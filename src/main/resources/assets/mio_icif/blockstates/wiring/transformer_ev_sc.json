@@ -1,0 +1,50 @@
+{
+    "variants": {
+        "active=false,facing=north": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc"
+        },
+        "active=false,facing=south": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc",
+            "y": 180
+        },
+        "active=false,facing=east": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc",
+            "y": 90
+        },
+        "active=false,facing=west": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc",
+            "y": 270
+        },
+        "active=false,facing=up": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc",
+            "x": 270
+        },
+        "active=false,facing=down": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc",
+            "x": 90
+        },
+        "active=true,facing=north": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc_on"
+        },
+        "active=true,facing=south": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc_on",
+            "y": 180
+        },
+        "active=true,facing=east": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc_on",
+            "y": 90
+        },
+        "active=true,facing=west": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc_on",
+            "y": 270
+        },
+        "active=true,facing=up": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc_on",
+            "x": 270
+        },
+        "active=true,facing=down": {
+            "model": "mio_icif:block/wiring/transformer_ev_sc_on",
+            "x": 90
+        }
+    }
+}

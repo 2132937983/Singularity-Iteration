@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IRI",
+    "IRI",
+    "CPC"
+  ],
+  "key": {
+    "I": {
+      "item": "mio_icif:resource/item_iridium_ingot"
+    },
+    "R": {
+      "item": "minecraft:redstone_block"
+    },
+    "C": {
+      "item": "mio_icif:resource/item_niobium_titanium_plate"
+    },
+    "P": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_quantum_sword",
+    "count": 1
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "type": "mio_icif:blast_furnace",
+  "count": 9,
+  "ingredient": {
+    "tag": "c:nuggets/titanium"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_titanium_ingot"
+  },
+  "secondary_result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_slag"
+  },
+  "duration": 750
+}

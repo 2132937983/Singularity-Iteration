@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["III","ISI","CCC"],"key":{"I":{"tag": "c:ingots/iron"},"S":{"item":"mio_icif:generator/block_solar_generator"},"C":{"item":"mio_icif:wiring/cable/block_cable"}},"result":{"id":"mio_icif:normal/item_solar_helmet","count":1}}

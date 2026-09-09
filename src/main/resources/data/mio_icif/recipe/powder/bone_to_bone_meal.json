@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "minecraft:bone"
+  },
+  "result": {
+    "count": 4,
+    "id": "minecraft:bone_meal"
+  }
+}

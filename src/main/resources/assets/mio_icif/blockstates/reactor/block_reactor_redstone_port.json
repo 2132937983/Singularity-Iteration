@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "powered=false": {
+            "model": "mio_icif:block/reactor/block_reactor_redstone_port"
+        },
+        "powered=true": {
+            "model": "mio_icif:block/reactor/block_reactor_redstone_port"
+        }
+    }
+}

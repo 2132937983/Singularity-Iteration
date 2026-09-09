@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "minecraft:blue_ice"
+  },
+  "result": {
+    "count": 9,
+    "id": "minecraft:packed_ice"
+  }
+}

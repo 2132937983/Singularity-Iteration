@@ -1,0 +1,22 @@
+{
+    "parent": "block/cube",
+    "textures": {
+        "particle": "mio_icif:block/producer/block_machine","particle_ub": "mio_icif:block/wiring/block_mfe_chargepad",
+        "all_lbr": "mio_icif:block/wiring/block_mfe_chargepad",
+        "face": "mio_icif:block/wiring/block_mfe_chargepad"
+    },
+    "elements": [
+        {
+            "from": [ 0, 0, 0 ],
+            "to": [ 16, 15, 16 ],
+            "faces": {
+                "down":  { "uv": [8,0, 9.33,16], "texture": "#particle_ub", "cullface": "down" },
+                "up":    { "uv": [9.33,0, 10.66,16], "texture": "#particle_ub" },
+                "south": { "uv": [10.66,0, 12,16], "texture": "#all_lbr" },
+                "north": { "uv": [12,0, 13.33,16], "texture": "#all_lbr" },
+                "west":  { "uv": [13.33,0, 14.66,16], "texture": "#all_lbr" },
+                "east":  { "uv": [14.66,0, 16,16], "texture": "#all_lbr" }
+            }
+        }
+    ]
+}

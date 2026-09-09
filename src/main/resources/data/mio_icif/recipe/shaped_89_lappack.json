@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CLC",
+    "LAL",
+    "LEL"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    },
+    "A": {
+      "tag": "c:circuits/advanced"
+    },
+    "E": {
+      "item": "mio_icif:armor/item_armor_energypack"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_lappack",
+    "count": 1
+  }
+}

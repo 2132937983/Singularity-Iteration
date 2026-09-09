@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["c","C","R"],"key":{"c":{"item":"mio_icif:wiring/cable/block_tin_cable"},"C":{"item":"mio_icif:wiring/cable/block_cable"},"R":{"item":"minecraft:redstone"}},"result":{"id":"mio_icif:normal/item_su_bat","count":8}}

@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shapeless","ingredients":[{"item":"mio_icif:resource/item_clay_dust"},{"item":"minecraft:water_bucket"},{"item":"minecraft:redstone"},{"tag": "c:dusts/coal"}],"result":{"id":"mio_icif:resource/item_cf_dust","count":3}}

@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "MLM",
+    "InI",
+    "G G"
+  ],
+  "key": {
+    "n": {
+      "item": "mio_icif:armor/item_armor_nano_leggings"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iridium_plate"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lamacrystal_chargebat_lev0"
+    },
+    "G": {
+      "item": "minecraft:glowstone_dust"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_quantum_leggings",
+    "count": 1
+  }
+}

@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["ICI","III"],"key":{"I":{"item":"mio_icif:resource/item_bronze_casing"},"C":{"item":"minecraft:chest"}},"result":{"id":"mio_icif:normal/item_toolbox","count":1}}

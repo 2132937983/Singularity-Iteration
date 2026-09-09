@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_normal/item_industrial_diamond": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:normal/item_industrial_diamond"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:industrial_diamond_to_diamond"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_normal/item_industrial_diamond"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:industrial_diamond_to_diamond"
+    ]
+  }
+}

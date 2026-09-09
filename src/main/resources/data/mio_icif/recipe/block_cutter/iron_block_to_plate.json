@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:block_cutter",
+  "hardness": 5,
+  "ingredient": {
+    "item": "minecraft:iron_block"
+  },
+  "result": {
+    "count": 9,
+    "id": "mio_icif:resource/item_iron_plate"
+  }
+}

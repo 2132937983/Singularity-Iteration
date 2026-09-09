@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" T "," P "," C "],"key":{"T":{"item":"mio_icif:item_tool_wooden_treetap"},"P":{"item":"mio_icif:item_tool_power_unit_small"},"C":{"item":"mio_icif:wiring/cable/block_tin_cable"}},"result":{"id":"mio_icif:item_tool_treetap_elc","count":1}}

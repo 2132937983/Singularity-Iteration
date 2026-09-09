@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_reactor/item_reactor_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:reactor/item_reactor_plate"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:reactor/item_reactor_explosive_plate"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_reactor/item_reactor_plate"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:reactor/item_reactor_explosive_plate"
+    ]
+  }
+}

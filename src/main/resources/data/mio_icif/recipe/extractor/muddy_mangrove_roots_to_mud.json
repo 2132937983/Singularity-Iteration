@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:extractor",
+  "energypertick": 10,
+  "ingredient": {
+    "item": "minecraft:muddy_mangrove_roots"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 1,
+    "id": "minecraft:mud"
+  }
+}

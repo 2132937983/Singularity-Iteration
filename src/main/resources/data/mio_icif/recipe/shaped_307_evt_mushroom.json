@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" M ","MEM"," M "],"key":{"M":{"item":"minecraft:red_mushroom"},"E":{"item":"mio_icif:env_template/evt_empty"}},"result":{"id":"mio_icif:env_template/evt_mushroom","count":1}}

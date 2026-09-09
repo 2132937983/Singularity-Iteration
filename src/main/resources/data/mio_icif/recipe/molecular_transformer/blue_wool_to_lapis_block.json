@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "minecraft:blue_wool"
+  },
+  "result": {
+    "count": 1,
+    "id": "minecraft:lapis_block"
+  },
+  "eu_cost": 1000000,
+  "duration": 1
+}

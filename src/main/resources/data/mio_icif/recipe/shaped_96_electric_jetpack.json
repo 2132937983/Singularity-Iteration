@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ICI",
+    "IBI",
+    "G G"
+  ],
+  "key": {
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "B": {
+      "item": "mio_icif:wiring/block_bat_box"
+    },
+    "G": {
+      "item": "minecraft:glowstone_dust"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_jetpack_electric",
+    "count": 1
+  }
+}

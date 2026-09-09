@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "level=0": { "model": "mio_icif:block/biogas" },
+    "level=1": { "model": "mio_icif:block/biogas" },
+    "level=2": { "model": "mio_icif:block/biogas" },
+    "level=3": { "model": "mio_icif:block/biogas" },
+    "level=4": { "model": "mio_icif:block/biogas" },
+    "level=5": { "model": "mio_icif:block/biogas" },
+    "level=6": { "model": "mio_icif:block/biogas" },
+    "level=7": { "model": "mio_icif:block/biogas" },
+    "level=8": { "model": "mio_icif:block/biogas" },
+    "level=9": { "model": "mio_icif:block/biogas" },
+    "level=10": { "model": "mio_icif:block/biogas" },
+    "level=11": { "model": "mio_icif:block/biogas" },
+    "level=12": { "model": "mio_icif:block/biogas" },
+    "level=13": { "model": "mio_icif:block/biogas" },
+    "level=14": { "model": "mio_icif:block/biogas" },
+    "level=15": { "model": "mio_icif:block/biogas" }
+  }
+}

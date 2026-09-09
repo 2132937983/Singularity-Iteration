@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["GEG","DAD","GDG"],"key":{"G":{"item":"minecraft:glowstone_dust"},"E":{"item":"mio_icif:env_template/evt_empty"},"D":{"item":"minecraft:dirt"},"A":{"item":"mio_icif:resource/item_adviron_casing"}},"result":{"id":"mio_icif:producer/block_terra_elc","count":1}}

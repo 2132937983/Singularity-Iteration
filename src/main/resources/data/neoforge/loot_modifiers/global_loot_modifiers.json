@@ -1,0 +1,13 @@
+{
+  "entries": [
+    "mio_icif:iridium_shard_in_dungeon",
+    "mio_icif:iridium_shard_in_mineshaft",
+    "mio_icif:iridium_shard_in_nether_fortress",
+    "mio_icif:iridium_shard_in_bastion",
+    "mio_icif:mets_nano_living_metal_in_dungeon",
+    "mio_icif:mets_nano_living_metal_in_mineshaft",
+    "mio_icif:mets_nano_living_metal_in_nether_fortress",
+    "mio_icif:mets_nano_living_metal_in_bastion"
+  ],
+  "replace": false
+}

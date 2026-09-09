@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["www","WBW","wEw"],"key":{"w":{"tag":"minecraft:planks"},"W":{"item":"mio_icif:wiring/cable/block_tin_cable"},"B":{"item":"mio_icif:normal/item_bat_lev0"},"E":{"tag":"c:circuits/basic"}},"result":{"id":"mio_icif:upgrade/energy_storage_upgrade","count":1}}

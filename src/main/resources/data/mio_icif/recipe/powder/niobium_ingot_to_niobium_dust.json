@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "tag": "c:ingots/niobium"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_niobium_dust"
+  }
+}

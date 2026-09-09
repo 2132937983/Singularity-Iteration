@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["B"],
+  "key": {"B":{"item":"mio_icif:block_tin"}},
+  "result":{"id":"mio_icif:resource/item_ingot_tin","count":9}
+}

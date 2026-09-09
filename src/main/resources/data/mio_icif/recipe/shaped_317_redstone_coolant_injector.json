@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["ICI","RUR","ICI"],"key":{"I":{"tag": "c:plates/iron"},"C":{"item":"mio_icif:reactor/item_reactor_condensator"},"R":{"item":"minecraft:redstone"},"U":{"type":"mio_icif:fluid_cell","fluid":"mio_icif:coolant"}},"result":{"id":"mio_icif:producer/block_redstone_reactor_coolant_injector","count":1}}

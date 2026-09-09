@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SSS",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:dusts/small_titanium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:resource/item_titanium_dust",
+    "count": 1
+  }
+}

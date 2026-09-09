@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "minecraft:coal"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_industrial_diamond"
+  },
+  "eu_cost": 9000000,
+  "duration": 1
+}

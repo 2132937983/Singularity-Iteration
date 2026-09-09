@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["CC ","IMI","PPP"],"key":{"C":{"item":"mio_icif:resource/item_iron_casing"},"I":{"item":"mio_icif:resource/item_iron_shaft"},"M":{"item":"mio_icif:producer/block_machine_hull_basic"},"P":{"tag": "c:plates/iron"}},"result":{"id":"mio_icif:producer/block_lathe","count":1}}

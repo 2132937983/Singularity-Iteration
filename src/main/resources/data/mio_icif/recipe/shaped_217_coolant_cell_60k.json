@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["TCT","TcT","TCT"],"key":{"C":{"item":"mio_icif:reactor/item_reactor_collant_triple"},"T":{"tag": "c:plates/tin"},"c":{"tag": "c:plates/iron"}},"result":{"id":"mio_icif:reactor/item_reactor_coolant_six","count":1}}

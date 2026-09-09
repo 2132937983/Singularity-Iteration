@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mio_icif:item/rotors/item_titanium_iron_alloy_rotor"
+  }
+}

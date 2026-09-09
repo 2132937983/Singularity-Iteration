@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " B ",
+    "III",
+    " F "
+  ],
+  "key": {
+    "B": {
+      "item": "mio_icif:resource/item_heatconductor"
+    },
+    "I": {
+      "tag": "c:plates/iron"
+    },
+    "F": {
+      "item": "mio_icif:producer/block_furnace_elc"
+    }
+  },
+  "result": {
+    "id": "mio_icif:hugenerator/block_solid_heat_generator",
+    "count": 1
+  }
+}

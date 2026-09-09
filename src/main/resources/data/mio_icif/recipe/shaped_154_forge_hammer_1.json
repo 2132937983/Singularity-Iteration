@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["II ","ISS","II "],"key":{"I":{"tag": "c:ingots/iron"},"S":{"item":"minecraft:stick"}},"result":{"id":"mio_icif:item_tool_hammer","count":1}}

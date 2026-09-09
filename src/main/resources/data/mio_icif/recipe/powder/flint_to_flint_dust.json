@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "minecraft:flint"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_flint_dust"
+  }
+}

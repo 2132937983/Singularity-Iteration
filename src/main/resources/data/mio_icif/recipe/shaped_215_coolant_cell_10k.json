@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" T ","TWT"," T "],"key":{"W":{"type":"mio_icif:fluid_cell","fluid":"mio_icif:coolant"},"T":{"tag": "c:plates/tin"}},"result":{"id":"mio_icif:reactor/item_reactor_collant_simple","count":1}}

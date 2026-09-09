@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GCG",
+    "BMB",
+    "GCG"
+  ],
+  "key": {
+    "G": {
+      "item": "mio_icif:wiring/cable/block_gold_cable"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_advchargebat_lev0"
+    },
+    "M": {
+      "item": "mio_icif:oilrig/block_oil_rig_base"
+    }
+  },
+  "result": {
+    "id": "mio_icif:oilrig/block_oil_rig_input",
+    "count": 1
+  }
+}

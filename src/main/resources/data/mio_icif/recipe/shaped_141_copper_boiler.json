@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["CCC","CIC","CCC"],
+  "key": {
+    "C":{"item":"mio_icif:resource/item_copper_casing"},
+    "I":{"tag": "c:ingots/iron"}
+  },
+  "result":{"id":"mio_icif:resource/item_copper_boiler","count":1}
+}

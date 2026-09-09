@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "VVV",
+    "VRV",
+    "VVV"
+  ],
+  "key": {
+    "V": {
+      "item": "mio_icif:reactor/block_reactor_vessel"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "id": "mio_icif:reactor/block_reactor_redstone_port",
+    "count": 1
+  }
+}

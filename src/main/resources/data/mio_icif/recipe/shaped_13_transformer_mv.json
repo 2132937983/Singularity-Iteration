@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "C",
+    "M",
+    "C"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "C": {
+      "item": "mio_icif:wiring/cable/block_tin_cable"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/transformer_mv_hv",
+    "count": 1
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "count": 9,
+  "energypertick": 25,
+  "ingredient": {
+    "item": "mio_icif:resource/item_shard_iridium"
+  },
+  "processingtime": 500,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_iridium"
+  }
+}

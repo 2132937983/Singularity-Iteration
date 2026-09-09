@@ -1,0 +1,50 @@
+{
+    "variants": {
+        "lit=false,facing=north": {
+            "model": "mio_icif:block/producer/block_blast_furnace"
+        },
+        "lit=false,facing=south": {
+            "model": "mio_icif:block/producer/block_blast_furnace",
+            "y": 180
+        },
+        "lit=false,facing=east": {
+            "model": "mio_icif:block/producer/block_blast_furnace",
+            "y": 90
+        },
+        "lit=false,facing=west": {
+            "model": "mio_icif:block/producer/block_blast_furnace",
+            "y": 270
+        },
+        "lit=false,facing=up": {
+            "model": "mio_icif:block/producer/block_blast_furnace",
+            "x": 270
+        },
+        "lit=false,facing=down": {
+            "model": "mio_icif:block/producer/block_blast_furnace",
+            "x": 90
+        },
+        "lit=true,facing=north": {
+            "model": "mio_icif:block/producer/block_blast_furnace_on"
+        },
+        "lit=true,facing=south": {
+            "model": "mio_icif:block/producer/block_blast_furnace_on",
+            "y": 180
+        },
+        "lit=true,facing=east": {
+            "model": "mio_icif:block/producer/block_blast_furnace_on",
+            "y": 90
+        },
+        "lit=true,facing=west": {
+            "model": "mio_icif:block/producer/block_blast_furnace_on",
+            "y": 270
+        },
+        "lit=true,facing=up": {
+            "model": "mio_icif:block/producer/block_blast_furnace_on",
+            "x": 270
+        },
+        "lit=true,facing=down": {
+            "model": "mio_icif:block/producer/block_blast_furnace_on",
+            "x": 90
+        }
+    }
+}

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AOA",
+    "OMO",
+    "AOA"
+  ],
+  "key": {
+    "A": {
+      "item": "mio_icif:resource/item_plant_extract"
+    },
+    "O": {
+      "item": "mio_icif:resource/item_mox"
+    },
+    "M": {
+      "item": "minecraft:wheat_seeds"
+    }
+  },
+  "result": {
+    "id": "mio_icif:crop/uranium_rich_seed",
+    "count": 1
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:extractor",
+  "ingredient": {
+    "type": "mio_icif:fluid_cell",
+    "fluid": "minecraft:water"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_hydrant_cell"
+  }
+}

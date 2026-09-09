@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mio_icif:normal/item_empty_mug"
+    },
+    {
+      "item": "mio_icif:resource/item_coffee_dust"
+    },
+    {
+      "item": "minecraft:water_bucket"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:normal/item_coffee_0",
+    "count": 1
+  }
+}

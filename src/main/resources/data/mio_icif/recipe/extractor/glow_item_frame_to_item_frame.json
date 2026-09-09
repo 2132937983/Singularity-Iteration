@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:extractor",
+  "energypertick": 10,
+  "ingredient": {
+    "item": "minecraft:glow_item_frame"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 1,
+    "id": "minecraft:item_frame"
+  }
+}

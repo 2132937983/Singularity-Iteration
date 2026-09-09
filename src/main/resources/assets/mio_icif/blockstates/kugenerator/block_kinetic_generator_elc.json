@@ -1,0 +1,19 @@
+{
+    "variants": {
+        "facing=north": {
+            "model": "mio_icif:block/kugenerator/block_water_kinetic_generator"
+        },
+        "facing=south": {
+            "model": "mio_icif:block/kugenerator/block_water_kinetic_generator",
+            "y": 180
+        },
+        "facing=east": {
+            "model": "mio_icif:block/kugenerator/block_water_kinetic_generator",
+            "y": 90
+        },
+        "facing=west": {
+            "model": "mio_icif:block/kugenerator/block_water_kinetic_generator",
+            "y": 270
+        }
+    }
+}

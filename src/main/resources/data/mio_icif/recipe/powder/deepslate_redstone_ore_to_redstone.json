@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "minecraft:deepslate_redstone_ore"
+  },
+  "result": {
+    "count": 8,
+    "id": "minecraft:redstone"
+  }
+}

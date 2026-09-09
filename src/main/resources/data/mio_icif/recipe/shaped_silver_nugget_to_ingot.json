@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "NNN",
+    "NNN",
+    "NNN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:nuggets/silver"
+    }
+  },
+  "result": {
+    "id": "mio_icif:resource/item_silver_ingot",
+    "count": 1
+  }
+}

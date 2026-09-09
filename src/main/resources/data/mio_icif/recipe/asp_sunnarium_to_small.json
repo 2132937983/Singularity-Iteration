@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {"item":"mio_icif:resource/item_sunnarium"}
+  ],
+  "result":{"id":"mio_icif:resource/item_sunnarium_small","count":9}
+}

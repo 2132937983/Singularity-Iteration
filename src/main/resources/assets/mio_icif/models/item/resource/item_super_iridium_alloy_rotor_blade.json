@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mio_icif:item/resource/item_super_iridium_alloy_rotor_blade"
+  }
+}

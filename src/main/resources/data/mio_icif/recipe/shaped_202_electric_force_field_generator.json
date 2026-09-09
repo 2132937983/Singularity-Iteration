@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["SCS", "MBM", "SCS"],
+  "key": {
+    "S": {"item": "mio_icif:resource/item_titanium_casing"},
+    "C": {"tag": "c:circuits/advanced"},
+    "M": {"item": "mio_icif:item_electric_nutrition_supply"},
+    "B": {"item": "mio_icif:normal/item_crystal_lev0"}
+  },
+  "result": {"id": "mio_icif:item_electric_force_field_generator", "count": 1}
+}

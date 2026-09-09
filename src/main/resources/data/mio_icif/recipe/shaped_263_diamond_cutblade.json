@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["DDD","DAD","DDD"],"key":{"D":{"item":"minecraft:diamond"},"A":{"item":"mio_icif:resource/item_adviron_ingot"}},"result":{"id":"mio_icif:resource/item_diamond_cut_blade","count":1}}

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["GNG", "EIE", "GNG"],
+  "key": {
+    "G": {"item": "mio_icif:resource/item_motor"},
+    "N": {"tag": "c:plates/niobium_titanium"},
+    "E": {"item": "mio_icif:reactor/item_reactor_golden_vent"},
+    "I": {"tag": "c:ingots/iridium"}
+  },
+  "result": {"id": "mio_icif:reactor/item_reactor_iridium_oc_vent", "count": 1}
+}

@@ -1,0 +1,64 @@
+{
+    "variants": {
+        "charging=false,discharging=false,facing=north": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc"
+        },
+        "charging=false,discharging=false,facing=south": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc",
+            "y": 180
+        },
+        "charging=false,discharging=false,facing=east": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc",
+            "y": 90
+        },
+        "charging=false,discharging=false,facing=west": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc",
+            "y": 270
+        },
+        "charging=true,discharging=false,facing=north": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on"
+        },
+        "charging=true,discharging=false,facing=south": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on",
+            "y": 180
+        },
+        "charging=true,discharging=false,facing=east": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on",
+            "y": 90
+        },
+        "charging=true,discharging=false,facing=west": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on",
+            "y": 270
+        },
+        "charging=false,discharging=true,facing=north": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on"
+        },
+        "charging=false,discharging=true,facing=south": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on",
+            "y": 180
+        },
+        "charging=false,discharging=true,facing=east": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on",
+            "y": 90
+        },
+        "charging=false,discharging=true,facing=west": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on",
+            "y": 270
+        },
+        "charging=true,discharging=true,facing=north": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on"
+        },
+        "charging=true,discharging=true,facing=south": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on",
+            "y": 180
+        },
+        "charging=true,discharging=true,facing=east": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on",
+            "y": 90
+        },
+        "charging=true,discharging=true,facing=west": {
+            "model": "mio_icif:block/producer/block_electrolyzer_elc_on",
+            "y": 270
+        }
+    }
+}

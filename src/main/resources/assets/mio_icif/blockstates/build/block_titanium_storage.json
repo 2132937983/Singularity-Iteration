@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "mio_icif:block/build/block_titanium_storage" }
+  }
+}

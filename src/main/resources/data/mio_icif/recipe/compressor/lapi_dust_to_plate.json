@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:compressor",
+  "ingredient": {
+    "tag": "c:dusts/lapis"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_lapi_plate"
+  }
+}

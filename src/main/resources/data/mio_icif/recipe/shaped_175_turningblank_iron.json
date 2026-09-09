@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["INI"],"key":{"I":{"tag": "c:ingots/iron"},"N":{"item":"mio_icif:resource/item_iron_casing"}},"result":{"id":"mio_icif:normal/item_iron_turning_blanks","count":1}}

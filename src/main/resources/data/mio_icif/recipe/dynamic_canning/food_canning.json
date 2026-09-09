@@ -1,0 +1,376 @@
+{
+  "type": "mio_icif:dynamic_canning",
+  "can": {
+    "item": "mio_icif:normal/item_tin_empty_can"
+  },
+  "energypertick": 5,
+  "food": [
+    {
+      "item": "minecraft:apple"
+    },
+    {
+      "item": "minecraft:mushroom_stew"
+    },
+    {
+      "item": "minecraft:bread"
+    },
+    {
+      "item": "minecraft:porkchop"
+    },
+    {
+      "item": "minecraft:cooked_porkchop"
+    },
+    {
+      "item": "minecraft:golden_apple"
+    },
+    {
+      "item": "minecraft:enchanted_golden_apple"
+    },
+    {
+      "item": "minecraft:cod"
+    },
+    {
+      "item": "minecraft:salmon"
+    },
+    {
+      "item": "minecraft:tropical_fish"
+    },
+    {
+      "item": "minecraft:pufferfish"
+    },
+    {
+      "item": "minecraft:cooked_cod"
+    },
+    {
+      "item": "minecraft:cooked_salmon"
+    },
+    {
+      "item": "minecraft:cookie"
+    },
+    {
+      "item": "minecraft:melon_slice"
+    },
+    {
+      "item": "minecraft:dried_kelp"
+    },
+    {
+      "item": "minecraft:beef"
+    },
+    {
+      "item": "minecraft:cooked_beef"
+    },
+    {
+      "item": "minecraft:chicken"
+    },
+    {
+      "item": "minecraft:cooked_chicken"
+    },
+    {
+      "item": "minecraft:rotten_flesh"
+    },
+    {
+      "item": "minecraft:spider_eye"
+    },
+    {
+      "item": "minecraft:carrot"
+    },
+    {
+      "item": "minecraft:potato"
+    },
+    {
+      "item": "minecraft:baked_potato"
+    },
+    {
+      "item": "minecraft:poisonous_potato"
+    },
+    {
+      "item": "minecraft:golden_carrot"
+    },
+    {
+      "item": "minecraft:pumpkin_pie"
+    },
+    {
+      "item": "minecraft:rabbit"
+    },
+    {
+      "item": "minecraft:cooked_rabbit"
+    },
+    {
+      "item": "minecraft:rabbit_stew"
+    },
+    {
+      "item": "minecraft:mutton"
+    },
+    {
+      "item": "minecraft:cooked_mutton"
+    },
+    {
+      "item": "minecraft:chorus_fruit"
+    },
+    {
+      "item": "minecraft:beetroot"
+    },
+    {
+      "item": "minecraft:beetroot_soup"
+    },
+    {
+      "item": "minecraft:suspicious_stew"
+    },
+    {
+      "item": "minecraft:sweet_berries"
+    },
+    {
+      "item": "minecraft:glow_berries"
+    },
+    {
+      "item": "minecraft:honey_bottle"
+    },
+    {
+      "item": "minecraft:ominous_bottle"
+    },
+    {
+      "item": "farmersdelight:cabbage"
+    },
+    {
+      "item": "farmersdelight:tomato"
+    },
+    {
+      "item": "farmersdelight:onion"
+    },
+    {
+      "item": "farmersdelight:fried_egg"
+    },
+    {
+      "item": "farmersdelight:apple_cider"
+    },
+    {
+      "item": "farmersdelight:tomato_sauce"
+    },
+    {
+      "item": "farmersdelight:wheat_dough"
+    },
+    {
+      "item": "farmersdelight:raw_pasta"
+    },
+    {
+      "item": "farmersdelight:pumpkin_slice"
+    },
+    {
+      "item": "farmersdelight:cabbage_leaf"
+    },
+    {
+      "item": "farmersdelight:minced_beef"
+    },
+    {
+      "item": "farmersdelight:beef_patty"
+    },
+    {
+      "item": "farmersdelight:chicken_cuts"
+    },
+    {
+      "item": "farmersdelight:cooked_chicken_cuts"
+    },
+    {
+      "item": "farmersdelight:bacon"
+    },
+    {
+      "item": "farmersdelight:cooked_bacon"
+    },
+    {
+      "item": "farmersdelight:cod_slice"
+    },
+    {
+      "item": "farmersdelight:cooked_cod_slice"
+    },
+    {
+      "item": "farmersdelight:salmon_slice"
+    },
+    {
+      "item": "farmersdelight:cooked_salmon_slice"
+    },
+    {
+      "item": "farmersdelight:mutton_chops"
+    },
+    {
+      "item": "farmersdelight:cooked_mutton_chops"
+    },
+    {
+      "item": "farmersdelight:ham"
+    },
+    {
+      "item": "farmersdelight:smoked_ham"
+    },
+    {
+      "item": "farmersdelight:pie_crust"
+    },
+    {
+      "item": "farmersdelight:cake_slice"
+    },
+    {
+      "item": "farmersdelight:apple_pie_slice"
+    },
+    {
+      "item": "farmersdelight:sweet_berry_cheesecake_slice"
+    },
+    {
+      "item": "farmersdelight:chocolate_pie_slice"
+    },
+    {
+      "item": "farmersdelight:sweet_berry_cookie"
+    },
+    {
+      "item": "farmersdelight:honey_cookie"
+    },
+    {
+      "item": "farmersdelight:melon_popsicle"
+    },
+    {
+      "item": "farmersdelight:glow_berry_custard"
+    },
+    {
+      "item": "farmersdelight:fruit_salad"
+    },
+    {
+      "item": "farmersdelight:mixed_salad"
+    },
+    {
+      "item": "farmersdelight:nether_salad"
+    },
+    {
+      "item": "farmersdelight:barbecue_stick"
+    },
+    {
+      "item": "farmersdelight:egg_sandwich"
+    },
+    {
+      "item": "farmersdelight:chicken_sandwich"
+    },
+    {
+      "item": "farmersdelight:hamburger"
+    },
+    {
+      "item": "farmersdelight:bacon_sandwich"
+    },
+    {
+      "item": "farmersdelight:mutton_wrap"
+    },
+    {
+      "item": "farmersdelight:dumplings"
+    },
+    {
+      "item": "farmersdelight:stuffed_potato"
+    },
+    {
+      "item": "farmersdelight:cabbage_rolls"
+    },
+    {
+      "item": "farmersdelight:salmon_roll"
+    },
+    {
+      "item": "farmersdelight:cod_roll"
+    },
+    {
+      "item": "farmersdelight:kelp_roll"
+    },
+    {
+      "item": "farmersdelight:kelp_roll_slice"
+    },
+    {
+      "item": "farmersdelight:cooked_rice"
+    },
+    {
+      "item": "farmersdelight:bone_broth"
+    },
+    {
+      "item": "farmersdelight:beef_stew"
+    },
+    {
+      "item": "farmersdelight:chicken_soup"
+    },
+    {
+      "item": "farmersdelight:vegetable_soup"
+    },
+    {
+      "item": "farmersdelight:fish_stew"
+    },
+    {
+      "item": "farmersdelight:fried_rice"
+    },
+    {
+      "item": "farmersdelight:pumpkin_soup"
+    },
+    {
+      "item": "farmersdelight:baked_cod_stew"
+    },
+    {
+      "item": "farmersdelight:noodle_soup"
+    },
+    {
+      "item": "farmersdelight:bacon_and_eggs"
+    },
+    {
+      "item": "farmersdelight:pasta_with_meatballs"
+    },
+    {
+      "item": "farmersdelight:pasta_with_mutton_chop"
+    },
+    {
+      "item": "farmersdelight:mushroom_rice"
+    },
+    {
+      "item": "farmersdelight:roasted_mutton_chops"
+    },
+    {
+      "item": "farmersdelight:vegetable_noodles"
+    },
+    {
+      "item": "farmersdelight:steak_and_potatoes"
+    },
+    {
+      "item": "farmersdelight:ratatouille"
+    },
+    {
+      "item": "farmersdelight:squid_ink_pasta"
+    },
+    {
+      "item": "farmersdelight:grilled_salmon"
+    },
+    {
+      "item": "farmersdelight:roast_chicken"
+    },
+    {
+      "item": "farmersdelight:stuffed_pumpkin"
+    },
+    {
+      "item": "farmersdelight:honey_glazed_ham"
+    },
+    {
+      "item": "farmersdelight:shepherds_pie"
+    },
+    {
+      "item": "farmersdelight:dog_food"
+    },
+    {
+      "item": "mio_icif:normal/item_tin_filled_can"
+    },
+    {
+      "item": "create:bar_of_chocolate"
+    },
+    {
+      "item": "create:sweet_roll"
+    },
+    {
+      "item": "create:chocolate_glazed_berries"
+    },
+    {
+      "item": "create:honeyed_apple"
+    },
+    {
+      "item": "create:builders_tea"
+    },
+    {
+      "item": "modern_industrialization:mixed_ingot_iridium"
+    }
+  ],
+  "processingtime": 100
+}

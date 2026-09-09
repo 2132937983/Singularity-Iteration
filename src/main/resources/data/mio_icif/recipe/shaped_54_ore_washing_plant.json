@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "BAB",
+    "EWE"
+  ],
+  "key": {
+    "A": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "E": {
+      "item": "mio_icif:resource/item_motor"
+    },
+    "B": {
+      "item": "minecraft:bucket"
+    },
+    "W": {
+      "tag": "c:circuits/basic"
+    },
+    "I": {
+      "tag": "c:plates/iron"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_washer_elc",
+    "count": 1
+  }
+}

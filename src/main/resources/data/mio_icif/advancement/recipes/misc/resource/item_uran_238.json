@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_block_uranium": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:block_uranium"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:resource/item_uran_238"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_block_uranium"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:resource/item_uran_238"
+    ]
+  }
+}

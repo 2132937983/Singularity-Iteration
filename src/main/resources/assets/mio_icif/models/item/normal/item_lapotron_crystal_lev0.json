@@ -1,0 +1,13 @@
+{
+    "parent": "minecraft:item/generated",
+    "textures": {
+        "layer0": "mio_icif:item/normal/item_crystal_batlama_lev0"
+    },
+    "overrides": [
+        {"predicate": {"mio_icif:energy_level": 0}, "model": "mio_icif:item/normal/item_crystal_batlama_lev0"},
+        {"predicate": {"mio_icif:energy_level": 1}, "model": "mio_icif:item/normal/item_crystal_batlama_lev1"},
+        {"predicate": {"mio_icif:energy_level": 2}, "model": "mio_icif:item/normal/item_crystal_batlama_lev2"},
+        {"predicate": {"mio_icif:energy_level": 3}, "model": "mio_icif:item/normal/item_crystal_batlama_lev3"},
+        {"predicate": {"mio_icif:energy_level": 4}, "model": "mio_icif:item/normal/item_crystal_batlama_lev4"}
+    ]
+}

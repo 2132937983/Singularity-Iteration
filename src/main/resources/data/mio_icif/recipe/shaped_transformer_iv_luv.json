@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "STB",
+    " C "
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:wiring/cable/block_glass_cable"
+    },
+    "S": {
+      "tag": "c:circuits/elite"
+    },
+    "T": {
+      "item": "mio_icif:wiring/transformer_ev_sc"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_super_lapotron_crystal"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/transformer_iv_luv",
+    "count": 1
+  }
+}

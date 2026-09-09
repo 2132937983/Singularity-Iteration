@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "tag": "c:ingots/lead"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_lead_dust"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "values": [
+    "mio_icif:resource/item_uran",
+    "mio_icif:resource/item_uran_235",
+    "mio_icif:resource/item_uran_238",
+    "mio_icif:resource/item_uran_235_small",
+    "mio_icif:resource/item_uran_238_small",
+    "mio_icif:resource/item_uran_pellet",
+    "mio_icif:resource/item_mox",
+    "mio_icif:resource/item_mox_pellet",
+    "mio_icif:resource/item_plutonium",
+    "mio_icif:resource/item_plutonium_small",
+    "mio_icif:resource/item_rtg_pellet",
+    "mio_icif:reactor/item_reactor_uranium_simple",
+    "mio_icif:reactor/item_reactor_uranium_dual",
+    "mio_icif:reactor/item_reactor_uranium_quad",
+    "mio_icif:reactor/item_reactor_mox_simple",
+    "mio_icif:reactor/item_reactor_mox_dual",
+    "mio_icif:reactor/item_reactor_mox_quad",
+    "mio_icif:block_uranium",
+    "mio_icif:reactor/item_reactor_uranium_simple_depleted",
+    "mio_icif:reactor/item_reactor_uranium_dual_depleted",
+    "mio_icif:reactor/item_reactor_uranium_quad_deplete",
+    "mio_icif:reactor/item_reactor_mox_simple_depleted",
+    "mio_icif:reactor/item_reactor_mox_dual_deplete",
+    "mio_icif:reactor/item_reactor_mox_quad_deplete"
+  ]
+}

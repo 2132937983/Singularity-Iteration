@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:extractor",
+  "energypertick": 5,
+  "ingredient": {
+    "item": "mio_icif:normal/item_tin_filled_can"
+  },
+  "processingtime": 50,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_tin_empty_can"
+  }
+}

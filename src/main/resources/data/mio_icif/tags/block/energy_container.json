@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:wiring/block_bat_box",
+    "mio_icif:wiring/block_cesu",
+    "mio_icif:wiring/block_mfe",
+    "mio_icif:wiring/block_mfsu",
+    "mio_icif:wiring/block_lesu",
+    "mio_icif:wiring/block_eesu",
+    "mio_icif:wiring/block_gesu_core",
+    "mio_icif:wiring/block_gesu_input_iv",
+    "mio_icif:wiring/block_gesu_output_iv",
+    "mio_icif:wiring/block_gesu_output_luv"
+  ]
+}

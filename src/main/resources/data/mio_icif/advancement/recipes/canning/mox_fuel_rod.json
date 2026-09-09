@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_normal/item_fuel_rod": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:normal/item_fuel_rod"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:canning/mox_fuel_rod"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_normal/item_fuel_rod"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:canning/mox_fuel_rod"
+    ]
+  }
+}

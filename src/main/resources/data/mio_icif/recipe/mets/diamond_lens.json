@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["GFG","FRF","GFG"],
+  "key": {
+    "F": {"tag": "c:plates/niobium_titanium"},
+    "G": {"item": "mio_icif:resource/item_irradiant_reinforced_plate"},
+    "R": {"item": "minecraft:diamond"}
+  },
+  "result": {"id": "mio_icif:normal/item_diamond_lens", "count": 1}
+}

@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["TcT","cCc","TcT"],"key":{"c":{"tag": "c:dusts/coal"},"C":{"tag": "c:plates/copper"},"T":{"tag": "c:dusts/tin"}},"result":{"id":"mio_icif:reactor/item_reactor_reflector","count":1}}

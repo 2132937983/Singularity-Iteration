@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["ITI", "MBM", "ITI"],
+  "key": {
+    "I": {"item": "mio_icif:resource/item_iridium"},
+    "M": {"item": "mio_icif:item_electric_force_field_generator"},
+    "B": {      "item": "mio_icif:normal/item_lapotron_crystal_lev0"},
+    "T": {"tag": "c:circuits/elite"}
+  },
+  "result": {"id": "mio_icif:item_electric_first_aid_life_support", "count": 1}
+}

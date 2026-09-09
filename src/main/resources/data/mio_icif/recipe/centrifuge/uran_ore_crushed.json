@@ -1,0 +1,22 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:resource/item_uran_ore_crushed"
+  },
+  "minheat": 3000,
+  "primaryCount": 1,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_uran_235_small"
+  },
+  "secondaryCount": 4,
+  "secondaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_uran_238"
+  },
+  "tertiaryCount": 1,
+  "tertiaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_stone_dust"
+  }
+}

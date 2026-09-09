@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GCG",
+    "TMT",
+    "GCG"
+  ],
+  "key": {
+    "G": {
+      "tag": "c:plates/titanium"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "T": {
+      "item": "minecraft:bucket"
+    },
+    "M": {
+      "item": "mio_icif:oilrig/block_oil_rig_base"
+    }
+  },
+  "result": {
+    "id": "mio_icif:oilrig/block_oil_rig_output",
+    "count": 1
+  }
+}

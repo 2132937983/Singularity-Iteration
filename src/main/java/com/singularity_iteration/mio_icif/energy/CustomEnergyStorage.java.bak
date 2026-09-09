@@ -1,0 +1,47 @@
+package com.singularity_iteration.mio_icif.energy;
+
+import net.neoforged.neoforge.energy.EnergyStorage;
+
+@SuppressWarnings("null")
+public class CustomEnergyStorage extends EnergyStorage {
+    
+    public CustomEnergyStorage(int capacity, int maxReceive, int maxExtract) {
+        super(capacity, maxReceive, maxExtract, 0);
+    }
+    
+    public CustomEnergyStorage(int capacity, int maxReceive, int maxExtract, int energy) {
+        super(capacity, maxReceive, maxExtract, energy);
+    }
+    
+    public void setEnergy(int energy) {
+        this.energy = Math.max(0, Math.min(capacity, energy));
+    }
+    
+    public int getEnergy() {
+        return this.energy;
+    }
+    
+    public int getMaxExtract() {
+        return this.maxExtract;
+    }
+    
+    public int getMaxReceive() {
+        return this.maxReceive;
+    }
+
+    public int consumeEnergyInternal(int amount, boolean simulate) {
+        int energyConsumed = Math.min(this.energy, amount);
+        if (!simulate) {
+            this.energy -= energyConsumed;
+        }
+        return energyConsumed;
+    }
+
+    public int generateEnergyInternal(int amount, boolean simulate) {
+        int energyGenerated = Math.min(this.capacity - this.energy, amount);
+        if (!simulate) {
+            this.energy += energyGenerated;
+        }
+        return energyGenerated;
+    }
+}

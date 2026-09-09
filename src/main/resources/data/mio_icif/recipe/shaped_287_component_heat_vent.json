@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["BTB","TVT","BTB"],"key":{"B":{"item":"minecraft:iron_bars"},"T":{"tag": "c:plates/tin"},"V":{"item":"mio_icif:reactor/item_reactor_vent"}},"result":{"id":"mio_icif:reactor/item_reactor_vent_spread","count":1}}

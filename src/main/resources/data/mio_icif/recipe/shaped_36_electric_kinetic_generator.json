@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IBI",
+    "ISI",
+    "IMI"
+  ],
+  "key": {
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_bat_lev0"
+    },
+    "M": {
+      "item": "mio_icif:resource/item_motor"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_iron_shaft"
+    }
+  },
+  "result": {
+    "id": "mio_icif:kugenerator/block_kinetic_generator_elc",
+    "count": 1
+  }
+}

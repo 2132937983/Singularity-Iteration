@@ -1,0 +1,21 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:reactor/item_reactor_mox_dual_deplete"
+  },
+  "primaryCount": 2,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_plutonium_small"
+  },
+  "secondaryCount": 6,
+  "secondaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_plutonium"
+  },
+  "tertiaryCount": 3,
+  "tertiaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_iron_dust"
+  }
+}

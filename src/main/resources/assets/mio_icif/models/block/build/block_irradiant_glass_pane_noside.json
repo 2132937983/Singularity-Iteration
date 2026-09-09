@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/template_glass_pane_noside",
+  "render_type": "translucent",
+  "textures": {
+    "pane": "mio_icif:block/build/irradiant_uranium_glass"
+  }
+}

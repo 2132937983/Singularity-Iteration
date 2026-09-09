@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "mio_icif:resource/item_fuel_plant_ball"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_biochaff"
+  }
+}

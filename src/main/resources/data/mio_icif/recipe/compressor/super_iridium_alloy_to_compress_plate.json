@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "count": 3,
+  "energypertick": 20,
+  "ingredient": {
+    "tag": "c:ingots/super_iridium"
+  },
+  "processingtime": 400,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_super_iridium_compress_plate"
+  }
+}

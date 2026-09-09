@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["CNC","NCN","CNC"],"key":{"C":{"tag": "c:plates/copper"},"N":{"item":"mio_icif:reactor/item_reactor_reflector"}},"result":{"id":"mio_icif:reactor/item_reactor_thick_reflector","count":1}}

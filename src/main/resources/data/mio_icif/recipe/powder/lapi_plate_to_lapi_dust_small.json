@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "tag": "c:plates/lapis"
+  },
+  "result": {
+    "count": 8,
+    "id": "mio_icif:resource/item_lapi_dust_small"
+  }
+}

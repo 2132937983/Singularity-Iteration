@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["NSB", "LJC", "NSD"],
+  "key": {
+    "N": {"item": "mio_icif:reactor/item_reactor_reflector"},
+    "S": {"item": "mio_icif:resource/item_iron_plate"},
+    "B": {"item": "mio_icif:normal/item_adv_lithium_battery"},
+    "L": {"item": "mio_icif:normal/item_lens"},
+    "J": {"tag": "c:dusts/glowstone"},
+    "C": {"tag": "c:circuits/advanced"},
+    "D": {"item": "mio_icif:item_tool_power_unit"}
+  },
+  "result": {"id": "mio_icif:item_electric_lighter", "count": 1}
+}

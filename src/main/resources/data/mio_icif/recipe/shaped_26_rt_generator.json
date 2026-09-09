@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "ICI",
+    "IGI"
+  ],
+  "key": {
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    },
+    "C": {
+      "item": "mio_icif:reactor/block_reactor_chamber"
+    },
+    "G": {
+      "item": "mio_icif:generator/block_thermal_generator"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_rt_generator",
+    "count": 1
+  }
+}

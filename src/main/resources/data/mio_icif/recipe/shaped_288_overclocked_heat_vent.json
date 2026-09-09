@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    "GVG",
+    " G "
+  ],
+  "key": {
+    "G": {
+      "tag": "c:plates/gold"
+    },
+    "V": {
+      "item": "mio_icif:reactor/item_reactor_vent_core"
+    }
+  },
+  "result": {
+    "id": "mio_icif:reactor/item_reactor_golden_vent",
+    "count": 1
+  }
+}

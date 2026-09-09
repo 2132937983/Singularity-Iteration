@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["CcC","TCT","CTC"],"key":{"c":{"tag":"c:circuits/basic"},"T":{"tag": "c:plates/tin"},"C":{"tag": "c:plates/copper"}},"result":{"id":"mio_icif:reactor/item_reactor_heat_switch","count":1}}

@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "TSB",
+    "OOC",
+    "TSD"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:plates/niobium_titanium"
+    },
+    "B": {
+      "tag": "c:crystals/energy"
+    },
+    "O": {
+      "item": "mio_icif:resource/item_coil"
+    },
+    "T": {
+      "item": "mio_icif:upgrade/ejector_upgrade"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "D": {
+      "item": "mio_icif:item_tool_electric_rifle"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_electric_plasma_gun",
+    "count": 1
+  }
+}

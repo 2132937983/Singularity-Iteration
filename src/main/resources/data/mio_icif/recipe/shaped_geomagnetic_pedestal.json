@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "SCS",
+    "TTT"
+  ],
+  "key": {
+    "T": {
+      "item": "mio_icif:block_titanium"
+    },
+    "S": {
+      "item": "mio_icif:generator/block_geo_generator"
+    },
+    "C": {
+      "tag": "c:circuits/ultimate"
+    },
+    "G": {
+      "item": "mio_icif:normal/item_field_generator"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_geomagnetic_pedestal",
+    "count": 1
+  }
+}

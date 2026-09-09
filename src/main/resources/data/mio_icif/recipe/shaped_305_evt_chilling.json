@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" I ","IEI"," I "],"key":{"I":{"item":"minecraft:ice"},"E":{"item":"mio_icif:env_template/evt_empty"}},"result":{"id":"mio_icif:env_template/evt_chilling","count":1}}

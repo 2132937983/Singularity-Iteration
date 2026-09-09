@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "tag": "c:ores/titanium"
+  },
+  "result": {
+    "count": 2,
+    "id": "mio_icif:resource/item_titanium_ore_crushed"
+  }
+}

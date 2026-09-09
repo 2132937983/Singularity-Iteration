@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SBS",
+    "SJS",
+    "P P"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:resource/item_titanium_plate"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    },
+    "J": {
+      "item": "mio_icif:armor/item_armor_jetpack_electric"
+    },
+    "P": {
+      "item": "mio_icif:upgrade/fluid_ejector_upgrade"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_advanced_jetpack",
+    "count": 1
+  }
+}

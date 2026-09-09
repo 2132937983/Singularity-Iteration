@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSB",
+    "LJC",
+    "SSD"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:plates/niobium_titanium"
+    },
+    "B": {
+      "tag": "c:crystals/energy"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_diamond_lens"
+    },
+    "J": {
+      "tag": "c:ingots/iridium"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "D": {
+      "item": "mio_icif:item_tool_electric_rifle"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_advanced_electric_rifle",
+    "count": 1
+  }
+}

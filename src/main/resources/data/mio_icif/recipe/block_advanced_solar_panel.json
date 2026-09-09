@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SAS",
+    "SGS"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:build/block_irradiant_glass_pane"
+    },
+    "A": {
+      "item": "mio_icif:generator/block_solar_generator"
+    },
+    "G": {
+      "item": "mio_icif:resource/item_alloy_plate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_advanced_solar_panel",
+    "count": 1
+  }
+}

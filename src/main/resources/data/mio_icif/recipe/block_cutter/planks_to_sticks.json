@@ -1,0 +1,14 @@
+{
+  "type": "mio_icif:block_cutter",
+  "count": 2,
+  "energypertick": 2,
+  "hardness": 1,
+  "ingredient": {
+    "tag": "minecraft:planks"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 6,
+    "id": "minecraft:stick"
+  }
+}

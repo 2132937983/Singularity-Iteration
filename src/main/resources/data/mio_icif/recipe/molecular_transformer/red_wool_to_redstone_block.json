@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "minecraft:red_wool"
+  },
+  "result": {
+    "count": 1,
+    "id": "minecraft:redstone_block"
+  },
+  "eu_cost": 1000000,
+  "duration": 1
+}

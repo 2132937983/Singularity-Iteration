@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "minecraft:netherrack"
+  },
+  "result": {
+    "count": 1,
+    "id": "minecraft:gunpowder"
+  },
+  "eu_cost": 70000,
+  "duration": 1
+}

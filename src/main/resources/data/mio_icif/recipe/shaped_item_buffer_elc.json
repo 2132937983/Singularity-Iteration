@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CCC",
+    "I I",
+    "CCC"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:resource/item_iron_casing"
+    },
+    "I": {
+      "item": "minecraft:chest"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_item_buffer_elc",
+    "count": 1
+  }
+}

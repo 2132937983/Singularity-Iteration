@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PSP","PSP","PSP"],
+  "key": {
+    "P": {"tag": "c:plates/titanium"},
+    "S": {"tag": "c:ingots/titanium"}
+  },
+  "result": {"id": "mio_icif:resource/item_titanium_iron_alloy_rotor_blade", "count": 1}
+}

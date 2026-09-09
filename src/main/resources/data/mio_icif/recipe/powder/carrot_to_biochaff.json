@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "minecraft:carrot"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_biochaff"
+  }
+}

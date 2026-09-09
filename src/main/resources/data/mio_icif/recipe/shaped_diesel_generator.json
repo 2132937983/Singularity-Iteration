@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "TCT",
+    "GSK",
+    "TBT"
+  ],
+  "key": {
+    "T": {
+      "item": "mio_icif:resource/item_titanium_casing"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_titanium_shaft"
+    },
+    "G": {
+      "item": "mio_icif:generator/block_semifluid_generator"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "K": {
+      "item": "mio_icif:generator/block_kinetic_generator"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_diesel_generator",
+    "count": 1
+  }
+}

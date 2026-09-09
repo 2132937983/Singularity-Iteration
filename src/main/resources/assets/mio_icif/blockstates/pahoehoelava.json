@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "level=0": { "model": "mio_icif:block/pahoehoelava" },
+    "level=1": { "model": "mio_icif:block/pahoehoelava" },
+    "level=2": { "model": "mio_icif:block/pahoehoelava" },
+    "level=3": { "model": "mio_icif:block/pahoehoelava" },
+    "level=4": { "model": "mio_icif:block/pahoehoelava" },
+    "level=5": { "model": "mio_icif:block/pahoehoelava" },
+    "level=6": { "model": "mio_icif:block/pahoehoelava" },
+    "level=7": { "model": "mio_icif:block/pahoehoelava" },
+    "level=8": { "model": "mio_icif:block/pahoehoelava" },
+    "level=9": { "model": "mio_icif:block/pahoehoelava" },
+    "level=10": { "model": "mio_icif:block/pahoehoelava" },
+    "level=11": { "model": "mio_icif:block/pahoehoelava" },
+    "level=12": { "model": "mio_icif:block/pahoehoelava" },
+    "level=13": { "model": "mio_icif:block/pahoehoelava" },
+    "level=14": { "model": "mio_icif:block/pahoehoelava" },
+    "level=15": { "model": "mio_icif:block/pahoehoelava" }
+  }
+}

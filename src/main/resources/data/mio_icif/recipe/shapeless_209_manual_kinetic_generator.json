@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shapeless","ingredients":[{"item":"mio_icif:producer/block_machine_hull_basic"},{"item":"minecraft:lever"}],"result":{"id":"mio_icif:kugenerator/block_manual_kinetic_generator","count":1}}

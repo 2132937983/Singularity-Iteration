@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mio_icif:block/environment/block_radiating_stone"
+    }
+  }
+}

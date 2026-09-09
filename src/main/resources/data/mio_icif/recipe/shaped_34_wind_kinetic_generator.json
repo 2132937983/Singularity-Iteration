@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "   ",
+    "SMS",
+    "   "
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_iron_shaft"
+    }
+  },
+  "result": {
+    "id": "mio_icif:kugenerator/block_wind_kinetic_generator",
+    "count": 1
+  }
+}

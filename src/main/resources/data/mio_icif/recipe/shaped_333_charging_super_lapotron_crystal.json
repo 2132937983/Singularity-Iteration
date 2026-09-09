@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["FGF","GSG","FGF"],"key":{"F":{"item":"mio_icif:normal/item_field_generator"},"G":{"item":"mio_icif:normal/item_super_lapotron_crystal"},"S":{"item":"mio_icif:normal/item_living_circuit"}},"result":{"id":"mio_icif:normal/item_charging_super_lapotron_crystal","count":1}}

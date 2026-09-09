@@ -1,0 +1,10 @@
+{
+  "values": {
+    "mio_icif:block_rub_leaves": {
+      "burn_time": 100
+    },
+    "mio_icif:block_rub_sapling": {
+      "burn_time": 100
+    }
+  }
+}

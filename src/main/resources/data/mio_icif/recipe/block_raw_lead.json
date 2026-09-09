@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "item": "mio_icif:resource/item_raw_lead_ore"
+    }
+  },
+  "result": {
+    "id": "mio_icif:block_raw_lead",
+    "count": 1
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " E ",
+    "TMT",
+    "KKK"
+  ],
+  "key": {
+    "E": {
+      "tag": "c:circuits/basic"
+    },
+    "T": {
+      "item": "mio_icif:normal/item_toolbox"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "K": {
+      "item": "mio_icif:resource/item_coil"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_metal_former",
+    "count": 1
+  }
+}

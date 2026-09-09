@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PGP","CBC","ccc"],
+  "key": {
+    "P":{"item":"mio_icif:resource/item_golden_casing"},
+    "G":{"item":"minecraft:glowstone_dust"},
+    "C":{"tag":"c:circuits/basic"},
+    "B":{"item":"mio_icif:normal/item_advbat_lev0"},
+    "c":{"item":"mio_icif:wiring/cable/block_tin_cable"}
+  },
+  "result":{"id":"mio_icif:item_tool_od_scanner","count":1}
+}

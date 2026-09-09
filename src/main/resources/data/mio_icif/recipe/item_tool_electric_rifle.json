@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSB",
+    "LJC",
+    "SSD"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:plates/iron"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_lithium_battery"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lens"
+    },
+    "J": {
+      "item": "mio_icif:reactor/item_reactor_reflector"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "D": {
+      "item": "mio_icif:item_tool_power_unit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_electric_rifle",
+    "count": 1
+  }
+}

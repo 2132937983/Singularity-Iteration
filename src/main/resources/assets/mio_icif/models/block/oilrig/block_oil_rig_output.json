@@ -1,0 +1,21 @@
+{
+    "parent": "block/cube",
+    "textures": {
+        "particle": "mio_icif:block/oilrig/block_oil_rig_output",
+        "all": "mio_icif:block/oilrig/block_oil_rig_output"
+    },
+    "elements": [
+        {
+            "from": [ 0, 0, 0 ],
+            "to": [ 16, 16, 16 ],
+            "faces": {
+                "down":  { "uv": [0, 0, 2.67, 16], "texture": "#all", "cullface": "down" },
+                "up":    { "uv": [2.67, 0, 5.33, 16], "texture": "#all", "cullface": "up" },
+                "east":  { "uv": [5.33, 0, 8, 16], "texture": "#all", "cullface": "east" },
+                "north": { "uv": [8, 0, 10.67, 16], "texture": "#all", "cullface": "north" },
+                "west":  { "uv": [10.67, 0, 13.33, 16], "texture": "#all", "cullface": "west" },
+                "south": { "uv": [13.33, 0, 16, 16], "texture": "#all", "cullface": "south" }
+            }
+        }
+    ]
+}

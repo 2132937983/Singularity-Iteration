@@ -1,0 +1,34 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_normal/item_tin_empty_can": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:normal/item_tin_empty_can"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:powder/tin_empty_can_to_tin_dust"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe"
+    ],
+    [
+      "has_normal/item_tin_empty_can"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:powder/tin_empty_can_to_tin_dust"
+    ]
+  }
+}

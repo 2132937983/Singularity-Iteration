@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SMS",
+    "SCS",
+    "SMS"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:wiring/cable/block_superconducting_cable"
+    },
+    "M": {
+      "item": "mio_icif:resource/item_nano_living_metal"
+    },
+    "C": {
+      "item": "mio_icif:producer/block_tesla"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_geomagnetic_antenna",
+    "count": 1
+  }
+}

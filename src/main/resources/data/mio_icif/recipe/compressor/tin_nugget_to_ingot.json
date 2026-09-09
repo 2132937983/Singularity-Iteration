@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "ingredient": {
+    "tag": "c:nuggets/tin"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_ingot_tin"
+  },
+  "count": 9,
+  "processingtime": 100,
+  "energypertick": 5
+}

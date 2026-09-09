@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["LCL","COC","LCL"],"key":{"L":{"tag":"c:dusts/lithium"},"C":{"item":"mio_icif:normal/item_advcircuit"},"O":{"item":"mio_icif:normal/item_lithium_battery"}},"result":{"id":"mio_icif:normal/item_adv_lithium_battery","count":1}}

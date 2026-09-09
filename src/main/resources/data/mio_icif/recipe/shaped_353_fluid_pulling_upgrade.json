@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["TXT"," E ","T T"],"key":{"T":{"tag": "c:plates/tin"},"E":{"item":"mio_icif:resource/item_motor"},"X":{"item":"mio_icif:item_tool_wooden_treetap"}},"result":{"id":"mio_icif:upgrade/fluid_pulling_upgrade","count":1}}

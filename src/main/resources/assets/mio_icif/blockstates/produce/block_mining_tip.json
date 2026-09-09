@@ -1,0 +1,7 @@
+{
+    "variants": {
+        "": {
+            "model": "mio_icif:block/produce/block_mining_tip"
+        }
+    }
+}

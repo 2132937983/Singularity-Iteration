@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["OSO","SOS","OSO"],"key":{"O":{"tag": "c:dusts/obsidian"},"S":{"item":"mio_icif:resource/item_silicondioxide_dust"}},"result":{"id":"mio_icif:resource/item_crystal_memory_raw","count":1}}

@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "mio_icif:block/build/rubber_slab"
+    },
+    "type=double": {
+      "model": "mio_icif:block/build/rubber_planks"
+    },
+    "type=top": {
+      "model": "mio_icif:block/build/rubber_slab_top"
+    }
+  }
+}

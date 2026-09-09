@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " S ",
+    "CQC",
+    "GTG"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:generator/block_hybrid_solar_panel"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_advcircuit"
+    },
+    "Q": {
+      "item": "mio_icif:armor/item_armor_quantum_helmet"
+    },
+    "G": {
+      "item": "mio_icif:wiring/cable/block_glass_cable"
+    },
+    "T": {
+      "item": "mio_icif:wiring/transformer_hv_ev"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_hybrid_solar_helmet",
+    "count": 1
+  }
+}

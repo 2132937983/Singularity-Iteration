@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "age=0": { "model": "mio_icif:block/crop/lead_rich/stage0" },
+    "age=1": { "model": "mio_icif:block/crop/lead_rich/stage1" },
+    "age=2": { "model": "mio_icif:block/crop/lead_rich/stage2" },
+    "age=3": { "model": "mio_icif:block/crop/lead_rich/stage3" },
+    "age=4": { "model": "mio_icif:block/crop/lead_rich/stage4" },
+    "age=5": { "model": "mio_icif:block/crop/lead_rich/stage5" },
+    "age=6": { "model": "mio_icif:block/crop/lead_rich/stage6" },
+    "age=7": { "model": "mio_icif:block/crop/lead_rich/stage7" }
+  }
+}

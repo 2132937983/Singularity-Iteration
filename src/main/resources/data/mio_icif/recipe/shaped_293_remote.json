@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" B ","RCR"," T "],"key":{"B":{"item":"minecraft:stone_button"},"R":{"item":"minecraft:redstone"},"C":{"tag":"c:circuits/basic"},"T":{"tag": "c:plates/tin"}},"result":{"id":"mio_icif:normal/item_remote","count":1}}

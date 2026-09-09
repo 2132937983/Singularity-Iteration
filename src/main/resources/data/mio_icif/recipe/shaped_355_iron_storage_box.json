@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["PCP","C C","PCP"],"key":{"P":{"tag": "c:plates/iron"},"C":{"item":"mio_icif:resource/item_iron_casing"}},"result":{"id":"mio_icif:build/block_iron_storage","count":1}}

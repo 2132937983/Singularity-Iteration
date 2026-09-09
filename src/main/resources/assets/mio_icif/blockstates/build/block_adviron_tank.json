@@ -1,0 +1,23 @@
+{
+  "variants": {
+    "facing=north,connected_up=false,connected_down=false": { "model": "mio_icif:block/build/block_adviron_tank_single" },
+    "facing=south,connected_up=false,connected_down=false": { "model": "mio_icif:block/build/block_adviron_tank_single", "y": 180 },
+    "facing=west,connected_up=false,connected_down=false":  { "model": "mio_icif:block/build/block_adviron_tank_single", "y": 270 },
+    "facing=east,connected_up=false,connected_down=false":  { "model": "mio_icif:block/build/block_adviron_tank_single", "y": 90 },
+
+    "facing=north,connected_up=true,connected_down=false":  { "model": "mio_icif:block/build/block_adviron_tank_bottom" },
+    "facing=south,connected_up=true,connected_down=false":  { "model": "mio_icif:block/build/block_adviron_tank_bottom", "y": 180 },
+    "facing=west,connected_up=true,connected_down=false":   { "model": "mio_icif:block/build/block_adviron_tank_bottom", "y": 270 },
+    "facing=east,connected_up=true,connected_down=false":   { "model": "mio_icif:block/build/block_adviron_tank_bottom", "y": 90 },
+
+    "facing=north,connected_up=false,connected_down=true":  { "model": "mio_icif:block/build/block_adviron_tank_top" },
+    "facing=south,connected_up=false,connected_down=true":  { "model": "mio_icif:block/build/block_adviron_tank_top", "y": 180 },
+    "facing=west,connected_up=false,connected_down=true":   { "model": "mio_icif:block/build/block_adviron_tank_top", "y": 270 },
+    "facing=east,connected_up=false,connected_down=true":   { "model": "mio_icif:block/build/block_adviron_tank_top", "y": 90 },
+
+    "facing=north,connected_up=true,connected_down=true":   { "model": "mio_icif:block/build/block_adviron_tank_center" },
+    "facing=south,connected_up=true,connected_down=true":   { "model": "mio_icif:block/build/block_adviron_tank_center", "y": 180 },
+    "facing=west,connected_up=true,connected_down=true":    { "model": "mio_icif:block/build/block_adviron_tank_center", "y": 270 },
+    "facing=east,connected_up=true,connected_down=true":    { "model": "mio_icif:block/build/block_adviron_tank_center", "y": 90 }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ACA",
+    "IEI",
+    "AIA"
+  ],
+  "key": {
+    "A": {
+      "tag": "c:circuits/advanced"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    },
+    "E": {
+      "item": "mio_icif:armor/item_armor_advbatpack"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_energypack",
+    "count": 1
+  }
+}

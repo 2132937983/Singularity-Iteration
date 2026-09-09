@@ -1,0 +1,34 @@
+{
+    "variants": {
+        "active=false,facing=north": {
+            "model": "mio_icif:block/generator/block_geo_generator"
+        },
+        "active=false,facing=south": {
+            "model": "mio_icif:block/generator/block_geo_generator",
+            "y": 180
+        },
+        "active=false,facing=east": {
+            "model": "mio_icif:block/generator/block_geo_generator",
+            "y": 90
+        },
+        "active=false,facing=west": {
+            "model": "mio_icif:block/generator/block_geo_generator",
+            "y": 270
+        },
+        "active=true,facing=north": {
+            "model": "mio_icif:block/generator/block_geo_generator_on"
+        },
+        "active=true,facing=south": {
+            "model": "mio_icif:block/generator/block_geo_generator_on",
+            "y": 180
+        },
+        "active=true,facing=east": {
+            "model": "mio_icif:block/generator/block_geo_generator_on",
+            "y": 90
+        },
+        "active=true,facing=west": {
+            "model": "mio_icif:block/generator/block_geo_generator_on",
+            "y": 270
+        }
+    }
+}

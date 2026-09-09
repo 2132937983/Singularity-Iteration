@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:block_cutter",
+  "ingredient": {
+    "item": "mio_icif:block_lead"
+  },
+  "result": {
+    "count": 9,
+    "id": "mio_icif:resource/item_lead_plate"
+  }
+}

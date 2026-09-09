@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "CAC",
+    " CB"
+  ],
+  "key": {
+    "C": {
+      "tag": "c:casings/tin"
+    },
+    "A": {
+      "tag": "c:casings/bronze"
+    },
+    "B": {
+      "item": "mio_icif:item_tool_power_unit_small"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_windmeter",
+    "count": 1
+  }
+}

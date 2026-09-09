@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "HCH",
+    "LGL",
+    "RAR"
+  ],
+  "key": {
+    "H": {
+      "item": "mio_icif:reactor/item_reactor_heat_switch_spread"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_advchargebat_lev0"
+    },
+    "L": {
+      "item": "minecraft:glowstone_dust"
+    },
+    "G": {
+      "item": "mio_icif:build/block_alloy_glass"
+    },
+    "R": {
+      "item": "mio_icif:resource/item_rubber"
+    },
+    "A": {
+      "tag": "c:circuits/advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_nightvision_goggles",
+    "count": 1
+  }
+}

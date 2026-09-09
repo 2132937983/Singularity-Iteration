@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["RGR","LCL","RGR"],
+  "key": {
+    "R":{"item":"minecraft:redstone"},
+    "G":{"item":"minecraft:glowstone_dust"},
+    "L":{"item":"minecraft:lapis_lazuli"},
+    "C":{"tag":"c:circuits/basic"}
+  },
+  "result":{"id":"mio_icif:normal/item_advcircuit","count":1}
+}

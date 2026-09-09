@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SQS",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:generator/block_ultimate_hybrid_solar_panel"
+    },
+    "Q": {
+      "item": "mio_icif:resource/item_quantum_core"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_quantum_solar_panel",
+    "count": 1
+  }
+}

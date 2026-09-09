@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "GGG",
+        "PBP",
+        "PCP"
+    ],
+    "key": {
+        "P": {
+            "item": "mio_icif:resource/item_super_iridium_compress_plate"
+        },
+        "G": {
+            "item": "mio_icif:generator/block_mets_advanced_solar_generator"
+        },
+        "C": {
+            "tag": "c:circuits/elite"
+        },
+        "B": {
+            "item": "mio_icif:normal/item_super_lapotron_crystal"
+        }
+    },
+    "result": {
+        "id": "mio_icif:generator/block_photon_resonance_solar_generator",
+        "count": 1
+    }
+}

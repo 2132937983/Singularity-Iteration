@@ -1,0 +1,9 @@
+{
+  "values": [
+    "mio_icif:resource/item_copper_nugget",
+    "mio_icif:resource/item_tin_nugget",
+    "mio_icif:resource/item_titanium_nugget",
+    "mio_icif:resource/item_lead_nugget",
+    "mio_icif:resource/item_silver_nugget"
+  ]
+}

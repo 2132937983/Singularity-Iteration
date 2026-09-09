@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ICI",
+    "CGC",
+    "ICI"
+  ],
+  "key": {
+    "G": {
+      "item": "mio_icif:generator/block_geo_generator"
+    },
+    "C": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_semifluid_generator",
+    "count": 1
+  }
+}

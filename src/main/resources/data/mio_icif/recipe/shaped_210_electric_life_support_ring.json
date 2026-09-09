@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PAP", "LSN", "PBP"],
+  "key": {
+    "P": { "item": "mio_icif:resource/item_super_iridium_compress_plate" },
+    "A": { "item": "mio_icif:item_electric_force_field_generator" },
+    "L": { "item": "mio_icif:item_electric_first_aid_life_support" },
+    "S": { "item": "mio_icif:item_trinket_lapotron_crystal_belt" },
+    "N": { "item": "mio_icif:item_electric_nutrition_supply" },
+    "B": { "item": "mio_icif:normal/item_super_lapotron_crystal" }
+  },
+  "result": { "id": "mio_icif:item_trinket_life_support_ring", "count": 1 }
+}

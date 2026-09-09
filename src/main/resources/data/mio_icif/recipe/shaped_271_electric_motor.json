@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" T ","CIC"," T "],"key":{"T":{"item":"mio_icif:resource/item_tin_casing"},"C":{"item":"mio_icif:resource/item_coil"},"I":{"tag": "c:ingots/iron"}},"result":{"id":"mio_icif:resource/item_motor","count":1}}

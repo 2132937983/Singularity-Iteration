@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["BB","SB","S "],"key":{"B":{"tag": "c:ingots/bronze"},"S":{"item":"minecraft:stick"}},"result":{"id":"mio_icif:item_tool_bronze_axe","count":1}}

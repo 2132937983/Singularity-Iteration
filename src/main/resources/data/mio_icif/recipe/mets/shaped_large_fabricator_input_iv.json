@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ISI",
+    "MBM",
+    "ISI"
+  ],
+  "key": {
+    "I": {
+      "tag": "c:plates/iridium"
+    },
+    "S": {
+      "tag": "c:circuits/elite"
+    },
+    "M": {
+      "item": "mio_icif:wiring/transformer_ev_sc"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_super_lapotron_crystal"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_large_fabricator_input_iv",
+    "count": 1
+  }
+}

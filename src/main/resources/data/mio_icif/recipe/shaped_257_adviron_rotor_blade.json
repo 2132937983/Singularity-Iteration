@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["ABA","ABA","ABA"],"key":{"A":{"item":"mio_icif:resource/item_adviron_plate"},"B":{"item":"mio_icif:resource/item_adviron_ingot"}},"result":{"id":"mio_icif:resource/item_adviron_rotor_blade","count":1}}

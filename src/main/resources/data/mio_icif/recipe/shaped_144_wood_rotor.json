@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [" A ","ABA"," A "],
+  "key": {
+    "A":{"item":"mio_icif:resource/item_wood_rotor_blade"},
+    "B":{"tag": "c:ingots/iron"}
+  },
+  "result":{"id":"mio_icif:rotors/item_wood_rotor","count":1}
+}

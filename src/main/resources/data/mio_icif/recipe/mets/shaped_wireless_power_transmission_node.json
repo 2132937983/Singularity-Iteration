@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "STS",
+        "BCB",
+        "STS"
+    ],
+    "key": {
+        "S": { "tag": "c:circuits/elite" },
+        "T": { "item": "mio_icif:wiring/transformer_hv_ev" },
+        "C": { "item": "mio_icif:producer/block_tesla" },
+        "B": { "item": "mio_icif:normal/item_super_lapotron_crystal" }
+    },
+    "result": {
+        "id": "mio_icif:wiring/block_wireless_power_transmission_node",
+        "count": 1
+    }
+}

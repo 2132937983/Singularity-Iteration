@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:compressor",
+  "ingredient": {
+    "item": "mio_icif:resource/item_coal_mesh"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_carbon_plate"
+  }
+}

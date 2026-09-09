@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IPI",
+    "IBI",
+    "IPI"
+  ],
+  "key": {
+    "I": {
+      "tag": "c:plates/iron"
+    },
+    "P": {
+      "tag": "c:circuits/basic"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_lithium_battery"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_steel_shield",
+    "count": 1
+  }
+}

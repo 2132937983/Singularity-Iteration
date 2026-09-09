@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:blasting",
+  "cookingtime": 100,
+  "experience": 0.1,
+  "ingredient": {
+    "item": "mio_icif:normal/item_coffee_0"
+  },
+  "result": {
+    "id": "mio_icif:normal/item_coffee_1"
+  }
+}

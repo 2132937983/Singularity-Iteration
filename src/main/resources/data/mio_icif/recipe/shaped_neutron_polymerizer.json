@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "FSF",
+    "RBM",
+    "FSF"
+  ],
+  "key": {
+    "F": {
+      "tag": "mio_icif:field_generators"
+    },
+    "S": {
+      "tag": "c:circuits/ultimate"
+    },
+    "R": {
+      "item": "mio_icif:producer/block_replicator_elc"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_matter_elc"
+    },
+    "B": {
+      "item": "mio_icif:wiring/block_eesu"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_neutron_polymerizer",
+    "count": 1
+  }
+}

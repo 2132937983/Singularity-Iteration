@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["SCS", "SBS", "DJD"],
+  "key": {
+    "S": { "item": "mio_icif:resource/item_niobium_titanium_plate" },
+    "C": { "tag": "c:circuits/elite" },
+    "B": { "item": "mio_icif:normal/item_lapotron_crystal_lev0" },
+    "D": { "item": "mio_icif:resource/item_energium_dust" },
+    "J": { "item": "mio_icif:armor/item_armor_advanced_jetpack" }
+  },
+  "result": { "id": "mio_icif:item_trinket_flight_ring", "count": 1 }
+}

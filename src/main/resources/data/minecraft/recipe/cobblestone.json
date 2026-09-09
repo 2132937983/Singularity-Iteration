@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    {
+      "item": "mio_icif:resource/item_stone_dust"
+    },
+    {
+      "item": "mio_icif:resource/item_stone_dust"
+    },
+    {
+      "item": "mio_icif:resource/item_stone_dust"
+    },
+    {
+      "item": "mio_icif:resource/item_stone_dust"
+    },
+    {
+      "item": "mio_icif:resource/item_stone_dust"
+    },
+    {
+      "item": "mio_icif:resource/item_stone_dust"
+    },
+    {
+      "item": "mio_icif:resource/item_stone_dust"
+    },
+    {
+      "item": "mio_icif:resource/item_stone_dust"
+    },
+    {
+      "item": "minecraft:gravel"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "minecraft:cobblestone"
+  }
+}

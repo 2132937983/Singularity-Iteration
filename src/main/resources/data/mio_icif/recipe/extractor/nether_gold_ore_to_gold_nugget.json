@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:extractor",
+  "energypertick": 10,
+  "ingredient": {
+    "item": "minecraft:nether_gold_ore"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 9,
+    "id": "minecraft:gold_nugget"
+  }
+}

@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["VVV","VTV","VVV"],"key":{"V":{"item":"mio_icif:reactor/block_reactor_vessel"},"T":{"item":"minecraft:oak_trapdoor"}},"result":{"id":"mio_icif:reactor/block_reactor_access_hatch","count":1}}

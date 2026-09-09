@@ -1,0 +1,22 @@
+{
+    "parent": "block/cube",
+    "textures": {
+        "particle": "mio_icif:block/producer/block_machine","particle_ub": "mio_icif:block/hugenerator/block_fluid_heat_generator",
+        "all_lbr": "mio_icif:block/hugenerator/block_fluid_heat_generator",
+        "face": "mio_icif:block/hugenerator/block_fluid_heat_generator"
+    },
+    "elements": [
+        {
+           "from": [ 0, 0, 0 ],
+            "to": [ 16, 16, 16 ],
+            "faces": {
+                "down":  { "uv": [0,0, 1.33,16], "texture": "#particle_ub", "cullface": "down" },
+                "up":    { "uv": [1.33,0, 2.66,16], "texture": "#particle_ub", "cullface": "up" },
+                "north": { "uv": [4,0, 5.33,16], "texture": "#all_lbr", "cullface": "north" },
+                "south": { "uv": [6.66,0, 8,16], "texture": "#all_lbr", "cullface": "south" },
+                "west":  { "uv": [5.33,0, 6.66,16], "texture": "#all_lbr", "cullface": "west" },
+                "east":  { "uv": [2.66,0, 4,16], "texture": "#all_lbr", "cullface": "east" }
+            }
+        }
+    ]
+}

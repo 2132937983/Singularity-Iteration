@@ -1,0 +1,14 @@
+{
+  "values": [
+    "mio_icif:block_ore_tin",
+    "mio_icif:block_ore_uran",
+    "mio_icif:block_ore_lead",
+    "mio_icif:block_ore_tin_in_deep",
+    "mio_icif:block_ore_uran_in_deep",
+    "mio_icif:block_ore_lead_in_deep",
+    "mio_icif:block_ore_niobium",
+    "mio_icif:block_ore_niobium_in_deep",
+    "mio_icif:block_ore_titanium",
+    "mio_icif:block_ore_titanium_in_deep"
+  ]
+}

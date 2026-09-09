@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "minecraft:cobblestone"
+  },
+  "minheat": 100,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_stone_dust"
+  }
+}

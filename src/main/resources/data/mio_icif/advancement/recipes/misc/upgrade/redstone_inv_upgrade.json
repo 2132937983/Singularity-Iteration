@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_normal/item_circuit": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:normal/item_circuit"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:upgrade/redstone_inv_upgrade"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_normal/item_circuit"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:upgrade/redstone_inv_upgrade"
+    ]
+  }
+}

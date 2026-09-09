@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" B ","BEB"," B "],"key":{"B":{"item":"minecraft:water_bucket"},"E":{"item":"mio_icif:env_template/evt_empty"}},"result":{"id":"mio_icif:env_template/evt_irrigation","count":1}}

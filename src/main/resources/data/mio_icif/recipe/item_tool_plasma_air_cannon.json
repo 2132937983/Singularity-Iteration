@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CCB",
+    "LPA",
+    "LLB"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:resource/item_coil"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_lithium_battery"
+    },
+    "L": {
+      "tag": "c:ingots/alloy"
+    },
+    "P": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "A": {
+      "tag": "c:circuits/advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_plasma_air_cannon",
+    "count": 1
+  }
+}

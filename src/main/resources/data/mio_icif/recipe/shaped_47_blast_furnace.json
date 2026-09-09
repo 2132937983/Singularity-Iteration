@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "IBI",
+    "IGI"
+  ],
+  "key": {
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    },
+    "B": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "G": {
+      "item": "mio_icif:resource/item_heatconductor"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_blast_furnace",
+    "count": 1
+  }
+}

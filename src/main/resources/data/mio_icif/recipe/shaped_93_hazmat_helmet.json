@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " O ",
+    "RGR",
+    "R#R"
+  ],
+  "key": {
+    "R": {
+      "item": "mio_icif:resource/item_rubber"
+    },
+    "O": {
+      "item": "minecraft:yellow_dye"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "#": {
+      "item": "minecraft:iron_bars"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_hazmat_helmet",
+    "count": 1
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:build/block_adviron_storage",
+    "mio_icif:build/block_titanium_storage",
+    "mio_icif:build/block_bronze_tank",
+    "mio_icif:build/block_iron_tank",
+    "mio_icif:build/block_titanium_tank",
+    "mio_icif:build/block_adviron_tank",
+    "mio_icif:build/block_iridium_tank",
+    "mio_icif:wiring/block_eesu",
+    "mio_icif:wiring/block_eesu_charger",
+    "mio_icif:wiring/block_gesu_input_iv",
+    "mio_icif:wiring/block_gesu_output_iv",
+    "mio_icif:generator/block_mets_advanced_solar_generator",
+    "mio_icif:generator/block_photon_resonance_solar_generator",
+    "mio_icif:generator/block_ultimate_photon_resonance_solar_generator"
+  ]
+}

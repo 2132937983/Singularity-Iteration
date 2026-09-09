@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["CLC","LOL","CLC"],"key":{"C":{"item":"mio_icif:reactor/item_reactor_diamond_heat_switch"},"L":{"item":"mio_icif:normal/item_lapotron_crystal_lev0"},"O":{"item":"mio_icif:normal/item_crystal_chargebat_lev0"}},"result":{"id":"mio_icif:normal/item_lamacrystal_chargebat_lev0","count":1}}

@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_jungle",
+  "features": "mio_icif:rubber_tree_placed",
+  "step": "top_layer_modification"
+}

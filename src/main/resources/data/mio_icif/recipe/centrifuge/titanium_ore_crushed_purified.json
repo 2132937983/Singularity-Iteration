@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:resource/item_titanium_ore_crushed_purified"
+  },
+  "minheat": 1500,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_titanium_dust"
+  }
+}

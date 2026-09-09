@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CIC",
+    "CAC",
+    "IBI"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    },
+    "A": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "B": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_condenser",
+    "count": 1
+  }
+}

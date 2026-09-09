@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PPP",
+    "PPP",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/niobium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:resource/item_niobium_denseplate",
+    "count": 1
+  }
+}

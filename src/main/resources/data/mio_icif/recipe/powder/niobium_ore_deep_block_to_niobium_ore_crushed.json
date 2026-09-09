@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "mio_icif:block_ore_niobium_in_deep"
+  },
+  "result": {
+    "count": 2,
+    "id": "mio_icif:resource/item_niobium_ore_crushed"
+  }
+}

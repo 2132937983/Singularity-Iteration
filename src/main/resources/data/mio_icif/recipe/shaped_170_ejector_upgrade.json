@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["PHP","WEW"],"key":{"P":{"item":"minecraft:piston"},"H":{"item":"minecraft:hopper"},"W":{"item":"mio_icif:wiring/cable/block_tin_cable"},"E":{"tag":"c:circuits/basic"}},"result":{"id":"mio_icif:upgrade/ejector_upgrade","count":1}}

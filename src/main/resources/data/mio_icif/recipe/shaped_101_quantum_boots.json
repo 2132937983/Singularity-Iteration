@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "InI",
+    "MLM",
+    "R R"
+  ],
+  "key": {
+    "n": {
+      "item": "mio_icif:armor/item_armor_nano_boots"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iridium_plate"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lamacrystal_chargebat_lev0"
+    },
+    "M": {
+      "item": "mio_icif:resource/item_motor"
+    },
+    "R": {
+      "item": "mio_icif:armor/item_armor_hazmat_boots"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_quantum_boots",
+    "count": 1
+  }
+}

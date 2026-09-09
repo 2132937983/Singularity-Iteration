@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_normal/item_broken_rubber_boat": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:normal/item_broken_rubber_boat"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:normal/entity_rubber_boat"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_normal/item_broken_rubber_boat"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:normal/entity_rubber_boat"
+    ]
+  }
+}

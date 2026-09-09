@@ -1,0 +1,19 @@
+{
+    "variants": {
+        "facing=north": {
+            "model": "mio_icif:block/checker/block_checker"
+        },
+        "facing=south": {
+            "model": "mio_icif:block/checker/block_checker",
+            "y": 180
+        },
+        "facing=east": {
+            "model": "mio_icif:block/checker/block_checker",
+            "y": 90
+        },
+        "facing=west": {
+            "model": "mio_icif:block/checker/block_checker",
+            "y": 270
+        }
+    }
+}

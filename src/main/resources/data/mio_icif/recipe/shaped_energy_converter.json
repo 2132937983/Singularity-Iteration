@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BCB",
+    "TMT",
+    "WCW"
+  ],
+  "key": {
+    "W": {
+      "item": "mio_icif:wiring/cable/block_cable"
+    },
+    "C": {
+      "item": "mio_icif:resource/item_coil"
+    },
+    "T": {
+      "item": "mio_icif:wiring/transformer_mv_hv"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_advbat_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:energy_converter/energy_converter",
+    "count": 1
+  }
+}

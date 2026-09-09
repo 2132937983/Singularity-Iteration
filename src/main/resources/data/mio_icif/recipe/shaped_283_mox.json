@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "UUU",
+    "PPP",
+    "UUU"
+  ],
+  "key": {
+    "U": {
+      "item": "mio_icif:resource/item_uran_238"
+    },
+    "P": {
+      "item": "mio_icif:resource/item_plutonium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:reactor/item_reactor_mox_simple",
+    "count": 1
+  }
+}

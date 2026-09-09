@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["EBE","BOB","EBE"],"key":{"E":{"item":"mio_icif:reactor/item_reactor_heat_switch"},"B":{"item":"mio_icif:normal/item_advbat_lev0"},"O":{"item":"mio_icif:normal/item_chargebat_lev0"}},"result":{"id":"mio_icif:normal/item_advchargebat_lev0","count":1}}

@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AnA",
+    "ILI",
+    "IJI"
+  ],
+  "key": {
+    "n": {
+      "item": "mio_icif:armor/item_armor_nano_chestplate"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iridium_plate"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lamacrystal_chargebat_lev0"
+    },
+    "A": {
+      "item": "mio_icif:resource/item_alloy_plate"
+    },
+    "J": {
+      "item": "mio_icif:armor/item_armor_jetpack_electric"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_quantum_chestplate",
+    "count": 1
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["X X","XXX"],
+  "key": {"X":{"item":"mio_icif:resource/item_rubber"}},
+  "result":{"id":"mio_icif:normal/entity_rubber_boat","count":1}
+}

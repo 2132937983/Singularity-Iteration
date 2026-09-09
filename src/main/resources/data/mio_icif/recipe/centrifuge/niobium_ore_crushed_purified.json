@@ -1,0 +1,16 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:resource/item_niobium_ore_crushed_purified"
+  },
+  "minheat": 1500,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_niobium_dust"
+  },
+  "secondaryCount": 1,
+  "secondaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_thorium_dust_small"
+  }
+}

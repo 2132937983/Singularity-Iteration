@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["III","IPI","III"],
+  "key": {
+    "I":{"tag":"c:plates/iron"},
+    "P":{"item":"mio_icif:resource/item_iridium"}
+  },
+  "result":{"id":"mio_icif:resource/item_iridiumiron_plate","count":1}
+}

@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["UUU","UUU","UUU"],
+  "key": {"U":{"item":"mio_icif:resource/item_uran_238"}},
+  "result":{"id":"mio_icif:block_uranium","count":1}
+}

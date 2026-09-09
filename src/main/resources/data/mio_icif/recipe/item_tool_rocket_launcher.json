@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSB",
+    "XLC",
+    "SFD"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:plates/titanium"
+    },
+    "B": {
+      "tag": "c:crystals/energy"
+    },
+    "X": {
+      "item": "mio_icif:resource/item_coil"
+    },
+    "L": {
+      "item": "mio_icif:upgrade/ejector_upgrade"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "F": {
+      "item": "mio_icif:normal/item_freq"
+    },
+    "D": {
+      "item": "mio_icif:item_tool_power_unit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_rocket_launcher",
+    "count": 1
+  }
+}

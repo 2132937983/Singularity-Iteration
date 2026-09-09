@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:block_cutter",
+  "ingredient": {
+    "item": "minecraft:gold_block"
+  },
+  "result": {
+    "count": 9,
+    "id": "mio_icif:resource/item_golden_plate"
+  }
+}

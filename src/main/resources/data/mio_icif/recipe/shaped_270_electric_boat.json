@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["CCC","IMI","IRI"],"key":{"C":{"item":"mio_icif:wiring/cable/block_cable"},"I":{"tag": "c:plates/iron"},"M":{"item":"mio_icif:resource/item_motor"},"R":{"item":"mio_icif:rotors/item_iron_rotor"}},"result":{"id":"mio_icif:normal/entity_electric_boat","count":1}}

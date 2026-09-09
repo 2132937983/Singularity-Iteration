@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" I ","IDI"," I "],"key":{"I":{"item":"mio_icif:resource/item_iridium"},"D":{"item":"mio_icif:item_tool_diamond_driller"}},"result":{"id":"mio_icif:item_tool_iridium_driller","count":1}}

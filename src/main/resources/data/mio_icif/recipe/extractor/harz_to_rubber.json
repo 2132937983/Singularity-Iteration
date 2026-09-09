@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:extractor",
+  "ingredient": {
+    "item": "mio_icif:resource/item_harz"
+  },
+  "result": {
+    "count": 3,
+    "id": "mio_icif:resource/item_rubber"
+  }
+}

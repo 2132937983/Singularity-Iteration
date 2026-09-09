@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["BVB","BDB","BVB"],"key":{"B":{"item":"minecraft:iron_bars"},"V":{"item":"mio_icif:reactor/item_reactor_vent"},"D":{"item":"minecraft:diamond"}},"result":{"id":"mio_icif:reactor/item_reactor_diamond_vent","count":1}}

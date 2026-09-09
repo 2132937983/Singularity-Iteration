@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["LCL","HSH","LCL"],"key":{"L":{"tag": "c:plates/lapis"},"C":{"tag":"c:circuits/basic"},"H":{"item":"mio_icif:reactor/item_reactor_heat_switch"},"S":{"tag": "c:plates/copper"}},"result":{"id":"mio_icif:reactor/item_reactor_diamond_heat_switch","count":1}}

@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "mio_icif:block/crop/stick"
+    },
+    "age=1": {
+      "model": "mio_icif:block/crop/stick"
+    },
+    "age=2": {
+      "model": "mio_icif:block/crop/stick"
+    },
+    "age=3": {
+      "model": "mio_icif:block/crop/stick"
+    },
+    "age=4": {
+      "model": "mio_icif:block/crop/stick"
+    },
+    "age=5": {
+      "model": "mio_icif:block/crop/stick"
+    },
+    "age=6": {
+      "model": "mio_icif:block/crop/stick"
+    },
+    "age=7": {
+      "model": "mio_icif:block/crop/stick"
+    }
+  }
+}

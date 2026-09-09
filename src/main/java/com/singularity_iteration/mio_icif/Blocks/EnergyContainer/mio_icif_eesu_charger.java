@@ -1,0 +1,138 @@
+package com.singularity_iteration.mio_icif.Blocks.EnergyContainer;
+
+import com.singularity_iteration.mio_icif.Blocks.entity.batbox.mio_icif_eesu_charger_entity;
+import com.singularity_iteration.mio_icif.Blocks.mio_icif_entity_block;
+import com.singularity_iteration.mio_icif.api.MioIcifAPI;
+import com.singularity_iteration.mio_icif.api.energy.ICableTier;
+import com.singularity_iteration.mio_icif.api.machine.IEnergyContainerBlock;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
+@SuppressWarnings("null")
+public class mio_icif_eesu_charger extends mio_icif_entity_block implements com.singularity_iteration.mio_icif.api.block.IChargepadBlock {
+
+    private static final long CAPACITY = 400000000L;
+    private static final ICableTier TIER = MioIcifAPI.instance().getEnergyNetAPI().getCableTier("iv");
+    private static final long IO_RATE = TIER.getPowerRating();
+
+    public static final BooleanProperty LIT = BooleanProperty.create("lit");
+
+    private static final VoxelShape OCCLUSION_SHAPE = Shapes.box(0.0, 0.0, 0.0, 1.0, 0.9375, 1.0);
+
+    public static final MapCodec<mio_icif_eesu_charger> CODEC = simpleCodec(mio_icif_eesu_charger::new);
+
+    public mio_icif_eesu_charger(Properties properties) {
+        super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(LIT, false));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
+        builder.add(LIT);
+    }
+
+    @Override
+    public boolean isCharging(BlockState state) {
+        return state.getValue(LIT);
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
+        return OCCLUSION_SHAPE;
+    }
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
+
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new mio_icif_eesu_charger_entity(pos, state);
+    }
+
+    @Override
+    @Nullable
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide ? null :
+            (l, p, s, blockEntity) -> {
+                if (blockEntity instanceof mio_icif_eesu_charger_entity charger) {
+                    mio_icif_eesu_charger_entity.tick(l, p, s, charger);
+                }
+            };
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (!level.isClientSide()) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof MenuProvider) {
+                player.openMenu((MenuProvider) blockEntity);
+            }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
+    }
+
+    @Override
+    protected void addBlockTooltip(ItemStack stack, List<Component> tooltip) {
+        long storedEnergy = mio_icif_entity_block.getStoredEnergyFromStack(stack);
+        if (storedEnergy >= 0) {
+            tooltip.add(Component.translatable("tooltip.mio_icif.energy_container.stored", storedEnergy, CAPACITY)
+                    .withStyle(ChatFormatting.GREEN));
+        }
+        tooltip.add(Component.translatable("tooltip.mio_icif.energy_container.capacity", CAPACITY)
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.mio_icif.energy_container.io_rate", IO_RATE)
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.mio_icif.energy_container.charger")
+                .withStyle(ChatFormatting.YELLOW));
+    }
+
+    @Override
+    protected boolean isSignalSource(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getSignal(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, Direction direction) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof IEnergyContainerBlock container) {
+            return container.getRedstoneSignalStrength();
+        }
+        return 0;
+    }
+
+    @Override
+    protected int getDirectSignal(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, Direction direction) {
+        return getSignal(state, level, pos, direction);
+    }
+}

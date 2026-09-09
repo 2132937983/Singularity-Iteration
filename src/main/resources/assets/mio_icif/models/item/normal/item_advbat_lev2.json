@@ -1,0 +1,6 @@
+{
+    "parent": "mio_icif:item/normal/item_advbat_lev0",
+    "textures": {
+        "layer0": "mio_icif:item/normal/item_advbat_lev2"
+    }
+}

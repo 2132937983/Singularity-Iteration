@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:metal_former_extruding",
+  "ingredient": {
+    "tag": "c:storage_blocks/titanium"
+  },
+  "processingtime": 400,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_titanium_shaft"
+  }
+}

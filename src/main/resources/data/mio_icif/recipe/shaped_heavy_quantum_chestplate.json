@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SAS",
+    "IBI",
+    "ICI"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:resource/item_alloy_ingot"
+    },
+    "A": {
+      "item": "mio_icif:armor/item_armor_nano_chestplate"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iridium"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_heavy_quantum_chestplate",
+    "count": 1
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BBB",
+    "CSC",
+    "   "
+  ],
+  "key": {
+    "B": {
+      "item": "minecraft:bone_meal"
+    },
+    "C": {
+      "item": "mio_icif:resource/item_charcoal_dust"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_sulfur_dust"
+    }
+  },
+  "result": {
+    "id": "minecraft:gunpowder",
+    "count": 1
+  }
+}

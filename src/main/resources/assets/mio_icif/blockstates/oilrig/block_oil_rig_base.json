@@ -1,0 +1,5 @@
+{
+    "variants": {
+        "": { "model": "mio_icif:block/oilrig/block_oil_rig_base" }
+    }
+}

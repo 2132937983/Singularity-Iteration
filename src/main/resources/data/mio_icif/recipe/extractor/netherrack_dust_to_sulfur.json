@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:extractor",
+  "energypertick": 12,
+  "ingredient": {
+    "item": "mio_icif:resource/item_netherrack_dust"
+  },
+  "processingtime": 150,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_sulfur_dust_small"
+  }
+}

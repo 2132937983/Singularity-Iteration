@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "MMM",
+    "MMM",
+    "MMM"
+  ],
+  "key": {
+    "M": {
+      "tag": "c:ingots/tin"
+    }
+  },
+  "result": {
+    "id": "mio_icif:block_tin",
+    "count": 1
+  }
+}

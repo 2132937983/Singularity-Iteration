@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "level=0": { "model": "mio_icif:block/biomass" },
+    "level=1": { "model": "mio_icif:block/biomass" },
+    "level=2": { "model": "mio_icif:block/biomass" },
+    "level=3": { "model": "mio_icif:block/biomass" },
+    "level=4": { "model": "mio_icif:block/biomass" },
+    "level=5": { "model": "mio_icif:block/biomass" },
+    "level=6": { "model": "mio_icif:block/biomass" },
+    "level=7": { "model": "mio_icif:block/biomass" },
+    "level=8": { "model": "mio_icif:block/biomass" },
+    "level=9": { "model": "mio_icif:block/biomass" },
+    "level=10": { "model": "mio_icif:block/biomass" },
+    "level=11": { "model": "mio_icif:block/biomass" },
+    "level=12": { "model": "mio_icif:block/biomass" },
+    "level=13": { "model": "mio_icif:block/biomass" },
+    "level=14": { "model": "mio_icif:block/biomass" },
+    "level=15": { "model": "mio_icif:block/biomass" }
+  }
+}

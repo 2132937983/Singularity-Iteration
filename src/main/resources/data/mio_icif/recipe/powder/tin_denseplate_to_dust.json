@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "mio_icif:resource/item_tin_denseplate"
+  },
+  "result": {
+    "count": 9,
+    "id": "mio_icif:resource/item_tin_dust"
+  }
+}

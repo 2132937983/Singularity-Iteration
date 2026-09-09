@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "MMM",
+    "MMM",
+    "MMM"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:resource/item_adviron_ingot"
+    }
+  },
+  "result": {
+    "id": "mio_icif:block_adviron",
+    "count": 1
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "mio_icif:mix",
+  "input_fluid": {
+    "amount": 1000,
+    "id": "minecraft:water"
+  },
+  "material": {
+    "item": "mio_icif:normal/item_biochaff"
+  },
+  "result_cell": {
+    "count": 1,
+    "id": "mio_icif:cell/item_cell_biomass"
+  },
+  "result_fluid": {
+    "amount": 1000,
+    "id": "mio_icif:biomass"
+  }
+}

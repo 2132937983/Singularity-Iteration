@@ -1,0 +1,34 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_reactor/item_reactor_mox_quad_deplete": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:reactor/item_reactor_mox_quad_deplete"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:centrifuge/mox_quad_depleted"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe"
+    ],
+    [
+      "has_reactor/item_reactor_mox_quad_deplete"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:centrifuge/mox_quad_depleted"
+    ]
+  }
+}

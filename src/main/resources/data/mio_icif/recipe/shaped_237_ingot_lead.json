@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["B"],
+  "key": {"B":{"item":"mio_icif:block_lead"}},
+  "result":{"id":"mio_icif:resource/item_lead_ingot","count":9}
+}

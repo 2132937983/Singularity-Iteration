@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PSP", "BCB", "PSP"],
+  "key": {
+    "P": { "item": "mio_icif:resource/item_carbon_plate" },
+    "S": { "tag": "c:circuits/elite" },
+    "B": { "item": "mio_icif:normal/item_crystal_lev0" },
+    "C": { "item": "mio_icif:resource/item_titanium_plate" }
+  },
+  "result": { "id": "mio_icif:item_trinket_energy_crystal_belt", "count": 1 }
+}

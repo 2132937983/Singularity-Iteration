@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["SCS", "CTC", "SBS"],
+  "key": {
+    "S": {"item": "mio_icif:resource/item_titanium_plate"},
+    "C": {"item": "mio_icif:normal/item_advcircuit"},
+    "T": {"item": "mio_icif:normal/item_freq"},
+    "B": {"item": "mio_icif:normal/item_lithium_battery"}
+  },
+  "result": {"id": "mio_icif:item_electric_wireless_manager", "count": 1}
+}

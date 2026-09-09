@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "cc ",
+    "RGR",
+    "RCR"
+  ],
+  "key": {
+    "c": {
+      "item": "mio_icif:wiring/cable/block_cable"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:normal/item_crop_analyzer",
+    "count": 1
+  }
+}

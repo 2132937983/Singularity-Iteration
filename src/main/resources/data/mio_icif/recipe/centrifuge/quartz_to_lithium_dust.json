@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "minecraft:quartz"
+  },
+  "minheat": 500,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_lithium_dust_small"
+  }
+}

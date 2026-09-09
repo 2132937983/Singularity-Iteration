@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ECE",
+    "COC",
+    "ECE"
+  ],
+  "key": {
+    "E": {
+      "item": "mio_icif:reactor/item_reactor_heat_switch_spread"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    },
+    "O": {
+      "item": "mio_icif:normal/item_advchargebat_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:normal/item_crystal_chargebat_lev0",
+    "count": 1
+  }
+}

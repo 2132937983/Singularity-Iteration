@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ACA",
+    "DED",
+    "BFB"
+  ],
+  "key": {
+    "A": {
+      "tag": "c:circuits/basic"
+    },
+    "B": {
+      "tag": "c:casings/gold"
+    },
+    "C": {
+      "item": "minecraft:emerald"
+    },
+    "D": {
+      "tag": "c:casings/iron"
+    },
+    "E": {
+      "tag": "c:casings/bronze"
+    },
+    "F": {
+      "item": "mio_icif:item_tool_power_unit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_future_elc",
+    "count": 1
+  }
+}

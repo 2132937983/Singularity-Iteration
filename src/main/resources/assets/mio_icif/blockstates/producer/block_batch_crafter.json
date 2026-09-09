@@ -1,0 +1,6 @@
+{
+    "variants": {
+        "lit=false": { "model": "mio_icif:block/producer/block_batch_crafter" },
+        "lit=true":  { "model": "mio_icif:block/producer/block_batch_crafter_on" }
+    }
+}

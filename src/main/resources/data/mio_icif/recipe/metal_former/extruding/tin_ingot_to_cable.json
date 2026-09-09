@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:metal_former_extruding",
+  "ingredient": {
+    "tag": "c:ingots/tin"
+  },
+  "processingtime": 200,
+  "result": {
+    "count": 3,
+    "id": "mio_icif:wiring/cable/block_tin_cable"
+  }
+}

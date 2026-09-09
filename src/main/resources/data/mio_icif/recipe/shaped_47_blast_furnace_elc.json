@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CFC",
+    "SBR",
+    "CFC"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:resource/item_neutron_plate"
+    },
+    "F": {
+      "tag": "mio_icif:field_generators"
+    },
+    "S": {
+      "tag": "c:circuits/ultimate"
+    },
+    "B": {
+      "item": "mio_icif:producer/block_blast_furnace_advanced"
+    },
+    "R": {
+      "item": "mio_icif:hugenerator/block_heat_generator_elc"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_blast_furnace_elc",
+    "count": 1
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "multipart": [
+    {
+      "when": { "active": "false" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable" }
+    },
+    {
+      "when": { "active": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_on" }
+    },
+    {
+      "when": { "active": "false", "north": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side", "uvlock": true }
+    },
+    {
+      "when": { "active": "false", "south": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side", "y": 180, "uvlock": true }
+    },
+    {
+      "when": { "active": "false", "east": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side", "y": 90, "uvlock": true }
+    },
+    {
+      "when": { "active": "false", "west": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side", "y": 270, "uvlock": true }
+    },
+    {
+      "when": { "active": "false", "up": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side", "x": 270, "uvlock": true }
+    },
+    {
+      "when": { "active": "false", "down": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side", "x": 90, "uvlock": true }
+    },
+    {
+      "when": { "active": "true", "north": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side_on", "uvlock": true }
+    },
+    {
+      "when": { "active": "true", "south": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side_on", "y": 180, "uvlock": true }
+    },
+    {
+      "when": { "active": "true", "east": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side_on", "y": 90, "uvlock": true }
+    },
+    {
+      "when": { "active": "true", "west": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side_on", "y": 270, "uvlock": true }
+    },
+    {
+      "when": { "active": "true", "up": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side_on", "x": 270, "uvlock": true }
+    },
+    {
+      "when": { "active": "true", "down": "true" },
+      "apply": { "model": "mio_icif:block/wiring/cable/block_eu_detector_cable_side_on", "x": 90, "uvlock": true }
+    }
+  ]
+}

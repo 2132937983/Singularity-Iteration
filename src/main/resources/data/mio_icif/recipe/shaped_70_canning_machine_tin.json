@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "TCT",
+    "TMT",
+    "TTT"
+  ],
+  "key": {
+    "T": {
+      "item": "mio_icif:resource/item_tin_casing"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_canner_elc",
+    "count": 1
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " L ",
+    "CSC",
+    "ECE"
+  ],
+  "key": {
+    "L": {
+      "item": "minecraft:lapis_block"
+    },
+    "C": {
+      "item": "mio_icif:resource/item_coal_chunk"
+    },
+    "S": {
+      "item": "mio_icif:generator/block_advanced_solar_panel"
+    },
+    "E": {
+      "item": "mio_icif:resource/item_enriched_sunnarium_alloy"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_ultimate_hybrid_solar_panel",
+    "count": 1
+  }
+}

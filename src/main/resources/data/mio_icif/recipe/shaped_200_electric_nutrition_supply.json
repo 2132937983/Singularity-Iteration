@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["SPS", "HCH", "SBS"],
+  "key": {
+    "S": {"item": "mio_icif:resource/item_golden_casing"},
+    "P": {"item": "mio_icif:item_tool_wooden_treetap"},
+    "H": {"item": "mio_icif:resource/item_heatconductor"},
+    "C": {"tag": "c:circuits/basic"},
+    "B": {"item": "mio_icif:normal/item_lithium_battery"}
+  },
+  "result": {"id": "mio_icif:item_electric_nutrition_supply", "count": 1}
+}

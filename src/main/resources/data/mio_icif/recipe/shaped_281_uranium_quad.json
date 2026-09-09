@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["UIU","CIC","UIU"],"key":{"U":{"item":"mio_icif:reactor/item_reactor_uranium_simple"},"I":{"tag": "c:plates/iron"},"C":{"tag": "c:plates/copper"}},"result":{"id":"mio_icif:reactor/item_reactor_uranium_quad","count":1}}

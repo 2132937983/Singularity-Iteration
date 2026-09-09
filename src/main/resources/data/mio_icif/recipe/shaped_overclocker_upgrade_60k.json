@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["CCC","WEW"],"key":{"C":{"item":"mio_icif:reactor/item_reactor_coolant_six"},"W":{"item":"mio_icif:wiring/cable/block_tin_cable"},"E":{"tag":"c:circuits/basic"}},"result":{"id":"mio_icif:upgrade/overclocker_upgrade","count":12}}

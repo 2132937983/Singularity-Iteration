@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["SCS", "CTC", "SBS"],
+  "key": {
+    "S": {"item": "mio_icif:resource/item_titanium_plate"},
+    "C": {"item": "mio_icif:normal/item_advcircuit"},
+    "T": {"item": "mio_icif:producer/block_tesla"},
+    "B": {"item": "mio_icif:normal/item_lithium_battery"}
+  },
+  "result": {"id": "mio_icif:item_geomagnetic_detector", "count": 1}
+}

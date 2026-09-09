@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "CCC",
+    "IGI"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "G": {
+      "item": "mio_icif:resource/item_heatconductor"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_fermenter_elc",
+    "count": 1
+  }
+}

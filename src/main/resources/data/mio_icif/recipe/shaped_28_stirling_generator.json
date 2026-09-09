@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IHI",
+    "ICI",
+    "III"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:generator/block_thermal_generator"
+    },
+    "H": {
+      "item": "mio_icif:resource/item_heatconductor"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_stirling_generator",
+    "count": 1
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:resource/item_clay_dust"
+  },
+  "minheat": 250,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_silicondioxide_dust"
+  }
+}

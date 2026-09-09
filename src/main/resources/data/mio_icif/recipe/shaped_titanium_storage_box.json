@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PSP",
+    "S S",
+    "PSP"
+  ],
+  "key": {
+    "P": {
+      "item": "mio_icif:resource/item_titanium_plate"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_titanium_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:build/block_titanium_storage",
+    "count": 1
+  }
+}

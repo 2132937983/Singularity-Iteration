@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["I I"," M ","I I"],"key":{"I":{"item":"mio_icif:resource/item_iron_shaft"},"M":{"item":"mio_icif:producer/block_machine_hull_basic"}},"result":{"id":"mio_icif:kugenerator/block_water_kinetic_generator","count":1}}

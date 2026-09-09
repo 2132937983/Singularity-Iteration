@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "#c:machine",
+    "#c:cable",
+    "mio_icif:producer/block_industrial_workbench",
+    "mio_icif:pipe/block_pipe_water",
+    "mio_icif:pipe/block_pipe_water_extract",
+    "mio_icif:pipe/block_pipe_item_input",
+    "mio_icif:pipe/block_pipe_item",
+    "mio_icif:build/block_wood_storage",
+    "mio_icif:build/block_bronze_storage",
+    "mio_icif:build/block_iron_storage",
+    "mio_icif:build/block_adviron_storage",
+    "mio_icif:build/block_iridium_storage"
+  ]
+}

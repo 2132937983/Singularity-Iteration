@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" I ","IGI"," I "],"key":{"I":{"item":"mio_icif:resource/item_adviron_ingot"},"G":{"item":"mio_icif:generator/block_thermal_generator"}},"result":{"id":"mio_icif:generator/block_wind_generator","count":1}}

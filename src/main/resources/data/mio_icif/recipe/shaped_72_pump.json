@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "cCc",
+    "cMc",
+    "PTP"
+  ],
+  "key": {
+    "c": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "T": {
+      "item": "mio_icif:item_tool_wooden_treetap"
+    },
+    "P": {
+      "item": "mio_icif:produce/block_mining_pipe"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_pump_elc",
+    "count": 1
+  }
+}

@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["IPI","PCP","IPI"],"key":{"I":{"tag":"c:plates/iridium"},"P":{"item":"mio_icif:normal/item_super_circuit"},"C":{"item":"mio_icif:normal/item_lapotron_crystal_lev0"}},"result":{"id":"mio_icif:normal/item_super_lapotron_crystal","count":1}}

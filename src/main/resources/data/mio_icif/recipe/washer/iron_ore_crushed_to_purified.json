@@ -1,0 +1,21 @@
+{
+  "type": "mio_icif:washer",
+  "ingredient": {
+    "item": "mio_icif:resource/item_iron_ore_crushed"
+  },
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_iron_ore_crushed_purified"
+  },
+  "secondaryCount": 2,
+  "secondaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_iron_dust_small"
+  },
+  "tertiaryCount": 1,
+  "tertiaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_stone_dust"
+  },
+  "wateramount": 1000
+}

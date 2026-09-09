@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "MMM",
+    "MMM",
+    "MMM"
+  ],
+  "key": {
+    "M": {
+      "tag": "c:ingots/lead"
+    }
+  },
+  "result": {
+    "id": "mio_icif:block_lead",
+    "count": 1
+  }
+}

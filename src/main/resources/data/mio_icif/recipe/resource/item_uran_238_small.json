@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "mio_icif:resource/item_uran_235"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "id": "mio_icif:resource/item_uran_238_small"
+  }
+}

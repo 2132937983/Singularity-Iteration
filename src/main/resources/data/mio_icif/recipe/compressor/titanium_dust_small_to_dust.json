@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "ingredient": {
+    "tag": "c:dusts/small_titanium"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_titanium_dust"
+  },
+  "count": 9,
+  "processingtime": 200,
+  "energypertick": 10
+}

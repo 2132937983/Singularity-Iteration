@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "RER",
+    " B "
+  ],
+  "key": {
+    "C": {
+      "tag": "c:plates/copper"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "E": {
+      "tag": "c:circuits/basic"
+    },
+    "B": {
+      "tag": "c:plates/tin"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_meter",
+    "count": 1
+  }
+}

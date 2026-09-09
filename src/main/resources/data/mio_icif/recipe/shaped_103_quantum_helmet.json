@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GnG",
+    "ILI",
+    "CNC"
+  ],
+  "key": {
+    "n": {
+      "item": "mio_icif:armor/item_armor_nano_helmet"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iridium_plate"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lamacrystal_chargebat_lev0"
+    },
+    "G": {
+      "item": "mio_icif:build/block_alloy_glass"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "N": {
+      "item": "mio_icif:armor/item_armor_hazmat_helmet"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_quantum_helmet",
+    "count": 1
+  }
+}

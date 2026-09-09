@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "group": "planks",
+  "ingredients": [
+    {
+      "tag": "mio_icif:rubber_logs"
+    }
+  ],
+  "result": {
+    "count": 4,
+    "id": "mio_icif:build/rubber_planks"
+  }
+}

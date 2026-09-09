@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SBS",
+    "RCD",
+    "SAS"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:resource/item_super_iridium_compress_plate"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_super_lapotron_crystal"
+    },
+    "R": {
+      "item": "mio_icif:item_electric_first_aid_life_support"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "D": {
+      "item": "mio_icif:armor/item_armor_jetpack_electric"
+    },
+    "A": {
+      "item": "mio_icif:armor/item_armor_heavy_quantum_chestplate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_advanced_quantum_chestplate",
+    "count": 1
+  }
+}

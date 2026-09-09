@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "SMS",
+    "SCS"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:resource/item_titanium_casing"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_blast_furnace"
+    },
+    "C": {
+      "item": "mio_icif:resource/item_alloy_plate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_blast_furnace_advanced",
+    "count": 1
+  }
+}

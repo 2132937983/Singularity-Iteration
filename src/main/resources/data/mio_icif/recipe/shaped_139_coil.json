@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["CCC","CXC","CCC"],
+  "key": {
+    "C":{"item":"mio_icif:wiring/cable/block_cable_o"},
+    "X":{"tag": "c:ingots/iron"}
+  },
+  "result":{"id":"mio_icif:resource/item_coil","count":1}
+}

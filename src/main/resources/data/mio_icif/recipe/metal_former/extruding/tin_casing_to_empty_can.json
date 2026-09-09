@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:metal_former_extruding",
+  "ingredient": {
+    "item": "mio_icif:resource/item_tin_casing"
+  },
+  "processingtime": 300,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_tin_empty_can"
+  }
+}

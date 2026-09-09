@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["RCR","RCR","RCR"],
+  "key": {
+    "R":{"item":"mio_icif:resource/item_rubber"},
+    "C":{"tag": "c:plates/copper"}
+  },
+  "result":{"id":"mio_icif:resource/item_heatconductor","count":1}
+}

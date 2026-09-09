@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PSP", "BTB", "PSP"],
+  "key": {
+    "P": { "item": "mio_icif:resource/item_niobium_titanium_plate" },
+    "S": { "tag": "c:circuits/elite" },
+    "B": { "item": "mio_icif:normal/item_lapotron_crystal_lev0" },
+    "T": { "item": "mio_icif:item_trinket_energy_crystal_belt" }
+  },
+  "result": { "id": "mio_icif:item_trinket_lapotron_crystal_belt", "count": 1 }
+}

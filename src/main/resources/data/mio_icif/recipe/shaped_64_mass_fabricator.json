@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GCG",
+    "ALA",
+    "GCG"
+  ],
+  "key": {
+    "A": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lamacrystal_chargebat_lev0"
+    },
+    "G": {
+      "item": "minecraft:glowstone_dust"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_matter_elc",
+    "count": 1
+  }
+}

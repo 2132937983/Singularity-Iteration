@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "DCD",
+    "SMS",
+    "DCD"
+  ],
+  "key": {
+    "D": {
+      "item": "mio_icif:build/block_scaffold_titanium"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "S": {
+      "tag": "c:ingots/alloy"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:oilrig/block_oil_rig_base",
+    "count": 1
+  }
+}

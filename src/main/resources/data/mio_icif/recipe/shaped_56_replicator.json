@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SGS",
+    "TTT",
+    "VFV"
+  ],
+  "key": {
+    "T": {
+      "item": "mio_icif:producer/block_scanner_elc"
+    },
+    "S": {
+      "item": "mio_icif:build/block_alloy_glass"
+    },
+    "G": {
+      "item": "mio_icif:build/block_alloy_glass"
+    },
+    "F": {
+      "item": "mio_icif:wiring/block_mfe"
+    },
+    "V": {
+      "item": "mio_icif:wiring/transformer_hv_ev"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_replicator_elc",
+    "count": 1
+  }
+}

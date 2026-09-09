@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#twilightforest:in_twilight_forest",
+  "features": "mio_icif:tin_ore_deep_twilight_forest_placed",
+  "step": "underground_ores"
+}

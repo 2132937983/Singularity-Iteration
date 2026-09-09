@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "count": 4,
+  "energypertick": 5,
+  "ingredient": {
+    "item": "minecraft:snowball"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 1,
+    "id": "minecraft:snow_block"
+  }
+}

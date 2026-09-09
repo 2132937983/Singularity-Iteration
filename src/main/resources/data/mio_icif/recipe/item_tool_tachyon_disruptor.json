@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "OSB",
+    "TTC",
+    "OSD"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:resource/item_nano_living_metal"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_super_lapotron_crystal"
+    },
+    "O": {
+      "item": "mio_icif:resource/item_neutron_plate"
+    },
+    "T": {
+      "item": "mio_icif:normal/item_field_generator"
+    },
+    "C": {
+      "tag": "c:circuits/ultimate"
+    },
+    "D": {
+      "item": "mio_icif:item_tool_tactical_laser_rifle"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_tachyon_disruptor",
+    "count": 1
+  }
+}

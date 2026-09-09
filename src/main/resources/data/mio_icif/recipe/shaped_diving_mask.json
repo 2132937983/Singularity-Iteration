@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "EBE",
+    "FGF",
+    "SCS"
+  ],
+  "key": {
+    "E": {
+      "item": "mio_icif:resource/item_heatconductor"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_lithium_battery"
+    },
+    "G": {
+      "item": "mio_icif:build/block_alloy_glass"
+    },
+    "F": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_rubber"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_diving_mask",
+    "count": 1
+  }
+}

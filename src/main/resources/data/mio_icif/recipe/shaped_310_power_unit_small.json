@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" C ","IMI"," C "],"key":{"C":{"item":"mio_icif:wiring/cable/block_tin_cable"},"I":{"tag": "c:plates/tin"},"M":{"item":"mio_icif:resource/item_motor"}},"result":{"id":"mio_icif:item_tool_power_unit_small","count":1}}

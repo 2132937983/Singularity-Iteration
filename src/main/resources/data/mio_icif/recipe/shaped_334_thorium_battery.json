@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["TPT","PRP","TPT"],"key":{"T":{"tag":"c:dusts/thorium"},"P":{"tag":"c:plates/iridium"},"R":{"item":"mio_icif:resource/item_rtg_pellet"}},"result":{"id":"mio_icif:normal/item_thorium_battery","count":1}}

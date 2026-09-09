@@ -1,0 +1,21 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "particle": "minecraft:block/water_still",
+    "water": "minecraft:block/water_still"
+  },
+  "elements": [
+    {
+      "name": "inner_water_east",
+      "from": [12, 5, 5],
+      "to": [16, 11, 11],
+      "faces": {
+        "north": {"uv": [12, 5, 16, 11], "texture": "#water", "tintindex": 0},
+        "east": {"uv": [5, 5, 11, 11], "texture": "#water", "tintindex": 0},
+        "south": {"uv": [12, 5, 16, 11], "texture": "#water", "tintindex": 0},
+        "up": {"uv": [5, 12, 11, 16], "texture": "#water", "tintindex": 0},
+        "down": {"uv": [5, 12, 11, 16], "texture": "#water", "tintindex": 0}
+      }
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["RAR","GCG","RRR"],"key":{"R":{"item":"minecraft:redstone"},"A":{"item":"mio_icif:normal/item_advchargebat_lev0"},"G":{"item":"mio_icif:wiring/cable/block_gold_cable"},"C":{"tag":"c:circuits/advanced"}},"result":{"id":"mio_icif:build/item_obscurator","count":1}}

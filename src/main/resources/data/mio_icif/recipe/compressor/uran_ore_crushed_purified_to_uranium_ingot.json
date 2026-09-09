@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:compressor",
+  "energypertick": 20,
+  "ingredient": {
+    "item": "mio_icif:resource/item_uran_ore_crushed_purified"
+  },
+  "processingtime": 400,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_uranium_ingot"
+  }
+}

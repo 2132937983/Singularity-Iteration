@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "minecraft:yellow_wool"
+  },
+  "result": {
+    "count": 1,
+    "id": "minecraft:glowstone"
+  },
+  "eu_cost": 750000,
+  "duration": 1
+}

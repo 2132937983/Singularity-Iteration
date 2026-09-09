@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "MIM"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:reactor/item_reactor_mox_simple"
+    },
+    "I": {
+      "tag": "c:plates/iron"
+    }
+  },
+  "result": {
+    "id": "mio_icif:reactor/item_reactor_mox_dual",
+    "count": 1
+  }
+}

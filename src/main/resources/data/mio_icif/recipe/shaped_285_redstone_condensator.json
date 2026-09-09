@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["TRT","RCR","TRT"],"key":{"T":{"tag": "c:plates/tin"},"R":{"item":"minecraft:redstone"},"C":{"item":"mio_icif:reactor/item_reactor_collant_simple"}},"result":{"id":"mio_icif:reactor/item_reactor_condensator","count":1}}

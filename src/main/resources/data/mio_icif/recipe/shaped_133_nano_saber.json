@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["GA ","GA ","CcC"],
+  "key": {
+    "C":{"tag": "c:plates/carbon"},
+    "c":{"item": "mio_icif:normal/item_crystal_lev0"},
+    "G":{"tag": "c:dusts/glowstone"},
+    "A":{"tag": "c:plates/alloy"}
+  },
+  "result":{"id": "mio_icif:item_tool_nanosaber", "count": 1}
+}

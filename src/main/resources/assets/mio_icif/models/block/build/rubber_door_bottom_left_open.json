@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/door_bottom_left_open",
+  "textures": {
+    "bottom": "mio_icif:block/build/rubber_door_bottom",
+    "top": "mio_icif:block/build/rubber_door_top"
+  }
+}

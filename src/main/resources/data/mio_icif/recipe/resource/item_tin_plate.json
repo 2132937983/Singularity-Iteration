@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "tag": "c:ingots/tin"
+    },
+    {
+      "item": "mio_icif:item_tool_hammer"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_tin_plate"
+  }
+}

@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" S ","SES"," S "],"key":{"S":{"item":"minecraft:stone_shovel"},"E":{"item":"mio_icif:env_template/evt_empty"}},"result":{"id":"mio_icif:env_template/evt_flatification","count":1}}

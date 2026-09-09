@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["MMM","MMM","MMM"],
+  "key": {"M":{"tag": "c:ingots/bronze"}},
+  "result":{"id":"mio_icif:block_bronze","count":1}
+}

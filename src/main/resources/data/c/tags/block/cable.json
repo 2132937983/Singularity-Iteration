@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:wiring/cable/block_tin_cable",
+    "mio_icif:wiring/cable/block_cable_o",
+    "mio_icif:wiring/cable/block_gold_cable",
+    "mio_icif:wiring/cable/block_iron_cable",
+    "mio_icif:wiring/cable/block_glass_cable",
+    "mio_icif:wiring/cable/block_tin_cable_1",
+    "mio_icif:wiring/cable/block_cable",
+    "mio_icif:wiring/cable/block_gold_cable_1",
+    "mio_icif:wiring/cable/block_iron_cable_1",
+    "mio_icif:wiring/block_eu_detector_cable",
+    "mio_icif:wiring/block_eu_splitter_cable"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BCB",
+    "BTB",
+    "B B"
+  ],
+  "key": {
+    "B": {
+      "item": "mio_icif:normal/item_bat_lev0"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "T": {
+      "tag": "minecraft:planks"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_batpack",
+    "count": 1
+  }
+}

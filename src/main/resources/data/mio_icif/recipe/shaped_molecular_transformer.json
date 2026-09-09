@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "MTM",
+    "CcC",
+    "MTM"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "T": {
+      "item": "mio_icif:wiring/transformer_ev_sc"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_advcircuit"
+    },
+    "c": {
+      "item": "mio_icif:resource/item_molecular_transformer_core"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_molecular_transformer",
+    "count": 1
+  }
+}

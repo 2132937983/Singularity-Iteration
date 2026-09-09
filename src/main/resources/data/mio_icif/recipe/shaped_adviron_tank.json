@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PUP",
+    "U U",
+    "PUP"
+  ],
+  "key": {
+    "P": {
+      "item": "mio_icif:resource/item_adviron_plate"
+    },
+    "U": {
+      "item": "minecraft:bucket"
+    }
+  },
+  "result": {
+    "id": "mio_icif:build/block_adviron_tank",
+    "count": 1
+  }
+}

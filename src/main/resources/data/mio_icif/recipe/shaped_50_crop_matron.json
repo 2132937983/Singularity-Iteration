@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "cBc",
+    "UMU",
+    "CCC"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "C": {
+      "item": "mio_icif:crop/stick"
+    },
+    "c": {
+      "tag": "c:circuits/basic"
+    },
+    "B": {
+      "item": "minecraft:chest"
+    },
+    "U": {
+      "item": "mio_icif:cell/item_cell_empty"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_matron_elc",
+    "count": 1
+  }
+}

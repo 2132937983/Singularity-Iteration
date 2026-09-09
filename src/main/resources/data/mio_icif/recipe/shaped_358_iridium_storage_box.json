@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["ISI","S S","ISI"],"key":{"I":{"item":"mio_icif:resource/item_iridium_plate"},"S":{"item":"mio_icif:resource/item_adviron_plate"}},"result":{"id":"mio_icif:build/block_iridium_storage","count":1}}

@@ -1,0 +1,34 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_block_ore_lead": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:block_ore_lead"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:powder/lead_ore_to_lead_ore_crushed"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe"
+    ],
+    [
+      "has_block_ore_lead"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:powder/lead_ore_to_lead_ore_crushed"
+    ]
+  }
+}

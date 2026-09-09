@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" E ","RCR"," T "],"key":{"E":{"item":"minecraft:ender_pearl"},"R":{"item":"minecraft:redstone"},"C":{"tag":"c:circuits/basic"},"T":{"tag": "c:plates/tin"}},"result":{"id":"mio_icif:normal/item_freq","count":1}}

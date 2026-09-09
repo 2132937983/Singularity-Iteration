@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:washer",
+  "ingredient": {
+    "item": "minecraft:gravel"
+  },
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_stone_dust"
+  },
+  "wateramount": 1000
+}

@@ -1,0 +1,16 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:resource/item_iron_ore_crushed_purified"
+  },
+  "minheat": 1500,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_golden_dust_small"
+  },
+  "secondaryCount": 1,
+  "secondaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_iron_dust"
+  }
+}

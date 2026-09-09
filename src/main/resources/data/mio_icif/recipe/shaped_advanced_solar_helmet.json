@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " S ",
+    "CNC",
+    "GTG"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:generator/block_advanced_solar_panel"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_advcircuit"
+    },
+    "N": {
+      "item": "mio_icif:armor/item_armor_nano_helmet"
+    },
+    "G": {
+      "item": "mio_icif:wiring/cable/block_gold_cable_1"
+    },
+    "T": {
+      "item": "mio_icif:wiring/transformer_lv_mv"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_advanced_solar_helmet",
+    "count": 1
+  }
+}

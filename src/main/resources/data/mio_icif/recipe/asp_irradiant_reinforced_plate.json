@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["RSR","LIL","RDR"],
+  "key": {
+    "I":{"item":"mio_icif:resource/item_iridiumiron_reinforced_plate"},
+    "R":{"item":"minecraft:redstone"},
+    "S":{"item":"mio_icif:resource/item_sunnarium_small"},
+    "L":{"item":"minecraft:lapis_lazuli"},
+    "D":{"item":"minecraft:diamond"}
+  },
+  "result":{"id":"mio_icif:resource/item_irradiant_reinforced_plate","count":1}
+}

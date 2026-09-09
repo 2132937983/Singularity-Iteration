@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSB",
+    "LJC",
+    "SSB"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:dense_plates/super_iridium"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_super_lapotron_crystal"
+    },
+    "L": {
+      "item": "mio_icif:item_tool_quantum_sword"
+    },
+    "J": {
+      "item": "mio_icif:item_tool_advanced_electric_rifle"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_tactical_laser_rifle",
+    "count": 1
+  }
+}

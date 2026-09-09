@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" C ","TRT","TRT"],"key":{"C":{"item":"mio_icif:wiring/cable/block_cable"},"T":{"item":"mio_icif:resource/item_tin_casing"},"R":{"item":"minecraft:redstone"}},"result":{"id":"mio_icif:normal/item_chargebat_lev0","count":1}}

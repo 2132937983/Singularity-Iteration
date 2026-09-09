@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["SSS", "BCB", "LSL"],
+  "key": {
+    "S": { "item": "mio_icif:resource/item_titanium_casing" },
+    "B": { "item": "mio_icif:normal/item_lithium_battery" },
+    "C": { "tag": "c:circuits/elite" },
+    "L": { "item": "minecraft:blaze_rod" }
+  },
+  "result": { "id": "mio_icif:item_trinket_fire_proof_necklace", "count": 1 }
+}

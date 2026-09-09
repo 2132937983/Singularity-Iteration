@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CPC",
+    "SMS"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:resource/item_rubber"
+    },
+    "P": {
+      "item": "minecraft:stone_pressure_plate"
+    },
+    "M": {
+      "item": "mio_icif:wiring/block_lesu"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_lesu_charger",
+    "count": 1
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PGP",
+    "MLM",
+    "CAC"
+  ],
+  "key": {
+    "L": {
+      "item": "mio_icif:build/block_alloy_glass"
+    },
+    "A": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "M": {
+      "item": "mio_icif:resource/item_motor"
+    },
+    "G": {
+      "item": "mio_icif:build/block_alloy_glass"
+    },
+    "P": {
+      "tag": "c:plates/iron"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_scanner_elc",
+    "count": 1
+  }
+}

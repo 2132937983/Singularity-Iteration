@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ALA",
+    "BBB",
+    "AAA"
+  ],
+  "key": {
+    "A": {
+      "tag": "c:plates/iron"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_adv_lithium_battery"
+    },
+    "L": {
+      "item": "mio_icif:wiring/cable/block_gold_cable_1"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_lesu",
+    "count": 1
+  }
+}

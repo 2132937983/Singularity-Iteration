@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["A A"," A ","I I"],"key":{"A":{"tag":"c:plates/iron"},"I":{"tag": "c:ingots/iron"}},"result":{"id":"mio_icif:item_tool_cutter","count":1}}

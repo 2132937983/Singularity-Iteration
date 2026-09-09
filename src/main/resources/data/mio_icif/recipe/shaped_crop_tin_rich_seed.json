@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "EOE",
+    "OSO",
+    "EOE"
+  ],
+  "key": {
+    "E": {
+      "item": "mio_icif:resource/item_plant_extract"
+    },
+    "O": {
+      "item": "mio_icif:resource/item_tin_ore_crushed"
+    },
+    "S": {
+      "item": "minecraft:wheat_seeds"
+    }
+  },
+  "result": {
+    "id": "mio_icif:crop/tin_rich_seed",
+    "count": 1
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "minecraft:quartz_stairs"
+  },
+  "result": {
+    "count": 6,
+    "id": "minecraft:quartz"
+  }
+}

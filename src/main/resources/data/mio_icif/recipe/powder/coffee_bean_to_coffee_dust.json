@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:powder",
+  "ingredient": {
+    "item": "mio_icif:resource/item_coffee_bean"
+  },
+  "result": {
+    "count": 3,
+    "id": "mio_icif:resource/item_coffee_dust"
+  }
+}

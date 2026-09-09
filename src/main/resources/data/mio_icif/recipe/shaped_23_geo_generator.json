@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "gCg",
+    "gCg",
+    "IGI"
+  ],
+  "key": {
+    "G": {
+      "item": "mio_icif:generator/block_thermal_generator"
+    },
+    "C": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "g": {
+      "item": "minecraft:glass"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_geo_generator",
+    "count": 1
+  }
+}

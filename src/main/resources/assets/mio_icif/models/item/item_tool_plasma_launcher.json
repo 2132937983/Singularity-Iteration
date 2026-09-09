@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "mio_icif:item/item_tool_plasma_launcher_deactivate"
+  },
+  "overrides": [
+    {"predicate": {"mio_icif:plasma_active": 1}, "model": "mio_icif:item/item_tool_plasma_launcher_active"}
+  ]
+}

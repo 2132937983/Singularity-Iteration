@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" C "," A ","R R"],"key":{"C":{"tag":"c:circuits/basic"},"A":{"tag":"c:circuits/advanced"},"R":{"item":"minecraft:redstone"}},"result":{"id":"mio_icif:env_template/evt_empty","count":1}}

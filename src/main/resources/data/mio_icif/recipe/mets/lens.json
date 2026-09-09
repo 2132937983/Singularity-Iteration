@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["GFG","FRF","GFG"],
+  "key": {
+    "F": {"tag": "c:plates/iron"},
+    "G": {"item": "minecraft:glass"},
+    "R": {"item": "mio_icif:resource/item_irradiant_reinforced_plate"}
+  },
+  "result": {"id": "mio_icif:normal/item_lens", "count": 1}
+}

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PCP",
+    "PcP",
+    "PCP"
+  ],
+  "key": {
+    "P": {
+      "tag": "minecraft:planks"
+    },
+    "C": {
+      "item": "mio_icif:wiring/cable/block_tin_cable_1"
+    },
+    "c": {
+      "item": "mio_icif:resource/item_coil"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/transformer_lv_mv",
+    "count": 1
+  }
+}

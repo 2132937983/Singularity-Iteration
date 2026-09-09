@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["WWW"," II"],"key":{"W":{"item":"minecraft:white_wool"},"I":{"tag": "c:ingots/iron"}},"result":{"id":"mio_icif:build/item_painter","count":1}}

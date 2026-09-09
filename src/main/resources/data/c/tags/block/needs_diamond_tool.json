@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:build/block_iridium_storage",
+    "mio_icif:wiring/block_gesu_core",
+    "mio_icif:wiring/block_gesu_output_luv"
+  ]
+}

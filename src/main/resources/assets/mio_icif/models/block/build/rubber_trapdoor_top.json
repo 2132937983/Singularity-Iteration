@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/template_trapdoor_top",
+  "textures": {
+    "texture": "mio_icif:block/build/rubber_trapdoor"
+  }
+}

@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":["GGG","WTW","GEG"],"key":{"G":{"item":"minecraft:glass"},"W":{"item":"mio_icif:wiring/cable/block_gold_cable_1"},"T":{"item":"mio_icif:wiring/transformer_mv_hv"},"E":{"tag":"c:circuits/basic"}},"result":{"id":"mio_icif:upgrade/transformer_upgrade","count":1}}

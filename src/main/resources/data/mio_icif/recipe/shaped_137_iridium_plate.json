@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["IAI","ADA","IAI"],
+  "key": {
+    "I":{"item":"mio_icif:resource/item_iridium"},
+    "A":{"item":"mio_icif:resource/item_alloy_plate"},
+    "D":{"item":"minecraft:diamond"}
+  },
+  "result":{"id":"mio_icif:resource/item_iridium_plate","count":1}
+}

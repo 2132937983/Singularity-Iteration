@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PSP","PSP","PSP"],
+  "key": {
+    "P": {"tag": "c:plates/super_iridium"},
+    "S": {"tag": "c:ingots/super_iridium"}
+  },
+  "result": {"id": "mio_icif:resource/item_super_iridium_alloy_rotor_blade", "count": 1}
+}

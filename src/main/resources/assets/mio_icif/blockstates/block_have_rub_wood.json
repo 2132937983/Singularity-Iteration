@@ -1,0 +1,36 @@
+{
+    "variants": {
+        "has_harz=true,facing=north": {
+            "model": "mio_icif:block/block_have_rub_wood_wet",
+            "y": 0
+        },
+        "has_harz=true,facing=south": {
+            "model": "mio_icif:block/block_have_rub_wood_wet",
+            "y": 180
+        },
+        "has_harz=true,facing=west": {
+            "model": "mio_icif:block/block_have_rub_wood_wet",
+            "y": 270
+        },
+        "has_harz=true,facing=east": {
+            "model": "mio_icif:block/block_have_rub_wood_wet",
+            "y": 90
+        },
+        "has_harz=false,facing=north": {
+            "model": "mio_icif:block/block_have_rub_wood_dry",
+            "y": 0
+        },
+        "has_harz=false,facing=south": {
+            "model": "mio_icif:block/block_have_rub_wood_dry",
+            "y": 180
+        },
+        "has_harz=false,facing=west": {
+            "model": "mio_icif:block/block_have_rub_wood_dry",
+            "y": 270
+        },
+        "has_harz=false,facing=east": {
+            "model": "mio_icif:block/block_have_rub_wood_dry",
+            "y": 90
+        }
+    }
+}

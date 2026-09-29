@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Singularity Iteration" width="180">
+  <img src="logo.png" alt="Singularity Iteration" width="100%">
 </p>
 
 <h1 align="center">Singularity Iteration</h1>

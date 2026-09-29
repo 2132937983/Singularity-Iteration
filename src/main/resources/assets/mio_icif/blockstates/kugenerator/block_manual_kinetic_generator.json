@@ -1,7 +1,0 @@
-{
-    "variants": {
-        "": {
-            "model": "mio_icif:block/kugenerator/block_manual_kinetic_generator"
-        }
-    }
-}

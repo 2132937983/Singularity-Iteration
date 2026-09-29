@@ -1,7 +1,0 @@
-﻿{
-  "parent": "minecraft:block/crop",
-  "render_type": "cutout",
-  "textures": {
-    "crop": "mio_icif:block/enriched_crop/uranium_rich_7"
-  }
-}

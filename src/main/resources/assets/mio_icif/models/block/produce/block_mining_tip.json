@@ -1,6 +1,0 @@
-{
-    "parent": "minecraft:block/cube_all",
-    "textures": {
-        "all": "mio_icif:block/producer/block_mining_tip"
-    }
-}

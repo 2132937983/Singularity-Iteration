@@ -1,7 +1,0 @@
-{
-  "parent": "minecraft:block/cube_column",
-  "textures": {
-    "end": "mio_icif:block/stripped_rubber_log_top",
-    "side": "mio_icif:block/stripped_rubber_log"
-  }
-}

@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "mio_icif:item/armor/item_armor_advanced_quantum_chestplate"
-  }
-}

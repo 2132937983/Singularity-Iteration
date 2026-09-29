@@ -1,7 +1,0 @@
-{
-    "variants": {
-        "": {
-            "model": "mio_icif:block/build/block_scaffold_iron"
-        }
-    }
-}

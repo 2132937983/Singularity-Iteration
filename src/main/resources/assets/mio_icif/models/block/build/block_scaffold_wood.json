@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/cube_all",
-  "render_type": "minecraft:translucent",
-  "textures": {
-    "all": "mio_icif:block/build/block_scaffold_wood",
-    "particle": "mio_icif:block/producer/block_machine"
-  }
-}

@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/outer_stairs",
-  "textures": {
-    "bottom": "mio_icif:block/build/rubber_planks",
-    "top": "mio_icif:block/build/rubber_planks",
-    "side": "mio_icif:block/build/rubber_planks"
-  }
-}

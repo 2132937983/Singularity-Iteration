@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "mio_icif:item/env_template/evt_irrigation"
-  }
-}

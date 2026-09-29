@@ -1,6 +1,0 @@
-{
-    "parent": "block/cube_all",
-    "textures": {
-        "all": "mio_icif:block/oilrig/block_oil_rig_input"
-    }
-}

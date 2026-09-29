@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " X ",
+    "CMC",
+    " P "
+  ],
+  "key": {
+    "X": {
+      "item": "minecraft:chest"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "P": {
+      "item": "mio_icif:produce/block_mining_pipe"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_miner_elc",
+    "count": 1
+  }
+}

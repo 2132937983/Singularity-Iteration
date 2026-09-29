@@ -1,0 +1,110 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "particle": "mio_icif:block/wiring/cable/block_iron_cable_1",
+    "texture": "mio_icif:block/wiring/cable/block_iron_cable_1",
+    "color_band": "minecraft:block/white_concrete"
+  },
+  "elements": [
+    {
+      "name": "center_post",
+      "from": [
+        3,
+        3,
+        3
+      ],
+      "to": [
+        13,
+        13,
+        13
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#texture"
+        },
+        "east": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#texture"
+        },
+        "south": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#texture"
+        },
+        "west": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#texture"
+        },
+        "up": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#texture"
+        },
+        "down": {
+          "uv": [
+            5,
+            5,
+            11,
+            11
+          ],
+          "texture": "#texture"
+        }
+      }
+    },
+    {
+      "name": "color_band",
+      "from": [
+        2.99,
+        7,
+        2.99
+      ],
+      "to": [
+        13.01,
+        9,
+        13.01
+      ],
+      "faces": {
+        "north": {
+          "texture": "#color_band",
+          "tintindex": 0
+        },
+        "south": {
+          "texture": "#color_band",
+          "tintindex": 0
+        },
+        "east": {
+          "texture": "#color_band",
+          "tintindex": 0
+        },
+        "west": {
+          "texture": "#color_band",
+          "tintindex": 0
+        }
+      }
+    }
+  ]
+}

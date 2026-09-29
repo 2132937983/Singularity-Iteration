@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "count": 9,
+  "energypertick": 20,
+  "ingredient": {
+    "tag": "c:plates/lapis"
+  },
+  "processingtime": 400,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_lapi_denseplate"
+  }
+}

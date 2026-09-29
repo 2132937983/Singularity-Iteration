@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "ingredient": {
+    "tag": "c:plates/niobium"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_niobium_denseplate"
+  },
+  "count": 9,
+  "processingtime": 200,
+  "energypertick": 10
+}

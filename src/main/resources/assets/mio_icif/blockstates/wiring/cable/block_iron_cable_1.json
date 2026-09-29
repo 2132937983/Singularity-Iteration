@@ -1,0 +1,76 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "mio_icif:block/wiring/cable/block_iron_cable_1"
+      }
+    },
+    {
+      "when": { "foamlogged": "true", "foam_reinforced": "false", "disguised": "false" },
+      "apply": { "model": "mio_icif:block/build/block_construction_foam" }
+    },
+    {
+      "when": { "foamlogged": "true", "foam_reinforced": "true", "disguised": "false" },
+      "apply": { "model": "mio_icif:block/build/block_construction_foam_reinforced" }
+    },
+    {
+      "when": {
+        "north": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/wiring/cable/block_iron_cable_1_side",
+        "uvlock": true
+      }
+    },
+    {
+      "when": {
+        "south": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/wiring/cable/block_iron_cable_1_side",
+        "y": 180,
+        "uvlock": true
+      }
+    },
+    {
+      "when": {
+        "east": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/wiring/cable/block_iron_cable_1_side",
+        "y": 90,
+        "uvlock": true
+      }
+    },
+    {
+      "when": {
+        "west": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/wiring/cable/block_iron_cable_1_side",
+        "y": 270,
+        "uvlock": true
+      }
+    },
+    {
+      "when": {
+        "up": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/wiring/cable/block_iron_cable_1_side",
+        "x": 270,
+        "uvlock": true
+      }
+    },
+    {
+      "when": {
+        "down": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/wiring/cable/block_iron_cable_1_side",
+        "x": 90,
+        "uvlock": true
+      }
+    }
+  ]
+}

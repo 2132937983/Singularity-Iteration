@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mio_icif:block_raw_uranium"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:resource/item_raw_uran_ore",
+    "count": 9
+  }
+}

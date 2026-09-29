@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ICI",
+    "SMS",
+    "ICI"
+  ],
+  "key": {
+    "I": {
+      "item": "mio_icif:resource/item_iridium_ingot"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_advcircuit"
+    },
+    "S": {
+      "item": "mio_icif:generator/block_quantum_solar_panel"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_matter_elc"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_quantum_generator",
+    "count": 1
+  }
+}

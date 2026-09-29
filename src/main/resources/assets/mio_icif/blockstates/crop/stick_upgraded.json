@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "age=0,hydrated=false": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=1,hydrated=false": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=2,hydrated=false": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=3,hydrated=false": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=4,hydrated=false": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=5,hydrated=false": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=6,hydrated=false": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=7,hydrated=false": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=0,hydrated=true": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=1,hydrated=true": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=2,hydrated=true": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=3,hydrated=true": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=4,hydrated=true": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=5,hydrated=true": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=6,hydrated=true": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    },
+    "age=7,hydrated=true": {
+      "model": "mio_icif:block/crop/stick_upgraded"
+    }
+  }
+}

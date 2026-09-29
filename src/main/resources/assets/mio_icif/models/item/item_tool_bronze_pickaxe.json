@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "mio_icif:item/item_tool_bronze_pickaxe"
+  }
+}

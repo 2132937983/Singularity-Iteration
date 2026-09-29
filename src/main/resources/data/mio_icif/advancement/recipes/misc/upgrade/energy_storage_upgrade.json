@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_normal/item_bat_lev0": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:normal/item_bat_lev0"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:upgrade/energy_storage_upgrade"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_normal/item_bat_lev0"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:upgrade/energy_storage_upgrade"
+    ]
+  }
+}

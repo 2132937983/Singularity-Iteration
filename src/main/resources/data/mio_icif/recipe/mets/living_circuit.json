@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["XTX","LSL","XTX"],
+  "key": {
+    "S": {"tag": "c:circuits/elite"},
+    "T": {"tag": "c:dense_plates/super_iridium"},
+    "L": {"item": "mio_icif:resource/item_nano_living_metal"},
+    "X": {"tag": "mio_icif:cables"}
+  },
+  "result": {"id": "mio_icif:normal/item_living_circuit", "count": 1}
+}

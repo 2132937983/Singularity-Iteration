@@ -1,0 +1,18 @@
+{
+  "values": [
+    "minecraft:wheat_seeds",
+    "minecraft:beetroot_seeds",
+    "minecraft:melon_seeds",
+    "minecraft:pumpkin_seeds",
+    "minecraft:torchflower_seeds",
+    "minecraft:pitcher_pod",
+    "minecraft:carrot",
+    "minecraft:potato",
+    "mio_icif:crop/iron_rich_seed",
+    "mio_icif:crop/copper_rich_seed",
+    "mio_icif:crop/tin_rich_seed",
+    "mio_icif:crop/titanium_rich_seed",
+    "mio_icif:crop/lead_rich_seed",
+    "mio_icif:crop/uranium_rich_seed"
+  ]
+}

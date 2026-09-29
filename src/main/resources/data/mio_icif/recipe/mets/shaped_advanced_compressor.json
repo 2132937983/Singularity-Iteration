@@ -1,0 +1,23 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "B B",
+        "BMB",
+        "BCB"
+    ],
+    "key": {
+        "B": {
+            "tag": "c:plates/titanium"
+        },
+        "M": {
+            "item": "mio_icif:producer/block_compressor_elc"
+        },
+        "C": {
+            "tag": "c:circuits/elite"
+        }
+    },
+    "result": {
+        "id": "mio_icif:producer/block_compressor_advanced_elc",
+        "count": 1
+    }
+}

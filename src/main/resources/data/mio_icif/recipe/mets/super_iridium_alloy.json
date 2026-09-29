@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["ASA","ASA","ASA"],
+  "key": {
+    "S": {"tag": "c:ingots/iridium"},
+    "A": {"tag": "c:plates/niobium_titanium"}
+  },
+  "result": {"id": "mio_icif:resource/item_super_iridium_alloy", "count": 1}
+}

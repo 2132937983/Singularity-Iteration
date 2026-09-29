@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:energy_converter/energy_converter",
+    "mio_icif:build/block_adviron_storage",
+    "mio_icif:build/block_construction_wall",
+    "mio_icif:generator/block_advanced_solar_panel",
+    "mio_icif:generator/block_hybrid_solar_panel",
+    "mio_icif:generator/block_ultimate_hybrid_solar_panel",
+    "mio_icif:generator/block_quantum_solar_panel",
+    "mio_icif:generator/block_quantum_generator"
+  ]
+}

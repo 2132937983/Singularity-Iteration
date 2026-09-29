@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "group": "mio_icif",
+    "pattern": [
+        " B ",
+        "IMT",
+        " B "
+    ],
+    "key": {
+        "B": { "item": "mio_icif:normal/item_super_lapotron_crystal" },
+        "T": { "item": "mio_icif:wiring/transformer_luv_zpmv" },
+        "M": { "item": "mio_icif:wiring/block_gesu_output_iv" },
+        "I": { "tag": "c:circuits/elite" }
+    },
+    "result": {
+        "id": "mio_icif:wiring/block_gesu_output_luv",
+        "count": 1
+    }
+}

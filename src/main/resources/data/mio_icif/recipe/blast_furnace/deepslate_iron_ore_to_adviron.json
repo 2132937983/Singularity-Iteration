@@ -1,0 +1,15 @@
+{
+  "type": "mio_icif:blast_furnace",
+  "ingredient": {
+    "item": "minecraft:deepslate_iron_ore"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_adviron_ingot"
+  },
+  "secondary_result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_slag"
+  },
+  "duration": 2400
+}

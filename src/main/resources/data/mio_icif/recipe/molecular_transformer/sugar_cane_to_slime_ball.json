@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "minecraft:sugar_cane"
+  },
+  "result": {
+    "count": 1,
+    "id": "minecraft:slime_ball"
+  },
+  "eu_cost": 90000,
+  "duration": 1
+}

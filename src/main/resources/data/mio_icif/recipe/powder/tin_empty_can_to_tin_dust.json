@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:powder",
+  "count": 1,
+  "ingredient": {
+    "item": "mio_icif:normal/item_tin_empty_can"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_tin_dust"
+  }
+}

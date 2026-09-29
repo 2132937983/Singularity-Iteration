@@ -1,0 +1,13 @@
+// 1.21.1	2026-04-08T21:50:17.9937519	Block States: mio_icif
+05e78faafa6b81ad25a256ddb57accd8af9950a5 assets/mio_icif/blockstates/block_rub_sapling.json
+9c659dc183271cd125f85d6d1c3ba409a08f5f4d assets/mio_icif/models/block/block_lead.json
+b177263e0736170bebf52867f21fb04d7e74bdc3 assets/mio_icif/models/block/block_ore_lead.json
+0985acf1df376089a2329bc533c408564f55cc76 assets/mio_icif/models/block/block_ore_tin.json
+33809d46c279be1cbf7b09ba83c6353b48cb912f assets/mio_icif/models/block/block_ore_uran.json
+31689a09fe6a42ffe4d11dc116a5b032291d2d8b assets/mio_icif/models/block/block_rub_sapling.json
+040d548db8f2de629b88182ff617bb751c912929 assets/mio_icif/models/block/block_tin.json
+551ff9e12946482cc75a1f3fd36ff69d54fdb608 assets/mio_icif/models/item/block_lead.json
+77f7e7a33587ab499ecd09ce04eb43fd736a306b assets/mio_icif/models/item/block_ore_lead.json
+4d68114c2063e5436c5f36b83c0f87fe092dc92d assets/mio_icif/models/item/block_ore_tin.json
+5de5f23d799866f334eb44f788655311d1bd7a09 assets/mio_icif/models/item/block_ore_uran.json
+209972d4f5e7bde09113fa44048ee03f7c15366c assets/mio_icif/models/item/block_tin.json

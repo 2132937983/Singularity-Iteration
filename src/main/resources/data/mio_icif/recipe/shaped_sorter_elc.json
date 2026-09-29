@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " H ",
+    "CMC",
+    " R "
+  ],
+  "key": {
+    "H": {
+      "item": "minecraft:hopper"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "R": {
+      "item": "minecraft:repeater"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_sorter_elc",
+    "count": 1
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:neutron_polymerizer",
+  "ingredient": {
+    "item": "mio_icif:resource/item_nano_living_metal"
+  },
+  "result": {
+    "id": "mio_icif:resource/item_neutron_plate",
+    "count": 1
+  },
+  "processingtime": 1500,
+  "energyPerTick": 1536
+}

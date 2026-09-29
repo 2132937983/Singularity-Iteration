@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "mio_icif:item_trinket_life_support_ring",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_trinket_flight_ring",
+      "required": false
+    }
+  ]
+}

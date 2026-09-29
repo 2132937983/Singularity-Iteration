@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="All Rights Reserved"
+[[mods]]
+modId="si_core_example"
+version="1.0.0"
+displayName="SI Core Development Example"
+[[dependencies.si_core_example]]
+modId="mio_icif"
+type="required"
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"
+[[dependencies.si_core_example]]
+modId="neoforge"
+type="required"
+versionRange="[21.1,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.si_core_example]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,1.21.2)"
+ordering="NONE"
+side="BOTH"

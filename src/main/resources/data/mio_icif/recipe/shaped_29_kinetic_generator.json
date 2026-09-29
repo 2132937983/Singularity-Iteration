@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "MES",
+    "III"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:generator/block_thermal_generator"
+    },
+    "E": {
+      "item": "mio_icif:resource/item_motor"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_iron_shaft"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_kinetic_generator",
+    "count": 1
+  }
+}

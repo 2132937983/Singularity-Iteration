@@ -1,0 +1,23 @@
+﻿{
+	"credit": "Made with Blockbench",
+	"parent": "block/block",
+	"render_type": "cutout",
+	"textures": {
+		"particle": "mio_icif:block/pipe/block_pipe_water",
+		"texture": "mio_icif:block/pipe/block_pipe_water"
+	},
+	"elements": [
+		{
+			"name": "extension_east",
+			"from": [12, 4, 4],
+			"to": [16, 12, 12],
+			"faces": {
+				"north": {"uv": [12, 4, 16, 12], "texture": "#texture"},
+				"east": {"uv": [4, 4, 12, 12], "texture": "#texture", "cullface": "east"},
+				"south": {"uv": [12, 4, 16, 12], "texture": "#texture"},
+				"up": {"uv": [12, 4, 16, 12], "texture": "#texture"},
+				"down": {"uv": [12, 4, 16, 12], "texture": "#texture"}
+			}
+		}
+	]
+}

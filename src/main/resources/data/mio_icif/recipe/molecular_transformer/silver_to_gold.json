@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "mio_icif:resource/item_silver_ingot"
+  },
+  "result": {
+    "count": 1,
+    "id": "minecraft:gold_ingot"
+  },
+  "eu_cost": 500000,
+  "duration": 1
+}

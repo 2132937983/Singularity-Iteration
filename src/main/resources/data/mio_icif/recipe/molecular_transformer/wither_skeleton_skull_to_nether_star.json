@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "minecraft:wither_skeleton_skull"
+  },
+  "result": {
+    "count": 1,
+    "id": "minecraft:nether_star"
+  },
+  "eu_cost": 120000000,
+  "duration": 1
+}

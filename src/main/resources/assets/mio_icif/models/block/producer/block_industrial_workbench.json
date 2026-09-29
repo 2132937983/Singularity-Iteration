@@ -1,0 +1,12 @@
+{
+  "parent": "block/cube",
+  "textures": {
+    "particle": "mio_icif:block/misc/industrial_workbench_top",
+    "down": "mio_icif:block/misc/industrial_workbench_bottom",
+    "up": "mio_icif:block/misc/industrial_workbench_top",
+    "north": "mio_icif:block/misc/industrial_workbench_front",
+    "east": "mio_icif:block/misc/industrial_workbench_right",
+    "south": "mio_icif:block/misc/industrial_workbench_back",
+    "west": "mio_icif:block/misc/industrial_workbench_left"
+  }
+}

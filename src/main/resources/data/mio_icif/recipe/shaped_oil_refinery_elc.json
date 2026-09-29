@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CFC",
+    "GMG",
+    "CFC"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "G": {
+      "item": "mio_icif:resource/item_heatconductor"
+    },
+    "F": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_oil_refinery_elc",
+    "count": 1
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_resource/item_bronze_plate": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:resource/item_bronze_plate"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:powder/bronze_plate_to_bronze_dust_small"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe"
+    ],
+    [
+      "has_resource/item_bronze_plate"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:powder/bronze_plate_to_bronze_dust_small"
+    ]
+  }
+}

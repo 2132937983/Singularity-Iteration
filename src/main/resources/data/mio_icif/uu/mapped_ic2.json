@@ -1,0 +1,2339 @@
+{
+  "schema": 4,
+  "data_version": 1343,
+  "entries": [
+    {
+      "legacy_stack": "{id:\"ic2:filled_tin_can\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_tin_filled_can",
+      "raw_value": "1120.066918771242",
+      "source_row": 0
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:resource/item_alloy_plate",
+      "raw_value": "387.3119260077443",
+      "source_row": 18
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:normal/item_advcircuit",
+      "raw_value": "82148.41651794752",
+      "source_row": 20
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:13s}",
+      "target_item": "mio_icif:producer/block_machine_hull_advanced",
+      "raw_value": "Infinity",
+      "source_row": 23
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:57s}",
+      "target_item": "mio_icif:producer/block_advanced_miner_elc",
+      "raw_value": "Infinity",
+      "source_row": 24
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:12s}",
+      "target_item": "mio_icif:producer/block_machine_hull_basic",
+      "raw_value": "Infinity",
+      "source_row": 35
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:89s}",
+      "target_item": "mio_icif:producer/block_batch_crafter",
+      "raw_value": "Infinity",
+      "source_row": 38
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:21s}",
+      "target_item": "mio_icif:normal/item_biochaff",
+      "raw_value": "21410.74553033812",
+      "source_row": 43
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:50s}",
+      "target_item": "mio_icif:producer/block_blast_furnace",
+      "raw_value": "Infinity",
+      "source_row": 63
+    },
+    {
+      "legacy_stack": "{id:\"ic2:block_cutting_blade\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:resource/item_diamond_cut_blade",
+      "raw_value": "19356.910899448892",
+      "source_row": 66
+    },
+    {
+      "legacy_stack": "{id:\"ic2:block_cutting_blade\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_iron_cut_blade",
+      "raw_value": "621.3130733902161",
+      "source_row": 67
+    },
+    {
+      "legacy_stack": "{id:\"ic2:block_cutting_blade\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_adviron_cutblade",
+      "raw_value": "686.0610952310772",
+      "source_row": 68
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:51s}",
+      "target_item": "mio_icif:producer/block_block_cutter",
+      "raw_value": "Infinity",
+      "source_row": 69
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:block_bronze",
+      "raw_value": "719.9712562663649",
+      "source_row": 105
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_bronze_dust",
+      "raw_value": "65.88569514070721",
+      "source_row": 108
+    },
+    {
+      "legacy_stack": "{id:\"ic2:ingot\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_ingot_bronze",
+      "raw_value": "79.88569514070721",
+      "source_row": 111
+    },
+    {
+      "legacy_stack": "{id:\"ic2:casing\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_bronze_casing",
+      "raw_value": "47.776180903686935",
+      "source_row": 112
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_bronze_plate",
+      "raw_value": "81.55236180737387",
+      "source_row": 115
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:113s}",
+      "target_item": "mio_icif:build/block_bronze_storage",
+      "raw_value": "Infinity",
+      "source_row": 118
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:131s}",
+      "target_item": "mio_icif:build/block_bronze_tank",
+      "raw_value": "Infinity",
+      "source_row": 120
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:25s}",
+      "target_item": "mio_icif:resource/item_cf_dust",
+      "raw_value": "1855.484771116184",
+      "source_row": 136
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:15s}",
+      "target_item": "mio_icif:resource/item_carbon_plate",
+      "raw_value": "Infinity",
+      "source_row": 142
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:34s}",
+      "target_item": "mio_icif:resource/item_carbon_rotorblade",
+      "raw_value": "Infinity",
+      "source_row": 143
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:82s}",
+      "target_item": "mio_icif:producer/block_chunk_loader",
+      "raw_value": "Infinity",
+      "source_row": 161
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_clay_dust",
+      "raw_value": "3476.469542232368",
+      "source_row": 164
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:16s}",
+      "target_item": "mio_icif:resource/item_coal_ball",
+      "raw_value": "201.30394353559853",
+      "source_row": 167
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:18s}",
+      "target_item": "mio_icif:resource/item_coal_chunk",
+      "raw_value": "2396.159310182532",
+      "source_row": 168
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:resource/item_coal_dust",
+      "raw_value": "17.72728359772764",
+      "source_row": 169
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crop_res\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_coffee_bean",
+      "raw_value": "Infinity",
+      "source_row": 177
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crop_res\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_coffee_dust",
+      "raw_value": "Infinity",
+      "source_row": 178
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:resource/item_coil",
+      "raw_value": "316.99073771042606",
+      "source_row": 179
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:17s}",
+      "target_item": "mio_icif:resource/item_zip_coal_block",
+      "raw_value": "215.30394353559853",
+      "source_row": 189
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:43s}",
+      "target_item": "mio_icif:producer/block_compressor_elc",
+      "raw_value": "Infinity",
+      "source_row": 190
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:27s}",
+      "target_item": "mio_icif:producer/block_condenser",
+      "raw_value": "Infinity",
+      "source_row": 191
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:8s}",
+      "target_item": "mio_icif:resource/item_copper_boiler",
+      "raw_value": "Infinity",
+      "source_row": 202
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:resource/item_copper_dust",
+      "raw_value": "76.50786989567045",
+      "source_row": 204
+    },
+    {
+      "legacy_stack": "{id:\"ic2:casing\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_copper_casing",
+      "raw_value": "46.087268281168555",
+      "source_row": 206
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_copper_plate",
+      "raw_value": "78.17453656233711",
+      "source_row": 208
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crop_stick\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:crop/stick",
+      "raw_value": "Infinity",
+      "source_row": 211
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:58s}",
+      "target_item": "mio_icif:producer/block_harvest_elc",
+      "raw_value": "Infinity",
+      "source_row": 212
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:59s}",
+      "target_item": "mio_icif:producer/block_matron_elc",
+      "raw_value": "Infinity",
+      "source_row": 213
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crushed\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_copper_ore_crushed",
+      "raw_value": "62.50786989567045",
+      "source_row": 215
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crushed\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_gold_ore_crushed",
+      "raw_value": "514.5098171910705",
+      "source_row": 216
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crushed\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:resource/item_iron_ore_crushed",
+      "raw_value": "60.63641798863821",
+      "source_row": 217
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crushed\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:resource/item_lead_ore_crushed",
+      "raw_value": "466.1177759873634",
+      "source_row": 218
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crushed\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:resource/item_silver_ore_crushed",
+      "raw_value": "Infinity",
+      "source_row": 219
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crushed\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:resource/item_tin_ore_crushed",
+      "raw_value": "75.01917087581748",
+      "source_row": 220
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:27s}",
+      "target_item": "mio_icif:resource/item_crystal_memory_raw",
+      "raw_value": "4.33779770852891E7",
+      "source_row": 223
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:9s}",
+      "target_item": "mio_icif:resource/item_bronze_denseplate",
+      "raw_value": "747.9712562663649",
+      "source_row": 252
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:10s}",
+      "target_item": "mio_icif:resource/item_copper_denseplate",
+      "raw_value": "717.570829061034",
+      "source_row": 253
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:11s}",
+      "target_item": "mio_icif:resource/item_golden_denseplate",
+      "raw_value": "4785.5883547196345",
+      "source_row": 254
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:12s}",
+      "target_item": "mio_icif:resource/item_iron_denseplate",
+      "raw_value": "700.7277618977439",
+      "source_row": 255
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:13s}",
+      "target_item": "mio_icif:resource/item_lapi_denseplate",
+      "raw_value": "3778.1628267681126",
+      "source_row": 256
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:14s}",
+      "target_item": "mio_icif:resource/item_lead_denseplate",
+      "raw_value": "4350.059983886271",
+      "source_row": 257
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:15s}",
+      "target_item": "mio_icif:resource/item_obsidian_denseplate",
+      "raw_value": "9.74438335625E7",
+      "source_row": 258
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:16s}",
+      "target_item": "mio_icif:resource/item_adviron_denseplate",
+      "raw_value": "700.7277618977439",
+      "source_row": 259
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:17s}",
+      "target_item": "mio_icif:resource/item_tin_denseplate",
+      "raw_value": "830.1725378823573",
+      "source_row": 260
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:resource/item_diamond_dust",
+      "raw_value": "2424.159310182532",
+      "source_row": 267
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:15s}",
+      "target_item": "mio_icif:reactor/item_reactor_mox_dual_deplete",
+      "raw_value": "Infinity",
+      "source_row": 279
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:12s}",
+      "target_item": "mio_icif:reactor/item_reactor_uranium_dual_depleted",
+      "raw_value": "Infinity",
+      "source_row": 280
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:80s}",
+      "target_item": "mio_icif:wiring/transformer_ev_sc",
+      "raw_value": "Infinity",
+      "source_row": 288
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:44s}",
+      "target_item": "mio_icif:producer/block_furnace_elc",
+      "raw_value": "Infinity",
+      "source_row": 292
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:12s}",
+      "target_item": "mio_icif:hugenerator/block_heat_generator_elc",
+      "raw_value": "Infinity",
+      "source_row": 293
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:38s}",
+      "target_item": "mio_icif:producer/block_sorter_elc",
+      "raw_value": "Infinity",
+      "source_row": 298
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:76s}",
+      "target_item": "mio_icif:producer/block_electrolyzer_elc",
+      "raw_value": "Infinity",
+      "source_row": 301
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:normal/item_circuit",
+      "raw_value": "60852.46895733449",
+      "source_row": 302
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:resource/item_energium_dust",
+      "raw_value": "1121.8069525499704",
+      "source_row": 317
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:45s}",
+      "target_item": "mio_icif:producer/block_extractor_elc",
+      "raw_value": "Infinity",
+      "source_row": 323
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:53s}",
+      "target_item": "mio_icif:producer/block_fermenter_elc",
+      "raw_value": "Infinity",
+      "source_row": 327
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:29s}",
+      "target_item": "mio_icif:producer/block_fluid_distributor_elc",
+      "raw_value": "Infinity",
+      "source_row": 334
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:30s}",
+      "target_item": "mio_icif:producer/block_fluid_regulator_elc",
+      "raw_value": "Infinity",
+      "source_row": 337
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:14s}",
+      "target_item": "mio_icif:reactor/item_reactor_mox_simple_depleted",
+      "raw_value": "93200.192643134",
+      "source_row": 341
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:11s}",
+      "target_item": "mio_icif:reactor/item_reactor_uranium_simple_depleted",
+      "raw_value": "3403.310654298808",
+      "source_row": 342
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:9s}",
+      "target_item": "mio_icif:normal/item_fuel_rod",
+      "raw_value": "90.30308465530487",
+      "source_row": 343
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:generator/block_thermal_generator",
+      "raw_value": "Infinity",
+      "source_row": 347
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:generator/block_geo_generator",
+      "raw_value": "Infinity",
+      "source_row": 348
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:7s}",
+      "target_item": "mio_icif:resource/item_golden_dust",
+      "raw_value": "528.5098171910705",
+      "source_row": 358
+    },
+    {
+      "legacy_stack": "{id:\"ic2:casing\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:resource/item_golden_casing",
+      "raw_value": "272.08824192886857",
+      "source_row": 361
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:resource/item_golden_plate",
+      "raw_value": "530.1764838577371",
+      "source_row": 364
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crop_res\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:resource/item_grin_dust",
+      "raw_value": "2716194.0",
+      "source_row": 400
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:79s}",
+      "target_item": "mio_icif:wiring/transformer_hv_ev",
+      "raw_value": "Infinity",
+      "source_row": 403
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:7s}",
+      "target_item": "mio_icif:resource/item_heatconductor",
+      "raw_value": "60664.22360968701",
+      "source_row": 407
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:54s}",
+      "target_item": "mio_icif:producer/block_induction_elc",
+      "raw_value": "Infinity",
+      "source_row": 415
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:19s}",
+      "target_item": "mio_icif:normal/item_industrial_diamond",
+      "raw_value": "Infinity",
+      "source_row": 417
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:reactor/block_ic_tnt",
+      "raw_value": "452785.81184546405",
+      "source_row": 418
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:88s}",
+      "target_item": "mio_icif:producer/block_industrial_workbench",
+      "raw_value": "Infinity",
+      "source_row": 419
+    },
+    {
+      "legacy_stack": "{id:\"ic2:misc_resource\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_iridium",
+      "raw_value": "12000.0",
+      "source_row": 429
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:resource/item_iridium_plate",
+      "raw_value": "51960.40701421351",
+      "source_row": 430
+    },
+    {
+      "legacy_stack": "{id:\"ic2:misc_resource\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:resource/item_shard_iridium",
+      "raw_value": "1333.0",
+      "source_row": 431
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:115s}",
+      "target_item": "mio_icif:build/block_iridium_storage",
+      "raw_value": "Infinity",
+      "source_row": 432
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:134s}",
+      "target_item": "mio_icif:build/block_iridium_tank",
+      "raw_value": "Infinity",
+      "source_row": 433
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:8s}",
+      "target_item": "mio_icif:resource/item_iron_dust",
+      "raw_value": "74.63641798863821",
+      "source_row": 439
+    },
+    {
+      "legacy_stack": "{id:\"ic2:fence\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:block_fence_iron",
+      "raw_value": "59.151542327652436",
+      "source_row": 440
+    },
+    {
+      "legacy_stack": "{id:\"ic2:casing\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:resource/item_iron_casing",
+      "raw_value": "45.151542327652436",
+      "source_row": 446
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:resource/item_iron_plate",
+      "raw_value": "76.30308465530487",
+      "source_row": 451
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:32s}",
+      "target_item": "mio_icif:resource/item_iron_rotor_blade",
+      "raw_value": "682.7277618977439",
+      "source_row": 452
+    },
+    {
+      "legacy_stack": "{id:\"ic2:scaffold\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:build/block_scaffold_iron",
+      "raw_value": "39.76707093217416",
+      "source_row": 453
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:112s}",
+      "target_item": "mio_icif:build/block_iron_storage",
+      "raw_value": "Infinity",
+      "source_row": 455
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:132s}",
+      "target_item": "mio_icif:build/block_iron_tank",
+      "raw_value": "Infinity",
+      "source_row": 457
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:35s}",
+      "target_item": "mio_icif:producer/block_item_buffer_elc",
+      "raw_value": "Infinity",
+      "source_row": 459
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:generator/block_kinetic_generator",
+      "raw_value": "Infinity",
+      "source_row": 479
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:77s}",
+      "target_item": "mio_icif:wiring/transformer_lv_mv",
+      "raw_value": "23200.36614836495",
+      "source_row": 480
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:9s}",
+      "target_item": "mio_icif:resource/item_lapi_dust",
+      "raw_value": "418.24031408534586",
+      "source_row": 485
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:resource/item_lapi_plate",
+      "raw_value": "418.24031408534586",
+      "source_row": 486
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:7s}",
+      "target_item": "mio_icif:block_lead",
+      "raw_value": "4322.059983886271",
+      "source_row": 493
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:10s}",
+      "target_item": "mio_icif:resource/item_lead_dust",
+      "raw_value": "480.1177759873634",
+      "source_row": 494
+    },
+    {
+      "legacy_stack": "{id:\"ic2:ingot\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:resource/item_lead_ingot",
+      "raw_value": "480.1177759873634",
+      "source_row": 495
+    },
+    {
+      "legacy_stack": "{id:\"ic2:casing\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:resource/item_lead_casing",
+      "raw_value": "247.89222132701505",
+      "source_row": 496
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:block_ore_lead",
+      "raw_value": "918.2355519747268",
+      "source_row": 497
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:resource/item_lead_plate",
+      "raw_value": "481.7844426540301",
+      "source_row": 498
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:13s}",
+      "target_item": "mio_icif:hugenerator/block_fluid_heat_generator",
+      "raw_value": "Infinity",
+      "source_row": 540
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:11s}",
+      "target_item": "mio_icif:resource/item_lithium_dust",
+      "raw_value": "Infinity",
+      "source_row": 542
+    },
+    {
+      "legacy_stack": "{id:\"ic2:upgrade_kit\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_tool_mfsu_upgrade_kit",
+      "raw_value": "Infinity",
+      "source_row": 546
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:78s}",
+      "target_item": "mio_icif:wiring/transformer_mv_hv",
+      "raw_value": "Infinity",
+      "source_row": 548
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:47s}",
+      "target_item": "mio_icif:producer/block_powder_elc",
+      "raw_value": "Infinity",
+      "source_row": 549
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:37s}",
+      "target_item": "mio_icif:producer/block_magnetizer",
+      "raw_value": "Infinity",
+      "source_row": 563
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:17s}",
+      "target_item": "mio_icif:kugenerator/block_manual_kinetic_generator",
+      "raw_value": "Infinity",
+      "source_row": 564
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:61s}",
+      "target_item": "mio_icif:producer/block_matter_elc",
+      "raw_value": "Infinity",
+      "source_row": 565
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:55s}",
+      "target_item": "mio_icif:producer/block_metal_former",
+      "raw_value": "Infinity",
+      "source_row": 571
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:60s}",
+      "target_item": "mio_icif:producer/block_miner_elc",
+      "raw_value": "Infinity",
+      "source_row": 578
+    },
+    {
+      "legacy_stack": "{id:\"ic2:mining_pipe\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:produce/block_mining_pipe",
+      "raw_value": "Infinity",
+      "source_row": 581
+    },
+    {
+      "legacy_stack": "{id:\"ic2:ingot\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_alloy_ingot",
+      "raw_value": "373.3119260077443",
+      "source_row": 582
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:30s}",
+      "target_item": "mio_icif:resource/item_netherrack_dust",
+      "raw_value": "4043.1799999999994",
+      "source_row": 607
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:22s}",
+      "target_item": "mio_icif:generator/block_nuclear_reactor_generator",
+      "raw_value": "Infinity",
+      "source_row": 611
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:12s}",
+      "target_item": "mio_icif:resource/item_obsidian_dust",
+      "raw_value": "1.0827094173611112E7",
+      "source_row": 626
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:resource/item_obsidian_plate",
+      "raw_value": "1.08270910625E7",
+      "source_row": 627
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:56s}",
+      "target_item": "mio_icif:producer/block_washer_elc",
+      "raw_value": "Infinity",
+      "source_row": 640
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:20s}",
+      "target_item": "mio_icif:resource/item_fuel_plant_ball",
+      "raw_value": "Infinity",
+      "source_row": 667
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:32s}",
+      "target_item": "mio_icif:producer/block_pump_elc",
+      "raw_value": "Infinity",
+      "source_row": 683
+    },
+    {
+      "legacy_stack": "{id:\"ic2:purified\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_copper_ore_crushed_purified",
+      "raw_value": "76.50786989567045",
+      "source_row": 689
+    },
+    {
+      "legacy_stack": "{id:\"ic2:purified\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_gold_ore_crushed_purified",
+      "raw_value": "528.5098171910705",
+      "source_row": 690
+    },
+    {
+      "legacy_stack": "{id:\"ic2:purified\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:resource/item_iron_ore_crushed_purified",
+      "raw_value": "74.63641798863821",
+      "source_row": 691
+    },
+    {
+      "legacy_stack": "{id:\"ic2:purified\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:resource/item_lead_ore_crushed_purified",
+      "raw_value": "480.1177759873634",
+      "source_row": 692
+    },
+    {
+      "legacy_stack": "{id:\"ic2:purified\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:resource/item_silver_ore_crushed_purified",
+      "raw_value": "Infinity",
+      "source_row": 693
+    },
+    {
+      "legacy_stack": "{id:\"ic2:purified\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:resource/item_tin_ore_crushed_purified",
+      "raw_value": "89.01917087581748",
+      "source_row": 694
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:16s}",
+      "target_item": "mio_icif:reactor/item_reactor_mox_quad_deplete",
+      "raw_value": "373187.0288996266",
+      "source_row": 712
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:13s}",
+      "target_item": "mio_icif:reactor/item_reactor_uranium_quad_deplete",
+      "raw_value": "13999.50094428582",
+      "source_row": 713
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:14s}",
+      "target_item": "mio_icif:hugenerator/block_rt_heat_generator",
+      "raw_value": "Infinity",
+      "source_row": 726
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:generator/block_rt_generator",
+      "raw_value": "Infinity",
+      "source_row": 727
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:13s}",
+      "target_item": "mio_icif:resource/item_coal_fabre",
+      "raw_value": "Infinity",
+      "source_row": 730
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:14s}",
+      "target_item": "mio_icif:resource/item_coal_mesh",
+      "raw_value": "Infinity",
+      "source_row": 731
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:23s}",
+      "target_item": "mio_icif:reactor/block_reactor_access_hatch",
+      "raw_value": "6234.849577424509",
+      "source_row": 736
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:24s}",
+      "target_item": "mio_icif:reactor/block_reactor_chamber",
+      "raw_value": "Infinity",
+      "source_row": 737
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:85s}",
+      "target_item": "mio_icif:producer/block_lapis_reactor_coolant_injector",
+      "raw_value": "Infinity",
+      "source_row": 738
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:84s}",
+      "target_item": "mio_icif:producer/block_redstone_reactor_coolant_injector",
+      "raw_value": "Infinity",
+      "source_row": 739
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:25s}",
+      "target_item": "mio_icif:reactor/block_reactor_fluid_port",
+      "raw_value": "Infinity",
+      "source_row": 740
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:14s}",
+      "target_item": "mio_icif:reactor/block_reactor_vessel",
+      "raw_value": "612.3689494653148",
+      "source_row": 744
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:26s}",
+      "target_item": "mio_icif:reactor/block_reactor_redstone_port",
+      "raw_value": "4979.67666216644",
+      "source_row": 745
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:48s}",
+      "target_item": "mio_icif:producer/block_recycler_elc",
+      "raw_value": "Infinity",
+      "source_row": 746
+    },
+    {
+      "legacy_stack": "{id:\"ic2:reinforced_door\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:build/block_alloy_door",
+      "raw_value": "1904.1718358939197",
+      "source_row": 771
+    },
+    {
+      "legacy_stack": "{id:\"ic2:glass\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:build/block_alloy_glass",
+      "raw_value": "139.8034074307841",
+      "source_row": 772
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:63s}",
+      "target_item": "mio_icif:producer/block_replicator_elc",
+      "raw_value": "Infinity",
+      "source_row": 774
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_rubber",
+      "raw_value": "10071.449999999999",
+      "source_row": 779
+    },
+    {
+      "legacy_stack": "{id:\"ic2:sapling\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:block_rub_sapling",
+      "raw_value": "357182.2701030928",
+      "source_row": 783
+    },
+    {
+      "legacy_stack": "{id:\"ic2:rubber_wood\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:block_rub_wood",
+      "raw_value": "93036.19817400645",
+      "source_row": 784
+    },
+    {
+      "legacy_stack": "{id:\"ic2:scaffold\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:build/block_scaffold_wood",
+      "raw_value": "Infinity",
+      "source_row": 790
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:64s}",
+      "target_item": "mio_icif:producer/block_scanner_elc",
+      "raw_value": "Infinity",
+      "source_row": 791
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:23s}",
+      "target_item": "mio_icif:normal/item_scrap",
+      "raw_value": "17.10333333333333",
+      "source_row": 792
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:7s}",
+      "target_item": "mio_icif:generator/block_semifluid_generator",
+      "raw_value": "Infinity",
+      "source_row": 797
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:29s}",
+      "target_item": "mio_icif:resource/item_iron_shaft",
+      "raw_value": "686.7277618977439",
+      "source_row": 799
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:30s}",
+      "target_item": "mio_icif:resource/item_adviron_shaft",
+      "raw_value": "686.7277618977439",
+      "source_row": 800
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:13s}",
+      "target_item": "mio_icif:resource/item_silicondioxide_dust",
+      "raw_value": "13919.878168929472",
+      "source_row": 806
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:14s}",
+      "target_item": "mio_icif:resource/item_silver_dust",
+      "raw_value": "4757.5883547196345",
+      "source_row": 808
+    },
+    {
+      "legacy_stack": "{id:\"ic2:ingot\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:resource/item_silver_ingot",
+      "raw_value": "4771.5883547196345",
+      "source_row": 809
+    },
+    {
+      "legacy_stack": "{id:\"ic2:single_use_battery\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_su_bat",
+      "raw_value": "11465.819999999998",
+      "source_row": 810
+    },
+    {
+      "legacy_stack": "{id:\"ic2:misc_resource\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:normal/item_slag",
+      "raw_value": "74.63641798863821",
+      "source_row": 811
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:33s}",
+      "target_item": "mio_icif:producer/block_solar_distiller",
+      "raw_value": "Infinity",
+      "source_row": 822
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:8s}",
+      "target_item": "mio_icif:generator/block_solar_generator",
+      "raw_value": "Infinity",
+      "source_row": 824
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:15s}",
+      "target_item": "mio_icif:hugenerator/block_solid_heat_generator",
+      "raw_value": "Infinity",
+      "source_row": 826
+    },
+    {
+      "legacy_stack": "{id:\"ic2:static_boots\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_static_boots",
+      "raw_value": "Infinity",
+      "source_row": 840
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:34s}",
+      "target_item": "mio_icif:producer/block_steam_generator",
+      "raw_value": "Infinity",
+      "source_row": 842
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:35s}",
+      "target_item": "mio_icif:normal/item_steam_turbine_blade",
+      "raw_value": "686.0610952310772",
+      "source_row": 846
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:8s}",
+      "target_item": "mio_icif:block_adviron",
+      "raw_value": "672.7277618977439",
+      "source_row": 847
+    },
+    {
+      "legacy_stack": "{id:\"ic2:ingot\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:resource/item_adviron_ingot",
+      "raw_value": "74.63641798863821",
+      "source_row": 848
+    },
+    {
+      "legacy_stack": "{id:\"ic2:casing\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:resource/item_adviron_casing",
+      "raw_value": "45.151542327652436",
+      "source_row": 849
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:7s}",
+      "target_item": "mio_icif:resource/item_adviron_plate",
+      "raw_value": "76.30308465530487",
+      "source_row": 850
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:33s}",
+      "target_item": "mio_icif:resource/item_adviron_rotor_blade",
+      "raw_value": "682.7277618977439",
+      "source_row": 851
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:114s}",
+      "target_item": "mio_icif:build/block_adviron_storage",
+      "raw_value": "Infinity",
+      "source_row": 852
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:133s}",
+      "target_item": "mio_icif:build/block_adviron_tank",
+      "raw_value": "Infinity",
+      "source_row": 853
+    },
+    {
+      "legacy_stack": "{id:\"ic2:misc_resource\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:resource/item_harz",
+      "raw_value": "3331411.5576923075",
+      "source_row": 857
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:9s}",
+      "target_item": "mio_icif:generator/block_stirling_generator",
+      "raw_value": "Infinity",
+      "source_row": 858
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:19s}",
+      "target_item": "mio_icif:kugenerator/block_stirling_kinetic_generator",
+      "raw_value": "Infinity",
+      "source_row": 859
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:15s}",
+      "target_item": "mio_icif:resource/item_stone_dust",
+      "raw_value": "15.0",
+      "source_row": 865
+    },
+    {
+      "legacy_stack": "{id:\"ic2:mug\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_empty_mug",
+      "raw_value": "Infinity",
+      "source_row": 867
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:16s}",
+      "target_item": "mio_icif:resource/item_sulfur_dust",
+      "raw_value": "1441.3533279620901",
+      "source_row": 876
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:39s}",
+      "target_item": "mio_icif:producer/block_teleporter_elc",
+      "raw_value": "Infinity",
+      "source_row": 887
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:40s}",
+      "target_item": "mio_icif:producer/block_terra_elc",
+      "raw_value": "Infinity",
+      "source_row": 889
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:41s}",
+      "target_item": "mio_icif:producer/block_tesla",
+      "raw_value": "Infinity",
+      "source_row": 890
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:52s}",
+      "target_item": "mio_icif:producer/block_centrifuge_elc",
+      "raw_value": "Infinity",
+      "source_row": 891
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:9s}",
+      "target_item": "mio_icif:block_tin",
+      "raw_value": "802.1725378823573",
+      "source_row": 893
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:10s}",
+      "target_item": "mio_icif:normal/item_tin_empty_can",
+      "raw_value": "66.34291877124207",
+      "source_row": 895
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:17s}",
+      "target_item": "mio_icif:resource/item_tin_dust",
+      "raw_value": "89.01917087581748",
+      "source_row": 896
+    },
+    {
+      "legacy_stack": "{id:\"ic2:ingot\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:resource/item_ingot_tin",
+      "raw_value": "89.01917087581748",
+      "source_row": 897
+    },
+    {
+      "legacy_stack": "{id:\"ic2:casing\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:resource/item_tin_casing",
+      "raw_value": "52.342918771242076",
+      "source_row": 898
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:block_ore_tin",
+      "raw_value": "136.03834175163496",
+      "source_row": 899
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plate\",Count:1b,Damage:8s}",
+      "target_item": "mio_icif:resource/item_tin_plate",
+      "raw_value": "90.68583754248415",
+      "source_row": 900
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:18s}",
+      "target_item": "mio_icif:resource/item_bronze_dust_small",
+      "raw_value": "Infinity",
+      "source_row": 902
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:19s}",
+      "target_item": "mio_icif:resource/item_copper_dust_small",
+      "raw_value": "38.253934947835226",
+      "source_row": 903
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:20s}",
+      "target_item": "mio_icif:resource/item_golden_dust_small",
+      "raw_value": "74.63641798863821",
+      "source_row": 906
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:21s}",
+      "target_item": "mio_icif:resource/item_iron_dust_small",
+      "raw_value": "37.31820899431911",
+      "source_row": 907
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:22s}",
+      "target_item": "mio_icif:resource/item_lapi_dust_small",
+      "raw_value": "Infinity",
+      "source_row": 908
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:23s}",
+      "target_item": "mio_icif:resource/item_lead_dust_small",
+      "raw_value": "412.2509462054379",
+      "source_row": 909
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:24s}",
+      "target_item": "mio_icif:resource/item_lithium_dust_small",
+      "raw_value": "Infinity",
+      "source_row": 910
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:25s}",
+      "target_item": "mio_icif:resource/item_obsidian_dust_small",
+      "raw_value": "Infinity",
+      "source_row": 911
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:26s}",
+      "target_item": "mio_icif:resource/item_silver_dust_small",
+      "raw_value": "528.5098171910705",
+      "source_row": 913
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:27s}",
+      "target_item": "mio_icif:resource/item_sulfur_dust_small",
+      "raw_value": "160.03925866245447",
+      "source_row": 914
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dust\",Count:1b,Damage:28s}",
+      "target_item": "mio_icif:resource/item_tin_dust_small",
+      "raw_value": "44.50958543790874",
+      "source_row": 915
+    },
+    {
+      "legacy_stack": "{id:\"ic2:tool_box\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_toolbox",
+      "raw_value": "Infinity",
+      "source_row": 918
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:10s}",
+      "target_item": "mio_icif:block_uranium",
+      "raw_value": "1258.7528386163137",
+      "source_row": 933
+    },
+    {
+      "legacy_stack": "{id:\"ic2:resource\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:block_ore_uran",
+      "raw_value": "1607.0037848217517",
+      "source_row": 934
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:10s}",
+      "target_item": "mio_icif:generator/block_water_generator",
+      "raw_value": "Infinity",
+      "source_row": 938
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:20s}",
+      "target_item": "mio_icif:kugenerator/block_water_kinetic_generator",
+      "raw_value": "Infinity",
+      "source_row": 939
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crop_res\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:normal/item_weed",
+      "raw_value": "Infinity",
+      "source_row": 940
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:90s}",
+      "target_item": "mio_icif:producer/block_weighted_fluid_distributor_elc",
+      "raw_value": "Infinity",
+      "source_row": 942
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:91s}",
+      "target_item": "mio_icif:producer/block_item_distributor_elc",
+      "raw_value": "Infinity",
+      "source_row": 943
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:11s}",
+      "target_item": "mio_icif:generator/block_wind_generator",
+      "raw_value": "Infinity",
+      "source_row": 959
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:21s}",
+      "target_item": "mio_icif:kugenerator/block_wind_kinetic_generator",
+      "raw_value": "Infinity",
+      "source_row": 960
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:31s}",
+      "target_item": "mio_icif:resource/item_wood_rotor_blade",
+      "raw_value": "10634.183853615925",
+      "source_row": 962
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:111s}",
+      "target_item": "mio_icif:build/block_wood_storage",
+      "raw_value": "Infinity",
+      "source_row": 968
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:build/item_painter_black",
+      "raw_value": "Infinity",
+      "source_row": 58
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:build/item_painter_blue",
+      "raw_value": "Infinity",
+      "source_row": 83
+    },
+    {
+      "legacy_stack": "{id:\"ic2:bronze_axe\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_bronze_axe",
+      "raw_value": "Infinity",
+      "source_row": 104
+    },
+    {
+      "legacy_stack": "{id:\"ic2:bronze_boots\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_bronze_boots",
+      "raw_value": "Infinity",
+      "source_row": 106
+    },
+    {
+      "legacy_stack": "{id:\"ic2:bronze_chestplate\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_bronze_chestplate",
+      "raw_value": "Infinity",
+      "source_row": 107
+    },
+    {
+      "legacy_stack": "{id:\"ic2:bronze_helmet\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_bronze_helmet",
+      "raw_value": "Infinity",
+      "source_row": 109
+    },
+    {
+      "legacy_stack": "{id:\"ic2:bronze_hoe\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_bronze_hoe",
+      "raw_value": "Infinity",
+      "source_row": 110
+    },
+    {
+      "legacy_stack": "{id:\"ic2:bronze_leggings\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_bronze_leggings",
+      "raw_value": "Infinity",
+      "source_row": 113
+    },
+    {
+      "legacy_stack": "{id:\"ic2:bronze_pickaxe\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_bronze_pickaxe",
+      "raw_value": "Infinity",
+      "source_row": 114
+    },
+    {
+      "legacy_stack": "{id:\"ic2:bronze_shovel\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_bronze_shovel",
+      "raw_value": "Infinity",
+      "source_row": 117
+    },
+    {
+      "legacy_stack": "{id:\"ic2:bronze_sword\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_bronze_sword",
+      "raw_value": "Infinity",
+      "source_row": 119
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:build/item_painter_brown",
+      "raw_value": "Infinity",
+      "source_row": 126
+    },
+    {
+      "legacy_stack": "{id:\"ic2:mug\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:normal/item_coffee_2",
+      "raw_value": "Infinity",
+      "source_row": 176
+    },
+    {
+      "legacy_stack": "{id:\"ic2:mug\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:normal/item_coffee_0",
+      "raw_value": "Infinity",
+      "source_row": 183
+    },
+    {
+      "legacy_stack": "{id:\"ic2:containment_plating\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_explosive_plate",
+      "raw_value": "1645.7202206772631",
+      "source_row": 193
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crushed\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:resource/item_uran_ore_crushed",
+      "raw_value": "810.5018924108758",
+      "source_row": 221
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crystal_memory\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_crystal_memory",
+      "raw_value": "4.33779910852891E7",
+      "source_row": 222
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cutter\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_cutter",
+      "raw_value": "Infinity",
+      "source_row": 224
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:build/item_painter_cyan",
+      "raw_value": "Infinity",
+      "source_row": 231
+    },
+    {
+      "legacy_stack": "{id:\"ic2:mug\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:normal/item_coffee_1",
+      "raw_value": "Infinity",
+      "source_row": 239
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:build/item_painter_gray",
+      "raw_value": "Infinity",
+      "source_row": 240
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dynamite\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_dynamite",
+      "raw_value": "57813.512823275596",
+      "source_row": 283
+    },
+    {
+      "legacy_stack": "{id:\"ic2:remote\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_remote",
+      "raw_value": "Infinity",
+      "source_row": 284
+    },
+    {
+      "legacy_stack": "{id:\"ic2:meter\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_meter",
+      "raw_value": "Infinity",
+      "source_row": 286
+    },
+    {
+      "legacy_stack": "{id:\"ic2:upgrade\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:upgrade/ejector_upgrade",
+      "raw_value": "Infinity",
+      "source_row": 290
+    },
+    {
+      "legacy_stack": "{id:\"ic2:upgrade\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:upgrade/energy_storage_upgrade",
+      "raw_value": "Infinity",
+      "source_row": 319
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:resource/item_uran",
+      "raw_value": "3313.0075696435033",
+      "source_row": 322
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crop_res\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:resource/item_fertilizer",
+      "raw_value": "35.20666666790843",
+      "source_row": 328
+    },
+    {
+      "legacy_stack": "{id:\"ic2:upgrade\",Count:1b,Damage:8s}",
+      "target_item": "mio_icif:upgrade/fluid_ejector_upgrade",
+      "raw_value": "Infinity",
+      "source_row": 335
+    },
+    {
+      "legacy_stack": "{id:\"ic2:upgrade\",Count:1b,Damage:9s}",
+      "target_item": "mio_icif:upgrade/fluid_pulling_upgrade",
+      "raw_value": "Infinity",
+      "source_row": 336
+    },
+    {
+      "legacy_stack": "{id:\"ic2:forge_hammer\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_hammer",
+      "raw_value": "Infinity",
+      "source_row": 339
+    },
+    {
+      "legacy_stack": "{id:\"ic2:frequency_transmitter\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_freq",
+      "raw_value": "70956.08824729972",
+      "source_row": 340
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:build/item_painter_green",
+      "raw_value": "Infinity",
+      "source_row": 395
+    },
+    {
+      "legacy_stack": "{id:\"ic2:hazmat_chestplate\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_hazmat_chestplate",
+      "raw_value": "Infinity",
+      "source_row": 405
+    },
+    {
+      "legacy_stack": "{id:\"ic2:hazmat_leggings\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_hazmat_leggings",
+      "raw_value": "Infinity",
+      "source_row": 406
+    },
+    {
+      "legacy_stack": "{id:\"ic2:heat_plating\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_heat_plate",
+      "raw_value": "1496.4926611604715",
+      "source_row": 410
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:7s}",
+      "target_item": "mio_icif:build/item_painter_light_blue",
+      "raw_value": "Infinity",
+      "source_row": 511
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:8s}",
+      "target_item": "mio_icif:build/item_painter_light_gray",
+      "raw_value": "Infinity",
+      "source_row": 526
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:9s}",
+      "target_item": "mio_icif:build/item_painter_lime",
+      "raw_value": "Infinity",
+      "source_row": 535
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:resource/item_mox",
+      "raw_value": "93109.8895584787",
+      "source_row": 547
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:10s}",
+      "target_item": "mio_icif:build/item_painter_magenta",
+      "raw_value": "Infinity",
+      "source_row": 556
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:11s}",
+      "target_item": "mio_icif:build/item_painter_orange",
+      "raw_value": "Infinity",
+      "source_row": 634
+    },
+    {
+      "legacy_stack": "{id:\"ic2:upgrade\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:upgrade/overclocker_upgrade",
+      "raw_value": "Infinity",
+      "source_row": 642
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:9s}",
+      "target_item": "mio_icif:resource/item_mox_pellet",
+      "raw_value": "Infinity",
+      "source_row": 649
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:10s}",
+      "target_item": "mio_icif:resource/item_rtg_pellet",
+      "raw_value": "96475.75423745428",
+      "source_row": 650
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:12s}",
+      "target_item": "mio_icif:build/item_painter_pink",
+      "raw_value": "Infinity",
+      "source_row": 660
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:resource/item_plutonium",
+      "raw_value": "30756.795888689274",
+      "source_row": 668
+    },
+    {
+      "legacy_stack": "{id:\"ic2:upgrade\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:upgrade/pulling_upgrade",
+      "raw_value": "Infinity",
+      "source_row": 682
+    },
+    {
+      "legacy_stack": "{id:\"ic2:purified\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:resource/item_uran_ore_crushed_purified",
+      "raw_value": "824.5018924108758",
+      "source_row": 695
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:13s}",
+      "target_item": "mio_icif:build/item_painter_purple",
+      "raw_value": "Infinity",
+      "source_row": 702
+    },
+    {
+      "legacy_stack": "{id:\"ic2:plating\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_plate",
+      "raw_value": "870.0963686617745",
+      "source_row": 743
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:14s}",
+      "target_item": "mio_icif:build/item_painter_red",
+      "raw_value": "Infinity",
+      "source_row": 753
+    },
+    {
+      "legacy_stack": "{id:\"ic2:upgrade\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:upgrade/redstone_inv_upgrade",
+      "raw_value": "Infinity",
+      "source_row": 767
+    },
+    {
+      "legacy_stack": "{id:\"ic2:rubber_boots\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_hazmat_boots",
+      "raw_value": "Infinity",
+      "source_row": 780
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:24s}",
+      "target_item": "mio_icif:normal/item_scrapbox",
+      "raw_value": "154.92999999999998",
+      "source_row": 793
+    },
+    {
+      "legacy_stack": "{id:\"ic2:hazmat_helmet\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_hazmat_helmet",
+      "raw_value": "Infinity",
+      "source_row": 794
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dynamite_sticky\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_sticky_dynamite",
+      "raw_value": "474240.082534814",
+      "source_row": 855
+    },
+    {
+      "legacy_stack": "{id:\"ic2:tfbp\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:env_template/evt_chilling",
+      "raw_value": "Infinity",
+      "source_row": 878
+    },
+    {
+      "legacy_stack": "{id:\"ic2:tfbp\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:env_template/evt_cultivation",
+      "raw_value": "Infinity",
+      "source_row": 879
+    },
+    {
+      "legacy_stack": "{id:\"ic2:tfbp\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:env_template/evt_desert",
+      "raw_value": "Infinity",
+      "source_row": 880
+    },
+    {
+      "legacy_stack": "{id:\"ic2:tfbp\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:env_template/evt_empty",
+      "raw_value": "Infinity",
+      "source_row": 881
+    },
+    {
+      "legacy_stack": "{id:\"ic2:tfbp\",Count:1b,Damage:4s}",
+      "target_item": "mio_icif:env_template/evt_flatification",
+      "raw_value": "Infinity",
+      "source_row": 882
+    },
+    {
+      "legacy_stack": "{id:\"ic2:tfbp\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:env_template/evt_irrigation",
+      "raw_value": "Infinity",
+      "source_row": 883
+    },
+    {
+      "legacy_stack": "{id:\"ic2:tfbp\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:env_template/evt_mushroom",
+      "raw_value": "Infinity",
+      "source_row": 884
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:7s}",
+      "target_item": "mio_icif:resource/item_plutonium_small",
+      "raw_value": "3417.310654298808",
+      "source_row": 912
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:5s}",
+      "target_item": "mio_icif:resource/item_uran_235_small",
+      "raw_value": "824.5018924108758",
+      "source_row": 916
+    },
+    {
+      "legacy_stack": "{id:\"ic2:upgrade\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:upgrade/transformer_upgrade",
+      "raw_value": "Infinity",
+      "source_row": 921
+    },
+    {
+      "legacy_stack": "{id:\"ic2:treetap\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_wooden_treetap",
+      "raw_value": "Infinity",
+      "source_row": 923
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:resource/item_uran_235",
+      "raw_value": "7421.517031697882",
+      "source_row": 931
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nuclear\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:resource/item_uran_238",
+      "raw_value": "139.75031540181263",
+      "source_row": 932
+    },
+    {
+      "legacy_stack": "{id:\"ic2:weeding_trowel\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_weeding_trowel",
+      "raw_value": "Infinity",
+      "source_row": 941
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:15s}",
+      "target_item": "mio_icif:build/item_painter_white",
+      "raw_value": "Infinity",
+      "source_row": 953
+    },
+    {
+      "legacy_stack": "{id:\"ic2:wrench\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_wrench",
+      "raw_value": "Infinity",
+      "source_row": 972
+    },
+    {
+      "legacy_stack": "{id:\"ic2:painter\",Count:1b,Damage:16s}",
+      "target_item": "mio_icif:build/item_painter_yellow",
+      "raw_value": "Infinity",
+      "source_row": 979
+    },
+    {
+      "legacy_stack": "{id:\"ic2:advanced_re_battery\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_advbat_lev0",
+      "raw_value": "22366.590588398336",
+      "source_row": 2000002
+    },
+    {
+      "legacy_stack": "{id:\"ic2:foam_sprayer\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:build/item_cf_sprayer",
+      "raw_value": "Infinity",
+      "source_row": 2000009
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:6s}",
+      "target_item": "mio_icif:resource/item_motor",
+      "raw_value": "Infinity",
+      "source_row": 2000025
+    },
+    {
+      "legacy_stack": "{id:\"ic2:electric_wrench\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_wrench_elc",
+      "raw_value": "Infinity",
+      "source_row": 2000027
+    },
+    {
+      "legacy_stack": "{id:\"ic2:energy_crystal\",Count:1b,Damage:27s}",
+      "target_item": "mio_icif:normal/item_crystal_lev0",
+      "raw_value": "10110.262572949734",
+      "source_row": 2000029
+    },
+    {
+      "legacy_stack": "{id:\"ic2:lapotron_crystal\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_lapotron_crystal_lev0",
+      "raw_value": "176917.53749335685",
+      "source_row": 2000035
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nano_chestplate\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_nano_chestplate",
+      "raw_value": "Infinity",
+      "source_row": 2000049
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nano_boots\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_nano_boots",
+      "raw_value": "Infinity",
+      "source_row": 2000050
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nano_helmet\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_nano_helmet",
+      "raw_value": "Infinity",
+      "source_row": 2000051
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nano_leggings\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_nano_leggings",
+      "raw_value": "Infinity",
+      "source_row": 2000052
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nightvision_goggles\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_nightvision_goggles",
+      "raw_value": "620371.770064578",
+      "source_row": 2000055
+    },
+    {
+      "legacy_stack": "{id:\"ic2:obscurator\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:build/item_obscurator",
+      "raw_value": "145473.687347161",
+      "source_row": 2000058
+    },
+    {
+      "legacy_stack": "{id:\"ic2:quantum_helmet\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_quantum_helmet",
+      "raw_value": "Infinity",
+      "source_row": 2000062
+    },
+    {
+      "legacy_stack": "{id:\"ic2:quantum_leggings\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_quantum_leggings",
+      "raw_value": "Infinity",
+      "source_row": 2000063
+    },
+    {
+      "legacy_stack": "{id:\"ic2:re_battery\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_bat_lev0",
+      "raw_value": "Infinity",
+      "source_row": 2000064
+    },
+    {
+      "legacy_stack": "{id:\"ic2:crafting\",Count:1b,Damage:36s}",
+      "target_item": "mio_icif:normal/item_steam_turbin",
+      "raw_value": "Infinity",
+      "source_row": 2000068
+    },
+    {
+      "legacy_stack": "{id:\"ic2:fluid_cell\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:cell/item_cell_empty",
+      "raw_value": "Infinity",
+      "source_row": 2000069
+    },
+    {
+      "legacy_stack": "{id:\"ic2:boat\",Count:1b,Damage:2s}",
+      "target_item": "mio_icif:normal/entity_coal_boat",
+      "raw_value": "Infinity",
+      "source_row": 141
+    },
+    {
+      "legacy_stack": "{id:\"ic2:boat\",Count:1b,Damage:3s}",
+      "target_item": "mio_icif:normal/entity_electric_boat",
+      "raw_value": "Infinity",
+      "source_row": 291
+    },
+    {
+      "legacy_stack": "{id:\"ic2:barrel\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:producer/block_barrel",
+      "raw_value": "Infinity",
+      "source_row": 305
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:62s}",
+      "target_item": "mio_icif:producer/block_pattern_storage",
+      "raw_value": "Infinity",
+      "source_row": 648
+    },
+    {
+      "legacy_stack": "{id:\"ic2:boat\",Count:1b,Damage:1s}",
+      "target_item": "mio_icif:normal/entity_rubber_boat",
+      "raw_value": "Infinity",
+      "source_row": 781
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:72s}",
+      "target_item": "mio_icif:wiring/block_bat_box",
+      "raw_value": "Infinity",
+      "source_row": 2000003
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:73s}",
+      "target_item": "mio_icif:wiring/block_cesu",
+      "raw_value": "77611.1528641971",
+      "source_row": 2000007
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:68s}",
+      "target_item": "mio_icif:wiring/block_batbox_charger",
+      "raw_value": "Infinity",
+      "source_row": 2000011
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:69s}",
+      "target_item": "mio_icif:wiring/block_cesu_charger",
+      "raw_value": "Infinity",
+      "source_row": 2000012
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:70s}",
+      "target_item": "mio_icif:wiring/block_mfe_charger",
+      "raw_value": "Infinity",
+      "source_row": 2000013
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:71s}",
+      "target_item": "mio_icif:wiring/block_mfsu_charger",
+      "raw_value": "Infinity",
+      "source_row": 2000014
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:16s}",
+      "target_item": "mio_icif:kugenerator/block_kinetic_generator_elc",
+      "raw_value": "Infinity",
+      "source_row": 2000024
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:74s}",
+      "target_item": "mio_icif:wiring/block_mfe",
+      "raw_value": "Infinity",
+      "source_row": 2000036
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:75s}",
+      "target_item": "mio_icif:wiring/block_mfsu",
+      "raw_value": "Infinity",
+      "source_row": 2000037
+    },
+    {
+      "legacy_stack": "{id:\"ic2:te\",Count:1b,Damage:18s}",
+      "target_item": "mio_icif:producer/block_steam_kinetic_generator",
+      "raw_value": "Infinity",
+      "source_row": 2000067
+    },
+    {
+      "legacy_stack": "{id:\"ic2:advanced_charging_re_battery\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_advchargebat_lev0",
+      "raw_value": "Infinity",
+      "source_row": 2000001,
+      "target_stack": "{id:\"mio_icif:normal/item_advchargebat_lev0\",count:1,components:{\"minecraft:damage\":400000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:chainsaw\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_iron_chainsaw",
+      "raw_value": "Infinity",
+      "source_row": 2000010,
+      "target_stack": "{id:\"mio_icif:item_tool_iron_chainsaw\",count:1,components:{\"minecraft:damage\":30000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:charging_energy_crystal\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_crystal_chargebat_lev0",
+      "raw_value": "Infinity",
+      "source_row": 2000015,
+      "target_stack": "{id:\"mio_icif:normal/item_crystal_chargebat_lev0\",count:1,components:{\"minecraft:damage\":4000000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:charging_lapotron_crystal\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_lamacrystal_chargebat_lev0",
+      "raw_value": "Infinity",
+      "source_row": 2000016,
+      "target_stack": "{id:\"mio_icif:normal/item_lamacrystal_chargebat_lev0\",count:1,components:{\"minecraft:damage\":40000000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:charging_re_battery\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_chargebat_lev0",
+      "raw_value": "Infinity",
+      "source_row": 2000017,
+      "target_stack": "{id:\"mio_icif:normal/item_chargebat_lev0\",count:1,components:{\"minecraft:damage\":40000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:electric_treetap\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_treetap_elc",
+      "raw_value": "Infinity",
+      "source_row": 2000026,
+      "target_stack": "{id:\"mio_icif:item_tool_treetap_elc\",count:1,components:{\"minecraft:damage\":5000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:iridium_drill\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_iridium_driller",
+      "raw_value": "Infinity",
+      "source_row": 2000033,
+      "target_stack": "{id:\"mio_icif:item_tool_iridium_driller\",count:1,components:{\"minecraft:damage\":1000000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:drill\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_iron_driller",
+      "raw_value": "Infinity",
+      "source_row": 2000042,
+      "target_stack": "{id:\"mio_icif:item_tool_iron_driller\",count:1,components:{\"minecraft:damage\":30000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:nano_saber\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_nanosaber",
+      "raw_value": "Infinity",
+      "source_row": 2000048,
+      "target_stack": "{id:\"mio_icif:item_tool_nanosaber\",count:1,components:{\"minecraft:damage\":160000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:scanner\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_od_scanner",
+      "raw_value": "184996.01285682071",
+      "source_row": 2000056,
+      "target_stack": "{id:\"mio_icif:item_tool_od_scanner\",count:1,components:{\"minecraft:damage\":100000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:advanced_scanner\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_ov_scanner",
+      "raw_value": "338501.82334017125",
+      "source_row": 2000057,
+      "target_stack": "{id:\"mio_icif:item_tool_ov_scanner\",count:1,components:{\"minecraft:damage\":1000000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:wind_meter\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_windmeter",
+      "raw_value": "Infinity",
+      "source_row": 2000075,
+      "target_stack": "{id:\"mio_icif:item_tool_windmeter\",count:1,components:{\"minecraft:damage\":10000}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:component_heat_vent\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_vent_spread",
+      "raw_value": "Infinity",
+      "source_row": 187,
+      "target_stack": "{count:1,id:\"mio_icif:reactor/item_reactor_vent_spread\",components:{}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:advanced_batpack\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_advbatpack",
+      "raw_value": "Infinity",
+      "source_row": 2000000,
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_advbatpack\",components:{}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:batpack\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_batpack",
+      "raw_value": "Infinity",
+      "source_row": 2000004,
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_batpack\",components:{}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cropnalyzer\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:normal/item_crop_analyzer",
+      "raw_value": "Infinity",
+      "source_row": 2000020,
+      "target_stack": "{components:{\"minecraft:damage\":100000},count:1,id:\"mio_icif:normal/item_crop_analyzer\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:diamond_drill\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_diamond_driller",
+      "raw_value": "Infinity",
+      "source_row": 2000021,
+      "target_stack": "{components:{\"minecraft:damage\":30000},count:1,id:\"mio_icif:item_tool_diamond_driller\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:jetpack_electric\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_jetpack_electric",
+      "raw_value": "Infinity",
+      "source_row": 2000023,
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_jetpack_electric\",components:{}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:energy_pack\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_energypack",
+      "raw_value": "Infinity",
+      "source_row": 2000030,
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_energypack\",components:{}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:mining_laser\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:item_tool_laser_miner",
+      "raw_value": "Infinity",
+      "source_row": 2000043,
+      "target_stack": "{components:{\"minecraft:damage\":300000},count:1,id:\"mio_icif:item_tool_laser_miner\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:quantum_chestplate\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_quantum_chestplate",
+      "raw_value": "Infinity",
+      "source_row": 2000060,
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_quantum_chestplate\",components:{}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:quantum_boots\",Count:1b,Damage:0s}",
+      "target_item": "mio_icif:armor/item_armor_quantum_boots",
+      "raw_value": "Infinity",
+      "source_row": 2000061,
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_quantum_boots\",components:{}}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:heat_storage\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_collant_simple",
+      "raw_value": "Infinity",
+      "source_row": 1,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_collant_simple\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:tri_heat_storage\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_collant_triple",
+      "raw_value": "Infinity",
+      "source_row": 4,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_collant_triple\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:hex_heat_storage\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_coolant_six",
+      "raw_value": "Infinity",
+      "source_row": 6,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_coolant_six\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:advanced_heat_exchanger\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_diamond_heat_switch",
+      "raw_value": "246489.87201311995",
+      "source_row": 21,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_diamond_heat_switch\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:advanced_heat_vent\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_diamond_vent",
+      "raw_value": "Infinity",
+      "source_row": 22,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_diamond_vent\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:component_heat_exchanger\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_heat_switch_spread",
+      "raw_value": "Infinity",
+      "source_row": 186,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_heat_switch_spread\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:0b,insulation:0b},Damage:0s}",
+      "target_item": "mio_icif:wiring/cable/block_cable_o",
+      "raw_value": "30.169289965223484",
+      "source_row": 203,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/cable/block_cable_o\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dual_mox_fuel_rod\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_mox_dual",
+      "raw_value": "Infinity",
+      "source_row": 281,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_mox_dual\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:dual_uranium_fuel_rod\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_uranium_dual",
+      "raw_value": "Infinity",
+      "source_row": 282,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_uranium_dual\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:5b,insulation:0b},Damage:5s}",
+      "target_item": "mio_icif:wiring/block_eu_detector_cable",
+      "raw_value": "Infinity",
+      "source_row": 285,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/block_eu_detector_cable\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:6b,insulation:0b},Damage:6s}",
+      "target_item": "mio_icif:wiring/block_eu_splitter_cable",
+      "raw_value": "Infinity",
+      "source_row": 287,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/block_eu_splitter_cable\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:mox_fuel_rod\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_mox_simple",
+      "raw_value": "93200.192643134",
+      "source_row": 344,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_mox_simple\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:uranium_fuel_rod\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_uranium_simple",
+      "raw_value": "3403.310654298808",
+      "source_row": 345,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_uranium_simple\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:1b,insulation:0b},Damage:1s}",
+      "target_item": "mio_icif:wiring/cable/block_glass_cable",
+      "raw_value": "1196.0337099699293",
+      "source_row": 352,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/cable/block_glass_cable\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:2b,insulation:0b},Damage:2s}",
+      "target_item": "mio_icif:wiring/cable/block_gold_cable",
+      "raw_value": "135.62745429776763",
+      "source_row": 357,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/cable/block_gold_cable\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:3b,insulation:0b},Damage:3s}",
+      "target_item": "mio_icif:wiring/cable/block_iron_cable",
+      "raw_value": "22.159104497159554",
+      "source_row": 402,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/cable/block_iron_cable\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:heat_exchanger\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_heat_switch",
+      "raw_value": "61516.39915277362",
+      "source_row": 408,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_heat_switch\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:heat_vent\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_vent",
+      "raw_value": "Infinity",
+      "source_row": 409,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_vent\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:0b,insulation:1b},Damage:0s}",
+      "target_item": "mio_icif:wiring/cable/block_cable",
+      "raw_value": "10102.619289965223",
+      "source_row": 421,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/cable/block_cable\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:2b,insulation:1b},Damage:2s}",
+      "target_item": "mio_icif:wiring/cable/block_gold_cable_1",
+      "raw_value": "10208.077454297767",
+      "source_row": 422,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/cable/block_gold_cable_1\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:3b,insulation:1b},Damage:3s}",
+      "target_item": "mio_icif:wiring/cable/block_iron_cable_1",
+      "raw_value": "10094.609104497158",
+      "source_row": 423,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/cable/block_iron_cable_1\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:4b,insulation:1b},Damage:4s}",
+      "target_item": "mio_icif:wiring/cable/block_tin_cable_1",
+      "raw_value": "10106.789723625272",
+      "source_row": 424,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/cable/block_tin_cable_1\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:lzh_condensator\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_condensator_lap",
+      "raw_value": "Infinity",
+      "source_row": 481,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_condensator_lap\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:neutron_reflector\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_reflector",
+      "raw_value": "506.1603544565176",
+      "source_row": 608,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_reflector\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:overclocked_heat_vent\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_golden_vent",
+      "raw_value": "Infinity",
+      "source_row": 641,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_golden_vent\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:quad_mox_fuel_rod\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_mox_quad",
+      "raw_value": "373187.0288996266",
+      "source_row": 714,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_mox_quad\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:quad_uranium_fuel_rod\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_uranium_quad",
+      "raw_value": "13999.50094428582",
+      "source_row": 715,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_uranium_quad\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:rsh_condensator\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_condensator",
+      "raw_value": "Infinity",
+      "source_row": 723,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_condensator\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:reactor_heat_exchanger\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_heat_switch_core",
+      "raw_value": "62142.79544527232",
+      "source_row": 741,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_heat_switch_core\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:reactor_heat_vent\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_vent_core",
+      "raw_value": "Infinity",
+      "source_row": 742,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_vent_core\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:thick_neutron_reflector\",Count:1b,tag:{advDmg:0},Damage:0s}",
+      "target_item": "mio_icif:reactor/item_reactor_thick_reflector",
+      "raw_value": "2416.514100637756",
+      "source_row": 892,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_thick_reflector\"}"
+    },
+    {
+      "legacy_stack": "{id:\"ic2:cable\",Count:1b,tag:{type:4b,insulation:0b},Damage:4s}",
+      "target_item": "mio_icif:wiring/cable/block_tin_cable",
+      "raw_value": "34.33972362527249",
+      "source_row": 894,
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/cable/block_tin_cable\"}"
+    },
+    {
+      "target_item": "mio_icif:resource/item_nano_living_metal",
+      "raw_value": "20000",
+      "source_row": 2000076
+    }
+  ]
+}

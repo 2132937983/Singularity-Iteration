@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "mio_icif:item/normal/item_crystal_chargebat_lev3"
+    }
+}

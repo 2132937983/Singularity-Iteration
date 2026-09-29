@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["TRT","RER","TRT"],
+  "key": {
+    "T": {"item": "minecraft:oak_sapling"},
+    "R": {"item": "mio_icif:normal/item_scrapbox"},
+    "E": {"tag": "c:dusts/energium"}
+  },
+  "result": {"id": "mio_icif:resource/item_plant_extract", "count": 1}
+}

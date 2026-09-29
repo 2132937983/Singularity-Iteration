@@ -1,0 +1,12 @@
+{
+    "variants": {
+        "lit=false,facing=north": { "model": "mio_icif:block/producer/block_solar_distiller" },
+        "lit=false,facing=south": { "model": "mio_icif:block/producer/block_solar_distiller", "y": 180 },
+        "lit=false,facing=east": { "model": "mio_icif:block/producer/block_solar_distiller", "y": 90 },
+        "lit=false,facing=west": { "model": "mio_icif:block/producer/block_solar_distiller", "y": 270 },
+        "lit=true,facing=north": { "model": "mio_icif:block/producer/block_solar_distiller_on" },
+        "lit=true,facing=south": { "model": "mio_icif:block/producer/block_solar_distiller_on", "y": 180 },
+        "lit=true,facing=east": { "model": "mio_icif:block/producer/block_solar_distiller_on", "y": 90 },
+        "lit=true,facing=west": { "model": "mio_icif:block/producer/block_solar_distiller_on", "y": 270 }
+    }
+}

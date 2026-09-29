@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "C C",
+    "C C",
+    "C C"
+  ],
+  "key": {
+    "C": {
+      "tag": "c:plates/bronze"
+    }
+  },
+  "result": {
+    "id": "mio_icif:pipe/fluid_pipe_bronze_large",
+    "count": 1
+  }
+}

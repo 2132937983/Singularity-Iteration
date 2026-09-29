@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "MCM",
+    "CSC",
+    "MCM"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:oilrig/block_oil_rig_core"
+    },
+    "S": {
+      "tag": "c:circuits/ultimate"
+    },
+    "M": {
+      "tag": "mio_icif:nano_living_metals"
+    }
+  },
+  "result": {
+    "id": "mio_icif:oilrig/block_dimension_oil_rig_core",
+    "count": 1
+  }
+}

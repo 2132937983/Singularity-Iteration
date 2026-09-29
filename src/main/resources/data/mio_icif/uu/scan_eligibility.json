@@ -1,0 +1,162 @@
+{
+  "schema": 2,
+  "denied_scan_items": [
+    "minecraft:milk_bucket",
+    "mio_icif:build/item_cf_sprayer",
+    "mio_icif:resource/item_motor",
+    "mio_icif:item_tool_wrench_elc",
+    "mio_icif:armor/item_armor_nano_chestplate",
+    "mio_icif:armor/item_armor_nano_boots",
+    "mio_icif:armor/item_armor_nano_helmet",
+    "mio_icif:armor/item_armor_nano_leggings",
+    "mio_icif:armor/item_armor_quantum_helmet",
+    "mio_icif:armor/item_armor_quantum_leggings",
+    "mio_icif:normal/item_bat_lev0",
+    "mio_icif:normal/item_steam_turbin",
+    "mio_icif:cell/item_cell_empty",
+    "mio_icif:wiring/block_bat_box",
+    "mio_icif:wiring/block_batbox_charger",
+    "mio_icif:wiring/block_cesu_charger",
+    "mio_icif:wiring/block_mfe_charger",
+    "mio_icif:wiring/block_mfsu_charger",
+    "mio_icif:kugenerator/block_kinetic_generator_elc",
+    "mio_icif:wiring/block_mfe",
+    "mio_icif:wiring/block_mfsu",
+    "mio_icif:producer/block_steam_kinetic_generator"
+  ],
+  "basis": "R99 normal scanner observations: existing milk bucket case 158 plus twelve exactly mapped canonical IC2 output identities documented in R102 denied-scan-eligibility-evidence.json. Each completed progress 3300, state 3, paid 844800 EU and retained one input. Only full registered SI defaults admitted by R102 are eligible; Infinity alone never grants scanning and component variants remain distinct. R105 adds nine canonical machine defaults supported by R99 natural paid scans and R104 pristine placement; see R105 identity-admission.json. R93-only Infinity entries do not gain scan eligibility. R108 adds ten exact empty prototypes: R99 paid natural denial and R108 ordinary visible 0 EU. Charged/default/other-component variants are not normalized. R109 adds nine exact empty equipment/tool identities from normal R109 tooltips and SI public-state observations; the R93-only component heat vent receives no scan eligibility. R133 adds fourteen exact R129 default prototypes only: fixed IC2 2.8.222 R130 natural scanners each reached state 3/progress 3300, paid 844800 EU and retained the original typed input. An internal failed-state pattern is not success or a storable output. Eighteen successful rows receive only finite mappings. Nuclear heat/wear/fuel-use variants and cable component variants remain unobserved and ineligible.",
+  "denied_scan_stacks": [
+    {
+      "target_item": "mio_icif:normal/item_advchargebat_lev0",
+      "target_stack": "{id:\"mio_icif:normal/item_advchargebat_lev0\",count:1,components:{\"minecraft:damage\":400000}}"
+    },
+    {
+      "target_item": "mio_icif:item_tool_iron_chainsaw",
+      "target_stack": "{id:\"mio_icif:item_tool_iron_chainsaw\",count:1,components:{\"minecraft:damage\":30000}}"
+    },
+    {
+      "target_item": "mio_icif:normal/item_crystal_chargebat_lev0",
+      "target_stack": "{id:\"mio_icif:normal/item_crystal_chargebat_lev0\",count:1,components:{\"minecraft:damage\":4000000}}"
+    },
+    {
+      "target_item": "mio_icif:normal/item_lamacrystal_chargebat_lev0",
+      "target_stack": "{id:\"mio_icif:normal/item_lamacrystal_chargebat_lev0\",count:1,components:{\"minecraft:damage\":40000000}}"
+    },
+    {
+      "target_item": "mio_icif:normal/item_chargebat_lev0",
+      "target_stack": "{id:\"mio_icif:normal/item_chargebat_lev0\",count:1,components:{\"minecraft:damage\":40000}}"
+    },
+    {
+      "target_item": "mio_icif:item_tool_treetap_elc",
+      "target_stack": "{id:\"mio_icif:item_tool_treetap_elc\",count:1,components:{\"minecraft:damage\":5000}}"
+    },
+    {
+      "target_item": "mio_icif:item_tool_iridium_driller",
+      "target_stack": "{id:\"mio_icif:item_tool_iridium_driller\",count:1,components:{\"minecraft:damage\":1000000}}"
+    },
+    {
+      "target_item": "mio_icif:item_tool_iron_driller",
+      "target_stack": "{id:\"mio_icif:item_tool_iron_driller\",count:1,components:{\"minecraft:damage\":30000}}"
+    },
+    {
+      "target_item": "mio_icif:item_tool_nanosaber",
+      "target_stack": "{id:\"mio_icif:item_tool_nanosaber\",count:1,components:{\"minecraft:damage\":160000}}"
+    },
+    {
+      "target_item": "mio_icif:item_tool_windmeter",
+      "target_stack": "{id:\"mio_icif:item_tool_windmeter\",count:1,components:{\"minecraft:damage\":10000}}"
+    },
+    {
+      "target_item": "mio_icif:armor/item_armor_advbatpack",
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_advbatpack\",components:{}}"
+    },
+    {
+      "target_item": "mio_icif:armor/item_armor_batpack",
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_batpack\",components:{}}"
+    },
+    {
+      "target_item": "mio_icif:normal/item_crop_analyzer",
+      "target_stack": "{components:{\"minecraft:damage\":100000},count:1,id:\"mio_icif:normal/item_crop_analyzer\"}"
+    },
+    {
+      "target_item": "mio_icif:item_tool_diamond_driller",
+      "target_stack": "{components:{\"minecraft:damage\":30000},count:1,id:\"mio_icif:item_tool_diamond_driller\"}"
+    },
+    {
+      "target_item": "mio_icif:armor/item_armor_jetpack_electric",
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_jetpack_electric\",components:{}}"
+    },
+    {
+      "target_item": "mio_icif:armor/item_armor_energypack",
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_energypack\",components:{}}"
+    },
+    {
+      "target_item": "mio_icif:item_tool_laser_miner",
+      "target_stack": "{components:{\"minecraft:damage\":300000},count:1,id:\"mio_icif:item_tool_laser_miner\"}"
+    },
+    {
+      "target_item": "mio_icif:armor/item_armor_quantum_chestplate",
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_quantum_chestplate\",components:{}}"
+    },
+    {
+      "target_item": "mio_icif:armor/item_armor_quantum_boots",
+      "target_stack": "{count:1,id:\"mio_icif:armor/item_armor_quantum_boots\",components:{}}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_collant_simple",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_collant_simple\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_collant_triple",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_collant_triple\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_coolant_six",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_coolant_six\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_diamond_vent",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_diamond_vent\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_heat_switch_spread",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_heat_switch_spread\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_mox_dual",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_mox_dual\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_uranium_dual",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_uranium_dual\"}"
+    },
+    {
+      "target_item": "mio_icif:wiring/block_eu_detector_cable",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/block_eu_detector_cable\"}"
+    },
+    {
+      "target_item": "mio_icif:wiring/block_eu_splitter_cable",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:wiring/block_eu_splitter_cable\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_vent",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_vent\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_condensator_lap",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_condensator_lap\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_golden_vent",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_golden_vent\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_condensator",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_condensator\"}"
+    },
+    {
+      "target_item": "mio_icif:reactor/item_reactor_vent_core",
+      "target_stack": "{components:{},count:1,id:\"mio_icif:reactor/item_reactor_vent_core\"}"
+    }
+  ]
+}

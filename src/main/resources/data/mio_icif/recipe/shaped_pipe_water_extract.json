@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "CPC",
+    " C "
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:resource/item_copper_casing"
+    },
+    "P": {
+      "tag": "c:ingots/copper"
+    }
+  },
+  "result": {
+    "id": "mio_icif:pipe/block_pipe_water_extract",
+    "count": 1
+  }
+}

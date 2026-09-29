@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "mio_icif:item/item_nanosaber_deactive"
+  },
+  "overrides": [
+    {"predicate": {"mio_icif:nanosaber_active": 1}, "model": "mio_icif:item/item_tool_nanosaber_active"}
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mio_icif:item/reactor/item_reactor_uranium_dual"
+  }
+}

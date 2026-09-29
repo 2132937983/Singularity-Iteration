@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["UUU","USU","UUU"],
+  "key": {
+    "S":{"item":"mio_icif:resource/item_sunnarium"},
+    "U":{"item":"mio_icif:resource/item_irradiant_uranium_ingot"}
+  },
+  "result":{"id":"mio_icif:resource/item_enriched_sunnarium","count":1}
+}

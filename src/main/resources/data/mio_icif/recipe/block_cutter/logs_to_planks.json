@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:block_cutter",
+  "energypertick": 2,
+  "hardness": 1,
+  "ingredient": {
+    "tag": "minecraft:logs"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 6,
+    "id": "minecraft:oak_planks"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "reinforced=false,disguised=false": { "model": "mio_icif:block/build/block_construction_foam" },
+    "reinforced=false,disguised=true": { "model": "mio_icif:block/build/block_construction_foam" },
+    "reinforced=true,disguised=false": { "model": "mio_icif:block/build/block_construction_foam_reinforced" },
+    "reinforced=true,disguised=true": { "model": "mio_icif:block/build/block_construction_foam_reinforced" }
+  }
+}

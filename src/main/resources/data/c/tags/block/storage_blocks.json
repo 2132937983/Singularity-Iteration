@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:block_tin",
+    "mio_icif:block_uranium",
+    "mio_icif:block_lead",
+    "mio_icif:block_raw_tin",
+    "mio_icif:block_raw_uranium",
+    "mio_icif:block_raw_lead"
+  ]
+}

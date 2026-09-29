@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mio_icif:block/build/block_alloy_glass"
+    }
+  }
+}

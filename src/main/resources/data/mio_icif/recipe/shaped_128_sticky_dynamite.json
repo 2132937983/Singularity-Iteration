@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "DDD",
+    "DRD",
+    "DDD"
+  ],
+  "key": {
+    "D": {
+      "item": "mio_icif:normal/item_dynamite"
+    },
+    "R": {
+      "item": "mio_icif:resource/item_harz"
+    }
+  },
+  "result": {
+    "id": "mio_icif:normal/item_sticky_dynamite",
+    "count": 8
+  }
+}

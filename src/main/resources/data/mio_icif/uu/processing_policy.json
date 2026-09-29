@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "raw_overheads": {
+    "SMELTING": 14.0,
+    "POWDER": 14.0,
+    "COMPRESSOR": 14.0,
+    "EXTRACTOR": 14.0,
+    "ROLLING": 14.0,
+    "CUTTING": 14.0,
+    "EXTRUDING": 14.0
+  },
+  "observed_sand": true,
+  "basis": "R93/R99 ordinary sand/glass and clay/brick smelting observations; R101/R102 fixed IC2 2.8.222 ordinary public recipe/config blackbox: six machine families, empty-filter no-recipe control plus seeds 2 and 5, quantities 1->1 and 2->3, stable tick40/300/600 dumps establish 14 raw overhead per operation before output division. Item-only fixed recipes; container/fluid/custom matching and full dynamic config parity remain unsupported. See processing-reference-equations.json."
+}

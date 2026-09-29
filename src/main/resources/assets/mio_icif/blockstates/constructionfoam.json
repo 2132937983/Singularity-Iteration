@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "level=0": { "model": "mio_icif:block/constructionfoam" },
+    "level=1": { "model": "mio_icif:block/constructionfoam" },
+    "level=2": { "model": "mio_icif:block/constructionfoam" },
+    "level=3": { "model": "mio_icif:block/constructionfoam" },
+    "level=4": { "model": "mio_icif:block/constructionfoam" },
+    "level=5": { "model": "mio_icif:block/constructionfoam" },
+    "level=6": { "model": "mio_icif:block/constructionfoam" },
+    "level=7": { "model": "mio_icif:block/constructionfoam" },
+    "level=8": { "model": "mio_icif:block/constructionfoam" },
+    "level=9": { "model": "mio_icif:block/constructionfoam" },
+    "level=10": { "model": "mio_icif:block/constructionfoam" },
+    "level=11": { "model": "mio_icif:block/constructionfoam" },
+    "level=12": { "model": "mio_icif:block/constructionfoam" },
+    "level=13": { "model": "mio_icif:block/constructionfoam" },
+    "level=14": { "model": "mio_icif:block/constructionfoam" },
+    "level=15": { "model": "mio_icif:block/constructionfoam" }
+  }
+}

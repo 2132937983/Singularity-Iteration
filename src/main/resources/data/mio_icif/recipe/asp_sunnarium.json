@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["SSS","SSS","SSS"],
+  "key": {
+    "S":{"item":"mio_icif:resource/item_sunnarium_small"}
+  },
+  "result":{"id":"mio_icif:resource/item_sunnarium","count":1}
+}

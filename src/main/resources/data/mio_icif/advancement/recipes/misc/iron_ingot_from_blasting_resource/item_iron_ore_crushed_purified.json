@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_resource/item_iron_ore_crushed_purified": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:resource/item_iron_ore_crushed_purified"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:iron_ingot_from_blasting_resource/item_iron_ore_crushed_purified"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_resource/item_iron_ore_crushed_purified"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:iron_ingot_from_blasting_resource/item_iron_ore_crushed_purified"
+    ]
+  }
+}

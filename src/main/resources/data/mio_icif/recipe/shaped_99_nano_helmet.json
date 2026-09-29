@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CcC",
+    "CGC"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:resource/item_carbon_plate"
+    },
+    "c": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    },
+    "G": {
+      "item": "mio_icif:armor/item_armor_nightvision_goggles"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_nano_helmet",
+    "count": 1
+  }
+}

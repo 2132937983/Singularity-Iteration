@@ -1,0 +1,252 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "size": "tiny"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_tiny_center"
+      }
+    },
+    {
+      "when": {
+        "size": "tiny",
+        "down": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_tiny_down"
+      }
+    },
+    {
+      "when": {
+        "size": "tiny",
+        "up": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_tiny_up"
+      }
+    },
+    {
+      "when": {
+        "size": "tiny",
+        "north": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_tiny_north"
+      }
+    },
+    {
+      "when": {
+        "size": "tiny",
+        "south": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_tiny_south"
+      }
+    },
+    {
+      "when": {
+        "size": "tiny",
+        "west": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_tiny_west"
+      }
+    },
+    {
+      "when": {
+        "size": "tiny",
+        "east": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_tiny_east"
+      }
+    },
+    {
+      "when": {
+        "size": "small"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_small_center"
+      }
+    },
+    {
+      "when": {
+        "size": "small",
+        "down": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_small_down"
+      }
+    },
+    {
+      "when": {
+        "size": "small",
+        "up": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_small_up"
+      }
+    },
+    {
+      "when": {
+        "size": "small",
+        "north": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_small_north"
+      }
+    },
+    {
+      "when": {
+        "size": "small",
+        "south": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_small_south"
+      }
+    },
+    {
+      "when": {
+        "size": "small",
+        "west": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_small_west"
+      }
+    },
+    {
+      "when": {
+        "size": "small",
+        "east": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_small_east"
+      }
+    },
+    {
+      "when": {
+        "size": "medium"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_medium_center"
+      }
+    },
+    {
+      "when": {
+        "size": "medium",
+        "down": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_medium_down"
+      }
+    },
+    {
+      "when": {
+        "size": "medium",
+        "up": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_medium_up"
+      }
+    },
+    {
+      "when": {
+        "size": "medium",
+        "north": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_medium_north"
+      }
+    },
+    {
+      "when": {
+        "size": "medium",
+        "south": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_medium_south"
+      }
+    },
+    {
+      "when": {
+        "size": "medium",
+        "west": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_medium_west"
+      }
+    },
+    {
+      "when": {
+        "size": "medium",
+        "east": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_medium_east"
+      }
+    },
+    {
+      "when": {
+        "size": "large"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_large_center"
+      }
+    },
+    {
+      "when": {
+        "size": "large",
+        "down": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_large_down"
+      }
+    },
+    {
+      "when": {
+        "size": "large",
+        "up": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_large_up"
+      }
+    },
+    {
+      "when": {
+        "size": "large",
+        "north": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_large_north"
+      }
+    },
+    {
+      "when": {
+        "size": "large",
+        "south": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_large_south"
+      }
+    },
+    {
+      "when": {
+        "size": "large",
+        "west": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_large_west"
+      }
+    },
+    {
+      "when": {
+        "size": "large",
+        "east": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/fluid_large_east"
+      }
+    }
+  ]
+}

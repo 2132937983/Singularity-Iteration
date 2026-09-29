@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["GNG", "EIE", "GNG"],
+  "key": {
+    "G": {"tag": "c:casings/titanium"},
+    "N": {"tag": "c:plates/niobium_titanium"},
+    "E": {"item": "mio_icif:reactor/item_reactor_diamond_vent"},
+    "I": {"tag": "c:ingots/iridium"}
+  },
+  "result": {"id": "mio_icif:reactor/item_reactor_iridium_vent", "count": 1}
+}

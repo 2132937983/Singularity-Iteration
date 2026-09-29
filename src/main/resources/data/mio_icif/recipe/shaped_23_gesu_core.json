@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "group": "mio_icif",
+    "pattern": [
+        "CFC",
+        "IBO",
+        "CFC"
+    ],
+    "key": {
+        "F": { "item": "mio_icif:normal/item_field_generator" },
+        "C": { "item": "mio_icif:resource/item_neutron_plate" },
+        "I": { "item": "mio_icif:wiring/block_gesu_input_iv" },
+        "O": { "item": "mio_icif:wiring/block_gesu_output_iv" },
+        "B": { "item": "mio_icif:wiring/block_eesu" }
+    },
+    "result": {
+        "id": "mio_icif:wiring/block_gesu_core",
+        "count": 1
+    }
+}

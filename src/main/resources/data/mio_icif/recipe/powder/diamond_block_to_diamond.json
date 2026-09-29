@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:powder",
+  "count": 1,
+  "ingredient": {
+    "item": "minecraft:diamond_block"
+  },
+  "result": {
+    "count": 9,
+    "id": "minecraft:diamond"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "C C",
+    "CcC",
+    "CCC"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:resource/item_carbon_plate"
+    },
+    "c": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_nano_chestplate",
+    "count": 1
+  }
+}

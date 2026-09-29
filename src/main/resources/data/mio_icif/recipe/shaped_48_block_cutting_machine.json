@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    " A ",
+    "MSM"
+  ],
+  "key": {
+    "A": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "M": {
+      "item": "mio_icif:resource/item_motor"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_iron_shaft"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_block_cutter",
+    "count": 1
+  }
+}

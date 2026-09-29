@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:compressor",
+  "energypertick": 5,
+  "ingredient": {
+    "item": "minecraft:water_bucket"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 1,
+    "id": "minecraft:snow_block"
+  }
+}

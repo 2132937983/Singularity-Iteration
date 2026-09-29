@@ -1,0 +1,1 @@
+{"type": "minecraft:crafting_shaped","pattern":["T T"," L ","T T"],"key":{"T":{"tag":"c:dense_plates/tin"},"L":{"item":"minecraft:lever"}},"result":{"id":"mio_icif:upgrade/redstone_inv_upgrade","count":8}}

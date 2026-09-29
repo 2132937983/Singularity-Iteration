@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "UIU"
+  ],
+  "key": {
+    "U": {
+      "item": "mio_icif:reactor/item_reactor_uranium_simple"
+    },
+    "I": {
+      "tag": "c:plates/iron"
+    }
+  },
+  "result": {
+    "id": "mio_icif:reactor/item_reactor_uranium_dual",
+    "count": 1
+  }
+}

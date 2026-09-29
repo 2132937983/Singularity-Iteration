@@ -1,0 +1,37 @@
+package com.miophas.singularity_iteration.common.recipe.generic;
+
+import com.miophas.singularity_iteration.core.prefab.recipe.AbstractSingleInputRecipe;
+
+import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+public class ReplicatorRecipes {
+
+    public static final DeferredRegister<RecipeType<?>> RECIPE_TYPES =
+        DeferredRegister.create(BuiltInRegistries.RECIPE_TYPE, Singularity_Iteration.MOD_ID);
+
+    public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
+        DeferredRegister.create(BuiltInRegistries.RECIPE_SERIALIZER, Singularity_Iteration.MOD_ID);
+
+    public static final DeferredHolder<RecipeType<?>, RecipeType<ReplicatorRecipe>> REPLICATOR_TYPE =
+        RECIPE_TYPES.register("replicator", () -> new RecipeType<ReplicatorRecipe>() {
+            @Override
+            public String toString() {
+                return "replicator";
+            }
+        });
+
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> REPLICATOR_SERIALIZER =
+        RECIPE_SERIALIZERS.register("replicator", () -> new GenericSingleInputRecipeSerializer());
+
+    public static void register(IEventBus eventBus) {
+        RECIPE_TYPES.register(eventBus);
+        RECIPE_SERIALIZERS.register(eventBus);
+    }
+}

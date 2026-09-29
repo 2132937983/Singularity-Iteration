@@ -1,0 +1,17 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:resource/item_uran_ore_crushed_purified"
+  },
+  "minheat": 3000,
+  "primaryCount": 2,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_uran_235_small"
+  },
+  "secondaryCount": 5,
+  "secondaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_uran_238"
+  }
+}

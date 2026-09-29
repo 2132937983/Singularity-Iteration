@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    {
+      "item": "mio_icif:cell/item_cell_water"
+    },
+    {
+      "item": "mio_icif:cell/item_cell_water"
+    },
+    {
+      "item": "mio_icif:cell/item_cell_lava"
+    },
+    {
+      "item": "mio_icif:cell/item_cell_lava"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "minecraft:obsidian"
+  }
+}

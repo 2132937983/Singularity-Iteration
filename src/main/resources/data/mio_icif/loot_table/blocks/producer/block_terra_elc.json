@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "mio_icif:producer/block_terra_elc"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "mio_icif:blocks/producer/block_terra_elc"
+}

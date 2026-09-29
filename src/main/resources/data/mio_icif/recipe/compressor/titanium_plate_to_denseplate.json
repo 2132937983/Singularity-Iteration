@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "ingredient": {
+    "tag": "c:plates/titanium"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_titanium_denseplate"
+  },
+  "count": 9,
+  "processingtime": 200,
+  "energypertick": 10
+}

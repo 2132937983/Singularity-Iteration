@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "level=0": { "model": "mio_icif:block/dieseloil" },
+    "level=1": { "model": "mio_icif:block/dieseloil" },
+    "level=2": { "model": "mio_icif:block/dieseloil" },
+    "level=3": { "model": "mio_icif:block/dieseloil" },
+    "level=4": { "model": "mio_icif:block/dieseloil" },
+    "level=5": { "model": "mio_icif:block/dieseloil" },
+    "level=6": { "model": "mio_icif:block/dieseloil" },
+    "level=7": { "model": "mio_icif:block/dieseloil" },
+    "level=8": { "model": "mio_icif:block/dieseloil" },
+    "level=9": { "model": "mio_icif:block/dieseloil" },
+    "level=10": { "model": "mio_icif:block/dieseloil" },
+    "level=11": { "model": "mio_icif:block/dieseloil" },
+    "level=12": { "model": "mio_icif:block/dieseloil" },
+    "level=13": { "model": "mio_icif:block/dieseloil" },
+    "level=14": { "model": "mio_icif:block/dieseloil" },
+    "level=15": { "model": "mio_icif:block/dieseloil" }
+  }
+}

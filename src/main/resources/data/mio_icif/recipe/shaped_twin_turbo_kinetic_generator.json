@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SES",
+    "GMG",
+    "SES"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:resource/item_iridium"
+    },
+    "G": {
+      "item": "mio_icif:generator/block_turbo_kinetic_generator"
+    },
+    "M": {
+      "item": "mio_icif:rotors/item_super_iridium_alloy_rotor"
+    },
+    "E": {
+      "item": "mio_icif:reactor/item_reactor_golden_vent"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_twin_turbo_kinetic_generator",
+    "count": 1
+  }
+}

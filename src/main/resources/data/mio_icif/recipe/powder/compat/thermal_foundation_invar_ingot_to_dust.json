@@ -1,0 +1,1 @@
+{"type":"mio_icif:powder","count":1,"neoforge:conditions":[{"type":"neoforge:mod_loaded","modid":"thermal_foundation"}],"ingredient":{"tag":"c:ingots/invar"},"result":{"id":"thermal:invar_dust","count":1}}

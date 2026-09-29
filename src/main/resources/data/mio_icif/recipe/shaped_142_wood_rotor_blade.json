@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PSP","PSP","PSP"],
+  "key": {
+    "P":{"tag":"minecraft:planks"},
+    "S":{"tag":"minecraft:logs"}
+  },
+  "result":{"id":"mio_icif:resource/item_wood_rotor_blade","count":1}
+}

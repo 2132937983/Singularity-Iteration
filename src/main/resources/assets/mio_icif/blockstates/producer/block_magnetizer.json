@@ -1,0 +1,19 @@
+{
+    "variants": {
+        "facing=north": {
+            "model": "mio_icif:block/producer/block_magnetizer"
+        },
+        "facing=south": {
+            "model": "mio_icif:block/producer/block_magnetizer",
+            "y": 180
+        },
+        "facing=east": {
+            "model": "mio_icif:block/producer/block_magnetizer",
+            "y": 90
+        },
+        "facing=west": {
+            "model": "mio_icif:block/producer/block_magnetizer",
+            "y": 270
+        }
+    }
+}

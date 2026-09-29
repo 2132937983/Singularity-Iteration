@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "minecraft:crafting_table"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "T": {
+      "item": "mio_icif:normal/item_toolbox"
+    },
+    "W": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "pattern": [
+    "III",
+    "CWC",
+    "ITI"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:producer/block_industrial_workbench"
+  }
+}

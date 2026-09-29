@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["CCC","CFC","CCC"],
+  "key": {
+    "C":{"tag": "c:dusts/coal"},
+    "F":{"item":"minecraft:flint"}
+  },
+  "result":{"id":"mio_icif:resource/item_coal_ball","count":1}
+}

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PCP",
+    "BBB",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/bronze"
+    },
+    "C": {
+      "item": "mio_icif:wiring/cable/block_tin_cable"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_advbat_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_cesu",
+    "count": 1
+  }
+}

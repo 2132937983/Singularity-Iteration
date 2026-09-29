@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ISI",
+    "MCM",
+    "ISI"
+  ],
+  "key": {
+    "I": {
+      "tag": "c:plates/iridium"
+    },
+    "S": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_matter_elc"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_large_fabricator_core",
+    "count": 1
+  }
+}

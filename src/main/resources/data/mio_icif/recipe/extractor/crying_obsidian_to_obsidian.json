@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:extractor",
+  "energypertick": 10,
+  "ingredient": {
+    "item": "minecraft:crying_obsidian"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 1,
+    "id": "minecraft:obsidian"
+  }
+}

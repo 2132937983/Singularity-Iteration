@@ -1,0 +1,7 @@
+{
+    "variants": {
+        "": {
+            "model": "mio_icif:block/reactor/block_ic_tnt"
+        }
+    }
+}

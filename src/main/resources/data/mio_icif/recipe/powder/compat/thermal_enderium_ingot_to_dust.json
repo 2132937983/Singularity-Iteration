@@ -1,0 +1,1 @@
+{"type":"mio_icif:powder","count":1,"neoforge:conditions":[{"type":"neoforge:mod_loaded","modid":"thermal"}],"ingredient":{"tag":"c:ingots/enderium"},"result":{"id":"thermal:enderium_dust","count":1}}

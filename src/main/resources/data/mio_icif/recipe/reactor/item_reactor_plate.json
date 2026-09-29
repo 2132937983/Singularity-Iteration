@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "tag": "c:plates/lead"
+    },
+    {
+      "item": "mio_icif:resource/item_alloy_plate"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:reactor/item_reactor_plate"
+  }
+}

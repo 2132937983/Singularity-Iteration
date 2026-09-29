@@ -1,0 +1,64 @@
+{
+    "variants": {
+        "lit=false,has_fluid=false,facing=north": {
+            "model": "mio_icif:block/producer/block_canner_elc"
+        },
+        "lit=false,has_fluid=false,facing=south": {
+            "model": "mio_icif:block/producer/block_canner_elc",
+            "y": 180
+        },
+        "lit=false,has_fluid=false,facing=east": {
+            "model": "mio_icif:block/producer/block_canner_elc",
+            "y": 90
+        },
+        "lit=false,has_fluid=false,facing=west": {
+            "model": "mio_icif:block/producer/block_canner_elc",
+            "y": 270
+        },
+        "lit=false,has_fluid=true,facing=north": {
+            "model": "mio_icif:block/producer/block_canner_elc_on"
+        },
+        "lit=false,has_fluid=true,facing=south": {
+            "model": "mio_icif:block/producer/block_canner_elc_on",
+            "y": 180
+        },
+        "lit=false,has_fluid=true,facing=east": {
+            "model": "mio_icif:block/producer/block_canner_elc_on",
+            "y": 90
+        },
+        "lit=false,has_fluid=true,facing=west": {
+            "model": "mio_icif:block/producer/block_canner_elc_on",
+            "y": 270
+        },
+        "lit=true,has_fluid=false,facing=north": {
+            "model": "mio_icif:block/producer/block_canner_elc_on"
+        },
+        "lit=true,has_fluid=false,facing=south": {
+            "model": "mio_icif:block/producer/block_canner_elc_on",
+            "y": 180
+        },
+        "lit=true,has_fluid=false,facing=east": {
+            "model": "mio_icif:block/producer/block_canner_elc_on",
+            "y": 90
+        },
+        "lit=true,has_fluid=false,facing=west": {
+            "model": "mio_icif:block/producer/block_canner_elc_on",
+            "y": 270
+        },
+        "lit=true,has_fluid=true,facing=north": {
+            "model": "mio_icif:block/producer/block_canner_elc_on"
+        },
+        "lit=true,has_fluid=true,facing=south": {
+            "model": "mio_icif:block/producer/block_canner_elc_on",
+            "y": 180
+        },
+        "lit=true,has_fluid=true,facing=east": {
+            "model": "mio_icif:block/producer/block_canner_elc_on",
+            "y": 90
+        },
+        "lit=true,has_fluid=true,facing=west": {
+            "model": "mio_icif:block/producer/block_canner_elc_on",
+            "y": 270
+        }
+    }
+}

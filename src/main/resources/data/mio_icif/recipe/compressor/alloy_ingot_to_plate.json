@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:compressor",
+  "energypertick": 15,
+  "ingredient": {
+    "item": "mio_icif:resource/item_alloy_ingot"
+  },
+  "processingtime": 300,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_alloy_plate"
+  }
+}

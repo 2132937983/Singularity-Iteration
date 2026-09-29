@@ -1,0 +1,7 @@
+﻿{
+  "parent": "minecraft:block/crop",
+  "render_type": "cutout",
+  "textures": {
+    "crop": "mio_icif:block/enriched_crop/lead_rich_3"
+  }
+}

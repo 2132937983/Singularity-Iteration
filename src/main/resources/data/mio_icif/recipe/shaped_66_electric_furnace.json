@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "RFR"
+  ],
+  "key": {
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "F": {
+      "item": "minecraft:furnace"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_furnace_elc",
+    "count": 1
+  }
+}

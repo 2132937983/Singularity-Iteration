@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "G G",
+    "CMC"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_solar_distiller",
+    "count": 1
+  }
+}

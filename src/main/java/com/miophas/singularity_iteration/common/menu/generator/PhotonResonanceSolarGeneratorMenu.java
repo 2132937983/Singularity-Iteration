@@ -1,0 +1,70 @@
+package com.miophas.singularity_iteration.common.menu.generator;
+
+import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_PhotonResonanceSolarGenerator;
+import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
+import com.miophas.singularity_iteration.common.menu.base.mio_icif_generator_menu;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
+
+@SuppressWarnings("null")
+public class PhotonResonanceSolarGeneratorMenu extends mio_icif_generator_menu {
+
+    public static final int BATTERY_SLOT = 0;
+    public static final int SLOT_COUNT = 1;
+
+    private static final int BATTERY_SLOT_X = 80;
+    private static final int BATTERY_SLOT_Y = 26;
+
+    private final ContainerLevelAccess access;
+    public final mio_icif_PhotonResonanceSolarGenerator blockEntity;
+
+    public PhotonResonanceSolarGeneratorMenu(int containerId, Inventory playerInventory) {
+        this(containerId, playerInventory, null);
+    }
+
+    public PhotonResonanceSolarGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_PhotonResonanceSolarGenerator blockEntity) {
+        super(mio_icif_menus.PHOTON_RESONANCE_SOLAR_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT,
+            playerInventory,
+            blockEntity != null ? blockEntity.getItemHandlerCapability(null) : null,
+            null, 3, blockEntity);
+
+        this.access = ContainerLevelAccess.create(playerInventory.player.level(),
+            blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
+        this.blockEntity = blockEntity;
+    }
+
+    @Override
+    protected void addMachineSlots() {
+        addBatterySlot(BATTERY_SLOT, BATTERY_SLOT_X, BATTERY_SLOT_Y);
+    }
+
+    public boolean isGenerating() {
+        return data.get(2) == 1;
+    }
+
+    @Override
+    protected boolean isBattery(ItemStack stack) {
+        return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
+    }
+
+    @Override
+    public boolean stillValid(Player player) {
+        return stillValid(this.access, player, blockEntity != null ?
+            blockEntity.getBlockState().getBlock() : null);
+    }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+        if (blockEntity != null) {
+            int energy = (int) blockEntity.getEnergyStorage().getAmount();
+            int maxEnergy = (int) blockEntity.getEnergyStorage().getCapacity();
+            this.setSyncData(0, energy);
+            this.setSyncData(1, maxEnergy);
+            this.setSyncData(2, blockEntity.isGenerating() ? 1 : 0);
+        }
+    }
+}

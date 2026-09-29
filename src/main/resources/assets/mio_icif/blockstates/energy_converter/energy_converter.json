@@ -1,0 +1,50 @@
+{
+  "variants": {
+    "facing=north,mode=false": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe"
+    },
+    "facing=south,mode=false": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+      "y": 180
+    },
+    "facing=east,mode=false": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+      "y": 90
+    },
+    "facing=west,mode=false": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+      "y": 270
+    },
+    "facing=up,mode=false": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+      "x": 270
+    },
+    "facing=down,mode=false": {
+      "model": "mio_icif:block/energy_converter/energy_converter_eu_to_fe",
+      "x": 90
+    },
+    "facing=north,mode=true": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu"
+    },
+    "facing=south,mode=true": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
+      "y": 180
+    },
+    "facing=east,mode=true": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
+      "y": 90
+    },
+    "facing=west,mode=true": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
+      "y": 270
+    },
+    "facing=up,mode=true": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
+      "x": 270
+    },
+    "facing=down,mode=true": {
+      "model": "mio_icif:block/energy_converter/energy_converter_fe_to_eu",
+      "x": 90
+    }
+  }
+}

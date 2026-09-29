@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:metal_former_rolling",
+  "ingredient": {
+    "item": "mio_icif:resource/item_adviron_ingot"
+  },
+  "processingtime": 200,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_adviron_plate"
+  }
+}

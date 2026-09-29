@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_producer/block_machine_hull_basic": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:producer/block_machine_hull_basic"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:kugenerator/block_manual_kinetic_generator"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_producer/block_machine_hull_basic"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:kugenerator/block_manual_kinetic_generator"
+    ]
+  }
+}

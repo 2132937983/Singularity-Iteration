@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RFR",
+    "RMR",
+    "RFR"
+  ],
+  "key": {
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "F": {
+      "item": "mio_icif:block_fence_iron"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_magnetizer",
+    "count": 1
+  }
+}

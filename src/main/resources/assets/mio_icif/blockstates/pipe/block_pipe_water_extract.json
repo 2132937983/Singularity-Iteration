@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mio_icif:block/pipe/block_pipe_water_extract"
+    },
+    "facing=south": {
+      "model": "mio_icif:block/pipe/block_pipe_water_extract",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "mio_icif:block/pipe/block_pipe_water_extract",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "mio_icif:block/pipe/block_pipe_water_extract",
+      "y": 90
+    },
+    "facing=up": {
+      "model": "mio_icif:block/pipe/block_pipe_water_extract",
+      "x": 270
+    },
+    "facing=down": {
+      "model": "mio_icif:block/pipe/block_pipe_water_extract",
+      "x": 90
+    }
+  }
+}

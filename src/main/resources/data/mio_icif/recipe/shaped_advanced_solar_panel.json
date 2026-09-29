@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PPP",
+    "ASA",
+    "CIC"
+  ],
+  "key": {
+    "P": {
+      "item": "mio_icif:build/block_irradiant_glass_pane"
+    },
+    "A": {
+      "item": "mio_icif:resource/item_alloy_plate"
+    },
+    "S": {
+      "item": "mio_icif:generator/block_solar_generator"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_advcircuit"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_irradiant_reinforced_plate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_advanced_solar_panel",
+    "count": 1
+  }
+}

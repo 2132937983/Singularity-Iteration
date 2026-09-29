@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:powder",
+  "count": 1,
+  "ingredient": {
+    "tag": "c:ores/lapis"
+  },
+  "result": {
+    "count": 2,
+    "id": "mio_icif:resource/item_lapi_dust"
+  }
+}

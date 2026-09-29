@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["B"],
+  "key": {"B":{"item":"minecraft:copper_block"}},
+  "result":{"id":"minecraft:copper_ingot","count":9}
+}

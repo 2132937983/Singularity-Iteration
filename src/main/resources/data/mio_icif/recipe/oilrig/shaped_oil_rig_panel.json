@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "NPN",
+    "MCM",
+    "NBN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:plates/niobium_titanium"
+    },
+    "P": {
+      "item": "minecraft:glowstone"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "M": {
+      "item": "mio_icif:oilrig/block_oil_rig_base"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_advchargebat_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:oilrig/block_oil_rig_panel",
+    "count": 1
+  }
+}

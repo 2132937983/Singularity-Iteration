@@ -1,0 +1,1940 @@
+{
+  "atlas_size": {
+    "width": 256,
+    "height": 512
+  },
+  "components": [
+    {
+      "name": "lightning_14x14",
+      "group": "energy",
+      "note": "Lightning energy icon",
+      "frequency": 17,
+      "source_files": [
+        "gui_compressor_elc.png",
+        "gui_extractor_elc.png",
+        "gui_miner_elc.png",
+        "gui_washer_elc.png",
+        "gui_canner_elc.png",
+        "gui_fluid_regulator_elc.png",
+        "gui_cutter_elc.png",
+        "gui_induction_elc.png",
+        "gui_powder_elc.png",
+        "gui_recycler_elc.png",
+        "gui_furnace_elc.png",
+        "gui_pump_elc.png",
+        "gui_magnetizer.png",
+        "gui_metal_former.png",
+        "gui_harvest_elc.png",
+        "gui_matron_elc.png",
+        "gui_condenser_elc.png"
+      ],
+      "source_png": "gui_compressor_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 72,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "lightning_14x15",
+      "group": "energy",
+      "note": "Lightning icon 14x15 variant",
+      "frequency": 5,
+      "source_files": [
+        "gui_heat_generator_elc.png",
+        "gui_kinetic_generator_elc.png",
+        "gui_centrifuge_elc.png",
+        "gui_replicator_elc.png",
+        "gui_advminer_elc.png"
+      ],
+      "source_png": "gui_heat_generator_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 14,
+        "h": 15
+      },
+      "atlas_uv": {
+        "u": 216,
+        "v": 192,
+        "w": 14,
+        "h": 15
+      }
+    },
+    {
+      "name": "lightning_14x42",
+      "group": "energy",
+      "note": "Lightning icon pattern storage",
+      "frequency": 1,
+      "source_files": [
+        "gui_pattern_storage.png"
+      ],
+      "source_png": "gui_pattern_storage.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 14,
+        "h": 42
+      },
+      "atlas_uv": {
+        "u": 70,
+        "v": 80,
+        "w": 14,
+        "h": 42
+      }
+    },
+    {
+      "name": "lightning_16x52",
+      "group": "energy",
+      "note": "Lightning icon reactor coolant",
+      "frequency": 1,
+      "source_files": [
+        "gui_double_chest.png"
+      ],
+      "source_png": "gui_double_chest.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 16,
+        "h": 52
+      },
+      "atlas_uv": {
+        "u": 144,
+        "v": 2,
+        "w": 16,
+        "h": 52
+      }
+    },
+    {
+      "name": "lightning_sorter",
+      "group": "energy",
+      "note": "Lightning icon sorter variant",
+      "frequency": 1,
+      "source_files": [
+        "gui_sorter_elc.png"
+      ],
+      "source_png": "gui_sorter_elc.png",
+      "source_uv": {
+        "u": 212,
+        "v": 0,
+        "w": 14,
+        "h": 15
+      },
+      "atlas_uv": {
+        "u": 232,
+        "v": 192,
+        "w": 14,
+        "h": 15
+      }
+    },
+    {
+      "name": "progress_arrow_24x17",
+      "group": "progress",
+      "note": "Default progress arrow",
+      "frequency": 7,
+      "source_files": [
+        "gui_compressor_elc.png",
+        "gui_extractor_elc.png",
+        "gui_induction_elc.png",
+        "gui_powder_elc.png",
+        "gui_recycler_elc.png",
+        "gui_furnace_elc.png",
+        "gui_pump_elc.png"
+      ],
+      "source_png": "gui_compressor_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 14,
+        "w": 24,
+        "h": 17
+      },
+      "atlas_uv": {
+        "u": 213,
+        "v": 164,
+        "w": 24,
+        "h": 17
+      }
+    },
+    {
+      "name": "progress_arrow_24x15_canner",
+      "group": "progress",
+      "note": "Progress arrow canner style",
+      "frequency": 2,
+      "source_files": [
+        "gui_canner_elc.png",
+        "gui_matter_elc.png"
+      ],
+      "source_png": "gui_canner_elc.png",
+      "source_uv": {
+        "u": 233,
+        "v": 0,
+        "w": 24,
+        "h": 15
+      },
+      "atlas_uv": {
+        "u": 190,
+        "v": 192,
+        "w": 24,
+        "h": 15
+      }
+    },
+    {
+      "name": "progress_arrow_20x19_washer",
+      "group": "progress",
+      "note": "Progress arrow washer",
+      "frequency": 1,
+      "source_files": [
+        "gui_washer_elc.png"
+      ],
+      "source_png": "gui_washer_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 117,
+        "w": 20,
+        "h": 19
+      },
+      "atlas_uv": {
+        "u": 34,
+        "v": 164,
+        "w": 20,
+        "h": 19
+      }
+    },
+    {
+      "name": "progress_arrow_5x30_centrifuge",
+      "group": "progress",
+      "note": "Progress arrow centrifuge",
+      "frequency": 1,
+      "source_files": [
+        "gui_centrifuge_elc.png"
+      ],
+      "source_png": "gui_centrifuge_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 50,
+        "w": 5,
+        "h": 30
+      },
+      "atlas_uv": {
+        "u": 66,
+        "v": 125,
+        "w": 5,
+        "h": 30
+      }
+    },
+    {
+      "name": "progress_arrow_27x27_blast",
+      "group": "progress",
+      "note": "Progress arrow blast furnace",
+      "frequency": 1,
+      "source_files": [
+        "gui_blast_furnace.png"
+      ],
+      "source_png": "gui_blast_furnace.png",
+      "source_uv": {
+        "u": 176,
+        "v": 51,
+        "w": 27,
+        "h": 27
+      },
+      "atlas_uv": {
+        "u": 172,
+        "v": 125,
+        "w": 27,
+        "h": 27
+      }
+    },
+    {
+      "name": "progress_arrow_40x7_fermenter",
+      "group": "progress",
+      "note": "Progress arrow fermenter",
+      "frequency": 1,
+      "source_files": [
+        "gui_fermenter_elc.png"
+      ],
+      "source_png": "gui_fermenter_elc.png",
+      "source_uv": {
+        "u": 177,
+        "v": 1,
+        "w": 40,
+        "h": 7
+      },
+      "atlas_uv": {
+        "u": 96,
+        "v": 259,
+        "w": 40,
+        "h": 7
+      }
+    },
+    {
+      "name": "progress_arrow_84x9_condenser",
+      "group": "progress",
+      "note": "Progress bar condenser",
+      "frequency": 1,
+      "source_files": [
+        "gui_condenser_elc.png"
+      ],
+      "source_png": "gui_condenser_elc.png",
+      "source_uv": {
+        "u": 0,
+        "v": 184,
+        "w": 84,
+        "h": 9
+      },
+      "atlas_uv": {
+        "u": 144,
+        "v": 243,
+        "w": 84,
+        "h": 9
+      }
+    },
+    {
+      "name": "progress_arrow_97x29_solar_distiller",
+      "group": "progress",
+      "note": "Progress bar solar distiller",
+      "frequency": 1,
+      "source_files": [
+        "gui_solar_destiller.png"
+      ],
+      "source_png": "gui_solar_destiller.png",
+      "source_uv": {
+        "u": 0,
+        "v": 184,
+        "w": 97,
+        "h": 29
+      },
+      "atlas_uv": {
+        "u": 73,
+        "v": 125,
+        "w": 97,
+        "h": 29
+      }
+    },
+    {
+      "name": "energy_bar_horizontal_24x17",
+      "group": "bars",
+      "note": "Horizontal energy bar fill",
+      "frequency": 3,
+      "source_files": [
+        "gui_magnetizer.png",
+        "gui_generator.png",
+        "gui_bat_box.png"
+      ],
+      "source_png": "gui_magnetizer.png",
+      "source_uv": {
+        "u": 176,
+        "v": 14,
+        "w": 24,
+        "h": 17
+      },
+      "atlas_uv": {
+        "u": 2,
+        "v": 192,
+        "w": 24,
+        "h": 17
+      }
+    },
+    {
+      "name": "energy_bar_horizontal_58x14",
+      "group": "bars",
+      "note": "Generator energy bar fill",
+      "frequency": 2,
+      "source_files": [
+        "gui_stirling_generator.png",
+        "gui_water_kinetic_generator.png"
+      ],
+      "source_png": "gui_stirling_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 15,
+        "w": 58,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 2,
+        "v": 211,
+        "w": 58,
+        "h": 14
+      }
+    },
+    {
+      "name": "energy_bar_horizontal_31x8",
+      "group": "bars",
+      "note": "RT energy/heat bar",
+      "frequency": 2,
+      "source_files": [
+        "gui_rt_generator.png",
+        "gui_rt_heat_generator.png"
+      ],
+      "source_png": "gui_rt_generator.png",
+      "source_uv": {
+        "u": 179,
+        "v": 3,
+        "w": 31,
+        "h": 8
+      },
+      "atlas_uv": {
+        "u": 2,
+        "v": 259,
+        "w": 31,
+        "h": 8
+      }
+    },
+    {
+      "name": "ku_bar_vertical_16x60",
+      "group": "bars",
+      "note": "Vertical KU bar lathe",
+      "frequency": 1,
+      "source_files": [
+        "gui_lathe.png"
+      ],
+      "source_png": "gui_lathe.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 16,
+        "h": 60
+      },
+      "atlas_uv": {
+        "u": 11,
+        "v": 2,
+        "w": 16,
+        "h": 60
+      }
+    },
+    {
+      "name": "heat_bar_vertical_16x54_nuke",
+      "group": "bars",
+      "note": "Nuclear heat bar",
+      "frequency": 1,
+      "source_files": [
+        "gui_ncl_rct_fluid.png"
+      ],
+      "source_png": "gui_ncl_rct_fluid.png",
+      "source_uv": {
+        "u": 228,
+        "v": 0,
+        "w": 16,
+        "h": 54
+      },
+      "atlas_uv": {
+        "u": 126,
+        "v": 2,
+        "w": 16,
+        "h": 54
+      }
+    },
+    {
+      "name": "progress_bar_16x2_stirling",
+      "group": "bars",
+      "note": "Stirling kinetic progress",
+      "frequency": 1,
+      "source_files": [
+        "gui_stirling_kinetic_generator.png"
+      ],
+      "source_png": "gui_stirling_kinetic_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 64,
+        "w": 16,
+        "h": 2
+      },
+      "atlas_uv": {
+        "u": 198,
+        "v": 259,
+        "w": 16,
+        "h": 2
+      }
+    },
+    {
+      "name": "heat_bar_23x8",
+      "group": "heat",
+      "note": "Heat bar 23x8 (centrifuge & blast furnace, pixels identical)",
+      "frequency": 2,
+      "source_files": [
+        "gui_centrifuge_elc.png",
+        "gui_blast_furnace.png"
+      ],
+      "source_png": "gui_centrifuge_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 28,
+        "w": 23,
+        "h": 8
+      },
+      "atlas_uv": {
+        "u": 35,
+        "v": 259,
+        "w": 23,
+        "h": 8
+      }
+    },
+    {
+      "name": "heat_bar_40x3_fermenter",
+      "group": "heat",
+      "note": "Heat bar fermenter",
+      "frequency": 1,
+      "source_files": [
+        "gui_fermenter_elc.png"
+      ],
+      "source_png": "gui_fermenter_elc.png",
+      "source_uv": {
+        "u": 177,
+        "v": 10,
+        "w": 40,
+        "h": 3
+      },
+      "atlas_uv": {
+        "u": 156,
+        "v": 259,
+        "w": 40,
+        "h": 3
+      }
+    },
+    {
+      "name": "heat_bar_25x17_stirling",
+      "group": "heat",
+      "note": "Heat bar stirling",
+      "frequency": 1,
+      "source_files": [
+        "gui_stirling_generator.png"
+      ],
+      "source_png": "gui_stirling_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 17,
+        "w": 25,
+        "h": 17
+      },
+      "atlas_uv": {
+        "u": 186,
+        "v": 164,
+        "w": 25,
+        "h": 17
+      }
+    },
+    {
+      "name": "heat_bar_16x4_repressurizer",
+      "group": "heat",
+      "note": "Heat bar steam repressurizer",
+      "frequency": 1,
+      "source_files": [
+        "gui_steam_generator_elc.png"
+      ],
+      "source_png": "gui_steam_generator_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 8,
+        "w": 16,
+        "h": 4
+      },
+      "atlas_uv": {
+        "u": 138,
+        "v": 259,
+        "w": 16,
+        "h": 4
+      }
+    },
+    {
+      "name": "heat_bar_7x76_steam",
+      "group": "heat",
+      "note": "Heat system bar steam generator",
+      "frequency": 1,
+      "source_files": [
+        "gui_steam_generator_elc.png"
+      ],
+      "source_png": "gui_steam_generator_elc.png",
+      "source_uv": {
+        "u": 177,
+        "v": 1,
+        "w": 7,
+        "h": 76
+      },
+      "atlas_uv": {
+        "u": 2,
+        "v": 2,
+        "w": 7,
+        "h": 76
+      }
+    },
+    {
+      "name": "tank_bg_20x55_washer",
+      "group": "fluid_tank_bg",
+      "note": "Fluid tank BG 20x55 (washer/pump/replicator, pixels identical)",
+      "frequency": 3,
+      "source_files": [
+        "gui_washer_elc.png",
+        "gui_replicator_elc.png",
+        "gui_pump_elc.png"
+      ],
+      "source_png": "gui_washer_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 15,
+        "w": 20,
+        "h": 55
+      },
+      "atlas_uv": {
+        "u": 38,
+        "v": 2,
+        "w": 20,
+        "h": 55
+      }
+    },
+    {
+      "name": "tank_bg_20x55_canner",
+      "group": "fluid_tank_bg",
+      "note": "Fluid tank BG canner",
+      "frequency": 1,
+      "source_files": [
+        "gui_canner_elc.png"
+      ],
+      "source_png": "gui_canner_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 14,
+        "w": 20,
+        "h": 55
+      },
+      "atlas_uv": {
+        "u": 60,
+        "v": 2,
+        "w": 20,
+        "h": 55
+      }
+    },
+    {
+      "name": "tank_bg_20x55_fluid",
+      "group": "fluid_tank_bg",
+      "note": "Fluid tank BG fluid generators",
+      "frequency": 2,
+      "source_files": [
+        "gui_fluid_heat_generator.png",
+        "gui_fluid_generator.png"
+      ],
+      "source_png": "gui_fluid_heat_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 17,
+        "w": 20,
+        "h": 55
+      },
+      "atlas_uv": {
+        "u": 82,
+        "v": 2,
+        "w": 20,
+        "h": 55
+      }
+    },
+    {
+      "name": "tank_bg_20x55_matter",
+      "group": "fluid_tank_bg",
+      "note": "Fluid tank BG matter",
+      "frequency": 1,
+      "source_files": [
+        "gui_matter_elc.png"
+      ],
+      "source_png": "gui_matter_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 20,
+        "h": 55
+      },
+      "atlas_uv": {
+        "u": 104,
+        "v": 2,
+        "w": 20,
+        "h": 55
+      }
+    },
+    {
+      "name": "scale_12x37_canner",
+      "group": "fluid_scale",
+      "note": "Scale overlay 12x37",
+      "frequency": 2,
+      "source_files": [
+        "gui_canner_elc.png",
+        "gui_replicator_elc.png"
+      ],
+      "source_png": "gui_canner_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 74,
+        "w": 12,
+        "h": 37
+      },
+      "atlas_uv": {
+        "u": 2,
+        "v": 125,
+        "w": 12,
+        "h": 37
+      }
+    },
+    {
+      "name": "scale_20x46_fluid",
+      "group": "fluid_scale",
+      "note": "Scale overlay 20x46",
+      "frequency": 2,
+      "source_files": [
+        "gui_fluid_heat_generator.png",
+        "gui_fluid_generator.png"
+      ],
+      "source_png": "gui_fluid_heat_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 72,
+        "w": 20,
+        "h": 46
+      },
+      "atlas_uv": {
+        "u": 216,
+        "v": 2,
+        "w": 20,
+        "h": 46
+      }
+    },
+    {
+      "name": "scale_20x47_washer",
+      "group": "fluid_scale",
+      "note": "Scale overlay washer",
+      "frequency": 1,
+      "source_files": [
+        "gui_washer_elc.png"
+      ],
+      "source_png": "gui_washer_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 70,
+        "w": 20,
+        "h": 47
+      },
+      "atlas_uv": {
+        "u": 194,
+        "v": 2,
+        "w": 20,
+        "h": 47
+      }
+    },
+    {
+      "name": "scale_12x37_pump",
+      "group": "fluid_scale",
+      "note": "Scale overlay pump",
+      "frequency": 1,
+      "source_files": [
+        "gui_pump_elc.png"
+      ],
+      "source_png": "gui_pump_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 90,
+        "w": 12,
+        "h": 37
+      },
+      "atlas_uv": {
+        "u": 16,
+        "v": 125,
+        "w": 12,
+        "h": 37
+      }
+    },
+    {
+      "name": "scale_12x37_matter",
+      "group": "fluid_scale",
+      "note": "Scale overlay matter",
+      "frequency": 1,
+      "source_files": [
+        "gui_matter_elc.png"
+      ],
+      "source_png": "gui_matter_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 60,
+        "w": 12,
+        "h": 37
+      },
+      "atlas_uv": {
+        "u": 30,
+        "v": 125,
+        "w": 12,
+        "h": 37
+      }
+    },
+    {
+      "name": "scale_nuclear_input",
+      "group": "fluid_scale",
+      "note": "Nuclear input scale",
+      "frequency": 1,
+      "source_files": [
+        "gui_ncl_rct_fluid.png"
+      ],
+      "source_png": "gui_ncl_rct_fluid.png",
+      "source_uv": {
+        "u": 218,
+        "v": 123,
+        "w": 9,
+        "h": 37
+      },
+      "atlas_uv": {
+        "u": 44,
+        "v": 125,
+        "w": 9,
+        "h": 37
+      }
+    },
+    {
+      "name": "scale_nuclear_output",
+      "group": "fluid_scale",
+      "note": "Nuclear output scale",
+      "frequency": 1,
+      "source_files": [
+        "gui_ncl_rct_fluid.png"
+      ],
+      "source_png": "gui_ncl_rct_fluid.png",
+      "source_uv": {
+        "u": 218,
+        "v": 81,
+        "w": 9,
+        "h": 37
+      },
+      "atlas_uv": {
+        "u": 55,
+        "v": 125,
+        "w": 9,
+        "h": 37
+      }
+    },
+    {
+      "name": "tank_bg_nuclear_input",
+      "group": "fluid_tank_bg",
+      "note": "Nuclear input tank BG",
+      "frequency": 1,
+      "source_files": [
+        "gui_ncl_rct_fluid.png"
+      ],
+      "source_png": "gui_ncl_rct_fluid.png",
+      "source_uv": {
+        "u": 215,
+        "v": 21,
+        "w": 14,
+        "h": 49
+      },
+      "atlas_uv": {
+        "u": 162,
+        "v": 2,
+        "w": 14,
+        "h": 49
+      }
+    },
+    {
+      "name": "tank_bg_nuclear_output",
+      "group": "fluid_tank_bg",
+      "note": "Nuclear output tank BG",
+      "frequency": 1,
+      "source_files": [
+        "gui_ncl_rct_fluid.png"
+      ],
+      "source_png": "gui_ncl_rct_fluid.png",
+      "source_uv": {
+        "u": 215,
+        "v": 21,
+        "w": 14,
+        "h": 49
+      },
+      "atlas_uv": {
+        "u": 178,
+        "v": 2,
+        "w": 14,
+        "h": 49
+      }
+    },
+    {
+      "name": "work_active_14x14",
+      "group": "status",
+      "note": "Work active icon",
+      "frequency": 2,
+      "source_files": [
+        "gui_stirling_generator.png",
+        "gui_water_kinetic_generator.png"
+      ],
+      "source_png": "gui_stirling_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 34,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 88,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "work_inactive_14x14",
+      "group": "status",
+      "note": "Work inactive icon",
+      "frequency": 2,
+      "source_files": [
+        "gui_stirling_generator.png",
+        "gui_water_kinetic_generator.png"
+      ],
+      "source_png": "gui_stirling_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 48,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 104,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "heat_ok_green_14x14",
+      "group": "status",
+      "note": "Heat OK green light",
+      "frequency": 1,
+      "source_files": [
+        "gui_centrifuge_elc.png"
+      ],
+      "source_png": "gui_centrifuge_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 36,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 120,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "heat_ok_14x14_blast",
+      "group": "status",
+      "note": "Heat OK blast furnace",
+      "frequency": 1,
+      "source_files": [
+        "gui_blast_furnace.png"
+      ],
+      "source_png": "gui_blast_furnace.png",
+      "source_uv": {
+        "u": 176,
+        "v": 8,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 136,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "flame_14x14",
+      "group": "status",
+      "note": "Flame icon",
+      "frequency": 2,
+      "source_files": [
+        "gui_fluid_heat_generator.png",
+        "gui_solid_heat_generator.png"
+      ],
+      "source_png": "gui_fluid_heat_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 152,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "heat_fill_14x14",
+      "group": "status",
+      "note": "Heat icon fill",
+      "frequency": 1,
+      "source_files": [
+        "gui_heat_generator_elc.png"
+      ],
+      "source_png": "gui_heat_generator_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 15,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 168,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "kinetic_fill_14x14",
+      "group": "status",
+      "note": "Kinetic icon fill",
+      "frequency": 1,
+      "source_files": [
+        "gui_kinetic_generator_elc.png"
+      ],
+      "source_png": "gui_kinetic_generator_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 15,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 184,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "sun_active_14x14",
+      "group": "status",
+      "note": "Sun icon active",
+      "frequency": 1,
+      "source_files": [
+        "gui_solar_generator.png"
+      ],
+      "source_png": "gui_solar_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 200,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "wind_blue_14x14",
+      "group": "status",
+      "note": "Wind fan blue",
+      "frequency": 1,
+      "source_files": [
+        "gui_wind_generator.png"
+      ],
+      "source_png": "gui_wind_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 216,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "wind_red_14x14",
+      "group": "status",
+      "note": "Wind fan red",
+      "frequency": 1,
+      "source_files": [
+        "gui_wind_generator.png"
+      ],
+      "source_png": "gui_wind_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 14,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 232,
+        "v": 227,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "water_blue_14x14",
+      "group": "status",
+      "note": "Water blue",
+      "frequency": 1,
+      "source_files": [
+        "gui_water_generator.png"
+      ],
+      "source_png": "gui_water_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 2,
+        "v": 243,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "water_red_14x14",
+      "group": "status",
+      "note": "Water red",
+      "frequency": 1,
+      "source_files": [
+        "gui_water_generator.png"
+      ],
+      "source_png": "gui_water_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 14,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 18,
+        "v": 243,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "condensation_warning_30x26",
+      "group": "status",
+      "note": "Condensation warning",
+      "frequency": 1,
+      "source_files": [
+        "gui_steam_kinetic_generator.png"
+      ],
+      "source_png": "gui_steam_kinetic_generator.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 30,
+        "h": 26
+      },
+      "atlas_uv": {
+        "u": 2,
+        "v": 164,
+        "w": 30,
+        "h": 26
+      }
+    },
+    {
+      "name": "electrolyzer_charge_16x16",
+      "group": "status",
+      "note": "Charging mode",
+      "frequency": 1,
+      "source_files": [
+        "gui_electrolyzer_elc.png"
+      ],
+      "source_png": "gui_electrolyzer_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 83,
+        "w": 16,
+        "h": 16
+      },
+      "atlas_uv": {
+        "u": 28,
+        "v": 192,
+        "w": 16,
+        "h": 16
+      }
+    },
+    {
+      "name": "electrolyzer_discharge_16x16",
+      "group": "status",
+      "note": "Discharging mode",
+      "frequency": 1,
+      "source_files": [
+        "gui_electrolyzer_elc.png"
+      ],
+      "source_png": "gui_electrolyzer_elc.png",
+      "source_uv": {
+        "u": 192,
+        "v": 83,
+        "w": 16,
+        "h": 16
+      },
+      "atlas_uv": {
+        "u": 46,
+        "v": 192,
+        "w": 16,
+        "h": 16
+      }
+    },
+    {
+      "name": "magnetizer_working_16x14",
+      "group": "status",
+      "note": "Magnetizer working",
+      "frequency": 1,
+      "source_files": [
+        "gui_magnetizer.png"
+      ],
+      "source_png": "gui_magnetizer.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 16,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 54,
+        "v": 227,
+        "w": 16,
+        "h": 14
+      }
+    },
+    {
+      "name": "btn_nav_prev_9x18",
+      "group": "buttons",
+      "note": "Nav prev button",
+      "frequency": 1,
+      "source_files": [
+        "gui_pattern_storage.png"
+      ],
+      "source_png": "gui_pattern_storage.png",
+      "source_uv": {
+        "u": 176,
+        "v": 42,
+        "w": 9,
+        "h": 18
+      },
+      "atlas_uv": {
+        "u": 164,
+        "v": 164,
+        "w": 9,
+        "h": 18
+      }
+    },
+    {
+      "name": "btn_nav_next_9x18",
+      "group": "buttons",
+      "note": "Nav next button",
+      "frequency": 1,
+      "source_files": [
+        "gui_pattern_storage.png"
+      ],
+      "source_png": "gui_pattern_storage.png",
+      "source_uv": {
+        "u": 176,
+        "v": 60,
+        "w": 9,
+        "h": 18
+      },
+      "atlas_uv": {
+        "u": 175,
+        "v": 164,
+        "w": 9,
+        "h": 18
+      }
+    },
+    {
+      "name": "btn_export_16x8",
+      "group": "buttons",
+      "note": "Export button",
+      "frequency": 1,
+      "source_files": [
+        "gui_pattern_storage.png"
+      ],
+      "source_png": "gui_pattern_storage.png",
+      "source_uv": {
+        "u": 176,
+        "v": 78,
+        "w": 16,
+        "h": 8
+      },
+      "atlas_uv": {
+        "u": 60,
+        "v": 259,
+        "w": 16,
+        "h": 8
+      }
+    },
+    {
+      "name": "btn_import_16x8",
+      "group": "buttons",
+      "note": "Import button",
+      "frequency": 1,
+      "source_files": [
+        "gui_pattern_storage.png"
+      ],
+      "source_png": "gui_pattern_storage.png",
+      "source_uv": {
+        "u": 176,
+        "v": 86,
+        "w": 16,
+        "h": 8
+      },
+      "atlas_uv": {
+        "u": 78,
+        "v": 259,
+        "w": 16,
+        "h": 8
+      }
+    },
+    {
+      "name": "btn_stop_16x12",
+      "group": "buttons",
+      "note": "Stop button",
+      "frequency": 1,
+      "source_files": [
+        "gui_replicator_elc.png"
+      ],
+      "source_png": "gui_replicator_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 112,
+        "w": 16,
+        "h": 12
+      },
+      "atlas_uv": {
+        "u": 76,
+        "v": 243,
+        "w": 16,
+        "h": 12
+      }
+    },
+    {
+      "name": "btn_single_16x12",
+      "group": "buttons",
+      "note": "Single button",
+      "frequency": 1,
+      "source_files": [
+        "gui_replicator_elc.png"
+      ],
+      "source_png": "gui_replicator_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 124,
+        "w": 16,
+        "h": 12
+      },
+      "atlas_uv": {
+        "u": 94,
+        "v": 243,
+        "w": 16,
+        "h": 12
+      }
+    },
+    {
+      "name": "btn_loop_16x12",
+      "group": "buttons",
+      "note": "Loop button",
+      "frequency": 1,
+      "source_files": [
+        "gui_replicator_elc.png"
+      ],
+      "source_png": "gui_replicator_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 136,
+        "w": 16,
+        "h": 12
+      },
+      "atlas_uv": {
+        "u": 112,
+        "v": 243,
+        "w": 16,
+        "h": 12
+      }
+    },
+    {
+      "name": "btn_delete_12x12",
+      "group": "buttons",
+      "note": "Delete button",
+      "frequency": 1,
+      "source_files": [
+        "gui_scanner_elc.png"
+      ],
+      "source_png": "gui_scanner_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 57,
+        "w": 12,
+        "h": 12
+      },
+      "atlas_uv": {
+        "u": 130,
+        "v": 243,
+        "w": 12,
+        "h": 12
+      }
+    },
+    {
+      "name": "btn_save_24x12",
+      "group": "buttons",
+      "note": "Save button",
+      "frequency": 1,
+      "source_files": [
+        "gui_scanner_elc.png"
+      ],
+      "source_png": "gui_scanner_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 69,
+        "w": 24,
+        "h": 12
+      },
+      "atlas_uv": {
+        "u": 50,
+        "v": 243,
+        "w": 24,
+        "h": 12
+      }
+    },
+    {
+      "name": "btn_cancel_14x14",
+      "group": "buttons",
+      "note": "Cancel button",
+      "frequency": 1,
+      "source_files": [
+        "gui_industrial_workbench.png"
+      ],
+      "source_png": "gui_industrial_workbench.png",
+      "source_uv": {
+        "u": 194,
+        "v": 0,
+        "w": 14,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 34,
+        "v": 243,
+        "w": 14,
+        "h": 14
+      }
+    },
+    {
+      "name": "arrow_canner_26x18",
+      "group": "buttons",
+      "note": "Canner arrow icon",
+      "frequency": 1,
+      "source_files": [
+        "gui_canner_elc.png"
+      ],
+      "source_png": "gui_canner_elc.png",
+      "source_uv": {
+        "u": 196,
+        "v": 0,
+        "w": 26,
+        "h": 18
+      },
+      "atlas_uv": {
+        "u": 56,
+        "v": 164,
+        "w": 26,
+        "h": 18
+      }
+    },
+    {
+      "name": "mode_canner_0_50x14",
+      "group": "buttons",
+      "note": "Canner mode 0 icon",
+      "frequency": 1,
+      "source_files": [
+        "gui_canner_elc.png"
+      ],
+      "source_png": "gui_canner_elc.png",
+      "source_uv": {
+        "u": 196,
+        "v": 20,
+        "w": 50,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 62,
+        "v": 211,
+        "w": 50,
+        "h": 14
+      }
+    },
+    {
+      "name": "mode_canner_1_50x14",
+      "group": "buttons",
+      "note": "Canner mode 1 icon",
+      "frequency": 1,
+      "source_files": [
+        "gui_canner_elc.png"
+      ],
+      "source_png": "gui_canner_elc.png",
+      "source_uv": {
+        "u": 196,
+        "v": 35,
+        "w": 50,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 114,
+        "v": 211,
+        "w": 50,
+        "h": 14
+      }
+    },
+    {
+      "name": "mode_canner_2_50x14",
+      "group": "buttons",
+      "note": "Canner mode 2 icon",
+      "frequency": 1,
+      "source_files": [
+        "gui_canner_elc.png"
+      ],
+      "source_png": "gui_canner_elc.png",
+      "source_uv": {
+        "u": 196,
+        "v": 50,
+        "w": 50,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 166,
+        "v": 211,
+        "w": 50,
+        "h": 14
+      }
+    },
+    {
+      "name": "mode_canner_3_50x14",
+      "group": "buttons",
+      "note": "Canner mode 3 icon",
+      "frequency": 1,
+      "source_files": [
+        "gui_canner_elc.png"
+      ],
+      "source_png": "gui_canner_elc.png",
+      "source_uv": {
+        "u": 196,
+        "v": 65,
+        "w": 50,
+        "h": 14
+      },
+      "atlas_uv": {
+        "u": 2,
+        "v": 227,
+        "w": 50,
+        "h": 14
+      }
+    },
+    {
+      "name": "dir_btn_normal_18x18",
+      "group": "buttons",
+      "note": "Direction button normal",
+      "frequency": 1,
+      "source_files": [
+        "gui_sorter_elc.png"
+      ],
+      "source_png": "gui_sorter_elc.png",
+      "source_uv": {
+        "u": 230,
+        "v": 15,
+        "w": 18,
+        "h": 18
+      },
+      "atlas_uv": {
+        "u": 84,
+        "v": 164,
+        "w": 18,
+        "h": 18
+      }
+    },
+    {
+      "name": "dir_btn_default_18x18",
+      "group": "buttons",
+      "note": "Direction button default",
+      "frequency": 1,
+      "source_files": [
+        "gui_sorter_elc.png"
+      ],
+      "source_png": "gui_sorter_elc.png",
+      "source_uv": {
+        "u": 230,
+        "v": 33,
+        "w": 18,
+        "h": 18
+      },
+      "atlas_uv": {
+        "u": 104,
+        "v": 164,
+        "w": 18,
+        "h": 18
+      }
+    },
+    {
+      "name": "adj_has_inv_18x18",
+      "group": "buttons",
+      "note": "Adj indicator has inv",
+      "frequency": 1,
+      "source_files": [
+        "gui_sorter_elc.png"
+      ],
+      "source_png": "gui_sorter_elc.png",
+      "source_uv": {
+        "u": 212,
+        "v": 15,
+        "w": 18,
+        "h": 18
+      },
+      "atlas_uv": {
+        "u": 124,
+        "v": 164,
+        "w": 18,
+        "h": 18
+      }
+    },
+    {
+      "name": "adj_no_inv_18x18",
+      "group": "buttons",
+      "note": "Adj indicator no inv",
+      "frequency": 1,
+      "source_files": [
+        "gui_sorter_elc.png"
+      ],
+      "source_png": "gui_sorter_elc.png",
+      "source_uv": {
+        "u": 212,
+        "v": 33,
+        "w": 18,
+        "h": 18
+      },
+      "atlas_uv": {
+        "u": 144,
+        "v": 164,
+        "w": 18,
+        "h": 18
+      }
+    },
+    {
+      "name": "x_mark_16x16",
+      "group": "buttons",
+      "note": "Unusable slot X mark",
+      "frequency": 1,
+      "source_files": [
+        "gui_nuclear_reactor_generator.png"
+      ],
+      "source_png": "gui_nuclear_reactor_generator.png",
+      "source_uv": {
+        "u": 213,
+        "v": 1,
+        "w": 16,
+        "h": 16
+      },
+      "atlas_uv": {
+        "u": 64,
+        "v": 192,
+        "w": 16,
+        "h": 16
+      }
+    },
+    {
+      "name": "mode_indicator_0_16x16",
+      "group": "indicators",
+      "note": "Transformer mode 0",
+      "frequency": 1,
+      "source_files": [
+        "gui_transformer.png"
+      ],
+      "source_png": "gui_transformer.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 16,
+        "h": 16
+      },
+      "atlas_uv": {
+        "u": 82,
+        "v": 192,
+        "w": 16,
+        "h": 16
+      }
+    },
+    {
+      "name": "mode_indicator_1_16x16",
+      "group": "indicators",
+      "note": "Transformer mode 1",
+      "frequency": 1,
+      "source_files": [
+        "gui_transformer.png"
+      ],
+      "source_png": "gui_transformer.png",
+      "source_uv": {
+        "u": 192,
+        "v": 0,
+        "w": 16,
+        "h": 16
+      },
+      "atlas_uv": {
+        "u": 100,
+        "v": 192,
+        "w": 16,
+        "h": 16
+      }
+    },
+    {
+      "name": "mode_indicator_2_16x16",
+      "group": "indicators",
+      "note": "Transformer mode 2",
+      "frequency": 1,
+      "source_files": [
+        "gui_transformer.png"
+      ],
+      "source_png": "gui_transformer.png",
+      "source_uv": {
+        "u": 208,
+        "v": 0,
+        "w": 16,
+        "h": 16
+      },
+      "atlas_uv": {
+        "u": 118,
+        "v": 192,
+        "w": 16,
+        "h": 16
+      }
+    },
+    {
+      "name": "mode_indicator_3_16x16",
+      "group": "indicators",
+      "note": "Transformer mode 3",
+      "frequency": 1,
+      "source_files": [
+        "gui_transformer.png"
+      ],
+      "source_png": "gui_transformer.png",
+      "source_uv": {
+        "u": 224,
+        "v": 0,
+        "w": 16,
+        "h": 16
+      },
+      "atlas_uv": {
+        "u": 136,
+        "v": 192,
+        "w": 16,
+        "h": 16
+      }
+    },
+    {
+      "name": "redstone_indicator_16x16",
+      "group": "indicators",
+      "note": "Redstone indicator",
+      "frequency": 1,
+      "source_files": [
+        "gui_transformer.png"
+      ],
+      "source_png": "gui_transformer.png",
+      "source_uv": {
+        "u": 176,
+        "v": 16,
+        "w": 16,
+        "h": 16
+      },
+      "atlas_uv": {
+        "u": 154,
+        "v": 192,
+        "w": 16,
+        "h": 16
+      }
+    },
+    {
+      "name": "eu_meter_mode_0_40x40",
+      "group": "indicators",
+      "note": "EU meter mode 0",
+      "frequency": 1,
+      "source_files": [
+        "gui_tool_eu_meter.png"
+      ],
+      "source_png": "gui_tool_eu_meter.png",
+      "source_uv": {
+        "u": 176,
+        "v": 0,
+        "w": 40,
+        "h": 40
+      },
+      "atlas_uv": {
+        "u": 86,
+        "v": 80,
+        "w": 40,
+        "h": 40
+      }
+    },
+    {
+      "name": "eu_meter_mode_1_40x40",
+      "group": "indicators",
+      "note": "EU meter mode 1",
+      "frequency": 1,
+      "source_files": [
+        "gui_tool_eu_meter.png"
+      ],
+      "source_png": "gui_tool_eu_meter.png",
+      "source_uv": {
+        "u": 176,
+        "v": 40,
+        "w": 40,
+        "h": 40
+      },
+      "atlas_uv": {
+        "u": 128,
+        "v": 80,
+        "w": 40,
+        "h": 40
+      }
+    },
+    {
+      "name": "eu_meter_mode_2_40x40",
+      "group": "indicators",
+      "note": "EU meter mode 2",
+      "frequency": 1,
+      "source_files": [
+        "gui_tool_eu_meter.png"
+      ],
+      "source_png": "gui_tool_eu_meter.png",
+      "source_uv": {
+        "u": 176,
+        "v": 80,
+        "w": 40,
+        "h": 40
+      },
+      "atlas_uv": {
+        "u": 170,
+        "v": 80,
+        "w": 40,
+        "h": 40
+      }
+    },
+    {
+      "name": "eu_meter_mode_3_40x40",
+      "group": "indicators",
+      "note": "EU meter mode 3",
+      "frequency": 1,
+      "source_files": [
+        "gui_tool_eu_meter.png"
+      ],
+      "source_png": "gui_tool_eu_meter.png",
+      "source_uv": {
+        "u": 176,
+        "v": 120,
+        "w": 40,
+        "h": 40
+      },
+      "atlas_uv": {
+        "u": 212,
+        "v": 80,
+        "w": 40,
+        "h": 40
+      }
+    },
+    {
+      "name": "calcification_bar_7x58",
+      "group": "misc",
+      "note": "Calcification bar",
+      "frequency": 1,
+      "source_files": [
+        "gui_steam_generator_elc.png"
+      ],
+      "source_png": "gui_steam_generator_elc.png",
+      "source_uv": {
+        "u": 187,
+        "v": 1,
+        "w": 7,
+        "h": 58
+      },
+      "atlas_uv": {
+        "u": 29,
+        "v": 2,
+        "w": 7,
+        "h": 58
+      }
+    },
+    {
+      "name": "heat_cache_16x16_stirling",
+      "group": "misc",
+      "note": "Heat cache icon",
+      "frequency": 1,
+      "source_files": [
+        "gui_stirling_kinetic_generator.png"
+      ],
+      "source_png": "gui_stirling_kinetic_generator.png",
+      "source_uv": {
+        "u": 208,
+        "v": 0,
+        "w": 16,
+        "h": 16
+      },
+      "atlas_uv": {
+        "u": 172,
+        "v": 192,
+        "w": 16,
+        "h": 16
+      }
+    },
+    {
+      "name": "blast_furnace_air_27x27",
+      "group": "misc",
+      "note": "Air OK indicator",
+      "frequency": 1,
+      "source_files": [
+        "gui_blast_furnace.png"
+      ],
+      "source_png": "gui_blast_furnace.png",
+      "source_uv": {
+        "u": 176,
+        "v": 23,
+        "w": 27,
+        "h": 27
+      },
+      "atlas_uv": {
+        "u": 201,
+        "v": 125,
+        "w": 27,
+        "h": 27
+      }
+    },
+    {
+      "name": "scanner_result_x_66x43",
+      "group": "misc",
+      "note": "Scanner result area",
+      "frequency": 1,
+      "source_files": [
+        "gui_scanner_elc.png"
+      ],
+      "source_png": "gui_scanner_elc.png",
+      "source_uv": {
+        "u": 176,
+        "v": 14,
+        "w": 66,
+        "h": 43
+      },
+      "atlas_uv": {
+        "u": 2,
+        "v": 80,
+        "w": 66,
+        "h": 43
+      }
+    }
+  ]
+}

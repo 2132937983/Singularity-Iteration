@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "T": {
+      "tag": "c:plates/tin"
+    },
+    "E": {
+      "item": "minecraft:ender_pearl"
+    },
+    "L": {
+      "item": "minecraft:lapis_lazuli"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "pattern": [
+    "TET",
+    "LML",
+    "TCT"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:producer/block_chunk_loader"
+  },
+  "show_notification": true
+}

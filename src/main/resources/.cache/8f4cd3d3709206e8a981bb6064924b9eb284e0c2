@@ -1,0 +1,6 @@
+// 1.21.1	2026-06-28T12:38:55.5573363	Global Loot Modifiers : mio_icif
+e3bf368dc1533ec67c6c47770daa5a3565c6935c data/mio_icif/loot_modifiers/iridium_shard_in_bastion.json
+7b4afc3067f8ab34375671104cce3fd9f88faa4d data/mio_icif/loot_modifiers/iridium_shard_in_dungeon.json
+b48b1e3f91b47c5fbcbde56d86de77e12d8c9f4e data/mio_icif/loot_modifiers/iridium_shard_in_mineshaft.json
+e81a014c76e89e000a9bab02fd19bdf170421a06 data/mio_icif/loot_modifiers/iridium_shard_in_nether_fortress.json
+172325a2fbeb05239dbfcd6ce8222d7f178df6ab data/neoforge/loot_modifiers/global_loot_modifiers.json

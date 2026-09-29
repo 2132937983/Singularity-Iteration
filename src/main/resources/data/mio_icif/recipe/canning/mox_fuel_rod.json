@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:canning",
+  "can": {
+    "item": "mio_icif:normal/item_fuel_rod"
+  },
+  "food": {
+    "item": "mio_icif:resource/item_mox"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:reactor/item_reactor_mox_simple"
+  }
+}

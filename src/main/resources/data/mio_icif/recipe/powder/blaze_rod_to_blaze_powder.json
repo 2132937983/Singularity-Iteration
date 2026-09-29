@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:powder",
+  "count": 1,
+  "ingredient": {
+    "item": "minecraft:blaze_rod"
+  },
+  "result": {
+    "count": 5,
+    "id": "minecraft:blaze_powder"
+  }
+}

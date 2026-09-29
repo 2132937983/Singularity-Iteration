@@ -1,0 +1,30 @@
+{
+  "type": "mio_icif:charge_carrying",
+  "transfer_charge": true,
+  "pattern": [
+    "CMS",
+    "CBA",
+    "CMS"
+  ],
+  "key": {
+    "C": {
+      "tag": "c:plates/carbon"
+    },
+    "M": {
+      "item": "mio_icif:resource/item_motor"
+    },
+    "S": {
+      "item": "minecraft:lead"
+    },
+    "B": {
+      "tag": "c:crystals/energy"
+    },
+    "A": {
+      "tag": "c:circuits/advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:item_tool_nano_bow",
+    "count": 1
+  }
+}

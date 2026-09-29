@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "DRD",
+    "GGG"
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "R": {
+      "tag": "c:dusts/silver"
+    },
+    "D": {
+      "item": "mio_icif:resource/item_energium_dust"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/cable/block_glass_cable",
+    "count": 6
+  }
+}

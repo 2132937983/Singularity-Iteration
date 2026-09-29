@@ -1,0 +1,23 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "PGP",
+        "GBG",
+        "PGP"
+    ],
+    "key": {
+        "P": {
+            "item": "mio_icif:resource/item_super_iridium_compress_plate"
+        },
+        "G": {
+            "item": "mio_icif:generator/block_photon_resonance_solar_generator"
+        },
+        "B": {
+            "item": "mio_icif:normal/item_charging_super_lapotron_crystal"
+        }
+    },
+    "result": {
+        "id": "mio_icif:generator/block_ultimate_photon_resonance_solar_generator",
+        "count": 1
+    }
+}

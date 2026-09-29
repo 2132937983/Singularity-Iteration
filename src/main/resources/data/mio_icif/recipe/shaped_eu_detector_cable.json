@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "RIR",
+    " R "
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:normal/item_circuit"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "I": {
+      "item": "mio_icif:wiring/cable/block_iron_cable_1"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_eu_detector_cable",
+    "count": 1
+  }
+}

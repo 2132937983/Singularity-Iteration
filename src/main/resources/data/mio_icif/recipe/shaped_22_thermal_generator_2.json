@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "B",
+    "M",
+    "F"
+  ],
+  "key": {
+    "B": {
+      "item": "mio_icif:normal/item_bat_lev0"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "F": {
+      "item": "minecraft:furnace"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_thermal_generator",
+    "count": 1
+  }
+}

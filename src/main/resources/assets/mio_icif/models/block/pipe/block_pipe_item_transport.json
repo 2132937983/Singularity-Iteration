@@ -1,0 +1,7 @@
+{
+  "parent": "mio_icif:block/pipe/block_pipe_item",
+  "textures": {
+    "particle": "mio_icif:block/pipe/block_pipe_item",
+    "texture": "mio_icif:block/pipe/block_pipe_item"
+  }
+}

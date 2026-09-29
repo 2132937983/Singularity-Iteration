@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PLP",
+    "IAI",
+    "CSC"
+  ],
+  "key": {
+    "P": {
+      "item": "mio_icif:resource/item_carbon_plate"
+    },
+    "L": {
+      "item": "minecraft:lapis_block"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iridium"
+    },
+    "A": {
+      "item": "mio_icif:generator/block_advanced_solar_panel"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_advcircuit"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_enriched_sunnarium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_hybrid_solar_panel",
+    "count": 1
+  }
+}

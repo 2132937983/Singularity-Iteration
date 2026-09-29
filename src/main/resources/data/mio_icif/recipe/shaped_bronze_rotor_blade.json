@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PSP","PSP","PSP"],
+  "key": {
+    "P":{"tag": "c:plates/bronze"},
+    "S":{"tag": "c:ingots/bronze"}
+  },
+  "result":{"id":"mio_icif:resource/item_bronze_rotor_blade","count":1}
+}

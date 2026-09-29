@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IMI",
+    "SCS",
+    "IMI"
+  ],
+  "key": {
+    "I": {
+      "tag": "c:plates/niobium_titanium"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_recycler_elc"
+    },
+    "C": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "S": {
+      "tag": "c:circuits/elite"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_large_fabricator_scrap",
+    "count": 1
+  }
+}

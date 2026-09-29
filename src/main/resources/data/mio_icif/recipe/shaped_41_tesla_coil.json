@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RRR",
+    "RMR",
+    "ICI"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:wiring/transformer_mv_hv"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_tesla",
+    "count": 1
+  }
+}

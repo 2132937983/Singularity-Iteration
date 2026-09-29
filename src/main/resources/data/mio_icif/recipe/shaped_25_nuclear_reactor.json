@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PcP",
+    "CCC",
+    "PGP"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:reactor/block_reactor_chamber"
+    },
+    "c": {
+      "tag": "c:circuits/advanced"
+    },
+    "G": {
+      "item": "mio_icif:generator/block_thermal_generator"
+    },
+    "P": {
+      "item": "mio_icif:resource/item_lead_denseplate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_nuclear_reactor_generator",
+    "count": 1
+  }
+}

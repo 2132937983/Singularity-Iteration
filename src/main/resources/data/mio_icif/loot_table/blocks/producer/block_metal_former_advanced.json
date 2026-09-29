@@ -1,0 +1,22 @@
+{
+    "type": "minecraft:block",
+    "pools": [
+        {
+            "bonus_rolls": 0.0,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "functions": [
+                        {
+                            "function": "minecraft:copy_name",
+                            "source": "block_entity"
+                        }
+                    ],
+                    "name": "mio_icif:producer/block_metal_former_advanced"
+                }
+            ],
+            "rolls": 1.0
+        }
+    ],
+    "random_sequence": "mio_icif:blocks/block_metal_former_advanced"
+}

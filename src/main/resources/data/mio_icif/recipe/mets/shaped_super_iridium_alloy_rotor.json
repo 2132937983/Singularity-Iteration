@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [" A ", "ABA", " A "],
+  "key": {
+    "A": {"item": "mio_icif:resource/item_super_iridium_alloy_rotor_blade"},
+    "B": {"tag": "c:shafts/titanium"}
+  },
+  "result": {"id": "mio_icif:rotors/item_super_iridium_alloy_rotor", "count": 1}
+}

@@ -1,0 +1,46 @@
+{
+  "variants": {
+    "facing=up,lit=false": {
+      "model": "mio_icif:block/producer/block_barrel"
+    },
+    "facing=down,lit=false": {
+      "model": "mio_icif:block/producer/block_barrel"
+    },
+    "facing=north,lit=false": {
+      "model": "mio_icif:block/producer/block_barrel"
+    },
+    "facing=south,lit=false": {
+      "model": "mio_icif:block/producer/block_barrel",
+      "y": 180
+    },
+    "facing=west,lit=false": {
+      "model": "mio_icif:block/producer/block_barrel",
+      "y": 270
+    },
+    "facing=east,lit=false": {
+      "model": "mio_icif:block/producer/block_barrel",
+      "y": 90
+    },
+    "facing=up,lit=true": {
+      "model": "mio_icif:block/producer/block_barrel"
+    },
+    "facing=down,lit=true": {
+      "model": "mio_icif:block/producer/block_barrel"
+    },
+    "facing=north,lit=true": {
+      "model": "mio_icif:block/producer/block_barrel"
+    },
+    "facing=south,lit=true": {
+      "model": "mio_icif:block/producer/block_barrel",
+      "y": 180
+    },
+    "facing=west,lit=true": {
+      "model": "mio_icif:block/producer/block_barrel",
+      "y": 270
+    },
+    "facing=east,lit=true": {
+      "model": "mio_icif:block/producer/block_barrel",
+      "y": 90
+    }
+  }
+}

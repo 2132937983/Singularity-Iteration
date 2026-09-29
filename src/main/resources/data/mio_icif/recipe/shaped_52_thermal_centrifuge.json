@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CMC",
+    "RAR",
+    "RER"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:resource/item_coil"
+    },
+    "R": {
+      "tag": "c:ingots/iron"
+    },
+    "A": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "M": {
+      "item": "mio_icif:item_tool_laser_miner"
+    },
+    "E": {
+      "item": "mio_icif:resource/item_motor"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_centrifuge_elc",
+    "count": 1
+  }
+}

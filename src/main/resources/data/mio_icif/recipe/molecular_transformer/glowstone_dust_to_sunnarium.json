@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "minecraft:glowstone_dust"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_sunnarium_small"
+  },
+  "eu_cost": 1000000,
+  "duration": 1
+}

@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CPC",
+    "RBR"
+  ],
+  "key": {
+    "B": {
+      "item": "mio_icif:wiring/block_mfe"
+    },
+    "R": {
+      "item": "mio_icif:resource/item_rubber"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "P": {
+      "item": "minecraft:stone_pressure_plate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_mfe_charger",
+    "count": 1
+  }
+}

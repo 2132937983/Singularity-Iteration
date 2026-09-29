@@ -1,0 +1,2791 @@
+{
+  "schema": 1,
+  "data_version": 1343,
+  "reference_sha256": "f96b1886b6d060b308fb811029d5c5cc76deb17b835aa368dcb6071f2de290d4",
+  "raw_units_per_bucket": 100000,
+  "source_observations_sha256": "2d00d25c65c9dd0eb3c992dc47191fddab9c7ab8022135204d8bbc655597b99b",
+  "entries": [
+    {
+      "legacy_stack": "{id:\"minecraft:acacia_boat\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 92
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:acacia_door\",Count:1b,Damage:0s}",
+      "raw_value": "18342.39822165767",
+      "source_console_line": 93
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:acacia_fence\",Count:1b,Damage:0s}",
+      "raw_value": "12328.776442712668",
+      "source_console_line": 94
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:acacia_fence_gate\",Count:1b,Damage:0s}",
+      "raw_value": "18945.463991303",
+      "source_console_line": 95
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sapling\",Count:1b,Damage:4s}",
+      "raw_value": "127565.09646539028",
+      "source_console_line": 96
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:log2\",Count:1b,Damage:0s}",
+      "raw_value": "55012.19466497301",
+      "source_console_line": 97
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:planks\",Count:1b,Damage:4s}",
+      "raw_value": "9171.032444162169",
+      "source_console_line": 98
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_slab\",Count:1b,Damage:4s}",
+      "raw_value": "4585.68288874775",
+      "source_console_line": 99
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:acacia_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 100
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:activator_rail\",Count:1b,Damage:0s}",
+      "raw_value": "163.55715026829125",
+      "source_console_line": 101
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_flower\",Count:1b,Damage:2s}",
+      "raw_value": "425634.8918918919",
+      "source_console_line": 111
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone\",Count:1b,Damage:5s}",
+      "raw_value": "9.888396147777113",
+      "source_console_line": 112
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:anvil\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 113
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:apple\",Count:1b,Damage:0s}",
+      "raw_value": "5268.619999999999",
+      "source_console_line": 114
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:armor_stand\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 115
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:arrow\",Count:1b,Damage:0s}",
+      "raw_value": "2066.8613626246106",
+      "source_console_line": 116
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_flower\",Count:1b,Damage:3s}",
+      "raw_value": "161147.34976744186",
+      "source_console_line": 118
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:baked_potato\",Count:1b,Damage:0s}",
+      "raw_value": "1862738.7419354839",
+      "source_console_line": 119
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:beacon\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 124
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:beetroot\",Count:1b,Damage:0s}",
+      "raw_value": "1.443611675E7",
+      "source_console_line": 125
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:beetroot_seeds\",Count:1b,Damage:0s}",
+      "raw_value": "1211422.3846153845",
+      "source_console_line": 126
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:beetroot_soup\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 127
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:birch_boat\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 129
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:birch_door\",Count:1b,Damage:0s}",
+      "raw_value": "1873.3297311288704",
+      "source_console_line": 130
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:birch_fence\",Count:1b,Damage:0s}",
+      "raw_value": "1349.3974490268017",
+      "source_console_line": 131
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:birch_fence_gate\",Count:1b,Damage:0s}",
+      "raw_value": "2476.3955007741993",
+      "source_console_line": 132
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sapling\",Count:1b,Damage:2s}",
+      "raw_value": "13292.925184162063",
+      "source_console_line": 133
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:log\",Count:1b,Damage:2s}",
+      "raw_value": "5604.989193386611",
+      "source_console_line": 134
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:planks\",Count:1b,Damage:2s}",
+      "raw_value": "936.4981988977685",
+      "source_console_line": 135
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_slab\",Count:1b,Damage:2s}",
+      "raw_value": "468.4157661155509",
+      "source_console_line": 136
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:birch_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 137
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 138
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:15s}",
+      "raw_value": "1.6298457397981701E7",
+      "source_console_line": 139
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:15s}",
+      "raw_value": "3621583.0",
+      "source_console_line": 140
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:15s}",
+      "raw_value": "Infinity",
+      "source_console_line": 141
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:black_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 142
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:15s}",
+      "raw_value": "Infinity",
+      "source_console_line": 144
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:15s}",
+      "raw_value": "Infinity",
+      "source_console_line": 145
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:15s}",
+      "raw_value": "Infinity",
+      "source_console_line": 146
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:15s}",
+      "raw_value": "5432374.0",
+      "source_console_line": 147
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:blaze_powder\",Count:1b,Damage:0s}",
+      "raw_value": "40067.897999999994",
+      "source_console_line": 149
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:blaze_rod\",Count:1b,Damage:0s}",
+      "raw_value": "200325.48999999996",
+      "source_console_line": 150
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:coal_block\",Count:1b,Damage:0s}",
+      "raw_value": "546.6366787674236",
+      "source_console_line": 155
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_block\",Count:1b,Damage:0s}",
+      "raw_value": "21692.433791642787",
+      "source_console_line": 156
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:emerald_block\",Count:1b,Damage:0s}",
+      "raw_value": "240788.73884169883",
+      "source_console_line": 157
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:gold_block\",Count:1b,Damage:0s}",
+      "raw_value": "4757.5883547196345",
+      "source_console_line": 158
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_block\",Count:1b,Damage:0s}",
+      "raw_value": "672.7277618977439",
+      "source_console_line": 159
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:quartz_block\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 160
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:redstone_block\",Count:1b,Damage:0s}",
+      "raw_value": "718.5255979952921",
+      "source_console_line": 161
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:4s}",
+      "raw_value": "Infinity",
+      "source_console_line": 162
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:11s}",
+      "raw_value": "118411.46051800955",
+      "source_console_line": 163
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:11s}",
+      "raw_value": "26202.824406921092",
+      "source_console_line": 164
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:11s}",
+      "raw_value": "81.9395433042236",
+      "source_console_line": 165
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:blue_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "681.7546734142319",
+      "source_console_line": 166
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_flower\",Count:1b,Damage:1s}",
+      "raw_value": "1219953.528169014",
+      "source_console_line": 167
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:11s}",
+      "raw_value": "81.1967059273349",
+      "source_console_line": 169
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:11s}",
+      "raw_value": "30.51126472275059",
+      "source_console_line": 170
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:11s}",
+      "raw_value": "667.7546734142319",
+      "source_console_line": 171
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:11s}",
+      "raw_value": "39303.73661038164",
+      "source_console_line": 172
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bone\",Count:1b,Damage:0s}",
+      "raw_value": "8057.359999999999",
+      "source_console_line": 174
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bone_block\",Count:1b,Damage:0s}",
+      "raw_value": "18161.559999999998",
+      "source_console_line": 175
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:15s}",
+      "raw_value": "2017.8399999999997",
+      "source_console_line": 176
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:book\",Count:1b,Damage:0s}",
+      "raw_value": "591336.8044444444",
+      "source_console_line": 177
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:writable_book\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 178
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bookshelf\",Count:1b,Damage:0s}",
+      "raw_value": "1776680.209296737",
+      "source_console_line": 179
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bow\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 181
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bowl\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 182
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bread\",Count:1b,Damage:0s}",
+      "raw_value": "5268.619999999999",
+      "source_console_line": 183
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:brewing_stand\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 184
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:brick\",Count:1b,Damage:0s}",
+      "raw_value": "1748.484771116184",
+      "source_console_line": 185
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:brick_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 186
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:brick_block\",Count:1b,Damage:0s}",
+      "raw_value": "6994.939084464736",
+      "source_console_line": 187
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_slab\",Count:1b,Damage:4s}",
+      "raw_value": "3497.636208899035",
+      "source_console_line": 188
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:3s}",
+      "raw_value": "Infinity",
+      "source_console_line": 206
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:12s}",
+      "raw_value": "652665.8776113316",
+      "source_console_line": 207
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:12s}",
+      "raw_value": "382372.4358024692",
+      "source_console_line": 208
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:12s}",
+      "raw_value": "66863.74167996949",
+      "source_console_line": 209
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:brown_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "2116.398128595354",
+      "source_console_line": 210
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:12s}",
+      "raw_value": "66862.9988425926",
+      "source_console_line": 212
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:12s}",
+      "raw_value": "25073.687065972226",
+      "source_console_line": 213
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:12s}",
+      "raw_value": "2102.398128595354",
+      "source_console_line": 214
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:12s}",
+      "raw_value": "573558.1537037038",
+      "source_console_line": 215
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bucket\",Count:1b,Damage:0s}",
+      "raw_value": "4330835.025",
+      "source_console_line": 216
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cactus\",Count:1b,Damage:0s}",
+      "raw_value": "264075.306402439",
+      "source_console_line": 223
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:2s}",
+      "raw_value": "264089.306402439",
+      "source_console_line": 224
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cake\",Count:1b,Damage:0s}",
+      "raw_value": "15958.789999999997",
+      "source_console_line": 225
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carrot\",Count:1b,Damage:0s}",
+      "raw_value": "5249497.0",
+      "source_console_line": 229
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carrot_on_a_stick\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 230
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cauldron\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 231
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:coal\",Count:1b,Damage:1s}",
+      "raw_value": "2668.795963403981",
+      "source_console_line": 233
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:chest\",Count:1b,Damage:0s}",
+      "raw_value": "821011.3791469195",
+      "source_console_line": 241
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:quartz_block\",Count:1b,Damage:1s}",
+      "raw_value": "Infinity",
+      "source_console_line": 242
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_sandstone\",Count:1b,Damage:1s}",
+      "raw_value": "52236.1343283582",
+      "source_console_line": 243
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sandstone\",Count:1b,Damage:1s}",
+      "raw_value": "62.333333333333336",
+      "source_console_line": 244
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stonebrick\",Count:1b,Damage:3s}",
+      "raw_value": "16.583333333333336",
+      "source_console_line": 245
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:clock\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 250
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:coal\",Count:1b,Damage:0s}",
+      "raw_value": "60.62629764082485",
+      "source_console_line": 251
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dirt\",Count:1b,Damage:1s}",
+      "raw_value": "29.92157920352484",
+      "source_console_line": 255
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cobblestone\",Count:1b,Damage:0s}",
+      "raw_value": "1.0",
+      "source_console_line": 256
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_slab\",Count:1b,Damage:3s}",
+      "raw_value": "0.6666666666666666",
+      "source_console_line": 257
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "3.46466802E7",
+      "source_console_line": 258
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cobblestone_wall\",Count:1b,Damage:0s}",
+      "raw_value": "1.1666666666666667",
+      "source_console_line": 259
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:3s}",
+      "raw_value": "534670.9907407408",
+      "source_console_line": 260
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:compass\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 270
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cooked_chicken\",Count:1b,Damage:0s}",
+      "raw_value": "8832.009999999998",
+      "source_console_line": 279
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cooked_fish\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 280
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cooked_mutton\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 281
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cooked_porkchop\",Count:1b,Damage:0s}",
+      "raw_value": "8832.009999999998",
+      "source_console_line": 282
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cooked_rabbit\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 283
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cooked_fish\",Count:1b,Damage:1s}",
+      "raw_value": "Infinity",
+      "source_console_line": 284
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cookie\",Count:1b,Damage:0s}",
+      "raw_value": "235348.98036010232",
+      "source_console_line": 285
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stonebrick\",Count:1b,Damage:2s}",
+      "raw_value": "29.25",
+      "source_console_line": 294
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:crafting_table\",Count:1b,Damage:0s}",
+      "raw_value": "1780.1973089359874",
+      "source_console_line": 295
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:6s}",
+      "raw_value": "Infinity",
+      "source_console_line": 310
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:9s}",
+      "raw_value": "250248.32689551974",
+      "source_console_line": 311
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:9s}",
+      "raw_value": "114094.06865859455",
+      "source_console_line": 312
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:9s}",
+      "raw_value": "16561.547840492996",
+      "source_console_line": 313
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:6s}",
+      "raw_value": "132253.44002492886",
+      "source_console_line": 314
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cyan_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "17161.362970603004",
+      "source_console_line": 315
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:9s}",
+      "raw_value": "16560.805003116107",
+      "source_console_line": 317
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:9s}",
+      "raw_value": "6210.36437616854",
+      "source_console_line": 318
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:9s}",
+      "raw_value": "17147.362970603004",
+      "source_console_line": 319
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:9s}",
+      "raw_value": "171140.60298789182",
+      "source_console_line": 320
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:yellow_flower\",Count:1b,Damage:0s}",
+      "raw_value": "30148.520884093283",
+      "source_console_line": 322
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:11s}",
+      "raw_value": "30149.520884093283",
+      "source_console_line": 323
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dark_oak_boat\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 326
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dark_oak_door\",Count:1b,Damage:0s}",
+      "raw_value": "889.9319878013271",
+      "source_console_line": 327
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dark_oak_fence\",Count:1b,Damage:0s}",
+      "raw_value": "693.7989534751063",
+      "source_console_line": 328
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dark_oak_fence_gate\",Count:1b,Damage:0s}",
+      "raw_value": "1492.9977574466561",
+      "source_console_line": 329
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sapling\",Count:1b,Damage:5s}",
+      "raw_value": "20679.64677092038",
+      "source_console_line": 330
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:log2\",Count:1b,Damage:1s}",
+      "raw_value": "2654.795963403981",
+      "source_console_line": 331
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:planks\",Count:1b,Damage:5s}",
+      "raw_value": "444.79932723399685",
+      "source_console_line": 332
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_slab\",Count:1b,Damage:5s}",
+      "raw_value": "222.5663302836651",
+      "source_console_line": 333
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dark_oak_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 334
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:prismarine\",Count:1b,Damage:2s}",
+      "raw_value": "931362.3709677419",
+      "source_console_line": 335
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:daylight_detector\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 336
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:detector_rail\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 346
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond\",Count:1b,Damage:0s}",
+      "raw_value": "2410.159310182532",
+      "source_console_line": 347
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_axe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 348
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_boots\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 349
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_chestplate\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 350
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_helmet\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 353
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_hoe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 354
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_horse_armor\",Count:1b,Damage:0s}",
+      "raw_value": "9624077.833333334",
+      "source_console_line": 355
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_leggings\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 356
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_pickaxe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 357
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_shovel\",Count:1b,Damage:0s}",
+      "raw_value": "2712.358861671863",
+      "source_console_line": 358
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:diamond_sword\",Count:1b,Damage:0s}",
+      "raw_value": "4971.91839610973",
+      "source_console_line": 359
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone\",Count:1b,Damage:3s}",
+      "raw_value": "17.776792295554227",
+      "source_console_line": 360
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dirt\",Count:1b,Damage:0s}",
+      "raw_value": "14.857483653272267",
+      "source_console_line": 361
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dispenser\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 362
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dropper\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 363
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:egg\",Count:1b,Damage:0s}",
+      "raw_value": "10071.449999999999",
+      "source_console_line": 374
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:emerald\",Count:1b,Damage:0s}",
+      "raw_value": "26754.193204633204",
+      "source_console_line": 388
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:map\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 391
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:enchanting_table\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 393
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:end_crystal\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 394
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:end_rod\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 395
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:end_stone\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 396
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:end_bricks\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 397
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:ender_chest\",Count:1b,Damage:0s}",
+      "raw_value": "3.46606957678E8",
+      "source_console_line": 398
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:ender_pearl\",Count:1b,Damage:0s}",
+      "raw_value": "100085.77999999998",
+      "source_console_line": 400
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:ender_eye\",Count:1b,Damage:0s}",
+      "raw_value": "140154.67799999999",
+      "source_console_line": 409
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:feather\",Count:1b,Damage:0s}",
+      "raw_value": "8057.359999999999",
+      "source_console_line": 410
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:fermented_spider_eye\",Count:1b,Damage:0s}",
+      "raw_value": "5689772.880245566",
+      "source_console_line": 411
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:fire_charge\",Count:1b,Damage:0s}",
+      "raw_value": "95750.926073536",
+      "source_console_line": 414
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:fishing_rod\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 415
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:flint\",Count:1b,Damage:0s}",
+      "raw_value": "58.48567475377741",
+      "source_console_line": 416
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:flint_and_steel\",Count:1b,Damage:0s}",
+      "raw_value": "134.12209274241562",
+      "source_console_line": 417
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:flower_pot\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 418
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:furnace\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 431
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:ghast_tear\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 434
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:glass\",Count:1b,Damage:0s}",
+      "raw_value": "29.0",
+      "source_console_line": 435
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:glass_bottle\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 436
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:glass_pane\",Count:1b,Damage:0s}",
+      "raw_value": "10.9375",
+      "source_console_line": 438
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:speckled_melon\",Count:1b,Damage:0s}",
+      "raw_value": "875387.8420597253",
+      "source_console_line": 439
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:glowstone\",Count:1b,Damage:0s}",
+      "raw_value": "40286.799999999996",
+      "source_console_line": 440
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:glowstone_dust\",Count:1b,Damage:0s}",
+      "raw_value": "10071.449999999999",
+      "source_console_line": 441
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_horse_armor\",Count:1b,Damage:0s}",
+      "raw_value": "4330835.025",
+      "source_console_line": 444
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:gold_ingot\",Count:1b,Damage:0s}",
+      "raw_value": "528.5098171910705",
+      "source_console_line": 445
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:gold_nugget\",Count:1b,Damage:0s}",
+      "raw_value": "58.83442413234117",
+      "source_console_line": 447
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:gold_ore\",Count:1b,Damage:0s}",
+      "raw_value": "1015.019634382141",
+      "source_console_line": 448
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_axe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 452
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_boots\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 453
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_carrot\",Count:1b,Damage:0s}",
+      "raw_value": "5249968.675393059",
+      "source_console_line": 454
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_chestplate\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 455
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_helmet\",Count:1b,Damage:0s}",
+      "raw_value": "800989.0999999999",
+      "source_console_line": 456
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_hoe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 457
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_leggings\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 458
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_pickaxe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 459
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_shovel\",Count:1b,Damage:0s}",
+      "raw_value": "830.7093686804017",
+      "source_console_line": 460
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_sword\",Count:1b,Damage:0s}",
+      "raw_value": "1208.6194101268065",
+      "source_console_line": 461
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone\",Count:1b,Damage:1s}",
+      "raw_value": "17.088380001493466",
+      "source_console_line": 462
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:grass\",Count:1b,Damage:0s}",
+      "raw_value": "2634.8099999999995",
+      "source_console_line": 463
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:gravel\",Count:1b,Damage:0s}",
+      "raw_value": "44.48567475377741",
+      "source_console_line": 464
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:8s}",
+      "raw_value": "Infinity",
+      "source_console_line": 465
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:7s}",
+      "raw_value": "Infinity",
+      "source_console_line": 466
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:7s}",
+      "raw_value": "Infinity",
+      "source_console_line": 467
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:7s}",
+      "raw_value": "Infinity",
+      "source_console_line": 468
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:8s}",
+      "raw_value": "Infinity",
+      "source_console_line": 469
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:gray_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 470
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:7s}",
+      "raw_value": "Infinity",
+      "source_console_line": 471
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:7s}",
+      "raw_value": "Infinity",
+      "source_console_line": 472
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:7s}",
+      "raw_value": "Infinity",
+      "source_console_line": 473
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:7s}",
+      "raw_value": "Infinity",
+      "source_console_line": 474
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:2s}",
+      "raw_value": "Infinity",
+      "source_console_line": 475
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:13s}",
+      "raw_value": "382084.1932730299",
+      "source_console_line": 476
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:13s}",
+      "raw_value": "201984.64624360134",
+      "source_console_line": 477
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:13s}",
+      "raw_value": "33041.03113768176",
+      "source_console_line": 478
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:green_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "33640.84626779178",
+      "source_console_line": 479
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:13s}",
+      "raw_value": "33040.28830030488",
+      "source_console_line": 481
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:13s}",
+      "raw_value": "12390.170612614329",
+      "source_console_line": 482
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:13s}",
+      "raw_value": "33626.84626779178",
+      "source_console_line": 483
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:13s}",
+      "raw_value": "302976.469365402",
+      "source_console_line": 484
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:gunpowder\",Count:1b,Damage:0s}",
+      "raw_value": "247123.25392296718",
+      "source_console_line": 486
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:hay_block\",Count:1b,Damage:0s}",
+      "raw_value": "6066540.334630351",
+      "source_console_line": 489
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:hopper\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 496
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:ice\",Count:1b,Damage:0s}",
+      "raw_value": "1120.2595040689569",
+      "source_console_line": 499
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 505
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_axe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 519
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_bars\",Count:1b,Damage:0s}",
+      "raw_value": "28.05115674573933",
+      "source_console_line": 520
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_boots\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 521
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_chestplate\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 522
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_door\",Count:1b,Damage:0s}",
+      "raw_value": "149.60616931060977",
+      "source_console_line": 523
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_helmet\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 527
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_hoe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 528
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_horse_armor\",Count:1b,Damage:0s}",
+      "raw_value": "3149698.2",
+      "source_console_line": 529
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_ingot\",Count:1b,Damage:0s}",
+      "raw_value": "74.63641798863821",
+      "source_console_line": 530
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_leggings\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 532
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_nugget\",Count:1b,Damage:0s}",
+      "raw_value": "8.404046443182024",
+      "source_console_line": 533
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_ore\",Count:1b,Damage:0s}",
+      "raw_value": "107.27283597727642",
+      "source_console_line": 534
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_pickaxe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 535
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_shovel\",Count:1b,Damage:0s}",
+      "raw_value": "376.83596947796946",
+      "source_console_line": 539
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_sword\",Count:1b,Damage:0s}",
+      "raw_value": "300.872611721942",
+      "source_console_line": 541
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:iron_trapdoor\",Count:1b,Damage:0s}",
+      "raw_value": "299.54567195455286",
+      "source_console_line": 543
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:item_frame\",Count:1b,Damage:0s}",
+      "raw_value": "9263.158205957323",
+      "source_console_line": 545
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:lit_pumpkin\",Count:1b,Damage:0s}",
+      "raw_value": "8886.066518346372",
+      "source_console_line": 546
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:jukebox\",Count:1b,Damage:0s}",
+      "raw_value": "5969.553928054507",
+      "source_console_line": 549
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:jungle_boat\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 550
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:jungle_door\",Count:1b,Damage:0s}",
+      "raw_value": "2375.9491685485523",
+      "source_console_line": 551
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:jungle_fence\",Count:1b,Damage:0s}",
+      "raw_value": "1684.4770739732567",
+      "source_console_line": 552
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:jungle_fence_gate\",Count:1b,Damage:0s}",
+      "raw_value": "2979.014938193882",
+      "source_console_line": 553
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sapling\",Count:1b,Damage:3s}",
+      "raw_value": "78033.06351351351",
+      "source_console_line": 554
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:log\",Count:1b,Damage:3s}",
+      "raw_value": "7112.847505645658",
+      "source_console_line": 555
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:planks\",Count:1b,Damage:3s}",
+      "raw_value": "1187.8079176076096",
+      "source_console_line": 556
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_slab\",Count:1b,Damage:3s}",
+      "raw_value": "594.0706254704714",
+      "source_console_line": 557
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:jungle_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 558
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:ladder\",Count:1b,Damage:0s}",
+      "raw_value": "2.1654175125E7",
+      "source_console_line": 567
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:4s}",
+      "raw_value": "416.5736474186792",
+      "source_console_line": 568
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:lapis_block\",Count:1b,Damage:0s}",
+      "raw_value": "3750.1628267681126",
+      "source_console_line": 569
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:lava_bucket\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 575
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:lead\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 577
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:leather\",Count:1b,Damage:0s}",
+      "raw_value": "8057.359999999999",
+      "source_console_line": 584
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:leather_boots\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 585
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:leather_helmet\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 586
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:leather_leggings\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 587
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:leather_chestplate\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 588
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:lever\",Count:1b,Damage:0s}",
+      "raw_value": "152.5997757446656",
+      "source_console_line": 589
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:12s}",
+      "raw_value": "Infinity",
+      "source_console_line": 590
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:3s}",
+      "raw_value": "119212.5936943002",
+      "source_console_line": 591
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:3s}",
+      "raw_value": "26736.91319111487",
+      "source_console_line": 592
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:3s}",
+      "raw_value": "182.08119034055613",
+      "source_console_line": 593
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:12s}",
+      "raw_value": "1217.7068237093395",
+      "source_console_line": 594
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:light_blue_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "781.8963204505644",
+      "source_console_line": 595
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:3s}",
+      "raw_value": "181.33835296366743",
+      "source_console_line": 597
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:3s}",
+      "raw_value": "68.0643823613753",
+      "source_console_line": 598
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:3s}",
+      "raw_value": "767.8963204505644",
+      "source_console_line": 599
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:3s}",
+      "raw_value": "40104.8697866723",
+      "source_console_line": 600
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:7s}",
+      "raw_value": "Infinity",
+      "source_console_line": 601
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:8s}",
+      "raw_value": "279143.2366380327",
+      "source_console_line": 602
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:8s}",
+      "raw_value": "133357.34182026988",
+      "source_console_line": 603
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:8s}",
+      "raw_value": "20173.41155830712",
+      "source_console_line": 604
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:7s}",
+      "raw_value": "161148.34976744186",
+      "source_console_line": 605
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:silver_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "9256.072183098591",
+      "source_console_line": 606
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:8s}",
+      "raw_value": "20172.668720930233",
+      "source_console_line": 607
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:8s}",
+      "raw_value": "7564.813270348837",
+      "source_console_line": 608
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:8s}",
+      "raw_value": "9242.072183098591",
+      "source_console_line": 609
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:8s}",
+      "raw_value": "200035.51273040482",
+      "source_console_line": 610
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:double_plant\",Count:1b,Damage:1s}",
+      "raw_value": "380732.7494505494",
+      "source_console_line": 612
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:waterlily\",Count:1b,Damage:0s}",
+      "raw_value": "45491.96454831933",
+      "source_console_line": 613
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:10s}",
+      "raw_value": "Infinity",
+      "source_console_line": 614
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:5s}",
+      "raw_value": "251048.9600718104",
+      "source_console_line": 615
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:5s}",
+      "raw_value": "114627.82410945499",
+      "source_console_line": 616
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:5s}",
+      "raw_value": "16661.62698752933",
+      "source_console_line": 617
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:10s}",
+      "raw_value": "133054.07320121952",
+      "source_console_line": 618
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:lime_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "17261.442117639337",
+      "source_console_line": 619
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:5s}",
+      "raw_value": "16660.88415015244",
+      "source_console_line": 621
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:5s}",
+      "raw_value": "6247.894056307165",
+      "source_console_line": 622
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:5s}",
+      "raw_value": "17247.442117639337",
+      "source_console_line": 623
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:5s}",
+      "raw_value": "171941.23616418248",
+      "source_console_line": 624
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:13s}",
+      "raw_value": "Infinity",
+      "source_console_line": 635
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:2s}",
+      "raw_value": "141755.11069392398",
+      "source_console_line": 636
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:2s}",
+      "raw_value": "41765.257857530705",
+      "source_console_line": 637
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:2s}",
+      "raw_value": "2999.895815293527",
+      "source_console_line": 638
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:13s}",
+      "raw_value": "23760.223823333105",
+      "source_console_line": 639
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:magenta_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "3599.7109454035353",
+      "source_console_line": 640
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:2s}",
+      "raw_value": "2999.152977916638",
+      "source_console_line": 642
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:2s}",
+      "raw_value": "1124.7448667187393",
+      "source_console_line": 643
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:2s}",
+      "raw_value": "3585.7109454035353",
+      "source_console_line": 644
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:2s}",
+      "raw_value": "62647.38678629606",
+      "source_console_line": 645
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:magma\",Count:1b,Damage:0s}",
+      "raw_value": "213576.51199999996",
+      "source_console_line": 646
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:magma_cream\",Count:1b,Damage:0s}",
+      "raw_value": "53393.87799999999",
+      "source_console_line": 647
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:minecart\",Count:1b,Damage:0s}",
+      "raw_value": "800989.0999999999",
+      "source_console_line": 658
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:chest_minecart\",Count:1b,Damage:0s}",
+      "raw_value": "1622001.4791469192",
+      "source_console_line": 659
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:furnace_minecart\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 660
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:hopper_minecart\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 661
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:tnt_minecart\",Count:1b,Damage:0s}",
+      "raw_value": "1404587.211111111",
+      "source_console_line": 662
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:mossy_cobblestone\",Count:1b,Damage:0s}",
+      "raw_value": "19798.102971428572",
+      "source_console_line": 668
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cobblestone_wall\",Count:1b,Damage:1s}",
+      "raw_value": "19798.26963809524",
+      "source_console_line": 669
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stonebrick\",Count:1b,Damage:1s}",
+      "raw_value": "Infinity",
+      "source_console_line": 670
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:mushroom_stew\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 673
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:name_tag\",Count:1b,Damage:0s}",
+      "raw_value": "2510629.0",
+      "source_console_line": 676
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:nether_brick_fence\",Count:1b,Damage:0s}",
+      "raw_value": "16173.886666666664",
+      "source_console_line": 684
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_slab\",Count:1b,Damage:6s}",
+      "raw_value": "8087.026666666665",
+      "source_console_line": 685
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:nether_brick_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 686
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:quartz\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 687
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:nether_star\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 688
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:nether_wart\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 689
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:nether_wart_block\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 690
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:netherrack\",Count:1b,Damage:0s}",
+      "raw_value": "4029.1799999999994",
+      "source_console_line": 691
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:noteblock\",Count:1b,Damage:0s}",
+      "raw_value": "3639.119684315896",
+      "source_console_line": 695
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:boat\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 699
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_door\",Count:1b,Damage:0s}",
+      "raw_value": "889.9319878013271",
+      "source_console_line": 700
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:fence\",Count:1b,Damage:0s}",
+      "raw_value": "693.7989534751063",
+      "source_console_line": 701
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:fence_gate\",Count:1b,Damage:0s}",
+      "raw_value": "1492.9977574466561",
+      "source_console_line": 702
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sapling\",Count:1b,Damage:0s}",
+      "raw_value": "5349.18638258453",
+      "source_console_line": 703
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:log\",Count:1b,Damage:0s}",
+      "raw_value": "3505.4717107126958",
+      "source_console_line": 704
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:planks\",Count:1b,Damage:0s}",
+      "raw_value": "444.79932723399685",
+      "source_console_line": 705
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_slab\",Count:1b,Damage:0s}",
+      "raw_value": "222.5663302836651",
+      "source_console_line": 706
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:oak_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "577444.67",
+      "source_console_line": 707
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:observer\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 709
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:obsidian\",Count:1b,Damage:0s}",
+      "raw_value": "4.330835025E7",
+      "source_console_line": 710
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:14s}",
+      "raw_value": "Infinity",
+      "source_console_line": 713
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:1s}",
+      "raw_value": "156354.70658683107",
+      "source_console_line": 714
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:1s}",
+      "raw_value": "51498.321786135435",
+      "source_console_line": 715
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:1s}",
+      "raw_value": "4824.845301906913",
+      "source_console_line": 716
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:14s}",
+      "raw_value": "38359.81971624019",
+      "source_console_line": 717
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:orange_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "1623.7813554124502",
+      "source_console_line": 718
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:1s}",
+      "raw_value": "4824.102464530024",
+      "source_console_line": 720
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:1s}",
+      "raw_value": "1809.100924198759",
+      "source_console_line": 721
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:1s}",
+      "raw_value": "1609.7813554124502",
+      "source_console_line": 722
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_flower\",Count:1b,Damage:5s}",
+      "raw_value": "386681.69866071426",
+      "source_console_line": 723
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:1s}",
+      "raw_value": "77246.98267920315",
+      "source_console_line": 724
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_flower\",Count:1b,Damage:8s}",
+      "raw_value": "276730.67252396164",
+      "source_console_line": 728
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:packed_ice\",Count:1b,Damage:0s}",
+      "raw_value": "2254.5190081379137",
+      "source_console_line": 729
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:painting\",Count:1b,Damage:0s}",
+      "raw_value": "40091.96116892029",
+      "source_console_line": 731
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:paper\",Count:1b,Damage:0s}",
+      "raw_value": "194426.14814814812",
+      "source_console_line": 732
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:double_plant\",Count:1b,Damage:5s}",
+      "raw_value": "502125.8",
+      "source_console_line": 736
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:quartz_block\",Count:1b,Damage:2s}",
+      "raw_value": "Infinity",
+      "source_console_line": 738
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:9s}",
+      "raw_value": "Infinity",
+      "source_console_line": 739
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:6s}",
+      "raw_value": "142288.8661447844",
+      "source_console_line": 740
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:6s}",
+      "raw_value": "42121.094824771004",
+      "source_console_line": 741
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:6s}",
+      "raw_value": "3066.615246651082",
+      "source_console_line": 742
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:9s}",
+      "raw_value": "24293.979274193545",
+      "source_console_line": 743
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:pink_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "3666.43037676109",
+      "source_console_line": 744
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:6s}",
+      "raw_value": "3065.872409274193",
+      "source_console_line": 746
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:6s}",
+      "raw_value": "1149.7646534778223",
+      "source_console_line": 747
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:6s}",
+      "raw_value": "3652.43037676109",
+      "source_console_line": 748
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_flower\",Count:1b,Damage:7s}",
+      "raw_value": "828867.947368421",
+      "source_console_line": 749
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:6s}",
+      "raw_value": "63181.142237156506",
+      "source_console_line": 750
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:piston\",Count:1b,Damage:0s}",
+      "raw_value": "1493.7594661345502",
+      "source_console_line": 751
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:poisonous_potato\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 754
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone\",Count:1b,Damage:6s}",
+      "raw_value": "10.138396147777113",
+      "source_console_line": 755
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone\",Count:1b,Damage:4s}",
+      "raw_value": "18.026792295554227",
+      "source_console_line": 756
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone\",Count:1b,Damage:2s}",
+      "raw_value": "17.338380001493466",
+      "source_console_line": 757
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:chorus_fruit_popped\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 758
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_flower\",Count:1b,Damage:0s}",
+      "raw_value": "46568.118548387094",
+      "source_console_line": 759
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:potato\",Count:1b,Damage:0s}",
+      "raw_value": "1862724.7419354839",
+      "source_console_line": 760
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_rail\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 762
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:prismarine\",Count:1b,Damage:0s}",
+      "raw_value": "29381.513059701494",
+      "source_console_line": 763
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:prismarine\",Count:1b,Damage:1s}",
+      "raw_value": "23463.82242990654",
+      "source_console_line": 764
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:prismarine_crystals\",Count:1b,Damage:0s}",
+      "raw_value": "1007170.9360465116",
+      "source_console_line": 765
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:prismarine_shard\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 766
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:pumpkin\",Count:1b,Damage:0s}",
+      "raw_value": "8832.009999999998",
+      "source_console_line": 771
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:pumpkin_pie\",Count:1b,Damage:0s}",
+      "raw_value": "213331.27481481482",
+      "source_console_line": 772
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:5s}",
+      "raw_value": "Infinity",
+      "source_console_line": 781
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:10s}",
+      "raw_value": "141488.23296849374",
+      "source_console_line": 782
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:10s}",
+      "raw_value": "41587.33937391057",
+      "source_console_line": 783
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:10s}",
+      "raw_value": "2966.5360996147497",
+      "source_console_line": 784
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:5s}",
+      "raw_value": "23493.346097902886",
+      "source_console_line": 785
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:purple_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "3566.351229724758",
+      "source_console_line": 786
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:purple_shulker_box\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 788
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:10s}",
+      "raw_value": "2965.7932622378607",
+      "source_console_line": 789
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:10s}",
+      "raw_value": "1112.2349733391977",
+      "source_console_line": 790
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:10s}",
+      "raw_value": "3552.351229724758",
+      "source_console_line": 791
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:10s}",
+      "raw_value": "62380.50906086585",
+      "source_console_line": 792
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:purpur_block\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 793
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:purpur_pillar\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 794
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:purpur_slab\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 795
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:purpur_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 796
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_slab\",Count:1b,Damage:7s}",
+      "raw_value": "Infinity",
+      "source_console_line": 805
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:quartz_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 806
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:rabbit_hide\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 809
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:rabbit_stew\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 810
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:rail\",Count:1b,Damage:0s}",
+      "raw_value": "8117.398481795604",
+      "source_console_line": 813
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:beef\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 814
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:chicken\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 817
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:fish\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 818
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:porkchop\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 819
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:fish\",Count:1b,Damage:1s}",
+      "raw_value": "Infinity",
+      "source_console_line": 820
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:1s}",
+      "raw_value": "Infinity",
+      "source_console_line": 832
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:14s}",
+      "raw_value": "164564.00541897796",
+      "source_console_line": 833
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:14s}",
+      "raw_value": "56971.18767423337",
+      "source_console_line": 834
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:14s}",
+      "raw_value": "5851.007655925276",
+      "source_console_line": 835
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "2507.3561846915572",
+      "source_console_line": 836
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_nether_brick\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 837
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sand\",Count:1b,Damage:1s}",
+      "raw_value": "13058.450248756219",
+      "source_console_line": 839
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_sandstone\",Count:1b,Damage:0s}",
+      "raw_value": "52234.800995024874",
+      "source_console_line": 840
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_slab2\",Count:1b,Damage:0s}",
+      "raw_value": "26117.5671641791",
+      "source_console_line": 841
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_sandstone_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 842
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:14s}",
+      "raw_value": "5850.264818548387",
+      "source_console_line": 843
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:14s}",
+      "raw_value": "2193.9118069556453",
+      "source_console_line": 844
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:14s}",
+      "raw_value": "2493.3561846915572",
+      "source_console_line": 845
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_flower\",Count:1b,Damage:4s}",
+      "raw_value": "448791.19430051814",
+      "source_console_line": 846
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:14s}",
+      "raw_value": "85456.28151135005",
+      "source_console_line": 847
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:redstone\",Count:1b,Damage:0s}",
+      "raw_value": "79.72506644392134",
+      "source_console_line": 848
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:comparator\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 849
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:redstone_lamp\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 850
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:repeater\",Count:1b,Damage:0s}",
+      "raw_value": "588.3747508210953",
+      "source_console_line": 851
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:redstone_torch\",Count:1b,Damage:0s}",
+      "raw_value": "231.32484218858696",
+      "source_console_line": 853
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:double_plant\",Count:1b,Damage:4s}",
+      "raw_value": "433083.5025",
+      "source_console_line": 861
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:dye\",Count:1b,Damage:1s}",
+      "raw_value": "46569.118548387094",
+      "source_console_line": 862
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:rotten_flesh\",Count:1b,Damage:0s}",
+      "raw_value": "4029.1799999999994",
+      "source_console_line": 863
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:saddle\",Count:1b,Damage:0s}",
+      "raw_value": "2706771.890625",
+      "source_console_line": 870
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sand\",Count:1b,Damage:0s}",
+      "raw_value": "15.0",
+      "source_console_line": 871
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sandstone\",Count:1b,Damage:0s}",
+      "raw_value": "61.0",
+      "source_console_line": 872
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_slab\",Count:1b,Damage:1s}",
+      "raw_value": "30.666666666666668",
+      "source_console_line": 873
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sandstone_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "1007170.9360465116",
+      "source_console_line": 874
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sea_lantern\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 880
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wheat_seeds\",Count:1b,Damage:0s}",
+      "raw_value": "4738.0723428696465",
+      "source_console_line": 881
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:shears\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 886
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:shield\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 887
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:shulker_shell\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 889
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sign\",Count:1b,Damage:0s}",
+      "raw_value": "8057.359999999999",
+      "source_console_line": 890
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:slime\",Count:1b,Damage:0s}",
+      "raw_value": "119925.81999999998",
+      "source_console_line": 897
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:slime_ball\",Count:1b,Damage:0s}",
+      "raw_value": "13324.979999999998",
+      "source_console_line": 898
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_sandstone\",Count:1b,Damage:2s}",
+      "raw_value": "52235.050995024874",
+      "source_console_line": 902
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sandstone\",Count:1b,Damage:2s}",
+      "raw_value": "61.25",
+      "source_console_line": 903
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:snowball\",Count:1b,Damage:0s}",
+      "raw_value": "276.3148760172392",
+      "source_console_line": 906
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:soul_sand\",Count:1b,Damage:0s}",
+      "raw_value": "8057.359999999999",
+      "source_console_line": 912
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:spectral_arrow\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 913
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:spider_eye\",Count:1b,Damage:0s}",
+      "raw_value": "5432374.0",
+      "source_console_line": 914
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sponge\",Count:1b,Damage:0s}",
+      "raw_value": "6662837.115384615",
+      "source_console_line": 915
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:spruce_boat\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 916
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:spruce_door\",Count:1b,Damage:0s}",
+      "raw_value": "984.6163777016253",
+      "source_console_line": 917
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:spruce_fence\",Count:1b,Damage:0s}",
+      "raw_value": "756.921880075305",
+      "source_console_line": 918
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:spruce_fence_gate\",Count:1b,Damage:0s}",
+      "raw_value": "1587.6821473469545",
+      "source_console_line": 919
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sapling\",Count:1b,Damage:1s}",
+      "raw_value": "10023.34091303593",
+      "source_console_line": 920
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:log\",Count:1b,Damage:1s}",
+      "raw_value": "2938.849133104876",
+      "source_console_line": 921
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:planks\",Count:1b,Damage:1s}",
+      "raw_value": "492.14152218414597",
+      "source_console_line": 922
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_slab\",Count:1b,Damage:1s}",
+      "raw_value": "246.23742775873964",
+      "source_console_line": 923
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:spruce_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 924
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:cooked_beef\",Count:1b,Damage:0s}",
+      "raw_value": "8832.009999999998",
+      "source_console_line": 926
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stick\",Count:1b,Damage:0s}",
+      "raw_value": "150.5997757446656",
+      "source_console_line": 939
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sticky_piston\",Count:1b,Damage:0s}",
+      "raw_value": "14819.739466134548",
+      "source_console_line": 941
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone\",Count:1b,Damage:0s}",
+      "raw_value": "15.0",
+      "source_console_line": 945
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_axe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 946
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_brick_stairs\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 947
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stonebrick\",Count:1b,Damage:0s}",
+      "raw_value": "15.25",
+      "source_console_line": 948
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_slab\",Count:1b,Damage:5s}",
+      "raw_value": "7.791666666666667",
+      "source_console_line": 949
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_hoe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 951
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_pickaxe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 953
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_pressure_plate\",Count:1b,Damage:0s}",
+      "raw_value": "31.0",
+      "source_console_line": 954
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_shovel\",Count:1b,Damage:0s}",
+      "raw_value": "303.1995514893312",
+      "source_console_line": 955
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_slab\",Count:1b,Damage:0s}",
+      "raw_value": "7.666666666666667",
+      "source_console_line": 956
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_sword\",Count:1b,Damage:0s}",
+      "raw_value": "153.5997757446656",
+      "source_console_line": 957
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:string\",Count:1b,Damage:0s}",
+      "raw_value": "9721.29074074074",
+      "source_console_line": 958
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sugar\",Count:1b,Damage:0s}",
+      "raw_value": "194426.8148148148",
+      "source_console_line": 959
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:reeds\",Count:1b,Damage:0s}",
+      "raw_value": "194425.8148148148",
+      "source_console_line": 960
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:double_plant\",Count:1b,Damage:0s}",
+      "raw_value": "474612.0575342466",
+      "source_console_line": 962
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:tnt\",Count:1b,Damage:0s}",
+      "raw_value": "603597.1111111111",
+      "source_console_line": 970
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:hardened_clay\",Count:1b,Damage:0s}",
+      "raw_value": "615.557967486897",
+      "source_console_line": 973
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:torch\",Count:1b,Damage:0s}",
+      "raw_value": "53.05651834637261",
+      "source_console_line": 1004
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:trapped_chest\",Count:1b,Damage:0s}",
+      "raw_value": "821347.8969074031",
+      "source_console_line": 1007
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:tripwire_hook\",Count:1b,Damage:0s}",
+      "raw_value": "335.51776048365036",
+      "source_console_line": 1009
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:vine\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 1020
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:water_bucket\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 1021
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:heavy_weighted_pressure_plate\",Count:1b,Damage:0s}",
+      "raw_value": "150.27283597727643",
+      "source_console_line": 1029
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:light_weighted_pressure_plate\",Count:1b,Damage:0s}",
+      "raw_value": "1058.019634382141",
+      "source_console_line": 1030
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:sponge\",Count:1b,Damage:1s}",
+      "raw_value": "6662823.115384615",
+      "source_console_line": 1031
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wheat\",Count:1b,Damage:0s}",
+      "raw_value": "674059.9260700389",
+      "source_console_line": 1032
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:15s}",
+      "raw_value": "Infinity",
+      "source_console_line": 1033
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:0s}",
+      "raw_value": "117993.88687059087",
+      "source_console_line": 1034
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:0s}",
+      "raw_value": "25924.44197530864",
+      "source_console_line": 1035
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:0s}",
+      "raw_value": "282.09783737688866",
+      "source_console_line": 1036
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:white_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "881.9129674868971",
+      "source_console_line": 1037
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:0s}",
+      "raw_value": "281.35499999999996",
+      "source_console_line": 1039
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:0s}",
+      "raw_value": "105.57062499999998",
+      "source_console_line": 1040
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:0s}",
+      "raw_value": "867.9129674868971",
+      "source_console_line": 1041
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_flower\",Count:1b,Damage:6s}",
+      "raw_value": "373347.8469827586",
+      "source_console_line": 1042
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:0s}",
+      "raw_value": "38886.16296296296",
+      "source_console_line": 1043
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_axe\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "source_console_line": 1048
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_hoe\",Count:1b,Damage:0s}",
+      "raw_value": "1550.2999999999997",
+      "source_console_line": 1049
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_pickaxe\",Count:1b,Damage:0s}",
+      "raw_value": "8057.359999999999",
+      "source_console_line": 1050
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_pressure_plate\",Count:1b,Damage:0s}",
+      "raw_value": "890.5986544679937",
+      "source_console_line": 1051
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_shovel\",Count:1b,Damage:0s}",
+      "raw_value": "746.9988787233281",
+      "source_console_line": 1052
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_sword\",Count:1b,Damage:0s}",
+      "raw_value": "1041.1984302126593",
+      "source_console_line": 1054
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:trapdoor\",Count:1b,Damage:0s}",
+      "raw_value": "1334.8979817019906",
+      "source_console_line": 1055
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:banner\",Count:1b,Damage:11s}",
+      "raw_value": "Infinity",
+      "source_console_line": 1059
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:bed\",Count:1b,Damage:4s}",
+      "raw_value": "148144.40775468416",
+      "source_console_line": 1060
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:carpet\",Count:1b,Damage:4s}",
+      "raw_value": "46024.78923137082",
+      "source_console_line": 1061
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:concrete_powder\",Count:1b,Damage:4s}",
+      "raw_value": "3798.5579478885493",
+      "source_console_line": 1062
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:yellow_glazed_terracotta\",Count:1b,Damage:0s}",
+      "raw_value": "4398.373077998557",
+      "source_console_line": 1063
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass\",Count:1b,Damage:4s}",
+      "raw_value": "3797.8151105116604",
+      "source_console_line": 1065
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_glass_pane\",Count:1b,Damage:4s}",
+      "raw_value": "1424.2431664418727",
+      "source_console_line": 1066
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stained_hardened_clay\",Count:1b,Damage:4s}",
+      "raw_value": "4384.373077998557",
+      "source_console_line": 1067
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wool\",Count:1b,Damage:4s}",
+      "raw_value": "69036.68384705624",
+      "source_console_line": 1068
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:stone_button\",Count:1b,Damage:0s}",
+      "raw_value": "16.0",
+      "display": "Button",
+      "r99_cases": [
+        11
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:wooden_button\",Count:1b,Damage:0s}",
+      "raw_value": "445.79932723399685",
+      "display": "Button",
+      "r99_cases": [
+        12
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:clay\",Count:1b,Damage:0s}",
+      "raw_value": "6938.939084464736",
+      "display": "Clay",
+      "r99_cases": [
+        35
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:clay_ball\",Count:1b,Damage:0s}",
+      "raw_value": "1734.484771116184",
+      "display": "Clay",
+      "r99_cases": [
+        36
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:enchanted_book\",Count:1b,Damage:0s}",
+      "raw_value": "1.73233401E8",
+      "display": "Enchanted Book",
+      "r99_cases": [
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_apple\",Count:1b,Damage:0s}",
+      "raw_value": "9497.698537528562",
+      "display": "Golden Apple",
+      "r99_cases": [
+        142
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:golden_apple\",Count:1b,Damage:1s}",
+      "raw_value": "2.88722335E7",
+      "display": "Golden Apple",
+      "r99_cases": [
+        143
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:melon_block\",Count:1b,Damage:0s}",
+      "raw_value": "7874246.5",
+      "display": "Melon",
+      "r99_cases": [
+        154
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:melon\",Count:1b,Damage:0s}",
+      "raw_value": "874916.1666666666",
+      "display": "Melon",
+      "r99_cases": [
+        155
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:melon_seeds\",Count:1b,Damage:0s}",
+      "raw_value": "874917.1666666666",
+      "display": "Melon Seeds",
+      "r99_cases": [
+        156
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:milk_bucket\",Count:1b,Damage:0s}",
+      "raw_value": "Infinity",
+      "display": "Milk",
+      "r99_cases": [
+        158
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:brown_mushroom\",Count:1b,Damage:0s}",
+      "raw_value": "62971.06543075245",
+      "display": "Mushroom",
+      "r99_cases": [
+        164
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:red_mushroom\",Count:1b,Damage:0s}",
+      "raw_value": "165141.4690181125",
+      "display": "Mushroom",
+      "r99_cases": [
+        165
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:record_13\",Count:1b,Damage:0s}",
+      "raw_value": "3535375.5306122447",
+      "display": "Music Disc",
+      "r99_cases": [
+        166
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:record_cat\",Count:1b,Damage:0s}",
+      "raw_value": "3937122.75",
+      "display": "Music Disc",
+      "r99_cases": [
+        167
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:nether_brick\",Count:1b,Damage:0s}",
+      "raw_value": "16173.719999999998",
+      "display": "Nether Brick",
+      "r99_cases": [
+        188
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:netherbrick\",Count:1b,Damage:0s}",
+      "raw_value": "4043.1799999999994",
+      "display": "Nether Brick",
+      "r99_cases": [
+        189
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:pumpkin_seeds\",Count:1b,Damage:0s}",
+      "raw_value": "2208.2524999999996",
+      "display": "Pumpkin Seeds",
+      "r99_cases": [
+        198
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:snow_layer\",Count:1b,Damage:0s}",
+      "raw_value": "553.2964187011452",
+      "display": "Snow",
+      "r99_cases": [
+        210
+      ]
+    },
+    {
+      "legacy_stack": "{id:\"minecraft:snow\",Count:1b,Damage:0s}",
+      "raw_value": "1106.2595040689569",
+      "display": "Snow",
+      "r99_cases": [
+        211
+      ]
+    }
+  ],
+  "r99_additions_basis": "Natural scanner saved identities plus 20 real GUI screens; exact prices retain ordinary R93 command values."
+}

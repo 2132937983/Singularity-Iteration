@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:item_tool_wrench",
+    "mio_icif:item_tool_wrench_elc"
+  ]
+}

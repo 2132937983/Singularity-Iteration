@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/fence_inventory",
+  "textures": {
+    "texture": "mio_icif:block/build/rubber_planks"
+  }
+}

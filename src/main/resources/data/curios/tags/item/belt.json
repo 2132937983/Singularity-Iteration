@@ -1,0 +1,12 @@
+{
+  "values": [
+    {
+      "id": "mio_icif:item_trinket_energy_crystal_belt",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_trinket_lapotron_crystal_belt",
+      "required": false
+    }
+  ]
+}

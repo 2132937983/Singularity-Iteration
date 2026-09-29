@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ICI",
+    "ASA",
+    "IMI"
+  ],
+  "key": {
+    "I": {
+      "item": "mio_icif:resource/item_iridium_ingot"
+    },
+    "C": {
+      "item": "mio_icif:normal/item_advcircuit"
+    },
+    "A": {
+      "item": "mio_icif:generator/block_hybrid_solar_panel"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_sunnarium"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_ultimate_hybrid_solar_panel",
+    "count": 1
+  }
+}

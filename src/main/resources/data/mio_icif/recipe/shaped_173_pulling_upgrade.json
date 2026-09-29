@@ -1,0 +1,1 @@
+{"type": "minecraft:crafting_shaped","pattern":["T T"," P ","T T"],"key":{"T":{"tag":"c:plates/tin"},"P":{"item":"minecraft:sticky_piston"}},"result":{"id":"mio_icif:upgrade/pulling_upgrade","count":1}}

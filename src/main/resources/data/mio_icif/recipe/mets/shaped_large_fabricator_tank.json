@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IMI",
+    "SCS",
+    "IMI"
+  ],
+  "key": {
+    "I": {
+      "tag": "c:plates/niobium_titanium"
+    },
+    "M": {
+      "item": "minecraft:bucket"
+    },
+    "C": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "S": {
+      "tag": "c:circuits/elite"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_large_fabricator_tank",
+    "count": 1
+  }
+}

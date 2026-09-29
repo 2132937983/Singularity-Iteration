@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:extractor",
+  "energypertick": 10,
+  "ingredient": {
+    "type": "mio_icif:fluid_cell",
+    "fluid": "mio_icif:air"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:cell/item_cell_empty"
+  }
+}

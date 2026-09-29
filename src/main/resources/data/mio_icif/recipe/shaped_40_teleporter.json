@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GFG",
+    "CMC",
+    "GDG"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "C": {
+      "item": "mio_icif:wiring/cable/block_glass_cable"
+    },
+    "F": {
+      "item": "mio_icif:normal/item_freq"
+    },
+    "G": {
+      "tag": "c:circuits/advanced"
+    },
+    "D": {
+      "item": "minecraft:diamond"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_teleporter_elc",
+    "count": 1
+  }
+}

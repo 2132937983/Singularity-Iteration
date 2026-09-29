@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "mio_icif:item/item_trinket_life_support_ring"
+  },
+  "overrides": [
+    {
+      "predicate": { "mio_icif:ring_energy_value": 0.25 },
+      "model": "mio_icif:item/item_trinket_life_support_ring/item_trinket_life_support_ring_1"
+    },
+    {
+      "predicate": { "mio_icif:ring_energy_value": 0.5 },
+      "model": "mio_icif:item/item_trinket_life_support_ring/item_trinket_life_support_ring_2"
+    },
+    {
+      "predicate": { "mio_icif:ring_energy_value": 0.75 },
+      "model": "mio_icif:item/item_trinket_life_support_ring/item_trinket_life_support_ring_3"
+    },
+    {
+      "predicate": { "mio_icif:ring_energy_value": 1.0 },
+      "model": "mio_icif:item/item_trinket_life_support_ring/item_trinket_life_support_ring_4"
+    }
+  ]
+}

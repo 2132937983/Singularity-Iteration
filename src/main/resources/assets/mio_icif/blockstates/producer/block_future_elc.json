@@ -1,0 +1,19 @@
+{
+    "variants": {
+        "facing=north": {
+            "model": "mio_icif:block/producer/block_future_elc"
+        },
+        "facing=south": {
+            "model": "mio_icif:block/producer/block_future_elc",
+            "y": 180
+        },
+        "facing=east": {
+            "model": "mio_icif:block/producer/block_future_elc",
+            "y": 90
+        },
+        "facing=west": {
+            "model": "mio_icif:block/producer/block_future_elc",
+            "y": 270
+        }
+    }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:metal_former_rolling",
+  "ingredient": {
+    "tag": "c:ingots/niobium"
+  },
+  "result": {
+    "id": "mio_icif:resource/item_niobium_plate"
+  },
+  "count": 1,
+  "processingtime": 100,
+  "energypertick": 10
+}

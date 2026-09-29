@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:extractor",
+  "ingredient": {
+    "item": "mio_icif:block_rub_sapling"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_rubber"
+  }
+}

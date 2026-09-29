@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "package": "com.miophas.singularity_iteration.core.mixin.energy",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8",
+  "mixins": [
+    "IndependentChunkMixin"
+  ]
+}

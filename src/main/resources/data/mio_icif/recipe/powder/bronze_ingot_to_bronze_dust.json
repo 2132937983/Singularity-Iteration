@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:powder",
+  "count": 1,
+  "ingredient": {
+    "tag": "c:ingots/bronze"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_bronze_dust"
+  }
+}

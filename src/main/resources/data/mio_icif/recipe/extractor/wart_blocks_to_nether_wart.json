@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:extractor",
+  "energypertick": 10,
+  "ingredient": {
+    "tag": "minecraft:wart_blocks"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 9,
+    "id": "minecraft:nether_wart"
+  }
+}

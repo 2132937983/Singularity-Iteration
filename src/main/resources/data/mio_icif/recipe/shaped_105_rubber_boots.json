@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "R R",
+    "R R",
+    "RWR"
+  ],
+  "key": {
+    "R": {
+      "item": "mio_icif:resource/item_rubber"
+    },
+    "W": {
+      "item": "minecraft:white_wool"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_armor_hazmat_boots",
+    "count": 1
+  }
+}

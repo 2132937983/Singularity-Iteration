@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:dynamic_canning",
+  "can": {
+    "item": "mio_icif:normal/item_tin_empty_can"
+  },
+  "energypertick": 5,
+  "food": {
+    "tag": "mio_icif:cannable_foods"
+  },
+  "processingtime": 100
+}

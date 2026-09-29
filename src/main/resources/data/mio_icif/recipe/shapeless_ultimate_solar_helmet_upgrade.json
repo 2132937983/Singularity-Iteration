@@ -1,0 +1,16 @@
+{
+  "type": "mio_icif:charge_carrying_shapeless",
+  "transfer_charge": true,
+  "ingredients": [
+    {
+      "item": "mio_icif:armor/item_armor_hybrid_solar_helmet"
+    },
+    {
+      "item": "mio_icif:generator/block_ultimate_hybrid_solar_panel"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:armor/item_armor_ultimate_solar_helmet",
+    "count": 1
+  }
+}

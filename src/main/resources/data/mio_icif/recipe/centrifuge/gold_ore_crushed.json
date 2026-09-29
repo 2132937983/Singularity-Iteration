@@ -1,0 +1,21 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:resource/item_gold_ore_crushed"
+  },
+  "minheat": 2000,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_silver_dust_small"
+  },
+  "secondaryCount": 1,
+  "secondaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_golden_dust"
+  },
+  "tertiaryCount": 1,
+  "tertiaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_stone_dust"
+  }
+}

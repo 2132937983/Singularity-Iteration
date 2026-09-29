@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:powder",
+  "count": 1,
+  "ingredient": {
+    "item": "minecraft:chain"
+  },
+  "result": {
+    "count": 11,
+    "id": "minecraft:iron_nugget"
+  }
+}

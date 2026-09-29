@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:neutron_polymerizer",
+  "ingredient": {
+    "item": "minecraft:coal"
+  },
+  "result": {
+    "id": "minecraft:diamond",
+    "count": 1
+  },
+  "processingtime": 1500,
+  "energyPerTick": 1536
+}

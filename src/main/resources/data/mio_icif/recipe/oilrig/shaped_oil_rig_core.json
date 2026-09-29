@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "NRN",
+    "CMC",
+    "NRN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:plates/niobium_titanium"
+    },
+    "R": {
+      "item": "mio_icif:producer/block_miner_elc"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "M": {
+      "item": "mio_icif:oilrig/block_oil_rig_base"
+    }
+  },
+  "result": {
+    "id": "mio_icif:oilrig/block_oil_rig_core",
+    "count": 1
+  }
+}

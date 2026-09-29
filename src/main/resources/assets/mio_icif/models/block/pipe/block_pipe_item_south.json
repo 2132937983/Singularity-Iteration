@@ -1,0 +1,17 @@
+{
+  "parent": "mio_icif:block/pipe/block_pipe_item",
+  "elements": [
+    {
+      "name": "connection_south",
+      "from": [4, 4, 12],
+      "to": [12, 12, 16],
+      "faces": {
+        "south": {"uv": [4, 4, 12, 12], "texture": "#texture", "cullface": "south"},
+        "east": {"uv": [12, 4, 16, 12], "texture": "#texture"},
+        "west": {"uv": [12, 4, 16, 12], "texture": "#texture"},
+        "up": {"uv": [4, 12, 12, 16], "texture": "#texture"},
+        "down": {"uv": [4, 12, 12, 16], "texture": "#texture"}
+      }
+    }
+  ]
+}

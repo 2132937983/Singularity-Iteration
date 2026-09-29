@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "W"
+  ],
+  "key": {
+    "W": {
+      "item": "mio_icif:block_rub_wood"
+    }
+  },
+  "result": {
+    "id": "mio_icif:build/rubber_planks",
+    "count": 4
+  }
+}

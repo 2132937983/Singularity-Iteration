@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "STB",
+    " C "
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:wiring/cable/block_superconducting_cable"
+    },
+    "S": {
+      "tag": "c:circuits/elite"
+    },
+    "T": {
+      "item": "mio_icif:wiring/transformer_iv_luv"
+    },
+    "B": {
+      "item": "mio_icif:wiring/block_eesu"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/transformer_luv_zpmv",
+    "count": 1
+  }
+}

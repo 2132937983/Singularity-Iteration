@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:upgrade/transformer_upgrade"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    },
+    "has_wiring/cable/block_glass_cable": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:wiring/cable/block_glass_cable"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_wiring/cable/block_glass_cable"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:upgrade/transformer_upgrade"
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "values": [
+    "mio_icif:block_ore_tin",
+    "mio_icif:block_ore_uran",
+    "mio_icif:block_ore_lead",
+    "mio_icif:block_ore_niobium",
+    "mio_icif:block_ore_titanium"
+  ]
+}

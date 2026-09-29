@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "facing=north": { "model": "mio_icif:block/wiring/block_gesu_output_iv" },
+        "facing=south": { "model": "mio_icif:block/wiring/block_gesu_output_iv", "y": 180 },
+        "facing=east":  { "model": "mio_icif:block/wiring/block_gesu_output_iv", "y": 90 },
+        "facing=west":  { "model": "mio_icif:block/wiring/block_gesu_output_iv", "y": 270 },
+        "facing=up":    { "model": "mio_icif:block/wiring/block_gesu_output_iv", "x": 270 },
+        "facing=down":  { "model": "mio_icif:block/wiring/block_gesu_output_iv", "x": 90 }
+    }
+}

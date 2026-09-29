@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " c ",
+    "CED",
+    " c "
+  ],
+  "key": {
+    "E": {
+      "item": "mio_icif:wiring/transformer_hv_ev"
+    },
+    "c": {
+      "item": "mio_icif:wiring/cable/block_iron_cable_1"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "D": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/transformer_ev_sc",
+    "count": 1
+  }
+}

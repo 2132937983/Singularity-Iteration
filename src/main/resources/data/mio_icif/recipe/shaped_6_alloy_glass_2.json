@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "AGA",
+    "GGG"
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "A": {
+      "item": "mio_icif:resource/item_alloy_plate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:build/block_alloy_glass",
+    "count": 7
+  }
+}

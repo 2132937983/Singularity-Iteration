@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LCL",
+    "LML",
+    "LAL"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:wiring/block_mfe"
+    },
+    "A": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_mfsu",
+    "count": 1
+  }
+}

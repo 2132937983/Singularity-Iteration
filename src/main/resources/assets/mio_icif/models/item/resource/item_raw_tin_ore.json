@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mio_icif:item/resource/item_raw_tin_ore"
+  }
+}

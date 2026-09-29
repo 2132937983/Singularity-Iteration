@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mio_icif:block/producer/block_machine_hull_advanced"
+    }
+  }
+}

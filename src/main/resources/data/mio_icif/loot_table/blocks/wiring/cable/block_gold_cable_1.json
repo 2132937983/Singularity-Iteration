@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "mio_icif:wiring/cable/block_gold_cable_1"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "mio_icif:blocks/wiring/cable/block_gold_cable_1"
+}

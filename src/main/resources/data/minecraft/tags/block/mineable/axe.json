@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:build/block_wood_storage",
+    "mio_icif:producer/block_barrel",
+    "#mio_icif:rubber_logs"
+  ]
+}

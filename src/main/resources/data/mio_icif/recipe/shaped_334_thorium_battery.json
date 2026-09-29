@@ -1,0 +1,1 @@
+{"type": "mio_icif:charge_carrying", "transfer_charge": true,"pattern":["TPT","PRP","TPT"],"key":{"T":{"tag":"c:dusts/thorium"},"P":{"tag":"c:plates/iridium"},"R":{"item":"mio_icif:resource/item_rtg_pellet"}},"result":{"id":"mio_icif:normal/item_thorium_battery","count":1}}

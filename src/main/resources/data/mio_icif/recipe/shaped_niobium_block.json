@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "III",
+    "III"
+  ],
+  "key": {
+    "I": {
+      "tag": "c:ingots/niobium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:block_niobium",
+    "count": 1
+  }
+}

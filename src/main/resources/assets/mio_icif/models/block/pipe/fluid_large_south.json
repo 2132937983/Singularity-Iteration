@@ -1,0 +1,50 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "mio_icif:block/pipe/pipe_side",
+    "side": "mio_icif:block/pipe/pipe_side",
+    "end": "mio_icif:block/pipe/pipe_large"
+  },
+  "elements": [
+    {
+      "from": [
+        3.0,
+        3.0,
+        13.0
+      ],
+      "to": [
+        13.0,
+        13.0,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "up": {
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "south": {
+          "texture": "#end",
+          "tintindex": 0,
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#side",
+          "tintindex": 0
+        },
+        "east": {
+          "texture": "#side",
+          "tintindex": 0
+        }
+      }
+    }
+  ]
+}

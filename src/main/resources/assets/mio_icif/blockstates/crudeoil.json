@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "level=0": { "model": "mio_icif:block/crudeoil" },
+    "level=1": { "model": "mio_icif:block/crudeoil" },
+    "level=2": { "model": "mio_icif:block/crudeoil" },
+    "level=3": { "model": "mio_icif:block/crudeoil" },
+    "level=4": { "model": "mio_icif:block/crudeoil" },
+    "level=5": { "model": "mio_icif:block/crudeoil" },
+    "level=6": { "model": "mio_icif:block/crudeoil" },
+    "level=7": { "model": "mio_icif:block/crudeoil" },
+    "level=8": { "model": "mio_icif:block/crudeoil" },
+    "level=9": { "model": "mio_icif:block/crudeoil" },
+    "level=10": { "model": "mio_icif:block/crudeoil" },
+    "level=11": { "model": "mio_icif:block/crudeoil" },
+    "level=12": { "model": "mio_icif:block/crudeoil" },
+    "level=13": { "model": "mio_icif:block/crudeoil" },
+    "level=14": { "model": "mio_icif:block/crudeoil" },
+    "level=15": { "model": "mio_icif:block/crudeoil" }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "ingredient": {
+    "tag": "c:nuggets/silver"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_silver_ingot"
+  },
+  "count": 9,
+  "processingtime": 100,
+  "energypertick": 5
+}

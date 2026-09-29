@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:metal_former_rolling",
+  "ingredient": {
+    "tag": "c:ingots/copper"
+  },
+  "processingtime": 200,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_copper_plate"
+  }
+}

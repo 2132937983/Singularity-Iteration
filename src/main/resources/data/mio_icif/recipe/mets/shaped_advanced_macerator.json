@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "DDD",
+    "BMB",
+    " C "
+  ],
+  "key": {
+    "D": {
+      "item": "minecraft:diamond"
+    },
+    "B": {
+      "tag": "c:plates/titanium"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_powder_elc"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_powder_advanced_elc",
+    "count": 1
+  }
+}

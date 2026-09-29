@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:compressor",
+  "count": 9,
+  "energypertick": 5,
+  "ingredient": {
+    "item": "mio_icif:resource/item_iron_dust_small"
+  },
+  "processingtime": 100,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_iron_dust"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 0.7,
+  "group": "tin",
+  "ingredient": {
+    "item": "mio_icif:resource/item_tin_ore_crushed"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:resource/item_ingot_tin"
+  }
+}

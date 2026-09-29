@@ -1,0 +1,10 @@
+{
+  "type": "mio_icif:fluid_refining",
+  "input_fluid": "minecraft:water",
+  "output_fluid": {
+    "id": "mio_icif:distilledwater",
+    "amount": 1
+  },
+  "processingtime": 80,
+  "energypertick": 0
+}

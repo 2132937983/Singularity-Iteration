@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["XXX","STS","XXX"],
+  "key": {
+    "S": {"tag": "c:dusts/energium"},
+    "T": {"item": "mio_icif:wiring/cable/block_glass_cable"},
+    "X": {"tag": "c:plates/niobium_titanium"}
+  },
+  "result": {"id": "mio_icif:wiring/cable/block_superconducting_cable", "count": 2}
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PRP","P P","PRP"],
+  "key": {
+    "P":{"item":"mio_icif:build/block_irradiant_glass_pane"},
+    "R":{"item":"mio_icif:reactor/item_reactor_thick_reflector"}
+  },
+  "result":{"id":"mio_icif:resource/item_molecular_transformer_core","count":1}
+}

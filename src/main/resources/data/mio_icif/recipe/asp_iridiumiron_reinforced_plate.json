@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["ACA","CIC","ACA"],
+  "key": {
+    "I":{"item":"mio_icif:resource/item_iridiumiron_plate"},
+    "A":{"item":"mio_icif:resource/item_alloy_plate"},
+    "C":{"item":"mio_icif:resource/item_carbon_plate"}
+  },
+  "result":{"id":"mio_icif:resource/item_iridiumiron_reinforced_plate","count":1}
+}

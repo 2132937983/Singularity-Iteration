@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CgC",
+    "gCg",
+    "cGc"
+  ],
+  "key": {
+    "G": {
+      "item": "mio_icif:generator/block_thermal_generator"
+    },
+    "C": {
+      "tag": "c:dusts/coal"
+    },
+    "g": {
+      "item": "minecraft:glass"
+    },
+    "c": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_solar_generator",
+    "count": 1
+  }
+}

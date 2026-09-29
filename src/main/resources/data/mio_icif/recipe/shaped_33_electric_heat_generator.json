@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IBI",
+    "ICI",
+    "IGI"
+  ],
+  "key": {
+    "I": {
+      "item": "mio_icif:resource/item_iron_casing"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_bat_lev0"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "G": {
+      "item": "mio_icif:resource/item_heatconductor"
+    }
+  },
+  "result": {
+    "id": "mio_icif:hugenerator/block_heat_generator_elc",
+    "count": 1
+  }
+}

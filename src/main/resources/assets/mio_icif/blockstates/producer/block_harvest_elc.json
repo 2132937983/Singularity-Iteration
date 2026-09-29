@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "working=false": {
+            "model": "mio_icif:block/producer/block_harvest_elc"
+        },
+        "working=true": {
+            "model": "mio_icif:block/producer/block_harvest_elc_on"
+        }
+    }
+}

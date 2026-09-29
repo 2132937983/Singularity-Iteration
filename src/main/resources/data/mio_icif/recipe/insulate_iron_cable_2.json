@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mio_icif:wiring/cable/block_iron_cable_1"
+    },
+    {
+      "item": "mio_icif:resource/item_rubber"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:wiring/cable/block_iron_cable_2",
+    "count": 1
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SCS",
+    "AMA",
+    "SCS"
+  ],
+  "key": {
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "A": {
+      "item": "mio_icif:resource/item_alloy_plate"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_adviron_plate"
+    },
+    "C": {
+      "item": "mio_icif:resource/item_carbon_plate"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_machine_hull_advanced",
+    "count": 1
+  }
+}

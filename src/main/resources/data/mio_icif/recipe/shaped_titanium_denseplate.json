@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PPP",
+    "PPP",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/titanium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:resource/item_titanium_denseplate",
+    "count": 1
+  }
+}

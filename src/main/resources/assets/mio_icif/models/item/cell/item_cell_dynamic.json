@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mio_icif:item/cell/item_cell_dynamic_base"
+  },
+  "overrides": [
+    { "predicate": { "mio_icif:cell_type": 0.0 }, "model": "mio_icif:item/cell/item_cell_dynamic_empty" },
+    { "predicate": { "mio_icif:cell_type": 1.0 }, "model": "mio_icif:item/cell/item_cell_water" },
+    { "predicate": { "mio_icif:cell_type": 2.0 }, "model": "mio_icif:item/cell/item_cell_lava" },
+    { "predicate": { "mio_icif:cell_type": 3.0 }, "model": "mio_icif:item/cell/item_cell_biogas" },
+    { "predicate": { "mio_icif:cell_type": 4.0 }, "model": "mio_icif:item/cell/item_cell_hotwater" },
+    { "predicate": { "mio_icif:cell_type": 5.0 }, "model": "mio_icif:item/cell/item_cell_biomass" },
+    { "predicate": { "mio_icif:cell_type": 6.0 }, "model": "mio_icif:item/cell/item_cell_constructionfoam" },
+    { "predicate": { "mio_icif:cell_type": 7.0 }, "model": "mio_icif:item/cell/item_cell_coolant" },
+    { "predicate": { "mio_icif:cell_type": 8.0 }, "model": "mio_icif:item/cell/item_cell_distilledwater" },
+    { "predicate": { "mio_icif:cell_type": 9.0 }, "model": "mio_icif:item/cell/item_cell_hotcoolant" },
+    { "predicate": { "mio_icif:cell_type": 10.0 }, "model": "mio_icif:item/cell/item_cell_pahoehoelava" },
+    { "predicate": { "mio_icif:cell_type": 11.0 }, "model": "mio_icif:item/cell/item_cell_steam" },
+    { "predicate": { "mio_icif:cell_type": 12.0 }, "model": "mio_icif:item/cell/item_cell_superheatedsteam" },
+    { "predicate": { "mio_icif:cell_type": 13.0 }, "model": "mio_icif:item/cell/item_cell_uumatter" },
+    { "predicate": { "mio_icif:cell_type": 14.0 }, "model": "mio_icif:item/cell/item_cell_air" },
+    { "predicate": { "mio_icif:cell_type": 15.0 }, "model": "mio_icif:item/cell/item_cell_dynamic_generic" }
+  ]
+}

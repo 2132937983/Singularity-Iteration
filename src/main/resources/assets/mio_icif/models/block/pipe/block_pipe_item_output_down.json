@@ -1,0 +1,30 @@
+{
+  "parent": "mio_icif:block/pipe/block_pipe_item_output",
+  "elements": [
+    {
+      "name": "center",
+      "from": [4, 4, 4],
+      "to": [12, 12, 12],
+      "faces": {
+        "north": {"uv": [4, 4, 12, 12], "texture": "#texture"},
+        "east": {"uv": [4, 4, 12, 12], "texture": "#texture"},
+        "south": {"uv": [4, 4, 12, 12], "texture": "#texture"},
+        "west": {"uv": [4, 4, 12, 12], "texture": "#texture"},
+        "up": {"uv": [4, 4, 12, 12], "texture": "#texture"},
+        "down": {"uv": [4, 4, 12, 12], "texture": "#texture"}
+      }
+    },
+    {
+      "name": "connection_down",
+      "from": [4, 0, 4],
+      "to": [12, 4, 12],
+      "faces": {
+        "north": {"uv": [4, 0, 12, 4], "texture": "#texture"},
+        "east": {"uv": [4, 0, 12, 4], "texture": "#texture"},
+        "south": {"uv": [4, 0, 12, 4], "texture": "#texture"},
+        "west": {"uv": [4, 0, 12, 4], "texture": "#texture"},
+        "down": {"uv": [4, 4, 12, 12], "texture": "#texture", "cullface": "down"}
+      }
+    }
+  ]
+}

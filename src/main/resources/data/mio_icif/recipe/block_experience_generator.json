@@ -1,0 +1,1 @@
+{"type": "minecraft:crafting_shaped", "pattern": ["SMS", "BCB", "SMS"], "key": {"S": {"item": "mio_icif:resource/item_titanium_casing"}, "M": {"item": "mio_icif:generator/block_drop_generator"}, "C": {"tag": "c:circuits/elite"}, "B": {"item": "mio_icif:normal/item_crystal_lev0"}}, "result": {"id": "mio_icif:generator/block_experience_generator", "count": 1}}

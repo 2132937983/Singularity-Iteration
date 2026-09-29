@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["XXX","STS","XXX"],
+  "key": {
+    "S": {"tag": "c:circuits/advanced"},
+    "T": {"tag": "c:plates/niobium_titanium"},
+    "X": {"tag": "mio_icif:cables"}
+  },
+  "result": {"id": "mio_icif:normal/item_super_circuit", "count": 2}
+}

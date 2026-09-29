@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "GMX",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:resource/item_titanium_plate"
+    },
+    "G": {
+      "item": "mio_icif:generator/block_kinetic_generator"
+    },
+    "M": {
+      "item": "mio_icif:rotors/item_titanium_iron_alloy_rotor"
+    },
+    "X": {
+      "tag": "c:circuits/elite"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_turbo_kinetic_generator",
+    "count": 1
+  }
+}

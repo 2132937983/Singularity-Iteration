@@ -1,0 +1,21 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:resource/item_copper_ore_crushed"
+  },
+  "minheat": 500,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_tin_dust_small"
+  },
+  "secondaryCount": 1,
+  "secondaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_copper_dust"
+  },
+  "tertiaryCount": 1,
+  "tertiaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_stone_dust"
+  }
+}

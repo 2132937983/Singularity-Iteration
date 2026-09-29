@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["ANA","NEN","ANA"],
+  "key": {
+    "A":{"item":"mio_icif:resource/item_enriched_sunnarium_alloy"},
+    "N":{"item":"minecraft:nether_star"},
+    "E":{"item":"minecraft:end_crystal"}
+  },
+  "result":{"id":"mio_icif:resource/item_quantum_core","count":1}
+}

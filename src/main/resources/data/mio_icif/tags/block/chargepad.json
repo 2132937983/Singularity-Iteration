@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:wiring/block_batbox_charger",
+    "mio_icif:wiring/block_cesu_charger",
+    "mio_icif:wiring/block_mfe_charger",
+    "mio_icif:wiring/block_mfsu_charger",
+    "mio_icif:wiring/block_lesu_charger",
+    "mio_icif:wiring/block_eesu_charger"
+  ]
+}

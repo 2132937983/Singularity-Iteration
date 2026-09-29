@@ -1,0 +1,34 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_block_rub_sapling": {
+      "conditions": {
+        "items": [
+          {
+            "items": "mio_icif:block_rub_sapling"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "mio_icif:extractor/rubber_sapling_to_rubber"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe"
+    ],
+    [
+      "has_block_rub_sapling"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mio_icif:extractor/rubber_sapling_to_rubber"
+    ]
+  }
+}

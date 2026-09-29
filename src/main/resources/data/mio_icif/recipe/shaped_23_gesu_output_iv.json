@@ -1,0 +1,22 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "group": "mio_icif",
+    "pattern": [
+        "PIP",
+        "SBS",
+        "CFC"
+    ],
+    "key": {
+        "C": { "item": "mio_icif:normal/item_field_generator" },
+        "F": { "item": "mio_icif:resource/item_neutron_plate" },
+        "S": { "tag": "c:circuits/ultimate" },
+        "B": { "item": "mio_icif:wiring/block_eesu" },
+        "P": { "item": "mio_icif:resource/item_super_iridium_compress_plate" },
+        "I": { "item": "mio_icif:wiring/transformer_ev_sc" }
+    },
+    "result": {
+        "id": "mio_icif:wiring/block_gesu_output_iv",
+        "count": 1
+    }
+}

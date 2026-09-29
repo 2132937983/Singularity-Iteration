@@ -1,0 +1,1 @@
+{"type": "mio_icif:charge_carrying", "transfer_charge": true,"pattern":[" II","III","BI "],"key":{"I":{"tag": "c:plates/iron"},"B":{"item":"mio_icif:item_tool_power_unit"}},"result":{"id":"mio_icif:item_tool_iron_chainsaw","count":1}}

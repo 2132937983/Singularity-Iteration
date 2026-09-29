@@ -1,0 +1,17 @@
+{
+  "machine.demolish": {
+    "sounds": [
+      "mio_icif:sfx_demolish"
+    ]
+  },
+  "machine.work": {
+    "sounds": [
+      "mio_icif:sfx_machine_work"
+    ]
+  },
+  "cable.break": {
+    "sounds": [
+      "mio_icif:sfx_cable_break"
+    ]
+  }
+}

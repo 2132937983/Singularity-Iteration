@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:powder",
+  "count": 16,
+  "ingredient": {
+    "item": "minecraft:wheat_seeds"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_biochaff"
+  }
+}

@@ -1,0 +1,12 @@
+// 1.21.1	2026-06-24T17:01:22.0504168	Tags for minecraft:block mod id mio_icif
+2e41082313755ec6b34d4768164724a0e49e8d1f data/c/tags/block/ores.json
+e9020d26e7ff6f03c825b0d051dacb52e85dc019 data/c/tags/block/ores_in_ground/deepslate.json
+f7699bbdf0ffd8547c15ac7dcfe6c89bbd696c2e data/c/tags/block/ores_in_ground/stone.json
+c8fe82cf1412a047da586a1ee7b694f1058dfade data/minecraft/tags/block/dirt.json
+6876d399ee1ea2904331dcb14cf08a17ecd4944b data/minecraft/tags/block/logs.json
+6876d399ee1ea2904331dcb14cf08a17ecd4944b data/minecraft/tags/block/logs_that_burn.json
+9682dc08d4fd4ee00a43dcf70e3acc074c38b5a5 data/minecraft/tags/block/mineable/pickaxe.json
+2e41082313755ec6b34d4768164724a0e49e8d1f data/minecraft/tags/block/needs_stone_tool.json
+6876d399ee1ea2904331dcb14cf08a17ecd4944b data/minecraft/tags/block/overworld_natural_logs.json
+d12b83a2985a3fbeb3df44bd96bde0de566cc08a data/minecraft/tags/block/stone_ore_replaceables.json
+d7797f35227372311e35d1a677c163310232509e data/minecraft/tags/block/villager_job_sites.json

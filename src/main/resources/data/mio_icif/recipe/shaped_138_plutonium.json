@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["UUU","UUU","UUU"],
+  "key": {"U":{"item":"mio_icif:resource/item_plutonium_small"}},
+  "result":{"id":"mio_icif:resource/item_plutonium","count":1}
+}

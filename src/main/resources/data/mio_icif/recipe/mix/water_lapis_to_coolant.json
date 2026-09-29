@@ -1,0 +1,19 @@
+{
+  "type": "mio_icif:mix",
+  "input_fluid": {
+    "amount": 1000,
+    "id": "minecraft:water"
+  },
+  "material": {
+    "tag": "c:dusts/lapis"
+  },
+  "material_count": 8,
+  "result_cell": {
+    "count": 1,
+    "id": "mio_icif:cell/item_cell_coolant"
+  },
+  "result_fluid": {
+    "amount": 1000,
+    "id": "mio_icif:coolant"
+  }
+}

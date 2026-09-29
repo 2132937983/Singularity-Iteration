@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ABA",
+    "SGS",
+    "ACA"
+  ],
+  "key": {
+    "A": {
+      "item": "mio_icif:resource/item_nano_living_metal"
+    },
+    "S": {
+      "tag": "c:circuits/ultimate"
+    },
+    "G": {
+      "item": "mio_icif:generator/block_kinetic_generator"
+    },
+    "B": {
+      "item": "mio_icif:wiring/block_eesu"
+    },
+    "C": {
+      "item": "mio_icif:generator/block_geomagnetic_antenna"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_geomagnetic_generator",
+    "count": 1
+  }
+}

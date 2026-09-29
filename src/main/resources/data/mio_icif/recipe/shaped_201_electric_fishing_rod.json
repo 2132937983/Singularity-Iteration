@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:charge_carrying",
+  "transfer_charge": true,
+  "pattern": [" SL", "SDL", " SL"],
+  "key": {
+    "S": {"item": "mio_icif:resource/item_iron_casing"},
+    "L": {"tag": "c:string"},
+    "D": {"item": "mio_icif:item_tool_power_unit_small"}
+  },
+  "result": {"id": "mio_icif:item_electric_fishing_rod", "count": 1}
+}

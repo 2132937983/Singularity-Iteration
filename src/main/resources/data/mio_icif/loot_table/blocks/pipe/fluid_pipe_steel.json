@@ -1,0 +1,67 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "mio_icif:pipe/fluid_pipe_steel_tiny",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "mio_icif:pipe/fluid_pipe_steel",
+              "properties": {
+                "size": "tiny"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "mio_icif:pipe/fluid_pipe_steel_small",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "mio_icif:pipe/fluid_pipe_steel",
+              "properties": {
+                "size": "small"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "mio_icif:pipe/fluid_pipe_steel_medium",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "mio_icif:pipe/fluid_pipe_steel",
+              "properties": {
+                "size": "medium"
+              }
+            }
+          ]
+        },
+        {
+          "type": "minecraft:item",
+          "name": "mio_icif:pipe/fluid_pipe_steel_large",
+          "conditions": [
+            {
+              "condition": "minecraft:block_state_property",
+              "block": "mio_icif:pipe/fluid_pipe_steel",
+              "properties": {
+                "size": "large"
+              }
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ]
+}

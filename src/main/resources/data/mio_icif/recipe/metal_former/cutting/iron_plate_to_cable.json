@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:metal_former_cutting",
+  "ingredient": {
+    "tag": "c:plates/iron"
+  },
+  "processingtime": 200,
+  "result": {
+    "count": 4,
+    "id": "mio_icif:wiring/cable/block_iron_cable"
+  }
+}

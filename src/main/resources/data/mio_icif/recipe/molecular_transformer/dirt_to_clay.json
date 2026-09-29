@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "minecraft:dirt"
+  },
+  "result": {
+    "count": 1,
+    "id": "minecraft:clay"
+  },
+  "eu_cost": 50000,
+  "duration": 1
+}

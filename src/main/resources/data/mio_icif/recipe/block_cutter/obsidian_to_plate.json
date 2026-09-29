@@ -1,0 +1,11 @@
+{
+  "type": "mio_icif:block_cutter",
+  "hardness": 8,
+  "ingredient": {
+    "item": "minecraft:obsidian"
+  },
+  "result": {
+    "count": 9,
+    "id": "mio_icif:resource/item_obsidian_plate"
+  }
+}

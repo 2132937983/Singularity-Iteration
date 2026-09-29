@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "C C",
+    "C C",
+    "C C"
+  ],
+  "key": {
+    "C": {
+      "item": "mio_icif:resource/item_bronze_casing"
+    }
+  },
+  "result": {
+    "id": "mio_icif:pipe/fluid_pipe_bronze_small",
+    "count": 3
+  }
+}

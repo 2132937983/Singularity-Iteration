@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "mio_icif:producer/block_industrial_workbench"
+    },
+    "A": {
+      "tag": "c:circuits/advanced"
+    },
+    "C": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "H": {
+      "item": "mio_icif:item_tool_hammer"
+    },
+    "W": {
+      "tag": "c:tools/wrench"
+    }
+  },
+  "pattern": [
+    " I ",
+    "ACA",
+    "HWH"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:producer/block_batch_crafter"
+  },
+  "show_notification": true
+}

@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "item": "mio_icif:build/rubber_planks"
+    }
+  },
+  "result": {
+    "id": "mio_icif:build/rubber_slab",
+    "count": 6
+  }
+}

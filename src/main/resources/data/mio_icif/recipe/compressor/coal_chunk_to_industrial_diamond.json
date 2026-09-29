@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:compressor",
+  "energypertick": 30,
+  "ingredient": {
+    "item": "mio_icif:resource/item_coal_chunk"
+  },
+  "processingtime": 600,
+  "result": {
+    "count": 1,
+    "id": "mio_icif:normal/item_industrial_diamond"
+  }
+}

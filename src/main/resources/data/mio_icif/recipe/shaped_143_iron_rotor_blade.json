@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PSP","PSP","PSP"],
+  "key": {
+    "P":{"tag": "c:plates/iron"},
+    "S":{"tag": "c:ingots/iron"}
+  },
+  "result":{"id":"mio_icif:resource/item_iron_rotor_blade","count":1}
+}

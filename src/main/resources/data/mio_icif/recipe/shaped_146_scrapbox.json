@@ -1,0 +1,6 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["SSS","SSS","SSS"],
+  "key": {"S":{"item":"mio_icif:normal/item_scrap"}},
+  "result":{"id":"mio_icif:normal/item_scrapbox","count":1}
+}

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "PPP",
+    "TTT",
+    "PPP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/titanium"
+    },
+    "T": {
+      "item": "mio_icif:block_titanium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:build/block_scaffold_titanium",
+    "count": 6
+  }
+}

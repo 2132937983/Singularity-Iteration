@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["III","ISI","III"],
+  "key": {
+    "S":{"item":"mio_icif:resource/item_sunnarium"},
+    "I":{"item":"mio_icif:resource/item_iridium"}
+  },
+  "result":{"id":"mio_icif:resource/item_sunnarium_alloy","count":1}
+}

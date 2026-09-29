@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "c c",
+    "cCc",
+    "EME"
+  ],
+  "key": {
+    "E": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "c": {
+      "item": "mio_icif:wiring/cable/block_tin_cable"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_electrolyzer_elc",
+    "count": 1
+  }
+}

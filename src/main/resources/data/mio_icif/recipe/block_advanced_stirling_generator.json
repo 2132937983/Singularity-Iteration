@@ -1,0 +1,1 @@
+{"type": "minecraft:crafting_shaped", "pattern": ["SPS", "SMS", "SSS"], "key": {"S": {"item": "mio_icif:resource/item_titanium_casing"}, "P": {"tag": "c:circuits/elite"}, "M": {"item": "mio_icif:generator/block_stirling_generator"}}, "result": {"id": "mio_icif:generator/block_advanced_stirling_generator", "count": 1}}

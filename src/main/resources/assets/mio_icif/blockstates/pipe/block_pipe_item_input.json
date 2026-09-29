@@ -1,0 +1,57 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "mio_icif:block/pipe/block_pipe_item_input"
+      }
+    },
+    {
+      "when": {
+        "north": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/block_pipe_item_input_north"
+      }
+    },
+    {
+      "when": {
+        "south": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/block_pipe_item_input_south"
+      }
+    },
+    {
+      "when": {
+        "east": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/block_pipe_item_input_east"
+      }
+    },
+    {
+      "when": {
+        "west": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/block_pipe_item_input_west"
+      }
+    },
+    {
+      "when": {
+        "up": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/block_pipe_item_input_up"
+      }
+    },
+    {
+      "when": {
+        "down": "true"
+      },
+      "apply": {
+        "model": "mio_icif:block/pipe/block_pipe_item_input_down"
+      }
+    }
+  ]
+}

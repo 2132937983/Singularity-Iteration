@@ -1,0 +1,21 @@
+{
+  "type": "mio_icif:washer",
+  "ingredient": {
+    "tag": "c:crushed_ores/titanium"
+  },
+  "primaryResult": {
+    "id": "mio_icif:resource/item_titanium_ore_crushed_purified"
+  },
+  "primaryCount": 1,
+  "secondaryResult": {
+    "id": "mio_icif:resource/item_stone_dust"
+  },
+  "secondaryCount": 1,
+  "tertiaryResult": {
+    "id": "mio_icif:resource/item_golden_dust_small"
+  },
+  "tertiaryCount": 1,
+  "processingtime": 200,
+  "energypertick": 10,
+  "wateramount": 200
+}

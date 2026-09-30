@@ -37,7 +37,9 @@ import com.miophas.singularity_iteration.common.service.recipe.RecipeRegistratio
 import com.miophas.singularity_iteration.core.api.registry.IMioIcifRegistries;
 import com.miophas.singularity_iteration.common.service.registry.MioIcifRegistriesImpl;
 import com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI;
+import com.miophas.singularity_iteration.core.api.world.IRubberTreeAPI;
 import com.miophas.singularity_iteration.core.runtime.upgrade.UpgradeAPIImpl;
+import com.miophas.singularity_iteration.common.service.world.RubberTreeAPIImpl;
 
 /**
  * API 实例持有者
@@ -61,6 +63,13 @@ public final class CommonApiServices {
     @SuppressWarnings("deprecation")
     private static class MioIcifAPIImpl implements MioIcifAPI {
         private final com.miophas.singularity_iteration.core.api.machine.IMultiblockAccess multiblocks = new com.miophas.singularity_iteration.core.api.machine.IMultiblockAccess() {
+            @Override public boolean isControllerRegistered(Class<? extends net.minecraft.world.level.block.Block> type) {
+                return com.miophas.singularity_iteration.core.runtime.multiblock.MultiblockControllers.isRegistered(type);
+            }
+            @Override public void registerController(Class<? extends net.minecraft.world.level.block.Block> type,
+                    java.util.function.Supplier<? extends com.miophas.singularity_iteration.core.api.machine.IMultiblockValidator> factory, String name) {
+                com.miophas.singularity_iteration.core.runtime.multiblock.MultiblockControllers.register(type, factory, name);
+            }
             @Override public com.miophas.singularity_iteration.core.api.machine.IMultiblockStructure findStructure(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
                 return com.miophas.singularity_iteration.common.service.machine.MultiblockBridge.findStructure(level, pos);
             }
@@ -87,6 +96,7 @@ public final class CommonApiServices {
         private volatile IReactorAPI reactorAPI;
         private volatile IUpgradeAPI upgradeAPI;
         private volatile com.miophas.singularity_iteration.core.api.world.IWindAPI windAPI;
+        private volatile IRubberTreeAPI rubberTreeAPI;
         private volatile IMachineAPI machineAPI;
         private volatile IMachineBuilderAPI machineBuilderAPI;
         private volatile IMioIcifRegistries registries;
@@ -207,6 +217,12 @@ public final class CommonApiServices {
         public com.miophas.singularity_iteration.core.api.world.IWindAPI getWindAPI() {
             if (windAPI == null) synchronized (this) { if (windAPI == null) windAPI = new com.miophas.singularity_iteration.core.runtime.world.WindAPIImpl(); }
             return windAPI;
+        }
+
+        @Override
+        public IRubberTreeAPI getRubberTreeAPI() {
+            if (rubberTreeAPI == null) synchronized (this) { if (rubberTreeAPI == null) rubberTreeAPI = new RubberTreeAPIImpl(); }
+            return rubberTreeAPI;
         }
 
         @Override

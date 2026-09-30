@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
  * 最基础的植物，会自然生成并扩散
  */
 @SuppressWarnings("null")
-public class PlantWeed extends PlantType {
+public class PlantWeed extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -30,38 +30,17 @@ public class PlantWeed extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Weed", "Bad"};
+        return new String[]{ "Weed", "Bad" };
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(0, 0, 0, 1, 0, 1);
+        return new PlantStats(0, 0, 0, 1, 0, 5);
     }
 
     @Override
     public int getMaxGrowthStage() {
         return 5;
-    }
-
-    @Override
-    public int getGrowthTime(IPlanter planter) {
-        return 50; // 生长很快
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        return planter.getGrowthStage() < getMaxGrowthStage();
-    }
-
-    @Override
-    public boolean isWeed(IPlanter planter) {
-        return true;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        // 杂草掉落杂草物品
-        return new ItemStack[]{new ItemStack(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.WEED.get())};
     }
 
     @Override

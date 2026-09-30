@@ -204,6 +204,42 @@ public class BatchCrafterMenu extends mio_icif_machine_menu {
         }
     }
 
+    /**
+     * ic2 ContainerBatchCrafter.handlePlayerSlotShiftClick spreads the shift-clicked stack over
+     * every accepting row slot instead of stuffing slots in order.
+     */
+    private boolean moveIngredientsBalanced(ItemStack stack) {
+        if (itemHandler == null || stack.isEmpty()) return false;
+        java.util.List<Integer> targets = new java.util.ArrayList<>();
+        for (int i = 0; i < INGREDIENT_SLOT_COUNT; i++) {
+            if (acceptsMenuIngredient(i, stack)) targets.add(INGREDIENT_SLOT_START + i);
+        }
+        if (targets.isEmpty()) return false;
+
+        ItemStack one = stack.copyWithCount(1);
+        int remaining = stack.getCount();
+        boolean moved = false;
+        // Fill one level per round so every accepting slot grows evenly.
+        while (remaining > 0) {
+            targets.sort(Comparator.comparingInt(slot -> {
+                ItemStack content = itemHandler.getStackInSlot(slot);
+                return content.isEmpty() ? 0 : content.getCount();
+            }));
+            int insertedThisRound = 0;
+            for (int slot : targets) {
+                if (remaining <= 0) break;
+                if (itemHandler.insertItem(slot, one.copy(), false).isEmpty()) {
+                    remaining--;
+                    insertedThisRound++;
+                    moved = true;
+                }
+            }
+            if (insertedThisRound == 0) break;
+        }
+        stack.shrink(stack.getCount() - remaining);
+        return moved;
+    }
+
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
@@ -224,7 +260,7 @@ public class BatchCrafterMenu extends mio_icif_machine_menu {
                     }
                 }
                 if (!moved) {
-                    if (this.moveItemStackTo(itemStack1, MENU_INGREDIENT_START, MENU_INGREDIENT_START + INGREDIENT_SLOT_COUNT, false)) {
+                    if (moveIngredientsBalanced(itemStack1)) {
                         moved = true;
                     }
                 }

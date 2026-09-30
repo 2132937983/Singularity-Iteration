@@ -53,20 +53,20 @@ public class CropRegistryEvent {
     private static List<PlantType> configuredPlants() {
         return List.of(
             generic("blazereed", "Mr. Brain", a("Fire","Blaze","Reed","Sulfur"), s(6,0,4,1,0,0), 4,4,4,1,1200, "minecraft:blaze_rod"),
-            generic("bobs_yer_uncle_ranks_berries", "GenerikB", a("Shiny","Vine","Emerald","Berylium","Crystal"), s(11,4,0,8,2,9), 4,4,4,1,2200, "minecraft:emerald"),
+            generic("bobs_yer_uncle_ranks_berries", "GenerikB", a("Shiny","Vine","Emerald","Berylium","Crystal"), s(11,4,0,8,2,9), 4,4,4,1,2200, "mio_icif:resource/item_bobs_yer_uncle_ranks_berry"),
             generic("corium", "Gregorius Techneticies", a("Cow","Silk","Vine"), s(6,0,2,3,1,0), 4,4,4,1,1200, "minecraft:leather"),
             generic("corpse_plant", "Mr. Kenny", a("Toxic","Undead","Vine","Edible","Rotten"), s(5,0,2,1,0,3), 4,4,4,1,1000, "minecraft:rotten_flesh"),
             generic("creeper_weed", "General Spaz", a("Creeper","Vine","Explosive","Fire","Sulfur","Saltpeter","Coal"), s(7,3,0,5,1,3), 4,4,4,1,1400, "minecraft:gunpowder"),
-            generic("diareed", "Diareed", a("Fire","Shiny","Reed","Coal","Diamond","Crystal"), s(12,5,0,10,2,10), 4,4,4,1,2400, "minecraft:diamond"),
+            generic("diareed", "Diareed", a("Fire","Shiny","Reed","Coal","Diamond","Crystal"), s(12,5,0,10,2,10), 4,4,4,1,2400, "mio_icif:resource/item_diamond_dust_small"),
             generic("egg_plant", "Link", a("Chicken","Egg","Edible","Feather","Flower","Addictive"), s(6,0,4,1,0,0), 3,3,3,2,5400, "minecraft:egg"),
-            generic("ender_blossom", "RichardG", a("Ender","Flower","Shiny"), s(10,5,0,2,1,6), 4,4,4,1,2000, "minecraft:ender_pearl"),
-            generic("meat_rose", "VintageBeef", a("Edible","Flower","Cow","Chicken","Pig","Sheep"), s(7,0,4,1,3,0), 4,4,4,1,10500, "minecraft:cooked_porkchop", "minecraft:cooked_beef"),
-            generic("milk_wart", "Mr. Brain", a("Edible","Milk","Cow"), s(6,0,3,0,1,0), 3,3,3,1,5400, "minecraft:milk_bucket"),
-            generic("oil_berries", "Spacetoad", a("Fire","Dark","Reed","Rotten","Coal","Oil"), s(9,6,1,2,1,12), 3,3,3,1,1800, "minecraft:slime_ball"),
+            generic("ender_blossom", "RichardG", a("Ender","Flower","Shiny"), s(10,5,0,2,1,6), 4,4,4,1,2000, "mio_icif:resource/item_ender_pearl_dust"),
+            generic("meat_rose", "VintageBeef", a("Edible","Flower","Cow","Chicken","Pig","Sheep"), s(7,0,4,1,3,0), 4,4,4,1,10500, "minecraft:pink_dye"),
+            generic("milk_wart", "Mr. Brain", a("Edible","Milk","Cow"), s(6,0,3,0,1,0), 3,3,3,1,5400, "mio_icif:resource/item_milk_wart"),
+            generic("oil_berries", "Spacetoad", a("Fire","Dark","Reed","Rotten","Coal","Oil"), s(9,6,1,2,1,12), 3,3,3,1,1800, "mio_icif:resource/item_oil_berry"),
             generic("slime_plant", "Neowulf", a("Slime","Bouncy","Sticky","Bush"), s(6,3,0,0,0,2), 4,4,4,3,1200, "minecraft:slime_ball"),
-            generic("spidernip", "Mr. Kenny", a("Toxic","Silk","Spider","Flower","Ingredient","Addictive"), s(4,2,1,4,1,3), 4,4,4,1,2400, "minecraft:cobweb"),
+            generic("spidernip", "Mr. Kenny", a("Toxic","Silk","Spider","Flower","Ingredient","Addictive"), s(4,2,1,4,1,3), 4,4,4,1,2400, "minecraft:string"),
             generic("tearstalks", "Neowulf", a("Healing","Nether","Ingredient","Reed","Ghast"), s(8,1,2,0,0,0), 4,4,4,1,1600, "minecraft:ghast_tear"),
-            generic("withereed", "CovertJaguar", a("Fire","Undead","Reed","Coal","Rotten","Wither"), s(8,2,0,4,1,3), 4,4,4,1,1600, "mio_icif:resource/item_coal_dust", "minecraft:wither_skeleton_skull"),
+            generic("withereed", "CovertJaguar", a("Fire","Undead","Reed","Coal","Rotten","Wither"), s(8,2,0,4,1,3), 4,4,4,1,1600, "mio_icif:resource/item_coal_dust"),
             sapling("oak_sapling", "minecraft:oak_leaves", "minecraft:oak_sapling", "minecraft:oak_log"),
             sapling("spruce_sapling", "minecraft:spruce_leaves", "minecraft:spruce_sapling", "minecraft:spruce_log"),
             sapling("birch_sapling", "minecraft:birch_leaves", "minecraft:birch_sapling", "minecraft:birch_log"),
@@ -76,6 +76,12 @@ public class CropRegistryEvent {
         );
     }
 
+    /** Shared by legacy factories so there is only one authoritative built-in definition. */
+    public static PlantGenericCrop createConfiguredCrop(String id) {
+        return configuredPlants().stream().filter(plant -> plant instanceof PlantGenericCrop && plant.getTypeId().equals(id))
+            .map(plant -> (PlantGenericCrop) plant).findFirst().orElseThrow(() -> new IllegalArgumentException(id));
+    }
+
     private static PlantGenericCrop generic(String id, String foundBy, String[] traits, PlantStats stats,
             int max, int harvest, int optimal, int after, int growthTime, String... drops) {
         if (growthTime % Math.max(1, stats.getLevel()) != 0) {
@@ -83,7 +89,22 @@ public class CropRegistryEvent {
         }
         return new PlantGenericCrop(id, foundBy, traits, stats, max, harvest, optimal,
             java.util.Arrays.stream(drops).map(CropRegistryEvent::stack).toArray(ItemStack[]::new),
-            new ItemStack[0], after, growthTime / Math.max(1, stats.getLevel()));
+            java.util.Arrays.stream(specialDrops(id)).map(CropRegistryEvent::stack).toArray(ItemStack[]::new), after, growthTime / Math.max(1, stats.getLevel()));
+    }
+
+    private static String[] specialDrops(String id) {
+        return switch (id) {
+            case "blazereed" -> a("minecraft:blaze_powder", "mio_icif:resource/item_sulfur_dust");
+            case "bobs_yer_uncle_ranks_berries" -> a("minecraft:emerald");
+            case "corpse_plant" -> a("minecraft:bone", "minecraft:bone_meal", "minecraft:bone_meal");
+            case "diareed" -> a("minecraft:diamond");
+            case "egg_plant" -> a("minecraft:chicken", "minecraft:feather", "minecraft:feather", "minecraft:feather");
+            case "ender_blossom" -> a("minecraft:ender_pearl", "minecraft:ender_pearl", "minecraft:ender_eye");
+            case "meat_rose" -> a("minecraft:beef", "minecraft:porkchop", "minecraft:chicken", "minecraft:mutton");
+            case "spidernip" -> a("minecraft:spider_eye", "minecraft:vine");
+            case "withereed" -> a("minecraft:coal", "minecraft:coal");
+            default -> a();
+        };
     }
 
     private static PlantBaseSapling sapling(String id, String leaves, String sapling, String log) {
@@ -103,6 +124,7 @@ public class CropRegistryEvent {
 
     private static void registerBaseSeeds(PlantRegistry registry) {
         Object[][] rows = {
+            {"mio_icif:resource/item_milk_wart","milk_wart",1,1,1,1,0},
             {"minecraft:wheat_seeds","wheat",1,1,1,1,0}, {"minecraft:pumpkin_seeds","pumpkin",1,1,1,1,0},
             {"minecraft:melon_seeds","melon",1,1,1,1,0}, {"minecraft:nether_wart","netherwart",1,1,1,1,0},
             {"mio_icif:resource/item_terra_wart","terrawart",1,1,1,1,0}, {"mio_icif:resource/item_coffee_bean","coffee",1,1,1,1,0},
@@ -121,7 +143,10 @@ public class CropRegistryEvent {
         for (Object[] row : rows) {
             PlantType plant = registry.getPlant("mio_icif", (String)row[1]);
             if (plant == null) throw new IllegalStateException("Missing registered plant " + row[1]);
-            registry.registerBaseSeed(stack((String)row[0]), plant,
+            ItemStack baseSeed = stack((String)row[0]);
+            if (baseSeed.is(net.minecraft.world.item.Items.POPPY) || baseSeed.is(net.minecraft.world.item.Items.DANDELION)
+                    || baseSeed.is(net.minecraft.world.item.Items.BROWN_MUSHROOM) || baseSeed.is(net.minecraft.world.item.Items.RED_MUSHROOM)) baseSeed.setCount(4);
+            registry.registerBaseSeed(baseSeed, plant,
                 (int)row[2], (int)row[3], (int)row[4], (int)row[5], (int)row[6]);
         }
     }

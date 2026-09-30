@@ -43,6 +43,27 @@ public class mio_icif_treetap_elc extends mio_icif_tool_elc implements ITreeTapI
     }
 
     /**
+     * 电动树脂提取器不消耗耐久，改为消耗电能。
+     */
+    @Override
+    public int getDurabilityCost() {
+        return 0;
+    }
+
+    /**
+     * 电动树脂提取器效率更高，每次掉落 2~4 个树脂。
+     */
+    @Override
+    public int getResinDropMin() {
+        return 2;
+    }
+
+    @Override
+    public int getResinDropMax() {
+        return 4;
+    }
+
+    /**
      * 重写：防止电动树脂提取器损坏
      */
     @Override

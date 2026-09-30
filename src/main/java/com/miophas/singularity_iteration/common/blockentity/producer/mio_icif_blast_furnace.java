@@ -43,6 +43,9 @@ import net.neoforged.neoforge.items.ItemStackHandler;
  * Existing SI recipes remain data driven. Only the measured iron recipe is aligned to6000ticks.
  * No predecessor body or original mod API/implementation was used. */
 public class mio_icif_blast_furnace extends AbstractHeatBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipeInput, com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_BlastFurnaceRecipes.BLAST_FURNACE_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipeInput, com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_BlastFurnaceRecipes.BLAST_FURNACE_TYPE);
     public static final int INPUT_SLOT=0,OUTPUT_SLOT_1=1,OUTPUT_SLOT_2=2,AIR_CELL_SLOT=3,EMPTY_CELL_SLOT=4,
             UPGRADE_SLOT_START=5,UPGRADE_SLOT_COUNT=2,TOTAL_SLOTS=7;
     public static final int HEAT_CAPACITY=50000,HEAT_STORAGE_CAPACITY=50100,MAX_HEAT_RECEIVE=1000,MAX_HEAT_EXTRACT=0,
@@ -96,13 +99,13 @@ public class mio_icif_blast_furnace extends AbstractHeatBlockEntity {
         if(!ItemStack.matches(input,cachedInput)||recipeChecked==Long.MIN_VALUE||now-recipeChecked>=20){
             cachedInput=input.copy();recipeChecked=now;
             computedPlan=new CompoundTag();
-            currentRecipe=level.getRecipeManager().getRecipeFor(mio_icif_BlastFurnaceRecipes.BLAST_FURNACE_TYPE.get(),new mio_icif_BlastFurnaceRecipeInput(input),level).orElse(null);
+            currentRecipe=recipeCache1.find(level, new mio_icif_BlastFurnaceRecipeInput(input)).orElse(null);
         }
         return currentRecipe;
     }
     public boolean isItemValidForSlot(int slot,ItemStack stack){
         if(stack.isEmpty())return false;
-        if(slot==INPUT_SLOT)return level==null||level.getRecipeManager().getRecipeFor(mio_icif_BlastFurnaceRecipes.BLAST_FURNACE_TYPE.get(),new mio_icif_BlastFurnaceRecipeInput(stack),level).isPresent();
+        if(slot==INPUT_SLOT)return level==null||recipeCache2.find(level, new mio_icif_BlastFurnaceRecipeInput(stack)).isPresent();
         if(slot==AIR_CELL_SLOT)return mio_icif_cells.isCellContainingFluid(stack,mio_icif_fluids.AIR.get());
         return slot>=UPGRADE_SLOT_START&&slot<TOTAL_SLOTS&&MioIcifAPI.instance().getItemAPI().isUpgrade(stack);
     }

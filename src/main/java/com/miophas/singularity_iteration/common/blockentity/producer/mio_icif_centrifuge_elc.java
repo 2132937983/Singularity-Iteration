@@ -35,6 +35,9 @@ import java.util.Optional;
  */
 @SuppressWarnings("null")
 public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.centrifuge.mio_icif_CentrifugeRecipeInput, com.miophas.singularity_iteration.common.recipe.centrifuge.mio_icif_CentrifugeRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_CentrifugeRecipes.CENTRIFUGE_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.centrifuge.mio_icif_CentrifugeRecipeInput, com.miophas.singularity_iteration.common.recipe.centrifuge.mio_icif_CentrifugeRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_CentrifugeRecipes.CENTRIFUGE_TYPE);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -130,8 +133,7 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
         // ??�建??�方输�??
         mio_icif_CentrifugeRecipeInput recipeInput = new mio_icif_CentrifugeRecipeInput(stack);
         // �??��?��?��??�匹??��????��??
-        Optional<RecipeHolder<mio_icif_CentrifugeRecipe>> recipe = level.getRecipeManager()
-            .getRecipeFor(mio_icif_CentrifugeRecipes.CENTRIFUGE_TYPE.get(), recipeInput, level);
+        Optional<RecipeHolder<mio_icif_CentrifugeRecipe>> recipe = recipeCache1.find(level, recipeInput);
         return recipe.isPresent();
     }
 
@@ -143,8 +145,7 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
             return Optional.empty();
         }
         mio_icif_CentrifugeRecipeInput recipeInput = new mio_icif_CentrifugeRecipeInput(input);
-        return level.getRecipeManager()
-            .getRecipeFor(mio_icif_CentrifugeRecipes.CENTRIFUGE_TYPE.get(), recipeInput, level)
+        return recipeCache2.find(level, recipeInput)
             .map(RecipeHolder::value);
     }
 

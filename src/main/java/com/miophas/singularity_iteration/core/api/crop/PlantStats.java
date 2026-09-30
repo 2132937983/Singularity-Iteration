@@ -26,6 +26,11 @@ public class PlantStats {
     public int getMedicinal() { return medicinal; }
     public int getDanger() { return danger; }
 
+    /** IC2 positional semantics; old getter names remain for binary compatibility. */
+    public int getDefensive() { return color; }
+    public int getColorful() { return medicinal; }
+    public int getWeed() { return danger; }
+
     public int stat(int index) {
         return switch (index) {
             case 0 -> chemistry;

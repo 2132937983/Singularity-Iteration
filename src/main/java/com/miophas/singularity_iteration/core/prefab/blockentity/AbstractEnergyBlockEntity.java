@@ -38,12 +38,15 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         com.miophas.singularity_iteration.core.api.machine.IEnergyBlock,
         IUpgradableBlock, IWrenchable {
     
+    /** Legacy implementation field. Addons should use getEnergyStorage() and the protected api* operations. */
+    @org.jetbrains.annotations.ApiStatus.Internal
     protected final CustomEUEnergyStorage energyStorage;
     private com.miophas.singularity_iteration.core.runtime.energy.FeMachineBridge scexFe;
     private CustomEUEnergyStorage[] scexEuPorts;
     // The wrapper is a live view over this block entity; reuse it on hot API paths
     // instead of allocating a new adapter for every upgrade/energy query.
     private IEnergyTileAccess energyApi;
+    @org.jetbrains.annotations.ApiStatus.Internal
     public final com.miophas.singularity_iteration.core.runtime.energy.FeMachineBridge scexFeBridge() {
         if (scexFe == null) scexFe = new com.miophas.singularity_iteration.core.runtime.energy.FeMachineBridge(this);
         return scexFe;
@@ -167,6 +170,9 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         return energyStorage;
     }
     
+    /** @deprecated Engine-only escape hatch. Use getEnergyStorage() for machine work, euPort(side) for transfers. */
+    @Deprecated(since = "0.1.7.14", forRemoval = false)
+    @org.jetbrains.annotations.ApiStatus.Internal
     public CustomEUEnergyStorage getEnergyStorageInternal() {
         return energyStorage;
     }
@@ -396,6 +402,14 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         return null;
     }
 
+    /** Public transfer port sharing direction checks and the native/FE ledger. */
+    public com.miophas.singularity_iteration.core.api.energy.storage.IEUEnergyStorage euPort(@Nullable Direction side) {
+        return getEnergyStorageCapability(side);
+    }
+
+    /** @deprecated Historical JVM descriptor; addons should use euPort(side). */
+    @Deprecated(since = "0.1.7.14", forRemoval = false)
+    @org.jetbrains.annotations.ApiStatus.Internal
     public CustomEUEnergyStorage getEnergyStorageCapability(@Nullable Direction side) {
         // Keep the historical JVM descriptor without exposing the controlled
         // balance directly. All external EU faces share the native/item/FE ledger.

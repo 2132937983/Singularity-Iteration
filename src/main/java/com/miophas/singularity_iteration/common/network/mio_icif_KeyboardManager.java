@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.network;
 
-import com.miophas.singularity_iteration.core.runtime.flight.JetpackKeyHandler;
+import com.miophas.singularity_iteration.core.prefab.flight.JetpackKeyHandler;
 import net.minecraft.world.entity.player.Player;
 
 /** Compatibility facade for the original public keyboard manager ABI. */

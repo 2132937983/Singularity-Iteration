@@ -5,7 +5,6 @@ import com.miophas.singularity_iteration.core.api.energy.ICableTier;
 import com.miophas.singularity_iteration.common.block.build.mio_icif_block_foam;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
 import com.miophas.singularity_iteration.common.blockentity.mio_icif_wire;
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.block.mio_icif_entity_block;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
@@ -521,14 +520,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
-    @Override
-    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
-        super.playerDestroy(level, player, pos, state, blockEntity, tool);
-        if (!level.isClientSide && state.getValue(FOAMLOGGED)) {
-            ItemStack foamDrop = new ItemStack(mio_icif_blocks.CONSTRUCTION_FOAM.get());
-            Block.popResource(level, pos, foamDrop);
-        }
-    }
+    // 对齐 IC2：破坏被建筑泡沫包裹的线缆时，泡沫会被破坏且不可回收，
+    // 线缆本体按战利品表正常掉落。此处无需掉落泡沫物品。
 
     @Override
     public List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder context) {

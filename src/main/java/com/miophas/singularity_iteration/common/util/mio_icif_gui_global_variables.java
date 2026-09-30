@@ -44,11 +44,11 @@ public final class mio_icif_gui_global_variables {
     public static final int LIGHTNING_BG_TEXTURE_X = 87;
     public static final int LIGHTNING_BG_TEXTURE_Y = 227;
 
-    // === 闪电能量图标 (14x14, uv=72,227) - 从下往上填充 ===
+    // === 闪电能量图标 xy=(72,227) uv=(14,14) - 从下往上填充 ===
     public static final int LIGHTNING_WIDTH = 14;
     public static final int LIGHTNING_HEIGHT = 14;
-    public static final int LIGHTNING_U = 72;
-    public static final int LIGHTNING_V = 227;
+    public static final int LIGHTNING_TEXTURE_X = 72;
+    public static final int LIGHTNING_TEXTURE_Y = 227;
 
     // 标准工作进度条背景 xy=(189，164) uv=(23，15)
     public static final int PROGRESS_BAR_BG_WIDTH = 23;

@@ -17,19 +17,20 @@ import org.jetbrains.annotations.Nullable;
 
     public static final int BATTERY_SLOT = 0;
     public static final int WATER_CELL_INPUT_SLOT = 1;
-    public static final int EMPTY_CELL_OUTPUT_SLOT = 2;
-    public static final int HERBICIDE_START_SLOT = 3;
-    public static final int FERTILIZER_START_SLOT = 10;
-    public static final int SLOT_COUNT = 17;
+    public static final int WATER_CELL_OUTPUT_SLOT = 2;
+    public static final int FERTILIZER_START_SLOT = 3;
+    public static final int WEEDEX_START_SLOT = 10;
+    public static final int UPGRADE_START_SLOT = 17;
+    public static final int SLOT_COUNT = 21;
 
     private static final int BATTERY_X = 134;
     private static final int BATTERY_Y = 80;
     private static final int WATER_CELL_X = 26;
     private static final int WATER_CELL_Y = 71;
-    private static final int EMPTY_CELL_X = 26;
-    private static final int EMPTY_CELL_Y = 89;
-    private static final int HERBICIDE_START_X = 26;
-    private static final int HERBICIDE_Y = 27;
+    private static final int WATER_CELL_OUTPUT_X = 26;
+    private static final int WATER_CELL_OUTPUT_Y = 89;
+    private static final int WEEDEX_START_X = 26;
+    private static final int WEEDEX_Y = 27;
     private static final int FERTILIZER_START_X = 26;
     private static final int FERTILIZER_Y = 50;
 
@@ -37,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
     private static final int DATA_MAX_ENERGY = 1;
     private static final int DATA_FLUID_AMOUNT = 2;
     private static final int DATA_MAX_FLUID = 3;
-    private static final int DATA_COUNT = 4;
+    private static final int DATA_COUNT = 5;
 
     public MatronElcMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, null);
@@ -76,6 +77,8 @@ import org.jetbrains.annotations.Nullable;
         return this.data.get(DATA_FLUID_AMOUNT);
     }
 
+    public int getWeedExAmount() { return this.data.get(4); }
+
     public int getMaxFluid() {
         return this.data.get(DATA_MAX_FLUID);
     }
@@ -90,19 +93,20 @@ import org.jetbrains.annotations.Nullable;
     protected void addMachineSlots() {
         this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, BATTERY_X, BATTERY_Y));
         this.addSlot(new SlotItemHandler(itemHandler, WATER_CELL_INPUT_SLOT, WATER_CELL_X, WATER_CELL_Y));
-        this.addSlot(new SlotItemHandler(itemHandler, EMPTY_CELL_OUTPUT_SLOT, EMPTY_CELL_X, EMPTY_CELL_Y) {
+        this.addSlot(new SlotItemHandler(itemHandler, WATER_CELL_OUTPUT_SLOT, WATER_CELL_OUTPUT_X, WATER_CELL_OUTPUT_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
         for (int i = 0; i < 7; i++) {
-            this.addSlot(new SlotItemHandler(itemHandler, HERBICIDE_START_SLOT + i, HERBICIDE_START_X + i * 18, HERBICIDE_Y));
+            this.addSlot(new SlotItemHandler(itemHandler, WEEDEX_START_SLOT + i, WEEDEX_START_X + i * 18, WEEDEX_Y));
         }
         for (int i = 0; i < 7; i++) {
             this.addSlot(new SlotItemHandler(itemHandler, FERTILIZER_START_SLOT + i, FERTILIZER_START_X + i * 18, FERTILIZER_Y));
         }
+        for (int i = 0; i < 4; i++) addUpgradeSlot(itemHandler, UPGRADE_START_SLOT + i, 180, 18 + i * 18);
     }
+    @Override protected int getUpgradeSlotStart() { return UPGRADE_START_SLOT; }
+    @Override protected int getUpgradeSlotCount() { return 4; }
 }
-
-

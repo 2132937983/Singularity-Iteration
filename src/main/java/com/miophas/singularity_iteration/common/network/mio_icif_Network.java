@@ -153,6 +153,13 @@ public class mio_icif_Network {
             ArmorFeatureTogglePacket::handle
         );
 
+        // 注册装备特性模式循环包
+        registrar.playToServer(
+            ArmorFeatureCyclePacket.TYPE,
+            ArmorFeatureCyclePacket.CODEC,
+            ArmorFeatureCyclePacket::handle
+        );
+
         // 注册方块实体网络事件同步包（服务端→客户端）
         registrar.playToClient(
             TileEntityEventPacket.TYPE,
@@ -227,12 +234,21 @@ public class mio_icif_Network {
 
     /**
      * 发送装备特性切换包到服务端
-     * @param slot 装备槽位
+     * @param slotId 槽位标识（head/chest/legs/feet/back）
      * @param featureKey 特性键
      * @param enabled 是否启用
      */
-    public static void sendArmorFeatureToggle(net.minecraft.world.entity.EquipmentSlot slot, String featureKey, boolean enabled) {
-        PacketDistributor.sendToServer(new ArmorFeatureTogglePacket(slot, featureKey, enabled));
+    public static void sendArmorFeatureToggle(String slotId, String featureKey, boolean enabled) {
+        PacketDistributor.sendToServer(new ArmorFeatureTogglePacket(slotId, featureKey, enabled));
+    }
+
+    /**
+     * 发送装备特性模式循环包到服务端
+     * @param slotId 槽位标识（head/chest/legs/feet/back）
+     * @param featureKey 特性键
+     */
+    public static void sendArmorFeatureCycle(String slotId, String featureKey) {
+        PacketDistributor.sendToServer(new ArmorFeatureCyclePacket(slotId, featureKey));
     }
 
     /**

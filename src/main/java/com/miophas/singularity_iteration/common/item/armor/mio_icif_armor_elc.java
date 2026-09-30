@@ -25,7 +25,6 @@ import java.util.List;
  * 继承 {@link AbstractElectricArmor}，添加 mio_icif 特有的逻辑：
  * <ul>
  *   <li>纳米胸甲（tier=5）穿戴时给予抗性效果</li>
- *   <li>使用内部 {@link ArmorFeatureToggle} 的 Tooltip 格式</li>
  *   <li>硬编码 mio_icif 材质命名空间</li>
  * </ul>
  *
@@ -76,15 +75,6 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
-    }
-
-    @Override
-    protected void appendFeatureTooltip(ItemStack stack, List<Component> tooltipComponents) {
-        List<ArmorFeatureInfo> features = getFeatures(stack);
-        List<ArmorFeatureToggle.FeatureInfo> internalFeatures = features.stream()
-            .map(ArmorFeatureToggle::fromApi)
-            .toList();
-        ArmorFeatureToggle.addFeaturesToTooltip(tooltipComponents, stack, internalFeatures);
     }
 
     @Override

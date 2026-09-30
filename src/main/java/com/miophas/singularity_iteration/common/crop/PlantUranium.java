@@ -82,4 +82,9 @@ public class PlantUranium extends PlantType {
         }
         return false;
     }
+    // SI extension: retain legacy growth/output, but support the shared root and seed lifecycle.
+    @Override public int getRootDepth(IPlanter planter) { return 5; }
+    @Override public ItemStack getSeedItem(IPlanter planter) {
+        return planter.makeSeeds(this, 1, planter.getGrowthSpeed(), planter.getYield(), planter.getResilience());
+    }
 }

@@ -1,6 +1,6 @@
 package com.miophas.singularity_iteration.common.integration.curios;
 
-import com.miophas.singularity_iteration.core.runtime.flight.JetpackKeyHandler;
+import com.miophas.singularity_iteration.core.prefab.flight.JetpackKeyHandler;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;

@@ -78,6 +78,7 @@ public interface IPlanter {
     boolean isBlockBelow(String oredictName);
 
     // ==================== 种子生成 ====================
-    ItemStack makeSeeds(PlantType plantType, int stage, int growthSpeed, int yield, int resilience);
+    /** Creates seed bags with the planter scan level. The second argument is the stack count. */
+    ItemStack makeSeeds(PlantType plantType, int count, int growthSpeed, int yield, int resilience);
 }
 

@@ -4,7 +4,7 @@ package com.miophas.singularity_iteration.common.item.armor;
 import com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo;
 import com.miophas.singularity_iteration.core.api.item.IBackSlotItem;
 import com.miophas.singularity_iteration.core.api.item.IJetpackItem;
-import com.miophas.singularity_iteration.core.runtime.flight.JetpackFlightController;
+import com.miophas.singularity_iteration.core.prefab.flight.JetpackFlightController;
 import java.util.List;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;

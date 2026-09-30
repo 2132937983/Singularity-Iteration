@@ -26,6 +26,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 @Mod(CoreExampleMod.ID)
 public final class CoreExampleMod {
     public static final String ID = "si_core_example";
+    private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(ID);
+    public static final net.neoforged.neoforge.registries.DeferredItem<ForeignCropSeed> FOREIGN_CROP_SEED = ITEMS.register("foreign_crop_seed", ForeignCropSeed::new);
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(ID);
     private static final DeferredRegister<BlockEntityType<?>> ENTITIES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, ID);
     public static final DeferredBlock<Block> SOURCE = BLOCKS.register("source", () -> new ExampleBlock(InheritedSource::new));
@@ -58,6 +60,7 @@ public final class CoreExampleMod {
         EnergyNodeRegistry.register(id("sink"), EnergyNodeProfile.consumer());
         EnergyNodeRegistry.register(id("multi_source"), EnergyNodeProfile.generator(32));
         EnergyNodeRegistry.register(id("packet_source"), EnergyNodeProfile.generator(32));
+        ITEMS.register(bus);
         BLOCKS.register(bus);
         ENTITIES.register(bus);
         bus.addListener(CoreExampleMod::capabilities);

@@ -39,6 +39,9 @@ import java.util.Optional;
  */
 @SuppressWarnings("null")
 public class mio_icif_furnace_elc extends AbstractStandardMachineBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<net.minecraft.world.item.crafting.SingleRecipeInput, net.minecraft.world.item.crafting.SmeltingRecipe> recipeCache1 = com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache.of(RecipeType.SMELTING);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<net.minecraft.world.item.crafting.SingleRecipeInput, net.minecraft.world.item.crafting.SmeltingRecipe> recipeCache2 = com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache.of(RecipeType.SMELTING);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -171,7 +174,7 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
         SimpleContainer container = new SimpleContainer(1);
         container.setItem(0, stack);
         SingleRecipeInput input = new SingleRecipeInput(stack);
-        return level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, input, level).isPresent();
+        return recipeCache1.find(level, input).isPresent();
     }
 
     /**
@@ -202,7 +205,7 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
         }
 
         SingleRecipeInput recipeInput = new SingleRecipeInput(input);
-        currentRecipe = manager.getRecipeFor(RecipeType.SMELTING, recipeInput, level);
+        currentRecipe = recipeCache2.find(level, recipeInput);
         recipeInputSnapshot = input.copy();
         recipeManagerSnapshot = manager;
         return currentRecipe;

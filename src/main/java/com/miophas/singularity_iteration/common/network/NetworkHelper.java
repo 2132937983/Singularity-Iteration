@@ -30,7 +30,7 @@ public final class NetworkHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(NetworkHelper.class);
     private static final int DEFAULT_RANGE = 64;
 
-    /** Field 鍙嶅皠缂撳瓨锛歬ey = Class.getName() + "#" + fieldName */
+    /** Field 反射缓存：key = Class.getName() + "#" + fieldName */
     private static final Map<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
 
     private NetworkHelper() {

@@ -1,18 +1,34 @@
 // SPDX-License-Identifier: Apache-2.0
-package com.miophas.singularity_iteration.core.runtime.flight;
+package com.miophas.singularity_iteration.core.prefab.flight;
 
 import com.miophas.singularity_iteration.core.api.item.IJetpackItem;
 import java.util.Map;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
+/**
+ * 喷气背包飞行控制器（可复用底座）。
+ *
+ * <p>实现 {@link IJetpackItem} 的物品只需在自己的 tick 中调用
+ * {@link #tick(Player, ItemStack, IJetpackItem, long, double, double, double, boolean)}
+ * 即可获得与宿主一致的推升、悬停、前向推进、限高与能量消耗行为。
+ * 跳跃/前进/潜行/加速按键输入由 {@link JetpackKeyHandler} 提供（宿主已为所有玩家同步）。
+ */
 public final class JetpackFlightController {
-    private static final Map<UUID, Long> ACTIVE_TICKS = new ConcurrentHashMap<>();
-    private static final Map<Player, Boolean> flyingPlayers = new WeakHashMap<>();
+    /*
+     * Last game tick in which each player's jetpack produced thrust, kept per logical side.
+     * In singleplayer the client and server Player share a UUID but tick on different threads
+     * against different game clocks; one shared map let each side overwrite the other.
+     */
+    private static final Map<UUID, Long> SERVER_ACTIVE_TICKS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Long> CLIENT_ACTIVE_TICKS = new ConcurrentHashMap<>();
+
+    private static Map<UUID, Long> activeTicks(Player player) {
+        return player.level().isClientSide ? CLIENT_ACTIVE_TICKS : SERVER_ACTIVE_TICKS;
+    }
 
     private JetpackFlightController() {}
 
@@ -32,8 +48,7 @@ public final class JetpackFlightController {
 
         int requiredEnergy = (currentMode == MODE_HOVER) ? (int) hoverCost : (int) flightCost;
         if (currentEnergy < requiredEnergy) {
-            flyingPlayers.remove(player);
-            ACTIVE_TICKS.remove(player.getUUID());
+            activeTicks(player).remove(player.getUUID());
             return;
         }
 
@@ -55,17 +70,16 @@ public final class JetpackFlightController {
         }
 
         if (jetpackUsed) {
-            flyingPlayers.put(player, true);
             player.fallDistance = 0.0F;
-            ACTIVE_TICKS.put(player.getUUID(), player.level().getGameTime());
+            activeTicks(player).put(player.getUUID(), player.level().getGameTime());
         } else {
-            flyingPlayers.remove(player);
-            ACTIVE_TICKS.remove(player.getUUID());
+            activeTicks(player).remove(player.getUUID());
         }
 
+        // Former WeakHashMap "flyingPlayers" was written and read back in this same call, so it
+        // always equalled jetpackUsed; it also raced between client and server threads.
         if (currentMode == MODE_HOVER && player.onGround() && !player.level().isClientSide) {
-            Boolean wasFlying = flyingPlayers.get(player);
-            if (wasFlying != null && wasFlying) {
+            if (jetpackUsed) {
                 jetpack.setMode(stack, IJetpackItem.JetpackMode.FLIGHT);
                 player.sendSystemMessage(Component.translatable("hud.mio_icif.jetpack.hover_disabled"));
             }
@@ -259,19 +273,18 @@ public final class JetpackFlightController {
 
     public static boolean isFlying(Player player) {
         if (player == null) return false;
-        Long tick = ACTIVE_TICKS.get(player.getUUID());
+        Long tick = activeTicks(player).get(player.getUUID());
         return tick != null && tick == player.level().getGameTime();
     }
 
     public static void removePlayer(Player player) {
         if (player != null && !player.level().isClientSide) {
-            ACTIVE_TICKS.remove(player.getUUID());
-            flyingPlayers.remove(player);
+            SERVER_ACTIVE_TICKS.remove(player.getUUID());
         }
     }
 
     public static void clearServerStates() {
-        ACTIVE_TICKS.clear();
-        flyingPlayers.clear();
+        SERVER_ACTIVE_TICKS.clear();
+        CLIENT_ACTIVE_TICKS.clear();
     }
 }

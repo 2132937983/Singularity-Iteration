@@ -58,6 +58,13 @@ public class mio_icif_resources {
     public static final DeferredItem<Item> CRYSTAL_MEMORY_RAW = ITEMS.register("resource/item_crystal_memory_raw", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> DCP_PLATE = ITEMS.register("resource/item_dcp_plate", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> DIAMOND_CUT_BLADE = ITEMS.register("resource/item_diamond_cut_blade", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> DIAMOND_DUST_SMALL = ITEMS.register("resource/item_diamond_dust_small", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> ENDER_PEARL_DUST = ITEMS.register("resource/item_ender_pearl_dust", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MILK_WART = ITEMS.register("resource/item_milk_wart", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> OIL_BERRY = ITEMS.register("resource/item_oil_berry", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> BOBS_BERRY = ITEMS.register("resource/item_bobs_yer_uncle_ranks_berry", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> EMERALD_DUST = ITEMS.register("resource/item_emerald_dust", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> EMERALD_DUST_SMALL = ITEMS.register("resource/item_emerald_dust_small", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> DIAMOND_DUST = ITEMS.register("resource/item_diamond_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> ENERGIUM_DUST = ITEMS.register("resource/item_energium_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> FERTILIZER = ITEMS.register("resource/item_fertilizer", () -> new MatronFertilizerItem(new Item.Properties()));

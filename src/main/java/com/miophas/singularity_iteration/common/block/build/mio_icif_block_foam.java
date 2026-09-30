@@ -12,19 +12,16 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -32,20 +29,30 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
- * 建筑泡沫方块 - IC2风格的CF泡沫
- * 普通泡沫会在光照下逐渐硬化，强化泡沫需要更长时间
- * 用沙子右键可以加速硬化
- * 支持遮蔽器伪装纹理功能
+ * 建筑泡沫方块 - 对齐 IC2 1.12.2 原版 {@code ic2.core.block.BlockFoam}。
  *
- * IC2原版特性：泡沫没有碰撞箱，实体可以穿过泡沫方块
- * 只有硬化后才会变成固体方块
+ * <p>对齐要点：
+ * <ul>
+ *     <li><b>随机刻硬化</b>：{@code chance = 1/(hardenTime*(16-light)*20)}，
+ *         再乘以 {@code 4096/randomTickSpeed} 换算到随机刻；光照越高越快。
+ *         hardenTime：普通 300、强化 600。</li>
+ *     <li><b>无碰撞箱</b>：未硬化前实体可以穿过（对齐 {@code getCollisionBoundingBox} 返回 null）。</li>
+ *     <li><b>沙子加速</b>：手持沙子右键立即硬化并消耗 1 个沙子。</li>
+ *     <li><b>硬化产物</b>：普通 → CF 墙；强化 → 强化石（防爆石）。</li>
+ *     <li><b>掉落</b>：普通泡沫不掉落任何物品；强化泡沫掉落 1 个铁脚手架。</li>
+ * </ul>
  */
 @SuppressWarnings("null")
 public class mio_icif_block_foam extends BaseEntityBlock {
@@ -58,9 +65,11 @@ public class mio_icif_block_foam extends BaseEntityBlock {
     // 是否有伪装纹理（遮蔽器粘贴后为true）
     public static final BooleanProperty DISGUISED = BooleanProperty.create("disguised");
 
-    // 硬化时间（秒），普通泡沫10秒，强化泡沫60秒
-    @SuppressWarnings("unused")
-    private final boolean isReinforced;
+    /** IC2 BlockFoam.FoamType.normal 的硬化时间参数。 */
+    private static final int HARDEN_TIME_NORMAL = 300;
+
+    /** IC2 BlockFoam.FoamType.reinforced 的硬化时间参数。 */
+    private static final int HARDEN_TIME_REINFORCED = 600;
 
     // 空碰撞箱 - 实体可以穿过泡沫（IC2原版特性）
     private static final VoxelShape EMPTY_SHAPE = Shapes.empty();
@@ -71,8 +80,9 @@ public class mio_icif_block_foam extends BaseEntityBlock {
 
     public mio_icif_block_foam(Properties properties, boolean reinforced) {
         super(properties);
-        this.isReinforced = reinforced;
-        this.registerDefaultState(this.stateDefinition.any().setValue(REINFORCED, reinforced).setValue(DISGUISED, false));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(REINFORCED, reinforced)
+                .setValue(DISGUISED, false));
     }
 
     @Override
@@ -95,7 +105,7 @@ public class mio_icif_block_foam extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return null; // 泡沫不需要tick更新
+        return null; // 泡沫不需要方块实体 tick
     }
 
     /**
@@ -123,8 +133,8 @@ public class mio_icif_block_foam extends BaseEntityBlock {
     }
 
     /**
-     * 显示形状（用于渲染和交互，但不是碰撞形状）
-     * 泡沫在视觉上仍然存在，只是实体可以穿过
+     * 显示形状（用于渲染和交互，但不是碰撞形状）。
+     * 泡沫在视觉上仍然存在，只是实体可以穿过。
      */
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
@@ -134,6 +144,84 @@ public class mio_icif_block_foam extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(REINFORCED, DISGUISED);
+    }
+
+    /**
+     * 随机刻硬化 - 完全对齐 IC2 {@code BlockFoam.updateTick}。
+     */
+    @Override
+    public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        int tickSpeed = level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
+        if (tickSpeed <= 0) {
+            return; // 世界未启用随机刻时不可能硬化
+        }
+        int hardenTime = state.getValue(REINFORCED) ? HARDEN_TIME_REINFORCED : HARDEN_TIME_NORMAL;
+        float chance = getHardenChance(level, pos, state, hardenTime) * 4096.0F / tickSpeed;
+        if (random.nextFloat() < chance) {
+            harden(level, pos, state);
+        }
+    }
+
+    /**
+     * 对齐 IC2 {@code BlockFoam.getHardenChance}：
+     * {@code 1 / (hardenTime * (16 - light) * 20)}。
+     */
+    public static float getHardenChance(Level level, BlockPos pos, BlockState state, int hardenTime) {
+        int light = level.getMaxLocalRawBrightness(pos);
+
+        // IC2：若方块非完整遮挡且透光，则取相邻方块（方块光）光照的最大值
+        if (state.getLightBlock(level, pos) == 0) {
+            for (Direction side : Direction.values()) {
+                light = Math.max(light, level.getBrightness(LightLayer.BLOCK, pos.relative(side)));
+            }
+        }
+
+        int avgTime = hardenTime * (16 - light);
+        return 1.0F / (avgTime * 20);
+    }
+
+    /**
+     * 硬化泡沫 - 将泡沫方块替换为硬化后的方块。
+     * 普通泡沫 → CF 墙；强化泡沫 → 强化石（防爆石）。
+     */
+    private void harden(Level level, BlockPos pos, BlockState state) {
+        BlockState result = state.getValue(REINFORCED)
+                ? mio_icif_blocks.CONSTRUCTION_WALL.get().defaultBlockState()
+                : mio_icif_blocks.CONSTRUCTION_FOAM_WALL.get().defaultBlockState();
+        level.setBlockAndUpdate(pos, result);
+        level.playSound(null, pos, SoundEvents.SAND_HIT, SoundSource.BLOCKS, 0.5F, 0.5F);
+    }
+
+    /**
+     * 对齐 IC2 {@code BlockFoam.FoamType#getDrops}：
+     * 普通泡沫不掉落任何物品；强化泡沫掉落 1 个铁脚手架。
+     */
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
+        if (state.getValue(REINFORCED)) {
+            List<ItemStack> drops = new ArrayList<>(1);
+            drops.add(new ItemStack(mio_icif_blocks.SCAFFOLD_IRON.get().asItem()));
+            return drops;
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * 右键交互 - 用沙子立即硬化（对齐 IC2，消耗 1 个沙子）。
+     */
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (stack.is(Items.SAND)) {
+            if (!level.isClientSide()) {
+                harden(level, pos, state);
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+            }
+            return ItemInteractionResult.sidedSuccess(level.isClientSide());
+        }
+
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
     @Override
@@ -174,125 +262,5 @@ public class mio_icif_block_foam extends BaseEntityBlock {
             return !shape.isEmpty() && shape != Shapes.block();
         }
         return false;
-    }
-
-    /**
-     * 随机tick - 泡沫硬化逻辑
-     * 硬化速度取决于光照等级：光照越高硬化越快
-     */
-    @Override
-    public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        float chance = getHardenChance(level, pos, state);
-        if (random.nextFloat() < chance) {
-            harden(level, pos, state);
-        }
-    }
-
-    /**
-     * 计算硬化概率
-     * 基于IC2逻辑：光照越高，硬化越快
-     */
-    public float getHardenChance(Level level, BlockPos pos, BlockState state) {
-        int light = level.getMaxLocalRawBrightness(pos);
-
-        // 检查周围光照取最大值
-        for (Direction side : Direction.values()) {
-            light = Math.max(light, level.getMaxLocalRawBrightness(pos.relative(side)));
-        }
-
-        // 光照为0时几乎不硬化
-        if (light <= 0) return 0.0F;
-
-        // 硬化基础时间（ticks）：普通泡沫7.5秒，强化泡沫15秒（缩短至原版1/4）
-        // 使用方块状态判断而不是实例字段，以支持动态设置强化状态
-        boolean reinforced = state.getValue(REINFORCED);
-        int hardenTimeTicks = reinforced ? 300 : 150;
-
-        // 光照越高硬化越快，光照越低硬化越慢
-        return (float) light / (hardenTimeTicks * 16);
-    }
-
-    /**
-     * 硬化泡沫 - 将泡沫方块替换为硬化后的方块
-     * 普通泡沫 → 石头
-     * 强化泡沫 → 防爆石（Construction Wall，防爆）
-     */
-    private void harden(Level level, BlockPos pos, BlockState state) {
-        // 使用方块状态判断而不是实例字段，以支持动态设置强化状态
-        boolean reinforced = state.getValue(REINFORCED);
-        if (reinforced) {
-            // 强化泡沫硬化为防爆石
-            level.setBlockAndUpdate(pos, mio_icif_blocks.CONSTRUCTION_WALL.get().defaultBlockState());
-        } else {
-            // 普通泡沫硬化为石头
-            level.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
-        }
-        level.playSound(null, pos, SoundEvents.SAND_HIT, SoundSource.BLOCKS, 0.5F, 0.5F);
-    }
-
-    /**
-     * 实体在泡沫内时的效果（IC2风格）
-     * - 移速变慢（缓慢效果）
-     * - 减少下落速度（模拟泡沫的阻力）
-     */
-    @Override
-    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        if (entity instanceof LivingEntity living) {
- // 慢 III 效果（大幅降低移速）
-            living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 2, false, false, false));
-            // 减少下落速度（模拟泡沫的阻力）
-            var delta = living.getDeltaMovement();
-            if (delta.y < 0) {
-                living.setDeltaMovement(delta.x, delta.y * 0.5, delta.z);
-            }
-            // 重置摔落距离
-            living.resetFallDistance();
-        }
-        super.entityInside(state, level, pos, entity);
-    }
-
-    /**
-     * 右键交互 - 用沙子加速硬化
-     */
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        // 用沙子右键加速硬化
-        if (stack.is(Items.SAND)) {
-            if (!level.isClientSide()) {
-                hardenByState(level, pos, state);
-                if (!player.getAbilities().instabuild) {
-                    stack.shrink(1);
-                }
-            }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
-        }
-
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-    }
-
-    /**
-     * 根据方块状态中的REINFORCED属性硬化泡沫
-     */
-    private void hardenByState(Level level, BlockPos pos, BlockState state) {
-        if (state.getValue(REINFORCED)) {
-            level.setBlockAndUpdate(pos, mio_icif_blocks.CONSTRUCTION_WALL.get().defaultBlockState());
-        } else {
-            level.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
-        }
-        level.playSound(null, pos, SoundEvents.SAND_HIT, SoundSource.BLOCKS, 0.5F, 0.5F);
-    }
-
-    /**
-     * 破坏方块时始终掉落建筑泡沫本身
-     * 忽略BlockEntity中存储的伪装数据
-     */
-    @Override
-    public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
-        super.playerDestroy(level, player, pos, state, blockEntity, tool);
-    }
-
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 }

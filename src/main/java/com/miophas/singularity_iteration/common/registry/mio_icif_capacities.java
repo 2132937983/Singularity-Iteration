@@ -3179,6 +3179,15 @@ public class mio_icif_capacities {
      * 使单元可以与其他模组的流体系统交互
      */
     private static void registerCellFluidCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerItem(Capabilities.FluidHandler.ITEM,
+            (stack, context) -> new com.miophas.singularity_iteration.common.item.normal.WeedExFluidHandler(stack),
+            com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.WEEDEX.get(),
+            com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.HERBICIDE_MATRON.get());
+        // 注册 CF 喷枪的流体能力（容量 8000 mB，仅接受建筑泡沫流体）
+        event.registerItem(Capabilities.FluidHandler.ITEM,
+            (stack, context) -> ((com.miophas.singularity_iteration.common.item.build.CFSprayerItem) stack.getItem())
+                .createFluidHandler(stack),
+            com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.CF_SPRAYER.get());
         // 注册所有流体单元的 FluidHandler.ITEM 能力
         var cellItems = java.util.List.of(
             com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_WATER.get(),

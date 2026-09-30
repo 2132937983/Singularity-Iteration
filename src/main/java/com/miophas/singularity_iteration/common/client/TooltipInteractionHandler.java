@@ -1,14 +1,13 @@
 package com.miophas.singularity_iteration.common.client;
 
-import com.miophas.singularity_iteration.common.item.armor.ArmorFeatureToggle;
-import com.miophas.singularity_iteration.core.api.item.IJetpackItem;
+import com.miophas.singularity_iteration.common.item.armor.ArmorFeatureSlots;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -60,34 +59,16 @@ public class TooltipInteractionHandler {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        EquipmentSlot slot = parseEquipmentSlot(slotName);
-        if (slot == null) return;
-
-        ItemStack clientStack = mc.player.getItemBySlot(slot);
-
-        if ("jetpack_mode".equals(featureKey)) {
-            if (clientStack.getItem() instanceof IJetpackItem jetpack) {
-                IJetpackItem.JetpackMode currentMode = jetpack.getMode(clientStack);
-                IJetpackItem.JetpackMode newMode = (currentMode == IJetpackItem.JetpackMode.HOVER)
-                    ? IJetpackItem.JetpackMode.FLIGHT
-                    : IJetpackItem.JetpackMode.HOVER;
-                jetpack.setMode(clientStack, newMode);
-            }
-        } else {
-            ArmorFeatureToggle.toggle(clientStack, featureKey);
+        // 槽位标识定位；若该槽位物品未声明此特性（例如背槽物品声明 CHEST），回退到全槽位查找
+        ItemStack clientStack = ArmorFeatureSlots.stackById(mc.player, slotName);
+        if (ArmorFeatures.find(clientStack, featureKey) == null) {
+            clientStack = ArmorFeatureSlots.findDeclaring(mc.player, featureKey);
         }
+        if (clientStack.isEmpty()) return;
 
+        // 乐观更新（开关型取反 / 模式型循环），服务端由 /mio_icif toggle 命令执行同一步骤
+        ArmorFeatures.toggleOrCycle(clientStack, null, featureKey);
         frozenItem = clientStack.copy();
-    }
-
-    private static EquipmentSlot parseEquipmentSlot(String slotName) {
-        return switch (slotName.toLowerCase()) {
-            case "head" -> EquipmentSlot.HEAD;
-            case "chest" -> EquipmentSlot.CHEST;
-            case "legs" -> EquipmentSlot.LEGS;
-            case "feet" -> EquipmentSlot.FEET;
-            default -> null;
-        };
     }
 
     private static void renderFrozenTooltip(GuiGraphics guiGraphics) {

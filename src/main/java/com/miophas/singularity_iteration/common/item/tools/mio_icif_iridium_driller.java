@@ -23,6 +23,7 @@ import net.neoforged.neoforge.event.enchanting.GetEnchantmentLevelEvent;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.miophas.singularity_iteration.core.api.item.IEquipmentHudProvider;
 import com.miophas.singularity_iteration.core.api.tool.IMiningDrill;
 import com.miophas.singularity_iteration.core.api.tool.ToggleableElectricTool;
 import net.minecraft.world.entity.Entity;
@@ -34,7 +35,7 @@ import net.neoforged.neoforge.common.ItemAbility;
  * 具有钻石镐的一切性质，不会因耐久度为0而损坏? * 速度是钻石镐的两倍，自带时运3效果
  * 蹲下右键可以切换为精准采集模式? */
 @SuppressWarnings("null")
-public class mio_icif_iridium_driller extends mio_icif_tool_elc implements ToggleableElectricTool, IMiningDrill {
+public class mio_icif_iridium_driller extends mio_icif_tool_elc implements ToggleableElectricTool, IMiningDrill, IEquipmentHudProvider {
 
     // 铱钻头默认最大能量?(IC2原版: 1000000 EU)
     public static final int IRIDIUM_DRILLER_MAX_ENERGY = 1000000;
@@ -304,23 +305,12 @@ private static final String MODE_KEY = "iridium_driller_mode";
      * 重写：在物品栏上方显示模式和电池信息（带颜色�
  */
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        // 只在客户端且物品被选中（手持）时显�
-    if (level.isClientSide && isSelected && entity instanceof Player player) {
-            int currentMode = getMode(stack);
-            Component modeName = (currentMode == MODE_FORTUNE) ?
-                Component.translatable("hud.mio_icif.driller.mode_fortune") :
-                Component.translatable("hud.mio_icif.driller.mode_silk");
-            long currentEnergy = getEnergy(stack);
-            long maxEnergy = getMaxEnergy();
-            
-            player.displayClientMessage(
-                Component.translatable("hud.mio_icif.driller.display",
-                    modeName, currentEnergy, maxEnergy),
-                true
-            );
-        }
+    public Component getEquipmentHudText(ItemStack stack) {
+        Component modeName = (getMode(stack) == MODE_FORTUNE) ?
+            Component.translatable("hud.mio_icif.driller.mode_fortune") :
+            Component.translatable("hud.mio_icif.driller.mode_silk");
+        return Component.translatable("hud.mio_icif.driller.display",
+            modeName, getEnergy(stack), getMaxEnergy());
     }
 
     /**

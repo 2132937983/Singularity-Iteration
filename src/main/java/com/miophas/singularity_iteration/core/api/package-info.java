@@ -8,7 +8,7 @@
  * <ul>
  *   <li>始终通过接口访问 API，不要直接依赖实现类（{@code *Impl}）</li>
  *   <li>{@link com.miophas.singularity_iteration.core.prefab.blockentity.GenericMachineBlockEntity}
- *       位于 {@code api.internal.machine} 包中，虽然可供附属模组继承，但强烈建议通过
+ *       位于 {@code core.prefab.blockentity} 包中，建议通过
  *       {@link com.miophas.singularity_iteration.core.api.machine.builder.IMachineBuilderAPI}
  *       的回调机制自定义行为，而非直接继承</li>
  *   <li>实现类可能在任何版本中变更或移除，不保证向后兼容</li>
@@ -24,7 +24,8 @@
  *   <li>{@code api.recipe} - 配方 API</li>
  *   <li>{@code api.fluid} - 流体 API</li>
  *   <li>{@code api.crop} - 作物 API</li>
- *   <li>{@code api.block} - 方块 API</li>
+ *   <li>{@code api.block} - 方块 API（含橡胶木接口 {@link com.miophas.singularity_iteration.core.api.block.IRubberWood}）</li>
+ *   <li>{@code api.world} - 世界系统 API（风场、橡胶树体系）</li>
  *   <li>{@code api.registry} - 注册表 API</li>
  *   <li>{@code api.heat} - 热能 API</li>
  *   <li>{@code api.kinetic} - 动能 API</li>

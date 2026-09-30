@@ -2,7 +2,7 @@
 package com.miophas.singularity_iteration.common.item.armor;
 
 import com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo;
-import com.miophas.singularity_iteration.core.runtime.flight.JetpackKeyHandler;
+import com.miophas.singularity_iteration.core.prefab.flight.JetpackKeyHandler;
 import java.util.List;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;

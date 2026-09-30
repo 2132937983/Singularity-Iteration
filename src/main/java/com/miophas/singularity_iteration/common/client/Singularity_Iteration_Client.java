@@ -12,7 +12,6 @@ import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
 import com.miophas.singularity_iteration.common.client.item.BatteryEnergyProperty;
 import com.miophas.singularity_iteration.common.item.normal.mio_icif_normal;
 import com.miophas.singularity_iteration.common.client.item.NanoSaberActiveProperty;
-import com.miophas.singularity_iteration.common.client.item.PlasmaLauncherActiveProperty;
 import com.miophas.singularity_iteration.common.item.tools.mio_icif_items_tools;
 import com.miophas.singularity_iteration.common.client.render.mio_icif_EnergyBulletRenderer;
 import com.miophas.singularity_iteration.common.client.render.mio_icif_IC_TNT_Renderer;
@@ -130,11 +129,6 @@ public class Singularity_Iteration_Client {
         ItemProperties.register(mio_icif_items_tools.NANO_SABER.get(), nanoSaberActiveProperty, new NanoSaberActiveProperty());
         Singularity_Iteration.LOGGER.info("Nano Saber active property registered successfully");
 
-        // 注册等离子射线枪激活属性，用于开关状态纹理切�
-    ResourceLocation plasmaActiveProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "plasma_active");
-        ItemProperties.register(mio_icif_items_tools.PLASMA_LAUNCHER.get(), plasmaActiveProperty, new PlasmaLauncherActiveProperty());
-        Singularity_Iteration.LOGGER.info("Plasma Launcher active property registered successfully");
-
         ResourceLocation cellTypeProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "cell_type");
         ItemProperties.register(mio_icif_cells.CELL_EMPTY.get(), cellTypeProperty, new DynamicCellFluidProperty());
         Singularity_Iteration.LOGGER.info("Dynamic cell fluid property registered successfully");
@@ -193,6 +187,10 @@ public class Singularity_Iteration_Client {
 
     @SubscribeEvent
     static void registerClientExtensions(RegisterClientExtensionsEvent event) {
+        event.registerFluidType(new IClientFluidTypeExtensions() {
+            @Override public ResourceLocation getStillTexture() { return ResourceLocation.parse("mio_icif:block/fluids/weed_ex_still"); }
+            @Override public ResourceLocation getFlowingTexture() { return getStillTexture(); }
+        }, mio_icif_fluids.WEED_EX_TYPE.get());
         // 注册生物气体流体客户端扩�
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override

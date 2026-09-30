@@ -195,7 +195,7 @@ public class JEIPlugin implements IModPlugin {
         var mixRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MIX_TYPE.get());
         registration.addRecipes(mio_icif_MixCategory.MIX_TYPE, mixRecipes.stream().toList());
 
-        // 娉ㄥ唽楂樼倝閰嶆柟
+        // 注册高炉配方
         var blastFurnaceRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLAST_FURNACE_TYPE.get());
         registration.addRecipes(mio_icif_BlastFurnaceCategory.BLAST_FURNACE_TYPE, blastFurnaceRecipes.stream().toList());
 
@@ -231,6 +231,9 @@ public class JEIPlugin implements IModPlugin {
             10, // 玩家背包起始槽位（Menu 索引 10）
             36  // 玩家背包槽位数量
         );
+
+        // 批量工作台：JEI "+" 只写入上方的 3x3 影子模板格，不消耗玩家物品（对齐 IC2 TransferHandlerBatchCrafter）
+        registration.addRecipeTransferHandler(new BatchCrafterTransferHandler(), RecipeTypes.CRAFTING);
     }
 
     @Override

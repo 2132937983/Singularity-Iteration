@@ -41,6 +41,8 @@ public class mio_icif_gui_recycler_elc extends mio_icif_screen<com.miophas.singu
             int progress = menu.getProgress();
             int maxProgress = menu.getMaxProgress();
             int progressPixels = maxProgress > 0 ? (progress * ARROW_WIDTH) / maxProgress : 0;
+            // 标准进度箭头 / 闪电能量图标（都含图集底框），与其它机器保持一致：
+            // 底框是 GUI 的标准标识，不能省；能量短时超出上限时的越界采样由基类的夹取兜住。
             drawProgressArrow(guiGraphics, x + PROGRESS_X, y + PROGRESS_Y, progressPixels);
 
             drawLightningEnergy(guiGraphics, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, menu.getEnergy(), menu.getMaxEnergy());

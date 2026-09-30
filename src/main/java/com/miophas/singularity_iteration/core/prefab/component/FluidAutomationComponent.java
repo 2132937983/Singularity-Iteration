@@ -58,9 +58,19 @@ public final class FluidAutomationComponent {
         this.input = new FluidTransferBuffer(host::markUnsaved);
     }
 
+    /** @deprecated Internal mutable buffer; use pendingOutput() for inspection and save/load for persistence. */
+    @Deprecated(since = "0.1.7.14", forRemoval = false)
+    @org.jetbrains.annotations.ApiStatus.Internal
     public FluidTransferBuffer outputBuffer() { return output; }
 
+    /** @deprecated Internal mutable buffer; use pendingInput() for inspection and save/load for persistence. */
+    @Deprecated(since = "0.1.7.14", forRemoval = false)
+    @org.jetbrains.annotations.ApiStatus.Internal
     public FluidTransferBuffer inputBuffer() { return input; }
+
+    /** Defensive snapshots: mutating the returned stack cannot change pending transfers. */
+    public FluidStack pendingOutput() { return output.pending().copy(); }
+    public FluidStack pendingInput() { return input.pending().copy(); }
 
     /** 按升级数量驱动一次弹射/吸取；无相应升级时直接返回。 */
     public void runAutomation() {

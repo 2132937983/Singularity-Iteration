@@ -34,6 +34,9 @@ import java.util.Optional;
  */
 @SuppressWarnings("null")
 public class mio_icif_extrator_elc extends AbstractStandardMachineBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.extractor.mio_icif_ExtractorRecipeInput, com.miophas.singularity_iteration.common.recipe.extractor.mio_icif_ExtractorRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ModRecipes.EXTRACTOR_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.extractor.mio_icif_ExtractorRecipeInput, com.miophas.singularity_iteration.common.recipe.extractor.mio_icif_ExtractorRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ModRecipes.EXTRACTOR_TYPE);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -112,8 +115,7 @@ private mio_icif_ExtractorRecipe currentRecipe = null;
         if (level == null) return true;
 
         mio_icif_ExtractorRecipeInput recipeInput = new mio_icif_ExtractorRecipeInput(stack);
-        return level.getRecipeManager()
-            .getRecipeFor(mio_icif_ModRecipes.EXTRACTOR_TYPE.get(), recipeInput, level).isPresent();
+        return recipeCache1.find(level, recipeInput).isPresent();
     }
 
     /**
@@ -167,8 +169,7 @@ private mio_icif_ExtractorRecipe currentRecipe = null;
         }
         
         mio_icif_ExtractorRecipeInput recipeInput = new mio_icif_ExtractorRecipeInput(input);
-        Optional<RecipeHolder<mio_icif_ExtractorRecipe>> recipe = level.getRecipeManager()
-            .getRecipeFor(mio_icif_ModRecipes.EXTRACTOR_TYPE.get(), recipeInput, level);
+        Optional<RecipeHolder<mio_icif_ExtractorRecipe>> recipe = recipeCache2.find(level, recipeInput);
         
         return recipe.map(RecipeHolder::value).orElse(null);
     }

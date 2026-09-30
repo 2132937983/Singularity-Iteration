@@ -110,24 +110,6 @@ side="BOTH"
     ordering="NONE"
     side="BOTH"
 
-# Optional dependency on Modern Industrialization for energyfix compatibility
-[[dependencies.${mod_id}]]
-    modId="modern_industrialization"
-    type="optional"
-    reason="For energy compatibility with Modern Industrialization machines"
-    versionRange="[2.0,)"
-    ordering="NONE"
-    side="BOTH"
-
-# Optional dependency on GrandPower for energyfix API compatibility
-[[dependencies.${mod_id}]]
-    modId="grandpower"
-    type="optional"
-    reason="For long-based energy storage API compatibility"
-    versionRange="[3.0,)"
-    ordering="NONE"
-    side="BOTH"
-
 # Optional dependency on REI for recipe viewing
 [[dependencies.${mod_id}]]
     modId="roughlyenoughitems"

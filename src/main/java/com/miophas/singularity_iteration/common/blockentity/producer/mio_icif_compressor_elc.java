@@ -26,6 +26,10 @@ import org.jetbrains.annotations.Nullable;
  */
 @SuppressWarnings("null")
 public class mio_icif_compressor_elc extends AbstractStandardMachineBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput, com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes.COMPRESSOR_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput, com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes.COMPRESSOR_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput, com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipe> recipeCache3 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes.COMPRESSOR_TYPE);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -148,8 +152,7 @@ public static final long DEFAULT_ENERGY_PER_TICK = 2L; // 每tick消
         com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput recipeInput =
                 new com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput(checkStack);
 
-        var recipe = level.getRecipeManager()
-            .getRecipeFor(com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes.COMPRESSOR_TYPE.get(), recipeInput, level);
+        var recipe = recipeCache1.find(level, recipeInput);
 
         return recipe.isPresent();
     }
@@ -286,8 +289,7 @@ public static final long DEFAULT_ENERGY_PER_TICK = 2L; // 每tick消
             new com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput(input);
 
         // 查找匹配的配
-    var recipe = level.getRecipeManager()
-            .getRecipeFor(com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes.COMPRESSOR_TYPE.get(), recipeInput, level);
+    var recipe = recipeCache2.find(level, recipeInput);
 
         return recipe.map(r -> r.value().getResult()).orElse(ItemStack.EMPTY);
     }
@@ -306,8 +308,7 @@ public static final long DEFAULT_ENERGY_PER_TICK = 2L; // 每tick消
         com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput recipeInput =
             new com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput(input);
 
-        var recipe = level.getRecipeManager()
-            .getRecipeFor(com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes.COMPRESSOR_TYPE.get(), recipeInput, level);
+        var recipe = recipeCache3.find(level, recipeInput);
 
         return recipe.map(r -> r.value()).orElse(null);
     }

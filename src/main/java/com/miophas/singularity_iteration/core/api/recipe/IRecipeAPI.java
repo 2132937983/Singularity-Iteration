@@ -325,7 +325,7 @@ public interface IRecipeAPI {
     Optional<? extends RecipeHolder<?>> findFusionReactorRecipe(ItemStack[] inputs, Level level);
 
     /**
-     * 娓呴櫎閰嶆柟缂撳瓨
+     * 清除配方缓存
      * 
      * <p>当配方系统发生变化时（如数据包重载、动态注册配方等），
  * 应调用此方法清除存，确保查询结果正确。

@@ -32,9 +32,7 @@ public static final float ATTACK_DAMAGE_BONUS = 1.0F;
     public static final float ATTACK_SPEED = -2.0F;
 
     public WeedingTrowelItem(Properties properties) {
-        super(properties
-            .durability(TIER.getUses())
-            .attributes(createAttributes(TIER, ATTACK_DAMAGE_BONUS, ATTACK_SPEED)));
+        super(properties.stacksTo(1));
     }
     
     /**
@@ -70,6 +68,8 @@ public static final float ATTACK_DAMAGE_BONUS = 1.0F;
         Player player = context.getPlayer();
 
         // 获取方块实体
+        if (player == null || player.isSpectator() || !level.mayInteract(player, pos)
+                || !player.mayUseItemAt(pos, context.getClickedFace(), context.getItemInHand())) return InteractionResult.FAIL;
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof IPlanter planter)) {
             return InteractionResult.PASS;
@@ -89,7 +89,8 @@ public static final float ATTACK_DAMAGE_BONUS = 1.0F;
             int originalProgress = planter.getProgress();
 
             // 先获取杂草掉落物
-            java.util.List<net.minecraft.world.item.ItemStack> drops = planter.doHarvest();
+            java.util.List<net.minecraft.world.item.ItemStack> drops = java.util.List.of(new net.minecraft.world.item.ItemStack(
+                com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.WEED.get(), originalGrowthStage));
 
             // Keep the crop mutation and its drops transactional. Entity joins can be
             // rejected by platform hooks; consuming the weed and tool anyway would
@@ -118,9 +119,7 @@ public static final float ATTACK_DAMAGE_BONUS = 1.0F;
         planter.updateState();
 
             // 消耗耐久（如果有耐久度）
-            if (player != null && !player.getAbilities().instabuild) {
-                context.getItemInHand().hurtAndBreak(1, player, net.minecraft.world.entity.LivingEntity.getSlotForHand(context.getHand()));
-            }
+
 
             if (player != null) {
                 player.sendSystemMessage(Component.translatable("message.mio_icif.weeding_trowel.success"));

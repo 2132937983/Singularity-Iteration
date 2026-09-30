@@ -1,16 +1,15 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
-import com.miophas.singularity_iteration.common.item.armor.ArmorFeatureToggle;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.core.api.MioIcifAPI;
-import com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo;
-import com.miophas.singularity_iteration.core.api.item.IJetpackItem;
+import com.miophas.singularity_iteration.common.item.armor.ArmorFeatureSlots;
 import com.miophas.singularity_iteration.common.network.mio_icif_Network;
+import com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo;
+import com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
@@ -20,8 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 装备特性管理 GUI
- * 按 Alt 键打开，用于管理玩家身上装备的特性开关
+ * 装备特性管理 GUI。
+ *
+ * <p>按 Alt 键打开，列出玩家身上所有"可管理特性"的装备槽
+ * （原版四格 + 可选的 Curios 背槽，见 {@link ArmorFeatureSlots}），
+ * 每个特性一个按钮：开关型点击取反，模式型点击切换到下一模式。
+ *
+ * <p>全部数据来自 {@link ArmorFeatures}（即物品声明的 {@link ArmorFeatureInfo}），
+ * 不含任何物品类判断，因此附属模组的装备与自定义特性会自动出现在界面中。
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
@@ -42,22 +47,16 @@ public class mio_icif_gui_armor_features extends Screen {
     private static final int GUI_HEIGHT = 180;
 
     // 装备图标位置
-    private static final int[] ARMOR_Y = {14, 56, 98, 140};
     private static final int ARMOR_X = 14;
+    private static final int FIRST_ROW_Y = 14;
+    private static final int STANDARD_ROW_GAP = 42;
+    private static final int COMPACT_ROW_GAP = 30;
 
     // 特性按钮参数（水平排列）
     private static final int BUTTON_X = 44;
-    private static final int BUTTON_WIDTH = 30;
+    private static final int BUTTON_WIDTH = 29;
     private static final int BUTTON_HEIGHT = 9;
-    private static final int BUTTON_GAP = 2;
-
-    // 装备槽位顺序
-    private static final EquipmentSlot[] SLOTS = {
-        EquipmentSlot.HEAD,
-        EquipmentSlot.CHEST,
-        EquipmentSlot.LEGS,
-        EquipmentSlot.FEET
-    };
+    private static final int BUTTON_GAP = 1;
 
     // 点击区域列表
     private final List<FeatureButton> featureButtons = new ArrayList<>();
@@ -72,77 +71,63 @@ public class mio_icif_gui_armor_features extends Screen {
         rebuildButtons();
     }
 
+    private static int rowGap(int rows) {
+        return rows <= 4 ? STANDARD_ROW_GAP : COMPACT_ROW_GAP;
+    }
+
     private void rebuildButtons() {
         featureButtons.clear();
 
         int guiLeft = (this.width - GUI_WIDTH) / 2;
         int guiTop = (this.height - GUI_HEIGHT) / 2;
 
-        Player player = minecraft.player;
+        Player player = minecraft == null ? null : minecraft.player;
         if (player == null) return;
 
-        // 为每个装备槽位创建特性按钮（水平排列）
-        for (int slotIndex = 0; slotIndex < SLOTS.length; slotIndex++) {
-            EquipmentSlot slot = SLOTS[slotIndex];
-            ItemStack stack = player.getItemBySlot(slot);
+        List<ArmorFeatureSlots.EquippedSlot> slots = ArmorFeatureSlots.equipped(player);
+        int gap = rowGap(slots.size());
 
-            if (!stack.isEmpty()) {
-                List<FeatureInfo> features = getFeaturesForSlot(slot, stack);
-                int baseY = guiTop + ARMOR_Y[slotIndex];
+        for (int slotIndex = 0; slotIndex < slots.size(); slotIndex++) {
+            ArmorFeatureSlots.EquippedSlot slot = slots.get(slotIndex);
+            List<ArmorFeatureInfo> features = ArmorFeatures.features(slot.stack());
+            int baseY = guiTop + FIRST_ROW_Y + slotIndex * gap;
 
-                for (int featureIndex = 0; featureIndex < features.size(); featureIndex++) {
-                    FeatureInfo feature = features.get(featureIndex);
-                    int buttonX = guiLeft + BUTTON_X + featureIndex * (BUTTON_WIDTH + BUTTON_GAP);
-
-                    featureButtons.add(new FeatureButton(
-                        buttonX, baseY, BUTTON_WIDTH, BUTTON_HEIGHT,
-                        slot, stack, feature.featureKey
-                    ));
-                }
+            for (int featureIndex = 0; featureIndex < features.size(); featureIndex++) {
+                int buttonX = guiLeft + BUTTON_X + featureIndex * (BUTTON_WIDTH + BUTTON_GAP);
+                featureButtons.add(new FeatureButton(
+                    buttonX, baseY, BUTTON_WIDTH, BUTTON_HEIGHT,
+                    slot.id(), slot.stack(), features.get(featureIndex).featureKey()
+                ));
             }
         }
     }
 
     /**
-     * 获取指定装备槽位的所有特性
+     * 切换 / 循环一个特性（乐观更新 + 同步到服务端）。
      */
-    private List<FeatureInfo> getFeaturesForSlot(EquipmentSlot slot, ItemStack stack) {
-        List<FeatureInfo> features = new ArrayList<>();
+    private void toggleFeature(String slotId, String featureKey) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
 
-        List<ArmorFeatureInfo> itemFeatures = MioIcifAPI.instance().getItemAPI().getArmorFeatures(stack);
-        for (ArmorFeatureInfo f : itemFeatures) {
-            if (f.slot() == slot) {
-                if ("jetpack_mode".equals(f.featureKey()) && stack.getItem() instanceof IJetpackItem jetpack) {
-                    // Render reads the currently synchronized stack, including legacy isMode=false declarations.
-                    String modeKey = switch (jetpack.getMode(stack)) {
-                        case HOVER -> "hud.mio_icif.jetpack.mode_hover";
-                        case OFF -> "tooltip.mio_icif.armor.feature_off";
-                        default -> "hud.mio_icif.jetpack.mode_jetpack";
-                    };
-                    features.add(new FeatureInfo(f.featureKey(), f.featureNameKey(), true, Component.translatable(modeKey)));
-                } else {
-                    features.add(new FeatureInfo(f.featureKey(), f.featureNameKey(), f.isMode(), f.currentModeName()));
-                }
-            }
+        String effectiveSlot = slotId;
+        ItemStack stack = ArmorFeatureSlots.stackById(mc.player, effectiveSlot);
+        if (ArmorFeatures.find(stack, featureKey) == null) {
+            effectiveSlot = ArmorFeatureSlots.findDeclaringSlotId(mc.player, featureKey);
+            if (effectiveSlot == null) return;
+            stack = ArmorFeatureSlots.stackById(mc.player, effectiveSlot);
         }
 
-        return features;
-    }
+        ArmorFeatureInfo info = ArmorFeatures.find(stack, featureKey);
+        if (info == null) return;
 
-    /**
-     * 切换特性状态
-     */
-    private void toggleFeature(EquipmentSlot slot, ItemStack stack, String featureKey) {
-        if (minecraft.player == null) return;
-        stack = minecraft.player.getItemBySlot(slot);
-        if (slot == EquipmentSlot.CHEST && "jetpack_mode".equals(featureKey)
-                && stack.getItem() instanceof IJetpackItem) {
-            mio_icif_Network.sendJetpackModeSwitch();
-        } else if (ArmorFeatureToggle.isToggleFeature(stack, slot, featureKey)) {
-            boolean newState = ArmorFeatureToggle.toggle(stack, featureKey);
-            mio_icif_Network.sendArmorFeatureToggle(slot, featureKey, newState);
-            rebuildButtons();
+        if (info.isMode()) {
+            ArmorFeatures.cycleMode(stack, featureKey);
+            mio_icif_Network.sendArmorFeatureCycle(effectiveSlot, featureKey);
+        } else {
+            boolean newState = ArmorFeatures.toggle(stack, featureKey);
+            mio_icif_Network.sendArmorFeatureToggle(effectiveSlot, featureKey, newState);
         }
+        rebuildButtons();
     }
 
     @Override
@@ -158,68 +143,62 @@ public class mio_icif_gui_armor_features extends Screen {
         // 绘制标题
         guiGraphics.drawString(this.font, this.title, guiLeft + 8, guiTop + 6, 0x404040, false);
 
-        Player player = minecraft.player;
-        if (player != null) {
-            // 绘制每个装备槽位
-            for (int slotIndex = 0; slotIndex < SLOTS.length; slotIndex++) {
-                EquipmentSlot slot = SLOTS[slotIndex];
-                ItemStack stack = player.getItemBySlot(slot);
-                int slotY = guiTop + ARMOR_Y[slotIndex];
+        Player player = minecraft == null ? null : minecraft.player;
+        if (player == null) return;
 
-                // 绘制装备图标
-                guiGraphics.renderItem(stack, guiLeft + ARMOR_X, slotY);
-                guiGraphics.renderItemDecorations(this.font, stack, guiLeft + ARMOR_X, slotY);
+        List<ArmorFeatureSlots.EquippedSlot> slots = ArmorFeatureSlots.equipped(player);
+        int gap = rowGap(slots.size());
 
-                if (!stack.isEmpty()) {
-                    // 绘制特性按钮（水平排列）
-                    List<FeatureInfo> features = getFeaturesForSlot(slot, stack);
-                    for (int featureIndex = 0; featureIndex < features.size(); featureIndex++) {
-                        FeatureInfo feature = features.get(featureIndex);
-                        boolean enabled = ArmorFeatureToggle.isEnabled(stack, feature.featureKey);
-                        Component featureName;
+        for (int slotIndex = 0; slotIndex < slots.size(); slotIndex++) {
+            ArmorFeatureSlots.EquippedSlot slot = slots.get(slotIndex);
+            ItemStack stack = slot.stack();
+            int slotY = guiTop + FIRST_ROW_Y + slotIndex * gap;
 
-                        if (feature.isMode && feature.currentModeName != null) {
-                            // 模式特性显示当前模式名称
-                            featureName = feature.currentModeName;
-                        } else {
-                            featureName = Component.translatable(feature.featureNameKey);
-                        }
+            // 绘制装备图标
+            guiGraphics.renderItem(stack, guiLeft + ARMOR_X, slotY);
+            guiGraphics.renderItemDecorations(this.font, stack, guiLeft + ARMOR_X, slotY);
 
-                        FeatureButton btn = findButton(slot, feature.featureKey);
-                        boolean hovered = btn != null && btn.isHovered(mouseX, mouseY);
+            if (stack.isEmpty()) {
+                Component emptyName = Component.translatable("gui.mio_icif.armor_features.empty_" + slot.id());
+                guiGraphics.drawString(this.font, emptyName, guiLeft + ARMOR_X + 20, slotY + 4, 0x808080, false);
+                continue;
+            }
 
-                        int buttonX = guiLeft + BUTTON_X + featureIndex * (BUTTON_WIDTH + BUTTON_GAP);
+            List<ArmorFeatureInfo> features = ArmorFeatures.features(stack);
+            for (int featureIndex = 0; featureIndex < features.size(); featureIndex++) {
+                ArmorFeatureInfo feature = features.get(featureIndex);
+                boolean enabled = ArmorFeatures.isEnabled(stack, feature.featureKey());
+                Component label = feature.isMode() && feature.currentModeName() != null
+                    ? feature.currentModeName()
+                    : Component.translatable(feature.featureNameKey());
 
-                        // 绘制原版按钮纹理
-                        ResourceLocation sprite = hovered ? BUTTON_HIGHLIGHTED_SPRITE : BUTTON_SPRITE;
-                        guiGraphics.blitSprite(sprite, buttonX, slotY, BUTTON_WIDTH, BUTTON_HEIGHT);
+                FeatureButton btn = findButton(slot.id(), feature.featureKey());
+                boolean hovered = btn != null && btn.isHovered(mouseX, mouseY);
 
-                        // 绘制特性名称（居中，缩小字体）
-                        float scale = 0.7f;
-                        int textWidth = this.font.width(featureName);
-                        int scaledWidth = (int)(textWidth * scale);
-                        int textX = buttonX + (BUTTON_WIDTH - scaledWidth) / 2;
-                        int textY = slotY + (BUTTON_HEIGHT - 6) / 2;
-                        int textColor = feature.isMode ? 0x55FFFF : (enabled ? 0x55FF55 : 0xFF5555);
+                int buttonX = guiLeft + BUTTON_X + featureIndex * (BUTTON_WIDTH + BUTTON_GAP);
 
-                        guiGraphics.pose().pushPose();
-                        guiGraphics.pose().translate(textX, textY, 0);
-                        guiGraphics.pose().scale(scale, scale, 1.0f);
-                        guiGraphics.drawString(this.font, featureName, 0, 0, textColor, false);
-                        guiGraphics.pose().popPose();
-                    }
-                } else {
-                    // 空槽位显示灰色文字
-                    Component emptyName = Component.translatable("gui.mio_icif.armor_features.empty_" + slot.getName().toLowerCase());
-                    guiGraphics.drawString(this.font, emptyName, guiLeft + ARMOR_X + 20, slotY + 4, 0x808080, false);
-                }
+                ResourceLocation sprite = hovered ? BUTTON_HIGHLIGHTED_SPRITE : BUTTON_SPRITE;
+                guiGraphics.blitSprite(sprite, buttonX, slotY, BUTTON_WIDTH, BUTTON_HEIGHT);
+
+                float scale = 0.7f;
+                int textWidth = this.font.width(label);
+                int scaledWidth = (int) (textWidth * scale);
+                int textX = buttonX + (BUTTON_WIDTH - scaledWidth) / 2;
+                int textY = slotY + (BUTTON_HEIGHT - 6) / 2;
+                int textColor = feature.isMode() ? 0x55FFFF : (enabled ? 0x55FF55 : 0xFF5555);
+
+                guiGraphics.pose().pushPose();
+                guiGraphics.pose().translate(textX, textY, 0);
+                guiGraphics.pose().scale(scale, scale, 1.0f);
+                guiGraphics.drawString(this.font, label, 0, 0, textColor, false);
+                guiGraphics.pose().popPose();
             }
         }
     }
 
-    private FeatureButton findButton(EquipmentSlot slot, String featureKey) {
+    private FeatureButton findButton(String slotId, String featureKey) {
         for (FeatureButton btn : featureButtons) {
-            if (btn.slot == slot && btn.featureKey.equals(featureKey)) {
+            if (btn.slotId.equals(slotId) && btn.featureKey.equals(featureKey)) {
                 return btn;
             }
         }
@@ -231,7 +210,7 @@ public class mio_icif_gui_armor_features extends Screen {
         if (button == 0) {
             for (FeatureButton btn : featureButtons) {
                 if (btn.isHovered((int) mouseX, (int) mouseY)) {
-                    toggleFeature(btn.slot, btn.stack, btn.featureKey);
+                    toggleFeature(btn.slotId, btn.featureKey);
                     return true;
                 }
             }
@@ -259,32 +238,18 @@ public class mio_icif_gui_armor_features extends Screen {
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
-    private static class FeatureInfo {
-        final String featureKey;
-        final String featureNameKey;
-        final boolean isMode;
-        final net.minecraft.network.chat.Component currentModeName;
-
-        FeatureInfo(String key, String nameKey, boolean mode, net.minecraft.network.chat.Component modeName) {
-            this.featureKey = key;
-            this.featureNameKey = nameKey;
-            this.isMode = mode;
-            this.currentModeName = modeName;
-        }
-    }
-
     private static class FeatureButton {
         final int x, y, width, height;
-        final EquipmentSlot slot;
+        final String slotId;
         final ItemStack stack;
         final String featureKey;
 
-        FeatureButton(int x, int y, int width, int height, EquipmentSlot slot, ItemStack stack, String featureKey) {
+        FeatureButton(int x, int y, int width, int height, String slotId, ItemStack stack, String featureKey) {
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
-            this.slot = slot;
+            this.slotId = slotId;
             this.stack = stack;
             this.featureKey = featureKey;
         }

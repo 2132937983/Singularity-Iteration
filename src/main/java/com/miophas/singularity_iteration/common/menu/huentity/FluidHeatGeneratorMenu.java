@@ -26,13 +26,13 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public FluidHeatGeneratorMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
-        super(mio_icif_menus.FLUID_HEAT_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, 4);
+        super(mio_icif_menus.FLUID_HEAT_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, 6);
     }
 
     public FluidHeatGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_fluid_heat_generator blockEntity) {
         super(mio_icif_menus.FLUID_HEAT_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory,
               blockEntity != null ? blockEntity.getItemHandler() : null,
-              blockEntity != null ? blockEntity.createContainerData() : null, 4, blockEntity);
+              blockEntity != null ? blockEntity.createContainerData() : null, 6, blockEntity);
     }
 
     @Override
@@ -60,6 +60,10 @@ import org.jetbrains.annotations.Nullable;
     public int getMaxBurnTime() { return data.get(1); }
     public int getFuelAmount() { return data.get(2); }
     public int getFuelCapacity() { return data.get(3); }
+    /** 最近一次实际输出的 HU/t（IC2 transmitHeat 同义，没输出时保持上一次读数）。 */
+    public int getTransmitHeat() { return data.get(4); }
+    /** 当前燃料的产热能力 HU/t，无燃料为 0。 */
+    public int getMaxHeatOutput() { return data.get(5); }
 
     public int getBurnProgress() {
         int maxBurnTime = getMaxBurnTime();
@@ -68,6 +72,7 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public boolean isWorking() {
-        return getBurnTime() > 0;
+        // 有合法燃料即在产热；不要用 burnTime（会随燃料罐耗尽才归零）之外的本 tick 状态判断。
+        return getMaxHeatOutput() > 0;
     }
 }

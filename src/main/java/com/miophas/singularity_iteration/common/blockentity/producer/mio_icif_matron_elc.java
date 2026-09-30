@@ -2,10 +2,10 @@ package com.miophas.singularity_iteration.common.blockentity.producer;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
-import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
+import com.miophas.singularity_iteration.core.api.upgrade.tile.UpgradableProperty;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -24,71 +24,50 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * 作物管理器方块实体类
- * 实现自动化农田管理框架
- * 工作范围：水平方向4格（9*9区域）/ 垂直方向3格（9*3*9区域）
- * 功能包括：
- * - 使用水单元补充水量
- * - 使用肥料物品加速成长
- * - 使用水仓库/水流补充
- *
- * 槽位布局说明：
- * 0: 电池槽
- * 1: 水单元输入槽位：接受水桶/水单元
- * 2: 空单元输出槽位
- * 3-9: 除草剂槽位：7个槽位
- * 10-16: 肥料槽位：7个槽位
- *
- * 流体配置：
- * - 水电容器接受所有流体
- *
- * 崩溃能量消费最大2EU/t（LV等级），不够能量不会强制工作
- */
+import java.util.EnumSet;
+import java.util.Set;
+
+/** IC2 Experimental agriculture machine; cursor and resource tanks survive reloads. */
 @SuppressWarnings("null")
 public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
 
+    // 对齐 1.7.10 TileEntityCropmatron：肥料 7 格 + 除草剂容器 7 格 + 水容器输入/输出各 1 格。
+    // 1.7.10 原版不支持升级；此处升级槽 4 格与电池槽 1 格均为本项目有意保留的扩展。
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .battery()
-        .extra(2)
-        .extra(14)
+        .extra(1)
+        .extra(1)
+        .extra(7)
+        .extra(7)
+        .upgrade(4)
         .build();
-
-    // 槽位布局定义
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_WATER_CELL_INPUT = 1;
-    public static final int SLOT_EMPTY_CELL_OUTPUT = 2;
-    public static final int SLOT_HERBICIDE_START = 3;
-    public static final int SLOT_HERBICIDE_COUNT = 7;
-    public static final int SLOT_FERTILIZER_START = 10;
+    public static final int SLOT_WATER_CELL_OUTPUT = 2;
+    public static final int SLOT_FERTILIZER_START = 3;
     public static final int SLOT_FERTILIZER_COUNT = 7;
-    public static final int TOTAL_SLOTS = 17;
-
-    // 默认配置
-    // 默认配置对比IC2原版设置
-    public static final long DEFAULT_CAPACITY = 1000L;       // 对比IC2作物管理器
-    public static final long DEFAULT_MAX_RECEIVE = 32L;      // 最大输入能量2EU/t (LV等级)
+    public static final int SLOT_WEEDEX_START = 10;
+    public static final int SLOT_WEEDEX_COUNT = 7;
+    public static final int SLOT_UPGRADE_START = 17;
+    public static final int TOTAL_SLOTS = 21;
+    public static final long DEFAULT_CAPACITY = 1000L;
+    public static final long DEFAULT_MAX_RECEIVE = 32L;
     public static final long DEFAULT_MAX_EXTRACT = 0L;
-    public static final int DEFAULT_WORK_TIME = 20;          // 1秒工作周期
-    public static final long DEFAULT_ENERGY_PER_TICK = 1L;   // 每次工作消耗1EU
-
-    // 流体配置
-    public static final int WATER_CAPACITY = 16000;          // 水箱容量容纳16000mB
-
-    // 工作范围参数
-    public static final int HORIZONTAL_RANGE = 4;            // 水平扩散范围4格
-    public static final int VERTICAL_RANGE = 1;              // 垂直扩散范围1格
-
-    // 搜索标签用于快速查询物品
-    private static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> FERTILIZERS_TAG = 
-        net.minecraft.tags.ItemTags.create(
-            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", "fertilizers"));
-
-    // 水体流水槽
+    public static final int DEFAULT_WORK_TIME = 10;
+    public static final long DEFAULT_ENERGY_PER_TICK = 1L;
+    public static final int WATER_CAPACITY = 2000;
+    // 对齐 1.7.10 applyWeedEx：每次固定 +50，达到 150 后不再处理
+    public static final int WEED_CONTROL_LIMIT = 150;
+    public static final int HERBICIDE_VALUE = 50;
+    public static final long MIN_START_ENERGY = 31L;
+    public static final int SCAN_RADIUS = 5;
+    public static final int SCAN_VOLUME = 363;
     protected final FluidTank waterTank;
+    protected final FluidTank weedExTank;
+    private final IFluidHandler fluidPorts;
+    private int scanIndex;
+    public FluidTank getWeedExTank() { return weedExTank; }
 
-    // 工作计数计时
-    private int workTimer = 0;
 
     private final ContainerData dataAccess = new ContainerData() {
         @Override
@@ -98,6 +77,7 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
                 case 1 -> (int) energyStorage.getCapacity();
                 case 2 -> waterTank.getFluidAmount();
                 case 3 -> waterTank.getCapacity();
+                case 4 -> weedExTank.getFluidAmount();
                 default -> 0;
             };
         }
@@ -107,7 +87,7 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
 
         @Override
         public int getCount() {
-            return 4;
+            return 5;
         }
     };
 
@@ -123,10 +103,19 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
             DEFAULT_WORK_TIME,
             LAYOUT,
             DEFAULT_ENERGY_PER_TICK,
-            CableTier.LV); // LV等级，最大输入2EU/t
+            CableTier.LV);
 
         this.waterTank = new FluidTank(WATER_CAPACITY, fluidStack -> 
-            fluidStack.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER));
+            fluidStack.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER)) {
+                @Override protected void onContentsChanged() { setChanged(); }
+            };
+        this.weedExTank = new FluidTank(2000, fluid -> fluid.getFluid().isSame(
+            com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.WEED_EX.get())) {
+                @Override protected void onContentsChanged() { setChanged(); }
+            };
+        this.fluidPorts = new com.miophas.singularity_iteration.core.prefab.fluid.FluidTankGroup(java.util.List.of(
+            new com.miophas.singularity_iteration.core.prefab.fluid.FluidTankGroup.Tank(waterTank, com.miophas.singularity_iteration.core.prefab.fluid.FluidTankGroup.Role.INPUT_ONLY),
+            new com.miophas.singularity_iteration.core.prefab.fluid.FluidTankGroup.Tank(weedExTank, com.miophas.singularity_iteration.core.prefab.fluid.FluidTankGroup.Role.INPUT_ONLY)));
     }
 
     @Override
@@ -145,59 +134,66 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
             containerId, playerInventory, this);
     }
 
-    /**
-     * 检查槽位是否存适合特定槽位
-     */
     @Override
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return switch (slot) {
-            case SLOT_BATTERY -> isBattery(stack);
-            case SLOT_WATER_CELL_INPUT -> isWaterCell(stack);
-            case SLOT_EMPTY_CELL_OUTPUT -> false; // 输出槽位不允许自动化
-            default -> {
-                // 除草剂槽位（3-8）：只允许除草剂
-                if (slot >= SLOT_HERBICIDE_START && slot < SLOT_HERBICIDE_START + SLOT_HERBICIDE_COUNT) {
-                    yield com.miophas.singularity_iteration.common.item.normal.MatronHerbicideItem.isHerbicide(stack);
-                }
-                // 肥料槽位（9-14）：只允许带#c:fertilizers 标签的肥料
-                if (slot >= SLOT_FERTILIZER_START && slot < SLOT_FERTILIZER_START + SLOT_FERTILIZER_COUNT) {
-                    yield isFertilizerItem(stack);
-                }
-                yield false;
-            }
-        };
+        if (slot == SLOT_BATTERY) return isBattery(stack);
+        if (slot == SLOT_WATER_CELL_INPUT) return isWaterCell(stack);
+        if (slot == SLOT_WATER_CELL_OUTPUT) return false;
+        if (slot >= SLOT_FERTILIZER_START && slot < SLOT_FERTILIZER_START + SLOT_FERTILIZER_COUNT) {
+            return isFertilizerItem(stack);
+        }
+        if (slot >= SLOT_WEEDEX_START && slot < SLOT_WEEDEX_START + SLOT_WEEDEX_COUNT) {
+            return isWeedExCell(stack);
+        }
+        if (slot >= SLOT_UPGRADE_START && slot < TOTAL_SLOTS) {
+            return isSuitableUpgrade(stack);
+        }
+        return false;
     }
 
-    /**
-     * 检查物品是否为产品内建肥料或带有 #c:fertilizers 标签。
-     *
-     * <p>外部数据包的无效同名标签可能让 vanilla 在本次重载中省略整个标签。
-     * 产品自己的三种核心肥料不能因此被 Matron 拒绝；标签仍作为第三方扩展点。</p>
-     */
+    /** 扩展：升级插件必须声明适用于本机属性（1.7.10 原版监护机无升级槽）。 */
+    private boolean isSuitableUpgrade(ItemStack stack) {
+        return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.upgrade.mio_icif_upgrade upgrade
+            && upgrade.isSuitableFor(stack, getUpgradableProperties());
+    }
+
+    /** 扩展：监护机可用升级类型（沿用 1.12.2 原版属性集）。 */
+    @Override
+    public Set<UpgradableProperty> getUpgradableProperties() {
+        return EnumSet.of(UpgradableProperty.TRANSFORMER,
+            UpgradableProperty.ENERGY_STORAGE,
+            UpgradableProperty.ITEM_CONSUMING,
+            UpgradableProperty.FLUID_CONSUMING);
+    }
+
+    /** 对齐原版：仅接受专用作物肥料物品，不接受骨粉/通用肥料标签。 */
     private boolean isFertilizerItem(ItemStack stack) {
-        if (stack.isEmpty()) {
-            return false;
-        }
-        if (stack.is(net.minecraft.world.item.Items.BONE_MEAL)
-            || stack.is(mio_icif_resources.FERTILIZER.get())
-            || stack.is(mio_icif_resources.FERTILIZER_MATRON.get())) {
-            return true;
-        }
-        // 保留对其他模组和数据包贡献肥料的正常扩展支持。
-        return stack.is(FERTILIZERS_TAG);
+        return com.miophas.singularity_iteration.common.item.resource.MatronFertilizerItem.isFertilizer(stack);
     }
 
-    /**
-     * 获取特定方向可访问的槽位
-     */
     @Override
     protected int[] getSlotsForDirection(Direction side) {
-        // 任何方向所有槽位都可以访问
-        int[] slots = new int[TOTAL_SLOTS];
-        for (int i = 0; i < TOTAL_SLOTS; i++) {
-            slots[i] = i;
-        }
+        // 对齐原版：升级槽不对自动化开放
+        int[] slots = new int[SLOT_UPGRADE_START];
+        for (int i = 0; i < SLOT_UPGRADE_START; i++) slots[i] = i;
         return slots;
+    }
+
+    @Override
+    protected boolean canInsertItem(int slot, ItemStack stack, @Nullable Direction side) {
+        boolean topOnly = slot == SLOT_WATER_CELL_INPUT
+            || (slot >= SLOT_FERTILIZER_START && slot < SLOT_FERTILIZER_START + SLOT_FERTILIZER_COUNT)
+            || (slot >= SLOT_WEEDEX_START && slot < SLOT_WEEDEX_START + SLOT_WEEDEX_COUNT);
+        if (topOnly) {
+            // 对齐原版 InvSlot.InvSide.TOP：肥料/除草剂/水容器仅可从顶面自动化输入
+            return side == Direction.UP && isItemValidForSlot(slot, stack);
+        }
+        return super.canInsertItem(slot, stack, side);
+    }
+
+    @Override
+    protected boolean canExtractItem(int slot, @Nullable Direction side) {
+        return slot == SLOT_WATER_CELL_OUTPUT;
     }
 
     @Override
@@ -205,33 +201,27 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
         return SLOT_BATTERY;
     }
 
-    /**
-     * 检查是否可以工作
-     */
     @Override
     protected boolean canWork() {
-        // 检查是否有足够能量
-        if (energyStorage.getAmount() < energyPerTick) {
-            return false;
-        }
-        return true;
+        return energyStorage.getAmount() >= 31;
     }
 
-    /**
-     * 不执行工作（作物管理逻辑在tick中处理）
-     */
     @Override
     protected void doWork() {
-        // 作物管理器相关工作在tick()中处理
     }
 
-    /**
-     * 检查物品是否为水单位
-     */
     private boolean isWaterCell(ItemStack stack) {
         if (stack.isEmpty()) return false;
         if (stack.is(net.minecraft.world.item.Items.WATER_BUCKET)) return true;
         return mio_icif_cells.isCellContainingFluid(stack, net.minecraft.world.level.material.Fluids.WATER);
+    }
+
+    private boolean isWeedExCell(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        var handler = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
+        return handler != null && !handler.drain(new FluidStack(
+            com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.WEED_EX.get(),
+            Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE).isEmpty();
     }
 
     @SuppressWarnings("unused")
@@ -241,146 +231,84 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
         return mio_icif_cells.isEmptyCell(stack);
     }
 
-    /**
-     * 每tick执行作物管理逻辑
-     */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_matron_elc blockEntity) {
         if (level.isClientSide()) {
             return;
         }
-
-        // 调用父类tick方法处理能量相关逻辑
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
-
-        // 素材水单元转换为水槽，不考虑工作周期
         blockEntity.processWaterCell();
-
-        // 工作计时
-        blockEntity.workTimer++;
-        if (blockEntity.workTimer < DEFAULT_WORK_TIME) {
-            return;
-        }
-        blockEntity.workTimer = 0;
-
-        // 检查是否可以工作
+        blockEntity.processWeedExCell();
+        // 对齐 1.7.10：每 tick 扫描一次，门槛 31 EU
         if (!blockEntity.canWork()) {
             return;
         }
-
-        // 执行作物管理
         blockEntity.processCrops();
     }
 
-    /**
-     * 处理水单元转换操作
-     * 水桶/水单元转换为水并放入空单元输出槽
-     */
     private void processWaterCell() {
-        ItemStack waterCellStack = itemHandler.getStackInSlot(SLOT_WATER_CELL_INPUT);
-        if (waterCellStack.isEmpty() || !isWaterCell(waterCellStack)) {
-            return;
-        }
-
-        // 确定水量是水桶还是空单元
-        int waterToAdd = 1000; // 1水桶单位 = 1000mB
-        if (waterTank.getFluidAmount() + waterToAdd > waterTank.getCapacity()) {
-            return; // 水箱已经满了
-        }
-
-        // 检查空气单元的输出槽是否可以接受
-        ItemStack emptyCellOutput = itemHandler.getStackInSlot(SLOT_EMPTY_CELL_OUTPUT);
-        ItemStack emptyCellToProduce;
-        if (waterCellStack.is(net.minecraft.world.item.Items.WATER_BUCKET)) {
-            emptyCellToProduce = new ItemStack(net.minecraft.world.item.Items.BUCKET);
-        } else if (mio_icif_cells.isFluidCell(waterCellStack)) {
-            emptyCellToProduce = mio_icif_cells.getEmptyCellForStack(waterCellStack);
-            if (emptyCellToProduce.isEmpty()) emptyCellToProduce = new ItemStack(mio_icif_cells.CELL_EMPTY.get());
-        } else {
-            return;
-        }
-
-        if (emptyCellOutput.isEmpty()) {
-            // 空槽位可以直接放置
-            itemHandler.setStackInSlot(SLOT_EMPTY_CELL_OUTPUT, emptyCellToProduce);
-        } else if (ItemStack.isSameItemSameComponents(emptyCellOutput, emptyCellToProduce) && 
-                   emptyCellOutput.getCount() < emptyCellOutput.getMaxStackSize()) {
-            // 已有相同物品且可以叠加
-            emptyCellOutput.grow(1);
-        } else {
-            return; // 输出槽无法放置
-        }
-
-        // 添加水到水箱
-        waterTank.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, waterToAdd), 
-                       net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
-
-        // 消耗水单元格
-        waterCellStack.shrink(1);
-        if (waterCellStack.isEmpty()) {
-            itemHandler.setStackInSlot(SLOT_WATER_CELL_INPUT, ItemStack.EMPTY);
-        }
-        // Mark the block entity dirty after the tank and inventory transaction so
-        // the converted water and empty-cell output are persisted on the next save.
-        setChanged();
+        processFluidContainer(SLOT_WATER_CELL_INPUT, waterTank, SLOT_WATER_CELL_OUTPUT);
     }
 
-    /**
-     * 执行作物管理功能
-     * 搜索工作范围内的作物方块并执行管理动作
-     */
-    private void processCrops() {
-        Level level = getLevel();
-        if (level == null) return;
-
-        BlockPos center = getBlockPos();
-        boolean worked = false;
-
-        // 首先检查中心位置周围土地湿润
-        if (tryHydrateFarmland(level, center)) {
-            worked = true;
+    private void processWeedExCell() {
+        // 除草剂为耐久型容器，耗尽后直接消失，无需空容器输出槽
+        for (int i = 0; i < SLOT_WEEDEX_COUNT; i++) {
+            if (processFluidContainer(SLOT_WEEDEX_START + i, weedExTank, -1)) break;
         }
+    }
 
-        // 循环工作范围内的方块
-        for (int x = -HORIZONTAL_RANGE; x <= HORIZONTAL_RANGE; x++) {
-            for (int y = -VERTICAL_RANGE; y <= VERTICAL_RANGE; y++) {
-                for (int z = -HORIZONTAL_RANGE; z <= HORIZONTAL_RANGE; z++) {
-                    BlockPos checkPos = center.offset(x, y, z);
-                    if (level.getBlockEntity(checkPos) instanceof com.miophas.singularity_iteration.common.blockentity.crop.mio_icif_crop_entity cropEntity) {
-                        // 依次尝试三级动作：除草 -> 施肥 -> 补水
-                        if (tryRemoveWeed(cropEntity)) {
-                            worked = true;
-                        } else if (tryFertilize(cropEntity)) {
-                            worked = true;
-                        } else if (tryHydrate(cropEntity)) {
-                            worked = true;
-                        }
-
-                        // 如果已经有工作了，本次tick不再继续搜索
-                        if (worked) {
-                            // 消耗能量
-                            apiUseEnergy(energyPerTick, false);
-                            // 将方块状态设置为工作状态
-                            updateWorkingState(level, center, true);
-                            return;
-                        }
-                    }
-                }
+    private boolean processFluidContainer(int slot, FluidTank tank, int outputSlot) {
+        ItemStack input = itemHandler.getStackInSlot(slot);
+        if (input.isEmpty()) return false;
+        ItemStack working = input.copyWithCount(1);
+        var handler = working.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
+        if (handler == null) return false;
+        FluidStack offered = handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+        int amount = tank.fill(offered, IFluidHandler.FluidAction.SIMULATE);
+        if (amount <= 0) return false;
+        FluidStack actual = handler.drain(offered.copyWithAmount(amount), IFluidHandler.FluidAction.EXECUTE);
+        if (actual.isEmpty() || actual.getAmount() > amount) return false;
+        ItemStack result = handler.getContainer();
+        boolean retain = !result.isEmpty() && result.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null
+            && !result.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM).drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE).isEmpty();
+        ItemStack output = outputSlot >= 0 ? itemHandler.getStackInSlot(outputSlot) : ItemStack.EMPTY;
+        if (!retain && !result.isEmpty() && !output.isEmpty()
+                && (!ItemStack.isSameItemSameComponents(output, result) || output.getCount() + result.getCount() > output.getMaxStackSize())) return false;
+        if (retain && input.getCount() > 1) return false;
+        tank.fill(actual, IFluidHandler.FluidAction.EXECUTE);
+        if (retain) itemHandler.setStackInSlot(slot, result);
+        else {
+            input.shrink(1);
+            if (!result.isEmpty() && outputSlot >= 0) {
+                if (output.isEmpty()) itemHandler.setStackInSlot(outputSlot, result);
+                else output.grow(result.getCount());
             }
         }
-
-        // 没有工作需要被执行，设置状态为未工作
-        if (worked) {
-            apiUseEnergy(energyPerTick, false);
-            updateWorkingState(level, center, true);
-        } else {
-            // 没有工作项，更新状态为未工作
-            updateWorkingState(level, center, false);
-        }
+        setChanged();
+        return true;
     }
 
-    /**
-     * 更新方块工作状态
-     */
+    private void processCrops() {
+        Level world = getLevel();
+        if (world == null || energyStorage.getAmount() < MIN_START_ENERGY) return;
+        scanIndex = (scanIndex + 1) % SCAN_VOLUME;
+        apiUseEnergy(1, false);
+        setChanged();
+        // 水平 ±5（11 格）、垂直 -1..1（3 层）：与原版 scanX/scanY/scanZ 相同的推进顺序
+        BlockPos target = worldPosition.offset(
+            scanIndex % 11 - SCAN_RADIUS,
+            scanIndex / 121 - 1,
+            scanIndex / 11 % 11 - SCAN_RADIUS);
+        boolean worked = false;
+        if (world.hasChunkAt(target)) {
+            if (world.getBlockEntity(target) instanceof com.miophas.singularity_iteration.core.api.crop.IPlanter crop) {
+                if (tryFertilize(crop)) { apiUseEnergy(10, false); worked = true; }
+                if (tryHydrate(crop)) { apiUseEnergy(10, false); worked = true; }
+                if (tryRemoveWeed(crop)) { apiUseEnergy(10, false); worked = true; }
+            } else if (tryHydrateFarmland(world, target)) { apiUseEnergy(10, false); worked = true; }
+        }
+        updateWorkingState(world, worldPosition, worked);
+    }
+
     private void updateWorkingState(Level level, BlockPos pos, boolean working) {
         BlockState state = level.getBlockState(pos);
         if (state.getBlock() instanceof com.miophas.singularity_iteration.common.block.producer.mio_icif_block_matron) {
@@ -391,112 +319,37 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
         }
     }
 
-    /**
-     * 尝试灌溉周围所有未湿润的土地
-     * 每次湿润消耗10mB水
-     * @return 是否成功灌溉任何土地
-     */
     private boolean tryHydrateFarmland(Level level, BlockPos center) {
-        boolean hydratedAny = false;
-        int waterConsumed = 0;
-        final int WATER_PER_FARMLAND = 10; // 每块耕地消耗10mB水
-        final int waterAvailable = waterTank.getFluidAmount();
-        if (waterAvailable < WATER_PER_FARMLAND) {
-            return false;
-        }
-
-        for (int x = -HORIZONTAL_RANGE; x <= HORIZONTAL_RANGE; x++) {
-            for (int y = -VERTICAL_RANGE - 1; y <= VERTICAL_RANGE; y++) { // 包含工作架下方的耕地
-                for (int z = -HORIZONTAL_RANGE; z <= HORIZONTAL_RANGE; z++) {
-                    BlockPos checkPos = center.offset(x, y, z);
-                    BlockState state = level.getBlockState(checkPos);
-
-                    // 检查是否是耕地且未湿润
-                    if (state.getBlock() instanceof net.minecraft.world.level.block.FarmBlock) {
-                        int moisture = state.getValue(net.minecraft.world.level.block.FarmBlock.MOISTURE);
-                        if (moisture < 7) {
-                            // 以本次扫描已经预留的水量为准；不能为每块耕地重复
-                            // 使用同一份槽内余额，或在水量不足时继续改世界状态。
-                            if (waterAvailable - waterConsumed < WATER_PER_FARMLAND) {
-                                continue;
-                            }
-                            // 设置耕地为湿润状态7，并只为实际改动成功的方块记账。
-                            if (level.setBlock(checkPos,
-                                state.setValue(net.minecraft.world.level.block.FarmBlock.MOISTURE, 7), 3)) {
-                                waterConsumed += WATER_PER_FARMLAND;
-                                hydratedAny = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 消耗水
-        if (waterConsumed > 0) {
-            waterTank.drain(waterConsumed, IFluidHandler.FluidAction.EXECUTE);
-            setChanged();
-        }
-
-        return hydratedAny;
+        BlockState state = level.getBlockState(center);
+        if (!state.is(net.minecraft.world.level.block.Blocks.FARMLAND)) return false;
+        int moisture = state.getValue(net.minecraft.world.level.block.FarmBlock.MOISTURE);
+        int amount = Math.min(waterTank.getFluidAmount(), 7 - moisture);
+        if (amount <= 0 || !level.setBlock(center, state.setValue(net.minecraft.world.level.block.FarmBlock.MOISTURE, moisture + amount), 2)) return false;
+        waterTank.drain(amount, IFluidHandler.FluidAction.EXECUTE);
+        return true;
     }
 
-    /**
-     * 尝试除草操作
-     * @return 是否成功除草
-     */
-    private boolean tryRemoveWeed(com.miophas.singularity_iteration.common.blockentity.crop.mio_icif_crop_entity cropEntity) {
-        // 检查植物是否是杂草
-        if (cropEntity.getPlant() == null || !cropEntity.getPlant().getTypeId().equals("weed")) {
-            return false;
-        }
-
-        // 查找除草剂
-        for (int i = 0; i < SLOT_HERBICIDE_COUNT; i++) {
-            int slot = SLOT_HERBICIDE_START + i;
-            ItemStack herbicideStack = itemHandler.getStackInSlot(slot);
-            if (!herbicideStack.isEmpty() && com.miophas.singularity_iteration.common.item.normal.MatronHerbicideItem.isHerbicide(herbicideStack)) {
-                // 重置作物状态
-                cropEntity.reset();
-                // 设置作物防控为150天
-                cropEntity.setWeedControl(150);
-                cropEntity.updateState();
-                // 消耗除草剂剩余伤害
-                herbicideStack.setDamageValue(herbicideStack.getDamageValue() + 1);
-                if (herbicideStack.getDamageValue() >= herbicideStack.getMaxDamage()) {
-                    itemHandler.setStackInSlot(slot, ItemStack.EMPTY);
-                }
-                return true;
-            }
-        }
-        return false;
+    private boolean tryRemoveWeed(com.miophas.singularity_iteration.core.api.crop.IPlanter cropEntity) {
+        // 对齐 1.7.10 applyWeedEx：达到上限后不再处理，否则每次固定 +50
+        if (cropEntity.getWeedControl() >= WEED_CONTROL_LIMIT) return false;
+        if (weedExTank.getFluidAmount() < HERBICIDE_VALUE) return false;
+        FluidStack drained = weedExTank.drain(HERBICIDE_VALUE, IFluidHandler.FluidAction.EXECUTE);
+        if (drained.isEmpty()) return false;
+        cropEntity.setWeedControl(cropEntity.getWeedControl() + drained.getAmount());
+        cropEntity.updateState();
+        return true;
     }
 
-    /**
-     * 尝试施肥操作
-     * 参考IC2的applyFertilizer方法，对每个作物补充100%的penalty，但重置到99
-     * @return 是否成功施肥作物
-     */
-    private boolean tryFertilize(com.miophas.singularity_iteration.common.blockentity.crop.mio_icif_crop_entity cropEntity) {
-        // 检查作物是否是已存在
-        if (cropEntity.getPlant() == null) {
-            return false;
-        }
-
-        // 检查作物养分是否已满100
+    private boolean tryFertilize(com.miophas.singularity_iteration.core.api.crop.IPlanter cropEntity) {
         if (cropEntity.getNutrients() >= 100) {
             return false;
         }
-
-        // 查找肥料
         for (int i = 0; i < SLOT_FERTILIZER_COUNT; i++) {
             int slot = SLOT_FERTILIZER_START + i;
             ItemStack fertilizerStack = itemHandler.getStackInSlot(slot);
             if (!fertilizerStack.isEmpty() && isFertilizerItem(fertilizerStack)) {
-                // 补充养分重置到100，参考IC2：机械补充90，整体重置100
-                cropEntity.setNutrients(Math.min(100, cropEntity.getNutrients() + 90));
+                cropEntity.setNutrients(cropEntity.getNutrients() + 90);
                 cropEntity.updateState();
-                // 消耗肥料物品
                 fertilizerStack.shrink(1);
                 if (fertilizerStack.isEmpty()) {
                     itemHandler.setStackInSlot(slot, ItemStack.EMPTY);
@@ -507,50 +360,31 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
         return false;
     }
 
-    /**
-     * 尝试给水操作
-     * 参考IC2的applyHydration方法，自动补充作物生长需水量，作物值从水中存储中补水
-     * @return 是否成功补水
-     */
-    private boolean tryHydrate(com.miophas.singularity_iteration.common.blockentity.crop.mio_icif_crop_entity cropEntity) {
-        // 检查作物是否是已存在
-        if (cropEntity.getPlant() == null) {
+    private boolean tryHydrate(com.miophas.singularity_iteration.core.api.crop.IPlanter cropEntity) {
+        if (cropEntity.getWater() >= 200) {
             return false;
         }
-
-        // 检查作物水份水是否已满100
-        if (cropEntity.getWater() >= 100) {
-            return false;
-        }
-
-        // 计算需补充水份消耗水量，1mB = 1水份点
-        int waterNeeded = 100 - cropEntity.getWater();
-        // 从水存储中抽取水量mB
+        int waterNeeded = 200 - cropEntity.getWater();
         FluidStack drained = waterTank.drain(waterNeeded, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
         if (drained.isEmpty() || drained.getAmount() <= 0) {
             return false;
         }
-
-        // 增加作物水值
-        cropEntity.setWater(Math.min(100, cropEntity.getWater() + drained.getAmount()));
+        cropEntity.setWater(cropEntity.getWater() + drained.getAmount());
         cropEntity.updateState();
         return true;
     }
 
-    /**
-     * 获取流体处理器实例
-     */
     @Override
     public net.neoforged.neoforge.fluids.capability.IFluidHandler getFluidHandlerCapability(@Nullable Direction direction) {
-        // 只返回水槽处理
-        return waterTank;
+        return fluidPorts;
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.put("WaterTank", waterTank.writeToNBT(registries, new CompoundTag()));
-        tag.putInt("WorkTimer", workTimer);
+        tag.putInt("CropScanIndex", scanIndex);
+        tag.put("WeedExTank", weedExTank.writeToNBT(registries, new CompoundTag()));
     }
 
     @Override
@@ -559,6 +393,7 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
         if (tag.contains("WaterTank")) {
             waterTank.readFromNBT(registries, tag.getCompound("WaterTank"));
         }
-        workTimer = tag.getInt("WorkTimer");
+        scanIndex = Math.floorMod(tag.getInt("CropScanIndex"), SCAN_VOLUME);
+        if (tag.contains("WeedExTank")) weedExTank.readFromNBT(registries, tag.getCompound("WeedExTank"));
     }
 }

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "XXX",
+    "XXX",
+    "XXX"
+  ],
+  "key": {
+    "X": {
+      "item": "mio_icif:resource/item_diamond_dust_small"
+    }
+  },
+  "result": {
+    "id": "mio_icif:resource/item_diamond_dust"
+  }
+}

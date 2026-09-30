@@ -1,6 +1,5 @@
 package com.miophas.singularity_iteration.common.event;
 
-import com.miophas.singularity_iteration.common.block.build.mio_icif_block_scaffold;
 import com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Nuclear_Reactor_Generator;
 import com.miophas.singularity_iteration.common.block.reactor.mio_icif_Block_Reactor_Chamber;
 import com.miophas.singularity_iteration.common.blockentity.reactor.NukeExplosionScheduler;
@@ -18,7 +17,6 @@ import com.miophas.singularity_iteration.common.util.RadiationProtectionUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.DamageTypeTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -330,84 +328,6 @@ public class mio_icif_events {
     }
 
     /**
-     * 脚手架攀爬事件处理
-     * 当玩家贴着脚手架方块时，实现类似梯子的攀爬功能
-     * - 按跳跃键：向上攀爬
-     * - 按Shift键：停留在当前位置（不下滑）
- * - 不按键：慢下滑
- * 注意：站在脚手架顶部不会触发减掉落效果
-     */
-    @SubscribeEvent
-    public static void onScaffoldClimb(EntityTickEvent.Pre event) {
-        if (!(event.getEntity() instanceof Player player)) {
-            return;
-        }
-
-        // 创造模式飞行不做处理
-        if (player.getAbilities().flying) {
-            return;
-        }
-
-        Level level = player.level();
-
-        if (!touchesScaffold(level, player)) {
-            return;
-        }
-
-        // 重置摔落距离（服务端）
-        if (!level.isClientSide) {
-            player.resetFallDistance();
-        }
-
-        // 获取当前速度
-        var movement = player.getDeltaMovement();
-
-        if (player.isShiftKeyDown()) {
-            // 潜行时：停留在当前位置（不下滑）
-            player.setDeltaMovement(movement.x, 0, movement.z);
-        } else {
-            // 检测跳跃键状态（通过反射访问私有字段）
-            boolean wantsToClimb = isJumpKeyDown(player, level.isClientSide);
-
-            if (wantsToClimb) {
-                // 向上攀爬
-                player.setDeltaMovement(movement.x, 0.2D, movement.z);
-            } else {
- // 慢下滑（未按跳跃键且未潜行）
-                player.setDeltaMovement(
-                    movement.x,
-                    Math.max(movement.y, -0.15D),
-                    movement.z
-                );
-            }
-        }
-    }
-
-    private static java.lang.reflect.Method cachedClientIsJumpKeyDown;
-    private static java.lang.reflect.Field cachedJumpingField;
-
-    private static boolean isJumpKeyDown(Player player, boolean isClientSide) {
-        try {
-            if (isClientSide) {
-                if (cachedClientIsJumpKeyDown == null) {
-                    Class<?> helperClass = Class.forName(
-                        "com.miophas.singularity_iteration.common.client.ClientKeyHelper");
-                    cachedClientIsJumpKeyDown = helperClass.getMethod("isJumpKeyDown");
-                }
-                return (boolean) cachedClientIsJumpKeyDown.invoke(null);
-            } else {
-                if (cachedJumpingField == null) {
-                    cachedJumpingField = LivingEntity.class.getDeclaredField("jumping");
-                    cachedJumpingField.setAccessible(true);
-                }
-                return cachedJumpingField.getBoolean(player);
-            }
-        } catch (Exception e) {
-            return player.getDeltaMovement().y > 0;
-        }
-    }
-
-    /**
      * 检测核反应仓是否同时接触多个核反应堆
      * 当核反应堆被放置时触发检测
      */
@@ -452,7 +372,7 @@ public class mio_icif_events {
     @SubscribeEvent
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         mio_icif_KeyboardManager.removePlayerReferences(event.getEntity());
-        com.miophas.singularity_iteration.core.runtime.flight.JetpackFlightController.removePlayer(event.getEntity());
+        com.miophas.singularity_iteration.core.prefab.flight.JetpackFlightController.removePlayer(event.getEntity());
     }
 
     /** Drop per-dimension explosion work as soon as a level unloads. */
@@ -465,46 +385,15 @@ public class mio_icif_events {
         }
     }
 
-    /**
-     * Iterate only blocks actually intersected by the player's collision box.
-     * The old fixed 3x3x3 probe allocated up to 27 BlockPos objects per player
-     * per tick even though a normal player overlaps at most 2x3x2 blocks.
-     */
-    private static boolean touchesScaffold(Level level, Player player) {
-        var box = player.getBoundingBox();
-        int minX = Mth.floor(box.minX);
-        int maxX = Mth.floor(Math.nextDown(box.maxX));
-        int minY = Mth.floor(box.minY);
-        int maxY = Mth.floor(Math.nextDown(box.maxY));
-        int minZ = Mth.floor(box.minZ);
-        int maxZ = Mth.floor(Math.nextDown(box.maxZ));
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-
-        for (int y = minY; y <= maxY; y++) {
-            // Standing on top is not climbing. This preserves the previous
-            // one-centimetre tolerance at the player's feet.
-            if (box.minY >= y + 1.0D - 0.01D) continue;
-            for (int x = minX; x <= maxX; x++) {
-                for (int z = minZ; z <= maxZ; z++) {
-                    cursor.set(x, y, z);
-                    if (level.getBlockState(cursor).getBlock() instanceof mio_icif_block_scaffold) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     @SubscribeEvent
     public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
         // Held key snapshots remain valid; only activity in the old dimension expires.
-        com.miophas.singularity_iteration.core.runtime.flight.JetpackFlightController.removePlayer(event.getEntity());
+        com.miophas.singularity_iteration.core.prefab.flight.JetpackFlightController.removePlayer(event.getEntity());
     }
 
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        com.miophas.singularity_iteration.core.runtime.flight.JetpackFlightController.removePlayer(event.getEntity());
+        com.miophas.singularity_iteration.core.prefab.flight.JetpackFlightController.removePlayer(event.getEntity());
     }
 
     @SubscribeEvent
@@ -512,7 +401,7 @@ public class mio_icif_events {
         if (event.getSlot() == EquipmentSlot.CHEST
                 && event.getFrom().getItem() != event.getTo().getItem()
                 && event.getEntity() instanceof Player player) {
-            com.miophas.singularity_iteration.core.runtime.flight.JetpackFlightController.removePlayer(player);
+            com.miophas.singularity_iteration.core.prefab.flight.JetpackFlightController.removePlayer(player);
         }
     }
 

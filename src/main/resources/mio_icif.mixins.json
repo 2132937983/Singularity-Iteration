@@ -6,6 +6,7 @@
   "mixins": [
     "ItemStackMaxStackMixin",
     "DataComponentMaxStackMixin",
-    "ContainerMaxStackMixin"
+    "ContainerMaxStackMixin",
+    "CropBiomeAccessor"
   ]
 }

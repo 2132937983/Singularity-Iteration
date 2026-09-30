@@ -156,6 +156,7 @@
     "mio_icif:build/block_iridium_tank",
     "mio_icif:producer/block_industrial_workbench",
     "mio_icif:build/block_construction_wall",
+    "mio_icif:build/block_cf_wall",
     "mio_icif:wiring/block_wireless_power_transmission_node",
     "mio_icif:producer/block_compressor_advanced_elc",
     "mio_icif:producer/block_metal_former_advanced",

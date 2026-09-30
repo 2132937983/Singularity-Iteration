@@ -263,8 +263,8 @@ com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.
         LOGGER.info("Server stopping, cleaning up machine registry");
         // 清空静态机器注册表，防止内存泄漏
         com.miophas.singularity_iteration.core.runtime.machine.MachineAPIImpl.clearRegistry();
-        com.miophas.singularity_iteration.core.runtime.flight.JetpackKeyHandler.clearServerStates();
-        com.miophas.singularity_iteration.core.runtime.flight.JetpackFlightController.clearServerStates();
+        com.miophas.singularity_iteration.core.prefab.flight.JetpackKeyHandler.clearServerStates();
+        com.miophas.singularity_iteration.core.prefab.flight.JetpackFlightController.clearServerStates();
     }
 
     @SubscribeEvent

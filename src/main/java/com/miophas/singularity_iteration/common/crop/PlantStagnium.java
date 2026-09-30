@@ -13,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
  * IC2: 需要下方有锡矿石或锡块才能从size3长到size4
  */
 @SuppressWarnings("null")
-public class PlantStagnium extends PlantType {
+public class PlantStagnium extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -37,7 +37,7 @@ public class PlantStagnium extends PlantType {
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(4, 0, 3, 0, 1, 0);
+        return new PlantStats(6, 2, 0, 0, 1, 0);
     }
 
     @Override
@@ -46,38 +46,10 @@ public class PlantStagnium extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 4;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        int yield = planter.getYield();
-        int count = 1 + Math.max(0, yield) / 4;
-        return new ItemStack[]{new ItemStack(mio_icif_resources.TIN_DUST_SMALL.get(), count)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/stagnium_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        if (planter.getGrowthStage() < 3) return true;
-        if (planter.getGrowthStage() == 3) {
-            return planter.isBlockBelow(mio_icif_blocks.BLOCK_ORE_TIN.get()) ||
-                   planter.isBlockBelow(mio_icif_blocks.BLOCK_ORE_TIN_IN_DEEP.get()) ||
-                   planter.isBlockBelow(mio_icif_blocks.BLOCK_TIN.get());
-        }
-        return false;
     }
 }

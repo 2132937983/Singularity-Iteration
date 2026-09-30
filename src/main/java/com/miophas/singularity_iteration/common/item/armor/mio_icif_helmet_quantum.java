@@ -92,7 +92,6 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
                 int skylight = level.getMaxLocalRawBrightness(player.blockPosition());
                 if (skylight > 8) {
                     player.removeEffect(MobEffects.BLINDNESS);
-                    player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0, true, true, false));
                 } else {
                     player.removeEffect(MobEffects.CONFUSION);
                     player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 300, 0, true, true, false));

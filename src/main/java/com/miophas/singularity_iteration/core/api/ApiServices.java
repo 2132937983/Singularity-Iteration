@@ -15,6 +15,7 @@ public final class ApiServices {
     }
 
     /** Called once by the host during mod construction, before content is created. */
+    @org.jetbrains.annotations.ApiStatus.Internal
     public static synchronized void install(MioIcifAPI services) {
         Objects.requireNonNull(services, "services");
         if (instance != null && instance != services) throw new IllegalStateException("Core services already installed");

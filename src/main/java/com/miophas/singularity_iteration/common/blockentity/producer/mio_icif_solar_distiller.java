@@ -40,12 +40,12 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 澶槼鑳借捀棣忔満鏂瑰潡瀹炰綋
- * 瀹屽叏渚濋潬澶槼鑳藉伐浣滐紝涓嶆秷鑰椾换浣旹U锛屼篃娌℃湁浠讳綍鐢靛帇绛夌骇
+ * 完全依靠能工作，不消耗任何EU，也没有任何电压等级
  *
  * 宸ヤ綔蹇呰鏉′欢:
- * - 鍦ㄤ富涓栫晫
- * - 鐧藉ぉ鏃堕棿锛?:20 ~ 17:45锛堟父鎴忔椂闂达級
- * - 澶╂皵鏅存湕锛堟棤涓嬮洦/涓嬮洩锛?
+ * - 在主世界
+ * - 白天时间?:20 ~ 17:45（游戏时间）
+ * - 天气晴朗（无下雨/下雪?
  * - 姝ｄ笂鏂规棤鏂瑰潡閬尅
  *
  * 姣?0 tick锛?绉掞級娑堣€?1mB 姘达紝浜у嚭 1mB 钂搁姘?
@@ -78,35 +78,35 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
         .upgrade(2)
         .build();
 
-    // 妲戒綅瀹氫箟锛堟寜 builder 璋冪敤椤哄簭锛欵XTRA=0-1, OUTPUT=2-3, UPGRADE=4-5锛?
+    // 槽位定义（按 builder 调用顺序：EXTRA=0-1, OUTPUT=2-3, UPGRADE=4-5?
     public static final int TOTAL_SLOTS = 6;
-    public static final int WATER_INPUT_SLOT = 0;      // 姘磋緭鍏ユЫ (EXTRA)
+    public static final int WATER_INPUT_SLOT = 0;      // 水输入槽 (EXTRA)
     public static final int DISTILLED_INPUT_SLOT = 1;  // 钂搁姘磋緭鍏ユЫ (EXTRA)
-    public static final int WATER_OUTPUT_SLOT = 2;     // 姘磋緭鍑烘Ы (OUTPUT)
+    public static final int WATER_OUTPUT_SLOT = 2;     // 水输出槽 (OUTPUT)
     public static final int DISTILLED_OUTPUT_SLOT = 3; // 钂搁姘磋緭鍑烘Ы (OUTPUT)
-    public static final int UPGRADE_SLOT_1 = 4;        // 鍗囩骇妲? (UPGRADE)
-    public static final int UPGRADE_SLOT_2 = 5;        // 鍗囩骇妲? (UPGRADE)
+    public static final int UPGRADE_SLOT_1 = 4;        // 升级? (UPGRADE)
+    public static final int UPGRADE_SLOT_2 = 5;        // 升级? (UPGRADE)
 
-    // 娴佷綋瀹归噺
-    public static final int WATER_TANK_CAPACITY = 10000;          // 姘存Ы 10 妗?
+    // 流体容量
+    public static final int WATER_TANK_CAPACITY = 10000;          // 水槽 10 ?
     public static final int DISTILLED_TANK_CAPACITY = 10000;      // 钂搁姘存Ы 10 妗?
-    // 宸ヤ綔鍙傛暟
-    public static final int PRODUCTION_INTERVAL = 80; // 姣?0 tick 浜у嚭 1mB
+    // 工作参数
+    public static final int PRODUCTION_INTERVAL = 80; // ?0 tick 产出 1mB
     public static final int FLUID_PER_CYCLE = 1;      // 姣忔寰幆 1mB
 
-    // 鍙戠數鏃堕棿娈碉紙涓庡お闃宠兘鍙戠數鏈轰竴鑷达級
+    // 发电时间段（与太阳能发电机一致）
     public static final int GENERATION_START_TIME = 333;
     public static final int GENERATION_END_TIME = 11750;
 
-    // 娴佷綋瀛樺偍
+    // 流体存储
     protected final FluidTank waterTank;
     protected final FluidTank distilledTank;
 
-    // 妲戒綅甯冨眬鍜岀墿鍝佸瓨鍌?
+    // 槽位布局和物品存?
     protected final SlotLayout slotLayout;
     protected MachineItemHandler itemHandler;
 
-    // 杩涘害
+    // 进度
     private int progress = 0;
     // 鏄惁姝ｅ湪宸ヤ綔
     protected boolean isWorking = false;

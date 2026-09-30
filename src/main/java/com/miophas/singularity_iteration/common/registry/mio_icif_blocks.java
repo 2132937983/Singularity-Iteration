@@ -861,30 +861,36 @@ public static final DeferredBlock<com.miophas.singularity_iteration.common.block
 public static final DeferredBlock<com.miophas.singularity_iteration.common.block.producer.mio_icif_block_chunk_loader> CHUNK_LOADER =
         registerBlock("producer/block_chunk_loader", () -> new com.miophas.singularity_iteration.common.block.producer.mio_icif_block_chunk_loader(Block.Properties.of().mapColor(MapColor.METAL).strength(2.0f, 10.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
 
-    // 注册脚手架方块（IC2风格）
-// 木脚手架 - 支撑强度1，最终
+    // 注册脚手架方块（对齐 IC2：悬空强度 + 右键加固）
+    // 强度 = 从有垂直支撑（地面/固体方块）的脚手架出发，水平悬空的最大格数。
+    // 构造参数：(properties, 基础强度, 加固后强度(-1=不可加固), 是否用木棍加固)
+// 木脚手架 - 悬空 2 格；+2 木棍 → 加固木脚手架（悬空 5 格）
 public static final DeferredBlock<mio_icif_block_scaffold> SCAFFOLD_WOOD =
-        registerBlock("build/block_scaffold_wood", () -> new mio_icif_block_scaffold(Block.Properties.of().mapColor(MapColor.WOOD).strength(0.5f).sound(SoundType.WOOD).noOcclusion().randomTicks(), 1));
+        registerBlock("build/block_scaffold_wood", () -> new mio_icif_block_scaffold(Block.Properties.of().mapColor(MapColor.WOOD).strength(0.5f).sound(SoundType.WOOD).noOcclusion().randomTicks(), 2, 5, true));
 
-    // 铁脚手架 - 支撑强度3，中等
+    // 铁脚手架 - 悬空 5 格；+1 铁栅栏 → 加固铁脚手架（悬空 12 格）
 public static final DeferredBlock<mio_icif_block_scaffold> SCAFFOLD_IRON =
-        registerBlock("build/block_scaffold_iron", () -> new mio_icif_block_scaffold(Block.Properties.of().mapColor(MapColor.METAL).strength(1.0f).sound(SoundType.METAL).noOcclusion().randomTicks().requiresCorrectToolForDrops(), 3));
+        registerBlock("build/block_scaffold_iron", () -> new mio_icif_block_scaffold(Block.Properties.of().mapColor(MapColor.METAL).strength(0.8f, 6.0f).sound(SoundType.METAL).noOcclusion().randomTicks().requiresCorrectToolForDrops(), 5, 12, false));
 
-    // 钢脚手架 - 支撑强度5，较高
+    // 钢脚手架 - 悬空 8 格（项目附加高阶档，不可加固）
 public static final DeferredBlock<mio_icif_block_scaffold> SCAFFOLD_STEEL =
-        registerBlock("build/block_scaffold_steel", () -> new mio_icif_block_scaffold(Block.Properties.of().mapColor(MapColor.METAL).strength(2.0f, 3.0f).sound(SoundType.METAL).noOcclusion().randomTicks().requiresCorrectToolForDrops(), 5));
+        registerBlock("build/block_scaffold_steel", () -> new mio_icif_block_scaffold(Block.Properties.of().mapColor(MapColor.METAL).strength(1.0f, 8.0f).sound(SoundType.METAL).noOcclusion().randomTicks().requiresCorrectToolForDrops(), 8));
 
-    // 碳纤维脚手架 - 支撑强度7，最终
+    // 碳纤维脚手架 - 悬空 12 格（项目附加最高档，不可加固）
 public static final DeferredBlock<mio_icif_block_scaffold> SCAFFOLD_CARBON =
-        registerBlock("build/block_scaffold_carbon", () -> new mio_icif_block_scaffold(Block.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(3.0f, 5.0f).sound(SoundType.METAL).noOcclusion().randomTicks().requiresCorrectToolForDrops(), 7));
+        registerBlock("build/block_scaffold_carbon", () -> new mio_icif_block_scaffold(Block.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.0f, 8.0f).sound(SoundType.METAL).noOcclusion().randomTicks().requiresCorrectToolForDrops(), 12));
 
-    // 注册建筑泡沫方块（IC2风格的CF泡沫）
-    // 普通泡沫 - 在光照下逐渐硬化为石头
-// IC2原版特性：泡沫没有碰撞箱，实体可以穿过
+    // 注册建筑泡沫方块（对齐 IC2 的 CF 泡沫）
+    // 普通泡沫 - 按 IC2 公式在光照下逐步硬化（随机刻），无光时极慢
+    // IC2原版特性：未硬化前没有碰撞箱、实体可穿过、破坏不掉落
     public static final DeferredBlock<mio_icif_block_foam> CONSTRUCTION_FOAM =
-        registerBlock("build/block_construction_foam", () -> new mio_icif_block_foam(Block.Properties.of().strength(0.5f).noOcclusion().randomTicks().mapColor(MapColor.SAND).sound(SoundType.WOOL), false));
+        registerBlock("build/block_construction_foam", () -> new mio_icif_block_foam(Block.Properties.of().strength(0.01f, 10.0f).noOcclusion().randomTicks().mapColor(MapColor.SAND).sound(SoundType.WOOL), false));
 
-    // 注册防爆石方块（IC2风格的Construction Wall）
+    // 注册 CF 墙（IC2：普通建筑泡沫硬化后的产物）
+    public static final DeferredBlock<Block> CONSTRUCTION_FOAM_WALL =
+        registerBlock("build/block_cf_wall", () -> new Block(Block.Properties.of().mapColor(MapColor.SAND).strength(1.0f, 10.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+
+    // 注册防爆石方块（IC2 的强化石 / Reinforced Stone）
 // 强化泡沫硬化后的产物，防爆（爆炸抗性极高）
     public static final DeferredBlock<Block> CONSTRUCTION_WALL =
         registerBlock("build/block_construction_wall", () -> new Block(Block.Properties.of().mapColor(MapColor.STONE).strength(3.0f, 1200.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()));

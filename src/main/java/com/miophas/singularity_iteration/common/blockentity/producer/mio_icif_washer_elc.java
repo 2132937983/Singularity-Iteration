@@ -38,6 +38,9 @@ import java.util.Optional;
  */
 @SuppressWarnings("null")
 public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.washer.mio_icif_WasherRecipeInput, com.miophas.singularity_iteration.common.recipe.washer.mio_icif_WasherRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_WasherRecipes.WASHER_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.washer.mio_icif_WasherRecipeInput, com.miophas.singularity_iteration.common.recipe.washer.mio_icif_WasherRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_WasherRecipes.WASHER_TYPE);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -175,8 +178,7 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
         // 构建配方输入
         mio_icif_WasherRecipeInput recipeInput = new mio_icif_WasherRecipeInput(stack);
         // 尝试匹配配方
-        Optional<RecipeHolder<mio_icif_WasherRecipe>> recipe = level.getRecipeManager()
-            .getRecipeFor(mio_icif_WasherRecipes.WASHER_TYPE.get(), recipeInput, level);
+        Optional<RecipeHolder<mio_icif_WasherRecipe>> recipe = recipeCache1.find(level, recipeInput);
         return recipe.isPresent();
     }
 
@@ -188,8 +190,7 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
             return Optional.empty();
         }
         mio_icif_WasherRecipeInput recipeInput = new mio_icif_WasherRecipeInput(input);
-        return level.getRecipeManager()
-            .getRecipeFor(mio_icif_WasherRecipes.WASHER_TYPE.get(), recipeInput, level)
+        return recipeCache2.find(level, recipeInput)
             .map(RecipeHolder::value);
     }
 

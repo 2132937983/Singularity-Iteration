@@ -42,8 +42,11 @@ public abstract class AbstractTankBlockEntity<T extends AbstractTankBlockEntity<
             protected void onContentsChanged() {
                 setChanged();
                 // 服务端内容变化时同步到客户端，供 HUD 显示流体信息
+                // Merged to at most one packet per few ticks: a pipe-fed tank, or a multi-tank
+                // fill touching every tank in the column, used to send one packet per change.
                 if (level != null && !level.isClientSide()) {
-                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                    com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle
+                        .request(AbstractTankBlockEntity.this);
                 }
             }
         };

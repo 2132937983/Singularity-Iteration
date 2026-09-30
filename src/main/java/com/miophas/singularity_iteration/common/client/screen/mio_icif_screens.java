@@ -86,7 +86,7 @@ public class mio_icif_screens {
             mio_icif_gui_oil_refinery_elc::new
         );
 
-        // 娉ㄥ唽楂樼倝鐨凣UI 鐣岄潰
+        // 注册高炉的GUI 界面
         event.register(
             mio_icif_menus.BLAST_FURNACE_MENU_TYPE.get(),
             mio_icif_gui_blast_furnace::new
@@ -545,7 +545,7 @@ public class mio_icif_screens {
             mio_icif_gui_barrel::new
         );
 
-        // 娉ㄥ唽鐗╁搧缂撳啿鏈虹殑 GUI 鐣岄潰
+        // 注册物品缓冲机的 GUI 界面
         event.register(
             mio_icif_menus.ITEM_BUFFER_MENU_TYPE.get(),
             mio_icif_gui_item_buffer::new

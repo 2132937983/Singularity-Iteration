@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class PlantGenericCrop extends PlantType {
+public class PlantGenericCrop extends com.miophas.singularity_iteration.core.prefab.crop.Ic2PlantType {
 
     protected final String cropName;
     protected final String discoveredBy;
@@ -120,5 +120,7 @@ public class PlantGenericCrop extends PlantType {
     public boolean canGrow(IPlanter planter) {
         return super.canGrow(planter);
     }
+    @Override public boolean canBeHarvested(IPlanter planter) { return planter.getGrowthStage() >= harvestSize; }
+    @Override public boolean canHybridize(IPlanter planter) { return planter.getGrowthStage() + 2 > maxSize; }
+    @Override public int getRootDepth(IPlanter planter) { return 5; }
 }
-

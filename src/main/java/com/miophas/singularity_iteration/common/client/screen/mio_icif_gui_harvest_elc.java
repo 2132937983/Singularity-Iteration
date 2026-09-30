@@ -19,7 +19,7 @@ public class mio_icif_gui_harvest_elc extends mio_icif_screen<HarvestElcMenu> {
         ResourceLocation.parse("mio_icif:textures/gui/gui_harvest_elc.png");
 
     // GUI 尺寸
-    private static final int GUI_WIDTH = 176;
+    private static final int GUI_WIDTH = 200;
     private static final int GUI_HEIGHT = 192;
 
     // 闪电标志位置
@@ -39,7 +39,13 @@ public class mio_icif_gui_harvest_elc extends mio_icif_screen<HarvestElcMenu> {
         int y = (this.height - this.imageHeight) / 2;
 
         // 绘制背景
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
+        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, 176, this.imageHeight);
+        guiGraphics.fill(x + 176, y, x + 200, y + imageHeight, 0xFFC6C6C6);
+        for (int i = 0; i < 4; i++) {
+            int sy = y + 17 + i * 18;
+            guiGraphics.fill(x + 179, sy, x + 197, sy + 18, 0xFF373737);
+            guiGraphics.fill(x + 180, sy + 1, x + 196, sy + 17, 0xFF8B8B8B);
+        }
 
         HarvestElcMenu menu = this.menu;
         if (menu != null) {

@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 @SuppressWarnings("null")
-public class PlantBaseSapling extends PlantType {
+public class PlantBaseSapling extends com.miophas.singularity_iteration.core.prefab.crop.Ic2PlantType {
 
     protected final String cropName;
     protected final String[] traits;
@@ -79,14 +79,10 @@ public class PlantBaseSapling extends PlantType {
     public ItemStack[] getHarvest(IPlanter planter) {
         java.util.List<ItemStack> drops = new java.util.ArrayList<>();
         drops.add(cropDrop.copy());
-        if (Math.random() >= 0.75) {
+        if (planter.getPlanterWorld().random.nextInt(100) >= 75) {
             drops.add(saplingDrop.copy());
         }
-        // 次要作物：原木（25%概率掉落）
-        if (logDrop != null && Math.random() >= 0.75) {
-            drops.add(logDrop.copy());
-        }
-        if (isOak && Math.random() >= 0.75) {
+        if (isOak && planter.getPlanterWorld().random.nextInt(100) >= 75) {
             drops.add(new ItemStack(Items.APPLE, 1));
         }
         return drops.toArray(new ItemStack[0]);

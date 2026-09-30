@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mio_icif:block/fluids/weed_ex"
+    }
+  }
+}

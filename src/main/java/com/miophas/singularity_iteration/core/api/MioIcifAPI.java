@@ -20,6 +20,7 @@ import com.miophas.singularity_iteration.core.api.recipe.IRecipeAPI;
 import com.miophas.singularity_iteration.core.api.recipe.IRecipeRegistrationAPI;
 import com.miophas.singularity_iteration.core.api.registry.IMioIcifRegistries;
 import com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI;
+import com.miophas.singularity_iteration.core.api.world.IRubberTreeAPI;
 import com.miophas.singularity_iteration.core.api.world.IWindAPI;
 
 /**
@@ -42,6 +43,7 @@ import com.miophas.singularity_iteration.core.api.world.IWindAPI;
  *   <li>热能 API - 访问 HU 热能系统</li>
  *   <li>动能 API - 访问 KU 动能系统</li>
  *   <li>核反应堆 API - 访问反应堆元件系统</li>
+ *   <li>橡胶树体系 API - 橡胶木与树脂采集逻辑</li>
  *   <li>升级插件 API - 访问机器升级系统</li>
  *   <li>能力系统 API - 访问 EU/HU/KU 能力接口和工厂方法</li>
  * </ul>
@@ -64,6 +66,12 @@ import com.miophas.singularity_iteration.core.api.world.IWindAPI;
  * }</pre>
  */
 public interface MioIcifAPI {
+
+    /** Compatibility series for documented public contracts; independent of the mod artifact version. */
+    String API_VERSION = "1.0";
+
+    /** Runtime query (unlike an inlined constant, this identifies the installed provider). */
+    default String getApiVersion() { return API_VERSION; }
 
     com.miophas.singularity_iteration.core.api.machine.IMultiblockAccess getMultiblockAPI();
 
@@ -238,6 +246,26 @@ public interface MioIcifAPI {
      * @return 全局风场 API 实例
      */
     IWindAPI getWindAPI();
+
+    /**
+     * 获取橡胶树体系 API
+     *
+     * <p>暴露橡胶树（树脂采集）系统的判定与采集逻辑，便于附属模组实现
+     * 自定义树液采集器、自定义橡胶木方块，或复用统一的树脂采集流程。
+     *
+     * <p>使用示例：
+     * <pre>{@code
+     * IRubberTreeAPI rubber = api.getRubberTreeAPI();
+     *
+     * // 判断手中物品是否为树液采集器，并复用采集逻辑
+     * if (rubber.isTreeTap(stack) && rubber.canHarvest(state)) {
+     *     RubberHarvestResult result = rubber.tryHarvest(level, pos, state, player, hand);
+     * }
+     * }</pre>
+     *
+     * @return 橡胶树体系 API 实例
+     */
+    IRubberTreeAPI getRubberTreeAPI();
 
     /**
      * 获取升级插件 API

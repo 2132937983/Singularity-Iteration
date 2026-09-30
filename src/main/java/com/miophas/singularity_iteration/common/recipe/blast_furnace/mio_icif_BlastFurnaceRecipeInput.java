@@ -4,7 +4,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 
 /**
- * 楂樼倝閰嶆柟杈撳叆
+ * 高炉配方输入
  * 包装单个物品输入
  */
 public record mio_icif_BlastFurnaceRecipeInput(ItemStack item) implements RecipeInput {

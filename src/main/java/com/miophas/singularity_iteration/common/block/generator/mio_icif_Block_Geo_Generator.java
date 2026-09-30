@@ -24,8 +24,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 地热发电机方法?
- * 通过燃烧岩浆发电，每桶岩浆（1000mb）发电量40,000FE
+ * 地热发电机方块
+ * 通过燃烧岩浆发电，每桶岩浆（1000mb）发电量 10,000 EU（10 EU/mB，即 20 EU/t 持续 500 tick）
+ * 发电与燃料细节见 {@link mio_icif_geo_generator} 的类注释
  */
 @SuppressWarnings("null")
 public class mio_icif_Block_Geo_Generator extends mio_icif_entity_block {
@@ -39,7 +40,7 @@ public class mio_icif_Block_Geo_Generator extends mio_icif_entity_block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        // FACING 由父类添加，只需要添�?ACTIVE
+        // FACING 由父类添加，这里只需要补充 ACTIVE
         builder.add(ACTIVE);
         super.createBlockStateDefinition(builder);
     }
@@ -90,5 +91,4 @@ public class mio_icif_Block_Geo_Generator extends mio_icif_entity_block {
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 }
-
 

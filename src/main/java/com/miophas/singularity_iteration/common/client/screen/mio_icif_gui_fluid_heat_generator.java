@@ -89,9 +89,10 @@ public class mio_icif_gui_fluid_heat_generator extends mio_icif_screen<com.mioph
                 }
             }
 
-            // 绘制发热效率文本
-            int heatRate = menu.isWorking() ? 32 : 0;
-            String heatRateText = heatRate + " HU/t";
+            // 热量输出：对齐 IC2 GuiFluidHeatGenerator 的 Emit/MaxEmit，显示“最近一次实际输出 / 上限”。
+            // 不能用 isWorking 直接判 32/0：1 mB = 64 HU = 2 tick 输出，实时 credit 每隔一 tick 就归零，
+            // 读数会变成 0↔32 的方波；原版用的是粘滞的 transmitHeat，读数稳定。
+            String heatRateText = menu.getTransmitHeat() + "/" + menu.getMaxHeatOutput() + " HU/t";
             guiGraphics.drawString(this.font, heatRateText, x + HEAT_RATE_TEXT_X, y + HEAT_RATE_TEXT_Y, TEXT_COLOR);
         }
     }

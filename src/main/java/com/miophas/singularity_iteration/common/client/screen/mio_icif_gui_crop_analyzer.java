@@ -43,13 +43,13 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
 
         ItemStack output = this.menu.getSlot(CropAnalyzerMenu.SLOT_OUTPUT).getItem();
-        if (output.isEmpty() || !(output.getItem() instanceof CropSeedItem)) {
+        if (output.isEmpty() || !(output.getItem() instanceof com.miophas.singularity_iteration.core.api.item.ICropSeedItem seed)) {
             drawText(guiGraphics, 8, 37, "UNKNOWN", 0xFFFFFF);
             return;
         }
 
-        int scannedLevel = CropSeedItem.getScanLevel(output);
-        PlantType crop = CropSeedItem.getPlantType(output);
+        int scannedLevel = seed.cropScanLevel(output);
+        PlantType crop = com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getCropAPI().getPlant(seed.cropModId(output), seed.cropId(output));
 
         if (scannedLevel == 0) {
             drawText(guiGraphics, 8, 37, "UNKNOWN", 0xFFFFFF);
@@ -78,9 +78,9 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
         }
 
         if (scannedLevel >= 4) {
-            int growth = CropSeedItem.getGrowthFromStack(output);
-            int gain = CropSeedItem.getGainFromStack(output);
-            int resistance = CropSeedItem.getResistanceFromStack(output);
+            int growth = seed.cropGrowth(output);
+            int gain = seed.cropGain(output);
+            int resistance = seed.cropResistance(output);
 
             drawText(guiGraphics, 118, 37, Component.translatable("gui.mio_icif.crop_analyzer.growth").getString(), 0xAEAEBE);
             drawText(guiGraphics, 118, 50, Integer.toString(growth), 0xAEAEBE);

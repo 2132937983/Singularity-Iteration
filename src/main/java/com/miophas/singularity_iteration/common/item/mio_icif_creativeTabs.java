@@ -457,6 +457,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_resources.SILVER_CASING.get());
                 output.accept(mio_icif_resources.SILVER_ORE_CRUSHED.get());
                 output.accept(mio_icif_resources.SILVER_ORE_CRUSHED_PURIFIED.get());
+                output.accept(mio_icif_resources.RAW_SILVER.get());
                 output.accept(mio_icif_resources.SILVER_NUGGET.get());
 
                 // PROCESSED MATERIALS - LAPIS
@@ -707,6 +708,14 @@ public class mio_icif_creativeTabs {
                 // Fertilizer & Crops
                 output.accept(mio_icif_resources.FERTILIZER.get());
                 output.accept(mio_icif_resources.TERRA_WART.get());
+                output.accept(mio_icif_resources.DIAMOND_DUST_SMALL.get());
+                output.accept(mio_icif_resources.ENDER_PEARL_DUST.get());
+                output.accept(mio_icif_resources.MILK_WART.get());
+                output.accept(mio_icif_resources.OIL_BERRY.get());
+                output.accept(mio_icif_resources.BOBS_BERRY.get());
+                output.accept(mio_icif_resources.EMERALD_DUST_SMALL.get());
+                output.accept(mio_icif_resources.EMERALD_DUST.get());
+
                 output.accept(mio_icif_resources.COFFEE_BEAN.get());
                 output.accept(mio_icif_resources.COFFEE_DUST.get());
                 output.accept(mio_icif_normal.WEEDEX.get());
@@ -800,8 +809,15 @@ public class mio_icif_creativeTabs {
                 // Construction Tools
                 // CF喷枪 - 空状态
                 output.accept(mio_icif_normal.CF_SPRAYER.get());
-                // CF喷枪 - 满装载状态
-                { ItemStack fullCfSprayer = new ItemStack(mio_icif_normal.CF_SPRAYER.get()); fullCfSprayer.setDamageValue(0); output.accept(fullCfSprayer); }
+                // CF喷枪 - 满装载状态（注入一满罐建筑泡沫流体）
+                {
+                    ItemStack fullCfSprayer = new ItemStack(mio_icif_normal.CF_SPRAYER.get());
+                    mio_icif_normal.CF_SPRAYER.get().fillFluid(fullCfSprayer,
+                        new net.neoforged.neoforge.fluids.FluidStack(
+                            com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.CONSTRUCTIONFOAM.get(),
+                            com.miophas.singularity_iteration.common.item.build.CFSprayerItem.CAPACITY));
+                    output.accept(fullCfSprayer);
+                }
                 output.accept(mio_icif_normal.OBSCURATOR.get());
 
                 // ============================================================

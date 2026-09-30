@@ -45,7 +45,6 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
     public static final int EMPTY_BUCKET_SLOT = 1;
     public static final int TOTAL_SLOTS = 2;
 
-    private static final int MAX_HEAT_GENERATION_RATE = 32;
 
     public static final int FUEL_CAPACITY = 10000; // 对齐原版 IC2 流体加热机储罐容量 10000 mB
     public static final int FUEL_PER_BUCKET = 1000;
@@ -58,6 +57,14 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
     private long scexHeatCredit;
     private int maxBurnTime = 0;
     private boolean isWorking = false;
+
+    /**
+     * 最近一次**实际输出**的 HU/t。对齐 IC2 {@code TileEntityHeatSourceInventory#transmitHeat}：
+     * 只在真的输出成功时更新，没有输出时保持上一次读数，原版 GUI 显示的正是它。
+     */
+    private int transmitHeat = 0;
+    /** 当前燃料的产热能力（HU/t），无燃料为 0；供 GUI 显示输出上限。 */
+    private int currentHeatOutput = 0;
 
     private int currentFuelBurning = 0;
     private int currentFuelHeatGenerated = 0;
@@ -109,6 +116,8 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
         if (value == null) {
             isWorking = false;
             burnTime = 0;
+            transmitHeat = 0;
+            currentHeatOutput = 0;
             if (previousWorking || previousCredit != 0) {
                 scexHeatCredit = 0;
                 setChanged();
@@ -128,10 +137,19 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
                 Math.min(rate, scexHeatCredit))
             : pushHeatToFront(rate);
         scexHeatCredit -= accepted;
-        burnTime = (int) ((scexHeatCredit + rate - 1) / Math.max(1, rate));
-        maxBurnTime = Math.max(burnTime, 1);
+        // 输出读数用粘滞的“最近一次实际输出”，不要用实时 credit：
+        // 1 mB = heatPerMb(=2×rate) HU，credit 每 tick 就在 0 与 rate 之间交替，直接显示会变成 0/32 方波。
+        if (accepted > 0) transmitHeat = (int) Math.min(Integer.MAX_VALUE, accepted);
+        currentHeatOutput = (int) Math.min(Integer.MAX_VALUE, rate);
+        // 火焰进度按“燃料罐还能烧多久”折算（credit 每 2 tick 归零，不能拿来驱动火焰，否则火焰隔 tick 闪烁）。
+        long heatPerMb = value.heatPerMb();
+        long tickRate = Math.max(1L, rate);
+        maxBurnTime = (int) Math.min(Integer.MAX_VALUE, Math.max(1L, (long) FUEL_CAPACITY * heatPerMb / tickRate));
+        long remainingHu = scexHeatCredit + (long) fuelTank.getFluidAmount() * heatPerMb;
+        burnTime = (int) Math.min(Integer.MAX_VALUE, (remainingHu + tickRate - 1) / tickRate);
         currentFuelBurning = 0;
         currentFuelHeatGenerated = 0;
+        // 原版激活状态 = “还在燃烧”（有合法燃料即在产热），而不是“本 tick 真的推出去”：否则隔 tick 抖动方块状态。
         isWorking = true;
         if (previousCredit != scexHeatCredit || previousWorking != isWorking || accepted > 0) setChanged();
     }
@@ -258,9 +276,11 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
             itemHandler.deserializeNBT(registries, tag.getCompound("Items"));
         }
         burnTime = Math.max(0, tag.getInt("burnTime"));
+        // credit 标签只在有余额时写入；缺标签说明旧存档本来就没有余额。
+        // （旧版 burnTime 是“credit 折算 tick 数”，现在改成“燃料罐剩余 tick 数”，不能再反推 credit。）
         scexHeatCredit = tag.contains("scex_heat_credit_hu", net.minecraft.nbt.Tag.TAG_LONG)
             ? com.miophas.singularity_iteration.core.api.util.BoundedUnits.clamp(tag.getLong("scex_heat_credit_hu"), HU_PER_BUCKET)
-            : (com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.enabled() ? Math.min(HU_PER_BUCKET, (long) burnTime * MAX_HEAT_GENERATION_RATE) : 0);
+            : 0;
         maxBurnTime = tag.getInt("maxBurnTime");
         isWorking = tag.getBoolean("isWorking");
         if (tag.contains("fuelTank")) {
@@ -425,6 +445,8 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
                     case 1 -> maxBurnTime;
                     case 2 -> fuelTank.getFluidAmount();
                     case 3 -> FUEL_CAPACITY;
+                    case 4 -> transmitHeat;
+                    case 5 -> currentHeatOutput;
                     default -> 0;
                 };
             }
@@ -439,7 +461,7 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
 
             @Override
             public int getCount() {
-                return 4;
+                return 6;
             }
         };
     }

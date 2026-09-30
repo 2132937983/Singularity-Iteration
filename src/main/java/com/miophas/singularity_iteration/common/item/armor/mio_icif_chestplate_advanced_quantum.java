@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.common.item.armor;
 
 import com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo;
+import com.miophas.singularity_iteration.core.api.item.IEquipmentHudProvider;
 import com.miophas.singularity_iteration.core.api.item.IJetpackItem;
-import com.miophas.singularity_iteration.core.runtime.flight.JetpackFlightController;
-import com.miophas.singularity_iteration.core.runtime.flight.JetpackKeyHandler;
+import com.miophas.singularity_iteration.core.prefab.flight.JetpackFlightController;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -20,8 +20,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 /**
  * 进阶量子胸甲 (Advanced Quantum Chestplate)
@@ -31,7 +29,7 @@ import java.util.WeakHashMap;
  * - 飞行(喷气/悬停模式)、生命恢复、击退抗性、防火
  */
 @SuppressWarnings({"null", "deprecation"})
-public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc implements IJetpackItem {
+public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc implements IJetpackItem, IEquipmentHudProvider {
 
     public static final int MAX_ENERGY = 100000000;
     public static final int ENERGY_PER_DAMAGE = 10000;
@@ -56,8 +54,6 @@ public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc imp
     public static final float DROP_PERCENTAGE = 0.05F;
 
     private static final ResourceLocation KNOCKBACK_RESISTANCE_ID = ResourceLocation.fromNamespaceAndPath("mio_icif", "advanced_quantum_knockback_resistance");
-
-    private static final Map<Player, Boolean> flyingPlayers = new WeakHashMap<>();
 
     public mio_icif_chestplate_advanced_quantum(Holder<ArmorMaterial> material, Properties properties) {
         super(material, Type.CHESTPLATE, properties, MAX_ENERGY, 0, "advanced_quantum", CHARGE_RATE, 0, ARMOR_TIER);
@@ -114,6 +110,12 @@ public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc imp
     }
 
     @Override
+    public Component getEquipmentHudText(ItemStack stack) {
+        return Component.translatable("hud.mio_icif.jetpack.display",
+            getModeName(getModeInternal(stack)), getEnergy(stack), MAX_ENERGY);
+    }
+
+    @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
 
@@ -123,15 +125,7 @@ public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc imp
         boolean isWearing = !actualStack.isEmpty() && actualStack.getItem() == this;
 
         if (!isWearing) {
-            flyingPlayers.remove(player);
             return;
-        }
-
-        if (level.isClientSide && player.tickCount % 20 == 0) {
-            Component modeName = getModeName(getModeInternal(actualStack));
-            player.displayClientMessage(
-                Component.translatable("hud.mio_icif.jetpack.display",
-                    modeName, getEnergy(actualStack), MAX_ENERGY), true);
         }
 
         if (!level.isClientSide && ArmorFeatureToggle.isEnabled(actualStack, "healing")
@@ -167,7 +161,6 @@ public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc imp
         }
 
         if (!ArmorFeatureToggle.isEnabled(actualStack, "flight")) {
-            flyingPlayers.remove(player);
             return;
         }
 

@@ -1,0 +1,13 @@
+{
+  "type": "mio_icif:extractor",
+  "energypertick": 12,
+  "ingredient": {
+    "item": "mio_icif:resource/item_bobs_yer_uncle_ranks_berry"
+  },
+  "processingtime": 150,
+  "result": {
+    "id": "mio_icif:resource/item_emerald_dust_small",
+    "count": 1
+  },
+  "count": 1
+}

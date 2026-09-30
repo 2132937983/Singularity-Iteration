@@ -8,7 +8,7 @@ import com.miophas.singularity_iteration.core.api.crop.PlantType;
 import net.minecraft.world.item.ItemStack;
 
 @SuppressWarnings("null")
-public class PlantTerraWart extends PlantType {
+public class PlantTerraWart extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -27,12 +27,12 @@ public class PlantTerraWart extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Blue", "Aether", "Wart"};
+        return new String[]{ "Blue", "Aether", "Consumable", "Snow" };
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(3, 0, 2, 0, 2, 0);
+        return new PlantStats(5, 2, 4, 0, 3, 0);
     }
 
     @Override
@@ -41,30 +41,10 @@ public class PlantTerraWart extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 3;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        return new ItemStack[]{new ItemStack(mio_icif_resources.TERRA_WART.get(), 1)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/terra_wart_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        return planter.getGrowthStage() < getMaxGrowthStage();
     }
 }

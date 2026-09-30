@@ -39,7 +39,8 @@ public class RichSeedItem extends Item implements ICropSeedItem {
         BlockState state = level.getBlockState(pos);
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
-        if(stack.isEmpty())return InteractionResult.PASS;
+        if (stack.isEmpty() || player == null || player.isSpectator() || !level.mayInteract(player, pos)
+                || !player.mayUseItemAt(pos, context.getClickedFace(), stack)) return InteractionResult.PASS;
 
         // 检查是否是IC2作物架
         if (state.getBlock() instanceof mio_icif_crop_stick || 
@@ -59,13 +60,13 @@ public class RichSeedItem extends Item implements ICropSeedItem {
             return InteractionResult.FAIL;
         }
 
-        if (planter.getPlant() != null) {
+        if (planter.getPlant() != null || planter.isHybridBase()) {
             return InteractionResult.FAIL;
         }
 
         // 获取对应的IC2植物类型
         PlantType plantType = PlantRegistry.instance.getPlant("mio_icif", plantTypeId);
-        if (plantType == null) {
+        if (plantType == null || !plantType.canGrow(planter)) {
             return InteractionResult.FAIL;
         }
         if(level.isClientSide)return InteractionResult.SUCCESS;
@@ -114,4 +115,6 @@ public class RichSeedItem extends Item implements ICropSeedItem {
 
         return InteractionResult.SUCCESS;
     }
+    @Override public String cropModId(ItemStack stack) { return "mio_icif"; }
+    @Override public String cropId(ItemStack stack) { return plantTypeId; }
 }

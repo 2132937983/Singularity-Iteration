@@ -53,13 +53,17 @@ public final class ItemTransferBuffer {
             if (pending.isEmpty()) {
                 var available = source.extractItem(sourceSlot, budget, true).copy();
                 if (removalSink != null || available.isEmpty()) return 0;
-                if (available.getCount() > budget) throw new IllegalStateException("Oversized item extraction quote");
-                int quoted = accepted(available, insert(target, targetSlot, available.copy(), true));
+                // 外部来源可能夸大抽取报价；夹到预算内，绝不为此抛异常崩服。
+                if (available.getCount() > budget) available = available.copyWithCount(budget);
+                int quoted = available.getCount()
+                        - sanitizedRemainder(available, insert(target, targetSlot, available.copy(), true)).getCount();
                 if (removalSink != null || quoted == 0) return 0;
                 uncertain = available.copyWithCount(quoted); phase = "extract"; changed.run();
                 var actual = source.extractItem(sourceSlot, quoted, false);
-                if (!actual.isEmpty() && (actual.getCount() > quoted || !ItemStack.isSameItemSameComponents(actual, uncertain)))
-                    throw new IllegalStateException("Invalid item extraction receipt");
+                // 外部来源违约时无法证明其取走了多少：放弃本次意图（宁可损耗也不复制），不崩服。
+                if (!actual.isEmpty() && (actual.getCount() > quoted
+                        || !ItemStack.isSameItemSameComponents(actual, uncertain)))
+                    actual = ItemStack.EMPTY;
                 pending = actual.copy(); clearIntent(); changed.run();
                 if (removalSink != null) { releaseRemovedPending(); return 0; }
             }
@@ -71,8 +75,8 @@ public final class ItemTransferBuffer {
             // stale handler must never receive a reserved item after removal;
             // the uncertain phase intentionally quarantines that ownership.
             if (removalSink != null) return 0;
-            var remainder = insert(target, targetSlot, offer.copy(), false);
-            int moved = accepted(uncertain, remainder);
+            var remainder = sanitizedRemainder(offer, insert(target, targetSlot, offer.copy(), false));
+            int moved = offer.getCount() - remainder.getCount();
             if (!remainder.isEmpty()) {
                 if (pending.isEmpty()) pending = remainder.copy(); else pending.grow(remainder.getCount());
             }
@@ -84,11 +88,16 @@ public final class ItemTransferBuffer {
     private static ItemStack insert(IItemHandler handler, int slot, ItemStack stack, boolean simulate) {
         return slot < 0 ? ItemHandlerHelper.insertItemStacked(handler, stack, simulate) : handler.insertItem(slot, stack, simulate);
     }
-    private static int accepted(ItemStack offered, ItemStack remainder) {
-        if (remainder == null || !remainder.isEmpty() && (remainder.getCount() > offered.getCount()
-                || !ItemStack.isSameItemSameComponents(offered, remainder)))
-            throw new IllegalStateException("Invalid item insertion receipt");
-        return offered.getCount() - remainder.getCount();
+    /**
+     * 外部处理器返回的余量非法（{@code null}、异类，或数量超过本次提供量）时，
+     * 保守地视为"全部插入"：既不重放（避免复制物品），也不抛异常崩服。
+     */
+    private static ItemStack sanitizedRemainder(ItemStack offered, ItemStack remainder) {
+        if (remainder == null || (!remainder.isEmpty() && (remainder.getCount() > offered.getCount()
+                || !ItemStack.isSameItemSameComponents(offered, remainder)))) {
+            return ItemStack.EMPTY;
+        }
+        return remainder;
     }
     private void clearIntent() { uncertain = ItemStack.EMPTY; phase = ""; }
     public CompoundTag save(HolderLookup.Provider registries) {

@@ -35,6 +35,9 @@ import java.util.Optional;
  * 4. 18格存储缓冲区
  */
 public class mio_icif_industrial_workbench extends BlockEntity implements MenuProvider, IWorkbench {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<net.minecraft.world.item.crafting.CraftingInput, net.minecraft.world.item.crafting.CraftingRecipe> recipeCache1 = com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache.of(RecipeType.CRAFTING);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<net.minecraft.world.item.crafting.CraftingInput, net.minecraft.world.item.crafting.CraftingRecipe> recipeCache2 = com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache.of(RecipeType.CRAFTING);
 
     // 槽位定义
     public static final int CRAFTING_GRID_SIZE = 9;  // 3x3合成网格
@@ -122,8 +125,7 @@ public class mio_icif_industrial_workbench extends BlockEntity implements MenuPr
     public void updateCraftingResult(net.minecraft.world.inventory.CraftingContainer craftMatrix) {
         if (level == null || level.isClientSide()) return;
 
-        Optional<RecipeHolder<CraftingRecipe>> recipe = level.getRecipeManager()
-            .getRecipeFor(RecipeType.CRAFTING, craftMatrix.asCraftInput(), level);
+        Optional<RecipeHolder<CraftingRecipe>> recipe = recipeCache1.find(level, craftMatrix.asCraftInput());
 
         if (recipe.isPresent()) {
             ItemStack result = recipe.get().value().assemble(craftMatrix.asCraftInput(), level.registryAccess());
@@ -198,8 +200,7 @@ public class mio_icif_industrial_workbench extends BlockEntity implements MenuPr
         tempCrafting.setItem(1, input.copy());
         
         // 查询无序配方
-        Optional<RecipeHolder<CraftingRecipe>> recipe = level.getRecipeManager()
-            .getRecipeFor(RecipeType.CRAFTING, tempCrafting.asCraftInput(), level);
+        Optional<RecipeHolder<CraftingRecipe>> recipe = recipeCache2.find(level, tempCrafting.asCraftInput());
         
         if (recipe.isPresent()) {
             return recipe.get().value().assemble(tempCrafting.asCraftInput(), level.registryAccess());

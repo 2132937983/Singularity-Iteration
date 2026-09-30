@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
  * 红蘑菇植物
  */
 @SuppressWarnings("null")
-public class PlantRedMushroom extends PlantType {
+public class PlantRedMushroom extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -30,12 +30,12 @@ public class PlantRedMushroom extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Red", "Mushroom", "Fungus"};
+        return new String[]{"Red", "Food", "Mushroom"};
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(2, 0, 3, 0, 0, 0);
+        return new PlantStats(2, 0, 4, 0, 0, 4);
     }
 
     @Override
@@ -44,33 +44,10 @@ public class PlantRedMushroom extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 3;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        int yield = planter.getYield();
-        int count = 1 + Math.max(0, yield) / 3;
-        return new ItemStack[]{new ItemStack(Items.RED_MUSHROOM, count)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/red_mushroom_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        // 蘑菇需要低光照（<=10）才能生长
-    return planter.getGrowthStage() < getMaxGrowthStage() && planter.getLightLevel() <= 10;
     }
 }

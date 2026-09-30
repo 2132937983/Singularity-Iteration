@@ -16,8 +16,8 @@ public final class CoreCapabilityRegistration {
     private CoreCapabilityRegistration() {}
 
     public static <T extends AbstractEnergyBlockEntity> void registerEntity(RegisterCapabilitiesEvent event, BlockEntityType<T> type) {
-        event.registerBlockEntity(EUApi.SIDED, type, AbstractEnergyBlockEntity::getEnergyStorageCapability);
-        event.registerBlockEntity(ILongEnergyStorage.BLOCK, type, AbstractEnergyBlockEntity::getEnergyStorageCapability);
+        event.registerBlockEntity(EUApi.SIDED, type, AbstractEnergyBlockEntity::euPort);
+        event.registerBlockEntity(ILongEnergyStorage.BLOCK, type, AbstractEnergyBlockEntity::euPort);
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, type, AbstractEnergyBlockEntity::scexFeCapability);
     }
 

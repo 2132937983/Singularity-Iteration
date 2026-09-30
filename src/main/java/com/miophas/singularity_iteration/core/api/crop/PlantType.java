@@ -33,6 +33,15 @@ public abstract class PlantType {
     public int getHarvestStage() { return getMaxGrowthStage(); }
     public int getOptimalHarvestStage() { return getHarvestStage(); }
     public int getStageAfterHarvest() { return 1; }
+    /** Opt in to the IC2 256-tick growth-point lifecycle. Legacy addons retain per-tick callbacks. */
+    public boolean usesIc2CropCycle() { return false; }
+    public int getStageAfterHarvest(IPlanter planter) { return getStageAfterHarvest(); }
+    public boolean onLeftClick(IPlanter planter, Player player) { return planter.pick(); }
+    public boolean onCollision(IPlanter planter, net.minecraft.world.entity.Entity entity) {
+        return entity instanceof net.minecraft.world.entity.LivingEntity && entity.isSprinting();
+    }
+    public int getRedstoneSignal(IPlanter planter) { return 0; }
+    public int getLightEmission(IPlanter planter) { return 0; }
 
     public int getGrowthTime(IPlanter planter) {
         int level = Math.max(0, getStats().getLevel());

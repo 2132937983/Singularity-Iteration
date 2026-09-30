@@ -10,7 +10,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
 /**
- * 楂樼倝閰嶆柟忓垪鍖栧櫒
+ * 高炉配方列化器
  * 用于序列化和反序列化高配方
  */
 @SuppressWarnings("null")

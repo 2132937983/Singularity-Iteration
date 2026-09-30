@@ -125,7 +125,7 @@ public class mio_icif_ClientEvents {
         Player player = minecraft.player;
 
         if (player != lastInputPlayer) {
-            com.miophas.singularity_iteration.core.runtime.flight.JetpackKeyHandler.clearClientStates();
+            com.miophas.singularity_iteration.core.prefab.flight.JetpackKeyHandler.clearClientStates();
             lastInputPlayer = player;
             lastKeyState = -1;
             modeKeyWasDown = false;

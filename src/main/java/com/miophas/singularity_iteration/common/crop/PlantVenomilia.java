@@ -12,7 +12,7 @@ import net.minecraft.world.item.Items;
  * IC2: size=5产出笑气粉末(venomilia_powder)，size>=4产出紫色染料
  */
 @SuppressWarnings("null")
-public class PlantVenomilia extends PlantType {
+public class PlantVenomilia extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -31,12 +31,12 @@ public class PlantVenomilia extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Purple", "Poison", "Flower"};
+        return new String[]{ "Purple", "Flower", "Tulip", "Poison" };
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(3, 0, 4, 3, 3, 1);
+        return new PlantStats(3, 3, 1, 3, 3, 3);
     }
 
     @Override
@@ -45,40 +45,10 @@ public class PlantVenomilia extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 4;
-    }
-
-    @Override
-    public int getOptimalHarvestStage() {
-        return 5;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        int stage = planter.getGrowthStage();
-        if (stage >= 5) {
-            return new ItemStack[]{new ItemStack(Items.PURPLE_DYE, 1)};
-        }
-        return new ItemStack[]{new ItemStack(Items.PURPLE_DYE, 1)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/venomilia_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        int stage = planter.getGrowthStage();
-        return (stage <= 4 && planter.getLightLevel() >= 12) || stage == 5;
     }
 }

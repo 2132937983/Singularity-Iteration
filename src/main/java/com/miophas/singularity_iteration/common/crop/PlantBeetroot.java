@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 @SuppressWarnings("null")
-public class PlantBeetroot extends PlantType {
+public class PlantBeetroot extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -27,12 +27,12 @@ public class PlantBeetroot extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Red", "Food", "Beetroot"};
+        return new String[]{ "Red", "Food", "Beetroot" };
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(1, 0, 3, 0, 0, 0);
+        return new PlantStats(1, 0, 4, 0, 1, 2);
     }
 
     @Override
@@ -41,33 +41,10 @@ public class PlantBeetroot extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 3;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        return new ItemStack[]{
-                new ItemStack(Items.BEETROOT, 1),
-                new ItemStack(Items.BEETROOT_SEEDS, 1)
-        };
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/beetroots_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        return planter.getGrowthStage() < getMaxGrowthStage() && planter.getLightLevel() >= 9;
     }
 }

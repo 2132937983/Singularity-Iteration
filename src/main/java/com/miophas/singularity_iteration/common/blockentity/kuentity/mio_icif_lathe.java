@@ -68,7 +68,7 @@ public static final int TOTAL_SLOTS = 3;
     // 物品存储
     protected MachineItemHandler itemHandler;
     
-    // KU 缂撳啿
+    // KU 缓冲
     public int kUBuffer = 0;
 
     // 是否激活工作状
@@ -280,7 +280,7 @@ return t.getHardness(toolStack) > l.getHardness(latheStack);
     public boolean isActive() { return active; }
     
     /**
-     * 鑾峰彇 KU 缂撳啿锛堜緵 GUI 鏄剧ず
+     * 获取 KU 缓冲（供 GUI 显示
  */
     public int getKUBuffer() { return kUBuffer; }
     

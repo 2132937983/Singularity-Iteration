@@ -1,5 +1,6 @@
 package com.miophas.singularity_iteration.common.item.tools;
 
+import com.miophas.singularity_iteration.core.api.item.IEquipmentHudProvider;
 import com.miophas.singularity_iteration.core.api.tool.ToggleableElectricTool;
 
 import net.minecraft.core.component.DataComponents;
@@ -13,12 +14,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.UseAnim;
-import net.minecraft.world.level.Level;
 
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_quantum_sword extends mio_icif_tool_elc implements ToggleableElectricTool {
+public class mio_icif_quantum_sword extends mio_icif_tool_elc implements ToggleableElectricTool, IEquipmentHudProvider {
     public static final int SWORD_MAX_ENERGY = 10000000;
     public static final int SWORD_CHARGE_RATE = 2048;
     public static final int SWORD_TIER = 4;
@@ -97,18 +97,12 @@ public class mio_icif_quantum_sword extends mio_icif_tool_elc implements Togglea
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (!level.isClientSide && isSelected && entity instanceof Player player) {
-            player.displayClientMessage(
-                Component.translatable("hud.mio_icif.quantum_sword.display",
-                    isHyperState(stack)
-                        ? Component.translatable("hud.mio_icif.quantum_sword.mode_hyper")
-                        : Component.translatable("hud.mio_icif.quantum_sword.mode_normal"),
-                    getEnergy(stack), getMaxEnergy()),
-                true
-            );
-        }
+    public Component getEquipmentHudText(ItemStack stack) {
+        return Component.translatable("hud.mio_icif.quantum_sword.display",
+            isHyperState(stack)
+                ? Component.translatable("hud.mio_icif.quantum_sword.mode_hyper")
+                : Component.translatable("hud.mio_icif.quantum_sword.mode_normal"),
+            getEnergy(stack), getMaxEnergy());
     }
 
     @Override

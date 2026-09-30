@@ -123,10 +123,8 @@ public static final long DEFAULT_ENERGY_PER_TICK = 4L; // 每tick消
     // 流体配置（mb = 毫桶
 public static final int FLUID_CAPACITY = 8000; // 8000 mb = 8
 
-    // CF喷枪补充配置：每次补充消耗的建筑泡沫流体量（mb
-public static final int FOAM_REFILL_FLUID_AMOUNT = 1000; // 1000mb = 1
-// CF喷枪补充配置：每次补充的泡沫点数
-    public static final int FOAM_REFILL_AMOUNT = 64;
+    // CF喷枪补充配置：每次操作最多从输入液体槽转移的建筑泡沫流体量（mB）
+public static final int FOAM_REFILL_FLUID_AMOUNT = 1000; // 1000 mB = 1 桶
 
     // 流体存储 - 输入流体
 public final FluidTank inputFluidTank;
@@ -749,25 +747,18 @@ public final FluidTank inputFluidTank;
             return false;
         }
 
-        // ===== CF喷枪补充特殊处理 =====
+        // ===== CF喷枪补充特殊处理（对齐 IC2：灌装机给喷枪注入建筑泡沫流体） =====
         if (material.getItem() instanceof CFSprayerItem sprayer) {
-            // 材料槽是CF喷枪，检查输入液体槽是否为建筑泡沫流
-        FluidStack inputFluid = inputFluidTank.getFluid();
+            FluidStack inputFluid = inputFluidTank.getFluid();
             if (inputFluid.getFluid() != com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.CONSTRUCTIONFOAM.get()) {
                 return false; // 不是建筑泡沫流体
             }
-            // 检查喷枪是否已
-        if (sprayer.isFull(material)) {
-                return false; // 喷枪已满，无需补充
-            }
-            if (sprayer.getFoamAmount(material) > CFSprayerItem.MAX_FOAM - FOAM_REFILL_AMOUNT) {
-                return false; // 一次补充必须完整容纳，避免扣液后静默截断
-            }
-            // 检查流体是否足够（每次补充消
             if (inputFluid.getAmount() < FOAM_REFILL_FLUID_AMOUNT) {
                 return false;
             }
-            return true;
+            // 模拟注入，确认喷枪还能装下（至少 1 mB）
+            FluidStack offered = new FluidStack(inputFluid.getFluid(), FOAM_REFILL_FLUID_AMOUNT);
+            return sprayer.fillFluid(material.copy(), offered) > 0;
         }
 
         // ===== 普通混合配方 =====
@@ -1252,42 +1243,38 @@ public final FluidTank inputFluidTank;
     private boolean processMixRecipe() {
         ItemStack material = itemHandler.getStackInSlot(MATERIAL_SLOT);
 
-        // ===== CF喷枪补充特殊处理 =====
+        // ===== CF喷枪补充特殊处理（对齐 IC2：灌装机给喷枪注入建筑泡沫流体） =====
         if (material.getItem() instanceof CFSprayerItem sprayer) {
-            // 检查输入液体槽是否为建筑泡沫流
-        FluidStack inputFluid = inputFluidTank.getFluid();
+            FluidStack inputFluid = inputFluidTank.getFluid();
             if (inputFluid.getFluid() != com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.CONSTRUCTIONFOAM.get()) {
                 return false;
             }
             if (inputFluid.getAmount() < FOAM_REFILL_FLUID_AMOUNT) {
                 return false;
             }
-            if (sprayer.isFull(material)) {
-                return false;
-            }
-            if (sprayer.getFoamAmount(material) > CFSprayerItem.MAX_FOAM - FOAM_REFILL_AMOUNT) {
+
+            FluidStack offered = new FluidStack(inputFluid.getFluid(), FOAM_REFILL_FLUID_AMOUNT);
+            int accepted = sprayer.fillFluid(material.copy(), offered);
+            if (accepted <= 0) {
                 return false;
             }
 
             FluidStack inputBefore = inputFluid.copy();
-            int foamBefore = sprayer.getFoamAmount(material);
-            FluidStack requested = new FluidStack(inputFluid.getFluid(), FOAM_REFILL_FLUID_AMOUNT);
+            FluidStack requested = new FluidStack(inputFluid.getFluid(), accepted);
             if (!canDrainFluidExactly(inputFluidTank, requested)
                     || !drainFluidExactly(inputFluidTank, requested)) {
                 return false;
             }
 
-            // 补充CF喷枪泡沫；若实现拒绝完整数量，恢复流体快照。
-            int added;
+            // 注入喷枪；若实现拒绝完整数量，恢复流体快照。
+            int filled;
             try {
-                added = sprayer.addFoam(material, FOAM_REFILL_AMOUNT);
+                filled = sprayer.fillFluid(material, requested);
             } catch (RuntimeException failure) {
-                sprayer.setFoamAmount(material, foamBefore);
                 inputFluidTank.setFluid(inputBefore);
                 return false;
             }
-            if (added != FOAM_REFILL_AMOUNT) {
-                sprayer.setFoamAmount(material, foamBefore);
+            if (filled != accepted) {
                 inputFluidTank.setFluid(inputBefore);
                 return false;
             }

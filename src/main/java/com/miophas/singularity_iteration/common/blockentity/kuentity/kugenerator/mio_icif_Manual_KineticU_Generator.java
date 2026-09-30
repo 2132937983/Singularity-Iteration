@@ -46,7 +46,7 @@ public class mio_icif_Manual_KineticU_Generator extends AbstractKineticGenerator
 
     /**
      * 构造函数（用于 BlockEntityType.Builder
-     * 鎵嬪姩鍙戠數鏈烘病鏈夊姩鑳界紦瀛橈紝鐩存帴杈撳嚭
+     * 手动发电机没有动能缓存，直接输出
      */
     public mio_icif_Manual_KineticU_Generator(BlockPos pos, BlockState state) {
         super(mio_icif_block_entities.MANUAL_KINETIC_GENERATOR_ENTITY_TYPE.get(), pos, state, SlotLayout.builder().extra(1).build(), KINETIC_PER_CLICK, KINETIC_PER_CLICK, MAX_RPM);

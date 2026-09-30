@@ -2,11 +2,9 @@ package com.miophas.singularity_iteration.common.block.reactor;
 
 import com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_chamber;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-import com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Nuclear_Reactor_Generator;
 import com.miophas.singularity_iteration.common.multiblock.mio_icif_multiblock_manager;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;

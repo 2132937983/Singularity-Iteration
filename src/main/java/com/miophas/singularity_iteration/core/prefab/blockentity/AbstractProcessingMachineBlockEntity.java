@@ -605,6 +605,9 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
             if (target != null) fluidAutomation.inputBuffer().deliverPending(target, Integer.MAX_VALUE, () -> !isRemoved());
         }
         if (isRemoved()) return;
+        // Fast path: most machines carry no automation upgrade. Skip the registry lookup,
+        // slot scan and neighbour capability queries below entirely.
+        if (!hasAutomationUpgrade()) return;
         // tick() refreshes the immutable snapshot after an upgrade-slot mutation.
         if (hasMeasuredItemAutomation()) {
             transferMeasuredItems();
@@ -627,9 +630,20 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     // R27: normal-game observations, four basic processors only. Each upgrade
     // slot acts separately; the sampled budgets are 1, 4, 16 and a full stack.
     // Keep other SI machines and extended upgrade stacks on their existing path.
+    private boolean hasAutomationUpgrade() {
+        return upgradeStats.getEjectorCount() > 0 || upgradeStats.getPullingCount() > 0
+            || upgradeStats.getFluidEjectorCount() > 0 || upgradeStats.getFluidPullingCount() > 0;
+    }
+
+    /** The block of a tile never changes, so the registry-profile answer is memoised (null = unknown). */
+    private @Nullable Boolean standardProcessor;
+
     private boolean hasMeasuredItemAutomation() {
-        var id = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(getBlockState().getBlock());
-        if (!com.miophas.singularity_iteration.core.api.energy.EnergyNodeRegistry.standardProcessor(id)) return false;
+        if (standardProcessor == null) {
+            var id = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(getBlockState().getBlock());
+            standardProcessor = com.miophas.singularity_iteration.core.api.energy.EnergyNodeRegistry.standardProcessor(id);
+        }
+        if (!standardProcessor) return false;
         for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
             if (itemHandler.getStackInSlot(slot).getCount() > 64) return false;
         }
@@ -769,6 +783,16 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
      */
     @Nullable
     protected IItemHandler getAdjacentItemHandler(BlockPos pos, @Nullable Direction side) {
+        if (side != null && level instanceof net.minecraft.server.level.ServerLevel server
+                && pos.equals(worldPosition.relative(side.getOpposite()))) {
+            var cache = itemNeighbourCaches[side.ordinal()];
+            if (cache == null) {
+                cache = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(
+                    Capabilities.ItemHandler.BLOCK, server, pos.immutable(), side);
+                itemNeighbourCaches[side.ordinal()] = cache;
+            }
+            return withBlockEntity(pos, cache.getCapability());
+        }
         if (level == null || !level.getChunkSource().hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
             return null;
         }
@@ -779,11 +803,43 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         return level.getCapability(Capabilities.ItemHandler.BLOCK, pos, side);
     }
 
+    /*
+     * Neighbour capability caches, one per face, created lazily on the server. NeoForge
+     * invalidates them itself when the neighbour changes, so the per-tick automation path no
+     * longer resolves capability providers on every call. Indexed by the side passed to the
+     * getter (the neighbour's face), i.e. Direction.ordinal().
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<IItemHandler, Direction>[] itemNeighbourCaches =
+        new net.neoforged.neoforge.capabilities.BlockCapabilityCache[6];
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<IFluidHandler, Direction>[] fluidNeighbourCaches =
+        new net.neoforged.neoforge.capabilities.BlockCapabilityCache[6];
+
+    /**
+     * Keeps the historical contract that only block entities (not block-only providers)
+     * are automation targets. The cache has already confirmed the chunk is loaded.
+     */
+    @Nullable
+    private <T> T withBlockEntity(BlockPos pos, @Nullable T capability) {
+        return capability != null && level.getBlockEntity(pos) != null ? capability : null;
+    }
+
     /**
      * 获取相邻位置的流体处理器
      */
     @Nullable
     protected IFluidHandler getAdjacentFluidHandler(BlockPos pos, @Nullable Direction side) {
+        if (side != null && level instanceof net.minecraft.server.level.ServerLevel server
+                && pos.equals(worldPosition.relative(side.getOpposite()))) {
+            var cache = fluidNeighbourCaches[side.ordinal()];
+            if (cache == null) {
+                cache = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(
+                    Capabilities.FluidHandler.BLOCK, server, pos.immutable(), side);
+                fluidNeighbourCaches[side.ordinal()] = cache;
+            }
+            return withBlockEntity(pos, cache.getCapability());
+        }
         if (level == null || !level.getChunkSource().hasChunk(pos.getX() >> 4, pos.getZ() >> 4)) {
             return null;
         }
@@ -967,7 +1023,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
             // 输入物品发生变化，重置进度
             progress = 0;
             isWorking = false;
-            // 鏇存柊缂撳瓨
+            // 更新缓存
             for (int i = 0; i < inputSlots.length; i++) {
                 lastInputStacks[i] = itemHandler.getStackInSlot(inputSlots[i]).copy();
             }

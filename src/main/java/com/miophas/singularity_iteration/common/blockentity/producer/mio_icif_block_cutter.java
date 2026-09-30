@@ -29,6 +29,9 @@ import java.util.Optional;
 
 @SuppressWarnings("null")
 public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.block_cutter.mio_icif_BlockCutterRecipeInput, com.miophas.singularity_iteration.common.recipe.block_cutter.mio_icif_BlockCutterRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_BlockCutterRecipes.BLOCK_CUTTER_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.block_cutter.mio_icif_BlockCutterRecipeInput, com.miophas.singularity_iteration.common.recipe.block_cutter.mio_icif_BlockCutterRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_BlockCutterRecipes.BLOCK_CUTTER_TYPE);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -91,8 +94,7 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
 
         ItemStack checkStack = stack.copyWithCount(64);
         mio_icif_BlockCutterRecipeInput recipeInput = new mio_icif_BlockCutterRecipeInput(checkStack);
-        return level.getRecipeManager()
-            .getRecipeFor(mio_icif_BlockCutterRecipes.BLOCK_CUTTER_TYPE.get(), recipeInput, level).isPresent();
+        return recipeCache1.find(level, recipeInput).isPresent();
     }
 
     /**
@@ -115,8 +117,7 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
 
         RecipeManager recipeManager = this.level.getRecipeManager();
         mio_icif_BlockCutterRecipeInput recipeInput = new mio_icif_BlockCutterRecipeInput(input);
-        Optional<RecipeHolder<mio_icif_BlockCutterRecipe>> recipe = recipeManager
-            .getRecipeFor(mio_icif_BlockCutterRecipes.BLOCK_CUTTER_TYPE.get(), recipeInput, this.level);
+        Optional<RecipeHolder<mio_icif_BlockCutterRecipe>> recipe = recipeCache2.find(this.level, recipeInput);
         return recipe.map(RecipeHolder::value).orElse(null);
     }
 

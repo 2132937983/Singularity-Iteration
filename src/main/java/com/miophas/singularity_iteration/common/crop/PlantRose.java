@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
  * 玫瑰植物
  */
 @SuppressWarnings("null")
-public class PlantRose extends PlantType {
+public class PlantRose extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -35,7 +35,7 @@ public class PlantRose extends PlantType {
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(1, 0, 2, 0, 5, 0);
+        return new PlantStats(2, 1, 1, 0, 5, 1);
     }
 
     @Override
@@ -44,31 +44,11 @@ public class PlantRose extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 4;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        return new ItemStack[]{new ItemStack(Items.POPPY, 1)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/rose_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        return planter.getGrowthStage() <= 3 && planter.getLightLevel() >= 12;
     }
 }
 

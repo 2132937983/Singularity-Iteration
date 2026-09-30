@@ -623,6 +623,8 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
      * 储能方块：正面输出，其他方向输入
      */
     @Override
+    @Deprecated(since = "0.1.7.14", forRemoval = false)
+    @org.jetbrains.annotations.ApiStatus.Internal
     public CustomEUEnergyStorage getEnergyStorageCapability(@Nullable Direction side) {
         return super.getEnergyStorageCapability(side);
     }

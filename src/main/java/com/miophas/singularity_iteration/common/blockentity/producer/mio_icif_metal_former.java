@@ -37,6 +37,13 @@ import org.jetbrains.annotations.Nullable;
  */
 @SuppressWarnings("null")
 public class mio_icif_metal_former extends AbstractProcessingMachineBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.metal_former.rolling.mio_icif_RollingRecipeInput, com.miophas.singularity_iteration.common.recipe.metal_former.rolling.mio_icif_RollingRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_RollingRecipes.ROLLING_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.metal_former.cutting.mio_icif_CuttingRecipeInput, com.miophas.singularity_iteration.common.recipe.metal_former.cutting.mio_icif_CuttingRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_CuttingRecipes.CUTTING_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.metal_former.extruding.mio_icif_ExtrudingRecipeInput, com.miophas.singularity_iteration.common.recipe.metal_former.extruding.mio_icif_ExtrudingRecipe> recipeCache3 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ExtrudingRecipes.EXTRUDING_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.metal_former.rolling.mio_icif_RollingRecipeInput, com.miophas.singularity_iteration.common.recipe.metal_former.rolling.mio_icif_RollingRecipe> recipeCache4 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_RollingRecipes.ROLLING_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.metal_former.cutting.mio_icif_CuttingRecipeInput, com.miophas.singularity_iteration.common.recipe.metal_former.cutting.mio_icif_CuttingRecipe> recipeCache5 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_CuttingRecipes.CUTTING_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.metal_former.extruding.mio_icif_ExtrudingRecipeInput, com.miophas.singularity_iteration.common.recipe.metal_former.extruding.mio_icif_ExtrudingRecipe> recipeCache6 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ExtrudingRecipes.EXTRUDING_TYPE);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -119,16 +126,13 @@ public enum MetalFormerMode {
         ItemStack checkStack = stack.copyWithCount(64);
 
         mio_icif_RollingRecipeInput rollingInput = new mio_icif_RollingRecipeInput(checkStack);
-        boolean canRoll = level.getRecipeManager()
-            .getRecipeFor(mio_icif_RollingRecipes.ROLLING_TYPE.get(), rollingInput, level).isPresent();
+        boolean canRoll = recipeCache1.find(level, rollingInput).isPresent();
 
         mio_icif_CuttingRecipeInput cuttingInput = new mio_icif_CuttingRecipeInput(checkStack);
-        boolean canCut = level.getRecipeManager()
-            .getRecipeFor(mio_icif_CuttingRecipes.CUTTING_TYPE.get(), cuttingInput, level).isPresent();
+        boolean canCut = recipeCache2.find(level, cuttingInput).isPresent();
 
         mio_icif_ExtrudingRecipeInput extrudingInput = new mio_icif_ExtrudingRecipeInput(checkStack);
-        boolean canExtrude = level.getRecipeManager()
-            .getRecipeFor(mio_icif_ExtrudingRecipes.EXTRUDING_TYPE.get(), extrudingInput, level).isPresent();
+        boolean canExtrude = recipeCache3.find(level, extrudingInput).isPresent();
 
         return canRoll || canCut || canExtrude;
     }
@@ -308,8 +312,7 @@ public enum MetalFormerMode {
         if (input.isEmpty()) return null;
 
         mio_icif_RollingRecipeInput recipeInput = new mio_icif_RollingRecipeInput(input);
-        var recipe = level.getRecipeManager()
-            .getRecipeFor(mio_icif_RollingRecipes.ROLLING_TYPE.get(), recipeInput, level);
+        var recipe = recipeCache4.find(level, recipeInput);
 
         return recipe.map(r -> r.value()).orElse(null);
     }
@@ -321,8 +324,7 @@ public enum MetalFormerMode {
         if (input.isEmpty()) return null;
 
         mio_icif_CuttingRecipeInput recipeInput = new mio_icif_CuttingRecipeInput(input);
-        var recipe = level.getRecipeManager()
-            .getRecipeFor(mio_icif_CuttingRecipes.CUTTING_TYPE.get(), recipeInput, level);
+        var recipe = recipeCache5.find(level, recipeInput);
 
         return recipe.map(r -> r.value()).orElse(null);
     }
@@ -334,8 +336,7 @@ public enum MetalFormerMode {
         if (input.isEmpty()) return null;
 
         mio_icif_ExtrudingRecipeInput recipeInput = new mio_icif_ExtrudingRecipeInput(input);
-        var recipe = level.getRecipeManager()
-            .getRecipeFor(mio_icif_ExtrudingRecipes.EXTRUDING_TYPE.get(), recipeInput, level);
+        var recipe = recipeCache6.find(level, recipeInput);
 
         return recipe.map(r -> r.value()).orElse(null);
     }

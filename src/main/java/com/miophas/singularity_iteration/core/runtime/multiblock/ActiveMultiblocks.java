@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -23,25 +24,26 @@ import java.util.WeakHashMap;
  */
 public final class ActiveMultiblocks {
 
+    // Guarded by the class lock: the integrated client and server threads both register here.
     private static final Map<Level, Map<BlockPos, IMultiblockStructure>> ACTIVE = new WeakHashMap<>();
 
     private ActiveMultiblocks() {}
 
     /** 框架内部注册点：成形时调用一次，不构成公开兼容承诺。 */
-    public static void register(Level level, IMultiblockStructure structure) {
+    public static synchronized void register(Level level, IMultiblockStructure structure) {
         ACTIVE.computeIfAbsent(level, key -> new HashMap<>())
             .put(structure.getControllerPos(), structure);
     }
 
     /** 框架内部注销点：拆除时调用一次，不构成公开兼容承诺。 */
-    public static void unregister(Level level, IMultiblockStructure structure) {
+    public static synchronized void unregister(Level level, IMultiblockStructure structure) {
         Map<BlockPos, IMultiblockStructure> structures = ACTIVE.get(level);
         if (structures != null) {
             structures.remove(structure.getControllerPos(), structure);
         }
     }
 
-    public static @Nullable IMultiblockStructure getStructureAt(Level level, BlockPos pos) {
+    public static synchronized @Nullable IMultiblockStructure getStructureAt(Level level, BlockPos pos) {
         Map<BlockPos, IMultiblockStructure> structures = ACTIVE.get(level);
         if (structures == null || pos == null) {
             return null;
@@ -61,17 +63,18 @@ public final class ActiveMultiblocks {
         return null;
     }
 
-    public static @Nullable IMultiblockStructure getStructureByController(Level level, BlockPos controllerPos) {
+    public static synchronized @Nullable IMultiblockStructure getStructureByController(Level level, BlockPos controllerPos) {
         Map<BlockPos, IMultiblockStructure> structures = ACTIVE.get(level);
         return structures != null && controllerPos != null ? structures.get(controllerPos) : null;
     }
 
-    public static Collection<IMultiblockStructure> getAllStructures(Level level) {
+    public static synchronized Collection<IMultiblockStructure> getAllStructures(Level level) {
         Map<BlockPos, IMultiblockStructure> structures = ACTIVE.get(level);
-        return structures != null ? Collections.unmodifiableCollection(structures.values()) : Collections.emptyList();
+        // Snapshot: a live view would escape the lock and could throw CME while iterated.
+        return structures != null ? List.copyOf(structures.values()) : Collections.emptyList();
     }
 
-    public static boolean isControllerAt(Level level, BlockPos pos) {
+    public static synchronized boolean isControllerAt(Level level, BlockPos pos) {
         Map<BlockPos, IMultiblockStructure> structures = ACTIVE.get(level);
         return structures != null && pos != null && structures.containsKey(pos);
     }

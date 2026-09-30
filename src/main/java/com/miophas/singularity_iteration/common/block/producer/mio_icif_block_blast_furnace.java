@@ -85,7 +85,7 @@ public class mio_icif_block_blast_furnace extends mio_icif_entity_block {
 
     /**
      * 玩家右键点击方块时的处理
-     * 鎵撳紑楂樼倝 GUI 鐣岄潰
+     * 打开高炉 GUI 界面
      */
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {

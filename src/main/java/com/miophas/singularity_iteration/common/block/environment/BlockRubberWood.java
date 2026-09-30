@@ -2,8 +2,8 @@ package com.miophas.singularity_iteration.common.block.environment;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
-import com.miophas.singularity_iteration.common.item.tools.mio_icif_treetap;
-import com.miophas.singularity_iteration.common.item.tools.mio_icif_treetap_elc;
+import com.miophas.singularity_iteration.core.api.block.IRubberWood;
+import com.miophas.singularity_iteration.core.runtime.world.RubberTreeSystem;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -11,8 +11,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -29,7 +27,7 @@ import net.neoforged.neoforge.common.ItemAbilities;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
-public class BlockRubberWood extends HorizontalDirectionalBlock {
+public class BlockRubberWood extends HorizontalDirectionalBlock implements IRubberWood {
 
     public static final MapCodec<BlockRubberWood> CODEC = simpleCodec(BlockRubberWood::new);
 
@@ -65,81 +63,38 @@ public class BlockRubberWood extends HorizontalDirectionalBlock {
         return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
     }
 
+    // ==================== IRubberWood ====================
+
+    @Override
+    public boolean hasResin(BlockState state) {
+        return state.getValue(HAS_HARZ);
+    }
+
+    @Override
+    public boolean isTappable(BlockState state) {
+        return state.getValue(HAS_SPOT);
+    }
+
+    @Override
+    public BlockState withResin(BlockState state, boolean hasResin) {
+        return state.setValue(HAS_HARZ, hasResin);
+    }
+
+    // ==================== 采集 ====================
+
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (!state.getValue(HAS_SPOT) || !state.getValue(HAS_HARZ)) {
+        if (!RubberTreeSystem.canUseTapOn(state, stack)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
-        String itemName = stack.getItem().toString();
-
-        if (itemName.contains("treetap_elc") || stack.getItem() instanceof mio_icif_treetap_elc) {
-            return useTreetapElc(stack, state, level, pos, player, hand);
-        }
-
-        if (itemName.contains("treetap") || stack.getItem() instanceof mio_icif_treetap) {
-            return useTreetap(stack, state, level, pos, player, hand);
-        }
-
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-    }
-
-    private ItemInteractionResult useTreetap(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {
-        if (!level.isClientSide) {
-            EquipmentSlot slot = hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
-            stack.hurtAndBreak(1, player, slot);
-
-            int count = 1 + level.getRandom().nextInt(3);
-            dropHarz(level, pos, player, count);
-
-            level.setBlock(pos, state.setValue(HAS_HARZ, false), 3);
-        }
-
+        RubberTreeSystem.harvest(level, pos, state, player, hand, stack, mio_icif_resources.HARZ.get());
         return ItemInteractionResult.sidedSuccess(level.isClientSide);
-    }
-
-    private ItemInteractionResult useTreetapElc(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {
-        mio_icif_treetap_elc treetapElc = (mio_icif_treetap_elc) stack.getItem();
-
-        if (!treetapElc.hasEnoughEnergy(stack)) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        }
-
-        if (!level.isClientSide) {
-            if (!player.isCreative()) {
-                treetapElc.consumeEnergy(stack);
-            }
-
-            int count = 2 + level.getRandom().nextInt(3);
-            dropHarz(level, pos, player, count);
-
-            level.setBlock(pos, state.setValue(HAS_HARZ, false), 3);
-
-            player.setItemInHand(hand, stack);
-        }
-
-        return ItemInteractionResult.sidedSuccess(level.isClientSide);
-    }
-
-    private void dropHarz(Level level, BlockPos pos, Player player, int count) {
-        ItemStack harzStack = new ItemStack(mio_icif_resources.HARZ.get(), count);
-
-        double midX = (pos.getX() + 0.5 + player.getX()) / 2.0;
-        double midZ = (pos.getZ() + 0.5 + player.getZ()) / 2.0;
-        double midY = (pos.getY() + 0.5 + player.getY()) / 2.0 + 1.0;
-
-        ItemEntity itemEntity = new ItemEntity(level, midX, midY, midZ, harzStack);
-        itemEntity.setDefaultPickUpDelay();
-        level.addFreshEntity(itemEntity);
     }
 
     @Override
     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (state.getValue(HAS_SPOT) && !state.getValue(HAS_HARZ)) {
-            if (random.nextFloat() < 0.05F) {
-                level.setBlock(pos, state.setValue(HAS_HARZ, true), 3);
-            }
-        }
+        RubberTreeSystem.tryRegrowResin(level, pos, state, random);
     }
 
     @Override

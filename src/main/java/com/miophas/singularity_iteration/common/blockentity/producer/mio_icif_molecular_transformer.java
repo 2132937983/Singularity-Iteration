@@ -22,6 +22,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.molecular_transformer.mio_icif_MolecularTransformerRecipeInput, com.miophas.singularity_iteration.common.recipe.molecular_transformer.mio_icif_MolecularTransformerRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_MolecularTransformerRecipes.MOLECULAR_TRANSFORMER_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.molecular_transformer.mio_icif_MolecularTransformerRecipeInput, com.miophas.singularity_iteration.common.recipe.molecular_transformer.mio_icif_MolecularTransformerRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_MolecularTransformerRecipes.MOLECULAR_TRANSFORMER_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.molecular_transformer.mio_icif_MolecularTransformerRecipeInput, com.miophas.singularity_iteration.common.recipe.molecular_transformer.mio_icif_MolecularTransformerRecipe> recipeCache3 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_MolecularTransformerRecipes.MOLECULAR_TRANSFORMER_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.molecular_transformer.mio_icif_MolecularTransformerRecipeInput, com.miophas.singularity_iteration.common.recipe.molecular_transformer.mio_icif_MolecularTransformerRecipe> recipeCache4 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_MolecularTransformerRecipes.MOLECULAR_TRANSFORMER_TYPE);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -114,7 +119,7 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
             if (level == null || stack.isEmpty()) return false;
             var recipeManager = level.getRecipeManager();
             var input = new mio_icif_MolecularTransformerRecipeInput(stack);
-            return recipeManager.getRecipeFor(mio_icif_MolecularTransformerRecipes.MOLECULAR_TRANSFORMER_TYPE.get(), input, level).isPresent();
+            return recipeCache1.find(level, input).isPresent();
         }
         return false;
     }
@@ -139,7 +144,7 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
         if (input.isEmpty() || level == null) return false;
         var recipeManager = level.getRecipeManager();
         var recipeInput = new mio_icif_MolecularTransformerRecipeInput(input);
-        return recipeManager.getRecipeFor(mio_icif_MolecularTransformerRecipes.MOLECULAR_TRANSFORMER_TYPE.get(), recipeInput, level).isPresent();
+        return recipeCache2.find(level, recipeInput).isPresent();
     }
 
     @Override
@@ -150,7 +155,7 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
         if (level == null) return false;
         var recipeManager = level.getRecipeManager();
         var recipeInput = new mio_icif_MolecularTransformerRecipeInput(input);
-        var recipeOpt = recipeManager.getRecipeFor(mio_icif_MolecularTransformerRecipes.MOLECULAR_TRANSFORMER_TYPE.get(), recipeInput, level);
+        var recipeOpt = recipeCache3.find(level, recipeInput);
         if (recipeOpt.isEmpty()) return false;
 
         var recipe = recipeOpt.get().value();
@@ -282,7 +287,7 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
 
         var recipeManager = level.getRecipeManager();
         var recipeInput = new mio_icif_MolecularTransformerRecipeInput(input);
-        var recipeOpt = recipeManager.getRecipeFor(mio_icif_MolecularTransformerRecipes.MOLECULAR_TRANSFORMER_TYPE.get(), recipeInput, level);
+        var recipeOpt = recipeCache4.find(level, recipeInput);
 
         if (recipeOpt.isPresent()) {
             var recipe = recipeOpt.get().value();

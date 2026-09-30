@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
  * 红小麦 - 特殊小麦变种
  */
 @SuppressWarnings("null")
-public class PlantRedwheat extends PlantType {
+public class PlantRedwheat extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -30,12 +30,12 @@ public class PlantRedwheat extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Red", "Food", "Wheat"};
+        return new String[]{ "Red", "Redstone", "Wheat" };
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(3, 0, 4, 0, 2, 0);
+        return new PlantStats(6, 3, 0, 0, 2, 0);
     }
 
     @Override
@@ -44,36 +44,10 @@ public class PlantRedwheat extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 6;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        int yield = planter.getYield();
-        int count = 1 + Math.max(0, yield) / 4;
-        if (Math.random() < 0.5) {
-            return new ItemStack[]{new ItemStack(Items.REDSTONE, count)};
-        }
-        return new ItemStack[]{new ItemStack(Items.WHEAT, count)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/redwheat_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        int light = planter.getLightLevel();
-        return planter.getGrowthStage() < getMaxGrowthStage() && light <= 10 && light >= 5;
     }
 }

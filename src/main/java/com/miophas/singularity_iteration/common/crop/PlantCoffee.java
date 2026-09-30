@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
  * IC2: size=4不产出，size=5才产出咖啡豆
  */
 @SuppressWarnings("null")
-public class PlantCoffee extends PlantType {
+public class PlantCoffee extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -31,12 +31,12 @@ public class PlantCoffee extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Brown", "Drink", "Coffee"};
+        return new String[]{ "Leaves", "Ingredient", "Beans" };
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(2, 0, 4, 1, 2, 0);
+        return new PlantStats(7, 1, 4, 1, 2, 0);
     }
 
     @Override
@@ -45,37 +45,11 @@ public class PlantCoffee extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 5;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        int yield = planter.getYield();
-        int stage = planter.getGrowthStage();
-        if (stage < 5) {
-            return new ItemStack[0];
-        }
-        int count = 1 + Math.max(0, yield) / 4;
-        return new ItemStack[]{new ItemStack(mio_icif_resources.COFFEE_BEAN.get(), count)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/coffee_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        return planter.getGrowthStage() < getMaxGrowthStage() && planter.getLightLevel() >= 9;
     }
 }
 

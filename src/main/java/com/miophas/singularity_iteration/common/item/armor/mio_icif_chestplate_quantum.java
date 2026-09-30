@@ -3,10 +3,11 @@ package com.miophas.singularity_iteration.common.item.armor;
 
 import com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo;
 import com.miophas.singularity_iteration.core.api.item.IJetpackItem;
-import com.miophas.singularity_iteration.core.runtime.flight.JetpackFlightController;
+import com.miophas.singularity_iteration.core.prefab.flight.JetpackFlightController;
 import java.util.List;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -36,7 +37,17 @@ public class mio_icif_chestplate_quantum extends mio_icif_armor_elc implements I
     @Override public List<ArmorFeatureInfo> getFeatures(ItemStack stack) {
         return List.of(new ArmorFeatureInfo(EquipmentSlot.CHEST, "flight", "tooltip.mio_icif.armor.feature_flight"),
                 new ArmorFeatureInfo(EquipmentSlot.CHEST, "fire_resistance", "tooltip.mio_icif.armor.feature_fire_resistance"),
-                new ArmorFeatureInfo(EquipmentSlot.CHEST, "jetpack_mode", "tooltip.mio_icif.armor.feature_jetpack_mode"));
+                new ArmorFeatureInfo(EquipmentSlot.CHEST, IJetpackItem.FEATURE_MODE_KEY,
+                        "tooltip.mio_icif.armor.feature_jetpack_mode", modeName(stack)));
+    }
+
+    /** 当前模式名称（供装备特性 Tooltip / GUI 显示）。 */
+    private Component modeName(ItemStack stack) {
+        return switch (getMode(stack)) {
+            case HOVER -> Component.translatable("hud.mio_icif.jetpack.mode_hover");
+            case OFF -> Component.translatable("tooltip.mio_icif.armor.feature_off");
+            default -> Component.translatable("hud.mio_icif.jetpack.mode_jetpack");
+        };
     }
     @Override public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
         super.inventoryTick(stack, level, entity, slot, selected);

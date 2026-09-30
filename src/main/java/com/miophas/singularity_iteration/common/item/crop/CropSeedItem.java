@@ -39,7 +39,8 @@ public class CropSeedItem extends Item implements ICropSeedItem {
         BlockState state = level.getBlockState(pos);
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
-        if(player==null || stack.isEmpty())return InteractionResult.PASS;
+        if (player == null || player.isSpectator() || stack.isEmpty() || !level.mayInteract(player, pos)
+                || !player.mayUseItemAt(pos, context.getClickedFace(), stack)) return InteractionResult.PASS;
 
         // 检查是否是种植架方法
    if (!isCropStick(state)) {
@@ -54,7 +55,7 @@ public class CropSeedItem extends Item implements ICropSeedItem {
         // 种子袋保留物品交互；原版基础种子从作物架的 useItemOn 进入。
         PlantType currentPlant = getPlantType(stack);
         if (currentPlant == null) {
-            if (CropSeedData.isEmptyBag(stack)) return tryCollectSeed(level, planter, stack, player);
+            // Empty bags cannot clone a living crop; left-click uprooting supplies seeds.
             return InteractionResult.PASS;
         }
         return tryPlant(level, planter, stack, player, null, this);
@@ -84,9 +85,10 @@ public class CropSeedItem extends Item implements ICropSeedItem {
      */
     private static InteractionResult tryPlant(Level level, IPlanter planter, ItemStack stack, Player player,
                                                PlantRegistry.BaseSeed baseSeed, Item emptyBagItem) {
-        if (planter.getPlant() != null) return InteractionResult.PASS;
+        if (planter.getPlant() != null || planter.isHybridBase()) return InteractionResult.PASS;
         PlantType plantType = baseSeed == null ? getPlantType(stack) : baseSeed.plantType;
-        if (plantType == null) return InteractionResult.PASS;
+        int requiredSeeds = baseSeed == null ? 1 : Math.max(1, baseSeed.seed.getCount());
+        if (plantType == null || !plantType.canGrow(planter) || stack.getCount() < requiredSeeds) return InteractionResult.PASS;
 
         if (!level.isClientSide) {
             var traits = CropSeedData.traits(stack);
@@ -104,53 +106,13 @@ public class CropSeedItem extends Item implements ICropSeedItem {
             planter.setHybridBase(false);
             planter.updateState();
 
-            // 消耗种子并返还空种子袋
+            // Consume the registered seed amount; seed bags are consumed as in IC2.
             if (!player.getAbilities().instabuild) {
-                stack.shrink(1);
-                // SI seed bags return an empty bag; registered vanilla/base seeds are consumed normally.
-                if (baseSeed == null) {
-                    ItemStack emptyBag = new ItemStack(emptyBagItem);
-                    if (!player.getInventory().add(emptyBag)) player.drop(emptyBag, false);
-                }
+                stack.shrink(requiredSeeds);
+
             }
             return InteractionResult.SUCCESS;
         }
-        return InteractionResult.SUCCESS;
-    }
-
-    /**
-     * 尝试收集种子（空种子袋功能）
-     */
-    private InteractionResult tryCollectSeed(Level level, IPlanter planter, ItemStack stack, Player player) {
-        if (player == null || !CropSeedData.isEmptyBag(stack)) {
-            return InteractionResult.PASS;
-        }
-
-        PlantType plant = planter.getPlant();
-        if (plant == null) {
-            if(!level.isClientSide)player.sendSystemMessage(Component.translatable("message.mio_icif.crop_stick_empty"));
-            return InteractionResult.FAIL;
-        }
-
-        // 检查作物是否成�
-   if (planter.getGrowthStage() < plant.getMaxGrowthStage()) {
-            if(!level.isClientSide)player.sendSystemMessage(Component.translatable("message.mio_icif.crop_not_mature"));
-            return InteractionResult.FAIL;
-        }
-
-        if(level.isClientSide)return InteractionResult.SUCCESS;
-        ItemStack filled=CropSeedData.fillOne(stack,plant.getModId(),plant.getTypeId(),
-            planter.getGrowthSpeed(),planter.getYield(),planter.getResilience());
-        if(filled.isEmpty())return InteractionResult.FAIL;
-        if(stack.getCount()==1) {
-            stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,filled.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA));
-        } else {
-            stack.shrink(1);
-            if(!player.getInventory().add(filled))player.drop(filled,false);
-        }
-
-        player.sendSystemMessage(Component.translatable("message.mio_icif.seed_collected", Component.translatable(plant.getTranslationKey())));
-
         return InteractionResult.SUCCESS;
     }
 

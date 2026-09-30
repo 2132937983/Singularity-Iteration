@@ -19,8 +19,8 @@ public class HarvestElcMenu extends mio_icif_base_menu {
 
     public static final int SLOT_STORAGE_START = 0;
     public static final int SLOT_STORAGE_COUNT = 15;
-    public static final int SLOT_BATTERY = 15;
-    public static final int SLOT_ANALYZER = 16;
+    public static final int SLOT_CROPNALYZER = 15;
+    public static final int SLOT_BATTERY = 16;
     public static final int SLOT_UPGRADE = 17;
     public static final int TOTAL_SLOTS = 18;
 
@@ -46,6 +46,9 @@ public class HarvestElcMenu extends mio_icif_base_menu {
         }
 
         // 电池�?(15) - 位置 (152, 58)
+        // 作物分析仪槽 - 对齐 1.7.10 cropnalyzerSlot
+        this.addSlot(new SlotItemHandler(itemHandler, SLOT_CROPNALYZER, 15, 40));
+
         this.addSlot(new SlotItemHandler(itemHandler, SLOT_BATTERY, 152, 58) {
             @Override
             public boolean mayPlace(ItemStack stack) {
@@ -60,10 +63,8 @@ public class HarvestElcMenu extends mio_icif_base_menu {
             }
         });
 
-        // 作物分析仪槽 (16) - 位置 (15, 40)
-        this.addSlot(new SlotItemHandler(itemHandler, SLOT_ANALYZER, 15, 40));
-
-        addUpgradeSlot(itemHandler, SLOT_UPGRADE, 80, 80);
+        // 升级槽 - 对齐 1.7.10 仅 1 格
+        addUpgradeSlot(itemHandler, SLOT_UPGRADE, 180, 18);
 
         // 玩家物品栈?
         addPlayerInventory(playerInventory, 110, 168);

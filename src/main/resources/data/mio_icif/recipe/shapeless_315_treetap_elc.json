@@ -1,0 +1,19 @@
+{
+  "type": "mio_icif:charge_carrying_shapeless",
+  "transfer_charge": true,
+  "ingredients": [
+    {
+      "item": "mio_icif:item_tool_wooden_treetap"
+    },
+    {
+      "item": "mio_icif:item_tool_power_unit_small"
+    },
+    {
+      "item": "mio_icif:wiring/cable/block_tin_cable"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:item_tool_treetap_elc",
+    "count": 1
+  }
+}

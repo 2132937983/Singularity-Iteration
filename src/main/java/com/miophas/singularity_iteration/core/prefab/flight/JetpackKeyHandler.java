@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-package com.miophas.singularity_iteration.core.runtime.flight;
+package com.miophas.singularity_iteration.core.prefab.flight;
 
 import java.util.Map;
 import java.util.UUID;

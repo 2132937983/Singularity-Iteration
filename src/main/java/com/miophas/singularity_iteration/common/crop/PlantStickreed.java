@@ -14,7 +14,7 @@ import net.minecraft.world.item.Items;
  * 竹芦植物 - 高级芦苇
  */
 @SuppressWarnings("null")
-public class PlantStickreed extends PlantType {
+public class PlantStickreed extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -33,12 +33,12 @@ public class PlantStickreed extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Brown", "Sugar", "Resin", "Reed"};
+        return new String[]{ "Reed", "Resin" };
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(4, 0, 4, 1, 0, 0);
+        return new PlantStats(4, 2, 0, 1, 0, 1);
     }
 
     @Override
@@ -47,37 +47,10 @@ public class PlantStickreed extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 4;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        int yield = planter.getYield();
-        int stage = planter.getGrowthStage();
-        if (stage >= 4) {
-            int resinCount = 1 + Math.max(0, yield) / 3;
-            return new ItemStack[]{new ItemStack(mio_icif_resources.HARZ.get(), resinCount)};
-        }
-        int caneCount = 1 + Math.max(0, yield) / 3;
-        return new ItemStack[]{new ItemStack(Items.SUGAR_CANE, caneCount)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/stickreed_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        return planter.getGrowthStage() < getMaxGrowthStage();
     }
 }

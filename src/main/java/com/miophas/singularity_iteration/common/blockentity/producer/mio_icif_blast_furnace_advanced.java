@@ -30,6 +30,9 @@ import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
 public class mio_icif_blast_furnace_advanced extends AbstractHeatBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipeInput, com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_BlastFurnaceRecipes.BLAST_FURNACE_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipeInput, com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_BlastFurnaceRecipes.BLAST_FURNACE_TYPE);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -134,7 +137,7 @@ public class mio_icif_blast_furnace_advanced extends AbstractHeatBlockEntity {
         if (level == null || stack.isEmpty()) return false;
         var recipeManager = level.getRecipeManager();
         var input = new com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipeInput(stack);
-        return recipeManager.getRecipeFor(mio_icif_BlastFurnaceRecipes.BLAST_FURNACE_TYPE.get(), input, level).isPresent();
+        return recipeCache1.find(level, input).isPresent();
     }
 
     private Direction getFrontSide() {
@@ -288,7 +291,7 @@ public class mio_icif_blast_furnace_advanced extends AbstractHeatBlockEntity {
 
         var recipeManager = level.getRecipeManager();
         var recipeInput = new com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipeInput(input);
-        return recipeManager.getRecipeFor(mio_icif_BlastFurnaceRecipes.BLAST_FURNACE_TYPE.get(), recipeInput, level).map(r -> r.value()).orElse(null);
+        return recipeCache2.find(level, recipeInput).map(r -> r.value()).orElse(null);
     }
 
     private boolean canOperate(mio_icif_BlastFurnaceRecipe recipe, int airPerTick) {

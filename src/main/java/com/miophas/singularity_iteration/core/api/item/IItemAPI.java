@@ -586,13 +586,56 @@ public interface IItemAPI {
     java.util.List<ArmorFeatureInfo> getArmorFeatures(ItemStack stack);
 
     /**
-     * 切换电力装甲的特性状态
+     * 切换电力装甲的<b>开关型</b>特性状态。
+     *
+     * <p>仅对 {@link ArmorFeatureInfo#isMode()} 为 {@code false} 且已由物品
+     * {@link IElectricArmorItem#getFeatures(ItemStack)} 声明的特性生效；
+     * 模式型特性请使用 {@link #cycleArmorFeature(ItemStack, String)}。
      *
      * @param stack 装甲物品
      * @param featureKey 特性键
-     * @return 切换后的状态
+     * @return 切换后的状态（未发生变化时返回当前状态）
      */
     boolean toggleArmorFeature(ItemStack stack, String featureKey);
+
+    /**
+     * 读取电力装甲开关型特性的启用状态。
+     *
+     * @param stack 装甲物品
+     * @param featureKey 特性键
+     * @return 是否启用；未声明或模式型特性返回 {@code true}
+     */
+    boolean isArmorFeatureEnabled(ItemStack stack, String featureKey);
+
+    /**
+     * 设置电力装甲开关型特性的启用状态。
+     *
+     * @param stack 装甲物品
+     * @param featureKey 特性键
+     * @param enabled 是否启用
+     */
+    void setArmorFeatureEnabled(ItemStack stack, String featureKey, boolean enabled);
+
+    /**
+     * 切换到电力装甲<b>模式型</b>特性的下一个模式。
+     *
+     * <p>物品需声明 {@link ArmorFeatureInfo#isMode()} 为 {@code true} 的特性，
+     * 并实现 {@link IArmorModeFeatureItem}（{@link IJetpackItem} 已内置默认实现）。
+     *
+     * @param stack 装甲物品
+     * @param featureKey 特性键
+     * @return 是否发生了切换
+     */
+    boolean cycleArmorFeature(ItemStack stack, String featureKey);
+
+    /**
+     * 查询物品对某特性键的声明信息。
+     *
+     * @param stack 装甲物品
+     * @param featureKey 特性键
+     * @return 特性信息；未声明时返回 {@code null}
+     */
+    ArmorFeatureInfo getArmorFeatureInfo(ItemStack stack, String featureKey);
 
     /**
      * 获取电力装甲每点伤害消耗的能量

@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 @SuppressWarnings("null")
-public class PlantFlax extends PlantType {
+public class PlantFlax extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -27,12 +27,12 @@ public class PlantFlax extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Blue", "Fabric", "Flax"};
+        return new String[]{ "Silk", "Vine", "Addictive" };
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(2, 0, 3, 0, 1, 0);
+        return new PlantStats(2, 1, 1, 2, 0, 1);
     }
 
     @Override
@@ -41,31 +41,11 @@ public class PlantFlax extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 4;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        return new ItemStack[]{new ItemStack(Items.STRING, 1)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/flax_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        return planter.getGrowthStage() < getMaxGrowthStage() && planter.getLightLevel() >= 9;
     }
 }
 

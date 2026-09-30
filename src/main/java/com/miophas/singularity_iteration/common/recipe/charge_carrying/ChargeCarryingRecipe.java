@@ -6,29 +6,33 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapedRecipePattern;
-import net.minecraft.world.level.Level;
 
-public class ChargeCarryingRecipe implements CraftingRecipe {
+/**
+ * 电量传递的有序合成配方（合成时把材料上的电量汇总进产物）。
+ *
+ * <p>这里必须继承原版 {@link ShapedRecipe}，而不是只实现 {@code CraftingRecipe}：
+ * 合成台、配方书、JEI/EMI 都是靠 {@code instanceof ShapedRecipe} 拿 {@link #getWidth()} /
+ * {@link #getHeight()} 才能按 3x3 真实位置摆放材料。以前只实现 {@code CraftingRecipe} 时，
+ * 查看器读不到形状信息，只能把 {@code getIngredients()} 里的材料并排显示成一行，
+ * 于是出现「JEI 显示第一行并排、实际要竖着摆才合成」的错位（“+”一键填充也会填错位置）。
+ *
+ * <p>配方数据格式与匹配逻辑保持不变：shape 仍由 {@link ShapedRecipePattern} 描述，
+ * 只有 {@link #assemble} 与 {@link #getRemainingItems} 被替换成带电量传递的版本。
+ */
+public class ChargeCarryingRecipe extends ShapedRecipe {
 
-    private final String group;
     private final ShapedRecipePattern pattern;
     private final ItemStack result;
     private final boolean transferCharge;
 
     public ChargeCarryingRecipe(String group, ShapedRecipePattern pattern, ItemStack result, boolean transferCharge) {
-        this.group = group;
+        super(group, CraftingBookCategory.MISC, pattern, result);
         this.pattern = pattern;
         this.result = result;
         this.transferCharge = transferCharge;
-    }
-
-    @Override
-    public boolean matches(CraftingInput input, Level level) {
-        return this.pattern.matches(input);
     }
 
     @Override
@@ -42,28 +46,8 @@ public class ChargeCarryingRecipe implements CraftingRecipe {
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return width >= this.pattern.width() && height >= this.pattern.height();
-    }
-
-    @Override
-    public ItemStack getResultItem(HolderLookup.Provider registries) {
-        return this.result;
-    }
-
-    @Override
-    public CraftingBookCategory category() {
-        return CraftingBookCategory.MISC;
-    }
-
-    @Override
     public RecipeSerializer<?> getSerializer() {
         return ChargeCarryingRecipes.CHARGE_CARRYING_SERIALIZER.get();
-    }
-
-    @Override
-    public String getGroup() {
-        return this.group;
     }
 
     @Override
@@ -79,16 +63,7 @@ public class ChargeCarryingRecipe implements CraftingRecipe {
         return remaining;
     }
 
-    @Override
-    public NonNullList<Ingredient> getIngredients() {
-        return this.pattern.ingredients();
-    }
-
-    @Override
-    public boolean isSpecial() {
-        return false;
-    }
-
+    /** 供序列化器读写 pattern（{@code ShapedRecipePattern.MAP_CODEC} 需要）。 */
     public ShapedRecipePattern getPattern() {
         return this.pattern;
     }

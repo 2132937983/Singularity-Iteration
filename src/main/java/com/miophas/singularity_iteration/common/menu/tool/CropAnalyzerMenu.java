@@ -1,6 +1,7 @@
 package com.miophas.singularity_iteration.common.menu.tool;
 
 import com.miophas.singularity_iteration.common.item.crop.CropSeedItem;
+import com.miophas.singularity_iteration.core.api.item.ICropSeedItem;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import com.miophas.singularity_iteration.common.item.tools.CropAnalyzerItem;
 import com.miophas.singularity_iteration.common.item.tools.mio_icif_tool_elc;
@@ -51,7 +52,10 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
         for (int i = 0; i < 3; i++) {
             inventory[i] = ItemStack.EMPTY;
         }
-        this.addSlot(new Slot(new CropAnalyzerInventory(), SLOT_INPUT, 8, 7));
+        this.addSlot(new Slot(new CropAnalyzerInventory(), SLOT_INPUT, 8, 7) {
+            @Override public boolean mayPlace(ItemStack stack) { return stack.getItem() instanceof ICropSeedItem; }
+            @Override public int getMaxStackSize() { return 1; }
+        });
         this.addSlot(new Slot(new CropAnalyzerInventory(), SLOT_OUTPUT, 41, 7) {
             @Override
             public boolean mayPlace(ItemStack stack) {
@@ -112,7 +116,7 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (slotStack.getItem() instanceof CropSeedItem) {
+            } else if (slotStack.getItem() instanceof ICropSeedItem) {
                 if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
                     return ItemStack.EMPTY;
                 }
@@ -165,8 +169,8 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
         long toTransfer = Math.min(needed, available);
 
         if (toTransfer > 0) {
-            api.dischargeBattery(battery, toTransfer, false);
-            analyzer.addEnergy(containerStack, toTransfer);
+            long extracted = api.dischargeBattery(battery, toTransfer, false);
+            analyzer.addEnergy(containerStack, extracted);
         }
     }
 
@@ -174,28 +178,12 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
         ItemStack input = inventory[SLOT_INPUT];
         ItemStack output = inventory[SLOT_OUTPUT];
 
-        if (input.isEmpty() && output.isEmpty()) return;
-
-        if (!output.isEmpty() && input.isEmpty()) {
-            if (output.getItem() instanceof CropSeedItem) {
-                int level = CropSeedItem.getScanLevel(output);
-                if (level < 4) {
-                    inventory[SLOT_INPUT] = output;
-                    inventory[SLOT_OUTPUT] = ItemStack.EMPTY;
-                    input = inventory[SLOT_INPUT];
-                } else {
-                    return;
-                }
-            } else {
-                return;
-            }
-        }
-
         if (!output.isEmpty()) return;
         if (input.isEmpty()) return;
-        if (!(input.getItem() instanceof CropSeedItem)) return;
+        if (!(input.getItem() instanceof ICropSeedItem)) return;
 
-        int level = CropSeedItem.getScanLevel(input);
+        ICropSeedItem seed = (ICropSeedItem) input.getItem();
+        int level = seed.cropScanLevel(input);
 
         if (level < 4) {
             int need = CropAnalyzerItem.energyForLevel(level);
@@ -207,11 +195,14 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
 
             if (!consumed) return;
 
-            CropSeedItem.incrementScanLevel(input);
+            ItemStack scanned = input.copyWithCount(1);
+            seed.setCropScanLevel(scanned, level + 1);
+            inventory[SLOT_OUTPUT] = scanned;
+            input.shrink(1);
+            return;
         }
 
-        inventory[SLOT_OUTPUT] = input.copy();
-        inventory[SLOT_INPUT] = ItemStack.EMPTY;
+        inventory[SLOT_OUTPUT] = input.split(1);
     }
 
     public ItemStack getOutputStack() {

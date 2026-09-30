@@ -412,7 +412,7 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("block_cutter", () ->
             BlockEntityType.Builder.of(mio_icif_block_cutter::new, mio_icif_blocks.BLOCK_CUTTER.get()).build(null));
 
-    // 娉ㄥ唽鏂瑰潡鍒囧壊鏈?MenuType
+    // 注册方块切割?MenuType
 
     // 注册 车床 MenuType
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_lathe>> LATHE_ENTITY_TYPE =
@@ -485,7 +485,7 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("geo_generator", () ->
             BlockEntityType.Builder.of((pos, state) -> new mio_icif_geo_generator(pos, state), mio_icif_blocks.GEO_GENERATOR.get()).build(null));
 
-    // 娉ㄥ唽鍦扮儹鍙戠數鏈篗enuType
+    // 注册地热发电机MenuType
 
     // 注册 太阳能发电机 方块实体类型
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_solar_generator>> SOLAR_GENERATOR_ENTITY_TYPE =
@@ -579,7 +579,7 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("fluid_heat_generator", () ->
             BlockEntityType.Builder.of(mio_icif_fluid_heat_generator::new, mio_icif_blocks.FLUID_HEAT_GENERATOR.get()).build(null));
 
-    // 娉ㄥ唽娴佷綋鍔犵儹鏈篗enuType
+    // 注册流体加热机MenuType
 
     // 注册 stirling generator 方块实体类型
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_stirling_generator>> STIRLING_GENERATOR_ENTITY_TYPE =
@@ -943,7 +943,7 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("pattern_storage", () ->
             BlockEntityType.Builder.of(mio_icif_pattern_storage::new, mio_icif_blocks.PATTERN_STORAGE.get()).build(null));
 
-    // 娉ㄥ唽妯″紡瀛樺偍鏈?MenuType
+    // 注册模式存储?MenuType
 
     // 注册 replicator elc MenuType
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_replicator_elc>> REPLICATOR_ELC_ENTITY_TYPE =

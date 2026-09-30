@@ -18,13 +18,24 @@ public class CropAnalyzerItem extends mio_icif_tool_elc {
     public static final long MAX_ENERGY = 100_000L;
 
     public CropAnalyzerItem(Properties properties) {
-        super(properties, MAX_ENERGY, 0L, 100L, 10L, 1);
+        super(properties, MAX_ENERGY, 0L, 128L, 10L, 2);
     }
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
         if (player == null) return InteractionResult.PASS;
+        if (!player.isShiftKeyDown() && context.getLevel().getBlockEntity(context.getClickedPos())
+                instanceof com.miophas.singularity_iteration.core.api.crop.IPlanter crop) {
+            if (!context.getLevel().isClientSide && consumeEnergy(context.getItemInHand(), energyForLevel(2))) {
+                var plant = crop.getPlant();
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.mio_icif.crop.diagnostic",
+                    plant == null ? net.minecraft.network.chat.Component.translatable("message.mio_icif.crop_stick_empty")
+                        : net.minecraft.network.chat.Component.translatable(plant.getTranslationKey()),
+                    crop.getGrowthStage(), crop.getNutrients(), crop.getWater(), crop.getWeedControl(), crop.getProgress()));
+            }
+            return InteractionResult.sidedSuccess(context.getLevel().isClientSide);
+        }
         if (!context.getLevel().isClientSide && player instanceof ServerPlayer serverPlayer) {
             open(serverPlayer, context.getItemInHand(), context.getHand());
         }

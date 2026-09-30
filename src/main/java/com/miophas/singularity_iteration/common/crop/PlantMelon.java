@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
  * 甜瓜植物
  */
 @SuppressWarnings("null")
-public class PlantMelon extends PlantType {
+public class PlantMelon extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -30,7 +30,7 @@ public class PlantMelon extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Green", "Food", "Melon"};
+        return new String[]{ "Green", "Food", "Stem" };
     }
 
     @Override
@@ -44,42 +44,11 @@ public class PlantMelon extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 4;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        int yield = planter.getYield();
-        if (Math.random() < 0.33) {
-            return new ItemStack[]{
-                    new ItemStack(Items.MELON, 1),
-                    new ItemStack(Items.MELON_SEEDS, 1 + (int)(Math.random() * 2))
-            };
-        }
-        int count = 2 + Math.max(0, yield) / 2;
-        return new ItemStack[]{
-                new ItemStack(Items.MELON_SLICE, count),
-                new ItemStack(Items.MELON_SEEDS, 1 + (int)(Math.random() * 2))
-        };
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/melon_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        return planter.getGrowthStage() < getMaxGrowthStage() && planter.getLightLevel() >= 9;
     }
 }
 

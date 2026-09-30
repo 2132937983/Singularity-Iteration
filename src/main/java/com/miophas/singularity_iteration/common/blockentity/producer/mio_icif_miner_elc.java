@@ -5,7 +5,6 @@ import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-import com.miophas.singularity_iteration.common.client.item.*;
 import com.miophas.singularity_iteration.common.item.tools.*;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
 import com.miophas.singularity_iteration.core.runtime.processing.PendingDrops;

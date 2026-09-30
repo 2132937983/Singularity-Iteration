@@ -43,13 +43,13 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
 
     protected static final int LIGHTNING_BG_WIDTH = mio_icif_gui_global_variables.LIGHTNING_BG_WIDTH;
     protected static final int LIGHTNING_BG_HEIGHT = mio_icif_gui_global_variables.LIGHTNING_BG_HEIGHT;
-    protected static final int LIGHTNING_BG_U = mio_icif_gui_global_variables.LIGHTNING_BG_TEXTURE_X;
-    protected static final int LIGHTNING_BG_V = mio_icif_gui_global_variables.LIGHTNING_BG_TEXTURE_Y;
+    protected static final int LIGHTNING_BG_TEXTURE_X = mio_icif_gui_global_variables.LIGHTNING_BG_TEXTURE_X;
+    protected static final int LIGHTNING_BG_TEXTURE_Y = mio_icif_gui_global_variables.LIGHTNING_BG_TEXTURE_Y;
 
     protected static final int LIGHTNING_WIDTH = mio_icif_gui_global_variables.LIGHTNING_WIDTH;
     protected static final int LIGHTNING_HEIGHT = mio_icif_gui_global_variables.LIGHTNING_HEIGHT;
-    protected static final int LIGHTNING_U = mio_icif_gui_global_variables.LIGHTNING_U;
-    protected static final int LIGHTNING_V = mio_icif_gui_global_variables.LIGHTNING_V;
+    protected static final int LIGHTNING_TEXTURE_X = mio_icif_gui_global_variables.LIGHTNING_TEXTURE_X;
+    protected static final int LIGHTNING_TEXTURE_Y = mio_icif_gui_global_variables.LIGHTNING_TEXTURE_Y;
 
     protected static final int ARROW_WIDTH = mio_icif_gui_global_variables.ARROW_WIDTH;
     protected static final int ARROW_HEIGHT = mio_icif_gui_global_variables.ARROW_HEIGHT;
@@ -337,11 +337,18 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         guiGraphics.blit(ATLAS_TEXTURE, x, y, 0,
             (float) PROGRESS_BAR_BG_U, (float) PROGRESS_BAR_BG_V,
             PROGRESS_BAR_BG_WIDTH, PROGRESS_BAR_BG_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-        
+
+        drawProgressArrowFill(guiGraphics, x, y, progressPixels);
+    }
+
+    // === 进度箭头填充层（drawProgressArrow 内部调用；仅贴图自带底框的机器才需要单独用它）===
+    protected void drawProgressArrowFill(GuiGraphics guiGraphics, int x, int y, int progressPixels) {
         if (progressPixels <= 0) return;
+        // 同样夹取到箭头宽度，避免调用方算出超宽像素时向右取到图集里的其它组件
+        int progressToDraw = Math.min(progressPixels, ARROW_WIDTH);
         guiGraphics.blit(ATLAS_TEXTURE, x, y, 0,
             (float) ARROW_U, (float) ARROW_V,
-            progressPixels, ARROW_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
+            progressToDraw, ARROW_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
     }
 
     // === 金属成型机专属进度条（先渲染背景，再从左往右填充）===
@@ -449,17 +456,25 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
     protected void drawLightningEnergy(GuiGraphics guiGraphics, int x, int y, int energy, int maxEnergy) {
         // 先渲染背景
         guiGraphics.blit(ATLAS_TEXTURE, x, y, 0,
-            (float) LIGHTNING_BG_U, (float) LIGHTNING_BG_V,
+            (float) LIGHTNING_BG_TEXTURE_X, (float) LIGHTNING_BG_TEXTURE_Y,
             LIGHTNING_BG_WIDTH, LIGHTNING_BG_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-        
+
+        drawLightningEnergyFill(guiGraphics, x, y, energy, maxEnergy);
+    }
+
+    // === 闪电能量填充层（drawLightningEnergy 内部调用；仅贴图自带底框的机器才需要单独用它）===
+    // LIGHTNING_WIDTH/HEIGHT 是图标长宽；LIGHTNING_TEXTURE_X/Y 是图标左上角在图集中的像素位置
+    protected void drawLightningEnergyFill(GuiGraphics guiGraphics, int x, int y, int energy, int maxEnergy) {
         // 再渲染能量图标
         if (energy <= 0 || maxEnergy <= 0) return;
-        int energyHeight = (int) ((long) energy * LIGHTNING_HEIGHT / maxEnergy);
+        // 必须夹取到图标高度：调用方若传进 energy > maxEnergy（数据索引对不上/存档残留），
+        // 未夹取时高度会超出图标，既会从图集里图标"上方"的其他组件取样，也会向上溢出图标框。
+        int energyHeight = (int) Math.min((long) energy * LIGHTNING_HEIGHT / maxEnergy, LIGHTNING_HEIGHT);
         if (energyHeight <= 0) return;
         int drawY = y + LIGHTNING_HEIGHT - energyHeight;
-        int textureV = LIGHTNING_V + LIGHTNING_HEIGHT - energyHeight;
+        int textureV = LIGHTNING_TEXTURE_Y + LIGHTNING_HEIGHT - energyHeight;
         guiGraphics.blit(ATLAS_TEXTURE, x, drawY, 0,
-            (float) LIGHTNING_U, (float) textureV,
+            (float) LIGHTNING_TEXTURE_X, (float) textureV,
             LIGHTNING_WIDTH, energyHeight, ATLAS_WIDTH, ATLAS_HEIGHT);
     }
 

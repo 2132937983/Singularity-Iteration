@@ -476,6 +476,9 @@ public class CustomEUEnergyStorage implements IEUEnergyStorage, IEnergyStorageAc
     public void setCapacity(long capacity) {
         scexPayments.checkPendingThread();
         this.capacity = Math.max(0, capacity);
+        // 对齐 IC2：容量收缩（取下储能/超频升级后 recalculateUpgradeStats 会缩小容量）不删除已存的 EU，
+        // 机器允许短期处于 energy > capacity。IC2 的 TileEntityElectricMachine 读档、injectEnergy、
+        // getDemandedEnergy 都不夹取存量，只在 GUI 侧把比例按 1 夹住（guiChargeLevel = min(1, e/max)）。
         scexSetWholePreservingFraction(this.energy);
     }
 

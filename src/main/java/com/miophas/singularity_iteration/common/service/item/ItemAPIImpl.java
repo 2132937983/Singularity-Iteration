@@ -558,15 +558,32 @@ public class ItemAPIImpl implements IItemAPI {
 
     @Override
     public java.util.List<ArmorFeatureInfo> getArmorFeatures(ItemStack stack) {
-        if (stack.getItem() instanceof IElectricArmorItem armor) {
-            return armor.getFeatures(stack);
-        }
-        return java.util.Collections.emptyList();
+        return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.features(stack);
     }
 
     @Override
     public boolean toggleArmorFeature(ItemStack stack, String featureKey) {
-        return com.miophas.singularity_iteration.common.item.armor.ArmorFeatureToggle.toggle(stack, featureKey);
+        return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.toggle(stack, featureKey);
+    }
+
+    @Override
+    public boolean isArmorFeatureEnabled(ItemStack stack, String featureKey) {
+        return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.isEnabled(stack, featureKey);
+    }
+
+    @Override
+    public void setArmorFeatureEnabled(ItemStack stack, String featureKey, boolean enabled) {
+        com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.setEnabled(stack, featureKey, enabled);
+    }
+
+    @Override
+    public boolean cycleArmorFeature(ItemStack stack, String featureKey) {
+        return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.cycleMode(stack, featureKey);
+    }
+
+    @Override
+    public ArmorFeatureInfo getArmorFeatureInfo(ItemStack stack, String featureKey) {
+        return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.find(stack, featureKey);
     }
 
     @Override

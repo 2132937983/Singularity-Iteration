@@ -75,7 +75,7 @@ public interface IEnergyConverter extends IEnergyBlock {
 
     /**
  * 获取内部冲区当前能量（以输出类型计）
-     * @return 褰撳墠缂撳啿鑳介噺
+     * @return 当前缓冲能量
      */
     long getBufferAmount();
 

@@ -1,6 +1,9 @@
 {
     "variants": {
-        "": {
+        "reinforced=false": {
+            "model": "mio_icif:block/build/block_scaffold_titanium"
+        },
+        "reinforced=true": {
             "model": "mio_icif:block/build/block_scaffold_titanium"
         }
     }

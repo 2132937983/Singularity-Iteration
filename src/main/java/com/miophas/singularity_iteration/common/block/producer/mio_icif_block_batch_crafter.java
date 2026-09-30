@@ -64,6 +64,20 @@ public class mio_icif_block_batch_crafter extends mio_icif_entity_block {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
+    /** ic2 TileEntityBatchCrafter exposes its cycle as a comparator signal. */
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof mio_icif_batch_crafter crafter) {
+            return crafter.getComparatorLevel();
+        }
+        return 0;
+    }
+
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (level.isClientSide()) {

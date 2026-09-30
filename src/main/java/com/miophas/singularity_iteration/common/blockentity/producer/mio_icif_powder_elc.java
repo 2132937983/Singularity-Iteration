@@ -29,6 +29,9 @@ import java.util.Optional;
  */
 @SuppressWarnings("null")
 public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
+    // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput, com.miophas.singularity_iteration.common.recipe.mio_icif_PowderRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ModRecipes.POWDER_TYPE);
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput, com.miophas.singularity_iteration.common.recipe.mio_icif_PowderRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_ModRecipes.POWDER_TYPE);
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -153,7 +156,7 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
         }
         // 槽位校验时忽略数量，避免数量大于1的配方无法放入不足数量的材料
         mio_icif_SingleItemRecipeInput input = new mio_icif_SingleItemRecipeInput(stack.copyWithCount(64));
-        return level.getRecipeManager().getRecipeFor(mio_icif_ModRecipes.POWDER_TYPE.get(), input, level).isPresent();
+        return recipeCache1.find(level, input).isPresent();
     }
 
     /**
@@ -179,7 +182,7 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
             return Optional.empty();
         }
         mio_icif_SingleItemRecipeInput recipeInput = new mio_icif_SingleItemRecipeInput(input);
-        return level.getRecipeManager().getRecipeFor(mio_icif_ModRecipes.POWDER_TYPE.get(), recipeInput, level);
+        return recipeCache2.find(level, recipeInput);
     }
 
     @Override

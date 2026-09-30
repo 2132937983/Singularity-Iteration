@@ -224,12 +224,6 @@ dependencies {
     // Jade
     compileOnly "curse.maven:jade-324717:${jade_id}"
 
-    // Modern Industrialization (MI) - Optional dependency for compatibility
-    compileOnly "curse.maven:modern-industrialization-405388:7796816"
-
-    // GrandPower API - Optional dependency for MI compatibility
-    compileOnly "dev.technici4n:GrandPower:3.0.0"
-
     // GregTech - Optional dependency for compatibility
     compileOnly "curse.maven:gregtechceu-modern-890405:6766269"
 
@@ -303,7 +297,7 @@ tasks.register('checkCoreArchitecture') {
             'com.miophas.singularity_iteration.common.', 'com.singularity_iteration.mio_icif',
             'net.minecraft.client.', 'net.neoforged.neoforge.client.', 'com.mojang.blaze3d.',
             'mezz.jei.', 'dev.emi.', 'me.shedaniel.', 'top.theillusivec4.',
-            'aztech.modern_industrialization.', 'com.gregtechceu.', 'appeng.'
+            'aztech.modern_industrialization.', 'com.gregtechceu.', 'appeng.', 'mekanism.'
         ]
         sourceSets.core.allJava.each { source ->
             def code = source.getText('UTF-8')
@@ -312,8 +306,16 @@ tasks.register('checkCoreArchitecture') {
             }
         }
         sourceSets.addonExample.allJava.each { source ->
-            if (source.getText('UTF-8').contains('com.miophas.singularity_iteration.common.'))
+            def code = source.getText('UTF-8')
+            if (code.contains('com.miophas.singularity_iteration.common.'))
                 throw new GradleException("Example depends on common: ${source}")
+            // Engine regression tests may inspect internals; actual addon examples and
+            // consumer contract tests must demonstrate supported public entry points.
+            if (!source.name.endsWith('GameTests.java') || source.name == 'PublicApiGameTests.java') {
+                if (code.contains('com.miophas.singularity_iteration.core.runtime.') ||
+                        code =~ /\b(getEnergyStorageInternal|internalStorage|internalLedger|getEnergyStorageCapability)\s*\(/)
+                    throw new GradleException("Public addon example uses an internal bridge: ${source}")
+            }
         }
     }
 }
@@ -354,6 +356,8 @@ tasks.register('checkCoreDistribution') {
     }
 }
 tasks.named('check') { dependsOn 'checkCoreDistribution' }
+
+apply from: 'gradle/core-architecture.gradle'
 
 tasks.named('assemble') { dependsOn coreJar, coreSourcesJar }
 
@@ -400,6 +404,15 @@ publishing {
     repositories {
         maven {
             url = uri('repo')
+        }
+        // Opt-in release destination. Credentials are supplied by Gradle properties,
+        // never embedded in the repository; local verification still uses repo/.
+        if (providers.gradleProperty('coreReleaseRepositoryUrl').isPresent()) {
+            maven {
+                name = 'coreRelease'
+                url = uri(providers.gradleProperty('coreReleaseRepositoryUrl').get())
+                credentials(PasswordCredentials)
+            }
         }
     }
 }

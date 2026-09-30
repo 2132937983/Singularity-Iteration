@@ -43,6 +43,18 @@ public static final DeferredRegister.Items FLUID_ITEMS =
         DeferredRegister.createItems(Singularity_Iteration.MOD_ID);
 
     // 生物气体纹理
+    public static final DeferredHolder<FluidType, FluidType> WEED_EX_TYPE = FLUID_TYPES.register("weed_ex",
+        () -> new FluidType(FluidType.Properties.create().density(1000).viscosity(1000).temperature(300).canConvertToSource(false)));
+    private static final BaseFlowingFluid.Properties WEED_EX_PROPERTIES = new BaseFlowingFluid.Properties(
+        WEED_EX_TYPE, () -> mio_icif_fluids.WEED_EX.get(), () -> mio_icif_fluids.WEED_EX_FLOWING.get())
+        .block(() -> mio_icif_fluids.WEED_EX_BLOCK.get()).bucket(() -> mio_icif_fluids.WEED_EX_BUCKET.get());
+    public static final DeferredHolder<Fluid, FlowingFluid> WEED_EX = FLUIDS.register("weed_ex", () -> new BaseFlowingFluid.Source(WEED_EX_PROPERTIES));
+    public static final DeferredHolder<Fluid, FlowingFluid> WEED_EX_FLOWING = FLUIDS.register("weed_ex_flowing", () -> new BaseFlowingFluid.Flowing(WEED_EX_PROPERTIES));
+    public static final DeferredBlock<LiquidBlock> WEED_EX_BLOCK = FLUID_BLOCKS.register("weed_ex",
+        () -> new LiquidBlock(WEED_EX.get(), BlockBehaviour.Properties.of().noCollission().strength(100).noLootTable().replaceable()));
+    public static final DeferredItem<BucketItem> WEED_EX_BUCKET = FLUID_ITEMS.register("weed_ex_bucket",
+        () -> new BucketItem(WEED_EX.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+
     public static final ResourceLocation BIOGAS_STILL_TEXTURE =
         ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "block/fluids/biogas_still");
     public static final ResourceLocation BIOGAS_FLOWING_TEXTURE =

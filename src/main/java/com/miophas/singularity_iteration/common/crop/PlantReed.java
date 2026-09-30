@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
  * 芦苇植物
  */
 @SuppressWarnings("null")
-public class PlantReed extends PlantType {
+public class PlantReed extends BuiltinCrop {
 
     @Override
     public String getTypeId() {
@@ -30,12 +30,12 @@ public class PlantReed extends PlantType {
 
     @Override
     public String[] getTraits() {
-        return new String[]{"Brown", "Sugar", "Reed"};
+        return new String[]{ "Reed" };
     }
 
     @Override
     public PlantStats getStats() {
-        return new PlantStats(2, 0, 3, 1, 0, 0);
+        return new PlantStats(2, 0, 0, 1, 0, 2);
     }
 
     @Override
@@ -44,33 +44,11 @@ public class PlantReed extends PlantType {
     }
 
     @Override
-    public int getHarvestStage() {
-        return 3;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        int yield = planter.getYield();
-        int count = 1 + Math.max(0, yield) / 3;
-        return new ItemStack[]{new ItemStack(Items.SUGAR_CANE, count)};
-    }
-
-    @Override
     public String getTexture(int stage) {
         if (stage < 1 || stage > getMaxGrowthStage()) {
             stage = 1;
         }
         return "mio_icif:block/crop/reed_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        return planter.getGrowthStage() < getMaxGrowthStage();
     }
 }
 

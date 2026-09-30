@@ -18,14 +18,14 @@ public class mio_icif_gui_matron_elc extends mio_icif_screen<com.miophas.singula
         ResourceLocation.parse("mio_icif:textures/gui/gui_matron_elc.png");
 
     // GUI 尺寸
-    private static final int GUI_WIDTH = 176;
+    private static final int GUI_WIDTH = 200;
     private static final int GUI_HEIGHT = 192;
 
     // 液体渲染位置
     private static final int FLUID_X = 64;
     private static final int FLUID_Y = 76;
     private static final int FLUID_WIDTH = 47;
-    private static final int FLUID_HEIGHT = 24;
+    private static final int FLUID_HEIGHT = 11;
 
     // 闪电标志位置
     private static final int LIGHTNING_X = 153;
@@ -44,7 +44,13 @@ public class mio_icif_gui_matron_elc extends mio_icif_screen<com.miophas.singula
         int y = (this.height - this.imageHeight) / 2;
 
         // 绘制背景
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
+        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, 176, this.imageHeight);
+        guiGraphics.fill(x + 176, y, x + 200, y + imageHeight, 0xFFC6C6C6);
+        for (int i = 0; i < 4; i++) {
+            int sy = y + 17 + i * 18;
+            guiGraphics.fill(x + 179, sy, x + 197, sy + 18, 0xFF373737);
+            guiGraphics.fill(x + 180, sy + 1, x + 196, sy + 17, 0xFF8B8B8B);
+        }
 
         com.miophas.singularity_iteration.common.menu.producer.MatronElcMenu menu = this.menu;
         if (menu != null) {
@@ -61,6 +67,8 @@ public class mio_icif_gui_matron_elc extends mio_icif_screen<com.miophas.singula
             }
 
             // 使用基类标准闪电标志渲染
+            int weedWidth = Math.min(FLUID_WIDTH, menu.getWeedExAmount() * FLUID_WIDTH / 2000);
+            guiGraphics.fill(x + FLUID_X, y + FLUID_Y + 13, x + FLUID_X + weedWidth, y + FLUID_Y + 24, 0xFF074F14);
             drawLightningEnergy(guiGraphics, x + LIGHTNING_X, y + LIGHTNING_Y, menu.getEnergy(), menu.getMaxEnergy());
         }
     }
@@ -84,6 +92,10 @@ public class mio_icif_gui_matron_elc extends mio_icif_screen<com.miophas.singula
             guiGraphics.renderTooltip(this.font, tooltip, relativeMouseX, relativeMouseY);
         }
 
+        if (relativeMouseX >= FLUID_X && relativeMouseX < FLUID_X + FLUID_WIDTH
+                && relativeMouseY >= FLUID_Y + 13 && relativeMouseY < FLUID_Y + 24) {
+            guiGraphics.renderTooltip(font, Component.translatable("gui.mio_icif.matron.weedex_tooltip", menu.getWeedExAmount()), relativeMouseX, relativeMouseY);
+        }
         // 检查鼠标是否在闪电标志区域
         if (isHovering(mouseX, mouseY, guiLeft + LIGHTNING_X, guiTop + LIGHTNING_Y, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)) {
             renderEnergyTooltip(guiGraphics, relativeMouseX, relativeMouseY, menu.getEnergy(), menu.getMaxEnergy());

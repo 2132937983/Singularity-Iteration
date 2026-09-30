@@ -19,7 +19,7 @@
 
 ## About
 
-This is a mod that aims to implement IC2-style gameplay in high versions, with code and most of the artwork independently developed by **MioPha** (a small portion was drawn by community members).
+This is a mod that aims to implement IC2-style gameplay in high versions, with code and most of the artwork independently developed by **MioPha** **Magellan67** (a small portion was drawn by community members).
 
 Currently, 99% of IC2's content has been fully and independently implemented, including the power grid system, voltage system, agricultural system, various machine blocks, electric tools, and calculations for thermal, kinetic, electrical, and wind energy.
 

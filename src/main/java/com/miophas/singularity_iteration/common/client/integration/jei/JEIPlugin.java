@@ -38,8 +38,16 @@ public class JEIPlugin implements IModPlugin {
                 }
                 return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
             };
-        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> damageInterpreter =
-            (itemStack, context) -> String.valueOf(itemStack.getDamageValue());
+        // 能量感知子类型：能量物品（工具/装甲/电池/饰品）用“当前电量/最大电量”区分，
+        // 其余物品退回耐久值区分。这样创造模式标签页里同时收录“空电”与“满电”两个版本时，
+        // JEI 不会把它们判定为重复物品。
+        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> energyInterpreter =
+            (itemStack, context) -> {
+                if (itemStack.getItem() instanceof IBatteryItem bat) {
+                    return bat.getEnergy(itemStack) + "/" + bat.getMaxEnergy(itemStack);
+                }
+                return String.valueOf(itemStack.getDamageValue());
+            };
         mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> nbtInterpreter =
             (itemStack, context) -> {
                 var beData = itemStack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
@@ -59,43 +67,47 @@ public class JEIPlugin implements IModPlugin {
 
         registration.registerSubtypeInterpreter(mio_icif_normal.BAT_LEV0.get(), batteryInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.ADVBAT_LEV0.get(), batteryInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.ADVCHARGEBAT_0.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.CHARGEBAT_LEV0.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.CRYSTAL_CHARGEBAT_LEV0.get(), damageInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.ADVCHARGEBAT_0.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.CHARGEBAT_LEV0.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.CRYSTAL_CHARGEBAT_LEV0.get(), energyInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.CRYSTAL_LEV0.get(), batteryInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.LAPOTRON_CRYSTAL_LEV0.get(), batteryInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.LAMACRYSTAL_CHARGEBAT_LEV0.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.SUPER_LAPOTRON_CRYSTAL.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.CHARGING_SUPER_LAPOTRON_CRYSTAL.get(), damageInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.LAMACRYSTAL_CHARGEBAT_LEV0.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.SUPER_LAPOTRON_CRYSTAL.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.CHARGING_SUPER_LAPOTRON_CRYSTAL.get(), energyInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.LITHIUM_BATTERY.get(), batteryInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.ADV_LITHIUM_BATTERY.get(), batteryInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.THORIUM_BATTERY.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.SOLAR_HELMET.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.CF_SPRAYER.get(), damageInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.THORIUM_BATTERY.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.SOLAR_HELMET.get(), energyInterpreter);
+        // CF喷枪存储的是建筑泡沫流体（CUSTOM_DATA），按流体数据区分子类型
+        registration.registerSubtypeInterpreter(mio_icif_normal.CF_SPRAYER.get(), fluidCellInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.CROP_ANALYZER.get(), energyInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.CROP_SEED.get(), fluidCellInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_tools.WRENCH_ELC.get(), damageInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_tools.WRENCH_ELC.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_tools.DIAMOND_DRILLER.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_tools.TOOL_LASER_MINER.get(), energyInterpreter);
 
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_BATPACK.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADV_BATPACK.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ENERGYPACK.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_LAPPACK.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NIGHTVISION_GOGGLES.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_HELMET.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_LEGGINGS.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_BOOTS.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_LEGGINGS.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_JETPACK_ELECTRIC.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_DIVING_MASK.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_HEAVY_QUANTUM_CHESTPLATE.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_QUANTUM_CHESTPLATE.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_SOLAR_HELMET.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_HYBRID_SOLAR_HELMET.get(), damageInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ULTIMATE_SOLAR_HELMET.get(), damageInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_BATPACK.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADV_BATPACK.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ENERGYPACK.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_LAPPACK.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NIGHTVISION_GOGGLES.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_HELMET.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_LEGGINGS.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_BOOTS.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_LEGGINGS.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_JETPACK_ELECTRIC.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_DIVING_MASK.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_HEAVY_QUANTUM_CHESTPLATE.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_QUANTUM_CHESTPLATE.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_SOLAR_HELMET.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_HYBRID_SOLAR_HELMET.get(), energyInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ULTIMATE_SOLAR_HELMET.get(), energyInterpreter);
 
         registration.registerSubtypeInterpreter(mio_icif_blocks.BAT_BOX.get().asItem(), nbtInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_blocks.CESU.get().asItem(), nbtInterpreter);
@@ -104,16 +116,23 @@ public class JEIPlugin implements IModPlugin {
         registration.registerSubtypeInterpreter(mio_icif_blocks.LESU.get().asItem(), nbtInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_blocks.EESU.get().asItem(), nbtInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_blocks.GESU_CORE.get().asItem(), nbtInterpreter);
+        // 充电座方块：同样通过 BLOCK_ENTITY_DATA 里的电量区分“空电/满电”
+        registration.registerSubtypeInterpreter(mio_icif_blocks.BATBOX_CHARGER.get().asItem(), nbtInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_blocks.CESU_CHARGER.get().asItem(), nbtInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_blocks.MFE_CHARGER.get().asItem(), nbtInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_blocks.MFSU_CHARGER.get().asItem(), nbtInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_blocks.LESU_CHARGER.get().asItem(), nbtInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_blocks.EESU_CHARGER.get().asItem(), nbtInterpreter);
 
         registration.registerSubtypeInterpreter(mio_icif_cells.CELL_EMPTY.get(), fluidCellInterpreter);
 
         if (net.neoforged.fml.ModList.get().isLoaded("curios")) {
             try {
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_FIREPROOF_NECKLACE.get(), damageInterpreter);
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_ENERGY_CRYSTAL_BELT.get(), damageInterpreter);
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_LAPORTON_CRYSTAL_BELT.get(), damageInterpreter);
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_LIFE_SUPPORT_RING.get(), damageInterpreter);
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_FLIGHT_RING.get(), damageInterpreter);
+                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_FIREPROOF_NECKLACE.get(), energyInterpreter);
+                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_ENERGY_CRYSTAL_BELT.get(), energyInterpreter);
+                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_LAPORTON_CRYSTAL_BELT.get(), energyInterpreter);
+                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_LIFE_SUPPORT_RING.get(), energyInterpreter);
+                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_FLIGHT_RING.get(), energyInterpreter);
             } catch (Exception e) {
             }
         }

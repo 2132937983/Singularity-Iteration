@@ -6,9 +6,7 @@
     " C "
   ],
   "key": {
-    "C": {
-      "item": "mio_icif:resource/item_iron_casing"
-    },
+    "C": {"tag": "c:casings/iron"},
     "P": {
       "tag": "c:ingots/iron"
     }

@@ -6,9 +6,7 @@
     "TTT"
   ],
   "key": {
-    "T": {
-      "item": "mio_icif:resource/item_tin_casing"
-    },
+    "T": {"tag": "c:casings/tin"},
     "M": {
       "item": "mio_icif:producer/block_machine_hull_basic"
     },

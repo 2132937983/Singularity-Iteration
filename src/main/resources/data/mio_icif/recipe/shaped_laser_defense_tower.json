@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " L ",
+    "CHC",
+    "PBP"
+  ],
+  "key": {
+    "L": {
+      "item": "mio_icif:item_tool_laser_miner"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "H": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "P": {
+      "tag": "c:plates/alloy"
+    },
+    "B": {
+      "tag": "c:crystals/energy"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_laser_defense_tower",
+    "count": 1
+  }
+}

@@ -74,6 +74,34 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     private static final int CONDUCTIVITY_RANGE = 32;
 
     /**
+     * 电线连接调试日志开关，默认关闭。
+     * 之前每次 neighborChanged 都会对 6 个方向各打一条 WARN，导致日志被同一坐标刷屏。
+     * 需要排查时用 JVM 参数打开：-Dsingularity_iteration.wireConnectDebug=true
+     */
+    private static final boolean WIRE_CONNECT_DEBUG =
+        Boolean.parseBoolean(System.getProperty("singularity_iteration.wireConnectDebug", "false"));
+
+    /** 调试日志去重缓存（仅在开关打开时写入），避免同一个坐标+方向反复刷屏 */
+    private static final java.util.Set<String> WIRE_CONNECT_DEBUG_ONCE =
+        java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+
+    private static void logWireConnect(String reason, BlockPos pos, @Nullable Direction side,
+                                       @Nullable BlockState state, @Nullable BlockEntity blockEntity) {
+        if (!WIRE_CONNECT_DEBUG) return;
+        String key = reason + "|" + pos + "|" + side;
+        if (WIRE_CONNECT_DEBUG_ONCE.size() > 512) {
+            WIRE_CONNECT_DEBUG_ONCE.clear();
+        }
+        if (!WIRE_CONNECT_DEBUG_ONCE.add(key)) return;
+        Singularity_Iteration.LOGGER.warn(
+            "[WireConnect-DEBUG] 电线连接受理 {} (side={}) | 原因: {} | 方块={} BE={}",
+            pos, side, reason,
+            state != null ? state.getBlock() : "null",
+            blockEntity != null ? blockEntity.getClass().getName() : "null"
+        );
+    }
+
+    /**
      * 获取电击伤害值，根据电缆等级递增
      * LV: 4点（2颗心）
      * MV: 8点（4颗心）
@@ -371,34 +399,17 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
                 IEUEnergyStorage euNull = realLevel.getCapability(EUApi.SIDED, pos, null);
 
                 if (euSided != null || euNull != null) {
-                    Singularity_Iteration.LOGGER.warn(
-                        "[WireConnect-DEBUG] 电线连接受?{} (side={}) | 原因: EUApi.SIDED 非空! euSided={} euNull={} | 方块={} BE={}",
-                        pos, side,
-                        euSided != null ? euSided.getClass().getName() : "null",
-                        euNull != null ? euNull.getClass().getName() : "null",
-                        state.getBlock(),
-                        blockEntity != null ? blockEntity.getClass().getName() : "null"
-                    );
+                    logWireConnect("EUApi.SIDED 非空", pos, side, state, blockEntity);
                     return true;
                 }
 
                 if (MICompat.isMILoaded()) {
                     if (side != null && MICompat.getMIStorage(realLevel, pos, side) != null) {
-                        Singularity_Iteration.LOGGER.warn(
-                            "[WireConnect-DEBUG] 电线连接受?{} (side={}) | 原因: MI能力 非空! | 方块={} BE={}",
-                            pos, side,
-                            state.getBlock(),
-                            blockEntity != null ? blockEntity.getClass().getName() : "null"
-                        );
+                        logWireConnect("MI能力 非空", pos, side, state, blockEntity);
                         return true;
                     }
                     if (MICompat.getMIStorage(realLevel, pos, null) != null) {
-                        Singularity_Iteration.LOGGER.warn(
-                            "[WireConnect-DEBUG] 电线连接受?{} (side=null) | 原因: MI能力(null) 非空! | 方块={} BE={}",
-                            pos,
-                            state.getBlock(),
-                            blockEntity != null ? blockEntity.getClass().getName() : "null"
-                        );
+                        logWireConnect("MI能力(null) 非空", pos, null, state, blockEntity);
                         return true;
                     }
                 }
@@ -418,7 +429,9 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
                 }
 
             } catch (Exception e) {
-                Singularity_Iteration.LOGGER.error("[WireConnect-DEBUG] 电线连接检查异�?at {}: {}", pos, e.getMessage());
+                if (WIRE_CONNECT_DEBUG) {
+                    Singularity_Iteration.LOGGER.error("[WireConnect-DEBUG] 电线连接检查异常 at {}: {}", pos, e.getMessage());
+                }
                 return false;
             }
         }

@@ -5,12 +5,8 @@
     {
       "item": "mio_icif:reactor/item_reactor_plate"
     },
-    {
-      "item": "mio_icif:resource/item_alloy_plate"
-    },
-    {
-      "item": "mio_icif:resource/item_alloy_plate"
-    }
+    {"tag": "c:plates/alloy"},
+    {"tag": "c:plates/alloy"}
   ],
   "result": {
     "count": 1,

@@ -1,9 +1,7 @@
 {
   "type": "mio_icif:extractor",
   "energypertick": 12,
-  "ingredient": {
-    "item": "mio_icif:resource/item_flint_dust"
-  },
+  "ingredient": {"tag": "c:dusts/flint"},
   "processingtime": 150,
   "result": {
     "count": 1,

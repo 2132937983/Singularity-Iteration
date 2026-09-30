@@ -3,7 +3,7 @@
   "pattern": ["IAI","ADA","IAI"],
   "key": {
     "I":{"item":"mio_icif:resource/item_iridium"},
-    "A":{"item":"mio_icif:resource/item_alloy_plate"},
+    "A":{"tag": "c:plates/alloy"},
     "D":{"item":"minecraft:diamond"}
   },
   "result":{"id":"mio_icif:resource/item_iridium_plate","count":1}

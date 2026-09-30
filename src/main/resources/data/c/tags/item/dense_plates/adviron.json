@@ -1,5 +1,6 @@
 {
   "values": [
-    "mio_icif:resource/item_adviron_denseplate"
+    "mio_icif:resource/item_adviron_denseplate",
+    "#c:dense_plates/steel"
   ]
 }

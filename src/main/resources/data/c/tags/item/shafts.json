@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "#c:shafts/adviron",
+    "#c:shafts/bronze",
+    "#c:shafts/iron",
+    "#c:shafts/titanium"
+  ]
+}

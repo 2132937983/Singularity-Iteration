@@ -18,7 +18,14 @@ public final class CommonEnergyCompatibility implements EnergyCompatibility {
     @Override public IEUEnergyStorage findEuStorage(Level level, BlockPos pos, Direction input) {
         if (!MICompat.isMILoaded()) return null;
         Object storage = MICompat.getMIStorage(level, pos, input);
-        return storage == null ? null : MICompat.wrapMIStorage(storage);
+        // 兜底：某些 MI 版本对带 side 的查询只暴露部分面，无 side 查询可拿到默认视图。
+        if (storage == null && input != null) storage = MICompat.getMIStorage(level, pos, null);
+        IEUEnergyStorage wrapped = storage == null ? null : MICompat.wrapMIStorage(storage);
+        EnergyBridge.debug("compat-find|" + pos + "|" + input,
+            "findEuStorage({}, side={}) -> wrapped={} storage={}",
+            pos, input, wrapped != null,
+            storage == null ? "null" : storage.getClass().getName());
+        return wrapped;
     }
 
     @Override public IEnergySink findNetworkSink(Level level, BlockPos pos) {

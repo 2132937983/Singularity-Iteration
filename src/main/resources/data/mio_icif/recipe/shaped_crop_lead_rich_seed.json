@@ -9,9 +9,7 @@
     "E": {
       "item": "mio_icif:resource/item_plant_extract"
     },
-    "O": {
-      "item": "mio_icif:resource/item_lead_ore_crushed"
-    },
+    "O": {"tag": "c:crushed_ores/lead"},
     "S": {
       "item": "minecraft:wheat_seeds"
     }

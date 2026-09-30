@@ -1213,6 +1213,8 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.TERRA_ELC.get());
                 output.accept(mio_icif_blocks.FUTURE_ELC.get());
                 output.accept(mio_icif_blocks.TESLA.get());
+                output.accept(mio_icif_blocks.LASER_DEFENSE_TOWER.get());
+                output.accept(mio_icif_blocks.SKY_PATROL_LASER_TOWER.get());
 
                 // 工业工作台               
                 output.accept(mio_icif_blocks.INDUSTRIAL_WORKBENCH.get());

@@ -1,8 +1,6 @@
 {
   "type": "mio_icif:centrifuge",
-  "ingredient": {
-    "item": "mio_icif:resource/item_copper_ore_crushed"
-  },
+  "ingredient": {"tag": "c:crushed_ores/copper"},
   "minheat": 500,
   "primaryResult": {
     "count": 1,

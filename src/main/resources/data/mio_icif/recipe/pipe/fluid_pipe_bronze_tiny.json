@@ -7,9 +7,7 @@
     "CCC"
   ],
   "key": {
-    "C": {
-      "item": "mio_icif:resource/item_bronze_casing"
-    }
+    "C": {"tag": "c:casings/bronze"}
   },
   "result": {
     "id": "mio_icif:pipe/fluid_pipe_bronze_tiny",

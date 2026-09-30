@@ -9,9 +9,7 @@
     "P": {
       "tag": "c:plates/titanium"
     },
-    "T": {
-      "item": "mio_icif:block_titanium"
-    }
+    "T": {"tag": "c:storage_blocks/titanium"}
   },
   "result": {
     "id": "mio_icif:build/block_scaffold_titanium",

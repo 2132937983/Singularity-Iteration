@@ -18,6 +18,13 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 
 /** Live sided capability adapter; never retains a capability beyond a transaction. */
 public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyStorage {
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(FECompatTile.class);
+    /** 与电线共用同一个 JVM 参数：-Dsingularity_iteration.wireConnectDebug=true */
+    private static final boolean DEBUG =
+        Boolean.parseBoolean(System.getProperty("singularity_iteration.wireConnectDebug", "false"));
+    private static final java.util.Set<String> DEBUG_ONCE =
+        java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+
     private final Level world;
     private final BlockPos pos;
     private final Direction input;
@@ -28,6 +35,32 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
         this.world = java.util.Objects.requireNonNull(world);
         this.pos = pos.immutable();
         this.input = java.util.Objects.requireNonNull(direction).getOpposite();
+    }
+
+    /** 仅用于排查"连上了却充不进电"：打印该接触点每层能力的可用情况。 */
+    private void debugLayers(String phase, int amount, boolean simulate) {
+        if (!DEBUG) return;
+        String key = phase + "|" + pos + "|" + input + "|" + simulate;
+        if (DEBUG_ONCE.size() > 512) {
+            DEBUG_ONCE.clear();
+        }
+        if (!DEBUG_ONCE.add(key)) return;
+        try {
+            var eu = world.getCapability(EUApi.SIDED, pos, input);
+            var wide = world.getCapability(ILongEnergyStorage.BLOCK, pos, input);
+            var fe = world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, input);
+            var compat = EnergyCompatibility.get().findEuStorage(world, pos, input);
+            var be = world.getBlockEntity(pos);
+            LOG.warn("[FECompat-DEBUG] {} {} (side={}, 请求={} FE, simulate={})"
+                    + " | EUApi={} ILong={} FE={}(canReceive={}) 兼容层={}(canReceive={}) | BE={}",
+                phase, pos, input, amount, simulate,
+                eu != null, wide != null,
+                fe != null, fe != null && fe.canReceive(),
+                compat != null, compat != null && compat.canReceive(),
+                be == null ? "null" : be.getClass().getName());
+        } catch (RuntimeException error) {
+            LOG.warn("[FECompat-DEBUG] {} {} 层诊断失败: {}", phase, pos, error.toString());
+        }
     }
     public boolean loaded() {
         if (!(world instanceof ServerLevel level) || !level.getServer().isSameThread()) return false;
@@ -78,12 +111,48 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
             // FE has integer granularity. Round the debit upwards, never create EU by truncation.
             return Math.min(offered, (int)Math.ceil((offered / 4.0 - rejected) * 4.0));
         }
-        var target = capabilityWhenLoaded();
+
+        // 逐层尝试并回退：某些模组（如 Modern Industrialization）同时暴露
+        // 本模组能力与 FE 适配层，而 FE 适配在某个面可能拒收（canReceive=false
+        // 或报价为 0）。旧实现只认"第一个非 null 的能力"，于是表现为
+        // "电线连上了、机器也在输入面，却永远充不进电"。某层拿不到能量时
+        // 必须继续尝试后续层。逐层惰性查询，避免为常见路径付出额外开销。
+        int accepted = receiveThrough(world.getCapability(EUApi.SIDED, pos, input), amount, simulate);
+        if (accepted >= 0) return accepted;
+        accepted = receiveThrough(world.getCapability(ILongEnergyStorage.BLOCK, pos, input), amount, simulate);
+        if (accepted >= 0) return accepted;
+        accepted = receiveThrough(world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, input), amount, simulate);
+        if (accepted >= 0) return accepted;
+        accepted = receiveThrough(EnergyCompatibility.get().findEuStorage(world, pos, input), amount, simulate);
+        if (accepted >= 0) return accepted;
+
+        debugLayers("所有能量层均未接收", amount, simulate);
+        return 0;
+    }
+
+    /**
+     * @return 该层实际接收量；返回 -1 表示该层不存在、不可接收或本层拿不到能量，
+     *         调用方应继续尝试下一层。
+     */
+    private int receiveThrough(IEnergyStorage target, int amount, boolean simulate) {
         // Providers and policy callbacks are foreign code; they can unload the target.
-        if (target == null || !loaded() || !target.canReceive() || !loaded()) return 0;
+        if (target == null || !loaded() || !target.canReceive() || !loaded()) return -1;
         int accepted = target.receiveEnergy(amount, simulate);
         if (accepted < 0 || accepted > amount) throw new IllegalStateException("Invalid external FE receipt at " + pos);
-        return accepted;
+        // 该层收不下（含模拟报价为 0）时继续尝试下一层。
+        return accepted > 0 ? accepted : -1;
+    }
+
+    /** 任一层可接收即为可接收，避免被优先级最高但当前拒收的层掩盖。 */
+    private boolean anyLayerCanReceive() {
+        if (capabilityCanReceive(world.getCapability(EUApi.SIDED, pos, input))) return true;
+        if (capabilityCanReceive(world.getCapability(ILongEnergyStorage.BLOCK, pos, input))) return true;
+        if (capabilityCanReceive(world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, input))) return true;
+        return capabilityCanReceive(EnergyCompatibility.get().findEuStorage(world, pos, input));
+    }
+
+    private boolean capabilityCanReceive(IEnergyStorage target) {
+        return target != null && loaded() && target.canReceive() && loaded();
     }
     @Override public int extractEnergy(int amount, boolean simulate) {
         if (amount <= 0 || !loaded()) return 0;
@@ -107,8 +176,9 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
         if (!loaded()) return false;
         var sink = ae2WhenLoaded();
         if (sink != null) return sink.getDemandedEnergy() > 0 && loaded();
-        var target = capabilityWhenLoaded();
-        return target != null && loaded() && target.canReceive();
+        if (anyLayerCanReceive()) return true;
+        debugLayers("canReceive=false", 0, true);
+        return false;
     }
     @Override public boolean canExtract() {
         if (!loaded()) return false;

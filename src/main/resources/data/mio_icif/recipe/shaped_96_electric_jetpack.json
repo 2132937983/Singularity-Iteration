@@ -7,9 +7,7 @@
     "G G"
   ],
   "key": {
-    "I": {
-      "item": "mio_icif:resource/item_iron_casing"
-    },
+    "I": {"tag": "c:casings/iron"},
     "C": {
       "tag": "c:circuits/advanced"
     },

@@ -7,9 +7,7 @@
     "PSP"
   ],
   "key": {
-    "P": {
-      "item": "mio_icif:resource/item_niobium_titanium_plate"
-    },
+    "P": {"tag": "c:plates/niobium_titanium"},
     "S": {
       "tag": "c:circuits/elite"
     },

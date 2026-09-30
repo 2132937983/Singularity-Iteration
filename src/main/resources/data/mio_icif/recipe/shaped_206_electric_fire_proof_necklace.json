@@ -7,9 +7,7 @@
     "LSL"
   ],
   "key": {
-    "S": {
-      "item": "mio_icif:resource/item_titanium_casing"
-    },
+    "S": {"tag": "c:casings/titanium"},
     "B": {
       "item": "mio_icif:normal/item_lithium_battery"
     },

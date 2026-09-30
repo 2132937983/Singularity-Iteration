@@ -6,9 +6,7 @@
     "IGI"
   ],
   "key": {
-    "I": {
-      "item": "mio_icif:resource/item_iron_casing"
-    },
+    "I": {"tag": "c:casings/iron"},
     "B": {
       "item": "mio_icif:normal/item_bat_lev0"
     },

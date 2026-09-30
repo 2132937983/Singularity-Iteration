@@ -6,12 +6,8 @@
     "PSP"
   ],
   "key": {
-    "P": {
-      "item": "mio_icif:resource/item_titanium_plate"
-    },
-    "S": {
-      "item": "mio_icif:resource/item_titanium_casing"
-    }
+    "P": {"tag": "c:plates/titanium"},
+    "S": {"tag": "c:casings/titanium"}
   },
   "result": {
     "id": "mio_icif:build/block_titanium_storage",

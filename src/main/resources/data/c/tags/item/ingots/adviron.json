@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:resource/item_adviron_ingot",
+    "#c:ingots/steel"
+  ]
+}

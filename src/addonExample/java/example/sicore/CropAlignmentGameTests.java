@@ -263,7 +263,7 @@ public final class CropAlignmentGameTests {
         port.fill(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, 1000), IFluidHandler.FluidAction.EXECUTE);
         port.fill(new FluidStack(BuiltInRegistries.FLUID.get(id("weed_ex")), 1000), IFluidHandler.FluidAction.EXECUTE);
         var inv = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(machinePos), Direction.UP);
-        inv.insertItem(10, item("resource/item_fertilizer"), false);
+        inv.insertItem(3, item("resource/item_fertilizer"), false); // fertilizer slots 3-9 (0.1.7.15 layout)
         machine.getEnergyStorageInternal().setEnergy(1000);
         invoke(machine, "processCrops", new Class<?>[0]);
         h.assertTrue(crop.getNutrients() == 189 && crop.getWater() == 200 && crop.getWeedControl() == 150, "Matron did not apply all three independent supplies");

@@ -2641,6 +2641,17 @@ public class mio_icif_capacities {
 
         Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Tesla Coil");
 
+        // Laser defence towers: EU input and the battery slot
+        for (var towerType : java.util.List.of(mio_icif_block_entities.LASER_DEFENSE_TOWER_ENTITY_TYPE.get(),
+                mio_icif_block_entities.SKY_PATROL_LASER_TOWER_ENTITY_TYPE.get())) {
+            event.registerBlockEntity(EUApi.SIDED, towerType,
+                (blockEntity, direction) -> blockEntity instanceof AbstractEnergyBlockEntity energyBlock
+                    ? energyBlock.getEnergyStorageCapability(direction) : null);
+            event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, towerType,
+                (blockEntity, direction) -> blockEntity instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower tower
+                    ? tower.getItemHandlerCapability(direction) : null);
+        }
+
         // 注册作物监管机 EU 能量存储能力
         event.registerBlockEntity(
             EUApi.SIDED,

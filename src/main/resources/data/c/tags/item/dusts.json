@@ -22,21 +22,15 @@
     "#c:dusts/obsidian",
     "#c:dusts/silicon_dioxide",
     "#c:dusts/silver",
-    "#c:dusts/small_bronze",
-    "#c:dusts/small_copper",
-    "#c:dusts/small_gold",
-    "#c:dusts/small_iron",
-    "#c:dusts/small_lapis",
-    "#c:dusts/small_lead",
-    "#c:dusts/small_lithium",
-    "#c:dusts/small_obsidian",
-    "#c:dusts/small_silver",
-    "#c:dusts/small_sulfur",
-    "#c:dusts/small_tin",
-    "#c:dusts/small_titanium",
     "#c:dusts/stone",
     "#c:dusts/sulfur",
     "#c:dusts/tin",
-    "#c:dusts/thorium"
+    "#c:dusts/thorium",
+    "#c:dusts/niobium_titanium",
+    "#c:dusts/cinder",
+    "#c:dusts/emerald",
+    "#c:dusts/ender_pearl",
+    "#c:dusts/niobium",
+    "#c:dusts/titanium"
   ]
 }

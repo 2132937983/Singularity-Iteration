@@ -14,6 +14,10 @@ public class mio_icif_DamageTypes {
     );
 
     // 特斯拉线圈电击伤害类�
+public static final ResourceKey<DamageType> LASER_TOWER = ResourceKey.create(
+        Registries.DAMAGE_TYPE,
+        ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "laser_tower")
+    );
 public static final ResourceKey<DamageType> TESLA_COIL = ResourceKey.create(
         Registries.DAMAGE_TYPE,
         ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "tesla_coil")

@@ -1,1 +1,1 @@
-{"type": "minecraft:crafting_shaped","pattern":["PCP","C C","PCP"],"key":{"P":{"item":"mio_icif:resource/item_adviron_plate"},"C":{"item":"mio_icif:resource/item_adviron_casing"}},"result":{"id":"mio_icif:build/block_adviron_storage","count":1}}
+{"type": "minecraft:crafting_shaped","pattern":["PCP","C C","PCP"],"key":{"P":{"tag": "c:plates/steel"},"C":{"tag": "c:casings/steel"}},"result":{"id":"mio_icif:build/block_adviron_storage","count":1}}

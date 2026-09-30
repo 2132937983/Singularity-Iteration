@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "#c:casings/adviron",
+    "#c:casings/bronze",
+    "#c:casings/copper",
+    "#c:casings/gold",
+    "#c:casings/iron",
+    "#c:casings/lead",
+    "#c:casings/niobium",
+    "#c:casings/silver",
+    "#c:casings/tin",
+    "#c:casings/titanium",
+    "#c:casings/steel",
+    "#c:casings/refined_iron"
+  ]
+}

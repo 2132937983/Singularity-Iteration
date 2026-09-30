@@ -1,5 +1,6 @@
 {
   "values": [
-    "mio_icif:resource/item_adviron_casing"
+    "mio_icif:resource/item_adviron_casing",
+    "#c:casings/steel"
   ]
 }

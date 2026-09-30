@@ -13,9 +13,7 @@
     "C": {
       "tag": "c:circuits/basic"
     },
-    "T": {
-      "item": "mio_icif:resource/item_copper_casing"
-    }
+    "T": {"tag": "c:casings/copper"}
   },
   "result": {
     "id": "mio_icif:armor/item_armor_advbatpack",

@@ -6,9 +6,7 @@
     " C "
   ],
   "key": {
-    "C": {
-      "item": "mio_icif:resource/item_tin_casing"
-    },
+    "C": {"tag": "c:casings/tin"},
     "G": {
       "item": "minecraft:glass_pane"
     }

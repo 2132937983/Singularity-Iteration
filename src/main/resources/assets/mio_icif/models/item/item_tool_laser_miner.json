@@ -1,6 +1,20 @@
 {
-  "parent": "minecraft:item/handheld",
-  "textures": {
-    "layer0": "mio_icif:item/item_tool_laserminer"
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "mio_icif:item/3d/item_tool_laser_miner"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/item_tool_laser_miner"
+      }
+    },
+    "fixed": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/item_tool_laser_miner"
+      }
+    }
   }
 }

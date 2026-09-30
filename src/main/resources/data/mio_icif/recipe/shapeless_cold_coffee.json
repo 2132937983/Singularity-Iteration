@@ -4,9 +4,7 @@
     {
       "item": "mio_icif:normal/item_empty_mug"
     },
-    {
-      "item": "mio_icif:resource/item_coffee_dust"
-    },
+    {"tag": "c:dusts/coffee"},
     {
       "item": "minecraft:water_bucket"
     }

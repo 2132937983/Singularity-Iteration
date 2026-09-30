@@ -6,9 +6,7 @@
     "CFC"
   ],
   "key": {
-    "C": {
-      "item": "mio_icif:resource/item_neutron_plate"
-    },
+    "C": {"tag": "c:plates/neutron"},
     "F": {
       "tag": "mio_icif:field_generators"
     },

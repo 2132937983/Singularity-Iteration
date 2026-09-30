@@ -6,82 +6,50 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.crafting.ShapelessRecipe;
 
 import java.util.List;
 
-public class ChargeCarryingShapelessRecipe implements CraftingRecipe {
+/**
+ * 电量传递的无序合成配方。
+ *
+ * <p>继承原版 {@link ShapelessRecipe}（与有序版继承 {@code ShapedRecipe} 同理）：
+ * 匹配使用原版的完整二分匹配，旧实现的"逐个取第一个匹配物品"贪心算法在材料重叠时
+ * （例如 tag 与具体物品同时出现）会把合法摆放判为不匹配；同时配方书、JEI/EMI
+ * 也能按无序配方正确显示。只替换 {@link #assemble} 与 {@link #getRemainingItems}。
+ */
+public class ChargeCarryingShapelessRecipe extends ShapelessRecipe {
 
-    private final String group;
-    private final List<Ingredient> ingredients;
+    private final List<Ingredient> ingredientList;
     private final ItemStack result;
     private final boolean transferCharge;
 
     public ChargeCarryingShapelessRecipe(String group, List<Ingredient> ingredients, ItemStack result, boolean transferCharge) {
-        this.group = group;
-        this.ingredients = ingredients;
+        super(group, CraftingBookCategory.MISC, result, toNonNullList(ingredients));
+        this.ingredientList = List.copyOf(ingredients);
         this.result = result;
         this.transferCharge = transferCharge;
     }
 
-    @Override
-    public boolean matches(CraftingInput input, Level level) {
-        java.util.List<ItemStack> available = new java.util.ArrayList<>();
-        for (int i = 0; i < input.size(); i++) {
-            ItemStack stack = input.getItem(i);
-            if (!stack.isEmpty()) {
-                available.add(stack.copy());
-            }
-        }
-        for (Ingredient ingredient : this.ingredients) {
-            boolean matched = false;
-            for (int j = 0; j < available.size(); j++) {
-                if (ingredient.test(available.get(j))) {
-                    available.remove(j);
-                    matched = true;
-                    break;
-                }
-            }
-            if (!matched) return false;
-        }
-        return available.isEmpty();
+    private static NonNullList<Ingredient> toNonNullList(List<Ingredient> ingredients) {
+        NonNullList<Ingredient> list = NonNullList.create();
+        list.addAll(ingredients);
+        return list;
     }
 
     @Override
     public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
         ItemStack ret = this.result.copy();
         if (this.transferCharge) {
-            long totalCharge = ChargeCarryingRecipe.collectInputCharge(input);
-            ChargeCarryingRecipe.chargeResult(ret, totalCharge);
+            ChargeCarryingRecipe.chargeResult(ret, ChargeCarryingRecipe.collectInputCharge(input));
         }
         return ret;
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return width * height >= this.ingredients.size();
-    }
-
-    @Override
-    public ItemStack getResultItem(HolderLookup.Provider registries) {
-        return this.result;
-    }
-
-    @Override
-    public CraftingBookCategory category() {
-        return CraftingBookCategory.MISC;
-    }
-
-    @Override
     public RecipeSerializer<?> getSerializer() {
         return ChargeCarryingRecipes.CHARGE_CARRYING_SHAPELESS_SERIALIZER.get();
-    }
-
-    @Override
-    public String getGroup() {
-        return this.group;
     }
 
     @Override
@@ -97,20 +65,8 @@ public class ChargeCarryingShapelessRecipe implements CraftingRecipe {
         return remaining;
     }
 
-    @Override
-    public NonNullList<Ingredient> getIngredients() {
-        NonNullList<Ingredient> list = NonNullList.create();
-        list.addAll(this.ingredients);
-        return list;
-    }
-
-    @Override
-    public boolean isSpecial() {
-        return false;
-    }
-
     public List<Ingredient> getIngredientList() {
-        return this.ingredients;
+        return this.ingredientList;
     }
 
     public ItemStack getResult() {

@@ -7,15 +7,11 @@
     "CPC"
   ],
   "key": {
-    "I": {
-      "item": "mio_icif:resource/item_iridium_ingot"
-    },
+    "I": {"tag": "c:ingots/iridium"},
     "R": {
       "item": "minecraft:redstone_block"
     },
-    "C": {
-      "item": "mio_icif:resource/item_niobium_titanium_plate"
-    },
+    "C": {"tag": "c:plates/niobium_titanium"},
     "P": {
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     }

@@ -1,8 +1,6 @@
 {
   "type": "mio_icif:metal_former_extruding",
-  "ingredient": {
-    "item": "mio_icif:block_adviron"
-  },
+  "ingredient": {"tag": "c:storage_blocks/steel"},
   "processingtime": 400,
   "result": {
     "count": 1,

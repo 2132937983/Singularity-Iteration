@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:item_tool_laser_miner",
+    "mio_icif:item_tool_iron_driller",
+    "mio_icif:item_tool_diamond_driller",
+    "mio_icif:item_tool_iridium_driller",
+    "mio_icif:item_tool_iron_chainsaw"
+  ]
+}

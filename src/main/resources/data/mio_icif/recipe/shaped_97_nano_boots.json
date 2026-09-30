@@ -5,9 +5,7 @@
     "CcC"
   ],
   "key": {
-    "C": {
-      "item": "mio_icif:resource/item_carbon_plate"
-    },
+    "C": {"tag": "c:plates/carbon"},
     "c": {
       "item": "mio_icif:normal/item_crystal_lev0"
     }

@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "#c:rotor_blades/adviron",
+    "#c:rotor_blades/bronze",
+    "#c:rotor_blades/carbon",
+    "#c:rotor_blades/iron",
+    "#c:rotor_blades/super_iridium_alloy",
+    "#c:rotor_blades/titanium_iron_alloy",
+    "#c:rotor_blades/wood"
+  ]
+}

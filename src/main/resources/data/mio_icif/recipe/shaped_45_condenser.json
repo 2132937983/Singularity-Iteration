@@ -9,9 +9,7 @@
     "C": {
       "item": "mio_icif:cell/item_cell_empty"
     },
-    "I": {
-      "item": "mio_icif:resource/item_iron_casing"
-    },
+    "I": {"tag": "c:casings/iron"},
     "A": {
       "item": "mio_icif:producer/block_machine_hull_basic"
     },

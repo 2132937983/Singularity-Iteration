@@ -1,8 +1,6 @@
 {
   "type": "mio_icif:centrifuge",
-  "ingredient": {
-    "item": "mio_icif:resource/item_clay_dust"
-  },
+  "ingredient": {"tag": "c:dusts/clay"},
   "minheat": 250,
   "primaryResult": {
     "count": 1,

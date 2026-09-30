@@ -9,9 +9,7 @@
     "R": {
       "item": "minecraft:redstone"
     },
-    "D": {
-      "item": "mio_icif:resource/item_diamond_dust"
-    }
+    "D": {"tag": "c:dusts/diamond"}
   },
   "result": {
     "id": "mio_icif:resource/item_energium_dust",

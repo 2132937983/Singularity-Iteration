@@ -1881,5 +1881,17 @@
   "item.mio_icif.herbicide.tooltip": "除草剂：64 次，每次 50 mB",
   "item.mio_icif.herbicide.tooltip.matron": "用于预防杂草侵占，也可供给作物管理器。",
   "item.mio_icif.fertilizer.tooltip": "储肥低于 100 时，手动施肥增加 100 点养分。",
-  "item.mio_icif.fertilizer.tooltip.matron": "作物管理器每次增加 90 点养分。"
+  "item.mio_icif.fertilizer.tooltip.matron": "作物管理器每次增加 90 点养分。",
+  "block.mio_icif.producer.block_laser_defense_tower": "镭射激光防御塔",
+  "block.mio_icif.producer.block_sky_patrol_laser_tower": "巡天镭射激光防御站",
+  "container.mio_icif.laser_defense_tower": "镭射激光防御塔",
+  "container.mio_icif.sky_patrol_laser_tower": "巡天镭射激光防御站",
+  "death.attack.laser_tower": "%1$s被镭射激光防御塔汽化了",
+  "death.attack.laser_tower.player": "%1$s在与%2$s战斗时被镭射激光防御塔汽化了",
+  "gui.mio_icif.laser_tower.horizontal": "水平 X/Z: ±%s",
+  "gui.mio_icif.laser_tower.vertical": "垂直 Y: ±%s",
+  "gui.mio_icif.laser_tower.targets": "上次齐射: %s / %s",
+  "gui.mio_icif.laser_tower.cost": "每个目标消耗 %s EU",
+  "gui.mio_icif.laser_tower.energy": "能量: %s / %s EU",
+  "gui.mio_icif.laser_tower.range_limit": "最大: ±%s 格"
 }

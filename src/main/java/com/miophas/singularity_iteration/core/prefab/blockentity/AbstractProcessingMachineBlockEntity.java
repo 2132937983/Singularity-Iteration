@@ -1342,8 +1342,15 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     protected class SidedItemHandler implements IItemHandler {
         protected final Direction side;
 
+        /**
+         * {@code side} is the capability context: the face of this machine being
+         * accessed (a hopper above inserts through UP). It is passed through
+         * unchanged, as {@link #canPlaceItemThroughFace} does; the former
+         * {@code getOpposite()} mirrored every side rule, so e.g. the Cropmatron's
+         * and Crop Harvester's top-only slots accepted items only from below.
+         */
         public SidedItemHandler(@Nullable Direction side) {
-            this.side = (side != null) ? side.getOpposite() : null;
+            this.side = side;
         }
 
         @Override

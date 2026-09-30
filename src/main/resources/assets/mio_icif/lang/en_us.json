@@ -1847,5 +1847,17 @@
   "item.mio_icif.herbicide.tooltip": "Weed-EX: 64 doses of 50 mB",
   "item.mio_icif.herbicide.tooltip.matron": "Prevents weed invasion; also supplies the cropmatron.",
   "item.mio_icif.fertilizer.tooltip": "Adds 100 nutrients manually when the reserve is below 100.",
-  "item.mio_icif.fertilizer.tooltip.matron": "The cropmatron adds 90 nutrients per application."
+  "item.mio_icif.fertilizer.tooltip.matron": "The cropmatron adds 90 nutrients per application.",
+  "block.mio_icif.producer.block_laser_defense_tower": "Laser Defense Tower",
+  "block.mio_icif.producer.block_sky_patrol_laser_tower": "Sky Patrol Laser Defense Station",
+  "container.mio_icif.laser_defense_tower": "Laser Defense Tower",
+  "container.mio_icif.sky_patrol_laser_tower": "Sky Patrol Laser Defense Station",
+  "death.attack.laser_tower": "%1$s was vaporised by a laser defense tower",
+  "death.attack.laser_tower.player": "%1$s was vaporised by a laser defense tower while fighting %2$s",
+  "gui.mio_icif.laser_tower.horizontal": "X/Z: ±%s",
+  "gui.mio_icif.laser_tower.vertical": "Y: ±%s",
+  "gui.mio_icif.laser_tower.targets": "Last volley: %s / %s",
+  "gui.mio_icif.laser_tower.cost": "Cost: %s EU per target",
+  "gui.mio_icif.laser_tower.energy": "Energy: %s / %s EU",
+  "gui.mio_icif.laser_tower.range_limit": "Maximum: ±%s blocks"
 }

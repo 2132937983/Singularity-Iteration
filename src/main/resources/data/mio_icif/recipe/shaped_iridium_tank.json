@@ -6,9 +6,7 @@
     "PUP"
   ],
   "key": {
-    "P": {
-      "item": "mio_icif:resource/item_iridium_plate"
-    },
+    "P": {"tag": "c:plates/iridium"},
     "U": {
       "item": "mio_icif:cell/item_cell_empty"
     }

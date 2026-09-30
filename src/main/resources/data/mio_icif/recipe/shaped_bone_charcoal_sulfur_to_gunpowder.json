@@ -9,12 +9,8 @@
     "B": {
       "item": "minecraft:bone_meal"
     },
-    "C": {
-      "item": "mio_icif:resource/item_charcoal_dust"
-    },
-    "S": {
-      "item": "mio_icif:resource/item_sulfur_dust"
-    }
+    "C": {"tag": "c:dusts/charcoal"},
+    "S": {"tag": "c:dusts/sulfur"}
   },
   "result": {
     "id": "minecraft:gunpowder",

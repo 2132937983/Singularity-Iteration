@@ -1,6 +1,20 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "mio_icif:item/item_rocket"
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "mio_icif:item/3d/item_rocket"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/item_rocket"
+      }
+    },
+    "fixed": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/item_rocket"
+      }
+    }
   }
 }

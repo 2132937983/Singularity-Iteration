@@ -3,7 +3,7 @@
   "transfer_charge": true,
   "pattern": ["SCS", "MBM", "SCS"],
   "key": {
-    "S": {"item": "mio_icif:resource/item_titanium_casing"},
+    "S": {"tag": "c:casings/titanium"},
     "C": {"tag": "c:circuits/advanced"},
     "M": {"item": "mio_icif:item_electric_nutrition_supply"},
     "B": {"item": "mio_icif:normal/item_crystal_lev0"}

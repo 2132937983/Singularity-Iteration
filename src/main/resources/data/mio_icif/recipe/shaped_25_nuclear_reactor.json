@@ -15,9 +15,7 @@
     "G": {
       "item": "mio_icif:generator/block_thermal_generator"
     },
-    "P": {
-      "item": "mio_icif:resource/item_lead_denseplate"
-    }
+    "P": {"tag": "c:dense_plates/lead"}
   },
   "result": {
     "id": "mio_icif:generator/block_nuclear_reactor_generator",

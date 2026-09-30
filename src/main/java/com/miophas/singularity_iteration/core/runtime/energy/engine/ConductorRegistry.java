@@ -279,6 +279,8 @@ public final class ConductorRegistry implements AutoCloseable {
         }
         public int componentOf(Position at) { return graph.componentOf(vertex(at)); }
         public int componentSize(Position at) { return graph.componentSize(vertex(at)); }
+        /** Search work / retained route size for a source in this component (key vertices only). */
+        public int searchWeight(Position at) { return graph.searchWeight(vertex(at)); }
         public ConductorGraph.Routes routesFrom(Position source) {
             return routesFrom(vertex(source), null);
         }
@@ -297,7 +299,8 @@ public final class ConductorRegistry implements AutoCloseable {
         private ConductorGraph.Routes routesFrom(int id, SearchBudget budget) {
             var result = routes.get(id);
             if (result == null) {
-                int weight = graph.componentSize(id);
+                // Chain-compressed search: work and route arrays scale with key vertices.
+                int weight = graph.searchWeight(id);
                 if (budget != null && !budget.tryConsume(weight)) return null;
                 result = graph.routesFrom(id);
                 routeComputations++;
@@ -305,7 +308,7 @@ public final class ConductorRegistry implements AutoCloseable {
                     while (routes.size() >= maximumCachedSources
                             || cachedRouteVertices > maximumCachedRouteVertices - weight) {
                         var evicted = routes.pollFirstEntry();
-                        cachedRouteVertices -= graph.componentSize(evicted.getKey());
+                        cachedRouteVertices -= graph.searchWeight(evicted.getKey());
                     }
                     routes.put(id, result);
                     cachedRouteVertices += weight;

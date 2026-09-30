@@ -13,9 +13,7 @@
     "C": {
       "item": "mio_icif:normal/item_crystal_lev0"
     },
-    "I": {
-      "item": "mio_icif:resource/item_iron_casing"
-    },
+    "I": {"tag": "c:casings/iron"},
     "E": {
       "item": "mio_icif:armor/item_armor_advbatpack"
     }

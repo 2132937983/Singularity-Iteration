@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "#c:heat_vents/iridium",
+    "#c:heat_vents/iridium_overclocked"
+  ]
+}

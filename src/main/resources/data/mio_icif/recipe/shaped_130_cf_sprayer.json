@@ -6,9 +6,7 @@
     " FC"
   ],
   "key": {
-    "C": {
-      "item": "mio_icif:resource/item_iron_casing"
-    },
+    "C": {"tag": "c:casings/iron"},
     "F": {
       "item": "mio_icif:cell/item_cell_empty"
     }

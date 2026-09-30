@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:block_ore_tin",
+    "mio_icif:block_ore_tin_in_deep"
+  ]
+}

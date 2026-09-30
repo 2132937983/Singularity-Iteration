@@ -12,9 +12,7 @@
     "R": {
       "tag": "c:dusts/silver"
     },
-    "D": {
-      "item": "mio_icif:resource/item_energium_dust"
-    }
+    "D": {"tag": "c:dusts/energium"}
   },
   "result": {
     "id": "mio_icif:wiring/cable/block_glass_cable",

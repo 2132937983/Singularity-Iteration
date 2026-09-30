@@ -6,9 +6,7 @@
     "GGG"
   ],
   "key": {
-    "G": {
-      "item": "mio_icif:resource/item_titanium_casing"
-    },
+    "G": {"tag": "c:casings/titanium"},
     "T": {
       "item": "minecraft:bucket"
     },

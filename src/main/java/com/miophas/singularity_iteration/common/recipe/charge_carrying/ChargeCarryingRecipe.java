@@ -76,24 +76,30 @@ public class ChargeCarryingRecipe extends ShapedRecipe {
         return this.transferCharge;
     }
 
+    /** Sum of the charge on every electric input; saturates instead of overflowing. */
     public static long collectInputCharge(CraftingInput input) {
         long totalCharge = 0L;
         for (int i = 0; i < input.size(); i++) {
             ItemStack stack = input.getItem(i);
             if (!stack.isEmpty() && stack.getItem() instanceof IBatteryItem battery) {
-                totalCharge += battery.getEnergy(stack);
+                long charge = Math.max(0L, battery.getEnergy(stack));
+                totalCharge = charge > Long.MAX_VALUE - totalCharge ? Long.MAX_VALUE : totalCharge + charge;
             }
         }
         return totalCharge;
     }
 
+    /**
+     * Gives the result exactly the carried charge, capped at its capacity.
+     * {@link IBatteryItem#setEnergy} is optional (a no-op by default), so any
+     * charge left on the result after it is drained explicitly. Excess charge
+     * beyond the result's capacity is not preserved, as in IC2.
+     */
     public static void chargeResult(ItemStack result, long charge) {
-        if (result.isEmpty()) return;
-        if (result.getItem() instanceof IBatteryItem battery) {
-            battery.setEnergy(result, 0);
-            if (charge > 0) {
-                battery.addEnergy(result, charge);
-            }
-        }
+        if (result.isEmpty() || !(result.getItem() instanceof IBatteryItem battery)) return;
+        battery.setEnergy(result, 0);
+        long left = battery.getEnergy(result);
+        if (left > 0) battery.extractEnergy(result, left);
+        if (charge > 0) battery.addEnergy(result, charge);
     }
 }

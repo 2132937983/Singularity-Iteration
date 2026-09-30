@@ -7,18 +7,14 @@
     "DJD"
   ],
   "key": {
-    "S": {
-      "item": "mio_icif:resource/item_niobium_titanium_plate"
-    },
+    "S": {"tag": "c:plates/niobium_titanium"},
     "C": {
       "tag": "c:circuits/elite"
     },
     "B": {
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     },
-    "D": {
-      "item": "mio_icif:resource/item_energium_dust"
-    },
+    "D": {"tag": "c:dusts/energium"},
     "J": {
       "item": "mio_icif:armor/item_armor_advanced_jetpack"
     }

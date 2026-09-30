@@ -7,9 +7,7 @@
     "ICI"
   ],
   "key": {
-    "S": {
-      "item": "mio_icif:resource/item_alloy_ingot"
-    },
+    "S": {"tag": "c:ingots/alloy"},
     "A": {
       "item": "mio_icif:armor/item_armor_nano_chestplate"
     },

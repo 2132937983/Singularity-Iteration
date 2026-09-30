@@ -1,8 +1,6 @@
 {
   "type": "mio_icif:washer",
-  "ingredient": {
-    "item": "mio_icif:resource/item_gold_ore_crushed"
-  },
+  "ingredient": {"tag": "c:crushed_ores/gold"},
   "primaryResult": {
     "count": 1,
     "id": "mio_icif:resource/item_gold_ore_crushed_purified"

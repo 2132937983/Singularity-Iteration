@@ -6,9 +6,7 @@
     "CSC"
   ],
   "key": {
-    "P": {
-      "item": "mio_icif:resource/item_carbon_plate"
-    },
+    "P": {"tag": "c:plates/carbon"},
     "L": {
       "item": "minecraft:lapis_block"
     },

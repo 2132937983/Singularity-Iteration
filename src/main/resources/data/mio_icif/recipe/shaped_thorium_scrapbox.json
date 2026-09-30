@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "pattern": [" R ","RER"," R "],
   "key": {
-    "R":{"item":"mio_icif:resource/item_thorium_dust"},
+    "R":{"tag": "c:dusts/thorium"},
     "E":{"item":"mio_icif:normal/item_scrapbox"}
   },
   "result":{"id":"mio_icif:normal/item_thorium_scrapbox","count":1}

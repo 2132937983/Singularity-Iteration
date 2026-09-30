@@ -593,6 +593,11 @@ public class mio_icif_screens {
         );
 
         event.register(
+            mio_icif_menus.LASER_TOWER_MENU_TYPE.get(),
+            LaserTowerScreen::new
+        );
+
+        event.register(
             mio_icif_menus.CHUNK_LOADER_MENU_TYPE.get(),
             mio_icif_gui_chunk_loader::new
         );

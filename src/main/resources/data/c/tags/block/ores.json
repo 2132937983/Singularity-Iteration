@@ -9,6 +9,11 @@
     "mio_icif:block_ore_niobium",
     "mio_icif:block_ore_niobium_in_deep",
     "mio_icif:block_ore_titanium",
-    "mio_icif:block_ore_titanium_in_deep"
+    "mio_icif:block_ore_titanium_in_deep",
+    "#c:ores/uranium",
+    "#c:ores/titanium",
+    "#c:ores/lead",
+    "#c:ores/tin",
+    "#c:ores/niobium"
   ]
 }

@@ -1,8 +1,6 @@
 {
   "type": "mio_icif:washer",
-  "ingredient": {
-    "item": "mio_icif:resource/item_tin_ore_crushed"
-  },
+  "ingredient": {"tag": "c:crushed_ores/tin"},
   "primaryResult": {
     "count": 1,
     "id": "mio_icif:resource/item_tin_ore_crushed_purified"

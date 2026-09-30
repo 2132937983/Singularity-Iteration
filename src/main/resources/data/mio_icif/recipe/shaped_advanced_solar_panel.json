@@ -9,18 +9,14 @@
     "P": {
       "item": "mio_icif:build/block_irradiant_glass_pane"
     },
-    "A": {
-      "item": "mio_icif:resource/item_alloy_plate"
-    },
+    "A": {"tag": "c:plates/alloy"},
     "S": {
       "item": "mio_icif:generator/block_solar_generator"
     },
     "C": {
       "item": "mio_icif:normal/item_advcircuit"
     },
-    "I": {
-      "item": "mio_icif:resource/item_irradiant_reinforced_plate"
-    }
+    "I": {"tag": "c:plates/irradiant_reinforced"}
   },
   "result": {
     "id": "mio_icif:generator/block_advanced_solar_panel",

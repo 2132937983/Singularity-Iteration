@@ -15,9 +15,7 @@
     "g": {
       "item": "minecraft:glass"
     },
-    "I": {
-      "item": "mio_icif:resource/item_iron_casing"
-    }
+    "I": {"tag": "c:casings/iron"}
   },
   "result": {
     "id": "mio_icif:generator/block_geo_generator",

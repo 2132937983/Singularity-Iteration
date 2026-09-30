@@ -10,15 +10,52 @@ import java.util.function.IntConsumer;
  * Immutable undirected conductor graph, including cycles and disconnected parts.
  * An independently chosen minimum-loss path model, not a claim about a game's
  * internal algorithm or which equal-cost physical path it selects.
+ *
+ * <h2>Chain compression</h2>
+ * Real cable networks are mostly long runs with few branches. Every vertex whose
+ * degree is not 2 is a <em>key</em> vertex (junctions, dead ends, isolated
+ * conductors); each pure degree-2 cycle promotes one member to key. The remaining
+ * vertices lie on exactly one <em>chain</em>: a maximal run of degree-2 vertices
+ * between two key vertices (possibly the same key, for a loop). A chain with no
+ * interior is a plain key-to-key link.
+ *
+ * <p>Shortest paths are searched over key vertices only, with each chain acting as
+ * one weighted edge. The cost of an interior vertex follows in O(1) from its
+ * chain's two end costs and a prefix sum. Search work and retained route memory
+ * are therefore proportional to the number of key vertices in a component
+ * ({@link #searchWeight(int)}), not to its cable length. The costs are identical
+ * to a full per-vertex search; when equal-cost paths exist, the path picked may
+ * differ.
  */
 public final class ConductorGraph {
     private final long[] losses;
     private final int[] offsets;
     private final int[] neighbours;
     private final int[] components;
-    private final int[] componentOffsets;
-    private final int[] componentVertices;
-    private final int[] localVertices;
+    private final int[] componentSizes;
+
+    // --- chain compression -------------------------------------------------
+    /** vertex -> component-local key index, or -1 for chain interiors. */
+    private final int[] keyLocal;
+    /** component label -> dense component ordinal (labels are seed vertex IDs). */
+    private final int[] componentOrdinal;
+    /** ordinal -> [start, end) into keyVertices. */
+    private final int[] componentKeyStart;
+    private final int[] keyVertices;
+    /** interior vertex -> chain, and its index along that chain (A to B). */
+    private final int[] chainOf;
+    private final int[] chainIndex;
+    /** chain -> end keys (global vertex IDs) and its interior slice. */
+    private final int[] chainA;
+    private final int[] chainB;
+    private final int[] chainStart;
+    private final int[] chainInterior;
+    /** prefix[chainPrefixStart[c] + i] = loss of the first i interior vertices. */
+    private final int[] chainPrefixStart;
+    private final long[] chainPrefix;
+    /** key vertex -> arcs; arc = chain * 2 + direction (0: leave via A, 1: leave via B). */
+    private final int[] arcOffsets;
+    private final int[] arcs;
 
     public ConductorGraph(long[] conductorLossMilli, int[][] links) {
         Objects.requireNonNull(conductorLossMilli, "conductorLossMilli");
@@ -51,13 +88,16 @@ public final class ConductorGraph {
             neighbours[cursor[ends[i]]++] = ends[i + 1];
             neighbours[cursor[ends[i + 1]]++] = ends[i];
         }
-        // Label physical wire components once. Endpoint machines are not wire
-        // vertices and therefore cannot accidentally merge distinct domains.
+
+        // Label physical wire components once (label = lowest vertex ID of the
+        // component). Endpoint machines are not wire vertices and therefore
+        // cannot accidentally merge distinct domains.
         components = new int[count]; Arrays.fill(components, -1);
+        componentOrdinal = new int[count]; Arrays.fill(componentOrdinal, -1);
         int[] queue = new int[count]; int componentCount = 0;
         for (int seed = 0; seed < count; seed++) {
             if (components[seed] >= 0) continue;
-            componentCount++;
+            componentOrdinal[seed] = componentCount++;
             int head = 0, tail = 0; queue[tail++] = seed; components[seed] = seed;
             while (head < tail) {
                 int vertex = queue[head++];
@@ -68,134 +108,188 @@ public final class ConductorGraph {
                 }
             }
         }
-        if (componentCount == 1) {
-            // A connected graph already has compact, ordered IDs. Preserve its
-            // existing working-set size without allocating another index.
-            componentOffsets = null; componentVertices = null; localVertices = null;
-        } else {
-            componentOffsets = new int[count + 1]; componentVertices = new int[count];
-            for (int component : components) componentOffsets[component + 1]++;
-            for (int i = 1; i <= count; i++) componentOffsets[i] += componentOffsets[i - 1];
-            // Reuse the finished traversal queue first as cursors, then as the
-            // global-to-local map. Ascending global IDs preserve heap tie order.
-            Arrays.fill(queue, 0);
-            for (int vertex = 0; vertex < count; vertex++) {
-                int component = components[vertex];
-                componentVertices[componentOffsets[component] + queue[component]++] = vertex;
+        componentSizes = new int[componentCount];
+        for (int vertex = 0; vertex < count; vertex++) componentSizes[componentOrdinal[components[vertex]]]++;
+
+        // Key vertices: degree != 2, plus one member of every pure degree-2 cycle.
+        boolean[] key = new boolean[count];
+        for (int v = 0; v < count; v++) key[v] = degree(v) != 2;
+        boolean[] walked = new boolean[count];
+        for (int start = 0; start < count; start++) {
+            if (key[start] || walked[start]) continue;
+            // Walk one direction; reaching a key or an already walked vertex means
+            // this run ends at a key. Returning to the start means a pure cycle.
+            int previous = start, vertex = start;
+            walked[start] = true;
+            while (true) {
+                int next = neighbours[offsets[vertex]] != previous ? neighbours[offsets[vertex]] : neighbours[offsets[vertex] + 1];
+                if (next == start) { key[start] = true; break; }
+                if (key[next] || walked[next]) break;
+                walked[next] = true; previous = vertex; vertex = next;
             }
-            for (int i = 0; i < count; i++) {
-                int vertex = componentVertices[i]; queue[vertex] = i - componentOffsets[components[vertex]];
-            }
-            localVertices = queue;
         }
+
+        // Dense per-component key numbering, ascending by vertex ID within a component.
+        componentKeyStart = new int[componentCount + 1];
+        for (int v = 0; v < count; v++) if (key[v]) componentKeyStart[componentOrdinal[components[v]] + 1]++;
+        for (int i = 1; i <= componentCount; i++) componentKeyStart[i] += componentKeyStart[i - 1];
+        keyVertices = new int[componentKeyStart[componentCount]];
+        keyLocal = new int[count]; Arrays.fill(keyLocal, -1);
+        int[] fill = Arrays.copyOf(componentKeyStart, componentCount);
+        for (int v = 0; v < count; v++) {
+            if (!key[v]) continue;
+            int ordinal = componentOrdinal[components[v]];
+            keyLocal[v] = fill[ordinal] - componentKeyStart[ordinal];
+            keyVertices[fill[ordinal]++] = v;
+        }
+
+        // Chains. Each is discovered once: from its lower-ID end key, or for a
+        // direct key-key link only when a < b. Interiors are claimed on the walk.
+        chainOf = new int[count]; Arrays.fill(chainOf, -1);
+        chainIndex = new int[count];
+        int chainCount = 0, interiorCount = 0;
+        int[] tmpA = new int[Math.max(1, links.length)], tmpB = new int[Math.max(1, links.length)];
+        int[] tmpStart = new int[Math.max(1, links.length) + 1];
+        int[] tmpInterior = new int[count];
+        for (int a = 0; a < count; a++) {
+            if (!key[a]) continue;
+            for (int i = offsets[a]; i < offsets[a + 1]; i++) {
+                int first = neighbours[i];
+                if (key[first]) {
+                    if (a < first) { tmpA[chainCount] = a; tmpB[chainCount] = first; tmpStart[++chainCount] = interiorCount; }
+                    continue;
+                }
+                if (chainOf[first] >= 0) continue; // claimed from the other end
+                int previous = a, vertex = first, index = 0;
+                while (!key[vertex]) {
+                    chainOf[vertex] = chainCount; chainIndex[vertex] = index++;
+                    tmpInterior[interiorCount++] = vertex;
+                    int next = neighbours[offsets[vertex]] != previous ? neighbours[offsets[vertex]] : neighbours[offsets[vertex] + 1];
+                    // A two-vertex loop through the same key (a-x-a) is impossible in a simple graph,
+                    // but a longer loop returns to 'a' here and ends the chain correctly.
+                    previous = vertex; vertex = next;
+                }
+                tmpA[chainCount] = a; tmpB[chainCount] = vertex; tmpStart[++chainCount] = interiorCount;
+            }
+        }
+        chainA = Arrays.copyOf(tmpA, chainCount);
+        chainB = Arrays.copyOf(tmpB, chainCount);
+        chainStart = Arrays.copyOf(tmpStart, chainCount + 1);
+        chainInterior = Arrays.copyOf(tmpInterior, interiorCount);
+        chainPrefixStart = new int[chainCount + 1];
+        for (int c = 0; c < chainCount; c++) chainPrefixStart[c + 1] = chainPrefixStart[c] + (chainStart[c + 1] - chainStart[c]) + 1;
+        chainPrefix = new long[chainPrefixStart[chainCount]];
+        for (int c = 0; c < chainCount; c++) {
+            int base = chainPrefixStart[c]; long sum = 0;
+            for (int i = chainStart[c]; i < chainStart[c + 1]; i++) {
+                sum = saturatedAdd(sum, losses[chainInterior[i]]);
+                chainPrefix[base + (i - chainStart[c]) + 1] = sum;
+            }
+        }
+        // Arcs per key vertex (a loop chain contributes both directions to the same key).
+        arcOffsets = new int[count + 1];
+        for (int c = 0; c < chainCount; c++) { arcOffsets[chainA[c] + 1]++; arcOffsets[chainB[c] + 1]++; }
+        for (int i = 1; i <= count; i++) arcOffsets[i] += arcOffsets[i - 1];
+        arcs = new int[arcOffsets[count]];
+        int[] arcCursor = Arrays.copyOf(arcOffsets, count);
+        for (int c = 0; c < chainCount; c++) {
+            arcs[arcCursor[chainA[c]]++] = 2 * c;     // leave A, travel toward B
+            arcs[arcCursor[chainB[c]]++] = 2 * c + 1; // leave B, travel toward A
+        }
+    }
+
+    private int degree(int vertex) { return offsets[vertex + 1] - offsets[vertex]; }
+
+    /** Overflowing sums saturate; a saturated cost can never be selected as reachable. */
+    private static long saturatedAdd(long a, long b) {
+        long sum = a + b;
+        return ((a ^ sum) & (b ^ sum)) < 0 ? Long.MAX_VALUE : sum;
     }
 
     /** Stable snapshot-local ID of the physical conductor component. */
     public int componentOf(int vertex) { check(vertex, losses.length); return components[vertex]; }
 
-    /** Number of route-array entries needed for this vertex's component. */
+    /** Number of physical conductors in this vertex's component (path/effect bound). */
     public int componentSize(int vertex) {
         check(vertex, losses.length);
-        int component = components[vertex];
-        return componentOffsets == null ? losses.length
-            : componentOffsets[component + 1] - componentOffsets[component];
+        return componentSizes[componentOrdinal[components[vertex]]];
     }
 
-    /** Work and route arrays cover only the source's physical component. */
+    /**
+     * Search work and retained memory of one {@link #routesFrom} call: the number of
+     * key vertices in the component. Always at least 1 and at most componentSize.
+     */
+    public int searchWeight(int vertex) {
+        check(vertex, losses.length);
+        int ordinal = componentOrdinal[components[vertex]];
+        return Math.max(1, componentKeyStart[ordinal + 1] - componentKeyStart[ordinal]);
+    }
+
+    private long interiorLoss(int chain) { return chainPrefix[chainPrefixStart[chain + 1] - 1]; }
+    private int interiorLength(int chain) { return chainStart[chain + 1] - chainStart[chain]; }
+    /** Loss of interior vertices [from, to) of a chain, counted from its A end. */
+    private long interiorRange(int chain, int from, int to) {
+        int base = chainPrefixStart[chain];
+        return chainPrefix[base + to] - chainPrefix[base + from];
+    }
+
+    /** Minimum-loss routes from one conductor over its component. */
     public Routes routesFrom(int sourceContact) {
         check(sourceContact, losses.length);
-        if (localVertices == null) return connectedRoutesFrom(sourceContact);
-        int component = components[sourceContact];
-        int start = componentOffsets == null ? 0 : componentOffsets[component];
-        int count = componentOffsets == null ? losses.length : componentOffsets[component + 1] - start;
-        int source = localVertices == null ? sourceContact : localVertices[sourceContact];
-        long[] costs = new long[count];
-        int[] parents = new int[count];
-        int[] pathVertices = new int[count];
-        Arrays.fill(parents, -2);
-        boolean[] known = new boolean[count];
-        boolean[] settled = new boolean[count];
-        boolean[] overflowFrontier = new boolean[count];
+        int ordinal = componentOrdinal[components[sourceContact]];
+        int keyBase = componentKeyStart[ordinal];
+        int keyCount = componentKeyStart[ordinal + 1] - keyBase;
+        long[] costs = new long[keyCount];
+        int[] parents = new int[keyCount];
+        int[] counts = new int[keyCount];
+        byte[] roots = new byte[keyCount];
+        boolean[] known = new boolean[keyCount];
+        boolean[] settled = new boolean[keyCount];
         var heap = new VertexHeap(costs);
-        costs[source] = losses[sourceContact];
-        known[source] = true;
-        parents[source] = -1;
-        pathVertices[source] = 1;
-        heap.update(source);
+        int sourceChain = keyLocal[sourceContact] >= 0 ? -1 : chainOf[sourceContact];
+        int sourceIndex = sourceChain < 0 ? -1 : chainIndex[sourceContact];
+        if (sourceChain < 0) {
+            int local = keyLocal[sourceContact];
+            costs[local] = losses[sourceContact]; parents[local] = Routes.FROM_SOURCE; counts[local] = 1;
+            known[local] = true; heap.update(local);
+        } else {
+            // Leave the source's chain toward each end key.
+            int length = interiorLength(sourceChain);
+            int a = keyLocal[chainA[sourceChain]], b = keyLocal[chainB[sourceChain]];
+            long towardA = saturatedAdd(interiorRange(sourceChain, 0, sourceIndex + 1), losses[chainA[sourceChain]]);
+            long towardB = saturatedAdd(interiorRange(sourceChain, sourceIndex, length), losses[chainB[sourceChain]]);
+            seed(heap, costs, parents, counts, roots, known, a, towardA, Routes.SEED_A, sourceIndex + 2);
+            seed(heap, costs, parents, counts, roots, known, b, towardB, Routes.SEED_B, length - sourceIndex + 1);
+        }
         while (!heap.empty()) {
-            int vertex = heap.take();
-            settled[vertex] = true;
-            int globalVertex = componentVertices == null ? vertex : componentVertices[start + vertex];
-            for (int i = offsets[globalVertex]; i < offsets[globalVertex + 1]; i++) {
-                int globalNext = neighbours[i];
-                int next = localVertices == null ? globalNext : localVertices[globalNext];
-                if (settled[next]) { continue; }
-                if (losses[globalNext] > Long.MAX_VALUE - costs[vertex]) {
-                    overflowFrontier[next] = true;
-                    continue;
-                }
-                long proposed = costs[vertex] + losses[globalNext];
+            int local = heap.take();
+            settled[local] = true;
+            if (costs[local] == Long.MAX_VALUE) throw new ArithmeticException("A reachable route cost cannot fit in long");
+            int vertex = keyVertices[keyBase + local];
+            for (int i = arcOffsets[vertex]; i < arcOffsets[vertex + 1]; i++) {
+                int arc = arcs[i], chain = arc >>> 1;
+                int far = (arc & 1) == 0 ? chainB[chain] : chainA[chain];
+                int next = keyLocal[far];
+                if (settled[next]) continue;
+                long proposed = saturatedAdd(saturatedAdd(costs[local], interiorLoss(chain)), losses[far]);
                 if (!known[next] || proposed < costs[next]) {
-                    costs[next] = proposed;
-                    parents[next] = vertex;
-                    pathVertices[next] = pathVertices[vertex] + 1;
-                    known[next] = true;
-                    heap.update(next);
+                    costs[next] = proposed; parents[next] = arc;
+                    counts[next] = counts[local] + interiorLength(chain) + 1;
+                    roots[next] = roots[local];
+                    known[next] = true; heap.update(next);
                 }
             }
         }
-        for (int i = 0; i < count; i++) {
-            if (overflowFrontier[i] && !settled[i]) {
-                throw new ArithmeticException("A reachable route cost cannot fit in long");
-            }
-        }
-        return new Routes(costs, parents, pathVertices, settled, losses.length, component,
-            localVertices == null ? null : components, localVertices, componentVertices, start);
+        return new Routes(this, components[sourceContact], keyBase, costs, parents, counts, roots, settled,
+            sourceContact, sourceChain, sourceIndex);
     }
 
-    // Preserve the existing connected-graph hot loop without per-edge ID
-    // translation. Both searches retain the same checked relaxation and heap
-    // ordering; the route contracts cover their public costs and global paths.
-    private Routes connectedRoutesFrom(int sourceContact) {
-        long[] costs = new long[losses.length];
-        int[] parents = new int[losses.length];
-        int[] pathVertices = new int[losses.length];
-        Arrays.fill(parents, -2);
-        boolean[] known = new boolean[losses.length];
-        boolean[] settled = new boolean[losses.length];
-        boolean[] overflowFrontier = new boolean[losses.length];
-        var heap = new VertexHeap(costs);
-        costs[sourceContact] = losses[sourceContact];
-        known[sourceContact] = true;
-        parents[sourceContact] = -1;
-        pathVertices[sourceContact] = 1;
-        heap.update(sourceContact);
-        while (!heap.empty()) {
-            int vertex = heap.take();
-            settled[vertex] = true;
-            for (int i = offsets[vertex]; i < offsets[vertex + 1]; i++) {
-                int next = neighbours[i];
-                if (settled[next]) continue;
-                if (losses[next] > Long.MAX_VALUE - costs[vertex]) {
-                    overflowFrontier[next] = true;
-                    continue;
-                }
-                long proposed = costs[vertex] + losses[next];
-                if (!known[next] || proposed < costs[next]) {
-                    costs[next] = proposed;
-                    parents[next] = vertex;
-                    pathVertices[next] = pathVertices[vertex] + 1;
-                    known[next] = true;
-                    heap.update(next);
-                }
-            }
-        }
-        for (int i = 0; i < losses.length; i++) {
-            if (overflowFrontier[i] && !settled[i]) {
-                throw new ArithmeticException("A reachable route cost cannot fit in long");
-            }
-        }
-        return new Routes(costs, parents, pathVertices, settled, losses.length, 0, null, null, null, 0);
+    private static void seed(VertexHeap heap, long[] costs, int[] parents, int[] counts, byte[] roots, boolean[] known,
+                             int local, long cost, int parent, int count) {
+        if (known[local] && costs[local] <= cost) return;
+        costs[local] = cost; parents[local] = parent; counts[local] = count; known[local] = true;
+        roots[local] = (byte) (parent == Routes.SEED_A ? 1 : 2);
+        heap.update(local);
     }
 
     private static void check(int vertex, int count) {
@@ -204,48 +298,120 @@ public final class ConductorGraph {
 
     /** No world references; callers replace the index when its topology changes. */
     public static final class Routes implements RouteCosts {
-        private final long[] costs;
-        private final int[] parents, pathVertices;
-        private final boolean[] reached;
-        private final int vertexCount, component, start;
-        private final int[] components, localVertices, componentVertices;
+        static final int FROM_SOURCE = -1, SEED_A = -2, SEED_B = -3;
+        private static final int VIA_DIRECT = 0, VIA_A = 1, VIA_B = 2;
 
-        private Routes(long[] costs, int[] parents, int[] pathVertices, boolean[] reached, int vertexCount, int component,
-                       int[] components, int[] localVertices, int[] componentVertices, int start) {
-            this.costs = costs; this.parents = parents; this.pathVertices = pathVertices; this.reached = reached;
-            this.vertexCount = vertexCount; this.component = component; this.components = components;
-            this.localVertices = localVertices; this.componentVertices = componentVertices; this.start = start;
+        private final ConductorGraph graph;
+        private final int component, keyBase;
+        private final long[] costs;
+        private final int[] parents, counts;
+        /** Seed side (1 = left source toward A, 2 = toward B) each key's route started from; 0 for a key source. */
+        private final byte[] roots;
+        private final boolean[] settled;
+        private final int source, sourceChain, sourceIndex;
+
+        private Routes(ConductorGraph graph, int component, int keyBase, long[] costs, int[] parents, int[] counts,
+                       byte[] roots, boolean[] settled, int source, int sourceChain, int sourceIndex) {
+            this.graph = graph; this.component = component; this.keyBase = keyBase;
+            this.costs = costs; this.parents = parents; this.counts = counts; this.roots = roots; this.settled = settled;
+            this.source = source; this.sourceChain = sourceChain; this.sourceIndex = sourceIndex;
         }
 
-        private int local(int vertex) { return localVertices == null ? vertex : localVertices[vertex]; }
+        /** Chosen access to an interior target: which side, and its cost/count. */
+        private long bestCost; private int bestCount, bestVia;
+
+        private boolean resolve(int target) {
+            check(target, graph.losses.length);
+            if (graph.components[target] != component) return false;
+            int local = graph.keyLocal[target];
+            if (local >= 0) {
+                if (!settled[local]) return false;
+                bestCost = costs[local]; bestCount = counts[local]; bestVia = -1;
+                return true;
+            }
+            int chain = graph.chainOf[target], index = graph.chainIndex[target], length = graph.interiorLength(chain);
+            boolean found = false;
+            if (chain == sourceChain) {
+                int from = Math.min(index, sourceIndex), to = Math.max(index, sourceIndex) + 1;
+                bestCost = graph.interiorRange(chain, from, to); bestCount = to - from; bestVia = VIA_DIRECT; found = true;
+            }
+            // Enter the chain only from an end whose own route does not already run
+            // along it; such an entry is never cheaper and would repeat vertices.
+            int a = graph.keyLocal[graph.chainA[chain]];
+            if (settled[a] && entersFresh(a, chain, index, true)) {
+                long cost = saturatedAdd(costs[a], graph.interiorRange(chain, 0, index + 1));
+                if (!found || cost < bestCost) { bestCost = cost; bestCount = counts[a] + index + 1; bestVia = VIA_A; found = true; }
+            }
+            int b = graph.keyLocal[graph.chainB[chain]];
+            if (settled[b] && entersFresh(b, chain, index, false)) {
+                long cost = saturatedAdd(costs[b], graph.interiorRange(chain, index, length));
+                if (!found || cost < bestCost) { bestCost = cost; bestCount = counts[b] + length - index; bestVia = VIA_B; found = true; }
+            }
+            if (found && bestCost == Long.MAX_VALUE) throw new ArithmeticException("A reachable route cost cannot fit in long");
+            return found;
+        }
+
+        private boolean entersFresh(int local, int chain, int index, boolean fromA) {
+            if (chain == sourceChain) {
+                // Every route here starts on this chain: from A only if it left the
+                // source toward B and the target lies on A's side, and vice versa.
+                return fromA ? roots[local] == 2 && index < sourceIndex : roots[local] == 1 && index > sourceIndex;
+            }
+            int parent = parents[local];
+            return parent < 0 || (parent >>> 1) != chain;
+        }
 
         @Override
-        public boolean reaches(int receiverContact) {
-            check(receiverContact, vertexCount);
-            return (components == null || components[receiverContact] == component) && reached[local(receiverContact)];
-        }
+        public boolean reaches(int receiverContact) { return resolve(receiverContact); }
 
         @Override
         public long lossMilliTo(int receiverContact) {
-            if (!reaches(receiverContact)) { throw new IllegalStateException("Unreachable contact"); }
-            return costs[local(receiverContact)];
+            if (!resolve(receiverContact)) { throw new IllegalStateException("Unreachable contact"); }
+            return bestCost;
         }
 
         /** Exact visitPath callback count, including both source and receiver. */
         public int vertexCountTo(int receiverContact) {
-            if (!reaches(receiverContact)) { throw new IllegalStateException("Unreachable contact"); }
-            return pathVertices[local(receiverContact)];
+            if (!resolve(receiverContact)) { throw new IllegalStateException("Unreachable contact"); }
+            return bestCount;
         }
 
+        /** Visits the chosen path from the receiver back to the source, both inclusive. */
         public void visitPath(int receiverContact, IntConsumer visitor) {
             Objects.requireNonNull(visitor, "visitor");
-            if (!reaches(receiverContact)) { throw new IllegalStateException("Unreachable contact"); }
-            if (componentVertices == null) {
-                for (int vertex = receiverContact; vertex != -1; vertex = parents[vertex]) visitor.accept(vertex);
-                return;
+            if (!resolve(receiverContact)) { throw new IllegalStateException("Unreachable contact"); }
+            var g = graph;
+            int key;
+            if (bestVia < 0) {
+                key = receiverContact;
+            } else {
+                int chain = g.chainOf[receiverContact], index = g.chainIndex[receiverContact];
+                int base = g.chainStart[chain];
+                if (bestVia == VIA_DIRECT) {
+                    int step = sourceIndex >= index ? 1 : -1;
+                    for (int i = index; ; i += step) { visitor.accept(g.chainInterior[base + i]); if (i == sourceIndex) return; }
+                }
+                if (bestVia == VIA_A) { for (int i = index; i >= 0; i--) visitor.accept(g.chainInterior[base + i]); key = g.chainA[chain]; }
+                else { for (int i = index; i < g.interiorLength(chain); i++) visitor.accept(g.chainInterior[base + i]); key = g.chainB[chain]; }
             }
-            for (int vertex = local(receiverContact); vertex != -1; vertex = parents[vertex]) {
-                visitor.accept(componentVertices[start + vertex]);
+            while (true) {
+                visitor.accept(key);
+                int parent = parents[g.keyLocal[key]];
+                if (parent == FROM_SOURCE) return;
+                if (parent == SEED_A || parent == SEED_B) {
+                    int base = g.chainStart[sourceChain];
+                    if (parent == SEED_A) for (int i = 0; i <= sourceIndex; i++) visitor.accept(g.chainInterior[base + i]);
+                    else for (int i = g.interiorLength(sourceChain) - 1; i >= sourceIndex; i--) visitor.accept(g.chainInterior[base + i]);
+                    return;
+                }
+                int chain = parent >>> 1, base = g.chainStart[chain], length = g.interiorLength(chain);
+                if ((parent & 1) == 0) { // arrived at B from A: walk interior B->A, then A
+                    for (int i = length - 1; i >= 0; i--) visitor.accept(g.chainInterior[base + i]);
+                    key = g.chainA[chain];
+                } else {                 // arrived at A from B
+                    for (int i = 0; i < length; i++) visitor.accept(g.chainInterior[base + i]);
+                    key = g.chainB[chain];
+                }
             }
         }
     }

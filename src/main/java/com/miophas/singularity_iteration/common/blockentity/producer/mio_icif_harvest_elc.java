@@ -46,13 +46,14 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity {
     public static final long DEFAULT_MAX_EXTRACT = 0L;
     public static final int DEFAULT_WORK_TIME = 10;
     public static final long DEFAULT_ENERGY_PER_TICK = 1L;
-    // 对齐 1.7.10：每个掉落物消耗 100 EU，装有作物分析仪时每个掉落物再额外消耗 100 EU。
-    public static final long ENERGY_PER_HARVEST = 100L;
+    // 对齐 IC2 2.8：每次扫描 1 EU，每个返回的物品堆 20 EU；需 21 EU 才能工作。
+    public static final long ENERGY_PER_HARVEST = 20L;
+    // SI 扩展：装有作物分析仪时每个物品堆额外消耗（原版 2.8 收割机无分析仪槽）。
     public static final long ENERGY_PER_ANALYZER = 100L;
-    // 1（扫描）+ 100（收获）+ 100（分析仪）
-    public static final long MIN_START_ENERGY = 201L;
-    public static final int SCAN_RADIUS = 5;
-    public static final int SCAN_VOLUME = 363;
+    // 1（扫描）+ 20（一个物品堆）
+    public static final long MIN_START_ENERGY = 21L;
+    public static final int SCAN_RADIUS = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.RADIUS;
+    public static final int SCAN_VOLUME = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.VOLUME;
 
     public mio_icif_harvest_elc(BlockPos pos, BlockState state) {
         this(pos, state, mio_icif_block_entities.HARVEST_ELC_ENTITY_TYPE.get());
@@ -185,7 +186,7 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity {
         }
 
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
-        // 对齐 1.7.10：每 tick 扫描一次，门槛为 201 EU
+        // 每 tick 扫描一次，门槛见 MIN_START_ENERGY
         if (blockEntity.energyStorage.getAmount() < MIN_START_ENERGY) {
             blockEntity.updateWorkingState(level, pos, false);
             return;
@@ -197,13 +198,10 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity {
     }
 
     private boolean scanAndHarvest(Level level, BlockPos center) {
-        scanIndex = (scanIndex + 1) % SCAN_VOLUME;
+        scanIndex = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.next(scanIndex);
         setChanged();
-        // 水平 ±5（11 格）、垂直 -1..1（3 层）：推进顺序与原版 scanX/scanY/scanZ 一致
-        BlockPos target = center.offset(
-            scanIndex % 11 - SCAN_RADIUS,
-            scanIndex / 121 - 1,
-            scanIndex / 11 % 11 - SCAN_RADIUS);
+        // 水平 ±4（9 格）、垂直 -1..1（3 层），x→z→y 推进，与 IC2 2.8 一致（见 CropScanCursor）
+        BlockPos target = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.target(center, scanIndex);
         return level.hasChunkAt(target) && tryHarvestCropStick(level, target);
     }
 
@@ -218,9 +216,13 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity {
         if (!cropEntity.getPlant().canBeHarvested(cropEntity)) {
             return false;
         }
-        // 装有作物分析仪时进入 optimal 模式：仅收割达到最佳收获尺寸的作物
+        // IC2 2.8：在最佳收获尺寸收割，否则等到最大尺寸再收割。
+        // SI 扩展：装有作物分析仪时只在最佳收获尺寸收割（并额外计费）。
         boolean optimal = hasCropAnalyzer();
-        if (optimal && cropEntity.getGrowthStage() != cropEntity.getPlant().getOptimalHarvestStage(cropEntity)) {
+        var plant = cropEntity.getPlant();
+        int stage = cropEntity.getGrowthStage();
+        boolean atOptimal = stage == plant.getOptimalHarvestStage(cropEntity);
+        if (!atOptimal && (optimal || stage != plant.getMaxGrowthStage())) {
             return false;
         }
         if (energyStorage.getAmount() < ENERGY_PER_HARVEST) {
@@ -310,6 +312,6 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity {
     }
     @Override public void loadAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        scanIndex = Math.floorMod(tag.getInt("CropScanIndex"), SCAN_VOLUME);
+        scanIndex = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.restore(tag.getInt("CropScanIndex"));
     }
 }

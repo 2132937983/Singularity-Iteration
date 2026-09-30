@@ -41,7 +41,34 @@ public class GradualChargeRecipe implements CraftingRecipe {
                 return false;
             }
         }
-        return foundTarget && chargeMats > 0;
+        if (!foundTarget || chargeMats <= 0) return false;
+        return acceptsAll(input, chargeMats);
+    }
+
+    /**
+     * Rejects a grid where the last material would be wasted: the target must
+     * still have room after the first (chargeMats - 1) materials. A full target
+     * therefore never matches, instead of consuming materials for nothing.
+     */
+    private boolean acceptsAll(CraftingInput input, int chargeMats) {
+        ItemStack target = findTarget(input);
+        if (target == null || !(target.getItem() instanceof IBatteryItem battery)) return true;
+        long room = battery.getMaxEnergy(target) - battery.getEnergy(target);
+        if (room <= 0) return false;
+        return saturatedCharge(chargeMats - 1) < room;
+    }
+
+    private ItemStack findTarget(CraftingInput input) {
+        for (int i = 0; i < input.size(); i++) {
+            ItemStack stack = input.getItem(i);
+            if (!stack.isEmpty() && stack.getItem() == this.targetItem) return stack;
+        }
+        return null;
+    }
+
+    private long saturatedCharge(int materials) {
+        if (materials <= 0 || this.chargePerMaterial <= 0) return 0;
+        return this.chargePerMaterial > Long.MAX_VALUE / materials ? Long.MAX_VALUE : this.chargePerMaterial * materials;
     }
 
     @Override
@@ -59,8 +86,10 @@ public class GradualChargeRecipe implements CraftingRecipe {
         }
         if (target == null || chargeMats <= 0) return ItemStack.EMPTY;
 
-        ItemStack result = target.copy();
-        long chargeToAdd = this.chargePerMaterial * chargeMats;
+        // One target item is consumed from its slot, so exactly one is produced
+        // (copy() kept the whole stack count and duplicated items).
+        ItemStack result = target.copyWithCount(1);
+        long chargeToAdd = saturatedCharge(chargeMats);
 
         if (result.getItem() instanceof IBatteryItem battery) {
             battery.addEnergy(result, chargeToAdd);

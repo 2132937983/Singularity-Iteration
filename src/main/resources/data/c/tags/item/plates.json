@@ -1,0 +1,28 @@
+{
+  "replace": false,
+  "values": [
+    "#c:plates/adviron",
+    "#c:plates/alloy",
+    "#c:plates/bronze",
+    "#c:plates/carbon",
+    "#c:plates/copper",
+    "#c:plates/dcp",
+    "#c:plates/gold",
+    "#c:plates/iridium",
+    "#c:plates/iridium_iron",
+    "#c:plates/iridium_iron_reinforced",
+    "#c:plates/iron",
+    "#c:plates/irradiant_reinforced",
+    "#c:plates/lapis",
+    "#c:plates/lead",
+    "#c:plates/neutron",
+    "#c:plates/niobium",
+    "#c:plates/niobium_titanium",
+    "#c:plates/obsidian",
+    "#c:plates/super_iridium",
+    "#c:plates/tin",
+    "#c:plates/titanium",
+    "#c:plates/steel",
+    "#c:plates/refined_iron"
+  ]
+}

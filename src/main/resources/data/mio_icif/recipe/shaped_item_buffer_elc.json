@@ -6,9 +6,7 @@
     "CCC"
   ],
   "key": {
-    "C": {
-      "item": "mio_icif:resource/item_iron_casing"
-    },
+    "C": {"tag": "c:casings/iron"},
     "I": {
       "item": "minecraft:chest"
     }

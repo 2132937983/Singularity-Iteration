@@ -1,5 +1,6 @@
 {
   "values": [
-    "mio_icif:resource/item_adviron_plate"
+    "mio_icif:resource/item_adviron_plate",
+    "#c:plates/steel"
   ]
 }

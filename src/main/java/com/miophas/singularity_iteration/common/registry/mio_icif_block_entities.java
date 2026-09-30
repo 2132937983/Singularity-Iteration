@@ -900,6 +900,16 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("tesla", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_tesla::new, mio_icif_blocks.TESLA.get()).build(null));
 
+    // Laser defence towers share one entity class, parameterised by spec.
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower>> LASER_DEFENSE_TOWER_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("laser_defense_tower", () -> BlockEntityType.Builder.<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower>of(
+            (pos, state) -> new com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower(mio_icif_block_entities.LASER_DEFENSE_TOWER_ENTITY_TYPE.get(), pos, state, com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower.GROUND),
+            mio_icif_blocks.LASER_DEFENSE_TOWER.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower>> SKY_PATROL_LASER_TOWER_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("sky_patrol_laser_tower", () -> BlockEntityType.Builder.<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower>of(
+            (pos, state) -> new com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower(mio_icif_block_entities.SKY_PATROL_LASER_TOWER_ENTITY_TYPE.get(), pos, state, com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower.SKY_PATROL),
+            mio_icif_blocks.SKY_PATROL_LASER_TOWER.get()).build(null));
+
     // 注册 配电器 MenuType
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_matron_elc>> MATRON_ELC_ENTITY_TYPE =
         BLOCK_ENTITIES.register("matron_elc", () ->

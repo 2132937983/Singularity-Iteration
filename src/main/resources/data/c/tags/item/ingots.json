@@ -1,0 +1,19 @@
+{
+  "replace": false,
+  "values": [
+    "#c:ingots/niobium_titanium",
+    "#c:ingots/alloy",
+    "#c:ingots/bronze",
+    "#c:ingots/copper",
+    "#c:ingots/iridium",
+    "#c:ingots/lead",
+    "#c:ingots/niobium",
+    "#c:ingots/silver",
+    "#c:ingots/steel",
+    "#c:ingots/super_iridium",
+    "#c:ingots/tin",
+    "#c:ingots/titanium",
+    "#c:ingots/uranium",
+    "#c:ingots/refined_iron"
+  ]
+}

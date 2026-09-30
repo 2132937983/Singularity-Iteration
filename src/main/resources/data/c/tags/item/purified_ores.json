@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "#c:purified_ores/copper",
+    "#c:purified_ores/gold",
+    "#c:purified_ores/iron",
+    "#c:purified_ores/lead",
+    "#c:purified_ores/niobium",
+    "#c:purified_ores/silver",
+    "#c:purified_ores/tin",
+    "#c:purified_ores/titanium",
+    "#c:purified_ores/uranium"
+  ]
+}

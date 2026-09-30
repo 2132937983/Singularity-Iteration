@@ -6,9 +6,7 @@
     "IGI"
   ],
   "key": {
-    "I": {
-      "item": "mio_icif:resource/item_iron_casing"
-    },
+    "I": {"tag": "c:casings/iron"},
     "C": {
       "item": "mio_icif:reactor/block_reactor_chamber"
     },

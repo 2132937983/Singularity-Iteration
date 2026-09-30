@@ -7,18 +7,14 @@
     "PSP"
   ],
   "key": {
-    "P": {
-      "item": "mio_icif:resource/item_carbon_plate"
-    },
+    "P": {"tag": "c:plates/carbon"},
     "S": {
       "tag": "c:circuits/elite"
     },
     "B": {
       "item": "mio_icif:normal/item_crystal_lev0"
     },
-    "C": {
-      "item": "mio_icif:resource/item_titanium_plate"
-    }
+    "C": {"tag": "c:plates/titanium"}
   },
   "result": {
     "id": "mio_icif:item_trinket_energy_crystal_belt",

@@ -3,7 +3,7 @@
   "transfer_charge": true,
   "pattern": ["SPS", "HCH", "SBS"],
   "key": {
-    "S": {"item": "mio_icif:resource/item_golden_casing"},
+    "S": {"tag": "c:casings/gold"},
     "P": {"item": "mio_icif:item_tool_wooden_treetap"},
     "H": {"item": "mio_icif:resource/item_heatconductor"},
     "C": {"tag": "c:circuits/basic"},

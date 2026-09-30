@@ -12,9 +12,7 @@
     "C": {
       "item": "mio_icif:cell/item_cell_empty"
     },
-    "I": {
-      "item": "mio_icif:resource/item_iron_casing"
-    }
+    "I": {"tag": "c:casings/iron"}
   },
   "result": {
     "id": "mio_icif:hugenerator/block_fluid_heat_generator",

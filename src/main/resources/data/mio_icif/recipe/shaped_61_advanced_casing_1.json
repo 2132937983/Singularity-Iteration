@@ -9,15 +9,9 @@
     "M": {
       "item": "mio_icif:producer/block_machine_hull_basic"
     },
-    "A": {
-      "item": "mio_icif:resource/item_alloy_plate"
-    },
-    "S": {
-      "item": "mio_icif:resource/item_adviron_plate"
-    },
-    "C": {
-      "item": "mio_icif:resource/item_carbon_plate"
-    }
+    "A": {"tag": "c:plates/alloy"},
+    "S": {"tag": "c:plates/steel"},
+    "C": {"tag": "c:plates/carbon"}
   },
   "result": {
     "id": "mio_icif:producer/block_machine_hull_advanced",

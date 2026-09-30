@@ -55,4 +55,8 @@ public class ClientPacketHandlers {
             listener.onNetworkUpdate(packet.fieldName(), packet.fieldValue());
         }
     }
+
+    public static void handleLaserTowerBeams(com.miophas.singularity_iteration.common.network.LaserTowerBeamPacket packet) {
+        com.miophas.singularity_iteration.common.client.render.LaserBeamRenderer.addVolley(packet);
+    }
 }

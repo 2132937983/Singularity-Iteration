@@ -532,6 +532,14 @@ public static final DeferredBlock<mio_icif_block_magnetizer> MAGNETIZER =
 public static final DeferredBlock<mio_icif_block_tesla> TESLA =
         registerBlock("producer/block_tesla", () -> new mio_icif_block_tesla(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
 
+    // Laser defence towers (energy turrets; spec and entity type resolved lazily)
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.producer.mio_icif_block_laser_tower> LASER_DEFENSE_TOWER =
+        registerBlock("producer/block_laser_defense_tower", () -> new com.miophas.singularity_iteration.common.block.producer.mio_icif_block_laser_tower(Block.Properties.of().mapColor(MapColor.METAL).strength(3.5f, 6.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion(),
+            com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower.GROUND, () -> mio_icif_block_entities.LASER_DEFENSE_TOWER_ENTITY_TYPE.get()));
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.producer.mio_icif_block_laser_tower> SKY_PATROL_LASER_TOWER =
+        registerBlock("producer/block_sky_patrol_laser_tower", () -> new com.miophas.singularity_iteration.common.block.producer.mio_icif_block_laser_tower(Block.Properties.of().mapColor(MapColor.METAL).strength(3.5f, 6.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion(),
+            com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower.SKY_PATROL, () -> mio_icif_block_entities.SKY_PATROL_LASER_TOWER_ENTITY_TYPE.get()));
+
     // 注册作物监管机方法
 public static final DeferredBlock<mio_icif_block_matron> MATRON_ELC =
         registerBlock("producer/block_matron_elc", () -> new mio_icif_block_matron(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));

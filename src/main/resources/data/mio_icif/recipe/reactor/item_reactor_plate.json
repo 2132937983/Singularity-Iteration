@@ -5,9 +5,7 @@
     {
       "tag": "c:plates/lead"
     },
-    {
-      "item": "mio_icif:resource/item_alloy_plate"
-    }
+    {"tag": "c:plates/alloy"}
   ],
   "result": {
     "count": 1,

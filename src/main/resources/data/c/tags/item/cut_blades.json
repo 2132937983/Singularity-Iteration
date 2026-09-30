@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "#c:cut_blades/adviron",
+    "#c:cut_blades/diamond",
+    "#c:cut_blades/iron"
+  ]
+}

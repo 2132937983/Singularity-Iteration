@@ -1,8 +1,6 @@
 {
   "type": "mio_icif:centrifuge",
-  "ingredient": {
-    "item": "mio_icif:resource/item_uran_ore_crushed"
-  },
+  "ingredient": {"tag": "c:crushed_ores/uranium"},
   "minheat": 3000,
   "primaryCount": 1,
   "primaryResult": {

@@ -12,9 +12,7 @@
     "B": {
       "item": "mio_icif:producer/block_miner_elc"
     },
-    "C": {
-      "item": "mio_icif:resource/item_alloy_plate"
-    },
+    "C": {"tag": "c:plates/alloy"},
     "T": {
       "item": "mio_icif:producer/block_teleporter_elc"
     },

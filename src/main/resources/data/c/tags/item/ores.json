@@ -1,16 +1,24 @@
 {
-    "values": [
-        "minecraft:iron_ore",
-        "minecraft:deepslate_iron_ore",
-        "minecraft:gold_ore",
-        "minecraft:deepslate_gold_ore",
-        "minecraft:copper_ore",
-        "minecraft:deepslate_copper_ore",
-        "mio_icif:block_ore_tin",
-        "mio_icif:block_ore_tin_in_deep",
-        "mio_icif:block_ore_lead",
-        "mio_icif:block_ore_lead_in_deep",
-        "mio_icif:block_ore_uran",
-        "mio_icif:block_ore_uran_in_deep"
-    ]
+  "values": [
+    "minecraft:iron_ore",
+    "minecraft:deepslate_iron_ore",
+    "minecraft:gold_ore",
+    "minecraft:deepslate_gold_ore",
+    "minecraft:copper_ore",
+    "minecraft:deepslate_copper_ore",
+    "mio_icif:block_ore_tin",
+    "mio_icif:block_ore_tin_in_deep",
+    "mio_icif:block_ore_lead",
+    "mio_icif:block_ore_lead_in_deep",
+    "mio_icif:block_ore_uran",
+    "mio_icif:block_ore_uran_in_deep",
+    "#c:ores/copper",
+    "#c:ores/gold",
+    "#c:ores/iron",
+    "#c:ores/lead",
+    "#c:ores/niobium",
+    "#c:ores/tin",
+    "#c:ores/titanium",
+    "#c:ores/uranium"
+  ]
 }

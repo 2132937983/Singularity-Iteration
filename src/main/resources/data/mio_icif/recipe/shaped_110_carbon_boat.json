@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": ["X X","XXX"],
-  "key": {"X":{"item":"mio_icif:resource/item_carbon_plate"}},
+  "key": {"X":{"tag": "c:plates/carbon"}},
   "result":{"id":"mio_icif:normal/entity_coal_boat","count":1}
 }

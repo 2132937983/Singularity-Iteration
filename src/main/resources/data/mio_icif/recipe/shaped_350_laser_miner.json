@@ -4,7 +4,7 @@
   "key": {
     "R": {"item": "minecraft:redstone"},
     "E": {"item": "mio_icif:normal/item_crystal_lev0"},
-    "A": {"item": "mio_icif:resource/item_alloy_plate"},
+    "A": {"tag": "c:plates/alloy"},
     "C": {"tag": "c:circuits/advanced"}
   },
   "result": {"id": "mio_icif:item_tool_laser_miner", "count": 1},

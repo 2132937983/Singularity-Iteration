@@ -1,8 +1,6 @@
 {
   "type": "mio_icif:metal_former_extruding",
-  "ingredient": {
-    "item": "mio_icif:resource/item_iron_casing"
-  },
+  "ingredient": {"tag": "c:casings/iron"},
   "processingtime": 300,
   "result": {
     "count": 1,

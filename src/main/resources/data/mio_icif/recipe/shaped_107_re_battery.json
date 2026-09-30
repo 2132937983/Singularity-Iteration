@@ -7,9 +7,7 @@
     "TRT"
   ],
   "key": {
-    "T": {
-      "item": "mio_icif:resource/item_tin_casing"
-    },
+    "T": {"tag": "c:casings/tin"},
     "R": {
       "item": "minecraft:redstone"
     },

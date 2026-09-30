@@ -12,9 +12,7 @@
     "G": {
       "item": "mio_icif:resource/item_heatconductor"
     },
-    "I": {
-      "item": "mio_icif:resource/item_iron_casing"
-    }
+    "I": {"tag": "c:casings/iron"}
   },
   "result": {
     "id": "mio_icif:producer/block_fermenter_elc",

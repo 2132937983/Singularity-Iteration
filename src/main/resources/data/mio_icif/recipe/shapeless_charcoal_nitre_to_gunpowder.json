@@ -1,12 +1,8 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    {
-      "item": "mio_icif:resource/item_charcoal_dust"
-    },
-    {
-      "item": "mio_icif:resource/item_nitre_dust"
-    }
+    {"tag": "c:dusts/charcoal"},
+    {"tag": "c:dusts/nitre"}
   ],
   "result": {
     "id": "minecraft:gunpowder",

@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "#c:crushed_ores/copper",
+    "#c:crushed_ores/gold",
+    "#c:crushed_ores/iron",
+    "#c:crushed_ores/lead",
+    "#c:crushed_ores/niobium",
+    "#c:crushed_ores/silver",
+    "#c:crushed_ores/tin",
+    "#c:crushed_ores/titanium",
+    "#c:crushed_ores/uranium"
+  ]
+}

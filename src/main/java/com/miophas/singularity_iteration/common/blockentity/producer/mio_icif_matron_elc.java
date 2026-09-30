@@ -50,18 +50,18 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
     public static final int SLOT_WEEDEX_COUNT = 7;
     public static final int SLOT_UPGRADE_START = 17;
     public static final int TOTAL_SLOTS = 21;
-    public static final long DEFAULT_CAPACITY = 1000L;
+    public static final long DEFAULT_CAPACITY = 10000L; // IC2 2.8 Cropmatron: 10 000 EU, tier 1
     public static final long DEFAULT_MAX_RECEIVE = 32L;
     public static final long DEFAULT_MAX_EXTRACT = 0L;
     public static final int DEFAULT_WORK_TIME = 10;
     public static final long DEFAULT_ENERGY_PER_TICK = 1L;
     public static final int WATER_CAPACITY = 2000;
-    // 对齐 1.7.10 applyWeedEx：每次固定 +50，达到 150 后不再处理
+    // 对齐 IC2 2.8 自动施用 applyWeedEx：一次补到 150（手动施用上限为 100）
     public static final int WEED_CONTROL_LIMIT = 150;
     public static final int HERBICIDE_VALUE = 50;
     public static final long MIN_START_ENERGY = 31L;
-    public static final int SCAN_RADIUS = 5;
-    public static final int SCAN_VOLUME = 363;
+    public static final int SCAN_RADIUS = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.RADIUS;
+    public static final int SCAN_VOLUME = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.VOLUME;
     protected final FluidTank waterTank;
     protected final FluidTank weedExTank;
     private final IFluidHandler fluidPorts;
@@ -290,14 +290,11 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
     private void processCrops() {
         Level world = getLevel();
         if (world == null || energyStorage.getAmount() < MIN_START_ENERGY) return;
-        scanIndex = (scanIndex + 1) % SCAN_VOLUME;
+        scanIndex = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.next(scanIndex);
         apiUseEnergy(1, false);
         setChanged();
         // 水平 ±5（11 格）、垂直 -1..1（3 层）：与原版 scanX/scanY/scanZ 相同的推进顺序
-        BlockPos target = worldPosition.offset(
-            scanIndex % 11 - SCAN_RADIUS,
-            scanIndex / 121 - 1,
-            scanIndex / 11 % 11 - SCAN_RADIUS);
+        BlockPos target = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.target(worldPosition, scanIndex);
         boolean worked = false;
         if (world.hasChunkAt(target)) {
             if (world.getBlockEntity(target) instanceof com.miophas.singularity_iteration.core.api.crop.IPlanter crop) {
@@ -330,10 +327,12 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
     }
 
     private boolean tryRemoveWeed(com.miophas.singularity_iteration.core.api.crop.IPlanter cropEntity) {
-        // 对齐 1.7.10 applyWeedEx：达到上限后不再处理，否则每次固定 +50
-        if (cropEntity.getWeedControl() >= WEED_CONTROL_LIMIT) return false;
-        if (weedExTank.getFluidAmount() < HERBICIDE_VALUE) return false;
-        FluidStack drained = weedExTank.drain(HERBICIDE_VALUE, IFluidHandler.FluidAction.EXECUTE);
+        // IC2 2.8 automated application: top the crop's Weed-EX storage up to the
+        // automated cap in one operation (manual application caps lower). The
+        // previous fixed +50 step followed 1.7.10 and needed three scans.
+        int missing = WEED_CONTROL_LIMIT - cropEntity.getWeedControl();
+        if (missing <= 0) return false;
+        FluidStack drained = weedExTank.drain(missing, IFluidHandler.FluidAction.EXECUTE);
         if (drained.isEmpty()) return false;
         cropEntity.setWeedControl(cropEntity.getWeedControl() + drained.getAmount());
         cropEntity.updateState();
@@ -385,6 +384,7 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
         tag.put("WaterTank", waterTank.writeToNBT(registries, new CompoundTag()));
         tag.putInt("CropScanIndex", scanIndex);
         tag.put("WeedExTank", weedExTank.writeToNBT(registries, new CompoundTag()));
+        tag.putInt(SLOT_LAYOUT_KEY, SLOT_LAYOUT_VERSION);
     }
 
     @Override
@@ -393,7 +393,34 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
         if (tag.contains("WaterTank")) {
             waterTank.readFromNBT(registries, tag.getCompound("WaterTank"));
         }
-        scanIndex = Math.floorMod(tag.getInt("CropScanIndex"), SCAN_VOLUME);
+        scanIndex = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.restore(tag.getInt("CropScanIndex"));
         if (tag.contains("WeedExTank")) weedExTank.readFromNBT(registries, tag.getCompound("WeedExTank"));
+        if (tag.getInt(SLOT_LAYOUT_KEY) < SLOT_LAYOUT_VERSION) migrateLegacySlotLayout();
+    }
+
+    /*
+     * Saves up to 0.1.7.14 kept Weed-EX containers in slots 3-9 and fertilizer in
+     * 10-16; 0.1.7.15 swapped the groups (IC2 order: fertilizer first) without a
+     * migration, so upgraded machines silently ignored both. An unmarked save
+     * whose contents only fit the old arrangement has the two groups swapped back.
+     */
+    private static final String SLOT_LAYOUT_KEY = "MatronSlotLayout";
+    private static final int SLOT_LAYOUT_VERSION = 2;
+
+    private void migrateLegacySlotLayout() {
+        boolean misplaced = false;
+        for (int i = 0; i < SLOT_FERTILIZER_COUNT && !misplaced; i++) {
+            ItemStack inFertilizerSlot = itemHandler.getStackInSlot(SLOT_FERTILIZER_START + i);
+            ItemStack inWeedExSlot = itemHandler.getStackInSlot(SLOT_WEEDEX_START + i);
+            misplaced = (!inFertilizerSlot.isEmpty() && !isFertilizerItem(inFertilizerSlot))
+                || (!inWeedExSlot.isEmpty() && !isWeedExCell(inWeedExSlot));
+        }
+        if (!misplaced) return;
+        for (int i = 0; i < SLOT_FERTILIZER_COUNT; i++) {
+            ItemStack a = itemHandler.getStackInSlot(SLOT_FERTILIZER_START + i).copy();
+            ItemStack b = itemHandler.getStackInSlot(SLOT_WEEDEX_START + i).copy();
+            itemHandler.setStackInSlot(SLOT_FERTILIZER_START + i, b);
+            itemHandler.setStackInSlot(SLOT_WEEDEX_START + i, a);
+        }
     }
 }

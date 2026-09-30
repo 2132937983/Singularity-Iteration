@@ -6,6 +6,20 @@
     "mio_icif:block_lead",
     "mio_icif:block_raw_tin",
     "mio_icif:block_raw_uranium",
-    "mio_icif:block_raw_lead"
+    "mio_icif:block_raw_lead",
+    "#c:storage_blocks/bronze",
+    "#c:storage_blocks/adviron",
+    "#c:storage_blocks/lead",
+    "#c:storage_blocks/niobium",
+    "#c:storage_blocks/raw_lead",
+    "#c:storage_blocks/raw_niobium",
+    "#c:storage_blocks/raw_tin",
+    "#c:storage_blocks/raw_titanium",
+    "#c:storage_blocks/raw_uranium",
+    "#c:storage_blocks/steel",
+    "#c:storage_blocks/tin",
+    "#c:storage_blocks/titanium",
+    "#c:storage_blocks/uranium",
+    "#c:storage_blocks/refined_iron"
   ]
 }

@@ -58,6 +58,8 @@
     "mio_icif:producer/block_metal_former_advanced",
     "mio_icif:producer/block_oil_refinery_elc",
     "mio_icif:energy_converter/energy_converter",
-    "mio_icif:reactor/block_reactor_chamber"
+    "mio_icif:reactor/block_reactor_chamber",
+    "mio_icif:producer/block_laser_defense_tower",
+    "mio_icif:producer/block_sky_patrol_laser_tower"
   ]
 }

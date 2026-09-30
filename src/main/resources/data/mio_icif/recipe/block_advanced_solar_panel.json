@@ -12,9 +12,7 @@
     "A": {
       "item": "mio_icif:generator/block_solar_generator"
     },
-    "G": {
-      "item": "mio_icif:resource/item_alloy_plate"
-    }
+    "G": {"tag": "c:plates/alloy"}
   },
   "result": {
     "id": "mio_icif:generator/block_advanced_solar_panel",

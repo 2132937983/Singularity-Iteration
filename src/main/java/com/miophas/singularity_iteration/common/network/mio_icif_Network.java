@@ -181,6 +181,13 @@ public class mio_icif_Network {
             TileEntityFieldUpdatePacket::handle
         );
 
+        // Laser tower volley visuals (server -> client, one packet per volley)
+        registrar.playToClient(
+            LaserTowerBeamPacket.TYPE,
+            LaserTowerBeamPacket.CODEC,
+            LaserTowerBeamPacket::handle
+        );
+
         // 注册高级采矿机过滤槽设置包（JEI 幽灵拖拽，客户端→服务端）
         registrar.playToServer(
             MinerFilterPacket.TYPE,

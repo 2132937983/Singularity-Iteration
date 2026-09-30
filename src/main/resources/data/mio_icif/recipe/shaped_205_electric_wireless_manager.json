@@ -3,7 +3,7 @@
   "transfer_charge": true,
   "pattern": ["SCS", "CTC", "SBS"],
   "key": {
-    "S": {"item": "mio_icif:resource/item_titanium_plate"},
+    "S": {"tag": "c:plates/titanium"},
     "C": {"item": "mio_icif:normal/item_advcircuit"},
     "T": {"item": "mio_icif:normal/item_freq"},
     "B": {"item": "mio_icif:normal/item_lithium_battery"}

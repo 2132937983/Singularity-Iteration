@@ -201,6 +201,7 @@ public class MioIcifRegistriesImpl implements IMioIcifRegistries {
                            path.contains("teleporter") ||
                            path.contains("nuke") ||
                            path.contains("tesla") ||
+                           path.endsWith("_tower") ||
                            path.contains("steam_repressurizer");
                 })
                 .collect(Collectors.toList());

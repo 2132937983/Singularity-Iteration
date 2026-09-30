@@ -7,9 +7,7 @@
     "P P"
   ],
   "key": {
-    "S": {
-      "item": "mio_icif:resource/item_titanium_plate"
-    },
+    "S": {"tag": "c:plates/titanium"},
     "B": {
       "item": "mio_icif:normal/item_crystal_lev0"
     },

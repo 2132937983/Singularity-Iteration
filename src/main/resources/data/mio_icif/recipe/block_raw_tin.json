@@ -6,9 +6,7 @@
     "###"
   ],
   "key": {
-    "#": {
-      "item": "mio_icif:resource/item_raw_tin_ore"
-    }
+    "#": {"tag": "c:raw_materials/tin"}
   },
   "result": {
     "id": "mio_icif:block_raw_tin",

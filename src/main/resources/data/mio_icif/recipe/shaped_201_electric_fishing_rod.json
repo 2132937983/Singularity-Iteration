@@ -3,7 +3,7 @@
   "transfer_charge": true,
   "pattern": [" SL", "SDL", " SL"],
   "key": {
-    "S": {"item": "mio_icif:resource/item_iron_casing"},
+    "S": {"tag": "c:casings/iron"},
     "L": {"tag": "c:string"},
     "D": {"item": "mio_icif:item_tool_power_unit_small"}
   },

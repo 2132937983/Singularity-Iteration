@@ -6,9 +6,7 @@
     "TTT"
   ],
   "key": {
-    "T": {
-      "item": "mio_icif:block_titanium"
-    },
+    "T": {"tag": "c:storage_blocks/titanium"},
     "S": {
       "item": "mio_icif:generator/block_geo_generator"
     },

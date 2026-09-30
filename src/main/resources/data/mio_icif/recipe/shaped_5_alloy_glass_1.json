@@ -9,9 +9,7 @@
     "G": {
       "item": "minecraft:glass"
     },
-    "A": {
-      "item": "mio_icif:resource/item_alloy_plate"
-    }
+    "A": {"tag": "c:plates/alloy"}
   },
   "result": {
     "id": "mio_icif:build/block_alloy_glass",

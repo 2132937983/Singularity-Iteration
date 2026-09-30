@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ILI",
+    "CTC",
+    "IBI"
+  ],
+  "key": {
+    "L": {
+      "item": "mio_icif:item_tool_advanced_electric_rifle"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "T": {
+      "item": "mio_icif:producer/block_laser_defense_tower"
+    },
+    "I": {
+      "tag": "c:plates/iridium"
+    },
+    "B": {
+      "tag": "c:crystals/energy"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_sky_patrol_laser_tower",
+    "count": 1
+  }
+}

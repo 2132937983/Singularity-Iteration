@@ -14,13 +14,39 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 @SuppressWarnings({"null", "deprecation"})
 public class EnergyBridge {
 
     private static final int BRIDGE_SCAN_INTERVAL = 20;
 
+    /**
+     * 调试开关，与电线的 WIRE_CONNECT_DEBUG 共用同一个 JVM 参数，
+     * 打开一次即可同时看到"是否连上"和"为什么没充进去"：
+     * -Dsingularity_iteration.wireConnectDebug=true
+     */
+    private static final boolean DEBUG =
+        Boolean.parseBoolean(System.getProperty("singularity_iteration.wireConnectDebug", "false"));
+
+    /** 调试日志去重缓存（仅在开关打开时写入） */
+    private static final Set<String> DEBUG_ONCE =
+        java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+
+    public static void debug(String key, String message, Object... args) {
+        if (!DEBUG) return;
+        if (DEBUG_ONCE.size() > 512) {
+            DEBUG_ONCE.clear();
+        }
+        if (!DEBUG_ONCE.add(key)) return;
+        Singularity_Iteration.LOGGER.warn("[EnergyBridge-DEBUG] " + message, args);
+    }
+
     private boolean hasAdjacentCompatSinks = false;
     private int ticksUntilBridgeScan = 0;
+    /** 上一次扫描中确认存在兼容能量接收方的方向，输电时只遍历这些方向 */
+    private final Set<Direction> compatSinkDirections = EnumSet.noneOf(Direction.class);
 
     public void tick(Level level, BlockPos wirePos, CableTier cableTier, CustomEUEnergyStorage energyStorage) {
         ticksUntilBridgeScan--;
@@ -38,11 +64,12 @@ public class EnergyBridge {
     private void scanAdjacentCompatSinks(Level level, BlockPos wirePos, CableTier cableTier, CustomEUEnergyStorage energyStorage) {
         if (level == null) return;
         boolean found = false;
+        compatSinkDirections.clear();
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = wirePos.relative(dir);
             if (hasCompatEnergyStorage(level, neighborPos, dir)) {
                 found = true;
-                break;
+                compatSinkDirections.add(dir);
             }
         }
         if (found != hasAdjacentCompatSinks) {
@@ -95,7 +122,7 @@ public class EnergyBridge {
         long buffered = energyStorage.getAmount();
         if (buffered <= 0) return;
 
-        for (Direction dir : Direction.values()) {
+        for (Direction dir : compatSinkDirections) {
             if (buffered <= 0) break;
             BlockPos neighborPos = wirePos.relative(dir);
 
@@ -105,6 +132,12 @@ public class EnergyBridge {
             if (pushed > 0) {
                 energyStorage.consumeEnergyInternal(pushed, false);
                 buffered -= pushed;
+            } else {
+                debug("bridge-pushfail|" + neighborPos + "|" + dir,
+                    "电线 {} 向 {} (dir={}) 推送失败: 缓冲={} EU, 邻居={}",
+                    wirePos, neighborPos, dir, buffered,
+                    level.getBlockEntity(neighborPos) != null
+                        ? level.getBlockEntity(neighborPos).getClass().getName() : "null");
             }
         }
     }
@@ -116,38 +149,60 @@ public class EnergyBridge {
             if (AE2Compat.isAE2Loaded() && AE2Compat.isAe2NetworkBlock(level, pos)) return 0;
             Direction queryDir = dir.getOpposite();
 
+            // 各兼容层按顺序尝试：只有真正收下能量才算成功，
+            // 否则继续尝试下一层（例如 MI 同时暴露了 FE 适配但该面拒收时，
+            // 必须继续走 MI 原生能力，否则会出现"连上了却永远充不进去"）。
             IEUEnergyStorage euStorage = level.getCapability(EUApi.SIDED, pos, queryDir);
             if (euStorage == null) euStorage = level.getCapability(EUApi.SIDED, pos, null);
-            if (euStorage != null && euStorage.canReceive()) {
-                return euStorage.receive(maxAmount, false);
+            if (euStorage != null) {
+                long accepted = euStorage.canReceive() ? euStorage.receive(maxAmount, false) : 0L;
+                if (accepted > 0) return accepted;
+                debug("bridge-eu|" + pos + "|" + queryDir,
+                    "{} 的 EUApi.SIDED 层未接收 (side={}, canReceive={}, 请求={} EU)",
+                    pos, queryDir, euStorage.canReceive(), maxAmount);
             }
 
             ILongEnergyStorage longStorage = level.getCapability(ILongEnergyStorage.BLOCK, pos, queryDir);
             if (longStorage == null) longStorage = level.getCapability(ILongEnergyStorage.BLOCK, pos, null);
-            if (longStorage != null && longStorage.canReceive()) {
-                return longStorage.receive(maxAmount, false);
+            if (longStorage != null) {
+                long accepted = longStorage.canReceive() ? longStorage.receive(maxAmount, false) : 0L;
+                if (accepted > 0) return accepted;
+                debug("bridge-long|" + pos + "|" + queryDir,
+                    "{} 的 ILongEnergyStorage 层未接收 (side={}, canReceive={}, 请求={} EU)",
+                    pos, queryDir, longStorage.canReceive(), maxAmount);
             }
 
             IEnergyStorage feStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, queryDir);
             if (feStorage == null) feStorage = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null);
-            if (feStorage != null && feStorage.canReceive()) {
-                int feToSend = (int) Math.min(maxAmount * ILongEnergyStorage.FE_PER_EU, Integer.MAX_VALUE);
-                // Quote first and commit only a complete EU.  The old direct
-                // call accounted floor(feSent/4), so a 1-3 FE acceptance was
-                // silently left in the foreign machine and sent again next tick.
-                int quoted = feStorage.receiveEnergy(feToSend, true);
-                int euQuoted = quoted / ILongEnergyStorage.FE_PER_EU;
-                if (euQuoted <= 0) return 0;
-                int feSent = feStorage.receiveEnergy(euQuoted * ILongEnergyStorage.FE_PER_EU, false);
-                if (feSent <= 0) return 0;
-                if (feSent % ILongEnergyStorage.FE_PER_EU != 0) {
-                    // A capability that violates its simulation quote cannot
-                    // be refunded through the whole-EU SI balance. Charge the
-                    // containing EU once, avoiding duplicate delivery.
-                    Singularity_Iteration.LOGGER.warn("FE endpoint at {} accepted non-EU quantum {} FE; accounting one containing EU", pos, feSent);
-                    return Math.min(maxAmount, (feSent + ILongEnergyStorage.FE_PER_EU - 1) / ILongEnergyStorage.FE_PER_EU);
+            if (feStorage != null) {
+                if (feStorage.canReceive()) {
+                    int feToSend = (int) Math.min(maxAmount * ILongEnergyStorage.FE_PER_EU, Integer.MAX_VALUE);
+                    // Quote first and commit only a complete EU.  The old direct
+                    // call accounted floor(feSent/4), so a 1-3 FE acceptance was
+                    // silently left in the foreign machine and sent again next tick.
+                    int quoted = feStorage.receiveEnergy(feToSend, true);
+                    int euQuoted = quoted / ILongEnergyStorage.FE_PER_EU;
+                    if (euQuoted > 0) {
+                        int feSent = feStorage.receiveEnergy(euQuoted * ILongEnergyStorage.FE_PER_EU, false);
+                        if (feSent > 0) {
+                            if (feSent % ILongEnergyStorage.FE_PER_EU != 0) {
+                                // A capability that violates its simulation quote cannot
+                                // be refunded through the whole-EU SI balance. Charge the
+                                // containing EU once, avoiding duplicate delivery.
+                                Singularity_Iteration.LOGGER.warn("FE endpoint at {} accepted non-EU quantum {} FE; accounting one containing EU", pos, feSent);
+                                return Math.min(maxAmount, (feSent + ILongEnergyStorage.FE_PER_EU - 1) / ILongEnergyStorage.FE_PER_EU);
+                            }
+                            return Math.min(maxAmount, feSent / ILongEnergyStorage.FE_PER_EU);
+                        }
+                    }
+                    debug("bridge-fe-fail|" + pos + "|" + queryDir,
+                        "{} 的 FE 能力报价后拒收 (side={}, 请求={} EU -> {} FE, 报价={} FE)",
+                        pos, queryDir, maxAmount, feToSend, quoted);
+                } else {
+                    // 该面只出不进，继续尝试后面的 MI 原生能力
+                    debug("bridge-fe-norecv|" + pos + "|" + queryDir,
+                        "{} 的 FE 能力 canReceive=false (side={})，继续尝试其他兼容层", pos, queryDir);
                 }
-                return Math.min(maxAmount, feSent / ILongEnergyStorage.FE_PER_EU);
             }
 
             if (MICompat.isMILoaded()) {
@@ -155,9 +210,21 @@ public class EnergyBridge {
                 if (miStorage == null) miStorage = MICompat.getMIStorage(level, pos, null);
                 if (miStorage != null) {
                     IEUEnergyStorage wrapped = MICompat.wrapMIStorage(miStorage);
-                    if (wrapped != null && wrapped.canReceive()) {
-                        return wrapped.receive(maxAmount, false);
+                    if (wrapped != null) {
+                        long accepted = wrapped.canReceive() ? wrapped.receive(maxAmount, false) : 0L;
+                        if (accepted > 0) {
+                            debug("bridge-mi-ok|" + pos + "|" + queryDir,
+                                "{} 的 MI 原生能力接收成功 (side={}, 接收={} EU, storage={})",
+                                pos, queryDir, accepted, miStorage.getClass().getName());
+                            return accepted;
+                        }
+                        debug("bridge-mi-reject|" + pos + "|" + queryDir,
+                            "{} 的 MI 原生能力拒收 (side={}, canReceive={}, 请求={} EU, storage={})",
+                            pos, queryDir, wrapped.canReceive(), maxAmount, miStorage.getClass().getName());
                     }
+                } else {
+                    debug("bridge-mi-null|" + pos + "|" + queryDir,
+                        "{} 查询不到 MI 能力 (side={})；可能该面在 MI 机器 UI 中未设置为输入面", pos, queryDir);
                 }
             }
 

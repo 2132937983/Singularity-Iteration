@@ -2,9 +2,7 @@
   "type": "mio_icif:compressor",
   "count": 9,
   "energypertick": 20,
-  "ingredient": {
-    "item": "mio_icif:resource/item_energium_dust"
-  },
+  "ingredient": {"tag": "c:dusts/energium"},
   "processingtime": 400,
   "result": {
     "count": 1,

@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "#c:nuggets/copper",
+    "#c:nuggets/lead",
+    "#c:nuggets/silver",
+    "#c:nuggets/tin",
+    "#c:nuggets/titanium"
+  ]
+}

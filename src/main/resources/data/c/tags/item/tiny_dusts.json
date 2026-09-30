@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "#c:tiny_dusts/thorium",
+    "#c:tiny_dusts/sulfur",
+    "#c:tiny_dusts/gold",
+    "#c:tiny_dusts/bronze",
+    "#c:tiny_dusts/niobium",
+    "#c:tiny_dusts/titanium",
+    "#c:tiny_dusts/lead",
+    "#c:tiny_dusts/lapis",
+    "#c:tiny_dusts/lithium",
+    "#c:tiny_dusts/tin",
+    "#c:tiny_dusts/silver",
+    "#c:tiny_dusts/obsidian",
+    "#c:tiny_dusts/iron",
+    "#c:tiny_dusts/copper",
+    "#c:tiny_dusts/diamond",
+    "#c:tiny_dusts/emerald"
+  ]
+}

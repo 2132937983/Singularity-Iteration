@@ -6,9 +6,7 @@
     "###"
   ],
   "key": {
-    "#": {
-      "item": "mio_icif:resource/item_raw_lead_ore"
-    }
+    "#": {"tag": "c:raw_materials/lead"}
   },
   "result": {
     "id": "mio_icif:block_raw_lead",

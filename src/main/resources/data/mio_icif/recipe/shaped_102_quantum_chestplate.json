@@ -10,15 +10,11 @@
     "n": {
       "item": "mio_icif:armor/item_armor_nano_chestplate"
     },
-    "I": {
-      "item": "mio_icif:resource/item_iridium_plate"
-    },
+    "I": {"tag": "c:plates/iridium"},
     "L": {
       "item": "mio_icif:normal/item_lamacrystal_chargebat_lev0"
     },
-    "A": {
-      "item": "mio_icif:resource/item_alloy_plate"
-    },
+    "A": {"tag": "c:plates/alloy"},
     "J": {
       "item": "mio_icif:armor/item_armor_jetpack_electric"
     }

@@ -292,6 +292,10 @@ public class mio_icif_menus {
     public static final DeferredHolder<MenuType<?>, MenuType<BatchCrafterMenu>> BATCH_CRAFTER_MENU_TYPE =
         MENU_TYPES.register("batch_crafter_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<BatchCrafterMenu>) (containerId, playerInventory, data) -> new BatchCrafterMenu(containerId, playerInventory, data), net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
+    // Laser defence towers (both variants share one menu)
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.producer.LaserTowerMenu>> LASER_TOWER_MENU_TYPE =
+        MENU_TYPES.register("laser_tower_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<com.miophas.singularity_iteration.common.menu.producer.LaserTowerMenu>) com.miophas.singularity_iteration.common.menu.producer.LaserTowerMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
+
     public static final DeferredHolder<MenuType<?>, MenuType<ChunkLoaderMenu>> CHUNK_LOADER_MENU_TYPE =
         MENU_TYPES.register("chunk_loader_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<ChunkLoaderMenu>) (containerId, playerInventory, data) -> new ChunkLoaderMenu(containerId, playerInventory, data), net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 

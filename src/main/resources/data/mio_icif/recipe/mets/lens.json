@@ -4,7 +4,7 @@
   "key": {
     "F": {"tag": "c:plates/iron"},
     "G": {"item": "minecraft:glass"},
-    "R": {"item": "mio_icif:resource/item_irradiant_reinforced_plate"}
+    "R": {"tag": "c:plates/irradiant_reinforced"}
   },
   "result": {"id": "mio_icif:normal/item_lens", "count": 1}
 }

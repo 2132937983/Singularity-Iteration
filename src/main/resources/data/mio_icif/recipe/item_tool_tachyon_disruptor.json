@@ -13,9 +13,7 @@
     "B": {
       "item": "mio_icif:normal/item_super_lapotron_crystal"
     },
-    "O": {
-      "item": "mio_icif:resource/item_neutron_plate"
-    },
+    "O": {"tag": "c:plates/neutron"},
     "T": {
       "item": "mio_icif:normal/item_field_generator"
     },

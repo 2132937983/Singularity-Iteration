@@ -7,9 +7,7 @@
     "CCC"
   ],
   "key": {
-    "C": {
-      "tag": "c:plates/adviron"
-    }
+    "C": {"tag": "c:plates/steel"}
   },
   "result": {
     "id": "mio_icif:pipe/fluid_pipe_steel_medium",

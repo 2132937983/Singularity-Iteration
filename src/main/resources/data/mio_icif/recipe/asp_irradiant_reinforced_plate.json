@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shaped",
   "pattern": ["RSR","LIL","RDR"],
   "key": {
-    "I":{"item":"mio_icif:resource/item_iridiumiron_reinforced_plate"},
+    "I":{"tag": "c:plates/iridium_iron_reinforced"},
     "R":{"item":"minecraft:redstone"},
     "S":{"item":"mio_icif:resource/item_sunnarium_small"},
     "L":{"item":"minecraft:lapis_lazuli"},

@@ -9,7 +9,7 @@
     ],
     "key": {
         "F": { "item": "mio_icif:normal/item_field_generator" },
-        "C": { "item": "mio_icif:resource/item_neutron_plate" },
+        "C": {"tag": "c:plates/neutron"},
         "I": { "item": "mio_icif:wiring/block_gesu_input_iv" },
         "O": { "item": "mio_icif:wiring/block_gesu_output_iv" },
         "B": { "item": "mio_icif:wiring/block_eesu" }

@@ -1,9 +1,7 @@
 {
   "type": "mio_icif:powder",
   "count": 1,
-  "ingredient": {
-    "item": "mio_icif:resource/item_adviron_ingot"
-  },
+  "ingredient": {"tag": "c:ingots/steel"},
   "result": {
     "count": 1,
     "id": "mio_icif:resource/item_iron_dust"

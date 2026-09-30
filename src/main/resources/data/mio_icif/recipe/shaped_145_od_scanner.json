@@ -3,7 +3,7 @@
   "transfer_charge": true,
   "pattern": ["PGP","CBC","ccc"],
   "key": {
-    "P":{"item":"mio_icif:resource/item_golden_casing"},
+    "P":{"tag": "c:casings/gold"},
     "G":{"item":"minecraft:glowstone_dust"},
     "C":{"tag":"c:circuits/basic"},
     "B":{"item":"mio_icif:normal/item_advbat_lev0"},

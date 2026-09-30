@@ -6,9 +6,7 @@
     "MMM"
   ],
   "key": {
-    "M": {
-      "item": "mio_icif:resource/item_adviron_ingot"
-    }
+    "M": {"tag": "c:ingots/steel"}
   },
   "result": {
     "id": "mio_icif:block_adviron",

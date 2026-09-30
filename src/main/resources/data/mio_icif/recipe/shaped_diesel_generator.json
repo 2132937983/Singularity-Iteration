@@ -6,9 +6,7 @@
     "TBT"
   ],
   "key": {
-    "T": {
-      "item": "mio_icif:resource/item_titanium_casing"
-    },
+    "T": {"tag": "c:casings/titanium"},
     "S": {
       "item": "mio_icif:resource/item_titanium_shaft"
     },

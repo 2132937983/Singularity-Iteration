@@ -1,0 +1,19 @@
+{
+  "replace": false,
+  "values": [
+    "#c:dense_plates/adviron",
+    "#c:dense_plates/bronze",
+    "#c:dense_plates/copper",
+    "#c:dense_plates/gold",
+    "#c:dense_plates/iron",
+    "#c:dense_plates/lapis",
+    "#c:dense_plates/lead",
+    "#c:dense_plates/niobium",
+    "#c:dense_plates/obsidian",
+    "#c:dense_plates/super_iridium",
+    "#c:dense_plates/tin",
+    "#c:dense_plates/titanium",
+    "#c:dense_plates/steel",
+    "#c:dense_plates/refined_iron"
+  ]
+}

@@ -11,7 +11,6 @@
 <p align="center">
   <img alt="Minecraft" src="https://img.shields.io/badge/Minecraft-1.21.1-brightgreen">
   <img alt="NeoForge" src="https://img.shields.io/badge/NeoForge-21.1.218-orange">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.7.14-blue">
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-lightgrey">
 </p>
 

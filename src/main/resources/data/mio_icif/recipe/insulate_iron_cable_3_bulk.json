@@ -5,13 +5,13 @@
       "item": "mio_icif:wiring/cable/block_iron_cable"
     },
     {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     },
     {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     },
     {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     }
   ],
   "result": {

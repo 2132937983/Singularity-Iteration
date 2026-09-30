@@ -10,7 +10,7 @@
       "item": "mio_icif:producer/block_machine_hull_basic"
     },
     "S": {
-      "item": "mio_icif:resource/item_iron_shaft"
+      "tag": "c:shafts/iron"
     }
   },
   "result": {

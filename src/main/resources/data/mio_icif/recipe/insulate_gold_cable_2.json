@@ -5,7 +5,7 @@
       "item": "mio_icif:wiring/cable/block_gold_cable_1"
     },
     {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     }
   ],
   "result": {

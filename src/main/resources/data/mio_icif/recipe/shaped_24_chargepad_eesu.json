@@ -6,7 +6,7 @@
   ],
   "key": {
     "S": {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     },
     "P": {
       "item": "minecraft:stone_pressure_plate"

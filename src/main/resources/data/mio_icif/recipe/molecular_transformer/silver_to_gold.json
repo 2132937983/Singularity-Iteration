@@ -1,7 +1,7 @@
 {
   "type": "mio_icif:molecular_transformer",
   "input": {
-    "item": "mio_icif:resource/item_silver_ingot"
+    "tag": "c:ingots/silver"
   },
   "result": {
     "count": 1,

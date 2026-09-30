@@ -20,7 +20,7 @@
       "item": "mio_icif:build/block_alloy_glass"
     },
     "R": {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     },
     "A": {
       "tag": "c:circuits/advanced"

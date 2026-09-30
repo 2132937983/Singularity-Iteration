@@ -1,7 +1,7 @@
 {
   "type": "mio_icif:metal_former_rolling",
   "ingredient": {
-    "item": "mio_icif:resource/item_niobium_titanium_ingot"
+    "tag": "c:ingots/niobium_titanium"
   },
   "result": {
     "id": "mio_icif:resource/item_niobium_titanium_plate"

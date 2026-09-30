@@ -12,7 +12,7 @@
         "F": {"tag": "c:plates/neutron"},
         "S": { "tag": "c:circuits/ultimate" },
         "B": { "item": "mio_icif:wiring/block_eesu" },
-        "P": { "item": "mio_icif:resource/item_super_iridium_compress_plate" },
+        "P": { "tag": "c:dense_plates/super_iridium" },
         "I": { "item": "mio_icif:wiring/transformer_ev_sc" }
     },
     "result": {

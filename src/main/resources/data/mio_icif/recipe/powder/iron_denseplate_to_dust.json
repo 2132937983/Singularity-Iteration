@@ -2,7 +2,7 @@
   "type": "mio_icif:powder",
   "count": 1,
   "ingredient": {
-    "item": "mio_icif:resource/item_iron_denseplate"
+    "tag": "c:dense_plates/iron"
   },
   "result": {
     "count": 9,

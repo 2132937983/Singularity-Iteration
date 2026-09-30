@@ -8,7 +8,7 @@
   ],
   "key": {
     "P": {
-      "item": "mio_icif:resource/item_super_iridium_compress_plate"
+      "tag": "c:dense_plates/super_iridium"
     },
     "A": {
       "item": "mio_icif:item_electric_force_field_generator"

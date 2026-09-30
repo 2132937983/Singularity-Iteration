@@ -3,7 +3,7 @@
   "count": 9,
   "energypertick": 5,
   "ingredient": {
-    "item": "mio_icif:resource/item_lithium_dust_small"
+    "tag": "c:dusts/small_lithium"
   },
   "processingtime": 100,
   "result": {

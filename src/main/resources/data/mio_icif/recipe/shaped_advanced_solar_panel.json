@@ -14,7 +14,7 @@
       "item": "mio_icif:generator/block_solar_generator"
     },
     "C": {
-      "item": "mio_icif:normal/item_advcircuit"
+      "tag": "c:circuits/advanced"
     },
     "I": {"tag": "c:plates/irradiant_reinforced"}
   },

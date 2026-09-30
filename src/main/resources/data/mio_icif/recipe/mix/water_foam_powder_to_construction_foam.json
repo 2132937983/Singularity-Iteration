@@ -5,7 +5,7 @@
     "id": "minecraft:water"
   },
   "material": {
-    "item": "mio_icif:resource/item_cf_dust"
+    "tag": "c:dusts/cf"
   },
   "result_cell": {
     "count": 1,

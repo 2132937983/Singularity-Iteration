@@ -7,7 +7,7 @@
   ],
   "key": {
     "R": {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     },
     "O": {
       "item": "minecraft:yellow_dye"

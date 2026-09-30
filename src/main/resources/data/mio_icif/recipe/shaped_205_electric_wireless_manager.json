@@ -4,7 +4,7 @@
   "pattern": ["SCS", "CTC", "SBS"],
   "key": {
     "S": {"tag": "c:plates/titanium"},
-    "C": {"item": "mio_icif:normal/item_advcircuit"},
+    "C": {"tag": "c:circuits/advanced"},
     "T": {"item": "mio_icif:normal/item_freq"},
     "B": {"item": "mio_icif:normal/item_lithium_battery"}
   },

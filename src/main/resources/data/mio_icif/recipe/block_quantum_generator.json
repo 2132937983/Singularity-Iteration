@@ -8,7 +8,7 @@
   "key": {
     "I": {"tag": "c:ingots/iridium"},
     "C": {
-      "item": "mio_icif:normal/item_advcircuit"
+      "tag": "c:circuits/advanced"
     },
     "S": {
       "item": "mio_icif:generator/block_quantum_solar_panel"

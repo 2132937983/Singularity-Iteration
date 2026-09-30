@@ -8,7 +8,7 @@
   ],
   "key": {
     "S": {
-      "item": "mio_icif:resource/item_nano_living_metal"
+      "tag": "mio_icif:nano_living_metals"
     },
     "B": {
       "item": "mio_icif:normal/item_super_lapotron_crystal"

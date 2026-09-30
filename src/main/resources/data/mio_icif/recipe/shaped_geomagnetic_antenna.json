@@ -10,7 +10,7 @@
       "item": "mio_icif:wiring/cable/block_superconducting_cable"
     },
     "M": {
-      "item": "mio_icif:resource/item_nano_living_metal"
+      "tag": "mio_icif:nano_living_metals"
     },
     "C": {
       "item": "mio_icif:producer/block_tesla"

@@ -13,7 +13,7 @@
       "item": "mio_icif:wiring/transformer_ev_sc"
     },
     "C": {
-      "item": "mio_icif:normal/item_advcircuit"
+      "tag": "c:circuits/advanced"
     },
     "c": {
       "item": "mio_icif:resource/item_molecular_transformer_core"

@@ -7,7 +7,7 @@
   ],
   "key": {
     "A": {
-      "item": "mio_icif:resource/item_nano_living_metal"
+      "tag": "mio_icif:nano_living_metals"
     },
     "S": {
       "tag": "c:circuits/ultimate"

@@ -11,7 +11,7 @@
       "item": "mio_icif:generator/block_advanced_solar_panel"
     },
     "C": {
-      "item": "mio_icif:normal/item_advcircuit"
+      "tag": "c:circuits/advanced"
     },
     "N": {
       "item": "mio_icif:armor/item_armor_nano_helmet"

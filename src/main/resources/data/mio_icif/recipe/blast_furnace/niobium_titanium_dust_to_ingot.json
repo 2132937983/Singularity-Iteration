@@ -1,7 +1,7 @@
 {
   "type": "mio_icif:blast_furnace",
   "ingredient": {
-    "item": "mio_icif:resource/item_niobium_titanium_dust"
+    "tag": "c:dusts/niobium_titanium"
   },
   "result": {
     "count": 1,

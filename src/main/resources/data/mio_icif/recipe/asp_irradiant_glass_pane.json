@@ -3,7 +3,7 @@
   "pattern": ["GGG","UDU","GGG"],
   "key": {
     "G":{"item":"mio_icif:build/block_alloy_glass"},
-    "U":{"item":"mio_icif:resource/item_irradiant_uranium_ingot"},
+    "U":{"tag":"mio_icif:irradiant_uranium"},
     "D":{"item":"minecraft:glowstone_dust"}
   },
   "result":{"id":"mio_icif:build/block_irradiant_glass_pane","count":8}

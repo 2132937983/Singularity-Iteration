@@ -1,1 +1,1 @@
-{"type": "minecraft:crafting_shaped","pattern":[" A ","ABA"," A "],"key":{"A":{"item":"mio_icif:resource/item_iron_rotor_blade"},"B":{"item":"mio_icif:resource/item_iron_shaft"}},"result":{"id":"mio_icif:rotors/item_iron_rotor","count":1}}
+{"type": "minecraft:crafting_shaped","pattern":[" A ","ABA"," A "],"key":{"A":{"tag":"c:rotor_blades/iron"},"B":{"tag":"c:shafts/iron"}},"result":{"id":"mio_icif:rotors/item_iron_rotor","count":1}}

@@ -1,7 +1,7 @@
 {
   "type": "mio_icif:neutron_polymerizer",
   "ingredient": {
-    "item": "mio_icif:resource/item_nano_living_metal"
+    "tag": "mio_icif:nano_living_metals"
   },
   "result": {
     "id": "mio_icif:resource/item_neutron_plate",

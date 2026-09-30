@@ -7,7 +7,7 @@
   ],
   "key": {
     "E": {
-      "item": "mio_icif:resource/item_plant_extract"
+      "tag": "mio_icif:plant_extracts"
     },
     "O": {"tag": "c:crushed_ores/titanium"},
     "S": {

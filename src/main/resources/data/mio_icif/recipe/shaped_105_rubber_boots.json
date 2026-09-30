@@ -7,7 +7,7 @@
   ],
   "key": {
     "R": {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     },
     "W": {
       "item": "minecraft:white_wool"

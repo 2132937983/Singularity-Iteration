@@ -7,7 +7,7 @@
   ],
   "key": {
     "C": {
-      "item": "mio_icif:normal/item_circuit"
+      "tag": "c:circuits/basic"
     },
     "R": {
       "item": "minecraft:redstone"

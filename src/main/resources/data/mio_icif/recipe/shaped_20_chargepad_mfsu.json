@@ -9,7 +9,7 @@
       "item": "mio_icif:wiring/block_mfsu"
     },
     "R": {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     },
     "C": {
       "tag": "c:circuits/basic"

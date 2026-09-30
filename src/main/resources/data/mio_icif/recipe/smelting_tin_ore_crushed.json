@@ -5,7 +5,7 @@
   "experience": 0.7,
   "group": "tin",
   "ingredient": {
-    "item": "mio_icif:resource/item_tin_ore_crushed"
+    "tag": "c:crushed_ores/tin"
   },
   "result": {
     "count": 1,

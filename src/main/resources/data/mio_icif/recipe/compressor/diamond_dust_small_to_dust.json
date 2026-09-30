@@ -3,7 +3,7 @@
   "count": 9,
   "energypertick": 5,
   "ingredient": {
-    "item": "mio_icif:resource/item_diamond_dust_small"
+    "tag": "c:tiny_dusts/diamond"
   },
   "processingtime": 100,
   "result": {

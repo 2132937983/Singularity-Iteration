@@ -2,7 +2,7 @@
   "type": "mio_icif:powder",
   "count": 1,
   "ingredient": {
-    "item": "mio_icif:resource/item_niobium_denseplate"
+    "tag": "c:dense_plates/niobium"
   },
   "result": {
     "count": 9,

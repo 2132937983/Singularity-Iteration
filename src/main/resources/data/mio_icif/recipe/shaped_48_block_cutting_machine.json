@@ -13,7 +13,7 @@
       "item": "mio_icif:resource/item_motor"
     },
     "S": {
-      "item": "mio_icif:resource/item_iron_shaft"
+      "tag": "c:shafts/iron"
     },
     "C": {
       "tag": "c:circuits/advanced"

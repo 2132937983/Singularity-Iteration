@@ -8,7 +8,7 @@
   "key": {
     "T": {"tag": "c:casings/titanium"},
     "S": {
-      "item": "mio_icif:resource/item_titanium_shaft"
+      "tag": "c:shafts/titanium"
     },
     "G": {
       "item": "mio_icif:generator/block_semifluid_generator"

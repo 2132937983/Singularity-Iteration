@@ -23,7 +23,7 @@
       "tag": "c:circuits/advanced"
     },
     "S": {
-      "item": "mio_icif:resource/item_rubber"
+      "tag": "c:rubber"
     }
   },
   "result": {

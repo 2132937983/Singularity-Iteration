@@ -3,7 +3,7 @@
   "count": 9,
   "energypertick": 5,
   "ingredient": {
-    "item": "mio_icif:resource/item_copper_dust_small"
+    "tag": "c:dusts/small_copper"
   },
   "processingtime": 100,
   "result": {

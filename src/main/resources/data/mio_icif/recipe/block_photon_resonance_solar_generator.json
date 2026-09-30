@@ -7,7 +7,7 @@
     ],
     "key": {
         "P": {
-            "item": "mio_icif:resource/item_super_iridium_compress_plate"
+            "tag": "c:dense_plates/super_iridium"
         },
         "G": {
             "item": "mio_icif:generator/block_mets_advanced_solar_generator"

@@ -140,7 +140,7 @@ public class mio_icif_gui_advanced_miner_elc extends mio_icif_screen<AdvancedMin
         super.renderLabels(guiGraphics, mouseX, mouseY);
 
         // 绘制标题
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        drawTitle(guiGraphics);
 
         // 绘制模式文本（黑名单/白名单）- 原版IC2位置(40, 31)
         AdvancedMinerElcMenu menu = this.menu;

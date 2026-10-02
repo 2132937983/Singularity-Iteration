@@ -228,6 +228,70 @@ public class GTCompat {
         return new long[]{voltage, amperage};
     }
 
+    /**
+     * The GT container on {@code side} of the block at {@code pos} as an SI energy sink,
+     * or null when there is none or it does not take energy on that face.
+     *
+     * <p>{@code side} is the face of the GT block being fed (the capability context).
+     */
+    @Nullable
+    public static IEUEnergyStorage findSink(Level level, BlockPos pos, @Nullable Direction side) {
+        if (!isGTLoaded) return null;
+        Object container = getGTEnergyContainer(level, pos, side);
+        if (container == null && side != null) container = getGTEnergyContainer(level, pos, null);
+        if (container == null || side == null || !inputsEnergy(container, side)) return null;
+        return new GTSink(container, side);
+    }
+
+    /**
+     * Largest packet SI may hand a GT receiver: never above its input voltage (GT machines
+     * explode on over-voltage), whole amps only, and never more than it has room for.
+     * Returns {voltage, amps}; amps == 0 means nothing can be delivered.
+     */
+    static long[] safePacket(long offer, long inputVoltage, long inputAmps, long room) {
+        if (offer <= 0 || inputVoltage <= 0 || room <= 0) return new long[]{0, 0};
+        long limit = Math.min(offer, room);
+        long voltage = Math.min(inputVoltage, limit);
+        long amps = Math.min(Math.max(1, inputAmps), limit / voltage);
+        return new long[]{voltage, Math.max(0, amps)};
+    }
+
+    /** SI -> GT: whole-amp packets at or below the receiver's own voltage. */
+    private static final class GTSink implements IEUEnergyStorage.NoExtract {
+        private final Object container;
+        private final Direction side;
+
+        GTSink(Object container, Direction side) {
+            this.container = container;
+            this.side = side;
+        }
+
+        private long room() {
+            long capacity = GTCompat.getEnergyCapacity(container), stored = GTCompat.getEnergyStored(container);
+            return capacity <= 0 ? 0 : Math.max(0, capacity - stored);
+        }
+
+        private long[] packet(long offer) {
+            return safePacket(offer, GTCompat.getInputVoltage(container), GTCompat.getInputAmperage(container), room());
+        }
+
+        @Override public boolean canConnect(CableTier cableTier) { return true; }
+        @Override public boolean canReceive() { return inputsEnergy(container, side) && GTCompat.getInputVoltage(container) > 0; }
+
+        @Override
+        public long receive(long maxReceive, boolean simulate) {
+            if (maxReceive <= 0 || !canReceive()) return 0;
+            long[] p = packet(maxReceive);
+            if (p[1] <= 0) return 0;
+            if (simulate) return p[0] * p[1];
+            long amps = acceptEnergyFromNetwork(container, side, p[0], p[1]);
+            return Math.max(0, Math.min(amps, p[1])) * p[0];
+        }
+
+        @Override public long getAmount() { return GTCompat.getEnergyStored(container); }
+        @Override public long getCapacity() { return GTCompat.getEnergyCapacity(container); }
+    }
+
     public static IEUEnergyStorage wrapGTContainerAsSource(Object gtContainer) {
         if (!isGTLoaded || gtContainer == null) return null;
         return new WrappedGTEnergyContainerAsSource(gtContainer);

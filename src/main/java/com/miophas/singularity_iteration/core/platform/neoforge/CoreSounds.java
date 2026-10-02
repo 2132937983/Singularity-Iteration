@@ -17,6 +17,10 @@ public final class CoreSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> CABLE_BREAK = SOUND_EVENTS.register("cable.break",
         () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath("mio_icif", "cable.break")));
 
+    /** One-shot "operation complete" cue (pneumatic release + two-tone chime), rate-limited per machine. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> MACHINE_COMPLETE = SOUND_EVENTS.register("machine.complete",
+        () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath("mio_icif", "machine.complete")));
+
     private CoreSounds() {}
 
     public static void register(IEventBus eventBus) {

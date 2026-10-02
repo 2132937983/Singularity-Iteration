@@ -1,0 +1,8 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+[[mods]]
+modId="botania"
+version="0.0.0-test"
+displayName="Botania API (headless test stub)"
+description='''Test-only stand-in exposing Botania's public mana API so the Armory bridge can be exercised. Never shipped.'''

@@ -64,7 +64,7 @@ public class mio_icif_gui_large_fabricator_core extends mio_icif_screen<LargeFab
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
+        drawTitle(guiGraphics);
 
         LargeFabricatorCoreMenu menu = this.menu;
         if (menu != null) {

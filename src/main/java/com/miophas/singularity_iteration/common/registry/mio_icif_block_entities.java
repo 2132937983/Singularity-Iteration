@@ -115,6 +115,7 @@ import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_fl
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.IEventBus;
@@ -658,39 +659,43 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("stirling_kinetic_generator", () ->
             BlockEntityType.Builder.of(mio_icif_Stirling_Kinetic_Generator::new, mio_icif_blocks.STIRLING_KINETIC_GENERATOR.get()).build(null));
 
-    // 注册 LV-MV 变压器 方块实体类型
-
-    // 注册 LV-MV 变压器 方块实体类型
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndependentTransformerBlockEntity>> TRANSFORMER_LV_MV =
+    // 变压器方块实体类型：工厂统一委托 TransformerEntities，保证放置 / 读档 / 客户端重建得到同一实体类。
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlockEntity>> TRANSFORMER_LV_MV =
         BLOCK_ENTITIES.register("transformer_lv_mv", () ->
-            BlockEntityType.Builder.of((pos, state) -> new IndependentTransformerBlockEntity(mio_icif_block_entities.TRANSFORMER_LV_MV.get(), pos, state, 32, 1),
+            BlockEntityType.Builder.<BlockEntity>of((pos, state) -> com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.create(
+                    com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.Tier.LV_MV, pos, state),
                 mio_icif_blocks.TRANSFORMER_LV_MV.get()).build(null));
 
-    // 注册 MV-HV 变压器 方块实体类型
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndependentTransformerBlockEntity>> TRANSFORMER_MV_HV =
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlockEntity>> TRANSFORMER_MV_HV =
         BLOCK_ENTITIES.register("transformer_mv_hv", () ->
-            BlockEntityType.Builder.of((pos, state) -> new IndependentTransformerBlockEntity(mio_icif_block_entities.TRANSFORMER_MV_HV.get(), pos, state, 128, 1),
+            BlockEntityType.Builder.<BlockEntity>of((pos, state) -> com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.create(
+                    com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.Tier.MV_HV, pos, state),
                 mio_icif_blocks.TRANSFORMER_MV_HV.get()).build(null));
 
-    // 注册 HV-EV 变压器 方块实体类型
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndependentTransformerBlockEntity>> TRANSFORMER_HV_EV =
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlockEntity>> TRANSFORMER_HV_EV =
         BLOCK_ENTITIES.register("transformer_hv_ev", () ->
-            BlockEntityType.Builder.of((pos, state) -> new IndependentTransformerBlockEntity(mio_icif_block_entities.TRANSFORMER_HV_EV.get(), pos, state, 512, 1),
+            BlockEntityType.Builder.<BlockEntity>of((pos, state) -> com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.create(
+                    com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.Tier.HV_EV, pos, state),
                 mio_icif_blocks.TRANSFORMER_HV_EV.get()).build(null));
 
-    // 注册 EV-SC 变压器 方块实体类型
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndependentTransformerBlockEntity>> TRANSFORMER_EV_SC =
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlockEntity>> TRANSFORMER_EV_SC =
         BLOCK_ENTITIES.register("transformer_ev_sc", () ->
-            BlockEntityType.Builder.of((pos, state) -> new IndependentTransformerBlockEntity(mio_icif_block_entities.TRANSFORMER_EV_SC.get(), pos, state, 2048, 1),
+            BlockEntityType.Builder.<BlockEntity>of((pos, state) -> com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.create(
+                    com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.Tier.EV_SC, pos, state),
                 mio_icif_blocks.TRANSFORMER_EV_SC.get()).build(null));
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_transformer_iv>> TRANSFORMER_IV_LUV =
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlockEntity>> TRANSFORMER_IV_LUV =
         BLOCK_ENTITIES.register("transformer_iv_luv", () ->
-            BlockEntityType.Builder.of(mio_icif_transformer_iv::new, mio_icif_blocks.TRANSFORMER_IV_LUV.get()).build(null));
+            BlockEntityType.Builder.<BlockEntity>of((pos, state) -> com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.create(
+                    com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.Tier.IV_LUV, pos, state),
+                mio_icif_blocks.TRANSFORMER_IV_LUV.get()).build(null));
 
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_transformer_luv>> TRANSFORMER_LUV_ZPMV =
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlockEntity>> TRANSFORMER_LUV_ZPMV =
         BLOCK_ENTITIES.register("transformer_luv_zpmv", () ->
-            BlockEntityType.Builder.of(mio_icif_transformer_luv::new, mio_icif_blocks.TRANSFORMER_LUV_ZPMV.get()).build(null));
+            BlockEntityType.Builder.<BlockEntity>of((pos, state) -> com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.create(
+                    com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.Tier.LUV_ZPMV, pos, state),
+                mio_icif_blocks.TRANSFORMER_LUV_ZPMV.get()).build(null));
+
 
     // 注册变压器 MenuType，所有变压器共用同一GUI
 
@@ -901,6 +906,10 @@ public class mio_icif_block_entities {
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_tesla::new, mio_icif_blocks.TESLA.get()).build(null));
 
     // Laser defence towers share one entity class, parameterised by spec.
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.wiring.terminal.EnergyTerminalBlockEntity>> ENERGY_TERMINAL =
+        BLOCK_ENTITIES.register("energy_terminal", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.wiring.terminal.EnergyTerminalBlockEntity::new, mio_icif_blocks.ENERGY_TERMINAL.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower>> LASER_DEFENSE_TOWER_ENTITY_TYPE =
         BLOCK_ENTITIES.register("laser_defense_tower", () -> BlockEntityType.Builder.<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower>of(
             (pos, state) -> new com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower(mio_icif_block_entities.LASER_DEFENSE_TOWER_ENTITY_TYPE.get(), pos, state, com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_laser_tower.GROUND),

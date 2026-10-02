@@ -1,0 +1,13 @@
+{
+  "entries": [
+    {
+      "enum": "net/minecraft/client/model/HumanoidModel$ArmPose",
+      "name": "MIO_ICIF_LASER_AIM",
+      "constructor": "(ZLnet/neoforged/neoforge/client/IArmPoseTransformer;)V",
+      "parameters": {
+        "class": "com/miophas/singularity_iteration/common/client/item/LaserGunPose",
+        "field": "ARM_POSE"
+      }
+    }
+  ]
+}

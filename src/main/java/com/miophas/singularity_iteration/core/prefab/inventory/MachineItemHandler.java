@@ -140,7 +140,7 @@ public class MachineItemHandler extends ItemStackHandler {
                 return validator == null || validator.isValidForSlot(slot, stack, type);
             }
             case UPGRADE -> {
-                return isUpgrade(stack);
+                return isUpgrade(stack) && (validator == null || validator.acceptsUpgrade(slot, stack));
             }
             case REACTOR -> {
                 return isReactorComponent(stack);

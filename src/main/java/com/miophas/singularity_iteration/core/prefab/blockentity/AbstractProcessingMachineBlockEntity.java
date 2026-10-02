@@ -559,6 +559,9 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         if (level == null) {
             return true;
         }
+        if (isRemotelyDisabled()) {
+            return false;
+        }
         boolean powered = level.hasNeighborSignal(worldPosition);
         if (upgradeStats.isRedstoneInverted()) {
             return powered;
@@ -1052,6 +1055,23 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     protected void finishWork() {
         progress = 0;
         isWorking = false;
+        playCompletionCue();
+    }
+
+    /** Minimum ticks between two completion cues of one machine (fast, overclocked machines stay quiet). */
+    public static final int COMPLETE_SOUND_COOLDOWN = 60;
+    private long lastCompleteSound = Long.MIN_VALUE / 2;
+
+    /** Plays the "operation complete" cue, at most once per {@link #COMPLETE_SOUND_COOLDOWN} ticks. */
+    protected void playCompletionCue() {
+        Level level = getLevel();
+        if (level == null || level.isClientSide) return;
+        long now = level.getGameTime();
+        if (now - lastCompleteSound < COMPLETE_SOUND_COOLDOWN) return;
+        lastCompleteSound = now;
+        level.playSound(null, getBlockPos(),
+            com.miophas.singularity_iteration.core.platform.neoforge.CoreSounds.MACHINE_COMPLETE.get(),
+            SoundSource.BLOCKS, 0.35F, 0.96F + level.random.nextFloat() * 0.08F);
     }
 
     /**

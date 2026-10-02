@@ -24,7 +24,11 @@ public final class CommonCoreBootstrap {
         CoreDataComponents.DATA_COMPONENTS.register(modEventBus);
         CoreSounds.register(modEventBus);
         EnergyCompatibility.install(new CommonEnergyCompatibility());
-        MachinePresentation.configure(BatBoxMenu::new, () -> CoreSounds.MACHINE_WORK.get(), () -> CoreSounds.CABLE_BREAK.get());
+        // Host machines get their running sound from the client-side loop manager
+        // (common.client.sound.MachineSoundManager, driven by the ACTIVE block state), so the
+        // server no longer broadcasts a work sound every 40 ticks per machine. Addon machines can
+        // still return their own sound from getWorkSound().
+        MachinePresentation.configure(BatBoxMenu::new, () -> null, () -> CoreSounds.CABLE_BREAK.get());
         SlotItemPredicates.configure(stack -> stack.getItem() instanceof mio_icif_reactor,
             stack -> stack.is(mio_icif_resources.RTG_PELLET.get()),
             stack -> stack.is(mio_icif_normal.STEAM_TURBIN.get()));

@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": {
+      "tag": "c:plates/alloy"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "S": {
+      "item": "minecraft:armor_stand"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "B": {
+      "item": "minecraft:chest"
+    }
+  },
+  "pattern": [
+    "PCP",
+    "SMS",
+    "PBP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:producer/block_armory"
+  },
+  "show_notification": true
+}

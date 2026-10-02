@@ -18,203 +18,137 @@ public class mio_icif_gui_od_scanner extends mio_icif_screen<mio_icif_od_scanner
 
     private static final ResourceLocation GUI_TEXTURE =
         ResourceLocation.parse("mio_icif:textures/gui/gui_tool_scanner.png");
-    private static final ResourceLocation SCROLLBAR_TEXTURE =
-        ResourceLocation.parse("minecraft:textures/gui/container/creative_inventory/tabs.png");
 
     private static final int GUI_WIDTH = 176;
     private static final int GUI_HEIGHT = 231;
 
-    private static final int TITLE_X = 10;
-    private static final int TITLE_Y = 19;
+    // result panel of gui_tool_scanner.png: inner area x 9..166, y 18..143
+    private static final int TITLE_X = 12, TITLE_Y = 21;
+    private static final int LIST_X = 12, LIST_Y = 33, LIST_W = 142, LIST_BOTTOM = 141;
+    private static final int LINE_H = 11;
+    private static final int ROWS = (LIST_BOTTOM - LIST_Y) / LINE_H;
+    private static final int BAR_X = 157, BAR_W = 6;
 
-    private static final int RESULT_START_X = 8;
-    private static final int RESULT_START_Y = 35;
-    private static final int RESULT_LINE_HEIGHT = 12;
+    private record Line(String name, String count) { }
 
-    private static final int RESULT_AREA_BOTTOM = 149;
-    private static final int MAX_VISIBLE_ROWS = (RESULT_AREA_BOTTOM - RESULT_START_Y) / RESULT_LINE_HEIGHT;
-
-    private static final int COLUMN_COUNT = 2;
-    private static final int COLUMN_WIDTH = 80;
-    private static final int COLUMN_GAP = 4;
-
-    private static final int SCROLLBAR_WIDTH = 12;
-    private static final int SCROLLBAR_X_OFFSET = GUI_WIDTH - SCROLLBAR_WIDTH - 2;
-
-    private List<String> resultLines = new ArrayList<>();
-    private float scrollOffset;
+    private final List<Line> lines = new ArrayList<>();
+    private int scroll;
+    private boolean dragging;
 
     public mio_icif_gui_od_scanner(mio_icif_od_scanner_menu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = GUI_WIDTH;
         this.imageHeight = GUI_HEIGHT;
-        this.scrollOffset = 0.0f;
-
-        menu.setOnScanResultsUpdated(this::reloadScanResults);
+        menu.setOnScanResultsUpdated(this::loadScanResults);
         loadScanResults();
     }
 
     private void loadScanResults() {
         Map<String, Integer> results = menu.getScanResults();
-        resultLines.clear();
-
-        if (results.isEmpty()) {
-            resultLines.add(Component.translatable("gui.mio_icif.od_scanner.no_ore_found").getString());
-        } else {
-            results.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .forEach(entry -> {
-                    String key = entry.getKey();
-                    Component oreName = key.contains(".") ? Component.translatable(key) : Component.literal(key);
-                    String line = entry.getValue() + Component.translatable("gui.mio_icif.od_scanner.ore_count_suffix").getString() + oreName.getString();
-                    resultLines.add(line);
-                });
-        }
-        this.scrollOffset = 0;
+        lines.clear();
+        results.entrySet().stream()
+            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
+            .forEach(e -> {
+                String key = e.getKey();
+                String name = (key.contains(".") ? Component.translatable(key) : Component.literal(key)).getString();
+                lines.add(new Line(name, String.format("%,d", e.getValue())));
+            });
+        scroll = 0;
     }
 
-    private void reloadScanResults() {
-        loadScanResults();
-    }
-
-    private int getTotalDisplayRows() {
-        if (resultLines.isEmpty()) return 0;
-        return (resultLines.size() + COLUMN_COUNT - 1) / COLUMN_COUNT;
-    }
-
-    private int getMaxScroll() {
-        if (resultLines.isEmpty()) return 0;
-        return getTotalDisplayRows();
+    private int maxScroll() {
+        return Math.max(0, lines.size() - ROWS);
     }
 
     @Override
     protected void init() {
         super.init();
-        this.inventoryLabelY = this.imageHeight - 94;
+        this.inventoryLabelY = 10000;   // the panel has no room for the "Inventory" label
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        int maxScroll = getMaxScroll();
-        if (maxScroll > 0) {
-            this.scrollOffset = Math.max(0, Math.min(maxScroll, this.scrollOffset - (float) verticalAmount));
-        }
+        scroll = Math.max(0, Math.min(maxScroll(), scroll - (int) Math.signum(verticalAmount)));
         return true;
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
-            int guiX = (this.width - this.imageWidth) / 2;
-            int guiY = (this.height - this.imageHeight) / 2;
-            int scrollbarX = guiX + SCROLLBAR_X_OFFSET;
-            int scrollbarTop = guiY + RESULT_START_Y;
-            int scrollbarHeight = MAX_VISIBLE_ROWS * RESULT_LINE_HEIGHT;
-
-            if (mouseX >= scrollbarX && mouseX < scrollbarX + SCROLLBAR_WIDTH
-                && mouseY >= scrollbarTop && mouseY < scrollbarTop + scrollbarHeight) {
-                int maxScroll = getMaxScroll();
-                if (maxScroll > 0) {
-                    float clickRatio = (float) (mouseY - scrollbarTop) / scrollbarHeight;
-                    this.scrollOffset = Math.max(0, Math.min(maxScroll, (int) (clickRatio * (maxScroll + 1))));
-                }
-                return true;
-            }
+        if (button == 0 && overBar(mouseX, mouseY) && maxScroll() > 0) {
+            dragging = true;
+            dragTo(mouseY);
+            return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        renderScrollbar(guiGraphics, x, y);
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (dragging) {
+            dragTo(mouseY);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
-    private void renderScrollbar(GuiGraphics guiGraphics, int guiX, int guiY) {
-        int scrollbarX = guiX + SCROLLBAR_X_OFFSET;
-        int scrollbarTop = guiY + RESULT_START_Y;
-        int scrollbarHeight = MAX_VISIBLE_ROWS * RESULT_LINE_HEIGHT;
-        int maxScroll = getMaxScroll();
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        dragging = false;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
 
-        guiGraphics.blit(SCROLLBAR_TEXTURE, scrollbarX, scrollbarTop, 232, 0, SCROLLBAR_WIDTH, scrollbarHeight);
+    private boolean overBar(double mx, double my) {
+        return mx >= leftPos + BAR_X - 1 && mx < leftPos + BAR_X + BAR_W + 1 && my >= topPos + LIST_Y && my < topPos + LIST_BOTTOM;
+    }
 
-        if (maxScroll > 0) {
-            int thumbHeight = Math.max(12, scrollbarHeight * scrollbarHeight / (scrollbarHeight + maxScroll * RESULT_LINE_HEIGHT));
-            float scrollRatio = this.scrollOffset / maxScroll;
-            int thumbY = scrollbarTop + (int) ((scrollbarHeight - thumbHeight) * scrollRatio);
-            guiGraphics.blit(SCROLLBAR_TEXTURE, scrollbarX, thumbY, 244, 0, SCROLLBAR_WIDTH, thumbHeight);
+    private void dragTo(double my) {
+        float t = (float) ((my - topPos - LIST_Y) / (LIST_BOTTOM - LIST_Y));
+        scroll = Math.max(0, Math.min(maxScroll(), Math.round(t * maxScroll())));
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        int x = leftPos, y = topPos;
+        g.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
+
+        // header
+        g.drawString(font, Component.translatable("gui.mio_icif.od_scanner.result_title"), x + TITLE_X, y + TITLE_Y, 0xFF2A2E33, false);
+        if (!lines.isEmpty()) {
+            String total = String.valueOf(lines.size());
+            g.drawString(font, total, x + 163 - font.width(total), y + TITLE_Y, 0xFF808890, false);
+        }
+        g.fill(x + LIST_X, y + LIST_Y - 3, x + 163, y + LIST_Y - 2, 0xFFC4C8CD);
+
+        if (lines.isEmpty()) {
+            Component none = Component.translatable("gui.mio_icif.od_scanner.no_ore_found");
+            g.drawString(font, none, x + LIST_X + (LIST_W - font.width(none)) / 2, y + LIST_Y + 40, 0xFF808890, false);
+            return;
+        }
+        g.enableScissor(x + LIST_X, y + LIST_Y, x + LIST_X + LIST_W, y + LIST_BOTTOM);
+        for (int row = 0; row < ROWS && scroll + row < lines.size(); row++) {
+            Line line = lines.get(scroll + row);
+            int ly = y + LIST_Y + row * LINE_H;
+            if (((scroll + row) & 1) == 1) g.fill(x + LIST_X, ly - 1, x + LIST_X + LIST_W, ly + LINE_H - 1, 0xFFE4E7EA);
+            int countW = font.width(line.count());
+            String name = font.plainSubstrByWidth(line.name(), LIST_W - countW - 8);
+            g.drawString(font, name, x + LIST_X + 2, ly + 1, 0xFF2A2E33, false);
+            g.drawString(font, line.count(), x + LIST_X + LIST_W - countW - 2, ly + 1, 0xFF2E7D44, false);
+        }
+        g.disableScissor();
+
+        // scrollbar (only when the list overflows)
+        if (maxScroll() > 0) {
+            int top = y + LIST_Y, h = LIST_BOTTOM - LIST_Y;
+            g.fill(x + BAR_X, top, x + BAR_X + BAR_W, top + h, 0xFFC9CDD2);
+            int thumb = Math.max(10, h * ROWS / lines.size());
+            int ty = top + (h - thumb) * scroll / maxScroll();
+            g.fill(x + BAR_X, ty, x + BAR_X + BAR_W, ty + thumb, 0xFF6B737D);
+            g.fill(x + BAR_X + 1, ty + 1, x + BAR_X + BAR_W - 1, ty + thumb - 1, 0xFF8C949E);
         }
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component title = Component.translatable("gui.mio_icif.od_scanner.result_title");
-        guiGraphics.drawString(this.font, title, TITLE_X, TITLE_Y, 0x404040, false);
-
-        int startRow = (int) this.scrollOffset;
-        int maxScroll = getMaxScroll();
-
-        enableScissorClip(guiGraphics);
-
-        for (int row = 0; row < MAX_VISIBLE_ROWS; row++) {
-            int displayRow = startRow + row;
-            int y = RESULT_START_Y + row * RESULT_LINE_HEIGHT;
-
-            for (int col = 0; col < COLUMN_COUNT; col++) {
-                int lineIndex = displayRow * COLUMN_COUNT + col;
-                if (lineIndex >= resultLines.size()) break;
-
-                int x = RESULT_START_X + col * (COLUMN_WIDTH + COLUMN_GAP);
-                String text = resultLines.get(lineIndex);
-
-                int maxWidth = COLUMN_WIDTH;
-                String trimmed = trimToWidth(text, maxWidth);
-                guiGraphics.drawString(this.font, trimmed, x, y, 0x00FF00, false);
-            }
-        }
-
-        disableScissorClip(guiGraphics);
-
-        if (maxScroll > 0) {
-            int totalLines = resultLines.size();
-            int firstShown = startRow * COLUMN_COUNT + 1;
-            int lastShown = Math.min((startRow + MAX_VISIBLE_ROWS) * COLUMN_COUNT, totalLines);
-            String info = firstShown + "-" + lastShown + "/" + totalLines;
-            guiGraphics.drawString(this.font, info, RESULT_START_X, RESULT_AREA_BOTTOM + 2, 0x808080, false);
-        }
-    }
-
-    private String trimToWidth(String text, int maxWidthPx) {
-        if (this.font.width(text) <= maxWidthPx) {
-            return text;
-        }
-        while (text.length() > 0 && this.font.width(text) > maxWidthPx) {
-            text = text.substring(0, text.length() - 1);
-        }
-        return text;
-    }
-
-    private void enableScissorClip(GuiGraphics guiGraphics) {
-        int guiX = (this.width - this.imageWidth) / 2;
-        int guiY = (this.height - this.imageHeight) / 2;
-        int clipX = guiX + RESULT_START_X;
-        int clipY = guiY + RESULT_START_Y;
-        int clipWidth = COLUMN_COUNT * COLUMN_WIDTH + (COLUMN_COUNT - 1) * COLUMN_GAP;
-        int clipHeight = MAX_VISIBLE_ROWS * RESULT_LINE_HEIGHT;
-        guiGraphics.enableScissor(clipX, clipY, clipX + clipWidth, clipY + clipHeight);
-    }
-
-    private void disableScissorClip(GuiGraphics guiGraphics) {
-        guiGraphics.disableScissor();
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        // everything is drawn in renderBg (absolute coordinates, scissor-safe)
     }
 }
-

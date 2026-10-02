@@ -414,6 +414,11 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
                     }
                 }
 
+                if (side != null && com.miophas.singularity_iteration.common.integration.gt.GTCompat.findSink(realLevel, pos, side) != null) {
+                    logWireConnect("GT能力 非空", pos, side, state, blockEntity);
+                    return true;
+                }
+
                 // 检查 NeoForge 原生 FE 能力
                 net.neoforged.neoforge.energy.IEnergyStorage feSided = side != null
                     ? realLevel.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, pos, side) : null;

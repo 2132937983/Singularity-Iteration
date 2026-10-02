@@ -67,7 +67,7 @@ public class mio_icif_gui_rt_generator extends mio_icif_screen<com.miophas.singu
         // 显示发电量(119, 50)
         long output = menu.getGenerationRate();
         Component outputText = Component.literal(output + " EU/t");
-        guiGraphics.drawString(this.font, outputText, OUTPUT_TEXT_X, OUTPUT_TEXT_Y, 0x00FF00, false);
+        guiGraphics.drawString(this.font, outputText, OUTPUT_TEXT_X, OUTPUT_TEXT_Y, 0x2A2E33, false);
 
         // 检查鼠标是否在能量条区域（显示tooltip）
         int x = (this.width - this.imageWidth) / 2;

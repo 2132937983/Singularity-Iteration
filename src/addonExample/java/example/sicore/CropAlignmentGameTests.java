@@ -40,6 +40,21 @@ public final class CropAlignmentGameTests {
     private static Block block(String path) { return BuiltInRegistries.BLOCK.get(id(path)); }
     private static ItemStack item(String path) { return new ItemStack(BuiltInRegistries.ITEM.get(id(path))); }
     private static PlantType plant(String name) { return MioIcifAPI.instance().getCropAPI().getPlant("mio_icif", name); }
+    /**
+     * Light-dependent crop rules need daylight. The game-test world runs a normal day
+     * cycle, so whether this batch starts before or after dusk depended on how many
+     * tests ran earlier. Pin the clock to noon and let the sky brightness refresh first.
+     */
+    private static void afterSkyLight(GameTestHelper h, BlockPos rel, Runnable body) {
+        var level = h.getLevel();
+        if (level.getSkyDarken() > 0 || level.isNight()) {
+            level.setDayTime(6000);
+            h.runAfterDelay(2, body);
+        } else {
+            body.run();
+        }
+    }
+
     private static IPlanter crop(GameTestHelper h, BlockPos pos, String species, int stage) {
         h.setBlock(pos.below(), Blocks.FARMLAND.defaultBlockState().setValue(FarmBlock.MOISTURE, 7));
         h.setBlock(pos, block("crop/stick"));
@@ -63,6 +78,10 @@ public final class CropAlignmentGameTests {
 
     @GameTest(template="reactor_loop", batch="agriculture", timeoutTicks=100)
     public static void crossingAndSuppliesUseRealBlockInteractions(GameTestHelper h) {
+        afterSkyLight(h, new BlockPos(3, 2, 3), () -> crossingAndSuppliesUseRealBlockInteractionsBody(h));
+    }
+
+    private static void crossingAndSuppliesUseRealBlockInteractionsBody(GameTestHelper h) {
         BlockPos pos = new BlockPos(3, 2, 3);
         IPlanter crop = crop(h, pos, null, 0);
         Player player = h.makeMockPlayer(GameType.SURVIVAL);
@@ -158,6 +177,10 @@ public final class CropAlignmentGameTests {
 
     @GameTest(template="reactor_loop", batch="agriculture", timeoutTicks=100)
     public static void fourParentsParticipateAndSingleNeighborSpreads(GameTestHelper h) {
+        afterSkyLight(h, new BlockPos(5, 2, 5), () -> fourParentsParticipateAndSingleNeighborSpreadsBody(h));
+    }
+
+    private static void fourParentsParticipateAndSingleNeighborSpreadsBody(GameTestHelper h) {
         BlockPos pos = new BlockPos(5, 2, 5);
         IPlanter target = crop(h, pos, null, 0);
         target.setWater(200); target.setNutrients(199); target.setHybridBase(true);
@@ -345,6 +368,10 @@ public final class CropAlignmentGameTests {
 
     @GameTest(template="reactor_loop", batch="agriculture", timeoutTicks=100)
     public static void venomEatingAndTrowelHaveOriginalEffects(GameTestHelper h) {
+        afterSkyLight(h, new BlockPos(3, 3, 3), () -> venomEatingAndTrowelHaveOriginalEffectsBody(h));
+    }
+
+    private static void venomEatingAndTrowelHaveOriginalEffectsBody(GameTestHelper h) {
         BlockPos pos = new BlockPos(3, 3, 3);
         IPlanter crop = crop(h, pos, "venomilia", 5);
         Player player = h.makeMockPlayer(GameType.SURVIVAL);

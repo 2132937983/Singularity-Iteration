@@ -33,7 +33,7 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
                                         @Nullable IItemHandler itemHandler,
                                         @Nullable ContainerData data) {
         super(mio_icif_menus.NUCLEAR_REACTOR_GENERATOR_MENU_TYPE.get(), containerId, TOTAL_SLOT_COUNT,
-              playerInventory, itemHandler, data, 6, blockEntity);
+              playerInventory, itemHandler, data, 11, blockEntity);
     }
 
     @Override
@@ -83,6 +83,33 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
     public int getMaxHeat() { return data.get(3); }
     public int getOutputPower() { return data.get(4); }
     public int getAvailableColumns() { return data.get(5); }
+    public int getFeedRate() { return Math.max(1, data.get(6)); }
+    public int getCoolantAmount() { return data.get(7); }
+    public int getHotCoolantAmount() { return data.get(8); }
+    public int getCoolingAbsorbed() { return data.get(9); }
+    public int getCoolantHuPerMB() { return data.get(10); }
+    public net.neoforged.neoforge.fluids.FluidStack coolantFluid() {
+        return blockEntity instanceof mio_icif_nuclear_reactor_generator gen ? gen.getLiquidCooling().coldFluid() : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+    }
+
+    /** Feed-rate buttons: 0 = slower, 1 = faster, 2 = reset to 1x (shift = by 4). */
+    @Override
+    public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+        if (!(blockEntity instanceof mio_icif_nuclear_reactor_generator gen)) return false;
+        int rate = gen.getFeedRate();
+        switch (id) {
+            case 0 -> gen.setFeedRate(rate - 1);
+            case 1 -> gen.setFeedRate(rate + 1);
+            case 2 -> gen.setFeedRate(1);
+            case 3 -> gen.setFeedRate(rate - 4);
+            case 4 -> gen.setFeedRate(rate + 4);
+            default -> { return false; }
+        }
+        if (gen.getLevel() != null) gen.getLevel().playSound(null, gen.getBlockPos(),
+            com.miophas.singularity_iteration.common.registry.mio_icif_sounds.UI_CLICK.get(),
+            net.minecraft.sounds.SoundSource.BLOCKS, 0.6F, 0.8F + gen.getFeedRate() / 20F);
+        return true;
+    }
 
     @Override
     public void broadcastChanges() {
@@ -94,6 +121,11 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
             setSyncData(3, (int) gen.getHeatStorage().getMaxHeatStored());
             setSyncData(4, gen.getCurrentOutput());
             setSyncData(5, gen.getAvailableColumns());
+            setSyncData(6, gen.getFeedRate());
+            setSyncData(7, gen.getLiquidCooling().coldFluid().getAmount());
+            setSyncData(8, gen.getLiquidCooling().hotFluid().getAmount());
+            setSyncData(9, gen.getLiquidCooling().lastAbsorbed());
+            setSyncData(10, gen.getLiquidCooling().active() == null ? 0 : gen.getLiquidCooling().active().huPerMB());
         }
     }
 }

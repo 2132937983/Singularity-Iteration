@@ -270,7 +270,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     @Override public void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.loadAdditional(tag,registries);held=null;selected=ItemStack.EMPTY;mode=WorkMode.STOPPED;price=processed=pendingUu=0;paidEu=pendingEu=completed=0;
         tank.setFluid(FluidStack.EMPTY);selectionDirty=true;quotedGeneration=-1;lastTick=Long.MIN_VALUE;
-        if(!tag.contains(SAVE_KEY,Tag.TAG_COMPOUND)){if(!tag.isEmpty())held=tag.copy();isWorking=false;return;}
+        if(!tag.contains(SAVE_KEY,Tag.TAG_COMPOUND)){isWorking=false;return;}   // item/pick-block data or empty: fresh machine
         var own=tag.getCompound(SAVE_KEY);
         var allowed=java.util.Set.of("version","credit","tank","item","price","processed","pending_uu","pending_eu","paid_eu","completed","mode","held");
         boolean schema=allowed.containsAll(own.getAllKeys())&&own.contains("mode",Tag.TAG_INT)
@@ -290,7 +290,8 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
             ||!selected.isEmpty()&&!StoredPattern.valid(selected,price,0)||selected.isEmpty()&&(price!=0||processed!=0||pendingUu!=0||paidEu!=0||pendingEu!=0)){
             held=tag.copy();isWorking=false;return;
         }
-        mode=WorkMode.values()[modeId];if(own.contains("held",Tag.TAG_COMPOUND))held=own.getCompound("held").copy();
+        mode=WorkMode.values()[modeId];
+        if(own.contains("held",Tag.TAG_COMPOUND))com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.warn("Replicator at {}: discarding held record {} on load",worldPosition,own.getCompound("held"));
         isWorking=false;updateProgress();
     }
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){var tag=super.getUpdateTag(registries);saveAdditional(tag,registries);return tag;}

@@ -142,7 +142,7 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
         isWorking=false;
         if(!serverThread()||changing||gameTime()==lastTick)return;
         lastTick=gameTime();
-        if(hasHeldScanData()){state=State.FAILED;return;}
+        if(hasHeldScanData()){recover(held!=null?held.getString("reason"):"scan session failed");return;}
         if(result!=null){state=State.COMPLETED;return;}
         if(isDeniedScanComplete()){state=State.FAILED;return;}
         var input=itemHandler.getStackInSlot(SCANNER_SLOT);
@@ -214,23 +214,39 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
     @Override protected boolean canWork(){return !hasHeldScanData()&&result==null;}
     @Override protected void updateProgress(){progress=result==null?session.progress():DEFAULT_SCAN_TIME;maxProgress=DEFAULT_SCAN_TIME;}
     @Override public int getMaxProgress(){return DEFAULT_SCAN_TIME;}
-    private void hold(String reason){held=new CompoundTag();held.putString("reason",reason);state=State.FAILED;isWorking=false;ContainerToTank.markUnsaved(this);}
+    /**
+     * Inconsistent scan bookkeeping used to lock the scanner forever ("paused: save data or debit
+     * record needs checking"). It now recovers instead: the unfinished scan is cancelled (energy
+     * already spent is not refunded, nothing is duplicated), the item stays in its slot and the
+     * scanner returns to idle. The reason is logged for diagnostics.
+     */
+    private void hold(String reason){recover(reason);}
+    private void recover(String reason){
+        com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.warn("Pattern scanner at {} recovered from an inconsistent scan state: {}",worldPosition,reason);
+        held=null;session=newSession();progress=0;state=State.IDLE;isWorking=false;ContainerToTank.markUnsaved(this);
+    }
     @Override public void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.saveAdditional(tag,registries);var own=new CompoundTag();own.putInt("version",1);own.put("session",session.save(registries));
         if(result!=null)own.put("result",result.save(registries));if(held!=null)own.put("held",held.copy());tag.put(SAVE_KEY,own);
     }
     @Override public void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.loadAdditional(tag,registries);session=newSession();result=null;held=null;isWorking=false;state=State.IDLE;lastTick=Long.MIN_VALUE;
-        if(!tag.contains(SAVE_KEY,Tag.TAG_COMPOUND)){if(!tag.isEmpty())held=tag.copy();state=held==null?State.IDLE:State.FAILED;updateProgress();return;}
+        if(!tag.contains(SAVE_KEY,Tag.TAG_COMPOUND)){state=State.IDLE;updateProgress();return;}
         var own=tag.getCompound(SAVE_KEY);
         boolean valid=java.util.Set.of("version","session","result","held").containsAll(own.getAllKeys())
             &&own.contains("version",Tag.TAG_INT)&&own.getInt("version")==1&&own.contains("session",Tag.TAG_COMPOUND)
             &&(!own.contains("result")||own.contains("result",Tag.TAG_COMPOUND))&&(!own.contains("held")||own.contains("held",Tag.TAG_COMPOUND));
-        if(!valid){held=tag.copy();state=State.FAILED;updateProgress();return;}
+        if(!valid){state=State.IDLE;updateProgress();return;}
         session.load(own.getCompound("session"),registries);
         if(own.contains("result")){result=StoredPattern.load(own.getCompound("result"),registries);if(result==null||session.state()!=IndependentScanSession.State.IDLE){held=tag.copy();result=null;}}
         if(own.contains("held")&&held==null)held=own.getCompound("held").copy();
         if(active()&&(itemHandler.getStackInSlot(SCANNER_SLOT).isEmpty()||!ItemStack.isSameItemSameComponents(itemHandler.getStackInSlot(SCANNER_SLOT),session.sourceStack())))held=tag.copy();
+        if(hasHeldScanData()&&!isDeniedScanComplete()&&(level==null||!level.isClientSide())){
+            // previously-locked scanners (held record or unreadable session) come back usable
+            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.warn("Pattern scanner at {}: discarding held scan record on load",worldPosition);
+            held=null;session=newSession();
+            if(result!=null&&session.state()!=IndependentScanSession.State.IDLE)result=null;
+        }
         state=hasHeldScanData()||isDeniedScanComplete()?State.FAILED:result!=null?State.COMPLETED:active()?State.NO_ENERGY:State.IDLE;updateProgress();
     }
     public ContainerData getContainerData(){return new ContainerData(){

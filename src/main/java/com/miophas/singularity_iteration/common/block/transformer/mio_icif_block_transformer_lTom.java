@@ -28,8 +28,8 @@ public class mio_icif_block_transformer_lTom extends com.miophas.singularity_ite
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new com.miophas.singularity_iteration.core.platform.neoforge.energy.IndependentTransformerBlockEntity(
-            com.miophas.singularity_iteration.common.registry.mio_icif_block_entities.TRANSFORMER_LV_MV.get(), pos, state, 32, 1);
+        return com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.create(
+            com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.Tier.LV_MV, pos, state);
     }
 }
 

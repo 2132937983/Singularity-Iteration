@@ -24,50 +24,62 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public InductionElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_induction_elc blockEntity) {
-        super(mio_icif_menus.INDUCTION_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 8);
+        super(mio_icif_menus.INDUCTION_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 9);
     }
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_1, 47, 17) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_1, 37, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return itemHandler.isItemValid(INPUT_SLOT_1, stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_2, 64, 17) {
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT_2, 55, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return itemHandler.isItemValid(INPUT_SLOT_2, stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 56, 53) {
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 17, 58) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return MioIcifAPI.instance().getItemAPI().isBattery(stack);
             }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 113, 35) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_1, 115, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
+
+            @Override
+            public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                super.onTake(player, stack);
+                collectXp(player);   // taking smelted items pours the banked XP straight into the XP bar
+            }
         });
-        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 131, 35) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_2, 133, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
+
+            @Override
+            public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                super.onTake(player, stack);
+                collectXp(player);   // taking smelted items pours the banked XP straight into the XP bar
+            }
         });
-        this.addUpgradeSlot(UPGRADE_SLOT_1, 153, 26);
-        this.addUpgradeSlot(UPGRADE_SLOT_2, 153, 44);
+        this.addUpgradeSlot(UPGRADE_SLOT_1, 152, 26);
+        this.addUpgradeSlot(UPGRADE_SLOT_2, 152, 44);
     }
 
     @Override
     protected int getBatterySlotIndex() { return BATTERY_SLOT; }
 
     @Override
-    protected int getDataSlotCount() { return 8; }
+    protected int getDataSlotCount() { return 9; }
 
     public int getProgress1() { return data.get(0); }
     public int getMaxProgress1() { return data.get(1); }
@@ -75,6 +87,27 @@ import org.jetbrains.annotations.Nullable;
     public int getMaxProgress2() { return data.get(3); }
     public boolean isWorking() { return data.get(4) == 1; }
     public int getHeatPercent() { return data.get(7); }
+    /** Banked XP x10. */
+    public int getStoredXpTenths() { return data.get(8); }
+
+    public static final int BUTTON_COLLECT_XP = 0;
+
+    void collectXp(net.minecraft.world.entity.player.Player player) {
+        if (blockEntity instanceof mio_icif_induction_elc induction && player instanceof net.minecraft.server.level.ServerPlayer sp) induction.collectExperience(sp);
+    }
+
+    @Override
+    public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+        if (id != BUTTON_COLLECT_XP) return false;
+        collectXp(player);
+        return true;
+    }
+
+    @Override
+    public void removed(net.minecraft.world.entity.player.Player player) {
+        super.removed(player);
+        collectXp(player);
+    }
 
     @Override
     public int getEnergy() { return data.get(5); }
@@ -101,6 +134,7 @@ import org.jetbrains.annotations.Nullable;
             this.setSyncData(5, (int) induction.getEnergyStorage().getAmount());
             this.setSyncData(6, (int) induction.getEnergyStorage().getCapacity());
             this.setSyncData(7, induction.getHeatPercent());
+            this.setSyncData(8, (int) Math.min(Integer.MAX_VALUE, induction.getStoredExperience() * 10));
         }
     }
 }

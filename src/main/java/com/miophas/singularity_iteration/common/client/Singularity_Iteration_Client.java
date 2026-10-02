@@ -387,6 +387,10 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.DIESELOIL_TYPE.get());
         Singularity_Iteration.LOGGER.info("Diesel oil fluid client extensions registered");
 
+        // Mining laser: two-handed gun pose + first-person recoil
+        event.registerItem(com.miophas.singularity_iteration.common.client.item.LaserGunPose.INSTANCE,
+            com.miophas.singularity_iteration.common.item.tools.mio_icif_items_tools.TOOL_LASER_MINER.get());
+
         // 注册青铜剑客户端扩展 - 设置第三人称手臂姿势为BLOCK（剑的握持姿势）
         event.registerItem(new IClientItemExtensions() {
             @Override

@@ -36,7 +36,7 @@ import java.util.Set;
 public abstract class AbstractEnergyBlockEntity extends BlockEntity implements MenuProvider,
         IEnergySource, IEnergySink,
         com.miophas.singularity_iteration.core.api.machine.IEnergyBlock,
-        IUpgradableBlock, IWrenchable {
+        IUpgradableBlock, IWrenchable, com.miophas.singularity_iteration.core.api.energy.IRemoteSwitchable {
     
     /** Legacy implementation field. Addons should use getEnergyStorage() and the protected api* operations. */
     @org.jetbrains.annotations.ApiStatus.Internal
@@ -62,6 +62,21 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
 
     protected boolean isPowerSource = false;
     protected long powerOutput = 0;
+    /** Cut from the grid by a remote switch (energy management terminal). */
+    private boolean remoteDisabled;
+
+    @Override
+    public boolean isRemotelyDisabled() { return remoteDisabled; }
+
+    @Override
+    public void setRemotelyDisabled(boolean disabled) {
+        if (remoteDisabled == disabled) return;
+        remoteDisabled = disabled;
+        setChanged();
+        // Ports change: revoke routes now and republish the endpoint's faces.
+        com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.conductorPortsChanged(this);
+        com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.changed(this);
+    }
     
     protected boolean registered = false;
 
@@ -344,6 +359,7 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         tag.putString("cable_tier", apiGetCableTier().name);
         tag.putBoolean("is_power_source", isPowerSource);
         tag.putLong("power_output", powerOutput);
+        if (remoteDisabled) tag.putBoolean("remote_disabled", true);
     }
     
     @Override
@@ -355,6 +371,7 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
             apiSetEnergy(tag.getInt("energy"));
         }
         energyStorage.scexLoadFraction(tag.getLong("scex_energy_fraction"));
+        remoteDisabled = tag.getBoolean("remote_disabled");
         int uncertainFe = tag.getInt("scex_fe_uncertain_output");
         if (uncertainFe != 0 || scexFe != null) scexFeBridge().loadUncertainOutput(uncertainFe);
         if (tag.contains("is_power_source")) {

@@ -61,7 +61,7 @@ public class mio_icif_plasma_launcher extends mio_icif_tool_elc {
             level.addFreshEntity(bullet);
 
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.PLAYERS, 1.0F, 0.8F);
+                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.PLASMA_SHOT.get(), SoundSource.PLAYERS, 1.1F, 0.75F + level.random.nextFloat() * 0.1F);
         }
 
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);

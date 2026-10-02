@@ -44,7 +44,7 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
 
         ItemStack output = this.menu.getSlot(CropAnalyzerMenu.SLOT_OUTPUT).getItem();
         if (output.isEmpty() || !(output.getItem() instanceof com.miophas.singularity_iteration.core.api.item.ICropSeedItem seed)) {
-            drawText(guiGraphics, 8, 37, "UNKNOWN", 0xFFFFFF);
+            drawText(guiGraphics, 8, 37, "UNKNOWN", 0x2A2E33);
             return;
         }
 
@@ -52,28 +52,28 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
         PlantType crop = com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getCropAPI().getPlant(seed.cropModId(output), seed.cropId(output));
 
         if (scannedLevel == 0) {
-            drawText(guiGraphics, 8, 37, "UNKNOWN", 0xFFFFFF);
+            drawText(guiGraphics, 8, 37, "UNKNOWN", 0x2A2E33);
             return;
         }
 
         if (scannedLevel >= 1 && crop != null) {
             String name = Component.translatable(crop.getTranslationKey()).getString();
-            drawText(guiGraphics, 8, 37, name, 0xFFFFFF);
+            drawText(guiGraphics, 8, 37, name, 0x2A2E33);
         }
 
         if (scannedLevel >= 2 && crop != null) {
-            drawText(guiGraphics, 8, 50, "Tier: " + toRomanNumeral(crop.getStats().getLevel()), 0xFFFFFF);
-            drawText(guiGraphics, 8, 73, "Discovered by:", 0xFFFFFF);
-            drawText(guiGraphics, 8, 86, crop.getFoundBy(), 0xFFFFFF);
+            drawText(guiGraphics, 8, 50, "Tier: " + toRomanNumeral(crop.getStats().getLevel()), 0x2A2E33);
+            drawText(guiGraphics, 8, 73, "Discovered by:", 0x2A2E33);
+            drawText(guiGraphics, 8, 86, crop.getFoundBy(), 0x2A2E33);
         }
 
         if (scannedLevel >= 3 && crop != null) {
             List<String> extraInfo = crop.getExtraInfo();
             if (extraInfo.size() > 0) {
-                drawText(guiGraphics, 8, 109, extraInfo.get(0), 0xFFFFFF);
+                drawText(guiGraphics, 8, 109, extraInfo.get(0), 0x2A2E33);
             }
             if (extraInfo.size() > 1) {
-                drawText(guiGraphics, 8, 122, extraInfo.get(1), 0xFFFFFF);
+                drawText(guiGraphics, 8, 122, extraInfo.get(1), 0x2A2E33);
             }
         }
 
@@ -84,10 +84,10 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
 
             drawText(guiGraphics, 118, 37, Component.translatable("gui.mio_icif.crop_analyzer.growth").getString(), 0xAEAEBE);
             drawText(guiGraphics, 118, 50, Integer.toString(growth), 0xAEAEBE);
-            drawText(guiGraphics, 118, 73, Component.translatable("gui.mio_icif.crop_analyzer.yield").getString(), 0xEEB422);
-            drawText(guiGraphics, 118, 86, Integer.toString(gain), 0xEEB422);
-            drawText(guiGraphics, 118, 109, Component.translatable("gui.mio_icif.crop_analyzer.resilience").getString(), 0x00CEC9);
-            drawText(guiGraphics, 118, 122, Integer.toString(resistance), 0x00CEC9);
+            drawText(guiGraphics, 118, 73, Component.translatable("gui.mio_icif.crop_analyzer.yield").getString(), 0xA86A00);
+            drawText(guiGraphics, 118, 86, Integer.toString(gain), 0xA86A00);
+            drawText(guiGraphics, 118, 109, Component.translatable("gui.mio_icif.crop_analyzer.resilience").getString(), 0x2A6E8A);
+            drawText(guiGraphics, 118, 122, Integer.toString(resistance), 0x2A6E8A);
         }
     }
 

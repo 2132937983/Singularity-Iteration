@@ -2,96 +2,20 @@ package com.miophas.singularity_iteration.common.blockentity.batbox;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
-import com.miophas.singularity_iteration.core.api.energy.ICableTier;
-import com.miophas.singularity_iteration.core.prefab.blockentity.MultiblockEnergyPart;
-import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
-import com.miophas.singularity_iteration.core.runtime.energy.grid.EnergyNetGlobal;
-import com.miophas.singularity_iteration.core.api.energy.grid.IEnergyAcceptor;
-import com.miophas.singularity_iteration.core.api.energy.grid.IEnergyEmitter;
-
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import org.jetbrains.annotations.Nullable;
-
+/** GESU LUV output port: relays core energy to the network at LUV tier (see {@link GesuOutputPort}). */
 @SuppressWarnings("null")
-public class mio_icif_gesu_output_luv_entity extends MultiblockEnergyPart {
-
-    private static final long TRANSFER_SPEED = 81920L;
-    private static final ICableTier LUV_TIER =
-        MioIcifAPI.instance().getEnergyNetAPI().getCableTier("luv");
-    private static final long LUV_IO_RATE = LUV_TIER.getPowerRating();
+public class mio_icif_gesu_output_luv_entity extends GesuOutputPort {
 
     public mio_icif_gesu_output_luv_entity(BlockPos pos, BlockState state) {
-        super(pos, state, mio_icif_block_entities.GESU_OUTPUT_LUV.get(), 1, 0, 0, LUV_TIER);
+        super(mio_icif_block_entities.GESU_OUTPUT_LUV.get(), pos, state, MioIcifAPI.instance().getEnergyNetAPI().getCableTier("luv"));
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_gesu_output_luv_entity blockEntity) {
-        if (level.isClientSide()) return;
-
-        if (!blockEntity.isStructureCompleted() || blockEntity.getCorePosition() == null) {
-            blockEntity.setAsConsumer();
-            return;
-        }
-
-        blockEntity.setAsPowerSource(LUV_IO_RATE);
-    }
-
-    @Override
-    public double getOfferedEnergy() {
-        if (!isPowerSource()) return 0.0D;
-        BlockEntity coreBe = getCoreBlockEntity();
-        if (coreBe instanceof mio_icif_gesu_core_entity core) {
-            if (core.isStructureComplete() && core.getStoredEnergy() > 0) {
-                return Math.min(TRANSFER_SPEED, core.getStoredEnergy());
-            }
-        }
-        return 0.0D;
-    }
-
-    @Override
-    public void drawEnergy(double amount) {
-        if (!isPowerSource() || amount <= 0.0D) return;
-        BlockEntity coreBe = getCoreBlockEntity();
-        if (coreBe instanceof mio_icif_gesu_core_entity core) {
-            core.consumeEnergy((long) amount, false);
-        }
-    }
-
-    @Override
-    public int getSourceTier() {
-        if (!isPowerSource()) return -1;
-        return EnergyNetGlobal.cableTierToSourceTier((CableTier) LUV_TIER);
-    }
-
-    @Override
-    public boolean emitsEnergyTo(IEnergyAcceptor acceptor, Direction direction) {
-        return isPowerSource();
-    }
-
-    @Override
-    public double getDemandedEnergy() {
-        return 0.0D;
-    }
-
-    @Override
-    public double injectEnergy(Direction direction, double amount, double voltage) {
-        return amount;
-    }
-
-    @Override
-    public boolean acceptsEnergyFrom(IEnergyEmitter emitter, Direction direction) {
-        return false;
-    }
-
-    @Nullable
-    private BlockEntity getCoreBlockEntity() {
-        if (getCorePosition() == null || level == null) return null;
-        if (!level.isLoaded(getCorePosition())) return null;
-        return level.getBlockEntity(getCorePosition());
+        tickPort(level, blockEntity);
     }
 
     @Override

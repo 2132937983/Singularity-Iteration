@@ -26,7 +26,7 @@ public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<com.mio
     private static final int STATUS_TEXT_X = 17;
     private static final int PRIMARY_STATUS_TEXT_Y = 48;
     private static final int SECONDARY_STATUS_TEXT_Y = 66;
-    private static final int INFO_TEXT_COLOR = 0x20eb3e;
+    private static final int INFO_TEXT_COLOR = 0x2A2E33;
 
     public mio_icif_gui_wind_kinetic_generator(com.miophas.singularity_iteration.common.menu.generator.WindKineticGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

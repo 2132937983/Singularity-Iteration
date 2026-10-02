@@ -16,6 +16,13 @@ import net.minecraft.world.level.Level;
 /** Maintains the legacy MI/GT/AE2 selection order outside the core classpath. */
 public final class CommonEnergyCompatibility implements EnergyCompatibility {
     @Override public IEUEnergyStorage findEuStorage(Level level, BlockPos pos, Direction input) {
+        IEUEnergyStorage mi = findMi(level, pos, input);
+        if (mi != null) return mi;
+        // GregTech Modern machines and cables expose only their own EU container (no FE).
+        return GTCompat.findSink(level, pos, input);
+    }
+
+    private static IEUEnergyStorage findMi(Level level, BlockPos pos, Direction input) {
         if (!MICompat.isMILoaded()) return null;
         Object storage = MICompat.getMIStorage(level, pos, input);
         // 兜底：某些 MI 版本对带 side 的查询只暴露部分面，无 side 查询可拿到默认视图。
@@ -37,12 +44,13 @@ public final class CommonEnergyCompatibility implements EnergyCompatibility {
     }
 
     @Override public long pushDirect(Level level, BlockPos target, Direction output, long amount, CableTier tier) {
-        if (GTCompat.isGTLoaded()) {
-            Object container = GTCompat.getGTEnergyContainer(level, target, output.getOpposite());
-            if (container != null && GTCompat.inputsEnergy(container, output.getOpposite())) {
-                long[] packet = GTCompat.calculateGTVoltageAndAmperage(amount, tier);
-                return GTCompat.acceptEnergyFromNetwork(container, output.getOpposite(), packet[0], packet[1]) * packet[0];
-            }
+        // GT used to receive the cable tier's voltage with amps rounded UP: that over-volted
+        // (exploded) lower-tier GT machines and could book more EU than was offered. The sink
+        // now picks a packet at or below the machine's own input voltage, whole amps only.
+        var gt = GTCompat.findSink(level, target, output.getOpposite());
+        if (gt != null) {
+            long moved = gt.receive(amount, false);
+            if (moved > 0) return Math.min(moved, amount);
         }
         return push(level, target, output, amount);
     }

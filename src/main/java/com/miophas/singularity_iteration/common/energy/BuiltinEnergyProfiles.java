@@ -89,7 +89,8 @@ public final class BuiltinEnergyProfiles {
         id("producer/block_fluid_regulator_elc"),
         id("producer/block_batch_crafter"), id("producer/block_tesla"), id("producer/block_chunk_loader"),
         id("producer/block_laser_defense_tower"), id("producer/block_sky_patrol_laser_tower"),
-        id("producer/block_blast_furnace_elc"), id("producer/block_magnetizer"), id("producer/block_future_elc"));
+        id("producer/block_blast_furnace_elc"), id("producer/block_magnetizer"), id("producer/block_future_elc"),
+        id("producer/block_armory"));
     private static final Set<ResourceLocation> BASIC_PROCESSORS = Set.of(id("producer/block_furnace_elc"),
         id("producer/block_powder_elc"), id("producer/block_extractor_elc"), id("producer/block_compressor_elc"));
     // Packet sizes are explicit public-game observations, not old grid tiers.

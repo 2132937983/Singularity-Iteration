@@ -50,7 +50,7 @@ public class mio_icif_gui_fluid_heat_generator extends mio_icif_screen<com.mioph
     private static final int HEAT_RATE_TEXT_X = 95;
     private static final int HEAT_RATE_TEXT_Y = 32;
     // 文本颜色 (57c4da)
-    private static final int TEXT_COLOR = 0x57c4da;
+    private static final int TEXT_COLOR = 0x2A2E33;
 
     public mio_icif_gui_fluid_heat_generator(FluidHeatGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

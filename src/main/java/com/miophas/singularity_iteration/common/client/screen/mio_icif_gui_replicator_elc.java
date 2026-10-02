@@ -119,25 +119,25 @@ public class mio_icif_gui_replicator_elc extends mio_icif_screen<com.miophas.sin
             int progressPercent = menu.getMaxProgress() > 0 ?
                 (menu.getProgress() * 100 / menu.getMaxProgress()) : 0;
             stateText = "Replicating... " + progressPercent + "%";
-            color = 0x20D4DE;
+            color = 0x2A2E33;
         } else {
             int workMode = menu.getWorkMode();
             switch (workMode) {
                 case 0:
                     stateText = "Stopped";
-                    color = 0xECA300;
+                    color = 0xA86A00;
                     break;
                 case 1:
                     stateText = "Single Mode";
-                    color = 0x20D4DE;
+                    color = 0x2A2E33;
                     break;
                 case 2:
                     stateText = "Loop Mode";
-                    color = 0x20D4DE;
+                    color = 0x2A2E33;
                     break;
                 default:
                     stateText = "";
-                    color = 0xFFFFFF;
+                    color = 0x2A2E33;
             }
         }
 

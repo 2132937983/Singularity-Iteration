@@ -18,11 +18,11 @@ public class MetalFormerAdvancedMenu extends mio_icif_machine_menu {
 
     public static final int SLOT_COUNT = 7;
 
-    private static final int INPUT_X = 17;
-    private static final int INPUT_Y = 17;
+    private static final int INPUT_X = 37;
+    private static final int INPUT_Y = 35;
     private static final int BATTERY_X = 17;
-    private static final int BATTERY_Y = 53;
-    private static final int OUTPUT_X = 116;
+    private static final int BATTERY_Y = 58;
+    private static final int OUTPUT_X = 115;
     private static final int OUTPUT_Y = 35;
 
     private static final int UPGRADE_X = 152;
@@ -61,7 +61,7 @@ public class MetalFormerAdvancedMenu extends mio_icif_machine_menu {
 
         addInputSlot(inputSlot, INPUT_X, INPUT_Y);
         addBatterySlot(batterySlot, BATTERY_X, BATTERY_Y);
-        this.addSlot(new LargeSlot(itemHandler, outputSlots[0], OUTPUT_X, OUTPUT_Y, 26, 26));
+        addOutputSlot(outputSlots[0], OUTPUT_X, OUTPUT_Y);
         for (int i = 0; i < upgradeSlots.length; i++) {
             addUpgradeSlot(upgradeSlots[i], UPGRADE_X, UPGRADE_Y[i]);
         }
@@ -144,6 +144,9 @@ public class MetalFormerAdvancedMenu extends mio_icif_machine_menu {
         };
 
         be.setMode(nextMode);
+        if (be.getLevel() != null) be.getLevel().playSound(null, be.getBlockPos(),
+            com.miophas.singularity_iteration.common.registry.mio_icif_sounds.METAL_FORMER_SWITCH.get(),
+            net.minecraft.sounds.SoundSource.BLOCKS, 0.9F, 0.95F + player.getRandom().nextFloat() * 0.1F);
 
         return true;
     }

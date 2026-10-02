@@ -217,7 +217,91 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
+        drawTitle(guiGraphics);
+    }
+
+    /** Left edge (GUI-relative) and scale of the title so it never overflows the panel. */
+    private float[] titleLayout() {
+        int margin = hasUpgradeHint() ? 18 : 6;
+        // slots sharing the title row on the right (e.g. an upgrade column starting at y=8) end the title early
+        int right = this.imageWidth - 6;
+        for (var slot : this.menu.slots) {
+            if (slot.x > this.imageWidth / 2 && slot.y <= this.titleLabelY + 8 && slot.y + 17 >= this.titleLabelY) right = Math.min(right, slot.x - 3);
+        }
+        int avail = right - margin - 10;                           // leave room for the status lamp
+        int w = this.font.width(this.title);
+        if (this.titleLabelX >= margin + 9 && this.titleLabelX + w <= right) {
+            return new float[]{this.titleLabelX, 1F};
+        }
+        float scale = w > avail ? Math.max(0.5F, (float) avail / w) : 1F;
+        return new float[]{Math.max(margin + 10, (margin + right - w * scale) / 2F + 5F), scale};
+    }
+
+    private boolean hasUpgradeHint() {
+        return this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu machine
+                && machine.hasUpgradeHint() && showUpgradeHint();
+    }
+
+    /** Draws the GUI title in the theme text colour, scaled down if it would overflow. */
+    protected void drawTitle(GuiGraphics guiGraphics) {
+        float[] l = titleLayout();
+        if (l[1] >= 1F) {
+            guiGraphics.drawString(this.font, this.title, (int) l[0], this.titleLabelY, SiGuiTheme.TEXT, false);
+            return;
+        }
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(l[0], this.titleLabelY + (8 - 8 * l[1]) / 2F, 0);
+        guiGraphics.pose().scale(l[1], l[1], 1F);
+        guiGraphics.drawString(this.font, this.title, 0, 0, SiGuiTheme.TEXT, false);
+        guiGraphics.pose().popPose();
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);   // blur + renderBg
+        renderStatusLamp(guiGraphics);
+    }
+
+    /**
+     * Theme chrome shared by every machine GUI: a small round status lamp left of the
+     * title (green = running, amber = no energy, grey = idle). Drawn after the
+     * background and before slots/labels, so subclass layouts are untouched.
+     */
+    private void renderStatusLamp(GuiGraphics guiGraphics) {
+        int color = statusLampColor();
+        if (color == 0) return;
+        float[] l = titleLayout();
+        int lx = leftPos + (int) l[0] - 8;
+        int ly = topPos + titleLabelY + 1;
+        if ((int) l[0] - 8 < (hasUpgradeHint() ? 17 : 4)) return;   // keep clear of the upgrade hint at (5,5)
+        SiGuiTheme.led(guiGraphics, lx, ly, color);
+    }
+
+    /** ARGB lamp colour for the machine state, or 0 to hide the lamp. */
+    protected int statusLampColor() {
+        Object be = null;
+        Boolean working = null;
+        int energy = -1, maxEnergy = -1;
+        if (this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_machine_menu m) {
+            be = m.getBlockEntity();
+            if (m.getData() != null && m.getData().getCount() > 4) {
+                working = m.isWorking(); energy = m.getEnergy(); maxEnergy = m.getMaxEnergy();
+            }
+        } else if (this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_generator_menu g) {
+            be = g.getBlockEntity();
+            if (g.getData() != null && g.getData().getCount() > 3) working = g.isGenerating();
+        }
+        Boolean active = null;
+        if (be instanceof net.minecraft.world.level.block.entity.BlockEntity blockEntity) {
+            net.minecraft.world.level.block.state.BlockState state = blockEntity.getBlockState();
+            if (com.miophas.singularity_iteration.common.client.machine.MachineRunState.hasRunState(state)) {
+                active = com.miophas.singularity_iteration.common.client.machine.MachineRunState.isRunning(state);
+            }
+        }
+        if (active == null && working == null) return 0;
+        if (Boolean.TRUE.equals(active) || (active == null && Boolean.TRUE.equals(working))) return SiGuiTheme.GOOD;
+        if (maxEnergy > 0 && energy == 0) return SiGuiTheme.WARN;
+        return SiGuiTheme.LED_OFF;
     }
 
     @Override
@@ -236,9 +320,12 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
      * Vanilla-like compact upgrade marker.  It stays in the GUI's upper-left
      * corner and only appears for menus with a real upgrade-slot range.
      */
+    /** Screens with their own upgrade panel can hide the corner marker. */
+    protected boolean showUpgradeHint() { return true; }
+
     private void renderUpgradeHint(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         if (!(this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu machine)
-                || !machine.hasUpgradeHint()) return;
+                || !machine.hasUpgradeHint() || !showUpgradeHint()) return;
 
         final int hintX = leftPos + 5;
         final int hintY = topPos + 5;
@@ -246,11 +333,11 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         boolean hovered = mouseX >= hintX && mouseX < hintX + hintSize
                 && mouseY >= hintY && mouseY < hintY + hintSize;
         guiGraphics.fill(hintX, hintY, hintX + hintSize, hintY + hintSize,
-                hovered ? 0xff3f6f8f : 0xff26343d);
+                hovered ? 0xffdde6f0 : 0xffeef0f1);
         guiGraphics.renderOutline(hintX, hintY, hintSize, hintSize,
-                hovered ? 0xffb9e6ff : 0xff78909c);
+                hovered ? 0xff3a6ea5 : 0xff8a9096);
         guiGraphics.drawString(this.font, Component.literal("i"), hintX + 4, hintY + 1,
-                0xffe8f5ff, false);
+                hovered ? 0xff3a6ea5 : 0xff2a2e33, false);
 
         if (!hovered) return;
         guiGraphics.renderTooltip(this.font, buildUpgradeHintTooltip(machine),
@@ -329,6 +416,47 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         guiGraphics.blit(ATLAS_TEXTURE, x + 2, y, 0,
             (float) KINETIC_ENERGY_BAR2_TEXTURE_X, (float) KINETIC_ENERGY_BAR2_TEXTURE_Y,
             progressToDraw, KINETIC_ENERGY_BAR2_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
+    }
+
+    // === banked smelting XP: readout + "collect" button (points go straight into the XP bar) ===
+    protected static final int XP_BUTTON_W = 48, XP_BUTTON_H = 12;
+
+    protected void drawXpButton(GuiGraphics g, int x, int y, int xpTenths, boolean hovered) {
+        boolean ready = xpTenths >= 10;
+        g.fill(x, y, x + XP_BUTTON_W, y + XP_BUTTON_H, 0xFF585D63);
+        g.fillGradient(x + 1, y + 1, x + XP_BUTTON_W - 1, y + XP_BUTTON_H - 1,
+            ready ? (hovered ? 0xFFE9F7DF : 0xFFDDEFD2) : 0xFFD9DDE1, ready ? (hovered ? 0xFFB9DFA0 : 0xFFA8D18D) : 0xFFC4C8CD);
+        // XP orb
+        int cx = x + 6, cy = y + 6;
+        g.fill(cx - 2, cy - 3, cx + 3, cy + 4, ready ? 0xFF4E8C1E : 0xFF8C9298);
+        g.fill(cx - 3, cy - 2, cx + 4, cy + 3, ready ? 0xFF4E8C1E : 0xFF8C9298);
+        g.fill(cx - 2, cy - 2, cx + 3, cy + 3, ready ? 0xFFB6F25A : 0xFFC0C4C8);
+        g.fill(cx - 1, cy - 1, cx + 1, cy + 1, 0xFFFFFFFF);
+        String text = String.format("%.1f XP", xpTenths / 10F);
+        g.pose().pushPose();
+        g.pose().translate(x + 12, y + 3, 0);
+        g.pose().scale(0.75F, 0.75F, 1);
+        g.drawString(this.font, text, 0, 0, ready ? 0xFF2D5A12 : 0xFF6B737D, false);
+        g.pose().popPose();
+    }
+
+    protected void renderXpTooltip(GuiGraphics g, int mouseX, int mouseY, int xpTenths) {
+        g.renderComponentTooltip(this.font, java.util.List.of(
+            Component.translatable("gui.mio_icif.xp.title", String.format("%.1f", xpTenths / 10F)),
+            Component.translatable("gui.mio_icif.xp.tip").withStyle(net.minecraft.ChatFormatting.GRAY)), mouseX, mouseY);
+    }
+
+    protected void clickXpButton() {
+        if (this.minecraft == null || this.minecraft.gameMode == null) return;
+        this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, 0);
+        this.minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+            com.miophas.singularity_iteration.common.registry.mio_icif_sounds.UI_CLICK.get(), 1.0F, 0.6F));
+    }
+
+    /** Molecular-Transformer-style segmented energy gauge (98x17), used by the advanced machines. */
+    protected void drawModernEnergyBar(GuiGraphics guiGraphics, int x, int y, long energy, long maxEnergy) {
+        int pixels = (int) (Math.max(0, energy) * KINETIC_ENERGY_BAR2_WIDTH / Math.max(1, maxEnergy));
+        drawKineticEnergyBar(guiGraphics, x, y, pixels);
     }
 
     // === 进度箭头（先渲染背景，再从左往右填充）===

@@ -67,7 +67,7 @@ public class mio_icif_electric_plasma_gun extends mio_icif_tool_elc implements I
             level.addFreshEntity(bullet);
 
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_BLAST, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.2F);
+                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.PLASMA_SHOT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F + level.random.nextFloat() * 0.1F);
             
             com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.info("PlasmaGun: Bullet fired!");
         }

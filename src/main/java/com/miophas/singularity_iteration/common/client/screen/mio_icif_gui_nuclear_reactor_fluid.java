@@ -183,7 +183,7 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
         if (menu == null) return;
 
         // 绘制标题
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        drawTitle(guiGraphics);
 
         // 绘制玩家物品栏标签
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 0x404040, false);
@@ -198,7 +198,7 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
         String outputText = Component.translatable("gui.mio_icif.reactor.heat_output", heatOutput).getString();
         String infoText = heatText + "    " + outputText;
 
-        // 绘制绿色文本 (0x00FF00 是绿色)
-        guiGraphics.drawString(this.font, infoText, INFO_TEXT_X, INFO_TEXT_Y, 0x00FF00, false);
+        // 绘制绿色文本 (0x2A2E33 是绿色)
+        guiGraphics.drawString(this.font, infoText, INFO_TEXT_X, INFO_TEXT_Y, 0x2A2E33, false);
     }
 }

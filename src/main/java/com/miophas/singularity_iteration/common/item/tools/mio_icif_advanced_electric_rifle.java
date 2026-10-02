@@ -58,7 +58,7 @@ public class mio_icif_advanced_electric_rifle extends mio_icif_tool_elc implemen
             level.addFreshEntity(bullet);
 
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_BLAST, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.5F);
+                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.RIFLE_SHOT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.9F, 0.95F + level.random.nextFloat() * 0.08F);
         }
 
         player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);

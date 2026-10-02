@@ -107,6 +107,8 @@ public class Singularity_Iteration {
 
         // Register blocks
         mio_icif_blocks.register(modEventBus);
+        // Armory (武装庫) system: block, items, entity, menus, data components
+        com.miophas.singularity_iteration.common.armory.ArmoryRegistry.register(modEventBus);
         
 
 

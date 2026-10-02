@@ -116,6 +116,8 @@ public class mio_icif_items_tools {
 
     // EU Meter
     public static final DeferredItem<Item> EU_METER = ITEMS.register("item_tool_meter",() -> new mio_icif_eu_meter(new Item.Properties()));
+    // Area Scanner: work-range preview for miners, pumps, towers...
+    public static final DeferredItem<Item> AREA_SCANNER = ITEMS.register("item_tool_area_scanner",() -> new mio_icif_area_scanner(new Item.Properties()));
 
     // Windmeter
     public static final DeferredItem<Item> WINDMETER = ITEMS.register("item_tool_windmeter",() -> new mio_icif_windmeter(new Item.Properties()));

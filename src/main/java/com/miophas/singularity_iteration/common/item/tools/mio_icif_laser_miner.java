@@ -21,7 +21,7 @@ import net.minecraft.world.phys.Vec3;
 
 /** Ten SI-declared modes with independent, explicit candidate tuning. */
 @SuppressWarnings("deprecation")
-public class mio_icif_laser_miner extends mio_icif_tool_elc implements ToggleableElectricTool {
+public class mio_icif_laser_miner extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider {
     public static final long LASER_MAX_ENERGY = 300_000;
     public static EntityType<mio_icif_laser_bullet> LASER_BULLET_ENTITY;
     private static final String MODE_KEY = "ScexLaserMode";
@@ -81,7 +81,7 @@ public class mio_icif_laser_miner extends mio_icif_tool_elc implements Toggleabl
             return InteractionResultHolder.fail(stack);
         }
         if (!hasEnoughEnergy(stack, mode.cost) || LASER_BULLET_ENTITY == null) return InteractionResultHolder.fail(stack);
-        if (level.isClientSide) return InteractionResultHolder.success(stack);
+        if (level.isClientSide) return InteractionResultHolder.consume(stack);   // no melee swing: the gun recoils instead
         var bullets = new ArrayList<mio_icif_laser_bullet>();
         boolean multiple = mode == Mode.SCATTER || mode == Mode.THREE_BY_THREE;
         int radius = multiple ? 1 : 0;
@@ -109,11 +109,35 @@ public class mio_icif_laser_miner extends mio_icif_tool_elc implements Toggleabl
             }
         }
         player.getCooldowns().addCooldown(this, 4);
-        level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIREWORK_ROCKET_BLAST, SoundSource.PLAYERS, 0.5F, 2.0F);
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.LASER_SHOT.get(), SoundSource.PLAYERS, 0.7F, 0.95F + level.random.nextFloat() * 0.1F);
         return InteractionResultHolder.success(stack);
     }
     @Override public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
         tooltip.add(getMode(stack).displayName());
+    }
+
+    // ---- equipment console (IToolModeProvider)
+    @Override public java.util.List<net.minecraft.network.chat.Component> toolModes(ItemStack stack) {
+        java.util.List<net.minecraft.network.chat.Component> out = new java.util.ArrayList<>();
+        for (Mode mode : Mode.values()) out.add(mode.displayName());
+        return out;
+    }
+    @Override public int toolModeIndex(ItemStack stack) { return getMode(stack).ordinal(); }
+    @Override public java.util.List<net.minecraft.network.chat.Component> toolModeDetails(ItemStack stack, int index) {
+        Mode mode = Mode.byIndex(index);
+        java.util.List<net.minecraft.network.chat.Component> out = new java.util.ArrayList<>();
+        out.add(net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.detail.cost", mode.cost));
+        out.add(net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.detail.range", (int) mode.range));
+        if (mode.blocks > 0) out.add(net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.detail.blocks", mode.blocks));
+        if (mode.damage > 0) out.add(net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.detail.damage", (int) mode.damage));
+        if (mode.explosion > 0) out.add(net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.detail.explosion", String.format("%.1f", mode.explosion)));
+        return out;
+    }
+    @Override public void selectToolMode(ItemStack stack, Player player, int index) {
+        if (index < 0 || index >= Mode.values().length) return;
+        var data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        data.putInt(MODE_KEY, index);
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(data));
     }
 }

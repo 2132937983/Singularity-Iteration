@@ -1,0 +1,202 @@
+{
+  "parent": "block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "mio_icif:block/producer/armor_showcase_side",
+    "side": "mio_icif:block/producer/armor_showcase_side",
+    "top": "mio_icif:block/producer/armor_showcase_top",
+    "bottom": "mio_icif:block/producer/armor_showcase_bottom"
+  },
+  "elements": [
+    {
+      "name": "plinth",
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        3,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            13,
+            16,
+            16
+          ],
+          "texture": "#side"
+        },
+        "south": {
+          "uv": [
+            0,
+            13,
+            16,
+            16
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            0,
+            13,
+            16,
+            16
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            0,
+            13,
+            16,
+            16
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#bottom",
+          "cullface": "down"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#top"
+        }
+      }
+    },
+    {
+      "name": "platter",
+      "from": [
+        2,
+        3,
+        2
+      ],
+      "to": [
+        14,
+        4,
+        14
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            9,
+            14,
+            10
+          ],
+          "texture": "#side"
+        },
+        "south": {
+          "uv": [
+            2,
+            9,
+            14,
+            10
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            2,
+            9,
+            14,
+            10
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            2,
+            9,
+            14,
+            10
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#top"
+        }
+      }
+    },
+    {
+      "name": "plaque",
+      "from": [
+        5,
+        0.5,
+        -0.5
+      ],
+      "to": [
+        11,
+        2.5,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5,
+            3,
+            11,
+            5
+          ],
+          "texture": "#side"
+        },
+        "east": {
+          "uv": [
+            0,
+            3,
+            0.5,
+            5
+          ],
+          "texture": "#side"
+        },
+        "west": {
+          "uv": [
+            0,
+            3,
+            0.5,
+            5
+          ],
+          "texture": "#side"
+        },
+        "up": {
+          "uv": [
+            5,
+            3,
+            11,
+            3.5
+          ],
+          "texture": "#side"
+        },
+        "down": {
+          "uv": [
+            5,
+            3,
+            11,
+            3.5
+          ],
+          "texture": "#side"
+        }
+      }
+    }
+  ]
+}

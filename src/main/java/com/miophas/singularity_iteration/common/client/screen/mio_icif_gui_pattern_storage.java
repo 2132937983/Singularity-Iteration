@@ -114,9 +114,9 @@ public class mio_icif_gui_pattern_storage extends mio_icif_screen<com.miophas.si
         guiGraphics.drawString(this.font, pageText, (this.imageWidth - pageWidth) / 2, 30, 0x404040, false);
 
         // 绘制标签
-        guiGraphics.drawString(this.font, "Name:", INFO_X, NAME_Y, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, "UU:", INFO_X, UUM_Y, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, "EU:", INFO_X, EU_Y, 0xFFFFFF, false);
+        guiGraphics.drawString(this.font, "Name:", INFO_X, NAME_Y, 0x2A2E33, false);
+        guiGraphics.drawString(this.font, "UU:", INFO_X, UUM_Y, 0x2A2E33, false);
+        guiGraphics.drawString(this.font, "EU:", INFO_X, EU_Y, 0x2A2E33, false);
 
         // 绘制当前模式的信息
         ItemStack pattern = menu.getCurrentPattern();
@@ -126,17 +126,17 @@ public class mio_icif_gui_pattern_storage extends mio_icif_screen<com.miophas.si
             if (name.length() > 20) {
                 name = name.substring(0, 17) + "...";
             }
-            guiGraphics.drawString(this.font, name, VALUE_X, NAME_Y, 0xFFFFFF, false);
+            guiGraphics.drawString(this.font, name, VALUE_X, NAME_Y, 0x2A2E33, false);
 
             // UU物质消耗
             double uuCost = menu.getCurrentUuCost();
             guiGraphics.drawString(this.font,
-                toSiString(uuCost, 4) + "B", VALUE_X, UUM_Y, 0xFFFFFF, false);
+                toSiString(uuCost, 4) + "B", VALUE_X, UUM_Y, 0x2A2E33, false);
 
             // 能量消耗
             long euCost = menu.getCurrentEuCost();
             guiGraphics.drawString(this.font,
-                String.format("%.2f", euCost / 1000000.0) + "M", VALUE_X, EU_Y, 0xFFFFFF, false);
+                String.format("%.2f", euCost / 1000000.0) + "M", VALUE_X, EU_Y, 0x2A2E33, false);
         } else {
             guiGraphics.drawString(this.font, "Empty", VALUE_X, NAME_Y, 0x888888, false);
         }

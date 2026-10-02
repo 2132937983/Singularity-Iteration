@@ -17,11 +17,11 @@ public class CompressorAdvancedElcMenu extends mio_icif_machine_menu {
 
     public static final int SLOT_COUNT = 7;
 
-    private static final int INPUT_X = 56;
-    private static final int INPUT_Y = 17;
-    private static final int BATTERY_X = 56;
-    private static final int BATTERY_Y = 53;
-    private static final int OUTPUT_X = 116;
+    private static final int INPUT_X = 55;
+    private static final int INPUT_Y = 35;
+    private static final int BATTERY_X = 17;
+    private static final int BATTERY_Y = 58;
+    private static final int OUTPUT_X = 115;
     private static final int OUTPUT_Y = 35;
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
@@ -60,7 +60,7 @@ public class CompressorAdvancedElcMenu extends mio_icif_machine_menu {
 
         addInputSlot(inputSlot, INPUT_X, INPUT_Y);
         addBatterySlot(batterySlot, BATTERY_X, BATTERY_Y);
-        this.addSlot(new LargeSlot(itemHandler, outputSlots[0], OUTPUT_X, OUTPUT_Y, 26, 26));
+        addOutputSlot(outputSlots[0], OUTPUT_X, OUTPUT_Y);
         for (int i = 0; i < upgradeSlots.length; i++) {
             addUpgradeSlot(upgradeSlots[i], UPGRADE_X, UPGRADE_Y[i]);
         }

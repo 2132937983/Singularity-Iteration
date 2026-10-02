@@ -95,7 +95,7 @@ guiGraphics.blit(ATLAS_TEXTURE, x + ADJ_INDICATOR_X, indY, 0, (float) indVs == I
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        drawTitle(guiGraphics);
         // 不绘制玩家物品栏标题
     }
 

@@ -67,9 +67,14 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
         return ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/armor/" + path + suffix + ".png");
     }
 
+    /**
+     * Never null: footstep/sound mods (Presence Footsteps etc.) call this unguarded. Charge changes
+     * no longer replay it every tick — LivingEquipEnergyMixin ignores energy-only stack updates.
+     */
     @Override
-    public @Nullable Holder<SoundEvent> getEquipSound() {
-        return null;
+    public Holder<SoundEvent> getEquipSound() {
+        Holder<SoundEvent> sound = super.getEquipSound();
+        return sound != null ? sound : net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_IRON;
     }
 
     @Override

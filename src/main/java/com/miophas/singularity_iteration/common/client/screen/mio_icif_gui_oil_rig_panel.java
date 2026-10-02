@@ -34,7 +34,7 @@ public class mio_icif_gui_oil_rig_panel extends mio_icif_screen<OilRigPanelMenu>
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         OilRigPanelMenu menu = this.getMenu();
 
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
+        drawTitle(guiGraphics);
 
         int drillX = menu.getDrillX();
         int drillY = menu.getDrillY();

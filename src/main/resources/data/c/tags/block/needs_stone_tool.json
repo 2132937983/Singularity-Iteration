@@ -112,6 +112,7 @@
     "mio_icif:build/block_iron_storage",
     "mio_icif:producer/block_industrial_workbench",
     "mio_icif:producer/block_laser_defense_tower",
-    "mio_icif:producer/block_sky_patrol_laser_tower"
+    "mio_icif:producer/block_sky_patrol_laser_tower",
+    "mio_icif:wiring/block_energy_terminal"
   ]
 }

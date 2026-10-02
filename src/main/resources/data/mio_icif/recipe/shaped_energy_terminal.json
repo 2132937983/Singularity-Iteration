@@ -1,0 +1,33 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GSG",
+    "CMC",
+    "PWP"
+  ],
+  "key": {
+    "G": {
+      "tag": "c:glass_panes"
+    },
+    "S": {
+      "item": "mio_icif:item_tool_meter"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "P": {
+      "tag": "c:plates/steel"
+    },
+    "W": {
+      "item": "mio_icif:wiring/cable/block_cable_o"
+    }
+  },
+  "result": {
+    "id": "mio_icif:wiring/block_energy_terminal",
+    "count": 1
+  }
+}

@@ -65,7 +65,7 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
             level.addFreshEntity(rocket);
 
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_LAUNCH, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ROCKET_LAUNCH.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 0.95F + level.random.nextFloat() * 0.1F);
         }
 
         player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);

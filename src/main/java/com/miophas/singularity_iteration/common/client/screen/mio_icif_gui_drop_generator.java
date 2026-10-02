@@ -23,7 +23,7 @@ public class mio_icif_gui_drop_generator extends mio_icif_screen<DropGeneratorMe
 
     private static final int INFO_TEXT_X = 42;
     private static final int INFO_TEXT_Y = 50;
-    private static final int INFO_TEXT_COLOR = 0x57c4da;
+    private static final int INFO_TEXT_COLOR = 0x2A2E33;
 
     public mio_icif_gui_drop_generator(DropGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

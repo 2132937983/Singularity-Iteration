@@ -1,17 +1,435 @@
 {
   "machine.demolish": {
+    "subtitle": "mio_icif.subtitle.machine.demolish",
     "sounds": [
-      "mio_icif:sfx_demolish"
+      {
+        "name": "mio_icif:sfx_demolish",
+        "attenuation_distance": 16
+      }
     ]
   },
   "machine.work": {
+    "subtitle": "mio_icif.subtitle.machine.work",
     "sounds": [
-      "mio_icif:sfx_machine_work"
+      {
+        "name": "mio_icif:sfx_machine_work",
+        "attenuation_distance": 16
+      }
     ]
   },
   "cable.break": {
+    "subtitle": "mio_icif.subtitle.cable.break",
     "sounds": [
-      "mio_icif:sfx_cable_break"
+      {
+        "name": "mio_icif:sfx_cable_break",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "tower.lock": {
+    "subtitle": "mio_icif.subtitle.tower.lock",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_tower_lock",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "tower.charge": {
+    "subtitle": "mio_icif.subtitle.tower.charge",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_tower_charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "tower.fire": {
+    "subtitle": "mio_icif.subtitle.tower.fire",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_tower_fire",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "tower.hit": {
+    "subtitle": "mio_icif.subtitle.tower.hit",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_tower_hit",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "ui.click": {
+    "subtitle": "mio_icif.subtitle.ui.click",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_ui_click",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "ui.toggle": {
+    "subtitle": "mio_icif.subtitle.ui.toggle",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_ui_toggle",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "terminal.ambient": {
+    "subtitle": "mio_icif.subtitle.terminal.ambient",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_terminal_ambient",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "machine.complete": {
+    "subtitle": "mio_icif.subtitle.machine.complete",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_machine_complete",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "machine.loop.motor": {
+    "subtitle": "mio_icif.subtitle.machine.loop.motor",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_motor",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.press": {
+    "subtitle": "mio_icif.subtitle.machine.loop.press",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_press",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.crusher": {
+    "subtitle": "mio_icif.subtitle.machine.loop.crusher",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_crusher",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.centrifuge": {
+    "subtitle": "mio_icif.subtitle.machine.loop.centrifuge",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_centrifuge",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.saw": {
+    "subtitle": "mio_icif.subtitle.machine.loop.saw",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_saw",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.furnace": {
+    "subtitle": "mio_icif.subtitle.machine.loop.furnace",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_furnace",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.fluid": {
+    "subtitle": "mio_icif.subtitle.machine.loop.fluid",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_fluid",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.electric": {
+    "subtitle": "mio_icif.subtitle.machine.loop.electric",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_electric",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.generator": {
+    "subtitle": "mio_icif.subtitle.machine.loop.generator",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_generator",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.turbine": {
+    "subtitle": "mio_icif.subtitle.machine.loop.turbine",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_turbine",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.reactor": {
+    "subtitle": "mio_icif.subtitle.machine.loop.reactor",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_reactor",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.drill": {
+    "subtitle": "mio_icif.subtitle.machine.loop.drill",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_drill",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "armory.jet_loop": {
+    "subtitle": "mio_icif.subtitle.armory.jet_loop",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_jet_loop",
+        "attenuation_distance": 32,
+        "stream": false
+      }
+    ]
+  },
+  "armory.launch": {
+    "subtitle": "mio_icif.subtitle.armory.launch",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_launch",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "armory.flyby": {
+    "subtitle": "mio_icif.subtitle.armory.flyby",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_flyby",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "armory.latch": {
+    "subtitle": "mio_icif.subtitle.armory.latch",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_latch",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "armory.lock": {
+    "subtitle": "mio_icif.subtitle.armory.lock",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_lock",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "armory.hiss": {
+    "subtitle": "mio_icif.subtitle.armory.hiss",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_hiss",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "armory.unlock": {
+    "subtitle": "mio_icif.subtitle.armory.unlock",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_unlock",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "armory.purge": {
+    "subtitle": "mio_icif.subtitle.armory.purge",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_purge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "armory.complete": {
+    "subtitle": "mio_icif.subtitle.armory.complete",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_complete",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "armory.turbine_loop": {
+    "subtitle": "mio_icif.subtitle.armory.turbine_loop",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_turbine_loop",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "armory.alarm": {
+    "subtitle": "mio_icif.subtitle.armory.alarm",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_alarm",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "armory.hatch": {
+    "subtitle": "mio_icif.subtitle.armory.hatch",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_hatch",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "armory.brake": {
+    "subtitle": "mio_icif.subtitle.armory.brake",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_brake",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "armory.pulse": {
+    "subtitle": "mio_icif.subtitle.armory.pulse",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_pulse",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.metal_former.switch": {
+    "subtitle": "mio_icif.subtitle.machine.metal_former.switch",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_metal_former_switch",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "tool.laser.shot": {
+    "subtitle": "mio_icif.subtitle.tool.laser.shot",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_laser_shot",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "weapon.rifle.shot": {
+    "subtitle": "mio_icif.subtitle.weapon.rifle.shot",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_weapon_rifle_shot",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "weapon.plasma.shot": {
+    "subtitle": "mio_icif.subtitle.weapon.plasma.shot",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_weapon_plasma_shot",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "weapon.tachyon.shot": {
+    "subtitle": "mio_icif.subtitle.weapon.tachyon.shot",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_weapon_tachyon_shot",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "weapon.tachyon.hit": {
+    "subtitle": "mio_icif.subtitle.weapon.tachyon.hit",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_weapon_tachyon_hit",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "weapon.energy.hit": {
+    "subtitle": "mio_icif.subtitle.weapon.energy.hit",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_weapon_energy_hit",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "weapon.air_cannon.charge": {
+    "subtitle": "mio_icif.subtitle.weapon.air_cannon.charge",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_weapon_air_cannon_charge",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "weapon.air_cannon.blast": {
+    "subtitle": "mio_icif.subtitle.weapon.air_cannon.blast",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_weapon_air_cannon_blast",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "weapon.air_cannon.hit": {
+    "subtitle": "mio_icif.subtitle.weapon.air_cannon.hit",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_weapon_air_cannon_hit",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "weapon.rocket.launch": {
+    "subtitle": "mio_icif.subtitle.weapon.rocket.launch",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_weapon_rocket_launch",
+        "attenuation_distance": 48
+      }
     ]
   }
 }

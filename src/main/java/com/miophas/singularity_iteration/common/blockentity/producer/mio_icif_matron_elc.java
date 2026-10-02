@@ -29,7 +29,7 @@ import java.util.Set;
 
 /** IC2 Experimental agriculture machine; cursor and resource tanks survive reloads. */
 @SuppressWarnings("null")
-public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
+public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider {
 
     // 对齐 1.7.10 TileEntityCropmatron：肥料 7 格 + 除草剂容器 7 格 + 水容器输入/输出各 1 格。
     // 1.7.10 原版不支持升级；此处升级槽 4 格与电池槽 1 格均为本项目有意保留的扩展。
@@ -422,5 +422,11 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity {
             itemHandler.setStackInSlot(SLOT_FERTILIZER_START + i, b);
             itemHandler.setStackInSlot(SLOT_WEEDEX_START + i, a);
         }
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        int r = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.RADIUS;
+        return java.util.List.of(com.miophas.singularity_iteration.common.area.WorkArea.box(worldPosition, r, 1, 1, r, com.miophas.singularity_iteration.common.area.WorkArea.FARM));
     }
 }

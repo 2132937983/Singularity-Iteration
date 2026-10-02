@@ -31,8 +31,9 @@ public class mio_icif_block_laser_tower extends mio_icif_entity_block {
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     private static final VoxelShape SHAPE = Shapes.or(
-        Block.box(0, 0, 0, 16, 4, 16),
-        Block.box(3, 4, 3, 13, 15, 13));
+        Block.box(0, 0, 0, 16, 3, 16),
+        Block.box(1, 3, 1, 15, 15, 15),
+        Block.box(7, 15, 7, 9, 16, 9));
 
     private final mio_icif_laser_tower.Spec spec;
     private final Supplier<? extends BlockEntityType<mio_icif_laser_tower>> type;

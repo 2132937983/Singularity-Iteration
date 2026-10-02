@@ -22,7 +22,7 @@ import java.util.List;
  * 消耗一次电量提供5个吸收之心（10点吸收值），持续30秒
  */
 @SuppressWarnings("null")
-public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc implements ToggleableElectricTool {
+public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider {
 
     private static final int MAX_ENERGY = 1000000;
     private static final int TRANSFER_SPEED = 512;
@@ -108,4 +108,10 @@ public class mio_icif_electric_force_field_generator extends mio_icif_tool_elc i
         tag.putBoolean(TAG_AUTO_SUPPLEMENT, value);
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
+
+    // ---- equipment console (IToolModeProvider)
+    @Override public java.util.List<net.minecraft.network.chat.Component> toolModes(ItemStack stack) {
+        return java.util.List.of(net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.auto_off"), net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.auto_on"));
+    }
+    @Override public int toolModeIndex(ItemStack stack) { return getAutoSupplement(stack) ? 1 : 0; }
 }

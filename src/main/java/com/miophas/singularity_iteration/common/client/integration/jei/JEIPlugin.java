@@ -33,6 +33,8 @@ public class JEIPlugin implements IModPlugin {
     public void registerItemSubtypes(ISubtypeRegistration registration) {
         mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> batteryInterpreter =
             (itemStack, context) -> {
+                // Recipe lookups match on the item alone: a half-charged tool must still find its recipes/uses.
+                if (context == mezz.jei.api.ingredients.subtypes.UidContext.Recipe) return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
                 if (itemStack.getItem() instanceof IBatteryItem bat) {
                     return String.valueOf(bat.getEnergy(itemStack));
                 }
@@ -43,6 +45,7 @@ public class JEIPlugin implements IModPlugin {
         // JEI 不会把它们判定为重复物品。
         mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> energyInterpreter =
             (itemStack, context) -> {
+                if (context == mezz.jei.api.ingredients.subtypes.UidContext.Recipe) return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
                 if (itemStack.getItem() instanceof IBatteryItem bat) {
                     return bat.getEnergy(itemStack) + "/" + bat.getMaxEnergy(itemStack);
                 }
@@ -50,6 +53,7 @@ public class JEIPlugin implements IModPlugin {
             };
         mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> nbtInterpreter =
             (itemStack, context) -> {
+                if (context == mezz.jei.api.ingredients.subtypes.UidContext.Recipe) return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
                 var beData = itemStack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
                 if (beData != null) {
                     return beData.copyTag().toString();
@@ -273,5 +277,15 @@ public class JEIPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.MOLECULAR_TRANSFORMER.get()), mio_icif_MolecularTransformerCategory.MOLECULAR_TRANSFORMER_TYPE);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.NEUTRON_POLYMERIZER.get()), mio_icif_NeutronPolymerizerCategory.NEUTRON_POLYMERIZER_TYPE);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.OIL_REFINERY_ELC.get()), mio_icif_FluidRefiningCategory.FLUID_REFINING_TYPE);
+        // Advanced / upgraded machines run the same recipe sets as their basic versions.
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.POWDER_ADVANCED_ELC.get()), mio_icif_PowderCategory.POWDER_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.COMPRESSOR_ADVANCED_ELC.get()), mio_icif_CompressorCategory.COMPRESSOR_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.METAL_FORMER_ADVANCED.get()), mio_icif_RollingCategory.ROLLING_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.METAL_FORMER_ADVANCED.get()), mio_icif_CuttingCategory.CUTTING_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.METAL_FORMER_ADVANCED.get()), mio_icif_ExtrudingCategory.EXTRUDING_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.BLAST_FURNACE_ELC.get()), mio_icif_BlastFurnaceCategory.BLAST_FURNACE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.BLAST_FURNACE_ADVANCED.get()), mio_icif_BlastFurnaceCategory.BLAST_FURNACE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.FURNACE_ELC.get()), RecipeTypes.SMELTING);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.INDUCTION_ELC.get()), RecipeTypes.SMELTING);
     }
 }

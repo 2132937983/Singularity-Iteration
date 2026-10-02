@@ -105,16 +105,16 @@ public class mio_icif_gui_fluid_distributor_elc extends mio_icif_screen<FluidDis
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        drawTitle(guiGraphics);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 0x404040, false);
 
-        guiGraphics.drawString(this.font, Component.translatable("gui.mio_icif.fluid_distributor.mode_info"), 112, 47, 0x57C6DA, false);
+        guiGraphics.drawString(this.font, Component.translatable("gui.mio_icif.fluid_distributor.mode_info"), 112, 47, 0x2A2E33, false);
 
         boolean active = (distributor != null && distributor.isActive()) || menu.isActive();
         if (active) {
-            guiGraphics.drawString(this.font, Component.translatable("gui.mio_icif.fluid_distributor.mode_concentrate"), 95, 71, 0x57C6DA, false);
+            guiGraphics.drawString(this.font, Component.translatable("gui.mio_icif.fluid_distributor.mode_concentrate"), 95, 71, 0x2A2E33, false);
         } else {
-            guiGraphics.drawString(this.font, Component.translatable("gui.mio_icif.fluid_distributor.mode_distribute"), 95, 71, 0x57C6DA, false);
+            guiGraphics.drawString(this.font, Component.translatable("gui.mio_icif.fluid_distributor.mode_distribute"), 95, 71, 0x2A2E33, false);
         }
     }
 

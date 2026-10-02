@@ -26,6 +26,32 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 @SuppressWarnings("null")
 public abstract class mio_icif_base_menu extends AbstractContainerMenu {
 
+    /**
+     * Vanilla sends container data as signed 16-bit values, so any energy, capacity or
+     * progress above 32767 wrapped on the client and GUI read-outs jumped back and
+     * forth while charging. Every logical value is sent as two 16-bit halves instead;
+     * the client reassembles the full int before the screen reads it.
+     */
+    @Override
+    protected void addDataSlots(net.minecraft.world.inventory.ContainerData data) {
+        if (data instanceof com.miophas.singularity_iteration.core.api.menu.WordContainerData) {
+            super.addDataSlots(data);
+            return;
+        }
+        for (int i = 0; i < data.getCount(); i++) {
+            final int index = i;
+            addDataSlot(new net.minecraft.world.inventory.DataSlot() {
+                @Override public int get() { return data.get(index) & 0xFFFF; }
+                @Override public void set(int value) { data.set(index, (data.get(index) & 0xFFFF0000) | (value & 0xFFFF)); }
+            });
+            addDataSlot(new net.minecraft.world.inventory.DataSlot() {
+                @Override public int get() { return data.get(index) >>> 16; }
+                @Override public void set(int value) { data.set(index, (data.get(index) & 0xFFFF) | ((value & 0xFFFF) << 16)); }
+            });
+        }
+    }
+
+
     /** 标准能量条的像素宽度 */
     protected static final int ENERGY_BAR_WIDTH = mio_icif_gui_global_variables.ENERGY_BAR_WIDTH;
 

@@ -205,7 +205,7 @@ public class mio_icif_ov_scanner extends mio_icif_tool_elc implements IScannerIt
         if (blockName.contains("quartz")) return "tooltip.mio_icif.ore.quartz";
 
         // 默认返回?�方??��?�称
-        return block.getName().getString();
+        return block.getDescriptionId();   // translated on the client
     }
 
     /**
@@ -213,7 +213,9 @@ public class mio_icif_ov_scanner extends mio_icif_tool_elc implements IScannerIt
      */
     private void openScannerGUI(ServerPlayer player, Map<String, Integer> scanResults) {
         // 使用MenuProvider?��??��??GUI
-        player.openMenu(new mio_icif_od_scanner_menu.Provider(scanResults));
+        mio_icif_od_scanner_menu.Provider provider = new mio_icif_od_scanner_menu.Provider(scanResults);
+        // the client-side menu factory reads the results from the open packet: always send them
+        player.openMenu(provider, provider::writeExtraData);
 
         // ??��???��??��?��?��?�客??��??
         PacketDistributor.sendToPlayer(player, new ODScannerResultPacket(scanResults));

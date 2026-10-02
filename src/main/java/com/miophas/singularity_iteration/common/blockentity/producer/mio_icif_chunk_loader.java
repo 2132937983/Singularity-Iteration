@@ -36,7 +36,7 @@ import net.neoforged.neoforge.common.world.chunk.TicketHelper;
 import net.neoforged.neoforge.common.world.chunk.TicketSet;
 
 @SuppressWarnings("null")
-public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements ISlotValidator {
+public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider, ISlotValidator {
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .battery()
@@ -432,5 +432,20 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         long spaceAvailable = getEffectiveCapacity() - energyStorage.getAmount();
         if (spaceAvailable <= 0) return 0.0D;
         return spaceAvailable;
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> out = new java.util.ArrayList<>();
+        int y = worldPosition.getY();
+        for (long key : loadedChunks) {
+            var chunk = new net.minecraft.world.level.ChunkPos(key);
+            out.add(new com.miophas.singularity_iteration.common.area.WorkArea(new net.minecraft.world.phys.AABB(chunk.getMinBlockX(), y - 8, chunk.getMinBlockZ(),
+                chunk.getMaxBlockX() + 1, y + 9, chunk.getMaxBlockZ() + 1), com.miophas.singularity_iteration.common.area.WorkArea.CHUNK, com.miophas.singularity_iteration.common.area.WorkArea.PRIMARY));
+        }
+        var self = getSelfChunkPos();
+        out.add(new com.miophas.singularity_iteration.common.area.WorkArea(new net.minecraft.world.phys.AABB((self.x - CHUNK_RADIUS) * 16, y - 8, (self.z - CHUNK_RADIUS) * 16,
+            (self.x + CHUNK_RADIUS + 1) * 16, y + 9, (self.z + CHUNK_RADIUS + 1) * 16), com.miophas.singularity_iteration.common.area.WorkArea.CHUNK, com.miophas.singularity_iteration.common.area.WorkArea.ENVELOPE));
+        return out;
     }
 }

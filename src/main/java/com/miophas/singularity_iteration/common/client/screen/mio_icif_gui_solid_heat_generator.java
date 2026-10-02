@@ -44,7 +44,7 @@ public class mio_icif_gui_solid_heat_generator extends mio_icif_screen<com.mioph
     private static final int HEAT_TEXT_X = 49;
     private static final int HEAT_TEXT_Y = 68;
     // 热能文本颜色 (57c4da)
-    private static final int HEAT_TEXT_COLOR = 0x57c4da;
+    private static final int HEAT_TEXT_COLOR = 0x2A2E33;
 
     public mio_icif_gui_solid_heat_generator(SolidHeatGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

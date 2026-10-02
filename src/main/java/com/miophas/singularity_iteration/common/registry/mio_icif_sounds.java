@@ -16,6 +16,60 @@ import net.neoforged.neoforge.registries.DeferredRegister;
     public static final DeferredHolder<SoundEvent, SoundEvent> MACHINE_DEMOLISH = SOUND_EVENTS.register("machine.demolish",
         () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "machine.demolish")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> TOWER_LOCK = sound("tower.lock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> TOWER_CHARGE = sound("tower.charge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> TOWER_FIRE = sound("tower.fire");
+    public static final DeferredHolder<SoundEvent, SoundEvent> TOWER_HIT = sound("tower.hit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UI_CLICK = sound("ui.click");
+    public static final DeferredHolder<SoundEvent, SoundEvent> UI_TOGGLE = sound("ui.toggle");
+    public static final DeferredHolder<SoundEvent, SoundEvent> METAL_FORMER_SWITCH = sound("machine.metal_former.switch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LASER_SHOT = sound("tool.laser.shot");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RIFLE_SHOT = sound("weapon.rifle.shot");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PLASMA_SHOT = sound("weapon.plasma.shot");
+    public static final DeferredHolder<SoundEvent, SoundEvent> TACHYON_SHOT = sound("weapon.tachyon.shot");
+    public static final DeferredHolder<SoundEvent, SoundEvent> TACHYON_HIT = sound("weapon.tachyon.hit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ENERGY_HIT = sound("weapon.energy.hit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIR_CANNON_CHARGE = sound("weapon.air_cannon.charge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIR_CANNON_BLAST = sound("weapon.air_cannon.blast");
+    public static final DeferredHolder<SoundEvent, SoundEvent> AIR_CANNON_HIT = sound("weapon.air_cannon.hit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ROCKET_LAUNCH = sound("weapon.rocket.launch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> TERMINAL_AMBIENT = sound("terminal.ambient");
+
+    // Running-machine loops (played client-side by MachineSoundManager while lit/active)
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_MOTOR = sound("machine.loop.motor");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_PRESS = sound("machine.loop.press");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_CRUSHER = sound("machine.loop.crusher");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_CENTRIFUGE = sound("machine.loop.centrifuge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_SAW = sound("machine.loop.saw");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_FURNACE = sound("machine.loop.furnace");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_FLUID = sound("machine.loop.fluid");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_ELECTRIC = sound("machine.loop.electric");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_GENERATOR = sound("machine.loop.generator");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_TURBINE = sound("machine.loop.turbine");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_REACTOR = sound("machine.loop.reactor");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_DRILL = sound("machine.loop.drill");
+
+    // Armory suit-up sequence (original synthesized effects, tools/armory_sfx.py)
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_JET_LOOP = sound("armory.jet_loop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_LAUNCH = sound("armory.launch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_FLYBY = sound("armory.flyby");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_LATCH = sound("armory.latch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_LOCK = sound("armory.lock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_HISS = sound("armory.hiss");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_UNLOCK = sound("armory.unlock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_PURGE = sound("armory.purge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_COMPLETE = sound("armory.complete");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_TURBINE_LOOP = sound("armory.turbine_loop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_ALARM = sound("armory.alarm");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_HATCH = sound("armory.hatch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_BRAKE = sound("armory.brake");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_PULSE = sound("armory.pulse");
+
+    private static DeferredHolder<SoundEvent, SoundEvent> sound(String name) {
+        return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(
+            ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, name)));
+    }
+
     private static SoundType MACHINE_SOUND_TYPE;
 
     public static SoundType getMachineSoundType() {

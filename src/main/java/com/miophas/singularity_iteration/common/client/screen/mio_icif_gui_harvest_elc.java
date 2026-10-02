@@ -40,11 +40,11 @@ public class mio_icif_gui_harvest_elc extends mio_icif_screen<HarvestElcMenu> {
 
         // 绘制背景
         guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, 176, this.imageHeight);
-        guiGraphics.fill(x + 176, y, x + 200, y + imageHeight, 0xFFC6C6C6);
+        guiGraphics.fill(x + 176, y, x + 200, y + imageHeight, SiGuiTheme.PANEL_BOTTOM);
         for (int i = 0; i < 4; i++) {
             int sy = y + 17 + i * 18;
-            guiGraphics.fill(x + 179, sy, x + 197, sy + 18, 0xFF373737);
-            guiGraphics.fill(x + 180, sy + 1, x + 196, sy + 17, 0xFF8B8B8B);
+            guiGraphics.fill(x + 179, sy, x + 197, sy + 18, SiGuiTheme.SLOT_SHADOW);
+            guiGraphics.fill(x + 180, sy + 1, x + 196, sy + 17, SiGuiTheme.SLOT_FILL);
         }
 
         HarvestElcMenu menu = this.menu;

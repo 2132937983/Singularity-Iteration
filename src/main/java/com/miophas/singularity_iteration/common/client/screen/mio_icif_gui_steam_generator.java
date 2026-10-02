@@ -29,7 +29,7 @@ public class mio_icif_gui_steam_generator extends mio_icif_screen<com.miophas.si
     private static final int GUI_HEIGHT = 220;
 
     // IC2 åçææ¬é¢è²
-    private static final int TEXT_COLOR = 0x20EC1E;
+    private static final int TEXT_COLOR = 0x2A2E33;
 
     // æ°´æ§½åºåï¼ç¸å¯¹äº GUI å·¦ä¸è§ï¼
     private static final int WATER_TANK_X = 10;

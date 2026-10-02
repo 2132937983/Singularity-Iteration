@@ -34,7 +34,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -198,7 +197,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         try{
             for(int i=0;i<54;i++){slots[i]=i;expected[i]=itemHandler.getStackInSlot(i).copy();if(i%9<columns)parts[i]=ReactorInventory.read(expected[i]);}
             var coolant=liquid?fluid.activeCoolant():null;
-            FluidReactorCycle.Result converted=liquid?FluidReactorCycle.step(parts,columns,heat.getHeatStored(),enabled(),fluid.getInputFluidAmount(),fluid.getOutputFluidAmount(),fluid.FLUID_CAPACITY,coolant.huPerMB(),fluid.isOutputCompatible()):null;
+            FluidReactorCycle.Result converted=liquid?FluidReactorCycle.step(parts,columns,heat.getHeatStored(),enabled(),fluid.getInputFluidAmount(),fluid.getOutputFluidAmount(),mio_icif_fluid_reactor_handler.FLUID_CAPACITY,coolant.huPerMB(),fluid.isOutputCompatible()):null;
             ReactorCycle.Result result=liquid?converted.cycle():ReactorCycle.step(parts,columns,heat.getHeatStored(),enabled());
             var next=result.parts();var depleted=result.depletedFuel();
             for(int i=0;i<54;i++)replacement[i]=i%9<columns?ReactorInventory.write(expected[i],parts[i],next[i],depleted[i]):expected[i].copy();

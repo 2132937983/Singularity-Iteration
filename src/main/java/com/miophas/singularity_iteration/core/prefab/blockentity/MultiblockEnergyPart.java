@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.core.prefab.blockentity;
 
 import com.miophas.singularity_iteration.core.api.machine.IJadeDisplayDelegate;
 
-import com.miophas.singularity_iteration.core.prefab.blockentity.GenericEnergyBlockEntity;
 import com.miophas.singularity_iteration.core.api.energy.ICableTier;
 
 import net.minecraft.core.BlockPos;

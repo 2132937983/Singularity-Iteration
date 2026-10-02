@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.processing;
 
-import com.miophas.singularity_iteration.common.processing.StoredPattern;
 import com.miophas.singularity_iteration.core.runtime.uu.IndependentUuValueIndex;
 
 import java.util.Objects;

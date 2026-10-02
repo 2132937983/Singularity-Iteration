@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:resource/item_rubber"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.acquire_resin.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.acquire_resin.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "resin": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:resource/item_rubber"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

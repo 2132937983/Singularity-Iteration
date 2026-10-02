@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:resource/item_adviron_ingot"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.acquire_refined_iron.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.acquire_refined_iron.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "refined_iron": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:resource/item_adviron_ingot"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

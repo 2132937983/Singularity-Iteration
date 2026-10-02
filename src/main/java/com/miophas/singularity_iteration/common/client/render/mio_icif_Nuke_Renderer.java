@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.client.render;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-
 import com.miophas.singularity_iteration.common.entity.mio_icif_Entity_Nuke_Primed;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;

@@ -1,7 +1,6 @@
 package com.miophas.singularity_iteration.common.block.wire;
 
 import com.miophas.singularity_iteration.core.api.energy.ICableBlock;
-import com.miophas.singularity_iteration.core.api.energy.ICableTier;
 import com.miophas.singularity_iteration.common.block.build.mio_icif_block_foam;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
 import com.miophas.singularity_iteration.common.blockentity.mio_icif_wire;
@@ -12,7 +11,6 @@ import com.miophas.singularity_iteration.core.api.energy.storage.EUApi;
 import com.miophas.singularity_iteration.core.api.energy.storage.IEUEnergyStorage;
 import com.miophas.singularity_iteration.core.runtime.energy.WaterEntityQueryCache;
 import com.miophas.singularity_iteration.core.api.energy.grid.*;
-import com.miophas.singularity_iteration.core.runtime.energy.grid.*;
 import com.miophas.singularity_iteration.common.integration.ae2.AE2Compat;
 import com.miophas.singularity_iteration.common.integration.mi.MICompat;
 import com.mojang.serialization.MapCodec;

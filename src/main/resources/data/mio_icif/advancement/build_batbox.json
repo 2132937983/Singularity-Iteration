@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:build_generator",
+  "display": {
+    "icon": {
+      "id": "mio_icif:wiring/block_bat_box"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.build_batbox.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.build_batbox.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "batbox": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:wiring/block_bat_box"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

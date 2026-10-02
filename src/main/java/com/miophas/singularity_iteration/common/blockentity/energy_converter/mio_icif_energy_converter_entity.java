@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.blockentity.energy_converter;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
 import com.miophas.singularity_iteration.common.block.energy_converter.mio_icif_block_energy_converter;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;

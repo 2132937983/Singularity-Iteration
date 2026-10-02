@@ -1,0 +1,35 @@
+{
+  "parent": "mio_icif:acquire_matter",
+  "display": {
+    "icon": {
+      "id": "mio_icif:armor/item_armor_quantum_chestplate"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.build_qarmor.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.build_qarmor.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "quantum_armor": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:armor/item_armor_quantum_helmet",
+              "mio_icif:armor/item_armor_quantum_chestplate",
+              "mio_icif:armor/item_armor_quantum_leggings",
+              "mio_icif:armor/item_armor_quantum_boots"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

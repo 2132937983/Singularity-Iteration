@@ -49,7 +49,7 @@ public class mio_icif_pipe_item extends mio_icif_pipe_default {
     private ItemPipeRoute route;
     private ItemPipeRoute.Watch routeWatch;
     private final IItemHandler[] handlers = new IItemHandler[7];
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     private final BlockCapabilityCache<IItemHandler, Direction>[] neighbors = new BlockCapabilityCache[6];
 
     public mio_icif_pipe_item(BlockEntityType<?> type, BlockPos pos, BlockState state) { this(type,pos,state,PipeMode.TRANSPORT); }

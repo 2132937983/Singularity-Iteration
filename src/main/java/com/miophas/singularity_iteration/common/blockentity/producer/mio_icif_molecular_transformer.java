@@ -117,7 +117,6 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == INPUT_SLOT) {
             if (level == null || stack.isEmpty()) return false;
-            var recipeManager = level.getRecipeManager();
             var input = new mio_icif_MolecularTransformerRecipeInput(stack);
             return recipeCache1.find(level, input).isPresent();
         }
@@ -142,7 +141,6 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
     protected boolean hasValidRecipe() {
         ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
         if (input.isEmpty() || level == null) return false;
-        var recipeManager = level.getRecipeManager();
         var recipeInput = new mio_icif_MolecularTransformerRecipeInput(input);
         return recipeCache2.find(level, recipeInput).isPresent();
     }
@@ -153,7 +151,6 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
         if (input.isEmpty()) return false;
 
         if (level == null) return false;
-        var recipeManager = level.getRecipeManager();
         var recipeInput = new mio_icif_MolecularTransformerRecipeInput(input);
         var recipeOpt = recipeCache3.find(level, recipeInput);
         if (recipeOpt.isEmpty()) return false;
@@ -285,7 +282,6 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
             return;
         }
 
-        var recipeManager = level.getRecipeManager();
         var recipeInput = new mio_icif_MolecularTransformerRecipeInput(input);
         var recipeOpt = recipeCache4.find(level, recipeInput);
 

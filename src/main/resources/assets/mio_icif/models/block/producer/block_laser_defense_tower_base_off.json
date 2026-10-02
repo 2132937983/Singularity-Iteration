@@ -1,0 +1,7 @@
+{
+  "parent": "mio_icif:block/producer/block_laser_defense_tower_base",
+  "textures": {
+    "0": "mio_icif:block/producer/block_laser_defense_tower_off",
+    "particle": "mio_icif:block/producer/block_laser_defense_tower_off"
+  }
+}

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.core.runtime.energy;
 
-import com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount;
 
 /** Server-owned source whose external fuel is acquired only after a routable electrical demand exists. */

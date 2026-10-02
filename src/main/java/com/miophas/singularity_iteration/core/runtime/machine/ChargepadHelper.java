@@ -6,7 +6,6 @@ import com.miophas.singularity_iteration.core.api.item.IItemAPI;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.AABB;
 
 import java.util.List;
 

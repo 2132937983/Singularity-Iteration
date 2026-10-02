@@ -3,7 +3,6 @@ package com.miophas.singularity_iteration.core.runtime.crop;
 import com.miophas.singularity_iteration.core.api.crop.ICropAPI;
 import com.miophas.singularity_iteration.core.api.crop.PlantType;
 
-import com.miophas.singularity_iteration.core.runtime.crop.PlantRegistry;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Collection;

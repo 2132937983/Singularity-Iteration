@@ -1,0 +1,7 @@
+{
+  "parent": "mio_icif:block/wiring/block_energy_terminal",
+  "textures": {
+    "0": "mio_icif:block/wiring/block_energy_terminal_off",
+    "particle": "mio_icif:block/wiring/block_energy_terminal_off"
+  }
+}

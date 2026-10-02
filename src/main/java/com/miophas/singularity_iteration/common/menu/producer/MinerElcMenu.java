@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.menu.producer;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_miner_elc;

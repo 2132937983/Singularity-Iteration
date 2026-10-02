@@ -1,0 +1,37 @@
+{
+  "parent": "mio_icif:build_terraformer",
+  "display": {
+    "icon": {
+      "id": "mio_icif:env_template/evt_cultivation"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.terraform_end_cultivation.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.terraform_end_cultivation.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "end_cultivation": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "player": {
+          "location": {
+            "dimension": "minecraft:the_end"
+          }
+        },
+        "items": [
+          {
+            "items": [
+              "mio_icif:env_template/evt_cultivation"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

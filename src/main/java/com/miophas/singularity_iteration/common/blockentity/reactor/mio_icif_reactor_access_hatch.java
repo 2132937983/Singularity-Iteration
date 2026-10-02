@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.blockentity.reactor;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-
 import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator;
 import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_reactor_mode;
 import com.miophas.singularity_iteration.common.block.reactor.mio_icif_Block_Reactor_Access_Hatch;

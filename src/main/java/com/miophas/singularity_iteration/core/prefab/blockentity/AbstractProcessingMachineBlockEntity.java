@@ -25,16 +25,13 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -809,10 +806,10 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
      * longer resolves capability providers on every call. Indexed by the side passed to the
      * getter (the neighbour's face), i.e. Direction.ordinal().
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<IItemHandler, Direction>[] itemNeighbourCaches =
         new net.neoforged.neoforge.capabilities.BlockCapabilityCache[6];
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<IFluidHandler, Direction>[] fluidNeighbourCaches =
         new net.neoforged.neoforge.capabilities.BlockCapabilityCache[6];
 

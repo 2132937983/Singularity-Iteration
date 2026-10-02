@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.service.block;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-
 import com.miophas.singularity_iteration.core.api.block.IBlockAPI;
 
 import net.minecraft.core.registries.BuiltInRegistries;

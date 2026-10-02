@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.crop;
 
-import com.miophas.singularity_iteration.core.api.crop.IPlanter;
 import com.miophas.singularity_iteration.core.api.crop.PlantStats;
-import com.miophas.singularity_iteration.core.api.crop.PlantType;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 
 /** Independent catalog implementation of the SI eating plant. */
 public class PlantEatingPlant extends BuiltinCrop {

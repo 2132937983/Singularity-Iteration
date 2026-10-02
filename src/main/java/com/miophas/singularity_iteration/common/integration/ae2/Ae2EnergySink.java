@@ -1,6 +1,5 @@
 package com.miophas.singularity_iteration.common.integration.ae2;
 
-import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.core.api.energy.grid.IEnergyEmitter;
 import com.miophas.singularity_iteration.core.api.energy.grid.IEnergySink;
 import com.miophas.singularity_iteration.core.api.energy.grid.ILocatableTile;

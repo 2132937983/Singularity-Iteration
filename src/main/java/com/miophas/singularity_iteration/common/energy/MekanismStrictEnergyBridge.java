@@ -3,7 +3,6 @@ package com.miophas.singularity_iteration.common.energy;
 
 import com.miophas.singularity_iteration.core.runtime.energy.BatteryFeCapability;
 import com.miophas.singularity_iteration.core.api.item.BatteryTransfer;
-import com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage;
 import com.miophas.singularity_iteration.core.runtime.energy.FeMachineBridge;
 
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;

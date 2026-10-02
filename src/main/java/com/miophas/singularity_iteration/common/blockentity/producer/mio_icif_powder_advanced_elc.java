@@ -10,7 +10,6 @@ import com.miophas.singularity_iteration.core.api.machine.ISlotLayout;
 import com.miophas.singularity_iteration.core.api.machine.ISlotType;
 import com.miophas.singularity_iteration.core.api.machine.builder.IElectricMachineBuilder;
 import com.miophas.singularity_iteration.core.api.machine.builder.IMachineBuilderAPI;
-import com.miophas.singularity_iteration.core.api.recipe.IRecipeAPI;
 import com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

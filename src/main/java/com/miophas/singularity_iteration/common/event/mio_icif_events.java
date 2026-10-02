@@ -242,7 +242,6 @@ public class mio_icif_events {
         boolean isExplosion = source.is(DamageTypeTags.IS_EXPLOSION);
         boolean isRadiation = source.getMsgId().equals("mio_icif_killed_by_uranium");
 
-        boolean fullQuantumSet = isWearingFullQuantumSet(entity);
         boolean radiationProtected = RadiationProtectionUtil.isRadiationProtected(entity);
         boolean fullNanoSet = isWearingFullNanoSet(entity);
 

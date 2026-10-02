@@ -1,6 +1,5 @@
 package com.miophas.singularity_iteration.core.prefab.blockentity;
 
-import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotType;
 import com.miophas.singularity_iteration.core.api.energy.ICableTier;

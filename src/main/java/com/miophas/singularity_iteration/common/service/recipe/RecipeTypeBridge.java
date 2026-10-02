@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.service.recipe;
 
 import com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes;
 import com.miophas.singularity_iteration.common.recipe.generic.*;
-import com.miophas.singularity_iteration.core.prefab.recipe.*;
 import net.minecraft.world.item.crafting.RecipeType;
 
 /**

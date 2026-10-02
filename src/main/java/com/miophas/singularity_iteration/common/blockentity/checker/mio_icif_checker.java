@@ -2,8 +2,6 @@ package com.miophas.singularity_iteration.common.blockentity.checker;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 
-import com.miophas.singularity_iteration.common.blockentity.*;
-import com.miophas.singularity_iteration.core.api.machine.*;
 import com.miophas.singularity_iteration.core.prefab.blockentity.*;
 import com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;

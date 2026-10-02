@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:build_macerator",
+  "display": {
+    "icon": {
+      "id": "mio_icif:resource/item_coal_chunk"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.build_coal_diamond.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.build_coal_diamond.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "coal_chunk": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:resource/item_coal_chunk"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

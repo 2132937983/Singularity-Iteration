@@ -15,7 +15,6 @@ import com.miophas.singularity_iteration.common.recipe.blast_furnace.*;
 import com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank;
 import com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots;
 import java.util.List;
-import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;

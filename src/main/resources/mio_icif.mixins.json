@@ -8,5 +8,8 @@
     "DataComponentMaxStackMixin",
     "ContainerMaxStackMixin",
     "CropBiomeAccessor"
+  ],
+  "client": [
+    "AdvancementTabMiophaMixin"
   ]
 }

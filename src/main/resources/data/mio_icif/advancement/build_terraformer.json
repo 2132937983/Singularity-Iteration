@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:build_mfsu",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_terra_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.build_terraformer.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.build_terraformer.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "terraformer": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_terra_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.blockentity.reactor;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-
 import com.miophas.singularity_iteration.core.api.item.IFluidPort;
 import com.miophas.singularity_iteration.core.api.machine.IMachineUpgradeStats;
 

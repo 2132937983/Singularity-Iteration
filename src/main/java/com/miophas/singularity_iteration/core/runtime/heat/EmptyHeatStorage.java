@@ -1,6 +1,5 @@
 package com.miophas.singularity_iteration.core.runtime.heat;
 
-import com.miophas.singularity_iteration.core.api.heat.HUCapabilities;
 import com.miophas.singularity_iteration.core.api.heat.IHeatStorage;
 
 /**

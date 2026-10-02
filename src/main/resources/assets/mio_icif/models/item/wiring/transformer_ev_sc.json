@@ -1,3 +1,15 @@
 {
-  "parent": "mio_icif:block/wiring/transformer_ev_sc"
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "base": {
+    "parent": "mio_icif:block/wiring/transformer_ev_sc"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/icon/wiring/transformer_ev_sc"
+      }
+    }
+  }
 }

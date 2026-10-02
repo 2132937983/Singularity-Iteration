@@ -1,10 +1,7 @@
 package com.miophas.singularity_iteration.common.registry;
 
-import com.miophas.singularity_iteration.common.block.mio_icif_entity_block;
-
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
-import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_item_buffer_elc;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_item_distributor_elc;
@@ -69,7 +66,6 @@ import com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStor
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.fluids.FluidStack;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import com.miophas.singularity_iteration.core.runtime.energy.BatteryFeCapability;

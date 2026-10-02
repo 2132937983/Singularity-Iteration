@@ -6,7 +6,6 @@ import com.miophas.singularity_iteration.common.block.crop.mio_icif_crop_stick;
 import com.miophas.singularity_iteration.common.block.crop.mio_icif_crop_stick_upgraded;
 import com.miophas.singularity_iteration.common.item.crop.CropSeedItem;
 import com.miophas.singularity_iteration.common.item.resource.MatronFertilizerItem;
-import com.miophas.singularity_iteration.common.item.normal.MatronHerbicideItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;

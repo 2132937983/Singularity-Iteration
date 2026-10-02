@@ -2,7 +2,6 @@
 package com.miophas.singularity_iteration.core.runtime.energy;
 
 import com.miophas.singularity_iteration.core.api.item.IItemAPI;
-import com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.StagedCharge;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;

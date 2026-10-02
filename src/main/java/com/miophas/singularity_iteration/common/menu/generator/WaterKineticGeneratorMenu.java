@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.menu.generator;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_items;
-
 import com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Water_Kinetic_Generator;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.core.api.item.IKineticRotor;

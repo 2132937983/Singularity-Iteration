@@ -8,7 +8,6 @@ import com.miophas.singularity_iteration.core.api.energy.grid.ILocatableTile;
 import com.miophas.singularity_iteration.core.api.energy.storage.EUApi;
 import com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage;
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.EnergyCompatibility;
-import com.miophas.singularity_iteration.core.api.energy.grid.IEnergySink;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;

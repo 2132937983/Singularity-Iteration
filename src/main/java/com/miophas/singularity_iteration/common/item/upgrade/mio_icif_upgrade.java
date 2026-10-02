@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.item.upgrade;
 
-import com.miophas.singularity_iteration.core.runtime.upgrade.MachineUpgradeStats;
-
 import com.miophas.singularity_iteration.core.api.upgrade.tile.IUpgradeItem;
 import com.miophas.singularity_iteration.core.api.upgrade.tile.IUpgradableBlock;
 import com.miophas.singularity_iteration.core.api.upgrade.tile.UpgradableProperty;

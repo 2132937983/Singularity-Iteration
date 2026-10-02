@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractKineticGeneratorBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;

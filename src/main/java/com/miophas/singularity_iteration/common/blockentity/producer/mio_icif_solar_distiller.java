@@ -34,8 +34,6 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import net.neoforged.neoforge.items.IItemHandler;
 
-import java.util.List;
-
 import org.jetbrains.annotations.Nullable;
 
 /**

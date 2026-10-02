@@ -19,7 +19,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -115,7 +114,6 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
         ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
         if (input.isEmpty()) return null;
 
-        RecipeManager recipeManager = this.level.getRecipeManager();
         mio_icif_BlockCutterRecipeInput recipeInput = new mio_icif_BlockCutterRecipeInput(input);
         Optional<RecipeHolder<mio_icif_BlockCutterRecipe>> recipe = recipeCache2.find(this.level, recipeInput);
         return recipe.map(RecipeHolder::value).orElse(null);

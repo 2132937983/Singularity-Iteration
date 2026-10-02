@@ -1,0 +1,33 @@
+{
+  "parent": "mio_icif:build_mass_fab",
+  "display": {
+    "icon": {
+      "id": "mio_icif:cell/item_cell_uumatter"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.acquire_matter.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.acquire_matter.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "uu_matter": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:cell/item_cell_uumatter",
+              "mio_icif:uumatter_bucket"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

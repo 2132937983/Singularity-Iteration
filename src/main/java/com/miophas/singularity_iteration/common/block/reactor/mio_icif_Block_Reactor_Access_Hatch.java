@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.block.reactor;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-
 import com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_access_hatch;
 import com.miophas.singularity_iteration.common.multiblock.mio_icif_multiblock_manager;
 import net.minecraft.core.BlockPos;

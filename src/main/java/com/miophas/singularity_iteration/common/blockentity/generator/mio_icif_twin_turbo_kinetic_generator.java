@@ -9,7 +9,6 @@ import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilitie
 import com.miophas.singularity_iteration.core.api.energy.ICableTier;
 import com.miophas.singularity_iteration.core.api.kinetic.IKineticAPI;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
-import com.miophas.singularity_iteration.core.api.energy.grid.*;
 import com.miophas.singularity_iteration.core.runtime.energy.grid.*;
 import com.miophas.singularity_iteration.core.api.kinetic.IKineticStorage;
 import net.minecraft.core.BlockPos;

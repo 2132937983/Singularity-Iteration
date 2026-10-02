@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common.block.reactor;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-
 import com.miophas.singularity_iteration.common.entity.mio_icif_entities;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;

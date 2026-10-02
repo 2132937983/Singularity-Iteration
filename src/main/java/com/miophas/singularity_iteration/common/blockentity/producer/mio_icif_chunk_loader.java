@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.blockentity.producer;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
-import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.inventory.ISlotValidator;
 import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;

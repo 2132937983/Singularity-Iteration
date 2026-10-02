@@ -1,7 +1,5 @@
 package com.miophas.singularity_iteration.common;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_data_components;
-import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.registry.mio_icif_sounds;
 
 import com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors;
@@ -22,7 +20,6 @@ import com.miophas.singularity_iteration.common.network.mio_icif_Network;
 import com.miophas.singularity_iteration.common.particle.mio_icif_Particles;
 import com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes;
 import com.miophas.singularity_iteration.common.recipe.mio_icif_IngredientTypes;
-import com.miophas.singularity_iteration.common.world.feature.WorldGeneration;
 import com.miophas.singularity_iteration.common.world.feature.mio_icif_foliage_placers;
 import com.miophas.singularity_iteration.common.world.feature.mio_icif_tree_decorators;
 import com.miophas.singularity_iteration.common.item.tools.mio_icif_iridium_driller;
@@ -36,7 +33,6 @@ import org.slf4j.Logger;
 import com.miophas.singularity_iteration.common.registry.mio_icif_items;
 import com.mojang.logging.LogUtils;
 
-import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -49,7 +45,6 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BlockEntityTypeAddBlocksEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import java.util.Set;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(Singularity_Iteration.MOD_ID)

@@ -1,0 +1,12 @@
+*
+!src/
+!src/**
+!README.md
+!logo.png
+!settings.gradle
+!build.gradle
+!gradle.properties
+!LICENSE
+!gradlew.bat
+!gradlew
+!.gitignore

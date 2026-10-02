@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.core.api.item;
 
-import com.miophas.singularity_iteration.core.api.item.IBatteryItem;
 import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities;
-import com.miophas.singularity_iteration.core.api.item.IElectricArmorItem;
-import com.miophas.singularity_iteration.core.api.item.IElectricToolItem;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.world.item.ItemStack;
 

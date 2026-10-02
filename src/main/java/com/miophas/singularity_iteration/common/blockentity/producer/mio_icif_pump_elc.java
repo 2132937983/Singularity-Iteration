@@ -296,7 +296,12 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity {
             if (!room(cachedFluid, FLUID_PER_OPERATION)) { forgetSearch(true); return; }
         }
         if (paidWork >= DEFAULT_WORK_TIME) {
-            boolean done = handlerSource ? collectFromFrontHandler() : collect(cachedSource, cachedFluid);
+            boolean done = handlerSource && collectFromFrontHandler();
+            if (!done) {
+                // 正面容器缺失或抽取失败时回退液源搜索，避免卡在容器分支上永不搜源。
+                done = findSource() && room(cachedFluid, FLUID_PER_OPERATION)
+                    && collect(cachedSource, cachedFluid);
+            }
             forgetSearch(!done); return;
         }
         changing = true;

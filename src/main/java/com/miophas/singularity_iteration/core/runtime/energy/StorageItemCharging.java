@@ -6,7 +6,6 @@ import com.miophas.singularity_iteration.core.api.item.BatteryTransfer;
 import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import com.miophas.singularity_iteration.core.api.item.IBatteryItem;
 import com.miophas.singularity_iteration.core.api.item.IElectricArmorItem;
-import com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage;
 import net.minecraft.world.item.ItemStack;
 
 /** Prepare an owned SI charging slot before paying its actual accepted energy. */

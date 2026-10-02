@@ -2,8 +2,6 @@
 package com.miophas.singularity_iteration.common.block.transformer;
 
 import com.miophas.singularity_iteration.common.block.mio_icif_entity_block;
-import com.miophas.singularity_iteration.common.blockentity.transformer.mio_icif_transformer;
-import com.miophas.singularity_iteration.core.api.energy.storage.EUApi;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -23,7 +21,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")

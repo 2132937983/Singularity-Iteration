@@ -12,7 +12,6 @@ import com.miophas.singularity_iteration.common.block.environment.BlockStrippedR
 import com.miophas.singularity_iteration.common.block.environment.mio_icif_have_rub_wood;
 import com.miophas.singularity_iteration.common.block.environment.mio_icif_radioactive_block;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.registry.mio_icif_sounds;
 import com.miophas.singularity_iteration.common.world.feature.WorldGeneration;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.grower.TreeGrower;
@@ -178,7 +177,6 @@ import com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_T
 import com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Wind_Generator;
 import com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Water_Generator;
 import com.miophas.singularity_iteration.common.block.energy_converter.mio_icif_block_energy_converter;
-import com.miophas.singularity_iteration.common.registry.mio_icif_items;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;

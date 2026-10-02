@@ -1,11 +1,7 @@
 package com.miophas.singularity_iteration.common.crop;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
-import com.miophas.singularity_iteration.core.api.crop.IPlanter;
 import com.miophas.singularity_iteration.core.api.crop.PlantStats;
-import com.miophas.singularity_iteration.core.api.crop.PlantType;
-import net.minecraft.world.item.ItemStack;
 
 @SuppressWarnings("null")
 public class PlantTerraWart extends BuiltinCrop {

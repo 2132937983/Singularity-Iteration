@@ -1,17 +1,209 @@
 {
   "machine.demolish": {
+    "subtitle": "mio_icif.subtitle.machine.demolish",
     "sounds": [
-      "mio_icif:sfx_demolish"
+      {
+        "name": "mio_icif:sfx_demolish",
+        "attenuation_distance": 16
+      }
     ]
   },
   "machine.work": {
+    "subtitle": "mio_icif.subtitle.machine.work",
     "sounds": [
-      "mio_icif:sfx_machine_work"
+      {
+        "name": "mio_icif:sfx_machine_work",
+        "attenuation_distance": 16
+      }
     ]
   },
   "cable.break": {
+    "subtitle": "mio_icif.subtitle.cable.break",
     "sounds": [
-      "mio_icif:sfx_cable_break"
+      {
+        "name": "mio_icif:sfx_cable_break",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "tower.lock": {
+    "subtitle": "mio_icif.subtitle.tower.lock",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_tower_lock",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "tower.charge": {
+    "subtitle": "mio_icif.subtitle.tower.charge",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_tower_charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "tower.fire": {
+    "subtitle": "mio_icif.subtitle.tower.fire",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_tower_fire",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "tower.hit": {
+    "subtitle": "mio_icif.subtitle.tower.hit",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_tower_hit",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "ui.click": {
+    "subtitle": "mio_icif.subtitle.ui.click",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_ui_click",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "ui.toggle": {
+    "subtitle": "mio_icif.subtitle.ui.toggle",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_ui_toggle",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "terminal.ambient": {
+    "subtitle": "mio_icif.subtitle.terminal.ambient",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_terminal_ambient",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "machine.complete": {
+    "subtitle": "mio_icif.subtitle.machine.complete",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_machine_complete",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "machine.loop.motor": {
+    "subtitle": "mio_icif.subtitle.machine.loop.motor",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_motor",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.press": {
+    "subtitle": "mio_icif.subtitle.machine.loop.press",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_press",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.crusher": {
+    "subtitle": "mio_icif.subtitle.machine.loop.crusher",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_crusher",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.centrifuge": {
+    "subtitle": "mio_icif.subtitle.machine.loop.centrifuge",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_centrifuge",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.saw": {
+    "subtitle": "mio_icif.subtitle.machine.loop.saw",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_saw",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.furnace": {
+    "subtitle": "mio_icif.subtitle.machine.loop.furnace",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_furnace",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.fluid": {
+    "subtitle": "mio_icif.subtitle.machine.loop.fluid",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_fluid",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.electric": {
+    "subtitle": "mio_icif.subtitle.machine.loop.electric",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_electric",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.generator": {
+    "subtitle": "mio_icif.subtitle.machine.loop.generator",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_generator",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.turbine": {
+    "subtitle": "mio_icif.subtitle.machine.loop.turbine",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_turbine",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.reactor": {
+    "subtitle": "mio_icif.subtitle.machine.loop.reactor",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_reactor",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.drill": {
+    "subtitle": "mio_icif.subtitle.machine.loop.drill",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_drill",
+        "attenuation_distance": 16
+      }
     ]
   }
 }

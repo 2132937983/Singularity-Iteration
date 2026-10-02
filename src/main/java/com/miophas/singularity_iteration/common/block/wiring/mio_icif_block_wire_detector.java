@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.block.wiring;
 
 import com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-import com.miophas.singularity_iteration.common.blockentity.wiring.mio_icif_wire_detector;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

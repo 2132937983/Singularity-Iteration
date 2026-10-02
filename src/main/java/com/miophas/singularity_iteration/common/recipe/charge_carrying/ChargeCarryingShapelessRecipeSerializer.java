@@ -9,8 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-import java.util.List;
-
 public class ChargeCarryingShapelessRecipeSerializer implements RecipeSerializer<ChargeCarryingShapelessRecipe> {
 
     public static final MapCodec<ChargeCarryingShapelessRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->

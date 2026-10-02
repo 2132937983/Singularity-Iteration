@@ -5,7 +5,6 @@ import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyB
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyStorageBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.component.EnergyComponentHost;
 import com.miophas.singularity_iteration.core.api.energy.ICableEnergyNode;
-import com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage;
 import com.miophas.singularity_iteration.core.api.energy.grid.IEnergySource;
 import com.miophas.singularity_iteration.core.api.energy.grid.IEnergyTile;
 import com.miophas.singularity_iteration.core.api.energy.grid.ILocatableTile;
@@ -60,7 +59,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.damagesource.DamageSources;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.common.NeoForge;

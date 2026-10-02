@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.blockentity.huentity.hugenerato
 
 import com.miophas.singularity_iteration.common.blockentity.generator.SemifluidFuels;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;

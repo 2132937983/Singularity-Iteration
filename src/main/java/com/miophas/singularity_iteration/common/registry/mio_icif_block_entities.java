@@ -31,10 +31,6 @@ import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_g
 import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_diesel_generator;
 import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_experience_generator;
 import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_advanced_experience_generator;
-import com.miophas.singularity_iteration.common.blockentity.transformer.mio_icif_transformer_lTom;
-import com.miophas.singularity_iteration.common.blockentity.transformer.mio_icif_transformer_mToh;
-import com.miophas.singularity_iteration.common.blockentity.transformer.mio_icif_transformer_hToe;
-import com.miophas.singularity_iteration.common.blockentity.transformer.mio_icif_transformer_eTos;
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.IndependentSpecialCableBlockEntity;
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.IndependentTransformerBlockEntity;
 import com.miophas.singularity_iteration.common.blockentity.transformer.mio_icif_transformer_iv;
@@ -112,7 +108,6 @@ import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_it
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_fluid_distributor_elc;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_weighted_fluid_distributor_elc;
 import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_fluid_regulator_elc;
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;

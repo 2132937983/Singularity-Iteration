@@ -6,7 +6,6 @@ import com.miophas.singularity_iteration.common.recipe.centrifuge.mio_icif_Centr
 import com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipe;
 import com.miophas.singularity_iteration.common.recipe.extractor.mio_icif_ExtractorRecipe;
 import com.miophas.singularity_iteration.common.recipe.generic.*;
-import com.miophas.singularity_iteration.core.prefab.recipe.*;
 import com.miophas.singularity_iteration.common.recipe.metal_former.cutting.mio_icif_CuttingRecipe;
 import com.miophas.singularity_iteration.common.recipe.metal_former.extruding.mio_icif_ExtrudingRecipe;
 import com.miophas.singularity_iteration.common.recipe.metal_former.rolling.mio_icif_RollingRecipe;

@@ -135,7 +135,6 @@ public class mio_icif_blast_furnace_advanced extends AbstractHeatBlockEntity {
 
     private boolean isValidBlastFurnaceInput(ItemStack stack) {
         if (level == null || stack.isEmpty()) return false;
-        var recipeManager = level.getRecipeManager();
         var input = new com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipeInput(stack);
         return recipeCache1.find(level, input).isPresent();
     }
@@ -289,7 +288,6 @@ public class mio_icif_blast_furnace_advanced extends AbstractHeatBlockEntity {
             return null;
         }
 
-        var recipeManager = level.getRecipeManager();
         var recipeInput = new com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipeInput(input);
         return recipeCache2.find(level, recipeInput).map(r -> r.value()).orElse(null);
     }

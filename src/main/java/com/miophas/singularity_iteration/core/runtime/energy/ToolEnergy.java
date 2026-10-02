@@ -3,7 +3,6 @@ package com.miophas.singularity_iteration.core.runtime.energy;
 
 import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import com.miophas.singularity_iteration.core.api.item.IItemAPI;
-import com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage;
 import net.minecraft.world.item.ItemStack;
 
 /** Owned single-tool charging. Internal work debit is independent of the outward cable packet limit. */

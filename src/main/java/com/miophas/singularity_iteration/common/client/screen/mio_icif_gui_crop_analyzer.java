@@ -1,6 +1,5 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
-import com.miophas.singularity_iteration.common.item.crop.CropSeedItem;
 import com.miophas.singularity_iteration.common.menu.tool.CropAnalyzerMenu;
 import com.miophas.singularity_iteration.core.api.crop.PlantType;
 import net.minecraft.client.gui.GuiGraphics;

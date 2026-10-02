@@ -1,4 +1,8 @@
-.gradle/
-build/
-run/
-*.log
+*
+!build.gradle
+!.gitignore
+!gradle.properties
+!LICENSE
+!logo.png
+!README.md
+!settings.gradle

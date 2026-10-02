@@ -39,7 +39,8 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
     private static final int JET = 1, FLYBY = 2, LATCH = 4, LOCK = 8, HISS = 16, UNLOCK = 32, PURGE = 64,
-        LAUNCH = 128, BRAKE = 256, PULSE_A = 512, PULSE_B = 1024, PULSE_C = 2048, SNAP = 4096;
+        LAUNCH = 128, BRAKE = 256, PULSE_A = 512, PULSE_B = 1024, PULSE_C = 2048, SNAP = 4096,
+        UNFOLD = 8192, SEGMENT = 16384 /* ..1<<17: one bit per segment */, POOF = 1 << 19;
     private static final RandomSource RANDOM = RandomSource.create();
 
     @Override
@@ -94,7 +95,24 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
             return;
         }
         float hover = age - flight;
+        // segments swing shut onto their joints one after another: a heavy clank each
+        float sinceSnap = hover - ArmoryFlight.HOVER_TICKS;
+        int n = ArmoryFlight.segments(piece.piece());
+        for (int j = 0; j < n && n > 1; j++) {
+            if (sinceSnap < ArmoryFlight.segmentLockTick(j, n)) continue;
+            int seg = j;
+            once(piece, SEGMENT << j, () -> {
+                play(piece, mio_icif_sounds.ARMORY_LOCK.get(), 0.85F, 0.72F + 0.14F * seg);
+                burst(piece, ParticleTypes.ELECTRIC_SPARK, 6, 0.18);
+                burst(piece, ArmoryRegistry.CORE.get(), 2, 0.05);
+            });
+        }
         if (hover < ArmoryFlight.HOVER_TICKS) {
+            // the closed piece unfolds into its segments in front of the wearer
+            once(piece, UNFOLD, () -> {
+                play(piece, mio_icif_sounds.ARMORY_UNLOCK.get(), 0.8F, 0.7F);
+                burst(piece, ParticleTypes.ELECTRIC_SPARK, 5, 0.12);
+            });
             liftJets(piece);
             if (hover >= 2) once(piece, PULSE_B, () -> pulse(piece));
             if (hover >= 6) once(piece, PULSE_C, () -> pulse(piece));
@@ -127,6 +145,17 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
         once(piece, UNLOCK, () -> {
             play(piece, mio_icif_sounds.ARMORY_UNLOCK.get(), 0.9F, 1.0F);
             burst(piece, ParticleTypes.ELECTRIC_SPARK, 6, 0.2);
+        });
+        // every lock blows at once: a "whump" of vented pressure around each piece
+        once(piece, POOF, () -> {
+            play(piece, mio_icif_sounds.ARMORY_PULSE.get(), 1.0F, 0.55F);
+            Vec3 at = piece.flightPosition(0);
+            for (int i = 0; i < 16; i++) {
+                double a = i / 16.0 * Math.PI * 2;
+                spawn(piece, ParticleTypes.CLOUD, at, new Vec3(Math.cos(a) * 0.22, (RANDOM.nextDouble() - 0.3) * 0.12, Math.sin(a) * 0.22));
+            }
+            burst(piece, ParticleTypes.POOF, 6, 0.1);
+            burst(piece, ArmoryRegistry.CORE.get(), 3, 0.08);
         });
         if (age < ArmoryFlight.PURGE_TICKS) {
             if (age < 4) burst(piece, ParticleTypes.CLOUD, 1, 0.03);

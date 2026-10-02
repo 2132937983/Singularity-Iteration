@@ -123,8 +123,25 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
         ArmoryPiece piece = entity.piece();
         boolean drawn = false;
         boolean flash = !ret && latch >= 0 && latch < 3.5F;
+        // segmented assembly: how far each segment is opened (0 = locked) and which one just locked
+        int n = ArmoryFlight.segments(piece);
+        float[] open = new float[n];
+        boolean[] seat = new boolean[n];
+        if (ret) {
+            float spread = (float) ArmoryFlight.burstSpread(age);
+            java.util.Arrays.fill(open, spread);
+        } else if (age >= flight) {
+            float unfold = (float) ArmoryFlight.unfold(age - flight);
+            float sinceSnap = age - flight - ArmoryFlight.HOVER_TICKS;
+            for (int j = 0; j < n; j++) {
+                double close = sinceSnap < 0 ? 0 : ArmoryFlight.segmentClose(sinceSnap, j, n);
+                open[j] = unfold * (float) (1 - close);
+                float lockAge = sinceSnap - ArmoryFlight.segmentLockTick(j, n);
+                seat[j] = lockAge >= 0 && lockAge < 3;
+            }
+        }
         if (piece.isArmor() && stack.getItem() instanceof ArmorItem armor && armor.getEquipmentSlot() == piece.slot) {
-            drawn = renderArmor(pose, buffers, light, stack, armor, piece, height, target, flash);
+            drawn = renderArmor(pose, buffers, light, stack, armor, piece, height, target, flash, open, seat);
         }
         if (!drawn) {
             float s = 0.55F + 0.2F * k;
@@ -136,7 +153,7 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
     }
 
     private boolean renderArmor(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack, ArmorItem armor,
-                                ArmoryPiece piece, float height, Entity target, boolean flash) {
+                                ArmoryPiece piece, float height, Entity target, boolean flash, float[] open, boolean[] seat) {
         LivingEntity wearer = target instanceof LivingEntity l ? l : Minecraft.getInstance().player;
         if (wearer == null) return false;
         pose.pushPose();
@@ -163,23 +180,74 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
             ArmorMaterial material = armor.getMaterial().value();
             IClientItemExtensions ext = IClientItemExtensions.of(stack);
             int fallback = ext.getDefaultDyeColor(stack);
-            for (int i = 0; i < material.layers().size(); i++) {
-                ArmorMaterial.Layer layer = material.layers().get(i);
-                int color = ext.getArmorLayerTintColor(stack, wearer, layer, i, fallback);
-                if (color == 0) continue;
-                ResourceLocation texture = ClientHooks.getArmorTexture(wearer, stack, layer, innerLayer, slot);
-                model.renderToBuffer(pose, buffers.getBuffer(RenderType.armorCutoutNoCull(texture)), light, OverlayTexture.NO_OVERLAY, color);
+            boolean anyOpen = false;
+            for (float o : open) anyOpen |= o > 0.001F;
+            if (model == base && anyOpen) {
+                // vanilla armour model: draw each segment on its own, displaced off its joint and hinged open
+                net.minecraft.client.model.geom.ModelPart[][] segs = segments(base, slot);
+                for (int j = 0; j < segs.length && j < open.length; j++) {
+                    base.setAllVisible(false);
+                    float[][] saved = new float[segs[j].length][];
+                    for (int k = 0; k < segs[j].length; k++) {
+                        var part = segs[j][k];
+                        part.visible = true;
+                        saved[k] = new float[]{part.x, part.y, part.z, part.xRot, part.yRot, part.zRot};
+                        displace(base, part, open[j]);
+                    }
+                    if (slot == EquipmentSlot.HEAD) base.hat.visible = true;
+                    drawLayers(pose, buffers, light, stack, material, ext, fallback, wearer, model, innerLayer, slot, flash || seat[j]);
+                    for (int k = 0; k < segs[j].length; k++) {
+                        var part = segs[j][k];
+                        part.x = saved[k][0]; part.y = saved[k][1]; part.z = saved[k][2];
+                        part.xRot = saved[k][3]; part.yRot = saved[k][4]; part.zRot = saved[k][5];
+                    }
+                }
+                return true;
             }
-            // Enchantment glint, and a shimmer while the plate seats and locks.
-            if (stack.hasFoil() || flash) {
-                model.renderToBuffer(pose, buffers.getBuffer(RenderType.armorEntityGlint()), light, OverlayTexture.NO_OVERLAY);
-            }
+            drawLayers(pose, buffers, light, stack, material, ext, fallback, wearer, model, innerLayer, slot, flash);
             return true;
         } catch (RuntimeException e) {
             return false;
         } finally {
             pose.popPose();
         }
+    }
+
+    private static void drawLayers(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack, ArmorMaterial material,
+                                   IClientItemExtensions ext, int fallback, LivingEntity wearer, net.minecraft.client.model.Model model,
+                                   boolean innerLayer, EquipmentSlot slot, boolean glint) {
+        for (int i = 0; i < material.layers().size(); i++) {
+            ArmorMaterial.Layer layer = material.layers().get(i);
+            int color = ext.getArmorLayerTintColor(stack, wearer, layer, i, fallback);
+            if (color == 0) continue;
+            ResourceLocation texture = ClientHooks.getArmorTexture(wearer, stack, layer, innerLayer, slot);
+            model.renderToBuffer(pose, buffers.getBuffer(RenderType.armorCutoutNoCull(texture)), light, OverlayTexture.NO_OVERLAY, color);
+        }
+        // Enchantment glint, and a shimmer while the plate seats and locks.
+        if (stack.hasFoil() || glint) {
+            model.renderToBuffer(pose, buffers.getBuffer(RenderType.armorEntityGlint()), light, OverlayTexture.NO_OVERLAY);
+        }
+    }
+
+    /** Segments of a piece, in locking order (torso plate / hip plate first, then the limbs). */
+    private static net.minecraft.client.model.geom.ModelPart[][] segments(HumanoidModel<LivingEntity> m, EquipmentSlot slot) {
+        return switch (slot) {
+            case HEAD -> new net.minecraft.client.model.geom.ModelPart[][]{{m.head, m.hat}};
+            case CHEST -> new net.minecraft.client.model.geom.ModelPart[][]{{m.body}, {m.rightArm}, {m.leftArm}};
+            case LEGS -> new net.minecraft.client.model.geom.ModelPart[][]{{m.body}, {m.rightLeg}, {m.leftLeg}};
+            case FEET -> new net.minecraft.client.model.geom.ModelPart[][]{{m.rightLeg}, {m.leftLeg}};
+            default -> new net.minecraft.client.model.geom.ModelPart[0][];
+        };
+    }
+
+    /** Pulls a segment off its joint (model pixels) and hinges it open, by {@code o} (0..1). */
+    private static void displace(HumanoidModel<LivingEntity> m, net.minecraft.client.model.geom.ModelPart part, float o) {
+        if (part == m.head || part == m.hat) { part.y -= 6 * o; part.z += 2 * o; part.xRot -= 0.7F * o; }
+        else if (part == m.body) { part.z -= 6 * o; part.y += 1.5F * o; part.xRot += 0.35F * o; }
+        else if (part == m.rightArm) { part.x -= 7 * o; part.y -= 2 * o; part.zRot += 0.95F * o; part.xRot -= 0.3F * o; }
+        else if (part == m.leftArm) { part.x += 7 * o; part.y -= 2 * o; part.zRot -= 0.95F * o; part.xRot -= 0.3F * o; }
+        else if (part == m.rightLeg) { part.x -= 5 * o; part.y += 2.5F * o; part.z -= 2 * o; part.zRot += 0.4F * o; }
+        else if (part == m.leftLeg) { part.x += 5 * o; part.y += 2.5F * o; part.z -= 2 * o; part.zRot -= 0.4F * o; }
     }
 
     @Override

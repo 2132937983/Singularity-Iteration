@@ -29,27 +29,34 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Energy Management Terminal console, in the spirit of a factory power panel:
- * KPI tiles (generation / consumption / storage), a rolling 112 s chart of
- * generation vs. consumption with the storage charge curve, and a filterable device
- * table with per-device EU/t read-outs and remote ON/OFF switches.
+ * Energy Management Terminal, styled as a holographic power-grid panel: four KPI gauges
+ * (generation vs. nameplate capacity, consumption vs. full demand, storage charge, net balance
+ * with time-to-full / time-to-empty), a 112 s trend chart (generation, consumption, charge
+ * curve), a ranking of the biggest consumers grouped by machine type, and the filterable
+ * device table with per-device read-outs and remote ON/OFF switches.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminalMenu> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.parse("mio_icif:textures/gui/gui_energy_terminal.png");
-    private static final int W = 240, H = 210;
-    private static final int GEN = 0xFF3C9A52, USE = 0xFFD2902A, CHARGE = 0xFF3A6EA5;
-    private static final int GRAPH_X = 7, GRAPH_Y = 50, GRAPH_W = 226, GRAPH_H = 64;
-    private static final int LIST_X = 7, LIST_Y = 132, LIST_W = 226, ROW_H = 14, ROWS = 5;
-    private static final int[] CATEGORY_COLOR = {GEN, USE, CHARGE, 0xFF7A62B0};
+    private static final int W = 320, H = 214;
+    private static final int GEN = DspUi.GREEN, USE = DspUi.ORANGE, CHARGE = DspUi.CYAN;
+    private static final int TILE_Y = 17, TILE_H = 38, TILE_W = 75;
+    private static final int GRAPH_X = 7, GRAPH_Y = 59, GRAPH_W = 200, GRAPH_H = 72;
+    private static final int RANK_X = 210, RANK_Y = 59, RANK_W = 103, RANK_H = 72, RANK_ROWS = 5;
+    private static final int LIST_X = 7, LIST_Y = 150, LIST_W = 306, ROW_H = 14, ROWS = 4;
+    private static final int[] CATEGORY_COLOR = {GEN, USE, CHARGE, DspUi.VIOLET};
 
     private int filter = -1;     // -1 all, else Category ordinal
     private int scroll;
     private final SiButton[] filterButtons = new SiButton[4];
     private int cachedSync = -1, cachedFilter = -2;
     private final List<Device> rows = new ArrayList<>();
+    private final List<Rank> ranking = new ArrayList<>();
     private final Map<String, ItemStack> icons = new HashMap<>();
+    private float lastChartMax = 1;
+
+    /** Consumption of one machine type: total EU/t, number of machines. */
+    private record Rank(String blockId, float use, int count) { }
 
     public EnergyTerminalScreen(EnergyTerminalMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -64,7 +71,7 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
         int[] ids = {-1, Category.GENERATOR.ordinal(), Category.CONSUMER.ordinal(), Category.STORAGE.ordinal()};
         for (int i = 0; i < 4; i++) {
             int id = ids[i];
-            filterButtons[i] = addRenderableWidget(new SiButton(leftPos + 7 + i * 42, topPos + 118, 41, 11,
+            filterButtons[i] = addRenderableWidget(new SiButton(leftPos + 7 + i * 46, topPos + 135, 45, 11,
                 Component.translatable("gui.mio_icif.energy_terminal.filter." + keys[i]), b -> setFilter(id)));
         }
         setFilter(filter);
@@ -91,6 +98,17 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
         rows.sort(Comparator.comparingInt((Device d) -> d.category().ordinal())
             .thenComparing(d -> -Math.max(d.input(), d.output())));
         scroll = Mth.clamp(scroll, 0, Math.max(0, rows.size() - ROWS));
+        // ranking: consumption grouped by machine type, biggest first
+        Map<String, float[]> byType = new HashMap<>();
+        for (Device d : menu.snapshot().devices) {
+            if (d.category() != Category.CONSUMER) continue;
+            float[] acc = byType.computeIfAbsent(d.blockId(), k -> new float[2]);
+            acc[0] += d.input();
+            acc[1]++;
+        }
+        ranking.clear();
+        byType.forEach((id, acc) -> ranking.add(new Rank(id, acc[0], (int) acc[1])));
+        ranking.sort(Comparator.comparingDouble((Rank r) -> -r.use()));
     }
 
     private ItemStack icon(String blockId) {
@@ -99,6 +117,11 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
             Block block = rl == null ? null : BuiltInRegistries.BLOCK.get(rl);
             return block == null ? ItemStack.EMPTY : new ItemStack(block);
         });
+    }
+
+    private String name(String blockId) {
+        ItemStack stack = icon(blockId);
+        return stack.isEmpty() ? blockId : stack.getHoverName().getString();
     }
 
     // ------------------------------------------------------------------ rendering
@@ -113,64 +136,73 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         refreshRows();
         int x = leftPos, y = topPos;
-        g.blit(TEXTURE, x, y, 0, 0, W, H);
-        for (int i = 0; i < 3; i++) SiGuiTheme.well(g, x + 7 + i * 76, y + 19, 74, 28);
-        SiGuiTheme.well(g, x + GRAPH_X, y + GRAPH_Y, GRAPH_W, GRAPH_H);
-        SiGuiTheme.well(g, x + LIST_X, y + LIST_Y - 1, LIST_W, ROWS * ROW_H + 2);
-        drawChart(g, x + GRAPH_X + 1, y + GRAPH_Y + 1, GRAPH_W - 2, GRAPH_H - 2);
-        // charge gauge under the storage tile value
+        SiGuiTheme.panel(g, x, y, W, H);
         EnergyNetworkSnapshot s = menu.snapshot();
-        SiGuiTheme.bar(g, x + 7 + 2 * 76 + 4, y + 41, 66, 3, s.chargeFraction(), SiGuiTheme.BAR_FROM, SiGuiTheme.BAR_TO);
-        // row highlights and switches
+        for (int i = 0; i < 4; i++) DspUi.screen(g, x + 7 + i * (TILE_W + 2), y + TILE_Y, TILE_W, TILE_H);
+        DspUi.screen(g, x + GRAPH_X, y + GRAPH_Y, GRAPH_W, GRAPH_H);
+        DspUi.screen(g, x + RANK_X, y + RANK_Y, RANK_W, RANK_H);
+        DspUi.screen(g, x + LIST_X, y + LIST_Y - 1, LIST_W, ROWS * ROW_H + 2);
+
+        // KPI gauges
+        float demandRatio = s.demandRatio();
+        int demandColor = demandRatio >= 0.999F ? GEN : demandRatio >= 0.5F ? USE : DspUi.RED;
+        DspUi.arc(g, x + 7 + 15, y + TILE_Y + 21, 11, 3, s.generationRatio(), GEN);
+        DspUi.arc(g, x + 7 + (TILE_W + 2) + 15, y + TILE_Y + 21, 11, 3, demandRatio, demandColor);
+        DspUi.arc(g, x + 7 + 2 * (TILE_W + 2) + 15, y + TILE_Y + 21, 11, 3, s.chargeFraction(), CHARGE);
+        float net = s.generation + s.storageOut - s.consumption - s.storageIn;
+        float balance = s.generation - s.consumption;
+        DspUi.arc(g, x + 7 + 3 * (TILE_W + 2) + 15, y + TILE_Y + 21, 11, 3,
+            0.5F + 0.5F * (float) Math.tanh(balance / Math.max(1F, Math.max(s.generation, s.consumption))), balance >= 0 ? GEN : DspUi.RED);
+
+        // trend chart
+        int cx = x + GRAPH_X + 2, cy = y + GRAPH_Y + 12, cw = GRAPH_W - 4, ch = GRAPH_H - 15;
+        float max = 1;
+        for (int i = 0; i < EnergyNetworkSnapshot.HISTORY; i++) max = Math.max(max, Math.max(s.genHistory[i], s.useHistory[i]));
+        max = niceCeil(max * 1.1F);
+        lastChartMax = max;
+        for (int gy = 1; gy < 4; gy++) for (int gx = cx; gx < cx + cw; gx += 3) g.fill(gx, cy + ch * gy / 4, gx + 1, cy + ch * gy / 4 + 1, 0x40FFFFFF);
+        DspUi.area(g, cx, cy, cw, ch, s.useHistory, max, USE);
+        DspUi.area(g, cx, cy, cw, ch, s.genHistory, max, GEN);
+        DspUi.line(g, cx, cy, cw, ch, s.chargeHistory, 1F, CHARGE);
+        if (isIn(mouseX, mouseY, cx, cy, cw, ch)) g.fill(mouseX, cy, mouseX + 1, cy + ch, 0x80FFFFFF);
+
+        // ranking bars
+        float top = ranking.isEmpty() ? 1 : Math.max(1e-3F, ranking.get(0).use());
+        for (int r = 0; r < Math.min(RANK_ROWS, ranking.size()); r++) {
+            Rank rank = ranking.get(r);
+            int ry = y + RANK_Y + 12 + r * 12;
+            DspUi.meter(g, x + RANK_X + 14, ry + 7, RANK_W - 18, 2, rank.use() / top, r == 0 ? DspUi.RED : USE);
+        }
+
+        // device table rows
         for (int r = 0; r < ROWS; r++) {
             int i = r + scroll;
             if (i >= rows.size()) break;
             Device d = rows.get(i);
             int ry = y + LIST_Y + r * ROW_H;
-            if (mouseX >= x + LIST_X && mouseX < x + LIST_X + LIST_W && mouseY >= ry && mouseY < ry + ROW_H) {
-                g.fill(x + LIST_X + 1, ry, x + LIST_X + LIST_W - 1, ry + ROW_H, 0x303A6EA5);
-            }
+            if (isIn(mouseX, mouseY, x + LIST_X, ry, LIST_W, ROW_H)) g.fill(x + LIST_X + 1, ry, x + LIST_X + LIST_W - 1, ry + ROW_H, 0x305FD3F5);
             g.fill(x + LIST_X + 1, ry + 1, x + LIST_X + 3, ry + ROW_H - 1, CATEGORY_COLOR[d.category().ordinal()]);
+            if (d.rated() > 0 && d.category() != Category.STORAGE) {
+                float load = d.category() == Category.GENERATOR ? d.output() / d.rated() : d.input() / d.rated();
+                DspUi.meter(g, x + LIST_X + 180, ry + 6, 40, 2, load, CATEGORY_COLOR[d.category().ordinal()]);
+            }
             if (d.switchable()) drawSwitch(g, x + LIST_X + LIST_W - 26, ry + 2, !d.disabled());
+        }
+        if (rows.size() > ROWS) {
+            int barH = ROWS * ROW_H;
+            int knob = Math.max(6, barH * ROWS / rows.size());
+            int ky = y + LIST_Y + (barH - knob) * scroll / Math.max(1, rows.size() - ROWS);
+            g.fill(x + LIST_X + LIST_W - 3, ky, x + LIST_X + LIST_W - 1, ky + knob, DspUi.CYAN_DIM);
         }
     }
 
     private void drawSwitch(GuiGraphics g, int sx, int sy, boolean on) {
-        g.fill(sx, sy, sx + 22, sy + 10, SiGuiTheme.OUTLINE);
-        g.fill(sx + 1, sy + 1, sx + 21, sy + 9, on ? 0xFF3C9A52 : 0xFFB0B4B9);
+        g.fill(sx, sy, sx + 22, sy + 10, 0xFF56606A);
+        g.fill(sx + 1, sy + 1, sx + 21, sy + 9, on ? 0xFF2F8F57 : 0xFF33404C);
         int knob = on ? sx + 12 : sx + 1;
         g.fillGradient(knob, sy + 1, knob + 9, sy + 9, 0xFFFFFFFF, 0xFFC8CCD0);
-        g.fill(on ? sx + 3 : sx + 13, sy + 4, on ? sx + 8 : sx + 18, sy + 6, on ? SiGuiTheme.GOOD : SiGuiTheme.BAD);
+        g.fill(on ? sx + 3 : sx + 13, sy + 4, on ? sx + 8 : sx + 18, sy + 6, on ? GEN : DspUi.RED);
     }
-
-    private void drawChart(GuiGraphics g, int cx, int cy, int cw, int ch) {
-        EnergyNetworkSnapshot s = menu.snapshot();
-        int n = EnergyNetworkSnapshot.HISTORY;
-        float max = 1;
-        for (int i = 0; i < n; i++) max = Math.max(max, Math.max(s.genHistory[i], s.useHistory[i]));
-        max = niceCeil(max * 1.1F);
-        int top = cy + 9, h = ch - 10;   // leave room for the legend line
-        float step = cw / (float) n;
-        int prevGen = -1, prevCharge = -1;
-        for (int i = 0; i < n; i++) {
-            int x0 = cx + (int) (i * step), x1 = Math.max(x0 + 1, cx + (int) ((i + 1) * step));
-            int use = Math.round(h * Math.min(1, s.useHistory[i] / max));
-            if (use > 0) g.fill(x0, top + h - use, x1, top + h, 0x66FFAA46);
-            if (use > 0) g.fill(x0, top + h - use, x1, top + h - use + 1, USE);
-            int gen = top + h - Math.round(h * Math.min(1, s.genHistory[i] / max));
-            if (prevGen >= 0) g.fill(x0, Math.min(prevGen, gen), x0 + 1, Math.max(prevGen, gen) + 1, GEN);
-            g.fill(x0, gen, x1, gen + 1, GEN);
-            prevGen = gen;
-            int charge = top + h - Math.round((h - 1) * s.chargeHistory[i]);
-            if (i % 2 == 0) g.fill(x0, charge, x0 + 1, charge + 1, CHARGE);
-            prevCharge = charge;
-        }
-        // grid line at 50 %
-        for (int gx = cx; gx < cx + cw; gx += 4) g.fill(gx, top + h / 2, gx + 2, top + h / 2 + 1, 0x30000000);
-        lastChartMax = max;
-    }
-
-    private float lastChartMax = 1;
 
     private static float niceCeil(float v) {
         double p = Math.pow(10, Math.floor(Math.log10(Math.max(1e-3, v))));
@@ -182,31 +214,61 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         EnergyNetworkSnapshot s = menu.snapshot();
-        g.drawString(font, title, 8, 5, SiGuiTheme.TEXT, false);
+        g.drawString(font, title, 8, 6, SiGuiTheme.TEXT, false);
         String info = Component.translatable("gui.mio_icif.energy_terminal.summary", s.devices.size(), s.conductors).getString()
             + (s.truncated ? " +" : "");
-        small(g, info, W - 8 - (int) (font.width(info) * 0.75F), 7, SiGuiTheme.TEXT);
+        small(g, info, W - 8 - DspUi.smallWidth(font, info), 7, SiGuiTheme.TEXT);
 
-        tile(g, 0, "gui.mio_icif.energy_terminal.generation", rate(s.generation), GEN);
-        tile(g, 1, "gui.mio_icif.energy_terminal.consumption", rate(s.consumption), USE);
-        tile(g, 2, "gui.mio_icif.energy_terminal.storage", String.format("%.1f%%", s.chargeFraction() * 100), CHARGE);
-
-        // chart legend and scale
-        int ly = GRAPH_Y + 2;
-        small(g, Component.translatable("gui.mio_icif.energy_terminal.chart").getString(), GRAPH_X + 3, ly, SiGuiTheme.TEXT_SCREEN_DIM);
-        int lx = GRAPH_X + GRAPH_W - 4;
-        lx = legend(g, lx, ly, "gui.mio_icif.energy_terminal.legend.charge", CHARGE);
-        lx = legend(g, lx, ly, "gui.mio_icif.energy_terminal.legend.use", USE);
-        legend(g, lx, ly, "gui.mio_icif.energy_terminal.legend.gen", GEN);
-        small(g, compact(lastChartMax) + " EU/t", GRAPH_X + 3, GRAPH_Y + 10, SiGuiTheme.TEXT_SCREEN_DIM);
         float balance = s.generation - s.consumption;
-        String bal = (balance >= 0 ? "+" : "") + compact(balance) + " EU/t";
-        small(g, bal, GRAPH_X + GRAPH_W - 4 - (int) (font.width(bal) * 0.75F), GRAPH_Y + GRAPH_H - 8,
-            balance >= 0 ? SiGuiTheme.GOOD : SiGuiTheme.BAD);
+        tile(g, 0, "gui.mio_icif.energy_terminal.generation", DspUi.compact(s.generation),
+            "/ " + DspUi.compact(s.generationCapacity) + " EU/t", pct(s.generationRatio()) + " " + tr("gui.mio_icif.energy_terminal.util"), GEN);
+        float demandRatio = s.demandRatio();
+        tile(g, 1, "gui.mio_icif.energy_terminal.consumption", DspUi.compact(s.consumption),
+            "/ " + DspUi.compact(s.demand) + " EU/t", pct(demandRatio) + " " + tr("gui.mio_icif.energy_terminal.satisfied"),
+            demandRatio >= 0.999F ? GEN : demandRatio >= 0.5F ? USE : DspUi.RED);
+        tile(g, 2, "gui.mio_icif.energy_terminal.storage", pct(s.chargeFraction()),
+            "+" + DspUi.compact(s.storageIn) + " / -" + DspUi.compact(s.storageOut), DspUi.compact(s.stored) + " EU", CHARGE);
+        float flow = s.storageIn - s.storageOut;
+        String eta = flow > 0.01F ? tr("gui.mio_icif.energy_terminal.full_in") + " " + DspUi.duration((s.capacity - s.stored) / (flow * 20.0))
+            : flow < -0.01F ? tr("gui.mio_icif.energy_terminal.empty_in") + " " + DspUi.duration(s.stored / (-flow * 20.0))
+            : tr("gui.mio_icif.energy_terminal.steady");
+        tile(g, 3, "gui.mio_icif.energy_terminal.net", (balance >= 0 ? "+" : "") + DspUi.compact(balance), "EU/t", eta,
+            balance >= 0 ? GEN : DspUi.RED);
+
+        // chart header and legend
+        int lx = GRAPH_X + GRAPH_W - 4;
+        lx = legend(g, lx, GRAPH_Y + 3, "gui.mio_icif.energy_terminal.legend.charge", CHARGE);
+        lx = legend(g, lx, GRAPH_Y + 3, "gui.mio_icif.energy_terminal.legend.use", USE);
+        lx = legend(g, lx, GRAPH_Y + 3, "gui.mio_icif.energy_terminal.legend.gen", GEN);
+        small(g, font.plainSubstrByWidth(tr("gui.mio_icif.energy_terminal.chart"), (int) Math.max(0, (lx - GRAPH_X - 8) / 0.75F)),
+            GRAPH_X + 4, GRAPH_Y + 3, DspUi.TEXT_DIM);
+        small(g, DspUi.compact(lastChartMax), GRAPH_X + 4, GRAPH_Y + 12, DspUi.TEXT_DIM);
+        small(g, "-112s", GRAPH_X + 4, GRAPH_Y + GRAPH_H - 8, DspUi.TEXT_DIM);
+        small(g, tr("gui.mio_icif.energy_terminal.now"), GRAPH_X + GRAPH_W - 4 - DspUi.smallWidth(font, tr("gui.mio_icif.energy_terminal.now")),
+            GRAPH_Y + GRAPH_H - 8, DspUi.TEXT_DIM);
+
+        // ranking
+        small(g, tr("gui.mio_icif.energy_terminal.top_consumers"), RANK_X + 4, RANK_Y + 3, DspUi.TEXT_DIM);
+        float total = Math.max(1e-3F, s.consumption);
+        for (int r = 0; r < Math.min(RANK_ROWS, ranking.size()); r++) {
+            Rank rank = ranking.get(r);
+            int ry = RANK_Y + 12 + r * 12;
+            g.pose().pushPose();
+            g.pose().translate(RANK_X + 3, ry - 1, 0);
+            g.pose().scale(0.6F, 0.6F, 1);
+            g.renderItem(icon(rank.blockId()), 0, 0);
+            g.pose().popPose();
+            String label = (rank.count() > 1 ? rank.count() + "× " : "") + name(rank.blockId());
+            String value = DspUi.compact(rank.use()) + " (" + Math.round(100 * rank.use() / total) + "%)";
+            int vw = DspUi.smallWidth(font, value);
+            small(g, font.plainSubstrByWidth(label, (int) ((RANK_W - 20 - vw) / 0.75F)), RANK_X + 14, ry, r == 0 ? DspUi.TEXT : DspUi.TEXT_DIM);
+            small(g, value, RANK_X + RANK_W - 4 - vw, ry, r == 0 ? DspUi.RED : USE);
+        }
+        if (ranking.isEmpty()) small(g, tr("gui.mio_icif.energy_terminal.no_consumers"), RANK_X + 4, RANK_Y + 16, DspUi.TEXT_DIM);
 
         // device table
         String count = rows.size() + "";
-        small(g, count, LIST_X + LIST_W - (int) (font.width(count) * 0.75F), 121, SiGuiTheme.TEXT);
+        small(g, count, LIST_X + LIST_W - DspUi.smallWidth(font, count), 138, SiGuiTheme.TEXT);
         for (int r = 0; r < ROWS; r++) {
             int i = r + scroll;
             if (i >= rows.size()) break;
@@ -218,79 +280,89 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
             g.pose().scale(0.75F, 0.75F, 1);
             g.renderItem(stack, 0, 0);
             g.pose().popPose();
-            String name = stack.isEmpty() ? d.blockId() : stack.getHoverName().getString();
-            int nameColor = d.disabled() ? 0xFFA0A5AB : SiGuiTheme.TEXT_SCREEN;
-            g.drawString(font, font.plainSubstrByWidth(name, 104), LIST_X + 19, ry + 3, nameColor, false);
+            String nm = stack.isEmpty() ? d.blockId() : stack.getHoverName().getString();
+            int nameColor = d.disabled() ? 0xFF5E6E7B : DspUi.TEXT;
+            g.drawString(font, font.plainSubstrByWidth(nm, 150), LIST_X + 19, ry + 3, nameColor, false);
             String value = switch (d.category()) {
-                case GENERATOR -> "+" + compact(d.output());
-                case CONSUMER -> "-" + compact(d.input());
+                case GENERATOR -> "+" + DspUi.compact(d.output());
+                case CONSUMER -> "-" + DspUi.compact(d.input());
                 case STORAGE -> d.capacity() > 0 ? String.format("%.0f%%", 100.0 * d.stored() / d.capacity()) : "-";
-                default -> compact(Math.max(d.input(), d.output()));
+                default -> DspUi.compact(Math.max(d.input(), d.output()));
             };
-            int vColor = d.disabled() ? 0xFFA0A5AB : CATEGORY_COLOR[d.category().ordinal()];
+            int vColor = d.disabled() ? 0xFF5E6E7B : CATEGORY_COLOR[d.category().ordinal()];
             g.drawString(font, value, LIST_X + LIST_W - 32 - font.width(value), ry + 3, vColor, false);
         }
         if (rows.isEmpty()) {
             g.drawString(font, Component.translatable(menu.snapshot().devices.isEmpty()
                 ? "gui.mio_icif.energy_terminal.no_network" : "gui.mio_icif.energy_terminal.no_match"),
-                LIST_X + 6, LIST_Y + 4, SiGuiTheme.TEXT_SCREEN_DIM, false);
+                LIST_X + 6, LIST_Y + 4, DspUi.TEXT_DIM, false);
         }
     }
 
-    private void tile(GuiGraphics g, int index, String key, String value, int color) {
-        int tx = 7 + index * 76;
-        small(g, Component.translatable(key).getString(), tx + 4, 22, SiGuiTheme.TEXT_SCREEN_DIM);
-        g.drawString(font, value, tx + 4, 31, color, false);
+    private void tile(GuiGraphics g, int index, String key, String value, String sub, String foot, int color) {
+        int tx = 7 + index * (TILE_W + 2) + 30, ty = TILE_Y;
+        // label across the tile top (above the gauge), never past the tile edge
+        small(g, font.plainSubstrByWidth(tr(key), (int) ((TILE_W - 8) / 0.75F)), tx - 26, ty + 3, DspUi.TEXT_DIM);
+        g.drawString(font, font.plainSubstrByWidth(value, TILE_W - 32), tx, ty + 11, color, false);
+        small(g, font.plainSubstrByWidth(sub, (int) ((TILE_W - 32) / 0.75F)), tx, ty + 21, DspUi.TEXT_DIM);
+        small(g, font.plainSubstrByWidth(foot, (int) ((TILE_W - 32) / 0.75F)), tx, ty + 29, color);
     }
 
     private int legend(GuiGraphics g, int rightX, int y, String key, int color) {
-        String text = Component.translatable(key).getString();
-        int w = (int) (font.width(text) * 0.75F);
+        String text = tr(key);
+        int w = DspUi.smallWidth(font, text);
         int x = rightX - w;
         small(g, text, x, y, color);
-        return x - 8;
+        g.fill(x - 5, y + 2, x - 2, y + 5, color);
+        return x - 10;
     }
 
     private void small(GuiGraphics g, String text, int x, int y, int color) {
-        g.pose().pushPose();
-        g.pose().translate(x, y, 0);
-        g.pose().scale(0.75F, 0.75F, 1);
-        g.drawString(font, text, 0, 0, color, false);
-        g.pose().popPose();
+        DspUi.small(g, font, text, x, y, color);
     }
 
-    private static String rate(float euPerTick) {
-        return compact(euPerTick) + " EU/t";
-    }
+    private static String tr(String key) { return Component.translatable(key).getString(); }
 
-    private static String compact(double v) {
-        double a = Math.abs(v);
-        if (a >= 1e9) return String.format("%.2fG", v / 1e9);
-        if (a >= 1e6) return String.format("%.2fM", v / 1e6);
-        if (a >= 1e4) return String.format("%.1fk", v / 1e3);
-        if (a >= 100) return String.format("%.0f", v);
-        return String.format("%.1f", v);
-    }
+    private static String pct(float f) { return String.format("%.0f%%", f * 100); }
+
+    private static String rate(float euPerTick) { return DspUi.compact(euPerTick) + " EU/t"; }
 
     private void renderTooltips(GuiGraphics g, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
         EnergyNetworkSnapshot s = menu.snapshot();
-        if (isIn(mouseX, mouseY, x + 7 + 2 * 76, y + 19, 74, 28)) {
-            g.renderComponentTooltip(font, List.of(
-                Component.translatable("gui.mio_icif.energy_terminal.storage"),
-                Component.literal(String.format("%,d / %,d EU", s.stored, s.capacity)).withStyle(ChatFormatting.AQUA),
-                Component.translatable("gui.mio_icif.energy_terminal.storage_flow", compact(s.storageIn), compact(s.storageOut))
-                    .withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
+        for (int i = 0; i < 4; i++) {
+            if (!isIn(mouseX, mouseY, x + 7 + i * (TILE_W + 2), y + TILE_Y, TILE_W, TILE_H)) continue;
+            List<Component> lines = switch (i) {
+                case 0 -> List.of(Component.translatable("gui.mio_icif.energy_terminal.generation"),
+                    Component.translatable("gui.mio_icif.energy_terminal.tip.generation", rate(s.generation), rate(s.generationCapacity), pct(s.generationRatio())).withStyle(ChatFormatting.GRAY));
+                case 1 -> List.of(Component.translatable("gui.mio_icif.energy_terminal.consumption"),
+                    Component.translatable("gui.mio_icif.energy_terminal.tip.demand", rate(s.consumption), rate(s.demand), pct(s.demandRatio())).withStyle(ChatFormatting.GRAY));
+                case 2 -> List.of(Component.translatable("gui.mio_icif.energy_terminal.storage"),
+                    Component.literal(String.format("%,d / %,d EU", s.stored, s.capacity)).withStyle(ChatFormatting.AQUA),
+                    Component.translatable("gui.mio_icif.energy_terminal.storage_flow", DspUi.compact(s.storageIn), DspUi.compact(s.storageOut)).withStyle(ChatFormatting.GRAY));
+                default -> List.of(Component.translatable("gui.mio_icif.energy_terminal.net"),
+                    Component.translatable("gui.mio_icif.energy_terminal.tip.net").withStyle(ChatFormatting.GRAY));
+            };
+            g.renderComponentTooltip(font, lines, mouseX, mouseY);
             return;
         }
-        if (isIn(mouseX, mouseY, x + GRAPH_X, y + GRAPH_Y, GRAPH_W, GRAPH_H)) {
-            int i = Mth.clamp((int) ((mouseX - x - GRAPH_X - 1) / ((GRAPH_W - 2) / (float) EnergyNetworkSnapshot.HISTORY)), 0, EnergyNetworkSnapshot.HISTORY - 1);
+        int cx = x + GRAPH_X + 2, cw = GRAPH_W - 4;
+        if (isIn(mouseX, mouseY, cx, y + GRAPH_Y + 12, cw, GRAPH_H - 15)) {
+            int i = Mth.clamp((int) ((mouseX - cx) / (cw / (float) EnergyNetworkSnapshot.HISTORY)), 0, EnergyNetworkSnapshot.HISTORY - 1);
             int ago = EnergyNetworkSnapshot.HISTORY - 1 - i;
             g.renderComponentTooltip(font, List.of(
                 Component.translatable("gui.mio_icif.energy_terminal.ago", ago),
                 Component.literal(rate(s.genHistory[i])).withColor(GEN),
                 Component.literal(rate(s.useHistory[i])).withColor(USE),
                 Component.literal(String.format("%.1f%%", s.chargeHistory[i] * 100)).withColor(CHARGE)), mouseX, mouseY);
+            return;
+        }
+        for (int r = 0; r < Math.min(RANK_ROWS, ranking.size()); r++) {
+            if (!isIn(mouseX, mouseY, x + RANK_X, y + RANK_Y + 11 + r * 12, RANK_W, 12)) continue;
+            Rank rank = ranking.get(r);
+            g.renderComponentTooltip(font, List.of(Component.literal(name(rank.blockId())),
+                Component.translatable("gui.mio_icif.energy_terminal.tip.rank", rank.count(), rate(rank.use()),
+                    pct(rank.use() / Math.max(1e-3F, s.consumption))).withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
             return;
         }
         for (int r = 0; r < ROWS; r++) {
@@ -304,7 +376,8 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
             lines.add(stack.isEmpty() ? Component.literal(d.blockId()) : stack.getHoverName().copy());
             lines.add(Component.translatable("gui.mio_icif.energy_terminal.category." + d.category().name().toLowerCase())
                 .withColor(CATEGORY_COLOR[d.category().ordinal()]));
-            lines.add(Component.literal(String.format("in %s / out %s EU/t", compact(d.input()), compact(d.output()))).withStyle(ChatFormatting.GRAY));
+            lines.add(Component.literal(String.format("in %s / out %s EU/t", DspUi.compact(d.input()), DspUi.compact(d.output()))).withStyle(ChatFormatting.GRAY));
+            if (d.rated() > 0) lines.add(Component.translatable("gui.mio_icif.energy_terminal.tip.rated", rate(d.rated())).withStyle(ChatFormatting.GRAY));
             if (d.capacity() > 0) lines.add(Component.literal(String.format("%,d / %,d EU", d.stored(), d.capacity())).withStyle(ChatFormatting.GRAY));
             lines.add(Component.literal(d.pos().toShortString()).withStyle(ChatFormatting.DARK_GRAY));
             if (d.switchable()) lines.add(Component.translatable(d.disabled()

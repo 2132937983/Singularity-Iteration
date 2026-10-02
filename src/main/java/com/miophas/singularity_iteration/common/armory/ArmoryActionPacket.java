@@ -27,9 +27,7 @@ public record ArmoryActionPacket(int containerId, int action, int index, String 
             if (!(context.player() instanceof ServerPlayer player)) return;
             var open = player.containerMenu;
             if (open == null || open.containerId != packet.containerId || !open.stillValid(player)) return;
-            if (open instanceof ArmoryRemoteMenu remote) {
-                if (packet.action == SUMMON) remote.summon(packet.index);
-            } else if (open instanceof ArmoryMenu menu && menu.getBlockEntity() instanceof mio_icif_armory armory) {
+            if (open instanceof ArmoryMenu menu && menu.getBlockEntity() instanceof mio_icif_armory armory) {
                 switch (packet.action) {
                     case SUMMON -> player.displayClientMessage(armory.summon(player, packet.index).message(), true);
                     case RENAME -> armory.rename(player, packet.index, packet.text);

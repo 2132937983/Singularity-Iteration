@@ -75,6 +75,20 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     private int trackedUpgradeSlotEnd = -1;
 
     /**
+     * Upgrade slots live in the external utility dock left of the GUI (item origin x = -21,
+     * one 18px row each from y = 8), so the panel's upper-right corner stays free for
+     * inventory-sorting mods (Inventory Profiles Next, Mouse Tweaks, ...). The positions the
+     * menu originally asked for are kept for the dev texture tooling.
+     */
+    public static final int DOCK_SLOT_X = -21, DOCK_SLOT_Y = 8;
+    private final java.util.List<int[]> legacyUpgradePositions = new java.util.ArrayList<>();
+
+    public final java.util.List<int[]> legacyUpgradePositions() { return java.util.Collections.unmodifiableList(legacyUpgradePositions); }
+
+    /** Number of upgrade slots placed in the left utility dock. */
+    public final int dockedUpgradeSlots() { return legacyUpgradePositions.size(); }
+
+    /**
      * 标记槽位是否属于机器槽位（非玩家物品栏）
      * 用于处理有显示槽混入的情况（如BatBoxMenu、MagnetizerMenu�?
      */
@@ -581,6 +595,9 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
             trackedUpgradeSlotStart = Math.min(trackedUpgradeSlotStart, index);
             trackedUpgradeSlotEnd = Math.max(trackedUpgradeSlotEnd, index + 1);
         }
+        legacyUpgradePositions.add(new int[]{x, y});
+        x = DOCK_SLOT_X;
+        y = DOCK_SLOT_Y + (legacyUpgradePositions.size() - 1) * 18;
         this.addSlot(new net.neoforged.neoforge.items.SlotItemHandler(itemHandler, index, x, y) {
             @Override
             public boolean mayPlace(ItemStack stack) {

@@ -202,16 +202,17 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
             }
             boolean switchable = be instanceof IRemoteSwitchable;
             boolean disabled = switchable && ((IRemoteSwitchable) be).isRemotelyDisabled();
+            float rated = rated(be, cat, in, out, disabled);
             switch (cat) {
-                case GENERATOR -> s.generation += out;
-                case CONSUMER -> s.consumption += in;
+                case GENERATOR -> { s.generation += out; s.generationCapacity += rated; }
+                case CONSUMER -> { s.consumption += in; s.demand += rated; }
                 case STORAGE -> { s.storageIn += in; s.storageOut += out; storageStored += stored; storageCap += cap; hasStorage = true; }
                 default -> { }
             }
             bufferStored += stored;
             bufferCap += cap;
             s.devices.add(new EnergyNetworkSnapshot.Device(at, BuiltInRegistries.BLOCK.getKey(be.getBlockState().getBlock()).toString(),
-                cat, in, out, stored, cap, switchable, disabled));
+                cat, in, out, stored, cap, switchable, disabled, rated));
         }
         java.util.Arrays.fill(accIn, 0);
         java.util.Arrays.fill(accOut, 0);
@@ -227,6 +228,35 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
         System.arraycopy(chargeHistory, 0, s.chargeHistory, 0, chargeHistory.length);
         latest = s;
         version++;
+    }
+
+    /**
+     * Theoretical EU/t of a device: a generator's nameplate output, a processing machine's
+     * draw while working (upgrades included). Never below what was actually measured.
+     */
+    private static float rated(BlockEntity be, EnergyNetworkSnapshot.Category cat, float in, float out, boolean disabled) {
+        if (disabled) return 0F;
+        try {
+            if (cat == EnergyNetworkSnapshot.Category.GENERATOR) {
+                float nameplate = be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity gen
+                    ? gen.getEnergyGenerationRate() : 0F;
+                return Math.max(nameplate, out);
+            }
+            if (cat == EnergyNetworkSnapshot.Category.CONSUMER) {
+                // a machine requests power while it works, or while its buffer is starved (it would work if fed);
+                // an idle machine with a full buffer requests nothing, so idle machines never read as "unmet demand"
+                if (be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity machine) {
+                    float draw = machine.getEffectiveEnergyPerTick();
+                    long stored = machine.getEnergyStorage().getAmount();
+                    boolean requesting = machine.isWorking() || stored < Math.max(1F, draw) * 4;
+                    return requesting ? Math.max(draw, in) : in;
+                }
+                return in;
+            }
+        } catch (RuntimeException ignored) {
+            // telemetry must never break the terminal
+        }
+        return Math.max(in, out);
     }
 
     private static void shift(float[] history, float value) {
@@ -247,7 +277,7 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
             var d = rows.get(i);
             if (d.pos().equals(target)) {
                 rows.set(i, new EnergyNetworkSnapshot.Device(d.pos(), d.blockId(), d.category(), d.input(), d.output(),
-                    d.stored(), d.capacity(), true, switchable.isRemotelyDisabled()));
+                    d.stored(), d.capacity(), true, switchable.isRemotelyDisabled(), d.rated()));
             }
         }
         version++;

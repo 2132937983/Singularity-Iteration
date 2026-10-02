@@ -193,9 +193,19 @@ public class mio_icif_Network {
             com.miophas.singularity_iteration.common.armory.ArmoryToastPacket::handle
         );
         registrar.playToClient(
-            com.miophas.singularity_iteration.common.armory.ArmoryRemoteSyncPacket.TYPE,
-            com.miophas.singularity_iteration.common.armory.ArmoryRemoteSyncPacket.CODEC,
-            com.miophas.singularity_iteration.common.armory.ArmoryRemoteSyncPacket::handle
+            com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket.TYPE,
+            com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket.CODEC,
+            com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket::handle
+        );
+        registrar.playToServer(
+            com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket.TYPE,
+            com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket.CODEC,
+            com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket::handle
+        );
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.machine.MachineStatusPacket.TYPE,
+            com.miophas.singularity_iteration.common.machine.MachineStatusPacket.CODEC,
+            com.miophas.singularity_iteration.common.machine.MachineStatusPacket::handle
         );
         registrar.playToClient(
             AreaPreviewPacket.TYPE,

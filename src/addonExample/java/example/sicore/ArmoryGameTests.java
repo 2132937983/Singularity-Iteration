@@ -144,8 +144,11 @@ public final class ArmoryGameTests {
         long expected = (long) call(armory.getClass(), "cost", 2, distance, true);
         long spent = before - ((AbstractEnergyBlockEntity) armory).getEnergyStorageInternal().getAmount();
         h.assertTrue(spent == expected, "Summon must cost " + expected + " EU, spent " + spent);
-        h.assertTrue(inv.getStackInSlot(HEAD_0).isEmpty() && inv.getStackInSlot(MAIN_0).isEmpty(), "Pieces leave the Armory at launch");
-        h.assertTrue(pieces(h).size() == 2, "One flying piece per stored item, got " + pieces(h).size());
+        // 0.1.7.22: the worn helmet bursts off at once and takes the new one's place in the suit slot
+        h.assertTrue(inv.getStackInSlot(HEAD_0).is(Items.LEATHER_HELMET) && inv.getStackInSlot(MAIN_0).isEmpty(),
+            "Pieces leave the Armory at launch; the old helmet is purged home at once");
+        long deliveries = pieces(h).stream().filter(e -> !(boolean) call(e, "isReturn")).count();
+        h.assertTrue(deliveries == 2, "One flying piece per stored item, got " + deliveries);
         Object busy = call(armory, "summon", p, 0);
         h.assertTrue(!(boolean) call(busy, "ok"), "A second summon while pieces fly is refused");
 

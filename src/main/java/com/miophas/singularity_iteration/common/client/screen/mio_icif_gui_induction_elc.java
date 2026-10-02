@@ -49,7 +49,6 @@ public class mio_icif_gui_induction_elc extends mio_icif_screen<InductionElcMenu
         drawProgressArrow(guiGraphics, x + PROGRESS_X, y + PROGRESS_Y, progressPixels);
 
         drawModernEnergyBar(guiGraphics, x + ENERGY_BAR_X, y + ENERGY_BAR_Y, menu.getEnergy(), menu.getMaxEnergy());
-        drawXpButton(guiGraphics, x + XP_X, y + XP_Y, menu.getStoredXpTenths(), isHovering(mouseX, mouseY, x + XP_X, y + XP_Y, XP_BUTTON_W, XP_BUTTON_H));
     }
 
     @Override
@@ -72,20 +71,11 @@ public class mio_icif_gui_induction_elc extends mio_icif_screen<InductionElcMenu
         if (isHovering(mouseX, mouseY, x + ENERGY_BAR_X, y + ENERGY_BAR_Y, KINETIC_ENERGY_BAR_WIDTH, KINETIC_ENERGY_BAR_HEIGHT)) {
             renderEnergyTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getEnergy(), menu.getMaxEnergy());
         }
-        if (isHovering(mouseX, mouseY, x + XP_X, y + XP_Y, XP_BUTTON_W, XP_BUTTON_H)) {
-            renderXpTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getStoredXpTenths());
-        }
     }
 
-    private static final int XP_X = 70, XP_Y = 16;
-
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int x = (this.width - this.imageWidth) / 2, y = (this.height - this.imageHeight) / 2;
-        if (button == 0 && isHovering((int) mouseX, (int) mouseY, x + XP_X, y + XP_Y, XP_BUTTON_W, XP_BUTTON_H)) {
-            clickXpButton();
-            return true;
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
+    protected void init() {
+        super.init();
+        addXpDockButton(() -> this.menu.getStoredXpTenths());
     }
 }

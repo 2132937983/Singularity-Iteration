@@ -152,10 +152,35 @@ public final class CaptureDirector {
                 var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
                 level.getBlockState(at).useWithoutItem(level, sp, hit);
             });
-            shot(25, "gallery/" + id.replace('/', '_'));
+            client(20, () -> dumpUpgradeLayout(id));
+            shot(5, "gallery/" + id.replace('/', '_'));
             server(1, ServerPlayer::closeContainer);
         }
         client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Dev tooling: records the upgrade-slot positions a menu asked for and the screen's GUI textures. */
+    private static void dumpUpgradeLayout(String id) {
+        Minecraft mc = Minecraft.getInstance();
+        if (!(mc.screen instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> screen)) return;
+        if (!(screen.getMenu() instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu menu)) return;
+        StringBuilder line = new StringBuilder(id).append('|').append(screen.getClass().getSimpleName()).append('|');
+        for (int[] p : menu.legacyUpgradePositions()) line.append(p[0]).append(',').append(p[1]).append(';');
+        line.append('|');
+        for (Class<?> c = screen.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+            for (var f : c.getDeclaredFields()) {
+                if (f.getType() != net.minecraft.resources.ResourceLocation.class || !java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(null);
+                    if (v != null && v.toString().contains("textures/gui/") && !v.toString().contains("atlas")) line.append(v).append(';');
+                } catch (ReflectiveOperationException ignored) { }
+            }
+        }
+        try {
+            java.nio.file.Files.writeString(java.nio.file.Path.of(OUT, "upgrade_layout.txt"), line + "\n",
+                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+        } catch (java.io.IOException ignored) { }
     }
 
     /** Scene mode: -Dsi.capture.scene=1 shoots the mining-laser poses and the Matrix Core towers in action. */
@@ -291,8 +316,226 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /** Scene 3 (0.1.7.22): armour burst purge + segmented assembly, console Armory and Energy sections. */
+    private static void scene3() {
+        BlockPos armoryAt = new BlockPos(8, -60, 12), showcaseAt = new BlockPos(-4, -60, 4);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack[][] suits = {
+                    {new ItemStack(Items.DIAMOND_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE), new ItemStack(Items.DIAMOND_LEGGINGS),
+                        new ItemStack(Items.DIAMOND_BOOTS), new ItemStack(Items.DIAMOND_SWORD), new ItemStack(Items.SHIELD)},
+                    {new ItemStack(Items.GOLDEN_HELMET), new ItemStack(Items.GOLDEN_CHESTPLATE), ItemStack.EMPTY, new ItemStack(Items.GOLDEN_BOOTS), ItemStack.EMPTY, ItemStack.EMPTY}};
+                for (int st = 0; st < suits.length; st++)
+                    for (int c = 0; c < 6; c++)
+                        if (!suits[st][c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), suits[st][c], false);
+                armory.rename(sp, 0, "Diamond Mk.II");
+                armory.rename(sp, 1, "Parade Gold");
+            }
+            level.setBlock(showcaseAt, block("producer/block_armor_showcase").defaultBlockState()
+                .setValue(com.miophas.singularity_iteration.common.armory.ArmorShowcaseBlock.FACING, Direction.EAST), 3);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(showcaseAt), Direction.UP, showcaseAt, false);
+            for (ItemStack stack : new ItemStack[]{new ItemStack(Items.NETHERITE_HELMET), new ItemStack(Items.NETHERITE_CHESTPLATE),
+                    new ItemStack(Items.NETHERITE_LEGGINGS), new ItemStack(Items.NETHERITE_BOOTS)}) {
+                sp.setItemInHand(InteractionHand.MAIN_HAND, stack);
+                level.getBlockState(showcaseAt).useItemOn(sp.getMainHandItem(), level, sp, InteractionHand.MAIN_HAND, hit);
+            }
+            sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            ItemStack remote = new ItemStack(ArmoryRegistry.REMOTE.get());
+            remote.set(ArmoryComponents.TARGET.get(), GlobalPos.of(level.dimension(), armoryAt));
+            if (!com.miophas.singularity_iteration.common.item.armor.ArmorFeatureSlots.write(sp, "curio:charm:0", remote)) sp.getInventory().add(remote);
+            sp.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+            sp.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+            sp.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+            sp.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 0);
+            sp.setYBodyRot(0);
+            sp.setYHeadRot(0);
+        });
+        // console: Armory section (Curios-worn remote, suits + showcase)
+        client(20, () -> { Minecraft.getInstance().options.hideGui = false;
+            Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()
+                .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_ARMORY)); });
+        shot(40, "scene3/console_armory");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        // burst purge + exchange with the showcase, then segmented assembly
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        server(5, sp -> com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.handle(sp,
+            com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.SHOWCASE, 0));
+        for (int f = 0; f < 45; f++) shot(1, String.format("scene3/burst/f%03d", f));
+        for (int f = 0; f < 70; f++) shot(2, String.format("scene3/assembly/f%03d", f));
+        shot(20, "scene3/after_exchange");
+        // summon the Armory suit (netherite bursts off and flies home to the Armory)
+        server(5, sp -> com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.handle(sp,
+            com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.SUMMON, 0));
+        for (int f = 0; f < 60; f++) shot(2, String.format("scene3/summon/f%03d", f));
+        client(40, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.FIRST_PERSON); mc.options.hideGui = false; });
+        // energy statistics: electric suit with features on, a crystal belt charging it
+        server(5, sp -> {
+            sp.setGameMode(GameType.SURVIVAL);
+            String[][] suit = {{"HEAD", "armor/item_armor_quantum_helmet"}, {"CHEST", "armor/item_armor_quantum_chestplate"},
+                {"LEGS", "armor/item_armor_quantum_leggings"}, {"FEET", "armor/item_armor_nano_boots"}};
+            for (String[] p : suit) {
+                ItemStack st = item(p[1]);
+                if (st.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(st, b.getMaxEnergy(st) * 3 / 5);
+                for (var f : com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.features(st))
+                    if (!f.isMode() && !com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.isEnabled(st, f.featureKey()))
+                        com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.toggle(st, f.featureKey());
+                sp.setItemSlot(EquipmentSlot.valueOf(p[0]), st);
+            }
+            ItemStack belt = item("item_trinket_energy_crystal_belt");
+            if (belt.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(belt, b.getMaxEnergy(belt) / 2);
+            com.miophas.singularity_iteration.common.item.armor.ArmorFeatureSlots.write(sp, "curio:belt:0", belt);
+            ItemStack laser = item("item_tool_laser_miner");
+            if (laser.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(laser, b.getMaxEnergy(laser) / 3);
+            sp.setItemInHand(InteractionHand.MAIN_HAND, laser);
+            sp.setSprinting(true);
+        });
+        client(160, () -> Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()
+            .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_ENERGY)));
+        shot(30, "scene3/console_energy");
+        client(2, () -> Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()));
+        shot(10, "scene3/console_equip");
+        // refined machine models: status slits / indicator LEDs (running = glowing), by night and by day
+        client(2, () -> { Minecraft.getInstance().setScreen(null); Minecraft.getInstance().options.hideGui = true; });
+        server(5, sp -> {
+            var level = sp.serverLevel();
+            sp.setGameMode(GameType.CREATIVE);
+            String[] ids = {"producer/block_compressor_elc", "producer/block_furnace_elc", "generator/block_geo_generator", "wiring/block_mfsu",
+                "producer/block_replicator_elc", "generator/block_solar_generator", "producer/block_powder_elc", "kugenerator/block_wind_kinetic_generator"};
+            for (int i = 0; i < ids.length; i++) {
+                BlockPos at = new BlockPos(-30 + i, -60, 40);
+                place(level, at, ids[i], Direction.NORTH);
+                BlockState st = level.getBlockState(at);
+                var lit = st.getBlock().getStateDefinition().getProperty("lit");
+                if (lit instanceof net.minecraft.world.level.block.state.properties.BooleanProperty b && i % 2 == 0) {
+                    level.setBlock(at, st.setValue(b, true), 3);
+                    level.removeBlockEntity(at);          // display piece: keep the running look without a ticking machine
+                }
+            }
+            level.setDayTime(18000);
+            look(sp, -26.0, -59.4, 37.4, 0, 12);
+        });
+        shot(40, "scene3/machines_night");
+        server(1, sp -> sp.serverLevel().setDayTime(6000));
+        shot(20, "scene3/machines_day");
+        // energy terminal on a live network: generators (nameplate vs actual), consumers, storage
+        BlockPos term = new BlockPos(-30, -60, 61);
+        server(5, sp -> {
+            var level = sp.serverLevel();
+            for (int x = -30; x <= -20; x++) place(level, new BlockPos(x, -60, 60), "wiring/cable/block_cable", Direction.NORTH);
+            place(level, term, "wiring/block_energy_terminal", Direction.NORTH);
+            place(level, new BlockPos(-29, -60, 59), "generator/block_geo_generator", Direction.NORTH);
+            for (int x = -28; x <= -26; x++) place(level, new BlockPos(x, -60, 59), "generator/block_solar_generator", Direction.NORTH);
+            place(level, new BlockPos(-25, -60, 59), "wiring/block_mfsu", Direction.NORTH);
+            String[] users = {"producer/block_furnace_elc", "producer/block_furnace_elc", "producer/block_powder_elc", "producer/block_compressor_elc", "producer/block_extractor_elc"};
+            for (int i = 0; i < users.length; i++) {
+                BlockPos at = new BlockPos(-24 + i, -60, 59);
+                place(level, at, users[i], Direction.NORTH);
+                var handler = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, at, null);
+                if (handler != null) handler.insertItem(0, new ItemStack(i < 2 ? Items.CACTUS : Items.COBBLESTONE, 64), false);
+            }
+            level.setDayTime(6000);
+            look(sp, -25.5, -59, 63.5, 180, 30);
+        });
+        server(240, sp -> {
+            var level = sp.serverLevel();
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(term), Direction.SOUTH, term, false);
+            level.getBlockState(term).useWithoutItem(level, sp, hit);
+        });
+        client(1, () -> Minecraft.getInstance().options.hideGui = false);
+        shot(60, "scene3/energy_terminal_live");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Scene 4 (0.1.7.23): machine item icons in the inventory (no corner badge). */
+    private static void scene4() {
+        server(40, sp -> {
+            sp.setGameMode(GameType.SURVIVAL);
+            String[] ids = {"producer/block_compressor_elc", "producer/block_powder_elc", "producer/block_extractor_elc", "producer/block_furnace_elc",
+                "producer/block_induction_elc", "producer/block_recycler_elc", "producer/block_canner_elc", "producer/block_centrifuge_elc",
+                "producer/block_magnetizer_elc", "producer/block_metal_former", "producer/block_replicator_elc", "producer/block_scanner_elc",
+                "producer/block_pump_elc", "producer/block_miner_elc", "producer/block_teleporter_elc", "producer/block_tesla",
+                "generator/block_generator", "generator/block_geo_generator", "generator/block_solar_generator", "generator/block_wind_generator",
+                "generator/block_water_generator", "generator/block_nuclear_reactor_generator", "wiring/block_bat_box", "wiring/block_mfe",
+                "wiring/block_mfsu", "wiring/transformer_lv_mv", "wiring/block_energy_terminal", "kugenerator/block_wind_kinetic_generator",
+                "hugenerator/block_solid_heat_generator", "producer/block_armory", "producer/block_laser_defense_tower", "producer/block_matter_elc",
+                "producer/block_washer_elc", "producer/block_electrolyzer_elc", "generator/block_rt_generator", "reactor/block_reactor_chamber"};
+            for (int i = 0; i < ids.length && i < 36; i++) sp.getInventory().setItem(i, item(ids[i]));
+        });
+        client(20, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false;
+            mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+        shot(30, "scene4/inventory_icons");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Scene 5 (0.1.7.24): status lamps (green / blinking amber / red / dark) and the redesigned machine fronts. */
+    private static void scene5() {
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            // row 1: four furnaces, one per lamp state
+            for (int i = 0; i < 4; i++) {
+                BlockPos at = new BlockPos(i, -60, 4);
+                place(level, at, "producer/block_furnace_elc", Direction.NORTH);
+                var items = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, at, null);
+                if (items != null && (i == 0 || i == 1)) items.insertItem(0, new ItemStack(Items.CACTUS, 64), false);
+                if (level.getBlockEntity(at) instanceof AbstractEnergyBlockEntity e)
+                    e.getEnergyStorageInternal().setStored(i == 0 || i == 2 ? e.getEnergyStorageInternal().getCapacity() : 0);
+            }
+            // row 2: machine fronts
+            String[] ids = {"producer/block_compressor_elc", "producer/block_powder_elc", "producer/block_extractor_elc", "producer/block_centrifuge_elc",
+                "producer/block_induction_elc", "producer/block_canner_elc", "producer/block_recycler_elc", "producer/block_electrolyzer_elc",
+                "producer/block_washer_elc", "producer/block_metal_former", "producer/block_block_cutter", "producer/block_magnetizer",
+                "generator/block_geo_generator", "generator/block_solar_generator", "kugenerator/block_wind_kinetic_generator", "wiring/block_mfsu"};
+            for (int i = 0; i < ids.length; i++) place(level, new BlockPos(-6 + i, -60, 9), ids[i], Direction.NORTH);
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            look(sp, 1.5, -59.9, 1.2, 0, 8);
+        });
+        for (int k = 0; k < 6; k++) server(k == 0 ? 40 : 1, sp -> {
+            for (int i = 0; i < 4; i += 2) if (sp.serverLevel().getBlockEntity(new BlockPos(i, -60, 4)) instanceof AbstractEnergyBlockEntity e)
+                e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
+        });
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; });
+        shot(2, "scene5/lamps_a");
+        shot(8, "scene5/lamps_b");
+        server(1, sp -> sp.serverLevel().setDayTime(18000));
+        shot(20, "scene5/lamps_night_a");
+        shot(8, "scene5/lamps_night_b");
+        server(1, sp -> { sp.serverLevel().setDayTime(6000); look(sp, 1.5, -59.7, 4.3, 0, 6); });
+        shot(20, "scene5/fronts_row");
+        server(1, sp -> look(sp, -2.5, -59.6, 7.0, 0, 8));
+        shot(15, "scene5/fronts_left");
+        server(1, sp -> look(sp, 5.5, -59.6, 7.0, 0, 8));
+        shot(15, "scene5/fronts_right");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
     static {
-        if (OUT != null && "2".equals(System.getProperty("si.capture.scene"))) {
+        if (OUT != null && "5".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene5();
+        } else if (OUT != null && "4".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene4();
+        } else if (OUT != null && "3".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene3();
+        } else if (OUT != null && "2".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             scene2();
         } else if (OUT != null && System.getProperty("si.capture.scene") != null) {
@@ -440,9 +683,10 @@ public final class CaptureDirector {
                 remote.set(ArmoryComponents.TARGET.get(), GlobalPos.of(sp.serverLevel().dimension(), ARMORY));
                 sp.setItemInHand(InteractionHand.MAIN_HAND, remote);
                 sp.teleportTo(sp.serverLevel(), ARMORY.getX() + 6.5, -60, ARMORY.getZ() - 14.5, 0, 10);
-                ((ArmoryRemoteItem) remote.getItem()).use(sp.serverLevel(), sp, InteractionHand.MAIN_HAND);
             });
-            client(1, () -> { Minecraft.getInstance().options.hideGui = false; hoverGui = new int[]{118, 42}; });
+            client(1, () -> { Minecraft.getInstance().options.hideGui = false; hoverGui = new int[]{118, 42};
+                Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()
+                    .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_ARMORY)); });
             shot(40, "05_remote_gui");
             client(1, () -> hoverGui = new int[]{-4000, 4000});
             server(1, ServerPlayer::closeContainer);

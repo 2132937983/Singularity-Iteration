@@ -3,7 +3,8 @@
  "parent": "block/block",
  "textures": {
   "particle": "mio_icif:block/oilrig/block_oil_rig_panel",
-  "r": "mio_icif:block/refined/oilrig/block_oil_rig_panel"
+  "r": "mio_icif:block/refined/oilrig/block_oil_rig_panel",
+  "dsp": "mio_icif:block/refined/status_lights"
  },
  "elements": [
   {
@@ -291,6 +292,66 @@
       16.0
      ],
      "texture": "#r"
+    }
+   }
+  },
+  {
+   "name": "dsp_indicator",
+   "from": [
+    0.5,
+    14.5,
+    -0.3
+   ],
+   "to": [
+    1.5,
+    15.5,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      6,
+      11.1,
+      8,
+      11.9
+     ],
+     "texture": "#dsp"
+    },
+    "up": {
+     "uv": [
+      0,
+      11,
+      1,
+      12
+     ],
+     "texture": "#dsp"
+    },
+    "down": {
+     "uv": [
+      0,
+      11,
+      1,
+      12
+     ],
+     "texture": "#dsp"
+    },
+    "east": {
+     "uv": [
+      0,
+      11,
+      1,
+      12
+     ],
+     "texture": "#dsp"
+    },
+    "west": {
+     "uv": [
+      0,
+      11,
+      1,
+      12
+     ],
+     "texture": "#dsp"
     }
    }
   }

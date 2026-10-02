@@ -137,6 +137,18 @@ public final class JetpackCuriosAdapter implements ICurioItem {
         return out;
     }
 
+    /** Every non-empty item in the player's Curios slots (Armory Remote lookup and similar). */
+    public static List<ItemStack> allAccessoryStacks(Player player) {
+        List<ItemStack> out = new java.util.ArrayList<>();
+        var inventory = CuriosApi.getCuriosInventory(player).orElse(null);
+        if (inventory == null) return out;
+        for (var entry : inventory.getCurios().values()) {
+            var stacks = entry.getStacks();
+            for (int i = 0; i < stacks.getSlots(); i++) if (!stacks.getStackInSlot(i).isEmpty()) out.add(stacks.getStackInSlot(i));
+        }
+        return out;
+    }
+
     public static ItemStack accessoryStack(Player player, String id) {
         String[] parts = id.split(":");
         if (parts.length != 3) return ItemStack.EMPTY;

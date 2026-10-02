@@ -171,6 +171,20 @@ public final class ArmorFeatureSlots {
         }
     }
 
+    /** Every item in the player's Curios slots (any slot type, cosmetic slots excluded); empty without Curios. */
+    @SuppressWarnings("unchecked")
+    public static List<ItemStack> accessoryStacks(Player player) {
+        CuriosBridge.resolve();
+        if (player == null || !CuriosBridge.available) return List.of();
+        try {
+            Object result = CuriosBridge.ALL_ACCESSORIES.invoke(null, player);
+            return result instanceof List<?> list ? (List<ItemStack>) list : List.of();
+        } catch (ReflectiveOperationException | LinkageError failure) {
+            CuriosBridge.fail(failure);
+            return List.of();
+        }
+    }
+
     private static ItemStack accessoryStack(Player player, String id) {
         CuriosBridge.resolve();
         if (!CuriosBridge.available) return ItemStack.EMPTY;
@@ -237,6 +251,7 @@ public final class ArmorFeatureSlots {
         private static Method ACCESSORIES;
         private static Method ACCESSORY_STACK;
         private static Method WRITE_ACCESSORY;
+        private static Method ALL_ACCESSORIES;
 
         private CuriosBridge() {
         }
@@ -256,6 +271,7 @@ public final class ArmorFeatureSlots {
                 ACCESSORIES = type.getMethod("accessorySlots", Player.class);
                 ACCESSORY_STACK = type.getMethod("accessoryStack", Player.class, String.class);
                 WRITE_ACCESSORY = type.getMethod("writeAccessory", Player.class, String.class, ItemStack.class);
+                ALL_ACCESSORIES = type.getMethod("allAccessoryStacks", Player.class);
                 available = true;
             } catch (ReflectiveOperationException | LinkageError failure) {
                 fail(failure);

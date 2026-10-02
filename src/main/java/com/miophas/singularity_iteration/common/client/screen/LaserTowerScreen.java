@@ -75,6 +75,7 @@ public class LaserTowerScreen extends mio_icif_screen<LaserTowerMenu> {
     @Override
     protected void init() {
         super.init();
+        addUpgradeInfoDockButton();
         this.titleLabelX = 8;
         this.titleLabelY = 5;
         this.inventoryLabelY = 107;
@@ -187,7 +188,6 @@ public class LaserTowerScreen extends mio_icif_screen<LaserTowerMenu> {
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         int x = leftPos, y = topPos;
         g.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
-        renderUpgradeBay(g, x, y);
 
         long energy = menu.energy(), capacity = Math.max(1, menu.capacity());
         SiGuiTheme.bar(g, x + BAR_X, y + BAR_Y, BAR_W, BAR_H, (double) energy / capacity, SiGuiTheme.BAR_FROM, SiGuiTheme.BAR_TO);
@@ -203,37 +203,21 @@ public class LaserTowerScreen extends mio_icif_screen<LaserTowerMenu> {
     }
 
     // ------------------------------------------------------------------ upgrade bay
-    private static final int BAY_X = 176, BAY_Y = 12, BAY_W = 26, BAY_H = 12 + LaserTowerMenu.UPGRADE_SLOT_COUNT * 18;
-
-    /** Side panel with the four upgrade slots, drawn with the console's own theme primitives. */
-    private void renderUpgradeBay(GuiGraphics g, int x, int y) {
-        SiGuiTheme.panel(g, x + BAY_X - 1, y + BAY_Y, BAY_W, BAY_H);
-        for (int i = 0; i < LaserTowerMenu.UPGRADE_SLOT_COUNT; i++) {
-            SiGuiTheme.slot(g, x + LaserTowerMenu.UPGRADE_X - 1, y + LaserTowerMenu.UPGRADE_Y - 1 + i * 18);
-        }
-    }
-
-    private boolean overBay(double mouseX, double mouseY) {
-        double rx = mouseX - leftPos, ry = mouseY - topPos;
-        return rx >= BAY_X - 1 && rx < BAY_X - 1 + BAY_W && ry >= BAY_Y && ry < BAY_Y + BAY_H;
-    }
-
-    @Override
-    protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top, int button) {
-        return super.hasClickedOutside(mouseX, mouseY, left, top, button) && !overBay(mouseX, mouseY);
+    // The four upgrade slots live in the shared left utility dock; an info button under them
+    // summarises what the installed upgrades currently do.
+    private void addUpgradeInfoDockButton() {
+        addDockButton(new DockButton((g, x, y, hov) -> {
+            g.fill(x + 7, y + 3, x + 9, y + 5, hov ? SiGuiTheme.ACCENT : 0xFF2A2E33);
+            g.fill(x + 7, y + 6, x + 9, y + 13, hov ? SiGuiTheme.ACCENT : 0xFF2A2E33);
+        }, () -> List.of(
+            Component.translatable("gui.mio_icif.laser_tower.upgrades").withStyle(ChatFormatting.WHITE),
+            Component.translatable("gui.mio_icif.laser_tower.upgrades.interval", menu.volleyInterval()).withStyle(ChatFormatting.GRAY),
+            Component.translatable("gui.mio_icif.laser_tower.upgrades.cost", menu.costPerTarget()).withStyle(ChatFormatting.GRAY),
+            Component.translatable("gui.mio_icif.laser_tower.upgrades.tier", menu.effectiveTier()).withStyle(ChatFormatting.GRAY)),
+            () -> { }));
     }
 
     private boolean renderBayTooltip(GuiGraphics g, int mouseX, int mouseY) {
-        double ry = mouseY - topPos;
-        if (overBay(mouseX, mouseY) && (ry < LaserTowerMenu.UPGRADE_Y - 1 || ry >= LaserTowerMenu.UPGRADE_Y - 1 + LaserTowerMenu.UPGRADE_SLOT_COUNT * 18)) {
-            g.renderComponentTooltip(font, List.of(
-                Component.translatable("gui.mio_icif.laser_tower.upgrades").withStyle(ChatFormatting.WHITE),
-                Component.translatable("gui.mio_icif.laser_tower.upgrades.interval", menu.volleyInterval()).withStyle(ChatFormatting.GRAY),
-                Component.translatable("gui.mio_icif.laser_tower.upgrades.cost", menu.costPerTarget()).withStyle(ChatFormatting.GRAY),
-                Component.translatable("gui.mio_icif.laser_tower.upgrades.tier", menu.effectiveTier()).withStyle(ChatFormatting.GRAY)),
-                mouseX, mouseY);
-            return true;
-        }
         return false;
     }
 

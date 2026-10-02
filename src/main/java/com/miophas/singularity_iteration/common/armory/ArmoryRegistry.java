@@ -73,8 +73,6 @@ public final class ArmoryRegistry {
 
     public static final DeferredHolder<MenuType<?>, MenuType<ArmoryMenu>> ARMORY_MENU = MENUS.register("armory_menu",
         () -> new MenuType<>((IContainerFactory<ArmoryMenu>) ArmoryMenu::new, FeatureFlags.VANILLA_SET));
-    public static final DeferredHolder<MenuType<?>, MenuType<ArmoryRemoteMenu>> REMOTE_MENU = MENUS.register("armory_remote_menu",
-        () -> new MenuType<>((IContainerFactory<ArmoryRemoteMenu>) ArmoryRemoteMenu::new, FeatureFlags.VANILLA_SET));
 
     public static final DeferredHolder<EntityType<?>, EntityType<ArmoryPieceEntity>> PIECE_ENTITY = ENTITIES.register("armory_piece",
         () -> EntityType.Builder.<ArmoryPieceEntity>of(ArmoryPieceEntity::new, MobCategory.MISC)

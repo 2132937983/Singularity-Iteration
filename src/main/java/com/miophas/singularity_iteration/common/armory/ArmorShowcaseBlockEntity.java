@@ -54,6 +54,41 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
     public int rotation() { return rotation * 45; }
     public ItemStack item(ArmoryPiece piece) { return items.get(piece.column()); }
 
+    // ------------------------------------------------------------------ Armory network
+    /** A showcase with its own outfit (not mirroring an Armory suit) is part of the owner's armour network. */
+    public boolean hasOwnOutfit() {
+        if (link != null) return false;
+        for (ItemStack stack : items) if (!stack.isEmpty()) return true;
+        return false;
+    }
+
+    /** Top of the mannequin, where summoned pieces launch from and purged pieces land. */
+    public net.minecraft.world.phys.Vec3 launchTop() {
+        return net.minecraft.world.phys.Vec3.atCenterOf(worldPosition).add(0, 0.6, 0);
+    }
+
+    /** Server: takes the piece off the mannequin (to fly it to a player). */
+    public ItemStack takePiece(ArmoryPiece piece) {
+        if (link != null) return ItemStack.EMPTY;
+        ItemStack stack = items.get(piece.column());
+        if (stack.isEmpty()) return ItemStack.EMPTY;
+        items.set(piece.column(), ItemStack.EMPTY);
+        changed(null);
+        return stack;
+    }
+
+    /** Server: puts a piece onto the mannequin (a suit flown in exchange). Returns what did not fit. */
+    public ItemStack storePiece(ArmoryPiece preferred, ItemStack stack) {
+        if (stack.isEmpty() || link != null) return stack;
+        ArmoryPiece piece = items.get(preferred.column()).isEmpty() ? preferred : pieceFor(stack);
+        if (!items.get(piece.column()).isEmpty()) return stack;
+        items.set(piece.column(), stack.copyWithCount(1));
+        ItemStack rest = stack.copy();
+        rest.shrink(1);
+        changed(SoundEvents.ARMOR_EQUIP_NETHERITE.value());
+        return rest;
+    }
+
     // ------------------------------------------------------------------ interaction
     boolean useItem(Player player, InteractionHand hand, ItemStack held) {
         if (held.getItem() instanceof ArmoryRemoteItem) {
@@ -117,8 +152,8 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
         return slot == EquipmentSlot.OFFHAND ? ArmoryPiece.OFFHAND : ArmoryPiece.MAINHAND;
     }
 
-    private void changed(net.minecraft.sounds.SoundEvent sound) {
-        if (level != null) level.playSound(null, worldPosition, sound, SoundSource.BLOCKS, 0.8F, 1.0F);
+    private void changed(@Nullable net.minecraft.sounds.SoundEvent sound) {
+        if (level != null && sound != null) level.playSound(null, worldPosition, sound, SoundSource.BLOCKS, 0.8F, 1.0F);
         if (link == null) for (int i = 0; i < SLOTS; i++) display.set(i, items.get(i).copy());
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);

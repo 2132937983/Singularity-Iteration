@@ -193,8 +193,23 @@ public final class AreaPreviewClient {
         if (!(mc.level.getBlockEntity(lastClicked) instanceof WorkAreaProvider)) return;
         BlockPos target = lastClicked;
         int containerId = screen.getMenu().containerId;
-        int x = screen.getGuiLeft() + screen.getXSize() - 15;
-        int y = Math.max(0, screen.getGuiTop() - 13);
+        if (screen instanceof com.miophas.singularity_iteration.common.client.screen.mio_icif_screen<?> si) {
+            // left utility dock: keeps the upper-right corner free for inventory-sorting mods
+            si.addDockButton(new com.miophas.singularity_iteration.common.client.screen.mio_icif_screen.DockButton((g, x, y, hov) -> {
+                int c = hov ? 0xFF3A6EA5 : 0xFF2A2E33, a = 0xFF5FD3F5;
+                for (int i = 0; i < 12; i += 3) {          // dashed work-area square
+                    g.fill(x + 2 + i, y + 2, x + 4 + i, y + 3, c);
+                    g.fill(x + 2 + i, y + 13, x + 4 + i, y + 14, c);
+                    g.fill(x + 2, y + 2 + i, x + 3, y + 4 + i, c);
+                    g.fill(x + 13, y + 2 + i, x + 14, y + 4 + i, c);
+                }
+                g.fill(x + 6, y + 6, x + 10, y + 10, a);   // the machine in the middle
+            }, () -> java.util.List.of(Component.translatable("gui.mio_icif.area_preview.button")),
+                () -> PacketDistributor.sendToServer(new AreaPreviewRequestPacket(containerId))));
+            return;
+        }
+        int x = Math.max(0, screen.getGuiLeft() - 17);   // outside the left edge, never the top-right corner
+        int y = screen.getGuiTop() + 4;
         SiButton button = new SiButton(x, y, 15, 12, label(target), b -> {
             PacketDistributor.sendToServer(new AreaPreviewRequestPacket(containerId));
         });

@@ -54,7 +54,7 @@ Once you've completed your basic industrial production line, you'll have access 
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for the per-version changes from 0.1.7.16 through 0.1.7.21, migration notes, and validation scope.
+See [CHANGELOG.md](CHANGELOG.md) for the per-version changes from 0.1.7.16 through 0.1.7.24, migration notes, and validation scope.
 
 ## Requirements
 
@@ -115,7 +115,7 @@ Licensed under the [Apache-2.0](LICENSE) license.
 
 ## 版本变更
 
-各版本功能、修复、迁移说明与验证范围见 [CHANGELOG.md](CHANGELOG.md)，本轮覆盖 0.1.7.16 至 0.1.7.21。
+各版本功能、修复、迁移说明与验证范围见 [CHANGELOG.md](CHANGELOG.md)，本轮覆盖 0.1.7.16 至 0.1.7.24。
 
 ## 环境要求
 

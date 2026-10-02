@@ -209,6 +209,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
 
     @Override
     protected void init() {
+        dockButtons.clear();
         super.init();
         this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
         this.inventoryLabelX = 8;
@@ -260,6 +261,126 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
     public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);   // blur + renderBg
         renderStatusLamp(guiGraphics);
+        renderDock(guiGraphics, mouseX, mouseY);
+    }
+
+    // ================================================================ left utility dock
+    /*
+     * Machine-specific controls (upgrade slots, work-area toggle, XP collector, ...) sit in a
+     * slim dock outside the panel's LEFT edge. Inventory-sorting mods (Inventory Profiles Next,
+     * Mouse Tweaks, ...) put their buttons around the panel's upper-right corner, which is
+     * therefore kept completely clear.
+     */
+    public interface DockIcon { void draw(GuiGraphics g, int x, int y, boolean hovered); }
+
+    public record DockButton(DockIcon icon, java.util.function.Supplier<List<Component>> tooltip, Runnable onClick) { }
+
+    private final List<DockButton> dockButtons = new ArrayList<>();
+    public static final int DOCK_W = 24, DOCK_BUTTON = 18;
+
+    /** Adds a utility button to the dock (call from init(), or from a ScreenEvent.Init.Post listener). */
+    public void addDockButton(DockButton button) { dockButtons.add(button); }
+
+    private int dockSlots() {
+        return this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu m ? m.dockedUpgradeSlots() : 0;
+    }
+
+    public boolean hasDock() { return dockSlots() > 0 || !dockButtons.isEmpty(); }
+
+    /** Dock bounds in screen coordinates: x, y, w, h (w = 0 when there is no dock). */
+    public int[] dockBounds() {
+        if (!hasDock()) return new int[]{leftPos, topPos, 0, 0};
+        int slots = dockSlots();
+        int h = 4 + slots * 18 + (slots > 0 && !dockButtons.isEmpty() ? 4 : 0) + dockButtons.size() * (DOCK_BUTTON + 2) + 2;
+        return new int[]{leftPos - DOCK_W - 1, topPos + 3, DOCK_W, h};
+    }
+
+    private int dockButtonY(int i) {
+        int slots = dockSlots();
+        return topPos + 7 + slots * 18 + (slots > 0 ? 4 : 0) + i * (DOCK_BUTTON + 2);
+    }
+
+    private int dockButtonAt(double mx, double my) {
+        int bx = leftPos - DOCK_W + 2;
+        for (int i = 0; i < dockButtons.size(); i++) {
+            int by = dockButtonY(i);
+            if (mx >= bx && mx < bx + DOCK_BUTTON && my >= by && my < by + DOCK_BUTTON) return i;
+        }
+        return -1;
+    }
+
+    private void renderDock(GuiGraphics g, int mouseX, int mouseY) {
+        if (!hasDock()) return;
+        int[] b = dockBounds();
+        int x = b[0], y = b[1], w = b[2], h = b[3];
+        // slim tab hugging the panel: outline, bevel, light face, cyan index stripe on the outer edge
+        g.fill(x, y, x + w + 2, y + h, SiGuiTheme.OUTLINE);
+        g.fill(x + 1, y + 1, x + w + 1, y + h - 1, SiGuiTheme.BEVEL_HI);
+        g.fillGradient(x + 2, y + 2, x + w + 1, y + h - 1, SiGuiTheme.PANEL_TOP, SiGuiTheme.PANEL_BOTTOM);
+        g.fill(x + 1, y + 3, x + 2, y + h - 3, 0xFF5FD3F5);
+        int slots = dockSlots();
+        for (int i = 0; i < slots; i++) {
+            SiGuiTheme.slot(g, leftPos + com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu.DOCK_SLOT_X - 1,
+                topPos + com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu.DOCK_SLOT_Y - 1 + i * 18);
+        }
+        if (slots > 0 && !dockButtons.isEmpty()) SiGuiTheme.groove(g, x + 4, topPos + 7 + slots * 18 + 1, w - 6);
+        int hovered = dockButtonAt(mouseX, mouseY);
+        int bx = leftPos - DOCK_W + 2;
+        for (int i = 0; i < dockButtons.size(); i++) {
+            int by = dockButtonY(i);
+            boolean hov = i == hovered;
+            g.fill(bx, by, bx + DOCK_BUTTON, by + DOCK_BUTTON, SiGuiTheme.OUTLINE);
+            g.fillGradient(bx + 1, by + 1, bx + DOCK_BUTTON - 1, by + DOCK_BUTTON - 1,
+                hov ? 0xFFF3F8FC : 0xFFE6E9EC, hov ? 0xFFC9DCEE : 0xFFC4C8CD);
+            if (hov) g.renderOutline(bx, by, DOCK_BUTTON, DOCK_BUTTON, SiGuiTheme.ACCENT);
+            dockButtons.get(i).icon().draw(g, bx + 1, by + 1, hov);
+        }
+    }
+
+    private void renderDockTooltip(GuiGraphics g, int mouseX, int mouseY) {
+        int i = dockButtonAt(mouseX, mouseY);
+        if (i >= 0) g.renderComponentTooltip(this.font, dockButtons.get(i).tooltip().get(), mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int i = button == 0 ? dockButtonAt(mouseX, mouseY) : -1;
+        if (i >= 0) {
+            dockButtons.get(i).onClick().run();
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    protected boolean hasClickedOutside(double mouseX, double mouseY, int guiLeft, int guiTop, int mouseButton) {
+        int[] b = dockBounds();
+        if (b[2] > 0 && mouseX >= b[0] && mouseX < b[0] + b[2] + 2 && mouseY >= b[1] && mouseY < b[1] + b[3]) return false;
+        return super.hasClickedOutside(mouseX, mouseY, guiLeft, guiTop, mouseButton);
+    }
+
+    /** UI click sound used by dock buttons. */
+    protected void playClick() {
+        if (this.minecraft == null) return;
+        this.minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+            com.miophas.singularity_iteration.common.registry.mio_icif_sounds.UI_CLICK.get(), 1.0F, 0.6F));
+    }
+
+    /** XP collector as a dock button: orb icon (green when at least 1 XP is banked) + tooltip. */
+    protected void addXpDockButton(java.util.function.IntSupplier xpTenths) {
+        addDockButton(new DockButton((g, x, y, hov) -> {
+            boolean ready = xpTenths.getAsInt() >= 10;
+            int cx = x + 8, cy = y + 7;
+            int rim = ready ? 0xFF4E8C1E : 0xFF8C9298, core = ready ? 0xFFB6F25A : 0xFFC0C4C8;
+            g.fill(cx - 3, cy - 4, cx + 4, cy + 5, rim);
+            g.fill(cx - 4, cy - 3, cx + 5, cy + 4, rim);
+            g.fill(cx - 3, cy - 3, cx + 4, cy + 4, core);
+            g.fill(cx - 1, cy - 2, cx + 1, cy, 0xFFFFFFFF);
+            String n = xpTenths.getAsInt() >= 100 ? String.valueOf(xpTenths.getAsInt() / 10) : String.format("%.1f", xpTenths.getAsInt() / 10F);
+            DspUi.small(g, this.font, n, x + 15 - DspUi.smallWidth(this.font, n), y + 11, ready ? 0xFF2D5A12 : 0xFF6B737D);
+        }, () -> java.util.List.of(
+            Component.translatable("gui.mio_icif.xp.title", String.format("%.1f", xpTenths.getAsInt() / 10F)),
+            Component.translatable("gui.mio_icif.xp.tip").withStyle(net.minecraft.ChatFormatting.GRAY)), this::clickXpButton));
     }
 
     /**
@@ -314,6 +435,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         this.renderTooltip(guiGraphics, mouseX, mouseY);
         // 空格子的升级槽默认提示该机器支持的升级（放在最后以覆盖在物品 tooltip 之上）
         renderUpgradeSlotTooltip(guiGraphics, mouseX, mouseY);
+        renderDockTooltip(guiGraphics, mouseX, mouseY);
     }
 
     /**

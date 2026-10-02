@@ -110,9 +110,55 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         }
     }
 
+    // ------------------------------------------------------------------ status lamp
+    /**
+     * Server-side lifecycle listener of the status-lamp tracker (installed by the mod): called with
+     * {@code true} when this machine loads and {@code false} when it is removed / unloaded.
+     */
+    @Nullable
+    public static volatile java.util.function.BiConsumer<AbstractEnergyBlockEntity, Boolean> STATUS_LIFECYCLE;
+
+    private com.miophas.singularity_iteration.core.api.machine.MachineStatus clientMachineStatus =
+        com.miophas.singularity_iteration.core.api.machine.MachineStatus.OFF;
+
+    /**
+     * Server: the current lamp state. Default: green while the block's run flag (lit / active /
+     * working / running) is set, dark otherwise. Machines and generators refine this.
+     */
+    public com.miophas.singularity_iteration.core.api.machine.MachineStatus machineStatus() {
+        return runFlag() ? com.miophas.singularity_iteration.core.api.machine.MachineStatus.RUNNING
+            : com.miophas.singularity_iteration.core.api.machine.MachineStatus.OFF;
+    }
+
+    /** True when the block state carries a set run flag (lit / active / working / running). */
+    protected boolean runFlag() {
+        BlockState state = getBlockState();
+        for (var property : state.getProperties()) {
+            if (property instanceof net.minecraft.world.level.block.state.properties.BooleanProperty flag) {
+                String name = flag.getName();
+                if ((name.equals("lit") || name.equals("active") || name.equals("working") || name.equals("running"))
+                        && state.getValue(flag)) return true;
+            }
+        }
+        return false;
+    }
+
+    /** Client: lamp state last received from the server. */
+    public com.miophas.singularity_iteration.core.api.machine.MachineStatus clientMachineStatus() {
+        return clientMachineStatus;
+    }
+
+    /** Client: applies a synced lamp state and re-meshes the block (only when it changed). */
+    public void acceptClientMachineStatus(com.miophas.singularity_iteration.core.api.machine.MachineStatus status) {
+        if (status == null || status == clientMachineStatus) return;
+        clientMachineStatus = status;
+        if (level != null && level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+    }
+
     @Override
     public void onLoad() {
         super.onLoad();
+        if (level != null && !level.isClientSide && STATUS_LIFECYCLE != null) STATUS_LIFECYCLE.accept(this, true);
         boolean isClient = level != null && level.isClientSide;
         if (level != null && !isClient) {
             if (energyStorage.scexNetworkControlled()) {
@@ -126,6 +172,7 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
     
     @Override
     public void setRemoved() {
+        if (level != null && !level.isClientSide && STATUS_LIFECYCLE != null) STATUS_LIFECYCLE.accept(this, false);
         if (level != null && !level.isClientSide && registered) {
             NeoForge.EVENT_BUS.post(new EnergyTileUnloadEvent(this, level));
             registered = false;

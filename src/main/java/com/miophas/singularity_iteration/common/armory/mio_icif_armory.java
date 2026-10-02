@@ -292,6 +292,8 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
             playerLevel.addFreshEntity(entity);
             latestArrival = Math.max(latestArrival, delay + ArmoryFlight.arrivalTicks(duration));
         }
+        // every lock of the old suit releases at once: the pieces blow off and fly home to this Armory
+        ArmoryPieceEntity.burstPurge(player, flying, GlobalPos.of(world.dimension(), worldPosition), (p, stack) -> store(set, p, stack));
         busyUntil = world.getGameTime() + latestArrival + 20;
         // Sequence start: warning buzzer and the launch hatch opening (each launch roars on its own).
         world.playSound(null, worldPosition, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ARMORY_ALARM.get(),

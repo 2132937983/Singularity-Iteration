@@ -3,11 +3,9 @@ package com.miophas.singularity_iteration.common.armory;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -21,10 +19,15 @@ import java.util.List;
  * Armory Remote Controller.
  * <ul>
  *   <li>Sneak + right-click your Armory: pair the remote with it.</li>
- *   <li>Right-click: open the remote console (suit list, one-tap summon, history, EU, distance).</li>
+ *   <li>Wear it as an accessory (Curios charm / belt slot) or carry it: the Equipment Console's
+ *       Armory section then summons / returns suits and exchanges suits with Armor Showcases.</li>
+ *   <li>Right-click: open the Equipment Console on that section.</li>
  * </ul>
  */
 public class ArmoryRemoteItem extends Item {
+    /** Client hook (installed by the client setup): opens the Equipment Console on its Armory section. */
+    @org.jetbrains.annotations.Nullable public static volatile Runnable OPEN_CONSOLE;
+
     public ArmoryRemoteItem(Properties properties) {
         super(properties.stacksTo(1));
     }
@@ -54,16 +57,13 @@ public class ArmoryRemoteItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        GlobalPos target = stack.get(ArmoryComponents.TARGET.get());
-        if (target == null) {
+        if (stack.get(ArmoryComponents.TARGET.get()) == null) {
             if (!level.isClientSide) player.displayClientMessage(Component.translatable("message.mio_icif.armory_remote.unpaired"), true);
             return InteractionResultHolder.fail(stack);
         }
-        if (!level.isClientSide && player instanceof ServerPlayer sp) {
-            sp.openMenu(new SimpleMenuProvider((id, inv, p) -> new ArmoryRemoteMenu(id, inv, target, hand),
-                    Component.translatable("item.mio_icif.normal.item_armory_remote")),
-                buf -> { GlobalPos.STREAM_CODEC.encode(buf, target); buf.writeBoolean(hand == InteractionHand.OFF_HAND); });
-            if (sp.containerMenu instanceof ArmoryRemoteMenu menu) menu.push(Component.empty());
+        if (level.isClientSide) {
+            Runnable open = OPEN_CONSOLE;
+            if (open != null) open.run();
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }

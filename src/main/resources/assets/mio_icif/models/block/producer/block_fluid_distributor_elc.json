@@ -3,7 +3,8 @@
  "parent": "block/block",
  "textures": {
   "particle": "mio_icif:block/producer/block_machine",
-  "r": "mio_icif:block/refined/producer/block_fluid_distributor_elc"
+  "r": "mio_icif:block/refined/producer/block_fluid_distributor_elc",
+  "dsp": "mio_icif:block/refined/status_lights"
  },
  "elements": [
   {
@@ -291,6 +292,66 @@
       16.0
      ],
      "texture": "#r"
+    }
+   }
+  },
+  {
+   "name": "dsp_indicator",
+   "from": [
+    0.5,
+    14.5,
+    -0.3
+   ],
+   "to": [
+    1.5,
+    15.5,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      6,
+      1.1,
+      8,
+      1.9
+     ],
+     "texture": "#dsp"
+    },
+    "up": {
+     "uv": [
+      0,
+      1,
+      1,
+      2
+     ],
+     "texture": "#dsp"
+    },
+    "down": {
+     "uv": [
+      0,
+      1,
+      1,
+      2
+     ],
+     "texture": "#dsp"
+    },
+    "east": {
+     "uv": [
+      0,
+      1,
+      1,
+      2
+     ],
+     "texture": "#dsp"
+    },
+    "west": {
+     "uv": [
+      0,
+      1,
+      1,
+      2
+     ],
+     "texture": "#dsp"
     }
    }
   }

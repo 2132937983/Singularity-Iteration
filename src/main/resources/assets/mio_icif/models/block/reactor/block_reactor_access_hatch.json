@@ -3,7 +3,8 @@
  "parent": "block/block",
  "textures": {
   "particle": "mio_icif:block/producer/block_machine",
-  "r": "mio_icif:block/refined/reactor/block_reactor_access_hatch"
+  "r": "mio_icif:block/refined/reactor/block_reactor_access_hatch",
+  "dsp": "mio_icif:block/refined/status_lights"
  },
  "elements": [
   {
@@ -291,6 +292,66 @@
       16.0
      ],
      "texture": "#r"
+    }
+   }
+  },
+  {
+   "name": "dsp_indicator",
+   "from": [
+    0.5,
+    14.5,
+    -0.3
+   ],
+   "to": [
+    1.5,
+    15.5,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      6,
+      9.1,
+      8,
+      9.9
+     ],
+     "texture": "#dsp"
+    },
+    "up": {
+     "uv": [
+      0,
+      9,
+      1,
+      10
+     ],
+     "texture": "#dsp"
+    },
+    "down": {
+     "uv": [
+      0,
+      9,
+      1,
+      10
+     ],
+     "texture": "#dsp"
+    },
+    "east": {
+     "uv": [
+      0,
+      9,
+      1,
+      10
+     ],
+     "texture": "#dsp"
+    },
+    "west": {
+     "uv": [
+      0,
+      9,
+      1,
+      10
+     ],
+     "texture": "#dsp"
     }
    }
   }

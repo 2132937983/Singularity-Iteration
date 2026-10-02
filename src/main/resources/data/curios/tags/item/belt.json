@@ -7,6 +7,10 @@
     {
       "id": "mio_icif:item_trinket_lapotron_crystal_belt",
       "required": false
+    },
+    {
+      "id": "mio_icif:normal/item_armory_remote",
+      "required": false
     }
   ]
 }

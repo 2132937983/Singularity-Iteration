@@ -240,6 +240,18 @@ public class JEIPlugin implements IModPlugin {
         registration.addGhostIngredientHandler(
             com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_advanced_miner_elc.class,
             new AdvancedMinerGhostHandler());
+        // the left utility dock (upgrade slots, area / XP buttons) is outside the GUI rectangle:
+        // tell JEI so its bookmark / ingredient overlays never cover it
+        registration.addGenericGuiContainerHandler(
+            com.miophas.singularity_iteration.common.client.screen.mio_icif_screen.class,
+            new mezz.jei.api.gui.handlers.IGuiContainerHandler<com.miophas.singularity_iteration.common.client.screen.mio_icif_screen<?>>() {
+                @Override
+                public java.util.List<net.minecraft.client.renderer.Rect2i> getGuiExtraAreas(
+                        com.miophas.singularity_iteration.common.client.screen.mio_icif_screen<?> screen) {
+                    int[] b = screen.dockBounds();
+                    return b[2] <= 0 ? java.util.List.of() : java.util.List.of(new net.minecraft.client.renderer.Rect2i(b[0], b[1], b[2] + 2, b[3]));
+                }
+            });
     }
 
     @Override

@@ -37,7 +37,7 @@ public final class ArmoryFlight {
     /** Beat of stillness in front of the wearer after the air brake. */
     public static final int HOVER_TICKS = 9;
     /** Final suction onto the body slot. */
-    public static final int SNAP_TICKS = 5;
+    public static final int SNAP_TICKS = 7;
     /** Hold point distance in front of the body. */
     public static final double HOLD_DISTANCE = 2.6;
     /** Fraction of the flight at which the retro-thrust air brake fires. */
@@ -67,11 +67,55 @@ public final class ArmoryFlight {
     /** Ticks the old piece is purged before the new one arrives. */
     public static final int PURGE_LEAD = 14;
     /** Ticks a detached piece spends popping off the body before its thrusters fire. */
-    public static final int PURGE_TICKS = 9;
+    public static final int PURGE_TICKS = 12;
     /** Ticks a docked piece spends seating and locking before it counts as worn. */
-    public static final int LATCH_TICKS = 7;
+    public static final int LATCH_TICKS = 11;
     /** Detached pieces leave faster than suits arrive. */
     public static final double RETURN_SPEED = 1.7;
+
+    // ------------------------------------------------------------------ segmented assembly
+    /*
+     * A delivered piece flies in closed, UNFOLDS into its segments while it hovers in front of
+     * the wearer (torso plate / arm guards, hip plate / leg guards, left / right boot, helmet
+     * shell), is sucked onto the body still open, and then each segment swings shut onto its
+     * own joint and locks - one after another, heaviest first. A purged piece does the reverse
+     * in one violent pop: every lock releases at once and the segments blow apart.
+     */
+
+    /** Number of segments a piece opens into (model parts that close one after another). */
+    public static int segments(ArmoryPiece piece) {
+        return switch (piece) {
+            case CHEST, LEGS -> 3;
+            case FEET -> 2;
+            default -> 1;
+        };
+    }
+
+    /** Opening during the hover beat: 0 = closed, 1 = fully unfolded. */
+    public static double unfold(float hoverTicks) {
+        return ease(hoverTicks / (HOVER_TICKS * 0.7));
+    }
+
+    /** Ticks after the start of the snap at which segment j of n is fully locked. */
+    public static float segmentLockTick(int j, int n) {
+        float window = SNAP_TICKS + LATCH_TICKS - 3;
+        return window * (j + 1) / n;
+    }
+
+    /** Closure of segment j (0 = open, 1 = locked) at {@code sinceSnap} ticks after the snap started. */
+    public static double segmentClose(float sinceSnap, int j, int n) {
+        float end = segmentLockTick(j, n);
+        float start = Math.max(0, end - (SNAP_TICKS + 2.5F));
+        double t = Mth.clamp((sinceSnap - start) / (end - start), 0, 1);
+        return t * t * t;                                    // heavy: slow swing, slam shut
+    }
+
+    /** Segment spread of a purged piece: blown fully open at once, folding back up for the flight home. */
+    public static double burstSpread(float age) {
+        if (age < 0) return 0;
+        if (age < 2) return age / 2.0;
+        return Math.max(0, 1 - (age - 2) / (PURGE_TICKS + 6.0));
+    }
 
     /** Ease: smooth start and smooth docking. */
     public static double ease(double t) {
@@ -181,19 +225,31 @@ public final class ArmoryFlight {
         return 1 + 0.13F * (float) Math.exp(-ticks / 2.2) * (float) Math.cos(ticks * 1.9);
     }
 
+    /** How far (blocks) a purged piece is blown off the body. */
+    public static final double BURST_DISTANCE = 1.9;
+
+    /** Burst displacement curve over the purge: explosive pop in 5 ticks, then a slow drift. */
+    public static double burstCurve(float age) {
+        if (age <= 0) return 0;
+        if (age < 5) return 1 - Math.pow(1 - age / 5.0, 4);
+        return 1 + 0.025 * (age - 5);
+    }
+
     /**
-     * Where a piece pops to when it is purged off the body: out along its own direction
-     * (helmet up and back, chest forward, hands sideways), in blocks, rotated by body yaw.
+     * Where a piece pops to when it is purged off the body: every piece blows out in its own
+     * direction (helmet up and back, chest forward and up, legs out front-low, boots back and
+     * down, hands sideways) so the suit bursts open in all directions at once; in blocks,
+     * rotated by body yaw.
      */
     public static Vec3 purgeOffset(ArmoryPiece piece, float bodyYaw, double amount) {
         double fwd, up, right;
         switch (piece) {
-            case HEAD -> { fwd = -0.25; up = 0.55; right = 0; }
-            case CHEST -> { fwd = 0.65; up = 0.1; right = 0; }
-            case LEGS -> { fwd = 0.55; up = -0.05; right = 0; }
-            case FEET -> { fwd = 0.45; up = 0.05; right = 0; }
-            case OFFHAND -> { fwd = 0.15; up = 0.1; right = -0.55; }
-            default -> { fwd = 0.15; up = 0.1; right = 0.55; }
+            case HEAD -> { fwd = -0.3; up = 0.62; right = 0.12; }
+            case CHEST -> { fwd = 0.62; up = 0.3; right = -0.1; }
+            case LEGS -> { fwd = 0.35; up = -0.1; right = 0.55; }
+            case FEET -> { fwd = -0.55; up = -0.05; right = -0.4; }
+            case OFFHAND -> { fwd = 0.1; up = 0.2; right = -0.7; }
+            default -> { fwd = 0.1; up = 0.2; right = 0.7; }
         }
         double yaw = Math.toRadians(bodyYaw);
         double fx = -Math.sin(yaw), fz = Math.cos(yaw);       // body forward

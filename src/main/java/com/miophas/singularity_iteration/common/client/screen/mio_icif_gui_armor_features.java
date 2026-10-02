@@ -65,6 +65,20 @@ public class mio_icif_gui_armor_features extends Screen {
 
     private String preselect;
 
+    // ---- sections: equipment settings / energy statistics / armory (summon, return, showcases)
+    public static final int TAB_EQUIP = 0, TAB_ENERGY = 1, TAB_ARMORY = 2;
+    private static final String[] TAB_KEYS = {"equip", "energy", "armory"};
+    private static final int TAB_W = 54, TAB_H = 13;
+    private int tab = TAB_EQUIP;
+    private int armoryScroll;
+    private int refreshTimer;
+
+    /** Opens on the given section. */
+    public mio_icif_gui_armor_features tab(int tab) {
+        this.tab = Mth.clamp(tab, 0, 2);
+        return this;
+    }
+
     public mio_icif_gui_armor_features() {
         super(Component.translatable("gui.mio_icif.equipment_console.title"));
     }
@@ -112,8 +126,13 @@ public class mio_icif_gui_armor_features extends Screen {
         boolean chargeable = isElectric(stack);
         ChargePriority p = ChargePriority.of(stack);
         for (int i = 0; i < 4; i++) {
-            priorityButtons[i].visible = chargeable;
+            priorityButtons[i].visible = chargeable && tab == TAB_EQUIP;
             priorityButtons[i].selected(p.ordinal() == i);
+        }
+        if (tab == TAB_ARMORY && refreshTimer-- <= 0) {
+            refreshTimer = 20;
+            PacketDistributor.sendToServer(new com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket(
+                com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.REQUEST, 0));
         }
     }
 
@@ -171,14 +190,18 @@ public class mio_icif_gui_armor_features extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g, mouseX, mouseY, partialTick);
         SiGuiTheme.panel(g, left, top, W, H);
-        SiGuiTheme.well(g, left + LIST_X, top + LIST_Y, LIST_W, H - LIST_Y - 7);
-        SiGuiTheme.well(g, left + PX, top + LIST_Y, PW, H - LIST_Y - 7);
         g.drawString(font, title, left + 8, top + 6, SiGuiTheme.TEXT, false);
-        String hint = Component.translatable("gui.mio_icif.equipment_console.hint").getString();
-        small(g, hint, left + W - 8 - (int) (font.width(hint) * 0.75F), top + 7, SiGuiTheme.TEXT);
-
-        renderRack(g, mouseX, mouseY);
-        renderDetail(g, mouseX, mouseY);
+        renderTabs(g, mouseX, mouseY);
+        switch (tab) {
+            case TAB_ENERGY -> renderEnergy(g, mouseX, mouseY);
+            case TAB_ARMORY -> renderArmory(g, mouseX, mouseY);
+            default -> {
+                SiGuiTheme.well(g, left + LIST_X, top + LIST_Y, LIST_W, H - LIST_Y - 7);
+                SiGuiTheme.well(g, left + PX, top + LIST_Y, PW, H - LIST_Y - 7);
+                renderRack(g, mouseX, mouseY);
+                renderDetail(g, mouseX, mouseY);
+            }
+        }
         // widgets only: Screen#render would draw (and blur) the background a second time over the panel
         for (var renderable : renderables) renderable.render(g, mouseX, mouseY, partialTick);
         renderTooltips(g, mouseX, mouseY);
@@ -362,6 +385,15 @@ public class mio_icif_gui_armor_features extends Screen {
     }
 
     private void renderTooltips(GuiGraphics g, int mouseX, int mouseY) {
+        for (int i = 0; i < 3; i++) {
+            if (in(mouseX, mouseY, tabX(i), top + 4, TAB_W, TAB_H)) {
+                g.renderComponentTooltip(font, List.of(Component.translatable("gui.mio_icif.equipment_console.tab." + TAB_KEYS[i]),
+                    Component.translatable("gui.mio_icif.equipment_console.tab." + TAB_KEYS[i] + ".tip").withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
+                return;
+            }
+        }
+        if (tab == TAB_ENERGY) { energyTooltips(g, mouseX, mouseY); return; }
+        if (tab == TAB_ARMORY) { armoryTooltips(g, mouseX, mouseY); return; }
         ItemStack stack = current();
         if (stack.isEmpty()) return;
         // tool mode details / tuning hints
@@ -417,6 +449,16 @@ public class mio_icif_gui_armor_features extends Screen {
     // ------------------------------------------------------------------ input
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            for (int i = 0; i < 3; i++) {
+                if (in(mouseX, mouseY, tabX(i), top + 4, TAB_W, TAB_H)) {
+                    if (tab != i) { tab = i; refreshTimer = 0; armoryScroll = 0; sound(false); }
+                    return true;
+                }
+            }
+        }
+        if (tab == TAB_ARMORY) return button == 0 && armoryClick(mouseX, mouseY);
+        if (tab == TAB_ENERGY) return false;
         if (super.mouseClicked(mouseX, mouseY, button)) return true;
         if (button != 0) return false;
         for (int i = rackStart; i < Math.min(entries.size(), rackStart + RACK_ROWS); i++) {
@@ -456,6 +498,11 @@ public class mio_icif_gui_armor_features extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (tab == TAB_ARMORY) {
+            armoryScroll = Math.max(0, armoryScroll - (int) Math.signum(scrollY));
+            return true;
+        }
+        if (tab != TAB_EQUIP) return false;
         Row row = rowAt(mouseX, mouseY);
         if (row != null && row.kind() == Kind.TUNE && mouseX >= left + PX + 4 + TUNE_TRACK_X - 4) {   // wheel over a slider steps it
             ITunableItem.Spec spec = (ITunableItem.Spec) row.ref();
@@ -486,11 +533,381 @@ public class mio_icif_gui_armor_features extends Screen {
             onClose();
             return true;
         }
-        if (keyCode == 265 || keyCode == 264) {   // up / down
+        if (keyCode == 258) {   // tab: next section
+            tab = (tab + 1) % 3;
+            refreshTimer = 0;
+            sound(false);
+            return true;
+        }
+        if (tab == TAB_EQUIP && (keyCode == 265 || keyCode == 264)) {   // up / down
             selected = Mth.clamp(selected + (keyCode == 264 ? 1 : -1), 0, Math.max(0, entries.size() - 1));
             featureScroll = 0;
             return true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
+
+    // ================================================================== section tabs
+    private int tabX(int i) {
+        return left + W - 7 - (3 - i) * (TAB_W + 2);
+    }
+
+    private void renderTabs(GuiGraphics g, int mouseX, int mouseY) {
+        for (int i = 0; i < 3; i++) {
+            int x = tabX(i), y = top + 4;
+            boolean on = tab == i, hot = in(mouseX, mouseY, x, y, TAB_W, TAB_H);
+            g.fill(x, y, x + TAB_W, y + TAB_H, SiGuiTheme.OUTLINE);
+            if (on) {
+                g.fill(x + 1, y + 1, x + TAB_W - 1, y + TAB_H - 1, DspUi.BG);
+                g.fill(x + 1, y + TAB_H - 2, x + TAB_W - 1, y + TAB_H - 1, DspUi.CYAN);
+            } else {
+                g.fillGradient(x + 1, y + 1, x + TAB_W - 1, y + TAB_H - 1, hot ? 0xFFF3F8FC : 0xFFE6E9EC, hot ? 0xFFC9DCEE : 0xFFC4C8CD);
+            }
+            // pictogram: rack / bolt / suit
+            int ix = x + 4, iy = y + 3, c = on ? DspUi.CYAN : 0xFF4A5560;
+            switch (i) {
+                case 0 -> { g.fill(ix, iy, ix + 2, iy + 7, c); g.fill(ix + 3, iy, ix + 5, iy + 7, c); g.fill(ix + 6, iy, ix + 8, iy + 7, c); }
+                case 1 -> { g.fill(ix + 4, iy, ix + 6, iy + 3, c); g.fill(ix + 2, iy + 3, ix + 7, iy + 4, c); g.fill(ix + 2, iy + 4, ix + 4, iy + 7, c); }
+                default -> { g.fill(ix + 2, iy, ix + 6, iy + 2, c); g.fill(ix, iy + 2, ix + 8, iy + 5, c); g.fill(ix + 1, iy + 5, ix + 3, iy + 7, c); g.fill(ix + 5, iy + 5, ix + 7, iy + 7, c); }
+            }
+            String label = font.plainSubstrByWidth(Component.translatable("gui.mio_icif.equipment_console.tab." + TAB_KEYS[i]).getString(), (int) ((TAB_W - 16) / 0.75F));
+            small(g, label, x + 14, y + 4, on ? DspUi.TEXT : SiGuiTheme.TEXT_SCREEN);
+        }
+    }
+
+    // ================================================================== ENERGY: DSP-style statistics
+    private static final int EX = 7, EY = 18, EW = 286, EH = H - 18 - 7;
+
+    private void renderEnergy(GuiGraphics g, int mouseX, int mouseY) {
+        int x0 = left + EX, y0 = top + EY;
+        DspUi.screen(g, x0, y0, EW, EH);
+        double income = EquipmentEnergyMonitor.income(), drain = EquipmentEnergyMonitor.drain(), netRate = income - drain;
+        long stored = EquipmentEnergyMonitor.stored(), cap = EquipmentEnergyMonitor.capacity();
+        double peak = Math.max(1, Math.max(income, drain));
+        String eus = " EU/s";
+        // ---- KPI tiles
+        kpi(g, x0 + 4, y0 + 4, "income", DspUi.compact(income), eus, DspUi.GREEN, (float) (income / peak));
+        kpi(g, x0 + 74, y0 + 4, "drain", DspUi.compact(drain), eus, DspUi.ORANGE, (float) (drain / peak));
+        kpi(g, x0 + 144, y0 + 4, "net", (netRate >= 0 ? "+" : "") + DspUi.compact(netRate), eus, netRate >= 0 ? DspUi.CYAN : DspUi.RED,
+            (float) (0.5 + 0.5 * Mth.clamp(netRate / peak, -1, 1)));
+        double eta = EquipmentEnergyMonitor.depletionSeconds();
+        boolean draining = Double.isFinite(eta);
+        double full = EquipmentEnergyMonitor.fullSeconds();
+        String etaKey = draining ? "depletion" : Double.isFinite(full) ? "full" : "steady";
+        int etaColor = !draining ? DspUi.GREEN : eta < 60 ? DspUi.RED : eta < 600 ? DspUi.ORANGE : DspUi.TEXT;
+        String etaValue = draining ? DspUi.duration(eta) : Double.isFinite(full) ? DspUi.duration(full) : "∞";
+        kpi(g, x0 + 214, y0 + 4, etaKey, etaValue, "", etaColor, cap > 0 ? (float) stored / cap : 0);
+        if (draining && eta < 60 && (System.currentTimeMillis() / 400) % 2 == 0) g.renderOutline(x0 + 214, y0 + 4, 68, 36, DspUi.RED);
+
+        // ---- trend (60 s): income / drain areas, stored charge line
+        int cx = x0 + 4, cy = y0 + 46, cw = 152, ch = 58;
+        g.fill(cx, cy, cx + cw, cy + ch, 0x40000000);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.energy_stats.trend").getString(), cx + 2, cy + 2, DspUi.CYAN_DIM);
+        float[] in = EquipmentEnergyMonitor.incomeHistory(), out = EquipmentEnergyMonitor.drainHistory(), st = EquipmentEnergyMonitor.storedHistory();
+        if (in.length > 1) {
+            float max = 1;
+            for (int i = 0; i < in.length; i++) max = Math.max(max, Math.max(in[i], out[i]));
+            int gx = cx + cw - Math.round(cw * in.length / (float) EquipmentEnergyMonitor.HISTORY);
+            int gw = cx + cw - gx;
+            DspUi.area(g, gx, cy + 10, gw, ch - 12, in, max * 1.1F, DspUi.GREEN);
+            DspUi.area(g, gx, cy + 10, gw, ch - 12, out, max * 1.1F, DspUi.ORANGE);
+            DspUi.line(g, gx, cy + 10, gw, ch - 12, st, Math.max(1, cap), DspUi.CYAN);
+            String peakLabel = DspUi.compact(max) + eus;
+            DspUi.small(g, font, peakLabel, cx + cw - 2 - DspUi.smallWidth(font, peakLabel), cy + 2, DspUi.TEXT_DIM);
+        } else {
+            DspUi.small(g, font, Component.translatable("gui.mio_icif.energy_stats.sampling").getString(), cx + 30, cy + 26, DspUi.TEXT_DIM);
+        }
+        legend(g, cx + 2, cy + ch + 2, DspUi.GREEN, "income");
+        legend(g, cx + 50, cy + ch + 2, DspUi.ORANGE, "drain");
+        legend(g, cx + 96, cy + ch + 2, DspUi.CYAN, "charge");
+
+        // ---- biggest drain source
+        var ranking = EquipmentEnergyMonitor.ranking();
+        EquipmentEnergyMonitor.Source top = null;
+        for (var src : ranking) {
+            if (src.drainPerSecond() <= 0) break;
+            if (!MioIcifAPI.instance().getItemAPI().isBattery(src.stack())) { top = src; break; }
+            if (top == null) top = src;
+        }
+        int bx = x0 + 4, by = y0 + 116, bw = 152, bh = EH - 120;
+        g.fill(bx, by, bx + bw, by + bh, 0x40000000);
+        g.fill(bx, by, bx + 2, by + bh, DspUi.ORANGE);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.energy_stats.top_drain").getString(), bx + 5, by + 3, DspUi.ORANGE);
+        if (top == null) {
+            DspUi.small(g, font, Component.translatable("gui.mio_icif.energy_stats.no_drain").getString(), bx + 5, by + 18, DspUi.TEXT_DIM);
+        } else {
+            g.renderItem(top.stack(), bx + 5, by + 12);
+            g.drawString(font, font.plainSubstrByWidth(top.stack().getHoverName().getString(), bw - 28), bx + 24, by + 12, DspUi.TEXT, false);
+            String rate = "-" + DspUi.compact(top.drainPerSecond()) + eus + "  " + Math.round(100 * top.drainPerSecond() / Math.max(1e-6, drain)) + "%";
+            DspUi.small(g, font, rate, bx + 24, by + 22, DspUi.ORANGE);
+            List<String> feats = activeFeatures(top.stack());
+            String f = feats.isEmpty() ? Component.translatable("gui.mio_icif.energy_stats.passive").getString() : String.join(" · ", feats);
+            int ly = by + 32;
+            for (var line : font.getSplitter().splitLines(f, (int) ((bw - 10) / 0.75F), net.minecraft.network.chat.Style.EMPTY)) {
+                if (ly > by + bh - 7) break;
+                DspUi.small(g, font, line.getString(), bx + 5, ly, DspUi.TEXT_DIM);
+                ly += 7;
+            }
+            long[] en = EquipmentEnergyMonitor.energy(top.stack());
+            if (top.drainPerSecond() > top.incomePerSecond()) {
+                String own = Component.translatable("gui.mio_icif.energy_stats.item_eta",
+                    DspUi.duration(en[0] / (top.drainPerSecond() - top.incomePerSecond()))).getString();
+                DspUi.small(g, font, own, bx + bw - 4 - DspUi.smallWidth(font, own), by + 3, DspUi.TEXT);
+            }
+        }
+
+        // ---- drain ranking (worst first)
+        int rx = x0 + 160, ry = y0 + 46, rw = EW - 164, rh = EH - 50;
+        g.fill(rx, ry, rx + rw, ry + rh, 0x40000000);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.energy_stats.ranking").getString(), rx + 3, ry + 2, DspUi.CYAN_DIM);
+        double maxDrain = 1e-6;
+        for (var src : ranking) maxDrain = Math.max(maxDrain, src.drainPerSecond());
+        int row = 0;
+        for (var src : ranking) {
+            int yy = ry + 11 + row * 14;
+            if (yy + 13 > ry + rh) break;
+            boolean idle = src.drainPerSecond() <= 0;
+            g.pose().pushPose();
+            g.pose().translate(rx + 2, yy, 0);
+            g.pose().scale(0.75F, 0.75F, 1);
+            g.renderItem(src.stack(), 0, 0);
+            g.pose().popPose();
+            String name = font.plainSubstrByWidth(src.stack().getHoverName().getString(), (int) ((rw - 54) / 0.75F));
+            DspUi.small(g, font, name, rx + 16, yy + 1, idle ? DspUi.TEXT_DIM : DspUi.TEXT);
+            String v = idle ? (src.incomePerSecond() > 0 ? "+" + DspUi.compact(src.incomePerSecond()) : "0") : "-" + DspUi.compact(src.drainPerSecond());
+            DspUi.small(g, font, v, rx + rw - 3 - DspUi.smallWidth(font, v), yy + 1, idle ? (src.incomePerSecond() > 0 ? DspUi.GREEN : DspUi.TEXT_DIM) : DspUi.ORANGE);
+            DspUi.meter(g, rx + 16, yy + 8, rw - 20, 2, (float) (src.drainPerSecond() / maxDrain), row == 0 && !idle ? DspUi.RED : DspUi.ORANGE);
+            row++;
+        }
+        if (ranking.isEmpty()) DspUi.small(g, font, Component.translatable("gui.mio_icif.energy_stats.no_items").getString(), rx + 4, ry + 16, DspUi.TEXT_DIM);
+    }
+
+    private void kpi(GuiGraphics g, int x, int y, String key, String value, String unit, int color, float fraction) {
+        g.fill(x, y, x + 68, y + 36, 0x40000000);
+        g.fill(x, y, x + 68, y + 1, (color & 0x00FFFFFF) | 0x90000000);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.energy_stats." + key).getString(), x + 3, y + 3, DspUi.TEXT_DIM);
+        g.drawString(font, value, x + 3, y + 12, color, false);
+        if (!unit.isEmpty()) DspUi.small(g, font, unit.strip(), x + 5 + font.width(value), y + 14, DspUi.TEXT_DIM);
+        DspUi.meter(g, x + 3, y + 26, 62, 3, fraction, color);
+    }
+
+    private void legend(GuiGraphics g, int x, int y, int color, String key) {
+        g.fill(x, y + 2, x + 5, y + 4, color);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.energy_stats." + key).getString(), x + 7, y, DspUi.TEXT_DIM);
+    }
+
+    private static List<String> activeFeatures(ItemStack stack) {
+        List<String> out = new ArrayList<>();
+        for (ArmorFeatureInfo info : ArmorFeatures.features(stack)) {
+            if (info.isMode()) continue;
+            if (ArmorFeatures.isEnabled(stack, info.featureKey())) out.add(Component.translatable(info.featureNameKey()).getString());
+        }
+        return out;
+    }
+
+    private void energyTooltips(GuiGraphics g, int mouseX, int mouseY) {
+        int x0 = left + EX, y0 = top + EY;
+        String[] keys = {"income", "drain", "net", "eta"};
+        for (int i = 0; i < 4; i++) {
+            if (in(mouseX, mouseY, x0 + 4 + i * 70, y0 + 4, 68, 36)) {
+                g.renderComponentTooltip(font, List.of(Component.translatable("gui.mio_icif.energy_stats." + keys[i] + ".tip").withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
+                return;
+            }
+        }
+        int rx = x0 + 160, ry = y0 + 46;
+        var ranking = EquipmentEnergyMonitor.ranking();
+        for (int row = 0; row < ranking.size(); row++) {
+            if (in(mouseX, mouseY, rx, ry + 11 + row * 14, EW - 164, 14)) {
+                var src = ranking.get(row);
+                List<Component> lines = new ArrayList<>();
+                lines.add(src.stack().getHoverName().copy().withStyle(ChatFormatting.AQUA));
+                lines.add(Component.translatable("gui.mio_icif.energy_stats.row", DspUi.compact(src.drainPerSecond()), DspUi.compact(src.incomePerSecond()),
+                    String.format("%,d / %,d", src.stored(), src.capacity())).withStyle(ChatFormatting.GRAY));
+                for (String f : activeFeatures(src.stack())) lines.add(Component.literal(" • " + f).withStyle(ChatFormatting.DARK_AQUA));
+                g.renderComponentTooltip(font, lines, mouseX, mouseY);
+                return;
+            }
+        }
+    }
+
+    // ================================================================== ARMORY: remote summon / return / showcases
+    private static final int AROW = 18, AROWS = 7;
+    private record ARow(int kind, int index) { }   // kind: 0 header-suits, 1 suit, 2 header-showcases, 3 showcase, 4 empty hint
+
+    private List<ARow> armoryRows(com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket data) {
+        List<ARow> rows = new ArrayList<>();
+        var snap = data.snapshot();
+        rows.add(new ARow(0, 0));
+        if (snap != null && snap.status() == com.miophas.singularity_iteration.common.armory.ArmorySnapshot.OK) {
+            // stocked suits, plus the first empty one (a target to fill); the rest stay folded away
+            boolean emptyShown = false;
+            for (int s = 0; s < snap.suits().size(); s++) {
+                if (snap.pieces(s) == 0) { if (emptyShown) continue; emptyShown = true; }
+                rows.add(new ARow(1, s));
+            }
+        }
+        rows.add(new ARow(2, 0));
+        if (data.showcases().isEmpty()) rows.add(new ARow(4, 0));
+        for (int i = 0; i < data.showcases().size(); i++) rows.add(new ARow(3, i));
+        return rows;
+    }
+
+    private void renderArmory(GuiGraphics g, int mouseX, int mouseY) {
+        int x0 = left + EX, y0 = top + EY;
+        DspUi.screen(g, x0, y0, EW, EH);
+        var data = com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket.latest();
+        if (data == null) {
+            DspUi.small(g, font, Component.translatable("gui.mio_icif.armory_console.connecting").getString(), x0 + 8, y0 + 10, DspUi.TEXT_DIM);
+            return;
+        }
+        if (!data.hasRemote() || data.snapshot() == null) {
+            String key = data.hasRemote() ? "gui.mio_icif.armory_console.unpaired" : "gui.mio_icif.armory_console.no_remote";
+            int ly = y0 + 12;
+            for (var line : font.getSplitter().splitLines(Component.translatable(key).getString(), EW - 16, net.minecraft.network.chat.Style.EMPTY)) {
+                g.drawString(font, line.getString(), x0 + 8, ly, DspUi.ORANGE, false);
+                ly += 10;
+            }
+            ly += 4;
+            for (var line : font.getSplitter().splitLines(Component.translatable("gui.mio_icif.armory_console.howto").getString(), (int) ((EW - 16) / 0.75F), net.minecraft.network.chat.Style.EMPTY)) {
+                DspUi.small(g, font, line.getString(), x0 + 8, ly, DspUi.TEXT_DIM);
+                ly += 8;
+            }
+            return;
+        }
+        var snap = data.snapshot();
+        // ---- header: link, status, energy, return button
+        String where = snap.armory().pos().toShortString() + "  " + snap.armory().dimension().location().getPath();
+        DspUi.small(g, font, font.plainSubstrByWidth(Component.translatable("gui.mio_icif.armory_console.linked", where).getString(), (int) (140 / 0.75F)),
+            x0 + 5, y0 + 4, DspUi.CYAN);
+        String status = Component.translatable("gui.mio_icif.armory_console.status." + snap.status()).getString() + (snap.busy() ? " · " + Component.translatable("gui.mio_icif.armory_console.busy").getString() : "");
+        DspUi.small(g, font, status, x0 + 5, y0 + 12, snap.status() == 0 ? (snap.busy() ? DspUi.ORANGE : DspUi.GREEN) : DspUi.RED);
+        DspUi.meter(g, x0 + 150, y0 + 6, 62, 3, snap.capacity() > 0 ? (float) snap.energy() / snap.capacity() : 0, DspUi.CYAN);
+        DspUi.small(g, font, DspUi.compact(snap.energy()) + " / " + DspUi.compact(snap.capacity()) + " EU", x0 + 150, y0 + 12, DspUi.TEXT_DIM);
+        int rbx = x0 + EW - 68, rby = y0 + 4;
+        dspButton(g, rbx, rby, 64, 14, Component.translatable("gui.mio_icif.armory_console.return").getString(), in(mouseX, mouseY, rbx, rby, 64, 14), DspUi.VIOLET, snap.status() == 0);
+
+        // ---- list
+        List<ARow> rows = armoryRows(data);
+        armoryScroll = Mth.clamp(armoryScroll, 0, Math.max(0, rows.size() - AROWS));
+        int ly = y0 + 24;
+        for (int i = armoryScroll; i < Math.min(rows.size(), armoryScroll + AROWS); i++) {
+            ARow r = rows.get(i);
+            int yy = ly + (i - armoryScroll) * AROW;
+            switch (r.kind()) {
+                case 0, 2 -> {
+                    String head = Component.translatable(r.kind() == 0 ? "gui.mio_icif.armory_console.suits" : "gui.mio_icif.armory_console.showcases").getString();
+                    DspUi.small(g, font, head, x0 + 5, yy + 8, DspUi.CYAN);
+                    g.fill(x0 + 8 + DspUi.smallWidth(font, head), yy + 11, x0 + EW - 5, yy + 12, DspUi.FRAME);
+                }
+                case 4 -> DspUi.small(g, font, Component.translatable("gui.mio_icif.armory_console.no_showcases",
+                    com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.PLAYER_RANGE,
+                    com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.ARMORY_RANGE).getString(), x0 + 8, yy + 6, DspUi.TEXT_DIM);
+                case 1 -> {
+                    int pieces = snap.pieces(r.index());
+                    boolean hot = in(mouseX, mouseY, x0 + 3, yy, EW - 6, AROW - 1);
+                    if (hot) g.fill(x0 + 3, yy, x0 + EW - 3, yy + AROW - 1, 0x305FD3F5);
+                    g.drawString(font, font.plainSubstrByWidth(snap.names().get(r.index()), 70), x0 + 6, yy + 5, pieces > 0 ? DspUi.TEXT : DspUi.TEXT_DIM, false);
+                    icons(g, snap.suits().get(r.index()), x0 + 80, yy + 1);
+                    DspUi.small(g, font, pieces + "/6", x0 + 192, yy + 6, DspUi.TEXT_DIM);
+                    boolean ok = pieces > 0 && !snap.busy();
+                    dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.armory_console.summon").getString(),
+                        in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.CYAN, ok);
+                }
+                case 3 -> {
+                    var view = data.showcases().get(r.index());
+                    boolean hot = in(mouseX, mouseY, x0 + 3, yy, EW - 6, AROW - 1);
+                    if (hot) g.fill(x0 + 3, yy, x0 + EW - 3, yy + AROW - 1, 0x30F5A23C);
+                    String label = view.label().isEmpty() ? Component.translatable("gui.mio_icif.armory_console.showcase").getString() : view.label();
+                    g.drawString(font, font.plainSubstrByWidth(label, 70), x0 + 6, yy + 2, DspUi.TEXT, false);
+                    double dist = minecraft != null && minecraft.player != null ? Math.sqrt(view.pos().distToCenterSqr(minecraft.player.position())) : 0;
+                    DspUi.small(g, font, view.pos().toShortString() + "  " + Math.round(dist) + "m", x0 + 6, yy + 11, DspUi.TEXT_DIM);
+                    icons(g, view.items(), x0 + 80, yy + 1);
+                    dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.armory_console.exchange").getString(),
+                        in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.ORANGE, !snap.busy());
+                }
+                default -> { }
+            }
+        }
+        if (rows.size() > AROWS) {
+            int barH = AROWS * AROW, knob = Math.max(8, barH * AROWS / rows.size());
+            int ky = ly + (barH - knob) * armoryScroll / Math.max(1, rows.size() - AROWS);
+            g.fill(x0 + EW - 3, ly, x0 + EW - 2, ly + barH, DspUi.FRAME);
+            g.fill(x0 + EW - 3, ky, x0 + EW - 2, ky + knob, DspUi.CYAN_DIM);
+        }
+        String msg = data.message().getString();
+        if (!msg.isEmpty()) DspUi.small(g, font, font.plainSubstrByWidth(msg, (int) ((EW - 10) / 0.75F)), x0 + 5, y0 + EH - 8, DspUi.TEXT);
+    }
+
+    private void icons(GuiGraphics g, List<ItemStack> items, int x, int y) {
+        for (int c = 0; c < items.size(); c++) {
+            int ix = x + c * 18;
+            g.fill(ix, y, ix + 17, y + 16, 0x40000000);
+            g.fill(ix, y + 15, ix + 17, y + 16, DspUi.FRAME);
+            if (!items.get(c).isEmpty()) g.renderItem(items.get(c), ix, y);
+        }
+    }
+
+    private void dspButton(GuiGraphics g, int x, int y, int w, int h, String label, boolean hot, int color, boolean enabled) {
+        int c = enabled ? color : DspUi.TEXT_DIM;
+        g.fill(x, y, x + w, y + h, (c & 0x00FFFFFF) | (hot && enabled ? 0x70000000 : 0x30000000));
+        g.renderOutline(x, y, w, h, c);
+        g.fill(x + 1, y + h - 2, x + w - 1, y + h - 1, (c & 0x00FFFFFF) | 0xA0000000);
+        int tw = DspUi.smallWidth(font, label);
+        DspUi.small(g, font, label, x + (w - tw) / 2, y + (h - 6) / 2, enabled ? DspUi.TEXT : DspUi.TEXT_DIM);
+    }
+
+    private boolean armoryClick(double mouseX, double mouseY) {
+        var data = com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket.latest();
+        if (data == null || data.snapshot() == null) return false;
+        int x0 = left + EX, y0 = top + EY;
+        if (in(mouseX, mouseY, x0 + EW - 68, y0 + 4, 64, 14)) {
+            sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.RETURN, 0);
+            return true;
+        }
+        List<ARow> rows = armoryRows(data);
+        int ly = y0 + 24;
+        for (int i = armoryScroll; i < Math.min(rows.size(), armoryScroll + AROWS); i++) {
+            ARow r = rows.get(i);
+            int yy = ly + (i - armoryScroll) * AROW;
+            if (!in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13)) continue;
+            if (r.kind() == 1) { sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.SUMMON, r.index()); return true; }
+            if (r.kind() == 3) { sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.SHOWCASE, r.index()); return true; }
+        }
+        return false;
+    }
+
+    private void sendArmory(int action, int index) {
+        PacketDistributor.sendToServer(new com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket(action, index));
+        refreshTimer = 10;
+        sound(true);
+    }
+
+    private void armoryTooltips(GuiGraphics g, int mouseX, int mouseY) {
+        var data = com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket.latest();
+        if (data == null || data.snapshot() == null) return;
+        int x0 = left + EX, y0 = top + EY;
+        if (in(mouseX, mouseY, x0 + EW - 68, y0 + 4, 64, 14)) {
+            g.renderComponentTooltip(font, List.of(Component.translatable("gui.mio_icif.armory_console.return.tip").withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
+            return;
+        }
+        List<ARow> rows = armoryRows(data);
+        int ly = y0 + 24;
+        for (int i = armoryScroll; i < Math.min(rows.size(), armoryScroll + AROWS); i++) {
+            ARow r = rows.get(i);
+            int yy = ly + (i - armoryScroll) * AROW;
+            if (r.kind() != 1 && r.kind() != 3) continue;
+            List<ItemStack> items = r.kind() == 1 ? data.snapshot().suits().get(r.index()) : data.showcases().get(r.index()).items();
+            for (int c = 0; c < items.size(); c++) {
+                if (in(mouseX, mouseY, x0 + 80 + c * 18, yy + 1, 17, 16) && !items.get(c).isEmpty()) {
+                    g.renderTooltip(font, items.get(c), mouseX, mouseY);
+                    return;
+                }
+            }
+            if (r.kind() == 3 && in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13)) {
+                g.renderComponentTooltip(font, List.of(Component.translatable("gui.mio_icif.armory_console.exchange.tip").withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
+                return;
+            }
+        }
+    }
+
 }

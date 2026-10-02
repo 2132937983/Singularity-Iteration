@@ -480,6 +480,15 @@ protected static final int CHARGE_SLOT = 1;
     /**
      * 检查是否正在燃烧
      */
+    /** Lamp state of a generator: green while generating, red when its buffer is full (output blocked), amber otherwise (standby / low output). */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.MachineStatus machineStatus() {
+        if (isBurning() || runFlag()) return com.miophas.singularity_iteration.core.api.machine.MachineStatus.RUNNING;
+        long cap = getEnergyStorage().getCapacity();
+        if (cap > 0 && getEnergyStorage().getAmount() >= cap) return com.miophas.singularity_iteration.core.api.machine.MachineStatus.BLOCKED;
+        return com.miophas.singularity_iteration.core.api.machine.MachineStatus.NO_POWER;
+    }
+
     public boolean isBurning() {
         return burnTime > 0;
     }

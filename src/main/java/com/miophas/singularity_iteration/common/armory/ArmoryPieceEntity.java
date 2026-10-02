@@ -211,6 +211,12 @@ public class ArmoryPieceEntity extends Entity {
         return start().add(shake, rise, Math.cos(a * 11.0) * shake);
     }
 
+    /** Burst direction of this piece: its own outward direction, scattered a little per entity. */
+    private Vec3 burstOffset(float yaw, double k) {
+        float scatter = ((getId() * 37) % 61 - 30);          // stable +-30 degrees per piece
+        return ArmoryFlight.purgeOffset(piece(), yaw + scatter, ArmoryFlight.BURST_DISTANCE * k);
+    }
+
     /** Purge (pop off the body), then a hard boost towards home. */
     private Vec3 returnPosition(float partialTick) {
         float age = age(partialTick);
@@ -219,13 +225,12 @@ public class ArmoryPieceEntity extends Entity {
             if (target == null) return start();
             float yaw = target instanceof net.minecraft.world.entity.LivingEntity living
                 ? net.minecraft.util.Mth.rotLerp(partialTick, living.yBodyRotO, living.yBodyRot) : target.getYRot();
-            double k = 1 - Math.pow(1 - Math.max(0, age) / ArmoryFlight.PURGE_TICKS, 3);
-            return ArmoryFlight.dockPoint(target, partialTick, piece()).add(ArmoryFlight.purgeOffset(piece(), yaw, k));
+            return ArmoryFlight.dockPoint(target, partialTick, piece()).add(burstOffset(yaw, ArmoryFlight.burstCurve(Math.max(0, age))));
         }
         if (purgeEnd == null) {
             if (target != null) {
                 float yaw = target instanceof net.minecraft.world.entity.LivingEntity living ? living.yBodyRot : target.getYRot();
-                purgeEnd = ArmoryFlight.dockPoint(target, 1.0F, piece()).add(ArmoryFlight.purgeOffset(piece(), yaw, 1));
+                purgeEnd = ArmoryFlight.dockPoint(target, 1.0F, piece()).add(burstOffset(yaw, ArmoryFlight.burstCurve(ArmoryFlight.PURGE_TICKS)));
             } else {
                 purgeEnd = start();
             }
@@ -269,7 +274,7 @@ public class ArmoryPieceEntity extends Entity {
         purged = true;
         ArmoryPiece piece = piece();
         ItemStack old = player.getItemBySlot(piece.slot);
-        if (old.isEmpty()) return;
+        if (old.isEmpty() || old.getItem() instanceof ArmoryRemoteItem) return;   // the remote is stashed on docking instead
         if (!player.isCreative() && net.minecraft.world.item.enchantment.EnchantmentHelper.has(old,
                 net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) return;
         ItemStack copy = old.copy();
@@ -295,6 +300,11 @@ public class ArmoryPieceEntity extends Entity {
         ServerLevel level = (ServerLevel) level();
         Vec3 at = ArmoryFlight.dockPoint(player, 1.0F, piece);
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z, 8, 0.25, 0.2, 0.25, 0.05);
+        // the remote stays with its owner: it moves to a free inventory slot instead of flying home
+        if (old.getItem() instanceof ArmoryRemoteItem) {
+            stash(player, old);
+            old = ItemStack.EMPTY;
+        }
         // Normally the slot was purged before arrival; anything put there since goes home too.
         if (!old.isEmpty()) {
             ItemStack rest = storeHome(old, piece);
@@ -308,15 +318,70 @@ public class ArmoryPieceEntity extends Entity {
         discard();
     }
 
+    /** Puts a stack into a free main-inventory slot other than the selected one, else drops it. */
+    static void stash(ServerPlayer player, ItemStack stack) {
+        var inv = player.getInventory();
+        for (int i = 0; i < inv.items.size(); i++) {
+            if (i == inv.selected || !inv.items.get(i).isEmpty()) continue;
+            inv.items.set(i, stack);
+            return;
+        }
+        player.drop(stack, false);
+    }
+
     /** Fly-home target for the echo of the old piece. */
     private Vec3 homeTarget(ServerPlayer player, Vec3 from) {
-        if (armory != null && armory.dimension() == level().dimension()) {
-            Vec3 top = Vec3.atCenterOf(armory.pos()).add(0, 0.7, 0);
+        return homeTarget(level(), armory, from);
+    }
+
+    /** Fly-home target: the home block's top when close, else a point high up towards it. */
+    static Vec3 homeTarget(Level here, @Nullable GlobalPos armory, Vec3 from) {
+        if (armory != null && armory.dimension() == here.dimension()) {
+            Vec3 top = Vec3.atCenterOf(armory.pos()).add(0, here.getBlockEntity(armory.pos()) instanceof ArmorShowcaseBlockEntity ? 0.6 : 0.7, 0);
             if (top.distanceTo(from) <= ArmoryFlight.LOCAL_LAUNCH_RANGE) return top;
             Vec3 dir = top.subtract(from);
             return from.add(new Vec3(dir.x, 0, dir.z).normalize().scale(30)).add(0, 18, 0);
         }
         return from.add(0, 24, 0);
+    }
+
+    /**
+     * Unlocks every listed worn piece at the same instant: the locks release, the pieces blow
+     * off the body in all directions (one "whump") and then thrust home to {@code home}
+     * (an Armory or an Armor Showcase), where {@code store} puts them away. Pieces that do not
+     * fit go to the inventory instead. Returns the number of pieces purged.
+     */
+    public static int burstPurge(ServerPlayer player, java.util.List<ArmoryPiece> pieces, GlobalPos home,
+                                 java.util.function.BiFunction<ArmoryPiece, ItemStack, ItemStack> store) {
+        ServerLevel level = (ServerLevel) player.level();
+        int purged = 0;
+        for (ArmoryPiece piece : pieces) {
+            ItemStack old = player.getItemBySlot(piece.slot);
+            if (old.isEmpty() || !ArmoryRules.isSummonable(old)) continue;
+            if (old.getItem() instanceof ArmoryRemoteItem) continue;      // the remote never flies away from its owner
+            if (!player.isCreative() && net.minecraft.world.item.enchantment.EnchantmentHelper.has(old,
+                    net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) continue;
+            ItemStack copy = old.copy();
+            player.setItemSlot(piece.slot, ItemStack.EMPTY);
+            ItemStack rest = store.apply(piece, copy.copy());
+            if (!rest.isEmpty()) {
+                if (!player.getInventory().add(rest)) player.drop(rest, false);
+                continue;
+            }
+            Vec3 at = ArmoryFlight.dockPoint(player, 1.0F, piece);
+            ArmoryPieceEntity echo = echo(level, player, copy, piece, at, homeTarget(level, home, at));
+            echo.armory = home;
+            level.addFreshEntity(echo);
+            purged++;
+        }
+        if (purged > 0) {
+            Vec3 c = player.position().add(0, player.getBbHeight() * 0.55, 0);
+            level.playSound(null, c.x, c.y, c.z, net.minecraft.sounds.SoundEvents.BREEZE_WIND_CHARGE_BURST.value(),
+                net.minecraft.sounds.SoundSource.PLAYERS, 0.9F, 0.8F);
+            level.sendParticles(ParticleTypes.POOF, c.x, c.y, c.z, 18, 0.35, 0.5, 0.35, 0.12);
+            level.sendParticles(ParticleTypes.ELECTRIC_SPARK, c.x, c.y, c.z, 14, 0.3, 0.5, 0.3, 0.25);
+        }
+        return purged;
     }
 
     /** Puts an item into the Armory this piece came from; returns what did not fit. */
@@ -326,6 +391,9 @@ public class ArmoryPieceEntity extends Entity {
         if (home == null) return stack;
         if (home.getBlockEntity(armory.pos()) instanceof mio_icif_armory box) {
             return box.store(suit, piece, stack);
+        }
+        if (home.getBlockEntity(armory.pos()) instanceof ArmorShowcaseBlockEntity showcase) {
+            return showcase.storePiece(piece, stack);
         }
         return stack;
     }

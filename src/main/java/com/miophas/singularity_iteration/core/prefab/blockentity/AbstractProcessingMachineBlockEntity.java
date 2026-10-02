@@ -1113,6 +1113,31 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         }
     }
 
+    /**
+     * Lamp state of a processing machine: green while working; blinking amber when it has input
+     * (or needs none) but too little energy; red when stopped by redstone, starved of input, or
+     * holding input with energy but unable to run (output full / no valid recipe); dark when it is
+     * empty and unpowered.
+     */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.MachineStatus machineStatus() {
+        if (isWorking || runFlag()) return com.miophas.singularity_iteration.core.api.machine.MachineStatus.RUNNING;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.core.api.machine.MachineStatus.BLOCKED;
+        long stored = apiGetStoredEnergy();
+        long need = Math.max(1, getEffectiveEnergyPerTick());
+        int[] inputs = getInputSlots();
+        boolean hasInput = false;
+        for (int slot : inputs) {
+            if (slot >= 0 && slot < itemHandler.getSlots() && !itemHandler.getStackInSlot(slot).isEmpty()) { hasInput = true; break; }
+        }
+        if (inputs.length == 0 || hasInput) {
+            return stored < need ? com.miophas.singularity_iteration.core.api.machine.MachineStatus.NO_POWER
+                : com.miophas.singularity_iteration.core.api.machine.MachineStatus.BLOCKED;
+        }
+        return stored > 0 ? com.miophas.singularity_iteration.core.api.machine.MachineStatus.BLOCKED
+            : com.miophas.singularity_iteration.core.api.machine.MachineStatus.OFF;
+    }
+
     @Override
     public void serverTick() {
         if (getLevel() == null || getLevel().isClientSide) return;

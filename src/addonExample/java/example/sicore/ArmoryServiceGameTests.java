@@ -226,7 +226,7 @@ public final class ArmoryServiceGameTests {
         boolean[] sawGap = {false};
         h.onEachTick(() -> {
             ItemStack head = p.getItemBySlot(EquipmentSlot.HEAD);
-            if (head.isEmpty()) {
+            if (head.isEmpty() && !sawGap[0]) {
                 sawGap[0] = true;
                 h.assertTrue(armory.getItemHandler().getStackInSlot(HEAD_0).is(Items.LEATHER_HELMET),
                     "A purged piece must already be home");

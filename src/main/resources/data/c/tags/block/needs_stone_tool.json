@@ -1,118 +1,457 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_ore_tin",
-    "mio_icif:block_ore_uran",
-    "mio_icif:block_ore_lead",
-    "mio_icif:block_ore_tin_in_deep",
-    "mio_icif:block_ore_uran_in_deep",
-    "mio_icif:block_ore_lead_in_deep",
-    "mio_icif:block_tin",
-    "mio_icif:block_lead",
-    "mio_icif:producer/block_machine_hull_basic",
-    "mio_icif:producer/block_machine_hull_advanced",
-    "mio_icif:generator/block_thermal_generator",
-    "mio_icif:generator/block_geo_generator",
-    "mio_icif:generator/block_solar_generator",
-    "mio_icif:generator/block_wind_generator",
-    "mio_icif:generator/block_water_generator",
-    "mio_icif:generator/block_semifluid_generator",
-    "mio_icif:generator/block_geomagnetic_generator",
-    "mio_icif:generator/block_geomagnetic_antenna",
-    "mio_icif:generator/block_geomagnetic_pedestal",
-    "mio_icif:generator/block_diesel_generator",
-    "mio_icif:generator/block_stirling_generator",
-    "mio_icif:generator/block_kinetic_generator",
-    "mio_icif:generator/block_turbo_kinetic_generator",
-    "mio_icif:generator/block_twin_turbo_kinetic_generator",
-    "mio_icif:generator/block_rt_generator",
-    "mio_icif:generator/block_unlimit_generator",
-    "mio_icif:generator/block_nuclear_reactor_generator",
-    "mio_icif:hugenerator/block_heat_generator_elc",
-    "mio_icif:hugenerator/block_solid_heat_generator",
-    "mio_icif:hugenerator/block_fluid_heat_generator",
-    "mio_icif:hugenerator/block_rt_heat_generator",
-    "mio_icif:hugenerator/block_heat_source_fluid",
-    "mio_icif:kugenerator/block_manual_kinetic_generator",
-    "mio_icif:kugenerator/block_wind_kinetic_generator",
-    "mio_icif:kugenerator/block_water_kinetic_generator",
-    "mio_icif:kugenerator/block_kinetic_generator_elc",
-    "mio_icif:kugenerator/block_stirling_kinetic_generator",
-    "mio_icif:wiring/block_bat_box",
-    "mio_icif:wiring/block_batbox_charger",
-    "mio_icif:wiring/block_cesu_charger",
-    "mio_icif:wiring/block_mfe_charger",
-    "mio_icif:wiring/block_mfsu_charger",
-    "mio_icif:wiring/block_mfsu",
-    "mio_icif:wiring/block_mfe",
-    "mio_icif:wiring/block_cesu",
-    "mio_icif:wiring/transformer_lv_mv",
-    "mio_icif:wiring/transformer_mv_hv",
-    "mio_icif:wiring/transformer_hv_ev",
-    "mio_icif:wiring/transformer_ev_sc",
-    "mio_icif:wiring/transformer_iv_luv",
-    "mio_icif:wiring/transformer_luv_zpmv",
-    "mio_icif:producer/block_magnetizer",
-    "mio_icif:producer/block_tesla",
-    "mio_icif:producer/block_matron_elc",
-    "mio_icif:producer/block_harvest_elc",
-    "mio_icif:producer/block_teleporter_elc",
-    "mio_icif:producer/block_furnace_elc",
-    "mio_icif:producer/block_powder_elc",
-    "mio_icif:producer/block_powder_advanced_elc",
-    "mio_icif:producer/block_washer_elc",
-    "mio_icif:producer/block_fermenter_elc",
-    "mio_icif:producer/block_oil_refinery_elc",
-    "mio_icif:producer/block_blast_furnace",
-    "mio_icif:producer/block_blast_furnace_elc",
-    "mio_icif:producer/block_blast_furnace_advanced",
-    "mio_icif:producer/block_steam_generator",
-    "mio_icif:producer/block_steam_repressurizer",
-    "mio_icif:producer/block_solar_distiller",
-    "mio_icif:producer/block_condenser",
-    "mio_icif:producer/block_block_cutter",
-    "mio_icif:producer/block_lathe",
-    "mio_icif:producer/block_steam_kinetic_generator",
-    "mio_icif:producer/block_centrifuge_elc",
-    "mio_icif:producer/block_extractor_elc",
-    "mio_icif:producer/block_compressor_elc",
-    "mio_icif:producer/block_canner_elc",
-    "mio_icif:producer/block_miner_elc",
-    "mio_icif:producer/block_advanced_miner_elc",
-    "mio_icif:producer/block_pump_elc",
-    "mio_icif:producer/block_electrolyzer_elc",
-    "mio_icif:producer/block_recycler_elc",
-    "mio_icif:producer/block_redstone_reactor_coolant_injector",
-    "mio_icif:producer/block_lapis_reactor_coolant_injector",
-    "mio_icif:producer/block_terra_elc",
-    "mio_icif:producer/block_future_elc",
-    "mio_icif:producer/block_induction_elc",
-    "mio_icif:producer/block_matter_elc",
-    "mio_icif:producer/block_metal_former",
-    "mio_icif:producer/block_scanner_elc",
-    "mio_icif:producer/block_pattern_storage",
-    "mio_icif:producer/block_replicator_elc",
-    "mio_icif:producer/block_item_buffer_elc",
-    "mio_icif:producer/block_sorter_elc",
-    "mio_icif:producer/block_item_distributor_elc",
-    "mio_icif:producer/block_fluid_distributor_elc",
-    "mio_icif:producer/block_weighted_fluid_distributor_elc",
-    "mio_icif:producer/block_fluid_regulator_elc",
-    "mio_icif:producer/block_batch_crafter",
-    "mio_icif:producer/block_chunk_loader",
-    "mio_icif:reactor/block_reactor_chamber",
-    "mio_icif:reactor/block_reactor_vessel",
-    "mio_icif:reactor/block_reactor_redstone_port",
-    "mio_icif:reactor/block_reactor_fluid_port",
-    "mio_icif:reactor/block_reactor_access_hatch",
-    "mio_icif:block_fence_iron",
-    "mio_icif:environment/block_radiating_stone",
-    "mio_icif:environment/block_radiating_deepslate",
-    "mio_icif:build/block_bronze_storage",
-    "mio_icif:build/block_iron_storage",
-    "mio_icif:producer/block_industrial_workbench",
-    "mio_icif:producer/block_laser_defense_tower",
-    "mio_icif:producer/block_sky_patrol_laser_tower",
-    "mio_icif:wiring/block_energy_terminal"
+    {
+      "id": "mio_icif:block_ore_tin",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_uran",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_lead",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_tin_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_uran_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_lead_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_tin",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_lead",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_machine_hull_basic",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_machine_hull_advanced",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_thermal_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_geo_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_solar_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_wind_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_water_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_semifluid_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_geomagnetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_geomagnetic_antenna",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_geomagnetic_pedestal",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_diesel_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_stirling_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_kinetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_turbo_kinetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_twin_turbo_kinetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_rt_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_unlimit_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_nuclear_reactor_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:hugenerator/block_heat_generator_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:hugenerator/block_solid_heat_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:hugenerator/block_fluid_heat_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:hugenerator/block_rt_heat_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:hugenerator/block_heat_source_fluid",
+      "required": false
+    },
+    {
+      "id": "mio_icif:kugenerator/block_manual_kinetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:kugenerator/block_wind_kinetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:kugenerator/block_water_kinetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:kugenerator/block_kinetic_generator_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:kugenerator/block_stirling_kinetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_bat_box",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_batbox_charger",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_cesu_charger",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_mfe_charger",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_mfsu_charger",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_mfsu",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_mfe",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_cesu",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/transformer_lv_mv",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/transformer_mv_hv",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/transformer_hv_ev",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/transformer_ev_sc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/transformer_iv_luv",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/transformer_luv_zpmv",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_magnetizer",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_tesla",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_matron_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_harvest_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_teleporter_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_furnace_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_powder_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_powder_advanced_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_washer_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_fermenter_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_oil_refinery_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_blast_furnace",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_blast_furnace_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_blast_furnace_advanced",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_steam_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_steam_repressurizer",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_solar_distiller",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_condenser",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_block_cutter",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_lathe",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_steam_kinetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_centrifuge_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_extractor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_compressor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_canner_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_miner_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_advanced_miner_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_pump_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_electrolyzer_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_recycler_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_redstone_reactor_coolant_injector",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_lapis_reactor_coolant_injector",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_terra_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_future_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_induction_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_matter_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_metal_former",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_scanner_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_pattern_storage",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_replicator_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_item_buffer_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_sorter_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_item_distributor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_fluid_distributor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_weighted_fluid_distributor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_fluid_regulator_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_batch_crafter",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_chunk_loader",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/block_reactor_chamber",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/block_reactor_vessel",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/block_reactor_redstone_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/block_reactor_fluid_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/block_reactor_access_hatch",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_fence_iron",
+      "required": false
+    },
+    {
+      "id": "mio_icif:environment/block_radiating_stone",
+      "required": false
+    },
+    {
+      "id": "mio_icif:environment/block_radiating_deepslate",
+      "required": false
+    },
+    {
+      "id": "mio_icif:build/block_bronze_storage",
+      "required": false
+    },
+    {
+      "id": "mio_icif:build/block_iron_storage",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_industrial_workbench",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_laser_defense_tower",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_sky_patrol_laser_tower",
+      "required": false
+    },
+    {
+      "id": "mio_icif:wiring/block_energy_terminal",
+      "required": false
+    }
   ]
 }

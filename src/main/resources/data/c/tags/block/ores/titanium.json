@@ -1,7 +1,13 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_ore_titanium",
-    "mio_icif:block_ore_titanium_in_deep"
+    {
+      "id": "mio_icif:block_ore_titanium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_titanium_in_deep",
+      "required": false
+    }
   ]
 }

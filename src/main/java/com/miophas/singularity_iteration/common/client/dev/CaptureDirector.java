@@ -525,8 +525,300 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /** Scene 6 (0.1.7.25): inventory crash check, terminal global mode, detector GUI + HUD, physical fronts, suits, appearance tab, classic look. */
+    private static void scene6() {
+        BlockPos terminal = new BlockPos(2, -60, 7), suitAt = new BlockPos(30, -60, 30);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            // MV storage -> MV cable -> LV/MV transformer -> LV cable -> machines; terminal on the MV side
+            place(level, new BlockPos(0, -60, 6), "wiring/block_cesu", Direction.EAST);   // 128 EU packets: MV cable
+            for (int x = 1; x <= 3; x++) place(level, new BlockPos(x, -60, 6), "wiring/cable/block_cable", Direction.NORTH);
+            place(level, new BlockPos(4, -60, 6), "wiring/transformer_lv_mv", Direction.WEST);
+            for (int x = 5; x <= 7; x++) place(level, new BlockPos(x, -60, 6), "wiring/cable/block_tin_cable", Direction.NORTH);
+            place(level, new BlockPos(8, -60, 6), "producer/block_powder_elc", Direction.NORTH);
+            place(level, new BlockPos(6, -60, 7), "producer/block_furnace_elc", Direction.NORTH);
+            place(level, new BlockPos(5, -60, 5), "producer/block_compressor_elc", Direction.NORTH);
+            place(level, terminal, "wiring/block_energy_terminal", Direction.SOUTH);
+            var mac = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, new BlockPos(8, -60, 6), null);
+            if (mac != null) mac.insertItem(0, new ItemStack(Items.COBBLESTONE, 64), false);
+            var fur = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, new BlockPos(6, -60, 7), null);
+            if (fur != null) fur.insertItem(0, new ItemStack(Items.CACTUS, 64), false);
+            // physical fronts: storage sockets, kinetic shafts, heat ports
+            String[] fronts = {"wiring/block_bat_box", "wiring/block_cesu", "wiring/block_mfe", "wiring/block_mfsu",
+                "kugenerator/block_kinetic_generator_elc", "kugenerator/block_stirling_kinetic_generator", "kugenerator/block_wind_kinetic_generator",
+                "kugenerator/block_water_kinetic_generator", "hugenerator/block_solid_heat_generator", "hugenerator/block_fluid_heat_generator",
+                "hugenerator/block_rt_heat_generator", "hugenerator/block_heat_generator_elc"};
+            for (int i = 0; i < fronts.length; i++) place(level, new BlockPos(-4 + i, -60, 14), fronts[i], Direction.NORTH);
+            sp.getInventory().setItem(0, item("item_tool_meter"));
+            sp.getInventory().selected = 0;
+            look(sp, 3.5, -59, 1.5, 0, 25);
+        });
+        for (int k = 0; k < 120; k++) server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(new BlockPos(0, -60, 6)) instanceof AbstractEnergyBlockEntity e)
+                e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
+        });
+        // 1) inventory screens (crashed before: AreaPreview queried InventoryMenu#getType)
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false;
+            mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+        shot(20, "scene6/inventory_survival");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        server(2, sp -> sp.setGameMode(GameType.CREATIVE));
+        client(10, () -> { Minecraft mc = Minecraft.getInstance();
+            mc.setScreen(new net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen(mc.player, mc.player.connection.enabledFeatures(), true)); });
+        shot(20, "scene6/inventory_creative");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        // 2) energy terminal: local, then global across the transformer
+        server(5, sp -> {
+            var level = sp.serverLevel();
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(terminal), Direction.NORTH, terminal, false);
+            level.getBlockState(terminal).useWithoutItem(level, sp, hit);
+        });
+        shot(50, "scene6/terminal_local");
+        server(1, sp -> sp.containerMenu.clickMenuButton(sp, 1));
+        shot(50, "scene6/terminal_global");
+        server(1, sp -> { sp.containerMenu.clickMenuButton(sp, 0); sp.closeContainer(); });
+        // 3) voltage detector GUI on a bare LV cable
+        server(5, sp -> {
+            BlockPos cable = new BlockPos(6, -60, 6);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(cable), Direction.UP, cable, false);
+            sp.getMainHandItem().onItemUseFirst(new net.minecraft.world.item.context.UseOnContext(sp, InteractionHand.MAIN_HAND, hit));
+        });
+        shot(80, "scene6/meter_cable");
+        server(1, ServerPlayer::closeContainer);
+        // 4) smart HUD: holding the detector and aiming at the MV cable
+        server(5, sp -> look(sp, 2.5, -60, 5.0, 0, 37));
+        shot(40, "scene6/hud_cable");
+        server(1, sp -> look(sp, 4.5, -60, 5.0, 0, 37));
+        shot(30, "scene6/hud_transformer");
+        // 5) physical fronts
+        client(1, () -> Minecraft.getInstance().options.hideGui = true);
+        server(1, sp -> look(sp, 1.5, -59.4, 10.8, 0, 6));
+        shot(25, "scene6/fronts_physical");
+        // 6) suits: nano on the player, quantum on an armour stand
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            sp.setItemSlot(EquipmentSlot.HEAD, item("armor/item_armor_nano_helmet"));
+            sp.setItemSlot(EquipmentSlot.CHEST, item("armor/item_armor_nano_chestplate"));
+            sp.setItemSlot(EquipmentSlot.LEGS, item("armor/item_armor_nano_leggings"));
+            sp.setItemSlot(EquipmentSlot.FEET, item("armor/item_armor_nano_boots"));
+            sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            var stand = new net.minecraft.world.entity.decoration.ArmorStand(level, suitAt.getX() + 1.6, suitAt.getY(), suitAt.getZ() + 0.5);
+            stand.moveTo(suitAt.getX() + 1.6, suitAt.getY(), suitAt.getZ() + 0.5, 180, 0);
+            stand.setYHeadRot(180); stand.setYBodyRot(180);
+            stand.setItemSlot(EquipmentSlot.HEAD, item("armor/item_armor_quantum_helmet"));
+            stand.setItemSlot(EquipmentSlot.CHEST, item("armor/item_armor_quantum_chestplate"));
+            stand.setItemSlot(EquipmentSlot.LEGS, item("armor/item_armor_quantum_leggings"));
+            stand.setItemSlot(EquipmentSlot.FEET, item("armor/item_armor_quantum_boots"));
+            try { var m = net.minecraft.world.entity.decoration.ArmorStand.class.getDeclaredMethod("setShowArms", boolean.class); m.setAccessible(true); m.invoke(stand, true); } catch (ReflectiveOperationException ignored) { }
+            level.addFreshEntity(stand);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, suitAt.getX() + 0.5, suitAt.getY(), suitAt.getZ() + 0.5, 180, 10);
+            sp.setYBodyRot(180); sp.setYHeadRot(180);
+        });
+        client(5, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(40, "scene6/suits_front_day");
+        server(1, sp -> sp.serverLevel().setDayTime(18000));
+        shot(30, "scene6/suits_front_night");
+        server(1, sp -> { sp.teleportTo(sp.serverLevel(), suitAt.getX() + 0.5, suitAt.getY(), suitAt.getZ() + 0.5, 0, 10); sp.setYBodyRot(0); sp.setYHeadRot(0); });
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
+        shot(30, "scene6/suits_back_night");
+        server(1, sp -> { sp.serverLevel().setDayTime(6000); sp.teleportTo(sp.serverLevel(), suitAt.getX() + 0.5, suitAt.getY(), suitAt.getZ() + 0.5, 210, 5);
+            sp.setYBodyRot(210); sp.setYHeadRot(210); });
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(30, "scene6/suits_angle_day");
+        // 7) Equipment Console appearance tab
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()
+                .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_APPEARANCE)); });
+        shot(30, "scene6/console_appearance");
+        // 8) classic look: switch, reload, re-shoot fronts + suits + icons, switch back
+        client(2, () -> com.miophas.singularity_iteration.common.client.ClassicLook.setClassic(true));
+        until(1200, () -> Minecraft.getInstance().getOverlay() == null);
+        shot(20, "scene6/console_appearance_classic");
+        client(2, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.hideGui = true; });
+        server(1, sp -> { sp.getAbilities().flying = true; sp.onUpdateAbilities(); look(sp, 1.5, -59.4, 10.8, 0, 6); });
+        shot(25, "scene6/classic_fronts");
+        server(1, sp -> look(sp, 3.5, -59.0, 2.8, 0, 20));
+        shot(20, "scene6/classic_network");
+        server(1, sp -> { sp.getAbilities().flying = false; sp.onUpdateAbilities();
+            sp.teleportTo(sp.serverLevel(), suitAt.getX() + 0.5, suitAt.getY(), suitAt.getZ() + 0.5, 210, 5); sp.setYBodyRot(210); sp.setYHeadRot(210); });
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(30, "scene6/classic_suits");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
+        server(1, sp -> { sp.setGameMode(GameType.SURVIVAL);
+            String[] ids = {"producer/block_compressor_elc", "producer/block_powder_elc", "producer/block_furnace_elc", "wiring/block_mfsu",
+                "wiring/block_bat_box", "kugenerator/block_wind_kinetic_generator", "hugenerator/block_solid_heat_generator", "generator/block_geo_generator", "wiring/transformer_lv_mv"};
+            for (int i = 0; i < ids.length; i++) sp.getInventory().setItem(9 + i, item(ids[i])); });
+        client(10, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false;
+            mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+        shot(20, "scene6/classic_icons");
+        client(2, () -> { Minecraft.getInstance().setScreen(null); com.miophas.singularity_iteration.common.client.ClassicLook.setClassic(false); });
+        until(1200, () -> Minecraft.getInstance().getOverlay() == null);
+        client(10, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+        shot(20, "scene6/refined_icons");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Scene 7 (0.1.7.26): items with the supplied replacement textures, classic suits restored. */
+    private static void scene7() {
+        String[] ids = {
+            "item_electric_fishing_rod",
+            "item_electric_wireless_manager",
+            "item_geomagnetic_detector",
+            "item_rocket",
+            "item_tool_advanced_electric_rifle",
+            "item_tool_cutter",
+            "item_tool_diamond_driller",
+            "item_tool_electric_plasma_gun",
+            "item_tool_electric_rifle",
+            "item_tool_hammer",
+            "item_tool_iridium_driller",
+            "item_tool_iron_chainsaw",
+            "item_tool_iron_driller",
+            "item_tool_meter",
+            "item_tool_od_scanner",
+            "item_tool_ov_scanner",
+            "item_tool_plasma_air_cannon",
+            "item_tool_power_unit",
+            "item_tool_power_unit_small",
+            "item_tool_rocket_launcher",
+            "item_tool_tactical_laser_rifle",
+            "item_tool_treetap_elc",
+            "item_tool_windmeter",
+            "item_tool_wooden_treetap",
+            "item_tool_wrench",
+            "item_tool_wrench_elc",
+            "item_trinket_energy_crystal_belt",
+            "item_trinket_flight_ring",
+            "item_trinket_lapotron_crystal_belt",
+            "item_trinket_life_support_ring",
+            "item_trinket_life_support_ring/item_trinket_life_support_ring_1",
+            "item_trinket_life_support_ring/item_trinket_life_support_ring_2",
+            "item_trinket_life_support_ring/item_trinket_life_support_ring_3",
+            "item_trinket_life_support_ring/item_trinket_life_support_ring_4",
+            "reactor/item_reactor_isotope_rod",
+            "resource/item_adviron_casing",
+            "resource/item_adviron_denseplate",
+            "resource/item_adviron_ingot",
+            "resource/item_adviron_plate",
+            "resource/item_ash",
+            "resource/item_bronze_casing",
+            "resource/item_bronze_denseplate",
+            "resource/item_bronze_dust_small",
+            "resource/item_bronze_plate",
+            "resource/item_copper_casing",
+            "resource/item_copper_denseplate",
+            "resource/item_copper_nugget",
+            "resource/item_copper_ore_crushed",
+            "resource/item_copper_ore_crushed_purified",
+            "resource/item_copper_plate",
+            "resource/item_gold_ore_crushed",
+            "resource/item_gold_ore_crushed_purified",
+            "resource/item_golden_casing",
+            "resource/item_golden_denseplate",
+            "resource/item_golden_plate",
+            "resource/item_ingot_bronze",
+            "resource/item_ingot_tin",
+            "resource/item_iron_casing",
+            "resource/item_iron_denseplate",
+            "resource/item_iron_ore_crushed",
+            "resource/item_iron_ore_crushed_purified",
+            "resource/item_iron_plate",
+            "resource/item_lapi_denseplate",
+            "resource/item_lapi_plate",
+            "resource/item_lead_casing",
+            "resource/item_lead_denseplate",
+            "resource/item_lead_ingot",
+            "resource/item_lead_nugget",
+            "resource/item_lead_ore_crushed",
+            "resource/item_lead_ore_crushed_purified",
+            "resource/item_lead_plate",
+            "resource/item_niobium_casing",
+            "resource/item_niobium_denseplate",
+            "resource/item_niobium_ingot",
+            "resource/item_niobium_ore_crushed",
+            "resource/item_niobium_ore_crushed_purified",
+            "resource/item_niobium_plate",
+            "resource/item_niobium_titanium_ingot",
+            "resource/item_niobium_titanium_plate",
+            "resource/item_obsidian_denseplate",
+            "resource/item_obsidian_dust_small",
+            "resource/item_obsidian_plate",
+            "resource/item_raw_lead_ore",
+            "resource/item_raw_niobium_ore",
+            "resource/item_raw_silver_ore",
+            "resource/item_raw_tin_ore",
+            "resource/item_raw_titanium_ore",
+            "resource/item_silver_casing",
+            "resource/item_silver_ingot",
+            "resource/item_silver_ore_crushed",
+            "resource/item_silver_ore_crushed_purified",
+            "resource/item_tin_casing",
+            "resource/item_tin_denseplate",
+            "resource/item_tin_dust_small",
+            "resource/item_tin_nugget",
+            "resource/item_tin_ore_crushed",
+            "resource/item_tin_ore_crushed_purified",
+            "resource/item_tin_plate",
+            "resource/item_titanium_casing",
+            "resource/item_titanium_denseplate",
+            "resource/item_titanium_ingot",
+            "resource/item_titanium_nugget",
+            "resource/item_titanium_ore_crushed",
+            "resource/item_titanium_ore_crushed_purified",
+            "resource/item_titanium_plate"};
+        BlockPos suitAt = new BlockPos(30, -60, 30);
+        for (int page = 0; page * 36 < ids.length; page++) {
+            int from = page * 36;
+            server(page == 0 ? 40 : 2, sp -> {
+                sp.setGameMode(GameType.SURVIVAL);
+                sp.getInventory().clearContent();
+                for (int i = 0; i < 36 && from + i < ids.length; i++) sp.getInventory().setItem(i, item(ids[from + i]));
+            });
+            client(10, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false;
+                mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+            String name = "scene7/items_" + page;
+            shot(20, name);
+            client(2, () -> Minecraft.getInstance().setScreen(null));
+        }
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            sp.getInventory().clearContent();
+            sp.setItemSlot(EquipmentSlot.HEAD, item("armor/item_armor_nano_helmet"));
+            sp.setItemSlot(EquipmentSlot.CHEST, item("armor/item_armor_nano_chestplate"));
+            sp.setItemSlot(EquipmentSlot.LEGS, item("armor/item_armor_nano_leggings"));
+            sp.setItemSlot(EquipmentSlot.FEET, item("armor/item_armor_nano_boots"));
+            var stand = new net.minecraft.world.entity.decoration.ArmorStand(level, suitAt.getX() + 1.6, suitAt.getY(), suitAt.getZ() + 0.5);
+            stand.moveTo(suitAt.getX() + 1.6, suitAt.getY(), suitAt.getZ() + 0.5, 180, 0);
+            stand.setYHeadRot(180); stand.setYBodyRot(180);
+            stand.setItemSlot(EquipmentSlot.HEAD, item("armor/item_armor_quantum_helmet"));
+            stand.setItemSlot(EquipmentSlot.CHEST, item("armor/item_armor_quantum_chestplate"));
+            stand.setItemSlot(EquipmentSlot.LEGS, item("armor/item_armor_quantum_leggings"));
+            stand.setItemSlot(EquipmentSlot.FEET, item("armor/item_armor_quantum_boots"));
+            level.addFreshEntity(stand);
+            sp.teleportTo(level, suitAt.getX() + 0.5, suitAt.getY(), suitAt.getZ() + 0.5, 180, 10);
+            sp.setYBodyRot(180); sp.setYHeadRot(180);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(40, "scene7/suits_classic");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
     static {
-        if (OUT != null && "5".equals(System.getProperty("si.capture.scene"))) {
+        if (OUT != null && "7".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene7();
+        } else if (OUT != null && "6".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene6();
+        } else if (OUT != null && "5".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             scene5();
         } else if (OUT != null && "4".equals(System.getProperty("si.capture.scene"))) {

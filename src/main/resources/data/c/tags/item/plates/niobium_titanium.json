@@ -1,5 +1,8 @@
-﻿{
+{
   "values": [
-    "mio_icif:resource/item_niobium_titanium_plate"
+    {
+      "id": "mio_icif:resource/item_niobium_titanium_plate",
+      "required": false
+    }
   ]
 }

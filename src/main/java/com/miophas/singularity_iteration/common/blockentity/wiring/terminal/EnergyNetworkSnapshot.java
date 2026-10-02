@@ -19,13 +19,31 @@ public final class EnergyNetworkSnapshot {
 
     /** One endpoint on the network. Rates are EU/t averaged over the last second. */
     /** {@code rated}: theoretical EU/t of the device (generator nameplate / consumer draw while working). */
+    /** {@code subnet}: index into {@link #subnets} (-1 unknown); {@code voltage}: largest EU packet seen in the window. */
     public record Device(BlockPos pos, String blockId, Category category, float input, float output,
-                         long stored, long capacity, boolean switchable, boolean disabled, float rated) {
+                         long stored, long capacity, boolean switchable, boolean disabled, float rated, int subnet, float voltage) {
+        public Device(BlockPos pos, String blockId, Category category, float input, float output,
+                      long stored, long capacity, boolean switchable, boolean disabled, float rated) {
+            this(pos, blockId, category, input, output, stored, capacity, switchable, disabled, rated, -1, 0F);
+        }
         public Device(BlockPos pos, String blockId, Category category, float input, float output,
                       long stored, long capacity, boolean switchable, boolean disabled) {
             this(pos, blockId, category, input, output, stored, capacity, switchable, disabled, 0F);
         }
     }
+
+    /** One sub-network (cables between transformers) in global mode. Rates in EU/t. */
+    public static final class Subnet {
+        public int conductors, devices;
+        public float generation, generationCapacity, consumption, demand, storageIn, storageOut;
+        /** Cable rating (EU/packet) and the largest packet measured. */
+        public long ratedPacket;
+        public float measuredPacket;
+    }
+
+    /** Global mode: the walk crossed transformers and {@link #subnets} breaks the system down. */
+    public boolean global;
+    public final List<Subnet> subnets = new ArrayList<>();
 
     public float generation, consumption, storageIn, storageOut;
     /** Theoretical maximum generation and consumption (sum of nameplates) for the satisfaction meters. */
@@ -62,6 +80,18 @@ public final class EnergyNetworkSnapshot {
             buf.writeFloat(d.input()); buf.writeFloat(d.output());
             buf.writeVarLong(Math.max(0, d.stored())); buf.writeVarLong(Math.max(0, d.capacity()));
             buf.writeFloat(d.rated());
+            buf.writeVarInt(d.subnet() + 1);
+            buf.writeFloat(d.voltage());
+        }
+        buf.writeBoolean(global);
+        int m = Math.min(subnets.size(), 64);
+        buf.writeVarInt(m);
+        for (int i = 0; i < m; i++) {
+            Subnet sn = subnets.get(i);
+            buf.writeVarInt(sn.conductors); buf.writeVarInt(sn.devices);
+            buf.writeFloat(sn.generation); buf.writeFloat(sn.generationCapacity); buf.writeFloat(sn.consumption); buf.writeFloat(sn.demand);
+            buf.writeFloat(sn.storageIn); buf.writeFloat(sn.storageOut);
+            buf.writeVarLong(Math.max(0, sn.ratedPacket)); buf.writeFloat(sn.measuredPacket);
         }
     }
 
@@ -82,8 +112,21 @@ public final class EnergyNetworkSnapshot {
             float in = buf.readFloat(), out = buf.readFloat();
             long stored = buf.readVarLong(), cap = buf.readVarLong();
             float rated = buf.readFloat();
+            int subnet = buf.readVarInt() - 1;
+            float voltage = buf.readFloat();
             s.devices.add(new Device(pos, id, cats[Math.min(flags & 0x0F, cats.length - 1)], in, out, stored, cap,
-                (flags & 0x10) != 0, (flags & 0x20) != 0, rated));
+                (flags & 0x10) != 0, (flags & 0x20) != 0, rated, subnet, voltage));
+        }
+        s.global = buf.readBoolean();
+        int m = buf.readVarInt();
+        if (m < 0 || m > 64) throw new IllegalArgumentException("Bad subnet count " + m);
+        for (int i = 0; i < m; i++) {
+            Subnet sn = new Subnet();
+            sn.conductors = buf.readVarInt(); sn.devices = buf.readVarInt();
+            sn.generation = buf.readFloat(); sn.generationCapacity = buf.readFloat(); sn.consumption = buf.readFloat(); sn.demand = buf.readFloat();
+            sn.storageIn = buf.readFloat(); sn.storageOut = buf.readFloat();
+            sn.ratedPacket = buf.readVarLong(); sn.measuredPacket = buf.readFloat();
+            s.subnets.add(sn);
         }
         return s;
     }

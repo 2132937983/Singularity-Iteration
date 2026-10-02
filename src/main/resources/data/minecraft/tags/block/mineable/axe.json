@@ -1,8 +1,17 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:build/block_wood_storage",
-    "mio_icif:producer/block_barrel",
-    "#mio_icif:rubber_logs"
+    {
+      "id": "mio_icif:build/block_wood_storage",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_barrel",
+      "required": false
+    },
+    {
+      "id": "#mio_icif:rubber_logs",
+      "required": false
+    }
   ]
 }

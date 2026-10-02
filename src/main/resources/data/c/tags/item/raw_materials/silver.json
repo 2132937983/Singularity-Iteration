@@ -1,5 +1,8 @@
 {
-    "values": [
-        "mio_icif:resource/item_raw_silver_ore"
-    ]
+  "values": [
+    {
+      "id": "mio_icif:resource/item_raw_silver_ore",
+      "required": false
+    }
+  ]
 }

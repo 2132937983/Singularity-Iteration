@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_niobium_ingot"
+    {
+      "id": "mio_icif:resource/item_niobium_ingot",
+      "required": false
+    }
   ]
 }

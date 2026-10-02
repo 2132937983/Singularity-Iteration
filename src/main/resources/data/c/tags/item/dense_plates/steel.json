@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:resource/item_adviron_denseplate"
+    {
+      "id": "mio_icif:resource/item_adviron_denseplate",
+      "required": false
+    }
   ]
 }

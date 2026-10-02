@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_titanium_iron_alloy_rotor_blade"
+    {
+      "id": "mio_icif:resource/item_titanium_iron_alloy_rotor_blade",
+      "required": false
+    }
   ]
 }

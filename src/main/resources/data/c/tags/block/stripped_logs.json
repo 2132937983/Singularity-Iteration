@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:stripped_rubber_wood"
+    {
+      "id": "mio_icif:stripped_rubber_wood",
+      "required": false
+    }
   ]
 }

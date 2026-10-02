@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_copper_casing"
+    {
+      "id": "mio_icif:resource/item_copper_casing",
+      "required": false
+    }
   ]
 }

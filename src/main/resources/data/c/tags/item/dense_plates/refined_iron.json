@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "#c:dense_plates/steel"
+    {
+      "id": "#c:dense_plates/steel",
+      "required": false
+    }
   ]
 }

@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:future_elc_poi"
+    {
+      "id": "mio_icif:future_elc_poi",
+      "required": false
+    }
   ]
 }

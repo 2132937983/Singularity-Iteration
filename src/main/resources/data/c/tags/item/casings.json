@@ -1,17 +1,53 @@
 {
   "replace": false,
   "values": [
-    "#c:casings/adviron",
-    "#c:casings/bronze",
-    "#c:casings/copper",
-    "#c:casings/gold",
-    "#c:casings/iron",
-    "#c:casings/lead",
-    "#c:casings/niobium",
-    "#c:casings/silver",
-    "#c:casings/tin",
-    "#c:casings/titanium",
-    "#c:casings/steel",
-    "#c:casings/refined_iron"
+    {
+      "id": "#c:casings/adviron",
+      "required": false
+    },
+    {
+      "id": "#c:casings/bronze",
+      "required": false
+    },
+    {
+      "id": "#c:casings/copper",
+      "required": false
+    },
+    {
+      "id": "#c:casings/gold",
+      "required": false
+    },
+    {
+      "id": "#c:casings/iron",
+      "required": false
+    },
+    {
+      "id": "#c:casings/lead",
+      "required": false
+    },
+    {
+      "id": "#c:casings/niobium",
+      "required": false
+    },
+    {
+      "id": "#c:casings/silver",
+      "required": false
+    },
+    {
+      "id": "#c:casings/tin",
+      "required": false
+    },
+    {
+      "id": "#c:casings/titanium",
+      "required": false
+    },
+    {
+      "id": "#c:casings/steel",
+      "required": false
+    },
+    {
+      "id": "#c:casings/refined_iron",
+      "required": false
+    }
   ]
 }

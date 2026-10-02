@@ -6,19 +6,61 @@
     "minecraft:deepslate_gold_ore",
     "minecraft:copper_ore",
     "minecraft:deepslate_copper_ore",
-    "mio_icif:block_ore_tin",
-    "mio_icif:block_ore_tin_in_deep",
-    "mio_icif:block_ore_lead",
-    "mio_icif:block_ore_lead_in_deep",
-    "mio_icif:block_ore_uran",
-    "mio_icif:block_ore_uran_in_deep",
-    "#c:ores/copper",
-    "#c:ores/gold",
-    "#c:ores/iron",
-    "#c:ores/lead",
-    "#c:ores/niobium",
-    "#c:ores/tin",
-    "#c:ores/titanium",
-    "#c:ores/uranium"
+    {
+      "id": "mio_icif:block_ore_tin",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_tin_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_lead",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_lead_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_uran",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_uran_in_deep",
+      "required": false
+    },
+    {
+      "id": "#c:ores/copper",
+      "required": false
+    },
+    {
+      "id": "#c:ores/gold",
+      "required": false
+    },
+    {
+      "id": "#c:ores/iron",
+      "required": false
+    },
+    {
+      "id": "#c:ores/lead",
+      "required": false
+    },
+    {
+      "id": "#c:ores/niobium",
+      "required": false
+    },
+    {
+      "id": "#c:ores/tin",
+      "required": false
+    },
+    {
+      "id": "#c:ores/titanium",
+      "required": false
+    },
+    {
+      "id": "#c:ores/uranium",
+      "required": false
+    }
   ]
 }

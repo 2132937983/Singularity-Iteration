@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_copper_plate"
+    {
+      "id": "mio_icif:resource/item_copper_plate",
+      "required": false
+    }
   ]
 }

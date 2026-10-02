@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:uumatter",
-    "mio_icif:uumatter_flowing"
+    {
+      "id": "mio_icif:uumatter",
+      "required": false
+    },
+    {
+      "id": "mio_icif:uumatter_flowing",
+      "required": false
+    }
   ]
 }

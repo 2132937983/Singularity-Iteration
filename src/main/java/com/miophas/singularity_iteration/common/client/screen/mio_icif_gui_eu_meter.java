@@ -9,23 +9,26 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+/**
+ * EU meter / voltage detector, styled as a holographic oscilloscope:
+ * <ul>
+ *   <li>scope: the last 6 s of throughput (EU/t delivered into endpoints, cyan area) and the
+ *       packet voltage (orange step line) on the network around the target;</li>
+ *   <li>read-outs: voltage tier and packet size, current in amperes (packets per tick =
+ *       throughput / packet voltage), average throughput, the cables' rated packet;</li>
+ *   <li>the IC2 instrument (mode in / out / gain / voltage tier with average, max / min and the
+ *       measuring time) and the network inventory (cables, generators, consumers, storage,
+ *       transformers).</li>
+ * </ul>
+ * Used on a machine it measures that node (IC2 behaviour); used on a cable, special cable,
+ * transformer or terminal it measures the network through it.
+ */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class mio_icif_gui_eu_meter extends mio_icif_screen<mio_icif_meter_menu> {
-
-    private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_tool_eu_meter.png");
-
-    private static final int MODE_BTN_SIZE = 20;
-    private static final int MODE_BTN_X1 = 112;
-    private static final int MODE_BTN_X2 = 132;
-    private static final int MODE_BTN_Y1 = 55;
-    private static final int MODE_BTN_Y2 = 75;
-
-    private static final int RESET_BTN_X = 26;
-    private static final int RESET_BTN_Y = 111;
-    private static final int RESET_BTN_W = 57;
-    private static final int RESET_BTN_H = 12;
+    private static final int SX = 7, SY = 15, SW = 162, SH = 44;
+    private static final int MODE_Y = 90, MODE_W = 38, MODE_H = 11;
+    private static final int RESET_X = 128, RESET_Y = 117, RESET_W = 41, RESET_H = 11;
 
     public mio_icif_gui_eu_meter(mio_icif_meter_menu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -40,69 +43,115 @@ public class mio_icif_gui_eu_meter extends mio_icif_screen<mio_icif_meter_menu> 
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
+    protected boolean showUpgradeHint() { return false; }
 
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        mio_icif_meter_menu menu = this.getMenu();
+    @Override
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        int x = leftPos, y = topPos;
+        SiGuiTheme.panel(g, x, y, imageWidth, imageHeight);
+        // player inventory wells
+        for (int r = 0; r < 3; r++) for (int c = 0; c < 9; c++) SiGuiTheme.slot(g, x + 7 + c * 18, y + 135 + r * 18);
+        for (int c = 0; c < 9; c++) SiGuiTheme.slot(g, x + 7 + c * 18, y + 193);
+        // scope
+        DspUi.screen(g, x + SX, y + SY, SW, SH);
+        float[] tp = menu.scopeThroughput(), volt = menu.scopeVoltage();
+        float maxTp = 1, maxV = 1;
+        for (int i = 0; i < tp.length; i++) { maxTp = Math.max(maxTp, tp[i]); maxV = Math.max(maxV, volt[i]); }
+        int cx = x + SX + 2, cy = y + SY + 9, cw = SW - 4, ch = SH - 12;
+        for (int gx = 1; gx < 6; gx++) for (int gy = cy; gy < cy + ch; gy += 2) g.fill(cx + cw * gx / 6, gy, cx + cw * gx / 6 + 1, gy + 1, 0x30FFFFFF);
+        DspUi.area(g, cx, cy, cw, ch, tp, maxTp * 1.15F, DspUi.CYAN);
+        // voltage: step line
+        float step = cw / (float) tp.length;
+        int prev = -1;
+        for (int i = 0; i < volt.length; i++) {
+            int x0 = cx + (int) (i * step), x1 = cx + (int) ((i + 1) * step);
+            int vy = cy + ch - 1 - Math.round((ch - 1) * Math.min(1F, volt[i] / (maxV * 1.15F)));
+            if (prev >= 0 && prev != vy) g.fill(x0, Math.min(prev, vy), x0 + 1, Math.max(prev, vy) + 1, DspUi.ORANGE);
+            g.fill(x0, vy, Math.max(x0 + 1, x1), vy + 1, DspUi.ORANGE);
+            prev = vy;
+        }
+        // read-out panels
+        DspUi.screen(g, x + 7, y + 62, 52, 25);
+        DspUi.screen(g, x + 62, y + 62, 52, 25);
+        DspUi.screen(g, x + 117, y + 62, 52, 25);
+        DspUi.screen(g, x + 7, y + 104, 118, 25);
+        // IC2 mode buttons
         MeterMode mode = menu.getMode();
-
-        int modeU = 86;
-        int modeV = switch (mode) {
-            case EnergyIn -> 80;
-            case EnergyOut -> 80;
-            case EnergyGain -> 80;
-            case Voltage -> 80;
-        };
-        int modeOffsetU = switch (mode) {
-            case EnergyIn -> 0;
-            case EnergyOut -> 42;
-            case EnergyGain -> 84;
-            case Voltage -> 126;
-        };
-guiGraphics.blit(ATLAS_TEXTURE, x + MODE_BTN_X1, y + MODE_BTN_Y1, 0, (float) modeU + modeOffsetU, (float) modeV, 40, 40, ATLAS_WIDTH, ATLAS_HEIGHT);
+        MeterMode[] modes = MeterMode.values();
+        for (int i = 0; i < modes.length; i++) {
+            int bx = x + 7 + i * (MODE_W + 3), by = y + MODE_Y;
+            boolean on = modes[i] == mode, hot = mouseX >= bx && mouseX < bx + MODE_W && mouseY >= by && mouseY < by + MODE_H;
+            g.fill(bx, by, bx + MODE_W, by + MODE_H, on ? 0xFF13212F : SiGuiTheme.OUTLINE);
+            g.renderOutline(bx, by, MODE_W, MODE_H, on ? DspUi.CYAN : hot ? SiGuiTheme.ACCENT : 0xFF8A9096);
+            if (!on) g.fillGradient(bx + 1, by + 1, bx + MODE_W - 1, by + MODE_H - 1, hot ? 0xFFF3F8FC : 0xFFE6E9EC, hot ? 0xFFC9DCEE : 0xFFC4C8CD);
+        }
+        boolean hotReset = mouseX >= x + RESET_X && mouseX < x + RESET_X + RESET_W && mouseY >= y + RESET_Y && mouseY < y + RESET_Y + RESET_H;
+        g.fill(x + RESET_X, y + RESET_Y, x + RESET_X + RESET_W, y + RESET_Y + RESET_H, SiGuiTheme.OUTLINE);
+        g.fillGradient(x + RESET_X + 1, y + RESET_Y + 1, x + RESET_X + RESET_W - 1, y + RESET_Y + RESET_H - 1,
+            hotReset ? 0xFFF3F8FC : 0xFFE6E9EC, hotReset ? 0xFFC9DCEE : 0xFFC4C8CD);
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderLabels(guiGraphics, mouseX, mouseY);
-
-        mio_icif_meter_menu menu = this.getMenu();
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(font, title, 8, 5, SiGuiTheme.TEXT, false);
+        var net = menu.clientNetwork();
+        String target = net == null ? "" : Component.translatable(net.conductor() ? "item.mio_icif.item_tool_meter.gui.target_network"
+            : "item.mio_icif.item_tool_meter.gui.target_node").getString();
+        DspUi.small(g, font, target, imageWidth - 8 - DspUi.smallWidth(font, target), 6, SiGuiTheme.TEXT);
+        // scope legend
+        DspUi.small(g, font, "EU/t", SX + 3, SY + 2, DspUi.CYAN);
+        DspUi.small(g, font, "V", SX + 22, SY + 2, DspUi.ORANGE);
+        String span = "6 s";
+        DspUi.small(g, font, span, SX + SW - 3 - DspUi.smallWidth(font, span), SY + 2, DspUi.TEXT_DIM);
+        // live values from the scope window
+        float[] tp = menu.scopeThroughput(), volt = menu.scopeVoltage();
+        int n = Math.max(1, Math.min(20, menu.scopeFilled()));
+        float avgTp = 0, maxV = 0;
+        for (int i = tp.length - n; i < tp.length; i++) { avgTp += tp[i]; maxV = Math.max(maxV, volt[i]); }
+        avgTp /= n;
+        String tier = com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.tierName(maxV);
+        readout(g, 7, Component.translatable("item.mio_icif.item_tool_meter.gui.voltage").getString(), tier, maxV > 0 ? DspUi.compact(maxV) + " V" : "-", DspUi.ORANGE);
+        float amps = maxV > 0 ? avgTp / maxV : 0;
+        readout(g, 62, Component.translatable("item.mio_icif.item_tool_meter.gui.current").getString(), String.format("%.2f A", amps),
+            Component.translatable("item.mio_icif.item_tool_meter.gui.packets").getString(), DspUi.GREEN);
+        readout(g, 117, Component.translatable("item.mio_icif.item_tool_meter.gui.throughput").getString(), DspUi.compact(avgTp),
+            "EU/t", DspUi.CYAN);
+        // IC2 instrument
         MeterMode mode = menu.getMode();
+        MeterMode[] modes = MeterMode.values();
+        String[] keys = {"in", "out", "gain", "tier"};
+        for (int i = 0; i < modes.length; i++) {
+            String label = Component.translatable("item.mio_icif.item_tool_meter.gui.mode_short." + keys[i]).getString();
+            int bx = 7 + i * (MODE_W + 3);
+            DspUi.small(g, font, label, bx + (MODE_W - DspUi.smallWidth(font, label)) / 2, MODE_Y + 3, modes[i] == mode ? DspUi.CYAN : SiGuiTheme.TEXT_SCREEN);
+        }
+        String unit = menu.isVoltageMode() ? "" : "EU/t";
+        String avg = (menu.isVoltageMode() ? "Tier " : "") + formatSI(menu.getResultAvg()) + unit;
+        DspUi.small(g, font, font.plainSubstrByWidth("\u2248" + avg, 54), 128, 104, SiGuiTheme.TEXT);
+        DspUi.small(g, font, font.plainSubstrByWidth("\u2191" + formatSI(menu.getResultMax()) + " \u2193" + formatSI(menu.getResultMin()), 54), 128, 110, SiGuiTheme.TEXT_SCREEN_DIM);
+        String reset = Component.translatable("item.mio_icif.item_tool_meter.gui.reset").getString();
+        DspUi.small(g, font, reset, RESET_X + (RESET_W - DspUi.smallWidth(font, reset)) / 2, RESET_Y + 3, SiGuiTheme.TEXT_SCREEN);
+        String cycle = Component.translatable("item.mio_icif.item_tool_meter.gui.cycle", menu.getResultCount() / 20).getString();
+        DspUi.small(g, font, font.plainSubstrByWidth(cycle, 70), SX + 32, SY + 2, DspUi.TEXT_DIM);
+        // network inventory
+        if (net != null) {
+            int fit = (int) ((118 - 6) / 0.75F);
+            DspUi.small(g, font, font.plainSubstrByWidth(Component.translatable("item.mio_icif.item_tool_meter.gui.network", net.conductors(), net.subnets()).getString(), fit), 10, 107, DspUi.TEXT);
+            DspUi.small(g, font, font.plainSubstrByWidth(Component.translatable("item.mio_icif.item_tool_meter.gui.nodes", net.generators(), net.consumers(), net.storages(), net.transformers()).getString(), fit), 10, 114, DspUi.TEXT_DIM);
+            String rated = net.ratedPacket() > 0 ? Component.translatable("item.mio_icif.item_tool_meter.gui.rated",
+                com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.tierName(net.ratedPacket()), DspUi.compact(net.ratedPacket())).getString() : "";
+            boolean over = net.ratedPacket() > 0 && maxV > net.ratedPacket();
+            DspUi.small(g, font, font.plainSubstrByWidth(rated, fit), 10, 121, over ? DspUi.RED : DspUi.CYAN_DIM);
+        } else {
+            DspUi.small(g, font, Component.translatable("item.mio_icif.item_tool_meter.gui.scanning").getString(), 10, 110, DspUi.TEXT_DIM);
+        }
+        // no "Inventory" caption: the network panel occupies that band (slots start right below it)
+    }
 
-        String unit = menu.isVoltageMode() ? "V" : "EU/t";
-
-        guiGraphics.drawString(this.font,
-            Component.translatable("item.mio_icif.item_tool_meter.gui.mode"), 115, 43, 0x215E32, false);
-
-        guiGraphics.drawString(this.font,
-            Component.translatable("item.mio_icif.item_tool_meter.gui.avg"), 15, 41, 0x215E32, false);
-        guiGraphics.drawString(this.font,
-            formatSI(menu.getResultAvg()) + unit, 15, 51, 0x215E32, false);
-
-        guiGraphics.drawString(this.font,
-            Component.translatable("item.mio_icif.item_tool_meter.gui.max_min"), 15, 64, 0x215E32, false);
-        guiGraphics.drawString(this.font,
-            formatSI(menu.getResultMax()) + unit, 15, 74, 0x215E32, false);
-        guiGraphics.drawString(this.font,
-            formatSI(menu.getResultMin()) + unit, 15, 84, 0x215E32, false);
-
-        int seconds = menu.getResultCount() / 20;
-        guiGraphics.drawString(this.font,
-            Component.translatable("item.mio_icif.item_tool_meter.gui.cycle", seconds), 15, 100, 0x215E32, false);
-
-        guiGraphics.drawString(this.font,
-            Component.translatable("item.mio_icif.item_tool_meter.gui.reset"), 39, 114, 0x215E32, false);
-
-        Component modeText = switch (mode) {
-            case EnergyIn -> Component.translatable("item.mio_icif.item_tool_meter.mode.EnergyIn");
-            case EnergyOut -> Component.translatable("item.mio_icif.item_tool_meter.mode.EnergyOut");
-            case EnergyGain -> Component.translatable("item.mio_icif.item_tool_meter.mode.EnergyGain");
-            case Voltage -> Component.translatable("item.mio_icif.item_tool_meter.mode.Voltage");
-        };
-        guiGraphics.drawString(this.font, modeText, 105, 100, 0x215E32, false);
+    private void readout(GuiGraphics g, int x, String label, String value, String sub, int color) {
+        DspUi.small(g, font, label, x + 3, 64, DspUi.TEXT_DIM);
+        g.drawString(font, font.plainSubstrByWidth(value, 48), x + 3, 70, color, false);
+        DspUi.small(g, font, font.plainSubstrByWidth(sub, 60), x + 3, 80, DspUi.TEXT_DIM);
     }
 
     private String formatSI(double value) {
@@ -128,37 +177,20 @@ guiGraphics.blit(ATLAS_TEXTURE, x + MODE_BTN_X1, y + MODE_BTN_Y1, 0, (float) mod
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && this.menu != null && this.minecraft != null && this.minecraft.gameMode != null) {
-            int x = (this.width - this.imageWidth) / 2;
-            int y = (this.height - this.imageHeight) / 2;
-
-            int relX = (int) mouseX - x;
-            int relY = (int) mouseY - y;
-
-            if (relX >= MODE_BTN_X1 && relX < MODE_BTN_X1 + MODE_BTN_SIZE
-                && relY >= MODE_BTN_Y1 && relY < MODE_BTN_Y1 + MODE_BTN_SIZE) {
-                this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, MeterMode.EnergyIn.ordinal());
-                return true;
+        if (button == 0 && this.minecraft != null && this.minecraft.gameMode != null) {
+            int relX = (int) mouseX - leftPos, relY = (int) mouseY - topPos;
+            MeterMode[] modes = MeterMode.values();
+            for (int i = 0; i < modes.length; i++) {
+                int bx = 7 + i * (MODE_W + 3);
+                if (relX >= bx && relX < bx + MODE_W && relY >= MODE_Y && relY < MODE_Y + MODE_H) {
+                    this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, modes[i].ordinal());
+                    playClick();
+                    return true;
+                }
             }
-            if (relX >= MODE_BTN_X2 && relX < MODE_BTN_X2 + MODE_BTN_SIZE
-                && relY >= MODE_BTN_Y1 && relY < MODE_BTN_Y1 + MODE_BTN_SIZE) {
-                this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, MeterMode.EnergyOut.ordinal());
-                return true;
-            }
-            if (relX >= MODE_BTN_X1 && relX < MODE_BTN_X1 + MODE_BTN_SIZE
-                && relY >= MODE_BTN_Y2 && relY < MODE_BTN_Y2 + MODE_BTN_SIZE) {
-                this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, MeterMode.EnergyGain.ordinal());
-                return true;
-            }
-            if (relX >= MODE_BTN_X2 && relX < MODE_BTN_X2 + MODE_BTN_SIZE
-                && relY >= MODE_BTN_Y2 && relY < MODE_BTN_Y2 + MODE_BTN_SIZE) {
-                this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, MeterMode.Voltage.ordinal());
-                return true;
-            }
-
-            if (relX >= RESET_BTN_X && relX < RESET_BTN_X + RESET_BTN_W
-                && relY >= RESET_BTN_Y && relY < RESET_BTN_Y + RESET_BTN_H) {
+            if (relX >= RESET_X && relX < RESET_X + RESET_W && relY >= RESET_Y && relY < RESET_Y + RESET_H) {
                 this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, 100);
+                playClick();
                 return true;
             }
         }

@@ -1,9 +1,21 @@
 {
   "replace": false,
   "values": [
-    "#c:shafts/adviron",
-    "#c:shafts/bronze",
-    "#c:shafts/iron",
-    "#c:shafts/titanium"
+    {
+      "id": "#c:shafts/adviron",
+      "required": false
+    },
+    {
+      "id": "#c:shafts/bronze",
+      "required": false
+    },
+    {
+      "id": "#c:shafts/iron",
+      "required": false
+    },
+    {
+      "id": "#c:shafts/titanium",
+      "required": false
+    }
   ]
 }

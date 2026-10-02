@@ -1,25 +1,85 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_tin",
-    "mio_icif:block_uranium",
-    "mio_icif:block_lead",
-    "mio_icif:block_raw_tin",
-    "mio_icif:block_raw_uranium",
-    "mio_icif:block_raw_lead",
-    "#c:storage_blocks/bronze",
-    "#c:storage_blocks/adviron",
-    "#c:storage_blocks/lead",
-    "#c:storage_blocks/niobium",
-    "#c:storage_blocks/raw_lead",
-    "#c:storage_blocks/raw_niobium",
-    "#c:storage_blocks/raw_tin",
-    "#c:storage_blocks/raw_titanium",
-    "#c:storage_blocks/raw_uranium",
-    "#c:storage_blocks/steel",
-    "#c:storage_blocks/tin",
-    "#c:storage_blocks/titanium",
-    "#c:storage_blocks/uranium",
-    "#c:storage_blocks/refined_iron"
+    {
+      "id": "mio_icif:block_tin",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_uranium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_lead",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_raw_tin",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_raw_uranium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_raw_lead",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/bronze",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/adviron",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/lead",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/niobium",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/raw_lead",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/raw_niobium",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/raw_tin",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/raw_titanium",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/raw_uranium",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/steel",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/tin",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/titanium",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/uranium",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/refined_iron",
+      "required": false
+    }
   ]
 }

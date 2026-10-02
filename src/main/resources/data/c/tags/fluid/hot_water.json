@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:hotwater",
-    "mio_icif:hotwater_flowing"
+    {
+      "id": "mio_icif:hotwater",
+      "required": false
+    },
+    {
+      "id": "mio_icif:hotwater_flowing",
+      "required": false
+    }
   ]
 }

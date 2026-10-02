@@ -437,6 +437,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
                 if (WIRE_CONNECT_DEBUG) {
                     Singularity_Iteration.LOGGER.error("[WireConnect-DEBUG] 电线连接检查异常 at {}: {}", pos, e.getMessage());
                 }
+                com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report(
+                    "wire-connect", "Cable connection check against " + pos, e);
                 return false;
             }
         }

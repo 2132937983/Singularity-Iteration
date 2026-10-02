@@ -202,6 +202,21 @@ public class mio_icif_Network {
             com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket.CODEC,
             com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket::handle
         );
+        registrar.playToServer(
+            com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket.Request.TYPE,
+            com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket.Request.CODEC,
+            com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket::handleRequest
+        );
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket.Reply.TYPE,
+            com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket.Reply.CODEC,
+            com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket::handleReply
+        );
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.menu.tool.MeterNetworkPacket.TYPE,
+            com.miophas.singularity_iteration.common.menu.tool.MeterNetworkPacket.CODEC,
+            com.miophas.singularity_iteration.common.menu.tool.MeterNetworkPacket::handle
+        );
         registrar.playToClient(
             com.miophas.singularity_iteration.common.machine.MachineStatusPacket.TYPE,
             com.miophas.singularity_iteration.common.machine.MachineStatusPacket.CODEC,

@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:pahoehoelava",
-    "mio_icif:pahoehoelava_flowing"
+    {
+      "id": "mio_icif:pahoehoelava",
+      "required": false
+    },
+    {
+      "id": "mio_icif:pahoehoelava_flowing",
+      "required": false
+    }
   ]
 }

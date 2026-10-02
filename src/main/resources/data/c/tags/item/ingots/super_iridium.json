@@ -1,5 +1,8 @@
-﻿{
+{
   "values": [
-    "mio_icif:resource/item_super_iridium_alloy"
+    {
+      "id": "mio_icif:resource/item_super_iridium_alloy",
+      "required": false
+    }
   ]
 }

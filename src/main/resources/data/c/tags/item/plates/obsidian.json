@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_obsidian_plate"
+    {
+      "id": "mio_icif:resource/item_obsidian_plate",
+      "required": false
+    }
   ]
 }

@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_irradiant_reinforced_plate"
+    {
+      "id": "mio_icif:resource/item_irradiant_reinforced_plate",
+      "required": false
+    }
   ]
 }

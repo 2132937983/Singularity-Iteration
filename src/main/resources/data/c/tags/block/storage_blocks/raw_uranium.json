@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_raw_uranium"
+    {
+      "id": "mio_icif:block_raw_uranium",
+      "required": false
+    }
   ]
 }

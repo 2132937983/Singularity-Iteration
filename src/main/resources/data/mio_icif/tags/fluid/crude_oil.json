@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:crudeoil",
-    "mio_icif:crudeoil_flowing"
+    {
+      "id": "mio_icif:crudeoil",
+      "required": false
+    },
+    {
+      "id": "mio_icif:crudeoil_flowing",
+      "required": false
+    }
   ]
 }

@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:build/rubber_stairs"
+    {
+      "id": "mio_icif:build/rubber_stairs",
+      "required": false
+    }
   ]
 }

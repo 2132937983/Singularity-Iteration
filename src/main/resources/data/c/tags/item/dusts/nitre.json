@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_nitre_dust"
+    {
+      "id": "mio_icif:resource/item_nitre_dust",
+      "required": false
+    }
   ]
 }

@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:reactor/item_reactor_iridium_vent"
+    {
+      "id": "mio_icif:reactor/item_reactor_iridium_vent",
+      "required": false
+    }
   ]
 }

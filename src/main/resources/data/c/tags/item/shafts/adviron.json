@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_adviron_shaft"
+    {
+      "id": "mio_icif:resource/item_adviron_shaft",
+      "required": false
+    }
   ]
 }

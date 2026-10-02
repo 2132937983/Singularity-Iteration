@@ -1,7 +1,13 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:item_tool_wrench",
-    "mio_icif:item_tool_wrench_elc"
+    {
+      "id": "mio_icif:item_tool_wrench",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_wrench_elc",
+      "required": false
+    }
   ]
 }

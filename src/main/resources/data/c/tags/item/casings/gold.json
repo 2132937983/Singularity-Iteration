@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_golden_casing"
+    {
+      "id": "mio_icif:resource/item_golden_casing",
+      "required": false
+    }
   ]
 }

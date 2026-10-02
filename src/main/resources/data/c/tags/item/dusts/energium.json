@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_energium_dust"
+    {
+      "id": "mio_icif:resource/item_energium_dust",
+      "required": false
+    }
   ]
 }

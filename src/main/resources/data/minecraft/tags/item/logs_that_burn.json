@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "#mio_icif:rubber_logs"
+    {
+      "id": "#mio_icif:rubber_logs",
+      "required": false
+    }
   ]
 }

@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_raw_lead"
+    {
+      "id": "mio_icif:block_raw_lead",
+      "required": false
+    }
   ]
 }

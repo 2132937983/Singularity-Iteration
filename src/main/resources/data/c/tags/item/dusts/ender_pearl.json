@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:resource/item_ender_pearl_dust"
+    {
+      "id": "mio_icif:resource/item_ender_pearl_dust",
+      "required": false
+    }
   ]
 }

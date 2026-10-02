@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:build/block_iridium_storage"
+    {
+      "id": "mio_icif:build/block_iridium_storage",
+      "required": false
+    }
   ]
 }

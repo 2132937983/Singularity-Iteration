@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:wiring/transformer_hv_ev"
+    {
+      "id": "mio_icif:wiring/transformer_hv_ev",
+      "required": false
+    }
   ]
 }

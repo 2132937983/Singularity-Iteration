@@ -1,5 +1,8 @@
-﻿{
+{
   "values": [
-    "mio_icif:resource/item_plant_extract"
+    {
+      "id": "mio_icif:resource/item_plant_extract",
+      "required": false
+    }
   ]
 }

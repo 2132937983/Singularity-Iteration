@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:coolant",
-    "mio_icif:coolant_flowing"
+    {
+      "id": "mio_icif:coolant",
+      "required": false
+    },
+    {
+      "id": "mio_icif:coolant_flowing",
+      "required": false
+    }
   ]
 }

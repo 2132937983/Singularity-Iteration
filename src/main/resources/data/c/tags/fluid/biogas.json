@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:biogas",
-    "mio_icif:biogas_flowing"
+    {
+      "id": "mio_icif:biogas",
+      "required": false
+    },
+    {
+      "id": "mio_icif:biogas_flowing",
+      "required": false
+    }
   ]
 }

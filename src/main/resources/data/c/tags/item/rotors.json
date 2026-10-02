@@ -1,7 +1,13 @@
 {
   "replace": false,
   "values": [
-    "#c:rotors/super_iridium_alloy",
-    "#c:rotors/titanium_iron_alloy"
+    {
+      "id": "#c:rotors/super_iridium_alloy",
+      "required": false
+    },
+    {
+      "id": "#c:rotors/titanium_iron_alloy",
+      "required": false
+    }
   ]
 }

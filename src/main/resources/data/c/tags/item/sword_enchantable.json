@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:item_tool_nanosaber"
+    {
+      "id": "mio_icif:item_tool_nanosaber",
+      "required": false
+    }
   ]
 }

@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:rotors/item_super_iridium_alloy_rotor"
+    {
+      "id": "mio_icif:rotors/item_super_iridium_alloy_rotor",
+      "required": false
+    }
   ]
 }

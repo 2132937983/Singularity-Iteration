@@ -66,16 +66,17 @@ public class mio_icif_gui_armor_features extends Screen {
     private String preselect;
 
     // ---- sections: equipment settings / energy statistics / armory (summon, return, showcases)
-    public static final int TAB_EQUIP = 0, TAB_ENERGY = 1, TAB_ARMORY = 2;
-    private static final String[] TAB_KEYS = {"equip", "energy", "armory"};
-    private static final int TAB_W = 54, TAB_H = 13;
+    public static final int TAB_EQUIP = 0, TAB_ENERGY = 1, TAB_ARMORY = 2, TAB_APPEARANCE = 3;
+    private static final String[] TAB_KEYS = {"equip", "energy", "armory", "appearance"};
+    private static final int TAB_COUNT = TAB_KEYS.length;
+    private static final int TAB_W = 46, TAB_H = 13;
     private int tab = TAB_EQUIP;
     private int armoryScroll;
     private int refreshTimer;
 
     /** Opens on the given section. */
     public mio_icif_gui_armor_features tab(int tab) {
-        this.tab = Mth.clamp(tab, 0, 2);
+        this.tab = Mth.clamp(tab, 0, TAB_COUNT - 1);
         return this;
     }
 
@@ -195,6 +196,7 @@ public class mio_icif_gui_armor_features extends Screen {
         switch (tab) {
             case TAB_ENERGY -> renderEnergy(g, mouseX, mouseY);
             case TAB_ARMORY -> renderArmory(g, mouseX, mouseY);
+            case TAB_APPEARANCE -> renderAppearance(g, mouseX, mouseY);
             default -> {
                 SiGuiTheme.well(g, left + LIST_X, top + LIST_Y, LIST_W, H - LIST_Y - 7);
                 SiGuiTheme.well(g, left + PX, top + LIST_Y, PW, H - LIST_Y - 7);
@@ -385,7 +387,7 @@ public class mio_icif_gui_armor_features extends Screen {
     }
 
     private void renderTooltips(GuiGraphics g, int mouseX, int mouseY) {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < TAB_COUNT; i++) {
             if (in(mouseX, mouseY, tabX(i), top + 4, TAB_W, TAB_H)) {
                 g.renderComponentTooltip(font, List.of(Component.translatable("gui.mio_icif.equipment_console.tab." + TAB_KEYS[i]),
                     Component.translatable("gui.mio_icif.equipment_console.tab." + TAB_KEYS[i] + ".tip").withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
@@ -394,6 +396,7 @@ public class mio_icif_gui_armor_features extends Screen {
         }
         if (tab == TAB_ENERGY) { energyTooltips(g, mouseX, mouseY); return; }
         if (tab == TAB_ARMORY) { armoryTooltips(g, mouseX, mouseY); return; }
+        if (tab == TAB_APPEARANCE) return;
         ItemStack stack = current();
         if (stack.isEmpty()) return;
         // tool mode details / tuning hints
@@ -450,7 +453,7 @@ public class mio_icif_gui_armor_features extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < TAB_COUNT; i++) {
                 if (in(mouseX, mouseY, tabX(i), top + 4, TAB_W, TAB_H)) {
                     if (tab != i) { tab = i; refreshTimer = 0; armoryScroll = 0; sound(false); }
                     return true;
@@ -458,6 +461,7 @@ public class mio_icif_gui_armor_features extends Screen {
             }
         }
         if (tab == TAB_ARMORY) return button == 0 && armoryClick(mouseX, mouseY);
+        if (tab == TAB_APPEARANCE) return button == 0 && appearanceClick(mouseX, mouseY);
         if (tab == TAB_ENERGY) return false;
         if (super.mouseClicked(mouseX, mouseY, button)) return true;
         if (button != 0) return false;
@@ -534,7 +538,7 @@ public class mio_icif_gui_armor_features extends Screen {
             return true;
         }
         if (keyCode == 258) {   // tab: next section
-            tab = (tab + 1) % 3;
+            tab = (tab + 1) % TAB_COUNT;
             refreshTimer = 0;
             sound(false);
             return true;
@@ -549,11 +553,11 @@ public class mio_icif_gui_armor_features extends Screen {
 
     // ================================================================== section tabs
     private int tabX(int i) {
-        return left + W - 7 - (3 - i) * (TAB_W + 2);
+        return left + W - 7 - (TAB_COUNT - i) * (TAB_W + 2);
     }
 
     private void renderTabs(GuiGraphics g, int mouseX, int mouseY) {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < TAB_COUNT; i++) {
             int x = tabX(i), y = top + 4;
             boolean on = tab == i, hot = in(mouseX, mouseY, x, y, TAB_W, TAB_H);
             g.fill(x, y, x + TAB_W, y + TAB_H, SiGuiTheme.OUTLINE);
@@ -568,6 +572,7 @@ public class mio_icif_gui_armor_features extends Screen {
             switch (i) {
                 case 0 -> { g.fill(ix, iy, ix + 2, iy + 7, c); g.fill(ix + 3, iy, ix + 5, iy + 7, c); g.fill(ix + 6, iy, ix + 8, iy + 7, c); }
                 case 1 -> { g.fill(ix + 4, iy, ix + 6, iy + 3, c); g.fill(ix + 2, iy + 3, ix + 7, iy + 4, c); g.fill(ix + 2, iy + 4, ix + 4, iy + 7, c); }
+                case 3 -> { g.fill(ix, iy, ix + 3, iy + 3, c); g.fill(ix + 5, iy, ix + 8, iy + 3, c); g.fill(ix, iy + 4, ix + 3, iy + 7, c); g.renderOutline(ix + 5, iy + 4, 3, 3, c); }
                 default -> { g.fill(ix + 2, iy, ix + 6, iy + 2, c); g.fill(ix, iy + 2, ix + 8, iy + 5, c); g.fill(ix + 1, iy + 5, ix + 3, iy + 7, c); g.fill(ix + 5, iy + 5, ix + 7, iy + 7, c); }
             }
             String label = font.plainSubstrByWidth(Component.translatable("gui.mio_icif.equipment_console.tab." + TAB_KEYS[i]).getString(), (int) ((TAB_W - 16) / 0.75F));
@@ -910,4 +915,69 @@ public class mio_icif_gui_armor_features extends Screen {
         }
     }
 
+
+    // ================================================================== APPEARANCE: texture style
+    private static final int AX = 7, AY = 18, AW = 286, AH = H - 18 - 7;
+    private static final int CARD_W = 134, CARD_H = 96;
+
+    private int cardX(int i) { return left + AX + 6 + i * (CARD_W + 6); }
+    private int cardY() { return top + AY + 22; }
+
+    private void renderAppearance(GuiGraphics g, int mouseX, int mouseY) {
+        int x0 = left + AX, y0 = top + AY;
+        DspUi.screen(g, x0, y0, AW, AH);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.texture_style").getString(), x0 + 6, y0 + 6, DspUi.CYAN);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.hint").getString(), x0 + 6, y0 + 13, DspUi.TEXT_DIM);
+        boolean classic = com.miophas.singularity_iteration.common.client.ClassicLook.isClassic();
+        boolean available = com.miophas.singularity_iteration.common.client.ClassicLook.available();
+        for (int i = 0; i < 2; i++) {
+            int x = cardX(i), y = cardY();
+            boolean on = (i == 1) == classic, hot = in(mouseX, mouseY, x, y, CARD_W, CARD_H);
+            g.fill(x, y, x + CARD_W, y + CARD_H, on ? 0xFF15293A : hot ? 0xFF112130 : DspUi.BG_HI);
+            g.renderOutline(x, y, CARD_W, CARD_H, on ? DspUi.CYAN : hot ? DspUi.CYAN_DIM : DspUi.FRAME);
+            // swatch: a little machine front in each style
+            int sx = x + 8, sy = y + 18;
+            if (i == 0) {
+                g.fill(sx, sy, sx + 34, sy + 34, 0xFF8C96A0);
+                g.fill(sx + 2, sy + 2, sx + 32, sy + 7, 0xFF3A4652);
+                g.fill(sx + 4, sy + 10, sx + 30, sy + 26, 0xFF1A232C);
+                g.fill(sx + 6, sy + 12, sx + 28, sy + 24, 0xFF2E4E68);
+                g.fill(sx + 8, sy + 29, sx + 26, sy + 31, (System.currentTimeMillis() / 500) % 2 == 0 ? DspUi.GREEN : 0xFF2E6B45);
+                g.fill(sx + 29, sy + 3, sx + 31, sy + 5, DspUi.CYAN);
+            } else {
+                g.fill(sx, sy, sx + 34, sy + 34, 0xFF9AA1A8);
+                g.renderOutline(sx, sy, 34, 34, 0xFF5E656C);
+                g.fill(sx + 9, sy + 9, sx + 25, sy + 25, 0xFF6B7178);
+                g.fill(sx + 11, sy + 11, sx + 23, sy + 23, 0xFF3C4146);
+            }
+            String key = i == 0 ? "refined" : "classic";
+            DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance." + key).getString(), x + 6, y + 6, on ? DspUi.TEXT : DspUi.TEXT_DIM);
+            int ty = sy;
+            for (String line : font.getSplitter().splitLines(Component.translatable("gui.mio_icif.equipment_console.appearance." + key + ".desc").getString(),
+                    (int) ((CARD_W - 52) / 0.75F), net.minecraft.network.chat.Style.EMPTY).stream().map(net.minecraft.network.chat.FormattedText::getString).toList()) {
+                if (ty > y + CARD_H - 20) break;
+                DspUi.small(g, font, line, x + 48, ty, DspUi.TEXT_DIM);
+                ty += 7;
+            }
+            String state = on ? "● " + Component.translatable("gui.mio_icif.equipment_console.appearance.active").getString()
+                : "○ " + Component.translatable("gui.mio_icif.equipment_console.appearance.select").getString();
+            DspUi.small(g, font, state, x + 6, y + CARD_H - 10, on ? DspUi.CYAN : (available ? DspUi.TEXT_DIM : DspUi.RED));
+        }
+        DspUi.small(g, font, Component.translatable(available ? "gui.mio_icif.equipment_console.appearance.reload"
+            : "gui.mio_icif.equipment_console.appearance.missing").getString(), x0 + 6, y0 + AH - 10, available ? DspUi.TEXT_DIM : DspUi.RED);
+    }
+
+    private boolean appearanceClick(double mouseX, double mouseY) {
+        for (int i = 0; i < 2; i++) {
+            if (in(mouseX, mouseY, cardX(i), cardY(), CARD_W, CARD_H)) {
+                boolean classic = i == 1;
+                if (classic != com.miophas.singularity_iteration.common.client.ClassicLook.isClassic()) {
+                    sound(true);
+                    com.miophas.singularity_iteration.common.client.ClassicLook.setClassic(classic);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
 }

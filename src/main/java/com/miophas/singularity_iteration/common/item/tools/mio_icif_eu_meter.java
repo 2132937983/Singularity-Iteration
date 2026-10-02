@@ -56,8 +56,12 @@ public class mio_icif_eu_meter extends Item implements IEUMeterItem {
 
         BlockPos pos = context.getClickedPos();
         IEnergyTile energyTile = resolveEnergyTile(level, pos);
+        var targetBe = level.getBlockEntity(pos);
+        boolean networkTarget = com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.isConductor(targetBe)
+            || com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.isTransformer(targetBe)
+            || targetBe instanceof com.miophas.singularity_iteration.common.blockentity.wiring.terminal.EnergyTerminalBlockEntity;
 
-        if (energyTile == null) {
+        if (energyTile == null && !networkTarget) {
             if (!level.isClientSide) {
                 player.sendSystemMessage(Component.translatable("item.mio_icif.item_tool_meter.not_energy_tile")
                     .withStyle(ChatFormatting.RED));

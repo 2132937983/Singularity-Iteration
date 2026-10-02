@@ -380,6 +380,8 @@ protected static final int CHARGE_SLOT = 1;
                 energyStorage.extract(pushed, false);
             }
         } catch (Exception e) {
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report(
+                "generator-push:" + getClass().getName(), "Generator energy push into " + adjacentPos, e);
         }
     }
 
@@ -422,7 +424,9 @@ protected static final int CHARGE_SLOT = 1;
                 energyStorage.extract(pushed, false);
             }
         } catch (Exception e) {
-            // 安全降级：不崩溃，只跳过本次输出
+            // 安全降级：不崩溃，只跳过本次输出 - but say so
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report(
+                "generator-output:" + getClass().getName(), "Generator output towards " + adjacentPos, e);
         }
     }
     

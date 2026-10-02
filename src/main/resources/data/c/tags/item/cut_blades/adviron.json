@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_adviron_cutblade"
+    {
+      "id": "mio_icif:resource/item_adviron_cutblade",
+      "required": false
+    }
   ]
 }

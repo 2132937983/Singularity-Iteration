@@ -1,8 +1,20 @@
 {
   "values": [
-    "#c:circuits/basic",
-    "#c:circuits/advanced",
-    "#c:circuits/elite",
-    "#c:circuits/ultimate"
+    {
+      "id": "#c:circuits/basic",
+      "required": false
+    },
+    {
+      "id": "#c:circuits/advanced",
+      "required": false
+    },
+    {
+      "id": "#c:circuits/elite",
+      "required": false
+    },
+    {
+      "id": "#c:circuits/ultimate",
+      "required": false
+    }
   ]
 }

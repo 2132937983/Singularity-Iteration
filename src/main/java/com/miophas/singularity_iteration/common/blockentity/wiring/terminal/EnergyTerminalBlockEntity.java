@@ -57,7 +57,11 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
 
     private final List<BlockPos> devicePos = new ArrayList<>();
     private final List<EnergyNetworkSnapshot.Category> deviceCat = new ArrayList<>();
-    private double[] accIn = new double[0], accOut = new double[0];
+    private final List<Integer> deviceSubnet = new ArrayList<>();
+    private List<NetworkWalker.Subnet> subnets = new ArrayList<>();
+    private double[] accIn = new double[0], accOut = new double[0], accV = new double[0];
+    /** Global mode: the walk crosses transformers and reports the whole multi-voltage system. */
+    private boolean globalMode;
     private int conductors;
     private boolean truncated;
     private int windowTick, windowCount;
@@ -104,6 +108,7 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
                 if (stats != null) {
                     accIn[i] += stats.energyIn();
                     accOut[i] += stats.energyOut();
+                    accV[i] = Math.max(accV[i], stats.voltage());
                 }
             }
         }
@@ -120,73 +125,44 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
         }
     }
 
-    /** Walks the attached conductors and records every endpoint reached. */
+    /** Walks the attached conductors (and, in global mode, across transformers) and records every endpoint reached. */
     private void rescan(ServerLevel level) {
+        NetworkWalker.Result r = NetworkWalker.walk(level, worldPosition, globalMode, MAX_CONDUCTORS, EnergyNetworkSnapshot.MAX_DEVICES);
         devicePos.clear();
         deviceCat.clear();
-        conductors = 0;
-        truncated = false;
-        LongOpenHashSet visited = new LongOpenHashSet();
-        LongOpenHashSet devices = new LongOpenHashSet();
-        ArrayDeque<BlockPos> queue = new ArrayDeque<>();
-        visited.add(worldPosition.asLong());
-        for (Direction side : Direction.values()) consider(level, null, worldPosition, side, visited, devices, queue);
-        while (!queue.isEmpty()) {
-            BlockPos at = queue.poll();
-            if (!(level.getBlockEntity(at) instanceof ICableEnergyNode cable)) continue;
-            for (Direction side : Direction.values()) {
-                if (cable.isDirectionBlocked(side)) continue;
-                consider(level, (BlockEntity) cable, at, side, visited, devices, queue);
-            }
-        }
+        deviceSubnet.clear();
+        devicePos.addAll(r.devices);
+        deviceCat.addAll(r.categories);
+        deviceSubnet.addAll(r.deviceSubnet);
+        subnets = r.subnets;
+        conductors = r.conductors;
+        truncated = r.truncated;
         accIn = new double[devicePos.size()];
         accOut = new double[devicePos.size()];
+        accV = new double[devicePos.size()];
     }
 
-    private void consider(ServerLevel level, @Nullable BlockEntity from, BlockPos at, Direction side,
-                          LongOpenHashSet visited, LongOpenHashSet devices, ArrayDeque<BlockPos> queue) {
-        BlockPos next = at.relative(side);
-        long key = next.asLong();
-        if (visited.contains(key) || devices.contains(key)) return;
-        if (!level.isLoaded(next)) return;
-        BlockEntity be = level.getBlockEntity(next);
-        if (be == null) return;
-        if (be instanceof ICableEnergyNode cable) {
-            // The terminal taps the cable physically, so the face toward the terminal need not be open.
-            if (from != null && cable.isDirectionBlocked(side.getOpposite())) return;   // may still be reached from another side
-            if (from != null && (from instanceof IColoredEnergyTile || be instanceof IColoredEnergyTile)
-                    && !IColoredEnergyTile.connects(from, be, side)) return;
-            if (conductors >= MAX_CONDUCTORS) { truncated = true; return; }
-            visited.add(key);
-            conductors++;
-            queue.add(next.immutable());
-            return;
-        }
-        if (from == null) return;                 // only cables attach the terminal to a network
-        EnergyNetworkSnapshot.Category category = categorize(be);
-        if (category == null) return;
-        if (devicePos.size() >= EnergyNetworkSnapshot.MAX_DEVICES) { truncated = true; return; }
-        devices.add(key);
-        devicePos.add(next.immutable());
-        deviceCat.add(category);
-    }
+    public boolean globalMode() { return globalMode; }
 
-    @Nullable
-    private static EnergyNetworkSnapshot.Category categorize(BlockEntity be) {
-        if (be instanceof EnergyTerminalBlockEntity) return null;
-        if (be instanceof AbstractEnergyStorageBlockEntity) return EnergyNetworkSnapshot.Category.STORAGE;
-        if (be instanceof mio_icif_transformer) return EnergyNetworkSnapshot.Category.TRANSFORMER;
-        if (be instanceof DemandEnergySource) return EnergyNetworkSnapshot.Category.GENERATOR;
-        if (be instanceof AbstractEnergyBlockEntity machine) {
-            return machine.isPowerSource() ? EnergyNetworkSnapshot.Category.GENERATOR : EnergyNetworkSnapshot.Category.CONSUMER;
-        }
-        if (be instanceof EnergyComponentHost) return EnergyNetworkSnapshot.Category.CONSUMER;
-        return null;
+    /** GUI request: switch between this sub-network and the whole system across transformers. */
+    public void setGlobalMode(boolean global) {
+        if (globalMode == global) return;
+        globalMode = global;
+        needsRescan = true;
+        windowTick = WINDOW - 1;          // publish on the next tick
+        setChanged();
     }
 
     /** Turns the accumulated window into averages, totals and history. */
     private void publish(ServerLevel level) {
         EnergyNetworkSnapshot s = new EnergyNetworkSnapshot();
+        s.global = globalMode;
+        for (NetworkWalker.Subnet n : subnets) {
+            EnergyNetworkSnapshot.Subnet out = new EnergyNetworkSnapshot.Subnet();
+            out.conductors = n.conductors;
+            out.ratedPacket = n.ratedPacket;
+            s.subnets.add(out);
+        }
         long storageStored = 0, storageCap = 0, bufferStored = 0, bufferCap = 0;
         boolean hasStorage = false;
         for (int i = 0; i < devicePos.size(); i++) {
@@ -203,19 +179,27 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
             boolean switchable = be instanceof IRemoteSwitchable;
             boolean disabled = switchable && ((IRemoteSwitchable) be).isRemotelyDisabled();
             float rated = rated(be, cat, in, out, disabled);
+            int subnetIndex = i < deviceSubnet.size() ? deviceSubnet.get(i) : -1;
+            EnergyNetworkSnapshot.Subnet sub = subnetIndex >= 0 && subnetIndex < s.subnets.size() ? s.subnets.get(subnetIndex) : null;
+            float voltage = i < accV.length ? (float) accV[i] : 0F;
             switch (cat) {
-                case GENERATOR -> { s.generation += out; s.generationCapacity += rated; }
-                case CONSUMER -> { s.consumption += in; s.demand += rated; }
-                case STORAGE -> { s.storageIn += in; s.storageOut += out; storageStored += stored; storageCap += cap; hasStorage = true; }
+                case GENERATOR -> { s.generation += out; s.generationCapacity += rated;
+                    if (sub != null) { sub.generation += out; sub.generationCapacity += rated; } }
+                case CONSUMER -> { s.consumption += in; s.demand += rated;
+                    if (sub != null) { sub.consumption += in; sub.demand += rated; } }
+                case STORAGE -> { s.storageIn += in; s.storageOut += out; storageStored += stored; storageCap += cap; hasStorage = true;
+                    if (sub != null) { sub.storageIn += in; sub.storageOut += out; } }
                 default -> { }
             }
+            if (sub != null) { sub.devices++; sub.measuredPacket = Math.max(sub.measuredPacket, voltage); }
             bufferStored += stored;
             bufferCap += cap;
             s.devices.add(new EnergyNetworkSnapshot.Device(at, BuiltInRegistries.BLOCK.getKey(be.getBlockState().getBlock()).toString(),
-                cat, in, out, stored, cap, switchable, disabled, rated));
+                cat, in, out, stored, cap, switchable, disabled, rated, subnetIndex, voltage));
         }
         java.util.Arrays.fill(accIn, 0);
         java.util.Arrays.fill(accOut, 0);
+        java.util.Arrays.fill(accV, 0);
         s.stored = hasStorage ? storageStored : bufferStored;
         s.capacity = hasStorage ? storageCap : bufferCap;
         s.conductors = conductors;
@@ -277,7 +261,7 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
             var d = rows.get(i);
             if (d.pos().equals(target)) {
                 rows.set(i, new EnergyNetworkSnapshot.Device(d.pos(), d.blockId(), d.category(), d.input(), d.output(),
-                    d.stored(), d.capacity(), true, switchable.isRemotelyDisabled(), d.rated()));
+                    d.stored(), d.capacity(), true, switchable.isRemotelyDisabled(), d.rated(), d.subnet(), d.voltage()));
             }
         }
         version++;
@@ -296,11 +280,13 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        tag.putBoolean("Global", globalMode);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        globalMode = tag.getBoolean("Global");
         needsRescan = true;
     }
 }

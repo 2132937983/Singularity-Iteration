@@ -1,12 +1,33 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:item_tool_electric_rifle",
-    "mio_icif:item_tool_advanced_electric_rifle",
-    "mio_icif:item_tool_tactical_laser_rifle",
-    "mio_icif:item_tool_plasma_launcher",
-    "mio_icif:item_tool_electric_plasma_gun",
-    "mio_icif:item_tool_plasma_air_cannon",
-    "mio_icif:item_tool_rocket_launcher"
+    {
+      "id": "mio_icif:item_tool_electric_rifle",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_advanced_electric_rifle",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_tactical_laser_rifle",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_plasma_launcher",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_electric_plasma_gun",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_plasma_air_cannon",
+      "required": false
+    },
+    {
+      "id": "mio_icif:item_tool_rocket_launcher",
+      "required": false
+    }
   ]
 }

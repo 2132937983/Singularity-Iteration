@@ -337,7 +337,10 @@
       "id": "farmersdelight:dog_food",
       "required": false
     },
-    "mio_icif:normal/item_tin_filled_can",
+    {
+      "id": "mio_icif:normal/item_tin_filled_can",
+      "required": false
+    },
     {
       "id": "create:bar_of_chocolate",
       "required": false

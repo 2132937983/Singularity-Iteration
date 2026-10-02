@@ -1,5 +1,8 @@
-﻿{
+{
   "values": [
-    "mio_icif:wiring/cable/block_superconducting_cable"
+    {
+      "id": "mio_icif:wiring/cable/block_superconducting_cable",
+      "required": false
+    }
   ]
 }

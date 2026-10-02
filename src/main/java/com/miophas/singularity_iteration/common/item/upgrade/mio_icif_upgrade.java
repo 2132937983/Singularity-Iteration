@@ -95,6 +95,7 @@ public class mio_icif_upgrade extends Item implements IUpgradeItem {
                 }
             }
         } catch (Exception e) {
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("upgrade-tier", "Reading an upgrade's tier", e);
         }
         return 1;
     }

@@ -1,12 +1,33 @@
 {
   "replace": false,
   "values": [
-    "#c:rotor_blades/adviron",
-    "#c:rotor_blades/bronze",
-    "#c:rotor_blades/carbon",
-    "#c:rotor_blades/iron",
-    "#c:rotor_blades/super_iridium_alloy",
-    "#c:rotor_blades/titanium_iron_alloy",
-    "#c:rotor_blades/wood"
+    {
+      "id": "#c:rotor_blades/adviron",
+      "required": false
+    },
+    {
+      "id": "#c:rotor_blades/bronze",
+      "required": false
+    },
+    {
+      "id": "#c:rotor_blades/carbon",
+      "required": false
+    },
+    {
+      "id": "#c:rotor_blades/iron",
+      "required": false
+    },
+    {
+      "id": "#c:rotor_blades/super_iridium_alloy",
+      "required": false
+    },
+    {
+      "id": "#c:rotor_blades/titanium_iron_alloy",
+      "required": false
+    },
+    {
+      "id": "#c:rotor_blades/wood",
+      "required": false
+    }
   ]
 }

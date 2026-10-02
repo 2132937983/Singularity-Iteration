@@ -238,11 +238,26 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         return RecipeSlots.combine(lanes);
     }
 
+    /**
+     * Overclocker factor: the base machines turn the upgrade's process-time multiplier into whole
+     * progress steps ({@link #getProgressPerTick()}); the induction furnace's heat model scales
+     * continuously instead - heat builds up and converts into progress this many times faster.
+     */
+    private double overclockSpeed() {
+        return 1.0 / Math.max(1.0e-3, upgradeStats.getProcessTimeMultiplier());
+    }
+
+    /** Energy cost scaled by the overclockers' energy multiplier (rounded up, at least the base). */
+    private long scaledCost(long base) {
+        return Math.max(base, (long) Math.ceil(base * upgradeStats.getEnergyUsageMultiplier()));
+    }
+
     @Override
     protected void onTick() {
         boolean heating = canWork() || level != null && level.hasNeighborSignal(worldPosition);
-        if (heating && apiGetStoredEnergy() >= HEAT_UP_COST && apiUseEnergy(HEAT_UP_COST, false) == HEAT_UP_COST) {
-            heatStorage.generateHeatInternal(HEAT_UP_RATE, false);
+        long heatCost = scaledCost(HEAT_UP_COST);
+        if (heating && apiGetStoredEnergy() >= heatCost && apiUseEnergy(heatCost, false) == heatCost) {
+            heatStorage.generateHeatInternal(Math.max(HEAT_UP_RATE, Math.round(HEAT_UP_RATE * overclockSpeed())), false);
         } else {
             heatStorage.consumeHeatInternal(HEAT_COOL_RATE, false);
         }
@@ -255,10 +270,12 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     protected void doWork() {
         if (prepareWorkingLanes().isEmpty()) { stopWork(); return; }
         if (progress < PROGRESS_TARGET) {
-            if (apiGetStoredEnergy() < WORK_ENERGY_COST || apiUseEnergy(WORK_ENERGY_COST, false) != WORK_ENERGY_COST) {
+            long workCost = scaledCost(WORK_ENERGY_COST);
+            if (apiGetStoredEnergy() < workCost || apiUseEnergy(workCost, false) != workCost) {
                 stopWork(); return;
             }
-            progress = (int) Math.min(PROGRESS_TARGET, (long) progress + heatStorage.getHeatStored() / HEAT_PROGRESS_DIVISOR);
+            long gain = Math.round(heatStorage.getHeatStored() / (double) HEAT_PROGRESS_DIVISOR * overclockSpeed());
+            progress = (int) Math.min(PROGRESS_TARGET, (long) progress + gain);
         }
         isWorking = true;
         if (progress >= PROGRESS_TARGET) finishSmeltingBoth();

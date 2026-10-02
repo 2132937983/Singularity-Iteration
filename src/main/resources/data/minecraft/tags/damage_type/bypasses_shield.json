@@ -1,4 +1,9 @@
 {
   "replace": false,
-  "values": ["mio_icif:tachyon_true"]
+  "values": [
+    {
+      "id": "mio_icif:tachyon_true",
+      "required": false
+    }
+  ]
 }

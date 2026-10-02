@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_golden_denseplate"
+    {
+      "id": "mio_icif:resource/item_golden_denseplate",
+      "required": false
+    }
   ]
 }

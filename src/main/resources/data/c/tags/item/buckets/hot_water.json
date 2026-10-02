@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:hotwater_bucket"
+    {
+      "id": "mio_icif:hotwater_bucket",
+      "required": false
+    }
   ]
 }

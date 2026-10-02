@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:biomass",
-    "mio_icif:biomass_flowing"
+    {
+      "id": "mio_icif:biomass",
+      "required": false
+    },
+    {
+      "id": "mio_icif:biomass_flowing",
+      "required": false
+    }
   ]
 }

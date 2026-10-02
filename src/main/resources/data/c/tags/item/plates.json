@@ -1,28 +1,97 @@
 {
   "replace": false,
   "values": [
-    "#c:plates/adviron",
-    "#c:plates/alloy",
-    "#c:plates/bronze",
-    "#c:plates/carbon",
-    "#c:plates/copper",
-    "#c:plates/dcp",
-    "#c:plates/gold",
-    "#c:plates/iridium",
-    "#c:plates/iridium_iron",
-    "#c:plates/iridium_iron_reinforced",
-    "#c:plates/iron",
-    "#c:plates/irradiant_reinforced",
-    "#c:plates/lapis",
-    "#c:plates/lead",
-    "#c:plates/neutron",
-    "#c:plates/niobium",
-    "#c:plates/niobium_titanium",
-    "#c:plates/obsidian",
-    "#c:plates/super_iridium",
-    "#c:plates/tin",
-    "#c:plates/titanium",
-    "#c:plates/steel",
-    "#c:plates/refined_iron"
+    {
+      "id": "#c:plates/adviron",
+      "required": false
+    },
+    {
+      "id": "#c:plates/alloy",
+      "required": false
+    },
+    {
+      "id": "#c:plates/bronze",
+      "required": false
+    },
+    {
+      "id": "#c:plates/carbon",
+      "required": false
+    },
+    {
+      "id": "#c:plates/copper",
+      "required": false
+    },
+    {
+      "id": "#c:plates/dcp",
+      "required": false
+    },
+    {
+      "id": "#c:plates/gold",
+      "required": false
+    },
+    {
+      "id": "#c:plates/iridium",
+      "required": false
+    },
+    {
+      "id": "#c:plates/iridium_iron",
+      "required": false
+    },
+    {
+      "id": "#c:plates/iridium_iron_reinforced",
+      "required": false
+    },
+    {
+      "id": "#c:plates/iron",
+      "required": false
+    },
+    {
+      "id": "#c:plates/irradiant_reinforced",
+      "required": false
+    },
+    {
+      "id": "#c:plates/lapis",
+      "required": false
+    },
+    {
+      "id": "#c:plates/lead",
+      "required": false
+    },
+    {
+      "id": "#c:plates/neutron",
+      "required": false
+    },
+    {
+      "id": "#c:plates/niobium",
+      "required": false
+    },
+    {
+      "id": "#c:plates/niobium_titanium",
+      "required": false
+    },
+    {
+      "id": "#c:plates/obsidian",
+      "required": false
+    },
+    {
+      "id": "#c:plates/super_iridium",
+      "required": false
+    },
+    {
+      "id": "#c:plates/tin",
+      "required": false
+    },
+    {
+      "id": "#c:plates/titanium",
+      "required": false
+    },
+    {
+      "id": "#c:plates/steel",
+      "required": false
+    },
+    {
+      "id": "#c:plates/refined_iron",
+      "required": false
+    }
   ]
 }

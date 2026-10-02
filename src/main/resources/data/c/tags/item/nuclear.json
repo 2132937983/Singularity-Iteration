@@ -1,28 +1,100 @@
 {
   "values": [
-    "mio_icif:resource/item_uran",
-    "mio_icif:resource/item_uran_235",
-    "mio_icif:resource/item_uran_238",
-    "mio_icif:resource/item_uran_235_small",
-    "mio_icif:resource/item_uran_238_small",
-    "mio_icif:resource/item_uran_pellet",
-    "mio_icif:resource/item_mox",
-    "mio_icif:resource/item_mox_pellet",
-    "mio_icif:resource/item_plutonium",
-    "mio_icif:resource/item_plutonium_small",
-    "mio_icif:resource/item_rtg_pellet",
-    "mio_icif:reactor/item_reactor_uranium_simple",
-    "mio_icif:reactor/item_reactor_uranium_dual",
-    "mio_icif:reactor/item_reactor_uranium_quad",
-    "mio_icif:reactor/item_reactor_mox_simple",
-    "mio_icif:reactor/item_reactor_mox_dual",
-    "mio_icif:reactor/item_reactor_mox_quad",
-    "mio_icif:block_uranium",
-    "mio_icif:reactor/item_reactor_uranium_simple_depleted",
-    "mio_icif:reactor/item_reactor_uranium_dual_depleted",
-    "mio_icif:reactor/item_reactor_uranium_quad_deplete",
-    "mio_icif:reactor/item_reactor_mox_simple_depleted",
-    "mio_icif:reactor/item_reactor_mox_dual_deplete",
-    "mio_icif:reactor/item_reactor_mox_quad_deplete"
+    {
+      "id": "mio_icif:resource/item_uran",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_uran_235",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_uran_238",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_uran_235_small",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_uran_238_small",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_uran_pellet",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_mox",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_mox_pellet",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_plutonium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_plutonium_small",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_rtg_pellet",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_uranium_simple",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_uranium_dual",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_uranium_quad",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_mox_simple",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_mox_dual",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_mox_quad",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_uranium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_uranium_simple_depleted",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_uranium_dual_depleted",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_uranium_quad_deplete",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_mox_simple_depleted",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_mox_dual_deplete",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/item_reactor_mox_quad_deplete",
+      "required": false
+    }
   ]
 }

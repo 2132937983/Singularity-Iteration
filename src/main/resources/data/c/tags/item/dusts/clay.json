@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_clay_dust"
+    {
+      "id": "mio_icif:resource/item_clay_dust",
+      "required": false
+    }
   ]
 }

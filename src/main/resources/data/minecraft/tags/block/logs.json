@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:block_rub_wood",
-    "mio_icif:block_have_rub_wood"
+    {
+      "id": "mio_icif:block_rub_wood",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_have_rub_wood",
+      "required": false
+    }
   ]
 }

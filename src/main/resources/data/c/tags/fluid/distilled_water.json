@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:distilledwater",
-    "mio_icif:distilledwater_flowing"
+    {
+      "id": "mio_icif:distilledwater",
+      "required": false
+    },
+    {
+      "id": "mio_icif:distilledwater_flowing",
+      "required": false
+    }
   ]
 }

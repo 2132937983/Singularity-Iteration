@@ -160,7 +160,8 @@ public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity impleme
                 }
             }
         } catch (Exception e) {
-            // 忽略能量传输异常
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report(
+                "quantum-generator-output", "Quantum generator output towards " + adjacentPos, e);
         }
     }
 

@@ -1,4 +1,8 @@
-﻿{
+{
   "values": [
-    "mio_icif:normal/item_living_circuit"  ]
+    {
+      "id": "mio_icif:normal/item_living_circuit",
+      "required": false
+    }
+  ]
 }

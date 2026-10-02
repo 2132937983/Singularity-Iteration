@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:dieseloil_bucket"
+    {
+      "id": "mio_icif:dieseloil_bucket",
+      "required": false
+    }
   ]
 }

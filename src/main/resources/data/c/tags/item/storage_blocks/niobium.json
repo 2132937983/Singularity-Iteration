@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_niobium"
+    {
+      "id": "mio_icif:block_niobium",
+      "required": false
+    }
   ]
 }

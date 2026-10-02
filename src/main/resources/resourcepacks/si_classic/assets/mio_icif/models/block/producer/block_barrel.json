@@ -1,0 +1,46 @@
+{
+    "parent": "block/block",
+    "elements": [
+        {
+            "from": [0, 0, 0],
+            "to": [16, 16, 16],
+            "faces": {
+                "down": {
+                    "texture": "#down",
+                    "rotation": 90,
+                    "cullface": "down"
+                },
+                "up": {
+                    "texture": "#up",
+                    "rotation": 90,
+                    "cullface": "up"
+                },
+                "north": {
+                    "texture": "#north",
+                    "cullface": "north"
+                },
+                "south": {
+                    "texture": "#south",
+                    "cullface": "south"
+                },
+                "west": {
+                    "texture": "#west",
+                    "cullface": "west"
+                },
+                "east": {
+                    "texture": "#east",
+                    "cullface": "east"
+                }
+            }
+        }
+    ],
+    "textures": {
+        "particle": "mio_icif:block/block_barrel",
+        "down": "mio_icif:block/block_barrel",
+        "up": "mio_icif:block/block_barrel",
+        "north": "mio_icif:block/block_barrel_top",
+        "south": "mio_icif:block/block_barrel_bottom",
+        "west": "mio_icif:block/block_barrel",
+        "east": "mio_icif:block/block_barrel"
+    }
+}

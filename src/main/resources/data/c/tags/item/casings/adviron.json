@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:resource/item_adviron_casing",
-    "#c:casings/steel"
+    {
+      "id": "mio_icif:resource/item_adviron_casing",
+      "required": false
+    },
+    {
+      "id": "#c:casings/steel",
+      "required": false
+    }
   ]
 }

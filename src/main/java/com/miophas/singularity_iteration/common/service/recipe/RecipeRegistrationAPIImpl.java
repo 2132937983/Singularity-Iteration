@@ -143,7 +143,7 @@ public class RecipeRegistrationAPIImpl implements IRecipeRegistrationAPI {
 
     @Override
     public boolean registerCannerRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime) {
-        Ingredient canIngredient = Ingredient.of(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "cell_empty")));
+        Ingredient canIngredient = Ingredient.of(com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_EMPTY.get());
         return registerRecipe(id, "canner", () -> RecipeFactoryBridge.canning("", canIngredient, input, output, processTime, 10));
     }
 

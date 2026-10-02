@@ -1,11 +1,29 @@
 {
   "replace": false,
   "values": [
-    "#c:raw_materials/lead",
-    "#c:raw_materials/niobium",
-    "#c:raw_materials/silver",
-    "#c:raw_materials/tin",
-    "#c:raw_materials/titanium",
-    "#c:raw_materials/uranium"
+    {
+      "id": "#c:raw_materials/lead",
+      "required": false
+    },
+    {
+      "id": "#c:raw_materials/niobium",
+      "required": false
+    },
+    {
+      "id": "#c:raw_materials/silver",
+      "required": false
+    },
+    {
+      "id": "#c:raw_materials/tin",
+      "required": false
+    },
+    {
+      "id": "#c:raw_materials/titanium",
+      "required": false
+    },
+    {
+      "id": "#c:raw_materials/uranium",
+      "required": false
+    }
   ]
 }

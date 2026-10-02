@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_carbon_rotorblade"
+    {
+      "id": "mio_icif:resource/item_carbon_rotorblade",
+      "required": false
+    }
   ]
 }

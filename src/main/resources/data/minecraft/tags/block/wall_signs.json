@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:build/rubber_wall_sign"
+    {
+      "id": "mio_icif:build/rubber_wall_sign",
+      "required": false
+    }
   ]
 }

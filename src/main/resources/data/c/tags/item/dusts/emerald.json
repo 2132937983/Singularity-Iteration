@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:resource/item_emerald_dust"
+    {
+      "id": "mio_icif:resource/item_emerald_dust",
+      "required": false
+    }
   ]
 }

@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_ingot_tin"
+    {
+      "id": "mio_icif:resource/item_ingot_tin",
+      "required": false
+    }
   ]
 }

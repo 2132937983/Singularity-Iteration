@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_silver_ingot"
+    {
+      "id": "mio_icif:resource/item_silver_ingot",
+      "required": false
+    }
   ]
 }

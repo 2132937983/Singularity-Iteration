@@ -1,7 +1,13 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_ore_niobium",
-    "mio_icif:block_ore_niobium_in_deep"
+    {
+      "id": "mio_icif:block_ore_niobium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_niobium_in_deep",
+      "required": false
+    }
   ]
 }

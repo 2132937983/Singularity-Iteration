@@ -1,1 +1,8 @@
-{"values": ["mio_icif:normal/item_circuit"]}
+{
+  "values": [
+    {
+      "id": "mio_icif:normal/item_circuit",
+      "required": false
+    }
+  ]
+}

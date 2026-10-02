@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_titanium_ingot"
+    {
+      "id": "mio_icif:resource/item_titanium_ingot",
+      "required": false
+    }
   ]
 }

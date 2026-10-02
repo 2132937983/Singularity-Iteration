@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_silver_ore_crushed_purified"
+    {
+      "id": "mio_icif:resource/item_silver_ore_crushed_purified",
+      "required": false
+    }
   ]
 }

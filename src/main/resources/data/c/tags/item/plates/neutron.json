@@ -1,5 +1,8 @@
-﻿{
+{
   "values": [
-    "mio_icif:resource/item_neutron_plate"
+    {
+      "id": "mio_icif:resource/item_neutron_plate",
+      "required": false
+    }
   ]
 }

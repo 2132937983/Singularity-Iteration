@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_iridiumiron_reinforced_plate"
+    {
+      "id": "mio_icif:resource/item_iridiumiron_reinforced_plate",
+      "required": false
+    }
   ]
 }

@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_adviron_rotor_blade"
+    {
+      "id": "mio_icif:resource/item_adviron_rotor_blade",
+      "required": false
+    }
   ]
 }

@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_sulfur_dust"
+    {
+      "id": "mio_icif:resource/item_sulfur_dust",
+      "required": false
+    }
   ]
 }

@@ -1,19 +1,61 @@
 {
   "replace": false,
   "values": [
-    "#c:dense_plates/adviron",
-    "#c:dense_plates/bronze",
-    "#c:dense_plates/copper",
-    "#c:dense_plates/gold",
-    "#c:dense_plates/iron",
-    "#c:dense_plates/lapis",
-    "#c:dense_plates/lead",
-    "#c:dense_plates/niobium",
-    "#c:dense_plates/obsidian",
-    "#c:dense_plates/super_iridium",
-    "#c:dense_plates/tin",
-    "#c:dense_plates/titanium",
-    "#c:dense_plates/steel",
-    "#c:dense_plates/refined_iron"
+    {
+      "id": "#c:dense_plates/adviron",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/bronze",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/copper",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/gold",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/iron",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/lapis",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/lead",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/niobium",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/obsidian",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/super_iridium",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/tin",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/titanium",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/steel",
+      "required": false
+    },
+    {
+      "id": "#c:dense_plates/refined_iron",
+      "required": false
+    }
   ]
 }

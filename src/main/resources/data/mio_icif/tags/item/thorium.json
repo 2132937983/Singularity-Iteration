@@ -1,7 +1,16 @@
 {
   "values": [
-    "mio_icif:resource/item_thorium_dust",
-    "mio_icif:resource/item_thorium_dust_small",
-    "mio_icif:normal/item_thorium_scrapbox"
+    {
+      "id": "mio_icif:resource/item_thorium_dust",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_thorium_dust_small",
+      "required": false
+    },
+    {
+      "id": "mio_icif:normal/item_thorium_scrapbox",
+      "required": false
+    }
   ]
 }

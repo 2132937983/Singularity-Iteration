@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:build/rubber_trapdoor"
+    {
+      "id": "mio_icif:build/rubber_trapdoor",
+      "required": false
+    }
   ]
 }

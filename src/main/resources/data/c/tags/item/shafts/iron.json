@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_iron_shaft"
+    {
+      "id": "mio_icif:resource/item_iron_shaft",
+      "required": false
+    }
   ]
 }

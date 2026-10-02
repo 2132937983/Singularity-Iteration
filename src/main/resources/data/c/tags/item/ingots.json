@@ -1,19 +1,61 @@
 {
   "replace": false,
   "values": [
-    "#c:ingots/niobium_titanium",
-    "#c:ingots/alloy",
-    "#c:ingots/bronze",
-    "#c:ingots/copper",
-    "#c:ingots/iridium",
-    "#c:ingots/lead",
-    "#c:ingots/niobium",
-    "#c:ingots/silver",
-    "#c:ingots/steel",
-    "#c:ingots/super_iridium",
-    "#c:ingots/tin",
-    "#c:ingots/titanium",
-    "#c:ingots/uranium",
-    "#c:ingots/refined_iron"
+    {
+      "id": "#c:ingots/niobium_titanium",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/alloy",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/bronze",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/copper",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/iridium",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/lead",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/niobium",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/silver",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/steel",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/super_iridium",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/tin",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/titanium",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/uranium",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/refined_iron",
+      "required": false
+    }
   ]
 }

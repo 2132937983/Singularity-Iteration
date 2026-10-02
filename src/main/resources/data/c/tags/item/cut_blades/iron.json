@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_iron_cut_blade"
+    {
+      "id": "mio_icif:resource/item_iron_cut_blade",
+      "required": false
+    }
   ]
 }

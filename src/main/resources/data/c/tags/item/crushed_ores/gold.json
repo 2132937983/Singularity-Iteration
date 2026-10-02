@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_gold_ore_crushed"
+    {
+      "id": "mio_icif:resource/item_gold_ore_crushed",
+      "required": false
+    }
   ]
 }

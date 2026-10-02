@@ -8,11 +8,29 @@
     "minecraft:pitcher_pod",
     "minecraft:carrot",
     "minecraft:potato",
-    "mio_icif:crop/iron_rich_seed",
-    "mio_icif:crop/copper_rich_seed",
-    "mio_icif:crop/tin_rich_seed",
-    "mio_icif:crop/titanium_rich_seed",
-    "mio_icif:crop/lead_rich_seed",
-    "mio_icif:crop/uranium_rich_seed"
+    {
+      "id": "mio_icif:crop/iron_rich_seed",
+      "required": false
+    },
+    {
+      "id": "mio_icif:crop/copper_rich_seed",
+      "required": false
+    },
+    {
+      "id": "mio_icif:crop/tin_rich_seed",
+      "required": false
+    },
+    {
+      "id": "mio_icif:crop/titanium_rich_seed",
+      "required": false
+    },
+    {
+      "id": "mio_icif:crop/lead_rich_seed",
+      "required": false
+    },
+    {
+      "id": "mio_icif:crop/uranium_rich_seed",
+      "required": false
+    }
   ]
 }

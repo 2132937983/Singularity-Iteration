@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_thorium_dust"
+    {
+      "id": "mio_icif:resource/item_thorium_dust",
+      "required": false
+    }
   ]
 }

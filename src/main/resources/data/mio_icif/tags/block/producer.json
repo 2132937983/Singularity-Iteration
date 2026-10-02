@@ -1,66 +1,249 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:producer/block_magnetizer",
-    "mio_icif:producer/block_tesla",
-    "mio_icif:producer/block_matron_elc",
-    "mio_icif:producer/block_harvest_elc",
-    "mio_icif:producer/block_teleporter_elc",
-    "mio_icif:producer/block_furnace_elc",
-    "mio_icif:producer/block_powder_elc",
-    "mio_icif:producer/block_powder_advanced_elc",
-    "mio_icif:producer/block_washer_elc",
-    "mio_icif:producer/block_fermenter_elc",
-    "mio_icif:producer/block_blast_furnace",
-    "mio_icif:producer/block_blast_furnace_elc",
-    "mio_icif:producer/block_blast_furnace_advanced",
-    "mio_icif:producer/block_steam_generator",
-    "mio_icif:producer/block_steam_repressurizer",
-    "mio_icif:producer/block_solar_distiller",
-    "mio_icif:producer/block_condenser",
-    "mio_icif:producer/block_block_cutter",
-    "mio_icif:producer/block_lathe",
-    "mio_icif:producer/block_steam_kinetic_generator",
-    "mio_icif:producer/block_centrifuge_elc",
-    "mio_icif:producer/block_extractor_elc",
-    "mio_icif:producer/block_compressor_elc",
-    "mio_icif:producer/block_canner_elc",
-    "mio_icif:producer/block_miner_elc",
-    "mio_icif:producer/block_advanced_miner_elc",
-    "mio_icif:producer/block_pump_elc",
-    "mio_icif:producer/block_electrolyzer_elc",
-    "mio_icif:producer/block_recycler_elc",
-    "mio_icif:producer/block_redstone_reactor_coolant_injector",
-    "mio_icif:producer/block_lapis_reactor_coolant_injector",
-    "mio_icif:producer/block_terra_elc",
-    "mio_icif:producer/block_future_elc",
-    "mio_icif:producer/block_induction_elc",
-    "mio_icif:producer/block_matter_elc",
-    "mio_icif:producer/block_large_fabricator_core",
-    "mio_icif:producer/block_large_fabricator_input_iv",
-    "mio_icif:producer/block_large_fabricator_tank",
-    "mio_icif:producer/block_large_fabricator_scrap",
-    "mio_icif:producer/block_neutron_polymerizer",
-    "mio_icif:producer/block_metal_former",
-    "mio_icif:producer/block_scanner_elc",
-    "mio_icif:producer/block_molecular_transformer",
-    "mio_icif:producer/block_pattern_storage",
-    "mio_icif:producer/block_replicator_elc",
-    "mio_icif:producer/block_item_buffer_elc",
-    "mio_icif:producer/block_sorter_elc",
-    "mio_icif:producer/block_item_distributor_elc",
-    "mio_icif:producer/block_fluid_distributor_elc",
-    "mio_icif:producer/block_weighted_fluid_distributor_elc",
-    "mio_icif:producer/block_fluid_regulator_elc",
-    "mio_icif:producer/block_batch_crafter",
-    "mio_icif:producer/block_chunk_loader",
-    "mio_icif:producer/block_compressor_advanced_elc",
-    "mio_icif:producer/block_metal_former_advanced",
-    "mio_icif:producer/block_oil_refinery_elc",
-    "mio_icif:energy_converter/energy_converter",
-    "mio_icif:reactor/block_reactor_chamber",
-    "mio_icif:producer/block_laser_defense_tower",
-    "mio_icif:producer/block_sky_patrol_laser_tower",
-    "mio_icif:producer/block_armory"
+    {
+      "id": "mio_icif:producer/block_magnetizer",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_tesla",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_matron_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_harvest_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_teleporter_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_furnace_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_powder_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_powder_advanced_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_washer_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_fermenter_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_blast_furnace",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_blast_furnace_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_blast_furnace_advanced",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_steam_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_steam_repressurizer",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_solar_distiller",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_condenser",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_block_cutter",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_lathe",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_steam_kinetic_generator",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_centrifuge_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_extractor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_compressor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_canner_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_miner_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_advanced_miner_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_pump_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_electrolyzer_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_recycler_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_redstone_reactor_coolant_injector",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_lapis_reactor_coolant_injector",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_terra_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_future_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_induction_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_matter_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_large_fabricator_core",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_large_fabricator_input_iv",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_large_fabricator_tank",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_large_fabricator_scrap",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_neutron_polymerizer",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_metal_former",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_scanner_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_molecular_transformer",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_pattern_storage",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_replicator_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_item_buffer_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_sorter_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_item_distributor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_fluid_distributor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_weighted_fluid_distributor_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_fluid_regulator_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_batch_crafter",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_chunk_loader",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_compressor_advanced_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_metal_former_advanced",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_oil_refinery_elc",
+      "required": false
+    },
+    {
+      "id": "mio_icif:energy_converter/energy_converter",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/block_reactor_chamber",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_laser_defense_tower",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_sky_patrol_laser_tower",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_armory",
+      "required": false
+    }
   ]
 }

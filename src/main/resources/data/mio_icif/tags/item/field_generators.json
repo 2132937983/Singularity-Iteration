@@ -1,4 +1,8 @@
-﻿{
+{
   "values": [
-    "mio_icif:normal/item_field_generator"  ]
+    {
+      "id": "mio_icif:normal/item_field_generator",
+      "required": false
+    }
+  ]
 }

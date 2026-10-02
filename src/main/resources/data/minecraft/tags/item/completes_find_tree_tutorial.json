@@ -1,7 +1,13 @@
 {
   "replace": false,
   "values": [
-    "#mio_icif:rubber_logs",
-    "mio_icif:block_rub_leaves"
+    {
+      "id": "#mio_icif:rubber_logs",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_rub_leaves",
+      "required": false
+    }
   ]
 }

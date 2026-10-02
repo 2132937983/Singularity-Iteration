@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:resource/item_adviron_plate",
-    "#c:plates/steel"
+    {
+      "id": "mio_icif:resource/item_adviron_plate",
+      "required": false
+    },
+    {
+      "id": "#c:plates/steel",
+      "required": false
+    }
   ]
 }

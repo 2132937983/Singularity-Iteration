@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:resource/item_niobium_titanium_dust"
+    {
+      "id": "mio_icif:resource/item_niobium_titanium_dust",
+      "required": false
+    }
   ]
 }

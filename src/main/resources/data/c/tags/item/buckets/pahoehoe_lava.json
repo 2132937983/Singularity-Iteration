@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:pahoehoelava_bucket"
+    {
+      "id": "mio_icif:pahoehoelava_bucket",
+      "required": false
+    }
   ]
 }

@@ -187,7 +187,15 @@ public final class AreaPreviewClient {
         if (!(event.getScreen() instanceof AbstractContainerScreen<?> screen)) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || lastClicked == null || mc.level.getGameTime() - lastClickedTime > 100) return;
-        var menuType = screen.getMenu().getType();
+        // the player inventory / creative menus have no MenuType (getType() throws): never touch them
+        if (screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen
+                || screen instanceof net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen) return;
+        net.minecraft.world.inventory.MenuType<?> menuType;
+        try {
+            menuType = screen.getMenu().getType();
+        } catch (UnsupportedOperationException e) {
+            return;
+        }
         var key = menuType == null ? null : BuiltInRegistries.MENU.getKey(menuType);
         if (key == null || !Singularity_Iteration.MOD_ID.equals(key.getNamespace())) return;
         if (!(mc.level.getBlockEntity(lastClicked) instanceof WorkAreaProvider)) return;

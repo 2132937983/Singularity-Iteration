@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:environment/block_radiating_stone",
-    "mio_icif:environment/block_radiating_deepslate"
+    {
+      "id": "mio_icif:environment/block_radiating_stone",
+      "required": false
+    },
+    {
+      "id": "mio_icif:environment/block_radiating_deepslate",
+      "required": false
+    }
   ]
 }

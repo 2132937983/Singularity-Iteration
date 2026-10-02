@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:superheatedsteam_bucket"
+    {
+      "id": "mio_icif:superheatedsteam_bucket",
+      "required": false
+    }
   ]
 }

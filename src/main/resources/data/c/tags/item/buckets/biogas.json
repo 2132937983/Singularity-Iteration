@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:biogas_bucket"
+    {
+      "id": "mio_icif:biogas_bucket",
+      "required": false
+    }
   ]
 }

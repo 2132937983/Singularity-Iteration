@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:resource/item_diamond_dust_small"
+    {
+      "id": "mio_icif:resource/item_diamond_dust_small",
+      "required": false
+    }
   ]
 }

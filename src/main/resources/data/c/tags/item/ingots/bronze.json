@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_ingot_bronze"
+    {
+      "id": "mio_icif:resource/item_ingot_bronze",
+      "required": false
+    }
   ]
 }

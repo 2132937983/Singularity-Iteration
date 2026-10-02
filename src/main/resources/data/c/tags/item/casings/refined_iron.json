@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "#c:casings/steel"
+    {
+      "id": "#c:casings/steel",
+      "required": false
+    }
   ]
 }

@@ -1,6 +1,12 @@
 {
-    "values": [
-        "mio_icif:block_ore_uran",
-        "mio_icif:block_ore_uran_in_deep"
-    ]
+  "values": [
+    {
+      "id": "mio_icif:block_ore_uran",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_uran_in_deep",
+      "required": false
+    }
+  ]
 }

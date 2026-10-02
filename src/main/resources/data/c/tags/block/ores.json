@@ -1,19 +1,64 @@
 {
   "values": [
-    "mio_icif:block_ore_tin",
-    "mio_icif:block_ore_uran",
-    "mio_icif:block_ore_lead",
-    "mio_icif:block_ore_tin_in_deep",
-    "mio_icif:block_ore_uran_in_deep",
-    "mio_icif:block_ore_lead_in_deep",
-    "mio_icif:block_ore_niobium",
-    "mio_icif:block_ore_niobium_in_deep",
-    "mio_icif:block_ore_titanium",
-    "mio_icif:block_ore_titanium_in_deep",
-    "#c:ores/uranium",
-    "#c:ores/titanium",
-    "#c:ores/lead",
-    "#c:ores/tin",
-    "#c:ores/niobium"
+    {
+      "id": "mio_icif:block_ore_tin",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_uran",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_lead",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_tin_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_uran_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_lead_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_niobium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_niobium_in_deep",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_titanium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_titanium_in_deep",
+      "required": false
+    },
+    {
+      "id": "#c:ores/uranium",
+      "required": false
+    },
+    {
+      "id": "#c:ores/titanium",
+      "required": false
+    },
+    {
+      "id": "#c:ores/lead",
+      "required": false
+    },
+    {
+      "id": "#c:ores/tin",
+      "required": false
+    },
+    {
+      "id": "#c:ores/niobium",
+      "required": false
+    }
   ]
 }

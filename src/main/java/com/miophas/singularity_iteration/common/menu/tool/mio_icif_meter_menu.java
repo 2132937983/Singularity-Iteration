@@ -30,6 +30,18 @@ public class mio_icif_meter_menu extends mio_icif_base_menu {
     private long lastSampleTick = Long.MIN_VALUE;
     private MeterMode mode = MeterMode.EnergyIn;
 
+    // ---- network view (voltage detector): the cable network around the target
+    private com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.Result network;
+    private long networkAt = Long.MIN_VALUE;
+    private final float[] pendingThroughput = new float[NETWORK_SEND], pendingVoltage = new float[NETWORK_SEND];
+    private int pending;
+    private static final int NETWORK_SEND = 4, NETWORK_REWALK = 40;
+    /** Client: latest network summary and the oscilloscope history (oldest first). */
+    private MeterNetworkPacket clientNetwork;
+    public static final int SCOPE = 120;
+    private final float[] scopeThroughput = new float[SCOPE], scopeVoltage = new float[SCOPE];
+    private int scopeFilled;
+
     private double resultAvg = 0;
     private double resultMin = 0;
     private double resultMax = 0;
@@ -84,7 +96,11 @@ public class mio_icif_meter_menu extends mio_icif_base_menu {
         if (tick == lastSampleTick) return;
         lastSampleTick = tick;
         if (!stillValid(player)) { player.closeContainer(); return; }
+        NodeStats network = sampleNetwork(player);
         NodeStats stats = EnergyNetGlobal.getCurrentTickNodeStats(level, targetPos);
+        // A cable, special cable, transformer or terminal has no node of its own: the meter reads the
+        // network through it (delivered EU, injected EU, highest packet). Endpoints keep the IC2 reading.
+        if (stats == null && isNetworkTarget()) stats = network;
         // IC2 closes an instrument whose energy node no longer exists.
         if (stats == null) { player.closeContainer(); return; }
         double result = switch (mode) {
@@ -108,6 +124,69 @@ public class mio_icif_meter_menu extends mio_icif_base_menu {
         // Publish AFTER producing this tick's sample, not one broadcast later.
         super.broadcastChanges();
     }
+
+    private boolean isNetworkTarget() {
+        return com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.isConductor(targetOwner)
+            || com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.isTransformer(targetOwner)
+            || targetOwner instanceof com.miophas.singularity_iteration.common.blockentity.wiring.terminal.EnergyTerminalBlockEntity;
+    }
+
+    /** Server: one tick of the network around the target; batches samples to the client. */
+    private NodeStats sampleNetwork(ServerPlayer player) {
+        if (!(level instanceof net.minecraft.server.level.ServerLevel server)) return null;
+        long now = server.getGameTime();
+        if (network == null || now - networkAt >= NETWORK_REWALK) {
+            network = com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.walk(server, targetPos, false, 8192, 512);
+            networkAt = now;
+        }
+        double in = 0, out = 0, voltage = 0;
+        boolean any = false;
+        for (BlockPos at : network.devices) {
+            NodeStats st = EnergyNetGlobal.getCurrentTickNodeStats(level, at);
+            if (st == null) continue;
+            any = true;
+            in += st.getEnergyIn();
+            out += st.getEnergyOut();
+            voltage = Math.max(voltage, st.getVoltage());
+        }
+        pendingThroughput[pending] = (float) in;
+        pendingVoltage[pending] = (float) voltage;
+        if (++pending >= NETWORK_SEND) {
+            pending = 0;
+            int gen = 0, use = 0, store = 0, xfmr = 0;
+            for (var cat : network.categories) switch (cat) {
+                case GENERATOR -> gen++;
+                case CONSUMER -> use++;
+                case STORAGE -> store++;
+                case TRANSFORMER -> xfmr++;
+            }
+            long rated = 0;
+            for (var n : network.subnets) rated = Math.max(rated, n.ratedPacket);
+            try {
+                if (player.connection != null && player.connection.hasChannel(MeterNetworkPacket.TYPE))
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new MeterNetworkPacket(containerId, isNetworkTarget(),
+                        rated, network.conductors, gen, use, store, xfmr, network.subnets.size(), pendingThroughput.clone(), pendingVoltage.clone()));
+            } catch (RuntimeException ignored) { }
+        }
+        return any || isNetworkTarget() ? new NodeStats(in, out, voltage) : null;
+    }
+
+    /** Client: network summary + samples from the server. */
+    public void acceptNetwork(MeterNetworkPacket packet) {
+        clientNetwork = packet;
+        for (int i = 0; i < packet.throughput().length; i++) {
+            System.arraycopy(scopeThroughput, 1, scopeThroughput, 0, SCOPE - 1);
+            System.arraycopy(scopeVoltage, 1, scopeVoltage, 0, SCOPE - 1);
+            scopeThroughput[SCOPE - 1] = packet.throughput()[i];
+            scopeVoltage[SCOPE - 1] = packet.voltage()[i];
+            scopeFilled = Math.min(SCOPE, scopeFilled + 1);
+        }
+    }
+
+    public MeterNetworkPacket clientNetwork() { return clientNetwork; }
+    public float[] scopeThroughput() { return scopeThroughput; }
+    public float[] scopeVoltage() { return scopeVoltage; }
+    public int scopeFilled() { return scopeFilled; }
 
     public MeterMode getMode() {
         int ordinal = data.mode();

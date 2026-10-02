@@ -1,18 +1,60 @@
 {
   "values": [
-    "#c:buckets/crude_oil",
-    "#c:buckets/diesel",
-    "#c:buckets/uu_matter",
-    "#c:buckets/superheated_steam",
-    "#c:buckets/steam",
-    "#c:buckets/pahoehoe_lava",
-    "#c:buckets/hot_water",
-    "#c:buckets/hot_coolant",
-    "#c:buckets/distilled_water",
-    "#c:buckets/coolant",
-    "#c:buckets/construction_foam",
-    "#c:buckets/biomass",
-    "#c:buckets/biogas",
-    "#c:buckets/air"
+    {
+      "id": "#c:buckets/crude_oil",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/diesel",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/uu_matter",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/superheated_steam",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/steam",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/pahoehoe_lava",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/hot_water",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/hot_coolant",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/distilled_water",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/coolant",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/construction_foam",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/biomass",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/biogas",
+      "required": false
+    },
+    {
+      "id": "#c:buckets/air",
+      "required": false
+    }
   ]
 }

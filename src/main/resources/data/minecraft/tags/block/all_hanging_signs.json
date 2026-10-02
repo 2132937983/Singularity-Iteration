@@ -1,7 +1,13 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:build/rubber_hanging_sign",
-    "mio_icif:build/rubber_wall_hanging_sign"
+    {
+      "id": "mio_icif:build/rubber_hanging_sign",
+      "required": false
+    },
+    {
+      "id": "mio_icif:build/rubber_wall_hanging_sign",
+      "required": false
+    }
   ]
 }

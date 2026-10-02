@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_bronze_casing"
+    {
+      "id": "mio_icif:resource/item_bronze_casing",
+      "required": false
+    }
   ]
 }

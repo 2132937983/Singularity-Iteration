@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_iron_casing"
+    {
+      "id": "mio_icif:resource/item_iron_casing",
+      "required": false
+    }
   ]
 }

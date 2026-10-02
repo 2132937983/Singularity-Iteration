@@ -233,13 +233,13 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
 
         // 绘制标题
         guiGraphics.drawString(this.font, this.title, 
-            (int)(this.width * 0.05f), (int)(this.height * 0.05f), 0x404040, false);
+            (int)(this.width * 0.05f), (int)(this.height * 0.05f), ink() & 0xFFFFFF, false);
 
         // 绘制第几天显示
         Component dayText = Component.translatable("gui.mio_icif.future.day", menu.getDay() + 1);
         int dayDisplayX = this.width - BUTTON_WIDTH - 20;
         int dayDisplayY = 20;
-        guiGraphics.drawString(this.font, dayText, dayDisplayX, dayDisplayY, 0x2A2E33, false);
+        guiGraphics.drawString(this.font, dayText, dayDisplayX, dayDisplayY, ink() & 0xFFFFFF, false);
 
         // 绘制货币显示
         int coinDisplayY = dayDisplayY + 15;
@@ -275,7 +275,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         int quantitySpacing = BUTTON_WIDTH - squareSize * 2;
         Component quantityText = Component.literal(String.valueOf(menu.getTradeQuantity()));
         guiGraphics.drawCenteredString(this.font, quantityText,
-            quantityAdjustX + squareSize + quantitySpacing / 2, quantityAdjustY + 5, 0x2A2E33);
+            quantityAdjustX + squareSize + quantitySpacing / 2, quantityAdjustY + 5, ink() & 0xFFFFFF);
 
         // 绘制底部信息
         int bottomY = this.height - 25;
@@ -306,7 +306,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         int tradeInfoX = startX;
         int energyDisplayX = startX + tradeTextWidth + spacing;
 
-        guiGraphics.drawString(this.font, tradeText, tradeInfoX, bottomY, 0x2A2E33, false);
+        guiGraphics.drawString(this.font, tradeText, tradeInfoX, bottomY, ink() & 0xFFFFFF, false);
         guiGraphics.drawString(this.font, energyText, energyDisplayX, bottomY, energyColor, false);
 
         updateButtonStates();
@@ -457,9 +457,9 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         guiGraphics.fill(chartLeft - 1, chartTop, chartLeft, chartBottom, axisColor);
         guiGraphics.fill(chartLeft, chartBottom, chartRight, chartBottom + 1, axisColor);
         
-        guiGraphics.drawString(this.font, String.valueOf(maxPrice), chartLeft - 25, chartTop - 4, 0x2A2E33, false);
+        guiGraphics.drawString(this.font, String.valueOf(maxPrice), chartLeft - 25, chartTop - 4, ink() & 0xFFFFFF, false);
         guiGraphics.drawString(this.font, String.valueOf(basePrice), chartLeft - 25, basePriceY - 4, 0xB08A10, false);
-        guiGraphics.drawString(this.font, String.valueOf(minPrice), chartLeft - 25, chartBottom - 4, 0x2A2E33, false);
+        guiGraphics.drawString(this.font, String.valueOf(minPrice), chartLeft - 25, chartBottom - 4, ink() & 0xFFFFFF, false);
         
         Component chartTitle = Component.literal(selectedCommodity.getDisplayName() + " - 20 天价格趋势");
         guiGraphics.drawString(this.font, chartTitle, chartLeft + chartWidth / 2 - this.font.width(chartTitle) / 2, chartTop - 10, 0x9A6A10, false);
@@ -619,4 +619,9 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
     }
 
 
+
+    /** Label ink over the (replaceable) background texture: light on a dark panel, dark on a light one. */
+    private int ink() {
+        return GuiInk.on(GUI_TEXTURE, 20, 10, 120, 20, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    }
 }

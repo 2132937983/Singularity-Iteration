@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_silver_nugget"
+    {
+      "id": "mio_icif:resource/item_silver_nugget",
+      "required": false
+    }
   ]
 }

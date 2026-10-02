@@ -1,7 +1,13 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_adviron",
-    "#c:storage_blocks/steel"
+    {
+      "id": "mio_icif:block_adviron",
+      "required": false
+    },
+    {
+      "id": "#c:storage_blocks/steel",
+      "required": false
+    }
   ]
 }

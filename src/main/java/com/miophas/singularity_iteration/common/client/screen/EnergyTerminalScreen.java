@@ -49,6 +49,7 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
     private int filter = -1;     // -1 all, else Category ordinal
     private int scroll;
     private final SiButton[] filterButtons = new SiButton[4];
+    private SiButton scopeButton;
     private int cachedSync = -1, cachedFilter = -2;
     private final List<Device> rows = new ArrayList<>();
     private final List<Rank> ranking = new ArrayList<>();
@@ -75,6 +76,22 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
                 Component.translatable("gui.mio_icif.energy_terminal.filter." + keys[i]), b -> setFilter(id)));
         }
         setFilter(filter);
+        // scope: this sub-network / the whole system across transformers (global aggregation)
+        scopeButton = addRenderableWidget(new SiButton(leftPos + W - 8 - 62, topPos + 4, 62, 11, Component.empty(), b -> {
+            if (minecraft != null && minecraft.gameMode != null)
+                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, menu.snapshot().global ? 0 : 1);
+            click();
+        }));
+    }
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        if (scopeButton != null) {
+            boolean global = menu.snapshot().global;
+            scopeButton.setMessage(Component.translatable(global ? "gui.mio_icif.energy_terminal.scope.global" : "gui.mio_icif.energy_terminal.scope.local"));
+            scopeButton.selected(global);
+        }
     }
 
     private void setFilter(int f) {
@@ -166,9 +183,21 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
         DspUi.line(g, cx, cy, cw, ch, s.chargeHistory, 1F, CHARGE);
         if (isIn(mouseX, mouseY, cx, cy, cw, ch)) g.fill(mouseX, cy, mouseX + 1, cy + ch, 0x80FFFFFF);
 
-        // ranking bars
+        // ranking bars (global mode: per-sub-network supply / demand bars)
+        if (s.global) {
+            int shown = 0;
+            for (int i = 0; i < s.subnets.size() && shown < 4; i++) {
+                EnergyNetworkSnapshot.Subnet n = s.subnets.get(i);
+                if (n.devices == 0 && n.conductors == 0) continue;
+                int ry = y + RANK_Y + 12 + shown * 15;
+                g.fill(x + RANK_X + 2, ry, x + RANK_X + 3, ry + 13, subnetColor(i));
+                float need = Math.max(n.demand, n.consumption);
+                DspUi.meter(g, x + RANK_X + 60, ry + 2, RANK_W - 64 - 30, 2, need <= 0 ? 1F : n.consumption / need, n.consumption + 0.01F >= need ? GEN : DspUi.RED);
+                shown++;
+            }
+        }
         float top = ranking.isEmpty() ? 1 : Math.max(1e-3F, ranking.get(0).use());
-        for (int r = 0; r < Math.min(RANK_ROWS, ranking.size()); r++) {
+        for (int r = 0; r < Math.min(RANK_ROWS, ranking.size()) && !s.global; r++) {
             Rank rank = ranking.get(r);
             int ry = y + RANK_Y + 12 + r * 12;
             DspUi.meter(g, x + RANK_X + 14, ry + 7, RANK_W - 18, 2, rank.use() / top, r == 0 ? DspUi.RED : USE);
@@ -217,7 +246,7 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
         g.drawString(font, title, 8, 6, SiGuiTheme.TEXT, false);
         String info = Component.translatable("gui.mio_icif.energy_terminal.summary", s.devices.size(), s.conductors).getString()
             + (s.truncated ? " +" : "");
-        small(g, info, W - 8 - DspUi.smallWidth(font, info), 7, SiGuiTheme.TEXT);
+        small(g, info, W - 8 - 66 - DspUi.smallWidth(font, info), 7, SiGuiTheme.TEXT);
 
         float balance = s.generation - s.consumption;
         tile(g, 0, "gui.mio_icif.energy_terminal.generation", DspUi.compact(s.generation),
@@ -247,6 +276,7 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
         small(g, tr("gui.mio_icif.energy_terminal.now"), GRAPH_X + GRAPH_W - 4 - DspUi.smallWidth(font, tr("gui.mio_icif.energy_terminal.now")),
             GRAPH_Y + GRAPH_H - 8, DspUi.TEXT_DIM);
 
+        if (s.global) { renderSubnetLabels(g, s); renderDeviceTable(g); return; }
         // ranking
         small(g, tr("gui.mio_icif.energy_terminal.top_consumers"), RANK_X + 4, RANK_Y + 3, DspUi.TEXT_DIM);
         float total = Math.max(1e-3F, s.consumption);
@@ -265,7 +295,36 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
             small(g, value, RANK_X + RANK_W - 4 - vw, ry, r == 0 ? DspUi.RED : USE);
         }
         if (ranking.isEmpty()) small(g, tr("gui.mio_icif.energy_terminal.no_consumers"), RANK_X + 4, RANK_Y + 16, DspUi.TEXT_DIM);
+        renderDeviceTable(g);
+    }
 
+    /** Global mode: the right panel lists every sub-network (voltage tier, generation / demand, devices). */
+    private void renderSubnetLabels(GuiGraphics g, EnergyNetworkSnapshot s) {
+        small(g, tr("gui.mio_icif.energy_terminal.subnet_title") + " (" + s.subnets.size() + ")", RANK_X + 4, RANK_Y + 3, DspUi.TEXT_DIM);
+        int shown = 0;
+        for (int i = 0; i < s.subnets.size() && shown < 4; i++) {
+            EnergyNetworkSnapshot.Subnet n = s.subnets.get(i);
+            if (n.devices == 0 && n.conductors == 0) continue;
+            int ry = RANK_Y + 12 + shown * 15;
+            long packet = Math.max(n.ratedPacket, (long) n.measuredPacket);
+            String head = "#" + (i + 1) + " " + com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.tierName(packet)
+                + (packet > 0 ? " " + DspUi.compact(packet) + "V" : "");
+            small(g, head, RANK_X + 4, ry, subnetColor(i));
+            String dev = n.devices + "dev";
+            small(g, dev, RANK_X + RANK_W - 4 - DspUi.smallWidth(font, dev), ry, DspUi.TEXT_DIM);
+            String flow = "+" + DspUi.compact(n.generation) + " / -" + DspUi.compact(n.consumption) + " EU/t";
+            small(g, font.plainSubstrByWidth(flow, (int) ((RANK_W - 8) / 0.75F)), RANK_X + 4, ry + 7, n.generation >= n.consumption ? GEN : DspUi.RED);
+            shown++;
+        }
+        if (s.subnets.size() > shown && shown == 4) small(g, "+" + (s.subnets.size() - 4), RANK_X + RANK_W - 12, RANK_Y + 3, DspUi.TEXT_DIM);
+    }
+
+    private static int subnetColor(int i) {
+        int[] c = {DspUi.CYAN, DspUi.VIOLET, DspUi.ORANGE, DspUi.GREEN, 0xFFF5D76E, 0xFFEF7FB0};
+        return c[Math.floorMod(i, c.length)];
+    }
+
+    private void renderDeviceTable(GuiGraphics g) {
         // device table
         String count = rows.size() + "";
         small(g, count, LIST_X + LIST_W - DspUi.smallWidth(font, count), 138, SiGuiTheme.TEXT);
@@ -282,7 +341,8 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
             g.pose().popPose();
             String nm = stack.isEmpty() ? d.blockId() : stack.getHoverName().getString();
             int nameColor = d.disabled() ? 0xFF5E6E7B : DspUi.TEXT;
-            g.drawString(font, font.plainSubstrByWidth(nm, 150), LIST_X + 19, ry + 3, nameColor, false);
+            g.drawString(font, font.plainSubstrByWidth(nm, 140), LIST_X + 19, ry + 3, nameColor, false);
+            if (menu.snapshot().global && d.subnet() >= 0) small(g, "#" + (d.subnet() + 1), LIST_X + 162, ry + 4, subnetColor(d.subnet()));
             String value = switch (d.category()) {
                 case GENERATOR -> "+" + DspUi.compact(d.output());
                 case CONSUMER -> "-" + DspUi.compact(d.input());

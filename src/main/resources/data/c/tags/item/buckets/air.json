@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:air_bucket"
+    {
+      "id": "mio_icif:air_bucket",
+      "required": false
+    }
   ]
 }

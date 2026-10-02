@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:dieseloil",
-    "mio_icif:dieseloil_flowing"
+    {
+      "id": "mio_icif:dieseloil",
+      "required": false
+    },
+    {
+      "id": "mio_icif:dieseloil_flowing",
+      "required": false
+    }
   ]
 }

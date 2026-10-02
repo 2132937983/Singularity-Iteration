@@ -1,5 +1,8 @@
-﻿{
+{
   "values": [
-    "mio_icif:resource/item_titanium_shaft"
+    {
+      "id": "mio_icif:resource/item_titanium_shaft",
+      "required": false
+    }
   ]
 }

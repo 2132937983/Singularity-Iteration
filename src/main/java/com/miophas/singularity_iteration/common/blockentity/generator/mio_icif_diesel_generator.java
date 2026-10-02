@@ -126,8 +126,7 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
         if (isCell) {
             emptyContainer = itemAPI.getFluidCellEmptyContainer(fuelBucketStack);
             if (emptyContainer.isEmpty()) {
-                var emptyCell = MioIcifAPI.instance().getRegistries().getItem(ResourceLocation.fromNamespaceAndPath("mio_icif", "cell_empty"));
-                emptyContainer = emptyCell != null ? new ItemStack(emptyCell) : ItemStack.EMPTY;
+                emptyContainer = new ItemStack(com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_EMPTY.get());
             }
         } else {
             emptyContainer = new ItemStack(Items.BUCKET);

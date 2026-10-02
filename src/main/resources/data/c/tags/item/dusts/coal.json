@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_coal_dust"
+    {
+      "id": "mio_icif:resource/item_coal_dust",
+      "required": false
+    }
   ]
 }

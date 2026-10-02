@@ -1,7 +1,13 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:resource/item_adviron_ingot",
-    "#c:ingots/steel"
+    {
+      "id": "mio_icif:resource/item_adviron_ingot",
+      "required": false
+    },
+    {
+      "id": "#c:ingots/steel",
+      "required": false
+    }
   ]
 }

@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:environment/block_radiating_dirt"
+    {
+      "id": "mio_icif:environment/block_radiating_dirt",
+      "required": false
+    }
   ]
 }

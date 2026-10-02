@@ -1,9 +1,24 @@
 {
   "values": [
-    "mio_icif:resource/item_sunnarium",
-    "mio_icif:resource/item_sunnarium_small",
-    "mio_icif:resource/item_sunnarium_alloy",
-    "mio_icif:resource/item_enriched_sunnarium",
-    "mio_icif:resource/item_enriched_sunnarium_alloy"
+    {
+      "id": "mio_icif:resource/item_sunnarium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_sunnarium_small",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_sunnarium_alloy",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_enriched_sunnarium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_enriched_sunnarium_alloy",
+      "required": false
+    }
   ]
 }

@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "#c:crystals/energy"
+    {
+      "id": "#c:crystals/energy",
+      "required": false
+    }
   ]
 }

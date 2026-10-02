@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_tin_dust"
+    {
+      "id": "mio_icif:resource/item_tin_dust",
+      "required": false
+    }
   ]
 }

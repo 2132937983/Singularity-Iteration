@@ -1,14 +1,41 @@
 {
   "replace": false,
   "values": [
-    "#c:purified_ores/copper",
-    "#c:purified_ores/gold",
-    "#c:purified_ores/iron",
-    "#c:purified_ores/lead",
-    "#c:purified_ores/niobium",
-    "#c:purified_ores/silver",
-    "#c:purified_ores/tin",
-    "#c:purified_ores/titanium",
-    "#c:purified_ores/uranium"
+    {
+      "id": "#c:purified_ores/copper",
+      "required": false
+    },
+    {
+      "id": "#c:purified_ores/gold",
+      "required": false
+    },
+    {
+      "id": "#c:purified_ores/iron",
+      "required": false
+    },
+    {
+      "id": "#c:purified_ores/lead",
+      "required": false
+    },
+    {
+      "id": "#c:purified_ores/niobium",
+      "required": false
+    },
+    {
+      "id": "#c:purified_ores/silver",
+      "required": false
+    },
+    {
+      "id": "#c:purified_ores/tin",
+      "required": false
+    },
+    {
+      "id": "#c:purified_ores/titanium",
+      "required": false
+    },
+    {
+      "id": "#c:purified_ores/uranium",
+      "required": false
+    }
   ]
 }

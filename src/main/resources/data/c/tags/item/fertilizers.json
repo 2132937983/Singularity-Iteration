@@ -1,7 +1,13 @@
 {
   "values": [
     "minecraft:bone_meal",
-    "mio_icif:resource/item_fertilizer",
-    "mio_icif:resource/item_fertilizer_matron"
+    {
+      "id": "mio_icif:resource/item_fertilizer",
+      "required": false
+    },
+    {
+      "id": "mio_icif:resource/item_fertilizer_matron",
+      "required": false
+    }
   ]
 }

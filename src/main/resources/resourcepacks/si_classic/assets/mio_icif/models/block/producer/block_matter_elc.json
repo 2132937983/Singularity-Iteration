@@ -1,0 +1,21 @@
+{
+    "parent": "block/cube",
+    "textures": {
+        "particle": "mio_icif:block/producer/block_machine",
+        "all": "mio_icif:block/producer/block_matter_elc"
+    },
+    "elements": [
+        {
+            "from": [ 0, 0, 0 ],
+            "to": [ 16, 16, 16 ],
+            "faces": {
+                "down":  { "uv": [0, 0, 1.33, 16], "texture": "#all", "cullface": "down" },
+                "up":    { "uv": [1.33, 0, 2.66, 16], "texture": "#all", "cullface": "up" },
+                "south": { "uv": [6.66, 0, 8, 16], "texture": "#all", "cullface": "south" },
+                "north": { "uv": [4, 0, 5.33, 16], "texture": "#all", "cullface": "north" },
+                "west":  { "uv": [5.33, 0, 6.66, 16], "texture": "#all", "cullface": "west" },
+                "east":  { "uv": [2.66, 0, 4, 16], "texture": "#all", "cullface": "east" }
+            }
+        }
+    ]
+}

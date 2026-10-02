@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_adviron"
+    {
+      "id": "mio_icif:block_adviron",
+      "required": false
+    }
   ]
 }

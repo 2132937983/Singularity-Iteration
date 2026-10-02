@@ -56,6 +56,14 @@ public class EnergyTerminalMenu extends AbstractContainerMenu {
         PacketDistributor.sendToPlayer(serverPlayer, new EnergyTerminalSyncPacket(containerId, terminal.snapshot()));
     }
 
+    /** Button 1: global mode on, 0: this sub-network only. */
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (terminal == null || (id != 0 && id != 1)) return false;
+        terminal.setGlobalMode(id == 1);
+        return true;
+    }
+
     /** Server side: validated toggle request from the GUI. */
     public void toggle(BlockPos device) {
         if (terminal != null) terminal.toggle(device);

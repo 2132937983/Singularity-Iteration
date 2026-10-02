@@ -1,10 +1,25 @@
 {
   "replace": false,
   "values": [
-    "#c:nuggets/copper",
-    "#c:nuggets/lead",
-    "#c:nuggets/silver",
-    "#c:nuggets/tin",
-    "#c:nuggets/titanium"
+    {
+      "id": "#c:nuggets/copper",
+      "required": false
+    },
+    {
+      "id": "#c:nuggets/lead",
+      "required": false
+    },
+    {
+      "id": "#c:nuggets/silver",
+      "required": false
+    },
+    {
+      "id": "#c:nuggets/tin",
+      "required": false
+    },
+    {
+      "id": "#c:nuggets/titanium",
+      "required": false
+    }
   ]
 }

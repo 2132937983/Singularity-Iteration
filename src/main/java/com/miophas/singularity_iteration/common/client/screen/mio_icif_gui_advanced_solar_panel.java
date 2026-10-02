@@ -60,6 +60,11 @@ public class mio_icif_gui_advanced_solar_panel extends mio_icif_screen<AdvancedS
     }
 
     @Override
+    protected int titleColor() {
+        return GuiInk.on(GUI_TEXTURE, this.titleLabelX, this.titleLabelY, Math.max(20, this.font.width(this.title)), 8, 256, 256);
+    }
+
+    @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
 

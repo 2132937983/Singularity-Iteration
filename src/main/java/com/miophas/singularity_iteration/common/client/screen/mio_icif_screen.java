@@ -247,14 +247,22 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
     protected void drawTitle(GuiGraphics guiGraphics) {
         float[] l = titleLayout();
         if (l[1] >= 1F) {
-            guiGraphics.drawString(this.font, this.title, (int) l[0], this.titleLabelY, SiGuiTheme.TEXT, false);
+            guiGraphics.drawString(this.font, this.title, (int) l[0], this.titleLabelY, titleColor(), false);
             return;
         }
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(l[0], this.titleLabelY + (8 - 8 * l[1]) / 2F, 0);
         guiGraphics.pose().scale(l[1], l[1], 1F);
-        guiGraphics.drawString(this.font, this.title, 0, 0, SiGuiTheme.TEXT, false);
+        guiGraphics.drawString(this.font, this.title, 0, 0, titleColor(), false);
         guiGraphics.pose().popPose();
+    }
+
+    /**
+     * Title ink. Screens drawn from a texture that a resource pack may replace return
+     * {@link GuiInk#on} so the title stays readable on dark replacement panels.
+     */
+    protected int titleColor() {
+        return SiGuiTheme.TEXT;
     }
 
     @Override

@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:producer/block_future_elc"
+    {
+      "id": "mio_icif:producer/block_future_elc",
+      "required": false
+    }
   ]
 }

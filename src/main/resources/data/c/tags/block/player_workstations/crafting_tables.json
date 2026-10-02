@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:producer/block_industrial_workbench"
+    {
+      "id": "mio_icif:producer/block_industrial_workbench",
+      "required": false
+    }
   ]
 }

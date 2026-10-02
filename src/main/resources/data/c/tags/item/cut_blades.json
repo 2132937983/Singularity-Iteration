@@ -1,8 +1,17 @@
 {
   "replace": false,
   "values": [
-    "#c:cut_blades/adviron",
-    "#c:cut_blades/diamond",
-    "#c:cut_blades/iron"
+    {
+      "id": "#c:cut_blades/adviron",
+      "required": false
+    },
+    {
+      "id": "#c:cut_blades/diamond",
+      "required": false
+    },
+    {
+      "id": "#c:cut_blades/iron",
+      "required": false
+    }
   ]
 }

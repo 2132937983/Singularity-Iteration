@@ -1,5 +1,8 @@
-﻿{
+{
   "values": [
-    "mio_icif:resource/item_nano_living_metal"
+    {
+      "id": "mio_icif:resource/item_nano_living_metal",
+      "required": false
+    }
   ]
 }

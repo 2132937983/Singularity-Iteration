@@ -1,6 +1,12 @@
 {
   "values": [
-    "mio_icif:hotcoolant",
-    "mio_icif:hotcoolant_flowing"
+    {
+      "id": "mio_icif:hotcoolant",
+      "required": false
+    },
+    {
+      "id": "mio_icif:hotcoolant_flowing",
+      "required": false
+    }
   ]
 }

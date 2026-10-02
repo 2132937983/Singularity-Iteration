@@ -1,5 +1,8 @@
 {
   "values": [
-    "mio_icif:resource/item_silicondioxide_dust"
+    {
+      "id": "mio_icif:resource/item_silicondioxide_dust",
+      "required": false
+    }
   ]
 }

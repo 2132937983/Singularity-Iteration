@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "mio_icif:block_raw_titanium"
+    {
+      "id": "mio_icif:block_raw_titanium",
+      "required": false
+    }
   ]
 }

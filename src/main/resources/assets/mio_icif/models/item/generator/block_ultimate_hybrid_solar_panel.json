@@ -1,3 +1,15 @@
 {
-  "parent": "mio_icif:block/generator/block_ultimate_hybrid_solar_panel"
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "base": {
+    "parent": "mio_icif:block/generator/block_ultimate_hybrid_solar_panel"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/icon/generator/block_ultimate_hybrid_solar_panel"
+      }
+    }
+  }
 }

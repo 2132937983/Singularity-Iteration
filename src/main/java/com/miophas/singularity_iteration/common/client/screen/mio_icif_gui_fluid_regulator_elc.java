@@ -159,14 +159,14 @@ public class mio_icif_gui_fluid_regulator_elc extends mio_icif_screen<FluidRegul
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        drawTitle(guiGraphics);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 0x404040, false);
 
         int outputmb = menu.getOutputmb();
         int mode = menu.getMode();
 
-        guiGraphics.drawString(this.font, outputmb + " mB", 105, 57, 0x20D3DE, false);
-        guiGraphics.drawString(this.font, mode == 0 ? "秒" : "tick", 145, 57, 0x20D3DE, false);
+        guiGraphics.drawString(this.font, outputmb + " mB", 105, 57, 0x2A2E33, false);
+        guiGraphics.drawString(this.font, mode == 0 ? "秒" : "tick", 145, 57, 0x2A2E33, false);
     }
 
     @Override

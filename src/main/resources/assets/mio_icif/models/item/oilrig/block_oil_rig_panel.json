@@ -1,3 +1,15 @@
 {
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "base": {
     "parent": "mio_icif:block/oilrig/block_oil_rig_panel"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/icon/oilrig/block_oil_rig_panel"
+      }
+    }
+  }
 }

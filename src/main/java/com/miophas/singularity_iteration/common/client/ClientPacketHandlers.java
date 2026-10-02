@@ -57,6 +57,22 @@ public class ClientPacketHandlers {
     }
 
     public static void handleLaserTowerBeams(com.miophas.singularity_iteration.common.network.LaserTowerBeamPacket packet) {
-        com.miophas.singularity_iteration.common.client.render.LaserBeamRenderer.addVolley(packet);
+        com.miophas.singularity_iteration.common.client.render.LaserBeamRenderer.accept(packet);
+    }
+
+    public static void handleLaserTowerSync(com.miophas.singularity_iteration.common.network.LaserTowerSyncPacket packet) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && mc.player.containerMenu.containerId == packet.containerId()
+                && mc.player.containerMenu instanceof com.miophas.singularity_iteration.common.menu.producer.LaserTowerMenu menu) {
+            menu.acceptSync(packet.stats(), packet.filter());
+        }
+    }
+
+    public static void handleEnergyTerminalSync(com.miophas.singularity_iteration.common.network.EnergyTerminalSyncPacket packet) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && mc.player.containerMenu.containerId == packet.containerId()
+                && mc.player.containerMenu instanceof com.miophas.singularity_iteration.common.menu.wiring.EnergyTerminalMenu menu) {
+            menu.acceptSync(packet.snapshot());
+        }
     }
 }

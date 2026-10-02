@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IBI",
+    "CHC",
+    "IGI"
+  ],
+  "key": {
+    "I": {"tag": "c:plates/iron"},
+    "B": {"item": "mio_icif:resource/item_copper_boiler"},
+    "C": {"tag": "c:circuits/basic"},
+    "H": {"item": "mio_icif:producer/block_machine_hull_basic"},
+    "G": {"item": "mio_icif:resource/item_heatconductor"}
+  },
+  "result": {
+    "id": "mio_icif:producer/block_steam_repressurizer",
+    "count": 1
+  }
+}

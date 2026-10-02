@@ -41,7 +41,7 @@ import java.util.UUID;
  * 最大输入电压为128EU/t (MV等级)
  */
 @SuppressWarnings("null")
-public class mio_icif_tesla extends AbstractProcessingMachineBlockEntity {
+public class mio_icif_tesla extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider {
     private boolean scexAttackInProgress;
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
@@ -337,5 +337,11 @@ public class mio_icif_tesla extends AbstractProcessingMachineBlockEntity {
                 }
             }
         }
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        int r = (int) Math.ceil(ATTACK_RANGE);
+        return java.util.List.of(com.miophas.singularity_iteration.common.area.WorkArea.cube(worldPosition, r, com.miophas.singularity_iteration.common.area.WorkArea.DEFENCE));
     }
 }

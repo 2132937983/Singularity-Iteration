@@ -46,7 +46,7 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.FURNACE_ELC_MENU_TYPE.get(), containerId, SLOT_COUNT,
             playerInventory,
             blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : null,
-            null, 5, blockEntity);
+            null, 6, blockEntity);
 
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
@@ -59,7 +59,13 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
     protected void addMachineSlots() {
         addInputSlot(INPUT_SLOT, INPUT_X, INPUT_Y);
         addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
-        this.addSlot(new LargeSlot(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y, 26, 26));
+        this.addSlot(new LargeSlot(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y, 26, 26) {
+            @Override
+            public void onTake(Player player, ItemStack stack) {
+                super.onTake(player, stack);
+                if (blockEntity != null && player instanceof ServerPlayer sp) blockEntity.collectExperience(sp);
+            }
+        });
         for (int i = 0; i < 4; i++) {
             addUpgradeSlot(UPGRADE_SLOT_START + i, UPGRADE_X, UPGRADE_Y[i]);
         }
@@ -116,6 +122,18 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
             true);
     }
 
+    /** Banked XP x10 (for the GUI readout). */
+    public int getStoredXpTenths() { return data.get(5); }
+
+    public static final int BUTTON_COLLECT_XP = 0;
+
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (id != BUTTON_COLLECT_XP || blockEntity == null || !(player instanceof ServerPlayer sp)) return false;
+        blockEntity.collectExperience(sp);
+        return true;
+    }
+
     /**
      * 当玩家关闭GUI时调用
      * 给予玩家冶炼获得的经验
@@ -140,6 +158,7 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
             int maxEnergy = (int) blockEntity.getEnergyStorage().getCapacity();
             this.data.set(3, energy);
             this.data.set(4, maxEnergy);
+            this.data.set(5, (int) Math.min(Integer.MAX_VALUE, blockEntity.getStoredExperience() * 10));
         }
     }
 

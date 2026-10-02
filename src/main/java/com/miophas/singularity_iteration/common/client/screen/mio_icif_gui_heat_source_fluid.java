@@ -119,7 +119,7 @@ public class mio_icif_gui_heat_source_fluid extends mio_icif_screen<HeatSourceFl
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         // 不调用super.renderLabels() 以避免渲染物品栏名称文本
         // 只渲染标题
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        drawTitle(guiGraphics);
 
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;

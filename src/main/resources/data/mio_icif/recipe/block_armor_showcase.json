@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "G": {
+      "tag": "c:glass_blocks"
+    },
+    "S": {
+      "item": "minecraft:armor_stand"
+    },
+    "P": {
+      "tag": "c:plates/iron"
+    },
+    "L": {
+      "item": "minecraft:glowstone_dust"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    }
+  },
+  "pattern": [
+    "GLG",
+    "PSP",
+    "PCP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:producer/block_armor_showcase"
+  },
+  "show_notification": true
+}

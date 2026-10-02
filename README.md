@@ -52,17 +52,19 @@ Once you've completed your basic industrial production line, you'll have access 
 
 **Welcome to the game!**
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for the per-version changes from 0.1.7.16 through 0.1.7.24, migration notes, and validation scope.
+
 ## Requirements
 
 | Requirement | Version |
 | --- | --- |
 | Minecraft | 1.21.1 |
-| Mod Loader | NeoForge 21.1.218 |
-| Bundled Dependencies | Modern Industrialization EU API, [GrandPower](https://modmaven.dev/dev/technici4n/GrandPower/) 3.0.0 |
+| Mod Loader | NeoForge 21.1+ (build pin: 21.1.218) |
+| Bundled Components | Singularity Iteration Core and SCEX Independent Energy Platform |
 
-The mod currently supports only 1.21.1 NeoForge (21.1.218), and porting is unlikely to be considered for a considerable period of time.
-
-The mod also uses the **EU API** and **GrandPower** from Modern Industrialization.
+The mod targets Minecraft 1.21.1 on NeoForge. The runtime loader range is `[21.1,)`; 21.1.218 is the reproducible build version. Modern Industrialization, GregTech Modern, AE2, Botania and other integrations are optional. The Core is bundled in the main mod JAR and does not need a second runtime installation.
 
 ## Reporting Bugs
 
@@ -111,17 +113,19 @@ Licensed under the [Apache-2.0](LICENSE) license.
 
 **欢迎你的游玩！**
 
+## 版本变更
+
+各版本功能、修复、迁移说明与验证范围见 [CHANGELOG.md](CHANGELOG.md)，本轮覆盖 0.1.7.16 至 0.1.7.24。
+
 ## 环境要求
 
 | 项目 | 版本 |
 | --- | --- |
 | Minecraft | 1.21.1 |
-| 模组加载器 | NeoForge 21.1.218 |
-| 前置依赖（已打包进模组内） | Modern Industrialization 的 EU API、[GrandPower](https://modmaven.dev/dev/technici4n/GrandPower/) 3.0.0 |
+| 模组加载器 | NeoForge 21.1+（构建锁定 21.1.218） |
+| 内置组件 | Singularity Iteration Core、SCEX 独立能源平台 |
 
-模组目前仅支持 1.21.1 NeoForge（21.1.218），或许在较长的一段时间内都不会考虑移植。
-
-模组也使用了 Modern Industrialization 所使用的 **EU API** 与 **GrandPower**。
+模组面向 Minecraft 1.21.1 NeoForge；运行加载器范围为 `[21.1,)`，21.1.218 用于可复现构建。Modern Industrialization、GregTech Modern、AE2、Botania 等联动均为可选。Core 已内置于主模组 JAR，运行时无需再单独安装。
 
 ## 问题反馈
 

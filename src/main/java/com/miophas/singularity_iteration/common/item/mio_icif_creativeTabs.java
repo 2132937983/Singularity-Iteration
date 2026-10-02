@@ -67,6 +67,11 @@ public class mio_icif_creativeTabs {
                 { ItemStack fullLaserMiner = new ItemStack(mio_icif_items_tools.TOOL_LASER_MINER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullLaserMiner, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullLaserMiner)); output.accept(fullLaserMiner); }
 
                 output.accept(mio_icif_items_tools.WRENCH.get());
+                output.accept(mio_icif_items_tools.AREA_SCANNER.get());
+                output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.ARMORY_ITEM.get());
+                output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.SHOWCASE_ITEM.get());
+                output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.REMOTE.get());
+                output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.CONNECTOR.get());
                 output.accept(mio_icif_items_tools.WRENCH_ELC.get());
                 // 电动扳手 - 空电版本
                 { ItemStack emptyWrenchElc = new ItemStack(mio_icif_items_tools.WRENCH_ELC.get());
@@ -1213,6 +1218,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.TERRA_ELC.get());
                 output.accept(mio_icif_blocks.FUTURE_ELC.get());
                 output.accept(mio_icif_blocks.TESLA.get());
+                output.accept(mio_icif_blocks.ENERGY_TERMINAL.get());
                 output.accept(mio_icif_blocks.LASER_DEFENSE_TOWER.get());
                 output.accept(mio_icif_blocks.SKY_PATROL_LASER_TOWER.get());
 

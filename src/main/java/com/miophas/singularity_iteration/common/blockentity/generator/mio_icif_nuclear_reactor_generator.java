@@ -62,6 +62,9 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     private final PlatformHeatStorage heat=new PlatformHeatStorage(10000,0,1000,20,5000,0);
     private final com.miophas.singularity_iteration.core.runtime.reactor.GuardedReactorHeat heatPort=new com.miophas.singularity_iteration.core.runtime.reactor.GuardedReactorHeat(heat,this::operational);
     private final mio_icif_fluid_reactor_handler fluid=new mio_icif_fluid_reactor_handler(this::fluidAvailable,this::dirty);
+    /** Liquid cooling of the standard (generator-mode) reactor. */
+    private final ReactorLiquidCooling cooling=new ReactorLiquidCooling(this::dirty);
+    public ReactorLiquidCooling getLiquidCooling(){return cooling;}
     private mio_icif_multiblock_manager<mio_icif_fluid_reactor_validator> structure;
     private mio_icif_reactor_mode mode=mio_icif_reactor_mode.GENERATOR;
     private int cycleRemaining=19,lastHeat;
@@ -107,6 +110,18 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         +": "+(accident.trigger().effect()==ReactorAccidentLatch.Effect.LOCAL_MACHINE?"local machine":"nuclear terrain");}
     public boolean hasReactorAccident(){return !accident.mayOperateOrExport();}
     /** IC2 IReactor#getHeatEffectModifier。 */
+    /** Feed / burn rate multiplier, 1x..16x (see {@link #excessHeat}). */
+    public static final int MIN_FEED=1,MAX_FEED=16;
+    private int feedRate=1;
+    public int getFeedRate(){return feedRate;}
+    public void setFeedRate(int value){int v=Math.max(MIN_FEED,Math.min(MAX_FEED,value));if(v!=feedRate){feedRate=v;dirty();}}
+    /** Total heat factor at a feed rate: n^1.6 (1x -> 1, 2x -> 3.0, 4x -> 9.2, 8x -> 27.9, 16x -> 84.4), EU stays n. */
+    public static double heatFactor(int n){return Math.pow(Math.max(1,n),1.6);}
+    /** Heat added to the hull on top of n normal cycles so total fuel heat follows {@link #heatFactor}. */
+    public static long excessHeat(long generatedOverFeeds,int n){
+        if(n<=1||generatedOverFeeds<=0)return 0;
+        return Math.round(generatedOverFeeds/(double)n*(heatFactor(n)-n));
+    }
     public float getHeatEffectModifier(){return hem;}
     /** IC2 IReactor#setHeatEffectModifier；每循环开始时重置为 1。 */
     public void setHeatEffectModifier(float value){hem=value>0?value:0;}
@@ -198,10 +213,39 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         try{
             for(int i=0;i<54;i++){slots[i]=i;expected[i]=itemHandler.getStackInSlot(i).copy();if(i%9<columns)parts[i]=ReactorInventory.read(expected[i]);}
             var coolant=liquid?fluid.activeCoolant():null;
-            FluidReactorCycle.Result converted=liquid?FluidReactorCycle.step(parts,columns,heat.getHeatStored(),enabled(),fluid.getInputFluidAmount(),fluid.getOutputFluidAmount(),fluid.FLUID_CAPACITY,coolant.huPerMB(),fluid.isOutputCompatible()):null;
-            ReactorCycle.Result result=liquid?converted.cycle():ReactorCycle.step(parts,columns,heat.getHeatStored(),enabled());
-            var next=result.parts();var depleted=result.depletedFuel();
-            for(int i=0;i<54;i++)replacement[i]=i%9<columns?ReactorInventory.write(expected[i],parts[i],next[i],depleted[i]):expected[i].copy();
+            // Feed rate: the cycle runs feedRate times per 20-tick period on item copies (fuel burn, component
+            // heat/wear and EU all scale linearly); the hull additionally takes super-linear excess heat.
+            int feeds=feedRate;
+            ItemStack[] current=new ItemStack[54];for(int i=0;i<54;i++)current[i]=expected[i].copy();
+            long hull=heat.getHeatStored();int coldIn=liquid?fluid.getInputFluidAmount():0,hotOut=liquid?fluid.getOutputFluidAmount():0,convertedSum=0;
+            double euSum=0;long generatedSum=0;
+            long coolBudget=liquid?0:cooling.budget(),coolUsed=0;
+            FluidReactorCycle.Result converted=null;ReactorCycle.Result result=null;
+            for(int feed=0;feed<feeds;feed++){
+                if(feed>0)for(int i=0;i<54;i++)parts[i]=i%9<columns?ReactorInventory.read(current[i]):null;
+                converted=liquid?FluidReactorCycle.step(parts,columns,hull,enabled(),coldIn,hotOut,fluid.FLUID_CAPACITY,coolant.huPerMB(),fluid.isOutputCompatible()):null;
+                result=liquid?converted.cycle():ReactorCycle.step(parts,columns,hull,enabled());
+                var next=result.parts();var depleted=result.depletedFuel();
+                // liquid cooling: coolant drains heat stored in vents/cells/exchangers first -> no wear while it flows
+                for(int i=0;i<54&&coolUsed<coolBudget;i++){
+                    var p=next[i];
+                    if(p==null||!p.profile().storesHeat()||p.stored()<=0)continue;
+                    int take=(int)Math.min(p.stored(),coolBudget-coolUsed);
+                    next[i]=p.withStored(p.stored()-take);coolUsed+=take;
+                }
+                for(int i=0;i<54;i++)replacement[i]=i%9<columns?ReactorInventory.write(current[i],parts[i],next[i],depleted[i]):current[i].copy();
+                euSum+=result.euPerTick();generatedSum+=result.generatedHeat();hull=result.hullHeat();
+                if(liquid){convertedSum+=converted.converted();coldIn=converted.coolant();hotOut=converted.hotCoolant();}
+                if(hull>=result.maxHullHeat())break;   // meltdown: no further feeds
+                if(feed<feeds-1){current=replacement;replacement=new ItemStack[54];}
+            }
+            long excessHeat=excessHeat(generatedSum,feeds);
+            long hullAfter=Math.addExact(hull,excessHeat);
+            long hullCooling=Math.min(hullAfter,coolBudget-coolUsed);   // remaining flow then cools the hull
+            coolUsed+=hullCooling;
+            final long finalHull=hullAfter-hullCooling;final long finalCoolUsed=coolUsed;
+            final double finalEu=euSum;final long finalGenerated=Math.addExact(generatedSum,excessHeat);
+            final int finalCold=coldIn,finalHot=hotOut,finalConverted=convertedSum;
             // Decide from the final fluid-adjusted result. Never reject the pre-cooling input heat.
             // 对齐 IC2 explode()：威力 = (10 + Σ加法项) × Π隔板减免 × hem，再按 reactorExplosionPowerLimit 封顶。
             int additiveMillis=10*POWER_MILLIS_PER_UNIT,modifierMillis=1000;
@@ -228,14 +272,16 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             int powerMillis=limitMillis<=0?1:(int)Math.max(1,Math.min(limitMillis,rawPower));
             // IC2 calculateHeatEffects：威力上限 <= 0 时直接返回——既不爆炸也不产生高温效应，反应堆就停在满热继续发电。
             var trigger=Singularity_Iteration_Config.REACTOR_EXPLOSION_POWER_LIMIT.get()<=0?null:
-                ReactorAccidentLatch.decide(result.hullHeat(),result.maxHullHeat(),level.getGameTime(),
+                ReactorAccidentLatch.decide(finalHull,result.maxHullHeat(),level.getGameTime(),
                 Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get(),powerMillis);
-            int committedHeat=Math.toIntExact(result.generatedHeat());
-            var committedRate=trigger==null?EnergyAmount.fromDouble(result.euPerTick()):EnergyAmount.ZERO;
+            int committedHeat=Math.toIntExact(finalGenerated);
+            var committedRate=trigger==null?EnergyAmount.fromDouble(finalEu):EnergyAmount.ZERO;
+            final var finalResult=result;final var finalConverted2=converted;
             if(!operational())return;
             if(!itemHandler.scexCommitSlots(slots,expected,replacement,()->{
-                heat.setCapacity(result.maxHullHeat());heat.setHeat(result.hullHeat());lastHeat=committedHeat;
-                if(converted!=null)fluid.commitCycle(converted.coolant(),converted.hotCoolant(),converted.converted(),coolant.huPerMB());
+                heat.setCapacity(finalResult.maxHullHeat());heat.setHeat(Math.min(finalHull,finalResult.maxHullHeat()));lastHeat=committedHeat;
+                if(!liquid)cooling.commit(finalCoolUsed);
+                if(finalConverted2!=null)fluid.commitCycle(finalCold,finalHot,finalConverted,coolant.huPerMB());
                 accident.armAfterCommit(trigger);cycleVerified=true;rate=committedRate;
                 if(hasReactorAccident())frameUsed=EnergyAmount.ZERO;
                 failure=hasReactorAccident()?accidentFailure():"";syncOutputGate();
@@ -388,18 +434,18 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     public mio_icif_multiblock_manager<mio_icif_fluid_reactor_validator> getFluidReactorMultiblock(){return structure;}
     public mio_icif_reactor_mode getReactorMode(){return mode;}
     @Override public IReactorAPI.ReactorMode getApiReactorMode(){return mode==mio_icif_reactor_mode.FLUID?IReactorAPI.ReactorMode.FLUID:IReactorAPI.ReactorMode.GENERATOR;}
-    public void setReactorMode(mio_icif_reactor_mode next){mode=java.util.Objects.requireNonNull(next);rate=EnergyAmount.ZERO;syncOutputGate();dirty();}
+    public void setReactorMode(mio_icif_reactor_mode next){var before=mode;mode=java.util.Objects.requireNonNull(next);rate=EnergyAmount.ZERO;syncOutputGate();dirty();if(before!=next&&level!=null)level.invalidateCapabilities(worldPosition);}
     @Override public boolean isValidFluidReactorStructure(){return structure!=null&&structure.isValid()&&level!=null&&new mio_icif_fluid_reactor_validator().validate(level,worldPosition).isValid();}
     @Override public mio_icif_fluid_reactor_handler getFluidHandler(){return fluid;}
-    public IFluidHandler getFluidHandlerCapability(Direction side){return fluidAvailable()?fluid:null;}
+    public IFluidHandler getFluidHandlerCapability(Direction side){if(fluidAvailable())return fluid;return mode==mio_icif_reactor_mode.GENERATOR?cooling:null;}
     public int getInputFluidAmount(){return fluid.getInputFluidAmount();}
     public int getOutputFluidAmount(){return fluid.getOutputFluidAmount();}
     @Override public Component getDisplayName(){return Component.translatable("block.mio_icif.generator.block_nuclear_reactor_generator");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return mode==mio_icif_reactor_mode.FLUID?new FluidReactorMenu(id,inventory,this):new NuclearReactorGeneratorMenu(id,inventory,this,itemHandler,getContainerData());}
     public ContainerData getContainerData(){return new ContainerData(){
-        @Override public int get(int i){return switch(i){case 0->(int)energyStorage.getAmount();case 1->(int)ENERGY_CAPACITY;case 2->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 3->(int)getMaxHeat();case 4->getCurrentOutput();case 5->getAvailableColumns();default->0;};}
+        @Override public int get(int i){return switch(i){case 0->(int)energyStorage.getAmount();case 1->(int)ENERGY_CAPACITY;case 2->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 3->(int)getMaxHeat();case 4->getCurrentOutput();case 5->getAvailableColumns();case 6->feedRate;case 7->cooling.coldFluid().getAmount();case 8->cooling.hotFluid().getAmount();case 9->cooling.lastAbsorbed();case 10->cooling.active()==null?0:cooling.active().huPerMB();default->0;};}
         @Override public void set(int i,int value){}
-        @Override public int getCount(){return 6;}
+        @Override public int getCount(){return 11;}
     };}
     public ContainerData getGeneratorContainerData(){return getContainerData();}
     public ContainerData getFluidContainerData(){return new FluidData();}
@@ -410,7 +456,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     }
     @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider provider){
         super.saveAdditional(tag,provider);tag.putLong("HeatStored",heat.getHeatStored());tag.putLong("MaxHeatStored",heat.getMaxHeatStored());
-        tag.putInt("CurrentHeatGeneration",lastHeat);tag.putLong("CurrentEnergyGeneration",rate.whole());tag.putBoolean("IsRunning",isRunning());tag.putInt("ReactorCycleTicks",cycleRemaining);tag.putString("ReactorMode",mode.getName());
+        tag.putInt("CurrentHeatGeneration",lastHeat);tag.putLong("CurrentEnergyGeneration",rate.whole());tag.putBoolean("IsRunning",isRunning());tag.putInt("ReactorCycleTicks",cycleRemaining);tag.putString("ReactorMode",mode.getName());tag.putInt("FeedRate",feedRate);tag.put("LiquidCooling",cooling.save(provider));
         ListTag legacy=new ListTag();for(int i=0;i<54;i++)if(!getItem(i).isEmpty()){CompoundTag item=(CompoundTag)getItem(i).save(provider);item.putByte("Slot",(byte)i);legacy.add(item);}tag.put("ReactorItems",legacy);
         CompoundTag fluidTag=new CompoundTag();fluid.saveToNBT(fluidTag,provider);tag.put("FluidHandler",fluidTag);
         CompoundTag saved=new CompoundTag();saved.putInt("version",2);saved.putLong("rate",rate.whole());saved.putLong("rate_fraction",rate.fraction());saved.put("hold",hold.copy());saved.putString("failure",failure);saved.put("accident",saveAccident());tag.put("scex_reactor",saved);
@@ -421,6 +467,8 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         long max=tag.getLong("MaxHeatStored");heat.setCapacity(max>0?max:10000);
         cycleRemaining=tag.contains("ReactorCycleTicks")?tag.getInt("ReactorCycleTicks"):19;
         if(cycleRemaining<0||cycleRemaining>19){hold.put("invalid_cycle",tag.get("ReactorCycleTicks").copy());cycleRemaining=19;}
+        if(tag.contains("LiquidCooling"))cooling.load(tag.getCompound("LiquidCooling"),provider);
+        feedRate=tag.contains("FeedRate")?Math.max(MIN_FEED,Math.min(MAX_FEED,tag.getInt("FeedRate"))):1;
         String savedMode=tag.getString("ReactorMode");mode=mio_icif_reactor_mode.fromString(savedMode);
         if(!savedMode.isEmpty()&&!savedMode.equals("generator")&&!savedMode.equals("fluid"))hold.putString("unknown_mode",savedMode);
         if(tag.contains("FluidHandler",Tag.TAG_COMPOUND))fluid.loadFromNBT(tag.getCompound("FluidHandler"),provider);

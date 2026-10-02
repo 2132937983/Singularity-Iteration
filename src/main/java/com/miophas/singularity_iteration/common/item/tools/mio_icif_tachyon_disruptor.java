@@ -15,7 +15,7 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWeaponItem {
+public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWeaponItem, com.miophas.singularity_iteration.common.item.tuning.ITunableItem {
     public static final int MAX_ENERGY = 400000000;
     public static final int CHARGE_RATE = 8192;
     public static final int TIER = 5;
@@ -39,8 +39,9 @@ public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWe
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        long cost = shotCost(stack);
 
-        if (!hasEnoughEnergy(stack, ENERGY_PER_SHOT)) {
+        if (!hasEnoughEnergy(stack, cost)) {
             if (!level.isClientSide) {
                 player.sendSystemMessage(Component.translatable("message.mio_icif.tachyon_disruptor.no_energy"));
             }
@@ -52,23 +53,64 @@ public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWe
                 return InteractionResultHolder.fail(stack);
             }
 
-            consumeEnergy(stack, ENERGY_PER_SHOT);
+            consumeEnergy(stack, cost);
 
             mio_icif_energy_bullet bullet = new mio_icif_energy_bullet(RIFLE_BULLET_ENTITY, player, level);
-            bullet.setDamage(BULLET_DAMAGE);
+            bullet.setDamage(damage(stack));
             bullet.setMaxLife(BULLET_MAX_LIFE);
-            bullet.setPierceCount(PIERCE_COUNT);
+            bullet.setPierceCount(PIERCE_COUNT + 2 * tuning(stack, "pierce"));
+            bullet.setTachyon(tuning(stack, "multi"), 2 * tuning(stack, "pierce"), tuning(stack, "true_damage") / 100F);
             bullet.setPotionEffect(new net.minecraft.world.effect.MobEffectInstance(
                 net.minecraft.world.effect.MobEffects.WEAKNESS, 600, 2));
             bullet.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, BULLET_SPEED, 0.0F);
             level.addFreshEntity(bullet);
 
+            float load = (float) Math.min(1.0, Math.log10(cost / (double) ENERGY_PER_SHOT) / 3.0);
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                net.minecraft.sounds.SoundEvents.FIREWORK_ROCKET_BLAST, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.5F);
+                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.TACHYON_SHOT.get(), net.minecraft.sounds.SoundSource.PLAYERS,
+                1.0F + load * 0.6F, 1.0F - load * 0.25F);
         }
 
         player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    }
+
+    // ---- tuning: baseline (100%) is the stock disruptor; every upgrade multiplies the EU per shot
+    private static final java.util.List<Spec> SPECS = java.util.List.of(
+        new Spec("output", 100, 300, 25, 100, "%"),
+        new Spec("multi", 0, 4, 1, 0, ""),
+        new Spec("pierce", 0, 5, 1, 0, ""),
+        new Spec("true_damage", 0, 100, 25, 0, "%"));
+
+    @Override public java.util.List<Spec> tuningSpecs(ItemStack stack) { return SPECS; }
+
+    /** Damage of one hit: base x output. */
+    public float damage(ItemStack stack) { return BULLET_DAMAGE * tuning(stack, "output") / 100F; }
+
+    /**
+     * EU per shot: 50k x output^2 x (1+multi)^1.4 x (1+pierce/2)^1.25 x (1+2 x true).
+     * All maxed this is ~1,230x the stock cost (~61.5M EU, six shots per full charge).
+     */
+    public long shotCost(ItemStack stack) {
+        double out = tuning(stack, "output") / 100.0;
+        double c = ENERGY_PER_SHOT * out * out
+            * Math.pow(1 + tuning(stack, "multi"), 1.4)
+            * Math.pow(1 + tuning(stack, "pierce") / 2.0, 1.25)
+            * (1 + 2.0 * tuning(stack, "true_damage") / 100.0);
+        return Math.round(c);
+    }
+
+    @Override
+    public java.util.List<Component> tuningSummary(ItemStack stack) {
+        long cost = shotCost(stack);
+        int hits = 1 + tuning(stack, "multi");
+        return java.util.List.of(
+            Component.translatable("tuning.mio_icif.tachyon.damage", String.format("%.0f", damage(stack)), hits,
+                tuning(stack, "true_damage")),
+            Component.translatable("tuning.mio_icif.tachyon.pierce", PIERCE_COUNT + 2 * tuning(stack, "pierce"), 2 * tuning(stack, "pierce")),
+            Component.translatable("tuning.mio_icif.tachyon.cost", String.format("%,d", cost),
+                String.format("%.1f", cost / (double) ENERGY_PER_SHOT)),
+            Component.translatable("tuning.mio_icif.tachyon.shots", String.format("%,d", Math.max(0, getEnergy(stack) / Math.max(1, cost)))));
     }
 
     @Override
@@ -90,7 +132,9 @@ public class mio_icif_tachyon_disruptor extends mio_icif_tool_elc implements IWe
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        tooltip.add(Component.translatable("tooltip.mio_icif.tachyon_disruptor.damage", BULLET_DAMAGE));
+        tooltip.add(Component.translatable("tooltip.mio_icif.tachyon_disruptor.damage", String.format("%.0f", damage(stack))));
+        for (Component line : tuningSummary(stack)) tooltip.add(line.copy().withStyle(net.minecraft.ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.mio_icif.tuning_hint").withStyle(net.minecraft.ChatFormatting.DARK_AQUA));
     }
 
     @Override

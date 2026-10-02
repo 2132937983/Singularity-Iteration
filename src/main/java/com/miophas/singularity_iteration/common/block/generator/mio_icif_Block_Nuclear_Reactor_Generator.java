@@ -108,6 +108,20 @@ public class mio_icif_Block_Nuclear_Reactor_Generator extends mio_icif_entity_bl
         return mio_icif_block_entities.NUCLEAR_REACTOR_GENERATOR_ENTITY_TYPE.get().create(pos, state);
     }
 
+    /** Buckets / cells / tanks: pour coolant in (generator mode liquid cooling) or take hot coolant out. */
+    @Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                                                 Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null
+            && level.getBlockEntity(pos) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator reactor
+            && reactor.getReactorMode() == com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_reactor_mode.GENERATOR) {
+            if (net.neoforged.neoforge.fluids.FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
+                return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+            }
+        }
+        return super.useItemOn(stack, state, level, pos, player, hand, hit);
+    }
+
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hitResult) {

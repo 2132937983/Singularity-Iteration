@@ -26,6 +26,8 @@ import org.jetbrains.annotations.Nullable;
 public class mio_icif_MetsSolarGeneratorBase extends AbstractGeneratorBlockEntity {
 
     public static final int SLOT_COUNT = 4;
+    /** The single GUI slot: items here are charged from the internal buffer (generators have no discharge slot). */
+    public static final int CHARGE_SLOT = 0;
 
     protected final int dayPower;
     protected final int tier;
@@ -173,11 +175,12 @@ public class mio_icif_MetsSolarGeneratorBase extends AbstractGeneratorBlockEntit
 
     @Override
     protected void chargeItems() {
+        if (level != null && level.getGameTime() % 40 == 0) ejectHiddenSlots();
         if (scexProfile != null) {
-            if (SolarItemCharging.charge(itemHandler, scexProfile.chargeSlots(), energyStorage, getItemAPI())) setChanged();
+            if (SolarItemCharging.charge(itemHandler, 1, energyStorage, getItemAPI())) setChanged();
             return;
         }
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 1; i++) {
             ItemStack chargeStack = itemHandler.getStackInSlot(i);
             if (chargeStack.isEmpty()) continue;
             if (getItemAPI().isBattery(chargeStack)) {
@@ -194,6 +197,18 @@ public class mio_icif_MetsSolarGeneratorBase extends AbstractGeneratorBlockEntit
                 api.chargeBattery(chargeStack, energyExtracted, false);
                 setChanged();
             }
+        }
+    }
+
+    /** Items left in the hidden extra slots (e.g. the 0.1.7.20 discharge slot) are ejected so nothing is lost. */
+    private void ejectHiddenSlots() {
+        if (level == null) return;
+        for (int i = 1; i < itemHandler.getSlots(); i++) {
+            ItemStack stack = itemHandler.getStackInSlot(i);
+            if (stack.isEmpty()) continue;
+            itemHandler.setStackInSlot(i, ItemStack.EMPTY);
+            net.minecraft.world.Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.1, worldPosition.getZ() + 0.5, stack);
+            setChanged();
         }
     }
 
@@ -254,12 +269,12 @@ public class mio_icif_MetsSolarGeneratorBase extends AbstractGeneratorBlockEntit
 
     @Override
     public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable net.minecraft.core.Direction side) {
-        return slot >= 0 && slot < Math.min(SLOT_COUNT, itemHandler.getSlots()) && isBattery(stack);
+        return slot == CHARGE_SLOT && isBattery(stack);
     }
 
     @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, net.minecraft.core.Direction side) {
-        return slot >= 0 && slot < Math.min(SLOT_COUNT, itemHandler.getSlots());
+        return slot >= 0 && slot < itemHandler.getSlots();
     }
 
     @Override

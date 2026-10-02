@@ -51,7 +51,7 @@ import org.jetbrains.annotations.Nullable;
  * Bounded connected search, lava, automation and miner requests are SI candidate behavior.
  * The excluded predecessor was archived without inspecting its implementation.
  */
-public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity {
+public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider {
     public static final int SLOT_BATTERY = 0, SLOT_UPGRADE_START = 1, SLOT_UPGRADE_COUNT = 4,
         SLOT_UPGRADE_END = 5, SLOT_EMPTY_CONTAINER = 5, SLOT_OUTPUT = 6, TOTAL_SLOTS = 7;
     public static final long DEFAULT_CAPACITY = 20, DEFAULT_MAX_RECEIVE = 32, DEFAULT_MAX_EXTRACT = 0,
@@ -517,5 +517,16 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity {
     }
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         var tag = super.getUpdateTag(registries); saveAdditional(tag, registries); return tag;
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        // IC2 PumpUtil: the search walks at most 64 steps from the intake, then probes a 5x5 patch.
+        BlockPos intake = worldPosition.relative(getFacing());
+        java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> out = new java.util.ArrayList<>();
+        out.add(com.miophas.singularity_iteration.common.area.WorkArea.cell(intake, com.miophas.singularity_iteration.common.area.WorkArea.FLUID));
+        out.add(com.miophas.singularity_iteration.common.area.WorkArea.box(intake, 64, 0, 64, 64, com.miophas.singularity_iteration.common.area.WorkArea.FLUID).asEnvelope());
+        if (cachedSource != null) out.add(com.miophas.singularity_iteration.common.area.WorkArea.cell(cachedSource, com.miophas.singularity_iteration.common.area.WorkArea.FLUID));
+        return out;
     }
 }

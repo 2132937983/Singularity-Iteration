@@ -39,6 +39,7 @@ public class mio_icif_laser_bullet extends IndependentElectricProjectile {
 
     @Override protected void onHitEntity(EntityHitResult hit) {
         if (level().isClientSide) return;
+        level().playSound(null, getX(), getY(), getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ENERGY_HIT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.7F, 1.2F);
         damage(hit.getEntity(), mode.damage);
         detonate(hit.getLocation());
         discard();
@@ -57,6 +58,7 @@ public class mio_icif_laser_bullet extends IndependentElectricProjectile {
             return;
         }
         BlockPos pos = hit.getBlockPos();
+        if (random.nextInt(3) == 0) level.playSound(null, pos, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ENERGY_HIT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.35F, 1.4F);
         if (!level.hasChunkAt(pos) || !level.mayInteract(player, pos)) { discard(); return; }
         var state = level.getBlockState(pos);
         var tool = new ItemStack(Items.DIAMOND_PICKAXE);

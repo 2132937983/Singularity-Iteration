@@ -219,7 +219,7 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        drawTitle(guiGraphics);
     }
 
     @Override

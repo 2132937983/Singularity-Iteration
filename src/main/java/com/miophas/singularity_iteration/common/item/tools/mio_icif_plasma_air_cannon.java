@@ -51,6 +51,17 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
         return MAX_CHARGE;
     }
 
+    /** Compressor whine while charging, re-triggered every 8 ticks with rising pitch. */
+    @Override
+    public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remainingUseDuration) {
+        int charged = getUseDuration(stack, entity) - remainingUseDuration;
+        if (!level.isClientSide && charged % 8 == 0 && charged <= 120) {
+            float p = 0.7F + Math.min(1F, charged / 120F) * 0.9F;
+            level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.AIR_CANNON_CHARGE.get(),
+                net.minecraft.sounds.SoundSource.PLAYERS, 0.45F, p);
+        }
+    }
+
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
         return UseAnim.BOW;
@@ -96,13 +107,15 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
 
                 target.push(lookDirection.x * velocity, lookDirection.y * velocity, lookDirection.z * velocity);
                 target.hurt(level.damageSources().playerAttack(player), (float) damage);
+                level.playSound(null, target.getX(), target.getY(), target.getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.AIR_CANNON_HIT.get(),
+                    net.minecraft.sounds.SoundSource.PLAYERS, 0.9F, 0.9F + level.random.nextFloat() * 0.2F);
             }
 
             consumeEnergy(stack, BASE_COST);
 
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.PLAYERS, 
-                1.0F * (expandSize / 15.0F + 1.0F), 1.0F);
+                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.AIR_CANNON_BLAST.get(), net.minecraft.sounds.SoundSource.PLAYERS, 
+                Math.min(3.0F, 1.0F + expandSize / 60.0F), 1.05F - Math.min(0.3F, expandSize / 600.0F));
 
             for (int i = 0; i < 15; i++) {
                 float newYaw = yaw + (level.random.nextFloat() - 0.5F) * 16.0F;
@@ -112,9 +125,12 @@ public class mio_icif_plasma_air_cannon extends mio_icif_tool_elc implements IAi
                     -Mth.sin(newPitch * 0.0174F),
                     Mth.cos(newYaw * 0.0174F) * Mth.cos(newPitch * 0.0174F)
                 );
-                level.addParticle(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
-                    player.getX(), player.getY() + 0.5, player.getZ(),
-                    shootDirection.x * velocity, shootDirection.y * velocity, shootDirection.z * velocity);
+                // server side: sendParticles reaches every client (addParticle on the server is a no-op)
+                if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD,
+                        player.getX() + lookDirection.x, player.getEyeY() - 0.2, player.getZ() + lookDirection.z, 0,
+                        shootDirection.x, shootDirection.y, shootDirection.z, Math.min(2.0, 0.3 + velocity * 0.1));
+                }
             }
         }
     }

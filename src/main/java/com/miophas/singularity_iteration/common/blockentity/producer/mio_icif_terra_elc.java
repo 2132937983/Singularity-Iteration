@@ -40,7 +40,7 @@ import java.util.List;
  * 使用服务器线程来计算缩放散列数和区域形态来检查卡顿
  */
 @SuppressWarnings("null")
-public class mio_icif_terra_elc extends AbstractProcessingMachineBlockEntity {
+public class mio_icif_terra_elc extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(mio_icif_terra_elc.class);
 
@@ -873,5 +873,10 @@ public class mio_icif_terra_elc extends AbstractProcessingMachineBlockEntity {
         if (!battery.isEmpty()) {
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), battery);
         }
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        return java.util.List.of(com.miophas.singularity_iteration.common.area.WorkArea.cube(worldPosition, Math.max(1, getRange()), com.miophas.singularity_iteration.common.area.WorkArea.TERRAFORM));
     }
 }

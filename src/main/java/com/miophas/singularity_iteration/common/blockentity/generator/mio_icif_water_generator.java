@@ -220,10 +220,10 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
 
             long energyToCharge = Math.min(batteryChargeRate, batteryMaxEnergy - currentEnergy);
             energyToCharge = Math.min(energyToCharge, availableEnergy);
-
-            long energyExtracted = getEnergyStorageInternal().extract(energyToCharge, false);
-
-            api.chargeBattery(chargeStack, energyExtracted, false);
+            energyToCharge = Math.min(energyToCharge, Math.max(0, api.chargeBattery(chargeStack, energyToCharge, true)));
+            long energyExtracted = energyToCharge > 0 ? getEnergyStorageInternal().extract(energyToCharge, false) : 0;
+            long energyStored = energyExtracted > 0 ? api.chargeBattery(chargeStack, energyExtracted, false) : 0;
+            if (energyStored < energyExtracted) getEnergyStorageInternal().generateEnergyInternal(energyExtracted - energyStored, false);
             setChanged();
         }
     }

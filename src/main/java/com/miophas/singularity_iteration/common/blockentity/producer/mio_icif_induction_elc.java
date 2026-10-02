@@ -270,10 +270,25 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     private void finishSmeltingBoth() {
         var operation = prepareWorkingLanes();
         if (operation.isEmpty()) { stopWork(); return; }
+        float xp = 0;
+        if (prepareLane(INPUT_SLOT_1, OUTPUT_SLOT_1).isPresent()) xp += findRecipe(INPUT_SLOT_1).map(r -> r.value().getExperience()).orElse(0F);
+        if (prepareLane(INPUT_SLOT_2, OUTPUT_SLOT_2).isPresent()) xp += findRecipe(INPUT_SLOT_2).map(r -> r.value().getExperience()).orElse(0F);
         int completed = progress;
         progress = 0; isWorking = false;
         if (!operation.get().commit()) progress = completed;
+        else storedXp.add(xp);
         setChanged();
+    }
+
+    /** Banked smelting XP, collected straight into the player's experience bar. */
+    private final com.miophas.singularity_iteration.common.processing.StoredExperience storedXp = new com.miophas.singularity_iteration.common.processing.StoredExperience();
+
+    public float getStoredExperience() { return storedXp.get(); }
+
+    public int collectExperience(net.minecraft.server.level.ServerPlayer player) {
+        int given = storedXp.collect(player);
+        if (given > 0) setChanged();
+        return given;
     }
 
     /**
@@ -335,6 +350,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         super.saveAdditional(tag, registries);
         tag.putLong("heat", heatStorage.getHeatStored());
         tag.putInt("progress", progress);
+        storedXp.save(tag);
     }
 
     @Override
@@ -345,6 +361,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
             heatStorage.setHeat(com.miophas.singularity_iteration.core.api.util.BoundedUnits.multiplyDivide(Math.max(0, Math.min(100, tag.getLong("heat_percent"))), HEAT_CAPACITY, 100));
         if (!tag.contains("progress") && tag.contains("progress1")) progress = tag.getInt("progress1");
         progress = Math.max(0, Math.min(PROGRESS_TARGET, progress));
+        storedXp.load(tag);
     }
 
     // ==================== Getter ?���? ====================

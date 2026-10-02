@@ -29,7 +29,7 @@ import java.util.List;
  * - 最大存储?60000EU，传输限制?00EU/t，等�?（HV�?
  */
 @SuppressWarnings("null")
-public class mio_icif_nanosaber extends mio_icif_tool_elc implements ToggleableElectricTool, IEquipmentHudProvider {
+public class mio_icif_nanosaber extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider, IEquipmentHudProvider {
 
     // 纳米剑最大能量?(IC2原版: 160000 EU)
     public static final int NANOSABER_MAX_ENERGY = 160000;
@@ -148,4 +148,10 @@ public class mio_icif_nanosaber extends mio_icif_tool_elc implements ToggleableE
     public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
         return slotChanged || isActive(oldStack) != isActive(newStack);
     }
+
+    // ---- equipment console (IToolModeProvider)
+    @Override public java.util.List<net.minecraft.network.chat.Component> toolModes(ItemStack stack) {
+        return java.util.List.of(net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.off"), net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.on"));
+    }
+    @Override public int toolModeIndex(ItemStack stack) { return isActive(stack) ? 1 : 0; }
 }

@@ -111,13 +111,13 @@ guiGraphics.blit(ATLAS_TEXTURE, x + SAVE_BTN_X, y + SAVE_BTN_Y, 0, (float) 50, (
         switch (state) {
             case 0: // IDLE
                 stateText = "Idle";
-                color = 0xECA300;
+                color = 0xA86A00;
                 break;
             case 1: // SCANNING
                 int progressPercent = menu.getMaxProgress() > 0 ?
                     (menu.getProgress() * 100 / menu.getMaxProgress()) : 0;
                 stateText = "Scanning... " + progressPercent + "%";
-                color = 0x20D4DE;
+                color = 0x2A2E33;
                 break;
             case 2: // NO_ENERGY
                 stateText = "No Energy";
@@ -129,7 +129,7 @@ guiGraphics.blit(ATLAS_TEXTURE, x + SAVE_BTN_X, y + SAVE_BTN_Y, 0, (float) 50, (
                 break;
             case 4: // COMPLETED
                 stateText = "Completed";
-                color = 0x20D4DE;
+                color = 0x2A2E33;
                 break;
             case 5: // FAILED
                 stateText = "Failed";
@@ -137,7 +137,7 @@ guiGraphics.blit(ATLAS_TEXTURE, x + SAVE_BTN_X, y + SAVE_BTN_Y, 0, (float) 50, (
                 break;
             default:
                 stateText = "";
-                color = 0xFFFFFF;
+                color = 0x2A2E33;
         }
 
         if (!stateText.isEmpty()) {
@@ -160,8 +160,8 @@ guiGraphics.blit(ATLAS_TEXTURE, x + SAVE_BTN_X, y + SAVE_BTN_Y, 0, (float) 50, (
                 euText = String.format("%.2fM EU", euCost / 1000000.0);
             }
 
-            guiGraphics.drawString(this.font, uuText, 105, 25, 0xFFFFFF, false);
-            guiGraphics.drawString(this.font, euText, 105, 36, 0xFFFFFF, false);
+            guiGraphics.drawString(this.font, uuText, 105, 25, 0x2A2E33, false);
+            guiGraphics.drawString(this.font, euText, 105, 36, 0x2A2E33, false);
         }
 
 

@@ -36,7 +36,7 @@ public class mio_icif_gui_water_kinetic_generator extends mio_icif_screen<com.mi
     private static final int BIOME_TEXT_Y = 66;
     private static final int ROTOR_DURABILITY_TEXT_Y = 75;
     // 文本颜色 20eb3e (绿色)
-    private static final int INFO_TEXT_COLOR = 0x20eb3e;
+    private static final int INFO_TEXT_COLOR = 0x2A2E33;
 
     public mio_icif_gui_water_kinetic_generator(com.miophas.singularity_iteration.common.menu.generator.WaterKineticGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

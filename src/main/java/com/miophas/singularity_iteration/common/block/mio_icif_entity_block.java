@@ -53,6 +53,33 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock {
         super(properties);
     }
 
+    /**
+     * Blocks whose model does not fill the whole cell. Machines use classic IC2 full-cube
+     * models again and occlude normally; only these partial shapes (chargers sitting on a
+     * plinth, the terminal, laser towers, special cables) let light and neighbour faces through.
+     */
+    private static final java.util.Set<String> PARTIAL_MODELS = java.util.Set.of(
+        "wiring/block_batbox_charger", "wiring/block_cesu_charger", "wiring/block_mfe_charger",
+        "wiring/block_mfsu_charger", "wiring/block_lesu_charger", "wiring/block_eesu_charger",
+        "wiring/block_energy_terminal", "wiring/block_eu_detector_cable", "wiring/block_eu_splitter_cable",
+        "producer/block_laser_defense_tower", "producer/block_sky_patrol_laser_tower");
+    private Boolean machineModel;
+
+    protected boolean usesMachineModel() {
+        if (machineModel == null) {
+            var key = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(this);
+            if (key == null || key.getPath().equals("air")) return false;   // not registered yet: do not cache
+            machineModel = key.getNamespace().equals(com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID)
+                && PARTIAL_MODELS.contains(key.getPath());
+        }
+        return machineModel;
+    }
+
+    @Override
+    protected net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return usesMachineModel() ? net.minecraft.world.phys.shapes.Shapes.empty() : super.getOcclusionShape(state, level, pos);
+    }
+
     @Override
     public boolean canEntityDestroy(BlockState state, BlockGetter level, BlockPos pos, Entity entity) {
         return false;

@@ -110,7 +110,7 @@ public class EnergyBridge {
                 if (MICompat.getMIStorage(level, pos, null) != null) return true;
             }
 
-            return false;
+            return com.miophas.singularity_iteration.common.integration.gt.GTCompat.findSink(level, pos, queryDir) != null;
         } catch (Exception e) {
             Singularity_Iteration.LOGGER.error("[EnergyBridge] Error checking compat energy storage at {}: {}", pos, e.getMessage());
             return false;
@@ -228,6 +228,11 @@ public class EnergyBridge {
                 }
             }
 
+            var gt = com.miophas.singularity_iteration.common.integration.gt.GTCompat.findSink(level, pos, queryDir);
+            if (gt != null) {
+                long accepted = gt.receive(maxAmount, false);
+                if (accepted > 0) return Math.min(accepted, maxAmount);
+            }
             return 0;
         } catch (Exception e) {
             Singularity_Iteration.LOGGER.error("[EnergyBridge] Error pushing energy to {}: {}", pos, e.getMessage());

@@ -559,6 +559,9 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         if (level == null) {
             return true;
         }
+        if (isRemotelyDisabled()) {
+            return false;
+        }
         boolean powered = level.hasNeighborSignal(worldPosition);
         if (upgradeStats.isRedstoneInverted()) {
             return powered;
@@ -1052,6 +1055,23 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     protected void finishWork() {
         progress = 0;
         isWorking = false;
+        playCompletionCue();
+    }
+
+    /** Minimum ticks between two completion cues of one machine (fast, overclocked machines stay quiet). */
+    public static final int COMPLETE_SOUND_COOLDOWN = 60;
+    private long lastCompleteSound = Long.MIN_VALUE / 2;
+
+    /** Plays the "operation complete" cue, at most once per {@link #COMPLETE_SOUND_COOLDOWN} ticks. */
+    protected void playCompletionCue() {
+        Level level = getLevel();
+        if (level == null || level.isClientSide) return;
+        long now = level.getGameTime();
+        if (now - lastCompleteSound < COMPLETE_SOUND_COOLDOWN) return;
+        lastCompleteSound = now;
+        level.playSound(null, getBlockPos(),
+            com.miophas.singularity_iteration.core.platform.neoforge.CoreSounds.MACHINE_COMPLETE.get(),
+            SoundSource.BLOCKS, 0.35F, 0.96F + level.random.nextFloat() * 0.08F);
     }
 
     /**
@@ -1091,6 +1111,31 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
                 }
             }
         }
+    }
+
+    /**
+     * Lamp state of a processing machine: green while working; blinking amber when it has input
+     * (or needs none) but too little energy; red when stopped by redstone, starved of input, or
+     * holding input with energy but unable to run (output full / no valid recipe); dark when it is
+     * empty and unpowered.
+     */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.MachineStatus machineStatus() {
+        if (isWorking || runFlag()) return com.miophas.singularity_iteration.core.api.machine.MachineStatus.RUNNING;
+        if (!canWorkRedstone()) return com.miophas.singularity_iteration.core.api.machine.MachineStatus.BLOCKED;
+        long stored = apiGetStoredEnergy();
+        long need = Math.max(1, getEffectiveEnergyPerTick());
+        int[] inputs = getInputSlots();
+        boolean hasInput = false;
+        for (int slot : inputs) {
+            if (slot >= 0 && slot < itemHandler.getSlots() && !itemHandler.getStackInSlot(slot).isEmpty()) { hasInput = true; break; }
+        }
+        if (inputs.length == 0 || hasInput) {
+            return stored < need ? com.miophas.singularity_iteration.core.api.machine.MachineStatus.NO_POWER
+                : com.miophas.singularity_iteration.core.api.machine.MachineStatus.BLOCKED;
+        }
+        return stored > 0 ? com.miophas.singularity_iteration.core.api.machine.MachineStatus.BLOCKED
+            : com.miophas.singularity_iteration.core.api.machine.MachineStatus.OFF;
     }
 
     @Override

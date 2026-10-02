@@ -21,7 +21,7 @@ import java.util.List;
  * G键切换自动补充模式
  */
 @SuppressWarnings("null")
-public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implements ToggleableElectricTool {
+public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider {
 
     private static final int MAX_ENERGY = 10000;
     private static final int TRANSFER_SPEED = 32;
@@ -93,4 +93,10 @@ public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implem
         tag.putBoolean(TAG_AUTO_SUPPLEMENT, value);
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
+
+    // ---- equipment console (IToolModeProvider)
+    @Override public java.util.List<net.minecraft.network.chat.Component> toolModes(ItemStack stack) {
+        return java.util.List.of(net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.auto_off"), net.minecraft.network.chat.Component.translatable("tool_mode.mio_icif.auto_on"));
+    }
+    @Override public int toolModeIndex(ItemStack stack) { return getAutoSupplement(stack) ? 1 : 0; }
 }

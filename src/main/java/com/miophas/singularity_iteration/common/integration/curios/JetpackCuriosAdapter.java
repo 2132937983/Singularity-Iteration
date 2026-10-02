@@ -112,4 +112,67 @@ public final class JetpackCuriosAdapter implements ICurioItem {
             backSlotItem.tickInBackSlot(player, stack);
         }
     }
+
+    // ---- equipment console: every functional accessory with settings (tuning sliders, modes, charge)
+    private static boolean manageable(ItemStack stack) {
+        return stack.getCount() == 1 && (stack.getItem() instanceof com.miophas.singularity_iteration.common.item.tuning.ITunableItem
+            || stack.getItem() instanceof com.miophas.singularity_iteration.core.api.tool.IToolModeProvider
+            || stack.getItem() instanceof IBatteryItem);
+    }
+
+    /** Accessory slots for the console as {id, stack}; ids are {@code curio:<slotType>:<index>}. The back-slot armor is listed separately. */
+    public static List<Object[]> accessorySlots(Player player) {
+        List<Object[]> out = new java.util.ArrayList<>();
+        var inventory = CuriosApi.getCuriosInventory(player).orElse(null);
+        if (inventory == null) return out;
+        for (var entry : inventory.getCurios().entrySet()) {
+            var stacks = entry.getValue().getStacks();
+            for (int i = 0; i < stacks.getSlots(); i++) {
+                ItemStack stack = stacks.getStackInSlot(i);
+                if (stack.isEmpty() || !manageable(stack)) continue;
+                if ("back".equals(entry.getKey()) && stack.getItem() instanceof IElectricArmorItem) continue;
+                out.add(new Object[]{"curio:" + entry.getKey() + ":" + i, stack});
+            }
+        }
+        return out;
+    }
+
+    /** Every non-empty item in the player's Curios slots (Armory Remote lookup and similar). */
+    public static List<ItemStack> allAccessoryStacks(Player player) {
+        List<ItemStack> out = new java.util.ArrayList<>();
+        var inventory = CuriosApi.getCuriosInventory(player).orElse(null);
+        if (inventory == null) return out;
+        for (var entry : inventory.getCurios().values()) {
+            var stacks = entry.getStacks();
+            for (int i = 0; i < stacks.getSlots(); i++) if (!stacks.getStackInSlot(i).isEmpty()) out.add(stacks.getStackInSlot(i));
+        }
+        return out;
+    }
+
+    public static ItemStack accessoryStack(Player player, String id) {
+        String[] parts = id.split(":");
+        if (parts.length != 3) return ItemStack.EMPTY;
+        var inventory = CuriosApi.getCuriosInventory(player).orElse(null);
+        if (inventory == null) return ItemStack.EMPTY;
+        var handler = inventory.getStacksHandler(parts[1]).orElse(null);
+        if (handler == null) return ItemStack.EMPTY;
+        int index;
+        try { index = Integer.parseInt(parts[2]); } catch (NumberFormatException e) { return ItemStack.EMPTY; }
+        var stacks = handler.getStacks();
+        return index >= 0 && index < stacks.getSlots() ? stacks.getStackInSlot(index) : ItemStack.EMPTY;
+    }
+
+    public static boolean writeAccessory(Player player, String id, ItemStack stack) {
+        String[] parts = id.split(":");
+        if (parts.length != 3) return false;
+        var inventory = CuriosApi.getCuriosInventory(player).orElse(null);
+        if (inventory == null) return false;
+        var handler = inventory.getStacksHandler(parts[1]).orElse(null);
+        if (handler == null) return false;
+        int index;
+        try { index = Integer.parseInt(parts[2]); } catch (NumberFormatException e) { return false; }
+        if (index < 0 || index >= handler.getStacks().getSlots()) return false;
+        handler.getStacks().setStackInSlot(index, stack);
+        return true;
+    }
 }

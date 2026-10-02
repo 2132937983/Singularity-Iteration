@@ -27,6 +27,10 @@ sourceSets {
         java.exclude 'com/miophas/singularity_iteration/core/**'
     }
     addonExample { }
+    // Test-only GuideME stand-in so MI/AE2 boot on the headless compat GameTest server.
+    guidemeStub { }
+    // Test-only stand-in for Botania's public mana API (compat server run only).
+    botaniaStub { }
 }
 
 sourceSets.main.resources {
@@ -114,6 +118,8 @@ neoForge {
 
     addModdingDependenciesTo sourceSets.core
     addModdingDependenciesTo sourceSets.addonExample
+    addModdingDependenciesTo sourceSets.guidemeStub
+    addModdingDependenciesTo sourceSets.botaniaStub
 
     parchment {
         mappingsVersion = project.parchment_mappings_version
@@ -250,6 +256,8 @@ dependencies {
 
 tasks.named('jar').configure {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    // development-only screenshot director (inert without -Dsi.capture) is not shipped
+    exclude "com/miophas/singularity_iteration/common/client/dev/**"
     from sourceSets.core.output
 }
 
@@ -357,7 +365,11 @@ tasks.register('checkCoreDistribution') {
 }
 tasks.named('check') { dependsOn 'checkCoreDistribution' }
 
-apply from: 'gradle/core-architecture.gradle'
+// Optional extra architecture rules. The file is not committed upstream, so a clean
+// clone must still build; the core architecture check itself is defined above.
+if (file('gradle/core-architecture.gradle').exists()) {
+    apply from: 'gradle/core-architecture.gradle'
+}
 
 tasks.named('assemble') { dependsOn coreJar, coreSourcesJar }
 
@@ -429,3 +441,62 @@ idea {
         downloadJavadoc = true
     }
 }
+
+// ------------------------------------------------------------------ compat GameTests
+// Boots the real GregTech Modern, Modern Industrialization and AE2 jars next to SI and
+// runs the same si_core_example GameTests plus the cross-mod energy/storage tests,
+// which register themselves only when the foreign mod is present. Nothing here ships.
+configurations { compatMods { transitive = false }; compatClientMods { transitive = false } }
+dependencies {
+    // GTM 7.0.1 cannot boot on a dedicated-server dist (it loads ClientLevel); it is exercised by the client compat run
+    compatClientMods "curse.maven:gregtechceu-modern-890405:6766269"
+    compatMods "curse.maven:modern-industrialization-405388:7796816"
+    compatMods "curse.maven:applied-energistics-2-223794:7027323"
+}
+def guidemeStubJar = tasks.register('guidemeStubJar', Jar) {
+    archiveBaseName = 'guideme-test-stub'
+    from sourceSets.guidemeStub.output
+}
+def botaniaStubJar = tasks.register('botaniaStubJar', Jar) {
+    archiveBaseName = 'botania-api-test-stub'
+    from sourceSets.botaniaStub.output
+}
+def compatModsDir = file('build/compat-gametest/mods')
+def syncCompatMods = tasks.register('syncCompatMods', Sync) {
+    from configurations.compatMods
+    from guidemeStubJar
+    from botaniaStubJar
+    into compatModsDir
+}
+neoForge.runs.register('compatGameTestServer') {
+    type = 'gameTestServer'
+    loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
+    gameDirectory = file('build/compat-gametest')
+    systemProperty 'neoforge.enabledGameTestNamespaces', 'si_core_example'
+    logLevel = org.slf4j.event.Level.INFO
+}
+tasks.matching { it.name == 'prepareCompatGameTestServerRun' }.configureEach { dependsOn syncCompatMods }
+
+// GregTech Modern only boots on the client dist in a dev workspace, so its compat tests run
+// in a headless client: CompatTestDirector (dev-only) creates a world and runs /test runall.
+def compatClientDir = file('build/compat-client')
+def syncCompatClientMods = tasks.register('syncCompatClientMods', Sync) {
+    from configurations.compatClientMods
+    into new File(compatClientDir, 'mods')
+    doLast {
+        def options = new File(compatClientDir, 'options.txt')
+        if (!options.exists()) options.text = 'onboardAccessibility:false\nmenuBackgroundBlurriness:0\nrenderDistance:4\nsimulationDistance:5\ngraphicsMode:0\nsoundCategory_master:0.0\n'
+    }
+}
+neoForge.runs.register('compatClient') {
+    client()
+    loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
+    gameDirectory = compatClientDir
+    systemProperty 'neoforge.enabledGameTestNamespaces', 'si_core_example'
+    systemProperty 'si.compattest', new File(compatClientDir, 'result.txt').absolutePath
+    // Only the GregTech tests: everything else already ran on the compat server.
+    systemProperty 'si.compattests', ['sicablefeedsgtmachine', 'sistoragefeedsadjacentgtmachine', 'sineverovervoltsgtmachine', 'gtnetworkfeedssistorage']
+        .collect { 'compatenergygametests.' + it }.join(',')
+    logLevel = org.slf4j.event.Level.INFO
+}
+tasks.matching { it.name == 'prepareCompatClientRun' }.configureEach { dependsOn syncCompatClientMods }

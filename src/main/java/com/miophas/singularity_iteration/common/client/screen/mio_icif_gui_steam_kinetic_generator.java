@@ -24,7 +24,7 @@ public class mio_icif_gui_steam_kinetic_generator extends mio_icif_screen<com.mi
     private static final int GUI_HEIGHT = 166;
 
     private static final int COLOR_ERROR = 0xE3A064;
-    private static final int COLOR_ACTIVE = 0x20EC1E;
+    private static final int COLOR_ACTIVE = 0x2A2E33;
 
     public mio_icif_gui_steam_kinetic_generator(com.miophas.singularity_iteration.common.menu.generator.SteamKineticGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

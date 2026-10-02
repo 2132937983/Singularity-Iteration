@@ -44,7 +44,7 @@ public class mio_icif_gui_kinetic_generator_elc extends mio_icif_screen<com.miop
     private static final int KINETIC_TEXT_X = 35;
     private static final int KINETIC_TEXT_Y = 68;
     // 动能文本颜色 (57c4da)
-    private static final int KINETIC_TEXT_COLOR = 0x57c4da;
+    private static final int KINETIC_TEXT_COLOR = 0x2A2E33;
 
     public mio_icif_gui_kinetic_generator_elc(com.miophas.singularity_iteration.common.menu.kuentity.KineticGeneratorElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

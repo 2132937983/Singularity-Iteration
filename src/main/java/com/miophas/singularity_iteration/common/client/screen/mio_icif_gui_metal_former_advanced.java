@@ -18,20 +18,20 @@ import net.neoforged.api.distmarker.OnlyIn;
 public class mio_icif_gui_metal_former_advanced extends mio_icif_screen<MetalFormerAdvancedMenu> {
 
     private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_metal_former.png");
+        ResourceLocation.parse("mio_icif:textures/gui/gui_adv_metal_former.png");
 
     private static final int GUI_WIDTH = 176;
     private static final int GUI_HEIGHT = 166;
 
-    private static final int PROGRESS_X = 50;
+    private static final int PROGRESS_X = 61;
     private static final int PROGRESS_Y = 35;
 
-    private static final int ENERGY_ICON_X = 17;
-    private static final int ENERGY_ICON_Y = 36;
+    private static final int ENERGY_BAR_X = 44;
+    private static final int ENERGY_BAR_Y = 58;
 
     private static final int MODE_BUTTON_SIZE = 16;
-    private static final int MODE_BUTTON_X = 67;
-    private static final int MODE_BUTTON_Y = 58;
+    private static final int MODE_BUTTON_X = 77;
+    private static final int MODE_BUTTON_Y = 14;
 
     private static final ResourceLocation BUTTON_SPRITE = ResourceLocation.withDefaultNamespace("widget/button");
     private static final ResourceLocation BUTTON_HIGHLIGHTED_SPRITE = ResourceLocation.withDefaultNamespace("widget/button_highlighted");
@@ -54,7 +54,7 @@ public class mio_icif_gui_metal_former_advanced extends mio_icif_screen<MetalFor
             int progressPixels = menu.getProgress() * METAL_FORMER_PROGRESS_WIDTH / Math.max(menu.getMaxProgress(), 1);
             drawMetalFormerProgress(guiGraphics, x + PROGRESS_X, y + PROGRESS_Y, progressPixels);
 
-            drawLightningEnergy(guiGraphics, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, menu.getEnergy(), menu.getMaxEnergy());
+            drawModernEnergyBar(guiGraphics, x + ENERGY_BAR_X, y + ENERGY_BAR_Y, menu.getEnergy(), menu.getMaxEnergy());
 
             boolean buttonHovered = isHoveringModeButton(mouseX, mouseY, x, y);
             renderModeButton(guiGraphics, x + MODE_BUTTON_X, y + MODE_BUTTON_Y, menu.getMode(), buttonHovered);
@@ -107,7 +107,7 @@ public class mio_icif_gui_metal_former_advanced extends mio_icif_screen<MetalFor
             renderProgressTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getProgress(), menu.getMaxProgress());
         }
 
-        if (isHovering(mouseX, mouseY, x + ENERGY_ICON_X, y + ENERGY_ICON_Y, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)) {
+        if (isHovering(mouseX, mouseY, x + ENERGY_BAR_X, y + ENERGY_BAR_Y, KINETIC_ENERGY_BAR_WIDTH, KINETIC_ENERGY_BAR_HEIGHT)) {
             renderEnergyTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getEnergy(), menu.getMaxEnergy());
         }
 

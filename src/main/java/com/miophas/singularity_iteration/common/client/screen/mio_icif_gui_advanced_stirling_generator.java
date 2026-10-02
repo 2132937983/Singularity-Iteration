@@ -33,7 +33,7 @@ public class mio_icif_gui_advanced_stirling_generator extends mio_icif_screen<Ad
 
     private static final int INFO_TEXT_X = 42;
     private static final int INFO_TEXT_Y = 50;
-    private static final int INFO_TEXT_COLOR = 0x57c4da;
+    private static final int INFO_TEXT_COLOR = 0x2A2E33;
 
     public mio_icif_gui_advanced_stirling_generator(AdvancedStirlingGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

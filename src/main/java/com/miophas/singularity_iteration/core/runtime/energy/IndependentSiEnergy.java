@@ -1182,6 +1182,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             int electricalFaces = conductorFaces(tile);
             inputs &= electricalFaces; outputs &= electricalFaces;
             if (!quote.outputEnabled()) outputs = 0;
+            if (tile instanceof com.miophas.singularity_iteration.core.api.energy.IRemoteSwitchable remote
+                    && remote.isRemotelyDisabled()) { inputs = 0; outputs = 0; }   // remotely switched off
             // Original binary observations distinguish generator residual offers
             // from the BatBox full-packet reserve rule, including a 1 EU offer.
             // Extended solar packet limits are SI candidate settings, pending loaded reference runs.

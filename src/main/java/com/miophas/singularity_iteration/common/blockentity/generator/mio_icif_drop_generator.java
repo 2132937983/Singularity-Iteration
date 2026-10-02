@@ -27,7 +27,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_drop_generator extends AbstractEnergyBlockEntity implements IGeneratorBlock {
+public class mio_icif_drop_generator extends AbstractEnergyBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider, IGeneratorBlock {
 
     private boolean registered = false;
 
@@ -328,5 +328,10 @@ public class mio_icif_drop_generator extends AbstractEnergyBlockEntity implement
     public void setBurnTime(int ticks) {
         this.fuel = Math.max(0, ticks);
         this.setChanged();
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        return java.util.List.of(com.miophas.singularity_iteration.common.area.WorkArea.cube(worldPosition, SCAN_RANGE, com.miophas.singularity_iteration.common.area.WorkArea.COLLECT));
     }
 }

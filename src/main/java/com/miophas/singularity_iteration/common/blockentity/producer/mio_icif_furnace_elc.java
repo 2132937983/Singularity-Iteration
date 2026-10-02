@@ -78,6 +78,10 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
 
     // 记录已使用的配方及其次数（用于经验计算）
     private final Object2IntOpenHashMap<ResourceLocation> recipesUsed = new Object2IntOpenHashMap<>();
+    /** Banked smelting XP, collected straight into the player's experience bar. */
+    private final com.miophas.singularity_iteration.common.processing.StoredExperience storedXp = new com.miophas.singularity_iteration.common.processing.StoredExperience();
+    /** Saves from before 0.1.7.21 kept XP only as recipe counts: convert them once on first collection. */
+    private boolean legacyXp;
 
     /**
      * 用于 BlockEntityType.Builder 的构造函
@@ -302,6 +306,7 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
         // 记录配方使用（用于经验计算）
         ResourceLocation recipeId = recipe.id();
         recipesUsed.addTo(recipeId, 1);
+        storedXp.add(recipe.value().getExperience());
 
         // 重置进度
         finishWork();
@@ -366,6 +371,7 @@ tick 更新逻辑
         CompoundTag recipesTag = new CompoundTag();
         recipesUsed.forEach((recipeId, count) -> recipesTag.putInt(recipeId.toString(), count));
         tag.put("RecipesUsed", recipesTag);
+        storedXp.save(tag);
     }
 
     @Override
@@ -382,6 +388,7 @@ tick 更新逻辑
                 recipesUsed.put(ResourceLocation.parse(key), recipesTag.getInt(key));
             }
         }
+        legacyXp = !storedXp.load(tag) && !recipesUsed.isEmpty();
     }
 
     // ==================== 经验给予功能 ====================
@@ -392,82 +399,37 @@ tick 更新逻辑
      * @param player 玩家
      */
     public void awardUsedRecipesAndPopExperience(ServerPlayer player) {
-        List<RecipeHolder<?>> list = this.getRecipesToAwardAndPopExperience(player.serverLevel(), player.position());
-        player.awardRecipes(list);
-
-        for (RecipeHolder<?> recipeHolder : list) {
-            if (recipeHolder != null) {
-                // 构建物品列表用于触发配方合成事件
-                List<ItemStack> items = new ArrayList<>();
-                for (int i = 0; i < itemHandler.getSlots(); i++) {
-                    items.add(itemHandler.getStackInSlot(i));
-                }
-                player.triggerRecipeCrafted(recipeHolder, items);
-            }
-        }
-
-        this.recipesUsed.clear();
+        collectExperience(player);
     }
 
     /**
-     * 获取需要给予经验的配方列表，并生成经验
-     * @param level 服务器世
-     * @param popVec 经验球生成位
-     * @return 配方列表
+     * Unlocks the smelted recipes for the player and adds the banked XP directly to their
+     * experience bar (no orbs). Called from the GUI button, when taking the output and on close.
      */
-    public List<RecipeHolder<?>> getRecipesToAwardAndPopExperience(ServerLevel level, Vec3 popVec) {
+    public int collectExperience(ServerPlayer player) {
         List<RecipeHolder<?>> list = new ArrayList<>();
-
         for (Object2IntMap.Entry<ResourceLocation> entry : recipesUsed.object2IntEntrySet()) {
-            level.getRecipeManager().byKey(entry.getKey()).ifPresent(recipeHolder -> {
-                list.add(recipeHolder);
-                if (recipeHolder.value() instanceof SmeltingRecipe smeltingRecipe) {
-                    createExperience(level, popVec, entry.getIntValue(), smeltingRecipe.getExperience());
-                }
+            player.serverLevel().getRecipeManager().byKey(entry.getKey()).ifPresent(holder -> {
+                list.add(holder);
+                if (legacyXp && holder.value() instanceof SmeltingRecipe smelting) storedXp.add(entry.getIntValue() * smelting.getExperience());
             });
         }
-
-        return list;
+        legacyXp = false;
+        if (!list.isEmpty()) {
+            player.awardRecipes(list);
+            List<ItemStack> items = new ArrayList<>();
+            for (int i = 0; i < itemHandler.getSlots(); i++) items.add(itemHandler.getStackInSlot(i));
+            for (RecipeHolder<?> holder : list) player.triggerRecipeCrafted(holder, items);
+        }
+        recipesUsed.clear();
+        int given = storedXp.collect(player);
+        setChanged();
+        return given;
     }
 
-    /**
-     * 创建经验
-     * @param level 服务器世
-     * @param popVec 经验球生成位
-     * @param count 配方使用次数
-     * @param experience 每次使用获得的经验
-     */
-    private static void createExperience(ServerLevel level, Vec3 popVec, int count, float experience) {
-        int amount = Mth.floor((float) count * experience);
-        float frac = Mth.frac((float) count * experience);
-        if (frac != 0.0F && Math.random() < (double) frac) {
-            amount++;
-        }
-
-        while (amount > 0) {
-            int orbValue = ExperienceOrb.getExperienceValue(amount);
-            amount -= orbValue;
-            level.addFreshEntity(new ExperienceOrb(level, popVec.x, popVec.y, popVec.z, orbValue));
-        }
-    }
-
-    /**
-     * 获取存储的经验值（用于显示或其他用途）
-     * @return 经验
-     */
-    @SuppressWarnings("unchecked")
+    /** Banked XP (points, fractional). */
     public float getStoredExperience() {
-        if (level == null) return 0.0f;
-
-        float totalExperience = 0.0f;
-        for (Object2IntMap.Entry<ResourceLocation> entry : recipesUsed.object2IntEntrySet()) {
-            Optional<RecipeHolder<SmeltingRecipe>> recipe = level.getRecipeManager().byKey(entry.getKey())
-                .map(r -> (RecipeHolder<SmeltingRecipe>) (RecipeHolder<?>) r);
-            if (recipe.isPresent()) {
-                totalExperience += entry.getIntValue() * recipe.get().value().getExperience();
-            }
-        }
-        return totalExperience;
+        return storedXp.get();
     }
 
     @Override

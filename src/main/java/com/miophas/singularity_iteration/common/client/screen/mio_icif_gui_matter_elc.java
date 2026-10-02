@@ -77,7 +77,7 @@ public class mio_icif_gui_matter_elc extends mio_icif_screen<MatterElcMenu> {
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         // 渲染标题和玩家背包标题
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
+        drawTitle(guiGraphics);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
 
         // 渲染进度标签和数值（对齐原版IC2）

@@ -182,10 +182,70 @@ public class mio_icif_Network {
         );
 
         // Laser tower volley visuals (server -> client, one packet per volley)
+        registrar.playToServer(
+            com.miophas.singularity_iteration.common.armory.ArmoryActionPacket.TYPE,
+            com.miophas.singularity_iteration.common.armory.ArmoryActionPacket.CODEC,
+            com.miophas.singularity_iteration.common.armory.ArmoryActionPacket::handle
+        );
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.armory.ArmoryToastPacket.TYPE,
+            com.miophas.singularity_iteration.common.armory.ArmoryToastPacket.CODEC,
+            com.miophas.singularity_iteration.common.armory.ArmoryToastPacket::handle
+        );
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket.TYPE,
+            com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket.CODEC,
+            com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket::handle
+        );
+        registrar.playToServer(
+            com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket.TYPE,
+            com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket.CODEC,
+            com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket::handle
+        );
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.machine.MachineStatusPacket.TYPE,
+            com.miophas.singularity_iteration.common.machine.MachineStatusPacket.CODEC,
+            com.miophas.singularity_iteration.common.machine.MachineStatusPacket::handle
+        );
+        registrar.playToClient(
+            AreaPreviewPacket.TYPE,
+            AreaPreviewPacket.CODEC,
+            AreaPreviewPacket::handle
+        );
+        registrar.playToServer(
+            AreaPreviewRequestPacket.TYPE,
+            AreaPreviewRequestPacket.CODEC,
+            AreaPreviewRequestPacket::handle
+        );
         registrar.playToClient(
             LaserTowerBeamPacket.TYPE,
             LaserTowerBeamPacket.CODEC,
             LaserTowerBeamPacket::handle
+        );
+        registrar.playToServer(
+            EquipmentConsolePacket.TYPE,
+            EquipmentConsolePacket.CODEC,
+            EquipmentConsolePacket::handle
+        );
+        registrar.playToClient(
+            EnergyTerminalSyncPacket.TYPE,
+            EnergyTerminalSyncPacket.CODEC,
+            EnergyTerminalSyncPacket::handle
+        );
+        registrar.playToServer(
+            EnergyTerminalTogglePacket.TYPE,
+            EnergyTerminalTogglePacket.CODEC,
+            EnergyTerminalTogglePacket::handle
+        );
+        registrar.playToClient(
+            LaserTowerSyncPacket.TYPE,
+            LaserTowerSyncPacket.CODEC,
+            LaserTowerSyncPacket::handle
+        );
+        registrar.playToServer(
+            LaserTowerConfigPacket.TYPE,
+            LaserTowerConfigPacket.CODEC,
+            LaserTowerConfigPacket::handle
         );
 
         // 注册高级采矿机过滤槽设置包（JEI 幽灵拖拽，客户端→服务端）

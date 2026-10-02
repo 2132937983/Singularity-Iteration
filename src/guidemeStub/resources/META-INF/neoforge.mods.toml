@@ -1,0 +1,8 @@
+modLoader="javafml"
+loaderVersion="[1,)"
+license="MIT"
+[[mods]]
+modId="guideme"
+version="21.1.99"
+displayName="GuideME (headless test stub)"
+description='''Test-only stub so Modern Industrialization / AE2 load on the compat GameTest server. Never shipped.'''

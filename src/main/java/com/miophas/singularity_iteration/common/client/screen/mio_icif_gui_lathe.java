@@ -58,12 +58,7 @@ public class mio_icif_gui_lathe extends mio_icif_screen<LatheMenu> {
             final int position = i;
             int buttonX = this.leftPos + BUTTON_START_X + i * BUTTON_GAP;
             int buttonY = this.topPos + BUTTON_Y;
-            this.addRenderableWidget(Button.builder(
-                    Component.literal(""),
-                    btn -> handleButtonClick(position)
-                )
-                .bounds(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT)
-                .build());
+            this.addRenderableWidget(new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT, Component.literal(""), btn -> handleButtonClick(position)));
         }
     }
 
@@ -142,6 +137,6 @@ public class mio_icif_gui_lathe extends mio_icif_screen<LatheMenu> {
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
         
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+        drawTitle(guiGraphics);
     }
 }

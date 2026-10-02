@@ -292,6 +292,10 @@ public class mio_icif_menus {
     public static final DeferredHolder<MenuType<?>, MenuType<BatchCrafterMenu>> BATCH_CRAFTER_MENU_TYPE =
         MENU_TYPES.register("batch_crafter_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<BatchCrafterMenu>) (containerId, playerInventory, data) -> new BatchCrafterMenu(containerId, playerInventory, data), net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
+    // Energy management terminal
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.wiring.EnergyTerminalMenu>> ENERGY_TERMINAL_MENU_TYPE =
+        MENU_TYPES.register("energy_terminal_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<com.miophas.singularity_iteration.common.menu.wiring.EnergyTerminalMenu>) com.miophas.singularity_iteration.common.menu.wiring.EnergyTerminalMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
+
     // Laser defence towers (both variants share one menu)
     public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.producer.LaserTowerMenu>> LASER_TOWER_MENU_TYPE =
         MENU_TYPES.register("laser_tower_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<com.miophas.singularity_iteration.common.menu.producer.LaserTowerMenu>) com.miophas.singularity_iteration.common.menu.producer.LaserTowerMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));

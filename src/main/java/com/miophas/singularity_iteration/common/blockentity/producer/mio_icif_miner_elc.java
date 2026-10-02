@@ -43,7 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 
 @SuppressWarnings("null")
-public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity implements MiningRangeProvider {
+public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider, MiningRangeProvider {
     private static final String ACTION_OWNER_KEY = "scex_machine_action_owner";
     private static final GameProfile LEGACY_ACTOR = new GameProfile(
         UUID.nameUUIDFromBytes("mio_icif:automated_miner".getBytes(StandardCharsets.UTF_8)), "[SI Miner]");
@@ -785,5 +785,16 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
     // ?��??�器类�?��?��??
     private enum ScannerType {
         NONE, OD, OV
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        int r = getScanRadius();
+        int bottom = level != null ? level.getMinBuildHeight() : worldPosition.getY() - 64;
+        java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> out = new java.util.ArrayList<>();
+        out.add(new com.miophas.singularity_iteration.common.area.WorkArea(new net.minecraft.world.phys.AABB(worldPosition.getX() - r, bottom, worldPosition.getZ() - r,
+            worldPosition.getX() + r + 1, worldPosition.getY(), worldPosition.getZ() + r + 1), com.miophas.singularity_iteration.common.area.WorkArea.MINING, com.miophas.singularity_iteration.common.area.WorkArea.PRIMARY));
+        if (tipPos != null) out.add(com.miophas.singularity_iteration.common.area.WorkArea.box(new BlockPos(worldPosition.getX(), tipPos.getY(), worldPosition.getZ()), r, 0, 0, r, com.miophas.singularity_iteration.common.area.WorkArea.MINING).asEnvelope());
+        return out;
     }
 }

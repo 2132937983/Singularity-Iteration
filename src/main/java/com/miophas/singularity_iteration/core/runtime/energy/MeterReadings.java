@@ -3,7 +3,7 @@ package com.miophas.singularity_iteration.core.runtime.energy;
 import net.minecraft.world.inventory.ContainerData;
 
 /** Lossless meter synchronization, including vanilla's signed 16-bit data packets. */
-public final class MeterReadings implements ContainerData {
+public final class MeterReadings implements com.miophas.singularity_iteration.core.api.menu.WordContainerData {
     public static final int SLOT_COUNT = 15;
     private final int[] words = new int[SLOT_COUNT];
 

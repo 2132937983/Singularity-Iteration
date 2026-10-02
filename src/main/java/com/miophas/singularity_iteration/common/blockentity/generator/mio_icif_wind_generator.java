@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * 槽位结构：1个电池充电槽
  */
 @SuppressWarnings("null")
-public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity {
+public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider {
 
     // 槽位数量：1个电池槽
     public static final int SLOT_COUNT = 1;
@@ -267,10 +267,10 @@ public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity {
 
             long energyToCharge = Math.min(batteryChargeRate, batteryMaxEnergy - currentEnergy);
             energyToCharge = Math.min(energyToCharge, availableEnergy);
-
-            long energyExtracted = getEnergyStorageInternal().extract(energyToCharge, false);
-
-            api.chargeBattery(chargeStack, energyExtracted, false);
+            energyToCharge = Math.min(energyToCharge, Math.max(0, api.chargeBattery(chargeStack, energyToCharge, true)));
+            long energyExtracted = energyToCharge > 0 ? getEnergyStorageInternal().extract(energyToCharge, false) : 0;
+            long energyStored = energyExtracted > 0 ? api.chargeBattery(chargeStack, energyExtracted, false) : 0;
+            if (energyStored < energyExtracted) getEnergyStorageInternal().generateEnergyInternal(energyExtracted - energyStored, false);
             setChanged();
         }
     }
@@ -474,5 +474,12 @@ public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity {
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new com.miophas.singularity_iteration.common.menu.generator.WindGeneratorMenu(containerId, playerInventory, this);
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        // Obstacles inside this box reduce the wind output.
+        return java.util.List.of(com.miophas.singularity_iteration.common.area.WorkArea.box(worldPosition, OBSTACLE_RANGE_HORIZONTAL, OBSTACLE_RANGE_DOWN, OBSTACLE_RANGE_UP,
+            OBSTACLE_RANGE_HORIZONTAL, com.miophas.singularity_iteration.common.area.WorkArea.FIELD));
     }
 }

@@ -173,6 +173,9 @@
     "mio_icif:producer/block_large_fabricator_scrap",
     "mio_icif:producer/block_neutron_polymerizer",
     "mio_icif:producer/block_laser_defense_tower",
-    "mio_icif:producer/block_sky_patrol_laser_tower"
+    "mio_icif:producer/block_sky_patrol_laser_tower",
+    "mio_icif:wiring/block_energy_terminal",
+    "mio_icif:producer/block_armory",
+    "mio_icif:producer/block_armor_showcase"
   ]
 }

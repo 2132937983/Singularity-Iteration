@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,lit=false": {
+      "model": "mio_icif:block/producer/block_armory"
+    },
+    "facing=east,lit=false": {
+      "model": "mio_icif:block/producer/block_armory",
+      "y": 90
+    },
+    "facing=south,lit=false": {
+      "model": "mio_icif:block/producer/block_armory",
+      "y": 180
+    },
+    "facing=west,lit=false": {
+      "model": "mio_icif:block/producer/block_armory",
+      "y": 270
+    },
+    "facing=north,lit=true": {
+      "model": "mio_icif:block/producer/block_armory_on"
+    },
+    "facing=east,lit=true": {
+      "model": "mio_icif:block/producer/block_armory_on",
+      "y": 90
+    },
+    "facing=south,lit=true": {
+      "model": "mio_icif:block/producer/block_armory_on",
+      "y": 180
+    },
+    "facing=west,lit=true": {
+      "model": "mio_icif:block/producer/block_armory_on",
+      "y": 270
+    }
+  }
+}

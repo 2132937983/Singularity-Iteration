@@ -25,6 +25,7 @@ public class mio_icif_block_transformer_iv extends mio_icif_block_transformer {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new mio_icif_transformer_iv(pos, state);
+        return com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.create(
+            com.miophas.singularity_iteration.common.blockentity.transformer.TransformerEntities.Tier.IV_LUV, pos, state);
     }
 }

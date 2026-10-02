@@ -28,6 +28,8 @@ public final class ArmorFeatureSlots {
 
     /** 背槽槽位标识。 */
     public static final String BACK = "back";
+    /** Accessory slot ids: {@code curio:<slotType>:<index>}. */
+    public static final String CURIO_PREFIX = "curio:";
 
     private static final EquipmentSlot[] VANILLA = {
         EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
@@ -61,6 +63,10 @@ public final class ArmorFeatureSlots {
         if (!back.isEmpty()) {
             slots.add(new EquippedSlot(BACK, null, back));
         }
+        // accessories (rings, belts, necklaces...) with tuning / modes / charge, so the console manages them too
+        for (Object[] accessory : accessorySlots(player)) {
+            slots.add(new EquippedSlot((String) accessory[0], null, (ItemStack) accessory[1]));
+        }
         return slots;
     }
 
@@ -93,6 +99,9 @@ public final class ArmorFeatureSlots {
         if (BACK.equalsIgnoreCase(id)) {
             return backSlotStack(player);
         }
+        if (id.startsWith(CURIO_PREFIX)) {
+            return accessoryStack(player, id);
+        }
         EquipmentSlot slot = equipmentSlot(id);
         return slot == null ? ItemStack.EMPTY : player.getItemBySlot(slot);
     }
@@ -113,6 +122,9 @@ public final class ArmorFeatureSlots {
         }
         if (BACK.equalsIgnoreCase(id)) {
             return writeBackSlotStack(player, stack);
+        }
+        if (id.startsWith(CURIO_PREFIX)) {
+            return writeAccessory(player, id, stack);
         }
         return false;
     }
@@ -144,6 +156,55 @@ public final class ArmorFeatureSlots {
             }
         }
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Object[]> accessorySlots(Player player) {
+        CuriosBridge.resolve();
+        if (player == null || !CuriosBridge.available) return List.of();
+        try {
+            Object result = CuriosBridge.ACCESSORIES.invoke(null, player);
+            return result instanceof List<?> list ? (List<Object[]>) list : List.of();
+        } catch (ReflectiveOperationException | LinkageError failure) {
+            CuriosBridge.fail(failure);
+            return List.of();
+        }
+    }
+
+    /** Every item in the player's Curios slots (any slot type, cosmetic slots excluded); empty without Curios. */
+    @SuppressWarnings("unchecked")
+    public static List<ItemStack> accessoryStacks(Player player) {
+        CuriosBridge.resolve();
+        if (player == null || !CuriosBridge.available) return List.of();
+        try {
+            Object result = CuriosBridge.ALL_ACCESSORIES.invoke(null, player);
+            return result instanceof List<?> list ? (List<ItemStack>) list : List.of();
+        } catch (ReflectiveOperationException | LinkageError failure) {
+            CuriosBridge.fail(failure);
+            return List.of();
+        }
+    }
+
+    private static ItemStack accessoryStack(Player player, String id) {
+        CuriosBridge.resolve();
+        if (!CuriosBridge.available) return ItemStack.EMPTY;
+        try {
+            return CuriosBridge.ACCESSORY_STACK.invoke(null, player, id) instanceof ItemStack stack ? stack : ItemStack.EMPTY;
+        } catch (ReflectiveOperationException | LinkageError failure) {
+            CuriosBridge.fail(failure);
+            return ItemStack.EMPTY;
+        }
+    }
+
+    private static boolean writeAccessory(Player player, String id, ItemStack stack) {
+        CuriosBridge.resolve();
+        if (!CuriosBridge.available) return false;
+        try {
+            return CuriosBridge.WRITE_ACCESSORY.invoke(null, player, id, stack) instanceof Boolean b && b;
+        } catch (ReflectiveOperationException | LinkageError failure) {
+            CuriosBridge.fail(failure);
+            return false;
+        }
     }
 
     // ==================== 可选背槽（Curios，反射调用） ====================
@@ -187,6 +248,10 @@ public final class ArmorFeatureSlots {
         private static boolean failed;
         private static Method BACK_STACK;
         private static Method WRITE_BACK;
+        private static Method ACCESSORIES;
+        private static Method ACCESSORY_STACK;
+        private static Method WRITE_ACCESSORY;
+        private static Method ALL_ACCESSORIES;
 
         private CuriosBridge() {
         }
@@ -203,6 +268,10 @@ public final class ArmorFeatureSlots {
                 Class<?> type = Class.forName(ADAPTER);
                 BACK_STACK = type.getMethod("backFeatureStack", Player.class);
                 WRITE_BACK = type.getMethod("writeBackFeatureStack", Player.class, ItemStack.class);
+                ACCESSORIES = type.getMethod("accessorySlots", Player.class);
+                ACCESSORY_STACK = type.getMethod("accessoryStack", Player.class, String.class);
+                WRITE_ACCESSORY = type.getMethod("writeAccessory", Player.class, String.class, ItemStack.class);
+                ALL_ACCESSORIES = type.getMethod("allAccessoryStacks", Player.class);
                 available = true;
             } catch (ReflectiveOperationException | LinkageError failure) {
                 fail(failure);

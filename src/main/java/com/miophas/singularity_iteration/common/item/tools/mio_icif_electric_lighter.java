@@ -52,14 +52,24 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
+        if (player.isShiftKeyDown()) {
+            clearArea(level, player);
+            return InteractionResult.SUCCESS;
+        }
 
         if (getEnergy(stack) < ENERGY_COST) {
             player.sendSystemMessage(Component.translatable("message.mio_icif.electric_lighter.no_energy"));
             return InteractionResult.FAIL;
         }
 
-        BlockPos placePos = pos;
         BlockState clickedState = level.getBlockState(pos);
+        // clicking an existing electric light switches it off (removes it)
+        if (clickedState.is(mio_icif_blocks.ELECTRIC_LIGHT.get())) {
+            level.removeBlock(pos, false);
+            level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.BLOCKS, 0.8F, 1.6F);
+            return InteractionResult.SUCCESS;
+        }
+        BlockPos placePos = pos;
         if (!clickedState.canBeReplaced()) {
             placePos = pos.relative(context.getClickedFace());
         }
@@ -87,6 +97,32 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
         return InteractionResult.FAIL;
     }
 
+    public static final int CLEAR_RADIUS = 8;
+
+    /** Shift + right-click (on a block or in the air): removes every electric light within 8 blocks. */
+    @Override
+    public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level level, Player player, net.minecraft.world.InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!player.isShiftKeyDown()) return net.minecraft.world.InteractionResultHolder.pass(stack);
+        if (!level.isClientSide) clearArea(level, player);
+        return net.minecraft.world.InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    }
+
+    public static int clearArea(Level level, Player player) {
+        BlockPos center = player.blockPosition();
+        int removed = 0;
+        for (BlockPos p : BlockPos.betweenClosed(center.offset(-CLEAR_RADIUS, -CLEAR_RADIUS, -CLEAR_RADIUS),
+                center.offset(CLEAR_RADIUS, CLEAR_RADIUS, CLEAR_RADIUS))) {
+            if (level.getBlockState(p).is(mio_icif_blocks.ELECTRIC_LIGHT.get()) && player.mayUseItemAt(p, net.minecraft.core.Direction.UP, ItemStack.EMPTY)) {
+                level.removeBlock(p, false);
+                removed++;
+            }
+        }
+        level.playSound(null, center, SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 0.6F, 1.6F);
+        player.displayClientMessage(Component.translatable("message.mio_icif.electric_lighter.cleared", removed), true);
+        return removed;
+    }
+
     @Override
     public boolean canPerformAction(ItemStack stack, net.neoforged.neoforge.common.ItemAbility itemAbility) {
         return true;
@@ -96,5 +132,6 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         tooltipComponents.add(Component.translatable("tooltip.mio_icif.electric_lighter.desc"));
+        tooltipComponents.add(Component.translatable("tooltip.mio_icif.electric_lighter.remove").withStyle(net.minecraft.ChatFormatting.GRAY));
     }
 }

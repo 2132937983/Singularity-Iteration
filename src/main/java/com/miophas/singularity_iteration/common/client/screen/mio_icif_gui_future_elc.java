@@ -128,10 +128,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
             CommodityCategory category = categories.get(i);
             int tabX = startX + i * (TAB_BUTTON_WIDTH + 5);
 
-            Button tabButton = Button.builder(category.getDisplayName(), b -> sendButtonClick(buttonId))
-                .pos(tabX, tabY)
-                .size(TAB_BUTTON_WIDTH, TAB_BUTTON_HEIGHT)
-                .build();
+            Button tabButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(tabX, tabY, TAB_BUTTON_WIDTH, TAB_BUTTON_HEIGHT, category.getDisplayName(), b -> sendButtonClick(buttonId));
             this.categoryTabButtons.add(tabButton);
             this.addRenderableWidget(tabButton);
         }
@@ -151,16 +148,10 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         int pageButtonHeight = buttonHeight;
         int pageNavY = (int)(this.height * 0.20f) - buttonHeight - 4;
 
-        prevPageButton = Button.builder(Component.literal("<"), b -> sendButtonClick(BUTTON_PREV_PAGE))
-            .pos(commodityListX, pageNavY)
-            .size(pageButtonWidth, pageButtonHeight)
-            .build();
+        prevPageButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(commodityListX, pageNavY, pageButtonWidth, pageButtonHeight, Component.literal("<"), b -> sendButtonClick(BUTTON_PREV_PAGE));
         this.addRenderableWidget(prevPageButton);
 
-        nextPageButton = Button.builder(Component.literal(">"), b -> sendButtonClick(BUTTON_NEXT_PAGE))
-            .pos(commodityListX + pageButtonWidth + 4, pageNavY)
-            .size(pageButtonWidth, pageButtonHeight)
-            .build();
+        nextPageButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(commodityListX + pageButtonWidth + 4, pageNavY, pageButtonWidth, pageButtonHeight, Component.literal(">"), b -> sendButtonClick(BUTTON_NEXT_PAGE));
         this.addRenderableWidget(nextPageButton);
 
         // 货品按钮
@@ -191,16 +182,10 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         int squareSize = BUTTON_HEIGHT;
         int spacing = BUTTON_WIDTH - squareSize * 2;
 
-        decreaseButton = Button.builder(Component.literal("-"), b -> sendButtonClick(BUTTON_DECREASE))
-            .pos(quantityAdjustX, quantityAdjustY)
-            .size(squareSize, squareSize)
-            .build();
+        decreaseButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(quantityAdjustX, quantityAdjustY, squareSize, squareSize, Component.literal("-"), b -> sendButtonClick(BUTTON_DECREASE));
         this.addRenderableWidget(decreaseButton);
 
-        increaseButton = Button.builder(Component.literal("+"), b -> sendButtonClick(BUTTON_INCREASE))
-            .pos(quantityAdjustX + squareSize + spacing, quantityAdjustY)
-            .size(squareSize, squareSize)
-            .build();
+        increaseButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(quantityAdjustX + squareSize + spacing, quantityAdjustY, squareSize, squareSize, Component.literal("+"), b -> sendButtonClick(BUTTON_INCREASE));
         this.addRenderableWidget(increaseButton);
     }
 
@@ -211,17 +196,11 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         int confirmButtonX = this.width - BUTTON_WIDTH - 20;
         int confirmButtonY = this.height - BUTTON_HEIGHT * 2 - 30;
 
-        buyButton = Button.builder(Component.translatable("gui.mio_icif.future.buy"), b -> sendButtonClick(BUTTON_BUY))
-            .pos(confirmButtonX, confirmButtonY)
-            .size(BUTTON_WIDTH, BUTTON_HEIGHT)
-            .build();
+        buyButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(confirmButtonX, confirmButtonY, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable("gui.mio_icif.future.buy"), b -> sendButtonClick(BUTTON_BUY));
         buyButton.setTooltip(Tooltip.create(Component.translatable("gui.mio_icif.future.buy.tooltip")));
         this.addRenderableWidget(buyButton);
 
-        sellButton = Button.builder(Component.translatable("gui.mio_icif.future.sell"), b -> sendButtonClick(BUTTON_SELL))
-            .pos(confirmButtonX, confirmButtonY + BUTTON_HEIGHT + 5)
-            .size(BUTTON_WIDTH, BUTTON_HEIGHT)
-            .build();
+        sellButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(confirmButtonX, confirmButtonY + BUTTON_HEIGHT + 5, BUTTON_WIDTH, BUTTON_HEIGHT, Component.translatable("gui.mio_icif.future.sell"), b -> sendButtonClick(BUTTON_SELL));
         sellButton.setTooltip(Tooltip.create(Component.translatable("gui.mio_icif.future.sell.tooltip")));
         this.addRenderableWidget(sellButton);
     }
@@ -260,7 +239,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         Component dayText = Component.translatable("gui.mio_icif.future.day", menu.getDay() + 1);
         int dayDisplayX = this.width - BUTTON_WIDTH - 20;
         int dayDisplayY = 20;
-        guiGraphics.drawString(this.font, dayText, dayDisplayX, dayDisplayY, 0xFFFFFF, false);
+        guiGraphics.drawString(this.font, dayText, dayDisplayX, dayDisplayY, 0x2A2E33, false);
 
         // 绘制货币显示
         int coinDisplayY = dayDisplayY + 15;
@@ -270,7 +249,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         guiGraphics.renderItem(coinStack, coinDisplayX, coinDisplayY);
 
         Component coinText = Component.literal(String.valueOf(menu.getPlayerCoins()));
-        guiGraphics.drawString(this.font, coinText, coinDisplayX + 20, coinDisplayY + 4, 0xFFD700, false);
+        guiGraphics.drawString(this.font, coinText, coinDisplayX + 20, coinDisplayY + 4, 0x9A6A10, false);
 
         // 绘制中央黑色矩形背景
         int commodityButtonWidth = 60;
@@ -284,7 +263,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         int panelLeftX = 20 + commodityButtonWidth + 15;
         int panelRightX = this.width - BUTTON_WIDTH - 20 - 15;
 
-        guiGraphics.fill(panelLeftX, panelTopY, panelRightX, panelBottomY, 0x80000000);
+        guiGraphics.fill(panelLeftX, panelTopY, panelRightX, panelBottomY, 0xFFEEF0F1);
 
         // 绘制价格折线图
         drawPriceChart(guiGraphics, panelLeftX, panelTopY, panelRightX, panelBottomY);
@@ -296,7 +275,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         int quantitySpacing = BUTTON_WIDTH - squareSize * 2;
         Component quantityText = Component.literal(String.valueOf(menu.getTradeQuantity()));
         guiGraphics.drawCenteredString(this.font, quantityText,
-            quantityAdjustX + squareSize + quantitySpacing / 2, quantityAdjustY + 5, 0xFFFFFF);
+            quantityAdjustX + squareSize + quantitySpacing / 2, quantityAdjustY + 5, 0x2A2E33);
 
         // 绘制底部信息
         int bottomY = this.height - 25;
@@ -313,10 +292,10 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         if (hasEnergy) {
             energyText = Component.translatable("gui.mio_icif.future.energy.ok",
                 menu.getEnergy(), menu.getMaxEnergy());
-            energyColor = 0x00FF00;
+            energyColor = 0x3C9A52;
         } else {
             energyText = Component.translatable("gui.mio_icif.future.energy.no");
-            energyColor = 0xFF0000;
+            energyColor = 0xC8423C;
         }
         int energyTextWidth = this.font.width(energyText);
 
@@ -327,7 +306,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         int tradeInfoX = startX;
         int energyDisplayX = startX + tradeTextWidth + spacing;
 
-        guiGraphics.drawString(this.font, tradeText, tradeInfoX, bottomY, 0xFFFFFF, false);
+        guiGraphics.drawString(this.font, tradeText, tradeInfoX, bottomY, 0x2A2E33, false);
         guiGraphics.drawString(this.font, energyText, energyDisplayX, bottomY, energyColor, false);
 
         updateButtonStates();
@@ -401,16 +380,10 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         int pageButtonWidth = buttonWidth / 2 - 2;
         int pageNavY = (int)(this.height * 0.20f) - buttonHeight - 4;
 
-        prevPageButton = Button.builder(Component.literal("<"), b -> sendButtonClick(BUTTON_PREV_PAGE))
-            .pos(commodityListX, pageNavY)
-            .size(pageButtonWidth, buttonHeight)
-            .build();
+        prevPageButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(commodityListX, pageNavY, pageButtonWidth, buttonHeight, Component.literal("<"), b -> sendButtonClick(BUTTON_PREV_PAGE));
         this.addRenderableWidget(prevPageButton);
 
-        nextPageButton = Button.builder(Component.literal(">"), b -> sendButtonClick(BUTTON_NEXT_PAGE))
-            .pos(commodityListX + pageButtonWidth + 4, pageNavY)
-            .size(pageButtonWidth, buttonHeight)
-            .build();
+        nextPageButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(commodityListX + pageButtonWidth + 4, pageNavY, pageButtonWidth, buttonHeight, Component.literal(">"), b -> sendButtonClick(BUTTON_NEXT_PAGE));
         this.addRenderableWidget(nextPageButton);
         
         int commodityListY = (int)(this.height * 0.20f);
@@ -480,21 +453,21 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         
         int basePriceY = chartBottom - (int)((basePrice - minPrice) * (float)chartHeight / priceRange);
         
-        int axisColor = 0xFFAAAAAA;
+        int axisColor = 0xFF8A9096;
         guiGraphics.fill(chartLeft - 1, chartTop, chartLeft, chartBottom, axisColor);
         guiGraphics.fill(chartLeft, chartBottom, chartRight, chartBottom + 1, axisColor);
         
-        guiGraphics.drawString(this.font, String.valueOf(maxPrice), chartLeft - 25, chartTop - 4, 0xFFFFFF, false);
-        guiGraphics.drawString(this.font, String.valueOf(basePrice), chartLeft - 25, basePriceY - 4, 0xFFFF00, false);
-        guiGraphics.drawString(this.font, String.valueOf(minPrice), chartLeft - 25, chartBottom - 4, 0xFFFFFF, false);
+        guiGraphics.drawString(this.font, String.valueOf(maxPrice), chartLeft - 25, chartTop - 4, 0x2A2E33, false);
+        guiGraphics.drawString(this.font, String.valueOf(basePrice), chartLeft - 25, basePriceY - 4, 0xB08A10, false);
+        guiGraphics.drawString(this.font, String.valueOf(minPrice), chartLeft - 25, chartBottom - 4, 0x2A2E33, false);
         
         Component chartTitle = Component.literal(selectedCommodity.getDisplayName() + " - 20 天价格趋势");
-        guiGraphics.drawString(this.font, chartTitle, chartLeft + chartWidth / 2 - this.font.width(chartTitle) / 2, chartTop - 10, 0xFFD700, false);
+        guiGraphics.drawString(this.font, chartTitle, chartLeft + chartWidth / 2 - this.font.width(chartTitle) / 2, chartTop - 10, 0x9A6A10, false);
         
-        int risingLineColor = 0xFFFF0000;
-        int fallingLineColor = 0xFF00FF00;
-        int pointColor = 0xFFD700;
-        int textColor = 0xFFD700;
+        int risingLineColor = 0xFFC8423C;
+        int fallingLineColor = 0xFF3C9A52;
+        int pointColor = 0x9A6A10;
+        int textColor = 0x9A6A10;
         
         int daysCount = priceHistory.size();
         int[] xPoints = new int[daysCount];
@@ -548,7 +521,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
             int i = keyDays[j];
             if (i < daysCount) {
                 int labelX = xPoints[i] - this.font.width(keyLabels[j]) / 2;
-                guiGraphics.drawString(this.font, keyLabels[j], labelX, chartBottom + 5, 0xFFFFFF, false);
+                guiGraphics.drawString(this.font, keyLabels[j], labelX, chartBottom + 5, 0x2A2E33, false);
             }
         }
     }
@@ -600,13 +573,13 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
 
         @Override
         protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-            int color = selected ? 0xFF808080 : (this.isHovered() ? 0xFF606060 : 0xFF404040);
+            int color = selected ? 0xFFD5E0EC : (this.isHovered() ? 0xFFE6E9EC : 0xFFF0F1F2);
             guiGraphics.fill(this.getX(), this.getY(),
                 this.getX() + this.width, this.getY() + this.height, color);
 
             if (selected) {
                 guiGraphics.renderOutline(this.getX(), this.getY(),
-                    this.width, this.height, 0xFFFFFF);
+                    this.width, this.height, 0xFF3A6EA5);
             }
 
             ItemStack stack = new ItemStack(commodity.getItem());
@@ -623,9 +596,9 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
                 // 根据价格涨跌确定颜色：高于基础价格=红色(涨)，低于=绿色(跌)，等于灰色
                 int priceColor;
                 if (currentPrice > basePrice) {
-                    priceColor = 0xFFFF0000; // 红色 - 上涨
+                    priceColor = 0xFFC8423C; // 红色 - 上涨
                 } else if (currentPrice < basePrice) {
-                    priceColor = 0xFF00FF00; // 绿色 - 下跌
+                    priceColor = 0xFF3C9A52; // 绿色 - 下跌
                 } else {
                     priceColor = 0xFF808080; // 灰色 - 持平
                 }

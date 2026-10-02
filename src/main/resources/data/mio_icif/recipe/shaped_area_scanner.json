@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " G ",
+    "ICI",
+    " R "
+  ],
+  "key": {
+    "G": { "tag": "c:glass_panes" },
+    "I": { "tag": "c:ingots/iron" },
+    "C": { "tag": "c:circuits/basic" },
+    "R": { "tag": "c:dusts/redstone" }
+  },
+  "result": { "id": "mio_icif:item_tool_area_scanner", "count": 1 }
+}

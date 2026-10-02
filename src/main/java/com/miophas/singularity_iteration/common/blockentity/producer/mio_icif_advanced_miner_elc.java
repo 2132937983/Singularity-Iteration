@@ -55,7 +55,7 @@ import com.mojang.logging.LogUtils;
  * - 支持精确采集模式
  * - 自动处理液体（不需要泵 * - 更大的扫描范围（9x9 * - HV电压等级
  */
-public class mio_icif_advanced_miner_elc extends AbstractProcessingMachineBlockEntity implements MiningRangeProvider {
+public class mio_icif_advanced_miner_elc extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider, MiningRangeProvider {
     private static final String ACTION_OWNER_KEY = "scex_machine_action_owner";
     private static final GameProfile LEGACY_ACTOR = new GameProfile(
         UUID.nameUUIDFromBytes("mio_icif:automated_miner".getBytes(StandardCharsets.UTF_8)), "[SI Miner]");
@@ -800,5 +800,16 @@ private int currentDepth = 0;           // 当前挖掘深度
     public void setActionOwnerFromPlacer(@Nullable LivingEntity placer) {
         actionOwner = MachineActionOwner.fromPlacer(placer);
         ContainerToTank.markUnsaved(this);
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        int r = getMiningRangeRadius();
+        int bottom = level != null ? level.getMinBuildHeight() : worldPosition.getY() - 64;
+        java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> out = new java.util.ArrayList<>();
+        out.add(new com.miophas.singularity_iteration.common.area.WorkArea(new net.minecraft.world.phys.AABB(worldPosition.getX() - r, bottom, worldPosition.getZ() - r,
+            worldPosition.getX() + r + 1, worldPosition.getY(), worldPosition.getZ() + r + 1), com.miophas.singularity_iteration.common.area.WorkArea.MINING, com.miophas.singularity_iteration.common.area.WorkArea.PRIMARY));
+        if (tipPos != null) out.add(com.miophas.singularity_iteration.common.area.WorkArea.box(new BlockPos(worldPosition.getX(), tipPos.getY(), worldPosition.getZ()), r, 0, 0, r, com.miophas.singularity_iteration.common.area.WorkArea.MINING).asEnvelope());
+        return out;
     }
 }

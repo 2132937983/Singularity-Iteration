@@ -45,25 +45,30 @@ public final class ChargepadHelper {
         long totalExtracted = 0;
         IItemAPI api = MioIcifAPI.instance().getItemAPI();
 
-        for (EquipmentSlot slot : CHARGE_SLOTS) {
+        // Equipment in priority order (stable: armor head-to-feet, then main and off hand).
+        java.util.List<ItemStack> equipment = new java.util.ArrayList<>(6);
+        for (EquipmentSlot slot : CHARGE_SLOTS) equipment.add(player.getItemBySlot(slot));
+        equipment.add(player.getMainHandItem());
+        equipment.add(player.getOffhandItem());
+        equipment.sort(java.util.Comparator.comparingInt(
+            (ItemStack stack) -> -com.miophas.singularity_iteration.core.api.item.ChargePriority.of(stack).ordinal()));
+        for (ItemStack stack : equipment) {
             if (totalExtracted >= availableEnergy) break;
-            ItemStack stack = player.getItemBySlot(slot);
+            if (stack.isEmpty() || com.miophas.singularity_iteration.core.api.item.ChargePriority.of(stack)
+                    == com.miophas.singularity_iteration.core.api.item.ChargePriority.OFF) continue;
             if (api.isElectricArmor(stack)) {
                 totalExtracted += chargeArmor(container, stack, availableEnergy - totalExtracted, maxTransferPerItem);
+            } else {
+                totalExtracted += chargeTool(container, stack, availableEnergy - totalExtracted, maxTransferPerItem);
             }
-        }
-
-        if (totalExtracted < availableEnergy) {
-            totalExtracted += chargeTool(container, player.getMainHandItem(), availableEnergy - totalExtracted, maxTransferPerItem);
-        }
-        if (totalExtracted < availableEnergy) {
-            totalExtracted += chargeTool(container, player.getOffhandItem(), availableEnergy - totalExtracted, maxTransferPerItem);
         }
 
         if (totalExtracted < availableEnergy) {
             for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
                 if (totalExtracted >= availableEnergy) break;
                 ItemStack stack = player.getInventory().getItem(i);
+                if (com.miophas.singularity_iteration.core.api.item.ChargePriority.of(stack)
+                        == com.miophas.singularity_iteration.core.api.item.ChargePriority.OFF) continue;
                 totalExtracted += chargeInventoryItem(container, stack, availableEnergy - totalExtracted, maxTransferPerItem);
             }
         }
@@ -75,6 +80,24 @@ public final class ChargepadHelper {
         return false;
     }
 
+    /**
+     * Moves energy only after the item has said how much it will take. The old order
+     * (extract first, then charge and ignore the result) silently destroyed whatever the
+     * item refused - e.g. its per-tick charge limit - which showed up as very low
+     * charging efficiency.
+     */
+    private static long transfer(AbstractEnergyStorageBlockEntity container, long offer,
+                                 java.util.function.LongUnaryOperator simulate, java.util.function.LongUnaryOperator charge) {
+        long accepted = Math.min(offer, Math.max(0, simulate.applyAsLong(offer)));
+        if (accepted <= 0) return 0;
+        var storage = container.getEnergyStorageInternal();
+        long extracted = storage.extract(accepted, false);
+        if (extracted <= 0) return 0;
+        long stored = Math.max(0, charge.applyAsLong(extracted));
+        if (stored < extracted) storage.generateEnergyInternal(extracted - stored, false);   // refund, never lose energy
+        return stored;
+    }
+
     private static long chargeArmor(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
         IItemAPI api = MioIcifAPI.instance().getItemAPI();
         long current = api.getElectricArmorStored(stack);
@@ -83,12 +106,8 @@ public final class ChargepadHelper {
         long spaceInItem = max - current;
         long energyToTransfer = Math.min(availableEnergy, Math.min(maxTransferPerItem, spaceInItem));
         if (energyToTransfer <= 0) return 0;
-        var storage = container.getEnergyStorageInternal();
-        long extracted = storage.extract(energyToTransfer, false);
-        if (extracted > 0) {
-            api.chargeElectricArmor(stack, extracted, false);
-        }
-        return extracted;
+        return transfer(container, energyToTransfer, amount -> api.chargeElectricArmor(stack, amount, true),
+            amount -> api.chargeElectricArmor(stack, amount, false));
     }
 
     private static long chargeTool(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
@@ -101,12 +120,8 @@ public final class ChargepadHelper {
         long spaceInItem = max - current;
         long energyToTransfer = Math.min(availableEnergy, Math.min(maxTransferPerItem, spaceInItem));
         if (energyToTransfer <= 0) return 0;
-        var storage = container.getEnergyStorageInternal();
-        long extracted = storage.extract(energyToTransfer, false);
-        if (extracted > 0) {
-            api.chargeElectricTool(stack, extracted, false);
-        }
-        return extracted;
+        return transfer(container, energyToTransfer, amount -> api.chargeElectricTool(stack, amount, true),
+            amount -> api.chargeElectricTool(stack, amount, false));
     }
 
     private static long chargeInventoryItem(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
@@ -134,11 +149,7 @@ public final class ChargepadHelper {
         long maxTransfer = Math.min(maxTransferPerItem, Math.min(spaceInItem, chargeRate));
         long energyToTransfer = Math.min(availableEnergy, maxTransfer);
         if (energyToTransfer <= 0) return 0;
-        var storage = container.getEnergyStorageInternal();
-        long extracted = storage.extract(energyToTransfer, false);
-        if (extracted > 0) {
-            api.chargeBattery(stack, extracted, false);
-        }
-        return extracted;
+        return transfer(container, energyToTransfer, amount -> api.chargeBattery(stack, amount, true),
+            amount -> api.chargeBattery(stack, amount, false));
     }
 }

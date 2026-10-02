@@ -1,22 +1,902 @@
 {
-    "parent": "block/cube",
-    "textures": {
-        "particle": "mio_icif:block/producer/block_machine","particle_ub": "mio_icif:block/reactor/block_ic_tnt",
-        "all_lbr": "mio_icif:block/reactor/block_ic_tnt",
-        "face": "mio_icif:block/reactor/block_ic_tnt"
-    },
-    "elements": [
-        {
-           "from": [ 0, 0, 0 ],
-            "to": [ 16, 16, 16 ],
-            "faces": {
-                "down":  { "uv": [0,0, 2.66,16], "texture": "#particle_ub", "cullface": "down" },
-                "up":    { "uv": [2.66,0, 5.33,16], "texture": "#particle_ub", "cullface": "up" },
-                "south": { "uv": [13.33,0, 16,16], "texture": "#all_lbr", "cullface": "south" },
-                "north": { "uv": [8,0, 10.66,16], "texture": "#all_lbr", "cullface": "north" },
-                "west":  { "uv": [10.66,0, 13.33,16], "texture": "#all_lbr", "cullface": "west" },
-                "east":  { "uv": [5.33,0, 8,16], "texture": "#all_lbr", "cullface": "east" }
-            }
+  "textures": {
+    "particle": "mio_icif:block/producer/block_machine",
+    "particle_ub": "mio_icif:block/reactor/block_ic_tnt",
+    "all_lbr": "mio_icif:block/reactor/block_ic_tnt",
+    "face": "mio_icif:block/reactor/block_ic_tnt"
+  },
+  "parent": "block/block",
+  "elements": [
+    {
+      "name": "edge_x_down_north",
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        1,
+        1
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.0,
+            15.0,
+            10.66667,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "north"
+        },
+        "south": {
+          "uv": [
+            0.0,
+            15.0,
+            2.66667,
+            16.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "down"
+        },
+        "west": {
+          "uv": [
+            10.66667,
+            15.0,
+            10.83333,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "east": {
+          "uv": [
+            7.83333,
+            15.0,
+            8.0,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        },
+        "up": {
+          "uv": [
+            8.0,
+            15.0,
+            10.66667,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "north"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            15.0,
+            2.66667,
+            16.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "down"
         }
-    ]
+      }
+    },
+    {
+      "name": "edge_x_down_south",
+      "from": [
+        0,
+        0,
+        15
+      ],
+      "to": [
+        16,
+        1,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            0.0,
+            2.66667,
+            1.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "down"
+        },
+        "south": {
+          "uv": [
+            13.33333,
+            15.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "south"
+        },
+        "west": {
+          "uv": [
+            13.16667,
+            15.0,
+            13.33333,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "east": {
+          "uv": [
+            5.33333,
+            15.0,
+            5.5,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        },
+        "up": {
+          "uv": [
+            13.33333,
+            15.0,
+            16.0,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "south"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            0.0,
+            2.66667,
+            1.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "name": "edge_x_up_north",
+      "from": [
+        0,
+        15,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        1
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.0,
+            0.0,
+            10.66667,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "north"
+        },
+        "south": {
+          "uv": [
+            2.66667,
+            0.0,
+            5.33333,
+            1.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "up"
+        },
+        "west": {
+          "uv": [
+            10.66667,
+            0.0,
+            10.83333,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "east": {
+          "uv": [
+            7.83333,
+            0.0,
+            8.0,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        },
+        "up": {
+          "uv": [
+            2.66667,
+            0.0,
+            5.33333,
+            1.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            8.0,
+            0.0,
+            10.66667,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "north"
+        }
+      }
+    },
+    {
+      "name": "edge_x_up_south",
+      "from": [
+        0,
+        15,
+        15
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2.66667,
+            15.0,
+            5.33333,
+            16.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "up"
+        },
+        "south": {
+          "uv": [
+            13.33333,
+            0.0,
+            16.0,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "south"
+        },
+        "west": {
+          "uv": [
+            13.16667,
+            0.0,
+            13.33333,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "east": {
+          "uv": [
+            5.33333,
+            0.0,
+            5.5,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        },
+        "up": {
+          "uv": [
+            2.66667,
+            15.0,
+            5.33333,
+            16.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            13.33333,
+            0.0,
+            16.0,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "south"
+        }
+      }
+    },
+    {
+      "name": "edge_y_west_north",
+      "from": [
+        0,
+        1,
+        0
+      ],
+      "to": [
+        1,
+        15,
+        1
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            10.5,
+            1.0,
+            10.66667,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "north"
+        },
+        "south": {
+          "uv": [
+            10.66667,
+            1.0,
+            10.83333,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "west": {
+          "uv": [
+            10.66667,
+            1.0,
+            10.83333,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "east": {
+          "uv": [
+            10.5,
+            1.0,
+            10.66667,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "north"
+        }
+      }
+    },
+    {
+      "name": "edge_y_west_south",
+      "from": [
+        0,
+        1,
+        15
+      ],
+      "to": [
+        1,
+        15,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.16667,
+            1.0,
+            13.33333,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "south": {
+          "uv": [
+            13.33333,
+            1.0,
+            13.5,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "south"
+        },
+        "west": {
+          "uv": [
+            13.16667,
+            1.0,
+            13.33333,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "east": {
+          "uv": [
+            13.33333,
+            1.0,
+            13.5,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "south"
+        }
+      }
+    },
+    {
+      "name": "edge_y_east_north",
+      "from": [
+        15,
+        1,
+        0
+      ],
+      "to": [
+        16,
+        15,
+        1
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.0,
+            1.0,
+            8.16667,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "north"
+        },
+        "south": {
+          "uv": [
+            7.83333,
+            1.0,
+            8.0,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        },
+        "west": {
+          "uv": [
+            8.0,
+            1.0,
+            8.16667,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "north"
+        },
+        "east": {
+          "uv": [
+            7.83333,
+            1.0,
+            8.0,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "name": "edge_y_east_south",
+      "from": [
+        15,
+        1,
+        15
+      ],
+      "to": [
+        16,
+        15,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            5.33333,
+            1.0,
+            5.5,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        },
+        "south": {
+          "uv": [
+            15.83333,
+            1.0,
+            16.0,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "south"
+        },
+        "west": {
+          "uv": [
+            15.83333,
+            1.0,
+            16.0,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "south"
+        },
+        "east": {
+          "uv": [
+            5.33333,
+            1.0,
+            5.5,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "name": "edge_z_west_down",
+      "from": [
+        0,
+        0,
+        1
+      ],
+      "to": [
+        1,
+        1,
+        15
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            10.83333,
+            15.0,
+            13.16667,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "east": {
+          "uv": [
+            0.0,
+            1.0,
+            0.16667,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "down"
+        },
+        "up": {
+          "uv": [
+            10.83333,
+            15.0,
+            13.16667,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "down": {
+          "uv": [
+            0.0,
+            1.0,
+            0.16667,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "name": "edge_z_west_up",
+      "from": [
+        0,
+        15,
+        1
+      ],
+      "to": [
+        1,
+        16,
+        15
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            10.83333,
+            0.0,
+            13.16667,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        },
+        "east": {
+          "uv": [
+            2.66667,
+            1.0,
+            2.83333,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "up"
+        },
+        "up": {
+          "uv": [
+            2.66667,
+            1.0,
+            2.83333,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            10.83333,
+            0.0,
+            13.16667,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        }
+      }
+    },
+    {
+      "name": "edge_z_east_down",
+      "from": [
+        15,
+        0,
+        1
+      ],
+      "to": [
+        16,
+        1,
+        15
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            2.5,
+            1.0,
+            2.66667,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "down"
+        },
+        "east": {
+          "uv": [
+            5.5,
+            15.0,
+            7.83333,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        },
+        "up": {
+          "uv": [
+            5.5,
+            15.0,
+            7.83333,
+            16.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            1.0,
+            2.66667,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "name": "edge_z_east_up",
+      "from": [
+        15,
+        15,
+        1
+      ],
+      "to": [
+        16,
+        16,
+        15
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            5.16667,
+            1.0,
+            5.33333,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "up"
+        },
+        "east": {
+          "uv": [
+            5.5,
+            0.0,
+            7.83333,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        },
+        "up": {
+          "uv": [
+            5.16667,
+            1.0,
+            5.33333,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "up"
+        },
+        "down": {
+          "uv": [
+            5.5,
+            0.0,
+            7.83333,
+            1.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "name": "panel_north",
+      "from": [
+        1,
+        1,
+        1
+      ],
+      "to": [
+        15,
+        15,
+        1
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.16667,
+            1.0,
+            10.5,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "north"
+        }
+      }
+    },
+    {
+      "name": "panel_south",
+      "from": [
+        1,
+        1,
+        15
+      ],
+      "to": [
+        15,
+        15,
+        15
+      ],
+      "faces": {
+        "south": {
+          "uv": [
+            13.5,
+            1.0,
+            15.83333,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "south"
+        }
+      }
+    },
+    {
+      "name": "panel_west",
+      "from": [
+        1,
+        1,
+        1
+      ],
+      "to": [
+        1,
+        15,
+        15
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            10.83333,
+            1.0,
+            13.16667,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "west"
+        }
+      }
+    },
+    {
+      "name": "panel_east",
+      "from": [
+        15,
+        1,
+        1
+      ],
+      "to": [
+        15,
+        15,
+        15
+      ],
+      "faces": {
+        "east": {
+          "uv": [
+            5.5,
+            1.0,
+            7.83333,
+            15.0
+          ],
+          "texture": "#all_lbr",
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "name": "panel_down",
+      "from": [
+        1,
+        1,
+        1
+      ],
+      "to": [
+        15,
+        1,
+        15
+      ],
+      "faces": {
+        "down": {
+          "uv": [
+            0.16667,
+            1.0,
+            2.5,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "name": "panel_up",
+      "from": [
+        1,
+        15,
+        1
+      ],
+      "to": [
+        15,
+        15,
+        15
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            2.83333,
+            1.0,
+            5.16667,
+            15.0
+          ],
+          "texture": "#particle_ub",
+          "cullface": "up"
+        }
+      }
+    }
+  ],
+  "credit": "Singularity Iteration machine casing (framed, recessed panels)"
 }

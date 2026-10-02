@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "P": {
+      "tag": "c:plates/copper"
+    },
+    "I": {
+      "tag": "c:ingots/iron"
+    },
+    "R": {
+      "tag": "c:dusts/redstone"
+    }
+  },
+  "pattern": [
+    " C ",
+    "PIP",
+    " R "
+  ],
+  "result": {
+    "count": 4,
+    "id": "mio_icif:normal/item_armory_connector"
+  },
+  "show_notification": true
+}

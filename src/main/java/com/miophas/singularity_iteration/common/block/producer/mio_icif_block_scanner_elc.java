@@ -65,10 +65,6 @@ public class mio_icif_block_scanner_elc extends mio_icif_entity_block {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if(blockEntity instanceof mio_icif_scanner_elc scanner&&scanner.hasHeldScanData()) {
-                player.displayClientMessage(Component.literal("扫描机已暂停：存档或扣费记录需要核对，拆除会保留完整数据。"),false);
-                return InteractionResult.CONSUME;
-            }
             if (blockEntity instanceof MenuProvider) {
                 player.openMenu((MenuProvider) blockEntity);
             } else {

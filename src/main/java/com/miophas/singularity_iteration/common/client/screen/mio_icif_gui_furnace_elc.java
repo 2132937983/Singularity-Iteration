@@ -82,4 +82,10 @@ public class mio_icif_gui_furnace_elc extends mio_icif_screen<FurnaceElcMenu> {
             menu.setSyncData(4, menu.blockEntity.getEnergyStorage().getMaxEnergyStored());
         }
     }
+
+    @Override
+    protected void init() {
+        super.init();
+        addXpDockButton(() -> this.menu.getStoredXpTenths());
+    }
 }

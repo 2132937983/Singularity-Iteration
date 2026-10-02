@@ -1,0 +1,75 @@
+{
+ "credit": "Singularity Iteration status lamp (dsp_models.py)",
+ "textures": {
+  "lamp": "mio_icif:block/status/lamp_run",
+  "particle": "mio_icif:block/status/lamp_run"
+ },
+ "elements": [
+  {
+   "name": "status_slit",
+   "from": [
+    2.5,
+    0.3,
+    -0.3
+   ],
+   "to": [
+    13.5,
+    1.2,
+    0
+   ],
+   "shade": false,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#lamp",
+     "neoforge_data": {
+      "block_light": 15,
+      "sky_light": 15,
+      "ambient_occlusion": false
+     }
+    },
+    "up": {
+     "uv": [
+      0,
+      0,
+      16,
+      1
+     ],
+     "texture": "#lamp"
+    },
+    "down": {
+     "uv": [
+      0,
+      0,
+      16,
+      1
+     ],
+     "texture": "#lamp"
+    },
+    "east": {
+     "uv": [
+      0,
+      0,
+      16,
+      1
+     ],
+     "texture": "#lamp"
+    },
+    "west": {
+     "uv": [
+      0,
+      0,
+      16,
+      1
+     ],
+     "texture": "#lamp"
+    }
+   }
+  }
+ ]
+}

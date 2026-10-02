@@ -53,7 +53,7 @@ public class mio_icif_gui_Thermal_Generator extends mio_icif_screen<com.miophas.
         super.renderLabels(guiGraphics, mouseX, mouseY);
         
         // 绘制标题
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
+        drawTitle(guiGraphics);
         
         // 绘制物品栏标题
         guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);

@@ -593,6 +593,11 @@ public class mio_icif_screens {
         );
 
         event.register(
+            mio_icif_menus.ENERGY_TERMINAL_MENU_TYPE.get(),
+            EnergyTerminalScreen::new
+        );
+
+        event.register(
             mio_icif_menus.LASER_TOWER_MENU_TYPE.get(),
             LaserTowerScreen::new
         );

@@ -532,6 +532,11 @@ public static final DeferredBlock<mio_icif_block_magnetizer> MAGNETIZER =
 public static final DeferredBlock<mio_icif_block_tesla> TESLA =
         registerBlock("producer/block_tesla", () -> new mio_icif_block_tesla(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
 
+    // Energy management terminal (network monitor and remote switchboard)
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_energy_terminal> ENERGY_TERMINAL =
+        registerBlock("wiring/block_energy_terminal", () -> new com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_energy_terminal(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 6.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion()
+            .lightLevel(state -> state.getValue(com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_energy_terminal.ACTIVE) ? 7 : 0)));
+
     // Laser defence towers (energy turrets; spec and entity type resolved lazily)
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.producer.mio_icif_block_laser_tower> LASER_DEFENSE_TOWER =
         registerBlock("producer/block_laser_defense_tower", () -> new com.miophas.singularity_iteration.common.block.producer.mio_icif_block_laser_tower(Block.Properties.of().mapColor(MapColor.METAL).strength(3.5f, 6.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion(),

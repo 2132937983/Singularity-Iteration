@@ -1,3 +1,15 @@
 {
-  "parent": "mio_icif:block/wiring/transformer_iv_luv"
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "base": {
+    "parent": "mio_icif:block/wiring/transformer_iv_luv"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/icon/wiring/transformer_iv_luv"
+      }
+    }
+  }
 }

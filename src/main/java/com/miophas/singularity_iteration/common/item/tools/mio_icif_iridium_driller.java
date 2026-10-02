@@ -35,7 +35,7 @@ import net.neoforged.neoforge.common.ItemAbility;
  * 具有钻石镐的一切性质，不会因耐久度为0而损坏? * 速度是钻石镐的两倍，自带时运3效果
  * 蹲下右键可以切换为精准采集模式? */
 @SuppressWarnings("null")
-public class mio_icif_iridium_driller extends mio_icif_tool_elc implements ToggleableElectricTool, IMiningDrill, IEquipmentHudProvider {
+public class mio_icif_iridium_driller extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider, IMiningDrill, IEquipmentHudProvider {
 
     // 铱钻头默认最大能量?(IC2原版: 1000000 EU)
     public static final int IRIDIUM_DRILLER_MAX_ENERGY = 1000000;
@@ -354,4 +354,10 @@ private static final String MODE_KEY = "iridium_driller_mode";
         return removed;
     }
 
+
+    // ---- equipment console (IToolModeProvider)
+    @Override public java.util.List<net.minecraft.network.chat.Component> toolModes(ItemStack stack) {
+        return java.util.List.of(net.minecraft.network.chat.Component.translatable("hud.mio_icif.driller.mode_fortune"), net.minecraft.network.chat.Component.translatable("hud.mio_icif.driller.mode_silk"));
+    }
+    @Override public int toolModeIndex(ItemStack stack) { return getMode(stack) == MODE_FORTUNE ? 0 : 1; }
 }

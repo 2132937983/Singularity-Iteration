@@ -211,7 +211,7 @@ public class mio_icif_gui_canner_elc extends mio_icif_screen<com.miophas.singula
             if (this.minecraft != null && this.minecraft.gameMode != null) {
                 net.minecraft.client.resources.sounds.SimpleSoundInstance clickSound =
                     net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F);
+                        com.miophas.singularity_iteration.common.registry.mio_icif_sounds.UI_CLICK.get(), 1.0F);
                 this.minecraft.getSoundManager().play(clickSound);
                 this.menu.clickMenuButton(this.minecraft.player, 0);
                 this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, 0);
@@ -224,7 +224,7 @@ public class mio_icif_gui_canner_elc extends mio_icif_screen<com.miophas.singula
             if (this.minecraft != null && this.minecraft.gameMode != null) {
                 net.minecraft.client.resources.sounds.SimpleSoundInstance clickSound =
                     net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F);
+                        com.miophas.singularity_iteration.common.registry.mio_icif_sounds.UI_CLICK.get(), 1.0F);
                 this.minecraft.getSoundManager().play(clickSound);
                 this.menu.clickMenuButton(this.minecraft.player, 1);
                 this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, 1);

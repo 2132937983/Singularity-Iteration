@@ -30,7 +30,7 @@ public class mio_icif_gui_kinetic_generator extends mio_icif_screen<com.miophas.
     private static final int INFO_TEXT_X = 42;
     private static final int INFO_TEXT_Y = 50;
     // 文本颜色 20eb3e (绿色)
-    private static final int INFO_TEXT_COLOR = 0x20eb3e;
+    private static final int INFO_TEXT_COLOR = 0x2A2E33;
 
     public mio_icif_gui_kinetic_generator(com.miophas.singularity_iteration.common.menu.generator.KineticGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

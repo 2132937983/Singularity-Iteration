@@ -164,6 +164,9 @@ public class MetalFormerMenu extends mio_icif_machine_menu {
 
         // 设置新模式?
         be.setMode(nextMode);
+        if (be.getLevel() != null) be.getLevel().playSound(null, be.getBlockPos(),
+            com.miophas.singularity_iteration.common.registry.mio_icif_sounds.METAL_FORMER_SWITCH.get(),
+            net.minecraft.sounds.SoundSource.BLOCKS, 0.9F, 0.95F + player.getRandom().nextFloat() * 0.1F);
 
         // 更新方块状态?
         if (be.getLevel() != null) {

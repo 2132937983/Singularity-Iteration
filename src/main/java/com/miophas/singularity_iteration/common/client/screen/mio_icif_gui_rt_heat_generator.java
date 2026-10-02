@@ -80,7 +80,7 @@ public class mio_icif_gui_rt_heat_generator extends mio_icif_screen<com.miophas.
         // 显示产热量(119, 50)
         int output = menu.getHeatRate();
         Component outputText = Component.literal(output + " HU/t");
-        guiGraphics.drawString(this.font, outputText, OUTPUT_TEXT_X, OUTPUT_TEXT_Y, 0x57c4da, false);
+        guiGraphics.drawString(this.font, outputText, OUTPUT_TEXT_X, OUTPUT_TEXT_Y, 0x2A2E33, false);
 
         // 检查鼠标是否在热能条区域（显示tooltip）
         int x = (this.width - this.imageWidth) / 2;

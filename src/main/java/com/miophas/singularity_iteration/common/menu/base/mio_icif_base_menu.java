@@ -26,6 +26,32 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 @SuppressWarnings("null")
 public abstract class mio_icif_base_menu extends AbstractContainerMenu {
 
+    /**
+     * Vanilla sends container data as signed 16-bit values, so any energy, capacity or
+     * progress above 32767 wrapped on the client and GUI read-outs jumped back and
+     * forth while charging. Every logical value is sent as two 16-bit halves instead;
+     * the client reassembles the full int before the screen reads it.
+     */
+    @Override
+    protected void addDataSlots(net.minecraft.world.inventory.ContainerData data) {
+        if (data instanceof com.miophas.singularity_iteration.core.api.menu.WordContainerData) {
+            super.addDataSlots(data);
+            return;
+        }
+        for (int i = 0; i < data.getCount(); i++) {
+            final int index = i;
+            addDataSlot(new net.minecraft.world.inventory.DataSlot() {
+                @Override public int get() { return data.get(index) & 0xFFFF; }
+                @Override public void set(int value) { data.set(index, (data.get(index) & 0xFFFF0000) | (value & 0xFFFF)); }
+            });
+            addDataSlot(new net.minecraft.world.inventory.DataSlot() {
+                @Override public int get() { return data.get(index) >>> 16; }
+                @Override public void set(int value) { data.set(index, (data.get(index) & 0xFFFF) | ((value & 0xFFFF) << 16)); }
+            });
+        }
+    }
+
+
     /** 标准能量条的像素宽度 */
     protected static final int ENERGY_BAR_WIDTH = mio_icif_gui_global_variables.ENERGY_BAR_WIDTH;
 
@@ -47,6 +73,20 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
      */
     private int trackedUpgradeSlotStart = -1;
     private int trackedUpgradeSlotEnd = -1;
+
+    /**
+     * Upgrade slots live in the external utility dock left of the GUI (item origin x = -21,
+     * one 18px row each from y = 8), so the panel's upper-right corner stays free for
+     * inventory-sorting mods (Inventory Profiles Next, Mouse Tweaks, ...). The positions the
+     * menu originally asked for are kept for the dev texture tooling.
+     */
+    public static final int DOCK_SLOT_X = -21, DOCK_SLOT_Y = 8;
+    private final java.util.List<int[]> legacyUpgradePositions = new java.util.ArrayList<>();
+
+    public final java.util.List<int[]> legacyUpgradePositions() { return java.util.Collections.unmodifiableList(legacyUpgradePositions); }
+
+    /** Number of upgrade slots placed in the left utility dock. */
+    public final int dockedUpgradeSlots() { return legacyUpgradePositions.size(); }
 
     /**
      * 标记槽位是否属于机器槽位（非玩家物品栏）
@@ -555,6 +595,9 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
             trackedUpgradeSlotStart = Math.min(trackedUpgradeSlotStart, index);
             trackedUpgradeSlotEnd = Math.max(trackedUpgradeSlotEnd, index + 1);
         }
+        legacyUpgradePositions.add(new int[]{x, y});
+        x = DOCK_SLOT_X;
+        y = DOCK_SLOT_Y + (legacyUpgradePositions.size() - 1) * 18;
         this.addSlot(new net.neoforged.neoforge.items.SlotItemHandler(itemHandler, index, x, y) {
             @Override
             public boolean mayPlace(ItemStack stack) {

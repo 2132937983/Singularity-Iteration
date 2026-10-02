@@ -10,13 +10,13 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
-public class MetsAdvancedSolarGeneratorMenu extends mio_icif_generator_menu {
+public class MetsAdvancedSolarGeneratorMenu extends mio_icif_generator_menu implements ModernSolarView {
 
     public static final int BATTERY_SLOT = 0;
     public static final int SLOT_COUNT = 1;
 
-    private static final int BATTERY_SLOT_X = 80;
-    private static final int BATTERY_SLOT_Y = 26;
+    private static final int BATTERY_SLOT_X = 115;
+    private static final int BATTERY_SLOT_Y = 35;
 
     private final ContainerLevelAccess access;
     public final mio_icif_MetsAdvancedSolarGenerator blockEntity;
@@ -29,7 +29,7 @@ public class MetsAdvancedSolarGeneratorMenu extends mio_icif_generator_menu {
         super(mio_icif_menus.METS_ADVANCED_SOLAR_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT,
             playerInventory,
             blockEntity != null ? blockEntity.getItemHandlerCapability(null) : null,
-            null, 3, blockEntity);
+            null, 4, blockEntity);
 
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
@@ -41,13 +41,18 @@ public class MetsAdvancedSolarGeneratorMenu extends mio_icif_generator_menu {
         addBatterySlot(BATTERY_SLOT, BATTERY_SLOT_X, BATTERY_SLOT_Y);
     }
 
+    /** Live EU/t (scaled by sky brightness). */
+    public int getLiveOutput() {
+        return data.getCount() > 3 ? data.get(3) : 0;
+    }
+
     public boolean isGenerating() {
         return data.get(2) == 1;
     }
 
     @Override
     protected boolean isBattery(ItemStack stack) {
-        return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
+        return stack.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem;
     }
 
     @Override
@@ -65,6 +70,7 @@ public class MetsAdvancedSolarGeneratorMenu extends mio_icif_generator_menu {
             this.setSyncData(0, energy);
             this.setSyncData(1, maxEnergy);
             this.setSyncData(2, blockEntity.isGenerating() ? 1 : 0);
+            this.setSyncData(3, (int) Math.min(Integer.MAX_VALUE, blockEntity.getPowerOutput()));
         }
     }
 }

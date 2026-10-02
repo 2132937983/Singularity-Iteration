@@ -24,7 +24,7 @@ import java.util.Set;
 
 /** IC2 Experimental agriculture machine; cursor and resource tanks survive reloads. */
 @SuppressWarnings("null")
-public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity {
+public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider {
     private int scanIndex;
 
     // 对齐 1.7.10 TileEntityCropHavester：15 格收获存储 + 1 格作物分析仪 + 1 格升级，
@@ -313,5 +313,11 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity {
     @Override public void loadAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         scanIndex = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.restore(tag.getInt("CropScanIndex"));
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
+        int r = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.RADIUS;
+        return java.util.List.of(com.miophas.singularity_iteration.common.area.WorkArea.box(worldPosition, r, 1, 1, r, com.miophas.singularity_iteration.common.area.WorkArea.FARM));
     }
 }

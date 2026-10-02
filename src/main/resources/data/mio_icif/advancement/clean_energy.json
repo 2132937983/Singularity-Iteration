@@ -1,0 +1,31 @@
+{
+  "parent": "mio_icif:trinity",
+  "display": {
+    "icon": {
+      "id": "mio_icif:generator/block_nuclear_reactor_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.clean_energy.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.clean_energy.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "reactor_started": {
+      "trigger": "minecraft:placed_block",
+      "conditions": {
+        "location": [
+          {
+            "condition": "minecraft:block_state_property",
+            "block": "mio_icif:reactor/block_reactor_vessel"
+          }
+        ]
+      }
+    }
+  }
+}

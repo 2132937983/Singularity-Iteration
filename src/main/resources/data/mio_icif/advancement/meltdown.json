@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:trinity",
+  "display": {
+    "icon": {
+      "id": "mio_icif:generator/block_nuclear_reactor_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.meltdown.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.meltdown.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "reactor_meltdown": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

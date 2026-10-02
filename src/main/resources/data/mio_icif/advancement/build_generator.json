@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:build_cable",
+  "display": {
+    "icon": {
+      "id": "mio_icif:normal/item_bat_lev0"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.build_generator.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.build_generator.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "battery": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:normal/item_bat_lev0"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

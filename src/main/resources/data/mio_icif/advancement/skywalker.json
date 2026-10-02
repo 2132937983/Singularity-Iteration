@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:gold_miner",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_nanosaber"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.skywalker.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.skywalker.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "nanosaber": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_tool_nanosaber"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

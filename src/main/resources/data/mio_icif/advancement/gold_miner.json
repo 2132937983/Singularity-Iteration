@@ -1,0 +1,34 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_iron_driller"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.gold_miner.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.gold_miner.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "drill": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_tool_iron_driller",
+              "mio_icif:item_tool_diamond_driller",
+              "mio_icif:item_tool_iridium_driller"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

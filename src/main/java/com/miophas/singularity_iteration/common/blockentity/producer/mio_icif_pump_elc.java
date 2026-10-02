@@ -32,7 +32,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BucketPickup;
-import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
@@ -59,6 +58,19 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
     // 对齐原版 IC2 TileEntityPump：addTankExtract("fluid", 8000) → 8000 mB（8 桶）
     public static final int DEFAULT_WORK_TIME = 20, FLUID_CAPACITY = 8000, FLUID_PER_OPERATION = 1000;
     public static final int IDLE_RETRY_TICKS = 20;
+    /**
+     * 抽取范围的长宽半宽：水平朝向时是垂直于朝向的横向 ±R，垂直朝向时是水平面的长宽 ±R。
+     * 高度（Y）在两种情况下都恒为 1 格。
+     */
+    public static final int PUMP_RANGE_RADIUS = 8;
+    /**
+     * 抽取范围沿泵朝向延伸的长度：自正面方格起共 L 格（对齐 IC2 只在正面一侧工作）。
+     */
+    public static final int PUMP_RANGE_LENGTH = 8;
+    /**
+     * 流动液溯源的步数上限（IC2 {@code PumpUtil.searchFluidSource} 为 64，这里放宽以跟随更长的水流）。
+     */
+    public static final int TRACE_MAX_STEPS = 128;
     private static final String SAVE_KEY = "scex_pump_v1";
     private static final SlotLayout LAYOUT = SlotLayout.builder().battery().upgrade(4).input(1).output(1).build();
     private static final GameProfile LEGACY_ACTOR = new GameProfile(
@@ -149,7 +161,7 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
     }
     /**
      * 复刻 IC2 {@code PumpUtil.moveUp}：探测正上方十字（中心 + 四邻）的流体，返回其 decay；
-     * 全部不可通行时把 pos 还原到原位置并返回 -1。
+     * 全部不可通行时把 pos 还原并返回 -1。
      */
     private int moveUp(BlockPos.MutableBlockPos pos) {
         int x = pos.getX(), y = pos.getY(), z = pos.getZ();
@@ -167,8 +179,7 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
         return -1;
     }
     /**
-     * 复刻 IC2 {@code PumpUtil.moveSideways}：同层探测 decay 更低的相邻流体；
-     * 全部失败时还原 pos 并返回 -1。
+     * 复刻 IC2 {@code PumpUtil.moveSideways}：同层探测 decay 更低的相邻流体；全部失败时还原并返回 -1。
      */
     private int moveSideways(BlockPos.MutableBlockPos pos, int decay) {
         int x = pos.getX(), y = pos.getY(), z = pos.getZ();
@@ -184,94 +195,130 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
         return -1;
     }
     /**
-     * 复刻 IC2 {@code PumpUtil.searchFluidSource}（含 ±2 跳格探测与找不到水源时消解终点周围 5×5 流动液的破坏性收尾）。
-     * 返回找到的水源方块坐标，找不到返回 null。
+     * 流动液溯源（IC2 语义）：从流动液起点出发，每步优先向上十字、其次在同层走向 decay 更小的邻格，
+     * 命中 {@code decay == 0} 的源即返回。超过 {@link #TRACE_MAX_STEPS} 步或断流则放弃。
+     * 只接受与储罐兼容的流体；纯只读。
      */
     @Nullable
-    private BlockPos ic2SearchFluidSource(BlockPos startPos) {
-        if (!(level instanceof ServerLevel server)) return null;
-        BlockPos.MutableBlockPos pos = startPos.mutable();
+    private BlockPos traceToSource(BlockPos start, Fluid held) {
+        BlockPos.MutableBlockPos pos = start.mutable();
         int decay = flowDecay(pos);
-        for (int i = 0; i < 64; i++) {
-            int newDecay = moveUp(pos);
-            if (newDecay < 0) {
-                newDecay = moveSideways(pos, decay);
-                if (newDecay < 0) break;
-            }
-            decay = newDecay;
-        }
-        java.util.Set<BlockPos> visited = new java.util.HashSet<>(64);
-        for (int j = 0; j < 64; j++) {
-            visited.add(pos.immutable());
-            if (!visited.contains(pos.move(-1, 0, 0).immutable())) {
-                int newDecay = flowDecay(pos);
-                if (newDecay >= 0) {
-                    if (newDecay == 0) return pos.immutable();
-                    continue;
-                }
-            }
-            if (!visited.contains(pos.move(1, 0, 1).immutable())) {
-                int newDecay = flowDecay(pos);
-                if (newDecay >= 0) {
-                    if (newDecay == 0) return pos.immutable();
-                    continue;
-                }
-            }
-            if (!visited.contains(pos.move(0, 0, -2).immutable())) {
-                int newDecay = flowDecay(pos);
-                if (newDecay >= 0) {
-                    if (newDecay == 0) return pos.immutable();
-                    continue;
-                }
-            }
-            if (!visited.contains(pos.move(1, 0, 1).immutable())) {
-                int newDecay = flowDecay(pos);
-                if (newDecay >= 0) {
-                    if (newDecay == 0) return pos.immutable();
-                    continue;
-                }
-            }
-            pos.move(-1, 0, 0);
-        }
-        for (int ix = -2; ix <= 2; ix++) {
-            for (int iz = -2; iz <= 2; iz++) {
-                BlockPos cPos = pos.offset(ix, 0, iz);
-                if (!available(server, cPos)) continue;
-                BlockState state = server.getBlockState(cPos);
-                int d = flowDecay(state, cPos);
-                if (d < 0) continue;
-                if (d == 0) return cPos;
-                if (d >= 1 && d < 7 && state.getBlock() instanceof LiquidBlock) {
-                    int amount = state.getFluidState().getAmount();
-                    server.setBlock(cPos, state.setValue(LiquidBlock.LEVEL, Math.max(1, amount - 1)), 3);
-                } else {
-                    server.removeBlock(cPos, false);
-                }
+        if (decay < 0) return null;
+        if (decay == 0) return pos.immutable();
+        for (int step = 0; step < TRACE_MAX_STEPS; step++) {
+            int next = moveUp(pos);
+            if (next < 0) next = moveSideways(pos, decay);
+            if (next < 0) return null;
+            decay = next;
+            if (decay == 0) {
+                Fluid fluid = sourceFluid(sourceState(pos));
+                if (fluid == Fluids.EMPTY || (held != Fluids.EMPTY && fluid != held)) return null;
+                return pos.immutable();
             }
         }
         return null;
+    }
+    /**
+     * 抽取范围的轴对齐包围盒。共同点是<b>高度（Y）恒为 1 格</b>：不会吸到与泵不同层、且不连通的流体。
+     * <ul>
+     *   <li>水平朝向（东南西北）：正面方格所在层，沿朝向延伸 {@link #PUMP_RANGE_LENGTH} 格、横向
+     *       ±{@link #PUMP_RANGE_RADIUS} 格（即与泵同层的一块薄板）；</li>
+     *   <li>垂直朝向（上/下）：正面方格所在层，长宽各 ±{@link #PUMP_RANGE_RADIUS} 格
+     *       （即泵正上方/正下方的一个平面）。</li>
+     * </ul>
+     * 落在范围之外、但与范围内流体连通的源仍会被取到：{@link #traceToSource} 会顺着流动液溯源命中
+     * （例如泵朝上时，正上方的整片岩浆一边被抽走、一边流入这一层，于是被逐个溯源抽干）。
+     */
+    private net.minecraft.world.phys.AABB forwardRangeBox() {
+        Direction facing = getFacing();
+        BlockPos front = worldPosition.relative(facing);
+        int r = PUMP_RANGE_RADIUS;
+        int span = PUMP_RANGE_LENGTH - 1;
+        int x1 = front.getX(), x2 = front.getX() + facing.getStepX() * span;
+        int y1 = front.getY(), y2 = front.getY() + facing.getStepY() * span;
+        int z1 = front.getZ(), z2 = front.getZ() + facing.getStepZ() * span;
+        if (facing.getStepX() != 0) {
+            // 东西朝向：同层沿 Z 展开 ±R，高度保持 1 格
+            z1 -= r; z2 += r;
+        } else if (facing.getStepZ() != 0) {
+            // 南北朝向：同层沿 X 展开 ±R，高度保持 1 格
+            x1 -= r; x2 += r;
+        } else {
+            // 垂直朝向：高度压成 1 格（Y 不延伸），长宽各展开 ±R
+            y2 = y1;
+            x1 -= r; x2 += r; z1 -= r; z2 += r;
+        }
+        return new net.minecraft.world.phys.AABB(
+            Math.min(x1, x2), Math.min(y1, y2), Math.min(z1, z2),
+            Math.max(x1, x2) + 1, Math.max(y1, y2) + 1, Math.max(z1, z2) + 1);
     }
     private void forgetSearch(boolean idle) {
         cachedSource = null; cachedFluid = Fluids.EMPTY;
         retryAt = idle ? currentTick() + IDLE_RETRY_TICKS + Math.floorMod(worldPosition.asLong(), 5) : 0;
     }
+    /**
+     * 在"正面前方空间"内寻源，必要时沿流动液溯源（IC2 语义）：
+     * <ol>
+     *   <li>范围（{@link #forwardRangeBox()}）内最近的<b>源</b>方块优先，保证范围内的源会被逐个抽干；</li>
+     *   <li>范围内没有源时，取范围内最近的<b>流动液</b>，用 {@link #traceToSource} 沿水流溯源到真正的源头
+     *       （源头可能位于范围之外的上游，与 IC2 行为一致）；</li>
+     *   <li>储罐为空时接受任意流体；罐内已有流体时只接受同种流体，避免反复盯上装不下的源。</li>
+     * </ol>
+     * 纯只读扫描，不修改世界。
+     */
+    @Nullable
+    private BlockPos findSourceInRange() {
+        if (!(level instanceof ServerLevel server)) return null;
+        Fluid held = tank.isEmpty() ? Fluids.EMPTY : tank.getFluid().getFluid();
+        net.minecraft.world.phys.AABB box = forwardRangeBox();
+        BlockPos min = BlockPos.containing(box.minX, box.minY, box.minZ);
+        BlockPos max = BlockPos.containing(box.maxX - 1.0E-4, box.maxY - 1.0E-4, box.maxZ - 1.0E-4);
+        BlockPos bestSource = null;
+        double bestSourceDistance = Double.MAX_VALUE;
+        BlockPos bestFlow = null;
+        double bestFlowDistance = Double.MAX_VALUE;
+        for (BlockPos candidate : BlockPos.betweenClosed(min, max)) {
+            if (!available(server, candidate)) continue;
+            BlockState state = server.getBlockState(candidate);
+            int decay = flowDecay(state, candidate);
+            if (decay < 0) continue;
+            Fluid fluid = sourceFluid(state);
+            if (fluid == Fluids.EMPTY) continue;
+            if (held != Fluids.EMPTY && fluid != held) continue;
+            double distance = worldPosition.distSqr(candidate);
+            if (decay == 0) {
+                if (distance < bestSourceDistance) {
+                    bestSourceDistance = distance;
+                    bestSource = candidate.immutable();
+                }
+            } else if (distance < bestFlowDistance) {
+                bestFlowDistance = distance;
+                bestFlow = candidate.immutable();
+            }
+        }
+        if (bestSource != null) return bestSource;
+        if (bestFlow != null) return traceToSource(bestFlow, held);
+        return null;
+    }
+
     private boolean findSource() {
         if (cachedSource != null) {
             BlockState state = sourceState(cachedSource);
             Fluid fluid = sourceFluid(state);
-            if (fluid != Fluids.EMPTY && state.getFluidState().isSource()) {
+            boolean stillUsable = fluid != Fluids.EMPTY && state.getFluidState().isSource()
+                && (tank.isEmpty() || tank.getFluid().getFluid() == fluid);
+            if (stillUsable) {
                 cachedFluid = fluid;
                 return true;
             }
+            // 当前源已被抽干/移除，或罐内流体已换成别的种类：立即解除节流并在范围内重新就近寻源。
             forgetSearch(false);
         }
         if (currentTick() < retryAt) return false;
-        BlockPos found = ic2SearchFluidSource(worldPosition.relative(getFacing()));
+        BlockPos found = findSourceInRange();
         if (found == null) { forgetSearch(true); return false; }
-        Fluid fluid = sourceFluid(sourceState(found));
-        if (fluid == Fluids.EMPTY) { forgetSearch(true); return false; }
         cachedSource = found;
-        cachedFluid = fluid;
+        cachedFluid = sourceFluid(sourceState(found));
         return true;
     }
     private boolean room(Fluid fluid, int amount) {
@@ -515,18 +562,24 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
         }
         isWorking = false; progress = paidWork;
     }
+    // 将方块实体的完整数据序列化为网络同步标签，供客户端渲染/显示使用
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         var tag = super.getUpdateTag(registries); saveAdditional(tag, registries); return tag;
     }
 
     @Override
     public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
-        // IC2 PumpUtil: the search walks at most 64 steps from the intake, then probes a 5x5 patch.
-        BlockPos intake = worldPosition.relative(getFacing());
         java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> out = new java.util.ArrayList<>();
-        out.add(com.miophas.singularity_iteration.common.area.WorkArea.cell(intake, com.miophas.singularity_iteration.common.area.WorkArea.FLUID));
-        out.add(com.miophas.singularity_iteration.common.area.WorkArea.box(intake, 64, 0, 64, 64, com.miophas.singularity_iteration.common.area.WorkArea.FLUID).asEnvelope());
-        if (cachedSource != null) out.add(com.miophas.singularity_iteration.common.area.WorkArea.cell(cachedSource, com.miophas.singularity_iteration.common.area.WorkArea.FLUID));
+        // 主区域：泵正面前方的抽取空间（沿朝向延伸 L 格、横截面 ±R），供区域预览显示。
+        out.add(new com.miophas.singularity_iteration.common.area.WorkArea(
+            forwardRangeBox(),
+            com.miophas.singularity_iteration.common.area.WorkArea.FLUID,
+            com.miophas.singularity_iteration.common.area.WorkArea.PRIMARY));
+        // 标记：当前正在抽取的源方块。
+        if (cachedSource != null) {
+            out.add(com.miophas.singularity_iteration.common.area.WorkArea.cell(
+                cachedSource, com.miophas.singularity_iteration.common.area.WorkArea.FLUID));
+        }
         return out;
     }
 }

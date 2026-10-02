@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_matter_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.ex_nihilo.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.ex_nihilo.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "matter_fabricator": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_matter_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

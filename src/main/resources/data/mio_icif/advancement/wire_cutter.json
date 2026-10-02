@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:gold_miner",
+  "display": {
+    "icon": {
+      "id": "mio_icif:item_tool_cutter"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.wire_cutter.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.wire_cutter.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "cutter": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:item_tool_cutter"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

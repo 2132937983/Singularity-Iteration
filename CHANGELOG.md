@@ -1,6 +1,39 @@
 # 奇点迭代变更日志
 
-累计记录 `0.1.7.16` 至 `0.1.7.26` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+累计记录 `0.1.7.16` 至 `0.1.7.26.1` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+
+## 0.1.7.26.1
+
+### 进度成就
+
+- 新增本模组进度页签「奇点迭代」，共 18 项成就：奇点迭代（进入世界，根节点，图标为量子头盔）、工业时代、一锤定音、千锤百炼、次男不妙夹、工业时代：序章、黄金矿工!、「天行者」、工业事故、曼哈顿计划、三位一体、清洁能源、无中生有、重构现实、重新排列，而非无中生有、皮卡德舰长的订单、以及隐藏成就「大伊万」与「核电，轻而易举啊！」。
+- 结构为单主干加 3 条叶子支线：「天行者」挂在黄金矿工之下、「大伊万」挂在三位一体之下、反应堆熔毁挂在清洁能源之下。两个隐藏成就置于链尾，避免其 `hidden` 标记连带隐藏后续成就。
+- 页签背景使用 `textures/achievements/background.png`；页签名称与图标取自根节点（奇点迭代）。
+- 未完成／已完成使用不同文本：新增 `AdvancementWidgetHintMixin`，未完成时显示 `advancements.mio_icif.<id>.hint`（黄色操作提示），完成后显示 `advancements.mio_icif.<id>.description`（达成条件）。未提供 `.hint` 的进度自动回退为原描述，不影响其他模组的页签。
+- 补齐中英双语 `title` / `description` / `hint` 共 54×2 条文案。
+- 修复「清洁能源」误触发：`minecraft:placed_block` 对应的 `ItemUsedOnLocationTrigger.TriggerInstance` 只接受 `player` 与 `location` 两个字段，原先写入的 `item` 被 Codec 静默忽略，导致任意方块放置都能达成；现改为在 `location` 中使用 `block_state_property` 限定 `mio_icif:reactor/block_reactor_vessel`。
+- 需要自定义逻辑的 5 项成就（工业事故、三位一体、「大伊万」、反应堆熔毁、皮卡德舰长的订单）使用 `minecraft:impossible`，当前通过指令授予，待接入对应事件后再由代码发放。
+
+### 进度页签彩蛋
+
+- 新增 `AdvancementTabMiophaMixin`：保持原版背景平铺（整张贴图作为 16×16 瓦片铺满），仅将平铺网格中的**单个瓦片**按概率替换为 `textures/achievements/miopha.png`，不替换整片背景。判定只对 `mio_icif` 命名空间的页签生效。
+- 彩蛋判定采用"先按概率决定是否出现、命中后再随机挑选一个瓦片"的两段式逻辑；结果按页签缓存，滚动与重绘时不闪烁，每次打开进度界面重新判定。当前 `MIOPHA_CHANCE = 0.00001`。
+- 贴图文件名必须全小写：`ResourceLocation` 的 path 仅允许 `[a-z0-9/._-]`，含大写字母会在打开进度界面时抛出 `ResourceLocationException`。
+
+### 电力泵
+
+- 抽取范围改为「正面前方空间」，且**高度恒为 1 格**：
+  - 水平朝向（东南西北）：自正面方格起沿朝向延伸 `PUMP_RANGE_LENGTH = 8` 格、同层横向 ±`PUMP_RANGE_RADIUS = 8` 格、高度 1 格；
+  - 垂直朝向（上下）：正面方格所在层，长宽各 ±8 格、高度 1 格（即泵正上方／正下方的一个平面）。
+- 保留并复刻 IC2 的流动液溯源（`moveUp` / `moveSideways`，`TRACE_MAX_STEPS = 128`）：范围内优先抽取最近的**源**，范围内只有流动液时沿水流／岩浆流溯源命中上游源头。因此水平放置仍可取到自上方流下的水源，垂直朝上可借助岩浆流入逐步抽干正上方整片岩浆。
+- 移除原先的 64 步连通搜索及其 5×5 破坏性收尾，寻源与抽液过程不再修改世界。
+- 单罐单流体规则：储罐已有流体时只接受同种流体，避免反复锁定装不下的源而空转；缓存失效后立即重新寻源，仅完全找不到时才进入 20 tick 空闲重试节流。
+- `workAreas()` 返回上述抽取范围，接入既有的区域预览（GUI 左侧按钮与区域扫描器），不再额外提供常显渲染；调试期间临时加入的常显范围渲染已在交付前移除。
+
+### 其他
+
+- `mio_icif.mixins.json` 的 `client` 数组新增 `client.AdvancementTabMiophaMixin` 与 `client.AdvancementWidgetHintMixin`。
+- 新增资源：`data/mio_icif/advancement/*.json`（18 个进度）、`textures/achievements/background.png`、`textures/achievements/miopha.png`。
 
 ## 0.1.7.26
 

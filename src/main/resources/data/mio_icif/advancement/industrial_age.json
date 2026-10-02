@@ -1,0 +1,39 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:generator/block_thermal_generator"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.industrial_age.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.industrial_age.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "generator": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:generator/block_thermal_generator",
+              "mio_icif:generator/block_stirling_generator",
+              "mio_icif:generator/block_solar_generator",
+              "mio_icif:generator/block_wind_generator",
+              "mio_icif:generator/block_water_generator",
+              "mio_icif:generator/block_geo_generator",
+              "mio_icif:generator/block_semifluid_generator",
+              "mio_icif:generator/block_diesel_generator"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

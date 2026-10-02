@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:rearrange_not_create",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_replicator_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.picard_order.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.picard_order.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "replicator_used": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:reality_refactor",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_replicator_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.rearrange_not_create.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.rearrange_not_create.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "replicator": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_replicator_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

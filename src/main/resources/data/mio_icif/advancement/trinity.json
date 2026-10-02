@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:manhattan_project",
+  "display": {
+    "icon": {
+      "id": "mio_icif:reactor/block_reactor_nuke"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.trinity.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.trinity.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "nuke_detonated": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

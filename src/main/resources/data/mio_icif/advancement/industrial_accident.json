@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_machine_hull_basic"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.industrial_accident.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.industrial_accident.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "machine_exploded": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

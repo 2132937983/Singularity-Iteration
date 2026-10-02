@@ -1,0 +1,23 @@
+{
+  "parent": "mio_icif:trinity",
+  "display": {
+    "icon": {
+      "id": "mio_icif:reactor/block_reactor_nuke"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.big_ivan.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.big_ivan.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "max_yield_nuke": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:build_elec_furnace",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_induction_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.build_ind_furnace.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.build_ind_furnace.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "induction_furnace": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_induction_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -11,6 +11,8 @@
     "LivingEquipEnergyMixin"
   ],
   "client": [
-    "client.ItemInHandReequipMixin"
+    "client.ItemInHandReequipMixin",
+    "client.AdvancementTabMiophaMixin",
+    "client.AdvancementWidgetHintMixin"
   ]
 }

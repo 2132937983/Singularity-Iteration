@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "id": "mio_icif:armor/item_armor_quantum_helmet"
+    },
+    "background": "mio_icif:textures/achievements/background.png",
+    "title": {
+      "translate": "advancements.mio_icif.root.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.root.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "enter_world": {
+      "trigger": "minecraft:tick"
+    }
+  }
+}

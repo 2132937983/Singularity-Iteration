@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:root",
+  "display": {
+    "icon": {
+      "id": "mio_icif:energy_converter/energy_converter"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.industrial_prologue.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.industrial_prologue.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "energy_converter": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:energy_converter/energy_converter"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:build_batbox",
+  "display": {
+    "icon": {
+      "id": "mio_icif:wiring/block_mfe"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.build_mfe.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.build_mfe.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "mfe": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:wiring/block_mfe"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

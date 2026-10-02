@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:build_generator",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_furnace_elc"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.build_elec_furnace.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.build_elec_furnace.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "elec_furnace": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_furnace_elc"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

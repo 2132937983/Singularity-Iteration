@@ -1,0 +1,32 @@
+{
+  "parent": "mio_icif:ex_nihilo",
+  "display": {
+    "icon": {
+      "id": "mio_icif:producer/block_molecular_transformer"
+    },
+    "title": {
+      "translate": "advancements.mio_icif.reality_refactor.title"
+    },
+    "description": {
+      "translate": "advancements.mio_icif.reality_refactor.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "molecular_transformer": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "mio_icif:producer/block_molecular_transformer"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

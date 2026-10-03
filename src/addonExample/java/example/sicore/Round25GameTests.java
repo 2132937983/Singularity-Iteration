@@ -109,6 +109,7 @@ public final class Round25GameTests {
         BlockEntity term = h.getBlockEntity(terminal);
         BlockEntity transformerBe = h.getBlockEntity(xfmr);
         h.assertTrue(walkerSays("isTransformer", transformerBe), "Transformer recognised: " + transformerBe.getClass().getSimpleName());
+        call(term, "setGlobalMode", false);     // 0.1.7.27: new terminals start in GLOBAL; check LOCAL first
         int[] phase = {0};
         h.onEachTick(() -> {
             Object s = call(term, "snapshot");
@@ -218,7 +219,7 @@ public final class Round25GameTests {
 
     private static int screenPixels(String path) {
         var file = net.neoforged.fml.ModList.get().getModFileById("mio_icif").getFile();
-        try (var in = java.nio.file.Files.newInputStream(file.findResource(("assets/mio_icif/textures/block/refined/" + path + ".png").split("/")))) {
+        try (var in = java.nio.file.Files.newInputStream(file.findResource(("resourcepacks/si_experimental/assets/mio_icif/textures/block/refined/" + path + ".png").split("/")))) {
             var img = javax.imageio.ImageIO.read(in);
             int n = 0;
             for (int y = 4; y < 30; y++) for (int x = 4; x < 28; x++) {
@@ -247,9 +248,9 @@ public final class Round25GameTests {
         var file = net.neoforged.fml.ModList.get().getModFileById("mio_icif").getFile();
         h.assertTrue(!java.nio.file.Files.exists(file.findResource("assets", "mio_icif", "textures", "armor", "suit", "quantum.png")),
             "The sealed suit atlases are no longer shipped");
-        h.assertTrue(java.nio.file.Files.exists(file.findResource("resourcepacks", "si_classic", "pack.mcmeta")), "Classic pack ships");
-        h.assertTrue(java.nio.file.Files.exists(file.findResource("resourcepacks", "si_classic", "assets", "mio_icif", "models", "block", "producer", "block_compressor_elc.json")),
-            "Classic pack carries the plain machine models");
+        h.assertTrue(java.nio.file.Files.exists(file.findResource("resourcepacks", "si_experimental", "pack.mcmeta")), "Experimental pack ships");
+        h.assertTrue(java.nio.file.Files.exists(file.findResource("resourcepacks", "si_experimental", "assets", "mio_icif", "models", "block", "producer", "block_compressor_elc.json")),
+            "The experimental pack carries the refined machine models");
         for (String suit : List.of("nano", "quantum")) {
             for (var slot : List.of(net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS)) {
                 String piece = slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? "chestplate" : "leggings";

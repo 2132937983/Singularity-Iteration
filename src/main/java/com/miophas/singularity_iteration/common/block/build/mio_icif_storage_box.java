@@ -127,7 +127,7 @@ public class mio_icif_storage_box extends BaseEntityBlock {
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         List<ItemStack> drops = new ArrayList<>();
         ItemStack dropStack = new ItemStack(this);
-        BlockEntity blockEntity = params.getParameter(LootContextParams.BLOCK_ENTITY);
+        BlockEntity blockEntity = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
 
         // 无论是否使用扳手，都将物品保存在存储箱内不掉落
         if (blockEntity instanceof mio_icif_storage_box_entity storageBox) {

@@ -163,6 +163,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
 
     /** Port edits revoke stale routes immediately; no chunk is acquired or created. */
     public static void conductorPortsChanged(BlockEntity tile) {
+        TopologyClock.bump(tile.getLevel());
         if (!(tile.getLevel() instanceof ServerLevel level) || !level.getServer().isSameThread()
                 || tile.isRemoved() || ownedStorage(tile) == null || !ownedStorage(tile).scexNetworkControlled()) return;
         var engine = current(level.getServer());

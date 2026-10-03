@@ -45,9 +45,17 @@ public final class ReactorLiquidCooling implements IFluidHandler {
      * Coolant table. Exact ids first, then name patterns so other mods' coolants and cryogenic
      * fluids work without hard dependencies. Hot / molten / gaseous fluids are never coolants.
      */
+    /** Fluids are fixed after registration: classify each one once (pipes ask on every fill). */
+    private static final java.util.Map<Fluid, java.util.Optional<Coolant>> CLASSIFIED = new java.util.concurrent.ConcurrentHashMap<>();
+
     @Nullable
     public static Coolant coolant(Fluid fluid) {
         if (fluid == null || fluid == Fluids.EMPTY) return null;
+        return CLASSIFIED.computeIfAbsent(fluid, f -> java.util.Optional.ofNullable(classify(f))).orElse(null);
+    }
+
+    @Nullable
+    private static Coolant classify(Fluid fluid) {
         if (fluid == mio_icif_fluids.COOLANT.get()) return new Coolant(FluidReactorCycle.COOLANT_HU_PER_MB, mio_icif_fluids.HOTCOOLANT.get());
         if (fluid == Fluids.WATER) return new Coolant(FluidReactorCycle.WATER_HU_PER_MB, mio_icif_fluids.HOTWATER.get());
         if (fluid == mio_icif_fluids.DISTILLEDWATER.get()) return new Coolant(2, mio_icif_fluids.HOTWATER.get());

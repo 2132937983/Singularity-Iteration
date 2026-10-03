@@ -100,7 +100,7 @@ public class mio_icif_meter_menu extends mio_icif_base_menu {
         NodeStats stats = EnergyNetGlobal.getCurrentTickNodeStats(level, targetPos);
         // A cable, special cable, transformer or terminal has no node of its own: the meter reads the
         // network through it (delivered EU, injected EU, highest packet). Endpoints keep the IC2 reading.
-        if (stats == null && isNetworkTarget()) stats = network;
+        if (isNetworkTarget()) stats = network;
         // IC2 closes an instrument whose energy node no longer exists.
         if (stats == null) { player.closeContainer(); return; }
         double result = switch (mode) {
@@ -136,39 +136,26 @@ public class mio_icif_meter_menu extends mio_icif_base_menu {
         if (!(level instanceof net.minecraft.server.level.ServerLevel server)) return null;
         long now = server.getGameTime();
         if (network == null || now - networkAt >= NETWORK_REWALK) {
-            network = com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.walk(server, targetPos, false, 8192, 512);
+            // the whole connected system (through transformers and storage boxes); the reading
+            // itself is taken on the probed segment
+            network = com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.walk(server, targetPos,
+                com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.Scope.SYSTEM, 8192, 512);
             networkAt = now;
         }
-        double in = 0, out = 0, voltage = 0;
-        boolean any = false;
-        for (BlockPos at : network.devices) {
-            NodeStats st = EnergyNetGlobal.getCurrentTickNodeStats(level, at);
-            if (st == null) continue;
-            any = true;
-            in += st.getEnergyIn();
-            out += st.getEnergyOut();
-            voltage = Math.max(voltage, st.getVoltage());
-        }
-        pendingThroughput[pending] = (float) in;
-        pendingVoltage[pending] = (float) voltage;
+        var reading = com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.read(server, network);
+        pendingThroughput[pending] = (float) reading.throughput();
+        pendingVoltage[pending] = (float) reading.voltage();
         if (++pending >= NETWORK_SEND) {
             pending = 0;
-            int gen = 0, use = 0, store = 0, xfmr = 0;
-            for (var cat : network.categories) switch (cat) {
-                case GENERATOR -> gen++;
-                case CONSUMER -> use++;
-                case STORAGE -> store++;
-                case TRANSFORMER -> xfmr++;
-            }
-            long rated = 0;
-            for (var n : network.subnets) rated = Math.max(rated, n.ratedPacket);
             try {
                 if (player.connection != null && player.connection.hasChannel(MeterNetworkPacket.TYPE))
                     net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player, new MeterNetworkPacket(containerId, isNetworkTarget(),
-                        rated, network.conductors, gen, use, store, xfmr, network.subnets.size(), pendingThroughput.clone(), pendingVoltage.clone()));
+                        reading.ratedPacket(), network.conductors, reading.generators(), reading.consumers(), reading.storages(),
+                        reading.transformers(), network.subnets.size(), pendingThroughput.clone(), pendingVoltage.clone()));
             } catch (RuntimeException ignored) { }
         }
-        return any || isNetworkTarget() ? new NodeStats(in, out, voltage) : null;
+        // throughput is what the segment delivered; report it as the network's in and out
+        return isNetworkTarget() ? new NodeStats(reading.throughput(), reading.throughput(), reading.voltage()) : null;
     }
 
     /** Client: network summary + samples from the server. */

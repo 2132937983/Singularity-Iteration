@@ -638,7 +638,7 @@ public final class CaptureDirector {
                 .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_APPEARANCE)); });
         shot(30, "scene6/console_appearance");
         // 8) classic look: switch, reload, re-shoot fronts + suits + icons, switch back
-        client(2, () -> com.miophas.singularity_iteration.common.client.ClassicLook.setClassic(true));
+        client(2, () -> com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(false));
         until(1200, () -> Minecraft.getInstance().getOverlay() == null);
         shot(20, "scene6/console_appearance_classic");
         client(2, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.hideGui = true; });
@@ -658,7 +658,7 @@ public final class CaptureDirector {
         client(10, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false;
             mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
         shot(20, "scene6/classic_icons");
-        client(2, () -> { Minecraft.getInstance().setScreen(null); com.miophas.singularity_iteration.common.client.ClassicLook.setClassic(false); });
+        client(2, () -> { Minecraft.getInstance().setScreen(null); com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(true); });
         until(1200, () -> Minecraft.getInstance().getOverlay() == null);
         client(10, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
         shot(20, "scene6/refined_icons");
@@ -811,8 +811,165 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /** Scene 8 (0.1.7.27): probe between two transformers, terminal default GLOBAL, Default vs Experimental look (blocks + items). */
+    private static void scene8() {
+        BlockPos terminal = new BlockPos(4, -60, 7);
+        String[] row = {"producer/block_compressor_elc", "producer/block_powder_elc", "producer/block_furnace_elc", "producer/block_extractor_elc",
+            "generator/block_geo_generator", "generator/block_solar_generator", "wiring/block_bat_box", "wiring/block_mfsu",
+            "kugenerator/block_wind_kinetic_generator", "hugenerator/block_solid_heat_generator"};
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            // CESU - MV cable - transformer - superconducting alloy cable (probe) - transformer - LV cable - machines
+            place(level, new BlockPos(0, -60, 6), "wiring/block_cesu", Direction.EAST);
+            place(level, new BlockPos(1, -60, 6), "wiring/cable/block_cable", Direction.NORTH);
+            place(level, new BlockPos(2, -60, 6), "wiring/transformer_lv_mv", Direction.WEST);
+            for (int x = 3; x <= 5; x++) place(level, new BlockPos(x, -60, 6), "wiring/cable/block_superconducting_cable", Direction.NORTH);
+            place(level, new BlockPos(6, -60, 6), "wiring/transformer_lv_mv", Direction.EAST);
+            place(level, new BlockPos(7, -60, 6), "wiring/cable/block_tin_cable", Direction.NORTH);
+            place(level, new BlockPos(8, -60, 6), "producer/block_furnace_elc", Direction.NORTH);
+            place(level, new BlockPos(7, -60, 5), "producer/block_powder_elc", Direction.NORTH);
+            place(level, terminal, "wiring/block_energy_terminal", Direction.SOUTH);
+            var fur = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, new BlockPos(8, -60, 6), null);
+            if (fur != null) fur.insertItem(0, new ItemStack(Items.CACTUS, 64), false);
+            for (int i = 0; i < row.length; i++) place(level, new BlockPos(-1 + i, -60, 12), row[i], Direction.NORTH);
+            sp.getInventory().clearContent();
+            sp.getInventory().setItem(0, item("item_tool_meter"));
+            for (int i = 0; i < row.length; i++) sp.getInventory().setItem(9 + i, item(row[i]));
+            sp.getInventory().selected = 0;
+            look(sp, 4.5, -59, 3.0, 0, 25);
+        });
+        for (int k = 0; k < 60; k++) server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(new BlockPos(0, -60, 6)) instanceof AbstractEnergyBlockEntity e)
+                e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
+        });
+        client(1, () -> Minecraft.getInstance().options.hideGui = false);
+        // detector on the alloy cable between the two transformers
+        server(1, sp -> {
+            BlockPos cable = new BlockPos(4, -60, 6);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(cable), Direction.UP, cable, false);
+            sp.getMainHandItem().onItemUseFirst(new net.minecraft.world.item.context.UseOnContext(sp, InteractionHand.MAIN_HAND, hit));
+        });
+        shot(80, "scene8/meter_between_transformers");
+        server(1, ServerPlayer::closeContainer);
+        server(5, sp -> {
+            var level = sp.serverLevel();
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(terminal), Direction.NORTH, terminal, false);
+            level.getBlockState(terminal).useWithoutItem(level, sp, hit);
+        });
+        shot(50, "scene8/terminal_default_global");
+        server(1, ServerPlayer::closeContainer);
+        server(5, sp -> look(sp, 4.5, -60, 5.0, 0, 37));
+        shot(40, "scene8/hud_alloy_cable");
+        // Default look: row + inventory
+        client(1, () -> Minecraft.getInstance().options.hideGui = true);
+        server(1, sp -> look(sp, 3.5, -59.4, 9.0, 0, 8));
+        shot(25, "scene8/default_blocks");
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false;
+            mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+        shot(20, "scene8/default_items");
+        client(2, () -> { Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()
+            .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_APPEARANCE)); });
+        shot(20, "scene8/look_tab_default");
+        // Experimental look
+        client(2, () -> com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(true));
+        until(1200, () -> Minecraft.getInstance().getOverlay() == null);
+        shot(20, "scene8/look_tab_experimental");
+        client(2, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.hideGui = true; });
+        shot(25, "scene8/experimental_blocks");
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false;
+            mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+        shot(20, "scene8/experimental_items");
+        client(2, () -> { Minecraft.getInstance().setScreen(null); com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(false); });
+        until(1200, () -> Minecraft.getInstance().getOverlay() == null);
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Scene 9 (0.1.7.28): advanced miner filter ghost icons while it works, and wrench pick-up keeping its settings. */
+    private static void scene9() {
+        BlockPos miner = new BlockPos(2, -60, 4);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            place(level, miner, "producer/block_advanced_miner_elc", Direction.NORTH);
+            if (level.getBlockEntity(miner) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_advanced_miner_elc m) {
+                m.setFilterStack(0, new ItemStack(Items.DIRT));
+                m.setFilterStack(1, new ItemStack(Items.GRASS_BLOCK));
+                m.setFilterStack(4, new ItemStack(Items.DIAMOND_ORE));
+                m.setWhitelistMode(false);
+                m.getItemHandler().insertItem(1, item("item_tool_od_scanner"), false);
+                m.getEnergyStorageInternal().setStored(m.getEnergyStorageInternal().getCapacity());
+            }
+            look(sp, 2.5, -60, 1.5, 0, 20);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(miner), Direction.NORTH, miner, false);
+            level.getBlockState(miner).useWithoutItem(level, sp, hit);
+        });
+        client(5, () -> Minecraft.getInstance().options.hideGui = false);
+        for (int t = 0; t < 6; t++) {
+            final int n = t;
+            for (int k = 0; k < 40; k++) server(1, sp -> {
+                if (sp.serverLevel().getBlockEntity(miner) instanceof AbstractEnergyBlockEntity e)
+                    e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
+            });
+            shot(1, "scene9/miner_gui_t" + n);
+        }
+        // log server vs client filter state
+        client(1, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            var clientBe = mc.level.getBlockEntity(miner);
+            var sb = new StringBuilder("client:");
+            if (clientBe instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_advanced_miner_elc m)
+                for (int i = 0; i < 6; i++) sb.append(' ').append(m.getFilterStack(i).getItem());
+            if (mc.player.containerMenu instanceof com.miophas.singularity_iteration.common.menu.producer.AdvancedMinerElcMenu menu)
+                sb.append(" | menuBE same=").append(menu.getMinerBlockEntity() == clientBe);
+            try { java.nio.file.Files.writeString(java.nio.file.Path.of(OUT, "scene9_state.txt"), sb + "\n",
+                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND); } catch (java.io.IOException ignored) { }
+        });
+        server(1, ServerPlayer::closeContainer);
+        // wrench pick-up and re-place two blocks east, then reopen the GUI
+        BlockPos again = miner.east(3);
+        server(5, sp -> {
+            var level = sp.serverLevel();
+            ItemStack wrench = item("item_tool_wrench");
+            sp.setItemInHand(InteractionHand.MAIN_HAND, wrench);
+            try {
+                var m = wrench.getItem().getClass().getDeclaredMethod("dismantleBlock", net.minecraft.world.level.Level.class, BlockPos.class,
+                    BlockState.class, net.minecraft.world.entity.player.Player.class, ItemStack.class, InteractionHand.class);
+                m.setAccessible(true);
+                m.invoke(wrench.getItem(), level, miner, level.getBlockState(miner), sp, wrench, InteractionHand.MAIN_HAND);
+            } catch (ReflectiveOperationException e) { throw new RuntimeException(e); }
+            ItemStack machine = ItemStack.EMPTY;
+            for (var e : level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, new net.minecraft.world.phys.AABB(miner).inflate(2))) {
+                if (e.getItem().is(block("producer/block_advanced_miner_elc").asItem())) { machine = e.getItem().copy(); }
+                e.discard();
+            }
+            sp.setItemInHand(InteractionHand.MAIN_HAND, machine);
+            var below = again.below();
+            machine.useOn(new net.minecraft.world.item.context.UseOnContext(sp, InteractionHand.MAIN_HAND,
+                new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(below).add(0, 0.5, 0), Direction.UP, below, false)));
+            sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(again), Direction.NORTH, again, false);
+            level.getBlockState(again).useWithoutItem(level, sp, hit);
+        });
+        shot(40, "scene9/miner_gui_after_wrench_replace");
+        server(1, ServerPlayer::closeContainer);
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
     static {
-        if (OUT != null && "7".equals(System.getProperty("si.capture.scene"))) {
+        if (OUT != null && "9".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene9();
+        } else if (OUT != null && "8".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene8();
+        } else if (OUT != null && "7".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             scene7();
         } else if (OUT != null && "6".equals(System.getProperty("si.capture.scene"))) {

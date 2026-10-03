@@ -98,6 +98,13 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock {
     }
 
     @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @org.jetbrains.annotations.Nullable net.minecraft.world.entity.LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        // settings restored from the item's block-entity data that the block state also displays
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof BlockStateMirror mirror) mirror.mirrorToBlockState();
+    }
+
+    @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         if (state.is(mio_icif_tags.MACHINE) || state.is(mio_icif_tags.CABLE)) {
             LootParams lootParams = params.withParameter(LootContextParams.BLOCK_STATE, state).create(LootContextParamSets.BLOCK);
@@ -106,7 +113,15 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock {
                 List<ItemStack> drops = new ArrayList<>();
                 ItemStack dropStack = new ItemStack(this);
                 BlockEntity blockEntity = lootParams.getParamOrNull(LootContextParams.BLOCK_ENTITY);
-                if (blockEntity instanceof AbstractEnergyBlockEntity energyBlock) {
+                if (blockEntity != null && state.is(mio_icif_tags.MACHINE)) {
+                    // full settings (modes, filters, upgrades, energy...) travel with the item;
+                    // the inventory too when the SI wrench kept it in the machine
+                    // the SI wrench captured everything (inventory included) before removal; any other
+                    // wrench gets the settings, the inventory having been spilled by onRemove
+                    CompoundTag data = MachineItemData.takeCarried(blockEntity.getBlockPos());
+                    if (data == null) data = MachineItemData.capture(blockEntity, lootParams.getLevel().registryAccess(), false);
+                    MachineItemData.apply(dropStack, data);
+                } else if (blockEntity instanceof AbstractEnergyBlockEntity energyBlock) {
                     CompoundTag tag = new CompoundTag();
                     tag.putString("id", BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()).toString());
                     tag.putLong("energy", energyBlock.getEnergyStorage().getAmount());

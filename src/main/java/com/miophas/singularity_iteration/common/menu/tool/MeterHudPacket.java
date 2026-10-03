@@ -56,25 +56,19 @@ public final class MeterHudPacket {
             long now = level.getGameTime();
             Long last = LAST.get(player.getUUID());
             if (last != null && now - last < 8) return;
+            if (LAST.size() > 256) LAST.values().removeIf(t -> now - t > 1200 || t > now);   // players who left
             LAST.put(player.getUUID(), now);
             BlockPos pos = request.pos();
             if (!level.isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > 64 * 64) return;
             var be = level.getBlockEntity(pos);
             boolean network = NetworkWalker.isConductor(be) || NetworkWalker.isTransformer(be);
             if (be == null || (!network && NetworkWalker.categorize(be) == null)) return;
-            NetworkWalker.Result r = NetworkWalker.walk(level, pos, false, 4096, 256);
-            double in = 0, voltage = 0;
-            for (BlockPos at : r.devices) {
-                var st = EnergyNetGlobal.getCurrentTickNodeStats(level, at);
-                if (st == null) continue;
-                in += st.getEnergyIn();
-                voltage = Math.max(voltage, st.getVoltage());
-            }
-            long rated = 0;
-            for (var n : r.subnets) rated = Math.max(rated, n.ratedPacket);
+            NetworkWalker.Result r = NetworkWalker.walk(level, pos, NetworkWalker.Scope.SYSTEM, 4096, 256);
+            var reading = NetworkWalker.read(level, r);
             try {
                 if (player.connection != null && player.connection.hasChannel(Reply.TYPE))
-                    PacketDistributor.sendToPlayer(player, new Reply(pos, (float) voltage, (float) in, r.conductors, r.devices.size(), rated, network));
+                    PacketDistributor.sendToPlayer(player, new Reply(pos, (float) reading.voltage(), (float) reading.throughput(),
+                        r.conductors, r.devices.size(), reading.ratedPacket(), network));
             } catch (RuntimeException ignored) { }
         });
     }

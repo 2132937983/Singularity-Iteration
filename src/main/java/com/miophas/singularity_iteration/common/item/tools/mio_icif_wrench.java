@@ -251,9 +251,17 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
         BlockEntity blockEntity = level.getBlockEntity(pos);
 
         if (blockEntity != null) {
-            block.playerWillDestroy(level, pos, state, player);
-            level.destroyBlock(pos, false);
-            Block.dropResources(state, level, pos, blockEntity, player, wrenchStack);
+            // SI machines without their own drop packing keep their inventory inside the item
+            boolean carry = block instanceof com.miophas.singularity_iteration.common.block.mio_icif_entity_block
+                && state.is(mio_icif_tags.MACHINE) && usesGenericMachineDrops(block);
+            if (carry) com.miophas.singularity_iteration.common.block.MachineItemData.carryContents(blockEntity, level.registryAccess());
+            try {
+                block.playerWillDestroy(level, pos, state, player);
+                level.destroyBlock(pos, false);
+                Block.dropResources(state, level, pos, blockEntity, player, wrenchStack);
+            } finally {
+                com.miophas.singularity_iteration.common.block.MachineItemData.endCarry();
+            }
         } else {
             level.destroyBlock(pos, true);
         }
@@ -261,6 +269,16 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
         if (!player.isCreative()) {
             EquipmentSlot slot = hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
             wrenchStack.hurtAndBreak(10, player, slot);
+        }
+    }
+
+    /** True when the block uses the shared machine drop (blocks with their own packing keep theirs). */
+    private static boolean usesGenericMachineDrops(Block block) {
+        try {
+            return block.getClass().getMethod("getDrops", BlockState.class, net.minecraft.world.level.storage.loot.LootParams.Builder.class)
+                .getDeclaringClass() == com.miophas.singularity_iteration.common.block.mio_icif_entity_block.class;
+        } catch (NoSuchMethodException e) {
+            return false;
         }
     }
 

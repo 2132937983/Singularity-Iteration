@@ -36,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
  * 包含7个槽位：输入槽、电池槽、输出槽、4个升级件槽
  */
 @SuppressWarnings("null")
-public class mio_icif_metal_former extends AbstractProcessingMachineBlockEntity {
+public class mio_icif_metal_former extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.block.BlockStateMirror {
     // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
     private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.metal_former.rolling.mio_icif_RollingRecipeInput, com.miophas.singularity_iteration.common.recipe.metal_former.rolling.mio_icif_RollingRecipe> recipeCache1 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_RollingRecipes.ROLLING_TYPE);
     private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.metal_former.cutting.mio_icif_CuttingRecipeInput, com.miophas.singularity_iteration.common.recipe.metal_former.cutting.mio_icif_CuttingRecipe> recipeCache2 = new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(mio_icif_CuttingRecipes.CUTTING_TYPE);
@@ -379,6 +379,14 @@ public enum MetalFormerMode {
                 yield recipe != null ? recipe.getEnergyPerTick() : DEFAULT_ENERGY_PER_TICK;
             }
         };
+    }
+
+    @Override
+    public void mirrorToBlockState() {
+        if (level == null || level.isClientSide || !getBlockState().hasProperty(mio_icif_block_metal_former.MODE)) return;
+        var want = mio_icif_block_metal_former.MetalFormerMode.valueOf(currentMode.name());
+        if (getBlockState().getValue(mio_icif_block_metal_former.MODE) != want)
+            level.setBlockAndUpdate(worldPosition, getBlockState().setValue(mio_icif_block_metal_former.MODE, want));
     }
 
     /**

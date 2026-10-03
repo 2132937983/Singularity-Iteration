@@ -99,18 +99,12 @@ public class mio_icif_bat_box extends mio_icif_entity_block {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        LOGGER.info("BatBox right-clicked (useWithoutItem)!");
         if (!level.isClientSide) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            LOGGER.info("BlockEntity: " + (blockEntity != null ? blockEntity.getClass().getName() : "null"));
-            LOGGER.info("Is MenuProvider: " + (blockEntity instanceof MenuProvider));
             if (blockEntity instanceof MenuProvider) {
-                LOGGER.info("Opening GUI...");
                 player.openMenu((MenuProvider) blockEntity);
-                LOGGER.info("GUI opened");
             } else {
                 player.sendSystemMessage(net.minecraft.network.chat.Component.literal("This block does not have a GUI!"));
-                LOGGER.info("BlockEntity is NOT a MenuProvider");
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

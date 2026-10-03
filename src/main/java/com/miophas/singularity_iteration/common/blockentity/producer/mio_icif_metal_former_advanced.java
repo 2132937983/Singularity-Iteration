@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 @SuppressWarnings("null")
-public class mio_icif_metal_former_advanced extends GenericMachineBlockEntity {
+public class mio_icif_metal_former_advanced extends GenericMachineBlockEntity implements com.miophas.singularity_iteration.common.block.BlockStateMirror {
 
     public static final long DEFAULT_CAPACITY = 1000L;
     public static final long DEFAULT_MAX_RECEIVE = 128L;
@@ -229,7 +229,16 @@ public class mio_icif_metal_former_advanced extends GenericMachineBlockEntity {
         this.currentMode = mode;
         this.progress = 0;
         setLit(isWorking());
+        mirrorToBlockState();   // the advanced former never showed its mode on the block before
         setChanged();
+    }
+
+    @Override
+    public void mirrorToBlockState() {
+        var prop = com.miophas.singularity_iteration.common.block.producer.mio_icif_block_metal_former_advanced.MODE;
+        if (level == null || level.isClientSide || !getBlockState().hasProperty(prop)) return;
+        var want = com.miophas.singularity_iteration.common.block.producer.mio_icif_block_metal_former_advanced.MetalFormerMode.valueOf(currentMode.name());
+        if (getBlockState().getValue(prop) != want) level.setBlockAndUpdate(worldPosition, getBlockState().setValue(prop, want));
     }
 
     public void setMode(IMachineAPI.MetalFormerMode mode) {

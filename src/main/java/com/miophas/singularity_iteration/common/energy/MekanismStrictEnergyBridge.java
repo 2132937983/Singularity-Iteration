@@ -154,9 +154,13 @@ public final class MekanismStrictEnergyBridge {
         return proxy(new ItemView(stack));
     }
 
+    /** Resolved once: the capability providers ask for a view on every query. */
+    private static volatile Class<?> strictHandler;
+
     private static Object proxy(View view) {
         try {
-            Class<?> api = Class.forName(STRICT_HANDLER, false, MekanismStrictEnergyBridge.class.getClassLoader());
+            Class<?> api = strictHandler;
+            if (api == null) strictHandler = api = Class.forName(STRICT_HANDLER, false, MekanismStrictEnergyBridge.class.getClassLoader());
             return Proxy.newProxyInstance(api.getClassLoader(), new Class<?>[]{api}, (proxy, method, args) -> {
                 if (method.getDeclaringClass() == Object.class) {
                     return switch (method.getName()) {

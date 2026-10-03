@@ -928,16 +928,17 @@ public class mio_icif_gui_armor_features extends Screen {
         DspUi.screen(g, x0, y0, AW, AH);
         DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.texture_style").getString(), x0 + 6, y0 + 6, DspUi.CYAN);
         DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.hint").getString(), x0 + 6, y0 + 13, DspUi.TEXT_DIM);
-        boolean classic = com.miophas.singularity_iteration.common.client.ClassicLook.isClassic();
-        boolean available = com.miophas.singularity_iteration.common.client.ClassicLook.available();
+        // card 0: Default (classic IC2, ships in assets/), card 1: Experimental (built-in pack)
+        boolean experimental = com.miophas.singularity_iteration.common.client.AppearanceStyle.isExperimental();
+        boolean available = com.miophas.singularity_iteration.common.client.AppearanceStyle.available();
         for (int i = 0; i < 2; i++) {
             int x = cardX(i), y = cardY();
-            boolean on = (i == 1) == classic, hot = in(mouseX, mouseY, x, y, CARD_W, CARD_H);
+            boolean on = (i == 1) == experimental, hot = in(mouseX, mouseY, x, y, CARD_W, CARD_H);
             g.fill(x, y, x + CARD_W, y + CARD_H, on ? 0xFF15293A : hot ? 0xFF112130 : DspUi.BG_HI);
             g.renderOutline(x, y, CARD_W, CARD_H, on ? DspUi.CYAN : hot ? DspUi.CYAN_DIM : DspUi.FRAME);
             // swatch: a little machine front in each style
             int sx = x + 8, sy = y + 18;
-            if (i == 0) {
+            if (i == 1) {
                 g.fill(sx, sy, sx + 34, sy + 34, 0xFF8C96A0);
                 g.fill(sx + 2, sy + 2, sx + 32, sy + 7, 0xFF3A4652);
                 g.fill(sx + 4, sy + 10, sx + 30, sy + 26, 0xFF1A232C);
@@ -950,7 +951,7 @@ public class mio_icif_gui_armor_features extends Screen {
                 g.fill(sx + 9, sy + 9, sx + 25, sy + 25, 0xFF6B7178);
                 g.fill(sx + 11, sy + 11, sx + 23, sy + 23, 0xFF3C4146);
             }
-            String key = i == 0 ? "refined" : "classic";
+            String key = i == 0 ? "default" : "experimental";
             DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance." + key).getString(), x + 6, y + 6, on ? DspUi.TEXT : DspUi.TEXT_DIM);
             int ty = sy;
             for (String line : font.getSplitter().splitLines(Component.translatable("gui.mio_icif.equipment_console.appearance." + key + ".desc").getString(),
@@ -970,10 +971,10 @@ public class mio_icif_gui_armor_features extends Screen {
     private boolean appearanceClick(double mouseX, double mouseY) {
         for (int i = 0; i < 2; i++) {
             if (in(mouseX, mouseY, cardX(i), cardY(), CARD_W, CARD_H)) {
-                boolean classic = i == 1;
-                if (classic != com.miophas.singularity_iteration.common.client.ClassicLook.isClassic()) {
+                boolean experimental = i == 1;
+                if (experimental != com.miophas.singularity_iteration.common.client.AppearanceStyle.isExperimental()) {
                     sound(true);
-                    com.miophas.singularity_iteration.common.client.ClassicLook.setClassic(classic);
+                    com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(experimental);
                 }
                 return true;
             }

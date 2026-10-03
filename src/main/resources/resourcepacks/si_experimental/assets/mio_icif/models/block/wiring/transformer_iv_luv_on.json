@@ -1,0 +1,364 @@
+{
+ "credit": "Singularity Iteration refined classic machine (refine_models.py)",
+ "parent": "block/block",
+ "textures": {
+  "particle": "mio_icif:block/producer/block_machine",
+  "r": "mio_icif:block/refined/wiring/transformer_iv_luv_on",
+  "dsp": "mio_icif:block/refined/status_lights"
+ },
+ "elements": [
+  {
+   "name": "body",
+   "from": [
+    0,
+    0,
+    0
+   ],
+   "to": [
+    16,
+    16,
+    16
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0.0,
+      0.0,
+      4.0,
+      8.0
+     ],
+     "texture": "#r",
+     "cullface": "north"
+    },
+    "east": {
+     "uv": [
+      4.0,
+      0.0,
+      8.0,
+      8.0
+     ],
+     "texture": "#r",
+     "cullface": "east"
+    },
+    "south": {
+     "uv": [
+      8.0,
+      0.0,
+      12.0,
+      8.0
+     ],
+     "texture": "#r",
+     "cullface": "south"
+    },
+    "west": {
+     "uv": [
+      12.0,
+      0.0,
+      16.0,
+      8.0
+     ],
+     "texture": "#r",
+     "cullface": "west"
+    },
+    "up": {
+     "uv": [
+      0.0,
+      8.0,
+      4.0,
+      16.0
+     ],
+     "texture": "#r",
+     "cullface": "up"
+    },
+    "down": {
+     "uv": [
+      4.0,
+      8.0,
+      8.0,
+      16.0
+     ],
+     "texture": "#r",
+     "cullface": "down"
+    }
+   }
+  },
+  {
+   "name": "panels_ew",
+   "from": [
+    -0.5,
+    1.5,
+    1.5
+   ],
+   "to": [
+    16.5,
+    14.5,
+    14.5
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "east": {
+     "uv": [
+      4.375,
+      0.75,
+      7.625,
+      7.25
+     ],
+     "texture": "#r",
+     "cullface": "east"
+    },
+    "south": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "west": {
+     "uv": [
+      12.375,
+      0.75,
+      15.625,
+      7.25
+     ],
+     "texture": "#r",
+     "cullface": "west"
+    },
+    "up": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "down": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    }
+   }
+  },
+  {
+   "name": "panels_ud",
+   "from": [
+    1.5,
+    -0.5,
+    1.5
+   ],
+   "to": [
+    14.5,
+    16.5,
+    14.5
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "east": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "south": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "west": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "up": {
+     "uv": [
+      0.375,
+      8.75,
+      3.625,
+      15.25
+     ],
+     "texture": "#r",
+     "cullface": "up"
+    },
+    "down": {
+     "uv": [
+      4.375,
+      8.75,
+      7.625,
+      15.25
+     ],
+     "texture": "#r",
+     "cullface": "down"
+    }
+   }
+  },
+  {
+   "name": "panels_ns",
+   "from": [
+    1.5,
+    1.5,
+    -0.5
+   ],
+   "to": [
+    14.5,
+    14.5,
+    16.5
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      0.375,
+      0.75,
+      3.625,
+      7.25
+     ],
+     "texture": "#r",
+     "cullface": "north"
+    },
+    "east": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "south": {
+     "uv": [
+      8.375,
+      0.75,
+      11.625,
+      7.25
+     ],
+     "texture": "#r",
+     "cullface": "south"
+    },
+    "west": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "up": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    },
+    "down": {
+     "uv": [
+      8.0,
+      8.0,
+      12.0,
+      16.0
+     ],
+     "texture": "#r"
+    }
+   }
+  },
+  {
+   "name": "dsp_indicator",
+   "from": [
+    0.5,
+    14.5,
+    -0.3
+   ],
+   "to": [
+    1.5,
+    15.5,
+    0
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      6,
+      10.1,
+      8,
+      10.9
+     ],
+     "texture": "#dsp",
+     "neoforge_data": {
+      "block_light": 15,
+      "sky_light": 15,
+      "ambient_occlusion": false
+     }
+    },
+    "up": {
+     "uv": [
+      0,
+      11,
+      1,
+      12
+     ],
+     "texture": "#dsp"
+    },
+    "down": {
+     "uv": [
+      0,
+      11,
+      1,
+      12
+     ],
+     "texture": "#dsp"
+    },
+    "east": {
+     "uv": [
+      0,
+      11,
+      1,
+      12
+     ],
+     "texture": "#dsp"
+    },
+    "west": {
+     "uv": [
+      0,
+      11,
+      1,
+      12
+     ],
+     "texture": "#dsp"
+    }
+   }
+  }
+ ]
+}

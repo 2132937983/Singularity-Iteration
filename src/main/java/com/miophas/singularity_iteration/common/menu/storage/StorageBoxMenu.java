@@ -183,6 +183,11 @@ public class StorageBoxMenu extends mio_icif_base_menu {
         }
 
         @Override
+        public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+            return com.miophas.singularity_iteration.common.blockentity.build.mio_icif_storage_box_entity.acceptsStack(stack) && super.mayPlace(stack);
+        }
+
+        @Override
         public boolean isActive() {
             if (!canScroll) return true;
             return logicalRow >= currentScrollOffset && logicalRow < currentScrollOffset + visibleRows;

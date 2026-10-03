@@ -56,6 +56,17 @@ public final class MachineStatusTracker {
         TRACKED.clear();
     }
 
+    /** Release the level (and through it the integrated server) as soon as it goes away. */
+    @SubscribeEvent
+    static void levelUnload(net.neoforged.neoforge.event.level.LevelEvent.Unload event) {
+        if (event.getLevel() instanceof ServerLevel level) TRACKED.remove(level);
+    }
+
+    @SubscribeEvent
+    static void serverStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
+        TRACKED.clear();
+    }
+
     private static void lifecycle(AbstractEnergyBlockEntity machine, Boolean loaded) {
         if (!(machine.getLevel() instanceof ServerLevel level)) return;
         long chunk = ChunkPos.asLong(machine.getBlockPos());

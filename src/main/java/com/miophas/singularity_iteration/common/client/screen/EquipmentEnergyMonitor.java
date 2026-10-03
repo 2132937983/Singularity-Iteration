@@ -68,6 +68,7 @@ public final class EquipmentEnergyMonitor {
         last.clear(); secondFlow.clear(); stacks.clear(); seconds.clear();
         java.util.Arrays.fill(incomeHistory, 0); java.util.Arrays.fill(drainHistory, 0); java.util.Arrays.fill(storedHistory, 0);
         head = filled = tick = 0;
+        rankingTick = -1;
     }
 
     /** Every electric item the player carries in a worn / held position, keyed by its slot id. */
@@ -185,7 +186,17 @@ public final class EquipmentEnergyMonitor {
     }
 
     /** Items ranked by their drain (EU/s, 3 s average), heaviest first; idle items last. */
+    private static List<Source> rankingCache = List.of();
+    private static long rankingTick = -1;
+
+    /** Cached per client tick: the console asks several times per frame. */
     public static List<Source> ranking() {
+        if (rankingTick == tick) return rankingCache;
+        rankingTick = tick;
+        return rankingCache = computeRanking();
+    }
+
+    private static List<Source> computeRanking() {
         Map<String, double[]> sum = new LinkedHashMap<>();
         for (Map<String, double[]> sec : seconds) {
             for (var e : sec.entrySet()) {

@@ -256,7 +256,15 @@ public final class ArmorFeatureSlots {
         private CuriosBridge() {
         }
 
-        static synchronized void resolve() {
+        /** Set once {@link #resolveLocked()} finished: every slot lookup checks it without taking the lock. */
+        private static volatile boolean ready;
+
+        static void resolve() {
+            if (ready) return;
+            try { resolveLocked(); } finally { ready = true; }
+        }
+
+        private static synchronized void resolveLocked() {
             if (resolved) {
                 return;
             }

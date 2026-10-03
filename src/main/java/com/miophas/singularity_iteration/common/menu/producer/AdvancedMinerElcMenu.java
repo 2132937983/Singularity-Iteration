@@ -40,6 +40,8 @@ public class AdvancedMinerElcMenu extends mio_icif_machine_menu {
 
     @Nullable
     private mio_icif_advanced_miner_elc minerBlockEntity;
+    /** Level of the viewing player: the block entity is looked up again if the cached one was replaced. */
+    private net.minecraft.world.level.Level viewerLevel;
 
     /**
      * 升级槽在 Menu.slots 列表中的起始索引。
@@ -73,6 +75,8 @@ public class AdvancedMinerElcMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.ADVANCED_MINER_ELC_MENU_TYPE.get(), containerId, playerInventory,
               blockEntity, TOTAL_SLOTS, 7);
         this.minerBlockEntity = blockEntity;
+        this.viewerLevel = playerInventory.player.level();
+        if (blockEntity != null) this.blockPos = blockEntity.getBlockPos();
     }
 
     public AdvancedMinerElcMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
@@ -203,11 +207,24 @@ public class AdvancedMinerElcMenu extends mio_icif_machine_menu {
     public mio_icif_advanced_miner_elc getBlockEntity() { return minerBlockEntity; }
 
     @Nullable
-    public mio_icif_advanced_miner_elc getMinerBlockEntity() { return minerBlockEntity; }
+    /**
+     * The live block entity at the menu's position. A chunk resend or a block-entity swap on the
+     * client leaves the cached reference stale (its ghost filters would stop updating), so a removed
+     * reference is looked up again.
+     */
+    public mio_icif_advanced_miner_elc getMinerBlockEntity() {
+        if ((minerBlockEntity == null || minerBlockEntity.isRemoved()) && blockPos != null && viewerLevel != null
+                && viewerLevel.isLoaded(blockPos) && viewerLevel.getBlockEntity(blockPos) instanceof mio_icif_advanced_miner_elc live)
+            minerBlockEntity = live;
+        return minerBlockEntity;
+    }
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+        var miner = getMinerBlockEntity();
+        // close when the machine is broken / wrenched away or the player walks off (was: always open)
+        return miner == null ? blockPos == null
+            : !miner.isRemoved() && player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(miner.getBlockPos())) <= 64.0;
     }
 
     @Override

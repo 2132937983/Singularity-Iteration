@@ -677,6 +677,8 @@ private int currentDepth = 0;           // 当前挖掘深度
         CompoundTag tag = super.getUpdateTag(registries);
         tag.putBoolean("silkTouchMode", silkTouchMode);
         tag.putBoolean("whitelistMode", whitelistMode);
+        tag.putBoolean("autoEjectMode", autoEjectMode);
+        tag.putInt("currentDepth", currentDepth);
         saveFilterStacks(tag, registries);
         return tag;
     }
@@ -699,8 +701,10 @@ private int currentDepth = 0;           // 当前挖掘深度
             if (!filterStacks[i].isEmpty()) {
                 net.minecraft.nbt.CompoundTag filterTag = new net.minecraft.nbt.CompoundTag();
                 filterTag.putInt("Slot", i);
-                filterStacks[i].save(registries, filterTag);
-                filterList.add(filterTag);
+                // ItemStack#save(provider, tag) RETURNS the merged tag - the argument is left untouched.
+                // Adding filterTag itself stored bare {Slot:i}: every filter was wiped on reload and on
+                // each client update packet (LIT toggle, filter edit, scanner change).
+                filterList.add(filterStacks[i].save(registries, filterTag));
             }
         }
         tag.put("FilterStacks", filterList);
@@ -811,5 +815,13 @@ private int currentDepth = 0;           // 当前挖掘深度
             worldPosition.getX() + r + 1, worldPosition.getY(), worldPosition.getZ() + r + 1), com.miophas.singularity_iteration.common.area.WorkArea.MINING, com.miophas.singularity_iteration.common.area.WorkArea.PRIMARY));
         if (tipPos != null) out.add(com.miophas.singularity_iteration.common.area.WorkArea.box(new BlockPos(worldPosition.getX(), tipPos.getY(), worldPosition.getZ()), r, 0, 0, r, com.miophas.singularity_iteration.common.area.WorkArea.MINING).asEnvelope());
         return out;
+    }
+
+    /** Mined loot still waiting for an output is dropped with the machine instead of vanishing. */
+    @Override
+    protected void dropMachineSpecificPending(java.util.function.Consumer<ItemStack> drop) {
+        if (scexPendingDrops.isBusy()) return;
+        scexPendingDrops.items().forEach(drop);
+        scexPendingDrops.cancel();
     }
 }

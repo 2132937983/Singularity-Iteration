@@ -39,6 +39,11 @@ public class mio_icif_storage_box_entity extends BlockEntity implements Containe
             protected void onContentsChanged(int slot) {
                 setChanged();
             }
+
+            @Override
+            public boolean isItemValid(int slot, ItemStack stack) {
+                return acceptsStack(stack) && super.isItemValid(slot, stack);
+            }
         };
     }
 
@@ -240,5 +245,15 @@ public class mio_icif_storage_box_entity extends BlockEntity implements Containe
 
     public MachineItemHandler getItemHandler() {
         return itemHandler;
+    }
+
+    /**
+     * A filled storage box (its contents travel in the item) cannot go into another one: boxes
+     * nested in boxes grew the item data without bound and could exceed the network packet limit.
+     */
+    public static boolean acceptsStack(ItemStack stack) {
+        return !(stack.getItem() instanceof net.minecraft.world.item.BlockItem block
+            && block.getBlock() instanceof com.miophas.singularity_iteration.common.block.build.mio_icif_storage_box
+            && stack.has(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA));
     }
 }

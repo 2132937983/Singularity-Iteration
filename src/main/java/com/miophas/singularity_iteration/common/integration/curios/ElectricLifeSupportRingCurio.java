@@ -64,6 +64,7 @@ public class ElectricLifeSupportRingCurio extends MioIcifTrinketBase implements 
         }
         // rate limiter: accumulate the per-tick share and run one pulse whenever it reaches 1
         int efficiency = tuning(stack, "efficiency");
+        if (PULSE.size() > 512) PULSE.clear();   // players who logged out wearing the ring; losing a sub-tick fraction is harmless
         float pulse = PULSE.getOrDefault(player.getUUID(), 0F) + rate(efficiency);
         if (pulse < 1F) {
             PULSE.put(player.getUUID(), pulse);
@@ -113,6 +114,7 @@ public class ElectricLifeSupportRingCurio extends MioIcifTrinketBase implements 
     @Override
     protected void onTrinketUnequipped(ItemStack stack, LivingEntity entity) {
         if (entity.level().isClientSide()) return;
+        PULSE.remove(entity.getUUID());
         if (entity instanceof Player player) {
             player.removeEffect(MobEffects.ABSORPTION);
             player.setAbsorptionAmount(0.0f);

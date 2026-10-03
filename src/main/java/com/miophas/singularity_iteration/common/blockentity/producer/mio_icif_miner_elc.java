@@ -797,4 +797,12 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         if (tipPos != null) out.add(com.miophas.singularity_iteration.common.area.WorkArea.box(new BlockPos(worldPosition.getX(), tipPos.getY(), worldPosition.getZ()), r, 0, 0, r, com.miophas.singularity_iteration.common.area.WorkArea.MINING).asEnvelope());
         return out;
     }
+
+    /** Mined loot still waiting for an output is dropped with the machine instead of vanishing. */
+    @Override
+    protected void dropMachineSpecificPending(java.util.function.Consumer<ItemStack> drop) {
+        if (scexPendingDrops.isBusy()) return;
+        scexPendingDrops.items().forEach(drop);
+        scexPendingDrops.cancel();
+    }
 }

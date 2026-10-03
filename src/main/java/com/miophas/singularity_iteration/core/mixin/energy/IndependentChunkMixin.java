@@ -22,6 +22,10 @@ public abstract class IndependentChunkMixin {
     @Inject(method="setBlockState",at=@At("RETURN"),require=1)
     private void scexBlockHistory(BlockPos position,BlockState state,boolean moving,CallbackInfoReturnable<BlockState> callback) {
         BlockState before=callback.getReturnValue();
+        // any block-entity block appearing, vanishing or being replaced may change an EU network
+        if(before!=null && before.getBlock()!=state.getBlock() && (before.hasBlockEntity()||state.hasBlockEntity())
+                && ((LevelChunk)(Object)this).getLevel() instanceof net.minecraft.server.level.ServerLevel clockLevel)
+            com.miophas.singularity_iteration.core.runtime.energy.TopologyClock.bump(clockLevel);
         if(com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode.enabled() && before!=null && before.getBlock()!=state.getBlock()
                 && ((LevelChunk)(Object)this).getLevel() instanceof net.minecraft.server.level.ServerLevel level) {
             com.miophas.singularity_iteration.core.platform.neoforge.energy.PlatformTopology.physicalBlockChanged(level,position,before,state);

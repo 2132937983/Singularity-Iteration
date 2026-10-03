@@ -79,7 +79,7 @@ public final class Round24GameTests {
 
     @GameTest(batch = "round24", template = "empty")
     public static void lampModelsAndBlockListShip(GameTestHelper h) {
-        String list = read("assets", "mio_icif", "si_status_lamps.json");
+        String list = read("resourcepacks", "si_experimental", "assets", "mio_icif", "si_status_lamps.json");
         for (String b : List.of("producer/block_compressor_elc", "producer/block_furnace_elc", "generator/block_geo_generator", "wiring/block_mfsu"))
             h.assertTrue(list.contains("mio_icif:" + b), b + " gets a status lamp");
         for (String lamp : List.of("off", "run", "nopower", "blocked")) {
@@ -89,7 +89,7 @@ public final class Round24GameTests {
         }
         h.assertTrue(read("assets", "mio_icif", "textures", "block", "status", "lamp_nopower.png.mcmeta").contains("animation"),
             "The amber lamp blinks (texture animation)");
-        String compressor = read("assets", "mio_icif", "models", "block", "producer", "block_compressor_elc.json");
+        String compressor = read("resourcepacks", "si_experimental", "assets", "mio_icif", "models", "block", "producer", "block_compressor_elc.json");
         h.assertTrue(!compressor.contains("dsp_status_slit"), "The static slit is replaced by the lamp");
         h.succeed();
     }
@@ -100,7 +100,7 @@ public final class Round24GameTests {
         int[][] fronts = new int[3][];
         String[] ids = {"block_compressor_elc", "block_powder_elc", "block_furnace_elc"};
         for (int i = 0; i < ids.length; i++) {
-            try (var in = java.nio.file.Files.newInputStream(file.findResource("assets", "mio_icif", "textures", "block", "refined", "producer", ids[i] + ".png"))) {
+            try (var in = java.nio.file.Files.newInputStream(file.findResource("resourcepacks", "si_experimental", "assets", "mio_icif", "textures", "block", "refined", "producer", ids[i] + ".png"))) {
                 var img = javax.imageio.ImageIO.read(in);
                 // shared layout: dark recessed window frame at (6,9) and a header bar at (10,6)
                 int frame = img.getRGB(6, 12), header = img.getRGB(10, 6);

@@ -141,7 +141,7 @@ public class mio_icif_iron_tank extends mio_icif_entity_block {
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
         List<ItemStack> drops = new ArrayList<>();
         ItemStack dropStack = new ItemStack(this);
-        BlockEntity blockEntity = params.getParameter(LootContextParams.BLOCK_ENTITY);
+        BlockEntity blockEntity = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (blockEntity instanceof mio_icif_iron_tank_entity tankEntity) {
             net.minecraft.core.HolderLookup.Provider registries = tankEntity.getLevel() != null ? tankEntity.getLevel().registryAccess() : null;
             if (registries != null) {

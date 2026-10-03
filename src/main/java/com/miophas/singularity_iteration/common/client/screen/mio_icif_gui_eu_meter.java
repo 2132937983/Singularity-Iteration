@@ -196,4 +196,14 @@ public class mio_icif_gui_eu_meter extends mio_icif_screen<mio_icif_meter_menu> 
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
+
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        super.render(g, mouseX, mouseY, partialTick);
+        // what "max ... EU/t" on the cable-rating line means
+        var net = menu.clientNetwork();
+        int rx = mouseX - leftPos, ry = mouseY - topPos;
+        if (net != null && net.ratedPacket() > 0 && rx >= 7 && rx < 125 && ry >= 119 && ry < 129)
+            g.renderTooltip(font, Component.translatable("item.mio_icif.item_tool_meter.gui.rated.tip"), mouseX, mouseY);
+    }
 }

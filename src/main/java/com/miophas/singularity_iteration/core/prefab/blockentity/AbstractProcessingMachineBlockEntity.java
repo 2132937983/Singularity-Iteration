@@ -686,8 +686,11 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
                             markItemTransferSaved(worldPosition.relative(face));
                     }
                 } else {
+                    // a pass that found nothing to pull waits a second before scanning the neighbour again
+                    if (level != null && level.getGameTime() < pullIdleUntil) continue;
                     int remaining = budget;
                     for (int sourceSlot = 0; sourceSlot < adjacent.getSlots() && remaining > 0; sourceSlot++) {
+                        if (adjacent.getStackInSlot(sourceSlot).isEmpty()) continue;
                         for (int input : getInputSlots()) {
                             int moved = scexItemInput.move(adjacent, sourceSlot, itemHandler, input, remaining);
                             if (moved <= 0) continue;
@@ -696,10 +699,15 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
                             break;
                         }
                     }
+                    if (remaining == budget && level != null) pullIdleUntil = level.getGameTime() + PULL_IDLE_TICKS;
                 }
             }
         }
     }
+
+    private static final int PULL_IDLE_TICKS = 20;
+    /** Game time before which a pulling upgrade does not rescan a neighbour that had nothing to give. */
+    private long pullIdleUntil;
 
     private void markItemTransferSaved(BlockPos neighborPos) {
         // Also mark the neighbor: third-party inventory handlers may not notify their owner.
@@ -779,6 +787,11 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
                 level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), stack);
         scexItemOutput.closeForRemoval(drop);
         scexItemInput.closeForRemoval(drop);
+        dropMachineSpecificPending(drop);
+    }
+
+    /** Machines buffering items outside their inventory (mined loot, ...) spill them here on removal. */
+    protected void dropMachineSpecificPending(java.util.function.Consumer<ItemStack> drop) {
     }
 
     /**

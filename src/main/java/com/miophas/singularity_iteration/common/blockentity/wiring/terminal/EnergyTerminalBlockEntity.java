@@ -61,7 +61,7 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
     private List<NetworkWalker.Subnet> subnets = new ArrayList<>();
     private double[] accIn = new double[0], accOut = new double[0], accV = new double[0];
     /** Global mode: the walk crosses transformers and reports the whole multi-voltage system. */
-    private boolean globalMode;
+    private boolean globalMode = true;
     private int conductors;
     private boolean truncated;
     private int windowTick, windowCount;
@@ -127,7 +127,8 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
 
     /** Walks the attached conductors (and, in global mode, across transformers) and records every endpoint reached. */
     private void rescan(ServerLevel level) {
-        NetworkWalker.Result r = NetworkWalker.walk(level, worldPosition, globalMode, MAX_CONDUCTORS, EnergyNetworkSnapshot.MAX_DEVICES);
+        NetworkWalker.Result r = NetworkWalker.walk(level, worldPosition,
+            globalMode ? NetworkWalker.Scope.SYSTEM : NetworkWalker.Scope.SEGMENT, MAX_CONDUCTORS, EnergyNetworkSnapshot.MAX_DEVICES);
         devicePos.clear();
         deviceCat.clear();
         deviceSubnet.clear();
@@ -286,7 +287,7 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        globalMode = tag.getBoolean("Global");
+        globalMode = !tag.contains("Global") || tag.getBoolean("Global");
         needsRescan = true;
     }
 }

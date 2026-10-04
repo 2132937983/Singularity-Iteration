@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:root",
+  "parent": "mio_icif:hammer_time",
   "display": {
     "icon": {
       "id": "mio_icif:generator/block_thermal_generator"
@@ -22,14 +22,7 @@
         "items": [
           {
             "items": [
-              "mio_icif:generator/block_thermal_generator",
-              "mio_icif:generator/block_stirling_generator",
-              "mio_icif:generator/block_solar_generator",
-              "mio_icif:generator/block_wind_generator",
-              "mio_icif:generator/block_water_generator",
-              "mio_icif:generator/block_geo_generator",
-              "mio_icif:generator/block_semifluid_generator",
-              "mio_icif:generator/block_diesel_generator"
+              "mio_icif:generator/block_thermal_generator"
             ]
           }
         ]

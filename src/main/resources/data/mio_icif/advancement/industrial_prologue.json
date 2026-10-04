@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:root",
+  "parent": "mio_icif:industrial_age",
   "display": {
     "icon": {
       "id": "mio_icif:energy_converter/energy_converter"

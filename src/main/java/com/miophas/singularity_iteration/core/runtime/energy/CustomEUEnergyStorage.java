@@ -319,6 +319,8 @@ public class CustomEUEnergyStorage implements IEUEnergyStorage, IEnergyStorageAc
             }
 
             level.removeBlock(pos, false);
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+                .at(level, pos, "industrial_accident", "machine_exploded");
         }
     }
 

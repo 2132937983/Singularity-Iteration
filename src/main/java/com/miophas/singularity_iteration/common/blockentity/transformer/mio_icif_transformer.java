@@ -341,6 +341,8 @@ public enum TransformerMode {
                     explosionPower, Level.ExplosionInteraction.BLOCK);
         }
         level.removeBlock(worldPosition, false);
+        com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+            .at(level, worldPosition, "industrial_accident", "machine_exploded");
     }
 
     // ==================== 方向/模式判定 ====================

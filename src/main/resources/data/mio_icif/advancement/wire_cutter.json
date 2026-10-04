@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:gold_miner",
+  "parent": "mio_icif:root",
   "display": {
     "icon": {
       "id": "mio_icif:item_tool_cutter"

@@ -282,6 +282,18 @@ public class mio_icif_reactor_nuke extends BlockEntity implements WorldlyContain
         return Math.min(totalPower, maxPower);
     }
 
+    /** 是否处于本装置可达的最大当量：全部 IC-TNT 槽与核材料槽都塞满。 */
+    public boolean isMaxYield() {
+        for (int i = ICTNT_SLOT_START; i < ICTNT_SLOT_START + ICTNT_SLOT_COUNT; i++) {
+            ItemStack stack = itemHandler.getStackInSlot(i);
+            if (stack.isEmpty() || stack.getCount() < stack.getMaxStackSize()) {
+                return false;
+            }
+        }
+        ItemStack nuclear = itemHandler.getStackInSlot(NUCLEAR_SLOT);
+        return !nuclear.isEmpty() && nuclear.getCount() >= nuclear.getMaxStackSize();
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_reactor_nuke blockEntity) {
         if (level.isClientSide) {
             return;
@@ -633,6 +645,8 @@ public class mio_icif_reactor_nuke extends BlockEntity implements WorldlyContain
         if (explosionPower <= 0) {
             return;
         }
+        // 最大当量：IC-TNT 槽与核材料槽全部塞满。必须在 clearContent() 之前取。
+        boolean maxYield = blockEntity.isMaxYield();
 
         // 检查是否启用核爆炸
         if (!com.miophas.singularity_iteration.common.Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get()) {
@@ -641,6 +655,12 @@ public class mio_icif_reactor_nuke extends BlockEntity implements WorldlyContain
             level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1.5F, Level.ExplosionInteraction.BLOCK);
             level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             level.removeBlockEntity(pos);
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+                .at(serverLevel, pos, "trinity", "nuke_detonated");
+            if (maxYield) {
+                com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+                    .at(serverLevel, pos, "big_ivan", "max_yield_nuke");
+            }
             return;
         }
 
@@ -722,6 +742,15 @@ public class mio_icif_reactor_nuke extends BlockEntity implements WorldlyContain
             }
             com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error(
                 "Nuclear blast side effect failed at {}; blast admission cancelled", pos, failure);
+        }
+
+        if (blockRemoved) {
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+                .at(serverLevel, pos, "trinity", "nuke_detonated");
+            if (maxYield) {
+                com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+                    .at(serverLevel, pos, "big_ivan", "max_yield_nuke");
+            }
         }
     }
 

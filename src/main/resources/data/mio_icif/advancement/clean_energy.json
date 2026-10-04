@@ -17,15 +17,7 @@
   },
   "criteria": {
     "reactor_started": {
-      "trigger": "minecraft:placed_block",
-      "conditions": {
-        "location": [
-          {
-            "condition": "minecraft:block_state_property",
-            "block": "mio_icif:reactor/block_reactor_vessel"
-          }
-        ]
-      }
+      "trigger": "minecraft:impossible"
     }
   }
 }

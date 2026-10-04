@@ -1117,6 +1117,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         net.minecraft.sounds.SoundSource.BLOCKS, 1.2F, 1.0F);
                     applySmallEntityBlast(level, at);
                     applySmallBlockBlast(level, grid, at, removedByEffects);
+                    com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+                        .at(level, at, "industrial_accident", "machine_exploded");
                 }
             }
             if (!removedByEffects.isEmpty()) {

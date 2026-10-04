@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/door_bottom_right",
-  "render_type": "cutout",
-  "textures": {
-    "bottom": "mio_icif:block/block_alloy_door_bottom",
-    "top": "mio_icif:block/block_alloy_door_top"
-  }
-}

@@ -133,8 +133,11 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         if(chunk==null||chunk.getBlockEntity(worldPosition,LevelChunk.EntityCreationType.CHECK)!=this)return;
         var current=chunk.getBlockState(worldPosition);boolean running=operational()&&cycleVerified&&isRunning();
         if(current.hasProperty(mio_icif_Block_Nuclear_Reactor_Generator.ACTIVE)
-            &&current.getValue(mio_icif_Block_Nuclear_Reactor_Generator.ACTIVE)!=running)
+            &&current.getValue(mio_icif_Block_Nuclear_Reactor_Generator.ACTIVE)!=running){
             server.setBlock(worldPosition,current.setValue(mio_icif_Block_Nuclear_Reactor_Generator.ACTIVE,running),3);
+            if(running)com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+                .at(server, worldPosition, "clean_energy", "reactor_started");
+        }
     }
     private void frame(){long now=level.getGameTime();if(frameAt!=now){frameAt=now;frameUsed=EnergyAmount.ZERO;}}
     private boolean enabled(){
@@ -360,6 +363,8 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             server.explode(null,worldPosition.getX()+0.5,worldPosition.getY()+0.5,worldPosition.getZ()+0.5,power,interaction);
             if(trigger.effect()==ReactorAccidentLatch.Effect.LOCAL_MACHINE&&live())server.removeBlock(worldPosition,false);
             accident.closeEffect();
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+                .at(server, worldPosition, "meltdown", "reactor_meltdown");
             if(live()){failure=accidentFailure();dirty();}
         }catch(RuntimeException|Error effectFailure){
             accident.markUncertain();

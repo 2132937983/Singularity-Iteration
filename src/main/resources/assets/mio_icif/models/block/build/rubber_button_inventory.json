@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:block/button_inventory",
-  "textures": {
-    "texture": "mio_icif:block/build/rubber_planks"
-  }
-}

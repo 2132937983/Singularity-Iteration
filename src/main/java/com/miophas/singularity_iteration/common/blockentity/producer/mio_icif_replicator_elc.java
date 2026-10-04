@@ -228,7 +228,11 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         var after=selected.copyWithCount(before.isEmpty()?1:before.getCount()+1);
         if(itemHandler.scexCommitSlots(new int[]{OUTPUT_SLOT},new ItemStack[]{before},new ItemStack[]{after},()->{
             processed=0;completed++;selectionDirty=true;if(mode==WorkMode.SINGLE)mode=WorkMode.STOPPED;
-        }))ContainerToTank.markUnsaved(this);
+        })){
+            ContainerToTank.markUnsaved(this);
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements
+                .at(level, worldPosition, "picard_order", "replicator_used");
+        }
     }
     @Override protected void doWork(){tickProduction();}
     @Override protected void checkInputChanged(){/* Paid work owns its immutable item snapshot. */}

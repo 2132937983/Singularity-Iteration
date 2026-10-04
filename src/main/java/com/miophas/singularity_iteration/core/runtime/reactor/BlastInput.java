@@ -5,14 +5,22 @@ package com.miophas.singularity_iteration.core.runtime.reactor;
 public final class BlastInput {
     private BlastInput() { }
 
-    /** The ordinary task retains nextInt(edge squared) to preserve its existing random stream. */
+    /** Pressure-front rays floor positions; the fallout scan extends to ceil(1.5 * radius). */
     public static void nuke(double x, double y, double z, float power, int radius) {
         common(x, y, z, power, radius, radius);
         long edge = Math.max(1, radius / 4);
         if (edge * edge > Integer.MAX_VALUE)
             throw invalid("ordinary radiation random bound exceeds positive int range");
         spiralRadius(scaledRadiationRadius(radius));
-        coordinates(x, y, z, radius, radius);
+        long surfaceExtent = ((long) radius * 3 + 1) / 2;
+        for (double coordinate : new double[] {x, z}) {
+            long floor = (long) Math.floor(coordinate);
+            if (floor - surfaceExtent < Integer.MIN_VALUE || floor + surfaceExtent > Integer.MAX_VALUE)
+                throw invalid("surface coordinate addition exceeds int range");
+        }
+        long floorY = (long) Math.floor(y);
+        if (floorY - radius < Integer.MIN_VALUE || floorY + radius > Integer.MAX_VALUE)
+            throw invalid("ray coordinate addition exceeds int range");
     }
 
     /** Ellipsoidal rays retain float coordinate rounding before the block-position floor. */

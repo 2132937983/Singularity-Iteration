@@ -71,8 +71,6 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     /** IC2 的 HeatEffectModifier：每循环重置为 1，再由隔板累乘（ItemReactorPlating.processChamber），
      *  在 explode() 里作为 boomMod 之外的第二重减免，并放大高温阶段效应的触发概率与伤害。 */
     private float hem=1.0F;
-    /** 爆炸威力与新增/减免项的千分之一精度换算基准。 */
-    private static final int POWER_MILLIS_PER_UNIT=1000;
     private EnergyAmount rate=EnergyAmount.ZERO,frameUsed=EnergyAmount.ZERO;
     private long frameAt=Long.MIN_VALUE;
     private boolean ready,cycleVerified;
@@ -250,33 +248,17 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             final double finalEu=euSum;final long finalGenerated=Math.addExact(generatedSum,excessHeat);
             final int finalCold=coldIn,finalHot=hotOut,finalConverted=convertedSum;
             // Decide from the final fluid-adjusted result. Never reject the pre-cooling input heat.
-            // 对齐 IC2 explode()：威力 = (10 + Σ加法项) × Π隔板减免 × hem，再按 reactorExplosionPowerLimit 封顶。
-            int additiveMillis=10*POWER_MILLIS_PER_UNIT,modifierMillis=1000;
-            float heatEffectModifier=1.0F;
-            for(var part:parts){
-                if(part==null)continue;
-                var profile=part.profile();
-                if(profile.kind()==ReactorCycle.Kind.FUEL&&part.remaining()>0)
-                    additiveMillis=Math.addExact(additiveMillis,Math.multiplyExact(2*profile.cells(),POWER_MILLIS_PER_UNIT));
-                else if(profile.kind()==ReactorCycle.Kind.REFLECTOR)additiveMillis=Math.subtractExact(additiveMillis,POWER_MILLIS_PER_UNIT);
-                else if(profile.kind()==ReactorCycle.Kind.HEATPACK)additiveMillis=Math.addExact(additiveMillis,POWER_MILLIS_PER_UNIT/10);
-                else if(profile.kind()==ReactorCycle.Kind.PLATING&&profile.explosionReduction()>0){
-                    // IC2 ItemReactorPlating.processChamber（仅 pass 1）：setMaxHeat(+maxHeatAdd) 且
-                    // setHeatEffectModifier(hem * effectModifier)，effectModifier = (100 - explosionReduction)/100。
-                    modifierMillis=modifierMillis*(100-profile.explosionReduction())/100;
-                    heatEffectModifier*= (100-profile.explosionReduction())/100.0F;
-                }
-            }
-            // IC2 explode() 为 boomPower *= hem * boomMod：隔板既进 boomMod 又进 hem，因此实际是平方减免；
-            // hem 同时放大高温阶段效应（引燃/蒸发/辐射）的触发概率与伤害。
-            hem=heatEffectModifier;
-            long rawPower=Math.round(additiveMillis*(modifierMillis/1000.0)*hem);
-            int limitMillis=Math.multiplyExact(Singularity_Iteration_Config.REACTOR_EXPLOSION_POWER_LIMIT.get(),POWER_MILLIS_PER_UNIT);
-            int powerMillis=limitMillis<=0?1:(int)Math.max(1,Math.min(limitMillis,rawPower));
-            // IC2 calculateHeatEffects：威力上限 <= 0 时直接返回——既不爆炸也不产生高温效应，反应堆就停在满热继续发电。
-            var trigger=Singularity_Iteration_Config.REACTOR_EXPLOSION_POWER_LIMIT.get()<=0?null:
-                ReactorAccidentLatch.decide(finalHull,result.maxHullHeat(),level.getGameTime(),
-                Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get(),powerMillis);
+            // Freeze the post-cycle inventory and configured scale in the same accident transaction.
+            // Legacy SI single/dual/quad rods contribute 1/2/4 cells; spent fuel contributes none.
+            var accidentParts = new ReactorCycle.Part[54];
+            for (int i = 0; i < 54; i++) if (i % 9 < columns) accidentParts[i] = ReactorInventory.read(replacement[i]);
+            var blastProfile = com.miophas.singularity_iteration.core.runtime.reactor.ReactorBlastProfile.calculate(
+                accidentParts, Singularity_Iteration_Config.REACTOR_EXPLOSION_MULTIPLIER.get(),
+                Singularity_Iteration_Config.REACTOR_EXPLOSION_POWER_LIMIT.get());
+            hem = blastProfile.heatEffectModifier();
+            var trigger = blastProfile.disabled() ? null : ReactorAccidentLatch.decide(
+                finalHull, result.maxHullHeat(), level.getGameTime(),
+                Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get(), blastProfile.powerMillis());
             int committedHeat=Math.toIntExact(finalGenerated);
             var committedRate=trigger==null?EnergyAmount.fromDouble(finalEu):EnergyAmount.ZERO;
             final var finalResult=result;final var finalConverted2=converted;
@@ -301,6 +283,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     private void applyHeatEffects(){
         long stored=heat.getHeatStored(),capacity=heat.getMaxHeatStored();
         if(stored<4000||capacity<=0||hem<=0||Singularity_Iteration_Config.REACTOR_EXPLOSION_POWER_LIMIT.get()<=0
+                ||Singularity_Iteration_Config.REACTOR_EXPLOSION_MULTIPLIER.get()<=0
                 ||!(level instanceof ServerLevel server))return;
         float power=(float)stored/(float)capacity;
         var random=server.random;
@@ -352,31 +335,70 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     }
     private void dispatchAccident(){
         if(accident.state()!=ReactorAccidentLatch.State.PENDING||!live())return;
+        if(Singularity_Iteration_Config.REACTOR_EXPLOSION_POWER_LIMIT.get()<=0
+                ||Singularity_Iteration_Config.REACTOR_EXPLOSION_MULTIPLIER.get()<=0)return;
         var trigger=accident.trigger();var server=(ServerLevel)level;
-        float power=trigger.effect()==ReactorAccidentLatch.Effect.LOCAL_MACHINE?1.5F:trigger.terrainPower();
-        if(trigger.effect()==ReactorAccidentLatch.Effect.NUCLEAR_TERRAIN&&!loadedBlastWindow(server,power))return;
+        if(trigger.effect()==ReactorAccidentLatch.Effect.NUCLEAR_TERRAIN
+                &&Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get()){
+            dispatchNuclearAccident(server,trigger);
+            return;
+        }
         if(!accident.claimEffect())return;
         failure=accidentFailure();rate=EnergyAmount.ZERO;frameUsed=EnergyAmount.ZERO;cycleVerified=false;syncOutputGate();dirty();
         try{
-            var interaction=trigger.effect()==ReactorAccidentLatch.Effect.LOCAL_MACHINE
-                ?Level.ExplosionInteraction.NONE:Level.ExplosionInteraction.BLOCK;
-            server.explode(null,worldPosition.getX()+0.5,worldPosition.getY()+0.5,worldPosition.getZ()+0.5,power,interaction);
-            if(trigger.effect()==ReactorAccidentLatch.Effect.LOCAL_MACHINE&&live())server.removeBlock(worldPosition,false);
+            server.explode(null,worldPosition.getX()+.5,worldPosition.getY()+.5,worldPosition.getZ()+.5,1.5F,Level.ExplosionInteraction.NONE);
+            if(live())server.removeBlock(worldPosition,false);
             accident.closeEffect();
-            com.miophas.singularity_iteration.core.api.advancement.MioAchievements
-                .at(server, worldPosition, "meltdown", "reactor_meltdown");
-            if(live()){failure=accidentFailure();dirty();}
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(server,worldPosition,"meltdown","reactor_meltdown");
         }catch(RuntimeException|Error effectFailure){
-            accident.markUncertain();
+            if(accident.state()==ReactorAccidentLatch.State.DISPATCHING)accident.markUncertain();
             if(live()){failure=accidentFailure()+": "+effectFailure.getClass().getSimpleName();dirty();}
         }
     }
-    private boolean loadedBlastWindow(ServerLevel server,float power){
-        int radius=(int)Math.ceil(power*2.0F);
-        int minX=(worldPosition.getX()-radius)>>4,maxX=(worldPosition.getX()+radius)>>4;
-        int minZ=(worldPosition.getZ()-radius)>>4,maxZ=(worldPosition.getZ()+radius)>>4;
-        for(int x=minX;x<=maxX;x++)for(int z=minZ;z<=maxZ;z++)if(server.getChunkSource().getChunkNow(x,z)==null)return false;
-        return true;
+    private void dispatchNuclearAccident(ServerLevel server,ReactorAccidentLatch.Trigger trigger){
+        com.miophas.singularity_iteration.common.reactor.ReactorBlastEffects.Prepared blast;
+        ItemStack[] contents=new ItemStack[54];
+        try{
+            for(int i=0;i<54;i++)contents[i]=itemHandler.getStackInSlot(i).copy();
+            blast=com.miophas.singularity_iteration.common.reactor.ReactorBlastEffects.tryPrepare(server,worldPosition,trigger.terrainPower());
+        }catch(RuntimeException admissionFailure){
+            failure="Reactor blast admission deferred: "+admissionFailure.getClass().getSimpleName();dirty();
+            return;
+        }
+        if(blast==null)return;
+        if(!live()||!accident.claimEffect()){blast.cancel();return;}
+        boolean removed=false;
+        try{
+            failure=accidentFailure();rate=EnergyAmount.ZERO;frameUsed=EnergyAmount.ZERO;cycleVerified=false;syncOutputGate();dirty();
+            // Consume components only after successful admission; do not scatter radioactive fuel as drops.
+            for(int i=0;i<54;i++)if(!contents[i].isEmpty())itemHandler.setStackInSlot(i,ItemStack.EMPTY);
+            if(!server.setBlock(worldPosition,net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(),3))
+                throw new IllegalStateException("Reactor block removal rejected");
+            removed=true;
+            accident.closeEffect();
+        }catch(RuntimeException failure){
+            if(!removed){
+                blast.cancel();
+                if(live()){
+                    try{
+                        for(int i=0;i<54;i++)itemHandler.setStackInSlot(i,contents[i]);
+                        accident.releaseEffect();dirty();
+                    }catch(RuntimeException restoreFailure){
+                        if(accident.state()==ReactorAccidentLatch.State.DISPATCHING)accident.markUncertain();
+                        com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Reactor blast rollback failed at {}",worldPosition,restoreFailure);
+                    }
+                }else if(accident.state()==ReactorAccidentLatch.State.DISPATCHING)accident.markUncertain();
+                com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Reactor blast source commit failed at {}",worldPosition,failure);
+                return;
+            }
+            if(accident.state()==ReactorAccidentLatch.State.DISPATCHING)accident.markUncertain();
+        }
+        blast.present();
+        try{
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(server,worldPosition,"meltdown","reactor_meltdown");
+        }catch(RuntimeException presentationFailure){
+            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Reactor meltdown advancement failed at {}",worldPosition,presentationFailure);
+        }
     }
     @Override public CustomEUEnergyStorage ownedEnergy(){return energyStorage;}
     @Override public int outputFaces(){return exportAllowed()?63:0;}
@@ -513,7 +535,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
                         if(!own.contains("accident",Tag.TAG_COMPOUND))throw new IllegalArgumentException("Missing accident state");
                         accident=loadAccident(own.getCompound("accident"));
                         var trigger=accident.trigger();
-                        if(trigger!=null&&(trigger.finalHeat()!=stored||trigger.finalCapacity()!=heat.getMaxHeatStored()))throw new IllegalArgumentException("Conflicting accident thermal state");
+                        if(trigger!=null&&(Math.min(trigger.finalHeat(),trigger.finalCapacity())!=stored||trigger.finalCapacity()!=heat.getMaxHeatStored()))throw new IllegalArgumentException("Conflicting accident thermal state");
                     }catch(IllegalArgumentException error){hold.put("invalid_accident",own.copy());accident=new ReactorAccidentLatch();}
                 }else if(LEGACY_ACCIDENT_FAILURE.equals(failure)){
                     if(hold.isEmpty()&&rate.isZero()&&max>0&&stored>=max){
@@ -549,7 +571,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         if(!tag.getAllKeys().equals(expected)
             ||!tag.contains("final_heat",Tag.TAG_LONG)||!tag.contains("final_capacity",Tag.TAG_LONG)
             ||!tag.contains("game_time",Tag.TAG_LONG)||!tag.contains("effect",Tag.TAG_STRING))throw new IllegalArgumentException("Invalid accident trigger payload");
-        if(version<3&&(!tag.contains("explosive_cells",Tag.TAG_INT)||!tag.contains("containment_plates",Tag.TAG_INT)))throw new IllegalArgumentException("Invalid accident profile payload");
+        if(version==2&&(!tag.contains("explosive_cells",Tag.TAG_INT)||!tag.contains("containment_plates",Tag.TAG_INT)))throw new IllegalArgumentException("Invalid accident profile payload");
         if(version==3&&!tag.contains("power_millis",Tag.TAG_INT))throw new IllegalArgumentException("Invalid accident power payload");
         // v1/v2 的旧威力公式= max(1, min(32, 4 + cells - plates))，迁移时按千分之一精度保留原表现。
         int powerMillis=switch(version){

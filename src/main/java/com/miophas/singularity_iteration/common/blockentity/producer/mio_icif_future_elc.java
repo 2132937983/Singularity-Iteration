@@ -117,7 +117,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     // ========== 构造函数 ==========
     
     public mio_icif_future_elc(BlockEntityType<?> type, BlockPos pos, BlockState state) {
-        super(pos, state, type, 10000, 100, 100, CableTier.LV);
+        super(pos, state, type, Singularity_Iteration_Config.FUTURE_ENERGY_CAPACITY.get(), Singularity_Iteration_Config.FUTURE_MAX_RECEIVE.get(), 100, CableTier.LV);
     }
 
     public mio_icif_future_elc(BlockPos pos, BlockState state) {
@@ -132,6 +132,12 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_future_elc blockEntity) {
         if (level.isClientSide) return;
         
+        // Apply reloaded storage settings on the server thread; capacity shrink preserves owned EU.
+        long capacity=Singularity_Iteration_Config.FUTURE_ENERGY_CAPACITY.get(),receive=Singularity_Iteration_Config.FUTURE_MAX_RECEIVE.get();
+        if(blockEntity.energyStorage.getCapacity()!=capacity||blockEntity.energyStorage.getMaxReceive()!=receive){
+            blockEntity.energyStorage.setCapacity(capacity);blockEntity.energyStorage.setMaxReceive(receive);
+            blockEntity.refreshRegistration();blockEntity.setChanged();
+        }
         // 调用父类tick方法，处理电网充电逻辑
         AbstractEnergyBlockEntity.tick(level, pos, state, blockEntity);
         

@@ -45,17 +45,25 @@ public final class BlastWorkEstimate {
 
     private BlastWorkEstimate() { }
 
-    /** Upper bound for the ordinary spherical/natural/radiation traversal. */
+    /** Upper bound for the pressure-front task, excluding its caller-owned entity snapshot. */
     public static Estimate nuke(int radius) {
         requireRadius(radius);
-        int rayCount = boundedRayCount(Math.PI * (double) radius * radius, NUKE_RAY_CAP, 500);
-        // Each ray needs one start, at most radius samples, and one end
-        // transition; the final phase transition is included separately.
-        long rays = add(multiply(rayCount, add(radius, 2)), 1);
-        int radiationRadius = scaledRadius(radius);
-        long natural = spiralOperations(radius, radius);
-        long radiation = spiralOperations(radiationRadius, radius);
-        return create(rays, 0, natural, radiation);
+        int rayCount = boundedRayCount(4 * Math.PI * (double) radius * radius, NUKE_RAY_CAP, 500);
+        long rays = add(multiply(radius, add(rayCount, 1)), 1);
+        long surfaceRadius = add(multiply(radius, 3), 1) / 2;
+        long diameter = add(multiply(surfaceRadius, 2), 1);
+        long chunksPerAxis = add(diameter, 30) / 16;
+        // A chunk prepares at most 256 section palettes; every column visits at most
+        // the supported 4096-block build span plus cursor/section transitions.
+        long perChunk=add(257,multiply(256,8198));
+        long fallout=add(multiply(multiply(chunksPerAxis,chunksPerAxis),perChunk),1);
+        return create(rays, 1, 0, fallout);
+    }
+
+    /** Includes one admission, at most radius LOS samples, and one damage step per entity. */
+    public static Estimate nuke(int radius, long entityCount) {
+        if (entityCount < 0) throw new IllegalArgumentException("Negative entity count");
+        return nuke(radius).withEntities(multiply(entityCount, add(radius, 2)));
     }
 
     /** Upper bound for the ellipsoidal ray task. */

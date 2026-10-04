@@ -3042,6 +3042,9 @@ public class mio_icif_capacities {
             return null;
         });
 
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK,
+            mio_icif_block_entities.RESIN_COLLECTOR.get(), (collector, side) -> collector.getItemHandler());
+
         // Register item handler capability for Storage Box
         event.registerBlockEntity(
             Capabilities.ItemHandler.BLOCK,

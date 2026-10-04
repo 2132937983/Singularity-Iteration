@@ -5,7 +5,7 @@ package com.miophas.singularity_iteration.core.runtime.reactor;
 public final class ReactorAccidentLatch {
     public enum State { OPEN, PENDING, DISPATCHING, CLOSED, UNCERTAIN }
     public enum Effect { LOCAL_MACHINE, NUCLEAR_TERRAIN }
-    /** 千分之一精度存放 IC2 的 boomPower；IC2 基础威力为 10.0。 */
+    /** Thousandth-unit persisted explosion power; older saves retain their committed strength. */
     public static final int DEFAULT_POWER_MILLIS = 10_000;
     public record Trigger(long finalHeat, long finalCapacity, long gameTime, Effect effect,
                           int powerMillis) {
@@ -18,10 +18,7 @@ public final class ReactorAccidentLatch {
         public Trigger(long finalHeat, long finalCapacity, long gameTime, Effect effect) {
             this(finalHeat, finalCapacity, gameTime, effect, DEFAULT_POWER_MILLIS);
         }
-        /**
-         * 对齐 IC2 {@code explode()}：威力 = (10 + Σ加法项) × Π隔板减免 × HEM，再按
-         * {@code protection/reactorExplosionPowerLimit}（默认 45）封顶。这里只负责读出已提交的数值。
-         */
+        /** Reads the committed strength; current configuration must not rescale a pending accident. */
         public float terrainPower() {
             return Math.max(1, powerMillis / 1000f);
         }
@@ -64,6 +61,11 @@ public final class ReactorAccidentLatch {
         if (state != State.PENDING) return false;
         state = State.DISPATCHING;
         return true;
+    }
+    /** Retry only after the caller cancels admission and restores an unchanged live source. */
+    public void releaseEffect() {
+        if (state != State.DISPATCHING) throw new IllegalStateException("No dispatched effect");
+        state = State.PENDING;
     }
     public void closeEffect() {
         if (state != State.DISPATCHING) throw new IllegalStateException("No dispatched effect");

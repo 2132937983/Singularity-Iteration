@@ -521,6 +521,7 @@ public class mio_icif_screens {
         );
 
         // 注册储物箱的 GUI 界面（按槽位数量分别注册）
+        event.register(mio_icif_menus.RESIN_COLLECTOR_MENU.get(), ResinCollectorScreen::new);
         event.register(mio_icif_menus.STORAGE_BOX_MENU_27.get(), mio_icif_gui_storage_box::new);
         event.register(mio_icif_menus.STORAGE_BOX_MENU_45.get(), mio_icif_gui_storage_box::new);
         event.register(mio_icif_menus.STORAGE_BOX_MENU_63.get(), mio_icif_gui_storage_box::new);

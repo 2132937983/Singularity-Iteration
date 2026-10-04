@@ -265,7 +265,12 @@ public class mio_icif_reactor_nuke extends BlockEntity implements WorldlyContain
         return total;
     }
 
-    public float calculateExplosionPower() {
+    public float calculateExplosionPower(){
+        return com.miophas.singularity_iteration.core.runtime.reactor.NuclearBlastProfile.calculate(
+            calculateBaseExplosionPower(),com.miophas.singularity_iteration.common.Singularity_Iteration_Config.NUKE_EXPLOSION_MULTIPLIER.get()).power();
+    }
+    /** Unscaled legacy charge yield for integrations and zero-multiplier fallback. */
+    public float calculateBaseExplosionPower() {
         int tntCount = getICTNTCount();
         float radioactivity = getTotalRadioactivity();
 
@@ -634,124 +639,79 @@ public class mio_icif_reactor_nuke extends BlockEntity implements WorldlyContain
         }
     }
 
+    /** Compatibility entry point for placed reactors and existing integrations. */
     public static void triggerExplosion(Level level, BlockPos pos, BlockState state, mio_icif_reactor_nuke blockEntity) {
-        if (level.isClientSide) {
-            return;
-        }
+        tryTriggerExplosion(level, pos, state, blockEntity);
+    }
 
-        ServerLevel serverLevel = (ServerLevel) level;
-
-        float explosionPower = blockEntity.calculateExplosionPower();
-        if (explosionPower <= 0) {
-            return;
-        }
-        // 最大当量：IC-TNT 槽与核材料槽全部塞满。必须在 clearContent() 之前取。
+    /** Returns false only when the armed source must be retained and retried. */
+    public static boolean tryTriggerExplosion(Level level, BlockPos pos, BlockState state, mio_icif_reactor_nuke blockEntity) {
+        if (!(level instanceof ServerLevel serverLevel)) return false;
+        float basePower=blockEntity.calculateBaseExplosionPower();
+        if(basePower<=0)return true;
+        var profile=com.miophas.singularity_iteration.core.runtime.reactor.NuclearBlastProfile.calculate(
+            basePower,com.miophas.singularity_iteration.common.Singularity_Iteration_Config.NUKE_EXPLOSION_MULTIPLIER.get());
+        float explosionPower=profile.power();
+        boolean attached = level.getBlockEntity(pos) == blockEntity;
         boolean maxYield = blockEntity.isMaxYield();
-
-        // 检查是否启用核爆炸
-        if (!com.miophas.singularity_iteration.common.Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get()) {
-            // 未启用时仅产生小规模机械破坏
+        if (!com.miophas.singularity_iteration.common.Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get()||profile.disabled()) {
             blockEntity.clearContent();
-            level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1.5F, Level.ExplosionInteraction.BLOCK);
-            level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-            level.removeBlockEntity(pos);
-            com.miophas.singularity_iteration.core.api.advancement.MioAchievements
-                .at(serverLevel, pos, "trinity", "nuke_detonated");
-            if (maxYield) {
-                com.miophas.singularity_iteration.core.api.advancement.MioAchievements
-                    .at(serverLevel, pos, "big_ivan", "max_yield_nuke");
+            level.explode(null, pos.getX() + .5, pos.getY() + .5, pos.getZ() + .5, 1.5F, Level.ExplosionInteraction.NONE);
+            if (attached && level.getBlockEntity(pos) == blockEntity) {
+                level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             }
-            return;
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(serverLevel, pos, "trinity", "nuke_detonated");
+            if (maxYield) com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(serverLevel, pos, "big_ivan", "max_yield_nuke");
+            return true;
         }
-
-        // 使用线性公式计算半径让误差更小
-        // 基础半径20，每25威力增加1格，比例更大时半径更大
-        int explosionRadius = (int) Math.ceil(20.0 + explosionPower / 25.0);
-        explosionRadius = Math.max(20, Math.min(explosionRadius, 2000));
-
-        Vec3 center = new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
-
-        // Admission is checked before the expensive entity snapshot and before
-        // any irreversible visual, radiation, inventory, or block mutation.
-        // A full shared queue must leave the armed reactor intact for a later
-        // retry instead of consuming its contents without a scheduled blast.
+        int explosionRadius=profile.radius();
+        Vec3 center = Vec3.atCenterOf(pos);
         if (!com.miophas.singularity_iteration.common.reactor.ExplosionWorkScheduler.hasCapacity(serverLevel)) {
             blockEntity.countdownTicks = 20;
             blockEntity.setChanged();
-            return;
+            return false;
         }
-
         ItemStack[] contents = null;
         NukeExplosionTask task = null;
-        boolean admitted = false;
         java.util.UUID radiationId = null;
-        boolean blockRemoved = false;
+        boolean admitted = false;
         try {
-            // Treat malformed/custom handler state and an unexpectedly failing
-            // entity snapshot as a retryable admission failure.  Neither may
-            // escape from the server Tick before the blast is admitted.
             contents = new ItemStack[blockEntity.itemHandler.getSlots()];
-            for (int i = 0; i < contents.length; i++) {
-                contents[i] = blockEntity.itemHandler.getStackInSlot(i).copy();
-            }
-
-            List<Entity> entities = level.getEntities(null, new AABB(
-                center.x - explosionRadius, center.y - explosionRadius, center.z - explosionRadius,
-                center.x + explosionRadius, center.y + explosionRadius, center.z + explosionRadius
-            ));
+            for (int i = 0; i < contents.length; i++) contents[i] = blockEntity.itemHandler.getStackInSlot(i).copy();
+            List<Entity> entities = level.getEntities(null, new AABB(center.x - explosionRadius, center.y - explosionRadius,
+                center.z - explosionRadius, center.x + explosionRadius, center.y + explosionRadius, center.z + explosionRadius));
             task = new NukeExplosionTask(serverLevel, center, explosionPower, explosionRadius, entities);
             if (!NukeExplosionScheduler.tryStartExplosion(serverLevel, pos, task)) {
-                // Covers a duplicate identity or a same-thread admission race.
-                blockEntity.countdownTicks = 20;
-                blockEntity.setChanged();
-                return;
+                blockEntity.countdownTicks = 20; blockEntity.setChanged(); return false;
             }
             admitted = true;
-
-            // 发送蘑菇云动画到客户端显示核爆炸视觉效果
-            com.miophas.singularity_iteration.common.network.mio_icif_Network.sendNuclearExplosionAnimation(
-                serverLevel, center.x, center.y, center.z, explosionRadius);
-
-            // 创建24小时辐射区域（实时24小时 = 20×72×60游戏tick * 72 = 86400秒现实时间）
-            // 使用辐射区域系统确保创建持续24小时的辐射
             radiationId = NukeRadiationZoneManager.createRadiationZone(serverLevel, pos, explosionRadius, explosionPower);
-
-            // 先清空物品防止爆炸时掉落
+            NuclearFalloutManager.register(serverLevel,radiationId,center,explosionRadius,explosionRadius);
+            task.bindFallout(radiationId);
             blockEntity.clearContent();
-
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE,
-                net.minecraft.sounds.SoundSource.BLOCKS,
-                4.0F,
-                0.5F);
-
-            if (!level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3)) {
+            // A primed entity uses an unattached temporary inventory. Its original block is already gone.
+            if (attached && !level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3))
                 throw new IllegalStateException("Nuclear reactor block removal was rejected");
-            }
-            blockRemoved = true;
-            level.removeBlockEntity(pos);
         } catch (RuntimeException failure) {
-            // Before the block is committed, cancel the admitted task and keep
-            // the reactor retryable if a snapshot or side effect unexpectedly fails.
             if (admitted && task != null) NukeExplosionScheduler.cancelExplosion(serverLevel, task);
             if (radiationId != null) NukeRadiationZoneManager.removeRadiationZone(radiationId);
-            if (!blockRemoved && contents != null && level.getBlockEntity(pos) == blockEntity) {
+            if (contents != null && (!attached || level.getBlockEntity(pos) == blockEntity))
                 for (int i = 0; i < contents.length; i++) blockEntity.itemHandler.setStackInSlot(i, contents[i]);
-                blockEntity.countdownTicks = 20;
-                blockEntity.setChanged();
-            }
+            blockEntity.countdownTicks = 20; blockEntity.setChanged();
             com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error(
-                "Nuclear blast side effect failed at {}; blast admission cancelled", pos, failure);
+                "Nuclear blast admission failed at {}; source retained for retry", pos, failure);
+            return false;
         }
-
-        if (blockRemoved) {
-            com.miophas.singularity_iteration.core.api.advancement.MioAchievements
-                .at(serverLevel, pos, "trinity", "nuke_detonated");
-            if (maxYield) {
-                com.miophas.singularity_iteration.core.api.advancement.MioAchievements
-                    .at(serverLevel, pos, "big_ivan", "max_yield_nuke");
-            }
+        // Publish only after admission and inventory/block commit. A cosmetic failure must not cancel a real blast.
+        try {
+            com.miophas.singularity_iteration.common.network.mio_icif_Network.sendNuclearExplosionAnimation(
+                serverLevel, center.x, center.y, center.z, explosionRadius);
+            com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(serverLevel, pos, "trinity", "nuke_detonated");
+            if (maxYield) com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(serverLevel, pos, "big_ivan", "max_yield_nuke");
+        } catch (RuntimeException failure) {
+            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Nuclear blast presentation failed at {}", pos, failure);
         }
+        return true;
     }
 
     // ==================== MenuProvider 接口实现 ====================

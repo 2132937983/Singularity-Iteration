@@ -197,6 +197,8 @@ public class Singularity_Iteration {
     }
 
     private void onConfigReload(net.neoforged.fml.event.config.ModConfigEvent event) {
+        if(event.getConfig().getSpec()!=Singularity_Iteration_Config.SPEC
+                ||event instanceof net.neoforged.fml.event.config.ModConfigEvent.Unloading)return;
         syncVoltageOverloadConfig();
     }
 

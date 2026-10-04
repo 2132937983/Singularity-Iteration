@@ -16,6 +16,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
     public static final DeferredHolder<SoundEvent, SoundEvent> MACHINE_DEMOLISH = SOUND_EVENTS.register("machine.demolish",
         () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "machine.demolish")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> NUCLEAR_EXPLOSION = sound("nuclear.explosion");
+
     public static final DeferredHolder<SoundEvent, SoundEvent> TOWER_LOCK = sound("tower.lock");
     public static final DeferredHolder<SoundEvent, SoundEvent> TOWER_CHARGE = sound("tower.charge");
     public static final DeferredHolder<SoundEvent, SoundEvent> TOWER_FIRE = sound("tower.fire");

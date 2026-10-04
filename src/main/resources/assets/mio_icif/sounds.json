@@ -1,4 +1,8 @@
 {
+  "nuclear.explosion": {
+    "subtitle": "subtitles.mio_icif.nuclear_explosion",
+    "sounds": [ { "name": "mio_icif:nuclear_explosion", "stream": false } ]
+  },
   "machine.demolish": {
     "subtitle": "mio_icif.subtitle.machine.demolish",
     "sounds": [

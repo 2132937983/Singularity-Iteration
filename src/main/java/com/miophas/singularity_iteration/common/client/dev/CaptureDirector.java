@@ -1062,8 +1062,54 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /** Real server detonation, negotiated visual packet, hidden-window OpenGL screenshots. */
+    private static void nuclearScene(boolean reactor) {
+        String directory = reactor ? "reactor_nuclear" : "nuclear";
+        client(1, () -> {
+            var mc = Minecraft.getInstance();
+            mc.options.pauseOnLostFocus = false;
+            org.lwjgl.glfw.GLFW.glfwHideWindow(mc.getWindow().getWindow());
+        });
+        server(40, sp -> {
+            sp.serverLevel().setDayTime(6000);
+            sp.setGameMode(GameType.CREATIVE);
+            look(sp, 0, 12, -96, 0, 10);
+        });
+        server(30, sp -> {
+            var level = sp.serverLevel();
+            var at = new BlockPos(0, -60, 64);
+            if (reactor) {
+                level.setBlock(at, block("generator/block_nuclear_reactor_generator").defaultBlockState(), 3);
+                level.setBlock(at.east(), net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
+                var machine = (com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator) level.getBlockEntity(at);
+                for (int slot = 0; slot < 3; slot++)
+                    machine.getItemHandler().insertItem(slot, item("reactor/item_reactor_uranium_quad"), false);
+                machine.getHeatStorage().setHeat(9999L);
+            } else {
+                level.setBlock(at, block("reactor/block_reactor_nuke").defaultBlockState(), 3);
+                var nuke = (com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_nuke) level.getBlockEntity(at);
+                nuke.setItem(0, item("reactor/block_ic_tnt").copyWithCount(64));
+                com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_nuke.triggerExplosion(level, at, level.getBlockState(at), nuke);
+            }
+        });
+        if (reactor) server(24, sp -> {
+            if (!sp.serverLevel().getBlockState(new BlockPos(0, -60, 64)).isAir())
+                throw new IllegalStateException("Reactor failed to overheat in the capture scene");
+        });
+        shot(5, directory + "/flash");
+        shot(90, directory + "/stem_and_shock");
+        shot(220, directory + "/rolling_cap");
+        server(5, sp -> look(sp, 35, -28, 12, 34, 29));
+        shot(700, directory + "/crater");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
     static {
-        if (OUT != null && "11".equals(System.getProperty("si.capture.scene"))) {
+        if (OUT != null && ("nuclear".equals(System.getProperty("si.capture.scene"))
+                || "reactor-nuclear".equals(System.getProperty("si.capture.scene")))) {
+            new File(OUT).mkdirs();
+            nuclearScene("reactor-nuclear".equals(System.getProperty("si.capture.scene")));
+        } else if (OUT != null && "11".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             scene11();
         } else if (OUT != null && "10".equals(System.getProperty("si.capture.scene"))) {

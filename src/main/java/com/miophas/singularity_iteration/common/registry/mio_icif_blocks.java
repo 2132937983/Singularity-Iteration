@@ -678,6 +678,10 @@ public static final DeferredBlock<mio_icif_block_pipe_water_extract> PIPE_WATER_
         .isViewBlocking((state, level, pos) -> false), mio_icif_pipe_item.PipeMode.TRANSPORT));
 
     // 注册橡胶树木头（含树脂提取功能）
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.producer.ResinCollectorBlock> RESIN_COLLECTOR =
+        registerBlock("producer/block_resin_collector", () -> new com.miophas.singularity_iteration.common.block.producer.ResinCollectorBlock(
+            Block.Properties.ofFullCopy(net.minecraft.world.level.block.Blocks.COMPOSTER).noOcclusion()));
+
     public static final DeferredBlock<BlockRubberWood> BLOCK_RUBBER_TREE = registerBlock("block_rub_wood", () -> new BlockRubberWood(Block.Properties.of().mapColor(MapColor.WOOD).strength(2.0f).sound(SoundType.WOOD).randomTicks()));
 
     // 注册被剥皮的橡胶木木头

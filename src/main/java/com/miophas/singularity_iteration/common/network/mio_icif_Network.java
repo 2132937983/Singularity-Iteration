@@ -290,13 +290,13 @@ public class mio_icif_Network {
      * @param explosionRadius 爆炸半径
      */
     public static void sendNuclearExplosionAnimation(ServerLevel level, double centerX, double centerY, double centerZ, int explosionRadius) {
-        PacketDistributor.sendToPlayersNear(
-            level,
-            null,
-            centerX, centerY, centerZ,
-            explosionRadius * 2,
-            new NuclearExplosionAnimationPacket(centerX, centerY, centerZ, explosionRadius)
-        );
+        double distance = Math.max(512, Math.min(4096, explosionRadius * 3));
+        var packet = new NuclearExplosionAnimationPacket(centerX, centerY, centerZ, explosionRadius);
+        for (var player : level.players()) {
+            if (player.connection != null && player.connection.hasChannel(NuclearExplosionAnimationPacket.TYPE)
+                    && player.distanceToSqr(centerX, centerY, centerZ) <= distance * distance)
+                PacketDistributor.sendToPlayer(player, packet);
+        }
     }
 
     /**

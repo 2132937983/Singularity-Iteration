@@ -46,6 +46,13 @@ public final class ExplosionWorkScheduler {
      */
     public static boolean trySubmit(ServerLevel level, BlockPos pos, Object category, Object task,
                                     BooleanSupplier step) {
+        return trySubmit(level,pos,category,task,step,true);
+    }
+    /** Cleanup shares the blast budget without broadcasting a second explosion game event per chunk. */
+    public static boolean trySubmitCleanup(ServerLevel level,BlockPos pos,Object category,Object task,BooleanSupplier step){
+        return trySubmit(level,pos,category,task,step,false);
+    }
+    private static boolean trySubmit(ServerLevel level,BlockPos pos,Object category,Object task,BooleanSupplier step,boolean explosionEvent){
         var server = level.getServer();
         if (!server.isSameThread()) throw new IllegalStateException("Explosion submission must use the server thread");
         var center = pos.immutable();
@@ -53,7 +60,7 @@ public final class ExplosionWorkScheduler {
         return state.queue.trySubmit(level, category, task, step,
                 () -> {
                     state.completed++;
-                    level.gameEvent(null, GameEvent.EXPLODE, center.getCenter());
+                    if(explosionEvent)level.gameEvent(null, GameEvent.EXPLODE, center.getCenter());
                 },
                 failure -> {
                     state.failed++;

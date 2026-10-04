@@ -1328,6 +1328,7 @@ public class mio_icif_creativeTabs {
                 //  31. BLOCKS - RUBBER TREE & RUBBER WOOD SERIES
                 // ============================================================
                 output.accept(mio_icif_blocks.BLOCK_RUBBER_SAPLING.get());
+                output.accept(mio_icif_blocks.RESIN_COLLECTOR.get());
                 output.accept(mio_icif_blocks.BLOCK_RUBBER_TREE.get());
                 output.accept(mio_icif_blocks.BLOCK_STRIPPED_RUBBER_WOOD.get());
                 output.accept(mio_icif_blocks.BLOCK_RUBBER_LEAF.get());

@@ -20,6 +20,9 @@ public class mio_icif_menus {
     public static final DeferredRegister<MenuType<?>> MENU_TYPES =
         DeferredRegister.create(BuiltInRegistries.MENU, Singularity_Iteration.MOD_ID);
 
+    public static final DeferredHolder<MenuType<?>, MenuType<ResinCollectorMenu>> RESIN_COLLECTOR_MENU =
+        MENU_TYPES.register("resin_collector", () -> new MenuType<>(ResinCollectorMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
+
     // ===== Generator =====
     public static final DeferredHolder<MenuType<?>, MenuType<ThermalGeneratorMenu>> THERMAL_GENERATOR_MENU_TYPE =
         MENU_TYPES.register("thermal_generator_menu", () -> new MenuType<>(ThermalGeneratorMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));

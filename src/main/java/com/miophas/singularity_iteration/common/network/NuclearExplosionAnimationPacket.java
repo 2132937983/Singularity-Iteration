@@ -16,6 +16,13 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public record NuclearExplosionAnimationPacket(double centerX, double centerY, double centerZ, int explosionRadius) 
         implements CustomPacketPayload {
 
+    public NuclearExplosionAnimationPacket {
+        if (explosionRadius < 1 || explosionRadius > 2000)
+            throw new IllegalArgumentException("Invalid nuclear animation radius");
+        com.miophas.singularity_iteration.core.runtime.reactor.BlastInput.nuke(
+            centerX, centerY, centerZ, 1, explosionRadius);
+    }
+
     public static final CustomPacketPayload.Type<NuclearExplosionAnimationPacket> TYPE = 
         new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "nuclear_explosion_animation"));
 

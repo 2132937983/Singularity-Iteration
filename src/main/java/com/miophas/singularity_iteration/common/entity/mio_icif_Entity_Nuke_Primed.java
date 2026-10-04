@@ -95,9 +95,9 @@ private List<ItemStack> containedItems = new ArrayList<>();
         this.setFuse(fuse);
 
         if (fuse <= 0) {
-            this.discard();
             if (!this.level().isClientSide) {
-                this.explode();
+                if (this.tryExplode()) this.discard();
+                else this.setFuse(20); // Preserve payload while the shared explosion queue is full.
             }
         } else {
             this.updateInWaterStateAndDoFluidPushing();
@@ -246,26 +246,15 @@ private List<ItemStack> containedItems = new ArrayList<>();
     /**
      * 执行核爆�
  */
-    protected void explode() {
-        // 创建临时方块实体来计算爆炸威�
-    com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_nuke tempNuke =
-            new com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_nuke(
-                this.blockPosition(),
-                com.miophas.singularity_iteration.common.registry.mio_icif_blocks.NUKE.get().defaultBlockState()
-            );
+    protected void explode() { tryExplode(); }
 
-        // 将存储的物品放入临时方块实体
-        for (int i = 0; i < containedItems.size() && i < 9; i++) {
-            tempNuke.setItem(i, containedItems.get(i));
-        }
-
-        // 使用现有的爆炸逻辑
-        com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_nuke.triggerExplosion(
-            this.level(),
-            this.blockPosition(),
-            com.miophas.singularity_iteration.common.registry.mio_icif_blocks.NUKE.get().defaultBlockState(),
-            tempNuke
-        );
+    protected boolean tryExplode() {
+        var tempNuke = new com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_nuke(
+            this.blockPosition(), mio_icif_blocks.NUKE.get().defaultBlockState());
+        for (int i = 0; i < containedItems.size() && i < CONTAINED_SLOT_COUNT; i++)
+            tempNuke.setItem(i, containedItems.get(i).copy());
+        return com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_nuke.tryTriggerExplosion(
+            this.level(), this.blockPosition(), mio_icif_blocks.NUKE.get().defaultBlockState(), tempNuke);
     }
 
     @Override

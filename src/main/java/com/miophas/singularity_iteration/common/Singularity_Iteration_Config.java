@@ -133,27 +133,39 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
     // ==================== 核爆炸视觉效果配方?====================
     private static final ModConfigSpec.Builder NUCLEAR_BUILDER = BUILDER.push("NuclearExplosion");
 
-    // 是否启用核爆炸（破坏环境�
-public static final ModConfigSpec.BooleanValue ENABLE_NUCLEAR_EXPLOSION = NUCLEAR_BUILDER
-            .comment("是否启用核爆炸（破坏环境�?",
-                    "true = 启用核爆炸，会大规模破坏地形并产生辐射区域?",
-                    "false = 禁用核爆炸，仅产生普通机器爆炸效果，不破坏环�?",
-                    "此选项同时影响核弹和核反应堆的爆炸")
+    // 核爆地形毁伤总开关；已存在的污染地形与辐射区不会被回滚。
+    public static final ModConfigSpec.BooleanValue ENABLE_NUCLEAR_EXPLOSION = NUCLEAR_BUILDER
+            .comment("是否启用核弹及核反应堆的核爆地形毁伤",
+                     "false：新爆炸退化为局部普通爆炸，仅移除装置自身，不破坏周围地形",
+                     "已排队的压力毁伤与辐射转化暂停；重新开启后继续，已有污染及辐射区不回滚")
             .define("enableNuclearExplosion", true);
+    public static final ModConfigSpec.DoubleValue NUKE_EXPLOSION_MULTIPLIER = NUCLEAR_BUILDER
+            .comment("核弹当量倍率，只影响核弹，不影响反应堆及采矿镭射枪",
+                     "倍率作用于原装药当量；保留当量 1000000、毁伤半径 2000 的上限",
+                     "0：禁用核弹的核爆部分，退化为不破坏周围地形的局部普通爆炸")
+            .defineInRange("nukeExplosionMultiplier", 1.0, 0.0, 16.0);
 
-    // 反应堆爆炸威力上限（对齐 IC2 protection/reactorExplosionPowerLimit，默认 45，TNT 为 4）
+    public static final ModConfigSpec.DoubleValue REACTOR_EXPLOSION_MULTIPLIER = NUCLEAR_BUILDER
+            .comment("反应堆爆炸倍率，只影响反应堆；基础半径为 8 + 4 × 有效燃料单元数",
+                     "先应用倍率与隔板减免，再受 reactorExplosionPowerLimit 限制；0 暂停事故及高温环境效果",
+                     "已提交事故固定保存当时威力，调整非零倍率不会重算该次事故")
+            .defineInRange("reactorExplosionMultiplier", 1.0, 0.0, 16.0);
     public static final ModConfigSpec.IntValue REACTOR_EXPLOSION_POWER_LIMIT = NUCLEAR_BUILDER
-            .comment("核反应堆爆炸威力上限（对齐 IC2 protection/reactorExplosionPowerLimit）",
-                    "TNT 的威力为 4，IC2 默认值为 45",
-                    "设为 0 会同时关闭反应堆的爆炸与高温阶段效应（引燃/辐射）")
+            .comment("反应堆爆炸威力上限；最大水平半径为此值的两倍",
+                     "默认 45 对应最大半径 90 格；0 暂停事故及高温环境效果，已提交事故不重算")
             .defineInRange("reactorExplosionPowerLimit", 45, 0, 1000);
 
     // 蘑菇云粒子数量倍率
+    public static final ModConfigSpec.BooleanValue NUCLEAR_FLASH = NUCLEAR_BUILDER
+            .comment("Enable transient nuclear explosion screen flash")
+            .define("nuclearExplosionFlash", true);
+    public static final ModConfigSpec.BooleanValue NUCLEAR_CAMERA_SHAKE = NUCLEAR_BUILDER
+            .comment("Enable transient shock-front camera shake")
+            .define("nuclearExplosionCameraShake", true);
+
     public static final ModConfigSpec.DoubleValue MUSHROOM_CLOUD_PARTICLE_MULTIPLIER = NUCLEAR_BUILDER
-            .comment("蘑菇云粒子数量倍率",
-                    "控制核爆炸蘑菇云效果的粒子数据?",
-                    "1.0 = 默认数量�?.5 = 一半数量，2.0 = 双倍数据?",
-                    "设置�?可以禁用蘑菇云粒子效果?")
+            .comment("Nuclear cloud density: 1.0 = 768 parcels, 0 disables the cloud",
+                     "Capped at 1536 parcels per cloud, four simultaneous clouds per client")
             .defineInRange("mushroomCloudParticleMultiplier", 1.0, 0.0, 10.0);
 
     // 采矿镭射枪是否启用超高能爆破模式
@@ -194,17 +206,17 @@ public static final ModConfigSpec.IntValue TERRA_RANGE = TERRA_BUILDER
 
     // UU物质消耗倍率
     public static final ModConfigSpec.DoubleValue SCANNER_UU_MULTIPLIER = SCANNER_BUILDER
-            .comment("UU物质消耗倍率", "基础消耗的乘数")
+            .comment("旧版扫描机 UU 倍率：兼容保留，当前独立 UU 定价与扫描流程不读取此项")
             .defineInRange("uuMultiplier", 1.0, 0.01, 10000.0);
 
     // EU能量消耗倍率
     public static final ModConfigSpec.DoubleValue SCANNER_EU_MULTIPLIER = SCANNER_BUILDER
-            .comment("EU能量消耗倍率", "基础消耗的乘数")
+            .comment("旧版扫描机 EU 倍率：兼容保留，当前扫描固定为 3300 tick × 256 EU/t，不读取此项")
             .defineInRange("euMultiplier", 1.0, 0.01, 10000.0);
 
     // 自定义物品UU/EU消耗覆�
 public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CUSTOM_COSTS = SCANNER_BUILDER
-            .comment("自定义物品UU/EU消耗覆�?",
+            .comment("旧版扫描机消耗覆盖：兼容保留，当前独立 UU 定价与扫描流程不读取此项",
                     "格式: 物品ID = (UU消耗? EU消耗?",
                     "例如: minecraft:diamond = (10000, 5000000) 表示钻石需�?0000mB UU�?00万EU",
                     "这会覆盖自动计算的消耗�?")
@@ -227,7 +239,7 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
             .comment("是否启用不同电压等级导致的过载效果",
                     "true = 启用过载效果，当电线或机器接收到超过其电压等级的能量时会被熔毁或爆炸",
                     "false = 禁用过载效果，电线和机器不会因电压不匹配而损坏，但仍会正常传输能量",
-                    "修改后需要重启游戏才能生效")
+                    "服务端配置重载后生效；COMMON 配置不会自动同步到客户端")
             .define("enableVoltageOverload", true);
 
     @SuppressWarnings("unused")
@@ -268,7 +280,8 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
         
         // 验证物品ID
         String itemId = parts[0].trim();
-        if (!BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemId))) {
+        ResourceLocation resourceId=ResourceLocation.tryParse(itemId);
+        if (resourceId==null||!BuiltInRegistries.ITEM.containsKey(resourceId)) {
             return false;
         }
         
@@ -283,7 +296,7 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
         // 验证波动作
     try {
             float volatility = Float.parseFloat(parts[2].trim());
-            if (volatility < 0.0f || volatility > 1.0f) return false;
+            if (!Float.isFinite(volatility)||volatility < 0.0f || volatility > 1.0f) return false;
         } catch (NumberFormatException e) {
             return false;
         }
@@ -383,7 +396,8 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
 
         // 验证物品ID
         String itemId = parts[0].trim();
-        if (!BuiltInRegistries.ITEM.containsKey(ResourceLocation.parse(itemId))) {
+        ResourceLocation resourceId=ResourceLocation.tryParse(itemId);
+        if (resourceId==null||!BuiltInRegistries.ITEM.containsKey(resourceId)) {
             return false;
         }
 

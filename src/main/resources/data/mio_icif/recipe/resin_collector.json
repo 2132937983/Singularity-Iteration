@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "STS",
+    "S S",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "tag": "minecraft:wooden_slabs"
+    },
+    "T": {
+      "item": "mio_icif:item_tool_wooden_treetap"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_resin_collector",
+    "count": 1
+  }
+}

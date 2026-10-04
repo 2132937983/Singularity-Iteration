@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=west": {
+      "model": "mio_icif:block/producer/block_resin_collector",
+      "y": 0
+    },
+    "facing=north": {
+      "model": "mio_icif:block/producer/block_resin_collector",
+      "y": 90
+    },
+    "facing=east": {
+      "model": "mio_icif:block/producer/block_resin_collector",
+      "y": 180
+    },
+    "facing=south": {
+      "model": "mio_icif:block/producer/block_resin_collector",
+      "y": 270
+    }
+  }
+}

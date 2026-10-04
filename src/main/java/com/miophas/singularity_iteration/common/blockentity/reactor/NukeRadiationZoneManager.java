@@ -4,6 +4,8 @@ import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.effect.mio_icif_effects;
 import com.miophas.singularity_iteration.common.util.RadiationProtectionUtil;
 import com.miophas.singularity_iteration.core.runtime.radiation.RadiationState;
+import com.miophas.singularity_iteration.core.runtime.radiation.NuclearFalloutState;
+import java.util.Map;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -52,31 +54,42 @@ public class NukeRadiationZoneManager {
         for (var level : server.getAllLevels()) {
             var data = RadiationState.get(level);
             if (data.zones.remove(id) != null) data.setDirty();
+            NuclearFalloutManager.remove(level,id);
         }
     }
-    private static boolean contains(RadiationState.Zone zone, double x, double y, double z) {
-        double dx = x - zone.center().getX() - .5, dy = y - zone.center().getY() - .5, dz = z - zone.center().getZ() - .5;
-        return dx * dx + dy * dy + dz * dz <= (double) zone.radius() * zone.radius();
+    private static double distanceSquared(ServerLevel level,UUID id,RadiationState.Zone zone,double x,double y,double z){
+        double dx=x-zone.center().getX()-.5,dy=y-zone.center().getY()-.5,dz=z-zone.center().getZ()-.5;
+        var footprint=NuclearFalloutState.get(level).regions.get(id);
+        if(footprint!=null){
+            if(!footprint.processedColumn((int)Math.floor(x),(int)Math.floor(z)))return Double.POSITIVE_INFINITY;
+            dy*= (double)footprint.radius/footprint.radiusY;
+        }
+        return dx*dx+dy*dy+dz*dz;
     }
-    private static float intensity(RadiationState.Zone zone, double x, double y, double z) {
-        if (!contains(zone, x, y, z)) return 0;
-        if (zone.radius() == 0) return 1;
-        double dx = x - zone.center().getX() - .5, dy = y - zone.center().getY() - .5, dz = z - zone.center().getZ() - .5;
-        return (float) Math.max(0, 1 - Math.sqrt(dx * dx + dy * dy + dz * dz) / zone.radius());
+    private static boolean contains(ServerLevel level,UUID id,RadiationState.Zone zone,double x,double y,double z){
+        return distanceSquared(level,id,zone,x,y,z)<=(double)zone.radius()*zone.radius();
+    }
+    private static float intensity(ServerLevel level,UUID id,RadiationState.Zone zone,double x,double y,double z){
+        double distance=distanceSquared(level,id,zone,x,y,z);
+        if(distance>(double)zone.radius()*zone.radius())return 0;
+        return zone.radius()==0?1:(float)Math.max(0,1-Math.sqrt(distance)/zone.radius());
     }
     public static boolean isInRadiationZone(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel world) || pos == null) return false;
         long now = System.currentTimeMillis();
-        for (var zone : RadiationState.get(world).zones.values())
-            if (!RadiationState.expired(zone.created(), now) && contains(zone, pos.getX() + .5, pos.getY() + .5, pos.getZ() + .5)) return true;
+        for (var entry : RadiationState.get(world).zones.entrySet()) {
+            var zone=entry.getValue();
+            if (!RadiationState.expired(zone.created(), now) && contains(world,entry.getKey(),zone, pos.getX() + .5, pos.getY() + .5, pos.getZ() + .5)) return true;
+        }
         return false;
     }
     public static float getRadiationIntensity(Level level, BlockPos pos) {
         if (!(level instanceof ServerLevel world) || pos == null) return 0;
         long now = System.currentTimeMillis(); float result = 0;
-        for (var zone : RadiationState.get(world).zones.values()) {
+        for (var entry : RadiationState.get(world).zones.entrySet()) {
+            var zone=entry.getValue();
             if (RadiationState.expired(zone.created(), now)) continue;
-            result = Math.max(result, intensity(zone, pos.getX() + .5, pos.getY() + .5, pos.getZ() + .5) * Math.min(zone.power() / 1000, 1));
+            result = Math.max(result, intensity(world,entry.getKey(),zone, pos.getX() + .5, pos.getY() + .5, pos.getZ() + .5) * Math.min(zone.power() / 1000, 1));
         }
         return result;
     }
@@ -87,32 +100,32 @@ public class NukeRadiationZoneManager {
         return count;
     }
 
-    private record Geometry(BlockPos center, int radius) { }
-
-    /** Pulse-local query plan; stored zone identities and expiry times remain independent. */
-    private static Collection<RadiationState.Zone> strongestGeometry(Iterable<RadiationState.Zone> zones, long now) {
-        var strongest = new LinkedHashMap<Geometry, RadiationState.Zone>();
-        for (var zone : zones) {
-            if (RadiationState.expired(zone.created(), now) || !Float.isFinite(zone.power()) || zone.power() <= 0) continue;
-            var geometry = new Geometry(zone.center(), zone.radius());
-            var previous = strongest.get(geometry);
-            if (previous == null || zone.power() > previous.power()) strongest.put(geometry, zone);
+    private record Geometry(BlockPos center,int radius,UUID footprint){}
+    /** Legacy duplicate geometries still share one query; distinct progress masks must not be merged. */
+    private static Collection<Map.Entry<UUID,RadiationState.Zone>> strongestGeometry(ServerLevel level,long now){
+        var strongest=new LinkedHashMap<Geometry,Map.Entry<UUID,RadiationState.Zone>>();
+        var footprints=NuclearFalloutState.get(level).regions;
+        for(var entry:RadiationState.get(level).zones.entrySet()){
+            var zone=entry.getValue();
+            if(RadiationState.expired(zone.created(),now)||!Float.isFinite(zone.power())||zone.power()<=0)continue;
+            var geometry=new Geometry(zone.center(),zone.radius(),footprints.containsKey(entry.getKey())?entry.getKey():null);
+            var previous=strongest.get(geometry);
+            if(previous==null||zone.power()>previous.getValue().power())strongest.put(geometry,entry);
         }
-        // LinkedHashMap preserves each geometry's first encounter, even when its stronger zone is later.
         return strongest.values();
     }
-
     @SubscribeEvent public static void onLevelTick(LevelTickEvent.Pre event) {
         if (!(event.getLevel() instanceof ServerLevel level) || level.getGameTime() % 20 != 0) return;
         var data = RadiationState.get(level); long now = System.currentTimeMillis();
         var exposure = new IdentityHashMap<LivingEntity, float[]>();
-        for (var zone : strongestGeometry(data.zones.values(), now)) {
+        for (var entry : strongestGeometry(level, now)) {
+            var zone=entry.getValue();
             var c = zone.center(); double r = zone.radius();
             var box = new AABB(c.getX() + .5 - r, c.getY() + .5 - r, c.getZ() + .5 - r,
                 c.getX() + .5 + r, c.getY() + .5 + r, c.getZ() + .5 + r);
             for (var entity : level.getEntitiesOfClass(LivingEntity.class, box)) {
                 if (RadiationProtectionUtil.isWearingFullHazmat(entity)) continue;
-                float factor = intensity(zone, entity.getX(), entity.getY(), entity.getZ());
+                float factor = intensity(level,entry.getKey(),zone, entity.getX(), entity.getY(), entity.getZ());
                 if (factor <= 0) continue;
                 var value = exposure.computeIfAbsent(entity, ignored -> new float[2]);
                 value[0] = Math.max(value[0], zone.power() / 500 * factor);
@@ -142,7 +155,9 @@ public class NukeRadiationZoneManager {
     public static void clearAllZones() {
         var server = ServerLifecycleHooks.getCurrentServer();
         if (server != null) for (var level : server.getAllLevels()) {
-            var data = RadiationState.get(level); data.zones.clear(); data.setDirty();
+            var data = RadiationState.get(level);
+            for(var id:new java.util.ArrayList<>(data.zones.keySet()))NuclearFalloutManager.remove(level,id);
+            data.zones.clear(); data.setDirty();NuclearFalloutManager.clear(level);
         }
     }
 }

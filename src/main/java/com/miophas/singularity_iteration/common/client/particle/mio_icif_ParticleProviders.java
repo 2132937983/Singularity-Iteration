@@ -19,7 +19,7 @@ public class mio_icif_ParticleProviders {
     @SubscribeEvent
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
         // 注册核爆烟雾粒子提供
-        // 使用原版生物死亡粒子的纹理（effect.png)        event.registerSpriteSet(mio_icif_Particles.NUCLEAR_SMOKE_DARK.get(), NuclearSmokeParticle.DarkProvider::new);
+        event.registerSpriteSet(mio_icif_Particles.NUCLEAR_SMOKE_DARK.get(), NuclearSmokeParticle.DarkProvider::new);
         event.registerSpriteSet(mio_icif_Particles.NUCLEAR_SMOKE_MEDIUM.get(), NuclearSmokeParticle.MediumProvider::new);
         event.registerSpriteSet(mio_icif_Particles.NUCLEAR_SMOKE_LIGHT.get(), NuclearSmokeParticle.LightProvider::new);
         event.registerSpriteSet(mio_icif_Particles.NUCLEAR_GLOW.get(), NuclearSmokeParticle.GlowProvider::new);

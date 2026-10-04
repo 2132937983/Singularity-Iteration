@@ -1,4 +1,5 @@
 {
+  "subtitles.mio_icif.nuclear_explosion": "Nuclear shock wave",
   "itemGroup.mio_icif": "Singularity Iteration",
   "mio_icif.configuration.FutureMarket": "Futures Machine Configuration",
   "mio_icif.configuration.FutureMarket.commodities": "Commodity Types",
@@ -2193,5 +2194,6 @@
   "gui.mio_icif.pattern_storage.name": "Name:",
   "gui.mio_icif.pattern_storage.uu": "UU:",
   "gui.mio_icif.pattern_storage.eu": "EU:",
-  "gui.mio_icif.pattern_storage.empty": "Empty"
+  "gui.mio_icif.pattern_storage.empty": "Empty",
+  "block.mio_icif.producer.block_resin_collector": "Resin Collector"
 }

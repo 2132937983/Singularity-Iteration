@@ -977,6 +977,11 @@ public class mio_icif_block_entities {
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.build.mio_icif_block_foam_entity::new, mio_icif_blocks.CONSTRUCTION_FOAM.get()).build(null));
 
     // 注册储物箱方块实体类型
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.ResinCollectorBlockEntity>> RESIN_COLLECTOR =
+        BLOCK_ENTITIES.register("resin_collector", () -> BlockEntityType.Builder.of(
+            com.miophas.singularity_iteration.common.blockentity.producer.ResinCollectorBlockEntity::new,
+            mio_icif_blocks.RESIN_COLLECTOR.get()).build(null));
+
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.build.mio_icif_storage_box_entity>> STORAGE_BOX_ENTITY_TYPE =
         BLOCK_ENTITIES.register("storage_box", () ->
             BlockEntityType.Builder.of(

@@ -2,6 +2,7 @@ package com.miophas.singularity_iteration.common.client;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
+import com.miophas.singularity_iteration.core.runtime.radiation.FalloutVisualRange;
 import com.mojang.blaze3d.shaders.FogShape;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -28,9 +29,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 public class NuclearFalloutClientManager {
 
     // 辐射区域检测半径
-    private static final int CHECK_RADIUS = 64;
-    // 辐射影响最大半径
-    private static final int MAX_EFFECT_RADIUS = 128;
+    private static final int CHECK_RADIUS = FalloutVisualRange.HORIZONTAL;
     // 迷雾密度
     private static final float FOG_DENSITY = 0.15f;
     // 天空变暗程度 (0-1, 越大越暗)
@@ -39,6 +38,7 @@ public class NuclearFalloutClientManager {
 
     // 当前玩家是否在辐射区域
     private static boolean inRadiationZone = false;
+    private static ClientLevel sampledLevel;
     // 距离最近的辐射方块的距离
     @SuppressWarnings("unused")
     private static double distanceToRadiation = Double.MAX_VALUE;
@@ -55,59 +55,28 @@ public class NuclearFalloutClientManager {
         Minecraft minecraft = Minecraft.getInstance();
         ClientLevel level = minecraft.level;
 
-        if (level == null || minecraft.player == null) {
-            inRadiationZone = false;
-            targetRadiationIntensity = 0.0f;
-            return;
+        if(level!=sampledLevel){
+            sampledLevel=level;inRadiationZone=false;distanceToRadiation=Double.MAX_VALUE;
+            radiationIntensity=targetRadiationIntensity=0;
         }
-
-        Vec3 playerPos = minecraft.player.position();
-        BlockPos playerBlockPos = minecraft.player.blockPosition();
-
-        // 检测周围是否有辐射方块
-        double closestDistance = Double.MAX_VALUE;
-        boolean foundRadiation = false;
-
-        // 只在玩家移动一定距离后或每隔几tick检测一次，优化性能
-        if (level.getGameTime() % 5 == 0) {
-            int checkRange = CHECK_RADIUS;
-
-            for (int x = -checkRange; x <= checkRange; x += 4) {
-                for (int y = -checkRange / 2; y <= checkRange / 2; y += 4) {
-                    for (int z = -checkRange; z <= checkRange; z += 4) {
-                        BlockPos checkPos = playerBlockPos.offset(x, y, z);
-                        BlockState state = level.getBlockState(checkPos);
-                        Block block = state.getBlock();
-
-                        if (block == mio_icif_blocks.BLOCK_RADIATING_STONE.get() ||
-                            block == mio_icif_blocks.BLOCK_RADIATING_DIRT.get() ||
-                            block == mio_icif_blocks.BLOCK_RADIATING_DEEPSLATE.get()) {
-
-                            double dx = playerPos.x - (checkPos.getX() + 0.5);
-                            double dy = playerPos.y - (checkPos.getY() + 0.5);
-                            double dz = playerPos.z - (checkPos.getZ() + 0.5);
-                            double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-                            if (dist < closestDistance) {
-                                closestDistance = dist;
-                            }
-                            foundRadiation = true;
-                        }
-                    }
+        if(level==null||minecraft.player==null){
+            inRadiationZone=false;radiationIntensity=targetRadiationIntensity=0;return;
+        }
+        Vec3 playerPos=minecraft.player.position();
+        BlockPos playerBlockPos=minecraft.player.blockPosition();
+        if(level.getGameTime()%5==0){
+            float strongest=0;double closest=Double.MAX_VALUE;
+            // Inspect local columns at full block resolution, including the ground below a flying player.
+            for(int x=-CHECK_RADIUS;x<=CHECK_RADIUS;x++)for(int z=-CHECK_RADIUS;z<=CHECK_RADIUS;z++)
+                for(int y=-FalloutVisualRange.VERTICAL;y<=2;y++){
+                    BlockPos at=playerBlockPos.offset(x,y,z);Block block=level.getBlockState(at).getBlock();
+                    if(block!=mio_icif_blocks.BLOCK_RADIATING_STONE.get()&&block!=mio_icif_blocks.BLOCK_RADIATING_DIRT.get()
+                            &&block!=mio_icif_blocks.BLOCK_RADIATING_DEEPSLATE.get())continue;
+                    double dx=playerPos.x-at.getX()-.5,dy=playerPos.y-at.getY()-.5,dz=playerPos.z-at.getZ()-.5;
+                    float value=FalloutVisualRange.intensity(dx,dy,dz);
+                    strongest=Math.max(strongest,value);if(value>0)closest=Math.min(closest,Math.sqrt(dx*dx+dy*dy+dz*dz));
                 }
-            }
-
-            distanceToRadiation = closestDistance;
-            inRadiationZone = foundRadiation;
-
-            // 计算目标辐射强度
-            if (foundRadiation && closestDistance < MAX_EFFECT_RADIUS) {
-                // 距离越近，强度越大
-            targetRadiationIntensity = 1.0f - (float) (closestDistance / MAX_EFFECT_RADIUS);
-                targetRadiationIntensity = Math.max(0.0f, Math.min(1.0f, targetRadiationIntensity));
-            } else {
-                targetRadiationIntensity = 0.0f;
-            }
+            targetRadiationIntensity=strongest;distanceToRadiation=closest;inRadiationZone=strongest>0;
         }
 
         // 平滑过渡辐射强度

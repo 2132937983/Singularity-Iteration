@@ -1,6 +1,8 @@
 package com.miophas.singularity_iteration.common.blockentity.reactor;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
+import com.miophas.singularity_iteration.common.reactor.NuclearTerrainUpdates;
+import com.miophas.singularity_iteration.common.reactor.NuclearThermalEffects;
 import com.miophas.singularity_iteration.core.runtime.radiation.NuclearFalloutState;
 import java.util.function.BooleanSupplier;
 import net.minecraft.core.BlockPos;
@@ -23,12 +25,12 @@ public final class NuclearFalloutChunkTask implements BooleanSupplier {
     private final LevelChunk chunk;
     private final long chunkKey;
     private final BooleanSupplier valid;
-    private final boolean[] plants;
+    private final boolean[] cleanupSections;
     private int sectionCursor,column,y,minY,maxY;
     private boolean scanning,groundDone,done;
     public NuclearFalloutChunkTask(ServerLevel level,NuclearFalloutState.Region region,LevelChunk chunk,NuclearFalloutState saved,BooleanSupplier valid){
         this.level=level;this.region=region;this.chunk=chunk;this.saved=saved;this.valid=valid;
-        chunkKey=chunk.getPos().toLong();column=region.columns.getOrDefault(chunkKey,0);plants=new boolean[chunk.getSections().length];
+        chunkKey=chunk.getPos().toLong();column=region.columns.getOrDefault(chunkKey,0);cleanupSections=new boolean[chunk.getSections().length];
         minY=Math.max(level.getMinBuildHeight(),(int)Math.ceil(region.center.y-region.radiusY-.5));
         maxY=Math.min(level.getMaxBuildHeight()-1,(int)Math.floor(region.center.y+region.radiusY-.5));
     }
@@ -43,8 +45,9 @@ public final class NuclearFalloutChunkTask implements BooleanSupplier {
         if(done)return true;
         if(!valid.getAsBoolean()||level.getChunkSource().getChunkNow(chunk.getPos().x,chunk.getPos().z)!=chunk){done=true;return true;}
         if(!com.miophas.singularity_iteration.common.Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get())return false;
-        if(sectionCursor<plants.length){
-            var section=chunk.getSections()[sectionCursor];plants[sectionCursor++]=!section.hasOnlyAir()&&section.maybeHas(NuclearFalloutChunkTask::vegetation);return false;
+        if(sectionCursor<cleanupSections.length){
+            var section=chunk.getSections()[sectionCursor];cleanupSections[sectionCursor++]=!section.hasOnlyAir()
+                &&section.maybeHas(state->vegetation(state)||NuclearThermalEffects.frozen(state));return false;
         }
         if(column>=256){done=true;return true;}
         int x=chunk.getPos().getMinBlockX()+(column&15),z=chunk.getPos().getMinBlockZ()+(column>>4);
@@ -55,17 +58,19 @@ public final class NuclearFalloutChunkTask implements BooleanSupplier {
         }
         if(y<minY){completeColumn();return false;}
         int sectionIndex=level.getSectionIndex(y);
-        if(groundDone&&!plants[sectionIndex]){y=Math.max(minY-1,Math.floorDiv(y,16)*16-1);return false;}
+        if(groundDone&&!cleanupSections[sectionIndex]){y=Math.max(minY-1,Math.floorDiv(y,16)*16-1);return false;}
         var at=new BlockPos(x,y--,z);var state=chunk.getBlockState(at);
-        if(vegetation(state)){
+        if(NuclearThermalEffects.frozen(state)){
+            NuclearTerrainUpdates.replace(level,at,NuclearThermalEffects.melted(level,state),REPLACE_FLAGS);
+        }else if(vegetation(state)){
             // Preserve water in waterlogged vegetation; do not create item entities across the fallout area.
-            level.setBlock(at,state.getFluidState().createLegacyBlock(),REPLACE_FLAGS);
+            NuclearTerrainUpdates.replace(level,at,state.getFluidState().createLegacyBlock(),REPLACE_FLAGS);
         }else if(!groundDone&&!state.isAir()&&state.getFluidState().isEmpty()&&!state.is(BlockTags.LOGS)){
             groundDone=true;
             Block replacement=radioactive(state.getBlock());
             double dx=x+.5-region.center.x,dz=z+.5-region.center.z;
             if(state.is(Blocks.SAND)&&dx*dx+dz*dz<region.radius*(double)region.radius*.64)replacement=Blocks.GLASS;
-            if(replacement!=null)level.setBlock(at,replacement.defaultBlockState(),REPLACE_FLAGS);
+            if(replacement!=null)NuclearTerrainUpdates.replace(level,at,replacement.defaultBlockState(),REPLACE_FLAGS);
         }
         return false;
     }

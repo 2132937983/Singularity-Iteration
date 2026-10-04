@@ -1,7 +1,10 @@
 package com.miophas.singularity_iteration.common.blockentity.reactor;
 
 import com.miophas.singularity_iteration.core.runtime.reactor.BlastInput;
+import com.miophas.singularity_iteration.common.reactor.NuclearTerrainUpdates;
+import com.miophas.singularity_iteration.common.reactor.NuclearThermalEffects;
 import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -35,6 +38,7 @@ public class NukeExplosionTask {
     private final int[] active;
     private int activeCount;
     private final Long2FloatOpenHashMap[] shells = new Long2FloatOpenHashMap[4];
+    private final LongOpenHashSet[] meltedPositions = new LongOpenHashSet[4];
     private final int minX, maxX, minZ, maxZ;
     private int surfaceChunkX, surfaceChunkZ;
     private NuclearFalloutChunkTask surfaceTask;
@@ -84,7 +88,10 @@ public class NukeExplosionTask {
             }
         }
         if (radius > 0) for (int i = 0; i < rayCount; i++) dy[i] *= (double) radiusY / radius;
-        for (int i = 0; i < shells.length; i++) shells[i] = new Long2FloatOpenHashMap();
+        for (int i = 0; i < shells.length; i++) {
+            shells[i] = new Long2FloatOpenHashMap();
+            meltedPositions[i] = new LongOpenHashSet();
+        }
         int extent = (int) Math.ceil(radius * 1.5);
         minX = (int) Math.floor(center.x) - extent; maxX = (int) Math.floor(center.x) + extent;
         minZ = (int) Math.floor(center.z) - extent; maxZ = (int) Math.floor(center.z) + extent;
@@ -111,6 +118,7 @@ public class NukeExplosionTask {
             if (activeCount == 0) { raysComplete = true; return; }
             ray = 0; shell++;
             shells[shell % shells.length].clear();
+            meltedPositions[shell % meltedPositions.length].clear();
             return;
         }
         int i = active[ray++];
@@ -184,10 +192,17 @@ public class NukeExplosionTask {
         if(fallout==null)throw new IllegalArgumentException("Missing fallout footprint");falloutId=id;
     }
     private void advanceSurface() {
+        if(falloutId!=null){
+            // The persistent manager owns bound cleanup. Start it as soon as pressure
+            // ends, rather than blocking chunk-load recovery behind a rectangular scan
+            // of an enormous footprint or competing with a second cursor for each chunk.
+            NuclearFalloutManager.ready(level,falloutId);
+            surfaceComplete=true;
+            return;
+        }
         if(surfaceTask!=null){if(surfaceTask.getAsBoolean())surfaceTask=null;return;}
         if(surfaceChunkZ>(maxZ>>4)){
             surfaceComplete=true;
-            if(falloutId!=null)NuclearFalloutManager.ready(level,falloutId);
             return;
         }
         int cx=surfaceChunkX,cz=surfaceChunkZ;
@@ -201,7 +216,16 @@ public class NukeExplosionTask {
     }
     private void replace(BlockPos pos, BlockState state) {
         // Do not synchronously fan out neighbour callbacks across a large nuclear crater.
-        level.setBlock(pos, state, Block.UPDATE_CLIENTS);
+        var before=level.getBlockState(pos);
+        boolean melting=state.isAir()&&NuclearThermalEffects.frozen(before);
+        if(melting)state=NuclearThermalEffects.melted(level,before);
+        else if(state.isAir()&&before.is(Blocks.WATER)){
+            // Overlapping rays must not immediately erase water produced by the same heat front.
+            for(var recent:meltedPositions)if(recent.contains(pos.asLong()))return;
+        }
+        int flags=melting?Block.UPDATE_CLIENTS|Block.UPDATE_KNOWN_SHAPE|Block.UPDATE_SUPPRESS_DROPS:Block.UPDATE_CLIENTS;
+        if(NuclearTerrainUpdates.replace(level,pos,state,flags)&&melting&&state.is(Blocks.WATER))
+            meltedPositions[shell%meltedPositions.length].add(pos.asLong());
     }
     private LevelChunk loadedChunk(BlockPos pos) {
         return level.isOutsideBuildHeight(pos) ? null : level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);

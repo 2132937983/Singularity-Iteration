@@ -64,21 +64,26 @@ public final class NuclearFalloutManager {
     }
     @SubscribeEvent public static void tick(ServerTickEvent.Pre event){
         if(!com.miophas.singularity_iteration.common.Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get())return;
-        int probes=0;var it=PENDING.iterator();
-        while(it.hasNext()&&probes++<32&&ACTIVE.size()<16){
-            var key=it.next();if(key.level.getServer()!=event.getServer())continue;
+        // A load event does not guarantee immediate FULL availability, and an address can
+        // remain tracked while its chunk waits for deferred unloading. Rotate retries so
+        // those addresses cannot monopolize the bounded probe budget as players travel.
+        int probes=0,limit=Math.min(32,PENDING.size());
+        var retry=new ArrayList<Key>();var it=PENDING.iterator();
+        while(it.hasNext()&&probes++<limit&&ACTIVE.size()<16){
+            var key=it.next();it.remove();
+            if(key.level.getServer()!=event.getServer()){retry.add(key);continue;}
             var data=NuclearFalloutState.get(key.level);var region=data.regions.get(key.region);
-            if(region==null){it.remove();continue;}
-            if(region.columns.getOrDefault(key.chunk,0)>=256){it.remove();continue;}
+            if(region==null||region.columns.getOrDefault(key.chunk,0)>=256)continue;
             var chunk=key.level.getChunkSource().getChunkNow(ChunkPos.getX(key.chunk),ChunkPos.getZ(key.chunk));
-            if(chunk==null)continue;
-            if(!ExplosionWorkScheduler.hasCapacity(key.level))break;
+            if(chunk==null){retry.add(key);continue;}
+            if(!ExplosionWorkScheduler.hasCapacity(key.level)){retry.add(key);break;}
             var task=new NuclearFalloutChunkTask(key.level,region,chunk,data,()->data.regions.get(key.region)==region);
             if(ExplosionWorkScheduler.trySubmitCleanup(key.level,net.minecraft.core.BlockPos.containing(region.center),NuclearFalloutManager.class,task,()->{
                 try{boolean done=task.getAsBoolean();if(done){ACTIVE.remove(key);if(region.columns.getOrDefault(key.chunk,0)<256&&LOADED.getOrDefault(key.level,Set.of()).contains(key.chunk))PENDING.add(key);}return done;}
                 catch(RuntimeException failure){ACTIVE.remove(key);throw failure;}
-            })){ACTIVE.add(key);it.remove();}
+            })){ACTIVE.add(key);}else retry.add(key);
         }
+        PENDING.addAll(retry);
         if(event.getServer().getTickCount()%1200==0)for(var level:event.getServer().getAllLevels()){
             var data=NuclearFalloutState.get(level);boolean changed=data.regions.entrySet().removeIf(entry->entry.getValue().complete()&&(!RadiationState.get(level).zones.containsKey(entry.getKey())||RadiationState.expired(entry.getValue().created,System.currentTimeMillis())));if(changed)data.setDirty();
         }

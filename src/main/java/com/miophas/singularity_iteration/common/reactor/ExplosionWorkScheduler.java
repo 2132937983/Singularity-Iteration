@@ -87,8 +87,13 @@ public final class ExplosionWorkScheduler {
     @SubscribeEvent
     public static void tick(ServerTickEvent.Post event) {
         var server = event.getServer();
+        long start=System.nanoTime();
+        // Reserve part of the existing budget so a busy pressure queue cannot starve
+        // visible, non-ticking chunk updates. Flush the previous tick's final states.
+        NuclearTerrainUpdates.flush(server,MAX_NANOS_PER_TICK/4);
+        long remaining=Math.max(0,MAX_NANOS_PER_TICK-(System.nanoTime()-start));
         var state = STATES.get(server);
-        if (state != null) state.lastSteps = state.queue.tick(server.getTickCount(), MAX_STEPS_PER_TICK, MAX_NANOS_PER_TICK);
+        if (state != null) state.lastSteps = state.queue.tick(server.getTickCount(), MAX_STEPS_PER_TICK, remaining);
     }
 
     public static Snapshot snapshot(MinecraftServer server) {

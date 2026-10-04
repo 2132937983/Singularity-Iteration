@@ -133,10 +133,13 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         if (level.isClientSide) return;
         
         // Apply reloaded storage settings on the server thread; capacity shrink preserves owned EU.
-        long capacity=Singularity_Iteration_Config.FUTURE_ENERGY_CAPACITY.get(),receive=Singularity_Iteration_Config.FUTURE_MAX_RECEIVE.get();
-        if(blockEntity.energyStorage.getCapacity()!=capacity||blockEntity.energyStorage.getMaxReceive()!=receive){
-            blockEntity.energyStorage.setCapacity(capacity);blockEntity.energyStorage.setMaxReceive(receive);
-            blockEntity.refreshRegistration();blockEntity.setChanged();
+        long capacity = Singularity_Iteration_Config.FUTURE_ENERGY_CAPACITY.get();
+        long receive = Singularity_Iteration_Config.FUTURE_MAX_RECEIVE.get();
+        if (blockEntity.energyStorage.getCapacity() != capacity || blockEntity.energyStorage.getMaxReceive() != receive) {
+            blockEntity.energyStorage.setCapacity(capacity);
+            blockEntity.energyStorage.setMaxReceive(receive);
+            blockEntity.refreshRegistration();
+            blockEntity.setChanged();
         }
         // 调用父类tick方法，处理电网充电逻辑
         AbstractEnergyBlockEntity.tick(level, pos, state, blockEntity);

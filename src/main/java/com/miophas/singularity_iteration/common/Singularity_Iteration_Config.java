@@ -172,7 +172,7 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
     public static final ModConfigSpec.BooleanValue ENABLE_LASER_NUCLEAR_EXPLOSIVE = NUCLEAR_BUILDER
             .comment("采矿镭射枪是否启用超高能爆破模式",
                     "true = 启用超高能爆破模式，玩家可以切换到该模式并使用镭射枪产生极强爆炸",
-                    "false = 禁用超高能爆破模式，切换模式时跳过该模式",
+                    "false = 禁止该模式发射，已有该模式弹丸也不会引爆",
                     "超高能爆破模式会产生100倍TNT当量的爆炸，具有极大的破坏力")
             .define("enableLaserNuclearExplosive", false);
 

@@ -107,6 +107,10 @@ guiGraphics.blit(ATLAS_TEXTURE, x + PROGRESS_X, y + PROGRESS_Y, 0, (float) 198, 
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // title between the two tanks at the top corners (free span x 38..138)
+        int tw = this.font.width(this.title);
+        int drawn = tw <= 100 ? tw : Math.min(100, (int) Math.ceil(tw * Math.max(0.7F, 100F / tw)));
+        drawFitted(guiGraphics, this.font, this.title, 88 - drawn / 2, this.titleLabelY, 100, titleColor(), false);
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
 

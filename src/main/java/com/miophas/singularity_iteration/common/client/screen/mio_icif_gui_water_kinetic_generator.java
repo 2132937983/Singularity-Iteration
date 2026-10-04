@@ -31,10 +31,9 @@ public class mio_icif_gui_water_kinetic_generator extends mio_icif_screen<com.mi
     private static final int WORK_ICON_Y = 70;
 
     // 文本位置
-    private static final int INFO_TEXT_X = 42;
+    private static final int INFO_TEXT_X = 20;
     private static final int OUTPUT_TEXT_Y = 50;
-    private static final int BIOME_TEXT_Y = 66;
-    private static final int ROTOR_DURABILITY_TEXT_Y = 75;
+    private static final int BIOME_TEXT_Y = 68;
     // 文本颜色 20eb3e (绿色)
     private static final int INFO_TEXT_COLOR = 0x2A2E33;
 
@@ -60,20 +59,19 @@ public class mio_icif_gui_water_kinetic_generator extends mio_icif_screen<com.mi
             // 绘制工作状态图标
             drawWorkStatusIcon(guiGraphics, x + WORK_ICON_X, y + WORK_ICON_Y, menu.isGenerating());
 
-            // 绘制输出信息文本
-            String infoText = Component.translatable("gui.mio_icif.water_kinetic_generator.output", menu.getKineticOutput()).getString();
-            guiGraphics.drawString(this.font, infoText, x + INFO_TEXT_X, y + OUTPUT_TEXT_Y, INFO_TEXT_COLOR);
-
-            // 绘制生物群系信息
-            String biomeText = Component.translatable("gui.mio_icif.water_kinetic_generator.biome", menu.getBiomeTypeName()).getString();
-            guiGraphics.drawString(this.font, biomeText, x + INFO_TEXT_X, y + BIOME_TEXT_Y, INFO_TEXT_COLOR);
-
-            // 绘制转子耐久度百分比（无转子时不显示）
+            // read-outs inside the two boxes of the texture (x 17..158, rows at y 47 and 65)
+            drawFitted(guiGraphics, this.font,
+                Component.translatable("gui.mio_icif.water_kinetic_generator.output", menu.getKineticOutput()),
+                x + INFO_TEXT_X, y + OUTPUT_TEXT_Y, 158 - INFO_TEXT_X, INFO_TEXT_COLOR, true);
+            // the biome is a translation key - it used to be printed raw ("gui.mio_icif.water_kinetic...");
+            // the lower box holds one line, so the rotor wear shares it
+            net.minecraft.network.chat.MutableComponent line = Component.translatable("gui.mio_icif.water_kinetic_generator.biome",
+                Component.translatable(menu.getBiomeTypeName()));
             int rotorHealthPercent = menu.getRotorHealthPercent();
             if (rotorHealthPercent >= 0) {
-                String rotorText = Component.translatable("gui.mio_icif.water_kinetic.rotor_health", rotorHealthPercent).getString();
-                guiGraphics.drawString(this.font, rotorText, x + INFO_TEXT_X, y + ROTOR_DURABILITY_TEXT_Y, INFO_TEXT_COLOR);
+                line = line.append(" · ").append(Component.translatable("gui.mio_icif.water_kinetic.rotor_health", rotorHealthPercent));
             }
+            drawFitted(guiGraphics, this.font, line, x + INFO_TEXT_X, y + BIOME_TEXT_Y, 158 - INFO_TEXT_X, INFO_TEXT_COLOR, true);
         }
     }
 

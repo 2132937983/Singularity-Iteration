@@ -34,7 +34,14 @@ public class SiButton extends Button {
         int color = !active && !selected ? 0xFFA0A4A8 : selected ? 0xFFFFFFFF : 0xFF2A2E33;
         var font = Minecraft.getInstance().font;
         int tw = font.width(getMessage());
-        g.drawString(font, getMessage(), x + (w - tw) / 2, y + (h - 8) / 2 + (h >= 11 ? 1 : 0), color, false);
+        int ty = y + (h - 8) / 2 + (h >= 11 ? 1 : 0);
+        if (tw <= w - 4) g.drawString(font, getMessage(), x + (w - tw) / 2, ty, color, false);
+        else {
+            // longer label (translation): shrink, then ellipsis - never past the button edge
+            int avail = w - 4;
+            int drawn = Math.min(avail, (int) Math.ceil(tw * Math.max(0.7F, (float) avail / tw)));
+            com.miophas.singularity_iteration.common.client.screen.mio_icif_screen.drawFitted(g, font, getMessage(), x + (w - drawn) / 2, ty, avail, color, false);
+        }
     }
 
     /** Precision key click (original synthesized UI sound) instead of the vanilla button click. */

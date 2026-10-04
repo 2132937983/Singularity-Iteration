@@ -211,21 +211,23 @@ guiGraphics.blit(ATLAS_TEXTURE, x + 155, y + 61 + 58 - calcPixels, 0, (float) 29
         if (menu == null) return;
 
         // ======== æå­æ¸²æï¼åæ ç¸å¯¹äº GUI å·¦ä¸è§ï¼ ========
-        guiGraphics.drawString(this.font,
+        // each read-out sits in its own box of gui_steam_generator_elc.png; the narrow ones use the
+        // short wording and show the full label on hover (they used to spill over buttons and pipes)
+        drawFitted(guiGraphics, this.font,
             Component.translatable("gui.mio_icif.steam_generator.heat_input", menu.getLastHeatInput()),
-            40, 136, TEXT_COLOR);
-        guiGraphics.drawString(this.font,
-            Component.translatable("gui.mio_icif.steam_generator.pressure_valve", menu.getPressure()),
-            25, 38, TEXT_COLOR);
-        guiGraphics.drawString(this.font,
-            Component.translatable("gui.mio_icif.steam_generator.water_input", menu.getInputMB()),
-            92, 175, TEXT_COLOR);
-        guiGraphics.drawString(this.font,
-            Component.translatable("gui.mio_icif.steam_generator.fluid_output", menu.getOutputMB()),
-            70, 29, TEXT_COLOR);
-        guiGraphics.drawString(this.font,
+            34, 136, 106, TEXT_COLOR, false);
+        drawFitted(guiGraphics, this.font,
+            Component.translatable("gui.mio_icif.steam_generator.pressure_valve.short", menu.getPressure()),
+            24, 38, 38, TEXT_COLOR, false);
+        drawFitted(guiGraphics, this.font,
+            Component.translatable("gui.mio_icif.steam_generator.water_input.short", menu.getInputMB()),
+            92, 175, 57, TEXT_COLOR, false);
+        drawFitted(guiGraphics, this.font,
+            Component.translatable("gui.mio_icif.steam_generator.fluid_output.short", menu.getOutputMB()),
+            69, 28, 75, TEXT_COLOR, false);
+        drawFitted(guiGraphics, this.font,
             Component.translatable(menu.getOutputFluidTranslationKey()),
-            70, 49, TEXT_COLOR);
+            69, 48, 95, TEXT_COLOR, false);
 
         // ======== Tooltip æ£æµï¼ä½¿ç¨ç¸å¯¹ GUI åæ ï¼å ä¸?GuiGraphics å·²å¹³ç§»è³ GUI å·¦ä¸è§ï¼ ========
         int relX = mouseX - this.leftPos;
@@ -261,15 +263,22 @@ guiGraphics.blit(ATLAS_TEXTURE, x + 155, y + 61 + 58 - calcPixels, 0, (float) 29
                 relX, relY);
         }
         // "Pressure: X" ææ¬åºå (25,38)
-        else if (isMouseOver(relX, relY, 25, 38, 75, 10)) {
+        else if (isMouseOver(relX, relY, 22, 35, 42, 13)) {
+            guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                Component.translatable("gui.mio_icif.steam_generator.pressure_valve", menu.getPressure()),
+                Component.translatable("gui.mio_icif.steam_generator.info.pressvalve")),
+                relX, relY);
+        }
+        else if (isMouseOver(relX, relY, 90, 171, 61, 14)) {
             guiGraphics.renderTooltip(this.font,
-                Component.translatable("gui.mio_icif.steam_generator.info.pressvalve"),
+                Component.translatable("gui.mio_icif.steam_generator.water_input", menu.getInputMB()),
                 relX, relY);
         }
         // è¾åºæµéææ¬åºå?(70,29)
-        else if (isMouseOver(relX, relY, 70, 29, 60, 10)) {
-            guiGraphics.renderTooltip(this.font,
-                Component.translatable("gui.mio_icif.steam_generator.info.fluidoutput"),
+        else if (isMouseOver(relX, relY, 66, 25, 81, 13)) {
+            guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                Component.translatable("gui.mio_icif.steam_generator.fluid_output", menu.getOutputMB()),
+                Component.translatable("gui.mio_icif.steam_generator.info.fluidoutput")),
                 relX, relY);
         }
         // è¾åºæµä½åç§°ææ¬åºå (70,49)

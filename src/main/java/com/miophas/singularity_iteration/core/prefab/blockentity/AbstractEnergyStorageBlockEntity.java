@@ -228,7 +228,9 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.mio_icif.energy_container");
+        // the block's own name: CESU, chargers and the LESU family had no override and showed the
+        // generic "Energy Container" key, which zh_cn translates as BatBox ("储电盒")
+        return getBlockState().getBlock().getName();
     }
     
     @Nullable

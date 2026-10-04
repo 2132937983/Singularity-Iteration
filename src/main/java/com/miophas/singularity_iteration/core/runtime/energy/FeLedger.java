@@ -81,6 +81,46 @@ public final class FeLedger {
         }
         return amount;
     }
+    // ------------------------------------------------------------------ charge-slot budget
+    // Items in a storage block's charge slot used to draw from the same per-tick output allowance
+    // as the cable / FE faces. Item charging runs in the block's own tick, before the network
+    // dispatch, so a battery, tool or armor that accepted a full tier packet left the network an
+    // allowance of zero: the box stopped sending power while anything was charging. The slot now
+    // has its own tier-rated allowance (IC2: charge slot and output are independent); the shared
+    // balance and the output revision still guard outstanding network quotes.
+    private long itemTick = Long.MIN_VALUE;
+    private long itemSpentFe;
+    private long itemSpentFe() { return itemTick == clock.getAsLong() ? itemSpentFe : 0; }
+    private void countItem(long fe) {
+        long now = clock.getAsLong();
+        if (itemTick != now) { itemTick = now; itemSpentFe = 0; }
+        itemSpentFe += fe; outputRevision++;
+    }
+    private boolean itemAllowed() {
+        return !busy && uncertain == 0 && active.getAsBoolean() && storage.isOutputEnabled();
+    }
+    /** Whole EU for a charge-slot item: its own tier-rated budget, not the network output allowance. */
+    public long extractItemWholeEu(long requested, boolean simulate) {
+        if (requested <= 0 || !itemAllowed()) return 0;
+        long room = Math.max(0, limit(storage.getMaxExtract()) - itemSpentFe()) / FE_PER_EU;
+        long amount = Math.min(requested, Math.min(room, storage.scexExactAmount().whole()));
+        if (!simulate && amount > 0) {
+            long actual = storage.consumeEnergyInternal(amount, false);
+            if (actual < 0 || actual > amount) throw new IllegalStateException("Invalid owned EU extraction");
+            countItem(actual * FE_PER_EU);
+            return actual;
+        }
+        return amount;
+    }
+    /** FE for a charge-slot item (other mods' FE items): same separate budget. */
+    public int extractItemFe(int requested, boolean simulate) {
+        if (requested <= 0 || !itemAllowed()) return 0;
+        int amount = (int) Math.min(requested, Math.max(0, limit(storage.getMaxExtract()) - itemSpentFe()));
+        amount = Math.min(amount, fe(storage.scexExactAmount()));
+        if (!simulate && amount > 0) { storage.scexTransferFe(amount, false); countItem(amount); }
+        return amount;
+    }
+
     private void countOutput(EnergyAmount amount) {
         long now = clock.getAsLong();
         if (tick != now) { tick = now; received = 0; extracted = EnergyAmount.ZERO; }

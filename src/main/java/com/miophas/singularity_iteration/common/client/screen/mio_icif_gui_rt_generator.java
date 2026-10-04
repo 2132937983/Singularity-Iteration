@@ -33,7 +33,7 @@ public class mio_icif_gui_rt_generator extends mio_icif_screen<com.miophas.singu
 
     // 发电量显示位置 (119, 56) - 往下调6个像素
     private static final int OUTPUT_TEXT_X = 119;
-    private static final int OUTPUT_TEXT_Y = 56;
+    private static final int OUTPUT_TEXT_Y = 60;   // below the 17 px energy bar (40..57)
 
     public mio_icif_gui_rt_generator(com.miophas.singularity_iteration.common.menu.generator.RTGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -67,7 +67,7 @@ public class mio_icif_gui_rt_generator extends mio_icif_screen<com.miophas.singu
         // 显示发电量(119, 50)
         long output = menu.getGenerationRate();
         Component outputText = Component.literal(output + " EU/t");
-        guiGraphics.drawString(this.font, outputText, OUTPUT_TEXT_X, OUTPUT_TEXT_Y, 0x2A2E33, false);
+        drawFitted(guiGraphics, this.font, outputText, OUTPUT_TEXT_X, OUTPUT_TEXT_Y, 176 - 4 - OUTPUT_TEXT_X, 0x2A2E33, false);
 
         // 检查鼠标是否在能量条区域（显示tooltip）
         int x = (this.width - this.imageWidth) / 2;

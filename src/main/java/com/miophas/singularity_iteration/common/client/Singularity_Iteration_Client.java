@@ -387,9 +387,17 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.DIESELOIL_TYPE.get());
         Singularity_Iteration.LOGGER.info("Diesel oil fluid client extensions registered");
 
-        // Mining laser: two-handed gun pose + first-person recoil
+        // Every two-handed gun: low-ready carry, shouldered aim when firing, first-person recoil.
+        // The item models' hand transforms are anchored on each gun's grip (0.1.7.29).
         event.registerItem(com.miophas.singularity_iteration.common.client.item.LaserGunPose.INSTANCE,
-            com.miophas.singularity_iteration.common.item.tools.mio_icif_items_tools.TOOL_LASER_MINER.get());
+            mio_icif_items_tools.TOOL_LASER_MINER.get(),
+            mio_icif_items_tools.ELECTRIC_RIFLE.get(),
+            mio_icif_items_tools.ADVANCED_ELECTRIC_RIFLE.get(),
+            mio_icif_items_tools.TACTICAL_LASER_RIFLE.get(),
+            mio_icif_items_tools.TACHYON_DISRUPTOR.get(),
+            mio_icif_items_tools.ELECTRIC_PLASMA_GUN.get(),
+            mio_icif_items_tools.PLASMA_AIR_CANNON.get(),
+            mio_icif_items_tools.ROCKET_LAUNCHER.get());
 
         // 注册青铜剑客户端扩展 - 设置第三人称手臂姿势为BLOCK（剑的握持姿势）
         event.registerItem(new IClientItemExtensions() {

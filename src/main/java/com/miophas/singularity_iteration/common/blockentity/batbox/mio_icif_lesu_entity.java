@@ -24,9 +24,4 @@ public class mio_icif_lesu_entity extends GenericEnergyContainerBlockEntity {
     public mio_icif_lesu_entity(BlockPos pos, BlockState state, BlockEntityType<?> type) {
         super(pos, state, type, DEFAULT_CAPACITY, HV_IO_RATE, HV_IO_RATE, HV_TIER);
     }
-
-    @Override
-    public net.minecraft.network.chat.Component getDisplayName() {
-        return net.minecraft.network.chat.Component.translatable("container.mio_icif.lesu");
-    }
 }

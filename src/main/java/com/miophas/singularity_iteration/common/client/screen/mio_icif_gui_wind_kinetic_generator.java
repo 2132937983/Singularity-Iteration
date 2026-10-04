@@ -46,12 +46,12 @@ public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<com.mio
         if (menu != null) {
             Component primaryText = getPrimaryStatusText(menu);
             if (primaryText != null) {
-                guiGraphics.drawString(this.font, primaryText, x + STATUS_TEXT_X, y + PRIMARY_STATUS_TEXT_Y, INFO_TEXT_COLOR);
+                drawFitted(guiGraphics, this.font, primaryText, x + STATUS_TEXT_X, y + PRIMARY_STATUS_TEXT_Y, 141, INFO_TEXT_COLOR, true);
             }
 
             Component secondaryText = getSecondaryStatusText(menu);
             if (secondaryText != null) {
-                guiGraphics.drawString(this.font, secondaryText, x + STATUS_TEXT_X, y + SECONDARY_STATUS_TEXT_Y, INFO_TEXT_COLOR);
+                drawFitted(guiGraphics, this.font, secondaryText, x + STATUS_TEXT_X, y + SECONDARY_STATUS_TEXT_Y, 141, INFO_TEXT_COLOR, true);
             }
         }
     }

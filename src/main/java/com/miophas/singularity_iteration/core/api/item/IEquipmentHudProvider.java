@@ -21,4 +21,13 @@ public interface IEquipmentHudProvider {
      * @return 要显示的文本；返回 {@code null} 表示当前不显示
      */
     Component getEquipmentHudText(ItemStack stack);
+
+    /**
+     * Whether the line should stay on screen continuously (e.g. a jetpack while airborne). By
+     * default a line is shown for a few seconds whenever its wording changes (mode switch, item
+     * equipped) and then left to fade; only numbers changing does not re-show it.
+     */
+    default boolean keepEquipmentHudVisible(ItemStack stack, net.minecraft.world.entity.player.Player player) {
+        return false;
+    }
 }

@@ -258,6 +258,44 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
     }
 
     /**
+     * Draws {@code text} inside a box {@code maxWidth} wide: scaled down to at most 70 % when it is
+     * too long, then cut with an ellipsis. Returns the drawn width. Every label sitting next to a
+     * slot, bar or panel edge goes through here so a longer translation cannot spill over it.
+     */
+    public static int drawFitted(GuiGraphics g, net.minecraft.client.gui.Font font, Component text, int x, int y, int maxWidth, int color, boolean shadow) {
+        return drawFitted(g, font, text.getVisualOrderText(), text, x, y, maxWidth, color, shadow);
+    }
+
+    private static int drawFitted(GuiGraphics g, net.minecraft.client.gui.Font font, net.minecraft.util.FormattedCharSequence seq,
+                                  Component text, int x, int y, int maxWidth, int color, boolean shadow) {
+        int w = font.width(seq);
+        if (maxWidth <= 0 || w <= maxWidth) {
+            g.drawString(font, seq, x, y, color, shadow);
+            return w;
+        }
+        float scale = Math.max(0.7F, (float) maxWidth / w);
+        net.minecraft.util.FormattedCharSequence shown = seq;
+        if (w * scale > maxWidth) {
+            int room = (int) (maxWidth / scale) - font.width("…");
+            shown = net.minecraft.locale.Language.getInstance().getVisualOrder(
+                net.minecraft.network.chat.FormattedText.composite(font.substrByWidth(text, Math.max(0, room)), Component.literal("…")));
+        }
+        g.pose().pushPose();
+        g.pose().translate(x, y + (8 - 8 * scale) / 2F, 0);
+        g.pose().scale(scale, scale, 1F);
+        g.drawString(font, shown, 0, 0, color, shadow);
+        g.pose().popPose();
+        return Math.min(maxWidth, (int) Math.ceil(font.width(shown) * scale));
+    }
+
+    /** Right-aligned variant: the text ends at {@code right}. */
+    public static void drawFittedRight(GuiGraphics g, net.minecraft.client.gui.Font font, Component text, int right, int y, int maxWidth, int color, boolean shadow) {
+        int w = font.width(text);
+        int drawn = w <= maxWidth ? w : Math.min(maxWidth, (int) Math.ceil(w * Math.max(0.7F, (float) maxWidth / w)));
+        drawFitted(g, font, text, right - drawn, y, maxWidth, color, shadow);
+    }
+
+    /**
      * Title ink. Screens drawn from a texture that a resource pack may replace return
      * {@link GuiInk#on} so the title stays readable on dark replacement panels.
      */

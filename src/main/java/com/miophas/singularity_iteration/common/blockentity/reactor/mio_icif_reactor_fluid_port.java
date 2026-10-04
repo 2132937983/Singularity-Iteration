@@ -87,7 +87,7 @@ public class mio_icif_reactor_fluid_port extends BlockEntity implements MenuProv
     // 缓存的所连接反应堆位置（由 tick 周期性刷新；多方块可能在端口放置之后才成型）
     @Nullable
     private BlockPos connectedReactorPos;
-    private long lastReactorScanTick = Long.MIN_VALUE;
+    private long lastReactorScanTick = -1000L;   // game time is never negative: the first scan runs at once (MIN_VALUE overflowed the age check)
 
     public mio_icif_reactor_fluid_port(BlockPos pos, BlockState state) {
         super(com.miophas.singularity_iteration.common.registry.mio_icif_block_entities.REACTOR_FLUID_PORT_ENTITY_TYPE.get(), pos, state);
@@ -133,6 +133,8 @@ public class mio_icif_reactor_fluid_port extends BlockEntity implements MenuProv
     /** 周期性刷新缓存的反应堆位置，避免每次 capability 查询都做一次全量 5x5x5 扫描。 */
     private void refreshConnection(Level level) {
         long now = level.getGameTime();
+        // no reactor nearby: the 125-block search runs once a second, not every tick
+        if (connectedReactorPos == null && now - lastReactorScanTick < 20) return;
         if (now - lastReactorScanTick < 20 && connectedReactorPos != null
                 && level.getBlockEntity(connectedReactorPos) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator cached
                 && isFluidCooled(cached)) {
@@ -227,8 +229,12 @@ public class mio_icif_reactor_fluid_port extends BlockEntity implements MenuProv
                 && level.getBlockEntity(connectedReactorPos) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator reactor) {
             cached = reactor;
         }
-        if (cached == null || !isFluidCooled(cached)) {
+        // a stale link is rescanned at most once a second (pipes query several times per tick)
+        if ((cached == null || !isFluidCooled(cached)) && level.getGameTime() - lastReactorScanTick >= 20) {
+            lastReactorScanTick = level.getGameTime();
             connectedReactorPos = findReactor(level);
+        } else if (cached == null || !isFluidCooled(cached)) {
+            return null;
         }
         if (connectedReactorPos == null) return null;
         return level.getBlockEntity(connectedReactorPos) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator reactor ? reactor : null;

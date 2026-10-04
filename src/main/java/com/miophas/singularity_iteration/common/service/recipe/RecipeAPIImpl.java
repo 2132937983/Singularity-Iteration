@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,7 +38,18 @@ public class RecipeAPIImpl implements IRecipeAPI {
 
     /** A cache generation owns its manager and immutable recipe catalog. */
     private record Catalog(RecipeManager manager, Collection<RecipeHolder<?>> recipes,
-                           ConcurrentHashMap<RecipeType<?>, List<RecipeHolder<?>>> byType) { }
+                           Map<RecipeType<?>, List<RecipeHolder<?>>> byType,
+                           Map<RecipeType<?>, Map<StackKey, Optional<RecipeHolder<?>>>> firstMatch) {
+        Catalog(RecipeManager manager, Collection<RecipeHolder<?>> recipes, Map<RecipeType<?>, List<RecipeHolder<?>>> byType) {
+            this(manager, recipes, byType, new ConcurrentHashMap<>());
+        }
+    }
+
+    /** Item + component patch: everything a single-ingredient test looks at (count is ignored). */
+    private record StackKey(net.minecraft.world.item.Item item, net.minecraft.core.component.DataComponentPatch patch) {
+        static StackKey of(ItemStack stack) { return new StackKey(stack.getItem(), stack.getComponentsPatch()); }
+    }
+    private static final int FIRST_MATCH_LIMIT = 4096;
     private volatile Catalog cachedCatalog;
 
     public RecipeAPIImpl() {
@@ -75,6 +87,10 @@ public class RecipeAPIImpl implements IRecipeAPI {
     }
 
     private List<RecipeHolder<?>> recipesByType(RecipeType<?> type, RecipeManager manager) {
+        return recipesByType(type, catalog(manager));
+    }
+
+    private Catalog catalog(RecipeManager manager) {
         // replaceRecipes may retain the manager but replace its immutable catalog.
         // A query keeps its own generation, so another world's query cannot clear
         // and repopulate this query's map with holders from a different manager.
@@ -89,7 +105,10 @@ public class RecipeAPIImpl implements IRecipeAPI {
                 }
             }
         }
-        var generation = current;
+        return current;
+    }
+
+    private static List<RecipeHolder<?>> recipesByType(RecipeType<?> type, Catalog generation) {
         return generation.byType().computeIfAbsent(type, k ->
             generation.recipes().stream()
                 .filter(holder -> holder.value().getType() == type)
@@ -168,7 +187,21 @@ public class RecipeAPIImpl implements IRecipeAPI {
     public <T extends Recipe<?>> Optional<RecipeHolder<T>> findRecipe(RecipeType<T> type, ItemStack input, Level level) {
         if (level == null || input.isEmpty()) return Optional.empty();
  // 跨敤缂撳瓨鐨勬寜绫诲瀷鍒嗙粍閰嶆柟锛岄伩鍏� O(n) 鍏ㄩ噺閬嶅巻
-        List<RecipeHolder<?>> cached = getRecipesByType(type, level);
+        // machines call this two or three times per tick with the same input: memoise the scan per
+        // catalog generation (a /reload or recipe replacement starts a new generation)
+        Catalog generation = catalog(level.getRecipeManager());
+        var memo = generation.firstMatch().computeIfAbsent(type, k -> new ConcurrentHashMap<>());
+        StackKey key = StackKey.of(input);
+        Optional<RecipeHolder<?>> known = memo.get(key);
+        if (known == null) {
+            known = scanFirstIngredient(recipesByType(type, generation), input);
+            if (memo.size() >= FIRST_MATCH_LIMIT) memo.clear();
+            memo.put(key, known);
+        }
+        return (Optional<RecipeHolder<T>>) (Optional<?>) known;
+    }
+
+    private static Optional<RecipeHolder<?>> scanFirstIngredient(List<RecipeHolder<?>> cached, ItemStack input) {
         for (RecipeHolder<?> holder : cached) {
             Recipe<?> recipe = holder.value();
             NonNullList<Ingredient> ingredients = recipe.getIngredients();
@@ -176,13 +209,7 @@ public class RecipeAPIImpl implements IRecipeAPI {
                 // 注意：此方法仅适用于单原料配方查找
                 // 对于多原料配方（如焊接机），只检查第一个原料，可能导致误匹配
                 // 建议多原料配方使用专门的 findMultiIngredientRecipe 方法
-                if (ingredients.getFirst().test(input)) {
-                    try {
-                        return Optional.of((RecipeHolder<T>) holder);
-                    } catch (ClassCastException e) {
-                        continue;
-                    }
-                }
+                if (ingredients.getFirst().test(input)) return Optional.of(holder);
             }
         }
         return Optional.empty();

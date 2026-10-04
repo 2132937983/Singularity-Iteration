@@ -166,6 +166,7 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
         }
         long storageStored = 0, storageCap = 0, bufferStored = 0, bufferCap = 0;
         boolean hasStorage = false;
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet countedOwners = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
         for (int i = 0; i < devicePos.size(); i++) {
             BlockPos at = devicePos.get(i);
             BlockEntity be = level.isLoaded(at) ? level.getBlockEntity(at) : null;
@@ -173,10 +174,13 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
             EnergyNetworkSnapshot.Category cat = deviceCat.get(i);
             float in = (float) (accIn[i] / WINDOW), out = (float) (accOut[i] / WINDOW);
             long stored = 0, cap = 0;
-            if (be instanceof AbstractEnergyBlockEntity energy) {
+            // storage ports report their multiblock core's store, counted once per core
+            BlockEntity owner = cat == EnergyNetworkSnapshot.Category.STORAGE ? NetworkWalker.storageOwner(be) : be;
+            if (owner instanceof AbstractEnergyBlockEntity energy) {
                 stored = energy.getEnergyStorage().getAmount();
                 cap = energy.getEnergyStorage().getCapacity();
             }
+            boolean firstOfOwner = owner == null || countedOwners.add(owner.getBlockPos().asLong());
             boolean switchable = be instanceof IRemoteSwitchable;
             boolean disabled = switchable && ((IRemoteSwitchable) be).isRemotelyDisabled();
             float rated = rated(be, cat, in, out, disabled);
@@ -188,13 +192,12 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
                     if (sub != null) { sub.generation += out; sub.generationCapacity += rated; } }
                 case CONSUMER -> { s.consumption += in; s.demand += rated;
                     if (sub != null) { sub.consumption += in; sub.demand += rated; } }
-                case STORAGE -> { s.storageIn += in; s.storageOut += out; storageStored += stored; storageCap += cap; hasStorage = true;
+                case STORAGE -> { s.storageIn += in; s.storageOut += out; if (firstOfOwner) { storageStored += stored; storageCap += cap; } hasStorage = true;
                     if (sub != null) { sub.storageIn += in; sub.storageOut += out; } }
                 default -> { }
             }
             if (sub != null) { sub.devices++; sub.measuredPacket = Math.max(sub.measuredPacket, voltage); }
-            bufferStored += stored;
-            bufferCap += cap;
+            if (firstOfOwner) { bufferStored += stored; bufferCap += cap; }
             s.devices.add(new EnergyNetworkSnapshot.Device(at, BuiltInRegistries.BLOCK.getKey(be.getBlockState().getBlock()).toString(),
                 cat, in, out, stored, cap, switchable, disabled, rated, subnetIndex, voltage));
         }

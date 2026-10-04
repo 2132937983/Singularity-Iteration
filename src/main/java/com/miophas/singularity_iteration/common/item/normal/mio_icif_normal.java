@@ -153,11 +153,9 @@ public class mio_icif_normal {
     public static final DeferredItem<Item> STUFF = ITEMS.register("normal/item_stuff", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SU_BAT = ITEMS.register("normal/item_su_bat", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> TIN_EMPTY_CAN = ITEMS.register("normal/item_tin_empty_can", () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> TIN_FILLED_CAN = ITEMS.register("normal/item_tin_filled_can", () -> new Item(new Item.Properties()
-        .food(new net.minecraft.world.food.FoodProperties.Builder()
-            .nutrition(1)  // 半个鸡腿 = 1点饥饿值
-            .saturationModifier(0.5f)  // 饱和度系数
-            .build())));
+    /** Canned food: fast to eat, 2 hunger + 3.2 saturation, returns the empty can (see TinCanFoodItem). */
+    public static final DeferredItem<Item> TIN_FILLED_CAN = ITEMS.register("normal/item_tin_filled_can",
+        () -> new com.miophas.singularity_iteration.common.item.food.TinCanFoodItem(new Item.Properties()));
     public static final DeferredItem<Item> TOOL_MFSU_UPGRADE_KIT = ITEMS.register("normal/item_tool_mfsu_upgrade_kit", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> TOOLBOX = ITEMS.register("normal/item_toolbox", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> TOOLBOX_X = ITEMS.register("normal/item_toolbox_x", () -> new Item(new Item.Properties()));

@@ -168,6 +168,7 @@ public class mio_icif_megnetizer extends AbstractProcessingMachineBlockEntity {
     @Override
     protected void stopWork() {
         super.stopWork();
+        lastFenceScanTick = Long.MIN_VALUE;
         demagnetizeFences();
     }
 
@@ -176,7 +177,13 @@ public class mio_icif_megnetizer extends AbstractProcessingMachineBlockEntity {
      * 使用广度优先搜索(BFS)从磁化机器开始搜索连接在一起的铁栏杆链
      * 连接的栏杆会被加入集合中供吸引系统使用，已被磁化的连接重复磁化的栏杆不会被重复添加
      */
+    /** Game time of the last fence walk: the up-to-512-block BFS runs once a second, not every tick. */
+    private long lastFenceScanTick = Long.MIN_VALUE;
+
     private void magnetizeFences() {
+        if (level != null && lastFenceScanTick != Long.MIN_VALUE && level.getGameTime() >= lastFenceScanTick
+                && level.getGameTime() - lastFenceScanTick < 20) return;
+        if (level != null) lastFenceScanTick = level.getGameTime();
         magnetizedFences.clear();
         scexLastFenceScanPositions = 0;
         if (level == null || level.isClientSide()) return;

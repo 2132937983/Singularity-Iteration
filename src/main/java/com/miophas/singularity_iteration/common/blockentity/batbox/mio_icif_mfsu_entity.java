@@ -44,10 +44,5 @@ public class mio_icif_mfsu_entity extends AbstractEnergyStorageBlockEntity {
     public mio_icif_mfsu_entity(BlockPos pos, BlockState state, BlockEntityType<?> type) {
         super(pos, state, type, 40000000L, EV_IO_RATE, EV_IO_RATE, CableTier.EV);
     }
-
-    @Override
-    public net.minecraft.network.chat.Component getDisplayName() {
-        return net.minecraft.network.chat.Component.translatable("container.mio_icif.mfsu");
-    }
 }
 

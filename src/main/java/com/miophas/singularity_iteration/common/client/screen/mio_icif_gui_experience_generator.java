@@ -13,7 +13,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 public class mio_icif_gui_experience_generator extends mio_icif_screen<ExperienceGeneratorMenu> {
 
     private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_generator.png");
+        ResourceLocation.parse("mio_icif:textures/gui/gui_default.png");
 
     private static final int GUI_WIDTH = 176;
     private static final int GUI_HEIGHT = 166;

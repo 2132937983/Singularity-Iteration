@@ -54,7 +54,8 @@ public class mio_icif_gui_kinetic_generator extends mio_icif_screen<com.miophas.
 
             // 绘制转换效率文本 (4 KU = 1 FE, 25%效率)
             String infoText = Component.translatable("gui.mio_icif.kinetic_generator.efficiency", 25).getString();
-            guiGraphics.drawString(this.font, infoText, x + INFO_TEXT_X, y + INFO_TEXT_Y, INFO_TEXT_COLOR);
+            // the read-out box spans x 42..136 on gui_kinetic_generator.png
+            drawFitted(guiGraphics, this.font, Component.literal(infoText), x + INFO_TEXT_X, y + INFO_TEXT_Y, 94, INFO_TEXT_COLOR, true);
         }
     }
 

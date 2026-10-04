@@ -59,7 +59,8 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
         long now = level.getGameTime();
         boolean transferred = false;
 
-        if (targetPosition != null) {
+        // the link has no range limit: an unloaded target is skipped instead of loading its chunk every tick
+        if (targetPosition != null && level.isLoaded(targetPosition)) {
             IEnergyStorageAccess storage = getEnergyStorage();
             if (storage.getAmount() >= TRANSFER_SPEED) {
                 net.minecraft.world.level.block.entity.BlockEntity targetBE = level.getBlockEntity(targetPosition);

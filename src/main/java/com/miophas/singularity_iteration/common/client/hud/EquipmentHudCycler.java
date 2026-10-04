@@ -41,6 +41,11 @@ public final class EquipmentHudCycler {
 
     private static int index;
     private static int timer;
+    /** Wording of the lines (numbers masked) - a change re-shows the HUD. */
+    private static final Map<String, String> SIGNATURES = new LinkedHashMap<>();
+    private static final int SHOW_TICKS = 60;
+    private static int visibleTicks;
+    private static boolean keepVisible;
 
     private EquipmentHudCycler() {}
 
@@ -61,6 +66,15 @@ public final class EquipmentHudCycler {
             return;
         }
 
+        // show for SHOW_TICKS after the wording changes (mode switch, new item); a line that only
+        // updates numbers (energy) is not pushed every tick any more - it used to stay burned in
+        Map<String, String> signatures = new LinkedHashMap<>();
+        PENDING.forEach((k, v) -> signatures.put(k, v.getString().replaceAll("[0-9][0-9.,]*", "#")));
+        if (!signatures.equals(SIGNATURES)) {
+            SIGNATURES.clear();
+            SIGNATURES.putAll(signatures);
+            visibleTicks = SHOW_TICKS;
+        }
         boolean sameSet = PENDING.keySet().equals(CURRENT.keySet());
         CURRENT.clear();
         CURRENT.putAll(PENDING);
@@ -82,10 +96,13 @@ public final class EquipmentHudCycler {
             index = 0;
         }
 
+        if (!keepVisible && visibleTicks <= 0) return;
+        if (visibleTicks > 0) visibleTicks--;
         minecraft.gui.setOverlayMessage(CURRENT.get(ORDER.get(index)), false);
     }
 
     private static void collect(Player player) {
+        keepVisible = false;
         submit("main", player.getMainHandItem());
         submit("off", player.getOffhandItem());
         for (EquipmentSlot slot : EquipmentSlot.values()) {
@@ -98,14 +115,21 @@ public final class EquipmentHudCycler {
     private static void submit(String key, ItemStack stack) {
         if (stack.isEmpty() || !(stack.getItem() instanceof IEquipmentHudProvider provider)) return;
         Component text = provider.getEquipmentHudText(stack);
-        if (text != null) PENDING.put(key, text);
+        if (text != null) {
+            PENDING.put(key, text);
+            Player player = Minecraft.getInstance().player;
+            if (player != null && provider.keepEquipmentHudVisible(stack, player)) keepVisible = true;
+        }
     }
 
     private static void reset() {
         PENDING.clear();
         CURRENT.clear();
         ORDER.clear();
+        SIGNATURES.clear();
         index = 0;
         timer = 0;
+        visibleTicks = 0;
+        keepVisible = false;
     }
 }

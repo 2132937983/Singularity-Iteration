@@ -30,7 +30,16 @@ import org.jetbrains.annotations.Nullable;
  * change republishes the port's topology.
  */
 @SuppressWarnings("null")
-public abstract class GesuOutputPort extends MultiblockEnergyPart {
+public abstract class GesuOutputPort extends MultiblockEnergyPart implements com.miophas.singularity_iteration.core.api.machine.IStorageMember {
+
+    /** The formed GESU core this port relays for (terminal storage reading). */
+    @Override
+    public BlockEntity storageOwner() {
+        Level level = getLevel();
+        if (level == null || !isStructureCompleted() || getCorePosition() == null || !level.isLoaded(getCorePosition())) return null;
+        return level.getBlockEntity(getCorePosition()) instanceof mio_icif_gesu_core_entity core ? core : null;
+    }
+
     private final ICableTier tier;
     private final long rate;
     private boolean sourceRole;

@@ -343,7 +343,7 @@ public final FluidTank inputFluidTank;
         }
         for (var holder : rm.getAllRecipesFor(mio_icif_ModRecipes.DYNAMIC_CANNING_TYPE.get())) {
             var recipe = holder.value();
-            if (recipe.getFoodIngredient().test(food)) {
+            if (recipe.acceptsFood(food)) {   // any edible item, not only the tag
                 if (inputCan.isEmpty() || recipe.getCanIngredient().test(inputCan)) return true;
             }
         }

@@ -12,7 +12,16 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 @SuppressWarnings("null")
-public class mio_icif_gesu_input_iv_entity extends MultiblockEnergyPart {
+public class mio_icif_gesu_input_iv_entity extends MultiblockEnergyPart implements com.miophas.singularity_iteration.core.api.machine.IStorageMember {
+
+    /** The formed GESU core this port relays for (terminal storage reading). */
+    @Override
+    public BlockEntity storageOwner() {
+        Level level = getLevel();
+        if (level == null || !isStructureCompleted() || getCorePosition() == null || !level.isLoaded(getCorePosition())) return null;
+        return level.getBlockEntity(getCorePosition()) instanceof mio_icif_gesu_core_entity core ? core : null;
+    }
+
 
     private static final ICableTier MAX_TIER =
         MioIcifAPI.instance().getEnergyNetAPI().getCableTier("max");
@@ -31,6 +40,7 @@ public class mio_icif_gesu_input_iv_entity extends MultiblockEnergyPart {
         }
 
         if (blockEntity.getStoredEnergy() > 0) {
+            if (!level.isLoaded(blockEntity.getCorePosition())) return;
             BlockEntity coreBe = level.getBlockEntity(blockEntity.getCorePosition());
             if (coreBe instanceof mio_icif_gesu_core_entity core) {
                 if (core.isStructureComplete()) {
@@ -52,7 +62,7 @@ public class mio_icif_gesu_input_iv_entity extends MultiblockEnergyPart {
         long localSpace = getEnergyCapacity() - getStoredEnergy();
         if (localSpace <= 0) return 0.0D;
         Level level = getLevel();
-        if (level != null && getCorePosition() != null && isStructureCompleted()) {
+        if (level != null && getCorePosition() != null && isStructureCompleted() && level.isLoaded(getCorePosition())) {
             BlockEntity coreBe = level.getBlockEntity(getCorePosition());
             if (coreBe instanceof mio_icif_gesu_core_entity core && core.isStructureComplete()) {
                 long coreSpace = core.getEnergyCapacity() - core.getStoredEnergy();

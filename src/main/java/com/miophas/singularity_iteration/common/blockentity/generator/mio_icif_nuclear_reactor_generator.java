@@ -435,7 +435,9 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     public mio_icif_reactor_mode getReactorMode(){return mode;}
     @Override public IReactorAPI.ReactorMode getApiReactorMode(){return mode==mio_icif_reactor_mode.FLUID?IReactorAPI.ReactorMode.FLUID:IReactorAPI.ReactorMode.GENERATOR;}
     public void setReactorMode(mio_icif_reactor_mode next){var before=mode;mode=java.util.Objects.requireNonNull(next);rate=EnergyAmount.ZERO;syncOutputGate();dirty();if(before!=next&&level!=null)level.invalidateCapabilities(worldPosition);}
-    @Override public boolean isValidFluidReactorStructure(){return structure!=null&&structure.isValid()&&level!=null&&new mio_icif_fluid_reactor_validator().validate(level,worldPosition).isValid();}
+    // the full block scan runs in refreshStructure() once per 20-tick cycle and block edits invalidate the
+    // structure through the multiblock manager; this is called every tick and per fluid capability query
+    @Override public boolean isValidFluidReactorStructure(){return structure!=null&&structure.isValid()&&level!=null;}
     @Override public mio_icif_fluid_reactor_handler getFluidHandler(){return fluid;}
     public IFluidHandler getFluidHandlerCapability(Direction side){if(fluidAvailable())return fluid;return mode==mio_icif_reactor_mode.GENERATOR?cooling:null;}
     public int getInputFluidAmount(){return fluid.getInputFluidAmount();}

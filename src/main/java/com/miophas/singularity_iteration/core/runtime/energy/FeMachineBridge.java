@@ -116,7 +116,7 @@ public final class FeMachineBridge {
         ItemStack after = before.copy();
         IEnergyStorage cap = after.getCapability(Capabilities.EnergyStorage.ITEM);
         if (cap == null || !cap.canReceive()) return false;
-        int offer = ledger.extract(Integer.MAX_VALUE, true);
+        int offer = ledger.extractItemFe(Integer.MAX_VALUE, true);
         if (offer <= 0) return true;
         var balance = owner.getEnergyStorageInternal().scexNetworkQuote();
         var exactBalance = owner.getEnergyStorageInternal().scexExactAmount();
@@ -126,8 +126,8 @@ public final class FeMachineBridge {
                 || !balance.equals(owner.getEnergyStorageInternal().scexNetworkQuote())
                 || !exactBalance.equals(owner.getEnergyStorageInternal().scexExactAmount())) return true;
         if (accepted == 0) return true;
-        if (ledger.extract(accepted, true) != accepted) return true;
-        if (ledger.extract(accepted, false) != accepted) return true;
+        if (ledger.extractItemFe(accepted, true) != accepted) return true;
+        if (ledger.extractItemFe(accepted, false) != accepted) return true;
         if (!inventory.scexCommitSlots(new int[]{slot}, new ItemStack[]{before}, new ItemStack[]{after}))
             throw new IllegalStateException("Owned charging slot changed during debit");
         return true;

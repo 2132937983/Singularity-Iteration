@@ -10,6 +10,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.entity.EquipmentSlot;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
@@ -29,7 +31,7 @@ public class GESUCoreMenu extends mio_icif_base_menu {
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
         this.blockEntity = blockEntity;
-        this.container = new SimpleContainer(0);
+        this.container = blockEntity != null ? blockEntity : new SimpleContainer(2);
         this.data = new ContainerData() {
             private final int[] data = new int[6];
 
@@ -50,6 +52,30 @@ public class GESUCoreMenu extends mio_icif_base_menu {
         };
 
         this.addDataSlots(data);
+
+        // machine slots on the BatBox texture frames: charge (top) and discharge (bottom)
+        this.addSlot(new Slot(container, mio_icif_gesu_core_entity.CHARGE_SLOT, 56, 17) {
+            @Override public boolean mayPlace(ItemStack stack) { return isChargeable(stack); }
+            @Override public int getMaxStackSize(ItemStack stack) { return 1; }
+        });
+        this.addSlot(new Slot(container, mio_icif_gesu_core_entity.DISCHARGE_SLOT, 56, 53) {
+            @Override public boolean mayPlace(ItemStack stack) { return isBattery(stack); }
+            @Override public int getMaxStackSize(ItemStack stack) { return stack.is(net.minecraft.world.item.Items.REDSTONE) ? 64 : 1; }
+        });
+        markMachineSlots(2);
+
+        // armor display slots (feet, legs, chest, head) like the other storage boxes
+        EquipmentSlot[] armor = {EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD};
+        for (int i = 0; i < 4; i++) {
+            EquipmentSlot type = armor[i];
+            this.addSlot(new Slot(playerInventory, 36 + i, 8 + i * 18, 84) {
+                @Override public boolean mayPlace(ItemStack stack) {
+                    return stack.getItem() instanceof ArmorItem a && a.getEquipmentSlot() == type;
+                }
+                @Override public int getMaxStackSize() { return 1; }
+            });
+        }
+        markPlayerSlots(4);
 
         // 玩家背包(3x9)与快捷栏(主物品栏)整体下移 2px
         addPlayerInventory(playerInventory, 114, 172);
@@ -88,7 +114,22 @@ public class GESUCoreMenu extends mio_icif_base_menu {
 
     @Override
     protected boolean isBattery(ItemStack stack) {
-        return false;
+        return com.miophas.singularity_iteration.core.runtime.energy.DirectItemCharging.canDischarge(stack);
+    }
+
+    @Override
+    protected boolean isChargeable(ItemStack stack) {
+        return com.miophas.singularity_iteration.core.runtime.energy.DirectItemCharging.canCharge(stack);
+    }
+
+    @Override
+    protected int getChargeSlotIndex() {
+        return 0;
+    }
+
+    @Override
+    protected int getBatterySlotIndex() {
+        return 1;
     }
 
     @Override

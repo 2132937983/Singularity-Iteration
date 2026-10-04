@@ -286,7 +286,8 @@ public class mio_icif_multiblock_manager<T extends mio_icif_multiblock_validator
         mio_icif_multiblock_manager<mio_icif_multiblock_validator> manager =
                 new mio_icif_multiblock_manager<>(pos, validator);
         boolean formed = manager.tryForm(level);
-        LOGGER.info("[Multiblock] " + descriptor.name() + " at " + pos + ": " + (formed ? "formed" : "failed"));
+        if (formed) LOGGER.info("[Multiblock] {} at {}: formed", descriptor.name(), pos);
+        else LOGGER.debug("[Multiblock] {} at {}: failed", descriptor.name(), pos);
         return formed;
     }
 

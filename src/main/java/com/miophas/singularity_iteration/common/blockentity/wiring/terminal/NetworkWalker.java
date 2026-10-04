@@ -89,7 +89,18 @@ public final class NetworkWalker {
 
     /** Transformers and storage boxes: they buffer energy and start a new voltage segment. */
     public static boolean isBuffer(@Nullable BlockEntity be) {
-        return isTransformer(be) || be instanceof AbstractEnergyStorageBlockEntity;
+        return isTransformer(be) || be instanceof AbstractEnergyStorageBlockEntity
+            || be instanceof com.miophas.singularity_iteration.core.api.machine.IStorageMember;
+    }
+
+    /**
+     * The block entity whose buffer a storage device reports: itself, or the multiblock core of a
+     * storage port (GESU). Null for an unformed port - it then has no store of its own to show.
+     */
+    @Nullable
+    public static BlockEntity storageOwner(@Nullable BlockEntity be) {
+        if (be instanceof com.miophas.singularity_iteration.core.api.machine.IStorageMember member) return member.storageOwner();
+        return be;
     }
 
     /** Endpoint category of a block entity on a cable, or null when it is no EU endpoint. */
@@ -97,7 +108,8 @@ public final class NetworkWalker {
     public static EnergyNetworkSnapshot.Category categorize(@Nullable BlockEntity be) {
         if (be == null || be instanceof EnergyTerminalBlockEntity) return null;
         if (isTransformer(be)) return EnergyNetworkSnapshot.Category.TRANSFORMER;
-        if (be instanceof AbstractEnergyStorageBlockEntity) return EnergyNetworkSnapshot.Category.STORAGE;
+        if (be instanceof AbstractEnergyStorageBlockEntity
+            || be instanceof com.miophas.singularity_iteration.core.api.machine.IStorageMember) return EnergyNetworkSnapshot.Category.STORAGE;
         if (be instanceof DemandEnergySource) return EnergyNetworkSnapshot.Category.GENERATOR;
         if (be instanceof AbstractEnergyBlockEntity machine && !(be instanceof ICableEnergyNode)) {
             return machine.isPowerSource() ? EnergyNetworkSnapshot.Category.GENERATOR : EnergyNetworkSnapshot.Category.CONSUMER;
@@ -290,11 +302,17 @@ public final class NetworkWalker {
         double in = 0, out = 0, voltage = 0;
         long rated = 0;
         int gen = 0, use = 0, store = 0, xfmr = 0;
+        java.util.Set<Object> stores = new java.util.HashSet<>();
         for (int i = 0; i < r.devices.size(); i++) {
             switch (r.categories.get(i)) {
                 case GENERATOR -> gen++;
                 case CONSUMER -> use++;
-                case STORAGE -> store++;
+                case STORAGE -> {
+                    // a GESU core and its ports are one store
+                    BlockPos at = r.devices.get(i);
+                    BlockEntity owner = level.isLoaded(at) ? storageOwner(level.getBlockEntity(at)) : null;
+                    if (stores.add(owner != null ? owner.getBlockPos().asLong() : (Object) at)) store++;
+                }
                 case TRANSFORMER -> xfmr++;
             }
             if (!r.inOriginSegment(i)) continue;

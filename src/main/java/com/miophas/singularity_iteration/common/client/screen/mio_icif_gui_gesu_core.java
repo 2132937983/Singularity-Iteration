@@ -19,6 +19,8 @@ public class mio_icif_gui_gesu_core extends mio_icif_screen<GESUCoreMenu> {
 
     private static final int ENERGY_BAR_X = 79;
     private static final int ENERGY_BAR_Y = 34;
+    private static final int MODULE_TEXT_X = 80;
+    private static final int MODULE_TEXT_W = 176 - 6 - 80;
 
     private static final DecimalFormat ENERGY_FORMAT = new DecimalFormat("#,###");
 
@@ -64,16 +66,17 @@ public class mio_icif_gui_gesu_core extends mio_icif_screen<GESUCoreMenu> {
         int inputCount = menu.getInputModuleCount();
         int outputCount = menu.getOutputModuleCount();
         if (inputCount > 0 || outputCount > 0) {
-            guiGraphics.drawString(this.font,
+            // right of the slot column (the discharge slot frame sits at 56..74 on this texture)
+            drawFitted(guiGraphics, this.font,
                 Component.translatable("gui.mio_icif.gesu_core.input_modules", inputCount),
-                8, 56, 0x404040, false);
-            guiGraphics.drawString(this.font,
+                MODULE_TEXT_X, 56, MODULE_TEXT_W, 0x404040, false);
+            drawFitted(guiGraphics, this.font,
                 Component.translatable("gui.mio_icif.gesu_core.output_modules", outputCount),
-                8, 68, 0x404040, false);
+                MODULE_TEXT_X, 68, MODULE_TEXT_W, 0x404040, false);
         } else {
-            guiGraphics.drawString(this.font,
+            drawFitted(guiGraphics, this.font,
                 Component.translatable("gui.mio_icif.gesu_core.no_structure"),
-                8, 56, 0xFF5555, false);
+                MODULE_TEXT_X, 56, MODULE_TEXT_W, 0xFF5555, false);
         }
     }
 

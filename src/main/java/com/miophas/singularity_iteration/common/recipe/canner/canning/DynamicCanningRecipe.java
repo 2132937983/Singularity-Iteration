@@ -31,49 +31,40 @@ private final Ingredient foodIngredient;     // 食物（任意食物）
         this.nutritionMultiplier = nutritionMultiplier;
     }
 
+    /** Largest stack the output slot can take: the input cans consumed never exceed what comes out. */
+    private static final int MAX_CANS = 64;
+
+    /** Nutrition from the stack's food component (vanilla FoodProperties, data-driven for every mod), 0 if none. */
+    public static int nutrition(ItemStack food) {
+        if (food.isEmpty()) return 0;
+        FoodProperties props = food.getFoodProperties(null);
+        return props == null ? 0 : Math.max(0, props.nutrition());
+    }
+
+    /**
+     * Any edible item is accepted - the recipe's food ingredient (the {@code cannable_foods} tag) is
+     * no longer a whitelist, so food added by other mods (larvae, dishes, ...) cans as well. Filled
+     * tin cans and food without nutrition are refused.
+     */
+    public boolean acceptsFood(ItemStack food) {
+        if (food.isEmpty() || food.is(mio_icif_normal.TIN_FILLED_CAN.get())) return false;
+        return nutrition(food) > 0;
+    }
+
     @Override
     public boolean matches(CanningRecipeInput input, Level level) {
-        // 检查输入槽是否为空锡罐
-        if (!this.canIngredient.test(input.inputCan())) {
-            return false;
-        }
-
-        // 检查材料槽是否为食�
-    if (!this.foodIngredient.test(input.material())) {
-            return false;
-        }
-
-        // 获取食物的营养�
-    FoodProperties foodProps = input.material().getItem().getFoodProperties(input.material(), null);
-        if (foodProps == null) {
-            return false;
-        }
-
-        int nutrition = foodProps.nutrition();
-        int requiredCans = nutrition * nutritionMultiplier;
-
-        // 检查输入槽是否有足够的锡罐
-        return input.inputCan().getCount() >= requiredCans;
+        if (!this.canIngredient.test(input.inputCan())) return false;
+        if (!acceptsFood(input.material())) return false;
+        int required = getRequiredCanCount(input);
+        return required > 0 && input.inputCan().getCount() >= required;
     }
 
-    /**
-     * 根据输入的食物计算输出数据
- * @param input 配方输入
-     * @return 输出的满锡罐数量
-     */
+    /** Filled cans made from one food item: one per point of nutrition (IC2), at most a stack. */
     public int getOutputCount(CanningRecipeInput input) {
-        FoodProperties foodProps = input.material().getItem().getFoodProperties(input.material(), null);
-        if (foodProps == null) {
-            return 0;
-        }
-        return foodProps.nutrition() * nutritionMultiplier;
+        return Math.min(MAX_CANS, nutrition(input.material()) * Math.max(1, nutritionMultiplier));
     }
 
-    /**
-     * 根据输入的食物计算需要消耗的空锡罐数据
- * @param input 配方输入
-     * @return 需要消耗的空锡罐数据
- */
+    /** Empty cans used: exactly as many as come out. */
     public int getRequiredCanCount(CanningRecipeInput input) {
         return getOutputCount(input);
     }
@@ -85,9 +76,7 @@ private final Ingredient foodIngredient;     // 食物（任意食物）
             return ItemStack.EMPTY;
         }
 
-        ItemStack result = new ItemStack(mio_icif_normal.TIN_FILLED_CAN.get());
-        result.setCount(Math.min(count, 64)); // 最终?4�
-    return result;
+        return new ItemStack(mio_icif_normal.TIN_FILLED_CAN.get(), count);
     }
 
     @Override

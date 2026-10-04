@@ -22,7 +22,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
-public class mio_icif_gesu_core_entity extends MultiblockEnergyCore {
+public class mio_icif_gesu_core_entity extends MultiblockEnergyCore implements net.minecraft.world.Container,
+        com.miophas.singularity_iteration.core.api.machine.IStorageMember {
+
+    @Override public net.minecraft.world.level.block.entity.BlockEntity storageOwner() { return this; }
+
+    /** Charge slot (items filled from the core) and discharge slot (batteries / redstone emptied into it). */
+    public static final int CHARGE_SLOT = 0, DISCHARGE_SLOT = 1;
+    private final net.minecraft.core.NonNullList<net.minecraft.world.item.ItemStack> items =
+        net.minecraft.core.NonNullList.withSize(2, net.minecraft.world.item.ItemStack.EMPTY);
 
     private static final long DEFAULT_CAPACITY = 2147483647L;
     private static final ICableTier MAX_TIER =
@@ -50,6 +58,7 @@ public class mio_icif_gesu_core_entity extends MultiblockEnergyCore {
         }
 
         AbstractEnergyBlockEntity.tick(level, pos, state, blockEntity);
+        blockEntity.tickItems();
 
         blockEntity.tickCounter++;
         if (blockEntity.tickCounter >= 20) {
@@ -65,6 +74,56 @@ public class mio_icif_gesu_core_entity extends MultiblockEnergyCore {
             }
         }
     }
+
+    /** Per-tick item rate of the slots (an LuV line: the core is the end of the ladder). */
+    public static long itemRate() {
+        return MioIcifAPI.instance().getEnergyNetAPI().getCableTier("luv").getPowerRating();
+    }
+
+    /** Charges the charge-slot item from the core and drains the discharge-slot item into it. */
+    public void tickItems() {
+        var storage = getEnergyStorageInternal();
+        boolean changed = false;
+        var charge = items.get(CHARGE_SLOT);
+        if (!charge.isEmpty() && storage.getAmount() > 0) {
+            long moved = com.miophas.singularity_iteration.core.runtime.energy.DirectItemCharging.charge(charge, Math.min(itemRate(), storage.getAmount()));
+            if (moved > 0) { storage.setEnergy(storage.getAmount() - moved); changed = true; }
+        }
+        var discharge = items.get(DISCHARGE_SLOT);
+        long room = storage.getCapacity() - storage.getAmount();
+        if (!discharge.isEmpty() && room > 0) {
+            long moved = com.miophas.singularity_iteration.core.runtime.energy.DirectItemCharging.discharge(discharge, Math.min(itemRate(), room));
+            if (moved > 0) { storage.setEnergy(storage.getAmount() + moved); changed = true; }
+        }
+        if (changed) setChanged();
+    }
+
+    // ------------------------------------------------------------------ Container (2 slots)
+    @Override public int getContainerSize() { return items.size(); }
+    @Override public boolean isEmpty() { return items.stream().allMatch(net.minecraft.world.item.ItemStack::isEmpty); }
+    @Override public net.minecraft.world.item.ItemStack getItem(int slot) {
+        return slot >= 0 && slot < items.size() ? items.get(slot) : net.minecraft.world.item.ItemStack.EMPTY;
+    }
+    @Override public net.minecraft.world.item.ItemStack removeItem(int slot, int amount) {
+        var out = net.minecraft.world.ContainerHelper.removeItem(items, slot, amount);
+        if (!out.isEmpty()) setChanged();
+        return out;
+    }
+    @Override public net.minecraft.world.item.ItemStack removeItemNoUpdate(int slot) {
+        return net.minecraft.world.ContainerHelper.takeItem(items, slot);
+    }
+    @Override public void setItem(int slot, net.minecraft.world.item.ItemStack stack) {
+        if (slot < 0 || slot >= items.size()) return;
+        items.set(slot, stack);
+        stack.limitSize(getMaxStackSize(stack));
+        setChanged();
+    }
+    @Override public boolean canPlaceItem(int slot, net.minecraft.world.item.ItemStack stack) {
+        return slot == CHARGE_SLOT ? com.miophas.singularity_iteration.core.runtime.energy.DirectItemCharging.canCharge(stack)
+            : slot == DISCHARGE_SLOT && com.miophas.singularity_iteration.core.runtime.energy.DirectItemCharging.canDischarge(stack);
+    }
+    @Override public boolean stillValid(Player player) { return net.minecraft.world.Container.stillValidBlockEntity(this, player); }
+    @Override public void clearContent() { items.clear(); setChanged(); }
 
     private void revalidateAfterLoad(Level level, BlockPos pos) {
         com.miophas.singularity_iteration.common.multiblock.mio_icif_multiblock_manager<?> existing =
@@ -183,6 +242,7 @@ public class mio_icif_gesu_core_entity extends MultiblockEnergyCore {
         tag.putInt("inputModuleCount", inputModuleCount);
         tag.putInt("outputIvModuleCount", outputIvModuleCount);
         tag.putInt("outputLuvModuleCount", outputLuvModuleCount);
+        net.minecraft.world.ContainerHelper.saveAllItems(tag, items, registries);
     }
 
     @Override
@@ -197,6 +257,8 @@ public class mio_icif_gesu_core_entity extends MultiblockEnergyCore {
         if (tag.contains("outputLuvModuleCount")) {
             outputLuvModuleCount = tag.getInt("outputLuvModuleCount");
         }
+        items.clear();
+        net.minecraft.world.ContainerHelper.loadAllItems(tag, items, registries);
         if (isStructureComplete()) {
             updateEnergyRates();
             needsRevalidation = true;

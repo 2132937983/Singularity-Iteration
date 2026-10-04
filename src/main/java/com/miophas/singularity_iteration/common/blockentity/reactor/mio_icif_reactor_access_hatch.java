@@ -33,6 +33,9 @@ import com.mojang.logging.LogUtils;
  */
 @SuppressWarnings("null")
 public class mio_icif_reactor_access_hatch extends BlockEntity implements MenuProvider, com.miophas.singularity_iteration.core.api.reactor.IAccessHatch {
+    /** Reactor this hatch last asked the multiblock manager to form (runtime only). */
+    @org.jetbrains.annotations.Nullable private BlockPos formAttemptedFor;
+
     private static final Logger LOGGER = LogUtils.getLogger();
     
     // 存储连接的核反应堆位置
@@ -228,7 +231,12 @@ public class mio_icif_reactor_access_hatch extends BlockEntity implements MenuPr
         } else if (reactorCount == 1) {
             // 只连接了一个核反应堆，尝试触发结构验证
             // 通知多方块结构管理器检查这个核反应堆
-            mio_icif_multiblock_manager.notifyBlockChanged(level, reactorPos);
+            // once per reactor: block edits re-run formation through the block-change hooks, so
+            // re-forming an unfinished shell every second only burned time (and spammed the log)
+            if (!reactorPos.equals(formAttemptedFor)) {
+                formAttemptedFor = reactorPos.immutable();
+                mio_icif_multiblock_manager.notifyBlockChanged(level, reactorPos);
+            }
 
             // 检查是否是有效的流体反应堆结构
             if (isValidFluidReactorStructure(level, reactorPos)) {

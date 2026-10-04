@@ -54,7 +54,7 @@ Once you've completed your basic industrial production line, you'll have access 
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for the per-version changes from 0.1.7.16 through 0.1.7.28, migration notes, and validation scope.
+See [CHANGELOG.md](CHANGELOG.md) for the per-version changes from 0.1.7.16 through 0.1.7.26, migration notes, and validation scope.
 
 ## Requirements
 

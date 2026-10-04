@@ -50,7 +50,10 @@ public class mio_icif_gui_pattern_storage extends mio_icif_screen<com.miophas.si
     private static final int NAME_Y = 48;
     private static final int UUM_Y = 59;
     private static final int EU_Y = 70;
-    private static final int VALUE_X = 80;
+    private static final int VALUE_X = 44;
+    /** Energy gauge inside the info panel (panel spans x 8..168, y 45..80). */
+    private static final int GAUGE_X = 161, GAUGE_Y = 49, GAUGE_W = 4, GAUGE_H = 27;
+    private static final int VALUE_W = GAUGE_X - 3 - VALUE_X;
 
     // 物品预览位置 (原版IC2: 152, 29)
     private static final int PREVIEW_X = 152;
@@ -73,24 +76,18 @@ public class mio_icif_gui_pattern_storage extends mio_icif_screen<com.miophas.si
         com.miophas.singularity_iteration.common.menu.producer.PatternStorageMenu menu = this.menu;
         if (menu == null) return;
 
-        // 绘制能量条
+        // energy: a slim gauge at the right end of the info panel. The old 14x42 atlas sprite at
+        // (9,24) and the extra arrow sprites were drawn over the texture's own arrows and the
+        // "Name / UU" labels.
         int energy = menu.getEnergy();
         int maxEnergy = menu.getMaxEnergy();
-        if (energy > 0 && maxEnergy > 0) {
-            int energyHeight = (energy * ENERGY_HEIGHT) / maxEnergy;
-            if (energyHeight > 0) {
-                int drawY = y + ENERGY_Y + ENERGY_HEIGHT - energyHeight;
-                guiGraphics.blit(ATLAS_TEXTURE, x + ENERGY_X, drawY, 0, (float) 70, (float) ENERGY_HEIGHT - energyHeight, ENERGY_WIDTH, energyHeight, ATLAS_WIDTH, ATLAS_HEIGHT);
-            }
+        if (maxEnergy > 0) {
+            int gx = x + GAUGE_X, gy = y + GAUGE_Y;
+            guiGraphics.fill(gx - 1, gy - 1, gx + GAUGE_W + 1, gy + GAUGE_H + 1, 0xFF5A5F66);
+            guiGraphics.fill(gx, gy, gx + GAUGE_W, gy + GAUGE_H, 0xFF2A2E33);
+            int filled = (int) ((long) Math.max(0, energy) * GAUGE_H / maxEnergy);
+            if (filled > 0) guiGraphics.fillGradient(gx, gy + GAUGE_H - filled, gx + GAUGE_W, gy + GAUGE_H, 0xFFF0C040, 0xFFD06020);
         }
-
-        // 绘制导航按钮
-        guiGraphics.blit(ATLAS_TEXTURE, x + PREV_BTN_X, y + PREV_BTN_Y, 0, (float) 164, (float) 164, NAV_BTN_WIDTH, NAV_BTN_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-        guiGraphics.blit(ATLAS_TEXTURE, x + NEXT_BTN_X, y + NEXT_BTN_Y, 0, (float) 175, (float) 164, NAV_BTN_WIDTH, NAV_BTN_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-
-        // 绘制导出/导入按钮
-        guiGraphics.blit(ATLAS_TEXTURE, x + EXPORT_BTN_X, y + EXPORT_BTN_Y, 0, (float) 60, (float) 259, IO_BTN_WIDTH, IO_BTN_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-        guiGraphics.blit(ATLAS_TEXTURE, x + IMPORT_BTN_X, y + IMPORT_BTN_Y, 0, (float) 78, (float) 259, IO_BTN_WIDTH, IO_BTN_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
 
         // 如果有模式数据，绘制物品预览
         ItemStack pattern = menu.getCurrentPattern();
@@ -106,39 +103,24 @@ public class mio_icif_gui_pattern_storage extends mio_icif_screen<com.miophas.si
         com.miophas.singularity_iteration.common.menu.producer.PatternStorageMenu menu = this.menu;
         if (menu == null) return;
 
-        // 绘制页码 (原版IC2: 中心对齐, y=30)
+        // 绘制页码 (原版IC2: 中心对齐, y=30); an empty storage reads 0 / 0
         int currentIndex = menu.getCurrentIndex();
         int maxIndex = menu.getMaxIndex();
-        String pageText = (currentIndex + 1) + " / " + maxIndex;
+        String pageText = (maxIndex <= 0 ? 0 : currentIndex + 1) + " / " + maxIndex;
         int pageWidth = this.font.width(pageText);
         guiGraphics.drawString(this.font, pageText, (this.imageWidth - pageWidth) / 2, 30, 0x404040, false);
 
-        // 绘制标签
-        guiGraphics.drawString(this.font, "Name:", INFO_X, NAME_Y, 0x2A2E33, false);
-        guiGraphics.drawString(this.font, "UU:", INFO_X, UUM_Y, 0x2A2E33, false);
-        guiGraphics.drawString(this.font, "EU:", INFO_X, EU_Y, 0x2A2E33, false);
+        drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.pattern_storage.name"), INFO_X, NAME_Y, VALUE_X - INFO_X - 2, 0x2A2E33, false);
+        drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.pattern_storage.uu"), INFO_X, UUM_Y, VALUE_X - INFO_X - 2, 0x2A2E33, false);
+        drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.pattern_storage.eu"), INFO_X, EU_Y, VALUE_X - INFO_X - 2, 0x2A2E33, false);
 
-        // 绘制当前模式的信息
         ItemStack pattern = menu.getCurrentPattern();
         if (!pattern.isEmpty()) {
-            // 物品名称
-            String name = pattern.getHoverName().getString();
-            if (name.length() > 20) {
-                name = name.substring(0, 17) + "...";
-            }
-            guiGraphics.drawString(this.font, name, VALUE_X, NAME_Y, 0x2A2E33, false);
-
-            // UU物质消耗
-            double uuCost = menu.getCurrentUuCost();
-            guiGraphics.drawString(this.font,
-                toSiString(uuCost, 4) + "B", VALUE_X, UUM_Y, 0x2A2E33, false);
-
-            // 能量消耗
-            long euCost = menu.getCurrentEuCost();
-            guiGraphics.drawString(this.font,
-                String.format("%.2f", euCost / 1000000.0) + "M", VALUE_X, EU_Y, 0x2A2E33, false);
+            drawFitted(guiGraphics, this.font, pattern.getHoverName(), VALUE_X, NAME_Y, VALUE_W, 0x2A2E33, false);
+            guiGraphics.drawString(this.font, toSiString(menu.getCurrentUuCost(), 4) + "B", VALUE_X, UUM_Y, 0x2A2E33, false);
+            guiGraphics.drawString(this.font, String.format("%.2f", menu.getCurrentEuCost() / 1000000.0) + "M", VALUE_X, EU_Y, 0x2A2E33, false);
         } else {
-            guiGraphics.drawString(this.font, "Empty", VALUE_X, NAME_Y, 0x888888, false);
+            drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.pattern_storage.empty"), VALUE_X, NAME_Y, VALUE_W, 0x888888, false);
         }
     }
 

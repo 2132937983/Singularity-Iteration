@@ -311,11 +311,8 @@ public class LaserTowerScreen extends mio_icif_screen<LaserTowerMenu> {
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        if (font.width(title) <= 84) {
-            g.drawString(font, title, titleLabelX, titleLabelY, SiGuiTheme.TEXT, false);
-        } else {
-            small(g, font.plainSubstrByWidth(title.getString(), 112), titleLabelX, titleLabelY + 1, SiGuiTheme.TEXT);
-        }
+        // the tabs start at x 92: long names shrink and end with an ellipsis instead of being cut
+        drawFitted(g, font, title, titleLabelX, titleLabelY, 84, SiGuiTheme.TEXT, false);
         g.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, SiGuiTheme.TEXT, false);
         switch (tab) {
             case TAB_CONTROL -> renderControlLabels(g);
@@ -332,8 +329,7 @@ public class LaserTowerScreen extends mio_icif_screen<LaserTowerMenu> {
         };
         Component stateText = Component.translatable("gui.mio_icif.laser_tower.state." + state);
         int room = RADAR_X - 19;
-        if (font.width(stateText) <= room) g.drawString(font, stateText, 17, 19, SiGuiTheme.TEXT, false);
-        else small(g, font.plainSubstrByWidth(stateText.getString(), (int) (room / 0.75F)), 17, 20, SiGuiTheme.TEXT);
+        drawFitted(g, font, stateText, 17, 19, room, SiGuiTheme.TEXT, false);
         g.drawString(font, Component.translatable("gui.mio_icif.laser_tower.horizontal", menu.horizontalRange()), 8, 31, SiGuiTheme.TEXT, false);
         g.drawString(font, Component.translatable("gui.mio_icif.laser_tower.vertical", menu.verticalRange()), 8, 56, SiGuiTheme.TEXT, false);
         small(g, Component.translatable("gui.mio_icif.laser_tower.volley", menu.lastVolley(), menu.maxTargets()).getString(),

@@ -120,15 +120,19 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         if (categories.isEmpty()) return;
 
         int tabY = (int)(this.height * 0.08f);
-        int totalWidth = categories.size() * TAB_BUTTON_WIDTH + (categories.size() - 1) * 5;
+        // every tab is as wide as the longest category name (a fixed 50 px clipped "Agriculture")
+        int tabWidth = TAB_BUTTON_WIDTH;
+        for (CommodityCategory category : categories) tabWidth = Math.max(tabWidth, this.font.width(category.getDisplayName()) + 12);
+        tabWidth = Math.min(tabWidth, Math.max(TAB_BUTTON_WIDTH, (this.width - 40) / categories.size() - 5));
+        int totalWidth = categories.size() * tabWidth + (categories.size() - 1) * 5;
         int startX = (this.width - totalWidth) / 2;
 
         for (int i = 0; i < categories.size(); i++) {
             final int buttonId = BUTTON_CATEGORY_BASE + i;
             CommodityCategory category = categories.get(i);
-            int tabX = startX + i * (TAB_BUTTON_WIDTH + 5);
+            int tabX = startX + i * (tabWidth + 5);
 
-            Button tabButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(tabX, tabY, TAB_BUTTON_WIDTH, TAB_BUTTON_HEIGHT, category.getDisplayName(), b -> sendButtonClick(buttonId));
+            Button tabButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(tabX, tabY, tabWidth, TAB_BUTTON_HEIGHT, category.getDisplayName(), b -> sendButtonClick(buttonId));
             this.categoryTabButtons.add(tabButton);
             this.addRenderableWidget(tabButton);
         }

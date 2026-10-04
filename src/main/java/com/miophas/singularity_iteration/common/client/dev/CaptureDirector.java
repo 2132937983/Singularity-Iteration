@@ -140,7 +140,12 @@ public final class CaptureDirector {
             look(sp, 0.5, -60, -3.5, 0, 0);
         });
         client(5, () -> Minecraft.getInstance().options.hideGui = false);
-        String[] ids = list.split(",");
+        // ALL: the registry is only populated once the game runs, so the shots are queued from a step
+        if ("ALL".equals(list)) client(1, () -> galleryShots(allMenuBlocks()));
+        else galleryShots(list.split(","));
+    }
+
+    private static void galleryShots(String[] ids) {
         for (int i = 0; i < ids.length; i++) {
             String id = ids[i].strip();
             BlockPos at = new BlockPos(i * 3, -60, 0);
@@ -157,6 +162,21 @@ public final class CaptureDirector {
             server(1, ServerPlayer::closeContainer);
         }
         client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Every SI block whose block entity opens a menu (GUI review gallery). */
+    private static String[] allMenuBlocks() {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        for (var e : BuiltInRegistries.BLOCK.entrySet()) {
+            var key = e.getKey().location();
+            if (!key.getNamespace().equals("mio_icif") || !(e.getValue() instanceof net.minecraft.world.level.block.EntityBlock eb)) continue;
+            try {
+                var be = eb.newBlockEntity(BlockPos.ZERO, e.getValue().defaultBlockState());
+                if (be instanceof net.minecraft.world.MenuProvider) out.add(key.getPath());
+            } catch (RuntimeException ignored) { }
+        }
+        java.util.Collections.sort(out);
+        return out.toArray(String[]::new);
     }
 
     /** Dev tooling: records the upgrade-slot positions a menu asked for and the screen's GUI textures. */
@@ -962,8 +982,94 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /** Scene 10 (-Dsi.capture.scene=10): every heavy gun in first person, third person front and back. */
+    private static void scene10() {
+        String[] guns = {"item_tool_laser_miner", "item_tool_electric_rifle", "item_tool_advanced_electric_rifle",
+            "item_tool_tactical_laser_rifle", "item_tool_tachyon_disruptor", "item_tool_electric_plasma_gun",
+            "item_tool_plasma_air_cannon", "item_tool_rocket_launcher"};
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -60, 0.5, 150, 0);
+        });
+        for (String id : guns) {
+            server(2, sp -> {
+                ItemStack gun = item(id);
+                if (gun.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(gun, b.getMaxEnergy(gun));
+                sp.setItemInHand(InteractionHand.MAIN_HAND, gun);
+                sp.getInventory().add(item("item_rocket").copyWithCount(16));
+                sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 150, 0);
+            });
+            // F1 (hideGui) also hides the first-person hand
+            client(2, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+            shot(30, "scene10/" + id + "_fp");
+            client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+            shot(25, "scene10/" + id + "_tp_front");
+            client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
+            shot(10, "scene10/" + id + "_tp_back");
+            server(1, sp -> sp.getMainHandItem().use(sp.serverLevel(), sp, InteractionHand.MAIN_HAND));
+            client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+            shot(3, "scene10/" + id + "_tp_aim");
+            server(1, sp -> sp.getInventory().clearContent());
+        }
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Scene 11 (-Dsi.capture.scene=11): canner fills tin cans with a food-component-only item, then a can is eaten. */
+    private static void scene11() {
+        BlockPos at = new BlockPos(0, -60, 2);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, 0.5, -60, -0.5, 0, 20);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            level.setBlock(at, block("producer/block_canner_elc").defaultBlockState(), 3);
+            var be = level.getBlockEntity(at);
+            if (be instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
+            if (be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity m
+                    && m.getItemHandler() instanceof net.neoforged.neoforge.items.IItemHandlerModifiable inv) {
+                inv.setStackInSlot(0, item("normal/item_tin_empty_can").copyWithCount(32));
+                ItemStack modFood = new ItemStack(Items.STICK);   // stands in for another mod's food: food component only
+                modFood.set(net.minecraft.core.component.DataComponents.FOOD,
+                    new net.minecraft.world.food.FoodProperties.Builder().nutrition(6).saturationModifier(0.4F).build());
+                modFood.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("Mod Larva (food component)"));
+                inv.setStackInSlot(2, modFood.copyWithCount(3));
+            }
+        });
+        server(200, sp -> {
+            var level = sp.serverLevel();
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
+            level.getBlockState(at).useWithoutItem(level, sp, hit);
+        });
+        client(5, () -> Minecraft.getInstance().options.hideGui = false);
+        shot(20, "scene11/canner_mod_food");
+        server(1, ServerPlayer::closeContainer);
+        server(5, sp -> {
+            sp.getInventory().clearContent();
+            sp.getFoodData().setFoodLevel(6);
+            sp.setItemInHand(InteractionHand.MAIN_HAND, item("normal/item_tin_filled_can").copyWithCount(5));
+            sp.startUsingItem(InteractionHand.MAIN_HAND);
+        });
+        shot(6, "scene11/eating_can");
+        shot(20, "scene11/after_one_can");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
     static {
-        if (OUT != null && "9".equals(System.getProperty("si.capture.scene"))) {
+        if (OUT != null && "11".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene11();
+        } else if (OUT != null && "10".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene10();
+        } else if (OUT != null && "9".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             scene9();
         } else if (OUT != null && "8".equals(System.getProperty("si.capture.scene"))) {

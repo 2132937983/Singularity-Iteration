@@ -158,13 +158,12 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
 
             // 冷却结束后尝试传送
             if (blockEntity.cooldown <= 0) {
-                if (blockEntity.verifyTarget()) {
-                    // 寻找需要传送的实体
-                    Entity entityToTeleport = blockEntity.findEntityToTeleport();
-                    if (entityToTeleport != null) {
-                        double distance = Math.sqrt(pos.distSqr(blockEntity.targetPos));
-                        blockEntity.teleport(entityToTeleport, distance);
-                    }
+                // look for a passenger first: verifying the target may load its chunk, which must
+                // not happen every tick of an idle, powered pad
+                Entity entityToTeleport = blockEntity.findEntityToTeleport();
+                if (entityToTeleport != null && blockEntity.verifyTarget()) {
+                    double distance = Math.sqrt(pos.distSqr(blockEntity.targetPos));
+                    blockEntity.teleport(entityToTeleport, distance);
                 }
             }
         } else {

@@ -21,7 +21,8 @@ import net.neoforged.neoforge.client.IArmPoseTransformer;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 /**
- * Two-handed gun handling for the mining laser.
+ * Two-handed gun handling for every heavy gun (mining laser, rifles, plasma guns, tachyon
+ * disruptor, rocket launcher).
  * <p>Third person: a low-ready carry (both hands on the gun, muzzle forward-down) that snaps up to a
  * shouldered aim along the line of sight when firing, stays raised briefly, then eases back down.
  * Each shot kicks the arms up. First person: a steady gun hold with a short backward/upward recoil

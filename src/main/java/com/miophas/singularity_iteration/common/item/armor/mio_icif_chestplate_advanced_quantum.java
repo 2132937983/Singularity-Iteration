@@ -109,6 +109,12 @@ public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc imp
         };
     }
 
+    /** Stay visible while actually flying on the jetpack. */
+    @Override
+    public boolean keepEquipmentHudVisible(ItemStack stack, Player player) {
+        return !player.onGround() && !player.getAbilities().flying && !player.isInWater();
+    }
+
     @Override
     public Component getEquipmentHudText(ItemStack stack) {
         return Component.translatable("hud.mio_icif.jetpack.display",

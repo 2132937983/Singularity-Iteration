@@ -107,7 +107,8 @@ public class mio_icif_gui_heat_generator_elc extends mio_icif_screen<com.miophas
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // 不调用super.renderLabels() 以避免渲染Inventory 文本标签
+        // 不调用super.renderLabels() 以避免渲染Inventory 文本标签; the title was missing entirely
+        drawTitle(guiGraphics);
 
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;

@@ -10,7 +10,7 @@
     "description": {
       "translate": "advancements.mio_icif.rearrange_not_create.description"
     },
-    "frame": "goal",
+    "frame": "task",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": false

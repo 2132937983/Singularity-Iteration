@@ -1,5 +1,5 @@
 {
-  "parent": "mio_icif:industrial_age",
+  "parent": "mio_icif:clean_energy",
   "display": {
     "icon": {
       "id": "mio_icif:reactor/block_reactor_nuke"
@@ -10,7 +10,7 @@
     "description": {
       "translate": "advancements.mio_icif.manhattan_project.description"
     },
-    "frame": "goal",
+    "frame": "task",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": false

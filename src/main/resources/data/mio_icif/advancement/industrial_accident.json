@@ -10,7 +10,7 @@
     "description": {
       "translate": "advancements.mio_icif.industrial_accident.description"
     },
-    "frame": "goal",
+    "frame": "task",
     "show_toast": true,
     "announce_to_chat": true,
     "hidden": false

@@ -203,8 +203,15 @@ public class Singularity_Iteration_Client {
             com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_BOOTS.get()};
         for (int i = 0; i < names.length; i++) {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor_models/" + names[i] + ".json");
+            ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "textures/models/armor/" + names[i] + ".png");
             event.registerItem(new IClientItemExtensions() {
                 private com.miophas.singularity_iteration.common.client.render.BakedArmorModel model;
+                private com.miophas.singularity_iteration.common.client.render.BakedArmorItemRenderer icon;
+                @Override
+                public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                    if (icon == null) icon = new com.miophas.singularity_iteration.common.client.render.BakedArmorItemRenderer(id, texture);
+                    return icon;
+                }
                 @Override
                 public HumanoidModel<?> getHumanoidArmorModel(LivingEntity entity, ItemStack stack, net.minecraft.world.entity.EquipmentSlot slot, HumanoidModel<?> original) {
                     if (model == null) model = new com.miophas.singularity_iteration.common.client.render.BakedArmorModel(id);

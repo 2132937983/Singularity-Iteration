@@ -98,7 +98,7 @@ public final class SuitModules {
 
     /** The worn piece that carries the unit, or EMPTY. */
     public static ItemStack wornPieceWith(Player player, SuitModuleType type) {
-        for (EquipmentSlot slot : type.slots()) {
+        for (EquipmentSlot slot : type.slotArray()) {
             ItemStack stack = player.getItemBySlot(slot);
             if (isSuitPiece(stack) && has(stack, type)) return stack;
         }
@@ -112,9 +112,11 @@ public final class SuitModules {
     /** Installed, switched on, powered, and (for HUD units) seen through a quantum visor. */
     public static boolean isActive(Player player, SuitModuleType type) {
         ItemStack piece = wornPieceWith(player, type);
-        if (piece.isEmpty() || !ArmorFeatures.isEnabled(piece, type.featureKey())) return false;
+        if (piece.isEmpty()) return false;
         if (type.needsVisor() && !hasVisor(player)) return false;
-        return energy(piece) >= Math.max(1, type.drainPerTick());
+        if (energy(piece) < Math.max(1, type.drainPerTick())) return false;
+        // unit switches are toggle features: read the switch state directly, without building the feature list
+        return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, type.featureKey());
     }
 
     public static long energy(ItemStack piece) {
@@ -122,26 +124,28 @@ public final class SuitModules {
     }
 
     public static long extract(ItemStack piece, long amount) {
-        return piece.getItem() instanceof AbstractElectricArmor armor ? armor.extractEnergy(piece, amount) : 0;
+        // suit units and Special Maneuver Mode pay through here: Energy Saving applies
+        return piece.getItem() instanceof AbstractElectricArmor armor
+            ? armor.extractEnergy(piece, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(piece, amount)) : 0;
     }
 
     /** Units active on the player right now (cheap: at most 4 worn pieces). */
     public static List<SuitModuleType> activeUnits(Player player) {
         List<SuitModuleType> out = new ArrayList<>();
-        for (SuitModuleType type : SuitModuleType.values()) if (isActive(player, type)) out.add(type);
+        for (SuitModuleType type : SuitModuleType.VALUES) if (isActive(player, type)) out.add(type);
         return out;
     }
 
     /** EU/t of every active unit together. */
     public static long totalDrain(Player player) {
         long sum = 0;
-        for (SuitModuleType type : activeUnits(player)) sum += type.drainPerTick();
+        for (SuitModuleType type : SuitModuleType.VALUES) if (isActive(player, type)) sum += type.drainPerTick();
         return sum;
     }
 
     /** Server, once a second: collect the drain of every active unit from its own piece. */
     public static void drain(Player player) {
-        for (SuitModuleType type : SuitModuleType.values()) {
+        for (SuitModuleType type : SuitModuleType.VALUES) {
             if (type.drainPerTick() <= 0 || !isActive(player, type)) continue;
             extract(wornPieceWith(player, type), type.drainPerTick() * DRAIN_INTERVAL);
         }

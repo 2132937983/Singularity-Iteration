@@ -68,7 +68,7 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
 
         if (player.isShiftKeyDown()) {
             setTargetPosition(stack, pos.getX(), pos.getY(), pos.getZ());
-            extractEnergy(stack, ENERGY_COST);
+            extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
 
             player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.target_set",
                 pos.getX(), pos.getY(), pos.getZ()));
@@ -84,7 +84,7 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
                 int targetZ = tag.getInt(TAG_TARGET_Z);
 
                 node.setTargetPosition(new BlockPos(targetX, targetY, targetZ));
-                extractEnergy(stack, ENERGY_COST);
+                extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
 
                 player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.node_set",
                     targetX, targetY, targetZ, pos.getX(), pos.getY(), pos.getZ()));
@@ -102,7 +102,7 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
 
             player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.target_info",
                 targetX, targetY, targetZ));
-            extractEnergy(stack, ENERGY_COST);
+            extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
         } else {
             player.sendSystemMessage(Component.translatable("message.mio_icif.electric_wireless_manager.no_target"));
         }
@@ -137,5 +137,11 @@ public class mio_icif_electric_wireless_manager extends mio_icif_bat implements 
             return customData.copyTag();
         }
         return null;
+    }
+
+    /** A tool on the battery base: right click keeps its tool action, no inventory auto-charge. */
+    @Override
+    public boolean supportsAutoCharge() {
+        return false;
     }
 }

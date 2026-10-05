@@ -413,5 +413,21 @@
   "subtitles.mio_icif.maneuver.takeoff": "機動発進",
   "subtitles.mio_icif.fcs.echo": "ソナーパルス",
   "subtitles.mio_icif.fcs.lock": "弾道ロック",
-  "subtitles.mio_icif.fcs.blast_beep": "爆発警告ビープ"
+  "subtitles.mio_icif.fcs.blast_beep": "爆発警告ビープ",
+  "enchantment.mio_icif.energy_saving": "省電力",
+  "enchantment.mio_icif.energy_saving.desc": "レベルごとに電気ツール・電気武器・電力防具の消費電力を 5 % 減らす。",
+  "message.mio_icif.bat.auto_on": "§aインベントリ自動充電：ON§r（%s / %s EU）",
+  "message.mio_icif.bat.auto_off": "§7インベントリ自動充電：OFF§r（%s / %s EU）",
+  "tooltip.mio_icif.bat.auto_on": "自動充電ON：インベントリ内の電気アイテムに給電する",
+  "tooltip.mio_icif.bat.auto_off": "自動充電OFF。右クリックでONにする",
+  "tooltip.mio_icif.pack.auto_hint": "スニーク + 右クリック：インベントリ自動充電のON/OFF",
+  "hud.mio_icif.nanosaber.display": "ナノセイバー：%s | エネルギー：%s / %s EU",
+  "hud.mio_icif.nanosaber.mode_active": "§a起動中",
+  "hud.mio_icif.nanosaber.mode_inactive": "§7停止",
+  "hud.mio_icif.quantum_sword.display": "量子剣：%s | エネルギー：%s / %s EU",
+  "hud.mio_icif.quantum_sword.mode_hyper": "§aハイパー",
+  "hud.mio_icif.quantum_sword.mode_normal": "§7通常",
+  "hud.mio_icif.jetpack.display": "ジェットパック：%s | エネルギー：%s / %s EU",
+  "hud.mio_icif.jetpack.mode_jetpack": "ジェット",
+  "hud.mio_icif.jetpack.mode_hover": "ホバー"
 }

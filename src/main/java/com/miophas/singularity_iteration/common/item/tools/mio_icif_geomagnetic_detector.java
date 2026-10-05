@@ -56,7 +56,7 @@ public class mio_icif_geomagnetic_detector extends mio_icif_bat {
             return InteractionResult.SUCCESS;
         }
 
-        extractEnergy(stack, ENERGY_COST);
+        extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
 
         // 计算地磁强度
         float ratio = getMagneticSource(level, pos);
@@ -116,5 +116,11 @@ public class mio_icif_geomagnetic_detector extends mio_icif_bat {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         tooltipComponents.add(Component.translatable("tooltip.mio_icif.geomagnetic_detector.desc"));
+    }
+
+    /** A tool on the battery base: right click keeps its tool action, no inventory auto-charge. */
+    @Override
+    public boolean supportsAutoCharge() {
+        return false;
     }
 }

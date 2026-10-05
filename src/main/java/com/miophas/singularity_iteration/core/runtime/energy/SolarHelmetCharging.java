@@ -51,7 +51,8 @@ public final class SolarHelmetCharging {
         long offered = remaining;
         for (ItemStack target : targets) {
             if (remaining <= 0) break;
-            if (target == source || !(target.getItem() instanceof IBatteryItem receiver)) continue;
+            if (target == source || com.miophas.singularity_iteration.core.api.item.BatteryAutoCharge.isOn(target)
+                    || !(target.getItem() instanceof IBatteryItem receiver)) continue;
             remaining -= BatteryTransfer.move(source, battery, target, receiver, remaining);
         }
         return offered - remaining;
@@ -73,7 +74,8 @@ public final class SolarHelmetCharging {
         long offered = Math.min(Math.max(0, limit), battery.getEnergy(source));
         if (offered <= 0) return 0;
         ItemStack target = player.getItemBySlot(EquipmentSlot.CHEST);
-        if (!(target.getItem() instanceof IBatteryItem receiver)) return 0;
+        if (com.miophas.singularity_iteration.core.api.item.BatteryAutoCharge.isOn(target)
+                || !(target.getItem() instanceof IBatteryItem receiver)) return 0;
         return BatteryTransfer.move(source, battery, target, receiver, offered);
     }
 
@@ -102,7 +104,8 @@ public final class SolarHelmetCharging {
         for (EquipmentSlot slot : WORN_ARMOR_SLOTS) {
             if (remaining <= 0) break;
             ItemStack target = player.getItemBySlot(slot);
-            if (target.getItem() instanceof IElectricArmorItem receiver) {
+            if (target.getItem() instanceof IElectricArmorItem receiver
+                    && !com.miophas.singularity_iteration.core.api.item.BatteryAutoCharge.isOn(target)) {
                 remaining -= BatteryTransfer.move(source, battery, target, receiver, remaining);
             }
         }
@@ -157,6 +160,8 @@ public final class SolarHelmetCharging {
         private long charge(Container inventory, int slot, ItemStack source, IBatteryItem battery, long amount) {
             targetAttempts++;
             ItemStack target = inventory.getItem(slot);
+            // loop guard: a battery or pack in auto-charge mode feeds the helmet; never feed it back
+            if (com.miophas.singularity_iteration.core.api.item.BatteryAutoCharge.isOn(target)) return 0;
             return target.getItem() instanceof IBatteryItem item ? BatteryTransfer.move(source, battery, target, item, amount) : 0;
         }
     }

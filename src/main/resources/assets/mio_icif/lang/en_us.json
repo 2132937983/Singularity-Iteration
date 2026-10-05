@@ -2283,5 +2283,12 @@
   "subtitles.mio_icif.maneuver.takeoff": "Maneuver launch",
   "subtitles.mio_icif.fcs.echo": "Sonar pulse",
   "subtitles.mio_icif.fcs.lock": "Ballistic lock",
-  "subtitles.mio_icif.fcs.blast_beep": "Blast warning beep"
+  "subtitles.mio_icif.fcs.blast_beep": "Blast warning beep",
+  "enchantment.mio_icif.energy_saving": "Energy Saving",
+  "enchantment.mio_icif.energy_saving.desc": "Each level decreases the energy use of electric tools, weapons and armor by 5 %.",
+  "message.mio_icif.bat.auto_on": "§aInventory auto-charge: ON§r (%s / %s EU)",
+  "message.mio_icif.bat.auto_off": "§7Inventory auto-charge: OFF§r (%s / %s EU)",
+  "tooltip.mio_icif.bat.auto_on": "Auto-charge ON: feeds the electric items in your inventory",
+  "tooltip.mio_icif.bat.auto_off": "Auto-charge OFF. Right click to switch it on",
+  "tooltip.mio_icif.pack.auto_hint": "Sneak + right click: inventory auto-charge on / off"
 }

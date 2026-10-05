@@ -92,6 +92,9 @@ public final class MachineStatusTracker {
         return e == null ? null : e.sent;
     }
 
+    private static final List<Map.Entry<Long, Map<AbstractEnergyBlockEntity, Entry>>> CHUNK_SCRATCH = new ArrayList<>();
+    private static final List<Map.Entry<AbstractEnergyBlockEntity, Entry>> MACHINE_SCRATCH = new ArrayList<>();
+
     @SubscribeEvent
     static void levelTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
@@ -99,9 +102,14 @@ public final class MachineStatusTracker {
         if (now % INTERVAL != 0) return;
         var chunks = TRACKED.get(level);
         if (chunks == null || chunks.isEmpty()) return;
-        for (var chunkEntry : new ArrayList<>(chunks.entrySet())) {
+        // snapshots in reused scratch lists: a status read may load or unload a machine (map change)
+        CHUNK_SCRATCH.clear();
+        CHUNK_SCRATCH.addAll(chunks.entrySet());
+        for (var chunkEntry : CHUNK_SCRATCH) {
             List<Long> pos = null; List<Byte> st = null;
-            for (var e : new ArrayList<>(chunkEntry.getValue().entrySet())) {
+            MACHINE_SCRATCH.clear();
+            MACHINE_SCRATCH.addAll(chunkEntry.getValue().entrySet());
+            for (var e : MACHINE_SCRATCH) {
                 AbstractEnergyBlockEntity machine = e.getKey();
                 if (machine.isRemoved()) { chunkEntry.getValue().remove(machine); continue; }
                 // never load a chunk for a lamp: the redstone check reads neighbour blocks
@@ -127,6 +135,8 @@ public final class MachineStatusTracker {
             if (pos != null) send(level, new ChunkPos(chunkEntry.getKey()), pos, st, null);
             if (chunkEntry.getValue().isEmpty()) chunks.remove(chunkEntry.getKey());
         }
+        CHUNK_SCRATCH.clear();
+        MACHINE_SCRATCH.clear();
     }
 
     @SubscribeEvent

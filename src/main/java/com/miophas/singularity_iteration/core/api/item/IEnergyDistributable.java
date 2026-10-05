@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 能量重分配接口。
- * 实现此接口的物品在玩家右键时，会将自身能量分配给背包中的其他电力装备。
+ * Portable battery that can feed the electric equipment in the player inventory. Right click
+ * switches the inventory auto-charge mode ({@link BatteryAutoCharge}).
  *
  * <p>此功能属于电池类专有，电动工具不应实现此接口。</p>
  *
@@ -64,28 +64,28 @@ public interface IEnergyDistributable extends IBatteryItem {
         }
     }
 
+    /** False for tools built on the battery base (detectors, managers): they keep their own right click. */
+    default boolean supportsAutoCharge() {
+        return true;
+    }
+
     /**
-     * 处理蹲下右键的能量分配交互。
-     * 电池类可在 {@link Item#use} 中调用此方法。
+     * Right click: switches the inventory auto-charge mode on or off (0.1.7.35). The battery no
+     * longer empties itself into the inventory on each click; while the mode is on it feeds the
+     * electric tools and armor of the inventory at its charge rate ({@link BatteryAutoCharge}).
      *
-     * @param level  世界
-     * @param player 玩家
-     * @param hand   手
-     * @return 交互结果
+     * @return the interaction result, or null when the stack is not a single battery
      */
     default InteractionResultHolder<ItemStack> handleDistributeUse(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (!level.isClientSide && stack.getCount() == 1) {
-            long batteryEnergy = getEnergy(stack);
-            if (batteryEnergy > 0) {
-                distributeEnergyToItems(player, stack, batteryEnergy);
-                player.displayClientMessage(
-                    Component.translatable("message.mio_icif.bat.distribute", getEnergy(stack), getMaxEnergy(stack)),
-                    true
-                );
-            }
-            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        if (stack.getCount() != 1 || !supportsAutoCharge()) return null;
+        if (!level.isClientSide) {
+            boolean on = BatteryAutoCharge.toggle(stack);
+            player.displayClientMessage(Component.translatable(on ? "message.mio_icif.bat.auto_on" : "message.mio_icif.bat.auto_off",
+                getEnergy(stack), getMaxEnergy(stack)), true);
+            level.playSound(null, player.blockPosition(), on ? net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE
+                : net.minecraft.sounds.SoundEvents.BEACON_DEACTIVATE, net.minecraft.sounds.SoundSource.PLAYERS, 0.35F, 1.8F);
         }
-        return null;
+        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }
 }

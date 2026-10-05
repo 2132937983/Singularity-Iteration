@@ -27,6 +27,10 @@ PIVOT = {  # MC model space
     'right_leg': (-1.9, 12, 0), 'left_leg': (1.9, 12, 0),
 }
 
+# Pieces authored facing +z (south) instead of the Blockbench entity front (-z): turned 180 deg
+# about the vertical axis before they are split into parts (0.1.7.35: the boots rendered back to front).
+TURN_AROUND = {'nano_boots'}
+
 PIECES = [
     # file stem, output name
     ('纳米头盔', 'nano_helmet'),
@@ -115,8 +119,9 @@ def convert(path, piece):
     for uid, e in elements.items():
         if e.get('export') is False or e.get('visibility') is False:
             continue
+        turn = piece in TURN_AROUND
         cx = (e['from'][0] + e['to'][0]) / 2
-        part = part_of(piece, owner.get(uid), cx)
+        part = part_of(piece, owner.get(uid), -cx if turn else cx)
         rot = e.get('rotation', [0, 0, 0])
         origin = e.get('origin', [0, 0, 0])
         m = rot_matrix(*rot)
@@ -126,6 +131,8 @@ def convert(path, piece):
             for (x, y, z, uu, vv) in quad:
                 p = apply(m, [x - origin[0], y - origin[1], z - origin[2]])
                 bx, by, bz = p[0] + origin[0], p[1] + origin[1], p[2] + origin[2]
+                if turn:
+                    bx, bz = -bx, -bz
                 mx, my, mz = bx - px, (24 - by) - py, bz - pz
                 verts += [round(mx, 4), round(my, 4), round(mz, 4), round(uu, 6), round(vv, 6)]
             # normal from the quad (MC space); renderer uses no culling, the normal is for light only

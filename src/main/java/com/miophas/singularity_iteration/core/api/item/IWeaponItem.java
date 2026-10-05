@@ -66,7 +66,7 @@ public interface IWeaponItem extends IBatteryItem {
      */
     default boolean shoot(ItemStack stack) {
         if (canShoot(stack)) {
-            extractEnergy(stack, getEnergyPerShot());
+            extractEnergy(stack, EnergySaving.apply(stack, getEnergyPerShot()));
             return true;
         }
         return false;

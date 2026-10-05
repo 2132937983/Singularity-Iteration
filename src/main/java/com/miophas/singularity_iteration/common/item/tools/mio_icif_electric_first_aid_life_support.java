@@ -47,7 +47,7 @@ public class mio_icif_electric_first_aid_life_support extends mio_icif_tool_elc 
         float currentHealth = player.getHealth();
         if (currentHealth < player.getMaxHealth()) {
             if (getEnergy(stack) >= ENERGY_COST) {
-                extractEnergy(stack, ENERGY_COST);
+                extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
                 player.setHealth(currentHealth + 1.0F);
                 player.containerMenu.broadcastChanges();
             }

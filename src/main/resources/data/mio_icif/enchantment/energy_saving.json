@@ -1,0 +1,20 @@
+{
+  "description": {
+    "translate": "enchantment.mio_icif.energy_saving"
+  },
+  "supported_items": "#mio_icif:enchantable/electric",
+  "weight": 5,
+  "max_level": 5,
+  "min_cost": {
+    "base": 5,
+    "per_level_above_first": 9
+  },
+  "max_cost": {
+    "base": 55,
+    "per_level_above_first": 9
+  },
+  "anvil_cost": 2,
+  "slots": [
+    "any"
+  ]
+}

@@ -89,7 +89,7 @@ public class mio_icif_electric_lighter extends mio_icif_tool_elc implements ILig
         }
 
         if (level.setBlockAndUpdate(placePos, lightState)) {
-            extractEnergy(stack, ENERGY_COST);
+            extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
             level.playSound(player, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F, 0.5F);
             return InteractionResult.SUCCESS;
         }

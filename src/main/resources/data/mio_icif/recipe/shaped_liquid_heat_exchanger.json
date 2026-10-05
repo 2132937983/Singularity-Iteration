@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GCG",
+    "GCG",
+    "IHI"
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "C": {
+      "item": "mio_icif:cell/item_cell_empty"
+    },
+    "I": {"tag": "c:casings/iron"},
+    "H": {
+      "item": "mio_icif:resource/item_heatconductor"
+    }
+  },
+  "result": {
+    "id": "mio_icif:hugenerator/block_heat_source_fluid",
+    "count": 1
+  }
+}

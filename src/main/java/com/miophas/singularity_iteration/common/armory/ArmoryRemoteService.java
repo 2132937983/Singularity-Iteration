@@ -202,7 +202,9 @@ public final class ArmoryRemoteService {
         List<ArmoryPiece> worn = new ArrayList<>();
         for (ArmoryPiece p : ArmoryFlight.SEQUENCE) {
             ItemStack stack = player.getItemBySlot(p.slot);
-            if (!stack.isEmpty() && ArmoryRules.isSummonable(stack) && ArmoryRules.fits(stack, p) && p.isArmor()) worn.add(p);
+            // hands too (0.1.7.35): weapons and tools of the suit go home with it; the remote itself stays
+            if (!stack.isEmpty() && !(stack.getItem() instanceof ArmoryRemoteItem)
+                    && ArmoryRules.isSummonable(stack) && ArmoryRules.fits(stack, p)) worn.add(p);
         }
         if (worn.isEmpty()) return Component.translatable("message.mio_icif.armory.nothing_worn");
         int set = 0;

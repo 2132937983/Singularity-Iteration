@@ -15,8 +15,10 @@ item_ids:
 ## Function
 
 The unit measures the fuse of primed TNT, primed TNT carts and swelling creepers within 28 blocks.
-A countdown label floats above each explosive.
-A red ring on the ground shows the blast radius and a yellow ring shows twice the radius.
+A round icon floats above each explosive. Its ring empties as the fuse burns, and a tag shows the seconds left.
+A zone on the ground shows the blast radius. The zone fills as the fuse burns.
+When an explosive is near you, an icon with an arrow appears around the aim point and points to the explosive. A beep sounds faster as the fuse burns.
+Inside the blast radius, the edge of the view flashes red.
 
 ## Power data
 
@@ -29,12 +31,13 @@ A red ring on the ground shows the blast radius and a yellow ring shows twice th
 ## Procedure
 
 1. Install the unit into the quantum chestplate or helmet.
-2. Watch the BLAST WARNING panel.
-3. Move out of the yellow ring when the panel shows IN RADIUS.
+2. Watch the icons around the aim point.
+3. Move away in the direction opposite to the arrow.
+4. Stay out of the zone on the ground until the explosion.
 
 ## Notes
 
-- The label turns red in the last second.
+- The icon and the zone turn red in the last second.
 
 ## Recipe
 

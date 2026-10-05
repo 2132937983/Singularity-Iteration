@@ -111,6 +111,7 @@ public final class FcsClient {
         FcsState.leadTarget = null;
         FcsState.leadPoint = null;
         if (hud && FcsState.active(SuitModuleType.BALLISTIC)) solveBallistics(mc, player);
+        cues(mc, player, blast);
 
         if (hud && FcsState.active(SuitModuleType.GRID_TELEMETRY)) {
             telemetryPos = null;
@@ -124,6 +125,34 @@ public final class FcsClient {
         } else {
             telemetryPos = null;
         }
+    }
+
+    private static boolean wasOnTarget;
+    private static int beepCooldown;
+
+    /** Audio cues: lock chirp when the ballistic path first hits a creature, blast warning beeps. */
+    private static void cues(Minecraft mc, LocalPlayer player, boolean blast) {
+        boolean onTarget = FcsState.ballistic != null && FcsState.ballistic.target() != null;
+        if (onTarget && !wasOnTarget) play(mc, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.FCS_LOCK.get(), 1.0F, 0.45F);
+        wasOnTarget = onTarget;
+        if (beepCooldown > 0) beepCooldown--;
+        if (!blast || beepCooldown > 0) return;
+        float soonest = Float.MAX_VALUE;
+        boolean close = false;
+        for (SensorTracker.Blast b : SensorTracker.blasts()) {
+            double d = Math.sqrt(b.entity().distanceToSqr(player));
+            if (d > b.radius() * 2.5) continue;
+            close = true;
+            soonest = Math.min(soonest, b.seconds());
+        }
+        if (!close) return;
+        // cadence speeds up as the fuse burns: 12 ticks apart at 3 s, 2 ticks apart near zero
+        beepCooldown = Math.max(2, Math.min(12, Math.round(soonest * 4)));
+        play(mc, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.FCS_BLAST_BEEP.get(), soonest < 1 ? 1.25F : 1.0F, 0.5F);
+    }
+
+    private static void play(Minecraft mc, net.minecraft.sounds.SoundEvent sound, float pitch, float volume) {
+        mc.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(sound, pitch, volume));
     }
 
     private static void send(net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
@@ -196,7 +225,7 @@ public final class FcsClient {
             renderSensors(event, mc);
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             ShieldFieldRenderer.render(event);
-            ViltrumFlightClient.renderWorld(event);
+            ManeuverModeClient.renderWorld(event);
         }
     }
 
@@ -207,10 +236,6 @@ public final class FcsClient {
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         float time = (mc.level.getGameTime() % 40 + partial) / 40F;
         float pulse = 0.8F + 0.2F * (float) Math.sin(time * Math.PI * 2);
-
-        if (FcsState.active(SuitModuleType.ORE_SCANNER)) {
-            sweepRing(pose, buffers, cam);
-        }
 
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);
@@ -234,57 +259,10 @@ public final class FcsClient {
             }
         }
 
-        if (FcsState.active(SuitModuleType.BALLISTIC) && FcsState.ballistic != null) {
-            BallisticSolver.Solution s = FcsState.ballistic;
-            int c = s.profile().ready() ? FcsDraw.RED : 0xFF9F1C;
-            List<Vec3> path = s.path();
-            for (int i = 2; i < path.size(); i++) {
-                if (i % 2 == 0) seg(pose, lines, path.get(i - 1), path.get(i), c, 0.85F);
-            }
-            if (s.impact() != null) {
-                Vec3 n = s.normal() != null ? s.normal() : new Vec3(0, 1, 0);
-                ring(pose, lines, s.impact().add(n.scale(0.02)), n, 0.45, c, 0.95F);
-                ring(pose, lines, s.impact().add(n.scale(0.02)), n, 0.18 + 0.1 * pulse, c, 0.8F);
-            }
-            if (s.target() != null) {
-                AABB box = s.target().getBoundingBox().inflate(0.08);
-                LevelRenderer.renderLineBox(pose, lines, box, 1F, 0.23F, 0.19F, 1F);
-            }
-            if (FcsState.leadPoint != null && FcsState.leadTarget != null) {
-                Vec3 from = FcsState.leadTarget.getBoundingBox().getCenter();
-                seg(pose, lines, from, FcsState.leadPoint, 0xFFD23F, 0.8F);
-                cross(pose, lines, FcsState.leadPoint, 0.3, 0xFFD23F, 1F);
-            }
-        }
-
-        if (FcsState.active(SuitModuleType.BLAST_WARNING)) {
-            for (SensorTracker.Blast b : SensorTracker.blasts()) {
-                Vec3 at = b.entity().getPosition(partial).add(0, 0.05, 0);
-                float flash = b.seconds() < 1.0F ? (float) (0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 60.0)) : pulse;
-                ring(pose, lines, at, new Vec3(0, 1, 0), b.radius(), FcsDraw.RED, 0.9F * flash);
-                ring(pose, lines, at, new Vec3(0, 1, 0), b.radius() * 2, 0xFFD23F, 0.45F * flash);
-            }
-        }
-
         if (FcsState.active(SuitModuleType.GRID_TELEMETRY) && telemetryPos != null) {
             float r = ((primary >> 16) & 255) / 255F, g = ((primary >> 8) & 255) / 255F, b = (primary & 255) / 255F;
             LevelRenderer.renderLineBox(pose, lines, new AABB(telemetryPos).inflate(0.01), r, g, b, 0.9F);
         }
-        buffers.endBatch(SiRenderTypes.XRAY_LINES);
-        pose.popPose();
-    }
-
-    /** Expanding horizontal ring at the start of each ore sweep. */
-    private static void sweepRing(PoseStack pose, MultiBufferSource.BufferSource buffers, Vec3 cam) {
-        long age = System.currentTimeMillis() - OreScanner.sweepStartMs();
-        if (age < 0 || age > 1400) return;
-        float f = age / 1400F;
-        pose.pushPose();
-        pose.translate(-cam.x, -cam.y, -cam.z);
-        VertexConsumer lines = buffers.getBuffer(SiRenderTypes.XRAY_LINES);
-        Vec3 c = Vec3.atBottomCenterOf(OreScanner.centre());
-        ring(pose, lines, c, new Vec3(0, 1, 0), OreScanner.RADIUS * f, 0x3FD4FF, 0.9F * (1 - f));
-        ring(pose, lines, c.add(0, -0.5, 0), new Vec3(0, 1, 0), OreScanner.RADIUS * f * 0.92, 0x3FD4FF, 0.5F * (1 - f));
         buffers.endBatch(SiRenderTypes.XRAY_LINES);
         pose.popPose();
     }

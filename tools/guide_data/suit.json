@@ -9,19 +9,22 @@
     "drain": 24,
     "function": {
       "en": [
-        "The unit scans a sphere with a 16-block radius around the wearer.",
-        "The visor shows each ore block as a wireframe cell in the color of the ore.",
-        "A side panel lists the nearest ore of each type with its distance and height."
+        "When you switch on the unit, it sends a sonar pulse through the ground in a 16-block radius.",
+        "The pulse spreads out from the wearer as a ring of light. A short glitch effect runs over the visor.",
+        "Each ore block lights up when the echo reaches it. The ore shows as a glowing cell in the color of the ore, also through rock.",
+        "After the pulse, a small tag shows the nearest ore of each type and its distance."
       ],
       "zh": [
-        "该单元扫描以穿戴者为中心、半径16格的球形范围。",
-        "面罩把每个矿石方块显示为矿物颜色的线框格。",
-        "侧面板列出每种矿物最近的一处，并显示距离和高度。"
+        "打开单元时，单元向半径16格的地层发出声呐脉冲。",
+        "脉冲以光环形式从穿戴者向外扩散。面罩上出现短暂的故障特效。",
+        "回波到达矿石方块时矿石亮起。矿石显示为矿物颜色的发光格，可透过岩石看到。",
+        "脉冲结束后，小标签显示每种矿物最近的一处及其距离。"
       ],
       "ja": [
-        "このユニットは着用者を中心に半径16ブロックの球をスキャンする。",
-        "バイザーは各鉱石ブロックを鉱石色のワイヤーフレームで表示する。",
-        "側面パネルは種類ごとに最も近い鉱石の距離と高さを表示する。"
+        "ユニットをオンにすると、半径16ブロックの地層にソナーパルスを送る。",
+        "パルスは光の輪として着用者から広がる。バイザーに短いグリッチ効果が走る。",
+        "エコーが届いた鉱石ブロックが光る。鉱石は鉱石色の光るセルで表示され、岩越しにも見える。",
+        "パルスの後、小さなタグが種類ごとに最も近い鉱石と距離を示す。"
       ]
     },
     "usage": {
@@ -29,33 +32,36 @@
         "Install the unit into the quantum boots or leggings.",
         "Wear a quantum helmet.",
         "Walk to the mining area.",
-        "Read the ore list on the status panel.",
-        "Dig towards the highlighted cells."
+        "Switch on the unit and wait for the echo.",
+        "Dig towards the lit cells."
       ],
       "zh": [
         "把单元装入量子靴子或护腿。",
         "穿戴量子头盔。",
         "走到采矿区域。",
-        "读取状态面板上的矿物列表。",
-        "朝高亮的线框格挖掘。"
+        "打开单元并等待回波。",
+        "朝亮起的矿石挖掘。"
       ],
       "ja": [
         "ユニットを量子ブーツか量子レギンスに取り付ける。",
         "量子ヘルメットを着用する。",
         "採掘場所まで移動する。",
-        "ステータスパネルの鉱石リストを読む。",
-        "強調表示のセルに向かって掘る。"
+        "ユニットをオンにしてエコーを待つ。",
+        "光るセルに向かって掘る。"
       ]
     },
     "notes": {
       "en": [
-        "One sweep takes 50 ticks. A ring on the ground marks the start of each sweep."
+        "After the first pulse, the unit scans again every 50 ticks without a pulse effect.",
+        "Switch the unit off and on again to send a new pulse."
       ],
       "zh": [
-        "一次扫描用时50 tick。地面上的圆环标出每次扫描的开始。"
+        "第一次脉冲后，单元每50 tick再次扫描，不显示脉冲特效。",
+        "关闭再打开单元可发出新的脉冲。"
       ],
       "ja": [
-        "1回のスキャンは50 tickかかる。地面のリングが各スキャンの開始を示す。"
+        "最初のパルスの後、ユニットは50 tickごとにパルス効果なしで再スキャンする。",
+        "ユニットをオフにしてから再びオンにすると、新しいパルスを送る。"
       ]
     }
   },
@@ -180,20 +186,26 @@
       "en": [
         "The unit calculates the path of the projectile of the held weapon.",
         "It uses the same gravity and drag steps as the game, so the path matches the real flight.",
-        "The visor shows the path, the impact ring, the time of flight, the range and the drop.",
-        "For a moving creature near the aim line, a yellow LEAD marker shows the point to aim at."
+        "The visor shows the path as a line of moving dots. The dots become brighter near the impact point.",
+        "A turning ring on the surface marks the impact point. A tag next to it shows the range and the time of flight.",
+        "When the path hits a creature, red brackets lock on to it and a lock tone sounds.",
+        "For a moving creature near the aim line, a yellow LEAD diamond shows the point to aim at."
       ],
       "zh": [
         "该单元计算手持武器所发射弹体的轨迹。",
         "计算使用与游戏相同的重力和阻力步骤，轨迹与实际飞行一致。",
-        "面罩显示轨迹、落点圆环、飞行时间、射程与下坠量。",
-        "瞄准线附近有移动生物时，黄色LEAD标记显示应瞄准的位置。"
+        "面罩把轨迹显示为一列移动的光点。光点越靠近落点越亮。",
+        "表面上旋转的圆环标出落点。旁边的标签显示射程与飞行时间。",
+        "轨迹命中生物时，红色框锁定该生物并发出锁定音。",
+        "瞄准线附近有移动生物时，黄色LEAD菱形显示应瞄准的位置。"
       ],
       "ja": [
         "このユニットは手持ち武器の弾体の軌道を計算する。",
         "計算はゲームと同じ重力と抵抗の手順を使うので、軌道は実際の飛行と一致する。",
-        "バイザーは軌道・着弾リング・飛翔時間・射程・落下量を表示する。",
-        "照準線の近くに動く生物がいると、黄色のLEADマーカーが狙う位置を示す。"
+        "バイザーは軌道を動く点の列で表示する。点は着弾点に近いほど明るい。",
+        "表面で回るリングが着弾点を示す。横のタグが射程と飛翔時間を示す。",
+        "軌道が生物に当たると、赤いブラケットがその生物をロックしてロック音が鳴る。",
+        "照準線の近くに動く生物がいると、黄色のLEADひし形が狙う位置を示す。"
       ]
     },
     "usage": {
@@ -201,33 +213,33 @@
         "Install the unit into the quantum helmet.",
         "Hold a bow, a crossbow, a trident or a throwable item.",
         "Draw the bow until the panel shows READY.",
-        "Put the impact ring on the LEAD marker.",
+        "Put the impact ring on the LEAD diamond.",
         "Release the shot."
       ],
       "zh": [
         "把单元装入量子头盔。",
         "手持弓、弩、三叉戟或投掷物。",
         "拉弓直到面板显示READY。",
-        "把落点圆环对准LEAD标记。",
+        "把落点圆环对准LEAD菱形。",
         "松开发射。"
       ],
       "ja": [
         "ユニットを量子ヘルメットに取り付ける。",
         "弓・クロスボウ・トライデント・投擲物を持つ。",
         "パネルにREADYが出るまで弓を引く。",
-        "着弾リングをLEADマーカーに重ねる。",
+        "着弾リングをLEADひし形に重ねる。",
         "射撃する。"
       ]
     },
     "notes": {
       "en": [
-        "The ring turns red when the weapon is ready or the path hits a creature."
+        "The path is grey while the weapon charges, amber when it is ready and red when it hits a creature."
       ],
       "zh": [
-        "武器就绪或轨迹命中生物时，圆环变为红色。"
+        "武器蓄力时轨迹为灰色，就绪时为琥珀色，命中生物时为红色。"
       ],
       "ja": [
-        "武器の準備が整うか軌道が生物に当たると、リングが赤に変わる。"
+        "軌道は武器の準備中は灰色、準備完了で琥珀色、生物に当たると赤になる。"
       ]
     }
   },
@@ -241,46 +253,55 @@
     "function": {
       "en": [
         "The unit measures the fuse of primed TNT, primed TNT carts and swelling creepers within 28 blocks.",
-        "A countdown label floats above each explosive.",
-        "A red ring on the ground shows the blast radius and a yellow ring shows twice the radius."
+        "A round icon floats above each explosive. Its ring empties as the fuse burns, and a tag shows the seconds left.",
+        "A zone on the ground shows the blast radius. The zone fills as the fuse burns.",
+        "When an explosive is near you, an icon with an arrow appears around the aim point and points to the explosive. A beep sounds faster as the fuse burns.",
+        "Inside the blast radius, the edge of the view flashes red."
       ],
       "zh": [
         "该单元测量28格内已点燃TNT、TNT矿车与膨胀苦力怕的引信。",
-        "每个爆炸物上方显示倒计时标签。",
-        "地面红环显示爆炸半径，黄环显示两倍半径。"
+        "每个爆炸物上方浮现圆形图标。图标的圆环随引信燃烧而减少，标签显示剩余秒数。",
+        "地面区域显示爆炸半径。区域随引信燃烧而填满。",
+        "爆炸物靠近你时，瞄准点周围出现带箭头的图标并指向爆炸物。蜂鸣声随引信燃烧而加快。",
+        "在爆炸半径内时，视野边缘闪烁红色。"
       ],
       "ja": [
         "このユニットは28ブロック内の点火TNT・TNTトロッコ・膨張クリーパーの導火時間を計る。",
-        "各爆発物の上にカウントダウンが浮かぶ。",
-        "地面の赤リングは爆発半径、黄リングはその2倍を示す。"
+        "各爆発物の上に丸いアイコンが浮かぶ。導火線が燃えるにつれてリングが減り、タグが残り秒数を示す。",
+        "地面のゾーンが爆発半径を示す。ゾーンは導火線が燃えるにつれて満ちる。",
+        "爆発物が近いと、照準点の周りに矢印付きアイコンが出て爆発物の方向を示す。導火線が燃えるにつれてビープが速くなる。",
+        "爆発半径の内側では視界の縁が赤く点滅する。"
       ]
     },
     "usage": {
       "en": [
         "Install the unit into the quantum chestplate or helmet.",
-        "Watch the BLAST WARNING panel.",
-        "Move out of the yellow ring when the panel shows IN RADIUS."
+        "Watch the icons around the aim point.",
+        "Move away in the direction opposite to the arrow.",
+        "Stay out of the zone on the ground until the explosion."
       ],
       "zh": [
         "把单元装入量子胸甲或头盔。",
-        "注视爆炸预警面板。",
-        "面板显示IN RADIUS时离开黄环。"
+        "注视瞄准点周围的图标。",
+        "朝箭头相反的方向离开。",
+        "爆炸前不要进入地面区域。"
       ],
       "ja": [
         "ユニットを量子チェストプレートかヘルメットに取り付ける。",
-        "爆発警告パネルを見る。",
-        "パネルにIN RADIUSが出たら黄リングの外へ出る。"
+        "照準点の周りのアイコンを見る。",
+        "矢印と反対の方向へ離れる。",
+        "爆発までは地面のゾーンに入らない。"
       ]
     },
     "notes": {
       "en": [
-        "The label turns red in the last second."
+        "The icon and the zone turn red in the last second."
       ],
       "zh": [
-        "最后一秒标签变为红色。"
+        "最后一秒图标与区域变为红色。"
       ],
       "ja": [
-        "最後の1秒でラベルが赤になる。"
+        "最後の1秒でアイコンとゾーンが赤になる。"
       ]
     }
   },
@@ -350,19 +371,22 @@
     "drain": 10,
     "function": {
       "en": [
-        "The unit shows a tilted 3D relief of the terrain within 20 blocks.",
-        "The map turns with the wearer, so the view direction is always up.",
-        "Diamonds on stalks show creatures within 32 blocks at their height."
+        "The unit shows a box-shaped 3D hologram of the blocks around the wearer: 25 x 14 x 25 blocks.",
+        "The hologram holds the full shape of the area: ground, walls, caves and buildings. The walls of the box show a cut section of the ground.",
+        "The box turns with the wearer, so the view direction always points into the box.",
+        "Diamonds on stalks show creatures within 24 blocks at their height. A white arrow shows the wearer."
       ],
       "zh": [
-        "该单元显示半径20格地形的倾斜3D浮雕。",
-        "地图随穿戴者转动，视线方向始终朝上。",
-        "带支柱的菱形按高度显示32格内的生物。"
+        "该单元以立方体3D全息影像显示穿戴者周围 25 x 14 x 25 格的方块。",
+        "全息影像包含该区域的完整形状：地面、墙壁、洞穴与建筑。盒体侧面显示地层的剖面。",
+        "盒体随穿戴者转动，视线方向始终朝向盒体内部。",
+        "带支柱的菱形按高度显示24格内的生物。白色箭头表示穿戴者。"
       ],
       "ja": [
-        "このユニットは半径20ブロックの地形を傾いた3D起伏で表示する。",
-        "マップは着用者と一緒に回り、視線方向が常に上になる。",
-        "支柱付きのひし形が32ブロック内の生物を高さ付きで示す。"
+        "このユニットは着用者の周囲 25 x 14 x 25 ブロックを箱型の3Dホログラムで表示する。",
+        "ホログラムは地面・壁・洞窟・建物を含む周囲の形をすべて表示する。箱の側面は地層の断面を示す。",
+        "箱は着用者と一緒に回り、視線方向は常に箱の奥を向く。",
+        "支柱付きのひし形が24ブロック内の生物を高さ付きで示す。白い矢印が着用者を示す。"
       ]
     },
     "usage": {
@@ -390,13 +414,13 @@
     },
     "notes": {
       "en": [
-        "Underground, the map shows the cave floor near the wearer instead of the surface."
+        "The box samples the blocks again every 10 ticks."
       ],
       "zh": [
-        "在地下时，地图显示穿戴者附近的洞穴地面，不显示地表。"
+        "盒体每10 tick重新采样方块。"
       ],
       "ja": [
-        "地下では、マップは地表ではなく着用者付近の洞窟の床を表示する。"
+        "箱は10 tickごとにブロックを取り直す。"
       ]
     }
   },

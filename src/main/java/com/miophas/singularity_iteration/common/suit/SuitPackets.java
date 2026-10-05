@@ -72,7 +72,38 @@ public final class SuitPackets {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
+    /** Client -> server: the local flyer's throttle and stick (sent on change, at most every 2 ticks). */
+    public record ManeuverInput(float throttle, float forward, float sideways, boolean locked) implements CustomPacketPayload {
+        public static final Type<ManeuverInput> TYPE = new Type<>(id("maneuver_input"));
+        public static final StreamCodec<ByteBuf, ManeuverInput> CODEC = StreamCodec.of((b, p) -> {
+            FriendlyByteBuf f = new FriendlyByteBuf(b);
+            f.writeFloat(p.throttle); f.writeFloat(p.forward); f.writeFloat(p.sideways); f.writeBoolean(p.locked);
+        }, b -> {
+            FriendlyByteBuf f = new FriendlyByteBuf(b);
+            return new ManeuverInput(f.readFloat(), f.readFloat(), f.readFloat(), f.readBoolean());
+        });
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    /** Server -> viewers: another flyer's throttle and stick (pose, vapour and trails). */
+    public record ManeuverState(int entityId, float throttle, float forward, float sideways, boolean locked) implements CustomPacketPayload {
+        public static final Type<ManeuverState> TYPE = new Type<>(id("maneuver_state"));
+        public static final StreamCodec<ByteBuf, ManeuverState> CODEC = StreamCodec.of((b, p) -> {
+            FriendlyByteBuf f = new FriendlyByteBuf(b);
+            f.writeVarInt(p.entityId); f.writeFloat(p.throttle); f.writeFloat(p.forward); f.writeFloat(p.sideways); f.writeBoolean(p.locked);
+        }, b -> {
+            FriendlyByteBuf f = new FriendlyByteBuf(b);
+            return new ManeuverState(f.readVarInt(), f.readFloat(), f.readFloat(), f.readFloat(), f.readBoolean());
+        });
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
     public static void register(PayloadRegistrar registrar) {
+        registrar.playToServer(ManeuverInput.TYPE, ManeuverInput.CODEC, (p, c) -> c.enqueueWork(() -> {
+            if (c.player() instanceof ServerPlayer player && Float.isFinite(p.throttle()) && Float.isFinite(p.forward()) && Float.isFinite(p.sideways()))
+                ManeuverMode.relayState(player, p.throttle(), p.forward(), p.sideways(), p.locked());
+        }));
+        registrar.playToClient(ManeuverState.TYPE, ManeuverState.CODEC, (p, c) -> client(c, () -> SuitSensorData.acceptManeuver(p)));
         registrar.playToClient(Threats.TYPE, Threats.CODEC, (p, c) -> client(c, () -> SuitSensorData.acceptThreats(p.ids, p.levels)));
         registrar.playToClient(ShieldHit.TYPE, ShieldHit.CODEC, (p, c) -> client(c, () -> SuitSensorData.acceptShieldHit(p)));
         registrar.playToClient(ChunkGrid.TYPE, ChunkGrid.CODEC, (p, c) -> client(c, () -> SuitSensorData.acceptChunkGrid(p)));

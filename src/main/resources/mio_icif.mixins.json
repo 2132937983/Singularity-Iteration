@@ -16,6 +16,7 @@
     "client.AdvancementTabMiophaMixin",
     "client.AdvancementWidgetHintMixin",
     "client.FcsGlowMixin",
-    "client.FcsTeamColorMixin"
+    "client.FcsTeamColorMixin",
+    "client.PlayerManeuverPoseMixin"
   ]
 }

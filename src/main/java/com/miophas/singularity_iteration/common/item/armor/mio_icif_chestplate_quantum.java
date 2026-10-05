@@ -39,8 +39,8 @@ public class mio_icif_chestplate_quantum extends mio_icif_armor_elc implements I
                 new ArmorFeatureInfo(EquipmentSlot.CHEST, "fire_resistance", "tooltip.mio_icif.armor.feature_fire_resistance"),
                 new ArmorFeatureInfo(EquipmentSlot.CHEST, IJetpackItem.FEATURE_MODE_KEY,
                         "tooltip.mio_icif.armor.feature_jetpack_mode", modeName(stack)),
-                new ArmorFeatureInfo(EquipmentSlot.CHEST, com.miophas.singularity_iteration.common.suit.ViltrumFlight.FEATURE,
-                        "tooltip.mio_icif.armor.feature_viltrum_flight"));
+                new ArmorFeatureInfo(EquipmentSlot.CHEST, com.miophas.singularity_iteration.common.suit.ManeuverMode.FEATURE,
+                        "tooltip.mio_icif.armor.feature_special_maneuver"));
     }
 
     /** 当前模式名称（供装备特性 Tooltip / GUI 显示）。 */

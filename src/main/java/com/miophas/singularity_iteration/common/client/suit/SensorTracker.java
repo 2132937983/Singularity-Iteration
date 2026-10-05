@@ -45,7 +45,10 @@ public final class SensorTracker {
     /** One tracked creature. {@code path} is filled only when the predictor unit is active. */
     public record Track(LivingEntity entity, Kind kind, Vec3 velocity, List<Vec3> path, @Nullable String intent, boolean intentHot) { }
 
-    public record Blast(Entity entity, float seconds, float radius, String label) { }
+    public record Blast(Entity entity, float seconds, float radius, String label, float fuse) {
+        /** Burnt part of the fuse, 0 (just lit) .. 1 (detonation). */
+        public float burnt() { return fuse <= 0 ? 1F : Math.max(0F, Math.min(1F, 1F - seconds / fuse)); }
+    }
 
     private static final Int2ObjectOpenHashMap<ArrayDeque<Vec3>> history = new Int2ObjectOpenHashMap<>();
     private static List<Track> tracks = List.of();
@@ -164,11 +167,11 @@ public final class SensorTracker {
     private static List<Blast> scanBlasts(ClientLevel level, LocalPlayer player) {
         List<Blast> out = new ArrayList<>();
         for (Entity e : level.getEntities(player, player.getBoundingBox().inflate(BLAST_RANGE))) {
-            if (e instanceof PrimedTnt tnt) out.add(new Blast(e, tnt.getFuse() / 20F, 4F, "TNT"));
-            else if (e instanceof MinecartTNT cart && cart.isPrimed()) out.add(new Blast(e, cart.getFuse() / 20F, 4F, "TNT-CART"));
+            if (e instanceof PrimedTnt tnt) out.add(new Blast(e, tnt.getFuse() / 20F, 4F, "TNT", 4F));
+            else if (e instanceof MinecartTNT cart && cart.isPrimed()) out.add(new Blast(e, cart.getFuse() / 20F, 4F, "TNT-CART", 4F));
             else if (e instanceof Creeper creeper && creeper.getSwelling(1.0F) > 0.02F) {
                 float left = (1F - creeper.getSwelling(1.0F)) * 30F / 20F;
-                out.add(new Blast(e, left, creeper.isPowered() ? 6F : 3F, creeper.isPowered() ? "CREEPER+" : "CREEPER"));
+                out.add(new Blast(e, left, creeper.isPowered() ? 6F : 3F, creeper.isPowered() ? "CREEPER+" : "CREEPER", 1.5F));
             }
         }
         out.sort((a, b) -> Float.compare(a.seconds, b.seconds));

@@ -67,7 +67,23 @@ public final class SuitSensorData {
         return System.currentTimeMillis() - chunkGridAt > 3000 ? null : chunkGrid;
     }
 
+    private static final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<SuitPackets.ManeuverState> maneuver = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>();
+    private static final it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap maneuverAt = new it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap();
+
+    public static synchronized void acceptManeuver(SuitPackets.ManeuverState state) {
+        maneuver.put(state.entityId(), state);
+        maneuverAt.put(state.entityId(), System.currentTimeMillis());
+    }
+
+    /** Last relayed maneuver state of another player (null when unknown or older than 3 s). */
+    public static synchronized SuitPackets.ManeuverState maneuver(int entityId) {
+        long at = maneuverAt.getOrDefault(entityId, 0L);
+        return System.currentTimeMillis() - at > 3000 ? null : maneuver.get(entityId);
+    }
+
     public static synchronized void clear() {
+        maneuver.clear();
+        maneuverAt.clear();
         threats.clear();
         hits.clear();
         chunkGrid = null;

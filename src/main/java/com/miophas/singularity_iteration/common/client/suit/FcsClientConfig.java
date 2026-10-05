@@ -27,8 +27,7 @@ public final class FcsClientConfig {
         TELEMETRY("telemetry", 0.86, 0.60),
         HOLOMAP("holomap", 0.87, 0.20),
         BALLISTIC("ballistic", 0.62, 0.72),
-        BLAST("blast", 0.50, 0.26),
-        FLIGHT("flight", 0.36, 0.52);
+        BLAST("blast", 0.38, 0.72);
         public final String id;
         public final double defaultX, defaultY;
         ModConfigSpec.DoubleValue x, y;
@@ -48,6 +47,7 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.EnumValue<Palette> PALETTE;
     public static final ModConfigSpec.BooleanValue ESP_OUTLINES;
     public static final ModConfigSpec.DoubleValue HOLOMAP_SCALE;
+    public static final ModConfigSpec.BooleanValue SHOW_COMPASS;
     public static final ModConfigSpec.BooleanValue FLIGHT_CAMERA_ROLL;
     public static final ModConfigSpec.BooleanValue FLIGHT_FOV;
 
@@ -58,10 +58,11 @@ public final class FcsClientConfig {
         PALETTE = b.comment("Main HUD colour: GREEN, AMBER or CYAN. Warnings stay yellow and red.").defineEnum("palette", Palette.GREEN);
         ESP_OUTLINES = b.comment("Entity ESP draws a see-through outline around each tagged creature.").define("esp_outlines", true);
         HOLOMAP_SCALE = b.comment("Size of the tactical holomap.").defineInRange("holomap_scale", 1.0, 0.6, 1.8);
+        SHOW_COMPASS = b.comment("Show the heading tape (compass) at the top of the HUD.").define("show_compass", true);
         b.pop();
         b.push("flight");
-        FLIGHT_CAMERA_ROLL = b.comment("The camera banks in turns during Viltrum flight.").define("camera_roll", true);
-        FLIGHT_FOV = b.comment("The field of view widens with speed during Viltrum flight.").define("speed_fov", true);
+        FLIGHT_CAMERA_ROLL = b.comment("The camera banks in turns in Special Maneuver Mode.").define("camera_roll", true);
+        FLIGHT_FOV = b.comment("The field of view widens with speed in Special Maneuver Mode.").define("speed_fov", true);
         b.pop();
         b.push("layout");
         for (Panel panel : Panel.values()) {
@@ -77,6 +78,8 @@ public final class FcsClientConfig {
     public static int primary() { return loaded() ? PALETTE.get().rgb : Palette.GREEN.rgb; }
     public static boolean outlines() { return !loaded() || ESP_OUTLINES.get(); }
     public static float holomapScale() { return loaded() ? HOLOMAP_SCALE.get().floatValue() : 1.0F; }
+    public static boolean showCompass() { return !loaded() || SHOW_COMPASS.get(); }
+    public static void setShowCompass(boolean on) { if (loaded()) { SHOW_COMPASS.set(on); SPEC.save(); } }
     public static boolean cameraRoll() { return !loaded() || FLIGHT_CAMERA_ROLL.get(); }
     public static boolean speedFov() { return !loaded() || FLIGHT_FOV.get(); }
 

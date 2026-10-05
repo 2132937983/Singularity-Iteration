@@ -166,6 +166,6 @@ public final class SuitModules {
         if (bootstrapped) return;
         bootstrapped = true;
         ArmorFeatures.registerExtension(SuitModules::features);
-        ViltrumFlight.bootstrap();
+        ManeuverMode.bootstrap();
     }
 }

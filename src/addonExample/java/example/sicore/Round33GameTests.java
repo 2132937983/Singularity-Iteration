@@ -36,7 +36,7 @@ import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
 /**
  * 0.1.7.33: quantum suit upgrade units and the modification station, the FCS server side
- * (threat sensor, deflector, chunk grid read-out), Viltrum flight, and the GuideME manual data.
+ * (threat sensor, deflector, chunk grid read-out), Special Maneuver Mode, and the GuideME manual data.
  */
 @GameTestHolder(CoreExampleMod.ID)
 @PrefixGameTestTemplate(false)
@@ -296,30 +296,30 @@ public final class Round33GameTests {
         });
     }
 
-    // ------------------------------------------------------------------ Viltrum flight
+    // ------------------------------------------------------------------ Special Maneuver Mode
 
     /** The switch starts off; on, it grants free flight; off again, it takes it away. */
-    @GameTest(batch = "round33_viltrum", template = "empty", timeoutTicks = 20)
-    public static void viltrumFlightSwitchGrantsFlight(GameTestHelper h) {
+    @GameTest(batch = "round33_maneuver", template = "empty", timeoutTicks = 20)
+    public static void maneuverSwitchGrantsFlight(GameTestHelper h) {
         ServerPlayer player = survivalPlayer(h);
         ItemStack chest = charged("armor/item_armor_quantum_chestplate");
         player.setItemSlot(EquipmentSlot.CHEST, chest);
         ItemStack worn = player.getItemBySlot(EquipmentSlot.CHEST);
-        h.assertTrue(ArmorFeatures.features(worn).stream().anyMatch(f -> f.featureKey().equals("viltrum_flight")), "no Viltrum switch in the console");
-        h.assertTrue(!ArmorFeatures.isEnabled(worn, "viltrum_flight"), "Viltrum flight must start switched off");
+        h.assertTrue(ArmorFeatures.features(worn).stream().anyMatch(f -> f.featureKey().equals("special_maneuver")), "no Special Maneuver switch in the console");
+        h.assertTrue(!ArmorFeatures.isEnabled(worn, "special_maneuver"), "Special Maneuver Mode must start switched off");
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
         h.assertTrue(!player.getAbilities().mayfly, "flight granted while the switch is off");
-        ArmorFeatures.setEnabled(worn, "viltrum_flight", true);
+        ArmorFeatures.setEnabled(worn, "special_maneuver", true);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
-        h.assertTrue(player.getAbilities().mayfly, "switch on: no free flight (canUse=" + call(common("suit.ViltrumFlight"), "canUse", player)
-            + ", creative=" + player.isCreative() + ", enabled=" + ArmorFeatures.isEnabled(player.getItemBySlot(EquipmentSlot.CHEST), "viltrum_flight") + ")");
-        ArmorFeatures.setEnabled(worn, "viltrum_flight", false);
+        h.assertTrue(player.getAbilities().mayfly, "switch on: no free flight (canUse=" + call(common("suit.ManeuverMode"), "canUse", player)
+            + ", creative=" + player.isCreative() + ", enabled=" + ArmorFeatures.isEnabled(player.getItemBySlot(EquipmentSlot.CHEST), "special_maneuver") + ")");
+        ArmorFeatures.setEnabled(worn, "special_maneuver", false);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
         h.assertTrue(!player.getAbilities().mayfly, "switch off: flight not removed");
         // advanced quantum chestplate has it too
         h.assertTrue(ArmorFeatures.features(item("armor/item_armor_advanced_quantum_chestplate")).stream()
-            .anyMatch(f -> f.featureKey().equals("viltrum_flight")), "advanced quantum chestplate lacks Viltrum flight");
-        double cruise = (double) call(common("suit.ViltrumFlight"), "costPerTick", 1.1);
+            .anyMatch(f -> f.featureKey().equals("special_maneuver")), "advanced quantum chestplate lacks Special Maneuver Mode");
+        double cruise = (double) call(common("suit.ManeuverMode"), "costPerTick", 1.1);
         h.assertTrue(cruise > 30 && cruise < 60, "cruise cost " + cruise);
         remove(player);
         h.succeed();
@@ -398,7 +398,7 @@ public final class Round33GameTests {
                 for (String key : new String[]{"module.mio_icif." + id, "module.mio_icif." + id + ".desc", "item.mio_icif.module.item_module_" + id})
                     if (!json.contains("\"" + key + "\"")) missing.add(lang + ":" + key);
             }
-            for (String key : new String[]{"block.mio_icif.producer.block_quantum_modification_station", "tooltip.mio_icif.armor.feature_viltrum_flight",
+            for (String key : new String[]{"block.mio_icif.producer.block_quantum_modification_station", "tooltip.mio_icif.armor.feature_special_maneuver",
                     "key.mio_icif.fcs_hud", "screen.mio_icif.hud_layout"})
                 if (!json.contains("\"" + key + "\"")) missing.add(lang + ":" + key);
         }

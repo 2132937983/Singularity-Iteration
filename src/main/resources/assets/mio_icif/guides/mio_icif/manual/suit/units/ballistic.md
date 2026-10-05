@@ -16,8 +16,10 @@ item_ids:
 
 The unit calculates the path of the projectile of the held weapon.
 It uses the same gravity and drag steps as the game, so the path matches the real flight.
-The visor shows the path, the impact ring, the time of flight, the range and the drop.
-For a moving creature near the aim line, a yellow LEAD marker shows the point to aim at.
+The visor shows the path as a line of moving dots. The dots become brighter near the impact point.
+A turning ring on the surface marks the impact point. A tag next to it shows the range and the time of flight.
+When the path hits a creature, red brackets lock on to it and a lock tone sounds.
+For a moving creature near the aim line, a yellow LEAD diamond shows the point to aim at.
 
 ## Power data
 
@@ -32,12 +34,12 @@ For a moving creature near the aim line, a yellow LEAD marker shows the point to
 1. Install the unit into the quantum helmet.
 2. Hold a bow, a crossbow, a trident or a throwable item.
 3. Draw the bow until the panel shows READY.
-4. Put the impact ring on the LEAD marker.
+4. Put the impact ring on the LEAD diamond.
 5. Release the shot.
 
 ## Notes
 
-- The ring turns red when the weapon is ready or the path hits a creature.
+- The path is grey while the weapon charges, amber when it is ready and red when it hits a creature.
 
 ## Recipe
 

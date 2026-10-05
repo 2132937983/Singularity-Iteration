@@ -1,7 +1,12 @@
 {
   "nuclear.explosion": {
     "subtitle": "subtitles.mio_icif.nuclear_explosion",
-    "sounds": [ { "name": "mio_icif:nuclear_explosion", "stream": false } ]
+    "sounds": [
+      {
+        "name": "mio_icif:nuclear_explosion",
+        "stream": false
+      }
+    ]
   },
   "machine.demolish": {
     "subtitle": "mio_icif.subtitle.machine.demolish",
@@ -433,6 +438,60 @@
       {
         "name": "mio_icif:sfx_weapon_rocket_launch",
         "attenuation_distance": 48
+      }
+    ]
+  },
+  "maneuver.boom": {
+    "subtitle": "subtitles.mio_icif.maneuver.boom",
+    "sounds": [
+      {
+        "name": "mio_icif:maneuver_boom",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "maneuver.wind": {
+    "subtitle": "subtitles.mio_icif.maneuver.wind",
+    "sounds": [
+      {
+        "name": "mio_icif:maneuver_wind",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "maneuver.takeoff": {
+    "subtitle": "subtitles.mio_icif.maneuver.takeoff",
+    "sounds": [
+      {
+        "name": "mio_icif:maneuver_takeoff",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "fcs.echo": {
+    "subtitle": "subtitles.mio_icif.fcs.echo",
+    "sounds": [
+      {
+        "name": "mio_icif:fcs_echo",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "fcs.lock": {
+    "subtitle": "subtitles.mio_icif.fcs.lock",
+    "sounds": [
+      {
+        "name": "mio_icif:fcs_lock",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "fcs.blast_beep": {
+    "subtitle": "subtitles.mio_icif.fcs.blast_beep",
+    "sounds": [
+      {
+        "name": "mio_icif:fcs_blast_beep",
+        "attenuation_distance": 8
       }
     ]
   }

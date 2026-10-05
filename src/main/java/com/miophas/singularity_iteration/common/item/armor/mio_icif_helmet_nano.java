@@ -63,4 +63,10 @@ public class mio_icif_helmet_nano extends mio_icif_armor_elc {
         }
     }
 
+    /** 0.1.7.34: per-piece texture of the Blockbench nano suit model. */
+    @Override
+    public net.minecraft.resources.ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+                                                                  net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
+        return net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/models/armor/nano_helmet.png");
+    }
 }

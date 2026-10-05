@@ -251,7 +251,8 @@ public final class Round25GameTests {
         h.assertTrue(java.nio.file.Files.exists(file.findResource("resourcepacks", "si_experimental", "pack.mcmeta")), "Experimental pack ships");
         h.assertTrue(java.nio.file.Files.exists(file.findResource("resourcepacks", "si_experimental", "assets", "mio_icif", "models", "block", "producer", "block_compressor_elc.json")),
             "The experimental pack carries the refined machine models");
-        for (String suit : List.of("nano", "quantum")) {
+        // 0.1.7.34: the nano suit now has its own Blockbench model and per-piece textures (Round34GameTests)
+        for (String suit : List.of("quantum")) {
             for (var slot : List.of(net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS)) {
                 String piece = slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? "chestplate" : "leggings";
                 ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(id("armor/item_armor_" + suit + "_" + piece)));

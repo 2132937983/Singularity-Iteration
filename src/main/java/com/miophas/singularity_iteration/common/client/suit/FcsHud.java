@@ -37,7 +37,7 @@ public final class FcsHud {
         if (mc.screen instanceof HudLayoutScreen) return;   // the editor draws its own preview
         float partial = delta.getGameTimeDeltaPartialTick(false);
         boolean hud = FcsState.anyHud();
-        boolean flight = ViltrumFlightClient.isFlying();
+        boolean flight = ManeuverModeClient.isFlying();
         if (!hud && !flight) return;
         int w = g.guiWidth(), h = g.guiHeight();
         int primary = FcsClientConfig.primary();
@@ -48,15 +48,15 @@ public final class FcsHud {
             }
             frame(g, mc, player, w, h, primary, partial);
             if (FcsState.active(SuitModuleType.ENTITY_ESP) || FcsState.active(SuitModuleType.BEHAVIOR_PREDICTOR)) tags(g, primary);
-            if (FcsState.active(SuitModuleType.ORE_SCANNER)) oreList(g, w, h, primary);
-            if (FcsState.active(SuitModuleType.BALLISTIC)) ballistic(g, w, h, primary);
+            if (FcsState.active(SuitModuleType.BALLISTIC)) ballistic(g, w, h, primary, partial);
             if (FcsState.active(SuitModuleType.BLAST_WARNING)) blast(g, w, h, primary, partial);
-            if (FcsState.active(SuitModuleType.GRID_TELEMETRY)) telemetry(g, w, h, primary);
+            // in flight the aircraft HUD owns the middle band: the status and telemetry panels step aside
+            if (FcsState.active(SuitModuleType.GRID_TELEMETRY) && !flight) telemetry(g, w, h, primary);
             if (FcsState.active(SuitModuleType.THREAT_SENSOR)) threats(g, mc, w, h, partial);
             if (FcsState.active(SuitModuleType.HOLOMAP)) holomap(g, w, h, primary, player, partial);
-            status(g, player, w, h, primary);
+            if (!flight) status(g, player, w, h, primary);
         }
-        if (flight) ViltrumFlightClient.renderHud(g, w, h, primary, partial);
+        if (flight) ManeuverModeClient.renderHud(g, w, h, primary, partial);
         g.flush();
     }
 
@@ -69,9 +69,15 @@ public final class FcsHud {
     private static void frame(GuiGraphics g, Minecraft mc, LocalPlayer player, int w, int h, int primary, float partial) {
         int inset = 8;
         FcsDraw.brackets(g, inset, inset, w - inset * 2, h - inset * 2, 22, 1.2F, FcsDraw.argb(primary, 0.55F));
-        // heading tape
-        float yaw = Mth.wrapDegrees(player.getViewYRot(partial) + 180F);   // 0 = north
         float cx = w / 2F, top = 12;
+        if (FcsClientConfig.showCompass()) heading(g, player, cx, top, w, primary, partial);
+        // laser range finder next to the aim point
+        rangeFinder(g, player, cx, h, primary, partial);
+    }
+
+    /** Heading tape at the top of the view (can be switched off in the layout editor). */
+    private static void heading(GuiGraphics g, LocalPlayer player, float cx, float top, int w, int primary, float partial) {
+        float yaw = Mth.wrapDegrees(player.getViewYRot(partial) + 180F);   // 0 = north
         float span = 90, tapeW = Math.min(220, w * 0.42F);
         g.fill((int) (cx - tapeW / 2), (int) top, (int) (cx + tapeW / 2), (int) top + 13, 0x50060A0C);
         for (int d = -60; d <= 420; d += 5) {
@@ -91,7 +97,9 @@ public final class FcsHud {
         FcsDraw.triangle(g, cx, top + 14, cx - 3, top + 19, cx + 3, top + 19, FcsDraw.argb(primary, 1F));
         FcsDraw.textCentered(g, String.format(Locale.ROOT, "%03d", Math.round(Math.floorMod((int) yaw, 360))), cx, top + 21,
             FcsDraw.argb(primary, 1F), 0.6F);
-        // laser range finder next to the aim point
+    }
+
+    private static void rangeFinder(GuiGraphics g, LocalPlayer player, float cx, int h, int primary, float partial) {
         HitResult hit = player.pick(160, partial, false);
         String range = hit.getType() == HitResult.Type.MISS ? "RNG ----" :
             String.format(Locale.ROOT, "RNG %05.1f", hit.getLocation().distanceTo(player.getEyePosition(partial)));
@@ -173,104 +181,241 @@ public final class FcsHud {
         return name.toUpperCase(Locale.ROOT);
     }
 
-    // ------------------------------------------------------------------ ore list
-
-    private static void oreList(GuiGraphics g, int w, int h, int primary) {
-        List<OreScanner.Hit> near = OreScanner.nearestPerKind(5);
-        float[] c = centre(FcsClientConfig.Panel.STATUS, w, h);
-        int x = (int) (c[0] - 52), y = (int) (c[1] + 14 + FcsState.activeSet().size() * 8 + 6);
-        int ph = 12 + Math.max(1, near.size()) * 8;
-        FcsDraw.panel(g, x, y, 104, ph, "SEISMIC  " + OreScanner.hits().size() + " CELLS", 0x3FD4FF);
-        if (near.isEmpty()) {
-            FcsDraw.text(g, "NO ORE IN R" + OreScanner.RADIUS, x + 4, y + 11, FcsDraw.argb(FcsDraw.WHITE, 0.6F), 0.55F);
-            return;
-        }
-        Vec3 eye = Minecraft.getInstance().player.position();
-        for (int i = 0; i < near.size(); i++) {
-            OreScanner.Hit hit = near.get(i);
-            int ry = y + 11 + i * 8;
-            g.fill(x + 4, ry + 1, x + 7, ry + 4, FcsDraw.argb(hit.color(), 1F));
-            FcsDraw.text(g, hit.label(), x + 10, ry, FcsDraw.argb(FcsDraw.WHITE, 0.9F), 0.55F);
-            Vec3 d = Vec3.atCenterOf(hit.pos()).subtract(eye);
-            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.0fm %+d", d.length(), (int) Math.round(d.y)), x + 100, ry,
-                FcsDraw.argb(0x3FD4FF, 0.9F), 0.55F);
-        }
-    }
-
     // ------------------------------------------------------------------ ballistic
 
-    private static void ballistic(GuiGraphics g, int w, int h, int primary) {
+    private static final int ARC_READY = 0xFFB347, ARC_CHARGE = 0x9AA7B0;
+
+    /**
+     * Ballistic computer: a flowing dotted arc that tapers and brightens towards the impact, a
+     * surface-aligned segmented reticle at the impact point with a range chip, target brackets and
+     * a lead diamond with a dashed tether. A slim data panel keeps the numbers.
+     */
+    private static void ballistic(GuiGraphics g, int w, int h, int primary, float partial) {
         BallisticSolver.Solution s = FcsState.ballistic;
         if (s == null) return;
-        int c = s.profile().ready() ? FcsDraw.RED : 0xFF9F1C;
+        long now = System.currentTimeMillis();
+        boolean onTarget = s.target() != null;
+        int c = onTarget ? FcsDraw.RED : s.profile().ready() ? ARC_READY : ARC_CHARGE;
+        Vec3 cam = FcsProjection.camera();
+        List<Vec3> path = s.path();
+        // dotted arc
+        double spacing = 0.85, phase = (now % 700) / 700.0 * spacing, run = 0, next = 1.6 + phase;
+        int total = path.size();
+        float[] prev = null;
+        for (int i = 1; i < total; i++) {
+            Vec3 a = path.get(i - 1), b = path.get(i);
+            double seg = a.distanceTo(b);
+            float[] pb = FcsProjection.project(b);
+            float t = i / (float) total;
+            if (prev != null && pb != null && i % 2 == 0) FcsDraw.line(g, prev[0], prev[1], pb[0], pb[1], 0.8F, FcsDraw.argb(c, 0.18F + 0.35F * t));
+            if (pb != null) prev = pb;
+            while (run + seg >= next) {
+                double f = (next - run) / seg;
+                Vec3 q = a.add(b.subtract(a).scale(f));
+                float[] pq = FcsProjection.project(q);
+                if (pq != null) {
+                    double dist = Math.max(1, q.distanceTo(cam));
+                    float r = (float) Mth.clamp(26 / dist, 1.1, 3.2);
+                    float alpha = 0.35F + 0.6F * t;
+                    FcsDraw.quad(g, pq[0], pq[1] - r, pq[0] + r, pq[1], pq[0], pq[1] + r, pq[0] - r, pq[1], FcsDraw.argb(c, alpha));
+                }
+                next += spacing;
+            }
+            run += seg;
+        }
+        // impact reticle
         if (s.impact() != null) {
-            float[] p = FcsProjection.project(s.impact());
-            if (p != null) {
-                FcsDraw.circle(g, p[0], p[1], 5, 1F, FcsDraw.argb(c, 0.95F));
-                FcsDraw.line(g, p[0] - 9, p[1], p[0] - 5, p[1], 1F, FcsDraw.argb(c, 0.95F));
-                FcsDraw.line(g, p[0] + 5, p[1], p[0] + 9, p[1], 1F, FcsDraw.argb(c, 0.95F));
-                FcsDraw.line(g, p[0], p[1] + 5, p[0], p[1] + 9, 1F, FcsDraw.argb(c, 0.95F));
+            Vec3 n = s.normal() != null ? s.normal() : new Vec3(0, 1, 0);
+            Vec3 at = s.impact().add(n.scale(0.03));
+            Vec3 tx = Math.abs(n.y) < 0.9 ? n.cross(new Vec3(0, 1, 0)).normalize() : n.cross(new Vec3(1, 0, 0)).normalize();
+            Vec3 ty = n.cross(tx).normalize();
+            float spin = (now % 3000) / 3000F * (float) Math.PI * 2;
+            for (int k = 0; k < 4; k++) {
+                float a0 = spin + k * (float) Math.PI / 2;
+                worldArc(g, at, tx, ty, 0.62, a0, a0 + 1.05F, 1.6F, FcsDraw.argb(c, 0.95F));
+            }
+            worldArc(g, at, tx, ty, 0.30, 0, (float) Math.PI * 2, 0.8F, FcsDraw.argb(c, 0.7F));
+            for (int k = 0; k < 4; k++) {
+                double ang = -spin * 0.5 + k * Math.PI / 2;
+                Vec3 dir = tx.scale(Math.cos(ang)).add(ty.scale(Math.sin(ang)));
+                float[] p0 = FcsProjection.project(at.add(dir.scale(0.72))), p1 = FcsProjection.project(at.add(dir.scale(0.95)));
+                if (p0 != null && p1 != null) FcsDraw.line(g, p0[0], p0[1], p1[0], p1[1], 1.2F, FcsDraw.argb(c, 0.9F));
+            }
+            float[] pc = FcsProjection.project(at);
+            if (pc != null) {
+                FcsDraw.disc(g, pc[0], pc[1], 1.6F, FcsDraw.argb(c, 1F));
+                double range = s.impact().distanceTo(path.get(0));
+                FcsDraw.chip(g, String.format(Locale.ROOT, "%.1fm", range), pc[0] + 10, pc[1] - 12, c, 0.5F);
+                FcsDraw.text(g, String.format(Locale.ROOT, "%.2fs", s.ticks() / 20.0), pc[0] + 11, pc[1] - 3, FcsDraw.argb(c, 0.9F), 0.5F);
             }
         }
-        if (FcsState.leadPoint != null) {
+        // target brackets
+        if (onTarget) {
+            var box = s.target().getBoundingBox();
+            float[] lo = null, hi = null;
+            float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
+            boolean ok = true;
+            for (int i = 0; i < 8 && ok; i++) {
+                float[] q = FcsProjection.project((i & 1) == 0 ? box.minX : box.maxX, (i & 2) == 0 ? box.minY : box.maxY, (i & 4) == 0 ? box.minZ : box.maxZ);
+                if (q == null) { ok = false; break; }
+                minX = Math.min(minX, q[0]); maxX = Math.max(maxX, q[0]); minY = Math.min(minY, q[1]); maxY = Math.max(maxY, q[1]);
+            }
+            if (ok) {
+                float pad = 3 + 2 * (float) Math.sin(now / 120.0);
+                FcsDraw.brackets(g, minX - pad, minY - pad, maxX - minX + pad * 2, maxY - minY + pad * 2, 6, 1.4F, FcsDraw.argb(FcsDraw.RED, 0.95F));
+                FcsDraw.chip(g, "LOCK", minX - pad, maxY + pad + 2, FcsDraw.RED, 0.5F);
+            }
+        }
+        // lead diamond and tether
+        if (FcsState.leadPoint != null && FcsState.leadTarget != null) {
             float[] p = FcsProjection.project(FcsState.leadPoint);
+            float[] from = FcsProjection.project(FcsState.leadTarget.getBoundingBox().getCenter());
             if (p != null) {
-                FcsDraw.quad(g, p[0], p[1] - 4, p[0] + 4, p[1], p[0], p[1] + 4, p[0] - 4, p[1], FcsDraw.argb(FcsDraw.YELLOW, 0.35F));
-                FcsDraw.text(g, "LEAD", p[0] + 6, p[1] - 3, FcsDraw.argb(FcsDraw.YELLOW, 0.95F), 0.5F);
+                if (from != null) FcsDraw.dashed(g, from[0], from[1], p[0], p[1], 2.5F, 0.8F, FcsDraw.argb(FcsDraw.YELLOW, 0.7F));
+                float r = 4.5F;
+                FcsDraw.line(g, p[0], p[1] - r, p[0] + r, p[1], 1.2F, FcsDraw.argb(FcsDraw.YELLOW, 1F));
+                FcsDraw.line(g, p[0] + r, p[1], p[0], p[1] + r, 1.2F, FcsDraw.argb(FcsDraw.YELLOW, 1F));
+                FcsDraw.line(g, p[0], p[1] + r, p[0] - r, p[1], 1.2F, FcsDraw.argb(FcsDraw.YELLOW, 1F));
+                FcsDraw.line(g, p[0] - r, p[1], p[0], p[1] - r, 1.2F, FcsDraw.argb(FcsDraw.YELLOW, 1F));
+                FcsDraw.disc(g, p[0], p[1], 1.2F, FcsDraw.argb(FcsDraw.YELLOW, 1F));
+                FcsDraw.text(g, "LEAD", p[0] + 7, p[1] - 3, FcsDraw.argb(FcsDraw.YELLOW, 0.95F), 0.5F);
             }
         }
+        // slim data panel
         float[] pc = centre(FcsClientConfig.Panel.BALLISTIC, w, h);
-        int pw = 92, ph = 44;
+        int pw = 92, ph = 40;
         int x = (int) (pc[0] - pw / 2F), y = (int) (pc[1] - ph / 2F);
         FcsDraw.panel(g, x, y, pw, ph, "BALLISTIC  " + s.profile().name(), c);
-        double tof = s.ticks() / 20.0;
-        double range = s.impact() != null ? s.impact().distanceTo(s.path().get(0)) : -1;
-        FcsDraw.text(g, String.format(Locale.ROOT, "TOF %.2fs", tof), x + 4, y + 11, FcsDraw.argb(FcsDraw.WHITE, 0.9F), 0.55F);
-        FcsDraw.text(g, range < 0 ? "RNG  OUT" : String.format(Locale.ROOT, "RNG %.1fm", range), x + 4, y + 19, FcsDraw.argb(FcsDraw.WHITE, 0.9F), 0.55F);
-        FcsDraw.text(g, String.format(Locale.ROOT, "DROP %.1fm", s.drop()), x + 4, y + 27, FcsDraw.argb(FcsDraw.WHITE, 0.9F), 0.55F);
-        String state = s.target() != null ? "ON TGT" : s.profile().ready() ? "READY" : "CHARGE";
-        FcsDraw.textRight(g, state, x + pw - 4, y + 11, FcsDraw.argb(c, 1F), 0.55F);
-        if (FcsState.leadTarget != null) {
-            FcsDraw.text(g, "TGT " + tagName(FcsState.leadTarget), x + 4, y + 35, FcsDraw.argb(FcsDraw.YELLOW, 0.95F), 0.55F);
+        double range = s.impact() != null ? s.impact().distanceTo(path.get(0)) : -1;
+        row(g, x, y + 13, pw, "TOF", String.format(Locale.ROOT, "%.2fs", s.ticks() / 20.0));
+        row(g, x, y + 21, pw, "RNG", range < 0 ? "OUT" : String.format(Locale.ROOT, "%.1fm", range));
+        row(g, x, y + 29, pw, "DROP", String.format(Locale.ROOT, "%.1fm", s.drop()));
+        String state = onTarget ? "ON TGT" : s.profile().ready() ? "READY" : "CHARGE";
+        FcsDraw.textRight(g, state, x + pw - 4, y + 2, FcsDraw.argb(c, 1F), 0.5F);
+    }
+
+    /** Label left, value right, dotted leader between. */
+    private static void row(GuiGraphics g, int x, int y, int pw, String label, String value) {
+        FcsDraw.text(g, label, x + 5, y, FcsDraw.argb(FcsDraw.WHITE, 0.6F), 0.55F);
+        float lw = FcsDraw.width(label, 0.55F), vw = FcsDraw.width(value, 0.55F);
+        for (float dx = x + 8 + lw; dx < x + pw - 6 - vw; dx += 3) g.fill((int) dx, y + 4, (int) dx + 1, y + 5, 0x40FFFFFF);
+        FcsDraw.textRight(g, value, x + pw - 4, y, FcsDraw.argb(FcsDraw.WHITE, 0.95F), 0.55F);
+    }
+
+    /** Arc of a circle in the world (centre, plane axes tx/ty), drawn in screen space. */
+    private static void worldArc(GuiGraphics g, Vec3 c, Vec3 tx, Vec3 ty, double r, float a0, float a1, float width, int argb) {
+        int steps = Math.max(3, (int) Math.ceil(Math.abs(a1 - a0) / 0.2F));
+        float[] prev = null;
+        for (int i = 0; i <= steps; i++) {
+            double a = a0 + (a1 - a0) * i / (double) steps;
+            float[] q = FcsProjection.project(c.add(tx.scale(Math.cos(a) * r)).add(ty.scale(Math.sin(a) * r)));
+            if (q != null && prev != null) FcsDraw.line(g, prev[0], prev[1], q[0], q[1], width, argb);
+            prev = q;
         }
     }
 
     // ------------------------------------------------------------------ blast warning
 
+    /**
+     * Blast warning: a ground danger zone that fills as the fuse burns, a fuse-ring icon over each
+     * charge, a direction indicator around the aim point for charges close to the wearer, a red
+     * screen edge inside the blast radius, and a compact list. The beeps come from FcsClient.
+     */
     private static void blast(GuiGraphics g, int w, int h, int primary, float partial) {
         List<SensorTracker.Blast> blasts = SensorTracker.blasts();
         if (blasts.isEmpty()) return;
         LocalPlayer player = Minecraft.getInstance().player;
+        long now = System.currentTimeMillis();
+        float cx = w / 2F, cy = h / 2F;
         boolean inside = false;
         for (SensorTracker.Blast b : blasts) {
             double d = Math.sqrt(b.entity().distanceToSqr(player));
-            if (d < b.radius() * 2) inside = true;
+            boolean in = d < b.radius();
+            inside |= in;
+            float burnt = b.burnt();
+            int col = b.seconds() < 1 || in ? FcsDraw.RED : FcsDraw.YELLOW;
+            float flash = b.seconds() < 1 ? (float) (0.6 + 0.4 * Math.sin(now / 55.0)) : 1F;
             Vec3 at = b.entity().getPosition(partial);
-            float[] p = FcsProjection.project(at.x, at.y + b.entity().getBbHeight() + 0.6, at.z);
-            if (p != null) {
-                int c = b.seconds() < 1 ? FcsDraw.RED : FcsDraw.YELLOW;
-                String t = String.format(Locale.ROOT, "T-%.2f", Math.max(0, b.seconds()));
-                float tw = FcsDraw.width(t, 0.75F);
-                g.fill((int) (p[0] - tw / 2 - 2), (int) p[1] - 2, (int) (p[0] + tw / 2 + 2), (int) p[1] + 8, 0x90000000);
-                FcsDraw.textCentered(g, t, p[0], p[1], FcsDraw.argb(c, 1F), 0.75F);
+            // ground danger zone
+            dangerZone(g, at.add(0, 0.06, 0), b.radius(), burnt, col, flash);
+            // fuse ring icon over the charge
+            float[] p = FcsProjection.project(at.x, at.y + b.entity().getBbHeight() + 0.9, at.z);
+            if (p != null && p[0] > 0 && p[0] < w && p[1] > 0 && p[1] < h) fuseIcon(g, p[0], p[1], 7, b, col, flash);
+            // indicator around the aim point when the charge is near
+            if (d < b.radius() * 2.5) {
+                Vec3 mid = at.add(0, b.entity().getBbHeight() * 0.5, 0);
+                float bearing = FcsProjection.bearing(mid.x, mid.y, mid.z);
+                float r = 52;
+                float ix = cx + (float) Math.sin(bearing) * r, iy = cy - (float) Math.cos(bearing) * r;
+                float bx = (float) Math.sin(bearing), by = (float) -Math.cos(bearing);
+                float ax = cx + bx * (r + 13), ay = cy + by * (r + 13);
+                FcsDraw.triangle(g, ax + bx * 5, ay + by * 5, ax - by * 4, ay + bx * 4, ax + by * 4, ay - bx * 4, FcsDraw.argb(col, flash));
+                fuseIcon(g, ix, iy, 8, b, col, flash);
+                FcsDraw.textCentered(g, String.format(Locale.ROOT, "%.0fm", d), ix, iy + 11, FcsDraw.argb(col, 0.9F), 0.5F);
             }
         }
+        if (inside) {
+            float pulse = (float) (0.5 + 0.5 * Math.sin(now / 80.0));
+            for (int k = 0; k < 4; k++) {
+                int a = FcsDraw.argb(FcsDraw.RED, (0.26F - k * 0.06F) * pulse);
+                int bw = 2 + k * 4;
+                g.fill(0, k * 4, w, bw, a); g.fill(0, h - bw, w, h - k * 4, a);
+                g.fill(k * 4, bw, bw, h - bw, a); g.fill(w - bw, bw, w - k * 4, h - bw, a);
+            }
+        }
+        // compact list
         float[] c = centre(FcsClientConfig.Panel.BLAST, w, h);
         int rows = Math.min(4, blasts.size());
-        int pw = 128, ph = 12 + rows * 9;
+        int pw = 128, ph = 13 + rows * 9;
         int x = (int) (c[0] - pw / 2F), y = (int) (c[1] - ph / 2F);
-        float flash = inside ? (float) (0.55 + 0.45 * Math.sin(System.currentTimeMillis() / 70.0)) : 1F;
-        FcsDraw.panel(g, x, y, pw, ph, inside ? "BLAST WARNING  IN RADIUS" : "BLAST WARNING", inside ? FcsDraw.RED : FcsDraw.YELLOW);
-        if (inside) g.fill(x + 1, y + 1, x + pw - 1, y + 9, FcsDraw.argb(FcsDraw.RED, 0.35F * flash));
+        FcsDraw.panel(g, x, y, pw, ph, inside ? "BLAST  IN RADIUS" : "BLAST WARNING", inside ? FcsDraw.RED : FcsDraw.YELLOW);
         for (int i = 0; i < rows; i++) {
             SensorTracker.Blast b = blasts.get(i);
-            int ry = y + 11 + i * 9;
+            int ry = y + 12 + i * 9;
             double d = Math.sqrt(b.entity().distanceToSqr(player));
             int col = b.seconds() < 1 || d < b.radius() ? FcsDraw.RED : FcsDraw.YELLOW;
-            FcsDraw.text(g, b.label(), x + 4, ry, FcsDraw.argb(col, 1F), 0.55F);
-            FcsDraw.text(g, String.format(Locale.ROOT, "%.0fm", d), x + 44, ry, FcsDraw.argb(FcsDraw.WHITE, 0.9F), 0.55F);
-            FcsDraw.bar(g, x + 64, ry, 34, 5, Math.min(1, b.seconds() / 4F), col);
-            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.2fs", Math.max(0, b.seconds())), x + pw - 4, ry, FcsDraw.argb(col, 1F), 0.55F);
+            FcsDraw.text(g, b.label(), x + 5, ry, FcsDraw.argb(col, 1F), 0.55F);
+            FcsDraw.text(g, String.format(Locale.ROOT, "%.0fm", d), x + 46, ry, FcsDraw.argb(FcsDraw.WHITE, 0.9F), 0.55F);
+            // segmented fuse bar
+            int segs = 10, filled = Math.round((1 - b.burnt()) * segs);
+            for (int k = 0; k < segs; k++) {
+                g.fill(x + 64 + k * 4, ry + 1, x + 67 + k * 4, ry + 5, k < filled ? FcsDraw.argb(col, 0.95F) : 0x40FFFFFF);
+            }
+            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.1f", Math.max(0, b.seconds())), x + pw - 4, ry, FcsDraw.argb(col, 1F), 0.55F);
+        }
+    }
+
+    /** Disc icon: dark core, warning glyph, ring that empties as the fuse burns, countdown chip. */
+    private static void fuseIcon(GuiGraphics g, float x, float y, float r, SensorTracker.Blast b, int col, float flash) {
+        FcsDraw.disc(g, x, y, r, 0xB0050808);
+        float left = 1 - b.burnt();
+        FcsDraw.circle(g, x, y, r, 0.8F, FcsDraw.argb(col, 0.35F));
+        FcsDraw.arc(g, x, y, r, 0, left * (float) Math.PI * 2, 1.8F, FcsDraw.argb(col, flash));
+        // "!" glyph
+        FcsDraw.quad(g, x - 0.9F, y - r * 0.55F, x + 0.9F, y - r * 0.55F, x + 0.6F, y + r * 0.15F, x - 0.6F, y + r * 0.15F, FcsDraw.argb(col, flash));
+        FcsDraw.disc(g, x, y + r * 0.42F, 0.9F, FcsDraw.argb(col, flash));
+        FcsDraw.chip(g, String.format(Locale.ROOT, "%.1f", Math.max(0, b.seconds())), x + r + 2, y - 4, col, 0.5F);
+    }
+
+    /** Ground circle of the blast radius: faint fill, a sector that fills with the burnt fuse, rim. */
+    private static void dangerZone(GuiGraphics g, Vec3 c, float radius, float burnt, int col, float flash) {
+        int steps = 40;
+        float[] centre = FcsProjection.project(c);
+        float[][] rim = new float[steps + 1][];
+        for (int i = 0; i <= steps; i++) {
+            double a = i * Math.PI * 2 / steps;
+            rim[i] = FcsProjection.project(c.x + Math.sin(a) * radius, c.y, c.z - Math.cos(a) * radius);
+        }
+        int fill = FcsDraw.argb(col, 0.10F * flash), burn = FcsDraw.argb(col, 0.24F * flash);
+        int burnSteps = Math.round(burnt * steps);
+        for (int i = 0; i < steps; i++) {
+            if (centre == null || rim[i] == null || rim[i + 1] == null) continue;
+            FcsDraw.triangle(g, centre[0], centre[1], rim[i][0], rim[i][1], rim[i + 1][0], rim[i + 1][1], i < burnSteps ? burn : fill);
+        }
+        for (int i = 0; i < steps; i++) {
+            if (rim[i] == null || rim[i + 1] == null) continue;
+            boolean dash = (i & 1) == 0;
+            FcsDraw.line(g, rim[i][0], rim[i][1], rim[i + 1][0], rim[i + 1][1], dash ? 1.4F : 0.7F, FcsDraw.argb(col, (dash ? 0.9F : 0.5F) * flash));
         }
     }
 
@@ -361,6 +506,9 @@ public final class FcsHud {
     private static void holomap(GuiGraphics g, int w, int h, int primary, LocalPlayer player, float partial) {
         float[] c = centre(FcsClientConfig.Panel.HOLOMAP, w, h);
         float size = 112 * FcsClientConfig.holomapScale();
+        // keep the whole box on screen at any size
+        c[0] = Mth.clamp(c[0], size / 2 + 4, w - size / 2 - 4);
+        c[1] = Mth.clamp(c[1], size * 0.46F + 4, h - size * 0.46F - 4);
         HoloMap.render(g, c[0], c[1], size, player.getViewYRot(partial), primary, partial);
     }
 }

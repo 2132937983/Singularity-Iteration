@@ -186,7 +186,7 @@ public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc imp
             new ArmorFeatureInfo(EquipmentSlot.CHEST, "fire_resistance", "tooltip.mio_icif.armor.feature_fire_resistance"),
             new ArmorFeatureInfo(EquipmentSlot.CHEST, "healing", "tooltip.mio_icif.armor.feature_healing"),
             new ArmorFeatureInfo(EquipmentSlot.CHEST, "knockback_resistance", "tooltip.mio_icif.armor.feature_knockback_resistance"),
-            new ArmorFeatureInfo(EquipmentSlot.CHEST, com.miophas.singularity_iteration.common.suit.ViltrumFlight.FEATURE, "tooltip.mio_icif.armor.feature_viltrum_flight")
+            new ArmorFeatureInfo(EquipmentSlot.CHEST, com.miophas.singularity_iteration.common.suit.ManeuverMode.FEATURE, "tooltip.mio_icif.armor.feature_special_maneuver")
         );
     }
 

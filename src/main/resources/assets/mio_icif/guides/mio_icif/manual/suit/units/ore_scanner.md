@@ -14,9 +14,10 @@ item_ids:
 
 ## Function
 
-The unit scans a sphere with a 16-block radius around the wearer.
-The visor shows each ore block as a wireframe cell in the color of the ore.
-A side panel lists the nearest ore of each type with its distance and height.
+When you switch on the unit, it sends a sonar pulse through the ground in a 16-block radius.
+The pulse spreads out from the wearer as a ring of light. A short glitch effect runs over the visor.
+Each ore block lights up when the echo reaches it. The ore shows as a glowing cell in the color of the ore, also through rock.
+After the pulse, a small tag shows the nearest ore of each type and its distance.
 
 ## Power data
 
@@ -31,12 +32,13 @@ A side panel lists the nearest ore of each type with its distance and height.
 1. Install the unit into the quantum boots or leggings.
 2. Wear a quantum helmet.
 3. Walk to the mining area.
-4. Read the ore list on the status panel.
-5. Dig towards the highlighted cells.
+4. Switch on the unit and wait for the echo.
+5. Dig towards the lit cells.
 
 ## Notes
 
-- One sweep takes 50 ticks. A ring on the ground marks the start of each sweep.
+- After the first pulse, the unit scans again every 50 ticks without a pulse effect.
+- Switch the unit off and on again to send a new pulse.
 
 ## Recipe
 

@@ -27,6 +27,7 @@ Data panels sit at the screen edges. Threat markers sit on the outer ring.
 Press H to switch the HUD on or off.
 Set the colors and the outlines in the mod configuration screen.
 Bind a key to the layout editor in the controls screen.
+To hide the heading tape, click the heading tape button in the layout editor.
 
 ## Read-outs
 

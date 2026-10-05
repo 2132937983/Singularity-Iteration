@@ -63,4 +63,15 @@ public final class SiRenderTypes extends RenderType {
             .setDepthTestState(LEQUAL_DEPTH_TEST)
             .setWriteMaskState(COLOR_WRITE)
             .createCompositeState(false));
+
+    /** Depth-tested alpha-blended ribbons and veils (wake trails, vapour cone): no depth write, no cull. */
+    public static final RenderType VAPOR = create("mio_icif_vapor",
+        DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 16384, false, true,
+        CompositeState.builder()
+            .setShaderState(POSITION_COLOR_SHADER)
+            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+            .setDepthTestState(LEQUAL_DEPTH_TEST)
+            .setCullState(NO_CULL)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
 }

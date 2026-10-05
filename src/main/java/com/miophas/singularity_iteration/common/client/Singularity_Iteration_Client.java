@@ -188,7 +188,35 @@ public class Singularity_Iteration_Client {
     }
 
     @SubscribeEvent
+    static void registerReloadListeners(net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager ->
+            com.miophas.singularity_iteration.common.client.render.BakedArmorModel.invalidate());
+    }
+
+    /** Nano suit (0.1.7.34): Blockbench geometry for each piece, shared by all wearers. */
+    private static void registerNanoArmor(RegisterClientExtensionsEvent event) {
+        String[] names = {"nano_helmet", "nano_chestplate", "nano_leggings", "nano_boots"};
+        net.minecraft.world.item.Item[] items = {
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_HELMET.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_LEGGINGS.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_BOOTS.get()};
+        for (int i = 0; i < names.length; i++) {
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor_models/" + names[i] + ".json");
+            event.registerItem(new IClientItemExtensions() {
+                private com.miophas.singularity_iteration.common.client.render.BakedArmorModel model;
+                @Override
+                public HumanoidModel<?> getHumanoidArmorModel(LivingEntity entity, ItemStack stack, net.minecraft.world.entity.EquipmentSlot slot, HumanoidModel<?> original) {
+                    if (model == null) model = new com.miophas.singularity_iteration.common.client.render.BakedArmorModel(id);
+                    return model;
+                }
+            }, items[i]);
+        }
+    }
+
+    @SubscribeEvent
     static void registerClientExtensions(RegisterClientExtensionsEvent event) {
+        registerNanoArmor(event);
         event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override public ResourceLocation getStillTexture() { return ResourceLocation.parse("mio_icif:block/fluids/weed_ex_still"); }
             @Override public ResourceLocation getFlowingTexture() { return getStillTexture(); }

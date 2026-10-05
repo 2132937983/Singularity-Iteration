@@ -28,11 +28,10 @@ public class HudLayoutScreen extends Screen {
             case TELEMETRY -> new int[]{112, 74};
             case HOLOMAP -> {
                 int s = (int) (112 * FcsClientConfig.holomapScale());
-                yield new int[]{s, (int) (s * 0.75F)};
+                yield new int[]{s, (int) (s * 0.92F)};
             }
-            case BALLISTIC -> new int[]{92, 44};
+            case BALLISTIC -> new int[]{92, 40};
             case BLAST -> new int[]{128, 30};
-            case FLIGHT -> new int[]{74, 66};
         };
     }
 
@@ -45,6 +44,15 @@ public class HudLayoutScreen extends Screen {
             FcsClientConfig.save();
         }).bounds(width / 2 - 104, y, 100, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).bounds(width / 2 + 4, y, 100, 20).build());
+        addRenderableWidget(Button.builder(compassLabel(), b -> {
+            FcsClientConfig.setShowCompass(!FcsClientConfig.showCompass());
+            b.setMessage(compassLabel());
+        }).bounds(width / 2 - 104, y - 24, 208, 20).build());
+    }
+
+    private static Component compassLabel() {
+        return Component.translatable("screen.mio_icif.hud_layout.compass",
+            Component.translatable(FcsClientConfig.showCompass() ? "options.on" : "options.off"));
     }
 
     private int[] rect(FcsClientConfig.Panel p) {
@@ -71,7 +79,7 @@ public class HudLayoutScreen extends Screen {
                 r[0] + r[2] / 2F, r[1] + r[3] / 2F, FcsDraw.argb(FcsDraw.WHITE, 0.8F), 0.6F);
         }
         g.drawCenteredString(font, title, width / 2, 10, 0xFFFFFF);
-        g.drawCenteredString(font, Component.translatable("screen.mio_icif.hud_layout.hint"), width / 2, height - 42, 0xA0C0C8);
+        g.drawCenteredString(font, Component.translatable("screen.mio_icif.hud_layout.hint"), width / 2, height - 66, 0xA0C0C8);
         super.render(g, mouseX, mouseY, partial);
     }
 

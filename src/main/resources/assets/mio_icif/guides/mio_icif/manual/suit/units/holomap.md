@@ -14,9 +14,10 @@ item_ids:
 
 ## Function
 
-The unit shows a tilted 3D relief of the terrain within 20 blocks.
-The map turns with the wearer, so the view direction is always up.
-Diamonds on stalks show creatures within 32 blocks at their height.
+The unit shows a box-shaped 3D hologram of the blocks around the wearer: 25 x 14 x 25 blocks.
+The hologram holds the full shape of the area: ground, walls, caves and buildings. The walls of the box show a cut section of the ground.
+The box turns with the wearer, so the view direction always points into the box.
+Diamonds on stalks show creatures within 24 blocks at their height. A white arrow shows the wearer.
 
 ## Power data
 
@@ -36,7 +37,7 @@ Diamonds on stalks show creatures within 32 blocks at their height.
 
 ## Notes
 
-- Underground, the map shows the cave floor near the wearer instead of the surface.
+- The box samples the blocks again every 10 ticks.
 
 ## Recipe
 

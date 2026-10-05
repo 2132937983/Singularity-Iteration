@@ -98,8 +98,6 @@ guiGraphics.blit(ATLAS_TEXTURE, x + SAVE_BTN_X, y + SAVE_BTN_Y, 0, (float) 50, (
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
 
-        // int x = (this.width - this.imageWidth) / 2;
-        // int y = (this.height - this.imageHeight) / 2;
 
         com.miophas.singularity_iteration.common.menu.producer.ScannerElcMenu menu = this.menu;
         if (menu == null) return;

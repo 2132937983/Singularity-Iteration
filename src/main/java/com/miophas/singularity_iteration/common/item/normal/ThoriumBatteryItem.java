@@ -14,6 +14,7 @@ public class ThoriumBatteryItem extends mio_icif_bat {
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        super.inventoryTick(stack, level, entity, slotId, isSelected);   // inventory auto-charge mode
         if (level.isClientSide || !(entity instanceof Player player)) return;   // server only: a client-side top-up was overwritten by the next sync (charge bar jitter)
         if (level.getGameTime() % 20 != 0) return; // 每20tick(1秒)执行一次，而不是每tick
         if (getEnergy(stack) < getMaxEnergy()) {

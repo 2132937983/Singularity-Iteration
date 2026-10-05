@@ -284,12 +284,26 @@ public class AbstractBattery extends Item implements IBatteryItem {
             Component.translatable("tooltip.mio_icif.energy", getEnergy(stack), maxEnergy)
                 .withStyle(ChatFormatting.GRAY)
         );
+        if (this instanceof IEnergyDistributable d && d.supportsAutoCharge()) {
+            boolean on = com.miophas.singularity_iteration.core.api.item.BatteryAutoCharge.isOn(stack);
+            tooltipComponents.add(Component.translatable(on ? "tooltip.mio_icif.bat.auto_on" : "tooltip.mio_icif.bat.auto_off")
+                .withStyle(on ? ChatFormatting.GREEN : ChatFormatting.DARK_GRAY));
+        }
     }
 
     // ==================== 生命周期 ====================
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        if (!level.isClientSide && this instanceof IEnergyDistributable d && d.supportsAutoCharge() && entity instanceof Player player) {
+            com.miophas.singularity_iteration.core.api.item.BatteryAutoCharge.tick(player, stack, this, chargeRate, slotId);
+        }
+    }
+
+    /** Auto-charge mode shows as the enchantment glint. */
+    @Override
+    public boolean isFoil(ItemStack stack) {
+        return super.isFoil(stack) || com.miophas.singularity_iteration.core.api.item.BatteryAutoCharge.isOn(stack);
     }
 
     @Override

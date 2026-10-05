@@ -46,7 +46,7 @@ public class mio_icif_electric_fishing_rod extends mio_icif_tool_elc implements 
             // 收杆
             if (!level.isClientSide) {
                 player.fishing.retrieve(stack);
-                extractEnergy(stack, ENERGY_COST);
+                extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
             }
 
             level.playSound(

@@ -1516,6 +1516,115 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /**
+     * Scene 15 (-Dsi.capture.scene=15), 0.1.7.35: nano suit 3D item icons and turned boots, Armory
+     * GUI tooltips (slot area, energy bar, status line), battery auto-charge and Energy Saving
+     * tooltips, the equipment HUD line fading after 3 s, and an Armory delivery in flight.
+     */
+    private static void scene15() {
+        BlockPos armoryAt = new BlockPos(8, -60, 12);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack[] suit = {new ItemStack(Items.DIAMOND_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE), new ItemStack(Items.DIAMOND_LEGGINGS),
+                    new ItemStack(Items.DIAMOND_BOOTS), new ItemStack(Items.DIAMOND_SWORD), new ItemStack(Items.SHIELD)};
+                for (int c = 0; c < 6; c++) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), suit[c], false);
+                armory.rename(sp, 0, "Diamond Mk.II");
+            }
+            var enchantments = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+            var saving = enchantments.getOrThrow(com.miophas.singularity_iteration.core.api.item.EnergySaving.KEY);
+            String[] pieces = {"helmet", "chestplate", "leggings", "boots"};
+            EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+            for (int i = 0; i < 4; i++) {
+                ItemStack st = item("armor/item_armor_nano_" + pieces[i]);
+                sp.setItemSlot(slots[i], st);
+                sp.getInventory().setItem(i, st.copy());
+            }
+            ItemStack sword = item("item_tool_quantum_sword");
+            if (sword.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(sword, b.getMaxEnergy(sword) / 2);
+            sword.enchant(saving, 5);
+            sp.getInventory().setItem(4, sword);
+            ItemStack battery = item("normal/item_lapotron_crystal_lev0");
+            if (battery.isEmpty()) battery = item("normal/item_crystal_lev0");
+            if (battery.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(battery, b.getMaxEnergy(battery));
+            com.miophas.singularity_iteration.core.api.item.BatteryAutoCharge.toggle(battery);
+            sp.getInventory().setItem(5, battery);
+            ItemStack book = new ItemStack(Items.ENCHANTED_BOOK);
+            book.set(net.minecraft.core.component.DataComponents.STORED_ENCHANTMENTS,
+                new net.minecraft.world.item.enchantment.ItemEnchantments.Mutable(net.minecraft.world.item.enchantment.ItemEnchantments.EMPTY) {{ set(saving, 5); }}.toImmutable());
+            sp.getInventory().setItem(6, book);
+            sp.getInventory().selected = 7;
+            sp.teleportTo(level, 8.5, -60, 9.0, 0, 20);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        // Armory GUI: the maintenance tooltip only over the status line
+        server(10, sp -> sp.openMenu((mio_icif_armory) sp.serverLevel().getBlockEntity(armoryAt), buf -> buf.writeBlockPos(armoryAt)));
+        client(1, () -> hoverGui = new int[]{100, 60});
+        shot(30, "scene15/armory_gui_no_tooltip_mid");
+        client(1, () -> hoverGui = new int[]{120, 141});
+        shot(5, "scene15/armory_gui_status_tooltip");
+        client(1, () -> hoverGui = new int[]{80, 132});
+        shot(5, "scene15/armory_gui_energy_tooltip");
+        client(1, () -> hoverGui = new int[]{30, 30});
+        shot(5, "scene15/armory_gui_rename_tooltip");
+        client(1, () -> hoverGui = new int[]{-4000, 4000});
+        server(1, ServerPlayer::closeContainer);
+        // inventory: 3D nano icons, battery and Energy Saving tooltips
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+        shot(15, "scene15/nano_icons_3d_inventory");
+        client(1, () -> hoverGui = new int[]{8 + 5 * 18 + 8, 150});
+        shot(5, "scene15/battery_auto_charge_tooltip");
+        client(1, () -> hoverGui = new int[]{8 + 4 * 18 + 8, 150});
+        shot(5, "scene15/energy_saving_sword_tooltip");
+        client(1, () -> hoverGui = new int[]{8 + 6 * 18 + 8, 150});
+        shot(5, "scene15/energy_saving_book_tooltip");
+        client(1, () -> { hoverGui = new int[]{-4000, 4000}; Minecraft.getInstance().setScreen(null); });
+        // worn nano suit: the boots now face forward
+        client(2, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -60, -6.5, 180, 30));
+        client(1, () -> Minecraft.getInstance().options.hideGui = true);
+        shot(20, "scene15/nano_boots_front");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -60, -6.5, 90, 20));
+        shot(10, "scene15/nano_boots_side");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -60, -6.5, 0, 5));
+        shot(10, "scene15/nano_suit_back");
+        // equipment HUD: the sword line shows, then fades (no burn-in)
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        server(1, sp -> { sp.getInventory().selected = 4; sp.teleportTo(sp.serverLevel(), 0.5, -60, -6.5, 0, 0); });
+        client(1, () -> Minecraft.getInstance().player.getInventory().selected = 4);
+        shot(20, "scene15/hud_sword_line_shown");
+        shot(110, "scene15/hud_sword_line_faded");
+        // Armory delivery in flight
+        client(1, () -> Minecraft.getInstance().player.getInventory().selected = 7);
+        server(5, sp -> {
+            sp.getInventory().selected = 7;
+            sp.teleportTo(sp.serverLevel(), armoryAt.getX() + 0.5, -60, armoryAt.getZ() - 6.5, 180, 0);
+            if (sp.serverLevel().getBlockEntity(armoryAt) instanceof mio_icif_armory armory) armory.summon(sp, 0);
+        });
+        client(2, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(70, "scene15/armory_delivery_a");
+        shot(4, "scene15/armory_delivery_b");
+        shot(30, "scene15/armory_delivery_docked");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "15".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene15();
+        }
+    }
+
     static {
         if (OUT != null && "14".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

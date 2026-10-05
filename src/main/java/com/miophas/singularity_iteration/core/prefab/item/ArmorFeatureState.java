@@ -42,6 +42,13 @@ public final class ArmorFeatureState {
      * @param featureKey 特性键
      * @return 是否启用；空物品或空键返回 {@link #DEFAULT_ENABLED}
      */
+    private static final java.util.Map<String, String> KEYS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** "feat_" + key, built once per feature (checks run every tick and every frame). */
+    static String storageKey(String featureKey) {
+        return KEYS.computeIfAbsent(featureKey, k -> FEATURE_PREFIX + k);
+    }
+
     public static boolean isEnabled(ItemStack stack, String featureKey) {
         if (stack.isEmpty() || featureKey == null) {
             return defaultFor(featureKey);
@@ -50,7 +57,7 @@ public final class ArmorFeatureState {
         if (customData == null || customData.isEmpty()) {
             return defaultFor(featureKey);
         }
-        String key = FEATURE_PREFIX + featureKey;
+        String key = storageKey(featureKey);
         // CustomData#contains / #read avoid copying the whole tag on every check (HUD code asks each frame)
         CompoundTag tag = customData.getUnsafe();
         return tag.contains(key) ? tag.getBoolean(key) : defaultFor(featureKey);

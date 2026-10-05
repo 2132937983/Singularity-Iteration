@@ -2311,5 +2311,12 @@
   "subtitles.mio_icif.maneuver.takeoff": "机动起飞",
   "subtitles.mio_icif.fcs.echo": "声呐脉冲",
   "subtitles.mio_icif.fcs.lock": "弹道锁定",
-  "subtitles.mio_icif.fcs.blast_beep": "爆炸预警蜂鸣"
+  "subtitles.mio_icif.fcs.blast_beep": "爆炸预警蜂鸣",
+  "enchantment.mio_icif.energy_saving": "省电",
+  "enchantment.mio_icif.energy_saving.desc": "每级使电动工具、电动武器与电力护甲的耗电减少 5%。",
+  "message.mio_icif.bat.auto_on": "§a背包自动充电：开§r（%s / %s EU）",
+  "message.mio_icif.bat.auto_off": "§7背包自动充电：关§r（%s / %s EU）",
+  "tooltip.mio_icif.bat.auto_on": "自动充电已开启：为背包中的电力物品供电",
+  "tooltip.mio_icif.bat.auto_off": "自动充电已关闭。右键开启",
+  "tooltip.mio_icif.pack.auto_hint": "潜行 + 右键：开关背包自动充电"
 }

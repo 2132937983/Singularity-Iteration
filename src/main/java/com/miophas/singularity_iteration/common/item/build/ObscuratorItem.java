@@ -266,7 +266,7 @@ public class ObscuratorItem extends mio_icif_tool_elc {
      */
     public boolean consumeEnergy(ItemStack stack, int amount) {
         if (hasEnoughEnergy(stack, amount)) {
-            extractEnergy(stack, amount);
+            extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, amount));
             return true;
         }
         return false;

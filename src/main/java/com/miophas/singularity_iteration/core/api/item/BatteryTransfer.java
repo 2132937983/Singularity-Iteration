@@ -63,6 +63,7 @@ public final class BatteryTransfer {
     /** Paid actions either get their full debit or leave the original item untouched. */
     public static boolean consume(ItemStack stack, IBatteryItem battery, long amount) {
         if (stack.isEmpty() || stack.getCount() != 1 || amount < 0) return false;
+        amount = EnergySaving.apply(stack, amount);
         if (amount == 0) return true;
         long before = battery.getEnergy(stack), capacity = battery.getMaxEnergy(stack);
         if (before < amount || before > capacity) return false;

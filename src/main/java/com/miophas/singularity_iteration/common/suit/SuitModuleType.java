@@ -41,6 +41,11 @@ public enum SuitModuleType {
     private final int color;
     private final boolean needsVisor;
     private final Set<EquipmentSlot> slots;
+    /** The same slots as an array: the per-tick checks iterate it without an iterator object. */
+    private final EquipmentSlot[] slotArray;
+    private final String featureKey, nameKey, descriptionKey;
+    /** values() copies the array on each call; the tick paths use this shared copy (do not modify). */
+    public static final SuitModuleType[] VALUES = values();
 
     SuitModuleType(String id, long drainPerTick, int color, boolean needsVisor, EquipmentSlot first, EquipmentSlot... rest) {
         this.id = id;
@@ -48,6 +53,10 @@ public enum SuitModuleType {
         this.color = color;
         this.needsVisor = needsVisor;
         this.slots = EnumSet.of(first, rest);
+        this.slotArray = this.slots.toArray(new EquipmentSlot[0]);
+        this.featureKey = "fcs_" + id;
+        this.nameKey = "module.mio_icif." + id;
+        this.descriptionKey = "module.mio_icif." + id + ".desc";
     }
 
     public String id() { return id; }
@@ -60,9 +69,10 @@ public enum SuitModuleType {
     public Set<EquipmentSlot> slots() { return slots; }
     public boolean fits(EquipmentSlot slot) { return slots.contains(slot); }
     /** Equipment console switch key. */
-    public String featureKey() { return "fcs_" + id; }
-    public String nameKey() { return "module.mio_icif." + id; }
-    public String descriptionKey() { return "module.mio_icif." + id + ".desc"; }
+    public String featureKey() { return featureKey; }
+    public String nameKey() { return nameKey; }
+    public String descriptionKey() { return descriptionKey; }
+    EquipmentSlot[] slotArray() { return slotArray; }
 
     @Nullable
     public static SuitModuleType byId(String id) {

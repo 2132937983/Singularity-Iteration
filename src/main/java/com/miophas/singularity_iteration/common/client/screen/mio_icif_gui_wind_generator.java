@@ -70,7 +70,6 @@ public class mio_icif_gui_wind_generator extends mio_icif_screen<com.miophas.sin
                 fillHeight = Math.min(fillHeight, FAN_ICON_HEIGHT); // 确保不超过图标高度
                 if (fillHeight > 0) {
                     // 从下往上绘制填充部分
-                    // int srcY = FAN_BLUE_TEXTURE_Y + FAN_ICON_HEIGHT - fillHeight;
                     int destY = y + FAN_ICON_Y + FAN_ICON_HEIGHT - fillHeight;
                     guiGraphics.blit(ATLAS_TEXTURE, x + FAN_ICON_X, destY, 0, (float) 216, (float) 227 + FAN_ICON_HEIGHT - fillHeight, FAN_ICON_WIDTH, fillHeight, ATLAS_WIDTH, ATLAS_HEIGHT);
                 }

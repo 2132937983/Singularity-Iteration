@@ -331,7 +331,6 @@ public static final int DATA_CURRENT_CATEGORY = 7;
                 if (event != null) {
                     marketData.addEvent(commodity.getItemId(), event);
                     // 事件通知已禁用（可在配置中开启）
-                    // broadcastEventMessage(commodity, event);
                 }
             }
         }

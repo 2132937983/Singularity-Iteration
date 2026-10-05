@@ -44,6 +44,7 @@ public interface IJetpackItem extends IBatteryItem, IArmorModeFeatureItem {
     default boolean consumeFlyTick(ItemStack stack) {
         long cost = Math.max(0L, getEnergyPerTickFlying());
         if (!canFlyTick(stack)) return false;
+        cost = EnergySaving.apply(stack, cost);
         if (cost == 0L) return true;
         long extracted = extractEnergy(stack, cost);
         if (extracted == cost) return true;

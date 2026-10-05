@@ -86,8 +86,6 @@ public class mio_icif_gui_transformer extends mio_icif_screen<TransformerMenu> {
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
 
-        // int x = (this.width - this.imageWidth) / 2;
-        // int y = (this.height - this.imageHeight) / 2;
 
         TransformerMenu menu = this.getMenu();
         if (menu != null) {

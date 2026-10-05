@@ -139,7 +139,6 @@ public class Singularity_Iteration {
         modEventBus.addListener(this::onConfigReload);
         
         // Register the gatherData method on the mod event bus
-        // modEventBus.addListener(this::gatherData);
 
         // Register energy capabilities on the mod event bus
         mio_icif_capacities.register(modEventBus);

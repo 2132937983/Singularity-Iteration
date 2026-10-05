@@ -1,8 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.client.hud;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.core.api.item.IEquipmentHudProvider;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -13,41 +13,38 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * 装备 HUD 循环显示器。
+ * Equipment HUD cycler: one action-bar line for all held and worn items that implement
+ * {@link IEquipmentHudProvider}.
  *
- * <p>收集玩家主手、副手与护甲槽中所有实现 {@link IEquipmentHudProvider} 的物品所提供的文本，
- * 在同一位置（actionbar）按固定顺序轮流显示，每个条目停留 {@link #DWELL_TICKS} tick。
- * 这样多个装备同时提供状态时不会互相覆盖闪烁；不再提供文本时停止刷新，让原版 actionbar 自然淡出。
+ * <p>Each slot has its own display window. A line shows for {@link #SHOW_TICKS} ticks when its
+ * wording changes (item equipped, mode switch); a change of numbers only (energy) does not show it
+ * again. A provider can ask to keep its own line on screen ({@code keepEquipmentHudVisible}, for
+ * example a jetpack in the air). That request applies to that line only: other lines still fade
+ * (0.1.7.35: a quantum sword line stayed on screen while the jetpack chestplate kept itself visible).
+ * When no line is due, the cycler stops writing and the vanilla action bar fades out.
+ *
+ * <p>The tick path allocates no collections: the slot table is fixed and reused.
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
-@SuppressWarnings("null")
 public final class EquipmentHudCycler {
-
-    /** 每个条目在 actionbar 上停留的 tick 数（40 tick = 2 秒）。 */
-    private static final int DWELL_TICKS = 40;
-
-    /** 本 tick 收集到的条目（用于替换显示集合）。 */
-    private static final Map<String, Component> PENDING = new LinkedHashMap<>();
-    /** 当前正在显示的条目（值每 tick 刷新，如能量）。 */
-    private static final Map<String, Component> CURRENT = new LinkedHashMap<>();
-    /** 当前条目的稳定顺序。 */
-    private static final List<String> ORDER = new ArrayList<>();
-
-    private static int index;
-    private static int timer;
-    /** Wording of the lines (numbers masked) - a change re-shows the HUD. */
-    private static final Map<String, String> SIGNATURES = new LinkedHashMap<>();
-    private static final int SHOW_TICKS = 60;
-    private static int visibleTicks;
-    private static boolean keepVisible;
-
     private EquipmentHudCycler() {}
+
+    /** Ticks each due line stays before the next due line takes the action bar (2 s). */
+    private static final int DWELL_TICKS = 40;
+    /** Ticks a line stays on screen after its wording changes (3 s). */
+    public static final int SHOW_TICKS = 60;
+
+    private static final EquipmentSlot[] SLOTS = {EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND,
+        EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+    private static final Component[] TEXT = new Component[SLOTS.length];
+    private static final String[] SIGNATURE = new String[SLOTS.length];
+    private static final int[] VISIBLE = new int[SLOTS.length];
+    private static final boolean[] KEEP = new boolean[SLOTS.length];
+    private static final StringBuilder SCRATCH = new StringBuilder(64);
+
+    private static int current = -1;
+    private static int dwell;
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -57,79 +54,81 @@ public final class EquipmentHudCycler {
             reset();
             return;
         }
-
-        collect(player);
-
-        // 没有任何装备提供 HUD 时停止刷新（不主动清空 actionbar，让其自然淡出）
-        if (PENDING.isEmpty()) {
-            reset();
+        boolean any = false;
+        for (int i = 0; i < SLOTS.length; i++) any |= update(i, player.getItemBySlot(SLOTS[i]), player);
+        if (!any) {
+            current = -1;
             return;
         }
-
-        // show for SHOW_TICKS after the wording changes (mode switch, new item); a line that only
-        // updates numbers (energy) is not pushed every tick any more - it used to stay burned in
-        Map<String, String> signatures = new LinkedHashMap<>();
-        PENDING.forEach((k, v) -> signatures.put(k, v.getString().replaceAll("[0-9][0-9.,]*", "#")));
-        if (!signatures.equals(SIGNATURES)) {
-            SIGNATURES.clear();
-            SIGNATURES.putAll(signatures);
-            visibleTicks = SHOW_TICKS;
+        // stay on the current line for DWELL_TICKS, then move to the next due line
+        if (current < 0 || !due(current) || --dwell <= 0) {
+            current = next(current);
+            dwell = DWELL_TICKS;
         }
-        boolean sameSet = PENDING.keySet().equals(CURRENT.keySet());
-        CURRENT.clear();
-        CURRENT.putAll(PENDING);
-        PENDING.clear();
-
-        if (!sameSet) {
-            ORDER.clear();
-            ORDER.addAll(CURRENT.keySet());
-            index = 0;
-            timer = DWELL_TICKS;
-        }
-
-        if (ORDER.size() > 1) {
-            if (--timer <= 0) {
-                index = (index + 1) % ORDER.size();
-                timer = DWELL_TICKS;
-            }
-        } else {
-            index = 0;
-        }
-
-        if (!keepVisible && visibleTicks <= 0) return;
-        if (visibleTicks > 0) visibleTicks--;
-        minecraft.gui.setOverlayMessage(CURRENT.get(ORDER.get(index)), false);
+        if (current >= 0) minecraft.gui.setOverlayMessage(TEXT[current], false);
     }
 
-    private static void collect(Player player) {
-        keepVisible = false;
-        submit("main", player.getMainHandItem());
-        submit("off", player.getOffhandItem());
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
-            if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
-                submit("armor_" + slot.getName(), player.getItemBySlot(slot));
-            }
+    /** Refreshes one slot; returns true when its line is due this tick. */
+    private static boolean update(int i, ItemStack stack, Player player) {
+        Component text = !stack.isEmpty() && stack.getItem() instanceof IEquipmentHudProvider provider
+            ? provider.getEquipmentHudText(stack) : null;
+        if (text == null) {
+            TEXT[i] = null;
+            SIGNATURE[i] = null;
+            VISIBLE[i] = 0;
+            KEEP[i] = false;
+            return false;
         }
+        String signature = maskNumbers(text.getString());
+        if (!signature.equals(SIGNATURE[i])) {
+            SIGNATURE[i] = signature;
+            VISIBLE[i] = SHOW_TICKS;
+        } else if (VISIBLE[i] > 0) {
+            VISIBLE[i]--;
+        }
+        TEXT[i] = text;
+        KEEP[i] = ((IEquipmentHudProvider) stack.getItem()).keepEquipmentHudVisible(stack, player);
+        return due(i);
     }
 
-    private static void submit(String key, ItemStack stack) {
-        if (stack.isEmpty() || !(stack.getItem() instanceof IEquipmentHudProvider provider)) return;
-        Component text = provider.getEquipmentHudText(stack);
-        if (text != null) {
-            PENDING.put(key, text);
-            Player player = Minecraft.getInstance().player;
-            if (player != null && provider.keepEquipmentHudVisible(stack, player)) keepVisible = true;
+    private static boolean due(int i) {
+        return TEXT[i] != null && (KEEP[i] || VISIBLE[i] > 0);
+    }
+
+    private static int next(int from) {
+        for (int k = 1; k <= SLOTS.length; k++) {
+            int i = Math.floorMod(from + k, SLOTS.length);
+            if (due(i)) return i;
         }
+        return -1;
+    }
+
+    /** The wording with every run of digits (and its separators) replaced by '#'. */
+    static String maskNumbers(String s) {
+        SCRATCH.setLength(0);
+        boolean inNumber = false;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            boolean digit = c >= '0' && c <= '9';
+            if (digit || (inNumber && (c == '.' || c == ','))) {
+                if (!inNumber) SCRATCH.append('#');
+                inNumber = true;
+            } else {
+                inNumber = false;
+                SCRATCH.append(c);
+            }
+        }
+        return SCRATCH.toString();
     }
 
     private static void reset() {
-        PENDING.clear();
-        CURRENT.clear();
-        ORDER.clear();
-        SIGNATURES.clear();
-        index = 0;
-        timer = 0;
-        visibleTicks = 0;
-        keepVisible = false;
+        for (int i = 0; i < SLOTS.length; i++) {
+            TEXT[i] = null;
+            SIGNATURE[i] = null;
+            VISIBLE[i] = 0;
+            KEEP[i] = false;
+        }
+        current = -1;
+        dwell = 0;
     }
 }

@@ -111,9 +111,6 @@ public class mio_icif_Block_Manual_Kinetic_Generator extends mio_icif_entity_blo
             if (success) {
                 // 更新方块状态为活跃
                 level.setBlock(pos, state.setValue(ACTIVE, true), 3);
-
-                // 播放声音效果（可选）
-                // level.playSound(null, pos, SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 0.3F, 0.5F);
             }
 
             return InteractionResult.CONSUME;

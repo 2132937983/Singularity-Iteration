@@ -140,7 +140,7 @@ public class mio_icif_events {
                 event.setCanceled(true);
                 return;
             }
-            long energyPerDamage = quantumBoots.getEnergyPerDamage();
+            long energyPerDamage = com.miophas.singularity_iteration.core.api.item.EnergySaving.rate(boots, quantumBoots.getEnergyPerDamage());
             long energyCost = fallDamage * energyPerDamage;
             if (itemApi.getElectricArmorStored(boots) >= energyCost) {
                 itemApi.dischargeElectricArmor(boots, energyCost, false);
@@ -159,14 +159,14 @@ public class mio_icif_events {
 
             if (fallDistance <= mio_icif_boots_nano.FULL_ABSORB_FALL_DISTANCE) {
                 int blocksOverFree = (int) (fallDistance - mio_icif_boots_nano.FREE_FALL_DISTANCE);
-                int energyCost = blocksOverFree * mio_icif_boots_nano.FALL_ENERGY_PER_BLOCK;
+                long energyCost = com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(boots, (long) blocksOverFree * mio_icif_boots_nano.FALL_ENERGY_PER_BLOCK);
                 if (itemApi.getElectricArmorStored(boots) >= energyCost) {
                     itemApi.dischargeElectricArmor(boots, energyCost, false);
                     event.setCanceled(true);
                 }
             } else {
-                int energyCost = (mio_icif_boots_nano.FULL_ABSORB_FALL_DISTANCE - mio_icif_boots_nano.FREE_FALL_DISTANCE)
-                        * mio_icif_boots_nano.FALL_ENERGY_PER_BLOCK;
+                long energyCost = com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(boots, (long) (mio_icif_boots_nano.FULL_ABSORB_FALL_DISTANCE - mio_icif_boots_nano.FREE_FALL_DISTANCE)
+                        * mio_icif_boots_nano.FALL_ENERGY_PER_BLOCK);
                 if (itemApi.getElectricArmorStored(boots) >= energyCost) {
                     itemApi.dischargeElectricArmor(boots, energyCost, false);
                     event.setDistance(fallDistance - mio_icif_boots_nano.FULL_ABSORB_FALL_DISTANCE);
@@ -285,7 +285,7 @@ public class mio_icif_events {
                 continue;
             }
 
-            long energyPerDamage = armorItem.getEnergyPerDamage();
+            long energyPerDamage = com.miophas.singularity_iteration.core.api.item.EnergySaving.rate(armorStack, armorItem.getEnergyPerDamage());
             float absorptionRatio = armorItem.getDamageAbsorptionRatio(slot);
 
             if (energyPerDamage <= 0 || absorptionRatio <= 0) {

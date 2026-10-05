@@ -150,7 +150,7 @@ public final class RubberTreeSystem {
                 return RubberHarvestResult.NONE;
             }
             if (!player.isCreative()) {
-                electricTool.extractEnergy(tool, electricTool.getEnergyPerUse());
+                electricTool.extractEnergy(tool, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(tool, electricTool.getEnergyPerUse()));
             }
             electric = true;
         } else {

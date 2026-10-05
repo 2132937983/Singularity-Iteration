@@ -46,7 +46,7 @@ public class mio_icif_electric_nutrition_supply extends mio_icif_tool_elc implem
 
         if (player.getFoodData().needsFood()) {
             if (getEnergy(stack) >= ENERGY_COST) {
-                extractEnergy(stack, ENERGY_COST);
+                extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, ENERGY_COST));
                 player.getFoodData().eat(1, 0.2F);
                 player.containerMenu.broadcastChanges();
             }

@@ -271,6 +271,7 @@ public final class JetpackFlightController {
 
     private static boolean consumeExact(ItemStack stack, IJetpackItem jetpack, long cost) {
         if (cost == 0L) return true;
+        cost = com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, cost);
         if (jetpack.getEnergy(stack) < cost) return false;
         long extracted = jetpack.extractEnergy(stack, cost);
         if (extracted == cost) return true;

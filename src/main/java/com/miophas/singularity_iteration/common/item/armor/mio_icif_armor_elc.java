@@ -113,7 +113,7 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
 
     public boolean consumeEnergy(ItemStack stack) {
         if (hasEnoughEnergy(stack)) {
-            extractEnergy(stack, getEnergyPerTick());
+            extractEnergy(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, getEnergyPerTick()));
             return true;
         }
         return false;

@@ -1123,7 +1123,6 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.PHOTON_RESONANCE_SOLAR_GENERATOR.get());
                 output.accept(mio_icif_blocks.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR.get());
                 // 量子发电机不在创造模式物品栏中显示
-                // output.accept(mio_icif_blocks.QUANTUM_GENERATOR.get());
                 output.accept(mio_icif_blocks.WIND_GENERATOR.get());
                 output.accept(mio_icif_blocks.WATER_GENERATOR.get());
                 output.accept(mio_icif_blocks.GEO_GENERATOR.get());

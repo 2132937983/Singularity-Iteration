@@ -128,14 +128,32 @@ public class ArmoryPieceEntity extends Entity {
     public int duration() { return entityData.get(DATA_DURATION); }
     @Nullable public Entity target() { return level().getEntity(entityData.get(DATA_TARGET)); }
 
+    /**
+     * Client clock of the flight: ticks since launch at the last client tick. The level time on a
+     * client jumps when the server corrects it (once a second) and stalls when a tick is late, so
+     * frames read this smooth counter instead and it only drifts gently back to the level time.
+     */
+    private double clientClock = Double.NaN;
+
     /** Raw flight progress 0..1 (negative before launch). */
     public double progress(float partialTick) {
-        return (level().getGameTime() + partialTick - launchTime()) / duration();
+        return age(partialTick) / duration();
     }
 
-    /** Ticks since launch (negative before). */
+    /** Ticks since launch (negative before), smooth between ticks on the client. */
     public float age(float partialTick) {
+        if (!Double.isNaN(clientClock)) return (float) (clientClock + partialTick);
         return (float) (level().getGameTime() + partialTick - launchTime());
+    }
+
+    private void advanceClientClock() {
+        double level = level().getGameTime() - launchTime();
+        if (Double.isNaN(clientClock) || Math.abs(level - clientClock) > 4) {
+            clientClock = level;
+        } else {
+            clientClock += 1;
+            clientClock += (level - clientClock) * 0.1;
+        }
     }
 
     /** Ticks from launch until the piece touches its body slot (end of the snap). */
@@ -190,7 +208,9 @@ public class ArmoryPieceEntity extends Entity {
         if (hover < ArmoryFlight.HOVER_TICKS) return hold.add(0, bob(hover), 0);
         float snap = hover - ArmoryFlight.HOVER_TICKS;
         if (snap < ArmoryFlight.SNAP_TICKS) {
-            double u = Math.pow(snap / ArmoryFlight.SNAP_TICKS, 2.6);   // sucked in, accelerating
+            // sucked in, accelerating: smooth start (no jerk out of the hover), hard arrival
+            double s = snap / ArmoryFlight.SNAP_TICKS;
+            double u = s * s * s * (1.6 - 0.6 * s);
             Vec3 from = hold.add(0, bob(ArmoryFlight.HOVER_TICKS), 0);
             return from.add(dock.subtract(from).scale(u));
         }
@@ -200,7 +220,8 @@ public class ArmoryPieceEntity extends Entity {
     /** Hover float: settles in, bobs gently on its thrusters. */
     private static double bob(float ticks) {
         double settle = Math.min(1, ticks / 3.0);
-        return Math.sin(ticks * 0.75) * 0.055 * settle - 0.04 * Math.exp(-ticks / 1.5);
+        // the dip starts at 0 so the piece does not jump when the flight hands over to the hover
+        return Math.sin(ticks * 0.75) * 0.055 * settle - 0.04 * (1 - Math.exp(-ticks / 1.5)) * Math.exp(-ticks / 4.0);
     }
 
     /** Pressurise in the hatch: rises out of the Armory top, shaking, before launch. */
@@ -243,6 +264,7 @@ public class ArmoryPieceEntity extends Entity {
     @Override
     public void tick() {
         super.tick();
+        if (level().isClientSide) advanceClientClock();
         setPos(flightPosition(0));
         if (level().isClientSide) {
             Effects fx = CLIENT_EFFECTS;

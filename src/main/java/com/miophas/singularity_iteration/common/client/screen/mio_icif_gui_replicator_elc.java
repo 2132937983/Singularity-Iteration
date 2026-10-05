@@ -105,8 +105,6 @@ public class mio_icif_gui_replicator_elc extends mio_icif_screen<com.miophas.sin
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
 
-        // int x = (this.width - this.imageWidth) / 2;
-        // int y = (this.height - this.imageHeight) / 2;
 
         com.miophas.singularity_iteration.common.menu.producer.ReplicatorElcMenu menu = this.menu;
         if (menu == null) return;

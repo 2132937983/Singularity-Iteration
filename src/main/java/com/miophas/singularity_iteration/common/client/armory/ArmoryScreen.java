@@ -184,19 +184,29 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
         g.pose().popPose();
     }
 
+    /**
+     * Hover test in GUI-relative coordinates. Do not call isHovering(int...) here: the base screen
+     * has an int overload with the mouse position first, and int arguments bind to it (0.1.7.35:
+     * the maintenance tooltip covered most of the screen and the other tooltips never showed).
+     */
+    private boolean over(int x, int y, int w, int h, double mouseX, double mouseY) {
+        double mx = mouseX - leftPos, my = mouseY - topPos;
+        return mx >= x && mx < x + w && my >= y && my < y + h;
+    }
+
     @Override
     protected void renderCustomTooltips(GuiGraphics g, int mouseX, int mouseY) {
-        if (isHovering(BAR_X, BAR_Y - 1, BAR_W, BAR_H + 2, mouseX, mouseY)) {
+        if (over(BAR_X, BAR_Y - 1, BAR_W, BAR_H + 2, mouseX, mouseY)) {
             g.renderTooltip(font, Component.translatable("gui.mio_icif.armory.energy",
                 String.format("%,d", menu.energy()), String.format("%,d", mio_icif_armory.CAPACITY)), mouseX, mouseY);
             return;
         }
-        if (showMana() && isHovering(BAR_X, MANA_Y - 1, BAR_W, MANA_H + 2, mouseX, mouseY)) {
+        if (showMana() && over(BAR_X, MANA_Y - 1, BAR_W, MANA_H + 2, mouseX, mouseY)) {
             g.renderTooltip(font, Component.translatable("gui.mio_icif.armory.mana",
                 String.format("%,d", menu.mana()), String.format("%,d", mio_icif_armory.MANA_CAPACITY)), mouseX, mouseY);
             return;
         }
-        if (isHovering(BAR_X + 60, 137, STATUS_RIGHT - BAR_X - 60, 8, mouseX, mouseY)) {
+        if (over(BAR_X + 60, 137, STATUS_RIGHT - BAR_X - 60, 8, mouseX, mouseY)) {
             java.util.List<Component> lines = new java.util.ArrayList<>();
             lines.add(Component.translatable("gui.mio_icif.armory.maint.title").withStyle(ChatFormatting.WHITE));
             lines.add(Component.translatable("gui.mio_icif.armory.maint.pieces", menu.pendingPieces()).withStyle(ChatFormatting.GRAY));
@@ -210,7 +220,7 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
             return;
         }
         for (int r = 0; r < mio_icif_armory.SETS; r++) {
-            if (r != renaming && isHovering(NAME_X, 18 + r * 18, NAME_W, 18, mouseX, mouseY)) {
+            if (r != renaming && over(NAME_X, 18 + r * 18, NAME_W, 18, mouseX, mouseY)) {
                 g.renderTooltip(font, Component.translatable("gui.mio_icif.armory.rename").withStyle(ChatFormatting.GRAY), mouseX, mouseY);
                 return;
             }
@@ -220,7 +230,7 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         for (int r = 0; r < mio_icif_armory.SETS; r++) {
-            if (isHovering(NAME_X, 18 + r * 18, NAME_W, 18, mouseX, mouseY)) {
+            if (over(NAME_X, 18 + r * 18, NAME_W, 18, mouseX, mouseY)) {
                 startRename(r);
                 return true;
             }

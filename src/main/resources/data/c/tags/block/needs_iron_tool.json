@@ -56,6 +56,10 @@
     {
       "id": "mio_icif:generator/block_ultimate_photon_resonance_solar_generator",
       "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_quantum_modification_station",
+      "required": false
     }
   ]
 }

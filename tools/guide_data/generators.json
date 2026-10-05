@@ -1,0 +1,630 @@
+{
+  "generator/block_thermal_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine burns furnace fuel and makes EU.", "The machine charges a battery in its battery slot."],
+      "zh": ["机器燃烧熔炉燃料并产生 EU。", "机器为电池槽位中的电池充电。"],
+      "ja": ["機械はかまどの燃料を燃やしてEUを作る。", "機械はバッテリースロットのバッテリーを充電する。"]
+    },
+    "usage": {
+      "en": ["Connect an LV cable to the generator.", "Put coal into the fuel slot.", "Put a battery into the battery slot to charge it."],
+      "zh": ["把 LV 导线连接到发电机。", "把煤炭放入燃料槽位。", "把电池放入电池槽位来充电。"],
+      "ja": ["LVケーブルを発電機に接続する。", "石炭を燃料スロットに入れる。", "充電するバッテリーをバッテリースロットに入れる。"]
+    }
+  },
+  "generator/block_geo_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts lava into EU.", "The machine moves lava from lava buckets and lava cells into an internal tank.", "Each lava block next to the machine adds extra EU output."],
+      "zh": ["机器把岩浆转换为 EU。", "机器把岩浆桶和岩浆单元中的岩浆移入内部储罐。", "每个相邻的岩浆方块都使发电量增加。"],
+      "ja": ["機械は溶岩をEUに変換する。", "機械は溶岩バケツと溶岩セルの溶岩を内部タンクに移す。", "隣接する溶岩ブロック1個ごとに発電量が増える。"]
+    },
+    "usage": {
+      "en": ["Connect an LV cable to the generator.", "Put a lava bucket into the input slot.", "Remove the empty buckets from the output slot.", "Put a battery into the battery slot to charge it."],
+      "zh": ["把 LV 导线连接到发电机。", "把岩浆桶放入输入槽位。", "从输出槽位取出空桶。", "把电池放入电池槽位来充电。"],
+      "ja": ["LVケーブルを発電機に接続する。", "溶岩バケツを入力スロットに入れる。", "出力スロットから空のバケツを取り出す。", "充電するバッテリーをバッテリースロットに入れる。"]
+    },
+    "notes": {
+      "en": ["The machine does not empty a bucket when the output slot is full."],
+      "zh": ["输出槽位已满时，机器不会倒空桶。"],
+      "ja": ["出力スロットが満杯のとき、機械はバケツを空にしない。"]
+    }
+  },
+  "generator/block_solar_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU from sunlight during the day.", "The machine needs a clear view of the sky above it.", "The machine stops at night and in rain."],
+      "zh": ["机器在白天利用阳光产生 EU。", "机器正上方必须能直接看到天空。", "夜间和雨天时机器停止发电。"],
+      "ja": ["機械は昼間に日光でEUを作る。", "機械の真上から空が見える必要がある。", "夜と雨の間、機械は停止する。"]
+    },
+    "usage": {
+      "en": ["Place the generator in a dimension with a sky, for example the Overworld.", "Remove all opaque blocks above the generator.", "Connect an LV cable to the generator.", "Put a battery into the battery slot to charge it."],
+      "zh": ["把发电机放在有天空的维度，例如主世界。", "移除发电机上方的所有不透明方块。", "把 LV 导线连接到发电机。", "把电池放入电池槽位来充电。"],
+      "ja": ["空のあるディメンション（例：オーバーワールド）に発電機を置く。", "発電機の上にある不透明なブロックをすべて取り除く。", "LVケーブルを発電機に接続する。", "充電するバッテリーをバッテリースロットに入れる。"]
+    }
+  },
+  "generator/block_advanced_solar_panel": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU from sunlight in the day and at a lower rate at night.", "The machine needs a clear view of the sky above it.", "In rain, the machine uses the night rate."],
+      "zh": ["机器白天利用阳光产生 EU，夜间以较低速率发电。", "机器正上方必须能直接看到天空。", "雨天时机器按夜间速率发电。"],
+      "ja": ["機械は昼に日光でEUを作り、夜は低い出力で発電する。", "機械の真上から空が見える必要がある。", "雨の間、機械は夜の出力で発電する。"]
+    },
+    "usage": {
+      "en": ["Place the panel in a dimension with a sky.", "Remove all opaque blocks above the panel.", "Connect an LV cable to the panel.", "Put up to four batteries into the charge slots."],
+      "zh": ["把面板放在有天空的维度。", "移除面板上方的所有不透明方块。", "把 LV 导线连接到面板。", "把最多四个电池放入充电槽位。"],
+      "ja": ["空のあるディメンションにパネルを置く。", "パネルの上にある不透明なブロックをすべて取り除く。", "LVケーブルをパネルに接続する。", "最大4個のバッテリーを充電スロットに入れる。"]
+    }
+  },
+  "generator/block_hybrid_solar_panel": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU from sunlight in the day and at a lower rate at night.", "The machine needs a clear view of the sky above it.", "In rain, the machine uses the night rate."],
+      "zh": ["机器白天利用阳光产生 EU，夜间以较低速率发电。", "机器正上方必须能直接看到天空。", "雨天时机器按夜间速率发电。"],
+      "ja": ["機械は昼に日光でEUを作り、夜は低い出力で発電する。", "機械の真上から空が見える必要がある。", "雨の間、機械は夜の出力で発電する。"]
+    },
+    "usage": {
+      "en": ["Place the panel in a dimension with a sky.", "Remove all opaque blocks above the panel.", "Connect an MV cable to the panel.", "Put up to four batteries into the charge slots."],
+      "zh": ["把面板放在有天空的维度。", "移除面板上方的所有不透明方块。", "把 MV 导线连接到面板。", "把最多四个电池放入充电槽位。"],
+      "ja": ["空のあるディメンションにパネルを置く。", "パネルの上にある不透明なブロックをすべて取り除く。", "MVケーブルをパネルに接続する。", "最大4個のバッテリーを充電スロットに入れる。"]
+    }
+  },
+  "generator/block_ultimate_hybrid_solar_panel": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU from sunlight in the day and at a lower rate at night.", "The machine needs a clear view of the sky above it.", "In rain, the machine uses the night rate."],
+      "zh": ["机器白天利用阳光产生 EU，夜间以较低速率发电。", "机器正上方必须能直接看到天空。", "雨天时机器按夜间速率发电。"],
+      "ja": ["機械は昼に日光でEUを作り、夜は低い出力で発電する。", "機械の真上から空が見える必要がある。", "雨の間、機械は夜の出力で発電する。"]
+    },
+    "usage": {
+      "en": ["Place the panel in a dimension with a sky.", "Remove all opaque blocks above the panel.", "Connect an HV cable to the panel.", "Put up to four batteries into the charge slots."],
+      "zh": ["把面板放在有天空的维度。", "移除面板上方的所有不透明方块。", "把 HV 导线连接到面板。", "把最多四个电池放入充电槽位。"],
+      "ja": ["空のあるディメンションにパネルを置く。", "パネルの上にある不透明なブロックをすべて取り除く。", "HVケーブルをパネルに接続する。", "最大4個のバッテリーを充電スロットに入れる。"]
+    }
+  },
+  "generator/block_quantum_solar_panel": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU from sunlight in the day and at a lower rate at night.", "The machine needs a clear view of the sky above it.", "In rain, the machine uses the night rate."],
+      "zh": ["机器白天利用阳光产生 EU，夜间以较低速率发电。", "机器正上方必须能直接看到天空。", "雨天时机器按夜间速率发电。"],
+      "ja": ["機械は昼に日光でEUを作り、夜は低い出力で発電する。", "機械の真上から空が見える必要がある。", "雨の間、機械は夜の出力で発電する。"]
+    },
+    "usage": {
+      "en": ["Place the panel in a dimension with a sky.", "Remove all opaque blocks above the panel.", "Connect an IV cable to the panel.", "Put up to four batteries into the charge slots."],
+      "zh": ["把面板放在有天空的维度。", "移除面板上方的所有不透明方块。", "把 IV 导线连接到面板。", "把最多四个电池放入充电槽位。"],
+      "ja": ["空のあるディメンションにパネルを置く。", "パネルの上にある不透明なブロックをすべて取り除く。", "IVケーブルをパネルに接続する。", "最大4個のバッテリーを充電スロットに入れる。"]
+    }
+  },
+  "generator/block_mets_advanced_solar_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU in proportion to the sky brightness above it.", "The sun angle, rain and thunder change the brightness. Sandy biomes ignore rain and thunder.", "At night and in dimensions without a sky, the machine keeps a minimum output."],
+      "zh": ["机器按上方天空亮度的比例产生 EU。", "太阳角度、雨和雷暴改变亮度。沙质生物群系不受雨和雷暴影响。", "夜间和无天空的维度中，机器保持最低输出。"],
+      "ja": ["機械は上の空の明るさに比例してEUを作る。", "太陽の角度、雨、雷雨が明るさを変える。砂の多いバイオームは雨と雷雨の影響を受けない。", "夜と空のないディメンションでは、機械は最低出力を保つ。"]
+    },
+    "usage": {
+      "en": ["Place the generator under open sky.", "Connect an MV cable to the generator.", "Put a battery into the charge slot."],
+      "zh": ["把发电机放在露天位置。", "把 MV 导线连接到发电机。", "把电池放入充电槽位。"],
+      "ja": ["発電機を空が見える場所に置く。", "MVケーブルを発電機に接続する。", "バッテリーを充電スロットに入れる。"]
+    }
+  },
+  "generator/block_photon_resonance_solar_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU in proportion to the sky brightness above it.", "The sun angle, rain and thunder change the brightness. Sandy biomes ignore rain and thunder.", "At night and in dimensions without a sky, the machine keeps a minimum output."],
+      "zh": ["机器按上方天空亮度的比例产生 EU。", "太阳角度、雨和雷暴改变亮度。沙质生物群系不受雨和雷暴影响。", "夜间和无天空的维度中，机器保持最低输出。"],
+      "ja": ["機械は上の空の明るさに比例してEUを作る。", "太陽の角度、雨、雷雨が明るさを変える。砂の多いバイオームは雨と雷雨の影響を受けない。", "夜と空のないディメンションでは、機械は最低出力を保つ。"]
+    },
+    "usage": {
+      "en": ["Place the generator under open sky.", "Connect an EV cable to the generator.", "Put a battery into the charge slot."],
+      "zh": ["把发电机放在露天位置。", "把 EV 导线连接到发电机。", "把电池放入充电槽位。"],
+      "ja": ["発電機を空が見える場所に置く。", "EVケーブルを発電機に接続する。", "バッテリーを充電スロットに入れる。"]
+    }
+  },
+  "generator/block_ultimate_photon_resonance_solar_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU in proportion to the sky brightness above it.", "The sun angle, rain and thunder change the brightness. Sandy biomes ignore rain and thunder.", "At night and in dimensions without a sky, the machine keeps a minimum output."],
+      "zh": ["机器按上方天空亮度的比例产生 EU。", "太阳角度、雨和雷暴改变亮度。沙质生物群系不受雨和雷暴影响。", "夜间和无天空的维度中，机器保持最低输出。"],
+      "ja": ["機械は上の空の明るさに比例してEUを作る。", "太陽の角度、雨、雷雨が明るさを変える。砂の多いバイオームは雨と雷雨の影響を受けない。", "夜と空のないディメンションでは、機械は最低出力を保つ。"]
+    },
+    "usage": {
+      "en": ["Place the generator under open sky.", "Connect an IV cable to the generator.", "Put a battery into the charge slot."],
+      "zh": ["把发电机放在露天位置。", "把 IV 导线连接到发电机。", "把电池放入充电槽位。"],
+      "ja": ["発電機を空が見える場所に置く。", "IVケーブルを発電機に接続する。", "バッテリーを充電スロットに入れる。"]
+    }
+  },
+  "generator/block_quantum_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU without fuel or sunlight.", "The machine sends EU to the blocks on all six faces."],
+      "zh": ["机器不需要燃料或阳光即可产生 EU。", "机器向六个面上的方块输出 EU。"],
+      "ja": ["機械は燃料も日光もなしでEUを作る。", "機械は6面すべての隣接ブロックにEUを送る。"]
+    },
+    "usage": {
+      "en": ["Place the generator next to a machine or a cable.", "Open the GUI to read the output and the voltage tier."],
+      "zh": ["把发电机放在机器或导线旁边。", "打开界面查看输出和电压等级。"],
+      "ja": ["発電機を機械またはケーブルの隣に置く。", "GUIを開いて出力と電圧Tierを確認する。"]
+    },
+    "notes": {
+      "en": ["The GUI shows the status only. The GUI has no controls."],
+      "zh": ["界面只显示状态。界面没有控制按钮。"],
+      "ja": ["GUIは状態だけを表示する。GUIに操作ボタンはない。"]
+    }
+  },
+  "generator/block_wind_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU from wind.", "The output increases with height above Y 64. Rain and thunder also increase the output.", "Blocks in a 9x9x7 zone around the machine decrease the output."],
+      "zh": ["机器利用风力产生 EU。", "高度超过 Y 64 越多，输出越高。雨和雷暴也使输出增加。", "机器周围 9x9x7 范围内的方块使输出降低。"],
+      "ja": ["機械は風でEUを作る。", "Y 64より高いほど出力が増える。雨と雷雨も出力を増やす。", "機械の周囲9x9x7の範囲にあるブロックは出力を下げる。"]
+    },
+    "usage": {
+      "en": ["Place the generator high above Y 64.", "Remove the blocks around the generator.", "Connect an LV cable to the generator.", "Put a battery into the battery slot to charge it."],
+      "zh": ["把发电机放在远高于 Y 64 的位置。", "移除发电机周围的方块。", "把 LV 导线连接到发电机。", "把电池放入电池槽位来充电。"],
+      "ja": ["発電機をY 64より十分高い場所に置く。", "発電機の周囲のブロックを取り除く。", "LVケーブルを発電機に接続する。", "充電するバッテリーをバッテリースロットに入れる。"]
+    },
+    "notes": {
+      "en": ["Below Y 64, the machine makes no EU.", "The wind strength changes at random over time."],
+      "zh": ["低于 Y 64 时，机器不产生 EU。", "风力强度随时间随机变化。"],
+      "ja": ["Y 64より低い場所では、機械はEUを作らない。", "風の強さは時間とともにランダムに変わる。"]
+    }
+  },
+  "generator/block_water_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts water from water buckets into EU.", "Water at the front face of the machine also makes EU without buckets."],
+      "zh": ["机器把水桶中的水转换为 EU。", "机器正面有水时，不用水桶也能产生 EU。"],
+      "ja": ["機械は水バケツの水をEUに変換する。", "機械の正面に水があると、バケツなしでもEUを作る。"]
+    },
+    "usage": {
+      "en": ["Place the generator with its front face in water.", "Put a water bucket into the bucket slot.", "Remove the empty bucket from the bucket slot.", "Connect an LV cable to the generator."],
+      "zh": ["放置发电机，使其正面对着水。", "把水桶放入水桶槽位。", "从水桶槽位取出空桶。", "把 LV 导线连接到发电机。"],
+      "ja": ["正面が水に接するように発電機を置く。", "水バケツをバケツスロットに入れる。", "バケツスロットから空のバケツを取り出す。", "LVケーブルを発電機に接続する。"]
+    }
+  },
+  "generator/block_semifluid_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine burns semifluid fuel and makes EU.", "The machine accepts biogas, biomass, crude oil and diesel oil.", "Each fuel gives a different EU output."],
+      "zh": ["机器燃烧半流质燃料并产生 EU。", "机器接受沼气、生物质、原油和柴油。", "每种燃料的发电量不同。"],
+      "ja": ["機械は半流体燃料を燃やしてEUを作る。", "機械はバイオガス、バイオマス、原油、軽油を受け入れる。", "燃料ごとにEU出力が異なる。"]
+    },
+    "usage": {
+      "en": ["Connect an LV cable to the generator.", "Put a fuel bucket or a fuel cell into the input slot.", "Remove the empty containers from the output slot.", "Put a battery into the battery slot to charge it."],
+      "zh": ["把 LV 导线连接到发电机。", "把燃料桶或燃料单元放入输入槽位。", "从输出槽位取出空容器。", "把电池放入电池槽位来充电。"],
+      "ja": ["LVケーブルを発電機に接続する。", "燃料バケツまたは燃料セルを入力スロットに入れる。", "出力スロットから空の容器を取り出す。", "充電するバッテリーをバッテリースロットに入れる。"]
+    }
+  },
+  "generator/block_advanced_semifluid_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine burns biogas and makes EU.", "The machine accepts biogas buckets and biogas cells only."],
+      "zh": ["机器燃烧沼气并产生 EU。", "机器只接受沼气桶和沼气单元。"],
+      "ja": ["機械はバイオガスを燃やしてEUを作る。", "機械はバイオガスバケツとバイオガスセルだけを受け入れる。"]
+    },
+    "usage": {
+      "en": ["Connect an MV cable to the generator.", "Put a biogas bucket into the input slot.", "Remove the empty containers from the output slot.", "Put a battery into the battery slot to charge it."],
+      "zh": ["把 MV 导线连接到发电机。", "把沼气桶放入输入槽位。", "从输出槽位取出空容器。", "把电池放入电池槽位来充电。"],
+      "ja": ["MVケーブルを発電機に接続する。", "バイオガスバケツを入力スロットに入れる。", "出力スロットから空の容器を取り出す。", "充電するバッテリーをバッテリースロットに入れる。"]
+    }
+  },
+  "generator/block_diesel_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine burns diesel oil and makes EU.", "The machine accepts diesel oil buckets and diesel oil cells only."],
+      "zh": ["机器燃烧柴油并产生 EU。", "机器只接受柴油桶和柴油单元。"],
+      "ja": ["機械は軽油を燃やしてEUを作る。", "機械は軽油バケツと軽油セルだけを受け入れる。"]
+    },
+    "usage": {
+      "en": ["Connect an HV cable to the generator.", "Put a diesel oil bucket into the input slot.", "Remove the empty containers from the output slot.", "Put a battery into the battery slot to charge it."],
+      "zh": ["把 HV 导线连接到发电机。", "把柴油桶放入输入槽位。", "从输出槽位取出空容器。", "把电池放入电池槽位来充电。"],
+      "ja": ["HVケーブルを発電機に接続する。", "軽油バケツを入力スロットに入れる。", "出力スロットから空の容器を取り出す。", "充電するバッテリーをバッテリースロットに入れる。"]
+    }
+  },
+  "generator/block_geomagnetic_generator": {
+    "kind": "multiblock",
+    "function": {
+      "en": ["The machine makes EU from the geomagnetic field when its structure is complete.", "The output decreases below sea level and with air or water below the machine.", "Nether biomes and mountain biomes increase the output."],
+      "zh": ["结构完整时，机器利用地磁场产生 EU。", "低于海平面或下方有空气和水时，输出降低。", "下界生物群系和山地生物群系使输出增加。"],
+      "ja": ["構造が完成すると、機械は地磁気でEUを作る。", "海面より低い場所や、下に空気か水があると出力が下がる。", "ネザーと山岳のバイオームは出力を上げる。"]
+    },
+    "usage": {
+      "en": ["Place the Geomagnetic Generator on solid ground.", "Put two Geomagnetic Antennas on top of the generator, one above the other.", "Put four Geomagnetic Pedestals around the block below the generator.", "Connect a cable to the generator.", "Put a battery into the battery slot to charge it."],
+      "zh": ["把地磁发电机放在实心地面上。", "在发电机上方竖直叠放两个地磁发电机天线。", "在发电机下方方块的四周放置四个地磁发电机基座。", "把导线连接到发电机。", "把电池放入电池槽位来充电。"],
+      "ja": ["地磁気発電機を固い地面の上に置く。", "発電機の上に地磁気アンテナを2個縦に積む。", "発電機の下のブロックの四方に地磁気台座を4個置く。", "ケーブルを発電機に接続する。", "充電するバッテリーをバッテリースロットに入れる。"]
+    },
+    "notes": {
+      "en": ["The machine checks up to 20 blocks below it. Each air or water block decreases the output."],
+      "zh": ["机器检查下方最多 20 格。每个空气或水方块都使输出降低。"],
+      "ja": ["機械は下の最大20ブロックを調べる。空気か水のブロック1個ごとに出力が下がる。"]
+    }
+  },
+  "generator/block_geomagnetic_antenna": {
+    "kind": "multiblock",
+    "function": {
+      "en": ["The block is a structural part of the Geomagnetic Generator.", "The block has no function alone."],
+      "zh": ["该方块是地磁发电机的结构部件。", "该方块单独放置时没有功能。"],
+      "ja": ["このブロックは地磁気発電機の構造部品だ。", "このブロックは単独では機能しない。"]
+    },
+    "usage": {
+      "en": ["Place the Geomagnetic Generator.", "Put one antenna directly on top of the generator.", "Put a second antenna on top of the first antenna."],
+      "zh": ["放置地磁发电机。", "在发电机正上方放一个天线。", "在第一个天线上方再放一个天线。"],
+      "ja": ["地磁気発電機を置く。", "発電機の真上にアンテナを1個置く。", "1個目のアンテナの上に2個目のアンテナを置く。"]
+    }
+  },
+  "generator/block_geomagnetic_pedestal": {
+    "kind": "multiblock",
+    "function": {
+      "en": ["The block is a structural part of the Geomagnetic Generator.", "The block has no function alone."],
+      "zh": ["该方块是地磁发电机的结构部件。", "该方块单独放置时没有功能。"],
+      "ja": ["このブロックは地磁気発電機の構造部品だ。", "このブロックは単独では機能しない。"]
+    },
+    "usage": {
+      "en": ["Place the Geomagnetic Generator.", "Find the block directly below the generator.", "Put one pedestal against each of the four horizontal sides of that block."],
+      "zh": ["放置地磁发电机。", "找到发电机正下方的方块。", "在该方块的四个水平侧面各放一个基座。"],
+      "ja": ["地磁気発電機を置く。", "発電機の真下のブロックを確認する。", "そのブロックの水平な4つの側面に台座を1個ずつ置く。"]
+    }
+  },
+  "hugenerator/block_heat_generator_elc": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts EU into heat (HU).", "Each coil in the coil slots increases the heat output.", "The machine gives heat only through its front face."],
+      "zh": ["机器把 EU 转换为热能（HU）。", "线圈槽位中的每个线圈都使产热量增加。", "机器只从正面输出热能。"],
+      "ja": ["機械はEUを熱（HU）に変換する。", "コイルスロットのコイル1個ごとに熱出力が増える。", "機械は正面だけから熱を出す。"]
+    },
+    "usage": {
+      "en": ["Place the machine with its front face against the heat consumer.", "Put coils into the coil slots.", "Connect a cable to the machine to supply EU.", "Put a charged battery into the battery slot as a second power source."],
+      "zh": ["放置机器，使其正面对着用热机器。", "把线圈放入线圈槽位。", "把导线连接到机器来供应 EU。", "把已充电的电池放入电池槽位作为备用电源。"],
+      "ja": ["正面が熱を使う機械に接するように機械を置く。", "コイルをコイルスロットに入れる。", "ケーブルを機械に接続してEUを供給する。", "充電済みのバッテリーを予備電源としてバッテリースロットに入れる。"]
+    },
+    "notes": {
+      "en": ["Without coils, the machine makes no heat."],
+      "zh": ["没有线圈时，机器不产生热能。"],
+      "ja": ["コイルがないと、機械は熱を作らない。"]
+    }
+  },
+  "hugenerator/block_solid_heat_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine burns furnace fuel and makes heat (HU).", "Each burned fuel item gives one ash in the ash slot.", "The machine gives heat only through its front face."],
+      "zh": ["机器燃烧熔炉燃料并产生热能（HU）。", "每燃烧一个燃料物品，灰烬槽位中增加一个灰烬。", "机器只从正面输出热能。"],
+      "ja": ["機械はかまどの燃料を燃やして熱（HU）を作る。", "燃料を1個燃やすごとに、灰スロットに灰が1個入る。", "機械は正面だけから熱を出す。"]
+    },
+    "usage": {
+      "en": ["Place the machine with its front face against the heat consumer.", "Put coal into the fuel slot.", "Remove the ash from the ash slot."],
+      "zh": ["放置机器，使其正面对着用热机器。", "把煤炭放入燃料槽位。", "从灰烬槽位取出灰烬。"],
+      "ja": ["正面が熱を使う機械に接するように機械を置く。", "石炭を燃料スロットに入れる。", "灰スロットから灰を取り出す。"]
+    },
+    "notes": {
+      "en": ["The machine does not burn lava.", "The machine stops when the ash slot is full."],
+      "zh": ["机器不燃烧岩浆。", "灰烬槽位满时，机器停止工作。"],
+      "ja": ["機械は溶岩を燃やさない。", "灰スロットが満杯になると、機械は停止する。"]
+    }
+  },
+  "hugenerator/block_fluid_heat_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine burns semifluid fuel and makes heat (HU).", "The machine accepts biogas, biomass, crude oil and diesel oil.", "The machine gives heat only through its front face."],
+      "zh": ["机器燃烧半流质燃料并产生热能（HU）。", "机器接受沼气、生物质、原油和柴油。", "机器只从正面输出热能。"],
+      "ja": ["機械は半流体燃料を燃やして熱（HU）を作る。", "機械はバイオガス、バイオマス、原油、軽油を受け入れる。", "機械は正面だけから熱を出す。"]
+    },
+    "usage": {
+      "en": ["Place the machine with its front face against the heat consumer.", "Put a fuel bucket or a fuel cell into the input slot.", "Remove the empty containers from the output slot."],
+      "zh": ["放置机器，使其正面对着用热机器。", "把燃料桶或燃料单元放入输入槽位。", "从输出槽位取出空容器。"],
+      "ja": ["正面が熱を使う機械に接するように機械を置く。", "燃料バケツまたは燃料セルを入力スロットに入れる。", "出力スロットから空の容器を取り出す。"]
+    }
+  },
+  "hugenerator/block_rt_heat_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes heat (HU) from Radioisotope Fuel Pellets.", "Each added pellet doubles the heat output. The pellets never deplete.", "The machine gives heat only through its front face."],
+      "zh": ["机器利用放射性同位素燃料靶丸产生热能（HU）。", "每增加一个靶丸，产热量翻倍。靶丸不会耗尽。", "机器只从正面输出热能。"],
+      "ja": ["機械は放射性同位体燃料ペレットで熱（HU）を作る。", "ペレットを1個足すごとに熱出力が2倍になる。ペレットは消耗しない。", "機械は正面だけから熱を出す。"]
+    },
+    "usage": {
+      "en": ["Place the machine with its front face against the heat consumer.", "Put up to six Radioisotope Fuel Pellets into the pellet slots."],
+      "zh": ["放置机器，使其正面对着用热机器。", "把最多六个燃料靶丸放入靶丸槽位。"],
+      "ja": ["正面が熱を使う機械に接するように機械を置く。", "最大6個の燃料ペレットをペレットスロットに入れる。"]
+    }
+  },
+  "hugenerator/block_heat_source_fluid": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts lava or hot coolant into heat (HU).", "Lava becomes pahoehoe lava. Hot coolant becomes coolant.", "Each heat conductor increases the heat output. The machine gives heat only through its front face."],
+      "zh": ["机器把岩浆或热冷却液转换为热能（HU）。", "岩浆变为绳状熔岩。热冷却液变为冷却液。", "每个热传导器都使产热量增加。机器只从正面输出热能。"],
+      "ja": ["機械は溶岩またはホットクーラントを熱（HU）に変換する。", "溶岩はパホイホイ溶岩になる。ホットクーラントはクーラントになる。", "熱伝導体1個ごとに熱出力が増える。機械は正面だけから熱を出す。"]
+    },
+    "usage": {
+      "en": ["Place the machine with its front face against the heat consumer.", "Put heat conductors into the conductor slots.", "Put a lava bucket or a hot coolant cell into the hot fluid input slot.", "Put empty containers into the cold fluid slot to collect the output fluid."],
+      "zh": ["放置机器，使其正面对着用热机器。", "把热传导器放入传导器槽位。", "把岩浆桶或热冷却液单元放入热流体输入槽位。", "把空容器放入冷流体槽位来收集产物流体。"],
+      "ja": ["正面が熱を使う機械に接するように機械を置く。", "熱伝導体を伝導体スロットに入れる。", "溶岩バケツかホットクーラントセルを高温流体入力スロットに入れる。", "空の容器を低温流体スロットに入れて出力流体を集める。"]
+    },
+    "notes": {
+      "en": ["The machine stops when the output tank is full.", "Without heat conductors, the machine makes no heat."],
+      "zh": ["输出储罐满时，机器停止工作。", "没有热传导器时，机器不产生热能。"],
+      "ja": ["出力タンクが満杯になると、機械は停止する。", "熱伝導体がないと、機械は熱を作らない。"]
+    }
+  },
+  "generator/block_stirling_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts heat (HU) into EU.", "The machine takes heat only through its back face."],
+      "zh": ["机器把热能（HU）转换为 EU。", "机器只从背面接收热能。"],
+      "ja": ["機械は熱（HU）をEUに変換する。", "機械は背面だけから熱を受け取る。"]
+    },
+    "usage": {
+      "en": ["Place a heat generator with its front face against the back face of the Stirling Generator.", "Connect an MV cable to the Stirling Generator.", "Supply the heat generator with fuel or EU."],
+      "zh": ["放置加热机，使其正面对着斯特林发电机背面。", "把 MV 导线连接到斯特林发电机。", "为加热机供应燃料或 EU。"],
+      "ja": ["加熱機の正面をスターリング発電機の背面に接して置く。", "MVケーブルをスターリング発電機に接続する。", "加熱機に燃料またはEUを供給する。"]
+    }
+  },
+  "generator/block_advanced_stirling_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts heat (HU) into EU at a higher ratio than the Stirling Generator.", "The machine draws heat from each adjacent heat generator whose front face points at it."],
+      "zh": ["机器把热能（HU）转换为 EU，转换比高于斯特林发电机。", "机器从正面朝向自身的相邻加热机抽取热能。"],
+      "ja": ["機械は熱（HU）をEUに変換する。変換比はスターリング発電機より高い。", "機械は正面をこちらに向けた隣接の加熱機から熱を取る。"]
+    },
+    "usage": {
+      "en": ["Place one or more heat generators next to the machine.", "Turn the front face of each heat generator to the machine.", "Connect an MV cable to the machine."],
+      "zh": ["在机器旁边放置一个或多个加热机。", "让每个加热机的正面朝向机器。", "把 MV 导线连接到机器。"],
+      "ja": ["機械の隣に加熱機を1個以上置く。", "各加熱機の正面を機械に向ける。", "MVケーブルを機械に接続する。"]
+    }
+  },
+  "generator/block_drop_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine pulls dropped items within a short range and destroys them to make EU.", "Rare items give more EU than common items."],
+      "zh": ["机器吸引近距离内的掉落物，并销毁它们来产生 EU。", "稀有物品比普通物品产生更多 EU。"],
+      "ja": ["機械は近くのドロップアイテムを引き寄せ、破壊してEUを作る。", "レアなアイテムは普通のアイテムより多くのEUを作る。"]
+    },
+    "usage": {
+      "en": ["Place the generator at the exit of an item collection line.", "Connect an MV cable to the generator.", "Drop unwanted items near the generator."],
+      "zh": ["把发电机放在物品收集线路的出口。", "把 MV 导线连接到发电机。", "把不需要的物品丢在发电机附近。"],
+      "ja": ["発電機をアイテム回収ラインの出口に置く。", "MVケーブルを発電機に接続する。", "不要なアイテムを発電機の近くに落とす。"]
+    },
+    "notes": {
+      "en": ["WARNING: The machine destroys every dropped item in its range, including your own items."],
+      "zh": ["警告：机器销毁范围内的所有掉落物，包括你的物品。"],
+      "ja": ["警告：機械は範囲内のすべてのドロップアイテムを破壊する。プレイヤーのアイテムも対象だ。"]
+    }
+  },
+  "generator/block_advanced_drop_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine pulls dropped items and destroys them to make EU.", "The machine has a larger range and a higher output than the Drop Generator.", "Rare items give more EU than common items."],
+      "zh": ["机器吸引掉落物，并销毁它们来产生 EU。", "机器的范围和输出都大于掉落物发电机。", "稀有物品比普通物品产生更多 EU。"],
+      "ja": ["機械はドロップアイテムを引き寄せ、破壊してEUを作る。", "機械の範囲と出力はドロップ発電機より大きい。", "レアなアイテムは普通のアイテムより多くのEUを作る。"]
+    },
+    "usage": {
+      "en": ["Place the generator at the exit of an item collection line.", "Connect an HV cable to the generator.", "Drop unwanted items near the generator."],
+      "zh": ["把发电机放在物品收集线路的出口。", "把 HV 导线连接到发电机。", "把不需要的物品丢在发电机附近。"],
+      "ja": ["発電機をアイテム回収ラインの出口に置く。", "HVケーブルを発電機に接続する。", "不要なアイテムを発電機の近くに落とす。"]
+    },
+    "notes": {
+      "en": ["WARNING: The machine destroys every dropped item in its range, including your own items."],
+      "zh": ["警告：机器销毁范围内的所有掉落物，包括你的物品。"],
+      "ja": ["警告：機械は範囲内のすべてのドロップアイテムを破壊する。プレイヤーのアイテムも対象だ。"]
+    }
+  },
+  "generator/block_experience_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine pulls experience orbs within its range and converts them into EU.", "Orbs with more experience give more EU."],
+      "zh": ["机器吸引范围内的经验球，并把它们转换为 EU。", "经验值越高的经验球产生越多 EU。"],
+      "ja": ["機械は範囲内の経験値オーブを引き寄せ、EUに変換する。", "経験値の多いオーブほど多くのEUを作る。"]
+    },
+    "usage": {
+      "en": ["Place the generator near a mob farm.", "Connect an HV cable to the generator.", "Kill mobs near the generator to release experience orbs."],
+      "zh": ["把发电机放在刷怪场附近。", "把 HV 导线连接到发电机。", "在发电机附近击杀生物来产生经验球。"],
+      "ja": ["発電機をモブトラップの近くに置く。", "HVケーブルを発電機に接続する。", "発電機の近くでモブを倒して経験値オーブを出す。"]
+    },
+    "notes": {
+      "en": ["The machine also takes the experience orbs that players need."],
+      "zh": ["机器也会吸走玩家需要的经验球。"],
+      "ja": ["機械はプレイヤーが欲しい経験値オーブも吸い取る。"]
+    }
+  },
+  "generator/block_advanced_experience_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine pulls experience orbs within its range and converts them into EU.", "The machine has a larger range and a higher output than the Experience Generator."],
+      "zh": ["机器吸引范围内的经验球，并把它们转换为 EU。", "机器的范围和输出都大于经验球发电机。"],
+      "ja": ["機械は範囲内の経験値オーブを引き寄せ、EUに変換する。", "機械の範囲と出力は経験値発電機より大きい。"]
+    },
+    "usage": {
+      "en": ["Place the generator near a mob farm.", "Connect an EV cable to the generator.", "Kill mobs near the generator to release experience orbs."],
+      "zh": ["把发电机放在刷怪场附近。", "把 EV 导线连接到发电机。", "在发电机附近击杀生物来产生经验球。"],
+      "ja": ["発電機をモブトラップの近くに置く。", "EVケーブルを発電機に接続する。", "発電機の近くでモブを倒して経験値オーブを出す。"]
+    },
+    "notes": {
+      "en": ["The machine also takes the experience orbs that players need."],
+      "zh": ["机器也会吸走玩家需要的经验球。"],
+      "ja": ["機械はプレイヤーが欲しい経験値オーブも吸い取る。"]
+    }
+  },
+  "kugenerator/block_manual_kinetic_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes kinetic energy (KU) when a player right-clicks it.", "Each click sends KU to the adjacent KU consumers and uses player food points."],
+      "zh": ["玩家右键点击时，机器产生动能（KU）。", "每次点击都向相邻的动能机器输出 KU，并消耗玩家饱食度。"],
+      "ja": ["プレイヤーが右クリックすると、機械は運動エネルギー（KU）を作る。", "クリックごとに隣接するKU消費機械へKUを送り、プレイヤーの満腹度を消費する。"]
+    },
+    "usage": {
+      "en": ["Place the machine next to a Kinetic Generator.", "Right-click the machine with an empty hand.", "Repeat the click to keep the KU flow."],
+      "zh": ["把机器放在动能发电机旁边。", "空手右键点击机器。", "重复点击来保持 KU 输出。"],
+      "ja": ["機械を運動エネルギー発電機の隣に置く。", "素手で機械を右クリックする。", "クリックを繰り返してKUの流れを保つ。"]
+    },
+    "notes": {
+      "en": ["The machine works only when your food level is at least six points (three drumsticks)."],
+      "zh": ["饱食度至少为六点（三个鸡腿）时，机器才工作。"],
+      "ja": ["満腹度が6ポイント（肉3個）以上のときだけ、機械は動く。"]
+    }
+  },
+  "kugenerator/block_wind_kinetic_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts wind into kinetic energy (KU) with a rotor.", "The wind strength increases with height and in bad weather. Blocks in front of the rotor decrease it.", "The machine sends KU only through its back face."],
+      "zh": ["机器通过转子把风力转换为动能（KU）。", "风力随高度和恶劣天气增加。转子前方的方块使风力降低。", "机器只从背面输出 KU。"],
+      "ja": ["機械はローターで風を運動エネルギー（KU）に変換する。", "風は高さと悪天候で強くなる。ローター前方のブロックは風を弱める。", "機械は背面だけからKUを送る。"]
+    },
+    "usage": {
+      "en": ["Put a rotor into the rotor slot.", "Remove all blocks from the area in front of the rotor.", "Place a Kinetic Generator with its front face against the back face of the machine.", "Use an Anemometer on the machine to read the effective wind."],
+      "zh": ["把转子放入转子槽位。", "移除转子前方区域的所有方块。", "放置动能发电机，使其正面对着机器背面。", "用风力计点击机器，读取有效风力。"],
+      "ja": ["ローターをローター用スロットに入れる。", "ローター前方の範囲にあるブロックをすべて取り除く。", "運動エネルギー発電機の正面を機械の背面に接して置く。", "風力計を機械に使って有効な風の強さを読む。"]
+    },
+    "notes": {
+      "en": ["WARNING: Wind above the rotor limit damages the rotor four times faster.", "The rotor wears during operation. Replace the rotor before it breaks."],
+      "zh": ["警告：风力超过转子上限时，转子损耗速度变为四倍。", "转子在运行中持续损耗。在转子损坏前更换它。"],
+      "ja": ["警告：風がローターの上限を超えると、ローターの消耗が4倍になる。", "ローターは運転中に消耗する。壊れる前にローターを交換する。"]
+    }
+  },
+  "kugenerator/block_water_kinetic_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts water flow into kinetic energy (KU) with a rotor.", "The machine works only in river, ocean and beach biomes with water at its front face.", "The output changes with the time of day. The machine sends KU only through its back face."],
+      "zh": ["机器通过转子把水流转换为动能（KU）。", "机器只在河流、海洋和沙滩生物群系中工作，且正面必须有水。", "输出随一天中的时间变化。机器只从背面输出 KU。"],
+      "ja": ["機械はローターで水の流れを運動エネルギー（KU）に変換する。", "機械は川、海、砂浜のバイオームで、正面に水があるときだけ動く。", "出力は時刻で変わる。機械は背面だけからKUを送る。"]
+    },
+    "usage": {
+      "en": ["Put a rotor into the rotor slot.", "Place the machine in a river or an ocean with its front face in the water.", "Place a Kinetic Generator with its front face against the back face of the machine."],
+      "zh": ["把转子放入转子槽位。", "把机器放在河流或海洋中，使正面浸在水中。", "放置动能发电机，使其正面对着机器背面。"],
+      "ja": ["ローターをローター用スロットに入れる。", "正面が水に入るように機械を川か海に置く。", "運動エネルギー発電機の正面を機械の背面に接して置く。"]
+    },
+    "notes": {
+      "en": ["The water block at the front face must touch at least two other water blocks.", "The rotor wears during operation. Replace the rotor before it breaks."],
+      "zh": ["正面的水方块必须至少接触另外两个水方块。", "转子在运行中持续损耗。在转子损坏前更换它。"],
+      "ja": ["正面の水ブロックは、ほかの水ブロック2個以上に接する必要がある。", "ローターは運転中に消耗する。壊れる前にローターを交換する。"]
+    }
+  },
+  "kugenerator/block_kinetic_generator_elc": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts EU into kinetic energy (KU).", "Each Electric Motor in the motor slots increases the KU output.", "The machine sends KU only through its front face."],
+      "zh": ["机器把 EU 转换为动能（KU）。", "马达槽位中的每个电动马达都使 KU 输出增加。", "机器只从正面输出 KU。"],
+      "ja": ["機械はEUを運動エネルギー（KU）に変換する。", "モータースロットの電気モーター1個ごとにKU出力が増える。", "機械は正面だけからKUを送る。"]
+    },
+    "usage": {
+      "en": ["Place the machine with its front face against the KU consumer.", "Put Electric Motors into the motor slots.", "Connect a cable to the machine to supply EU.", "Put a charged battery into the battery slot as a second power source."],
+      "zh": ["放置机器，使其正面对着动能机器。", "把电动马达放入马达槽位。", "把导线连接到机器来供应 EU。", "把已充电的电池放入电池槽位作为备用电源。"],
+      "ja": ["正面がKU消費機械に接するように機械を置く。", "電気モーターをモータースロットに入れる。", "ケーブルを機械に接続してEUを供給する。", "充電済みのバッテリーを予備電源としてバッテリースロットに入れる。"]
+    },
+    "notes": {
+      "en": ["Without Electric Motors, the machine makes no KU.", "Turbocharged generators convert KU from this machine at a low efficiency."],
+      "zh": ["没有电动马达时，机器不产生 KU。", "涡轮增压发电机转换本机器的 KU 时效率较低。"],
+      "ja": ["電気モーターがないと、機械はKUを作らない。", "ターボ発電機はこの機械のKUを低い効率で変換する。"]
+    }
+  },
+  "kugenerator/block_stirling_kinetic_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts heat (HU) and water into kinetic energy (KU) and hot water.", "The machine takes heat through all faces except the front face.", "The machine sends KU only through its front face."],
+      "zh": ["机器把热能（HU）和水转换为动能（KU）和热水。", "机器从正面以外的所有面接收热能。", "机器只从正面输出 KU。"],
+      "ja": ["機械は熱（HU）と水を運動エネルギー（KU）とお湯に変換する。", "機械は正面以外のすべての面から熱を受け取る。", "機械は正面だけからKUを送る。"]
+    },
+    "usage": {
+      "en": ["Place the machine with its front face against the KU consumer.", "Place a heat generator against another face of the machine.", "Put water buckets or water cells into the water input slot.", "Put empty containers into the hot water slot to collect the hot water."],
+      "zh": ["放置机器，使其正面对着动能机器。", "把加热机放在机器的其他面上。", "把水桶或水单元放入水输入槽位。", "把空容器放入热水槽位来收集热水。"],
+      "ja": ["正面がKU消費機械に接するように機械を置く。", "機械の別の面に加熱機を置く。", "水バケツか水セルを水入力スロットに入れる。", "空の容器をお湯スロットに入れてお湯を集める。"]
+    },
+    "notes": {
+      "en": ["The machine stops when the water tank is empty or the hot water tank is full."],
+      "zh": ["水储罐为空或热水储罐已满时，机器停止工作。"],
+      "ja": ["水タンクが空か、お湯タンクが満杯になると、機械は停止する。"]
+    }
+  },
+  "generator/block_kinetic_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts kinetic energy (KU) into EU.", "The machine takes KU from the block at its front face."],
+      "zh": ["机器把动能（KU）转换为 EU。", "机器从正面相邻的方块接收 KU。"],
+      "ja": ["機械は運動エネルギー（KU）をEUに変換する。", "機械は正面に隣接するブロックからKUを受け取る。"]
+    },
+    "usage": {
+      "en": ["Place the generator with its front face against the back face of a Wind Kinetic Generator.", "Connect an MV cable to the generator."],
+      "zh": ["放置发电机，使其正面对着风力动能发生机背面。", "把 MV 导线连接到发电机。"],
+      "ja": ["発電機の正面を風力運動エネルギー発生機の背面に接して置く。", "MVケーブルを発電機に接続する。"]
+    }
+  },
+  "generator/block_turbo_kinetic_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts kinetic energy (KU) from the block at its front face into EU.", "KU from wind or water kinetic generators converts at full efficiency.", "KU from other sources converts at a low efficiency."],
+      "zh": ["机器把正面方块提供的动能（KU）转换为 EU。", "来自风力或水力动能发生机的 KU 按全效率转换。", "来自其他来源的 KU 按低效率转换。"],
+      "ja": ["機械は正面のブロックからの運動エネルギー（KU）をEUに変換する。", "風力または水力の運動エネルギー発生機のKUは全効率で変換する。", "ほかの発生源のKUは低い効率で変換する。"]
+    },
+    "usage": {
+      "en": ["Place the generator with its front face against the back face of a Wind Kinetic Generator.", "Connect an HV cable to the generator."],
+      "zh": ["放置发电机，使其正面对着风力动能发生机背面。", "把 HV 导线连接到发电机。"],
+      "ja": ["発電機の正面を風力運動エネルギー発生機の背面に接して置く。", "HVケーブルを発電機に接続する。"]
+    }
+  },
+  "generator/block_twin_turbo_kinetic_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine converts kinetic energy (KU) from the block at its front face into EU.", "KU from wind or water kinetic generators converts at full efficiency.", "KU from other sources converts at a low efficiency."],
+      "zh": ["机器把正面方块提供的动能（KU）转换为 EU。", "来自风力或水力动能发生机的 KU 按全效率转换。", "来自其他来源的 KU 按低效率转换。"],
+      "ja": ["機械は正面のブロックからの運動エネルギー（KU）をEUに変換する。", "風力または水力の運動エネルギー発生機のKUは全効率で変換する。", "ほかの発生源のKUは低い効率で変換する。"]
+    },
+    "usage": {
+      "en": ["Place the generator with its front face against the back face of a Wind Kinetic Generator.", "Connect an EV cable to the generator."],
+      "zh": ["放置发电机，使其正面对着风力动能发生机背面。", "把 EV 导线连接到发电机。"],
+      "ja": ["発電機の正面を風力運動エネルギー発生機の背面に接して置く。", "EVケーブルを発電機に接続する。"]
+    },
+    "notes": {
+      "en": ["The machine has a higher KU to EU ratio than the Turbocharged Kinetic Generator."],
+      "zh": ["机器的 KU 转 EU 比率高于涡轮增压动能发电机。"],
+      "ja": ["機械のKUからEUへの変換比はターボ運動エネルギー発電機より高い。"]
+    }
+  },
+  "generator/block_rt_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU from Radioisotope Fuel Pellets.", "Each added pellet doubles the EU output. The pellets never deplete."],
+      "zh": ["机器利用放射性同位素燃料靶丸产生 EU。", "每增加一个靶丸，发电量翻倍。靶丸不会耗尽。"],
+      "ja": ["機械は放射性同位体燃料ペレットでEUを作る。", "ペレットを1個足すごとにEU出力が2倍になる。ペレットは消耗しない。"]
+    },
+    "usage": {
+      "en": ["Connect an LV cable to the generator.", "Put up to six Radioisotope Fuel Pellets into the pellet slots."],
+      "zh": ["把 LV 导线连接到发电机。", "把最多六个燃料靶丸放入靶丸槽位。"],
+      "ja": ["LVケーブルを発電機に接続する。", "最大6個の燃料ペレットをペレットスロットに入れる。"]
+    }
+  },
+  "generator/block_unlimit_generator": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine makes EU continuously without fuel.", "The machine charges a battery in its charge slot. The machine is a creative-mode block."],
+      "zh": ["机器不需要燃料即可持续产生 EU。", "机器为充电槽位中的电池充电。该机器是创造模式方块。"],
+      "ja": ["機械は燃料なしで連続してEUを作る。", "機械は充電スロットのバッテリーを充電する。この機械はクリエイティブ用ブロックだ。"]
+    },
+    "usage": {
+      "en": ["Place the generator next to a machine or a cable.", "Put a battery into the charge slot to charge it."],
+      "zh": ["把发电机放在机器或导线旁边。", "把电池放入充电槽位来充电。"],
+      "ja": ["発電機を機械またはケーブルの隣に置く。", "充電するバッテリーを充電スロットに入れる。"]
+    },
+    "notes": {
+      "en": ["Check the voltage tier of each connected machine. A machine explodes on overvoltage."],
+      "zh": ["检查每台连接机器的电压等级。过压会使机器爆炸。"],
+      "ja": ["接続する各機械の電圧Tierを確認する。過電圧で機械は爆発する。"]
+    }
+  },
+  "generator/block_nuclear_reactor_generator": {
+    "kind": "reactor",
+    "function": {
+      "en": ["The machine burns nuclear fuel rods and makes EU and heat.", "Each adjacent Reactor Chamber adds one column of component slots.", "With a Reactor Pressure Vessel structure, the machine changes to fluid mode and heats coolant."],
+      "zh": ["机器燃烧核燃料棒，产生 EU 和热量。", "每个相邻的核反应仓都增加一列元件槽位。", "组成核反应堆压力容器结构后，机器切换到流体模式并加热冷却液。"],
+      "ja": ["機械は核燃料棒を燃やしてEUと熱を作る。", "隣接する原子炉チャンバー1個ごとに部品スロットが1列増える。", "原子炉圧力容器の構造を作ると、機械は流体モードに切り替わりクーラントを加熱する。"]
+    },
+    "usage": {
+      "en": ["Place Reactor Chambers against the faces of the reactor.", "Put fuel rods and cooling components into the slots.", "Connect a cable to the reactor.", "Apply a redstone signal to the reactor to start it."],
+      "zh": ["把核反应仓贴在反应堆的各个面上。", "把燃料棒和冷却元件放入槽位。", "把导线连接到反应堆。", "向反应堆输入红石信号来启动它。"],
+      "ja": ["原子炉チャンバーを原子炉の各面に接して置く。", "燃料棒と冷却部品をスロットに入れる。", "ケーブルを原子炉に接続する。", "原子炉にレッドストーン信号を入れて起動する。"]
+    },
+    "notes": {
+      "en": ["WARNING: The reactor explodes when the hull heat reaches its limit.", "WARNING: At high hull heat, the reactor sets blocks on fire and hurts nearby mobs."],
+      "zh": ["警告：堆温达到上限时，反应堆爆炸。", "警告：堆温较高时，反应堆会点燃方块并伤害附近的生物。"],
+      "ja": ["警告：炉の温度が上限に達すると、原子炉は爆発する。", "警告：炉の温度が高いと、原子炉はブロックに火をつけ、近くのモブを傷つける。"]
+    }
+  }
+}

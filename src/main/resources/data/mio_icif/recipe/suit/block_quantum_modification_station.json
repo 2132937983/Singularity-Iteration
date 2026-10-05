@@ -1,0 +1,34 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "ECE",
+    "GHG",
+    "PLP"
+  ],
+  "key": {
+    "E": {
+      "tag": "c:circuits/elite"
+    },
+    "C": {
+      "item": "mio_icif:item_tool_ov_scanner"
+    },
+    "G": {
+      "item": "mio_icif:build/block_alloy_glass"
+    },
+    "H": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "P": {
+      "tag": "c:plates/iridium"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_quantum_modification_station",
+    "count": 1
+  },
+  "show_notification": true
+}

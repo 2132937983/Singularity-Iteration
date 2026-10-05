@@ -30,6 +30,7 @@ public class mio_icif_Network {
         // module / core menu gained its charge and armor slots in 0.1.7.29: an older client
         // built 36 slots, the newer server synced 42 -> IndexOutOfBoundsException at slot 36).
         final PayloadRegistrar registrar = event.registrar(protocolVersion());
+        com.miophas.singularity_iteration.common.suit.SuitPackets.register(registrar);
 
         // 注册金属成型机模式切换包
         registrar.playToServer(

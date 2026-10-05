@@ -63,6 +63,8 @@ public class Singularity_Iteration_Client {
         // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
         // Do not forget to add translations for your config options to the en_us.json file.
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        container.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT,
+            com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.SPEC);
     }
 
     @SubscribeEvent

@@ -1174,8 +1174,175 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+
+    // ------------------------------------------------------------------ scene 13 (0.1.7.33)
+
+    private static ItemStack suitPiece(String path, String... units) {
+        ItemStack stack = item(path);
+        if (stack.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor a) a.setEnergy(stack, a.getMaxEnergy(stack));
+        for (String u : units) com.miophas.singularity_iteration.common.suit.SuitModules.install(stack,
+            com.miophas.singularity_iteration.common.suit.SuitModuleType.byId(u));
+        return stack;
+    }
+
+    private static void suitUp(ServerPlayer sp) {
+        sp.setItemSlot(EquipmentSlot.HEAD, suitPiece("armor/item_armor_quantum_helmet", "entity_esp", "ballistic", "behavior_predictor", "holomap"));
+        sp.setItemSlot(EquipmentSlot.CHEST, suitPiece("armor/item_armor_quantum_chestplate", "threat_sensor", "blast_warning", "deflector"));
+        sp.setItemSlot(EquipmentSlot.LEGS, suitPiece("armor/item_armor_quantum_leggings", "grid_telemetry"));
+        sp.setItemSlot(EquipmentSlot.FEET, suitPiece("armor/item_armor_quantum_boots", "ore_scanner"));
+    }
+
+    private static <T extends net.minecraft.world.entity.Mob> T mob(ServerLevel level, net.minecraft.world.entity.EntityType<T> type, double x, double y, double z,
+                                                                  boolean noAi, ServerPlayer face) {
+        T m = type.create(level);
+        m.moveTo(x, y, z, 0, 0);
+        m.setNoAi(noAi);
+        m.setPersistenceRequired();
+        level.addFreshEntity(m);
+        if (face != null) m.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, face.getEyePosition());
+        if (face != null) { m.setYBodyRot(m.getYRot()); m.setYHeadRot(m.getYRot()); }
+        return m;
+    }
+
+    /** Scene 13 (-Dsi.capture.scene=13): FCS HUD, deflector field, Viltrum flight, modification station, layout editor. */
+    private static void scene13() {
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            sp.setGameMode(GameType.SURVIVAL);
+            // ores under the turf, a small grid, mobs
+            int[][] ores = {{2, -62, 6}, {-3, -63, 8}, {4, -63, 10}, {-1, -62, 12}, {6, -62, 4}, {-5, -62, 5}, {1, -63, 3}, {3, -62, 14}};
+            String[] kinds = {"minecraft:diamond_ore", "minecraft:gold_ore", "minecraft:iron_ore", "minecraft:redstone_ore", "minecraft:lapis_ore",
+                "minecraft:emerald_ore", "minecraft:copper_ore", "minecraft:coal_ore"};
+            for (int i = 0; i < ores.length; i++)
+                level.setBlock(new BlockPos(ores[i][0], ores[i][1], ores[i][2]),
+                    BuiltInRegistries.BLOCK.get(ResourceLocation.parse(kinds[i])).defaultBlockState(), 3);
+            place(level, new BlockPos(-4, -60, 9), "generator/block_geo_generator", Direction.EAST);
+            place(level, new BlockPos(-3, -60, 9), "wiring/block_mfe", Direction.EAST);
+            place(level, new BlockPos(-2, -60, 9), "producer/block_powder_elc", Direction.SOUTH);
+            if (level.getBlockEntity(new BlockPos(-3, -60, 9)) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity() / 2);
+            look(sp, 0.5, -60, 0.5, 0, 6);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            suitUp(sp);
+            var crossbow = new ItemStack(Items.CROSSBOW);
+            crossbow.set(net.minecraft.core.component.DataComponents.CHARGED_PROJECTILES,
+                net.minecraft.world.item.component.ChargedProjectiles.of(new ItemStack(Items.ARROW)));
+            sp.setItemInHand(InteractionHand.MAIN_HAND, crossbow);
+            var husk = mob(level, net.minecraft.world.entity.EntityType.HUSK, 3.5, -60, 9.5, true, sp);
+            husk.setTarget(sp);
+            var husk2 = mob(level, net.minecraft.world.entity.EntityType.HUSK, -1.5, -60, 15.5, true, sp);
+            husk2.setTarget(sp);
+            mob(level, net.minecraft.world.entity.EntityType.WOLF, 5.5, -60, 6.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.COW, -5.5, -60, 12.5, true, null);
+            var pig = mob(level, net.minecraft.world.entity.EntityType.PIG, 1.5, -60, 7.5, false, null);
+            pig.setDeltaMovement(0.12, 0, 0);
+            var tnt = new net.minecraft.world.entity.item.PrimedTnt(level, 6.5, -60, 12.5, null);
+            tnt.setFuse(500);
+            level.addFreshEntity(tnt);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(90, "scene13/fcs_hud_overview");
+        // telemetry: look at the macerator
+        server(5, sp -> sp.teleportTo(sp.serverLevel(), -2.5, -60, 5.0, 0, 14));
+        client(45, () -> Singularity_Iteration.LOGGER.warn("[scene13] ores={} first={} telemetryPos={} reply={} hit={}",
+            com.miophas.singularity_iteration.common.client.suit.OreScanner.hits().size(),
+            com.miophas.singularity_iteration.common.client.suit.OreScanner.hits().isEmpty() ? null : com.miophas.singularity_iteration.common.client.suit.OreScanner.hits().get(0).pos(),
+            com.miophas.singularity_iteration.common.client.suit.FcsClient.telemetryPos(),
+            com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket.latest(), Minecraft.getInstance().hitResult));
+        shot(5, "scene13/fcs_grid_telemetry");
+        // deflector: hits from three sides, third person front
+        server(5, sp -> {
+            sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 180, 0);
+            sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.item.PrimedTnt.class, sp.getBoundingBox().inflate(40)).forEach(e -> e.discard());
+        });
+        client(5, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        for (int i = 0; i < 3; i++) {
+            final int k = i;
+            server(i == 0 ? 20 : 3, sp -> {
+                var level = sp.serverLevel();
+                var src = level.getEntitiesOfClass(net.minecraft.world.entity.monster.Husk.class, sp.getBoundingBox().inflate(30)).stream().findFirst().orElse(null);
+                if (src == null) return;
+                double[][] at = {{-1.2, 1.1, -1.4}, {1.4, 1.5, -0.6}, {0.2, 0.6, -1.6}};
+                src.moveTo(sp.getX() + at[k][0], sp.getY() + at[k][1] - 1, sp.getZ() + at[k][2]);
+                sp.invulnerableTime = 0;
+                sp.hurt(level.damageSources().mobAttack(src), 6);
+            });
+        }
+        client(1, () -> Singularity_Iteration.LOGGER.warn("[scene13] shield hits on client: {}",
+            com.miophas.singularity_iteration.common.suit.SuitSensorData.shieldHits().size()));
+        shot(3, "scene13/deflector_field");
+        // Viltrum flight
+        server(30, sp -> {
+            var chest = sp.getItemBySlot(EquipmentSlot.CHEST);
+            com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.setEnabled(chest, "viltrum_flight", true);
+            sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            sp.teleportTo(sp.serverLevel(), 0.5, -40, -60.5, 0, -4);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+        });
+        client(5, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            mc.options.keyUp.setDown(true);
+            mc.options.keySprint.setDown(true);
+        });
+        client(20, () -> { var pl = Minecraft.getInstance().player;
+            Singularity_Iteration.LOGGER.warn("[scene13] flight: pos={} abilitiesFlying={} viltrum={} speed={}", pl.position(), pl.getAbilities().flying,
+                com.miophas.singularity_iteration.common.client.suit.ViltrumFlightClient.isFlying(),
+                com.miophas.singularity_iteration.common.client.suit.ViltrumFlightClient.speed()); });
+        shot(2, "scene13/viltrum_flight_back");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
+        shot(6, "scene13/viltrum_flight_hud");
+        client(2, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.keyUp.setDown(false);
+            mc.options.keySprint.setDown(false);
+            mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
+        });
+        // station
+        server(20, sp -> {
+            var level = sp.serverLevel();
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            BlockPos at = new BlockPos(30, -60, 4);
+            place(level, at, "producer/block_quantum_modification_station", Direction.NORTH);
+            if (level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.suit.QuantumModStationBlockEntity st) {
+                st.getEnergyStorageInternal().setStored(30_000);
+                var h = (net.neoforged.neoforge.items.IItemHandlerModifiable) st.getItemHandler();
+                h.setStackInSlot(1, suitPiece("armor/item_armor_quantum_helmet", "entity_esp", "holomap"));
+                h.setStackInSlot(2, new ItemStack(com.miophas.singularity_iteration.common.suit.SuitRegistry.unitItem(
+                    com.miophas.singularity_iteration.common.suit.SuitModuleType.BALLISTIC), 2));
+            }
+            sp.teleportTo(level, 30.5, -60, 1.6, 0, 28);
+        });
+        client(3, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.FIRST_PERSON); mc.options.hideGui = true; });
+        shot(40, "scene13/station_block");
+        server(2, sp -> {
+            var level = sp.serverLevel();
+            BlockPos at = new BlockPos(30, -60, 4);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
+            level.getBlockState(at).useWithoutItem(level, sp, hit);
+        });
+        client(5, () -> Minecraft.getInstance().options.hideGui = false);
+        shot(25, "scene13/station_gui");
+        server(1, ServerPlayer::closeContainer);
+        client(5, () -> Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.suit.HudLayoutScreen(null)));
+        shot(15, "scene13/hud_layout_editor");
+        client(2, () -> Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features().select("chest")));
+        shot(15, "scene13/console_viltrum_units");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
     static {
-        if (OUT != null && "12".equals(System.getProperty("si.capture.scene"))) {
+        if (OUT != null && "13".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene13();
+        } else if (OUT != null && "12".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             scene12();
         } else if (OUT != null && ("nuclear".equals(System.getProperty("si.capture.scene"))

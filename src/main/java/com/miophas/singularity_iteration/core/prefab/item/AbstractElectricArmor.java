@@ -318,7 +318,7 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
      * @param tooltipComponents Tooltip 列表
      */
     protected void appendFeatureTooltip(ItemStack stack, List<Component> tooltipComponents) {
-        ArmorFeatureTooltip.appendAll(tooltipComponents, stack, getFeatures(stack));
+        ArmorFeatureTooltip.appendAll(tooltipComponents, stack, ArmorFeatures.features(stack));
     }
 
     /**

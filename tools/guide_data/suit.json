@@ -1,0 +1,516 @@
+{
+  "_comment": "Upgrade units of the quantum suit (0.1.7.33). Same format as the machine data; kind = unit.",
+  "ore_scanner": {
+    "kind": "unit",
+    "slots": [
+      "feet",
+      "legs"
+    ],
+    "drain": 24,
+    "function": {
+      "en": [
+        "The unit scans a sphere with a 16-block radius around the wearer.",
+        "The visor shows each ore block as a wireframe cell in the color of the ore.",
+        "A side panel lists the nearest ore of each type with its distance and height."
+      ],
+      "zh": [
+        "该单元扫描以穿戴者为中心、半径16格的球形范围。",
+        "面罩把每个矿石方块显示为矿物颜色的线框格。",
+        "侧面板列出每种矿物最近的一处，并显示距离和高度。"
+      ],
+      "ja": [
+        "このユニットは着用者を中心に半径16ブロックの球をスキャンする。",
+        "バイザーは各鉱石ブロックを鉱石色のワイヤーフレームで表示する。",
+        "側面パネルは種類ごとに最も近い鉱石の距離と高さを表示する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Install the unit into the quantum boots or leggings.",
+        "Wear a quantum helmet.",
+        "Walk to the mining area.",
+        "Read the ore list on the status panel.",
+        "Dig towards the highlighted cells."
+      ],
+      "zh": [
+        "把单元装入量子靴子或护腿。",
+        "穿戴量子头盔。",
+        "走到采矿区域。",
+        "读取状态面板上的矿物列表。",
+        "朝高亮的线框格挖掘。"
+      ],
+      "ja": [
+        "ユニットを量子ブーツか量子レギンスに取り付ける。",
+        "量子ヘルメットを着用する。",
+        "採掘場所まで移動する。",
+        "ステータスパネルの鉱石リストを読む。",
+        "強調表示のセルに向かって掘る。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "One sweep takes 50 ticks. A ring on the ground marks the start of each sweep."
+      ],
+      "zh": [
+        "一次扫描用时50 tick。地面上的圆环标出每次扫描的开始。"
+      ],
+      "ja": [
+        "1回のスキャンは50 tickかかる。地面のリングが各スキャンの開始を示す。"
+      ]
+    }
+  },
+  "grid_telemetry": {
+    "kind": "unit",
+    "slots": [
+      "legs",
+      "head"
+    ],
+    "drain": 4,
+    "function": {
+      "en": [
+        "The unit reads the EU grid of the block in view and of the chunk of the wearer.",
+        "For the block in view, the panel shows the voltage tier, the packet size, the EU flow and the cable rating.",
+        "For the chunk, the panel shows generators, consumers, storage blocks, cables, stored EU and overvoltage risks."
+      ],
+      "zh": [
+        "该单元读取视线方块与穿戴者所在区块的EU电网。",
+        "面板显示视线方块的电压等级、电力包大小、EU流量与导线额定值。",
+        "面板显示区块内的发电机、用电机器、储电方块、导线、储存EU与过压风险。"
+      ],
+      "ja": [
+        "このユニットは視線先のブロックと着用者のチャンクのEU電網を読む。",
+        "視線先について、パネルは電圧Tier・パケット量・EU流量・ケーブル定格を表示する。",
+        "チャンクについて、パネルは発電機・消費機械・蓄電ブロック・ケーブル・蓄電量・過電圧リスクを表示する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Install the unit into the quantum leggings or helmet.",
+        "Look at a machine or a cable within 24 blocks.",
+        "Read the LOS lines of the telemetry panel.",
+        "Compare the packet size with the cable rating.",
+        "Replace the cable when the panel shows OVER."
+      ],
+      "zh": [
+        "把单元装入量子护腿或头盔。",
+        "看向24格内的机器或导线。",
+        "读取遥测面板的LOS行。",
+        "比较电力包大小与导线额定值。",
+        "面板显示OVER时更换导线。"
+      ],
+      "ja": [
+        "ユニットを量子レギンスかヘルメットに取り付ける。",
+        "24ブロック内の機械かケーブルを見る。",
+        "テレメトリパネルのLOS行を読む。",
+        "パケット量とケーブル定格を比べる。",
+        "パネルにOVERが出たらケーブルを交換する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The OV counter shows machines in the chunk that receive packets above their voltage tier."
+      ],
+      "zh": [
+        "OV计数显示区块内收到超过自身电压等级电力包的机器数量。"
+      ],
+      "ja": [
+        "OVカウンターは、電圧Tierを超えるパケットを受けたチャンク内の機械数を示す。"
+      ]
+    }
+  },
+  "entity_esp": {
+    "kind": "unit",
+    "slots": [
+      "head"
+    ],
+    "drain": 12,
+    "function": {
+      "en": [
+        "The unit tags every creature within 32 blocks.",
+        "Each tag shows corner brackets, the name, the distance and a health bar.",
+        "The visor draws a see-through outline around each tagged creature."
+      ],
+      "zh": [
+        "该单元标记32格内的每个生物。",
+        "每个标记显示边角框、名称、距离与生命条。",
+        "面罩在每个已标记生物周围绘制透视轮廓。"
+      ],
+      "ja": [
+        "このユニットは32ブロック内の全生物にタグを付ける。",
+        "タグはコーナーブラケット・名前・距離・体力バーを表示する。",
+        "バイザーはタグ付きの各生物に透視輪郭を描く。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Install the unit into the quantum helmet.",
+        "Enter a cave or a dark area.",
+        "Count the red outlines before you advance."
+      ],
+      "zh": [
+        "把单元装入量子头盔。",
+        "进入洞穴或黑暗区域。",
+        "前进前数清红色轮廓的数量。"
+      ],
+      "ja": [
+        "ユニットを量子ヘルメットに取り付ける。",
+        "洞窟か暗い場所に入る。",
+        "進む前に赤い輪郭の数を数える。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Colors: red is hostile, yellow is neutral, green is passive, cyan is a player."
+      ],
+      "zh": [
+        "颜色：红色为敌对，黄色为中立，绿色为友好，青色为玩家。"
+      ],
+      "ja": [
+        "色：赤は敵対、黄は中立、緑は友好、シアンはプレイヤー。"
+      ]
+    }
+  },
+  "ballistic": {
+    "kind": "unit",
+    "slots": [
+      "head"
+    ],
+    "drain": 4,
+    "function": {
+      "en": [
+        "The unit calculates the path of the projectile of the held weapon.",
+        "It uses the same gravity and drag steps as the game, so the path matches the real flight.",
+        "The visor shows the path, the impact ring, the time of flight, the range and the drop.",
+        "For a moving creature near the aim line, a yellow LEAD marker shows the point to aim at."
+      ],
+      "zh": [
+        "该单元计算手持武器所发射弹体的轨迹。",
+        "计算使用与游戏相同的重力和阻力步骤，轨迹与实际飞行一致。",
+        "面罩显示轨迹、落点圆环、飞行时间、射程与下坠量。",
+        "瞄准线附近有移动生物时，黄色LEAD标记显示应瞄准的位置。"
+      ],
+      "ja": [
+        "このユニットは手持ち武器の弾体の軌道を計算する。",
+        "計算はゲームと同じ重力と抵抗の手順を使うので、軌道は実際の飛行と一致する。",
+        "バイザーは軌道・着弾リング・飛翔時間・射程・落下量を表示する。",
+        "照準線の近くに動く生物がいると、黄色のLEADマーカーが狙う位置を示す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Install the unit into the quantum helmet.",
+        "Hold a bow, a crossbow, a trident or a throwable item.",
+        "Draw the bow until the panel shows READY.",
+        "Put the impact ring on the LEAD marker.",
+        "Release the shot."
+      ],
+      "zh": [
+        "把单元装入量子头盔。",
+        "手持弓、弩、三叉戟或投掷物。",
+        "拉弓直到面板显示READY。",
+        "把落点圆环对准LEAD标记。",
+        "松开发射。"
+      ],
+      "ja": [
+        "ユニットを量子ヘルメットに取り付ける。",
+        "弓・クロスボウ・トライデント・投擲物を持つ。",
+        "パネルにREADYが出るまで弓を引く。",
+        "着弾リングをLEADマーカーに重ねる。",
+        "射撃する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The ring turns red when the weapon is ready or the path hits a creature."
+      ],
+      "zh": [
+        "武器就绪或轨迹命中生物时，圆环变为红色。"
+      ],
+      "ja": [
+        "武器の準備が整うか軌道が生物に当たると、リングが赤に変わる。"
+      ]
+    }
+  },
+  "blast_warning": {
+    "kind": "unit",
+    "slots": [
+      "chest",
+      "head"
+    ],
+    "drain": 2,
+    "function": {
+      "en": [
+        "The unit measures the fuse of primed TNT, primed TNT carts and swelling creepers within 28 blocks.",
+        "A countdown label floats above each explosive.",
+        "A red ring on the ground shows the blast radius and a yellow ring shows twice the radius."
+      ],
+      "zh": [
+        "该单元测量28格内已点燃TNT、TNT矿车与膨胀苦力怕的引信。",
+        "每个爆炸物上方显示倒计时标签。",
+        "地面红环显示爆炸半径，黄环显示两倍半径。"
+      ],
+      "ja": [
+        "このユニットは28ブロック内の点火TNT・TNTトロッコ・膨張クリーパーの導火時間を計る。",
+        "各爆発物の上にカウントダウンが浮かぶ。",
+        "地面の赤リングは爆発半径、黄リングはその2倍を示す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Install the unit into the quantum chestplate or helmet.",
+        "Watch the BLAST WARNING panel.",
+        "Move out of the yellow ring when the panel shows IN RADIUS."
+      ],
+      "zh": [
+        "把单元装入量子胸甲或头盔。",
+        "注视爆炸预警面板。",
+        "面板显示IN RADIUS时离开黄环。"
+      ],
+      "ja": [
+        "ユニットを量子チェストプレートかヘルメットに取り付ける。",
+        "爆発警告パネルを見る。",
+        "パネルにIN RADIUSが出たら黄リングの外へ出る。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The label turns red in the last second."
+      ],
+      "zh": [
+        "最后一秒标签变为红色。"
+      ],
+      "ja": [
+        "最後の1秒でラベルが赤になる。"
+      ]
+    }
+  },
+  "behavior_predictor": {
+    "kind": "unit",
+    "slots": [
+      "head"
+    ],
+    "drain": 8,
+    "function": {
+      "en": [
+        "The unit follows the movement of each creature within 24 blocks.",
+        "It draws the path of the creature for the next second.",
+        "It marks attack signs before the attack: aim, charge, cast, swell, beam and dive.",
+        "A red line shows the aim axis of a creature that aims a weapon."
+      ],
+      "zh": [
+        "该单元跟踪24格内每个生物的移动。",
+        "该单元绘制生物下一秒的路径。",
+        "该单元在攻击前标出攻击征兆：瞄准、蓄力、施法、膨胀、光束与俯冲。",
+        "红线显示正在瞄准的生物的瞄准轴。"
+      ],
+      "ja": [
+        "このユニットは24ブロック内の各生物の動きを追う。",
+        "生物の次の1秒の経路を描く。",
+        "攻撃前の兆候（照準・溜め・詠唱・膨張・光線・急降下）をマークする。",
+        "赤線は武器を構える生物の照準軸を示す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Install the unit into the quantum helmet.",
+        "Watch the intent codes next to the tags.",
+        "Step out of a red aim line before the shot."
+      ],
+      "zh": [
+        "把单元装入量子头盔。",
+        "注视标记旁的意图代码。",
+        "射击前离开红色瞄准线。"
+      ],
+      "ja": [
+        "ユニットを量子ヘルメットに取り付ける。",
+        "タグ横の意図コードを見る。",
+        "射撃前に赤い照準線から外れる。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Codes for close and ranged attacks: ATK melee, AIM ranged weapon, DET explosion.",
+        "Codes for special attacks: CAST spell, BEAM guardian, FIRE ghast, DIVE vex, AGGRO enderman."
+      ],
+      "zh": [
+        "近战与远程代码：ATK近战，AIM远程武器，DET爆炸。",
+        "特殊攻击代码：CAST法术，BEAM守卫者，FIRE恶魂，DIVE恼鬼，AGGRO末影人。"
+      ],
+      "ja": [
+        "近接と遠隔のコード：ATK近接、AIM遠隔武器、DET爆発。",
+        "特殊攻撃のコード：CAST呪文、BEAMガーディアン、FIREガスト、DIVEヴェックス、AGGROエンダーマン。"
+      ]
+    }
+  },
+  "holomap": {
+    "kind": "unit",
+    "slots": [
+      "head"
+    ],
+    "drain": 10,
+    "function": {
+      "en": [
+        "The unit shows a tilted 3D relief of the terrain within 20 blocks.",
+        "The map turns with the wearer, so the view direction is always up.",
+        "Diamonds on stalks show creatures within 32 blocks at their height."
+      ],
+      "zh": [
+        "该单元显示半径20格地形的倾斜3D浮雕。",
+        "地图随穿戴者转动，视线方向始终朝上。",
+        "带支柱的菱形按高度显示32格内的生物。"
+      ],
+      "ja": [
+        "このユニットは半径20ブロックの地形を傾いた3D起伏で表示する。",
+        "マップは着用者と一緒に回り、視線方向が常に上になる。",
+        "支柱付きのひし形が32ブロック内の生物を高さ付きで示す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Install the unit into the quantum helmet.",
+        "Open the equipment console.",
+        "Click HUD layout.",
+        "Drag the HOLOMAP panel to a free corner.",
+        "Scroll on the panel to set the size."
+      ],
+      "zh": [
+        "把单元装入量子头盔。",
+        "打开装备控制台。",
+        "点击HUD布局。",
+        "把全息地图面板拖到空闲角落。",
+        "在面板上滚动滚轮设定大小。"
+      ],
+      "ja": [
+        "ユニットを量子ヘルメットに取り付ける。",
+        "装備コンソールを開く。",
+        "HUD配置をクリックする。",
+        "ホロマップパネルを空いた隅へドラッグする。",
+        "パネル上でスクロールしてサイズを決める。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Underground, the map shows the cave floor near the wearer instead of the surface."
+      ],
+      "zh": [
+        "在地下时，地图显示穿戴者附近的洞穴地面，不显示地表。"
+      ],
+      "ja": [
+        "地下では、マップは地表ではなく着用者付近の洞窟の床を表示する。"
+      ]
+    }
+  },
+  "threat_sensor": {
+    "kind": "unit",
+    "slots": [
+      "chest"
+    ],
+    "drain": 6,
+    "function": {
+      "en": [
+        "The server checks all creatures within 32 blocks four times per second.",
+        "A yellow warning means that a player or a neutral creature looks at the wearer.",
+        "A red warning means that a creature targets the wearer or that a hostile creature looks at the wearer.",
+        "Markers on the outer ring of the HUD point to each threat. The holomap shows the same colors."
+      ],
+      "zh": [
+        "服务器每秒四次检查32格内的全部生物。",
+        "黄色警告表示玩家或中立生物注视穿戴者。",
+        "红色警告表示生物锁定穿戴者，或敌对生物注视穿戴者。",
+        "HUD外环上的标记指向每个威胁。全息地图使用相同颜色。"
+      ],
+      "ja": [
+        "サーバーは32ブロック内の全生物を毎秒4回確認する。",
+        "黄色警告は、プレイヤーか中立生物が着用者を注視していることを示す。",
+        "赤色警告は、生物が着用者を標的にしているか、敵対生物が着用者を注視していることを示す。",
+        "HUD外周のマーカーが各脅威の方向を指す。ホロマップも同じ色を使う。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Install the unit into the quantum chestplate.",
+        "Wear a quantum helmet.",
+        "Turn towards a red marker.",
+        "Engage the target or leave the area."
+      ],
+      "zh": [
+        "把单元装入量子胸甲。",
+        "穿戴量子头盔。",
+        "转向红色标记。",
+        "攻击目标或离开该区域。"
+      ],
+      "ja": [
+        "ユニットを量子チェストプレートに取り付ける。",
+        "量子ヘルメットを着用する。",
+        "赤いマーカーの方を向く。",
+        "目標と交戦するか、その場を離れる。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The banner at the top counts LOCK (red) and WATCH (yellow) contacts."
+      ],
+      "zh": [
+        "顶部横幅统计LOCK（红）与WATCH（黄）的数量。"
+      ],
+      "ja": [
+        "上部のバナーはLOCK（赤）とWATCH（黄）の数を表示する。"
+      ]
+    }
+  },
+  "deflector": {
+    "kind": "unit",
+    "slots": [
+      "chest"
+    ],
+    "drain": 0,
+    "function": {
+      "en": [
+        "The unit cancels the damage that the armor lets through.",
+        "It spends 4000 EU from the chestplate for each damage point and stops at most 12 points per hit.",
+        "The field is not visible when idle. A hit lights hexagonal cells and deflector plates at the impact point.",
+        "The unit does not stop damage that bypasses armor, except explosions."
+      ],
+      "zh": [
+        "该单元抵消护甲未挡住的伤害。",
+        "每点伤害消耗胸甲4000 EU，每次命中最多抵消12点。",
+        "力场平时不可见。命中时，命中点亮起六边形单元与偏转板。",
+        "该单元不抵消无视护甲的伤害，爆炸除外。"
+      ],
+      "ja": [
+        "このユニットは防具が防げなかったダメージを打ち消す。",
+        "ダメージ1点ごとにチェストプレートから4000 EUを使い、1回の命中で最大12点を止める。",
+        "待機中の力場は見えない。命中すると着弾点に六角セルと偏向プレートが光る。",
+        "防具貫通ダメージは止めない。爆発は例外とする。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Install the unit into the quantum chestplate.",
+        "Charge the chestplate.",
+        "Check the chestplate charge after each fight."
+      ],
+      "zh": [
+        "把单元装入量子胸甲。",
+        "给胸甲充电。",
+        "每次战斗后检查胸甲电量。"
+      ],
+      "ja": [
+        "ユニットを量子チェストプレートに取り付ける。",
+        "チェストプレートを充電する。",
+        "戦闘のたびにチェストプレートの残量を確認する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The unit has no continuous drain. It uses EU only when it stops a hit."
+      ],
+      "zh": [
+        "该单元没有持续功耗。只在挡下命中时消耗EU。"
+      ],
+      "ja": [
+        "このユニットに常時消費はない。命中を止めたときだけEUを使う。"
+      ]
+    }
+  }
+}

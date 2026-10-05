@@ -38,7 +38,9 @@ public class mio_icif_chestplate_quantum extends mio_icif_armor_elc implements I
         return List.of(new ArmorFeatureInfo(EquipmentSlot.CHEST, "flight", "tooltip.mio_icif.armor.feature_flight"),
                 new ArmorFeatureInfo(EquipmentSlot.CHEST, "fire_resistance", "tooltip.mio_icif.armor.feature_fire_resistance"),
                 new ArmorFeatureInfo(EquipmentSlot.CHEST, IJetpackItem.FEATURE_MODE_KEY,
-                        "tooltip.mio_icif.armor.feature_jetpack_mode", modeName(stack)));
+                        "tooltip.mio_icif.armor.feature_jetpack_mode", modeName(stack)),
+                new ArmorFeatureInfo(EquipmentSlot.CHEST, com.miophas.singularity_iteration.common.suit.ViltrumFlight.FEATURE,
+                        "tooltip.mio_icif.armor.feature_viltrum_flight"));
     }
 
     /** 当前模式名称（供装备特性 Tooltip / GUI 显示）。 */

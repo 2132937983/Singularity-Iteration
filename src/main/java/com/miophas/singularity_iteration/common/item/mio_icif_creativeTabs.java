@@ -72,6 +72,9 @@ public class mio_icif_creativeTabs {
                 output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.SHOWCASE_ITEM.get());
                 output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.REMOTE.get());
                 output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.CONNECTOR.get());
+                output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.STATION_ITEM.get());
+                for (var unit : com.miophas.singularity_iteration.common.suit.SuitRegistry.units()) output.accept(unit.get());
+                com.miophas.singularity_iteration.common.guide.GuideBook.addToTab(output);
                 output.accept(mio_icif_items_tools.WRENCH_ELC.get());
                 // 电动扳手 - 空电版本
                 { ItemStack emptyWrenchElc = new ItemStack(mio_icif_items_tools.WRENCH_ELC.get());

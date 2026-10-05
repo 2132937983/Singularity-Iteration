@@ -26,5 +26,10 @@ public class mio_icif_data_components {
         DATA_COMPONENTS.registerComponentType("reactor_component_data",
             builder -> builder.persistent(ReactorComponentData.CODEC).networkSynchronized(ReactorComponentData.STREAM_CODEC)
         );
-}
 
+    /** Upgrade units installed in a quantum suit piece (0.1.7.33). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.miophas.singularity_iteration.common.suit.InstalledModules>> SUIT_MODULES =
+        DATA_COMPONENTS.registerComponentType("suit_modules",
+            builder -> builder.persistent(com.miophas.singularity_iteration.common.suit.InstalledModules.CODEC)
+                .networkSynchronized(com.miophas.singularity_iteration.common.suit.InstalledModules.STREAM_CODEC));
+}

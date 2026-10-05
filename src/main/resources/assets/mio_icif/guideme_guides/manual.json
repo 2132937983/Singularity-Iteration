@@ -1,0 +1,15 @@
+{
+  "default_language": "en_us",
+  "item_settings": {
+    "display_name": {
+      "type": "translatable",
+      "translate": "item.mio_icif.guide"
+    },
+    "tooltip_lines": [
+      {
+        "text": "Singularity Iteration",
+        "color": "dark_aqua"
+      }
+    ]
+  }
+}

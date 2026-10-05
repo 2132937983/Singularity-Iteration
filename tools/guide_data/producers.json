@@ -1,0 +1,3259 @@
+{
+  "producer/block_machine_hull_basic": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Basic Machine Hull is a crafting component. The block has no function in the world.",
+        "Basic machines use this hull in their crafting recipes."
+      ],
+      "zh": [
+        "本方块是合成材料。本方块放置后没有功能。",
+        "基础机器的合成配方使用本方块。"
+      ],
+      "ja": [
+        "基本マシンハルはクラフト素材だ。設置しても機能はない。",
+        "基本的な機械のレシピがこのハルを使う。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Craft the Basic Machine Hull at a crafting table.",
+        "Use the hull as an ingredient in a machine recipe.",
+        "Look up the machines that use the hull in the recipe viewer."
+      ],
+      "zh": [
+        "在工作台合成本方块。",
+        "把本方块用作机器配方的材料。",
+        "在配方查看器中查找使用本方块的机器。"
+      ],
+      "ja": [
+        "作業台で基本マシンハルをクラフトする。",
+        "機械のレシピの材料としてハルを使う。",
+        "レシピビューアでハルを使う機械を調べる。"
+      ]
+    }
+  },
+  "producer/block_machine_hull_advanced": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Advanced Machine Hull is a crafting component. The block has no function in the world.",
+        "Advanced machines use this hull in their crafting recipes."
+      ],
+      "zh": [
+        "本方块是合成材料。本方块放置后没有功能。",
+        "高级机器的合成配方使用本方块。"
+      ],
+      "ja": [
+        "高度マシンハルはクラフト素材だ。設置しても機能はない。",
+        "高度な機械のレシピがこのハルを使う。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Craft the Advanced Machine Hull at a crafting table.",
+        "Use the hull as an ingredient in an advanced machine recipe.",
+        "Look up the machines that use the hull in the recipe viewer."
+      ],
+      "zh": [
+        "在工作台合成本方块。",
+        "把本方块用作高级机器配方的材料。",
+        "在配方查看器中查找使用本方块的机器。"
+      ],
+      "ja": [
+        "作業台で高度マシンハルをクラフトする。",
+        "高度な機械のレシピの材料としてハルを使う。",
+        "レシピビューアでハルを使う機械を調べる。"
+      ]
+    }
+  },
+  "checker/block_checker": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Voltage Detector connects to a cable network and measures the voltage on the network.",
+        "Look at the detector to see the voltage, the voltage tier and the input power."
+      ],
+      "zh": [
+        "电压检测器连接导线网络，并测量网络电压。",
+        "看向检测器时，屏幕显示电压、电压等级和输入功率。"
+      ],
+      "ja": [
+        "電圧検出器はケーブル網に接続して、網の電圧を測る。",
+        "検出器を見ると、画面に電圧、電圧Tier、入力電力が出る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the Voltage Detector next to a cable of the network.",
+        "Point the crosshair at the detector.",
+        "Read the voltage and the voltage tier on the screen.",
+        "Compare the voltage tier with the input tier of your machines."
+      ],
+      "zh": [
+        "把电压检测器放在网络导线旁边。",
+        "把准星对准检测器。",
+        "读取屏幕上的电压和电压等级。",
+        "将该电压等级与机器的输入等级比较。"
+      ],
+      "ja": [
+        "電圧検出器を網のケーブルの隣に置く。",
+        "照準を検出器に合わせる。",
+        "画面で電圧と電圧Tierを読む。",
+        "その電圧Tierを機械の入力電圧Tierと比べる。"
+      ]
+    }
+  },
+  "producer/block_magnetizer": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Magnetizer uses EU to magnetize connected iron bars and Iron Fence blocks.",
+        "A player with iron, gold, netherite or electric boots moves up inside the magnetized bars.",
+        "The machine magnetizes bars up to 20 blocks above or below its own height."
+      ],
+      "zh": [
+        "磁化机消耗EU，磁化相连的铁栏杆和铁栅栏。",
+        "穿铁、金、下界合金或电动靴子的玩家在磁化栏杆内向上移动。",
+        "机器磁化其上下各20格以内的栏杆。"
+      ],
+      "ja": [
+        "磁化機はEUを使い、つながった鉄格子と鉄フェンスを磁化する。",
+        "鉄、金、ネザライト、電気のブーツを履いたプレイヤーは、磁化した格子の中で上昇する。",
+        "機械は自身の高さから上下20ブロック以内の格子を磁化する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Build a vertical column of iron bars.",
+        "Place the Magnetizer next to the lowest block of the column.",
+        "Connect an LV cable to the machine.",
+        "Put on iron boots or electric boots.",
+        "Walk into the bars to move up."
+      ],
+      "zh": [
+        "搭建一根竖直的铁栏杆柱。",
+        "把磁化机放在柱子最下方方块的旁边。",
+        "将LV导线连接到机器。",
+        "穿上铁靴子或电动靴子。",
+        "走进栏杆后即可向上移动。"
+      ],
+      "ja": [
+        "鉄格子で縦の柱を作る。",
+        "柱の一番下のブロックの隣に磁化機を置く。",
+        "LVケーブルを機械に接続する。",
+        "鉄のブーツか電気ブーツを履く。",
+        "格子の中に入って上昇する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine.",
+        "WARNING: The machine explodes on overvoltage above LV."
+      ],
+      "zh": [
+        "红石信号使机器停止。",
+        "警告：电压高于LV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。",
+        "警告：LVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_tesla": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Tesla Coil uses EU to damage every living entity within 9 blocks of the coil.",
+        "The coil attacks at a fixed interval while it receives a redstone signal and holds enough EU.",
+        "The first hit on a target does more damage. Each hit also damages armor."
+      ],
+      "zh": [
+        "特斯拉线圈消耗EU，伤害周围9格内的所有生物。",
+        "收到红石信号且储能足够时，线圈按固定间隔攻击。",
+        "对目标的首次攻击伤害更高。每次攻击也会损坏护甲。"
+      ],
+      "ja": [
+        "テスラコイルはEUを使い、周囲9ブロック以内の全生物にダメージを与える。",
+        "レッドストーン信号を受け、EUが十分な間、コイルは一定間隔で攻撃する。",
+        "目標への最初の攻撃は大きなダメージを与える。各攻撃は防具も傷める。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the Tesla Coil in the area to protect.",
+        "Connect an MV cable to the machine.",
+        "Let the coil store enough EU.",
+        "Apply a redstone signal to activate the coil."
+      ],
+      "zh": [
+        "把特斯拉线圈放在需要防护的区域。",
+        "将MV导线连接到机器。",
+        "等待线圈储存足够的EU。",
+        "施加红石信号以启动线圈。"
+      ],
+      "ja": [
+        "守る場所にテスラコイルを置く。",
+        "MVケーブルを機械に接続する。",
+        "コイルに十分なEUがたまるまで待つ。",
+        "レッドストーン信号を与えてコイルを起動する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The coil also attacks players and tamed animals in range.",
+        "WARNING: The machine explodes on overvoltage above MV."
+      ],
+      "zh": [
+        "警告：线圈也会攻击范围内的玩家和驯服的动物。",
+        "警告：电压高于MV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "警告：コイルは範囲内のプレイヤーと飼いならした動物も攻撃する。",
+        "警告：MVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_laser_defense_tower": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Laser Defense Tower fires laser beams at up to 5 targets in line of sight. Each hit costs EU.",
+        "The default scan box reaches 16 blocks in each direction. The GUI extends the box up to 32 blocks.",
+        "Blacklist mode attacks hostile mobs except listed ones. Whitelist mode attacks only listed mobs, tags and players."
+      ],
+      "zh": [
+        "镭射激光防御塔向视线内最多5个目标发射激光。每次命中消耗EU。",
+        "默认扫描范围为各方向16格。可在界面中扩大到32格。",
+        "黑名单模式攻击未列出的敌对生物。白名单模式只攻击列出的生物、标签和玩家。"
+      ],
+      "ja": [
+        "レーザー防衛塔は視線内の最大5体の目標にレーザーを撃つ。命中ごとにEUを使う。",
+        "標準の索敵範囲は各方向16ブロックだ。GUIで最大32ブロックまで広げる。",
+        "ブラックリストモードはリスト外の敵対モブを攻撃する。ホワイトリストモードはリストのモブ、タグ、プレイヤーだけを攻撃する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the tower at a position with a clear view of the area.",
+        "Connect an MV cable to the machine.",
+        "Open the GUI and set the horizontal and vertical range.",
+        "Select the targeting mode and add entries to the list."
+      ],
+      "zh": [
+        "把防御塔放在视野开阔的位置。",
+        "将MV导线连接到机器。",
+        "打开界面，设置水平和垂直范围。",
+        "选择目标模式，并向列表添加条目。"
+      ],
+      "ja": [
+        "見通しのよい場所に塔を置く。",
+        "MVケーブルを機械に接続する。",
+        "GUIを開き、水平と垂直の範囲を設定する。",
+        "目標モードを選び、リストに項目を追加する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The upgrade bay accepts Overclocker, Transformer, Energy Storage and Redstone Signal Inverter Upgrades.",
+        "A redstone signal switches the tower off.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "升级舱接受超频、变压、储能和红石信号反转升级。",
+        "红石信号使防御塔关闭。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "アップグレードベイはオーバークロッカー、変圧、蓄電、レッドストーン信号反転のアップグレードを受け付ける。",
+        "レッドストーン信号は塔を停止する。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_sky_patrol_laser_tower": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Sky Patrol Laser Defense Station fires laser beams at up to 10 targets in line of sight. Each hit costs EU.",
+        "The default scan box reaches 32 blocks in each direction. The GUI extends the box up to 64 blocks.",
+        "Blacklist mode attacks hostile mobs except listed ones. Whitelist mode attacks only listed mobs, tags and players."
+      ],
+      "zh": [
+        "巡天镭射激光防御站向视线内最多10个目标发射激光。每次命中消耗EU。",
+        "默认扫描范围为各方向32格。可在界面中扩大到64格。",
+        "黑名单模式攻击未列出的敌对生物。白名单模式只攻击列出的生物、标签和玩家。"
+      ],
+      "ja": [
+        "スカイパトロール防衛ステーションは視線内の最大10体の目標にレーザーを撃つ。命中ごとにEUを使う。",
+        "標準の索敵範囲は各方向32ブロックだ。GUIで最大64ブロックまで広げる。",
+        "ブラックリストモードはリスト外の敵対モブを攻撃する。ホワイトリストモードはリストのモブ、タグ、プレイヤーだけを攻撃する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the tower at a position with a clear view of the area.",
+        "Connect an HV cable to the machine.",
+        "Open the GUI and set the horizontal and vertical range.",
+        "Select the targeting mode and add entries to the list."
+      ],
+      "zh": [
+        "把防御塔放在视野开阔的位置。",
+        "将HV导线连接到机器。",
+        "打开界面，设置水平和垂直范围。",
+        "选择目标模式，并向列表添加条目。"
+      ],
+      "ja": [
+        "見通しのよい場所に塔を置く。",
+        "HVケーブルを機械に接続する。",
+        "GUIを開き、水平と垂直の範囲を設定する。",
+        "目標モードを選び、リストに項目を追加する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The upgrade bay accepts Overclocker, Transformer, Energy Storage and Redstone Signal Inverter Upgrades.",
+        "A redstone signal switches the tower off.",
+        "WARNING: The machine explodes on overvoltage above HV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "升级舱接受超频、变压、储能和红石信号反转升级。",
+        "红石信号使防御塔关闭。",
+        "警告：电压高于HV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "アップグレードベイはオーバークロッカー、変圧、蓄電、レッドストーン信号反転のアップグレードを受け付ける。",
+        "レッドストーン信号は塔を停止する。",
+        "警告：HVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_matron_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Crop Manager tends the crop sticks in a 9 x 3 x 9 area around the machine.",
+        "The machine adds Fertilizer, water and Weed-EX to each crop stick."
+      ],
+      "zh": [
+        "作物监管机照料周围9×3×9范围内的作物架。",
+        "机器向每个作物架施加肥料、水和除草剂。"
+      ],
+      "ja": [
+        "作物管理機は周囲9×3×9の範囲のクロップスティックを世話する。",
+        "機械は各クロップスティックに肥料、水、除草剤を与える。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the machine in the center of the crop field.",
+        "Connect an LV cable to the machine.",
+        "Put Fertilizer into the fertilizer slots.",
+        "Put Crop Manager Herbicide into the herbicide slots.",
+        "Supply water with Water Cells or with a pipe."
+      ],
+      "zh": [
+        "把机器放在农田中央。",
+        "将LV导线连接到机器。",
+        "把肥料放入肥料槽位。",
+        "把作物监管除草剂放入除草剂槽位。",
+        "用水单元或管道供水。"
+      ],
+      "ja": [
+        "機械を畑の中央に置く。",
+        "LVケーブルを機械に接続する。",
+        "肥料を肥料スロットに入れる。",
+        "作物管理用除草剤を除草剤スロットに入れる。",
+        "水セルかパイプで水を供給する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_harvest_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Harvester collects ripe crops from the crop sticks in a 9 x 3 x 9 area around the machine.",
+        "The machine puts the drops into its storage slots.",
+        "With a Crop Analyzer installed, the machine harvests only at the optimal size."
+      ],
+      "zh": [
+        "收割机收获周围9×3×9范围内作物架上的成熟作物。",
+        "机器把产物放入储存槽位。",
+        "装有作物分析仪时，机器只在最佳尺寸收割。"
+      ],
+      "ja": [
+        "収穫機は周囲9×3×9の範囲のクロップスティックから熟した作物を集める。",
+        "機械は収穫物を保管スロットに入れる。",
+        "作物分析器を入れると、機械は最適サイズでのみ収穫する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the machine in the center of the crop field.",
+        "Connect an LV cable to the machine.",
+        "Put a Crop Analyzer into the analyzer slot to harvest at the optimal size.",
+        "Take the crops from the storage slots."
+      ],
+      "zh": [
+        "把机器放在农田中央。",
+        "将LV导线连接到机器。",
+        "放入作物分析仪，使机器在最佳尺寸收割。",
+        "从储存槽位取出作物。"
+      ],
+      "ja": [
+        "機械を畑の中央に置く。",
+        "LVケーブルを機械に接続する。",
+        "最適サイズで収穫するため、分析器スロットに作物分析器を入れる。",
+        "保管スロットから作物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The Crop Analyzer increases the EU cost of each harvest.",
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "作物分析仪会增加每次收割的EU消耗。",
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "作物分析器は収穫ごとのEU消費を増やす。",
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_teleporter_elc": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Teleporter sends the entity on top of the pad to the linked Teleporter.",
+        "Each teleport costs EU. A longer distance costs more EU.",
+        "The Teleporter has no GUI. The machine works only while it receives a redstone signal."
+      ],
+      "zh": [
+        "传送机把站在其上的实体传送到配对的传送机。",
+        "每次传送消耗EU。距离越远，消耗越多。",
+        "传送机没有界面。机器只在收到红石信号时工作。"
+      ],
+      "ja": [
+        "テレポーターは上に立つエンティティをリンク先のテレポーターへ送る。",
+        "移動ごとにEUを使う。距離が長いほど消費が増える。",
+        "テレポーターにGUIはない。機械はレッドストーン信号を受けている間だけ動く。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place two Teleporters and connect an HV cable to each.",
+        "Right-click the first Teleporter with a Frequency Transmitter.",
+        "Right-click the second Teleporter to complete the link.",
+        "Apply a redstone signal to the Teleporter.",
+        "Stand on the Teleporter to travel to the linked Teleporter."
+      ],
+      "zh": [
+        "放置两台传送机，并分别连接HV导线。",
+        "用遥控器右键第一台传送机。",
+        "右键第二台传送机，完成配对。",
+        "向传送机施加红石信号。",
+        "站在传送机上，即可到达配对的传送机。"
+      ],
+      "ja": [
+        "テレポーターを2台置き、それぞれにHVケーブルを接続する。",
+        "周波数送信機で1台目のテレポーターを右クリックする。",
+        "2台目のテレポーターを右クリックしてリンクを完了する。",
+        "テレポーターにレッドストーン信号を与える。",
+        "テレポーターの上に立ち、リンク先へ移動する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The link works in both directions.",
+        "WARNING: The machine explodes on overvoltage above HV."
+      ],
+      "zh": [
+        "配对是双向的。",
+        "警告：电压高于HV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "リンクは双方向に働く。",
+        "警告：HVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_furnace_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Electric Furnace uses EU to smelt items with the furnace recipes.",
+        "The machine has one input slot, one output slot, one battery slot and four upgrade slots."
+      ],
+      "zh": [
+        "电炉消耗EU，按熔炉配方冶炼物品。",
+        "机器有1个输入槽位、1个输出槽位、1个电池槽位和4个升级槽位。"
+      ],
+      "ja": [
+        "電気炉はEUを使い、かまどのレシピでアイテムを製錬する。",
+        "機械は入力、出力、バッテリーのスロットを各1つ、アップグレードスロットを4つ持つ。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Put the items to smelt into the input slot.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "把要冶炼的物品放入输入槽位。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "製錬するアイテムを入力スロットに入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_powder_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Macerator uses EU to grind ores and other items into crushed ores and dusts.",
+        "The machine has one input slot, one output slot, one battery slot and four upgrade slots."
+      ],
+      "zh": [
+        "打粉机消耗EU，把矿石和其他物品粉碎成粉碎矿石和粉末。",
+        "机器有1个输入槽位、1个输出槽位、1个电池槽位和4个升级槽位。"
+      ],
+      "ja": [
+        "粉砕機はEUを使い、鉱石とその他のアイテムを粉砕鉱石と粉にする。",
+        "機械は入力、出力、バッテリーのスロットを各1つ、アップグレードスロットを4つ持つ。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Put the ore or the item to grind into the input slot.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "把要粉碎的矿石或物品放入输入槽位。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "粉砕する鉱石かアイテムを入力スロットに入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_powder_advanced_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Advanced Cyclone Macerator uses the Macerator recipes at MV.",
+        "The machine completes each operation in less time than the Macerator."
+      ],
+      "zh": [
+        "进阶旋风打粉机在MV下使用打粉机配方。",
+        "机器完成每次加工的时间比打粉机短。"
+      ],
+      "ja": [
+        "高度サイクロン粉砕機はMVで粉砕機のレシピを使う。",
+        "機械は粉砕機より短い時間で各処理を終える。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Put the ore or the item to grind into the input slot.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "把要粉碎的矿石或物品放入输入槽位。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "粉砕する鉱石かアイテムを入力スロットに入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_washer_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Ore Washer uses EU and water to wash crushed ores into purified crushed ores and by-products.",
+        "Each operation uses water from the internal tank. The machine has three output slots."
+      ],
+      "zh": [
+        "洗矿机消耗EU和水，把粉碎矿石洗成纯净的粉碎矿石和副产物。",
+        "每次加工消耗内部储罐中的水。机器有3个输出槽位。"
+      ],
+      "ja": [
+        "鉱石洗浄機はEUと水を使い、粉砕鉱石を精製粉砕鉱石と副産物にする。",
+        "各処理は内部タンクの水を使う。機械は出力スロットを3つ持つ。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Put a Water Bucket or a Water Cell into the water slot, or connect a water pipe.",
+        "Put the crushed ore into the input slot.",
+        "Take the products from the three output slots."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "把水桶或水单元放入水槽位，或连接输水管道。",
+        "把粉碎矿石放入输入槽位。",
+        "从3个输出槽位取出产物。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "水バケツか水セルを水スロットに入れるか、水のパイプを接続する。",
+        "粉砕鉱石を入力スロットに入れる。",
+        "3つの出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_fermenter_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Fermenter uses heat (HU) to convert Biomass into Biogas.",
+        "The machine takes heat only from a heat source on its front face.",
+        "The machine also produces Fertilizer from the processed Biomass."
+      ],
+      "zh": [
+        "发酵机利用热量（HU）把生物质转化为沼气。",
+        "机器只从正面的热源获取热量。",
+        "机器还用处理过的生物质产出肥料。"
+      ],
+      "ja": [
+        "発酵槽は熱（HU）を使い、バイオマスをバイオガスに変える。",
+        "機械は正面の熱源からだけ熱を受け取る。",
+        "機械は処理したバイオマスから肥料も作る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place a heat generator against the front face of the Fermenter.",
+        "Supply Biomass with Biomass Cells or with a pipe.",
+        "Put Empty Cells into the cell input slot to collect Biogas.",
+        "Take the Fertilizer from the fertilizer slot."
+      ],
+      "zh": [
+        "把热能发生器贴在发酵机正面。",
+        "用生物质单元或管道供应生物质。",
+        "把空单元放入单元输入槽位，以收集沼气。",
+        "从肥料槽位取出肥料。"
+      ],
+      "ja": [
+        "発酵槽の正面に熱発生機を置く。",
+        "バイオマスセルかパイプでバイオマスを供給する。",
+        "バイオガスを集めるため、セル入力スロットに空セルを入れる。",
+        "肥料スロットから肥料を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal has no effect on the Fermenter.",
+        "The upgrade slots accept item and fluid ejector and pulling upgrades only."
+      ],
+      "zh": [
+        "红石信号对发酵机没有作用。",
+        "升级槽位只接受物品和流体的弹出与抽入升级。"
+      ],
+      "ja": [
+        "レッドストーン信号は発酵槽に影響しない。",
+        "アップグレードスロットはアイテムと流体のエジェクターと吸入のアップグレードだけを受け付ける。"
+      ]
+    }
+  },
+  "producer/block_oil_refinery_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Oil Refinery uses EU to refine fluids. Crude Oil becomes Diesel Oil.",
+        "The machine also turns Water or Steam into Distilled Water.",
+        "Each Overclocker Upgrade increases the fluid per cycle and the EU cost."
+      ],
+      "zh": [
+        "精炼机消耗EU精炼流体。原油变为柴油。",
+        "机器也把水或蒸汽变为蒸馏水。",
+        "每个超频升级都会增加每次循环的流体量和EU消耗。"
+      ],
+      "ja": [
+        "精製機はEUを使い、流体を精製する。原油は軽油になる。",
+        "機械は水か蒸気も蒸留水に変える。",
+        "オーバークロッカーアップグレード1個ごとに、1サイクルの流体量とEU消費が増える。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Pump the input fluid into the machine, or put a filled cell into the input slot.",
+        "Put Empty Cells into the output cell slot, or connect a pipe to take the product."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "把输入流体泵入机器，或把装满的单元放入输入槽位。",
+        "把空单元放入输出单元槽位，或连接管道取出产物。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "入力流体をパイプで機械に入れるか、満タンのセルを入力スロットに入れる。",
+        "出力セルスロットに空セルを入れるか、パイプを接続して成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_barrel": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Barrel brews beer from wheat, Hops and water. The Barrel brews rum from sugar cane and water.",
+        "The beer changes to a stronger stage as the brew time increases. The Barrel uses no EU."
+      ],
+      "zh": [
+        "酒桶用小麦、啤酒花和水酿造啤酒。酒桶用甘蔗和水酿造朗姆酒。",
+        "啤酒随酿造时间增加进入更烈的阶段。酒桶不消耗EU。"
+      ],
+      "ja": [
+        "酒樽は小麦、ホップ、水でビールを造る。酒樽はサトウキビと水でラム酒を造る。",
+        "ビールは醸造時間が長いほど強い段階に変わる。酒樽はEUを使わない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Right-click the Barrel to open the GUI.",
+        "Put the ingredients and a Water Bucket into the slots.",
+        "Sneak and right-click the Barrel to see the brew progress.",
+        "Right-click the Barrel with a Stone Mug to collect the drink."
+      ],
+      "zh": [
+        "右键酒桶，打开界面。",
+        "把原料和水桶放入槽位。",
+        "潜行并右键酒桶，查看酿造进度。",
+        "手持石杯右键酒桶，取出酒。"
+      ],
+      "ja": [
+        "酒樽を右クリックしてGUIを開く。",
+        "材料と水バケツをスロットに入れる。",
+        "スニークして酒樽を右クリックし、醸造の進み具合を見る。",
+        "石のジョッキで酒樽を右クリックして酒を取り出す。"
+      ]
+    }
+  },
+  "producer/block_blast_furnace": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Blast Furnace uses heat (HU) and Compressed Air to make Refined Iron Ingots from iron ore, iron dust or iron ingots.",
+        "Slag is a by-product. The furnace takes heat only from a heat source on its front face."
+      ],
+      "zh": [
+        "高炉利用热量（HU）和压缩空气，把铁矿石、铁粉或铁锭炼成精炼铁锭。",
+        "副产物为炉渣。高炉只从正面的热源获取热量。"
+      ],
+      "ja": [
+        "高炉は熱（HU）と圧縮空気を使い、鉄鉱石、鉄の粉、鉄インゴットから精錬鉄インゴットを作る。",
+        "副産物はスラグだ。高炉は正面の熱源からだけ熱を受け取る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place a heat generator against the front face of the furnace.",
+        "Make Compressed Air Cells from Empty Cells in a Compressor.",
+        "Put the Compressed Air Cells into the air slot.",
+        "Put the iron into the input slot and wait until the furnace is hot.",
+        "Take the ingots, the Slag and the Empty Cells from the output slots."
+      ],
+      "zh": [
+        "把热能发生器贴在高炉正面。",
+        "用压缩机把空单元制成压缩空气单元。",
+        "把压缩空气单元放入空气槽位。",
+        "把铁放入输入槽位，等待高炉升温。",
+        "从输出槽位取出铁锭、炉渣和空单元。"
+      ],
+      "ja": [
+        "高炉の正面に熱発生機を置く。",
+        "圧縮機で空セルから圧縮空気セルを作る。",
+        "圧縮空気セルを空気スロットに入れる。",
+        "鉄を入力スロットに入れ、高炉が熱くなるまで待つ。",
+        "出力スロットからインゴット、スラグ、空セルを取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The furnace accepts heat only while the input slot holds a valid item.",
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this."
+      ],
+      "zh": [
+        "只有输入槽位有有效物品时，高炉才接收热量。",
+        "红石信号使机器停止。红石信号反转升级可反转此行为。"
+      ],
+      "ja": [
+        "入力スロットに有効なアイテムがある間だけ、高炉は熱を受け取る。",
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。"
+      ]
+    }
+  },
+  "producer/block_blast_furnace_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Electric Nano Blast Furnace uses EU to process the Blast Furnace recipes. The machine needs no heat and no Compressed Air.",
+        "The machine gives only the main product. The machine gives no Slag."
+      ],
+      "zh": [
+        "电力纳米高炉消耗EU，加工高炉配方。机器不需要热量和压缩空气。",
+        "机器只产出主产物。机器不产出炉渣。"
+      ],
+      "ja": [
+        "電気ナノ高炉はEUを使い、高炉のレシピを処理する。機械は熱も圧縮空気も使わない。",
+        "機械は主産物だけを出す。機械はスラグを出さない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an IV supply to the machine through transformers.",
+        "Put the iron into the input slot.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "通过变压器将IV电源连接到机器。",
+        "把铁放入输入槽位。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "変圧器を通してIV電源を機械に接続する。",
+        "鉄を入力スロットに入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above IV."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于IV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：IVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_blast_furnace_advanced": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Advanced Titanium Alloy Blast Furnace uses heat (HU) and Compressed Air to process the Blast Furnace recipes.",
+        "The furnace works faster than the Blast Furnace. The furnace takes heat only from its front face."
+      ],
+      "zh": [
+        "进阶钛合金高炉利用热量（HU）和压缩空气，加工高炉配方。",
+        "本高炉比高炉更快。本高炉只从正面获取热量。"
+      ],
+      "ja": [
+        "高級チタン合金高炉は熱（HU）と圧縮空気を使い、高炉のレシピを処理する。",
+        "この高炉は高炉より速い。この高炉は正面からだけ熱を受け取る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place a heat generator against the front face of the furnace.",
+        "Put Compressed Air Cells into the air slot.",
+        "Put the input item into the input slot and wait until the furnace is hot.",
+        "Take the products and the Empty Cells from the output slots."
+      ],
+      "zh": [
+        "把热能发生器贴在高炉正面。",
+        "把压缩空气单元放入空气槽位。",
+        "把输入物品放入输入槽位，等待高炉升温。",
+        "从输出槽位取出产物和空单元。"
+      ],
+      "ja": [
+        "高炉の正面に熱発生機を置く。",
+        "圧縮空気セルを空気スロットに入れる。",
+        "入力アイテムを入力スロットに入れ、高炉が熱くなるまで待つ。",
+        "出力スロットから成果物と空セルを取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal keeps the furnace hot and pauses the process."
+      ],
+      "zh": [
+        "红石信号使高炉保持高温，并暂停加工。"
+      ],
+      "ja": [
+        "レッドストーン信号は高炉を熱いまま保ち、処理を止める。"
+      ]
+    }
+  },
+  "producer/block_steam_generator": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Steam Generator uses heat (HU) and water to make Steam or Superheated Steam.",
+        "The GUI sets the water flow and the pressure valve. The machine pushes the steam into adjacent tanks.",
+        "Normal water calcifies the boiler and stops the machine. Distilled Water causes no calcification."
+      ],
+      "zh": [
+        "蒸汽机利用热量（HU）和水产生蒸汽或过热蒸汽。",
+        "界面设置水流量和压力阀。机器把蒸汽推入相邻储罐。",
+        "普通水使锅炉钙化，并使机器停止。蒸馏水不会造成钙化。"
+      ],
+      "ja": [
+        "蒸気発生機は熱（HU）と水を使い、蒸気か過熱蒸気を作る。",
+        "GUIで水の流量と圧力弁を設定する。機械は蒸気を隣のタンクへ送る。",
+        "普通の水はボイラーを石灰化させ、機械を止める。蒸留水は石灰化を起こさない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place heat generators next to the Steam Generator.",
+        "Pump Distilled Water into the machine.",
+        "Open the GUI and set the water flow and the pressure valve.",
+        "Place a tank or a Steam Kinetic Generator next to the machine to take the steam."
+      ],
+      "zh": [
+        "把热能发生器放在蒸汽机旁边。",
+        "把蒸馏水泵入机器。",
+        "打开界面，设置水流量和压力阀。",
+        "在机器旁放置储罐或蒸汽动能发生机，接收蒸汽。"
+      ],
+      "ja": [
+        "蒸気発生機の隣に熱発生機を置く。",
+        "蒸留水をパイプで機械に入れる。",
+        "GUIを開き、水の流量と圧力弁を設定する。",
+        "蒸気を受け取るため、機械の隣にタンクか蒸気運動エネルギー発生機を置く。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: When the system heat passes the limit, the Steam Generator explodes and destroys itself.",
+        "WARNING: Steam that no neighbor accepts causes small explosions."
+      ],
+      "zh": [
+        "警告：系统热量超过上限时，蒸汽机爆炸并自毁。",
+        "警告：没有相邻方块接收的蒸汽会引起小型爆炸。"
+      ],
+      "ja": [
+        "警告：システム熱が上限を超えると、蒸気発生機は爆発して壊れる。",
+        "警告：隣のブロックが受け取らない蒸気は小さな爆発を起こす。"
+      ]
+    }
+  },
+  "producer/block_steam_repressurizer": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Steam Repressurizer uses heat (HU) to increase the volume of Steam or Superheated Steam.",
+        "The output fluid is the same type as the input fluid. Superheated Steam gives a larger gain.",
+        "The machine takes heat from all faces except the front face."
+      ],
+      "zh": [
+        "蒸汽再加压机利用热量（HU）增加蒸汽或过热蒸汽的体积。",
+        "输出流体与输入流体类型相同。过热蒸汽的增量更大。",
+        "机器从正面以外的所有面获取热量。"
+      ],
+      "ja": [
+        "蒸気再加圧機は熱（HU）を使い、蒸気か過熱蒸気の量を増やす。",
+        "出力流体は入力流体と同じ種類だ。過熱蒸気のほうが増加量は大きい。",
+        "機械は正面以外の全面から熱を受け取る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place a heat generator against a side face of the machine.",
+        "Pump Steam or Superheated Steam into the machine.",
+        "Place a tank at the front face or the back face to collect the output steam."
+      ],
+      "zh": [
+        "把热能发生器贴在机器的侧面。",
+        "把蒸汽或过热蒸汽泵入机器。",
+        "在正面或背面放置储罐，收集输出蒸汽。"
+      ],
+      "ja": [
+        "機械の側面に熱発生機を置く。",
+        "蒸気か過熱蒸気をパイプで機械に入れる。",
+        "出力蒸気を集めるため、正面か背面にタンクを置く。"
+      ]
+    }
+  },
+  "producer/block_solar_distiller": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Solar Distiller turns water into Distilled Water with sunlight. The machine uses no EU.",
+        "The machine works only in the Overworld, in daytime, in clear weather and with open sky above."
+      ],
+      "zh": [
+        "太阳能蒸馏机利用阳光把水变为蒸馏水。机器不消耗EU。",
+        "机器只在主世界、白天、晴天且上方无遮挡时工作。"
+      ],
+      "ja": [
+        "太陽熱蒸留器は日光で水を蒸留水に変える。機械はEUを使わない。",
+        "機械はオーバーワールドで、昼、晴天、真上に空が見えるときだけ動く。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the Solar Distiller under open sky in the Overworld.",
+        "Put Water Buckets or Water Cells into the water input slot, or connect a water pipe.",
+        "Put Empty Cells or buckets into the distilled water slot to collect the product."
+      ],
+      "zh": [
+        "把太阳能蒸馏机放在主世界的露天位置。",
+        "把水桶或水单元放入水输入槽位，或连接输水管道。",
+        "把空单元或空桶放入蒸馏水槽位，收集产物。"
+      ],
+      "ja": [
+        "オーバーワールドの空が見える場所に太陽熱蒸留器を置く。",
+        "水バケツか水セルを水入力スロットに入れるか、水のパイプを接続する。",
+        "成果物を集めるため、蒸留水スロットに空セルか空のバケツを入れる。"
+      ]
+    }
+  },
+  "producer/block_condenser": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Condenser turns Steam or Superheated Steam into Distilled Water.",
+        "Heat Vents in the four vent slots increase the speed. Each Heat Vent uses EU."
+      ],
+      "zh": [
+        "冷凝机把蒸汽或过热蒸汽变为蒸馏水。",
+        "4个散热片槽位中的散热片提高速度。每个散热片消耗EU。"
+      ],
+      "ja": [
+        "凝縮器は蒸気か過熱蒸気を蒸留水に変える。",
+        "4つのベントスロットのヒートベントが速度を上げる。ヒートベント1個ごとにEUを使う。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Pump steam into the Condenser, or place the Condenser next to a Steam Kinetic Generator.",
+        "Put Heat Vents into the vent slots to increase the speed.",
+        "Connect an HV cable to the machine when Heat Vents are installed.",
+        "Take the Distilled Water with a pipe, or put an empty bucket or cell into the container slot."
+      ],
+      "zh": [
+        "把蒸汽泵入冷凝机，或把冷凝机放在蒸汽动能发生机旁边。",
+        "把散热片放入散热片槽位，提高速度。",
+        "装有散热片时，将HV导线连接到机器。",
+        "用管道取出蒸馏水，或把空桶或空单元放入容器槽位。"
+      ],
+      "ja": [
+        "凝縮器に蒸気をパイプで入れるか、蒸気運動エネルギー発生機の隣に凝縮器を置く。",
+        "速度を上げるため、ベントスロットにヒートベントを入れる。",
+        "ヒートベントを入れたときは、HVケーブルを機械に接続する。",
+        "パイプで蒸留水を取り出すか、容器スロットに空のバケツかセルを入れる。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Without Heat Vents the Condenser uses no EU.",
+        "WARNING: The machine explodes on overvoltage above HV."
+      ],
+      "zh": [
+        "没有散热片时，冷凝机不消耗EU。",
+        "警告：电压高于HV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "ヒートベントがないとき、凝縮器はEUを使わない。",
+        "警告：HVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_block_cutter": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Block Cutter uses EU and a cutting blade to cut blocks. Metal blocks become plates. Logs become planks.",
+        "Each recipe needs a minimum blade hardness. The Diamond Cutting Blade is harder than the Iron Cutting Blade."
+      ],
+      "zh": [
+        "方块切割机消耗EU并使用切割刀片切割方块。金属块变为板。原木变为木板。",
+        "每个配方要求最低刀片硬度。钻石切割刀片比铁切割刀片更硬。"
+      ],
+      "ja": [
+        "ブロックカッターはEUと切断刃でブロックを切る。金属ブロックは板になる。原木は板材になる。",
+        "各レシピは最低限の刃の硬さを要求する。ダイヤモンド切断刃は鉄切断刃より硬い。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Put a cutting blade into the blade slot.",
+        "Put the block to cut into the input slot.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "把切割刀片放入刀片槽位。",
+        "把要切割的方块放入输入槽位。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "切断刃を刃スロットに入れる。",
+        "切るブロックを入力スロットに入れる。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_lathe": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Lathe uses kinetic energy (KU) from an adjacent kinetic source to shape Turning Blanks with a Lathe Tool.",
+        "The workpiece has five positions. Each cut can give a by-product, for example Sticks or Small Iron Dust.",
+        "The Lathe Tool must be harder than the workpiece. Each cut uses tool durability."
+      ],
+      "zh": [
+        "车床使用相邻动能源的动能（KU），用车刀加工车刀坯。",
+        "加工件有5个位置。每次切削可能产出副产物，例如木棍或小撮铁粉。",
+        "车刀必须比加工件更硬。每次切削消耗车刀耐久。"
+      ],
+      "ja": [
+        "旋盤は隣の運動エネルギー源のKUを使い、旋盤工具で旋削ブランクを削る。",
+        "加工物には5つの位置がある。各切削で棒や小さな鉄の粉の副産物が出ることがある。",
+        "旋盤工具は加工物より硬い必要がある。各切削は工具の耐久値を使う。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the Lathe next to a kinetic generator.",
+        "Put a Lathe Tool into the tool slot.",
+        "Put Turning Blanks into the workpiece slot.",
+        "Click a position in the GUI to cut the workpiece at that position.",
+        "Take the by-products from the output slot."
+      ],
+      "zh": [
+        "把车床放在动能发生机旁边。",
+        "把车刀放入车刀槽位。",
+        "把车刀坯放入加工件槽位。",
+        "在界面中点击一个位置，切削该位置。",
+        "从输出槽位取出副产物。"
+      ],
+      "ja": [
+        "旋盤を運動エネルギー発生機の隣に置く。",
+        "旋盤工具を工具スロットに入れる。",
+        "旋削ブランクを加工物スロットに入れる。",
+        "GUIで位置をクリックし、その位置を削る。",
+        "出力スロットから副産物を取り出す。"
+      ]
+    }
+  },
+  "producer/block_steam_kinetic_generator": {
+    "kind": "generator",
+    "function": {
+      "en": [
+        "The Steam Kinetic Generator turns Steam or Superheated Steam into kinetic energy (KU). The machine outputs KU on its front face.",
+        "The machine needs a Steam Turbine in the turbine slot. The turbine loses durability during operation.",
+        "The machine sends the exhaust steam to an adjacent Condenser and keeps the condensed Distilled Water in a tank."
+      ],
+      "zh": [
+        "蒸汽动能发生机把蒸汽或过热蒸汽转化为动能（KU）。机器从正面输出KU。",
+        "机器需要在涡轮槽位放入蒸汽涡轮。涡轮在运行中损失耐久。",
+        "机器把排出的蒸汽送入相邻冷凝机，并把冷凝的蒸馏水存入储罐。"
+      ],
+      "ja": [
+        "蒸気運動エネルギー発生機は蒸気か過熱蒸気をKUに変える。機械は正面からKUを出す。",
+        "機械はタービンスロットに蒸気タービンが必要だ。タービンは運転中に耐久値を失う。",
+        "機械は排気蒸気を隣の凝縮器へ送り、凝縮した蒸留水をタンクにためる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Put a Steam Turbine into the turbine slot.",
+        "Place a Condenser next to the machine.",
+        "Place the KU consumer against the front face.",
+        "Pump steam into the machine.",
+        "Remove the Distilled Water with a pipe."
+      ],
+      "zh": [
+        "把蒸汽涡轮放入涡轮槽位。",
+        "在机器旁边放置冷凝机。",
+        "把KU用电设备贴在正面。",
+        "把蒸汽泵入机器。",
+        "用管道排出蒸馏水。"
+      ],
+      "ja": [
+        "蒸気タービンをタービンスロットに入れる。",
+        "機械の隣に凝縮器を置く。",
+        "KUを使うブロックを正面に置く。",
+        "蒸気をパイプで機械に入れる。",
+        "パイプで蒸留水を抜く。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: Steam that the machine cannot vent causes explosions.",
+        "Distilled Water in the tank reduces the output. A full water tank blocks the turbine."
+      ],
+      "zh": [
+        "警告：机器无法排出的蒸汽会引起爆炸。",
+        "储罐中的蒸馏水会降低输出。水罐满时涡轮停止。"
+      ],
+      "ja": [
+        "警告：機械が排出できない蒸気は爆発を起こす。",
+        "タンクの蒸留水は出力を下げる。水タンクが満杯になるとタービンは止まる。"
+      ]
+    }
+  },
+  "producer/block_centrifuge_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Thermal Centrifuge uses EU to heat up and then separates items into up to three products.",
+        "The machine starts to process only after it reaches the minimum heat. Without power, the heat drops."
+      ],
+      "zh": [
+        "热能离心机消耗EU升温，然后把物品分离为最多3种产物。",
+        "机器达到最低热量后才开始加工。断电时热量下降。"
+      ],
+      "ja": [
+        "熱遠心分離機はEUで加熱し、アイテムを最大3種類の成果物に分ける。",
+        "機械は最低限の熱に達してから処理を始める。電力がないと熱は下がる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Put the crushed ore into the input slot.",
+        "Wait until the machine reaches the working heat.",
+        "Take the products from the three output slots."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "把粉碎矿石放入输入槽位。",
+        "等待机器达到工作热量。",
+        "从3个输出槽位取出产物。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "粉砕鉱石を入力スロットに入れる。",
+        "機械が作業温度に達するまで待つ。",
+        "3つの出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_extractor_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Extractor uses EU to extract materials from items. Sticky Resin becomes Rubber.",
+        "The machine has one input slot, one output slot, one battery slot and four upgrade slots."
+      ],
+      "zh": [
+        "提取机消耗EU，从物品中提取材料。粘性树脂变为橡胶。",
+        "机器有1个输入槽位、1个输出槽位、1个电池槽位和4个升级槽位。"
+      ],
+      "ja": [
+        "抽出機はEUを使い、アイテムから素材を取り出す。粘着性樹脂はゴムになる。",
+        "機械は入力、出力、バッテリーのスロットを各1つ、アップグレードスロットを4つ持つ。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Put the item into the input slot.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "把物品放入输入槽位。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "アイテムを入力スロットに入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_compressor_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Compressor uses EU to compress items. Dusts become plates, ingots become blocks, and Empty Cells become Compressed Air Cells."
+      ],
+      "zh": [
+        "压缩机消耗EU压缩物品。粉末变为板，锭变为块，空单元变为压缩空气单元。"
+      ],
+      "ja": [
+        "圧縮機はEUを使い、アイテムを圧縮する。粉は板に、インゴットはブロックに、空セルは圧縮空気セルになる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Put the item to compress into the input slot.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "把要压缩的物品放入输入槽位。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "圧縮するアイテムを入力スロットに入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_compressor_advanced_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Advanced High-Pressure Compressor uses the Compressor recipes at MV.",
+        "The machine completes each operation in less time than the Compressor."
+      ],
+      "zh": [
+        "进阶高压压缩机在MV下使用压缩机配方。",
+        "机器完成每次加工的时间比压缩机短。"
+      ],
+      "ja": [
+        "高度高圧圧縮機はMVで圧縮機のレシピを使う。",
+        "機械は圧縮機より短い時間で各処理を終える。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Put the item to compress into the input slot.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "把要压缩的物品放入输入槽位。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "圧縮するアイテムを入力スロットに入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_canner_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Canner uses EU in four modes. Canning mode puts an item into a container, for example food into a Tin Can.",
+        "The other modes empty cells into the tank, fill cells from the tank, or mix a fluid with a solid.",
+        "Mix mode makes Coolant from Distilled Water and lapis dust."
+      ],
+      "zh": [
+        "装罐机消耗EU，有4种模式。装罐模式把物品装入容器，例如把食物装入锡罐。",
+        "其他模式把单元中的流体倒入储罐、用储罐流体装满单元，或混合流体与固体。",
+        "混合模式用蒸馏水和青金石粉制作冷却液。"
+      ],
+      "ja": [
+        "缶詰機はEUを使い、4つのモードで動く。缶詰モードはアイテムを容器に入れる。例として食料を錫缶に入れる。",
+        "その他のモードは、セルをタンクに空ける、タンクからセルを満たす、流体と固体を混ぜる。",
+        "混合モードは蒸留水とラピスの粉から冷却材を作る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Select the mode in the GUI.",
+        "Put the container and the material into the input slots, or pump the fluid in.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "在界面中选择模式。",
+        "把容器和材料放入输入槽位，或泵入流体。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "GUIでモードを選ぶ。",
+        "容器と素材を入力スロットに入れるか、流体をパイプで入れる。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_miner_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Miner pushes Mining Pipe down into the ground and mines the ores on each layer.",
+        "The machine needs a drill, Mining Pipe and an OD Scanner or OV Scanner.",
+        "The OD Scanner gives a radius of 3 blocks around the pipe. The OV Scanner gives 6 blocks."
+      ],
+      "zh": [
+        "采矿机把采矿管道向下推进，并开采每层的矿石。",
+        "机器需要钻头、采矿管道和OD扫描器或OV扫描器。",
+        "OD扫描器的半径为管道周围3格。OV扫描器为6格。"
+      ],
+      "ja": [
+        "採掘機は採掘パイプを地下へ伸ばし、各層の鉱石を掘る。",
+        "機械はドリル、採掘パイプ、ODスキャナーかOVスキャナーが必要だ。",
+        "ODスキャナーの半径はパイプの周囲3ブロックだ。OVスキャナーは6ブロックだ。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Put an Iron Drill, a Diamond Drill or an Iridium Drill into the drill slot.",
+        "Put Mining Pipe into the pipe slot.",
+        "Put an OD Scanner or an OV Scanner into the scanner slot.",
+        "Take the ores from the storage slots."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "把铁钻头、钻石钻头或铱钻头放入钻头槽位。",
+        "把采矿管道放入管道槽位。",
+        "把OD扫描器或OV扫描器放入扫描器槽位。",
+        "从储存槽位取出矿石。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "鉄ドリル、ダイヤモンドドリル、イリジウムドリルのどれかをドリルスロットに入れる。",
+        "採掘パイプをパイプスロットに入れる。",
+        "ODスキャナーかOVスキャナーをスキャナースロットに入れる。",
+        "保管スロットから鉱石を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Place a Pump next to the Miner to remove the fluids in the shaft.",
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "在采矿机旁放置泵，以抽走竖井中的流体。",
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "縦穴の流体を取り除くため、採掘機の隣にポンプを置く。",
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_advanced_miner_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Advanced Miner mines ores below the machine without Mining Pipe or a drill.",
+        "An OD Scanner gives a radius of 16 blocks. An OV Scanner gives 32 blocks. Without a scanner the machine mines straight down.",
+        "The machine puts the drops into adjacent inventories. When no inventory has space, the drops fall above the machine."
+      ],
+      "zh": [
+        "高级采矿机无需采矿管道和钻头，开采机器下方的矿石。",
+        "OD扫描器的半径为16格。OV扫描器为32格。没有扫描器时，机器只向正下方开采。",
+        "机器把产物放入相邻容器。没有容器有空间时，产物掉落在机器上方。"
+      ],
+      "ja": [
+        "高度採掘機は採掘パイプもドリルも使わず、機械の下の鉱石を掘る。",
+        "ODスキャナーの半径は16ブロックだ。OVスキャナーは32ブロックだ。スキャナーがないと、機械は真下だけを掘る。",
+        "機械は収穫物を隣のインベントリに入れる。空きがないとき、収穫物は機械の上に落ちる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an HV cable to the machine.",
+        "Put an OD Scanner or an OV Scanner into the scanner slot.",
+        "Place a chest next to the machine to collect the ores.",
+        "Set the filter list, the whitelist or blacklist mode and Silk Touch in the GUI."
+      ],
+      "zh": [
+        "将HV导线连接到机器。",
+        "把OD扫描器或OV扫描器放入扫描器槽位。",
+        "在机器旁放置箱子，收集矿石。",
+        "在界面中设置过滤列表、白名单或黑名单模式和精准采集。"
+      ],
+      "ja": [
+        "HVケーブルを機械に接続する。",
+        "ODスキャナーかOVスキャナーをスキャナースロットに入れる。",
+        "鉱石を集めるため、機械の隣にチェストを置く。",
+        "GUIでフィルター、ホワイトリストかブラックリスト、シルクタッチを設定する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The Reset button starts the mining position again from the top.",
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above HV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "重置按钮使开采位置从顶部重新开始。",
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于HV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "リセットボタンは採掘位置を最上部からやり直す。",
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：HVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_pump_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Pump removes fluid source blocks in front of the machine and stores the fluid in its tank.",
+        "The pump area is one layer high, 8 blocks long and 8 blocks to each side.",
+        "Next to a Miner, the Pump also removes the fluids that the Miner finds."
+      ],
+      "zh": [
+        "泵抽取机器前方的流体源方块，并把流体存入储罐。",
+        "抽取范围高1层，长8格，两侧各8格。",
+        "放在采矿机旁时，泵也会抽走采矿机遇到的流体。"
+      ],
+      "ja": [
+        "ポンプは機械の前の流体源ブロックを取り除き、流体をタンクにためる。",
+        "汲み上げ範囲は高さ1層、長さ8ブロック、左右各8ブロックだ。",
+        "採掘機の隣では、ポンプは採掘機が見つけた流体も取り除く。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the Pump with its front face toward the fluid.",
+        "Connect an LV cable to the machine.",
+        "Put empty buckets or Empty Cells into the container slot, or connect a pipe.",
+        "Take the filled containers from the output slot."
+      ],
+      "zh": [
+        "放置泵，使其正面朝向流体。",
+        "将LV导线连接到机器。",
+        "把空桶或空单元放入容器槽位，或连接管道。",
+        "从输出槽位取出装满的容器。"
+      ],
+      "ja": [
+        "正面を流体に向けてポンプを置く。",
+        "LVケーブルを機械に接続する。",
+        "容器スロットに空のバケツか空セルを入れるか、パイプを接続する。",
+        "出力スロットから満タンの容器を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_electrolyzer_elc": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The Electrolyzer uses EU to split the water in Water Cells and stores the energy as chemical energy.",
+        "The machine returns the stored energy to adjacent blocks that are not full. The output slot receives Empty Cells."
+      ],
+      "zh": [
+        "电解机消耗EU分解水单元中的水，并把能量存储为化学能。",
+        "机器把储存的能量送回未满的相邻方块。输出槽位接收空单元。"
+      ],
+      "ja": [
+        "電解機はEUを使って水セルの水を分解し、そのエネルギーを化学エネルギーとしてためる。",
+        "機械はためたエネルギーを満杯でない隣のブロックへ返す。出力スロットには空セルが入る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Put Water Cells into the input slot.",
+        "Place a storage block or a machine next to the Electrolyzer to take the stored energy.",
+        "Take the Empty Cells from the output slot."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "把水单元放入输入槽位。",
+        "在电解机旁放置储电方块或机器，以取回储存的能量。",
+        "从输出槽位取出空单元。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "水セルを入力スロットに入れる。",
+        "ためたエネルギーを受け取るため、電解機の隣に蓄電ブロックか機械を置く。",
+        "出力スロットから空セルを取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The machine explodes on overvoltage above LV."
+      ],
+      "zh": [
+        "警告：电压高于LV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "警告：LVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_recycler_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Recycler uses EU to turn items into Scrap. Each operation gives Scrap only by chance.",
+        "The machine consumes the input item in every operation."
+      ],
+      "zh": [
+        "回收机消耗EU把物品变为废料。每次加工只有一定几率产出废料。",
+        "机器每次加工都会消耗输入物品。"
+      ],
+      "ja": [
+        "リサイクラーはEUを使い、アイテムをスクラップに変える。各処理でスクラップが出るかは確率で決まる。",
+        "機械は各処理で入力アイテムを消費する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Put the unwanted items into the input slot.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "把不需要的物品放入输入槽位。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "不要なアイテムを入力スロットに入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_resin_collector": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Resin Collector collects Sticky Resin from a rubber log behind the collector. The block uses no EU.",
+        "The collector takes the resin when the resin spot on the log refills. The collector has one slot."
+      ],
+      "zh": [
+        "树脂收集器从其背后的橡胶原木收集粘性树脂。本方块不消耗EU。",
+        "原木上的树脂点恢复时，收集器取走树脂。收集器有1个槽位。"
+      ],
+      "ja": [
+        "樹脂コレクターは背後のゴムの原木から粘着性樹脂を集める。このブロックはEUを使わない。",
+        "原木の樹脂部分が戻ると、コレクターが樹脂を取る。コレクターはスロットを1つ持つ。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Find a rubber log with a resin spot.",
+        "Place the Resin Collector on the face of the log with the resin spot.",
+        "Open the collector and take the Sticky Resin."
+      ],
+      "zh": [
+        "找到带树脂点的橡胶原木。",
+        "把树脂收集器放在原木的树脂点那一面。",
+        "打开收集器，取出粘性树脂。"
+      ],
+      "ja": [
+        "樹脂部分のあるゴムの原木を探す。",
+        "原木の樹脂部分の面に樹脂コレクターを置く。",
+        "コレクターを開き、粘着性樹脂を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "When the slot is full, the collector leaves the resin on the log."
+      ],
+      "zh": [
+        "槽位满时，收集器把树脂留在原木上。"
+      ],
+      "ja": [
+        "スロットが満杯のとき、コレクターは樹脂を原木に残す。"
+      ]
+    }
+  },
+  "producer/block_future_elc": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Futures Machine buys and sells commodities for Industrial Coins at prices that change every day.",
+        "Each trade costs EU. The machine takes the items and the coins from your inventory. A daily limit applies."
+      ],
+      "zh": [
+        "期货机以每天变化的价格，用工业货币买卖商品。",
+        "每次交易消耗EU。机器从你的背包取出物品和货币。每天有交易上限。"
+      ],
+      "ja": [
+        "先物取引機は毎日変わる価格で、工業コインと商品を売買する。",
+        "取引ごとにEUを使う。機械はインベントリからアイテムとコインを取る。1日の上限がある。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Open the GUI and select a category and a commodity.",
+        "Set the quantity of the trade.",
+        "Click Buy or Sell."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "打开界面，选择类别和商品。",
+        "设置交易数量。",
+        "点击购买或出售。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "GUIを開き、カテゴリと商品を選ぶ。",
+        "取引数量を設定する。",
+        "購入か売却をクリックする。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Market events change the price trend for a number of days.",
+        "Some commodities stay locked until you get the advancement that the GUI shows."
+      ],
+      "zh": [
+        "市场事件会在数天内改变价格走势。",
+        "部分商品在获得界面所示进度前保持锁定。"
+      ],
+      "ja": [
+        "市場イベントは数日間、価格の動きを変える。",
+        "一部の商品は、GUIが示す進捗を得るまで使えない。"
+      ]
+    }
+  },
+  "producer/block_induction_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Induction Furnace uses EU to smelt two items at the same time with the furnace recipes.",
+        "The machine heats up during operation. Higher heat gives a higher speed. Without power, the heat drops."
+      ],
+      "zh": [
+        "感应炉消耗EU，按熔炉配方同时冶炼两个物品。",
+        "机器在运行中升温。热量越高，速度越快。断电时热量下降。"
+      ],
+      "ja": [
+        "誘導炉はEUを使い、かまどのレシピで2つのアイテムを同時に製錬する。",
+        "機械は運転中に熱くなる。熱が高いほど速い。電力がないと熱は下がる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Put the items to smelt into the two input slots.",
+        "Keep the machine busy to hold the heat.",
+        "Take the results from the two output slots."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "把要冶炼的物品放入2个输入槽位。",
+        "让机器持续工作，以保持热量。",
+        "从2个输出槽位取出产物。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "製錬するアイテムを2つの入力スロットに入れる。",
+        "熱を保つため、機械を動かし続ける。",
+        "2つの出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal keeps the machine hot and pauses the process.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器保持高温，并暂停加工。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を熱いまま保ち、処理を止める。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_matter_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Matter Generator converts a large amount of EU into UU-Matter.",
+        "Scrap, Scrap Box or Thorium Scrap Box in the amplifier slot reduces the EU cost."
+      ],
+      "zh": [
+        "物质生成机把大量EU转化为UU物质。",
+        "放入增幅槽位的废料、废料盒或钍废料盒可降低EU消耗。"
+      ],
+      "ja": [
+        "物質生成機は大量のEUをUU物質に変える。",
+        "増幅スロットのスクラップ、スクラップボックス、トリウムスクラップボックスはEU消費を減らす。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an EV supply to the machine through transformers.",
+        "Put Scrap into the amplifier slot.",
+        "Put Empty Cells into the container slot to collect UU-Matter, or connect a pipe.",
+        "Take the UU-Matter Cells from the output slot."
+      ],
+      "zh": [
+        "通过变压器将EV电源连接到机器。",
+        "把废料放入增幅槽位。",
+        "把空单元放入容器槽位收集UU物质，或连接管道。",
+        "从输出槽位取出UU物质单元。"
+      ],
+      "ja": [
+        "変圧器を通してEV電源を機械に接続する。",
+        "スクラップを増幅スロットに入れる。",
+        "UU物質を集めるため、容器スロットに空セルを入れるか、パイプを接続する。",
+        "出力スロットからUU物質セルを取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above EV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于EV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：EVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_large_fabricator_core": {
+    "kind": "multiblock",
+    "function": {
+      "en": [
+        "The Large Matter Fabricator Core is the center of a multiblock. Each of the six faces must touch a module.",
+        "The structure needs at least one Input Module (IV) and one Tank Module. The structure accepts a maximum of one Scrap Input Module.",
+        "The core converts EU from the Input Modules into UU-Matter and stores the UU-Matter in the Tank Modules."
+      ],
+      "zh": [
+        "大型物质生成机核心是多方块结构的中心。6个面都必须接触模块。",
+        "结构至少需要1个输入模块（IV）和1个储罐模块。废料输入模块最多1个。",
+        "核心把输入模块的EU转化为UU物质，并存入储罐模块。"
+      ],
+      "ja": [
+        "大型物質生成機コアはマルチブロックの中心だ。6面すべてにモジュールが接する必要がある。",
+        "構造には入力モジュール（IV）とタンクモジュールが最低1つずつ必要だ。スクラップ入力モジュールは最大1つだ。",
+        "コアは入力モジュールのEUをUU物質に変え、タンクモジュールにためる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the Large Matter Fabricator Core.",
+        "Place one module against each of the six faces of the core.",
+        "Connect IV cables to the Input Modules.",
+        "Take the UU-Matter from the Tank Modules with a pipe."
+      ],
+      "zh": [
+        "放置大型物质生成机核心。",
+        "在核心的6个面上各放置1个模块。",
+        "将IV导线连接到输入模块。",
+        "用管道从储罐模块取出UU物质。"
+      ],
+      "ja": [
+        "大型物質生成機コアを置く。",
+        "コアの6面それぞれにモジュールを1つ置く。",
+        "IVケーブルを入力モジュールに接続する。",
+        "パイプでタンクモジュールからUU物質を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The GUI shows the module counts and a message when the structure is incomplete."
+      ],
+      "zh": [
+        "界面显示模块数量，并在结构不完整时显示提示。"
+      ],
+      "ja": [
+        "GUIはモジュールの数と、構造が不完全なときのメッセージを表示する。"
+      ]
+    }
+  },
+  "producer/block_large_fabricator_input_iv": {
+    "kind": "multiblock",
+    "function": {
+      "en": [
+        "The Input Module (IV) is a part of the Large Matter Fabricator. The module receives EU from IV cables.",
+        "The core uses the EU in each Input Module to make UU-Matter. More Input Modules give more input."
+      ],
+      "zh": [
+        "输入模块（IV）是大型物质生成机的部件。模块从IV导线接收EU。",
+        "核心使用每个输入模块中的EU制造UU物质。输入模块越多，输入越多。"
+      ],
+      "ja": [
+        "入力モジュール（IV）は大型物質生成機の部品だ。モジュールはIVケーブルからEUを受け取る。",
+        "コアは各入力モジュールのEUでUU物質を作る。入力モジュールが多いほど入力も多い。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the module against a face of the Large Matter Fabricator Core.",
+        "Connect an IV cable to the module."
+      ],
+      "zh": [
+        "把模块贴在大型物质生成机核心的一个面上。",
+        "将IV导线连接到模块。"
+      ],
+      "ja": [
+        "大型物質生成機コアの1面にモジュールを置く。",
+        "IVケーブルをモジュールに接続する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: Supply IV or lower. The module explodes on overvoltage."
+      ],
+      "zh": [
+        "警告：只能供应IV或更低电压。模块会因过压爆炸。"
+      ],
+      "ja": [
+        "警告：IV以下の電圧を供給する。モジュールは過電圧で爆発する。"
+      ]
+    }
+  },
+  "producer/block_large_fabricator_tank": {
+    "kind": "multiblock",
+    "function": {
+      "en": [
+        "The Tank Module is a part of the Large Matter Fabricator. The module stores the UU-Matter from the core.",
+        "A pipe can take the UU-Matter out of the module."
+      ],
+      "zh": [
+        "储罐模块是大型物质生成机的部件。模块储存核心产出的UU物质。",
+        "管道可以从模块取出UU物质。"
+      ],
+      "ja": [
+        "タンクモジュールは大型物質生成機の部品だ。モジュールはコアのUU物質をためる。",
+        "パイプでモジュールからUU物質を取り出せる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the module against a face of the Large Matter Fabricator Core.",
+        "Connect a pipe to the module to take the UU-Matter."
+      ],
+      "zh": [
+        "把模块贴在大型物质生成机核心的一个面上。",
+        "把管道连接到模块，取出UU物质。"
+      ],
+      "ja": [
+        "大型物質生成機コアの1面にモジュールを置く。",
+        "UU物質を取り出すため、パイプをモジュールに接続する。"
+      ]
+    }
+  },
+  "producer/block_large_fabricator_scrap": {
+    "kind": "multiblock",
+    "function": {
+      "en": [
+        "The Scrap Input Module is a part of the Large Matter Fabricator. The module accepts Scrap, Scrap Box and Thorium Scrap Box.",
+        "The scrap value reduces the EU cost of the UU-Matter."
+      ],
+      "zh": [
+        "废料输入模块是大型物质生成机的部件。模块接受废料、废料盒和钍废料盒。",
+        "废料值降低UU物质的EU消耗。"
+      ],
+      "ja": [
+        "スクラップ入力モジュールは大型物質生成機の部品だ。モジュールはスクラップ、スクラップボックス、トリウムスクラップボックスを受け付ける。",
+        "スクラップ値はUU物質のEU消費を減らす。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the module against a face of the Large Matter Fabricator Core.",
+        "Put Scrap or Scrap Boxes into the module slot."
+      ],
+      "zh": [
+        "把模块贴在大型物质生成机核心的一个面上。",
+        "把废料或废料盒放入模块槽位。"
+      ],
+      "ja": [
+        "大型物質生成機コアの1面にモジュールを置く。",
+        "スクラップかスクラップボックスをモジュールのスロットに入れる。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The structure accepts a maximum of one Scrap Input Module."
+      ],
+      "zh": [
+        "结构最多接受1个废料输入模块。"
+      ],
+      "ja": [
+        "構造はスクラップ入力モジュールを最大1つまで受け付ける。"
+      ]
+    }
+  },
+  "producer/block_neutron_polymerizer": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Particle Aggregator uses a large amount of EU to convert items into rare items.",
+        "Coal becomes a diamond, titanium becomes Iridium, and a glass cable becomes a superconducting cable."
+      ],
+      "zh": [
+        "粒子聚合发生器消耗大量EU，把物品转化为稀有物品。",
+        "煤变为钻石，钛变为铱，玻璃导线变为超导导线。"
+      ],
+      "ja": [
+        "粒子凝集機は大量のEUを使い、アイテムを希少なアイテムに変える。",
+        "石炭はダイヤモンドに、チタンはイリジウムに、ガラスケーブルは超伝導ケーブルになる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an EV supply to the machine through transformers.",
+        "Put the input item into the input slot.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "通过变压器将EV电源连接到机器。",
+        "把输入物品放入输入槽位。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "変圧器を通してEV電源を機械に接続する。",
+        "入力アイテムを入力スロットに入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above EV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于EV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：EVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_metal_former": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Metal Former uses EU to shape metal in three modes.",
+        "Rolling mode makes plates and casings. Cutting mode makes cables from plates. Extruding mode makes cables, shafts and cans."
+      ],
+      "zh": [
+        "金属成型机消耗EU，以3种模式加工金属。",
+        "辊压模式制作板和外壳。切割模式用板制作导线。挤压模式制作导线、轴和罐。"
+      ],
+      "ja": [
+        "金属成形機はEUを使い、3つのモードで金属を成形する。",
+        "圧延モードは板とケースを作る。切断モードは板からケーブルを作る。押出モードはケーブル、シャフト、缶を作る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an LV cable to the machine.",
+        "Click the mode button in the GUI to select Rolling, Cutting or Extruding.",
+        "Put the ingot or the plate into the input slot.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将LV导线连接到机器。",
+        "点击界面中的模式按钮，选择辊压、切割或挤压。",
+        "把锭或板放入输入槽位。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "LVケーブルを機械に接続する。",
+        "GUIのモードボタンをクリックし、圧延、切断、押出を選ぶ。",
+        "インゴットか板を入力スロットに入れる。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_metal_former_advanced": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Advanced Metal Former uses the Metal Former recipes at MV and completes each operation faster.",
+        "Rolling mode makes plates and casings. Cutting mode makes cables from plates. Extruding mode makes cables, shafts and cans.",
+        "The block texture shows the current mode."
+      ],
+      "zh": [
+        "进阶金属成型机在MV下使用金属成型机配方，加工更快。",
+        "辊压模式制作板和外壳。切割模式用板制作导线。挤压模式制作导线、轴和罐。",
+        "方块外观显示当前模式。"
+      ],
+      "ja": [
+        "高度金属成形機はMVで金属成形機のレシピを使い、各処理を速く終える。",
+        "圧延モードは板とケースを作る。切断モードは板からケーブルを作る。押出モードはケーブル、シャフト、缶を作る。",
+        "ブロックの見た目が現在のモードを示す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Click the mode button in the GUI to select Rolling, Cutting or Extruding.",
+        "Put the ingot or the plate into the input slot.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "点击界面中的模式按钮，选择辊压、切割或挤压。",
+        "把锭或板放入输入槽位。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "GUIのモードボタンをクリックし、圧延、切断、押出を選ぶ。",
+        "インゴットか板を入力スロットに入れる。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_redstone_reactor_coolant_injector": {
+    "kind": "reactor",
+    "function": {
+      "en": [
+        "The Reactor Coolant Injector (RSH) repairs Redstone Condensators in a nuclear reactor. Each repair uses one Block of Redstone and EU.",
+        "The front face must touch the reactor or a reactor chamber. The machine has storage slots for the Block of Redstone."
+      ],
+      "zh": [
+        "反应堆冷却液注入器（RSH）修复核反应堆中的红石冷凝模块。每次修复消耗1个红石块和EU。",
+        "正面必须接触反应堆或反应堆仓室。机器有存放红石块的储存槽位。"
+      ],
+      "ja": [
+        "原子炉冷却材注入器（RSH）は原子炉のレッドストーンコンデンセーターを修理する。修理ごとにレッドストーンブロック1個とEUを使う。",
+        "正面は原子炉か原子炉チャンバーに接する必要がある。機械にはレッドストーンブロックを入れる保管スロットがある。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the injector with its front face against the reactor or a reactor chamber.",
+        "Connect an MV cable to the machine.",
+        "Fill the storage slots with Block of Redstone.",
+        "Check the stock of Block of Redstone at regular intervals."
+      ],
+      "zh": [
+        "放置注入器，使正面贴住反应堆或反应堆仓室。",
+        "将MV导线连接到机器。",
+        "在储存槽位中放满红石块。",
+        "定期检查红石块的库存。"
+      ],
+      "ja": [
+        "正面を原子炉か原子炉チャンバーに向けて注入器を置く。",
+        "MVケーブルを機械に接続する。",
+        "保管スロットをレッドストーンブロックで満たす。",
+        "レッドストーンブロックの残りを定期的に確認する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "When the stock is empty, the condensators in the reactor wear out.",
+        "WARNING: The machine explodes on overvoltage above MV."
+      ],
+      "zh": [
+        "库存用完时，反应堆中的冷凝模块会耗尽。",
+        "警告：电压高于MV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "在庫がなくなると、原子炉のコンデンセーターは消耗しきる。",
+        "警告：MVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_lapis_reactor_coolant_injector": {
+    "kind": "reactor",
+    "function": {
+      "en": [
+        "The Reactor Coolant Injector (LZH) repairs Lapis Condensators in a nuclear reactor. Each repair uses one Block of Lapis Lazuli and EU.",
+        "The front face must touch the reactor or a reactor chamber. The machine has storage slots for the Block of Lapis Lazuli."
+      ],
+      "zh": [
+        "反应堆冷却液注入器（LZH）修复核反应堆中的青金石冷凝模块。每次修复消耗1个青金石块和EU。",
+        "正面必须接触反应堆或反应堆仓室。机器有存放青金石块的储存槽位。"
+      ],
+      "ja": [
+        "原子炉冷却材注入器（LZH）は原子炉のラピスコンデンセーターを修理する。修理ごとにラピスラズリブロック1個とEUを使う。",
+        "正面は原子炉か原子炉チャンバーに接する必要がある。機械にはラピスラズリブロックを入れる保管スロットがある。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the injector with its front face against the reactor or a reactor chamber.",
+        "Connect an MV cable to the machine.",
+        "Fill the storage slots with Block of Lapis Lazuli.",
+        "Check the stock of Block of Lapis Lazuli at regular intervals."
+      ],
+      "zh": [
+        "放置注入器，使正面贴住反应堆或反应堆仓室。",
+        "将MV导线连接到机器。",
+        "在储存槽位中放满青金石块。",
+        "定期检查青金石块的库存。"
+      ],
+      "ja": [
+        "正面を原子炉か原子炉チャンバーに向けて注入器を置く。",
+        "MVケーブルを機械に接続する。",
+        "保管スロットをラピスラズリブロックで満たす。",
+        "ラピスラズリブロックの残りを定期的に確認する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "When the stock is empty, the condensators in the reactor wear out.",
+        "WARNING: The machine explodes on overvoltage above MV."
+      ],
+      "zh": [
+        "库存用完时，反应堆中的冷凝模块会耗尽。",
+        "警告：电压高于MV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "在庫がなくなると、原子炉のコンデンセーターは消耗しきる。",
+        "警告：MVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_terra_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Terraformer uses EU to change the terrain around the machine with a Terraformer Template.",
+        "Templates include Cultivation, Desert, Irrigation, Chilling, Flatification and Mushroom.",
+        "The machine has no GUI. The default radius is 128 blocks. The server configuration sets the radius."
+      ],
+      "zh": [
+        "地形转换机消耗EU，按地形转换模板改变机器周围的地形。",
+        "模板包括耕作、沙漠、灌溉、冰冻、平整和蘑菇。",
+        "机器没有界面。默认半径为128格。服务器配置决定半径。"
+      ],
+      "ja": [
+        "テラフォーマーはEUを使い、テラフォーマーテンプレートで機械の周りの地形を変える。",
+        "テンプレートには耕作、砂漠、灌漑、冷却、平坦化、キノコがある。",
+        "機械にGUIはない。標準の半径は128ブロックだ。サーバー設定が半径を決める。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the Terraformer in the center of the area to change.",
+        "Connect an HV cable to the machine.",
+        "Right-click the machine with a template to insert the template.",
+        "Sneak and right-click the machine to remove the template."
+      ],
+      "zh": [
+        "把地形转换机放在要改变的区域中央。",
+        "将HV导线连接到机器。",
+        "手持模板右键机器，插入模板。",
+        "潜行并右键机器，取出模板。"
+      ],
+      "ja": [
+        "変えたい範囲の中央にテラフォーマーを置く。",
+        "HVケーブルを機械に接続する。",
+        "テンプレートを持って機械を右クリックし、テンプレートを入れる。",
+        "スニークして機械を右クリックし、テンプレートを取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The terrain changes are permanent. Test the template in an area without buildings.",
+        "A redstone signal stops the machine.",
+        "WARNING: The machine explodes on overvoltage above HV."
+      ],
+      "zh": [
+        "警告：地形变化是永久的。先在没有建筑的区域测试模板。",
+        "红石信号使机器停止。",
+        "警告：电压高于HV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "警告：地形の変化は元に戻らない。建物のない場所でテンプレートを試す。",
+        "レッドストーン信号は機械を止める。",
+        "警告：HVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "produce/block_mining_pipe": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "Mining Pipe is a structural block of the Miner. The Miner places the pipe below itself as it mines down.",
+        "The pipe has no function without the Miner."
+      ],
+      "zh": [
+        "采矿管道是采矿机的结构方块。采矿机向下开采时，把管道放在自身下方。",
+        "没有采矿机时，管道没有功能。"
+      ],
+      "ja": [
+        "採掘パイプは採掘機の構造ブロックだ。採掘機は掘り進むときに自分の下へパイプを置く。",
+        "採掘機がないと、パイプに機能はない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Craft Mining Pipe.",
+        "Put the Mining Pipe into the pipe slot of the Miner.",
+        "Keep the pipe slot filled while the Miner goes deeper."
+      ],
+      "zh": [
+        "合成采矿管道。",
+        "把采矿管道放入采矿机的管道槽位。",
+        "采矿机向深处开采时，保持管道槽位有管道。"
+      ],
+      "ja": [
+        "採掘パイプをクラフトする。",
+        "採掘パイプを採掘機のパイプスロットに入れる。",
+        "採掘機が深く掘る間、パイプスロットを空にしない。"
+      ]
+    }
+  },
+  "produce/block_mining_tip": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Mining Drill Tip is a structural block of the Miner. The Miner places the tip at the lower end of the Mining Pipe.",
+        "The tip has no function of its own."
+      ],
+      "zh": [
+        "采矿钻头是采矿机的结构方块。采矿机把钻头放在采矿管道的下端。",
+        "钻头本身没有功能。"
+      ],
+      "ja": [
+        "採掘ドリル先端は採掘機の構造ブロックだ。採掘機は採掘パイプの下端に先端を置く。",
+        "先端そのものに機能はない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Let the Miner place the tip automatically.",
+        "Leave the tip in place while the Miner works."
+      ],
+      "zh": [
+        "让采矿机自动放置钻头。",
+        "采矿机工作时，不要移动钻头。"
+      ],
+      "ja": [
+        "採掘機に先端を自動で置かせる。",
+        "採掘機が動いている間、先端をそのままにする。"
+      ]
+    }
+  },
+  "producer/block_scanner_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Pattern Scanner uses EU to scan an item and record its pattern with the UU-Matter cost and the EU cost.",
+        "A completed scan consumes the scanned item. The machine saves the pattern to a Pattern Storage Crystal or to an adjacent Pattern Storage."
+      ],
+      "zh": [
+        "模式扫描机消耗EU扫描物品，并记录其模式、UU物质消耗和EU消耗。",
+        "扫描完成后，机器消耗该物品。机器把模式存入模式存储水晶或相邻的模式存储机。"
+      ],
+      "ja": [
+        "パターンスキャナーはEUを使ってアイテムをスキャンし、そのパターンとUU物質とEUの消費量を記録する。",
+        "スキャン完了でアイテムを消費する。機械はパターンをパターン保存クリスタルか隣のパターン保管機に保存する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an HV cable to the machine.",
+        "Put the item to scan into the scanner slot.",
+        "Put a blank Pattern Storage Crystal into the memory slot, or place a Pattern Storage next to the machine.",
+        "Save the result in the GUI when the scan is complete."
+      ],
+      "zh": [
+        "将HV导线连接到机器。",
+        "把要扫描的物品放入扫描槽位。",
+        "放入空白模式存储水晶，或在旁边放置模式存储机。",
+        "扫描完成后，在界面中保存结果。"
+      ],
+      "ja": [
+        "HVケーブルを機械に接続する。",
+        "スキャンするアイテムをスキャナースロットに入れる。",
+        "空のパターン保存クリスタルを入れるか、隣にパターン保管機を置く。",
+        "スキャンが終わったら、GUIで結果を保存する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The machine does not scan an item that the storage already holds.",
+        "A redstone signal stops the machine.",
+        "WARNING: The machine explodes on overvoltage above HV."
+      ],
+      "zh": [
+        "存储中已有的物品，机器不会再次扫描。",
+        "红石信号使机器停止。",
+        "警告：电压高于HV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "保存先にあるアイテムを、機械は再びスキャンしない。",
+        "レッドストーン信号は機械を止める。",
+        "警告：HVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_molecular_transformer": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Molecular Transformer uses a very large amount of EU to transform one item into another item.",
+        "Glowstone dust becomes Sunnarium, an iron ingot becomes iridium ore, and a wither skeleton skull becomes a nether star.",
+        "The machine accepts any voltage tier and has no input limit."
+      ],
+      "zh": [
+        "分子重组仪消耗极大量EU，把一种物品转化为另一种物品。",
+        "萤石粉变为阳光化合物，铁锭变为铱矿石，凋灵骷髅头变为下界之星。",
+        "机器接受任何电压等级，没有输入上限。"
+      ],
+      "ja": [
+        "分子変換機は非常に大量のEUを使い、アイテムを別のアイテムに変える。",
+        "グロウストーンダストはサンナリウムに、鉄インゴットはイリジウム鉱石に、ウィザースケルトンの頭蓋骨はネザースターになる。",
+        "機械はどの電圧Tierも受け付け、入力の上限はない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect a high-output generator or storage block to the machine.",
+        "Put the input item into the input slot.",
+        "Wait until the progress bar is full.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将大输出的发电机或储电方块连接到机器。",
+        "把输入物品放入输入槽位。",
+        "等待进度条充满。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "出力の大きい発電機か蓄電ブロックを機械に接続する。",
+        "入力アイテムを入力スロットに入れる。",
+        "進捗バーが満杯になるまで待つ。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A large stored EU buffer lets the machine finish more than one operation in the same tick."
+      ],
+      "zh": [
+        "储能充足时，机器可在同一刻完成多次加工。"
+      ],
+      "ja": [
+        "ためたEUが多いと、機械は同じtickで複数の処理を終える。"
+      ]
+    }
+  },
+  "producer/block_pattern_storage": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Pattern Storage holds up to 64 item patterns for UU-Matter replication.",
+        "The machine imports and exports patterns with a Pattern Storage Crystal. Each operation costs EU.",
+        "An adjacent Pattern Scanner saves new patterns here. An adjacent Replicator uses the selected pattern."
+      ],
+      "zh": [
+        "模式存储机最多保存64个用于UU物质复制的物品模式。",
+        "机器通过模式存储水晶导入和导出模式。每次操作消耗EU。",
+        "相邻的模式扫描机把新模式存到这里。相邻的复制机使用选中的模式。"
+      ],
+      "ja": [
+        "パターン保管機はUU物質の複製用に最大64個のアイテムパターンを保存する。",
+        "機械はパターン保存クリスタルでパターンを読み込み、書き出す。各操作でEUを使う。",
+        "隣のパターンスキャナーは新しいパターンをここに保存する。隣の複製機は選んだパターンを使う。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the Pattern Storage between a Pattern Scanner and a Replicator.",
+        "Connect an LV cable to the machine.",
+        "Use the arrow buttons in the GUI to select a pattern.",
+        "Put a Pattern Storage Crystal into the slot to import or export a pattern."
+      ],
+      "zh": [
+        "把模式存储机放在模式扫描机和复制机之间。",
+        "将LV导线连接到机器。",
+        "使用界面中的箭头按钮选择模式。",
+        "把模式存储水晶放入槽位，导入或导出模式。"
+      ],
+      "ja": [
+        "パターンスキャナーと複製機の間にパターン保管機を置く。",
+        "LVケーブルを機械に接続する。",
+        "GUIの矢印ボタンでパターンを選ぶ。",
+        "パターンを読み込むか書き出すため、パターン保存クリスタルをスロットに入れる。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The machine explodes on overvoltage above LV."
+      ],
+      "zh": [
+        "警告：电压高于LV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "警告：LVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_replicator_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Replicator uses UU-Matter and EU to make a copy of an item from a stored pattern.",
+        "The pattern comes from a Pattern Storage Crystal in the memory slot or from an adjacent Pattern Storage."
+      ],
+      "zh": [
+        "复制机消耗UU物质和EU，按存储的模式复制物品。",
+        "模式来自存储槽位中的模式存储水晶，或相邻的模式存储机。"
+      ],
+      "ja": [
+        "複製機はUU物質とEUを使い、保存したパターンからアイテムを複製する。",
+        "パターンはメモリスロットのパターン保存クリスタルか、隣のパターン保管機から来る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an EV supply to the machine through transformers.",
+        "Supply UU-Matter with UU-Matter Cells or with a pipe.",
+        "Put a Pattern Storage Crystal into the memory slot, or place a Pattern Storage next to the machine.",
+        "Click Single or Loop in the GUI to start.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "通过变压器将EV电源连接到机器。",
+        "用UU物质单元或管道供应UU物质。",
+        "把模式存储水晶放入存储槽位，或在机器旁放置模式存储机。",
+        "在界面中点击单次或循环开始工作。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "変圧器を通してEV電源を機械に接続する。",
+        "UU物質セルかパイプでUU物質を供給する。",
+        "パターン保存クリスタルをメモリスロットに入れるか、機械の隣にパターン保管機を置く。",
+        "GUIで単発かループをクリックして開始する。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above EV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于EV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：EVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_item_buffer_elc": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Item Buffer stores items in two halves of 24 slots each. The block uses no EU.",
+        "The top and bottom faces access the left half. The four side faces access the right half.",
+        "Each half has one upgrade slot for an Overclocker, Ejector or Pulling Upgrade."
+      ],
+      "zh": [
+        "物品缓冲机把物品存放在两个各24槽位的区域。本方块不消耗EU。",
+        "顶面和底面访问左半区。4个侧面访问右半区。",
+        "每个半区有1个升级槽位，可放超频、弹出或抽入升级。"
+      ],
+      "ja": [
+        "アイテムバッファは24スロットずつの2つの区画にアイテムをためる。このブロックはEUを使わない。",
+        "上面と下面は左の区画に、4つの側面は右の区画につながる。",
+        "各区画はオーバークロッカー、エジェクター、吸入のアップグレード用スロットを1つ持つ。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the Item Buffer between two inventories.",
+        "Insert items from the top to fill the left half.",
+        "Install an Ejector Upgrade in the upgrade slot of the half to empty."
+      ],
+      "zh": [
+        "把物品缓冲机放在两个容器之间。",
+        "从顶面输入物品，装入左半区。",
+        "在需要清空的半区升级槽位安装弹出升级。"
+      ],
+      "ja": [
+        "2つのインベントリの間にアイテムバッファを置く。",
+        "上から入れたアイテムは左の区画に入る。",
+        "空にしたい区画のアップグレードスロットにエジェクターアップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_sorter_elc": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Electric Sorter sends items to the six faces by filters. Each face has its own filter slots.",
+        "Items that match no filter go to the default output face. Each moved item costs EU."
+      ],
+      "zh": [
+        "电动分拣机按过滤设置把物品送往6个面。每个面有独立的过滤槽位。",
+        "不匹配任何过滤的物品送往默认输出面。每移动一个物品消耗EU。"
+      ],
+      "ja": [
+        "電気ソーターはフィルターでアイテムを6面へ送る。各面に専用のフィルタースロットがある。",
+        "どのフィルターにも合わないアイテムは標準出力面へ行く。アイテム1個の移動ごとにEUを使う。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Place inventories against the output faces.",
+        "Put sample items into the filter slots of each face in the GUI.",
+        "Select the default output face in the GUI.",
+        "Insert the items into the sorter."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "在输出面旁放置容器。",
+        "在界面中把样品物品放入各面的过滤槽位。",
+        "在界面中选择默认输出面。",
+        "把物品送入分拣机。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "出力面の隣にインベントリを置く。",
+        "GUIで各面のフィルタースロットに見本のアイテムを入れる。",
+        "GUIで標準出力面を選ぶ。",
+        "アイテムをソーターに入れる。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The stack size in a filter slot sets the batch size for that filter.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "过滤槽位中的堆叠数量决定该过滤的每批数量。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "フィルタースロットのスタック数が、そのフィルターの1回分の数を決める。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_item_distributor_elc": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Advanced Item Distributor sends the items in its 9-slot buffer to adjacent inventories in a priority order.",
+        "The GUI sets the face order. The block uses no EU."
+      ],
+      "zh": [
+        "高级物品分配机按优先顺序，把9格缓冲区中的物品送往相邻容器。",
+        "界面设置各面的顺序。本方块不消耗EU。"
+      ],
+      "ja": [
+        "高度アイテム分配機は9スロットのバッファのアイテムを、優先順に隣のインベントリへ送る。",
+        "GUIで面の順番を設定する。このブロックはEUを使わない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place inventories against the faces of the distributor.",
+        "Open the GUI and add the faces in the order of priority.",
+        "Insert items into the distributor."
+      ],
+      "zh": [
+        "在分配机各面旁放置容器。",
+        "打开界面，按优先顺序添加各面。",
+        "把物品送入分配机。"
+      ],
+      "ja": [
+        "分配機の各面の隣にインベントリを置く。",
+        "GUIを開き、優先順に面を追加する。",
+        "アイテムを分配機に入れる。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The next face receives items only when the faces before it cannot take all items."
+      ],
+      "zh": [
+        "只有前面的面无法接收全部物品时，下一个面才接收物品。"
+      ],
+      "ja": [
+        "前の面が全部を受け取れないときだけ、次の面がアイテムを受け取る。"
+      ]
+    }
+  },
+  "producer/block_fluid_distributor_elc": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Fluid Distributor moves fluid in two modes. The block uses no EU.",
+        "Distribute mode takes fluid at the front face and splits the fluid to the other five faces.",
+        "Concentrate mode takes fluid at the other five faces and outputs the fluid at the front face."
+      ],
+      "zh": [
+        "流体分配机以两种模式输送流体。本方块不消耗EU。",
+        "分配模式从正面接收流体，并把流体分给其他5个面。",
+        "集中模式从其他5个面接收流体，并从正面输出。"
+      ],
+      "ja": [
+        "流体分配機は2つのモードで流体を送る。このブロックはEUを使わない。",
+        "分配モードは正面で流体を受け、残りの5面へ分ける。",
+        "集中モードは残りの5面で流体を受け、正面から出す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the distributor with the front face toward the source or the target.",
+        "Click Toggle Mode in the GUI to select the mode.",
+        "Connect pipes or tanks to the faces.",
+        "Put an empty container into the container slot to fill the container from the tank."
+      ],
+      "zh": [
+        "放置分配机，使正面朝向流体源或目标。",
+        "点击界面中的切换模式按钮选择模式。",
+        "将管道或储罐连接到各面。",
+        "把空容器放入容器槽位，用储罐中的流体装满容器。"
+      ],
+      "ja": [
+        "正面を流体源か送り先に向けて分配機を置く。",
+        "GUIのモード切替をクリックしてモードを選ぶ。",
+        "各面にパイプかタンクを接続する。",
+        "タンクの流体で満たすため、容器スロットに空の容器を入れる。"
+      ]
+    }
+  },
+  "producer/block_weighted_fluid_distributor_elc": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Advanced Fluid Distributor takes fluid at the front face and outputs the fluid to the selected faces in a priority order.",
+        "Faces that are not in the list do not connect. The block uses no EU."
+      ],
+      "zh": [
+        "高级流体分配机从正面接收流体，并按优先顺序输出到选定的面。",
+        "不在列表中的面不连接。本方块不消耗EU。"
+      ],
+      "ja": [
+        "高度流体分配機は正面で流体を受け、選んだ面へ優先順に出す。",
+        "リストにない面は接続しない。このブロックはEUを使わない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the distributor with the front face toward the fluid source.",
+        "Open the GUI and add the output faces in the order of priority.",
+        "Connect pipes or tanks to the output faces."
+      ],
+      "zh": [
+        "放置分配机，使正面朝向流体源。",
+        "打开界面，按优先顺序添加输出面。",
+        "将管道或储罐连接到输出面。"
+      ],
+      "ja": [
+        "正面を流体源に向けて分配機を置く。",
+        "GUIを開き、出力面を優先順に追加する。",
+        "出力面にパイプかタンクを接続する。"
+      ]
+    }
+  },
+  "producer/block_fluid_regulator_elc": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Fluid Flow Regulator stores fluid in its tank and outputs the fluid at the front face at a set rate.",
+        "The GUI sets the amount and the unit, per second or per tick. Each transfer costs EU."
+      ],
+      "zh": [
+        "流体流量调节机把流体存入储罐，并以设定的速率从正面输出。",
+        "界面设置流量和单位，按秒或按刻。每次输送消耗EU。"
+      ],
+      "ja": [
+        "流体流量調整機は流体をタンクにため、設定した速さで正面から出す。",
+        "GUIで量と単位（毎秒か毎tick）を設定する。送るたびにEUを使う。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an EV cable to the machine.",
+        "Pump the fluid into the regulator, or put a filled container into the input slot.",
+        "Place the target tank or pipe at the front face.",
+        "Set the flow rate in the GUI."
+      ],
+      "zh": [
+        "将EV导线连接到机器。",
+        "把流体泵入调节机，或把装满的容器放入输入槽位。",
+        "在正面放置目标储罐或管道。",
+        "在界面中设置流量。"
+      ],
+      "ja": [
+        "EVケーブルを機械に接続する。",
+        "流体をパイプで調整機に入れるか、満タンの容器を入力スロットに入れる。",
+        "正面に送り先のタンクかパイプを置く。",
+        "GUIで流量を設定する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "With a flow rate of zero, the regulator moves no fluid.",
+        "WARNING: The machine explodes on overvoltage above EV."
+      ],
+      "zh": [
+        "流量为零时，调节机不输送流体。",
+        "警告：电压高于EV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "流量がゼロのとき、調整機は流体を送らない。",
+        "警告：EVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  },
+  "producer/block_batch_crafter": {
+    "kind": "machine",
+    "function": {
+      "en": [
+        "The Batch Crafter uses EU to craft a crafting table recipe automatically.",
+        "The GUI holds the recipe pattern. The machine takes the ingredients from nine ingredient slots.",
+        "Container remainders, for example empty buckets, go to separate output slots."
+      ],
+      "zh": [
+        "批量工作台消耗EU，自动合成工作台配方。",
+        "界面保存配方图样。机器从9个材料槽位取用材料。",
+        "容器残留物（例如空桶）进入单独的输出槽位。"
+      ],
+      "ja": [
+        "バッチクラフターはEUを使い、作業台のレシピを自動でクラフトする。",
+        "GUIがレシピの型を持つ。機械は9つの材料スロットから材料を取る。",
+        "空のバケツのような容器の残りは、別の出力スロットへ行く。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Place the recipe pattern in the crafting grid of the GUI.",
+        "Put the ingredients into the ingredient slots, or pipe them in.",
+        "Install Overclocker Upgrades to process faster.",
+        "Take the result from the output slot."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "在界面的合成网格中放置配方图样。",
+        "把材料放入材料槽位，或用管道输入。",
+        "安装超频升级以加快加工。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "GUIのクラフトグリッドにレシピの型を置く。",
+        "材料を材料スロットに入れるか、パイプで入れる。",
+        "オーバークロッカーアップグレードを入れて処理を速くする。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_chunk_loader": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Chunk Loader keeps selected chunks loaded. The machine loads up to 25 chunks in a 9 x 9 chunk area around itself.",
+        "Each loaded chunk costs EU. The machine stops when the EU runs out."
+      ],
+      "zh": [
+        "区块加载器使选定的区块保持加载。机器在周围9×9区块范围内最多加载25个区块。",
+        "每个加载的区块消耗EU。EU耗尽时机器停止。"
+      ],
+      "ja": [
+        "チャンクローダーは選んだチャンクを読み込んだまま保つ。機械は周囲9×9チャンクの範囲で最大25チャンクを読み込む。",
+        "読み込むチャンクごとにEUを使う。EUがなくなると機械は止まる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect an MV cable to the machine.",
+        "Open the GUI and click the chunks to load.",
+        "Keep a steady EU supply to the machine."
+      ],
+      "zh": [
+        "将MV导线连接到机器。",
+        "打开界面，点击要加载的区块。",
+        "为机器保持稳定的EU供应。"
+      ],
+      "ja": [
+        "MVケーブルを機械に接続する。",
+        "GUIを開き、読み込むチャンクをクリックする。",
+        "機械へのEU供給を安定させる。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The chunk that holds the Chunk Loader is part of the selection grid.",
+        "WARNING: The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier."
+      ],
+      "zh": [
+        "区块加载器所在的区块也在选择网格中。",
+        "警告：电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。"
+      ],
+      "ja": [
+        "チャンクローダーのあるチャンクも選択グリッドに含まれる。",
+        "警告：MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
+      ]
+    }
+  },
+  "producer/block_industrial_workbench": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Industrial Workbench is a crafting table with a 3 x 3 grid and an 18-slot storage. The block uses no EU.",
+        "The left tool slot uses a Forge Hammer and the right tool slot uses Plate Cutting Shears to process materials.",
+        "The grid and the storage keep their items when you close the GUI."
+      ],
+      "zh": [
+        "工业工作台是带3×3网格和18格存储的工作台。本方块不消耗EU。",
+        "左侧工具槽位使用锻造锤，右侧工具槽位使用板材切割剪刀加工材料。",
+        "关闭界面后，网格和存储中的物品保留。"
+      ],
+      "ja": [
+        "工業作業台は3×3グリッドと18スロットの保管庫を持つ作業台だ。このブロックはEUを使わない。",
+        "左の工具スロットは鍛造ハンマーで、右の工具スロットは板切断ばさみで素材を加工する。",
+        "GUIを閉じても、グリッドと保管庫のアイテムは残る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Right-click the workbench to open the GUI.",
+        "Put the ingredients into the crafting grid.",
+        "Put a Forge Hammer and a material into the left tool slots.",
+        "Take the results from the output slots."
+      ],
+      "zh": [
+        "右键工作台，打开界面。",
+        "把材料放入合成网格。",
+        "把锻造锤和材料放入左侧工具槽位。",
+        "从输出槽位取出产物。"
+      ],
+      "ja": [
+        "作業台を右クリックしてGUIを開く。",
+        "材料をクラフトグリッドに入れる。",
+        "鍛造ハンマーと素材を左の工具スロットに入れる。",
+        "出力スロットから成果物を取り出す。"
+      ]
+    }
+  },
+  "energy_converter/energy_converter": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The Energy Converter converts energy between EU and FE. The rate is 1 EU = 4 FE.",
+        "In EU to FE mode, the machine receives EU and outputs FE at the front face.",
+        "In FE to EU mode, the machine takes FE from the other five faces and outputs EU to the cable network at HV."
+      ],
+      "zh": [
+        "能源转换器在EU和FE之间转换能量。比例为1 EU = 4 FE。",
+        "EU转FE模式下，机器接收EU，并从正面输出FE。",
+        "FE转EU模式下，机器从其他5个面获取FE，并以HV向导线网络输出EU。"
+      ],
+      "ja": [
+        "エネルギー変換機はEUとFEの間でエネルギーを変換する。比率は1 EU = 4 FEだ。",
+        "EUからFEのモードでは、機械はEUを受け、正面からFEを出す。",
+        "FEからEUのモードでは、機械は残りの5面からFEを取り、HVでケーブル網へEUを出す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the converter with the front face toward the target.",
+        "Sneak and right-click the converter to switch the mode.",
+        "Connect the source to the other faces."
+      ],
+      "zh": [
+        "放置转换器，使正面朝向目标。",
+        "潜行并右键转换器，切换模式。",
+        "将能量源连接到其他面。"
+      ],
+      "ja": [
+        "正面を送り先に向けて変換機を置く。",
+        "スニークして変換機を右クリックし、モードを切り替える。",
+        "残りの面にエネルギー源を接続する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The machine explodes on overvoltage above HV."
+      ],
+      "zh": [
+        "警告：电压高于HV时，机器因过压爆炸。"
+      ],
+      "ja": [
+        "警告：HVを超える過電圧で機械は爆発する。"
+      ]
+    }
+  }
+}

@@ -245,6 +245,23 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.0
     );
 
+    /**
+     * Superconducting alloy cable (0.1.7.32): no voltage or packet ceiling at all. Shows as MAX but
+     * is not registered as a tier of its own, so tier lookups and indices are unchanged; its
+     * conductor and insulation never break down and it carries packets of any size losslessly.
+     */
+    public static final CableTier UNLIMITED = new CableTier(
+        "max", "MAX", "Maximum Voltage",
+        Long.MAX_VALUE, 13, 0.0f,
+        Long.MAX_VALUE,
+        Long.MAX_VALUE,
+        Double.MAX_VALUE,
+        0.0,
+        Double.MAX_VALUE,
+        0.0,
+        true
+    );
+
     // ============ 字段 ============
 
     /** 内部名称（如"lv", "mv"） */

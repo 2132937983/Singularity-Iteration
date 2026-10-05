@@ -1,0 +1,55 @@
+{
+  "category": "wood",
+  "commodities": [
+    {
+      "item": "minecraft:oak_log",
+      "base_price": 20,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:spruce_log",
+      "base_price": 20,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:birch_log",
+      "base_price": 20,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:jungle_log",
+      "base_price": 20,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:acacia_log",
+      "base_price": 20,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:dark_oak_log",
+      "base_price": 20,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:mangrove_log",
+      "base_price": 20,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:cherry_log",
+      "base_price": 30,
+      "volatility": 0.05
+    },
+    {
+      "item": "minecraft:crimson_stem",
+      "base_price": 40,
+      "volatility": 0.06
+    },
+    {
+      "item": "minecraft:warped_stem",
+      "base_price": 40,
+      "volatility": 0.06
+    }
+  ]
+}

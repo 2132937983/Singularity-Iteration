@@ -85,6 +85,9 @@ public final class ArmorFeatureSlots {
             case "chest" -> EquipmentSlot.CHEST;
             case "legs" -> EquipmentSlot.LEGS;
             case "feet" -> EquipmentSlot.FEET;
+            // electric tools / weapons in hand (equipment console tool traits)
+            case "mainhand" -> EquipmentSlot.MAINHAND;
+            case "offhand" -> EquipmentSlot.OFFHAND;
             default -> null;
         };
     }

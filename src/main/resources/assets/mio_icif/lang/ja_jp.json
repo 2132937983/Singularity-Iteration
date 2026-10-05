@@ -325,5 +325,10 @@
   "gui.mio_icif.pattern_storage.empty": "空",
   "gui.mio_icif.kinetic_generator.efficiency": "変換効率: %s%%",
   "gui.mio_icif.turbo_kinetic_generator.efficiency": "変換効率: %s%%",
-  "gui.mio_icif.twin_turbo_kinetic_generator.efficiency": "変換効率: %s%%"
+  "gui.mio_icif.twin_turbo_kinetic_generator.efficiency": "変換効率: %s%%",
+  "tooltip.mio_icif.tool.feature_keep_contents": "機械の中身を保持",
+  "tooltip.mio_icif.tool.feature_front_dismantle": "正面クリックで撤去",
+  "tooltip.mio_icif.tool.feature_auto_shutoff": "収納時に自動停止",
+  "tooltip.mio_icif.tool.feature_protect_allies": "ペット・村人・ゴーレムを保護",
+  "gui.mio_icif.future.locked": "未解放 - 進捗 %s が必要"
 }

@@ -66,10 +66,10 @@ public class mio_icif_block_foam extends BaseEntityBlock {
     public static final BooleanProperty DISGUISED = BooleanProperty.create("disguised");
 
     /** IC2 BlockFoam.FoamType.normal 的硬化时间参数。 */
-    private static final int HARDEN_TIME_NORMAL = 300;
+    public static final int HARDEN_TIME_NORMAL = 300;
 
     /** IC2 BlockFoam.FoamType.reinforced 的硬化时间参数。 */
-    private static final int HARDEN_TIME_REINFORCED = 600;
+    public static final int HARDEN_TIME_REINFORCED = 600;
 
     // 空碰撞箱 - 实体可以穿过泡沫（IC2原版特性）
     private static final VoxelShape EMPTY_SHAPE = Shapes.empty();

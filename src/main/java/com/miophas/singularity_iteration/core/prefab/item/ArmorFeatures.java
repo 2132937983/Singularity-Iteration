@@ -32,9 +32,9 @@ public final class ArmorFeatures {
      * 获取物品声明的全部装备特性。
      */
     public static List<ArmorFeatureInfo> features(ItemStack stack) {
-        if (stack.isEmpty() || !(stack.getItem() instanceof IElectricArmorItem armor)) {
-            return List.of();
-        }
+        if (stack.isEmpty()) return List.of();
+        if (stack.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IFeatureToolItem tool) return tool.getFeatures(stack);
+        if (!(stack.getItem() instanceof IElectricArmorItem armor)) return List.of();
         return armor.getFeatures(stack);
     }
 

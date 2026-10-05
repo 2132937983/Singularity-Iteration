@@ -135,9 +135,18 @@ public final class CommonConfigGameTests {
     @GameTest(template="reactor_loop",batch="common_config",timeoutTicks=40)
     public static void malformedIdentifiersAndNanCommodityValuesAreRejectedWithoutThrowing(GameTestHelper h){
         var config=implementation("Singularity_Iteration_Config");
-        for(String value:new String[]{"Bad ID!,10,0.1,mineral","minecraft:coal,10,NaN,mineral","minecraft:coal,10,Infinity,mineral"})
-            h.assertTrue(!(boolean)ArmoryServiceGameTests.call(config,"validateCommodityConfig",value),"Malformed commodity is accepted");
+        // 0.1.7.32: commodities are datapack entries; malformed ones are skipped, the file still loads
+        var loader=implementation("future.FutureCommodityLoader");
+        var map=new java.util.LinkedHashMap<String,Object>();
+        var file=com.google.gson.JsonParser.parseString("{\"category\":\"mineral\",\"commodities\":["
+            +"{\"item\":\"Bad ID!\",\"base_price\":10,\"volatility\":0.1},"
+            +"{\"item\":\"minecraft:coal\",\"base_price\":10,\"volatility\":\"NaN\"},"
+            +"{\"item\":\"minecraft:coal\",\"base_price\":10,\"volatility\":\"Infinity\"},"
+            +"{\"item\":\"minecraft:coal\",\"base_price\":40,\"volatility\":0.05}]}");
+        ArmoryServiceGameTests.call(loader,"parseFile",net.minecraft.resources.ResourceLocation.parse("si_test:futures"),file,map);
+        h.assertTrue(map.size()==1&&map.containsKey("minecraft:coal")
+            &&(int)ArmoryServiceGameTests.call(map.get("minecraft:coal"),"getBasePrice")==40,"Malformed commodity accepted or valid one rejected: "+map.keySet());
         h.assertTrue(!(boolean)ArmoryServiceGameTests.call(config,"validateCustomCostConfig","Bad ID! = (100, 1000)"),"Malformed scanner ID accepted");
-        h.assertTrue((boolean)ArmoryServiceGameTests.call(config,"validateCommodityConfig","minecraft:coal,40,0.05,mineral"),"Valid commodity rejected");h.succeed();
+        h.succeed();
     }
 }

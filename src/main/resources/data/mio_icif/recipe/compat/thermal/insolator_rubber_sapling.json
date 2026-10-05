@@ -1,0 +1,31 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "thermal"
+    }
+  ],
+  "type": "thermal:insolator",
+  "ingredient": {
+    "item": "mio_icif:block_rub_sapling"
+  },
+  "result": [
+    {
+      "item": "mio_icif:block_rub_wood",
+      "id": "mio_icif:block_rub_wood",
+      "chance": 6.0
+    },
+    {
+      "item": "mio_icif:block_rub_sapling",
+      "id": "mio_icif:block_rub_sapling",
+      "chance": 1.1
+    },
+    {
+      "item": "mio_icif:resource/item_harz",
+      "id": "mio_icif:resource/item_harz",
+      "chance": 1.0
+    }
+  ],
+  "energy_mod": 3.0,
+  "water_mod": 3.0
+}

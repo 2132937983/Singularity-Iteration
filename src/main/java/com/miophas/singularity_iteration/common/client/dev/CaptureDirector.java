@@ -1104,8 +1104,81 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /** Scene 12 (-Dsi.capture.scene=12): 0.1.7.32 features - embedded cables, wireless receiver, GESU module, futures, tool traits. */
+    private static void scene12() {
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            for (int x = 0; x < 4; x++) {
+                BlockPos at = new BlockPos(x, -60, 4);
+                level.setBlock(at, block("wiring/cable/block_tin_cable_1").defaultBlockState(), 3);
+                var st = level.getBlockState(at);
+                var def = st.getBlock().getStateDefinition();
+                var reinforced = (net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_reinforced");
+                var foam = (net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foamlogged");
+                var hard = (net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foam_hardened");
+                if (x >= 1) st = st.setValue(reinforced, true);
+                if (x >= 2) st = st.setValue(foam, true);
+                if (x >= 3) st = st.setValue(hard, true);
+                level.setBlock(at, st, 3);
+            }
+            place(level, new BlockPos(6, -60, 4), "wiring/block_wireless_power_transmission_node", Direction.NORTH);
+            place(level, new BlockPos(9, -60, 4), "wiring/block_wireless_power_transmission_node", Direction.NORTH);
+            place(level, new BlockPos(10, -60, 4), "producer/block_furnace_elc", Direction.NORTH);
+            if (level.getBlockEntity(new BlockPos(6, -60, 4)) instanceof com.miophas.singularity_iteration.common.blockentity.wiring.mio_icif_wireless_power_transmission_node tx) {
+                tx.setTargetPosition(new BlockPos(9, -60, 4));
+                tx.getEnergyStorageInternal().setStored(tx.getEnergyStorageInternal().getCapacity());
+            }
+            look(sp, 5.0, -59.0, 0.5, 0, 25);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(60, "scene12/cables_and_wireless");
+        server(5, sp -> {
+            var level = sp.serverLevel();
+            BlockPos core = new BlockPos(20, -58, 4);
+            for (Direction d : Direction.values())
+                level.setBlock(core.relative(d), block(d == Direction.UP ? "wiring/block_gesu_output_iv" : "wiring/block_gesu_input_iv").defaultBlockState(), 3);
+            level.setBlock(core, block("wiring/block_gesu_core").defaultBlockState(), 3);
+            look(sp, 20.5, -60, 1.0, 0, 0);
+        });
+        server(30, sp -> {
+            var level = sp.serverLevel();
+            BlockPos module = new BlockPos(20, -58, 3);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(module), Direction.NORTH, module, false);
+            level.getBlockState(module).useWithoutItem(level, sp, hit);
+        });
+        client(5, () -> Minecraft.getInstance().options.hideGui = false);
+        shot(20, "scene12/gesu_module_opens_core_gui");
+        server(1, ServerPlayer::closeContainer);
+        server(5, sp -> {
+            var level = sp.serverLevel();
+            BlockPos at = new BlockPos(30, -60, 4);
+            place(level, at, "producer/block_future_elc", Direction.NORTH);
+            if (level.getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
+            look(sp, 30.5, -60, 1.5, 0, 20);
+        });
+        server(10, sp -> {
+            var level = sp.serverLevel();
+            BlockPos at = new BlockPos(30, -60, 4);
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
+            level.getBlockState(at).useWithoutItem(level, sp, hit);
+        });
+        shot(30, "scene12/futures_datapack");
+        server(1, ServerPlayer::closeContainer);
+        server(5, sp -> sp.setItemInHand(InteractionHand.MAIN_HAND, item("item_tool_nanosaber")));
+        client(10, () -> Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()));
+        client(5, () -> { var sc = Minecraft.getInstance().screen; if (sc != null) for (int i = 0; i < 4; i++) sc.keyPressed(264, 0, 0); });
+        shot(20, "scene12/console_tool_traits");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
     static {
-        if (OUT != null && ("nuclear".equals(System.getProperty("si.capture.scene"))
+        if (OUT != null && "12".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene12();
+        } else if (OUT != null && ("nuclear".equals(System.getProperty("si.capture.scene"))
                 || "reactor-nuclear".equals(System.getProperty("si.capture.scene")))) {
             new File(OUT).mkdirs();
             nuclearScene("reactor-nuclear".equals(System.getProperty("si.capture.scene")));

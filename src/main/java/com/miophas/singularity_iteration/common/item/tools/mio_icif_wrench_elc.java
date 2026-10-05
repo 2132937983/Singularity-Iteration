@@ -41,7 +41,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
 @SuppressWarnings("null")
-public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchItem {
+public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchItem, com.miophas.singularity_iteration.core.api.item.IFeatureToolItem {
 
     public static final int WRENCH_ELC_MAX_ENERGY = 50000;
     public static final int WRENCH_ELC_ENERGY_PER_USE = 100;
@@ -169,7 +169,8 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
         }
 
         Direction currentFacing = getCurrentFacing(state);
-        if (currentFacing != null && currentFacing == clickedFace) {
+        if (currentFacing != null && currentFacing == clickedFace
+                && com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.isEnabled(stack, FEATURE_FRONT_DISMANTLE)) {
             if (!hasEnoughEnergy(stack)) {
                 player.setItemInHand(hand, stack);
                 return;
@@ -313,23 +314,30 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
     }
 
     private void dismantleBlock(Level level, BlockPos pos, BlockState state, Player player, ItemStack wrenchStack, InteractionHand hand) {
-        Block block = state.getBlock();
-
-        level.playSound(null, pos, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.MACHINE_DEMOLISH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-
-        if (blockEntity != null) {
-            block.playerWillDestroy(level, pos, state, player);
-            level.destroyBlock(pos, false);
-            Block.dropResources(state, level, pos, blockEntity, player, wrenchStack);
-        } else {
-            level.destroyBlock(pos, true);
-        }
-
+        mio_icif_wrench.dismantle(level, pos, state, player, wrenchStack,
+            com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.isEnabled(wrenchStack, FEATURE_KEEP_CONTENTS));
         if (!player.isCreative()) {
             consumeEnergy(wrenchStack);
         }
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
+        com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureTooltip.appendAll(tooltip, stack, getFeatures(stack));
+    }
+
+    // ---- equipment console traits
+    /** Machines keep their inventory inside the dropped item (off: contents spill as with a pickaxe). */
+    public static final String FEATURE_KEEP_CONTENTS = "keep_contents";
+    /** Clicking a machine's front face dismantles it (off: only sneak-dismantle, a safety against misclicks). */
+    public static final String FEATURE_FRONT_DISMANTLE = "front_dismantle";
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo> getFeatures(ItemStack stack) {
+        return java.util.List.of(
+            new com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo(net.minecraft.world.entity.EquipmentSlot.MAINHAND, FEATURE_KEEP_CONTENTS, "tooltip.mio_icif.tool.feature_keep_contents"),
+            new com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo(net.minecraft.world.entity.EquipmentSlot.MAINHAND, FEATURE_FRONT_DISMANTLE, "tooltip.mio_icif.tool.feature_front_dismantle"));
     }
 
     @Override

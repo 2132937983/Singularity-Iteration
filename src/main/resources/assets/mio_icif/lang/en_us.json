@@ -2195,5 +2195,10 @@
   "gui.mio_icif.pattern_storage.uu": "UU:",
   "gui.mio_icif.pattern_storage.eu": "EU:",
   "gui.mio_icif.pattern_storage.empty": "Empty",
-  "block.mio_icif.producer.block_resin_collector": "Resin Collector"
+  "block.mio_icif.producer.block_resin_collector": "Resin Collector",
+  "tooltip.mio_icif.tool.feature_keep_contents": "Keep contents",
+  "tooltip.mio_icif.tool.feature_front_dismantle": "Front dismantle",
+  "tooltip.mio_icif.tool.feature_auto_shutoff": "Auto shut-off",
+  "tooltip.mio_icif.tool.feature_protect_allies": "Spare allies",
+  "gui.mio_icif.future.locked": "Locked - requires advancement %s"
 }

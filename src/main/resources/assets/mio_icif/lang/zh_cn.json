@@ -2223,5 +2223,10 @@
   "gui.mio_icif.pattern_storage.uu": "UU：",
   "gui.mio_icif.pattern_storage.eu": "EU：",
   "gui.mio_icif.pattern_storage.empty": "空",
-  "block.mio_icif.producer.block_resin_collector": "树脂收集器"
+  "block.mio_icif.producer.block_resin_collector": "树脂收集器",
+  "tooltip.mio_icif.tool.feature_keep_contents": "保留机器内容物",
+  "tooltip.mio_icif.tool.feature_front_dismantle": "点击正面拆除",
+  "tooltip.mio_icif.tool.feature_auto_shutoff": "收起时自动关闭",
+  "tooltip.mio_icif.tool.feature_protect_allies": "不伤宠物、村民与傀儡",
+  "gui.mio_icif.future.locked": "未解锁 - 需要进度 %s"
 }

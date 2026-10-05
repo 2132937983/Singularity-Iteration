@@ -1,0 +1,70 @@
+{
+  "category": "agriculture",
+  "commodities": [
+    {
+      "item": "minecraft:wheat",
+      "base_price": 30,
+      "volatility": 0.05
+    },
+    {
+      "item": "minecraft:carrot",
+      "base_price": 20,
+      "volatility": 0.04
+    },
+    {
+      "item": "minecraft:potato",
+      "base_price": 20,
+      "volatility": 0.04
+    },
+    {
+      "item": "minecraft:beetroot",
+      "base_price": 20,
+      "volatility": 0.04
+    },
+    {
+      "item": "minecraft:pumpkin",
+      "base_price": 40,
+      "volatility": 0.06
+    },
+    {
+      "item": "minecraft:melon_slice",
+      "base_price": 10,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:sugar_cane",
+      "base_price": 10,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:cactus",
+      "base_price": 10,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:bamboo",
+      "base_price": 10,
+      "volatility": 0.03
+    },
+    {
+      "item": "minecraft:cocoa_beans",
+      "base_price": 30,
+      "volatility": 0.05
+    },
+    {
+      "item": "minecraft:sweet_berries",
+      "base_price": 20,
+      "volatility": 0.04
+    },
+    {
+      "item": "minecraft:glow_berries",
+      "base_price": 50,
+      "volatility": 0.1
+    },
+    {
+      "item": "minecraft:nether_wart",
+      "base_price": 40,
+      "volatility": 0.08
+    }
+  ]
+}

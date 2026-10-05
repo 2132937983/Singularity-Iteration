@@ -34,7 +34,27 @@ public final class SolarHelmetCharging {
     public static void tick(ItemStack source, IBatteryItem battery, Level level, Player player, int generation, int limit) {
         if (!(level instanceof ServerLevel server) || !server.getServer().isSameThread()
                 || player.level() != level || player.getItemBySlot(EquipmentSlot.HEAD) != source || source.getCount() != 1) return;
-        PLAYERS.computeIfAbsent(player, ignored -> new Cursor()).step(player.getInventory(), source, battery, level.getGameTime(), generation, limit);
+        long moved = PLAYERS.computeIfAbsent(player, ignored -> new Cursor()).step(player.getInventory(), source, battery, level.getGameTime(), generation, limit);
+        chargeAccessories(player, source, battery, Math.max(0, limit - moved));
+    }
+
+    /**
+     * Accessory slots (Curios rings, belts, back-slot jetpacks...) registered through
+     * {@link com.miophas.singularity_iteration.core.api.item.BatteryTargetProviders}: the inventory
+     * cursor never saw them, so worn trinkets were never charged by a solar helmet.
+     */
+    static long chargeAccessories(Player player, ItemStack source, IBatteryItem battery, long budget) {
+        if (budget <= 0 || battery.getEnergy(source) <= 0) return 0;
+        java.util.List<ItemStack> targets = new java.util.ArrayList<>();
+        com.miophas.singularity_iteration.core.api.item.BatteryTargetProviders.appendTargets(player, targets, source);
+        long remaining = Math.min(budget, battery.getEnergy(source));
+        long offered = remaining;
+        for (ItemStack target : targets) {
+            if (remaining <= 0) break;
+            if (target == source || !(target.getItem() instanceof IBatteryItem receiver)) continue;
+            remaining -= BatteryTransfer.move(source, battery, target, receiver, remaining);
+        }
+        return offered - remaining;
     }
 
     /**

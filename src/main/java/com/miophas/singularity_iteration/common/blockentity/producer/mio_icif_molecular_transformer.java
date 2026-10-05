@@ -40,7 +40,10 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
     // 参考ASP源代码：分子转换仪接受IV等级（最大8192 EU/t）
     // 能量容量需要足够大以支持高EU消耗（最大配方需要约20,000,000 EU）
     public static final long DEFAULT_CAPACITY = 120_000_000L;  // 最大能量容量（EU）
-    public static final long DEFAULT_MAX_RECEIVE = 32768L;     // LuV等级输入
+    /** No input ceiling (0.1.7.32): any voltage, any amount up to the free buffer per tick. */
+    public static final long DEFAULT_MAX_RECEIVE = Long.MAX_VALUE;
+    /** Recipes finished per tick at most when the buffer holds enough for several (parallel run). */
+    public static final int MAX_OPERATIONS_PER_TICK = 64;
     public static final long DEFAULT_MAX_EXTRACT = 0L;         // 不输出能量
     public static final int DEFAULT_MAX_PROGRESS = 100;        // 最大进度（实际使用EU消耗）
     public static final long DEFAULT_ENERGY_PER_TICK = 32768L; // 每tick消耗32768 EU
@@ -92,7 +95,7 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
             DEFAULT_MAX_PROGRESS,
             LAYOUT,
             DEFAULT_ENERGY_PER_TICK,
-            CableTier.ZPMV);
+            CableTier.UNLIMITED);
     }
 
     @Override
@@ -173,38 +176,45 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
 
         if (!canAddItem(OUTPUT_SLOT, recipe.getResult())) return false;
 
-        return energyStorage.getAmount() >= getEffectiveEnergyPerTick();
+        // any stored energy advances the recipe: a weak line no longer has to fill a 32768 EU tick first
+        return energyStorage.getAmount() > 0;
     }
 
+    /** Never overvolted: every packet tier is accepted. */
+    @Override
+    public int getSinkTier() {
+        return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Spends everything the buffer holds (no per-tick ceiling), so the speed follows the power
+     * supplied; with enough energy several items finish in the same tick (up to
+     * {@link #MAX_OPERATIONS_PER_TICK}).
+     */
     @Override
     protected void doWork() {
         if (currentRecipeEU == null) return;
-
-        if (consumedEU >= currentRecipeEU) {
+        long spent = 0;
+        for (int op = 0; op < MAX_OPERATIONS_PER_TICK; op++) {
+            if (consumedEU < currentRecipeEU) {
+                long take = Math.min(currentRecipeEU - consumedEU, energyStorage.getAmount());
+                long extracted = take > 0 ? apiUseEnergy(take, false) : 0;
+                if (extracted <= 0) break;
+                consumedEU += extracted;
+                spent += extracted;
+            }
+            if (consumedEU < currentRecipeEU) break;
             operate();
-            return;
+            if (currentRecipeEU != null) break;                 // output blocked: operate kept the bill
+            if (!canWork() || currentRecipeEU == null) break;   // sets up the next item / recipe
         }
-
-        long euNeeded = currentRecipeEU - consumedEU;
-
-        long effectiveEnergyPerTick = getEffectiveEnergyPerTick();
-        long euPerTick = Math.min(effectiveEnergyPerTick, euNeeded);
-
-        long extracted = apiUseEnergy(euPerTick, false);
-        if (extracted <= 0) {
+        if (spent <= 0 && currentRecipeEU != null && consumedEU < currentRecipeEU) {
             stopWork();
             return;
         }
-
-        lastEnergyPerTick = extracted;
+        lastEnergyPerTick = spent;
         isWorking = true;
-        consumedEU += extracted;
-
         syncProgressToBase();
-
-        if (consumedEU >= currentRecipeEU) {
-            operate();
-        }
     }
 
     private void syncProgressToBase() {

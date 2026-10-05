@@ -210,8 +210,9 @@ public class mio_icif_block_entities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_wire>> WIRE_LuV_ENTITY_TYPE =
         BLOCK_ENTITIES.register("wire_luv", () -> {
             BlockEntityType<mio_icif_wire> type = BlockEntityType.Builder.of(
-                (pos, state) -> new mio_icif_wire(pos, state, CableTier.LuV, true), mio_icif_blocks.SUPERCONDUCTING_CABLE.get()).build(null);
+                (pos, state) -> new mio_icif_wire(pos, state, CableTier.UNLIMITED, true), mio_icif_blocks.SUPERCONDUCTING_CABLE.get()).build(null);
             mio_icif_wire.registerWireType(CableTier.LuV, type);
+            mio_icif_wire.registerWireType(CableTier.UNLIMITED, type);   // unlimited superconducting cable (0.1.7.32)
             return type;
         });
 

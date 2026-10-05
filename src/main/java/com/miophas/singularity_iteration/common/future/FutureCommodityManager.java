@@ -1,6 +1,5 @@
 package com.miophas.singularity_iteration.common.future;
 
-import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 import net.minecraft.world.item.Item;
 
 import java.util.ArrayList;
@@ -14,86 +13,73 @@ import java.util.Map;
  */
 @SuppressWarnings("null")
 public class FutureCommodityManager {
-    private static final List<FutureCommodity> COMMODITIES = new ArrayList<>();
-    private static final Map<CommodityCategory, List<FutureCommodity>> CATEGORY_MAP = new HashMap<>();
-    private static boolean initialized = false;
+    /** Immutable snapshot; replaced as a whole so the render thread never sees a half-applied reload. */
+    private record Snapshot(List<FutureCommodity> all, Map<CommodityCategory, List<FutureCommodity>> byCategory) { }
+    private static volatile Snapshot snapshot = build(List.of());
+
+    private static Snapshot build(List<FutureCommodity> commodities) {
+        List<FutureCommodity> all = new ArrayList<>();
+        Map<CommodityCategory, List<FutureCommodity>> map = new java.util.EnumMap<>(CommodityCategory.class);
+        for (CommodityCategory category : CommodityCategory.values()) map.put(category, new ArrayList<>());
+        for (FutureCommodity commodity : commodities) {
+            if (commodity.getItem() == null || commodity.getItem() == net.minecraft.world.item.Items.AIR) continue;
+            all.add(commodity);
+            map.get(commodity.getCategory()).add(commodity);
+        }
+        map.replaceAll((c, list) -> List.copyOf(list));
+        return new Snapshot(List.copyOf(all), Map.copyOf(map));
+    }
 
     /**
-     * 初始化货品列表（从配置文件加载）
+     * Commodities come from datapacks ({@code data/<namespace>/si_futures/*.json}, see
+     * {@link FutureCommodityLoader}) and reach clients through {@link FutureCommoditySync}; the
+     * old config list is gone. Until data arrives the list is empty.
      */
-    public static void init() {
-        if (initialized) {
-            return;
-        }
+    public static void init() { }
 
-        COMMODITIES.clear();
-        CATEGORY_MAP.clear();
-        
-        // 初始化所有种类的空列�
-    for (CommodityCategory category : CommodityCategory.values()) {
-            CATEGORY_MAP.put(category, new ArrayList<>());
-        }
-        
-        List<Singularity_Iteration_Config.CommodityConfig> configs = Singularity_Iteration_Config.getCommodityConfigs();
-        for (Singularity_Iteration_Config.CommodityConfig config : configs) {
-            CommodityCategory category = CommodityCategory.fromId(config.getCategoryId());
-            FutureCommodity commodity = new FutureCommodity(
-                config.getItemId(),
-                config.getBasePrice(),
-                config.getVolatility(),
-                category
-            );
-            
-            // 验证物品是否有效
-            if (commodity.getItem() != null && commodity.getItem() != net.minecraft.world.item.Items.AIR) {
-                COMMODITIES.add(commodity);
-                CATEGORY_MAP.get(category).add(commodity);
-            }
-        }
-        
-        initialized = true;
+    /** Replaces the commodity list (datapack reload on the server, sync packet on the client). */
+    public static void apply(List<FutureCommodity> commodities) {
+        snapshot = build(commodities);
     }
 
-    /**
-     * 重新加载货品配置（配置变更时调用�
- */
-    public static void reload() {
-        initialized = false;
-        init();
+    /** Kept for callers of the old config reload: the list only changes with datapacks now. */
+    public static void reload() { }
+
+    // ------------------------------------------------------------------ unlocks
+    /** Client: commodities the local player has not unlocked (sent with the sync packet). */
+    private static final java.util.Set<String> CLIENT_LOCKED = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    public static void setClientLocked(java.util.Collection<String> ids) {
+        CLIENT_LOCKED.clear();
+        CLIENT_LOCKED.addAll(ids);
     }
 
-    /**
-     * 获取所有货�
- */
+    /** Server: has {@code player} completed the commodity's unlock advancement (always true without one)? */
+    public static boolean isUnlocked(net.minecraft.server.level.ServerPlayer player, FutureCommodity commodity) {
+        var id = commodity.getUnlockAdvancement();
+        if (id == null) return true;
+        var holder = player.server.getAdvancements().get(id);
+        return holder == null || player.getAdvancements().getOrStartProgress(holder).isDone();
+    }
+
+    /** Either side: locked for this player (server checks advancements, client uses the synced set). */
+    public static boolean isLocked(net.minecraft.world.entity.player.Player player, FutureCommodity commodity) {
+        if (player instanceof net.minecraft.server.level.ServerPlayer sp) return !isUnlocked(sp, commodity);
+        return CLIENT_LOCKED.contains(commodity.getItemId());
+    }
+
     public static List<FutureCommodity> getCommodities() {
-        if (!initialized) {
-            init();
-        }
-        return Collections.unmodifiableList(COMMODITIES);
+        return snapshot.all();
     }
 
-    /**
-     * 获取指定种类的所有货�
- */
     public static List<FutureCommodity> getCommoditiesByCategory(CommodityCategory category) {
-        if (!initialized) {
-            init();
-        }
-        return Collections.unmodifiableList(CATEGORY_MAP.getOrDefault(category, Collections.emptyList()));
+        return snapshot.byCategory().getOrDefault(category, List.of());
     }
 
-    /**
-     * 获取所有有货品的种类列�
- */
     public static List<CommodityCategory> getCategoriesWithCommodities() {
-        if (!initialized) {
-            init();
-        }
         List<CommodityCategory> categories = new ArrayList<>();
         for (CommodityCategory category : CommodityCategory.values()) {
-            if (!CATEGORY_MAP.get(category).isEmpty()) {
-                categories.add(category);
-            }
+            if (!getCommoditiesByCategory(category).isEmpty()) categories.add(category);
         }
         return categories;
     }

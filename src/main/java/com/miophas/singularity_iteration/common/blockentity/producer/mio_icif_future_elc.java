@@ -437,6 +437,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         if (level == null || level.isClientSide) return;
         
         for (FutureCommodity commodity : FutureCommodityManager.getCommodities()) {
+            if (!commodity.repricesOn(currentDay)) continue;   // datapack period_days: price holds between periods
             int newPrice = calculateNewPrice(commodity);
             setPrice(commodity, newPrice);
         }
@@ -564,6 +565,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         
         // 4. 更新所有货品价格
     for (FutureCommodity commodity : FutureCommodityManager.getCommodities()) {
+            if (!commodity.repricesOn(newDay)) continue;   // datapack period_days: price holds between periods
             int newPrice = calculateNewPrice(commodity);
             setPrice(commodity, newPrice);
         }
@@ -643,6 +645,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
                     || fee < 0 || fee > 10000) return false;
             FutureCommodity commodity = getSelectedCommodity();
             if (commodity == null || commodity.getItem() == Items.AIR) return false;
+            if (!FutureCommodityManager.isUnlocked(customer, commodity)) return false;   // datapack unlock condition
             final int price = getCurrentPrice(commodity);
             if (price <= 0) return false;
             final long coins = (long) price * quantity;

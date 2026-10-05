@@ -52,13 +52,16 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
         return slot == EquipmentSlot.HEAD ? 0.15F : 0.0F;
     }
 
+    /** Quantum helmet traits; helmets crafted from a quantum helmet (hybrid / ultimate solar) share them. */
+    public static final List<ArmorFeatureInfo> FEATURES = List.of(
+        new ArmorFeatureInfo(EquipmentSlot.HEAD, "night_vision", "tooltip.mio_icif.armor.feature_night_vision"),
+        new ArmorFeatureInfo(EquipmentSlot.HEAD, "water_breathing", "tooltip.mio_icif.armor.feature_water_breathing"),
+        new ArmorFeatureInfo(EquipmentSlot.HEAD, "auto_food", "tooltip.mio_icif.armor.feature_auto_food")
+    );
+
     @Override
     public List<ArmorFeatureInfo> getFeatures(ItemStack stack) {
-        return List.of(
-            new ArmorFeatureInfo(EquipmentSlot.HEAD, "night_vision", "tooltip.mio_icif.armor.feature_night_vision"),
-            new ArmorFeatureInfo(EquipmentSlot.HEAD, "water_breathing", "tooltip.mio_icif.armor.feature_water_breathing"),
-            new ArmorFeatureInfo(EquipmentSlot.HEAD, "auto_food", "tooltip.mio_icif.armor.feature_auto_food")
-        );
+        return FEATURES;
     }
 
     @Override
@@ -75,11 +78,21 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
             return;
         }
 
+        applyQuantumHelmetTraits(stack, this, level, player);
+    }
+
+    /**
+     * Air supply, night vision, automatic eating and poison / wither / radiation removal, paid
+     * from {@code armor}'s own charge. Used by the quantum helmet and every helmet crafted from
+     * it, which used to lose these traits (only a weaker air refill was left).
+     */
+    public static void applyQuantumHelmetTraits(ItemStack stack, com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor,
+                                               Level level, Player player) {
         if (ArmorFeatureToggle.isEnabled(stack, "water_breathing")) {
             int airSupply = player.getAirSupply();
             int maxAir = player.getMaxAirSupply();
             if (airSupply < maxAir) {
-                if (consumeEnergy(stack, OXYGEN_COST)) {
+                if (armor.consumeEnergy(stack, OXYGEN_COST)) {
                     player.setAirSupply(Math.min(maxAir, airSupply + 200));
                 }
             }
@@ -88,7 +101,7 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
         // IC2原版行为：水下呼吸功能关闭时，不移除效果，让效果自然过期
 
         if (ArmorFeatureToggle.isEnabled(stack, "night_vision")) {
-            if (consumeEnergy(stack, NIGHT_VISION_COST)) {
+            if (armor.consumeEnergy(stack, NIGHT_VISION_COST)) {
                 int skylight = level.getMaxLocalRawBrightness(player.blockPosition());
                 if (skylight > 8) {
                     player.removeEffect(MobEffects.BLINDNESS);
@@ -104,7 +117,7 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
             if (player.getFoodData().needsFood()) {
                 // 查找背包中的食物
                 ItemStack foodStack = findFoodInInventory(player);
-                if (foodStack != null && !foodStack.isEmpty() && consumeEnergy(stack, TIN_CAN_FOOD_COST)) {
+                if (foodStack != null && !foodStack.isEmpty() && armor.consumeEnergy(stack, TIN_CAN_FOOD_COST)) {
                     // 获取食物属性
                     FoodProperties foodProperties = foodStack.getItem().getFoodProperties(foodStack, player);
                     if (foodProperties != null) {
@@ -123,7 +136,7 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
             Integer cost = POTION_REMOVAL_COST.get(potionHolder);
             if (cost != null) {
                 int totalCost = cost * (effect.getAmplifier() + 1);
-                if (consumeEnergy(stack, totalCost)) {
+                if (armor.consumeEnergy(stack, totalCost)) {
                     toRemove.add(potionHolder);
                 }
             }
@@ -138,7 +151,7 @@ public class mio_icif_helmet_quantum extends mio_icif_armor_elc {
      * @param player 玩家
      * @return 找到的食物物品堆，如果没有则返回null
      */
-    private ItemStack findFoodInInventory(Player player) {
+    private static ItemStack findFoodInInventory(Player player) {
         // 遍历主背包（0-35槽位）
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack itemStack = player.getInventory().getItem(i);

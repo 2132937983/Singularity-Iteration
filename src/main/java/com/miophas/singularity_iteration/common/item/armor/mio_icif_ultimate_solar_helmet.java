@@ -107,14 +107,13 @@ public class mio_icif_ultimate_solar_helmet extends mio_icif_armor_elc implement
         // ASP solar helmets charge every worn/carried piece of equipment, not just the armor slots.
         com.miophas.singularity_iteration.core.runtime.energy.SolarHelmetCharging.tick(stack, this, level, player,
             getGenerationRate(level, entity), TRANSFER_LIMIT);
-        // 3. 水下呼吸功能
-        if (getEnergy(stack) >= 1000 * 4) { // 需要至少 1000 EU
-            int airLevel = player.getAirSupply();
-            if (airLevel < 100) {
-                player.setAirSupply(airLevel + 200);
-                extractEnergy(stack, 1000 * 4);
-            }
-        }
+        // crafted from a quantum helmet: keeps all of its traits (air, night vision, auto food, cleansing)
+        mio_icif_helmet_quantum.applyQuantumHelmetTraits(stack, this, level, player);
+    }
+
+    @Override
+    public java.util.List<com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo> getFeatures(ItemStack stack) {
+        return mio_icif_helmet_quantum.FEATURES;
     }
 
 

@@ -6,12 +6,90 @@
       }
     },
     {
-      "when": { "foamlogged": "true", "foam_reinforced": "false", "disguised": "false" },
-      "apply": { "model": "mio_icif:block/build/block_construction_foam" }
+      "when": {
+        "foamlogged": "true",
+        "foam_hardened": "true",
+        "foam_reinforced": "true",
+        "disguised": "false"
+      },
+      "apply": {
+        "model": "mio_icif:block/build/block_construction_wall"
+      }
     },
     {
-      "when": { "foamlogged": "true", "foam_reinforced": "true", "disguised": "false" },
-      "apply": { "model": "mio_icif:block/build/block_construction_foam_reinforced" }
+      "when": {
+        "foamlogged": "true",
+        "foam_hardened": "true",
+        "foam_reinforced": "false",
+        "disguised": "false"
+      },
+      "apply": {
+        "model": "mio_icif:block/build/block_cf_wall"
+      }
+    },
+    {
+      "when": {
+        "foamlogged": "false",
+        "foam_reinforced": "true",
+        "disguised": "false"
+      },
+      "apply": {
+        "model": "mio_icif:block/build/block_scaffold_iron"
+      }
+    },
+    {
+      "when": {
+        "foamlogged": "true",
+        "foam_hardened": "false",
+        "foam_reinforced": "true",
+        "disguised": "false"
+      },
+      "apply": {
+        "model": "mio_icif:block/build/block_construction_wall"
+      }
+    },
+    {
+      "when": {
+        "foamlogged": "true",
+        "foam_hardened": "false",
+        "foam_reinforced": "false",
+        "disguised": "false"
+      },
+      "apply": {
+        "model": "mio_icif:block/build/block_cf_wall"
+      }
+    },
+    {
+      "when": {
+        "foamlogged": "false",
+        "foam_reinforced": "true",
+        "disguised": "false"
+      },
+      "apply": {
+        "model": "mio_icif:block/build/block_scaffold_iron"
+      }
+    },
+    {
+      "when": {
+        "foamlogged": "true",
+        "foam_reinforced": "false",
+        "disguised": "false",
+        "foam_hardened": "false"
+      },
+      "apply": {
+        "model": "mio_icif:block/build/block_construction_foam"
+      }
+    },
+    {
+      "when": {
+        "foamlogged": "true",
+        "foam_reinforced": "true",
+        "disguised": "false",
+        "foam_hardened": "false"
+      },
+      "apply": {
+        "model": "mio_icif:block/build/block_construction_foam_reinforced"
+      }
     },
     {
       "when": {

@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
 public class mio_icif_wireless_power_transmission_node extends GenericEnergyBlockEntity
-        implements IWirelessPowerNode, IEnergyConductiveEndpoint {
+        implements IWirelessPowerNode, IEnergyConductiveEndpoint, com.miophas.singularity_iteration.core.api.energy.IEnergyPacketSource {
 
     public static final long TRANSFER_SPEED = 32768L;
     public static final long DEFAULT_CAPACITY = 196608L;
@@ -41,6 +41,8 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_wireless_power_transmission_node blockEntity) {
         if (level.isClientSide()) return;
 
+        blockEntity.updateRole();
+        blockEntity.refreshPacket();
         blockEntity.wirelessTransfer();
 
         boolean lit = state.getValue(com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wireless_power_transmission_node.LIT);
@@ -53,6 +55,69 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
         }
     }
 
+    /**
+     * A linked node is the transmitter: it takes power from cables and sends it to its target.
+     * A node without a target is a receiver: it used to stay a pure consumer, so the energy that
+     * arrived wirelessly sat in its buffer and adjacent machines or cables never got any. It now
+     * acts as a source and feeds the network from that buffer (at most one transfer per tick).
+     */
+    private void updateRole() {
+        boolean receiver = targetPosition == null;
+        if (receiver == isPowerSource()) return;
+        if (receiver) setAsPowerSource(TRANSFER_SPEED);
+        else setAsConsumer();
+        getEnergyStorageInternal().setMaxExtract(receiver ? TRANSFER_SPEED : DEFAULT_MAX_EXTRACT);
+        setChanged();
+        com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.changed(this);   // republish faces
+    }
+
+    // ------------------------------------------------------------------ receiver packet size
+    /**
+     * A receiver emits packets no larger than its weakest neighbour takes: an adjacent machine's
+     * input tier, or an adjacent cable's rating (LV when nothing is attached yet). A fixed LuV
+     * packet blew up the low-tier machines people put right next to the node.
+     */
+    private long outputPacket = 32;
+    private long packetCheckedTick = Long.MIN_VALUE;
+
+    private long neighbourPacket() {
+        long packet = Long.MAX_VALUE;
+        if (level == null) return 32;
+        for (net.minecraft.core.Direction side : net.minecraft.core.Direction.values()) {
+            BlockPos at = worldPosition.relative(side);
+            if (!level.isLoaded(at)) continue;
+            var be = level.getBlockEntity(at);
+            if (be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractWireBlockEntity wire && wire.getCableTier() != null) {
+                packet = Math.min(packet, Math.max(1, wire.getCableTier().getPowerRating()));
+            } else if (be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity machine
+                    && !(be instanceof mio_icif_wireless_power_transmission_node) && !machine.isPowerSource()) {
+                double power = com.miophas.singularity_iteration.core.runtime.energy.grid.EnergyNetGlobal.getPowerFromTier(machine.getSinkTier());
+                if (power >= 1) packet = Math.min(packet, (long) Math.min(power, Long.MAX_VALUE));
+            }
+        }
+        return packet == Long.MAX_VALUE ? 32 : Math.min(packet, TRANSFER_SPEED);
+    }
+
+    private void refreshPacket() {
+        if (level == null || level.getGameTime() - packetCheckedTick < 20 && packetCheckedTick != Long.MIN_VALUE) return;
+        packetCheckedTick = level.getGameTime();
+        long next = neighbourPacket();
+        if (next != outputPacket) {
+            outputPacket = next;
+            if (isPowerSource()) com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.changed(this);
+        }
+    }
+
+    @Override
+    public com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy getEnergyPacketPolicy() {
+        long packet = Math.max(1, outputPacket);
+        int count = (int) Math.max(1, Math.min(com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy.MAX_PACKETS_PER_ROUND, TRANSFER_SPEED / packet));
+        return new com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy(packet, count, true);
+    }
+
+    /** Receiver nodes have no target: true when this node emits into the network. */
+    public boolean isReceiver() { return targetPosition == null; }
+
     private void wirelessTransfer() {
         if (level == null || level.isClientSide) return;
 
@@ -62,7 +127,8 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
         // the link has no range limit: an unloaded target is skipped instead of loading its chunk every tick
         if (targetPosition != null && level.isLoaded(targetPosition)) {
             IEnergyStorageAccess storage = getEnergyStorage();
-            if (storage.getAmount() >= TRANSFER_SPEED) {
+            // whatever is buffered moves (it used to wait for a full 32768 EU, so a weakly fed node never sent)
+            if (storage.getAmount() > 0) {
                 net.minecraft.world.level.block.entity.BlockEntity targetBE = level.getBlockEntity(targetPosition);
                 if (targetBE != null) {
                     if (targetBE instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity absBE) {
@@ -71,10 +137,12 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
                         long targetMax = targetStorage.getCapacity();
 
                         if (targetCurrent < targetMax) {
-                            long toTransfer = Math.min(TRANSFER_SPEED, targetMax - targetCurrent);
-                            storage.useEnergy(toTransfer, false);
-                            targetStorage.setEnergy(targetCurrent + toTransfer);
-                            transferred = true;
+                            long toTransfer = Math.min(Math.min(TRANSFER_SPEED, storage.getAmount()), targetMax - targetCurrent);
+                            long used = storage.useEnergy(toTransfer, false);   // credit only what was actually taken
+                            if (used > 0) {
+                                targetStorage.setEnergy(targetCurrent + used);
+                                transferred = true;
+                            }
                         }
                     } else {
                         IEUEnergyStorage targetStorage = level.getCapability(EUApi.SIDED, targetPosition, null);
@@ -84,7 +152,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
                             long targetMax = targetStorage.getCapacity();
 
                             if (targetCurrent < targetMax) {
-                                long toTransfer = Math.min(TRANSFER_SPEED, targetMax - targetCurrent);
+                                long toTransfer = Math.min(Math.min(TRANSFER_SPEED, storage.getAmount()), targetMax - targetCurrent);
                                 long extracted = storage.useEnergy(toTransfer, false);
                                 if (extracted > 0) {
                                     long received = targetStorage.generateEnergy(extracted, false);

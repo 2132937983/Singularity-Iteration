@@ -482,7 +482,7 @@ public static final DeferredBlock<mio_icif_block_wire> WIRE_EV = registerBlock("
     public static final DeferredBlock<mio_icif_block_wire> WIRE_IV = registerBlock("wiring/cable/block_glass_cable", () -> new mio_icif_block_wire(Block.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).strength(0.5f).sound(SoundType.WOOL).noOcclusion(), CableTier.IV));
 
 // 注册超导电缆方块（无损、无触电伤害，使用 LuV 电压等级）
-    public static final DeferredBlock<mio_icif_block_wire> SUPERCONDUCTING_CABLE = registerBlock("wiring/cable/block_superconducting_cable", () -> new mio_icif_block_wire(Block.Properties.of().mapColor(MapColor.METAL).strength(0.5f).sound(SoundType.WOOL).noOcclusion(), CableTier.LuV, true));
+    public static final DeferredBlock<mio_icif_block_wire> SUPERCONDUCTING_CABLE = registerBlock("wiring/cable/block_superconducting_cable", () -> new mio_icif_block_wire(Block.Properties.of().mapColor(MapColor.METAL).strength(0.5f).sound(SoundType.WOOL).noOcclusion(), CableTier.UNLIMITED, true));
 
     // 注册 LV 绝缘电线方块（低压）
     public static final DeferredBlock<mio_icif_block_wire> WIRE_ISOLATION_LV = registerBlock("wiring/cable/block_tin_cable_1", () -> new mio_icif_block_wire(Block.Properties.of().mapColor(MapColor.METAL).strength(0.5f).sound(SoundType.WOOL).noOcclusion(), CableTier.LV, true));

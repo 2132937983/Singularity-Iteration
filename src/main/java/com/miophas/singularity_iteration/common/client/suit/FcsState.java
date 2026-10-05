@@ -28,7 +28,7 @@ public final class FcsState {
         ACTIVE.clear();
         drain = 0;
         if (player == null) return;
-        for (SuitModuleType type : SuitModuleType.values()) {
+        for (SuitModuleType type : SuitModuleType.VALUES) {
             if (SuitModules.isActive(player, type)) {
                 ACTIVE.add(type);
                 drain += type.drainPerTick();

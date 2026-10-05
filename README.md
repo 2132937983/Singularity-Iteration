@@ -54,7 +54,7 @@ Once you've completed your basic industrial production line, you'll have access 
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for the per-version changes from 0.1.7.16 through 0.1.7.26, migration notes, and validation scope.
+See [CHANGELOG.md](CHANGELOG.md) for the per-version changes from 0.1.7.16 through 0.1.7.34, migration notes, and validation scope.
 
 ## Requirements
 
@@ -115,7 +115,7 @@ Licensed under the [Apache-2.0](LICENSE) license.
 
 ## 版本变更
 
-各版本功能、修复、迁移说明与验证范围见 [CHANGELOG.md](CHANGELOG.md)，本轮覆盖 0.1.7.16 至 0.1.7.26。
+各版本功能、修复、迁移说明与验证范围见 [CHANGELOG.md](CHANGELOG.md)，本轮覆盖 0.1.7.16 至 0.1.7.34。
 
 ## 环境要求
 
@@ -125,7 +125,7 @@ Licensed under the [Apache-2.0](LICENSE) license.
 | 模组加载器 | NeoForge 21.1+（构建锁定 21.1.218） |
 | 内置组件 | Singularity Iteration Core、SCEX 独立能源平台 |
 
-模组面向 Minecraft 1.21.1 NeoForge；运行加载器范围为 `[21.1,)`，21.1.218 用于可复现构建。Modern Industrialization、GregTech Modern、AE2、Botania 等联动均为可选。Core 已内置于主模组 JAR，运行时无需再单独安装。
+模组面向 Minecraft 1.21.1 NeoForge；运行加载器范围为 `[21.1,)`，21.1.218 用于可复现构建。Modern Industrialization、GregTech Modern、AE2、Botania 等联动均为可选。Core 已内置于主模组 JAR，运行时无需再单独安装。游戏内手册可选安装 GuideME；未安装时不影响其他功能。
 
 ## 问题反馈
 

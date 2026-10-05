@@ -8,7 +8,10 @@ import net.minecraft.network.chat.Component;
 @SuppressWarnings("null")
 public enum CommodityCategory {
     MINERAL("mineral", "gui.mio_icif.future.category.mineral"),      // 矿产
-    AGRICULTURE("agriculture", "gui.mio_icif.future.category.agriculture"),  // 农产�?    WOOD("wood", "gui.mio_icif.future.category.wood"),              // 木材
+    AGRICULTURE("agriculture", "gui.mio_icif.future.category.agriculture"),  // 农产品
+    // WOOD sat inside the comment above (a broken byte swallowed the line break), so wood
+    // commodities fell back to OTHER
+    WOOD("wood", "gui.mio_icif.future.category.wood"),              // 木材
     FOOD("food", "gui.mio_icif.future.category.food"),              // 食物
     OTHER("other", "gui.mio_icif.future.category.other");           // 其他
 

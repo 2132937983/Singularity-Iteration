@@ -620,4 +620,35 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
         return MioIcifAPI.instance().getUpgradeAPI().getUpgradeType(stack)
                 == com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI.UpgradeType.TRANSFORMER;
     }
+
+    // ------------------------------------------------------------------ client sync guard
+    /**
+     * A content packet that lists more stacks than this menu has slots (server and client built
+     * the menu differently - e.g. a module opening its core's menu from a different code path,
+     * or mismatched server/client versions) used to throw IndexOutOfBoundsException in
+     * {@code getSlot} and disconnect the client. The extra entries are ignored instead.
+     */
+    @Override
+    public void initializeContents(int stateId, java.util.List<net.minecraft.world.item.ItemStack> items,
+                                   net.minecraft.world.item.ItemStack carried) {
+        if (items.size() > this.slots.size()) {
+            warnSlotMismatch(items.size());
+            items = items.subList(0, this.slots.size());
+        }
+        super.initializeContents(stateId, items, carried);
+    }
+
+    @Override
+    public void setItem(int slotId, int stateId, net.minecraft.world.item.ItemStack stack) {
+        if (slotId < 0 || slotId >= this.slots.size()) { warnSlotMismatch(slotId + 1); return; }
+        super.setItem(slotId, stateId, stack);
+    }
+
+    private boolean slotMismatchLogged;
+    private void warnSlotMismatch(int wanted) {
+        if (slotMismatchLogged) return;
+        slotMismatchLogged = true;
+        org.slf4j.LoggerFactory.getLogger("mio_icif/menu").warn("{} has {} slots but the server synced {}; extra slots ignored",
+            getClass().getSimpleName(), this.slots.size(), wanted);
+    }
 }

@@ -119,18 +119,22 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         List<CommodityCategory> categories = FutureCommodityManager.getCategoriesWithCommodities();
         if (categories.isEmpty()) return;
 
-        int tabY = (int)(this.height * 0.08f);
-        // every tab is as wide as the longest category name (a fixed 50 px clipped "Agriculture")
+        // one row just above the chart panel, between the commodity column (left) and the
+        // day / coin / trade column (right): it used to overlap the title and the day line
+        int areaLeft = 20 + 60 + 15;
+        int areaRight = this.width - BUTTON_WIDTH - 20 - 15;   // panel right edge
+        int tabY = (int)(this.height * 0.20f) - TAB_BUTTON_HEIGHT - 3;
+        int n = categories.size();
         int tabWidth = TAB_BUTTON_WIDTH;
         for (CommodityCategory category : categories) tabWidth = Math.max(tabWidth, this.font.width(category.getDisplayName()) + 12);
-        tabWidth = Math.min(tabWidth, Math.max(TAB_BUTTON_WIDTH, (this.width - 40) / categories.size() - 5));
-        int totalWidth = categories.size() * tabWidth + (categories.size() - 1) * 5;
-        int startX = (this.width - totalWidth) / 2;
+        tabWidth = Math.max(24, Math.min(tabWidth, (areaRight - areaLeft - (n - 1) * 3) / Math.max(1, n)));
+        int totalWidth = n * tabWidth + (n - 1) * 3;
+        int startX = areaLeft + Math.max(0, (areaRight - areaLeft - totalWidth) / 2);
 
         for (int i = 0; i < categories.size(); i++) {
             final int buttonId = BUTTON_CATEGORY_BASE + i;
             CommodityCategory category = categories.get(i);
-            int tabX = startX + i * (tabWidth + 5);
+            int tabX = startX + i * (tabWidth + 3);
 
             Button tabButton = new com.miophas.singularity_iteration.common.client.screen.widget.SiButton(tabX, tabY, tabWidth, TAB_BUTTON_HEIGHT, category.getDisplayName(), b -> sendButtonClick(buttonId));
             this.categoryTabButtons.add(tabButton);
@@ -610,7 +614,20 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
                 String priceText = String.valueOf(currentPrice);
                 int textX = iconX + 20;
                 int textY = this.getY() + (this.height - 8) / 2;
-                guiGraphics.drawString(mio_icif_gui_future_elc.this.font, priceText, textX, textY, priceColor, false);
+                boolean locked = minecraft != null && minecraft.player != null
+                    && com.miophas.singularity_iteration.common.future.FutureCommodityManager.isLocked(minecraft.player, commodity);
+                if (locked) {
+                    // datapack unlock condition not met: greyed out, the server refuses the trade
+                    guiGraphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x88808080);
+                    guiGraphics.drawString(mio_icif_gui_future_elc.this.font, "--", textX, textY, 0xFF606060, false);
+                    if (this.isHovered()) {
+                        var adv = commodity.getUnlockAdvancement();
+                        setTooltip(net.minecraft.client.gui.components.Tooltip.create(net.minecraft.network.chat.Component.translatable(
+                            "gui.mio_icif.future.locked", adv == null ? "" : adv.toString())));
+                    }
+                } else {
+                    guiGraphics.drawString(mio_icif_gui_future_elc.this.font, priceText, textX, textY, priceColor, false);
+                }
             }
         }
 

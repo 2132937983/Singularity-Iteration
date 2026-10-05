@@ -36,6 +36,13 @@ public final class JetpackFlightController {
             long hoverCost, double maxAscentSpeed, double hoverAscentSpeed,
             double hoverDescentSpeed, boolean advanced) {
         if (stack.isEmpty() || stack.getCount() != 1) return;
+        // Creative-style flight from another source (flight ring, creative mode) is not jetpack
+        // flight: hover mode used to treat "in the air" as hovering and drained the chestplate
+        // while the ring was the one keeping the player up.
+        if (player.getAbilities().flying) {
+            activeTicks(player).remove(player.getUUID());
+            return;
+        }
 
         int currentMode = jetpack.getMode(stack) == IJetpackItem.JetpackMode.HOVER ? 1 : 0;
         int MODE_JETPACK = 0;

@@ -130,6 +130,12 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     public static final BooleanProperty FOAMLOGGED = BooleanProperty.create("foamlogged");
     public static final BooleanProperty FOAM_REINFORCED = BooleanProperty.create("foam_reinforced");
     public static final BooleanProperty DISGUISED = BooleanProperty.create("disguised");
+    /**
+     * Foam around the cable has set: reinforced foam becomes reinforced stone (blast proof), plain
+     * foam a CF wall - with the cable still inside and conducting. FOAM_REINFORCED without
+     * FOAMLOGGED marks a cable laid through an iron scaffold, which foams into reinforced foam.
+     */
+    public static final BooleanProperty FOAM_HARDENED = BooleanProperty.create("foam_hardened");
     
     // 基础中心�?4x4x4
     protected static final VoxelShape CENTER_SHAPE = Block.box(6.0, 6.0, 6.0, 10.0, 10.0, 10.0);
@@ -201,6 +207,7 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
             .setValue(WATERLOGGED, false)
             .setValue(FOAMLOGGED, false)
             .setValue(FOAM_REINFORCED, false)
+            .setValue(FOAM_HARDENED, false)
             .setValue(DISGUISED, false));
     }
 
@@ -235,17 +242,73 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(NORTH, SOUTH, EAST, WEST, UP, DOWN, WATERLOGGED, FOAMLOGGED, FOAM_REINFORCED, DISGUISED);
+        builder.add(NORTH, SOUTH, EAST, WEST, UP, DOWN, WATERLOGGED, FOAMLOGGED, FOAM_REINFORCED, FOAM_HARDENED, DISGUISED);
     }
     
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // foam, set foam and the scaffold around the cable fill the block
+        if (state.getValue(FOAMLOGGED) || state.getValue(FOAM_REINFORCED)) return Shapes.block();
         return getCombinedShape(state);
     }
     
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // wet foam has no collision (IC2); set foam and the scaffold are solid
+        if (state.getValue(FOAM_HARDENED) || (state.getValue(FOAM_REINFORCED) && !state.getValue(FOAMLOGGED))) return Shapes.block();
         return getCombinedShape(state);
+    }
+
+    /** Iron-class scaffold (IC2: sprays into reinforced foam): a cable may be laid through it. */
+    public static boolean isFoamScaffold(BlockState state) {
+        return state.getBlock() instanceof com.miophas.singularity_iteration.common.block.build.mio_icif_block_scaffold scaffold
+            && scaffold.getStrength() >= 3;
+    }
+
+    /** A cable is embedded in a set wall (reinforced stone or CF wall). */
+    public static boolean isEmbedded(BlockState state) {
+        return state.getBlock() instanceof mio_icif_block_wire && state.getValue(FOAMLOGGED) && state.getValue(FOAM_HARDENED);
+    }
+
+    private static BlockState wallOf(BlockState state) {
+        return state.getValue(FOAM_REINFORCED)
+            ? com.miophas.singularity_iteration.common.registry.mio_icif_blocks.CONSTRUCTION_WALL.get().defaultBlockState()
+            : com.miophas.singularity_iteration.common.registry.mio_icif_blocks.CONSTRUCTION_FOAM_WALL.get().defaultBlockState();
+    }
+
+    @Override
+    public float getExplosionResistance(BlockState state, BlockGetter level, BlockPos pos, net.minecraft.world.level.Explosion explosion) {
+        if (isEmbedded(state)) return wallOf(state).getBlock().getExplosionResistance();
+        return super.getExplosionResistance(state, level, pos, explosion);
+    }
+
+    @Override
+    protected float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+        // an embedded cable is mined like the wall around it
+        if (isEmbedded(state)) return wallOf(state).getDestroyProgress(player, level, pos);
+        return super.getDestroyProgress(state, player, level, pos);
+    }
+
+    @Override
+    protected boolean isRandomlyTicking(BlockState state) {
+        return state.getValue(FOAMLOGGED) && !state.getValue(FOAM_HARDENED);
+    }
+
+    /** Foam around a cable sets like a free foam block (IC2 harden time and light formula). */
+    @Override
+    protected void randomTick(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, net.minecraft.util.RandomSource random) {
+        if (!state.getValue(FOAMLOGGED) || state.getValue(FOAM_HARDENED)) return;
+        int tickSpeed = level.getGameRules().getInt(net.minecraft.world.level.GameRules.RULE_RANDOMTICKING);
+        if (tickSpeed <= 0) return;
+        int hardenTime = state.getValue(FOAM_REINFORCED) ? mio_icif_block_foam.HARDEN_TIME_REINFORCED : mio_icif_block_foam.HARDEN_TIME_NORMAL;
+        float chance = mio_icif_block_foam.getHardenChance(level, pos, state, hardenTime) * 4096.0F / tickSpeed;
+        if (random.nextFloat() < chance) hardenFoam(level, pos, state);
+    }
+
+    public static void hardenFoam(Level level, BlockPos pos, BlockState state) {
+        if (!(state.getBlock() instanceof mio_icif_block_wire) || !state.getValue(FOAMLOGGED) || state.getValue(FOAM_HARDENED)) return;
+        level.setBlockAndUpdate(pos, state.setValue(FOAM_HARDENED, true));
+        level.playSound(null, pos, SoundEvents.SAND_HIT, SoundSource.BLOCKS, 0.5F, 0.5F);
     }
     
     private static VoxelShape getCombinedShape(BlockState state) {
@@ -288,6 +351,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         if (replacedState.getBlock() instanceof mio_icif_block_foam) {
             foamlogged = true;
             foamReinforced = replacedState.getValue(mio_icif_block_foam.REINFORCED);
+        } else if (isFoamScaffold(replacedState)) {
+            foamReinforced = true;             // laid through an iron scaffold: sprays into reinforced foam
         }
         
         return this.defaultBlockState()
@@ -492,6 +557,13 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
 
     @Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (stack.is(net.minecraft.world.item.Items.SAND) && state.getValue(FOAMLOGGED) && !state.getValue(FOAM_HARDENED)) {
+            if (!level.isClientSide) {
+                hardenFoam(level, pos, state);               // IC2: sand sets foam at once
+                if (!player.getAbilities().instabuild) stack.shrink(1);
+            }
+            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (player.isShiftKeyDown() && stack.getItem() instanceof com.miophas.singularity_iteration.core.api.item.ICutterItem
                 && getBareCounterpart() != null && level.getBlockEntity(pos) instanceof mio_icif_wire wire) {
             if (!level.isClientSide) {
@@ -525,7 +597,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
                 return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
             }
             if (!level.isClientSide) {
-                boolean reinforced = foamBlock.defaultBlockState().getValue(mio_icif_block_foam.REINFORCED);
+                boolean reinforced = foamBlock.defaultBlockState().getValue(mio_icif_block_foam.REINFORCED)
+                    || state.getValue(FOAM_REINFORCED);       // a scaffolded cable stays reinforced
                 BlockState newState = state
                     .setValue(FOAMLOGGED, true)
                     .setValue(FOAM_REINFORCED, reinforced);
@@ -545,7 +618,12 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
 
     @Override
     public List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder context) {
-        var drops = super.getDrops(state, context);
+        var drops = new java.util.ArrayList<>(super.getDrops(state, context));
+        // the cable's surroundings: the iron scaffold it was laid through (also under wet reinforced
+        // foam, as a foam block drops it), or the set wall it is embedded in
+        if (state.getValue(FOAM_HARDENED) && state.getValue(FOAMLOGGED)) drops.add(new ItemStack(wallOf(state).getBlock().asItem()));
+        else if (state.getValue(FOAM_REINFORCED))
+            drops.add(new ItemStack(com.miophas.singularity_iteration.common.registry.mio_icif_blocks.SCAFFOLD_IRON.get().asItem()));
         if (context.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY)
                 instanceof mio_icif_wire wire && wire.getCableColor() != net.minecraft.world.item.DyeColor.BLACK) {
             var data = new net.minecraft.nbt.CompoundTag();

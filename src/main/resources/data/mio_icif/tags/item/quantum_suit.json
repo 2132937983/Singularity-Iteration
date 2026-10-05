@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:armor/item_armor_quantum_helmet",
+    "mio_icif:armor/item_armor_quantum_chestplate",
+    "mio_icif:armor/item_armor_quantum_leggings",
+    "mio_icif:armor/item_armor_quantum_boots",
+    "mio_icif:armor/item_armor_advanced_quantum_chestplate",
+    "mio_icif:armor/item_armor_heavy_quantum_chestplate",
+    "mio_icif:armor/item_armor_hybrid_solar_helmet",
+    "mio_icif:armor/item_armor_ultimate_solar_helmet"
+  ]
+}

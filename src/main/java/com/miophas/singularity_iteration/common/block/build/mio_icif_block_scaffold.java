@@ -104,6 +104,14 @@ public class mio_icif_block_scaffold extends Block {
     }
 
     /** 基础悬空强度（格）。 */
+    /** An iron-class scaffold gives way to a cable placed into it (the cable keeps the scaffold, see mio_icif_block_wire). */
+    @Override
+    public boolean canBeReplaced(BlockState state, net.minecraft.world.item.context.BlockPlaceContext context) {
+        if (getStrength() >= 3 && context.getItemInHand().getItem() instanceof net.minecraft.world.item.BlockItem item
+                && item.getBlock() instanceof com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire) return true;
+        return super.canBeReplaced(state, context);
+    }
+
     public int getStrength() {
         return strength;
     }

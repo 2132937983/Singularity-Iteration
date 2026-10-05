@@ -244,15 +244,25 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
     }
 
     private void dismantleBlock(Level level, BlockPos pos, BlockState state, Player player, ItemStack wrenchStack, InteractionHand hand) {
+        dismantle(level, pos, state, player, wrenchStack, true);
+        if (!player.isCreative()) {
+            EquipmentSlot slot = hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
+            wrenchStack.hurtAndBreak(10, player, slot);
+        }
+    }
+
+    /**
+     * Shared wrench pick-up (manual and electric wrench): the machine drops as an item that keeps
+     * its settings and - with {@code keepContents} - its inventory (MachineItemData). The electric
+     * wrench used its own copy without the inventory carry and spilled machine contents.
+     */
+    public static void dismantle(Level level, BlockPos pos, BlockState state, Player player, ItemStack wrenchStack, boolean keepContents) {
         Block block = state.getBlock();
-
         level.playSound(null, pos, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.MACHINE_DEMOLISH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
-
         BlockEntity blockEntity = level.getBlockEntity(pos);
-
         if (blockEntity != null) {
             // SI machines without their own drop packing keep their inventory inside the item
-            boolean carry = block instanceof com.miophas.singularity_iteration.common.block.mio_icif_entity_block
+            boolean carry = keepContents && block instanceof com.miophas.singularity_iteration.common.block.mio_icif_entity_block
                 && state.is(mio_icif_tags.MACHINE) && usesGenericMachineDrops(block);
             if (carry) com.miophas.singularity_iteration.common.block.MachineItemData.carryContents(blockEntity, level.registryAccess());
             try {
@@ -264,11 +274,6 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
             }
         } else {
             level.destroyBlock(pos, true);
-        }
-
-        if (!player.isCreative()) {
-            EquipmentSlot slot = hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
-            wrenchStack.hurtAndBreak(10, player, slot);
         }
     }
 

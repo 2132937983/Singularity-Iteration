@@ -18,8 +18,19 @@ public class mio_icif_Network {
      * 注册所有网络包
      * @param event 注册事件
      */
+    public static String protocolVersion() {
+        return net.neoforged.fml.ModList.get().getModContainerById(com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID)
+            .map(c -> c.getModInfo().getVersion().toString()).orElse("1");
+    }
+
     public static void register(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar("1");
+        // The channel version is the mod version: a client and a server on different SI builds
+        // are refused at login with NeoForge's channel-mismatch screen. With the fixed "1" they
+        // connected and then crashed on the first menu whose slot layout had changed (the GESU
+        // module / core menu gained its charge and armor slots in 0.1.7.29: an older client
+        // built 36 slots, the newer server synced 42 -> IndexOutOfBoundsException at slot 36).
+        final PayloadRegistrar registrar = event.registrar(protocolVersion());
+        com.miophas.singularity_iteration.common.suit.SuitPackets.register(registrar);
 
         // 注册金属成型机模式切换包
         registrar.playToServer(
@@ -29,6 +40,13 @@ public class mio_icif_Network {
         );
 
         // 注册核爆炸动画包
+        // datapack futures commodities (+ the player's locked ones)
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.future.FutureCommoditySync.TYPE,
+            com.miophas.singularity_iteration.common.future.FutureCommoditySync.CODEC,
+            com.miophas.singularity_iteration.common.future.FutureCommoditySync::handle
+        );
+
         registrar.playToClient(
             NuclearExplosionAnimationPacket.TYPE,
             NuclearExplosionAnimationPacket.CODEC,

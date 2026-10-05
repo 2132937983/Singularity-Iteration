@@ -106,7 +106,17 @@ public class mio_icif_advanced_solar_helmet extends mio_icif_armor_elc implement
         // ASP solar helmets charge every worn/carried piece of equipment, not just the armor slots.
         com.miophas.singularity_iteration.core.runtime.energy.SolarHelmetCharging.tick(stack, this, level, player,
             getGenerationRate(level, entity), TRANSFER_LIMIT);
+        // crafted from a nano helmet: keeps its night vision trait
+        if (ArmorFeatureToggle.isEnabled(stack, "night_vision")
+                && consumeEnergy(stack, mio_icif_helmet_nano.NIGHT_VISION_ENERGY_COST)) {
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NIGHT_VISION,
+                mio_icif_helmet_nano.NIGHT_VISION_DURATION, 0, false, false, false));
+        }
+    }
 
+    @Override
+    public List<com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo> getFeatures(ItemStack stack) {
+        return List.of(new com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo(EquipmentSlot.HEAD, "night_vision", "tooltip.mio_icif.armor.feature_night_vision"));
     }
 
 

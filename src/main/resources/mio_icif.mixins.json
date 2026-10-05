@@ -14,6 +14,9 @@
   "client": [
     "client.ItemInHandReequipMixin",
     "client.AdvancementTabMiophaMixin",
-    "client.AdvancementWidgetHintMixin"
+    "client.AdvancementWidgetHintMixin",
+    "client.FcsGlowMixin",
+    "client.FcsTeamColorMixin",
+    "client.PlayerManeuverPoseMixin"
   ]
 }

@@ -67,6 +67,14 @@ import net.neoforged.neoforge.registries.DeferredRegister;
     public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_BRAKE = sound("armory.brake");
     public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_PULSE = sound("armory.pulse");
 
+    // 0.1.7.34 Special Maneuver Mode and FCS cues (original synthesized effects, tools/gen_sfx_034.py)
+    public static final DeferredHolder<SoundEvent, SoundEvent> MANEUVER_BOOM = sound("maneuver.boom");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MANEUVER_WIND = sound("maneuver.wind");
+    public static final DeferredHolder<SoundEvent, SoundEvent> MANEUVER_TAKEOFF = sound("maneuver.takeoff");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FCS_ECHO = sound("fcs.echo");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FCS_LOCK = sound("fcs.lock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FCS_BLAST_BEEP = sound("fcs.blast_beep");
+
     private static DeferredHolder<SoundEvent, SoundEvent> sound(String name) {
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(
             ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, name)));

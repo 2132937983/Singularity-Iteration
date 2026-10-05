@@ -28,4 +28,50 @@ public final class SiRenderTypes extends RenderType {
             .setWriteMaskState(COLOR_WRITE)
             .setOutputState(PARTICLES_TARGET)
             .createCompositeState(false));
+
+    /** See-through lines (FCS sensor wireframes): no depth test, translucent, 2 px. */
+    public static final RenderType XRAY_LINES = create("mio_icif_xray_lines",
+        DefaultVertexFormat.POSITION_COLOR_NORMAL, VertexFormat.Mode.LINES, 16384, false, false,
+        CompositeState.builder()
+            .setShaderState(RENDERTYPE_LINES_SHADER)
+            .setLineState(new LineStateShard(java.util.OptionalDouble.of(2.0)))
+            .setLayeringState(VIEW_OFFSET_Z_LAYERING)
+            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+            .setDepthTestState(NO_DEPTH_TEST)
+            .setCullState(NO_CULL)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
+
+    /** See-through translucent quads (sensor box fill, impact ring). */
+    public static final RenderType XRAY_FILL = create("mio_icif_xray_fill",
+        DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 16384, false, true,
+        CompositeState.builder()
+            .setShaderState(POSITION_COLOR_SHADER)
+            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+            .setDepthTestState(NO_DEPTH_TEST)
+            .setCullState(NO_CULL)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
+
+    /** Depth-tested additive quads in the main target (deflector field cells, flight shock rings). */
+    public static final RenderType FIELD_GLOW = create("mio_icif_field_glow",
+        DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 16384, false, false,
+        CompositeState.builder()
+            .setShaderState(RENDERTYPE_LIGHTNING_SHADER)
+            .setTransparencyState(LIGHTNING_TRANSPARENCY)
+            .setCullState(NO_CULL)
+            .setDepthTestState(LEQUAL_DEPTH_TEST)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
+
+    /** Depth-tested alpha-blended ribbons and veils (wake trails, vapour cone): no depth write, no cull. */
+    public static final RenderType VAPOR = create("mio_icif_vapor",
+        DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 16384, false, true,
+        CompositeState.builder()
+            .setShaderState(POSITION_COLOR_SHADER)
+            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+            .setDepthTestState(LEQUAL_DEPTH_TEST)
+            .setCullState(NO_CULL)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
 }

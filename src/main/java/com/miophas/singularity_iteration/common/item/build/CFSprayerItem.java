@@ -351,7 +351,10 @@ public class CFSprayerItem extends Item implements ICFSprayerItem {
         return switch (target) {
             case ANY -> (state.isAir() || state.canBeReplaced())
                     && !(state.getBlock() instanceof mio_icif_block_foam);
-            case SCAFFOLD -> state.getBlock() instanceof mio_icif_block_scaffold;
+            case SCAFFOLD -> state.getBlock() instanceof mio_icif_block_scaffold
+                    // cables laid through the scaffold are foamed with it (into reinforced foam)
+                    || state.getBlock() instanceof mio_icif_block_wire && !state.getValue(mio_icif_block_wire.FOAMLOGGED)
+                       && state.getValue(mio_icif_block_wire.FOAM_REINFORCED);
             case CABLE -> state.getBlock() instanceof mio_icif_block_wire
                     && !state.getValue(mio_icif_block_wire.FOAMLOGGED);
         };
@@ -409,7 +412,7 @@ public class CFSprayerItem extends Item implements ICFSprayerItem {
                 } else {
                     level.setBlockAndUpdate(targetPos, state
                             .setValue(mio_icif_block_wire.FOAMLOGGED, true)
-                            .setValue(mio_icif_block_wire.FOAM_REINFORCED, false));
+                            .setValue(mio_icif_block_wire.FOAM_REINFORCED, state.getValue(mio_icif_block_wire.FOAM_REINFORCED)));
                 }
                 continue;
             }

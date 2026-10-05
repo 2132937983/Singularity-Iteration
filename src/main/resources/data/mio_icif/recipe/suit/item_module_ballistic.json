@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PTP",
+    "CXC",
+    "PBP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "T": {
+      "item": "minecraft:spyglass"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "X": {
+      "item": "minecraft:crossbow"
+    },
+    "B": {
+      "tag": "c:plates/iridium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_ballistic",
+    "count": 1
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PTP",
+    "CXC",
+    "PBP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "T": {
+      "item": "minecraft:redstone_torch"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "X": {
+      "item": "minecraft:tnt"
+    },
+    "B": {
+      "tag": "c:plates/iridium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_blast_warning",
+    "count": 1
+  }
+}

@@ -1,0 +1,661 @@
+{
+  "pipe/block_pipe_water": {
+    "kind": "utility",
+    "function": {
+      "en": ["The Water Pipe moves fluid between connected pipes and fluid containers. The pipe holds one fluid type at a time.",
+             "The pipe connects to each adjacent pipe and to each adjacent block with a fluid tank."],
+      "zh": ["输水管道在相连的管道和流体容器之间传输流体。管道每次只容纳一种流体。",
+             "管道自动连接相邻的管道和带有流体储罐的方块。"],
+      "ja": ["輸水パイプは接続したパイプと流体容器の間で流体を運ぶ。パイプは一度に一種類の流体だけを保持する。",
+             "パイプは隣接するパイプと、流体タンクを持つ隣接ブロックに自動で接続する。"]
+    },
+    "usage": {
+      "en": ["Put a Water Extraction Pipe or a machine with fluid output at the start of the line.",
+             "Place Water Pipes from that point to the target tank.",
+             "Right-click an arm of the pipe with a wrench to close that side.",
+             "Right-click the pipe center on the closed side with a wrench to open the side again."],
+      "zh": ["在管线起点放置抽水管道或输出流体的机器。",
+             "从该处向目标储罐铺设输水管道。",
+             "用扳手右键管道的一个分支，关闭该方向。",
+             "用扳手在关闭的一侧右键管道中心，重新打开该方向。"],
+      "ja": ["ラインの始点に抽水パイプか流体を出力する機械を置く。",
+             "そこから目標のタンクまで輸水パイプを置く。",
+             "レンチでパイプの枝を右クリックし、その方向を閉じる。",
+             "閉じた側からレンチでパイプの中心を右クリックし、方向を再び開く。"]
+    },
+    "notes": {
+      "en": ["The pipe does not pull fluid. A machine or an extraction pipe must push fluid into the pipe.",
+             "When you break the pipe, the fluid in the pipe disappears."],
+      "zh": ["管道不会主动抽取流体。机器或抽水管道必须向管道推入流体。",
+             "拆除管道时，管道内的流体消失。"],
+      "ja": ["パイプは流体を吸い出さない。機械か抽水パイプがパイプに流体を押し込む必要がある。",
+             "パイプを壊すと、中の流体は消える。"]
+    }
+  },
+
+  "pipe/block_pipe_water_extract": {
+    "kind": "utility",
+    "function": {
+      "en": ["The Water Extraction Pipe pulls fluid from the block at its back and pushes the fluid out of its front.",
+             "EU from an LV cable increases the transfer speed. Without EU, the pipe moves fluid at a low base speed."],
+      "zh": ["抽水管道从背面的方块抽取流体，并从正面输出。",
+             "LV导线供给的EU可提高传输速度。没有EU时，管道以较低的基础速度传输流体。"],
+      "ja": ["抽水パイプは背面のブロックから流体を吸い出し、正面から出力する。",
+             "LVケーブルのEUで転送速度が上がる。EUがない時、パイプは低い基本速度で流体を運ぶ。"]
+    },
+    "usage": {
+      "en": ["Look at the source tank and place the pipe against the tank.",
+             "Connect Water Pipes to the front of the extraction pipe.",
+             "Connect an LV cable to the extraction pipe to increase the speed."],
+      "zh": ["面向源储罐，把管道贴着储罐放置。",
+             "在抽水管道正面连接输水管道。",
+             "连接LV导线，提高传输速度。"],
+      "ja": ["元のタンクを見ながら、タンクに接してパイプを置く。",
+             "抽水パイプの正面に輸水パイプを接続する。",
+             "LVケーブルを接続し、転送速度を上げる。"]
+    },
+    "notes": {
+      "en": ["The extraction pipe connects only on its front and on its back."],
+      "zh": ["抽水管道只在正面和背面连接。"],
+      "ja": ["抽水パイプは正面と背面だけで接続する。"]
+    }
+  },
+
+  "pipe/block_pipe_item_input": {
+    "kind": "utility",
+    "function": {
+      "en": ["The Item Extraction Pipe takes items from adjacent containers and sends the items into connected Item Transport Pipes.",
+             "Without EU, the pipe moves one item per cycle. EU from an MV cable increases the number of items per cycle."],
+      "zh": ["物品提取管道从相邻容器取出物品，并送入相连的物品传输管道。",
+             "没有EU时，管道每次移动一个物品。MV导线供给的EU可增加每次移动的数量。"],
+      "ja": ["アイテム抽出パイプは隣接するコンテナからアイテムを取り出し、接続したアイテム輸送パイプに送る。",
+             "EUがない時、パイプは1回に1個を運ぶ。MVケーブルのEUで1回に運ぶ数が増える。"]
+    },
+    "usage": {
+      "en": ["Place the Item Extraction Pipe next to the source chest.",
+             "Connect Item Transport Pipes from the extraction pipe to the target container.",
+             "Connect an MV cable to the extraction pipe to move more items per cycle.",
+             "Right-click an arm of the pipe with a wrench to close that side."],
+      "zh": ["把物品提取管道放在源箱子旁边。",
+             "用物品传输管道连接提取管道和目标容器。",
+             "连接MV导线，使每次移动更多物品。",
+             "用扳手右键管道的一个分支，关闭该方向。"],
+      "ja": ["アイテム抽出パイプを元のチェストの隣に置く。",
+             "抽出パイプから目標のコンテナまでアイテム輸送パイプをつなぐ。",
+             "MVケーブルを接続し、1回に運ぶ数を増やす。",
+             "レンチでパイプの枝を右クリックし、その方向を閉じる。"]
+    },
+    "notes": {
+      "en": ["The extraction pipe does not put items into containers. The pipe works only when a transport pipe can take the items."],
+      "zh": ["提取管道不会向容器放入物品。只有传输管道能接收物品时，提取管道才工作。"],
+      "ja": ["抽出パイプはコンテナにアイテムを入れない。輸送パイプが受け取れる時だけ動作する。"]
+    }
+  },
+
+  "pipe/block_pipe_item": {
+    "kind": "utility",
+    "function": {
+      "en": ["The Item Transport Pipe moves items between pipes and puts the items into connected containers.",
+             "The pipe receives items from an Item Extraction Pipe. The pipe searches the network for a container with free space."],
+      "zh": ["物品传输管道在管道之间移动物品，并放入相连的容器。",
+             "管道从物品提取管道接收物品，并在管网中寻找有空位的容器。"],
+      "ja": ["アイテム輸送パイプはパイプの間でアイテムを運び、接続したコンテナに入れる。",
+             "パイプはアイテム抽出パイプからアイテムを受け取り、空きのあるコンテナを探す。"]
+    },
+    "usage": {
+      "en": ["Place an Item Extraction Pipe next to the source container.",
+             "Connect Item Transport Pipes from the extraction pipe to the target containers.",
+             "Right-click an arm of the pipe with a wrench to close that side."],
+      "zh": ["在源容器旁放置物品提取管道。",
+             "用物品传输管道连接提取管道和目标容器。",
+             "用扳手右键管道的一个分支，关闭该方向。"],
+      "ja": ["元のコンテナの隣にアイテム抽出パイプを置く。",
+             "抽出パイプから目標のコンテナまでアイテム輸送パイプをつなぐ。",
+             "レンチでパイプの枝を右クリックし、その方向を閉じる。"]
+    },
+    "notes": {
+      "en": ["When you break the pipe, the items in the pipe drop on the ground."],
+      "zh": ["拆除管道时，管道内的物品掉落在地上。"],
+      "ja": ["パイプを壊すと、中のアイテムが地面に落ちる。"]
+    }
+  },
+
+  "reactor/block_reactor_chamber": {
+    "kind": "reactor",
+    "function": {
+      "en": ["The Reactor Chamber adds one column of component slots to an adjacent Nuclear Reactor Generator.",
+             "The chamber shares the reactor inventory, EU output and heat. A redstone signal on the chamber also enables the reactor."],
+      "zh": ["核反应仓为相邻的核反应堆发电机增加一列元件槽位。",
+             "反应仓共享反应堆的物品栏、EU输出和热量。反应仓收到红石信号时，反应堆也会启动。"],
+      "ja": ["原子炉チャンバーは隣接する原子炉発電機に部品スロットを1列追加する。",
+             "チャンバーは原子炉のインベントリ、EU出力、熱を共有する。チャンバーへのレッドストーン信号でも原子炉が起動する。"]
+    },
+    "usage": {
+      "en": ["Place the Nuclear Reactor Generator.",
+             "Place up to six chambers against the faces of the reactor.",
+             "Right-click a chamber to open the reactor GUI.",
+             "Connect a cable to a chamber to take the EU output."],
+      "zh": ["放置核反应堆发电机。",
+             "在反应堆的六个面上放置最多六个反应仓。",
+             "右键反应仓，打开反应堆界面。",
+             "在反应仓上连接导线，输出EU。"],
+      "ja": ["原子炉発電機を置く。",
+             "原子炉の面に最大6個のチャンバーを置く。",
+             "チャンバーを右クリックし、原子炉のGUIを開く。",
+             "チャンバーにケーブルを接続し、EUを取り出す。"]
+    },
+    "notes": {
+      "en": ["A chamber must touch exactly one reactor. Otherwise the chamber breaks and drops as an item.",
+             "WARNING: A chamber adds no heat capacity. Check the reactor heat after each change of components."],
+      "zh": ["反应仓必须只接触一个反应堆。否则反应仓会破坏并掉落为物品。",
+             "警告：反应仓不增加热容量。每次更换元件后，检查反应堆的堆温。"],
+      "ja": ["チャンバーはちょうど1基の原子炉に接する必要がある。そうでない時、チャンバーは壊れてアイテムになる。",
+             "警告：チャンバーは熱容量を増やさない。部品を変えるたびに原子炉の温度を確認する。"]
+    }
+  },
+
+  "reactor/block_reactor_vessel": {
+    "kind": "reactor",
+    "function": {
+      "en": ["The Reactor Pressure Vessel is a structural part of the fluid reactor. The vessel has no GUI and no function of its own.",
+             "The vessel forms the outer shell of the 5x5x5 fluid reactor. The vessel has a high blast resistance."],
+      "zh": ["核反应堆压力容器是流体反应堆的结构方块。它没有界面，也没有独立功能。",
+             "压力容器构成5x5x5流体反应堆的外壳。压力容器的抗爆性很高。"],
+      "ja": ["原子炉圧力容器は流体原子炉の構造ブロックだ。GUIも独自の機能も持たない。",
+             "圧力容器は5x5x5の流体原子炉の外殻になる。圧力容器の爆発耐性は高い。"]
+    },
+    "usage": {
+      "en": ["Place the Nuclear Reactor Generator at the center of a 5x5x5 area.",
+             "Put a Reactor Chamber on each of the six faces of the reactor.",
+             "Fill the outer layer of the 5x5x5 cube with pressure vessels.",
+             "Replace one or more vessels in the outer layer with ports or hatches."],
+      "zh": ["把核反应堆发电机放在5x5x5区域的中心。",
+             "在反应堆六个面上各放一个核反应仓。",
+             "用压力容器填满5x5x5立方体的外层。",
+             "把外层中至少一个容器换成接口。"],
+      "ja": ["5x5x5の範囲の中心に原子炉発電機を置く。",
+             "原子炉の6面すべてにチャンバーを置く。",
+             "5x5x5の立方体の外層を圧力容器で埋める。",
+             "外層の容器を1個以上ポートかハッチに替える。"]
+    },
+    "notes": {
+      "en": ["The shell needs at least one Fluid Port, Access Hatch or Redstone Port."],
+      "zh": ["外壳中至少需要一个流体接口、访问接口或红石接口。"],
+      "ja": ["外殻には流体ポート、アクセスハッチ、レッドストーンポートのどれかが1個以上必要だ。"]
+    }
+  },
+
+  "reactor/block_reactor_redstone_port": {
+    "kind": "reactor",
+    "function": {
+      "en": ["The Reactor Redstone Port is a shell block of the fluid reactor. A redstone signal on the port enables the reactor.",
+             "The port has no GUI. The port texture changes when the port receives a signal."],
+      "zh": ["反应堆红石接口是流体反应堆的外壳方块。接口收到红石信号时，反应堆启动。",
+             "接口没有界面。接口收到信号时，外观改变。"],
+      "ja": ["原子炉レッドストーンポートは流体原子炉の外殻ブロックだ。ポートに信号が入ると原子炉が起動する。",
+             "ポートにGUIはない。信号を受けると、ポートの見た目が変わる。"]
+    },
+    "usage": {
+      "en": ["Build the 5x5x5 fluid reactor shell.",
+             "Replace one pressure vessel in the shell with the redstone port.",
+             "Place a lever on the port.",
+             "Turn on the lever to start the reactor.",
+             "Turn off the lever to stop the reactor."],
+      "zh": ["建造5x5x5流体反应堆外壳。",
+             "把外壳中的一个压力容器换成红石接口。",
+             "在接口上放置拉杆。",
+             "打开拉杆，启动反应堆。",
+             "关闭拉杆，停止反应堆。"],
+      "ja": ["5x5x5の流体原子炉の外殻を作る。",
+             "外殻の圧力容器1個をレッドストーンポートに替える。",
+             "ポートにレバーを付ける。",
+             "レバーをオンにして原子炉を起動する。",
+             "レバーをオフにして原子炉を止める。"]
+    },
+    "notes": {
+      "en": ["WARNING: Remove the redstone signal before you change reactor components. A running reactor can overheat and explode."],
+      "zh": ["警告：更换反应堆元件前，先断开红石信号。运行中的反应堆可能过热并爆炸。"],
+      "ja": ["警告：原子炉の部品を変える前に信号を切る。稼働中の原子炉は過熱して爆発することがある。"]
+    }
+  },
+
+  "reactor/block_reactor_fluid_port": {
+    "kind": "reactor",
+    "function": {
+      "en": ["The Reactor Fluid Port connects pipes to the coolant tanks of a fluid reactor. Coolant goes in and hot coolant comes out.",
+             "The port has one upgrade slot for a fluid ejector upgrade or a fluid pulling upgrade."],
+      "zh": ["反应堆流体接口把管道连接到流体反应堆的冷却液储罐。冷却液输入，热冷却液输出。",
+             "接口有一个升级槽位，可放流体弹出升级或流体抽入升级。"],
+      "ja": ["原子炉流体ポートはパイプを流体原子炉の冷却材タンクにつなぐ。冷却材が入り、高温の冷却材が出る。",
+             "ポートには流体排出か流体吸入のアップグレード用スロットが1個ある。"]
+    },
+    "usage": {
+      "en": ["Replace one pressure vessel in the reactor shell with the fluid port.",
+             "Connect a coolant supply pipe to the port.",
+             "Put a fluid ejector upgrade in the port slot.",
+             "Connect a pipe from the port to a tank or to a machine that uses hot coolant."],
+      "zh": ["把反应堆外壳中的一个压力容器换成流体接口。",
+             "把冷却液供给管道连接到接口。",
+             "在接口槽位中放入流体弹出升级。",
+             "从接口向储罐或使用热冷却液的机器接管道。"],
+      "ja": ["原子炉外殻の圧力容器1個を流体ポートに替える。",
+             "冷却材の供給パイプをポートに接続する。",
+             "ポートのスロットに流体排出アップグレードを入れる。",
+             "ポートから、タンクか高温冷却材を使う機械へパイプをつなぐ。"]
+    },
+    "notes": {
+      "en": ["The port works with a reactor in fluid mode within 2 blocks.",
+             "WARNING: Keep the hot coolant output free. A full hot coolant tank stops the cooling, and the reactor can overheat."],
+      "zh": ["接口可连接2格内处于流体模式的反应堆。",
+             "警告：保持热冷却液输出畅通。热冷却液储罐满时冷却停止，反应堆可能过热。"],
+      "ja": ["ポートは2ブロック以内の流体モードの原子炉と連携する。",
+             "警告：高温冷却材の出口を空けておく。タンクが満杯だと冷却が止まり、原子炉が過熱することがある。"]
+    }
+  },
+
+  "reactor/block_reactor_access_hatch": {
+    "kind": "reactor",
+    "function": {
+      "en": ["The Reactor Access Hatch opens the GUI of the fluid reactor from the outer shell. The hatch has no inventory of its own.",
+             "The hatch switches the connected reactor to fluid mode when the structure is complete."],
+      "zh": ["反应堆访问接口可从外壳打开流体反应堆的界面。访问接口自身没有物品栏。",
+             "结构完整时，访问接口把连接的反应堆切换到流体模式。"],
+      "ja": ["原子炉アクセスハッチは外殻から流体原子炉のGUIを開く。ハッチ自体にインベントリはない。",
+             "構造が完成すると、ハッチは接続した原子炉を流体モードにする。"]
+    },
+    "usage": {
+      "en": ["Replace one pressure vessel in the reactor shell with the hatch.",
+             "Right-click the hatch to open the reactor GUI.",
+             "Sneak and right-click the hatch to show a structure diagnosis."],
+      "zh": ["把反应堆外壳中的一个压力容器换成访问接口。",
+             "右键访问接口，打开反应堆界面。",
+             "潜行并右键访问接口，显示结构诊断信息。"],
+      "ja": ["原子炉外殻の圧力容器1個をアクセスハッチに替える。",
+             "ハッチを右クリックし、原子炉のGUIを開く。",
+             "スニークしてハッチを右クリックし、構造の診断を表示する。"]
+    },
+    "notes": {
+      "en": ["WARNING: Do not place the hatch within 2 blocks of two reactors. The hatch then explodes."],
+      "zh": ["警告：不要把访问接口放在两个反应堆的2格范围内。否则访问接口会爆炸。"],
+      "ja": ["警告：2基の原子炉から2ブロック以内にハッチを置かない。置くとハッチが爆発する。"]
+    }
+  },
+
+  "reactor/block_ic_tnt": {
+    "kind": "utility",
+    "function": {
+      "en": ["Industrial TNT is an explosive block with a stronger blast than vanilla TNT.",
+             "A redstone signal, fire, a burning projectile or a nearby explosion ignites the block. Industrial TNT is also the main charge of the Nuclear Bomb."],
+      "zh": ["工业TNT是爆炸方块，威力比原版TNT更强。",
+             "红石信号、火、燃烧的弹射物或附近的爆炸会点燃它。工业TNT也是核弹的主装药。"],
+      "ja": ["工業用TNTはバニラのTNTより強い爆発を起こすブロックだ。",
+             "レッドストーン信号、火、燃える飛び道具、近くの爆発で点火する。工業用TNTは核爆弾の主装薬でもある。"]
+    },
+    "usage": {
+      "en": ["Place the Industrial TNT at a safe distance from your base.",
+             "Place a lever next to the TNT.",
+             "Turn on the lever.",
+             "Move away from the TNT before the fuse ends."],
+      "zh": ["把工业TNT放在远离基地的位置。",
+             "在TNT旁边放置拉杆。",
+             "打开拉杆。",
+             "在引信结束前远离TNT。"],
+      "ja": ["拠点から離れた場所に工業用TNTを置く。",
+             "TNTの隣にレバーを置く。",
+             "レバーをオンにする。",
+             "導火時間が終わる前にTNTから離れる。"]
+    },
+    "notes": {
+      "en": ["WARNING: A right-click on the block with any item in your hand ignites the TNT."],
+      "zh": ["警告：手持任何物品右键该方块，都会点燃TNT。"],
+      "ja": ["警告：何かを手に持ってブロックを右クリックすると、TNTに点火する。"]
+    }
+  },
+
+  "reactor/block_reactor_nuke": {
+    "kind": "utility",
+    "function": {
+      "en": ["The Nuclear Bomb has eight slots for Industrial TNT and one slot for nuclear material. The charge sets the explosion power.",
+             "A redstone signal arms the bomb and starts a countdown. The explosion leaves a radiation zone."],
+      "zh": ["核弹有八个工业TNT槽位和一个核材料槽位。装填量决定爆炸威力。",
+             "红石信号使核弹开始引爆倒计时。爆炸后留下辐射区域。"],
+      "ja": ["核爆弾には工業用TNTのスロット8個と核物質のスロット1個がある。装填量が爆発の威力を決める。",
+             "レッドストーン信号で核爆弾が起爆の秒読みを始める。爆発の後に放射線区域が残る。"]
+    },
+    "usage": {
+      "en": ["Place the bomb far away from your base and from other players.",
+             "Right-click the bomb to open the GUI.",
+             "Put Industrial TNT and nuclear material into the slots.",
+             "Read the explosion power in the GUI.",
+             "Apply a redstone signal to the bomb.",
+             "Move far away before the countdown ends."],
+      "zh": ["把核弹放在远离基地和其他玩家的位置。",
+             "右键核弹，打开界面。",
+             "在槽位中放入工业TNT和核材料。",
+             "在界面中查看爆炸威力。",
+             "向核弹输入红石信号。",
+             "在倒计时结束前远离核弹。"],
+      "ja": ["拠点と他のプレイヤーから遠い場所に核爆弾を置く。",
+             "核爆弾を右クリックしてGUIを開く。",
+             "スロットに工業用TNTと核物質を入れる。",
+             "GUIで爆発の威力を確認する。",
+             "核爆弾にレッドストーン信号を入れる。",
+             "秒読みが終わる前に遠くへ離れる。"]
+    },
+    "notes": {
+      "en": ["WARNING: You cannot stop the countdown after you arm the bomb.",
+             "WARNING: The explosion destroys a large area. The radiation zone stays after the explosion and harms living creatures."],
+      "zh": ["警告：核弹启动后，无法停止倒计时。",
+             "警告：爆炸会摧毁大片区域。辐射区域在爆炸后持续存在，并伤害生物。"],
+      "ja": ["警告：起爆した後、秒読みを止める方法はない。",
+             "警告：爆発は広い範囲を破壊する。爆発の後も放射線区域が残り、生物に害を与える。"]
+    }
+  },
+
+  "oilrig/block_oil_rig_core": {
+    "kind": "multiblock",
+    "function": {
+      "en": ["The Oil Rig Core controls the oil rig multiblock. The rig drills down to bedrock and produces crude oil.",
+             "The drill removes the blocks below the rig. Each removed block can give crude oil to the Output Modules.",
+             "The rig stops after the drill finishes a limited area around the core."],
+      "zh": ["石油钻机核心控制石油钻机多方块结构。钻机向下钻到基岩并产出原油。",
+             "钻头移除钻机下方的方块。每移除一个方块，都可能向储油模块提供原油。",
+             "钻头钻完核心周围的有限区域后，钻机停止。"],
+      "ja": ["石油リグコアは石油リグのマルチブロックを制御する。リグは岩盤まで掘り下げ、原油を作る。",
+             "ドリルはリグの下のブロックを取り除く。取り除いたブロックごとに、貯油モジュールへ原油が入ることがある。",
+             "ドリルがコアの周りの限られた範囲を掘り終えると、リグは止まる。"]
+    },
+    "usage": {
+      "en": ["Place the Oil Rig Core and put eight modules around the core on the same layer.",
+             "Stack two modules on top of the core.",
+             "Stack three Titanium Drill Frames on top of these two modules.",
+             "Place two frames on each of the four sides of the stacked modules.",
+             "Include at least one Input Module and one Output Module.",
+             "Connect an HV cable to an Input Module."],
+      "zh": ["放置石油钻机核心，并在同层四周放置八个模块。",
+             "在核心上方叠放两个模块。",
+             "在这两个模块上方叠放三个钛制钻机框架。",
+             "在叠放模块的四个侧面各放两个框架。",
+             "至少包含一个输入模块和一个储油模块。",
+             "把HV导线连接到输入模块。"],
+      "ja": ["石油リグコアを置き、同じ層の周りに8個のモジュールを置く。",
+             "コアの上にモジュールを2個積む。",
+             "その2個の上にチタン製ドリルフレームを3個積む。",
+             "積んだモジュールの4側面にフレームを2個ずつ置く。",
+             "入力モジュールと貯油モジュールを1個以上ずつ入れる。",
+             "HVケーブルを入力モジュールに接続する。"]
+    },
+    "notes": {
+      "en": ["Right-click the Oil Rig Panel to see the rig status. The core has no GUI.",
+             "WARNING: The drill destroys the blocks in its columns and drops no items. Do not build the rig above your base."],
+      "zh": ["右键石油钻机面板，查看钻机状态。核心没有界面。",
+             "警告：钻头摧毁钻探列中的方块，且不掉落物品。不要在基地上方建造钻机。"],
+      "ja": ["石油リグパネルを右クリックし、リグの状態を見る。コアにGUIはない。",
+             "警告：ドリルは掘削列のブロックを壊し、アイテムを落とさない。拠点の上にリグを作らない。"]
+    }
+  },
+
+  "oilrig/block_oil_rig_base": {
+    "kind": "multiblock",
+    "function": {
+      "en": ["The Oil Rig Base Module is a structural part of the oil rig. The module fills a module position and has no function of its own."],
+      "zh": ["石油钻机基础模块是石油钻机的结构方块。它占据一个模块位置，没有独立功能。"],
+      "ja": ["石油リグ基礎モジュールは石油リグの構造ブロックだ。モジュールの位置を埋めるだけで、独自の機能はない。"]
+    },
+    "usage": {
+      "en": ["Build the module ring around the Oil Rig Core.",
+             "Put Input Modules and Output Modules where you need them.",
+             "Fill the remaining module positions with Base Modules."],
+      "zh": ["在石油钻机核心周围建造模块环。",
+             "在需要的位置放置输入模块和储油模块。",
+             "用基础模块填满其余的模块位置。"],
+      "ja": ["石油リグコアの周りにモジュールの輪を作る。",
+             "必要な位置に入力モジュールと貯油モジュールを置く。",
+             "残りのモジュール位置を基礎モジュールで埋める。"]
+    }
+  },
+
+  "oilrig/block_oil_rig_input": {
+    "kind": "multiblock",
+    "function": {
+      "en": ["The Oil Rig Input Module receives EU from cables and stores the EU for the rig. The core takes EU from all Input Modules."],
+      "zh": ["石油钻机输入模块从导线接收EU，并为钻机储存。核心从所有输入模块取用EU。"],
+      "ja": ["石油リグ入力モジュールはケーブルからEUを受け取り、リグのために蓄える。コアはすべての入力モジュールからEUを取る。"]
+    },
+    "usage": {
+      "en": ["Put the Input Module in a module position of the rig.",
+             "Connect an HV cable to the module.",
+             "Add more Input Modules to store more EU."],
+      "zh": ["把输入模块放在钻机的模块位置。",
+             "把HV导线连接到模块。",
+             "增加输入模块，储存更多EU。"],
+      "ja": ["入力モジュールをリグのモジュール位置に置く。",
+             "HVケーブルをモジュールに接続する。",
+             "入力モジュールを追加し、EUを多く蓄える。"]
+    },
+    "notes": {
+      "en": ["The rig needs at least one Input Module."],
+      "zh": ["钻机至少需要一个输入模块。"],
+      "ja": ["リグには入力モジュールが1個以上必要だ。"]
+    }
+  },
+
+  "oilrig/block_oil_rig_output": {
+    "kind": "multiblock",
+    "function": {
+      "en": ["The Oil Rig Output Module stores the crude oil from the drill. Pipes can take the oil from the module."],
+      "zh": ["石油钻机储油模块储存钻头产出的原油。管道可从模块中取出原油。"],
+      "ja": ["石油リグ貯油モジュールはドリルが掘り出した原油を蓄える。パイプでモジュールから原油を取り出せる。"]
+    },
+    "usage": {
+      "en": ["Put the Output Module in a module position of the rig.",
+             "Place a Water Extraction Pipe with its back against the module.",
+             "Connect pipes from the extraction pipe to a tank or to a machine."],
+      "zh": ["把储油模块放在钻机的模块位置。",
+             "把抽水管道的背面贴着模块放置。",
+             "从抽水管道向储罐或机器接管道。"],
+      "ja": ["貯油モジュールをリグのモジュール位置に置く。",
+             "抽水パイプの背面をモジュールに向けて置く。",
+             "抽水パイプからタンクか機械へパイプをつなぐ。"]
+    },
+    "notes": {
+      "en": ["When all Output Modules are full, the rig stops."],
+      "zh": ["所有储油模块装满时，钻机停止。"],
+      "ja": ["すべての貯油モジュールが満杯になると、リグは止まる。"]
+    }
+  },
+
+  "oilrig/block_oil_rig_panel": {
+    "kind": "multiblock",
+    "function": {
+      "en": ["The Oil Rig Panel shows the rig status and the current drill coordinate. The panel lights up while the rig works."],
+      "zh": ["石油钻机面板显示钻机状态和当前钻探坐标。钻机工作时，面板亮起。"],
+      "ja": ["石油リグパネルはリグの状態と現在の掘削座標を表示する。リグの稼働中、パネルが光る。"]
+    },
+    "usage": {
+      "en": ["Put the panel in a module position of the rig.",
+             "Right-click the panel to open the status GUI.",
+             "Read the status line to find the cause of a stop."],
+      "zh": ["把面板放在钻机的模块位置。",
+             "右键面板，打开状态界面。",
+             "查看状态行，找出停止的原因。"],
+      "ja": ["パネルをリグのモジュール位置に置く。",
+             "パネルを右クリックし、状態のGUIを開く。",
+             "状態の行を読み、停止の原因を調べる。"]
+    },
+    "notes": {
+      "en": ["The panel opens the GUI only when the rig structure is complete."],
+      "zh": ["只有钻机结构完整时，面板才会打开界面。"],
+      "ja": ["リグの構造が完成している時だけ、パネルはGUIを開く。"]
+    }
+  },
+
+  "oilrig/block_dimension_oil_rig_core": {
+    "kind": "multiblock",
+    "function": {
+      "en": ["The Dimension Oil Rig Core controls a larger oil rig. The drill moves in a spiral around the core and has no area limit.",
+             "The rig uses the same modules as the Oil Rig. The rig gives more crude oil per block and uses more EU."],
+      "zh": ["维度石油钻机核心控制更大的石油钻机。钻头绕核心螺旋移动，没有区域限制。",
+             "钻机使用与石油钻机相同的模块。每个方块产出更多原油，并消耗更多EU。"],
+      "ja": ["次元石油リグコアは大型の石油リグを制御する。ドリルはコアの周りを渦巻き状に動き、範囲の上限はない。",
+             "リグは石油リグと同じモジュールを使う。1ブロックあたりの原油が多く、EUも多く使う。"]
+    },
+    "usage": {
+      "en": ["Place the core with eight modules around the core and two modules on top.",
+             "Place a ring of sixteen modules one layer below, two blocks from the core.",
+             "Stack four Titanium Drill Frames on top and put four frames around the third frame.",
+             "Put one frame three blocks from the core on each side, on the core layer.",
+             "Put one frame two blocks from the core on each side, one layer above the core.",
+             "Connect an HV cable to an Input Module."],
+      "zh": ["放置核心，在同层四周放八个模块，并在上方叠两个模块。",
+             "在下一层距核心两格处放一圈十六个模块。",
+             "在顶部叠四个钛制钻机框架，第三个框架四周各加一个。",
+             "在核心层四个方向距核心三格处各放一个框架。",
+             "在核心上一层四个方向距核心两格处各放一个框架。",
+             "把HV导线连接到输入模块。"],
+      "ja": ["コアを置き、周りに8個、上に2個のモジュールを置く。",
+             "1層下、コアから2ブロックの位置に16個のモジュールを輪状に置く。",
+             "上にチタン製ドリルフレームを4個積み、3個目の周りに4個置く。",
+             "コアの層で、コアから3ブロックの4方向にフレームを1個ずつ置く。",
+             "コアの1層上で、コアから2ブロックの4方向にフレームを1個ずつ置く。",
+             "HVケーブルを入力モジュールに接続する。"]
+    },
+    "notes": {
+      "en": ["The structure needs at least one Input Module and one Output Module.",
+             "WARNING: The drill destroys the blocks in its path and drops no items. The drill area grows without limit."],
+      "zh": ["结构至少需要一个输入模块和一个储油模块。",
+             "警告：钻头摧毁路径上的方块，且不掉落物品。钻探区域无限扩大。"],
+      "ja": ["構造には入力モジュールと貯油モジュールが1個以上ずつ必要だ。",
+             "警告：ドリルは経路上のブロックを壊し、アイテムを落とさない。掘削範囲は際限なく広がる。"]
+    }
+  },
+
+  "producer/block_armory": {
+    "kind": "machine",
+    "function": {
+      "en": ["The Armory stores six suits. Each suit has six pieces: helmet, chestplate, leggings, boots, main hand and off hand.",
+             "The Armory flies a stored suit to its owner on command.",
+             "The Armory repairs and charges the stored pieces with EU. Botania gear uses mana from the Armory mana tank."],
+      "zh": ["武装库储存六套装备。每套有六件：头盔、胸甲、护腿、靴子、主手和副手。",
+             "武装库按指令把一套储存的装备飞送给主人。",
+             "武装库用EU修复储存的装备并为其充能。Botania装备使用武装库魔力罐中的魔力。"],
+      "ja": ["武装庫は6着のスーツを保管する。各スーツはヘルメット、チェストプレート、レギンス、ブーツ、メインハンド、オフハンドの6部位だ。",
+             "武装庫は指令に従い、保管したスーツを所有者へ飛ばす。",
+             "武装庫はEUで保管中の装備を修理し、充電する。Botaniaの装備には武装庫のマナタンクのマナを使う。"]
+    },
+    "usage": {
+      "en": ["Connect an HV cable to the Armory.",
+             "Right-click the powered Armory to become its owner.",
+             "Put your gear into the suit slots in the GUI.",
+             "Sneak and right-click the Armory with an Armory Remote Controller to pair the remote.",
+             "Wear the remote in a charm or belt accessory slot.",
+             "Open the Armory section of the Equipment Console and click SUMMON."],
+      "zh": ["把HV导线连接到武装库。",
+             "右键已通电的武装库，成为它的主人。",
+             "在界面中把装备放入套装槽位。",
+             "手持武装库遥控器潜行右键武装库，完成配对。",
+             "把遥控器戴在护符或腰带饰品槽位。",
+             "打开装备综合控制台的武装库页面，点击召唤。"],
+      "ja": ["HVケーブルを武装庫に接続する。",
+             "通電した武装庫を右クリックし、所有者になる。",
+             "GUIでスーツのスロットに装備を入れる。",
+             "武装庫リモートコントローラーを持ち、スニークして武装庫を右クリックし、ペアにする。",
+             "リモートをチャームかベルトのアクセサリスロットに着ける。",
+             "装備特性管理の武装庫セクションを開き、召喚を押す。"]
+    },
+    "notes": {
+      "en": ["The Armory needs stored EU before it accepts an owner. Only the owner can open, use or break a bound Armory.",
+             "Equipment from other mods needs a Connector Kit before the Armory accepts the equipment.",
+             "Each summon costs EU. The cost increases with the distance and with a change of dimension."],
+      "zh": ["武装库储存足够EU后才接受主人。只有主人能打开、使用或拆除已绑定的武装库。",
+             "其他模组的装备需先用连接器套件连接，武装库才接受。",
+             "每次召唤消耗EU。距离越远或跨维度时，消耗越多。"],
+      "ja": ["武装庫はEUを蓄えてから所有者を受け付ける。所有者だけが登録済みの武装庫を開き、使い、壊せる。",
+             "他のMODの装備は、コネクターキットで接続してから武装庫に入れる。",
+             "召喚ごとにEUを使う。距離と次元の移動でコストが増える。"]
+    }
+  },
+
+  "producer/block_armor_showcase": {
+    "kind": "utility",
+    "function": {
+      "en": ["The Armor Showcase displays a full suit on a mannequin.",
+             "With an Armory Remote, the Equipment Console can exchange your worn suit with the showcase outfit."],
+      "zh": ["盔甲展示柜在人台上展示整套装备。",
+             "使用武装库遥控器时，装备综合控制台可把身上的装备与展示柜上的装备交换。"],
+      "ja": ["アーマーショーケースはマネキンに一式の装備を飾る。",
+             "武装庫リモートがあれば、装備特性管理で着ている装備とショーケースの装備を交換できる。"]
+    },
+    "usage": {
+      "en": ["Right-click the showcase with an armor piece or a weapon to put the item on the mannequin.",
+             "Sneak and right-click the showcase with an empty hand to swap your whole outfit.",
+             "Right-click the showcase with an empty hand to turn the mannequin.",
+             "Right-click the showcase with a paired Armory Remote to mirror a suit of the Armory.",
+             "Apply a redstone signal to the showcase to spin the turntable."],
+      "zh": ["手持盔甲或武器右键展示柜，把它放到人台上。",
+             "空手潜行右键展示柜，交换全身装备。",
+             "空手右键展示柜，转动人台。",
+             "手持已配对的遥控器右键，显示武装库中的一套装备。",
+             "向展示柜输入红石信号，使转台旋转。"],
+      "ja": ["防具か武器を持ってショーケースを右クリックし、マネキンに着せる。",
+             "素手でスニークしてショーケースを右クリックし、装備一式を交換する。",
+             "素手でショーケースを右クリックし、マネキンを回す。",
+             "ペア済みの武装庫リモートで右クリックし、武装庫のスーツを映す。",
+             "ショーケースにレッドストーン信号を入れ、ターンテーブルを回す。"]
+    },
+    "notes": {
+      "en": ["A showcase that mirrors an Armory suit holds no items. Sneak and use the remote on the showcase to unlink the showcase.",
+             "The console exchange works only with showcases near you or near the Armory."],
+      "zh": ["映射武装库装备的展示柜不存放物品。手持遥控器潜行使用，即可解除链接。",
+             "控制台换装只适用于你或武装库附近的展示柜。"],
+      "ja": ["武装庫のスーツを映すショーケースはアイテムを持たない。リモートを持ってスニークで使うと、リンクを解除する。",
+             "コンソールの換装は、自分か武装庫の近くのショーケースだけが対象だ。"]
+    }
+  },
+
+  "producer/block_quantum_modification_station": {
+    "kind": "machine",
+    "function": {
+      "en": ["The Quantum Modification Station installs upgrade units into quantum suit pieces. The station uses EU for each installation.",
+             "Available units: Seismic Ore Scanner, Grid Telemetry Sensor, Biometric Scanner, Ballistic Computer, Blast Warning Timer.",
+             "More units: Behavior Predictor, Tactical 3D Holomap, Threat Sensor, Quantum Deflector."],
+      "zh": ["量子改装台把升级单元安装到量子套装部件中。每次安装消耗EU。",
+             "可用单元：地震矿物扫描仪、电网遥测传感器、生物扫描仪、弹道计算机、爆炸预警计时器。",
+             "其他单元：行为预测器、战术3D全息地图、威胁传感器、量子偏转器。"],
+      "ja": ["量子改造ステーションは量子スーツの部位にアップグレードユニットを取り付ける。取り付けのたびにEUを使う。",
+             "使えるユニット：震探鉱石スキャナー、電網テレメトリセンサー、生体スキャナー、弾道計算機、爆発警告タイマー。",
+             "ほかのユニット：行動予測器、戦術3Dホロマップ、脅威センサー、量子偏向器。"]
+    },
+    "usage": {
+      "en": ["Connect an HV cable to the station.",
+             "Put a quantum suit piece in the top slot.",
+             "Put an upgrade unit in the lower slot.",
+             "Wait until the station finishes the installation.",
+             "Click the x next to an installed unit to remove the unit.",
+             "Switch the unit on in the Equipment Console."],
+      "zh": ["把HV导线连接到改装台。",
+             "把量子套装部件放入上方槽位。",
+             "把升级单元放入下方槽位。",
+             "等待改装台完成安装。",
+             "点击已安装单元旁的×，拆下单元。",
+             "在装备综合控制台中开启该单元。"],
+      "ja": ["HVケーブルをステーションに接続する。",
+             "上のスロットに量子スーツの部位を入れる。",
+             "下のスロットにアップグレードユニットを入れる。",
+             "ステーションが取り付けを終えるまで待つ。",
+             "取り付け済みユニットの横の×を押し、ユニットを外す。",
+             "装備特性管理でユニットをオンにする。"]
+    },
+    "notes": {
+      "en": ["The helmet takes four units, the chestplate three, the leggings two and the boots two. Each unit fits only specific pieces.",
+             "Sensor units show data only through a quantum helmet visor. Each active unit uses EU from its suit piece.",
+             "The removal of a unit costs no EU and gives the unit back."],
+      "zh": ["头盔可装四个单元，胸甲三个，护腿两个，靴子两个。每个单元只适用于指定部位。",
+             "传感器单元只能通过量子头盔面罩显示数据。开启的单元消耗所在部件的EU。",
+             "拆下单元不消耗EU，并返还单元。"],
+      "ja": ["ヘルメットはユニット4個、チェストプレートは3個、レギンスとブーツは2個ずつ付く。各ユニットは決まった部位だけに付く。",
+             "センサーユニットは量子ヘルメットのバイザーでだけデータを表示する。オンのユニットは部位のEUを使う。",
+             "ユニットを外す時、EUは使わず、ユニットは戻る。"]
+    }
+  }
+}

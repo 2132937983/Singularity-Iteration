@@ -760,6 +760,10 @@
     {
       "id": "mio_icif:build/block_scaffold_carbon",
       "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_quantum_modification_station",
+      "required": false
     }
   ]
 }

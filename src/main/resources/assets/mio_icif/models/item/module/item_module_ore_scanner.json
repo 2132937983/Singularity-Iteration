@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mio_icif:item/module/item_module_ore_scanner"
+  }
+}

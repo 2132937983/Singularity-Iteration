@@ -1,0 +1,2057 @@
+{
+  "wiring/block_bat_box": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The BatBox is an LV storage block. The BatBox stores EU and supplies EU to machines.",
+        "The front face outputs EU. The other five faces receive EU.",
+        "The top slot charges an item. The bottom slot takes EU from a battery."
+      ],
+      "zh": [
+        "储电盒是LV储电方块。储电盒储存EU并向机器供电。",
+        "正面输出EU。其余五个面接收EU。",
+        "上方槽位为物品充电。下方槽位从电池取出EU。"
+      ],
+      "ja": [
+        "BatBoxはLVの蓄電ブロックだ。BatBoxがEUを蓄え、機械にEUを供給する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。",
+        "上のスロットがアイテムを充電する。下のスロットがバッテリーからEUを取り出す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the BatBox with the front face toward you.",
+        "Connect the generator cable to one of the five input faces.",
+        "Connect the front face to the machines with LV cable.",
+        "Open the GUI and select a redstone mode to control the output."
+      ],
+      "zh": [
+        "放置储电盒，使正面朝向你。",
+        "把发电机导线接到五个输入面之一。",
+        "用LV导线把正面接到机器。",
+        "打开界面，选择红石模式以控制输出。"
+      ],
+      "ja": [
+        "BatBoxを置き、正面を自分の方に向ける。",
+        "発電機のケーブルを5つの入力面のどれかに接続する。",
+        "LVケーブルで正面を機械に接続する。",
+        "GUIを開き、レッドストーンモードを選んで出力を制御する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The redstone mode can stop the output or emit a signal at a charge level."
+      ],
+      "zh": [
+        "红石模式可以停止输出，或在指定电量时发出信号。"
+      ],
+      "ja": [
+        "レッドストーンモードで出力を止めるか、指定の充電量で信号を出す。"
+      ]
+    }
+  },
+  "wiring/block_batbox_charger": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The BatBox Charger is an LV storage block with a charge pad on top.",
+        "The pad charges the armor, held items and inventory items of a player on top.",
+        "The front face outputs EU. The other five faces receive EU."
+      ],
+      "zh": [
+        "充电座是顶部带充电板的LV储电方块。",
+        "充电板为顶部玩家的盔甲、手持物品和背包物品充电。",
+        "正面输出EU。其余五个面接收EU。"
+      ],
+      "ja": [
+        "BatBox充電器は上面に充電パッドを持つLVの蓄電ブロックだ。",
+        "パッドが上に立つプレイヤーの防具、手持ちアイテム、インベントリ内のアイテムを充電する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the BatBox Charger with the front face toward you.",
+        "Connect an LV generator cable to one of the five input faces.",
+        "Wait until the BatBox Charger stores EU.",
+        "Stand on top of the BatBox Charger to charge your equipment."
+      ],
+      "zh": [
+        "放置充电座，使正面朝向你。",
+        "把LV发电机导线接到五个输入面之一。",
+        "等待充电座储存EU。",
+        "站在充电座顶部，为装备充电。"
+      ],
+      "ja": [
+        "BatBox充電器を置き、正面を自分の方に向ける。",
+        "LVの発電機ケーブルを5つの入力面のどれかに接続する。",
+        "BatBox充電器がEUを蓄えるまで待つ。",
+        "BatBox充電器の上に立ち、装備を充電する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The pad charges only while the redstone mode allows output."
+      ],
+      "zh": [
+        "仅在红石模式允许输出时，充电板才充电。"
+      ],
+      "ja": [
+        "レッドストーンモードが出力を許可する間だけ、パッドが充電する。"
+      ]
+    }
+  },
+  "wiring/block_cesu_charger": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The CESU Charger is an MV storage block with a charge pad on top.",
+        "The pad charges the armor, held items and inventory items of a player on top.",
+        "The front face outputs EU. The other five faces receive EU."
+      ],
+      "zh": [
+        "CESU充电座是顶部带充电板的MV储电方块。",
+        "充电板为顶部玩家的盔甲、手持物品和背包物品充电。",
+        "正面输出EU。其余五个面接收EU。"
+      ],
+      "ja": [
+        "CESU充電器は上面に充電パッドを持つMVの蓄電ブロックだ。",
+        "パッドが上に立つプレイヤーの防具、手持ちアイテム、インベントリ内のアイテムを充電する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the CESU Charger with the front face toward you.",
+        "Connect an MV generator cable to one of the five input faces.",
+        "Wait until the CESU Charger stores EU.",
+        "Stand on top of the CESU Charger to charge your equipment."
+      ],
+      "zh": [
+        "放置CESU充电座，使正面朝向你。",
+        "把MV发电机导线接到五个输入面之一。",
+        "等待CESU充电座储存EU。",
+        "站在CESU充电座顶部，为装备充电。"
+      ],
+      "ja": [
+        "CESU充電器を置き、正面を自分の方に向ける。",
+        "MVの発電機ケーブルを5つの入力面のどれかに接続する。",
+        "CESU充電器がEUを蓄えるまで待つ。",
+        "CESU充電器の上に立ち、装備を充電する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The pad charges only while the redstone mode allows output.",
+        "WARNING: The output is MV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "仅在红石模式允许输出时，充电板才充电。",
+        "警告：输出为MV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードが出力を許可する間だけ、パッドが充電する。",
+        "警告：出力はMVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_mfe_charger": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The MFE Charger is an HV storage block with a charge pad on top.",
+        "The pad charges the armor, held items and inventory items of a player on top.",
+        "The front face outputs EU. The other five faces receive EU."
+      ],
+      "zh": [
+        "MFE充电座是顶部带充电板的HV储电方块。",
+        "充电板为顶部玩家的盔甲、手持物品和背包物品充电。",
+        "正面输出EU。其余五个面接收EU。"
+      ],
+      "ja": [
+        "MFE充電器は上面に充電パッドを持つHVの蓄電ブロックだ。",
+        "パッドが上に立つプレイヤーの防具、手持ちアイテム、インベントリ内のアイテムを充電する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the MFE Charger with the front face toward you.",
+        "Connect an HV generator cable to one of the five input faces.",
+        "Wait until the MFE Charger stores EU.",
+        "Stand on top of the MFE Charger to charge your equipment."
+      ],
+      "zh": [
+        "放置MFE充电座，使正面朝向你。",
+        "把HV发电机导线接到五个输入面之一。",
+        "等待MFE充电座储存EU。",
+        "站在MFE充电座顶部，为装备充电。"
+      ],
+      "ja": [
+        "MFE充電器を置き、正面を自分の方に向ける。",
+        "HVの発電機ケーブルを5つの入力面のどれかに接続する。",
+        "MFE充電器がEUを蓄えるまで待つ。",
+        "MFE充電器の上に立ち、装備を充電する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The pad charges only while the redstone mode allows output.",
+        "WARNING: The output is HV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "仅在红石模式允许输出时，充电板才充电。",
+        "警告：输出为HV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードが出力を許可する間だけ、パッドが充電する。",
+        "警告：出力はHVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_mfsu_charger": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The MFSU Charger is an EV storage block with a charge pad on top.",
+        "The pad charges the armor, held items and inventory items of a player on top.",
+        "The front face outputs EU. The other five faces receive EU."
+      ],
+      "zh": [
+        "MFSU充电座是顶部带充电板的EV储电方块。",
+        "充电板为顶部玩家的盔甲、手持物品和背包物品充电。",
+        "正面输出EU。其余五个面接收EU。"
+      ],
+      "ja": [
+        "MFSU充電器は上面に充電パッドを持つEVの蓄電ブロックだ。",
+        "パッドが上に立つプレイヤーの防具、手持ちアイテム、インベントリ内のアイテムを充電する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the MFSU Charger with the front face toward you.",
+        "Connect an EV generator cable to one of the five input faces.",
+        "Wait until the MFSU Charger stores EU.",
+        "Stand on top of the MFSU Charger to charge your equipment."
+      ],
+      "zh": [
+        "放置MFSU充电座，使正面朝向你。",
+        "把EV发电机导线接到五个输入面之一。",
+        "等待MFSU充电座储存EU。",
+        "站在MFSU充电座顶部，为装备充电。"
+      ],
+      "ja": [
+        "MFSU充電器を置き、正面を自分の方に向ける。",
+        "EVの発電機ケーブルを5つの入力面のどれかに接続する。",
+        "MFSU充電器がEUを蓄えるまで待つ。",
+        "MFSU充電器の上に立ち、装備を充電する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The pad charges only while the redstone mode allows output.",
+        "WARNING: The output is EV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "仅在红石模式允许输出时，充电板才充电。",
+        "警告：输出为EV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードが出力を許可する間だけ、パッドが充電する。",
+        "警告：出力はEVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_mfsu": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The MFSU is an EV storage block. The MFSU stores EU and supplies EU to machines.",
+        "The front face outputs EU. The other five faces receive EU.",
+        "The top slot charges an item. The bottom slot takes EU from a battery."
+      ],
+      "zh": [
+        "MFSU是EV储电方块。MFSU储存EU并向机器供电。",
+        "正面输出EU。其余五个面接收EU。",
+        "上方槽位为物品充电。下方槽位从电池取出EU。"
+      ],
+      "ja": [
+        "MFSUはEVの蓄電ブロックだ。MFSUがEUを蓄え、機械にEUを供給する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。",
+        "上のスロットがアイテムを充電する。下のスロットがバッテリーからEUを取り出す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the MFSU with the front face toward you.",
+        "Connect the generator cable to one of the five input faces.",
+        "Connect the front face to the machines with EV cable.",
+        "Open the GUI and select a redstone mode to control the output."
+      ],
+      "zh": [
+        "放置MFSU，使正面朝向你。",
+        "把发电机导线接到五个输入面之一。",
+        "用EV导线把正面接到机器。",
+        "打开界面，选择红石模式以控制输出。"
+      ],
+      "ja": [
+        "MFSUを置き、正面を自分の方に向ける。",
+        "発電機のケーブルを5つの入力面のどれかに接続する。",
+        "EVケーブルで正面を機械に接続する。",
+        "GUIを開き、レッドストーンモードを選んで出力を制御する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The redstone mode can stop the output or emit a signal at a charge level.",
+        "WARNING: The output is EV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "红石模式可以停止输出，或在指定电量时发出信号。",
+        "警告：输出为EV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードで出力を止めるか、指定の充電量で信号を出す。",
+        "警告：出力はEVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_mfe": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The MFE is an HV storage block. The MFE stores EU and supplies EU to machines.",
+        "The front face outputs EU. The other five faces receive EU.",
+        "The top slot charges an item. The bottom slot takes EU from a battery."
+      ],
+      "zh": [
+        "MFE是HV储电方块。MFE储存EU并向机器供电。",
+        "正面输出EU。其余五个面接收EU。",
+        "上方槽位为物品充电。下方槽位从电池取出EU。"
+      ],
+      "ja": [
+        "MFEはHVの蓄電ブロックだ。MFEがEUを蓄え、機械にEUを供給する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。",
+        "上のスロットがアイテムを充電する。下のスロットがバッテリーからEUを取り出す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the MFE with the front face toward you.",
+        "Connect the generator cable to one of the five input faces.",
+        "Connect the front face to the machines with HV cable.",
+        "Open the GUI and select a redstone mode to control the output."
+      ],
+      "zh": [
+        "放置MFE，使正面朝向你。",
+        "把发电机导线接到五个输入面之一。",
+        "用HV导线把正面接到机器。",
+        "打开界面，选择红石模式以控制输出。"
+      ],
+      "ja": [
+        "MFEを置き、正面を自分の方に向ける。",
+        "発電機のケーブルを5つの入力面のどれかに接続する。",
+        "HVケーブルで正面を機械に接続する。",
+        "GUIを開き、レッドストーンモードを選んで出力を制御する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The redstone mode can stop the output or emit a signal at a charge level.",
+        "WARNING: The output is HV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "红石模式可以停止输出，或在指定电量时发出信号。",
+        "警告：输出为HV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードで出力を止めるか、指定の充電量で信号を出す。",
+        "警告：出力はHVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_cesu": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The CESU is an MV storage block. The CESU stores EU and supplies EU to machines.",
+        "The front face outputs EU. The other five faces receive EU.",
+        "The top slot charges an item. The bottom slot takes EU from a battery."
+      ],
+      "zh": [
+        "CESU是MV储电方块。CESU储存EU并向机器供电。",
+        "正面输出EU。其余五个面接收EU。",
+        "上方槽位为物品充电。下方槽位从电池取出EU。"
+      ],
+      "ja": [
+        "CESUはMVの蓄電ブロックだ。CESUがEUを蓄え、機械にEUを供給する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。",
+        "上のスロットがアイテムを充電する。下のスロットがバッテリーからEUを取り出す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the CESU with the front face toward you.",
+        "Connect the generator cable to one of the five input faces.",
+        "Connect the front face to the machines with MV cable.",
+        "Open the GUI and select a redstone mode to control the output."
+      ],
+      "zh": [
+        "放置CESU，使正面朝向你。",
+        "把发电机导线接到五个输入面之一。",
+        "用MV导线把正面接到机器。",
+        "打开界面，选择红石模式以控制输出。"
+      ],
+      "ja": [
+        "CESUを置き、正面を自分の方に向ける。",
+        "発電機のケーブルを5つの入力面のどれかに接続する。",
+        "MVケーブルで正面を機械に接続する。",
+        "GUIを開き、レッドストーンモードを選んで出力を制御する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The redstone mode can stop the output or emit a signal at a charge level.",
+        "WARNING: The output is MV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "红石模式可以停止输出，或在指定电量时发出信号。",
+        "警告：输出为MV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードで出力を止めるか、指定の充電量で信号を出す。",
+        "警告：出力はMVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_lesu": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The LESU is an HV storage block. The LESU stores EU and supplies EU to machines.",
+        "The front face outputs EU. The other five faces receive EU.",
+        "The top slot charges an item. The bottom slot takes EU from a battery."
+      ],
+      "zh": [
+        "LESU是HV储电方块。LESU储存EU并向机器供电。",
+        "正面输出EU。其余五个面接收EU。",
+        "上方槽位为物品充电。下方槽位从电池取出EU。"
+      ],
+      "ja": [
+        "LESUはHVの蓄電ブロックだ。LESUがEUを蓄え、機械にEUを供給する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。",
+        "上のスロットがアイテムを充電する。下のスロットがバッテリーからEUを取り出す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the LESU with the front face toward you.",
+        "Connect the generator cable to one of the five input faces.",
+        "Connect the front face to the machines with HV cable.",
+        "Open the GUI and select a redstone mode to control the output."
+      ],
+      "zh": [
+        "放置LESU，使正面朝向你。",
+        "把发电机导线接到五个输入面之一。",
+        "用HV导线把正面接到机器。",
+        "打开界面，选择红石模式以控制输出。"
+      ],
+      "ja": [
+        "LESUを置き、正面を自分の方に向ける。",
+        "発電機のケーブルを5つの入力面のどれかに接続する。",
+        "HVケーブルで正面を機械に接続する。",
+        "GUIを開き、レッドストーンモードを選んで出力を制御する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The redstone mode can stop the output or emit a signal at a charge level.",
+        "WARNING: The output is HV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "红石模式可以停止输出，或在指定电量时发出信号。",
+        "警告：输出为HV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードで出力を止めるか、指定の充電量で信号を出す。",
+        "警告：出力はHVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_lesu_charger": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The LESU Charger is an HV storage block with a charge pad on top.",
+        "The pad charges the armor, held items and inventory items of a player on top.",
+        "The front face outputs EU. The other five faces receive EU."
+      ],
+      "zh": [
+        "LESU充电座是顶部带充电板的HV储电方块。",
+        "充电板为顶部玩家的盔甲、手持物品和背包物品充电。",
+        "正面输出EU。其余五个面接收EU。"
+      ],
+      "ja": [
+        "LESU充電器は上面に充電パッドを持つHVの蓄電ブロックだ。",
+        "パッドが上に立つプレイヤーの防具、手持ちアイテム、インベントリ内のアイテムを充電する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the LESU Charger with the front face toward you.",
+        "Connect an HV generator cable to one of the five input faces.",
+        "Wait until the LESU Charger stores EU.",
+        "Stand on top of the LESU Charger to charge your equipment."
+      ],
+      "zh": [
+        "放置LESU充电座，使正面朝向你。",
+        "把HV发电机导线接到五个输入面之一。",
+        "等待LESU充电座储存EU。",
+        "站在LESU充电座顶部，为装备充电。"
+      ],
+      "ja": [
+        "LESU充電器を置き、正面を自分の方に向ける。",
+        "HVの発電機ケーブルを5つの入力面のどれかに接続する。",
+        "LESU充電器がEUを蓄えるまで待つ。",
+        "LESU充電器の上に立ち、装備を充電する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The pad charges only while the redstone mode allows output.",
+        "WARNING: The output is HV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "仅在红石模式允许输出时，充电板才充电。",
+        "警告：输出为HV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードが出力を許可する間だけ、パッドが充電する。",
+        "警告：出力はHVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_eesu": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The EESU is an IV storage block. The EESU stores EU and supplies EU to machines.",
+        "The front face outputs EU. The other five faces receive EU.",
+        "The top slot charges an item. The bottom slot takes EU from a battery."
+      ],
+      "zh": [
+        "EESU是IV储电方块。EESU储存EU并向机器供电。",
+        "正面输出EU。其余五个面接收EU。",
+        "上方槽位为物品充电。下方槽位从电池取出EU。"
+      ],
+      "ja": [
+        "EESUはIVの蓄電ブロックだ。EESUがEUを蓄え、機械にEUを供給する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。",
+        "上のスロットがアイテムを充電する。下のスロットがバッテリーからEUを取り出す。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the EESU with the front face toward you.",
+        "Connect the generator cable to one of the five input faces.",
+        "Connect the front face to the machines with IV cable.",
+        "Open the GUI and select a redstone mode to control the output."
+      ],
+      "zh": [
+        "放置EESU，使正面朝向你。",
+        "把发电机导线接到五个输入面之一。",
+        "用IV导线把正面接到机器。",
+        "打开界面，选择红石模式以控制输出。"
+      ],
+      "ja": [
+        "EESUを置き、正面を自分の方に向ける。",
+        "発電機のケーブルを5つの入力面のどれかに接続する。",
+        "IVケーブルで正面を機械に接続する。",
+        "GUIを開き、レッドストーンモードを選んで出力を制御する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The redstone mode can stop the output or emit a signal at a charge level.",
+        "WARNING: The output is IV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "红石模式可以停止输出，或在指定电量时发出信号。",
+        "警告：输出为IV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードで出力を止めるか、指定の充電量で信号を出す。",
+        "警告：出力はIVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_eesu_charger": {
+    "kind": "storage",
+    "function": {
+      "en": [
+        "The EESU Charger is an IV storage block with a charge pad on top.",
+        "The pad charges the armor, held items and inventory items of a player on top.",
+        "The front face outputs EU. The other five faces receive EU."
+      ],
+      "zh": [
+        "EESU充电座是顶部带充电板的IV储电方块。",
+        "充电板为顶部玩家的盔甲、手持物品和背包物品充电。",
+        "正面输出EU。其余五个面接收EU。"
+      ],
+      "ja": [
+        "EESU充電器は上面に充電パッドを持つIVの蓄電ブロックだ。",
+        "パッドが上に立つプレイヤーの防具、手持ちアイテム、インベントリ内のアイテムを充電する。",
+        "正面がEUを出力する。他の5面がEUを受け取る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the EESU Charger with the front face toward you.",
+        "Connect an IV generator cable to one of the five input faces.",
+        "Wait until the EESU Charger stores EU.",
+        "Stand on top of the EESU Charger to charge your equipment."
+      ],
+      "zh": [
+        "放置EESU充电座，使正面朝向你。",
+        "把IV发电机导线接到五个输入面之一。",
+        "等待EESU充电座储存EU。",
+        "站在EESU充电座顶部，为装备充电。"
+      ],
+      "ja": [
+        "EESU充電器を置き、正面を自分の方に向ける。",
+        "IVの発電機ケーブルを5つの入力面のどれかに接続する。",
+        "EESU充電器がEUを蓄えるまで待つ。",
+        "EESU充電器の上に立ち、装備を充電する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The pad charges only while the redstone mode allows output.",
+        "WARNING: The output is IV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "仅在红石模式允许输出时，充电板才充电。",
+        "警告：输出为IV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "レッドストーンモードが出力を許可する間だけ、パッドが充電する。",
+        "警告：出力はIVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_gesu_core": {
+    "kind": "multiblock",
+    "function": {
+      "en": [
+        "The GESU Core is the center of the GESU multiblock and stores EU.",
+        "The structure forms when each of the six faces touches a GESU input or output module.",
+        "Input modules give the input rate. Output modules give the output rate."
+      ],
+      "zh": [
+        "GESU核心是GESU多方块结构的中心，储存EU。",
+        "核心六个面都接触GESU输入或输出模块时，结构成形。",
+        "输入模块决定输入速率。输出模块决定输出速率。"
+      ],
+      "ja": [
+        "GESUコアはGESUマルチブロックの中心で、EUを蓄える。",
+        "コアの6面すべてにGESUの入力または出力モジュールが接すると、構造が完成する。",
+        "入力モジュールが入力速度を決める。出力モジュールが出力速度を決める。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the GESU Core.",
+        "Place at least one GESU Input Module on a face of the core.",
+        "Place GESU Output Modules on the other faces of the core.",
+        "Connect the generator cables to the input modules.",
+        "Connect the machine cables to the output modules.",
+        "Open the GUI of the core to check the module count."
+      ],
+      "zh": [
+        "放置GESU核心。",
+        "在核心的一个面上放置至少一个GESU输入模块。",
+        "在核心的其余面上放置GESU输出模块。",
+        "把发电机导线接到输入模块。",
+        "把机器导线接到输出模块。",
+        "打开核心界面，检查模块数量。"
+      ],
+      "ja": [
+        "GESUコアを置く。",
+        "コアの1面に1個以上のGESU入力モジュールを置く。",
+        "コアの残りの面にGESU出力モジュールを置く。",
+        "発電機のケーブルを入力モジュールに接続する。",
+        "機械のケーブルを出力モジュールに接続する。",
+        "コアのGUIを開き、モジュール数を確認する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The structure is a cross of seven blocks: the core and six modules.",
+        "If you remove one module, the GESU stops until you replace the module.",
+        "The GUI has one slot to charge an item and one slot to take EU from a battery."
+      ],
+      "zh": [
+        "结构为七个方块组成的十字形：核心和六个模块。",
+        "拆除一个模块后，GESU停止工作，直到补回模块。",
+        "界面有一个槽位为物品充电，一个槽位从电池取出EU。"
+      ],
+      "ja": [
+        "構造はコアと6個のモジュールからなる7ブロックの十字形だ。",
+        "モジュールを1個外すと、モジュールを戻すまでGESUが停止する。",
+        "GUIには、アイテムを充電するスロットと、バッテリーからEUを取り出すスロットがある。"
+      ]
+    }
+  },
+  "wiring/block_gesu_input_iv": {
+    "kind": "multiblock",
+    "function": {
+      "en": [
+        "The GESU Input Module receives EU from cables and moves the EU into the GESU Core.",
+        "The module is a structural part. The module works only in a complete GESU structure.",
+        "Each input module adds to the input rate of the core."
+      ],
+      "zh": [
+        "GESU输入模块从导线接收EU，并把EU送入GESU核心。",
+        "该模块是结构部件。模块仅在完整的GESU结构中工作。",
+        "每个输入模块都提高核心的输入速率。"
+      ],
+      "ja": [
+        "GESU入力モジュールがケーブルからEUを受け取り、GESUコアへ送る。",
+        "このモジュールは構造部品だ。完成したGESU構造の中でだけ動作する。",
+        "入力モジュールを1個足すごとに、コアの入力速度が上がる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the module directly on a face of the GESU Core.",
+        "Fill the other faces of the core with modules.",
+        "Connect the generator cable to the outer faces of the input module.",
+        "Add more input modules to raise the input rate."
+      ],
+      "zh": [
+        "把模块直接放在GESU核心的一个面上。",
+        "在核心的其余面上放满模块。",
+        "把发电机导线接到输入模块的外侧面。",
+        "增加输入模块以提高输入速率。"
+      ],
+      "ja": [
+        "モジュールをGESUコアの面に直接置く。",
+        "コアの残りの面をモジュールで埋める。",
+        "発電機のケーブルを入力モジュールの外側の面に接続する。",
+        "入力モジュールを足して入力速度を上げる。"
+      ]
+    }
+  },
+  "wiring/block_gesu_output_iv": {
+    "kind": "multiblock",
+    "function": {
+      "en": [
+        "The GESU Output Module (IV) takes EU from the GESU Core and sends the EU to cables at IV.",
+        "The module is a structural part. The module works only in a complete GESU structure.",
+        "Each output module adds to the output rate of the core."
+      ],
+      "zh": [
+        "GESU输出模块（IV）从GESU核心取出EU，以IV输出到导线。",
+        "该模块是结构部件。模块仅在完整的GESU结构中工作。",
+        "每个输出模块都提高核心的输出速率。"
+      ],
+      "ja": [
+        "GESU出力モジュール（IV）がGESUコアからEUを取り出し、IVでケーブルへ送る。",
+        "このモジュールは構造部品だ。完成したGESU構造の中でだけ動作する。",
+        "出力モジュールを1個足すごとに、コアの出力速度が上がる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the module directly on a face of the GESU Core.",
+        "Fill the other faces of the core with modules.",
+        "Connect an IV cable to the outer faces of the output module.",
+        "Put a transformer between the cable and each machine with a lower voltage tier."
+      ],
+      "zh": [
+        "把模块直接放在GESU核心的一个面上。",
+        "在核心的其余面上放满模块。",
+        "把IV导线接到输出模块的外侧面。",
+        "在导线和低电压等级机器之间放置变压器。"
+      ],
+      "ja": [
+        "モジュールをGESUコアの面に直接置く。",
+        "コアの残りの面をモジュールで埋める。",
+        "IVケーブルを出力モジュールの外側の面に接続する。",
+        "ケーブルと電圧Tierの低い機械の間に変圧器を置く。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The output is IV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "警告：输出为IV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "警告：出力はIVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/block_gesu_output_luv": {
+    "kind": "multiblock",
+    "function": {
+      "en": [
+        "The GESU Output Module (LuV) takes EU from the GESU Core and sends the EU to cables at LuV.",
+        "The module is a structural part. The module works only in a complete GESU structure.",
+        "Each output module adds to the output rate of the core."
+      ],
+      "zh": [
+        "GESU输出模块（LuV）从GESU核心取出EU，以LuV输出到导线。",
+        "该模块是结构部件。模块仅在完整的GESU结构中工作。",
+        "每个输出模块都提高核心的输出速率。"
+      ],
+      "ja": [
+        "GESU出力モジュール（LuV）がGESUコアからEUを取り出し、LuVでケーブルへ送る。",
+        "このモジュールは構造部品だ。完成したGESU構造の中でだけ動作する。",
+        "出力モジュールを1個足すごとに、コアの出力速度が上がる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the module directly on a face of the GESU Core.",
+        "Fill the other faces of the core with modules.",
+        "Connect an LuV cable to the outer faces of the output module.",
+        "Put a transformer between the cable and each machine with a lower voltage tier."
+      ],
+      "zh": [
+        "把模块直接放在GESU核心的一个面上。",
+        "在核心的其余面上放满模块。",
+        "把LuV导线接到输出模块的外侧面。",
+        "在导线和低电压等级机器之间放置变压器。"
+      ],
+      "ja": [
+        "モジュールをGESUコアの面に直接置く。",
+        "コアの残りの面をモジュールで埋める。",
+        "LuVケーブルを出力モジュールの外側の面に接続する。",
+        "ケーブルと電圧Tierの低い機械の間に変圧器を置く。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The output is LuV. A machine with a lower voltage tier explodes on overvoltage."
+      ],
+      "zh": [
+        "警告：输出为LuV。电压等级更低的机器因过压爆炸。"
+      ],
+      "ja": [
+        "警告：出力はLuVだ。電圧Tierが低い機械は過電圧で爆発する。"
+      ]
+    }
+  },
+  "wiring/cable/block_tin_cable": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The Low-Voltage Cable carries EU at the LV voltage tier.",
+        "The bare cable shocks living entities that touch the cable while EU flows.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "低压导线以LV电压等级传输EU。",
+        "裸导线通电时，会电击接触导线的生物。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "低圧ケーブルがLVの電圧TierでEUを運ぶ。",
+        "通電中の裸ケーブルは、触れた生物に感電ダメージを与える。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the cable in a line from the generator to the machine.",
+        "Right-click the cable with Rubber to add an insulation layer.",
+        "Right-click a cable arm with a wrench to disconnect that side.",
+        "Right-click the cable center with a wrench to connect the side again."
+      ],
+      "zh": [
+        "从发电机到机器铺设一条导线。",
+        "手持橡胶右键点击导线，加一层绝缘层。",
+        "用扳手右键点击导线分支，断开该方向。",
+        "用扳手右键点击导线中心，恢复该方向。"
+      ],
+      "ja": [
+        "発電機から機械までケーブルを1列に置く。",
+        "ゴムでケーブルを右クリックし、絶縁層を1枚足す。",
+        "レンチでケーブルの腕を右クリックし、その方向を切断する。",
+        "レンチでケーブルの中心を右クリックし、その方向を再接続する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_cable_o": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The Medium-Voltage Cable carries EU at the MV voltage tier.",
+        "The bare cable shocks living entities that touch the cable while EU flows.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "中压导线以MV电压等级传输EU。",
+        "裸导线通电时，会电击接触导线的生物。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "中圧ケーブルがMVの電圧TierでEUを運ぶ。",
+        "通電中の裸ケーブルは、触れた生物に感電ダメージを与える。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the cable in a line from the generator to the machine.",
+        "Right-click the cable with Rubber to add an insulation layer.",
+        "Right-click a cable arm with a wrench to disconnect that side.",
+        "Right-click the cable center with a wrench to connect the side again."
+      ],
+      "zh": [
+        "从发电机到机器铺设一条导线。",
+        "手持橡胶右键点击导线，加一层绝缘层。",
+        "用扳手右键点击导线分支，断开该方向。",
+        "用扳手右键点击导线中心，恢复该方向。"
+      ],
+      "ja": [
+        "発電機から機械までケーブルを1列に置く。",
+        "ゴムでケーブルを右クリックし、絶縁層を1枚足す。",
+        "レンチでケーブルの腕を右クリックし、その方向を切断する。",
+        "レンチでケーブルの中心を右クリックし、その方向を再接続する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_gold_cable": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The High-Voltage Cable carries EU at the HV voltage tier.",
+        "The bare cable shocks living entities that touch the cable while EU flows.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "高压导线以HV电压等级传输EU。",
+        "裸导线通电时，会电击接触导线的生物。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "高圧ケーブルがHVの電圧TierでEUを運ぶ。",
+        "通電中の裸ケーブルは、触れた生物に感電ダメージを与える。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the cable in a line from the generator to the machine.",
+        "Right-click the cable with Rubber to add an insulation layer.",
+        "Right-click a cable arm with a wrench to disconnect that side.",
+        "Right-click the cable center with a wrench to connect the side again."
+      ],
+      "zh": [
+        "从发电机到机器铺设一条导线。",
+        "手持橡胶右键点击导线，加一层绝缘层。",
+        "用扳手右键点击导线分支，断开该方向。",
+        "用扳手右键点击导线中心，恢复该方向。"
+      ],
+      "ja": [
+        "発電機から機械までケーブルを1列に置く。",
+        "ゴムでケーブルを右クリックし、絶縁層を1枚足す。",
+        "レンチでケーブルの腕を右クリックし、その方向を切断する。",
+        "レンチでケーブルの中心を右クリックし、その方向を再接続する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_iron_cable": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The Extra-High-Voltage Cable carries EU at the EV voltage tier.",
+        "The bare cable shocks living entities that touch the cable while EU flows.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "超高压导线以EV电压等级传输EU。",
+        "裸导线通电时，会电击接触导线的生物。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "超高圧ケーブルがEVの電圧TierでEUを運ぶ。",
+        "通電中の裸ケーブルは、触れた生物に感電ダメージを与える。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the cable in a line from the generator to the machine.",
+        "Right-click the cable with Rubber to add an insulation layer.",
+        "Right-click a cable arm with a wrench to disconnect that side.",
+        "Right-click the cable center with a wrench to connect the side again."
+      ],
+      "zh": [
+        "从发电机到机器铺设一条导线。",
+        "手持橡胶右键点击导线，加一层绝缘层。",
+        "用扳手右键点击导线分支，断开该方向。",
+        "用扳手右键点击导线中心，恢复该方向。"
+      ],
+      "ja": [
+        "発電機から機械までケーブルを1列に置く。",
+        "ゴムでケーブルを右クリックし、絶縁層を1枚足す。",
+        "レンチでケーブルの腕を右クリックし、その方向を切断する。",
+        "レンチでケーブルの中心を右クリックし、その方向を再接続する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_glass_cable": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The IV Cable carries EU at the IV voltage tier.",
+        "The cable does not shock living entities.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "IV导线以IV电压等级传输EU。",
+        "该导线不会电击生物。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "IVケーブルがIVの電圧TierでEUを運ぶ。",
+        "このケーブルは生物に感電ダメージを与えない。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect the IV source to the IV machine with IV Cable.",
+        "Right-click the cable with a dye to give the cable a colour.",
+        "Give two parallel lines different colours to keep the lines apart."
+      ],
+      "zh": [
+        "用IV导线连接IV电源和IV机器。",
+        "手持染料右键点击导线，为导线染色。",
+        "为两条平行线路染不同颜色，使线路分开。"
+      ],
+      "ja": [
+        "IVケーブルでIV電源とIV機械を接続する。",
+        "染料でケーブルを右クリックし、ケーブルに色を付ける。",
+        "平行な2本の線路に別の色を付け、線路を分ける。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Cables with different colours do not connect. A black cable connects to all colours.",
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "颜色不同的导线不相连。黑色导线与所有颜色相连。",
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "色の違うケーブルは接続しない。黒のケーブルはすべての色と接続する。",
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_superconducting_cable": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The Superconducting Cable carries EU with no voltage or packet limit.",
+        "The cable has no transport loss and does not burn.",
+        "The insulation does not break down. The cable does not shock living entities."
+      ],
+      "zh": [
+        "超导合金导线传输EU，没有电压和电力包上限。",
+        "该导线没有传输损耗，不会烧毁。",
+        "绝缘层不会损坏。该导线不会电击生物。"
+      ],
+      "ja": [
+        "超伝導ケーブルは電圧とパケットの上限なしにEUを運ぶ。",
+        "このケーブルには輸送損失がなく、焼き切れない。",
+        "絶縁層は壊れない。このケーブルは生物に感電ダメージを与えない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place an iron scaffold line from the generator to the machines.",
+        "Place the Superconducting Cable into each iron scaffold.",
+        "Spray CF foam on the scaffold line with the CF Sprayer.",
+        "Right-click the wet foam with sand, or wait until the foam hardens.",
+        "Put a transformer before each machine with a lower voltage tier."
+      ],
+      "zh": [
+        "从发电机到机器放置一列铁脚手架。",
+        "把超导合金导线放进每个铁脚手架。",
+        "用CF喷枪向脚手架喷涂CF泡沫。",
+        "手持沙子右键点击湿泡沫，或等待泡沫硬化。",
+        "在低电压等级机器前放置变压器。"
+      ],
+      "ja": [
+        "発電機から機械まで鉄の足場を1列に置く。",
+        "各鉄の足場に超伝導ケーブルを置く。",
+        "CFスプレーで足場の列にCFフォームを吹き付ける。",
+        "砂で湿ったフォームを右クリックするか、フォームが固まるまで待つ。",
+        "電圧Tierの低い機械の前に変圧器を置く。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The cable does not limit the packet. A machine with a lower voltage tier explodes on overvoltage.",
+        "The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "警告：该导线不限制电力包。电压等级更低的机器因过压爆炸。",
+        "导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "警告：このケーブルはパケットを制限しない。電圧Tierが低い機械は過電圧で爆発する。",
+        "強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_tin_cable_1": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The Insulated Low-Voltage Cable is an LV cable with one insulation layer.",
+        "The insulation stops shocks at the full LV voltage.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "绝缘低压导线是带一层绝缘层的LV导线。",
+        "绝缘层在LV满电压下也能防止触电。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "絶縁低圧ケーブルは1枚の絶縁層を持つLVケーブルだ。",
+        "絶縁層がLVの最大電圧でも感電を防ぐ。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect the generator to the machine with the Insulated Low-Voltage Cable.",
+        "Shift-right-click the cable with a Cable Cutter to remove one insulation layer.",
+        "Right-click the cable with a dye to give the cable a colour."
+      ],
+      "zh": [
+        "用绝缘低压导线连接发电机和机器。",
+        "潜行时用剪线钳右键点击导线，去掉一层绝缘层。",
+        "手持染料右键点击导线，为导线染色。"
+      ],
+      "ja": [
+        "絶縁低圧ケーブルで発電機と機械を接続する。",
+        "スニークしながらケーブルカッターで右クリックし、絶縁層を1枚外す。",
+        "染料でケーブルを右クリックし、ケーブルに色を付ける。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Cables with different colours do not connect. A black cable connects to all colours.",
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "颜色不同的导线不相连。黑色导线与所有颜色相连。",
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "色の違うケーブルは接続しない。黒のケーブルはすべての色と接続する。",
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_cable": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The Insulated Medium-Voltage Cable is an MV cable with one insulation layer.",
+        "The insulation stops shocks at the full MV voltage.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "绝缘中压导线是带一层绝缘层的MV导线。",
+        "绝缘层在MV满电压下也能防止触电。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "絶縁中圧ケーブルは1枚の絶縁層を持つMVケーブルだ。",
+        "絶縁層がMVの最大電圧でも感電を防ぐ。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect the generator to the machine with the Insulated Medium-Voltage Cable.",
+        "Shift-right-click the cable with a Cable Cutter to remove one insulation layer.",
+        "Right-click the cable with a dye to give the cable a colour."
+      ],
+      "zh": [
+        "用绝缘中压导线连接发电机和机器。",
+        "潜行时用剪线钳右键点击导线，去掉一层绝缘层。",
+        "手持染料右键点击导线，为导线染色。"
+      ],
+      "ja": [
+        "絶縁中圧ケーブルで発電機と機械を接続する。",
+        "スニークしながらケーブルカッターで右クリックし、絶縁層を1枚外す。",
+        "染料でケーブルを右クリックし、ケーブルに色を付ける。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Cables with different colours do not connect. A black cable connects to all colours.",
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "颜色不同的导线不相连。黑色导线与所有颜色相连。",
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "色の違うケーブルは接続しない。黒のケーブルはすべての色と接続する。",
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_gold_cable_1": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The Insulated High-Voltage Cable is an HV cable with one insulation layer.",
+        "The insulation stops shocks only below the full HV voltage.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "绝缘高压导线是带一层绝缘层的HV导线。",
+        "绝缘层仅在低于HV满电压时防止触电。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "絶縁高圧ケーブルは1枚の絶縁層を持つHVケーブルだ。",
+        "絶縁層はHVの最大電圧未満でのみ感電を防ぐ。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect the generator to the machine with the Insulated High-Voltage Cable.",
+        "Right-click the cable with Rubber to add an insulation layer.",
+        "Shift-right-click the cable with a Cable Cutter to remove one insulation layer.",
+        "Right-click the cable with a dye to give the cable a colour."
+      ],
+      "zh": [
+        "用绝缘高压导线连接发电机和机器。",
+        "手持橡胶右键点击导线，加一层绝缘层。",
+        "潜行时用剪线钳右键点击导线，去掉一层绝缘层。",
+        "手持染料右键点击导线，为导线染色。"
+      ],
+      "ja": [
+        "絶縁高圧ケーブルで発電機と機械を接続する。",
+        "ゴムでケーブルを右クリックし、絶縁層を1枚足す。",
+        "スニークしながらケーブルカッターで右クリックし、絶縁層を1枚外す。",
+        "染料でケーブルを右クリックし、ケーブルに色を付ける。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The cable can shock players at the full HV voltage. Add insulation layers with Rubber.",
+        "Cables with different colours do not connect. A black cable connects to all colours.",
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "警告：HV满电压下，导线可能电击玩家。用橡胶增加绝缘层。",
+        "颜色不同的导线不相连。黑色导线与所有颜色相连。",
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "警告：HVの最大電圧ではケーブルが感電を起こすことがある。ゴムで絶縁層を足す。",
+        "色の違うケーブルは接続しない。黒のケーブルはすべての色と接続する。",
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_iron_cable_1": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The Insulated Extra-High-Voltage Cable is an EV cable with one insulation layer.",
+        "The insulation stops shocks only below the full EV voltage.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "绝缘超高压导线是带一层绝缘层的EV导线。",
+        "绝缘层仅在低于EV满电压时防止触电。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "絶縁超高圧ケーブルは1枚の絶縁層を持つEVケーブルだ。",
+        "絶縁層はEVの最大電圧未満でのみ感電を防ぐ。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place an iron scaffold line from the EV source to the EV machine.",
+        "Place the Insulated Extra-High-Voltage Cable into each iron scaffold.",
+        "Spray CF foam on the scaffold line with the CF Sprayer.",
+        "Right-click the wet foam with sand, or wait until the foam hardens."
+      ],
+      "zh": [
+        "从EV电源到EV机器放置一列铁脚手架。",
+        "把绝缘超高压导线放进每个铁脚手架。",
+        "用CF喷枪向脚手架喷涂CF泡沫。",
+        "手持沙子右键点击湿泡沫，或等待泡沫硬化。"
+      ],
+      "ja": [
+        "EV電源からEV機械まで鉄の足場を1列に置く。",
+        "各鉄の足場に絶縁超高圧ケーブルを置く。",
+        "CFスプレーで足場の列にCFフォームを吹き付ける。",
+        "砂で湿ったフォームを右クリックするか、フォームが固まるまで待つ。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The cable can shock players at the full EV voltage. Add insulation layers with Rubber.",
+        "Cables with different colours do not connect. A black cable connects to all colours.",
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "警告：EV满电压下，导线可能电击玩家。用橡胶增加绝缘层。",
+        "颜色不同的导线不相连。黑色导线与所有颜色相连。",
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "警告：EVの最大電圧ではケーブルが感電を起こすことがある。ゴムで絶縁層を足す。",
+        "色の違うケーブルは接続しない。黒のケーブルはすべての色と接続する。",
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_gold_cable_2": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The 2x Insulated Gold Cable is an HV cable with two insulation layers.",
+        "The insulation stops shocks at the full HV voltage.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "双层绝缘金导线是带两层绝缘层的HV导线。",
+        "绝缘层在HV满电压下也能防止触电。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "2層絶縁金ケーブルは2枚の絶縁層を持つHVケーブルだ。",
+        "絶縁層がHVの最大電圧でも感電を防ぐ。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect the generator to the machine with the 2x Insulated Gold Cable.",
+        "Shift-right-click the cable with a Cable Cutter to remove one insulation layer.",
+        "Right-click the cable with a dye to give the cable a colour."
+      ],
+      "zh": [
+        "用双层绝缘金导线连接发电机和机器。",
+        "潜行时用剪线钳右键点击导线，去掉一层绝缘层。",
+        "手持染料右键点击导线，为导线染色。"
+      ],
+      "ja": [
+        "2層絶縁金ケーブルで発電機と機械を接続する。",
+        "スニークしながらケーブルカッターで右クリックし、絶縁層を1枚外す。",
+        "染料でケーブルを右クリックし、ケーブルに色を付ける。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Cables with different colours do not connect. A black cable connects to all colours.",
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "颜色不同的导线不相连。黑色导线与所有颜色相连。",
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "色の違うケーブルは接続しない。黒のケーブルはすべての色と接続する。",
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_iron_cable_2": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The 2x Insulated HV Iron Cable is an EV cable with two insulation layers.",
+        "The insulation stops shocks only below the full EV voltage.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "双层绝缘高压铁导线是带两层绝缘层的EV导线。",
+        "绝缘层仅在低于EV满电压时防止触电。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "2層絶縁鉄ケーブルは2枚の絶縁層を持つEVケーブルだ。",
+        "絶縁層はEVの最大電圧未満でのみ感電を防ぐ。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect the generator to the machine with the 2x Insulated HV Iron Cable.",
+        "Right-click the cable with Rubber to add an insulation layer.",
+        "Shift-right-click the cable with a Cable Cutter to remove one insulation layer.",
+        "Right-click the cable with a dye to give the cable a colour."
+      ],
+      "zh": [
+        "用双层绝缘高压铁导线连接发电机和机器。",
+        "手持橡胶右键点击导线，加一层绝缘层。",
+        "潜行时用剪线钳右键点击导线，去掉一层绝缘层。",
+        "手持染料右键点击导线，为导线染色。"
+      ],
+      "ja": [
+        "2層絶縁鉄ケーブルで発電機と機械を接続する。",
+        "ゴムでケーブルを右クリックし、絶縁層を1枚足す。",
+        "スニークしながらケーブルカッターで右クリックし、絶縁層を1枚外す。",
+        "染料でケーブルを右クリックし、ケーブルに色を付ける。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "WARNING: The cable can shock players at the full EV voltage. Add insulation layers with Rubber.",
+        "Cables with different colours do not connect. A black cable connects to all colours.",
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "警告：EV满电压下，导线可能电击玩家。用橡胶增加绝缘层。",
+        "颜色不同的导线不相连。黑色导线与所有颜色相连。",
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "警告：EVの最大電圧ではケーブルが感電を起こすことがある。ゴムで絶縁層を足す。",
+        "色の違うケーブルは接続しない。黒のケーブルはすべての色と接続する。",
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/cable/block_iron_cable_3": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The 3x Insulated HV Iron Cable is an EV cable with three insulation layers.",
+        "The insulation stops shocks at the full EV voltage.",
+        "A packet above the cable limit burns the cable."
+      ],
+      "zh": [
+        "三层绝缘高压铁导线是带三层绝缘层的EV导线。",
+        "绝缘层在EV满电压下也能防止触电。",
+        "超过导线上限的电力包会烧毁导线。"
+      ],
+      "ja": [
+        "3層絶縁鉄ケーブルは3枚の絶縁層を持つEVケーブルだ。",
+        "絶縁層がEVの最大電圧でも感電を防ぐ。",
+        "上限を超えるパケットがケーブルを焼き切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Connect the generator to the machine with the 3x Insulated HV Iron Cable.",
+        "Shift-right-click the cable with a Cable Cutter to remove one insulation layer.",
+        "Right-click the cable with a dye to give the cable a colour."
+      ],
+      "zh": [
+        "用三层绝缘高压铁导线连接发电机和机器。",
+        "潜行时用剪线钳右键点击导线，去掉一层绝缘层。",
+        "手持染料右键点击导线，为导线染色。"
+      ],
+      "ja": [
+        "3層絶縁鉄ケーブルで発電機と機械を接続する。",
+        "スニークしながらケーブルカッターで右クリックし、絶縁層を1枚外す。",
+        "染料でケーブルを右クリックし、ケーブルに色を付ける。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "Cables with different colours do not connect. A black cable connects to all colours.",
+        "You can lay the cable through an iron scaffold and foam the scaffold. The cable conducts inside the reinforced stone."
+      ],
+      "zh": [
+        "颜色不同的导线不相连。黑色导线与所有颜色相连。",
+        "导线可穿过铁脚手架铺设，再喷涂泡沫。导线在强化石内仍然导电。"
+      ],
+      "ja": [
+        "色の違うケーブルは接続しない。黒のケーブルはすべての色と接続する。",
+        "鉄の足場にケーブルを通し、足場にCFフォームを吹き付けることができる。強化石の中でもケーブルが導電する。"
+      ]
+    }
+  },
+  "wiring/transformer_lv_mv": {
+    "kind": "transformer",
+    "function": {
+      "en": [
+        "The transformer converts EU between the LV and MV voltage tiers.",
+        "The front face is the MV side. The other five faces are the LV side.",
+        "Step-down mode is the default. Redstone control mode steps up while a redstone signal is present."
+      ],
+      "zh": [
+        "变压器在LV和MV电压等级之间转换EU。",
+        "正面为MV侧。其余五个面为LV侧。",
+        "默认为降压模式。红石控制模式在有红石信号时升压。"
+      ],
+      "ja": [
+        "変圧器がLVとMVの電圧Tierの間でEUを変換する。",
+        "正面がMV側だ。他の5面がLV側だ。",
+        "初期モードは降圧モードだ。レッドストーン制御モードは信号がある間に昇圧する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the transformer with the front face toward you.",
+        "Connect the MV cable from the source to the front face.",
+        "Connect the LV machines to one of the other five faces.",
+        "Open the GUI and select Step down, Step up or Redstone control.",
+        "Right-click the transformer with a wrench to turn the front face."
+      ],
+      "zh": [
+        "放置变压器，使正面朝向你。",
+        "把电源的MV导线接到正面。",
+        "把LV机器接到其余五个面之一。",
+        "打开界面，选择降压、升压或红石控制。",
+        "用扳手右键点击变压器，转动正面。"
+      ],
+      "ja": [
+        "変圧器を置き、正面を自分の方に向ける。",
+        "電源のMVケーブルを正面に接続する。",
+        "LVの機械を他の5面のどれかに接続する。",
+        "GUIを開き、降圧、昇圧、レッドストーン制御のどれかを選ぶ。",
+        "レンチで変圧器を右クリックし、正面の向きを変える。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "In step-up mode, EU enters the LV faces and leaves the front face at MV.",
+        "WARNING: An input above the input voltage tier makes the transformer explode."
+      ],
+      "zh": [
+        "升压模式下，EU从LV面输入，以MV从正面输出。",
+        "警告：输入超过输入侧电压等级时，变压器爆炸。"
+      ],
+      "ja": [
+        "昇圧モードでは、EUがLVの面から入り、MVで正面から出る。",
+        "警告：入力側の電圧Tierを超える入力で変圧器が爆発する。"
+      ]
+    }
+  },
+  "wiring/transformer_mv_hv": {
+    "kind": "transformer",
+    "function": {
+      "en": [
+        "The transformer converts EU between the MV and HV voltage tiers.",
+        "The front face is the HV side. The other five faces are the MV side.",
+        "Step-down mode is the default. Redstone control mode steps up while a redstone signal is present."
+      ],
+      "zh": [
+        "变压器在MV和HV电压等级之间转换EU。",
+        "正面为HV侧。其余五个面为MV侧。",
+        "默认为降压模式。红石控制模式在有红石信号时升压。"
+      ],
+      "ja": [
+        "変圧器がMVとHVの電圧Tierの間でEUを変換する。",
+        "正面がHV側だ。他の5面がMV側だ。",
+        "初期モードは降圧モードだ。レッドストーン制御モードは信号がある間に昇圧する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the transformer with the front face toward you.",
+        "Connect the HV cable from the source to the front face.",
+        "Connect the MV machines to one of the other five faces.",
+        "Open the GUI and select Step down, Step up or Redstone control.",
+        "Right-click the transformer with a wrench to turn the front face."
+      ],
+      "zh": [
+        "放置变压器，使正面朝向你。",
+        "把电源的HV导线接到正面。",
+        "把MV机器接到其余五个面之一。",
+        "打开界面，选择降压、升压或红石控制。",
+        "用扳手右键点击变压器，转动正面。"
+      ],
+      "ja": [
+        "変圧器を置き、正面を自分の方に向ける。",
+        "電源のHVケーブルを正面に接続する。",
+        "MVの機械を他の5面のどれかに接続する。",
+        "GUIを開き、降圧、昇圧、レッドストーン制御のどれかを選ぶ。",
+        "レンチで変圧器を右クリックし、正面の向きを変える。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "In step-up mode, EU enters the MV faces and leaves the front face at HV.",
+        "WARNING: An input above the input voltage tier makes the transformer explode."
+      ],
+      "zh": [
+        "升压模式下，EU从MV面输入，以HV从正面输出。",
+        "警告：输入超过输入侧电压等级时，变压器爆炸。"
+      ],
+      "ja": [
+        "昇圧モードでは、EUがMVの面から入り、HVで正面から出る。",
+        "警告：入力側の電圧Tierを超える入力で変圧器が爆発する。"
+      ]
+    }
+  },
+  "wiring/transformer_hv_ev": {
+    "kind": "transformer",
+    "function": {
+      "en": [
+        "The transformer converts EU between the HV and EV voltage tiers.",
+        "The front face is the EV side. The other five faces are the HV side.",
+        "Step-down mode is the default. Redstone control mode steps up while a redstone signal is present."
+      ],
+      "zh": [
+        "变压器在HV和EV电压等级之间转换EU。",
+        "正面为EV侧。其余五个面为HV侧。",
+        "默认为降压模式。红石控制模式在有红石信号时升压。"
+      ],
+      "ja": [
+        "変圧器がHVとEVの電圧Tierの間でEUを変換する。",
+        "正面がEV側だ。他の5面がHV側だ。",
+        "初期モードは降圧モードだ。レッドストーン制御モードは信号がある間に昇圧する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the transformer with the front face toward you.",
+        "Connect the EV cable from the source to the front face.",
+        "Connect the HV machines to one of the other five faces.",
+        "Open the GUI and select Step down, Step up or Redstone control.",
+        "Right-click the transformer with a wrench to turn the front face."
+      ],
+      "zh": [
+        "放置变压器，使正面朝向你。",
+        "把电源的EV导线接到正面。",
+        "把HV机器接到其余五个面之一。",
+        "打开界面，选择降压、升压或红石控制。",
+        "用扳手右键点击变压器，转动正面。"
+      ],
+      "ja": [
+        "変圧器を置き、正面を自分の方に向ける。",
+        "電源のEVケーブルを正面に接続する。",
+        "HVの機械を他の5面のどれかに接続する。",
+        "GUIを開き、降圧、昇圧、レッドストーン制御のどれかを選ぶ。",
+        "レンチで変圧器を右クリックし、正面の向きを変える。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "In step-up mode, EU enters the HV faces and leaves the front face at EV.",
+        "WARNING: An input above the input voltage tier makes the transformer explode."
+      ],
+      "zh": [
+        "升压模式下，EU从HV面输入，以EV从正面输出。",
+        "警告：输入超过输入侧电压等级时，变压器爆炸。"
+      ],
+      "ja": [
+        "昇圧モードでは、EUがHVの面から入り、EVで正面から出る。",
+        "警告：入力側の電圧Tierを超える入力で変圧器が爆発する。"
+      ]
+    }
+  },
+  "wiring/transformer_ev_sc": {
+    "kind": "transformer",
+    "function": {
+      "en": [
+        "The transformer converts EU between the EV and IV voltage tiers.",
+        "The front face is the IV side. The other five faces are the EV side.",
+        "Step-down mode is the default. Redstone control mode steps up while a redstone signal is present."
+      ],
+      "zh": [
+        "变压器在EV和IV电压等级之间转换EU。",
+        "正面为IV侧。其余五个面为EV侧。",
+        "默认为降压模式。红石控制模式在有红石信号时升压。"
+      ],
+      "ja": [
+        "変圧器がEVとIVの電圧Tierの間でEUを変換する。",
+        "正面がIV側だ。他の5面がEV側だ。",
+        "初期モードは降圧モードだ。レッドストーン制御モードは信号がある間に昇圧する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the transformer with the front face toward you.",
+        "Connect the IV cable from the source to the front face.",
+        "Connect the EV machines to one of the other five faces.",
+        "Open the GUI and select Step down, Step up or Redstone control.",
+        "Right-click the transformer with a wrench to turn the front face."
+      ],
+      "zh": [
+        "放置变压器，使正面朝向你。",
+        "把电源的IV导线接到正面。",
+        "把EV机器接到其余五个面之一。",
+        "打开界面，选择降压、升压或红石控制。",
+        "用扳手右键点击变压器，转动正面。"
+      ],
+      "ja": [
+        "変圧器を置き、正面を自分の方に向ける。",
+        "電源のIVケーブルを正面に接続する。",
+        "EVの機械を他の5面のどれかに接続する。",
+        "GUIを開き、降圧、昇圧、レッドストーン制御のどれかを選ぶ。",
+        "レンチで変圧器を右クリックし、正面の向きを変える。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "In step-up mode, EU enters the EV faces and leaves the front face at IV.",
+        "WARNING: An input above the input voltage tier makes the transformer explode."
+      ],
+      "zh": [
+        "升压模式下，EU从EV面输入，以IV从正面输出。",
+        "警告：输入超过输入侧电压等级时，变压器爆炸。"
+      ],
+      "ja": [
+        "昇圧モードでは、EUがEVの面から入り、IVで正面から出る。",
+        "警告：入力側の電圧Tierを超える入力で変圧器が爆発する。"
+      ]
+    }
+  },
+  "wiring/transformer_iv_luv": {
+    "kind": "transformer",
+    "function": {
+      "en": [
+        "The transformer converts EU between the IV and LuV voltage tiers.",
+        "The front face is the LuV side. The other five faces are the IV side.",
+        "Step-down mode is the default. Redstone control mode steps up while a redstone signal is present."
+      ],
+      "zh": [
+        "变压器在IV和LuV电压等级之间转换EU。",
+        "正面为LuV侧。其余五个面为IV侧。",
+        "默认为降压模式。红石控制模式在有红石信号时升压。"
+      ],
+      "ja": [
+        "変圧器がIVとLuVの電圧Tierの間でEUを変換する。",
+        "正面がLuV側だ。他の5面がIV側だ。",
+        "初期モードは降圧モードだ。レッドストーン制御モードは信号がある間に昇圧する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the transformer with the front face toward you.",
+        "Connect the LuV cable from the source to the front face.",
+        "Connect the IV machines to one of the other five faces.",
+        "Open the GUI and select Step down, Step up or Redstone control.",
+        "Right-click the transformer with a wrench to turn the front face."
+      ],
+      "zh": [
+        "放置变压器，使正面朝向你。",
+        "把电源的LuV导线接到正面。",
+        "把IV机器接到其余五个面之一。",
+        "打开界面，选择降压、升压或红石控制。",
+        "用扳手右键点击变压器，转动正面。"
+      ],
+      "ja": [
+        "変圧器を置き、正面を自分の方に向ける。",
+        "電源のLuVケーブルを正面に接続する。",
+        "IVの機械を他の5面のどれかに接続する。",
+        "GUIを開き、降圧、昇圧、レッドストーン制御のどれかを選ぶ。",
+        "レンチで変圧器を右クリックし、正面の向きを変える。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "In step-up mode, EU enters the IV faces and leaves the front face at LuV.",
+        "WARNING: An input above the input voltage tier makes the transformer explode."
+      ],
+      "zh": [
+        "升压模式下，EU从IV面输入，以LuV从正面输出。",
+        "警告：输入超过输入侧电压等级时，变压器爆炸。"
+      ],
+      "ja": [
+        "昇圧モードでは、EUがIVの面から入り、LuVで正面から出る。",
+        "警告：入力側の電圧Tierを超える入力で変圧器が爆発する。"
+      ]
+    }
+  },
+  "wiring/transformer_luv_zpmv": {
+    "kind": "transformer",
+    "function": {
+      "en": [
+        "The transformer converts EU between the LuV and ZPMV voltage tiers.",
+        "The front face is the ZPMV side. The other five faces are the LuV side.",
+        "Step-down mode is the default. Redstone control mode steps up while a redstone signal is present."
+      ],
+      "zh": [
+        "变压器在LuV和ZPMV电压等级之间转换EU。",
+        "正面为ZPMV侧。其余五个面为LuV侧。",
+        "默认为降压模式。红石控制模式在有红石信号时升压。"
+      ],
+      "ja": [
+        "変圧器がLuVとZPMVの電圧Tierの間でEUを変換する。",
+        "正面がZPMV側だ。他の5面がLuV側だ。",
+        "初期モードは降圧モードだ。レッドストーン制御モードは信号がある間に昇圧する。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the transformer with the front face toward you.",
+        "Connect the ZPMV cable from the source to the front face.",
+        "Connect the LuV machines to one of the other five faces.",
+        "Open the GUI and select Step down, Step up or Redstone control.",
+        "Right-click the transformer with a wrench to turn the front face."
+      ],
+      "zh": [
+        "放置变压器，使正面朝向你。",
+        "把电源的ZPMV导线接到正面。",
+        "把LuV机器接到其余五个面之一。",
+        "打开界面，选择降压、升压或红石控制。",
+        "用扳手右键点击变压器，转动正面。"
+      ],
+      "ja": [
+        "変圧器を置き、正面を自分の方に向ける。",
+        "電源のZPMVケーブルを正面に接続する。",
+        "LuVの機械を他の5面のどれかに接続する。",
+        "GUIを開き、降圧、昇圧、レッドストーン制御のどれかを選ぶ。",
+        "レンチで変圧器を右クリックし、正面の向きを変える。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "In step-up mode, EU enters the LuV faces and leaves the front face at ZPMV.",
+        "WARNING: An input above the input voltage tier makes the transformer explode."
+      ],
+      "zh": [
+        "升压模式下，EU从LuV面输入，以ZPMV从正面输出。",
+        "警告：输入超过输入侧电压等级时，变压器爆炸。"
+      ],
+      "ja": [
+        "昇圧モードでは、EUがLuVの面から入り、ZPMVで正面から出る。",
+        "警告：入力側の電圧Tierを超える入力で変圧器が爆発する。"
+      ]
+    }
+  },
+  "wiring/block_wireless_power_transmission_node": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The node sends EU without cables to a target block in a loaded chunk, at any distance.",
+        "A node with a target takes EU from adjacent cables and sends the EU to the target.",
+        "A node without a target supplies adjacent machines and cables. The packet matches the weakest neighbour."
+      ],
+      "zh": [
+        "节点无需导线，把EU送到已加载区块中的目标方块，距离不限。",
+        "有目标的节点从相邻导线取电，并把EU送到目标。",
+        "无目标的节点向相邻机器和导线供电。电力包大小适配最弱的相邻方块。"
+      ],
+      "ja": [
+        "ノードがケーブルなしで、読み込み済みチャンク内の目標ブロックへ距離に関係なくEUを送る。",
+        "目標を持つノードは隣のケーブルからEUを取り、目標へ送る。",
+        "目標のないノードは隣の機械とケーブルに給電する。パケットは最も弱い隣接ブロックに合わせる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place a receiver node next to the machines or cables that need EU.",
+        "Place a sender node next to the generator cable.",
+        "Shift-right-click the receiver node with the Electric Wireless Manager to store the target.",
+        "Right-click the sender node with the Electric Wireless Manager to link the node."
+      ],
+      "zh": [
+        "在需要EU的机器或导线旁放置接收节点。",
+        "在发电机导线旁放置发送节点。",
+        "潜行时用无线管理器右键点击接收节点，记录目标。",
+        "用无线管理器右键点击发送节点，完成连接。"
+      ],
+      "ja": [
+        "EUが必要な機械またはケーブルの隣に受信ノードを置く。",
+        "発電機のケーブルの隣に送信ノードを置く。",
+        "スニークしながら無線電力マネージャーで受信ノードを右クリックし、目標を記録する。",
+        "無線電力マネージャーで送信ノードを右クリックし、ノードを接続する。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The target can also be a machine or a storage block.",
+        "The node glows while the node sends EU. A target in an unloaded chunk gets no EU."
+      ],
+      "zh": [
+        "目标也可以是机器或储电方块。",
+        "节点发送EU时发光。未加载区块中的目标得不到EU。"
+      ],
+      "ja": [
+        "目標は機械や蓄電ブロックでもよい。",
+        "ノードはEUを送る間に光る。読み込まれていないチャンクの目標にはEUが届かない。"
+      ]
+    }
+  },
+  "wiring/block_eu_detector_cable": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The EU Detector Cable is an IV cable that measures the EU flow through the cable.",
+        "The cable emits a full redstone signal while EU flows.",
+        "A comparator reads a signal strength that increases with the flow."
+      ],
+      "zh": [
+        "EU检测导线是IV导线，测量流经导线的EU。",
+        "有EU流过时，导线发出满强度红石信号。",
+        "比较器读取的信号强度随电流增大。"
+      ],
+      "ja": [
+        "EU検出ケーブルはIVケーブルで、通過するEUの流れを測る。",
+        "EUが流れる間、ケーブルが最大強度のレッドストーン信号を出す。",
+        "コンパレーターが読む信号強度は流量に応じて上がる。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Replace one cable block in the line with the EU Detector Cable.",
+        "Place a redstone lamp next to the detector cable.",
+        "Place a comparator next to the detector cable to read the flow level."
+      ],
+      "zh": [
+        "用EU检测导线替换线路中的一格导线。",
+        "在检测导线旁放置红石灯。",
+        "在检测导线旁放置比较器，读取电流大小。"
+      ],
+      "ja": [
+        "線路のケーブル1ブロックをEU検出ケーブルに置き換える。",
+        "検出ケーブルの隣にレッドストーンランプを置く。",
+        "検出ケーブルの隣にコンパレーターを置き、流量を読む。"
+      ]
+    },
+    "notes": {
+      "en": [
+        "The signal updates with a short delay."
+      ],
+      "zh": [
+        "信号更新有短暂延迟。"
+      ],
+      "ja": [
+        "信号の更新には短い遅れがある。"
+      ]
+    }
+  },
+  "wiring/block_eu_splitter_cable": {
+    "kind": "cable",
+    "function": {
+      "en": [
+        "The EU Splitter Cable is an IV cable with a redstone switch.",
+        "Without a redstone signal, the cable conducts EU. With a redstone signal, the cable cuts the line."
+      ],
+      "zh": [
+        "EU分流导线是带红石开关的IV导线。",
+        "无红石信号时导线导电。有红石信号时导线断开线路。"
+      ],
+      "ja": [
+        "EU分離ケーブルはレッドストーンスイッチ付きのIVケーブルだ。",
+        "信号がないとケーブルがEUを通す。信号があるとケーブルが線路を切る。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Replace one cable block in the line with the EU Splitter Cable.",
+        "Place a lever next to the splitter cable.",
+        "Turn the lever on to stop the EU flow.",
+        "Turn the lever off to connect the line again."
+      ],
+      "zh": [
+        "用EU分流导线替换线路中的一格导线。",
+        "在分流导线旁放置拉杆。",
+        "打开拉杆，停止EU流动。",
+        "关闭拉杆，重新接通线路。"
+      ],
+      "ja": [
+        "線路のケーブル1ブロックをEU分離ケーブルに置き換える。",
+        "分離ケーブルの隣にレバーを置く。",
+        "レバーをオンにし、EUの流れを止める。",
+        "レバーをオフにし、線路を再接続する。"
+      ]
+    }
+  },
+  "wiring/block_energy_terminal": {
+    "kind": "utility",
+    "function": {
+      "en": [
+        "The terminal monitors generation, consumption and storage of the attached cable network.",
+        "The terminal uses no EU and adds no load to the network.",
+        "The GUI can switch off a device. A switched-off device has no input and no output."
+      ],
+      "zh": [
+        "终端监视所连导线网络的发电、耗电和储电。",
+        "终端不消耗EU，也不给网络增加负载。",
+        "界面可以关闭设备。关闭的设备没有输入和输出。"
+      ],
+      "ja": [
+        "端末が接続先ケーブルネットワークの発電、消費、蓄電を監視する。",
+        "端末はEUを使わず、ネットワークに負荷を加えない。",
+        "GUIで機器を停止できる。停止した機器は入力も出力もしない。"
+      ]
+    },
+    "usage": {
+      "en": [
+        "Place the terminal next to a cable of the network.",
+        "Right-click the terminal to open the GUI.",
+        "Select Local to show this network or Global to include networks behind transformers.",
+        "Click the switch of a device to cut the device from the network."
+      ],
+      "zh": [
+        "把终端放在网络导线旁。",
+        "右键点击终端，打开界面。",
+        "选择本地显示本网络，选择全局包含变压器后的网络。",
+        "点击设备开关，把设备从网络断开。"
+      ],
+      "ja": [
+        "端末をネットワークのケーブルの隣に置く。",
+        "端末を右クリックし、GUIを開く。",
+        "ローカルでこのネットワークを、グローバルで変圧器の先のネットワークも表示する。",
+        "機器のスイッチをクリックし、機器をネットワークから切り離す。"
+      ]
+    }
+  }
+}

@@ -32,10 +32,35 @@ public final class ArmorFeatures {
      * 获取物品声明的全部装备特性。
      */
     public static List<ArmorFeatureInfo> features(ItemStack stack) {
-        if (stack.isEmpty() || !(stack.getItem() instanceof IElectricArmorItem armor)) {
-            return List.of();
+        if (stack.isEmpty()) return List.of();
+        List<ArmorFeatureInfo> base;
+        if (stack.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IFeatureToolItem tool) base = tool.getFeatures(stack);
+        else if (stack.getItem() instanceof IElectricArmorItem armor) base = armor.getFeatures(stack);
+        else base = List.of();
+        if (EXTENSIONS.isEmpty()) return base;
+        List<ArmorFeatureInfo> out = null;
+        for (Extension extension : EXTENSIONS) {
+            List<ArmorFeatureInfo> extra = extension.extraFeatures(stack);
+            if (extra == null || extra.isEmpty()) continue;
+            if (out == null) out = new java.util.ArrayList<>(base);
+            out.addAll(extra);
         }
-        return armor.getFeatures(stack);
+        return out == null ? base : List.copyOf(out);
+    }
+
+    /**
+     * Extra features that do not come from the item class, e.g. installed upgrade units.
+     * Registered once during mod construction.
+     */
+    @FunctionalInterface
+    public interface Extension {
+        List<ArmorFeatureInfo> extraFeatures(ItemStack stack);
+    }
+
+    private static final List<Extension> EXTENSIONS = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    public static void registerExtension(Extension extension) {
+        EXTENSIONS.add(java.util.Objects.requireNonNull(extension));
     }
 
     /**

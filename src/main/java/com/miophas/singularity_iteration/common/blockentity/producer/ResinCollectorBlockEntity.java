@@ -44,8 +44,16 @@ public class ResinCollectorBlockEntity extends BlockEntity implements MenuProvid
             level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
     }
     public static void serverTick(Level level, BlockPos pos, BlockState state, ResinCollectorBlockEntity collector) {
-        // Covers chunk loads and neighbor changes that external blocks do not notify.
+        // Covers chunk loads and neighbor changes that external blocks do not notify. The check
+        // is one modulo per tick; the log is only read every 20 ticks (staggered by position).
         if ((level.getGameTime() + pos.asLong()) % 20 == 0) collector.collectResin();
+    }
+
+    /** A loaded chunk collects at once instead of waiting for the next 20-tick poll. */
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide) level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
     }
     public boolean collectResin() {
         if (level == null || level.isClientSide || isRemoved()) return false;
@@ -53,7 +61,7 @@ public class ResinCollectorBlockEntity extends BlockEntity implements MenuProvid
         if (!(own.getBlock() instanceof ResinCollectorBlock)) return false;
         Direction front = own.getValue(ResinCollectorBlock.FACING);
         BlockPos logPos = worldPosition.relative(front.getOpposite());
-        if (!level.hasChunkAt(logPos)) return false;
+        if (!level.isLoaded(logPos)) return false;   // chunk border: wait for the poll
         BlockState log = level.getBlockState(logPos);
         if (!(log.getBlock() instanceof IRubberWood wood) || !log.hasProperty(ResinCollectorBlock.FACING)
                 || log.getValue(ResinCollectorBlock.FACING) != front || !wood.isTappable(log) || !wood.hasResin(log)) return false;

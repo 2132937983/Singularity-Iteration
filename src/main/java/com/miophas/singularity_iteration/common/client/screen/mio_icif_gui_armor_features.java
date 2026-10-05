@@ -100,6 +100,9 @@ public class mio_icif_gui_armor_features extends Screen {
             priorityButtons[i] = addRenderableWidget(new SiButton(left + PX + 4 + i * 41, top + 56, 40, 11,
                 Component.translatable("gui.mio_icif.equipment_console.priority." + PRIORITY_KEYS[i]), b -> setPriority(value)));
         }
+        addRenderableWidget(new SiButton(left + W - 64, top + H + 3, 64, 12,
+            Component.translatable("gui.mio_icif.armor_features.hud_layout"),
+            b -> minecraft.setScreen(new com.miophas.singularity_iteration.common.client.suit.HudLayoutScreen(this))));
         refreshEntries();
         if (preselect != null) {
             for (int i = 0; i < entries.size(); i++) if (entries.get(i).id().equals(preselect)) selected = i;

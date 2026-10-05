@@ -24,6 +24,17 @@ public final class ArmorFeatureState {
     private ArmorFeatureState() {
     }
 
+    private static final java.util.Map<String, Boolean> DEFAULTS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** A feature that starts switched off (for behaviour a player has to opt into). */
+    public static void registerDefault(String featureKey, boolean enabled) {
+        DEFAULTS.put(featureKey, enabled);
+    }
+
+    public static boolean defaultFor(String featureKey) {
+        return featureKey == null ? DEFAULT_ENABLED : DEFAULTS.getOrDefault(featureKey, DEFAULT_ENABLED);
+    }
+
     /**
      * 读取开关型特性的启用状态。
      *
@@ -33,15 +44,16 @@ public final class ArmorFeatureState {
      */
     public static boolean isEnabled(ItemStack stack, String featureKey) {
         if (stack.isEmpty() || featureKey == null) {
-            return DEFAULT_ENABLED;
+            return defaultFor(featureKey);
         }
         CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
         if (customData == null || customData.isEmpty()) {
-            return DEFAULT_ENABLED;
+            return defaultFor(featureKey);
         }
-        CompoundTag tag = customData.copyTag();
         String key = FEATURE_PREFIX + featureKey;
-        return tag.contains(key) ? tag.getBoolean(key) : DEFAULT_ENABLED;
+        // CustomData#contains / #read avoid copying the whole tag on every check (HUD code asks each frame)
+        CompoundTag tag = customData.getUnsafe();
+        return tag.contains(key) ? tag.getBoolean(key) : defaultFor(featureKey);
     }
 
     /**

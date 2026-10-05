@@ -1,0 +1,95 @@
+{
+  "category": "food",
+  "commodities": [
+    {
+      "item": "minecraft:apple",
+      "base_price": 30,
+      "volatility": 0.04
+    },
+    {
+      "item": "minecraft:bread",
+      "base_price": 50,
+      "volatility": 0.05
+    },
+    {
+      "item": "minecraft:cooked_porkchop",
+      "base_price": 70,
+      "volatility": 0.06
+    },
+    {
+      "item": "minecraft:cooked_beef",
+      "base_price": 80,
+      "volatility": 0.06
+    },
+    {
+      "item": "minecraft:cooked_chicken",
+      "base_price": 60,
+      "volatility": 0.06
+    },
+    {
+      "item": "minecraft:cooked_mutton",
+      "base_price": 70,
+      "volatility": 0.06
+    },
+    {
+      "item": "minecraft:cooked_rabbit",
+      "base_price": 50,
+      "volatility": 0.05
+    },
+    {
+      "item": "minecraft:cooked_cod",
+      "base_price": 50,
+      "volatility": 0.05
+    },
+    {
+      "item": "minecraft:cooked_salmon",
+      "base_price": 60,
+      "volatility": 0.06
+    },
+    {
+      "item": "minecraft:cookie",
+      "base_price": 20,
+      "volatility": 0.04
+    },
+    {
+      "item": "minecraft:pumpkin_pie",
+      "base_price": 60,
+      "volatility": 0.06
+    },
+    {
+      "item": "minecraft:mushroom_stew",
+      "base_price": 50,
+      "volatility": 0.05
+    },
+    {
+      "item": "minecraft:rabbit_stew",
+      "base_price": 80,
+      "volatility": 0.07
+    },
+    {
+      "item": "minecraft:beetroot_soup",
+      "base_price": 50,
+      "volatility": 0.05
+    },
+    {
+      "item": "minecraft:honey_bottle",
+      "base_price": 60,
+      "volatility": 0.06
+    },
+    {
+      "item": "minecraft:cake",
+      "base_price": 120,
+      "volatility": 0.08
+    },
+    {
+      "item": "minecraft:golden_apple",
+      "base_price": 1500,
+      "volatility": 0.15
+    },
+    {
+      "item": "minecraft:enchanted_golden_apple",
+      "base_price": 8000,
+      "volatility": 0.2
+    }
+  ]
+}

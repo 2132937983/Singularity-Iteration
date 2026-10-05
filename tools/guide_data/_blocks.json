@@ -1,0 +1,666 @@
+{
+ "generator": [
+  [
+   "generator/block_thermal_generator",
+   "Thermal Generator"
+  ],
+  [
+   "generator/block_geo_generator",
+   "Geothermal Generator"
+  ],
+  [
+   "generator/block_solar_generator",
+   "Solar Generator"
+  ],
+  [
+   "generator/block_advanced_solar_panel",
+   "Advanced Solar Panel"
+  ],
+  [
+   "generator/block_hybrid_solar_panel",
+   "Hybrid Solar Panel"
+  ],
+  [
+   "generator/block_ultimate_hybrid_solar_panel",
+   "Ultimate Hybrid Solar Panel"
+  ],
+  [
+   "generator/block_quantum_solar_panel",
+   "Quantum Solar Panel"
+  ],
+  [
+   "generator/block_mets_advanced_solar_generator",
+   "METS Advanced Solar Generator"
+  ],
+  [
+   "generator/block_photon_resonance_solar_generator",
+   "Photon Resonance Solar Generator"
+  ],
+  [
+   "generator/block_ultimate_photon_resonance_solar_generator",
+   "Ultimate Photon Resonance Solar Generator"
+  ],
+  [
+   "generator/block_quantum_generator",
+   "Quantum Generator"
+  ],
+  [
+   "generator/block_wind_generator",
+   "Wind Generator"
+  ],
+  [
+   "generator/block_water_generator",
+   "Water Generator"
+  ],
+  [
+   "generator/block_semifluid_generator",
+   "Semifluid Generator"
+  ],
+  [
+   "generator/block_geomagnetic_generator",
+   "Geomagnetic Generator"
+  ],
+  [
+   "generator/block_geomagnetic_antenna",
+   "Geomagnetic Antenna"
+  ],
+  [
+   "generator/block_geomagnetic_pedestal",
+   "Geomagnetic Pedestal"
+  ],
+  [
+   "generator/block_diesel_generator",
+   "Diesel Generator"
+  ],
+  [
+   "hugenerator/block_heat_generator_elc",
+   "Electric Heat Generator"
+  ],
+  [
+   "hugenerator/block_solid_heat_generator",
+   "Solid Heat Generator"
+  ],
+  [
+   "hugenerator/block_fluid_heat_generator",
+   "Fluid Heat Generator"
+  ],
+  [
+   "hugenerator/block_rt_heat_generator",
+   "Radioisotope Heat Generator"
+  ],
+  [
+   "hugenerator/block_heat_source_fluid",
+   "Heat Exchanger"
+  ],
+  [
+   "generator/block_stirling_generator",
+   "Stirling Generator"
+  ],
+  [
+   "generator/block_drop_generator",
+   "Drop Generator"
+  ],
+  [
+   "generator/block_advanced_drop_generator",
+   "Advanced Drop Generator"
+  ],
+  [
+   "generator/block_advanced_stirling_generator",
+   "Advanced Stirling Generator"
+  ],
+  [
+   "generator/block_advanced_semifluid_generator",
+   "Advanced Semifluid Generator"
+  ],
+  [
+   "generator/block_experience_generator",
+   "Experience Generator"
+  ],
+  [
+   "generator/block_advanced_experience_generator",
+   "Advanced Experience Generator"
+  ],
+  [
+   "kugenerator/block_manual_kinetic_generator",
+   "Manual Kinetic Generator"
+  ],
+  [
+   "kugenerator/block_wind_kinetic_generator",
+   "Wind Kinetic Generator"
+  ],
+  [
+   "kugenerator/block_water_kinetic_generator",
+   "Water Kinetic Generator"
+  ],
+  [
+   "kugenerator/block_kinetic_generator_elc",
+   "Electric Kinetic Generator"
+  ],
+  [
+   "kugenerator/block_stirling_kinetic_generator",
+   "Stirling Kinetic Generator"
+  ],
+  [
+   "generator/block_kinetic_generator",
+   "Kinetic Generator"
+  ],
+  [
+   "generator/block_turbo_kinetic_generator",
+   "Turbocharged Kinetic Generator"
+  ],
+  [
+   "generator/block_twin_turbo_kinetic_generator",
+   "Twin-turbocharged Kinetic Generator"
+  ],
+  [
+   "generator/block_rt_generator",
+   "Radioisotope Thermoelectric Generator"
+  ],
+  [
+   "generator/block_unlimit_generator",
+   "Infinite Generator"
+  ],
+  [
+   "generator/block_nuclear_reactor_generator",
+   "Nuclear Reactor Generator"
+  ]
+ ],
+ "producer": [
+  [
+   "producer/block_machine_hull_basic",
+   "Basic Machine Hull"
+  ],
+  [
+   "producer/block_machine_hull_advanced",
+   "Advanced Machine Hull"
+  ],
+  [
+   "checker/block_checker",
+   "Voltage Detector"
+  ],
+  [
+   "producer/block_magnetizer",
+   "Magnetizer"
+  ],
+  [
+   "producer/block_tesla",
+   "Tesla Coil"
+  ],
+  [
+   "producer/block_laser_defense_tower",
+   "Laser Defense Tower"
+  ],
+  [
+   "producer/block_sky_patrol_laser_tower",
+   "Sky Patrol Laser Defense Station"
+  ],
+  [
+   "producer/block_matron_elc",
+   "Crop Manager"
+  ],
+  [
+   "producer/block_harvest_elc",
+   "Harvester"
+  ],
+  [
+   "producer/block_teleporter_elc",
+   "Teleporter"
+  ],
+  [
+   "producer/block_furnace_elc",
+   "Electric Furnace"
+  ],
+  [
+   "producer/block_powder_elc",
+   "Macerator"
+  ],
+  [
+   "producer/block_powder_advanced_elc",
+   "Advanced Cyclone Macerator"
+  ],
+  [
+   "producer/block_washer_elc",
+   "Ore Washer"
+  ],
+  [
+   "producer/block_fermenter_elc",
+   "Fermenter"
+  ],
+  [
+   "producer/block_oil_refinery_elc",
+   "Oil Refinery"
+  ],
+  [
+   "producer/block_barrel",
+   "Barrel"
+  ],
+  [
+   "producer/block_blast_furnace",
+   "Blast Furnace"
+  ],
+  [
+   "producer/block_blast_furnace_elc",
+   "Electric Nano Blast Furnace"
+  ],
+  [
+   "producer/block_blast_furnace_advanced",
+   "Advanced Titanium Alloy Blast Furnace"
+  ],
+  [
+   "producer/block_steam_generator",
+   "Steam Generator"
+  ],
+  [
+   "producer/block_steam_repressurizer",
+   "Steam Repressurizer"
+  ],
+  [
+   "producer/block_solar_distiller",
+   "Solar Distiller"
+  ],
+  [
+   "producer/block_condenser",
+   "Condenser"
+  ],
+  [
+   "producer/block_block_cutter",
+   "Block Cutter"
+  ],
+  [
+   "producer/block_lathe",
+   "Lathe"
+  ],
+  [
+   "producer/block_steam_kinetic_generator",
+   "Steam Kinetic Generator"
+  ],
+  [
+   "producer/block_centrifuge_elc",
+   "Thermal Centrifuge"
+  ],
+  [
+   "producer/block_extractor_elc",
+   "Extractor"
+  ],
+  [
+   "producer/block_compressor_elc",
+   "Compressor"
+  ],
+  [
+   "producer/block_compressor_advanced_elc",
+   "Advanced High-Pressure Compressor"
+  ],
+  [
+   "producer/block_canner_elc",
+   "Canner"
+  ],
+  [
+   "producer/block_miner_elc",
+   "Miner"
+  ],
+  [
+   "producer/block_advanced_miner_elc",
+   "Advanced Miner"
+  ],
+  [
+   "producer/block_pump_elc",
+   "Pump"
+  ],
+  [
+   "producer/block_electrolyzer_elc",
+   "Electrolyzer"
+  ],
+  [
+   "producer/block_recycler_elc",
+   "Recycler"
+  ],
+  [
+   "producer/block_resin_collector",
+   "Resin Collector"
+  ],
+  [
+   "producer/block_future_elc",
+   "Futures Machine"
+  ],
+  [
+   "producer/block_induction_elc",
+   "Induction Furnace"
+  ],
+  [
+   "producer/block_matter_elc",
+   "Matter Generator"
+  ],
+  [
+   "producer/block_large_fabricator_core",
+   "Large Matter Fabricator Core"
+  ],
+  [
+   "producer/block_large_fabricator_input_iv",
+   "Large Matter Fabricator Input Module (IV)"
+  ],
+  [
+   "producer/block_large_fabricator_tank",
+   "Large Matter Fabricator Tank Module"
+  ],
+  [
+   "producer/block_large_fabricator_scrap",
+   "Large Matter Fabricator Scrap Input Module"
+  ],
+  [
+   "producer/block_neutron_polymerizer",
+   "Particle Aggregator"
+  ],
+  [
+   "producer/block_metal_former",
+   "Metal Former"
+  ],
+  [
+   "producer/block_metal_former_advanced",
+   "Advanced Metal Former"
+  ],
+  [
+   "producer/block_redstone_reactor_coolant_injector",
+   "Reactor Coolant Injector (RSH)"
+  ],
+  [
+   "producer/block_lapis_reactor_coolant_injector",
+   "Reactor Coolant Injector (LZH)"
+  ],
+  [
+   "producer/block_terra_elc",
+   "Terraformer"
+  ],
+  [
+   "produce/block_mining_pipe",
+   "Mining Pipe"
+  ],
+  [
+   "produce/block_mining_tip",
+   "Mining Drill Tip"
+  ],
+  [
+   "producer/block_scanner_elc",
+   "Pattern Scanner"
+  ],
+  [
+   "producer/block_molecular_transformer",
+   "Molecular Transformer"
+  ],
+  [
+   "producer/block_pattern_storage",
+   "Pattern Storage"
+  ],
+  [
+   "producer/block_replicator_elc",
+   "Replicator"
+  ],
+  [
+   "producer/block_item_buffer_elc",
+   "Item Buffer"
+  ],
+  [
+   "producer/block_sorter_elc",
+   "Electric Sorter"
+  ],
+  [
+   "producer/block_item_distributor_elc",
+   "Advanced Item Distributor"
+  ],
+  [
+   "producer/block_fluid_distributor_elc",
+   "Fluid Distributor"
+  ],
+  [
+   "producer/block_weighted_fluid_distributor_elc",
+   "Advanced Fluid Distributor"
+  ],
+  [
+   "producer/block_fluid_regulator_elc",
+   "Fluid Flow Regulator"
+  ],
+  [
+   "producer/block_batch_crafter",
+   "Batch Crafter"
+  ],
+  [
+   "producer/block_chunk_loader",
+   "Chunk Loader"
+  ],
+  [
+   "producer/block_industrial_workbench",
+   "Industrial Workbench"
+  ],
+  [
+   "energy_converter/energy_converter",
+   "Energy Converter"
+  ]
+ ],
+ "wiring": [
+  [
+   "wiring/block_bat_box",
+   "BatBox"
+  ],
+  [
+   "wiring/block_batbox_charger",
+   "BatBox Charger"
+  ],
+  [
+   "wiring/block_cesu_charger",
+   "CESU Charger"
+  ],
+  [
+   "wiring/block_mfe_charger",
+   "MFE Charger"
+  ],
+  [
+   "wiring/block_mfsu_charger",
+   "MFSU Charger"
+  ],
+  [
+   "wiring/block_mfsu",
+   "MFSU"
+  ],
+  [
+   "wiring/block_mfe",
+   "MFE"
+  ],
+  [
+   "wiring/block_cesu",
+   "CESU"
+  ],
+  [
+   "wiring/block_lesu",
+   "LESU"
+  ],
+  [
+   "wiring/block_lesu_charger",
+   "LESU Charger"
+  ],
+  [
+   "wiring/block_eesu",
+   "EESU"
+  ],
+  [
+   "wiring/block_eesu_charger",
+   "EESU Charger"
+  ],
+  [
+   "wiring/block_gesu_core",
+   "GESU Core"
+  ],
+  [
+   "wiring/block_gesu_input_iv",
+   "GESU Input Module (IV)"
+  ],
+  [
+   "wiring/block_gesu_output_iv",
+   "GESU Output Module (IV)"
+  ],
+  [
+   "wiring/block_gesu_output_luv",
+   "GESU Output Module (LuV)"
+  ],
+  [
+   "wiring/cable/block_tin_cable",
+   "Low-Voltage Cable"
+  ],
+  [
+   "wiring/cable/block_cable_o",
+   "Medium-Voltage Cable"
+  ],
+  [
+   "wiring/cable/block_gold_cable",
+   "High-Voltage Cable"
+  ],
+  [
+   "wiring/cable/block_iron_cable",
+   "Extra-High-Voltage Cable"
+  ],
+  [
+   "wiring/cable/block_glass_cable",
+   "IV Cable"
+  ],
+  [
+   "wiring/cable/block_superconducting_cable",
+   "?"
+  ],
+  [
+   "wiring/cable/block_tin_cable_1",
+   "Insulated Low-Voltage Cable"
+  ],
+  [
+   "wiring/cable/block_cable",
+   "Insulated Medium-Voltage Cable"
+  ],
+  [
+   "wiring/cable/block_gold_cable_1",
+   "Insulated High-Voltage Cable"
+  ],
+  [
+   "wiring/cable/block_iron_cable_1",
+   "Insulated Extra-High-Voltage Cable"
+  ],
+  [
+   "wiring/cable/block_gold_cable_2",
+   "2x Insulated Gold Cable"
+  ],
+  [
+   "wiring/cable/block_iron_cable_2",
+   "2x Insulated HV Iron Cable"
+  ],
+  [
+   "wiring/cable/block_iron_cable_3",
+   "3x Insulated HV Iron Cable"
+  ],
+  [
+   "wiring/transformer_lv_mv",
+   "Transformer LV→MV"
+  ],
+  [
+   "wiring/transformer_mv_hv",
+   "Transformer MV→HV"
+  ],
+  [
+   "wiring/transformer_hv_ev",
+   "Transformer HV→EV"
+  ],
+  [
+   "wiring/transformer_ev_sc",
+   "Transformer EV→SC"
+  ],
+  [
+   "wiring/transformer_iv_luv",
+   "Transformer IV→LuV"
+  ],
+  [
+   "wiring/transformer_luv_zpmv",
+   "Transformer LuV→ZPMV"
+  ],
+  [
+   "wiring/block_wireless_power_transmission_node",
+   "Wireless Power Transmission Node"
+  ],
+  [
+   "wiring/block_eu_detector_cable",
+   "EU Detector Cable"
+  ],
+  [
+   "wiring/block_eu_splitter_cable",
+   "EU Splitter Cable"
+  ],
+  [
+   "wiring/block_energy_terminal",
+   "Energy Management Terminal"
+  ]
+ ],
+ "heavy": [
+  [
+   "pipe/block_pipe_water",
+   "Water Pipe"
+  ],
+  [
+   "pipe/block_pipe_water_extract",
+   "Water Extraction Pipe"
+  ],
+  [
+   "pipe/block_pipe_item_input",
+   "Item Extraction Pipe"
+  ],
+  [
+   "pipe/block_pipe_item",
+   "Item Transport Pipe"
+  ],
+  [
+   "reactor/block_reactor_chamber",
+   "Reactor Chamber"
+  ],
+  [
+   "reactor/block_reactor_vessel",
+   "Reactor Pressure Vessel"
+  ],
+  [
+   "reactor/block_reactor_redstone_port",
+   "Reactor Redstone Port"
+  ],
+  [
+   "reactor/block_reactor_fluid_port",
+   "Reactor Fluid Port"
+  ],
+  [
+   "reactor/block_reactor_access_hatch",
+   "Reactor Access Hatch"
+  ],
+  [
+   "reactor/block_ic_tnt",
+   "Industrial TNT"
+  ],
+  [
+   "reactor/block_reactor_nuke",
+   "Nuclear Bomb"
+  ],
+  [
+   "oilrig/block_oil_rig_core",
+   "Oil Rig Core"
+  ],
+  [
+   "oilrig/block_oil_rig_base",
+   "Oil Rig Base Module"
+  ],
+  [
+   "oilrig/block_oil_rig_input",
+   "Oil Rig Input Module"
+  ],
+  [
+   "oilrig/block_oil_rig_output",
+   "Oil Rig Output Module"
+  ],
+  [
+   "oilrig/block_oil_rig_panel",
+   "Oil Rig Panel"
+  ],
+  [
+   "oilrig/block_dimension_oil_rig_core",
+   "Dimension Oil Rig Core"
+  ]
+ ]
+}

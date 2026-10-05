@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mio_icif:block/producer/block_quantum_modification_station"
+    },
+    "facing=east": {
+      "model": "mio_icif:block/producer/block_quantum_modification_station",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "mio_icif:block/producer/block_quantum_modification_station",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "mio_icif:block/producer/block_quantum_modification_station",
+      "y": 270
+    }
+  }
+}

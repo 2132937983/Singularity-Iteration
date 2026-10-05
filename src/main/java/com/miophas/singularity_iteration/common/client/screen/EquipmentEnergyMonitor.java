@@ -42,7 +42,7 @@ public final class EquipmentEnergyMonitor {
     /** One item's contribution over the averaging window. */
     public record Source(String id, ItemStack stack, double drainPerSecond, double incomePerSecond, long stored, long capacity) { }
 
-    private record Sample(String key, long energy) { }
+    private record Sample(net.minecraft.world.item.Item item, long energy) { }
 
     private static final Map<String, Sample> last = new HashMap<>();
     private static final Map<String, double[]> secondFlow = new LinkedHashMap<>();   // id -> {gain, loss} this second
@@ -60,8 +60,13 @@ public final class EquipmentEnergyMonitor {
             reset();
             return;
         }
+        // sample every SAMPLE_EVERY ticks: the deltas add up the same, at a quarter of the cost
+        if (++clientTick % SAMPLE_EVERY != 0) return;
         sample(player);
     }
+
+    private static final int SAMPLE_EVERY = 4;
+    private static int clientTick;
 
     private static void reset() {
         if (last.isEmpty() && filled == 0) return;
@@ -104,11 +109,10 @@ public final class EquipmentEnergyMonitor {
             long[] en = energy(stack);
             st += en[0];
             cap += en[1];
-            String key = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
             Sample prev = last.get(slot.id());
-            seen.put(slot.id(), new Sample(key, en[0]));
+            seen.put(slot.id(), new Sample(stack.getItem(), en[0]));
             stacks.put(slot.id(), stack);
-            if (prev == null || !prev.key().equals(key)) continue;             // new item in this slot: baseline only
+            if (prev == null || prev.item() != stack.getItem()) continue;             // new item in this slot: baseline only
             long delta = en[0] - prev.energy();
             if (delta == 0) continue;
             double[] flow = secondFlow.computeIfAbsent(slot.id(), k -> new double[2]);
@@ -131,7 +135,8 @@ public final class EquipmentEnergyMonitor {
         stacks.keySet().retainAll(seen.keySet());
         stored = st;
         capacity = cap;
-        if (++tick % 20 != 0) return;
+        tick += SAMPLE_EVERY;
+        if (tick % 20 != 0) return;
         // close this second
         double internalSecond = secondFlow.containsKey("#internal") ? secondFlow.remove("#internal")[0] : 0;
         double gain = 0, loss = 0;

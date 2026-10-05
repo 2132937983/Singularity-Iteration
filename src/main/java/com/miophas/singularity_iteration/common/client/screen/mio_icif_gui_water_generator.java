@@ -75,7 +75,6 @@ public class mio_icif_gui_water_generator extends mio_icif_screen<com.miophas.si
                 fillHeight = Math.min(fillHeight, WATER_ICON_HEIGHT); // 确保不超过图标高度
                 if (fillHeight > 0) {
                     // 从下往上绘制填充部分
-                    // int srcY = WATER_BLUE_TEXTURE_Y + WATER_ICON_HEIGHT - fillHeight;
                     int destY = y + WATER_ICON_Y + WATER_ICON_HEIGHT - fillHeight;
                     guiGraphics.blit(ATLAS_TEXTURE, x + WATER_ICON_X, destY, 0, (float) 2, (float) 243 + WATER_ICON_HEIGHT - fillHeight, WATER_ICON_WIDTH, fillHeight, ATLAS_WIDTH, ATLAS_HEIGHT);
                 }

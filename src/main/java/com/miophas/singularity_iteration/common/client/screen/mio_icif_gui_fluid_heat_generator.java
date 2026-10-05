@@ -83,7 +83,6 @@ public class mio_icif_gui_fluid_heat_generator extends mio_icif_screen<com.mioph
                 if (visibleHeight > 0) {
                     // 从顶部开始消失，所以绘制的起始Y坐标要向下偏移
                     int drawY = y + FLAME_ICON_Y + (FLAME_ICON_HEIGHT - visibleHeight);
-                    // int textureY = FLAME_ICON_TEXTURE_Y + (FLAME_ICON_HEIGHT - visibleHeight);
                     // 绘制剩余可见的部分（从下往上显示）
                     guiGraphics.blit(ATLAS_TEXTURE, x + FLAME_ICON_X, drawY, 0, (float) 152, (float) 227 + FLAME_ICON_HEIGHT - visibleHeight, FLAME_ICON_WIDTH, visibleHeight, ATLAS_WIDTH, ATLAS_HEIGHT);
                 }

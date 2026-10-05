@@ -104,7 +104,7 @@ public class mio_icif_electric_boat extends mio_icif_boat {
         if (api.isElectricArmor(stack)) {
             long energy = api.getElectricArmorStored(stack);
             if (energy >= EU_CONSUME) {
-                api.dischargeElectricArmor(stack, (int) EU_CONSUME, false);
+                api.dischargeElectricArmor(stack, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(stack, (long) EU_CONSUME), false);
                 return true;
             }
         } else if (api.isBattery(stack)) {

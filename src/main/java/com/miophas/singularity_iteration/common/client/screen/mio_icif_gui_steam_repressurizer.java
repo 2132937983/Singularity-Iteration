@@ -1,107 +1,54 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.menu.producer.SteamRepressurizerMenu;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.fluids.FluidStack;
 
-/**
- * 閽傚憡鑻�閸愭繂濮為崢瀣�婧� GUI 缁�? */
+/** Port of IC2's steam_repressurizer.xml layout (176 x 166). */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
-public class mio_icif_gui_steam_repressurizer extends mio_icif_screen<com.miophas.singularity_iteration.common.menu.producer.SteamRepressurizerMenu> {
+public class mio_icif_gui_steam_repressurizer extends AbstractContainerScreen<SteamRepressurizerMenu> {
+    private static final ResourceLocation TEXTURE =
+        ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/gui/gui_steam_repressurizer.png");
+    private static final int INPUT_X = 15, OUTPUT_X = 123, TANK_Y = 19;
+    private static final int TANK_WIDTH = 38, TANK_HEIGHT = 47;
 
-    private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_steam_generator_elc.png");
-
-    private static final int GUI_WIDTH = 176;
-    private static final int GUI_HEIGHT = 166;
-
-    // 杈撳叆妲芥樉绀哄尯鍩?(49, 24) 16x58
-    private static final int INPUT_TANK_X = 49;
-    private static final int INPUT_TANK_Y = 24;
-    private static final int INPUT_TANK_WIDTH = 16;
-    private static final int INPUT_TANK_HEIGHT = 58;
-    @SuppressWarnings("unused")
-    private static final int INPUT_COLOR = 0xFFD0D0D0;
-
-    // 杈撳嚭妲芥樉绀哄尯鍩?(111, 24) 16x58
-    private static final int OUTPUT_TANK_X = 111;
-    private static final int OUTPUT_TANK_Y = 24;
-    private static final int OUTPUT_TANK_WIDTH = 16;
-    private static final int OUTPUT_TANK_HEIGHT = 58;
-    @SuppressWarnings("unused")
-    private static final int OUTPUT_COLOR = 0xFFE0E0E0;
-
-    public mio_icif_gui_steam_repressurizer(com.miophas.singularity_iteration.common.menu.producer.SteamRepressurizerMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        this.imageWidth = GUI_WIDTH;
-        this.imageHeight = GUI_HEIGHT;
+    public mio_icif_gui_steam_repressurizer(SteamRepressurizerMenu menu, Inventory inventory, Component title) {
+        super(menu, inventory, title);
+        imageWidth = 176;
+        imageHeight = 166;
     }
-
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        com.miophas.singularity_iteration.common.menu.producer.SteamRepressurizerMenu menu = this.menu;
-        if (menu == null) return;
-
-        // 杈撳叆娴濅綋
-        int inputAmount = menu.getInputAmount();
-        int inputCapacity = menu.getInputCapacity();
-        net.neoforged.neoforge.fluids.FluidStack inputFluid = menu.getInputFluid();
-        if (inputAmount > 0 && inputCapacity > 0 && !inputFluid.isEmpty()) {
-            mio_icif_GuiUtils.renderFluidBar(guiGraphics, x + INPUT_TANK_X, y + INPUT_TANK_Y,
-                INPUT_TANK_WIDTH, INPUT_TANK_HEIGHT, inputFluid, inputCapacity);
-        }
-
-        // 杈撳嚭娴濅綋
-        int outputAmount = menu.getOutputAmount();
-        int outputCapacity = menu.getOutputCapacity();
-        net.neoforged.neoforge.fluids.FluidStack outputFluid = menu.getOutputFluid();
-        if (outputAmount > 0 && outputCapacity > 0 && !outputFluid.isEmpty()) {
-            mio_icif_GuiUtils.renderFluidBar(guiGraphics, x + OUTPUT_TANK_X, y + OUTPUT_TANK_Y,
-                OUTPUT_TANK_WIDTH, OUTPUT_TANK_HEIGHT, outputFluid, outputCapacity);
-        }
-
-        // 閻戭參鍤岄弶?(80, 35) 16x4
-        int heat = menu.getHeat();
-        int maxHeat = menu.getMaxHeat();
-        if (heat > 0 && maxHeat > 0) {
-            int heatPixels = (heat * 16) / maxHeat;
-            if (heatPixels > 0) {
-guiGraphics.blit(ATLAS_TEXTURE, x + 80, y + 35, 0, (float) 138, (float) 259, heatPixels, 4, ATLAS_WIDTH, ATLAS_HEIGHT);
-            }
-        }
+    @Override protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        renderTank(g, INPUT_X, menu.getInputFluid(), menu.getInputCapacity());
+        renderTank(g, OUTPUT_X, menu.getOutputFluid(), menu.getOutputCapacity());
     }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderLabels(guiGraphics, mouseX, mouseY);
-
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        com.miophas.singularity_iteration.common.menu.producer.SteamRepressurizerMenu menu = this.menu;
-        if (menu == null) return;
-
-        if (mouseX >= x + INPUT_TANK_X && mouseX <= x + INPUT_TANK_X + INPUT_TANK_WIDTH &&
-            mouseY >= y + INPUT_TANK_Y && mouseY <= y + INPUT_TANK_Y + INPUT_TANK_HEIGHT) {
-            guiGraphics.renderTooltip(this.font,
-                Component.literal((!menu.getInputFluid().isEmpty() ? menu.getInputFluid().getFluid().getFluidType().getDescription().getString() + ": " : "") + menu.getInputAmount() + "/" + menu.getInputCapacity() + " mB"),
-                mouseX, mouseY);
-        }
-
-        if (mouseX >= x + OUTPUT_TANK_X && mouseX <= x + OUTPUT_TANK_X + OUTPUT_TANK_WIDTH &&
-            mouseY >= y + OUTPUT_TANK_Y && mouseY <= y + OUTPUT_TANK_Y + OUTPUT_TANK_HEIGHT) {
-            guiGraphics.renderTooltip(this.font,
-                Component.literal((!menu.getOutputFluid().isEmpty() ? menu.getOutputFluid().getFluid().getFluidType().getDescription().getString() + ": " : "") + menu.getOutputAmount() + "/" + menu.getOutputCapacity() + " mB"),
-                mouseX, mouseY);
-        }
+    private void renderTank(GuiGraphics g, int x, FluidStack fluid, int capacity) {
+        if (fluid.isEmpty()) return;
+        // Legacy balances may exceed the new capacity: keep them, cap only the visual level.
+        mio_icif_GuiUtils.renderFluidBar(g, leftPos + x, topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT,
+            fluid.copyWithAmount(Math.min(fluid.getAmount(), capacity)), capacity);
+    }
+    @Override protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(font, title, (imageWidth - font.width(title)) / 2, 6, 0x404040, false);
+    }
+    @Override public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        super.render(g, mouseX, mouseY, partialTick);
+        renderTooltip(g, mouseX, mouseY);
+        tankTooltip(g, mouseX, mouseY, INPUT_X, menu.getInputFluid(), menu.getInputAmount(), menu.getInputCapacity());
+        tankTooltip(g, mouseX, mouseY, OUTPUT_X, menu.getOutputFluid(), menu.getOutputAmount(), menu.getOutputCapacity());
+    }
+    private void tankTooltip(GuiGraphics g, int mouseX, int mouseY, int x, FluidStack fluid, int amount, int capacity) {
+        if (!isHovering(x, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) return;
+        Component text = Component.translatable("gui.mio_icif.steam_repressurizer.tank",
+            fluid.isEmpty() ? Component.translatable("gui.mio_icif.steam_repressurizer.empty") : fluid.getHoverName(),
+            amount, capacity);
+        g.renderTooltip(font, text, mouseX, mouseY);
     }
 }

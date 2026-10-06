@@ -1,9 +1,10 @@
 {
-  "type": "mio_icif:powder",
-  "count": 1,
+  "type": "mio_icif:extractor",
+  "energypertick": 12,
   "ingredient": {
     "item": "minecraft:gravel"
   },
+  "processingtime": 150,
   "result": {
     "count": 1,
     "id": "minecraft:flint"

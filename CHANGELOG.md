@@ -1,6 +1,57 @@
 # 奇点迭代变更日志
 
-累计记录 `0.1.7.16` 至 `0.1.7.35` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+累计记录 `0.1.7.16` 至 `0.1.7.35.1` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+
+## 0.1.7.35.1
+
+基于 0.1.7.35。新增「电动锄」（`mio_icif:item_tool_iron_hoe`）：1x1／3x3／5x5／9x9 范围一键锄地、自动除草、整片连锁收获（自带时运 3）、副手种子自动种植与副手肥料范围施肥，物品数值与合成配方对齐 IC2 1.12.2 的 `ic2:electric_hoe`。生产加工配方改为：石头与圆石打粉为沙砾、沙砾打粉为沙子、沙砾在提取机提取为燧石；蒸汽涡轮扇叶的合成材料由 8 块精炼铁板减为 4 块。本版本同时完成蒸汽再加压机的机制与 GUI 对齐：修复热量处理瓶颈和过热蒸汽产物类型，恢复原版双罐布局，并补齐流体同步、比例配置和旧存档迁移。
+
+### 蒸汽再加压机 IC2 对齐
+
+- 两个流体罐均为 10,000 mB；每批 10 mB 输入与 1 HU，普通蒸汽产出 16 mB、过热蒸汽产出 32 mB，产物均为普通蒸汽。移除每 tick 仅消费 1 HU 的瓶颈，支持同 tick 多批处理。
+- 按需从六面抽取热源热量，服从热源朝向和限额；输入不足 10 mB 不取热。完整产物放不下时不消费输入和处理 HU，保留不足批次的余量。
+- 移除原版不存在的单元槽、升级槽与内建自动蒸汽弹出。产物通过管道抽走；旧库存可通过自动化或破坏机器取回。
+- GUI 改为 IC2 专用背景和 176×166 双罐布局；补齐流体类型同步、液位纹理及中英数量提示，移除不对应原版的热量条。
+- COMMON 配置新增 `[SteamRepressurizer]` 的 `steamPerSteam=16`、`steamPerSuperSteam=32`；旧热量合并、错误产物转换为普通蒸汽，旧超容量流体余额保留。
+- 七项专用 GameTest、完整构建与 core 架构检查通过；对齐依据、项目蒸汽映射及验证方式见 [对齐记录](docs/steam_repressurizer_ic2_alignment.md)。
+
+### 电动锄（`mio_icif_electric_hoe`）
+
+- 基类：`mio_icif_tool_elc` → `AbstractElectricTool`，电量走统一 DataComponent `mio_icif:battery_energy`，不消耗耐久。maxCharge 10000 EU、transferLimit 100 EU/t、tier 1，与 IC2 原版一致。挖掘效率 16.0F 对应 `ItemElectricToolHoe` 的 `field_77864_a = 16.0F`（`ItemToolIC2.func_150893_a` 把它作为 `getDestroySpeed` 返回值，是效率不是攻击）；攻击伤害对齐 `ItemTool` 基础值 2.0（玩家基础 1.0 + 加成 1.0）。
+- 耗电：每次操作 10 EU。IC2 原版为 50 EU/次，本工具一次点击要处理整片范围或整片作物，故下调，满电可处理 1000 格。数值集中在 `HOE_ENERGY_PER_USE` 单点可调，装备控制台的模式详情同步显示。
+- 范围锄地：模式枚举 `Range` 为 1x1（基础，默认）／3x3／5x5／9x9，存于 CustomData 键 `electric_hoe_range`，界面文案为「锄地范围」。按键集中的「切换工具」键（默认 G）经 `ToolTogglePacket` 进入 `toggleActive` 循环切换并显示客户端消息。作用范围取垂直于点击面、以点击方块为中心的 size×size 平面，按到中心的距离排序（电量不足时优先处理中心格）。实现 `IToolModeProvider`（装备控制台可列出四种模式并显示单次费用）与 `IEquipmentHudProvider`（HUD 显示当前范围与电量）。
+- 锄地：走 NeoForge 的 `ItemAbilities.HOE_TILL` 与 `BlockState#getToolModifiedState`，因此其它模组注册的可锄土壤自动兼容；`canPerformAction`、`getDestroySpeed`、`isCorrectToolForDrops` 按 `DEFAULT_HOE_ACTIONS` 与 `BlockTags.MINEABLE_WITH_HOE` 放行，没电时速度与掉落退化为手挖。
+- 除草：原版与 NeoForge 的 `HOE_TILL` 判定要求目标上方是空气（`IBlockExtension#getToolModifiedState`），草方块上有一株草就锄不动；而射线通常先命中草本身，连草方块都点不到。现在两种情况都处理：射线打在杂草上时整片平面按「杂草层」处理（`soilFor` 取下方土壤，`weedsToClear` 收集目标与土壤之间的杂草，双高草两段都收），可锄土壤上方长了杂草时先清除再锄该土壤。杂草判定为 `BushBlock` 减去 `BlockTags.CROPS`、`CropBlock`、`StemBlock`、`SweetBerryBushBlock`，未成熟作物、瓜茎、浆果丛不会被锄掉；可锄土壤列表排除 `FarmBlock`，耕地及其上的作物安全。清除走 `Level#destroyBlock`，掉落、粒子与音效与玩家破坏一致，双高植物由 `updateShape` 连带清除。
+- 连锁收获：此前收获混在范围平面内逐格判定，现独立为 `chainHarvest` 并且不看范围。点击可收获作物时，从点击处按 6 个方向（`Direction.values()`，含上下，作物架竖直堆叠也能连成一片）做广度优先扩散，沿「连通同类作物」整片收获：同类指同种作物方块，作物架则把普通款与升级款视为一族。原版与模组 `CropBlock` 作物、`NetherWartBlock` 地狱疣取时运 3 掉落并补种回 0 龄；`IPlanter` 种植架走 `doManualHarvest`（内部扣种子并重置生长阶段）。每收一格扣 10 EU，电量不足即停；另有 `MAX_CHAIN_VISITS` 4096、`MAX_CHAIN_HARVESTS` 1024 上限，避免超大农田单次点击造成卡顿。收获不再出现在范围预判里，所以右键是否消耗仍与实际动作一致。
+- 自带时运 3：静态 `onGetEnchantmentLevel` 注册到 `NeoForge.EVENT_BUS`（与铱钻头同一机制），`GetEnchantmentLevelEvent` 使 `Block#getDrops` 的时运查询（掉落表经 `EnchantmentHelper.getItemEnchantmentLevel` → `ItemStack#getEnchantmentLevel`）得到 3 级。
+- 副手自动种植：副手物品在 `Tags.Items.SEEDS`（`c:seeds`）时，锄地后对每格调用种子物品自身的 `useOn`，因此原版种子（`BlockItem` 放置）与本模组富集作物种子（`RichSeedItem` 的耕地与作物架两条路径）都能种植，其它模组实现自定义种植的种子同样可用。仅在「上方为空位的耕地」或「空且非杂交基底的作物架」上尝试，不会误放。
+- 副手批量施肥：副手物品在 `Tags.Items.FERTILIZERS`（`c:fertilizers`）时按范围施肥。作物架调用 `BlockState#useItemOn`，进入 `CropInteractions.use`，由 `MatronFertilizerItem` 加 100 营养值，与手持使用完全一致（营养已满时不消耗）。普通作物调用肥料物品自身的 `useOn`，骨粉等原版肥料因此可用。施肥目标由 `isFertilizableCrop` 限定为作物类方块（`BlockTags.CROPS`、`CropBlock`、`NetherWartBlock`、`StemBlock`、`SweetBerryBushBlock`），排除草方块与树苗，范围施肥不会顺手种草，也不会一次长出大片树林。每格先试目标本身，失败再试其上方一格，同一列只施肥一次，成功一格扣 10 EU、肥料从副手消耗。
+- 各功能互不干扰：成熟作物与种植架先由连锁收获处理，空作物架先由自动种植处理，均可锄土壤才进入除草与锄地，因此一次右键不会既收又锄同一格。
+
+### 注册、资源与配方
+
+- 注册 `mio_icif_items_tools.IRON_HOE`（`item_tool_iron_hoe`），并加入创造模式标签页（空电与满电两种展示）。
+- 物品模型 `models/item/item_tool_iron_hoe.json`（`minecraft:item/handheld`）指向仓库中已有的 `textures/item/item_tool_iron_hoe.png`——该纹理此前只有文件、没有对应物品。
+- 配方 `data/mio_icif/recipe/shaped_270_electric_hoe.json`，抄 IC2 1.12.2 默认配置 `assets/ic2/config/shaped_recipes.ini` 的 `"II| I| B" I:OreDict:plateIron B:ic2:crafting#small_power_unit = ic2:electric_hoe`：铁板 ×3（`c:plates/iron`）加小型驱动把手 ×1（`item_tool_power_unit_small`），沿用 `mio_icif:charge_carrying` 类型以在合成时传递电量，与铁链锯、铁钻头一致。
+- 加入 `mio_icif:enchantable/electric` 标签，可获得「省电」附魔。
+- 语言键（中英）：物品名、四种范围名、切换提示、HUD 文本、范围与时运提示、除草提示、副手功能提示。
+
+### 生产加工配方
+
+- 打粉机（`mio_icif:powder`）改用新的石头系链路：石头 → 沙砾（`powder/stone_to_gravel.json`）、圆石 → 沙砾（`powder/cobblestone_to_gravel.json`）、沙砾 → 沙子（`powder/gravel_to_sand.json`）。原先对齐 IC2 默认配置 `macerator.ini` 的三条（石头 → 圆石、圆石 → 沙子、沙砾 → 燧石）随内容改名重建并替换，旧配方 id 已在代码、资源与文档中确认无引用。
+- 沙砾 → 燧石移入提取机（`mio_icif:extractor`，`extractor/gravel_to_flint.json`），参数取 `energypertick` 12、`processingtime` 150，与同类石头系配方（下界岩 → 小撮硫粉、燧石粉 → 硝石粉）一致，而非提取机默认的 15 EU/t 与 200 tick。整合后的链路为石头／圆石打粉成沙砾、沙砾打粉成沙子或提取成燧石。
+- 产出比均为 1:1。打粉配方顶层的 `count` 是输入数量（`mio_icif_PowderRecipeSerializer` 中映射到 `getIngredientCount`），产物数量写在 `result.count`，因此新增条目沿用 1/1 写法。
+- 打粉机与进阶旋风打粉机共用 `mio_icif:powder` 配方集（JEI 催化剂 `POWDER_ADVANCED_ELC` 指向同一类型），两台机器同时生效。
+- 未改动的相邻配方保持不变：深板岩 → 深板岩圆石（打粉）、沙砾 → 石粉（洗矿机）、圆石 → 石粉（热能离心机）、沙子 → 沙砾（分子重组仪）以及砂岩系列 → 沙子。
+
+### 配方调整
+
+- 蒸汽涡轮扇叶（`recipe/shaped_296_steam_turbine_blade.json`，产物 `mio_icif:normal/item_steam_turbine_blade`）：精炼铁板由 8 块减为 4 块。形状由 `["AAA","AIA","AAA"]`（八块板环绕一块精炼铁锭）改为 `[" A ","AIA"," A "]`（上下左右四块板，铁锭仍在中心），产物数量与所需锭数不变。原配方抄自 IC2 1.12.2 `shaped_recipes.ini` 的 `"AAA|ABA|AAA" A:OreDict:plateSteel B:OreDict:ingotSteel = ic2:crafting#steam_turbine_blade`，本次为有意偏离原版的平衡调整。
+- 键位对应：配方中的 `A` 是 `c:plates/steel`，该标签在数据包中指向 `mio_icif:resource/item_adviron_plate`，语言文件名为「精炼铁板」（内部命名 `adviron` 对应 IC2 的精炼铁）；`I` 是 `c:ingots/steel`，即精炼铁锭。名字相近的「精炼铁质扇叶」（`item_adviron_rotor_blade`）是另一条配方（`["ABA","ABA","ABA"]`，3 板 + 3 锭），本次未改动。
+
+### 校验
+
+- `compileJava` 通过。项目未使用 DataGen，资源均为手写 JSON，新增与改动的模型、配方、语言文件均已解析校验，并确认同一配方类型内不存在重复输入。
 
 ## 0.1.7.35
 

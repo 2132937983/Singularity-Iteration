@@ -1,0 +1,1 @@
+{"type": "mio_icif:charge_carrying", "transfer_charge": true,"pattern":["II"," I"," B"],"key":{"I":{"tag": "c:plates/iron"},"B":{"item":"mio_icif:item_tool_power_unit_small"}},"result":{"id":"mio_icif:item_tool_iron_hoe","count":1}}

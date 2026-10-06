@@ -25,6 +25,7 @@ import com.miophas.singularity_iteration.common.recipe.mio_icif_IngredientTypes;
 import com.miophas.singularity_iteration.common.world.feature.WorldGeneration;
 import com.miophas.singularity_iteration.common.world.feature.mio_icif_foliage_placers;
 import com.miophas.singularity_iteration.common.world.feature.mio_icif_tree_decorators;
+import com.miophas.singularity_iteration.common.item.tools.mio_icif_electric_hoe;
 import com.miophas.singularity_iteration.common.item.tools.mio_icif_iridium_driller;
 import com.miophas.singularity_iteration.common.item.tools.mio_icif_items_tools;
 import com.miophas.singularity_iteration.common.item.lathe.mio_icif_lathe_items;
@@ -204,6 +205,8 @@ public class Singularity_Iteration {
 
     private void commonSetup(FMLCommonSetupEvent event) {
         NeoForge.EVENT_BUS.addListener(mio_icif_iridium_driller::onGetEnchantmentLevel);
+        // 电动锄：自带时运 3（收获作物掉落受时运加成）
+        NeoForge.EVENT_BUS.addListener(mio_icif_electric_hoe::onGetEnchantmentLevel);
 
         // 注册废料箱的发射器行�
 com.miophas.singularity_iteration.common.item.normal.mio_icif_scrapbox.registerDispenserBehavior();

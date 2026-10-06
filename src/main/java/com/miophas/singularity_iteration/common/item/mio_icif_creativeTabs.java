@@ -59,6 +59,8 @@ public class mio_icif_creativeTabs {
                 { ItemStack fullIridiumDriller = new ItemStack(mio_icif_items_tools.IRIDIUM_DRILLER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullIridiumDriller, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullIridiumDriller)); output.accept(fullIridiumDriller); }
                 output.accept(mio_icif_items_tools.IRON_CHAINSAW.get());
                 { ItemStack fullIronChainsaw = new ItemStack(mio_icif_items_tools.IRON_CHAINSAW.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullIronChainsaw, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullIronChainsaw)); output.accept(fullIronChainsaw); }
+                output.accept(mio_icif_items_tools.IRON_HOE.get());
+                { ItemStack fullIronHoe = new ItemStack(mio_icif_items_tools.IRON_HOE.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullIronHoe, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullIronHoe)); output.accept(fullIronHoe); }
                 output.accept(mio_icif_items_tools.NANO_SABER.get());
                 { ItemStack fullNanoSaber = new ItemStack(mio_icif_items_tools.NANO_SABER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullNanoSaber, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullNanoSaber)); output.accept(fullNanoSaber); }
                 output.accept(mio_icif_items_tools.PLASMA_LAUNCHER.get());

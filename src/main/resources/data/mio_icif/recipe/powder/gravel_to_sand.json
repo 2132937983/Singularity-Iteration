@@ -2,7 +2,7 @@
   "type": "mio_icif:powder",
   "count": 1,
   "ingredient": {
-    "item": "minecraft:cobblestone"
+    "item": "minecraft:gravel"
   },
   "result": {
     "count": 1,

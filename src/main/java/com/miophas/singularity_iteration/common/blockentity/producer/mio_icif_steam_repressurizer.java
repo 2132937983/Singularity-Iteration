@@ -1,20 +1,24 @@
 package com.miophas.singularity_iteration.common.blockentity.producer;
 
+import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
-import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractHeatBlockEntity;
+import com.miophas.singularity_iteration.common.block.producer.mio_icif_block_steam_repressurizer;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities;
+import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractHeatBlockEntity;
+import com.miophas.singularity_iteration.core.prefab.fluid.FluidTankGroup;
+import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
+import com.miophas.singularity_iteration.core.runtime.energy.PlatformHeatStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,83 +27,51 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 蒸汽再加压机方块实体
- * 
-IC2 蒸汽/过热蒸汽通过加热再加压，提高输出蒸汽
- *
- * 转换比例
- * - 普通蒸汽：1 mB 
-1.6 mB
- * - 过热蒸汽
- mB 
-3.2 mB
+ * IC2 2.8.221 steam repressurizer: 10 mB input + 1 HU per batch, producing
+ * 16 / 32 mB ordinary steam. Heat is drawn on demand from all six neighbours.
+ * IC2's external registered "steam" output is mapped to this mod's ordinary steam.
  */
 @SuppressWarnings("null")
 public class mio_icif_steam_repressurizer extends AbstractHeatBlockEntity {
+    public static final int INPUT_TANK_CAPACITY = 10_000;
+    public static final int OUTPUT_TANK_CAPACITY = 10_000;
+    public static final int INPUT_BATCH = 10;
+    public static final int NORMAL_OUTPUT_BATCH = 16;
+    public static final int SUPERHEATED_OUTPUT_BATCH = 32;
+    public static final int DATA_COUNT = 8;
 
-    private static final SlotLayout LAYOUT = SlotLayout.builder()
-        .extra(2)
-        .upgrade(2)
-        .build();
+    // IC2 can retain < aim HU, then draw aim HU (not aim - currentHeat).
+    // At a full input tank aim <= 1000, so its ordinary buffer never exceeds 1999 HU.
+    public static final int HEAT_CAPACITY = 2000;
+    private static final int SAVE_VERSION = 1;
+    // Recovery inventory only: no new items, no upgrades, no slots in the GUI.
+    // Existing cells/upgrades remain extractable through automation or block drops.
+    private static final SlotLayout LEGACY_LAYOUT = SlotLayout.builder().extra(4).build();
 
-    // 槽位定义
-    public static final int INPUT_CELL_SLOT = 0;     // 蒸汽单元输入槽（可选）
-    public static final int OUTPUT_CELL_SLOT = 1;    // 再加压蒸汽单元输出槽（可选）
-    public static final int UPGRADE_SLOT_START = 2;  // 升级槽起
-public static final int UPGRADE_SLOT_COUNT = 2;  // 升级槽数
-public static final int TOTAL_SLOTS = 4;
-
-    // 流体容量
-    public static final int INPUT_TANK_CAPACITY = 10000;  // 输入蒸汽
-public static final int OUTPUT_TANK_CAPACITY = 16000; // 输出蒸汽
-
-    // 工作参数（原
-public static final int INPUT_BATCH = 10;            // 每批次处
-    public static final int NORMAL_OUTPUT_BATCH = 16;    // 10 mB 普通蒸
-
-    public static final int SUPERHEATED_OUTPUT_BATCH = 32; // 10 mB 过热蒸汽 
-    public static final int HU_PER_HEAT_UNIT = 1;        // 每积
-    public static final int MAX_HEAT_PER_TICK = 4;       // 
-
-    // 热量配置
-    public static final int HEAT_CAPACITY = 20000;
-    public static final int MAX_HEAT_RECEIVE = 500;
-    public static final int MAX_HEAT_EXTRACT = 0;
-    public static final int MAX_TEMP = 500;
-    public static final float HEAT_LOSS_FACTOR = 0.0f;
-
-    // 流体存储
     protected final FluidTank inputTank;
     protected final FluidTank outputTank;
     private final IFluidHandler combinedFluidHandler;
-
-    // 状态
-private boolean isWorking = false;
-    private int currentHeat = 0; // 当前积累的热量单位（原版
+    private boolean isWorking;
 
     private final ContainerData containerData = new ContainerData() {
-        @Override
-        public int get(int index) {
+        @Override public int get(int index) {
             return switch (index) {
                 case 0 -> inputTank.getFluidAmount();
                 case 1 -> inputTank.getCapacity();
                 case 2 -> outputTank.getFluidAmount();
                 case 3 -> outputTank.getCapacity();
-                case 4 -> (int) Math.min(heatStorage.getHeatStored(), Integer.MAX_VALUE);
-                case 5 -> (int) Math.min(heatStorage.getMaxHeatStored(), Integer.MAX_VALUE);
+                case 4 -> (int) Math.min(getHeatStored(), Integer.MAX_VALUE);
+                case 5 -> HEAT_CAPACITY;
+                case 6 -> getInputFluidTypeId();
+                case 7 -> getOutputFluidTypeId();
                 default -> 0;
             };
         }
-
-        @Override
-        public void set(int index, int value) {}
-
-        @Override
-        public int getCount() { return 6; }
+        @Override public void set(int index, int value) { }
+        @Override public int getCount() { return DATA_COUNT; }
     };
 
     public mio_icif_steam_repressurizer(BlockPos pos, BlockState state) {
@@ -107,270 +79,129 @@ private boolean isWorking = false;
     }
 
     public mio_icif_steam_repressurizer(BlockPos pos, BlockState state, BlockEntityType<?> type) {
-        super(type, pos, state, HEAT_CAPACITY, MAX_HEAT_RECEIVE, MAX_HEAT_EXTRACT,
-              20, MAX_TEMP, HEAT_LOSS_FACTOR);
-
-        this.inputTank = new FluidTank(INPUT_TANK_CAPACITY, fluidStack -> {
-            if (fluidStack.isEmpty()) return true;
-            return fluidStack.getFluid() == mio_icif_fluids.STEAM.get()
-                || fluidStack.getFluid() == mio_icif_fluids.SUPERHEATEDSTEAM.get();
-        });
-
-        this.outputTank = new FluidTank(OUTPUT_TANK_CAPACITY, fluidStack -> {
-            if (fluidStack.isEmpty()) return true;
-            return fluidStack.getFluid() == mio_icif_fluids.STEAM.get()
-                || fluidStack.getFluid() == mio_icif_fluids.SUPERHEATEDSTEAM.get();
-        });
-
-        this.combinedFluidHandler = com.miophas.singularity_iteration.core.prefab.fluid.FluidTankGroup
-            .inputOutput(inputTank, outputTank);
-
-        // 初始化槽位布局和物品处理器
-        this.slotLayout = LAYOUT;
-        this.itemHandler = createItemHandler(LAYOUT);
-        this.itemHandler.setValidator((slot, stack, slotType) -> mio_icif_steam_repressurizer.this.isItemValidForSlot(slot, stack));
-    }
-
-    public boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (isUpgradeSlot(slot)) {
-            return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.upgrade.mio_icif_upgrade;
-        }
-        return switch (slot) {
-            case INPUT_CELL_SLOT -> !(stack.getItem() instanceof com.miophas.singularity_iteration.common.item.upgrade.mio_icif_upgrade);
-            case OUTPUT_CELL_SLOT -> false;
-            default -> false;
+        super(type, pos, state, LEGACY_LAYOUT,
+            new PlatformHeatStorage(HEAT_CAPACITY, 0, 0, 20, 700, 0));
+        itemHandler.setValidator((slot, stack, slotType) -> false);
+        inputTank = new FluidTank(INPUT_TANK_CAPACITY, fluid ->
+            fluid.getFluid() == mio_icif_fluids.STEAM.get()
+                || fluid.getFluid() == mio_icif_fluids.SUPERHEATEDSTEAM.get()) {
+            @Override protected void onContentsChanged() { setChanged(); }
         };
+        outputTank = new FluidTank(OUTPUT_TANK_CAPACITY,
+            fluid -> fluid.getFluid() == mio_icif_fluids.STEAM.get()) {
+            @Override protected void onContentsChanged() { setChanged(); }
+        };
+        combinedFluidHandler = FluidTankGroup.inputOutput(inputTank, outputTank);
     }
 
-    /**
-     * 
-tick 更新逻辑
-     */
-    public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_steam_repressurizer blockEntity) {
+    public static void tick(Level level, BlockPos pos, BlockState state,
+                            mio_icif_steam_repressurizer machine) {
         if (level.isClientSide()) return;
-
-        blockEntity.receiveHeatFromSides();
-        blockEntity.handleInputCellSlot();
-        blockEntity.repressurizeSteam();
-        blockEntity.outputSteamToNeighbors();
-
-        boolean wasWorking = blockEntity.isWorking;
-        blockEntity.isWorking = blockEntity.canWork();
-        if (wasWorking != blockEntity.isWorking) {
-            blockEntity.updateBlockState(blockEntity.isWorking);
+        int batches = machine.inputTank.getFluidAmount() / INPUT_BATCH;
+        if (batches > 0 && machine.getHeatStored() < batches) machine.drawHeat(batches);
+        machine.isWorking = machine.repressurizeSteam() > 0;
+        // Keep the project's lit model, but never claim work without an actual conversion.
+        BlockState actual = machine.getBlockState();
+        if (actual.getValue(mio_icif_block_steam_repressurizer.LIT) != machine.isWorking) {
+            level.setBlock(pos, actual.setValue(mio_icif_block_steam_repressurizer.LIT, machine.isWorking), 3);
         }
-
-        blockEntity.handleAutomationUpgrades();
-
-        blockEntity.setChanged();
     }
 
-    /**
-     * 从除正面外的其他面接收热
- */
-    private void receiveHeatFromSides() {
-        if (level == null || level.isClientSide()) return;
-
-        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
-        long heatNeeded = HEAT_CAPACITY - heatStorage.getHeatStored();
-        if (heatNeeded <= 0) return;
-
-        for (Direction direction : Direction.values()) {
-            if (direction == facing) continue;
-            if (heatNeeded <= 0) return;
-
-            BlockPos neighborPos = worldPosition.relative(direction);
-            IMioIcifCapabilities.IHeatStorage adjacentHeat = level.getCapability(IMioIcifCapabilities.HEAT_STORAGE_BLOCK, neighborPos, direction.getOpposite());
-
-            if (adjacentHeat != null && adjacentHeat.canExtractHeat()) {
-                long heatToExtract = Math.min(heatNeeded, adjacentHeat.getHeatStored());
-                long extracted = adjacentHeat.extractHeat(heatToExtract, false);
-                if (extracted > 0) {
-                    heatStorage.receiveHeat(extracted, false);
-                    heatNeeded -= extracted;
-                }
+    private void drawHeat(int aim) {
+        if (level == null) return;
+        long remaining = aim;
+        for (Direction side : Direction.values()) {
+            BlockPos neighbour = worldPosition.relative(side);
+            if (!level.hasChunkAt(neighbour)) continue;
+            var source = level.getCapability(IMioIcifCapabilities.HEAT_STORAGE_BLOCK,
+                neighbour, side.getOpposite());
+            if (source == null || !source.canExtractHeat()) continue;
+            long request = Math.min(remaining, heatStorage.generateHeatInternal(remaining, true));
+            long offered = source.extractHeat(request, true);
+            long drawn = source.extractHeat(Math.min(request, Math.max(0, offered)), false);
+            if (drawn > 0) {
+                generateHeatInternal(drawn, false);
+                remaining -= drawn;
+                if (remaining <= 0) break;
             }
         }
     }
 
-    /**
-     * 处理输入单元槽（简化版：接受装有蒸汽的单元，填入输入槽
- */
-    private void handleInputCellSlot() {
-        // 暂不实现单元处理，留给后续扩
-}
-
-    /**
-     * 蒸汽再加压（原版 IC2 风格
- */
-    private void repressurizeSteam() {
-        FluidStack inputFluid = inputTank.getFluid();
-        if (inputFluid.isEmpty() || inputTank.getFluidAmount() < INPUT_BATCH) return;
-
-        boolean isSuperheated = inputFluid.getFluid() == mio_icif_fluids.SUPERHEATEDSTEAM.get();
-        int outputPerBatch = isSuperheated ? SUPERHEATED_OUTPUT_BATCH : NORMAL_OUTPUT_BATCH;
-
-        // 检查输出槽是否有足够空
-    if (outputTank.getFluidAmount() > 0 && outputTank.getFluid().getFluid() != inputFluid.getFluid()) return;
-
-        // 目标热量 = 输入
-        int targetHeat = inputTank.getFluidAmount() / 10;
-
-    if (currentHeat < targetHeat && heatStorage.getHeatStored() >= HU_PER_HEAT_UNIT) {
-            // 本机 MAX_HEAT_EXTRACT = 0（不对外供热），HeatStorage#extractHeat 会因
-            // canExtractHeat()==false 恒返回 0、什么都不扣；内部消耗必须走 consumeHeatInternal。
-            heatStorage.consumeHeatInternal(HU_PER_HEAT_UNIT, false);
-            currentHeat++;
-        }
-
-        if (currentHeat <= 0) return;
-
-        // 计算可处理量
-        int availableInput = inputTank.getFluidAmount();
-        int availableOutputSpace = outputTank.getCapacity() - outputTank.getFluidAmount();
-
-        int maxProcessByHeat = currentHeat * 10;
-        int maxProcessByOutput = availableOutputSpace * INPUT_BATCH / outputPerBatch;
-
-        int amountToProcess = Math.min(availableInput, Math.min(maxProcessByHeat, maxProcessByOutput));
-        if (amountToProcess < INPUT_BATCH) return;
-
-        // 向下取整
-        int batches = amountToProcess / INPUT_BATCH;
-        amountToProcess = batches * INPUT_BATCH;
-
-        int usedHeat = amountToProcess / 10;
-        int outputAmount = batches * outputPerBatch;
-
-        // 执行转换
-        FluidStack drained = inputTank.drain(amountToProcess, IFluidHandler.FluidAction.EXECUTE);
-        if (drained.getAmount() < amountToProcess) return;
-
-        outputTank.fill(new FluidStack(inputFluid.getFluid(), outputAmount), IFluidHandler.FluidAction.EXECUTE);
-        currentHeat -= usedHeat;
+    private int repressurizeSteam() {
+        FluidStack input = inputTank.getFluid();
+        if (input.isEmpty() || input.getAmount() < INPUT_BATCH) return 0;
+        int outputPerBatch;
+        if (input.getFluid() == mio_icif_fluids.STEAM.get()) {
+            outputPerBatch = Singularity_Iteration_Config.REPRESSURIZER_STEAM_OUTPUT.get();
+        } else if (input.getFluid() == mio_icif_fluids.SUPERHEATEDSTEAM.get()) {
+            outputPerBatch = Singularity_Iteration_Config.REPRESSURIZER_SUPERHEATED_OUTPUT.get();
+        } else return 0;
+        var product = new FluidStack(mio_icif_fluids.STEAM.get(), outputPerBatch);
+        int freeOutput = outputTank.fill(product.copyWithAmount(Integer.MAX_VALUE),
+            IFluidHandler.FluidAction.SIMULATE);
+        int batches = (int) Math.min(getHeatStored(), Math.min(input.getAmount() / INPUT_BATCH,
+            freeOutput / outputPerBatch));
+        if (batches <= 0) return 0;
+        consumeHeatInternal(batches, false);
+        inputTank.drain(batches * INPUT_BATCH, IFluidHandler.FluidAction.EXECUTE);
+        outputTank.fill(product.copyWithAmount(batches * outputPerBatch), IFluidHandler.FluidAction.EXECUTE);
+        return batches;
     }
 
-    /**
-     * 将再加压蒸汽输出到相邻流体容
- */
-    private void outputSteamToNeighbors() {
-        if (level == null || outputTank.getFluidAmount() <= 0) return;
-
-        FluidStack available = outputTank.getFluid();
-        if (available.isEmpty()) return;
-
-        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
-
-        Direction[] directions = new Direction[]{facing, facing.getOpposite()};
-        for (Direction dir : directions) {
-            BlockPos neighborPos = worldPosition.relative(dir);
-            IFluidHandler neighborHandler = level.getCapability(
-                net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
-                neighborPos, dir.getOpposite());
-
-            if (neighborHandler != null) {
-                FluidStack toDrain = new FluidStack(available.getFluid(), Math.min(available.getAmount(), 1000));
-                int filled = neighborHandler.fill(toDrain, IFluidHandler.FluidAction.EXECUTE);
-                if (filled > 0) {
-                    outputTank.drain(filled, IFluidHandler.FluidAction.EXECUTE);
-                    available = outputTank.getFluid();
-                    if (available.isEmpty()) return;
-                }
-            }
-        }
+    // The source owns its direction/bandwidth; this consumer draws HU instead of accepting
+    // speculative pushes. No steam demand means no heat drawn from a generator.
+    @Override public long receiveHeat(long amount, boolean simulate) { return 0; }
+    @Override public boolean canReceiveHeat() { return false; }
+    @Override public boolean isOverheated() { return false; }
+    @Override public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
+        return this;
     }
-
-    private boolean canWork() {
-        return inputTank.getFluidAmount() >= INPUT_BATCH
-            && outputTank.getFluidAmount() + NORMAL_OUTPUT_BATCH <= outputTank.getCapacity();
-    }
-
-    private void updateBlockState(boolean working) {
-        if (level == null || level.isClientSide()) return;
-        BlockState state = getBlockState();
-        if (state.hasProperty(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_steam_repressurizer.LIT)) {
-            level.setBlock(worldPosition, state.setValue(
-                com.miophas.singularity_iteration.common.block.producer.mio_icif_block_steam_repressurizer.LIT, working), 3);
-        }
-    }
-
-    // ==================== Capability ====================
-
-    public IItemHandler getItemHandlerCapability(@Nullable Direction side) {
-        return itemHandler;
-    }
-
-    @Override
-    public IFluidHandler getFluidHandlerCapability(@Nullable Direction side) {
+    public IItemHandler getItemHandlerCapability(@Nullable Direction side) { return itemHandler; }
+    @Override public IFluidHandler getFluidHandlerCapability(@Nullable Direction side) {
         return combinedFluidHandler;
     }
 
-    @Override
-    public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
-        if (side == null) return heatStorage;
-        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
-        if (side == facing) return null;
-        return heatStorage;
-    }
-
-    // ==================== NBT ====================
-
-    @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    @Override protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.put("inputTank", inputTank.writeToNBT(registries, new CompoundTag()));
         tag.put("outputTank", outputTank.writeToNBT(registries, new CompoundTag()));
         tag.put("items", itemHandler.serializeNBT(registries));
-        tag.putBoolean("isWorking", isWorking);
-        tag.putInt("currentHeat", currentHeat);
+        tag.putInt("repressurizerVersion", SAVE_VERSION);
     }
 
-    @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+    @Override public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         if (tag.contains("inputTank")) inputTank.readFromNBT(registries, tag.getCompound("inputTank"));
         if (tag.contains("outputTank")) outputTank.readFromNBT(registries, tag.getCompound("outputTank"));
         if (tag.contains("items")) itemHandler.deserializeNBT(registries, tag.getCompound("items"));
-        isWorking = tag.getBoolean("isWorking");
-        currentHeat = tag.getInt("currentHeat");
+        if (tag.getInt("repressurizerVersion") < SAVE_VERSION) {
+            long extraHeat = Math.max(0, tag.getInt("currentHeat"));
+            setHeat(getHeatStored() + Math.min(extraHeat, Long.MAX_VALUE - getHeatStored()));
+            // Old implementation incorrectly produced superheated steam. Retain the volume,
+            // migrate it to the correct product, and never truncate a legacy >10k mB balance.
+            if (!outputTank.isEmpty() && outputTank.getFluid().getFluid() == mio_icif_fluids.SUPERHEATEDSTEAM.get()) {
+                outputTank.setFluid(new FluidStack(mio_icif_fluids.STEAM.get(), outputTank.getFluidAmount()));
+            }
+        }
+        isWorking = false;
     }
 
-    // ==================== MenuProvider ====================
-
-    @Override
-    public Component getDisplayName() {
+    @Override public Component getDisplayName() {
         return Component.translatable("container.mio_icif.steam_repressurizer");
     }
-
-    @Nullable
-    @Override
-    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.producer.SteamRepressurizerMenu(containerId, playerInventory, this);
+    @Override public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+        return new com.miophas.singularity_iteration.common.menu.producer.SteamRepressurizerMenu(id, inventory, this);
     }
-
-    // ==================== Getters ====================
-
     public FluidTank getInputTank() { return inputTank; }
     public FluidTank getOutputTank() { return outputTank; }
-    /** 合并后的流体端口（输入槽只进 / 输出槽只出），供右击容器交互使用。 */
     public IFluidHandler getCombinedFluidHandler() { return combinedFluidHandler; }
-    public ItemStackHandler getItemHandler() { return itemHandler; }
+    @Override public ItemStackHandler getItemHandler() { return itemHandler; }
     public ContainerData getContainerData() { return containerData; }
     public boolean isWorking() { return isWorking; }
-
     public int getInputFluidTypeId() {
-        FluidStack fluid = inputTank.getFluid();
-        if (fluid.isEmpty()) return -1;
-        return net.minecraft.core.registries.BuiltInRegistries.FLUID.getId(fluid.getFluid());
+        return inputTank.isEmpty() ? -1 : BuiltInRegistries.FLUID.getId(inputTank.getFluid().getFluid());
     }
-
     public int getOutputFluidTypeId() {
-        FluidStack fluid = outputTank.getFluid();
-        if (fluid.isEmpty()) return -1;
-        return net.minecraft.core.registries.BuiltInRegistries.FLUID.getId(fluid.getFluid());
+        return outputTank.isEmpty() ? -1 : BuiltInRegistries.FLUID.getId(outputTank.getFluid().getFluid());
     }
-
-    /**
-     * 组合流体处理
- */
 }

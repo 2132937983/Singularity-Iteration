@@ -193,6 +193,16 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     private static final ModConfigSpec.Builder MINER_RANGE_POP = BUILDER.pop();
     // ==================== 采矿机工作范围显示配置结束 ====================
 
+    private static final ModConfigSpec.Builder REPRESSURIZER_BUILDER = BUILDER.push("SteamRepressurizer");
+    public static final ModConfigSpec.IntValue REPRESSURIZER_STEAM_OUTPUT = REPRESSURIZER_BUILDER
+        .comment("Output ordinary steam (mB) per 10 mB steam + 1 HU; IC2 default: 16")
+        .defineInRange("steamPerSteam", 16, 1, 10000);
+    public static final ModConfigSpec.IntValue REPRESSURIZER_SUPERHEATED_OUTPUT = REPRESSURIZER_BUILDER
+        .comment("Output ordinary steam (mB) per 10 mB superheated steam + 1 HU; IC2 default: 32")
+        .defineInRange("steamPerSuperSteam", 32, 1, 10000);
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder REPRESSURIZER_POP = BUILDER.pop();
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     /**

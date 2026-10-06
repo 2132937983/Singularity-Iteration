@@ -58,6 +58,9 @@ public class mio_icif_items_tools {
     // Iron Chainsaw
     public static final DeferredItem<Item> IRON_CHAINSAW = ITEMS.register("item_tool_iron_chainsaw",() -> new mio_icif_iron_chainsaw(new Item.Properties()));
 
+    // Electric Hoe
+    public static final DeferredItem<Item> IRON_HOE = ITEMS.register("item_tool_iron_hoe",() -> new mio_icif_electric_hoe(new Item.Properties()));
+
     // Wrench
     public static final DeferredItem<Item> WRENCH = ITEMS.register("item_tool_wrench",() -> new mio_icif_wrench(new Item.Properties()));
 

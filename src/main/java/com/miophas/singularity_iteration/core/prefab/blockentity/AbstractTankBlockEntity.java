@@ -20,12 +20,13 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 可垂直堆叠连通的储罐骨架。
+ * Base for tanks that connect when you stack them vertically.
  *
- * <p>容量与方块实体类型由子类提供，连通组默认按具体子类判定，因此不同材质的
- * 储罐不会串成一组。NBT 仍使用 {@code FluidTank} 键，旧存档可直接读取。
+ * <p>Subclasses supply the capacity and the block entity type.
+ * By default the concrete subclass decides the connected group, so tanks of different materials do not join one group.
+ * The NBT still uses the {@code FluidTank} key, so old saves load directly.
  *
- * @param <T> 自身类型，用于让 {@link #getConnectedTanks()} 返回具体子类型
+ * @param <T> the own type, so that {@link #getConnectedTanks()} returns the concrete subtype
  */
 @SuppressWarnings("null")
 public abstract class AbstractTankBlockEntity<T extends AbstractTankBlockEntity<T>> extends BlockEntity {
@@ -41,7 +42,7 @@ public abstract class AbstractTankBlockEntity<T extends AbstractTankBlockEntity<
             @Override
             protected void onContentsChanged() {
                 setChanged();
-                // 服务端内容变化时同步到客户端，供 HUD 显示流体信息
+                // When the contents change on the server, sync them to the client so the HUD can show the fluid
                 // Merged to at most one packet per few ticks: a pipe-fed tank, or a multi-tank
                 // fill touching every tank in the column, used to send one packet per change.
                 if (level != null && !level.isClientSide()) {
@@ -52,7 +53,7 @@ public abstract class AbstractTankBlockEntity<T extends AbstractTankBlockEntity<
         };
     }
 
-    /** 连通组判定；默认要求同一具体储罐类型。 */
+    /** Decides if another block entity is in the same connected group. By default it must be the same concrete tank class. */
     protected boolean sameTankGroup(@Nullable BlockEntity other) {
         return other != null && getClass() == other.getClass();
     }
@@ -271,7 +272,7 @@ public abstract class AbstractTankBlockEntity<T extends AbstractTankBlockEntity<
         }
     }
 
-    // ==================== 客户端同步 ====================
+    // ==================== Client sync ====================
 
     @Nullable
     @Override

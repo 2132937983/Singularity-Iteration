@@ -19,7 +19,7 @@ public class PlantHybridization {
         List<IPlanter> result = new ArrayList<>();
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             var pos = target.getPlanterPos().relative(direction);
-            if (target.getPlanterWorld().hasChunkAt(pos)
+            if (target.getPlanterWorld().isLoaded(pos)
                     && target.getPlanterWorld().getBlockEntity(pos) instanceof IPlanter crop) result.add(crop);
         }
         return result;

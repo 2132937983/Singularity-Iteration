@@ -34,14 +34,9 @@ public class mio_icif_gui_wind_generator extends mio_icif_screen<com.miophas.sin
 
     // 蓝色风扇图标纹理位置 (176, 0) - 与太阳图标相同
     @SuppressWarnings("unused")
-    private static final int FAN_BLUE_TEXTURE_X = 176;
     // private static final int FAN_BLUE_TEXTURE_Y = 0;
 
     // 红色风扇图标纹理位置 (176, 14) - 表示无法产生能量
-    @SuppressWarnings("unused")
-    private static final int FAN_RED_TEXTURE_X = 176;
-    @SuppressWarnings("unused")
-    private static final int FAN_RED_TEXTURE_Y = 14;
 
     // 最大发电量参考值（用于计算填充比例）理论最高约11.46，取12作为最大值
     private static final int MAX_ENERGY_OUTPUT = 12;

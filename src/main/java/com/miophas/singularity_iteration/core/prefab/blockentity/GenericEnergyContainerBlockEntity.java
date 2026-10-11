@@ -9,15 +9,15 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 通用储能方块实体（内部实现）- 供 API 构建器和内部储电箱使用
+ * Generic energy storage block entity (internal implementation). The API builder and the internal energy storage boxes use it.
  *
- * <p>这是 {@link AbstractEnergyStorageBlockEntity} 的 API 友好包装，
- * 提供 {@link ICableTier} 接口参数的构造函数，避免外部直接引用内部枚举 {@link CableTier}。
+ * <p>This is an API-friendly wrapper of {@link AbstractEnergyStorageBlockEntity}.
+ * Its constructor takes the {@link ICableTier} interface. Thus outside code does not refer directly to the internal class {@link CableTier}.
  *
- * <p><strong>这是内部实现类，不应被 Addon 直接扩展。</strong>
- * Addon 开发者应该使用 {@link com.miophas.singularity_iteration.core.api.machine.builder.IEnergyContainerBuilder} 构建器接口。
+ * <p><strong>This is an internal implementation class. Addons must not extend it directly.</strong>
+ * Addon developers should use the builder interface {@link com.miophas.singularity_iteration.core.api.machine.builder.IEnergyContainerBuilder}.
  *
- * <p>使用示例（内部储电箱）：
+ * <p>Example (internal energy storage box):
  * <pre>{@code
  * public class MyContainerEntity extends GenericEnergyContainerBlockEntity {
  *     private static final ICableTier TIER =

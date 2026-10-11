@@ -9,7 +9,8 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
 /**
- * 动态装罐配方序列化学? */
+ * Serializer for dynamic canning recipes.
+ */
 @SuppressWarnings("null")
 public class DynamicCanningRecipeSerializer implements RecipeSerializer<DynamicCanningRecipe> {
 

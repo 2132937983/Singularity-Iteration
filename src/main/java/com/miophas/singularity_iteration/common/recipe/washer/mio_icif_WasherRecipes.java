@@ -9,17 +9,17 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 洗矿配方注册�?
- * 统一管理洗矿配方的注册?
+ * Ore washer recipe registry.
+ * It registers all ore washer recipes in one place.
  */
 @SuppressWarnings("null")
 public class mio_icif_WasherRecipes {
 
-    // 配方类型注册�?
+    // Recipe type registry
     public static final DeferredRegister<RecipeType<?>> RECIPE_TYPES =
         DeferredRegister.create(BuiltInRegistries.RECIPE_TYPE, Singularity_Iteration.MOD_ID);
 
-    // 配方序列化器注册�?
+    // Recipe serializer registry
     public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
         DeferredRegister.create(BuiltInRegistries.RECIPE_SERIALIZER, Singularity_Iteration.MOD_ID);
 

@@ -9,9 +9,11 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 /**
- * 流体核反应堆流体端口 GUI类? *
- * 功能量? * - 显示一个插件槽位（用于放置未来设计的插件物品）
- * - 显示流体相关信息（预留）
+ * GUI class for the fluid port of the fluid nuclear reactor.
+ *
+ * Functions:
+ * - Shows one plugin slot (for plugin items of a future design).
+ * - Shows fluid information (reserved).
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")

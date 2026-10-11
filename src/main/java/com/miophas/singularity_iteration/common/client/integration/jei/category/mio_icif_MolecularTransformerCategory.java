@@ -73,8 +73,11 @@ public class mio_icif_MolecularTransformerCategory extends AbstractJeiRecipeCate
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_MolecularTransformerRecipe recipe, IFocusGroup focuses) {
-        builder.addSlot(RecipeIngredientRole.INPUT, 48, 28)
-                .addIngredients(recipe.getIngredients().get(0));
+        // A data pack recipe can have no ingredients. JEI must not crash on it.
+        if (!recipe.getIngredients().isEmpty()) {
+            builder.addSlot(RecipeIngredientRole.INPUT, 48, 28)
+                    .addIngredients(recipe.getIngredients().get(0));
+        }
 
         builder.addSlot(RecipeIngredientRole.OUTPUT, 108, 28)
                 .addItemStack(recipe.getResultItem(null));

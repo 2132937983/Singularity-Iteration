@@ -27,13 +27,14 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 磁化机方块类
- * 用于磁化铁栅栏，使其可以像梯子一样攀�? * 同时可以吸引穿金属靴子的玩家
+ * Block class for the magnetizer.
+ * The magnetizer magnetizes iron fences. Players can then climb the fences like ladders.
+ * The magnetizer also attracts players who wear metal boots.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_magnetizer extends mio_icif_entity_block {
 
-    // 定义激活状态属性（是否有电在工作）
+    // Defines the active state property (true when the machine has power and works).
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     public static final MapCodec<mio_icif_block_magnetizer> CODEC = RecordCodecBuilder.mapCodec(instance ->
@@ -84,9 +85,9 @@ public class mio_icif_block_magnetizer extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_megnetizer magnetizer) {
-                // 掉落物品栏中的物品（只掉落电池槽，盔甲展示槽不掉落）
+                // Drop the items in the inventory. Only the battery slot drops. The armor display slots do not drop.
                 for (int i = 0; i < magnetizer.getItemHandler().getSlots(); i++) {
-                    // 只掉落电池槽（索引?），其他是展示槽不掉�
+                    // Only the battery slot drops its item. The other slots are display slots and do not drop.
                 if (i == mio_icif_megnetizer.BATTERY_SLOT) {
                         ItemStack stack = magnetizer.getItemHandler().getStackInSlot(i);
                         if (!stack.isEmpty()) {

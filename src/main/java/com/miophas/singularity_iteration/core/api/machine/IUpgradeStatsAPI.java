@@ -7,75 +7,75 @@ import net.minecraft.world.level.Level;
 import java.util.Optional;
 
 /**
- * 升级统计 API
+ * Upgrade statistics API.
  *
- * <p>提供机器升级相关的统计信息和有效参数查询功能。
- * 从 IMachineAPI 拆分而来，遵循单一职责原则。
+ * <p>It gives statistics about machine upgrades and queries for the effective parameters.
+ * It was split from IMachineAPI to follow the single responsibility principle.
  */
 public interface IUpgradeStatsAPI {
 
     /**
-     * 获取机器的升级统计信息
+     * Gets the upgrade statistics of the machine.
      */
     Optional<IMachineUpgradeStats> getUpgradeStats(Level world, BlockPos pos);
 
     /**
-     * 获取升级后的实际处理时间倍率
+     * Gets the actual process time multiplier after the upgrades are applied.
      *
-     * <p><b>注意</b>：此方法返回的是<b>处理时间倍率</b>，而非速度倍率。
-     * 值越小表示处理越快（例如 0.5 表示处理时间减半，速度翻倍）。
+     * <p><b>Note</b>: This method returns the <b>process time multiplier</b>. It does not return a speed multiplier.
+     * A lower value is faster (for example 0.5 means half the process time and double the speed).
      *
-     * <p><b>命名说明</b>：方法名保留 "Speed" 以维持向后兼容，但语义实际为 "TimeMultiplier"。
-     * 获取真正的速度倍率请使用 {@code 1.0 / getEffectiveProcessTimeMultiplier(world, pos)}。
+     * <p><b>Name</b>: The method name keeps "Speed" for backward compatibility. The actual meaning is "TimeMultiplier".
+     * To get the real speed multiplier, use {@code 1.0 / getEffectiveProcessTimeMultiplier(world, pos)}.
      *
-     * @return 处理时间倍率（值越小越快，1.0 为基准速度）
-     * @deprecated 语义与方法名不符，请使用 {@link #getEffectiveProcessTimeMultiplier(Level, BlockPos)} 代替
+     * @return the process time multiplier (a lower value is faster; 1.0 is the base speed)
+     * @deprecated The meaning does not agree with the method name. Use {@link #getEffectiveProcessTimeMultiplier(Level, BlockPos)} instead.
      */
     @Deprecated
     double getEffectiveSpeedMultiplier(Level world, BlockPos pos);
 
     /**
-     * 获取升级后的实际处理时间倍率（语义正确的方法名）
+     * Gets the actual process time multiplier after the upgrades are applied (method name with the correct meaning).
      *
-     * <p>值越小表示处理越快（例如 0.5 表示处理时间减半，速度翻倍）。
-     * 获取真正的速度倍率请使用 {@code 1.0 / getEffectiveProcessTimeMultiplier(world, pos)}。
+     * <p>A lower value is faster (for example 0.5 means half the process time and double the speed).
+     * To get the real speed multiplier, use {@code 1.0 / getEffectiveProcessTimeMultiplier(world, pos)}.
      *
-     * @return 处理时间倍率（值越小越快，1.0 为基准速度）
+     * @return the process time multiplier (a lower value is faster; 1.0 is the base speed)
      */
     double getEffectiveProcessTimeMultiplier(Level world, BlockPos pos);
 
     /**
-     * 获取升级后的实际能量消耗倍率
+     * Gets the actual energy usage multiplier after the upgrades are applied.
      *
-     * @return 能量消耗倍率
+     * @return the energy usage multiplier
      */
     double getEffectiveEnergyMultiplier(Level world, BlockPos pos);
 
     /**
-     * 获取升级后的有效电缆等级
+     * Gets the effective cable tier after the upgrades are applied.
      *
-     * @return 有效电缆等级
+     * @return the effective cable tier
      */
     Optional<ICableTier> getEffectiveCableTier(Level world, BlockPos pos);
 
     /**
-     * 获取升级后的能量容量加成
+     * Gets the energy capacity bonus from the upgrades.
      *
-     * @return 容量加成 (EU)
+     * @return the capacity bonus (EU)
      */
     long getEnergyCapacityBonus(Level world, BlockPos pos);
 
     /**
-     * 获取升级后的实际工作 tick
+     * Gets the actual work time after the upgrades are applied.
      *
-     * @return 实际工作 tick
+     * @return the actual work time (ticks)
      */
     int getEffectiveProcessTicks(Level world, BlockPos pos);
 
     /**
-     * 获取升级后的实际每 tick 能耗
+     * Gets the actual energy for each tick after the upgrades are applied.
      *
-     * @return 实际每 tick 能耗 (EU)
+     * @return the actual energy for each tick (EU)
      */
     long getEffectiveEnergyPerTick(Level world, BlockPos pos);
 }

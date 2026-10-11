@@ -202,7 +202,7 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity i
         setChanged();
         // 水平 ±4（9 格）、垂直 -1..1（3 层），x→z→y 推进，与 IC2 2.8 一致（见 CropScanCursor）
         BlockPos target = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.target(center, scanIndex);
-        return level.hasChunkAt(target) && tryHarvestCropStick(level, target);
+        return level.isLoaded(target) && tryHarvestCropStick(level, target);
     }
 
     private boolean tryHarvestCropStick(Level level, BlockPos pos) {

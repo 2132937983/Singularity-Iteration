@@ -323,7 +323,7 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
             return;
         }
 
-        // ??�方不�?�在，�?�置工�??
+        // The recipe is no longer valid. Reset the work.
         resetWork();
     }
 

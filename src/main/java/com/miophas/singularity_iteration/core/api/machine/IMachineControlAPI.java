@@ -6,59 +6,59 @@ import net.minecraft.world.level.Level;
 import java.util.Optional;
 
 /**
- * 机器控制 API
+ * Machine control API.
  *
- * <p>提供机器启停、状态查询等基础控制功能。
- * 从 IMachineAPI 拆分而来，遵循单一职责原则。
+ * <p>Gives basic control functions: start and stop a machine, and read its state.
+ * This interface comes from IMachineAPI. It has one responsibility only.
  */
 public interface IMachineControlAPI {
 
     /**
-     * 启动机器
+     * Starts the machine at the given position.
      */
     boolean startMachine(Level world, BlockPos pos);
 
     /**
-     * 停止机器
+     * Stops the machine at the given position.
      */
     boolean stopMachine(Level world, BlockPos pos);
 
     /**
-     * 获取机器工作进度
+     * Gets the current work progress of the machine.
      */
     int getProgress(Level world, BlockPos pos);
 
     /**
-     * 获取机器最大进度
+     * Gets the maximum work progress of the machine.
      */
     int getMaxProgress(Level world, BlockPos pos);
 
     /**
-     * 检查机器是否正在工作
+     * Checks if the machine is working now.
      */
     boolean isWorking(Level world, BlockPos pos);
 
     /**
-     * 获取机器类型
+     * Gets the machine type.
      *
-     * @return 机器类型的 Optional 包装，如果该位置不是机器则返回空 Optional
+     * @return the machine type in an Optional, or an empty Optional if the position does not contain a machine
      */
     Optional<IMachineAPI.MachineType> getMachineType(Level world, BlockPos pos);
 
     /**
-     * 获取机器配置
+     * Gets the machine configuration.
      *
-     * @return 机器配置的 Optional 包装，如果该位置不是机器则返回空 Optional
+     * @return the machine configuration in an Optional, or an empty Optional if the position does not contain a machine
      */
     Optional<IMachineAPI.IMachineConfiguration> getMachineConfiguration(Level world, BlockPos pos);
 
     /**
-     * 强制启动机器
+     * Starts the machine by force.
      */
     boolean forceStart(Level world, BlockPos pos);
 
     /**
-     * 强制停止机器
+     * Stops the machine by force.
      */
     boolean forceStop(Level world, BlockPos pos);
 }

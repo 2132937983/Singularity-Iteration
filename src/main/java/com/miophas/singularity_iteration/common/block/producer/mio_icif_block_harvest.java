@@ -26,8 +26,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 作物收割机方块类
- * 能够自动收割作物的机器? * 工作范围：水平每方向4格（9*9区域），垂直每方法?格（9*3*9区域�? * 功能：收割普通作物和作物架上的作�? * 最大输入电压为32EU/t（LV等级），超过会爆�? */
+ * Crop harvester block.
+ * Machine that harvests crops automatically.
+ * Range: 4 blocks in each horizontal direction (9x9 area) and 1 block up and down (9x3x9 area).
+ * It harvests normal crops and crops on crop sticks.
+ * Maximum input voltage is 32 EU/t (LV tier). A higher voltage makes the machine explode.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_harvest extends mio_icif_entity_block {
 
@@ -81,7 +85,7 @@ public static final BooleanProperty WORKING = BooleanProperty.create("working");
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_harvest_elc harvest) {
-                // 掉落所有槽位中的物�
+                // Drop the items in all slots.
             for (int i = 0; i < harvest.getItemHandler().getSlots(); i++) {
                     ItemStack stack = harvest.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {

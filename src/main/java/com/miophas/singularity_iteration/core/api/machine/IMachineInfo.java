@@ -8,11 +8,12 @@ import net.minecraft.world.level.Level;
 import java.util.Collection;
 
 /**
- * 机器信息接口
+ * Machine information.
  *
- * <p>提供机器运行时状态的只读视图，用于查询机器的能量、进度、配方等信息。
+ * <p>A read-only view of the runtime state of a machine.
+ * Use it to query the energy, progress, recipe and other information of the machine.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * IMachineInfo info = machineAPI.getMachineInfo(world, pos);
  * if (info != null) {
@@ -25,42 +26,42 @@ import java.util.Collection;
 public interface IMachineInfo {
 
     /**
-     * 获取机器所在的世界
+     * Gets the world of the machine.
      */
     Level getWorld();
 
     /**
-     * 获取机器方块位置
+     * Gets the block position of the machine.
      */
     BlockPos getPos();
 
     /**
-     * 获取机器类型
+     * Gets the machine type.
      */
     IMachineAPI.MachineType getMachineType();
 
     /**
-     * 获取机器当前存储的能量
+     * Gets the energy that the machine stores now, in EU.
      */
     long getStoredEnergy();
 
     /**
-     * 获取机器最大能量容量
+     * Gets the maximum energy capacity of the machine, in EU.
      */
     long getMaxEnergy();
 
     /**
-     * 获取机器当前工作进度
+     * Gets the current work progress of the machine, in ticks.
      */
     int getProgress();
 
     /**
-     * 获取机器最大工作进度
+     * Gets the maximum work progress of the machine, in ticks.
      */
     int getMaxProgress();
 
     /**
-     * 获取工作进度百分比（0.0 - 1.0）
+     * Gets the work progress as a fraction (0.0 to 1.0). Returns 0.0 if the maximum progress is 0 or less.
      */
     default double getProgressPercent() {
         if (getMaxProgress() <= 0) return 0.0;
@@ -68,90 +69,92 @@ public interface IMachineInfo {
     }
 
     /**
-     * 检查机器是否正在工作
+     * Checks if the machine is working now.
      */
     boolean isWorking();
 
     /**
-     * 获取机器当前每 tick 的能量消耗
+     * Gets the current energy consumption of the machine, in EU/t.
      */
     long getEnergyPerTick();
 
     /**
-     * 获取机器基础每 tick 能量消耗（不受升级影响）
+     * Gets the base energy consumption of the machine, in EU/t. Upgrades do not change this value.
      */
     long getBaseEnergyPerTick();
 
     /**
-     * 获取机器的电缆等级
+     * Gets the cable tier of the machine.
      */
     ICableTier getCableTier();
 
     /**
-     * 获取机器当前输入物品
+     * Gets the current input item of the machine.
      */
     ItemStack getInputItem();
 
     /**
-     * 获取机器当前输出物品
+     * Gets the current output item of the machine.
      */
     ItemStack getOutputItem();
 
     /**
-     * 获取机器所有输入槽的物品
+     * Gets the items in all input slots of the machine.
      */
     Collection<ItemStack> getInputItems();
 
     /**
-     * 获取机器所有输出槽的物品
+     * Gets the items in all output slots of the machine.
      */
     Collection<ItemStack> getOutputItems();
 
     /**
-     * 获取本次运行的持续时间（tick）
+     * Gets the duration of the current run, in ticks.
      */
     long getRuntimeTicks();
 
     /**
-     * 获取机器总加工数量
+     * Gets the total number of items that the machine processed.
      */
     long getTotalProcessed();
 
     /**
-     * 获取机器速度倍率
+     * Gets the speed multiplier of the machine.
      */
     double getSpeedMultiplier();
 
     /**
-     * 获取机器能耗倍率
+     * Gets the energy consumption multiplier of the machine.
      */
     double getEnergyMultiplier();
 
     /**
-     * 检查机器是否支持升级插件
+     * Checks if the machine accepts upgrades.
      */
     boolean supportsUpgrades();
 
     /**
-     * 获取已安装的升级插件
+     * Gets the installed upgrades.
      */
     Collection<ItemStack> getInstalledUpgrades();
 
     /**
-     * 获取机器效率百分比
+     * Gets the efficiency of the machine as a percentage.
      *
-     * <p>效率定义为每单位能量输入的工作输出：
-     * {@code (speedMultiplier / energyMultiplier) * 100}。
-     * 100% 表示无升级影响。低于 100% 表示机器相对于速度增益消耗更多能量
-     * （例如超频插件）。高于 100% 表示能量效率提升（例如效率升级插件）。
+     * <p>The efficiency is the work output for each unit of energy input:
+     * {@code (speedMultiplier / energyMultiplier) * 100}.
+     * 100% means that no upgrade has an effect.
+     * Less than 100% means that the machine uses more energy than it gains in speed
+     * (for example with an overclocker upgrade).
+     * More than 100% means better energy efficiency (for example with an efficiency upgrade).
      *
-     * <p>如果能耗倍率为零或负数（表示 bug 或无效状态），
-     * 此方法返回 0.0 表示机器无法正常工作。
+     * <p>If the energy multiplier is zero or negative (a bug or a state that is not valid),
+     * this method returns 0.0. This shows that the machine cannot work correctly.
      */
     default double getEfficiency() {
         double speed = getSpeedMultiplier();
         double energy = getEnergyMultiplier();
-        // 如果能耗倍率为0或负数，表示机器处于无效状态，效率为0
+        // If the energy multiplier is 0 or negative, the machine state is not valid. The efficiency is 0.
         if (energy <= 0) return 0.0;
         return (speed / energy) * 100.0;
     }

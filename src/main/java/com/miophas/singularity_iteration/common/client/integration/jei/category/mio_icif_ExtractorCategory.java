@@ -21,7 +21,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 提取得?JEI 配方类别
+ * JEI recipe category for the extractor.
  */
 @SuppressWarnings("null")
 public class mio_icif_ExtractorCategory extends AbstractJeiRecipeCategory<mio_icif_ExtractorRecipe> {
@@ -37,7 +37,7 @@ public class mio_icif_ExtractorCategory extends AbstractJeiRecipeCategory<mio_ic
     private final IDrawable icon;
 
     public mio_icif_ExtractorCategory(IGuiHelper helper) {
-        // 背景只绘制机器内容区域，去掉边框
+        // Draw only the machine content area as the background. Do not draw the border.
         this.background = helper.createDrawable(TEXTURE, 7, 7, 162, 72);
         this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
                 new ItemStack(mio_icif_blocks.EXTRACTOR_ELC.get()));
@@ -70,11 +70,14 @@ public class mio_icif_ExtractorCategory extends AbstractJeiRecipeCategory<mio_ic
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_ExtractorRecipe recipe, IFocusGroup focuses) {
-        // 槽位坐标已根据新的背景区域?7,7)调整
-        builder.addSlot(RecipeIngredientRole.INPUT, 49, 10)
-                .addIngredients(recipe.getIngredients().get(0));
+        // The slot coordinates are adjusted for the new background area.
+        // A data pack recipe can have no ingredients. JEI must not crash on it.
+        if (!recipe.getIngredients().isEmpty()) {
+            builder.addSlot(RecipeIngredientRole.INPUT, 49, 10)
+                    .addIngredients(recipe.getIngredients().get(0));
+        }
 
-        // 输出�
+        // Output slot
     builder.addSlot(RecipeIngredientRole.OUTPUT, 109, 28)
                 .addItemStack(recipe.getResultItem(null));
     }
@@ -83,12 +86,12 @@ public class mio_icif_ExtractorCategory extends AbstractJeiRecipeCategory<mio_ic
     protected void drawFor(mio_icif_ExtractorRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
         this.background.draw(guiGraphics, 0, 0);
         
-        // 绘制提取机专属进度条 - 使用与 Screen 基类相同的方法
+        // Draw the extractor progress bar. Use the same method as the Screen base class.
         int progressX = 72;
         int progressY = 27;
-        int progressPixels = mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_U; // 满进度
+        int progressPixels = mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_U; // Full progress
         
-        // 先渲染背景
+        // Render the background first.
         guiGraphics.blit(ATLAS_TEXTURE, progressX, progressY, 0,
             (float) mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_BG_X,
             (float) mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_BG_Y,
@@ -97,7 +100,7 @@ public class mio_icif_ExtractorCategory extends AbstractJeiRecipeCategory<mio_ic
             mio_icif_gui_global_variables.ATLAS_WIDTH,
             mio_icif_gui_global_variables.ATLAS_HEIGHT);
         
-        // 再渲染进度条
+        // Then render the progress bar.
         guiGraphics.blit(ATLAS_TEXTURE, progressX, progressY, 0,
             (float) mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_X,
             (float) mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_Y,

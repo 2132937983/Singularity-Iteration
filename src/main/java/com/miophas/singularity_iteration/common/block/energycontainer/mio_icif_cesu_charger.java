@@ -29,7 +29,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * CESU 充电座方法? */
+ * Block class for the CESU charge pad.
+ */
 @SuppressWarnings("null")
 public class mio_icif_cesu_charger extends mio_icif_entity_block implements com.miophas.singularity_iteration.core.api.block.IChargepadBlock {
 

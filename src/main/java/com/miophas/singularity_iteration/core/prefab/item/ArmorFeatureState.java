@@ -6,19 +6,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 
 /**
- * 装备特性（开关型）状态存储。
+ * State storage for equipment features (on/off type).
  *
- * <p>状态存放于物品的 {@code CustomData} 组件，键为 {@code feat_<featureKey>}。
- * 该实现与具体物品类、注册表内容无关，因此 core、common 与附属模组可共用同一存储语义。
+ * <p>The state is stored in the {@code CustomData} component of the item. The key is {@code feat_<featureKey>}.
+ * This implementation does not depend on specific item classes or registry contents. Thus core, common and add-on mods can share the same storage rules.
  *
- * <p><b>默认语义：未显式写入时为"启用"</b>（新物品默认打开）。
+ * <p><b>Default rule: a feature that has no written value is "enabled"</b> (new items are on by default). {@link #registerDefault} can change the default of one feature.
  */
 public final class ArmorFeatureState {
 
-    /** 特性键前缀。 */
+    /** Feature key prefix. */
     public static final String FEATURE_PREFIX = "feat_";
 
-    /** 未显式写入时的默认启用状态。 */
+    /** Default enabled state when no value is written. */
     public static final boolean DEFAULT_ENABLED = true;
 
     private ArmorFeatureState() {
@@ -35,13 +35,6 @@ public final class ArmorFeatureState {
         return featureKey == null ? DEFAULT_ENABLED : DEFAULTS.getOrDefault(featureKey, DEFAULT_ENABLED);
     }
 
-    /**
-     * 读取开关型特性的启用状态。
-     *
-     * @param stack      物品堆
-     * @param featureKey 特性键
-     * @return 是否启用；空物品或空键返回 {@link #DEFAULT_ENABLED}
-     */
     private static final java.util.Map<String, String> KEYS = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** "feat_" + key, built once per feature (checks run every tick and every frame). */
@@ -49,6 +42,13 @@ public final class ArmorFeatureState {
         return KEYS.computeIfAbsent(featureKey, k -> FEATURE_PREFIX + k);
     }
 
+    /**
+     * Reads the enabled state of an on/off feature.
+     *
+     * @param stack      the item stack
+     * @param featureKey the feature key
+     * @return true if enabled. For an empty stack, a null key or no written value, it returns {@link #defaultFor(String)}.
+     */
     public static boolean isEnabled(ItemStack stack, String featureKey) {
         if (stack.isEmpty() || featureKey == null) {
             return defaultFor(featureKey);
@@ -64,11 +64,11 @@ public final class ArmorFeatureState {
     }
 
     /**
-     * 写入开关型特性的启用状态。
+     * Writes the enabled state of an on/off feature. An empty stack or a null key does nothing.
      *
-     * @param stack      物品堆
-     * @param featureKey 特性键
-     * @param enabled    是否启用
+     * @param stack      the item stack
+     * @param featureKey the feature key
+     * @param enabled    true to enable
      */
     public static void setEnabled(ItemStack stack, String featureKey, boolean enabled) {
         if (stack.isEmpty() || featureKey == null) {
@@ -80,9 +80,9 @@ public final class ArmorFeatureState {
     }
 
     /**
-     * 取反开关型特性的启用状态。
+     * Inverts the enabled state of an on/off feature.
      *
-     * @return 切换后的状态
+     * @return the state after the change
      */
     public static boolean toggle(ItemStack stack, String featureKey) {
         boolean next = !isEnabled(stack, featureKey);

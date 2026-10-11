@@ -27,30 +27,32 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * ?���??��?��??��?��?�类
- * 继承�?AbstractProcessingMachineBlockEntity
- * 
- * ??��?��?? * 1. ?��??�电??�来?���?水�?��??，�?�出空气?��??
- * 2. ?????��?��?�学??��?��?�系�?�?0000EU）? * 3. �??��与侧?��??�可以�?�出??��?��??2EU/t�? * 4. 当接触面????��?��不是满电?��，�?��?��?��?�出给该?��?��
+ * Block entity for the electrolyzer.
+ * It extends AbstractProcessingMachineBlockEntity.
+ *
+ * Behavior:
+ * 1. It uses electricity to electrolyze water cells. It outputs empty cells.
+ * 2. It stores the energy as chemical energy, up to DEFAULT_CAPACITY EU.
+ * 3. It outputs the chemical energy to adjacent blocks at a maximum of 32 EU/t.
+ * 4. It sends energy to an adjacent machine only when that machine is not full.
  */
 @SuppressWarnings("null")
 public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEntity {
 
-    // 槽位?��?��?��??�?须�?�GUI中�??槽位?�索引�???���?
-    public static final int INPUT_SLOT = 0;   // 输�?��??- 水�?��??    
-    public static final int OUTPUT_SLOT = 1;  // 输出�?- 空气?��??
-    // ??�置
-    // ??�置�?对�??IC2 ??��??�?    
-    public static final long DEFAULT_CAPACITY = 400L;        // 10 EU/t ?? 20 ticks = 200 EU）??????��?��??400
-    public static final long DEFAULT_MAX_RECEIVE = 32L;      // ?��?��?��??��?��?? 32EU/t
-    public static final long DEFAULT_MAX_EXTRACT = 32L;      // 输出?��??��?��?? 32EU/t
-    public static final long ENERGY_PER_WATER_CELL = 200L;   // ?���?�?个水??��?????�?00EU
-    public static final long DEFAULT_ENERGY_PER_TICK = 10L; // 每tick�?�??0EU (??�IC2?���??��????????��??
+    // Slot indexes. They must match the slot indexes in the GUI.
+    public static final int INPUT_SLOT = 0; // Input: water cells
+    public static final int OUTPUT_SLOT = 1; // Output: empty cells
+    // Default energy settings. The values match the IC2 electrolyzer.
+    public static final long DEFAULT_CAPACITY = 400L; // 10 EU/t x 20 ticks = 200 EU for one cell. The buffer holds 2 cells.
+    public static final long DEFAULT_MAX_RECEIVE = 32L; // Maximum input: 32 EU/t
+    public static final long DEFAULT_MAX_EXTRACT = 32L; // Maximum output: 32 EU/t
+    public static final long ENERGY_PER_WATER_CELL = 200L; // One water cell uses 200 EU
+    public static final long DEFAULT_ENERGY_PER_TICK = 10L; // Uses 10 EU per tick, the same as IC2
 
-    // ??�学??��?��??    
+    // Stored chemical energy in EU.
     protected long chemicalEnergy = 0;
 
-    // ??��?�累积器�??��于追踪�?�时间???�水??��??�?    
+    // Energy paid toward the current water cell, in EU.
     protected long energyAccumulator = 0;
     // Legacy accumulator energy was already in ChemicalEnergy or had already been emitted.
     // It still owes cell consumption but must not be published as chemical energy a second time.
@@ -93,14 +95,14 @@ public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEnt
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
             case INPUT_SLOT -> mio_icif_cells.isCellContainingFluid(stack, net.minecraft.world.level.material.Fluids.WATER);
-            case OUTPUT_SLOT -> false; // 输出槽位?��??许�?�动?��???
+            case OUTPUT_SLOT -> false; // Players cannot put items into the output slot
             default -> false;
         };
     }
 
     @Override
     protected int[] getSlotsForDirection(Direction side) {
-        // ?????�方??��?�可以访?��?????�槽位?        
+        // All sides can access all slots.
         return new int[]{INPUT_SLOT, OUTPUT_SLOT};
     }
 
@@ -119,24 +121,29 @@ public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEnt
         if (!isItemValidForSlot(slot, stack)) {
             return false;
         }
-        // ?��??��?��?�槽?��以�?��??        
+        // Automation can insert only into the input slot.
         return slot == INPUT_SLOT;
     }
 
     @Override
     protected int getBatterySlot() {
-        return -1; // ?���??��没�?�电池槽
+        return -1; // The electrolyzer has no battery slot
     }
 
     @Override
     protected boolean canExtractItem(int slot, @Nullable Direction side) {
-        // ?��??��?�出槽可以�?��??        
+        // Automation can extract only from the output slot.
         return slot == OUTPUT_SLOT;
     }
 
     /**
-     * �??��?��?��?��?��?��以工�?     * ?��事件??     * 1. ??�电力??????��?��?��?�电池�??     * 2. 输�?�槽??�水??��??     * 3. 输出槽可以放??�空??��??
-     * 4. ??�学??�未�?     */
+     * Checks if the electrolyzer can work.
+     * Conditions:
+     * 1. Energy is available in the buffer or from paid credit.
+     * 2. The input slot contains a water cell.
+     * 3. The output slot can accept the empty cell.
+     * 4. The chemical energy storage has space for one cell of energy.
+     */
     @Override
     protected boolean canWork() {
         if (scexProcessing || scexOutputting || uncertainOutput > 0 || prepareCell().isEmpty()) return false;
@@ -158,9 +165,10 @@ public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEnt
     }
 
     /**
-     * ??��?�电力?工�??
-     * �???�电??��?�累积�?��?��??当达???200EU?���???�水??��??输出空气?��??     
-     * */
+     * Uses electricity to process a water cell.
+     * The machine adds energy to the accumulator each tick.
+     * At 200 EU it converts one water cell into an empty cell and stores the energy as chemical energy.
+     */
     @Override
     protected void doWork() {
         if (!canWork()) { stopWork(); return; }
@@ -202,25 +210,26 @@ public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEnt
     }
 
     /**
-     * 每tick?��?��??��??
+     * Runs one server tick.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_electrolyzer_elc blockEntity) {
         if (level.isClientSide()) {
             return;
         }
 
-        // �??��??�类???tick?��法�??�??????��?�接?��???工�?��?��?��??        
+        // The parent tick does the energy input and processing logic.
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
-        // 输出??�学??��?�相??�机?��
+        // Send chemical energy to adjacent machines.
         blockEntity.outputChemicalEnergy();
 
 
     }
 
     /**
-     * 输出??�学??��?�相??�机?��
-     * ??��????��?�满?��????��??�机?��输出??��??     */
+     * Sends chemical energy to adjacent machines.
+     * The machine sends energy only to neighbors that are not full.
+     */
     private void outputChemicalEnergy() {
         if (!(level instanceof ServerLevel server) || !server.getServer().isSameThread()
                 || scexOutputting || scexProcessing || uncertainOutput > 0 || chemicalEnergy <= 0) return;
@@ -287,7 +296,7 @@ public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEnt
         var tag = super.getUpdateTag(registries); saveAdditional(tag, registries); return tag;
     }
 
-    // ==================== Getter ?���? ====================
+    // ==================== Getters ====================
 
     public long getChemicalEnergy() {
         return chemicalEnergy;

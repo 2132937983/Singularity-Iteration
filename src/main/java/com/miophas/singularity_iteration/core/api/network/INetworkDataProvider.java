@@ -5,20 +5,20 @@ import com.miophas.singularity_iteration.core.api.network.INetworkDataProvider;
 import java.util.List;
 
 /**
- * 网络数据提供者接口。
+ * Network data provider interface.
  * <p>
- * 对应 IC2 1.12.2 的 {@code INetworkDataProvider}。
- * 实现此接口的方块实体可以声明哪些字段需要网络同步。
+ * Equivalent to {@code INetworkDataProvider} in IC2 1.12.2.
+ * A block entity that implements this interface declares which fields need network sync.
  */
 public interface INetworkDataProvider {
 
     /**
-     * 获取需要同步的字段名列表。
+     * Gets the names of the fields to sync.
      * <p>
-     * 返回的字段将在方块实体加载时自动同步到客户端，
-     * 并在服务端修改时通过 {@link NetworkHelper} 更新。
+     * The mod sends these fields to the client automatically when the block entity loads.
+     * When the server changes a field, {@code TileEntityFieldUpdatePacket} sends the update.
      *
-     * @return 需要同步的字段名列表
+     * @return the names of the fields to sync
      */
     List<String> getNetworkedFields();
 }

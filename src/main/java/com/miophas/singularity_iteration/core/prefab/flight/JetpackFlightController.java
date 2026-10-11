@@ -10,12 +10,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 喷气背包飞行控制器（可复用底座）。
+ * Jetpack flight controller (a reusable base).
  *
- * <p>实现 {@link IJetpackItem} 的物品只需在自己的 tick 中调用
+ * <p>An item that implements {@link IJetpackItem} only needs to call
  * {@link #tick(Player, ItemStack, IJetpackItem, long, double, double, double, boolean)}
- * 即可获得与宿主一致的推升、悬停、前向推进、限高与能量消耗行为。
- * 跳跃/前进/潜行/加速按键输入由 {@link JetpackKeyHandler} 提供（宿主已为所有玩家同步）。
+ * in its own tick. Then it gets the same lift, hover, forward thrust, height limit and energy use as the host.
+ * {@link JetpackKeyHandler} supplies the jump, forward, sneak and boost key input
+ * (the host already syncs it for all players).
  */
 public final class JetpackFlightController {
     /*

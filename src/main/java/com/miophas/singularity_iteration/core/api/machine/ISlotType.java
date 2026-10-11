@@ -1,44 +1,44 @@
 package com.miophas.singularity_iteration.core.api.machine;
 
 /**
- * API 级槽位类型接口
- * 使附属模组开发者与内部 SlotType 实现解耦
+ * API-level slot type interface.
+ * It keeps addon developers independent of the internal SlotType implementation.
  */
 public interface ISlotType {
     
     /**
-     * 获取槽位类型名称
-     * @return 类型名称
+     * Gets the name of the slot type.
+     * @return the type name
      */
     String getName();
     
     /**
-     * 检查是否为输入槽
-     * @return 如果是输入槽返回 true
+     * Checks if this is an input slot.
+     * @return true if this is an input slot
      */
     boolean isInput();
     
     /**
-     * 检查是否为输出槽
-     * @return 如果是输出槽返回 true
+     * Checks if this is an output slot.
+     * @return true if this is an output slot
      */
     boolean isOutput();
     
     /**
-     * 检查是否为电池槽
-     * @return 如果是电池槽返回 true
+     * Checks if this is a battery slot.
+     * @return true if this is a battery slot
      */
     boolean isBattery();
     
     /**
-     * 检查是否为升级槽
-     * @return 如果是升级槽返回 true
+     * Checks if this is an upgrade slot.
+     * @return true if this is an upgrade slot
      */
     boolean isUpgrade();
     
     /**
-     * 检查是否为额外槽
-     * @return 如果是额外槽返回 true
+     * Checks if this is an extra slot.
+     * @return true if this is an extra slot
      */
     boolean isExtra();
 }

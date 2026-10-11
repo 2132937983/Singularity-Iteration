@@ -7,135 +7,135 @@ import net.neoforged.neoforge.items.IItemHandler;
 import java.util.List;
 
 /**
- * 生产机器接口
- * 所有能处理配方的机器都应实现此接口
+ * Interface for production machines.
+ * All machines that process recipes must implement this interface.
  */
 public interface IProducerBlock {
-    
+
     /**
-     * 强制开始工作
+     * Forces the machine to start work.
      */
     void forceStartWork();
-    
+
     /**
-     * 强制停止工作
+     * Forces the machine to stop work.
      */
     void forceStopWork();
-    
+
     /**
-     * 获取升级统计信息
-     * @return 升级统计
+     * Gets the upgrade statistics.
+     * @return the upgrade statistics
      */
     IMachineUpgradeStats getUpgradeStats();
-    
+
     /**
-     * 获取升级槽起始位置
-     * @return 起始槽位索引
+     * Gets the index of the first upgrade slot.
+     * @return the index of the first upgrade slot
      */
     int getUpgradeSlotStart();
-    
+
     /**
-     * 获取升级槽数量
-     * @return 升级槽数量
+     * Gets the number of upgrade slots.
+     * @return the number of upgrade slots
      */
     int getUpgradeSlotCount();
-    
+
     /**
-     * 获取物品处理器
-     * @return 物品处理器
+     * Gets the item handler.
+     * @return the item handler
      */
     IItemHandler getItemHandler();
-    
+
     /**
-     * 获取升级物品列表
-     * @return 升级物品列表
+     * Gets the list of upgrade items.
+     * @return the list of upgrade items
      */
     List<ItemStack> getUpgrades();
-    
+
     /**
-     * 获取工作进度
-     * @return 当前进度
+     * Gets the work progress.
+     * @return the current progress (ticks)
      */
     int getProgress();
-    
+
     /**
-     * 获取最大工作进度
-     * @return 最大进度
+     * Gets the maximum work progress.
+     * @return the maximum progress (ticks)
      */
     int getMaxProgress();
-    
+
     /**
-     * 获取基础最大进度
-     * @return 基础最大进度
+     * Gets the base maximum progress, before upgrades.
+     * @return the base maximum progress (ticks)
      */
     int getBaseMaxProgress();
-    
+
     /**
-     * 获取每 tick 能耗
-     * @return 每 tick 能耗（EU）
+     * Gets the energy use per tick.
+     * @return the energy use per tick (EU)
      */
     long getEnergyPerTick();
-    
+
     /**
-     * 获取槽位布局
-     * @return 槽位布局
+     * Gets the slot layout.
+     * @return the slot layout
      */
     ISlotLayout getSlotLayout();
-    
+
     /**
-     * 获取容器大小
-     * @return 容器大小
+     * Gets the container size.
+     * @return the container size (number of slots)
      */
     int getContainerSize();
-    
+
     /**
-     * 获取能量存储
-     * @return 能量存储
+     * Gets the energy storage.
+     * @return the energy storage
      */
     IEnergyStorageAccess getEnergyStorage();
-    
+
     /**
-     * 获取工作完成回调
-     * @return 工作完成回调，可能为 null
+     * Gets the work completion callback.
+     * @return the work completion callback, or null
      */
     IWorkCompleteCallback getWorkCompleteCallback();
-    
+
     /**
-     * 是否正在工作
-     * @return true 如果正在工作
+     * Checks if the machine is working.
+     * @return true if the machine is working
      */
     boolean isWorking();
-    
+
     /**
-     * 获取有效的每 tick 能量消耗（考虑升级）
-     * @return 有效能耗（EU）
+     * Gets the effective energy use per tick, with upgrades applied.
+     * @return the effective energy use (EU)
      */
     long getEffectiveEnergyPerTick();
-    
+
     /**
-     * 获取总处理量
-     * @return 总处理量
+     * Gets the total processed amount.
+     * @return the total processed amount
      */
     long getTotalProcessed();
-    
+
     /**
-     * 获取当前红石模式
-     * @return 红石模式，默认返回 NONE
+     * Gets the current redstone mode.
+     * @return the redstone mode; the default is NONE
      */
     default IMachineAPI.RedstoneMode getRedstoneMode() {
         return IMachineAPI.RedstoneMode.NONE;
     }
-    
+
     /**
-     * 设置红石模式
-     * @param mode 红石模式
+     * Sets the redstone mode.
+     * @param mode the redstone mode
      */
     default void setRedstoneMode(IMachineAPI.RedstoneMode mode) {
-        // 默认实现为空，子类可选择性覆盖
+        // Default: does nothing. Subclasses can override it.
     }
 
     default void setLit(boolean lit) {
-        // 默认实现为空，子类可选择性覆盖
+        // Default: does nothing. Subclasses can override it.
     }
 
     default boolean isLit() {
@@ -143,7 +143,7 @@ public interface IProducerBlock {
     }
 
     default void serverTick() {
-        // 默认实现为空，子类可选择性覆盖
+        // Default: does nothing. Subclasses can override it.
     }
 
     default IMachineAPI.MetalFormerMode getMetalFormerMode() {
@@ -151,6 +151,6 @@ public interface IProducerBlock {
     }
 
     default void setMetalFormerMode(IMachineAPI.MetalFormerMode mode) {
-        // 默认实现为空，子类可选择性覆盖
+        // Default: does nothing. Subclasses can override it.
     }
 }

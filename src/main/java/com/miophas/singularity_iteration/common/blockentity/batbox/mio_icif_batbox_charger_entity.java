@@ -17,9 +17,9 @@ import net.minecraft.world.phys.AABB;
 import java.util.List;
 
 /**
- * 充电座方块实体?
- * 继承 batbox_entity，增加了玩家充电功能
- * 当玩家站在上面时，为玩家身上的所有电力设备充电
+ * Block entity for the charge pad.
+ * It extends batbox_entity and adds a function that charges players.
+ * When a player stands on it, it charges all electric items that the player carries.
  */
 @SuppressWarnings("null")
 public class mio_icif_batbox_charger_entity extends mio_icif_batbox_entity {

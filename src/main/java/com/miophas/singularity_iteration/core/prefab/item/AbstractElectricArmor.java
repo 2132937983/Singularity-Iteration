@@ -27,33 +27,33 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 电力装甲抽象基类，提供完整的默认能量存储实现。
+ * Abstract base class for electric armor. It gives a full default energy storage implementation.
  *
- * <p>Addon 开发者只需继承此类并指定构造参数即可创建一个功能完整的电力装甲，
- * 无需访问任何 mio_icif 内部类。
+ * <p>An addon developer only extends this class and gives the constructor arguments to create a fully functional electric armor piece.
+ * No access to mio_icif internal classes is necessary.
  *
- * <h3>能量存储机制</h3>
- * <p>统一使用 DataComponent {@code mio_icif:battery_energy}
- * （{@link BatteryEnergy}，含 energy / maxEnergy 两个字段）存储能量，不依赖耐久度系统。
- * 旧存档中基于耐久度存储的电量会在首次读取时自动迁移。
+ * <h3>Energy storage</h3>
+ * <p>Energy is always stored in the DataComponent {@code mio_icif:battery_energy}
+ * ({@link BatteryEnergy}, with the two fields energy and maxEnergy). It does not use the durability system.
+ * Energy that old saves stored as durability moves to the component automatically on the first read.
  *
- * <h3>使用示例</h3>
+ * <h3>Example</h3>
  * <pre>{@code
  * public class MyChestplate extends AbstractElectricArmor {
  *     public MyChestplate(Holder<ArmorMaterial> material, Properties properties) {
  *         super(material, Type.CHESTPLATE, properties,
- *               1_000_000,    // maxEnergy: 100万EU
- *               0,            // initialEnergy: 初始为空
- *               512,          // chargeRate: 充电速率 512 EU/t
- *               0,            // energyPerTick: 无持续消耗
- *               3,            // armorTier: 自定义等级3
- *               "my_mod/my_armor"  // texturePrefix: 材质路径
+ *               1_000_000,    // maxEnergy: 1,000,000 EU
+ *               0,            // initialEnergy: starts empty
+ *               512,          // chargeRate: charge rate 512 EU/t
+ *               0,            // energyPerTick: no continuous use
+ *               3,            // armorTier: custom tier 3
+ *               "my_mod/my_armor"  // texturePrefix: texture path
  *         );
  *     }
  *
  *     @Override
  *     public long getEnergyPerDamage() {
- *         return 10000; // 每点伤害消耗 10000 EU
+ *         return 10000; // Each damage point uses 10000 EU
  *     }
  *
  *     @Override
@@ -75,17 +75,17 @@ import java.util.function.Consumer;
  * }
  * }</pre>
  *
- * <h3>自动提供的功能</h3>
+ * <h3>Functions supplied automatically</h3>
  * <ul>
- *   <li>能量存储（基于统一 DataComponent）</li>
- *   <li>能量条渲染（绿→红渐变）</li>
- *   <li>能量 Tooltip 显示</li>
- *   <li>特性 Tooltip 显示（可点击开关 / 模式切换，见 {@link ArmorFeatureTooltip}）</li>
- *   <li>充电器兼容（通过 IBatteryItem 接口）</li>
- *   <li>伤害吸收（通过 IElectricArmorItem 接口，由事件系统驱动）</li>
- *   <li>特性切换（通过 {@code IItemAPI} 的 {@code toggleArmorFeature} /
- *       {@code cycleArmorFeature}，或直接使用 {@link ArmorFeatures}）</li>
- *   <li>防止原版耐久消耗</li>
+ *   <li>Energy storage (in the common DataComponent)</li>
+ *   <li>Energy bar rendering (green-to-red gradient)</li>
+ *   <li>Energy tooltip</li>
+ *   <li>Feature tooltip (clickable toggle / mode switch, see {@link ArmorFeatureTooltip})</li>
+ *   <li>Charger compatibility (through the IBatteryItem interface)</li>
+ *   <li>Damage absorption (through the IElectricArmorItem interface, driven by the event system)</li>
+ *   <li>Feature toggle (through {@code toggleArmorFeature} /
+ *       {@code cycleArmorFeature} of {@code IItemAPI}, or directly with {@link ArmorFeatures})</li>
+ *   <li>No vanilla durability loss</li>
  * </ul>
  */
 public abstract class AbstractElectricArmor extends ArmorItem implements IElectricArmorItem {
@@ -98,21 +98,21 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
     private final int armorTier;
     private final String texturePrefix;
 
-    // ==================== 构造函数 ====================
+    // ==================== Constructor ====================
 
     /**
-     * 创建电力装甲。
+     * Creates an electric armor piece.
      *
-     * @param material      装甲材料
-     * @param type          装甲类型（头盔/胸甲/护腿/靴子）
-     * @param properties    物品属性
-     * @param maxEnergy     最大能量容量 (EU)
-     * @param initialEnergy 初始能量 (EU)
-     * @param chargeRate    充电速率 (EU/tick)
-     * @param energyPerTick 每 tick 持续消耗 (EU)，0 表示无持续消耗
-     * @param armorTier     装甲等级，用于伤害吸收规则判断
-     * @param texturePrefix 材质路径前缀，格式为 "namespace/path"，
-     *                      实际材质文件为 namespace:textures/armor/path_1.png 和 _2.png
+     * @param material      the armor material
+     * @param type          the armor type (helmet, chestplate, leggings or boots)
+     * @param properties    the item properties
+     * @param maxEnergy     the maximum energy capacity (EU)
+     * @param initialEnergy the initial energy (EU)
+     * @param chargeRate    the charge rate (EU/tick)
+     * @param energyPerTick the continuous energy use per tick (EU). 0 means no continuous use.
+     * @param armorTier     the armor tier. The damage absorption rules use it.
+     * @param texturePrefix the texture path prefix, in the format "namespace/path".
+     *                      The texture files are namespace:textures/armor/path_1.png and _2.png.
      */
     protected AbstractElectricArmor(Holder<ArmorMaterial> material, Type type, Properties properties,
                                     long maxEnergy, long initialEnergy, long chargeRate,
@@ -125,15 +125,15 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
         this.texturePrefix = texturePrefix;
     }
 
-    // ==================== 能量存储（统一 DataComponent） ====================
+    // ==================== Energy storage (common DataComponent) ====================
 
     private static Properties buildArmorProperties(Properties properties, long maxEnergy, long initialEnergy) {
-        // 通过默认组件携带初始电量（保持旧方案中 initialEnergy 的语义）
+        // The default component holds the initial energy (this keeps the meaning of initialEnergy from the old design)
         long clamped = Math.clamp(initialEnergy, 0L, Math.max(0, maxEnergy));
         return properties.component(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(clamped, maxEnergy));
     }
 
-    // ==================== IBatteryItem 实现 ====================
+    // ==================== IBatteryItem implementation ====================
 
     @Override
     public long getMaxEnergy() {
@@ -158,8 +158,8 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
     }
 
     /**
-     * 兼容旧存档：将旧版本通过耐久度系统存储的电量迁移到统一 DataComponent，
-     * 仅在检测到旧数据（无组件但有耐久度损耗）时执行一次。
+     * Compatibility with old saves: moves energy that old versions stored in the durability system to the common DataComponent.
+     * It runs one time only, when it finds old data (no component, but durability damage).
      */
     private long readStoredEnergy(ItemStack stack) {
         BatteryEnergy data = stack.get(CoreDataComponents.BATTERY_ENERGY.get());
@@ -207,7 +207,7 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
         return chargeRate;
     }
 
-    // ==================== IElectricArmorItem 实现 ====================
+    // ==================== IElectricArmorItem implementation ====================
 
     @Override
     public long getEnergyPerTick() {
@@ -244,7 +244,7 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
         return 0.0F;
     }
 
-    // ==================== 能量条渲染 ====================
+    // ==================== Energy bar rendering ====================
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
@@ -267,7 +267,7 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
         return r << 16 | g << 8;
     }
 
-    // ==================== 防止原版耐久消耗 ====================
+    // ==================== Prevent vanilla durability loss ====================
 
     @Override
     public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, T entity, Consumer<Item> onBroken) {
@@ -294,11 +294,11 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
     }
 
     /**
-     * 追加能量信息到 Tooltip。
-     * 子类可以覆盖此方法来自定义能量显示格式。
+     * Adds energy information to the tooltip.
+     * Subclasses can override this method to use a custom energy display format.
      *
-     * @param stack             物品堆
-     * @param tooltipComponents Tooltip 列表
+     * @param stack             the item stack
+     * @param tooltipComponents the tooltip list
      */
     protected void appendEnergyTooltip(ItemStack stack, List<Component> tooltipComponents) {
         tooltipComponents.add(
@@ -308,34 +308,34 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
     }
 
     /**
-     * 追加特性信息到 Tooltip。
+     * Adds feature information to the tooltip.
      *
-     * <p>使用统一的 {@link ArmorFeatureTooltip} 渲染可点击行（开关 / 模式切换），
-     * 所有实现 {@link IElectricArmorItem} 的物品（含附属模组）共享同一交互路径。
-     * 子类可以覆盖此方法来自定义特性显示格式。
+     * <p>It uses the common {@link ArmorFeatureTooltip} to render clickable lines (toggle / mode switch).
+     * All items that implement {@link IElectricArmorItem} (also from addon mods) use the same interaction path.
+     * Subclasses can override this method to use a custom feature display format.
      *
-     * @param stack             物品堆
-     * @param tooltipComponents Tooltip 列表
+     * @param stack             the item stack
+     * @param tooltipComponents the tooltip list
      */
     protected void appendFeatureTooltip(ItemStack stack, List<Component> tooltipComponents) {
         ArmorFeatureTooltip.appendAll(tooltipComponents, stack, ArmorFeatures.features(stack));
     }
 
     /**
-     * 检查开关型特性是否启用。
+     * Checks if an on/off feature is enabled.
      *
-     * <p>委托 {@link ArmorFeatureState}（CustomData 键 {@code feat_{featureKey}}，
-     * 未显式写入时默认启用）。子类可以覆盖此方法以使用不同的存储方式。
+     * <p>It delegates to {@link ArmorFeatureState} (CustomData key {@code feat_{featureKey}}).
+     * A feature that was never written is enabled by default. Subclasses can override this method to use a different storage.
      *
-     * @param stack      物品堆
-     * @param featureKey 特性键
-     * @return 是否启用
+     * @param stack      the item stack
+     * @param featureKey the feature key
+     * @return true if the feature is enabled
      */
     protected boolean isFeatureEnabled(ItemStack stack, String featureKey) {
         return ArmorFeatureState.isEnabled(stack, featureKey);
     }
 
-    // ==================== 材质 ====================
+    // ==================== Texture ====================
 
     @Override
     @Nullable
@@ -347,17 +347,17 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
         return ResourceLocation.fromNamespaceAndPath(namespace, "textures/armor/" + path + suffix + ".png");
     }
 
-    // ==================== 辅助方法 ====================
+    // ==================== Helper methods ====================
 
     /**
-     * 获取材质路径前缀
+     * Gets the texture path prefix.
      */
     public String getTexturePrefix() {
         return texturePrefix;
     }
 
     /**
-     * 检查玩家是否正在穿戴此装甲
+     * Checks if the player wears this armor piece in the given slot.
      */
     public boolean isWearingThisArmor(Player player, EquipmentSlot slot) {
         ItemStack equipped = player.getItemBySlot(slot);
@@ -365,8 +365,8 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
     }
 
     /**
-     * 检查玩家是否穿齐了同系列装甲。
-     * 同系列定义为具有相同 texturePrefix 的 AbstractElectricArmor 子类。
+     * Checks if the player wears a full set of the same armor series.
+     * The same series means AbstractElectricArmor subclasses with the same texturePrefix.
      */
     public boolean isWearingFullSet(Player player) {
         for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
@@ -383,21 +383,21 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
     }
 
     /**
-     * 获取能量剩余百分比 (0.0 ~ 1.0)
+     * Gets the remaining energy fraction (0.0 to 1.0).
      */
     public float getDurabilityPercent(ItemStack stack) {
         return maxEnergy <= 0 ? 0.0F : (float) getEnergy(stack) / maxEnergy;
     }
 
     /**
-     * 获取剩余可运行 tick 数
+     * Gets the number of ticks that the armor can still run. Returns 0 if energyPerTick is 0 or less.
      */
     public long getRemainingTicks(ItemStack stack) {
         return energyPerTick <= 0 ? 0 : getEnergy(stack) / energyPerTick;
     }
 
     /**
-     * 检查是否有足够能量使用
+     * Checks if the item has energy to use (energy is more than 0).
      */
     public boolean canUse(ItemStack stack) {
         return !isEmpty(stack);

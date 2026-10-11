@@ -27,11 +27,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 地形转换机方块类
- * 环境改造机，能够改造环境（改变方块?
- * 没有GUI，通过手持转换模板右键放入/蹲下取出
- * 作用范围：以机器为圆心直?56x256?
- * 需要通电才能工作，会慢改造而非瞬间完成
+ * Block class for the terrain converter.
+ * The terrain converter changes the environment. It replaces blocks.
+ * It has no GUI. Right-click with a conversion template to insert it. Crouch and right-click to remove it.
+ * Work area: a 256x256 area with the machine at the center.
+ * The machine needs electric power to work. It changes the area slowly, not at once.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_terra_elc extends mio_icif_entity_block {
@@ -73,13 +73,13 @@ public class mio_icif_block_terra_elc extends mio_icif_entity_block {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
-        // 玩家蹲下时：尝试取出模板
+        // When the player crouches, try to remove the template.
         if (player.isCrouching()) {
             ItemStack template = terraEntity.extractTemplate();
             if (!template.isEmpty()) {
-                // 尝试将模板放入玩家背?
+                // Try to put the template into the player inventory.
                 if (!player.getInventory().add(template)) {
-                    // 如果背包满了，掉落物?
+                    // If the inventory is full, drop the item.
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), template);
                 }
                 player.sendSystemMessage(Component.translatable("message.mio_icif.terra_elc.template_removed"));
@@ -88,7 +88,7 @@ public class mio_icif_block_terra_elc extends mio_icif_entity_block {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
-        // 玩家站立时：尝试放入模板
+        // When the player stands, try to insert the template.
         if (!stack.isEmpty()) {
             // Only registered environment templates are valid.  Rejecting the
             // item at the block boundary avoids consuming arbitrary items when
@@ -97,15 +97,15 @@ public class mio_icif_block_terra_elc extends mio_icif_entity_block {
                 return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
             }
 
-            // 如果已有模板，提示玩?
+            // If the machine already has a template, tell the player.
             if (terraEntity.hasTemplate()) {
                 player.sendSystemMessage(Component.translatable("message.mio_icif.terra_elc.has_template"));
                 return ItemInteractionResult.FAIL;
             }
 
-            // 插入模板
+            // Insert the template.
             if (terraEntity.insertTemplate(stack.copyWithCount(1))) {
-                // 消耗玩家手中的一个物?
+                // Remove one item from the player hand.
                 stack.shrink(1);
                 player.sendSystemMessage(Component.translatable("message.mio_icif.terra_elc.template_inserted"));
                 return ItemInteractionResult.SUCCESS;
@@ -126,13 +126,13 @@ public class mio_icif_block_terra_elc extends mio_icif_entity_block {
             return InteractionResult.PASS;
         }
 
-        // 玩家蹲下时：尝试取出模板
+        // When the player crouches, try to remove the template.
         if (player.isCrouching()) {
             ItemStack template = terraEntity.extractTemplate();
             if (!template.isEmpty()) {
-                // 尝试将模板放入玩家背?
+                // Try to put the template into the player inventory.
                 if (!player.getInventory().add(template)) {
-                    // 如果背包满了，掉落物?
+                    // If the inventory is full, drop the item.
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), template);
                 }
                 player.sendSystemMessage(Component.translatable("message.mio_icif.terra_elc.template_removed"));
@@ -141,7 +141,7 @@ public class mio_icif_block_terra_elc extends mio_icif_entity_block {
             return InteractionResult.PASS;
         }
 
-        // 空手右键：显示状态信息?
+        // Right-click with an empty hand: show the status.
         if (terraEntity.hasTemplate()) {
             player.sendSystemMessage(Component.translatable("message.mio_icif.terra_elc.status.has_template",
                 terraEntity.getTemplate().getDisplayName().getString()));
@@ -149,7 +149,7 @@ public class mio_icif_block_terra_elc extends mio_icif_entity_block {
             player.sendSystemMessage(Component.translatable("message.mio_icif.terra_elc.status.no_template"));
         }
 
-        // 显示能量状?
+        // Show the energy status.
         long energy = terraEntity.getEnergyStorage().getAmount();
         long capacity = terraEntity.getEnergyStorage().getCapacity();
         player.sendSystemMessage(Component.translatable("message.mio_icif.terra_elc.status.energy", energy, capacity));

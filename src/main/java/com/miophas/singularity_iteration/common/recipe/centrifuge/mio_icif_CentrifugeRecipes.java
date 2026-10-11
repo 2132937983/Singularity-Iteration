@@ -15,15 +15,15 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 @SuppressWarnings("null")
 public class mio_icif_CentrifugeRecipes {
 
-    // 配方类型注册�
+    // Register for recipe types.
 public static final DeferredRegister<RecipeType<?>> RECIPE_TYPES =
         DeferredRegister.create(BuiltInRegistries.RECIPE_TYPE, Singularity_Iteration.MOD_ID);
 
-    // 配方序列化器注册�
+    // Register for recipe serializers.
 public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
         DeferredRegister.create(BuiltInRegistries.RECIPE_SERIALIZER, Singularity_Iteration.MOD_ID);
 
-    // 注册热能离心机配方类�
+    // Register the thermal centrifuge recipe type.
 public static final DeferredHolder<RecipeType<?>, RecipeType<mio_icif_CentrifugeRecipe>> CENTRIFUGE_TYPE =
         RECIPE_TYPES.register("centrifuge", () -> new RecipeType<mio_icif_CentrifugeRecipe>() {
             @Override

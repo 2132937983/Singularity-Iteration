@@ -42,14 +42,14 @@ public class mio_icif_block_washer_elc extends mio_icif_entity_block {
 
     public mio_icif_block_washer_elc(Properties properties) {
         super(properties);
-        // 注册默认状态：未点�?
+        // Default state: not lit.
         this.registerDefaultState(this.stateDefinition.any().setValue(LIT, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        // 添加 LIT 属性到方块状态定�?
+        // Add the LIT property to the block state definition.
         builder.add(LIT);
     }
 
@@ -86,8 +86,8 @@ public class mio_icif_block_washer_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 方块被移除时的处理?
-     * 掉落方块实体中的物品
+     * Handles the removal of the block.
+     * Drops the items that are in the block entity.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
@@ -98,7 +98,7 @@ public class mio_icif_block_washer_elc extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_washer_elc washer) {
-                // 掉落物品栏中的所有物�?
+                // Drop all items in the inventory.
                 for (int i = 0; i < washer.getItemHandler().getSlots(); i++) {
                     ItemStack stack = washer.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {
@@ -119,14 +119,14 @@ public class mio_icif_block_washer_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取模拟输出信号强度（用于红石比较器�?
-     * 基于物品栏填充程度和流体储量计算
+     * Returns the analog output signal strength for a redstone comparator.
+     * The value comes from the inventory fill level and the stored fluid amount.
      */
     @Override
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof mio_icif_washer_elc washer) {
-            // 计算物品栏填充程�?
+            // Calculate how full the inventory is.
             var handler = washer.getItemHandler();
             int totalSlots = handler.getSlots();
             int filledSlots = 0;
@@ -153,8 +153,8 @@ public class mio_icif_block_washer_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取方块实体更新器（Ticker�?
-     * 用于�?tick 更新方块实体逻辑
+     * Returns the block entity ticker.
+     * The ticker runs the block entity logic each tick.
      */
     @Nullable
     @Override

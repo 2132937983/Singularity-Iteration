@@ -1,12 +1,12 @@
 package com.miophas.singularity_iteration.core.api.upgrade.tile;
 
 /**
- * 流体消耗升级接口（标记接口）。
+ * Interface for upgrades that consume fluid (marker interface).
  * <p>
- * 对应 IC2 1.12.2 的 {@code IFluidConsumingUpgrade}。
- * 实现此接口的升级表示该升级会消耗流体作为工作材料。
+ * This is the equivalent of {@code IFluidConsumingUpgrade} in IC2 for 1.12.2.
+ * An upgrade that implements this interface uses fluid as a work material.
  * <p>
- * 例如：某些升级可能需要消耗冷却液或特殊流体来提供额外功能。
+ * Example: some upgrades can use coolant or a special fluid to give additional functions.
  */
 public interface IFluidConsumingUpgrade extends IUpgradeItem {
 }

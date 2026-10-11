@@ -143,14 +143,17 @@ public final class TargetFilter {
 
     public void write(FriendlyByteBuf buf) {
         buf.writeBoolean(mode == Mode.WHITELIST);
-        buf.writeVarInt(entries.size());
-        for (String e : entries) buf.writeUtf(e, MAX_LENGTH);
+        int left = com.miophas.singularity_iteration.common.util.PacketLimits.writeCount(buf, entries.size(), MAX_ENTRIES);
+        for (String e : entries) {
+            if (left-- <= 0) break;
+            buf.writeUtf(e, MAX_LENGTH);
+        }
     }
 
     public static TargetFilter read(FriendlyByteBuf buf) {
         TargetFilter f = new TargetFilter();
         f.mode = buf.readBoolean() ? Mode.WHITELIST : Mode.BLACKLIST;
-        int n = Math.min(buf.readVarInt(), MAX_ENTRIES);
+        int n = com.miophas.singularity_iteration.common.util.PacketLimits.readCount(buf, MAX_ENTRIES, "filter entry");
         for (int i = 0; i < n; i++) f.entries.add(buf.readUtf(MAX_LENGTH));
         return f;
     }

@@ -5,9 +5,11 @@ import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 import java.util.Random;
 
 /**
- * 长期暴涨暴跌事件（大泡沫�? *
- * 效果：长期内价格持续稳步上涨，然后在最后几天快速暴力? * 典型模式：前 80% 时间稳步上涨 5%-15%，最终?20% 时间暴跌 30%-50%
- * 强度影响：强度越高，整体波动幅度越大
+ * Long-term rise and crash event (large bubble).
+ *
+ * Effect: the price rises steadily for a long time. Then it falls fast in the last days.
+ * Typical pattern: in the first 80% of the duration, the price rises 5%-15%. In the last 20%, it falls 30%-50%.
+ * Intensity: a higher intensity gives larger price changes overall.
  */
 @SuppressWarnings("null")
 public class LongBubbleEvent extends FuturePriceEvent {
@@ -27,35 +29,35 @@ public class LongBubbleEvent extends FuturePriceEvent {
     public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
         double totalChange;
 
-        // 判断是上涨阶段还是暴跌阶�
-    // �?80% 的时间稳步上涨，�?20% 的时间快速暴力
+        // Find whether the day is in the rise phase or in the crash phase.
+    // The first 80% of the duration is a steady rise. The last 20% is a fast crash.
     int riseDays = Math.max(1, (int) (duration * 0.8));
 
         if (dayOffset < riseDays) {
-            // 上涨阶段：每天稳定上�?5% - 15%
+            // Rise phase: the price rises 5% - 15% each day.
             double baseRise = 0.05 + (0.10 * intensity);
-            // 长期上涨，递增较慢
+            // Long rise. The increase grows slowly.
             double dayMultiplier = 1.0 + (dayOffset * 0.05);
             totalChange = baseRise * dayMultiplier;
 
-            // 较小的随机波动，保持相对稳定
+            // Small random change. The price stays almost stable.
             double randomFactor = 0.90 + (RANDOM.nextDouble() * 0.2);
             totalChange *= randomFactor;
         } else {
-            // 暴跌阶段：每天暴力?25% - 45%
+            // Crash phase: the price falls 25% - 45% each day.
             double baseFall = 0.25 + (0.20 * intensity);
             int crashDay = dayOffset - riseDays;
-            double dayMultiplier = 1.0 + (crashDay * 0.25); // 暴跌加载
+            double dayMultiplier = 1.0 + (crashDay * 0.25); // The crash becomes faster each day
         totalChange = -baseFall * dayMultiplier;
 
-            // 较大的随机波动，模拟恐慌性抛�
+            // Large random change that simulates panic selling.
         double randomFactor = 0.80 + (RANDOM.nextDouble() * 0.4);
             totalChange *= randomFactor;
         }
 
         int newPrice = (int) (currentPrice * (1.0 + totalChange));
 
-        // 使用配置的价格范围限制
+        // Limit the price to the configured price range.
     double minMultiplier = Singularity_Iteration_Config.FUTURE_MIN_PRICE_MULTIPLIER.get();
         double maxMultiplier = Singularity_Iteration_Config.FUTURE_MAX_PRICE_MULTIPLIER.get();
         int minPrice = Math.max(1, (int) (basePrice * minMultiplier));

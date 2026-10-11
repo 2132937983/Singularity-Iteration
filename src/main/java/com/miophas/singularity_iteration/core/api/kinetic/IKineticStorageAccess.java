@@ -4,115 +4,115 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 /**
- * 动能存储访问接口
+ * Access interface for kinetic storage.
  *
- * <p>提供对动能方块的读写访问，用于查询和修改动能状态。
- * KU (Kinetic Units) 是 mio_icif 的动能单位。
+ * <p>Gives read and write access to a kinetic block. Use it to query and change the kinetic state.
+ * KU (Kinetic Units) is the kinetic energy unit of mio_icif.
  * <p>
- * 写入方法与 {@code IEnergyTileAccess} 的 {@code chargeEnergy/dischargeEnergy} 保持一致的设计风格，
- * 附属模组可通过这些方法直接向动能系统注入或抽取动能。
+ * The write methods use the same design as {@code chargeEnergy/dischargeEnergy} of {@code IEnergyTileAccess}.
+ * Addon mods can use these methods to put kinetic energy into the kinetic system or take it out.
  */
 public interface IKineticStorageAccess {
 
     /**
-     * 获取方块所在世界
+     * Gets the level of the block.
      */
     Level getWorld();
 
     /**
-     * 获取方块位置
+     * Gets the block position.
      */
     BlockPos getPos();
 
     /**
-     * 获取当前存储的动能值(KU)
+     * Gets the stored kinetic energy (KU).
      */
     long getKineticStored();
 
     /**
-     * 获取最大动能容量(KU)
+     * Gets the maximum kinetic capacity (KU).
      */
     long getMaxKineticStored();
 
     /**
-     * 获取当前转速(RPM)
+     * Gets the current rotation speed (RPM).
      */
     int getRPM();
 
     /**
-     * 检查是否是动力源
+     * Checks if the block is a kinetic source.
      */
     boolean isKineticSource();
 
     /**
-     * 检查是否是动能导体
+     * Checks if the block is a kinetic conductor.
      */
     boolean isKineticConductor();
 
     /**
-     * 检查是否可以提取动能
+     * Checks if kinetic energy can be extracted.
      */
     boolean canExtractKinetic();
 
     /**
-     * 检查是否可以接收动能
+     * Checks if the block can receive kinetic energy.
      */
     boolean canReceiveKinetic();
 
     /**
-     * 向存储中注入动能。
+     * Puts kinetic energy into the storage.
      * <p>
-     * 不会超过最大容量。如果 {@link #canReceiveKinetic()} 返回 false，则始终返回 0。
+     * The stored value does not go above the maximum capacity. If {@link #canReceiveKinetic()} returns false, this method always returns 0.
      *
-     * @param amount    要注入的动能（KU），必须 ≥ 0
-     * @param simulate  如果为 true，只模拟操作不实际改变存储
-     * @return 实际注入的动能（KU）
+     * @param amount    the kinetic energy to insert (KU); must be ≥ 0
+     * @param simulate  if true, only simulate; the storage does not change
+     * @return the kinetic energy that was inserted (KU)
      */
     long insertKinetic(long amount, boolean simulate);
 
     /**
-     * 从存储中提取动能。
+     * Takes kinetic energy from the storage.
      * <p>
-     * 不会超过当前存储量。如果 {@link #canExtractKinetic()} 返回 false，则始终返回 0。
+     * The result is not more than the stored amount. If {@link #canExtractKinetic()} returns false, this method always returns 0.
      *
-     * @param amount    要提取的动能（KU），必须 ≥ 0
-     * @param simulate  如果为 true，只模拟操作不实际改变存储
-     * @return 实际提取的动能（KU）
+     * @param amount    the kinetic energy to extract (KU); must be ≥ 0
+     * @param simulate  if true, only simulate; the storage does not change
+     * @return the kinetic energy that was extracted (KU)
      */
     long extractKinetic(long amount, boolean simulate);
 
     /**
-     * 检查是否超速。
-     * 当转速 ≥ 8000 RPM 时视为超速状态。
+     * Checks if the block is in overspeed.
+     * Overspeed starts at a rotation speed of 8000 RPM or more.
      */
     boolean isOverspeed();
 
     /**
-     * 获取每 tick 的动能损耗量（KU）。
-     * 转速越高损耗越快。
+     * Gets the kinetic loss per tick (KU).
+     * A higher rotation speed gives a faster loss.
      */
     long getKineticLossPerTick();
 
     /**
-     * 获取最大单 tick 可接收动能速率（KU/t）。
+     * Gets the maximum input rate for one tick (KU/t).
      */
     long getMaxReceive();
 
     /**
-     * 获取最大单 tick 可提取动能速率（KU/t）。
+     * Gets the maximum output rate for one tick (KU/t).
      */
     long getMaxExtract();
 
     /**
-     * 直接设置动能存储量。
+     * Sets the stored kinetic energy directly.
      * <p>
-     * 值会被限制在 [0, {@link #getMaxKineticStored()}] 范围内。
+     * The value is clamped to [0, {@link #getMaxKineticStored()}].
      * <p>
-     * <b>注意：</b>此方法通过 receiveKinetic/extractKinetic 间接实现。
-     * 如果方块当前拒绝接收或提取动能（如 canReceiveKinetic() 返回 false），
-     * 操作可能静默失败。调用者应在调用后通过 getKineticStored() 验证实际值。
+     * <b>Note:</b> this method uses receiveKinetic/extractKinetic internally.
+     * If the block does not accept input or output now (for example, canReceiveKinetic() returns false),
+     * the operation can fail without an error. After the call, use getKineticStored() to check the real value.
      *
-     * @param amount 新的动能值（KU）
+     * @param amount the new kinetic energy value (KU)
      */
     void setKineticStored(long amount);
 }

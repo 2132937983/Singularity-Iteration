@@ -24,8 +24,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 水力发电机方法? * 通过消耗水桶发电，每个水桶4000FE
- * 当水力发电机面前有水时也会产生微量电力? */
+ * Block class for the water generator.
+ * The generator makes power from water buckets. Each water bucket gives 4000 FE.
+ * The generator also makes a small quantity of power when water is in front of it.
+ */
 @SuppressWarnings("null")
 public class mio_icif_Block_Water_Generator extends mio_icif_entity_block {
 
@@ -38,7 +40,7 @@ public class mio_icif_Block_Water_Generator extends mio_icif_entity_block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        // FACING 由父类添加，只需要添�?ACTIVE
+        // The parent class adds FACING. This class adds only ACTIVE.
         builder.add(ACTIVE);
         super.createBlockStateDefinition(builder);
     }

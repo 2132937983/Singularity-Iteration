@@ -4,21 +4,21 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 装备 HUD 提供者。
+ * Equipment HUD provider.
  *
- * <p>物品在被手持（主/副手）或穿戴（护甲槽）时，可提供一行显示在 actionbar 上的状态文本。
- * 客户端 {@code EquipmentHudCycler} 会统一收集所有提供者的文本，并按固定顺序循环显示，
- * 避免多个装备每 tick 各自抢占 actionbar 造成文字闪烁。
+ * <p>When an item is held (main hand or off hand) or worn (armor slot), it can give one line of status text for the action bar.
+ * The client {@code EquipmentHudCycler} collects the text of all providers and shows the lines in turn, in a fixed order.
+ * This prevents flicker when many items try to use the action bar each tick.
  *
- * <p>注意：本方法仅在客户端被调用，实现中可安全使用客户端逻辑。
+ * <p>Note: these methods are called only on the client. Implementations can safely use client-side logic.
  */
 public interface IEquipmentHudProvider {
 
     /**
-     * 获取当前要显示的 HUD 文本。
+     * Gets the HUD text to show now.
      *
-     * @param stack 该物品的物品堆
-     * @return 要显示的文本；返回 {@code null} 表示当前不显示
+     * @param stack the item stack of this item
+     * @return the text to show; {@code null} means show nothing now
      */
     Component getEquipmentHudText(ItemStack stack);
 

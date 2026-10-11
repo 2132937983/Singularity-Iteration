@@ -85,7 +85,7 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
         Direction facing = state.getValue(com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Water_Generator.FACING);
         // 检查朝向的方块是否是水
         BlockPos frontPos = pos.relative(facing);
-        if (!level.hasChunkAt(frontPos)) { this.hasWaterInFront = false; return; }
+        if (!level.isLoaded(frontPos)) { this.hasWaterInFront = false; return; }
         BlockState frontState = level.getBlockState(frontPos);
         this.hasWaterInFront = frontState.is(Blocks.WATER);
     }

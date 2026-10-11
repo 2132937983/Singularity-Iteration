@@ -7,21 +7,21 @@ import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.ItemCapability;
 
 /**
- * mio_icif 能力系统 API
+ * mio_icif capability system API.
  *
- * <p>定义所有可供外部使用的能力接口，让附属模组可以通过 NeoForge 的 Capability 系统
- * 与本模组的方块和物品交互。
+ * <p>This interface defines all capabilities that other mods can use. Add-on mods use the NeoForge
+ * Capability system to interact with the blocks and items of this mod.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
- * // 获取方块的 EU 能量存储
+ * // Get the EU energy storage of a block.
  * IEUStorage storage = level.getCapability(IMioIcifCapabilities.EU_STORAGE_BLOCK, pos, direction);
  * if (storage != null) {
  *     long stored = storage.getStored();
  *     long capacity = storage.getCapacity();
  * }
  *
- * // 获取物品的 EU 能量存储
+ * // Get the EU energy storage of an item.
  * IEUStorage itemStorage = stack.getCapability(IMioIcifCapabilities.EU_STORAGE_ITEM);
  * if (itemStorage != null) {
  *     long received = itemStorage.receiveEnergy(100, false);
@@ -30,10 +30,10 @@ import net.neoforged.neoforge.capabilities.ItemCapability;
  */
 public interface IMioIcifCapabilities {
 
-    // ========== 方块能力 ==========
+    // ========== Block capabilities ==========
 
     /**
-     * EU 能量存储能力（方块）
+     * EU energy storage capability (block).
      */
     BlockCapability<IEUStorage, Direction> EU_STORAGE_BLOCK = BlockCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "eu_storage"),
@@ -42,7 +42,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 机器信息能力（方块）
+     * Machine information capability (block).
      */
     BlockCapability<IMachineCapability, Direction> MACHINE_BLOCK = BlockCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "machine"),
@@ -51,7 +51,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 发电机信息能力（方块）
+     * Generator information capability (block).
      */
     BlockCapability<IGeneratorCapability, Direction> GENERATOR_BLOCK = BlockCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "generator"),
@@ -60,7 +60,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 热能存储能力（方块）
+     * Heat storage capability (block).
      */
     BlockCapability<IHeatStorage, Direction> HEAT_STORAGE_BLOCK = BlockCapability.createSided(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "api_heat_storage"),
@@ -68,17 +68,17 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 动能存储能力（方块）
+     * Kinetic storage capability (block).
      */
     BlockCapability<IKineticStorage, Direction> KINETIC_STORAGE_BLOCK = BlockCapability.createSided(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "api_kinetic_storage"),
         IKineticStorage.class
     );
 
-    // ========== 物品能力 ==========
+    // ========== Item capabilities ==========
 
     /**
-     * EU 能量存储能力（物品）
+     * EU energy storage capability (item).
      */
     ItemCapability<IEUStorage, Void> EU_STORAGE_ITEM = ItemCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "eu_storage_item"),
@@ -87,7 +87,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 电动物品能力
+     * Electric item capability.
      */
     ItemCapability<ICapabilityElectricItem, Void> ELECTRIC_ITEM = ItemCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "electric_item"),
@@ -96,7 +96,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 升级物品能力
+     * Upgrade item capability.
      */
     ItemCapability<IUpgradeItem, Void> UPGRADE_ITEM = ItemCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "upgrade_item"),
@@ -105,7 +105,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 反应堆组件能力
+     * Reactor component capability.
      */
     ItemCapability<IReactorComponent, Void> REACTOR_COMPONENT = ItemCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor_component"),
@@ -113,10 +113,10 @@ public interface IMioIcifCapabilities {
         Void.class
     );
 
-    // ========== 新增方块能力 ==========
+    // ========== Additional block capabilities ==========
 
     /**
-     * 变压器能力（方块）
+     * Transformer capability (block).
      */
     BlockCapability<ITransformerCapability, Direction> TRANSFORMER_BLOCK = BlockCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "transformer"),
@@ -125,7 +125,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 管道能力（方块）
+     * Pipe capability (block).
      */
     BlockCapability<IPipeCapability, Direction> PIPE_BLOCK = BlockCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "pipe"),
@@ -134,7 +134,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 能量转换器能力（方块）
+     * Energy converter capability (block).
      */
     BlockCapability<IEnergyConverterCapability, Direction> ENERGY_CONVERTER_BLOCK = BlockCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "energy_converter"),
@@ -142,10 +142,10 @@ public interface IMioIcifCapabilities {
         Direction.class
     );
 
-    // ========== 新增物品能力 ==========
+    // ========== Additional item capabilities ==========
 
     /**
-     * 武器物品能力
+     * Weapon item capability.
      */
     ItemCapability<IWeaponCapability, Void> WEAPON_ITEM = ItemCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "weapon"),
@@ -154,7 +154,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 太阳能头盔能力
+     * Solar helmet capability.
      */
     ItemCapability<ISolarHelmetCapability, Void> SOLAR_HELMET_ITEM = ItemCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "solar_helmet"),
@@ -163,7 +163,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 喷气背包能力
+     * Jetpack capability.
      */
     ItemCapability<IJetpackCapability, Void> JETPACK_ITEM = ItemCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "jetpack"),
@@ -172,7 +172,7 @@ public interface IMioIcifCapabilities {
     );
 
     /**
-     * 流体单元能力
+     * Fluid cell capability.
      */
     ItemCapability<IFluidCellCapability, Void> FLUID_CELL_ITEM = ItemCapability.create(
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "fluid_cell"),
@@ -180,108 +180,108 @@ public interface IMioIcifCapabilities {
         Void.class
     );
 
-    // ========== 工厂方法 ==========
+    // ========== Factory methods ==========
 
     /**
-     * 创建 EU 能量存储实现
+     * Creates an EU energy storage.
      *
-     * @param capacity 能量容量
-     * @param maxReceive 最大接收速率
-     * @param maxExtract 最大提取速率
-     * @param tier 电缆等级
-     * @return EU 存储实例
+     * @param capacity energy capacity (EU)
+     * @param maxReceive maximum receive rate (EU/t)
+     * @param maxExtract maximum extract rate (EU/t)
+     * @param tier cable tier
+     * @return a new EU storage
      */
     IEUStorage createEUStorage(long capacity, long maxReceive, long maxExtract, ICableTier tier);
 
     /**
-     * 创建可配置方向的 EU 能量存储实现
+     * Creates an EU energy storage with configurable sides.
      *
-     * @param capacity 能量容量
-     * @param maxReceive 最大接收速率
-     * @param maxExtract 最大提取速率
-     * @param tier 电缆等级
-     * @param inputSides 允许输入的方向
-     * @param outputSides 允许输出的方向
-     * @return EU 存储实例
+     * @param capacity energy capacity (EU)
+     * @param maxReceive maximum receive rate (EU/t)
+     * @param maxExtract maximum extract rate (EU/t)
+     * @param tier cable tier
+     * @param inputSides the sides that can receive energy
+     * @param outputSides the sides that can output energy
+     * @return a new EU storage
      */
     IEUStorage createEUStorage(long capacity, long maxReceive, long maxExtract, ICableTier tier,
                                 Direction[] inputSides, Direction[] outputSides);
 
     /**
-     * 创建热能存储实现（基础参数）
+     * Creates a heat storage (basic parameters).
      *
-     * @param capacity 热能容量
-     * @param maxOutput 最大输出/输入速率
-     * @return 热能存储实例
+     * @param capacity heat capacity
+     * @param maxOutput maximum output and input rate
+     * @return a new heat storage
      */
     IHeatStorage createHeatStorage(long capacity, long maxOutput);
 
     /**
-     * 创建热能存储实现（完整参数）
+     * Creates a heat storage (all parameters).
      *
-     * @param capacity 热能容量
-     * @param maxReceive 最大接收速率
-     * @param maxExtract 最大提取速率
-     * @param baseTemp 基础温度（摄氏度）
-     * @param maxTemp 最高温度（摄氏度）
-     * @param lossFactor 热损失系数
-     * @return 热能存储实例
+     * @param capacity heat capacity
+     * @param maxReceive maximum receive rate
+     * @param maxExtract maximum extract rate
+     * @param baseTemp base temperature (degrees Celsius)
+     * @param maxTemp maximum temperature (degrees Celsius)
+     * @param lossFactor heat loss factor
+     * @return a new heat storage
      */
     IHeatStorage createHeatStorage(long capacity, long maxReceive, long maxExtract,
                                    int baseTemp, int maxTemp, float lossFactor);
 
     /**
-     * 创建动能存储实现（基础参数）
+     * Creates a kinetic storage (basic parameters).
      *
-     * @param capacity 动能容量
-     * @param maxOutput 最大输出/输入速率
-     * @return 动能存储实例
+     * @param capacity kinetic energy capacity
+     * @param maxOutput maximum output and input rate
+     * @return a new kinetic storage
      */
     IKineticStorage createKineticStorage(long capacity, long maxOutput);
 
     /**
-     * 创建动能存储实现（完整参数）
+     * Creates a kinetic storage (all parameters).
      *
-     * @param capacity 动能容量
-     * @param maxReceive 最大接收速率
-     * @param maxExtract 最大提取速率
-     * @param maxRPM 最大转速
-     * @param frictionFactor 摩擦系数
-     * @return 动能存储实例
+     * @param capacity kinetic energy capacity
+     * @param maxReceive maximum receive rate
+     * @param maxExtract maximum extract rate
+     * @param maxRPM maximum rotation speed (RPM)
+     * @param frictionFactor friction factor
+     * @return a new kinetic storage
      */
     IKineticStorage createKineticStorage(long capacity, long maxReceive, long maxExtract,
                                          int maxRPM, float frictionFactor);
 
     /**
-     * 创建电动物品实现
+     * Creates an electric item.
      *
-     * @param maxCharge 最大电荷
-     * @param transferLimit 传输限制
-     * @param tier 等级
-     * @param canProvide 是否可以提供能量
-     * @return 电动物品实例
+     * @param maxCharge maximum charge (EU)
+     * @param transferLimit transfer limit (EU per operation)
+     * @param tier tier
+     * @param canProvide true if the item can supply energy to other items
+     * @return a new electric item
      */
     ICapabilityElectricItem createElectricItem(long maxCharge, long transferLimit, int tier, boolean canProvide);
 
     /**
-     * 创建升级物品实现
+     * Creates an upgrade item.
      *
-     * @param type 升级类型
-     * @param speedMultiplier 速度倍率
-     * @param energyMultiplier 能量倍率
-     * @param extraStorage 额外存储
-     * @param autoEject 自动弹出
-     * @param autoImport 自动导入
-     * @param tierUpgrade 等级提升
-     * @return 升级物品实例
+     * @param type upgrade type
+     * @param speedMultiplier speed multiplier
+     * @param energyMultiplier energy multiplier
+     * @param extraStorage extra energy storage (EU)
+     * @param autoEject true to eject output automatically
+     * @param autoImport true to import input automatically
+     * @param tierUpgrade number of tiers to add
+     * @return a new upgrade item
      */
     IUpgradeItem createUpgradeItem(String type, double speedMultiplier, double energyMultiplier,
                                     int extraStorage, boolean autoEject, boolean autoImport, int tierUpgrade);
 
-    // ========== 能力接口定义 ==========
+    // ========== Capability interface definitions ==========
 
     /**
-     * EU 能量存储接口
+     * EU energy storage.
      */
     interface IEUStorage {
         long getStored();
@@ -290,17 +290,17 @@ public interface IMioIcifCapabilities {
         long extractEnergy(long maxExtract, boolean simulate);
 
         /**
-         * 消耗能量（内部做功），不受 maxExtract 限制
+         * Uses energy for internal work. The maxExtract limit does not apply.
          *
-         * <p>与 {@link #extractEnergy} 的区别：
+         * <p>Difference from {@link #extractEnergy}:
          * <ul>
-         *   <li>{@code extractEnergy} — 对外输出，受 maxExtract 限制</li>
-         *   <li>{@code useEnergy} — 内部消耗，不受 maxExtract 限制</li>
+         *   <li>{@code extractEnergy} — output to other blocks. The maxExtract limit applies.</li>
+         *   <li>{@code useEnergy} — internal use. The maxExtract limit does not apply.</li>
          * </ul>
          *
-         * @param amount 消耗量 (EU)
-         * @param simulate 如果为true，仅模拟而不实际消耗
-         * @return 实际消耗的能量量
+         * @param amount amount to use (EU)
+         * @param simulate if true, only simulate. The stored energy does not change.
+         * @return the energy that was used (EU)
          */
         default long useEnergy(long amount, boolean simulate) {
             long toUse = Math.min(amount, getStored());
@@ -311,17 +311,17 @@ public interface IMioIcifCapabilities {
         }
 
         /**
-         * 生成能量（内部发电），不受 maxReceive 限制
+         * Generates energy internally. The maxReceive limit does not apply.
          *
-         * <p>与 {@link #receiveEnergy} 的区别：
+         * <p>Difference from {@link #receiveEnergy}:
          * <ul>
-         *   <li>{@code receiveEnergy} — 从外部充入，受 maxReceive 限制</li>
-         *   <li>{@code generateEnergy} — 内部生成，不受 maxReceive 限制</li>
+         *   <li>{@code receiveEnergy} — input from outside. The maxReceive limit applies.</li>
+         *   <li>{@code generateEnergy} — internal generation. The maxReceive limit does not apply.</li>
          * </ul>
          *
-         * @param amount 生成量 (EU)
-         * @param simulate 如果为true，仅模拟而不实际生成
-         * @return 实际生成的能量量
+         * @param amount amount to generate (EU)
+         * @param simulate if true, only simulate. The stored energy does not change.
+         * @return the energy that was generated (EU)
          */
         default long generateEnergy(long amount, boolean simulate) {
             long toGenerate = Math.min(amount, getCapacity() - getStored());
@@ -338,16 +338,16 @@ public interface IMioIcifCapabilities {
         boolean canExtractTo(Direction direction);
 
         /**
-         * 设置存储的能量（可选操作）
-         * 默认实现抛出 UnsupportedOperationException，实现类可以选择覆盖此方法
+         * Sets the stored energy (optional operation).
+         * The default implementation throws UnsupportedOperationException. An implementation can override this method.
          */
         default void setStored(long amount) {
             throw new UnsupportedOperationException("setStored not supported by this implementation");
         }
 
         /**
-         * 设置能量容量（可选操作）
-         * 默认实现抛出 UnsupportedOperationException，实现类可以选择覆盖此方法
+         * Sets the energy capacity (optional operation).
+         * The default implementation throws UnsupportedOperationException. An implementation can override this method.
          */
         default void setCapacity(long capacity) {
             throw new UnsupportedOperationException("setCapacity not supported by this implementation");
@@ -355,7 +355,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 机器能力接口
+     * Machine capability.
      */
     interface IMachineCapability {
         boolean isWorking();
@@ -370,7 +370,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 发电机能力接口
+     * Generator capability.
      */
     interface IGeneratorCapability {
         boolean isGenerating();
@@ -381,7 +381,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 热能存储接口
+     * Heat storage.
      */
     interface IHeatStorage {
         long getHeatStored();
@@ -432,7 +432,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 动能存储接口
+     * Kinetic storage.
      */
     interface IKineticStorage {
         long getKineticStored();
@@ -471,11 +471,11 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 电动物品能力接口。
+     * Electric item capability.
      * <p>
-     * 此接口用于 NeoForge Capability 系统，与 {@code api.item.electric.IElectricItem} 不同。
-     * 后者是完整的电力物品接口，包含物品管理器等高级功能；
-     * 此接口是简化的能力版本，仅包含充放电和基本属性查询。
+     * This interface is for the NeoForge Capability system. It is different from {@code api.item.electric.IElectricItem}.
+     * That interface is the full electric item interface. It also has advanced functions, for example the item manager.
+     * This interface is a simplified capability version. It has only charge, discharge and basic property queries.
      */
     interface ICapabilityElectricItem {
         long getMaxCharge(ItemStack stack);
@@ -487,7 +487,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 升级物品接口
+     * Upgrade item.
      */
     interface IUpgradeItem {
         String getUpgradeType();
@@ -500,7 +500,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 反应堆组件接口
+     * Reactor component.
      */
     interface IReactorComponent {
         int getMaxDurability();
@@ -513,10 +513,10 @@ public interface IMioIcifCapabilities {
         boolean isReflector();
     }
 
-    // ========== 新增能力接口 ==========
+    // ========== Additional capability interfaces ==========
 
     /**
-     * 变压器能力接口
+     * Transformer capability.
      */
     interface ITransformerCapability {
         boolean isStepUp();
@@ -529,7 +529,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 管道能力接口
+     * Pipe capability.
      */
     interface IPipeCapability {
         enum PipeType { ITEM, FLUID, CABLE, UNIVERSAL }
@@ -540,7 +540,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 能量转换器能力接口
+     * Energy converter capability.
      */
     interface IEnergyConverterCapability {
         enum EnergyType { EU, FE, KU, HE, CUSTOM }
@@ -554,7 +554,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 武器物品能力接口
+     * Weapon item capability.
      */
     interface IWeaponCapability {
         float getDamage();
@@ -564,7 +564,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 太阳能头盔能力接口
+     * Solar helmet capability.
      */
     interface ISolarHelmetCapability {
         long getGenerationRate();
@@ -573,7 +573,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 喷气背包能力接口
+     * Jetpack capability.
      */
     interface IJetpackCapability {
         float getThrust();
@@ -583,7 +583,7 @@ public interface IMioIcifCapabilities {
     }
 
     /**
-     * 流体单元能力接口
+     * Fluid cell capability.
      */
     interface IFluidCellCapability {
         int getCapacity();
@@ -593,92 +593,92 @@ public interface IMioIcifCapabilities {
         net.neoforged.neoforge.fluids.FluidStack drain(int amount, boolean simulate);
     }
 
-    // ========== 新增工厂方法 ==========
+    // ========== Additional factory methods ==========
 
     /**
-     * 创建变压器能力实现
+     * Creates a transformer capability.
      *
-     * @param isStepUp 是否升压模式
-     * @param lowTier 低压侧等级
-     * @param highTier 高压侧等级
-     * @return 变压器能力实例
+     * @param isStepUp true for step-up mode
+     * @param lowTier tier of the low-voltage side
+     * @param highTier tier of the high-voltage side
+     * @return a new transformer capability
      */
     ITransformerCapability createTransformer(boolean isStepUp, ICableTier lowTier, ICableTier highTier);
 
     /**
-     * 创建管道能力实现
+     * Creates a pipe capability.
      *
-     * @param pipeType 管道类型
-     * @param transferRate 传输速率
-     * @return 管道能力实例
+     * @param pipeType pipe type
+     * @param transferRate transfer rate
+     * @return a new pipe capability
      */
     IPipeCapability createPipe(IPipeCapability.PipeType pipeType, int transferRate);
 
     /**
-     * 创建能量转换器能力实现
+     * Creates an energy converter capability.
      *
-     * @param inputType 输入能量类型
-     * @param outputType 输出能量类型
-     * @param conversionRatio 转换比率
-     * @return 能量转换器能力实例
+     * @param inputType input energy type
+     * @param outputType output energy type
+     * @param conversionRatio conversion ratio
+     * @return a new energy converter capability
      */
     IEnergyConverterCapability createEnergyConverter(IEnergyConverterCapability.EnergyType inputType, IEnergyConverterCapability.EnergyType outputType, double conversionRatio);
 
     /**
-     * 创建武器能力实现
+     * Creates a weapon capability.
      *
-     * @param damage 伤害值
-     * @param range 射程
-     * @param energyPerShot 每次射击能耗
-     * @param isRanged 是否远程武器
-     * @return 武器能力实例
+     * @param damage damage value
+     * @param range range
+     * @param energyPerShot energy for each shot (EU)
+     * @param isRanged true for a ranged weapon
+     * @return a new weapon capability
      */
     IWeaponCapability createWeapon(float damage, float range, long energyPerShot, boolean isRanged);
 
     /**
-     * 创建太阳能头盔能力实现
+     * Creates a solar helmet capability.
      *
-     * @param generationRate 发电速率
-     * @param requiresSky 是否需要天空
-     * @param isDayOnly 是否仅白天
-     * @return 太阳能头盔能力实例
+     * @param generationRate generation rate (EU/t)
+     * @param requiresSky true if the helmet must see the sky
+     * @param isDayOnly true if the helmet works only in daytime
+     * @return a new solar helmet capability
      */
     ISolarHelmetCapability createSolarHelmet(long generationRate, boolean requiresSky, boolean isDayOnly);
 
     /**
-     * 创建喷气背包能力实现
+     * Creates a jetpack capability.
      *
-     * @param thrust 推力
-     * @param energyPerTickFlying 每 tick 飞行能耗
-     * @return 喷气背包能力实例
+     * @param thrust thrust
+     * @param energyPerTickFlying energy used for each tick of flight (EU)
+     * @return a new jetpack capability
      */
     IJetpackCapability createJetpack(float thrust, long energyPerTickFlying);
 
     /**
-     * 创建流体单元能力实现
+     * Creates a fluid cell capability.
      *
-     * @param capacity 容量（mB）
-     * @return 流体单元能力实例
+     * @param capacity capacity (mB)
+     * @return a new fluid cell capability
      */
     IFluidCellCapability createFluidCell(int capacity);
 
     /**
-     * 为方块实体创建热能存储适配器。
-     * 当方块实体实现了内部的 IHeatStorage 接口时，此方法返回一个通过 API 接口暴露的包装器。
-     * 若方块不支持热能存储则返回 null。
+     * Creates a heat storage adapter for a block entity.
+     * If the block entity implements the internal IHeatStorage interface, this method returns a wrapper that shows it through the API interface.
+     * If the block does not support heat storage, this method returns null.
      *
-     * @param blockEntity 目标方块实体
-     * @return API 层的热能存储接口，或 null 如果方块不支持
+     * @param blockEntity the target block entity
+     * @return the API heat storage, or null if the block does not support it
      */
     IHeatStorage adaptHeatStorage(Object blockEntity);
 
     /**
-     * 为方块实体创建动能存储适配器。
-     * 当方块实体实现了内部的 IKineticStorage 接口时，此方法返回一个通过 API 接口暴露的包装器。
-     * 若方块不支持动能存储则返回 null。
+     * Creates a kinetic storage adapter for a block entity.
+     * If the block entity implements the internal IKineticStorage interface, this method returns a wrapper that shows it through the API interface.
+     * If the block does not support kinetic storage, this method returns null.
      *
-     * @param blockEntity 目标方块实体
-     * @return API 层的动能存储接口，或 null 如果方块不支持
+     * @param blockEntity the target block entity
+     * @return the API kinetic storage, or null if the block does not support it
      */
     IKineticStorage adaptKineticStorage(Object blockEntity);
 }

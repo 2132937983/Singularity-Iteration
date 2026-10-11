@@ -5,76 +5,77 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 红石控制 API
+ * Redstone control API.
  *
- * <p>提供机器红石信号控制功能。
- * 从 IMachineAPI 拆分而来，遵循单一职责原则。
+ * <p>Gives redstone signal control for machines.
+ * It was split from IMachineAPI to follow the single responsibility principle.
  */
 public interface IRedstoneAPI {
 
-    // ========== 枚举版本（推荐） ==========
+    // ========== Enum versions (recommended) ==========
 
     /**
-     * 获取机器的红石模式（枚举版本）
-     * @return 红石模式，如果方块不是机器则返回 NONE
+     * Gets the redstone mode of a machine (enum version).
+     * @return the redstone mode; NONE if the block is not a machine
      */
     @NotNull
     IMachineAPI.RedstoneMode getRedstoneModeEnum(Level world, BlockPos pos);
 
     /**
-     * 设置机器的红石模式（枚举版本）
+     * Sets the redstone mode of a machine (enum version).
      */
     void setRedstoneModeEnum(Level world, BlockPos pos, IMachineAPI.RedstoneMode mode);
 
     /**
-     * 检查红石信号是否允许机器工作
+     * Checks if the redstone signal lets the machine work.
      */
     boolean isRedstoneAllowed(Level world, BlockPos pos);
 
-    // ========== int 版本（向后兼容） ==========
+    // ========== int versions (backward compatibility) ==========
 
     /**
-     * 获取储能方块的红石模式
+     * Gets the redstone mode of an energy storage block.
      *
-     * @return 红石模式 (0-7)，非储能方块返回 -1
+     * @return the redstone mode (0-7); -1 if the block is not an energy storage block
      */
     int getRedstoneMode(Level world, BlockPos pos);
 
     /**
-     * 设置储能方块的红石模式
+     * Sets the redstone mode of an energy storage block.
      *
-     * @param mode 红石模式 (0-7)
-     * @return 是否成功设置
+     * @param mode the redstone mode (0-7)
+     * @return true if the mode was set
      */
     boolean setRedstoneMode(Level world, BlockPos pos, int mode);
 
     /**
-     * 获取红石模式名称
+     * Gets the name of a redstone mode.
      *
-     * @param mode 红石模式 (0-7)
-     * @return 模式名称
+     * @param mode the redstone mode (0-7)
+     * @return the mode name as plain English text for logs and tools, never null.
+     *         For UI text, use a translation key.
      */
     String getRedstoneModeName(int mode);
 
     /**
-     * 检查储能方块是否正在输出红石信号
+     * Checks if the energy storage block emits a redstone signal now.
      */
     boolean isEmittingRedstone(Level world, BlockPos pos);
 
     /**
-     * 获取储能方块的红石信号强度
+     * Gets the redstone signal strength of the energy storage block.
      *
-     * @return 信号强度 (0-15)
+     * @return the signal strength (0-15)
      */
     int getRedstoneSignalStrength(Level world, BlockPos pos);
 
     /**
-     * 检查储能方块是否接收到红石输入信号
+     * Checks if the energy storage block receives a redstone input signal.
      */
     boolean hasRedstoneInput(Level world, BlockPos pos);
 
     /**
-     * 检查储能方块是否允许能量输出
+     * Checks if the energy storage block allows energy output.
      */
     boolean isEnergyOutputEnabled(Level world, BlockPos pos);
 }

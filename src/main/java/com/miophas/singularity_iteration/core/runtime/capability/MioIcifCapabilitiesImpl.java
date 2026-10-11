@@ -9,20 +9,20 @@ import net.minecraft.world.item.ItemStack;
 import java.lang.reflect.Method;
 
 /**
- * mio_icif 能力系统 API 实现
+ * Implementation of the mio_icif capability API.
  *
- * <p>提供所有能力接口的工厂方法，让附属模组可以创建自定义的能力实现。
+ * <p>Gives factory methods for all capability interfaces, so that addon mods can create custom capability implementations.
  */
 public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
 
     /**
-     * 创建 EU 能量存储实现
+     * Creates an EU energy storage implementation.
      *
-     * @param capacity 能量容量
-     * @param maxReceive 最大接收速率
-     * @param maxExtract 最大提取速率
-     * @param tier 电缆等级
-     * @return EU 存储实例
+     * @param capacity the energy capacity (EU)
+     * @param maxReceive the maximum receive rate (EU per operation)
+     * @param maxExtract the maximum extract rate (EU per operation)
+     * @param tier the cable tier
+     * @return the EU storage instance
      */
     @Override
     public IEUStorage createEUStorage(long capacity, long maxReceive, long maxExtract, ICableTier tier) {
@@ -30,15 +30,15 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
     }
 
     /**
-     * 创建可配置方向的 EU 能量存储实现
+     * Creates an EU energy storage implementation with configurable sides.
      *
-     * @param capacity 能量容量
-     * @param maxReceive 最大接收速率
-     * @param maxExtract 最大提取速率
-     * @param tier 电缆等级
-     * @param inputSides 允许输入的面
-     * @param outputSides 允许输出的面
-     * @return EU 存储实例
+     * @param capacity the energy capacity (EU)
+     * @param maxReceive the maximum receive rate (EU per operation)
+     * @param maxExtract the maximum extract rate (EU per operation)
+     * @param tier the cable tier
+     * @param inputSides the sides that accept input (null or empty means all sides)
+     * @param outputSides the sides that allow output (null or empty means all sides)
+     * @return the EU storage instance
      */
     @Override
     public IEUStorage createEUStorage(long capacity, long maxReceive, long maxExtract, ICableTier tier,
@@ -47,11 +47,11 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
     }
 
     /**
-     * 创建热能存储实现
+     * Creates a heat storage implementation.
      *
-     * @param capacity 热能容量
-     * @param maxOutput 最大输出速率
-     * @return 热能存储实例
+     * @param capacity the heat capacity
+     * @param maxOutput the maximum output rate
+     * @return the heat storage instance
      */
     @Override
     public IHeatStorage createHeatStorage(long capacity, long maxOutput) {
@@ -65,11 +65,11 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
     }
 
     /**
-     * 创建动能存储实现
+     * Creates a kinetic storage implementation.
      *
-     * @param capacity 动能容量
-     * @param maxOutput 最大输出速率
-     * @return 动能存储实例
+     * @param capacity the kinetic capacity
+     * @param maxOutput the maximum output rate
+     * @return the kinetic storage instance
      */
     @Override
     public IKineticStorage createKineticStorage(long capacity, long maxOutput) {
@@ -83,13 +83,13 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
     }
 
     /**
-     * 创建电动物品实现
+     * Creates an electric item implementation.
      *
-     * @param maxCharge 最大电荷
-     * @param transferLimit 传输限制
-     * @param tier 等级
-     * @param canProvide 是否可以提供能量
-     * @return 电动物品实例
+     * @param maxCharge the maximum charge (EU)
+     * @param transferLimit the transfer limit (EU per operation)
+     * @param tier the tier
+     * @param canProvide true if the item can supply energy
+     * @return the electric item instance
      */
     @Override
     public ICapabilityElectricItem createElectricItem(long maxCharge, long transferLimit, int tier, boolean canProvide) {
@@ -97,16 +97,16 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
     }
 
     /**
-     * 创建升级物品实现
+     * Creates an upgrade item implementation.
      *
-     * @param type 升级类型
-     * @param speedMultiplier 速度倍率
-     * @param energyMultiplier 能量倍率
-     * @param extraStorage 额外存储
-     * @param autoEject 自动弹出
-     * @param autoImport 自动导入
-     * @param tierUpgrade 等级提升
-     * @return 升级物品实例
+     * @param type the upgrade type
+     * @param speedMultiplier the speed multiplier
+     * @param energyMultiplier the energy multiplier
+     * @param extraStorage the additional storage
+     * @param autoEject the automatic eject flag
+     * @param autoImport the automatic import flag
+     * @param tierUpgrade the tier increase
+     * @return the upgrade item instance
      */
     @Override
     public IUpgradeItem createUpgradeItem(String type, double speedMultiplier, double energyMultiplier,
@@ -114,7 +114,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         return new UpgradeItemImpl(type, speedMultiplier, energyMultiplier, extraStorage, autoEject, autoImport, tierUpgrade);
     }
 
-    // ========== 新增工厂方法 ==========
+    // ========== Additional factory methods ==========
 
     @Override
     public ITransformerCapability createTransformer(boolean isStepUp, ICableTier lowTier, ICableTier highTier) {
@@ -163,7 +163,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         return KineticCapabilityAdapter.wrap(blockEntity);
     }
 
-    // ========== EU 存储实现 ==========
+    // ========== EU storage implementation ==========
 
     private static class EUStorageImpl implements IEUStorage {
         private static final int MAX_CAS_RETRIES = 16;
@@ -278,7 +278,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         }
 
         /**
-         * 内部设置存储能量（用于机器内部逻辑）
+         * Sets the stored energy directly (for internal machine logic). The value is clamped to 0..capacity.
          */
         @Override
         public void setStored(long amount) {
@@ -287,12 +287,12 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
 
         @Override
         public void setCapacity(long capacity) {
-            // 不支持动态修改容量
+            // Changing the capacity at runtime is not supported
             throw new UnsupportedOperationException("setCapacity not supported");
         }
     }
 
-    // ========== 热能存储实现 ==========
+    // ========== Heat storage implementation ==========
 
     private static class HeatStorageImpl implements IHeatStorage {
         private static final int MAX_CAS_RETRIES = 16;
@@ -429,7 +429,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         }
     }
 
-    // ========== 动能存储实现 ==========
+    // ========== Kinetic storage implementation ==========
 
     private static class KineticStorageImpl implements IKineticStorage {
         private static final int MAX_CAS_RETRIES = 16;
@@ -563,7 +563,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         }
     }
 
-    // ========== 电动物品实现 ==========
+    // ========== Electric item implementation ==========
 
     private static class ElectricItemImpl implements ICapabilityElectricItem {
         private final long maxCharge;
@@ -639,21 +639,21 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         }
 
         /**
-         * 获取物品当前电荷
+         * Gets the current charge of the item.
          */
         private long getCharge(ItemStack stack) {
             return BatteryBridge.getCharge(stack);
         }
 
         /**
-         * 设置物品电荷
+         * Sets the charge of the item.
          */
         private void setCharge(ItemStack stack, long charge) {
             BatteryBridge.setCharge(stack, charge, maxCharge);
         }
     }
 
-    // ========== 升级物品实现 ==========
+    // ========== Upgrade item implementation ==========
 
     private static class UpgradeItemImpl implements IUpgradeItem {
         private final String type;
@@ -717,7 +717,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         }
     }
 
-    // ========== 变压器实现 ==========
+    // ========== Transformer implementation ==========
 
     private static class TransformerImpl implements ITransformerCapability {
         private final boolean stepUp;
@@ -739,7 +739,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         @Override public long getBufferCapacity() { return lowTier.getPowerRating() * 10; }
     }
 
-    // ========== 管道实现 ==========
+    // ========== Pipe implementation ==========
 
     private static class PipeImpl implements IPipeCapability {
         private final PipeType pipeType;
@@ -758,7 +758,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         @Override public int getTransferRate() { return transferRate; }
     }
 
-    // ========== 能量转换器实现 ==========
+    // ========== Energy converter implementation ==========
 
     private static class EnergyConverterImpl implements IEnergyConverterCapability {
         private final EnergyType inputType;
@@ -780,7 +780,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         @Override public long getBufferCapacity() { return 0; }
     }
 
-    // ========== 武器实现 ==========
+    // ========== Weapon implementation ==========
 
     private static class WeaponImpl implements IWeaponCapability {
         private final float damage;
@@ -801,7 +801,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         @Override public boolean isRanged() { return isRanged; }
     }
 
-    // ========== 太阳能头盔实现 ==========
+    // ========== Solar helmet implementation ==========
 
     private static class SolarHelmetImpl implements ISolarHelmetCapability {
         private final long generationRate;
@@ -819,7 +819,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         @Override public boolean isDayOnly() { return isDayOnly; }
     }
 
-    // ========== 喷气背包实现 ==========
+    // ========== Jetpack implementation ==========
 
     private static class JetpackImpl implements IJetpackCapability {
         private final float thrust;
@@ -835,7 +835,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         @Override public JetpackMode getMode() { return JetpackMode.OFF; }
     }
 
-    // ========== 流体单元实现 ==========
+    // ========== Fluid cell implementation ==========
 
     private static class FluidCellImpl implements IFluidCellCapability {
         private final int capacity;
@@ -878,7 +878,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
         }
     }
 
-    // ========== 热能存储适配器 ==========
+    // ========== Heat storage adapter ==========
 
     /** Typed bridge: the smaller heat API does not declare transfer-limit getters. */
     private static final class HeatCapabilityAdapter implements IHeatStorage {
@@ -910,7 +910,7 @@ public class MioIcifCapabilitiesImpl implements IMioIcifCapabilities {
                 ? storage.getMaxExtract() : target.extractHeat(Long.MAX_VALUE, true);
         }
     }
-    // ========== 动能存储适配器 ==========
+    // ========== Kinetic storage adapter ==========
 
     private static final class KineticCapabilityAdapter implements IKineticStorage {
         private static final Class<?> I_KINETIC_STORAGE;

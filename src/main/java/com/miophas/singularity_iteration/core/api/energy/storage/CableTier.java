@@ -35,49 +35,49 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
 /**
- * 电压等级定义 - 所有电线相关参数在此处统一配置
+ * Voltage tier definitions. All cable parameters are set in this class.
  *
- * <p>与IC2原版电压等级体系一致：</p>
+ * <p>The tiers agree with the original IC2 voltage tier system:</p>
  * <pre>
- *   LV = 32 EU/t   (tier 0) - Low Voltage / 低压
- *   MV = 128 EU/t  (tier 1) - Medium Voltage / 中压
- *   HV = 512 EU/t  (tier 2) - High Voltage / 高压
- *   EV = 2048 EU/t (tier 3) - Extreme Voltage / 超高压
- *   IV = 8192 EU/t (tier 4) - Insane Voltage / 超高电压
- *   LuV = 32768 EU/t (tier 5) - Ludicrous Voltage / 剧差压
- *   ZPMV = 131072 EU/t (tier 6) - Zero Point Module Voltage / 零点压
- *   UV = 524288 EU/t (tier 7) - Ultimate Voltage / 极高压
- *   UHV = 2097152 EU/t (tier 8) - Ultra High Voltage / 超极限压
- *   UEV = 8388608 EU/t (tier 9) - Ultra Excessive Voltage / 超极限压
- *   UIV = 33554432 EU/t (tier 10) - Ultra Immense Voltage / 极强导压
- *   UXV = 134217728 EU/t (tier 11) - Ultra Extreme Voltage / 极上拓压
- *   OpV = 536870912 EU/t (tier 12) - Overpowered Voltage / 过载压
- *   MAX = 2147483647 EU/t (tier 13) - Maximum Voltage / 终压
+ *   LV = 32 EU/t   (tier 0) - Low Voltage
+ *   MV = 128 EU/t  (tier 1) - Medium Voltage
+ *   HV = 512 EU/t  (tier 2) - High Voltage
+ *   EV = 2048 EU/t (tier 3) - Extreme Voltage
+ *   IV = 8192 EU/t (tier 4) - Insane Voltage
+ *   LuV = 32768 EU/t (tier 5) - Ludicrous Voltage
+ *   ZPMV = 131072 EU/t (tier 6) - Zero Point Module Voltage
+ *   UV = 524288 EU/t (tier 7) - Ultimate Voltage
+ *   UHV = 2097152 EU/t (tier 8) - Ultra High Voltage
+ *   UEV = 8388608 EU/t (tier 9) - Ultra Excessive Voltage
+ *   UIV = 33554432 EU/t (tier 10) - Ultra Immense Voltage
+ *   UXV = 134217728 EU/t (tier 11) - Ultra Extreme Voltage
+ *   OpV = 536870912 EU/t (tier 12) - Overpowered Voltage
+ *   MAX = 2147483647 EU/t (tier 13) - Maximum Voltage
  * </pre>
  *
- * <h3>参数说明</h3>
+ * <h3>Parameters</h3>
  * <ul>
- *   <li>{@link #powerRating} - 电压等级（EU/t），决定机器可接受的能量传输速率</li>
- *   <li>{@link #electricDamage} - 裸线触电伤害值（绝缘电线为 0）</li>
- *   <li>{@link #conductorBreakdownEnergy} - 导体熔毁能量阈值（超过此值导体被摧毁）</li>
- *   <li>{@link #insulationBreakdownEnergy} - 绝缘层熔毁能量阈值（超过此值绝缘层被剥离）</li>
- *   <li>{@link #insulationEnergyAbsorption} - 裸线绝缘吸收阈值（低于此值绝缘层完全吸收能量）</li>
- *   <li>{@link #conductionLoss} - 每格裸线传导损耗（EU/能量包）</li>
- *   <li>{@link #insulatedInsulationEnergyAbsorption} - 绝缘电线绝缘吸收阈值</li>
- *   <li>{@link #insulatedConductionLoss} - 每格绝缘电线传导损耗（EU/能量包）</li>
+ *   <li>{@link #powerRating} - the voltage rating (EU/t). It sets the energy transfer rate that a machine accepts.</li>
+ *   <li>{@link #electricDamage} - the shock damage of a bare cable (0 for an insulated cable).</li>
+ *   <li>{@link #conductorBreakdownEnergy} - the conductor breakdown threshold. Above this value, the conductor is destroyed.</li>
+ *   <li>{@link #insulationBreakdownEnergy} - the insulation breakdown threshold. Above this value, the insulation is removed.</li>
+ *   <li>{@link #insulationEnergyAbsorption} - the insulation absorption threshold of a bare cable. Below this value, the insulation absorbs all energy.</li>
+ *   <li>{@link #conductionLoss} - the conduction loss of a bare cable, per block (EU per packet).</li>
+ *   <li>{@link #insulatedInsulationEnergyAbsorption} - the insulation absorption threshold of an insulated cable.</li>
+ *   <li>{@link #insulatedConductionLoss} - the conduction loss of an insulated cable, per block (EU per packet).</li>
  * </ul>
  *
- * <p><b>修改电线参数只需修改此类的实例定义即可。</b></p>
+ * <p><b>To change cable parameters, change only the instance definitions in this class.</b></p>
  */
 @SuppressWarnings("null")
 public final class CableTier implements Comparable<CableTier>, ICableTier {
 
-    // ============ 电压等级实例 ============
+    // ============ Voltage tier instances ============
     // SCEX clean-room: base cable losses calibrated against 2.8.222-ex112
     // normal placement and saved-energy traces; see R3 grid fixtures/evidence.
     // Insulation does not change the measured loss of the corresponding metal.
 
-    /** LV 低压：32 EU/t，触电伤害 4 点 */
+    /** LV (Low Voltage): 32 EU/t. Shock damage is 4 points. */
     public static CableTier LV = new CableTier(
         "lv", "LV", "Low Voltage",
         32, 0, 4.0f,
@@ -89,7 +89,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.2        // insulatedConductionLoss
     );
 
-    /** MV 中压：128 EU/t，触电伤害 8 点 */
+    /** MV (Medium Voltage): 128 EU/t. Shock damage is 8 points. */
     public static CableTier MV = new CableTier(
         "mv", "MV", "Medium Voltage",
         128, 1, 8.0f,
@@ -101,7 +101,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.2
     );
 
-    /** HV 高压：512 EU/t，触电伤害 18 点 */
+    /** HV (High Voltage): 512 EU/t. Shock damage is 18 points. */
     public static CableTier HV = new CableTier(
         "hv", "HV", "High Voltage",
         512, 2, 18.0f,
@@ -113,7 +113,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.4
     );
 
-    /** EV 超高压：2048 EU/t，触电伤害 40 点 */
+    /** EV (Extreme Voltage): 2048 EU/t. Shock damage is 40 points. */
     public static CableTier EV = new CableTier(
         "ev", "EV", "Extreme Voltage",
         2048, 3, 40.0f,
@@ -125,7 +125,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.8
     );
 
-    /** IV 超高电压：8192 EU/t，无触电伤害（玻璃电缆，每格损耗 0.025 EU/能量包） */
+    /** IV (Insane Voltage): 8192 EU/t. No shock damage. Glass fibre cable; the loss is 0.025 EU per packet per block. */
     public static CableTier IV = new CableTier(
         "iv", "IV", "Insane Voltage",
         8192, 4, 0.0f,
@@ -137,7 +137,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.025
     );
 
-    /** LuV 剧差压：32768 EU/t，无触电伤害（超导合金，完全绝缘零损耗） */
+    /** LuV (Ludicrous Voltage): 32768 EU/t. No shock damage. Superconductor alloy; fully insulated, zero loss. */
     public static CableTier LuV = new CableTier(
         "luv", "LuV", "Ludicrous Voltage",
         32768, 5, 0.0f,
@@ -149,7 +149,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.0
     );
 
-    /** ZPMV 零点压：131072 EU/t，无触电伤害（零点模块，完全绝缘零损耗） */
+    /** ZPMV (Zero Point Module Voltage): 131072 EU/t. No shock damage. Zero point module; fully insulated, zero loss. */
     public static CableTier ZPMV = new CableTier(
         "zpmv", "ZPMV", "Zero Point Module Voltage",
         131072, 6, 0.0f,
@@ -161,7 +161,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.0
     );
 
-    /** UV 极高压：524288 EU/t，无触电伤害（超导，完全绝缘零损耗） */
+    /** UV (Ultimate Voltage): 524288 EU/t. No shock damage. Superconductor; fully insulated, zero loss. */
     public static CableTier UV = new CableTier(
         "uv", "UV", "Ultimate Voltage",
         524288, 7, 0.0f,
@@ -173,7 +173,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.0
     );
 
-    /** UHV 超极限压：2097152 EU/t，无触电伤害（超导，完全绝缘零损耗） */
+    /** UHV (Ultra High Voltage): 2097152 EU/t. No shock damage. Superconductor; fully insulated, zero loss. */
     public static CableTier UHV = new CableTier(
         "uhv", "UHV", "Ultra High Voltage",
         2097152, 8, 0.0f,
@@ -185,7 +185,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.0
     );
 
-    /** UEV 超极限压：8388608 EU/t，无触电伤害（超导，完全绝缘零损耗） */
+    /** UEV (Ultra Excessive Voltage): 8388608 EU/t. No shock damage. Superconductor; fully insulated, zero loss. */
     public static CableTier UEV = new CableTier(
         "uev", "UEV", "Ultra Excessive Voltage",
         8388608, 9, 0.0f,
@@ -197,7 +197,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.0
     );
 
-    /** UIV 极强导压：33554432 EU/t，无触电伤害（超导，完全绝缘零损耗） */
+    /** UIV (Ultra Immense Voltage): 33554432 EU/t. No shock damage. Superconductor; fully insulated, zero loss. */
     public static CableTier UIV = new CableTier(
         "uiv", "UIV", "Ultra Immense Voltage",
         33554432, 10, 0.0f,
@@ -209,7 +209,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.0
     );
 
-    /** UXV 极上拓压：134217728 EU/t，无触电伤害（超导，完全绝缘零损耗） */
+    /** UXV (Ultra Extreme Voltage): 134217728 EU/t. No shock damage. Superconductor; fully insulated, zero loss. */
     public static CableTier UXV = new CableTier(
         "uxv", "UXV", "Ultra Extreme Voltage",
         134217728, 11, 0.0f,
@@ -221,7 +221,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.0
     );
 
-    /** OpV 过载压：536870912 EU/t，无触电伤害（超导，完全绝缘零损耗） */
+    /** OpV (Overpowered Voltage): 536870912 EU/t. No shock damage. Superconductor; fully insulated, zero loss. */
     public static CableTier OpV = new CableTier(
         "opv", "OpV", "Overpowered Voltage",
         536870912, 12, 0.0f,
@@ -233,7 +233,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         0.0
     );
 
-    /** MAX 终压：2147483647 EU/t，无触电伤害（超导，完全绝缘零损耗） */
+    /** MAX (Maximum Voltage): 2147483647 EU/t. No shock damage. Superconductor; fully insulated, zero loss. */
     public static CableTier MAX = new CableTier(
         "max", "MAX", "Maximum Voltage",
         2147483647L, 13, 0.0f,
@@ -262,55 +262,56 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         true
     );
 
-    // ============ 字段 ============
+    // ============ Fields ============
 
-    /** 内部名称（如"lv", "mv"） */
+    /** The internal name (for example "lv", "mv"). */
     public final String name;
-    /** 短显示名（如"LV", "MV"） */
+    /** The short display name (for example "LV", "MV"). */
     public final String shortEnglishName;
-    /** 长显示名（如"Low Voltage"） */
+    /** The long display name (for example "Low Voltage"). */
     public final String longEnglishName;
-    /** 电压等级（EU/t） */
+    /** The voltage rating (EU/t). */
     public final long powerRating;
-    /** 等级索引 0=LV, 1=MV, 2=HV, 3=EV, 4=IV, 5=LuV */
+    /** The tier index: 0=LV, 1=MV, 2=HV, 3=EV, 4=IV, 5=LuV, and so on up to 13=MAX. */
     public final int tierIndex;
-    /** 是否内置等级 */
+    /** True if this is a built-in tier. */
     public final boolean builtin;
 
-    // --- 电线电气参数 ---
+    // --- Cable electrical parameters ---
 
-    /** 触电伤害值（0表示无伤害，绝缘电线始终为0） */
+    /** The shock damage. 0 means no damage. It is always 0 for an insulated cable. */
     public final float electricDamage;
-    /** 导体熔毁能量阈值（超过此值导体本身被摧毁） */
+    /** The conductor breakdown threshold (EU). Above this value, the conductor itself is destroyed. */
     public final long conductorBreakdownEnergy;
-    /** 绝缘层熔毁能量阈值（超过此值绝缘层被剥离） */
+    /** The insulation breakdown threshold (EU). Above this value, the insulation is removed. Never less than {@link #conductorBreakdownEnergy}. */
     public final long insulationBreakdownEnergy;
-    /** 裸线绝缘吸收阈值（低于此值绝缘层完全吸收，高于此值产生触电伤害） */
+    /** The insulation absorption threshold of a bare cable (EU). Below this value, the insulation absorbs all energy. Above this value, the cable causes shock damage. It is Integer.MAX_VALUE when {@link #electricDamage} is 0 or less. */
     public final double insulationEnergyAbsorption;
-    /** 裸线传导损耗比例 */
+    /** The conduction loss of a bare cable (EU per packet per block). */
     public final double conductionLoss;
-    /** 绝缘电线绝缘吸收阈值 */
+    /** The insulation absorption threshold of an insulated cable (EU). It is Integer.MAX_VALUE when {@link #electricDamage} is 0 or less. */
     public final double insulatedInsulationEnergyAbsorption;
-    /** 绝缘电线传导损耗比例 */
+    /** The conduction loss of an insulated cable (EU per packet per block). */
     public final double insulatedConductionLoss;
 
-    // ============ 构造函数 ============
+    // ============ Constructors ============
 
     /**
-     * 创建电压等级（包含所有电线电气参数）
+     * Makes a built-in voltage tier with all cable electrical parameters.
      *
-     * @param name                            内部名称
-     * @param shortEnglishName                短显示名
-     * @param longEnglishName                 长显示名
-     * @param powerRating                     电压等级（EU/t）
-     * @param tierIndex                       等级索引
-     * @param electricDamage                  触电伤害值
-     * @param conductorBreakdownEnergy        导体熔毁能量
-     * @param insulationBreakdownEnergy       绝缘层熔毁能量
-     * @param insulationEnergyAbsorption      裸线绝缘吸收阈值
-     * @param conductionLoss                  裸线传导损耗
-     * @param insulatedInsulationEnergyAbsorption 绝缘电线绝缘吸收阈值
-     * @param insulatedConductionLoss         绝缘电线传导损耗
+     * @param name                            the internal name
+     * @param shortEnglishName                the short display name
+     * @param longEnglishName                 the long display name
+     * @param powerRating                     the voltage rating (EU/t); must not be negative
+     * @param tierIndex                       the tier index
+     * @param electricDamage                  the shock damage
+     * @param conductorBreakdownEnergy        the conductor breakdown energy (EU)
+     * @param insulationBreakdownEnergy       the insulation breakdown energy (EU)
+     * @param insulationEnergyAbsorption      the insulation absorption threshold of a bare cable
+     * @param conductionLoss                  the conduction loss of a bare cable
+     * @param insulatedInsulationEnergyAbsorption the insulation absorption threshold of an insulated cable
+     * @param insulatedConductionLoss         the conduction loss of an insulated cable
+     * @throws IllegalArgumentException if {@code powerRating} is negative
      */
     public CableTier(String name, String shortEnglishName, String longEnglishName,
                      long powerRating, int tierIndex, float electricDamage,
@@ -340,7 +341,10 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
     }
 
     /**
-     * 创建自定义电压等级（可指定是否为内置）
+     * Makes a custom voltage tier. You can set whether it is built-in.
+     * The other parameters are the same as in the other constructor.
+     *
+     * @throws IllegalArgumentException if {@code powerRating} is negative
      */
     public CableTier(String name, String shortEnglishName, String longEnglishName,
                      long powerRating, int tierIndex, float electricDamage,
@@ -370,7 +374,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         this.insulatedConductionLoss = insulatedConductionLoss;
     }
 
-    // ============ Getter 方法 ============
+    // ============ Getters ============
 
     public long getPowerRating() {
         return powerRating;
@@ -381,7 +385,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
     }
 
     /**
-     * 能量等级编号：LV = 1、MV = 2、HV = 3 ……（即等级索引 + 1）。
+     * Gets the energy level number: LV = 1, MV = 2, HV = 3, and so on (the tier index + 1).
      */
     public int getEnergyLevel() {
         return tierIndex + 1;
@@ -422,19 +426,19 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         return insulationBreakdownEnergy;
     }
 
-    /** @deprecated 使用 {@link #getPowerRating()} 替代 */
+    /** @deprecated Use {@link #getPowerRating()} instead. */
     @Deprecated
     public long getMaxTransfer() {
         return powerRating;
     }
 
-    /** @deprecated 使用 {@link #getPowerRating()} 替代 */
+    /** @deprecated Use {@link #getPowerRating()} instead. */
     @Deprecated
     public long getEu() {
         return powerRating;
     }
 
-    // ============ 显示名 ============
+    // ============ Display names ============
 
     public String shortEnglishKey() {
         return "cable_tier_short.mio_icif." + name;
@@ -452,7 +456,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         return Component.translatable(longEnglishKey());
     }
 
-    // ============ 比较 ============
+    // ============ Comparison ============
 
     @Override
     public int compareTo(CableTier other) {
@@ -464,13 +468,15 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
         return name;
     }
 
-    // ============ 注册表 ============
+    // ============ Registry ============
 
     private final static Map<String, CableTier> tiers = new HashMap<>();
     private static List<CableTier> cachedAllTiers;
 
     /**
-     * 注册新的电压等级。如果已存在同名或同电压等级的等级，则抛出异常。
+     * Registers a new voltage tier. Not thread-safe; call during mod initialization.
+     *
+     * @throws IllegalArgumentException if a tier with the same name or the same voltage rating already exists
      */
     public static void addTier(CableTier tier) {
         for (var existingTier : tiers.values()) {
@@ -486,7 +492,9 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
     }
 
     /**
-     * 根据名称查找已注册的电压等级。
+     * Finds a registered voltage tier by its name.
+     *
+     * @throws NoSuchElementException if no tier has this name
      */
     public static CableTier getTier(String name) {
         CableTier existing = tiers.get(name);
@@ -502,7 +510,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
     }
 
     /**
-     * @return 所有已注册的电压等级，按电压等级排序。
+     * @return all registered voltage tiers, sorted by voltage rating (an immutable list)
      */
     public static List<CableTier> allTiers() {
         if (cachedAllTiers == null) {

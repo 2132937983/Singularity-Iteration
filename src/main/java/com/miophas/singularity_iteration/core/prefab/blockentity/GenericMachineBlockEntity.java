@@ -21,21 +21,21 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
- * 通用机器方块实体（内部实现）- 供 API 构建器使用
+ * Generic machine block entity (internal implementation) for the API builders.
  *
- * <p>这是一个通用的生产者机器实现，附属模组可以通过回调函数自定义行为。
- * 
- * <p><strong>这是内部实现类，不应被 Addon 直接扩展。</strong>
- * Addon 开发者应该实现自己的 BlockEntity 并使用 IMachineBuilderAPI 提供的构建器接口。
+ * <p>This is a generic producer machine. Addon mods change its behavior through callbacks.
  *
- * <p>使用示例：
+ * <p><strong>This is an internal implementation class. Addons must not extend it directly.</strong>
+ * Addon developers must implement their own BlockEntity and use the builder interfaces of IMachineBuilderAPI.
+ *
+ * <p>Example:
  * <pre>{@code
- * // 在模组初始化阶段创建 BlockEntityType
+ * // Create the BlockEntityType during mod initialization
  * public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GenericMachineBlockEntity>> MY_MACHINE =
  *     BLOCK_ENTITIES.register("my_machine", () ->
  *         BlockEntityType.Builder.of(GenericMachineBlockEntity::new, ModBlocks.MY_MACHINE.get()).build(null));
  *
- * // 使用 API 构建器创建机器定义
+ * // Use the API builder to create the machine definition
  * IMachineDefinition definition = MioIcifAPI.instance().getMachineBuilderAPI()
  *     .createElectricMachineBuilder()
  *     .setName("my_machine")
@@ -47,15 +47,15 @@ import java.util.function.BiConsumer;
  *     .withEntityType(MY_MACHINE.get())
  *     .build();
  *
- * // 设置工作处理器
+ * // Set the work handler
  * GenericMachineBlockEntity entity = ...;
  * entity.setWorkHandler((machine, inputs) -> {
- *     // 查找配方
+ *     // Find the recipe
  *     var recipe = findRecipe(inputs[0]);
  *     if (recipe != null) {
- *         // 消耗输入物品
+ *         // Use the input items
  *         machine.consumeInput(0, 1);
- *         // 插入输出物品
+ *         // Insert the output items
  *         machine.insertOutput(recipe.getResult());
  *     }
  * });
@@ -64,27 +64,27 @@ import java.util.function.BiConsumer;
 public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEntity
     implements com.miophas.singularity_iteration.core.api.machine.IMachineConfigurable {
 
-    // 回调函数
+    // Callbacks
     private BiConsumer<GenericMachineBlockEntity, ItemStack[]> workHandler;
     private Runnable tickCallback;
     private Runnable workStartCallback;
     private IWorkCompleteCallback workCompleteCallback;
     
-    // 机器配置（用于API查询）
+    // Machine configuration (for API queries)
     @Nullable
     private IMachineBuilderAPI.MachineConfiguration configuration;
     
-    // 跟踪上一个tick的工作状态，用于检测工作开始
+    // Work state of the previous tick. It is used to detect the start of work.
     private boolean wasWorkingLastTick = false;
 
-    // 构建器声明的流体罐；配置在构造之后注入，因此惰性创建
+    // Fluid tanks that the builder declares. The configuration is injected after construction, so the tanks are created lazily.
     @Nullable
     private List<net.neoforged.neoforge.fluids.capability.templates.FluidTank> builderTanks;
 
     /**
-     * 简化构造函数 - 供 NeoForge BlockEntityType.Builder.of() 使用
-     * 
-     * <p>使用示例：
+     * Simple constructor for NeoForge BlockEntityType.Builder.of().
+     *
+     * <p>Example:
      * <pre>{@code
      * public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GenericMachineBlockEntity>> MY_MACHINE =
      *     BLOCK_ENTITIES.register("my_machine", () ->
@@ -108,17 +108,17 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
     }
 
     /**
-     * 设置机器配置（供构建器注入）
+     * Sets the machine configuration (the builder injects it).
      */
     public void setConfiguration(@Nullable IMachineBuilderAPI.MachineConfiguration configuration) {
         this.configuration = configuration;
     }
 
     /**
-     * 构建器用 {@code addFluidTank} 声明的罐体。
+     * Returns the tanks that the builder declares with {@code addFluidTank}.
      *
-     * <p>只在构建器确实声明了罐体时才创建，因此没有声明流体槽的机器仍然返回 null，
-     * 不会被流体自动化升级顺带接管。自行提供流体处理器的子类（覆写本方法）不受影响。
+     * <p>The tanks are created only when the builder really declares tanks. Thus a machine without declared fluid tanks still returns null,
+     * and the fluid automation upgrade does not take control of it. Subclasses that supply their own fluid handler (and override this method) are not affected.
      */
     @Override
     protected net.neoforged.neoforge.fluids.capability.IFluidHandler getFluidHandlerCapability(@Nullable Direction side) {
@@ -161,7 +161,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
         return builderTanks;
     }
 
-    /** 罐体内容按独立键保存，避免与具体机器已有的 {@code fluid}/{@code InputTank} 等键冲突。 */
+    /** Each tank is saved under its own key. This prevents conflicts with keys that specific machines already use, such as {@code fluid}/{@code InputTank}. */
     @Override
     protected void saveAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
@@ -190,7 +190,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
     }
 
     /**
-     * 获取机器配置
+     * Returns the machine configuration, or null if no configuration is set.
      */
     @Nullable
     public IMachineBuilderAPI.MachineConfiguration getConfiguration() {
@@ -198,41 +198,43 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
     }
 
     /**
-     * 设置工作处理器
-     * @param handler 接收 (entity, inputs) 并处理配方的回调。
-     *                inputs 是输入槽物品的副本，仅用于配方匹配。
-     *                实际物品操作请调用 {@link #consumeInput(int, int)} 和 {@link #insertOutput(ItemStack)}。
+     * Sets the work handler.
+     *
+     * @param handler the callback that receives (entity, inputs) and processes the recipe.
+     *                inputs are copies of the input slot items. Use them only for recipe matching.
+     *                To change the real items, call {@link #consumeInput(int, int)} and {@link #insertOutput(ItemStack)}.
      */
     public void setWorkHandler(BiConsumer<GenericMachineBlockEntity, ItemStack[]> handler) {
         this.workHandler = handler;
     }
 
     /**
-     * 设置每 tick 回调（供构建器注入）
+     * Sets the callback for each tick (the builder injects it). It runs on the server side only.
      */
     public void setTickCallback(Runnable tickCallback) {
         this.tickCallback = tickCallback;
     }
 
     /**
-     * 设置工作开始回调（供构建器注入）
+     * Sets the callback for the start of work (the builder injects it).
      */
     public void setWorkStartCallback(Runnable workStartCallback) {
         this.workStartCallback = workStartCallback;
     }
 
     /**
-     * 设置工作完成回调（供构建器注入）
+     * Sets the callback for the end of work (the builder injects it).
      */
     public void setWorkCompleteCallback(IWorkCompleteCallback workCompleteCallback) {
         this.workCompleteCallback = workCompleteCallback;
     }
 
     /**
-     * 从指定输入槽消耗指定数量的物品
-     * @param inputIndex 输入槽索引（0-based，相对于输入槽起始位置）
-     * @param amount 消耗数量
-     * @return 实际消耗的数量
+     * Removes the given number of items from an input slot.
+     *
+     * @param inputIndex the input slot index (0-based, relative to the first input slot)
+     * @param amount the number of items to remove
+     * @return the number of items that were removed (0 if the index is not valid)
      */
     public int consumeInput(int inputIndex, int amount) {
         int inputStart = slotLayout.getStart(SlotType.INPUT);
@@ -248,16 +250,17 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
     }
 
     /**
-     * 向输出槽插入物品
-     * @param stack 要插入的物品
-     * @return 剩余未插入的物品（空表示全部插入成功）
+     * Inserts an item into the output slots.
+     *
+     * @param stack the item to insert
+     * @return the remaining items that were not inserted (empty if all items were inserted)
      */
     public ItemStack insertOutput(ItemStack stack) {
         return com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.insertOutput(itemHandler, getOutputSlots(), stack);
     }
 
     /**
-     * 获取物品处理器（可用于更复杂的物品操作）
+     * Returns the item handler (for more complex item operations).
      */
     public IItemHandler getItemHandler() {
         return itemHandler;
@@ -265,7 +268,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
 
     @Override
     protected int[] getSlotsForDirection(Direction side) {
-        // 默认实现：根据槽位类型返回合适的槽位
+        // Default implementation: return the slots that match the slot type of each side.
         int inputCount = slotLayout.getCount(SlotType.INPUT);
         int outputCount = slotLayout.getCount(SlotType.OUTPUT);
         int batteryCount = slotLayout.getCount(SlotType.BATTERY);
@@ -277,7 +280,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
 
         return switch (side) {
             case DOWN -> {
-                // 下方：输出槽
+                // Bottom: output slots
                 int[] slots = new int[outputCount];
                 for (int i = 0; i < outputCount; i++) {
                     slots[i] = outputStart + i;
@@ -285,7 +288,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
                 yield slots;
             }
             case UP -> {
-                // 上方：输入槽 + 电池槽
+                // Top: input slots + battery slots
                 int[] slots = new int[inputCount + batteryCount];
                 int idx = 0;
                 for (int i = 0; i < inputCount; i++) {
@@ -297,7 +300,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
                 yield slots;
             }
             default -> {
-                // 其他方向：所有非升级槽
+                // Other sides: all slots except upgrade slots
                 int totalSlots = slotLayout.getTotalCount();
                 int[] slots = new int[totalSlots - upgradeCount];
                 int idx = 0;
@@ -313,7 +316,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
 
     @Override
     protected boolean canWork() {
-        // 默认：检查输入槽是否有物品
+        // Default: check whether an input slot contains an item.
         int inputStart = slotLayout.getStart(SlotType.INPUT);
         int inputCount = slotLayout.getCount(SlotType.INPUT);
         for (int i = 0; i < inputCount; i++) {
@@ -337,7 +340,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
     @Override
     protected void doWork() {
         if (!scexLiveWorkOwner()) { stopWork(); return; }
-        // 先验证配方是否有效，避免无效工作时消耗能量
+        // First, make sure that the recipe is valid. This prevents energy use when no valid work is possible.
         if (!canWork() || !canProcessWithHandler() || !scexLiveWorkOwner()) {
             stopWork();
             return;
@@ -352,11 +355,11 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
             payment.commit();
         }
 
-        // 增加进度
+        // Increase the progress.
         int progressPerTick = getProgressPerTick();
         progress += progressPerTick;
 
-        // 检查是否完成
+        // Check whether the work is complete.
         if (progress >= maxProgress) {
             progress = 0;
             isWorking = true;
@@ -367,8 +370,8 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
     }
 
     /**
-     * 检查 workHandler 是否可以处理当前输入
-     * 使用模拟模式验证配方，不实际消耗物品
+     * Checks whether the workHandler can process the current inputs.
+     * This check does not use any items. The output check is only approximate.
      */
     private boolean canProcessWithHandler() {
         if (workHandler == null) return false;
@@ -377,7 +380,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
         int inputStart = slotLayout.getStart(SlotType.INPUT);
         int inputCount = slotLayout.getCount(SlotType.INPUT);
         
-        // 检查是否有输入物品
+        // Check whether an input item exists.
         boolean hasInput = false;
         for (int i = 0; i < inputCount; i++) {
             if (!itemHandler.getStackInSlot(inputStart + i).isEmpty()) {
@@ -387,20 +390,20 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
         }
         if (!hasInput) return false;
 
-        // 检查输出槽是否有空间（粗略检查）
+        // Check whether an output slot has space (approximate check).
         int outputStart = slotLayout.getStart(SlotType.OUTPUT);
         int outputCount = slotLayout.getCount(SlotType.OUTPUT);
         for (int i = 0; i < outputCount; i++) {
             ItemStack outputStack = itemHandler.getStackInSlot(outputStart + i);
             if (outputStack.isEmpty() || outputStack.getCount() < outputStack.getMaxStackSize()) {
-                return true; // 有输出空间
+                return true; // Output space is available
             }
         }
         return false;
     }
 
     /**
-     * 工作完成时调用
+     * Called when one work cycle is complete. Server side only.
      */
     protected void onWorkComplete() {
         if (!scexLiveWorkOwner()) { stopWork(); return; }
@@ -410,7 +413,7 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
             }
         }
         if (workHandler == null || !scexLiveWorkOwner()) { stopWork(); return; }
-        // 确保仅在服务端执行回调，防止客户端/服务端不同步
+        // Run the callback only on the server side. This prevents a client/server desync.
         if (getLevel() != null && getLevel().isClientSide) return;
 
         int inputStart = slotLayout.getStart(SlotType.INPUT);
@@ -423,20 +426,20 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
     }
 
     /**
-     * 获取有效的每 tick 能量消耗
+     * Returns the effective energy use for each tick (EU/tick), after the upgrade multiplier.
      */
     public long getEffectiveEnergyPerTick() {
         return (long) (energyPerTick * upgradeStats.getEnergyUsageMultiplier());
     }
 
     /**
-     * 获取每 tick 处理的进度
+     * Returns the progress added for each tick (minimum 1), after the upgrade multiplier.
      */
     public int getProgressPerTick() {
         return Math.max(1, (int) Math.ceil(1.0 / upgradeStats.getProcessTimeMultiplier()));
     }
 
-    // ==================== IProducerBlock 接口实现 ====================
+    // ==================== IProducerBlock implementation ====================
 
     @Override
     public java.util.List<ItemStack> getUpgrades() {
@@ -460,13 +463,13 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
     @Override
     protected void onTick() {
         if (getLevel() != null && !getLevel().isClientSide) {
-            // 检测工作开始：从非工作状态变为工作状态
+            // Detect the start of work: the state changes from not working to working.
             if (isWorking && !wasWorkingLastTick && workStartCallback != null) {
                 workStartCallback.run();
             }
             wasWorkingLastTick = isWorking;
             
-            // 调用tick回调
+            // Run the tick callback.
             if (tickCallback != null) {
                 tickCallback.run();
             }
@@ -477,14 +480,14 @@ public class GenericMachineBlockEntity extends AbstractProcessingMachineBlockEnt
     public void onLoad() {
         super.onLoad();
         
-        // 如果是通过简化构造函数创建的实例，尝试从回调注册表获取回调
-        // 仅当回调尚未设置时才从注册表获取，避免覆盖已设置的回调
+        // If this instance was made by the simple constructor, try to get the callbacks from the callback registry.
+        // Get them from the registry only when a callback is not set yet. This prevents an overwrite of callbacks that are already set.
         if (getLevel() != null && !getLevel().isClientSide) {
             BlockEntityType<?> type = getType();
             if (type != null) {
                 var callbacks = com.miophas.singularity_iteration.core.runtime.machine.builder.MachineBuilderAPIImpl.getCallbacks(type);
                 if (callbacks != null) {
-                    // 将回调转换为 Runnable 形式并注入（仅当尚未设置时）
+                    // Wrap the callbacks as Runnable and inject them (only when not set yet).
                     if (callbacks.onWorkStart != null && this.workStartCallback == null) {
                         BlockPos pos = getBlockPos();
                         this.workStartCallback = () -> callbacks.onWorkStart.onWorkStart(getLevel(), pos);

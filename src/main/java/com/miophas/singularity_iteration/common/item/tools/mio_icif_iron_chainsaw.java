@@ -22,53 +22,53 @@ import net.neoforged.neoforge.common.ItemAbility;
 import java.util.List;
 
 /**
- * 铁链�?
- * 继承电力工具基础类，使用电力驱动
- * 具有铁斧的一切性质，不会因耐久度为0而损坏?
- * 还具有剪刀的性质：剪羊毛、精准采集蜘蛛网、树叶等
- * 有电时破坏速度与铁斧相当，没电时速度变得跟手挖一样快
+ * Iron chainsaw.
+ * It extends the electric tool base class and uses energy.
+ * It has all the properties of an iron axe. It does not break when the durability reaches 0.
+ * It also has shear properties: it shears sheep and collects cobwebs and leaves intact.
+ * With energy, it breaks blocks as fast as an iron axe. Without energy, it breaks blocks at hand speed.
  */
 @SuppressWarnings("null")
 public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
 
-    // 铁链锯默认最大能量?(IC2原版: 30000 EU)
+    // Default maximum energy of the iron chainsaw (IC2 original: 30000 EU).
     public static final int IRON_CHAINSAW_MAX_ENERGY = 30000;
 
-    // 铁链锯传输限制?(IC2原版: 100 EU/t)
+    // Energy transfer limit of the iron chainsaw (IC2 original: 100 EU/t).
     public static final int IRON_CHAINSAW_TRANSFER_LIMIT = 100;
 
-    // 铁链锯每次使用消耗的能量 (IC2原版: 100 EU)
+    // Energy that the iron chainsaw uses for each operation (IC2 original: 100 EU).
     public static final int IRON_CHAINSAW_ENERGY_PER_USE = 100;
 
-    // 铁链锯的攻击伤害 (IC2原版: 9.0)
+    // Attack damage of the iron chainsaw (IC2 original: 9.0).
     public static final float IRON_CHAINSAW_ATTACK_DAMAGE = 9.0F;
 
-    // 铁链锯的挖掘效率 (IC2原版: 8.0)
+    // Mining efficiency of the iron chainsaw (IC2 original: 8.0).
     public static final float IRON_CHAINSAW_EFFICIENCY = 8.0F;
 
-    // 铁斧的挖掘等�?
+    // Mining tier of the iron axe.
     private static final Tier IRON_TIER = Tiers.IRON;
 
     /**
-     * 默认构造函数（空电状态）
-     * @param properties 物品属性?
+     * Default constructor. The tool starts with no energy.
+     * @param properties the item properties
      */
     public mio_icif_iron_chainsaw(Properties properties) {
         super(properties, IRON_CHAINSAW_MAX_ENERGY, IRON_CHAINSAW_MAX_ENERGY, "iron_chainsaw", IRON_CHAINSAW_TRANSFER_LIMIT, IRON_CHAINSAW_ENERGY_PER_USE, 1);
     }
 
     /**
-     * 带初始能量的构造函数?
-     * @param properties 物品属性?
-     * @param initialEnergy 初始能量
+     * Constructor with an initial energy value.
+     * @param properties the item properties
+     * @param initialEnergy the initial energy
      */
     public mio_icif_iron_chainsaw(Properties properties, int initialEnergy) {
         super(properties, IRON_CHAINSAW_MAX_ENERGY, IRON_CHAINSAW_MAX_ENERGY - initialEnergy, "iron_chainsaw", IRON_CHAINSAW_TRANSFER_LIMIT, IRON_CHAINSAW_ENERGY_PER_USE, 1);
     }
 
     /**
-     * 获取攻击伤害加成
-     * 铁链锯提取?点伤�?(IC2原版)
+     * Returns the attack damage bonus.
+     * The iron chainsaw adds 9 points of damage (IC2 original value).
      */
     @Override
     public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
@@ -76,63 +76,63 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
     }
 
     /**
-     * 检查是否可以挖掘指定方法?
-     * 铁链锯可以挖掘铁斧能挖的所有方块，以及剪刀能处理的方块
+     * Checks whether the tool can mine the specified block.
+     * The iron chainsaw can mine all blocks that an iron axe can mine. It can also process all blocks that shears can process.
      */
     @Override
     public boolean canAttackBlock(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player) {
-        // 检查是否有足够能量
+        // Check that the tool has sufficient energy.
         ItemStack stack = player.getMainHandItem();
         if (!hasEnoughEnergy(stack)) {
-            // 没电时只能挖掘手可以挖的方块
+            // Without energy, the tool can mine only the blocks that a hand can mine.
             return state.getDestroySpeed(level, pos) > 0 && !state.requiresCorrectToolForDrops();
         }
-        // 有电时可以挖�?
+        // With energy, the chainsaw can mine the block.
         return true;
     }
 
     /**
-     * 获取挖掘速度
-     * 有电时与铁斧/剪刀相当，没电时与手挖一�?
+     * Returns the mining speed.
+     * With energy, the speed matches an iron axe or shears. Without energy, the speed matches the hand.
      */
     @Override
     public float getDestroySpeed(ItemStack stack, BlockState state) {
-        // 检查是否有足够能量
+        // Check that the tool has sufficient energy.
         if (!hasEnoughEnergy(stack)) {
-            // 没电时速度极慢（手挖速度�?
+            // Without energy, the speed is very slow (hand speed).
             return 1.0F;
         }
 
-        // 剪刀类方块（高优先级�?
+        // Shear blocks have high priority.
         if (state.is(Blocks.COBWEB)) {
-            return 15.0F; // 蜘蛛�?- 剪刀速度
+            return 15.0F; // Cobweb: shear speed
         }
         if (state.is(BlockTags.LEAVES)) {
-            return 15.0F; // 树叶 - 剪刀速度
+            return 15.0F; // Leaves: shear speed
         }
         if (state.is(BlockTags.WOOL)) {
-            return 5.0F; // 羊毛 - 剪刀速度
+            return 5.0F; // Wool: shear speed
         }
         if (state.is(Blocks.VINE) || state.is(Blocks.GLOW_LICHEN)) {
-            return 2.0F; // 藤蔓、发光地�?
+            return 2.0F; // Vines and glow lichen
         }
 
-        // 斧子类方法?
+        // Blocks for axes
         if (state.is(BlockTags.MINEABLE_WITH_AXE)) {
             return IRON_CHAINSAW_EFFICIENCY;
         }
 
-        // 对于其他方块，返回基础速度
+        // For all other blocks, return the base speed.
         return 1.0F;
     }
 
     /**
-     * 挖掘方块时消耗能量?
-     * 对齐IC2原版：只在方块实际被破坏后消耗能量，且只在硬度不为0时消耗
+     * Uses energy when the tool mines a block.
+     * This matches the original IC2. The tool uses energy only after the block breaks. It uses energy only when the block hardness is not 0.
      */
     @Override
     public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity miningEntity) {
-        // 只在服务端、方块硬度不为0时消耗能量
+        // Use energy only on the server, and only when the block hardness is not 0.
         if (!level.isClientSide && state.getDestroySpeed(level, pos) != 0.0F) {
             consumeEnergy(stack);
         }
@@ -140,16 +140,16 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
     }
 
     /**
-     * 检查是否正确工�?
+     * Checks if the chainsaw is the correct tool for drops.
      */
     @Override
     public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
-        // 检查是否有足够能量
+        // Check that the tool has sufficient energy.
         if (!hasEnoughEnergy(stack)) {
             return false;
         }
 
-        // 剪刀类方法?- 始终可以处理
+        // Blocks for shears: the tool can always process these blocks.
         if (state.is(Blocks.COBWEB) ||
             state.is(BlockTags.LEAVES) ||
             state.is(BlockTags.WOOL) ||
@@ -159,19 +159,19 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
             return true;
         }
 
-        // 斧子类方法?
+        // Blocks for axes
         if (state.is(BlockTags.MINEABLE_WITH_AXE)) {
-            // 检查方块需要的挖掘等级
+            // Check the mining level that the block needs.
             if (state.is(BlockTags.NEEDS_DIAMOND_TOOL)) {
-                return false; // 需要钻石工�?
+                return false; // Needs a diamond tool.
             }
             if (state.is(BlockTags.NEEDS_IRON_TOOL)) {
-                return true; // 需要铁工具
+                return true; // Needs an iron tool.
             }
             if (state.is(BlockTags.NEEDS_STONE_TOOL)) {
-                return true; // 需要石工具
+                return true; // Needs a stone tool.
             }
-            // 不需要特定工具的方块
+            // Blocks that do not need a specific tool
             return true;
         }
 
@@ -179,23 +179,23 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
     }
 
     /**
-     * 右键点击实体（剪羊毛等）
+     * Handles a right click on an entity (for example, to shear a sheep).
      */
     @Override
     public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity entity, net.minecraft.world.InteractionHand hand) {
-        // 检查是否有足够能量
+        // Check that the tool has sufficient energy.
         if (!hasEnoughEnergy(stack)) {
             return InteractionResult.PASS;
         }
 
-        // 检查实体是否可以被剪切
+        // Check whether the entity can be sheared.
         if (entity instanceof net.neoforged.neoforge.common.IShearable target) {
             BlockPos pos = entity.blockPosition();
             boolean isClient = entity.level().isClientSide();
 
-            // 检查是否可以剪�?
+            // Check if the target can be sheared.
             if (target.isShearable(player, stack, entity.level(), pos)) {
-                // 在服务端执行剪切
+                // Shear the entity on the server.
                 if (!isClient) {
                     List<ItemStack> drops = target.onSheared(player, stack, entity.level(), pos);
                     for (ItemStack drop : drops) {
@@ -203,10 +203,10 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
                     }
                 }
 
-                // 触发剪切游戏事件
+                // Send the shear game event.
                 entity.gameEvent(GameEvent.SHEAR, player);
 
-                // 在服务端消耗能量?
+                // Use energy on the server.
                 if (!isClient) {
                     consumeEnergy(stack);
                 }
@@ -219,7 +219,7 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
     }
 
     /**
-     * 右键点击方块（剥离木头、去蜡等�?
+     * Handles right-click on a block (strips logs and removes wax).
      */
     @Override
     public InteractionResult useOn(UseOnContext context) {
@@ -229,15 +229,15 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
         ItemStack stack = context.getItemInHand();
         Player player = context.getPlayer();
 
-        // 检查是否有足够能量
+        // Check that the tool has sufficient energy.
         if (!hasEnoughEnergy(stack)) {
             return InteractionResult.PASS;
         }
 
-        // 尝试执行斧子的右键功能（剥离木头、去蜡等�?
-        // 使用 NeoForge �?ItemAbilities 系统
+        // Try the axe right-click actions (log stripping and wax removal).
+        // Use the NeoForge ItemAbilities system.
         if (player != null) {
-            // 检查是否是可剥离的木头
+            // Check whether the block is wood that the tool can strip.
             BlockState modifiedState = state.getToolModifiedState(context, ItemAbilities.AXE_STRIP, false);
             if (modifiedState != null) {
                 if (!level.isClientSide) {
@@ -248,7 +248,7 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
 
-            // 检查是否是可去蜡的铜块
+            // Check whether the block is a waxed copper block that the tool can scrape the wax from.
             modifiedState = state.getToolModifiedState(context, ItemAbilities.AXE_SCRAPE, false);
             if (modifiedState != null) {
                 if (!level.isClientSide) {
@@ -259,7 +259,7 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
 
-            // 检查是否是可除锈的铜块
+            // Check whether the block is an oxidized copper block that the tool can scrape.
             modifiedState = state.getToolModifiedState(context, ItemAbilities.AXE_WAX_OFF, false);
             if (modifiedState != null) {
                 if (!level.isClientSide) {
@@ -275,21 +275,21 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
     }
 
     /**
-     * 检查是否可以执行特定动作（剪刀动作、斧子动作）
+     * Checks whether the tool can do a specific action (shear actions and axe actions).
      */
     @Override
     public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
-        // 检查是否有足够能量
+        // Check that the tool has sufficient energy.
         if (!hasEnoughEnergy(stack)) {
             return false;
         }
 
-        // 支持剪刀的所有动作?
+        // Support all shear actions.
         if (ItemAbilities.DEFAULT_SHEARS_ACTIONS.contains(itemAbility)) {
             return true;
         }
 
-        // 支持斧子的所有动作?
+        // Support all axe actions.
         if (ItemAbilities.DEFAULT_AXE_ACTIONS.contains(itemAbility)) {
             return true;
         }
@@ -298,25 +298,25 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
     }
 
     /**
-     * 重写：防止链锯损坏?
+     * Override: prevents damage to the chainsaw.
      */
     @Override
     public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, T entity, java.util.function.Consumer<net.minecraft.world.item.Item> onBroken) {
-        // 电力链锯不通过damageItem损坏，而是通过消耗能量?
+        // The electric chainsaw does not take damage through damageItem. It uses energy instead.
         return 0;
     }
 
     /**
-     * 重写：链锯永远不会消耗?
+     * Override: the chainsaw does not wear out.
      */
     @Override
     public boolean isDamaged(ItemStack stack) {
-        // 当能量未满时返回true，显示耐久度信息?
+        // Return true when the energy is not full. This shows the durability bar.
         return getEnergy(stack) < getMaxEnergy();
     }
 
     /**
-     * 是否可以附魔
+     * Checks whether the tool can be enchanted.
      */
     @Override
     public boolean isEnchantable(ItemStack stack) {
@@ -324,7 +324,7 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
     }
 
     /**
-     * 获取附魔能力值（与铁斧相同）
+     * Gets the enchantment value (the same as an iron axe).
      */
     @Override
     public int getEnchantmentValue() {

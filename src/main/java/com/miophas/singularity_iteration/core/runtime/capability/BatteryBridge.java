@@ -4,12 +4,12 @@ package com.miophas.singularity_iteration.core.runtime.capability;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 电池内部类型的集中适配层。
+ * Central adapter layer for the internal battery types.
  *
- * <p>{@code MioIcifCapabilitiesImpl.BatteryItemImpl} 通过此类访问内部电池组件，
- * 而非直接引用 {@code Items.Normal.BatteryEnergy} 或 {@code Items.Normal.mio_icif_data_components}。
+ * <p>{@code MioIcifCapabilitiesImpl.BatteryItemImpl} uses this class to access the internal battery components.
+ * It does not refer directly to {@code Items.Normal.BatteryEnergy} or {@code Items.Normal.mio_icif_data_components}.
  *
- * <p>此类为包级私有，不对外暴露。
+ * <p>This class is package-private. It is not exposed outside the package.
  */
 final class BatteryBridge {
 

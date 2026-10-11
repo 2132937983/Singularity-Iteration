@@ -177,6 +177,13 @@ public class mio_icif_oil_rig_core_entity extends MultiblockEnergyCore {
 
         BlockPos targetPos = pos.offset(ox, -2 - offsetY, oz);
         drillCoord = targetPos;
+        // Below the world floor (End, void and skyblock worlds have no bedrock): the column is
+        // done. Without this check the cursor never moved and the rig drilled void air forever.
+        if (targetPos.getY() < level.getMinBuildHeight()) {
+            offsetY = 0;
+            offsetFlag++;
+            return false;
+        }
 
         BlockState targetState = level.getBlockState(targetPos);
         if (!targetState.isAir()) {
@@ -204,6 +211,7 @@ public class mio_icif_oil_rig_core_entity extends MultiblockEnergyCore {
     }
 
     private int[] getOffsetCoord(int flag) {
+        flag = Math.max(0, flag);                 // a damaged save can hold a negative cursor
         int scale = flag / 9 + 1;
         int idx = flag % 9;
         int[][] base = {

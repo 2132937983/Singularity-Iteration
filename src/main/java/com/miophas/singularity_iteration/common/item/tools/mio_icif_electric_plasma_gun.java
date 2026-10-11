@@ -40,13 +40,11 @@ public class mio_icif_electric_plasma_gun extends mio_icif_tool_elc implements I
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         
-        com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.info("PlasmaGun use() called! Energy: {}, Required: {}", getEnergy(stack), ENERGY_PER_SHOT);
 
         if (!hasEnoughEnergy(stack, ENERGY_PER_SHOT)) {
             if (!level.isClientSide) {
                 player.sendSystemMessage(Component.translatable("message.mio_icif.electric_plasma_gun.no_energy"));
             }
-            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.info("PlasmaGun: Not enough energy!");
             return InteractionResultHolder.fail(stack);
         }
 
@@ -69,7 +67,6 @@ public class mio_icif_electric_plasma_gun extends mio_icif_tool_elc implements I
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 com.miophas.singularity_iteration.common.registry.mio_icif_sounds.PLASMA_SHOT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F + level.random.nextFloat() * 0.1F);
             
-            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.info("PlasmaGun: Bullet fired!");
         }
 
         player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);

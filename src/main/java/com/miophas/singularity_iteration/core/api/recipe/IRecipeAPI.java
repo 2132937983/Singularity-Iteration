@@ -24,14 +24,14 @@ public interface IRecipeAPI {
     RecipeType<?> getCentrifugeRecipeType();
 
     /**
-     * @deprecated 金属成型机已拆分为卷板机、切割机和压膜器。
-     * 请使用 {@link #getRollingMachineRecipeType()}、{@link #getCuttingRecipeType()} 或 {@link #getExtrudingRecipeType()} 代替。
+     * @deprecated The metal former is now split into the rolling machine, the cutting machine and the extruder.
+     * Use {@link #getRollingMachineRecipeType()}, {@link #getCuttingRecipeType()} or {@link #getExtrudingRecipeType()} instead.
      */
     @Deprecated
     RecipeType<?> getMetalFormerRecipeType();
 
     /**
-     * @deprecated 卷板机配方类型。请使用 {@link #getMetalFormerRecipeType()} 代替。
+     * @deprecated Rolling machine recipe type. Use {@link #getMetalFormerRecipeType()} instead.
      */
     @Deprecated
     default RecipeType<?> getRollingMachineRecipeType() { return getMetalFormerRecipeType(); }
@@ -79,23 +79,23 @@ public interface IRecipeAPI {
     RecipeType<?> getFluidRefiningRecipeType();
 
     /**
-     * 查找与输入物品匹配的配方
+     * Finds a recipe that matches the input item.
      *
-     * <p><b>⚠️ 重要警告：</b>此方法仅检查配方的第一个 Ingredient 是否匹配输入物品。
-     * 对于多成分配方（如焊接机、精密组装机等需要多个输入的配方），此方法可能返回
-     * <b>错误的匹配结果</b>，因为它不会验证其他输入槽位是否满足。
+     * <p><b>WARNING:</b> This method checks only if the first Ingredient of the recipe matches the input item.
+     * For recipes with more than one ingredient (for example welder or precision assembler recipes that need more than one input),
+     * this method can return a <b>wrong match</b>. It does not check the other input slots.
      *
-     * <p><b>正确用法：</b>
+     * <p><b>Correct use:</b>
      * <ul>
-     *   <li>✅ 单输入配方：压缩机、粉碎机、提取器等 - 使用此方法</li>
-     *   <li>❌ 多输入配方：焊接机、精密组装机、聚变反应堆等 - 使用 {@link #findRecipeMultiInput(RecipeType, ItemStack[], Level)}</li>
+     *   <li>Single-input recipes (compressor, macerator, extractor and similar): use this method.</li>
+     *   <li>Multi-input recipes (welder, precision assembler, fusion reactor and similar): use {@link #findRecipeMultiInput(RecipeType, ItemStack[], Level)}.</li>
      * </ul>
      *
-     * @deprecated 此方法仅适用于单输入配方。对于多输入配方，请使用 {@link #findRecipeMultiInput(RecipeType, ItemStack[], Level)}。
-     * @param type 配方类型
-     * @param input 输入物品
-     * @param level 世界
-     * @return 匹配的配方，如果没有则返回 Optional.empty()
+     * @deprecated This method is correct only for single-input recipes. For multi-input recipes, use {@link #findRecipeMultiInput(RecipeType, ItemStack[], Level)}.
+     * @param type the recipe type
+     * @param input the input item
+     * @param level the world
+     * @return the matching recipe, or Optional.empty() if there is no match
      */
     @Deprecated
     <T extends Recipe<?>> Optional<RecipeHolder<T>> findRecipe(RecipeType<T> type, ItemStack input, Level level);
@@ -110,10 +110,10 @@ public interface IRecipeAPI {
 
     Optional<? extends RecipeHolder<?>> findCentrifugeRecipe(ItemStack input, Level level);
 
-    // ========== 便捷配方查找（default 方法委托到 findRecipe） ==========
+    // ========== Convenience recipe lookups (default methods call findRecipe) ==========
 
     /**
-     * 鏌ユ壘楂樼倝閰嶆柟
+     * Finds the blast furnace recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findBlastFurnaceRecipe(ItemStack input, Level level) {
@@ -121,7 +121,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找罐装机配方
+     * Finds the canner recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findCannerRecipe(ItemStack input, Level level) {
@@ -129,7 +129,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找方块切割机配方
+     * Finds the block cutter recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findBlockCutterRecipe(ItemStack input, Level level) {
@@ -137,7 +137,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找切割机配方
+     * Finds the cutting machine recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findCuttingRecipe(ItemStack input, Level level) {
@@ -145,7 +145,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找卷板机配方
+     * Finds the rolling machine recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findRollingRecipe(ItemStack input, Level level) {
@@ -153,7 +153,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找压膜器配方
+     * Finds the extruder recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findExtrudingRecipe(ItemStack input, Level level) {
@@ -161,7 +161,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找车床配方
+     * Finds the lathe recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findLatheRecipe(ItemStack input, Level level) {
@@ -169,7 +169,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找激光雕刻机配方
+     * Finds the laser engraver recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findLaserEngraverRecipe(ItemStack input, Level level) {
@@ -177,7 +177,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找真空冷冻机配方
+     * Finds the vacuum freezer recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findVacuumFreezerRecipe(ItemStack input, Level level) {
@@ -185,7 +185,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找搅拌机配方
+     * Finds the blender recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findBlenderRecipe(ItemStack input, Level level) {
@@ -193,7 +193,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找电解槽配方
+     * Finds the electrolyzer recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findElectrolyzerRecipe(ItemStack input, Level level) {
@@ -201,7 +201,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找发酵罐配方
+     * Finds the fermenter recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findFermenterRecipe(ItemStack input, Level level) {
@@ -209,7 +209,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找回收机配方
+     * Finds the recycler recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findRecyclerRecipe(ItemStack input, Level level) {
@@ -217,7 +217,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 鏌ユ壘绛夌�诲瓙鐔旂倝閰嶆柟
+     * Finds the plasma furnace recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findPlasmaFurnaceRecipe(ItemStack input, Level level) {
@@ -225,7 +225,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找物质制造机配方
+     * Finds the mass fabricator recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findMassFabricatorRecipe(ItemStack input, Level level) {
@@ -233,7 +233,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找复制机配方
+     * Finds the replicator recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findReplicatorRecipe(ItemStack input, Level level) {
@@ -241,7 +241,7 @@ public interface IRecipeAPI {
     }
 
     /**
-     * 查找扫描机配方
+     * Finds the scanner recipe for the input item.
      */
     @SuppressWarnings("unchecked")
     default Optional<? extends RecipeHolder<?>> findScannerRecipe(ItemStack input, Level level) {
@@ -255,7 +255,7 @@ public interface IRecipeAPI {
         return findRecipe((RecipeType) getNeutronPolymerizerRecipeType(), input, level);
     }
 
-    // ========== 流体精炼配方 API ==========
+    // ========== Fluid refining recipe API ==========
 
     Optional<? extends RecipeHolder<?>> findFluidRefiningRecipe(ItemStack inputItem, net.neoforged.neoforge.fluids.FluidStack inputFluid, Level level);
 
@@ -263,58 +263,58 @@ public interface IRecipeAPI {
 
     net.neoforged.neoforge.fluids.FluidStack getFluidRefiningOutputFluid(RecipeHolder<?> recipe);
 
-    // ========== 配方信息访问 API ==========
+    // ========== Recipe information API ==========
 
     /**
-     * 获取配方的输出物品
+     * Gets the output item of the recipe.
      *
-     * @param recipe 配方
-     * @return 输出物品，如果配方为null则返回空ItemStack
+     * @param recipe the recipe
+     * @return the output item, or an empty ItemStack if the recipe is null
      */
     ItemStack getRecipeOutput(RecipeHolder<?> recipe);
 
     /**
-     * 获取配方的处理时间（tick）
+     * Gets the process time of the recipe (ticks).
      *
-     * @param recipe 配方
-     * @return 处理时间（tick），如果配方为null或无法获取则返回200
+     * @param recipe the recipe
+     * @return the process time (ticks), or 200 if the recipe is null or the value is not available
      */
     int getRecipeProcessTime(RecipeHolder<?> recipe);
 
     /**
-     * 获取配方的能耗（EU）
+     * Gets the energy cost of the recipe (EU).
      *
-     * @param recipe 配方
-     * @return 总能耗（EU），如果配方为null或无法获取则返回0
+     * @param recipe the recipe
+     * @return the total energy cost (EU), or 0 if the recipe is null or the value is not available
      */
     long getRecipeEnergyCost(RecipeHolder<?> recipe);
 
     /**
-     * 获取配方的每tick能耗（EU/tick）
+     * Gets the energy cost for each tick of the recipe (EU/tick).
      *
-     * @param recipe 配方
-     * @return 每tick能耗（EU），如果配方为null或无法获取则返回0
+     * @param recipe the recipe
+     * @return the energy for each tick (EU), or 0 if the recipe is null or the value is not available
      */
     long getRecipeEnergyPerTick(RecipeHolder<?> recipe);
 
     /**
-     * 获取配方的输入物品消耗数量
+     * Gets the quantity of input items that the recipe uses.
      *
-     * @param recipe 配方
-     * @return 消耗数量，如果配方为null或无法获取则返回1
+     * @param recipe the recipe
+     * @return the quantity used, or 1 if the recipe is null or the value is not available
      */
     int getRecipeIngredientCount(RecipeHolder<?> recipe);
 
     /**
-     * 多输入配方查找
+     * Finds a recipe with more than one input.
      *
-     * <p>用于焊接机、精密组装机、聚变反应堆等需要多个输入物品的配方。
-     * 该方法会检查所有输入槽是否与配方的原料匹配。
+     * <p>Use it for welder, precision assembler, fusion reactor and other recipes that need more than one input item.
+     * This method checks if all input slots match the ingredients of the recipe.
      *
-     * @param type 配方类型
-     * @param inputs 输入物品数组
-     * @param level 世界
-     * @return 匹配的配方，如果没有则返回 Optional.empty()
+     * @param type the recipe type
+     * @param inputs the input items
+     * @param level the world
+     * @return the matching recipe, or Optional.empty() if there is no match
      */
     <T extends Recipe<?>> Optional<RecipeHolder<T>> findRecipeMultiInput(RecipeType<T> type, ItemStack[] inputs, Level level);
 
@@ -325,12 +325,12 @@ public interface IRecipeAPI {
     Optional<? extends RecipeHolder<?>> findFusionReactorRecipe(ItemStack[] inputs, Level level);
 
     /**
-     * 清除配方缓存
+     * Clears the recipe cache.
      * 
-     * <p>当配方系统发生变化时（如数据包重载、动态注册配方等），
- * 应调用此方法清除存，确保查询结果正确。
+     * <p>When the recipe system changes (for example a data pack reload or dynamic recipe registration),
+     * call this method to clear the cache. This makes sure that lookups give correct results.
      * 
-     * <p>附属模组在运行时注册新配方后应调用此方法。
+     * <p>Add-on mods must call this method after they register new recipes at runtime.
      */
     void invalidateCache();
 }

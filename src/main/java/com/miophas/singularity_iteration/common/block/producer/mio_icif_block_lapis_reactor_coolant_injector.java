@@ -24,15 +24,17 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 青金石反应堆冷却液注入器方方块? *
- * 特性：
- * - 正面对着核反应堆或核反应�? * - 无延迟修复青金石冷凝模块
- * - 需要青金石块和 EU 能量
+ * Lapis reactor coolant injector block.
+ *
+ * Properties:
+ * - The front faces a nuclear reactor or a reactor chamber.
+ * - It repairs lapis condensators with no delay.
+ * - It needs lapis lazuli blocks and EU.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_lapis_reactor_coolant_injector extends mio_icif_entity_block {
 
-    // 工作状态属性（用于显示是否正在修复�
+    // Working state. It shows if the injector is repairing.
 public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     public static final MapCodec<mio_icif_block_lapis_reactor_coolant_injector> CODEC = RecordCodecBuilder.mapCodec(instance ->
@@ -79,7 +81,7 @@ public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_lapis_reactor_coolant_injector injector) {
-                // 掉落物品栏中的物�
+                // Drop the items in the inventory.
             for (int i = 0; i < injector.getItemHandler().getSlots(); i++) {
                     ItemStack stack = injector.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {

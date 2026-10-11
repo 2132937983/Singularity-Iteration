@@ -17,12 +17,11 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 升级插件 API 实现
+ * Implementation of the upgrade API.
  */
 @SuppressWarnings("null")
 public class UpgradeAPIImpl implements IUpgradeAPI {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UpgradeAPIImpl.class);
 
     @Override
     public boolean supportsUpgrades(Level world, BlockPos pos) {
@@ -214,14 +213,14 @@ public class UpgradeAPIImpl implements IUpgradeAPI {
             case ADVANCED_CIRCUIT -> 4;
             case MOLECULAR_TRANSFORM -> 1;
             case QUANTUM_CORE -> 1;
-            // CUSTOM 类型没有硬性限制，实际限制由机器的升级槽数量决定
-            // 返回 4 作为合理的默认上限，避免调用方误以为可以装几十亿个升级
+            // The CUSTOM type has no fixed limit. The number of upgrade slots of the machine sets the real limit.
+            // Return 4 as a sensible default limit, so that callers do not think that they can install billions of upgrades.
             case CUSTOM -> 4;
         };
     }
 
     /**
-     * 升级效果实现
+     * Implementation of upgrade effects.
      */
     private static class UpgradeEffectImpl implements IUpgradeEffect {
         private final double speedMultiplier;

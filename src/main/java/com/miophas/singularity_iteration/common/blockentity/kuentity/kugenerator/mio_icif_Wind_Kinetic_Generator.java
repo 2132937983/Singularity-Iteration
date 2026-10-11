@@ -198,7 +198,7 @@ public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlo
 
                     // Do not force-load adjacent chunks during the rotor scan. An unloaded
                     // slice is conservatively treated as blocked until it is loaded.
-                    if (!level.hasChunkAt(checkPos)) {
+                    if (!level.isLoaded(checkPos)) {
                         occupied = true;
                         continue;
                     }

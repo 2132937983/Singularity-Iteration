@@ -5,23 +5,44 @@ import net.minecraft.core.BlockPos;
 import java.util.*;
 
 /**
- * 多方块结构验证结果? */
+ * Result of one multiblock shape check.
+ *
+ * <p>{@link mio_icif_multiblock_validator#validate} makes this object.
+ * {@link mio_icif_multiblock_manager#tryForm} reads it. If the result is valid,
+ * the manager copies the member positions and the structure data into its own state.
+ *
+ * <p>Contents:
+ * <ul>
+ *   <li>valid flag: {@code true} if the shape is complete.</li>
+ *   <li>error message: the reason for a failure. It is for logs and debugging.
+ *       It is {@code null} for a result from {@link #success}.</li>
+ *   <li>member positions: all world positions of the structure, the controller
+ *       included. It is empty for a failure result.</li>
+ *   <li>structure data: extra values for the controller block entity, for example
+ *       module counts ({@code "inputModuleCount"}) or the redstone port positions
+ *       ({@code "redstonePortPositions"}). It is empty for a failure result.</li>
+ * </ul>
+ *
+ * <p>The getters return read-only views. The views are not copies. If the caller
+ * changes the source set or map after it makes the result, the result also changes.
+ */
 @SuppressWarnings("null")
 public class mio_icif_multiblock_validation_result {
     
-    // 是否验证通过
+    // True if the shape is complete.
     private final boolean valid;
     
-    // 验证失败的原�
+    // Reason for the validation failure. Null for a result from success().
 private final String errorMessage;
     
-    // 结构中的所有方块位置
+    // All member positions, the controller included. Read-only view.
 private final Set<BlockPos> structureBlocks;
     
-    // 结构数据（可用于存储额外的结构信息）
+    // Extra structure values, for example module counts. Read-only view.
     private final Map<String, Object> structureData;
     
-    // 私有构造函数，使用 Builder 模式创建
+    // Private constructor. Use the static factory methods or the Builder.
+    // A null set or map becomes an empty read-only collection.
     private mio_icif_multiblock_validation_result(boolean valid, String errorMessage, 
                                                    Set<BlockPos> structureBlocks, 
                                                    Map<String, Object> structureData) {
@@ -32,14 +53,21 @@ private final Set<BlockPos> structureBlocks;
     }
     
     /**
-     * 创建验证成功的结果
- */
+     * Makes a valid result with no structure data.
+     *
+     * @param structureBlocks all member positions, the controller included
+     * @return a valid result
+     */
     public static mio_icif_multiblock_validation_result success(Set<BlockPos> structureBlocks) {
         return new mio_icif_multiblock_validation_result(true, null, structureBlocks, new HashMap<>());
     }
     
     /**
-     * 创建验证成功的结果（带结构数据）
+     * Makes a valid result with structure data.
+     *
+     * @param structureBlocks all member positions, the controller included
+     * @param structureData the extra structure values, or {@code null} for none
+     * @return a valid result
      */
     public static mio_icif_multiblock_validation_result success(Set<BlockPos> structureBlocks, 
                                                                  Map<String, Object> structureData) {
@@ -47,50 +75,69 @@ private final Set<BlockPos> structureBlocks;
     }
     
     /**
-     * 创建验证失败的结果
- */
+     * Makes a failure result.
+     *
+     * @param errorMessage the reason for the failure
+     * @return a failure result with no members and no structure data
+     */
     public static mio_icif_multiblock_validation_result failure(String errorMessage) {
         return new mio_icif_multiblock_validation_result(false, errorMessage, null, null);
     }
     
     /**
-     * 检查是否验证通过
+     * Tells if the shape is complete.
+     *
+     * @return {@code true} for a valid result
      */
     public boolean isValid() {
         return valid;
     }
     
     /**
-     * 获取错误信息
+     * Gets the reason for the failure.
+     *
+     * @return the error message. It is {@code null} for a result from
+     *         {@link #success}. It is {@code ""} for a Builder result with no message.
      */
     public String getErrorMessage() {
         return errorMessage;
     }
     
     /**
-     * 获取结构中的所有方块位置
- */
+     * Gets all member positions.
+     *
+     * @return a read-only view of the positions, the controller included
+     */
     public Set<BlockPos> getStructureBlocks() {
         return structureBlocks;
     }
     
     /**
-     * 获取结构数据
+     * Gets the extra structure values.
+     *
+     * @return a read-only view of the map
      */
     public Map<String, Object> getStructureData() {
         return structureData;
     }
     
     /**
-     * 创建 Builder
+     * Makes a new Builder.
+     *
+     * @return a Builder with the valid flag set to {@code false}
      */
     public static Builder builder() {
         return new Builder();
     }
     
     /**
-     * 验证结果构建�
- */
+     * Builder for the validation result.
+     *
+     * <p>The valid flag starts as {@code false}. Call {@link #setValid} with
+     * {@code true} for a valid result. Do not change the Builder after
+     * {@link #build}. The result keeps a view of the Builder collections, so a
+     * later change also changes the result.
+     */
     public static class Builder {
         private boolean valid = false;
         private String errorMessage = "";

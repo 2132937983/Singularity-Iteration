@@ -4,59 +4,62 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 车床可加工物品接口
- * 实现此接口的物品可以在车床上进行加工，通过状态变化产出不同产物。
- * 参考 IC2 的 ILatheItem
+ * Interface for items that a lathe can process.
+ * A lathe can process items that implement this interface. The item gives different products as its state changes.
+ * Based on ILatheItem of IC2.
  */
 public interface ILatheItem {
     /**
-     * 获取物品宽度（车床加工参数）
-     * 如果物品在车床中加工需要旋转多个面
+     * Returns the width of the item (a lathe processing parameter).
+     * This is the number of faces that the lathe must turn when it processes the item.
      */
     int getWidth(ItemStack stack);
 
     /**
-     * 获取当前车床加工状态
-     * 返回数组表示每个面的加工状态（0=未加工，1=已加工）
-     * 索引范围 0~getWidth()-1
+     * Returns the current lathe processing state.
+     * The returned array gives the state of each face (0 = not processed, 1 = processed).
+     * The index range is 0 to getWidth()-1.
      */
     int[] getCurrentState(ItemStack stack);
 
     /**
-     * 设置指定位置的车床加工状态
-     * @param position 面索引 (0-4)
-     * @param value 状态值
+     * Sets the lathe processing state at the given position.
+     *
+     * @param position the face index (0-4)
+     * @param value the state value
      */
     void setState(ItemStack stack, int position, int value);
 
     /**
-     * 获取指定位置车床加工后的输出物品
-     * @param position 面索引 (0-4)
+     * Returns the output item after lathe processing at the given position.
+     *
+     * @param position the face index (0-4)
      */
     ItemStack getOutputItem(ItemStack stack, int position);
 
     /**
-     * 获取指定位置车床加工后的输出概率 (0.0~1.0)
-     * @param position 面索引 (0-4)
+     * Returns the output chance after lathe processing at the given position (0.0 to 1.0).
+     *
+     * @param position the face index (0-4)
      */
     float getOutputChance(ItemStack stack, int position);
 
     /**
-     * 获取物品纹理路径
+     * Returns the texture path of the item.
      */
     ResourceLocation getTexture(ItemStack stack);
 
     /**
-     * 获取物品硬度（车床加工参数）
+     * Returns the hardness of the item (a lathe processing parameter).
      */
     int getHardness(ItemStack stack);
 
     /**
-     * 车床工具接口
+     * Interface for lathe tools.
      */
     interface ILatheTool extends ICustomDamageItem {
         /**
-         * 获取工具硬度
+         * Returns the hardness of the tool.
          */
         int getHardness(ItemStack stack);
     }

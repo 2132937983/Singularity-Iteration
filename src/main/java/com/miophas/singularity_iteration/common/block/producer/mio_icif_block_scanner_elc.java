@@ -25,8 +25,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 模式扫描机方块类
- * 用于扫描物品，分析复制该物品所需的UU流体和电力? */
+ * Pattern scanner block.
+ * It scans an item and calculates the UU fluid and the electricity that are necessary to replicate the item. */
 @SuppressWarnings("null")
 public class mio_icif_block_scanner_elc extends mio_icif_entity_block {
 
@@ -111,7 +111,7 @@ public class mio_icif_block_scanner_elc extends mio_icif_entity_block {
                 return 15;
             }
             if (scanner.isWorking()) {
-                // 根据进度返回信号强度
+                // Return the signal strength from the progress.
                 return (scanner.getProgress() * 14) / scanner.getMaxProgress() + 1;
             }
         }
@@ -134,7 +134,7 @@ public class mio_icif_block_scanner_elc extends mio_icif_entity_block {
             if (blockEntity instanceof mio_icif_scanner_elc scanner) {
                 mio_icif_scanner_elc.tick(lvl, pos, blockState, scanner);
 
-                // 更新方块状态
+                // Update the block state.
             boolean isScanning = scanner.isWorking();
                 boolean isComplete = scanner.isScanComplete();
                 boolean hasPower = scanner.getEnergyStorage().getAmount() > 0;

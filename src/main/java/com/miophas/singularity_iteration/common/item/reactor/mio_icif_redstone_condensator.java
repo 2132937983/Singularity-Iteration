@@ -1,21 +1,26 @@
 package com.miophas.singularity_iteration.common.item.reactor;
 
 /**
- * 红石冷凝模块
+ * Redstone condensator.
  *
- * 特性：
- * - 能够吸收附近元件20,000点热�? * - 不能被其他元件（如散热片）散�? * - 使用红石和冷凝模块在工作台上合成可将其修复? * - 每个红石修复冷凝模块10000点耐久
- * - 正常工作时会显示耐久�? * - 满热后无法继续吸热，但不会消耗? */
+ * Properties:
+ * - It absorbs up to 20,000 heat from nearby components.
+ * - Other components, such as heat vents, cannot cool it.
+ * - Craft it with redstone in a crafting table to repair it.
+ * - Each redstone repairs 10000 points of durability.
+ * - It shows its durability while it works.
+ * - When it is full of heat, it stops absorbing heat. It is not destroyed.
+ */
 @SuppressWarnings("null")
 public class mio_icif_redstone_condensator extends mio_icif_condensator {
 
-    // 最大热量存�
+    // Maximum heat storage
 public static final int MAX_HEAT = 20000;
 
-    // 每tick吸收的热�
+    // Heat absorbed per tick
 public static final int ABSORPTION_RATE = 2; // 每tick吸收2点（已翻倍）
 
-    // 红石修复�
+    // Durability that one redstone repairs
 public static final int REDSTONE_REPAIR = 10000;
 
     // 青金石修复量（红石冷凝模块不使用青金石修复）

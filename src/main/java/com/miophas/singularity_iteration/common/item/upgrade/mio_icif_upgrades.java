@@ -6,7 +6,8 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 工业2升级插件注册�? */
+ * Registry for IC2 upgrade modules.
+ */
 @SuppressWarnings("null")
 public class mio_icif_upgrades {
 
@@ -32,7 +33,7 @@ public static final DeferredItem<mio_icif_upgrade> TRANSFORMER_UPGRADE = UPGRADE
     public static final DeferredItem<mio_icif_upgrade> PULLING_UPGRADE = UPGRADES.register("upgrade/pulling_upgrade",
         () -> new mio_icif_upgrade(new net.minecraft.world.item.Item.Properties(), mio_icif_upgrade.UpgradeType.PULLING));
 
-    // 流体弹出升级（对�?mcmod item/5409�
+    // Fluid ejector upgrade (mcmod item/5409)
 public static final DeferredItem<mio_icif_upgrade> FLUID_EJECTOR_UPGRADE = UPGRADES.register("upgrade/fluid_ejector_upgrade",
         () -> new mio_icif_upgrade(new net.minecraft.world.item.Item.Properties(), mio_icif_upgrade.UpgradeType.FLUID_EJECTOR));
 
@@ -40,7 +41,7 @@ public static final DeferredItem<mio_icif_upgrade> FLUID_EJECTOR_UPGRADE = UPGRA
     public static final DeferredItem<mio_icif_upgrade> REDSTONE_INVERTER_UPGRADE = UPGRADES.register("upgrade/redstone_inv_upgrade",
         () -> new mio_icif_upgrade(new net.minecraft.world.item.Item.Properties(), mio_icif_upgrade.UpgradeType.REDSTONE_INVERTER));
 
-    // 流体抽入升级（对�?mcmod item/37497，新增）
+    // Fluid pulling upgrade (mcmod item/37497, new addition)
     public static final DeferredItem<mio_icif_upgrade> FLUID_PULLING_UPGRADE = UPGRADES.register("upgrade/fluid_pulling_upgrade",
         () -> new mio_icif_upgrade(new net.minecraft.world.item.Item.Properties(), mio_icif_upgrade.UpgradeType.FLUID_PULLING));
 

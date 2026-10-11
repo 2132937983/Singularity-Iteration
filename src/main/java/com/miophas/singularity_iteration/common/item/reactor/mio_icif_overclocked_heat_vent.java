@@ -1,16 +1,22 @@
 package com.miophas.singularity_iteration.common.item.reactor;
 
 /**
- * 超频散热�? *
- * 特性（参考IC2）：
- * - 最大热量存储：10000�? * - 自身散热速度�?0�?tick
- * - 从反应堆吸热速度�?8�?tick
- * - 不会从燃料棒吸收热量
- * - 由于吸热速度大于散热速度，多余热量会积累
- * - 必须配合热交换器或元件散热片来散发多余热�? * - 超过热量上限会熔毁（耐久度变化?�? *
- * 使用建议�? * - 配合元件散热片使用（四周都摆满）
- * - 在流体反应堆中确保冷却液循环顺畅
- * - 可以使用脉冲模式（运�?秒停止?秒）来避免过程? */
+ * Overclocked heat vent.
+ *
+ * Properties (based on IC2):
+ * - Maximum heat storage: 1000.
+ * - Self cooling: 20 heat per tick.
+ * - Heat absorption from the reactor: 36 heat per tick.
+ * - It does not absorb heat from fuel rods.
+ * - The absorption is higher than the cooling. Excess heat collects in the vent.
+ * - Use a heat exchanger or component heat vents to remove the excess heat.
+ * - The vent melts when its heat exceeds the maximum.
+ *
+ * Recommendations:
+ * - Put component heat vents on all sides.
+ * - In a fluid reactor, make sure that the coolant flows freely.
+ * - Use pulse mode (run and stop the reactor in cycles) to prevent overheating.
+ */
 @SuppressWarnings("null")
 public class mio_icif_overclocked_heat_vent extends mio_icif_heat_vent {
 

@@ -1,15 +1,19 @@
 package com.miophas.singularity_iteration.common.item.reactor;
 
 /**
- * 基础热交换器
+ * Basic heat exchanger (reactor component).
  *
- * 特性：
- * - 自身可以储存2500点热�? * - 向相邻其他元件传�?4点热�? * - 向核反应堆自身传�?点热�? * - 正常工作时会显示耐久�? * - 超过自身热量上限耐久度将会变化?（消失）
+ * Properties:
+ * - It stores up to {@link #MAX_HEAT} (2500) heat.
+ * - It moves up to {@link #TRANSFER_TO_ADJACENT} heat per cycle with each adjacent component.
+ * - It moves up to {@link #TRANSFER_TO_REACTOR} heat per cycle with the reactor hull.
+ * - During normal operation, the durability bar shows the stored heat.
+ * - When the stored heat goes above the limit, the component is destroyed.
  */
 @SuppressWarnings("null")
 public class mio_icif_basic_heat_switch extends mio_icif_heat_switch {
 
-    // 最大热量存�
+    // Maximum heat that this component stores.
 public static final int MAX_HEAT = 2500;
 
     // 向相邻元件传递的热量

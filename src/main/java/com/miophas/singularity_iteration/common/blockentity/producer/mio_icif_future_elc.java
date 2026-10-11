@@ -448,8 +448,8 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     // ========== 业务逻辑 - 价格历史 ==========
     
     /**
-     * 获取货品价格历史（20天）
-     * 返回列表：索引0=19天前，索引9=今天
+     * Gets the price history of a commodity (20 days).
+     * The returned list uses index 0 = 19 days ago and index 19 = today.
      */
     public List<Integer> getPriceHistory(FutureCommodity commodity) {
         if (commodity == null) {
@@ -478,7 +478,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     }
     
     /**
- * 更新价格历史存（同步到客户端）
+ * Updates the price history cache. The cache is synchronized to the client.
      */
     private void updatePriceHistoryCache() {
         FutureCommodity commodity = getSelectedCommodity();
@@ -809,7 +809,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     // ========== 业务逻辑 - 玩家货币 ==========
     
     /**
-     * 计算玩家拥有的货币数据
+     * Counts the coins that the player has.
  */
     public int countPlayerCoins(Player player) {
         long count = 0;
@@ -822,7 +822,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     }
     
     /**
- * 更新玩家货币存（用于显示）
+ * Updates the player coin cache. The cache is used for display.
      */
     public void updatePlayerCoinsCache(Player player) {
         if (tradeInProgress) return;
@@ -831,7 +831,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         syncToClient();
     }
     
-    // ========== 业务逻辑 - 分类和分配?==========
+    // ========== Business logic - categories and pages ==========
     
     /**
      * 获取当前分类下的货品列表

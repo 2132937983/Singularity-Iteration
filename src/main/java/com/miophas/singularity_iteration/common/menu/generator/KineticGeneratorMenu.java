@@ -9,7 +9,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 动能发电机的容器菜单独?
+ * Container menu for the kinetic generator.
  */
 @SuppressWarnings({"null"}) public class KineticGeneratorMenu extends mio_icif_generator_menu {
 
@@ -102,6 +102,6 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        // 动能发电机没有槽位?
+        // The kinetic generator has no slots.
     }
 }

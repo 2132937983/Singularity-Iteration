@@ -6,7 +6,7 @@ import net.minecraft.world.item.ItemStack;
 /** Public jetpack contract, independently implemented from the frozen SI ABI. */
 public interface IJetpackItem extends IBatteryItem, IArmorModeFeatureItem {
 
-    /** 喷气背包模式特性键（模式型特性）。 */
+    /** The feature key of the jetpack mode (a mode-type feature). */
     String FEATURE_MODE_KEY = "jetpack_mode";
 
     enum JetpackMode {
@@ -53,10 +53,12 @@ public interface IJetpackItem extends IBatteryItem, IArmorModeFeatureItem {
     }
 
     /**
-     * 默认模式切换：悬停 ↔ 飞行。
+     * Default mode switch: hover ↔ flight. Any mode other than HOVER switches to HOVER.
      *
-     * <p>喷气背包无需额外实现 {@link IArmorModeFeatureItem}，GUI / 命令 / Tooltip
-     * 会通过本默认实现统一驱动。
+     * <p>A jetpack does not need its own {@link IArmorModeFeatureItem} implementation. The GUI, the command and the tooltip
+     * all use this default implementation.
+     *
+     * @return true if the mode changed; false if {@code featureKey} is not {@link #FEATURE_MODE_KEY} or the stack is empty
      */
     @Override
     default boolean cycleMode(ItemStack stack, String featureKey) {

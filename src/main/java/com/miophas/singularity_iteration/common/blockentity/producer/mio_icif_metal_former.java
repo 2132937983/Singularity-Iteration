@@ -164,18 +164,18 @@ public enum MetalFormerMode {
 
     @Override
     protected boolean canWork() {
-        // �??��?��?��??��?��?��?��??
+        // Check that the input slot is not empty.
         ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
         if (input.isEmpty()) {
             return false;
         }
 
-        // �??��?��?��??�足够�?��??
+        // Check that the machine has enough energy.
         if (getEffectiveEnergyPerTick() <= 0 || progress < Math.max(1, getRecipeProcessingTime()) && !hasEnoughEnergy()) {
             return false;
         }
 
-        // ?��?��当�?�模式�???��??��??
+        // Check the recipe for the current mode.
         return switch (currentMode) {
             case ROLLING -> canWorkRolling(input);
             case CUTTING -> canWorkCutting(input);
@@ -257,7 +257,7 @@ public enum MetalFormerMode {
             return;
         }
 
-        // ?��?��当�?�模式�?��?��?�工
+        // Finish the process for the current mode.
         switch (currentMode) {
             case ROLLING -> finishRolling(input);
             case CUTTING -> finishCutting(input);
@@ -432,7 +432,7 @@ public enum MetalFormerMode {
     }
 
     /**
-     * �?tick ?��?��??��??
+     * Runs the machine logic on each tick.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_metal_former blockEntity) {
         if (level.isClientSide()) {

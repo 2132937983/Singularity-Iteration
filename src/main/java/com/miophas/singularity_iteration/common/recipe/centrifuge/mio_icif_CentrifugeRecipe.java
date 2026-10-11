@@ -18,13 +18,13 @@ public class mio_icif_CentrifugeRecipe implements Recipe<mio_icif_CentrifugeReci
 
     private final String group;
     private final Ingredient ingredient;
-    // 主输出（输出�?�
+    // Primary output (output slot 1).
 private final ItemStack primaryResult;
     private final int primaryCount;
-    // 副输�?（输出槽2�
+    // Secondary output (output slot 2).
 private final ItemStack secondaryResult;
     private final int secondaryCount;
-    // 副输�?（输出槽3�
+    // Tertiary output (output slot 3).
 private final ItemStack tertiaryResult;
     private final int tertiaryCount;
     
@@ -137,8 +137,8 @@ private final ItemStack tertiaryResult;
     }
 
     /**
-     * 获取所需最小热量（HU�
- */
+     * Gets the minimum heat that the recipe needs, in HU.
+     */
     public int getMinHeatRequired() {
         return minHeatRequired;
     }
@@ -165,28 +165,28 @@ private final ItemStack tertiaryResult;
     }
 
     /**
-     * 获取副输�?结果
+     * Gets the secondary output item.
      */
     public ItemStack getSecondaryResult() {
         return secondaryResult;
     }
 
     /**
-     * 获取副输�?数量
+     * Gets the secondary output count.
      */
     public int getSecondaryCount() {
         return secondaryCount;
     }
 
     /**
-     * 获取副输�?结果
+     * Gets the tertiary output item.
      */
     public ItemStack getTertiaryResult() {
         return tertiaryResult;
     }
 
     /**
-     * 获取副输�?数量
+     * Gets the tertiary output count.
      */
     public int getTertiaryCount() {
         return tertiaryCount;

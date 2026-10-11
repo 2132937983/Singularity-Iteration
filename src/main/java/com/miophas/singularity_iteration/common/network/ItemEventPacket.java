@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * 物品网络事件同步包。
  * 从服务端发送到客户端，通知客户端持有物品的玩家发生了指定事件。
  * <p>
- * 替代旧版 NetworkHelper 中仅调用本地监听器的实现，
+ * 替代旧版网络助手类中仅调用本地监听器的实现，
  * 实现真正的服务端→客户端网络同步。
  */
 public record ItemEventPacket(int slotIndex, int eventId, boolean limitRange)

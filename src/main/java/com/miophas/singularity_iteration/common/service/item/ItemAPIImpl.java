@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 @SuppressWarnings("null")
 public class ItemAPIImpl implements IItemAPI {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ItemAPIImpl.class);
 
     @Override
     public Item getItem(ResourceLocation id) {

@@ -900,7 +900,7 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
         setChanged();
     }
 
-    // ==================== MenuProvider ?��?��实现 ====================
+    // ==================== MenuProvider implementation ====================
 
     @Override
     public Component getDisplayName() {
@@ -914,7 +914,7 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
                 containerId, playerInventory, this);
     }
 
-    // ==================== IHeatGeneratorBlock ?��?��实现 ====================
+    // ==================== IHeatGeneratorBlock implementation ====================
 
     @Override
     public int getHeatOutput() {
@@ -941,7 +941,7 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
         return currentHeatOutput;
     }
 
-    // ==================== IBurnControl ?��?��实现 ====================
+    // ==================== IBurnControl implementation ====================
 
     @Override
     public int getDefaultBurnTime() {

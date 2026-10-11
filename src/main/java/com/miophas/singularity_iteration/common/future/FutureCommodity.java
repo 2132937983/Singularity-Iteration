@@ -6,7 +6,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 
 /**
- * 期货货品??? * 从配置文件加载的货品种类
+ * Futures commodity.
+ * A commodity type that the mod loads from the configuration file.
  */
 @SuppressWarnings("null")
 public class FutureCommodity {

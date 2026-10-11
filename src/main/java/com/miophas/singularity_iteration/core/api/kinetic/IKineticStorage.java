@@ -1,76 +1,76 @@
 package com.miophas.singularity_iteration.core.api.kinetic;
 
 /**
- * KU (Kinetic Units) 动能存储接口
- * 工业2风格的动能系统，与 FE 能量和 HU 热能完全独立
+ * KU (Kinetic Units) storage interface.
+ * Kinetic system in IndustrialCraft 2 style. It is fully independent of FE energy and HU heat.
  * 
- * 动能特点：
- * - 只能由特定动力源产生（如蒸汽轮机、水轮机、风力发电机等）
- * - 只能被特定机器消耗（如粉碎机、压缩机、离心机等）
- * - 不能像电力那样远距离传输，需要机械传动（如传动轴、齿轮箱等）
- * - 传动过程中可能会有动能损耗
- * - 需要旋转部件来传动
+ * Properties of kinetic energy:
+ * - Only specific power sources make it (for example steam turbines, water mills, wind generators).
+ * - Only specific machines use it (for example macerators, compressors, centrifuges).
+ * - It cannot move over long distances as electricity does. It needs a mechanical drive (for example shafts, gearboxes).
+ * - Some kinetic energy can be lost during transmission.
+ * - It needs rotating parts for transmission.
  */
 public interface IKineticStorage {
     
     /**
-     * 向存储中添加动能。返回实际添加的动能。
+     * Adds kinetic energy to the storage. Returns the kinetic energy that was really added.
      * 
-     * @param toReceive 要接收的动能
-     * @param simulate  如果为 true，则只模拟操作，不实际改变存储。
-     * @return 实际接收的动能
+     * @param toReceive the kinetic energy to receive
+     * @param simulate  if true, only simulate the operation and do not change the storage.
+     * @return the kinetic energy that was really received
      */
     long receiveKinetic(long toReceive, boolean simulate);
     
     /**
-     * 从存储中提取动能。返回实际提取的动能。
+     * Removes kinetic energy from the storage. Returns the kinetic energy that was really removed.
      * 
-     * @param toExtract 要提取的动能
-     * @param simulate  如果为 true，则只模拟操作，不实际改变存储。
-     * @return 实际提取的动能
+     * @param toExtract the kinetic energy to extract
+     * @param simulate  if true, only simulate the operation and do not change the storage.
+     * @return the kinetic energy that was really extracted
      */
     long extractKinetic(long toExtract, boolean simulate);
     
     /**
-     * 获取当前存储的动能值。
+     * Gets the kinetic energy stored now.
      */
     long getKineticStored();
     
     /**
-     * 获取最大动能容量。
+     * Gets the maximum kinetic energy capacity.
      */
     long getMaxKineticStored();
     
     /**
-     * 是否可以提取动能
-     * 如果返回 false，extractKinetic 将始终返回 0
+     * Checks if kinetic energy can be extracted.
+     * If this returns false, extractKinetic always returns 0.
      */
     boolean canExtractKinetic();
     
     /**
-     * 是否可以接收动能
-     * 如果返回 false，receiveKinetic 将始终返回 0
+     * Checks if kinetic energy can be received.
+     * If this returns false, receiveKinetic always returns 0.
      */
     boolean canReceiveKinetic();
     
     /**
-     * 获取当前转速（RPM）
-     * 用于显示和某些特殊机器
+     * Gets the current rotation speed (RPM).
+     * Used for display and by some special machines.
      */
     default int getRPM() {
         return com.miophas.singularity_iteration.core.api.util.BoundedUnits.gauge(getKineticStored(), getMaxKineticStored(), 0, 10000);
     }
     
     /**
-     * 是否处于超速状态
+     * Checks if the storage is in overspeed state.
      */
     default boolean isOverspeed() {
         return getRPM() >= 8000;
     }
     
     /**
-     * 获取动能损失率（每 tick 损失的动能）
-     * 动能系统通常会有摩擦损失
+     * Gets the kinetic loss rate (kinetic energy lost per tick).
+     * The kinetic system usually has friction loss.
      */
     default long getKineticLossPerTick() {
         int rpm = getRPM();
@@ -81,12 +81,12 @@ public interface IKineticStorage {
     }
     
     /**
-     * 获取最大接收速率
+     * Gets the maximum receive rate.
      */
     long getMaxReceive();
     
     /**
-     * 获取最大提取速率
+     * Gets the maximum extract rate.
      */
     long getMaxExtract();
 }

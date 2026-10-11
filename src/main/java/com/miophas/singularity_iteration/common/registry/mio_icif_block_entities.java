@@ -332,7 +332,7 @@ public class mio_icif_block_entities {
             BlockEntityType.Builder.of((pos, state) -> new IndependentSpecialCableBlockEntity(mio_icif_block_entities.WIRE_SPLITTER.get(), pos, state, false),
                 mio_icif_blocks.WIRE_SPLITTER.get()).build(null));
 
- // 注册 电 MenuType
+ // Register the electric furnace block entity type
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_furnace_elc>> FURNACE_ELC_ENTITY_TYPE =
         BLOCK_ENTITIES.register("furnace_elc", () ->
             BlockEntityType.Builder.of(mio_icif_furnace_elc::new, mio_icif_blocks.FURNACE_ELC.get()).build(null));
@@ -366,7 +366,7 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("oil_refinery_elc", () ->
             BlockEntityType.Builder.of(mio_icif_oil_refinery_elc::new, mio_icif_blocks.OIL_REFINERY_ELC.get()).build(null));
 
- // 注册 高 方块实体类型
+ // Register the blast furnace block entity type
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_blast_furnace>> BLAST_FURNACE_ENTITY_TYPE =
         BLOCK_ENTITIES.register("blast_furnace", () ->
             BlockEntityType.Builder.of(mio_icif_blast_furnace::new, mio_icif_blocks.BLAST_FURNACE.get()).build(null));
@@ -414,7 +414,7 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("block_cutter", () ->
             BlockEntityType.Builder.of(mio_icif_block_cutter::new, mio_icif_blocks.BLOCK_CUTTER.get()).build(null));
 
-    // 注册方块切割?MenuType
+    // Register the block cutter MenuType
 
     // 注册 车床 MenuType
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_lathe>> LATHE_ENTITY_TYPE =
@@ -574,7 +574,7 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("solid_heat_generator", () ->
             BlockEntityType.Builder.of(mio_icif_solid_heat_generator::new, mio_icif_blocks.SOLID_HEAT_GENERATOR.get()).build(null));
 
-    // 娉ㄥ唽鍥轰綋鍔犵儹鏈篗enuType
+    // Register the solid heat generator MenuType
 
     // 注册 fluid heat generator 方块实体类型
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_fluid_heat_generator>> FLUID_HEAT_GENERATOR =
@@ -772,7 +772,7 @@ public class mio_icif_block_entities {
 
     // 注册回收机 MenuType
 
- // 注册 感应 MenuType
+ // Register the induction furnace block entity type
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_induction_elc>> INDUCTION_ELC_ENTITY_TYPE =
         BLOCK_ENTITIES.register("induction_elc", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_induction_elc::new, mio_icif_blocks.INDUCTION_ELC.get()).build(null));
@@ -859,8 +859,6 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("redstone_reactor_coolant_injector", () ->
             BlockEntityType.Builder.of(mio_icif_redstone_reactor_coolant_injector::new, mio_icif_blocks.REDSTONE_REACTOR_COOLANT_INJECTOR.get()).build(null));
 
-    // 娉ㄥ唽鍙�?簲鍫嗗喎鍗存恫娉ㄥ�?鍣?MenuType
-
     // 注册 lapis reactor coolant injector MenuType
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_lapis_reactor_coolant_injector>> LAPIS_REACTOR_COOLANT_INJECTOR_ENTITY_TYPE =
         BLOCK_ENTITIES.register("lapis_reactor_coolant_injector", () ->
@@ -898,8 +896,6 @@ public class mio_icif_block_entities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_megnetizer>> MAGNETIZER_ENTITY_TYPE =
         BLOCK_ENTITIES.register("magnetizer", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_megnetizer::new, mio_icif_blocks.MAGNETIZER.get()).build(null));
-
-    // 娉ㄥ唽纾佸寲�?MenuType
 
     // 注册 特斯拉线圈 方块实体类型
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_tesla>> TESLA_ENTITY_TYPE =
@@ -956,21 +952,17 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("molecular_transformer", () ->
             BlockEntityType.Builder.of(mio_icif_molecular_transformer::new, mio_icif_blocks.MOLECULAR_TRANSFORMER.get()).build(null));
 
-    // 娉ㄥ唽妯″紡鎵���弿�??MenuType
-
     // 注册 pattern storage MenuType
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_pattern_storage>> PATTERN_STORAGE_ENTITY_TYPE =
         BLOCK_ENTITIES.register("pattern_storage", () ->
             BlockEntityType.Builder.of(mio_icif_pattern_storage::new, mio_icif_blocks.PATTERN_STORAGE.get()).build(null));
 
-    // 注册模式存储?MenuType
+    // Register the pattern storage MenuType
 
     // 注册 replicator elc MenuType
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_replicator_elc>> REPLICATOR_ELC_ENTITY_TYPE =
         BLOCK_ENTITIES.register("replicator_elc", () ->
             BlockEntityType.Builder.of(mio_icif_replicator_elc::new, mio_icif_blocks.REPLICATOR_ELC.get()).build(null));
-
-    // 娉ㄥ唽澶�?埗�??MenuType
 
     // 注册 foam 方块实体类型
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.build.mio_icif_block_foam_entity>> FOAM_ENTITY_TYPE =
@@ -1016,7 +1008,7 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("iridium_tank", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.build.mio_icif_iridium_tank_entity::new, mio_icif_blocks.IRIDIUM_TANK.get()).build(null));
 
-    // 注册�?�桶方块实体类�?
+    // Register the barrel block entity type.
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_barrel_entity>> BARREL =
         BLOCK_ENTITIES.register("barrel", () ->
             BlockEntityType.Builder.of(mio_icif_barrel_entity::new, mio_icif_blocks.BARREL.get()).build(null));
@@ -1026,27 +1018,27 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("item_buffer_elc", () ->
             BlockEntityType.Builder.of(mio_icif_item_buffer_elc::new, mio_icif_blocks.ITEM_BUFFER_ELC.get()).build(null));
 
-    // 注册电动作?拣机方块实体类�?
+    // Register the electric sorter block entity type.
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_sorter_elc>> SORTER_ELC =
         BLOCK_ENTITIES.register("sorter_elc", () ->
             BlockEntityType.Builder.of(mio_icif_sorter_elc::new, mio_icif_blocks.SORTER_ELC.get()).build(null));
 
-    // 注册高级物品栈??配机方块实体类�?
+    // Register the advanced item stack distributor block entity type.
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_item_distributor_elc>> ITEM_DISTRIBUTOR_ELC =
         BLOCK_ENTITIES.register("item_distributor_elc", () ->
             BlockEntityType.Builder.of(mio_icif_item_distributor_elc::new, mio_icif_blocks.ITEM_DISTRIBUTOR_ELC.get()).build(null));
 
-    // 注册流体�??配机方块实体类�?
+    // Register the fluid distributor block entity type.
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_fluid_distributor_elc>> FLUID_DISTRIBUTOR_ELC =
         BLOCK_ENTITIES.register("fluid_distributor_elc", () ->
             BlockEntityType.Builder.of(mio_icif_fluid_distributor_elc::new, mio_icif_blocks.FLUID_DISTRIBUTOR_ELC.get()).build(null));
 
-    // 注册高级流体�??配机方块实体类�?
+    // Register the advanced fluid distributor block entity type.
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_weighted_fluid_distributor_elc>> WEIGHTED_FLUID_DISTRIBUTOR_ELC =
         BLOCK_ENTITIES.register("weighted_fluid_distributor_elc", () ->
             BlockEntityType.Builder.of(mio_icif_weighted_fluid_distributor_elc::new, mio_icif_blocks.WEIGHTED_FLUID_DISTRIBUTOR_ELC.get()).build(null));
 
-    // 注册流体�?量�?节机方块实体类�?
+    // Register the fluid flow regulator block entity type.
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_fluid_regulator_elc>> FLUID_REGULATOR_ELC =
         BLOCK_ENTITIES.register("fluid_regulator_elc", () ->
             BlockEntityType.Builder.of(mio_icif_fluid_regulator_elc::new, mio_icif_blocks.FLUID_REGULATOR_ELC.get()).build(null));
@@ -1059,12 +1051,12 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("chunk_loader", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader::new, mio_icif_blocks.CHUNK_LOADER.get()).build(null));
 
-    // 注册工业工作台方块实体类�?
+    // Register the industrial workbench block entity type.
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_industrial_workbench>> INDUSTRIAL_WORKBENCH_ENTITY_TYPE =
         BLOCK_ENTITIES.register("industrial_workbench", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_industrial_workbench::new, mio_icif_blocks.INDUSTRIAL_WORKBENCH.get()).build(null));
 
-    // 注册能源转换器方块实体类�?
+    // Register the energy converter block entity type.
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_energy_converter_entity>> ENERGY_CONVERTER_ENTITY_TYPE =
         BLOCK_ENTITIES.register("energy_converter", () ->
             BlockEntityType.Builder.of(mio_icif_energy_converter_entity::new, mio_icif_blocks.ENERGY_CONVERTER.get()).build(null));

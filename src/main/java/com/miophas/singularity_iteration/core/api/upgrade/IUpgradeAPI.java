@@ -7,127 +7,127 @@ import net.minecraft.world.level.Level;
 import java.util.Collection;
 
 /**
- * 升级插件 API
+ * Upgrade API.
  *
- * <p>提供管理机器升级插件的接口，包括：
+ * <p>Gives an interface to manage machine upgrades. It lets you:
  * <ul>
- *   <li>查询升级类型和效果</li>
- *   <li>安装/移除升级</li>
- *   <li>计算升级后的属性</li>
+ *   <li>Query upgrade types and effects</li>
+ *   <li>Install and remove upgrades</li>
+ *   <li>Calculate the properties after upgrades</li>
  * </ul>
  */
 public interface IUpgradeAPI {
 
     /**
-     * 升级类型枚举
+     * Upgrade type enumeration.
      */
     enum UpgradeType {
-        OVERCLOCKER,        // 超频升级 - 加速但增加能耗
-        TRANSFORMER,        // 变压器升级 - 提高电压等级
-        ENERGY_STORAGE,     // 能量存储升级 - 增加能量容量
-        EJECTOR,            // 弹出升级 - 自动输出物品
-        IMPORT,             // 导入升级 - 自动输入物品
-        FLUID_EJECTOR,      // 流体弹出升级 - 自动输出流体
-        FLUID_IMPORT,       // 流体导入升级 - 自动输入流体
-        REDSTONE_SIGNAL,    // 红石信号升级 - 红石控制
-        ADVANCED_CIRCUIT,   // 高级电路升级 - 增加处理槽位
-        MOLECULAR_TRANSFORM, // 分子变换升级 - 改变配方
-        QUANTUM_CORE,       // 量子核心升级 - 大幅提升性能
-        CUSTOM              // 自定义升级
+        OVERCLOCKER,        // Overclocker upgrade - increases speed, but also energy use
+        TRANSFORMER,        // Transformer upgrade - increases the voltage tier
+        ENERGY_STORAGE,     // Energy storage upgrade - increases energy capacity
+        EJECTOR,            // Ejector upgrade - outputs items automatically
+        IMPORT,             // Import upgrade - inputs items automatically
+        FLUID_EJECTOR,      // Fluid ejector upgrade - outputs fluids automatically
+        FLUID_IMPORT,       // Fluid import upgrade - inputs fluids automatically
+        REDSTONE_SIGNAL,    // Redstone signal upgrade - redstone control
+        ADVANCED_CIRCUIT,   // Advanced circuit upgrade - adds processing slots
+        MOLECULAR_TRANSFORM, // Molecular transform upgrade - changes the recipe
+        QUANTUM_CORE,       // Quantum core upgrade - increases performance very much
+        CUSTOM              // Custom upgrade
     }
 
     /**
-     * 升级效果接口
+     * Upgrade effect interface.
      */
     interface IUpgradeEffect {
         /**
-         * 获取速度倍率加成
+         * Gets the speed multiplier bonus.
          */
         double getSpeedMultiplier();
 
         /**
-         * 获取能量消耗倍率
+         * Gets the energy use multiplier.
          */
         double getEnergyMultiplier();
 
         /**
-         * 获取额外能量容量
+         * Gets the additional energy capacity.
          */
         long getExtraCapacity();
 
         /**
-         * 获取额外输出槽位
+         * Gets the number of additional output slots.
          */
         int getExtraOutputSlots();
 
         /**
-         * 是否支持自动输出
+         * Checks if the upgrade enables automatic output.
          */
         boolean hasAutoEject();
 
         /**
-         * 是否支持自动输入
+         * Checks if the upgrade enables automatic input.
          */
         boolean hasAutoImport();
 
         /**
-         * 是否支持红石控制
+         * Checks if the upgrade enables redstone control.
          */
         boolean hasRedstoneControl();
 
         /**
-         * 获取电压等级提升
+         * Gets the number of voltage tiers to add.
          */
         int getTierUpgrade();
     }
 
     /**
-     * 检查机器是否支持升级
+     * Checks if the machine accepts upgrades.
      */
     boolean supportsUpgrades(Level world, BlockPos pos);
 
     /**
-     * 获取机器最大升级槽位数
+     * Gets the maximum number of upgrade slots of the machine.
      */
     int getMaxUpgradeSlots(Level world, BlockPos pos);
 
     /**
-     * 获取已安装的升级
+     * Gets the installed upgrades.
      */
     Collection<ItemStack> getInstalledUpgrades(Level world, BlockPos pos);
 
     /**
-     * 获取升级类型
+     * Gets the upgrade type.
      */
     UpgradeType getUpgradeType(ItemStack upgrade);
 
     /**
-     * 获取升级效果
+     * Gets the upgrade effect.
      */
     IUpgradeEffect getUpgradeEffect(ItemStack upgrade);
 
     /**
-     * 计算多个升级的组合效果
+     * Calculates the combined effect of more than one upgrade.
      */
     IUpgradeEffect calculateCombinedEffect(Collection<ItemStack> upgrades);
 
     /**
-     * 安装升级
+     * Installs an upgrade.
      */
     boolean installUpgrade(Level world, BlockPos pos, ItemStack upgrade);
 
     /**
-     * 移除升级
+     * Removes an upgrade.
      */
     ItemStack removeUpgrade(Level world, BlockPos pos, int slot);
 
     /**
-     * 检查是否可以安装此升级
+     * Checks if this upgrade can be installed.
      */
     boolean canInstallUpgrade(Level world, BlockPos pos, ItemStack upgrade);
 
     /**
-     * 获取升级限制数量
+     * Gets the maximum number of upgrades of this type.
      */
     int getUpgradeLimit(UpgradeType type);
 }

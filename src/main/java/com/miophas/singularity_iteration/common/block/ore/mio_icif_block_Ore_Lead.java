@@ -3,7 +3,7 @@ package com.miophas.singularity_iteration.common.block.ore;
 import net.minecraft.world.level.block.Block;
 
 /**
- * 铅矿石方法?
+ * Lead ore block.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_Ore_Lead extends Block {

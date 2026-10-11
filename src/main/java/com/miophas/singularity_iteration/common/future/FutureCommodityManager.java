@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 期货货品管理�? * 负责从配置文件加载和管理货品种类
+ * Futures commodity manager.
+ * It loads the commodity types from the configuration file and manages them.
  */
 @SuppressWarnings("null")
 public class FutureCommodityManager {
@@ -110,7 +111,7 @@ public class FutureCommodityManager {
     }
 
     /**
-     * 根据种类和索引获取货�
+     * Returns the commodity at the given index in the category.
  */
     public static FutureCommodity getCommodityByCategory(CommodityCategory category, int index) {
         List<FutureCommodity> commodities = getCommoditiesByCategory(category);
@@ -145,7 +146,7 @@ public class FutureCommodityManager {
     }
 
     /**
-     * 检查是否包含指定货�
+     * Checks if the given commodity exists.
  */
     public static boolean hasCommodity(String itemId) {
         return getCommodityById(itemId) != null;

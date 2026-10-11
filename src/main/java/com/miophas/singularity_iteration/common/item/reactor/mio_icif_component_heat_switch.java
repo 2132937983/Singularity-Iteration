@@ -1,27 +1,30 @@
 package com.miophas.singularity_iteration.common.item.reactor;
 
 /**
- * 元件热交换器
+ * Component heat exchanger.
  *
- * 特性：
- * - 自身可以储存5000点热? * - 不会与核反应自身交换热量（传?点）
- * - 只会向相邻其他元件传?2点热? * - 正常工作时会显示耐久? * - 超过自身热量上限耐久度将会变?（消失）
+ * Properties:
+ * - It can store 5000 heat.
+ * - It does not exchange heat with the reactor (it transfers 0 heat).
+ * - It transfers 36 heat only to other adjacent components.
+ * - It shows durability during normal operation.
+ * - If its heat goes above its heat limit, its durability becomes 0 and it disappears.
  */
 @SuppressWarnings("null")
 public class mio_icif_component_heat_switch extends mio_icif_heat_switch {
 
-    // 最大热量存
+    // Maximum heat storage.
 public static final int MAX_HEAT = 5000;
 
-    // 向相邻元件传递的热量
+    // Heat that it transfers to adjacent components.
     public static final int TRANSFER_TO_ADJACENT = 36;
 
-    // 向核反应堆传递的热量（元件热交换器不向反应堆传递）
+    // Heat that it transfers to the reactor. The component heat exchanger does not transfer heat to the reactor.
     public static final int TRANSFER_TO_REACTOR = 0;
 
     /**
-     * 构造函数
- * @param properties 物品属
+     * Constructor.
+ * @param properties the item properties
  */
     public mio_icif_component_heat_switch(Properties properties) {
         super(properties, MAX_HEAT, TRANSFER_TO_ADJACENT, TRANSFER_TO_REACTOR);

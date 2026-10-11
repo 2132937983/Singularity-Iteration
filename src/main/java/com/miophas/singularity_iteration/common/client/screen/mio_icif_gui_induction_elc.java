@@ -9,7 +9,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 /**
- * 鎰熷簲鐐夋柟鍧楃殑 GUI 绫�
+ * GUI for the induction furnace block.
  */
 @OnlyIn(Dist.CLIENT)
 public class mio_icif_gui_induction_elc extends mio_icif_screen<InductionElcMenu> {

@@ -15,23 +15,23 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * 扳手交互接口。
+ * Wrench interaction interface.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IWrenchable}。
- * 实现此接口的方块可以使用扳手进行交互，包括旋转方向和拆卸。
+ * It is equivalent to {@code IWrenchable} in IC2 1.12.2.
+ * Players can use a wrench on blocks that implement this interface. The wrench can rotate and remove the block.
  * <p>
- * 本接口为所有方法提供了基于方块 {@code FACING}/{@code HORIZONTAL_FACING}
- * 属性的通用默认实现，机器方块只需声明 {@code implements IWrenchable} 即可被
- * API 统一管理，无需自行编写旋转/拆卸逻辑。需要特殊行为的方块可覆盖对应方法。
+ * This interface gives general default implementations for all methods. They use the block properties {@code FACING}/{@code HORIZONTAL_FACING}.
+ * A machine block only has to declare {@code implements IWrenchable}. Then the API manages it, and the block
+ * does not need its own rotate or remove logic. Blocks that need special behavior can override the related methods.
  */
 public interface IWrenchable {
 
     /**
-     * 获取方块当前的朝向。
+     * Gets the current facing of the block.
      *
-     * @param world 世界
-     * @param pos   方块位置
-     * @return 当前朝向
+     * @param world the world
+     * @param pos   the block position
+     * @return the current facing, or NORTH if the block has no facing property
      */
     default Direction getFacing(Level world, BlockPos pos) {
         BlockState state = world.getBlockState(pos);
@@ -45,13 +45,13 @@ public interface IWrenchable {
     }
 
     /**
-     * 设置方块的朝向。
+     * Sets the facing of the block.
      *
-     * @param world  世界
-     * @param pos    方块位置
-     * @param facing 新朝向
-     * @param player 执行操作的玩家
-     * @return 如果设置成功则返回 true
+     * @param world  the world
+     * @param pos    the block position
+     * @param facing the new facing
+     * @param player the player who does the operation
+     * @return true if the facing changed
      */
     default boolean setFacing(Level world, BlockPos pos, Direction facing, Player player) {
         if (!canSetFacing(world, pos, facing)) {
@@ -81,36 +81,36 @@ public interface IWrenchable {
     }
 
     /**
-     * 检查是否可以设置指定朝向。
+     * Checks if the given facing can be set.
      *
-     * @param world  世界
-     * @param pos    方块位置
-     * @param facing 目标朝向
-     * @return 如果可以设置则返回 true
+     * @param world  the world
+     * @param pos    the block position
+     * @param facing the target facing
+     * @return true if the facing can be set
      */
     default boolean canSetFacing(Level world, BlockPos pos, Direction facing) {
         return true;
     }
 
     /**
-     * 检查扳手是否可以移除此方块。
+     * Checks if the wrench can remove this block.
      *
-     * @param world  世界
-     * @param pos    方块位置
-     * @param player 执行操作的玩家
-     * @return 如果可以移除则返回 true
+     * @param world  the world
+     * @param pos    the block position
+     * @param player the player who does the operation
+     * @return true if the block can be removed
      */
     default boolean wrenchCanRemove(Level world, BlockPos pos, Player player) {
         return true;
     }
 
     /**
-     * 获取扳手拆卸此方块时的掉落物品。
+     * Gets the items that drop when a wrench removes this block.
      *
-     * @param world 世界
-     * @param pos   方块位置
-     * @param state 方块状态
-     * @return 掉落物品列表
+     * @param world the world
+     * @param pos   the block position
+     * @param state the block state
+     * @return the list of dropped items
      */
     default Collection<ItemStack> getWrenchDrops(Level world, BlockPos pos, BlockState state) {
         BlockEntity blockEntity = world.getBlockEntity(pos);

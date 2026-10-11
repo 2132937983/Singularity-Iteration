@@ -22,18 +22,18 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import java.util.List;
 
 /**
- * 刷子（Painter�? IC2风格的建筑工�?
+ * Painter: an IC2-style building tool.
  * 
- * 功能量?
- * - 右键给以下方块上色（16种颜色）�?
- *   建筑泡沫、羊毛、混凝土粉末、混凝土、玻璃、玻璃板、旗帜、蜡烛、地毯、陶�?
- * - 陶瓦刷色后变成普通带色陶瓦（不上釉）
- * - 如果方块已经是刷子的颜色，会提示颜色相同
+ * Functions:
+ * - Right-click paints these blocks in one of 16 colors:
+ *   construction foam, wool, concrete powder, concrete, glass, glass panes, banners, candles, carpets and terracotta.
+ * - Painted terracotta becomes plain colored terracotta, not glazed terracotta.
+ * - If the block already has the painter color, the player gets a message.
  */
 @SuppressWarnings("null")
 public class PainterItem extends Item implements IPainterItem {
 
-    // 刷子颜色枚举 - 对应Minecraft�?6种染料颜�?
+    // Painter colors. They match the 16 Minecraft dye colors.
     @SuppressWarnings("null")
 public enum PainterColor {
         WHITE("white", 0xFFFFFF),
@@ -88,7 +88,7 @@ public enum PainterColor {
         BlockState clickedState = level.getBlockState(pos);
         Block clickedBlock = clickedState.getBlock();
 
-        // 尝试给原版方块上色（羊毛、地毯、陶瓦、混凝土、玻璃、旗帜、蜡烛等�?
+        // Try to paint the vanilla block (wool, carpet, terracotta, concrete, glass, banner or candle).
         Block targetBlock = getVanillaColoredBlock(clickedBlock, color);
         if (targetBlock != null && targetBlock != clickedBlock) {
             BlockState newState = targetBlock.defaultBlockState();
@@ -110,7 +110,7 @@ public enum PainterColor {
             return InteractionResult.CONSUME;
         }
 
-        // 建筑泡沫 �?对应颜色的混凝土
+        // Construction foam becomes concrete of the painter color.
         if (clickedBlock == mio_icif_blocks.CONSTRUCTION_FOAM.get()) {
             level.setBlockAndUpdate(pos, getConcreteForColor(color).defaultBlockState());
             level.playSound(null, pos, SoundEvents.DYE_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
@@ -127,8 +127,8 @@ public enum PainterColor {
     }
 
     /**
-     * 获取原版方块对应颜色的版�?
-     * @return 对应颜色的方块，如果不可上色返回null，如果已经是目标颜色返回原方法?
+     * Returns the vanilla block in the painter color.
+     * @return the colored block, null if the block cannot be painted, or the same block if it already has the target color
      */
     private Block getVanillaColoredBlock(Block clickedBlock, PainterColor painterColor) {
         // 羊毛
@@ -136,30 +136,30 @@ public enum PainterColor {
             Block target = getWoolForColor(painterColor);
             return clickedBlock == target ? clickedBlock : target;
         }
-        // 混凝土粉�?
+        // Concrete powder
         if (isConcretePowder(clickedBlock)) {
             Block target = getConcretePowderForColor(painterColor);
             return clickedBlock == target ? clickedBlock : target;
         }
-        // 混凝�?
+        // Concrete
         if (isConcrete(clickedBlock)) {
             Block target = getConcreteForColor(painterColor);
             return clickedBlock == target ? clickedBlock : target;
         }
-        // 玻璃 �?彩色玻璃
+        // Glass becomes stained glass.
         if (clickedBlock == Blocks.GLASS) {
             return getStainedGlassForColor(painterColor);
         }
-        // 彩色玻璃 �?彩色玻璃
+        // Stained glass becomes stained glass of the new color.
         if (isStainedGlass(clickedBlock)) {
             Block target = getStainedGlassForColor(painterColor);
             return clickedBlock == target ? clickedBlock : target;
         }
-        // 玻璃�?�?彩色玻璃�?
+        // Glass pane becomes stained glass pane.
         if (clickedBlock == Blocks.GLASS_PANE) {
             return getStainedGlassPaneForColor(painterColor);
         }
-        // 彩色玻璃�?�?彩色玻璃�?
+        // Stained glass pane becomes stained glass pane of the new color.
         if (isStainedGlassPane(clickedBlock)) {
             Block target = getStainedGlassPaneForColor(painterColor);
             return clickedBlock == target ? clickedBlock : target;
@@ -179,11 +179,11 @@ public enum PainterColor {
             Block target = getCarpetForColor(painterColor);
             return clickedBlock == target ? clickedBlock : target;
         }
-        // 陶瓦 �?普通带色陶瓦（不上釉！�?
+        // Terracotta becomes plain colored terracotta, not glazed terracotta.
         if (clickedBlock == Blocks.TERRACOTTA) {
             return getTerracottaForColor(painterColor);
         }
-        // 带色陶瓦 �?带色陶瓦（不上釉�?
+        // Colored terracotta becomes colored terracotta of the new color, not glazed terracotta.
         if (isColoredTerracotta(clickedBlock)) {
             Block target = getTerracottaForColor(painterColor);
             return clickedBlock == target ? clickedBlock : target;
@@ -193,30 +193,30 @@ public enum PainterColor {
     }
 
     /**
-     * 尝试复制方块状态属性（如朝向等�?
+     * Copies block state properties, such as the facing, from the old state to the new state.
      */
     private void copyBlockStateProperties(BlockState oldState, BlockState newState, Level level, BlockPos pos) {
         BlockState finalState = newState;
-        // 复制朝向属性（facing�?
+        // Copy the facing property.
         if (oldState.hasProperty(BlockStateProperties.FACING) && finalState.hasProperty(BlockStateProperties.FACING)) {
             finalState = finalState.setValue(BlockStateProperties.FACING, oldState.getValue(BlockStateProperties.FACING));
         }
-        // 复制水平朝向属性?
+        // Copy the horizontal facing property.
         if (oldState.hasProperty(BlockStateProperties.HORIZONTAL_FACING) && finalState.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
             finalState = finalState.setValue(BlockStateProperties.HORIZONTAL_FACING, oldState.getValue(BlockStateProperties.HORIZONTAL_FACING));
         }
-        // 复制蜡烛点亮状态?
+        // Copy the lit state of candles.
         if (oldState.hasProperty(BlockStateProperties.LIT) && finalState.hasProperty(BlockStateProperties.LIT)) {
             finalState = finalState.setValue(BlockStateProperties.LIT, oldState.getValue(BlockStateProperties.LIT));
         }
-        // 复制水位属性?
+        // Copy the waterlogged property.
         if (oldState.hasProperty(BlockStateProperties.WATERLOGGED) && finalState.hasProperty(BlockStateProperties.WATERLOGGED)) {
             finalState = finalState.setValue(BlockStateProperties.WATERLOGGED, oldState.getValue(BlockStateProperties.WATERLOGGED));
         }
         level.setBlockAndUpdate(pos, finalState);
     }
 
-    // ===== 检查方法?=====
+    // ===== Check methods =====
 
     private boolean isWool(Block block) {
         return block == Blocks.WHITE_WOOL || block == Blocks.ORANGE_WOOL
@@ -317,7 +317,7 @@ public enum PainterColor {
             || block == Blocks.RED_TERRACOTTA || block == Blocks.BLACK_TERRACOTTA;
     }
 
-    // ===== 获取对应颜色方块的方法?=====
+    // ===== Methods that get the block for a color =====
 
     private Block getWoolForColor(PainterColor c) {
         return switch (c) {
@@ -424,7 +424,7 @@ public enum PainterColor {
     }
 
     /**
-     * 陶瓦刷色 �?普通带色陶瓦（不上釉！�?
+     * Returns the plain colored terracotta for the color, not glazed terracotta.
      */
     private Block getTerracottaForColor(PainterColor c) {
         return switch (c) {

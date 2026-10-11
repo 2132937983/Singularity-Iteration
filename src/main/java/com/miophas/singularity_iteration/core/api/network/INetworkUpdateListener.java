@@ -1,47 +1,47 @@
 package com.miophas.singularity_iteration.core.api.network;
 
 /**
- * 网络更新监听接口。
+ * Network update listener interface.
  * <p>
- * 对应 IC2 1.12.2 的 {@code INetworkUpdateListener}。
- * 实现此接口的方块实体可以在网络字段更新时收到通知，
- * 并获取服务端同步的字段最新值。
+ * Equivalent to {@code INetworkUpdateListener} in IC2 1.12.2.
+ * A block entity that implements this interface gets a notification when a network field updates.
+ * It also gets the latest field value that the server synchronizes.
  */
 public interface INetworkUpdateListener {
 
     /**
-     * 当网络同步的字段被更新时调用（带字段值）。
+     * Called when a network-synchronized field updates (with the field value).
      * <p>
-     * 此方法在客户端执行，用于响应服务端同步的字段变化。
-     * {@code value} 是服务端发送的字段最新值，以 {@code double} 类型传输，
-     * 可以安全地转换为 {@code int}、{@code long}、{@code float} 或 {@code boolean}。
+     * This method runs on the client. It responds to field changes that the server synchronizes.
+     * {@code value} is the latest field value that the server sends. It is transmitted as a {@code double}.
+     * You can safely cast it to {@code int}, {@code long}, {@code float} or {@code boolean}.
      * <p>
-     * 实现者应根据字段名将值应用到对应的字段：
+     * The implementation must apply the value to the field that has the given field name:
      * <pre>{@code
      * switch (fieldName) {
      *     case "progress" -> this.progress = (int) value;
      *     case "energy"   -> this.energy = (long) value;
      *     case "active"   -> this.active = value != 0;
-     *     default         -> {} // 未知字段，忽略
+     *     default         -> {} // Unknown field: ignore it
      * }
      * }</pre>
      *
-     * @param fieldName 被更新的字段名
-     * @param value     字段的新值（从服务端同步）
+     * @param fieldName the name of the field that updated
+     * @param value     the new value of the field (synchronized from the server)
      */
     default void onNetworkUpdate(String fieldName, double value) {
         onNetworkUpdate(fieldName);
     }
 
     /**
-     * 当网络同步的字段被更新时调用（仅字段名，无值）。
+     * Called when a network-synchronized field updates (field name only, no value).
      * <p>
-     * 此方法在客户端执行。当旧版网络包（不携带值）到达时调用此方法。
-     * 默认实现为空，实现者可以选择覆盖此方法以支持旧版兼容，
-     * 或覆盖 {@link #onNetworkUpdate(String, double)} 以获取字段值。
+     * This method runs on the client. It is called when a legacy network packet (with no value) arrives.
+     * The default implementation does nothing. Override this method for legacy compatibility,
+     * or override {@link #onNetworkUpdate(String, double)} to get the field value.
      *
-     * @param fieldName 被更新的字段名
-     * @deprecated 请使用 {@link #onNetworkUpdate(String, double)} 以获取服务端同步的字段值。
+     * @param fieldName the name of the field that updated
+     * @deprecated Use {@link #onNetworkUpdate(String, double)} to get the field value that the server synchronizes.
      */
     @Deprecated
     default void onNetworkUpdate(String fieldName) {

@@ -7,29 +7,29 @@ import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
 
 /**
- * 机器开始工作事件
+ * Event for the start of machine work.
  *
- * <p><b>触发时机</b>：当机器从空闲状态切换到工作状态时触发（例如：放入原料后机器开始加工）。
+ * <p><b>When</b>: The event fires when a machine changes from idle to working (for example, the machine starts to process after an input is added).
  *
- * <p><b>触发频率</b>：每次机器启动触发一次，通常在放入原料、能量充足、红石条件满足时。
+ * <p><b>How often</b>: One time each time the machine starts. Usually when an input is added, energy is sufficient and the redstone condition is satisfied.
  *
- * <p><b>覆盖范围</b>：所有实现 IProducerBlock 接口的机器类型，包括：
+ * <p><b>Scope</b>: All machine types that implement the IProducerBlock interface, including:
  * <ul>
- *   <li>压缩机、提取机、粉碎机、离心机等基础机器</li>
- *   <li>焊接机、精密组装机等多原料机器</li>
- *   <li>核反应堆（每次循环开始时）</li>
+ *   <li>basic machines such as the compressor, extractor, macerator and centrifuge</li>
+ *   <li>multi-input machines such as the welder and the precision assembler</li>
+ *   <li>the nuclear reactor (at the start of each cycle)</li>
  * </ul>
  *
- * <p>可通过取消事件阻止机器开始工作。
+ * <p>Cancel the event to prevent the start of the machine work.
  *
- * <p>示例用法：
+ * <p>Example:
  * <pre>{@code
  * @SubscribeEvent
  * public void onMachineWorkStart(MachineWorkStartEvent event) {
- *     // 记录机器启动
+ *     // Log the machine start.
  *     logger.info("Machine started working at " + event.getPos());
  *
- *     // 阻止特定条件下的工作
+ *     // Prevent work under a specific condition.
  *     if (event.getLevel().isRainingAt(event.getPos().above())) {
  *         event.setCanceled(true);
  *     }
@@ -49,21 +49,21 @@ public class MachineWorkStartEvent extends Event implements ICancellableEvent {
     }
 
     /**
-     * 获取世界
+     * Gets the world.
      */
     public Level getLevel() {
         return level;
     }
 
     /**
-     * 获取机器位置
+     * Gets the machine position.
      */
     public BlockPos getPos() {
         return pos;
     }
 
     /**
-     * 获取机器实例
+     * Gets the machine instance.
      */
     public IProducerBlock getMachine() {
         return machine;

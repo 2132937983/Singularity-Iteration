@@ -83,13 +83,13 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     public static final float HEAT_LOSS_FACTOR = 0.005f;
     public static final int HEAT_UP_RATE = 1;
 
-    // ??��?��?��??
+    // Heat storage of the machine.
     protected final HeatStorage heatStorage;
 
 
 
     /**
-     * ?���? BlockEntityType.Builder ????????�函�?
+     * Constructor for BlockEntityType.Builder.
      */
     public mio_icif_induction_elc(BlockPos pos, BlockState state) {
         this(pos, state, mio_icif_block_entities.INDUCTION_ELC_ENTITY_TYPE.get());
@@ -118,14 +118,14 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
 
 
     /**
-     * ?��??��?��?��?��??
+     * Returns the heat storage.
      */
     public HeatStorage getHeatStorage() {
         return heatStorage;
     }
 
     /**
-     * ?��??��?��?��?��?��?��?��???���?capability 系�??�?
+     * Returns the heat storage for the capability system. All sides share the same storage.
      */
     @Nullable
     public IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
@@ -165,7 +165,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     }
 
     /**
-     * ?��?��??��?��?�方
+     * Finds the smelting recipe for the item in the input slot.
      */
     private Optional<RecipeHolder<SmeltingRecipe>> findRecipe(int inputSlot) {
         if (level == null) {
@@ -210,7 +210,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     }
 
     /**
-     * �??��?��?��?��?��?��以工�?
+     * Checks if the machine can work. At least one input slot must have a valid recipe.
      */
     @Override
     protected boolean canWork() {
@@ -322,7 +322,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     }
 
     /**
-     * �?tick ?��?��??��??
+     * Runs the machine logic on each tick.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_induction_elc blockEntity) {
         if (level.isClientSide()) {
@@ -381,7 +381,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         storedXp.load(tag);
     }
 
-    // ==================== Getter ?���? ====================
+    // ==================== Getters ====================
 
     public int getProgress1() {
         return progress;

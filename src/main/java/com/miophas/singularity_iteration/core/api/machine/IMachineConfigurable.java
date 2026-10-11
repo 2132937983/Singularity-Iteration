@@ -4,17 +4,17 @@ import com.miophas.singularity_iteration.core.api.machine.builder.IMachineBuilde
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 可配置的机器方块接口。
+ * Interface for configurable machine blocks.
  *
- * <p>实现了此接口的方块实体可通过 {@link #getConfiguration()} 获取机器配置信息。
- * 附属模组的自定义机器应实现此接口以支持 API 层的机器类型查询。
+ * <p>Block entities that implement this interface give their machine configuration through {@link #getConfiguration()}.
+ * Custom machines of addon mods must implement this interface to support machine type queries at the API layer.
  */
 public interface IMachineConfigurable {
 
     /**
-     * 获取机器配置。
+     * Returns the machine configuration.
      *
-     * @return 机器配置，如果未配置则返回 null
+     * @return the machine configuration, or null if no configuration is set
      */
     @Nullable
     IMachineBuilderAPI.MachineConfiguration getConfiguration();

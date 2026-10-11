@@ -10,69 +10,70 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * ?��??��?��?��??????���?
- * 
- * ?��??��??
- * - ?��??��?��??度�??使用寿命�?
- * - ?????�核??��?��???��??��?��??�??????��?��???��??��???????�却?��等�?��?�继?��此�??
- * - ?��????��?��??��?��??中�?�周?��??��??交换?��????��??/?��?��中�?��?��?��???��??��?��??
- * - ?????��?�使?��DataComponent存�?��?��??度�?�使?��?????��?�使?��次数????????��?�可以�?????
+ * Base class for all reactor components.
+ *
+ * Features:
+ * - Tracks durability (the service life of the component).
+ * - Fuel rods, heat vents, heat exchangers, coolant cells and neutron reflectors extend this class.
+ * - Holds the neutron pulse properties and the heat properties of the component.
+ * - Can store durability in a DataComponent instead of the vanilla item damage value.
+ *   Such items have no vanilla durability and can stack to 64.
  */
 @SuppressWarnings("null")
 public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     
-    // ???大�?��??度�??使用寿命�?
+    // Maximum durability (service life) of the component.
     protected final int maxDurability;
 
-    // ?��?��使用FuelRodDurability DataComponent存�?��?��??度�???????��?�使?���?
+    // True: store durability in the FuelRodDurability DataComponent (fuel rods use this).
     protected final boolean useDataComponentDurability;
 
-    // ?��?��使用ReactorComponentData DataComponent存�?�状???�??��??��???????�交?��?��等使?���?
+    // True: store state in the ReactorComponentData DataComponent (heat vents and heat exchangers use this).
     protected final boolean useReactorComponentData;
     
-    // ==================== ??��?��??件类??? ====================
+    // ==================== Component type ====================
     
-    // ???件类???
+    // Type of the reactor component.
     protected final ReactorComponentType componentType;
     
-    // ==================== 中�?��?��?�相??? ====================
+    // ==================== Neutron pulse properties ====================
     
-    // ??��?�周??��?????中�?��?��?�数据??????��?�使?���?
+    // Number of neutron pulses that this component sends to adjacent components (fuel rods use this).
     protected final int neutronPulseOutput;
     
-    // ?��?��??�接?��中�?��?��??
+    // True: the component accepts neutron pulses.
     protected final boolean canReceiveNeutronPulse;
     
-    // ?��?��中�?��?��?��?��????��?��??�?MOX?????��?��?�根?��???温�?��?��?�电力?
+    // True: the component is MOX fuel. MOX fuel makes more power when the reactor heat is high.
     protected final boolean isMoxFuel;
     
-    // ==================== ??��?�相??? ====================
+    // ==================== Heat properties ====================
     
-    // 产�?��????��?��???????��?�为�?，散??��??为�?�表示吸??��?��?��??
+    // Heat that the component makes. A positive value adds heat. A negative value (heat vents) removes heat.
     protected final int heatOutput;
     
-    // ???大�?��?��?��?��???��??��???????�却?��使用�?
+    // Maximum heat that the component can store (heat vents and coolant cells use this).
     protected final int maxHeatStorage;
     
-    // ??��?��?��?��?????�???�相??��??事件?��?��?��?��????��?��??-100�?
+    // Heat transfer efficiency in percent, 0 to 100 (heat exchangers use this).
     protected final int heatTransferEfficiency;
     
-    // ==================== ?????�函???====================
+    // ==================== Constructors ====================
     
     /**
-     * ?���??????�函???
-     * @param properties ??��??属性??
-     * @param maxDurability ???大�?��??�?
+     * Creates a component of type OTHER.
+     * @param properties item properties
+     * @param maxDurability maximum durability
      */
     public mio_icif_reactor(Properties properties, int maxDurability) {
         this(properties, maxDurability, ReactorComponentType.OTHER);
     }
     
     /**
-     * 带类??��???????�函???
-     * @param properties ??��??属性??
-     * @param maxDurability ???大�?��??�?
-     * @param componentType ???件类???
+     * Creates a component of the given type that uses vanilla item damage for durability.
+     * @param properties item properties
+     * @param maxDurability maximum durability
+     * @param componentType type of the reactor component
      */
     public mio_icif_reactor(Properties properties, int maxDurability, ReactorComponentType componentType) {
         super(properties.durability(maxDurability));
@@ -81,25 +82,26 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
         this.useDataComponentDurability = false;
         this.useReactorComponentData = false;
         
-        // 默认中�?��?��?��?��??
+        // No neutron pulse behavior by default.
         this.neutronPulseOutput = 0;
         this.canReceiveNeutronPulse = false;
         this.isMoxFuel = false;
         
-        // 默认??��?��?��??
+        // No heat behavior by default.
         this.heatOutput = 0;
         this.maxHeatStorage = 0;
         this.heatTransferEfficiency = 0;
     }
 
     /**
-     * 带DataComponent??��??度�?�项????????�函???
-     * ?????��?�使?��FuelRodDurability�???��?��??件使?��ReactorComponentData
-     * @param properties ??��??属性??
-     * @param maxDurability ???大�?��??�?
-     * @param componentType ???件类???
-     * @param useDataComponentDurability ?��?��使用FuelRodDurability DataComponent�??????��?��??
-     * @param useReactorComponentData ?��?��使用ReactorComponentData DataComponent�???��?��??事件??
+     * Creates a component that can store durability or state in a DataComponent.
+     * Fuel rods use FuelRodDurability. Other components use ReactorComponentData.
+     * If one of the flags is true, the item has no vanilla durability and stacks to 64.
+     * @param properties item properties
+     * @param maxDurability maximum durability
+     * @param componentType type of the reactor component
+     * @param useDataComponentDurability true to store durability in FuelRodDurability (fuel rods)
+     * @param useReactorComponentData true to store state in ReactorComponentData (heat vents and heat exchangers)
      */
     protected mio_icif_reactor(Properties properties, int maxDurability, ReactorComponentType componentType, boolean useDataComponentDurability, boolean useReactorComponentData) {
         super((useDataComponentDurability || useReactorComponentData) ? properties.stacksTo(64) : properties.durability(maxDurability));
@@ -108,28 +110,28 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
         this.useDataComponentDurability = useDataComponentDurability;
         this.useReactorComponentData = useReactorComponentData;
         
-        // 默认中�?��?��?��?��??
+        // No neutron pulse behavior by default.
         this.neutronPulseOutput = 0;
         this.canReceiveNeutronPulse = false;
         this.isMoxFuel = false;
         
-        // 默认??��?��?��??
+        // No heat behavior by default.
         this.heatOutput = 0;
         this.maxHeatStorage = 0;
         this.heatTransferEfficiency = 0;
     }
     
     /**
-     * 完整?????�函?���??��于�????��?��??
-     * @param properties ??��??属性??
-     * @param maxDurability ???大�?��??�?
-     * @param componentType ???件类???
-     * @param neutronPulseOutput ??��?????中�?��?��?�数
-     * @param canReceiveNeutronPulse ?��?��??�接?��中�?��?��??
-     * @param isMoxFuel ?��?��?��MOX??????
-     * @param heatOutput 产�?��????��??
-     * @param maxHeatStorage ???大�?��?��?��??
-     * @param heatTransferEfficiency ??��?��?��?��?????
+     * Creates a component with all neutron pulse and heat properties (for fuel rods and similar components).
+     * @param properties item properties
+     * @param maxDurability maximum durability
+     * @param componentType type of the reactor component
+     * @param neutronPulseOutput number of neutron pulses sent to adjacent components
+     * @param canReceiveNeutronPulse true if the component accepts neutron pulses
+     * @param isMoxFuel true if the component is MOX fuel
+     * @param heatOutput heat that the component makes
+     * @param maxHeatStorage maximum heat that the component can store
+     * @param heatTransferEfficiency heat transfer efficiency in percent, 0 to 100
      */
     public mio_icif_reactor(Properties properties, int maxDurability, 
                             ReactorComponentType componentType,
@@ -149,16 +151,16 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * ?��??��??大�?��??�?
+     * Returns the maximum durability.
      */
     public int getMaxDurability() {
         return maxDurability;
     }
     
-    // ==================== ???件类??�相??�方法? ====================
+    // ==================== Component type methods ====================
     
     /**
-     * ?��??��??件类???
+     * Returns the type of the reactor component.
      */
     @Override
     public ReactorComponentType getComponentType() {
@@ -166,7 +168,7 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * ?��?��?��?????��??
+     * Returns true if the component is a fuel rod.
      */
     @Override
     public boolean isFuelRod() {
@@ -174,40 +176,40 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * ?��?��?��?��??��??
+     * Returns true if the component is a heat sink.
      */
     public boolean isHeatSink() {
         return componentType == ReactorComponentType.HEAT_SINK;
     }
     
     /**
-     * ?��?��?��??�却?��
+     * Returns true if the component is a cooler.
      */
     public boolean isCooler() {
         return componentType == ReactorComponentType.COOLER;
     }
     
     /**
-     * ?��?��?��中�?��?��???��
+     * Returns true if the component is a neutron reflector.
      */
     public boolean isNeutronReflector() {
         return componentType == ReactorComponentType.NEUTRON_REFLECTOR;
     }
     
     /**
-     * ?���U�ƴΪ��m?�]?�m/�șm/�|�m�^�C
-     * ��W�q?��^ 1�]?�m�^�C�l�W�]�p�ֿU�ƴΡ^�i�Пª�^�b�̙m?�C
+     * Returns the number of fuel cells in the component (single, dual or quad).
+     * The default is 1 (single). Multi-cell fuel rods override this method.
      *
-     * @return �m?�]1=?�m, 2=�șm, 4=�|�m�^
+     * @return number of cells (1 = single, 2 = dual, 4 = quad)
      */
     public int getNumberOfCells() {
         return 1;
     }
     
-    // ==================== 中�?��?��?�相??�方法? ====================
+    // ==================== Neutron pulse methods ====================
     
     /**
-     * ?��??��?��?�周??��?????中�?��?��?��??
+     * Returns the number of neutron pulses that this component sends to adjacent components.
      */
     @Override
     public int getNeutronPulseOutput() {
@@ -215,14 +217,14 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * ?��?��??�接?��中�?��?��??
+     * Returns true if the component accepts neutron pulses.
      */
     public boolean canReceiveNeutronPulse() {
         return canReceiveNeutronPulse;
     }
     
     /**
-     * ?��?��?��MOX?????��??会根?��???温�?��?��?�电力?
+     * Returns true if the component is MOX fuel. MOX fuel makes more power when the reactor heat is high.
      */
     @Override
     public boolean isMoxFuel() {
@@ -230,23 +232,24 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * ?��?��中�?��?��?��?��??�????
-     * 子类?��以�?��?�此?��法来实现?��殊�????��??�?MOX?????�根?��???温�?��?��?�电力?
-     * @param stack ??��?????
-     * @param pulseCount ?��?��??��??中�?��?��?��??
-     * @param reactorHeat 当�?��?��?��????��??
-     * @param maxReactorHeat ??��?��?????大�?��??
-     * @return �??????��??额�?��?�电??��?�EU/tick）?
+     * Called when the component receives neutron pulses.
+     * Subclasses override this method for special behavior.
+     * For example, MOX fuel makes more power when the reactor heat is high.
+     * @param stack the component item stack
+     * @param pulseCount number of neutron pulses received
+     * @param reactorHeat current reactor heat
+     * @param maxReactorHeat maximum reactor heat
+     * @return additional power that the component makes, in EU/tick
      */
     public int onReceiveNeutronPulse(ItemStack stack, int pulseCount, int reactorHeat, int maxReactorHeat) {
-        // 默认不产??��?��?��?�电力?子类?��以�?��??
+        // The default makes no additional power. Subclasses can override this.
         return 0;
     }
     
-    // ==================== ??��?�相??�方法? ====================
+    // ==================== Heat methods ====================
     
     /**
-     * ?��??�产??��????��?��???????��?�为�?，散??��??为�?�表示吸??��?��?��??
+     * Returns the heat that the component makes. A positive value adds heat. A negative value (heat vents) removes heat.
      */
     @Override
     public int getHeatOutput() {
@@ -254,7 +257,7 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * ?��??��??大�?��?��?��?��???��??��???????�却?��使用�?
+     * Returns the maximum heat that the component can store (heat vents and coolant cells use this).
      */
     @Override
     public int getMaxHeatStorage() {
@@ -262,7 +265,7 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * ?��??��?��?��?��?��?????�???�相??��??事件?��?��?��?��????��?��??-100�?
+     * Returns the heat transfer efficiency in percent, 0 to 100 (heat exchangers use this).
      */
     @Override
     public int getHeatTransferEfficiency() {
@@ -270,50 +273,50 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * ?��?��??��?��???��??��???????�却?��使用�?
-     * @param stack ??��?????
-     * @param heatToAbsorb �??��?��?????��??
-     * @return 实�???��?��?????��??
+     * Absorbs heat into the component (heat vents and coolant cells use this).
+     * @param stack the component item stack
+     * @param heatToAbsorb heat to absorb
+     * @return heat that the component actually absorbed
      */
     public int absorbHeat(ItemStack stack, int heatToAbsorb) {
-        // 默认实现有?子类?��以�?��??
-        // ?��??��???????�却?��应该??��?�此?��法来实现?��??��?��??
+        // The default absorbs no heat.
+        // Heat vents and coolant cells override this method to absorb heat.
         return 0;
     }
     
     /**
-     * ?��??��?��?��?��?��????��??
-     * @param stack ??��?????
-     * @return 当�?��?��??
+     * Returns the heat that the component stores now.
+     * @param stack the component item stack
+     * @return stored heat
      */
     public int getStoredHeat(ItemStack stack) {
-        // 默认返回??0，�?��?��?��?��?��?????事件??�??��??��??）�?�该??��?�此?���?
+        // The default is 0. Components that store heat (heat vents and heat exchangers) override this method.
         return 0;
     }
     
     /**
-     * 设置存�?��????��??
-     * @param stack ??��?????
-     * @param heat ??��?��??
+     * Sets the stored heat of the component.
+     * @param stack the component item stack
+     * @param heat new stored heat
      */
     public void setStoredHeat(ItemStack stack, int heat) {
-        // 默认空气?�现，�?��?��?��?��?��?????事件?�该??��?�此?���?
+        // The default does nothing. Components that store heat (heat vents and heat exchangers) override this method.
     }
     
     /**
-     * ??�相??��??事件?��?��?��??
-     * @param stack ??��?????
-     * @param heatToTransfer �?传�?��????��??
-     * @return 实�??传�?��????��??
+     * Transfers heat to adjacent components (heat exchangers use this).
+     * @param stack the component item stack
+     * @param heatToTransfer heat to transfer
+     * @return heat that the component actually transfers
      */
     public int transferHeatToAdjacent(ItemStack stack, int heatToTransfer) {
-        // ?��?��??��?��?��?��?????计算?��?��??传�?��????��??
+        // Scale the heat by the heat transfer efficiency (percent).
         int actualTransfer = (int) (heatToTransfer * heatTransferEfficiency / 100.0);
         return actualTransfer;
     }
     
     /**
-     * ?��??��?��?��?��??�?
+     * Returns the remaining durability from the active durability storage.
      */
     public int getCurrentDurability(ItemStack stack) {
         if (useDataComponentDurability) {
@@ -328,10 +331,10 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * �???��?��??�?
-     * @param stack ??��?????
-     * @param amount �???��??
-     * @return ?��?���???��?��??
+     * Applies damage to the component.
+     * @param stack the component item stack
+     * @param amount damage to apply
+     * @return true if the component is depleted after the damage
      */
     public boolean damageItem(ItemStack stack, int amount) {
         if (useDataComponentDurability) {
@@ -373,7 +376,7 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
     
     /**
-     * ?��?��??��?��???��??��???????�却?��使用�?
+     * Returns true if the component is depleted.
      */
     @Override
     public boolean isDepleted(ItemStack stack) {
@@ -389,9 +392,9 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
 
     /**
-     * ?��??��?��????�尽??��???��竭�?��?��?��??
-     * 子类?��??��?�此?��法以返回?�对应�???��竭�?��??�?�??��竭�????��?��??
-     * @return ?��竭�?��?��?��??�?�???��?��?�在??��?��?�null
+     * Returns the item that replaces this component when it is depleted (for example, a depleted fuel rod).
+     * Subclasses override this method to return their depleted item.
+     * @return the depleted item, or null if there is no depleted item
      */
     @Override
     @Nullable
@@ -400,20 +403,20 @@ public class mio_icif_reactor extends Item implements IBaseReactorComponent {
     }
 
     /**
-     * �??��??��???��?��??��??�??��于散??��???????�却??��??�?
-     * 默认实现：�????��?��??度�?�尽??��??为�?��??
-     * @param stack ??��?????
-     * @return ?��?��??��??
+     * Returns true if the component has melted (heat vents and coolant cells use this).
+     * The default treats a depleted component as melted.
+     * @param stack the component item stack
+     * @return true if the component has melted
      */
     public boolean isMelted(ItemStack stack) {
         return isDepleted(stack);
     }
 
     /**
-     * �??��??��???��?��应该??��??�??��于散??��???????�却??��??�?
-     * 默认实现：�?��?�false，表示�?��?��?��??
-     * @param stack ??��?????
-     * @return ?��?��应该??��??
+     * Returns true if the component must melt now (heat vents and coolant cells use this).
+     * The default returns false. The component never melts.
+     * @param stack the component item stack
+     * @return true if the component must melt
      */
     public boolean shouldMelt(ItemStack stack) {
         return false;

@@ -26,7 +26,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 固体加热机方法? * 通过燃烧可燃烧物（除了岩浆）来产生热�? */
+ * Solid heat generator block.
+ * It makes heat by burning fuel items. Lava is not accepted.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_solid_heat_generator extends mio_icif_entity_block {
 

@@ -1,16 +1,18 @@
 package com.miophas.singularity_iteration.common.item.tools;
 
 /**
- * 小型驱动把手
- * 继承电力工具基础值? * 比标准驱动把手能量存储更少，但消耗也更少
- * 用于合成小型电力工具的组�? */
+ * Small power unit.
+ * Extends the electric tool base class.
+ * It stores less energy than the standard power unit. It also uses less energy.
+ * It is a crafting component for small electric tools.
+ */
 @SuppressWarnings("null")
 public class mio_icif_power_unit_small extends mio_icif_tool_elc {
 
     // 小型驱动把手默认最大能量（比标准版少）
     public static final int POWER_UNIT_SMALL_MAX_ENERGY = 5000;
 
-    // 小型驱动把手默认每次使用消耗的能量（比标准版少�
+    // Default energy that the small power unit uses each time (less than the standard power unit).
 public static final int POWER_UNIT_SMALL_ENERGY_PER_USE = 25;
 
     /**

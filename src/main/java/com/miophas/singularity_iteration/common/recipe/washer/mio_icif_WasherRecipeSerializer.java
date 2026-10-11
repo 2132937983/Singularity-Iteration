@@ -10,9 +10,10 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
 /**
- * 洗矿配方序列化器
- * 用于序列化和反序列化洗矿配方
- * 支持多输出（3个输出槽位? */
+ * Serializer for ore washer recipes.
+ * It serializes and deserializes ore washer recipes.
+ * It supports multiple outputs (3 output slots).
+ */
 @SuppressWarnings("null")
 public class mio_icif_WasherRecipeSerializer implements RecipeSerializer<mio_icif_WasherRecipe> {
 
@@ -30,16 +31,16 @@ public static final MapCodec<mio_icif_WasherRecipe> CODEC = RecordCodecBuilder.m
         instance.group(
             Codec.STRING.optionalFieldOf("group", "").forGetter(mio_icif_WasherRecipe::getGroup),
             Ingredient.CODEC_NONEMPTY.fieldOf("ingredient").forGetter(mio_icif_WasherRecipe::getIngredient),
-            // 主输
+            // Primary output
         ItemStack.CODEC.fieldOf("primaryResult").forGetter(mio_icif_WasherRecipe::getPrimaryResult),
             Codec.INT.optionalFieldOf("primaryCount", DEFAULT_RESULT_COUNT).forGetter(mio_icif_WasherRecipe::getPrimaryCount),
-            // 副输?
+            // Secondary output
             ItemStack.CODEC.optionalFieldOf("secondaryResult", ItemStack.EMPTY).forGetter(mio_icif_WasherRecipe::getSecondaryResult),
             Codec.INT.optionalFieldOf("secondaryCount", 0).forGetter(mio_icif_WasherRecipe::getSecondaryCount),
-            // 副输?
+            // Tertiary output
             ItemStack.CODEC.optionalFieldOf("tertiaryResult", ItemStack.EMPTY).forGetter(mio_icif_WasherRecipe::getTertiaryResult),
             Codec.INT.optionalFieldOf("tertiaryCount", 0).forGetter(mio_icif_WasherRecipe::getTertiaryCount),
-            // 其他参数
+            // Other parameters
             Codec.INT.optionalFieldOf("processingtime", DEFAULT_PROCESSING_TIME).forGetter(mio_icif_WasherRecipe::getProcessingTime),
             Codec.INT.optionalFieldOf("energypertick", DEFAULT_ENERGY_PER_TICK).forGetter(mio_icif_WasherRecipe::getEnergyPerTick),
             Codec.INT.optionalFieldOf("wateramount", DEFAULT_WATER_AMOUNT).forGetter(mio_icif_WasherRecipe::getWaterAmount)
@@ -84,16 +85,16 @@ public static final MapCodec<mio_icif_WasherRecipe> CODEC = RecordCodecBuilder.m
     private static mio_icif_WasherRecipe fromNetwork(RegistryFriendlyByteBuf buffer) {
         String group = buffer.readUtf();
         Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buffer);
-        // 主输
+        // Primary output
     ItemStack primaryResult = ItemStack.STREAM_CODEC.decode(buffer);
         int primaryCount = buffer.readVarInt();
-        // 副输?
+        // Secondary output
         ItemStack secondaryResult = OPTIONAL_ITEM_STREAM_CODEC.decode(buffer);
         int secondaryCount = buffer.readVarInt();
-        // 副输?
+        // Tertiary output
         ItemStack tertiaryResult = OPTIONAL_ITEM_STREAM_CODEC.decode(buffer);
         int tertiaryCount = buffer.readVarInt();
-        // 其他参数
+        // Other parameters
         int processingTime = buffer.readVarInt();
         int energyPerTick = buffer.readVarInt();
         int waterAmount = buffer.readVarInt();
@@ -111,16 +112,16 @@ public static final MapCodec<mio_icif_WasherRecipe> CODEC = RecordCodecBuilder.m
     private static void toNetwork(RegistryFriendlyByteBuf buffer, mio_icif_WasherRecipe recipe) {
         buffer.writeUtf(recipe.getGroup());
         Ingredient.CONTENTS_STREAM_CODEC.encode(buffer, recipe.getIngredient());
-        // 主输
+        // Primary output
     ItemStack.STREAM_CODEC.encode(buffer, recipe.getPrimaryResult());
         buffer.writeVarInt(recipe.getPrimaryCount());
-        // 副输?
+        // Secondary output
         OPTIONAL_ITEM_STREAM_CODEC.encode(buffer, recipe.getSecondaryResult());
         buffer.writeVarInt(recipe.getSecondaryCount());
-        // 副输?
+        // Tertiary output
         OPTIONAL_ITEM_STREAM_CODEC.encode(buffer, recipe.getTertiaryResult());
         buffer.writeVarInt(recipe.getTertiaryCount());
-        // 其他参数
+        // Other parameters
         buffer.writeVarInt(recipe.getProcessingTime());
         buffer.writeVarInt(recipe.getEnergyPerTick());
         buffer.writeVarInt(recipe.getWaterAmount());

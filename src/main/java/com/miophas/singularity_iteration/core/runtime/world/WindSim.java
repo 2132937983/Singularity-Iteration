@@ -10,38 +10,45 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.saveddata.SavedData;
 
 /**
- * 全局风场模拟（复刻 IC2 WindSim 机制，独立实现）。
+ * Global wind simulation. It copies the IC2 WindSim mechanism with an independent implementation.
  *
- * <p>每个维度维护一份风场状态：
+ * <p>Each dimension keeps one wind state:
  * <ul>
- *   <li>基础风力强度每 128 tick 随机游走一次：风力越高越难继续上升（&gt;30 时上升概率递减），
- *       风力越低越难继续下降（&lt;12 时下降概率递减），自然形成 12~30 的均衡区间；</li>
- *   <li>风向每 128 tick 有概率左右偏转 18°；</li>
- *   <li>风力随高度按三次多项式变化：在 (海平面与建筑上限的中点) 处达到峰值系数 1，
- *       在建筑上限的 1.125 倍处衰减为 0，且峰值处导数为 0（系数由三个约束解出）；
- *       以主世界（上限 320、海平面 63）为例：y=64 约 0.54、y=140 约 0.93、y=191 峰值 1.0、y=320 约 0.44；</li>
- *   <li>雷暴 ×1.5、降雨 ×1.25，最终乘以全局风力系数换算为 MCU——中高空晴天的典型风力约 45~110 MCU，
- *       风暴峰值可超过 150 MCU（碳转子会过载，符合 IC2 的风险收益设计）。</li>
+ *   <li>The base wind strength does a random walk every 128 ticks. A high wind rises less easily
+ *       (above 30, the chance to rise decreases). A low wind falls less easily
+ *       (below 12, the chance to fall decreases). Thus the wind stays near the range 12 to 30.</li>
+ *   <li>Every 128 ticks, the wind direction can turn 18° left or right.</li>
+ *   <li>The wind changes with height by a cubic polynomial. The factor has its peak of 1 at the midpoint
+ *       between sea level and the build limit. It falls to 0 at 1.125 times the build limit.
+ *       The derivative is 0 at the peak. These three constraints give the coefficients.
+ *       Example for the overworld (build limit 320, sea level 63): y=64 is about 0.54, y=140 is about 0.93,
+ *       y=191 is the peak 1.0, y=320 is about 0.44.</li>
+ *   <li>Thunder multiplies the wind by 1.5. Rain multiplies it by 1.25. Then the global wind multiplier
+ *       converts it to MCU. Typical wind at middle and high altitude in clear weather is about 45 to 110 MCU.
+ *       Storm peaks can go above 150 MCU. Carbon rotors then overload, as in the IC2 risk and reward design.</li>
  * </ul>
  *
- * <p>全局风力系数可通过 <code>assets/mio_icif/config/core.ini</code> 的
- * <code>[wind] globalMultiplier</code> 调整（默认 4.0），对应 IC2 的
- * balance/energyfix/kineticgenerator/wind 配置位。
+ * <p>You can change the global wind multiplier with
+ * <code>[wind] globalMultiplier</code> in <code>assets/mio_icif/config/core.ini</code> (default 4.0).
+ * It matches the IC2 setting balance/energyfix/kineticgenerator/wind.
  *
- * <p>状态随存档持久化；随机游走以绝对游戏时间推进，加载存档或服务器重启后自动补齐
- * 期间的风力演化（有步数上限防止离线过久卡顿）。
+ * <p>The state is saved with the world. The random walk follows the absolute game time.
+ * After a world load or a server restart, the simulation calculates the missed steps.
+ * A step limit prevents lag after a long time offline.
+ *
+ * <p>Server side only. Call on the server thread.
  */
 public final class WindSim extends SavedData {
     private static final String DATA_ID = "scex_wind_sim";
-    /** IC2 的风场刷新间隔（tick）。 */
+    /** The IC2 wind update interval (ticks). */
     public static final int UPDATE_INTERVAL = 128;
-    /** 全局风力系数默认值（调高自 IC2 的 2.4，使中高空典型风力达到碳转子的有效工作区间）。 */
+    /** The default global wind multiplier. It is higher than the IC2 value of 2.4, so typical wind at middle and high altitude is in the useful range of carbon rotors. */
     public static final double DEFAULT_GLOBAL_MULTIPLIER = 4.0;
-    /** 单次访问最多补算的演化步数，超出后直接对齐当前时间。 */
+    /** The maximum number of missed steps to calculate in one access. Above this limit, the time jumps to the current time. */
     private static final int MAX_CATCH_UP_STEPS = 4096;
 
     private ServerLevel level;
-    /** 三次多项式系数 p(y) = c1*y + c2*y^2 + c3*y^3。 */
+    /** The cubic polynomial coefficients: p(y) = c1*y + c2*y^2 + c3*y^3. */
     private double[] coefficients;
     private int windStrength = -1;
     private int windDirection;
@@ -56,7 +63,7 @@ public final class WindSim extends SavedData {
         return sim;
     }
 
-    /** DataStorage 按维度隔离实例；首次访问时绑定维度并初始化本地参数。 */
+    /** DataStorage keeps one instance per dimension. On first access, this binds the dimension and sets the local parameters. */
     private void attach(ServerLevel level) {
         if (this.level == level && coefficients != null) return;
         this.level = level;
@@ -81,7 +88,7 @@ public final class WindSim extends SavedData {
         return tag;
     }
 
-    /** 将风场演化推进到当前游戏时间（每 128 tick 一步）。 */
+    /** Moves the wind simulation forward to the current game time (one step per 128 ticks). */
     private void advance() {
         if (level == null) return;
         long now = level.getGameTime();
@@ -100,7 +107,7 @@ public final class WindSim extends SavedData {
         RandomSource random = level.random;
         int upChance = 10;
         int downChance = 10;
-        // 均衡区间 12~30：超过 30 后上升概率递减，低于 12 后下降概率递减
+        // Balance range 12 to 30: above 30 the chance to rise decreases; below 12 the chance to fall decreases
         if (windStrength > 30) {
             upChance -= windStrength - 30;
         } else if (windStrength < 12) {
@@ -125,7 +132,8 @@ public final class WindSim extends SavedData {
     }
 
     /**
-     * 求解高度系数：p(sh)=1（中点峰值）、p(fh)=0（1.125 倍建筑上限）、p'(sh)=0，Cramer 法则求解。
+     * Solves the height coefficients with Cramer's rule. The constraints are:
+     * p(sh)=1 (peak at the midpoint), p(fh)=0 (at 1.125 times the build limit), and p'(sh)=0.
      */
     private static double[] calculateCoefficients(int height, int seaLevel) {
         double h = Math.max(1, height);
@@ -157,12 +165,12 @@ public final class WindSim extends SavedData {
              + a02 * (a10 * a21 - a11 * a20);
     }
 
-    /** 全局风力系数，读取 core.ini 的 [wind] globalMultiplier（默认 4.0，负值按 0 处理）。 */
+    /** Gets the global wind multiplier from [wind] globalMultiplier in core.ini (default 4.0). A negative value counts as 0. */
     public static double globalMultiplier() {
         return Math.max(0.0, CoreConfig.getDouble("wind", "globalMultiplier", DEFAULT_GLOBAL_MULTIPLIER));
     }
 
-    /** 指定高度的瞬时风力（MCU），不小于 0。 */
+    /** Gets the current wind at a height (MCU). The value is never less than 0. */
     public double getWindAt(double height) {
         advance();
         double multiplier = 0.0;
@@ -179,13 +187,13 @@ public final class WindSim extends SavedData {
         return ret * globalMultiplier();
     }
 
-    /** 当前基础风力强度（未经高度与天气修正）。 */
+    /** Gets the current base wind strength (without height and weather correction). */
     public int getWindStrength() {
         advance();
         return Math.max(0, windStrength);
     }
 
-    /** 当前风向（0~359 度）。 */
+    /** Gets the current wind direction (0 to 359 degrees). */
     public int getWindDirection() {
         return Math.floorMod(windDirection, 360);
     }

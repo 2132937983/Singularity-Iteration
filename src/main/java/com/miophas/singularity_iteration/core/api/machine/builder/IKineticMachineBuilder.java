@@ -4,11 +4,11 @@ import com.miophas.singularity_iteration.core.api.machine.builder.IMachineBuilde
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 /**
- * 动能机器构建器
+ * Builder for kinetic machines.
  *
- * <p>用于创建符合 mio_icif 风格的动能机器（KU系统）。
+ * <p>Use it to create kinetic machines (KU system) in the mio_icif style.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * CustomKineticMachine machine = builder
  *     .setName("advanced_kinetic_generator")
@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
  */
 public interface IKineticMachineBuilder {
 
-    // ========== 基础配置 ==========
+    // ========== Basic configuration ==========
 
     IKineticMachineBuilder setName(String name);
 
@@ -32,46 +32,46 @@ public interface IKineticMachineBuilder {
 
     IKineticMachineBuilder setBlockProperties(BlockBehaviour.Properties properties);
 
-    // ========== 动能配置 ==========
+    // ========== Kinetic configuration ==========
 
     /**
-     * 设置动能容量
+     * Sets the kinetic capacity (KU).
      */
     IKineticMachineBuilder setKineticCapacity(long capacity);
 
     /**
-     * 设置动能输出 (KU/t)
+     * Sets the kinetic output (KU/t).
      */
     IKineticMachineBuilder setKineticOutput(long kineticOutput);
 
     /**
-     * 设置动能传输速率
+     * Sets the kinetic transfer rate (KU/t).
      */
     IKineticMachineBuilder setKineticTransferRate(long transferRate);
 
     /**
-     * 设置动能输入速率
+     * Sets the kinetic input rate (KU/t).
      */
     IKineticMachineBuilder setKineticInputRate(long inputRate);
 
-    // ========== 转子配置 ==========
+    // ========== Rotor configuration ==========
 
     /**
-     * 设置是否需要转子
+     * Sets whether the machine needs a rotor.
      */
     IKineticMachineBuilder setRequiresRotor(boolean requiresRotor);
 
     /**
-     * 设置转子类型
+     * Sets the rotor type.
      */
     IKineticMachineBuilder setRotorType(RotorType rotorType);
 
     /**
-     * 设置转子损耗速率
+     * Sets the rotor wear rate.
      */
     IKineticMachineBuilder setRotorWearRate(int wearRate);
 
-    // ========== 槽位配置 ==========
+    // ========== Slot configuration ==========
 
     IKineticMachineBuilder addRotorSlot(int index);
 
@@ -82,59 +82,59 @@ public interface IKineticMachineBuilder {
     IKineticMachineBuilder addOutputSlot(int index, int maxStackSize);
 
     /**
-     * 设置机器类型
+     * Sets the machine type.
      */
     IKineticMachineBuilder setMachineType(com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType machineType);
 
-    // ========== 事件回调 ==========
+    // ========== Event callbacks ==========
 
     IKineticMachineBuilder onKineticGenerate(KineticCallback callback);
 
     IKineticMachineBuilder onRotorBreak(RotorBreakCallback callback);
 
-    // ========== 构建 ==========
+    // ========== Build ==========
 
     /**
-     * 设置已注册的 BlockEntityType
+     * Sets the registered BlockEntityType.
      *
-     * <p>附属模组在自己的模组初始化阶段创建 BlockEntityType 后，
-     * 通过此方法将其关联到构建器，使 {@link #build()} 返回的定义包含有效的 entityType。
+     * <p>After an addon mod creates the BlockEntityType during its own mod initialization,
+     * it uses this method to link the type to the builder. The definition that {@link #build()} returns then contains a valid entityType.
      *
-     * @param entityType 已注册的 BlockEntityType
-     * @return 构建器自身
+     * @param entityType the registered BlockEntityType
+     * @return this builder
      */
     IKineticMachineBuilder withEntityType(net.minecraft.world.level.block.entity.BlockEntityType<?> entityType);
 
     IMachineDefinition build();
 
     /**
-     * 构建并注册动能机器
+     * Builds and registers the kinetic machine.
      *
-     * <p>如果已通过 {@link #withEntityType(BlockEntityType)} 设置了 BlockEntityType，
-     * 返回的定义将包含该 entityType，可直接使用。
+     * <p>If a BlockEntityType was set through {@link #withEntityType(BlockEntityType)},
+     * the returned definition contains that entityType and is ready to use.
      *
-     * @param modId 模组 ID
-     * @return 机器定义
+     * @param modId the mod ID
+     * @return the machine definition
      */
     IMachineDefinition buildAndRegister(String modId);
 
     /**
-     * 获取机器配置记录
+     * Returns the machine configuration record.
      *
-     * <p>提供创建机器所需的所有参数，供附属模组自行注册 BlockEntityType。
+     * <p>It supplies all parameters that are necessary to create the machine, so that addon mods can register the BlockEntityType themselves.
      *
-     * @return 机器配置记录
+     * @return the machine configuration record
      */
     IMachineBuilderAPI.MachineConfiguration getConfiguration();
 
-    // ========== 枚举和回调 ==========
+    // ========== Enums and callbacks ==========
 
     enum RotorType {
-        WIND,       // 风力转子
-        WATER,      // 水力转子
-        STEAM,      // 蒸汽转子
-        MANUAL,     // 手动转子
-        STIRLING    // 斯特林转子
+        WIND,       // Wind rotor
+        WATER,      // Water rotor
+        STEAM,      // Steam rotor
+        MANUAL,     // Manual rotor
+        STIRLING    // Stirling rotor
     }
 
     @FunctionalInterface

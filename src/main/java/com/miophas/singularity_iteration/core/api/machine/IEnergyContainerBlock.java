@@ -3,95 +3,95 @@ package com.miophas.singularity_iteration.core.api.machine;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
- * 储能方块接口
- * 所有能存储/充放电的方块都应实现此接口
+ * Interface for energy storage blocks.
+ * All blocks that store energy or charge and discharge items must implement this interface.
  *
- * <p>此接口扩展 {@link IEnergyBlock}，储能箱本质上也是一种能源方块，
- * 因此同时提供能量存储访问（继承自 {@link IEnergyBlock}）和电池槽位管理。
+ * <p>This interface extends {@link IEnergyBlock}. An energy storage block is also an energy block.
+ * Thus it gives access to the energy storage (from {@link IEnergyBlock}) and also manages the battery slots.
  */
 public interface IEnergyContainerBlock extends IEnergyBlock {
     
     /**
-     * 获取物品处理器
-     * @return 物品处理器
+     * Gets the item handler.
+     * @return the item handler
      */
     IItemHandler getItemHandler();
     
     /**
-     * 获取电池槽位数量
-     * @return 电池槽位数量
+     * Gets the number of battery slots.
+     * @return the number of battery slots
      */
     int getBatterySlotCount();
     
     /**
-     * 获取充电速率
-     * @return 充电速率（EU/t）
+     * Gets the charge rate.
+     * @return the charge rate (EU/tick)
      */
     long getChargeRate();
     
     /**
-     * 获取放电速率
-     * @return 放电速率（EU/t）
+     * Gets the discharge rate.
+     * @return the discharge rate (EU/tick)
      */
     long getDischargeRate();
     
     /**
-     * 获取总充电量
-     * @return 总充电量（EU）
+     * Gets the total charged energy.
+     * @return the total charged energy (EU)
      */
     long getTotalCharged();
     
     /**
-     * 获取总放电量
-     * @return 总放电量（EU）
+     * Gets the total discharged energy.
+     * @return the total discharged energy (EU)
      */
     long getTotalDischarged();
     
     /**
-     * 获取运行时间
-     * @return 运行时间（tick）
+     * Gets the running time.
+     * @return the running time (ticks)
      */
     long getRunningTime();
     
     /**
-     * 获取运行状态
-     * @return 运行状态描述
+     * Gets the running state.
+     * @return plain English text ("Working", "Full" or "Idle" for energy containers), never null
      */
     String getRunningState();
     
     /**
-     * 获取红石模式
-     * @return 红石模式 (0-7)
+     * Gets the redstone mode.
+     * @return the redstone mode (0 to 7)
      */
     byte getRedstoneMode();
     
     /**
-     * 设置红石模式
-     * @param mode 红石模式 (0-7)
+     * Sets the redstone mode.
+     * @param mode the redstone mode (0 to 7)
      */
     void setRedstoneMode(byte mode);
     
     /**
-     * 是否应该发出红石信号
-     * @return true 如果应该发出信号
+     * Checks if the block must emit a redstone signal.
+     * @return true if the block must emit a signal
      */
     boolean shouldEmitRedstone();
     
     /**
-     * 获取红石信号强度
-     * @return 信号强度 (0-15)
+     * Gets the redstone signal strength.
+     * @return the signal strength (0 to 15)
      */
     int getRedstoneSignalStrength();
     
     /**
-     * 是否有红石输入
-     * @return true 如果有红石输入
+     * Checks if the block has a redstone input.
+     * @return true if the block has a redstone input
      */
     boolean hasRedstoneInput();
     
     /**
-     * 是否启用能量输出
-     * @return true 如果启用能量输出
+     * Checks if energy output is enabled.
+     * @return true if energy output is enabled
      */
     boolean shouldEmitEnergy();
 }

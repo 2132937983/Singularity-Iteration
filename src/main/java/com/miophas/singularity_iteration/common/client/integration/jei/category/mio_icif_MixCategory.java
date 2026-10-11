@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 装罐�?混合模式 JEI 配方类别
+ * JEI recipe category for the canning machine in mix mode.
  */
 @SuppressWarnings("null")
 public class mio_icif_MixCategory extends AbstractJeiRecipeCategory<MixRecipe> {
@@ -45,7 +45,7 @@ public class mio_icif_MixCategory extends AbstractJeiRecipeCategory<MixRecipe> {
         this.background = helper.createDrawable(TEXTURE, 0, 0, 176, 104);
         this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
                 new ItemStack(mio_icif_blocks.CANNER_ELC.get()));
-        // 进度条纹�?(233, 0), 尺寸 24x15
+        // Progress bar texture at (233, 0), size 24x15.
         this.progressBar = helper.createAnimatedDrawable(
                 helper.createDrawable(TEXTURE, 233, 0, 24, 15),
                 40, IDrawableAnimated.StartDirection.LEFT, false);
@@ -111,7 +111,7 @@ public class mio_icif_MixCategory extends AbstractJeiRecipeCategory<MixRecipe> {
     @Override
     protected void drawFor(MixRecipe recipe, IRecipeSlotsView recipeSlotsView, net.minecraft.client.gui.GuiGraphics guiGraphics, double mouseX, double mouseY) {
         this.background.draw(guiGraphics, 0, 0);
-        // 进度条位置?(74, 22) �?GUI 一�
+        // Progress bar at (74, 22). The position matches the machine GUI.
     this.progressBar.draw(guiGraphics, 74, 22);
 
         Minecraft minecraft = Minecraft.getInstance();

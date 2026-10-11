@@ -23,11 +23,6 @@ public class mio_icif_gui_pattern_storage extends mio_icif_screen<com.miophas.si
     private static final int GUI_WIDTH = 176;
     private static final int GUI_HEIGHT = 166;
 
-    // 能量显示位置
-    private static final int ENERGY_X = 9;
-    private static final int ENERGY_Y = 24;
-    private static final int ENERGY_WIDTH = 14;
-    private static final int ENERGY_HEIGHT = 42;
 
     // 导航按钮位置 (原版IC2: 7, 19 和 36, 19)
     private static final int PREV_BTN_X = 7;

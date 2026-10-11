@@ -12,8 +12,8 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 青铜胸甲
- * 比锝链甲稝强的普通护???
+ * Bronze chestplate.
+ * Standard armor that is slightly stronger than chainmail armor.
  */
 @SuppressWarnings("null")
 public class mio_icif_chestplate_bronze extends ArmorItem implements IMetalArmor {

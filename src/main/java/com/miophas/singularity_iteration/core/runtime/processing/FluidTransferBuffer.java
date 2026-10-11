@@ -32,9 +32,10 @@ public final class FluidTransferBuffer {
     /**
      * Server-thread operation.
      *
-     * <p>外部流体处理器是不可信的：真实模组里存在 {@code fill}/ {@code drain} 返回越界数值
-     * （负数或超过请求量）的实现。这类违约只按"保守估计"处理并夹到合法区间，
-     * 绝不抛异常——否则一个坏掉的相邻容器就能崩掉整个服务器。
+     * <p>External fluid handlers are not trusted. Some real mods have {@code fill}/{@code drain} implementations
+     * that return out-of-range values (negative, or more than the request). This code handles such violations
+     * with a conservative estimate and clamps them to the valid range.
+     * It never throws an exception. If it did, one broken adjacent container could crash the whole server.
      */
     public int move(IFluidHandler source, IFluidHandler target, int budget) {
         return move(source, target, budget, () -> true);
@@ -51,8 +52,8 @@ public final class FluidTransferBuffer {
                 available = available.copyWithAmount(Math.min(budget, available.getAmount()));
                 int quoted = target.fill(available.copy(), IFluidHandler.FluidAction.SIMULATE);
                 if (!current.getAsBoolean()) return 0;
-                // 填充分额只是预估，不构成任何承诺：夹到 [0, 可用量] 即可。
-                // 负数（含违约）视为不可接收而放弃本次传输；超过可用量则按可用量封顶。
+                // The fill quote is only an estimate, not a promise. Clamp it to [0, available].
+                // A value of 0 or less (including violations) means "cannot accept"; skip this transfer. A value above the available amount is capped to it.
                 if (quoted <= 0) return 0;
                 if (quoted > available.getAmount()) quoted = available.getAmount();
                 uncertain = available.copyWithAmount(quoted);
@@ -62,8 +63,8 @@ public final class FluidTransferBuffer {
                 // Retain the durable intent without calling a stale source.
                 if (!current.getAsBoolean()) return 0;
                 var actual = source.drain(uncertain.copy(), IFluidHandler.FluidAction.EXECUTE);
-                // 外部来源违约时无法证明其究竟取走了多少：放弃本次意图（宁可损耗也不复制），
-                // 且绝不抛出异常崩服务器。下次 tick 会重新从来源读取。
+                // When the external source violates the contract, we cannot know how much it removed. Drop this intent
+                // (a loss is better than a duplication). Never throw an exception that crashes the server. The next tick reads from the source again.
                 if (!actual.isEmpty() && (actual.getAmount() > uncertain.getAmount()
                         || !FluidStack.isSameFluidSameComponents(actual, uncertain))) {
                     pending = FluidStack.EMPTY;
@@ -89,8 +90,8 @@ public final class FluidTransferBuffer {
             // leave the offered amount in the durable uncertain phase instead.
             if (!current.getAsBoolean()) return 0;
             int accepted = target.fill(offered, IFluidHandler.FluidAction.EXECUTE);
-            // 目标物理上最多只能接收 offered，越界返回一律保守地视为"全部接收"：
-            // 既不重发（避免复制流体），也不抛异常崩服务器。
+            // The target can physically accept at most "offered". An out-of-range return value counts as "all accepted".
+            // Do not send again (this prevents fluid duplication) and do not throw an exception that crashes the server.
             if (accepted < 0 || accepted > uncertain.getAmount()) accepted = uncertain.getAmount();
             int rejected = uncertain.getAmount() - accepted;
             if (rejected > 0) {

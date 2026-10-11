@@ -4,9 +4,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 地形转换模板基类
- * 用于地形转换机中改造环境的模板
- * 最大堆叠：1�?�?
+ * Base class for terrain transformer templates.
+ * The terrain transformer uses templates to change the environment.
+ * Maximum stack size: 1.
  */
 @SuppressWarnings("null")
 public class mio_icif_EvT_default extends Item {
@@ -14,16 +14,16 @@ public class mio_icif_EvT_default extends Item {
     // 模板类型枚举
     @SuppressWarnings("null")
 public enum TemplateType {
-        EMPTY("empty", 0),           // 空白模板 - 不能用于地形转换�?
-        CULTIVATION("cultivation", 400),   // 耕地模板 - 400 EU/�?
-        DESERTIFICATION("desertification", 80),  // 沙漠模板 - 80 EU/�?
-        IRRIGATION("irrigation", 160),   // 灌溉模板 - 160 EU/�?
-        CHILLING("chilling", 80),        // 冰原模板 - 80 EU/�?
-        FLATIFICATION("flatification", 800), // 平地模板 - 800 EU/�?
-        MUSHROOM("mushroom", 160);       // 蘑菇模板 - 160 EU/�?
+        EMPTY("empty", 0), // Blank template. The terrain transformer cannot use it.
+        CULTIVATION("cultivation", 400), // Cultivation template: 400 EU/t
+        DESERTIFICATION("desertification", 80), // Desertification template: 80 EU/t
+        IRRIGATION("irrigation", 160), // Irrigation template: 160 EU/t
+        CHILLING("chilling", 80), // Chilling template: 80 EU/t
+        FLATIFICATION("flatification", 800), // Flatification template: 800 EU/t
+        MUSHROOM("mushroom", 160); // Mushroom template: 160 EU/t
 
         private final String name;
-        private final int euPerTick;  // EU消耗?�?(实际为EU/tick)
+        private final int euPerTick; // EU cost per tick
 
         TemplateType(String name, int euPerTick) {
             this.name = name;
@@ -42,12 +42,12 @@ public enum TemplateType {
     private final TemplateType templateType;
 
     /**
-     * 创建地形转换模板
-     * @param properties 物品属性?
-     * @param templateType 模板类型
+     * Creates a terrain conversion template.
+     * @param properties the item properties
+     * @param templateType the template type
      */
     public mio_icif_EvT_default(Item.Properties properties, TemplateType templateType) {
-        super(properties.stacksTo(1));  // 最大堆�?�?
+        super(properties.stacksTo(1)); // Maximum stack size: 1
         this.templateType = templateType;
     }
 
@@ -59,15 +59,15 @@ public enum TemplateType {
     }
 
     /**
-     * 获取EU消耗（每tick�?
+     * Gets the EU cost per tick.
      */
     public int getEuPerTick() {
         return templateType.getEuPerTick();
     }
 
     /**
-     * 检查是否是空白模板
-     * 空白模板不能用于地形转换�?
+     * Checks if this is the blank template.
+     * The terrain transformer cannot use the blank template.
      */
     public boolean isEmpty() {
         return templateType == TemplateType.EMPTY;

@@ -4,10 +4,10 @@ package com.miophas.singularity_iteration.common.future.event;
 import java.util.Random;
 
 /**
- * 价格稳定事件
+ * Price stabilization event.
  *
- * 效果：未来N天价格向基础价格回归，最终稳定在基础价格附近
- * 强度影响：强度越高，回归速度越快
+ * Effect: during the next N days, the price moves back to the base price. The price then stays near the base price.
+ * Intensity: a higher intensity makes the price move back faster.
  */
 @SuppressWarnings("null")
 public class PriceStabilizationEvent extends FuturePriceEvent {
@@ -25,21 +25,21 @@ public class PriceStabilizationEvent extends FuturePriceEvent {
 
     @Override
     public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
-        // 计算与基础价格的偏???
+        // Calculate the deviation from the base price.
         double deviation = (double) (currentPrice - basePrice) / basePrice;
 
-        // 回归力度随天数和强度增加
+        // The regression strength increases with the day count and the intensity.
         double regressionStrength = 0.2 + (intensity * 0.3);
         double dayProgress = (double) dayOffset / duration;
         double totalRegression = deviation * regressionStrength * (1 + dayProgress);
 
-        // 添加微小随机波动 (-2% to +2%)
+        // Add a small random fluctuation (-2% to +2%).
         double randomFactor = 0.98 + (RANDOM.nextDouble() * 0.04);
 
-        // 计算新价???
+        // Calculate the new price.
         int newPrice = (int) (currentPrice * (1.0 - totalRegression) * randomFactor);
 
-        // 确保价格不会偏离基础价格太远（基础价格???0%-150%???
+        // Make sure that the price stays near the base price (50%-150% of the base price).
         int minPrice = (int) (basePrice * 0.5);
         int maxPrice = (int) (basePrice * 1.5);
 

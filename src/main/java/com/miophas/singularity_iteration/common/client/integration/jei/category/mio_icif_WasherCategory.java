@@ -101,8 +101,11 @@ public class mio_icif_WasherCategory extends AbstractJeiRecipeCategory<mio_icif_
         int ox = -BG_X;
         int oy = -BG_Y;
 
-        builder.addSlot(RecipeIngredientRole.INPUT, 104 + ox, 17 + oy)
-                .addIngredients(recipe.getIngredients().get(0));
+        // A data pack recipe can have no ingredients. JEI must not crash on it.
+        if (!recipe.getIngredients().isEmpty()) {
+            builder.addSlot(RecipeIngredientRole.INPUT, 104 + ox, 17 + oy)
+                    .addIngredients(recipe.getIngredients().get(0));
+        }
 
         builder.addSlot(RecipeIngredientRole.INPUT, 38 + ox, 17 + oy)
                 .addItemStack(new ItemStack(Items.WATER_BUCKET));

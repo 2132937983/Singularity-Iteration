@@ -63,7 +63,7 @@ public class mio_icif_diamond_driller extends mio_icif_tool_elc implements IMini
         return hardness < 0 ? -1 : (int)Math.ceil(hardness * 30.0D / getDestroySpeed(stack, state));
     }
     @Override public boolean breakBlock(ItemStack stack, BlockGetter world, BlockPos pos, BlockState expected) {
-        if (!(world instanceof ServerLevel level) || !level.hasChunkAt(pos)
+        if (!(world instanceof ServerLevel level) || !level.isLoaded(pos)
                 || !level.getBlockState(pos).equals(expected) || expected.getDestroySpeed(level, pos) < 0
                 || !isCorrectToolForDrops(stack, expected)) return false;
         var actor = FakePlayerFactory.getMinecraft(level);

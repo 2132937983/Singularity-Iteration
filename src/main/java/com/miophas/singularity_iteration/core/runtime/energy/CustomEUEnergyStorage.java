@@ -25,7 +25,7 @@ public class CustomEUEnergyStorage implements IEUEnergyStorage, IEnergyStorageAc
     
     protected long powerOutput = 0;
     protected boolean isPowerSource = false;
-    protected boolean outputEnabled = true; // 红石控制输出开关
+    protected boolean outputEnabled = true; // Redstone-controlled output switch.
 
     // Independent-network ownership is explicit and fixed by the containing
     // block's development policy before its saved balance is read.
@@ -262,15 +262,15 @@ public class CustomEUEnergyStorage implements IEUEnergyStorage, IEnergyStorageAc
     }
     
     /**
-     * 设置能量输出是否启用（红石控制）
-     * @param enabled true=允许输出, false=禁止输出
+     * Sets if the energy output is enabled (redstone control).
+     * @param enabled true = output is allowed, false = output is not allowed
      */
     public void setOutputEnabled(boolean enabled) {
         this.outputEnabled = enabled;
     }
     
     /**
-     * 检查能量输出是否启用
+     * Checks if the energy output is enabled.
      */
     public boolean isOutputEnabled() {
         return this.outputEnabled;
@@ -329,16 +329,16 @@ public class CustomEUEnergyStorage implements IEUEnergyStorage, IEnergyStorageAc
     }
 
     /**
-     * 检查实现 {@link IExplosionPowerOverride} 的方块是否应爆炸。
-     * 未实现该接口时默认返回 true。
+     * Checks if a block that implements {@link IExplosionPowerOverride} must explode.
+     * If the block does not implement that interface, this method returns true.
      */
     public static boolean shouldTileExplode(BlockEntity tile) {
         return !(tile instanceof IExplosionPowerOverride override) || override.shouldExplode();
     }
 
     /**
-     * 解析实现 {@link IExplosionPowerOverride} 的方块的实际爆炸威力。
-     * 未实现该接口时返回 basePower。
+     * Gets the actual explosion power of a block that implements {@link IExplosionPowerOverride}.
+     * If the block does not implement that interface, this method returns basePower.
      */
     public static float resolveTileExplosionPower(BlockEntity tile, int tier, float basePower) {
         if (tile instanceof IExplosionPowerOverride override) {
@@ -365,7 +365,7 @@ public class CustomEUEnergyStorage implements IEUEnergyStorage, IEnergyStorageAc
     @Override
     public long extract(long maxExtract, boolean simulate) {
         if (maxExtract <= 0) return 0;
-        // 如果输出被禁用（红石控制），则不允许提取能量
+        // If the output is disabled (redstone control), energy extraction is not allowed.
         if (!this.outputEnabled) {
             return 0;
         }
@@ -478,9 +478,9 @@ public class CustomEUEnergyStorage implements IEUEnergyStorage, IEnergyStorageAc
     public void setCapacity(long capacity) {
         scexPayments.checkPendingThread();
         this.capacity = Math.max(0, capacity);
-        // 对齐 IC2：容量收缩（取下储能/超频升级后 recalculateUpgradeStats 会缩小容量）不删除已存的 EU，
-        // 机器允许短期处于 energy > capacity。IC2 的 TileEntityElectricMachine 读档、injectEnergy、
-        // getDemandedEnergy 都不夹取存量，只在 GUI 侧把比例按 1 夹住（guiChargeLevel = min(1, e/max)）。
+        // Same as IC2: a capacity decrease (recalculateUpgradeStats decreases the capacity after energy storage or overclocker upgrades are removed) does not delete stored EU.
+        // A machine can have energy > capacity for a short time. In IC2, TileEntityElectricMachine load, injectEnergy and
+        // getDemandedEnergy do not clamp the stored energy. Only the GUI clamps the ratio to 1 (guiChargeLevel = min(1, e/max)).
         scexSetWholePreservingFraction(this.energy);
     }
 

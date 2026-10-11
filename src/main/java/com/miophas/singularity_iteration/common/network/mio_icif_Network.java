@@ -9,20 +9,100 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 /**
- * 网络包注册类
- * 统一管理所有网络包的注册? */
+ * Registers all custom payloads of the mod in one place ({@link #register}).
+ *
+ * <h2>Rules for all payloads</h2>
+ * <ul>
+ *   <li>Channel version: the mod version ({@link #protocolVersion()}). NeoForge refuses a
+ *       client and a server with different versions at login.</li>
+ *   <li>No payload is optional. NeoForge refuses a vanilla client at login. A fake player or a
+ *       test player can still exist without the channel. A server-to-client sender must check
+ *       {@code connection.hasChannel(type)} or catch the send error.</li>
+ *   <li>Handler thread: the registrar uses the NeoForge default, the main thread (the server
+ *       thread, or the client main thread). On the main thread,
+ *       {@code IPayloadContext.enqueueWork} runs its task at once.</li>
+ *   <li>Trust boundary: a client-to-server handler must treat each field as hostile. It must
+ *       check ranges, ownership, distance and the open menu on the server.</li>
+ * </ul>
+ *
+ * <h2>Payloads</h2>
+ * C2S = client to server. S2C = server to client.
+ * <table>
+ *   <caption>Registered payloads</caption>
+ *   <tr><th>Payload</th><th>Direction</th><th>Purpose</th></tr>
+ *   <tr><td>{@code SuitPackets.ManeuverInput}</td><td>C2S</td><td>throttle and stick of the local Special Maneuver Mode flyer</td></tr>
+ *   <tr><td>{@code SuitPackets.ManeuverState}</td><td>S2C</td><td>throttle and stick of a different flyer, for visuals</td></tr>
+ *   <tr><td>{@code SuitPackets.Threats}</td><td>S2C</td><td>threat sensor list: entities that watch or target the wearer</td></tr>
+ *   <tr><td>{@code SuitPackets.ShieldHit}</td><td>S2C</td><td>one hit that the suit deflector stopped</td></tr>
+ *   <tr><td>{@code SuitPackets.ChunkGrid}</td><td>S2C</td><td>EU grid summary of the player's chunk</td></tr>
+ *   <tr><td>{@code SuitPackets.ChunkGridRequest}</td><td>C2S</td><td>asks for {@code ChunkGrid}</td></tr>
+ *   <tr><td>{@code MetalFormerModePacket}</td><td>C2S</td><td>sets the mode of a Metal Former</td></tr>
+ *   <tr><td>{@code FutureCommoditySync}</td><td>S2C</td><td>datapack futures commodity list and the commodities that the player has not unlocked</td></tr>
+ *   <tr><td>{@code NuclearExplosionAnimationPacket}</td><td>S2C</td><td>starts the mushroom cloud animation of a nuclear explosion</td></tr>
+ *   <tr><td>{@code ODScannerResultPacket}</td><td>S2C</td><td>result of an ore dictionary (OD) scan</td></tr>
+ *   <tr><td>{@code FutureTradePacket}</td><td>C2S</td><td>a futures trade request at a market block</td></tr>
+ *   <tr><td>{@code ScannerButtonPacket}</td><td>C2S</td><td>delete or save button of the Scanner</td></tr>
+ *   <tr><td>{@code JetpackModeSwitchPacket}</td><td>C2S</td><td>toggles the hover mode of the worn jetpack</td></tr>
+ *   <tr><td>{@code JetpackKeyStatePacket}</td><td>C2S</td><td>jetpack key state (bit mask)</td></tr>
+ *   <tr><td>{@code ToolTogglePacket}</td><td>C2S</td><td>toggles the tool in the main hand (G key)</td></tr>
+ *   <tr><td>{@code QuantumJumpPacket}</td><td>C2S</td><td>legacy quantum boots jump. Kept for compatibility. It has no effect.</td></tr>
+ *   <tr><td>{@code KeyboardStatePacket}</td><td>C2S</td><td>key state of the player, sent on change (IC2 key update)</td></tr>
+ *   <tr><td>{@code QuantumBoostPacket}</td><td>S2C</td><td>dash velocity of the quantum boots</td></tr>
+ *   <tr><td>{@code FluidRegulatorFlowRatePacket}</td><td>C2S</td><td>sets the flow rate of a Fluid Regulator</td></tr>
+ *   <tr><td>{@code FluidDistributorModePacket}</td><td>C2S</td><td>changes the mode of a Fluid Distributor</td></tr>
+ *   <tr><td>{@code FluidRegulatorModePacket}</td><td>C2S</td><td>changes the mode of a Fluid Regulator</td></tr>
+ *   <tr><td>{@code WeightedDistributorPriorityPacket}</td><td>C2S</td><td>sets the priority order of a Weighted Distributor</td></tr>
+ *   <tr><td>{@code WorkbenchClearPacket}</td><td>C2S</td><td>clear button of the Industrial Workbench</td></tr>
+ *   <tr><td>{@code SorterDefaultDirPacket}</td><td>C2S</td><td>sets the default output side of the Electric Sorter</td></tr>
+ *   <tr><td>{@code ChunkLoaderTogglePacket}</td><td>C2S</td><td>toggles one chunk of a Chunk Loader</td></tr>
+ *   <tr><td>{@code ArmorFeatureTogglePacket}</td><td>C2S</td><td>switches an on/off feature of a worn item on or off</td></tr>
+ *   <tr><td>{@code ArmorFeatureCyclePacket}</td><td>C2S</td><td>selects the next mode of a mode feature of a worn item</td></tr>
+ *   <tr><td>{@code TileEntityEventPacket}</td><td>S2C</td><td>a block entity network event</td></tr>
+ *   <tr><td>{@code ItemEventPacket}</td><td>S2C</td><td>an item network event for the player that holds the item</td></tr>
+ *   <tr><td>{@code TileEntityFieldUpdatePacket}</td><td>S2C</td><td>new value of one block entity field</td></tr>
+ *   <tr><td>{@code ArmoryActionPacket}</td><td>C2S</td><td>action in the open Armory menu (summon, rename, unbind, automation)</td></tr>
+ *   <tr><td>{@code ArmoryToastPacket}</td><td>S2C</td><td>toast for the owner: the Armory repaired and charged the stored suits</td></tr>
+ *   <tr><td>{@code ArmoryConsoleSyncPacket}</td><td>S2C</td><td>contents of the Armory section of the Equipment Console</td></tr>
+ *   <tr><td>{@code ArmoryConsolePacket}</td><td>C2S</td><td>action in the Armory section of the Equipment Console (refresh, summon, showcase, return)</td></tr>
+ *   <tr><td>{@code MeterHudPacket.Request}</td><td>C2S</td><td>voltage detector HUD: asks what is on the network at a position</td></tr>
+ *   <tr><td>{@code MeterHudPacket.Reply}</td><td>S2C</td><td>answer to {@code MeterHudPacket.Request}</td></tr>
+ *   <tr><td>{@code MeterNetworkPacket}</td><td>S2C</td><td>network data and samples for the open EU meter menu</td></tr>
+ *   <tr><td>{@code MachineStatusPacket}</td><td>S2C</td><td>status lamp states of machines in one chunk</td></tr>
+ *   <tr><td>{@code AreaPreviewPacket}</td><td>S2C</td><td>work areas of machines for the Area Preview</td></tr>
+ *   <tr><td>{@code AreaPreviewRequestPacket}</td><td>C2S</td><td>asks for the work area of the machine of the open menu</td></tr>
+ *   <tr><td>{@code LaserTowerBeamPacket}</td><td>S2C</td><td>laser tower state change or volley, for visuals</td></tr>
+ *   <tr><td>{@code EquipmentConsolePacket}</td><td>C2S</td><td>Equipment Console edit of one item (priority, mode, tuning)</td></tr>
+ *   <tr><td>{@code EnergyTerminalSyncPacket}</td><td>S2C</td><td>one second of telemetry for the open Energy Terminal menu</td></tr>
+ *   <tr><td>{@code EnergyTerminalTogglePacket}</td><td>C2S</td><td>switches one device of the terminal network on or off</td></tr>
+ *   <tr><td>{@code LaserTowerSyncPacket}</td><td>S2C</td><td>statistics and target list for the open laser tower menu</td></tr>
+ *   <tr><td>{@code LaserTowerConfigPacket}</td><td>C2S</td><td>edits the target list of the open laser tower menu</td></tr>
+ *   <tr><td>{@code MinerFilterPacket}</td><td>C2S</td><td>sets a ghost filter slot of the Advanced Miner (JEI drag)</td></tr>
+ * </table>
+ */
 @SuppressWarnings("null")
 public class mio_icif_Network {
 
     /**
-     * 注册所有网络包
-     * @param event 注册事件
+     * Returns the channel version for all payloads of the mod. The value is the mod version from
+     * the mod metadata, or "1" when the mod container is not available.
      */
     public static String protocolVersion() {
         return net.neoforged.fml.ModList.get().getModContainerById(com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID)
             .map(c -> c.getModInfo().getVersion().toString()).orElse("1");
     }
 
+    /**
+     * Registers each payload with its codec and its handler. {@link #init} adds this method as
+     * a listener on the mod event bus. The class Javadoc lists each payload, its direction and
+     * its purpose.
+     *
+     * <p>{@code playToServer} registers a client-to-server payload. {@code playToClient}
+     * registers a server-to-client payload. All payloads use the play protocol. The registrar
+     * does not call {@code optional()} or {@code executesOn(...)}. Thus each payload is
+     * required, and each handler runs on the main thread.
+     *
+     * @param event the NeoForge payload registration event
+     */
     public static void register(final RegisterPayloadHandlersEvent event) {
         // The channel version is the mod version: a client and a server on different SI builds
         // are refused at login with NeoForge's channel-mismatch screen. With the fixed "1" they
@@ -30,176 +110,178 @@ public class mio_icif_Network {
         // module / core menu gained its charge and armor slots in 0.1.7.29: an older client
         // built 36 slots, the newer server synced 42 -> IndexOutOfBoundsException at slot 36).
         final PayloadRegistrar registrar = event.registrar(protocolVersion());
+        // Suit sensors and Special Maneuver Mode: six payloads, see SuitPackets.
         com.miophas.singularity_iteration.common.suit.SuitPackets.register(registrar);
 
-        // 注册金属成型机模式切换包
+        // C2S: Metal Former mode change.
         registrar.playToServer(
             MetalFormerModePacket.TYPE,
             MetalFormerModePacket.CODEC,
             MetalFormerModePacket::handle
         );
 
-        // 注册核爆炸动画包
-        // datapack futures commodities (+ the player's locked ones)
+        // S2C: datapack futures commodities, and the commodities that the player has not unlocked.
         registrar.playToClient(
             com.miophas.singularity_iteration.common.future.FutureCommoditySync.TYPE,
             com.miophas.singularity_iteration.common.future.FutureCommoditySync.CODEC,
             com.miophas.singularity_iteration.common.future.FutureCommoditySync::handle
         );
 
+        // S2C: nuclear explosion mushroom cloud animation.
         registrar.playToClient(
             NuclearExplosionAnimationPacket.TYPE,
             NuclearExplosionAnimationPacket.CODEC,
             NuclearExplosionAnimationPacket::handle
         );
 
-        // 注册OD扫描器结果包
+        // S2C: OD scanner result.
         registrar.playToClient(
             ODScannerResultPacket.TYPE,
             ODScannerResultPacket.CODEC,
             ODScannerResultPacket::handle
         );
 
-        // 注册未来交易�
+        // C2S: futures trade request.
     registrar.playToServer(
             FutureTradePacket.TYPE,
             FutureTradePacket.CODEC,
             FutureTradePacket::handle
         );
 
-        // 注册扫描机按钮点击包
+        // C2S: Scanner button click (delete or save).
         registrar.playToServer(
             ScannerButtonPacket.TYPE,
             ScannerButtonPacket.STREAM_CODEC,
             ScannerButtonPacket::handleOnServer
         );
 
-        // 注册喷气背包模式切换�
+        // C2S: jetpack hover mode toggle.
     registrar.playToServer(
             JetpackModeSwitchPacket.TYPE,
             JetpackModeSwitchPacket.CODEC,
             JetpackModeSwitchPacket::handle
         );
 
-        // 注册喷气背包按键状态包（IC2风格，独立按键状态）
+        // C2S: jetpack key state (IC2 style, separate from the general key state).
         registrar.playToServer(
             JetpackKeyStatePacket.TYPE,
             JetpackKeyStatePacket.CODEC,
             JetpackKeyStatePacket::handle
         );
 
-        // 注册工具开关切换包
+        // C2S: tool on/off toggle.
         registrar.playToServer(
             ToolTogglePacket.TYPE,
             ToolTogglePacket.CODEC,
             ToolTogglePacket::handle
         );
 
-        // 注册量子靴大跳包（保留兼容）
+        // C2S: quantum boots jump. Kept for compatibility only.
         registrar.playToServer(
             QuantumJumpPacket.TYPE,
             QuantumJumpPacket.CODEC,
             QuantumJumpPacket::handle
         );
 
-        // 注册按键状态同步包（IC2RIn120原版：KeyboardClient.sendKeyUpdate�
+        // C2S: key state sync (from IC2RIn120: KeyboardClient.sendKeyUpdate).
     registrar.playToServer(
             KeyboardStatePacket.TYPE,
             KeyboardStatePacket.CODEC,
             KeyboardStatePacket::handle
         );
 
-        // 注册量子靴突进速度同步包（服务端→客户端）
+        // S2C: quantum boots dash velocity.
         registrar.playToClient(
             QuantumBoostPacket.TYPE,
             QuantumBoostPacket.CODEC,
             QuantumBoostPacket::handle
         );
 
-        // 注册流体流量调节机流量设置包
+        // C2S: Fluid Regulator flow rate.
         registrar.playToServer(
             FluidRegulatorFlowRatePacket.TYPE,
             FluidRegulatorFlowRatePacket.CODEC,
             FluidRegulatorFlowRatePacket::handle
         );
 
-        // 注册流体分配机模式切换包
+        // C2S: Fluid Distributor mode change.
         registrar.playToServer(
             FluidDistributorModePacket.TYPE,
             FluidDistributorModePacket.CODEC,
             FluidDistributorModePacket::handle
         );
 
-        // 注册流体流量调节机模式切换包
+        // C2S: Fluid Regulator mode change.
         registrar.playToServer(
             FluidRegulatorModePacket.TYPE,
             FluidRegulatorModePacket.CODEC,
             FluidRegulatorModePacket::handle
         );
 
-        // 注册加权分配机优先级同步�
+        // C2S: Weighted Distributor priority order.
     registrar.playToServer(
             WeightedDistributorPriorityPacket.TYPE,
             WeightedDistributorPriorityPacket.CODEC,
             WeightedDistributorPriorityPacket::handle
         );
 
-        // 注册工业工作台清空按钮
+        // C2S: Industrial Workbench clear button.
         registrar.playToServer(
             WorkbenchClearPacket.TYPE,
             WorkbenchClearPacket.CODEC,
             WorkbenchClearPacket::handle
         );
 
-        // 注册电动分拣机默认输出方向切换包
+        // C2S: Electric Sorter default output side.
         registrar.playToServer(
             SorterDefaultDirPacket.TYPE,
             SorterDefaultDirPacket.CODEC,
             SorterDefaultDirPacket::handle
         );
 
+        // C2S: Chunk Loader chunk toggle.
         registrar.playToServer(
             ChunkLoaderTogglePacket.TYPE,
             ChunkLoaderTogglePacket.CODEC,
             ChunkLoaderTogglePacket::handle
         );
 
-        // 注册装备特性切换包
+        // C2S: armor feature on/off toggle.
         registrar.playToServer(
             ArmorFeatureTogglePacket.TYPE,
             ArmorFeatureTogglePacket.CODEC,
             ArmorFeatureTogglePacket::handle
         );
 
-        // 注册装备特性模式循环包
+        // C2S: armor feature mode cycle.
         registrar.playToServer(
             ArmorFeatureCyclePacket.TYPE,
             ArmorFeatureCyclePacket.CODEC,
             ArmorFeatureCyclePacket::handle
         );
 
-        // 注册方块实体网络事件同步包（服务端→客户端）
+        // S2C: block entity network event.
         registrar.playToClient(
             TileEntityEventPacket.TYPE,
             TileEntityEventPacket.CODEC,
             TileEntityEventPacket::handle
         );
 
-        // 注册物品网络事件同步包（服务端→客户端）
+        // S2C: item network event.
         registrar.playToClient(
             ItemEventPacket.TYPE,
             ItemEventPacket.CODEC,
             ItemEventPacket::handle
         );
 
-        // 注册方块实体字段更新同步包（服务端→客户端）
+        // S2C: block entity field update.
         registrar.playToClient(
             TileEntityFieldUpdatePacket.TYPE,
             TileEntityFieldUpdatePacket.CODEC,
             TileEntityFieldUpdatePacket::handle
         );
 
-        // Laser tower volley visuals (server -> client, one packet per volley)
+        // Armory: C2S menu action, S2C maintenance toast, S2C console contents, C2S console action.
         registrar.playToServer(
             com.miophas.singularity_iteration.common.armory.ArmoryActionPacket.TYPE,
             com.miophas.singularity_iteration.common.armory.ArmoryActionPacket.CODEC,
@@ -220,6 +302,7 @@ public class mio_icif_Network {
             com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket.CODEC,
             com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket::handle
         );
+        // EU meter and voltage detector: C2S HUD request, S2C HUD reply, S2C open-menu data.
         registrar.playToServer(
             com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket.Request.TYPE,
             com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket.Request.CODEC,
@@ -235,11 +318,13 @@ public class mio_icif_Network {
             com.miophas.singularity_iteration.common.menu.tool.MeterNetworkPacket.CODEC,
             com.miophas.singularity_iteration.common.menu.tool.MeterNetworkPacket::handle
         );
+        // S2C: status lamp changes of one chunk (MachineStatusTracker).
         registrar.playToClient(
             com.miophas.singularity_iteration.common.machine.MachineStatusPacket.TYPE,
             com.miophas.singularity_iteration.common.machine.MachineStatusPacket.CODEC,
             com.miophas.singularity_iteration.common.machine.MachineStatusPacket::handle
         );
+        // Area Preview: S2C work areas, C2S request for the machine of the open menu.
         registrar.playToClient(
             AreaPreviewPacket.TYPE,
             AreaPreviewPacket.CODEC,
@@ -250,16 +335,19 @@ public class mio_icif_Network {
             AreaPreviewRequestPacket.CODEC,
             AreaPreviewRequestPacket::handle
         );
+        // S2C: laser tower state change or volley, for visuals. One packet per change, never per tick.
         registrar.playToClient(
             LaserTowerBeamPacket.TYPE,
             LaserTowerBeamPacket.CODEC,
             LaserTowerBeamPacket::handle
         );
+        // C2S: Equipment Console edit of one item.
         registrar.playToServer(
             EquipmentConsolePacket.TYPE,
             EquipmentConsolePacket.CODEC,
             EquipmentConsolePacket::handle
         );
+        // Energy Terminal: S2C telemetry, C2S device toggle.
         registrar.playToClient(
             EnergyTerminalSyncPacket.TYPE,
             EnergyTerminalSyncPacket.CODEC,
@@ -270,6 +358,7 @@ public class mio_icif_Network {
             EnergyTerminalTogglePacket.CODEC,
             EnergyTerminalTogglePacket::handle
         );
+        // Laser tower menu: S2C statistics and target list, C2S target list edit.
         registrar.playToClient(
             LaserTowerSyncPacket.TYPE,
             LaserTowerSyncPacket.CODEC,
@@ -281,7 +370,7 @@ public class mio_icif_Network {
             LaserTowerConfigPacket::handle
         );
 
-        // 注册高级采矿机过滤槽设置包（JEI 幽灵拖拽，客户端→服务端）
+        // C2S: Advanced Miner filter slot (JEI ghost drag).
         registrar.playToServer(
             MinerFilterPacket.TYPE,
             MinerFilterPacket.CODEC,
@@ -300,12 +389,12 @@ public class mio_icif_Network {
     }
 
     /**
-     * 发送核爆炸动画包到客户端
- * @param level 服务端世�
- * @param centerX 爆炸中心X
-     * @param centerY 爆炸中心Y
-     * @param centerZ 爆炸中心Z
-     * @param explosionRadius 爆炸半径
+     * Sends the nuclear explosion animation packet to clients.
+     * @param level the server level
+     * @param centerX the explosion center X
+     * @param centerY the explosion center Y
+     * @param centerZ the explosion center Z
+     * @param explosionRadius the explosion radius
      */
     public static void sendNuclearExplosionAnimation(ServerLevel level, double centerX, double centerY, double centerZ, int explosionRadius) {
         double distance = Math.max(512, Math.min(4096, explosionRadius * 3));

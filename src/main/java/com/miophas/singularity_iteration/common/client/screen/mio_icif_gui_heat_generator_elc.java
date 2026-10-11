@@ -37,10 +37,6 @@ public class mio_icif_gui_heat_generator_elc extends mio_icif_screen<com.miophas
     private static final int HEAT_ICON_TEXTURE_Y = 227;
 
     // 电池槽位位置
-    @SuppressWarnings("unused")
-    private static final int BATTERY_X = 8;
-    @SuppressWarnings("unused")
-    private static final int BATTERY_Y = 62;
 
     // 线圈槽位置（2排5列，紧凑排列18x18）
     @SuppressWarnings("unused")

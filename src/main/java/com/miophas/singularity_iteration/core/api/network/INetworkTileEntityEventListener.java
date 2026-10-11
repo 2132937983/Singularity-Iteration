@@ -1,19 +1,19 @@
 package com.miophas.singularity_iteration.core.api.network;
 
 /**
- * 方块实体网络事件监听接口（服务端）。
+ * Listener interface for block entity network events (server side).
  * <p>
- * 对应 IC2 1.12.2 的 {@code INetworkTileEntityEventListener}。
- * 实现此接口的方块实体可以在触发网络事件时收到通知。
+ * Equivalent to {@code INetworkTileEntityEventListener} in IC2 1.12.2.
+ * A block entity that implements this interface gets a notification when a network event occurs.
  */
 public interface INetworkTileEntityEventListener {
 
     /**
-     * 当方块实体触发网络事件时调用。
+     * Called when the block entity triggers a network event.
      * <p>
-     * 此方法在服务端执行。
+     * This method runs on the server side.
      *
-     * @param eventId 事件 ID
+     * @param eventId the event ID
      */
     void onNetworkEvent(int eventId);
 }

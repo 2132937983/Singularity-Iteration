@@ -29,14 +29,14 @@ import java.util.List;
 public class mio_icif_Entity_Nuke_Primed extends Entity implements TraceableEntity {
     private static final int CONTAINED_SLOT_COUNT = 9;
     private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(mio_icif_Entity_Nuke_Primed.class, EntityDataSerializers.INT);
-    private static final int DEFAULT_FUSE_TIME = 600; // 30�?= 600 ticks
+    private static final int DEFAULT_FUSE_TIME = 600; // 30 seconds = 600 ticks
     public static final String TAG_FUSE = "fuse";
     public static final String TAG_ITEMS = "Items";
 
     @Nullable
     private LivingEntity owner;
 
-    // 存储核弹内的物品栈?个TNT槽位 + 1个核原料槽位置
+    // Stores the item stacks in the nuke (8 TNT slots + 1 nuclear material slot).
 private List<ItemStack> containedItems = new ArrayList<>();
 
     public mio_icif_Entity_Nuke_Primed(EntityType<? extends mio_icif_Entity_Nuke_Primed> entityType, Level level) {
@@ -172,7 +172,7 @@ private List<ItemStack> containedItems = new ArrayList<>();
             );
         }
 
-        // 红石粒子和烟�
+        // Redstone particles and smoke
     if (fuse % 2 == 0) {
             // 红石粒子
             int redstoneCount = fuse <= 100 ? 6 : 3;
@@ -225,7 +225,7 @@ private List<ItemStack> containedItems = new ArrayList<>();
             }
         }
 
-        // 最终?秒添加更多警告效果
+        // In the last 5 seconds, add more warning effects.
     if (fuse <= 100 && fuse % 5 == 0) {
             for (int i = 0; i < 12; i++) {
                 double offsetX = (this.level().random.nextDouble() - 0.5) * 1.8;
@@ -244,8 +244,8 @@ private List<ItemStack> containedItems = new ArrayList<>();
     }
 
     /**
-     * 执行核爆�
- */
+     * Detonates the nuke.
+     */
     protected void explode() { tryExplode(); }
 
     protected boolean tryExplode() {

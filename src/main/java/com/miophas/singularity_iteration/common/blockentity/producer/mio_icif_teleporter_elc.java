@@ -64,7 +64,6 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
 
     // 目标检查计时器
     @SuppressWarnings("unused")
-    private int targetCheckTicker = 0;
 
     // 机器是否被红石信号激活且配对完成
     private boolean isActive = false;
@@ -81,7 +80,7 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
             DEFAULT_CAPACITY,
             DEFAULT_MAX_RECEIVE,
             DEFAULT_MAX_EXTRACT,
-            DEFAULT_COOLDOWN,
+            com.miophas.singularity_iteration.common.tuning.SiTuningValues.TELEPORTER_COOLDOWN.get(),       // datapack: si_tuning/teleporter.json
             LAYOUT,
             DEFAULT_ENERGY_PER_TICK,
             CableTier.HV);
@@ -169,7 +168,6 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
         } else {
             blockEntity.setActive(false);
         }
-        blockEntity.targetCheckTicker++;
     }
 
     /**
@@ -343,7 +341,7 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
      * 当有其他传送机传送到此机器时调用
      */
     private void onTeleportFrom(mio_icif_teleporter_elc from) {
-        this.cooldown = DEFAULT_COOLDOWN;
+        this.cooldown = com.miophas.singularity_iteration.common.tuning.SiTuningValues.TELEPORTER_COOLDOWN.get();
         setChanged();
     }
 

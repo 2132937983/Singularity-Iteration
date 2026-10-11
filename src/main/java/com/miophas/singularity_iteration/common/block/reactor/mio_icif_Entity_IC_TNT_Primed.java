@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 public class mio_icif_Entity_IC_TNT_Primed extends Entity implements TraceableEntity {
     private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(mio_icif_Entity_IC_TNT_Primed.class, EntityDataSerializers.INT);
     @SuppressWarnings("unused")
-    private static final int DEFAULT_FUSE_TIME = 80;
     public static final String TAG_FUSE = "fuse";
     @Nullable
     private LivingEntity owner;

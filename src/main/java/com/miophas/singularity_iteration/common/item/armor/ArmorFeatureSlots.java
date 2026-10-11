@@ -57,7 +57,7 @@ public final class ArmorFeatureSlots {
             return slots;
         }
         for (EquipmentSlot slot : VANILLA) {
-            slots.add(new EquippedSlot(slot.getName().toLowerCase(), slot, player.getItemBySlot(slot)));
+            slots.add(new EquippedSlot(slot.getName().toLowerCase(java.util.Locale.ROOT), slot, player.getItemBySlot(slot)));
         }
         ItemStack back = backSlotStack(player);
         if (!back.isEmpty()) {
@@ -80,7 +80,7 @@ public final class ArmorFeatureSlots {
         if (id == null) {
             return null;
         }
-        return switch (id.toLowerCase()) {
+        return switch (id.toLowerCase(java.util.Locale.ROOT)) {
             case "head" -> EquipmentSlot.HEAD;
             case "chest" -> EquipmentSlot.CHEST;
             case "legs" -> EquipmentSlot.LEGS;

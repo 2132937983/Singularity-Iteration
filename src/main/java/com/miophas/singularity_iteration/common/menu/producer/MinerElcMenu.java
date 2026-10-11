@@ -22,7 +22,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 采矿石?Menu
+ * Menu for the miner.
  */
 @SuppressWarnings("null")
 public class MinerElcMenu extends mio_icif_base_menu {
@@ -68,7 +68,7 @@ public class MinerElcMenu extends mio_icif_base_menu {
         this.blockEntity = blockEntity;
         this.itemHandler = blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : new ItemStackHandler(TOTAL_SLOTS);
 
-        // 数据同步�?=progress, 1=maxProgress, 2=isWorking, 3=energy, 4=maxEnergy
+        // Synced data: 0=progress, 1=maxProgress, 2=isWorking, 3=energy, 4=maxEnergy
         this.data = new ContainerData() {
             private final int[] data = new int[5];
 
@@ -89,7 +89,7 @@ public class MinerElcMenu extends mio_icif_base_menu {
         };
         this.addDataSlots(data);
 
-        // 电池�?
+        // Battery slot
         this.addSlot(new SlotItemHandler(itemHandler, SLOT_BATTERY, BATTERY_X, BATTERY_Y) {
             @Override
             public int getMaxStackSize(ItemStack stack) {
@@ -100,16 +100,16 @@ public class MinerElcMenu extends mio_icif_base_menu {
 
         addUpgradeSlot(itemHandler, SLOT_UPGRADE, UPGRADE_X, UPGRADE_Y);
 
-        // 钻头�?
+        // Drill slot
         this.addSlot(new SlotItemHandler(itemHandler, SLOT_DRILL, DRILL_X, DRILL_Y));
 
         // 扫描器槽
         this.addSlot(new SlotItemHandler(itemHandler, SLOT_SCANNER, SCANNER_X, SCANNER_Y));
 
-        // 采矿管道�?
+        // Mining pipe slot
         this.addSlot(new SlotItemHandler(itemHandler, SLOT_PIPE, PIPE_X, PIPE_Y));
 
-        // 存储槽（3�?x 5列）
+        // Storage slots (3 rows x 5 columns)
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 5; col++) {
                 int slotIndex = SLOT_STORAGE_START + row * 5 + col;
@@ -118,13 +118,13 @@ public class MinerElcMenu extends mio_icif_base_menu {
                 this.addSlot(new SlotItemHandler(itemHandler, slotIndex, x, y) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
-                        return false; // 存储槽不能手动放入物�?
+                        return false; // Players cannot put items into the storage slots manually
                     }
                 });
             }
         }
 
-        // 注册自定义快速移动规则?
+        // Register custom quick-move rules.
         addCustomMoveRule(
             stack -> stack.getItem() instanceof mio_icif_iron_driller ||
                      stack.getItem() instanceof mio_icif_diamond_driller ||
@@ -138,15 +138,15 @@ public class MinerElcMenu extends mio_icif_base_menu {
             stack -> stack.is(com.miophas.singularity_iteration.common.registry.mio_icif_blocks.BLOCK_MINING_PIPE.get().asItem()),
             SLOT_PIPE, SLOT_PIPE + 1);
 
-        // 玩家物品栈?(3�?�? - 按照原版IC2逻辑: height=166, inventoryYOffset=-82, hotbarYOffset=-24
-        // 背包第一�?Y = 166 - 82 = 84, 快捷�?Y = 166 - 24 = 142
+        // Player inventory (3 rows x 9 columns). This follows the original IC2 layout: height=166, inventoryYOffset=-82, hotbarYOffset=-24.
+        // First inventory row Y = 166 - 82 = 84. Hotbar Y = 166 - 24 = 142.
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
             }
         }
 
-        // 玩家快捷�?(1�?�?
+        // Player hotbar (1 row x 9 columns)
         for (int col = 0; col < 9; col++) {
             this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, col, 8 + col * 18, 142));
         }
@@ -201,7 +201,7 @@ public class MinerElcMenu extends mio_icif_base_menu {
     }
 
     /**
-     * 设置同步数据（供 Screen �?containerTick 中调用）
+     * Sets a synced data value. The Screen calls this from containerTick.
      */
     public void setSyncData(int index, int value) {
         if (index >= 0 && index < data.getCount()) {

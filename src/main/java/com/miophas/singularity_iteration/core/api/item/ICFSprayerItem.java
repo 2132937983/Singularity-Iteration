@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * CF 泡沫喷枪物品接口。
+ * Marker interface for CF (construction foam) sprayer items.
  *
- * <p>用于标识建筑泡沫喷枪类物品，便于 API 统一查询与分类。
+ * <p>Use it to identify construction foam sprayer items. The API uses it to find and sort these items.
  */
 public interface ICFSprayerItem {
 }

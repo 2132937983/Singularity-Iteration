@@ -12,7 +12,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 金属成型�?Menu
+ * Menu for the metal former.
  */
 @SuppressWarnings("null")
 public class MetalFormerMenu extends mio_icif_machine_menu {
@@ -31,7 +31,7 @@ public class MetalFormerMenu extends mio_icif_machine_menu {
     private static final int OUTPUT_X = 116;
     private static final int OUTPUT_Y = 35;
 
-    // 插件槽（空闲槽）位置
+    // Position of the plugin slots (free slots).
     private static final int PLUGIN_X = 152;
     private static final int PLUGIN_Y_START = 8;
     private static final int PLUGIN_SLOT_SPACING = 18;
@@ -51,19 +51,19 @@ public class MetalFormerMenu extends mio_icif_machine_menu {
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
 
-        // 注册快速移动规则?
+        // Register the quick-move rules.
         registerMachineMoveRules();
     }
 
     @Override
     protected void addMachineSlots() {
-        // 输入�?
+        // Input slot.
         addInputSlot(INPUT_SLOT, INPUT_X, INPUT_Y);
 
-        // 电池�?
+        // Battery slot.
         addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
 
-        // 输出�?
+        // Output slot.
         addOutputSlot(OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y);
 
         for (int i = 0; i < PLUGIN_SLOT_COUNT; i++) {
@@ -154,7 +154,7 @@ public class MetalFormerMenu extends mio_icif_machine_menu {
             return false;
         }
 
-        // 获取当前模式并切换到下一�?
+        // Get the current mode and switch to the next mode.
         mio_icif_metal_former.MetalFormerMode currentMode = be.getMode();
         mio_icif_metal_former.MetalFormerMode nextMode = switch (currentMode) {
             case ROLLING -> mio_icif_metal_former.MetalFormerMode.CUTTING;
@@ -162,13 +162,13 @@ public class MetalFormerMenu extends mio_icif_machine_menu {
             case EXTRUDING -> mio_icif_metal_former.MetalFormerMode.ROLLING;
         };
 
-        // 设置新模式?
+        // Set the new mode.
         be.setMode(nextMode);
         if (be.getLevel() != null) be.getLevel().playSound(null, be.getBlockPos(),
             com.miophas.singularity_iteration.common.registry.mio_icif_sounds.METAL_FORMER_SWITCH.get(),
             net.minecraft.sounds.SoundSource.BLOCKS, 0.9F, 0.95F + player.getRandom().nextFloat() * 0.1F);
 
-        // 更新方块状态?
+        // Update the block state.
         if (be.getLevel() != null) {
             be.getLevel().setBlockAndUpdate(be.getBlockPos(),
                 be.getBlockState().setValue(mio_icif_block_metal_former.MODE,

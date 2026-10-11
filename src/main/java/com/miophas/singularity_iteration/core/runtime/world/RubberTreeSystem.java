@@ -17,33 +17,33 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 橡胶树体系核心逻辑。
+ * Core logic of the rubber tree system.
  *
- * <p>集中实现树脂采集与再生的规则，供橡胶木方块与 {@code IRubberTreeAPI} 共用，
- * 与具体注册表内容（树脂物品、方块/物品类）解耦：树脂物品由调用方以 {@link Item} 传入。
+ * <p>It holds the rules for resin harvest and regrowth in one place. Rubber wood blocks and {@code IRubberTreeAPI} both use it.
+ * It does not depend on specific registry content (resin item, block and item classes): the caller gives the resin item as an {@link Item}.
  *
- * <p>所有修改世界的方法仅在服务端执行，客户端调用视为无操作。
+ * <p>All methods that change the world run only on the server. A call on the client does nothing.
  */
 @SuppressWarnings("null")
 public final class RubberTreeSystem {
 
-    /** 橡胶木每次随机刻再生树脂的概率。 */
+    /** Probability that rubber wood regrows resin on each random tick. */
     public static final float RESIN_REGROW_CHANCE = 0.05F;
 
     private RubberTreeSystem() {
     }
 
-    // ==================== 判定 ====================
+    // ==================== Checks ====================
 
     /**
-     * 判断物品堆是否为树液采集器。
+     * Checks if the item stack is a treetap.
      */
     public static boolean isTreeTap(ItemStack stack) {
         return stack != null && !stack.isEmpty() && stack.getItem() instanceof ITreeTapItem;
     }
 
     /**
-     * 判断物品堆是否为电动树液采集器。
+     * Checks if the item stack is an electric treetap.
      */
     public static boolean isElectricTreeTap(ItemStack stack) {
         return stack != null && !stack.isEmpty()
@@ -52,23 +52,23 @@ public final class RubberTreeSystem {
     }
 
     /**
-     * 获取方块状态对应的橡胶木接口。
+     * Gets the rubber wood interface for the block state.
      *
-     * @return 非橡胶木返回 {@code null}
+     * @return {@code null} if the block is not rubber wood
      */
     public static IRubberWood rubberWoodOf(BlockState state) {
         return state != null && state.getBlock() instanceof IRubberWood wood ? wood : null;
     }
 
     /**
-     * 判断方块状态是否为橡胶木。
+     * Checks if the block state is rubber wood.
      */
     public static boolean isRubberWood(BlockState state) {
         return rubberWoodOf(state) != null;
     }
 
     /**
-     * 判断橡胶木当前是否含有树脂。
+     * Checks if the rubber wood contains resin now.
      */
     public static boolean hasResin(BlockState state) {
         IRubberWood wood = rubberWoodOf(state);
@@ -76,7 +76,7 @@ public final class RubberTreeSystem {
     }
 
     /**
-     * 判断橡胶木是否具备采集条件。
+     * Checks if the rubber wood meets the harvest conditions.
      */
     public static boolean isTappable(BlockState state) {
         IRubberWood wood = rubberWoodOf(state);
@@ -84,7 +84,7 @@ public final class RubberTreeSystem {
     }
 
     /**
-     * 判断橡胶木当前是否可被采集（具备采集条件且含有树脂）。
+     * Checks if the rubber wood can be harvested now (it meets the harvest conditions and contains resin).
      */
     public static boolean canHarvest(BlockState state) {
         IRubberWood wood = rubberWoodOf(state);
@@ -92,9 +92,9 @@ public final class RubberTreeSystem {
     }
 
     /**
-     * 判断指定工具是否可用于采集该橡胶木。
+     * Checks if the given tool can harvest this rubber wood.
      *
-     * <p>电动工具需要能量充足。
+     * <p>An electric tool needs sufficient energy.
      */
     public static boolean canUseTapOn(BlockState state, ItemStack tool) {
         if (!canHarvest(state) || !isTreeTap(tool)) {
@@ -106,10 +106,10 @@ public final class RubberTreeSystem {
         return true;
     }
 
-    // ==================== 数量 ====================
+    // ==================== Quantity ====================
 
     /**
-     * 根据采集器参数掷出本次可获得的树脂数量。
+     * Rolls the quantity of resin for this harvest from the treetap parameters.
      */
     public static int rollResinCount(ITreeTapItem tap, RandomSource random) {
         if (tap == null || random == null) {
@@ -120,15 +120,15 @@ public final class RubberTreeSystem {
         return max == min ? min : min + random.nextInt(max - min + 1);
     }
 
-    // ==================== 采集 ====================
+    // ==================== Harvest ====================
 
     /**
-     * 执行一次树脂采集。
+     * Does one resin harvest.
      *
-     * <p>消耗采集器耐久或电能、掉落树脂并将方块置为不含树脂状态。
+     * <p>It uses treetap durability or electric energy, drops resin, and sets the block to the state without resin.
      *
-     * @param resinItem 树脂物品
-     * @return 采集结果
+     * @param resinItem the resin item
+     * @return the harvest result
      */
     public static RubberHarvestResult harvest(Level level, BlockPos pos, BlockState state,
                                               Player player, InteractionHand hand,
@@ -166,14 +166,14 @@ public final class RubberTreeSystem {
         level.setBlock(pos, wood.withResin(state, false), 3);
 
         if (electric && hand != null) {
-            // 同步能量变化到玩家手中
+            // Synchronize the energy change to the item in the player's hand
             player.setItemInHand(hand, tool);
         }
         return RubberHarvestResult.success(count);
     }
 
     /**
-     * 在方块与玩家之间掉落指定数量的树脂。
+     * Drops the given quantity of resin between the block and the player.
      */
     public static void dropResin(Level level, BlockPos pos, Player player, Item resinItem, int count) {
         if (level == null || pos == null || player == null || resinItem == null || count <= 0) {
@@ -190,10 +190,10 @@ public final class RubberTreeSystem {
         level.addFreshEntity(itemEntity);
     }
 
-    // ==================== 再生 ====================
+    // ==================== Regrowth ====================
 
     /**
-     * 判断橡胶木当前是否可以自然再生树脂。
+     * Checks if the rubber wood can regrow resin naturally now.
      */
     public static boolean canRegrowResin(BlockState state) {
         IRubberWood wood = rubberWoodOf(state);
@@ -201,9 +201,9 @@ public final class RubberTreeSystem {
     }
 
     /**
-     * 尝试让橡胶木再生树脂（随机刻逻辑）。
+     * Tries to make the rubber wood regrow resin (random tick logic).
      *
-     * @return 本次是否再生了树脂
+     * @return true if resin regrew this time
      */
     public static boolean tryRegrowResin(Level level, BlockPos pos, BlockState state, RandomSource random) {
         if (level == null || level.isClientSide || pos == null || random == null) {

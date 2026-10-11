@@ -32,24 +32,26 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * 村民系统注册
- * 
- * 职责�? * 1. 注册期货商人村民职业
- * 2. 注册兴趣点（POI）类�? * 3. 配置交易内容
+ * Registers the villager system.
+ *
+ * Tasks:
+ * 1. Register the future trader villager profession.
+ * 2. Register the point of interest (POI) type.
+ * 3. Configure the trades.
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
 @SuppressWarnings("null")
 public class mio_icif_villagers {
 
-    // POI 类型注册�
+    // Register for POI types.
 public static final DeferredRegister<PoiType> POI_TYPES = 
             DeferredRegister.create(BuiltInRegistries.POINT_OF_INTEREST_TYPE, Singularity_Iteration.MOD_ID);
 
-    // 村民职业注册�
+    // Register for villager professions.
 public static final DeferredRegister<VillagerProfession> VILLAGER_PROFESSIONS = 
             DeferredRegister.create(BuiltInRegistries.VILLAGER_PROFESSION, Singularity_Iteration.MOD_ID);
 
-    // POI 类型�?ResourceKey
+    // ResourceKey of the future machine POI type.
     public static final ResourceKey<PoiType> FUTURE_ELC_POI_KEY = ResourceKey.create(
             BuiltInRegistries.POINT_OF_INTEREST_TYPE.key(),
             ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "future_elc_poi")
@@ -64,23 +66,23 @@ public static final DeferredHolder<PoiType, PoiType> FUTURE_ELC_POI = POI_TYPES.
                 );
                 Singularity_Iteration.LOGGER.info("Registering POI type for future_elc with {} states: {}",
                         states.size(), states);
-                // 创建 POI 类型：最终?1 个村民使用，范围 1 �
+                // Create the POI type: 1 villager can use it, and the search range is 1 block.
             return new PoiType(states, 1, 1);
             });
 
-    // 期货商人职业 - 使用 Holder 直接比较�?.21 正确方式�
+    // Future trader profession. It matches the POI by Holder, which is the correct method in 1.21.
 public static final DeferredHolder<VillagerProfession, VillagerProfession> FUTURE_TRADER = VILLAGER_PROFESSIONS.register("future_trader",
             () -> {
                 Singularity_Iteration.LOGGER.info("Registering villager profession: future_trader");
                 
-                // 创建谓词：使�?ResourceKey 进行匹配
+                // Create the predicate. It matches the POI by ResourceKey.
                 Predicate<Holder<PoiType>> poiPredicate = holder -> holder.is(FUTURE_ELC_POI_KEY);
                 
                 return new VillagerProfession(
                         Singularity_Iteration.MOD_ID + ":future_trader",
-                        poiPredicate,  // heldWorkstation - 村民持有的工作站�
-                    poiPredicate,  // acquirableWorkstation - 村民可以获取的工作站�
-                    ImmutableSet.of(),  // gatherableItems - 可收集物�
+                        poiPredicate, // heldWorkstation: the workstation that the villager holds
+                    poiPredicate, // acquirableWorkstation: the workstation that the villager can claim
+                    ImmutableSet.of(), // gatherableItems: items that the villager collects
                     ImmutableSet.of(),  // secondaryJobSites - 辅助工作站点
                         SoundEvents.VILLAGER_WORK_LIBRARIAN);
             });
@@ -122,8 +124,8 @@ public static final DeferredHolder<VillagerProfession, VillagerProfession> FUTUR
     }
 
     /**
-     * 自定义交易类 - 用物品换绿宝�
- */
+     * Custom trade: the villager gives one emerald for items.
+     */
     public static class EmeraldForItemsTrade implements VillagerTrades.ItemListing {
         private final Item item;
         private final int itemCount;
@@ -146,8 +148,8 @@ public static final DeferredHolder<VillagerProfession, VillagerProfession> FUTUR
     }
     
     /**
-     * 自定义交易类 - 用硬币购买物�
- */
+     * Custom trade: the villager sells items for coins.
+     */
     public static class ItemsForCoinsTrade implements VillagerTrades.ItemListing {
         private final Item item;
         private final int itemCount;
@@ -179,53 +181,53 @@ public static final DeferredHolder<VillagerProfession, VillagerProfession> FUTUR
         if (event.getType() == FUTURE_TRADER.get()) {
             Singularity_Iteration.LOGGER.info("Registering trades for future_trader");
             
-            // 新手级别交易（等�?1�
+            // Novice trades (level 1).
         event.getTrades().put(1, List.of(
-                    // 用绿宝石买硬币（1 绿宝�?5 硬币�
+                    // Buy 5 coins for 1 emerald.
                 new ItemsForEmeraldsTrade(mio_icif_normal.COIN.get(), 5, 1, 12, 0.05f),
                     // 用硬币换绿宝石（10 硬币=1 绿宝石）
                     new EmeraldForItemsTrade(mio_icif_normal.COIN.get(), 10, 12, 2)
             ));
 
-            // 学徒级别交易（等�?2�
+            // Apprentice trades (level 2).
         event.getTrades().put(2, List.of(
                     // 出售空电池（8 绿宝石）
                     new ItemsForEmeraldsTrade(mio_icif_normal.BAT_LEV0.get(), 1, 8, 8, 0.05f),
-                    // 出售橡胶�? 橡胶=10 绿宝石）
+                    // Sell 4 rubber for 10 emeralds.
                     new ItemsForEmeraldsTrade(mio_icif_resources.RUBBER.get(), 4, 10, 10, 0.05f)
             ));
 
-            // 老手级别交易（等�?3�
+            // Journeyman trades (level 3).
         event.getTrades().put(3, List.of(
                     // 出售木转子（6 绿宝石）
                     new ItemsForEmeraldsTrade(mio_icif_items.ROTOR_WOOD.get(), 1, 6, 6, 0.05f),
-                    // 出售树脂�? 树脂=8 绿宝石）
+                    // Sell 4 resin for 8 emeralds.
                     new ItemsForEmeraldsTrade(mio_icif_resources.HARZ.get(), 4, 8, 8, 0.05f)
             ));
 
-            // 专家级别交易（等�?4�
+            // Expert trades (level 4).
         event.getTrades().put(4, List.of(
-                    // 出售高级电池�? 绿宝石）
+                    // Sell 1 advanced battery for 4 emeralds.
                     new ItemsForEmeraldsTrade(mio_icif_normal.ADVBAT_LEV0.get(), 1, 4, 4, 0.05f),
-                    // 出售电路板（2 电路�?6 绿宝石）
+                    // Sell 2 circuits for 6 emeralds.
                     new ItemsForEmeraldsTrade(mio_icif_normal.CIRCUIT.get(), 2, 6, 6, 0.05f)
             ));
 
-            // 大师级别交易（等�?5�
+            // Master trades (level 5).
         event.getTrades().put(5, List.of(
-                    // 出售能量水晶�? 绿宝石）
+                    // Sell 1 energy crystal for 2 emeralds.
                     new ItemsForEmeraldsTrade(mio_icif_normal.CRYSTAL_LEV0.get(), 1, 2, 2, 0.05f),
                     // 出售兰波顿水晶电池（1 绿宝石）
                     new ItemsForEmeraldsTrade(mio_icif_normal.CRYSTAL_CHARGEBAT_LEV0.get(), 1, 1, 1, 0.05f)
             ));
             
-            // 添加新物品交易（使用硬币�
-        // 情报�?000 硬币�? 等级 3
+            // Add the coin trades.
+        // Intelligence costs 1000 coins at level 3. This put replaces the level 3 list above.
             event.getTrades().put(3, List.of(
                     new ItemsForCoinsTrade(mio_icif_normal.INTELLIGENCE.get(), 1, 1000, 5, 0.05f)
             ));
             
-            // 价格修改器（2000 硬币�? 等级 4
+            // Price modifier costs 2000 coins at level 4. This put replaces the level 4 list above.
             event.getTrades().put(4, List.of(
                     new ItemsForCoinsTrade(mio_icif_normal.MODIFY.get(), 1, 2000, 3, 0.05f)
             ));

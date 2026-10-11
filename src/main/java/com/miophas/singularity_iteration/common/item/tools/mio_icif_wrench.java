@@ -109,6 +109,11 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
         if (level.isClientSide) {
             return;
         }
+        // spectators, adventure mode, spawn protection and claims: same checks as a vanilla edit
+        if (!com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(player, level, pos,
+                event.getFace(), stack)) {
+            return;
+        }
 
         Direction clickedFace = event.getHitVec().getDirection();
         Vec3 hitVec = event.getHitVec().getLocation();
@@ -257,6 +262,10 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
      * wrench used its own copy without the inventory carry and spilled machine contents.
      */
     public static void dismantle(Level level, BlockPos pos, BlockState state, Player player, ItemStack wrenchStack, boolean keepContents) {
+        // a dismantle removes the block: the break event lets protection mods refuse it
+        if (!level.isClientSide && !com.miophas.singularity_iteration.common.util.BlockEditPermission.canBreak(player, level, pos, state, null, wrenchStack)) {
+            return;
+        }
         Block block = state.getBlock();
         level.playSound(null, pos, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.MACHINE_DEMOLISH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
         BlockEntity blockEntity = level.getBlockEntity(pos);

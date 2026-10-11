@@ -27,6 +27,9 @@ public class mio_icif_screens {
      */
     private static void registerMenuScreens(RegisterMenuScreensEvent event) {
         // 注册火力发电机的 GUI 界面
+        // Toolbox: the menu was registered and opened by the item, but had no screen (0.1.7.36)
+        event.register(mio_icif_tool_menus.TOOLBOX_MENU.get(), mio_icif_gui_toolbox::new);
+
         event.register(
             mio_icif_menus.THERMAL_GENERATOR_MENU_TYPE.get(),
             mio_icif_gui_Thermal_Generator::new

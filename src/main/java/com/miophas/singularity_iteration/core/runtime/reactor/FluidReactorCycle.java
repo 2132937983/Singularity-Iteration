@@ -5,29 +5,29 @@ package com.miophas.singularity_iteration.core.runtime.reactor;
 public final class FluidReactorCycle {
     private FluidReactorCycle(){}
     /**
-     * IC2 {@code balance/energyfix/FluidReactor/outputModifier} 默认 1.0 → huOutputModifier = 40。
-     * 放出热先乘该系数，再按冷媒的 huPerMB 折算产量。
+     * IC2 {@code balance/energyfix/FluidReactor/outputModifier} has the default 1.0 → huOutputModifier = 40.
+     * The emitted heat is first multiplied by this factor. Then the coolant huPerMB converts it to the output quantity.
      */
     public static final int HU_OUTPUT_MODIFIER=40;
-    /** IC2 冷却液换热默认 {@code heatExchangerHotCoolant = 1.0} → round(20 × 1.0) = 20 HU/mB。 */
+    /** IC2 coolant heat exchange default {@code heatExchangerHotCoolant = 1.0} → round(20 × 1.0) = 20 HU/mB. */
     public static final int COOLANT_HU_PER_MB=20;
-    /** IC2 水换热默认 {@code heatExchangerWater = 1.0} → round(1.0 × 1.0) = 1 HU/mB。 */
+    /** IC2 water heat exchange default {@code heatExchangerWater = 1.0} → round(1.0 × 1.0) = 1 HU/mB. */
     public static final int WATER_HU_PER_MB=1;
     public record Conversion(int millibuckets,long returnedHeat){}
     public record Result(ReactorCycle.Result cycle,int coolant,int hotCoolant,int converted,long returnedHeat){}
-    /** 默认按冷却液（20 HU/mB）换算。 */
+    /** Converts with the coolant rate by default (20 HU/mB). */
     public static Conversion convert(long emittedHeat,int coolant,int hotCoolant,int capacity){
         return convert(emittedHeat,coolant,hotCoolant,capacity,COOLANT_HU_PER_MB);
     }
     /**
-     * 与 IC2 的流体反应堆换算等价：
+     * Equivalent to the IC2 fluid reactor conversion:
      * <pre>
-     *   huOutput  = huOutputModifier × 放出热
-     *   产量      = huOutput / huPerMB          （再受输出罐剩余空间与输入冷媒量限制）
-     *   返回堆温  = (huOutput - 产量 × huPerMB) / huOutputModifier
+     *   huOutput     = huOutputModifier × emitted heat
+     *   output (mB)  = huOutput / huPerMB          (also limited by the free space of the output tank and the input coolant quantity)
+     *   returned heat = (huOutput - output × huPerMB) / huOutputModifier
      * </pre>
-     * 当没有任何输入冷媒时产量为 0，放出热全部退回外壳堆温，这与 IC2 在
-     * {@code inputFluid == null} 分支里的行为一致。
+     * When there is no input coolant, the output is 0 and all emitted heat goes back to the hull heat. This agrees with the IC2
+     * behavior in the {@code inputFluid == null} branch.
      */
     public static Conversion convert(long emittedHeat,int coolant,int hotCoolant,int capacity,int huPerMB){
         return convert(emittedHeat,coolant,hotCoolant,capacity,huPerMB,true);

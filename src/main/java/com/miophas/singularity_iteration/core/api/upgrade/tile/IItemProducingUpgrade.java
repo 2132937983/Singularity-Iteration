@@ -1,12 +1,12 @@
 package com.miophas.singularity_iteration.core.api.upgrade.tile;
 
 /**
- * 物品产出升级接口（标记接口）。
+ * Marker interface for upgrades that produce items.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IItemProducingUpgrade}。
- * 实现此接口的升级表示该升级可以产出物品。
+ * Equivalent to {@code IItemProducingUpgrade} in IC2 1.12.2.
+ * An upgrade that implements this interface can produce items.
  * <p>
- * 例如：某些升级可以在机器工作时额外产出副产品。
+ * Example: some upgrades produce an extra by-product while the machine operates.
  */
 public interface IItemProducingUpgrade extends IUpgradeItem {
 }

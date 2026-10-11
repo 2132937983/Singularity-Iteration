@@ -100,7 +100,17 @@ public class mio_icif_pipe_item extends mio_icif_pipe_default {
         if(!queued){queued=true;w.waiting.add(new java.lang.ref.WeakReference<>(this));}
         return 0;
     }
-    private void releaseSearch() { if(level!=null)window().searching.remove(this); }
+    /**
+     * The work window is server state. Client block entities also run markForUpdate / onLoad /
+     * setRemoved, and in single player that is the render thread: touching the shared WeakHashMap
+     * from there raced the server tick (0.1.7.36). Only the server thread may use the window.
+     */
+    private void releaseSearch() {
+        if (level instanceof ServerLevel server && server.getServer().isSameThread()) {
+            WorkWindow w = WINDOWS.get(level);
+            if (w != null) w.searching.remove(this);
+        }
+    }
     protected void dirty() {
         if(level instanceof ServerLevel server) {
             var chunk=server.getChunkSource().getChunkNow(worldPosition.getX()>>4,worldPosition.getZ()>>4);

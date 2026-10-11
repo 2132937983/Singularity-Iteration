@@ -7,13 +7,13 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 流体核反应堆压力容器框架方块
+ * Pressure vessel frame block of the fluid nuclear reactor.
  *
- * 功能量?
- * - 用于构建流体核反应堆多方块结构的框架方块
- * - 作为反应堆的外壳结构，提供结构支�?
- * - 防爆性较强，能够抵御核反应堆爆炸
- * - 无特殊功能，不链接方块实体?
+ * Function:
+ * - It is the frame block of the fluid nuclear reactor multiblock structure.
+ * - It forms the reactor shell and gives structural support.
+ * - It has high blast resistance and can survive a nuclear reactor explosion.
+ * - It has no special function and does not link to a block entity.
  */
 @SuppressWarnings("null")
 public class mio_icif_Block_reactorvessel extends Block {
@@ -26,7 +26,7 @@ public class mio_icif_Block_reactorvessel extends Block {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!level.isClientSide()) {
-            // 通知多方块结构管理器检查结果?
+            // Tell the multiblock structure manager to check the structure.
             mio_icif_multiblock_manager.notifyBlockChanged(level, pos);
         }
     }
@@ -34,7 +34,7 @@ public class mio_icif_Block_reactorvessel extends Block {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
-            // 通知多方块结构管理器检查结果?
+            // Tell the multiblock structure manager to check the structure.
             mio_icif_multiblock_manager.notifyBlockChanged(level, pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);

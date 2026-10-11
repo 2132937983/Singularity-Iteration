@@ -35,7 +35,8 @@ public record mio_icif_CentrifugeRecipeInput(ItemStack item) implements RecipeIn
     }
 
     /**
-     * 检查输入是否为???     */
+     * Checks if the input is empty.
+     */
     public boolean isEmpty() {
         return item.isEmpty();
     }

@@ -3,10 +3,10 @@ package com.miophas.singularity_iteration.core.runtime.uu;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 扫描结果的公开值模型：一次扫描产出的单件物品与其 UU/能源报价。
+ * Public value model of a scan result: the single item from one scan and its UU and energy cost.
  *
- * <p>这是核心侧的规范类型；内置扫描机的 {@code ScanResult} 只是它的兼容外壳，
- * 其余代码（模式存储、复制、迁移）只依赖本类。
+ * <p>This is the canonical type on the core side. The {@code ScanResult} of the built-in scanner is only a compatibility wrapper for it.
+ * All other code (pattern storage, replication, migration) depends only on this class.
  */
 public class UuScanResult {
 

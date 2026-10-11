@@ -104,8 +104,8 @@ public class LathingToolItem extends Item implements ILatheItem.ILatheTool {
      */
     @SuppressWarnings("null")
 public enum ToolMaterial {
-        IRON(2, 32),    // 铁车刀：硬???，耐久32
-        DIAMOND(4, 64); // 钻石车刀：硬???，耐久64
+        IRON(2, 32),    // Iron lathe tool: hardness 2, durability 32
+        DIAMOND(4, 64); // Diamond lathe tool: hardness 4, durability 64
 
         public final int hardness;
         public final int maxDamage;

@@ -25,9 +25,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 核反应堆发电机方法? *
- * 特点�? * - 自身不直接发电，依靠内部放置的燃料棒进行发电
- * - 拥有54个槽位用于放置燃料棒、散热片等物�? * - 拥有热量存储系统，最大热量存储为10000HU
+ * Nuclear reactor generator block.
+ *
+ * Properties:
+ * - The block does not make power by itself. The fuel rods inside it make the power.
+ * - It has 54 slots for fuel rods, heat vents and other reactor components.
+ * - It has a heat storage system. The maximum heat is 10000 HU.
  */
 @SuppressWarnings("null")
 public class mio_icif_Block_Nuclear_Reactor_Generator extends mio_icif_entity_block {
@@ -41,7 +44,7 @@ public class mio_icif_Block_Nuclear_Reactor_Generator extends mio_icif_entity_bl
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        // FACING 由父类添加，只需要添�?ACTIVE
+        // The parent class adds FACING. This class adds only ACTIVE.
         builder.add(ACTIVE);
         super.createBlockStateDefinition(builder);
     }

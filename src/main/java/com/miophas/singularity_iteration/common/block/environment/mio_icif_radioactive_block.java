@@ -11,13 +11,13 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 辐射方块基类
- * 被核爆炸污染的方块，会对周围生物造成辐射伤害
+ * Base class for radioactive blocks.
+ * These blocks are contaminated by a nuclear explosion. They cause radiation damage to nearby living entities.
  */
 @SuppressWarnings("null")
 public class mio_icif_radioactive_block extends Block {
     private static final int MAX_RADIATION_LEVEL = 32;
-    private final int radiationLevel; // 辐射等级，影响伤害和范围
+    private final int radiationLevel; // Radiation level. It controls the damage and the range.
     
     public mio_icif_radioactive_block(Properties properties, int radiationLevel) {
         super(properties);
@@ -26,14 +26,15 @@ public class mio_icif_radioactive_block extends Block {
     
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        // 随机对周围生物造成辐射效果
-        if (random.nextInt(20) == 0) { // 5% 概率
+        // Apply a radiation effect to nearby living entities at random.
+        if (random.nextInt(20) == 0) { // 5% chance
             applyRadiationEffect(level, pos);
         }
     }
     
     /**
-     * 对周围生物应用辐射效果?     */
+     * Applies the radiation effect to nearby living entities.
+     */
     private void applyRadiationEffect(ServerLevel level, BlockPos pos) {
         // Keep malformed registry/config values from creating an unbounded
         // entity query. Bundled levels are much smaller than this cap.

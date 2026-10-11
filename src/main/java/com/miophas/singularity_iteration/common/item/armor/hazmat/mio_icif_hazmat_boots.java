@@ -14,12 +14,13 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 防化服靴�? * 提供辐射防护功能
+ * Hazmat boots.
+ * They give radiation protection.
  */
 @SuppressWarnings("null")
 public class mio_icif_hazmat_boots extends ArmorItem implements IHazmatLike {
 
-    // 辐射防护等级�?-4�? 为完全防护）
+    // Radiation protection level (0-4). Level 4 is full protection.
     private static final int RADIATION_PROTECTION_LEVEL = 4;
 
     // 防化服靴子护甲材质路径（使用橡胶靴纹理）
@@ -54,7 +55,7 @@ public class mio_icif_hazmat_boots extends ArmorItem implements IHazmatLike {
 
         // 如果穿着整套防化服，提供完全辐射免疫
         if (isWearingFullHazmat(livingEntity)) {
-            // 穿着整套时完全免疫辐�
+            // A full hazmat suit gives full immunity to radiation.
         return;
         }
     }

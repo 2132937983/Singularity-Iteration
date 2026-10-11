@@ -8,13 +8,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * 量子靴大跳网络包（保留兼容，但不再使用）
+ * Network packet for the quantum boots high jump. It stays for compatibility but is not used.
  *
- * IC2RIn120原版逻辑已迁移到�?
- * - 客户端：mio_icif_ClientEvents.sendKeyStateUpdate() 发送按键状态?
- * - 服务端：mio_icif_boots_quantum.handleQuantumJumpServer() 使用mio_icif_KeyboardManager检测按�?
+ * The original IC2RIn120 logic moved to these locations:
+ * - Client: mio_icif_ClientEvents.sendKeyStateUpdate() sends the key state.
+ * - Server: mio_icif_boots_quantum.handleQuantumJumpServer() uses mio_icif_KeyboardManager to detect the key.
  *
- * 此包保留用于向后兼容，不再处理跳跃逻辑
+ * This packet stays for backward compatibility. It does not handle the jump logic.
  */
 @SuppressWarnings("null")
 public record QuantumJumpPacket(boolean dummy) implements CustomPacketPayload {

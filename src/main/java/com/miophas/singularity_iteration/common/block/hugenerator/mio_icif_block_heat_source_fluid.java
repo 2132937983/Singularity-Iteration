@@ -26,8 +26,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 热交换机方块
- * 通过热交换器将热冷却剂或岩浆转化为热�? */
+ * Heat exchanger block.
+ * It converts hot coolant or lava into heat (HU) through heat exchangers.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_heat_source_fluid extends mio_icif_entity_block {
 

@@ -23,23 +23,27 @@ import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 放射性同位素温差加热?(RTG Heat Generator) 方块实体? *
- * 特点? * - 6个槽位用于放置RTG燃料靶丸
- * - 靶丸无限耐久，不需要更? * - 只在正面输出热量
- * - 正面有需要受热的机器才输出热? * - 产热量与放入的靶丸数量有关：
- *   1?= 2 HU/t
- *   2?= 4 HU/t
- *   3?= 8 HU/t
- *   4?= 16 HU/t
- *   5?= 32 HU/t
- *   6?= 64 HU/t
+ * Block entity for the radioisotope thermoelectric heat generator (RTG Heat Generator).
+ *
+ * Features:
+ * - 6 slots hold RTG fuel pellets.
+ * - The pellets have infinite durability. You do not need to replace them.
+ * - The generator outputs heat only from the front face.
+ * - The generator outputs heat only when a machine that accepts heat is at the front face.
+ * - The heat output depends on the number of pellets:
+ *   1 pellet = 2 HU/t
+ *   2 pellets = 4 HU/t
+ *   3 pellets = 8 HU/t
+ *   4 pellets = 16 HU/t
+ *   5 pellets = 32 HU/t
+ *   6 pellets = 64 HU/t
  */
 @SuppressWarnings("null")
 public class mio_icif_rt_heat_generator extends AbstractHeatGeneratorBlockEntity {
 
-    // 槽位数量?个靶丸槽位
+    // Number of slots: 6 pellet slots.
 public static final int SLOT_COUNT = 6;
-    // 热能容量：对齐原版 IC2 —— 热缓冲上限 = 一 tick 最大产热（满 6 靶丸 = 64 HU）
+    // Heat capacity matches the original IC2. The heat buffer limit is the maximum heat output in one tick (6 pellets = 64 HU).
     public static final int HEAT_CAPACITY = 64;
     // 最大输出速率
     public static final int MAX_EXTRACT = 64;

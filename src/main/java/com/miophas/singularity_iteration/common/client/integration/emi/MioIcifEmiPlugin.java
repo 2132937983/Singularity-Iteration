@@ -192,7 +192,7 @@ public class MioIcifEmiPlugin implements EmiPlugin {
             for (int i = 1; i <= 9; i++) {
                 list.add(handler.getSlot(i));
             }
-            // 缂撳啿瀛樺偍鍖� (10-27)
+            // Buffer storage slots (10-27)
             for (int i = 10; i <= 27; i++) {
                 list.add(handler.getSlot(i));
             }

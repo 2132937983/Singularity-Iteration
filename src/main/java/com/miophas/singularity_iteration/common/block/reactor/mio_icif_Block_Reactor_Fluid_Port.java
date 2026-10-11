@@ -22,12 +22,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 流体核反应堆流体端口方块
+ * Fluid port block of the fluid nuclear reactor.
  *
- * 功能量? * - 用于流体核反应堆多方块结构中作为流体访问接口
- * - 提供 GUI 用于管理流体输入输出
- * - 包含一个空闲槽用于放置插件物品（未来扩展）
- * - 防爆性较强，能够抵御核反应堆爆炸
+ * Functions:
+ * - It is the fluid access interface of the fluid nuclear reactor multiblock structure.
+ * - It gives a GUI to manage the fluid input and output.
+ * - It has one free slot for plugin items (for future extensions).
+ * - It has high blast resistance. It can resist a nuclear reactor explosion.
  */
 @SuppressWarnings("null")
 public class mio_icif_Block_Reactor_Fluid_Port extends BaseEntityBlock {
@@ -89,7 +90,7 @@ public class mio_icif_Block_Reactor_Fluid_Port extends BaseEntityBlock {
         if (!state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_reactor_fluid_port fluidPort) {
-                // 掉落槽位中的物品
+                // Drop the items in the slots.
                 for (int i = 0; i < fluidPort.getItemHandler().getSlots(); i++) {
                     ItemStack stack = fluidPort.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {
@@ -97,7 +98,7 @@ public class mio_icif_Block_Reactor_Fluid_Port extends BaseEntityBlock {
                     }
                 }
             }
-            // 通知多方块结构管理器
+            // Tell the multiblock structure manager.
             if (!level.isClientSide()) {
                 mio_icif_multiblock_manager.notifyBlockChanged(level, pos);
             }

@@ -329,7 +329,7 @@ public class CFSprayerItem extends Item implements ICFSprayerItem {
         Direction viewFacing = Direction.getNearest(view.x, view.y, view.z);
         Direction excludedDir = viewFacing.getOpposite();
 
-        int placed = sprayFoam(level, pos, excludedDir, target, maxFoamBlocks);
+        int placed = sprayFoam(level, pos, excludedDir, target, maxFoamBlocks, player, stack);
         if (placed <= 0) {
             return InteractionResult.FAIL;
         }
@@ -366,6 +366,16 @@ public class CFSprayerItem extends Item implements ICFSprayerItem {
      * @return 实际成功放置的方块数
      */
     public int sprayFoam(Level level, BlockPos pos, Direction excludedDir, Target target, int maxFoamBlocks) {
+        return sprayFoam(level, pos, excludedDir, target, maxFoamBlocks, null, ItemStack.EMPTY);
+    }
+
+    /**
+     * Flood fill with a permission check per position: a fill can reach blocks that the player did
+     * not click, for example across a claim border. With {@code player == null} (machines, tests)
+     * no player check runs.
+     */
+    public int sprayFoam(Level level, BlockPos pos, Direction excludedDir, Target target, int maxFoamBlocks,
+                         @org.jetbrains.annotations.Nullable Player player, ItemStack tool) {
         if (!canPlaceFoam(level, pos, target)) {
             return 0;
         }
@@ -376,6 +386,10 @@ public class CFSprayerItem extends Item implements ICFSprayerItem {
         BlockPos current;
         while ((current = toCheck.poll()) != null && positions.size() < maxFoamBlocks) {
             if (!canPlaceFoam(level, current, target)) {
+                continue;
+            }
+            if (player != null && !level.isClientSide
+                    && !com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(player, level, current, null, tool)) {
                 continue;
             }
             if (positions.add(current)) {

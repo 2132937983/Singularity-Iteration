@@ -158,9 +158,9 @@ public class MagnetizerMenu extends mio_icif_base_menu {
         });
         markMachineSlots(1);
 
-        // 玩家物品栈?
+        // Player inventory slots
         addPlayerInventory(playerInventory, 84, 142);
-        markPlayerSlots(36); // 3*9背包 + 9快捷�?
+        markPlayerSlots(36); // 3x9 inventory + 9 hotbar slots
     }
 
     @Override

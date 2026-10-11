@@ -20,14 +20,17 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * 除草�? * 用于清除作物架上的杂�? * 使用铁材质，具有铁工具的攻击伤害和攻击速度属性? */
+ * Weeding trowel.
+ * It removes weeds from crop sticks.
+ * It uses the iron tier and has the attack damage and attack speed of an iron tool.
+ */
 @SuppressWarnings("null")
 public class WeedingTrowelItem extends Item implements IWeedingTrowelItem {
 
-    // 使用铁材质等�
+    // Uses the iron tier.
 public static final Tier TIER = Tiers.IRON;
     
-    // 铁锄头属性参考：攻击伤害+1，攻击速度-2（即攻击速度�?.0�
+    // Values from the iron hoe: attack damage +1, attack speed -2 (resulting attack speed 2.0).
 public static final float ATTACK_DAMAGE_BONUS = 1.0F;
     public static final float ATTACK_SPEED = -2.0F;
 
@@ -36,8 +39,8 @@ public static final float ATTACK_DAMAGE_BONUS = 1.0F;
     }
     
     /**
-     * 创建工具属性（参考HoeItem.createAttributes�
- */
+     * Creates the tool attributes. The method is based on HoeItem.createAttributes.
+     */
     public static ItemAttributeModifiers createAttributes(Tier tier, float attackDamageBonus, float attackSpeed) {
         return ItemAttributeModifiers.builder()
             .add(

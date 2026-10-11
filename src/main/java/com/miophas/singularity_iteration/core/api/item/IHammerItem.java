@@ -1,12 +1,12 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 锻造锤物品标记接口。
+ * Marker interface for forge hammer items.
  * <p>
- * 实现此接口的物品可以被识别为锻造锤工具，
- * 用于合成配方中的板材锻造等特殊配方。
+ * Items that implement this interface are identified as forge hammer tools.
+ * Crafting recipes use them for special recipes, such as plate forging.
  * <p>
- * 锻造锤在合成中使用时会保留并扣除耐久（不消耗物品）。
+ * When a forge hammer is used in crafting, it stays in the grid and loses durability (the item is not used up).
  */
 public interface IHammerItem {
 }

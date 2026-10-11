@@ -1,59 +1,59 @@
 package com.miophas.singularity_iteration.core.api.upgrade.tile;
 
 /**
- * 可升级属性枚举。
+ * Upgradable property.
  * <p>
- * 对应 IC2 1.12.2 的 {@code UpgradableProperty}。
- * 定义了机器可以支持的升级属性类型。
+ * This is the equivalent of {@code UpgradableProperty} in IC2 for 1.12.2.
+ * It defines the upgrade property types that a machine can support.
  */
 public enum UpgradableProperty {
     /**
-     * 处理速度升级（ overclocker）。
+     * Processing speed upgrade (overclocker).
      */
     PROCESSING,
 
     /**
-     * 可安装增强模块（augment slot）。
+     * The machine accepts augment modules (augment slot).
      */
     AUGMENTABLE,
 
     /**
-     * 红石信号控制（红石信号反转）。
+     * Redstone signal control (redstone signal inversion).
      */
     REDSTONE_SENSITIVE,
 
     /**
-     * 变压器升级（提高输入电压等级）。
+     * Transformer upgrade (increases the input voltage tier).
      */
     TRANSFORMER,
 
     /**
-     * 能量存储升级（增加储能容量）。
+     * Energy storage upgrade (increases the energy capacity).
      */
     ENERGY_STORAGE,
 
     /**
-     * 物品消耗（机器消耗物品）。
+     * Item consuming (the machine uses items).
      */
     ITEM_CONSUMING,
 
     /**
-     * 物品产出（机器产出物品）。
+     * Item producing (the machine makes items).
      */
     ITEM_PRODUCING,
 
     /**
-     * 流体消耗（机器消耗流体）。
+     * Fluid consuming (the machine uses fluids).
      */
     FLUID_CONSUMING,
 
     /**
-     * 流体产出（机器产出流体）。
+     * Fluid producing (the machine makes fluids).
      */
     FLUID_PRODUCING,
 
     /**
-     * 远程访问（远程工具支持）。
+     * Remotely accessible (remote tools can access the machine).
      */
     REMOTELY_ACCESSIBLE
 }

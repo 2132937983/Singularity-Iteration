@@ -34,7 +34,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 蒸汽再加压机方方块? */
+ * Block class for the steam repressurizer.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_steam_repressurizer extends mio_icif_entity_block {
 

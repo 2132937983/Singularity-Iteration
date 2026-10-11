@@ -144,7 +144,7 @@ public class JEIPlugin implements IModPlugin {
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        // 注册所有配方类�?
+        // Register all recipe categories.
         registration.addRecipeCategories(
             // 生产机器
             new mio_icif_PowderCategory(registration.getJeiHelpers().getGuiHelper()),
@@ -153,11 +153,11 @@ public class JEIPlugin implements IModPlugin {
             new mio_icif_ExtractorCategory(registration.getJeiHelpers().getGuiHelper()),
             new mio_icif_CompressorCategory(registration.getJeiHelpers().getGuiHelper()),
             new mio_icif_BlockCutterCategory(registration.getJeiHelpers().getGuiHelper()),
-            // 金属成型�?
+            // Metal former
             new mio_icif_RollingCategory(registration.getJeiHelpers().getGuiHelper()),
             new mio_icif_CuttingCategory(registration.getJeiHelpers().getGuiHelper()),
             new mio_icif_ExtrudingCategory(registration.getJeiHelpers().getGuiHelper()),
-            // 装罐�?
+            // Canning machine
             new mio_icif_CanningCategory(registration.getJeiHelpers().getGuiHelper()),
             new mio_icif_MixCategory(registration.getJeiHelpers().getGuiHelper()),
             new mio_icif_BlastFurnaceCategory(registration.getJeiHelpers().getGuiHelper()),
@@ -174,55 +174,55 @@ public class JEIPlugin implements IModPlugin {
 
         var recipeManager = level.getRecipeManager();
 
-        // 注册打粉配方
+        // Register the macerator recipes.
         var powderRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.POWDER_TYPE.get());
         registration.addRecipes(mio_icif_PowderCategory.POWDER_TYPE, powderRecipes.stream().toList());
 
-        // 注册洗矿配方
+        // Register the ore washing recipes.
         var washerRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.WASHER_TYPE.get());
         registration.addRecipes(mio_icif_WasherCategory.WASHER_TYPE, washerRecipes.stream().toList());
 
-        // 注册离心机配方?
+        // Register the centrifuge recipes.
         var centrifugeRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CENTRIFUGE_TYPE.get());
         registration.addRecipes(mio_icif_CentrifugeCategory.CENTRIFUGE_TYPE, centrifugeRecipes.stream().toList());
 
-        // 注册提取机配方?
+        // Register the extractor recipes.
         var extractorRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.EXTRACTOR_TYPE.get());
         registration.addRecipes(mio_icif_ExtractorCategory.EXTRACTOR_TYPE, extractorRecipes.stream().toList());
 
-        // 注册压缩机配方?
+        // Register the compressor recipes.
         var compressorRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.COMPRESSOR_TYPE.get());
         registration.addRecipes(mio_icif_CompressorCategory.COMPRESSOR_TYPE, compressorRecipes.stream().toList());
 
-        // 注册方块切割机配方?
+        // Register the block cutter recipes.
         var blockCutterRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLOCK_CUTTER_TYPE.get());
         registration.addRecipes(mio_icif_BlockCutterCategory.BLOCK_CUTTER_TYPE, blockCutterRecipes.stream().toList());
 
-        // 注册金属成型�?轧制配方
+        // Register the metal former rolling recipes.
         var rollingRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.ROLLING_TYPE.get());
         registration.addRecipes(mio_icif_RollingCategory.ROLLING_TYPE, rollingRecipes.stream().toList());
 
-        // 注册金属成型�?切割配方
+        // Register the metal former cutting recipes.
         var cuttingRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CUTTING_TYPE.get());
         registration.addRecipes(mio_icif_CuttingCategory.CUTTING_TYPE, cuttingRecipes.stream().toList());
 
-        // 注册金属成型�?挤出配方
+        // Register the metal former extruding recipes.
         var extrudingRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.EXTRUDING_TYPE.get());
         registration.addRecipes(mio_icif_ExtrudingCategory.EXTRUDING_TYPE, extrudingRecipes.stream().toList());
 
-        // 注册装罐机配方?
+        // Register the canner recipes.
         var canningRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CANNING_TYPE.get());
         registration.addRecipes(mio_icif_CanningCategory.CANNING_TYPE, canningRecipes.stream().toList());
 
-        // 注册混合配方
+        // Register the mixing recipes.
         var mixRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MIX_TYPE.get());
         registration.addRecipes(mio_icif_MixCategory.MIX_TYPE, mixRecipes.stream().toList());
 
-        // 注册高炉配方
+        // Register the blast furnace recipes.
         var blastFurnaceRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLAST_FURNACE_TYPE.get());
         registration.addRecipes(mio_icif_BlastFurnaceCategory.BLAST_FURNACE_TYPE, blastFurnaceRecipes.stream().toList());
 
-        // 注册分子重组仪配方
+        // Register the molecular transformer recipes.
         var molecularTransformerRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MOLECULAR_TRANSFORMER_TYPE.get());
         registration.addRecipes(mio_icif_MolecularTransformerCategory.MOLECULAR_TRANSFORMER_TYPE, molecularTransformerRecipes.stream().toList());
 

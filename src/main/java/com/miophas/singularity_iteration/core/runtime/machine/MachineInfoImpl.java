@@ -23,7 +23,7 @@ import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 机器信息实现
+ * Implementation of machine information.
  */
 @SuppressWarnings("null")
 public class MachineInfoImpl implements IMachineInfo {
@@ -78,7 +78,7 @@ public class MachineInfoImpl implements IMachineInfo {
     private final IEnergyBlock energyBlock;
     private final IMachineAPI.MachineType machineType;
     
- // 存推断的机器类型（volatile 确保多线程可见性）
+ // Cache of the inferred machine type (volatile makes it visible across threads)
     private volatile IMachineAPI.MachineType cachedInferredType;
     private volatile boolean inferredTypeComputed = false;
 
@@ -105,12 +105,12 @@ public class MachineInfoImpl implements IMachineInfo {
 
     @Override
     public IMachineAPI.MachineType getMachineType() {
-        // 优先使用构造函数传入的 machineType
+        // First, use the machineType from the constructor
         if (machineType != null) {
             return machineType;
         }
 
-        // 检查 IMachineConfigurable 的配置
+        // Check the IMachineConfigurable configuration
         if (energyBlock instanceof IMachineConfigurable configurable) {
             var config = configurable.getConfiguration();
             if (config != null && config.machineType() != null) {
@@ -119,13 +119,13 @@ public class MachineInfoImpl implements IMachineInfo {
             return IMachineAPI.MachineType.CUSTOM;
         }
 
-        // 优先使用实现类报告的机器类型
+        // Next, use the machine type that the implementation reports
         IMachineAPI.MachineType reportedType = energyBlock.getMachineType();
         if (reportedType != null) {
             return reportedType;
         }
 
- // 跨敤缂撳瓨閬垮厤閲嶅�嶅瓧绗︿覆鍖归厤
+ // Cache the result to avoid repeated string matching.
         if (!inferredTypeComputed) {
             cachedInferredType = inferMachineType();
             inferredTypeComputed = true;
@@ -134,27 +134,27 @@ public class MachineInfoImpl implements IMachineInfo {
     }
 
     /**
-     * 推断机器类型（基于注册表 ID 和类名）
-     * @return 推断的机器类型
+     * Infers the machine type from the registry ID and the class name.
+     * @return the inferred machine type; CUSTOM if no keyword matches
      */
     private IMachineAPI.MachineType inferMachineType() {
-        // 基于注册表 ID 推断（混淆安全，注册表 ID 不会被混淆）
+        // Infer from the registry ID (safe with obfuscation; registry IDs are not obfuscated)
         String registryId = BuiltInRegistries.BLOCK.getKey(energyBlock.getBlockState().getBlock()).getPath().toLowerCase(Locale.ROOT);
         IMachineAPI.MachineType result = lookupByKeywords(registryId);
         if (result != null) return result;
 
-        // 基于类名推断（向后兼容，混淆后可能失效）
+        // Infer from the class name (backward compatibility; can fail after obfuscation)
         String className = energyBlock.getClass().getSimpleName().toLowerCase(Locale.ROOT);
         result = lookupByKeywords(className);
         return result != null ? result : IMachineAPI.MachineType.CUSTOM;
     }
 
     private static IMachineAPI.MachineType lookupByKeywords(String text) {
-        // 优先精确匹配（整个字符串等于关键词）
+        // First, exact match (the full string equals the keyword)
         for (Map.Entry<String, IMachineAPI.MachineType> entry : TYPE_KEYWORDS) {
             if (text.equals(entry.getKey())) return entry.getValue();
         }
-        // 其次模糊匹配（字符串包含关键词）
+        // Next, partial match (the string contains the keyword); the first keyword in list order wins
         for (Map.Entry<String, IMachineAPI.MachineType> entry : TYPE_KEYWORDS) {
             if (text.contains(entry.getKey())) return entry.getValue();
         }
@@ -282,7 +282,7 @@ public class MachineInfoImpl implements IMachineInfo {
 
     @Override
     public long getRuntimeTicks() {
-        // 返回当前操作的已运行时间（即当前进度）
+        // Return the run time of the current operation (the current progress)
         if (energyBlock instanceof IProducerBlock producer) {
             return producer.getProgress();
         }
@@ -291,7 +291,7 @@ public class MachineInfoImpl implements IMachineInfo {
 
     @Override
     public long getTotalProcessed() {
-        // 通过 producer 方块实体获取总处理量
+        // Get the total processed amount from the producer block entity
         if (energyBlock instanceof IProducerBlock producer) {
             return producer.getTotalProcessed();
         }

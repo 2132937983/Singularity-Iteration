@@ -10,7 +10,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
 /**
- * 绛夌�诲瓙鐐夐厤鏂�
+ * Plasma furnace recipe.
  */
 public class PlasmaFurnaceRecipe extends AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput> {
 

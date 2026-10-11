@@ -14,10 +14,10 @@ import java.util.Collections;
 import java.util.Optional;
 
 /**
- * 热能 API 实现
+ * Heat API implementation.
  *
- * <p>所有内部类型访问通过 {@link HeatBridge} 完成，
- * 此文件零内部包引用。
+ * <p>All access to internal types goes through {@link HeatBridge}.
+ * This file has no references to internal packages.
  */
 public class HeatAPIImpl implements IHeatAPI {
 

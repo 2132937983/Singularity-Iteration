@@ -14,7 +14,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
  * 方块实体字段更新同步包。
  * 从服务端发送到客户端，通知客户端方块实体的指定字段已更新，并携带字段的最新值。
  * <p>
- * 替代旧版 NetworkHelper.updateTileEntityField 中仅调用本地监听器的实现，
+ * 替代旧版网络助手类 updateTileEntityField 中仅调用本地监听器的实现，
  * 实现真正的服务端→客户端字段同步。
  * <p>
  * 字段值使用 {@code double} 类型传输，足以覆盖 IC2 风格的所有字段类型

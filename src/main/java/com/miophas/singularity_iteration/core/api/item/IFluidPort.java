@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 流体接口方块接口。
+ * Interface for fluid port blocks.
  *
- * <p>用于标识反应堆流体接口方块实体，便于 API 统一查询与分类。
+ * <p>It identifies reactor fluid port block entities, so that the API can query and classify them in one way.
  */
 public interface IFluidPort {
 }

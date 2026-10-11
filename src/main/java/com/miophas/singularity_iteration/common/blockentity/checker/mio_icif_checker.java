@@ -91,8 +91,8 @@ public class mio_icif_checker extends AbstractEnergyBlockEntity {
     }
 
     /**
-     * 检测周围电网的电压（实际电压）
-     * 使用BFS扫描整个电网，计算所有发电机的总输出电力?
+     * Detects the voltage (actual voltage) of the grid around the block.
+     * It uses BFS to scan the full grid. It calculates the total power output of all generators.
      */
     private void detectVoltage() {
         if (level == null || level.isClientSide()) return;

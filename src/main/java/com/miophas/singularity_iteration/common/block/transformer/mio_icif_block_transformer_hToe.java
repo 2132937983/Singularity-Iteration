@@ -9,7 +9,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * HV-EV 变压器方法? * 用于�?HV（高压）�?EV（超高压）之间进行电压转�? */
+ * HV-EV transformer block.
+ * It converts voltage between HV (high voltage) and EV (extreme voltage).
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_transformer_hToe extends com.miophas.singularity_iteration.common.block.transformer.mio_icif_block_transformer {
 

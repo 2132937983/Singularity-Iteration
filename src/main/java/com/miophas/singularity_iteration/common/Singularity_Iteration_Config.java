@@ -8,24 +8,24 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * 模组配置文件
- * 包含期货机等功能的配方? */
+ * Mod configuration file.
+ * It contains the settings for the futures machine and other features. */
 @SuppressWarnings("null")
 public class Singularity_Iteration_Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    // ==================== 期货机配方?====================
+    // ==================== Futures machine settings ====================
     private static final ModConfigSpec.Builder FUTURE_BUILDER = BUILDER.push("FutureMarket");
 
     // Futures commodities moved to datapacks in 0.1.7.32: data/<namespace>/si_futures/*.json
     // (see FutureCommodityLoader). The old "commodities" list here is ignored and removed.
 
-    // 每日最大交易物品数据
+    // Maximum number of items that a player can trade each day.
 public static final ModConfigSpec.IntValue FUTURE_MAX_DAILY_ITEMS = FUTURE_BUILDER
-            .comment("每日最大交易物品数据?", "玩家每天最多可以购买或出售的物品总数")
+            .comment("Maximum number of items traded each day", "The total number of items that a player can buy or sell each day")
             .defineInRange("maxDailyItems", 100, 1, 10000);
 
-    // 每日交易限制（别名，�?FUTURE_MAX_DAILY_ITEMS 相同步
+    // Daily trade limit. This is an alias of FUTURE_MAX_DAILY_ITEMS.
 public static final ModConfigSpec.IntValue FUTURE_DAILY_LIMIT = FUTURE_MAX_DAILY_ITEMS;
 
     // 每页显示货品数量
@@ -33,36 +33,36 @@ public static final ModConfigSpec.IntValue FUTURE_DAILY_LIMIT = FUTURE_MAX_DAILY
             .comment("每页显示货品数量")
             .defineInRange("itemsPerPage", 5, 1, 20);
 
-    // 每次交易消耗的能量
+    // Energy that each trade uses.
     public static final ModConfigSpec.IntValue FUTURE_ENERGY_PER_TRADE = FUTURE_BUILDER
-            .comment("每次交易消耗的能量（EU）?")
+            .comment("Energy that each trade uses (EU)")
             .defineInRange("energyPerTrade", 10, 0, 10000);
 
-    // 期货机能量容纳
+    // Energy capacity of the futures machine.
 public static final ModConfigSpec.IntValue FUTURE_ENERGY_CAPACITY = FUTURE_BUILDER
-            .comment("期货机能量容量（EU）?")
+            .comment("Energy capacity of the futures machine (EU)")
             .defineInRange("energyCapacity", 10000, 1000, 1000000);
 
-    // 期货机最大接收能量
+    // Maximum energy input of the futures machine.
 public static final ModConfigSpec.IntValue FUTURE_MAX_RECEIVE = FUTURE_BUILDER
-            .comment("期货机最大接收能量（EU/t�?")
+            .comment("Maximum energy input of the futures machine (EU/t)")
             .defineInRange("maxReceive", 100, 1, 10000);
 
-    // 价格最小倍数（相对于基础价格�
+    // Minimum price multiplier, relative to the base price.
 public static final ModConfigSpec.DoubleValue FUTURE_MIN_PRICE_MULTIPLIER = FUTURE_BUILDER
-            .comment("价格最小倍数", "价格最低可以跌到基础价格的多少�?", "例如 0.1 表示最低为基础价格�?0%")
+            .comment("Minimum price multiplier", "The lowest price, as a multiple of the base price", "Example: 0.1 sets the lowest price to 10% of the base price")
             .defineInRange("minPriceMultiplier", 0.1, 0.01, 1.0);
 
-    // 价格最大倍数（相对于基础价格�
+    // Maximum price multiplier, relative to the base price.
 public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTURE_BUILDER
-            .comment("价格最大倍数", "价格最高可以涨到基础价格的多少�?", "例如 10.0 表示最高为基础价格?0?")
+            .comment("Maximum price multiplier", "The highest price, as a multiple of the base price", "Example: 10.0 sets the highest price to 10 times the base price")
             .defineInRange("maxPriceMultiplier", 10.0, 1.0, 100.0);
 
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder FUTURE_POP = BUILDER.pop();
-    // ==================== 期货机配置结果?====================
+    // ==================== End of futures machine settings ====================
 
-    // ==================== 核爆炸视觉效果配方?====================
+    // ==================== Nuclear explosion settings ====================
     private static final ModConfigSpec.Builder NUCLEAR_BUILDER = BUILDER.push("NuclearExplosion");
 
     // 核爆地形毁伤总开关；已存在的污染地形与辐射区不会被回滚。
@@ -110,30 +110,30 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
 
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder NUCLEAR_POP = BUILDER.pop();
-    // ==================== 核爆炸视觉效果配置结果?====================
+    // ==================== End of nuclear explosion settings ====================
 
-    // ==================== 地形转换机配方?====================
+    // ==================== Terrain transformer settings ====================
     private static final ModConfigSpec.Builder TERRA_BUILDER = BUILDER.push("TerraELC");
 
-    // 地形转换机每tick处理的方块数据
+    // Number of blocks that the terrain transformer processes each tick.
 public static final ModConfigSpec.IntValue TERRA_BLOCKS_PER_TICK = TERRA_BUILDER
-            .comment("地形转换机每tick处理的方块数据?",
-                    "数值越大转换速度越快，但可能造成卡顿",
-                    "建议范围�?0-500")
+            .comment("Number of blocks that the terrain transformer processes each tick",
+                    "A larger value makes the conversion faster, but it can cause lag",
+                    "Recommended maximum: 500")
             .defineInRange("blocksPerTick", 100, 1, 1000);
 
-    // 地形转换机作用范围（半径�
+    // Range (radius) of the terrain transformer.
 public static final ModConfigSpec.IntValue TERRA_RANGE = TERRA_BUILDER
-            .comment("地形转换机作用范围（半径�?",
-                    "以机器为中心的球形区域半�?",
-                    "默认128格（直径256格）")
+            .comment("Range of the terrain transformer (radius)",
+                    "The radius of the sphere around the machine",
+                    "Default: 128 blocks (256 blocks diameter)")
             .defineInRange("range", 128, 16, 256);
 
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder TERRA_POP = BUILDER.pop();
-    // ==================== 地形转换机配置结果?====================
+    // ==================== End of terrain transformer settings ====================
 
-    // ==================== 扫描机配方?====================
+    // ==================== Scanner settings ====================
     private static final ModConfigSpec.Builder SCANNER_BUILDER = BUILDER.push("Scanner");
 
     // UU物质消耗倍率
@@ -146,22 +146,22 @@ public static final ModConfigSpec.IntValue TERRA_RANGE = TERRA_BUILDER
             .comment("旧版扫描机 EU 倍率：兼容保留，当前扫描固定为 3300 tick × 256 EU/t，不读取此项")
             .defineInRange("euMultiplier", 1.0, 0.01, 10000.0);
 
-    // 自定义物品UU/EU消耗覆�
+    // Custom UU/EU cost overrides for items.
 public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CUSTOM_COSTS = SCANNER_BUILDER
-            .comment("旧版扫描机消耗覆盖：兼容保留，当前独立 UU 定价与扫描流程不读取此项",
-                    "格式: 物品ID = (UU消耗? EU消耗?",
-                    "例如: minecraft:diamond = (10000, 5000000) 表示钻石需�?0000mB UU�?00万EU",
-                    "这会覆盖自动计算的消耗�?")
+            .comment("Legacy scanner cost overrides. This setting is kept for compatibility. The current UU pricing and scan process do not read it.",
+                    "Format: itemID = (UU cost, EU cost)",
+                    "Example: minecraft:diamond = (10000, 5000000) sets the diamond cost to 10000 mB UU and 5000000 EU",
+                    "These entries override the automatically calculated costs")
             .defineListAllowEmpty("customCosts",
                     List.of(
-                            // 示例配置（默认留空，由用户自定义�
+                            // Example entries. The default list is empty. Users add their own entries.
                 ),
                     () -> "minecraft:stone = (100, 10000)",
                     Singularity_Iteration_Config::validateCustomCostConfig);
 
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder SCANNER_POP = BUILDER.pop();
-    // ==================== 扫描机配置结果?====================
+    // ==================== End of scanner settings ====================
 
     // ==================== 电网配置 ====================
     private static final ModConfigSpec.Builder ENERGY_NET_BUILDER = BUILDER.push("EnergyNet");
@@ -206,34 +206,34 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     static final ModConfigSpec SPEC = BUILDER.build();
 
     /**
-     * 验证货品种类配置格式
-     * 格式: 物品ID,基础价格,波动作?种类
+     * Validates the format of a commodity type entry.
+     * Format: itemID,base price,volatility,category
      */
 
 
     /**
-     * 验证自定义消耗配置格�
- * 格式: 物品ID = (UU消耗? EU消耗?
+     * Validates one custom cost entry.
+     * Format: itemID = (UU cost, EU cost)
      */
     private static boolean validateCustomCostConfig(final Object obj) {
         if (!(obj instanceof String config)) {
             return false;
         }
 
-        // 格式: minecraft:item = (1000, 500000)
+        // Format: minecraft:item = (1000, 500000)
         String[] parts = config.split("=");
         if (parts.length != 2) {
             return false;
         }
 
-        // 验证物品ID
+        // Validate the item ID.
         String itemId = parts[0].trim();
         ResourceLocation resourceId=ResourceLocation.tryParse(itemId);
         if (resourceId==null||!BuiltInRegistries.ITEM.containsKey(resourceId)) {
             return false;
         }
 
-        // 验证消耗值格�?(UU, EU)
+        // Validate the cost format (UU, EU).
         String costPart = parts[1].trim();
         if (!costPart.startsWith("(") || !costPart.endsWith(")")) {
             return false;
@@ -257,8 +257,8 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     }
 
     /**
-     * 获取自定义消耗配置映�
- */
+     * Gets the custom cost entries as a map.
+     */
     public static java.util.Map<String, CostConfig> getCustomCostConfigs() {
         java.util.Map<String, CostConfig> configs = new java.util.HashMap<>();
         List<? extends String> configStrings = SCANNER_CUSTOM_COSTS.get();
@@ -277,7 +277,7 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
                             long euCost = Long.parseLong(costs[1].trim());
                             configs.put(itemId, new CostConfig(uuCost, euCost));
                         } catch (NumberFormatException e) {
-                            // 忽略无效配置
+                            // Ignore an invalid entry.
                         }
                     }
                 }
@@ -288,7 +288,7 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     }
 
     /**
-     * 消耗配置数据类
+     * Data class for one cost entry.
      */
     public static class CostConfig {
         private final long uuCost;

@@ -33,8 +33,6 @@ public class NuclearFalloutClientManager {
     // 迷雾密度
     private static final float FOG_DENSITY = 0.15f;
     // 天空变暗程度 (0-1, 越大越暗)
-    @SuppressWarnings("unused")
-    private static final float SKY_DARKENING = 0.6f;
 
     // 当前玩家是否在辐射区域
     private static boolean inRadiationZone = false;

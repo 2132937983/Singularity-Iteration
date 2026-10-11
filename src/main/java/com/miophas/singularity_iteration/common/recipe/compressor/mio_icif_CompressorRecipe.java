@@ -11,8 +11,9 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
 /**
- * 压缩机配方类
- * 用于将物品压缩成更密集的形式（如�?>块，矿物->板，粉末->锭等�? */
+ * Compressor recipe.
+ * Compresses items into a denser form (for example ingot to block, ore to plate, dust to ingot).
+ */
 @SuppressWarnings("null")
 public class mio_icif_CompressorRecipe implements Recipe<mio_icif_CompressorRecipeInput>, IRecipeProcessingInfo {
 
@@ -80,7 +81,8 @@ public class mio_icif_CompressorRecipe implements Recipe<mio_icif_CompressorReci
     }
 
     /**
-     * 获取处理时间（ticks�?     */
+     * Returns the processing time in ticks.
+     */
     public int getProcessingTime() {
         return processingTime;
     }

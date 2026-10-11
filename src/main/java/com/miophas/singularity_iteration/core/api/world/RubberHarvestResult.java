@@ -1,17 +1,17 @@
 package com.miophas.singularity_iteration.core.api.world;
 
 /**
- * 一次树脂采集的结果。
+ * Result of one resin harvest.
  *
- * @param harvested  是否成功完成采集（服务端且条件满足时为 true）
- * @param resinCount 本次掉落的树脂数量；未采集时为 0
+ * @param harvested  true if the harvest completed (only on the server side, when the conditions are met)
+ * @param resinCount the number of resin items dropped by this harvest. 0 if no harvest occurred.
  */
 public record RubberHarvestResult(boolean harvested, int resinCount) {
 
-    /** 未发生采集的结果。 */
+    /** Result when no harvest occurred. */
     public static final RubberHarvestResult NONE = new RubberHarvestResult(false, 0);
 
-    /** 采集成功的结果。 */
+    /** Result of a successful harvest. */
     public static RubberHarvestResult success(int resinCount) {
         return new RubberHarvestResult(true, resinCount);
     }

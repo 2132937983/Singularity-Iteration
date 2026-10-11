@@ -8,10 +8,11 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 自定义树装饰器类型注册? */
+ * Registers the custom tree decorator types.
+ */
 @SuppressWarnings("null")
 public class mio_icif_tree_decorators {
-    // 创建延迟注册�
+    // Deferred register for tree decorator types.
 public static final DeferredRegister<TreeDecoratorType<?>> TREE_DECORATORS = 
         DeferredRegister.create(Registries.TREE_DECORATOR_TYPE, Singularity_Iteration.MOD_ID);
 
@@ -20,7 +21,7 @@ public static final DeferredRegister<TreeDecoratorType<?>> TREE_DECORATORS =
         TREE_DECORATORS.register("rubber_wood", () -> new TreeDecoratorType<>(RubberWoodDecorator.CODEC));
 
     /**
-     * 注册所有树装饰器类�
+     * Registers all tree decorator types.
  */
     public static void register(IEventBus eventBus) {
         TREE_DECORATORS.register(eventBus);

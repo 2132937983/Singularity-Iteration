@@ -24,40 +24,40 @@ import com.miophas.singularity_iteration.core.api.world.IRubberTreeAPI;
 import com.miophas.singularity_iteration.core.api.world.IWindAPI;
 
 /**
- * Industrial Craft In Future (mio_icif) 的 API 入口
+ * API entry point of Industrial Craft In Future (mio_icif).
  *
- * <p>这是附属模组与 mio_icif 交互的主要接口。通过此接口可以访问：
+ * <p>This is the main interface for addon mods to work with mio_icif. Through this interface you can access:
  * <ul>
- *   <li>能源网络 API - 查询和交互 EU 电网</li>
- *   <li>发电机 API - 注册和管理自定义发电机</li>
- *   <li>机器 API - 注册和管理自定义机器</li>
- *   <li>机器构建 API - 使用 Builder 模式创建风格一致的机器</li>
- *   <li>物品 API - 访问模组物品和工具</li>
- *   <li>配方 API - 注册和查询自定义配方</li>
- *   <li>配方注册 API - 注册新的加工配方</li>
- *   <li>流体 API - 访问模组流体</li>
- *   <li>流体处理 API - 查询和管理机器流体存储</li>
- *   <li>作物 API - 访问作物杂交系统</li>
- *   <li>方块 API - 访问模组方块</li>
- *   <li>注册表 API - 查询模组注册的所有内容</li>
- *   <li>热能 API - 访问 HU 热能系统</li>
- *   <li>动能 API - 访问 KU 动能系统</li>
- *   <li>核反应堆 API - 访问反应堆元件系统</li>
- *   <li>橡胶树体系 API - 橡胶木与树脂采集逻辑</li>
- *   <li>升级插件 API - 访问机器升级系统</li>
- *   <li>能力系统 API - 访问 EU/HU/KU 能力接口和工厂方法</li>
+ *   <li>Energy network API - query and use the EU grid</li>
+ *   <li>Generator API - register and manage custom generators</li>
+ *   <li>Machine API - register and manage custom machines</li>
+ *   <li>Machine builder API - use the Builder pattern to create machines with a consistent style</li>
+ *   <li>Item API - access mod items and tools</li>
+ *   <li>Recipe API - register and query custom recipes</li>
+ *   <li>Recipe registration API - register new processing recipes</li>
+ *   <li>Fluid API - access mod fluids</li>
+ *   <li>Fluid handling API - query and manage machine fluid storage</li>
+ *   <li>Crop API - access the crop breeding system</li>
+ *   <li>Block API - access mod blocks</li>
+ *   <li>Registry API - query all content that the mod registers</li>
+ *   <li>Heat API - access the HU heat system</li>
+ *   <li>Kinetic API - access the KU kinetic system</li>
+ *   <li>Nuclear reactor API - access the reactor component system</li>
+ *   <li>Rubber tree API - rubber wood and resin harvest logic</li>
+ *   <li>Upgrade API - access the machine upgrade system</li>
+ *   <li>Capability API - access EU/HU/KU capability interfaces and factory methods</li>
  * </ul>
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
- * // 获取 API 实例
+ * // Get the API instance
  * MioIcifAPI api = MioIcifAPI.instance();
  *
- * // 查询位置的电网状态
+ * // Query the grid state at a position
  * IEnergyNetAPI energyApi = api.getEnergyNetAPI();
  * NodeStats stats = energyApi.getNodeStats(world, pos);
  *
- * // 使用机器构建器创建新机器
+ * // Use the machine builder to create a new machine
  * IMachineBuilderAPI builder = api.getMachineBuilderAPI();
  * var machine = builder.createElectricMachineBuilder()
  *     .setName("my_machine")
@@ -76,236 +76,236 @@ public interface MioIcifAPI {
     com.miophas.singularity_iteration.core.api.machine.IMultiblockAccess getMultiblockAPI();
 
     /**
-     * 获取 API 实例
+     * Gets the API instance.
      *
-     * @return MioIcifAPI 单例实例
+     * @return the MioIcifAPI singleton instance
      */
     static MioIcifAPI instance() {
         return ApiServices.get();
     }
 
-    // ========== 核心 API ==========
+    // ========== Core APIs ==========
 
     /**
-     * 获取能源网络 API
+     * Gets the energy network API.
      *
-     * @return 能源网络 API 实例
+     * @return the energy network API instance
      */
     IEnergyNetAPI getEnergyNetAPI();
 
     /**
-     * 获取 FE↔EU 兼容 API
+     * Gets the FE-to-EU compatibility API.
      *
-     * <p>提供将 FE (Forge Energy) 机器接入 EU 电网的工厂方法。
-     * 转换比例：1 EU = 4 FE。
+     * <p>Gives factory methods that connect FE (Forge Energy) machines to the EU grid.
+     * Conversion ratio: 1 EU = 4 FE.
      *
-     * @return FE 兼容 API 实例
+     * @return the FE compatibility API instance
      */
     IFECompatAPI getFECompatAPI();
 
     /**
-     * 获取发电机 API
+     * Gets the generator API.
      *
-     * <p><b>已废弃</b>：发电机已统一为机器的一种类型。
+     * <p><b>Deprecated</b>: a generator is now one type of machine.
      *
-     * <h3>迁移指南</h3>
+     * <h3>Migration guide</h3>
      * <ul>
-     *   <li><b>创建新发电机</b>：使用 {@link #getMachineBuilderAPI()}.{@code createGeneratorBuilder()}</li>
-     *   <li><b>查询发电机状态</b>：使用 {@link #getMachineAPI()}.{@code getMachineInfo(world, pos)}</li>
-     *   <li><b>启停发电机</b>：使用 {@link #getMachineAPI()}.{@code forceStart/Stop(world, pos)}</li>
-     *   <li><b>通过Capability查询</b>：使用 {@code IMioIcifCapabilities.GENERATOR_BLOCK}</li>
+     *   <li><b>Create a new generator</b>: use {@link #getMachineBuilderAPI()}.{@code createGeneratorBuilder()}</li>
+     *   <li><b>Query generator state</b>: use {@link #getMachineAPI()}.{@code getMachineInfo(world, pos)}</li>
+     *   <li><b>Start or stop a generator</b>: use {@link #getMachineAPI()}.{@code forceStart/Stop(world, pos)}</li>
+     *   <li><b>Query through a capability</b>: use {@code IMioIcifCapabilities.GENERATOR_BLOCK}</li>
      * </ul>
      *
-     * <p>示例代码：
+     * <p>Example code:
      * <pre>{@code
-     * // 旧方式（废弃）
+     * // Old method (deprecated)
      * IGeneratorAPI genApi = api.getGeneratorAPI();
      * IGeneratorInfo info = genApi.getGeneratorInfo(world, pos);
      *
-     * // 新方式
+     * // New method
      * IMachineAPI machineApi = api.getMachineAPI();
      * IMachineInfo info = machineApi.getMachineInfo(world, pos);
      * }</pre>
      *
-     * @return 发电机 API 实例（仅保留向后兼容）
-     * @deprecated 发电机已统一为机器的一种类型，请使用 {@link #getMachineAPI()} 和 {@link #getMachineBuilderAPI()}。
-     *             此方法将在未来版本中移除。
+     * @return the generator API instance (kept only for backward compatibility)
+     * @deprecated A generator is now one type of machine. Use {@link #getMachineAPI()} and {@link #getMachineBuilderAPI()}.
+     *             A future version will remove this method.
      */
     @Deprecated(forRemoval = true)
     IGeneratorAPI getGeneratorAPI();
 
     /**
-     * 获取机器 API
+     * Gets the machine API.
      *
-     * @return 机器 API 实例
+     * @return the machine API instance
      */
     IMachineAPI getMachineAPI();
 
     /**
-     * 获取机器构建 API
+     * Gets the machine builder API.
      *
-     * @return 机器构建 API 实例
+     * @return the machine builder API instance
      */
     IMachineBuilderAPI getMachineBuilderAPI();
 
-    // ========== 物品与配方 API ==========
+    // ========== Item and recipe APIs ==========
 
     /**
-     * 获取物品 API
+     * Gets the item API.
      *
-     * @return 物品 API 实例
+     * @return the item API instance
      */
     IItemAPI getItemAPI();
 
     /**
-     * 获取配方 API
+     * Gets the recipe API.
      *
-     * @return 配方 API 实例
+     * @return the recipe API instance
      */
     IRecipeAPI getRecipeAPI();
 
     /**
-     * 获取配方注册 API
+     * Gets the recipe registration API.
      *
-     * @return 配方注册 API 实例
+     * @return the recipe registration API instance
      */
     IRecipeRegistrationAPI getRecipeRegistrationAPI();
 
-    // ========== 流体 API ==========
+    // ========== Fluid APIs ==========
 
     /**
-     * 获取流体 API
+     * Gets the fluid API.
      *
-     * @return 流体 API 实例
+     * @return the fluid API instance
      */
     IFluidAPI getFluidAPI();
 
     /**
-     * 获取流体处理 API
+     * Gets the fluid handling API.
      *
-     * @return 流体处理 API 实例
+     * @return the fluid handling API instance
      */
     IFluidHandlerAPI getFluidHandlerAPI();
 
-    // ========== 特殊系统 API ==========
+    // ========== Special system APIs ==========
 
     /**
-     * 获取作物 API
+     * Gets the crop API.
      *
-     * @return 作物 API 实例
+     * @return the crop API instance
      */
     ICropAPI getCropAPI();
 
     /**
-     * 获取方块 API
+     * Gets the block API.
      *
-     * @return 方块 API 实例
+     * @return the block API instance
      */
     IBlockAPI getBlockAPI();
 
     /**
-     * 获取注册表 API
+     * Gets the registry API.
      *
-     * @return 注册表 API 实例
+     * @return the registry API instance
      */
     IMioIcifRegistries getRegistries();
 
     /**
-     * 获取热能 API
+     * Gets the heat API.
      *
-     * @return 热能 API 实例
+     * @return the heat API instance
      */
     IHeatAPI getHeatAPI();
 
     /**
-     * 获取动能 API
+     * Gets the kinetic API.
      *
-     * @return 动能 API 实例
+     * @return the kinetic API instance
      */
     IKineticAPI getKineticAPI();
 
     /**
-     * 获取核反应堆 API
+     * Gets the nuclear reactor API.
      *
-     * @return 核反应堆 API 实例
+     * @return the nuclear reactor API instance
      */
     IReactorAPI getReactorAPI();
 
     /**
-     * 获取全局风场 API
+     * Gets the global wind API.
      *
-     * <p>暴露按维度维护的全局风场模拟（随机游走基础风力 + 高度三次多项式 + 天气修正），
-     * 附属模组可据此实现自定义风力发电机、风力计、气象设备等。
+     * <p>It gives access to the global wind simulation for each dimension (random-walk base wind + cubic polynomial of height + weather correction).
+     * Addon mods can use it to make custom wind generators, wind meters, weather devices and similar items.
      *
-     * <p>使用示例：
+     * <p>Example:
      * <pre>{@code
      * IWindAPI wind = api.getWindAPI();
      * double windAt = wind.getWindAt(level, pos.getY() + 0.5);
      * }</pre>
      *
-     * @return 全局风场 API 实例
+     * @return the global wind API instance
      */
     IWindAPI getWindAPI();
 
     /**
-     * 获取橡胶树体系 API
+     * Gets the rubber tree API.
      *
-     * <p>暴露橡胶树（树脂采集）系统的判定与采集逻辑，便于附属模组实现
-     * 自定义树液采集器、自定义橡胶木方块，或复用统一的树脂采集流程。
+     * <p>It gives access to the check and harvest logic of the rubber tree (resin harvest) system. Addon mods can use it to make
+     * custom treetaps or custom rubber wood blocks, or to use the same resin harvest flow again.
      *
-     * <p>使用示例：
+     * <p>Example:
      * <pre>{@code
      * IRubberTreeAPI rubber = api.getRubberTreeAPI();
      *
-     * // 判断手中物品是否为树液采集器，并复用采集逻辑
+     * // Check if the held item is a treetap, and use the harvest logic again
      * if (rubber.isTreeTap(stack) && rubber.canHarvest(state)) {
      *     RubberHarvestResult result = rubber.tryHarvest(level, pos, state, player, hand);
      * }
      * }</pre>
      *
-     * @return 橡胶树体系 API 实例
+     * @return the rubber tree API instance
      */
     IRubberTreeAPI getRubberTreeAPI();
 
     /**
-     * 获取升级插件 API
+     * Gets the upgrade API.
      *
-     * @return 升级插件 API 实例
+     * @return the upgrade API instance
      */
     IUpgradeAPI getUpgradeAPI();
 
     /**
-     * 获取能力系统 API
+     * Gets the capability API.
      *
-     * <p>提供 EU/HU/KU 能量存储能力的工厂方法，让附属模组可以创建
-     * 符合 mio_icif 风格的能力实现。
+     * <p>Gives factory methods for EU/HU/KU energy storage capabilities, so that addon mods can create
+     * capability implementations in the mio_icif style.
      *
-     * <p>使用示例：
+     * <p>Example:
      * <pre>{@code
-     * // 创建 EU 存储能力
+     * // Create an EU storage capability
      * IEUStorage storage = api.getCapabilities().createEUStorage(10000, 32, 32, CableTier.LV);
      *
-     * // 创建电动物品能力
+     * // Create an electric item capability
      * IElectricItem electricItem = api.getCapabilities().createElectricItem(100000, 512, 3, true);
      * }</pre>
      *
-     * @return 能力系统 API 实例
+     * @return the capability API instance
      */
     IMioIcifCapabilities getCapabilities();
 
-    // ========== 版本信息 ==========
+    // ========== Version information ==========
 
     /**
-     * 获取 API 版本
+     * Gets the API version.
      *
-     * @return 版本号字符串
+     * @return the version string
      */
     String getVersion();
 
     /**
-     * 获取模组 ID
+     * Gets the mod ID.
      *
-     * @return 模组 ID
+     * @return the mod ID
      */
     String getModId();
 }

@@ -30,12 +30,6 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
     private static final int GUI_HEIGHT = 243;
 
     // 反应堆槽位区域
-    @SuppressWarnings("unused")
-    private static final int REACTOR_SLOTS_X = 26;
-    @SuppressWarnings("unused")
-    private static final int REACTOR_SLOTS_Y = 25;
-    @SuppressWarnings("unused")
-    private static final int SLOT_SIZE = 18;
     
     // 液体槽背景位置(纹理坐标 215, 21, uv14,49)
     private static final int INPUT_TANK_BG_X = 9;
@@ -44,10 +38,6 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
     private static final int OUTPUT_TANK_BG_Y = 53;
     private static final int TANK_BG_WIDTH = 14;
     private static final int TANK_BG_HEIGHT = 49;
-    @SuppressWarnings("unused")
-    private static final int TANK_BG_UV_X = 215;
-    @SuppressWarnings("unused")
-    private static final int TANK_BG_UV_Y = 21;
 
     // 液体槽刻度位置
     // 输入槽刻度 纹理坐标 218, 123, uv9, 37, 位置 11, 59
@@ -55,18 +45,10 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
     private static final int INPUT_TANK_SCALE_Y = 59;
     private static final int TANK_SCALE_WIDTH = 9;
     private static final int TANK_SCALE_HEIGHT = 37;
-    @SuppressWarnings("unused")
-    private static final int INPUT_TANK_SCALE_UV_X = 218;
-    @SuppressWarnings("unused")
-    private static final int INPUT_TANK_SCALE_UV_Y = 123;
 
     // 输出槽刻度 纹理坐标 218, 81, uv9, 37, 位置 192, 59
     private static final int OUTPUT_TANK_SCALE_X = 192;
     private static final int OUTPUT_TANK_SCALE_Y = 59;
-    @SuppressWarnings("unused")
-    private static final int OUTPUT_TANK_SCALE_UV_X = 218;
-    @SuppressWarnings("unused")
-    private static final int OUTPUT_TANK_SCALE_UV_Y = 81;
 
     // 液体槽物品槽位置（往右下移动一格）
     // 输入液体: 输出槽在 8, 115, 输入槽在 8, 25
@@ -86,19 +68,12 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
     private static final int INPUT_FLUID_X = 10;
     private static final int INPUT_FLUID_Y = 54;
     @SuppressWarnings("unused")
-    private static final int INPUT_FLUID_UV_X = 12;
-    @SuppressWarnings("unused")
-    private static final int INPUT_FLUID_UV_Y = 47;
     private static final int FLUID_WIDTH = 12;
     private static final int FLUID_HEIGHT = 47;
 
     // 输出液体: 位置 192, 54, uv12, 47
     private static final int OUTPUT_FLUID_X = 192;
     private static final int OUTPUT_FLUID_Y = 54;
-    @SuppressWarnings("unused")
-    private static final int OUTPUT_FLUID_UV_X = 12;
-    @SuppressWarnings("unused")
-    private static final int OUTPUT_FLUID_UV_Y = 47;
 
     // 热量条位置
     private static final int HEAT_BAR_X = 188;

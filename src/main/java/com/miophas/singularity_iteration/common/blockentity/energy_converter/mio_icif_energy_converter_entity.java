@@ -123,15 +123,17 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity 
         long euAvailable = energyStorage.getAmount();  // 使用 getAmount() 获取 EU
         long euToConvert = Math.min(euAvailable, MAX_CONVERT_PER_TICK);
         int feToAdd = (int) (euToConvert * EU_TO_FE_RATE);
-        
+
         if (feToAdd > 0) {
-            // 使用内部方法存入FE（不受canReceive限制）
-            int actualAdded = feStorage.receiveEnergyInternal(feToAdd, false);
-            if (actualAdded > 0) {
-                // 根据实际转换的FE量计算消耗的EU
-                int actualEUConsumed = actualAdded / EU_TO_FE_RATE;
-                // 使用 extract() 方法直接提取EU（不是 extractEnergy，后者期望FE单位）
-                energyStorage.extract(actualEUConsumed, false);
+            // Convert whole EU only. The FE buffer can have 1..3 FE of room; filling that room
+            // and charging room / 4 = 0 EU made free FE (0.1.7.36). Quote first, then store a
+            // multiple of EU_TO_FE_RATE and charge exactly room / EU_TO_FE_RATE EU.
+            int room = feStorage.receiveEnergyInternal(feToAdd, true);
+            int wholeEu = room / EU_TO_FE_RATE;
+            if (wholeEu > 0) {
+                int actualAdded = feStorage.receiveEnergyInternal(wholeEu * EU_TO_FE_RATE, false);
+                // extract() takes EU (extractEnergy() takes FE)
+                energyStorage.extract((actualAdded + EU_TO_FE_RATE - 1) / EU_TO_FE_RATE, false);
             }
         }
         

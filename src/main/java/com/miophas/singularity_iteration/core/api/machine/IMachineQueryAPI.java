@@ -7,60 +7,60 @@ import java.util.Collection;
 import java.util.Optional;
 
 /**
- * 机器查询 API
+ * Machine query API.
  *
- * <p>提供机器检测、信息查询和批量检索功能。
- * 从 IMachineAPI 拆分而来，遵循单一职责原则。
+ * <p>It gives machine detection, information queries and bulk lookups.
+ * It was split from IMachineAPI to follow the single responsibility principle.
  */
 public interface IMachineQueryAPI {
 
     /**
-     * 检查指定位置是否有机器
+     * Checks if there is a machine at the given position.
      */
     boolean isMachine(Level world, BlockPos pos);
 
     /**
-     * 获取机器信息
+     * Gets the machine information.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 机器信息的 Optional 包装，如果该位置不是机器或机器信息不可用则返回空 Optional
+     * @param world the world
+     * @param pos the block position
+     * @return an Optional with the machine information, or an empty Optional if the position has no machine or the information is not available
      */
     Optional<IMachineInfo> getMachineInfo(Level world, BlockPos pos);
 
     /**
-     * 获取指定类型的所有机器
+     * Gets all machines of the given type.
      */
     Collection<BlockPos> getMachinesByType(Level world, IMachineAPI.MachineType type);
 
     /**
-     * 获取指定世界的所有机器
+     * Gets all machines in the given world.
      */
     Collection<BlockPos> getAllMachines(Level world);
 
     /**
-     * 获取机器工作速度倍率
+     * Gets the work speed multiplier of the machine.
      *
-     * @deprecated 速度倍率由升级插件系统控制，请使用
-     * {@link IUpgradeStatsAPI#getEffectiveSpeedMultiplier} 获取准确值。
+     * @deprecated The upgrade plugin system controls the speed multiplier. Use
+     * {@link IUpgradeStatsAPI#getEffectiveSpeedMultiplier} to get the correct value.
      */
     @Deprecated
     double getSpeedMultiplier(Level world, BlockPos pos);
 
     /**
-     * 获取机器能量消耗倍率
+     * Gets the energy usage multiplier of the machine.
      *
-     * @deprecated 能量倍率由升级插件系统控制，请使用
-     * {@link IUpgradeStatsAPI#getEffectiveEnergyMultiplier} 获取准确值。
+     * @deprecated The upgrade plugin system controls the energy multiplier. Use
+     * {@link IUpgradeStatsAPI#getEffectiveEnergyMultiplier} to get the correct value.
      */
     @Deprecated
     double getEnergyMultiplier(Level world, BlockPos pos);
 
     /**
-     * 获取机器的电缆等级
+     * Gets the cable tier of the machine.
      *
-     * @deprecated 电缆等级由升级插件系统控制，请使用
-     * {@link IUpgradeStatsAPI#getEffectiveCableTier} 获取准确值。
+     * @deprecated The upgrade plugin system controls the cable tier. Use
+     * {@link IUpgradeStatsAPI#getEffectiveCableTier} to get the correct value.
      */
     @Deprecated
     com.miophas.singularity_iteration.core.api.energy.ICableTier getCableTier(Level world, BlockPos pos);

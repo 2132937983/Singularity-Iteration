@@ -29,16 +29,8 @@ public class mio_icif_gui_solid_heat_generator extends mio_icif_screen<com.mioph
     private static final int FLAME_HEIGHT = 14;
 
     // 燃料输入槽位位置
-    @SuppressWarnings("unused")
-    private static final int FUEL_SLOT_X = 80;
-    @SuppressWarnings("unused")
-    private static final int FUEL_SLOT_Y = 45;
 
     // 灰烬输出槽位位置
-    @SuppressWarnings("unused")
-    private static final int ASH_SLOT_X = 113;
-    @SuppressWarnings("unused")
-    private static final int ASH_SLOT_Y = 45;
 
     // 热能文本显示位置 (49, 68)
     private static final int HEAT_TEXT_X = 49;

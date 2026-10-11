@@ -432,7 +432,7 @@ public class mio_icif_steam_kinetic_generator extends AbstractKineticBlockEntity
             if (remaining <= 0) break;
             if (level == null) break;
             BlockPos neighborPos = worldPosition.relative(dir);
-            if (!level.hasChunkAt(neighborPos)) continue;
+            if (!level.isLoaded(neighborPos)) continue;
 
             BlockEntity neighbor = level.getBlockEntity(neighborPos);
             boolean accepted = neighbor instanceof mio_icif_condenser

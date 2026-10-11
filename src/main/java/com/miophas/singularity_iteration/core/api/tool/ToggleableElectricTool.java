@@ -4,16 +4,16 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 可开关电力工具接口。
- * 实现此接口的电力工具可以通过 G 键切换开关状态，
- * 例如：纳米剑、等离子射线枪等。
+ * Interface for electric tools that you can switch on and off.
+ * The player can toggle an electric tool that implements this interface with the G key.
+ * Examples: the nano saber and the plasma ray gun.
  */
 public interface ToggleableElectricTool {
 
     /**
-     * 切换工具的开关状态
-     * @param stack 工具物品堆
-     * @param player 玩家
+     * Toggles the on/off state of the tool.
+     * @param stack the tool item stack
+     * @param player the player
      */
     void toggleActive(ItemStack stack, Player player);
 }

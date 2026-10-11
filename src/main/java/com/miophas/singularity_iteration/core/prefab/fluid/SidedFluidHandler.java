@@ -4,9 +4,9 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 /**
- * 按面别限制填充/抽取的流体处理器视图。
+ * A fluid handler view that limits fill/drain for each side.
  *
- * <p>只在能力边界上做限制，不改变被包装处理器的余额与校验规则。
+ * <p>It applies the limits only at the capability boundary. It does not change the amounts or the validation rules of the wrapped handler.
  */
 public final class SidedFluidHandler implements IFluidHandler {
 

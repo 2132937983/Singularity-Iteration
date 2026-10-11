@@ -39,16 +39,16 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 澶槼鑳借捀棣忔満鏂瑰潡瀹炰綋
- * 完全依靠能工作，不消耗任何EU，也没有任何电压等级
+ * Block entity for the solar distiller.
+ * This machine operates only on solar energy. It uses no EU and it has no voltage tier.
  *
- * 宸ヤ綔蹇呰鏉′欢:
- * - 在主世界
- * - 白天时间?:20 ~ 17:45（游戏时间）
- * - 天气晴朗（无下雨/下雪?
- * - 姝ｄ笂鏂规棤鏂瑰潡閬尅
+ * Conditions for operation:
+ * - The machine is in the Overworld.
+ * - The time is between 6:20 and 17:45 (game time).
+ * - The weather is clear (no rain and no snow).
+ * - No block is directly above the machine.
  *
- * 姣?0 tick锛?绉掞級娑堣€?1mB 姘达紝浜у嚭 1mB 钂搁姘?
+ * Every 80 ticks (4 seconds), the machine uses 1 mB of water and makes 1 mB of distilled water.
  */
 @SuppressWarnings("null")
 public class mio_icif_solar_distiller extends BlockEntity implements MenuProvider, com.miophas.singularity_iteration.core.api.machine.IProducerBlock {
@@ -78,37 +78,37 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
         .upgrade(2)
         .build();
 
-    // 槽位定义（按 builder 调用顺序：EXTRA=0-1, OUTPUT=2-3, UPGRADE=4-5?
+    // Slot indexes, in the builder call order: EXTRA=0-1, OUTPUT=2-3, UPGRADE=4-5.
     public static final int TOTAL_SLOTS = 6;
-    public static final int WATER_INPUT_SLOT = 0;      // 水输入槽 (EXTRA)
-    public static final int DISTILLED_INPUT_SLOT = 1;  // 钂搁姘磋緭鍏ユЫ (EXTRA)
-    public static final int WATER_OUTPUT_SLOT = 2;     // 水输出槽 (OUTPUT)
-    public static final int DISTILLED_OUTPUT_SLOT = 3; // 钂搁姘磋緭鍑烘Ы (OUTPUT)
-    public static final int UPGRADE_SLOT_1 = 4;        // 升级? (UPGRADE)
-    public static final int UPGRADE_SLOT_2 = 5;        // 升级? (UPGRADE)
+    public static final int WATER_INPUT_SLOT = 0;      // Water input slot (EXTRA)
+    public static final int DISTILLED_INPUT_SLOT = 1;  // Distilled water input slot (EXTRA)
+    public static final int WATER_OUTPUT_SLOT = 2;     // Water output slot (OUTPUT)
+    public static final int DISTILLED_OUTPUT_SLOT = 3; // Distilled water output slot (OUTPUT)
+    public static final int UPGRADE_SLOT_1 = 4;        // Upgrade slot 1 (UPGRADE)
+    public static final int UPGRADE_SLOT_2 = 5;        // Upgrade slot 2 (UPGRADE)
 
-    // 流体容量
-    public static final int WATER_TANK_CAPACITY = 10000;          // 水槽 10 ?
-    public static final int DISTILLED_TANK_CAPACITY = 10000;      // 钂搁姘存Ы 10 妗?
-    // 工作参数
-    public static final int PRODUCTION_INTERVAL = 80; // ?0 tick 产出 1mB
-    public static final int FLUID_PER_CYCLE = 1;      // 姣忔寰幆 1mB
+    // Fluid capacities
+    public static final int WATER_TANK_CAPACITY = 10000;          // Water tank: 10 buckets
+    public static final int DISTILLED_TANK_CAPACITY = 10000;      // Distilled water tank: 10 buckets
+    // Operation parameters
+    public static final int PRODUCTION_INTERVAL = 80; // Makes 1 mB every 80 ticks
+    public static final int FLUID_PER_CYCLE = 1;      // 1 mB for each cycle
 
-    // 发电时间段（与太阳能发电机一致）
+    // Operation time window. It is the same as the time window of the solar generator.
     public static final int GENERATION_START_TIME = 333;
     public static final int GENERATION_END_TIME = 11750;
 
-    // 流体存储
+    // Fluid storage
     protected final FluidTank waterTank;
     protected final FluidTank distilledTank;
 
-    // 槽位布局和物品存?
+    // Slot layout and item storage
     protected final SlotLayout slotLayout;
     protected MachineItemHandler itemHandler;
 
-    // 进度
+    // Progress
     private int progress = 0;
-    // 鏄惁姝ｅ湪宸ヤ綔
+    // True when the machine operates
     protected boolean isWorking = false;
 
     private final ContainerData containerData = new ContainerData() {
@@ -130,7 +130,7 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
         public int getCount() { return 4; }
     };
 
-    // 鍗囩骇缁勪欢妲戒綅閰嶇疆
+    // Upgrade slot configuration
     @SuppressWarnings("unused")
     private int upgradeSlotStart = -1;
     @SuppressWarnings("unused")
@@ -189,7 +189,7 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
     }
 
     /**
-     * 姣弔ick 鏇存柊閫昏緫
+     * Updates the machine logic one time each tick.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_solar_distiller blockEntity) {
         if (!(level instanceof net.minecraft.server.level.ServerLevel server)
@@ -222,27 +222,27 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
     }
 
     /**
-     * 妫€鏌ユ槸鍚﹀彲浠ュ伐浣?
+     * Checks if the machine can operate.
      */
     private boolean canWork(Level level, BlockPos pos) {
         if (prepareDistillation().isEmpty()) return false;
 
-        // 妫€鏌ョ淮搴?
+        // Check the dimension.
         if (level.dimension() != Level.OVERWORLD) return false;
 
-        // 妫€鏌ュぉ姘?
+        // Check the weather.
         if (level.isRaining() || level.isThundering()) return false;
 
-        // 妫€鏌ユ椂闂?
+        // Check the time of day.
         long timeOfDay = level.getDayTime() % 24000;
         if (timeOfDay < GENERATION_START_TIME || timeOfDay > GENERATION_END_TIME) return false;
 
-        // 妫€鏌ュぉ绌烘槸鍚﹁閬尅
+        // Check if a block blocks the sky.
         return level.canSeeSky(pos.above());
     }
 
     /**
-     * 浜у嚭钂搁姘?
+     * Prepares one cycle of distilled water production.
      */
     private java.util.Optional<OwnedFluidConversion.Prepared> prepareDistillation() {
         return OwnedFluidConversion.prepare(waterTank, new FluidStack(Fluids.WATER, FLUID_PER_CYCLE),
@@ -258,7 +258,7 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
     }
 
     /**
-     * 澶勭悊姘存《杈撳叆锛氬皢姘翠粠姘村崟鍏冧腑鐨勬按杞叆姘存Ы锛岀┖瀹瑰櫒绉诲埌姘磋緭鍑烘Ы
+     * Handles the water input slot. Moves the water from a water bucket or a water cell into the water tank. Moves the empty container to the water output slot.
      */
     private void handleWaterBucketSlot() {
         var input = itemHandler.getStackInSlot(WATER_INPUT_SLOT);
@@ -272,7 +272,7 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
     }
 
     /**
-     * 澶勭悊钂搁姘存《杈撳叆锛氱敤绌哄崟鍏?绌烘《浠庤捀棣忔按妲藉彇姘达紝绉诲埌钂搁姘磋緭鍑烘Ы
+     * Handles the distilled water input slot. Fills an empty cell or an empty bucket from the distilled water tank. Moves the filled container to the distilled water output slot.
      */
     private void handleDistilledBucketSlot() {
         var input = itemHandler.getStackInSlot(DISTILLED_INPUT_SLOT);
@@ -306,8 +306,8 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
         return switch (slot) {
             case WATER_INPUT_SLOT -> stack.is(Items.WATER_BUCKET) || mio_icif_cells.isCellContainingFluid(stack, Fluids.WATER);
             case DISTILLED_INPUT_SLOT -> stack.is(Items.BUCKET) || mio_icif_cells.isEmptyCell(stack);
-            case WATER_OUTPUT_SLOT -> false; // 浠呰緭鍑猴紝涓嶆帴鍙楁墜鍔ㄦ斁鍏?
-            case DISTILLED_OUTPUT_SLOT -> false; // 浠呰緭鍑猴紝涓嶆帴鍙楁墜鍔ㄦ斁鍏?
+            case WATER_OUTPUT_SLOT -> false; // Output only. Manual insertion is not permitted.
+            case DISTILLED_OUTPUT_SLOT -> false; // Output only. Manual insertion is not permitted.
             default -> false;
         };
     }
@@ -370,14 +370,14 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
     }
 
     /**
-     * 澶勭悊娴佷綋鑷姩鍖栧崌绾?
+     * Runs the fluid automation upgrades.
      */
     private void handleFluidUpgrades() {
         fluidAutomation.runAutomation();
     }
 
     /**
-     * 鑾峰彇鐩搁偦浣嶇疆鐨勬祦浣撳鐞嗗櫒
+     * Gets the fluid handler at the adjacent position.
      */
     @Nullable
     private IFluidHandler getAdjacentFluidHandler(BlockPos pos, @Nullable Direction side) {
@@ -392,14 +392,14 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
     }
 
     /**
-     * 娴佷綋寮瑰嚭鍗囩骇
+     * Ejects fluids for the fluid ejector upgrade.
      */
     private void ejectFluids(IFluidHandler own, int upgradeCount) {
         fluidAutomation.ejectFluids(own, upgradeCount);
     }
 
     /**
-     * 娴佷綋鎶藉叆鍗囩骇
+     * Pulls fluids for the fluid pulling upgrade.
      */
     private void pullFluids(IFluidHandler own, int upgradeCount) {
         fluidAutomation.pullFluids(own, upgradeCount);
@@ -488,6 +488,6 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
     }
 
     /**
-     * 缁勫悎娴佷綋澶勭悊鍣?
+     * Combined fluid handler.
      */
 }

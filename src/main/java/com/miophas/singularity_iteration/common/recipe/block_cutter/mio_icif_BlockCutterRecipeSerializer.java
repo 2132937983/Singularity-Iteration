@@ -10,7 +10,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
 /**
- * 方块切割机配方序列化学? */
+ * Block cutter recipe serializer. */
 @SuppressWarnings("null")
 public class mio_icif_BlockCutterRecipeSerializer implements RecipeSerializer<mio_icif_BlockCutterRecipe> {
 

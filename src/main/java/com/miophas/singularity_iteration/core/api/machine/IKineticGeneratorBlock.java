@@ -1,55 +1,55 @@
 package com.miophas.singularity_iteration.core.api.machine;
 
 /**
- * KU 动能发电机接口。
+ * KU kinetic generator interface.
  * <p>
- * 为 KU 动能发电机提供统一的运行时 API。
- * 实现此接口的方块可以通过动能系统向相邻机器提供动能。
+ * It gives one runtime API for all KU kinetic generators.
+ * A block that implements this interface can supply kinetic energy to adjacent machines through the kinetic system.
  * <p>
- * 注意：此接口独立于 {@link IEnergyBlock}（EU 系统），
- * 因为 KU 动能是与 EU 电力并行的独立能量系统。
+ * Note: this interface is independent of {@link IEnergyBlock} (EU system),
+ * because KU kinetic energy is a separate energy system parallel to EU electricity.
  */
 public interface IKineticGeneratorBlock {
 
     /**
-     * 获取当前动能输出速率（KU/tick）。
+     * Gets the current kinetic output rate (KU/tick).
      *
-     * @return 当前动能输出速率，0 表示未发电
+     * @return the current kinetic output rate, 0 if the generator does not generate
      */
     int getKineticOutput();
 
     /**
-     * 检查发电机是否正在发电（燃烧中）。
+     * Checks if the generator is generating now (burning fuel).
      *
-     * @return true 如果正在发电
+     * @return true if it is generating
      */
     boolean isGenerating();
 
     /**
-     * 获取燃料剩余燃烧时间（tick）。
+     * Gets the remaining fuel burn time (ticks).
      *
-     * @return 剩余燃烧时间
+     * @return the remaining burn time
      */
     int getBurnTime();
 
     /**
-     * 获取当前燃料的总燃烧时间（tick）。
+     * Gets the total burn time of the current fuel (ticks).
      *
-     * @return 总燃烧时间
+     * @return the total burn time
      */
     int getBurnDuration();
 
     /**
-     * 获取动能生成速率（KU/tick）。
+     * Gets the kinetic generation rate (KU/tick).
      *
-     * @return 动能生成速率
+     * @return the kinetic generation rate
      */
     int getKineticGenerationRate();
 
     /**
-     * 获取当前转子转速（RPM）。
+     * Gets the current rotor speed (RPM).
      *
-     * @return 当前转速
+     * @return the current rotation speed
      */
     int getRotorRPM();
 }

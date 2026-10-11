@@ -1,11 +1,11 @@
 package com.miophas.singularity_iteration.core.api.upgrade.tile;
 
 /**
- * 全能升级接口。
+ * Interface for full upgrades.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IFullUpgrade}。
- * 实现此接口的升级同时具备所有升级类型的功能。
- * 这是一个便捷接口，继承了所有具体的升级子接口。
+ * It is the equivalent of {@code IFullUpgrade} in IC2 1.12.2.
+ * Upgrades that implement this interface have the functions of all upgrade types.
+ * This is a convenience interface. It extends all specific upgrade sub-interfaces.
  */
 public interface IFullUpgrade extends
         IAugmentationUpgrade,

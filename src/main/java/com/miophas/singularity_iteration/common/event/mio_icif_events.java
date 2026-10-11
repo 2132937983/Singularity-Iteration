@@ -3,8 +3,6 @@ package com.miophas.singularity_iteration.common.event;
 import com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Nuclear_Reactor_Generator;
 import com.miophas.singularity_iteration.common.block.reactor.mio_icif_Block_Reactor_Chamber;
 import com.miophas.singularity_iteration.common.blockentity.reactor.NukeExplosionScheduler;
-import com.miophas.singularity_iteration.common.blockentity.reactor.NukeExplosionSchedulerOctree;
-import com.miophas.singularity_iteration.common.blockentity.reactor.ReactorExplosionSchedulerWave;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import com.miophas.singularity_iteration.core.api.item.IElectricArmorItem;
 import com.miophas.singularity_iteration.core.api.item.IJetpackItem;
@@ -67,35 +65,8 @@ public class mio_icif_events {
         if (NuclearRadiationHandler.hasNuclearItem(livingEntity)) {
             NuclearRadiationHandler.applyRadiationEffect(livingEntity);
         }
-
-        @SuppressWarnings("unused")
-        Level level = livingEntity.level();
-        @SuppressWarnings("unused")
-        BlockPos entityPos = livingEntity.blockPosition();
     }
     
-    /**
-     * 每tick 更新核弹/反应堆爆炸任务
-     */
-    @SubscribeEvent
-    public static void onLevelTick(LevelTickEvent.Pre event) {
-        Level level = event.getLevel();
-        if (level.isClientSide) {
-            return;
-        }
-
-        // 电网管理已移至GridEventHandler（IC2 风格架构）
-        
-        // 更新核弹爆炸任务
-        NukeExplosionScheduler.tick(level);
-        
-        // 更新核弹爆炸任务 (Octree版本)
-        NukeExplosionSchedulerOctree.tick(level);
-        
-        // 更新核反应堆爆炸任务 (Wave Propagation版本)
-        ReactorExplosionSchedulerWave.tick(level);
-    }
-
     /**
      * 玩家摔落时处理电力靴子的摔落免疫
      * 量子靴：消耗能量抵挡摔落伤害（每点伤害消耗10000EU）
@@ -182,19 +153,11 @@ public class mio_icif_events {
         return stack.getItem() instanceof IElectricArmorItem armor && armor.getArmorTier() == NANO_ARMOR_TIER;
     }
 
-    private static boolean isWearingFullQuantumSet(LivingEntity entity) {
-        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
-            ItemStack stack = entity.getItemBySlot(slot);
-            if (stack.isEmpty() || !MioIcifAPI.instance().getItemAPI().isElectricArmor(stack)
-                || !RadiationProtectionUtil.isQuantumSetPiece(stack, slot)) {
-                return false;
-            }
-        }
-        return true;
-    }
+    /** Shared array: the damage handler runs for every hit, so it must not allocate one each call. */
+    private static final EquipmentSlot[] ARMOR_SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
 
     private static boolean isWearingFullNanoSet(LivingEntity entity) {
-        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
             ItemStack stack = entity.getItemBySlot(slot);
             if (stack.isEmpty() || !MioIcifAPI.instance().getItemAPI().isElectricArmor(stack) || !isNanoArmor(stack)) {
                 return false;
@@ -242,7 +205,6 @@ public class mio_icif_events {
         boolean isExplosion = source.is(DamageTypeTags.IS_EXPLOSION);
         boolean isRadiation = source.getMsgId().equals("mio_icif_killed_by_uranium");
 
-        boolean fullQuantumSet = isWearingFullQuantumSet(entity);
         boolean radiationProtected = RadiationProtectionUtil.isRadiationProtected(entity);
         boolean fullNanoSet = isWearingFullNanoSet(entity);
 
@@ -380,8 +342,6 @@ public class mio_icif_events {
     public static void onLevelUnload(LevelEvent.Unload event) {
         if (event.getLevel() instanceof net.minecraft.server.level.ServerLevel level) {
             NukeExplosionScheduler.clear(level);
-            NukeExplosionSchedulerOctree.clear(level);
-            ReactorExplosionSchedulerWave.clear(level);
         }
     }
 

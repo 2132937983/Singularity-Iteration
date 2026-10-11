@@ -8,178 +8,178 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * 核反应堆 API
+ * Nuclear reactor API.
  *
- * <p>提供与 mio_icif 核反应堆系统交互的接口，包括：
+ * <p>Use this interface to work with the mio_icif nuclear reactor system. It lets you:
  * <ul>
- *   <li>查询反应堆元件属性</li>
- *   <li>检查物品是否是反应堆元件</li>
- *   <li>获取反应堆元件类型</li>
- *   <li>监控反应堆运行状态</li>
- *   <li>获取反应堆结构和热量信息</li>
+ *   <li>Query the properties of reactor components.</li>
+ *   <li>Check if an item is a reactor component.</li>
+ *   <li>Get the type of a reactor component.</li>
+ *   <li>Monitor the operating state of a reactor.</li>
+ *   <li>Get the structure and heat data of a reactor.</li>
  * </ul>
  */
 public interface IReactorAPI {
 
     /**
-     * 检查物品是否是核反应堆元件
+     * Checks if the item is a nuclear reactor component.
      *
-     * @param stack 物品栈
-     * @return true 如果是反应堆元件
+     * @param stack the item stack
+     * @return true if the item is a reactor component
      */
     boolean isReactorComponent(ItemStack stack);
 
     /**
-     * 获取反应堆元件类型
+     * Gets the type of a reactor component.
      *
-     * @param stack 物品栈
-     * @return 元件类型，如果不是反应堆元件则返回 null
+     * @param stack the item stack
+     * @return the component type, or null if the item is not a reactor component
      */
     ReactorComponentType getComponentType(ItemStack stack);
 
     /**
-     * 获取反应堆元件的中子脉冲输出
+     * Gets the neutron pulse output of a reactor component.
      *
-     * @param stack 物品栈
-     * @return 中子脉冲数，如果不是燃料棒则返回 0
+     * @param stack the item stack
+     * @return the number of neutron pulses, or 0 if the item is not a fuel rod
      */
     int getNeutronPulseOutput(ItemStack stack);
 
     /**
-     * 获取反应堆元件的热量输出
+     * Gets the heat output of a reactor component.
      *
-     * @param stack 物品栈
-     * @return 热量输出值（HU）
+     * @param stack the item stack
+     * @return the heat output (HU)
      */
     int getHeatOutput(ItemStack stack);
 
     /**
-     * 获取反应堆元件的最大热量存储
+     * Gets the maximum heat storage of a reactor component.
      *
-     * @param stack 物品栈
-     * @return 最大热量存储值（HU）
+     * @param stack the item stack
+     * @return the maximum heat storage (HU)
      */
     int getMaxHeatStorage(ItemStack stack);
 
     /**
-     * 获取反应堆元件的热量传递效率
+     * Gets the heat transfer efficiency of a reactor component.
      *
-     * @param stack 物品栈
-     * @return 热量传递效率 (0-100)
+     * @param stack the item stack
+     * @return the heat transfer efficiency (0 to 100)
      */
     int getHeatTransferEfficiency(ItemStack stack);
 
     /**
-     * 检查物品是否是 MOX 燃料
+     * Checks if the item is MOX fuel.
      *
-     * @param stack 物品栈
-     * @return true 如果是 MOX 燃料
+     * @param stack the item stack
+     * @return true if the item is MOX fuel
      */
     boolean isMoxFuel(ItemStack stack);
 
     /**
-     * 检查物品是否是燃料棒
+     * Checks if the item is a fuel rod.
      *
-     * @param stack 物品栈
-     * @return true 如果是燃料棒
+     * @param stack the item stack
+     * @return true if the item is a fuel rod
      */
     boolean isFuelRod(ItemStack stack);
 
     /**
-     * 获取所有注册的反应堆元件 ID
+     * Gets the IDs of all registered reactor components.
      */
     Collection<net.minecraft.resources.ResourceLocation> getAllReactorComponentIds();
 
-    // ========== 反应堆监控 API ==========
+    // ========== Reactor monitoring API ==========
 
     /**
-     * 检查反应堆是否正在运行
+     * Checks if the reactor is running.
      *
-     * @param world 世界
-     * @param pos 反应堆主控位置
-     * @return true 如果反应堆正在运行
+     * @param world the level
+     * @param pos the position of the reactor controller
+     * @return true if the reactor is running
      */
     boolean isReactorRunning(Level world, BlockPos pos);
 
     /**
-     * 获取反应堆当前热量
+     * Gets the current heat of the reactor.
      *
-     * @param world 世界
-     * @param pos 反应堆主控位置
-     * @return 当前热量值
+     * @param world the level
+     * @param pos the position of the reactor controller
+     * @return the current heat value
      */
     long getReactorCurrentHeat(Level world, BlockPos pos);
 
     /**
-     * 获取反应堆最大热量容量
+     * Gets the maximum heat capacity of the reactor.
      *
-     * @param world 世界
-     * @param pos 反应堆主控位置
-     * @return 最大热量容量
+     * @param world the level
+     * @param pos the position of the reactor controller
+     * @return the maximum heat capacity
      */
     long getReactorMaxHeat(Level world, BlockPos pos);
 
     /**
-     * 获取反应堆当前温度
+     * Gets the current temperature of the reactor.
      *
-     * @param world 世界
-     * @param pos 反应堆主控位置
-     * @return 当前温度（摄氏度）
+     * @param world the level
+     * @param pos the position of the reactor controller
+     * @return the current temperature (degrees Celsius)
      */
     double getReactorCurrentTemperature(Level world, BlockPos pos);
 
     /**
-     * 获取反应堆当前发电量
+     * Gets the current energy generation of the reactor.
      *
-     * @param world 世界
-     * @param pos 反应堆主控位置
-     * @return 发电量 (EU/tick)
+     * @param world the level
+     * @param pos the position of the reactor controller
+     * @return the energy generation (EU/tick)
      */
     long getReactorCurrentEnergyGeneration(Level world, BlockPos pos);
 
     /**
-     * 获取反应堆可用柱数
+     * Gets the number of available columns of the reactor.
      *
-     * @param world 世界
-     * @param pos 反应堆主控位置
-     * @return 可用柱数
+     * @param world the level
+     * @param pos the position of the reactor controller
+     * @return the number of available columns
      */
     int getReactorAvailableColumns(Level world, BlockPos pos);
 
     /**
-     * 获取反应堆模式
+     * Gets the reactor mode.
      *
-     * @param world 世界
-     * @param pos 反应堆主控位置
-     * @return 反应堆模式（GENERATOR 或 FLUID）
+     * @param world the level
+     * @param pos the position of the reactor controller
+     * @return the reactor mode (GENERATOR or FLUID)
      */
     ReactorMode getReactorMode(Level world, BlockPos pos);
 
     /**
-     * 获取反应堆结构详细状态
+     * Gets the detailed structure status of the reactor.
      *
-     * @param world 世界
-     * @param pos 反应堆主控位置
-     * @return 结构详细状态
+     * @param world the level
+     * @param pos the position of the reactor controller
+     * @return the detailed structure status
      */
     ReactorStructureStatus getReactorStructureStatusDetailed(Level world, BlockPos pos);
 
     /**
-     * 反应堆模式枚举
+     * Reactor modes.
      */
     enum ReactorMode {
-        /** 发电模式：产生EU */
+        /** Generator mode: the reactor makes EU. */
         GENERATOR,
-        /** 流体模式：产生热能/蒸汽 */
+        /** Fluid mode: the reactor makes heat or steam. */
         FLUID
     }
 
     /**
-     * 反应堆结构状态记录
+     * Status of the reactor structure.
      *
-     * @param valid 结构是否完整
-     * @param errors 错误信息列表
-     * @param chambersConnected 已连接的反应堆舱数量
+     * @param valid true if the structure is complete
+     * @param errors the list of error messages
+     * @param chambersConnected the number of connected reactor chambers
      */
     record ReactorStructureStatus(
         boolean valid,
@@ -187,72 +187,72 @@ public interface IReactorAPI {
         int chambersConnected
     ) {
         /**
-         * 创建一个有效的结构状态
+         * Creates a valid structure status.
          */
         public static ReactorStructureStatus valid(int chambersConnected) {
             return new ReactorStructureStatus(true, List.of(), chambersConnected);
         }
 
         /**
-         * 创建一个无效的结构状态
+         * Creates an invalid structure status.
          */
         public static ReactorStructureStatus invalid(List<String> errors) {
             return new ReactorStructureStatus(false, errors, 0);
         }
     }
 
-    // ========== 燃料棒 API ==========
+    // ========== Fuel rod API ==========
 
     /**
-     * 获取燃料棒的中子脉冲数
+     * Gets the number of neutron pulses of a fuel rod.
      *
-     * @param stack 燃料棒物品
-     * @return 中子脉冲数
+     * @param stack the fuel rod item
+     * @return the number of neutron pulses
      */
     int getFuelRodPulses(ItemStack stack);
 
     /**
-     * 获取燃料棒的联数（单/双/四）
+     * Gets the number of cells in a fuel rod (single, dual or quad).
      *
-     * @param stack 燃料棒物品
-     * @return 1=单联, 2=双联, 4=四联
+     * @param stack the fuel rod item
+     * @return 1 for single, 2 for dual, 4 for quad
      */
     int getFuelRodCells(ItemStack stack);
 
     /**
-     * 检查燃料棒是否已耗尽
+     * Checks if the fuel rod is depleted.
      *
-     * @param stack 燃料棒物品
-     * @return true 如果已耗尽
+     * @param stack the fuel rod item
+     * @return true if the fuel rod is depleted
      */
     boolean isFuelRodDepleted(ItemStack stack);
 
     /**
-     * 获取燃料棒的热量输出
+     * Gets the heat output of a fuel rod.
      *
-     * @param stack 燃料棒物品
-     * @return 热量输出
+     * @param stack the fuel rod item
+     * @return the heat output
      */
     long getFuelRodHeatOutput(ItemStack stack);
 
     /**
-     * 获取燃料棒耗尽后的物品
+     * Gets the item that the fuel rod becomes when it is depleted.
      *
-     * @param stack 燃料棒物品
-     * @return 耗尽后的物品
+     * @param stack the fuel rod item
+     * @return the depleted item
      */
     ItemStack getFuelRodDepletedItem(ItemStack stack);
 
     /**
-     * 获取燃料棒类型
+     * Gets the type of a fuel rod.
      *
-     * @param stack 燃料棒物品
-     * @return 燃料棒类型
+     * @param stack the fuel rod item
+     * @return the fuel rod type
      */
     FuelRodType getFuelRodType(ItemStack stack);
 
     /**
-     * 燃料棒类型枚举
+     * Fuel rod types.
      */
     enum FuelRodType {
         SINGLE(1),

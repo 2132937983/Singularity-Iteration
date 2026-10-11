@@ -2332,5 +2332,6 @@
   "message.mio_icif.bat.auto_off": "§7背包自动充电：关§r（%s / %s EU）",
   "tooltip.mio_icif.bat.auto_on": "自动充电已开启：为背包中的电力物品供电",
   "tooltip.mio_icif.bat.auto_off": "自动充电已关闭。右键开启",
-  "tooltip.mio_icif.pack.auto_hint": "潜行 + 右键：开关背包自动充电"
+  "tooltip.mio_icif.pack.auto_hint": "潜行 + 右键：开关背包自动充电",
+  "message.mio_icif.transformer.mode_switched": "变压器：%s；蹲下空手右键切换"
 }

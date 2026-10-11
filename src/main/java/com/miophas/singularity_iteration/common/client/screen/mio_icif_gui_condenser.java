@@ -30,14 +30,6 @@ public class mio_icif_gui_condenser extends mio_icif_screen<com.miophas.singular
     // 蒸汽 -> 蒸馏水进度条
     private static final int PROGRESS_X = 46;
     private static final int PROGRESS_Y = 62;
-    @SuppressWarnings("unused")
-    private static final int PROGRESS_WIDTH = 84;
-    @SuppressWarnings("unused")
-    private static final int PROGRESS_HEIGHT = 9;
-    @SuppressWarnings("unused")
-    private static final int PROGRESS_TEXTURE_X = 0;
-    @SuppressWarnings("unused")
-    private static final int PROGRESS_TEXTURE_Y = 184;
 
     public mio_icif_gui_condenser(CondenserMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

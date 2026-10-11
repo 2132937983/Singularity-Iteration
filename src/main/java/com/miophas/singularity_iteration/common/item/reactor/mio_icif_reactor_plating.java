@@ -5,30 +5,38 @@ import com.miophas.singularity_iteration.core.api.reactor.ReactorComponentType;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 反应堆隔板（防护板）
+ * Reactor plating (protective plate).
  *
- * 特性（参考IC2）：
- * - 增加反应堆的热量上限
- * - 降低反应堆爆炸范围? * - 不储存热量，不吸热，不散�? * - 纯粹的被动防护组�? *
- * 工作原理�? * - 每个隔板提供固定的热量上限加载? * - 每个隔板降低一定百分比的爆炸范围? * - 多个隔板的效果可以叠�? *
- * 隔板类型�? * - 基础反应堆隔板：+1000热量上限制?5%爆炸范围
- * - 密封反应堆隔热板�?500热量上限制?10%爆炸范围
- * - 高热容反应堆隔板�?1700热量上限制?1%爆炸范围
+ * Properties (based on IC2):
+ * - Increases the maximum heat of the reactor.
+ * - Decreases the reactor explosion radius.
+ * - Does not store, absorb or vent heat.
+ * - Is a passive protective component only.
+ *
+ * Function:
+ * - Each plate adds a fixed amount to the maximum heat.
+ * - Each plate decreases the explosion radius by a fixed percentage.
+ * - The effects of multiple plates stack.
+ *
+ * Plating types:
+ * - Reactor plating: +1000 maximum heat, -5% explosion radius.
+ * - Containment reactor plating: +500 maximum heat, -10% explosion radius.
+ * - Heat-capacity reactor plating: +1700 maximum heat, -1% explosion radius.
  */
 @SuppressWarnings("null")
 public class mio_icif_reactor_plating extends mio_icif_reactor {
 
-    // 提供的热量上�
+    // Maximum heat that this plate adds.
 private final int heatCapacityBonus;
 
-    // 爆炸范围降低百分比（0-100�
+    // Explosion radius decrease, in percent (0-100).
 private final int explosionReductionPercent;
 
     /**
-     * 构造函数
- * @param properties 物品属性
- * @param heatCapacityBonus 提供的热量上�
- * @param explosionReductionPercent 爆炸范围降低百分配
+     * Creates a reactor plating item.
+ * @param properties the item properties
+ * @param heatCapacityBonus the maximum heat that the plate adds
+ * @param explosionReductionPercent the explosion radius decrease, in percent
  */
     public mio_icif_reactor_plating(Properties properties, int heatCapacityBonus, int explosionReductionPercent) {
         super(properties.stacksTo(64), 1, ReactorComponentType.REACTOR_PLATING);
@@ -37,25 +45,25 @@ private final int explosionReductionPercent;
     }
 
     /**
-     * 获取提供的热量上�
- * @param stack 物品栈
- * @return 热量上限加成
+     * Returns the maximum heat that the plate adds.
+ * @param stack the item stack
+ * @return the maximum heat bonus
      */
     public int getHeatCapacityBonus(ItemStack stack) {
         return heatCapacityBonus;
     }
 
     /**
-     * 获取爆炸范围降低百分配
- * @param stack 物品栈
- * @return 爆炸范围降低百分比（0-100�
+     * Returns the explosion radius decrease.
+ * @param stack the item stack
+ * @return the explosion radius decrease, in percent (0-100)
  */
     public int getExplosionReductionPercent(ItemStack stack) {
         return explosionReductionPercent;
     }
 
     /**
-     * 反应堆隔板不显示耐久�
+     * Reactor plating does not show a durability bar.
  */
     @Override
     public boolean isBarVisible(ItemStack stack) {

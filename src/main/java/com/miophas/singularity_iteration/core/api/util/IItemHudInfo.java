@@ -5,34 +5,34 @@ import net.minecraft.world.item.ItemStack;
 import java.util.List;
 
 /**
- * 物品 HUD 信息接口。
+ * Interface for item HUD information.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IItemHudInfo}。
- * 实现此接口的物品可以在 HUD 上显示额外信息。
+ * It is the equivalent of {@code IItemHudInfo} in IC2 1.12.2.
+ * Items that implement this interface can show more information on the HUD.
  */
 public interface IItemHudInfo {
 
     /**
-     * 获取此物品的 HUD 信息行。
+     * Returns the HUD information lines of this item.
      *
-     * @param stack    物品堆
-     * @param extended 是否显示扩展信息
-     * @return HUD 信息行列表
+     * @param stack    the item stack
+     * @param extended true to show the extended information
+     * @return the list of HUD information lines
      */
     List<String> getHudInfo(ItemStack stack, boolean extended);
 
     /**
-     * HUD 能量条提供者接口。
+     * Interface for HUD energy bar providers.
      * <p>
-     * 对应 IC2 1.12.2 的 {@code IItemHudProvider.IItemHudBarProvider}。
-     * 实现此接口的物品可以在 HUD 上显示能量条。
+     * It is the equivalent of {@code IItemHudProvider.IItemHudBarProvider} in IC2 1.12.2.
+     * Items that implement this interface can show an energy bar on the HUD.
      */
     interface IItemHudBarProvider {
         /**
-         * 获取能量条百分比（0-100）。
+         * Returns the energy bar percentage (0-100).
          *
-         * @param stack 物品堆
-         * @return 能量条百分比
+         * @param stack the item stack
+         * @return the energy bar percentage
          */
         int getBarPercent(ItemStack stack);
     }

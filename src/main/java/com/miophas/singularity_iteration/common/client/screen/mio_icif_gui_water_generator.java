@@ -39,14 +39,9 @@ public class mio_icif_gui_water_generator extends mio_icif_screen<com.miophas.si
 
     // 蓝色水桶图标纹理位置 (176, 0) - 表示正在发电
     @SuppressWarnings("unused")
-    private static final int WATER_BLUE_TEXTURE_X = 176;
     // private static final int WATER_BLUE_TEXTURE_Y = 0;
 
     // 红色水桶图标纹理位置 (176, 14) - 表示无法产生能量
-    @SuppressWarnings("unused")
-    private static final int WATER_RED_TEXTURE_X = 176;
-    @SuppressWarnings("unused")
-    private static final int WATER_RED_TEXTURE_Y = 14;
 
     // 最大发电量参考值（用于计算填充比例）
     private static final int MAX_ENERGY_OUTPUT = 5;

@@ -89,8 +89,8 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     public final int dockedUpgradeSlots() { return legacyUpgradePositions.size(); }
 
     /**
-     * 标记槽位是否属于机器槽位（非玩家物品栏）
-     * 用于处理有显示槽混入的情况（如BatBoxMenu、MagnetizerMenu�?
+     * Marks each slot as a machine slot (true) or a player inventory slot (false).
+     * This handles menus that mix display slots into the slot list, for example BatBoxMenu and MagnetizerMenu.
      */
     private final List<Boolean> machineSlotFlags = new ArrayList<>();
 
@@ -121,7 +121,7 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     }
 
     /**
-     * 标记接下来的n个槽位为玩家物品栏槽位?
+     * Marks the next n slots as player inventory slots.
      */
     protected void markPlayerSlots(int count) {
         for (int i = 0; i < count; i++) {
@@ -142,8 +142,8 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     }
 
     /**
-     * 获取玩家物品栏起始索引?
-     * 优先使用显式标记查找第一个玩家槽位，如果没有则回退到旧的逻辑
+     * Gets the start index of the player inventory.
+     * It uses the explicit marks first to find the first player slot. If there are no marks, it uses the old logic.
      */
     protected int getPlayerInventoryStart() {
         for (int i = 0; i < machineSlotFlags.size(); i++) {
@@ -374,20 +374,20 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     }
 
     /**
-     * 注册自定义快速移动规则?
-     * 子类可以在构造函数中调用此方法添加额外的槽位移动规则
-     * 规则按注册顺序执行，先注册的先尝�?
+     * Registers a custom quick-move rule.
+     * Subclasses can call this method in the constructor to add more slot move rules.
+     * Rules run in registration order. The first registered rule is tried first.
      *
-     * @param validator 物品验证�?
-     * @param slotStart 目标槽位起始索引（包含）
-     * @param slotEnd   目标槽位结束索引（不包含�?
+     * @param validator the item filter
+     * @param slotStart the first target slot index (inclusive)
+     * @param slotEnd   the last target slot index (exclusive)
      */
     protected void addCustomMoveRule(Predicate<ItemStack> validator, int slotStart, int slotEnd) {
         customMoveRules.add(new SlotMoveRule(validator, slotStart, slotEnd));
     }
 
     /**
-     * 清空自定义快速移动规则?
+     * Removes all custom quick-move rules.
      */
     protected void clearCustomMoveRules() {
         customMoveRules.clear();
@@ -407,12 +407,12 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
             itemstack = itemStack1.copy();
 
             if (isMachineSlot(index)) {
-                // 从机器槽位移出到玩家物品栈?
+                // Move the item from a machine slot to the player inventory.
                 if (!this.moveItemStackTo(itemStack1, getPlayerInventoryStart(), this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
-                // 从玩家物品栏移入到机器槽位?
+                // Move the item from the player inventory to a machine slot.
                 boolean moved = false;
 
                 if (!moved && isUpgrade(itemStack1)) {
@@ -487,7 +487,7 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     }
 
     /**
-     * 检查指定索引是否是有效的机器槽位?
+     * Checks if the given index is a valid machine slot.
      */
     protected boolean isValidMachineSlot(int index) {
         if (index < 0 || index >= this.slots.size()) return false;
@@ -555,14 +555,14 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     }
 
     /**
-     * 添加玩家物品栏槽位（重载方法，兼容旧代码�?
+     * Adds the player inventory slots. This overload keeps compatibility with legacy code.
      */
     protected void addPlayerInventorySlots(Inventory playerInventory, int startY, int hotbarY) {
         addPlayerInventory(playerInventory, startY, hotbarY);
     }
 
     /**
-     * 添加玩家物品栏槽位（默认位置，兼容旧代码�?
+     * Adds the player inventory slots at the default position. This overload keeps compatibility with legacy code.
      */
     protected void addPlayerInventorySlots(Inventory playerInventory) {
         addPlayerInventory(playerInventory, 84, 142);
@@ -581,7 +581,7 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     }
 
     /**
-     * 自定义槽位移动规则?
+     * Custom slot move rule.
      */
     private record SlotMoveRule(Predicate<ItemStack> validator, int slotStart, int slotEnd) {
     }

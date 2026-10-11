@@ -37,7 +37,7 @@ public class HarvestElcMenu extends mio_icif_base_menu {
         this.data = data;
         this.addDataSlots(this.data);
 
-        // 存存储?(0-14) - 15个槽位?行�?列，第一个在(44, 22)
+        // Storage slots (0-14): 15 slots in 3 rows and 5 columns. The first slot is at (44, 22).
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 5; col++) {
                 int slotIndex = row * 5 + col;
@@ -45,7 +45,7 @@ public class HarvestElcMenu extends mio_icif_base_menu {
             }
         }
 
-        // 电池�?(15) - 位置 (152, 58)
+        // Battery slot (15) at (152, 58).
         // 作物分析仪槽 - 对齐 1.7.10 cropnalyzerSlot
         this.addSlot(new SlotItemHandler(itemHandler, SLOT_CROPNALYZER, 15, 40));
 
@@ -66,7 +66,7 @@ public class HarvestElcMenu extends mio_icif_base_menu {
         // 升级槽 - 对齐 1.7.10 仅 1 格
         addUpgradeSlot(itemHandler, SLOT_UPGRADE, 180, 18);
 
-        // 玩家物品栈?
+        // Player inventory slots.
         addPlayerInventory(playerInventory, 110, 168);
     }
 

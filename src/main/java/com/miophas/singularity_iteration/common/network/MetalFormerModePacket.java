@@ -38,7 +38,7 @@ public record MetalFormerModePacket(BlockPos pos, int modeOrdinal) implements Cu
     }
 
     /**
-     * 处理数据�
+     * Handles the packet.
  */
     public static void handle(MetalFormerModePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {

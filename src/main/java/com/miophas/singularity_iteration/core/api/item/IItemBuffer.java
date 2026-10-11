@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 物品冲方块接口。
+ * Marker interface for item buffer blocks.
  *
- * <p>用于标识物品冲方块实体，便于 API 统一查询与分类。
+ * <p>Use it to identify item buffer block entities. The API uses it to find and sort these blocks.
  */
 public interface IItemBuffer {
 }

@@ -17,18 +17,18 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 火力发电机实体（LV 级）
- * 使用煤炭等燃料发?
- * 使用 EU (Energy Unit) 能量系统
- * LV 级配置：128 EU/tick 输出?4000 EU 容量，发电速率 10 EU/tick
+ * Thermal generator block entity (LV tier).
+ * It burns coal and other fuels to make energy.
+ * It uses the EU (Energy Unit) energy system.
+ * LV tier settings: 128 EU/tick output, 4000 EU capacity, generation rate 10 EU/tick.
  * 
- * 该发电机通过电网（PowerGrid）分配能量，而非直接向相邻方块输出能量?
- * 电网通过 extractPowerForConsumer 从发电机?energyStorage 提取能量?
+ * This generator sends energy through the power grid (PowerGrid). It does not send energy directly to adjacent blocks.
+ * The grid uses extractPowerForConsumer to take energy from the energyStorage of the generator.
  */
 @SuppressWarnings("null")
 public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity {
     
-    // LV 级：对齐 IC2 原版，容纳?4000 EU，发电速率 10 EU/tick，最大输?32 EU/tick
+    // LV tier: matches original IC2. Capacity is 4000 EU. Generation rate is 10 EU/tick. Maximum output is 32 EU/tick.
     public mio_icif_Thermal_Generator(BlockPos pos, BlockState state) {
         super(pos, state, mio_icif_block_entities.THERMAL_GENERATOR_ENTITY_TYPE.get(),
             SlotLayout.builder().input(1).battery().build(), 10L, 4000L, 0L, 32L, CableTier.LV);
@@ -40,13 +40,13 @@ public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity {
     }
     
     /**
-     * 当方块实体加载时注册到电?
-     * 注册由基?AbstractEnergyBlockEntity 通过 EnergyTileLoadEvent 自动处理
+     * The block entity registers to the grid when it loads.
+     * The base class AbstractEnergyBlockEntity does the registration automatically through EnergyTileLoadEvent.
      */
 
     /**
-     * 火力发电机通过电网分配能量，不直接向相邻方块输出能量?
-     * 由电网通过 extractPowerForConsumer 从发电机的存储中提取能量
+     * The thermal generator sends energy through the grid. It does not send energy directly to adjacent blocks.
+     * The grid uses extractPowerForConsumer to take energy from the storage of the generator.
      */
     @Override
     protected boolean shouldDirectlyDistributeEnergy() {
@@ -54,10 +54,10 @@ public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity {
     }
     
     /**
-     * 获取燃料的燃烧时间?
- * 像原版熔一样，根据物品是否可燃的标签对其进行燃烧发?
-     * @param fuel 燃料物品
-     * @return 燃烧时间（tick），0表示不是燃料
+     * Gets the burn time of the fuel.
+ * Like the vanilla furnace, it burns the item to make energy if the item is a fuel.
+     * @param fuel the fuel item
+     * @return the burn time in ticks. 0 means that the item is not a fuel.
      */
     @Override
     public int getFuelBurnTime(ItemStack fuel) {
@@ -90,11 +90,11 @@ public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity {
     }
     
     /**
-     * 创建Menu
-     * @param id Menu ID
-     * @param playerInventory 玩家物品栈?
-     * @param player 玩家
-     * @return Menu实例
+     * Creates the menu.
+     * @param id the menu ID
+     * @param playerInventory the player inventory
+     * @param player the player
+     * @return the menu instance
      */
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) {

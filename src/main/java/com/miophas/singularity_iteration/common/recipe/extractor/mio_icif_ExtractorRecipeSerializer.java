@@ -10,16 +10,17 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
 /**
- * 提取机配方序列化? * 用于序列化和反序列化提取机配? */
+ * Extractor recipe serializer.
+ * It serializes and deserializes extractor recipes. */
 @SuppressWarnings("null")
 public class mio_icif_ExtractorRecipeSerializer implements RecipeSerializer<mio_icif_ExtractorRecipe> {
 
-    // 默认处理时间
+    // Default processing time.
     public static final int DEFAULT_PROCESSING_TIME = 200;
-    // 默认每tick能量消
+    // Default energy consumption per tick.
 public static final int DEFAULT_ENERGY_PER_TICK = 15;
 
-    // Codec 用于 JSON 序列
+    // Codec for JSON serialization.
 public static final MapCodec<mio_icif_ExtractorRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->
         instance.group(
             Codec.STRING.optionalFieldOf("group", "").forGetter(mio_icif_ExtractorRecipe::getGroup),
@@ -30,7 +31,7 @@ public static final MapCodec<mio_icif_ExtractorRecipe> CODEC = RecordCodecBuilde
         ).apply(instance, mio_icif_ExtractorRecipe::new)
     );
 
-    // StreamCodec 用于网络同步
+    // StreamCodec for network synchronization.
     public static final StreamCodec<RegistryFriendlyByteBuf, mio_icif_ExtractorRecipe> STREAM_CODEC = StreamCodec.of(
         mio_icif_ExtractorRecipeSerializer::toNetwork,
         mio_icif_ExtractorRecipeSerializer::fromNetwork
@@ -47,7 +48,7 @@ public static final MapCodec<mio_icif_ExtractorRecipe> CODEC = RecordCodecBuilde
     }
 
     /**
- * 从网络冲区读取配方
+ * Reads a recipe from the network buffer.
      */
     private static mio_icif_ExtractorRecipe fromNetwork(RegistryFriendlyByteBuf buffer) {
         String group = buffer.readUtf();
@@ -59,7 +60,7 @@ public static final MapCodec<mio_icif_ExtractorRecipe> CODEC = RecordCodecBuilde
     }
 
     /**
- * 写入配方到网络冲区
+ * Writes a recipe to the network buffer.
      */
     private static void toNetwork(RegistryFriendlyByteBuf buffer, mio_icif_ExtractorRecipe recipe) {
         buffer.writeUtf(recipe.getGroup());

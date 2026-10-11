@@ -1,15 +1,21 @@
 package com.miophas.singularity_iteration.common.item.reactor;
 
 /**
- * 基础散热�? *
- * 特性（参考IC2）：
- * - 最大热量存储：1000�? * - 自身散热速度�?�?tick
- * - 从周围燃料棒吸收热量
- * - 超过热量上限会熔毁（耐久度变化?，物品消失）
+ * Basic heat vent.
  *
- * 工作原理�? * - 每tick从周围的燃料棒吸收热�? * - 同时向外界散�?点热�?tick
- * - 如果吸收的热量大于散发的热量，热量会积累
- * - 热量与耐久度成反比，热量越高耐久度越�? * - 当热量达�?000时，散热片熔毁消耗? */
+ * Behavior (IC2 reference):
+ * - Maximum heat storage: 1000.
+ * - Self cooling: 6 heat per tick.
+ * - It absorbs heat from adjacent fuel rods.
+ * - It melts and disappears when its heat reaches the maximum.
+ *
+ * How it works:
+ * - Each tick, it absorbs heat from adjacent fuel rods.
+ * - At the same time, it vents 6 heat per tick to the environment.
+ * - If it absorbs more heat than it vents, the heat accumulates.
+ * - Stored heat is the inverse of durability. More heat gives less durability.
+ * - When the heat reaches MAX_HEAT (1000), the vent melts and is consumed.
+ */
 @SuppressWarnings("null")
 public class mio_icif_basic_heat_vent extends mio_icif_heat_vent {
 

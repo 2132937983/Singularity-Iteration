@@ -3,57 +3,57 @@ package com.miophas.singularity_iteration.core.api.block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 橡胶木方块接口。
+ * Rubber wood block interface.
  *
- * <p>mio_icif 的橡胶木（{@code block_rub_wood}、{@code block_have_rub_wood}）均实现此接口，
- * 以统一描述"方块是否含树脂、是否已形成采集口、如何清除/恢复树脂"的状态语义。
+ * <p>The mio_icif rubber wood blocks ({@code block_rub_wood}, {@code block_have_rub_wood}) implement this interface.
+ * It gives one meaning for these states: "the block has resin", "the block has a tap hole", and "how to remove or restore the resin".
  *
- * <p>附属模组可以：
+ * <p>Add-on mods can:
  * <ul>
- *   <li>通过 {@link IRubberTreeAPI} 查询任意橡胶木状态，而无需依赖具体方块类；</li>
- *   <li>让自定义原木实现本接口，即可被树液采集器以及本模组的采集 API 统一处理。</li>
+ *   <li>use {@link IRubberTreeAPI} to query the state of any rubber wood without a dependency on a specific block class;</li>
+ *   <li>make a custom log implement this interface. Then the resin extractor and the collection API of this mod handle it the same way.</li>
  * </ul>
  *
- * <p>实现约定：{@link #isTappable(BlockState)} 描述结构条件（例如是否已形成采集口），
- * {@link #hasResin(BlockState)} 描述是否当前含有可采集的树脂。只有当二者同时为真时，
- * 橡胶木才可被采集。
+ * <p>Implementation rules: {@link #isTappable(BlockState)} describes the structural condition (for example, a tap hole is present).
+ * {@link #hasResin(BlockState)} describes if resin is available to collect now. A rubber wood can be tapped only when
+ * both are true.
  */
 public interface IRubberWood {
 
     /**
-     * 该方块状态当前是否含有可采集的树脂。
+     * Checks if this block state has resin to collect now.
      *
-     * @param state 方块状态
-     * @return 含树脂返回 true
+     * @param state the block state
+     * @return true if it has resin
      */
     boolean hasResin(BlockState state);
 
     /**
-     * 该方块状态是否具备采集条件（例如橡胶木已形成采集口）。
+     * Checks if this block state can be tapped (for example, the rubber wood has a tap hole).
      *
-     * <p>此方法不考虑当前是否含树脂，仅描述结构上是否允许被树液采集器采集。
+     * <p>This method does not check if resin is present now. It describes only if the structure allows the resin extractor to tap it.
      *
-     * @param state 方块状态
-     * @return 可采集返回 true
+     * @param state the block state
+     * @return true if it can be tapped
      */
     boolean isTappable(BlockState state);
 
     /**
-     * 返回修改了树脂状态的方块状态。
+     * Returns the block state with a changed resin state.
      *
-     * @param state    原始方块状态
-     * @param hasResin true 置为含树脂，false 置为不含树脂
-     * @return 修改后的方块状态
+     * @param state    the original block state
+     * @param hasResin true to set resin, false to remove resin
+     * @return the changed block state
      */
     BlockState withResin(BlockState state, boolean hasResin);
 
     /**
-     * 该方块状态当前是否可以自然再生树脂（随机刻触发）。
+     * Checks if this block state can grow resin again naturally (on a random tick).
      *
-     * <p>默认实现为"具备采集条件且当前不含树脂"。
+     * <p>The default implementation returns "can be tapped and has no resin now".
      *
-     * @param state 方块状态
-     * @return 可再生返回 true
+     * @param state the block state
+     * @return true if resin can grow again
      */
     default boolean canRegrowResin(BlockState state) {
         return isTappable(state) && !hasResin(state);

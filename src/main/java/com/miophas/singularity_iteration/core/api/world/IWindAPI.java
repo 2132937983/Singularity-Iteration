@@ -3,51 +3,54 @@ package com.miophas.singularity_iteration.core.api.world;
 import net.minecraft.world.level.Level;
 
 /**
- * 全局风场 API
+ * Global wind field API.
  *
- * <p>暴露 mio_icif 的全局风场模拟（WindSim）给附属模组。风场按维度独立维护并随存档持久化：
- * 基础风力强度做随机游走，查询时按高度三次多项式系数与天气（雷暴 ×1.5、降雨 ×1.25）换算，
- * 最终乘以全局系数得到该高度的瞬时风力（MCU）。
+ * <p>Gives addon mods access to the mio_icif global wind field simulation (WindSim).
+ * Each dimension has its own wind field. The save file keeps the wind field.
+ * The base wind strength does a random walk.
+ * At query time, a cubic polynomial of the height and the weather (thunderstorm x1.5, rain x1.25) convert it.
+ * Then a global factor multiplies the result to give the instantaneous wind at that height (MCU).
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * IWindAPI wind = MioIcifAPI.instance().getWindAPI();
  *
- * // 查询某高度的风力（决定风力动能发生机/风力相关机器的输出）
+ * // Query the wind at a height (this sets the output of wind kinetic generators and other wind machines)
  * double windAt = wind.getWindAt(level, pos.getY() + 0.5);
  *
- * // 查询风场基础强度与风向（未经高度/天气修正）
+ * // Query the base strength and direction of the wind field (no height or weather correction)
  * int base = wind.getBaseWindStrength(level);
  * int direction = wind.getWindDirection(level);
  * }</pre>
  *
- * <p>所有方法仅在服务端有效；客户端世界一律返回 0。附属模组可据此实现
- * 自定义风力发电机、风力计、气象预测设备等。
+ * <p>All methods work only on the server side. For a client world they always return 0.
+ * Addon mods can use this API for custom wind generators, anemometers, weather forecast devices and similar.
  */
 public interface IWindAPI {
 
     /**
-     * 查询指定维度的全局风场在给定高度的瞬时风力。
+     * Queries the instantaneous wind of the global wind field of a dimension at a given height.
      *
-     * @param level  服务端世界
-     * @param height 查询高度（通常为方块或实体的 Y 坐标）
-     * @return 瞬时风力（MCU），不小于 0；客户端世界返回 0
+     * @param level  the server world
+     * @param height the query height (usually the Y coordinate of a block or entity)
+     * @return the instantaneous wind (MCU), 0 or more; 0 for a client world
      */
     double getWindAt(Level level, double height);
 
     /**
-     * 查询风场的基础风力强度（随机游走原始值，未经高度与天气修正）。
+     * Queries the base wind strength of the wind field.
+     * This is the raw random-walk value, with no height or weather correction.
      *
-     * @param level 服务端世界
-     * @return 基础风力强度；客户端世界返回 0
+     * @param level the server world
+     * @return the base wind strength; 0 for a client world
      */
     int getBaseWindStrength(Level level);
 
     /**
-     * 查询当前风向。
+     * Queries the current wind direction.
      *
-     * @param level 服务端世界
-     * @return 风向角度（0~359 度）；客户端世界返回 0
+     * @param level the server world
+     * @return the wind direction angle in degrees (0 to 359); 0 for a client world
      */
     int getWindDirection(Level level);
 }

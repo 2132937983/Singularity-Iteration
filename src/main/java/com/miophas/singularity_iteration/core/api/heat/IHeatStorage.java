@@ -1,75 +1,77 @@
 package com.miophas.singularity_iteration.core.api.heat;
 
 /**
- * HU (Heat Units) 热能存储接口
- * 工业2风格的热能系统，与 FE 能量完全独立
+ * Heat storage interface for HU (Heat Units).
+ * This is an IC2-style heat system. It is fully independent of FE energy.
  * 
- * 热能特点：
- * - 只能由特定热源产生（如核反应堆、地热、燃烧等）
- * - 只能被特定机器消耗（如热交换器、蒸汽发生器等）
- * - 不能像电力那样远距离传输，需要特殊的热传导机制
- * - 可能会产生热量损耗
+ * Properties of heat:
+ * - Only specific heat sources make heat (for example nuclear reactors, geothermal, combustion).
+ * - Only specific machines use heat (for example heat exchangers, steam generators).
+ * - Heat cannot move over long distances like electricity. It needs a special heat conduction mechanism.
+ * - Heat can be lost.
  */
 public interface IHeatStorage {
     
     /**
-     * 向存储中添加热能。返回实际添加的热量。
+     * Adds heat to the storage. Returns the heat that was added.
      * 
-     * @param toReceive 要接收的热量
-     * @param simulate  如果为 true，则只模拟操作，不实际改变存储。
-     * @return 实际接收的热量
+     * @param toReceive the heat to receive, in HU
+     * @param simulate  if true, only simulate; do not change the storage
+     * @return the heat that was received, in HU
      */
     long receiveHeat(long toReceive, boolean simulate);
     
     /**
-     * 从存储中提取热能。返回实际提取的热量。
+     * Extracts heat from the storage. Returns the heat that was extracted.
      * 
-     * @param toExtract 要提取的热量
-     * @param simulate  如果为 true，则只模拟操作，不实际改变存储。
-     * @return 实际提取的热量
+     * @param toExtract the heat to extract, in HU
+     * @param simulate  if true, only simulate; do not change the storage
+     * @return the heat that was extracted, in HU
      */
     long extractHeat(long toExtract, boolean simulate);
     
     /**
-     * 获取当前存储的热能值。
+     * Gets the heat that is stored now, in HU.
      */
     long getHeatStored();
     
     /**
-     * 获取最大热能容量。
+     * Gets the maximum heat capacity, in HU.
      */
     long getMaxHeatStored();
     
     /**
-     * 是否可以提取热能
-     * 如果返回 false，extractHeat 将始终返回 0
+     * Returns true if heat can be extracted.
+     * If this returns false, extractHeat always returns 0.
      */
     boolean canExtractHeat();
     
     /**
-     * 是否可以接收热能
-     * 如果返回 false，receiveHeat 将始终返回 0
+     * Returns true if heat can be received.
+     * If this returns false, receiveHeat always returns 0.
      */
     boolean canReceiveHeat();
     
     /**
-     * 获取热能温度（摄氏度）
-     * 用于显示和某些特殊机器
+     * Gets the heat temperature in degrees Celsius.
+     * The default maps the fill level linearly to the range 20 to 1000 (in steps of 1%).
+     * Use it for display and for some special machines.
      */
     default int getTemperature() {
         return com.miophas.singularity_iteration.core.api.util.BoundedUnits.gauge(getHeatStored(), getMaxHeatStored(), 20, 1000);
     }
     
     /**
-     * 是否处于过热状态
+     * Returns true if the storage is overheated (temperature 800 °C or more by default).
      */
     default boolean isOverheated() {
         return getTemperature() >= 800;
     }
     
     /**
-     * 获取热损失率（每 tick 损失的热量）
-     * 热能系统通常会有热量散失
+     * Gets the heat loss rate, in HU per tick.
+     * A heat system usually loses some heat.
+     * By default there is no loss at 100 °C or less.
      */
     default long getHeatLossPerTick() {
         int temp = getTemperature();

@@ -55,7 +55,7 @@ public class BatBoxMenu extends mio_icif_base_menu {
 
         this.addDataSlots(data);
 
-        // 机器槽位：充电槽 + 电池�?
+        // Machine slots: charge slot and discharge (battery) slot
         this.addSlot(new Slot(container, 0, 56, 17) {
             @Override
             public boolean mayPlace(ItemStack stack) {
@@ -156,9 +156,9 @@ public class BatBoxMenu extends mio_icif_base_menu {
         });
         markPlayerSlots(4);
 
-        // 玩家物品栈?
+        // Player inventory.
         addPlayerInventory(playerInventory, 114, 172);
-        markPlayerSlots(36); // 3*9背包 + 9快捷�?
+        markPlayerSlots(36); // 3x9 inventory + 9 hotbar slots
     }
 
     @Override

@@ -11,12 +11,12 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 反应堆冷却液注入器的容器菜单独?
+ * Container menu class for the reactor coolant injector.
  */
 @SuppressWarnings({"null"}) public class RedstoneReactorCoolantInjectorMenu extends mio_icif_machine_menu {
 
     // 槽位索引
-    public static final int SLOT_COUNT = 54; // 53 个红石方块?+ 1 个电池槽
+    public static final int SLOT_COUNT = 54; // 53 redstone block slots + 1 battery slot
     public static final int BATTERY_SLOT = 53;
 
     // 槽位布局参数
@@ -92,7 +92,7 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        // 添加 54 个槽位（6 �?x 9 列）
+        // Add 54 slots (6 rows x 9 columns).
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLUMNS; col++) {
                 int slotIndex = row * COLUMNS + col;

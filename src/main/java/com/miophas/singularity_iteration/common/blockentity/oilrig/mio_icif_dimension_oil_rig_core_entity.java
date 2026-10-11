@@ -173,6 +173,27 @@ public class mio_icif_dimension_oil_rig_core_entity extends MultiblockEnergyCore
         }
     }
 
+    /** Square spiral: moves the drill to the next column (after bedrock or the world floor). */
+    private void nextColumn() {
+        if (!isFirstRun) {
+            if (offsetMoveTimes + 1 < offsetValue) {
+                offsetMoveTimes++;
+            } else {
+                offsetMoveTimes = 0;
+                offsetMode = (offsetMode + 1) % 4;
+                if (offsetUseTwice) {
+                    offsetValue++;
+                    offsetUseTwice = false;
+                } else {
+                    offsetUseTwice = true;
+                }
+            }
+        } else {
+            isFirstRun = false;
+        }
+        offsetFlag = true;
+    }
+
     private boolean tryDrill(Level level, BlockPos pos) {
         int targetX = -offsetX;
         int targetZ = -offsetZ;
@@ -193,32 +214,18 @@ public class mio_icif_dimension_oil_rig_core_entity extends MultiblockEnergyCore
 
         BlockPos targetPos = pos.offset(targetX, -2 - offsetY, targetZ);
         drillCoord = targetPos;
+        // Below the world floor (no bedrock in this dimension): the column is done. Without this
+        // check the rig drilled void air forever and never moved on.
+        if (targetPos.getY() < level.getMinBuildHeight()) {
+            nextColumn();
+            return false;
+        }
 
         BlockState targetState = level.getBlockState(targetPos);
         if (!targetState.isAir()) {
             offsetY++;
             if (targetState.is(Blocks.BEDROCK)) {
-                if (!isFirstRun) {
-                    if (offsetMoveTimes + 1 < offsetValue) {
-                        offsetMoveTimes++;
-                    } else {
-                        offsetMoveTimes = 0;
-                        if (offsetMode + 1 < 4) {
-                            offsetMode++;
-                        } else {
-                            offsetMode = 0;
-                        }
-                        if (offsetUseTwice) {
-                            offsetValue++;
-                            offsetUseTwice = false;
-                        } else {
-                            offsetUseTwice = true;
-                        }
-                    }
-                } else {
-                    isFirstRun = false;
-                }
-                offsetFlag = true;
+                nextColumn();
                 return false;
             }
 

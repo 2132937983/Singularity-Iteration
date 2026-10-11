@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 扫描仪物品接口。
+ * Marker interface for scanner items.
  *
- * <p>用于标识 OD/OV 扫描仪类物品，便于 API 统一查询与分类。
+ * <p>Use it to identify OD/OV scanner items. The API uses it to find and sort these items.
  */
 public interface IScannerItem {
 }

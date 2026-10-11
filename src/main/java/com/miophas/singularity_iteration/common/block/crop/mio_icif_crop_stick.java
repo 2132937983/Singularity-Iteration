@@ -98,14 +98,14 @@ public class mio_icif_crop_stick extends BaseEntityBlock {
 
     static void harvestAfterPermission(BlockState state, Level level, BlockPos pos, Player player) {
         if (!(level instanceof ServerLevel server) || !(player instanceof ServerPlayer serverPlayer)
-                || !server.hasChunkAt(pos) || !server.mayInteract(player, pos)
+                || !server.isLoaded(pos) || !server.mayInteract(player, pos)
                 || player.blockActionRestricted(server, pos, serverPlayer.gameMode.getGameModeForPlayer())
                 || server.getBlockState(pos) != state
                 || !(server.getBlockEntity(pos) instanceof mio_icif_crop_entity crop)) return;
         // attack precedes the normal break event; ask protection before changing the crop or its drops.
         var event = new BlockEvent.BreakEvent(server, pos, state, player);
         NeoForge.EVENT_BUS.post(event);
-        if (event.isCanceled() || !server.hasChunkAt(pos) || server.getBlockState(pos) != state
+        if (event.isCanceled() || !server.isLoaded(pos) || server.getBlockState(pos) != state
                 || server.getBlockEntity(pos) != crop) return;
         if (crop.getPlant() != null) crop.getPlant().onLeftClick(crop, player);
         else if (crop.isHybridBase()) {

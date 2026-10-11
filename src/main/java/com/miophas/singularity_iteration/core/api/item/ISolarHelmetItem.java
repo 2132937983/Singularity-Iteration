@@ -3,48 +3,52 @@ package com.miophas.singularity_iteration.core.api.item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 太阳能头盔接口。
+ * Interface for solar helmets.
  *
- * <p>扩展 {@link IBatteryItem}，为太阳能头盔/护甲提供统一的 API。
- * 太阳能头盔在白天（或满足光照条件时）自动为自身或其他装备充电。
+ * <p>It extends {@link IBatteryItem} and gives one API for solar helmets and armor.
+ * A solar helmet automatically charges itself or other equipment during the day (or when the light conditions are met).
  */
 public interface ISolarHelmetItem extends IBatteryItem {
 
     /**
-     * 获取太阳能发电速率
-     * @return 每 tick 发电量（EU）
+     * Returns the solar generation rate.
+     *
+     * @return the energy generated each tick (EU)
      */
     long getGenerationRate();
 
     /**
-     * 检查是否需要天空可见（无方块遮挡）
-     * @return true 如果需要天空可见
+     * Returns true if the helmet needs a view of the sky (no blocks above it).
+     *
+     * @return true if a view of the sky is necessary
      */
     boolean requiresSky();
 
     /**
-     * 检查是否仅在白天工作
-     * @return true 如果仅白天发电
+     * Returns true if the helmet works only during the day.
+     *
+     * @return true if it generates power only during the day
      */
     boolean isDayOnly();
 
     /**
-     * 获取最低光照等级要求（0-15）
-     * @return 最低光照等级
+     * Returns the minimum light level that is necessary (0-15).
+     *
+     * @return the minimum light level
      */
     default int getMinLightLevel() {
         return 0;
     }
 
     /**
-     * 检查当前条件是否满足发电要求
+     * Returns true if the current conditions permit power generation.
      *
-     * @param stack     物品堆
-     * @param skyLight  天空光照等级（0-15）
-     * @param blockLight 方块光照等级（0-15）
-     * @param canSeeSky 是否可以看到天空
-     * @param isDaytime 是否为白天
-     * @return true 如果满足发电条件
+     * @param stack     the item stack
+     * @param skyLight  the sky light level (0-15)
+     * @param blockLight the block light level (0-15)
+     * @param canSeeSky true if the sky is visible
+     * @param isDaytime true if it is day
+     * @return true if the conditions for generation are met
      */
     default boolean canGenerate(ItemStack stack, int skyLight, int blockLight, boolean canSeeSky, boolean isDaytime) {
         if (requiresSky() && !canSeeSky) return false;
@@ -54,12 +58,13 @@ public interface ISolarHelmetItem extends IBatteryItem {
     }
 
     /**
-     * 对装备了此头盔的玩家执行太阳能充电
+     * Charges a target item with solar energy for the player who wears this helmet.
+     * The amount is at most {@link #getGenerationRate()}.
      *
-     * @param stack           物品堆
-     * @param chargeTarget    充电目标物品堆
-     * @param simulate        是否仅模拟
-     * @return 实际充入的能量
+     * @param stack           the item stack
+     * @param chargeTarget    the item stack to charge
+     * @param simulate        if true, only simulate
+     * @return the energy that was added (EU)
      */
     default long chargeTarget(ItemStack stack, ItemStack chargeTarget, boolean simulate) {
         if (chargeTarget.isEmpty()) return 0;

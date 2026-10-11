@@ -15,30 +15,30 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * IC2 1.12.2 {@code ElectricItemManager.chargeFromArmor()} 的 SI 等价实现。
+ * SI equivalent of IC2 1.12.2 {@code ElectricItemManager.chargeFromArmor()}.
  *
- * <p>充电背包自身没有任何 tick 逻辑，它们只是被动的能量源；充电由使用方（手持的电动物品）
- * 主动发起：物品在读取/消耗能量前从穿戴的充电背包中取电补满自己，与 IC2 原版
- * "工具使用时从护甲取电"一致。
+ * <p>Energy packs have no tick logic of their own. They are only passive energy sources. The user (the electric item in hand)
+ * starts the charge: before the item reads or uses energy, it takes energy from the worn energy packs to fill itself. This agrees with
+ * the original IC2 behavior "a tool takes energy from the armor when it is used".
  *
- * <p>按本次对齐要求，不做 Tier 限制。
+ * <p>As this alignment requires, there is no tier limit.
  */
 public final class EnergyPackCharging {
     private static final EquipmentSlot[] ARMOR_SLOTS = {
         EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
     };
-    /** 手持中的物品 -> 使用者。以 ItemStack 身份为键，不做强引用。 */
+    /** Item in hand -> user. The key is the ItemStack identity. There is no strong reference. */
     private static final Map<ItemStack, ServerPlayer> HOLDERS = Collections.synchronizedMap(new WeakHashMap<>());
-    /** 手持物品 -> 最近一次补电的游戏刻，用于限制"每 tick 最多补一次"。 */
+    /** Item in hand -> game tick of the last charge. It limits the charge to "one time per tick at most". */
     private static final Map<ItemStack, Long> LAST_PULL_TICK = Collections.synchronizedMap(new WeakHashMap<>());
-    /** 补电过程中目标物品的能量读取会再次触发补电，用守卫阻断递归。 */
+    /** During a charge, an energy read on the target item starts a charge again. This guard stops the recursion. */
     private static final ThreadLocal<Boolean> ACTIVE = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     private EnergyPackCharging() { }
 
     /**
-     * 由物品的 {@code inventoryTick} 每 tick 调用，记录"谁手持着它"；
-     * 只有手持中的物品才会从护甲取电。
+     * The item calls this method from {@code inventoryTick} each tick. It records "who holds the item".
+     * Only items in a hand take energy from the armor.
      */
     public static void trackHolder(ItemStack stack, Entity entity) {
         if (!(entity instanceof ServerPlayer player) || stack.getCount() != 1) return;
@@ -50,13 +50,13 @@ public final class EnergyPackCharging {
     }
 
     /**
-     * 读取/消耗能量前的补电入口（对应 IC2 chargeFromArmor 的调用时机）。
+     * Charge entry point before energy is read or used (the same call time as IC2 chargeFromArmor).
      *
-     * <p>关键约束：同一个手持物品**每 tick 最多补一次**。因为补电是从 {@code getEnergy()} 触发的，
-     * 而 {@code BatteryTransfer} 的操作依赖"同一 tick 内重复读取返回同一数值"来校验不变量
-     * （如 {@code consume()} 扣电前读一次、扣电后再读一次做核对）。若第二次读取又补满，
-     * 就会被判定为"提交后的余额被篡改"并抛出异常。因此这里用每 tick 一次的守卫，
-     * 保证一次操作内部后续的读取是纯的。
+     * <p>Important rule: the same item in hand charges **one time per tick at most**. The charge starts from {@code getEnergy()}.
+     * {@code BatteryTransfer} operations use the rule "repeated reads in the same tick return the same value" to verify invariants
+     * (for example, {@code consume()} reads one time before it removes energy and one time after to verify). If the second read fills the item again,
+     * the operation sees "the balance changed after commit" and throws an exception. Thus this guard allows one charge per tick.
+     * It makes sure that the subsequent reads in one operation have no side effects.
      */
     public static void pullFromArmor(ItemStack stack) {
         ServerPlayer holder = HOLDERS.get(stack);
@@ -69,11 +69,11 @@ public final class EnergyPackCharging {
     }
 
     /**
-     * 从实体穿戴的充电背包向目标物品补电，直到目标充满或所有背包耗尽。
-     *
-     * @param target 需要充电的物品堆（通常是手持的电动物品）
-     * @param entity 持有者
-     * @return 实际充入目标物品的能量
+     * Charges the target item from the energy packs that the entity wears, until the target is full or all packs are empty.
+     * Server thread only. On another thread or on the client, this method returns 0.
+     * @param target the item stack to charge (usually the electric item in hand)
+     * @param entity the holder
+     * @return the energy that was put into the target item (EU)
      */
     public static long chargeFromArmor(ItemStack target, LivingEntity entity) {
         if (Boolean.TRUE.equals(ACTIVE.get())) return 0;

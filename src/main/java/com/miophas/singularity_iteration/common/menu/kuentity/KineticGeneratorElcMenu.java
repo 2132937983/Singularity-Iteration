@@ -9,7 +9,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 电力动能机的容器菜单独?
+ * Container menu for the electric kinetic generator.
  */
 @SuppressWarnings({"null"}) public class KineticGeneratorElcMenu extends mio_icif_machine_menu {
 

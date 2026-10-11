@@ -76,16 +76,16 @@ public final class IndependentTransformerBlockEntity extends BlockEntity {
 
     public int savedMode() { return savedMode; }
 
-    /** 低压侧包大小（EU）。 */
+    /** Packet size on the low-voltage side (EU). */
     public long lowPacket() { return lowPacket; }
 
-    /** 高压侧包大小：独立实现按四倍档位换算，与遗留 CableTier 序列一致。 */
+    /** Packet size on the high-voltage side. This implementation uses a 4x step per tier, the same as the legacy CableTier sequence. */
     public long highPacket() { return lowPacket * 4; }
 
-    /** 缓冲容量：沿用遗留换算（低压侧额定值 × 8）。 */
+    /** Buffer capacity. It uses the legacy formula (low-side rating x 8). */
     public double bufferCapacity() { return lowPacket * 8.0d; }
 
-    /** 当前缓冲电量（EU，取整部分）。 */
+    /** Current buffered energy (EU, integer part). */
     public double storedEnergy() { return cell == null ? savedBuffer : cell.quote().amount(); }
 
     public boolean hasNeighborRedstoneSignal() {
@@ -117,8 +117,8 @@ public final class IndependentTransformerBlockEntity extends BlockEntity {
     }
 
     /**
-     * 升压视觉状态写入宿主方块的 {@code active} 属性（按属性名查表，
-     * core 不认识具体方块类；方块没有该属性时静默跳过）。
+     * Writes the step-up visual state to the {@code active} property of the host block. (It finds the property by name,
+     * because core does not know the block class. If the block has no such property, it skips silently.)
      */
     private void applyActiveProperty() {
         if (level == null || level.isClientSide || isRemoved()) return;
@@ -167,8 +167,8 @@ public final class IndependentTransformerBlockEntity extends BlockEntity {
     @Override protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         revokeCell();
         super.loadAdditional(tag, registries);
-        // 遗留存档写的是 buffer_long / buffer_fraction / redstone_signal，
-        // 这里一次性迁移到独立命名，避免切换后丢失已存电量。
+        // Legacy saves use buffer_long / buffer_fraction / redstone_signal.
+        // This code moves them to the new names one time, so that stored energy is not lost after the change.
         if (tag.contains("buffer_long")) {
             savedBuffer = tag.getLong("buffer_long");
             double fraction = tag.getDouble("buffer_fraction");

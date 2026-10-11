@@ -12,13 +12,15 @@ import net.neoforged.neoforge.items.IItemHandler;
 import java.util.List;
 
 /**
- * 核反应堆主控方块应实现的接口。
+ * Interface for the main control block of a nuclear reactor.
  *
- * <p>API 层（{@code ReactorAPIImpl}、{@code MachineAPIImpl} 等）通过此接口访问反应堆，
- * 而不直接依赖具体实现类 {@code mio_icif_nuclear_reactor_generator}，
- * 从而避免内部重构（重命名/移动/改字段）时破坏 API 层编译。
+ * <p>The API layer ({@code ReactorAPIImpl}, {@code MachineAPIImpl} and others) uses this interface
+ * to access the reactor. It does not depend on the implementation class
+ * {@code mio_icif_nuclear_reactor_generator}.
+ * Thus internal refactors (rename, move, field changes) do not break the API layer build.
  *
- * <p>此接口扩展 {@link IReactor}，将反应堆核心模拟接口与 API 控制接口统一。
+ * <p>This interface extends {@link IReactor}. It joins the reactor core simulation interface
+ * and the API control interface.
  */
 public interface IReactorController extends IReactor {
 
@@ -30,15 +32,15 @@ public interface IReactorController extends IReactor {
     }
 
     /**
-     * 设置反应堆热量。
+     * Sets the reactor heat.
      *
-     * <p><b>受限制操作：</b>当前不支持通过 API 直接设置热量。此方法抛出
-     * {@link UnsupportedOperationException}。
-     * 如需修改热量，请使用反应堆内部机制（燃料棒发热、散热片散热）。
+     * <p><b>Restricted operation:</b> The API cannot set the heat directly at this time.
+     * This method always throws {@link UnsupportedOperationException}.
+     * To change the heat, use the internal reactor mechanisms (fuel rods make heat, heat vents remove heat).
      *
-     * @param heat 新的热量值
-     * @throws UnsupportedOperationException 此实现不支持此操作
-     * @see IReactorAPI#getReactorCurrentHeat(Level, BlockPos) 查询当前热量
+     * @param heat the new heat value
+     * @throws UnsupportedOperationException always; this implementation does not support this operation
+     * @see IReactorAPI#getReactorCurrentHeat(Level, BlockPos) to query the current heat
      */
     @Override
     default void setHeat(long heat) {
@@ -47,16 +49,16 @@ public interface IReactorController extends IReactor {
     }
 
     /**
-     * 向反应堆添加热量。
+     * Adds heat to the reactor.
      *
-     * <p><b>受限制操作：</b>当前不支持通过 API 直接添加热量。此方法抛出
-     * {@link UnsupportedOperationException}。
-     * 如需修改热量，请使用反应堆内部机制（燃料棒发热、散热片散热）。
+     * <p><b>Restricted operation:</b> The API cannot add heat directly at this time.
+     * This method always throws {@link UnsupportedOperationException}.
+     * To change the heat, use the internal reactor mechanisms (fuel rods make heat, heat vents remove heat).
      *
-     * @param heat 要添加的热量值
-     * @return 实际添加的热量值
-     * @throws UnsupportedOperationException 此实现不支持此操作
-     * @see IReactorAPI#getReactorCurrentHeat(Level, BlockPos) 查询当前热量
+     * @param heat the heat value to add
+     * @return the heat value that was added
+     * @throws UnsupportedOperationException always; this implementation does not support this operation
+     * @see IReactorAPI#getReactorCurrentHeat(Level, BlockPos) to query the current heat
      */
     @Override
     default long addHeat(long heat) {
@@ -65,15 +67,15 @@ public interface IReactorController extends IReactor {
     }
 
     /**
-     * 设置反应堆最大热量容量。
+     * Sets the maximum heat capacity of the reactor.
      *
-     * <p><b>受限制操作：</b>当前不支持通过 API 设置最大热量。此方法抛出
-     * {@link UnsupportedOperationException}。
-     * 最大热量由反应堆结构和连接的核反应仓数量决定。
+     * <p><b>Restricted operation:</b> The API cannot set the maximum heat at this time.
+     * This method always throws {@link UnsupportedOperationException}.
+     * The reactor structure and the number of connected reactor chambers set the maximum heat.
      *
-     * @param maxHeat 新的最大热量容量
-     * @throws UnsupportedOperationException 此实现不支持此操作
-     * @see IReactorAPI#getReactorMaxHeat(Level, BlockPos) 查询最大热量
+     * @param maxHeat the new maximum heat capacity
+     * @throws UnsupportedOperationException always; this implementation does not support this operation
+     * @see IReactorAPI#getReactorMaxHeat(Level, BlockPos) to query the maximum heat
      */
     @Override
     default void setMaxHeat(long maxHeat) {
@@ -82,15 +84,15 @@ public interface IReactorController extends IReactor {
     }
 
     /**
-     * 添加散热热量。
+     * Adds heat to emit (remove) from the reactor.
      *
-     * <p><b>受限制操作：</b>当前不支持通过 API 直接散热。此方法抛出
-     * {@link UnsupportedOperationException}。
-     * 散热由散热片元件自动处理。
+     * <p><b>Restricted operation:</b> The API cannot remove heat directly at this time.
+     * This method always throws {@link UnsupportedOperationException}.
+     * Heat vent components remove heat automatically.
      *
-     * @param heat 散热量
-     * @throws UnsupportedOperationException 此实现不支持此操作
-     * @see IReactorAPI#getReactorCurrentTemperature(Level, BlockPos) 查询温度（间接反映散热效果）
+     * @param heat the heat to emit
+     * @throws UnsupportedOperationException always; this implementation does not support this operation
+     * @see IReactorAPI#getReactorCurrentTemperature(Level, BlockPos) to query the temperature (it shows the cooling effect indirectly)
      */
     @Override
     default void addEmitHeat(long heat) {
@@ -103,15 +105,15 @@ public interface IReactorController extends IReactor {
     }
 
     /**
-     * <b>受限制操作：</b>设置热量效应修正系数。
+     * <b>Restricted operation:</b> Sets the heat effect modifier.
      *
-     * <p>当前不支持通过 API 直接设置修正系数。此方法抛出
-     * {@link UnsupportedOperationException}。
-     * 修正系数由反应堆温度自动计算，无需手动设置。
+     * <p>The API cannot set the modifier directly at this time.
+     * This method always throws {@link UnsupportedOperationException}.
+     * The reactor calculates the modifier from its temperature automatically. You do not need to set it.
      *
-     * @param modifier 修正系数
-     * @throws UnsupportedOperationException 此实现不支持此操作
-     * @see #getHeatEffectModifier() 获取当前修正系数
+     * @param modifier the modifier
+     * @throws UnsupportedOperationException always; this implementation does not support this operation
+     * @see #getHeatEffectModifier() to get the current modifier
      */
     default void setHeatEffectModifier(float modifier) {
         throw new UnsupportedOperationException(
@@ -123,17 +125,17 @@ public interface IReactorController extends IReactor {
     }
 
     /**
-     * 获取指定位置的物品（网格坐标系）。
+     * Gets the item at a grid position.
      *
-     * <p><b>受限制操作：</b>当前不支持通过 API 按网格坐标访问物品槽。此方法抛出
-     * {@link UnsupportedOperationException}。
-     * 如需访问物品，请使用 {@link #getItemHandler()} 获取物品处理器。
+     * <p><b>Restricted operation:</b> The API cannot access item slots by grid position at this time.
+     * This method always throws {@link UnsupportedOperationException}.
+     * To access items, use {@link #getItemHandler()} to get the item handler.
      *
-     * @param x X 坐标（0-based 列索引）
-     * @param y Y 坐标（0-based 行索引）
-     * @return 该位置的物品
-     * @throws UnsupportedOperationException 此实现不支持此操作
-     * @see #getItemHandler() 通过物品处理器访问所有槽位
+     * @param x X coordinate (0-based column index)
+     * @param y Y coordinate (0-based row index)
+     * @return the item at this position
+     * @throws UnsupportedOperationException always; this implementation does not support this operation
+     * @see #getItemHandler() to access all slots through the item handler
      */
     default ItemStack getItemAt(int x, int y) {
         throw new UnsupportedOperationException(
@@ -141,17 +143,17 @@ public interface IReactorController extends IReactor {
     }
 
     /**
-     * 设置指定位置的物品（网格坐标系）。
+     * Sets the item at a grid position.
      *
-     * <p><b>受限制操作：</b>当前不支持通过 API 按网格坐标设置物品槽。此方法抛出
-     * {@link UnsupportedOperationException}。
-     * 如需修改物品，请使用 {@link #getItemHandler()} 获取物品处理器。
+     * <p><b>Restricted operation:</b> The API cannot set item slots by grid position at this time.
+     * This method always throws {@link UnsupportedOperationException}.
+     * To change items, use {@link #getItemHandler()} to get the item handler.
      *
-     * @param x X 坐标（0-based 列索引）
-     * @param y Y 坐标（0-based 行索引）
-     * @param stack 要放置的物品
-     * @throws UnsupportedOperationException 此实现不支持此操作
-     * @see #getItemHandler() 通过物品处理器访问所有槽位
+     * @param x X coordinate (0-based column index)
+     * @param y Y coordinate (0-based row index)
+     * @param stack the item to put
+     * @throws UnsupportedOperationException always; this implementation does not support this operation
+     * @see #getItemHandler() to access all slots through the item handler
      */
     default void setItemAt(int x, int y, ItemStack stack) {
         throw new UnsupportedOperationException(
@@ -159,14 +161,15 @@ public interface IReactorController extends IReactor {
     }
 
     /**
-     * 引发反应堆爆炸。
+     * Makes the reactor explode.
      *
-     * <p><b>受限制操作：</b>当前不支持通过 API 触发爆炸。此方法抛出
-     * {@link UnsupportedOperationException}。
-     * 爆炸仅在热量超过最大容量时由内部逻辑自动触发（熔毁）。
+     * <p><b>Restricted operation:</b> The API cannot start an explosion at this time.
+     * This method always throws {@link UnsupportedOperationException}.
+     * The internal logic starts the explosion automatically only when the heat is more than
+     * the maximum capacity (meltdown).
      *
-     * @throws UnsupportedOperationException 此实现不支持此操作
-     * @see IReactorAPI#getReactorCurrentTemperature(Level, BlockPos) 监控温度避免熔毁
+     * @throws UnsupportedOperationException always; this implementation does not support this operation
+     * @see IReactorAPI#getReactorCurrentTemperature(Level, BlockPos) to monitor the temperature and prevent a meltdown
      */
     default void explode() {
         throw new UnsupportedOperationException(
@@ -190,11 +193,11 @@ public interface IReactorController extends IReactor {
     long getMaxHeat();
 
     /**
-     * 获取反应堆当前温度（摄氏度）。
+     * Gets the current reactor temperature in degrees Celsius.
      *
-     * <p>返回 {@code double} 类型以保留温度小数精度（如 20.5°C）。
+     * <p>The return type is {@code double} to keep decimal precision (for example 20.5 °C).
      *
-     * @return 当前温度（摄氏度）
+     * @return the current temperature in degrees Celsius
      */
     double getCurrentTemperature();
 
@@ -203,12 +206,12 @@ public interface IReactorController extends IReactor {
     int getAvailableColumns();
 
     /**
-     * 获取反应堆子方块列表（包括主控方块和连接的核反应仓）。
+     * Gets the list of reactor sub-blocks. The list includes the main control block and the connected reactor chambers.
      *
-     * <p>返回的列表包含所有参与能源网络的子方块标记。
-     * 电网将分别查询每个子方块的能源属性。
+     * <p>The list contains the markers of all sub-blocks that are part of the energy network.
+     * The grid queries the energy properties of each sub-block separately.
      *
-     * @return 子方块标记列表
+     * @return the list of sub-block markers
      * @see EnergyTileEvent.IEnergyTileMarker
      */
     List<? extends EnergyTileEvent.IEnergyTileMarker> getSubTiles();

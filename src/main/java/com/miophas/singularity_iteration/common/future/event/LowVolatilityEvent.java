@@ -5,9 +5,10 @@ import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 import java.util.Random;
 
 /**
- * 低波动事? *
- * 效果：未来N天价格波动幅度大幅减小，价格变化平
- * 强度影响：强度越高，波动越小
+ * Low volatility event.
+ *
+ * Effect: for the next N days, price changes become much smaller. Prices change slowly.
+ * Intensity: a higher intensity gives smaller price changes.
  */
 @SuppressWarnings("null")
 public class LowVolatilityEvent extends FuturePriceEvent {
@@ -25,13 +26,13 @@ public class LowVolatilityEvent extends FuturePriceEvent {
 
     @Override
     public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
-        // 低波动：-5% ?+5% 的变化，受强度影响（强度越高波动越小
+        // Low volatility: the change is between -5% and +5%. A higher intensity gives a smaller range.
     double volatility = 0.05 * (1.0 - intensity * 0.5);
         double change = (RANDOM.nextDouble() * 2 - 1) * volatility;
 
         int newPrice = (int) (currentPrice * (1.0 + change));
 
-        // 使用配置的价格范围限
+        // Apply the configured price range limits.
     double minMultiplier = Singularity_Iteration_Config.FUTURE_MIN_PRICE_MULTIPLIER.get();
         double maxMultiplier = Singularity_Iteration_Config.FUTURE_MAX_PRICE_MULTIPLIER.get();
         int minPrice = Math.max(1, (int) (basePrice * minMultiplier));

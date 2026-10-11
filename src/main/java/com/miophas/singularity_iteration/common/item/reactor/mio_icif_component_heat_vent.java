@@ -3,21 +3,30 @@ package com.miophas.singularity_iteration.common.item.reactor;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 元件散热�? *
- * 特性（参考IC2）：
- * - 自身不储存热�? * - 不从反应堆或燃料棒吸收热�? * - 只会散发周围元件4点热�?tick
+ * Component heat vent.
  *
- * 工作原理�? * - 每tick从相邻的散热片、热交换器等元件中吸�?点热�? * - 直接将吸收的热量散发到外�? * - 自身不存储热量，因此不会过热熔毁
- * - 主要用于帮助其他散热组件散发多余热量
+ * Properties (from IC2):
+ * - Stores no heat.
+ * - Does not absorb heat from the reactor or from fuel rods.
+ * - Removes 4 heat per tick from each adjacent component.
  *
- * 使用场景�? * - 配合超频散热片使用（超频散热片吸热快但散热慢，需要元件散热片帮助散热�? * - 在紧凑的反应堆布局中辅助散�? */
+ * Operation:
+ * - Each tick, it pulls heat from adjacent heat vents, heat exchangers and similar components.
+ * - It releases the absorbed heat directly to the environment.
+ * - It stores no heat. Thus it cannot overheat and melt.
+ * - Its main function is to help other cooling components remove excess heat.
+ *
+ * Use cases:
+ * - Use it with overclocked heat vents. They absorb heat fast but release it slowly.
+ * - Use it to add cooling in compact reactor layouts.
+ */
 @SuppressWarnings("null")
 public class mio_icif_component_heat_vent extends mio_icif_heat_vent {
 
     // 元件散热片参数
-public static final int MAX_HEAT = 0;              // 不储存热�
-public static final int SELF_COOLING = 0;          // 不散发自热热�
-public static final int REACTOR_ABSORPTION = 0;    // 不从反应堆吸�
+public static final int MAX_HEAT = 0;              // Stores no heat.
+public static final int SELF_COOLING = 0;          // Releases no heat of its own.
+public static final int REACTOR_ABSORPTION = 0;    // Absorbs no heat from the reactor.
 public static final int COMPONENT_COOLING = 4;
 
     /**
@@ -47,9 +56,9 @@ public static final int COMPONENT_COOLING = 4;
     }
 
     /**
-     * 获取当前存储的热�?- 元件散热片始终为0
-     * @param stack 物品栈
- * @return 始终返回0
+     * Returns the stored heat. A component heat vent always stores 0 heat.
+     * @param stack the component item stack
+ * @return always 0
      */
     @Override
     public int getStoredHeat(ItemStack stack) {

@@ -145,7 +145,7 @@ public class AbstractKineticBlockEntity extends BlockEntity implements MenuProvi
 
         for (Direction direction : Direction.values()) {
             BlockPos adjacentPos = worldPosition.relative(direction);
-            if (!level.hasChunkAt(adjacentPos)) continue;
+            if (!level.isLoaded(adjacentPos)) continue;
 
             IMioIcifCapabilities.IKineticStorage adjacentKinetic = level.getCapability(
                 IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, adjacentPos, direction.getOpposite());

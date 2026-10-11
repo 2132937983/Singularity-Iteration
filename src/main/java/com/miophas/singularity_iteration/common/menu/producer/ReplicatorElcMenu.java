@@ -12,7 +12,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 复制机的容器菜单独?
+ * Container menu class for the replicator.
  */
 @SuppressWarnings({"null"}) public class ReplicatorElcMenu extends mio_icif_machine_menu {
 
@@ -58,8 +58,8 @@ import org.jetbrains.annotations.Nullable;
         this(containerId, playerInventory, itemHandler, null);
     }
 
-    // GUI高度184，按照原版IC2逻辑调整玩家物品栏位置?
-    // 背包Y = 184 - 82 = 102, 快捷栏Y = 184 - 24 = 160
+    // The GUI height is 184. The player inventory position follows the original IC2 logic.
+    // Inventory Y = 184 - 82 = 102, hotbar Y = 184 - 24 = 160
     @Override
     protected int getPlayerInventoryY() { return 102; }
 
@@ -141,7 +141,7 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        // 单元输入�?(8, 27)
+        // UU cell input slot (8, 27)
         this.addSlot(new SlotItemHandler(itemHandler, UU_CELL_SLOT, UU_CELL_X, UU_CELL_Y));
         // 空单元输出槽 (8, 72)
         this.addSlot(new SlotItemHandler(itemHandler, EMPTY_CELL_SLOT, EMPTY_CELL_X, EMPTY_CELL_Y) {
@@ -150,18 +150,18 @@ import org.jetbrains.annotations.Nullable;
                 return false;
             }
         });
-        // 记忆水晶�?(91, 17)
+        // Memory crystal slot (91, 17)
         this.addSlot(new SlotItemHandler(itemHandler, MEMORY_SLOT, MEMORY_X, MEMORY_Y));
-        // 输出�?(91, 59)
+        // Output slot (91, 59)
         this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        // 电池�?(152, 83)
+        // Battery slot (152, 83)
         this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, BATTERY_X, BATTERY_Y));
-        // 升级�?(152, 8) 开始，排成一�?
+        // Upgrade slots start at (152, 8) and go down in one column.
         for (int i = 0; i < 4; i++) {
             addUpgradeSlot(itemHandler, UPGRADE_SLOT_START + i, UPGRADE_BASE_X, UPGRADE_BASE_Y + i * 18);
         }

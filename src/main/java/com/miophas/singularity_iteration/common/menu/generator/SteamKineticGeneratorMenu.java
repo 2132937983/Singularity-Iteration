@@ -10,7 +10,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 蒸汽动能发生机的容器菜单独?
+ * Container menu for the steam kinetic generator.
  */
 @SuppressWarnings({"null"}) public class SteamKineticGeneratorMenu extends mio_icif_generator_menu {
 

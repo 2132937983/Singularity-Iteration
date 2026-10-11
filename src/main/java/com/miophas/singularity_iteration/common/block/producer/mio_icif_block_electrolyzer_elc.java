@@ -26,13 +26,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 电解机方块类
- * 用于将电能转化为化学能储存，或将化学能转化为电能释放
- * 需要与储电装置（储电盒、CESU、MFE、MFSU）挨在一起放弃? */
+ * Electrolyzer block.
+ * It converts electrical energy into stored chemical energy, or releases chemical energy as electrical energy.
+ * Place it next to an energy storage block (BatBox, CESU, MFE or MFSU). */
 @SuppressWarnings("null")
 public class mio_icif_block_electrolyzer_elc extends mio_icif_entity_block {
 
-    // 工作状态属性
+    // Working state properties.
 public static final BooleanProperty CHARGING = BooleanProperty.create("charging");
     public static final BooleanProperty DISCHARGING = BooleanProperty.create("discharging");
 
@@ -84,7 +84,7 @@ public static final BooleanProperty CHARGING = BooleanProperty.create("charging"
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_electrolyzer_elc electrolyzer) {
-                // 掉落物品栏中的物�
+                // Drop the items in the inventory.
             for (int i = 0; i < electrolyzer.getContainerSize(); i++) {
                     ItemStack stack = electrolyzer.getItem(i);
                     if (!stack.isEmpty()) {
@@ -105,7 +105,7 @@ public static final BooleanProperty CHARGING = BooleanProperty.create("charging"
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof mio_icif_electrolyzer_elc electrolyzer) {
-            // 计算红石信号强度（基于化学能储存程度�
+            // Calculate the redstone signal strength from the stored chemical energy.
         long energy = electrolyzer.getChemicalEnergy();
             long maxEnergy = electrolyzer.getMaxChemicalEnergy();
             return (int) ((energy * 15) / maxEnergy);
@@ -129,7 +129,7 @@ public static final BooleanProperty CHARGING = BooleanProperty.create("charging"
             if (blockEntity instanceof mio_icif_electrolyzer_elc electrolyzer) {
                 mio_icif_electrolyzer_elc.tick(lvl, pos, blockState, electrolyzer);
 
-                // 更新方块状态
+                // Update the block state.
             boolean isCharging = electrolyzer.isCharging();
                 boolean isDischarging = electrolyzer.isDischarging();
                 if (blockState.getValue(CHARGING) != isCharging ||

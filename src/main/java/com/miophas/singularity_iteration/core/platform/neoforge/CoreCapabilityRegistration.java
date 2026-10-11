@@ -22,10 +22,11 @@ public final class CoreCapabilityRegistration {
     }
 
     /**
-     * 注册流体能力。
+     * Registers the fluid capability.
      *
-     * <p>机器通过 {@code fluidHandler(side)} 暴露处理器；不支持流体时返回 null，
-     * 能力查询即视为不存在，不会让机器被流体自动化顺带接管。
+     * <p>A machine exposes its handler through {@code fluidHandler(side)}.
+     * If the machine does not support fluids, it returns null and the capability query treats the capability as absent.
+     * Thus fluid automation does not take control of the machine by accident.
      */
     public static void registerFluidHandler(RegisterCapabilitiesEvent event, BlockEntityType<?> type) {
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, type, (entity, side) -> {

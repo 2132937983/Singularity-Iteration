@@ -98,10 +98,8 @@ public abstract class AbstractWireBlockEntity extends AbstractEnergyBlockEntity 
         if (!isPowered()) return;
         float damage = getElectricDamage();
         if (damage <= 0) return;
-        Holder<DamageType> electricDamageType = level.registryAccess()
-            .registryOrThrow(Registries.DAMAGE_TYPE)
-            .getHolderOrThrow(DamageTypes.LIGHTNING_BOLT);
-        DamageSource electricSource = new DamageSource(electricDamageType);
+        // the level caches its damage sources: no registry lookup or new object per check
+        DamageSource electricSource = level.damageSources().lightningBolt();
         if (isWaterlogged(state)) {
             AABB rangeBox = new AABB(
                 pos.getX() - CONDUCTIVITY_RANGE, pos.getY() - CONDUCTIVITY_RANGE, pos.getZ() - CONDUCTIVITY_RANGE,

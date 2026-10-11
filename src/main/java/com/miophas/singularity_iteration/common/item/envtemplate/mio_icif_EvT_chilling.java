@@ -4,8 +4,10 @@ package com.miophas.singularity_iteration.common.item.envtemplate;
 import net.minecraft.world.item.Item;
 
 /**
- * 地形转换模板-冰原
- * 能在方块上生成雪，并冻结水成??? * 消耗电量：80 EU/??? */
+ * Terraformer template: ice plains.
+ * It makes snow on blocks and freezes water into ice.
+ * Energy use: 80 EU/t.
+ */
 @SuppressWarnings("null")
 public class mio_icif_EvT_chilling extends mio_icif_EvT_default {
 

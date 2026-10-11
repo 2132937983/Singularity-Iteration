@@ -10,19 +10,21 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
 /**
- * 压缩机配方序列化? * 用于序列化和反序列化压缩机配? */
+ * Recipe serializer for the compressor.
+ * It serializes and deserializes compressor recipes.
+ */
 @SuppressWarnings("null")
 public class mio_icif_CompressorRecipeSerializer implements RecipeSerializer<mio_icif_CompressorRecipe> {
 
-    // 默认处理时间
+    // Default processing time.
     public static final int DEFAULT_PROCESSING_TIME = 200;
-    // 默认每tick能量消
+    // Default energy consumption per tick.
 public static final int DEFAULT_ENERGY_PER_TICK = 10;
 
-    // 默认输入数量
+    // Default input count.
     public static final int DEFAULT_INGREDIENT_COUNT = 1;
 
-    // Codec 用于 JSON 序列
+    // Codec for JSON serialization.
 public static final MapCodec<mio_icif_CompressorRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->
         instance.group(
             Codec.STRING.optionalFieldOf("group", "").forGetter(mio_icif_CompressorRecipe::getGroup),
@@ -34,7 +36,7 @@ public static final MapCodec<mio_icif_CompressorRecipe> CODEC = RecordCodecBuild
         ).apply(instance, mio_icif_CompressorRecipe::new)
     );
 
-    // StreamCodec 用于网络同步
+    // StreamCodec for network synchronization.
     public static final StreamCodec<RegistryFriendlyByteBuf, mio_icif_CompressorRecipe> STREAM_CODEC = StreamCodec.of(
         mio_icif_CompressorRecipeSerializer::toNetwork,
         mio_icif_CompressorRecipeSerializer::fromNetwork
@@ -51,7 +53,7 @@ public static final MapCodec<mio_icif_CompressorRecipe> CODEC = RecordCodecBuild
     }
 
     /**
- * 从网络冲区读取配方
+ * Reads a recipe from the network buffer.
      */
     private static mio_icif_CompressorRecipe fromNetwork(RegistryFriendlyByteBuf buffer) {
         String group = buffer.readUtf();
@@ -64,7 +66,7 @@ public static final MapCodec<mio_icif_CompressorRecipe> CODEC = RecordCodecBuild
     }
 
     /**
- * 写入配方到网络冲区
+ * Writes a recipe to the network buffer.
      */
     private static void toNetwork(RegistryFriendlyByteBuf buffer, mio_icif_CompressorRecipe recipe) {
         buffer.writeUtf(recipe.getGroup());

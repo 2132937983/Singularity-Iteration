@@ -17,12 +17,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 核弹方块
+ * Nuke block.
  *
- * 功能量? * - 拥有8个工业TNT槽位置?个核原料槽位
- * - 右键点击打开GUI进行装填
- * - 根据装填内容计算爆炸威力
- * - 使用射线算法进行高效爆炸计算
+ * Functions:
+ * - It has 8 industrial TNT slots and 1 nuclear material slot.
+ * - Right-click opens the GUI to load the nuke.
+ * - It calculates the explosion power from the loaded items.
+ * - It uses a ray algorithm to calculate the explosion efficiently.
  */
 @SuppressWarnings("null")
 public class mio_icif_Block_Nuke extends Block implements EntityBlock {
@@ -56,7 +57,7 @@ public class mio_icif_Block_Nuke extends Block implements EntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        // 客户端和服务端都需�?tick 来处理粒子效果和逻辑
+        // Both the client and the server tick the block. The client shows particles. The server runs the logic.
         return createTickerHelper(blockEntityType,
             mio_icif_block_entities.NUKE_ENTITY_TYPE.get(),
             mio_icif_reactor_nuke::tick);

@@ -11,8 +11,8 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * ??�电???Menu ?���?
- * ????��于�??种�?�电设置??�???��?��???��??��???��??��?��??
+ * Base menu for generators.
+ * It holds the shared slot setup and data sync for all generator types.
  */
 @SuppressWarnings("null")
 public abstract class mio_icif_generator_menu extends mio_icif_base_menu {
@@ -28,12 +28,12 @@ public abstract class mio_icif_generator_menu extends mio_icif_base_menu {
 
     /**
      * @param type            MenuType
-     * @param containerId     容器ID
-     * @param machineSlotCount ?��?��槽位?��?�数
-     * @param playerInventory ?��家�?��?????
-     * @param itemHandler     ??��??�?????���??��为null�?
-     * @param data            ?��?��??�步?���??��为null�?
-     * @param dataCount       ?��?��??�步?��大�??
+     * @param containerId     the container ID
+     * @param machineSlotCount the number of machine slots
+     * @param playerInventory the player inventory
+     * @param itemHandler     the machine item handler, can be null
+     * @param data            the synced container data, can be null
+     * @param dataCount       the size of the synced data
      */
     protected mio_icif_generator_menu(MenuType<?> type, int containerId, int machineSlotCount,
                                        Inventory playerInventory, @Nullable IItemHandler itemHandler,
@@ -42,7 +42,7 @@ public abstract class mio_icif_generator_menu extends mio_icif_base_menu {
     }
 
     /**
-     * 完整?????�函?���?带blockEntity�?
+     * Full constructor with a block entity.
      */
     protected mio_icif_generator_menu(MenuType<?> type, int containerId, int machineSlotCount,
                                        Inventory playerInventory, @Nullable IItemHandler itemHandler,
@@ -60,47 +60,47 @@ public abstract class mio_icif_generator_menu extends mio_icif_base_menu {
     }
 
     /**
-     * ??�容?���????????????�函?���?�???��??�?带dataCount�?
+     * Client-side constructor with a specified dataCount.
      */
     protected mio_icif_generator_menu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler, int dataCount) {
         this(null, containerId, 0, playerInventory, itemHandler, null, dataCount, null);
     }
 
     /**
-     * ??�容?���????????????�函?���?�???��??，�?�认dataCount=5�?
+     * Client-side constructor. The default dataCount is 5.
      */
     protected mio_icif_generator_menu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler) {
         this(null, containerId, 0, playerInventory, itemHandler, null, 5, null);
     }
 
-    /** 子类�?须�?�现：添??�机?��槽位??*/
+    /** Subclasses must implement this method to add the machine slots. */
     protected abstract void addMachineSlots();
 
-    /** 子类?��以�?��?��?�是?��添�?�玩家�?????，�?�认true */
+    /** Subclasses can override this method to skip the player inventory. The default is true. */
     protected boolean shouldAddPlayerInventory() { return true; }
 
-    /** 子类?��以�?��?��?�玩家�?????起�?�Y??��??，�?��??4 */
+    /** Subclasses can override this method to set the player inventory start Y. The default is 84. */
     protected int getPlayerInventoryY() { return 84; }
 
-    /** 子类?��以�?��?��?�玩家快?��??�Y??��??，�?��??42 */
+    /** Subclasses can override this method to set the player hotbar Y. The default is 142. */
     protected int getPlayerHotbarY() { return 142; }
 
-    /** 子类?��以�?�现：�?��?�数?��??�步?��大�?? */
+    /** Subclasses can override this method to set the synced data size. */
     protected int getDataSlotCount() { return 5; }
 
-    // ===== 子类?��??��?��??槽位?��?�置 =====
+    // ===== Slot configuration that subclasses can override =====
 
-    /** ?????�槽索引?��??-1表示??��????�槽 */
+    /** Fuel slot index. -1 means no fuel slot. */
     protected int getFuelSlotIndex() {
         return -1;
     }
 
-    /** ??�却???槽索引�??1表示??��?�却???�?*/
+    /** Coolant slot index. -1 means no coolant slot. */
     protected int getCoolantSlotIndex() {
         return -1;
     }
 
-    // ===== ??�用?��?��访问?���? =====
+    // ===== Shared data accessors =====
 
     public int getEnergy() {
         return data.getCount() > 0 ? data.get(0) : 0;
@@ -133,7 +133,7 @@ public abstract class mio_icif_generator_menu extends mio_icif_base_menu {
         return (int) ((energy * ENERGY_BAR_WIDTH) / maxEnergy);
     }
 
-    // ===== ??�用槽位?�添??�方法? =====
+    // ===== Shared slot helper methods =====
 
     protected void addFuelSlot(int index, int x, int y) {
         this.addSlot(new SlotItemHandler(itemHandler, index, x, y) {

@@ -20,10 +20,10 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null")
 public class mio_icif_hazmat_helmet extends ArmorItem implements IHazmatLike {
 
-    // 辐射防护等级�?-4�? 为完全防护）
+    // Radiation protection level (0-4, 4 is full protection).
     private static final int RADIATION_PROTECTION_LEVEL = 4;
 
-    // 防化服护甲材质路径（头盔和胸甲使�?layer 1�
+    // Hazmat armor texture path. The helmet and the chestplate use layer 1.
 private static final ResourceLocation HAZMAT_ARMOR_TEXTURE = 
         ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/armor/hazmat_1.png");
 
@@ -55,7 +55,7 @@ private static final ResourceLocation HAZMAT_ARMOR_TEXTURE =
 
         // 如果穿着整套防化服，提供完全辐射免疫
         if (isWearingFullHazmat(livingEntity)) {
-            // 穿着整套时完全免疫辐�
+            // A full hazmat suit gives full radiation immunity.
         return;
         }
     }

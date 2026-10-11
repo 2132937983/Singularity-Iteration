@@ -26,10 +26,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 作物监管机方块类
- * 能够自动管理作物架的机械
- * 工作范围：水平每方向4格（9*9区域），垂直每方法?格（9*3*9区域�? * 功能：使用除草剂、肥料、水自动管理作物
- * 最大输入电压为32EU/t（LV等级），超过会爆�? */
+ * Crop matron block.
+ * The machine manages crop sticks automatically.
+ * Work area: 4 blocks horizontally in each direction (9x9) and 1 block vertically in each direction (9x3x9).
+ * Function: it applies weed-ex, fertilizer and water to crops automatically.
+ * Maximum input voltage: 32 EU/t (LV). A higher voltage makes the machine explode.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_matron extends mio_icif_entity_block {
 
@@ -83,7 +85,7 @@ public static final BooleanProperty WORKING = BooleanProperty.create("working");
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_matron_elc matron) {
-                // 掉落所有槽位中的物�
+                // Drop the items in all slots.
             for (int i = 0; i < matron.getItemHandler().getSlots(); i++) {
                     ItemStack stack = matron.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {

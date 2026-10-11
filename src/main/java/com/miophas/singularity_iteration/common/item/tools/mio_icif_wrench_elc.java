@@ -112,6 +112,11 @@ public class mio_icif_wrench_elc extends mio_icif_tool_elc implements IWrenchIte
         if (level.isClientSide) {
             return;
         }
+        // spectators, adventure mode, spawn protection and claims: same checks as a vanilla edit
+        if (!com.miophas.singularity_iteration.common.util.BlockEditPermission.canEdit(player, level, pos,
+                event.getFace(), stack)) {
+            return;
+        }
 
         Direction clickedFace = event.getHitVec().getDirection();
         Vec3 hitVec = event.getHitVec().getLocation();

@@ -55,7 +55,7 @@ public class mio_icif_gui_washer_elc extends mio_icif_screen<com.miophas.singula
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
 
-        // 缁樺?惰?屾櫙
+        // Draw the background.
         guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
 
         com.miophas.singularity_iteration.common.menu.producer.WasherElcMenu menu = this.getMenu();

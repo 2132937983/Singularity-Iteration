@@ -8,9 +8,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 纳米剑激活状态属性函�?
- * 返回0=关闭�?=开始?
- * 用于模型override切换纹理
+ * Item property function for the nano saber active state.
+ * It returns 0 for off and 1 for on.
+ * The model override uses it to switch the texture.
  */
 @SuppressWarnings({"null", "deprecation"})
 public class NanoSaberActiveProperty implements ItemPropertyFunction {

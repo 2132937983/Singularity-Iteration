@@ -1,48 +1,48 @@
 package com.miophas.singularity_iteration.core.api.machine;
 
 /**
- * HU 热能发电机接口。
+ * HU heat generator interface.
  * <p>
- * 为 HU 热能发电机提供统一的运行时 API。
- * 实现此接口的方块可以通过热能系统向相邻机器提供热能。
+ * It gives one runtime API for HU heat generators.
+ * Blocks that implement this interface can supply heat to adjacent machines through the heat system.
  * <p>
- * 注意：此接口独立于 {@link IEnergyBlock}（EU 系统），
- * 因为 HU 热能是与 EU 电力并行的独立能量系统。
+ * Note: This interface is independent of {@link IEnergyBlock} (the EU system),
+ * because HU heat is an independent energy system parallel to EU electricity.
  */
 public interface IHeatGeneratorBlock {
 
     /**
-     * 获取当前热能输出速率（HU/tick）。
+     * Gets the current heat output rate (HU/tick).
      *
-     * @return 当前热能输出速率，0 表示未发电
+     * @return the current heat output rate. 0 means no generation.
      */
     int getHeatOutput();
 
     /**
-     * 检查发电机是否正在发电（燃烧中）。
+     * Checks if the generator generates now (is burning).
      *
-     * @return true 如果正在发电
+     * @return true if it generates now
      */
     boolean isGenerating();
 
     /**
-     * 获取燃料剩余燃烧时间（tick）。
+     * Gets the remaining burn time of the fuel (ticks).
      *
-     * @return 剩余燃烧时间
+     * @return the remaining burn time
      */
     int getBurnTime();
 
     /**
-     * 获取当前燃料的总燃烧时间（tick）。
+     * Gets the total burn time of the current fuel (ticks).
      *
-     * @return 总燃烧时间
+     * @return the total burn time
      */
     int getBurnDuration();
 
     /**
-     * 获取热能生成速率（HU/tick）。
+     * Gets the heat generation rate (HU/tick).
      *
-     * @return 热能生成速率
+     * @return the heat generation rate
      */
     int getHeatGenerationRate();
 }

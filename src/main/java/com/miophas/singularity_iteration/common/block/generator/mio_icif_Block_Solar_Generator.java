@@ -24,14 +24,16 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 太阳能发电机方块
- * 仅在白天工作，只能在主世界使�? * 正上方任何高度都不能有非透明方块阻挡
- * 发电时间段为6:20~17:45，平均每天能发电13050EU，输出电压为1EU/t
- * 下雨或下雪时不发生? */
+ * Solar generator block.
+ * It operates only in daytime and only in the Overworld.
+ * No opaque block can be above it, at any height.
+ * It makes power from 6:20 to 17:45. It makes an average of 13050 EU each day. Its output voltage is 1 EU/t.
+ * It does not make power in rain or snow.
+ */
 @SuppressWarnings("null")
 public class mio_icif_Block_Solar_Generator extends mio_icif_entity_block {
 
-    // 定义方块状态：是否正在发电
+    // Block state: true when the generator makes power
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     public mio_icif_Block_Solar_Generator(Properties properties) {
@@ -40,7 +42,7 @@ public class mio_icif_Block_Solar_Generator extends mio_icif_entity_block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        // FACING 由父类添加，只需要添�?ACTIVE
+        // The parent class adds FACING. This class adds only ACTIVE.
         builder.add(ACTIVE);
         super.createBlockStateDefinition(builder);
     }

@@ -78,6 +78,8 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
     public static final long DEFAULT_MAX_EXTRACT = 1600L;     public static final int DEFAULT_WORK_TIME = 20;
     public static final long DEFAULT_ENERGY_PER_TICK = 0L;
 
+    // Default energy costs. The live values come from SiTuningValues.MINER_* (datapack file
+    // si_tuning/miner.json). These constants stay for addons and tests that read them.
     public static final int ENERGY_IRON_DRILL_MIN = 450;
     public static final int ENERGY_IRON_DRILL_MAX = 470;
     public static final int ENERGY_DIAMOND_DRILL_MIN = 880;
@@ -103,8 +105,6 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
     private int scexSyncedRangeRadius = -1;
     private List<BlockPos> oresInCurrentLayer = new ArrayList<>();
     private int currentOreIndex = 0;
-    @SuppressWarnings("unused")
-    private boolean waitingForNextLayer = false;
 
     public mio_icif_miner_elc(BlockPos pos, BlockState state) {
         this(pos, state, mio_icif_block_entities.MINER_ELC_ENTITY_TYPE.get());
@@ -248,15 +248,15 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         long scannerCost = 0;
 
         switch (getDrillType()) {
-            case IRON -> drillCost = randInclusive(ENERGY_IRON_DRILL_MIN, ENERGY_IRON_DRILL_MAX);
-            case DIAMOND -> drillCost = randInclusive(ENERGY_DIAMOND_DRILL_MIN, ENERGY_DIAMOND_DRILL_MAX);
-            case IRIDIUM -> drillCost = randInclusive(ENERGY_IRIDIUM_DRILL_MIN, ENERGY_IRIDIUM_DRILL_MAX);
+            case IRON -> drillCost = randInclusive(com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_IRON_DRILL_MIN.get(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_IRON_DRILL_MAX.get());
+            case DIAMOND -> drillCost = randInclusive(com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_DIAMOND_DRILL_MIN.get(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_DIAMOND_DRILL_MAX.get());
+            case IRIDIUM -> drillCost = randInclusive(com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_IRIDIUM_DRILL_MIN.get(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_IRIDIUM_DRILL_MAX.get());
             case NONE -> {}
         }
 
         switch (getScannerType()) {
-            case OD -> scannerCost = randInclusive(ENERGY_OD_SCANNER_MIN, ENERGY_OD_SCANNER_MAX);
-            case OV -> scannerCost = randInclusive(ENERGY_OV_SCANNER_MIN, ENERGY_OV_SCANNER_MAX);
+            case OD -> scannerCost = randInclusive(com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_OD_SCANNER_MIN.get(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_OD_SCANNER_MAX.get());
+            case OV -> scannerCost = randInclusive(com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_OV_SCANNER_MIN.get(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_OV_SCANNER_MAX.get());
             case NONE -> {}
         }
 
@@ -500,7 +500,7 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
     }
 
     private boolean isOre(BlockState state) {
-        // ??��???��?��???�?
+        // Check the vanilla ore block tags.
         if (state.is(BlockTags.COAL_ORES) ||
             state.is(BlockTags.IRON_ORES) ||
             state.is(BlockTags.COPPER_ORES) ||
@@ -512,12 +512,12 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
             return true;
         }
 
-        // NeoForge ??�用?��?��???�?
+        // Check the common NeoForge ore tag.
         if (state.is(Tags.Blocks.ORES)) {
             return true;
         }
 
-        // ?��模式???��?���??��??? tags ????????��?��?��?��??
+        // Check the mod ores explicitly in case the ore tags do not include them.
         if (state.is(mio_icif_blocks.BLOCK_ORE_TIN.get()) ||
             state.is(mio_icif_blocks.BLOCK_ORE_URAN.get()) ||
             state.is(mio_icif_blocks.BLOCK_ORE_LEAD.get())) {
@@ -527,23 +527,16 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         return false;
     }
 
-    /**
-     * ??��?��?�tip??�矿??��?�间???路�??
-     */
+
+
 
 
     /**
-     * �???�可以�?��?��?��?��?�方???
-     * 跳�??空气?��?�液体方??��?��?��?? true
-     */
-
-
-    /**
-     * �??��?��?��?��以�?��?�方???
-     * ????��?��?��以�?��?��?�U?��????�方??��???���??��岩�?�液体�??
+     * Checks if the miner can mine this block.
+     * The miner cannot mine air, bedrock, liquids or unbreakable blocks. The drill type sets further limits.
      */
     private boolean canMineBlock(BlockState state, BlockPos pos) {
-        // 不�?��?��?�空气�???��岩�?�液�?
+        // Do not mine air or bedrock.
         if (state.isAir() || state.is(Blocks.BEDROCK)) {
             return false;
         }
@@ -553,12 +546,12 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
             return false;
         }
 
-        // �??��?��??�硬度�??-1.0F 表示不可?��??��??�??��岩�??
+        // A hardness below 0 (for example -1.0F) means that the block is unbreakable, like bedrock.
         if (state.getDestroySpeed(level, pos) < 0) {
             return false;
         }
 
-        // ?��?��?��头类??��???��??��?��?��??
+        // The drill type sets which blocks the miner can mine.
         return switch (getDrillType()) {
             case IRON -> canIronDrillMine(state);
             case DIAMOND, IRIDIUM -> canDiamondDrillMine(state);
@@ -567,29 +560,25 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
     }
 
     /**
-     * ????��头可以�?��?��???��???
+     * Checks if the iron drill can mine this block.
      */
     private boolean canIronDrillMine(BlockState state) {
-        // ????��头�?��?��?��?��??�??��?��工�?��???��???
+        // The iron drill cannot mine blocks that need a diamond tool.
         if (state.is(BlockTags.NEEDS_DIAMOND_TOOL)) {
             return false;
         }
-        // ?��以�?��?�任何�?�硬度�???��??��???���????�??��?��工�?��??�?
+        // The iron drill can mine all other blocks, regardless of hardness.
         return true;
     }
 
     /**
-     * ?��?��/?��?��头可以�?��?��???��???
+     * Checks if the diamond drill or the iridium drill can mine this block.
      */
     private boolean canDiamondDrillMine(BlockState state) {
-        // ?��以�?��?�任何�?�硬度�???��???
+        // These drills can mine all blocks, regardless of hardness.
         return true;
     }
 
-    /**
-     * ??��?�方??�并?��?????�落???
-     * 使用destroyBlock?��?��?��??�方??��?��?�获??�落??�并存�?��?��?�槽
-     */
 
 
     private int[] lootOutputSlots() {
@@ -601,19 +590,17 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
     }
 
     /**
-     * �??��??��?�槽?��?��??�足够�??空间存放??�落???
+     * Checks if the storage slots have space for all the drops.
      */
     private boolean canStoreDrops(List<ItemStack> drops) {
         return drops.isEmpty() || RecipeSlots.outputs(itemHandler, lootOutputSlots(), drops).isPresent();
     }
 
-    /**
-     * �??��?��?��?��以�?��?��?��????��?��?��??
-     */
 
 
     /**
-     * ?��??�用于�?�利???计算?��????�工??��???????�H???��于时间?/精�????????等�?��??
+     * Returns the tool stack that the loot calculation uses.
+     * For the iridium drill, the copy gets Fortune III in mode 0 or Silk Touch in mode 1.
      */
     private ItemStack getLootToolStack(ServerLevel serverLevel) {
         ItemStack drill = itemHandler.getStackInSlot(SLOT_DRILL);
@@ -621,11 +608,11 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
             return drill;
         }
 
-        // ?��?��头�?��??事件?��??????魔�?��???��??��?�利???计算?��?��??定�?�触??�该事件，�?��?�显式�?��?��??魔�??事件??
+        // The loot calculation does not fire the iridium drill mode event. Add the mode enchantment to a copy of the drill explicitly.
         ItemStack tool = drill.copy();
         var enchantmentLookup = serverLevel.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
 
-        // 读�?�铱?��头模式�??0=?���?, 1=精�????????）�?��?��?��??类�?��??�??��????��??��??
+        // Read the iridium drill mode: 0 = Fortune, 1 = Silk Touch.
         int mode = 0;
         var customData = tool.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         if (customData != null) {
@@ -648,14 +635,8 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         return tool;
     }
 
-    /**
-     * �???��????��?��?��?�槽
-     */
 
 
-    /**
-     * �???�钻头�?��??
-     */
 
 
     @Override
@@ -664,7 +645,7 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
     }
 
     /**
-     * 每tick?��?��??��??
+     * Runs the miner logic on each tick.
      */
         public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_miner_elc blockEntity) {
         if (!blockEntity.actionOwner.canAct()) { blockEntity.stopWork(); return; }
@@ -709,7 +690,7 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
             );
         }
 
-        // ??�载?��??��?�表
+        // Load the ore list of the current layer.
         oresInCurrentLayer.clear();
         int oreCount = Math.clamp(tag.getInt("OreCount"), 0, (2 * MiningRoute.RADIUS + 1) * (2 * MiningRoute.RADIUS + 1));
         var unique = new java.util.HashSet<BlockPos>();
@@ -750,7 +731,7 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
             tag.putInt("TipPosZ", tipPos.getZ());
         }
 
-        // 保�?�矿??��?�表
+        // Save the ore list of the current layer.
         tag.putInt("OreCount", oresInCurrentLayer.size());
         for (int i = 0; i < oresInCurrentLayer.size(); i++) {
             BlockPos pos = oresInCurrentLayer.get(i);
@@ -777,12 +758,12 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         ContainerToTank.markUnsaved(this);
     }
 
-    // ?��头类??��?�举
+    // Drill types.
     private enum DrillType {
         NONE, IRON, DIAMOND, IRIDIUM
     }
 
-    // ?��??�器类�?��?��??
+    // Scanner types (OD scanner and OV scanner).
     private enum ScannerType {
         NONE, OD, OV
     }

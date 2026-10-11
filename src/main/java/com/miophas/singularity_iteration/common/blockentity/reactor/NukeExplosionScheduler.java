@@ -22,8 +22,6 @@ public class NukeExplosionScheduler {
 
     /** The central ServerTick.Post subscriber owns execution. Retained for existing callers. */
     @Deprecated
-    public static void tick(Level level) { }
-
     public static void clear(ServerLevel level) {
         ExplosionWorkScheduler.clear(level, NukeExplosionScheduler.class);
     }

@@ -306,7 +306,7 @@ public class mio_icif_menus {
     public static final DeferredHolder<MenuType<?>, MenuType<ChunkLoaderMenu>> CHUNK_LOADER_MENU_TYPE =
         MENU_TYPES.register("chunk_loader_menu", () -> new MenuType<>((net.neoforged.neoforge.network.IContainerFactory<ChunkLoaderMenu>) (containerId, playerInventory, data) -> new ChunkLoaderMenu(containerId, playerInventory, data), net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
-    // 工业工作台菜�?
+    // Industrial workbench menu
     public static final DeferredHolder<MenuType<?>, MenuType<IndustrialWorkbenchMenu>> INDUSTRIAL_WORKBENCH_MENU_TYPE =
         MENU_TYPES.register("industrial_workbench_menu", () -> new MenuType<>(IndustrialWorkbenchMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 

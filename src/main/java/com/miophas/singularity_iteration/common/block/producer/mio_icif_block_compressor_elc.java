@@ -26,8 +26,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 电力压缩机方块类
- * 使用电力进行压缩加工的机器方法? */
+ * Electric compressor block class.
+ * This machine block uses electricity to compress items.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_compressor_elc extends mio_icif_entity_block {
 
@@ -79,7 +80,7 @@ public class mio_icif_block_compressor_elc extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_compressor_elc compressor) {
-                // 掉落物品栏中的物�
+                // Drop the items in the inventory.
             for (int i = 0; i < compressor.getItemHandler().getSlots(); i++) {
                     ItemStack stack = compressor.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {
@@ -100,7 +101,7 @@ public class mio_icif_block_compressor_elc extends mio_icif_entity_block {
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof mio_icif_compressor_elc compressor) {
-            // 计算红石信号强度（基于物品栏填充程度�
+            // Calculate the redstone signal strength from the inventory fill level.
         var handler = compressor.getItemHandler();
             int totalSlots = handler.getSlots();
             int filledSlots = 0;

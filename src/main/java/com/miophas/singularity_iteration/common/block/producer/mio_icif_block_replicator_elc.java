@@ -34,7 +34,7 @@ public class mio_icif_block_replicator_elc extends mio_icif_entity_block {
 
     // 运行状态属性，用于控制方块的光照和纹理变化
     public static final BooleanProperty LIT = BooleanProperty.create("lit");
-    // 复制中状态?
+    // Property that shows whether the replicator is replicating.
     public static final BooleanProperty REPLICATING = BooleanProperty.create("replicating");
 
     // 方块编码器，用于数据生成和序列化
@@ -43,7 +43,7 @@ public class mio_icif_block_replicator_elc extends mio_icif_entity_block {
 
     public mio_icif_block_replicator_elc(Properties properties) {
         super(properties);
-        // 注册默认状态：未点亮，未复�?
+        // Default state: not lit and not replicating.
         this.registerDefaultState(this.stateDefinition.any()
             .setValue(LIT, false)
             .setValue(REPLICATING, false));
@@ -52,7 +52,7 @@ public class mio_icif_block_replicator_elc extends mio_icif_entity_block {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        // 添加 LIT �?REPLICATING 属性到方块状态定�?
+        // Add the LIT and REPLICATING properties to the block state definition.
         builder.add(LIT, REPLICATING);
     }
 
@@ -93,8 +93,8 @@ public class mio_icif_block_replicator_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 方块被移除时的处理?
-     * 掉落方块实体中的物品
+     * Handles the removal of the block.
+     * Drops the items that are in the block entity.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
@@ -114,7 +114,6 @@ public class mio_icif_block_replicator_elc extends mio_icif_entity_block {
                     super.onRemove(state,level,pos,newState,movedByPiston);
                     return;
                 }
-                // 掉落物品栏中的所有物�?
                 // Ordinary inventory is dropped once by the container base.
             }
             super.onRemove(state, level, pos, newState, movedByPiston);
@@ -137,8 +136,8 @@ public class mio_icif_block_replicator_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取模拟输出信号强度（用于红石比较器�?
-     * 基于UU物质储量计算
+     * Returns the analog output signal strength for a redstone comparator.
+     * The value comes from the stored UU matter amount.
      */
     @Override
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
@@ -162,7 +161,7 @@ public class mio_icif_block_replicator_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取方块实体�?ticker
+     * Returns the block entity ticker.
      */
     @Nullable
     @Override
@@ -174,8 +173,8 @@ public class mio_icif_block_replicator_elc extends mio_icif_entity_block {
             if (blockEntity instanceof mio_icif_replicator_elc replicator) {
                 mio_icif_replicator_elc.tick(lvl, pos, blockState, replicator);
 
-                // 更新方块状态?（只在状态变化时更新，避免闪烁）
-                // LIT 和 REPLICATING 都只在真正工作时才为 true
+                // Update the block state only when the state changes. This prevents flicker.
+                // LIT and REPLICATING are true only while the machine works.
                 boolean isWorking = replicator.isReplicating();
 
                 boolean currentReplicating = blockState.getValue(REPLICATING);

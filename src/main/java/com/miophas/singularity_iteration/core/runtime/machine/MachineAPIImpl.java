@@ -35,47 +35,47 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 机器 API 实现
+ * Machine API implementation.
  */
 @SuppressWarnings("null")
 public class MachineAPIImpl implements IMachineAPI {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MachineAPIImpl.class);
 
-    // 全局机器位置注册表（按维度 ResourceKey 分组，避免持有 Level 对象引用导致内存泄漏）
-    // 由主模组在机器方块放置/破坏时调用 registerMachine/unregisterMachine 维护
+    // Global machine position registry. It is grouped by dimension ResourceKey. This prevents memory leaks from held Level references.
+    // The main mod keeps it up to date: it calls registerMachine/unregisterMachine when a machine block is placed or broken.
     private static final Map<ResourceKey<Level>, Set<BlockPos>> machineRegistry = new ConcurrentHashMap<>();
     
-    // 上次清理时间戳（按维度记录，避免维度 A 的清理间隔影响维度 B）
+    // Time stamp of the last cleanup, for each dimension. Thus the cleanup interval of dimension A does not affect dimension B.
     private static final Map<ResourceKey<Level>, Long> lastCleanupTime = new ConcurrentHashMap<>();
-    private static final long CLEANUP_INTERVAL_TICKS = 12000; // 每 10 分钟清理一次（假设 20 TPS）
+    private static final long CLEANUP_INTERVAL_TICKS = 12000; // Clean up one time each 10 minutes (at 20 TPS).
 
-    /** 客户端侧和降级场景使用的默认电缆等级，避免触发 API 懒加载链 */
+    /** Default cable tier for the client side and fallback cases. It prevents the start of the lazy API load chain. */
     private static final ICableTier DEFAULT_CABLE_TIER = com.miophas.singularity_iteration.core.api.energy.tile.IEnergyConductor.LV_TIER;
 
     /**
-     * 注册机器位置到全局注册表。
+     * Adds a machine position to the global registry.
      *
-     * <p><b>此方法为内部 API，附属模组不应调用。</b>
-     * 机器注册由能量网络通过 {@code EnergyTileLoadEvent} 自动管理。
+     * <p><b>This method is an internal API. Add-on mods must not call it.</b>
+     * The energy network manages machine registration automatically through {@code EnergyTileLoadEvent}.
      *
-     * @param world 世界
-     * @param pos 机器位置
-     * @apiNote Internal — 仅供能量网络调用
+     * @param world the world
+     * @param pos the machine position
+     * @apiNote Internal — only the energy network calls this method.
      */
     public static void registerMachine(Level world, BlockPos pos) {
         machineRegistry.computeIfAbsent(world.dimension(), k -> ConcurrentHashMap.newKeySet()).add(pos.immutable());
     }
 
     /**
-     * 从全局注册表移除机器位置。
+     * Removes a machine position from the global registry.
      *
-     * <p><b>此方法为内部 API，附属模组不应调用。</b>
-     * 机器注销由能量网络通过 {@code EnergyTileUnloadEvent} 自动管理。
+     * <p><b>This method is an internal API. Add-on mods must not call it.</b>
+     * The energy network manages machine removal automatically through {@code EnergyTileUnloadEvent}.
      *
-     * @param world 世界
-     * @param pos 机器位置
-     * @apiNote Internal — 仅供能量网络调用
+     * @param world the world
+     * @param pos the machine position
+     * @apiNote Internal — only the energy network calls this method.
      */
     public static void unregisterMachine(Level world, BlockPos pos) {
         Set<BlockPos> set = machineRegistry.get(world.dimension());
@@ -85,7 +85,7 @@ public class MachineAPIImpl implements IMachineAPI {
     }
 
     /**
-     * 清理已卸载维度的注册表条目
+     * Removes the registry entries of an unloaded dimension.
      */
     public static void onDimensionUnload(Level world) {
         machineRegistry.remove(world.dimension());
@@ -93,10 +93,10 @@ public class MachineAPIImpl implements IMachineAPI {
     }
 
     /**
-     * 清空所有机器注册表（服务端停止时调用）
+     * Clears all machine registries. Call this method when the server stops.
      * 
-     * <p>此方法用于释放静态注册表占用的内存，防止内存泄漏。
-     * 应在 ServerStoppingEvent 或类似生命周期事件中调用。
+     * <p>This method releases the memory of the static registries. This prevents memory leaks.
+     * Call it in ServerStoppingEvent or in a similar lifecycle event.
      */
     public static void clearRegistry() {
         int totalSize = machineRegistry.values().stream().mapToInt(Set::size).sum();
@@ -106,14 +106,14 @@ public class MachineAPIImpl implements IMachineAPI {
     }
     
     /**
-     * 定期清理僵尸条目（方块已不存在但仍注册的位置）
-     * 此方法应在 tick 事件中定期调用
+     * Removes stale entries from time to time (positions that are registered but have no block entity).
+     * Call this method regularly from a tick event. It does the cleanup only after CLEANUP_INTERVAL_TICKS.
      */
     public static void cleanupStaleEntries(Level world) {
         long currentTime = world.getGameTime();
         long lastTime = lastCleanupTime.getOrDefault(world.dimension(), 0L);
         if (currentTime - lastTime < CLEANUP_INTERVAL_TICKS) {
-            return; // 未到清理间隔，跳过
+            return; // The cleanup interval is not complete. Skip.
         }
         
         lastCleanupTime.put(world.dimension(), currentTime);
@@ -122,7 +122,7 @@ public class MachineAPIImpl implements IMachineAPI {
             return;
         }
         
-        // 收集需要移除的僵尸条目
+        // Collect the stale entries to remove.
         List<BlockPos> toRemove = new ArrayList<>();
         for (BlockPos pos : set) {
             if (world.getBlockEntity(pos) == null) {
@@ -130,7 +130,7 @@ public class MachineAPIImpl implements IMachineAPI {
             }
         }
         
-        // 批量移除
+        // Remove them in one operation.
         if (!toRemove.isEmpty()) {
             set.removeAll(toRemove);
             LOGGER.debug("Cleaned up {} stale machine entries in dimension {}", toRemove.size(), world.dimension().location());
@@ -138,12 +138,12 @@ public class MachineAPIImpl implements IMachineAPI {
     }
 
     /**
-     * 获取指定世界中的所有机器位置（内部方法，供 GeneratorAPIImpl 使用）。
+     * Gets all machine positions in the given world (internal method for GeneratorAPIImpl).
      *
-     * <p>返回的是不可修改的快照副本，调用者无法修改内部注册表。
+     * <p>The return value is an unmodifiable snapshot copy. The caller cannot change the internal registry.
      *
-     * @return 机器位置集合的快照副本，如果维度未注册则返回空集合
-     * @apiNote Internal — 仅供 GeneratorAPIImpl 调用
+     * @return a snapshot copy of the machine positions, or an empty set if the dimension is not registered
+     * @apiNote Internal — only GeneratorAPIImpl calls this method.
      */
     public static Set<BlockPos> getAllMachinePositions(Level world) {
         Set<BlockPos> set = machineRegistry.get(world.dimension());
@@ -166,7 +166,7 @@ public class MachineAPIImpl implements IMachineAPI {
 
         BlockEntity be = world.getBlockEntity(pos);
 
-        // 优先检查特殊方块类型，确保 machineType 正确
+        // Check the special block types first. This makes sure that machineType is correct.
         if (be instanceof ITransformerBlock transformer) {
             return Optional.of(new EnergyBlockInfoWithFixedType(world, pos, transformer, MachineType.TRANSFORMER));
         }
@@ -239,13 +239,13 @@ public class MachineAPIImpl implements IMachineAPI {
         BlockEntity be = world.getBlockEntity(pos);
         if (be == null) return false;
 
-        // 尝试作为 producer 处理
+        // Try to handle it as a producer.
         if (be instanceof IProducerBlock producer) {
             producer.forceStartWork();
             return true;
         }
 
-        // 发电机逻辑：通过 IBurnControl 强制启动
+        // Generator logic: use IBurnControl to force a start.
         if (be instanceof com.miophas.singularity_iteration.core.api.machine.IBurnControl gen) {
             int maxBurn = gen.getDefaultBurnTime();
             gen.setBurnTime(maxBurn > 0 ? maxBurn : 200);
@@ -261,13 +261,13 @@ public class MachineAPIImpl implements IMachineAPI {
         BlockEntity be = world.getBlockEntity(pos);
         if (be == null) return false;
 
-        // 尝试作为 producer 处理
+        // Try to handle it as a producer.
         if (be instanceof IProducerBlock producer) {
             producer.forceStopWork();
             return true;
         }
 
-        // 发电机逻辑：通过 IBurnControl 强制停止
+        // Generator logic: use IBurnControl to force a stop.
         if (be instanceof com.miophas.singularity_iteration.core.api.machine.IBurnControl gen) {
             gen.setBurnTime(0);
             return true;
@@ -384,7 +384,7 @@ public class MachineAPIImpl implements IMachineAPI {
         return ItemStack.EMPTY;
     }
 
-    // ========== 机器工作信息 API ==========
+    // ========== Machine work information API ==========
 
     @Override
     public int getMachineProgress(Level world, BlockPos pos) {
@@ -457,7 +457,7 @@ public class MachineAPIImpl implements IMachineAPI {
         return 0;
     }
 
-    // ========== 发电机专用 API ==========
+    // ========== Generator API ==========
 
     @Override
     public boolean isGeneratorBurning(Level world, BlockPos pos) {
@@ -523,7 +523,7 @@ public class MachineAPIImpl implements IMachineAPI {
         return false;
     }
 
-    // ========== 红石控制 API ==========
+    // ========== Redstone control API ==========
 
     @Override
     public int getRedstoneMode(Level world, BlockPos pos) {
@@ -556,15 +556,16 @@ public class MachineAPIImpl implements IMachineAPI {
     @Override
     public String getRedstoneModeName(int mode) {
         return switch (mode) {
-            case 0 -> "无红石控制";
-            case 1 -> "满电输出信号";
-            case 2 -> "中间范围信号";
-            case 3 -> "未满输出信号";
-            case 4 -> "空电输出信号";
-            case 5 -> "红石停止输出";
-            case 6 -> "条件输出";
-            case 7 -> "红石信号输出";
-            default -> "未知模式";
+            // English API text (0.1.7.36: before, hard-coded Chinese). UI code uses translation keys.
+            case 0 -> "No redstone control";
+            case 1 -> "Signal when full";
+            case 2 -> "Signal when partly charged";
+            case 3 -> "Signal when not full";
+            case 4 -> "Signal when empty";
+            case 5 -> "Redstone stops output";
+            case 6 -> "Conditional output";
+            case 7 -> "Redstone signal output";
+            default -> "Unknown mode";
         };
     }
 
@@ -608,7 +609,7 @@ public class MachineAPIImpl implements IMachineAPI {
         return false;
     }
 
-    // ========== 升级组合统计 API ==========
+    // ========== Upgrade combination statistics API ==========
 
     @Override
     public Optional<IMachineUpgradeStats> getUpgradeStats(Level world, BlockPos pos) {
@@ -695,11 +696,11 @@ public class MachineAPIImpl implements IMachineAPI {
         return 0;
     }
 
-    // ========== 反应堆多方块 API ==========
-    // 已通过 IReactorController / IMultiblockStructure / IAccessHatch 接口访问内部实现，
-    // 不再直接引用具体类。附属模组仍应优先使用 MioIcifAPI.instance().getReactorAPI()。
+    // ========== Reactor multiblock API ==========
+    // Access to the internal implementation goes through the IReactorController / IMultiblockStructure / IAccessHatch interfaces.
+    // This class does not refer to the concrete classes directly. Add-on mods must still use MioIcifAPI.instance().getReactorAPI() first.
 
-    // ========== IMachineControlAPI 实现 ==========
+    // ========== IMachineControlAPI implementation ==========
 
     @Override
     public boolean startMachine(Level world, BlockPos pos) {
@@ -761,7 +762,7 @@ public class MachineAPIImpl implements IMachineAPI {
         return Optional.empty();
     }
 
-    // ========== IMultiblockReactorAPI 实现 ==========
+    // ========== IMultiblockReactorAPI implementation ==========
 
     @Override
     public Optional<IMultiblockInfo> getReactorInfo(Level world, BlockPos pos) {
@@ -795,7 +796,7 @@ public class MachineAPIImpl implements IMachineAPI {
         if (be instanceof IReactorController reactor) {
             var fluidHandler = reactor.getFluidHandler();
             if (fluidHandler != null) {
-                // 返回冷却液填充百分比
+                // Return the coolant fill fraction (0.0 to 1.0).
                 int capacity = fluidHandler.getTankCapacity(0);
                 if (capacity > 0) {
                     int amount = fluidHandler.getFluidInTank(0).getAmount();
@@ -806,7 +807,7 @@ public class MachineAPIImpl implements IMachineAPI {
         return 0;
     }
 
-    // ========== IRedstoneAPI 实现 ==========
+    // ========== IRedstoneAPI implementation ==========
 
     @Override
     public RedstoneMode getRedstoneModeEnum(Level world, BlockPos pos) {
@@ -837,23 +838,23 @@ public class MachineAPIImpl implements IMachineAPI {
     @Override
     public boolean isRedstoneAllowed(Level world, BlockPos pos) {
         if (world.isClientSide) return true;
-        // 检查是否有红石信号
+        // Check for a redstone signal.
         boolean hasSignal = world.hasNeighborSignal(pos);
         BlockEntity be = world.getBlockEntity(pos);
         if (be instanceof IProducerBlock) {
-            // 根据红石模式判断是否允许工作
+            // Use the redstone mode to find if work is allowed.
             RedstoneMode mode = getRedstoneModeEnum(world, pos);
             return switch (mode) {
-                case NONE -> true; // 无模式，始终允许
-                case FULL -> hasSignal; // 有信号时工作
-                case NOT_FULL -> !hasSignal; // 无信号时工作
+                case NONE -> true; // No mode. Work is always allowed.
+                case FULL -> hasSignal; // Work when there is a signal.
+                case NOT_FULL -> !hasSignal; // Work when there is no signal.
                 default -> true;
             };
         }
-        return !hasSignal; // 默认无信号时允许工作
+        return !hasSignal; // Default: work is allowed when there is no signal.
     }
 
-    // ========== 内部包装类 ==========
+    // ========== Internal wrapper classes ==========
 
     @SuppressWarnings("null")
     private static class SlotLayoutWrapper implements ISlotLayout {
@@ -1236,11 +1237,11 @@ public class MachineAPIImpl implements IMachineAPI {
         }
     }
 
-    // ==================== IProducerBlock 适配器 ====================
+    // ==================== IProducerBlock adapter ====================
 
     /**
-     * 为不继承 {@link AbstractEnergyBlockEntity} 的 {@link IProducerBlock} 实现
-     * （如太阳能蒸馝机、车床、蒸汽动能发生机等）提供 {@link IMachineInfo} 视图。
+     * Gives an {@link IMachineInfo} view for {@link IProducerBlock} implementations that do not extend {@link AbstractEnergyBlockEntity}
+     * (for example the solar distiller, the lathe and the steam kinetic generator).
      */
     private static class ProducerMachineInfoImpl implements IMachineInfo {
         private final Level world;
@@ -1362,9 +1363,9 @@ public class MachineAPIImpl implements IMachineAPI {
     }
 
     /**
-     * 带固定 MachineType 的 IEnergyBlock IMachineInfo 适配器。
-     * 用于变压器/能量转换器等需要强制指定 MachineType 的场景，
-     * 避免依赖 IMachineConfigurable 配置。
+     * IMachineInfo adapter for an IEnergyBlock with a fixed MachineType.
+     * Use it for transformers, energy converters and other blocks that must have a specified MachineType.
+     * Thus it does not depend on the IMachineConfigurable configuration.
      */
     private static class EnergyBlockInfoWithFixedType implements IMachineInfo {
         private final Level world;
@@ -1403,7 +1404,7 @@ public class MachineAPIImpl implements IMachineAPI {
     }
 
     /**
-     * 管道方块的 IMachineInfo 适配器
+     * IMachineInfo adapter for pipe blocks.
      */
     private static class PipeMachineInfoImpl implements IMachineInfo {
         private final Level world;

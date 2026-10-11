@@ -244,7 +244,7 @@ public final class FcsHud {
             float[] pc = FcsProjection.project(at);
             if (pc != null) {
                 FcsDraw.disc(g, pc[0], pc[1], 1.6F, FcsDraw.argb(c, 1F));
-                double range = s.impact().distanceTo(path.get(0));
+                double range = path.isEmpty() ? 0 : s.impact().distanceTo(path.get(0));
                 FcsDraw.chip(g, String.format(Locale.ROOT, "%.1fm", range), pc[0] + 10, pc[1] - 12, c, 0.5F);
                 FcsDraw.text(g, String.format(Locale.ROOT, "%.2fs", s.ticks() / 20.0), pc[0] + 11, pc[1] - 3, FcsDraw.argb(c, 0.9F), 0.5F);
             }
@@ -286,7 +286,7 @@ public final class FcsHud {
         int pw = 92, ph = 40;
         int x = (int) (pc[0] - pw / 2F), y = (int) (pc[1] - ph / 2F);
         FcsDraw.panel(g, x, y, pw, ph, "BALLISTIC  " + s.profile().name(), c);
-        double range = s.impact() != null ? s.impact().distanceTo(path.get(0)) : -1;
+        double range = s.impact() != null && !path.isEmpty() ? s.impact().distanceTo(path.get(0)) : -1;
         row(g, x, y + 13, pw, "TOF", String.format(Locale.ROOT, "%.2fs", s.ticks() / 20.0));
         row(g, x, y + 21, pw, "RNG", range < 0 ? "OUT" : String.format(Locale.ROOT, "%.1fm", range));
         row(g, x, y + 29, pw, "DROP", String.format(Locale.ROOT, "%.1fm", s.drop()));

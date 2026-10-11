@@ -23,25 +23,25 @@ import java.util.Collection;
  *   <li>Upgrade plugin direction and effects</li>
  * </ul>
  *
- * <h3>Fluid Cell API (Addon 开发者必读)</h3>
- * <p>流体单元 API 提供了完整的流体容器操作支持：
+ * <h3>Fluid Cell API (read this if you develop an addon)</h3>
+ * <p>The fluid cell API gives full support for fluid container operations:
  * <ul>
- *   <li>{@link #isFluidCell(ItemStack)} - 检查物品是否为流体单元</li>
- *   <li>{@link #getFluidCellCapacity(ItemStack)} - 获取单元容量</li>
- *   <li>{@link #getFluidCellContent(ItemStack)} - 获取当前存储的流体</li>
- *   <li>{@link #canFluidCellHold(ItemStack, Fluid)} - 检查是否可以存储指定流体</li>
- *   <li>{@link #fillFluidCell(ItemStack, FluidStack, boolean)} - 填充流体</li>
- *   <li>{@link #drainFluidCell(ItemStack, int, boolean)} - 排出流体</li>
- *   <li>{@link #getFluidCellEmptyContainer(ItemStack)} - 获取排空后的空容器</li>
- *   <li>{@link #getFluidCellFilledContainer(ItemStack, Fluid)} - 获取填充后的满容器</li>
+ *   <li>{@link #isFluidCell(ItemStack)} - checks if the item is a fluid cell</li>
+ *   <li>{@link #getFluidCellCapacity(ItemStack)} - gets the cell capacity</li>
+ *   <li>{@link #getFluidCellContent(ItemStack)} - gets the fluid that the cell holds now</li>
+ *   <li>{@link #canFluidCellHold(ItemStack, Fluid)} - checks if the cell can hold the given fluid</li>
+ *   <li>{@link #fillFluidCell(ItemStack, FluidStack, boolean)} - fills fluid into the cell</li>
+ *   <li>{@link #drainFluidCell(ItemStack, int, boolean)} - drains fluid from the cell</li>
+ *   <li>{@link #getFluidCellEmptyContainer(ItemStack)} - gets the empty container after a drain</li>
+ *   <li>{@link #getFluidCellFilledContainer(ItemStack, Fluid)} - gets the full container after a fill</li>
  * </ul>
- * <p>实现 {@link IFluidCellItem} 接口的物品可以：
+ * <p>An item that implements {@link IFluidCellItem} can:
  * <ul>
- *   <li>通过 Forge Fluid Capability 与其他模组的流体系统交互</li>
- *   <li>右键点击储罐直接传输流体</li>
- *   <li>通过发射器发射/吸取流体</li>
- *   <li>在罐装机中自动处理（无需硬编码映射）</li>
- *   <li>支持部分填充（非固定 1000mB）</li>
+ *   <li>Interact with fluid systems of other mods through the Forge fluid capability</li>
+ *   <li>Move fluid directly when the player right-clicks a tank</li>
+ *   <li>Put out or pick up fluid through a dispenser</li>
+ *   <li>Be processed automatically in the canning machine (no hard-coded mapping is necessary)</li>
+ *   <li>Hold a partial fill (not only a fixed 1000 mB)</li>
  * </ul>
  */
 public interface IItemAPI {
@@ -162,513 +162,515 @@ public interface IItemAPI {
      */
     long dischargeBattery(ItemStack stack, long amount, boolean simulate);
 
-    // ========== 电动工具 API ==========
+    // ========== Electric tool API ==========
 
     /**
-     * 获取电动工具的最大能量容量 (EU)
+     * Get the maximum energy capacity (EU) of an electric tool.
      *
-     * @param stack 工具物品
-     * @return 最大容量，非电动工具返回 0
+     * @param stack the tool item stack
+     * @return the maximum capacity, or 0 if the item is not an electric tool
      */
     long getElectricToolMaxEnergy(ItemStack stack);
 
     /**
-     * 获取电动工具当前存储的能量 (EU)
+     * Get the energy (EU) that an electric tool stores now.
      *
-     * @param stack 工具物品
-     * @return 当前能量，非电动工具返回 0
+     * @param stack the tool item stack
+     * @return the current energy, or 0 if the item is not an electric tool
      */
     long getElectricToolStored(ItemStack stack);
 
     /**
-     * 获取电动工具每次使用的能量消耗 (EU)
+     * Get the energy (EU) that an electric tool uses for each use.
      *
-     * @param stack 工具物品
-     * @return 每次消耗的能量，非电动工具返回 0
+     * @param stack the tool item stack
+     * @return the energy for each use, or 0 if the item is not an electric tool
      */
     long getElectricToolEnergyPerUse(ItemStack stack);
 
     /**
-     * 获取电动工具的等级
+     * Get the tier of an electric tool.
      *
-     * @param stack 工具物品
-     * @return 工具等级，非电动工具返回 0
+     * @param stack the tool item stack
+     * @return the tool tier, or 0 if the item is not an electric tool
      */
     int getElectricToolTier(ItemStack stack);
 
     /**
-     * 为电动工具充电
+     * Charge an electric tool.
      *
-     * @param stack 工具物品
-     * @param amount 充电量 (EU)
-     * @param simulate 是否模拟
-     * @return 实际充入的能量
+     * @param stack the tool item stack
+     * @param amount the amount of energy to charge (EU)
+     * @param simulate if true, do not change the item
+     * @return the energy that was actually charged (EU)
      */
     long chargeElectricTool(ItemStack stack, long amount, boolean simulate);
 
     /**
-     * 从电动工具放电
+     * Discharge an electric tool.
      *
-     * @param stack 工具物品
-     * @param amount 放电量 (EU)
-     * @param simulate 是否模拟
-     * @return 实际放出的能量
+     * @param stack the tool item stack
+     * @param amount the amount of energy to discharge (EU)
+     * @param simulate if true, do not change the item
+     * @return the energy that was actually discharged (EU)
      */
     long dischargeElectricTool(ItemStack stack, long amount, boolean simulate);
 
     /**
-     * 检查电动工具是否有足够能量使用一次
+     * Check if an electric tool has sufficient energy for one use.
      *
-     * @param stack 工具物品
-     * @return 是否有足够能量
+     * @param stack the tool item stack
+     * @return true if the energy is sufficient
      */
     boolean hasEnoughToolEnergy(ItemStack stack);
 
-    // ========== 电力装甲 API ==========
+    // ========== Electric armor API ==========
 
     /**
-     * 获取电力装甲的最大能量容量 (EU)
+     * Get the maximum energy capacity (EU) of electric armor.
      *
-     * @param stack 装甲物品
-     * @return 最大容量，非电力装甲返回 0
+     * @param stack the armor item stack
+     * @return the maximum capacity, or 0 if the item is not electric armor
      */
     long getElectricArmorMaxEnergy(ItemStack stack);
 
     /**
-     * 获取电力装甲当前存储的能量 (EU)
+     * Get the energy (EU) that electric armor stores now.
      *
-     * @param stack 装甲物品
-     * @return 当前能量，非电力装甲返回 0
+     * @param stack the armor item stack
+     * @return the current energy, or 0 if the item is not electric armor
      */
     long getElectricArmorStored(ItemStack stack);
 
     /**
-     * 获取电力装甲每 tick 的能量消耗 (EU)
+     * Get the energy (EU) that electric armor uses each tick.
      *
-     * @param stack 装甲物品
-     * @return 每 tick 消耗，非电力装甲返回 0
+     * @param stack the armor item stack
+     * @return the energy for each tick, or 0 if the item is not electric armor
      */
     long getElectricArmorEnergyPerTick(ItemStack stack);
 
     /**
-     * 获取电力装甲的等级
+     * Get the tier of electric armor.
      *
-     * @param stack 装甲物品
-     * @return 装甲等级，非电力装甲返回 0
+     * @param stack the armor item stack
+     * @return the armor tier, or 0 if the item is not electric armor
      */
     int getElectricArmorTier(ItemStack stack);
 
     /**
-     * 为电力装甲充电
+     * Charge electric armor.
      *
-     * @param stack 装甲物品
-     * @param amount 充电量 (EU)
-     * @param simulate 是否模拟
-     * @return 实际充入的能量
+     * @param stack the armor item stack
+     * @param amount the amount of energy to charge (EU)
+     * @param simulate if true, do not change the item
+     * @return the energy that was actually charged (EU)
      */
     long chargeElectricArmor(ItemStack stack, long amount, boolean simulate);
 
     /**
-     * 从电力装甲放电
+     * Discharge electric armor.
      *
-     * @param stack 装甲物品
-     * @param amount 放电量 (EU)
-     * @param simulate 是否模拟
-     * @return 实际放出的能量
+     * @param stack the armor item stack
+     * @param amount the amount of energy to discharge (EU)
+     * @param simulate if true, do not change the item
+     * @return the energy that was actually discharged (EU)
      */
     long dischargeElectricArmor(ItemStack stack, long amount, boolean simulate);
 
     /**
-     * 检查电力装甲是否有足够能量
+     * Check if electric armor has sufficient energy.
      *
-     * @param stack 装甲物品
-     * @return 是否有足够能量
+     * @param stack the armor item stack
+     * @return true if the energy is sufficient
      */
     boolean hasEnoughArmorEnergy(ItemStack stack);
 
     /**
-     * 消耗电力装甲的能量
+     * Use energy from electric armor.
      *
-     * @param stack 装甲物品
-     * @param amount 消耗量 (EU)
-     * @return 是否成功消耗
+     * @param stack the armor item stack
+     * @param amount the amount of energy to use (EU)
+     * @return true if the energy was used
      */
     boolean consumeArmorEnergy(ItemStack stack, long amount);
 
-    // ========== 反应堆组件 API ==========
+    // ========== Reactor component API ==========
 
     /**
-     * 获取反应堆组件的类型 ID
+     * Get the type ID of a reactor component.
      *
-     * @param stack 物品
-     * @return 类型 ID，非反应堆组件返回 null
+     * @param stack the item stack
+     * @return the type ID, or null if the item is not a reactor component
      */
     String getReactorComponentType(ItemStack stack);
 
-    // ========== 升级插件 API ==========
+    // ========== Upgrade plugin API ==========
 
     /**
-     * 获取升级插件的类型
+     * Get the type of an upgrade plugin.
      *
-     * @param stack 物品
-     * @return 升级类型，非升级插件返回 null
+     * @param stack the item stack
+     * @return the upgrade type, or null if the item is not an upgrade plugin
      */
     String getUpgradeType(ItemStack stack);
 
     /**
-     * 获取升级插件是否是定向的
+     * Check if an upgrade plugin is directional.
      *
-     * @param stack 物品
-     * @return 是否定向，非升级插件返回 false
+     * @param stack the item stack
+     * @return true if it is directional; false if the item is not an upgrade plugin
      */
     boolean isUpgradeDirectional(ItemStack stack);
 
     /**
-     * 获取升级插件的方向
+     * Get the direction of an upgrade plugin.
      *
-     * @param stack 升级插件物品
-     * @return 方向，未设置或非定向升级返回 null
+     * @param stack the upgrade plugin item stack
+     * @return the direction, or null if no direction is set or the upgrade is not directional
      */
     net.minecraft.core.Direction getUpgradeDirection(ItemStack stack);
 
     /**
-     * 获取所有 mod 物品 ID
+     * Get the IDs of all mod items.
      *
-     * @return 命名空间为 mio_icif 的物品 ID 集合
+     * @return the item IDs in the mio_icif namespace
      */
     Collection<ResourceLocation> getAllItemIds();
 
-    // ========== 电池充放电速率 API ==========
+    // ========== Battery charge and discharge rate API ==========
 
     /**
-     * 获取电池的充电速率
+     * Get the charge rate of a battery.
      *
-     * @param stack 电池物品
-     * @return 充电速率 (EU/tick)，非电池物品返回 0
+     * @param stack the battery item stack
+     * @return the charge rate (EU/tick), or 0 if the item is not a battery
      */
     long getChargeRate(ItemStack stack);
 
     /**
-     * 获取电池的放电速率
+     * Get the discharge rate of a battery.
      *
-     * @param stack 电池物品
-     * @return 放电速率 (EU/tick)，非电池物品返回 0
+     * @param stack the battery item stack
+     * @return the discharge rate (EU/tick), or 0 if the item is not a battery
      */
     long getDischargeRate(ItemStack stack);
 
     /**
-     * 检查电池是否已充满
+     * Check if a battery is fully charged.
      *
-     * @param stack 电池物品
-     * @return true 如果已充满
+     * @param stack the battery item stack
+     * @return true if the battery is full
      */
     boolean isBatteryFull(ItemStack stack);
 
     /**
-     * 检查电池是否为空
+     * Check if a battery is empty.
      *
-     * @param stack 电池物品
-     * @return true 如果电量为0
+     * @param stack the battery item stack
+     * @return true if the stored energy is 0
      */
     boolean isBatteryEmpty(ItemStack stack);
 
-    // ========== 升级插件效果 API ==========
+    // ========== Upgrade plugin effect API ==========
 
     /**
-     * 获取升级插件的速度加成
+     * Get the speed bonus of an upgrade plugin.
      *
-     * @param stack 升级插件物品
-     * @return 速度加成倍率（值越小越快）
+     * @param stack the upgrade plugin item stack
+     * @return the speed multiplier (a lower value is faster)
      */
     float getUpgradeSpeedBonus(ItemStack stack);
 
     /**
-     * 获取升级插件的能量加成
+     * Get the energy bonus of an upgrade plugin.
      *
-     * @param stack 升级插件物品
-     * @return 能量消耗倍率
+     * @param stack the upgrade plugin item stack
+     * @return the energy use multiplier
      */
     float getUpgradeEnergyBonus(ItemStack stack);
 
     /**
-     * 获取升级插件的等级
+     * Get the tier of an upgrade plugin.
      *
-     * @param stack 升级插件物品
-     * @return 升级等级 (1-4, 对应 LV-MV-HV-EV)
+     * @param stack the upgrade plugin item stack
+     * @return the upgrade tier (1-4, for LV-MV-HV-EV)
      */
     int getUpgradeTier(ItemStack stack);
 
-    // ========== 新物品类型查询 API ==========
+    // ========== Item type query API (new types) ==========
 
     /**
-     * 检查物品是否为武器
+     * Check if an item is a weapon.
      *
-     * @param stack 物品堆
-     * @return true 如果是武器
+     * @param stack the item stack
+     * @return true if it is a weapon
      */
     boolean isWeapon(ItemStack stack);
 
     /**
-     * 检查物品是否为太阳能头盔
+     * Check if an item is a solar helmet.
      *
-     * @param stack 物品堆
-     * @return true 如果是太阳能头盔
+     * @param stack the item stack
+     * @return true if it is a solar helmet
      */
     boolean isSolarHelmet(ItemStack stack);
 
     /**
-     * 检查物品是否为喷气背包
+     * Check if an item is a jetpack.
      *
-     * @param stack 物品堆
-     * @return true 如果是喷气背包
+     * @param stack the item stack
+     * @return true if it is a jetpack
      */
     boolean isJetpack(ItemStack stack);
 
     /**
-     * 检查物品是否为流体单元
+     * Check if an item is a fluid cell.
      *
-     * @param stack 物品堆
-     * @return true 如果是流体单元
+     * @param stack the item stack
+     * @return true if it is a fluid cell
      */
     boolean isFluidCell(ItemStack stack);
 
     /**
-     * 获取武器的基础伤害值
+     * Get the base damage of a weapon.
      *
-     * @param stack 武器物品
-     * @return 伤害值，非武器返回 0
+     * @param stack the weapon item stack
+     * @return the damage value, or 0 if the item is not a weapon
      */
     float getWeaponDamage(ItemStack stack);
 
     /**
-     * 获取武器的有效射程（方块数）
+     * Get the effective range of a weapon, in blocks.
      *
-     * @param stack 武器物品
-     * @return 射程，非武器返回 0
+     * @param stack the weapon item stack
+     * @return the range, or 0 if the item is not a weapon
      */
     float getWeaponRange(ItemStack stack);
 
     /**
-     * 获取武器每次射击消耗的能量
+     * Get the energy that a weapon uses for each shot.
      *
-     * @param stack 武器物品
-     * @return 每次射击能耗（EU），非武器返回 0
+     * @param stack the weapon item stack
+     * @return the energy for each shot (EU), or 0 if the item is not a weapon
      */
     long getWeaponEnergyPerShot(ItemStack stack);
 
     /**
-     * 获取太阳能头盔的发电速率
+     * Get the generation rate of a solar helmet.
      *
-     * @param stack 太阳能头盔物品
-     * @return 每 tick 发电量（EU），非太阳能头盔返回 0
+     * @param stack the solar helmet item stack
+     * @return the energy made each tick (EU), or 0 if the item is not a solar helmet
      */
     long getSolarGenerationRate(ItemStack stack);
 
     /**
-     * 获取喷气背包的推力
+     * Get the thrust of a jetpack.
      *
-     * @param stack 喷气背包物品
-     * @return 推力值，非喷气背包返回 0
+     * @param stack the jetpack item stack
+     * @return the thrust value, or 0 if the item is not a jetpack
      */
     float getJetpackThrust(ItemStack stack);
 
     /**
-     * 获取喷气背包每 tick 飞行消耗的能量
+     * Get the energy that a jetpack uses each tick while it flies.
      *
-     * @param stack 喷气背包物品
-     * @return 每 tick 飞行能耗（EU），非喷气背包返回 0
+     * @param stack the jetpack item stack
+     * @return the flight energy for each tick (EU), or 0 if the item is not a jetpack
      */
     long getJetpackEnergyPerTick(ItemStack stack);
 
     /**
-     * 获取喷气背包当前模式
+     * Get the current mode of a jetpack.
      *
-     * @param stack 喷气背包物品
-     * @return 当前模式，非喷气背包返回 OFF
+     * @param stack the jetpack item stack
+     * @return the current mode, or OFF if the item is not a jetpack
      */
     IJetpackItem.JetpackMode getJetpackMode(ItemStack stack);
 
     /**
-     * 设置喷气背包模式
+     * Set the mode of a jetpack.
      *
-     * @param stack 喷气背包物品
-     * @param mode  目标模式
+     * @param stack the jetpack item stack
+     * @param mode  the new mode
      */
     void setJetpackMode(ItemStack stack, IJetpackItem.JetpackMode mode);
 
     /**
-     * 获取流体单元的最大容量
+     * Get the maximum capacity of a fluid cell.
      *
-     * @param stack 流体单元物品
-     * @return 容量（mB），非流体单元返回 0
+     * @param stack the fluid cell item stack
+     * @return the capacity (mB), or 0 if the item is not a fluid cell
      */
     int getFluidCellCapacity(ItemStack stack);
 
     /**
-     * 获取流体单元当前存储的流体
+     * Get the fluid that a fluid cell holds now.
      *
-     * @param stack 流体单元物品
-     * @return 当前流体堆，非流体单元返回空
+     * @param stack the fluid cell item stack
+     * @return the current fluid stack, or an empty stack if the item is not a fluid cell
      */
     net.neoforged.neoforge.fluids.FluidStack getFluidCellContent(ItemStack stack);
 
     /**
-     * 检查流体单元是否可以存储指定流体
+     * Check if a fluid cell can hold the given fluid.
      *
-     * @param stack 流体单元物品
-     * @param fluid 流体类型
-     * @return true 如果可以存储
+     * @param stack the fluid cell item stack
+     * @param fluid the fluid type
+     * @return true if the cell can hold the fluid
      */
     boolean canFluidCellHold(ItemStack stack, net.minecraft.world.level.material.Fluid fluid);
 
     /**
-     * 向流体单元填充流体
+     * Fill fluid into a fluid cell.
      *
-     * @param stack 流体单元物品
-     * @param fluid 要填充的流体
-     * @param simulate 是否仅模拟
-     * @return 实际填充的量（mB）
+     * @param stack the fluid cell item stack
+     * @param fluid the fluid to fill
+     * @param simulate if true, do not change the item
+     * @return the amount that was actually filled (mB)
      */
     int fillFluidCell(ItemStack stack, net.neoforged.neoforge.fluids.FluidStack fluid, boolean simulate);
 
     /**
-     * 从流体单元排出流体
+     * Drain fluid from a fluid cell.
      *
-     * @param stack 流体单元物品
-     * @param amount 要排出的量（mB）
-     * @param simulate 是否仅模拟
-     * @return 实际排出的流体堆
+     * @param stack the fluid cell item stack
+     * @param amount the amount to drain (mB)
+     * @param simulate if true, do not change the item
+     * @return the fluid stack that was actually drained
      */
     net.neoforged.neoforge.fluids.FluidStack drainFluidCell(ItemStack stack, int amount, boolean simulate);
 
     /**
-     * 获取流体单元排空后的空容器
+     * Get the empty container that is left after a fluid cell is drained.
      *
-     * @param stack 流体单元物品
-     * @return 排空后的空容器，非流体单元返回空
+     * @param stack the fluid cell item stack
+     * @return the empty container, or an empty stack if the item is not a fluid cell
      */
     ItemStack getFluidCellEmptyContainer(ItemStack stack);
 
     /**
-     * 获取流体单元填充后的满容器
+     * Get the full container after a fluid cell is filled.
      *
-     * @param stack 流体单元物品
-     * @param fluid 要填充的流体
-     * @return 填充后的满容器，非流体单元返回空
+     * @param stack the fluid cell item stack
+     * @param fluid the fluid to fill
+     * @return the full container, or an empty stack if the item is not a fluid cell
      */
     ItemStack getFluidCellFilledContainer(ItemStack stack, net.minecraft.world.level.material.Fluid fluid);
 
     /**
-     * 检查物品是否是动态流体单元（支持任意流体和部分填充）
+     * Check if an item is a dynamic fluid cell (it accepts any fluid and partial fills).
      *
-     * @param stack 物品堆
-     * @return true 如果是动态流体单元
+     * @param stack the item stack
+     * @return true if it is a dynamic fluid cell
      */
     boolean isDynamicFluidCell(ItemStack stack);
 
     /**
-     * 创建动态流体单元并填充指定流体
+     * Make a dynamic fluid cell and fill it with the given fluid.
      *
-     * @param fluid 要填充的流体
-     * @param amount 填充量（mB）
-     * @return 填充后的动态单元，失败返回空
+     * @param fluid the fluid to fill
+     * @param amount the fill amount (mB)
+     * @return the filled dynamic cell, or an empty stack if this fails
      */
     ItemStack createDynamicFluidCell(net.minecraft.world.level.material.Fluid fluid, int amount);
 
-    // ========== 装甲特性 API ==========
+    // ========== Armor feature API ==========
 
     /**
-     * 获取电力装甲的特性列表
+     * Get the feature list of electric armor.
      *
-     * @param stack 装甲物品
-     * @return 特性信息列表，非电力装甲返回空列表
+     * @param stack the armor item stack
+     * @return the feature information list, or an empty list if the item is not electric armor
      */
     java.util.List<ArmorFeatureInfo> getArmorFeatures(ItemStack stack);
 
     /**
-     * 切换电力装甲的<b>开关型</b>特性状态。
+     * Toggle the state of a <b>toggle-type</b> feature of electric armor.
      *
-     * <p>仅对 {@link ArmorFeatureInfo#isMode()} 为 {@code false} 且已由物品
-     * {@link IElectricArmorItem#getFeatures(ItemStack)} 声明的特性生效；
-     * 模式型特性请使用 {@link #cycleArmorFeature(ItemStack, String)}。
+     * <p>This has an effect only on a feature where {@link ArmorFeatureInfo#isMode()} is
+     * {@code false} and that the item declares in
+     * {@link IElectricArmorItem#getFeatures(ItemStack)}.
+     * For a mode-type feature, use {@link #cycleArmorFeature(ItemStack, String)}.
      *
-     * @param stack 装甲物品
-     * @param featureKey 特性键
-     * @return 切换后的状态（未发生变化时返回当前状态）
+     * @param stack the armor item stack
+     * @param featureKey the feature key
+     * @return the state after the toggle (the current state if nothing changed)
      */
     boolean toggleArmorFeature(ItemStack stack, String featureKey);
 
     /**
-     * 读取电力装甲开关型特性的启用状态。
+     * Read the enabled state of a toggle-type feature of electric armor.
      *
-     * @param stack 装甲物品
-     * @param featureKey 特性键
-     * @return 是否启用；未声明或模式型特性返回 {@code true}
+     * @param stack the armor item stack
+     * @param featureKey the feature key
+     * @return true if enabled; {@code true} also for a feature that is not declared or is mode-type
      */
     boolean isArmorFeatureEnabled(ItemStack stack, String featureKey);
 
     /**
-     * 设置电力装甲开关型特性的启用状态。
+     * Set the enabled state of a toggle-type feature of electric armor.
      *
-     * @param stack 装甲物品
-     * @param featureKey 特性键
-     * @param enabled 是否启用
+     * @param stack the armor item stack
+     * @param featureKey the feature key
+     * @param enabled true to enable the feature
      */
     void setArmorFeatureEnabled(ItemStack stack, String featureKey, boolean enabled);
 
     /**
-     * 切换到电力装甲<b>模式型</b>特性的下一个模式。
+     * Change a <b>mode-type</b> feature of electric armor to its next mode.
      *
-     * <p>物品需声明 {@link ArmorFeatureInfo#isMode()} 为 {@code true} 的特性，
-     * 并实现 {@link IArmorModeFeatureItem}（{@link IJetpackItem} 已内置默认实现）。
+     * <p>The item must declare a feature where {@link ArmorFeatureInfo#isMode()} is {@code true}.
+     * The item must also implement {@link IArmorModeFeatureItem}
+     * ({@link IJetpackItem} has a default implementation).
      *
-     * @param stack 装甲物品
-     * @param featureKey 特性键
-     * @return 是否发生了切换
+     * @param stack the armor item stack
+     * @param featureKey the feature key
+     * @return true if the mode changed
      */
     boolean cycleArmorFeature(ItemStack stack, String featureKey);
 
     /**
-     * 查询物品对某特性键的声明信息。
+     * Get the information that an item declares for a feature key.
      *
-     * @param stack 装甲物品
-     * @param featureKey 特性键
-     * @return 特性信息；未声明时返回 {@code null}
+     * @param stack the armor item stack
+     * @param featureKey the feature key
+     * @return the feature information, or {@code null} if the item does not declare it
      */
     ArmorFeatureInfo getArmorFeatureInfo(ItemStack stack, String featureKey);
 
     /**
-     * 获取电力装甲每点伤害消耗的能量
+     * Get the energy that electric armor uses for each point of damage.
      *
-     * @param stack 装甲物品
-     * @return 每点伤害消耗的能量，非电力装甲返回 0
+     * @param stack the armor item stack
+     * @return the energy for each point of damage (EU), or 0 if the item is not electric armor
      */
     long getEnergyPerDamage(ItemStack stack);
 
     /**
-     * 获取电力装甲在指定装备槽位的伤害吸收比例
+     * Get the damage absorption ratio of electric armor in the given equipment slot.
      *
-     * @param stack 装甲物品
-     * @param slot 装备槽位
-     * @return 伤害吸收比例 (0.0 ~ 1.0+)，非电力装甲返回 0
+     * @param stack the armor item stack
+     * @param slot the equipment slot
+     * @return the absorption ratio (0.0 to 1.0 or more), or 0 if the item is not electric armor
      */
     float getDamageAbsorptionRatio(ItemStack stack, EquipmentSlot slot);
 
-    // ========== 能量设置 API (主要用于创造模式标签页) ==========
+    // ========== Energy set API (mainly for the creative mode tab) ==========
 
     /**
-     * 设置电池的能量值（不检查上限）
+     * Set the energy value of a battery. This does not check the maximum.
      *
-     * @param stack 电池物品
-     * @param energy 能量值
+     * @param stack the battery item stack
+     * @param energy the energy value (EU)
      */
     void setBatteryEnergy(ItemStack stack, long energy);
 
     /**
-     * 设置电动工具的能量值（不检查上限）
+     * Set the energy value of an electric tool. This does not check the maximum.
      *
-     * @param stack 工具物品
-     * @param energy 能量值
+     * @param stack the tool item stack
+     * @param energy the energy value (EU)
      */
     void setElectricToolEnergy(ItemStack stack, long energy);
 }

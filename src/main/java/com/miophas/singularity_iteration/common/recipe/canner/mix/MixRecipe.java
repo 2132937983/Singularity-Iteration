@@ -20,7 +20,7 @@ public class MixRecipe implements Recipe<MixRecipeInput>, IRecipeProcessingInfo 
     private final Ingredient materialIngredient;   // 材料物品
     private final int materialCount;               // 材料数量
     private final FluidStack resultFluid;          // 结果流体
-    private final ItemStack resultCell;            // 结果单元（如果有空单元时输出�
+    private final ItemStack resultCell;            // Result cell, output when an empty cell is present
 private final int processingTime;
     private final int energyPerTick;
 
@@ -38,7 +38,7 @@ private final int processingTime;
 
     @Override
     public boolean matches(MixRecipeInput input, Level level) {
-        // 检查材料是否匹�
+        // Check that the material matches.
     if (!this.materialIngredient.test(input.material())) {
             return false;
         }
@@ -48,7 +48,7 @@ private final int processingTime;
             return false;
         }
 
-        // 检查输入流体是否匹�
+        // Check that the input fluid matches.
     FluidStack tankFluid = input.inputFluid();
         if (tankFluid.isEmpty()) {
             return false;

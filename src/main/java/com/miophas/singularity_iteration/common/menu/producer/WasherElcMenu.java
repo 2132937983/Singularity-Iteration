@@ -15,7 +15,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 洗矿石?Menu
+ * Ore washing plant menu.
  */
 @SuppressWarnings("null")
 public class WasherElcMenu extends mio_icif_machine_menu {

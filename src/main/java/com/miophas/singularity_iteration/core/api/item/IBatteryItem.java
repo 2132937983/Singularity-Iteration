@@ -3,93 +3,93 @@ package com.miophas.singularity_iteration.core.api.item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 电池功能接口（mio_icif 简化 API）。
- * 所有可存储电力的电池物品都应实现此接口。
+ * Battery function interface (simplified mio_icif API).
+ * All battery items that can store electric energy must implement this interface.
  *
- * <h3>与 {@link com.miophas.singularity_iteration.core.api.item.electric.IElectricItem} 的关系</h3>
- * <p>本接口与 {@code IElectricItem} 是两套并行的电池物品 API，服务于不同场景：
+ * <h3>Relation to {@link com.miophas.singularity_iteration.core.api.item.electric.IElectricItem}</h3>
+ * <p>This interface and {@code IElectricItem} are two parallel battery item APIs. They serve different cases:
  * <ul>
- *   <li><b>{@code IBatteryItem}</b>（本接口）— mio_icif 内部简化 API。
- *       方法签名简洁（如 {@link #getMaxEnergy()} 无需传入 ItemStack），
- *       适合机器内部直接调用。所有 mio_icif 自带的电池、电动工具、电力装甲
- *       均通过其基类（{@code mio_icif_bat}、{@code mio_icif_tool_elc}、
- *       {@code mio_icif_armor_elc}）实现此接口。</li>
- *   <li><b>{@code IElectricItem}</b> — IC2 兼容 API。
- *       遵循 IC2 1.12.2 的 {@code IElectricItem} 规范，所有方法均需传入
- *       {@code ItemStack} 参数，配合 {@code IElectricItemManager} 使用。
- *       适用于需要与 IC2 原版工具/电池互操作的附属模组。</li>
+ *   <li><b>{@code IBatteryItem}</b> (this interface) — the simplified internal mio_icif API.
+ *       The method signatures are short (for example {@link #getMaxEnergy()} does not need an ItemStack).
+ *       Machines can call it directly. All batteries, electric tools and electric armor of mio_icif
+ *       implement this interface through their base classes ({@code mio_icif_bat}, {@code mio_icif_tool_elc},
+ *       {@code mio_icif_armor_elc}).</li>
+ *   <li><b>{@code IElectricItem}</b> — the IC2-compatible API.
+ *       It follows the IC2 1.12.2 {@code IElectricItem} specification. All methods need an
+ *       {@code ItemStack} parameter. Use it together with {@code IElectricItemManager}.
+ *       Use it for add-on mods that must work with the original IC2 tools and batteries.</li>
  * </ul>
  *
- * <p><b>选择建议：</b>
+ * <p><b>Which one to use:</b>
  * <ul>
- *   <li>若物品仅需在 mio_icif 机器中使用 → 实现 {@code IBatteryItem}</li>
- *   <li>若物品需要 IC2 原版兼容性（如 IC2 充电bench、电动工具管理器）→ 实现 {@code IElectricItem}</li>
- *   <li>两者可同时实现，互不冲突</li>
+ *   <li>If the item is used only in mio_icif machines, implement {@code IBatteryItem}.</li>
+ *   <li>If the item must be compatible with original IC2 (for example the IC2 charging bench or the electric tool manager), implement {@code IElectricItem}.</li>
+ *   <li>An item can implement both. They do not conflict.</li>
  * </ul>
  */
 public interface IBatteryItem {
 
     /**
-     * 获取最大能量容量 (EU)
+     * Gets the maximum energy capacity (EU).
      */
     long getMaxEnergy();
 
     /**
-     * 获取指定物品堆的最大能量容量 (EU)
-     * <p>默认委托到无参的 {@link #getMaxEnergy()}，适用于容量固定的电池。
-     * 支持可变容量（如受附魔/ NBT / 升级影响的）物品应覆盖此方法，
-     * 根据 {@code stack} 返回实际容量。
+     * Gets the maximum energy capacity of the given item stack (EU).
+     * <p>By default this method calls {@link #getMaxEnergy()} with no arguments. This is correct for batteries with a fixed capacity.
+     * Items with a variable capacity (for example from enchantments, NBT or upgrades) must override this method
+     * and return the actual capacity for {@code stack}.
      *
-     * @param stack 物品堆
-     * @return 最大能量容量 (EU)
+     * @param stack the item stack
+     * @return the maximum energy capacity (EU)
      */
     default long getMaxEnergy(ItemStack stack) {
         return getMaxEnergy();
     }
 
     /**
-     * 获取当前存储的能量 (EU)
+     * Gets the energy that is stored now (EU).
      */
     long getEnergy(ItemStack stack);
 
     /**
-     * 添加能量 (EU)
-     * @return 实际添加的能量
+     * Adds energy (EU).
+     * @return the energy that was added (EU)
      */
     long addEnergy(ItemStack stack, long amount);
 
     /**
-     * 提取能量 (EU)
-     * @return 实际提取的能量
+     * Extracts energy (EU).
+     * @return the energy that was extracted (EU)
      */
     long extractEnergy(ItemStack stack, long amount);
 
     /**
-     * 检查是否已充满
+     * Checks if the item is full.
      */
     boolean isFull(ItemStack stack);
 
     /**
-     * 检查是否为空
+     * Checks if the item is empty.
      */
     boolean isEmpty(ItemStack stack);
 
     /**
-     * 获取充电速率 (EU/tick)
+     * Gets the charge rate (EU/tick). The default is 0.
      */
     default long getChargeRate(ItemStack stack) {
         return 0;
     }
 
     /**
-     * 设置能量值（不检查上限）。
-     * <p>主要用于创造模式标签页等需要直接设置能量的场景。
-     * 默认实现为空操作，支持能量设置的物品应覆盖此方法。
+     * Sets the energy value. This method does not check the maximum.
+     * <p>Use it mainly where the energy must be set directly, for example on the creative mode tab.
+     * The default implementation does nothing. Items that support this operation must override this method.
      *
-     * @param stack  物品堆
-     * @param energy 要设置的能量值 (EU)
+     * @param stack  the item stack
+     * @param energy the energy value to set (EU)
      */
     default void setEnergy(ItemStack stack, long energy) {
-        // 默认实现：空操作
+        // Default implementation: do nothing.
     }
 }

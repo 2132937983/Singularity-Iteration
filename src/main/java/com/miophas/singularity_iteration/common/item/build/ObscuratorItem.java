@@ -198,7 +198,8 @@ public class ObscuratorItem extends mio_icif_tool_elc {
      */
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        if (!level.isClientSide && isSelected && entity instanceof Player player) {
+        // once a second: an action-bar packet every tick was pure network load (0.1.7.36)
+        if (!level.isClientSide && isSelected && entity instanceof Player player && player.tickCount % 20 == 0) {
             long currentEnergy = getEnergy(stack);
             player.displayClientMessage(
                 Component.translatable("tooltip.mio_icif.obscurator.energy", currentEnergy, getMaxEnergy()),

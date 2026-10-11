@@ -37,7 +37,6 @@ import com.mojang.logging.LogUtils;
  */
 @SuppressWarnings("null")
 public class mio_icif_bat_box extends mio_icif_entity_block {
-    private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final MapCodec<mio_icif_bat_box> CODEC = simpleCodec(mio_icif_bat_box::new);
     public static final DirectionProperty FACING = DirectionalBlock.FACING;

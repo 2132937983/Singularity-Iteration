@@ -163,7 +163,7 @@ public class FurnaceElcMenu extends mio_icif_machine_menu {
     }
 
     /**
-     * 大尺寸槽位类?6x26?
+     * Large slot class (26x26).
      */
     public static class LargeSlot extends SlotItemHandler {
         @SuppressWarnings("unused")

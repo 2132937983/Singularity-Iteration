@@ -8,26 +8,26 @@ import net.minecraft.world.level.material.FluidState;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
 /**
- * 气体流体源方块实现。
+ * Gas fluid source implementation.
  *
- * <p>继承 {@link BaseFlowingFluid.Source}，添加气体行为：
+ * <p>This class extends {@link BaseFlowingFluid.Source} and adds gas behavior:
  * <ul>
- *   <li><b>向上飘升</b>：每 tick 检查上方方块，若为空气或可替换则向上移动</li>
- *   <li><b>限高消失</b>：当 Y 坐标达到 {@link #getMaxHeight()} 时自动消失</li>
- *   <li><b>水平扩散</b>：当上方被阻挡时，向水平四个方向扩散</li>
- *   <li><b>禁止向下流动</b>：不执行任何向下流动逻辑</li>
+ *   <li><b>Move up</b>: on each tick, it checks the block above. If that block is air or replaceable, the gas moves up.</li>
+ *   <li><b>Disappear at the height limit</b>: when the Y coordinate reaches {@link #getMaxHeight()}, the gas disappears.</li>
+ *   <li><b>Spread horizontally</b>: when the block above blocks it, the gas spreads in the four horizontal directions.</li>
+ *   <li><b>No downward flow</b>: the gas never flows down.</li>
  * </ul>
  *
- * <h3>Addon 开发者使用示例</h3>
+ * <h3>Example for addon developers</h3>
  * <pre>{@code
- * // 1. 定义流体属性（与普通流体相同）
+ * // 1. Define the fluid properties (the same as for a normal fluid)
  * public static final BaseFlowingFluid.Properties MY_GAS_PROPERTIES =
  *     new BaseFlowingFluid.Properties(
  *         () -> MY_GAS, () -> MY_GAS_FLOWING,
  *         () -> mio_icif_fluids.MY_GAS_BLOCK
  *     ).canMultiply(true).flowSpeed(4).levelDecreasePerBlock(1);
  *
- * // 2. 注册流体，使用 GasFluidSource / GasFluidFlowing
+ * // 2. Register the fluids with GasFluidSource / GasFluidFlowing
  * public static final DeferredHolder<Fluid, FlowingFluid> MY_GAS = FLUIDS.register("my_gas",
  *     () -> new GasFluidSource(MY_GAS_PROPERTIES, 320));
  * public static final DeferredHolder<Fluid, FlowingFluid> MY_GAS_FLOWING = FLUIDS.register("my_gas_flowing",
@@ -41,11 +41,11 @@ public class GasFluidSource extends BaseFlowingFluid.Source {
     private final int maxHeight;
 
     /**
-     * 创建气体流体源。
+     * Creates a gas fluid source.
      *
-     * @param properties 流体属性（{@link BaseFlowingFluid.Properties}）
-     * @param maxHeight  最大高度限制，超过此 Y 坐标气体会消失。
-     *                   通常使用 {@code 320}（1.18+ 世界高度上限）。
+     * @param properties the fluid properties ({@link BaseFlowingFluid.Properties})
+     * @param maxHeight  the maximum height. At this Y coordinate or higher, the gas disappears.
+     *                   Usually {@code 320} (the world height limit in 1.18 and later).
      */
     public GasFluidSource(BaseFlowingFluid.Properties properties, int maxHeight) {
         super(properties);
@@ -53,9 +53,9 @@ public class GasFluidSource extends BaseFlowingFluid.Source {
     }
 
     /**
-     * 获取气体消失的最大高度。
+     * Gets the maximum height at which the gas disappears.
      *
-     * @return 最大 Y 坐标
+     * @return the maximum Y coordinate
      */
     public int getMaxHeight() {
         return maxHeight;

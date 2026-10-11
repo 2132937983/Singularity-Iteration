@@ -13,13 +13,15 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 /**
- * KU 动能能力注册事件
- * 包装 NeoForge �?RegisterCapabilitiesEvent，专门用�?KU 动能系统
- * 
- * 使用示例�? * <pre>{@code
+ * Registration event for KU kinetic energy capabilities.
+ * Wraps the NeoForge RegisterCapabilitiesEvent for the KU kinetic energy system.
+ *
+ * Example:
+ * <pre>{@code
  * @SubscribeEvent
  * public static void registerKUCapabilities(RegisterCapabilitiesEvent event) {
- *     // 注册蒸汽轮机的动能存储能量? *     KURegisterCapabilitiesEvent.registerKineticStorage(
+ *     // Register the kinetic storage capability of the steam turbine.
+ *     KURegisterCapabilitiesEvent.registerKineticStorage(
  *         event,
  *         ModBlockEntities.STEAM_TURBINE.get(),
  *         (turbine, direction) -> turbine.getKineticStorage()
@@ -38,9 +40,12 @@ public class KURegisterCapabilitiesEvent extends Event implements IModBusEvent {
     }
     
     /**
-     * 为方块实体注册动能存储能量?     * 
-     * @param event NeoForge 的注册事�?     * @param blockEntityType 方块实体类型
-     * @param provider 能力提供�?     */
+     * Registers the kinetic storage capability for a block entity type.
+     *
+     * @param event the NeoForge capability registration event
+     * @param blockEntityType the block entity type
+     * @param provider the capability provider
+     */
     public static <T extends BlockEntity> void registerKineticStorage(
             RegisterCapabilitiesEvent event,
             BlockEntityType<T> blockEntityType,
@@ -56,10 +61,12 @@ public class KURegisterCapabilitiesEvent extends Event implements IModBusEvent {
     }
     
     /**
-     * 为方块实体注册动力源能力
+     * Registers the kinetic source capability for a block entity type.
      * 
-     * @param event NeoForge 的注册事�?     * @param blockEntityType 方块实体类型
-     * @param provider 能力提供�?     */
+     * @param event the NeoForge capability registration event
+     * @param blockEntityType the block entity type
+     * @param provider the capability provider
+     */
     public static <T extends BlockEntity> void registerKineticSource(
             RegisterCapabilitiesEvent event,
             BlockEntityType<T> blockEntityType,
@@ -75,10 +82,12 @@ public class KURegisterCapabilitiesEvent extends Event implements IModBusEvent {
     }
     
     /**
-     * 为方块实体注册动能传导器能力
+     * Registers the kinetic conductor capability for a block entity type.
      * 
-     * @param event NeoForge 的注册事�?     * @param blockEntityType 方块实体类型
-     * @param provider 能力提供�?     */
+     * @param event the NeoForge capability registration event
+     * @param blockEntityType the block entity type
+     * @param provider the capability provider
+     */
     public static <T extends BlockEntity> void registerKineticConductor(
             RegisterCapabilitiesEvent event,
             BlockEntityType<T> blockEntityType,

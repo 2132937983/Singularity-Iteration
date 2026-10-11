@@ -3,23 +3,23 @@ package com.miophas.singularity_iteration.core.api.item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 电动工具功能接口。
- * 所有消耗电力运行的工具都应实现此接口。
+ * Interface for electric tool functions.
+ * All tools that use electricity to work should implement this interface.
  */
 public interface IElectricToolItem extends IBatteryItem {
 
     /**
-     * 获取每次使用的能量消耗 (EU)
+     * Gets the energy that one use consumes, in EU.
      */
     long getEnergyPerUse();
 
     /**
-     * 获取工具等级
+     * Gets the tool tier.
      */
     int getToolTier();
 
     /**
-     * 检查是否有足够能量使用一次
+     * Checks if the stack has sufficient energy for one use.
      */
     default boolean hasEnoughEnergy(ItemStack stack) {
         return getEnergy(stack) >= getEnergyPerUse();

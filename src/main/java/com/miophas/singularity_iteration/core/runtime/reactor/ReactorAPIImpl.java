@@ -76,7 +76,7 @@ public class ReactorAPIImpl implements IReactorAPI {
             .collect(Collectors.toList());
     }
 
-    // ========== 反应堆监控 API 实现 ==========
+    // ========== Reactor monitoring API implementation ==========
 
     @Override
     public boolean isReactorRunning(Level world, BlockPos pos) {
@@ -176,7 +176,7 @@ public class ReactorAPIImpl implements IReactorAPI {
         }
     }
 
-    // ========== 燃料棒 API 实现 ==========
+    // ========== Fuel rod API implementation ==========
 
     @Override
     public int getFuelRodPulses(ItemStack stack) {

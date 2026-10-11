@@ -5,23 +5,23 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 配方注册 API
+ * Recipe registration API.
  *
- * <p>提供注册自定义配方的接口，允许附属模组添加新的加工配方。
+ * <p>Use this interface to register custom recipes. Add-on mods use it to add new processing recipes.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * IRecipeRegistrationAPI recipeAPI = MioIcifAPI.instance().getRecipeRegistrationAPI();
  *
- * // 注册压缩机配方
+ * // Register a compressor recipe
  * recipeAPI.registerCompressorRecipe(
  *     new ResourceLocation("mymod", "compress_iron"),
  *     Ingredient.of(Items.IRON_INGOT),
  *     new ItemStack(ModItems.COMPRESSED_IRON.get()),
- *     200 // 处理时间
+ *     200 // process time in ticks
  * );
  *
- * // 注册提取机配方
+ * // Register an extractor recipe
  * recipeAPI.registerExtractorRecipe(
  *     new ResourceLocation("mymod", "extract_rubber"),
  *     Ingredient.of(ModItems.RUBBER_WOOD.get()),
@@ -33,330 +33,342 @@ import net.minecraft.resources.ResourceLocation;
 public interface IRecipeRegistrationAPI {
 
     /**
-     * 注册压缩机配方
+     * Registers a compressor recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerCompressorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册提取机配方
+     * Registers an extractor recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerExtractorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
- * 注册电配方
+ * Registers an electric furnace recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @param experience 经验值
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @param experience the experience that the player gets for one output
+     * @return true if the registration is successful
      */
     boolean registerElectricFurnaceRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime, float experience);
 
     /**
-     * 注册打粉机配方
+     * Registers a macerator recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerMaceratorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册离心机配方
+     * Registers a centrifuge recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param outputs 输出物品数组（支持多个输出）
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param outputs the output items (more than one output is permitted)
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerCentrifugeRecipe(ResourceLocation id, Ingredient input, ItemStack[] outputs, int processTime);
 
     /**
-     * 注册回收机配方
+     * Registers a recycler recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param outputs 输出物品数组（支持随机输出）
-     * @param chances 每个输出的概率（0-1）
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param outputs the possible output items (each output is random)
+     * @param chances the chance for each output, from 0 to 1. Index i applies to {@code outputs[i]}
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerRecyclerRecipe(ResourceLocation id, Ingredient input, ItemStack[] outputs, float[] chances, int processTime);
 
     /**
-     * 注册洗矿机配方
+     * Registers an ore washer recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param outputs 输出物品数组
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param outputs the output items
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerOreWasherRecipe(ResourceLocation id, Ingredient input, ItemStack[] outputs, int processTime);
 
     /**
-     * 注册热能离心机配方
+     * Registers a thermal centrifuge recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param outputs 输出物品数组
-     * @param processTime 处理时间（刻）
-     * @param heatRequired 所需热量
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param outputs the output items
+     * @param processTime the process time, in ticks
+     * @param heatRequired the minimum heat that the machine must have
+     * @return true if the registration is successful
      */
     boolean registerThermalCentrifugeRecipe(ResourceLocation id, Ingredient input, ItemStack[] outputs, int processTime, int heatRequired);
 
     /**
-     * 注册搅拌机配方
+     * Registers a blender recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerBlenderRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册发酵机配方
+     * Registers a fermenter recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerFermenterRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册流体固体灌装机配方
+     * Registers a fluid/solid canning machine recipe.
      *
-     * @param id 配方 ID
-     * @param itemInput 物品输入
-     * @param fluidInput 流体输入（格式："fluid_id:amount"）
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param itemInput the input item
+     * @param fluidInput the input fluid, in the format {@code "fluid_id:amount"} (amount in mB)
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerFluidSolidRecipe(ResourceLocation id, Ingredient itemInput, String fluidInput, ItemStack output, int processTime);
 
     /**
-     * 注册 canner 配方
+     * Registers a canner recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerCannerRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册电解机配方
+     * Registers an electrolyzer recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param outputs 输出物品数组
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param outputs the output items
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerElectrolyzerRecipe(ResourceLocation id, Ingredient input, ItemStack[] outputs, int processTime);
 
     /**
-     * 注册压膜器配方
+     * Registers an extruder recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerExtruderRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册车床配方
+     * Registers a lathe recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerLatheRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册卷板机配方
+     * Registers a rolling machine recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerRollingMachineRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册切割机配方
+     * Registers a cutter recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerCutterRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册焊接机配方
+     * Registers a welder recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerWelderRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册焊接机配方（多输入版本）
+     * Registers a welder recipe with more than one input.
      *
-     * @param id 配方 ID
-     * @param inputs 输入材料数组
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param inputs the input ingredients
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerWelderRecipe(ResourceLocation id, Ingredient[] inputs, ItemStack output, int processTime);
 
     /**
-     * 注册激光雕刻机配方
+     * Registers a laser engraver recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerLaserEngraverRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册精密组装机配方
+     * Registers a precision assembler recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerPrecisionAssemblerRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册精密组装机配方（多输入版本）
+     * Registers a precision assembler recipe with more than one input.
      *
-     * @param id 配方 ID
-     * @param inputs 输入材料数组
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param inputs the input ingredients
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerPrecisionAssemblerRecipe(ResourceLocation id, Ingredient[] inputs, ItemStack output, int processTime);
 
     /**
-     * 注册真空冷冻机配方
+     * Registers a vacuum freezer recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerVacuumFreezerRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 娉ㄥ唽绛夌�诲瓙鐐夐厤鏂�
+     * Registers a plasma furnace recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerPlasmaFurnaceRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册聚变反应堆配方
+     * Registers a fusion reactor recipe.
      *
-     * @param id 配方 ID
-     * @param input1 输入材料1
-     * @param input2 输入材料2
-     * @param output 输出物品
-     * @param energyRequired 所需能量
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input1 the first input ingredient
+     * @param input2 the second input ingredient
+     * @param output the output item
+     * @param energyRequired the total energy that the recipe needs, in EU
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerFusionReactorRecipe(ResourceLocation id, Ingredient input1, Ingredient input2, ItemStack output, long energyRequired, int processTime);
 
     /**
-     * 注册质量 Fabricator 配方
+     * Registers a mass fabricator recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerMassFabricatorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册复制机配方
+     * Registers a replicator recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerReplicatorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * 注册扫描机配方
+     * Registers a scanner recipe.
      *
-     * @param id 配方 ID
-     * @param input 输入材料
-     * @param output 输出物品
-     * @param processTime 处理时间（刻）
-     * @return true 如果注册成功
+     * @param id the recipe ID
+     * @param input the input ingredient
+     * @param output the output item
+     * @param processTime the process time, in ticks
+     * @return true if the registration is successful
      */
     boolean registerScannerRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
+    /**
+     * Registers a fluid refining recipe.
+     *
+     * @param id the recipe ID
+     * @param ingredient the input ingredient
+     * @param inputFluid the input fluid and amount, in mB
+     * @param outputFluid the output fluid and amount, in mB
+     * @param processTime the process time, in ticks
+     * @param energyPerTick the energy that the machine uses each tick, in EU/t
+     * @return true if the registration is successful
+     */
     boolean registerFluidRefiningRecipe(ResourceLocation id, Ingredient ingredient, net.neoforged.neoforge.fluids.FluidStack inputFluid, net.neoforged.neoforge.fluids.FluidStack outputFluid, int processTime, int energyPerTick);
 
     /**
-     * 将运行时注册的所有配方同步到 RecipeManager
+     * Copies all recipes that were registered at runtime into the RecipeManager.
      *
-     * <p>由于 Minecraft 的配方系统在服务器启动时从数据包加载，
-     * 运行时注册的配方需要通过此方法手动同步到 RecipeManager。
+     * <p>Minecraft loads recipes from data packs when the server starts.
+     * Thus, recipes that you register at runtime are not in the RecipeManager.
+     * Call this method to add them manually. Call it on the server side.
      *
-     * <p>建议在 {@link net.neoforged.neoforge.event.server.ServerStartedEvent} 中调用此方法。
+     * <p>Call this method in {@link net.neoforged.neoforge.event.server.ServerStartedEvent}.
      *
-     * <p>使用示例：
+     * <p>Example:
      * <pre>{@code
      * @SubscribeEvent
      * public void onServerStarted(ServerStartedEvent event) {

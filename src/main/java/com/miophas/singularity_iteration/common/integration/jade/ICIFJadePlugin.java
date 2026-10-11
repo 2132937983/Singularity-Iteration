@@ -10,7 +10,7 @@ import snownee.jade.api.IWailaPlugin;
 import snownee.jade.api.WailaPlugin;
 
 /**
- * Industrial Craft In Future �?Jade 插件
+ * Jade plugin for Industrial Craft In Future.
  * 注册 EU、HU、KU 能量显示支持
  */
 @WailaPlugin
@@ -19,25 +19,25 @@ public class ICIFJadePlugin implements IWailaPlugin {
 
     @Override
     public void register(IWailaCommonRegistration registration) {
-        // 注册 EU 能量数据提供�
+        // Register the EU energy data provider.
     registration.registerBlockDataProvider(
                 EUEnergyStorageProvider.INSTANCE,
                 BlockEntity.class
         );
 
-        // 注册 HU 热能数据提供�
+        // Register the HU heat data provider.
     registration.registerBlockDataProvider(
                 HUHeatStorageProvider.INSTANCE,
                 BlockEntity.class
         );
 
-        // 注册 KU 动能数据提供�
+        // Register the KU kinetic energy data provider.
     registration.registerBlockDataProvider(
                 KUKineticStorageProvider.INSTANCE,
                 BlockEntity.class
         );
 
-        // 注册双流体槽数据提供�
+        // Register the dual fluid tank data provider.
     registration.registerBlockDataProvider(
                 DualFluidStorageProvider.INSTANCE,
                 BlockEntity.class

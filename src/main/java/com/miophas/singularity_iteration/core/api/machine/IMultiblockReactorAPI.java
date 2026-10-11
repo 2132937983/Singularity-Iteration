@@ -6,35 +6,36 @@ import net.minecraft.world.level.Level;
 import java.util.Optional;
 
 /**
- * 反应堆多方块 API
+ * Reactor multiblock API.
  *
- * <p>提供反应堆多方块结构的查询和管理功能。
- * 从 IMachineAPI 拆分而来，遵循单一职责原则。
+ * <p>Use it to query and manage reactor multiblock structures.
+ * It is split from IMachineAPI to follow the single responsibility principle.
  *
- * <p>注意：此接口专注于多方块结构管理，与 {@link com.miophas.singularity_iteration.core.api.reactor.IReactorAPI}
- * （反应堆元件系统）职责不同。
+ * <p>Note: this interface is only for multiblock structure management.
+ * {@link com.miophas.singularity_iteration.core.api.reactor.IReactorAPI} (the reactor component system)
+ * has a different responsibility.
  */
 public interface IMultiblockReactorAPI {
 
     /**
-     * 获取反应堆多方块信息
+     * Gets the reactor multiblock information.
      *
-     * @return 多方块信息的 Optional 包装，如果不是反应堆则返回空 Optional
+     * @return the multiblock information in an Optional, or an empty Optional if no reactor is at the position
      */
     Optional<IMachineAPI.IMultiblockInfo> getReactorInfo(Level world, BlockPos pos);
 
     /**
-     * 检查位置是否是反应堆控制器
+     * Checks if the position has a reactor controller.
      */
     boolean isReactorController(Level world, BlockPos pos);
 
     /**
-     * 获取反应堆温度
+     * Gets the reactor temperature.
      */
     double getReactorTemperature(Level world, BlockPos pos);
 
     /**
-     * 获取反应堆冷却水平
+     * Gets the reactor coolant level.
      */
     double getReactorCoolantLevel(Level world, BlockPos pos);
 }

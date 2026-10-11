@@ -11,7 +11,8 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
 /**
- * 打粉配方法? * 用于将矿石?物品打成粉末
+ * Powder recipe.
+ * It grinds ores and other items into powder.
  */
 @SuppressWarnings("null")
 public class mio_icif_PowderRecipe implements Recipe<mio_icif_SingleItemRecipeInput>, IRecipeProcessingInfo {
@@ -80,7 +81,8 @@ public class mio_icif_PowderRecipe implements Recipe<mio_icif_SingleItemRecipeIn
     }
 
     /**
-     * 获取处理时间（ticks�?     */
+     * Returns the processing time in ticks.
+     */
     public int getProcessingTime() {
         return processingTime;
     }

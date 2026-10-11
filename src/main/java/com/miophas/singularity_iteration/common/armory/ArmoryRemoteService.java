@@ -29,11 +29,16 @@ import java.util.List;
  * bursts off and flies to where the new one came from (an Armory suit slot, or the showcase
  * mannequin - a two-way exchange). A "return" action sends the worn suit home.
  */
+@net.neoforged.fml.common.EventBusSubscriber(modid = com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID)
 public final class ArmoryRemoteService {
     private ArmoryRemoteService() {}
 
     public static final int REQUEST = 0, SUMMON = 1, SHOWCASE = 2, RETURN = 3;
-    /** Showcases this close to the player, or to the paired Armory, belong to the network. */
+    /**
+     * Default ranges: showcases this close to the player, or to the paired Armory, belong to the
+     * network. The live values come from {@code SiTuningValues.ARMORY_*_RANGE}
+     * (datapack file {@code si_tuning/armory.json}).
+     */
     public static final int PLAYER_RANGE = 24, ARMORY_RANGE = 16;
 
     /** A showcase entry of the console list. */
@@ -70,15 +75,34 @@ public final class ArmoryRemoteService {
         if (target == null) return null;
         ServerLevel level = player.server.getLevel(target.dimension());
         if (level == null || !level.isInWorldBounds(target.pos())) return null;
+        // A remote Armory may sit in an unloaded chunk: reading it loads the chunk synchronously.
+        // Every console packet reaches this lookup, so a client could spam blocking chunk loads.
+        // Allow one forced load per player per LOAD_COOLDOWN ticks; loaded chunks are always free.
+        if (!level.hasChunk(target.pos().getX() >> 4, target.pos().getZ() >> 4)) {
+            long now = player.server.getTickCount();
+            Long last = LAST_FORCED_LOAD.get(player.getUUID());
+            if (last != null && now - last < LOAD_COOLDOWN && now >= last) return null;
+            LAST_FORCED_LOAD.put(player.getUUID(), now);
+        }
         return level.getBlockEntity(target.pos()) instanceof mio_icif_armory a ? a : null;
+    }
+
+    /** Ticks between two forced chunk loads for one player's remote Armory lookups. */
+    static final int LOAD_COOLDOWN = 20;
+    /** Server thread only (packet handlers run on the main thread). Pruned on logout. */
+    private static final java.util.Map<java.util.UUID, Long> LAST_FORCED_LOAD = new java.util.HashMap<>();
+
+    @net.neoforged.bus.api.SubscribeEvent
+    static void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
+        LAST_FORCED_LOAD.remove(event.getEntity().getUUID());
     }
 
     // ------------------------------------------------------------------ showcases of the network
     /** Own-outfit showcases near the player (same dimension) and near the paired Armory. */
     public static List<ArmorShowcaseBlockEntity> showcases(ServerPlayer player, @Nullable mio_icif_armory armory) {
         List<ArmorShowcaseBlockEntity> out = new ArrayList<>();
-        collect(player.serverLevel(), player.blockPosition(), PLAYER_RANGE, out);
-        if (armory != null && armory.getLevel() instanceof ServerLevel home) collect(home, armory.getBlockPos(), ARMORY_RANGE, out);
+        collect(player.serverLevel(), player.blockPosition(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.ARMORY_PLAYER_RANGE.get(), out);
+        if (armory != null && armory.getLevel() instanceof ServerLevel home) collect(home, armory.getBlockPos(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.ARMORY_ARMORY_RANGE.get(), out);
         out.sort(java.util.Comparator.comparingDouble(s -> s.getLevel() == player.level()
             ? s.getBlockPos().distSqr(player.blockPosition()) : Double.MAX_VALUE));
         return out;

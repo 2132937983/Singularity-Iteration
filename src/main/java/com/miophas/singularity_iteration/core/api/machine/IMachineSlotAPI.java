@@ -7,81 +7,81 @@ import net.minecraft.world.level.Level;
 import java.util.Optional;
 
 /**
- * 机器槽位 API
+ * Machine slot API.
  *
- * <p>提供机器槽位布局查询和物品操作功能。
- * 从 IMachineAPI 拆分而来，遵循单一职责原则。
+ * <p>Use it to query the slot layout of a machine and to operate on its items.
+ * It is split from IMachineAPI to follow the single responsibility principle.
  */
 public interface IMachineSlotAPI {
 
     /**
-     * 获取机器的槽位布局信息
+     * Gets the slot layout of the machine.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 槽位布局，如果该位置不是机器或布局信息不可用则返回空 Optional
+     * @param world the world
+     * @param pos the block position
+     * @return the slot layout, or an empty Optional if no machine is at the position or the layout is not available
      */
     Optional<ISlotLayout> getMachineSlotLayout(Level world, BlockPos pos);
 
     /**
-     * 获取机器指定槽位的物品
+     * Gets the item in a slot of the machine.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @param slot 槽位索引
-     * @return 槽位中的物品，无效槽位返回空 ItemStack
+     * @param world the world
+     * @param pos the block position
+     * @param slot the slot index
+     * @return the item in the slot, or an empty ItemStack if the slot is not valid
      */
     ItemStack getMachineSlotItem(Level world, BlockPos pos, int slot);
 
     /**
-     * 设置机器指定槽位的物品
+     * Sets the item in a slot of the machine.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @param slot 槽位索引
-     * @param stack 要设置的物品
-     * @return 是否成功设置
+     * @param world the world
+     * @param pos the block position
+     * @param slot the slot index
+     * @param stack the item to set
+     * @return true if the item was set
      */
     boolean setMachineSlotItem(Level world, BlockPos pos, int slot, ItemStack stack);
 
     /**
-     * 获取机器的总槽位数
+     * Gets the total number of slots of the machine.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 总槽位数
+     * @param world the world
+     * @param pos the block position
+     * @return the total number of slots
      */
     int getMachineSlotCount(Level world, BlockPos pos);
 
     /**
-     * 获取机器的工作进度
+     * Gets the work progress of the machine.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 当前进度 tick，非工作机器返回 0
-     * @deprecated 请使用 {@link IMachineControlAPI#getProgress(Level, BlockPos)}
+     * @param world the world
+     * @param pos the block position
+     * @return the current progress in ticks, or 0 if the machine does not work
+     * @deprecated use {@link IMachineControlAPI#getProgress(Level, BlockPos)}
      */
     @Deprecated
     int getMachineProgress(Level world, BlockPos pos);
 
     /**
-     * 获取机器完成工作所需的总进度
+     * Gets the total progress that the machine needs to complete its work.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 总进度 tick
-     * @deprecated 请使用 {@link IMachineControlAPI#getMaxProgress(Level, BlockPos)}
+     * @param world the world
+     * @param pos the block position
+     * @return the total progress in ticks
+     * @deprecated use {@link IMachineControlAPI#getMaxProgress(Level, BlockPos)}
      */
     @Deprecated
     int getMachineMaxProgress(Level world, BlockPos pos);
 
     /**
-     * 获取机器每 tick 的能量消耗
+     * Gets the energy consumption of the machine per tick.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 每 tick 消耗的能量 (EU)
-     * @deprecated 该方法语义上属于控制/查询接口，建议使用 {@link IProducerBlock#getEnergyPerTick()}
+     * @param world the world
+     * @param pos the block position
+     * @return the energy used per tick (EU/t)
+     * @deprecated this method belongs to the control/query interfaces; use {@link IProducerBlock#getEnergyPerTick()}
      */
     @Deprecated
     long getMachineEnergyPerTick(Level world, BlockPos pos);

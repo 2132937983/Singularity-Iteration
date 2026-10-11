@@ -25,101 +25,111 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 能量发电机方块实体，继承自能量方块实体
- * 作为所有发电机的父类，提供接受材料生成能量的基础功能
- * 实现 WorldlyContainer 接口以支持漏斗和管道交互
- * 使用 EU (Energy Unit) 能量系统
- * 
- * <p>燃料处理通过 IItemAPI 进行，Addon 可以注册自定义燃料类型。
+ * Base block entity for all generators. It extends the energy block entity.
+ * It uses fuel items to make energy.
+ * It implements {@link WorldlyContainer} so that hoppers and pipes can move items.
+ * It uses the EU (Energy Unit) energy system.
+ *
+ * <p>Fuel handling goes through {@link IItemAPI}. Addons can register custom fuel types.
  */
 @SuppressWarnings("null")
 public abstract class AbstractGeneratorBlockEntity extends AbstractEnergyBlockEntity implements WorldlyContainer, com.miophas.singularity_iteration.core.api.machine.IGeneratorBlock {
     
-    // ==================== API 方法层 ====================
-    // 燃料和能量操作通过受保护的方法进行，子类可以覆盖以改变行为
+    // ==================== API method layer ====================
+    // Fuel and energy operations go through protected methods. Subclasses can override them to change the behavior.
 
     /**
-     * 获取物品 API 实例
+     * Returns the item API instance.
      */
     protected IItemAPI getItemAPI() {
         return MioIcifAPI.instance().getItemAPI();
     }
 
     /**
-     * 通过 API 获取燃料燃烧时间
-     * 子类可以覆盖此方法以支持自定义燃料
+     * Returns the burn time of a fuel item through the API, in ticks.
+     * Subclasses can override this method to support custom fuels.
      */
     protected int apiGetFuelBurnTime(ItemStack fuel) {
-        // 首先尝试通过 API 查询（如果燃料是模组电池）
+        // First, query the API (when the fuel is a mod battery).
         if (getItemAPI().isBattery(fuel)) {
             long energy = getItemAPI().getBatteryStored(fuel);
-            // 每 100 EU = 1 tick 燃烧时间（可被子类调整）
+            // 100 EU of stored battery energy gives 1 tick of burn time (subclasses can change this).
             return (int) (energy / 100);
         }
-        // 回退到子类的抽象方法
+        // Fall back to the abstract method of the subclass.
         return getFuelBurnTime(fuel);
     }
 
     /**
-     * 通过 API 检查物品是否为电池
+     * Returns true if the item is a battery, through the API.
      */
     protected boolean apiIsBattery(ItemStack stack) {
         return getItemAPI().isBattery(stack);
     }
 
     /**
-     * 通过 API 从电池提取能量
+     * Removes energy from a battery item through the API.
+     *
+     * @param amount the maximum energy to remove, in EU
+     * @param simulate if true, do not change the item
+     * @return the energy removed, in EU
      */
     protected long apiDischargeBattery(ItemStack stack, long amount, boolean simulate) {
         return getItemAPI().dischargeBattery(stack, amount, simulate);
     }
 
     /**
-     * 通过 API 获取电池当前能量
+     * Returns the energy that is stored in a battery item, in EU, through the API.
      */
     protected long apiGetBatteryStored(ItemStack stack) {
         return getItemAPI().getBatteryStored(stack);
     }
 
     /**
-     * 通过 API 为电池充电
+     * Charges a battery item through the API.
+     *
+     * @param amount the maximum energy to add, in EU
+     * @param simulate if true, do not change the item
+     * @return the energy added, in EU
      */
     protected long apiChargeBattery(ItemStack stack, long amount, boolean simulate) {
         return getItemAPI().chargeBattery(stack, amount, simulate);
     }
 
     /**
-     * 通过 API 获取电池容量
+     * Returns the energy capacity of a battery item, in EU, through the API.
      */
     protected long apiGetBatteryCapacity(ItemStack stack) {
         return getItemAPI().getBatteryCapacity(stack);
     }
 
     /**
-     * 通过 API 获取电池充电速率
+     * Returns the charge rate of a battery item, in EU/tick, through the API.
      */
     protected long apiGetChargeRate(ItemStack stack) {
         return getItemAPI().getChargeRate(stack);
     }
 
     /**
-     * 通过 API 检查电池是否已充满
+     * Returns true if the battery item is full, through the API.
      */
     protected boolean apiIsBatteryFull(ItemStack stack) {
         return getItemAPI().isBatteryFull(stack);
     }
 
     /**
-     * 通过 API 生成能量（内部发电）
-     * 使用 apiGenerateEnergy 绕过 maxReceive 限制
+     * Generates energy into the internal storage (internal generation), through the API.
+     * This call bypasses the maxReceive limit.
+     *
+     * @param amount the energy to generate, in EU
      */
     protected long apiGenerateEnergy(long amount) {
         return apiGenerateEnergy(amount, false);
     }
 
     /**
-     * 通过 API 获取当前存储能量
-     * 直接访问 energyStorage，避免通过 getEnergyAPI() 造成无限递归
+     * Returns the stored energy, in EU, through the API.
+     * This method reads energyStorage directly. This prevents infinite recursion through getEnergyAPI().
      */
     @Override
     protected long apiGetStoredEnergy() {
@@ -127,8 +137,8 @@ public abstract class AbstractGeneratorBlockEntity extends AbstractEnergyBlockEn
     }
 
     /**
-     * 通过 API 获取最大能量容量
-     * 直接访问 energyStorage，避免通过 getEnergyAPI() 造成无限递归
+     * Returns the maximum energy capacity, in EU, through the API.
+     * This method reads energyStorage directly. This prevents infinite recursion through getEnergyAPI().
      */
     @Override
     protected long apiGetMaxEnergy() {
@@ -136,41 +146,42 @@ public abstract class AbstractGeneratorBlockEntity extends AbstractEnergyBlockEn
     }
 
     /**
-     * 通过 API 提取能量
-     * 直接访问 energyStorage，避免通过 getEnergyAPI() 造成无限递归
+     * Extracts energy, in EU, through the API.
+     * This method reads energyStorage directly. This prevents infinite recursion through getEnergyAPI().
      */
     @Override
     protected long apiExtractEnergy(long amount, boolean simulate) {
         return energyStorage.extract(amount, simulate);
     }
     
-    // 槽位布局
+    // Slot layout
     protected SlotLayout slotLayout;
-    // 物品处理器
+    // Item handler
 protected MachineItemHandler itemHandler;
 
-    // 当前燃烧时间
+    // Remaining burn time of the current fuel, in ticks
     public int burnTime = 0;
 
-    // 当前物品的总燃烧时间
+    // Total burn time of the current fuel item, in ticks
 public int burnDuration = 0;
 
-    // 能量生成速率 (EU/tick)
+    // Energy generation rate (EU/tick)
     protected final long energyGenerationRate;
 
-    // 燃料槽索引
+    // Index of the fuel slot
 protected static final int FUEL_SLOT = 0;
 
-    // 充电槽索引
+    // Index of the charge slot
 protected static final int CHARGE_SLOT = 1;
     
     /**
-     * 构造函数
- * @param pos 方块位置
-     * @param state 方块状态
- * @param type 方块实体类型
-     * @param layout 槽位布局
-     * @param energyGenerationRate 能量生成速率 (EU/tick)
+     * Creates a generator with the default energy storage.
+     *
+     * @param pos the block position
+     * @param state the block state
+     * @param type the block entity type
+     * @param layout the slot layout
+     * @param energyGenerationRate the energy generation rate (EU/tick)
      */
     public AbstractGeneratorBlockEntity(BlockPos pos, BlockState state, BlockEntityType<?> type,
                                      SlotLayout layout, long energyGenerationRate) {
@@ -178,21 +189,22 @@ protected static final int CHARGE_SLOT = 1;
         this.slotLayout = layout;
         this.itemHandler = createItemHandler(layout);
         this.energyGenerationRate = energyGenerationRate;
-        // 发电机是电源
+        // A generator is a power source.
         setAsPowerSource(energyGenerationRate);
     }
 
     /**
-     * 构造函数（支持自定义能量上限）
-     * @param pos 方块位置
-     * @param state 方块状态
- * @param type 方块实体类型
-     * @param layout 槽位布局
-     * @param energyGenerationRate 能量生成速率 (EU/tick)
-     * @param capacity 能量容量上限 (EU)
-     * @param maxReceive 最大输入速率 (EU/tick)
-     * @param maxExtract 最大输出速率 (EU/tick)
-     * @param cableTier 电缆等级
+     * Creates a generator with a custom energy storage.
+     *
+     * @param pos the block position
+     * @param state the block state
+     * @param type the block entity type
+     * @param layout the slot layout
+     * @param energyGenerationRate the energy generation rate (EU/tick)
+     * @param capacity the energy capacity (EU)
+     * @param maxReceive the maximum input rate (EU/tick)
+     * @param maxExtract the maximum output rate (EU/tick)
+     * @param cableTier the cable tier
      */
     public AbstractGeneratorBlockEntity(BlockPos pos, BlockState state, BlockEntityType<?> type,
                                      SlotLayout layout, long energyGenerationRate,
@@ -201,13 +213,13 @@ protected static final int CHARGE_SLOT = 1;
         this.slotLayout = layout;
         this.itemHandler = createItemHandler(layout);
         this.energyGenerationRate = energyGenerationRate;
-        // 发电机是电源
+        // A generator is a power source.
         setAsPowerSource(energyGenerationRate);
     }
 
     /**
-     * 创建物品处理器
- */
+     * Creates the item handler. The handler marks this block entity as changed when its contents change.
+     */
     protected MachineItemHandler createItemHandler(SlotLayout layout) {
         MachineItemHandler handler = new MachineItemHandler(layout) {
             @Override
@@ -219,18 +231,19 @@ protected static final int CHARGE_SLOT = 1;
     }
     
     /**
-     * 每tick更新逻辑，处理能量生成
- * 
-     * 重要：能量分配必须在燃烧检查之前执行！
-     * 这样可以确保发电机在决定是否停止燃烧之前，先尝试输出能量
- * 避免因内部存储满就停止燃烧，而实际上能量可以通过电网输出
- * 
-     * 注意：如果发电机通过电网分配能量（shouldDirectlyDistributeEnergy返回false），
-     * 则跳过直接能量分配，由电网通过extractPowerForConsumer提取能量
- * 
-     * 燃烧停止逻辑：当能量存储已满且电网也无需求时
- * 等待当前燃烧进度自然结束（burnTime递减到0），而不是立即停止
- */
+     * Runs the update logic each tick and generates energy. Server side only.
+     *
+     * <p>Important: energy distribution must run before the burn check.
+     * The generator first tries to send energy out, and then decides whether to stop burning.
+     * This prevents a stop when the internal storage is full but the grid can still take the energy.
+     *
+     * <p>Note: if the generator distributes energy through the grid
+     * ({@link #shouldDirectlyDistributeEnergy()} returns false), the direct distribution is skipped.
+     * The grid then extracts energy through extractPowerForConsumer.
+     *
+     * <p>Burn stop logic: when the energy storage is full and the grid has no demand,
+     * the current fuel continues until burnTime decreases to 0. The burn does not stop immediately.
+     */
     public static void tick(Level level, BlockPos pos, BlockState state, AbstractGeneratorBlockEntity blockEntity) {
         if (level.isClientSide()) {
             return;
@@ -241,10 +254,10 @@ protected static final int CHARGE_SLOT = 1;
             return;
         }
         
-        // 记录之前的燃烧状态
+        // Record the burn state before this tick.
     boolean wasBurning = blockEntity.isBurning();
         
-        // 先给充电槽中的物品充电
+        // First, charge the item in the charge slot.
     blockEntity.chargeItems();
         
         if (blockEntity.shouldDirectlyDistributeEnergy()) {
@@ -253,45 +266,45 @@ protected static final int CHARGE_SLOT = 1;
             blockEntity.distributeEnergyToCompatSinks();
         }
         
-        // 分配完能量后再检查能量存储是否已满
-    // 只有在能量真正无法输出时（存储已满且无法分配），才停止燃烧
+        // After distribution, check whether the energy storage is full.
+        // Stop burning only when the energy really cannot go out (the storage is full and distribution failed).
     boolean isEnergyFull = blockEntity.apiGetStoredEnergy() >= 
                               blockEntity.apiGetMaxEnergy();
         
-        // 如果正在燃烧，让当前燃烧自然结束
+        // If the generator burns, let the current fuel finish.
         if (blockEntity.isBurning()) {
             if (isEnergyFull) {
-                // 存储已满且电网无需求：让当前燃烧进度自然递减到0，不生成能量也不消耗新燃料
+                // Storage full and no grid demand: decrease the burn time to 0. Do not generate energy. Do not use new fuel.
                 blockEntity.burnTime--;
-                // 当前燃料烧完后，不尝试消耗新燃料（因为存储已满无法输出）
+                // When the current fuel ends, do not use new fuel (the storage is full and cannot output).
                 if (blockEntity.burnTime <= 0) {
                     blockEntity.burnTime = 0;
                 }
             } else {
-                // 能量未满，正常生成能量并递减燃烧时间
+                // Storage not full: generate energy and decrease the burn time.
                 blockEntity.generateEnergy();
                 blockEntity.burnTime--;
                 
-                // 如果燃烧完毕，尝试消耗新的燃料
+                // When the burn ends, try to use new fuel.
             if (blockEntity.burnTime <= 0) {
                     blockEntity.consumeFuel();
                 }
             }
         } else {
-            // 如果没有在燃烧且能量未满，尝试消耗新的燃料
+            // If the generator does not burn and the storage is not full, try to use new fuel.
         if (!isEnergyFull) {
                 blockEntity.consumeFuel();
             }
         }
         
-        // 检查燃烧状态是否改变
+        // Check whether the burn state changed.
     boolean isBurning = blockEntity.isBurning();
         if (wasBurning != isBurning) {
-            // 更新方块状态
+            // Update the block state.
             blockEntity.updateActiveState(level, pos, isBurning);
         }
         
-        // 标记方块实体已更新
+        // Mark the block entity as changed.
     blockEntity.setChanged();
     }
     
@@ -322,10 +335,6 @@ protected static final int CHARGE_SLOT = 1;
         }
     }
 
-    /**
-     * 向相邻方块实体分配能量
- * 发电机从六面输出能量
-     */
     /** Updates a declared active property; machines with other state models may override this hook. */
     protected void updateActiveState(Level world, BlockPos position, boolean active) {
         BlockState state = world.getBlockState(position);
@@ -334,23 +343,28 @@ protected static final int CHARGE_SLOT = 1;
                 && state.getValue(flag) != active) world.setBlock(position, state.setValue(flag, active), 3);
     }
 
+    /**
+     * Sends energy to adjacent block entities.
+     * The generator outputs energy on all six sides.
+     */
     protected void distributeEnergy() {
         // The independent network owns all neighbour transfers for controlled generators.
         if (energyStorage.scexNetworkControlled() || apiGetStoredEnergy() <= 0) {
             return;
         }
         
-        // 向六个方向输出能量
+        // Output energy in all six directions.
     for (Direction direction : Direction.values()) {
             outputEnergyToDirection(direction);
         }
     }
     
     /**
-     * 向相邻的非IEnergyTile兼容方块分配能量
-     * 当发电机通过电网分配能量时（shouldDirectlyDistributeEnergy返回false），
-     * 电网只能向IEnergySink节点输送能量，无法识别AE2等模组的能量接收器。
-     * 此方法作为补充，将能量推送到相邻的非IEnergyTile但具有兼容能量存储的方块。
+     * Sends energy to adjacent compatible blocks that are not an {@link IEnergyTile}.
+     * When the generator distributes energy through the grid ({@link #shouldDirectlyDistributeEnergy()} returns false),
+     * the grid can only send energy to IEnergySink nodes. It cannot find energy receivers of other mods, such as AE2.
+     * This method fills that gap. It pushes energy to adjacent blocks that are not an IEnergyTile
+     * but have a compatible energy storage.
      */
     protected void distributeEnergyToCompatSinks() {
         if (energyStorage.scexNetworkControlled() || apiGetStoredEnergy() <= 0) {
@@ -363,8 +377,8 @@ protected static final int CHARGE_SLOT = 1;
     }
 
     /**
-     * 向指定方向的非IEnergyTile兼容方块输出能量
-     * 跳过IEnergyTile方块（由电网处理），仅向AE2等外部模组的能量存储推送能量
+     * Outputs energy to a compatible block in the given direction that is not an {@link IEnergyTile}.
+     * It skips IEnergyTile blocks (the grid handles them). It only pushes energy to energy storages of external mods, such as AE2.
      */
     private void outputEnergyToCompatSink(Direction direction) {
         BlockPos adjacentPos = worldPosition.relative(direction);
@@ -386,21 +400,21 @@ protected static final int CHARGE_SLOT = 1;
     }
 
     /**
-     * 判断发电机是否应该直接向相邻方块分配能量
-     * 
-     * 默认返回 true，表示发电机直接向相邻方块输出能量
- * 对于使用电网分配能量的发电机（如火力发电机），应重写此方法返回false
- * 由电网通过 extractPowerForConsumer 从发电机的存储中提取能量
- * 
-     * @return true = 直接分配能量（默认），false = 通过电网分配能量
+     * Returns whether the generator sends energy directly to adjacent blocks.
+     *
+     * <p>The default is true: the generator outputs energy directly to adjacent blocks.
+     * A generator that uses the grid to distribute energy (for example, the thermal generator) must override this method and return false.
+     * The grid then extracts energy from the generator storage through extractPowerForConsumer.
+     *
+     * @return true = distribute energy directly (default), false = distribute energy through the grid
      */
     protected boolean shouldDirectlyDistributeEnergy() {
         return true;
     }
     
     /**
-     * 向指定方向输出能量
- */
+     * Outputs energy in the given direction.
+     */
     private void outputEnergyToDirection(Direction direction) {
         BlockPos adjacentPos = worldPosition.relative(direction);
 
@@ -424,27 +438,27 @@ protected static final int CHARGE_SLOT = 1;
                 energyStorage.extract(pushed, false);
             }
         } catch (Exception e) {
-            // 安全降级：不崩溃，只跳过本次输出 - but say so
+            // Safe fallback: do not crash. Skip only this output, but report it.
             com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report(
                 "generator-output:" + getClass().getName(), "Generator output towards " + adjacentPos, e);
         }
     }
     
     /**
-     * 生成能量
+     * Generates energy for one tick. The amount is the generation rate, limited by the free storage space.
      */
     protected void generateEnergy() {
         long energyGenerated = Math.min(energyGenerationRate, 
             apiGetMaxEnergy() - apiGetStoredEnergy());
-        // 通过 API 写入能量
+        // Write the energy through the API.
         apiGenerateEnergy(energyGenerated);
     }
     
     /**
-     * 给充电槽中的物品充电
+     * Charges the item in the charge slot.
      */
     protected void chargeItems() {
-        // 检查是否有充电槽
+        // Check whether a charge slot exists.
         if (itemHandler == null || itemHandler.getSlots() <= CHARGE_SLOT) {
             return;
         }
@@ -454,7 +468,7 @@ protected static final int CHARGE_SLOT = 1;
             return;
         }
         
-        // 检查物品是否是电池
+        // Check whether the item is a battery.
         if (apiIsBattery(chargeStack)) {
             long currentEnergy = apiGetBatteryStored(chargeStack);
             long batteryMaxEnergy = apiGetBatteryCapacity(chargeStack);
@@ -481,9 +495,6 @@ protected static final int CHARGE_SLOT = 1;
         }
     }
     
-    /**
-     * 检查是否正在燃烧
-     */
     /** Lamp state of a generator: green while generating, red when its buffer is full (output blocked), amber otherwise (standby / low output). */
     @Override
     public com.miophas.singularity_iteration.core.api.machine.MachineStatus machineStatus() {
@@ -493,19 +504,22 @@ protected static final int CHARGE_SLOT = 1;
         return com.miophas.singularity_iteration.core.api.machine.MachineStatus.NO_POWER;
     }
 
+    /**
+     * Returns true if the generator burns fuel now (burnTime is more than 0).
+     */
     public boolean isBurning() {
         return burnTime > 0;
     }
 
     /**
-     * 获取当前燃烧时间
+     * Returns the remaining burn time, in ticks.
      */
     public int getBurnTime() {
         return burnTime;
     }
 
     /**
-     * 获取最大燃烧时间（当前燃料的总燃烧时间）
+     * Returns the maximum burn time (the total burn time of the current fuel), in ticks.
      */
     public int getMaxBurnTime() {
         return burnDuration;
@@ -523,13 +537,13 @@ protected static final int CHARGE_SLOT = 1;
     }
 
     /**
-     * 获取能量生成速率 (EU/tick)
+     * Returns the energy generation rate (EU/tick).
      */
     public long getEnergyGenerationRate() {
         return energyGenerationRate;
     }
 
-    // ==================== IGeneratorBlock 接口实现 ====================
+    // ==================== IGeneratorBlock implementation ====================
 
     @Override
     public long getPowerOutput() {
@@ -552,14 +566,15 @@ protected static final int CHARGE_SLOT = 1;
     }
     
     /**
-     * 消耗燃料
+     * Uses one fuel item from the fuel slot and starts a new burn.
+     * It does nothing when the energy storage is full.
      */
     protected void consumeFuel() {
-        // 检查能量存储是否已满
+        // Check whether the energy storage is full.
     boolean isEnergyFull = getEnergyStorage().getAmount() >=
                               getEnergyStorage().getCapacity();
 
-        // 如果能量已满，不消耗燃料
+        // If the energy storage is full, do not use fuel.
     if (isEnergyFull) {
             return;
         }
@@ -571,13 +586,13 @@ protected static final int CHARGE_SLOT = 1;
                 this.burnDuration = burnTime;
                 this.burnTime = burnTime;
 
-                // 在消耗前获取容器物品（如岩浆桶返回空桶）
+                // Get the container item before the fuel is used (for example, a lava bucket gives an empty bucket).
                 ItemStack remainingItem = fuelStack.getCraftingRemainingItem();
 
-                // 消耗燃料
+                // Use the fuel.
             fuelStack.shrink(1);
 
-                // 如果燃料堆为空，放入容器物品（如果有的话）
+                // If the fuel stack is empty, put in the container item (if there is one).
             if (fuelStack.isEmpty()) {
                     itemHandler.setStackInSlot(FUEL_SLOT, remainingItem);
                 }
@@ -586,15 +601,17 @@ protected static final int CHARGE_SLOT = 1;
     }
     
     /**
-     * 获取燃料的燃烧时间，子类可以重写此方法来定义可用的燃料
- * @param fuel 燃料物品
-     * @return 燃烧时间 (tick)
+     * Returns the burn time of a fuel item. Subclasses override this method to define the valid fuels.
+     *
+     * @param fuel the fuel item
+     * @return the burn time (ticks). 0 or less means that the item is not a fuel.
      */
     public abstract int getFuelBurnTime(ItemStack fuel);
     
     /**
-     * 获取燃烧进度，用于GUI显示
-     * @return 燃烧进度 (0-1)
+     * Returns the burn progress for the GUI.
+     *
+     * @return the burn progress (0 to 1)
      */
     public float getBurnProgress() {
         if (burnDuration == 0) {
@@ -644,7 +661,7 @@ protected static final int CHARGE_SLOT = 1;
         burnDuration = tag.getInt("BurnDuration");
     }
     
-    // Container接口实现
+    // Container implementation
     @Override
     public int getContainerSize() {
         return itemHandler != null ? itemHandler.getSlots() : 0;
@@ -723,21 +740,21 @@ protected static final int CHARGE_SLOT = 1;
         return 64;
     }
 
-    // ==================== WorldlyContainer 接口实现 ====================
+    // ==================== WorldlyContainer implementation ====================
 
     @Override
     public int[] getSlotsForFace(Direction side) {
-        // 所有方向都可以访问燃料槽和充电槽
+        // All sides can access the fuel slot and the charge slot.
     return new int[]{FUEL_SLOT, CHARGE_SLOT};
     }
 
     @Override
     public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction side) {
-        // 燃料槽：只接受燃料
+        // Fuel slot: accept only fuel.
     if (slot == FUEL_SLOT) {
             return getFuelBurnTime(stack) > 0;
         }
-        // 充电槽：只接受电池类物品
+        // Charge slot: accept only battery items.
         if (slot == CHARGE_SLOT) {
             return isBattery(stack);
         }
@@ -746,28 +763,30 @@ protected static final int CHARGE_SLOT = 1;
 
     @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction side) {
-        // 充电槽可以提取（电池充满后可以取出）
+        // The charge slot allows extraction (a player can take out a full battery).
         if (slot == CHARGE_SLOT) {
             return true;
         }
-        // 燃料槽不能提取（防止漏斗吸走燃料）
+        // The fuel slot does not allow extraction (this stops hoppers from removing the fuel).
     return false;
     }
 
     /**
-     * 检查物品是否是电池
-     * @param stack 物品栈
- * @return 是否是电池
- */
+     * Returns true if the item is a battery.
+     *
+     * @param stack the item stack
+     * @return true if the item is a battery
+     */
     protected boolean isBattery(ItemStack stack) {
         return getItemAPI().isBattery(stack);
     }
 
     /**
-     * 获取物品处理器（用于 capability 系统）
- * @param side 方向
-     * @return 物品处理器
- */
+     * Returns the item handler for the capability system.
+     *
+     * @param side the side, or null for no side
+     * @return a new item handler that applies the side rules
+     */
     public IItemHandler getItemHandlerCapability(@Nullable Direction side) {
         return new GeneratorItemHandler(side);
     }
@@ -776,12 +795,12 @@ protected static final int CHARGE_SLOT = 1;
         return itemHandler;
     }
 
-    // ==================== GeneratorItemHandler 内部类 ====================
+    // ==================== GeneratorItemHandler inner class ====================
 
     /**
-     * 发电机的物品处理器
- * 用于 capability 系统，限制物品的插入和提取行为
- */
+     * The item handler of the generator.
+     * The capability system uses it. It limits item insertion and extraction.
+     */
     protected class GeneratorItemHandler implements IItemHandlerModifiable {
         private final Direction side;
 

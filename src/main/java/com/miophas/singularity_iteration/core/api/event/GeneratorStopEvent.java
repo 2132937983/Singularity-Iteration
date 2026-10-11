@@ -5,21 +5,23 @@ import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.Event;
 
 /**
- * 发电机停止事件
+ * Generator stop event.
  *
- * <p><b>触发时机</b>：当发电机从发电状态切换到停止状态时触发（例如：燃料耗尽、红石信号断开）。
+ * <p><b>When it fires</b>: when a generator changes from the generating state to the stopped state
+ * (for example: the fuel is empty, or the redstone signal stops).
  *
- * <p><b>触发频率</b>：每次发电机停止触发一次，通常在燃料耗尽、能量存储满、红石条件不满足时。
+ * <p><b>How often</b>: one time for each stop of a generator. Usually this occurs when the fuel is empty,
+ * the energy storage is full, or the redstone condition is not met.
  *
- * <p><b>覆盖范围</b>：所有继承自 AbstractEnergyBlockEntity 的发电设备（同 GeneratorStartEvent）。
+ * <p><b>Scope</b>: all generators that extend AbstractEnergyBlockEntity (the same as GeneratorStartEvent).
  *
- * <p><b>注意</b>：此事件不可取消。可用于记录统计数据或执行清理操作。
+ * <p><b>Note</b>: you cannot cancel this event. Use it to record statistics or to do cleanup.
  *
- * <p>示例用法：
+ * <p>Example:
  * <pre>{@code
  * @SubscribeEvent
  * public void onGeneratorStop(GeneratorStopEvent event) {
- *     // 记录停止时间
+ *     // Record the stop time
  *     stats.recordStop(event.getPos());
  * }
  * }</pre>
@@ -38,27 +40,27 @@ public class GeneratorStopEvent extends Event {
     }
 
     /**
-     * 获取世界
+     * Gets the world.
      *
-     * @return 世界对象
+     * @return the world
      */
     public Level getWorld() {
         return world;
     }
 
     /**
-     * 获取位置
+     * Gets the position.
      *
-     * @return 发电机位置
+     * @return the generator position
      */
     public BlockPos getPos() {
         return pos;
     }
 
     /**
-     * 获取总发电量
+     * Gets the total energy generated.
      *
-     * @return 本次运行的总发电量
+     * @return the total energy generated during this run, in EU
      */
     public long getTotalGenerated() {
         return totalGenerated;

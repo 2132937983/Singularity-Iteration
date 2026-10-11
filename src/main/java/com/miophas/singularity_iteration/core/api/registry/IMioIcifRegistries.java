@@ -10,290 +10,290 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * mio_icif 注册表 API
+ * Registry API of mio_icif.
  *
- * <p>提供对 mio_icif 内部注册表的访问，让附属模组可以查询和引用本模组的内容。
+ * <p>Gives access to the internal registries of mio_icif. Addon mods use it to find and refer to the content of this mod.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * IMioIcifRegistries registries = MioIcifAPI.instance().getRegistries();
  *
- * // 获取所有机器外壳
+ * // Get the machine hulls
  * Block basicHull = registries.getBlock("machine_hull_basic");
  * Block advancedHull = registries.getBlock("machine_hull_advanced");
  *
- * // 获取所有电缆
+ * // Get all cables
  * Collection<Block> cables = registries.getBlocksByPrefix("cable");
  *
- * // 获取所有电路板
+ * // Get all circuit boards
  * Collection<Item> circuits = registries.getItemsByPrefix("circuit");
  *
- * // 获取所有电池
+ * // Get all batteries
  * Collection<Item> batteries = registries.getItemsByCategory(ItemCategory.BATTERY);
  * }</pre>
  */
 public interface IMioIcifRegistries {
 
-    // ========== 方块注册表 ==========
+    // ========== Block registry ==========
 
     /**
-     * 根据 ID 获取方块
+     * Returns the block with the given ID.
      *
-     * @param id 方块 ID（不含命名空间）
-     * @return 方块，如果不存在则返回 null
+     * @param id the block ID (without namespace)
+     * @return the block, or null if it does not exist
      */
     Block getBlock(String id);
 
     /**
-     * 根据 ResourceLocation 获取方块
+     * Returns the block with the given ResourceLocation.
      *
-     * @param id 完整方块 ID
-     * @return 方块，如果不存在则返回 null
+     * @param id the full block ID
+     * @return the block, or null if it does not exist
      */
     Block getBlock(ResourceLocation id);
 
     /**
-     * 根据前缀获取方块集合
+     * Returns the blocks whose ID starts with the given prefix.
      *
-     * @param prefix ID 前缀
-     * @return 方块集合
+     * @param prefix the ID prefix
+     * @return the blocks
      */
     Collection<Block> getBlocksByPrefix(String prefix);
 
     /**
-     * 根据分类获取方块集合
+     * Returns the blocks of a category.
      *
-     * <p>分类基于方块 ID 的路径部分进行匹配。例如：
+     * <p>The category match uses the path part of the block ID. For example:
      * <ul>
-     *   <li>{@code MACHINE} - 匹配包含 "compressor", "extractor", "macerator" 等机器关键字的 ID</li>
-     *   <li>{@code STORAGE} - 匹配包含 "energy_storage", "battery" 等关键字的 ID</li>
-     *   <li>{@code CABLE} - 匹配包含 "cable" 的 ID</li>
+     *   <li>{@code MACHINE} - matches IDs that contain machine keywords such as "compressor", "extractor", "macerator"</li>
+     *   <li>{@code STORAGE} - matches IDs that contain keywords such as "energy_storage", "battery"</li>
+     *   <li>{@code CABLE} - matches IDs that contain "cable"</li>
      * </ul>
-     * 附属模组注册的方块不会自动归类，除非其 ID 包含对应的关键字。
+     * Blocks that addon mods register do not get a category automatically. They get one only when their ID contains the related keyword.
      *
-     * @param category 方块分类
-     * @return 方块集合
+     * @param category the block category
+     * @return the blocks
      */
     Collection<Block> getBlocksByCategory(BlockCategory category);
 
     /**
-     * 获取所有注册方块
+     * Returns all registered blocks.
      *
-     * @return 所有方块 ID 到方块的映射
+     * @return a map from each block ID to its block
      */
     Map<ResourceLocation, Block> getAllBlocks();
 
-    // ========== 方块实体类型注册表 ==========
+    // ========== Block entity type registry ==========
 
     /**
-     * 根据 ID 获取方块实体类型
+     * Returns the block entity type with the given ID.
      *
-     * @param id 方块实体类型 ID（不含命名空间）
-     * @return 方块实体类型，如果不存在则返回 null
+     * @param id the block entity type ID (without namespace)
+     * @return the block entity type, or null if it does not exist
      */
     BlockEntityType<?> getBlockEntityType(String id);
 
     /**
-     * 根据 ResourceLocation 获取方块实体类型
+     * Returns the block entity type with the given ResourceLocation.
      *
-     * @param id 完整方块实体类型 ID
-     * @return 方块实体类型，如果不存在则返回 null
+     * @param id the full block entity type ID
+     * @return the block entity type, or null if it does not exist
      */
     BlockEntityType<?> getBlockEntityType(ResourceLocation id);
 
-    // ========== 物品注册表 ==========
+    // ========== Item registry ==========
 
     /**
-     * 根据 ID 获取物品
+     * Returns the item with the given ID.
      *
-     * @param id 物品 ID（不含命名空间）
-     * @return 物品，如果不存在则返回 null
+     * @param id the item ID (without namespace)
+     * @return the item, or null if it does not exist
      */
     Item getItem(String id);
 
     /**
-     * 根据 ResourceLocation 获取物品
+     * Returns the item with the given ResourceLocation.
      *
-     * @param id 完整物品 ID
-     * @return 物品，如果不存在则返回 null
+     * @param id the full item ID
+     * @return the item, or null if it does not exist
      */
     Item getItem(ResourceLocation id);
 
     /**
-     * 根据前缀获取物品集合
+     * Returns the items whose ID starts with the given prefix.
      *
-     * @param prefix ID 前缀
-     * @return 物品集合
+     * @param prefix the ID prefix
+     * @return the items
      */
     Collection<Item> getItemsByPrefix(String prefix);
 
     /**
-     * 根据分类获取物品集合
+     * Returns the items of a category.
      *
-     * <p>分类基于物品 ID 的路径部分进行匹配。例如：
+     * <p>The category match uses the path part of the item ID. For example:
      * <ul>
-     *   <li>{@code BATTERY} - 匹配包含 "battery", "energy_pack" 等关键字的 ID</li>
-     *   <li>{@code CIRCUIT} - 匹配包含 "circuit" 的 ID</li>
-     *   <li>{@code UPGRADE} - 匹配包含 "upgrade" 的 ID</li>
+     *   <li>{@code BATTERY} - matches IDs that contain keywords such as "battery", "energy_pack"</li>
+     *   <li>{@code CIRCUIT} - matches IDs that contain "circuit"</li>
+     *   <li>{@code UPGRADE} - matches IDs that contain "upgrade"</li>
      * </ul>
-     * 附属模组注册的物品不会自动归类，除非其 ID 包含对应的关键字。
+     * Items that addon mods register do not get a category automatically. They get one only when their ID contains the related keyword.
      *
-     * @param category 物品分类
-     * @return 物品集合
+     * @param category the item category
+     * @return the items
      */
     Collection<Item> getItemsByCategory(ItemCategory category);
 
     /**
-     * 获取所有注册物品
+     * Returns all registered items.
      *
-     * @return 所有物品 ID 到物品的映射
+     * @return a map from each item ID to its item
      */
     Map<ResourceLocation, Item> getAllItems();
 
-    // ========== 流体注册表 ==========
+    // ========== Fluid registry ==========
 
     /**
-     * 根据 ID 获取流体
+     * Returns the fluid with the given ID.
      *
-     * @param id 流体 ID（不含命名空间）
-     * @return 流体，如果不存在则返回 null
+     * @param id the fluid ID (without namespace)
+     * @return the fluid, or null if it does not exist
      */
     Fluid getFluid(String id);
 
     /**
-     * 根据 ResourceLocation 获取流体
+     * Returns the fluid with the given ResourceLocation.
      *
-     * @param id 完整流体 ID
-     * @return 流体，如果不存在则返回 null
+     * @param id the full fluid ID
+     * @return the fluid, or null if it does not exist
      */
     Fluid getFluid(ResourceLocation id);
 
     /**
-     * 获取所有注册流体
+     * Returns all registered fluids.
      *
-     * @return 所有流体 ID 到流体的映射
+     * @return a map from each fluid ID to its fluid
      */
     Map<ResourceLocation, Fluid> getAllFluids();
 
-    // ========== 分类枚举 ==========
+    // ========== Category enums ==========
 
     enum BlockCategory {
-        MACHINE,        // 机器
-        GENERATOR,      // 发电机
-        CABLE,          // 电缆
-        STORAGE,        // 储能方块
-        ORE,            // 矿石
-        RESOURCE,       // 资源方块
-        BUILDING,       // 建筑方块
-        FLUID,          // 流体相关
-        CROP,           // 作物
-        OTHER           // 其他
+        MACHINE,        // Machines
+        GENERATOR,      // Generators
+        CABLE,          // Cables
+        STORAGE,        // Energy storage blocks
+        ORE,            // Ores
+        RESOURCE,       // Resource (storage) blocks
+        BUILDING,       // Building blocks
+        FLUID,          // Fluid-related blocks
+        CROP,           // Crops
+        OTHER           // Other
     }
 
     enum ItemCategory {
-        BATTERY,        // 电池
-        TOOL,           // 工具
-        ARMOR,          // 护甲
-        COMPONENT,      // 组件
-        CIRCUIT,        // 电路板
-        INGOT,          // 锭
-        DUST,           // 粉
-        PLATE,          // 板
-        UPGRADE,        // 升级
-        REACTOR,        // 反应堆组件
-        FLUID_CONTAINER,// 流体容器
-        SEED,           // 种子
-        FOOD,           // 食物
-        OTHER           // 其他
+        BATTERY,        // Batteries
+        TOOL,           // Tools
+        ARMOR,          // Armor
+        COMPONENT,      // Components
+        CIRCUIT,        // Circuit boards
+        INGOT,          // Ingots
+        DUST,           // Dusts
+        PLATE,          // Plates
+        UPGRADE,        // Upgrades
+        REACTOR,        // Reactor components
+        FLUID_CONTAINER,// Fluid containers
+        SEED,           // Seeds
+        FOOD,           // Food
+        OTHER           // Other
     }
 
-    // ========== 实用方法 ==========
+    // ========== Utility methods ==========
 
     /**
-     * 检查方块是否存在
+     * Returns true if the block exists.
      *
-     * @param id 方块 ID（不含命名空间）
-     * @return true 如果方块存在
+     * @param id the block ID (without namespace)
+     * @return true if the block exists
      */
     boolean hasBlock(String id);
 
     /**
-     * 检查方块是否存在
+     * Returns true if the block exists.
      *
-     * @param id 完整方块 ID
-     * @return true 如果方块存在
+     * @param id the full block ID
+     * @return true if the block exists
      */
     boolean hasBlock(ResourceLocation id);
 
     /**
-     * 检查物品是否存在
+     * Returns true if the item exists.
      *
-     * @param id 物品 ID（不含命名空间）
-     * @return true 如果物品存在
+     * @param id the item ID (without namespace)
+     * @return true if the item exists
      */
     boolean hasItem(String id);
 
     /**
-     * 检查物品是否存在
+     * Returns true if the item exists.
      *
-     * @param id 完整物品 ID
-     * @return true 如果物品存在
+     * @param id the full item ID
+     * @return true if the item exists
      */
     boolean hasItem(ResourceLocation id);
 
     /**
-     * 获取 ItemStack
+     * Makes a new ItemStack.
      *
-     * @param id 物品 ID（不含命名空间）
-     * @param count 数量
-     * @return ItemStack，如果物品不存在则返回 ItemStack.EMPTY
+     * @param id the item ID (without namespace)
+     * @param count the stack size
+     * @return the ItemStack, or ItemStack.EMPTY if the item does not exist
      */
     net.minecraft.world.item.ItemStack getItemStack(String id, int count);
 
     /**
-     * 获取 ItemStack（默认数量为 1）
+     * Makes a new ItemStack with a stack size of 1.
      *
-     * @param id 物品 ID（不含命名空间）
-     * @return ItemStack，如果物品不存在则返回 ItemStack.EMPTY
+     * @param id the item ID (without namespace)
+     * @return the ItemStack, or ItemStack.EMPTY if the item does not exist
      */
     default net.minecraft.world.item.ItemStack getItemStack(String id) {
         return getItemStack(id, 1);
     }
 
     /**
-     * 获取所有方块 ID 列表
+     * Returns the IDs of all blocks.
      *
-     * @return 所有方块 ID（不含命名空间）
+     * @return all block IDs (without namespace)
      */
     Collection<String> getAllBlockIds();
 
     /**
-     * 获取所有物品 ID 列表
+     * Returns the IDs of all items.
      *
-     * @return 所有物品 ID（不含命名空间）
+     * @return all item IDs (without namespace)
      */
     Collection<String> getAllItemIds();
 
     /**
-     * 获取所有流体 ID 列表
+     * Returns the IDs of all fluids.
      *
-     * @return 所有流体 ID（不含命名空间）
+     * @return all fluid IDs (without namespace)
      */
     Collection<String> getAllFluidIds();
 
     /**
-     * 搜索包含关键字的方块
+     * Finds the blocks whose ID contains the keyword.
      *
-     * @param keyword 搜索关键字
-     * @return 匹配的方块集合
+     * @param keyword the search keyword
+     * @return the matching blocks
      */
     Collection<Block> searchBlocks(String keyword);
 
     /**
-     * 搜索包含关键字的物品
+     * Finds the items whose ID contains the keyword.
      *
-     * @param keyword 搜索关键字
-     * @return 匹配的物品集合
+     * @param keyword the search keyword
+     * @return the matching items
      */
     Collection<Item> searchItems(String keyword);
 }

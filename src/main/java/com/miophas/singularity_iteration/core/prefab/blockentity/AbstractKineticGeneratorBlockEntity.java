@@ -23,26 +23,26 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * KU 动能发电机方块实体基类
- * 模仿 AbstractHeatGeneratorBlockEntity，但使用 KU 动能系统
+ * Base block entity for KU kinetic generators.
+ * It works like AbstractHeatGeneratorBlockEntity, but it uses the KU kinetic system.
  * 
- * 动能发电机特点：
- * - 燃烧燃料或使用其他能源产生动能（KU）
- * - 动能会有摩擦损失
- * - 可以向相邻方块传输动能
- * - 需要转速差才能有效传输
- * - 需要机械传动来传输
+ * Properties of a kinetic generator:
+ * - It burns fuel or uses another energy source to make kinetic energy (KU).
+ * - Kinetic energy has friction loss.
+ * - It can send kinetic energy to adjacent blocks.
+ * - A transfer occurs only when the source RPM is higher than the target RPM.
+ * - It needs a mechanical transmission to send kinetic energy.
  */
 @SuppressWarnings("null")
 public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineticBlockEntity implements WorldlyContainer, IBurnControl, IKineticGeneratorBlock {
 
-    // 物品栏处理器
+    // Item inventory handler
     protected MachineItemHandler itemHandler;
 
-    // 当前燃烧时间
+    // Remaining burn time (ticks)
     public int burnTime = 0;
 
-    // 当前物品的总燃烧时间
+    // Total burn time of the current fuel item (ticks)
     public int burnDuration = 0;
 
     @Override
@@ -56,42 +56,42 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
         this.setChanged();
     }
 
-    // 动能生成速率 (KU/tick)
+    // Kinetic generation rate (KU/tick)
     protected final int kineticGenerationRate;
 
-    // 燃料槽索引
+    // Index of the fuel slot
     protected static final int FUEL_SLOT = 0;
 
     /**
-     * 构造函数
-     * @param type 方块实体类型
-     * @param pos 位置
-     * @param state 方块状态
-     * @param layout 槽位布局
-     * @param kineticGenerationRate 动能生成速率 (KU/tick)
+     * Constructor.
+     * @param type the block entity type
+     * @param pos the position
+     * @param state the block state
+     * @param layout the slot layout
+     * @param kineticGenerationRate the kinetic generation rate (KU/tick)
      */
     public AbstractKineticGeneratorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
                                        SlotLayout layout, int kineticGenerationRate) {
- // 发电机没有动能存，容量设为0，最大输出设为生成速率
+ // The generator does not store kinetic energy. The capacity is 0 and the maximum output is the generation rate.
         super(type, pos, state, 0, 0, kineticGenerationRate, 10000, 0.0f);
         this.itemHandler = createItemHandler(layout);
         this.kineticGenerationRate = kineticGenerationRate;
     }
 
     /**
-     * 构造函数（支持自定义动能参数）
-     * @param type 方块实体类型
-     * @param pos 位置
-     * @param state 方块状态
-     * @param layout 槽位布局
-     * @param kineticGenerationRate 动能生成速率 (KU/tick)
-     * @param maxExtract 最大输出速率
-     * @param maxRPM 最大转速
+     * Constructor with custom kinetic parameters.
+     * @param type the block entity type
+     * @param pos the position
+     * @param state the block state
+     * @param layout the slot layout
+     * @param kineticGenerationRate the kinetic generation rate (KU/tick)
+     * @param maxExtract the maximum output rate (KU/tick)
+     * @param maxRPM the maximum RPM
      */
     public AbstractKineticGeneratorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
                                        SlotLayout layout, int kineticGenerationRate,
                                        int maxExtract, int maxRPM) {
- // 产生动能的方块没有动能存，容量设为0
+ // A block that makes kinetic energy does not store it. The capacity is 0.
         super(type, pos, state, 0, 0, maxExtract, maxRPM, 0.0f);
         this.itemHandler = createItemHandler(layout);
         this.kineticGenerationRate = kineticGenerationRate;
@@ -107,14 +107,14 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
     }
     
     /**
-     * 检查前方是否有需要动能的机器
+     * Checks if the block in front (on the FACING side) can receive kinetic energy and is not full.
      */
     protected boolean hasKineticConsumerInFront() {
         if (level == null) return false;
 
         Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
-        if (!level.hasChunkAt(frontPos)) return false;
+        if (!level.isLoaded(frontPos)) return false;
 
         IMioIcifCapabilities.IKineticStorage frontKinetic = level.getCapability(
             IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, frontPos, facing.getOpposite());
@@ -131,54 +131,57 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
     }
     
     /**
-     * 每 tick 更新逻辑
+     * Server tick logic. It does nothing on the client side.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, AbstractKineticGeneratorBlockEntity blockEntity) {
         if (level.isClientSide()) {
             return;
         }
 
-        // 记录之前的燃烧状态
+        // Record the burn state before this tick
         boolean wasBurning = blockEntity.isBurning();
 
-        // 检查前方是否有需要动能的机器
+        // Check if a machine in front needs kinetic energy
         boolean hasConsumer = blockEntity.hasKineticConsumerInFront();
 
-        // 如果正在燃烧，生成并输出动能
+        // If the generator burns, make and send kinetic energy
         if (blockEntity.isBurning()) {
-            // 如果前方没有需要动能的机器，停止燃烧
+            // If no machine in front needs kinetic energy, stop the burn
             if (!hasConsumer) {
                 blockEntity.burnTime = 0;
             } else {
-                // 直接输出动能到相邻方向
+                // Send kinetic energy directly to the adjacent blocks
                 blockEntity.outputKineticDirectly();
                 blockEntity.burnTime--;
 
-                // 如果燃烧完毕，尝试消耗新的燃料
+                // If the burn is complete, try to consume new fuel
                 if (blockEntity.burnTime <= 0) {
                     blockEntity.consumeFuel();
                 }
             }
         } else {
-            // 如果没有在燃烧且前方有需要动能的机器，尝试消耗新的燃料
+            // If the generator does not burn and a machine in front needs kinetic energy, try to consume new fuel
             if (hasConsumer) {
                 blockEntity.consumeFuel();
             }
         }
 
-        // 检查燃烧状态是否改变
+        // Check if the burn state changed
         boolean isBurning = blockEntity.isBurning();
         if (wasBurning != isBurning) {
-            // 更新方块状态（子类可以实现 ACTIVATE 属性）
+            // Update the block state (subclasses can set the ACTIVATE property)
             blockEntity.updateBlockState(isBurning);
         }
 
-        // 标记方块实体已更新
+        // Mark the block entity as changed
         blockEntity.setChanged();
     }
 
     /**
-     * 直接向相邻方块输出动能（发电机没有存储，直接输出）
+     * Sends kinetic energy directly to adjacent blocks.
+     * The generator has no storage, so it sends the energy directly.
+     * The front block gets energy first, then the other sides.
+     * A target gets energy only when its RPM is lower than the RPM of this generator.
      */
     protected void outputKineticDirectly() {
         if (level == null) return;
@@ -188,7 +191,7 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
 
         Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
-        if (!level.hasChunkAt(frontPos)) return;
+        if (!level.isLoaded(frontPos)) return;
         IMioIcifCapabilities.IKineticStorage frontKinetic = level.getCapability(
             IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, frontPos, facing.getOpposite());
         if (frontKinetic == null) {
@@ -213,7 +216,7 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
                 if (direction == facing) continue;
 
                 BlockPos adjacentPos = worldPosition.relative(direction);
-                if (!level.hasChunkAt(adjacentPos)) continue;
+                if (!level.isLoaded(adjacentPos)) continue;
                 IMioIcifCapabilities.IKineticStorage adjacentKinetic = level.getCapability(
                     IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, adjacentPos, direction.getOpposite());
                 if (adjacentKinetic == null) {
@@ -238,17 +241,17 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
     }
     
     /**
-     * 检查是否正在燃烧
+     * Checks if the generator burns fuel now.
      */
     public boolean isBurning() {
         return burnTime > 0;
     }
     
     /**
-     * 消耗燃料
+     * Consumes one fuel item from the fuel slot and starts a new burn.
      */
     protected void consumeFuel() {
- // 发电机没有存储，只要有消费者就可以消耗燃料
+ // The generator has no storage. It can consume fuel when a consumer is present.
         ItemStack fuelStack = itemHandler.getStackInSlot(FUEL_SLOT);
         if (!fuelStack.isEmpty()) {
             int burnTime = getFuelBurnTime(fuelStack);
@@ -256,27 +259,30 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
                 this.burnDuration = burnTime;
                 this.burnTime = burnTime;
 
-                // 消耗燃料
+                // Read the container item (for example the empty bucket of a lava bucket)
+                // before shrink: an empty stack always returns EMPTY (fixed in 0.1.7.36).
+                ItemStack remainder = fuelStack.getCraftingRemainingItem();
                 fuelStack.shrink(1);
 
-                // 如果燃料堆为空，且燃料有容器物品，则放入容器物品
+                // When the fuel stack is empty, put the container item in the slot.
                 if (fuelStack.isEmpty()) {
-                    itemHandler.setStackInSlot(FUEL_SLOT, fuelStack.getCraftingRemainingItem());
+                    itemHandler.setStackInSlot(FUEL_SLOT, remainder);
                 }
             }
         }
     }
     
     /**
-     * 获取燃料的燃烧时间，子类可以重写此方法来定义可用的燃料
-     * @param fuel 燃料物品
-     * @return 燃烧时间 (tick)
+     * Gets the burn time of a fuel item.
+     * Subclasses implement this method to define the valid fuels.
+     * @param fuel the fuel item
+     * @return the burn time (ticks). 0 or less means the item is not a valid fuel.
      */
     public abstract int getFuelBurnTime(ItemStack fuel);
     
     /**
-     * 获取燃烧进度，用于GUI显示
-     * @return 燃烧进度 (0-1)
+     * Gets the burn progress for the GUI.
+     * @return the remaining burn fraction (0 to 1)
      */
     public float getBurnProgress() {
         if (burnDuration == 0) {
@@ -286,11 +292,11 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
     }
     
     /**
-     * 更新方块状态（燃烧/未燃烧）
-     * 子类可以重写此方法以更新方块外观
+     * Updates the block state (burning or not burning).
+     * Subclasses can override this method to update the block appearance.
      */
     protected void updateBlockState(boolean isBurning) {
-        // 默认实现：子类可以重写以设置 ACTIVATE 属性
+        // Default implementation does nothing. Subclasses can override it to set the ACTIVATE property.
     }
     
     @Override
@@ -334,7 +340,7 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
         burnDuration = tag.getInt("BurnDuration");
     }
     
-    // ==================== Container 接口实现 ====================
+    // ==================== Container implementation ====================
 
     public MachineItemHandler getItemHandler() {
         return itemHandler;
@@ -417,17 +423,17 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
         return 64;
     }
     
-    // ==================== WorldlyContainer 接口实现 ====================
+    // ==================== WorldlyContainer implementation ====================
     
     @Override
     public int[] getSlotsForFace(Direction side) {
-        // 所有方向都可以访问燃料槽
+        // All sides can access the fuel slot
         return new int[]{FUEL_SLOT};
     }
     
     @Override
     public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction side) {
-        // 燃料槽：只接受燃料
+        // Fuel slot: accept only fuel
         if (slot == FUEL_SLOT) {
             return getFuelBurnTime(stack) > 0;
         }
@@ -436,12 +442,13 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
     
     @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction side) {
-        // 燃料槽不能提取（防止漏斗吸走燃料）
+        // Do not allow extraction from the fuel slot (this stops hoppers from removing fuel)
         return false;
     }
     
     /**
-     * 创建物品处理器（用于自动化模组）
+     * Creates an item handler for automation mods.
+     * It accepts only valid fuel in the fuel slot and does not allow extraction.
      */
     public IItemHandler createItemHandler() {
         return new IItemHandlerModifiable() {
@@ -483,7 +490,7 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
 
             @Override
             public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-                // 不允许提取燃料
+                // Do not allow fuel extraction
                 return ItemStack.EMPTY;
             }
 
@@ -504,7 +511,7 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
         };
     }
 
-    // ==================== IKineticGeneratorBlock 接口实现 ====================
+    // ==================== IKineticGeneratorBlock implementation ====================
 
     @Override
     public int getKineticOutput() {

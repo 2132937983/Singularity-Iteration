@@ -8,12 +8,12 @@ import net.minecraft.world.level.material.FluidState;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 
 /**
- * 气体流体流动方块实现。
+ * Gas fluid flowing implementation.
  *
- * <p>继承 {@link BaseFlowingFluid.Flowing}，与 {@link GasFluidSource} 配对使用，
- * 实现相同的向上飘升、限高消失和水平扩散行为。
+ * <p>This class extends {@link BaseFlowingFluid.Flowing}. Use it together with {@link GasFluidSource}.
+ * It has the same behavior: it moves up, disappears at the height limit, and spreads horizontally.
  *
- * <p>使用方式请参见 {@link GasFluidSource} 的文档。
+ * <p>For usage, see the documentation of {@link GasFluidSource}.
  *
  * @see GasFluidSource
  */
@@ -22,10 +22,10 @@ public class GasFluidFlowing extends BaseFlowingFluid.Flowing {
     private final int maxHeight;
 
     /**
-     * 创建气体流体流动变体。
+     * Creates the flowing variant of a gas fluid.
      *
-     * @param properties 流体属性（必须与对应的 {@link GasFluidSource} 使用相同的 Properties）
-     * @param maxHeight  最大高度限制，必须与对应的 {@link GasFluidSource} 一致
+     * @param properties the fluid properties (must be the same Properties as the related {@link GasFluidSource})
+     * @param maxHeight  the maximum height. It must be the same as in the related {@link GasFluidSource}.
      */
     public GasFluidFlowing(BaseFlowingFluid.Properties properties, int maxHeight) {
         super(properties);
@@ -33,9 +33,9 @@ public class GasFluidFlowing extends BaseFlowingFluid.Flowing {
     }
 
     /**
-     * 获取气体消失的最大高度。
+     * Gets the maximum height at which the gas disappears.
      *
-     * @return 最大 Y 坐标
+     * @return the maximum Y coordinate
      */
     public int getMaxHeight() {
         return maxHeight;

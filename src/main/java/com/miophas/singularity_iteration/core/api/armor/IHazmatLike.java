@@ -5,30 +5,32 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 防辐射装备接口。
+ * Interface for radiation protection equipment.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IHazmatLike}。
- * 实现此接口的物品可以提供防辐射保护。
+ * This is the equivalent of {@code IHazmatLike} in IC2 for 1.12.2.
+ * An item that implements this interface can give radiation protection.
  */
 public interface IHazmatLike {
 
     /**
-     * 检查此装备是否提供防辐射保护。
+     * Checks if this equipment gives radiation protection.
      *
-     * @param entity     穿着实体
-     * @param slot       装备槽位
-     * @param stack      物品堆
-     * @return 如果提供防辐射保护则返回 true
+     * @param entity     the entity that wears the equipment
+     * @param slot       the equipment slot
+     * @param stack      the item stack
+     * @return true if the equipment gives radiation protection
      */
     boolean providesHazmatProtection(LivingEntity entity, EquipmentSlot slot, ItemStack stack);
 
     /**
-     * 检查实体是否穿着了完整的防辐射装备。
+     * Checks if the entity wears a full set of radiation protection equipment.
      * <p>
-     * 便捷静态方法，检查所有装甲槽位是否都有防辐射装备。
+     * This is a static shortcut. It checks all armor slots for radiation protection equipment.
+     * Note: the current code only rejects {@link IHazmatLike} items that give no protection.
+     * Empty slots and other items do not cause a false result.
      *
-     * @param entity 要检查的实体
-     * @return 如果穿着了完整防辐射装备则返回 true
+     * @param entity the entity to check; can be null (then the result is false)
+     * @return true if the entity wears a full set of radiation protection equipment
      */
     static boolean hasCompleteHazmat(LivingEntity entity) {
         if (entity == null) return false;

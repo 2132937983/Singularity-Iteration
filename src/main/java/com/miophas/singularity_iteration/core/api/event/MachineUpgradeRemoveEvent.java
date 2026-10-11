@@ -8,21 +8,22 @@ import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
 
 /**
- * 升级插件移除事件
+ * Upgrade removal event.
  *
- * <p><b>触发时机</b>：当玩家或自动化系统从机器的升级槽中取出升级插件时触发。
+ * <p><b>When</b>: the event fires when a player or an automation system removes an upgrade from the upgrade slot of a machine.
  *
- * <p><b>触发频率</b>：每次移除操作触发一次，通常在玩家点击升级槽或管道/漏斗取出物品时。
+ * <p><b>Frequency</b>: the event fires one time for each removal.
+ * Usually this occurs when a player clicks the upgrade slot, or when a pipe or hopper removes the item.
  *
- * <p><b>覆盖范围</b>：所有实现 IProducerBlock 接口的机器类型（同 MachineUpgradeInsertEvent）。
+ * <p><b>Scope</b>: all machine types that implement the IProducerBlock interface (the same as MachineUpgradeInsertEvent).
  *
- * <p>可通过取消事件阻止移除。
+ * <p>Cancel the event to stop the removal.
  *
- * <p>示例用法：
+ * <p>Example:
  * <pre>{@code
  * @SubscribeEvent
  * public void onUpgradeRemove(MachineUpgradeRemoveEvent event) {
- *     // 阻止升级插件被移除（例如：机器工作时锁定升级）
+ *     // Stop the removal of the upgrade (for example, lock upgrades while the machine works)
  *     if (event.getMachine().isWorking()) {
  *         event.setCanceled(true);
  *     }
@@ -46,35 +47,35 @@ public class MachineUpgradeRemoveEvent extends Event implements ICancellableEven
     }
 
     /**
-     * 获取世界
+     * Gets the level.
      */
     public Level getLevel() {
         return level;
     }
 
     /**
-     * 获取机器位置
+     * Gets the machine position.
      */
     public BlockPos getPos() {
         return pos;
     }
 
     /**
-     * 获取机器实例
+     * Gets the machine instance.
      */
     public IProducerBlock getMachine() {
         return machine;
     }
 
     /**
-     * 获取升级槽位索引
+     * Gets the index of the upgrade slot.
      */
     public int getSlot() {
         return slot;
     }
 
     /**
-     * 获取升级插件物品
+     * Gets the upgrade item.
      */
     public ItemStack getUpgrade() {
         return upgrade;

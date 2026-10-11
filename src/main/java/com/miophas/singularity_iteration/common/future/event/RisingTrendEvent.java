@@ -5,10 +5,10 @@ import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 import java.util.Random;
 
 /**
- * 持续上涨事件
+ * Rising trend event.
  * 
- * 效果：未来N天价格持续上涨，每天涨幅在基础价格�?%-15%之间
- * 强度影响：强度越高，涨幅越大
+ * Effect: the price rises continuously for the next N days. Each day the rise is between 5% and 15% of the base price.
+ * Intensity: a higher intensity gives a larger rise.
  */
 @SuppressWarnings("null")
 public class RisingTrendEvent extends FuturePriceEvent {
@@ -26,19 +26,19 @@ public class RisingTrendEvent extends FuturePriceEvent {
     
     @Override
     public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
-        // 基础涨幅 5% - 15%，受强度影响
+        // Base rise is 5% - 15%. The intensity changes it.
         double baseRise = 0.05 + (0.10 * intensity);
-        // 随天数递增，最后一天涨幅最终
+        // The rise increases each day. The last day has the largest rise.
     double dayMultiplier = 1.0 + (dayOffset * 0.1);
         double totalChange = baseRise * dayMultiplier;
         
-        // 添加随机波动 (-20% to +20%)
+        // Add a random fluctuation (-20% to +20%).
         double randomFactor = 0.8 + (RANDOM.nextDouble() * 0.4);
         totalChange *= randomFactor;
         
         int newPrice = (int) (currentPrice * (1.0 + totalChange));
         
-        // 使用配置的价格范围限制
+        // Limit the price to the configured price range.
     double maxMultiplier = Singularity_Iteration_Config.FUTURE_MAX_PRICE_MULTIPLIER.get();
         int maxPrice = (int) (basePrice * maxMultiplier);
         

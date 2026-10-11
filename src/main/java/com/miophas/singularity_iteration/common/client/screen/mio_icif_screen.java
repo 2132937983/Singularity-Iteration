@@ -783,7 +783,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         
         // 再渲染能量图标
         if (energy <= 0 || maxEnergy <= 0) return;
-        int energyHeight = (int) ((long) energy * FLAME_ICON_HEIGHT / maxEnergy);
+        int energyHeight = (int) Math.max(0, Math.min((long) energy * FLAME_ICON_HEIGHT / maxEnergy, FLAME_ICON_HEIGHT));
         if (energyHeight <= 0) return;
         int drawY = y + FLAME_ICON_HEIGHT - energyHeight;
         int textureV = FLAME_ICON_V + FLAME_ICON_HEIGHT - energyHeight;
@@ -795,7 +795,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
     // === 横向能量条（从左往右填充）===
     protected void drawHorizontalEnergyBar(GuiGraphics guiGraphics, int x, int y, int energy, int maxEnergy) {
         if (energy <= 0 || maxEnergy <= 0) return;
-        int energyWidth = (int) ((long) energy * ENERGY_BAR2_WIDTH / maxEnergy);
+        int energyWidth = (int) Math.max(0, Math.min((long) energy * ENERGY_BAR2_WIDTH / maxEnergy, ENERGY_BAR2_WIDTH));
         if (energyWidth <= 0) return;
         guiGraphics.blit(ATLAS_TEXTURE, x, y, 0,
             (float) ENERGY_BAR2_U, (float) ENERGY_BAR2_V,
@@ -805,7 +805,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
     // === 动能条（从左往右填充）===
     protected void drawKineticBar(GuiGraphics guiGraphics, int x, int y, int kinetic, int maxKinetic) {
         if (kinetic <= 0 || maxKinetic <= 0) return;
-        int kineticWidth = (int) ((long) kinetic * KINETIC_BAR_WIDTH / maxKinetic);
+        int kineticWidth = (int) Math.max(0, Math.min((long) kinetic * KINETIC_BAR_WIDTH / maxKinetic, KINETIC_BAR_WIDTH));
         if (kineticWidth <= 0) return;
         guiGraphics.blit(ATLAS_TEXTURE, x, y, 0,
             (float) KINETIC_BAR_U, (float) KINETIC_BAR_V,
@@ -837,7 +837,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
  // === 高热量进度条（从左往右填充）===
     protected void drawHeatBar(GuiGraphics guiGraphics, int x, int y, int heat, int maxHeat) {
         if (heat <= 0 || maxHeat <= 0) return;
-        int heatPixels = (int) ((long) heat * HEAT_BAR_WIDTH / maxHeat);
+        int heatPixels = (int) Math.max(0, Math.min((long) heat * HEAT_BAR_WIDTH / maxHeat, HEAT_BAR_WIDTH));
         if (heatPixels <= 0) return;
         guiGraphics.blit(ATLAS_TEXTURE, x, y, 0,
             (float) HEAT_BAR_U, (float) HEAT_BAR_V,
@@ -861,7 +861,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
  // === 高冶炼进度条（从下往上填充，无背景，背景在GUI纹理中）===
     protected void drawBlastProgress(GuiGraphics guiGraphics, int x, int y, int progress, int maxProgress) {
         if (progress <= 0 || maxProgress <= 0) return;
-        int progressPixels = (int) ((long) progress * BLAST_PROGRESS_HEIGHT / maxProgress);
+        int progressPixels = (int) Math.max(0, Math.min((long) progress * BLAST_PROGRESS_HEIGHT / maxProgress, BLAST_PROGRESS_HEIGHT));
         if (progressPixels <= 0) return;
         // 从下往上填充
         int drawY = y + BLAST_PROGRESS_HEIGHT - progressPixels;
@@ -874,7 +874,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
     // === 热能离心机进度条（从下往上填充，无背景，背景在GUI纹理中）===
     protected void drawCentrifugeProgress(GuiGraphics guiGraphics, int x, int y, int progress, int maxProgress) {
         if (progress <= 0 || maxProgress <= 0) return;
-        int progressPixels = (int) ((long) progress * HEAT_ENERGY_CENTRIFUGE_HEIGHT / maxProgress);
+        int progressPixels = (int) Math.max(0, Math.min((long) progress * HEAT_ENERGY_CENTRIFUGE_HEIGHT / maxProgress, HEAT_ENERGY_CENTRIFUGE_HEIGHT));
         if (progressPixels <= 0) return;
         // 从下往上填充
         int drawY = y + HEAT_ENERGY_CENTRIFUGE_HEIGHT - progressPixels;

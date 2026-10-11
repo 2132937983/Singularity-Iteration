@@ -10,9 +10,9 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 独立特种线缆（检测/分流）的实体替换与红石信号面判定。
+ * Block entity substitution and redstone signal side checks for independent special cables (detector and splitter).
  *
- * <p>替换表见 {@link IndependentSubstitutions}，由宿主注册。
+ * <p>For the substitution table, see {@link IndependentSubstitutions}. The host registers it.
  */
 public final class IndependentCableFactory {
 

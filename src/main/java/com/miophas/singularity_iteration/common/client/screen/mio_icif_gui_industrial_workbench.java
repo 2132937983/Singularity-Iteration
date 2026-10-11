@@ -23,9 +23,6 @@ public class mio_icif_gui_industrial_workbench extends mio_icif_screen<Industria
     private static final int GUI_HEIGHT = 228;
 
     @SuppressWarnings("unused")
-    private static final int CANCEL_U = 194;
-    @SuppressWarnings("unused")
-    private static final int CANCEL_V = 0;
     private static final int CANCEL_W = 14;
     private static final int CANCEL_H = 14;
     private static final int CANCEL_X = 14;

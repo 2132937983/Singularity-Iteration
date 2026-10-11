@@ -5,69 +5,69 @@ import net.minecraft.core.Direction;
 import java.util.Collection;
 
 /**
- * 管道方块接口。
+ * Pipe block interface.
  *
- * <p>用于描述流体/物品管道的行为和状态。
- * 实现此接口的方块可以管理连接方向、抽取/推送配置和传输速率。
+ * <p>It describes the behavior and state of fluid and item pipes.
+ * A block that implements this interface can manage connection sides, extract/push configuration and transfer rate.
  */
 public interface IPipeBlock {
 
     /**
-     * 管道类型枚举
+     * Pipe type enumeration.
      */
     enum PipeType {
-        /** 物品管道 */
+        /** Item pipe */
         ITEM,
-        /** 流体管道 */
+        /** Fluid pipe */
         FLUID,
-        /** 电缆（能量管道） */
+        /** Cable (energy pipe) */
         CABLE,
-        /** 通用管道 */
+        /** General pipe */
         UNIVERSAL
     }
 
     /**
-     * 获取管道类型
-     * @return 管道类型
+     * Gets the pipe type.
+     * @return the pipe type
      */
     PipeType getPipeType();
 
     /**
-     * 获取当前已连接的方向集合
-     * @return 已连接方向
+     * Gets the set of sides that are connected now.
+     * @return the connected sides
      */
     Collection<Direction> getConnections();
 
     /**
-     * 检查指定方向是否连接
-     * @param side 方向
-     * @return true 如果已连接
+     * Checks if the given side is connected.
+     * @param side the side
+     * @return true if the side is connected
      */
     boolean isConnected(Direction side);
 
     /**
-     * 检查指定方向是否处于抽取模式
-     * @param side 方向
-     * @return true 如果该方向正在抽取
+     * Checks if the given side is in extract mode.
+     * @param side the side
+     * @return true if the pipe extracts from this side
      */
     boolean isExtracting(Direction side);
 
     /**
-     * 设置指定方向的抽取模式
-     * @param side       方向
-     * @param extracting 是否抽取
+     * Sets the extract mode of the given side.
+     * @param side       the side
+     * @param extracting true to extract
      */
     void setExtracting(Direction side, boolean extracting);
 
     /**
-     * 获取传输速率
-     * @return 每 tick 最大传输量
+     * Gets the transfer rate.
+     * @return the maximum transfer amount per tick
      */
     int getTransferRate();
 
     /**
-     * 检查管道是否被阻断
-     * @return true 如果管道被阻断
+     * Checks if the pipe is blocked.
+     * @return true if the pipe is blocked
      */
     default boolean isBlocked() {
         return false;

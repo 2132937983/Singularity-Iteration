@@ -5,10 +5,11 @@ import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 import java.util.Random;
 
 /**
- * 短期暴涨暴跌事件（泡沫）
+ * Short-term spike and crash event (bubble).
  *
- * 效果：短期内价格快速暴涨，然后在最后几天暴力? * 典型模式：前几天暴涨 20%-40%，最终?-2天暴力?30%-50%
- * 强度影响：强度越高，涨幅和跌幅都越大
+ * Effect: the price rises quickly for a short time. Then the price crashes in the last days.
+ * Typical pattern: the price rises 20%-40% in the first days. In the last 1-2 days, the price falls 30%-50%.
+ * Intensity: a higher intensity gives a larger rise and a larger fall.
  */
 @SuppressWarnings("null")
 public class ShortBubbleEvent extends FuturePriceEvent {
@@ -28,24 +29,24 @@ public class ShortBubbleEvent extends FuturePriceEvent {
     public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
         double totalChange;
 
-        // 判断是上涨阶段还是暴跌阶�
-    // �?70% 的时间上涨，�?30% 的时间暴力
+        // Check if the price is in the rise phase or the crash phase.
+    // The price rises for the first 70% of the duration and crashes for the last 30%.
     int riseDays = Math.max(1, (int) (duration * 0.7));
 
         if (dayOffset < riseDays) {
-            // 上涨阶段：每天暴力?15% - 35%
+            // Rise phase: the price rises 15% - 35% each day.
             double baseRise = 0.15 + (0.20 * intensity);
-            double dayMultiplier = 1.0 + (dayOffset * 0.15); // 越往后涨得越�
+            double dayMultiplier = 1.0 + (dayOffset * 0.15); // The rise gets faster each day
         totalChange = baseRise * dayMultiplier;
 
             // 添加随机波动
             double randomFactor = 0.85 + (RANDOM.nextDouble() * 0.3);
             totalChange *= randomFactor;
         } else {
-            // 暴跌阶段：每天暴力?20% - 40%
+            // Crash phase: the price falls 20% - 40% each day.
             double baseFall = 0.20 + (0.20 * intensity);
             int crashDay = dayOffset - riseDays;
-            double dayMultiplier = 1.0 + (crashDay * 0.2); // 越往后跌得越�
+            double dayMultiplier = 1.0 + (crashDay * 0.2); // The fall gets faster each day
         totalChange = -baseFall * dayMultiplier;
 
             // 添加随机波动

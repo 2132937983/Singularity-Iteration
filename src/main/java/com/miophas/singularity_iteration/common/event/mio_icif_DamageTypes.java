@@ -13,7 +13,7 @@ public class mio_icif_DamageTypes {
         ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "radiation")
     );
 
-    // 特斯拉线圈电击伤害类�
+    // Tesla coil electric shock damage type.
 public static final ResourceKey<DamageType> LASER_TOWER = ResourceKey.create(
         Registries.DAMAGE_TYPE,
         ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "laser_tower")

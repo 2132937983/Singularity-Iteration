@@ -3,35 +3,35 @@ package com.miophas.singularity_iteration.core.api.upgrade.tile;
 import java.util.Set;
 
 /**
- * 可升级方块接口。
+ * Upgradable block interface.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IUpgradableBlock}。
- * 实现此接口的机器方块可以被升级物品增强。
+ * It is equivalent to {@code IUpgradableBlock} in IC2 1.12.2.
+ * Upgrade items can improve machine blocks that implement this interface.
  */
 public interface IUpgradableBlock {
 
     /**
-     * 获取方块当前的储能（EU）。
+     * Gets the energy that the block stores now (EU).
      *
-     * @return 当前储能
+     * @return the stored energy now (EU)
      */
     long getEnergy();
 
     /**
-     * 从方块中消耗指定量的能量。
+     * Uses the given quantity of energy from the block.
      *
-     * @param amount 要消耗的能量值（EU）
-     * @return 如果成功消耗则返回 true
+     * @param amount the energy to use (EU)
+     * @return true if the energy was used
      */
     boolean useEnergy(long amount);
 
     /**
-     * 获取此机器支持的升级属性集合。
+     * Gets the set of upgrade properties that this machine supports.
      * <p>
-     * 升级物品通过 {@link IUpgradeItem#isSuitableFor} 检查自己的类型
-     * 是否在此集合中，以决定是否适用于此机器。
+     * An upgrade item uses {@link IUpgradeItem#isSuitableFor} to check if its type
+     * is in this set. This decides if the upgrade is applicable to this machine.
      *
-     * @return 支持的升级属性集合
+     * @return the set of supported upgrade properties
      */
     Set<UpgradableProperty> getUpgradableProperties();
 }

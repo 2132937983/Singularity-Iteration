@@ -12,7 +12,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * 期货交易数据??? * 处理客户端到服务端的交易请求
+ * Futures trade packet.
+ * It sends a trade request from the client to the server.
  */
 @SuppressWarnings("null")
 public record FutureTradePacket(BlockPos pos, int action, int commodityIndex, int quantity) implements CustomPacketPayload {
@@ -49,7 +50,8 @@ public record FutureTradePacket(BlockPos pos, int action, int commodityIndex, in
     }
 
     /**
-     * 处理数据???     */
+     * Handles the packet.
+     */
     public static void handle(FutureTradePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)

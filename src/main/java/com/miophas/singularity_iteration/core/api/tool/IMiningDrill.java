@@ -6,45 +6,45 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 电钻工具接口。
+ * Electric drill tool interface.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IMiningDrill}。
- * 实现此接口的物品是电力驱动的采矿工具。
+ * Equivalent to {@code IMiningDrill} in IC2 1.12.2.
+ * An item that implements this interface is an electric mining tool.
  */
 public interface IMiningDrill {
 
     /**
-     * 获取挖掘指定方块所需的能量消耗。
+     * Gets the energy necessary to mine the given block.
      *
-     * @param stack 工具物品堆
-     * @param world 世界
-     * @param pos   方块位置
-     * @param state 方块状态
-     * @return 能量消耗（EU）
+     * @param stack the tool item stack
+     * @param world the world
+     * @param pos   the block position
+     * @param state the block state
+     * @return the energy cost (EU)
      */
     long energyUse(ItemStack stack, BlockGetter world, BlockPos pos, BlockState state);
 
     /**
-     * 获取挖掘指定方块所需的 tick 数。
+     * Gets the number of ticks necessary to mine the given block.
      *
-     * @param stack 工具物品堆
-     * @param world 世界
-     * @param pos   方块位置
-     * @param state 方块状态
-     * @return 所需 tick 数
+     * @param stack the tool item stack
+     * @param world the world
+     * @param pos   the block position
+     * @param state the block state
+     * @return the number of ticks necessary
      */
     int breakTime(ItemStack stack, BlockGetter world, BlockPos pos, BlockState state);
 
     /**
-     * 实际挖掘方块。
+     * Mines the block.
      * <p>
-     * 此方法在能量充足时调用，执行实际的方块破坏逻辑。
+     * The caller calls this method when there is sufficient energy. It does the block break logic.
      *
-     * @param stack 工具物品堆
-     * @param world 世界
-     * @param pos   方块位置
-     * @param state 方块状态
-     * @return 如果方块成功被破坏则返回 true
+     * @param stack the tool item stack
+     * @param world the world
+     * @param pos   the block position
+     * @param state the block state
+     * @return true if the block was broken
      */
     boolean breakBlock(ItemStack stack, BlockGetter world, BlockPos pos, BlockState state);
 }

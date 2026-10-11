@@ -31,11 +31,11 @@ public class mio_icif_Nuke_Renderer extends EntityRenderer<mio_icif_Entity_Nuke_
         poseStack.pushPose();
         poseStack.translate(0.0F, 0.5F, 0.0F);
 
-        // 获取引信时间
+        // Get the fuse time.
         int fuse = entity.getFuse();
 
-        // 倒计时最终?0秒开始闪烁放大效果
-    if ((float)fuse - partialTicks + 1.0F < 200.0F) { // 200 ticks = 10�
+        // In the last 10 seconds of the countdown, apply the flashing and scaling effect.
+    if ((float)fuse - partialTicks + 1.0F < 200.0F) { // 200 ticks = 10 seconds
         float f = 1.0F - ((float)fuse - partialTicks + 1.0F) / 200.0F;
             f = Mth.clamp(f, 0.0F, 1.0F);
             f *= f;
@@ -48,11 +48,11 @@ public class mio_icif_Nuke_Renderer extends EntityRenderer<mio_icif_Entity_Nuke_
         poseStack.translate(-0.5F, -0.5F, 0.5F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
 
-        // 获取核弹方块状态
+        // Get the nuke block state.
     var blockState = com.miophas.singularity_iteration.common.registry.mio_icif_blocks.NUKE.get().defaultBlockState();
 
-        // 使用TntMinecartRenderer的渲染方法来渲染白色闪烁效果
-        // 最终?秒闪烁频率加载
+        // Use the TntMinecartRenderer method to render the white flash effect.
+        // In the last 5 seconds, the flash frequency increases.
     boolean flash = fuse <= 100 ? fuse / 2 % 2 == 0 : fuse / 5 % 2 == 0;
 
         net.minecraft.client.renderer.entity.TntMinecartRenderer.renderWhiteSolidBlock(

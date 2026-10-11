@@ -5,7 +5,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 
 /**
- * 方块切割机配方输??? * 包装输入槽中的单个物??? */
+ * Recipe input for the block cutter.
+ * It wraps the single item in the input slot.
+ */
 public record mio_icif_BlockCutterRecipeInput(ItemStack item) implements RecipeInput {
 
     @Override

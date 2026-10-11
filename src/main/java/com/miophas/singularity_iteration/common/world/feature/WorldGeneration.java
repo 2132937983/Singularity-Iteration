@@ -91,7 +91,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> TITANIUM_ORE_KEY =
     public static final ResourceKey<PlacedFeature> TITANIUM_ORE_DEEP_PLACED_KEY = 
         ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "titanium_ore_deep_placed"));
 
-    // 橡胶�
+    // Rubber tree
 public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY = 
         ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "rubber_tree"));
     
@@ -119,7 +119,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             mio_icif_blocks.BLOCK_ORE_TIN_IN_DEEP.get().defaultBlockState(),
             10, 0.0F);
         
-        // 注册深层铀矿石（替换深板岩�
+        // Register the deep uranium ore. It replaces deepslate.
     ModFeatures.registerDeepOreFeature(context, "uran_ore_deep", 
             mio_icif_blocks.BLOCK_ORE_URAN_IN_DEEP.get().defaultBlockState(),
             8, 0.0F);
@@ -149,7 +149,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             mio_icif_blocks.BLOCK_ORE_TITANIUM_IN_DEEP.get().defaultBlockState(),
             7, 0.0F);
 
-        // 注册橡胶�
+        // Register the rubber tree.
     RubberTreeFeature.registerConfiguredFeature(context);
     }
 
@@ -170,13 +170,13 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             )
         ));
         
-        // 铀矿石的放置（生成在深层，Y=5 �?Y=64�
+        // Uranium ore placement: deep layers, from Y=5 to Y=64.
     Holder<ConfiguredFeature<?, ?>> uranOreFeature = context.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(URAN_ORE_KEY);
         
         context.register(URAN_ORE_PLACED_KEY, new PlacedFeature(
             uranOreFeature,
             List.of(
-                CountPlacement.of(8), // 每次尝试生成 8 个矿脉（比锡矿少�
+                CountPlacement.of(8), // Each attempt generates 8 veins. This is fewer than tin ore.
             InSquarePlacement.spread(),
                 HeightRangePlacement.uniform(
                     VerticalAnchor.absolute(5),
@@ -186,7 +186,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             )
         ));
         
-        // 铅矿石的放置（生成在深层，Y=5 �?Y=80�
+        // Lead ore placement: deep layers, from Y=5 to Y=80.
     Holder<ConfiguredFeature<?, ?>> leadOreFeature = context.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(LEAD_ORE_KEY);
         
         context.register(LEAD_ORE_PLACED_KEY, new PlacedFeature(
@@ -202,7 +202,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             )
         ));
 
-        // 深层锡矿石的放置（Y=-64 �?Y=0，深板岩层）
+        // Deep tin ore placement: Y=-64 to Y=0, in the deepslate layer.
         Holder<ConfiguredFeature<?, ?>> tinOreDeepFeature = context.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(TIN_ORE_DEEP_KEY);
         
         context.register(TIN_ORE_DEEP_PLACED_KEY, new PlacedFeature(
@@ -218,7 +218,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             )
         ));
         
-        // 深层铀矿石的放置（Y=-64 �?Y=-20，更深层�
+        // Deep uranium ore placement: Y=-64 to Y=-20, in the deeper layers.
     Holder<ConfiguredFeature<?, ?>> uranOreDeepFeature = context.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(URAN_ORE_DEEP_KEY);
         
         context.register(URAN_ORE_DEEP_PLACED_KEY, new PlacedFeature(
@@ -234,7 +234,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             )
         ));
         
-        // 深层铅矿石的放置（Y=-64 �?Y=-10�
+        // Deep lead ore placement: Y=-64 to Y=-10.
     Holder<ConfiguredFeature<?, ?>> leadOreDeepFeature = context.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(LEAD_ORE_DEEP_KEY);
         
         context.register(LEAD_ORE_DEEP_PLACED_KEY, new PlacedFeature(
@@ -250,7 +250,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             )
         ));
 
-        // 铌矿石的放置（比钻石少，Y=-64 �?Y=16，count=4）
+        // Niobium ore placement: Y=-64 to Y=16, count=4. This is rarer than diamond ore.
         Holder<ConfiguredFeature<?, ?>> niobiumOreFeature = context.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(NIOBIUM_ORE_KEY);
         
         context.register(NIOBIUM_ORE_PLACED_KEY, new PlacedFeature(
@@ -266,7 +266,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             )
         ));
         
-        // 深层铌矿石的放置（Y=-64 �?Y=0，count=3）
+        // Deep niobium ore placement: Y=-64 to Y=0, count=3.
         Holder<ConfiguredFeature<?, ?>> niobiumOreDeepFeature = context.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(NIOBIUM_ORE_DEEP_KEY);
         
         context.register(NIOBIUM_ORE_DEEP_PLACED_KEY, new PlacedFeature(
@@ -282,7 +282,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             )
         ));
         
-        // 钛矿石的放置（比金少，Y=-64 �?Y=32，count=5）
+        // Titanium ore placement: Y=-64 to Y=32, count=5. This is rarer than gold ore.
         Holder<ConfiguredFeature<?, ?>> titaniumOreFeature = context.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(TITANIUM_ORE_KEY);
         
         context.register(TITANIUM_ORE_PLACED_KEY, new PlacedFeature(
@@ -298,7 +298,7 @@ public static final ResourceKey<ConfiguredFeature<?, ?>> RUBBER_TREE_KEY =
             )
         ));
         
-        // 深层钛矿石的放置（Y=-64 �?Y=0，count=4）
+        // Deep titanium ore placement: Y=-64 to Y=0, count=4.
         Holder<ConfiguredFeature<?, ?>> titaniumOreDeepFeature = context.lookup(Registries.CONFIGURED_FEATURE).getOrThrow(TITANIUM_ORE_DEEP_KEY);
         
         context.register(TITANIUM_ORE_DEEP_PLACED_KEY, new PlacedFeature(

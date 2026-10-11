@@ -31,8 +31,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 发酵机方块类
- * 使用 HU 热能发酵生物质为沼气的机器方法?
+ * Block class for the fermenter.
+ * A machine block that uses HU heat to ferment biomass into biogas.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_fermenter_elc extends mio_icif_entity_block {
@@ -94,8 +94,8 @@ public class mio_icif_block_fermenter_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 方块被移除时的处理?
-     * 掉落方块实体中的物品
+     * Handles the removal of the block.
+     * Drops the items that are in the block entity.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
@@ -126,7 +126,7 @@ public class mio_icif_block_fermenter_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取模拟输出信号强度（用于红石比较器�?
+     * Returns the analog output signal strength for a redstone comparator.
      */
     @Override
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
@@ -158,7 +158,7 @@ public class mio_icif_block_fermenter_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取方块实体更新器（Ticker�?
+     * Returns the block entity ticker.
      */
     @Nullable
     @Override

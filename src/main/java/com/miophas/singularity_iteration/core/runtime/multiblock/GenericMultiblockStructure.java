@@ -20,11 +20,11 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 
 /**
- * 通用多方块结构生命周期实现，供构建器与内置管理器共用。
+ * Generic lifecycle implementation of a multiblock structure. The builder and the built-in manager both use it.
  *
- * <p>负责验证、成形注册、快速/完整重验、拆除，并在成形与拆除时依次
- * 执行验证器钩子、构建器回调和公开事件。内置机器不再在此写死，
- * 控制方块到验证器的映射见 {@link MultiblockControllers}。
+ * <p>It does validation, registration on formation, quick and full revalidation, and breakdown. On formation and on breakdown
+ * it runs, in this sequence, the validator hooks, the builder callbacks and the public events. Built-in machines are not hard-coded here.
+ * For the map from controller block to validator, see {@link MultiblockControllers}.
  */
 public class GenericMultiblockStructure implements IMultiblockStructure {
 
@@ -194,7 +194,8 @@ public class GenericMultiblockStructure implements IMultiblockStructure {
     public Set<BlockPos> getRedstonePorts() {
         Object positions = structureData.get("redstonePortPositions");
         if (positions instanceof Set) {
-            return (Set<BlockPos>) positions;
+            // Read-only view: a caller cannot change the structure data (0.1.7.36).
+            return Collections.unmodifiableSet((Set<BlockPos>) positions);
         }
         return Collections.emptySet();
     }

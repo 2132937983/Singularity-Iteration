@@ -30,9 +30,6 @@ public class mio_icif_gui_fluid_regulator_elc extends mio_icif_screen<FluidRegul
     private static final int LIGHTNING_X = 9;
     private static final int LIGHTNING_Y = 38;
 
-    @SuppressWarnings("unused")
-    private mio_icif_fluid_regulator_elc regulator;
-
     public mio_icif_gui_fluid_regulator_elc(FluidRegulatorElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
@@ -43,26 +40,6 @@ public class mio_icif_gui_fluid_regulator_elc extends mio_icif_screen<FluidRegul
     protected void init() {
         super.init();
         this.inventoryLabelY = this.imageHeight - 94;
-
-        BlockPos pos = menu.getBlockPos();
-        if (pos != null && Minecraft.getInstance() != null && Minecraft.getInstance().level != null) {
-            BlockEntity be = Minecraft.getInstance().level.getBlockEntity(pos);
-            if (be instanceof mio_icif_fluid_regulator_elc reg) {
-                this.regulator = reg;
-            }
-        }
-    }
-
-    @Override
-    protected void containerTick() {
-        super.containerTick();
-        BlockPos pos = menu.getBlockPos();
-        if (pos != null && Minecraft.getInstance() != null && Minecraft.getInstance().level != null) {
-            BlockEntity be = Minecraft.getInstance().level.getBlockEntity(pos);
-            if (be instanceof mio_icif_fluid_regulator_elc reg) {
-                this.regulator = reg;
-            }
-        }
     }
 
     @Override

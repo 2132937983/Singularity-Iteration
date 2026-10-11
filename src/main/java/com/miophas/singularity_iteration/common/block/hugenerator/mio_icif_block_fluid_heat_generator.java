@@ -26,7 +26,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 流体加热机方法? * 通过燃烧沼气液体来产生热�? */
+ * Fluid heat generator block.
+ * Burns biogas to make heat.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_fluid_heat_generator extends mio_icif_entity_block {
 

@@ -154,7 +154,7 @@ public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity implem
                     
                     BlockPos checkPos = pos.offset(dx, dy, dz);
                     // Unknown adjacent chunks are obstacles; never load them for a generator scan.
-                    if (!level.hasChunkAt(checkPos)) { count++; continue; }
+                    if (!level.isLoaded(checkPos)) { count++; continue; }
                     BlockState state = level.getBlockState(checkPos);
                     
                     // 如果不是空气方块，算作障碍物

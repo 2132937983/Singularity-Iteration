@@ -24,17 +24,17 @@ public enum SlotType implements ISlotType {
     MINING_PIPE,
     FILTER,
     HEAT_CONDUCTOR,
-    HAMMER_TOOL,    // 锻造锤工具槽
-    HAMMER_INPUT,   // 锻造锤输入槽
-    HAMMER_OUTPUT,  // 锻造锤输出槽
-    CUTTER_TOOL,    // 板材切割剪工具槽
-    CUTTER_INPUT,   // 板材切割剪输入槽
-    CUTTER_OUTPUT,  // 板材切割剪输出槽
-    RTG_PELLET;      // 放射性同位素靶丸槽（RTG用，限制只能放一个）
+    HAMMER_TOOL,    // Forge hammer tool slot
+    HAMMER_INPUT,   // Forge hammer input slot
+    HAMMER_OUTPUT,  // Forge hammer output slot
+    CUTTER_TOOL,    // Plate cutter tool slot
+    CUTTER_INPUT,   // Plate cutter input slot
+    CUTTER_OUTPUT,  // Plate cutter output slot
+    RTG_PELLET;      // Radioisotope pellet slot (for the RTG; holds one item only)
 
     @Override
     public String getName() {
-        return name().toLowerCase();
+        return name().toLowerCase(java.util.Locale.ROOT);
     }
 
     @Override

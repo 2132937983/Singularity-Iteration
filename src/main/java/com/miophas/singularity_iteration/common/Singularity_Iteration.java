@@ -174,7 +174,7 @@ public class Singularity_Iteration {
         // Register effects
         mio_icif_effects.register(modEventBus);
 
-        // 注册作物注册事件处理�
+        // Register the crop registry event handler.
 
         modEventBus.register(com.miophas.singularity_iteration.common.event.CropRegistryEvent.class);
 
@@ -208,11 +208,11 @@ public class Singularity_Iteration {
         // 电动锄：自带时运 3（收获作物掉落受时运加成）
         NeoForge.EVENT_BUS.addListener(mio_icif_electric_hoe::onGetEnchantmentLevel);
 
-        // 注册废料箱的发射器行�
+        // Register the dispenser behavior for scrap boxes.
 com.miophas.singularity_iteration.common.item.normal.mio_icif_scrapbox.registerDispenserBehavior();
         com.miophas.singularity_iteration.common.item.normal.mio_icif_thorium_scrapbox.registerDispenserBehavior();
 
-        // 注册炸药和粘性炸药的发射器行�
+        // Register the dispenser behavior for dynamite and sticky dynamite.
 com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.registerDispenserBehavior();
         com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_sticky_dynamite_item.registerDispenserBehavior();
 

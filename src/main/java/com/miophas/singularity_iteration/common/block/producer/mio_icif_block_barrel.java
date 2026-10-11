@@ -31,9 +31,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 酒桶方方块?- 基于IC2原版机制
+ * Barrel block. It is based on the original IC2 mechanics.
  *
- * 交互方式：通过GUI操作
+ * Interaction: the player uses the GUI.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_barrel extends mio_icif_entity_block {
@@ -75,7 +75,7 @@ public class mio_icif_block_barrel extends mio_icif_entity_block {
 
     /**
      * 玩家右键点击方块时：
-     * - 潜行：显示酿造进�?
+     * - Sneaking: show the brewing progress.
      * - 正常：打开GUI
      */
     @Override
@@ -84,7 +84,7 @@ public class mio_icif_block_barrel extends mio_icif_entity_block {
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof mio_icif_barrel_entity barrel) {
-            // 潜行右键显示酿造进�?
+            // Sneak and right-click to show the brewing progress.
             if (player.isShiftKeyDown()) {
                 sendProgressMessage(player, barrel);
                 return InteractionResult.SUCCESS;
@@ -105,7 +105,7 @@ public class mio_icif_block_barrel extends mio_icif_entity_block {
 
         Component message;
         if (barrel.isEmpty()) {
-            message = Component.literal("§7[酒桶] §f空酒�?- 请放入原料开始酿�?");
+            message = Component.literal("§7[Barrel] §fEmpty barrel - add ingredients to start brewing");
         } else if (barrel.type == mio_icif_barrel_entity.TYPE_BEER) {
             int timeRatio = barrel.timeRatio;
             String stageName = switch (timeRatio) {
@@ -129,7 +129,7 @@ public class mio_icif_block_barrel extends mio_icif_entity_block {
 
     /**
      * 使用物品右键时：
-     * - 潜行：显示酿造进�?
+     * - Sneaking: show the brewing progress.
      * - 空酒杯：取出酒水
      * - 其他：打开GUI
      */
@@ -142,13 +142,13 @@ public class mio_icif_block_barrel extends mio_icif_entity_block {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
 
-        // 潜行右键显示酿造进�?
+        // Sneak and right-click to show the brewing progress.
         if (player.isShiftKeyDown()) {
             sendProgressMessage(player, barrel);
             return ItemInteractionResult.SUCCESS;
         }
 
-        // 拿着空酒杯时，取出酒�?
+        // With an empty mug in hand, take out the drink.
         if (stack.is(mio_icif_normal.EMPTY_MUG.get())) {
             ItemStack output = barrel.takeOutput();
             if (!output.isEmpty()) {
@@ -169,8 +169,8 @@ public class mio_icif_block_barrel extends mio_icif_entity_block {
     }
 
     /**
-     * 方块被移除时的处理?
-     * 掉落方块实体中的物品
+     * Handles the removal of the block.
+     * Drops the items that are in the block entity.
      */
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {

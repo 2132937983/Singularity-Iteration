@@ -3,27 +3,27 @@ package com.miophas.singularity_iteration.core.api.upgrade.tile;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 增强升级接口。
+ * Interface for augmentation upgrades.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IAugmentationUpgrade}。
- * 实现此接口的升级可以为机器提供额外的增强效果。
- * 这是一个通用的增强接口，具体的增强效果由实现类定义。
+ * It is the equivalent of {@code IAugmentationUpgrade} in IC2 1.12.2.
+ * Upgrades that implement this interface give more augmentation effects to a machine.
+ * This is a general augmentation interface. The implementation class defines the specific effect.
  */
 public interface IAugmentationUpgrade extends IUpgradeItem {
 
     /**
-     * 获取此升级提供的增强值。
+     * Returns the augmentation value of this upgrade.
      * <p>
-     * 增强值的含义取决于具体实现：
+     * The meaning of the value depends on the implementation:
      * <ul>
-     *   <li>对于超频升级：增强值表示额外的处理速度</li>
-     *   <li>对于储能升级：增强值表示额外的能量容量</li>
-     *   <li>对于其他升级：增强值由实现者自定义</li>
+     *   <li>for an overclocker upgrade: the value is the additional process speed</li>
+     *   <li>for an energy storage upgrade: the value is the additional energy capacity</li>
+     *   <li>for other upgrades: the implementer defines the value</li>
      * </ul>
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @return 增强值
+     * @param stack the upgrade item stack
+     * @param block the machine that has this upgrade installed
+     * @return the augmentation value
      */
     int getAugmentation(ItemStack stack, IUpgradableBlock block);
 }

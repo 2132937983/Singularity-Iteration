@@ -64,17 +64,17 @@ public class RecipeAPIImpl implements IRecipeAPI {
     }
 
     /**
-     * 清除配方缓存
+     * Clears the recipe cache.
      * 
-     * <p>当配方系统发生变化时（如数据包重载、动态注册配方等），
- * 应调用此方法清除存，确保查询结果正确。
+     * <p>Call this method when the recipe system changes (for example, a data pack reload or a dynamic recipe registration).
+ * This makes sure that the query results are correct.
      */
     public void invalidateCache() {
         cachedCatalog = null;
     }
 
     /**
- * 静态方法：清除配方存（供事件处理器调用）
+ * Static method: clears the recipe cache (for event handlers).
      */
     public static void invalidateStaticCache() {
         if (instance != null) {
@@ -186,7 +186,7 @@ public class RecipeAPIImpl implements IRecipeAPI {
     @SuppressWarnings("unchecked")
     public <T extends Recipe<?>> Optional<RecipeHolder<T>> findRecipe(RecipeType<T> type, ItemStack input, Level level) {
         if (level == null || input.isEmpty()) return Optional.empty();
- // 跨敤缂撳瓨鐨勬寜绫诲瀷鍒嗙粍閰嶆柟锛岄伩鍏� O(n) 鍏ㄩ噺閬嶅巻
+ // Use the cached recipes that are grouped by type. This prevents an O(n) scan of all recipes.
         // machines call this two or three times per tick with the same input: memoise the scan per
         // catalog generation (a /reload or recipe replacement starts a new generation)
         Catalog generation = catalog(level.getRecipeManager());

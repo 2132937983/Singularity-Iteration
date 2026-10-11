@@ -31,9 +31,6 @@ public class mio_icif_gui_nuclear_reactor_generator extends mio_icif_screen<com.
     
     // X号标志纹理位置（用于显示不可用的槽位）
     @SuppressWarnings("unused")
-    private static final int X_MARK_TEXTURE_X = 213;
-    @SuppressWarnings("unused")
-    private static final int X_MARK_TEXTURE_Y = 1;
     private static final int X_MARK_SIZE = 16;
 
     // 电池槽位位置

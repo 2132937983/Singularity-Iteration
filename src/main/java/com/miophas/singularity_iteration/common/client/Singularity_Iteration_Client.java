@@ -73,11 +73,11 @@ public class Singularity_Iteration_Client {
         Singularity_Iteration.LOGGER.info("HELLO FROM CLIENT SETUP");
         Singularity_Iteration.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
         
-        // 注册电池能量属性，用于动态纹理切�
+        // Register the battery energy property. The battery texture changes with the energy level.
     ResourceLocation energyProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "energy_level");
         BatteryEnergyProperty propertyFunction = new BatteryEnergyProperty();
         
-        // 注册普通电池系�
+        // Register the standard battery series.
     ItemProperties.register(mio_icif_normal.BAT_LEV0.get(), energyProperty, propertyFunction);
         
         // 注册高级电池系列
@@ -126,7 +126,7 @@ public class Singularity_Iteration_Client {
 
         Singularity_Iteration.LOGGER.info("Battery energy property registered successfully");
 
-        // 注册纳米剑激活属性，用于开关状态纹理切�
+        // Register the nano saber active property. The texture changes between the on state and the off state.
     ResourceLocation nanoSaberActiveProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "nanosaber_active");
         ItemProperties.register(mio_icif_items_tools.NANO_SABER.get(), nanoSaberActiveProperty, new NanoSaberActiveProperty());
         Singularity_Iteration.LOGGER.info("Nano Saber active property registered successfully");
@@ -148,7 +148,7 @@ public class Singularity_Iteration_Client {
         event.register((state, level, pos, tint) -> tint == 0
             ? ((com.miophas.singularity_iteration.common.block.pipe.FluidPipeBlock) state.getBlock()).grade().color() : -1,
             mio_icif_blocks.FLUID_PIPE_BRONZE.get(), mio_icif_blocks.FLUID_PIPE_STEEL.get());
-        // 注册橡胶树树叶颜色处理器，使其根据生物群系显示颜�
+        // Register the rubber leaf color handler. The leaves use the foliage color of the biome.
     event.register((state, level, pos, tintIndex) -> {
             if (tintIndex != 0) {
                 return -1;
@@ -157,7 +157,7 @@ public class Singularity_Iteration_Client {
                 // 默认颜色
                 return FoliageColor.getDefaultColor();
             }
-            // 获取生物群系�?foliage 颜色
+            // Use the average foliage color of the biome.
             return BiomeColors.getAverageFoliageColor(level, pos);
         }, mio_icif_blocks.BLOCK_RUBBER_LEAF.get());
         Singularity_Iteration.LOGGER.info("Rubber leaves block color handler registered");
@@ -228,7 +228,7 @@ public class Singularity_Iteration_Client {
             @Override public ResourceLocation getStillTexture() { return ResourceLocation.parse("mio_icif:block/fluids/weed_ex_still"); }
             @Override public ResourceLocation getFlowingTexture() { return getStillTexture(); }
         }, mio_icif_fluids.WEED_EX_TYPE.get());
-        // 注册生物气体流体客户端扩�
+        // Register the client extensions for the biogas fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -242,7 +242,7 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.BIOGAS_TYPE.get());
         Singularity_Iteration.LOGGER.info("Biogas fluid client extensions registered");
 
-        // 注册热水流体客户端扩�
+        // Register the client extensions for the hot water fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -270,7 +270,7 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.BIOMASS_TYPE.get());
         Singularity_Iteration.LOGGER.info("Biomass fluid client extensions registered");
 
-        // 注册建筑泡沫流体客户端扩�
+        // Register the client extensions for the construction foam fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -312,7 +312,7 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.DISTILLEDWATER_TYPE.get());
         Singularity_Iteration.LOGGER.info("Distilled water fluid client extensions registered");
 
-        // 注册热冷却液流体客户端扩�
+        // Register the client extensions for the hot coolant fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -326,7 +326,7 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.HOTCOOLANT_TYPE.get());
         Singularity_Iteration.LOGGER.info("Hot coolant fluid client extensions registered");
 
-        // 注册熔岩流体客户端扩�
+        // Register the client extensions for the pahoehoe lava fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -340,7 +340,7 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.PAHOEHOELAVA_TYPE.get());
         Singularity_Iteration.LOGGER.info("Pahoehoe lava fluid client extensions registered");
 
-        // 注册蒸汽流体客户端扩�
+        // Register the client extensions for the steam fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -354,7 +354,7 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.STEAM_TYPE.get());
         Singularity_Iteration.LOGGER.info("Steam fluid client extensions registered");
 
-        // 注册过热蒸汽流体客户端扩�
+        // Register the client extensions for the superheated steam fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -368,7 +368,7 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.SUPERHEATEDSTEAM_TYPE.get());
         Singularity_Iteration.LOGGER.info("Superheated steam fluid client extensions registered");
 
-        // 注册UU物质流体客户端扩�
+        // Register the client extensions for the UU matter fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -382,7 +382,7 @@ public class Singularity_Iteration_Client {
         }, mio_icif_fluids.UUMATTER_TYPE.get());
         Singularity_Iteration.LOGGER.info("UU matter fluid client extensions registered");
 
-        // 注册压缩空气流体客户端扩�
+        // Register the client extensions for the compressed air fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
             @Override
             public ResourceLocation getStillTexture() {
@@ -525,7 +525,7 @@ public class Singularity_Iteration_Client {
         );
         Singularity_Iteration.LOGGER.info("Water kinetic generator rotor renderer registered");
 
-        // 注册作物方块实体渲染�
+        // Register the crop block entity renderer.
     event.registerBlockEntityRenderer(
             mio_icif_block_entities.CROP_ENTITY_TYPE.get(),
             com.miophas.singularity_iteration.common.client.render.CropEntityRenderer::new
@@ -546,14 +546,14 @@ public class Singularity_Iteration_Client {
         );
         Singularity_Iteration.LOGGER.info("Plasma bullet entity renderer registered");
 
-        // 注册工业TNT点燃实体渲染�
+        // Register the renderer for the primed industrial TNT entity.
     event.registerEntityRenderer(
             mio_icif_entities.IC_TNT_PRIMED.get(),
             mio_icif_IC_TNT_Renderer::new
         );
         Singularity_Iteration.LOGGER.info("IC TNT primed entity renderer registered");
 
-        // 注册核弹点燃实体渲染�
+        // Register the renderer for the primed nuke entity.
     event.registerEntityRenderer(
             mio_icif_entities.NUKE_PRIMED.get(),
             mio_icif_Nuke_Renderer::new

@@ -9,20 +9,21 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 压缩机配方注册类
- * 管理压缩机配方的类型和序列化器注册? */
+ * Compressor recipe registration class.
+ * It registers the recipe type and the serializer for compressor recipes.
+ */
 @SuppressWarnings("null")
 public class mio_icif_CompressorRecipes {
 
-    // 配方类型注册�
+    // Recipe type registry.
 public static final DeferredRegister<RecipeType<?>> RECIPE_TYPES =
         DeferredRegister.create(BuiltInRegistries.RECIPE_TYPE, Singularity_Iteration.MOD_ID);
 
-    // 配方序列化器注册�
+    // Recipe serializer registry.
 public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
         DeferredRegister.create(BuiltInRegistries.RECIPE_SERIALIZER, Singularity_Iteration.MOD_ID);
 
-    // 注册压缩机配方类�
+    // Register the compressor recipe type.
 public static final DeferredHolder<RecipeType<?>, RecipeType<mio_icif_CompressorRecipe>> COMPRESSOR_TYPE =
         RECIPE_TYPES.register("compressor", () -> new RecipeType<mio_icif_CompressorRecipe>() {
             @Override

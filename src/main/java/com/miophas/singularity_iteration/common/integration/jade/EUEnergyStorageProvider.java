@@ -27,7 +27,9 @@ import snownee.jade.api.ui.IElementHelper;
 import snownee.jade.api.ui.ProgressStyle;
 
 /**
- * Jade EU 能量存储显示提供�? * 使用进度条样式显示EU能量，与FE能量显示一�? */
+ * Jade provider for the EU energy storage display.
+ * It shows EU as a progress bar, in the same style as the FE display.
+ */
 @SuppressWarnings("null")
 public enum EUEnergyStorageProvider implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 

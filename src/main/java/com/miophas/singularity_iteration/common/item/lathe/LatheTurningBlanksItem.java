@@ -16,12 +16,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * 车床加工件物�?
- * 对应 IC2 �?ItemLatheDefault
- * 
- * 材质枚举�?
- * - WOOD: 木质加工�?(宽度3, 硬度0, 产出木棍, 概率0.1)
- * - IRON: 铁质加工�?(宽度5, 硬度2, 产出小撮铁粉, 概率0.5)
+ * Lathe turning blank item.
+ * It is the equivalent of ItemLatheDefault in IC2.
+ *
+ * Materials:
+ * - WOOD: wooden blank (width 3, hardness 0, gives sticks, chance 0.1)
+ * - IRON: iron blank (width 5, hardness 2, gives small piles of iron dust, chance 0.5)
  */
 @SuppressWarnings("null")
 public class LatheTurningBlanksItem extends Item implements ILatheItem {
@@ -104,7 +104,7 @@ public class LatheTurningBlanksItem extends Item implements ILatheItem {
         
         int[] state = getCurrentState(stack);
         
-        // 显示各段状态?
+        // Show the state of each segment.
         int max = getWidth(stack);
         StringBuilder sb = new StringBuilder();
         for (int j = 0; j < 5; j++) {
@@ -115,7 +115,7 @@ public class LatheTurningBlanksItem extends Item implements ILatheItem {
     }
 
     /**
-     * 获取自定义数据标�?
+     * Gets the custom data tag of the stack.
      */
     @Nullable
     private CompoundTag getCustomDataTag(ItemStack stack) {
@@ -127,14 +127,14 @@ public class LatheTurningBlanksItem extends Item implements ILatheItem {
     }
 
     /**
-     * 设置自定义数据标�?
+     * Sets the custom data tag of the stack.
      */
     private void setCustomDataTag(ItemStack stack, CompoundTag tag) {
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
     /**
-     * 获取数值化的状态?
+     * Gets the state as one numeric value.
      */
     public static int getNumericState(int[] state) {
         if (state == null || state.length != 5) return -1;
@@ -149,7 +149,7 @@ public class LatheTurningBlanksItem extends Item implements ILatheItem {
     }
 
     /**
-     * 从数值化状态恢复数据?
+     * Restores the state array from the numeric value.
      */
     public static int[] getStateFromNumeric(int state) {
         int[] ret = new int[5];
@@ -162,7 +162,7 @@ public class LatheTurningBlanksItem extends Item implements ILatheItem {
     }
 
     /**
-     * 根据状态数组获取新的物品栈
+     * Gets a new item stack for the state array.
      */
     public static ItemStack getStackForState(ItemStack stack, int[] state) {
         if (stack.isEmpty()) return ItemStack.EMPTY;
@@ -181,7 +181,7 @@ public class LatheTurningBlanksItem extends Item implements ILatheItem {
     }
 
     /**
-     * 车床加工件材质枚举?
+     * Material enum for lathe workpieces.
      */
     @SuppressWarnings("null")
 public enum LatheMaterial {

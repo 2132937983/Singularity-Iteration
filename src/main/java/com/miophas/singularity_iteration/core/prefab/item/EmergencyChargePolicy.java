@@ -5,10 +5,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
- * 放电槽里可以当作一次性能源使用的原版物品策略。
+ * Policy for the vanilla item that a discharge slot can use as a single-use energy source.
  *
- * <p>默认把红石当作应急燃料，与迁移前的行为一致；宿主可在装配阶段替换，
- * 使 core 的槽位/充放电逻辑不写死某一种物品。
+ * <p>The default is redstone as emergency fuel. This is the same as the behavior before the migration.
+ * The host can replace it during setup, so the slot and charge logic of core does not hard-code one item.
+ * All methods are synchronized and are safe to call from any thread.
  */
 public final class EmergencyChargePolicy {
 
@@ -47,7 +48,10 @@ public final class EmergencyChargePolicy {
         return stackLimit;
     }
 
-    /** 放电槽对这种应急燃料放宽堆叠上限，其余放电物品保持单件限制。 */
+    /**
+     * The discharge slot allows a larger stack size for the emergency fuel.
+     * Other discharge items keep the default limit.
+     */
     public static synchronized int stackLimitFor(ItemStack stack, int defaultLimit) {
         return applies(stack) ? stackLimit : defaultLimit;
     }

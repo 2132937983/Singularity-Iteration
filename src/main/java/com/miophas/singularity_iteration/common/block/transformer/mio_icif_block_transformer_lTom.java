@@ -9,7 +9,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * LV-MV 变压器方法? * 用于�?LV（低压）�?MV（中压）之间进行电压转换
+ * LV-MV transformer block.
+ * It converts voltage between LV (low voltage) and MV (medium voltage).
  */
 @SuppressWarnings("null")
 public class mio_icif_block_transformer_lTom extends com.miophas.singularity_iteration.common.block.transformer.mio_icif_block_transformer {

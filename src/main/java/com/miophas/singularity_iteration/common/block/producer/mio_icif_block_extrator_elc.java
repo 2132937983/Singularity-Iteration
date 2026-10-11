@@ -80,7 +80,7 @@ public class mio_icif_block_extrator_elc extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_extrator_elc extractor) {
-                // 掉落物品栏中的物�
+                // Drop the items in the inventory.
             for (int i = 0; i < extractor.getItemHandler().getSlots(); i++) {
                     ItemStack stack = extractor.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {
@@ -101,7 +101,7 @@ public class mio_icif_block_extrator_elc extends mio_icif_entity_block {
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof mio_icif_extrator_elc extractor) {
-            // 计算红石信号强度（基于物品栏填充程度�
+            // Calculate the redstone signal strength from the inventory fill level.
         var handler = extractor.getItemHandler();
             int totalSlots = handler.getSlots();
             int filledSlots = 0;

@@ -36,10 +36,6 @@ public class mio_icif_gui_rt_heat_generator extends mio_icif_screen<com.miophas.
     private static final int HEAT_BAR_HEIGHT = 8;
 
     // 热能条纹理位置(179, 3)
-    @SuppressWarnings("unused")
-    private static final int HEAT_TEXTURE_X = 179;
-    @SuppressWarnings("unused")
-    private static final int HEAT_TEXTURE_Y = 3;
 
     // 产热量显示位置(51, 68)
     private static final int OUTPUT_TEXT_X = 51;

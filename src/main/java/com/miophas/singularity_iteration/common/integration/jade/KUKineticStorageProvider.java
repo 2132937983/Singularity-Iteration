@@ -17,8 +17,9 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Jade KU 动能存储显示提供�? * 参数?EUEnergyStorageProvider 实现
- * 支持显示存储型方块和发电机型方块的KU信息
+ * Jade provider that shows KU kinetic storage.
+ * It follows the EUEnergyStorageProvider implementation.
+ * It shows KU information for storage blocks and generator blocks.
  */
 @SuppressWarnings("null")
 public enum KUKineticStorageProvider implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
@@ -31,14 +32,14 @@ public enum KUKineticStorageProvider implements IBlockComponentProvider, IServer
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
         CompoundTag data = accessor.getServerData();
         
-        // 检查是否是发电机类型（有输出速率显示�
+        // Check for the generator type (shows the output rate).
     if (data.contains("IsGenerator") && data.getBoolean("IsGenerator")) {
             int output = data.getInt("CurrentOutput");
             tooltip.add(Component.translatable("jade.mio_icif.kinetic.generating", output));
             return;
         }
         
-        // 普通存储类型显�
+        // Show the normal storage type.
     if (data.contains("Kinetic") && data.contains("MaxKinetic")) {
             int kinetic = data.getInt("Kinetic");
             int maxKinetic = data.getInt("MaxKinetic");
@@ -56,14 +57,14 @@ public enum KUKineticStorageProvider implements IBlockComponentProvider, IServer
             return;
         }
 
-        // 检查是否是风力动能发生�
+        // Check for a wind kinetic generator.
     if (blockEntity instanceof mio_icif_Wind_Kinetic_Generator windGen) {
             data.putBoolean("IsGenerator", true);
             data.putInt("CurrentOutput", windGen.getCurrentKineticOutput());
             return;
         }
         
-        // 检查是否是水力动能发生�
+        // Check for a water kinetic generator.
     if (blockEntity instanceof mio_icif_Water_Kinetic_Generator waterGen) {
             data.putBoolean("IsGenerator", true);
             data.putInt("CurrentOutput", waterGen.getCurrentKineticOutput());

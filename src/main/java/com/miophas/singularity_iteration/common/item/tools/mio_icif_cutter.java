@@ -13,9 +13,9 @@ public class mio_icif_cutter extends Item implements ICutterItem {
     }
 
     /**
-     * 原版IC2设计：切割剪不可通过两个合成修复�?
-     * 返回false以防止原版RepairItemRecipe匹配方?
-     * 避免按Shift快速合成时物品复制的问题�?
+     * Original IC2 design: two cutters cannot combine in crafting for repair.
+     * Returns false so the vanilla RepairItemRecipe does not match.
+     * This prevents item duplication with Shift quick crafting.
      */
     @Override
     public boolean isRepairable(ItemStack stack) {
@@ -23,7 +23,7 @@ public class mio_icif_cutter extends Item implements ICutterItem {
     }
 
     /**
-     * 原版IC2设计：切割剪在合成中使用时保留并扣除1点耐久�?
+     * Original IC2 design: the cutter stays in the grid after crafting and loses 1 durability.
      */
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
@@ -31,7 +31,7 @@ public class mio_icif_cutter extends Item implements ICutterItem {
     }
 
     /**
-     * 原版IC2设计：切割剪在合成后返回耐久-1的副本身?
+     * Original IC2 design: after crafting, the cutter returns a copy of itself with 1 more point of damage.
      */
     @Override
     public ItemStack getCraftingRemainingItem(ItemStack stack) {

@@ -24,12 +24,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 半流质发电机方块
- * 通过燃烧半流质燃料发生? */
+ * Semifluid generator block.
+ * It burns semifluid fuel to make power.
+ */
 @SuppressWarnings("null")
 public class mio_icif_Block_Semifluid_Generator extends mio_icif_entity_block {
 
-    // 定义方块状态：是否正在发电
+    // Block state: true when the generator makes power
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     public mio_icif_Block_Semifluid_Generator(Properties properties) {
@@ -38,7 +39,7 @@ public class mio_icif_Block_Semifluid_Generator extends mio_icif_entity_block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        // FACING 由父类添加，只需要添�?ACTIVE
+        // The parent class adds FACING. This class adds only ACTIVE.
         builder.add(ACTIVE);
         super.createBlockStateDefinition(builder);
     }

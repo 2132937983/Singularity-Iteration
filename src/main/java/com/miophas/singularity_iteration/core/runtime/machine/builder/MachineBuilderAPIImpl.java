@@ -19,14 +19,14 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 机器构建 API 实现
+ * Implementation of the machine builder API.
  *
- * <p>提供完整的机器构建功能，包括：
+ * <p>It supplies the full machine build function:
  * <ul>
- *   <li>存储机器配置参数</li>
- *   <li>创建机器定义</li>
- *   <li>注册机器到系统</li>
- *   <li>验证配置合法性</li>
+ *   <li>stores the machine configuration parameters</li>
+ *   <li>creates machine definitions</li>
+ *   <li>registers machines in the system</li>
+ *   <li>validates the configuration</li>
  * </ul>
  */
 public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
@@ -37,26 +37,26 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
     private static final Map<String, String> customMachineTypeRegistry = new ConcurrentHashMap<>();
     
     /**
-     * 机器回调注册表（线程安全）。BlockEntityType 被注册表强引用，此处改用 ConcurrentHashMap 确保线程安全。
+     * Registry of machine callbacks (thread-safe). The registry holds strong references to each BlockEntityType. A ConcurrentHashMap is used here for thread safety.
      */
     private static final Map<BlockEntityType<?>, MachineCallbacks> callbackRegistry = new java.util.concurrent.ConcurrentHashMap<>();
     
     /**
-     * 注册机器回调
+     * Registers the callbacks of a machine. A new registration replaces the old callbacks for the same entity type.
      */
     public static void registerCallbacks(BlockEntityType<?> entityType, MachineCallbacks callbacks) {
         callbackRegistry.put(entityType, callbacks);
     }
     
     /**
-     * 获取机器回调
+     * Returns the callbacks of a machine, or null if none are registered.
      */
     public static MachineCallbacks getCallbacks(BlockEntityType<?> entityType) {
         return callbackRegistry.get(entityType);
     }
     
     /**
-     * 机器回调容器
+     * Container for the callbacks of a machine.
      */
     public static class MachineCallbacks {
         public final IElectricMachineBuilder.MachineWorkCallback onWorkStart;
@@ -167,7 +167,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         if (inputSlots < 0 || outputSlots < 0 || upgradeSlots < 0) {
             throw new IllegalArgumentException("Slot counts cannot be negative");
         }
-        // 使用扩展的 SlotLayoutWithSpecialsImpl 来正确处理特殊槽位
+        // Use the extended SlotLayoutWithSpecialsImpl to handle the special slots correctly.
         return new SlotLayoutWithSpecialsImpl(inputSlots, outputSlots, hasBatterySlot, upgradeSlots, specialSlots);
     }
 
@@ -184,7 +184,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         return IEnergyConductor.LV_TIER;
     }
 
-    // ========== 内部实现类 ==========
+    // ========== Internal implementation classes ==========
 
     private static class SlotLayoutImpl implements ISlotLayout {
         private final int inputSlots;
@@ -289,7 +289,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
     }
 
     /**
-     * 支持特殊槽位的槽位布局实现
+     * Slot layout implementation that supports special slots.
      */
     private static class SlotLayoutWithSpecialsImpl implements ISlotLayout {
         private final int inputSlots;
@@ -363,7 +363,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
                 case BATTERY -> hasBatterySlot ? inputSlots + outputSlots : -1;
                 case UPGRADE -> inputSlots + outputSlots + (hasBatterySlot ? 1 : 0);
                 default -> {
-                    // 查找特殊槽位中该类型的起始位置
+                    // Find the start position of this type in the special slots.
                     for (int i = 0; i < specialSlots.length; i++) {
                         if (specialSlots[i] == type) {
                             yield specialSlotsStart + i;
@@ -507,7 +507,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         }
     }
 
-    // ========== 机器定义实现 ==========
+    // ========== Machine definition implementation ==========
 
     private static class MachineDefinitionImpl implements IMachineDefinition {
         private final String id;
@@ -600,7 +600,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         public boolean supportsFluids() { return supportsFluids; }
     }
 
-    // ========== 电力机器构建器实现 ==========
+    // ========== Electric machine builder implementation ==========
 
     private static class ElectricMachineBuilderImpl implements IElectricMachineBuilder {
         private String name = "unnamed_machine";
@@ -620,8 +620,8 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         private boolean supportsUpgrades = false;
         private boolean supportsFluids = false;
 
-        // 跟踪用户是否显式设置了能量相关参数
-        // 用于 setCableTier() 判断是否应该覆盖这些值
+        // Track whether the user set the energy parameters explicitly.
+        // setCableTier() uses these flags to decide whether it overwrites these values.
         private boolean energyCapacitySet = false;
         private boolean maxReceiveSet = false;
         private boolean maxExtractSet = false;
@@ -887,7 +887,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
                 name, modId, translationKey, entityType, properties, config
             );
             
-            // 注册回调到全局注册表，供 GenericMachineBlockEntity.onLoad() 时注入
+            // Register the callbacks in the global registry. GenericMachineBlockEntity.onLoad() injects them.
             if (entityType != null && (onWorkStart != null || onWorkComplete != null || onTick != null)) {
                 MachineBuilderAPIImpl.registerCallbacks(entityType, 
                     new MachineCallbacks(onWorkStart, onWorkComplete, onTick));
@@ -917,7 +917,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         }
 
         /**
-         * 获取机器配置，供外部创建 BlockEntityType 使用
+         * Returns the machine configuration. External code uses it to create the BlockEntityType.
          */
         public IMachineBuilderAPI.MachineConfiguration getConfiguration() {
             return new IMachineBuilderAPI.MachineConfiguration(
@@ -931,7 +931,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         }
     }
 
-    // ========== 发电机构建器实现 ==========
+    // ========== Generator builder implementation ==========
 
     private static class GeneratorBuilderImpl implements IGeneratorBuilder {
         private String name = "unnamed_generator";
@@ -1235,7 +1235,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         }
 
         /**
-         * 获取机器配置，供外部创建 BlockEntityType 使用
+         * Returns the machine configuration. External code uses it to create the BlockEntityType.
          */
         public IMachineBuilderAPI.MachineConfiguration getConfiguration() {
             return new IMachineBuilderAPI.MachineConfiguration(
@@ -1249,7 +1249,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         }
     }
 
-    // ========== 热能机器构建器实现 ==========
+    // ========== Thermal machine builder implementation ==========
 
     private static class HeatMachineBuilderImpl implements IHeatMachineBuilder {
         private String name = "unnamed_heat_machine";
@@ -1465,8 +1465,8 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
                 inputSlots, outputSlots, false, 0, fluidTanks, tankCapacity
             );
 
-            // 热能机器使用 HU 系统，EU 相关字段为 0 是合理的
-            // 但应该将热能参数存储到 properties 中以便查询
+            // Thermal machines use the HU system, so 0 is correct for the EU fields.
+            // But the thermal parameters should be stored in properties so that queries can read them.
             MachinePropertiesImpl properties = new MachinePropertiesImpl(
                 0, 0, 0, 0, 0, null, layout, false, fluidTanks > 0
             );
@@ -1496,7 +1496,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         }
 
         /**
-         * 获取机器配置，供外部创建 BlockEntityType 使用
+         * Returns the machine configuration. External code uses it to create the BlockEntityType.
          */
         public IMachineBuilderAPI.MachineConfiguration getConfiguration() {
             return new IMachineBuilderAPI.MachineConfiguration(
@@ -1510,7 +1510,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         }
     }
 
-    // ========== 动能机器构建器实现 ==========
+    // ========== Kinetic machine builder implementation ==========
 
     private static class KineticMachineBuilderImpl implements IKineticMachineBuilder {
         private String name = "unnamed_kinetic_machine";
@@ -1731,7 +1731,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         }
 
         /**
-         * 获取机器配置，供外部创建 BlockEntityType 使用
+         * Returns the machine configuration. External code uses it to create the BlockEntityType.
          */
         public IMachineBuilderAPI.MachineConfiguration getConfiguration() {
             return new IMachineBuilderAPI.MachineConfiguration(
@@ -1745,7 +1745,7 @@ public class MachineBuilderAPIImpl implements IMachineBuilderAPI {
         }
     }
 
-    // ========== 储能方块构建器实现 ==========
+    // ========== Energy storage block builder implementation ==========
 
     private static class EnergyContainerBuilderImpl implements IEnergyContainerBuilder {
         private String name = "unnamed_container";

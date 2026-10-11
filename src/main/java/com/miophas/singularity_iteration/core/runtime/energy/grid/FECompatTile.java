@@ -8,7 +8,6 @@ import com.miophas.singularity_iteration.core.api.energy.grid.ILocatableTile;
 import com.miophas.singularity_iteration.core.api.energy.storage.EUApi;
 import com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage;
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.EnergyCompatibility;
-import com.miophas.singularity_iteration.core.api.energy.grid.IEnergySink;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -16,18 +15,48 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
-/** Live sided capability adapter; never retains a capability beyond a transaction. */
+/**
+ * Live sided capability adapter. It never retains a capability beyond a transaction.
+ *
+ * <p>This class lets the EU grid deliver energy to a foreign block that has no SI energy node. The
+ * grid sees an {@link IEnergySink} at {@link #getPos()}. Each call looks up the capabilities of the
+ * target block again. The adapter keeps no reference to a capability between calls.
+ *
+ * <h2>Units</h2>
+ * <p>1 EU is 4 FE. The {@link IEnergySink} methods use EU as {@code double}. The {@link IEnergyStorage}
+ * methods use FE as {@code int}.
+ *
+ * <h2>Capability layers</h2>
+ * <p>The target can expose several capabilities on the same face. The receive path tries them in
+ * this order: an AE2 network sink, {@link EUApi#SIDED}, {@link ILongEnergyStorage#BLOCK},
+ * {@link Capabilities.EnergyStorage#BLOCK}, and last {@link EnergyCompatibility#findEuStorage}. If the
+ * AE2 sink exists, only that sink is used. Otherwise a layer that is absent, cannot receive, or
+ * accepts 0 FE passes the request to the next layer. The extract and stored-energy paths use only
+ * the first layer that is present.
+ *
+ * <h2>Chunk and thread rules</h2>
+ * <p>Each public call checks {@link #loaded()} first and returns 0 or false if the target is not
+ * available. {@link #loaded()} never loads a chunk. Foreign code can unload the target during a call,
+ * so the check runs again after each foreign call.
+ *
+ * <h2>Debug output</h2>
+ * <p>The JVM property {@code -Dsingularity_iteration.wireConnectDebug=true} enables a layer report in
+ * the log. The wires use the same property.
+ */
 public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyStorage {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(FECompatTile.class);
-    /** 与电线共用同一个 JVM 参数：-Dsingularity_iteration.wireConnectDebug=true */
+    /** Shares the JVM property with the wires: -Dsingularity_iteration.wireConnectDebug=true */
     private static final boolean DEBUG =
         Boolean.parseBoolean(System.getProperty("singularity_iteration.wireConnectDebug", "false"));
+    /** Debug keys already logged. The set is cleared when it passes 512 entries, to bound memory. */
     private static final java.util.Set<String> DEBUG_ONCE =
         java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
 
     private final Level world;
     private final BlockPos pos;
+    /** Face of the target block that receives energy. It points from the target back to the wire. */
     private final Direction input;
+    /** True while the energy engine holds this adapter as a registered tile. */
     private boolean registered;
 
     /** direction is the existing SI caller's direction from its wire to the receiver. */
@@ -37,7 +66,11 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
         this.input = java.util.Objects.requireNonNull(direction).getOpposite();
     }
 
-    /** 仅用于排查"连上了却充不进电"：打印该接触点每层能力的可用情况。 */
+    /**
+     * Debug aid for the fault "the wire connects, but the machine does not charge". It logs which
+     * capability layer of this contact point is present. It logs each key (phase, position, side,
+     * simulate) once. It has no effect when {@link #DEBUG} is false. It never throws.
+     */
     private void debugLayers(String phase, int amount, boolean simulate) {
         if (!DEBUG) return;
         String key = phase + "|" + pos + "|" + input + "|" + simulate;
@@ -51,23 +84,28 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
             var fe = world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, input);
             var compat = EnergyCompatibility.get().findEuStorage(world, pos, input);
             var be = world.getBlockEntity(pos);
-            LOG.warn("[FECompat-DEBUG] {} {} (side={}, 请求={} FE, simulate={})"
-                    + " | EUApi={} ILong={} FE={}(canReceive={}) 兼容层={}(canReceive={}) | BE={}",
+            LOG.warn("[FECompat-DEBUG] {} {} (side={}, request={} FE, simulate={})"
+                    + " | EUApi={} ILong={} FE={}(canReceive={}) compat={}(canReceive={}) | BE={}",
                 phase, pos, input, amount, simulate,
                 eu != null, wide != null,
                 fe != null, fe != null && fe.canReceive(),
                 compat != null, compat != null && compat.canReceive(),
                 be == null ? "null" : be.getClass().getName());
         } catch (RuntimeException error) {
-            LOG.warn("[FECompat-DEBUG] {} {} 层诊断失败: {}", phase, pos, error.toString());
+            LOG.warn("[FECompat-DEBUG] {} {} layer diagnosis failed: {}", phase, pos, error.toString());
         }
     }
+    /**
+     * Returns true if the caller is on the server thread, the target chunk is loaded now, and the
+     * chunk ticks block entities. This method never loads a chunk. A client level always gives false.
+     */
     public boolean loaded() {
         if (!(world instanceof ServerLevel level) || !level.getServer().isSameThread()) return false;
         return level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4) != null
             && level.shouldTickBlocksAt(net.minecraft.world.level.ChunkPos.asLong(pos));
     }
     // Call only after the public entry has checked thread/chunk availability.
+    // Returns the first present storage layer, or null.
     private IEnergyStorage capabilityWhenLoaded() {
         var eu = world.getCapability(EUApi.SIDED, pos, input);
         if (eu != null) return eu;
@@ -77,9 +115,12 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
         if (fe != null) return fe;
         return EnergyCompatibility.get().findEuStorage(world, pos, input);
     }
+    // Call only after the public entry has checked thread/chunk availability.
+    // Returns the AE2 network sink at the position, or null.
     private IEnergySink ae2WhenLoaded() {
         return EnergyCompatibility.get().findNetworkSink(world, pos);
     }
+    /** Returns true if the target is loaded and has a storage layer or an AE2 sink. */
     public boolean isValid() {
         if (!loaded()) return false;
         boolean valid = capabilityWhenLoaded() != null || ae2WhenLoaded() != null;
@@ -87,22 +128,40 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
     }
     public boolean isRegistered() { return registered; }
     public void setRegistered(boolean value) { registered = value; }
+    /** Returns the face of the target that receives energy. */
     public Direction inputSide() { return input; }
     @Override public Level getWorld() { return world; }
     @Override public BlockPos getPos() { return pos; }
+    /** Accepts energy only on the input face, and only while some layer can receive. */
     @Override public boolean acceptsEnergyFrom(IEnergyEmitter source, Direction side) { return side == input && canReceive(); }
+    /** Returns the demand in EU: a simulated FE receive of the maximum amount, divided by 4. */
     @Override public double getDemandedEnergy() { return receiveEnergy(Integer.MAX_VALUE, true) / 4.0; }
+    /** Returns 14, the highest sink tier. The adapter accepts any packet size. */
     @Override public int getSinkTier() { return 14; }
+    /**
+     * Delivers {@code amount} EU on {@code side}. Returns the EU that was not accepted.
+     * The offer is rounded down to whole FE. The fraction below 0.25 EU is returned as not accepted.
+     * A wrong side, a non-finite amount, or an amount of 0 or less returns the full amount.
+     */
     @Override public double injectEnergy(Direction side, double amount, double voltage) {
         if (side != input || !Double.isFinite(amount) || amount <= 0) return amount;
         int offer = (int) Math.min(Integer.MAX_VALUE, Math.floor(amount * 4.0));
         return amount - receiveEnergy(offer, false) / 4.0;
     }
+    /**
+     * Receives up to {@code amount} FE. Returns the FE accepted, in the range {@code 0..amount}.
+     *
+     * <p>If an AE2 sink exists, the offer is limited to its demand and the call goes only to that sink.
+     * Otherwise the layers are tried in order until one accepts more than 0 FE.
+     *
+     * @throws IllegalStateException if a foreign layer reports an amount out of range
+     */
     @Override public int receiveEnergy(int amount, boolean simulate) {
         if (amount <= 0 || !loaded()) return 0;
         var sink = ae2WhenLoaded();
         if (sink != null) {
             int offered = (int)Math.min(amount, Math.floor(Math.max(0, sink.getDemandedEnergy()) * 4.0));
+            // The demand query is foreign code. Check again that the target is still loaded.
             if (!loaded()) return 0;
             if (simulate || offered == 0) return offered;
             double rejected = sink.injectEnergy(input, offered / 4.0, offered / 4.0);
@@ -112,11 +171,13 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
             return Math.min(offered, (int)Math.ceil((offered / 4.0 - rejected) * 4.0));
         }
 
-        // 逐层尝试并回退：某些模组（如 Modern Industrialization）同时暴露
-        // 本模组能力与 FE 适配层，而 FE 适配在某个面可能拒收（canReceive=false
-        // 或报价为 0）。旧实现只认"第一个非 null 的能力"，于是表现为
-        // "电线连上了、机器也在输入面，却永远充不进电"。某层拿不到能量时
-        // 必须继续尝试后续层。逐层惰性查询，避免为常见路径付出额外开销。
+        // Try each layer in order and fall back to the next one. Some mods (for example Modern
+        // Industrialization) expose their own capability and an FE adapter at the same time. The FE
+        // adapter can refuse energy on a face (canReceive=false, or an offer of 0). An adapter that
+        // used only the first non-null capability showed the fault "the wire connects and the
+        // machine faces the wire, but it never charges". When a layer accepts no energy, the next
+        // layer must be tried. Each layer is looked up only when it is needed, so the common path
+        // has no extra cost.
         int accepted = receiveThrough(world.getCapability(EUApi.SIDED, pos, input), amount, simulate);
         if (accepted >= 0) return accepted;
         accepted = receiveThrough(world.getCapability(ILongEnergyStorage.BLOCK, pos, input), amount, simulate);
@@ -126,24 +187,32 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
         accepted = receiveThrough(EnergyCompatibility.get().findEuStorage(world, pos, input), amount, simulate);
         if (accepted >= 0) return accepted;
 
-        debugLayers("所有能量层均未接收", amount, simulate);
+        // No layer accepted energy.
+        debugLayers("no energy layer accepted", amount, simulate);
         return 0;
     }
 
     /**
-     * @return 该层实际接收量；返回 -1 表示该层不存在、不可接收或本层拿不到能量，
-     *         调用方应继续尝试下一层。
+     * Offers {@code amount} FE to one layer.
+     *
+     * @return the amount that this layer accepted, in the range {@code 1..amount}. Returns -1 if the
+     *         layer is absent, cannot receive, or accepts 0 FE. The caller must then try the next layer.
+     * @throws IllegalStateException if the layer reports an amount out of range
      */
     private int receiveThrough(IEnergyStorage target, int amount, boolean simulate) {
-        // Providers and policy callbacks are foreign code; they can unload the target.
+        // Providers and policy callbacks are foreign code. They can unload the target.
+        // Thus loaded() runs before and after canReceive().
         if (target == null || !loaded() || !target.canReceive() || !loaded()) return -1;
         int accepted = target.receiveEnergy(amount, simulate);
         if (accepted < 0 || accepted > amount) throw new IllegalStateException("Invalid external FE receipt at " + pos);
-        // 该层收不下（含模拟报价为 0）时继续尝试下一层。
+        // This layer accepted nothing (also a simulated offer of 0). Try the next layer.
         return accepted > 0 ? accepted : -1;
     }
 
-    /** 任一层可接收即为可接收，避免被优先级最高但当前拒收的层掩盖。 */
+    /**
+     * Returns true if any layer can receive. Thus a layer with higher priority that refuses energy now
+     * does not hide a lower layer that accepts energy.
+     */
     private boolean anyLayerCanReceive() {
         if (capabilityCanReceive(world.getCapability(EUApi.SIDED, pos, input))) return true;
         if (capabilityCanReceive(world.getCapability(ILongEnergyStorage.BLOCK, pos, input))) return true;
@@ -151,9 +220,16 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
         return capabilityCanReceive(EnergyCompatibility.get().findEuStorage(world, pos, input));
     }
 
+    /** Returns true if the layer is present and can receive, and the target is still loaded after the query. */
     private boolean capabilityCanReceive(IEnergyStorage target) {
         return target != null && loaded() && target.canReceive() && loaded();
     }
+    /**
+     * Extracts up to {@code amount} FE from the first present layer. Returns the FE extracted, in the
+     * range {@code 0..amount}.
+     *
+     * @throws IllegalStateException if the layer reports an amount out of range
+     */
     @Override public int extractEnergy(int amount, boolean simulate) {
         if (amount <= 0 || !loaded()) return 0;
         var target = capabilityWhenLoaded();
@@ -162,16 +238,19 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
         if (extracted < 0 || extracted > amount) throw new IllegalStateException("Invalid external FE extraction at " + pos);
         return extracted;
     }
+    /** Returns the FE stored in the first present layer, or 0. */
     @Override public int getEnergyStored() {
         if (!loaded()) return 0;
         var target = capabilityWhenLoaded();
         return target == null || !loaded() ? 0 : target.getEnergyStored();
     }
+    /** Returns the FE capacity of the first present layer, or 0. */
     @Override public int getMaxEnergyStored() {
         if (!loaded()) return 0;
         var target = capabilityWhenLoaded();
         return target == null || !loaded() ? 0 : target.getMaxEnergyStored();
     }
+    /** Returns true if the AE2 sink has demand, or, without an AE2 sink, if any layer can receive. */
     @Override public boolean canReceive() {
         if (!loaded()) return false;
         var sink = ae2WhenLoaded();
@@ -180,6 +259,7 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
         debugLayers("canReceive=false", 0, true);
         return false;
     }
+    /** Returns true if the first present layer can extract. */
     @Override public boolean canExtract() {
         if (!loaded()) return false;
         var target = capabilityWhenLoaded();

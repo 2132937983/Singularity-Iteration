@@ -16,41 +16,45 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 期货市场全局数据 - 数据库层
- * 
- * 职责�? * 1. 持久化存储所有期货货品的当前价格�?0天历史价�? * 2. 持久化存储价格事�? * 3. 提供标准的数据库CRUD操作
- * 4. 管理游戏天数和价格滚�? * 
- * 注意：此类只负责数据存储，不涉及业务逻辑
+ * Global futures market data. This class is the database layer.
+ *
+ * Responsibilities:
+ * 1. Persist the current price and the 20-day price history of all futures commodities.
+ * 2. Persist the price events.
+ * 3. Supply standard database CRUD operations.
+ * 4. Manage the game day count and the price history roll.
+ *
+ * This class only stores data. It contains no business logic.
  */
 @SuppressWarnings("null")
 public class FutureMarketData extends SavedData {
-    
+
     private static final String DATA_NAME = "mio_icif_future_market";
     private static final int HISTORY_DAYS = 20;
-    
-    // ========== 数据存储 ==========
-    
-    /** 当前价格：key=货品ID, value=当前价格 */
+
+    // ========== Data storage ==========
+
+    /** Current prices: key = commodity ID, value = current price. */
     private final Map<String, Integer> currentPrices = new HashMap<>();
-    
-    /** 价格历史：key=货品ID, value=20天价格列�?索引0=19天前, 索引19=今天) */
+
+    /** Price history: key = commodity ID, value = list of 20 daily prices (index 0 = 19 days ago, index 19 = today). */
     private final Map<String, List<Integer>> priceHistory = new HashMap<>();
-    
-    /** 价格事件：key=货品ID, value=该货品的活跃事件列表 */
+
+    /** Price events: key = commodity ID, value = list of active events for that commodity. */
     private final Map<String, List<FuturePriceEvent>> activeEvents = new HashMap<>();
-    
-    /** 当前游戏天数 */
+
+    /** Current game day. */
     private long currentDay = 0;
-    
-    /** 是否已初始化 */
+
+    /** True when the data is initialized. */
     private boolean initialized = false;
-    
-    // ========== 构造函数?==========
-    
+
+    // ========== Constructor ==========
+
     public FutureMarketData() {}
-    
-    // ========== 单例获取 ==========
-    
+
+    // ========== Singleton access ==========
+
     public static FutureMarketData get(Level level) {
         if (level instanceof ServerLevel serverLevel) {
             DimensionDataStorage storage = serverLevel.getDataStorage();
@@ -61,22 +65,22 @@ public class FutureMarketData extends SavedData {
         }
         throw new IllegalStateException("Cannot get FutureMarketData on client side");
     }
-    
-    // ========== 数据加载 ==========
-    
+
+    // ========== Data loading ==========
+
     public static FutureMarketData load(CompoundTag tag, HolderLookup.Provider provider) {
         FutureMarketData data = new FutureMarketData();
-        
+
         data.currentDay = tag.getLong("CurrentDay");
         data.initialized = tag.getBoolean("Initialized");
-        
-        // 加载当前价格
+
+        // Load the current prices.
         CompoundTag pricesTag = tag.getCompound("CurrentPrices");
         for (String key : pricesTag.getAllKeys()) {
             data.currentPrices.put(key, pricesTag.getInt(key));
         }
-        
-        // 加载价格历史
+
+        // Load the price history.
         CompoundTag historyTag = tag.getCompound("PriceHistory");
         for (String commodityId : historyTag.getAllKeys()) {
             ListTag list = historyTag.getList(commodityId, Tag.TAG_INT);
@@ -86,8 +90,8 @@ public class FutureMarketData extends SavedData {
             }
             data.priceHistory.put(commodityId, prices);
         }
-        
-        // 加载价格事件
+
+        // Load the price events.
         CompoundTag eventsTag = tag.getCompound("ActiveEvents");
         for (String commodityId : eventsTag.getAllKeys()) {
             ListTag eventList = eventsTag.getList(commodityId, Tag.TAG_COMPOUND);
@@ -98,30 +102,30 @@ public class FutureMarketData extends SavedData {
                     FuturePriceEvent event = FuturePriceEvent.deserialize(eventTag);
                     events.add(event);
                 } catch (Exception e) {
-                    // 忽略无效事件
+                    // Ignore an invalid event.
                 }
             }
             data.activeEvents.put(commodityId, events);
         }
-        
+
         return data;
     }
-    
-    // ========== 数据保存 ==========
-    
+
+    // ========== Data saving ==========
+
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putLong("CurrentDay", currentDay);
         tag.putBoolean("Initialized", initialized);
-        
-        // 保存当前价格
+
+        // Save the current prices.
         CompoundTag pricesTag = new CompoundTag();
         for (Map.Entry<String, Integer> entry : currentPrices.entrySet()) {
             pricesTag.putInt(entry.getKey(), entry.getValue());
         }
         tag.put("CurrentPrices", pricesTag);
-        
-        // 保存价格历史
+
+        // Save the price history.
         CompoundTag historyTag = new CompoundTag();
         for (Map.Entry<String, List<Integer>> entry : priceHistory.entrySet()) {
             ListTag list = new ListTag();
@@ -131,8 +135,8 @@ public class FutureMarketData extends SavedData {
             historyTag.put(entry.getKey(), list);
         }
         tag.put("PriceHistory", historyTag);
-        
-        // 保存价格事件
+
+        // Save the price events.
         CompoundTag eventsTag = new CompoundTag();
         for (Map.Entry<String, List<FuturePriceEvent>> entry : activeEvents.entrySet()) {
             ListTag eventList = new ListTag();
@@ -142,53 +146,55 @@ public class FutureMarketData extends SavedData {
             eventsTag.put(entry.getKey(), eventList);
         }
         tag.put("ActiveEvents", eventsTag);
-        
+
         return tag;
     }
-    
-    // ========== 标准数据库操�?- 当前价格 ==========
-    
+
+    // ========== Standard database operations: current prices ==========
+
     /**
-     * 获取货品当前价格
-     * @param commodityId 货品ID
-     * @param defaultPrice 默认价格（未找到时返回）
-     * @return 当前价格
+     * Gets the current price of a commodity.
+     * @param commodityId the commodity ID
+     * @param defaultPrice the default price. The method returns it when no price is found.
+     * @return the current price
      */
     public int getPrice(String commodityId, int defaultPrice) {
         return currentPrices.getOrDefault(commodityId, defaultPrice);
     }
-    
+
     /**
-     * 设置货品当前价格
-     * @param commodityId 货品ID
-     * @param price 新价�?     */
+     * Sets the current price of a commodity.
+     * @param commodityId the commodity ID
+     * @param price the new price
+     */
     public void setPrice(String commodityId, int price) {
         currentPrices.put(commodityId, price);
         setDirty();
     }
-    
+
     /**
-     * 批量设置价格
-     * @param prices 价格映射
+     * Sets several prices at once.
+     * @param prices the price map
      */
     public void setPrices(Map<String, Integer> prices) {
         currentPrices.putAll(prices);
         setDirty();
     }
-    
+
     /**
-     * 获取所有当前价�?     * @return 价格映射副本
+     * Returns all current prices.
+     * @return a copy of the price map
      */
     public Map<String, Integer> getAllPrices() {
         return new HashMap<>(currentPrices);
     }
-    
-    // ========== 标准数据库操�?- 价格历史 ==========
-    
+
+    // ========== Standard database operations: price history ==========
+
     /**
-     * 获取货品价格历史
-     * @param commodityId 货品ID
-     * @return 20天价格列表（索引0=19天前，索引?9=今天），如果不存在返回空列表
+     * Gets the price history of a commodity.
+     * @param commodityId the commodity ID
+     * @return the list of 20 daily prices (index 0 = 19 days ago, index 19 = today), or an empty list if no history exists
      */
     public List<Integer> getPriceHistory(String commodityId) {
         List<Integer> history = priceHistory.get(commodityId);
@@ -197,42 +203,43 @@ public class FutureMarketData extends SavedData {
         }
         return new ArrayList<>(history);
     }
-    
+
     /**
-     * 设置货品价格历史（覆盖）
-     * @param commodityId 货品ID
-     * @param history 价格历史列表
+     * Sets the price history of a commodity. It replaces the existing history.
+     * @param commodityId the commodity ID
+     * @param history the price history list
      */
     public void setPriceHistory(String commodityId, List<Integer> history) {
         priceHistory.put(commodityId, new ArrayList<>(history));
         setDirty();
     }
-    
+
     /**
-     * 记录当天价格到历史末�?     * @param commodityId 货品ID
-     * @param price 当天价格
+     * Records the price of today at the end of the history.
+     * @param commodityId the commodity ID
+     * @param price the price of today
      */
     public void recordTodayPrice(String commodityId, int price) {
         List<Integer> history = priceHistory.computeIfAbsent(commodityId, k -> new ArrayList<>());
-        
-        // 确保列表�?0个元素，用当前价格填充（避免0值）
+
+        // Fill the list to 20 entries with the current price. This prevents zero values.
         while (history.size() < HISTORY_DAYS) {
             history.add(Math.max(1, price));
         }
-        
-        // 设置今天的价格（最后一个元素），确保至少为1
+
+        // Set the price for today (the last element). The price is at least 1.
         history.set(HISTORY_DAYS - 1, Math.max(1, price));
         setDirty();
     }
-    
+
     /**
-     * 滚动价格历史（新的一天）
-     * 移除最旧的一天，复制最后一天的价格（避�?值）
+     * Rolls the price history forward by one day.
+     * Removes the oldest day and copies the last price to the new day. This prevents zero values.
      */
     public void rollPriceHistory() {
         for (List<Integer> history : priceHistory.values()) {
             if (!history.isEmpty()) {
-                // 获取最后一天的价格，确保至少为1
+                // Get the price of the last day. The price is at least 1.
                 int lastPrice = Math.max(1, history.get(history.size() - 1));
                 history.remove(0);
                 history.add(lastPrice);
@@ -240,10 +247,11 @@ public class FutureMarketData extends SavedData {
         }
         setDirty();
     }
-    
+
     /**
-     * 初始化货品价格历�?     * @param commodityId 货品ID
-     * @param basePrice 基础价格（用于填充历史）
+     * Initializes the price history of a commodity.
+     * @param commodityId the commodity ID
+     * @param basePrice the base price that fills the history
      */
     public void initializeCommodityHistory(String commodityId, int basePrice) {
         if (!priceHistory.containsKey(commodityId)) {
@@ -255,57 +263,61 @@ public class FutureMarketData extends SavedData {
             setDirty();
         }
     }
-    
-    // ========== 标准数据库操�?- 天数管理 ==========
-    
+
+    // ========== Standard database operations: day count ==========
+
     /**
-     * 获取当前游戏天数
-     * @return 天数
+     * Gets the current game day.
+     * @return the day number
      */
     public long getCurrentDay() {
         return currentDay;
     }
-    
+
     /**
-     * 设置当前游戏天数
-     * @param day 天数
+     * Sets the current game day.
+     * @param day the day number
      */
     public void setCurrentDay(long day) {
         this.currentDay = day;
         setDirty();
     }
-    
-    // ========== 标准数据库操�?- 初始化状态?==========
-    
+
+    // ========== Standard database operations: initialization state ==========
+
     /**
-     * 检查是否已初始�?     * @return 是否已初始化
+     * Checks if the market data is initialized.
+     * @return true if the market data is initialized
      */
     public boolean isInitialized() {
         return initialized;
     }
-    
+
     /**
-     * 设置初始化状态?     * @param initialized 初始化状态?     */
+     * Sets the initialization state.
+     * @param initialized the initialization state
+     */
     public void setInitialized(boolean initialized) {
         this.initialized = initialized;
         setDirty();
     }
-    
-    // ========== 标准数据库操�?- 价格事件 ==========
-    
+
+    // ========== Standard database operations: price events ==========
+
     /**
-     * 添加价格事件
-     * @param commodityId 货品ID
-     * @param event 价格事件
+     * Adds a price event.
+     * @param commodityId the commodity ID
+     * @param event the price event
      */
     public void addEvent(String commodityId, FuturePriceEvent event) {
         activeEvents.computeIfAbsent(commodityId, k -> new ArrayList<>()).add(event);
         setDirty();
     }
-    
+
     /**
-     * 获取货品的活跃事件列�?     * @param commodityId 货品ID
-     * @return 事件列表，如果没有返回空列表
+     * Returns the active events of a commodity.
+     * @param commodityId the commodity ID
+     * @return the event list, or an empty list if there are no events
      */
     public List<FuturePriceEvent> getEvents(String commodityId) {
         List<FuturePriceEvent> events = activeEvents.get(commodityId);
@@ -314,9 +326,10 @@ public class FutureMarketData extends SavedData {
         }
         return new ArrayList<>(events);
     }
-    
+
     /**
-     * 获取所有活跃事�?     * @return 事件映射
+     * Returns all active events.
+     * @return the event map
      */
     public Map<String, List<FuturePriceEvent>> getAllEvents() {
         Map<String, List<FuturePriceEvent>> result = new HashMap<>();
@@ -325,11 +338,11 @@ public class FutureMarketData extends SavedData {
         }
         return result;
     }
-    
+
     /**
-     * 移除过期事件
-     * @param commodityId 货品ID
-     * @param currentDay 当前游戏天数
+     * Removes expired events.
+     * @param commodityId the commodity ID
+     * @param currentDay the current game day
      */
     public void removeExpiredEvents(String commodityId, long currentDay) {
         List<FuturePriceEvent> events = activeEvents.get(commodityId);
@@ -341,20 +354,22 @@ public class FutureMarketData extends SavedData {
             setDirty();
         }
     }
-    
+
     /**
-     * 清理所有过期事�?     * @param currentDay 当前游戏天数
+     * Removes all expired events.
+     * @param currentDay the current game day
      */
     public void cleanupExpiredEvents(long currentDay) {
         for (String commodityId : new ArrayList<>(activeEvents.keySet())) {
             removeExpiredEvents(commodityId, currentDay);
         }
     }
-    
+
     /**
-     * 获取货品的活跃事件（用于价格计算�?     * @param commodityId 货品ID
-     * @param currentDay 当前游戏天数
-     * @return 活跃事件，如果没有返回null
+     * Returns the active event of a commodity for the price calculation.
+     * @param commodityId the commodity ID
+     * @param currentDay the current game day
+     * @return the active event, or null if there is no active event
      */
     public FuturePriceEvent getActiveEvent(String commodityId, long currentDay) {
         List<FuturePriceEvent> events = activeEvents.get(commodityId);
@@ -367,9 +382,9 @@ public class FutureMarketData extends SavedData {
         }
         return null;
     }
-    
-    // ========== 常量获取 ==========
-    
+
+    // ========== Constants ==========
+
     public static int getHistoryDays() {
         return HISTORY_DAYS;
     }

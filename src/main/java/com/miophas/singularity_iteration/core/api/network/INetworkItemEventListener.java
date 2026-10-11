@@ -4,21 +4,21 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * 物品网络事件监听接口。
+ * Interface to listen for item network events.
  * <p>
- * 对应 IC2 1.12.2 的 {@code INetworkItemEventListener}。
- * 实现此接口的物品可以在网络事件到达时执行客户端逻辑。
+ * This is the equivalent of {@code INetworkItemEventListener} in IC2 for 1.12.2.
+ * An item that implements this interface can run client logic when a network event arrives.
  */
 public interface INetworkItemEventListener {
 
     /**
-     * 当物品收到网络事件时调用。
+     * Called when the item receives a network event.
      * <p>
-     * 此方法在客户端执行，用于处理从服务端同步的物品事件。
+     * This method runs on the client side. It handles item events that the server sends.
      *
-     * @param stack 物品堆
-     * @param player 接收事件的玩家
-     * @param eventId 事件 ID
+     * @param stack the item stack
+     * @param player the player that receives the event
+     * @param eventId the event ID
      */
     void onNetworkEvent(ItemStack stack, Player player, int eventId);
 }

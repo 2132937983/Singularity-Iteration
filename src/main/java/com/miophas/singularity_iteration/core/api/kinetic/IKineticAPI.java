@@ -8,66 +8,66 @@ import java.util.Collection;
 import java.util.Optional;
 
 /**
- * 动能 (KU) API
+ * Kinetic energy (KU) API.
  *
- * <p>提供与 mio_icif 动能系统交互的接口，包括：
+ * <p>Gives access to the mio_icif kinetic system. It lets you:
  * <ul>
- *   <li>查询方块的动能状态</li>
- *   <li>获取动能存储信息</li>
- *   <li>注入/提取动能</li>
- *   <li>查询动能连接</li>
+ *   <li>Query the kinetic state of a block</li>
+ *   <li>Get kinetic storage data</li>
+ *   <li>Insert or extract kinetic energy</li>
+ *   <li>Query kinetic connections</li>
  * </ul>
  */
 public interface IKineticAPI {
 
     /**
-     * 获取指定位置的动能存储信息
+     * Gets the kinetic storage at a position.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 动能存储访问接口；如果位置没有动能方块或存储信息不可用则返回空 Optional
+     * @param world the level
+     * @param pos the block position
+     * @return the kinetic storage access; an empty Optional if the position has no kinetic block or the storage is not available
      */
     Optional<IKineticStorageAccess> getKineticStorage(Level world, BlockPos pos);
 
     /**
-     * 检查指定位置是否有动能方块
+     * Checks if a position has a kinetic block.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return true 如果位置有动能方块
+     * @param world the level
+     * @param pos the block position
+     * @return true if the position has a kinetic block
      */
     boolean hasKineticTile(Level world, BlockPos pos);
 
     /**
-     * 获取指定位置的动能连接方向
+     * Gets the kinetic connection directions at a position.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 连接方向集合
+     * @param world the level
+     * @param pos the block position
+     * @return the collection of connected directions
      */
     Collection<Direction> getKineticConnections(Level world, BlockPos pos);
 
     /**
-     * 向指定位置的动能存储注入动能。
+     * Puts kinetic energy into the kinetic storage at a position.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @param amount 要注入的动能（KU），必须 ≥ 0
-     * @param simulate 如果 true 只模拟不实际修改
-     * @return 实际注入的动能（KU）；如果位置没有动能方块返回 0
+     * @param world the level
+     * @param pos the block position
+     * @param amount the kinetic energy to insert (KU); must be ≥ 0
+     * @param simulate if true, only simulate; nothing changes
+     * @return the kinetic energy that was inserted (KU); 0 if the position has no kinetic block
      */
     default long insertKinetic(Level world, BlockPos pos, long amount, boolean simulate) {
         return getKineticStorage(world, pos).map(s -> s.insertKinetic(amount, simulate)).orElse(0L);
     }
 
     /**
-     * 从指定位置的动能存储提取动能。
+     * Takes kinetic energy from the kinetic storage at a position.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @param amount 要提取的动能（KU），必须 ≥ 0
-     * @param simulate 如果 true 只模拟不实际修改
-     * @return 实际提取的动能（KU）；如果位置没有动能方块返回 0
+     * @param world the level
+     * @param pos the block position
+     * @param amount the kinetic energy to extract (KU); must be ≥ 0
+     * @param simulate if true, only simulate; nothing changes
+     * @return the kinetic energy that was extracted (KU); 0 if the position has no kinetic block
      */
     default long extractKinetic(Level world, BlockPos pos, long amount, boolean simulate) {
         return getKineticStorage(world, pos).map(s -> s.extractKinetic(amount, simulate)).orElse(0L);

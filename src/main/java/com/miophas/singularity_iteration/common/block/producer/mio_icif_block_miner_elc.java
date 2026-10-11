@@ -28,8 +28,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 电力采矿机方块类
- * 自动垂直挖矿的机器方法? */
+ * Block class for the electric miner.
+ * A machine block that mines vertically downward automatically.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_miner_elc extends mio_icif_entity_block {
 
@@ -40,7 +41,7 @@ public class mio_icif_block_miner_elc extends mio_icif_entity_block {
 
     public mio_icif_block_miner_elc(Properties properties) {
         super(properties);
-        // 注册默认状态：朝向北，未点�
+        // Default state: facing north and not lit.
     this.registerDefaultState(this.stateDefinition.any()
             .setValue(FACING, Direction.NORTH)
             .setValue(LIT, false));
@@ -93,7 +94,7 @@ public class mio_icif_block_miner_elc extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_miner_elc miner) {
-                // 掉落物品栏中的物�
+                // Drop the items in the inventory.
             for (int i = 0; i < miner.getItemHandler().getSlots(); i++) {
                     ItemStack stack = miner.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {

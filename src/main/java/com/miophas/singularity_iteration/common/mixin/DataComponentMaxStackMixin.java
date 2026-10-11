@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * 修改 DataComponents.MAX_STACK_SIZE 的序列化 Codec
- * 允许数据组件中的最大堆叠数超过 64
+ * Changes the serialization Codec of DataComponents.MAX_STACK_SIZE.
+ * It lets the maximum stack size in the data component go above 64.
  */
 @Mixin(DataComponents.class)
 @SuppressWarnings("null")
@@ -23,7 +23,7 @@ public class DataComponentMaxStackMixin {
         )
     )
     private static Codec<Integer> replaceMaxStackCodec(Codec<Integer> original) {
-        // ???MAX_STACK_SIZE 数据组件的序列化范围???0-64 改为 0-9999
+        // Change the serialization range of the MAX_STACK_SIZE data component from 0-64 to 0-9999.
         return Codec.intRange(0, 9999);
     }
 }

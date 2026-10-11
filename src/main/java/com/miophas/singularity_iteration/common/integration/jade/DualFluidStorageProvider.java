@@ -13,7 +13,8 @@ import snownee.jade.api.ITooltip;
 import snownee.jade.api.config.IPluginConfig;
 
 /**
- * Jade 双流体槽显示提供�? * 支持显示两个流体槽的流体信息
+ * Jade provider for blocks with two fluid tanks.
+ * Shows the fluid information of the input tank and the output tank.
  */
 @SuppressWarnings({"null", "removal"})
 public enum DualFluidStorageProvider implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
@@ -26,7 +27,7 @@ public enum DualFluidStorageProvider implements IBlockComponentProvider, IServer
     public void appendTooltip(ITooltip tooltip, BlockAccessor accessor, IPluginConfig config) {
         CompoundTag data = accessor.getServerData();
         
-        // 显示输入流体�?- 总是显示
+        // Show the input tank. The tooltip always shows it.
         if (data.contains("InputFluid") && data.contains("InputFluidAmount") && data.contains("InputFluidCapacity")) {
             String fluidName = data.getString("InputFluid");
             int amount = data.getInt("InputFluidAmount");
@@ -38,7 +39,7 @@ public enum DualFluidStorageProvider implements IBlockComponentProvider, IServer
             }
         }
         
-        // 显示输出流体�?- 总是显示
+        // Show the output tank. The tooltip always shows it.
         if (data.contains("OutputFluid") && data.contains("OutputFluidAmount") && data.contains("OutputFluidCapacity")) {
             String fluidName = data.getString("OutputFluid");
             int amount = data.getInt("OutputFluidAmount");
@@ -59,11 +60,11 @@ public enum DualFluidStorageProvider implements IBlockComponentProvider, IServer
         }
 
         // 尝试获取双流体槽能力
-        // 这里使用一个自定义的接口来获取两个流体�
+        // Use a custom interface to get both fluid tanks.
     DualFluidHandler dualHandler = getDualFluidHandler(blockEntity);
         
         if (dualHandler != null) {
-            // 输入�?- 总是显示，即使为�
+            // Input tank. Always send its data, also when the tank is empty.
         FluidStack inputFluid = dualHandler.getInputFluid();
             if (!inputFluid.isEmpty()) {
                 data.putString("InputFluid", inputFluid.getDisplayName().getString());
@@ -74,7 +75,7 @@ public enum DualFluidStorageProvider implements IBlockComponentProvider, IServer
             }
             data.putInt("InputFluidCapacity", dualHandler.getInputCapacity());
             
-            // 输出�?- 总是显示，即使为�
+            // Output tank. Always send its data, also when the tank is empty.
         FluidStack outputFluid = dualHandler.getOutputFluid();
             if (!outputFluid.isEmpty()) {
                 data.putString("OutputFluid", outputFluid.getDisplayName().getString());

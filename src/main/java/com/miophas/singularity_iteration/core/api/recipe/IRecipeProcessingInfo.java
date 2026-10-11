@@ -1,12 +1,13 @@
 package com.miophas.singularity_iteration.core.api.recipe;
 
 /**
- * 配方处理信息接口
+ * Recipe processing information interface.
  *
- * <p>所有需要暴露处理时间和能耗信息的配方都应实现此接口。
- * 通过实现此接口，可以避免使用反射访问配方属性，确保在混淆环境下正常工作。
+ * <p>All recipes that must expose their processing time and energy use must implement this interface.
+ * With this interface, callers do not need reflection to read recipe properties.
+ * This makes sure that the code works correctly in an obfuscated environment.
  *
- * <p>实现示例：
+ * <p>Implementation example:
  * <pre>{@code
  * public class MyCustomRecipe implements Recipe<MyInventory>, IRecipeProcessingInfo {
  *     private final int processingTime;
@@ -27,37 +28,37 @@ package com.miophas.singularity_iteration.core.api.recipe;
 public interface IRecipeProcessingInfo {
 
     /**
-     * 获取配方处理时间（tick）
+     * Gets the recipe processing time.
      *
-     * @return 处理时间，单位 tick
+     * @return the processing time (ticks)
      */
     int getProcessingTime();
 
     /**
-     * 获取配方每 tick 能耗（EU/tick）
+     * Gets the recipe energy use per tick.
      *
-     * @return 每 tick 能耗，单位 EU/tick
+     * @return the energy use per tick (EU/tick)
      */
     int getEnergyPerTick();
 
     /**
-     * 获取配方总能耗（EU）
+     * Gets the total recipe energy cost.
      *
-     * <p>默认实现为 getEnergyPerTick() * getProcessingTime()
+     * <p>The default implementation returns getEnergyPerTick() * getProcessingTime().
      *
-     * @return 总能耗，单位 EU
+     * @return the total energy cost (EU)
      */
     default long getTotalEnergyCost() {
         return (long) getEnergyPerTick() * getProcessingTime();
     }
 
     /**
-     * 获取配方输入物品消耗数量
+     * Gets the number of input items that the recipe consumes.
      *
-     * <p>默认返回1，表示每次加工消耗1个输入物品。
-     * 金属成型机等配方可能需要消耗多个输入物品。
+     * <p>The default is 1. This means that each operation consumes 1 input item.
+     * Some recipes, for example metal former recipes, can consume more than one input item.
      *
-     * @return 消耗数量
+     * @return the number of consumed items
      */
     default int getIngredientCount() {
         return 1;

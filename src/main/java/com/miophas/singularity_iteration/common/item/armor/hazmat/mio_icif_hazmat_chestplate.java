@@ -14,16 +14,16 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 防化朝胸�?
- * 杝供辝射防护功能
+ * Hazmat chestplate.
+ * It gives radiation protection.
  */
 @SuppressWarnings("null")
 public class mio_icif_hazmat_chestplate extends ArmorItem implements IHazmatLike {
 
-    // 辝射防护等级�?-4�? 为完全防护）
+    // Radiation protection level (0-4, 4 is full protection).
     private static final int RADIATION_PROTECTION_LEVEL = 4;
 
-    // 防化朝护甲杝质路径（头盔和胸甲使�?layer 1�?
+    // Hazmat armor texture path. The helmet and the chestplate use layer 1.
     private static final ResourceLocation HAZMAT_ARMOR_TEXTURE = 
         ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/armor/hazmat_1.png");
 
@@ -32,8 +32,8 @@ public class mio_icif_hazmat_chestplate extends ArmorItem implements IHazmatLike
     }
 
     /**
-     * 获坖护甲杝质
-     * 使用自定义的防化朝杝�?
+     * Returns the armor texture.
+     * It uses the custom hazmat texture.
      */
     @Override
     @Nullable
@@ -42,26 +42,26 @@ public class mio_icif_hazmat_chestplate extends ArmorItem implements IHazmatLike
     }
 
     /**
-     * 物哝在物哝栝中的更新
+     * Updates the item while it is in an inventory.
      */
     @Override
     public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
         
-        // 坪在朝务端处理?
+        // Process only on the server.
         if (level.isClientSide || !(entity instanceof LivingEntity livingEntity)) {
             return;
         }
 
-        // 如果穿着整套防化朝，杝供完全辝射兝疫
+        // Check if the entity wears a full hazmat suit.
         if (isWearingFullHazmat(livingEntity)) {
-            // 穿着整套时完全兝疫辝�?
+            // A full hazmat suit gives full radiation immunity.
             return;
         }
     }
 
     /**
-     * 检查是坦穿着整套防化学?
+     * Checks if the player wears a full hazmat suit.
      */
     private boolean isWearingFullHazmat(LivingEntity entity) {
         if (!(entity instanceof Player player)) {
@@ -80,7 +80,7 @@ public class mio_icif_hazmat_chestplate extends ArmorItem implements IHazmatLike
     }
 
     /**
-     * 获坖辝射防护等级
+     * Gets the radiation protection level.
      */
     public static int getRadiationProtectionLevel() {
         return RADIATION_PROTECTION_LEVEL;

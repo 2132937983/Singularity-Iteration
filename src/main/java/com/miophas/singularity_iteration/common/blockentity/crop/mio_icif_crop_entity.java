@@ -135,7 +135,7 @@ public class mio_icif_crop_entity extends BlockEntity implements IPlanter {
         var directions = new net.minecraft.core.Direction[]{net.minecraft.core.Direction.NORTH, net.minecraft.core.Direction.SOUTH,
             net.minecraft.core.Direction.WEST, net.minecraft.core.Direction.EAST};
         BlockPos pos = worldPosition.relative(directions[level.random.nextInt(4)]);
-        if (!level.hasChunkAt(pos)) return;
+        if (!level.isLoaded(pos)) return;
         if (level.getBlockEntity(pos) instanceof IPlanter other) {
             boolean invade = other.getPlant() == null;
             if (!invade && !other.getPlant().isWeed(other) && level.random.nextInt(32) >= other.getResilience()) {
@@ -221,7 +221,7 @@ public class mio_icif_crop_entity extends BlockEntity implements IPlanter {
             // Preserve the Experimental source's asymmetric 2x2 neighborhood.
             for (int x = -1; x < 1; x++) for (int z = -1; z < 1; z++) {
                 BlockPos pos = worldPosition.offset(x, 0, z);
-                if (!level.hasChunkAt(pos) || level.getBlockState(pos).isSolidRender(level, pos)
+                if (!level.isLoaded(pos) || level.getBlockState(pos).isSolidRender(level, pos)
                         || level.getBlockEntity(pos) instanceof IPlanter) fresh--;
             }
             airQuality = Math.clamp((int) Math.floor((worldPosition.getY() - 40) / 15.0), 0, 2)

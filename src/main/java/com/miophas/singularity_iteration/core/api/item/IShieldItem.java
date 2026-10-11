@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 盾牌物品接口。
+ * Interface for a shield item.
  *
- * <p>用于标识盾牌类物品，便于 API 统一查询与分类。
+ * <p>It marks shield items, so that the API can query and sort them in one way.
  */
 public interface IShieldItem {
 }

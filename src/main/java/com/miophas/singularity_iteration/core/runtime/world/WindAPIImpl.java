@@ -6,8 +6,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
 /**
- * {@link IWindAPI} 的默认实现，委托给按维度持久化的 {@link WindSim}。
- * 客户端世界一律返回 0，避免在客户端创建 SavedData。
+ * Default implementation of {@link IWindAPI}. It delegates to {@link WindSim}, which is saved for each dimension.
+ * On a client level, it always returns 0. This prevents the creation of SavedData on the client.
  */
 public final class WindAPIImpl implements IWindAPI {
 

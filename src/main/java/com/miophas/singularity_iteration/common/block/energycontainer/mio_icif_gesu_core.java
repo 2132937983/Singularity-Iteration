@@ -35,7 +35,6 @@ import java.util.List;
 public class mio_icif_gesu_core extends mio_icif_Block_GESU_Multiblock_Base {
 
     private static final long CAPACITY = 2147483647L;
-    private static final ICableTier TIER = MioIcifAPI.instance().getEnergyNetAPI().getCableTier("iv");
 
     public static final MapCodec<mio_icif_gesu_core> CODEC = simpleCodec(mio_icif_gesu_core::new);
     public static final DirectionProperty FACING = DirectionalBlock.FACING;

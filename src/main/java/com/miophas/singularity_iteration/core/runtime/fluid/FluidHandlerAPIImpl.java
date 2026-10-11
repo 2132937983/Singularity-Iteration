@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 流体处理 API 实现
+ * Implementation of the fluid handler API.
  */
 public class FluidHandlerAPIImpl implements IFluidHandlerAPI {
 
@@ -67,16 +67,16 @@ public class FluidHandlerAPIImpl implements IFluidHandlerAPI {
         if (handler == null) return 0;
         if (tank < 0 || tank >= handler.getTanks()) return 0;
 
-        // 检查指定 tank 是否可以接受此流体
+        // Check if the given tank can accept this fluid
         if (!handler.isFluidValid(tank, fluid)) {
             return 0;
         }
 
-        // 注意：NeoForge 的 IFluidHandler.fill() 不接受 tank 索引参数
-        // 它会自动将流体路由到第一个可接受的 tank
-        // 此方法无法强制填充到特定 tank 索引
-        // 如果需要精确控制填充目标槽位，请直接使用 NeoForge 的 IFluidHandler capability
-        // 并实现自定义的填充逻辑
+        // Note: the NeoForge IFluidHandler.fill() has no tank index parameter.
+        // It sends the fluid to the first tank that accepts it.
+        // This method cannot force the fill into a specific tank index.
+        // For exact control of the target tank, use the NeoForge IFluidHandler capability directly
+        // and write your own fill logic.
         return handler.fill(fluid, simulate ? IFluidHandler.FluidAction.SIMULATE : IFluidHandler.FluidAction.EXECUTE);
     }
 
@@ -97,7 +97,7 @@ public class FluidHandlerAPIImpl implements IFluidHandlerAPI {
     }
 
     /**
-     * 流体槽信息实现
+     * Implementation of the fluid tank information.
      */
     private static class FluidTankInfoImpl implements IFluidTankInfo {
         private final int tankIndex;

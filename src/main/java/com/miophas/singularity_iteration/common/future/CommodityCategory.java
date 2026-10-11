@@ -3,8 +3,8 @@ package com.miophas.singularity_iteration.common.future;
 import net.minecraft.network.chat.Component;
 
 /**
- * 货品种类枚举
- * 定义期货机中货品的分配? */
+ * Commodity category enum.
+ * It defines the categories of commodities in the futures machine. */
 @SuppressWarnings("null")
 public enum CommodityCategory {
     MINERAL("mineral", "gui.mio_icif.future.category.mineral"),      // 矿产

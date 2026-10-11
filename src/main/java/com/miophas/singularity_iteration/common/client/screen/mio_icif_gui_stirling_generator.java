@@ -33,10 +33,6 @@ public class mio_icif_gui_stirling_generator extends mio_icif_screen<com.miophas
     private static final int HEAT_BAR_HEIGHT = 17;
 
     // 热能条纹理位置
-    @SuppressWarnings("unused")
-    private static final int HEAT_BAR_TEXTURE_X = 176;
-    @SuppressWarnings("unused")
-    private static final int HEAT_BAR_TEXTURE_Y = 17;
 
     // 工作状态图标位置
     private static final int WORK_ICON_X = 80;
@@ -45,14 +41,6 @@ public class mio_icif_gui_stirling_generator extends mio_icif_screen<com.miophas
     private static final int WORK_ICON_HEIGHT = 14;
 
     // 工作状态图标纹理位置
-    @SuppressWarnings("unused")
-    private static final int WORK_ACTIVE_TEXTURE_X = 176;
-    @SuppressWarnings("unused")
-    private static final int WORK_ACTIVE_TEXTURE_Y = 34;
-    @SuppressWarnings("unused")
-    private static final int WORK_INACTIVE_TEXTURE_X = 176;
-    @SuppressWarnings("unused")
-    private static final int WORK_INACTIVE_TEXTURE_Y = 48;
 
     // 文本位置
     private static final int INFO_TEXT_X = 42;

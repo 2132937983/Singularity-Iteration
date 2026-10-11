@@ -5,48 +5,48 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
- * 发电机查询 API
+ * Generator query API.
  *
- * <p>提供发电机燃料、燃烧状态和能量生成的查询功能。
- * 从 IMachineAPI 拆分而来，遵循单一职责原则。
+ * <p>Gives queries for generator fuel, burn state and energy generation.
+ * It was split from IMachineAPI to follow the single responsibility principle.
  */
 public interface IGeneratorQueryAPI {
 
     /**
-     * 检查发电机是否正在燃烧
+     * Checks if the generator is burning fuel.
      */
     boolean isGeneratorBurning(Level world, BlockPos pos);
 
     /**
-     * 获取发电机当前燃料的剩余燃烧时间
+     * Gets the remaining burn time of the current fuel.
      *
-     * @return 剩余燃烧时间 (tick)
+     * @return the remaining burn time (ticks)
      */
     int getGeneratorBurnTime(Level world, BlockPos pos);
 
     /**
-     * 获取发电机当前燃料的总燃烧时间
+     * Gets the total burn time of the current fuel.
      *
-     * @return 总燃烧时间 (tick)
+     * @return the total burn time (ticks)
      */
     int getGeneratorBurnDuration(Level world, BlockPos pos);
 
     /**
-     * 获取发电机的能量生成速率
+     * Gets the energy generation rate of the generator.
      *
-     * @return 生成速率 (EU/tick)
+     * @return the generation rate (EU/tick)
      */
     long getGeneratorEnergyRate(Level world, BlockPos pos);
 
     /**
-     * 获取发电机燃料槽的物品
+     * Gets the item in the fuel slot of the generator.
      */
     ItemStack getGeneratorFuelSlot(Level world, BlockPos pos);
 
     /**
-     * 设置发电机燃料槽的物品
+     * Sets the item in the fuel slot of the generator.
      *
-     * @return 是否成功设置
+     * @return true if the item was set
      */
     boolean setGeneratorFuelSlot(Level world, BlockPos pos, ItemStack stack);
 }

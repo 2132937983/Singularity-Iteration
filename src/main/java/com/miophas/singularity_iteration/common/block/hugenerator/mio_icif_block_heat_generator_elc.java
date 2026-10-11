@@ -26,8 +26,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 电力发热机方法?
- * 使用 FE 电力产生 HU 热能
+ * Block class for the electric heat generator.
+ * It uses FE power to make HU heat.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_heat_generator_elc extends mio_icif_entity_block {

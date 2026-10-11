@@ -12,8 +12,8 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 通用机器 Menu 基类
- * 适用于有输入、输出、电池、升级槽的标准加工机器?
+ * Base menu class for general machines.
+ * Use it for standard processing machines that have input, output, battery and upgrade slots.
  */
 @SuppressWarnings("null")
 public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
@@ -28,14 +28,14 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
     public ContainerData getData() { return data; }
 
     /**
-     * 标准构造函数?
+     * Standard constructor.
      * @param type              MenuType
-     * @param containerId       容器ID
-     * @param machineSlotCount  机器槽位总数
-     * @param playerInventory   玩家物品栈?
-     * @param itemHandler       物品处理器（可为null，此时创建空handler�?
-     * @param data              数据同步器（可为null，此时创建空data�?
-     * @param dataCount         数据同步器大小（当data为null时使用）
+     * @param containerId       the container ID
+     * @param machineSlotCount  the total number of machine slots
+     * @param playerInventory   the player inventory
+     * @param itemHandler       the item handler. If null, the menu creates an empty handler.
+     * @param data              the synced container data. If null, the menu creates empty data.
+     * @param dataCount         the synced data size, used when data is null
      */
     protected mio_icif_machine_menu(MenuType<?> type, int containerId, int machineSlotCount,
                                      Inventory playerInventory, @Nullable IItemHandler itemHandler,
@@ -44,15 +44,15 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
     }
 
     /**
-     * 完整构造函数（带blockEntity�?
+     * Full constructor with a block entity.
      * @param type              MenuType
-     * @param containerId       容器ID
-     * @param machineSlotCount  机器槽位总数
-     * @param playerInventory   玩家物品栈?
-     * @param itemHandler       物品处理器（可为null，此时创建空handler�?
-     * @param data              数据同步器（可为null，此时创建空data�?
-     * @param dataCount         数据同步器大小（当data为null时使用）
-     * @param blockEntity       方块实体（可为null�?
+     * @param containerId       the container ID
+     * @param machineSlotCount  the total number of machine slots
+     * @param playerInventory   the player inventory
+     * @param itemHandler       the item handler. If null, the menu creates an empty handler.
+     * @param data              the synced container data. If null, the menu creates empty data.
+     * @param dataCount         the synced data size, used when data is null
+     * @param blockEntity       the block entity, can be null
      */
     protected mio_icif_machine_menu(MenuType<?> type, int containerId, int machineSlotCount,
                                      Inventory playerInventory, @Nullable IItemHandler itemHandler,
@@ -70,8 +70,8 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
     }
 
     /**
-     * 兼容旧代码的构造函数（带blockEntity参数据?
-     * 子类应重�?getDataSlotCount() 并通过5参数版本调用此构造函数?
+     * Legacy constructor that takes a block entity.
+     * Subclasses should override getDataSlotCount() and call this constructor through the 5-parameter version.
      */
     protected mio_icif_machine_menu(MenuType<?> type, int containerId, Inventory playerInventory,
                                      Object blockEntity, int machineSlotCount, int dataCount) {
@@ -81,7 +81,7 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
     }
 
     /**
-     * 兼容旧代码的构造函数（默认dataCount=5�?
+     * Legacy constructor. The default dataCount is 5.
      */
     protected mio_icif_machine_menu(MenuType<?> type, int containerId, Inventory playerInventory,
                                      Object blockEntity, int machineSlotCount) {
@@ -90,39 +90,39 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
              null, 5, blockEntity);
     }
 
-    /** 子类必须实现：添加机器槽位?*/
+    /** Subclasses must implement this method. It adds the machine slots. */
     protected abstract void addMachineSlots();
 
-    /** 子类可以重写：是否添加玩家背包，默认true */
+    /** Subclasses can override this method. It tells if the player inventory is added. The default is true. */
     protected boolean shouldAddPlayerInventory() { return true; }
 
-    /** 子类可以重写：玩家背包起始Y坐标，默�?4 */
+    /** Subclasses can override this method. Player inventory start Y. The default is 84. */
     protected int getPlayerInventoryY() { return 84; }
 
-    /** 子类可以重写：玩家快捷栏Y坐标，默�?42 */
+    /** Subclasses can override this method. Player hotbar Y. The default is 142. */
     protected int getPlayerHotbarY() { return 142; }
 
-    /** 子类可以实现：返回数据同步器大小 */
+    /** Subclasses can override this method. It returns the size of the data synchronizer. */
     protected int getDataSlotCount() { return 5; }
 
-    // ===== 子类必须实现的槽位配方?=====
+    // ===== Slot configuration for subclasses to implement =====
 
-    /** 输入槽起始索引，-1表示无输入槽 */
+    /** Start index of the input slots. -1 means that there are no input slots. */
     protected int getInputSlotStart() {
         return -1;
     }
 
-    /** 输入槽数据?*/
+    /** Number of input slots. */
     protected int getInputSlotCount() {
         return 0;
     }
 
-    /** 输出槽起始索引，-1表示无输出槽 */
+    /** Start index of the output slots. -1 means that there are no output slots. */
     protected int getOutputSlotStart() {
         return -1;
     }
 
-    /** 输出槽数据?*/
+    /** Number of output slots. */
     protected int getOutputSlotCount() {
         return 0;
     }
@@ -150,10 +150,10 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
     }
 
     /**
-     * 获取进度条像素宽�?
+     * Gets the progress bar width in pixels.
      *
-     * @param maxPixels 最大像素宽�?
-     * @return 当前进度对应的像素宽�?
+     * @param maxPixels the maximum bar width in pixels
+     * @return the bar width in pixels for the current progress
      */
     public int getProgressPixels(int maxPixels) {
         int progress = getProgress();
@@ -179,7 +179,7 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
     }
 
     /**
-     * 设置同步数据（供 Screen �?containerTick 中调用）
+     * Sets a synced data value. The Screen calls this from containerTick.
      */
     public void setSyncData(int index, int value) {
         if (index >= 0 && index < data.getCount()) {
@@ -209,7 +209,7 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
     }
 
     /**
-     * 添加输出槽到容器（不允许放入�?
+     * Adds an output slot to the container. Players cannot put items into it.
      */
     protected void addOutputSlot(int index, int x, int y) {
         this.addSlot(new SlotItemHandler(itemHandler, index, x, y) {
@@ -243,16 +243,16 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
     }
 
     /**
-     * 验证物品是否可以放入输入�?
-     * 子类可以重写此方法?
+     * Checks whether an item can go into an input slot.
+     * Subclasses can override this method.
      */
     protected boolean isValidInput(ItemStack stack) {
         return true;
     }
 
     /**
-     * 注册机器特有的快速移动规则?
-     * 子类在构造函数中调用
+     * Registers the quick-move rules that are specific to the machine.
+     * Subclasses call this method in their constructor.
      */
     protected void registerMachineMoveRules() {
         int inputStart = getInputSlotStart();

@@ -165,16 +165,16 @@ public class MachineItemHandler extends ItemStackHandler {
         if (!isValidSlotIndex(slot)) return 0;
         SlotType type = layout.getInternalSlotType(slot);
         if (type == SlotType.REACTOR) return 1;
-        if (type == SlotType.RTG_PELLET) return 1;  // RTG靶丸槽只能放1个
-        if (type == SlotType.HEAT_CONDUCTOR) return 1;  // 热交换器槽只能放1个（IC2 setStackSizeLimit(1)）
-        if (type == SlotType.TURBINE) return 1;  // 涡轮槽只能放1个
+        if (type == SlotType.RTG_PELLET) return 1;  // The RTG pellet slot holds 1 item only
+        if (type == SlotType.HEAT_CONDUCTOR) return 1;  // The heat exchanger slot holds 1 item only (IC2 setStackSizeLimit(1))
+        if (type == SlotType.TURBINE) return 1;  // The turbine slot holds 1 item only
         if (type == SlotType.BATTERY) {
             return EmergencyChargePolicy.stackLimitFor(getStackInSlot(slot), 1);
         }
-        if (type == SlotType.COIL) return 1;  // 线圈槽只能放1个
-        if (type == SlotType.SCANNER) return 1;  // 扫描槽只能放1个
-        if (type == SlotType.MEMORY) return 1;  // 记忆槽只能放1个
-        if (type == SlotType.TOOL) return 1;  // 工具槽只能放1个
+        if (type == SlotType.COIL) return 1;  // The coil slot holds 1 item only
+        if (type == SlotType.SCANNER) return 1;  // The scanner slot holds 1 item only
+        if (type == SlotType.MEMORY) return 1;  // The memory slot holds 1 item only
+        if (type == SlotType.TOOL) return 1;  // The tool slot holds 1 item only
         if (type == SlotType.UPGRADE) return 64;
         return 64;
     }

@@ -88,7 +88,7 @@ public class MioIcifRegistriesImpl implements IMioIcifRegistries {
     }
 
     /**
-     * 鎳掑姞杞界紦瀛橈細鍦ㄩ�栨�¤�块棶鏃惰嚜鍔ㄥ埛鏂�
+     * Lazy-loads the cache. The cache refreshes automatically on first access.
      */
     private void ensureCacheInitialized() {
         if (snapshot.initialized()) return;
@@ -411,7 +411,7 @@ public class MioIcifRegistriesImpl implements IMioIcifRegistries {
      */
     public Collection<Block> searchBlocks(String keyword) {
         if (keyword == null || keyword.isEmpty()) return Collections.emptyList();
-        String lowerKeyword = keyword.toLowerCase();
+        String lowerKeyword = keyword.toLowerCase(java.util.Locale.ROOT);
         return getAllBlocks().entrySet().stream()
             .filter(entry -> entry.getKey().getPath().contains(lowerKeyword))
             .map(Map.Entry::getValue)
@@ -426,7 +426,7 @@ public class MioIcifRegistriesImpl implements IMioIcifRegistries {
      */
     public Collection<Item> searchItems(String keyword) {
         if (keyword == null || keyword.isEmpty()) return Collections.emptyList();
-        String lowerKeyword = keyword.toLowerCase();
+        String lowerKeyword = keyword.toLowerCase(java.util.Locale.ROOT);
         return getAllItems().entrySet().stream()
             .filter(entry -> entry.getKey().getPath().contains(lowerKeyword))
             .map(Map.Entry::getValue)

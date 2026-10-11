@@ -11,23 +11,23 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 装备特性 Tooltip 统一渲染。
+ * Shared tooltip rendering for equipment features.
  *
- * <p>为 {@link IElectricArmorItem#getFeatures(ItemStack) 声明的特性}生成可点击行：
+ * <p>Makes clickable lines for the {@link IElectricArmorItem#getFeatures(ItemStack) declared features}:
 
  * <ul>
- *   <li>开关型：{@code 特性名: 开/关}，点击取反；</li>
- *   <li>模式型：{@code 特性名: 当前模式 [切换模式]}，点击切换到下一模式。</li>
+ *   <li>Toggle type: {@code feature name: on/off}. A click inverts the value.</li>
+ *   <li>Mode type: {@code feature name: current mode [switch mode]}. A click goes to the next mode.</li>
  * </ul>
  *
- * <p>点击通过 {@code /mio_icif toggle <slot> <featureKey>} 命令执行，服务端由宿主统一处理，
- * 因此 core / common / 附属模组的物品共用同一交互路径。
+ * <p>A click runs the command {@code /mio_icif toggle <slot> <featureKey>}. The host mod handles it on the server.
+ * Thus items from core, common and addon mods all use the same interaction path.
  */
 public final class ArmorFeatureTooltip {
 
-    /** 命令根节点。 */
+    /** The root command node. */
     public static final String COMMAND_ROOT = "mio_icif";
-    /** 切换子命令。 */
+    /** The toggle subcommand. */
     public static final String COMMAND_TOGGLE = "toggle";
 
     private static final String KEY_FEATURE_ON = "tooltip.mio_icif.armor.feature_on";
@@ -39,7 +39,7 @@ public final class ArmorFeatureTooltip {
     }
 
     /**
-     * 追加全部特性行。
+     * Adds one line for each feature to the tooltip.
      */
     public static void appendAll(List<Component> tooltip, ItemStack stack, List<ArmorFeatureInfo> features) {
         for (ArmorFeatureInfo feature : features) {
@@ -48,7 +48,7 @@ public final class ArmorFeatureTooltip {
     }
 
     /**
-     * 追加单条特性行。
+     * Adds the line for one feature to the tooltip. Does nothing if {@code feature} is null.
      */
     public static void append(List<Component> tooltip, ItemStack stack, ArmorFeatureInfo feature) {
         if (feature == null) {
@@ -61,9 +61,9 @@ public final class ArmorFeatureTooltip {
         }
     }
 
-    /** 生成点击命令。 */
+    /** Makes the click command. If the feature has no slot, the slot is "chest". */
     public static String toggleCommand(ArmorFeatureInfo feature) {
-        String slot = feature.slot() == null ? "chest" : feature.slot().getName().toLowerCase();
+        String slot = feature.slot() == null ? "chest" : feature.slot().getName().toLowerCase(java.util.Locale.ROOT);
         return "/" + COMMAND_ROOT + " " + COMMAND_TOGGLE + " " + slot + " " + feature.featureKey();
     }
 

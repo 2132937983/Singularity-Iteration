@@ -10,13 +10,13 @@ import net.minecraft.nbt.Tag;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 
 /**
- * KU (Kinetic Units) 动能存储的参考实现
- * 实现了 IKineticStorage 接口和 NBT 序列化
+ * Reference implementation of KU (Kinetic Units) storage.
+ * It implements the IKineticStorage interface and NBT serialization.
  * 
- * 与 FE 和 HU 的区别：
- * - 动能会有摩擦损失
- * - 有转速概念（RPM）
- * - 需要机械传动来传输
+ * Differences from FE and HU:
+ * - Kinetic energy has friction loss.
+ * - It has a rotation speed (RPM).
+ * - It needs a mechanical drive to transfer.
  */
 @SuppressWarnings("null")
 public class KineticStorage implements IKineticStorage, INBTSerializable<Tag> {

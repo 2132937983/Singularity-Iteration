@@ -3,19 +3,20 @@ package com.miophas.singularity_iteration.core.api.block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 充电座方块接口
- * 所有充电座方块都应实现此接口，以便客户端粒子系统自动识别并渲染充电粒子特效
+ * Charge pad block interface.
+ * All charge pad blocks must implement this interface.
+ * The client particle system uses it to find charge pads and render the charge particle effect.
  *
- * <p>附属开发者只需让充电座方块实现此接口，即可自动获得蓝色充电粒子特效支持，
- * 无需修改任何客户端代码。
+ * <p>An addon developer only needs to implement this interface on a charge pad block to get the blue charge particle effect.
+ * No change to client code is necessary.
  */
 public interface IChargepadBlock {
 
     /**
-     * 获取充电座当前的激活（LIT）状态
+     * Gets the current active (LIT) state of the charge pad.
      *
-     * @param state 方块状态
-     * @return true 如果充电座正在充电（激活状态）
+     * @param state the block state
+     * @return true if the charge pad charges now (active state)
      */
     boolean isCharging(BlockState state);
 }

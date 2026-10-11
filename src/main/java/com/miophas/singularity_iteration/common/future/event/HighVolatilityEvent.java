@@ -5,9 +5,10 @@ import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 import java.util.Random;
 
 /**
- * 高波动事�? *
- * 效果：未来N天价格波动幅度大幅增加，可能出现剧烈涨跌
- * 强度影响：强度越高，波动范围越大
+ * High volatility event.
+ *
+ * Effect: for the next N days, price changes become much larger. Sudden rises and falls can occur.
+ * Intensity: a higher intensity gives a larger range of change.
  */
 @SuppressWarnings("null")
 public class HighVolatilityEvent extends FuturePriceEvent {
@@ -25,7 +26,7 @@ public class HighVolatilityEvent extends FuturePriceEvent {
 
     @Override
     public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
-        // 高波动：-30% �?+30% 的变化，受强度影�
+        // High volatility: the change is between -30% and +30%, multiplied by the intensity.
     double volatility = 0.30 * intensity;
         double change = (RANDOM.nextDouble() * 2 - 1) * volatility;
 

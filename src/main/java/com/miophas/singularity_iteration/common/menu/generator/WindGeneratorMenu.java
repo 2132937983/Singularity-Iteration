@@ -10,14 +10,14 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 风力发电机的容器菜单独?
+ * Container menu for the wind generator.
  */
 @SuppressWarnings({"null"}) public class WindGeneratorMenu extends mio_icif_generator_menu {
 
-    // 槽位索引
+    // Slot indexes.
     public static final int BATTERY_SLOT = 0;
 
-    // 数据同步索引
+    // Data synchronization indexes.
     private static final int DATA_GENERATING = 0;
     private static final int DATA_OUTPUT = 1;
     private static final int DATA_COUNT = 2;
@@ -64,7 +64,7 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        // 电池�?(80, 26)
+        // Battery slot (80, 26).
         this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 80, 26));
     }
 }

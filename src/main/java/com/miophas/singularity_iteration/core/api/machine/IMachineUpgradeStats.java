@@ -5,149 +5,149 @@ import java.util.List;
 import net.minecraft.core.Direction;
 
 /**
- * API 级机器升级统计接口
- * 使附属模组开发者与内部 MachineUpgradeStats 实现解耦
+ * API-level machine upgrade statistics.
+ * Add-on developers use it so that they do not depend on the internal MachineUpgradeStats implementation.
  */
 public interface IMachineUpgradeStats {
     
     /**
-     * 获取处理时间倍率
-     * @return 处理时间倍率（越低越快）
+     * Gets the process time multiplier.
+     * @return the process time multiplier (a lower value is faster)
      */
     double getProcessTimeMultiplier();
     
     /**
-     * 获取能耗倍率
-     * @return 能耗倍率
+     * Gets the energy usage multiplier.
+     * @return the energy usage multiplier
      */
     double getEnergyUsageMultiplier();
     
     /**
-     * 获取应用升级后的每 tick 能耗
-     * @param baseEnergyPerTick 基础每 tick 能耗
-     * @return 实际每 tick 能耗
+     * Gets the energy for each tick after the upgrades are applied.
+     * @param baseEnergyPerTick base energy for each tick (EU/t)
+     * @return actual energy for each tick (EU/t)
      */
     long getEnergyPerTick(long baseEnergyPerTick);
     
     /**
-     * 获取应用升级后的最大进度
-     * @param baseMaxProgress 基础最大进度
-     * @return 实际最大进度
+     * Gets the maximum progress after the upgrades are applied.
+     * @param baseMaxProgress base maximum progress
+     * @return actual maximum progress
      */
     int getMaxProgress(int baseMaxProgress);
     
     /**
-     * 获取应用升级后的处理时间
-     * @param baseTicks 基础 tick 数
-     * @return 实际处理时间
+     * Gets the process time after the upgrades are applied.
+     * @param baseTicks base number of ticks
+     * @return actual process time (ticks)
      */
     int getProcessTicks(int baseTicks);
     
     /**
-     * 获取应用升级后的能量容量加成
-     * @return 能量容量加成
+     * Gets the energy capacity bonus from the upgrades.
+     * @return the energy capacity bonus (EU)
      */
     long getEnergyCapacityBonus();
 
     /**
-     * 获取应用储能升级后的 HU 容量
+     * Gets the HU capacity after the energy storage upgrades are applied.
      *
-     * @param baseCapacity 基础 HU 容量
-     * @return 实际 HU 容量
+     * @param baseCapacity base HU capacity
+     * @return actual HU capacity
      */
     long getHeatCapacity(long baseCapacity);
     
     /**
-     * 获取应用变压器升级后的有效电缆等级
-     * @param baseTier 基础电缆等级
-     * @return 有效电缆等级
+     * Gets the effective cable tier after the transformer upgrades are applied.
+     * @param baseTier base cable tier
+     * @return effective cable tier
      */
     ICableTier getEffectiveCableTier(ICableTier baseTier);
     
     /**
-     * 获取超频升级数量
-     * @return 超频升级数量
+     * Gets the number of overclocker upgrades.
+     * @return the number of overclocker upgrades
      */
     int getOverclockerCount();
     
     /**
-     * 获取储能升级数量
-     * @return 储能升级数量
+     * Gets the number of energy storage upgrades.
+     * @return the number of energy storage upgrades
      */
     int getEnergyStorageCount();
     
     /**
-     * 获取变压器升级数量
-     * @return 变压器升级数量
+     * Gets the number of transformer upgrades.
+     * @return the number of transformer upgrades
      */
     int getTransformerCount();
     
     /**
-     * 获取弹射升级数量
-     * @return 弹射升级数量
+     * Gets the number of ejector upgrades.
+     * @return the number of ejector upgrades
      */
     int getEjectorCount();
     
     /**
-     * 获取吸取升级数量
-     * @return 吸取升级数量
+     * Gets the number of pulling upgrades.
+     * @return the number of pulling upgrades
      */
     int getPullingCount();
     
     /**
-     * 获取流体弹射升级数量
-     * @return 流体弹射升级数量
+     * Gets the number of fluid ejector upgrades.
+     * @return the number of fluid ejector upgrades
      */
     int getFluidEjectorCount();
     
     /**
-     * 获取流体吸取升级数量
-     * @return 流体吸取升级数量
+     * Gets the number of fluid pulling upgrades.
+     * @return the number of fluid pulling upgrades
      */
     int getFluidPullingCount();
     
     /**
-     * 检查红石信号是否反转
-     * @return 如果反转则返回 true
+     * Checks if the redstone signal is inverted.
+     * @return true if it is inverted
      */
     boolean isRedstoneInverted();
     
     /**
-     * 获取弹射方向
-     * @return 方向列表
+     * Gets the ejector directions.
+     * @return the list of directions
      */
     List<Direction> getEjectorDirections();
     
     /**
-     * 获取吸取方向
-     * @return 方向列表
+     * Gets the pulling directions.
+     * @return the list of directions
      */
     List<Direction> getPullingDirections();
     
     /**
-     * 获取流体弹射方向
-     * @return 方向列表
+     * Gets the fluid ejector directions.
+     * @return the list of directions
      */
     List<Direction> getFluidEjectorDirections();
     
     /**
-     * 获取流体吸取方向
-     * @return 方向列表
+     * Gets the fluid pulling directions.
+     * @return the list of directions
      */
     List<Direction> getFluidPullingDirections();
 
-    /** IC2 每一叠流体升级、每个相邻面的 mB/t：50、200、800、3200、12800（封顶）。 */
+    /** IC2 rate in mB/t for each adjacent side, for a stack of fluid upgrades: 50, 200, 800, 3200, 12800 (maximum). */
     static int fluidTransferPerStack(int count) {
         return count <= 0 ? 0 : 50 << (2 * Math.min(4, count - 1));
     }
 
-    /** 每个面的独立弹出额度。实现可保留不同升级槽的堆叠数量与方向。 */
+    /** Ejection limit for each side, independent of the other sides. An implementation can keep different stack counts and directions for different upgrade slots. */
     default int getFluidEjectorTransferLimit(Direction side) {
         var directions = getFluidEjectorDirections();
         return directions.isEmpty() || directions.contains(side) ? fluidTransferPerStack(getFluidEjectorCount()) : 0;
     }
 
-    /** 每个面的独立抽入额度；不是六个面共用的额度。 */
+    /** Pull limit for each side, independent of the other sides. The six sides do not share one limit. */
     default int getFluidPullingTransferLimit(Direction side) {
         var directions = getFluidPullingDirections();
         return directions.isEmpty() || directions.contains(side) ? fluidTransferPerStack(getFluidPullingCount()) : 0;

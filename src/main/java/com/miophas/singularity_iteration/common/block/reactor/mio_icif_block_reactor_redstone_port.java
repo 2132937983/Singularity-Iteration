@@ -15,19 +15,19 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 流体核反应堆红石端口方块
  *
- * 功能量?
- * - 用于流体核反应堆多方块结构中接收红石信号
- * - 可以放置拉杆、按钮等红石控制元件来激�?关闭反应�?
- * - 根据接收到的红石信号强度控制反应堆的启停
- * - �?GUI，纯红石控制接口
- * - 方块状态会随红石信号变化（用于视觉反馈�?
+ * Function:
+ * - It receives redstone signals for the fluid nuclear reactor multiblock structure.
+ * - Players can place levers, buttons, or other redstone controls on it to start or stop the reactor.
+ * - The received redstone signal controls whether the reactor runs.
+ * - It has no GUI. It is a redstone-only control interface.
+ * - The block state changes with the redstone signal to give visual feedback.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_reactor_redstone_port extends Block {
 
     public static final MapCodec<mio_icif_block_reactor_redstone_port> CODEC = simpleCodec(mio_icif_block_reactor_redstone_port::new);
 
-    // 红石信号激活状态属性?
+    // Property that shows whether a redstone signal is active.
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
 
     @Override
@@ -72,24 +72,24 @@ public class mio_icif_block_reactor_redstone_port extends Block {
 
             if (isPowered != hasSignal) {
                 level.setBlock(pos, state.setValue(POWERED, hasSignal), 3);
-                // 通知相邻的反应堆方块红石状态变化?
+                // Tell the adjacent reactor blocks that the redstone state changed.
                 notifyReactorRedstoneChange(level, pos, hasSignal);
             }
         }
     }
 
     /**
-     * 通知反应堆红石信号状态变化?
-     * 查找附近的核反应堆并触发更新
+     * Tells the reactor that the redstone signal state changed.
+     * Finds the nearby nuclear reactor and starts an update.
      */
     private void notifyReactorRedstoneChange(Level level, BlockPos pos, boolean powered) {
-        // 查找附近的核反应堆（�?x5x5范围内）
+        // Find nuclear reactors nearby (in a 5x5x5 area).
         for (int x = -2; x <= 2; x++) {
             for (int y = -2; y <= 2; y++) {
                 for (int z = -2; z <= 2; z++) {
                     BlockPos checkPos = pos.offset(x, y, z);
                     if (level.getBlockEntity(checkPos) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator reactor) {
-                        // 触发反应堆更新（通过标记更改�?
+                        // Mark the reactor as changed to trigger an update.
                         reactor.setChanged();
                     }
                 }

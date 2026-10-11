@@ -3,30 +3,30 @@ package com.miophas.singularity_iteration.core.api.upgrade.tile;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 能量存储升级接口。
+ * Interface for energy storage upgrades.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IEnergyStorageUpgrade}。
- * 实现此接口的升级可以增加机器的储能容量。
+ * Matches {@code IEnergyStorageUpgrade} of IC2 1.12.2.
+ * An upgrade that implements this interface can increase the energy capacity of the machine.
  */
 public interface IEnergyStorageUpgrade extends IUpgradeItem {
 
     /**
-     * 获取额外的储能容量（EU）。
+     * Gets the extra energy capacity (EU).
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @return 额外储能容量（EU）
+     * @param stack the upgrade item stack
+     * @param block the machine that contains this upgrade
+     * @return the extra energy capacity (EU)
      */
     long getExtraEnergyStorage(ItemStack stack, IUpgradableBlock block);
 
     /**
-     * 获取储能容量乘数。
+     * Gets the energy capacity multiplier.
      * <p>
-     * 1.0 表示无变化，2.0 表示容量翻倍。
+     * 1.0 means no change. 2.0 doubles the capacity.
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @return 储能容量乘数
+     * @param stack the upgrade item stack
+     * @param block the machine that contains this upgrade
+     * @return the energy capacity multiplier
      */
     double getEnergyStorageMultiplier(ItemStack stack, IUpgradableBlock block);
 }

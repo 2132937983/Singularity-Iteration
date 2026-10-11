@@ -10,17 +10,18 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 装备特性统一分发入口。
+ * Single entry point for equipment features.
  *
- * <p>集中处理"物品声明了哪些特性、当前状态、如何切换"，供工具提示、特性管理 GUI、
- * 命令与网络包共用。所有判定均基于 {@link IElectricArmorItem#getFeatures(ItemStack)}
- * 声明，不识别具体物品类，因此附属模组只需实现接口即可被完整支持。
+ * <p>This class handles which features an item declares, their current state, and how to switch them.
+ * Tooltips, the feature management GUI, commands and network packets use it.
+ * All checks use the declarations from {@link IElectricArmorItem#getFeatures(ItemStack)}.
+ * This class does not check for specific item classes. Thus an addon mod only needs to implement the interface to get full support.
  *
- * <p>语义：
+ * <p>Semantics:
  * <ul>
- *   <li>开关型（{@code isMode=false}）：状态由 {@link ArmorFeatureState} 存储，默认启用；</li>
- *   <li>模式型（{@code isMode=true}）：通过 {@link IArmorModeFeatureItem#cycleMode} 切换，
- *       当前模式名称由 {@link IElectricArmorItem#getFeatures(ItemStack)} 提供。</li>
+ *   <li>Toggle feature ({@code isMode=false}): {@link ArmorFeatureState} stores the state. The default is enabled.</li>
+ *   <li>Mode feature ({@code isMode=true}): {@link IArmorModeFeatureItem#cycleMode} switches the mode.
+ *       {@link IElectricArmorItem#getFeatures(ItemStack)} gives the name of the current mode.</li>
  * </ul>
  */
 public final class ArmorFeatures {
@@ -29,7 +30,8 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 获取物品声明的全部装备特性。
+     * Gets all equipment features that the item declares, plus the features from registered extensions.
+     * Returns an empty list for an empty stack.
      */
     public static List<ArmorFeatureInfo> features(ItemStack stack) {
         if (stack.isEmpty()) return List.of();
@@ -64,9 +66,9 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 查找指定特性键的声明。
+     * Finds the declaration of the given feature key.
      *
-     * @return 未声明时返回 {@code null}
+     * @return the declaration, or {@code null} if the feature is not declared
      */
     @Nullable
     public static ArmorFeatureInfo find(ItemStack stack, String featureKey) {
@@ -82,9 +84,9 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 判断物品是否声明了指定特性（可按槽位过滤）。
+     * Checks if the item declares the given feature (with an optional slot filter).
      *
-     * @param slot 为 {@code null} 时不限槽位
+     * @param slot the slot filter. If {@code null}, all slots match.
      */
     public static boolean isDeclared(ItemStack stack, @Nullable EquipmentSlot slot, String featureKey) {
         ArmorFeatureInfo info = find(stack, featureKey);
@@ -92,7 +94,7 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 判断物品是否声明了指定<b>开关型</b>特性。
+     * Checks if the item declares the given <b>toggle</b> feature.
      */
     public static boolean isToggleFeature(ItemStack stack, @Nullable EquipmentSlot slot, String featureKey) {
         ArmorFeatureInfo info = find(stack, featureKey);
@@ -100,7 +102,7 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 判断物品是否声明了指定<b>模式型</b>特性。
+     * Checks if the item declares the given <b>mode</b> feature.
      */
     public static boolean isModeFeature(ItemStack stack, @Nullable EquipmentSlot slot, String featureKey) {
         ArmorFeatureInfo info = find(stack, featureKey);
@@ -108,7 +110,8 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 读取开关型特性的启用状态；模式型特性恒为 {@code true}。
+     * Reads the enabled state of a toggle feature.
+     * For a mode feature or an undeclared feature, the result is always {@code true}.
      */
     public static boolean isEnabled(ItemStack stack, String featureKey) {
         ArmorFeatureInfo info = find(stack, featureKey);
@@ -119,7 +122,8 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 设置开关型特性的启用状态；非开关型特性无操作。
+     * Sets the enabled state of a toggle feature.
+     * For other features, this method does nothing.
      */
     public static void setEnabled(ItemStack stack, String featureKey, boolean enabled) {
         if (isToggleFeature(stack, null, featureKey)) {
@@ -128,9 +132,9 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 切换开关型特性。
+     * Toggles a toggle feature.
      *
-     * @return 切换后的状态；非开关型特性返回当前状态
+     * @return the state after the toggle. For other features, the current state.
      */
     public static boolean toggle(ItemStack stack, String featureKey) {
         if (!isToggleFeature(stack, null, featureKey)) {
@@ -140,9 +144,9 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 切换到模式型特性的下一个模式。
+     * Switches a mode feature to the next mode.
      *
-     * @return 是否发生了切换
+     * @return true if the mode changed
      */
     public static boolean cycleMode(ItemStack stack, String featureKey) {
         if (stack.isEmpty() || !isModeFeature(stack, null, featureKey)) {
@@ -155,9 +159,10 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 按特性声明类型自动切换（开关型取反 / 模式型循环）。
+     * Switches the feature according to its declared type.
+     * A toggle feature changes to the opposite state. A mode feature goes to the next mode.
      *
-     * @return 是否发生了变更
+     * @return true if a change occurred
      */
     public static boolean toggleOrCycle(ItemStack stack, @Nullable EquipmentSlot slot, String featureKey) {
         ArmorFeatureInfo info = find(stack, featureKey);
@@ -172,9 +177,9 @@ public final class ArmorFeatures {
     }
 
     /**
-     * 获取特性名称翻译键。
+     * Gets the translation key of the feature name.
      *
-     * @return 未声明时返回 {@code null}
+     * @return the translation key, or {@code null} if the feature is not declared
      */
     @Nullable
     public static String nameKey(ItemStack stack, String featureKey) {

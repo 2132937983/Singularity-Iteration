@@ -24,8 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 打粉�?JEI 配方类别
- * 支持进度条动画显示处理进�?
+ * JEI recipe category for the powder machine.
+ * It shows an animated progress bar.
  */
 @SuppressWarnings("null")
 public class mio_icif_PowderCategory extends AbstractJeiRecipeCategory<mio_icif_PowderRecipe> {
@@ -46,11 +46,11 @@ public class mio_icif_PowderCategory extends AbstractJeiRecipeCategory<mio_icif_
     private final IDrawable icon;
 
     public mio_icif_PowderCategory(IGuiHelper helper) {
-        // 背景只绘制机器内容区域，去掉边框
-        // 从纹�?7,7)开始，尺寸(162, 72) - 裁剪掉边�?
+        // The background draws only the machine content area. It does not draw the border.
+        // Start at texture position (7,7) with size (162, 72). This crops the border.
         this.background = helper.createDrawable(TEXTURE, 7, 7, 162, 72);
 
-        // 创建图标（使用打粉机方方块?
+        // Create the icon. It uses the macerator block.
         this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
                 new ItemStack(mio_icif_blocks.POWDER_ELC));
     }
@@ -82,15 +82,15 @@ public class mio_icif_PowderCategory extends AbstractJeiRecipeCategory<mio_icif_
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_PowderRecipe recipe, IFocusGroup focuses) {
-        // 槽位坐标已根据新的背景区域?7,7)调整
-        // 输入�? (49, 10), 输出�? (109, 28)
+        // The slot coordinates are adjusted for the new background origin (7,7).
+        // Input slot: (49, 10). Output slot: (109, 28).
         List<ItemStack> inputs = Arrays.stream(recipe.getIngredient().getItems())
                 .map(stack -> stack.copyWithCount(recipe.getIngredientCount()))
                 .toList();
         builder.addSlot(RecipeIngredientRole.INPUT, 49, 10)
                 .addItemStacks(inputs);
 
-        // 输出�?
+        // Output slot
         builder.addSlot(RecipeIngredientRole.OUTPUT, 109, 28)
                 .addItemStack(recipe.getResultItem(null));
     }

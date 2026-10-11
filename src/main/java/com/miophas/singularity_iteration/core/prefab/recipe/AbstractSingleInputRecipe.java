@@ -9,8 +9,8 @@ import net.minecraft.world.item.crafting.Recipe;
 
 
 /**
- * 通用单输入单输出配方基类
- * 用于电、回收机、发酵机等机器
+ * Base class for generic recipes with one input and one output.
+ * Machines such as the electric furnace, the recycler and the fermenter use it.
  */
 @SuppressWarnings("null")
 public abstract class AbstractSingleInputRecipe<T extends net.minecraft.world.item.crafting.RecipeInput> implements Recipe<T>, IRecipeProcessingInfo {

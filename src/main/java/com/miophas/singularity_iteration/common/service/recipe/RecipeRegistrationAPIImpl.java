@@ -89,6 +89,9 @@ public class RecipeRegistrationAPIImpl implements IRecipeRegistrationAPI {
         if (chances != null && chances.length > 1) { LOGGER.error("Recycler recipe {} requires at most one chance", id); return false; }
         float chance = chances == null || chances.length == 0 ? 0.0f : chances[0];
         if (chance < 0.0f || chance > 1.0f) { LOGGER.error("Recycler recipe {} has invalid chance {}", id, chance); return false; }
+        // RecyclerRecipe has no per-recipe chance: the recycler always uses its fixed scrap chance.
+        // Accept the call for compatibility, but say that the value has no effect.
+        if (chance != 0.0f) LOGGER.warn("Recycler recipe {}: chance {} is ignored (the recycler uses its fixed scrap chance)", id, chance);
         return registerRecipe(id, "recycler", () -> RecipeFactoryBridge.recycler("", input, outputs[0], processTime, 2, chance));
     }
 
@@ -124,11 +127,18 @@ public class RecipeRegistrationAPIImpl implements IRecipeRegistrationAPI {
 
     @Override
     public boolean registerFluidSolidRecipe(ResourceLocation id, Ingredient itemInput, String fluidInput, ItemStack output, int processTime) {
-        String[] parts = fluidInput.split(":");
-        if (parts.length != 2) { LOGGER.error("Invalid fluid input format for recipe {}: expected 'fluid_name:amount', got '{}'", id, fluidInput); return false; }
+        // "namespace:path:amount" or "path:amount": the amount is after the LAST colon
+        // (split(":") rejected every namespaced fluid id before 0.1.7.36)
+        int colon = fluidInput == null ? -1 : fluidInput.lastIndexOf(':');
+        if (colon <= 0 || colon == fluidInput.length() - 1) {
+            LOGGER.error("Invalid fluid input format for recipe {}: expected 'fluid_id:amount', got '{}'", id, fluidInput);
+            return false;
+        }
+        String[] parts = {fluidInput.substring(0, colon), fluidInput.substring(colon + 1)};
         try {
             String fluidName = parts[0];
             int fluidAmount = Integer.parseInt(parts[1]);
+            if (fluidAmount <= 0) { LOGGER.error("Fluid amount must be positive in recipe {}: {}", id, fluidAmount); return false; }
             var fluidLoc = ResourceLocation.parse(fluidName);
             if (!BuiltInRegistries.FLUID.containsKey(fluidLoc)) { LOGGER.error("Fluid not found: {}", fluidName); return false; }
             var fluid = BuiltInRegistries.FLUID.get(fluidLoc);

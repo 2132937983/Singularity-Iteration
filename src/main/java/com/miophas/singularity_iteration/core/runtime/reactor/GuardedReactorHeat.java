@@ -6,11 +6,12 @@ import com.miophas.singularity_iteration.core.api.heat.IHeatStorage;
 import java.util.function.BooleanSupplier;
 
 /**
- * 反应堆外壳热的只读视图。
+ * Read-only view of the reactor hull heat.
  *
- * <p>IC2 1.12.2 的反应堆没有对外 HU 能力：外壳热只能由堆内元件与冷却液处理，
- * 不能被管道抽取或注入。因此本视图只暴露读数（供热能显示用），
- * 传输一律返回 0，且 {@code canExtractHeat()} 恒为 false。
+ * <p>The IC2 1.12.2 reactor has no external HU capability. Only components in the reactor and the coolant change hull heat.
+ * Pipes cannot extract or insert this heat. Thus this view only gives readings (for heat displays).
+ * All transfer methods return 0, and {@code canExtractHeat()} is always false.
+ * When {@code available} is false, the readings are 0 (temperature is 20).
  */
 public final class GuardedReactorHeat implements IHeatStorage,IMioIcifCapabilities.IHeatStorage {
     private final HeatStorage storage;private final BooleanSupplier available;

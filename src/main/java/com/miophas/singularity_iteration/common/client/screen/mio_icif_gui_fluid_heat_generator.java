@@ -41,10 +41,6 @@ public class mio_icif_gui_fluid_heat_generator extends mio_icif_screen<com.mioph
     private static final int FLAME_ICON_HEIGHT = 14;
 
     // 火焰标志纹理位置 (176, 0)，uv(14, 14)
-    @SuppressWarnings("unused")
-    private static final int FLAME_ICON_TEXTURE_X = 176;
-    @SuppressWarnings("unused")
-    private static final int FLAME_ICON_TEXTURE_Y = 0;
 
     // 发热效率文本位置
     private static final int HEAT_RATE_TEXT_X = 95;

@@ -5,70 +5,71 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 /**
- * 发电机信息接口
+ * Generator information.
  *
- * <p>提供发电机运行时状态的只读视图，用于查询发电速率、能量存储、效率等信息。
+ * <p>A read-only view of the runtime state of a generator.
+ * Use it to query the generation rate, stored energy, efficiency and other information.
  */
 public interface IGeneratorInfo {
 
     /**
-     * 获取发电机所在的世界
+     * Gets the world of the generator.
      */
     Level getWorld();
 
     /**
-     * 获取发电机方块位置
+     * Gets the block position of the generator.
      */
     BlockPos getPos();
 
     /**
-     * 获取发电机类型 ID
+     * Gets the generator type ID.
      */
     String getTypeId();
 
     /**
-     * 获取发电机发电速率（EU/tick）
+     * Gets the generation rate of the generator, in EU/t.
      */
     long getGenerationRate();
 
     /**
-     * 获取发电机当前存储的能量
+     * Gets the energy that the generator stores now, in EU.
      */
     long getStoredEnergy();
 
     /**
-     * 获取发电机最大能量容量
+     * Gets the maximum energy capacity of the generator, in EU.
      */
     long getMaxEnergy();
 
     /**
-     * 获取发电机的电缆等级
+     * Gets the cable tier of the generator.
      */
     ICableTier getCableTier();
 
     /**
-     * 检查发电机是否正在发电
+     * Checks if the generator is generating energy now.
      */
     boolean isActive();
 
     /**
-     * 获取发电机能量输出速率
+     * Gets the energy output rate of the generator, in EU/t.
      */
     long getOutputRate();
 
     /**
-     * 获取发电机效率（0-100）
-     * 由于升级插件、燃料质量等因素，实际效率可能低于基础效率。
+     * Gets the efficiency of the generator (0 to 100).
+     * Upgrades, fuel quality and other factors can make the real efficiency lower than the base efficiency.
      */
     double getEfficiency();
 
     /**
-     * 获取本次运行的持续时间（tick）
+     * Gets the duration of the current run, in ticks.
      */
     long getRuntimeTicks();
 
     /**
-     * 获取发电机总发电量
+     * Gets the total energy that the generator made, in EU.
      */
     long getTotalGenerated();
 }

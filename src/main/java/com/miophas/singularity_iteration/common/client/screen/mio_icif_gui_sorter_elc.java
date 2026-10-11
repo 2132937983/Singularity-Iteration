@@ -34,13 +34,10 @@ public class mio_icif_gui_sorter_elc extends mio_icif_screen<SorterElcMenu> {
     private static final int ADJ_INDICATOR_SPACING = 20;
 
     @SuppressWarnings("unused")
-    private static final int BUTTON_TEXTURE_X = 230;
     private static final int BUTTON_VS_NORMAL = 15;
     private static final int BUTTON_VS_DEFAULT = 33;
     private static final int INDICATOR_VS_HAS_INV = 15;
     private static final int INDICATOR_VS_NO_INV = 33;
-    @SuppressWarnings("unused")
-    private static final int INDICATOR_TEXTURE_X = 212;
 
     private static final Direction[] DIRECTIONS = Direction.values();
 

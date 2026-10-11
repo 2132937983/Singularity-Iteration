@@ -1,0 +1,12 @@
+{
+  "iron_drill_energy_min": 450,
+  "iron_drill_energy_max": 470,
+  "diamond_drill_energy_min": 880,
+  "diamond_drill_energy_max": 900,
+  "iridium_drill_energy_min": 1500,
+  "iridium_drill_energy_max": 1600,
+  "od_scanner_energy_min": 45,
+  "od_scanner_energy_max": 75,
+  "ov_scanner_energy_min": 165,
+  "ov_scanner_energy_max": 190
+}

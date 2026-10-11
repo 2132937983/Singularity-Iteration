@@ -8,27 +8,29 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 机器 API（聚合接口）
+ * Machine API (aggregate interface).
  *
- * <p>此接口是所有机器子 API 的聚合入口，继承了以下子接口：
+ * <p>This interface is the single entry point for all machine sub-APIs.
+ * It extends these sub-interfaces:
  * <ul>
- *   <li>{@link IMachineQueryAPI} - 机器检测、查询和批量检索</li>
- *   <li>{@link IMachineControlAPI} - 机器启停和状态控制</li>
- *   <li>{@link IMachineSlotAPI} - 槽位布局和物品操作</li>
- *   <li>{@link IMachineUpgradeOpsAPI} - 升级插件安装/移除</li>
- *   <li>{@link IUpgradeStatsAPI} - 升级统计信息查询</li>
- *   <li>{@link IGeneratorQueryAPI} - 发电机燃料/燃烧查询</li>
- *   <li>{@link IMultiblockReactorAPI} - 反应堆多方块结构管理</li>
- *   <li>{@link IRedstoneAPI} - 红石信号控制</li>
+ *   <li>{@link IMachineQueryAPI} - detect, query and bulk-find machines</li>
+ *   <li>{@link IMachineControlAPI} - start, stop and control machine state</li>
+ *   <li>{@link IMachineSlotAPI} - slot layout and item operations</li>
+ *   <li>{@link IMachineUpgradeOpsAPI} - install and remove upgrades</li>
+ *   <li>{@link IUpgradeStatsAPI} - query upgrade statistics</li>
+ *   <li>{@link IGeneratorQueryAPI} - query generator fuel and burn state</li>
+ *   <li>{@link IMultiblockReactorAPI} - manage reactor multiblock structures</li>
+ *   <li>{@link IRedstoneAPI} - control redstone signals</li>
  * </ul>
  *
- * <p>建议附属模组根据需要使用具体的子接口，而非直接依赖此聚合接口。
+ * <p>Addon mods should use the specific sub-interface that they need.
+ * Do not depend directly on this aggregate interface.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * IMachineAPI machineAPI = MioIcifAPI.instance().getMachineAPI();
  *
- * // 检查位置是否有机器
+ * // Check if a machine is at the position
  * if (machineAPI.isMachine(world, pos)) {
  *     IMachineInfo info = machineAPI.getMachineInfo(world, pos);
  *     boolean working = info.isWorking();
@@ -41,78 +43,78 @@ public interface IMachineAPI
                 IMachineUpgradeOpsAPI, IUpgradeStatsAPI, IGeneratorQueryAPI,
                 IMultiblockReactorAPI, IRedstoneAPI {
 
-    // ========== 内部类型 ==========
+    // ========== Nested types ==========
 
     /**
-     * 机器类型枚举
+     * Machine type.
      */
     enum MachineType {
-        GENERATOR,      // 发电机
-        PROCESSOR,      // 加工机器（压缩机、提取机等）
-        SMELTER,        // 熔炉机
-        MACERATOR,      // 打粉机
-        COMPRESSOR,     // 压缩机
-        EXTRACTOR,      // 提取机
-        CENTRIFUGE,     // 离心机
-        WASHER,         // 洗矿机
-        RECYCLER,       // 回收机
-        METAL_FORMER,   // 金属成型机
-        ELECTROLYZER,   // 电解机
-        BLENDER,        // 搅拌机
-        CUTTER,         // 切割机
-        WELDER,         // 焊接机
-        LATHE,          // 车床
-        ROLLING,        // 卷板机
-        EXTRUDER,       // 压膜机
-        FERMENTER,      // 发酵机
+        GENERATOR,      // Generator
+        PROCESSOR,      // Processing machine (compressor, extractor, and other)
+        SMELTER,        // Electric furnace
+        MACERATOR,      // Macerator
+        COMPRESSOR,     // Compressor
+        EXTRACTOR,      // Extractor
+        CENTRIFUGE,     // Centrifuge
+        WASHER,         // Ore washer
+        RECYCLER,       // Recycler
+        METAL_FORMER,   // Metal former
+        ELECTROLYZER,   // Electrolyzer
+        BLENDER,        // Blender
+        CUTTER,         // Cutter
+        WELDER,         // Welder
+        LATHE,          // Lathe
+        ROLLING,        // Rolling machine
+        EXTRUDER,       // Extruder
+        FERMENTER,      // Fermenter
         CANNER,         // Canner
-        FLUID_SOLID,    // 流体固体灌装机
-        THERMAL_CENTRIFUGE, // 热能离心机
-        LASER_ENGRAVER, // 激光雕刻机
-        PRECISION_ASSEMBLER, // 精密组装机
-        VACUUM_FREEZER, // 真空冷冻机
-        PLASMA_FURNACE, // 等离子炉
-        FUSION_REACTOR, // 聚变反应堆
-        MATTER_FABRICATOR, // 物质生成机
-        REPLICATOR,     // 复制机
-        SCANNER,        // 扫描机
-        TELEPORTER,     // 传送机
-        PUMP,           // 泵
-        MINER,          // 采矿机
-        INDUCTION,      // 感应炉
-        CONDENSER,      // 冷凝机
-        TERRAFORMER,    // 地形改造机
-        HARVESTER,      // 收割机
-        MATRON,         // 物质复制机
-        MAGNETIZER,     // 磁化机
-        TESLA_COIL,     // 特斯拉线圈
-        ADVANCED_MINER, // 高级采矿机
-        TRANSFORMER,    // 变压器
-        PIPE,           // 管道
-        ENERGY_CONVERTER, // 能量转换器
-        NEUTRON_POLYMERIZER, // 粒子聚合发生器
-        CUSTOM          // 自定义类型
+        FLUID_SOLID,    // Fluid/solid canner
+        THERMAL_CENTRIFUGE, // Thermal centrifuge
+        LASER_ENGRAVER, // Laser engraver
+        PRECISION_ASSEMBLER, // Precision assembler
+        VACUUM_FREEZER, // Vacuum freezer
+        PLASMA_FURNACE, // Plasma furnace
+        FUSION_REACTOR, // Fusion reactor
+        MATTER_FABRICATOR, // Matter fabricator
+        REPLICATOR,     // Replicator
+        SCANNER,        // Scanner
+        TELEPORTER,     // Teleporter
+        PUMP,           // Pump
+        MINER,          // Miner
+        INDUCTION,      // Induction furnace
+        CONDENSER,      // Condenser
+        TERRAFORMER,    // Terraformer
+        HARVESTER,      // Harvester
+        MATRON,         // Matter replicator
+        MAGNETIZER,     // Magnetizer
+        TESLA_COIL,     // Tesla coil
+        ADVANCED_MINER, // Advanced miner
+        TRANSFORMER,    // Transformer
+        PIPE,           // Pipe
+        ENERGY_CONVERTER, // Energy converter
+        NEUTRON_POLYMERIZER, // Particle polymerization generator
+        CUSTOM          // Custom type
     }
 
     /**
-     * 红石模式枚举
+     * Redstone mode.
      */
     enum RedstoneMode {
-        /** 无红石控制 */
+        /** No redstone control. */
         NONE(0),
-        /** 严格满电时发出信号 (100%) */
+        /** Emits a signal only when the energy is exactly full (100%). */
         FULL(1),
-        /** 能量在中间范围时发出信号 */
+        /** Emits a signal when the energy is in the middle range. */
         PARTIAL(2),
-        /** 能量未满时发出信号 */
+        /** Emits a signal when the energy is not full. */
         NOT_FULL(3),
-        /** 严格空电时发出信号 (0%) */
+        /** Emits a signal only when the energy is exactly empty (0%). */
         EMPTY(4),
-        /** 接收到红石信号时停止输出 */
+        /** Stops output when the block gets a redstone signal. */
         INVERTED(5),
-        /** 接收到红石信号时停止输出，或严格满电时继续输出 */
+        /** Stops output when the block gets a redstone signal. Continues output when the energy is exactly full. */
         CONDITIONAL(6),
-        /** 接收到红石信号时才输出能量 */
+        /** Outputs energy only when the block gets a redstone signal. */
         REDSTONE_ON(7);
 
         private final int id;
@@ -157,7 +159,7 @@ public interface IMachineAPI
     }
 
     /**
-     * 槽位类型枚举
+     * Slot type.
      */
     enum SlotType implements ISlotType {
         INPUT,
@@ -192,7 +194,7 @@ public interface IMachineAPI
 
         @Override
         public String getName() {
-            return name().toLowerCase();
+            return name().toLowerCase(java.util.Locale.ROOT);
         }
 
         @Override
@@ -222,7 +224,7 @@ public interface IMachineAPI
     }
 
     /**
-     * 多方块结构信息接口
+     * Information about a multiblock structure.
      */
     interface IMultiblockInfo {
         boolean isStructureValid();
@@ -234,7 +236,7 @@ public interface IMachineAPI
     }
 
     /**
-     * 机器配置接口
+     * Machine configuration.
      */
     interface IMachineConfiguration {
         MachineType getMachineType();
@@ -247,18 +249,18 @@ public interface IMachineAPI
         int getSlotCount();
     }
 
-    // ========== 可扩展机器类型注册 ==========
+    // ========== Extensible machine type registration ==========
 
     /**
-     * 机器类型元数据记录。
+     * Metadata record for a machine type.
      *
-     * <p>当 {@link MachineType#CUSTOM} 不足以描述自定义机器时，
-     * 可通过 {@link MachineTypeRegistry#register(MachineTypeInfo)} 注册带元数据的类型。
+     * <p>Use this when {@link MachineType#CUSTOM} cannot fully describe a custom machine.
+     * Register the type with its metadata through {@link MachineTypeRegistry#register(MachineTypeInfo)}.
      *
-     * @param id          唯一类型标识符（建议格式：{@code modid:type_name}）
-     * @param displayName 显示名称（用于 HUD/日志）
-     * @param parentType  父类型（用于分类和兼容性判断）
-     * @param metadata    附加元数据
+     * @param id          unique type identifier (recommended format: {@code modid:type_name})
+     * @param displayName display name (for the HUD and logs)
+     * @param parentType  parent type (for categories and compatibility checks)
+     * @param metadata    additional metadata
      */
     record MachineTypeInfo(
         String id,
@@ -267,7 +269,7 @@ public interface IMachineAPI
         Map<String, Object> metadata
     ) {
         /**
-         * 简化构造器（无元数据）。
+         * Short constructor. It uses an empty metadata map.
          */
         public MachineTypeInfo(String id, String displayName, MachineType parentType) {
             this(id, displayName, parentType, Collections.emptyMap());
@@ -275,21 +277,22 @@ public interface IMachineAPI
     }
 
     /**
-     * 自定义机器类型注册表。
+     * Registry for custom machine types.
      *
-     * <p>提供运行时注册和查询自定义机器类型的机制，
-     * 解决 {@link MachineType} 枚举不可扩展的问题。
+     * <p>Use it to register and query custom machine types at runtime.
+     * The {@link MachineType} enum cannot be extended, so this registry adds that function.
+     * The registry is thread-safe.
      *
-     * <h3>使用示例</h3>
+     * <h3>Example</h3>
      * <pre>{@code
-     * // 注册自定义类型
+     * // Register a custom type
      * MachineTypeRegistry.register(new IMachineAPI.MachineTypeInfo(
      *     "mymod:quantum_assembler",
-     *     "量子组装机",
+     *     "Quantum Assembler",
      *     IMachineAPI.MachineType.PROCESSOR
      * ));
      *
-     * // 查询类型信息
+     * // Query the type information
      * Optional<IMachineAPI.MachineTypeInfo> info = MachineTypeRegistry.get("mymod:quantum_assembler");
      * }</pre>
      */
@@ -300,36 +303,37 @@ public interface IMachineAPI
         }
 
         /**
-         * 注册一个自定义机器类型。
+         * Registers a custom machine type.
+         * If a type with the same ID exists, this method replaces it.
          *
-         * @param info 类型元数据
-         * @return 之前的值（如果已存在），否则 null
+         * @param info type metadata (must not be null)
+         * @return the previous value for this ID, or null if no previous value exists
          */
         public static MachineTypeInfo register(MachineTypeInfo info) {
             return REGISTRY.put(info.id(), info);
         }
 
         /**
-         * 根据 ID 获取已注册的类型信息。
+         * Gets the registered type information for an ID.
          *
-         * @param id 类型 ID
-         * @return 类型信息（可能为空）
+         * @param id type ID
+         * @return the type information, or an empty Optional if the ID is not registered
          */
         public static java.util.Optional<MachineTypeInfo> get(String id) {
             return java.util.Optional.ofNullable(REGISTRY.get(id));
         }
 
         /**
-         * 获取所有已注册的自定义类型。
+         * Gets all registered custom types.
          *
-         * @return 不可变的注册表副本
+         * @return a read-only view of the registry (not a copy; it shows later registrations)
          */
         public static Map<String, MachineTypeInfo> getAll() {
             return Collections.unmodifiableMap(REGISTRY);
         }
 
         /**
-         * 检查指定 ID 的类型是否已注册。
+         * Checks if a type with the given ID is registered.
          */
         public static boolean isRegistered(String id) {
             return REGISTRY.containsKey(id);

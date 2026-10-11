@@ -9,22 +9,26 @@ import net.neoforged.neoforge.capabilities.ItemCapability;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * HU (Heat Units) 热能能力注册
- * 提供�?FE 能力系统类似�?API，但完全独立
+ * Registers the HU (heat units) capabilities.
+ * The API is similar to the FE capability system, but it is fully independent.
  * 
- * 热能系统的特点：
- * - 只能由特定热源产�? * - 只能被特定机器消耗? * - 不能像电力那样远距离传输
- * - 需要热传导介质（如热导管、蒸汽等�? */
+ * Properties of the heat system:
+ * - Only specific heat sources produce heat.
+ * - Only specific machines consume heat.
+ * - Heat cannot travel long distances like electricity.
+ * - Heat needs a transfer medium, such as heat conductors or steam.
+ */
 @SuppressWarnings("null")
 public final class HUCapabilities {
     
     /**
-     * 热能存储能力
+     * Heat storage capabilities.
      */
     public static final class HeatStorage {
         /**
-         * 方块热能存储能力（支持方向）
-         * 用于热交换器、核反应堆、地热发电机器?         */
+         * Block heat storage capability (sided).
+         * For heat exchangers, nuclear reactors, geothermal generators and similar blocks.
+         */
         public static final BlockCapability<IHeatStorage, @Nullable Direction> BLOCK = 
             BlockCapability.createSided(
                 ResourceLocation.fromNamespaceAndPath("mio_icif", "heat_storage"), 
@@ -32,8 +36,9 @@ public final class HUCapabilities {
             );
         
         /**
-         * 实体热能存储能力
-         * 用于可以携带热能的实�?         */
+         * Entity heat storage capability.
+         * For entities that can carry heat.
+         */
         public static final EntityCapability<IHeatStorage, @Nullable Direction> ENTITY = 
             EntityCapability.createSided(
                 ResourceLocation.fromNamespaceAndPath("mio_icif", "heat_storage"), 
@@ -41,8 +46,8 @@ public final class HUCapabilities {
             );
         
         /**
-         * 物品热能存储能力
-         * 用于热电池、燃料棒等可以存储热能的物品
+         * Item heat storage capability.
+         * For heat batteries, fuel rods and other items that can store heat.
          */
         public static final ItemCapability<IHeatStorage, @Nullable Void> ITEM = 
             ItemCapability.createVoid(
@@ -54,12 +59,12 @@ public final class HUCapabilities {
     }
     
     /**
-     * 热源能力
-     * 用于可以产生热能的方法?物品（如核燃料、燃烧室等）
+     * Heat source capabilities.
+     * For blocks and items that can make heat (for example, nuclear fuel and combustion chambers).
      */
     public static final class HeatSource {
         /**
-         * 方块热源能力
+         * Block heat source capability.
          */
         public static final BlockCapability<IHeatSource, @Nullable Direction> BLOCK = 
             BlockCapability.createSided(
@@ -68,8 +73,8 @@ public final class HUCapabilities {
             );
         
         /**
-         * 物品热源能力
-         * 用于燃料棒等
+         * Item heat source capability.
+         * For fuel rods and similar items.
          */
         public static final ItemCapability<IHeatSource, @Nullable Void> ITEM = 
             ItemCapability.createVoid(
@@ -81,10 +86,13 @@ public final class HUCapabilities {
     }
     
     /**
-     * 热传导介质能量?     * 用于可以传导热能的方块（如热导管理?     */
+     * Heat conductor capabilities.
+     * For blocks that can conduct heat (for example, heat pipes).
+     */
     public static final class HeatConductor {
         /**
-         * 方块热传导能量?         */
+         * Block heat conductor capability.
+         */
         public static final BlockCapability<IHeatConductor, @Nullable Direction> BLOCK = 
             BlockCapability.createSided(
                 ResourceLocation.fromNamespaceAndPath("mio_icif", "heat_conductor"), 

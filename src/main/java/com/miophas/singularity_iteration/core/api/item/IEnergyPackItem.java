@@ -1,9 +1,10 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 能量背包物品接口。
+ * Energy pack item interface.
  *
- * <p>用于标识能量背包（电池包 / lap 包 / 能量包 / 高级电池包等）类物品，便于 API 统一查询与分类。
+ * <p>Marks energy pack items (batpack, lappack, energy pack, advanced batpack and similar).
+ * The API uses it to query and classify them in one way.
  */
 public interface IEnergyPackItem {
 }

@@ -567,7 +567,7 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
                 && serverLevel.shouldTickBlocksAt(net.minecraft.world.level.ChunkPos.asLong(worldPosition));
     }
 
-    // ==================== grid.IEnergySource 接口实现 ====================
+    // ==================== grid.IEnergySource implementation ====================
 
     @Override
     public double getOfferedEnergy() {
@@ -590,7 +590,7 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         return EnergyNetGlobal.cableTierToSourceTier((CableTier) getEffectiveCableTier());
     }
 
-    // ==================== grid.IEnergySink 接口实现 ====================
+    // ==================== grid.IEnergySink implementation ====================
 
     @Override
     public double getDemandedEnergy() {
@@ -626,7 +626,7 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         return !energyStorage.scexNetworkControlled() && isPowerSource;
     }
 
-    // ==================== IUpgradableBlock 接口实现 ====================
+    // ==================== IUpgradableBlock implementation ====================
 
     @Override
     public long getEnergy() {
@@ -643,7 +643,7 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         return Set.of(UpgradableProperty.values());
     }
 
-    // ==================== IEnergyBlock 接口实现 ====================
+    // ==================== IEnergyBlock implementation ====================
 
     @Override
     public long useEnergy(long amount, boolean simulate) {

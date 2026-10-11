@@ -4,11 +4,11 @@ import com.miophas.singularity_iteration.core.api.machine.builder.IMachineBuilde
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 /**
- * 热能机器构建器
+ * Builder for heat machines.
  *
- * <p>用于创建符合 mio_icif 风格的热能机器（HU系统）。
+ * <p>Use it to create heat machines (HU system) in the mio_icif style.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * CustomHeatMachine machine = builder
  *     .setName("advanced_heat_exchanger")
@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
  */
 public interface IHeatMachineBuilder {
 
-    // ========== 基础配置 ==========
+    // ========== Basic configuration ==========
 
     IHeatMachineBuilder setName(String name);
 
@@ -31,56 +31,56 @@ public interface IHeatMachineBuilder {
 
     IHeatMachineBuilder setBlockProperties(BlockBehaviour.Properties properties);
 
-    // ========== 热能配置 ==========
+    // ========== Heat configuration ==========
 
     /**
-     * 设置热量容量
+     * Sets the heat capacity.
      */
     IHeatMachineBuilder setHeatCapacity(long capacity);
 
     /**
-     * 设置热量输出 (HU/t)
+     * Sets the heat output (HU/t).
      */
     IHeatMachineBuilder setHeatOutput(long heatOutput);
 
     /**
-     * 设置热量传输速率
+     * Sets the heat transfer rate.
      */
     IHeatMachineBuilder setHeatTransferRate(long transferRate);
 
     /**
-     * 设置热量输入速率
+     * Sets the heat input rate.
      */
     IHeatMachineBuilder setHeatInputRate(long inputRate);
 
     /**
-     * 设置工作温度
+     * Sets the operating temperature.
      */
     IHeatMachineBuilder setOperatingTemperature(long temperature);
 
     /**
-     * 设置最大温度
+     * Sets the maximum temperature.
      */
     IHeatMachineBuilder setMaxTemperature(long maxTemperature);
 
-    // ========== 工作配置 ==========
+    // ========== Work configuration ==========
 
     /**
-     * 设置是否需要燃料
+     * Sets if the machine needs fuel.
      */
     IHeatMachineBuilder setRequiresFuel(boolean requiresFuel);
 
     /**
-     * 设置是否需要流体冷却
+     * Sets if the machine needs fluid cooling.
      */
     IHeatMachineBuilder setRequiresCooling(boolean requiresCooling);
 
     /**
-     * 设置冷却液类型
+     * Sets the coolant type.
      */
     IHeatMachineBuilder setCoolantType(String fluidId);
 
-    // ========== 槽位配置 ==========
+    // ========== Slot configuration ==========
 
     IHeatMachineBuilder addInputSlot(int index, int maxStackSize);
 
@@ -91,52 +91,52 @@ public interface IHeatMachineBuilder {
     IHeatMachineBuilder addFluidTank(int capacity);
 
     /**
-     * 设置机器类型
+     * Sets the machine type.
      */
     IHeatMachineBuilder setMachineType(com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType machineType);
 
-    // ========== 事件回调 ==========
+    // ========== Event callbacks ==========
 
     IHeatMachineBuilder onHeatGenerate(HeatCallback callback);
 
     IHeatMachineBuilder onOverheat(OverheatCallback callback);
 
-    // ========== 构建 ==========
+    // ========== Build ==========
 
     /**
-     * 设置已注册的 BlockEntityType
+     * Sets the registered BlockEntityType.
      *
-     * <p>附属模组在自己的模组初始化阶段创建 BlockEntityType 后，
-     * 通过此方法将其关联到构建器，使 {@link #build()} 返回的定义包含有效的 entityType。
+     * <p>An addon mod creates the BlockEntityType during its own mod initialization.
+     * Then it calls this method to attach the type to the builder, so that the definition from {@link #build()} contains a valid entityType.
      *
-     * @param entityType 已注册的 BlockEntityType
-     * @return 构建器自身
+     * @param entityType the registered BlockEntityType
+     * @return this builder
      */
     IHeatMachineBuilder withEntityType(net.minecraft.world.level.block.entity.BlockEntityType<?> entityType);
 
     IMachineDefinition build();
 
     /**
-     * 构建并注册热能机器
+     * Builds and registers the heat machine.
      *
-     * <p>如果已通过 {@link #withEntityType(BlockEntityType)} 设置了 BlockEntityType，
-     * 返回的定义将包含该 entityType，可直接使用。
+     * <p>If you set the BlockEntityType with {@link #withEntityType(BlockEntityType)},
+     * the returned definition contains that entityType and is ready to use.
      *
-     * @param modId 模组 ID
-     * @return 机器定义
+     * @param modId the mod ID
+     * @return the machine definition
      */
     IMachineDefinition buildAndRegister(String modId);
 
     /**
-     * 获取机器配置记录
+     * Gets the machine configuration record.
      *
-     * <p>提供创建机器所需的所有参数，供附属模组自行注册 BlockEntityType。
+     * <p>It gives all the parameters necessary to create the machine, so that addon mods can register their own BlockEntityType.
      *
-     * @return 机器配置记录
+     * @return the machine configuration record
      */
     IMachineBuilderAPI.MachineConfiguration getConfiguration();
 
-    // ========== 回调接口 ==========
+    // ========== Callback interfaces ==========
 
     @FunctionalInterface
     interface HeatCallback {

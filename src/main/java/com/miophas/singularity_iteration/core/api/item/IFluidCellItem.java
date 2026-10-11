@@ -5,118 +5,124 @@ import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 /**
- * 流体单元物品接口。
+ * Interface for fluid cell items.
  *
- * <p>用于描述可以存储流体的物品（如流体单元、桶等）。
- * 实现此接口的物品可以存储和传输特定类型的流体。
+ * <p>It describes items that can store fluid (for example, fluid cells and buckets).
+ * Items that implement this interface can store and move a specific type of fluid.
  *
- * <h3>IC2 风格单元语义（Addon 开发者必读）</h3>
- * <p>本接口对应的实现（{@code mio_icif_cells} 下的各类单元）遵循 IC2 原版流体单元的约定，
- * 与桶（Bucket）行为对齐，请勿按普通 {@code ItemStack} 容器理解：
+ * <h3>IC2-style cell rules (addon developers must read this)</h3>
+ * <p>The implementations of this interface (the cells under {@code mio_icif_cells}) follow the rules of the original IC2 fluid cells.
+ * They behave like buckets. Do not treat them as a normal {@code ItemStack} container:
  * <ul>
- *   <li><b>固定容量</b>：每个单元有固定容量（通常为 1000 mB，与原版桶一致；部分单元为 2000 mB）。
- *   {@link #getCapacity()} 返回的是<b>单格</b>容量，而非堆叠总容量。</li>
- *   <li><b>空单元返还</b>：单元参与合成配方时通过 {@code .craftRemainder(CELL_EMPTY)} 返回空单元，
- *       与原版桶合成后返还空桶一致。Addon 自定义单元若参与合成，也必须设置 craftRemainder，
- *       否则单元会被消耗而非返还。</li>
- *   <li><b>按流体种类区分</b>：不同流体的单元是不同的物品（水单元 / 岩浆单元 / 生物气单元等），
- *       不可混用；同种流体单元之间可正常堆叠。</li>
- *   <li><b>单流体存储</b>：单元同一时刻只容纳一种流体。{@code fill} 时若待填充流体与已存储流体
- *       不同且单元非空，应拒绝（返回 0），不允许混合。</li>
- *   <li><b>单位</b>：所有容量与流量方法均以毫桶（mB）为单位。</li>
- *   <li><b>空/满判定</b>：{@link #isEmpty(ItemStack)} / {@link #isFull(ItemStack)} 是基于容量与
- *       当前存量的便捷判定，不要假设单元一定满容量。</li>
+ *   <li><b>Fixed capacity</b>: each cell has a fixed capacity (usually 1000 mB, the same as a vanilla bucket; some cells have 2000 mB).
+ *   {@link #getCapacity()} returns the capacity of <b>one</b> cell, not the total capacity of the stack.</li>
+ *   <li><b>Empty cell return</b>: when a cell is used in a crafting recipe, {@code .craftRemainder(CELL_EMPTY)} returns an empty cell.
+ *       This is the same as a vanilla bucket, which returns an empty bucket after crafting. If a custom addon cell is used in crafting,
+ *       it must also set craftRemainder. If not, the cell is used up and not returned.</li>
+ *   <li><b>One item for each fluid type</b>: cells for different fluids are different items (water cell, lava cell, biogas cell and so on).
+ *       Do not mix them. Cells of the same fluid stack normally.</li>
+ *   <li><b>One fluid only</b>: a cell holds only one fluid at a time. If {@code fill} gets a fluid that is different from the stored fluid
+ *       and the cell is not empty, it must refuse (return 0). Mixing is not permitted.</li>
+ *   <li><b>Unit</b>: all capacity and flow methods use millibuckets (mB).</li>
+ *   <li><b>Empty/full checks</b>: {@link #isEmpty(ItemStack)} / {@link #isFull(ItemStack)} are helper checks that compare the capacity
+ *       with the current amount. Do not assume that a cell is always at full capacity.</li>
  * </ul>
  */
 public interface IFluidCellItem {
 
     /**
-     * 获取流体单元的最大容量（mB）
-     * @return 容量（毫桶）
+     * Returns the maximum capacity of one fluid cell (mB).
+     *
+     * @return the capacity (millibuckets)
      */
     int getCapacity();
 
     /**
-     * 获取物品中当前存储的流体
-     * @param stack 物品堆
-     * @return 当前流体堆（可能为空）
+     * Returns the fluid that is stored in the item now.
+     *
+     * @param stack the item stack
+     * @return the current fluid stack (can be empty)
      */
     FluidStack getFluid(ItemStack stack);
 
     /**
-     * 检查是否可以存储指定流体
-     * @param fluid 流体
-     * @return true 如果可以存储
+     * Returns true if the cell can store the given fluid.
+     *
+     * @param fluid the fluid
+     * @return true if the cell can store it
      */
     boolean canHoldFluid(Fluid fluid);
 
     /**
-     * 向物品中填充流体
+     * Fills the item with fluid.
      *
-     * @param stack     物品堆
-     * @param fluid     要填充的流体堆
-     * @param simulate  是否仅模拟（不实际填充）
-     * @return 实际填充的量（mB）
+     * @param stack     the item stack
+     * @param fluid     the fluid stack to fill
+     * @param simulate  if true, only simulate (do not fill)
+     * @return the amount that was filled (mB)
      */
     int fill(ItemStack stack, FluidStack fluid, boolean simulate);
 
     /**
-     * 从物品中排出流体
+     * Drains fluid from the item.
      *
-     * @param stack     物品堆
-     * @param amount    要排出的量（mB）
-     * @param simulate  是否仅模拟（不实际排出）
-     * @return 实际排出的流体堆
+     * @param stack     the item stack
+     * @param amount    the amount to drain (mB)
+     * @param simulate  if true, only simulate (do not drain)
+     * @return the fluid stack that was drained
      */
     FluidStack drain(ItemStack stack, int amount, boolean simulate);
 
     /**
-     * 获取可以排出的最大量
-     * @param stack 物品堆
-     * @return 最大可排出量（mB）
+     * Returns the maximum amount that can be drained.
+     *
+     * @param stack the item stack
+     * @return the maximum amount to drain (mB)
      */
     default int getMaxDrain(ItemStack stack) {
         return getFluid(stack).getAmount();
     }
 
     /**
-     * 检查流体单元是否为空
-     * @param stack 物品堆
-     * @return true 如果没有流体
+     * Returns true if the fluid cell is empty.
+     *
+     * @param stack the item stack
+     * @return true if the cell contains no fluid
      */
     default boolean isEmpty(ItemStack stack) {
         return getFluid(stack).isEmpty();
     }
 
     /**
-     * 检查流体单元是否已满
-     * @param stack 物品堆
-     * @return true 如果流体已满
+     * Returns true if the fluid cell is full.
+     *
+     * @param stack the item stack
+     * @return true if the fluid amount is at the capacity or more
      */
     default boolean isFull(ItemStack stack) {
         return getFluid(stack).getAmount() >= getCapacity();
     }
 
     /**
-     * 获取此单元在排空后应该变成的空容器物品。
-     * <p>例如水单元排空后变成空单元，桶排空后变成空桶。
-     * 默认实现返回 {@link ItemStack#EMPTY}，表示不返还容器。
+     * Returns the empty container item that this cell becomes after it is drained.
+     * <p>For example, a water cell becomes an empty cell, and a filled bucket becomes an empty bucket.
+     * The default implementation returns {@link ItemStack#EMPTY}. This means that no container is returned.
      *
-     * @param stack 当前的满单元物品堆
-     * @return 排空后的空容器物品堆
+     * @param stack the current full cell item stack
+     * @return the empty container item stack after the drain
      */
     default ItemStack getEmptyContainer(ItemStack stack) {
         return ItemStack.EMPTY;
     }
 
     /**
-     * 获取此空单元在填充指定流体后应该变成的满容器物品。
-     * <p>例如空单元填充水后变成水单元，空桶填充水后变成水桶。
-     * 默认实现返回 {@link ItemStack#EMPTY}，表示无法填充。
+     * Returns the full container item that this empty cell becomes after it is filled with the given fluid.
+     * <p>For example, an empty cell filled with water becomes a water cell, and an empty bucket becomes a water bucket.
+     * The default implementation returns {@link ItemStack#EMPTY}. This means that the cell cannot be filled.
      *
-     * @param stack 当前的空单元物品堆
-     * @param fluid 要填充的流体类型
-     * @return 填充后的满容器物品堆
+     * @param stack the current empty cell item stack
+     * @param fluid the fluid type to fill
+     * @return the full container item stack after the fill
      */
     default ItemStack getFilledContainer(ItemStack stack, Fluid fluid) {
         return ItemStack.EMPTY;

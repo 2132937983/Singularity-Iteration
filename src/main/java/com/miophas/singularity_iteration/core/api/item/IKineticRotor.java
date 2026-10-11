@@ -4,11 +4,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 动能转子接口。
+ * Kinetic rotor interface.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IKineticRotor}。
- * 实现此接口的物品可以作为风力/水力发电机的转子，
- * 提供动能转换功能。
+ * Equivalent to {@code IKineticRotor} in IC2 1.12.2.
+ * An item that implements this interface can be the rotor of a wind or water kinetic generator.
+ * The rotor converts wind or water flow into kinetic energy.
  */
 public interface IKineticRotor {
 

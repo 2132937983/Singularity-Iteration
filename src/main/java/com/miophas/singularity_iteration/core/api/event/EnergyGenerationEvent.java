@@ -6,30 +6,30 @@ import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
 
 /**
- * 能量生成事件
+ * Energy generation event.
  *
- * <p><b>触发时机</b>：当发电机（包括核反应堆、太阳能板、风力发电机等）生成能量时触发。
+ * <p><b>When</b>: the event fires when a generator makes energy. Generators include nuclear reactors, solar panels, wind generators and others.
  *
- * <p><b>触发频率</b>：每个游戏 tick 触发一次（如果发电机正在工作），频率高。
+ * <p><b>Frequency</b>: the event fires one time per game tick while the generator works. The frequency is high.
  *
- * <p><b>覆盖范围</b>：所有继承自 AbstractEnergyBlockEntity 的发电设备，包括：
+ * <p><b>Scope</b>: all generators that extend AbstractEnergyBlockEntity, including:
  * <ul>
- *   <li>核反应堆、流体反应堆</li>
- *   <li>太阳能板、风力发电机</li>
- *   <li>地热发电机、RTG 发电机</li>
- *   <li>其他所有发电机器</li>
+ *   <li>Nuclear reactors and fluid reactors</li>
+ *   <li>Solar panels and wind generators</li>
+ *   <li>Geothermal generators and RTG generators</li>
+ *   <li>All other generators</li>
  * </ul>
  *
- * <p>可通过取消事件阻止能量生成，或修改生成量。
+ * <p>Cancel the event to stop the energy generation. You can also change the generated amount.
  *
- * <p>示例用法：
+ * <p>Example:
  * <pre>{@code
  * @SubscribeEvent
  * public void onEnergyGenerated(EnergyGenerationEvent event) {
- *     // 记录发电量
+ *     // Record the generated energy
  *     stats.recordGeneration(event.getPos(), event.getAmount());
  *
- *     // 修改发电量（例如：升级插件效果）
+ *     // Change the generated energy (for example, for an upgrade effect)
  *     event.setAmount(event.getAmount() * 2);
  * }
  * }</pre>
@@ -51,56 +51,57 @@ public class EnergyGenerationEvent extends Event implements ICancellableEvent {
     }
 
     /**
-     * 获取世界
+     * Gets the level.
      *
-     * @return 世界对象
+     * @return the level
      */
     public Level getWorld() {
         return world;
     }
 
     /**
-     * 获取位置
+     * Gets the position.
      *
-     * @return 方块位置
+     * @return the block position
      */
     public BlockPos getPos() {
         return pos;
     }
 
     /**
-     * 获取发电量
+     * Gets the generated energy.
      *
-     * @return 生成的能量值
+     * @return the generated energy (EU)
      */
     public long getAmount() {
         return amount;
     }
 
     /**
-     * 设置发电量
+     * Sets the generated energy.
+     * The value is limited to the free space of the storage (maxCapacity - currentStored).
      *
-     * @param amount 新的发电量
+     * @param amount the new generated energy (EU)
      */
     public void setAmount(long amount) {
-        // 确保发电量不会超过储能上限
+        // Make sure that the generated energy does not exceed the storage limit
         long space = maxCapacity - currentStored;
         this.amount = Math.min(amount, Math.max(0, space));
     }
 
     /**
-     * 获取最大容量
+     * Gets the maximum capacity.
      *
-     * @return 最大能量容量
+     * @return the maximum energy capacity (EU)
      */
     public long getMaxCapacity() {
         return maxCapacity;
     }
 
     /**
-     * 获取当前存储量
+     * Gets the stored energy.
      *
-     * @return 当前存储的能量
+     * @return the energy that is stored now (EU)
      */
     public long getCurrentStored() {
         return currentStored;

@@ -4,105 +4,105 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 /**
- * 热能存储访问接口
+ * Heat storage access interface.
  *
- * <p>提供对热能方块的读写访问，用于查询和修改热能状态。
- * HU (Heat Units) 是 mio_icif 的热能单位。
+ * <p>It gives read and write access to heat blocks. Use it to query and change the heat state.
+ * HU (Heat Units) is the heat unit of mio_icif.
  * <p>
- * 写入方法与 {@code IEnergyTileAccess} 的 {@code chargeEnergy/dischargeEnergy} 保持一致的设计风格，
- * 附属模组可通过这些方法直接向热能系统注入或抽取热量。
+ * The write methods use the same design as {@code chargeEnergy/dischargeEnergy} in {@code IEnergyTileAccess}.
+ * Add-on mods can use these methods to put heat into the heat system or to remove heat from it directly.
  */
 public interface IHeatStorageAccess {
 
     /**
-     * 获取方块所在世界
+     * Gets the world of the block.
      */
     Level getWorld();
 
     /**
-     * 获取方块位置
+     * Gets the block position.
      */
     BlockPos getPos();
 
     /**
-     * 获取当前存储的热能值(HU)
+     * Gets the heat that is stored now (HU).
      */
     long getHeatStored();
 
     /**
-     * 获取最大热能容量(HU)
+     * Gets the maximum heat capacity (HU).
      */
     long getMaxHeatStored();
 
     /**
-     * 获取热能温度（摄氏度）
+     * Gets the temperature (degrees Celsius).
      */
     int getTemperature();
 
     /**
-     * 检查是否是热源
+     * Checks if the block is a heat source.
      */
     boolean isHeatSource();
 
     /**
-     * 检查是否是热导体
+     * Checks if the block is a heat conductor.
      */
     boolean isHeatConductor();
 
     /**
-     * 检查是否可以提取热能
+     * Checks if heat can be extracted.
      */
     boolean canExtractHeat();
 
     /**
-     * 检查是否可以接收热能
+     * Checks if heat can be received.
      */
     boolean canReceiveHeat();
 
     /**
-     * 向存储中注入热能。
+     * Puts heat into the storage.
      * <p>
-     * 不会超过最大容量。如果 {@link #canReceiveHeat()} 返回 false，则始终返回 0。
+     * The result does not go above the maximum capacity. If {@link #canReceiveHeat()} returns false, this method always returns 0.
      *
-     * @param amount    要注入的热量（HU），必须 ≥ 0
-     * @param simulate  如果为 true，只模拟操作不实际改变存储
-     * @return 实际注入的热量（HU）
+     * @param amount    the heat to put in (HU). It must be ≥ 0.
+     * @param simulate  if true, only simulate. The storage does not change.
+     * @return the heat that was put in (HU)
      */
     long insertHeat(long amount, boolean simulate);
 
     /**
-     * 从存储中提取热能。
+     * Extracts heat from the storage.
      * <p>
-     * 不会超过当前存储量。如果 {@link #canExtractHeat()} 返回 false，则始终返回 0。
+     * The result does not go above the stored quantity. If {@link #canExtractHeat()} returns false, this method always returns 0.
      *
-     * @param amount    要提取的热量（HU），必须 ≥ 0
-     * @param simulate  如果为 true，只模拟操作不实际改变存储
-     * @return 实际提取的热量（HU）
+     * @param amount    the heat to extract (HU). It must be ≥ 0.
+     * @param simulate  if true, only simulate. The storage does not change.
+     * @return the heat that was extracted (HU)
      */
     long extractHeat(long amount, boolean simulate);
 
     /**
-     * 检查是否过热。
-     * 当温度 ≥ 800°C 时视为过热状态。
+     * Checks if the block is overheated.
+     * The block is overheated when the temperature is ≥ 800°C.
      */
     boolean isOverheated();
 
     /**
-     * 获取每 tick 的热能损耗量（HU）。
-     * 温度越高损耗越快。
+     * Gets the heat loss for each tick (HU).
+     * A higher temperature causes a faster loss.
      */
     long getHeatLossPerTick();
 
     /**
-     * 直接设置热能存储量。
+     * Sets the stored heat directly.
      * <p>
-     * 值会被限制在 [0, {@link #getMaxHeatStored()}] 范围内。
+     * The value is clamped to the range [0, {@link #getMaxHeatStored()}].
      * <p>
-     * <b>注意：</b>此方法通过 receiveHeat/extractHeat 间接实现。
-     * 如果方块当前拒绝接收或提取热能（如 canReceiveHeat() 返回 false），
-     * 操作可能静默失败。调用者应在调用后通过 getHeatStored() 验证实际值。
+     * <b>Note:</b> This method uses receiveHeat/extractHeat internally.
+     * If the block does not accept or release heat now (for example canReceiveHeat() returns false),
+     * the operation can fail without a message. After the call, use getHeatStored() to verify the actual value.
      *
-     * @param amount 新的热量值（HU）
+     * @param amount the new heat value (HU)
      */
     void setHeatStored(long amount);
 }

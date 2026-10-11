@@ -139,7 +139,7 @@ public class mio_icif_turbo_kinetic_generator extends AbstractGeneratorBlockEnti
         Direction facing = getBlockState().getValue(
             net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
         BlockPos sourcePos = worldPosition.relative(facing);
-        if (!level.hasChunkAt(sourcePos)) return;
+        if (!level.isLoaded(sourcePos)) return;
 
         IMioIcifCapabilities.IKineticStorage source = level.getCapability(
             IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, sourcePos, facing.getOpposite());

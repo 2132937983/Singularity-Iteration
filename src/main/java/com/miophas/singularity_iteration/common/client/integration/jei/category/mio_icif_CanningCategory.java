@@ -20,7 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 装罐�?装罐模式 JEI 配方类别
+ * JEI recipe category for the canning machine in canning mode.
  */
 @SuppressWarnings("null")
 public class mio_icif_CanningCategory extends AbstractJeiRecipeCategory<CanningRecipe> {
@@ -40,7 +40,7 @@ public class mio_icif_CanningCategory extends AbstractJeiRecipeCategory<CanningR
         this.background = helper.createDrawable(TEXTURE, 0, 0, 176, 104);
         this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
                 new ItemStack(mio_icif_blocks.CANNER_ELC.get()));
-        // 进度条纹�?(233, 0), 尺寸 24x15
+        // Progress bar texture at (233, 0), size 24x15.
         this.progressBar = helper.createAnimatedDrawable(
                 helper.createDrawable(TEXTURE, 233, 0, 24, 15),
                 40, IDrawableAnimated.StartDirection.LEFT, false);
@@ -73,15 +73,18 @@ public class mio_icif_CanningCategory extends AbstractJeiRecipeCategory<CanningR
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, CanningRecipe recipe, IFocusGroup focuses) {
-        // 输入�?(41, 17), 材料�?(80, 44), 输出�?(119, 17) - �?GUI 一�
-    builder.addSlot(RecipeIngredientRole.INPUT, 41, 17)
+        // Input slot (41, 17), material slot (80, 44), output slot (119, 17). The positions match the machine GUI.
+    // A data pack recipe can have no ingredients. JEI must not crash on it.
+    if (!recipe.getIngredients().isEmpty()) {
+        builder.addSlot(RecipeIngredientRole.INPUT, 41, 17)
                 .addIngredients(recipe.getIngredients().get(0));
+    }
 
-        // 材料�
+        // Material slot.
     builder.addSlot(RecipeIngredientRole.INPUT, 80, 44)
                 .addIngredients(recipe.getIngredients().get(1));
 
-        // 输出�?(右侧)
+        // Output slot (right side).
         builder.addSlot(RecipeIngredientRole.OUTPUT, 119, 17)
                 .addItemStack(recipe.getResultItem(null));
     }
@@ -89,7 +92,7 @@ public class mio_icif_CanningCategory extends AbstractJeiRecipeCategory<CanningR
     @Override
     protected void drawFor(CanningRecipe recipe, IRecipeSlotsView recipeSlotsView, net.minecraft.client.gui.GuiGraphics guiGraphics, double mouseX, double mouseY) {
         this.background.draw(guiGraphics, 0, 0);
-        // 进度条位置?(74, 22) �?GUI 一�
+        // Progress bar at (74, 22). The position matches the machine GUI.
     this.progressBar.draw(guiGraphics, 74, 22);
 
         Minecraft minecraft = Minecraft.getInstance();

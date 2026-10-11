@@ -133,7 +133,9 @@ public final class LaserTowerStats {
         writeMap(buf, hitsByType); writeMap(buf, killsByType);
         buf.writeVarInt(recent.size());
         for (Recent r : recent) {
-            buf.writeUtf(r.type(), 128); buf.writeUtf(r.name(), 64);
+            // writeUtf throws when the text is longer than the limit. A custom name from a
+            // command can be longer than 64 characters, so cut it first (0.1.7.36).
+            buf.writeUtf(clip(r.type(), 128)); buf.writeUtf(clip(r.name(), 64));
             buf.writeFloat(r.damage()); buf.writeBoolean(r.killed()); buf.writeVarLong(r.gameTime());
         }
     }
@@ -143,20 +145,27 @@ public final class LaserTowerStats {
         s.energyUsed = buf.readVarLong(); s.volleys = buf.readVarLong(); s.hits = buf.readVarLong(); s.kills = buf.readVarLong();
         s.damage = buf.readDouble();
         readMap(buf, s.hitsByType); readMap(buf, s.killsByType);
-        int n = Math.min(buf.readVarInt(), RECENT);
+        int n = com.miophas.singularity_iteration.common.util.PacketLimits.readCount(buf, RECENT, "recent shot");
         for (int i = 0; i < n; i++) {
             s.recent.add(new Recent(buf.readUtf(128), buf.readUtf(64), buf.readFloat(), buf.readBoolean(), buf.readVarLong()));
         }
         return s;
     }
 
+    private static String clip(String s, int max) {
+        return s.length() <= max ? s : s.substring(0, max);
+    }
+
     private static void writeMap(FriendlyByteBuf buf, Object2LongOpenHashMap<String> map) {
-        buf.writeVarInt(map.size());
-        for (Object2LongMap.Entry<String> e : map.object2LongEntrySet()) { buf.writeUtf(e.getKey(), 128); buf.writeVarLong(e.getLongValue()); }
+        int left = com.miophas.singularity_iteration.common.util.PacketLimits.writeCount(buf, map.size(), MAX_TYPES + 1);
+        for (Object2LongMap.Entry<String> e : map.object2LongEntrySet()) {
+            if (left-- <= 0) break;
+            buf.writeUtf(clip(e.getKey(), 128)); buf.writeVarLong(e.getLongValue());
+        }
     }
 
     private static void readMap(FriendlyByteBuf buf, Object2LongOpenHashMap<String> map) {
-        int n = Math.min(buf.readVarInt(), MAX_TYPES + 1);
+        int n = com.miophas.singularity_iteration.common.util.PacketLimits.readCount(buf, MAX_TYPES + 1, "entity type");
         for (int i = 0; i < n; i++) map.put(buf.readUtf(128), buf.readVarLong());
     }
 }

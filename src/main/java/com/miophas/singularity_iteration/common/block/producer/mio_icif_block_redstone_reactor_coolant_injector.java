@@ -24,15 +24,17 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 反应堆冷却液注入器方块类
+ * Reactor coolant injector block.
  *
- * 特性：
- * - 正面对着核反应堆或核反应�? * - 无延迟修复红石冷凝模式? * - 需要红石方块?EU 能量
+ * Features:
+ * - Its front faces a nuclear reactor or a reactor chamber.
+ * - It repairs redstone condensators in the reactor with no delay.
+ * - It needs redstone blocks and EU energy.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_redstone_reactor_coolant_injector extends mio_icif_entity_block {
 
-    // 工作状态属性（用于显示是否正在修复�
+    // Working state property. It shows whether the injector is repairing.
 public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     public static final MapCodec<mio_icif_block_redstone_reactor_coolant_injector> CODEC = RecordCodecBuilder.mapCodec(instance ->
@@ -79,7 +81,7 @@ public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_redstone_reactor_coolant_injector injector) {
-                // 掉落物品栏中的物�
+                // Drop the items in the inventory.
             for (int i = 0; i < injector.getItemHandler().getSlots(); i++) {
                     ItemStack stack = injector.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {
@@ -100,7 +102,7 @@ public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof mio_icif_redstone_reactor_coolant_injector injector) {
-            // 计算红石信号强度（基于红石块填充程度�
+            // Calculate the redstone signal strength from the redstone block fill level.
         int maxSlots = mio_icif_redstone_reactor_coolant_injector.BATTERY_SLOT;
             int filledSlots = 0;
             for (int i = 0; i < maxSlots; i++) {

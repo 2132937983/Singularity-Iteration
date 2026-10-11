@@ -3,18 +3,18 @@ package com.miophas.singularity_iteration.core.api.network;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * 方块实体网络事件监听接口（客户端）。
+ * Listener interface for block entity network events (client side).
  * <p>
- * 对应 IC2 1.12.2 的 {@code INetworkClientTileEntityEventListener}。
- * 实现此接口的方块实体可以在客户端收到网络事件通知。
+ * Equivalent to {@code INetworkClientTileEntityEventListener} in IC2 1.12.2.
+ * A block entity that implements this interface receives network events on the client.
  */
 public interface INetworkClientTileEntityEventListener {
 
     /**
-     * 当客户端收到方块实体的网络事件时调用。
+     * Called when the client receives a network event for this block entity.
      *
-     * @param player 触发事件的玩家（可能为 null）
-     * @param eventId 事件 ID
+     * @param player the player that caused the event (can be null)
+     * @param eventId the event ID
      */
     void onNetworkEvent(Player player, int eventId);
 }

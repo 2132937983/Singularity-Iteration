@@ -222,7 +222,7 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
 
     @Override
     protected void doWork() {
-        // �???��?��??
+        // Use energy. Stop if the machine does not have sufficient energy.
         if (!consumeEnergy()) {
             stopWork();
             return;
@@ -230,7 +230,7 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
 
         isWorking = true;
 
-        // ?��??��?��?��?�方
+        // Find the matching recipe.
         Optional<RecipeHolder<mio_icif_PowderRecipe>> recipe = findRecipe();
         if (recipe.isEmpty()) {
             stopWork();
@@ -253,7 +253,7 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
         ItemStack result = recipe.value().getResultItem(level.registryAccess());
         ItemStack currentOutput = itemHandler.getStackInSlot(OUTPUT_SLOT);
 
-        // 添�?��?��?��?��?�出�?
+        // Add the result to the output slot.
         if (currentOutput.isEmpty()) {
             itemHandler.setStackInSlot(OUTPUT_SLOT, result.copy());
         } else {
@@ -319,7 +319,7 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
         }
     }
 
-    // MenuProvider ?��?��实现
+    // MenuProvider implementation
 
     @Override
     public Component getDisplayName() {

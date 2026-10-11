@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 工作台方块接口。
+ * Workbench block interface.
  *
- * <p>用于标识工业工作台方块实体，便于 API 统一查询与分类。
+ * <p>Marks industrial workbench block entities. The API uses it for queries and classification.
  */
 public interface IWorkbench {
 }

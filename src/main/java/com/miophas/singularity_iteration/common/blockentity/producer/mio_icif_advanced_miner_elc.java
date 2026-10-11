@@ -67,7 +67,6 @@ public class mio_icif_advanced_miner_elc extends AbstractProcessingMachineBlockE
     private final PendingDrops scexPendingDrops = new PendingDrops(() -> ContainerToTank.markUnsaved(this));
     private MachineActionOwner actionOwner = MachineActionOwner.legacy(LEGACY_ACTOR);
 
-    private static final Logger LOGGER = LogUtils.getLogger();
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .battery()  // 电池
@@ -76,31 +75,31 @@ public class mio_icif_advanced_miner_elc extends AbstractProcessingMachineBlockE
    .build();
 
     // 槽位定义 - 匹配原版IC2高级采矿机GUI布局
-    public static final int SLOT_BATTERY = 0;        // 电池�?(8,80)
+    public static final int SLOT_BATTERY = 0; // Battery slot (8,80)
     public static final int SLOT_SCANNER = 1;        // 扫描仪槽 (8,26)
-    public static final int SLOT_UPGRADE_START = 2;  // 升级槽起�?152,26) - 4�?垂直排列)
+    public static final int SLOT_UPGRADE_START = 2; // First upgrade slot (152,26). 4 slots in a vertical column.
     public static final int SLOT_UPGRADE_COUNT = 4;
     public static final int SLOT_UPGRADE_END = SLOT_UPGRADE_START + SLOT_UPGRADE_COUNT; // 6
     public static final int TOTAL_SLOTS = 6;         // itemHandler实际槽位数（电池、扫描仪、升级）
-    // 过滤槽定义（幽灵槽，不占用itemHandler�?
+    // Filter slots. These are ghost slots and are not part of itemHandler.
     public static final int FILTER_COUNT = 15;       // 15(3 - 用于黑白名单
     public static final int FILTER_ROWS = 3;
     public static final int FILTER_COLS = 5;
     public static final int FILTER_START_X = 36;
     public static final int FILTER_START_Y = 44;
 
-    // 默认配置 - HV等级（对齐原版IC2�?
+    // Default settings: HV tier, the same as the original IC2 advanced miner.
     public static final long DEFAULT_CAPACITY = 4000000L;  // 4M EU
     public static final long DEFAULT_MAX_RECEIVE = 512L;   // HV 512 EU/t
     public static final long DEFAULT_MAX_EXTRACT = 512L;   // 最大提取速率
     public static final int DEFAULT_WORK_TIME = 20;        // 20 ticks基础工作速度
     public static final long DEFAULT_ENERGY_PER_TICK = 0L; // 动态计
-    // 基础耗电配置（对齐原版IC2�?
-    public static final int BASE_ENERGY_COST = 512;       // 原版IC2: 512 EU/次挖�?
+    // Base energy cost, the same as the original IC2.
+    public static final int BASE_ENERGY_COST = 512; // Original IC2: 512 EU for each mined block
     public static final int OVERCLOCK_ENERGY_MULTIPLIER = 2; // 每个超频升级耗电
-    // 扫描器耗电配置（对齐原版IC2�?
+    // Scanner energy cost, the same as the original IC2.
     public static final int SCANNER_ENERGY_COST = 64;     // 原版IC2: 64 EU/次扫
-    // 扫描范围x9�?
+    // Scan area: 9x9 blocks.
     public static final int SCAN_RADIUS = 4; // 9x9范围，向四个方向延伸4
     // 升级类型
     public enum UpgradeType {
@@ -116,7 +115,6 @@ private int currentDepth = 0;           // 当前挖掘深度
     private int scexSyncedRangeRadius = -1;
     private BlockPos tipPos = null;         // 采矿尖端位置
     @SuppressWarnings("unused")
-    private boolean isPaused = false;       // 是否暂停（遇到液体或满仓）
     private List<BlockPos> oresInCurrentLayer = new ArrayList<>(); // 当前层的矿物位置
     private int currentOreIndex = 0;        // 当前正在挖掘的矿物索引
     private boolean silkTouchMode = false;  // 精确采集模式
@@ -131,8 +129,8 @@ private int currentDepth = 0;           // 当前挖掘深度
     private int energyStorageCount = 0;
     private int tractorBeamCount = 0;
     private int effectiveScanRadius = SCAN_RADIUS;
-    private int maxBlockScanCount = 5;  // 每周期最多扫�?挖掘的方块数（对齐IC2: 5*(overclockerCount+1)
-    private int workTicker = 0;          // 工作周期计时器（0-20�?
+    private int maxBlockScanCount = 5; // Maximum blocks to scan or mine in each cycle. IC2 uses 5 * (overclockerCount + 1).
+    private int workTicker = 0; // Work cycle timer (0-20 ticks)
     /**
      * 用于 BlockEntityType.Builder 的构造函
 */

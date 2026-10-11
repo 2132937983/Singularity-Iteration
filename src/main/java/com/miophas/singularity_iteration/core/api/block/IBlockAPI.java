@@ -6,36 +6,36 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Collection;
 
 /**
- * 方块 API
+ * Block API.
  *
- * <p>提供与 mio_icif 方块的访问，包括：
+ * <p>It gives access to mio_icif blocks, including:
  * <ul>
- *   <li>查询模组方块</li>
- *   <li>获取方块属性</li>
+ *   <li>queries for mod blocks</li>
+ *   <li>block properties</li>
  * </ul>
  */
 public interface IBlockAPI {
 
     /**
-     * 根据 ID 获取方块
+     * Gets a block from its ID.
      *
-     * @param id 方块 ID
-     * @return 方块，如果不存在则返回 null
+     * @param id the block ID
+     * @return the block, or null if it does not exist
      */
     Block getBlock(ResourceLocation id);
 
     /**
-     * 获取基础机器外壳方块
+     * Gets the basic machine casing block.
      */
     Block getMachineHullBasic();
 
     /**
-     * 获取高级机器外壳方块
+     * Gets the advanced machine casing block.
      */
     Block getMachineHullAdvanced();
 
     /**
-     * 获取所有注册方块 ID
+     * Gets the IDs of all registered blocks.
      */
     Collection<ResourceLocation> getAllBlockIds();
 }

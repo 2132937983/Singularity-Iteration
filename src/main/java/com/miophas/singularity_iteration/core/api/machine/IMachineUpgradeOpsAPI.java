@@ -7,30 +7,35 @@ import net.minecraft.world.level.Level;
 import java.util.Collection;
 
 /**
- * 机器升级操作 API
+ * Machine upgrade operations API.
  *
- * <p>提供升级插件的安装、移除和查询功能。
- * 从 IMachineAPI 拆分而来，遵循单一职责原则。
+ * <p>Gives methods to install, remove and query upgrade modules.
+ * It was split from IMachineAPI to follow the single responsibility principle.
  */
 public interface IMachineUpgradeOpsAPI {
 
     /**
-     * 检查机器是否支持升级插件
+     * Checks if the machine accepts upgrade modules.
      */
     boolean supportsUpgrades(Level world, BlockPos pos);
 
     /**
-     * 获取机器当前安装的升级插件
+     * Gets the upgrade modules that are installed in the machine now.
      */
     Collection<ItemStack> getInstalledUpgrades(Level world, BlockPos pos);
 
     /**
-     * 安装升级插件
+     * Installs an upgrade module.
+     *
+     * @return true if the upgrade was installed
      */
     boolean installUpgrade(Level world, BlockPos pos, ItemStack upgrade);
 
     /**
-     * 移除升级插件
+     * Removes the upgrade module from an upgrade slot. Server side only.
+     *
+     * @param slot the index inside the upgrade slots (0 = the first upgrade slot), not the container slot index
+     * @return the removed upgrade; an empty stack if nothing was removed or on the client
      */
     ItemStack removeUpgrade(Level world, BlockPos pos, int slot);
 }

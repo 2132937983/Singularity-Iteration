@@ -5,7 +5,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 
 /**
- * 单物品配方输??? * 用于打粉机等单输入配方的机器
+ * Recipe input with one item.
+ * Machines with single-input recipes use it. Example: the macerator.
  */
 public record mio_icif_SingleItemRecipeInput(ItemStack item) implements RecipeInput {
 

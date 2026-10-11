@@ -11,23 +11,31 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 /**
- * 热交换器基类
+ * Base class for heat exchangers (heat switches).
  *
- * 特性（参考IC2）：
- * - 可以从燃料棒吸热
- * - 用于元件之间热量交换
- * - 可以向核反应堆传递热�? * - 自身有热量存�? * - 超过热量上限会熔�? *
- * 工作原理�? * - 从相邻燃料棒吸收热量
- * - 向相邻其他元件传递热�? * - 向核反应堆传递热�? * - 热量与耐久度成反比
+ * Behavior (IC2 reference):
+ * - It absorbs heat from fuel rods.
+ * - It moves heat between components.
+ * - It can move heat to the reactor hull.
+ * - It has its own heat storage.
+ * - It melts when its heat reaches the maximum.
  *
- * 热交换器类型�? * - 基础热交换器�?500热量，向相邻传�?2，向反应堆传�?
- * - 反应堆热交换器：5000热量，不向相邻传递，向反应堆传�?2
- * - 元件热交换器�?000热量，向相邻传�?6，不向反应堆传�? * - 高级热交换器�?0000热量，向相邻传�?4，向反应堆传�?
+ * How it works:
+ * - It absorbs heat from adjacent fuel rods.
+ * - It moves heat to adjacent components.
+ * - It moves heat to the reactor hull.
+ * - Stored heat is the inverse of durability.
+ *
+ * Heat exchanger types:
+ * - Basic heat exchanger: 2500 heat, 12 to adjacent components, 4 to the reactor.
+ * - Reactor heat exchanger: 5000 heat, 0 to adjacent components, 72 to the reactor.
+ * - Component heat exchanger: 5000 heat, 36 to adjacent components, 0 to the reactor.
+ * - Advanced heat exchanger: 10000 heat, 24 to adjacent components, 8 to the reactor.
  */
 @SuppressWarnings("null")
 public class mio_icif_heat_switch extends mio_icif_reactor {
 
-    // 最大热量存�
+    // Maximum heat storage.
 protected final int maxHeatStorage;
 
     // 向相邻元件传递的热量
@@ -37,11 +45,11 @@ protected final int maxHeatStorage;
     protected final int heatTransferToReactor;
 
     /**
-     * 构造函数
- * @param properties 物品属性
- * @param maxHeatStorage 最大热量存�
- * @param heatTransferToAdjacent 向相邻元件传递的热量
-     * @param heatTransferToReactor 向核反应堆传递的热量
+     * Creates a heat exchanger.
+     * @param properties the item properties
+     * @param maxHeatStorage the maximum heat storage
+     * @param heatTransferToAdjacent the heat moved to adjacent components
+     * @param heatTransferToReactor the heat moved to the reactor hull
      */
     public mio_icif_heat_switch(Properties properties, int maxHeatStorage,
                                 int heatTransferToAdjacent, int heatTransferToReactor) {
@@ -54,9 +62,9 @@ protected final int maxHeatStorage;
     // ==================== 热量存储相关 ====================
 
     /**
-     * 获取当前存储的热�
- * @param stack 物品栈
- * @return 当前热量
+     * Gets the stored heat.
+     * @param stack the item stack
+     * @return the stored heat
      */
     @Override
     public int getStoredHeat(ItemStack stack) {
@@ -65,10 +73,11 @@ protected final int maxHeatStorage;
     }
 
     /**
-     * 设置存储的热�
- * @param stack 物品栈
- * @param heat 热量�
- */
+     * Sets the stored heat. The value is clamped to 0..maxHeatStorage.
+     * The stack is destroyed when the heat reaches the maximum.
+     * @param stack the item stack
+     * @param heat the heat value
+     */
     @Override
     public void setStoredHeat(ItemStack stack, int heat) {
         heat = Math.max(0, Math.min(heat, maxHeatStorage));
@@ -82,11 +91,11 @@ protected final int maxHeatStorage;
     }
 
     /**
-     * 添加热量
-     * @param stack 物品栈
- * @param heat 要添加的热量
-     * @return 实际添加的热�
- */
+     * Adds heat, limited by the free heat capacity.
+     * @param stack the item stack
+     * @param heat the heat to add
+     * @return the heat that was actually added
+     */
     public int addHeat(ItemStack stack, int heat) {
         int currentHeat = getStoredHeat(stack);
         int maxAddable = maxHeatStorage - currentHeat;
@@ -100,11 +109,11 @@ protected final int maxHeatStorage;
     }
 
     /**
-     * 减少热量
-     * @param stack 物品栈
- * @param heat 要减少的热量
-     * @return 实际减少的热�
- */
+     * Removes heat, limited by the stored heat.
+     * @param stack the item stack
+     * @param heat the heat to remove
+     * @return the heat that was actually removed
+     */
     public int removeHeat(ItemStack stack, int heat) {
         int currentHeat = getStoredHeat(stack);
         int actualRemove = Math.min(heat, currentHeat);
@@ -116,37 +125,37 @@ protected final int maxHeatStorage;
         return actualRemove;
     }
 
-    // ==================== 热量传递相同?====================
+    // ==================== Heat transfer ====================
 
     /**
-     * 获取向相邻元件传递的热量
-     * @return 传递热�
- */
+     * Gets the heat moved to adjacent components.
+     * @return the heat moved per transfer
+     */
     public int getHeatTransferToAdjacent() {
         return heatTransferToAdjacent;
     }
 
     /**
-     * 获取向核反应堆传递的热量
-     * @return 传递热�
- */
+     * Gets the heat moved to the reactor hull.
+     * @return the heat moved per transfer
+     */
     public int getHeatTransferToReactor() {
         return heatTransferToReactor;
     }
 
     /**
-     * 获取最大热量存�
- * @return 最大热�
- */
+     * Gets the maximum heat storage.
+     * @return the maximum heat storage
+     */
     public int getMaxHeatStorage() {
         return maxHeatStorage;
     }
 
     /**
-     * 计算热量百分配
- * @param stack 物品栈
- * @return 热量百分比（0.0 - 1.0�
- */
+     * Calculates the heat percentage.
+     * @param stack the item stack
+     * @return the heat percentage, from 0.0 to 100.0
+     */
     public double getHeatPercentage(ItemStack stack) {
         return (double) getStoredHeat(stack) * 100.0 / maxHeatStorage;
     }
@@ -154,9 +163,9 @@ protected final int maxHeatStorage;
     // ==================== 熔毁相关 ====================
 
     /**
-     * 检查热交换器是否熔�
- * @param stack 物品栈
- * @return 是否熔毁
+     * Checks whether the heat exchanger has melted.
+     * @param stack the item stack
+     * @return true if the stored heat is at or above the maximum
      */
     @Override
     public boolean isMelted(ItemStack stack) {
@@ -164,9 +173,9 @@ protected final int maxHeatStorage;
     }
 
     /**
-     * 热交换器会熔�
- * @param stack 物品栈
- * @return 始终返回true
+     * Heat exchangers can melt.
+     * @param stack the item stack
+     * @return always true
      */
     @Override
     public boolean shouldMelt(ItemStack stack) {

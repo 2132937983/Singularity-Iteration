@@ -18,15 +18,15 @@ import net.minecraft.world.item.component.CustomData;
 import java.util.List;
 
 /**
- * 纳米�?- IC2风格的高级电力武�?
- * 继承电力工具基础值?
+ * Nano saber: an IC2-style advanced electric weapon.
+ * It extends the electric tool base class.
  *
- * 特性：
- * - 右键切换开关状态?
- * - 开启时攻击伤害20，关闭时攻击伤害4
- * - 攻击时消耗?00EU
- * - 开启时对纳�?量子护甲造成额外电力伤害
- * - 最大存储?60000EU，传输限制?00EU/t，等�?（HV�?
+ * Properties:
+ * - Right-click turns the saber on or off.
+ * - Attack damage is 20 when on and 4 when off.
+ * - Each attack uses 100 EU.
+ * - When on, it does extra electric damage to nano and quantum armor.
+ * - Maximum storage: 160000 EU. Transfer limit: 500 EU/t. Tier: 3 (HV).
  */
 @SuppressWarnings("null")
 public class mio_icif_nanosaber extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider, IEquipmentHudProvider,
@@ -65,23 +65,23 @@ public class mio_icif_nanosaber extends mio_icif_tool_elc implements com.miophas
         }
     }
 
-    // 纳米剑最大能量?(IC2原版: 160000 EU)
+    // Nano saber maximum energy (IC2 original: 160000 EU)
     public static final int NANOSABER_MAX_ENERGY = 160000;
-    // 纳米剑传输限制?(IC2原版: 500 EU/t)
+    // Nano saber transfer limit (IC2 original: 500 EU/t)
     public static final int NANOSABER_CHARGE_RATE = 500;
-    // 纳米剑等�?(IC2原版: 3 - HV)
+    // Nano saber tier (IC2 original: 3 - HV)
     public static final int NANOSABER_TIER = 3;
-    // 纳米剑每次使用消耗?(IC2原版: 100 EU)
+    // Nano saber energy cost for each use (IC2 original: 100 EU)
     public static final int NANOSABER_ENERGY_PER_USE = 100;
 
-    // 纳米剑攻击消耗?(IC2原版: 400 EU)
+    // Nano saber attack cost (IC2 original: 400 EU)
     public static final int ATTACK_COST = 400;
-    // 纳米剑激活消耗?(IC2原版: 16 EU)
+    // Nano saber activation cost (IC2 original: 16 EU)
     public static final int ACTIVATE_COST = 16;
 
-    // 纳米剑关闭状态伤�?(IC2原版: 4.0)
+    // Nano saber damage when off (IC2 original: 4.0)
     public static final float DAMAGE_INACTIVE = 4.0F;
-    // 纳米剑开启状态伤�?(IC2原版: 20.0)
+    // Nano saber damage when on (IC2 original: 20.0)
     public static final float DAMAGE_ACTIVE = 20.0F;
 
     private static final String TAG_ACTIVE = "NanoSaberActive";

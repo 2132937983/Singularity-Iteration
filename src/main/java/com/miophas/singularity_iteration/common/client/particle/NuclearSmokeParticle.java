@@ -12,9 +12,7 @@ import net.minecraft.core.particles.SimpleParticleType;
 public class NuclearSmokeParticle extends TextureSheetParticle {
 
     private float baseScale = 2.0f;
-    private final float rotationSpeed;
     @SuppressWarnings("unused")
-    private float rotation;
     
     // 烟柱上升速度（再减半）
 private static final double RISE_SPEED = 0.04;
@@ -74,8 +72,6 @@ private static final double SPREAD_SPEED = 0.01;
         this.zd = vz * 0.25;
         
         // 旋转效果
-        this.rotation = level.random.nextFloat() * 360f;
-        this.rotationSpeed = (level.random.nextFloat() - 0.5f) * 2f;
         
         // 设置粒子大小
         this.quadSize = baseScale;
@@ -92,7 +88,6 @@ private static final double SPREAD_SPEED = 0.01;
         super.tick();
         
         // 更新旋转
-        this.rotation += rotationSpeed;
         
         // 随时间变化
     float lifeRatio = (float) this.age / this.lifetime;

@@ -39,8 +39,8 @@ import org.jetbrains.annotations.Nullable;
         super(mio_icif_menus.HEAT_SOURCE_FLUID_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 10);
     }
 
-        // 热交换机GUI高度�?04，按照原版IC2逻辑调整玩家物品栏位置?
-    // 背包Y = 204 - 82 = 122, 快捷栏Y = 204 - 24 = 180
+        // The heat exchanger GUI height is 204. The player inventory position follows the original IC2 logic.
+    // Inventory Y = 204 - 82 = 122. Hotbar Y = 204 - 24 = 180.
     @Override
     protected int getPlayerInventoryY() { return 122; }
 

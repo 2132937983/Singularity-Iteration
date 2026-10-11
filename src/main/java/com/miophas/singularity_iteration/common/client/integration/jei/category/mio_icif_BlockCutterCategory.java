@@ -21,7 +21,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 方块切割�?JEI 配方类别
+ * JEI recipe category for the block cutter.
  */
 @SuppressWarnings("null")
 public class mio_icif_BlockCutterCategory extends AbstractJeiRecipeCategory<mio_icif_BlockCutterRecipe> {
@@ -70,11 +70,14 @@ public class mio_icif_BlockCutterCategory extends AbstractJeiRecipeCategory<mio_
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_BlockCutterRecipe recipe, IFocusGroup focuses) {
-        // 槽位坐标已根据新的背景区域?7,7)调整
-        builder.addSlot(RecipeIngredientRole.INPUT, 19, 10)
-                .addIngredients(recipe.getIngredients().get(0));
+        // The slot coordinates are adjusted for the new background area at (7,7).
+        // A data pack recipe can have no ingredients. JEI must not crash on it.
+        if (!recipe.getIngredients().isEmpty()) {
+            builder.addSlot(RecipeIngredientRole.INPUT, 19, 10)
+                    .addIngredients(recipe.getIngredients().get(0));
+        }
 
-        // 输出�
+        // Output slot.
     builder.addSlot(RecipeIngredientRole.OUTPUT, 109, 28)
                 .addItemStack(recipe.getResultItem(null));
     }

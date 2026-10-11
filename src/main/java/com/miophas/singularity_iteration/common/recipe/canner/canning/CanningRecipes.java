@@ -9,7 +9,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 装罐模式配方注册�? */
+ * Recipe registration for the canning mode.
+ */
 @SuppressWarnings("null")
 public class CanningRecipes {
 
@@ -30,7 +31,7 @@ public class CanningRecipes {
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<CanningRecipe>> CANNING_SERIALIZER =
         RECIPE_SERIALIZERS.register("canning", CanningRecipeSerializer::new);
 
-    // 动态装罐配方类�
+    // Recipe type for dynamic canning recipes.
 public static final DeferredHolder<RecipeType<?>, RecipeType<DynamicCanningRecipe>> DYNAMIC_CANNING_TYPE =
         RECIPE_TYPES.register("dynamic_canning", () -> new RecipeType<DynamicCanningRecipe>() {
             @Override

@@ -9,7 +9,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * MV-HV 变压器方法? * 用于�?MV（中压）�?HV（高压）之间进行电压转换
+ * MV-HV transformer block.
+ * It converts the voltage between MV (medium voltage) and HV (high voltage).
  */
 @SuppressWarnings("null")
 public class mio_icif_block_transformer_mToh extends com.miophas.singularity_iteration.common.block.transformer.mio_icif_block_transformer {

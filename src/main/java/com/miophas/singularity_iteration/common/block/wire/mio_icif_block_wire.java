@@ -58,11 +58,11 @@ import java.util.Queue;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 电线方块
- * 用于传输能量，可以向所有方向传�?
- * 支持含水
- * 含水电线会对接触的实体造成电击伤害
- * 支持不同电压等级（LV, MV, HV, EV, IVIV）
+ * Wire block.
+ * It transfers energy in all directions.
+ * It can be waterlogged.
+ * A waterlogged wire gives electric shock damage to entities in contact with the water.
+ * It supports different voltage tiers (LV, MV, HV, EV, IV).
  */
 @SuppressWarnings("null")
 public class mio_icif_block_wire extends mio_icif_entity_block implements SimpleWaterloggedBlock, ICableBlock {
@@ -70,8 +70,6 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     private static final Direction[] WATER_DIRECTIONS = Direction.values();
 
     // 导电范围（方块半径）
-    @SuppressWarnings("unused")
-    private static final int CONDUCTIVITY_RANGE = 32;
 
     /**
      * 电线连接调试日志开关，默认关闭。
@@ -117,16 +115,16 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     
     public static final MapCodec<mio_icif_block_wire> CODEC = simpleCodec(mio_icif_block_wire::new);
     
-    // 连接状态属性?
+    // Connection state properties
     public static final BooleanProperty NORTH = BooleanProperty.create("north");
     public static final BooleanProperty SOUTH = BooleanProperty.create("south");
     public static final BooleanProperty EAST = BooleanProperty.create("east");
     public static final BooleanProperty WEST = BooleanProperty.create("west");
     public static final BooleanProperty UP = BooleanProperty.create("up");
     public static final BooleanProperty DOWN = BooleanProperty.create("down");
-    // 含水属性?
+    // Waterlogged property
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-    // 含泡沫属性?
+    // Foam state properties
     public static final BooleanProperty FOAMLOGGED = BooleanProperty.create("foamlogged");
     public static final BooleanProperty FOAM_REINFORCED = BooleanProperty.create("foam_reinforced");
     public static final BooleanProperty DISGUISED = BooleanProperty.create("disguised");
@@ -137,10 +135,10 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
      */
     public static final BooleanProperty FOAM_HARDENED = BooleanProperty.create("foam_hardened");
     
-    // 基础中心�?4x4x4
+    // Center core: 4x4x4 pixels.
     protected static final VoxelShape CENTER_SHAPE = Block.box(6.0, 6.0, 6.0, 10.0, 10.0, 10.0);
     
-    // 各方向的连接形状 (延伸6个像�?
+    // Connection shape for each direction. Each one extends 6 pixels.
     protected static final VoxelShape NORTH_SHAPE = Block.box(6.0, 6.0, 0.0, 10.0, 10.0, 6.0);
     protected static final VoxelShape SOUTH_SHAPE = Block.box(6.0, 6.0, 10.0, 10.0, 10.0, 16.0);
     protected static final VoxelShape EAST_SHAPE = Block.box(10.0, 6.0, 6.0, 16.0, 10.0, 10.0);
@@ -166,16 +164,16 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     private mio_icif_block_wire insulatedCounterpart;
     
     /**
-     * 默认构造函数（LV等级�?
+     * Default constructor. It uses the LV tier.
      */
     public mio_icif_block_wire(Properties properties) {
         this(properties, CableTier.LV, false);
     }
     
     /**
-     * 带电压等级的构造函数?
-     * @param properties 方块属性?
-     * @param cableTier 电缆等级
+     * Constructor with a cable tier.
+     * @param properties the block properties
+     * @param cableTier the cable tier
      */
     public mio_icif_block_wire(Properties properties, CableTier cableTier) {
         this(properties, cableTier, false);
@@ -403,11 +401,11 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     }
 
     /**
-     * 检查是否可以连接到指定位置的方法?
-     * @param level 方块获取得?
-     * @param pos 目标位置
-     * @param fromPos 当前电线位置（用于计算方向）
-     * @return 是否可以连接
+     * Checks if the wire can connect to the block at the given position.
+     * @param level the block getter
+     * @param pos the target position
+     * @param fromPos the position of this wire (used to calculate the direction)
+     * @return true if the wire can connect
      */
     private boolean canConnectTo(BlockGetter level, BlockPos pos, @Nullable BlockPos fromPos) {
         if (fromPos != null) {
@@ -700,7 +698,7 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
      * 使用洪水填充算法找到所有连接的水方块，然后对这些水体中的生物造成伤害
      * @param level 世界
      * @param pos 电线位置
-     * @param electricSource 电击伤害�?
+     * @param electricSource the electric damage source
      */
     private void damageEntitiesInConnectedWater(Level level, BlockPos pos, DamageSource electricSource) {
         if (!(level.getBlockEntity(pos) instanceof mio_icif_wire wire)
@@ -716,7 +714,7 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
             wire.cacheWaterConnectivity(level.getGameTime(), connectedWaterBlocks);
         }
         
-        // 获取半径16格内的所有实�?
+        // Get all entities within a radius of 16 blocks.
         AABB rangeBox = new AABB(
             pos.getX() - 16, pos.getY() - 16, pos.getZ() - 16,
             pos.getX() + 16, pos.getY() + 16, pos.getZ() + 16
@@ -725,7 +723,7 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         
         float damage = getElectricDamage();
         for (LivingEntity targetLiving : entitiesInRange) {
-            // 检查生物是否在与电线相同的水体�?
+            // Check if the entity is in the same body of water as the wire.
             if (isEntityInConnectedWater(targetLiving, connectedWaterBlocks)) {
                 targetLiving.hurt(electricSource, damage);
             }
@@ -734,7 +732,7 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
 
     /**
      * 使用洪水填充算法找到所有与电线连接的水方块
-     * 限制搜索范围在半�?6格内，避免性能问题
+     * The search stays within a radius of 16 blocks to limit the performance cost.
      * @param level 世界
      * @param startPos 起始位置（电线位置）
      * @return 连接的水方块集合
@@ -755,19 +753,19 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
             for (Direction direction : WATER_DIRECTIONS) {
                 BlockPos neighbor = current.relative(direction);
                 
-                // 检查是否在搜索范围�?
+                // Check that the neighbor is in the search range.
                 if (Math.abs(neighbor.getX() - startPos.getX()) > maxSearchRange ||
                     Math.abs(neighbor.getY() - startPos.getY()) > maxSearchRange ||
                     Math.abs(neighbor.getZ() - startPos.getZ()) > maxSearchRange) {
                     continue;
                 }
                 
-                // 已经访问�?
+                // Skip positions that the search already visited.
                 if (visited.contains(neighbor)) {
                     continue;
                 }
                 
-                // 检查是否是水方法?
+                // Check if the block is water.
                 if (isWaterBlock(level, neighbor)) {
                     visited.add(neighbor);
                     queue.add(neighbor);
@@ -779,11 +777,11 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     }
 
     /**
-     * 检查指定位置是否是水方法?
-     * 包括水源、水流、含水方块等
-     * @param level 世界
-     * @param pos 位置
-     * @return 是否是水方块
+     * Checks if the block at the given position is water.
+     * This includes water sources, flowing water and waterlogged blocks.
+     * @param level the level
+     * @param pos the position
+     * @return true if the block is water
      */
     private boolean isWaterBlock(Level level, BlockPos pos) {
         FluidState fluidState = level.getFluidState(pos);
@@ -800,18 +798,18 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     }
 
     /**
-     * 检查生物是否在与电线连接的水体�?
-     * 检查生物所在位置及其周围是否是连接的水方块
-     * @param entity 生物
-     * @param connectedWaterBlocks 连接的水方块集合
-     * @return 是否在连接的水体�?
+     * Checks if the entity is in water that connects to the wire.
+     * It checks the entity position and the positions around it against the connected water blocks.
+     * @param entity the entity
+     * @param connectedWaterBlocks the set of connected water blocks
+     * @return true if the entity is in the connected water
      */
     private boolean isEntityInConnectedWater(LivingEntity entity, java.util.Set<BlockPos> connectedWaterBlocks) {
-        // 获取生物所在位置?
+        // Get the position of the entity.
         BlockPos entityPos = entity.blockPosition();
         
-        // 检查生物所在位置及其周围是否是连接的水方块
-        // 生物可能占据多个方块位置，所以检查一个范围?
+        // Check if the entity position or a position near it is a connected water block.
+        // An entity can occupy more than one block. Thus, check a range of positions.
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 2; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {

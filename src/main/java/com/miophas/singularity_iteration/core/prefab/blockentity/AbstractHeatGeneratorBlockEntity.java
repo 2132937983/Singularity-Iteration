@@ -22,24 +22,25 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * HU 热能发电机方块实体基类 * 模仿 AbstractGeneratorBlockEntity，但使用 HU 热能系统
+ * Base class for HU heat generator block entities.
+ * It copies AbstractGeneratorBlockEntity, but it uses the HU heat system.
  * 
- * 热能发电机特点：
- * - 燃烧燃料产生热能（HU）
- * - 热能会自然散失
- * - 可以向相邻方块传导热能
- * - 需要温度差才能有效传输
+ * Heat generator properties:
+ * - It burns fuel to make heat (HU).
+ * - Stored heat decreases over time (heat loss).
+ * - It sends heat only to the block at its front (see {@link #distributeHeat()}).
+ * - It burns fuel only when the heat storage is not full and a heat consumer is at the front.
  */
 @SuppressWarnings("null")
 public abstract class AbstractHeatGeneratorBlockEntity extends AbstractHeatBlockEntity implements WorldlyContainer, IBurnControl, IHeatGeneratorBlock {
 
-    // 物品处理器，使用统一的槽位系�
+    // Item handler. It uses the shared slot system.
 // Uses the inherited inventory; no shadow copy.
 
-    // 当前燃烧时间
+    // Remaining burn time of the current fuel (ticks)
     public int burnTime = 0;
 
-    // 当前物品的总燃烧时间
+    // Total burn time of the current fuel item (ticks)
 public int burnDuration = 0;
 
     @Override
@@ -53,19 +54,20 @@ public int burnDuration = 0;
         this.setChanged();
     }
 
-    // 热能生成速率 (HU/tick)
+    // Heat generation rate (HU/tick)
     protected final int heatGenerationRate;
 
-    // 燃料槽索引
+    // Fuel slot index
 protected static final int FUEL_SLOT = 0;
 
     /**
-     * 构造函数
- * @param type 方块实体类型
-     * @param pos 位置
-     * @param state 方块状态
- * @param layout 槽位布局
-     * @param heatGenerationRate 热能生成速率 (HU/tick)
+     * Constructor with the default heat settings
+     * (capacity 20000 HU, maximum output 500 HU/t, maximum temperature 1500).
+     * @param type the block entity type
+     * @param pos the position
+     * @param state the block state
+     * @param layout the slot layout
+     * @param heatGenerationRate the heat generation rate (HU/tick)
      */
     public AbstractHeatGeneratorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
                                        SlotLayout layout, int heatGenerationRate) {
@@ -76,16 +78,16 @@ protected static final int FUEL_SLOT = 0;
     }
 
     /**
-     * 构造函数（支持自定义热能参数）
-     * @param type 方块实体类型
-     * @param pos 位置
-     * @param state 方块状态
- * @param layout 槽位布局
-     * @param heatGenerationRate 热能生成速率 (HU/tick)
-     * @param capacity 热能容量
-     * @param maxExtract 最大输出速率
-     * @param maxTemp 最高温�
- */
+     * Constructor with custom heat settings.
+     * @param type the block entity type
+     * @param pos the position
+     * @param state the block state
+     * @param layout the slot layout
+     * @param heatGenerationRate the heat generation rate (HU/tick)
+     * @param capacity the heat capacity
+     * @param maxExtract the maximum output rate
+     * @param maxTemp the maximum temperature
+     */
     public AbstractHeatGeneratorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
                                        SlotLayout layout, int heatGenerationRate,
                                int capacity, int maxExtract, int maxTemp) {
@@ -107,23 +109,25 @@ protected static final int FUEL_SLOT = 0;
     }
     
     /**
-     * 检查前方是否有需要热量的机器
+     * Checks if a machine at the front needs heat.
+     * The front is the block that the FACING property points to.
+     * Returns false if the front chunk is not loaded.
      */
     protected boolean hasHeatConsumerInFront() {
         if (level == null) return false;
 
-        // 获取方块朝向
+        // Get the block facing
         Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
-        if (!level.hasChunkAt(frontPos)) return false;
+        if (!level.isLoaded(frontPos)) return false;
 
-        // 获取前方方块的热能存储能量
+        // Get the heat storage of the front block
     IMioIcifCapabilities.IHeatStorage frontHeat = level.getCapability(
             IMioIcifCapabilities.HEAT_STORAGE_BLOCK, frontPos, facing.getOpposite());
 
-        // 检查前方是否有可以接收热能的机器
+        // Check if the front machine can receive heat
     if (frontHeat != null && frontHeat.canReceiveHeat()) {
-            // 检查前方机器是否还需要热能（未充满
+            // Check if the front machine still needs heat (it is not full)
         return frontHeat.getHeatStored() < frontHeat.getMaxHeatStored();
         }
 
@@ -131,63 +135,63 @@ protected static final int FUEL_SLOT = 0;
     }
 
     /**
-     * tick 更新逻辑
+     * Server tick logic. Does nothing on the client.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, AbstractHeatGeneratorBlockEntity blockEntity) {
         if (level.isClientSide()) {
             return;
         }
         
-        // 记录之前的燃烧状态
+        // Record the burn state before this tick
     boolean wasBurning = blockEntity.isBurning();
         
-        // 检查热能存储是否已满
+        // Check if the heat storage is full
     boolean isHeatFull = blockEntity.getHeatStorage().getHeatStored() >= 
                             blockEntity.getHeatStorage().getMaxHeatStored();
         
-        // 检查前方是否有需要热量的机器
+        // Check if a machine at the front needs heat
         boolean hasConsumer = blockEntity.hasHeatConsumerInFront();
         
-        // 如果正在燃烧，生成热�
+        // Generate heat while the generator burns fuel.
     if (blockEntity.isBurning()) {
-            // 如果热能已满或前方没有需要热量的机器，停止燃烧
+            // If the heat is full or no machine at the front needs heat, stop burning
         if (isHeatFull || !hasConsumer) {
                 blockEntity.burnTime = 0;
             } else {
                 blockEntity.generateHeat();
                 blockEntity.burnTime--;
                 
-                // 如果燃烧完毕，尝试消耗新的燃料
+                // If the burn is complete, try to use new fuel
             if (blockEntity.burnTime <= 0) {
                     blockEntity.consumeFuel();
                 }
             }
         } else {
-            // 如果没有在燃烧、热能未满且前方有需要热量的机器，尝试消耗新的燃料
+            // If not burning, the heat is not full and a machine at the front needs heat, try to use new fuel
         if (!isHeatFull && hasConsumer) {
                 blockEntity.consumeFuel();
             }
         }
         
-        // 应用热损坏
+        // Apply heat loss
     blockEntity.applyHeatLoss();
         
-        // 向相邻方块传导热�
+        // Transfer heat to adjacent blocks.
     blockEntity.distributeHeat();
         
-        // 检查燃烧状态是否改变
+        // Check if the burn state changed
     boolean isBurning = blockEntity.isBurning();
         if (wasBurning != isBurning) {
-            // 更新方块状态（子类可以实现 ACTIVATE 属性）
+            // Update the block state (subclasses can set the ACTIVATE property)
             blockEntity.updateBlockState(isBurning);
         }
         
-        // 标记方块实体已更新
+        // Mark the block entity as changed
     blockEntity.setChanged();
     }
     
     /**
-     * 生成热能
+     * Generates heat. Adds up to heatGenerationRate HU, limited by the free storage space.
      */
     protected void generateHeat() {
         long heatGenerated = Math.min((long)heatGenerationRate, 
@@ -196,8 +200,9 @@ protected static final int FUEL_SLOT = 0;
     }
     
     /**
-     * 温度差传导已按原版 IC2 雪藏（见基类 {@link AbstractHeatBlockEntity#distributeHeat()}）。
-     * 热机自身通过 outputHeatToFront()/pushFront() 只向正面输出热量。
+     * Conduction by temperature difference is disabled, as in original IC2
+     * (see the base class {@link AbstractHeatBlockEntity#distributeHeat()}).
+     * The heat generator sends heat only to its front, with outputHeatToFront()/pushFront().
      */
     @Override
     protected void distributeHeat() {
@@ -206,21 +211,23 @@ protected static final int FUEL_SLOT = 0;
 
     
     /**
-     * 检查是否正在燃烧
+     * Checks if the generator is burning fuel.
  */
     public boolean isBurning() {
         return burnTime > 0;
     }
     
     /**
-     * 消耗燃料
+     * Uses one fuel item from the fuel slot and starts a new burn.
+     * Does nothing if the heat storage is full or the fuel slot has no valid fuel.
+     * Puts the crafting remainder (for example an empty bucket) in the slot when the stack becomes empty.
  */
     protected void consumeFuel() {
-        // 检查热能存储是否已满
+        // Check if the heat storage is full
     boolean isHeatFull = getHeatStorage().getHeatStored() >= 
                             getHeatStorage().getMaxHeatStored();
         
-        // 如果热能已满，不消耗燃料
+        // If the heat is full, do not use fuel
     if (isHeatFull) {
             return;
         }
@@ -232,27 +239,29 @@ protected static final int FUEL_SLOT = 0;
                 this.burnDuration = burnTime;
                 this.burnTime = burnTime;
 
-                // 消耗燃料
-            fuelStack.shrink(1);
+                // Read the container item before shrink: an empty stack always returns EMPTY,
+                // so a lava bucket lost its bucket before 0.1.7.36.
+                ItemStack remainder = fuelStack.getCraftingRemainingItem();
+                fuelStack.shrink(1);
 
-                // 如果燃料堆为空，且燃料有容器物品，则放入容器物品
+                // When the fuel stack is empty, put the container item in the slot.
                 if (fuelStack.isEmpty()) {
-                    itemHandler.setStackInSlot(FUEL_SLOT, fuelStack.getCraftingRemainingItem());
+                    itemHandler.setStackInSlot(FUEL_SLOT, remainder);
                 }
             }
         }
     }
     
     /**
-     * 获取燃料的燃烧时间，子类可以重写此方法来定义可用的燃料
- * @param fuel 燃料物品
-     * @return 燃烧时间 (tick)
+     * Gets the burn time of a fuel. Subclasses implement this method to define the valid fuels.
+     * @param fuel the fuel item
+     * @return the burn time (ticks); 0 or less means the item is not a fuel
      */
     public abstract int getFuelBurnTime(ItemStack fuel);
     
     /**
-     * 获取燃烧进度，用于GUI显示
-     * @return 燃烧进度 (0-1)
+     * Gets the burn progress for the GUI.
+     * @return the burn progress (0 to 1); 0 if there is no burn duration
      */
     public float getBurnProgress() {
         if (burnDuration == 0) {
@@ -262,11 +271,11 @@ protected static final int FUEL_SLOT = 0;
     }
     
     /**
-     * 更新方块状态（燃烧/未燃烧）
-     * 子类可以重写此方法以更新方块外观
+     * Updates the block state (burning or not burning).
+     * Subclasses can override this method to update the block look.
      */
     protected void updateBlockState(boolean isBurning) {
-        // 默认实现：子类可以重写以设置 ACTIVATE 属性
+        // Default: does nothing. Subclasses can override this to set the ACTIVATE property.
 }
     
     @Override
@@ -310,7 +319,7 @@ protected static final int FUEL_SLOT = 0;
         burnDuration = tag.getInt("BurnDuration");
     }
     
-    // ==================== Container 接口实现 ====================
+    // ==================== Container implementation ====================
 
     @Override
     public int getContainerSize() {
@@ -388,17 +397,17 @@ protected static final int FUEL_SLOT = 0;
         return 64;
     }
 
-    // ==================== WorldlyContainer 接口实现 ====================
+    // ==================== WorldlyContainer implementation ====================
 
     @Override
     public int[] getSlotsForFace(Direction side) {
-        // 所有方向都可以访问燃料�
+        // All sides can access the fuel slot.
     return new int[]{FUEL_SLOT};
     }
 
     @Override
     public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction side) {
-        // 燃料槽：只接受燃料
+        // Fuel slot: accepts only fuel
     if (slot == FUEL_SLOT) {
             return getFuelBurnTime(stack) > 0;
         }
@@ -407,20 +416,20 @@ protected static final int FUEL_SLOT = 0;
 
     @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction side) {
-        // 燃料槽不能提取（防止漏斗吸走燃料）
+        // No slot allows extraction (this stops hoppers from removing fuel)
     return false;
     }
     
     /**
-     * 获取物品处理器（用于 capability 系统）
-     * @param side 方向
-     * @return 物品处理器
+     * Gets an item handler for the capability system.
+     * @param side the side, or null for internal access
+     * @return a new item handler for this side
      */
     public IItemHandler getItemHandlerCapability(@Nullable Direction side) {
         return new GeneratorItemHandler(side);
     }
 
-    // ==================== IHeatGeneratorBlock 接口实现 ====================
+    // ==================== IHeatGeneratorBlock implementation ====================
 
     @Override
     public int getHeatOutput() {
@@ -447,11 +456,11 @@ protected static final int FUEL_SLOT = 0;
         return heatGenerationRate;
     }
     
-    // ==================== GeneratorItemHandler 内部分?====================
+    // ==================== GeneratorItemHandler inner class====================
     
     /**
-     * 热能发电机的物品处理器
- * 用于 capability 系统，限制物品的插入和提取行为
+     * Item handler of the heat generator.
+     * The capability system uses it. It limits item insertion and extraction.
  */
     protected class GeneratorItemHandler implements IItemHandlerModifiable {
         private final Direction side;
@@ -478,7 +487,7 @@ protected static final int FUEL_SLOT = 0;
 
             ItemStack currentStack = itemHandler.getStackInSlot(slot);
             if (currentStack.isEmpty()) {
-                // 槽位为空，可以放弃
+                // The slot is empty; the item can go in
             int count = Math.min(stack.getCount(), getMaxStackSize());
                 if (!simulate) {
                     itemHandler.setStackInSlot(slot, stack.copyWithCount(count));
@@ -489,7 +498,7 @@ protected static final int FUEL_SLOT = 0;
                 }
                 return ItemStack.EMPTY;
             } else if (ItemStack.isSameItemSameComponents(currentStack, stack)) {
-                // 槽位有相同物品，可以合并
+                // The slot has the same item; the stacks can merge
                 int space = getMaxStackSize() - currentStack.getCount();
                 int toAdd = Math.min(stack.getCount(), space);
                 if (toAdd > 0) {

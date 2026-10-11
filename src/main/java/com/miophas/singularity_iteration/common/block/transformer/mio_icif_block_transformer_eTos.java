@@ -9,7 +9,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * EV-SC 变压器方法? * 用于�?EV（超高压）和 SC（超导）之间进行电压转换
+ * EV-SC transformer block.
+ * It converts voltage between EV (extra-high voltage) and SC (superconductor).
  */
 @SuppressWarnings("null")
 public class mio_icif_block_transformer_eTos extends com.miophas.singularity_iteration.common.block.transformer.mio_icif_block_transformer {

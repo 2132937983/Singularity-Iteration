@@ -3,18 +3,18 @@ package com.miophas.singularity_iteration.core.api.util;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 工具箱存储接口。
+ * Interface for toolbox storage.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IBoxable}。
- * 实现此接口的物品可以被存放在工具箱中。
+ * It is the equivalent of {@code IBoxable} in IC2 1.12.2.
+ * Items that implement this interface can be stored in a toolbox.
  */
 public interface IBoxable {
 
     /**
-     * 检查此物品是否可以存放在工具箱中。
+     * Returns true if this item can be stored in a toolbox.
      *
-     * @param stack 物品堆
-     * @return 如果可以存放则返回 true
+     * @param stack the item stack
+     * @return true if the item can be stored
      */
     boolean canBeStoredInToolbox(ItemStack stack);
 }

@@ -40,8 +40,8 @@ import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 装罐机方块类
- * 用于将流体装入容器或从容器中取出流体的机器方?
+ * Block class for the canner.
+ * A machine block that fills fluid into containers or drains fluid from containers.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_canner_elc extends mio_icif_entity_block {
@@ -56,7 +56,7 @@ public class mio_icif_block_canner_elc extends mio_icif_entity_block {
 
     public mio_icif_block_canner_elc(Properties properties) {
         super(properties);
-        // 注册默认状态：未点?
+        // Register the default state: not lit.
         this.registerDefaultState(this.stateDefinition.any()
             .setValue(LIT, false)
             .setValue(HAS_FLUID, false));
@@ -65,7 +65,7 @@ public class mio_icif_block_canner_elc extends mio_icif_entity_block {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        // 添加 LIT 属性到方块状态定?
+        // Add the LIT and HAS_FLUID properties to the block state definition.
         builder.add(LIT, HAS_FLUID);
     }
 
@@ -243,8 +243,8 @@ public class mio_icif_block_canner_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 方块被移除时的处?
-     * 掉落方块实体中的物品
+     * Handles the removal of the block.
+     * Drops the items that are in the block entity.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
@@ -255,7 +255,7 @@ public class mio_icif_block_canner_elc extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_canner_elc canner) {
-                // 掉落物品栏中的所有物?
+                // Drop all items in the inventory.
                 for (int i = 0; i < canner.getItemHandler().getSlots(); i++) {
                     ItemStack stack = canner.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {

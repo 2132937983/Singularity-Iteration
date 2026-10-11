@@ -3,26 +3,26 @@ package com.miophas.singularity_iteration.core.api.machine;
 import com.miophas.singularity_iteration.core.api.energy.ICableTier;
 
 /**
- * 能量转换器接口。
+ * Energy converter interface.
  *
- * <p>用于描述在不同能量类型之间进行转换的方块，
- * 如 EU ↔ FE（Forge Energy）、EU ↔ KU（Kinetic Units）等。
+ * <p>It describes blocks that convert between energy types,
+ * for example EU ↔ FE (Forge Energy) or EU ↔ KU (Kinetic Units).
  *
- * <h3>能量类型</h3>
+ * <h3>Energy types</h3>
  * <ul>
- *   <li>{@link EnergyType#EU}  — IndustrialCraft 能量单位</li>
- *   <li>{@link EnergyType#FE}  — Forge Energy（通用能量）</li>
- *   <li>{@link EnergyType#KU}  — 动能单位（Kinetic Units）</li>
- *   <li>{@link EnergyType#HE}  — 热能单位（Heat Energy）</li>
+ *   <li>{@link EnergyType#EU}  — IndustrialCraft energy unit</li>
+ *   <li>{@link EnergyType#FE}  — Forge Energy (general energy)</li>
+ *   <li>{@link EnergyType#KU}  — Kinetic Units</li>
+ *   <li>{@link EnergyType#HE}  — Heat Energy</li>
  * </ul>
  */
 public interface IEnergyConverter extends IEnergyBlock {
 
     /**
-     * 能量类型枚举
+     * Energy type.
      */
     enum EnergyType {
-        /** EU — IndustrialCraft 能量 */
+        /** EU — IndustrialCraft energy */
         EU,
         /** FE — Forge Energy */
         FE,
@@ -30,58 +30,58 @@ public interface IEnergyConverter extends IEnergyBlock {
         KU,
         /** HE — Heat Energy */
         HE,
-        /** 自定义类型 */
+        /** Custom type */
         CUSTOM
     }
 
     /**
-     * 获取输入侧的能量类型
-     * @return 输入能量类型
+     * Gets the energy type of the input side.
+     * @return the input energy type
      */
     EnergyType getInputType();
 
     /**
-     * 获取输出侧的能量类型
-     * @return 输出能量类型
+     * Gets the energy type of the output side.
+     * @return the output energy type
      */
     EnergyType getOutputType();
 
     /**
-     * 获取转换比率
-     * <p>例如：EU → FE 的比率为 4.0 表示 1 EU = 4 FE
-     * @return 转换比率（输出/输入）
+     * Gets the conversion ratio.
+     * <p>Example: an EU → FE ratio of 4.0 means 1 EU = 4 FE.
+     * @return the conversion ratio (output/input)
      */
     double getConversionRatio();
 
     /**
-     * 获取输入侧电缆等级
-     * @return 输入侧等级
+     * Gets the cable tier of the input side.
+     * @return the input side tier
      */
     ICableTier getInputCableTier();
 
     /**
-     * 获取输出侧电缆等级
-     * @return 输出侧等级
+     * Gets the cable tier of the output side.
+     * @return the output side tier
      */
     ICableTier getOutputCableTier();
 
     /**
-     * 获取转换效率（0.0 - 1.0）
-     * @return 效率
+     * Gets the conversion efficiency (0.0 - 1.0).
+     * @return the efficiency
      */
     default double getEfficiency() {
         return 1.0;
     }
 
     /**
- * 获取内部冲区当前能量（以输出类型计）
-     * @return 当前缓冲能量
+     * Gets the energy in the internal buffer now (in the output energy type).
+     * @return the energy in the buffer now
      */
     long getBufferAmount();
 
     /**
- * 获取内部冲区容量（以输出类型计）
- * @return 冲容量
+     * Gets the capacity of the internal buffer (in the output energy type).
+     * @return the buffer capacity
      */
     long getBufferCapacity();
 }

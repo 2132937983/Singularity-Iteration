@@ -3,23 +3,23 @@ package com.miophas.singularity_iteration.core.api.upgrade.tile;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 远程访问升级接口。
+ * Remote access upgrade interface.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IRemoteAccessUpgrade}。
- * 实现此接口的升级可以让机器支持远程访问或扩展操作范围。
+ * Equivalent to {@code IRemoteAccessUpgrade} in IC2 1.12.2.
+ * An upgrade that implements this interface lets a machine use remote access or a larger operation range.
  */
 public interface IRemoteAccessUpgrade extends IUpgradeItem {
 
     /**
-     * 获取范围放大倍数。
+     * Gets the range increase.
      * <p>
-     * 返回值加到机器的基础远程访问范围上。
-     * 例如：返回 16 表示远程访问范围增加 16 格。
+     * The machine adds the return value to its base remote access range.
+     * Example: a return value of 16 increases the remote access range by 16 blocks.
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @param baseRange 基础远程访问范围
-     * @return 放大后的范围
+     * @param stack the upgrade item stack
+     * @param block the machine that contains this upgrade
+     * @param baseRange the base remote access range, in blocks
+     * @return the increased range, in blocks
      */
     int getRangeAmplification(ItemStack stack, IUpgradableBlock block, int baseRange);
 }

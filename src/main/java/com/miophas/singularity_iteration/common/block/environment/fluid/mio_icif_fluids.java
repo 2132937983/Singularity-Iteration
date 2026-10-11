@@ -22,23 +22,25 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 /**
- * 流体注册�? * 统一管理所有模组的自定义流�? */
+ * Fluid registry.
+ * Registers and holds all custom fluids of the mod.
+ */
 @SuppressWarnings("null")
 public class mio_icif_fluids {
 
-    // 流体类型注册�
+    // Fluid type registry.
 public static final DeferredRegister<FluidType> FLUID_TYPES =
         DeferredRegister.create(NeoForgeRegistries.FLUID_TYPES, Singularity_Iteration.MOD_ID);
 
-    // 流体注册�
+    // Fluid registry.
 public static final DeferredRegister<Fluid> FLUIDS =
         DeferredRegister.create(BuiltInRegistries.FLUID, Singularity_Iteration.MOD_ID);
 
-    // 流体方块注册�
+    // Fluid block registry.
 public static final DeferredRegister.Blocks FLUID_BLOCKS =
         DeferredRegister.createBlocks(Singularity_Iteration.MOD_ID);
 
-    // 流体物品注册�
+    // Fluid item (bucket) registry.
 public static final DeferredRegister.Items FLUID_ITEMS =
         DeferredRegister.createItems(Singularity_Iteration.MOD_ID);
 
@@ -103,7 +105,7 @@ private static final BaseFlowingFluid.Properties BIOGAS_PROPERTIES = new BaseFlo
             .noLootTable()
             .replaceable()));
 
-    // 生物气体桶物�
+    // Biogas bucket item.
 public static final DeferredItem<BucketItem> BIOGAS_BUCKET = FLUID_ITEMS.register("biogas_bucket",
         () -> new BucketItem(BIOGAS.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
@@ -143,7 +145,7 @@ private static final BaseFlowingFluid.Properties HOTWATER_PROPERTIES = new BaseF
         .block(() -> mio_icif_fluids.HOTWATER_BLOCK.get())
         .bucket(() -> mio_icif_fluids.HOTWATER_BUCKET.get());
 
-    // 热水源流�
+    // Hot water source fluid.
 public static final DeferredHolder<Fluid, FlowingFluid> HOTWATER = FLUIDS.register("hotwater",
         () -> new BaseFlowingFluid.Source(HOTWATER_PROPERTIES));
 
@@ -159,11 +161,11 @@ public static final DeferredHolder<Fluid, FlowingFluid> HOTWATER = FLUIDS.regist
             .noLootTable()
             .replaceable(), mio_icif_block_fluid_effect.HOT_WATER));
 
-    // 热水桶物�
+    // Hot water bucket item.
 public static final DeferredItem<BucketItem> HOTWATER_BUCKET = FLUID_ITEMS.register("hotwater_bucket",
         () -> new BucketItem(HOTWATER.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
-    // ==================== 生物�?(Biomass) ====================
+    // ==================== Biomass ====================
     public static final ResourceLocation BIOMASS_STILL_TEXTURE =
         ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "block/fluids/biomass_still");
     public static final ResourceLocation BIOMASS_FLOWING_TEXTURE =
@@ -235,7 +237,7 @@ public static final DeferredItem<BucketItem> HOTWATER_BUCKET = FLUID_ITEMS.regis
     public static final DeferredItem<BucketItem> CONSTRUCTIONFOAM_BUCKET = FLUID_ITEMS.register("constructionfoam_bucket",
         () -> new BucketItem(CONSTRUCTIONFOAM.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
-    // ==================== 冷却�?(Coolant) ====================
+    // ==================== Coolant ====================
     public static final ResourceLocation COOLANT_STILL_TEXTURE =
         ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "block/fluids/coolant_still");
     public static final ResourceLocation COOLANT_FLOWING_TEXTURE =
@@ -272,7 +274,7 @@ public static final DeferredItem<BucketItem> HOTWATER_BUCKET = FLUID_ITEMS.regis
     public static final DeferredItem<BucketItem> COOLANT_BUCKET = FLUID_ITEMS.register("coolant_bucket",
         () -> new BucketItem(COOLANT.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
-    // ==================== 蒸馏�?(Distilled Water) ====================
+    // ==================== Distilled Water ====================
     public static final ResourceLocation DISTILLEDWATER_STILL_TEXTURE =
         ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "block/fluids/distilledwater_still");
     public static final ResourceLocation DISTILLEDWATER_FLOWING_TEXTURE =
@@ -596,8 +598,8 @@ public static final DeferredItem<BucketItem> HOTWATER_BUCKET = FLUID_ITEMS.regis
         () -> new BucketItem(DIESELOIL.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
     /**
-     * 注册所有流�
- * @param eventBus 事件总线
+     * Registers all fluid registries on the mod event bus.
+ * @param eventBus the mod event bus
      */
     public static void register(IEventBus eventBus) {
         FLUID_TYPES.register(eventBus);

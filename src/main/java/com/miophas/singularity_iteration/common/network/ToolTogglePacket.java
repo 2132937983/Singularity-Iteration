@@ -11,9 +11,9 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * 工具开关切杢数杮包
- * 客户端按下G键时坑逝此包到朝务�?
- * 朝务端收到坎切杢手挝工具的开关状态?
+ * Tool toggle packet.
+ * The client sends this packet to the server when the player presses the G key.
+ * The server then toggles the on/off state of the tool in the player's hand.
  */
 @SuppressWarnings("null")
 public record ToolTogglePacket() implements CustomPacketPayload {

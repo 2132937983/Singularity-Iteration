@@ -429,7 +429,7 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
         Iterable<Direction> targets = configured.isEmpty() ? ALL_DIRECTIONS : configured;
         for (Direction dir : targets) {
             BlockPos pos = worldPosition.relative(dir);
-            if (!level.hasChunkAt(pos)) {
+            if (!level.isLoaded(pos)) {
                 continue;
             }
             IItemHandler target = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, dir.getOpposite());
@@ -459,7 +459,7 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
         Iterable<Direction> targets = configured.isEmpty() ? ALL_DIRECTIONS : configured;
         for (Direction dir : targets) {
             BlockPos pos = worldPosition.relative(dir);
-            if (!level.hasChunkAt(pos)) {
+            if (!level.isLoaded(pos)) {
                 continue;
             }
             IItemHandler source = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, dir.getOpposite());
@@ -556,7 +556,7 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
             return null;
         }
         BlockPos pos = worldPosition.relative(dir);
-        if (!level.hasChunkAt(pos)) {
+        if (!level.isLoaded(pos)) {
             return null;
         }
         return level.getCapability(Capabilities.FluidHandler.BLOCK, pos, dir.getOpposite());

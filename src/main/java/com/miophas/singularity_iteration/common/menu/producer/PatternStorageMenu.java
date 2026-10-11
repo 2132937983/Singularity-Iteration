@@ -14,7 +14,7 @@ import com.miophas.singularity_iteration.core.runtime.processing.MachineMenuAcce
 import net.minecraft.world.entity.player.Player;
 
 /**
- * 模式存储机的容器菜单独?
+ * Container menu for the pattern storage.
  */
 @SuppressWarnings({"null"}) public class PatternStorageMenu extends mio_icif_machine_menu {
 

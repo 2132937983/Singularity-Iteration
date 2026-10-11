@@ -13,13 +13,13 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 
 /**
- * 等离子子弹渲染类 - 还原IC2原版RenderBillboardEntity效果
+ * Renderer for the plasma bullet. It recreates the RenderBillboardEntity effect of the original IC2.
  *
- * IC2原版渲染方式???
- * - Billboard广告牌渲染（始终面向玩家???
- * - 使用beam.png纹理
- * - 加法混合(Additive Blending)实现发光效果
- * - 半径0.4的发光球???
+ * Render method of the original IC2:
+ * - Billboard rendering (the quad always faces the player)
+ * - Uses the beam.png texture
+ * - Additive blending makes the glow effect
+ * - A glowing sphere with a radius of 0.4
  */
 @SuppressWarnings("null")
 public class mio_icif_PlasmaBullet extends EntityRenderer<mio_icif_plasma_bullet> {

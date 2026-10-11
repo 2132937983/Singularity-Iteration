@@ -15,19 +15,19 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import java.util.*;
 
 /**
- * 发电机 API 实现
+ * Implementation of the generator API.
  *
- * @deprecated 发电机已统一为机器的一种类型，请使用 {@link MachineAPIImpl}。
- *             此类别保留以向后兼容。
+ * @deprecated A generator is now one type of machine. Use {@link MachineAPIImpl}.
+ *             This class stays for backward compatibility.
  */
 @SuppressWarnings("null")
 @Deprecated
 public class GeneratorAPIImpl implements IGeneratorAPI {
 
     /**
-     * 注册发电机位置到全局注册表
-     * 应由主模组在发电机方块放置时调用
-     * @deprecated 请使用 {@link MachineAPIImpl#registerMachine(Level, BlockPos)}
+     * Registers a generator position in the global registry.
+     * The main mod must call this when a generator block is placed.
+     * @deprecated Use {@link MachineAPIImpl#registerMachine(Level, BlockPos)}
      */
     @Deprecated
     public static void registerGenerator(Level world, BlockPos pos) {
@@ -35,9 +35,9 @@ public class GeneratorAPIImpl implements IGeneratorAPI {
     }
 
     /**
-     * 从全局注册表移除发电机位置
-     * 应由主模组在发电机方块破坏时调用
-     * @deprecated 请使用 {@link MachineAPIImpl#unregisterMachine(Level, BlockPos)}
+     * Removes a generator position from the global registry.
+     * The main mod must call this when a generator block is broken.
+     * @deprecated Use {@link MachineAPIImpl#unregisterMachine(Level, BlockPos)}
      */
     @Deprecated
     public static void unregisterGenerator(Level world, BlockPos pos) {
@@ -45,8 +45,8 @@ public class GeneratorAPIImpl implements IGeneratorAPI {
     }
 
     /**
-     * 清理已卸载维度的注册表条目
-     * @deprecated 请使用 {@link MachineAPIImpl#onDimensionUnload(Level)}
+     * Removes registry entries of unloaded dimensions.
+     * @deprecated Use {@link MachineAPIImpl#onDimensionUnload(Level)}
      */
     @Deprecated
     public static void onDimensionUnload(Level world) {
@@ -56,8 +56,8 @@ public class GeneratorAPIImpl implements IGeneratorAPI {
     @Override
     @Deprecated
     public <T extends BlockEntity> void registerGeneratorType(String id, BlockEntityType<T> type) {
-        // 发电机类型注册已废弃，发电机统一为机器类型
-        // 请使用 MachineBuilderAPI 创建自定义发电机
+        // Generator type registration is deprecated. A generator is now a machine type.
+        // Use MachineBuilderAPI to create custom generators.
     }
 
     @Override
@@ -130,7 +130,7 @@ public class GeneratorAPIImpl implements IGeneratorAPI {
     }
 
     /**
-     * 发电机信息实现
+     * Implementation of generator information.
      */
     private static class GeneratorInfoImpl implements IGeneratorInfo {
         private final Level world;

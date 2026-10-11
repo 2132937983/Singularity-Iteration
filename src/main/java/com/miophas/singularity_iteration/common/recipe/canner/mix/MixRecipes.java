@@ -10,7 +10,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 混合模式配方注册??? */
+ * Recipe registration for the mix mode.
+ */
 @SuppressWarnings("null")
 public class MixRecipes {
 

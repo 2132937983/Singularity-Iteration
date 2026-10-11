@@ -5,7 +5,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 
 /**
- * 压缩机配方输??? * 包装单个物品输入
+ * Recipe input for the compressor.
+ * It wraps one input item.
  */
 public record mio_icif_CompressorRecipeInput(ItemStack item) implements RecipeInput {
 

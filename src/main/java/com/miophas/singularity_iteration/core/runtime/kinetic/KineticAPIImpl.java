@@ -14,10 +14,10 @@ import java.util.Collections;
 import java.util.Optional;
 
 /**
- * 动能 API 实现
+ * Implementation of the kinetic API.
  *
- * <p>所有内部类型访问通过 {@link KineticBridge} 完成，
- * 此文件零内部包引用。
+ * <p>All access to internal types goes through {@link KineticBridge}.
+ * This file has no references to internal packages.
  */
 public class KineticAPIImpl implements IKineticAPI {
 

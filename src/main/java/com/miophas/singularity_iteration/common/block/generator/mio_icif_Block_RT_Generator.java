@@ -24,16 +24,18 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 放射性同位素温差发电力?(RTG) 方块
+ * Radioisotope thermoelectric generator (RTG) block.
  *
- * 特点�? * - 6个槽位用于放置RTG燃料靶丸
- * - 靶丸无限耐久，不需要更新? * - 发电量与放入的靶丸数量有关：
- *   1�?= 1 EU/t
- *   2�?= 2 EU/t
- *   3�?= 4 EU/t
- *   4�?= 8 EU/t
- *   5�?= 16 EU/t
- *   6�?= 32 EU/t
+ * Features:
+ * - 6 slots hold RTG fuel pellets.
+ * - Pellets have infinite durability and never need replacement.
+ * - The output depends on the number of pellets:
+ *   1 pellet  = 1 EU/t
+ *   2 pellets = 2 EU/t
+ *   3 pellets = 4 EU/t
+ *   4 pellets = 8 EU/t
+ *   5 pellets = 16 EU/t
+ *   6 pellets = 32 EU/t
  */
 @SuppressWarnings("null")
 public class mio_icif_Block_RT_Generator extends mio_icif_entity_block {
@@ -47,7 +49,7 @@ public class mio_icif_Block_RT_Generator extends mio_icif_entity_block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        // FACING 由父类添加，只需要添�?ACTIVE
+        // The parent class adds FACING. Add only ACTIVE here.
         builder.add(ACTIVE);
         super.createBlockStateDefinition(builder);
     }

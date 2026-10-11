@@ -206,7 +206,7 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
     }
 
     /**
-     * �?tick ?��?��??��??
+     * Runs the machine logic on each tick.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_block_cutter blockEntity) {
         if (level.isClientSide()) return;

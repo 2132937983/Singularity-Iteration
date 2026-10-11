@@ -15,16 +15,16 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 
 /**
- * 电动工具抽象基类，提供完整的默认能量存储和消耗实现。
+ * Base class for electric tools. It gives complete default energy storage and energy use.
  *
- * <p>Addon 开发者只需继承此类并指定构造参数即可创建一个功能完整的电动工具，
- * 无需访问任何 mio_icif 内部类。
+ * <p>An addon developer extends this class and sets the constructor parameters.
+ * This makes a fully working electric tool. No access to mio_icif internal classes is necessary.
  *
- * <h3>能量存储机制</h3>
- * <p>继承 {@link AbstractBattery} 的统一 DataComponent 能量存储（{@code mio_icif:battery_energy}），
- * 不依赖耐久度系统。
+ * <h3>Energy storage</h3>
+ * <p>The tool uses the shared DataComponent energy storage of {@link AbstractBattery} ({@code mio_icif:battery_energy}).
+ * It does not use the durability system.
  *
- * <h3>使用示例</h3>
+ * <h3>Example</h3>
  * <pre>{@code
  * public class MyElectricDrill extends AbstractElectricTool {
  *     public MyElectricDrill() {
@@ -33,16 +33,16 @@ import net.minecraft.world.level.Level;
  * }
  * }</pre>
  *
- * <h3>自动提供的功能</h3>
+ * <h3>Features that you get automatically</h3>
  * <ul>
- *   <li>能量存储（基于统一 DataComponent）</li>
- *   <li>能量条渲染（绿→红渐变）</li>
- *   <li>能量 Tooltip 显示</li>
- *   <li>Shift 右键给装备充电</li>
- *   <li>充电器兼容（通过 IBatteryItem 接口）</li>
- *   <li>防止原版耐久消耗</li>
- *   <li>能量消耗与检查</li>
- *   <li>手持物品栏序列化/反序列化</li>
+ *   <li>Energy storage (on the shared DataComponent)</li>
+ *   <li>Energy bar rendering (green to red gradient)</li>
+ *   <li>Energy tooltip</li>
+ *   <li>Shift + right-click charges equipment</li>
+ *   <li>Charger compatibility (through the IBatteryItem interface)</li>
+ *   <li>No vanilla durability loss</li>
+ *   <li>Energy use and energy checks</li>
+ *   <li>Save and load of a hand-held inventory</li>
  * </ul>
  */
 public class AbstractElectricTool extends AbstractBattery implements IElectricToolItem {
@@ -51,14 +51,14 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
     private final int toolTier;
 
     /**
-     * 创建电动工具（不可堆叠）。
+     * Makes an electric tool (not stackable).
      *
-     * @param properties    物品属性
-     * @param maxEnergy     最大能量容量 (EU)
-     * @param initialEnergy 初始能量 (EU)
-     * @param chargeRate    充电速率 (EU/tick)
-     * @param energyPerUse  每次使用的能量消耗 (EU)
-     * @param toolTier      工具等级
+     * @param properties    the item properties
+     * @param maxEnergy     the maximum energy capacity (EU)
+     * @param initialEnergy the initial energy (EU)
+     * @param chargeRate    the charge rate (EU/tick)
+     * @param energyPerUse  the energy used for each use (EU)
+     * @param toolTier      the tool tier
      */
     protected AbstractElectricTool(Properties properties, long maxEnergy, long initialEnergy,
                                    long chargeRate, long energyPerUse, int toolTier) {
@@ -67,7 +67,7 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
         this.toolTier = toolTier;
     }
 
-    // ==================== IC2 chargeFromArmor 等价实现 ====================
+    // ==================== Equivalent of IC2 chargeFromArmor ====================
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
@@ -76,9 +76,12 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
     }
 
     /**
-     * IC2 1.12.2 原版工具在 {@code ElectricItemManager.use()} 中会先调用 {@code chargeFromArmor()}：
-     * 工具在读取/消耗能量前先从穿戴的充电背包取电。本项目各工具存在"先读 getEnergy 检查、
-     * 再 consumeEnergy"的多种写法，因此在能量读取处统一补电（消耗路径必然会先读能量）。
+     * In original IC2 1.12.2, tools call {@code chargeFromArmor()} first in {@code ElectricItemManager.use()}.
+     * Before a tool reads or uses energy, it takes energy from the worn charging pack.
+     * In this project, tools use different patterns ("read getEnergy to check, then consumeEnergy").
+     * Thus, this method pulls energy at the read point. Every use path reads the energy first.
+     *
+     * <p>Side effect: each call can move energy from the worn armor into {@code stack}.
      */
     @Override
     public long getEnergy(ItemStack stack) {
@@ -86,7 +89,7 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
         return super.getEnergy(stack);
     }
 
-    // ==================== IElectricToolItem 实现 ====================
+    // ==================== IElectricToolItem implementation ====================
 
     @Override
     public long getEnergyPerUse() {
@@ -103,77 +106,79 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
         return getEnergy(stack) >= energyPerUse;
     }
 
-    // ==================== 能量消耗 ====================
+    // ==================== Energy use ====================
 
     /**
-     * 检查是否有足够能量使用指定量
+     * Checks if the tool has enough energy for the given amount.
      *
-     * @param stack  物品堆
-     * @param amount 需要的能量
-     * @return 是否有足够能量
+     * @param stack  the item stack
+     * @param amount the necessary energy (EU)
+     * @return true if the stored energy is at least {@code amount}; false if {@code amount} is negative
      */
     public boolean hasEnoughEnergy(ItemStack stack, long amount) {
         return amount >= 0 && getEnergy(stack) >= amount;
     }
 
     /**
-     * 消耗一次使用的能量
+     * Uses the energy for one use ({@link #getEnergyPerUse()}).
      *
-     * @param stack 物品堆
-     * @return 是否成功消耗
+     * @param stack the item stack
+     * @return true if the energy was used
      */
     public boolean consumeEnergy(ItemStack stack) {
         return consumeEnergy(stack, energyPerUse);
     }
 
     /**
-     * 消耗指定量的能量
+     * Uses the given amount of energy.
      *
-     * @param stack  物品堆
-     * @param amount 消耗量
-     * @return 是否成功消耗
+     * @param stack  the item stack
+     * @param amount the amount to use (EU)
+     * @return true if the energy was used
      */
     public boolean consumeEnergy(ItemStack stack, long amount) {
         return com.miophas.singularity_iteration.core.api.item.BatteryTransfer.consume(stack, this, amount);
     }
 
     /**
-     * 获取能量剩余百分比 (0.0 ~ 1.0)
+     * Gets the remaining energy as a fraction (0.0 to 1.0).
      */
     public float getDurabilityPercent(ItemStack stack) {
-        return (float) getEnergy(stack) / getMaxEnergy();
+        long max = getMaxEnergy();
+        return max <= 0 ? 0F : (float) getEnergy(stack) / max;   // no NaN for a zero capacity
     }
 
     /**
-     * 获取剩余使用次数
+     * Gets the number of uses left. Returns 0 if the energy per use is 0 or less.
      */
     public long getRemainingUses(ItemStack stack) {
         return energyPerUse <= 0 ? 0 : getEnergy(stack) / energyPerUse;
     }
 
     /**
-     * 检查工具是否可以使用（有能量）
+     * Checks if the tool can be used (it has energy).
      */
     public boolean canUse(ItemStack stack) {
         return !isEmpty(stack);
     }
 
-    // ==================== 防止原版耐久消耗 ====================
+    // ==================== Prevent vanilla durability loss ====================
 
     @Override
     public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, T entity, java.util.function.Consumer<Item> onBroken) {
         return 0;
     }
 
-    // ==================== 手持物品栏序列化 ====================
+    // ==================== Hand-held inventory serialization ====================
 
     /**
-     * 将手持物品栏保存到物品的 CUSTOM_DATA 中。
-     * 适用于电钻等带有内置物品栏的电动工具。
+     * Saves the hand-held inventory to the CUSTOM_DATA of the item.
+     * Use it for electric tools with a built-in inventory, for example the drill.
+     * Empty and null entries are not saved. Does nothing if {@code containerStack} is empty.
      *
-     * @param containerStack 容器物品堆
-     * @param inventory      物品栏数组
-     * @param registries     注册表访问器
+     * @param containerStack the container item stack
+     * @param inventory      the inventory array
+     * @param registries     the registry access
      */
     public static void saveHandHeldInventory(ItemStack containerStack, ItemStack[] inventory, net.minecraft.core.HolderLookup.Provider registries) {
         if (containerStack.isEmpty()) return;
@@ -204,11 +209,12 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
     }
 
     /**
-     * 从物品的 CUSTOM_DATA 中加载手持物品栏。
+     * Loads the hand-held inventory from the CUSTOM_DATA of the item.
+     * First fills the array with ItemStack.EMPTY. Slots out of range are ignored.
      *
-     * @param containerStack 容器物品堆
-     * @param inventory      物品栏数组（输出参数）
-     * @param registries     注册表访问器
+     * @param containerStack the container item stack
+     * @param inventory      the inventory array (output parameter)
+     * @param registries     the registry access
      */
     public static void loadHandHeldInventory(ItemStack containerStack, ItemStack[] inventory, net.minecraft.core.HolderLookup.Provider registries) {
         java.util.Arrays.fill(inventory, ItemStack.EMPTY);

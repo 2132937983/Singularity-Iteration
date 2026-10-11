@@ -59,7 +59,7 @@ public class mio_icif_laser_bullet extends IndependentElectricProjectile {
         }
         BlockPos pos = hit.getBlockPos();
         if (random.nextInt(3) == 0) level.playSound(null, pos, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ENERGY_HIT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.35F, 1.4F);
-        if (!level.hasChunkAt(pos) || !level.mayInteract(player, pos)) { discard(); return; }
+        if (!level.isLoaded(pos) || !level.mayInteract(player, pos)) { discard(); return; }
         var state = level.getBlockState(pos);
         var tool = new ItemStack(Items.DIAMOND_PICKAXE);
         if (state.isAir() || state.getDestroySpeed(level, pos) < 0

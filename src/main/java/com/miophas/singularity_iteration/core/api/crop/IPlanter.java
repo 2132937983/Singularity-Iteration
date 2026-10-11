@@ -9,19 +9,19 @@ import net.minecraft.world.level.block.Block;
 import java.util.List;
 
 /**
- * 种植架方块实体接口
- * 定义了种植架需要实现的所有方法 */
+ * Block entity interface for a crop planter.
+ * It defines all the methods that a planter must implement. */
 public interface IPlanter {
 
-    // ==================== 植物类型 ====================
+    // ==================== Plant type ====================
     PlantType getPlant();
     void setPlant(PlantType plantType);
 
-    // ==================== 成长阶段 ====================
+    // ==================== Growth stage ====================
     int getGrowthStage();
     void setGrowthStage(int stage);
 
-    // ==================== 三属性(0-31) ====================
+    // ==================== Three stats (range 0-31) ====================
     int getGrowthSpeed();
     void setGrowthSpeed(int speed);
 
@@ -31,7 +31,7 @@ public interface IPlanter {
     int getResilience();
     void setResilience(int resilience);
 
-    // ==================== 存储资源 ====================
+    // ==================== Stored resources ====================
     int getNutrients();
     void setNutrients(int nutrients);
 
@@ -41,22 +41,22 @@ public interface IPlanter {
     int getWeedControl();
     void setWeedControl(int weedControl);
 
-    // ==================== 成长 ====================
+    // ==================== Growth ====================
     int getProgress();
     void setProgress(int progress);
 
-    // ==================== 扫描等级 ====================
+    // ==================== Scan level ====================
     int getScanLevel();
     void setScanLevel(int level);
 
-    // ==================== 杂交基地标记 ====================
+    // ==================== Hybrid base flag ====================
     boolean isHybridBase();
     void setHybridBase(boolean hybridBase);
 
-    // ==================== 自定义数据 ====================
+    // ==================== Custom data ====================
     CompoundTag getCustomData();
 
-    // ==================== 环境检测 ====================
+    // ==================== Environment checks ====================
     int getHumidity();
     int getSoilNutrients();
     int getAirQuality();
@@ -66,7 +66,7 @@ public interface IPlanter {
 
     int getLightLevel();
 
-    // ==================== 操作 ====================
+    // ==================== Operations ====================
     boolean pick();
     boolean doManualHarvest();
     boolean doHarvestWithoutSeeds();
@@ -77,7 +77,7 @@ public interface IPlanter {
     boolean isBlockBelow(Block block);
     boolean isBlockBelow(String oredictName);
 
-    // ==================== 种子生成 ====================
+    // ==================== Seed creation ====================
     /** Creates seed bags with the planter scan level. The second argument is the stack count. */
     ItemStack makeSeeds(PlantType plantType, int count, int growthSpeed, int yield, int resilience);
 }

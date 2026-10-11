@@ -11,17 +11,17 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 模式扫描机的容器菜单独?
+ * Container menu for the pattern scanner.
  */
 @SuppressWarnings({"null"}) public class ScannerElcMenu extends mio_icif_machine_menu {
 
-    // 槽位索引
+    // Slot indexes.
     public static final int SCANNER_SLOT = 0;
     public static final int BATTERY_SLOT = 1;
     public static final int MEMORY_SLOT = 2;
     public static final int SLOT_COUNT = 3;
 
-    // 槽位位置
+    // Slot positions.
     private static final int SCANNER_X = 55;
     private static final int SCANNER_Y = 35;
     private static final int BATTERY_X = 8;
@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
     private static final int MEMORY_X = 152;
     private static final int MEMORY_Y = 65;
 
-    // 数据同步索引
+    // Data synchronization indexes.
     private static final int DATA_PROGRESS = 0;
     private static final int DATA_MAX_PROGRESS = 1;
     private static final int DATA_IS_WORKING = 2;
@@ -113,10 +113,10 @@ import org.jetbrains.annotations.Nullable;
         if (this.blockEntity instanceof mio_icif_scanner_elc scanner
                 && com.miophas.singularity_iteration.core.runtime.processing.MachineMenuAccess.action(player,this,scanner)) {
             switch (buttonId) {
-                case 0: // 删除/取消按钮
+                case 0: // Delete/cancel button
                     scanner.discardResult();
                     return true;
-                case 1: // 保存按钮
+                case 1: // Save button
                     return scanner.storeResult();
                 default:
                     return false;
@@ -132,11 +132,11 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        // 扫描述?(55, 35)
+        // Scanner slot (55, 35).
         this.addSlot(new SlotItemHandler(itemHandler, SCANNER_SLOT, SCANNER_X, SCANNER_Y));
-        // 电池�?(8, 43)
+        // Battery slot (8, 43).
         this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, BATTERY_X, BATTERY_Y));
-        // 记忆�?(152, 65)
+        // Memory slot (152, 65).
         this.addSlot(new SlotItemHandler(itemHandler, MEMORY_SLOT, MEMORY_X, MEMORY_Y));
     }
 }

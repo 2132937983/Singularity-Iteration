@@ -1,41 +1,41 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 树液采集器物品标记接口。
+ * Marker interface for tree tap items.
  * <p>
- * 实现此接口的物品可以被识别为树液采集器工具，
- * 用于从橡胶木中提取树脂。
+ * Items that implement this interface are identified as tree tap tools.
+ * Use them to extract resin from rubber wood.
  *
- * <p>附属模组可以让自定义物品实现本接口，即可被 {@code IRubberTreeAPI}
- * 与橡胶木方块识别并用于采集树脂。默认参数对应普通（木质）采集器：
- * 每次消耗 1 点耐久、掉落 1~3 个树脂。电动版本可覆盖相应方法以调整行为。
+ * <p>Addon mods can let a custom item implement this interface. {@code IRubberTreeAPI}
+ * and the rubber wood blocks then identify it and use it to harvest resin. The default values match the normal (wooden) tap:
+ * each harvest uses 1 durability point and drops 1 to 3 resin. An electric version can override the methods to change this behavior.
  */
 public interface ITreeTapItem {
 
     /**
-     * 采集一次对工具造成的耐久损耗。
+     * Returns the durability that one harvest removes from the tool.
      *
-     * <p>默认 1；电动采集器应返回 0（改为消耗电能）。
+     * <p>The default is 1. An electric tap must return 0 (it uses electric energy instead).
      *
-     * @return 耐久损耗值
+     * @return the durability cost
      */
     default int getDurabilityCost() {
         return 1;
     }
 
     /**
-     * 采集一次可获得树脂的最小数量（含）。
+     * Returns the minimum number of resin items from one harvest (inclusive).
      *
-     * @return 最小数量
+     * @return the minimum number
      */
     default int getResinDropMin() {
         return 1;
     }
 
     /**
-     * 采集一次可获得树脂的最大数量（含）。
+     * Returns the maximum number of resin items from one harvest (inclusive).
      *
-     * @return 最大数量
+     * @return the maximum number
      */
     default int getResinDropMax() {
         return 3;

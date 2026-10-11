@@ -9,36 +9,42 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 多个流体槽合并成一个 {@link IFluidHandler} 的通用实现。
+ * General implementation that joins several fluid tanks into one {@link IFluidHandler}.
  *
- * <p>模型与 IC2 的 {@code Fluids} 组件同构：每个槽带一个<b>方向角色</b>与自己的
- * {@code accepts} 谓词，输入槽不可被抽、输出槽不可被灌是<b>结构性</b>保证，
- * 不依赖调用方的索引判断，也不会把产物槽灌进东西、不会从原料槽抽走东西。
+ * <p>The model has the same structure as the IC2 {@code Fluids} component. Each tank has a <b>direction role</b>
+ * and its own {@code accepts} predicate. The structure itself makes sure that nothing drains an input tank
+ * and nothing fills an output tank. This does not depend on index checks by the caller.
+ * Thus nothing fills a product tank and nothing drains a raw-material tank.
  *
  * <ul>
- *   <li>{@code fill}：按注册顺序遍历可灌槽并累加（修正了 IC2 里剩余量未递减导致的重复分发）。</li>
- *   <li>{@code drain(FluidStack)}：按注册顺序遍历可抽槽、按流体类型累加，够量即停。</li>
- *   <li>{@code drain(int)}：先用第一个非空可抽槽确定流体类型，再按该类型累加。</li>
- *   <li>{@code getFluidInTank/getTankCapacity/isFluidValid}：按注册顺序直接代理，保住 GUI 的槽位索引。</li>
+ *   <li>{@code fill}: goes through the fillable tanks in registration order and adds up the amounts.
+ *       (This fixes an IC2 bug: IC2 did not decrease the remaining amount, so it distributed the same fluid again.)</li>
+ *   <li>{@code drain(FluidStack)}: goes through the drainable tanks in registration order, adds up the amounts
+ *       of the requested fluid type, and stops when the amount is sufficient.</li>
+ *   <li>{@code drain(int)}: uses the first drainable tank that is not empty to find the fluid type.
+ *       Then it adds up the amounts of that type.</li>
+ *   <li>{@code getFluidInTank/getTankCapacity/isFluidValid}: delegate directly in registration order.
+ *       This keeps the GUI slot indexes stable.</li>
  * </ul>
  *
- * <p>{@code null} 方向视为任意面（IC2 原版在 null 面上所有槽都不可访问，这里显式修正）。
+ * <p>A {@code null} side means any side. (In the original IC2, no tank is accessible from a null side.
+ * This class fixes that on purpose.)
  */
 public final class FluidTankGroup implements IFluidHandler {
 
-    /** 槽位方向角色。 */
+    /** Direction role of a tank. */
     public enum Role {
-        /** 只可灌入。 */
+        /** Fill only. */
         INPUT_ONLY,
-        /** 只可抽出。 */
+        /** Drain only. */
         OUTPUT_ONLY,
-        /** 既可灌入也可抽出。 */
+        /** Fill and drain. */
         IO,
-        /** 对外不可见，仅供内部逻辑使用。 */
+        /** Not available from outside. Only internal logic uses it. */
         INTERNAL
     }
 
-    /** 一个槽位：处理器 + 方向角色。 */
+    /** One tank: a handler and a direction role. Both must not be null. */
     public record Tank(IFluidHandler handler, Role role) {
         public Tank {
             if (handler == null) throw new IllegalArgumentException("fluid handler");
@@ -53,12 +59,12 @@ public final class FluidTankGroup implements IFluidHandler {
         this.tanks = List.copyOf(tanks);
     }
 
-    /** 便捷构造：单个只进槽。 */
+    /** Shortcut factory: one input-only tank. */
     public static FluidTankGroup inputOnly(IFluidHandler tank) {
         return new FluidTankGroup(List.of(new Tank(tank, Role.INPUT_ONLY)));
     }
 
-    /** 便捷构造：一个只进槽 + 一个只出槽（IC2 双槽机器的常见形态）。 */
+    /** Shortcut factory: one input-only tank and one output-only tank (the usual layout of an IC2 two-tank machine). */
     public static FluidTankGroup inputOutput(IFluidHandler input, IFluidHandler output) {
         return new FluidTankGroup(List.of(new Tank(input, Role.INPUT_ONLY), new Tank(output, Role.OUTPUT_ONLY)));
     }
@@ -150,7 +156,7 @@ public final class FluidTankGroup implements IFluidHandler {
         return role == Role.OUTPUT_ONLY || role == Role.IO;
     }
 
-    /** 供 GUI/菜单按角色枚举槽位。 */
+    /** Returns the tanks so that a GUI or menu can list them by role. The list is immutable. */
     public List<Tank> tanks() {
         return tanks;
     }
@@ -159,7 +165,7 @@ public final class FluidTankGroup implements IFluidHandler {
         return tank >= 0 && tank < tanks.size();
     }
 
-    /** 兼容早期调用：按注册顺序取处理器列表。 */
+    /** For compatibility with older callers: returns the handlers in registration order as an immutable list. */
     public List<IFluidHandler> handlers() {
         var handlers = new ArrayList<IFluidHandler>(tanks.size());
         for (Tank entry : tanks) {

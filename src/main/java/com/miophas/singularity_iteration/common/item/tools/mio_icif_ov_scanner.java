@@ -23,118 +23,114 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
 /**
- * OV?��??��??
- * ?��于扫??�玩家周?��25x25x13????��???????��?��
- * ???大�?��?��??1,000,000 EU
- * 毝次?��??��????��??96 EU
+ * OV scanner.
+ * Scans a 25x25x13 area around the player for ores.
+ * Maximum energy: 1,000,000 EU.
+ * Energy per scan: 96 EU.
  */
 @SuppressWarnings("null")
 public class mio_icif_ov_scanner extends mio_icif_tool_elc implements IScannerItem {
-    private static final Logger LOGGER = LogUtils.getLogger();
 
-    // OV?��??�器???大�?��??
+    // Maximum energy of the OV scanner, in EU.
     public static final int OV_SCANNER_MAX_ENERGY = 1000000;
 
-    // 毝次?��??��????��????��??
+    // Energy that one scan uses, in EU.
     public static final int OV_SCANNER_ENERGY_PER_USE = 96;
 
-    // ?��??��???��（XZ平面，以?��家为中�??�?
-    public static final int SCAN_RADIUS = 12; // 25x25????���???��??�?12
+    // Horizontal scan radius on the XZ plane, centered on the player.
+    public static final int SCAN_RADIUS = 12; // A 25x25 area gives a radius of 12.
 
-    // Y轴扫??��?��??
-    public static final int Y_RADIUS = 6; // 上方6?��??��?�方6?��，�?��??13???
+    // Vertical scan radius on the Y axis.
+    public static final int Y_RADIUS = 6; // 6 blocks above and 6 blocks below, 13 blocks in total.
 
     /**
-     * 默认?????�函?���?空电?��???�?
-     * @param properties ??��??属性??
+     * Creates an OV scanner with no energy.
+     * @param properties the item properties
      */
     public mio_icif_ov_scanner(Properties properties) {
         super(properties, OV_SCANNER_MAX_ENERGY, OV_SCANNER_MAX_ENERGY, "ov_scanner", OV_SCANNER_MAX_ENERGY, OV_SCANNER_ENERGY_PER_USE, 1);
     }
 
     /**
-     * 带�?��?��?��?��???????�函???
-     * @param properties ??��??属性??
-     * @param initialEnergy ??��?��?��??
+     * Creates an OV scanner with a given initial energy.
+     * @param properties the item properties
+     * @param initialEnergy the initial energy, in EU
      */
     public mio_icif_ov_scanner(Properties properties, int initialEnergy) {
         super(properties, OV_SCANNER_MAX_ENERGY, OV_SCANNER_MAX_ENERGY - initialEnergy, "ov_scanner", OV_SCANNER_MAX_ENERGY, OV_SCANNER_ENERGY_PER_USE, 1);
     }
 
     /**
-     * ?��?��使用?��??��??
+     * Runs a scan when the player uses the item.
      */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // ?��?��??�务端�?��?��?��??
+        // Run the scan only on the server.
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
-            // �?试�?�出当�?��?��??
-            LOGGER.info("[OV Scanner] Current energy: " + getEnergy(stack) + "/" + getMaxEnergy());
-            LOGGER.info("[OV Scanner] Damage value: " + stack.getDamageValue());
-            LOGGER.info("[OV Scanner] Energy per use: " + getEnergyPerUse());
 
-            // �??��?��?��??�足够�?��??
-            if (!hasEnoughEnergy(stack)) {
-                LOGGER.info("[OV Scanner] Not enough energy!");
+            // Check that the scanner has enough energy.
+            // Cost per scan: datapack file si_tuning/ov_scanner.json.
+            final long cost = com.miophas.singularity_iteration.common.tuning.SiTuningValues.OV_ENERGY_PER_USE.get();
+            if (!hasEnoughEnergy(stack, cost)) {
                 return InteractionResultHolder.fail(stack);
             }
 
-            // �???��?��??
+            // Consume energy. Creative players use no energy.
             if (!player.isCreative()) {
-                boolean consumed = consumeEnergy(stack);
-                LOGGER.info("[OV Scanner] Energy consumed: " + consumed);
+                boolean consumed = consumeEnergy(stack, cost);
                 if (!consumed) {
-                    // ??��?��????�失败�?��?��?��?�扫???
+                    // If the energy consumption fails, do not scan.
                     return InteractionResultHolder.fail(stack);
                 }
-                LOGGER.info("[OV Scanner] Remaining energy: " + getEnergy(stack));
             }
 
-            // ??��?�扫???
+            // Run the scan.
             Map<String, Integer> scanResults = performScan(level, player);
-            LOGGER.info("[OV Scanner] Scan results: " + scanResults);
 
-            // ??��??GUI并显示�?��??
+            // Open the GUI and show the results.
             openScannerGUI(serverPlayer, scanResults);
 
-            // ??�步修改??��??ItemStack??�玩家�?��??
+            // Put the changed ItemStack back into the player hand.
             player.setItemInHand(hand, stack);
 
             return InteractionResultHolder.success(stack);
         }
 
-        // 客�?�端?��?��返回?��?��??
+        // On the client, return the side-dependent result.
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
     }
 
     /**
-     * ??��?�扫???
-     * ?��??�玩家Y??��??上方6?��??��?�方6?��，XZ平面25x25????��???????��?��
-     * ??��??25x13x25????��??��?????
+     * Runs the scan.
+     * The scan area is 6 blocks above and below the player Y level, and 25x25 on the XZ plane.
+     * The total scan volume is 25x13x25 blocks.
+     * @return a map from the ore translation key to the ore count
      */
     private Map<String, Integer> performScan(Level level, Player player) {
         Map<String, Integer> oreCounts = new HashMap<>();
 
-        // ?��??�玩家�???��??��?��??
+        // Get the player position.
         BlockPos playerPos = player.blockPosition();
 
-        // ?��???25x13x25????���?以玩家为中�??�?
-        for (int x = -SCAN_RADIUS; x <= SCAN_RADIUS; x++) {
-            for (int z = -SCAN_RADIUS; z <= SCAN_RADIUS; z++) {
-                for (int y = -Y_RADIUS; y <= Y_RADIUS; y++) {
-                    BlockPos scanPos = playerPos.offset(x, y, z);
-
-                    // �??��Y??��???��?��?��??��??????��???
-                    if (scanPos.getY() < level.getMinBuildHeight() || scanPos.getY() > level.getMaxBuildHeight()) {
-                        continue;
-                    }
+        // Scan the 25x13x25 area centered on the player.
+        // Live values: datapack file si_tuning/ov_scanner.json (defaults SCAN_RADIUS, Y_RADIUS).
+        final int radius = com.miophas.singularity_iteration.common.tuning.SiTuningValues.OV_SCAN_RADIUS.get();
+        final int yRadius = com.miophas.singularity_iteration.common.tuning.SiTuningValues.OV_Y_RADIUS.get();
+        // Build height: min is inclusive, max is exclusive (0.1.7.36: before, y == max was read).
+        final int minY = Math.max(level.getMinBuildHeight(), playerPos.getY() - yRadius);
+        final int maxY = Math.min(level.getMaxBuildHeight() - 1, playerPos.getY() + yRadius);
+        BlockPos.MutableBlockPos scanPos = new BlockPos.MutableBlockPos();
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                for (int y = minY; y <= maxY; y++) {
+                    scanPos.set(playerPos.getX() + x, y, playerPos.getZ() + z);
 
                     BlockState state = level.getBlockState(scanPos);
                     Block block = state.getBlock();
 
-                    // �??��?��?��?��?��?��
+                    // Count the block if it is an ore.
                     if (isOre(state)) {
                         String oreName = getOreName(block);
                         oreCounts.merge(oreName, 1, Integer::sum);
@@ -147,10 +143,10 @@ public class mio_icif_ov_scanner extends mio_icif_tool_elc implements IScannerIt
     }
 
     /**
-     * �??��?��??�是?��?��?��?��
+     * Checks if the block is an ore.
      */
     private boolean isOre(BlockState state) {
-        // �??��?��?��?��??��??????��?��???�?
+        // Check the vanilla ore tags.
         if (state.is(BlockTags.COAL_ORES) ||
             state.is(BlockTags.IRON_ORES) ||
             state.is(BlockTags.COPPER_ORES) ||
@@ -162,28 +158,26 @@ public class mio_icif_ov_scanner extends mio_icif_tool_elc implements IScannerIt
             return true;
         }
 
-        // �??��?��?��?��??�用????��?��???签�?�NeoForge/Forge ??????�?
+        // Check the common NeoForge/Forge ore tag.
         if (state.is(net.neoforged.neoforge.common.Tags.Blocks.ORES)) {
             return true;
         }
 
-        // �??��?��??�注?????�是?��????��"ore"
+        // Check if the registry name contains "ore".
         Block block = state.getBlock();
-        String blockName = BuiltInRegistries.BLOCK.getKey(block).toString();
-        if (blockName.contains("ore") || blockName.contains("_ore")) {
-            return true;
-        }
-
-        return false;
+        // cached per block: the scan asks this for thousands of positions per use
+        return ORE_BY_NAME.computeIfAbsent(block, k -> BuiltInRegistries.BLOCK.getKey(k).getPath().contains("ore"));
     }
 
+    private static final java.util.Map<Block, Boolean> ORE_BY_NAME = new java.util.concurrent.ConcurrentHashMap<>();
+
     /**
-     * ?��??�矿?��????��示�?�称�?返回?�翻译按键?
+     * Returns the translation key of the ore display name.
      */
     private String getOreName(Block block) {
         String blockName = BuiltInRegistries.BLOCK.getKey(block).toString();
 
-        // ??��?�矿?��类�??
+        // Find the ore type from the registry name.
         if (blockName.contains("coal")) return "tooltip.mio_icif.ore.coal";
         if (blockName.contains("iron")) return "tooltip.mio_icif.ore.iron";
         if (blockName.contains("copper")) return "tooltip.mio_icif.ore.copper";
@@ -204,38 +198,38 @@ public class mio_icif_ov_scanner extends mio_icif_tool_elc implements IScannerIt
         if (blockName.contains("sapphire")) return "tooltip.mio_icif.ore.sapphire";
         if (blockName.contains("quartz")) return "tooltip.mio_icif.ore.quartz";
 
-        // 默认返回?�方??��?�称
+        // By default, return the block description ID.
         return block.getDescriptionId();   // translated on the client
     }
 
     /**
-     * ??��???��??�器GUI
+     * Opens the scanner GUI.
      */
     private void openScannerGUI(ServerPlayer player, Map<String, Integer> scanResults) {
-        // 使用MenuProvider?��??��??GUI
+        // Open the GUI through a MenuProvider.
         mio_icif_od_scanner_menu.Provider provider = new mio_icif_od_scanner_menu.Provider(scanResults);
         // the client-side menu factory reads the results from the open packet: always send them
         player.openMenu(provider, provider::writeExtraData);
 
-        // ??��???��??��?��?��?�客??��??
+        // Send the scan results to the client.
         PacketDistributor.sendToPlayer(player, new ODScannerResultPacket(scanResults));
     }
 
     /**
-     * ??��?��?�防止OV?��??�器??��??
+     * Prevents damage to the OV scanner.
      */
     @Override
     public <T extends net.minecraft.world.entity.LivingEntity> int damageItem(ItemStack stack, int amount, T entity, java.util.function.Consumer<net.minecraft.world.item.Item> onBroken) {
-        // OV?��??�器丝�?��?�damageItem??��?��?��?�是??��??�???��?��??
+        // The OV scanner uses energy, not durability. damageItem always returns 0.
         return 0;
     }
 
     /**
-     * ??��?��?�OV?��??�器?��示�?��?�状???
+     * Makes the item bar show the OV scanner charge.
      */
     @Override
     public boolean isDamaged(ItemStack stack) {
-        // 当�?��?�未满时返回?�true，显示�?��??度信???
+        // Return true when the energy is not full. The item bar then shows the charge level.
         return getEnergy(stack) < getMaxEnergy();
     }
 

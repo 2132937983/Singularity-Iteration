@@ -12,7 +12,9 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 
 /**
- * 电压检测器渲染�? * 在准心指向电压检测器时渲染电压信息? */
+ * Voltage checker renderer.
+ * It renders the voltage information when the crosshair points at a voltage checker.
+ */
 @SuppressWarnings("null")
 public class mio_icif_checker_renderer {
 
@@ -89,7 +91,7 @@ public class mio_icif_checker_renderer {
     int textX = centerX + 15; // 准心右侧15像素
         int textY = centerY - 10; // 准心上方10像素
 
-        // 判断是否显示输入电能（无输入时不显示�
+        // Show the input energy only when there is an input.
     boolean hasInput = !inputEnergyText.equals(Component.translatable("gui.mio_icif.checker.no_input").getString());
 
         // 获取文本宽度
@@ -100,8 +102,8 @@ public class mio_icif_checker_renderer {
             maxWidth = Math.max(voltageWidth, inputWidth);
         }
 
-        // 绘制背景（半透明黑色�
-    int bgHeight = hasInput ? font.lineHeight * 2 + 6 : font.lineHeight + 4; // 根据是否有输入调整高�
+        // Draw the background (semi-transparent black).
+    int bgHeight = hasInput ? font.lineHeight * 2 + 6 : font.lineHeight + 4; // Set the height by whether there is an input.
     graphics.fill(textX - 2, textY - 2, textX + maxWidth + 2, textY + bgHeight, 0xAA000000);
 
         // 绘制电压文本（白色）

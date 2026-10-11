@@ -28,8 +28,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 高级采矿机方块类
- * 不需要采矿管道和钻头，内置超大存储，支持升级的高级挖矿机器? * 支持精确采集和液体处理? */
+ * Advanced miner block class.
+ * This advanced mining machine does not need mining pipes or a drill. It has a very large internal storage and accepts upgrades.
+ * It supports Silk Touch mining and liquid handling.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_advanced_miner_elc extends mio_icif_entity_block {
 
@@ -41,7 +43,7 @@ public class mio_icif_block_advanced_miner_elc extends mio_icif_entity_block {
 
     public mio_icif_block_advanced_miner_elc(Properties properties) {
         super(properties);
-        // 注册默认状态：朝向北，未点亮，未激�
+        // Default state: facing north, not lit, not active.
     this.registerDefaultState(this.stateDefinition.any()
             .setValue(FACING, Direction.NORTH)
             .setValue(LIT, false)
@@ -95,7 +97,7 @@ public class mio_icif_block_advanced_miner_elc extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_advanced_miner_elc miner) {
-                // 掉落物品栏中的物�
+                // Drop the items in the inventory.
             for (int i = 0; i < miner.getItemHandler().getSlots(); i++) {
                     ItemStack stack = miner.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {

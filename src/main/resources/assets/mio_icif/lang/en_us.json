@@ -2304,5 +2304,6 @@
   "message.mio_icif.bat.auto_off": "§7Inventory auto-charge: OFF§r (%s / %s EU)",
   "tooltip.mio_icif.bat.auto_on": "Auto-charge ON: feeds the electric items in your inventory",
   "tooltip.mio_icif.bat.auto_off": "Auto-charge OFF. Right click to switch it on",
-  "tooltip.mio_icif.pack.auto_hint": "Sneak + right click: inventory auto-charge on / off"
+  "tooltip.mio_icif.pack.auto_hint": "Sneak + right click: inventory auto-charge on / off",
+  "message.mio_icif.transformer.mode_switched": "Transformer: %s. Sneak + empty-hand right click to switch."
 }

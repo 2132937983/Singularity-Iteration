@@ -161,7 +161,7 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
             return 0;
         }
 
-        // 誹???衡膀?碩
+        // Calculate the kinetic output from the rotor diameter, the biome bonus and the time of day.
         int diameter = rotor.getDiameter(rotorStack);
         int amplitude = (diameter - 3) * 25 + currentBiomeType.amplitudeBonus;
 
@@ -432,7 +432,7 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
         };
     }
 
-    // ==================== Getterよ猭ㄑUI?ボ ====================
+    // ==================== Getters for the UI display ====================
 
     public int getCurrentKineticOutput() { return currentKineticOutput; }
     public boolean isGenerating() { return isGenerating; }

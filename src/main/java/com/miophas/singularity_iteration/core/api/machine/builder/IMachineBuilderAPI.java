@@ -9,17 +9,17 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 /**
- * 机器构建 API
+ * Machine builder API.
  *
- * <p>提供工厂方法，让附属模组可以方便地创建符合 mio_icif 风格的机器。
- * 这是附属模组开发的核心 API，封装了机器创建的所有复杂逻辑。
+ * <p>This API gives factory methods for addon mods. Use them to make machines in the mio_icif style.
+ * This is the core API for addon development. It contains all the complex logic of machine creation.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
- * // 获取 API
+ * // Get the API
  * IMachineBuilderAPI builder = MioIcifAPI.instance().getMachineBuilderAPI();
  *
- * // 创建一个简单的电力机器
+ * // Make a simple electric machine
  * CustomMachineBlock myMachine = builder.createElectricMachineBuilder()
  *     .setName("my_machine")
  *     .setEnergyCapacity(10000)
@@ -32,78 +32,79 @@ import java.util.Optional;
  *     .setRecipeType(MioIcifAPI.instance().getRecipeAPI().getCompressorRecipeType())
  *     .build();
  *
- * // 注册机器
+ * // Register the machine
  * builder.registerMachine("mymod", myMachine);
  * }</pre>
  */
 public interface IMachineBuilderAPI {
 
     /**
-     * 创建电力机器构建器
+     * Makes a new electric machine builder.
      *
-     * @return 新的电力机器构建器实例
+     * @return a new electric machine builder instance
      */
     IElectricMachineBuilder createElectricMachineBuilder();
 
     /**
-     * 创建发电机构建器
+     * Makes a new generator builder.
      *
-     * @return 新的发电机构建器实例
+     * @return a new generator builder instance
      */
     IGeneratorBuilder createGeneratorBuilder();
 
     /**
-     * 创建热能机器构建器
+     * Makes a new heat machine builder.
      *
-     * @return 新的热能机器构建器实例
+     * @return a new heat machine builder instance
      */
     IHeatMachineBuilder createHeatMachineBuilder();
 
     /**
-     * 创建动能机器构建器
+     * Makes a new kinetic machine builder.
      *
-     * @return 新的动能机器构建器实例
+     * @return a new kinetic machine builder instance
      */
     IKineticMachineBuilder createKineticMachineBuilder();
 
     /**
-     * 创建储能方块构建器
+     * Makes a new energy storage block builder.
      *
-     * @return 新的储能方块构建器实例
+     * @return a new energy storage block builder instance
      */
     IEnergyContainerBuilder createEnergyContainerBuilder();
 
     /**
-     * 注册自定义机器到系统
+     * Registers a custom machine in the system.
      *
-     * <p><strong>注意：此方法仅将机器定义存入内部注册表，不会注册到 NeoForge 的任何注册表中。</strong>
-     * 附属模组需要自行注册 Block、BlockEntity 和 BlockEntityType。
-     * 此方法主要用于：
+     * <p><strong>Note: this method only puts the machine definition in an internal registry.
+     * It does not register anything in a NeoForge registry.</strong>
+     * The addon mod must register its Block, BlockEntity and BlockEntityType itself.
+     * Use this method to:
      * <ul>
-     *   <li>让机器可以通过 API 查询（如 getMachineDefinition）</li>
-     *   <li>让机器可以使用升级系统</li>
-     *   <li>让机器可以使用能量网络</li>
+     *   <li>Let the API find the machine (for example, with getMachineDefinition)</li>
+     *   <li>Let the machine use the upgrade system</li>
+     *   <li>Let the machine use the energy grid</li>
      * </ul>
      *
-     * @param modId 附属模组 ID
-     * @param machine 机器定义
-     * @return 注册后的 BlockEntityType（可能为 null）
+     * @param modId the addon mod ID
+     * @param machine the machine definition
+     * @return the registered BlockEntityType (can be null)
      */
     BlockEntityType<?> registerMachine(String modId, IMachineDefinition machine);
 
     /**
-     * 注册自定义机器到系统（带 BlockEntityType）
+     * Registers a custom machine in the system, with a BlockEntityType.
      *
-     * <p>由于 NeoForge 要求 BlockEntityType 在模组初始化阶段注册，
-     * 附属模组需要先创建自己的 BlockEntityType，然后通过此方法注册。
+     * <p>NeoForge requires registration of a BlockEntityType during mod initialization.
+     * Thus, the addon mod must first make its own BlockEntityType. Then it registers it with this method.
      *
-     * @param modId 附属模组 ID
-     * @param machine 机器定义
-     * @param blockEntityType 已注册的 BlockEntityType
-     * @return 传入的 BlockEntityType
+     * @param modId the addon mod ID
+     * @param machine the machine definition
+     * @param blockEntityType the BlockEntityType that is already registered
+     * @return the same BlockEntityType that you gave
      */
     default BlockEntityType<?> registerMachine(String modId, IMachineDefinition machine, BlockEntityType<?> blockEntityType) {
-        // 创建一个带有 BlockEntityType 的新定义
+        // Make a new definition that contains the BlockEntityType
         IMachineDefinition definitionWithEntity = new IMachineDefinition() {
             @Override
             public String getId() { return machine.getId(); }
@@ -122,93 +123,93 @@ public interface IMachineBuilderAPI {
     }
 
     /**
-     * 获取已注册的机器定义
+     * Gets a registered machine definition.
      *
-     * @param modId 模组 ID
-     * @param machineId 机器 ID
-     * @return 机器定义，如果不存在则返回 null
+     * @param modId the mod ID
+     * @param machineId the machine ID
+     * @return the machine definition, or null if it does not exist
      */
     IMachineDefinition getMachineDefinition(String modId, String machineId);
 
     /**
-     * 检查机器 ID 是否已注册
+     * Checks if a machine ID is registered.
      *
-     * @param modId 模组 ID
-     * @param machineId 机器 ID
-     * @return true 如果已注册
+     * @param modId the mod ID
+     * @param machineId the machine ID
+     * @return true if the machine is registered
      */
     boolean isMachineRegistered(String modId, String machineId);
 
     /**
-     * 注册一个命名自定义机器类型。
+     * Registers a named custom machine type.
      *
-     * <p><b>注意：</b>{@link com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType}
-     * 是固定枚举（含 {@code CUSTOM}），无法在运行时新增枚举常量。因此此方法仅将
-     * {@code modId:name} 登记到全局自定义类型名称注册表，并返回 {@code CUSTOM}。
-     * 附属模组可通过 {@link #getRegisteredCustomMachineTypeName} 取回登记的名称，
-     * 用于在 UI/日志中展示带名称的自定义类型。</p>
+     * <p><b>Note:</b> {@link com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType}
+     * is a fixed enum (it contains {@code CUSTOM}). You cannot add enum constants at runtime. Thus, this method only
+     * records {@code modId:name} in the global registry of custom type names, and returns {@code CUSTOM}.
+     * Addon mods can get the recorded name back with {@link #getRegisteredCustomMachineTypeName}.
+     * Use the name to show the custom type in the UI or in logs.</p>
      *
-     * @param modId 附属模组 ID
-     * @param name 自定义类型名称
-     * @return 始终为 {@link com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType#CUSTOM}
+     * @param modId the addon mod ID
+     * @param name the custom type name
+     * @return always {@link com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType#CUSTOM}
      */
     com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType registerCustomMachineType(String modId, String name);
 
     /**
-     * 查询已登记的自定义机器类型名称。
+     * Finds a recorded custom machine type name.
      *
-     * @param modId 附属模组 ID
-     * @param name 自定义类型名称
-     * @return 登记的名称，未登记则返回空 Optional
+     * @param modId the addon mod ID
+     * @param name the custom type name
+     * @return the recorded name, or an empty Optional if it is not recorded
      */
     Optional<String> getRegisteredCustomMachineTypeName(String modId, String name);
 
     /**
-     * 创建标准槽位布局（输入+输出+电池+升级）
+     * Makes a standard slot layout (input + output + battery + upgrade).
      *
-     * @param inputSlots 输入槽数量
-     * @param outputSlots 输出槽数量
-     * @param hasBatterySlot 是否有电池槽
-     * @param upgradeSlots 升级槽数量
-     * @return 槽位布局定义
+     * @param inputSlots the number of input slots
+     * @param outputSlots the number of output slots
+     * @param hasBatterySlot true if the layout has a battery slot
+     * @param upgradeSlots the number of upgrade slots
+     * @return the slot layout definition
      */
     ISlotLayout createStandardLayout(int inputSlots, int outputSlots, boolean hasBatterySlot, int upgradeSlots);
 
     /**
-     * 创建带特殊槽位的布局
+     * Makes a slot layout with special slots.
      *
-     * @param inputSlots 输入槽数量
-     * @param outputSlots 输出槽数量
-     * @param hasBatterySlot 是否有电池槽
-     * @param upgradeSlots 升级槽数量
-     * @param specialSlots 特殊槽位配置
-     * @return 槽位布局定义
+     * @param inputSlots the number of input slots
+     * @param outputSlots the number of output slots
+     * @param hasBatterySlot true if the layout has a battery slot
+     * @param upgradeSlots the number of upgrade slots
+     * @param specialSlots the special slot configuration
+     * @return the slot layout definition
      */
     ISlotLayout createLayoutWithSpecialSlots(int inputSlots, int outputSlots, boolean hasBatterySlot, int upgradeSlots, ISlotLayout.SlotType[] specialSlots);
 
     /**
-     * 创建流体机器槽位布局（输入+输出+电池+升级+流体）
+     * Makes a slot layout for a fluid machine (input + output + battery + upgrade + fluid).
      *
-     * @param inputSlots 输入槽数量
-     * @param outputSlots 输出槽数量
-     * @param hasBatterySlot 是否有电池槽
-     * @param upgradeSlots 升级槽数量
-     * @param fluidTanks 流体槽数量
-     * @param tankCapacity 每个流体槽容量 (mB)
-     * @return 槽位布局定义
+     * @param inputSlots the number of input slots
+     * @param outputSlots the number of output slots
+     * @param hasBatterySlot true if the layout has a battery slot
+     * @param upgradeSlots the number of upgrade slots
+     * @param fluidTanks the number of fluid tanks
+     * @param tankCapacity the capacity of each fluid tank (mB)
+     * @return the slot layout definition
      */
     ISlotLayout createFluidLayout(int inputSlots, int outputSlots, boolean hasBatterySlot, int upgradeSlots, int fluidTanks, int tankCapacity);
 
     /**
-     * 获取机器默认属性模板
+     * Gets the default machine property template for a tier.
      *
-     * @param tier 电缆等级
-     * @return 默认属性
+     * @param tier the cable tier
+     * @return the default properties
      */
     IMachineDefaults getDefaultsForTier(ICableTier tier);
 
     /**
-     * 机器定义接口 - 描述一个完整的机器
+     * Machine definition. It describes a complete machine.
      */
     interface IMachineDefinition {
         String getId();
@@ -216,50 +217,50 @@ public interface IMachineBuilderAPI {
         String getTranslationKey();
 
         /**
-         * 获取机器的 BlockEntityType。
+         * Gets the BlockEntityType of the machine.
          *
-         * <p>注意：通过 {@link IElectricMachineBuilder#build()} 等方法创建的机器定义，
-         * 此方法可能返回 {@code null}。附属模组需要自己创建 BlockEntityType 并调用
+         * <p>Note: for a definition made by {@link IElectricMachineBuilder#build()} or a similar method,
+         * this method can return {@code null}. The addon mod must make its own BlockEntityType. Then it must call
          * {@link IMachineBuilderAPI#registerMachine(String, IMachineDefinition, BlockEntityType)}
-         * 来完成注册。
+         * to complete the registration.
          *
-         * <p>使用示例：
+         * <p>Example:
          * <pre>{@code
-         * // 在模组初始化阶段创建 BlockEntityType
+         * // Make the BlockEntityType during mod initialization
          * public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GenericMachineBlockEntity>> MY_MACHINE =
          *     BLOCK_ENTITIES.register("my_machine", () ->
          *         BlockEntityType.Builder.of(GenericMachineBlockEntity::new, ModBlocks.MY_MACHINE.get()).build(null));
          *
-         * // 创建机器定义
+         * // Make the machine definition
          * IMachineDefinition definition = builder.createElectricMachineBuilder()
          *     .setName("my_machine")
          *     .setEnergyCapacity(10000)
          *     .build();
          *
-         * // 注册机器（传入 BlockEntityType）
+         * // Register the machine (give the BlockEntityType)
          * builder.registerMachine("mymod", definition, MY_MACHINE.get());
          * }</pre>
          *
-         * @return BlockEntityType，如果未提供则返回 null
+         * @return the BlockEntityType, or null if none was given
          */
         @Nullable
         BlockEntityType<?> getBlockEntityType();
         IMachineProperties getProperties();
 
         /**
-         * 获取创建此机器时使用的完整配置记录。
+         * Gets the full configuration record that was used to make this machine.
          *
-         * <p>由于 NeoForge 要求 BlockEntityType 在模组初始化阶段注册，
-         * {@link #getBlockEntityType()} 可能为 null。附属模组可通过此方法
-         * 获取配置后自行创建 BlockEntityType。
+         * <p>NeoForge requires registration of a BlockEntityType during mod initialization.
+         * Thus, {@link #getBlockEntityType()} can be null. Addon mods can get the configuration
+         * with this method and then make the BlockEntityType themselves.
          *
-         * @return 机器配置记录
+         * @return the machine configuration record
          */
         MachineConfiguration getConfiguration();
     }
 
     /**
-     * 机器属性接口
+     * Machine properties.
      */
     interface IMachineProperties {
         long getEnergyCapacity();
@@ -274,10 +275,10 @@ public interface IMachineBuilderAPI {
     }
 
     /**
-     * 槽位布局接口（构建器专用）
+     * Slot layout for builders only.
      *
-     * <p>继承 {@link com.miophas.singularity_iteration.core.api.machine.ISlotLayout}，添加构建器所需的额外方法。
-     * 通过 default 方法桥接两套 API，使构建器布局可直接传给查询 API。
+     * <p>This interface extends {@link com.miophas.singularity_iteration.core.api.machine.ISlotLayout} and adds the methods that builders need.
+     * Default methods connect the two APIs. Thus, you can give a builder layout directly to the query API.
      */
     interface ISlotLayout extends com.miophas.singularity_iteration.core.api.machine.ISlotLayout {
 
@@ -342,16 +343,16 @@ public interface IMachineBuilderAPI {
         default int[] getUpgradeSlots() { return getSlotsOfBuilderType(SlotType.UPGRADE); }
 
         /**
-         * 槽位类型枚举
+         * Slot type enum.
          * 
-         * <p>构建器专用槽位类型，包含更多 specialized 的槽位类型
-         * （如 HAMMER_HEAD, CUTTER_HEAD 等）。
+         * <p>Slot types for builders only. It contains more specialized slot types
+         * (for example, HAMMER_HEAD and CUTTER_HEAD).
          * 
-         * <p>与 {@link com.miophas.singularity_iteration.core.api.machine.IMachineAPI.SlotType} 的映射：
+         * <p>Mapping to {@link com.miophas.singularity_iteration.core.api.machine.IMachineAPI.SlotType}:
          * <ul>
          *   <li>HAMMER_HEAD → HAMMER_TOOL, HAMMER_PLATE → HAMMER_INPUT, HAMMER_HANDLE → HAMMER_OUTPUT</li>
          *   <li>CUTTER_HEAD → CUTTER_TOOL, CUTTER_PLATE → CUTTER_INPUT, CUTTER_HANDLE → CUTTER_OUTPUT</li>
-         *   <li>其他类型名称相同</li>
+         *   <li>All other types use the same name</li>
          * </ul>
          */
         enum SlotType implements ISlotType {
@@ -387,7 +388,7 @@ public interface IMachineBuilderAPI {
 
             @Override
             public String getName() {
-                return name().toLowerCase();
+                return name().toLowerCase(java.util.Locale.ROOT);
             }
 
             @Override
@@ -416,7 +417,8 @@ public interface IMachineBuilderAPI {
             }
 
             /**
-             * 映射到通用查询 API 的 SlotType
+             * Maps this type to the SlotType of the general query API.
+             * Types with no match map to {@code CUSTOM}.
              */
             public com.miophas.singularity_iteration.core.api.machine.IMachineAPI.SlotType toApiSlotType() {
                 return switch (this) {
@@ -439,7 +441,7 @@ public interface IMachineBuilderAPI {
     }
 
     /**
-     * 机器默认属性
+     * Default machine properties.
      */
     interface IMachineDefaults {
         long getDefaultCapacity();
@@ -451,30 +453,30 @@ public interface IMachineBuilderAPI {
     }
 
     /**
-     * 机器配置记录
+     * Machine configuration record.
      *
-     * <p>包含创建机器所需的所有参数。当附属模组使用构建器时，
-     * 可以通过此记录获取完整的机器配置，然后使用这些参数创建自己的 Block、BlockEntity 和 BlockEntityType。
+     * <p>Contains all parameters to make a machine. When an addon mod uses a builder,
+     * it can get the full machine configuration from this record. It then uses these parameters to make its own Block, BlockEntity and BlockEntityType.
      *
-     * @param name 机器名称
-     * @param translationKey 翻译键
-     * @param blockProperties 方块属性
-     * @param energyCapacity 能量容量
-     * @param maxReceive 最大接收速率
-     * @param maxExtract 最大提取速率
-     * @param energyPerTick 每tick能耗
-     * @param cableTier 电缆等级。注意：对于非电力机器（热能/动能），此字段为 null
-     * @param processTime 处理时间（tick）
-     * @param recipeType 配方类型
-     * @param supportsUpgrades 是否支持升级
-     * @param supportsFluids 是否支持流体
-     * @param inputSlots 输入槽数量
-     * @param outputSlots 输出槽数量
-     * @param hasBatterySlot 是否有电池槽
-     * @param upgradeSlots 升级槽数量
-     * @param fluidTanks 流体槽数量
-     * @param tankCapacity 流体槽容量
-     * @param machineType 机器类型。注意：若构建器未调用 setMachineType() 则为此字段为 null
+     * @param name the machine name
+     * @param translationKey the translation key
+     * @param blockProperties the block properties
+     * @param energyCapacity the energy capacity (EU)
+     * @param maxReceive the maximum input rate (EU/t)
+     * @param maxExtract the maximum output rate (EU/t)
+     * @param energyPerTick the energy use per tick (EU/t)
+     * @param cableTier the cable tier. Note: this field is null for machines that are not electric (heat or kinetic)
+     * @param processTime the process time (ticks)
+     * @param recipeType the recipe type
+     * @param supportsUpgrades true if the machine accepts upgrades
+     * @param supportsFluids true if the machine accepts fluids
+     * @param inputSlots the number of input slots
+     * @param outputSlots the number of output slots
+     * @param hasBatterySlot true if the layout has a battery slot
+     * @param upgradeSlots the number of upgrade slots
+     * @param fluidTanks the number of fluid tanks
+     * @param tankCapacity the capacity of each fluid tank (mB)
+     * @param machineType the machine type. Note: this field is null if the builder did not call setMachineType()
      */
     record MachineConfiguration(
         String name,
@@ -498,21 +500,23 @@ public interface IMachineBuilderAPI {
         @Nullable com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType machineType
     ) {
         /**
-         * 获取总槽位数
+         * Gets the total number of item slots (input + output + battery + upgrade).
          */
         public int getTotalSlots() {
             return inputSlots + outputSlots + (hasBatterySlot ? 1 : 0) + upgradeSlots;
         }
 
         /**
-         * 获取电池槽索引
+         * Gets the battery slot index.
+         *
+         * @return the index, or -1 if there is no battery slot
          */
         public int getBatterySlotIndex() {
             return hasBatterySlot ? inputSlots + outputSlots : -1;
         }
 
         /**
-         * 获取升级槽起始索引
+         * Gets the index of the first upgrade slot.
          */
         public int getUpgradeSlotStart() {
             return inputSlots + outputSlots + (hasBatterySlot ? 1 : 0);

@@ -6,15 +6,18 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * 发电机 forceStart/forceStop 的共享辅助类
- * 包私有，仅供 API 内部使用
+ * Shared helper for generator forceStart/forceStop.
+ * For internal API use only.
  */
 public final class GeneratorHelper {
 
     private GeneratorHelper() {}
 
     /**
-     * 强制启动发电机
+     * Forces a generator to start. Sets its burn time to the default burn time, or to 200 ticks if the default is 0 or less.
+     * Server side only.
+     *
+     * @return true if the block entity at {@code pos} is an {@link IBurnControl}; false on the client or otherwise
      */
     public static boolean forceStartGenerator(Level world, BlockPos pos) {
         if (world.isClientSide) return false;
@@ -30,7 +33,10 @@ public final class GeneratorHelper {
     }
 
     /**
-     * 强制停止发电机
+     * Forces a generator to stop. Sets its burn time to 0.
+     * Server side only.
+     *
+     * @return true if the block entity at {@code pos} is an {@link IBurnControl}; false on the client or otherwise
      */
     public static boolean forceStopGenerator(Level world, BlockPos pos) {
         if (world.isClientSide) return false;

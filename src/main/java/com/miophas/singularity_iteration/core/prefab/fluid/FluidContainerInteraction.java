@@ -10,32 +10,38 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 手持流体容器右击机器时的通用储罐交互。
+ * General tank interaction when a player right-clicks a machine with a fluid container in hand.
  *
- * <p>语义对齐原版 IC2 {@code ic2.core.item.ItemFluidCell#interactWithTank}：
+ * <p>The behavior is the same as the original IC2 {@code ic2.core.item.ItemFluidCell#interactWithTank}:
  * <ul>
- *   <li>通过流体能力（{@code Capabilities.FluidHandler.BLOCK} / {@code .ITEM}）传输，
- *       不关心容器具体种类 —— 水桶、水/蒸馏水单元、其它模组的流体容器走同一条路径。</li>
- *   <li><b>先</b>尝试"容器 → 储罐"（对齐 Forge {@code FluidUtil.tryFluidTransfer} 的
- *       drain-source-first 顺序），失败再尝试"储罐 → 容器"。因此空容器天然表现为抽取。</li>
- *   <li><b>没有蹲下开关</b>：IC2 原版就是双向自动判定，方向由容器/储罐各自能否接受决定。</li>
- *   <li>支持整叠容器：一次右击循环处理，直到无法继续或手上用完。</li>
+ *   <li>The transfer uses the fluid capabilities ({@code Capabilities.FluidHandler.BLOCK} / {@code .ITEM}).
+ *       The container kind is not important. Buckets, water and distilled water cells, and fluid containers
+ *       of other mods all use the same path.</li>
+ *   <li>It <b>first</b> tries "container to tank" (the same drain-source-first order as Forge
+ *       {@code FluidUtil.tryFluidTransfer}). If that fails, it tries "tank to container".
+ *       Thus an empty container always drains the tank.</li>
+ *   <li><b>There is no sneak toggle</b>: the original IC2 also selects the direction automatically.
+ *       The direction depends on what the container and the tank can accept.</li>
+ *   <li>It accepts a full stack of containers: one right-click repeats the transfer until it cannot continue
+ *       or the hand is empty.</li>
  * </ul>
  *
- * <p>储罐的方向角色（只进 / 只出 / 双向）应由传入的 {@link IFluidHandler}
- * 结构性保证（见 {@link FluidTankGroup}），本类不做额外索引判断。
+ * <p>The {@link IFluidHandler} that you give must enforce the direction roles of the tanks
+ * (input only, output only, both) by its structure (see {@link FluidTankGroup}).
+ * This class does no additional index checks.
  */
 public final class FluidContainerInteraction {
 
     private FluidContainerInteraction() { }
 
     /**
-     * 让玩家手上的流体容器与储罐做一次双向传输。
+     * Does one two-way transfer between the fluid container in the player's hand and the tank.
+     * Call it on the server side.
      *
-     * @param player      玩家（服务端）
-     * @param hand        持容器的手
-     * @param tankHandler 机器暴露的储罐处理器，可为 null
-     * @return 是否真的发生了流体转移
+     * @param player      the player (server side)
+     * @param hand        the hand that holds the container
+     * @param tankHandler the tank handler that the machine exposes; can be null (then the method returns false)
+     * @return true if fluid was really transferred
      */
     public static boolean interact(Player player, InteractionHand hand, @Nullable IFluidHandler tankHandler) {
         if (tankHandler == null) return false;
@@ -70,7 +76,7 @@ public final class FluidContainerInteraction {
         return changed;
     }
 
-    /** 容器 → 储罐。按储罐实际可接收量精确转移，避免消耗多于被接收的流体。 */
+    /** Container to tank. Transfers exactly the amount that the tank can accept, so the container does not lose more fluid than the tank receives. */
     private static boolean tryFillTank(IFluidHandlerItem item, IFluidHandler tank) {
         FluidStack available = item.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
         if (available.isEmpty()) return false;
@@ -84,7 +90,7 @@ public final class FluidContainerInteraction {
         return tank.fill(drained, IFluidHandler.FluidAction.EXECUTE) == drained.getAmount();
     }
 
-    /** 储罐 → 容器。按容器实际可容纳量精确转移，避免抽走多于被接收的流体。 */
+    /** Tank to container. Transfers exactly the amount that the container can hold, so the tank does not lose more fluid than the container receives. */
     private static boolean tryDrainFromTank(IFluidHandlerItem item, IFluidHandler tank) {
         FluidStack available = tank.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
         if (available.isEmpty()) return false;

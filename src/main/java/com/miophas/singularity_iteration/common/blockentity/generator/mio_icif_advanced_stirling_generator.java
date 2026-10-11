@@ -117,7 +117,7 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
         for (Direction direction : Direction.values()) {
             if (needed <= 0 || perTick <= 0) return;
             BlockPos neighborPos = worldPosition.relative(direction);
-            if (!level.hasChunkAt(neighborPos)) continue;
+            if (!level.isLoaded(neighborPos)) continue;
 
             IMioIcifCapabilities.IHeatStorage adjacentHeat = level.getCapability(
                 IMioIcifCapabilities.HEAT_STORAGE_BLOCK, neighborPos, direction.getOpposite());

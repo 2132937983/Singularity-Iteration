@@ -12,13 +12,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
- * 夜视?(Nightvision Goggles)
- * 参考IC2原版夜视镜实�?
- * - 最大电力? 200,000 EU (Tier 1)
- * - 充电速率: 200 EU/t
- * - 有电时自动提供夜视效果（类似纳米头盔�?
- * - 夜视时每tick消耗? EU
- * - 电量耗尽时移除夜视效果?
+ * Nightvision Goggles.
+ * Based on the original IC2 nightvision goggles.
+ * - Maximum energy: 200,000 EU (Tier 1).
+ * - Charge rate: 200 EU/t.
+ * - With power, the goggles give night vision automatically (like the nano helmet).
+ * - Night vision uses 1 EU each tick.
+ * - When the energy is empty, the goggles remove the night vision effect.
  */
 @SuppressWarnings("null")
 public class mio_icif_nightvision_goggles extends mio_icif_armor_elc implements INightVisionItem {
@@ -29,7 +29,7 @@ public class mio_icif_nightvision_goggles extends mio_icif_armor_elc implements 
     public static final int ENERGY_PER_TICK = 1;
     public static final int ARMOR_TIER = 1;
 
-    // 夜视效果持续时间（tick），20秒避免闪�?
+    // Night vision effect duration in ticks (20 seconds). The long duration prevents screen flicker.
     public static final int EFFECT_DURATION = 400;
 
     public mio_icif_nightvision_goggles(Holder<ArmorMaterial> material, Properties properties) {
@@ -44,7 +44,7 @@ public class mio_icif_nightvision_goggles extends mio_icif_armor_elc implements 
             return;
         }
 
-        // 只在头盔槽位穿戴时生�?
+        // Apply the effect only when the player wears the goggles in the helmet slot.
         ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
         if (helmet != stack || isEmpty(stack)) {
             // IC2原版行为：取下头盔时，不移除夜视效果，让效果自然过期

@@ -17,52 +17,52 @@ import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.common.ItemAbility;
 
 /**
- * 铁钻�?
- * 继承电力工具基础类，使用电力驱动
- * 具有铁镐的一切性质，不会因耐久度为0而损坏?
- * 有电时破坏速度与铁镐相当，没电时速度变得跟手挖一样快
+ * Iron drill.
+ * Extends the electric tool base class and runs on electric power.
+ * It has all properties of an iron pickaxe. It does not break when its durability reaches 0.
+ * With power, it mines as fast as an iron pickaxe. Without power, it mines at hand speed.
  */
 @SuppressWarnings("null")
 public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningDrill {
 
-    // 铁钻头默认最大能量?(IC2原版: 30000 EU)
+    // Default maximum energy of the iron drill (IC2 original: 30000 EU).
     public static final int IRON_DRILLER_MAX_ENERGY = 30000;
 
-    // 铁钻头传输限制?(IC2原版: 100 EU/t)
+    // Energy transfer limit of the iron drill (IC2 original: 100 EU/t).
     public static final int IRON_DRILLER_TRANSFER_LIMIT = 100;
 
-    // 铁钻头每次使用消耗的能量 (IC2原版: 50 EU)
+    // Energy that the iron drill uses for each operation (IC2 original: 50 EU).
     public static final int IRON_DRILLER_ENERGY_PER_USE = 50;
 
-    // 铁钻头的攻击伤害 (IC2原版: 8.0)
+    // Attack damage of the iron drill (IC2 original: 8.0).
     public static final float IRON_DRILLER_ATTACK_DAMAGE = 8.0F;
 
-    // 铁钻头的挖掘效率 (IC2原版: 8.0)
+    // Mining efficiency of the iron drill (IC2 original: 8.0).
     public static final float IRON_DRILLER_EFFICIENCY = 8.0F;
 
-    // 铁镐的挖掘等�?
+    // Mining tier of an iron pickaxe.
     private static final Tier IRON_TIER = Tiers.IRON;
 
     /**
-     * 默认构造函数（空电状态）
-     * @param properties 物品属性?
+     * Default constructor. The tool starts with no energy.
+     * @param properties the item properties
      */
     public mio_icif_iron_driller(Properties properties) {
         super(properties, IRON_DRILLER_MAX_ENERGY, IRON_DRILLER_MAX_ENERGY, "iron_driller", IRON_DRILLER_TRANSFER_LIMIT, IRON_DRILLER_ENERGY_PER_USE, 1);
     }
 
     /**
-     * 带初始能量的构造函数?
-     * @param properties 物品属性?
-     * @param initialEnergy 初始能量
+     * Constructor with an initial energy value.
+     * @param properties the item properties
+     * @param initialEnergy the initial energy
      */
     public mio_icif_iron_driller(Properties properties, int initialEnergy) {
         super(properties, IRON_DRILLER_MAX_ENERGY, IRON_DRILLER_MAX_ENERGY - initialEnergy, "iron_driller", IRON_DRILLER_TRANSFER_LIMIT, IRON_DRILLER_ENERGY_PER_USE, 1);
     }
 
     /**
-     * 获取攻击伤害加成
-     * 铁钻头提取?点伤�?(IC2原版)
+     * Returns the attack damage bonus.
+     * The iron drill deals 8 extra damage (as in the original IC2).
      */
     @Override
     public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
@@ -70,25 +70,25 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
     }
 
     /**
-     * 检查是否可以挖掘指定方法?
-     * 铁钻头可以挖掘铁镐能挖的所有方法?
+     * Checks whether the tool can mine the specified block.
+     * The iron drill can mine all blocks that an iron pickaxe can mine.
      */
     @Override
     public boolean canAttackBlock(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player) {
-        // 检查是否有足够能量
+        // Check that the tool has sufficient energy.
         ItemStack stack = player.getMainHandItem();
         if (!hasEnoughEnergy(stack)) {
-            // 没电时只能挖掘手可以挖的方块
+            // Without energy, the tool can mine only the blocks that a hand can mine.
             return state.getDestroySpeed(level, pos) > 0 && !state.requiresCorrectToolForDrops();
         }
-        // 有电时可以挖掘铁镐能挖的方块
+        // With energy, the tool can mine the blocks that an iron pickaxe can mine.
         return true;
     }
 
     /**
-     * 检查是否可以执行特定动作（镐子+铲子动作�?
-     * 这是解决挖掘进度重置问题的关键方法?
-     * NeoForge在挖掘过程中会通过此方法验证工具能量?
+     * Checks whether the tool can do a given action (pickaxe and shovel actions).
+     * This method prevents the mining progress reset.
+     * NeoForge calls this method during mining to check the tool energy.
      */
     @Override
     public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
@@ -104,9 +104,9 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
             return true;
         }
 
-        // 保留斧头动作支持，防止挖掘木头时进度重置
-        // 但getDestroySpeed中不会给予快速挖掘速度
-        // isCorrectToolForDrops确保木头不会掉落
+        // Keep support for axe actions. This prevents a reset of the mining progress on wood.
+        // getDestroySpeed does not give a high mining speed for wood.
+        // isCorrectToolForDrops makes sure that wood does not drop.
         if (ItemAbilities.DEFAULT_AXE_ACTIONS.contains(itemAbility)) {
             return true;
         }
@@ -115,9 +115,9 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
     }
 
     /**
-     * 获取挖掘速度
-     * 有电时与铁镐相当，没电时与手挖一�?
-     * 钻头只能快速挖掘镐子和铲子类方法?
+     * Returns the mining speed.
+     * With power, the speed equals an iron pickaxe. Without power, the speed equals mining by hand.
+     * The drill mines only pickaxe blocks and shovel blocks fast.
      */
     @Override
     public float getDestroySpeed(ItemStack stack, BlockState state) {
@@ -137,12 +137,12 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
     }
 
     /**
-     * 挖掘方块时消耗能量?
-     * 对齐IC2原版：只在方块实际被破坏后消耗能量，且只在硬度不为0时消耗
+     * Uses energy when the tool mines a block.
+     * This matches the original IC2. The tool uses energy only after the block breaks. It uses energy only when the block hardness is not 0.
      */
     @Override
     public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity miningEntity) {
-        // 只在服务端、方块硬度不为0时消耗能量
+        // Use energy only on the server, and only when the block hardness is not 0.
         if (!level.isClientSide && state.getDestroySpeed(level, pos) != 0.0F) {
             consumeEnergy(stack);
         }
@@ -150,7 +150,7 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
     }
 
     /**
-     * 检查是否正确工�?
+     * Checks whether the tool is the correct tool to get drops from the block.
      */
     @Override
     public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
@@ -173,25 +173,25 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
     }
 
     /**
-     * 重写：防止钻头损坏?
+     * Override: prevents damage to the drill.
      */
     @Override
     public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, T entity, java.util.function.Consumer<net.minecraft.world.item.Item> onBroken) {
-        // 电力钻头不通过damageItem损坏，而是通过消耗能量?
+        // The electric drill does not take damage through damageItem. It uses energy instead.
         return 0;
     }
 
     /**
-     * 重写：钻头永远不会消耗?
+     * Override: the drill does not wear out.
      */
     @Override
     public boolean isDamaged(ItemStack stack) {
-        // 当能量未满时返回true，显示耐久度信息?
+        // Return true when the energy is not full. This shows the durability bar.
         return getEnergy(stack) < getMaxEnergy();
     }
 
     /**
-     * 是否可以附魔
+     * Checks whether the tool can be enchanted.
      */
     @Override
     public boolean isEnchantable(ItemStack stack) {
@@ -199,7 +199,7 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
     }
 
     /**
-     * 获取附魔能力值（与铁镐相同）
+     * Gets the enchantment value (the same as an iron pickaxe).
      */
     @Override
     public int getEnchantmentValue() {
@@ -211,7 +211,7 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
         return UseAnim.BLOCK;
     }
 
-    // ==================== IMiningDrill 接口实现 ====================
+    // ==================== IMiningDrill interface implementation ====================
 
     @Override
     public long energyUse(ItemStack stack, BlockGetter world, BlockPos pos, BlockState state) {
@@ -233,6 +233,12 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
         if (!(world instanceof Level level) || level.isClientSide) return false;
         if (!hasEnoughEnergy(stack)) return false;
         if (state.getDestroySpeed(level, pos) < 0.0F) return false;
+        // IMiningDrill is public API: an addon call must respect protection like the diamond driller
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            var actor = net.neoforged.neoforge.common.util.FakePlayerFactory.getMinecraft(server);
+            if (!level.mayInteract(actor, pos) || net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
+                    new net.neoforged.neoforge.event.level.BlockEvent.BreakEvent(level, pos, state, actor)).isCanceled()) return false;
+        }
         boolean removed = level.destroyBlock(pos, true);
         if (removed) consumeEnergy(stack);
         return removed;

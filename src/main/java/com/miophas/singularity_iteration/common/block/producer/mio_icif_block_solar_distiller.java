@@ -25,7 +25,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 太阳能蒸馏机方方块? */
+ * Solar distiller block.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_solar_distiller extends mio_icif_entity_block {
 

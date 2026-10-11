@@ -429,5 +429,9 @@
   "hud.mio_icif.quantum_sword.mode_normal": "§7通常",
   "hud.mio_icif.jetpack.display": "ジェットパック：%s | エネルギー：%s / %s EU",
   "hud.mio_icif.jetpack.mode_jetpack": "ジェット",
-  "hud.mio_icif.jetpack.mode_hover": "ホバー"
+  "hud.mio_icif.jetpack.mode_hover": "ホバー",
+  "message.mio_icif.transformer.mode_switched": "変圧器：%s（スニーク＋素手右クリックで切り替え）",
+  "gui.mio_icif.transformer.mode.step_up": "昇圧モード",
+  "gui.mio_icif.transformer.mode.step_down": "降圧モード",
+  "gui.mio_icif.transformer.mode.redstone_control": "レッドストーン制御"
 }

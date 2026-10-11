@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 public class LatheMenu extends mio_icif_machine_menu {
 
     public static final int INPUT_SLOT = 0;  // 车刀
-    public static final int TOOL_SLOT = 1;    // 加工�?
+    public static final int TOOL_SLOT = 1;    // Workpiece
     public static final int OUTPUT_SLOT = 2;
     public static final int SLOT_COUNT = 3;
 
@@ -37,7 +37,7 @@ public class LatheMenu extends mio_icif_machine_menu {
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
 
-        // 注册自定义快速移动规则?
+        // Register the custom quick-move rules.
         addCustomMoveRule(
             stack -> stack.getItem() instanceof ILatheItem.ILatheTool,
             INPUT_SLOT, INPUT_SLOT + 1);
@@ -48,7 +48,7 @@ public class LatheMenu extends mio_icif_machine_menu {
 
     @Override
     protected void addMachineSlots() {
-        // 车刀�?(0) - 位置 (10, 30)
+        // Lathe tool slot (0) at position (10, 30)
         this.addSlot(new SlotItemHandler(itemHandler, 0, 10, 30) {
             @Override
             public boolean mayPlace(ItemStack stack) {
@@ -64,7 +64,7 @@ public class LatheMenu extends mio_icif_machine_menu {
             }
         });
 
-        // 输出�?(2) - 位置 (10, 57)
+        // Output slot (2) at position (10, 57)
         this.addSlot(new SlotItemHandler(itemHandler, 2, 10, 57) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
@@ -117,7 +117,7 @@ public class LatheMenu extends mio_icif_machine_menu {
     }
 
     /**
-     * 获取 KU 缓冲像素（供 GUI 渲染�?
+     * Returns the KU buffer bar size in pixels, for the GUI.
      */
     public int getKUBufferPixels() {
         var be = getBlockEntity();

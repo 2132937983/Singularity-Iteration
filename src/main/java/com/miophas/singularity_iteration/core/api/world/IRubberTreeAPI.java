@@ -12,168 +12,168 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 橡胶树体系 API。
+ * Rubber tree API.
  *
- * <p>向附属模组暴露 mio_icif 的橡胶树（树脂采集）系统的判定与采集逻辑，使附属模组可以：
+ * <p>This API gives addon mods access to the checks and harvest logic of the mio_icif rubber tree (resin harvest) system. Addon mods can use it to:
  * <ul>
- *   <li>识别本模组的树液采集器与橡胶木；</li>
- *   <li>在手写方块/物品交互中复用统一的采集逻辑，而不必依赖具体方块或物品类；</li>
- *   <li>让自定义原木通过实现 {@link IRubberWood}、自定义采集器通过实现
- *       {@link ITreeTapItem} 加入该系统。</li>
+ *   <li>identify the tree taps and rubber wood of this mod;</li>
+ *   <li>use the same harvest logic in their own block or item interactions, without a dependency on specific block or item classes;</li>
+ *   <li>add custom logs to the system through {@link IRubberWood}, and add custom taps through
+ *       {@link ITreeTapItem}.</li>
  * </ul>
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * IRubberTreeAPI rubber = MioIcifAPI.instance().getRubberTreeAPI();
  *
- * // 判断手中物品是否为树液采集器
+ * // Check whether the held item is a tree tap
  * if (rubber.isTreeTap(stack) && rubber.canHarvest(state)) {
  *     RubberHarvestResult result = rubber.tryHarvest(level, pos, state, player, hand);
  * }
  * }</pre>
  *
- * <p>除 {@link #tryHarvest}、{@link #tryRegrowResin}、{@link #dropResin} 外的方法均为纯查询，
- * 不会修改世界。修改世界的方法仅在服务端生效。
+ * <p>All methods except {@link #tryHarvest}, {@link #tryRegrowResin} and {@link #dropResin} are pure queries.
+ * They do not change the world. The methods that change the world have an effect only on the server side.
  */
 public interface IRubberTreeAPI {
 
-    // ========== 树脂物品 ==========
+    // ========== Resin item ==========
 
     /**
-     * 获取树脂（生橡胶）物品。
+     * Returns the resin (raw rubber) item.
      *
-     * @return 树脂物品
+     * @return the resin item
      */
     Item getResinItem();
 
     /**
-     * 创建一个包含指定数量树脂的物品堆。
+     * Makes an item stack with the given number of resin items.
      *
-     * @param count 数量
-     * @return 树脂物品堆
+     * @param count the stack size
+     * @return the resin item stack
      */
     ItemStack createResinStack(int count);
 
-    // ========== 树液采集器判定 ==========
+    // ========== Tree tap checks ==========
 
     /**
-     * 判断物品堆是否为树液采集器（实现 {@link ITreeTapItem}）。
+     * Returns true if the item stack is a tree tap (it implements {@link ITreeTapItem}).
      *
-     * @param stack 物品堆
-     * @return 是树液采集器返回 true
+     * @param stack the item stack
+     * @return true if the stack is a tree tap
      */
     boolean isTreeTap(ItemStack stack);
 
     /**
-     * 判断物品堆是否为电动树液采集器（实现 {@link ITreeTapItem} 且为电动工具）。
+     * Returns true if the item stack is an electric tree tap (it implements {@link ITreeTapItem} and is an electric tool).
      *
-     * @param stack 物品堆
-     * @return 是电动树液采集器返回 true
+     * @param stack the item stack
+     * @return true if the stack is an electric tree tap
      */
     boolean isElectricTreeTap(ItemStack stack);
 
-    // ========== 橡胶木判定 ==========
+    // ========== Rubber wood checks ==========
 
     /**
-     * 判断方块状态是否为橡胶木（实现 {@link IRubberWood}）。
+     * Returns true if the block state is rubber wood (it implements {@link IRubberWood}).
      *
-     * @param state 方块状态
-     * @return 是橡胶木返回 true
+     * @param state the block state
+     * @return true if the block is rubber wood
      */
     boolean isRubberWood(BlockState state);
 
     /**
-     * 判断橡胶木当前是否含有可采集的树脂。
+     * Returns true if the rubber wood now contains resin that a player can harvest.
      *
-     * @param state 方块状态
-     * @return 含树脂返回 true
+     * @param state the block state
+     * @return true if the block contains resin
      */
     boolean hasResin(BlockState state);
 
     /**
-     * 判断橡胶木是否具备采集条件（例如已形成采集口）。
+     * Returns true if the rubber wood meets the harvest conditions (for example, it has a tap hole).
      *
-     * @param state 方块状态
-     * @return 具备采集条件返回 true
+     * @param state the block state
+     * @return true if the block meets the harvest conditions
      */
     boolean isTappable(BlockState state);
 
     /**
-     * 判断橡胶木当前是否可被采集（具备采集条件且含有树脂）。
+     * Returns true if a player can harvest the rubber wood now (it meets the harvest conditions and contains resin).
      *
-     * @param state 方块状态
-     * @return 可采集返回 true
+     * @param state the block state
+     * @return true if the block can be harvested
      */
     boolean canHarvest(BlockState state);
 
     /**
-     * 判断指定工具是否可用于采集该橡胶木。
+     * Returns true if the given tool can harvest this rubber wood.
      *
-     * <p>等价于：工具是树液采集器、方块可采集，且（电动工具时）能量充足。
+     * <p>This is true when the tool is a tree tap, the block can be harvested, and (for an electric tool) the tool has sufficient energy.
      *
-     * @param state 方块状态
-     * @param tool  工具物品堆
-     * @return 可用于采集返回 true
+     * @param state the block state
+     * @param tool  the tool item stack
+     * @return true if the tool can harvest the block
      */
     boolean canUseTapOn(BlockState state, ItemStack tool);
 
-    // ========== 采集与再生 ==========
+    // ========== Harvest and regrowth ==========
 
     /**
-     * 尝试从橡胶木中采集树脂。
+     * Tries to harvest resin from the rubber wood.
      *
-     * <p>仅在服务端且条件满足时执行：消耗采集器耐久（或电能）、掉落树脂，
-     * 并将方块置为不含树脂状态。
+     * <p>This method runs only on the server side and only when the conditions are met. It uses tap durability (or electric energy),
+     * drops resin, and sets the block to the state without resin.
      *
-     * @param level  世界
-     * @param pos    方块位置
-     * @param state  方块状态
-     * @param player 玩家
-     * @param hand   交互手
-     * @return 采集结果；未执行采集时返回 {@link RubberHarvestResult#NONE}
+     * @param level  the world
+     * @param pos    the block position
+     * @param state  the block state
+     * @param player the player
+     * @param hand   the hand that interacts
+     * @return the harvest result; {@link RubberHarvestResult#NONE} if no harvest occurred
      */
     RubberHarvestResult tryHarvest(Level level, BlockPos pos, BlockState state, Player player, InteractionHand hand);
 
     /**
-     * 计算一次采集可获得的树脂数量（不修改世界）。
+     * Calculates the number of resin items from one harvest. It does not change the world.
      *
-     * <p>数量区间由采集器的 {@link ITreeTapItem} 参数决定。
+     * <p>The {@link ITreeTapItem} parameters of the tap set the range of the count.
      *
-     * @param tool   采集器物品堆
-     * @param random 随机源
-     * @return 树脂数量，非采集器返回 0
+     * @param tool   the tap item stack
+     * @param random the random source
+     * @return the resin count, or 0 if the tool is not a tree tap
      */
     int rollResinCount(ItemStack tool, RandomSource random);
 
     /**
-     * 在方块与玩家之间掉落指定数量的树脂。
+     * Drops the given number of resin items between the block and the player.
      *
-     * <p>掉落位置沿用本模组的默认规则（方块中心与玩家连线的中点上方一格）。
+     * <p>The drop position follows the default rule of this mod (one block above the midpoint of the line from the block center to the player).
      *
-     * @param level  世界
-     * @param pos    方块位置
-     * @param player 玩家
-     * @param count  数量
+     * @param level  the world
+     * @param pos    the block position
+     * @param player the player
+     * @param count  the number of items
      */
     void dropResin(Level level, BlockPos pos, Player player, int count);
 
     /**
-     * 尝试让橡胶木自然再生树脂（对应方块的随机刻逻辑）。
+     * Tries to let the rubber wood regrow resin naturally (the random tick logic of the block).
      *
-     * <p>仅在服务端生效，且仅在方块当前满足再生条件时可能成功。
+     * <p>This method has an effect only on the server side. It can succeed only when the block meets the regrowth conditions now.
      *
-     * @param level  世界
-     * @param pos    方块位置
-     * @param state  方块状态
-     * @param random 随机源
-     * @return 本次是否再生了树脂
+     * @param level  the world
+     * @param pos    the block position
+     * @param state  the block state
+     * @param random the random source
+     * @return true if resin regrew during this call
      */
     boolean tryRegrowResin(Level level, BlockPos pos, BlockState state, RandomSource random);
 
     /**
-     * 获取橡胶木每次随机刻再生树脂的概率。
+     * Returns the chance that rubber wood regrows resin on each random tick.
      *
-     * @return 再生概率 (0.0 ~ 1.0)
+     * @return the regrowth chance (0.0 to 1.0)
      */
     float getResinRegrowChance();
 }

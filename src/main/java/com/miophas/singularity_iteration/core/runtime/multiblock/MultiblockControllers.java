@@ -10,17 +10,17 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * 控制方块到多方块验证器的注册表。
+ * Registry that maps controller blocks to multiblock validators.
  *
- * <p>common 在启动装配时注册内置结构（GESU、大型制造机、流体反应堆等），
- * 附属用同一入口注册自己的控制方块。结构发现不再对具体机器类做
- * {@code instanceof} 判断。
+ * <p>The common module registers the built-in structures during startup (GESU, large fabricator, fluid reactor and others).
+ * Addons use the same entry point to register their own controller blocks.
+ * Structure discovery does not use {@code instanceof} checks on specific machine classes.
  */
 public final class MultiblockControllers {
 
     /**
-     * @param validatorFactory 每次尝试成新建一个验证器实例
-     * @param name 日志与事件使用的结构名
+     * @param validatorFactory makes a new validator instance for each formation attempt; must not be null
+     * @param name the structure name for logs and events; must not be null or blank
      */
     public record ControllerDescriptor(Supplier<? extends IMultiblockValidator> validatorFactory, String name) {
         public ControllerDescriptor {

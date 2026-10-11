@@ -69,7 +69,6 @@ public class mio_icif_terra_elc extends AbstractProcessingMachineBlockEntity imp
     private int failedAttempts = 0;    // 连续失败次数
     private int processedBlocks = 0;       // 已处理的方块总数
     private int convertedBlocks;       // 本次转换的方块数
-    private transient boolean hasLoggedFirstTick; // 防止重复记录第一次tick日志，仅用于调试
     // 待处理的方块更改队列
     private final List<BlockChange> pendingChanges = new ArrayList<>();
     private int tickCounter = 0;
@@ -753,13 +752,6 @@ public class mio_icif_terra_elc extends AbstractProcessingMachineBlockEntity imp
             return;
         }
 
-        // 防止重复记录第一次tick日志，仅用于调试加载问题
-        if (!blockEntity.hasLoggedFirstTick) {
-            blockEntity.hasLoggedFirstTick = true;
-            LOGGER.info("[TerraELC] First tick at {} - Current lastPos: ({},{}), failed: {}", 
-                pos, blockEntity.lastX, blockEntity.lastZ, blockEntity.failedAttempts);
-        }
-
         // 调用父类tick方法处理升级和充放电等逻辑
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
@@ -845,7 +837,7 @@ public class mio_icif_terra_elc extends AbstractProcessingMachineBlockEntity imp
         }
         // 注意：pendingChanges不会保存在NBT中，加载后会重新开始
         // 这是为了避免加载时的卡顿问题
-        LOGGER.info("[TerraELC] Loaded from NBT - lastPos: ({},{}), failed: {} (was: {}, {})", 
+        LOGGER.debug("[TerraELC] Loaded from NBT - lastPos: ({},{}), failed: {} (was: {}, {})",
             lastX, lastZ, failedAttempts, oldLastX, oldLastZ);
     }
 

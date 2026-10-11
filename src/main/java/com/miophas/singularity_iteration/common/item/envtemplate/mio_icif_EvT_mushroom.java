@@ -4,9 +4,11 @@ package com.miophas.singularity_iteration.common.item.envtemplate;
 import net.minecraft.world.item.Item;
 
 /**
- * 地形转换模板-蘑菇
- * 能够将附近变为菌丝，并会在菌丝上生长巨型蘑菇
- * 能够将附近的生物群系改造成蘑菇岛类型的（会生成哞菇??? * 消耗电量：160 EU/??? */
+ * Terrain conversion template: mushroom.
+ * It changes nearby blocks to mycelium. Huge mushrooms grow on the mycelium.
+ * It changes nearby biomes to the mushroom fields type. Mooshrooms spawn there.
+ * Energy use: 160 EU/t.
+ */
 @SuppressWarnings("null")
 public class mio_icif_EvT_mushroom extends mio_icif_EvT_default {
 

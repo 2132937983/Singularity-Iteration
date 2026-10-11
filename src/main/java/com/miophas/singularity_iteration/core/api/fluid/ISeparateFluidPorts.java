@@ -3,9 +3,9 @@ package com.miophas.singularity_iteration.core.api.fluid;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
 /**
- * 输入罐与输出罐彼此独立的机器。
+ * A machine whose input tank and output tank are separate.
  *
- * <p>继承自 {@link IFluidPorts}，因此核心自动化按端口契约而非具体机器识别它。
+ * <p>It extends {@link IFluidPorts}. Thus the core automation identifies it by the port contract, not by the specific machine.
  */
 public interface ISeparateFluidPorts extends IFluidPorts {
 

@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * 修改 ItemStack 的物品数量序列化 Codec
- * 允许网络同步时传输大???64 的堆叠数
+ * Changes the Codec that serializes the item count of an ItemStack.
+ * This lets network sync send stack sizes larger than 64.
  */
 @Mixin(ItemStack.class)
 @SuppressWarnings("null")

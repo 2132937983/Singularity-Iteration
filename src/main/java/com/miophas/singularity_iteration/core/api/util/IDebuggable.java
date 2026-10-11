@@ -1,24 +1,24 @@
 package com.miophas.singularity_iteration.core.api.util;
 
 /**
- * 可调试接口。
+ * Interface for a debuggable block.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IDebuggable}。
- * 实现此接口的方块在使用调试模式（扳手 shift+右键）时可以显示调试信息。
+ * Equivalent to {@code IDebuggable} in IC2 1.12.2.
+ * A block that implements this interface shows debug information in debug mode (wrench, shift + right-click).
  */
 public interface IDebuggable {
 
     /**
-     * 检查此方块是否可调试。
+     * Checks if this block is debuggable.
      *
-     * @return 如果可调试则返回 true
+     * @return true if the block is debuggable
      */
     boolean isDebuggable();
 
     /**
-     * 获取调试信息文本。
+     * Gets the debug information text.
      *
-     * @return 调试信息
+     * @return the debug information
      */
     String getDebugText();
 }

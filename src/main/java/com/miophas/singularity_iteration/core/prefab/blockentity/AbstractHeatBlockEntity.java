@@ -439,7 +439,7 @@ public class AbstractHeatBlockEntity extends BlockEntity implements MenuProvider
 
     @Nullable
     protected IItemHandler getAdjacentItemHandler(BlockPos pos, @Nullable Direction side) {
-        if (level == null || !level.hasChunkAt(pos) || level.getBlockEntity(pos) == null) {
+        if (level == null || !level.isLoaded(pos) || level.getBlockEntity(pos) == null) {
             return null;
         }
         return level.getCapability(Capabilities.ItemHandler.BLOCK, pos, side);
@@ -450,7 +450,7 @@ public class AbstractHeatBlockEntity extends BlockEntity implements MenuProvider
         return null;
     }
 
-    /** 对外暴露本机流体处理器，供附属注册流体能力；无流体支持时为 null。 */
+    /** Exposes the fluid handler of this machine, so that addons can register a fluid capability. Returns null if the machine has no fluid support. */
     @Nullable
     public final IFluidHandler fluidHandler(@Nullable Direction side) {
         return getFluidHandlerCapability(side);
@@ -458,7 +458,7 @@ public class AbstractHeatBlockEntity extends BlockEntity implements MenuProvider
 
     @Nullable
     protected IFluidHandler getAdjacentFluidHandler(BlockPos pos, @Nullable Direction side) {
-        if (level == null || !level.hasChunkAt(pos)) {
+        if (level == null || !level.isLoaded(pos)) {
             return null;
         }
         BlockEntity target = level.getBlockEntity(pos);
@@ -494,11 +494,11 @@ public class AbstractHeatBlockEntity extends BlockEntity implements MenuProvider
     }
 
     /**
-     * 传热模型已按原版 IC2 调整：热源机器各自只向“正面”输出热量
-     * （见各热机自己的 outputHeat / pushFront / ThermalOutput.front），
-     * 原来的“按温度差向 6 面广播”已雪藏 —— 原版 IC2 没有温度差传导，传输量与温差无关。
+     * The heat transfer model now follows the original IC2: each heat source machine outputs heat only to its "front" face
+     * (see the outputHeat / pushFront / ThermalOutput.front of each heat machine).
+     * The old "broadcast to 6 faces by temperature difference" logic is shelved. The original IC2 has no temperature-difference conduction; the transfer amount does not depend on the temperature difference.
      *
-     * 保留空实现以免影响既有调用点。
+     * This empty implementation stays so that existing call sites are not affected.
      */
     protected void distributeHeat() {
         // intentionally empty (temperature-gradient conduction shelved)

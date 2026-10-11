@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 物品分配器方块接口。
+ * Interface for an item distributor block.
  *
- * <p>用于标识物品分配器方块实体，便于 API 统一查询与分类。
+ * <p>It marks item distributor block entities, so that the API can query and sort them in one way.
  */
 public interface IItemDistributor {
 }

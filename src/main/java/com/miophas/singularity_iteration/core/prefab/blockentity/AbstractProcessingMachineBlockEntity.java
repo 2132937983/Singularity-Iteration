@@ -42,14 +42,14 @@ import java.util.EnumMap;
 import java.util.List;
 
 /**
- * 生产者机器基类
- * 所有生产用机器的基类，提供工作进度等基础功能
- * 电器类型，使用电力而非燃料
- * 实现 Container 和 WorldlyContainer 接口以支持漏斗交互
- * 使用 EU (Energy Unit) 能量系统
+ * Base class for producer machines.
+ * It is the base class of all production machines. It gives basic functions such as work progress.
+ * These are electrical machines. They use electricity, not fuel.
+ * It implements the Container and WorldlyContainer interfaces, so that hoppers can interact with it.
+ * It uses the EU (Energy Unit) energy system.
  *
- * <p>配方查找和能量操作通过 API 层进行，子类可以覆盖受保护的方法
- * 来改变行为，Addon 可以安全地扩展机器行为。
+ * <p>Recipe lookup and energy operations go through the API layer. Subclasses can override the protected methods
+ * to change the behavior. Thus addons can safely extend machine behavior.
  */
 @SuppressWarnings("null")
 public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnergyBlockEntity implements WorldlyContainer, ISlotValidator, com.miophas.singularity_iteration.core.api.machine.IProducerBlock {
@@ -94,7 +94,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
     protected boolean isWorking;
 
-    // 输入槽物品变化检测（用于重置进度）
+    // Change detection for input slot items (used to reset progress)
     protected ItemStack[] lastInputStacks;
 
     public static final int WORK_SOUND_INTERVAL = 40;
@@ -111,25 +111,25 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     // Upgrade slots change infrequently; rebuild the immutable snapshot only after a slot mutation.
     private boolean upgradeStatsDirty = true;
 
-    // ==================== API 方法层 ====================
-    // 所有配方和能量操作通过这些受保护的方法进行，子类可以覆盖以改变行为
+    // ==================== API method layer ====================
+    // All recipe and energy operations go through these protected methods. Subclasses can override them to change the behavior.
 
     /**
-     * 获取配方 API 实例
+     * Gets the recipe API instance.
      */
     protected IRecipeAPI getRecipeAPI() {
         return MioIcifAPI.instance().getRecipeAPI();
     }
 
     /**
-     * 获取物品 API 实例
+     * Gets the item API instance.
      */
     protected IItemAPI getItemAPI() {
         return MioIcifAPI.instance().getItemAPI();
     }
 
     /**
-     * 获取能量 API 访问接口（通过父类）
+     * Gets the energy API access interface (through the parent class).
      */
     @Override
     protected IEnergyTileAccess getEnergyAPI() {
@@ -137,8 +137,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 通过 API 查找配方
-     * 子类可以覆盖此方法以提供自定义配方查找逻辑
+     * Finds a recipe through the API.
+     * Subclasses can override this method to supply custom recipe lookup logic.
      */
     @SuppressWarnings("deprecation")
     protected <T extends net.minecraft.world.item.crafting.Recipe<?>> java.util.Optional<net.minecraft.world.item.crafting.RecipeHolder<T>> apiFindRecipe(
@@ -147,100 +147,100 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 通过 API 获取配方输出
+     * Gets the recipe output through the API.
      */
     protected ItemStack apiGetRecipeOutput(net.minecraft.world.item.crafting.RecipeHolder<?> recipe) {
         return getRecipeAPI().getRecipeOutput(recipe);
     }
 
     /**
-     * 通过 API 获取配方处理时间
+     * Gets the recipe processing time through the API.
      */
     protected int apiGetRecipeProcessTime(net.minecraft.world.item.crafting.RecipeHolder<?> recipe) {
         return getRecipeAPI().getRecipeProcessTime(recipe);
     }
 
     /**
-     * 通过 API 获取配方能耗
+     * Gets the recipe energy cost through the API.
      */
     protected long apiGetRecipeEnergyCost(net.minecraft.world.item.crafting.RecipeHolder<?> recipe) {
         return getRecipeAPI().getRecipeEnergyCost(recipe);
     }
 
     /**
-     * 通过 API 检查物品是否为电池
-     * 子类可以覆盖此方法以支持自定义电池类型
+     * Checks through the API if the item is a battery.
+     * Subclasses can override this method to support custom battery types.
      */
     protected boolean apiIsBattery(ItemStack stack) {
         return getItemAPI().isBattery(stack);
     }
 
     /**
-     * 通过 API 为电池充电
+     * Charges a battery through the API.
      */
     protected long apiChargeBattery(ItemStack stack, long amount, boolean simulate) {
         return getItemAPI().chargeBattery(stack, amount, simulate);
     }
 
     /**
-     * 通过 API 从电池放电
+     * Discharges a battery through the API.
      */
     protected long apiDischargeBattery(ItemStack stack, long amount, boolean simulate) {
         return getItemAPI().dischargeBattery(stack, amount, simulate);
     }
 
     /**
-     * 通过 API 获取电池容量
+     * Gets the battery capacity through the API.
      */
     protected long apiGetBatteryCapacity(ItemStack stack) {
         return getItemAPI().getBatteryCapacity(stack);
     }
 
     /**
-     * 通过 API 获取电池当前能量
+     * Gets the current battery energy through the API.
      */
     protected long apiGetBatteryStored(ItemStack stack) {
         return getItemAPI().getBatteryStored(stack);
     }
 
     /**
-     * 通过 API 获取电池充电速率
+     * Gets the battery charge rate through the API.
      */
     protected long apiGetChargeRate(ItemStack stack) {
         return getItemAPI().getChargeRate(stack);
     }
 
     /**
-     * 通过 API 为电力护甲充电
+     * Charges electric armor through the API.
      */
     protected long apiChargeElectricArmor(ItemStack stack, long amount, boolean simulate) {
         return getItemAPI().chargeElectricArmor(stack, amount, simulate);
     }
 
     /**
-     * 通过 API 从电力护甲放电
+     * Discharges electric armor through the API.
      */
     protected long apiDischargeElectricArmor(ItemStack stack, long amount, boolean simulate) {
         return getItemAPI().dischargeElectricArmor(stack, amount, simulate);
     }
 
     /**
-     * 通过 API 检查是否为电力护甲
+     * Checks through the API if the item is electric armor.
      */
     protected boolean apiIsElectricArmor(ItemStack stack) {
         return getItemAPI().isElectricArmor(stack);
     }
 
     /**
-     * 通过 API 检查是否为电动工具
+     * Checks through the API if the item is an electric tool.
      */
     protected boolean apiIsElectricTool(ItemStack stack) {
         return getItemAPI().isElectricTool(stack);
     }
 
     /**
-     * 通过 API 消耗能量（内部做功）
-     * 使用 apiUseEnergy 绕过 maxExtract 限制
+     * Uses energy through the API (internal work).
+     * It uses apiUseEnergy, which ignores the maxExtract limit.
      */
     protected boolean apiConsumeEnergy(long amount) {
         long consumed = apiUseEnergy(amount, false);
@@ -248,8 +248,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 通过 API 获取当前存储能量
-     * 直接访问 energyStorage，避免通过 getEnergyAPI() 造成无限递归
+     * Gets the current stored energy through the API.
+     * It accesses energyStorage directly, because a call through getEnergyAPI() causes infinite recursion.
      */
     @Override
     protected long apiGetStoredEnergy() {
@@ -257,8 +257,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 通过 API 接收能量
-     * 直接访问 energyStorage，避免通过 getEnergyAPI() 造成无限递归
+     * Receives energy through the API.
+     * It accesses energyStorage directly, because a call through getEnergyAPI() causes infinite recursion.
      */
     @Override
     protected long apiReceiveEnergy(long amount, boolean simulate) {
@@ -266,10 +266,10 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 简化构造函数 - 供 NeoForge BlockEntityType.Builder.of() 使用
+     * Simplified constructor, for NeoForge BlockEntityType.Builder.of().
      *
-     * <p>此构造函数使用默认配置，适用于 GenericMachineBlockEntity 等需要通过
-     * BlockEntityType 创建的机器。实际配置应在 onLoad() 时从 MachineRegistry 获取。
+     * <p>This constructor uses the default configuration. Use it for machines such as GenericMachineBlockEntity that
+     * are created through a BlockEntityType. The real configuration comes from MachineRegistry in onLoad().
      */
     public AbstractProcessingMachineBlockEntity(BlockPos pos, BlockState state, BlockEntityType<?> type) {
         this(pos, state, type, 10000, 100, 100, 200,
@@ -348,7 +348,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
     protected int getSlotLimit(int slot) {
         SlotType type = slotLayout.getInternalSlotType(slot);
-        // 扫描槽、记忆槽、工具槽等限制只能放1个物品
+        // Scanner slots, memory slots, tool slots and similar slots hold only 1 item
         if (type == SlotType.SCANNER || type == SlotType.MEMORY || type == SlotType.TOOL) {
             return 1;
         }
@@ -356,16 +356,16 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取指定方向可访问的槽位
-     * 子类必须实现此方法以定义各方向可访问的槽位
-     * @param side 方向
-     * @return 可访问的槽位数组
+     * Gets the slots that are accessible from the given side.
+     * Subclasses must implement this method to define the accessible slots for each side.
+     * @param side the side
+     * @return the array of accessible slots
      */
     protected abstract int[] getSlotsForDirection(Direction side);
 
     /**
-     * 检查指定槽位是否可以从指定方向插入物品
-     * 基于 SlotLayout 自动判断槽位类型
+     * Checks if an item can be inserted into the given slot from the given side.
+     * It finds the slot type automatically from the SlotLayout.
      */
     protected boolean canInsertItem(int slot, ItemStack stack, @Nullable Direction side) {
         SlotType type = slotLayout.getInternalSlotType(slot);
@@ -388,7 +388,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         return switch (type) {
             case INPUT -> !isBattery(stack);
             case BATTERY -> isBattery(stack);
-            case UPGRADE -> false; // 升级槽不允许自动化插入（与IC2原版一致）
+            case UPGRADE -> false; // Automation cannot insert into upgrade slots (same as original IC2)
             case OUTPUT -> false;
             case FILTER -> isItemValidForSlot(slot, stack);
             default -> isItemValidForSlot(slot, stack);
@@ -399,7 +399,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         return slotLayout.isType(slot, SlotType.UPGRADE);
     }
 
-    /** 保留原常量供兼容；实际策略见 {@link EmergencyChargePolicy}。 */
+    /** This old constant stays for compatibility. For the real policy, see {@link EmergencyChargePolicy}. */
     public static final long REDSTONE_ENERGY_VALUE = EmergencyChargePolicy.DEFAULT_ENERGY_VALUE;
 
     protected boolean isBattery(ItemStack stack) {
@@ -418,40 +418,40 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 每tick更新逻辑
+     * Update logic for each tick.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, AbstractProcessingMachineBlockEntity blockEntity) {
         if (level.isClientSide()) {
             return;
         }
 
-        // 刷新升级插件统计信息并应用相关效果?
+        // Refresh the upgrade statistics and apply their effects.
         blockEntity.recalculateUpgradeStats();
 
-        // 调用父类的能量传输逻辑
+        // Run the energy transfer logic of the parent class
         AbstractEnergyBlockEntity.tick(level, pos, state, blockEntity);
 
-        // 检测输入槽物品变化，如果变化则重置进度
+        // Detect changes of the input slot items. If they changed, reset the progress
         blockEntity.checkInputChanged();
 
-        // 子类每 tick 钩子（例如 GenericMachineBlockEntity 的 tick 回调）
+        // Per-tick hook for subclasses (for example the tick callback of GenericMachineBlockEntity)
         blockEntity.onTick();
 
-        // 红石信号反转升级：控制机器是否被红石信号阻止
+        // Redstone inversion upgrade: it controls whether the redstone signal stops the machine
         if (!blockEntity.canWorkRedstone()) {
             blockEntity.stopWork();
         } else {
             blockEntity.tickProduction();
         }
 
-        // 处理电池槽放电（仅从电池获取能量，不给电池充电）
+        // Discharge the battery slot (only take energy from the battery, do not charge the battery)
         blockEntity.handleBatterySlot();
 
-        // 处理自动化升级（弹出/抽取等）
-        // 注意：即使机器因红石信号停止工作，自动化升级仍应继续运行
+        // Run automation upgrades (eject, import and similar)
+        // Note: automation upgrades must continue to run also when the redstone signal stops the machine
         blockEntity.handleAutomationUpgrades();
 
-        // 工作音效：机器工作时周期性播放
+        // Work sound: play it periodically while the machine works
         if (blockEntity.isWorking) {
             blockEntity.workSoundTick++;
             if (blockEntity.workSoundTick >= WORK_SOUND_INTERVAL) {
@@ -483,8 +483,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 刷新升级插件统计信息
-     * 超频升级：每 tick 处理更多进度，消耗更多EU，电压等级不变
+     * Updates the upgrade statistics.
+     * Overclocker upgrade: more progress per tick and more EU use. The voltage tier does not change.
      */
     protected void recalculateUpgradeStats() {
         if (!upgradeStatsDirty) return;
@@ -510,8 +510,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     protected void updateProcessingParameters() {
-        // 超频升级改为1tick 增加更多进度，而不是减少最大进度
-        // 因此这里只需要把旧存档可能被改过的maxProgress 恢复成基础值
+        // The overclocker upgrade now adds more progress per tick. It does not decrease the maximum progress.
+        // Thus this code only resets a maxProgress that an old save possibly changed back to the base value.
         if (this.maxProgress != this.baseMaxProgress) {
             this.maxProgress = this.baseMaxProgress;
             if (this.progress > this.maxProgress) {
@@ -521,15 +521,15 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取每tick 增加的工作进度（受超频升级影响）
-     * 超频升级使机器在 1 tick 内处理多个进度，同时消耗更多EU，但电压等级不变
+     * Gets the work progress added per tick (the overclocker upgrade changes it).
+     * The overclocker upgrade makes the machine do more progress in 1 tick and use more EU. The voltage tier does not change.
      */
     protected int getProgressPerTick() {
         return Math.max(1, (int) Math.ceil(1.0 / upgradeStats.getProcessTimeMultiplier()));
     }
 
     /**
-     * 获取当前升级统计信息
+     * Gets the current upgrade statistics.
      */
     @Override
     public IMachineUpgradeStats getUpgradeStats() {
@@ -537,23 +537,23 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取升级插件槽位起始索引
+     * Gets the start index of the upgrade slots.
      */
     public int getUpgradeSlotStart() {
         return slotLayout.getStart(SlotType.UPGRADE);
     }
 
     /**
-     * 获取升级插件槽位数量
+     * Gets the number of upgrade slots.
      */
     public int getUpgradeSlotCount() {
         return slotLayout.getCount(SlotType.UPGRADE);
     }
 
     /**
-     * 检查机器在红石控制下是否可以工作
-     * 默认：无红石信号时工作，有红石信号时停止
-     * 红石信号反转升级：有红石信号时工作，无信号时停止
+     * Checks if the machine can work under redstone control.
+     * Default: the machine works when there is no redstone signal, and stops when there is a signal.
+     * Redstone inversion upgrade: the machine works when there is a signal, and stops when there is no signal.
      */
     protected boolean canWorkRedstone() {
         if (level == null) {
@@ -570,22 +570,22 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取输入槽位索引数组，子类可覆盖
+     * Gets the array of input slot indices. Subclasses can override it.
      */
     protected int[] getInputSlots() {
         return inputSlotIndices;
     }
 
     /**
-     * 获取输出槽位索引数组，子类可覆盖
+     * Gets the array of output slot indices. Subclasses can override it.
      */
     protected int[] getOutputSlots() {
         return outputSlotIndices;
     }
 
     /**
-     * 处理自动化升级插件
-     * 子类可以覆盖以添加更具体的流体/物品交互
+     * Runs the automation upgrades.
+     * Subclasses can override it to add more specific fluid or item interaction.
      */
     protected void handleAutomationUpgrades() {
         if (level == null || level.isClientSide) {
@@ -718,8 +718,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 弹出升级：将输出槽物品推送到相邻容器
-     * @param upgradeCount 弹出升级数量
+     * Ejector upgrade: pushes output slot items into adjacent containers.
+     * @param upgradeCount the number of ejector upgrades
      */
     protected void ejectItems(int upgradeCount) {
         int maxPerTick = Math.max(1, upgradeCount);
@@ -748,8 +748,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 抽取升级：从相邻容器拉取物品到输入槽
-     * @param upgradeCount 抽取升级数量
+     * Import upgrade: pulls items from adjacent containers into the input slots.
+     * @param upgradeCount the number of import upgrades
      */
     protected void pullItems(int upgradeCount) {
         int maxPerTick = Math.max(1, upgradeCount);
@@ -795,7 +795,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取相邻位置的物品处理器
+     * Gets the item handler at the adjacent position.
      */
     @Nullable
     protected IItemHandler getAdjacentItemHandler(BlockPos pos, @Nullable Direction side) {
@@ -842,7 +842,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取相邻位置的流体处理器
+     * Gets the fluid handler at the adjacent position.
      */
     @Nullable
     protected IFluidHandler getAdjacentFluidHandler(BlockPos pos, @Nullable Direction side) {
@@ -867,8 +867,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 处理流体自动化升级
-     * 子类如有多个流体槽或特殊输出方向可覆盖
+     * Runs the fluid automation upgrades.
+     * Subclasses with more than one fluid tank or special output sides can override it.
      */
     protected void handleFluidUpgrades() {
         if (level == null || level.isClientSide) {
@@ -931,88 +931,88 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 流体弹出升级：将输出槽流体推送到相邻储罐
-     * 默认把最后一个tank 当作输出 tank
-     * @param own 本机器的流体处理器
-     * @param upgradeCount 流体弹出升级数量
+     * Fluid ejector upgrade: pushes fluid from the output tank into adjacent tanks.
+     * By default, the last tank is the output tank.
+     * @param own the fluid handler of this machine
+     * @param upgradeCount the number of fluid ejector upgrades
      */
     protected void ejectFluids(IFluidHandler own, int upgradeCount) {
         fluidAutomation.ejectFluids(own, upgradeCount);
     }
 
     /**
-     * 流体抽入升级：从相邻储罐抽取流体到输入tank
-     * 默认把第一个tank 当作输入 tank
-     * @param own 本机器的流体处理器
-     * @param upgradeCount 流体抽入升级数量
+     * Fluid import upgrade: pulls fluid from adjacent tanks into the input tank.
+     * By default, the first tank is the input tank.
+     * @param own the fluid handler of this machine
+     * @param upgradeCount the number of fluid import upgrades
      */
     protected void pullFluids(IFluidHandler own, int upgradeCount) {
         fluidAutomation.pullFluids(own, upgradeCount);
     }
 
     /**
-     * 子类返回本机器的流体处理器，若不支持流体则返回null
+     * Subclasses return the fluid handler of this machine, or null if the machine does not support fluids.
      */
     @Nullable
     protected IFluidHandler getFluidHandlerCapability(@Nullable Direction side) {
         return null;
     }
 
-    /** 对外暴露本机流体处理器，供附属注册流体能力；无流体支持时为 null。 */
+    /** Gives the fluid handler of this machine to other code, so that addons can register a fluid capability. It is null if the machine has no fluid support. */
     @Nullable
     public final IFluidHandler fluidHandler(@Nullable Direction side) {
         return getFluidHandlerCapability(side);
     }
 
     /**
-     * 更新工作进度
-     * 超频升级会提高每 tick 增加的进度值
+     * Updates the work progress.
+     * The overclocker upgrade increases the progress added per tick.
      */
     protected void updateProgress() {
         if (isWorking) {
             progress = Math.min(maxProgress, progress + getProgressPerTick());
         }
-        // 进度不回退，保持当前进度直到完成
+        // Progress does not go back. It stays at the current value until the work completes
     }
 
     /**
-     * 检查机器是否可以工作
-     * @return 是否可以工作
+     * Checks if the machine can work.
+     * @return true if the machine can work
      */
     protected abstract boolean canWork();
 
     /**
-     * 检查是否有有效的配方（用于判断进度是否应该重置）
-     * 子类应该重写此方法来判断输入物品是否有匹配的配方
-     * 默认返回true，表示不重置进度（保守策略）
-     * @return 是否有有效配方
+     * Checks if there is a valid recipe (used to decide if the progress must be reset).
+     * Subclasses must override this method to check if the input items match a recipe.
+     * By default it returns true, which means that the progress is not reset (conservative policy).
+     * @return true if there is a valid recipe
      */
     protected boolean hasValidRecipe() {
         return true;
     }
 
     /**
-     * 执行生产工作
+     * Does the production work.
      */
     protected abstract void doWork();
 
     /**
-     * 停止工作
+     * Stops the work.
      */
     protected void stopWork() {
         isWorking = false;
     }
 
     /**
-     * 检测输入槽物品是否发生变化
-     * 只在物品类型/NBT变化时重置工作进度，数量变化不重置
-     * 这样自动化添加相同物品时不会打断工作进度
+     * Detects if the input slot items changed.
+     * It resets the work progress only when the item type or NBT changes. A change of count does not reset it.
+     * Thus, when automation adds more of the same item, the work progress continues.
      */
     protected void checkInputChanged() {
         int[] inputSlots = getInputSlots();
         if (inputSlots.length == 0) return;
 
-        // 初始化 lastInputStacks
+        // Initialize lastInputStacks
         if (lastInputStacks == null || lastInputStacks.length != inputSlots.length) {
             lastInputStacks = new ItemStack[inputSlots.length];
             for (int i = 0; i < inputSlots.length; i++) {
@@ -1021,14 +1021,14 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
             return;
         }
 
-        // 检查每个输入槽是否发生变化
+        // Check each input slot for a change
         boolean changed = false;
         for (int i = 0; i < inputSlots.length; i++) {
             ItemStack current = itemHandler.getStackInSlot(inputSlots[i]);
             ItemStack last = lastInputStacks[i];
 
-            // 只检测物品类型/NBT变化，不检测数量变化
-            // 这样自动化添加相同物品时不会重置进度
+            // Detect only item type or NBT changes, not count changes
+            // Thus, when automation adds more of the same item, the progress is not reset
             if (!ItemStack.isSameItemSameComponents(current, last)) {
                 changed = true;
                 break;
@@ -1036,10 +1036,10 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         }
 
         if (changed) {
-            // 输入物品发生变化，重置进度
+            // The input items changed. Reset the progress
             progress = 0;
             isWorking = false;
-            // 更新缓存
+            // Update the cache
             for (int i = 0; i < inputSlots.length; i++) {
                 lastInputStacks[i] = itemHandler.getStackInSlot(inputSlots[i]).copy();
             }
@@ -1047,10 +1047,10 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 检查是否应该重置进度（输入槽物品变化时）
-     * 默认实现：只在输入槽为空或配方不匹配时重置，断电时保持进度
-     * 子类可以覆盖此方法来自定义重置逻辑
-     * @return 是否应该重置进度
+     * Checks if the progress must be reset (when the input slot items change).
+     * Default implementation: reset only when the input slot is empty or the recipe does not match. Keep the progress when power is lost.
+     * Subclasses can override this method to use custom reset logic.
+     * @return true if the progress must be reset
      */
     protected boolean shouldResetProgress() {
         int[] inputSlots = getInputSlots();
@@ -1063,7 +1063,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 完成生产
+     * Completes the production.
      */
     protected void finishWork() {
         progress = 0;
@@ -1088,14 +1088,14 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 每 tick 子类钩子（默认无操作）
+     * Per-tick hook for subclasses (does nothing by default).
      */
     protected void onTick() {
         // hook for subclasses
     }
 
     /**
-     * 强制开始工作（供 API 调用）
+     * Starts the work by force (for API calls).
      */
     public void forceStartWork() {
         this.isWorking = true;
@@ -1103,7 +1103,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 强制停止工作（供 API 调用）
+     * Stops the work by force (for API calls).
      */
     public void forceStopWork() {
         this.isWorking = false;
@@ -1158,18 +1158,18 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取总处理物品数量
-     * 子类应重写此方法以返回实际的总处理量
+     * Gets the total number of processed items.
+     * Subclasses must override this method to return the real total.
      */
     public long getTotalProcessed() {
         return 0;
     }
 
     /**
-     * 处理电池槽的放电逻辑（仅从电池提取能量给机器，不给电池充电）
-     * 生产机器只能消耗电池能量，不能给电池充电
+     * Discharges the battery slot (only takes energy from the battery into the machine, does not charge the battery).
+     * A production machine can only use battery energy. It cannot charge the battery.
      *
-     * <p>通过 IItemAPI 进行电池操作，Addon 可以注册自定义电池类型。
+     * <p>Battery operations go through IItemAPI, so addons can register custom battery types.
      */
     protected void handleBatterySlot() {
         int slot = getBatterySlot();
@@ -1177,19 +1177,19 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取物品处理器
+     * Gets the item handler.
      *
-     * @return 物品处理器
+     * @return the item handler
      */
     public IItemHandler getItemHandler() {
         return itemHandler;
     }
 
     /**
-     * 获取指定方向的物品处理器（带方向限制）
-     * 用于 capability 系统，限制提取行为
-     * @param side 方向
-     * @return 带方向限制的 IItemHandler
+     * Gets the item handler for the given side (with side restrictions).
+     * The capability system uses it to limit extraction.
+     * @param side the side
+     * @return the IItemHandler with side restrictions
      */
     public IItemHandler getItemHandlerCapability(@Nullable Direction side) {
         if (side == null) {
@@ -1200,48 +1200,48 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取当前工作进度
-     * @return 工作进度
+     * Gets the current work progress.
+     * @return the work progress
      */
     public int getProgress() {
         return progress;
     }
 
     /**
-     * 获取最大工作进度
-     * @return 最大工作进度
+     * Gets the maximum work progress.
+     * @return the maximum work progress
      */
     public int getMaxProgress() {
         return maxProgress;
     }
 
     /**
-     * 获取基础最大进度（不受升级影响）
-     * @return 基础最大进度
+     * Gets the base maximum progress (upgrades do not change it).
+     * @return the base maximum progress
      */
     public int getBaseMaxProgress() {
         return baseMaxProgress;
     }
 
     /**
-     * 检查机器是否正在工作
-     * @return 是否正在工作
+     * Checks if the machine is working.
+     * @return true if the machine is working
      */
     public boolean isWorking() {
         return isWorking;
     }
 
     /**
-     * 获取每次工作消耗的能量
-     * @return 能量消耗
+     * Gets the energy that each work operation uses.
+     * @return the energy cost
      */
     public long getEnergyPerTick() {
         return energyPerTick;
     }
 
     /**
-     * 获取工作进度百分比（用于GUI显示）
-     * @return 0-100之间的值
+     * Gets the work progress as a percentage (for GUI display).
+     * @return a value from 0 to 100
      */
     public int getWorkProgress() {
         if (maxProgress <= 0) {
@@ -1251,24 +1251,24 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     }
 
     /**
-     * 获取实际每tick 能耗（含超频升级影响）
+     * Gets the real energy use per tick (with the overclocker upgrade effect), in EU/tick.
      */
     public long getEffectiveEnergyPerTick() {
-        // 走可覆写的 getEnergyPerTick() 而不是字段，便于"能耗随机器状态变化"的机器（如冷凝机按散热片计费）接入超频统计。
+        // Use the overridable getEnergyPerTick(), not the field, so that machines whose energy use changes with their state (for example the condenser, which charges per heat vent) are included in the overclocker statistics.
         return upgradeStats.getEnergyPerTick(getEnergyPerTick());
     }
 
     /**
-     * 检查是否有足够能量工作
-     * @return 是否有足够能量
+     * Checks if there is sufficient energy to work.
+     * @return true if there is sufficient energy
      */
     protected boolean hasEnoughEnergy() {
         return apiGetStoredEnergy() >= getEffectiveEnergyPerTick();
     }
 
     /**
-     * 消耗能量
-     * @return 是否成功消耗
+     * Uses energy.
+     * @return true if the energy was used
      */
     protected boolean consumeEnergy() {
         long effectiveEnergy = getEffectiveEnergyPerTick();
@@ -1289,15 +1289,15 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
     @Override
     public long getEffectiveMaxReceive() {
-        // 变压器升级提升最大接收速率到有效等级的电压等级
+        // The transformer upgrade increases the maximum receive rate to the voltage rating of the effective tier
         return Math.max(baseMaxReceive, getEffectiveCableTier().getPowerRating());
     }
 
     /**
-     * 获取本tick需求的能量量
- * 对齐 IC2 原版行为：返回内部冲区的全部剩余空间(capacity - storage)
-     * IC2 原版机器的容纳= energyPerTick × operationLength，因此需求量自然受限于合理范围
- * 例如：电容纳=100 EU，打粉机容量600 EU，不会出现需求过大的问题
+     * Gets the energy that this machine demands in this tick.
+     * Same as original IC2 behavior: it returns all the free space of the internal buffer (capacity - stored).
+     * In original IC2, the machine capacity = energyPerTick x operationLength. Thus the demand stays in a sensible range.
+     * For example: a capacity of 100 EU, or a macerator capacity of 600 EU, does not cause a too large demand.
      */
     @Override
     public double getDemandedEnergy() {
@@ -1308,7 +1308,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         return spaceAvailable;
     }
 
-    // ==================== Container 接口实现 ====================
+    // ==================== Container interface implementation ====================
 
     @Override
     public int getContainerSize() {
@@ -1372,7 +1372,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         }
     }
 
-    // ==================== WorldlyContainer 接口实现 ====================
+    // ==================== WorldlyContainer interface implementation ====================
 
     @Override
     public int[] getSlotsForFace(Direction side) {
@@ -1391,11 +1391,11 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         return canExtractItem(slot, side);
     }
 
-    // ==================== SidedItemHandler 内部类 ====================
+    // ==================== SidedItemHandler inner class ====================
 
     /**
-     * 带方向限制的 IItemHandler 包装类
-     * 用于 capability 系统，限制物品的插入和提取行为
+     * IItemHandler wrapper with side restrictions.
+     * The capability system uses it to limit item insertion and extraction.
      */
     protected class SidedItemHandler implements IItemHandler {
         protected final Direction side;
@@ -1423,7 +1423,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
         @Override
         public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            // 检查是否可以从指定方向插入
+            // Check if items can be inserted from the given side
             if (!canInsertItem(slot, stack, side)) {
                 return stack;
             }
@@ -1432,7 +1432,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
         @Override
         public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            // 检查是否可以从指定方向提取
+            // Check if items can be extracted from the given side
             if (!canExtractItem(slot, side)) {
                 return ItemStack.EMPTY;
             }
@@ -1469,7 +1469,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         fluidAutomation.load(tag, registries);
         if (tag.contains("inventory")) {
             itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-            // 自动迁移旧存档的槽位数量（例如冷凝机从3/7 槽扩容到 8 槽）
+            // Move the slot count of old saves automatically (for example the condenser grew from 3/7 slots to 8 slots)
             if (itemHandler.getSlots() != slotCount) {
                 MachineItemHandler resized = createItemHandler(slotLayout);
                 int copyCount = Math.min(itemHandler.getSlots(), slotCount);
@@ -1485,7 +1485,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         if (tag.contains("is_working")) {
             isWorking = tag.getBoolean("is_working");
         }
- // 重置输入槽存，下次tick会重新初始化
+        // Reset the input slot cache. The next tick initializes it again
         lastInputStacks = null;
 
         recalculateUpgradeStats();
@@ -1498,11 +1498,11 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        // 同步物品栏到客户端
+        // Synchronize the inventory to the client
         tag.put("inventory", itemHandler.serializeNBT(registries));
-        // 同步工作进度
+        // Synchronize the work progress
         tag.putInt("progress", progress);
-        // 同步工作状态
+        // Synchronize the work state
         tag.putBoolean("is_working", isWorking);
         return tag;
     }
@@ -1510,24 +1510,24 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     @Override
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.handleUpdateTag(tag, registries);
-        // 从服务端同步物品栈
+        // Synchronize the item stacks from the server
         if (tag.contains("inventory")) {
             itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
         }
-        // 同步工作进度
+        // Synchronize the work progress
         if (tag.contains("progress")) {
             progress = tag.getInt("progress");
         }
-        // 同步工作状态
+        // Synchronize the work state
         if (tag.contains("is_working")) {
             isWorking = tag.getBoolean("is_working");
         }
- // 重置输入槽存，下次tick会重新初始化
+        // Reset the input slot cache. The next tick initializes it again
         lastInputStacks = null;
         upgradeStatsDirty = true;
     }
 
-    // ==================== IProducerBlock 接口实现 ====================
+    // ==================== IProducerBlock interface implementation ====================
 
     @Override
     public java.util.List<ItemStack> getUpgrades() {
@@ -1545,6 +1545,6 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
     @Override
     public IWorkCompleteCallback getWorkCompleteCallback() {
-        return null; // 基类没有回调，子类可以覆盖
+        return null; // The base class has no callback. Subclasses can override it
     }
 }

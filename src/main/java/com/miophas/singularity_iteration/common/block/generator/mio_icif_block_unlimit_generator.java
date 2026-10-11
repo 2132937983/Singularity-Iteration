@@ -23,7 +23,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 无限发电机方法? * SC级发电机，可以无限输出能量而不消耗自身存�? */
+ * Unlimited generator block.
+ * SC tier generator. It outputs unlimited energy and does not use its own storage.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_unlimit_generator extends mio_icif_entity_block {
 
@@ -40,7 +42,7 @@ public class mio_icif_block_unlimit_generator extends mio_icif_entity_block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        // FACING 由父类添加，只需要添�?ACTIVE
+        // The parent class adds FACING. This class adds only ACTIVE.
         builder.add(ACTIVE);
         super.createBlockStateDefinition(builder);
     }
@@ -94,7 +96,7 @@ public class mio_icif_block_unlimit_generator extends mio_icif_entity_block {
  */
     @Override
     public int getLightEmission(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
-        return 15; // 最大亮�
+        return 15; // Maximum light level.
 }
 }
 

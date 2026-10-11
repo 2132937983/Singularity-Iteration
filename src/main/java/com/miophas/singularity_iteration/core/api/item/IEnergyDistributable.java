@@ -17,23 +17,24 @@ import java.util.List;
  * Portable battery that can feed the electric equipment in the player inventory. Right click
  * switches the inventory auto-charge mode ({@link BatteryAutoCharge}).
  *
- * <p>此功能属于电池类专有，电动工具不应实现此接口。</p>
+ * <p>This function belongs only to batteries. Electric tools must not implement this interface.</p>
  *
- * <h3>使用方式</h3>
+ * <h3>How to use</h3>
  * <ul>
- *   <li>电池类：实现此接口即可自动获得右键放电功能</li>
- *   <li>附属电池：实现 {@link IBatteryItem} 和此接口即可</li>
- *   <li>电动工具：不要实现此接口</li>
+ *   <li>Batteries: implement this interface to get the right-click discharge function automatically</li>
+ *   <li>Addon batteries: implement {@link IBatteryItem} and this interface</li>
+ *   <li>Electric tools: do not implement this interface</li>
  * </ul>
  */
 public interface IEnergyDistributable extends IBatteryItem {
 
     /**
-     * 将电池能量分配给玩家背包中的其他电力装备。
+     * Distributes the battery energy to the other electric equipment in the player inventory.
+     * The energy is divided equally among the targets that are not full. The battery stack must have a count of 1.
      *
-     * @param player        玩家
-     * @param batteryStack  电池物品堆
-     * @param totalEnergy   可分配的总能量
+     * @param player        the player
+     * @param batteryStack  the battery item stack
+     * @param totalEnergy   the total energy that can be distributed (EU); it is limited to the stored energy
      */
     default void distributeEnergyToItems(Player player, ItemStack batteryStack, long totalEnergy) {
         if (batteryStack.isEmpty() || batteryStack.getCount() != 1) return;

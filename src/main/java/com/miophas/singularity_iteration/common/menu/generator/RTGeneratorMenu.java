@@ -12,7 +12,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * RTG发电机的容器菜单独?
+ * Container menu for the RTG generator.
  */
 @SuppressWarnings({"null"}) public class RTGeneratorMenu extends mio_icif_generator_menu {
 
@@ -94,7 +94,7 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        // 添加6个靶丸槽位?(2�?x 3�?，第一个槽位在(36, 36)
+        // Add 6 pellet slots (2 rows x 3 columns). The first slot is at (36, 36).
         for (int row = 0; row < 2; row++) {
             for (int col = 0; col < 3; col++) {
                 int slotIndex = row * 3 + col;

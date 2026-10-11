@@ -3,47 +3,47 @@ package com.miophas.singularity_iteration.core.api.machine;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
 
 /**
- * 发电机方块实体接口
- * 所有类型的发电机（EU/HU/KU）都应实现此接口
+ * Interface for generator block entities.
+ * All generator types (EU/HU/KU) must implement this interface.
  *
- * <p>此接口扩展 {@link com.miophas.singularity_iteration.core.api.machine.IGeneratorBlock}，
- * 以 {@link CableTier} 返回类型提供电缆等级查询。
- * 新代码应优先使用 {@link com.miophas.singularity_iteration.core.api.machine.IGeneratorBlock}。
+ * <p>This interface extends {@link com.miophas.singularity_iteration.core.api.machine.IGeneratorBlock}.
+ * It gives the cable tier query with the return type {@link CableTier}.
+ * New code should use {@link com.miophas.singularity_iteration.core.api.machine.IGeneratorBlock}.
  */
 public interface IGeneratorBlockEntity extends com.miophas.singularity_iteration.core.api.machine.IGeneratorBlock {
 
     /**
-     * 获取电缆等级（内部类型返回）
+     * Gets the cable tier (as the internal type).
      *
-     * @return 电缆等级
+     * @return the cable tier
      */
     @Override
     CableTier getCableTier();
 
     /**
-     * 检查发电机是否正在工作
-     * @return true 如果正在发电
+     * Checks if the generator is working.
+     * @return true if the generator makes energy now
      */
     @Override
     boolean isGenerating();
 
     /**
-     * 获取发电速率
-     * @return 每tick发电量
+     * Gets the generation rate.
+     * @return the amount generated per tick
      */
     @Override
     long getGenerationRate();
 
     /**
-     * 获取发电机类型ID
-     * @return 类型ID
+     * Gets the generator type ID.
+     * @return the type ID
      */
     @Override
     String getGeneratorTypeId();
 
     /**
-     * 获取发电机累计总发电量 (EU)
-     * @return 总发电量
+     * Gets the total energy that the generator made (EU).
+     * @return the total generated energy
      */
     @Override
     long getTotalGenerated();

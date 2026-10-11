@@ -22,16 +22,16 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * ??��?�离�??��?��??��?��?�类
- * 使用?��??�产??��?��?�来??�工??��??
- * 槽位?��?��??�?输�?? + 3输出 + 1?���? + 4??�件 = 9�?
- * 
- * ?��??��??
- * - 5000 HU??��?��?��??
- * - 1EU产�??1HU
- * - 达�??5000HU??��??始�?��??
- * - 40EU/t??��?��??500tick??�工?��?��
- * - MV?��??��?�级
+ * Block entity for the electric centrifuge.
+ * It uses electricity to make heat and uses the heat to process items.
+ * Slots: 1 input + 3 outputs + 1 battery + 4 upgrades = 9 slots.
+ *
+ * Heat rules:
+ * - The machine stores a maximum of 5000 HU.
+ * - 1 EU makes 1 HU.
+ * - Processing starts only when the heat reaches 5000 HU.
+ * - A recipe uses 48 EU/t and takes 500 ticks.
+ * - The machine accepts MV-tier energy.
  */
 @SuppressWarnings("null")
 public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntity {
@@ -46,39 +46,38 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
         .upgrade(4)
         .build();
 
-    // 槽位?�数??��??个槽位?
+    // Total number of slots.
     public static final int SLOT_COUNT = 9;
-    // 输�?�槽位?�???
+    // Index of the input slot.
     public static final int INPUT_SLOT = 0;
-    // 输出槽起始索引�??3个�?�出槽位??
+    // Indexes of the 3 output slots.
     public static final int OUTPUT_SLOT_1 = 1;
     public static final int OUTPUT_SLOT_2 = 2;
     public static final int OUTPUT_SLOT_3 = 3;
-    // ?��池槽位?�???
+    // Index of the battery slot.
     public static final int BATTERY_SLOT = 4;
-    // ??�件槽起始索引�??4个�?�件槽位??
+    // First index of the 4 upgrade slots.
     public static final int UPGRADE_SLOT_START = 5;
 
-    // 默�????�置
-    // 默�????�置�?对�??IC2 ??��??�?
-    public static final long DEFAULT_CAPACITY = 24000L;  // 48 EU/t ?? 500 ticks = 24000 EU
-    public static final long DEFAULT_MAX_RECEIVE = 128L; // MV级�?��??
+    // Default energy settings. The values match the IC2 centrifuge.
+    public static final long DEFAULT_CAPACITY = 24000L; // 48 EU/t x 500 ticks = 24000 EU
+    public static final long DEFAULT_MAX_RECEIVE = 128L; // MV tier input limit
     public static final long DEFAULT_MAX_EXTRACT = 0L;
-    public static final int DEFAULT_WORK_TIME = 500; // 25�?= 500tick
-    public static final long DEFAULT_ENERGY_PER_TICK = 48L; // 48EU/t�?对�?�IC2??��??�?
+    public static final int DEFAULT_WORK_TIME = 500; // 25 seconds = 500 ticks
+    public static final long DEFAULT_ENERGY_PER_TICK = 48L; // 48 EU/t, the same as the IC2 centrifuge
 
-    // ??��?�系统）?�置
-    public static final int MAX_HEAT = 5000; // ???大�?��??000HU
-    public static final int HEAT_PER_EU = 1; // 1EU产�??1HU
-    public static final int HEAT_GENERATION_RATE = 4; // 每tick产�?��?��?��?��??
-    public static final int HEAT_COOLING_RATE = 2; // 每tick?��??��?�却??��??
-    public static final int MIN_HEAT_FOR_WORK = 5000; // �?始工作�????????小�?��??
+    // Heat system settings.
+    public static final int MAX_HEAT = 5000; // Maximum heat: 5000 HU
+    public static final int HEAT_PER_EU = 1; // 1 EU makes 1 HU
+    public static final int HEAT_GENERATION_RATE = 4; // Heat made per tick (HU)
+    public static final int HEAT_COOLING_RATE = 2; // Heat lost per tick when the machine has no power (HU)
+    public static final int MIN_HEAT_FOR_WORK = 5000; // Minimum heat to start processing (HU)
 
-    // ??��?��?��??
+    // Current stored heat in HU.
     protected int heatStorage;
 
     /**
-     * ?���? BlockEntityType.Builder ????????�函???
+     * Constructor for the BlockEntityType.Builder.
      */
     public mio_icif_centrifuge_elc(BlockPos pos, BlockState state) {
         this(pos, state, mio_icif_block_entities.CENTRIFUGE_ELC_ENTITY_TYPE.get());
@@ -107,38 +106,37 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     @Override
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == INPUT_SLOT) {
-            // 输�?�槽：�???��?��?��?��?��??�工?????��??
+            // Input slot: accept only items that have a centrifuge recipe.
             return isProcessable(stack);
         } else if (slot >= OUTPUT_SLOT_1 && slot <= OUTPUT_SLOT_3) {
-            // 输出槽位?��?��??许�?�动?��??��?��??
+            // Output slots: players cannot put items here.
             return false;
         } else if (slot == BATTERY_SLOT) {
-            // ?��池槽：接??��?��?��?��?��?��??�??��池�??
+            // Battery slot: accept only batteries.
             return isBattery(stack);
         } else if (slot >= UPGRADE_SLOT_START && slot < UPGRADE_SLOT_START + 4) {
-            // ??�件槽位?�只?��??��??级�?��??
+            // Upgrade slots: accept only upgrade items.
             return getItemAPI().isUpgrade(stack);
         }
         return false;
     }
 
     /**
-     * �??��??��???��?��?��??�工
-     * ??��????�方系�??�????
+     * Checks if the item can be processed.
+     * The check uses the recipe system.
      */
     private boolean isProcessable(ItemStack stack) {
         if (stack.isEmpty() || level == null) {
             return false;
         }
-        // ??�建??�方输�??
         mio_icif_CentrifugeRecipeInput recipeInput = new mio_icif_CentrifugeRecipeInput(stack);
-        // �??��?��?��??�匹??��????��??
+        // Look for a matching recipe.
         Optional<RecipeHolder<mio_icif_CentrifugeRecipe>> recipe = recipeCache1.find(level, recipeInput);
         return recipe.isPresent();
     }
 
     /**
-     * ?��??�匹??��????��?�离�??��??�方
+     * Gets the centrifuge recipe that matches the input item.
      */
     private Optional<mio_icif_CentrifugeRecipe> getRecipe(ItemStack input) {
         if (level == null || input.isEmpty()) {
@@ -152,12 +150,12 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
 
 
     /**
-     * �???��?��?????漏�?�槽位方法?
-     * ?????�面??�可以�???��?????�槽位?
+     * Gets the slots that hoppers can access from a side.
+     * All sides can access the same slots.
      */
     @Override
     protected int[] getSlotsForDirection(Direction side) {
-        // ?????�面??�可以�???��?????�槽位?
+        // All sides can access the same slots.
         return new int[]{INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3};
     }
 
@@ -177,51 +175,50 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     }
 
     /**
-     * �???��?��???????��?��???��?���?
+     * Checks if automation can insert the item into the slot.
      */
     @Override
     protected boolean canInsertItem(int slot, ItemStack stack, @Nullable Direction side) {
-        // 输出槽位?��?��?��??
+        // Automation cannot insert into output slots.
         if (slot >= OUTPUT_SLOT_1 && slot <= OUTPUT_SLOT_3) {
             return false;
         }
 
-        // ?��池槽：只?��??�电池类??��??
+        // Battery slot: accept only batteries.
         if (slot == BATTERY_SLOT) {
             return isBattery(stack);
         }
 
-        // 输�?�槽：接??�可??�工?????��??
+        // Input slot: accept only items that have a recipe.
         if (slot == INPUT_SLOT) {
             return isProcessable(stack);
         }
 
-        // ??��?�槽位置????�件槽位?��?��?��???��不�??许放???
+        // Automation cannot insert into other slots, for example upgrade slots.
         return false;
     }
 
     /**
-     * �???��?��???????��?��???��?���?
-     * ?????�方??��?�可以�?��??3个�?�出�?
+     * Checks if automation can extract the item from the slot.
+     * Automation can extract from the 3 output slots on all sides.
      */
     @Override
     protected boolean canExtractItem(int slot, @Nullable Direction side) {
-        // 3个�?�出槽可以�?�任何方??��?��??
         return slot >= OUTPUT_SLOT_1 && slot <= OUTPUT_SLOT_3;
     }
 
     /**
-     * �??��?��?��应�????�置进�??
-     * ?��?��输�?�槽为空?��??�置
+     * Checks if the progress must go back to zero.
+     * This occurs when the input slot is empty or the input has no recipe.
      */
     @Override
     protected boolean shouldResetProgress() {
         ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
-        // 输�?�槽为空，�?�置进度
+        // Input slot is empty: reset the progress.
         if (input.isEmpty()) {
             return true;
         }
-        // ??�方不匹??��?��?�置进度
+        // No recipe matches the input: reset the progress.
         return !isProcessable(input);
     }
 
@@ -234,22 +231,22 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     }
 
     /**
-     * ?��??��?�工结果?��???????��?�出�?
-     * @param input 输�?��?��??
-     * @return ?????��?�出??��???????�表
+     * Gets the output items of the recipe for the input.
+     * @param input the input item
+     * @return the list of output items, or an empty list if no recipe matches
      */
     private List<ItemStack> getProcessingResults(ItemStack input) {
         Optional<mio_icif_CentrifugeRecipe> recipe = getRecipe(input);
         if (recipe.isPresent()) {
             return recipe.get().getAllResults();
         }
-        // �???�没??��?�方，�?��?�空??�表
+        // No recipe matches: return an empty list.
         return java.util.Collections.emptyList();
     }
 
     @Override
     protected void doWork() {
-        // �???��?��??
+        // Use energy. Stop if the machine does not have sufficient energy.
         if (!consumeEnergy()) {
             stopWork();
             return;
@@ -257,14 +254,14 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
 
         isWorking = true;
 
-        // �??��?��?��完成??
+        // Finish the recipe when the progress is complete.
         if (progress >= maxProgress) {
             finishProcessing();
         }
     }
 
     /**
-     * 完成?��?�工�?多�?�出????���?
+     * Completes the recipe and puts the outputs into the 3 output slots.
      */
     private void finishProcessing() {
         var input = itemHandler.getStackInSlot(INPUT_SLOT);
@@ -279,14 +276,14 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     }
 
     /**
-     * 尝�?��??结果?�放??��??定�?�出�?
-     * @param slot 输出槽索引?
-     * @param result �??��??��????��??
-     * @return ?��?��??��???��???
+     * Tries to put a result into an output slot.
+     * @param slot the output slot index
+     * @param result the item to put into the slot
+     * @return true if the slot accepted the item
      */
     private boolean tryPlaceResult(int slot, ItemStack result) {
         if (result.isEmpty()) {
-            return true; // 空气?��??�?为�?��??
+            return true; // An empty result counts as a success
         }
         
         ItemStack currentOutput = itemHandler.getStackInSlot(slot);
@@ -305,20 +302,20 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     }
 
     /**
-     * �?tick ?��?��??��??
+     * Runs one server tick.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_centrifuge_elc blockEntity) {
         if (level.isClientSide()) {
             return;
         }
 
-        // ?��?��??��?�系�?
+        // Update the heat system.
         blockEntity.updateHeat();
 
-        // �??��??�类???tick ??��?��??�???��?��?��?��??工�?��??????��?��池槽?��?���?
+        // The parent tick does the processing, progress and battery slot logic.
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
-        // ?��?��?��??�状???�?运�??/??��??�?
+        // Update the LIT block state to show if the machine is working.
         boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_centrifuge_elc.LIT);
         if (blockEntity.isWorking() != isLit) {
             level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_centrifuge_elc.LIT, blockEntity.isWorking()), 3);
@@ -326,9 +323,9 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     }
 
     /**
-     * ?��?��??��?�系�?
-     * - ??�电且�?��?��?�在?��，�?��?��?��??
-     * - ?��??��?��?��?��??
+     * Updates the heat system.
+     * - With power, the machine converts energy into heat until it reaches the maximum.
+     * - Without power, the machine loses heat each tick.
      */
     private void updateHeat() {
         if (!hasEnoughEnergy()) {
@@ -355,35 +352,36 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
 
 
     /**
-     * ?��??��?��?��?��?��??
+     * Gets the current stored heat in HU.
      */
     public int getHeatStorage() {
         return heatStorage;
     }
 
     /**
-     * ?��??��??大�?��?��??
+     * Gets the maximum heat in HU.
      */
     public int getMaxHeat() {
         return MAX_HEAT;
     }
 
     /**
-     * ?��??��?��?�百???比�???��于GUI?��示�??
+     * Gets the heat as a percentage (0-100) for the GUI.
      */
     public int getHeatProgress() {
         return (heatStorage * 100) / MAX_HEAT;
     }
 
     /**
-     * ?��??��?��?�槽??��??
+     * Gets the item in the input slot.
      */
     public ItemStack getInputItem() {
         return itemHandler.getStackInSlot(INPUT_SLOT);
     }
 
     /**
-     * ?��??��??定�?�出槽位?��??
+     * Gets the item in an output slot.
+     * @param index the output index (0-2)
      */
     public ItemStack getOutputItem(int index) {
         if (index >= 0 && index < 3) {
@@ -395,14 +393,14 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        // 保�?��?��?�数?��
+        // Save the stored heat.
         tag.putInt("heat_storage", heatStorage);
     }
 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        // 读�?��?��?�数?��
+        // Load the stored heat.
         if (tag.contains("heat_storage")) {
             heatStorage = tag.getInt("heat_storage");
         }

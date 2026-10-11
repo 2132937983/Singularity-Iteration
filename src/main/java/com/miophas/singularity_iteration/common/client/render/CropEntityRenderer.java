@@ -15,7 +15,8 @@ import net.minecraft.world.inventory.InventoryMenu;
 import org.joml.Matrix4f;
 
 /**
- * 作物方块实体渲染�? * 用于渲染种植在作物架上的植物
+ * Block entity renderer for crops.
+ * It renders the plant that grows on a crop stick.
  */
 @SuppressWarnings("null")
 public class CropEntityRenderer implements BlockEntityRenderer<mio_icif_crop_entity> {
@@ -31,7 +32,7 @@ public class CropEntityRenderer implements BlockEntityRenderer<mio_icif_crop_ent
             return; // 没有种植作物，不渲染
         }
 
-        // 获取当前生长阶段的纹�
+        // Get the texture for the current growth stage.
     int stage = blockEntity.getGrowthStage();
         String texturePath = plant.getTexture(stage);
         
@@ -40,7 +41,7 @@ public class CropEntityRenderer implements BlockEntityRenderer<mio_icif_crop_ent
         }
 
         // 构建完整的资源位置
-    // getTexture 返回格式�?"mio_icif:block/crop/wheat_1"
+    // getTexture returns a value in the format "mio_icif:block/crop/wheat_1".
         ResourceLocation textureLoc = ResourceLocation.parse(texturePath);
 
         // 获取纹理图集中的精灵
@@ -53,10 +54,10 @@ public class CropEntityRenderer implements BlockEntityRenderer<mio_icif_crop_ent
         // 渲染井字交叉模型（类似原版作物）
         poseStack.pushPose();
         
-        // 将坐标系移动到方块中�
+        // Move the origin to the block center.
     poseStack.translate(0.5, 0.0, 0.5);
         
-        // 渲染井字交叉（四个方向的交叉�
+        // Render the hash-shaped cross (four planes in a # pattern).
     renderCropCross(poseStack, bufferSource, sprite, packedLight, packedOverlay);
         
         poseStack.popPose();
@@ -76,31 +77,31 @@ public class CropEntityRenderer implements BlockEntityRenderer<mio_icif_crop_ent
         float v0 = sprite.getV0();
         float v1 = sprite.getV1();
 
-        // 作物的高度（�?�?.8125，接地并稍微降低高度�
+        // Crop height: 0 to 0.8125. The crop touches the ground and is slightly lower than a full block.
     float yBottom = 0.0f;
         float yTop = 0.8125f;
-        float offset = 0.25625f; // 平面位置往内移�?格像�?(4.1/16 = 0.25625)，稍微往�?.1像素避免闪烁
-        float width = 0.4f;      // 面的半宽保持不变，确保四角交换?
-        // 四个平面呈井字形交叉，位置往内移动但宽度不变
-        // 平面1: 南北方向 (X = -offset)
+        float offset = 0.25625f; // Planes move 4.1 pixels inward (4.1/16 = 0.25625). The extra 0.1 pixel prevents z-fighting.
+        float width = 0.4f;      // The half width of each plane does not change. This makes sure that the planes cross at the corners.
+        // The four planes cross in a # shape. They move inward, but their width does not change.
+        // Plane 1: north-south (X = -offset)
         renderQuad(poseStack, builder, -offset, yBottom, -width, -offset, yTop, width, u0, v0, u1, v1, packedLight, packedOverlay);
-        // 平面2: 南北方向 (X = offset)
+        // Plane 2: north-south (X = offset)
         renderQuad(poseStack, builder, offset, yBottom, -width, offset, yTop, width, u0, v0, u1, v1, packedLight, packedOverlay);
-        // 平面3: 东西方向 (Z = -offset)
+        // Plane 3: east-west (Z = -offset)
         renderQuad(poseStack, builder, -width, yBottom, -offset, width, yTop, -offset, u0, v0, u1, v1, packedLight, packedOverlay);
-        // 平面4: 东西方向 (Z = offset)
+        // Plane 4: east-west (Z = offset)
         renderQuad(poseStack, builder, -width, yBottom, offset, width, yTop, offset, u0, v0, u1, v1, packedLight, packedOverlay);
     }
 
     /**
-     * 渲染一个双面四边形（正面和背面�
- */
+     * Renders a double-sided quad (front face and back face).
+     */
     private void renderQuad(PoseStack poseStack, VertexConsumer builder,
                             float x1, float y1, float z1, float x2, float y2, float z2,
                             float u0, float v0, float u1, float v1, int packedLight, int packedOverlay) {
         Matrix4f matrix = poseStack.last().pose();
 
-        // 计算法向量（正面�
+        // Calculate the normal vector of the front face.
     float nx = z2 - z1;
         float nz = x1 - x2;
         float len = (float) Math.sqrt(nx * nx + nz * nz);

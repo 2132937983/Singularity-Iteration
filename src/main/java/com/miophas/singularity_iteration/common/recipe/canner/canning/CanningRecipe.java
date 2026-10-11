@@ -14,7 +14,7 @@ import com.miophas.singularity_iteration.core.api.recipe.IRecipeProcessingInfo;
 public class CanningRecipe implements Recipe<CanningRecipeInput>, IRecipeProcessingInfo {
 
     private final String group;
-    private final Ingredient canIngredient;      // 空锡�
+    private final Ingredient canIngredient;      // Empty tin can
 private final Ingredient foodIngredient;     // 食物
     private final ItemStack result;              // 结果：装满的锡罐
     private final int processingTime;

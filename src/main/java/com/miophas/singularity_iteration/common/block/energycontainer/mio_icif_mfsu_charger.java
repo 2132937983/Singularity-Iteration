@@ -29,7 +29,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * MFSU 充电座方法? */
+ * Block class for the MFSU charge pad.
+ */
 @SuppressWarnings("null")
 public class mio_icif_mfsu_charger extends mio_icif_entity_block implements com.miophas.singularity_iteration.core.api.block.IChargepadBlock {
 

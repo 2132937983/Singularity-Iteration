@@ -7,27 +7,27 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Collection;
 
 /**
- * 流体 API
+ * Fluid API.
  *
- * <p>提供与 mio_icif 流体的访问，包括：
+ * <p>Use this interface to access mio_icif fluids. It lets you:
  * <ul>
- *   <li>查询模组流体</li>
- *   <li>获取流体属性</li>
- *   <li>判断气体流体</li>
+ *   <li>Query the fluids of the mod.</li>
+ *   <li>Get fluid properties.</li>
+ *   <li>Check if a fluid is a gas.</li>
  * </ul>
  *
- * <h3>创建自定义气体流体</h3>
- * <p>Addon 开发者可以使用 {@code GasFluidSource} 和 {@code GasFluidFlowing} 创建
- * 具有"向上飘升 + 限高消失 + 水平扩散"行为的气体流体：
+ * <h3>Create a custom gas fluid</h3>
+ * <p>Addon developers can use {@code GasFluidSource} and {@code GasFluidFlowing} to create
+ * a gas fluid. A gas fluid moves up, disappears at a height limit, and spreads horizontally:
  * <pre>{@code
- * // 定义流体属性
+ * // Define the fluid properties
  * public static final BaseFlowingFluid.Properties MY_GAS_PROPERTIES =
  *     new BaseFlowingFluid.Properties(
  *         () -> MY_GAS, () -> MY_GAS_FLOWING,
  *         () -> MY_GAS_BLOCK
  *     ).canMultiply(true).flowSpeed(4).levelDecreasePerBlock(1);
  *
- * // 注册气体流体
+ * // Register the gas fluid
  * public static final DeferredHolder<Fluid, FlowingFluid> MY_GAS = FLUIDS.register("my_gas",
  *     () -> new GasFluidSource(MY_GAS_PROPERTIES, 320));
  * public static final DeferredHolder<Fluid, FlowingFluid> MY_GAS_FLOWING = FLUIDS.register("my_gas_flowing",
@@ -40,112 +40,112 @@ import java.util.Collection;
 public interface IFluidAPI {
 
     /**
-     * 根据 ID 获取流体
+     * Gets a fluid by its ID.
      *
-     * @param id 流体 ID
-     * @return 流体，如果不存在则返回 null
+     * @param id the fluid ID
+     * @return the fluid, or null if it does not exist
      */
     Fluid getFluid(ResourceLocation id);
 
     /**
-     * 获取生物气体
+     * Gets the biogas fluid.
      *
-     * @return 生物气体流体
+     * @return the biogas fluid
      */
     Fluid getBiogas();
 
     /**
-     * 获取热水
+     * Gets the hot water fluid.
      *
-     * @return 热水流体
+     * @return the hot water fluid
      */
     Fluid getHotWater();
 
     /**
-     * 获取生物质
+     * Gets the biomass fluid.
      *
-     * @return 生物质流体
+     * @return the biomass fluid
      */
     Fluid getBiomass();
 
     /**
-     * 获取建筑泡沫
+     * Gets the construction foam fluid.
      *
-     * @return 建筑泡沫流体
+     * @return the construction foam fluid
      */
     Fluid getConstructionFoam();
 
     /**
-     * 获取冷却液
+     * Gets the coolant fluid.
      *
-     * @return 冷却液流体
+     * @return the coolant fluid
      */
     Fluid getCoolant();
 
     /**
-     * 获取蒸馏水
+     * Gets the distilled water fluid.
      *
-     * @return 蒸馏水流体
+     * @return the distilled water fluid
      */
     Fluid getDistilledWater();
 
     /**
-     * 获取热冷却液
+     * Gets the hot coolant fluid.
      *
-     * @return 热冷却液流体
+     * @return the hot coolant fluid
      */
     Fluid getHotCoolant();
 
     /**
-     * 获取绳状熔岩
+     * Gets the pahoehoe lava fluid.
      *
-     * @return 绳状熔岩流体
+     * @return the pahoehoe lava fluid
      */
     Fluid getPahoehoeLava();
 
     /**
-     * 获取蒸汽
+     * Gets the steam fluid.
      *
-     * @return 蒸汽流体
+     * @return the steam fluid
      */
     Fluid getSteam();
 
     /**
-     * 获取过热蒸汽
+     * Gets the superheated steam fluid.
      *
-     * @return 过热蒸汽流体
+     * @return the superheated steam fluid
      */
     Fluid getSuperheatedSteam();
 
     /**
-     * 获取 UU 物质
+     * Gets the UU matter fluid.
      *
-     * @return UU 物质流体
+     * @return the UU matter fluid
      */
     Fluid getUUMatter();
 
     /**
-     * 获取空气
+     * Gets the air fluid.
      *
-     * @return 空气流体
+     * @return the air fluid
      */
     Fluid getAir();
 
     /**
-     * 获取所有注册流体 ID
+     * Gets the IDs of all registered fluids.
      *
-     * @return 流体 ID 集合
+     * @return the collection of fluid IDs
      */
     Collection<ResourceLocation> getAllFluidIds();
 
     /**
-     * 判断指定流体是否为气体流体（具有向上飘升行为）。
+     * Checks if the fluid is a gas fluid (a fluid that moves up).
      *
-     * <p>气体流体包括本模组的生物气体、蒸汽、过热蒸汽和压缩空气，
-     * 以及使用 {@code GasFluidSource}/{@code GasFluidFlowing} 注册的 Addon 气体流体。
+     * <p>Gas fluids include the biogas, steam, superheated steam and compressed air of this mod.
+     * They also include addon gas fluids that use {@code GasFluidSource} or {@code GasFluidFlowing}.
      *
-     * @param fluid 流体
-     * @return true 如果是气体流体
+     * @param fluid the fluid
+     * @return true if the fluid is a gas fluid
      */
     boolean isGasFluid(Fluid fluid);
 }

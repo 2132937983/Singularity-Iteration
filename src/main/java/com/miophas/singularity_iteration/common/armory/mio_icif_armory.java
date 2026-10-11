@@ -156,12 +156,18 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         return Component.translatable("message.mio_icif.armory.bound", ownerName);
     }
 
-    public void unbind(Player player) {
-        if (!isOwner(player) && !player.hasPermissions(2)) return;
+    /**
+     * Removes the owner. Only the owner or an operator (permission level 2) can do this.
+     *
+     * @return true when the owner was removed; false when the player may not unbind
+     */
+    public boolean unbind(Player player) {
+        if (!isOwner(player) && !player.hasPermissions(2)) return false;
         owner = null;
         ownerName = "";
         setChanged();
         sync();
+        return true;
     }
 
     // ------------------------------------------------------------------ suits

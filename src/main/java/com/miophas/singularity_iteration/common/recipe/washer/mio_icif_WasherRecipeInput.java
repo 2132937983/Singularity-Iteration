@@ -4,7 +4,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 
 /**
- * 洗矿配方输入包装置? * 包装单个物品作为洗矿配方的输�? */
+ * Ore washer recipe input wrapper.
+ * It wraps one item as the input of an ore washer recipe.
+ */
 public record mio_icif_WasherRecipeInput(ItemStack item) implements RecipeInput {
 
     /**
@@ -32,7 +34,8 @@ public record mio_icif_WasherRecipeInput(ItemStack item) implements RecipeInput 
     }
 
     /**
-     * 检查输入是否为�?     */
+     * Checks if the input is empty.
+     */
     public boolean isEmpty() {
         return item.isEmpty();
     }

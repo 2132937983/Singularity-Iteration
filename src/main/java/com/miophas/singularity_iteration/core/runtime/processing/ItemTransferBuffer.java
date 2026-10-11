@@ -53,14 +53,14 @@ public final class ItemTransferBuffer {
             if (pending.isEmpty()) {
                 var available = source.extractItem(sourceSlot, budget, true).copy();
                 if (removalSink != null || available.isEmpty()) return 0;
-                // 外部来源可能夸大抽取报价；夹到预算内，绝不为此抛异常崩服。
+                // An external source can report a larger extract quote than allowed. Clamp it to the budget. Never throw an exception that crashes the server.
                 if (available.getCount() > budget) available = available.copyWithCount(budget);
                 int quoted = available.getCount()
                         - sanitizedRemainder(available, insert(target, targetSlot, available.copy(), true)).getCount();
                 if (removalSink != null || quoted == 0) return 0;
                 uncertain = available.copyWithCount(quoted); phase = "extract"; changed.run();
                 var actual = source.extractItem(sourceSlot, quoted, false);
-                // 外部来源违约时无法证明其取走了多少：放弃本次意图（宁可损耗也不复制），不崩服。
+                // When the external source violates the contract, we cannot know how much it removed. Drop this intent (a loss is better than a duplication). Do not crash the server.
                 if (!actual.isEmpty() && (actual.getCount() > quoted
                         || !ItemStack.isSameItemSameComponents(actual, uncertain)))
                     actual = ItemStack.EMPTY;
@@ -89,8 +89,8 @@ public final class ItemTransferBuffer {
         return slot < 0 ? ItemHandlerHelper.insertItemStacked(handler, stack, simulate) : handler.insertItem(slot, stack, simulate);
     }
     /**
-     * 外部处理器返回的余量非法（{@code null}、异类，或数量超过本次提供量）时，
-     * 保守地视为"全部插入"：既不重放（避免复制物品），也不抛异常崩服。
+     * If an external handler returns an invalid remainder ({@code null}, a different item, or a count larger than the offer),
+     * this method conservatively treats it as "all inserted". It does not send again (this prevents item duplication) and does not throw an exception that crashes the server.
      */
     private static ItemStack sanitizedRemainder(ItemStack offered, ItemStack remainder) {
         if (remainder == null || (!remainder.isEmpty() && (remainder.getCount() > offered.getCount()

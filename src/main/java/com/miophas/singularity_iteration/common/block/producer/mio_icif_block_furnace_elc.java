@@ -28,12 +28,11 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
 /**
- * 电炉方方块?
- * 使用电力进行冶炼的机器方法?
+ * Electric furnace block.
+ * A machine that uses electricity to smelt items.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_furnace_elc extends mio_icif_entity_block {
-    private static final Logger LOGGER = LogUtils.getLogger();
 
     public static final BooleanProperty LIT = BooleanProperty.create("lit");
 
@@ -63,10 +62,8 @@ public class mio_icif_block_furnace_elc extends mio_icif_entity_block {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        LOGGER.info("Furnace right-clicked! isClientSide: " + level.isClientSide());
         if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            LOGGER.info("Is MenuProvider: " + (blockEntity instanceof MenuProvider));
             if (blockEntity instanceof MenuProvider) {
                 player.openMenu((MenuProvider) blockEntity);
             } else {
@@ -85,7 +82,7 @@ public class mio_icif_block_furnace_elc extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_furnace_elc furnace) {
-                // 掉落物品栏中的物�?
+                // Drop the items in the inventory.
                 for (int i = 0; i < furnace.getItemHandler().getSlots(); i++) {
                     ItemStack stack = furnace.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {
@@ -106,7 +103,7 @@ public class mio_icif_block_furnace_elc extends mio_icif_entity_block {
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof mio_icif_furnace_elc furnace) {
-            // 计算红石信号强度（基于物品栏填充程度�?
+            // Calculate the redstone signal strength from the inventory fill level.
             var handler = furnace.getItemHandler();
             int totalSlots = handler.getSlots();
             int filledSlots = 0;

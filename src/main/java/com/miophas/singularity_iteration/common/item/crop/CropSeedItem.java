@@ -22,8 +22,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.List;
 
 /**
- * 作物种子物品
- * 用于在种植架上种植作�? * 植物类型通过NBT数据存储
+ * Crop seed item.
+ * Players plant it on crop sticks.
+ * The plant type is stored in the item NBT data.
  */
 @SuppressWarnings("null")
 public class CropSeedItem extends Item implements ICropSeedItem {
@@ -69,7 +70,7 @@ public class CropSeedItem extends Item implements ICropSeedItem {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         var baseSeed = PlantRegistry.instance.getBaseSeed(stack);
         if (baseSeed == null) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        if (player == null || player.isSpectator() || !level.hasChunkAt(pos)
+        if (player == null || player.isSpectator() || !level.isLoaded(pos)
                 || !level.mayInteract(player, pos) || !player.mayUseItemAt(pos, face, stack)
                 || level.getBlockState(pos) != state
                 || !(level.getBlockEntity(pos) instanceof IPlanter planter)
@@ -122,8 +123,8 @@ public class CropSeedItem extends Item implements ICropSeedItem {
     }
 
     /**
-     * 从ItemStack的NBT中获取植物类�
-*/
+     * Gets the plant type from the NBT data of the ItemStack.
+     */
     public static PlantType getPlantType(ItemStack stack) {
         var customData = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         if (customData != null) {

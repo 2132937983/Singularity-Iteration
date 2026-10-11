@@ -24,24 +24,34 @@
  */
 package com.miophas.singularity_iteration.core.api.energy.storage;
 
-import com.google.common.primitives.Ints;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
 public record NonLongWrapper(IEnergyStorage storage) implements ILongEnergyStorage {
+    /**
+     * EU view of an FE storage. Contract: the EU returned is exactly the energy moved, in whole EU.
+     * Both directions quote first and then move a multiple of {@link #FE_PER_EU} FE, so a foreign
+     * storage that takes 1..3 FE neither makes free EU (receive) nor loses FE (extract). The FE
+     * request is capped before the multiplication, so Long.MAX_VALUE ("as much as possible")
+     * cannot overflow to a negative request.
+     */
     @Override
     public long receive(long maxReceive, boolean simulate) {
-        int feToReceive = Ints.saturatedCast(maxReceive * FE_PER_EU);
-        int feReceived = storage.receiveEnergy(feToReceive, simulate);
-        return feReceived / FE_PER_EU;
+        if (maxReceive <= 0) return 0;
+        int request = (int) Math.min(maxReceive, Integer.MAX_VALUE / FE_PER_EU) * FE_PER_EU;
+        int whole = storage.receiveEnergy(request, true) / FE_PER_EU * FE_PER_EU;
+        if (whole <= 0) return 0;
+        return (simulate ? whole : storage.receiveEnergy(whole, false)) / FE_PER_EU;
     }
 
     @Override
     public long extract(long maxExtract, boolean simulate) {
-        int feToExtract = Ints.saturatedCast(maxExtract * FE_PER_EU);
-        int feExtracted = storage.extractEnergy(feToExtract, simulate);
-        return feExtracted / FE_PER_EU;
+        if (maxExtract <= 0) return 0;
+        int request = (int) Math.min(maxExtract, Integer.MAX_VALUE / FE_PER_EU) * FE_PER_EU;
+        int whole = storage.extractEnergy(request, true) / FE_PER_EU * FE_PER_EU;
+        if (whole <= 0) return 0;
+        return (simulate ? whole : storage.extractEnergy(whole, false)) / FE_PER_EU;
     }
 
     @Override

@@ -4,8 +4,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 
 /**
- * 提取机配方输�?
- * 用于提取机单输入配方的机器?
+ * Extractor recipe input.
+ * The extractor uses it for recipes with a single input.
  */
 public record mio_icif_ExtractorRecipeInput(ItemStack item) implements RecipeInput {
 

@@ -8,12 +8,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
- * 按键状态同步包（IC2RIn120原版移植�?
+ * Key state sync packet (ported from the original IC2RIn120).
  *
- * 客户端每tick检测按键状态，状态变化时发送此包到服务�?
- * 服务端存储玩家按键状态，供inventoryTick中使�?
+ * The client checks the key state each tick. When the state changes, the client sends this packet to the server.
+ * The server stores the key state of the player. inventoryTick reads this state.
  *
- * 对应IC2：KeyboardClient.sendKeyUpdate() �?IC2.network.initiateKeyUpdate()
+ * IC2 equivalent: KeyboardClient.sendKeyUpdate() and IC2.network.initiateKeyUpdate().
  */
 @SuppressWarnings("null")
 public record KeyboardStatePacket(int keyState) implements CustomPacketPayload {
@@ -32,8 +32,8 @@ public record KeyboardStatePacket(int keyState) implements CustomPacketPayload {
     }
 
     /**
-     * 处理按键状态更新?
-     * 对应IC2：Keyboard.processKeyUpdate()
+     * Processes the key state update.
+     * IC2 equivalent: Keyboard.processKeyUpdate()
      */
     public static void handle(KeyboardStatePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {

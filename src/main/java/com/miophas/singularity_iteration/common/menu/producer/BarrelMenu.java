@@ -70,7 +70,7 @@ public class BarrelMenu extends AbstractContainerMenu {
             }
         });
 
-        // 水桶�?(108, 37)
+        // Water bucket slot (108, 37)
         this.addSlot(new SlotItemHandler(itemHandler, SLOT_WATER, 108, 37) {
             @Override
             public boolean mayPlace(ItemStack stack) {
@@ -111,15 +111,15 @@ public class BarrelMenu extends AbstractContainerMenu {
             itemstack = itemStack1.copy();
 
             if (index < SLOT_COUNT) {
-                // 从机器槽位移到玩家背�?
+                // Move from the machine slots to the player inventory.
                 if (!this.moveItemStackTo(itemStack1, SLOT_COUNT, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
-                // 从玩家背包移到机器槽位?
+                // Move the item from the player inventory to a machine slot.
                 boolean moved = false;
 
-                // 尝试放入水桶�?
+                // Try to put the item into the water bucket slot.
                 if (itemStack1.is(Items.WATER_BUCKET)) {
                     if (this.moveItemStackTo(itemStack1, SLOT_WATER, SLOT_WATER + 1, false)) {
                         moved = true;

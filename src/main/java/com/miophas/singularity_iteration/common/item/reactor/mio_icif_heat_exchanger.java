@@ -11,17 +11,27 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
 /**
- * 冷却单元（热交换器）
+ * Coolant cell (heat exchanger).
  *
- * 特性（参考IC2）：
- * - 自身可以储存热量
- * - 从周围燃料棒吸收热量
- * - 无法自身散热（需要配合元件散热片来散发热量）
- * - 可以给反应堆添加额外的热量上�? * - 提供的热量上�?= 初始耐久�? * - 超过热量上限会熔毁（耐久度变化?�? *
- * 工作原理�? * - 每tick从周围的燃料棒吸收热�? * - 自身不散发热量，热量需要通过相邻的元件散热片来散�? * - 冷却单元的存在会增加反应堆的总热量上�? * - 热量与耐久度成反比，热量越高耐久度越�? * - 当热量达到上限时，冷却单元熔毁消耗? *
- * 使用建议�? * - 必须配合元件散热片使用（四周都摆满）
- * - 用于增加反应堆的热量存储容量
- * - 适合需要长时间运行但又不想频繁换料的反应堆
+ * Properties (based on IC2):
+ * - The cell stores heat.
+ * - The cell absorbs heat from adjacent fuel rods.
+ * - The cell cannot vent heat by itself. Adjacent component heat vents must remove the heat.
+ * - The cell adds extra heat capacity to the reactor.
+ * - The extra heat capacity equals the initial durability (maxHeatStorage).
+ * - The cell melts when its heat reaches the limit. The durability shows the heat.
+ *
+ * Operation:
+ * - Each tick, the cell absorbs heat from adjacent fuel rods.
+ * - The cell does not vent heat. Adjacent component heat vents remove the heat.
+ * - The cell increases the total heat capacity of the reactor.
+ * - Durability decreases as heat increases.
+ * - When the heat reaches the limit, the cell melts and is consumed.
+ *
+ * Usage:
+ * - Surround the cell with component heat vents on all 4 sides.
+ * - Use the cell to increase the heat storage of the reactor.
+ * - Use the cell in reactors that must run for a long time without refueling.
  */
 @SuppressWarnings("null")
 public class mio_icif_heat_exchanger extends mio_icif_reactor {
@@ -33,18 +43,18 @@ public class mio_icif_heat_exchanger extends mio_icif_reactor {
     public static final int HEAT_ABSORPTION_RATE = 8;  // 每tick 8点热量（已翻倍）
 
     /**
-     * 构造函数?- 默认10000热量
-     * @param properties 物品属性
+     * Constructor. The default heat capacity is 10000.
+     * @param properties the item properties
  */
     public mio_icif_heat_exchanger(Properties properties) {
         this(properties, 10000);
     }
 
     /**
-     * 构造函数?- 指定热量存储
-     * @param properties 物品属性
- * @param maxHeatStorage 最大热量存�
- */
+     * Constructor with a specified heat storage.
+     * @param properties the item properties
+     * @param maxHeatStorage the maximum heat that the cell can store
+     */
     public mio_icif_heat_exchanger(Properties properties, int maxHeatStorage) {
         super(properties, maxHeatStorage, ReactorComponentType.HEAT_EXCHANGER, false, true);
         this.maxHeatStorage = maxHeatStorage;
@@ -53,9 +63,9 @@ public class mio_icif_heat_exchanger extends mio_icif_reactor {
     // ==================== 热量存储相关 ====================
 
     /**
-     * 获取当前存储的热�
- * @param stack 物品栈
- * @return 当前热量
+     * Gets the stored heat.
+     * @param stack the item stack
+     * @return the current heat
      */
     @Override
     public int getStoredHeat(ItemStack stack) {
@@ -64,10 +74,11 @@ public class mio_icif_heat_exchanger extends mio_icif_reactor {
     }
 
     /**
-     * 设置存储的热�
- * @param stack 物品栈
- * @param heat 热量�
- */
+     * Sets the stored heat.
+     * The value is clamped to 0..maxHeatStorage. The cell is destroyed when the heat reaches maxHeatStorage.
+     * @param stack the item stack
+     * @param heat the new heat value
+     */
     @Override
     public void setStoredHeat(ItemStack stack, int heat) {
         heat = Math.max(0, Math.min(heat, maxHeatStorage));
@@ -81,11 +92,11 @@ public class mio_icif_heat_exchanger extends mio_icif_reactor {
     }
 
     /**
-     * 添加热量
-     * @param stack 物品栈
- * @param heat 要添加的热量
-     * @return 实际添加的热�
- */
+     * Adds heat.
+     * @param stack the item stack
+     * @param heat the heat to add
+     * @return the heat that was added
+     */
     public int addHeat(ItemStack stack, int heat) {
         int currentHeat = getStoredHeat(stack);
         int maxAddable = maxHeatStorage - currentHeat;
@@ -99,11 +110,11 @@ public class mio_icif_heat_exchanger extends mio_icif_reactor {
     }
 
     /**
-     * 减少热量
-     * @param stack 物品栈
- * @param heat 要减少的热量
-     * @return 实际减少的热�
- */
+     * Removes heat.
+     * @param stack the item stack
+     * @param heat the heat to remove
+     * @return the heat that was removed
+     */
     public int removeHeat(ItemStack stack, int heat) {
         int currentHeat = getStoredHeat(stack);
         int actualRemove = Math.min(heat, currentHeat);
@@ -118,9 +129,9 @@ public class mio_icif_heat_exchanger extends mio_icif_reactor {
     // ==================== 熔毁相关 ====================
 
     /**
-     * 检查冷却单元是否熔�
- * @param stack 物品栈
- * @return 是否熔毁
+     * Checks if the coolant cell has melted.
+     * @param stack the item stack
+     * @return true if the stored heat is at or above maxHeatStorage
      */
     @Override
     public boolean isMelted(ItemStack stack) {
@@ -128,9 +139,9 @@ public class mio_icif_heat_exchanger extends mio_icif_reactor {
     }
 
     /**
-     * 冷却单元会熔�
- * @param stack 物品栈
- * @return 始终返回true
+     * Coolant cells can melt.
+     * @param stack the item stack
+     * @return always true
      */
     @Override
     public boolean shouldMelt(ItemStack stack) {
@@ -140,17 +151,17 @@ public class mio_icif_heat_exchanger extends mio_icif_reactor {
     // ==================== 热量上限相关 ====================
 
     /**
-     * 获取冷却单元提供的额外热量上�
- * 冷却单元的额外热量上�?= 初始耐久�?= maxHeatStorage
-     * @param stack 物品栈
- * @return 提供的额外热量上�
- */
+     * Gets the extra heat capacity that the coolant cell gives to the reactor.
+     * The extra heat capacity equals the initial durability, which is maxHeatStorage.
+     * @param stack the item stack
+     * @return the extra heat capacity, or 0 if the cell is melted or the stack is empty
+     */
     public int getExtraHeatCapacity(ItemStack stack) {
-        // 如果已经熔毁，返回?
+        // Return 0 if the cell has melted.
         if (isMelted(stack) || stack.isEmpty()) {
             return 0;
         }
-        // 冷却单元提供的额外热量上限等于它的最大耐久�
+        // The extra heat capacity equals the maximum durability.
     return maxHeatStorage;
     }
 

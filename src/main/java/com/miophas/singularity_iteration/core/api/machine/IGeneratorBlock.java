@@ -5,101 +5,109 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 
 /**
- * 发电机接口
- * 所有能发电的机器都应实现此接口
+ * Interface for generators.
+ * All machines that generate power must implement this interface.
  *
- * <p>此接口扩展 {@link IBurnControl}，发电机在支持燃烧时间查询的同时，
- * 也应支持通过 API 控制燃烧进度（强制启停）。
+ * <p>This interface extends {@link IBurnControl}. A generator supports burn time queries,
+ * and it must also support control of the burn progress through the API (forced start and stop).
  */
 public interface IGeneratorBlock extends IBurnControl {
     
     /**
-     * 获取电缆等级
-     * @return 电缆等级
+     * Returns the cable tier.
+     *
+     * @return the cable tier
      */
     ICableTier getCableTier();
     
     /**
-     * 是否正在燃烧燃料
-     * @return true 如果正在燃烧
+     * Returns true if the generator burns fuel now.
+     *
+     * @return true if it burns fuel
      */
     boolean isBurning();
     
     /**
-     * 获取当前燃烧时间
-     * @return 当前燃烧时间（tick）
+     * Returns the remaining burn time.
+     *
+     * @return the remaining burn time (ticks)
      */
     int getBurnTime();
     
     /**
-     * 获取最大燃烧时间
-     * @return 最大燃烧时间（tick）
+     * Returns the maximum burn time.
+     *
+     * @return the maximum burn time (ticks)
      */
     int getMaxBurnTime();
     
     /**
-     * 获取发电量（EU/t）
-     * @return 发电量
+     * Returns the power output (EU/t).
+     *
+     * @return the power output
      */
     long getPowerOutput();
     
     /**
-     * 获取燃料槽位物品
-     * @return 燃料槽位物品
+     * Returns the item in the fuel slot.
+     *
+     * @return the fuel slot item
      */
     ItemStack getFuelSlotItem();
     
     /**
-     * 获取充电槽位物品
-     * @return 充电槽位物品
+     * Returns the item in the charge slot.
+     *
+     * @return the charge slot item
      */
     ItemStack getChargeSlotItem();
     
     /**
-     * 获取物品处理器
-     * @return 物品处理器
+     * Returns the item handler.
+     *
+     * @return the item handler
      */
     IItemHandler getItemHandler();
 
     /**
-     * 检查发电机是否正在工作（产出能量）
+     * Returns true if the generator works now (produces energy).
      *
-     * <p>默认委托到 {@link #isBurning()}，子类可覆盖以区分"燃烧中"与"发电中"。
+     * <p>The default calls {@link #isBurning()}. Subclasses can override it to make "burning" and "generating" different.
      *
-     * @return true 如果正在发电
+     * @return true if the generator produces energy
      */
     default boolean isGenerating() {
         return isBurning();
     }
 
     /**
-     * 获取当前发电速率（EU/t）
+     * Returns the current generation rate (EU/t).
      *
-     * <p>默认委托到 {@link #getPowerOutput()}。
+     * <p>The default calls {@link #getPowerOutput()}.
      *
-     * @return 每 tick 发电量
+     * @return the energy generated each tick
      */
     default long getGenerationRate() {
         return getPowerOutput();
     }
 
     /**
-     * 获取发电机类型 ID
+     * Returns the generator type ID.
      *
-     * <p>默认返回空字符串，子类可覆盖以返回自定义类型标识。
+     * <p>The default returns an empty string. Subclasses can override it to return a custom type ID.
      *
-     * @return 类型 ID
+     * @return the type ID
      */
     default String getGeneratorTypeId() {
         return "";
     }
 
     /**
-     * 获取发电机累计总发电量（EU）
+     * Returns the total energy that the generator produced (EU).
      *
-     * <p>默认返回 0，子类可覆盖以跟踪累计发电量。
+     * <p>The default returns 0. Subclasses can override it to track the total.
      *
-     * @return 总发电量
+     * @return the total generated energy
      */
     default long getTotalGenerated() {
         return 0;

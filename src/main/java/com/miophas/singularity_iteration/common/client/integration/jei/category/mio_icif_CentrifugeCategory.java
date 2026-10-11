@@ -92,8 +92,11 @@ public class mio_icif_CentrifugeCategory extends AbstractJeiRecipeCategory<mio_i
         int ox = -BG_X;
         int oy = -BG_Y;
 
-        builder.addSlot(RecipeIngredientRole.INPUT, 11 + ox, 21 + oy)
-                .addIngredients(recipe.getIngredients().get(0));
+        // A data pack recipe can have no ingredients. JEI must not crash on it.
+        if (!recipe.getIngredients().isEmpty()) {
+            builder.addSlot(RecipeIngredientRole.INPUT, 11 + ox, 21 + oy)
+                    .addIngredients(recipe.getIngredients().get(0));
+        }
 
         builder.addSlot(RecipeIngredientRole.OUTPUT, 124 + ox, 18 + oy)
                 .addItemStack(new ItemStack(recipe.getPrimaryResult().getItem(), recipe.getPrimaryCount()));

@@ -7,7 +7,14 @@ import com.miophas.singularity_iteration.core.api.machine.IMultiblockValidationR
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
-/** 把内置验证器（common 接口）注册进 core 控制方块注册表时的适配层。 */
+/**
+ * Wraps a builtin {@link mio_icif_multiblock_validator} as a core
+ * {@code IMultiblockValidator}.
+ *
+ * <p>{@link BuiltinMultiblockControllers} uses this adapter to put the builtin
+ * validators into the core {@code MultiblockControllers} registry. The core
+ * registry only accepts the core interface.
+ */
 final class ToCoreValidatorAdapter implements IMultiblockValidator {
 
     private final mio_icif_multiblock_validator builtinValidator;
@@ -16,6 +23,12 @@ final class ToCoreValidatorAdapter implements IMultiblockValidator {
         this.builtinValidator = builtinValidator;
     }
 
+    /**
+     * Runs the builtin validator and converts its result.
+     *
+     * <p>A valid result keeps the member positions and the structure data.
+     * A failure result keeps only the error message.
+     */
     @Override
     public IMultiblockValidationResult validate(Level level, BlockPos controllerPos) {
         mio_icif_multiblock_validation_result result = builtinValidator.validate(level, controllerPos);
@@ -25,6 +38,12 @@ final class ToCoreValidatorAdapter implements IMultiblockValidator {
         return IMultiblockValidationResult.failure(result.getErrorMessage());
     }
 
+    /**
+     * Forwards the call only if {@code structure} is a builtin manager.
+     *
+     * <p>A structure of another type gets no callback. The builtin callbacks need
+     * the manager type.
+     */
     @Override
     public void onStructureFormed(Level level, BlockPos controllerPos, IMultiblockStructure structure) {
         if (structure instanceof mio_icif_multiblock_manager<?> manager) {
@@ -32,6 +51,11 @@ final class ToCoreValidatorAdapter implements IMultiblockValidator {
         }
     }
 
+    /**
+     * Forwards the call only if {@code structure} is a builtin manager.
+     *
+     * <p>A structure of another type gets no callback.
+     */
     @Override
     public void onStructureBroken(Level level, BlockPos controllerPos, IMultiblockStructure structure) {
         if (structure instanceof mio_icif_multiblock_manager<?> manager) {

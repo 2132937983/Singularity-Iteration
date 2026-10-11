@@ -29,8 +29,8 @@ import java.util.List;
 public class RubberTreeFeature {
 
     /**
-     * 注册橡胶树的配置特征
-     * 使用高大阔叶树形态，参考巴西橡胶树（Hevea brasiliensis�?
+     * Registers the configured feature for the rubber tree.
+     * The tree is a tall broadleaf tree, based on the Brazilian rubber tree (Hevea brasiliensis).
      */
     public static void registerConfiguredFeature(BootstrapContext<ConfiguredFeature<?, ?>> context) {
         // 创建橡胶树配置（高大阔叶树，参考现实中巴西橡胶树形态）
@@ -45,7 +45,7 @@ public class RubberTreeFeature {
         // 忽略藤蔓
         treeConfigurationBuilder.ignoreVines();
 
-        // 添加装饰器：在树干上放置有胶橡胶木（最终?个，最终?个）
+        // Add a decorator that places rubber wood with resin on the trunk.
         treeConfigurationBuilder.decorators(List.of(new RubberWoodDecorator(1)));
 
         context.register(WorldGeneration.RUBBER_TREE_KEY, new ConfiguredFeature<>(Feature.TREE, treeConfigurationBuilder.build()));
@@ -65,7 +65,7 @@ public class RubberTreeFeature {
                 InSquarePlacement.spread(), // 在区块内随机分布
                 SurfaceWaterDepthFilter.forMaxDepth(0), // 不在水中生成
                 PlacementUtils.HEIGHTMAP_OCEAN_FLOOR, // 基于海平面高度图
-                // 检查下方一格是否是适合树生长的方块（泥土、草地、沙子等�?
+                // Check that the block below is a valid soil block (the DIRT tag).
                 BlockPredicateFilter.forPredicate(BlockPredicate.matchesTag(new Vec3i(0, -1, 0), BlockTags.DIRT)),
                 BiomeFilter.biome() // 只在合适的生物群系生成
             )

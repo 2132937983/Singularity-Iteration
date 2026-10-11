@@ -22,45 +22,100 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.Tags;
 
 /**
- * Seismic ore scan. The scan walks a sphere around the wearer a few hundred blocks per tick, so
- * one full sweep takes {@link #SWEEP_TICKS} ticks and never stalls a frame. Results are drawn as
- * see-through wireframe cells, colour-coded by ore.
+ * Seismic ore scan of the suit HUD. The scanner reads blocks from the client chunk data. It sends
+ * no packets.
+ *
+ * <p><b>Sweep cycle.</b> The scan volume is the cube of side {@code 2 * RADIUS + 1} = 33 blocks
+ * around the sweep centre (35 937 cells). The scanner tests only the cells in the sphere of
+ * {@link #RADIUS} (about 17 000 cells). Each tick tests the next
+ * {@code ceil(35937 / SWEEP_TICKS)} = 719 cube cells. Thus one sweep takes {@link #SWEEP_TICKS}
+ * ticks (2.5 seconds), and a tick reads about 340 block states in the sphere. Then the next sweep
+ * starts at once. The cell order is x fastest, then z, then y. Thus a sweep goes from the bottom
+ * layer to the top layer.
+ *
+ * <p>Exception: on the first tick after the unit comes on, the scanner tests the full sphere in
+ * one tick. Thus the first sonar pulse has results to show. This one tick reads all 35 937 cells.
+ *
+ * <p><b>Coordinate frames.</b> The sweep centre is the block position of the player at the start
+ * of the sweep. It does not move during the sweep. {@link Hit#pos()} is an absolute world block
+ * position. The HUD pass projects the block corners with {@link FcsProjection}, in world
+ * coordinates.
+ *
+ * <p><b>Memory bounds.</b> The pending list holds at most the number of ore cells in the sphere.
+ * The shown list holds at most {@link #MAX_SHOWN} hits. The colour and label caches hold one entry
+ * per block type.
+ *
+ * <p><b>Rendering.</b> The HUD pass draws each hit as a see-through wireframe cell in the ore
+ * colour. The cells are in screen space, with no depth test. Thus they show through rock.
+ *
+ * <p><b>Thread.</b> Call all methods on the client thread only.
  */
 public final class OreScanner {
     private OreScanner() {}
 
+    /** Scan sphere radius in blocks. */
     public static final int RADIUS = 16;
+    /** Ticks for one full sweep of the scan cube. */
     public static final int SWEEP_TICKS = 50;
+    /** Maximum number of hits that the scanner keeps and draws, nearest to the sweep centre first. */
     public static final int MAX_SHOWN = 384;
 
+    /**
+     * One ore block.
+     *
+     * @param pos   the absolute world block position.
+     * @param color the ore colour, 0xRRGGBB.
+     * @param label the short HUD name of the ore, for example "IRON".
+     */
     public record Hit(BlockPos pos, int color, String label) { }
 
+    /** Colour per block type. One entry per block type, so the size has a limit. */
     private static final Map<Block, Integer> COLORS = new IdentityHashMap<>();
+    /** Label per block type. One entry per block type, so the size has a limit. */
     private static final Map<Block, String> LABELS = new IdentityHashMap<>();
+    /** Result of the last full sweep. Immutable. Sorted by distance to the sweep centre. */
     private static List<Hit> shown = List.of();
+    /** Hits of the sweep that runs now. They go to {@link #shown} when the sweep ends. */
     private static final List<Hit> pending = new ArrayList<>();
+    /** Centre of the sweep that runs now, in world block coordinates. */
     private static BlockPos centre = BlockPos.ZERO;
+    /** Index of the next cube cell to test, 0 .. 35 936. 0 means that a new sweep starts. */
     private static int cursor;
+    /** Wall-clock start time of the sweep that runs now, in milliseconds. */
     private static long sweepStart;
+    /** The level of the last tick. A new level resets the scanner. */
     private static ClientLevel boundLevel;
 
-    /** Echo wavefront: time the sonar pulse needs to reach {@link #RADIUS}. */
+    /** Echo wavefront: time in milliseconds that the sonar pulse needs to reach {@link #RADIUS}. */
     public static final long ECHO_MS = 1600;
-    /** Glitch burst at the start of a pulse. */
+    /** Length in milliseconds of the glitch burst at the start of a pulse. */
     public static final long GLITCH_MS = 850;
+    /** Wall-clock start time of the last pulse, in milliseconds. The start value means "no pulse". */
     private static long echoStart = -100_000;
+    /** True while the unit is on. {@link #tick} uses it to find the first tick after switch-on. */
     private static boolean wasActive;
 
+    /** Hits of the last full sweep, nearest to the sweep centre first. */
     public static List<Hit> hits() { return shown; }
+    /** Wall-clock start time of the last pulse, in milliseconds. */
     public static long echoStartMs() { return echoStart; }
-    /** 0..1 progress of the running echo, or -1 when no echo runs. */
+    /**
+     * Progress of the running echo, from 0 to 1. It stays at 1 for 900 ms after the wavefront
+     * reaches {@link #RADIUS}, while the echo fades. It is -1 when no echo runs.
+     */
     public static float echoProgress() {
         long age = System.currentTimeMillis() - echoStart;
         return age < 0 || age > ECHO_MS + 900 ? -1F : Math.min(1F, age / (float) ECHO_MS);
     }
+    /** Wall-clock start time of the sweep that runs now, in milliseconds. */
     public static long sweepStartMs() { return sweepStart; }
+    /** Centre of the sweep that runs now, in world block coordinates. */
     public static BlockPos centre() { return centre; }
 
+    /**
+     * Removes all hits and stops the sweep. {@code FcsClient} calls it on each tick while the unit
+     * is off. It does not stop a running echo.
+     */
     public static void reset() {
         wasActive = false;
         shown = List.of();
@@ -69,11 +124,16 @@ public final class OreScanner {
         boundLevel = null;
     }
 
-    /** Client tick while the scanner unit is active. */
+    /**
+     * Client tick while the scanner unit is on. Call it one time per tick.
+     *
+     * @param level     the client level. It must not be null.
+     * @param playerPos the block position of the player. The next sweep uses it as the centre.
+     */
     public static void tick(ClientLevel level, BlockPos playerPos) {
         if (level != boundLevel) { reset(); boundLevel = level; }
         if (!wasActive) {
-            // switched on: scan the whole sphere at once so the first pulse has something to reveal
+            // switched on: scan the whole sphere in this tick. Thus the first pulse has hits to show.
             wasActive = true;
             cursor = 0;
             fullScan(level, playerPos);
@@ -83,7 +143,10 @@ public final class OreScanner {
         sweep(level, playerPos, false);
     }
 
-    /** Starts a sonar pulse (sound + echo wavefront + glitch). */
+    /**
+     * Starts a sonar pulse: the echo sound, the echo wavefront and the glitch burst. The scanner
+     * starts a pulse only when the unit comes on. Later sweeps change the hits without a pulse.
+     */
     public static void pulse() {
         echoStart = System.currentTimeMillis();
         Minecraft mc = Minecraft.getInstance();
@@ -97,14 +160,29 @@ public final class OreScanner {
         sweep(level, playerPos, true);
     }
 
+    /**
+     * Tests the next part of the scan cube.
+     *
+     * <p>The cell index {@code i} maps to an offset from the centre:
+     * {@code dx = i % side - RADIUS}, {@code dz = (i / side) % side - RADIUS},
+     * {@code dy = i / side^2 - RADIUS}. The method skips cells out of the sphere, cells in
+     * chunks that are not loaded, and cells that are not ore.
+     *
+     * <p>At the end of a sweep, the method sorts the hits by distance to the centre of the centre
+     * block. It keeps the nearest {@link #MAX_SHOWN} as the new {@link #shown} list.
+     *
+     * @param all true to test all cells in this call, false to test one tick budget of cells.
+     */
     private static void sweep(ClientLevel level, BlockPos playerPos, boolean all) {
         int side = RADIUS * 2 + 1;
         int total = side * side * side;
         if (cursor == 0) {
+            // new sweep: fix the centre for the full sweep
             centre = playerPos;
             pending.clear();
             sweepStart = System.currentTimeMillis();
         }
+        // tick budget: total / SWEEP_TICKS, rounded up, so that a sweep ends in SWEEP_TICKS ticks
         int perTick = all ? total : (total + SWEEP_TICKS - 1) / SWEEP_TICKS;
         int end = Math.min(total, cursor + perTick);
         BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
@@ -128,11 +206,19 @@ public final class OreScanner {
         }
     }
 
+    /**
+     * Tests a block state for ore. Ore is a block in the common {@code c:ores} tag, or ancient
+     * debris. Thus ores of other mods count when they use the common tag.
+     */
     public static boolean isOre(BlockState state) {
         return state.is(Tags.Blocks.ORES) || state.is(Blocks.ANCIENT_DEBRIS);
     }
 
-    /** Ore colour by its registry name (works for other mods' ores of the same metal). */
+    /**
+     * Ore colour from the registry path of the block, as 0xRRGGBB. The method finds a metal name in
+     * the path. Thus it also works for ores of other mods with the same metal. The first name that
+     * matches wins. The colour is white when no name matches. The result is cached per block type.
+     */
     public static int color(Block block) {
         return COLORS.computeIfAbsent(block, b -> {
             String p = BuiltInRegistries.BLOCK.getKey(b).getPath();
@@ -156,6 +242,12 @@ public final class OreScanner {
         });
     }
 
+    /**
+     * Short HUD label from the registry path of the block, in upper case. The method removes the
+     * prefixes and suffixes "deepslate_", "nether_", "_ore", "ore_" and "block_", and any folder
+     * part before the last '/'. Example: "deepslate_iron_ore" becomes "IRON". The result is cached
+     * per block type.
+     */
     public static String label(Block block) {
         return LABELS.computeIfAbsent(block, b -> {
             String p = BuiltInRegistries.BLOCK.getKey(b).getPath();
@@ -166,7 +258,13 @@ public final class OreScanner {
         });
     }
 
-    /** Nearest hit of each label (for the HUD list), nearest first. */
+    /**
+     * One hit for each label, for the HUD list. For each label, the method takes the first hit in
+     * {@link #shown}. That is the hit nearest to the sweep centre, not always the hit nearest to the
+     * player. Then it sorts these hits by distance to the player feet, nearest first.
+     *
+     * @param max the maximum number of hits to return.
+     */
     public static List<Hit> nearestPerKind(int max) {
         Map<String, Hit> best = new HashMap<>();
         for (Hit h : shown) best.putIfAbsent(h.label, h);
@@ -176,12 +274,21 @@ public final class OreScanner {
         return list.size() > max ? list.subList(0, max) : list;
     }
 
+    /**
+     * The 12 cube edges as pairs of corner indices. Corner layout: corners 0..3 are the bottom
+     * (y = 0) and 4..7 are the top (y = 1). Corner i + 4 is above corner i. Around the bottom, the
+     * corners are 0 = (0, 0), 1 = (1, 0), 2 = (1, 1), 3 = (0, 1) as (x, z).
+     */
     private static final int[][] EDGES = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
-    /** Cube faces as corner indices (bottom, top, north, south, west, east). */
+    /** Cube faces as corner indices (bottom, top, north, south, west, east). Same layout as {@link #EDGES}. */
     private static final int[][] FACES = {{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 5, 4}, {3, 2, 6, 7}, {0, 3, 7, 4}, {1, 2, 6, 5}};
+    /** Colour of the echo effects, 0xRRGGBB. */
     static final int ECHO_RGB = 0x3FD4FF;
 
-    /** Deterministic hash noise 0..1. */
+    /**
+     * Deterministic hash noise from 0 to 1 (1 excluded). The same inputs always give the same
+     * value. The effects use a time bucket as one input, so the noise changes in steps.
+     */
     static float noise(long a, long b) {
         long h = a * 0x9E3779B97F4A7C15L + b * 0xC2B2AE3D27D4EB4FL;
         h ^= h >>> 29; h *= 0xBF58476D1CE4E5B9L; h ^= h >>> 32;
@@ -189,15 +296,25 @@ public final class OreScanner {
     }
 
     /**
-     * HUD pass. While a pulse runs: a sonar wavefront sphere sweeps out through the terrain,
-     * ripples cross the screen from the edges, and a digital glitch burst runs over the view. Each
-     * ore lights up when the wavefront reaches it (with a short glitch flicker) and then stays lit:
-     * a translucent filled cell with bright edges, drawn in screen space so it shows through rock.
+     * HUD pass. Call it on the render thread, after {@link FcsProjection#capture} for this frame.
+     *
+     * <p>While a pulse runs, a sonar wavefront sphere moves out through the terrain. Ripples cross
+     * the screen from the edges, and a digital glitch burst runs over the view. Each ore comes on
+     * when the wavefront reaches it, with a short glitch flicker. Then it stays on. Each ore is a
+     * translucent filled cell with bright edges. The cells are in screen space, so they show
+     * through rock.
+     *
+     * <p>The wavefront radius is {@code RADIUS * age / ECHO_MS} blocks. It grows at a constant
+     * speed and stops at {@code RADIUS + 2}.
+     *
+     * @param cam   the camera position in world blocks.
+     * @param pulse the alpha multiplier of the slow HUD pulse, about 0.6..1.
      */
     public static void renderHud(net.minecraft.client.gui.GuiGraphics g, Vec3 cam, float pulse) {
         long now = System.currentTimeMillis();
         long age = now - echoStart;
         int w = g.guiWidth(), h = g.guiHeight();
+        // wavefront radius in blocks. A start time in the future shows the full sphere.
         float front = age < 0 ? RADIUS : Math.min(RADIUS + 2, RADIUS * age / (float) ECHO_MS);
         boolean echo = age >= 0 && age <= ECHO_MS + 900;
         Vec3 origin = Vec3.atCenterOf(centre);
@@ -207,6 +324,19 @@ public final class OreScanner {
         if (!shown.isEmpty() && age > ECHO_MS) tagsNearest(g, cam, now);
     }
 
+    /**
+     * Draws the ore cells that the wavefront has reached.
+     *
+     * <p>Each cell projects its 8 corners with {@link FcsProjection}. When one corner is behind the
+     * camera, the method skips the full cell. Then no cell is drawn with a wrong, mirrored shape.
+     * The alpha falls with the camera distance, from 1 at the camera to 0.4 at {@code 1.2 * RADIUS}
+     * and more.
+     *
+     * <p>Reveal: for 380 ms after the wavefront passes a cell, the cell flashes brighter and
+     * flickers. The flicker changes every 40 ms. In a flicker step, the cell is hidden with a
+     * probability of up to 35 % and moves sideways by up to 3 GUI pixels. Both values fall to 0 at
+     * the end of the reveal.
+     */
     private static void cells(net.minecraft.client.gui.GuiGraphics g, Vec3 cam, Vec3 origin, float front, long age, long now, float pulse) {
         if (shown.isEmpty()) return;
         float[][] p = new float[8][];
@@ -217,9 +347,10 @@ public final class OreScanner {
             float since = (float) (age - dOrigin / RADIUS * ECHO_MS);   // ms since the wave passed
             double d = Math.sqrt(hit.pos.distToCenterSqr(cam));
             float a = (float) Math.max(0.40, 1.0 - d / RADIUS * 0.5) * pulse;
+            // jx, jy: GUI pixel offset of the flicker. Only jx changes. jy stays 0.
             float jx = 0, jy = 0;
             if (since >= 0 && since < 380) {
-                // reveal: flash, then a few frames of glitch flicker and offset
+                // reveal: a flash, then some frames of glitch flicker and offset
                 float f = since / 380F;
                 long bucket = now / 40;
                 if (noise(bucket, hit.pos.asLong()) < 0.35F * (1 - f)) continue;
@@ -227,6 +358,7 @@ public final class OreScanner {
                 jx = (noise(bucket + 7, hit.pos.asLong()) - 0.5F) * 6 * (1 - f);
             }
             boolean ok = true;
+            // corner i: x = 1 for i in {1, 2, 5, 6}, z = 1 for i in {2, 3, 6, 7}, y = 1 for i >= 4
             for (int i = 0; i < 8 && ok; i++) {
                 double x = hit.pos.getX() + ((i == 1 || i == 2 || i == 5 || i == 6) ? 1.0 : 0.0);
                 double y = hit.pos.getY() + (i >= 4 ? 1.0 : 0.0);
@@ -246,7 +378,17 @@ public final class OreScanner {
         }
     }
 
-    /** The wavefront sphere: latitude rings, clipped to the scan radius, cyan with a bright leading edge. */
+    /**
+     * Draws the wavefront sphere in cyan. It has 8 latitude rings (48 segments each) and 12 faint
+     * meridians (16 segments each). Rings near the equator are brighter. Ring k = lat / 2 = 4 is
+     * thicker. With lat = 9 this ring is at 80 degrees from the top, not at the equator. A segment
+     * is not drawn when one of its ends is behind the camera. The sphere fades out in the 900 ms
+     * after {@link #ECHO_MS}.
+     *
+     * @param o   the sphere centre in world blocks.
+     * @param r   the sphere radius in blocks.
+     * @param age the time since the pulse start, in milliseconds.
+     */
     private static void wavefront(net.minecraft.client.gui.GuiGraphics g, Vec3 o, float r, long age) {
         float fade = age < ECHO_MS ? 1F : Math.max(0F, 1F - (age - ECHO_MS) / 900F);
         if (fade <= 0 || r < 0.5F) return;
@@ -278,9 +420,11 @@ public final class OreScanner {
     }
 
     /**
-     * Screen-space echo: ripple rings that start at the edge of the view and close in on the
-     * centre (the pulse washes over the wearer from all sides), with an RGB split, plus a short
-     * digital glitch burst (offset slices, noise blocks, a scan bar).
+     * Screen-space echo. Three ripple rings start at the edge of the view and close in on the
+     * centre. This shows the pulse as it comes back to the wearer from all sides. Each ring has a
+     * red and a cyan copy, offset by 1.6 GUI pixels (RGB split). Ring k starts 170 ms after ring
+     * k - 1 and lives 1100 ms. For {@link #GLITCH_MS} after the pulse start, a digital glitch burst
+     * also runs: offset slices, noise blocks and a scan bar. The glitch pattern changes every 45 ms.
      */
     private static void screenEcho(net.minecraft.client.gui.GuiGraphics g, int w, int h, long age, long now) {
         float cx = w / 2F, cy = h / 2F;
@@ -288,6 +432,7 @@ public final class OreScanner {
         for (int k = 0; k < 3; k++) {
             float t = (age - k * 170) / 1100F;
             if (t < 0 || t > 1) continue;
+            // ease-out: the ring moves fast at the start and slows near the centre
             float e = 1 - (1 - t) * (1 - t);
             float r = maxR * (1.05F - e * 0.95F);
             float a = (float) Math.sin(t * Math.PI) * (0.55F - k * 0.12F);
@@ -340,7 +485,11 @@ public final class OreScanner {
         g.flush();
     }
 
-    /** Small in-world tags on the nearest ore of each kind (label and distance). */
+    /**
+     * Small tags on up to 6 ores, one for each label (see {@link #nearestPerKind}). Each tag shows
+     * the label and the distance from the camera in blocks (1 block = 1 m). The tag is 0.5 blocks
+     * above the block centre. A tag is not drawn when its point is behind the camera.
+     */
     private static void tagsNearest(net.minecraft.client.gui.GuiGraphics g, Vec3 cam, long now) {
         for (Hit hit : nearestPerKind(6)) {
             Vec3 c = Vec3.atCenterOf(hit.pos);

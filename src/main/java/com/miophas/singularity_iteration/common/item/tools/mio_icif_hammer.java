@@ -13,9 +13,9 @@ public class mio_icif_hammer extends Item implements IHammerItem {
     }
 
     /**
-     * 原版IC2设计：锻造锤不可通过两个合成修复�?
-     * 返回false以防止原版RepairItemRecipe匹配方?
-     * 避免按Shift快速合成时物品复制的问题�?
+     * Original IC2 design: two forge hammers cannot be combined in crafting to repair them.
+     * Return false so that the vanilla RepairItemRecipe does not match.
+     * This prevents item duplication during shift-click crafting.
      */
     @Override
     public boolean isRepairable(ItemStack stack) {
@@ -23,7 +23,7 @@ public class mio_icif_hammer extends Item implements IHammerItem {
     }
 
     /**
-     * 原版IC2设计：锻造锤在合成中使用时保留并扣除1点耐久�?
+     * Original IC2 design: the forge hammer stays in the grid after crafting and loses 1 durability.
      */
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
@@ -31,7 +31,7 @@ public class mio_icif_hammer extends Item implements IHammerItem {
     }
 
     /**
-     * 原版IC2设计：锻造锤在合成后返回耐久-1的副本身?
+     * This follows the original IC2 design. After crafting, the forge hammer returns a copy of itself. The copy has 1 less durability.
      */
     @Override
     public ItemStack getCraftingRemainingItem(ItemStack stack) {

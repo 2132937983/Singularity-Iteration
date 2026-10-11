@@ -12,7 +12,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 打粉�?Menu
+ * Menu for the powder machine.
  */
 @SuppressWarnings("null")
 public class PowderElcMenu extends mio_icif_machine_menu {
@@ -130,7 +130,7 @@ public class PowderElcMenu extends mio_icif_machine_menu {
     }
 
     /**
-     * 大尺寸槽位类�?6x26�?
+     * Large slot type (26x26).
      */
     public static class LargeSlot extends SlotItemHandler {
         @SuppressWarnings("unused")

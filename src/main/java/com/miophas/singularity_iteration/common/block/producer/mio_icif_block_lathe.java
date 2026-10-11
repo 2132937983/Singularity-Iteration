@@ -25,7 +25,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 车床方方块? */
+ * Lathe block.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_lathe extends mio_icif_entity_block {
 

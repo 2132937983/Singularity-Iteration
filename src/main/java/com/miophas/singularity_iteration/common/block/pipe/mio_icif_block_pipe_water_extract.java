@@ -25,12 +25,12 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 抽水管道方块（单向泵设计算?
+ * Water extraction pipe block (one-way pump design).
  *
- * 设计参考：机械动力的动力泵
- * - 正面（facing方向）：输出流体到相邻容纳?
- * - 背面（facing的反方向）：从相邻容器抽取流�?
- * - 其他4个侧面：不连接、不传输
+ * Design reference: the mechanical pump from Create.
+ * - Front (facing direction): outputs fluid to the adjacent container.
+ * - Back (opposite of facing): extracts fluid from the adjacent container.
+ * - The other 4 sides do not connect and do not transfer fluid.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_pipe_water_extract extends BaseEntityBlock {
@@ -38,7 +38,7 @@ public class mio_icif_block_pipe_water_extract extends BaseEntityBlock {
     public static final MapCodec<mio_icif_block_pipe_water_extract> CODEC = RecordCodecBuilder.mapCodec(instance ->
         instance.group(propertiesCodec()).apply(instance, mio_icif_block_pipe_water_extract::new));
 
-    // facing = 正面（输出方向），背�?= facing.getOpposite()（抽取方向）
+    // facing = front (output direction). Back = facing.getOpposite() (extraction direction).
     public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.values());
 
     // 碰撞箱：6×6×16 的泵体，占满整个方块长度
@@ -114,7 +114,7 @@ public class mio_icif_block_pipe_water_extract extends BaseEntityBlock {
     }
 
     public static void updateBlockState(Level level, BlockPos pos, BlockState state, mio_icif_pipe_fluid_extract pipe) {
-        // 流体状态更新已禁用（不渲染流体�?
+        // Fluid state updates are disabled. The pipe does not render fluid.
     }
 
     /**
@@ -164,7 +164,7 @@ public class mio_icif_block_pipe_water_extract extends BaseEntityBlock {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_pipe_fluid_extract pipe) {
                 Direction facing = state.getValue(FACING);
-                pipe.setExtractFacing(facing.getOpposite()); // 背面是抽取方法?
+                pipe.setExtractFacing(facing.getOpposite()); // The back side is the extraction side.
                 pipe.markForUpdate();
             }
         }

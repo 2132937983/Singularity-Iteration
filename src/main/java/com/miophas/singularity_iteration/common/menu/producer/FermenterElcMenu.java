@@ -34,8 +34,8 @@ import org.jetbrains.annotations.Nullable;
         addCustomMoveRule(stack -> mio_icif_cells.isEmptyCell(stack), EMPTY_CELL_INPUT_SLOT, EMPTY_CELL_INPUT_SLOT + 1);
     }
 
-    // GUI高度184，按照原版IC2逻辑调整玩家物哝栝佝�?
-    // 背包Y = 184 - 82 = 102, 快杷栝Y = 184 - 24 = 160
+    // The GUI height is 184. The player inventory position follows the original IC2 logic.
+    // Inventory Y = 184 - 82 = 102. Hotbar Y = 184 - 24 = 160.
     @Override
     protected int getPlayerInventoryY() { return 102; }
 

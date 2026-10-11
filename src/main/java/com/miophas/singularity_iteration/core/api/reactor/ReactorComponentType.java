@@ -1,8 +1,8 @@
 package com.miophas.singularity_iteration.core.api.reactor;
 
 /**
- * 核反应堆元件类型
- * 对应内部 mio_icif_reactor.ReactorComponentType
+ * Nuclear reactor component type.
+ * Equivalent to the internal mio_icif_reactor.ReactorComponentType.
  */
 public enum ReactorComponentType {
     FUEL_ROD,

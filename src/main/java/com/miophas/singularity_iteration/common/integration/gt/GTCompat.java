@@ -13,8 +13,9 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.Method;
 
 /**
- * GregTech Modern 兼容性层
- * 使用反射安全地访问?GTCEu �?API，避免在没有 GTCEu 时崩�?
+ * Compatibility layer for GregTech Modern (GTCEu).
+ * It uses reflection to access the GTCEu API safely.
+ * The game does not crash when GTCEu is not installed.
  */
 @SuppressWarnings("null")
 public class GTCompat {
@@ -71,8 +72,8 @@ public class GTCompat {
     }
     
     /**
-     * 检查指定位置的方块实体是否来自 GregTech CEu 模组�?
-     * 用于防止�?GT 方块被误识别�?GT 能量容器�?
+     * Checks if the block entity at the position comes from the GregTech CEu mod.
+     * This prevents the code from treating a non-GT block as a GT energy container.
      */
     public static boolean isGTBlockEntity(Level level, BlockPos pos) {
         if (!isGTLoaded) return false;
@@ -82,8 +83,8 @@ public class GTCompat {
     }
 
     /**
-     * 从指定位置获�?GT 能量容器�?
-     * 仅当方块实体来自 GTCEu 模组时才返回结果�?
+     * Gets the GT energy container at the position.
+     * It returns a result only when the block entity comes from the GTCEu mod.
      */
     @SuppressWarnings("unchecked")
     @Nullable

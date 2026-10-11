@@ -37,8 +37,8 @@ public record ScannerButtonPacket(BlockPos pos, int buttonType) implements Custo
     }
 
     /**
-     * 服务器端处理�
- */
+     * Handles the packet on the server.
+     */
     public static void handleOnServer(ScannerButtonPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer serverPlayer) {

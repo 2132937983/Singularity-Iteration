@@ -19,9 +19,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 流体反应堆访问接口方法? *
- * 功能量? * - 用于访问流体反应堆多方块结构中的核反应堆
- * - 右键点击时显示连接的核反应堆�?GUI
+ * Fluid reactor access hatch block.
+ *
+ * Function:
+ * - It gives access to the nuclear reactor in the fluid reactor multiblock structure.
+ * - Right-clicking it opens the GUI of the connected nuclear reactor.
  * - 只有在有效的流体反应堆结构下才能正常工作
  */
 @SuppressWarnings("null")
@@ -62,7 +64,7 @@ public class mio_icif_Block_Reactor_Access_Hatch extends Block implements Entity
                 return InteractionResult.CONSUME;
             }
 
-            // 检查是否已连接到有效的流体反应�
+            // Check whether the hatch is connected to a valid fluid reactor.
         if (accessHatch.isConnected()) {
                 // 打开连接的核反应堆的 GUI
                 MenuProvider menuProvider = accessHatch;

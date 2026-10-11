@@ -32,7 +32,7 @@ public class mio_icif_have_rub_wood extends HorizontalDirectionalBlock implement
 
     public static final MapCodec<mio_icif_have_rub_wood> CODEC = simpleCodec(mio_icif_have_rub_wood::new);
 
-    // 定义有胶属性?
+    // Property that shows whether the wood has resin.
     public static final BooleanProperty HAS_HARZ = BooleanProperty.create("has_harz");
 
     public mio_icif_have_rub_wood(Properties properties) {

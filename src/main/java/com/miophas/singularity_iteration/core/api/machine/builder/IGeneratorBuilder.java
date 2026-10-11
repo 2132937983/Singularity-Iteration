@@ -5,11 +5,11 @@ import com.miophas.singularity_iteration.core.api.energy.ICableTier;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 
 /**
- * 发电机构建器
+ * Generator builder.
  *
- * <p>用于创建符合 mio_icif 风格的发电机。
+ * <p>Use it to make generators in the mio_icif style.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * CustomGeneratorBlock generator = builder
  *     .setName("advanced_solar")
@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
  */
 public interface IGeneratorBuilder {
 
-    // ========== 基础配置 ==========
+    // ========== Basic configuration ==========
 
     IGeneratorBuilder setName(String name);
 
@@ -34,180 +34,182 @@ public interface IGeneratorBuilder {
 
     IGeneratorBuilder setBlockProperties(BlockBehaviour.Properties properties);
 
-    // ========== 能量配置 ==========
+    // ========== Energy configuration ==========
 
     /**
-     * 设置发电速率 (EU/t)
+     * Sets the generation rate in EU/t.
      */
     IGeneratorBuilder setGenerationRate(long generationRate);
 
     /**
-     * 设置能量容量
+     * Sets the energy capacity in EU.
      */
     IGeneratorBuilder setEnergyCapacity(long capacity);
 
     /**
-     * 设置最大输出速率
+     * Sets the maximum output rate in EU/t.
      */
     IGeneratorBuilder setMaxExtract(long maxExtract);
 
     /**
-     * 设置电缆等级
+     * Sets the cable tier.
      */
     IGeneratorBuilder setCableTier(ICableTier tier);
 
     /**
-     * 使用默认模板配置
+     * Applies the default template values for the given tier.
      */
     IGeneratorBuilder useDefaultsForTier(ICableTier tier);
 
-    // ========== 发电机类型配置 ==========
+    // ========== Generator type configuration ==========
 
     /**
-     * 设置发电机类型
+     * Sets the generator type.
      */
     IGeneratorBuilder setGeneratorType(GeneratorType type);
 
     /**
-     * 设置是否需要天空（太阳能等）
+     * Sets if the generator needs a clear view of the sky (for example solar).
      */
     IGeneratorBuilder setRequiresSky(boolean requiresSky);
 
     /**
-     * 设置是否只在白天工作
+     * Sets if the generator works only during the day.
      */
     IGeneratorBuilder setDayOnly(boolean dayOnly);
 
     /**
-     * 设置是否只在夜晚工作
+     * Sets if the generator works only during the night.
      */
     IGeneratorBuilder setNightOnly(boolean nightOnly);
 
     /**
-     * 设置是否受天气影响
+     * Sets if the weather has an effect on the generator.
      */
     IGeneratorBuilder setWeatherDependent(boolean weatherDependent);
 
     /**
-     * 设置是否需要燃料
+     * Sets if the generator needs fuel.
      */
     IGeneratorBuilder setRequiresFuel(boolean requiresFuel);
 
     /**
-     * 设置是否需要流体燃料
+     * Sets if the generator needs fluid fuel.
      */
     IGeneratorBuilder setRequiresFluidFuel(boolean requiresFluidFuel);
 
     /**
-     * 设置是否需要转子（风力/水力）
+     * Sets if the generator needs a rotor (wind or water).
      */
     IGeneratorBuilder setRequiresRotor(boolean requiresRotor);
 
-    // ========== 槽位配置 ==========
+    // ========== Slot configuration ==========
 
     /**
-     * 添加燃料槽
+     * Adds a fuel slot at the given slot index.
      */
     IGeneratorBuilder addFuelSlot(int index);
 
     /**
-     * 添加电池槽（输出充电）
+     * Adds a battery slot at the given slot index. The generator charges the item in this slot.
      */
     IGeneratorBuilder addBatterySlot(int index);
 
     /**
-     * 添加流体槽
+     * Adds a fluid tank with the given capacity in mB.
      */
     IGeneratorBuilder addFluidTank(int capacity);
 
-    // ========== 效率配置 ==========
+    // ========== Efficiency configuration ==========
 
     /**
-     * 设置基础效率
+     * Sets the base efficiency.
      */
     IGeneratorBuilder setBaseEfficiency(double efficiency);
 
     /**
-     * 设置效率随高度变化（风力发电机）
+     * Sets if the efficiency changes with height (wind generator).
      */
     IGeneratorBuilder setHeightEfficiency(boolean heightEfficiency);
 
     /**
-     * 设置效率随生物群系变化
+     * Sets if the efficiency changes with the biome.
      */
     IGeneratorBuilder setBiomeEfficiency(boolean biomeEfficiency);
 
     /**
-     * 设置机器类型
+     * Sets the machine type.
      */
     IGeneratorBuilder setMachineType(com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType machineType);
 
-    // ========== 事件回调 ==========
+    // ========== Event callbacks ==========
 
     /**
-     * 设置发电开始回调
+     * Sets the callback for the start of generation.
      */
     IGeneratorBuilder onGenerationStart(GenerationCallback callback);
 
     /**
-     * 设置每 tick 发电回调
+     * Sets the callback that runs for each tick of generation.
      */
     IGeneratorBuilder onGenerate(GenerationCallback callback);
 
     /**
-     * 设置燃料消耗回调
+     * Sets the callback for fuel consumption.
      */
     IGeneratorBuilder onFuelConsume(FuelConsumeCallback callback);
 
-    // ========== 构建 ==========
+    // ========== Build ==========
 
     /**
-     * 设置已注册的 BlockEntityType
+     * Sets the registered BlockEntityType.
      *
-     * <p>附属模组在自己的模组初始化阶段创建 BlockEntityType 后，
-     * 通过此方法将其关联到构建器，使 {@link #build()} 返回的定义包含有效的 entityType。
+     * <p>An addon mod creates its BlockEntityType during its own mod initialization.
+     * Then it calls this method to link the type to the builder.
+     * After this, the definition that {@link #build()} returns contains a valid entityType.
      *
-     * @param entityType 已注册的 BlockEntityType
-     * @return 构建器自身
+     * @param entityType the registered BlockEntityType
+     * @return this builder
      */
     IGeneratorBuilder withEntityType(net.minecraft.world.level.block.entity.BlockEntityType<?> entityType);
 
     IMachineDefinition build();
 
     /**
-     * 构建并注册发电机
+     * Builds and registers the generator.
      *
-     * <p>如果已通过 {@link #withEntityType(BlockEntityType)} 设置了 BlockEntityType，
-     * 返回的定义将包含该 entityType，可直接使用。
+     * <p>If you set a BlockEntityType with {@link #withEntityType(BlockEntityType)},
+     * the returned definition contains that entityType. You can use it directly.
      *
-     * @param modId 模组 ID
-     * @return 机器定义
+     * @param modId the mod ID
+     * @return the machine definition
      */
     IMachineDefinition buildAndRegister(String modId);
 
     /**
-     * 获取机器配置记录
+     * Gets the machine configuration record.
      *
-     * <p>提供创建机器所需的所有参数，供附属模组自行注册 BlockEntityType。
+     * <p>The record contains all parameters that are necessary to create the machine.
+     * Addon mods use it to register their own BlockEntityType.
      *
-     * @return 机器配置记录
+     * @return the machine configuration record
      */
     IMachineBuilderAPI.MachineConfiguration getConfiguration();
 
-    // ========== 枚举和回调 ==========
+    // ========== Enums and callbacks ==========
 
     enum GeneratorType {
-        SOLAR,          // 太阳能
-        WIND,           // 风力
-        WATER,          // 水力
-        THERMAL,        // 热力
-        KINETIC,        // 动能
-        NUCLEAR,        // 核能
-        SEMI_FLUID,     // 半流体
-        GEO,            // 地热
-        RTG,            // 放射性同位素
-        FUSION,         // 聚变
-        CUSTOM          // 自定义
+        SOLAR,          // Solar
+        WIND,           // Wind
+        WATER,          // Water
+        THERMAL,        // Thermal
+        KINETIC,        // Kinetic
+        NUCLEAR,        // Nuclear
+        SEMI_FLUID,     // Semi-fluid
+        GEO,            // Geothermal
+        RTG,            // Radioisotope
+        FUSION,         // Fusion
+        CUSTOM          // Custom
     }
 
     @FunctionalInterface

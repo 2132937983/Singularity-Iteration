@@ -17,7 +17,7 @@ public class mio_icif_CondensatorRepairRecipeSerializer implements RecipeSeriali
     // JSON编解码器（不需要额外数据）
     private static final MapCodec<mio_icif_CondensatorRepairRecipe> CODEC = MapCodec.unit(mio_icif_CondensatorRepairRecipe::new);
 
-    // 网络流传输编解码�?- 使用正确的实现方法
+    // Network stream codec.
 private static final StreamCodec<RegistryFriendlyByteBuf, mio_icif_CondensatorRepairRecipe> STREAM_CODEC =
             new StreamCodec<>() {
                 @Override

@@ -32,7 +32,6 @@ import java.util.List;
 public class mio_icif_block_dimension_oil_rig_core extends mio_icif_Block_OilRig_Multiblock_Base {
 
     private static final long CAPACITY = 200000L;
-    private static final ICableTier TIER = MioIcifAPI.instance().getEnergyNetAPI().getCableTier("ev");
 
     public static final MapCodec<mio_icif_block_dimension_oil_rig_core> CODEC = simpleCodec(mio_icif_block_dimension_oil_rig_core::new);
     public static final DirectionProperty FACING = DirectionalBlock.FACING;

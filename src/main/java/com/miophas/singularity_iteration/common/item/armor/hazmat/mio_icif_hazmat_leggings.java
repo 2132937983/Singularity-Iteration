@@ -14,15 +14,16 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 防化服护�? * 提供辐射防护功能
+ * Hazmat suit leggings.
+ * They give radiation protection.
  */
 @SuppressWarnings("null")
 public class mio_icif_hazmat_leggings extends ArmorItem implements IHazmatLike {
 
-    // 辐射防护等级�?-4�? 为完全防护）
+    // Radiation protection level (0-4). 4 is full protection.
     private static final int RADIATION_PROTECTION_LEVEL = 4;
 
-    // 防化服护甲材质路径（护腿和靴子使�?layer 2�
+    // Hazmat armor texture path. Leggings and boots use layer 2.
 private static final ResourceLocation HAZMAT_ARMOR_TEXTURE = 
         ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/armor/hazmat_2.png");
 
@@ -54,7 +55,7 @@ private static final ResourceLocation HAZMAT_ARMOR_TEXTURE =
 
         // 如果穿着整套防化服，提供完全辐射免疫
         if (isWearingFullHazmat(livingEntity)) {
-            // 穿着整套时完全免疫辐�
+            // A full hazmat suit gives full radiation immunity.
         return;
         }
     }

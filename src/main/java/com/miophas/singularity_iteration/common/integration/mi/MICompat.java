@@ -14,8 +14,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Modern Industrialization 兼容性层
- * 使用反射安全地访问?MI �?API，避免在没有 MI 时崩�?
+ * Compatibility layer for Modern Industrialization (MI).
+ * It uses reflection to access the MI API safely.
+ * The game does not crash when MI is not installed.
  */
 @SuppressWarnings("null")
 public class MICompat {
@@ -35,7 +36,7 @@ public class MICompat {
     private static Method canReceiveMethod;
     private static Method canConnectMethod;
     
-    // MI CableTier 枚举�?
+    // MI CableTier enum constants.
     private static Object miTierLV;
     private static Object miTierMV;
     private static Object miTierHV;
@@ -62,7 +63,7 @@ public class MICompat {
             canReceiveMethod = miEnergyStorageClass.getMethod("canReceive");
             canConnectMethod = miEnergyStorageClass.getMethod("canConnect", miCableTierClass);
 
-            // 获取 CableTier 枚举�?
+            // Get the CableTier enum constants.
             miTierLV = miCableTierClass.getField("LV").get(null);
             miTierMV = miCableTierClass.getField("MV").get(null);
             miTierHV = miCableTierClass.getField("HV").get(null);
@@ -72,22 +73,22 @@ public class MICompat {
             isMILoaded = true;
             Singularity_Iteration.LOGGER.info("[MICompat] MI compatibility layer initialized successfully");
         } catch (Exception e) {
-            // MI 未加载，这是正常�?
+            // MI is not loaded. This is a normal condition.
             isMILoaded = false;
             Singularity_Iteration.LOGGER.info("[MICompat] MI not loaded, compatibility layer disabled: {}", e.getMessage());
         }
     }
     
     /**
-     * 检�?MI 是否已加载?
+     * Checks if MI is loaded.
      */
     public static boolean isMILoaded() {
         return isMILoaded;
     }
     
     /**
-     * 检查指定位置的方块实体是否来自 Modern Industrialization 模组�?
-     * 用于防止 GrandPower 自动适配器将其他模组�?FE 存储误判�?MI 存存储?
+     * Checks if the block entity at the position comes from the Modern Industrialization mod.
+     * This prevents the GrandPower auto-adapter from treating FE storage from other mods as MI storage.
      */
     public static boolean isMIBlockEntity(Level level, BlockPos pos) {
         if (!isMILoaded) return false;
@@ -97,9 +98,9 @@ public class MICompat {
     }
     
     /**
-     * 从指定位置获�?MI 能量存存储?
-     * 仅当方块实体来自 MI 模组时才返回结果，防止?GrandPower 自动适配方?
-     * 将其他模组（如沉浸工程）�?FE 存储误包装为 MI 存存储?
+     * Gets the MI energy storage at the position.
+     * It returns a result only when the block entity comes from the MI mod.
+     * This prevents the GrandPower auto-adapter from wrapping FE storage from other mods (for example Immersive Engineering) as MI storage.
      */
     @SuppressWarnings("unchecked")
     @Nullable
@@ -113,8 +114,8 @@ public class MICompat {
         }
 
         try {
-            // 使用 Level.getCapability 方法查询 MI 的能量?
-            // 首先获取 BlockCapability 的类�?
+            // Use Level.getCapability to query the MI energy capability.
+            // First cast the capability to its BlockCapability type.
             BlockCapability<Object, Direction> capability = (BlockCapability<Object, Direction>) sidedCapability;
             return level.getCapability(capability, pos, direction);
         } catch (Exception e) {
@@ -124,7 +125,7 @@ public class MICompat {
     }
     
     /**
-     * 包装 MI 能量存存储?IEUEnergyStorage
+     * Wraps an MI energy storage as an IEUEnergyStorage.
      */
     public static IEUEnergyStorage wrapMIStorage(Object miStorage) {
         if (!isMILoaded || miStorage == null) return null;
@@ -132,7 +133,7 @@ public class MICompat {
     }
     
     /**
-     * 将我们的 CableTier 转换�?MI �?CableTier
+     * Converts our CableTier to the MI CableTier.
      */
     private static Object convertCableTier(CableTier tier) {
         if (!isMILoaded) return miTierLV;
@@ -147,7 +148,7 @@ public class MICompat {
     }
     
     /**
-     * 包装类：�?MI �?MIEnergyStorage 包装置?IEUEnergyStorage
+     * Wrapper that adapts the MI MIEnergyStorage to IEUEnergyStorage.
      */
     private static class WrappedMIEnergyStorage implements IEUEnergyStorage {
         private final Object wrapped;

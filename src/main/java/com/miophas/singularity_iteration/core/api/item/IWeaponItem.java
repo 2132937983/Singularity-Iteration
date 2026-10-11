@@ -3,66 +3,74 @@ package com.miophas.singularity_iteration.core.api.item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 武器物品接口。
+ * Interface for weapon items.
  *
- * <p>扩展 {@link IBatteryItem}，为电动武器提供统一的 API。
- * 适用于电枪、激光武器、等离子武器等消耗能量的武器。
+ * <p>It extends {@link IBatteryItem} and gives one API for electric weapons.
+ * Use it for weapons that use energy, such as electric guns, laser weapons and plasma weapons.
  */
 public interface IWeaponItem extends IBatteryItem {
 
     /**
-     * 获取武器基础伤害值
-     * @return 伤害值
+     * Returns the base damage of the weapon.
+     *
+     * @return the damage
      */
     float getDamage();
 
     /**
-     * 获取武器有效射程（方块数）
-     * @return 射程
+     * Returns the effective range of the weapon (in blocks).
+     *
+     * @return the range
      */
     float getRange();
 
     /**
-     * 获取每次射击消耗的能量
-     * @return 每次射击的能耗（EU）
+     * Returns the energy that each shot uses.
+     *
+     * @return the energy for each shot (EU)
      */
     long getEnergyPerShot();
 
     /**
-     * 检查是否为远程武器
-     * @return true 如果是远程武器
+     * Returns true if this is a ranged weapon.
+     *
+     * @return true if it is a ranged weapon
      */
     boolean isRanged();
 
     /**
-     * 获取武器射速（tick/发）
-     * @return 射速间隔
+     * Returns the fire rate of the weapon (ticks for each shot).
+     *
+     * @return the interval between shots
      */
     default int getFireRate() {
         return 20;
     }
 
     /**
-     * 获取武器精准度（0.0 - 1.0）
-     * @return 精准度
+     * Returns the accuracy of the weapon (0.0 - 1.0).
+     *
+     * @return the accuracy
      */
     default float getAccuracy() {
         return 1.0F;
     }
 
     /**
-     * 检查武器是否有足够能量射击
-     * @param stack 物品堆
-     * @return true 如果能量足够
+     * Returns true if the weapon has sufficient energy for a shot.
+     *
+     * @param stack the item stack
+     * @return true if the energy is sufficient
      */
     default boolean canShoot(ItemStack stack) {
         return getEnergy(stack) >= getEnergyPerShot();
     }
 
     /**
-     * 消耗射击能量
-     * @param stack 物品堆
-     * @return true 如果成功消耗
+     * Uses the energy for one shot.
+     *
+     * @param stack the item stack
+     * @return true if the energy was used
      */
     default boolean shoot(ItemStack stack) {
         if (canShoot(stack)) {

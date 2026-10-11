@@ -10,15 +10,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 独立能源平台的实体替换登记表。
+ * Entity substitution registry for the independent energy platform.
  *
- * <p>哪些方块在放置/读档时被替换成 core 的独立变压器与特种线缆实体，由宿主注册，
- * 而不是写死在 core 里：core 因此不认识任何具体模组命名空间，附属也能登记自己的
- * 控制器方块。注册在启动装配阶段完成，运行期只读。
+ * <p>The host registers which blocks are replaced with the core independent transformer and special cable entities on placement or load.
+ * This is not hard-coded in core. Thus core does not know any specific mod namespace, and add-ons can register their own
+ * controller blocks. Registration occurs during the startup assembly phase. At runtime the registry is read-only.
  */
 public final class IndependentSubstitutions {
 
-    /** 变压器替换项：目标实体类型 ID + 低压阈值。 */
+    /** Transformer substitution entry: target entity type ID + low-voltage threshold. */
     public record Transformer(String entityType, long lowTier) {
         public Transformer {
             if (entityType == null || entityType.isBlank()) throw new IllegalArgumentException("entity type");
@@ -26,7 +26,7 @@ public final class IndependentSubstitutions {
         }
     }
 
-    /** 特种线缆替换项：目标实体类型 ID + 是否为检测线缆。 */
+    /** Special cable substitution entry: target entity type ID + whether it is a detector cable. */
     public record Cable(String entityType, boolean detector) {
         public Cable {
             if (entityType == null || entityType.isBlank()) throw new IllegalArgumentException("entity type");
@@ -60,12 +60,12 @@ public final class IndependentSubstitutions {
         return state == null ? null : CABLES.get(idOf(state));
     }
 
-    /** 该方块是否登记为特种线缆（决定红石信号面是否被接管）。 */
+    /** Returns true if the block is registered as a special cable (this decides if the redstone signal sides are taken over). */
     public static boolean controlsCable(BlockState state) {
         return cableFor(state) != null;
     }
 
-    /** 该特种线缆是否为检测线缆（检测线缆才是信号源）。 */
+    /** Returns true if the special cable is a detector cable (only detector cables are signal sources). */
     public static boolean detectorCable(BlockState state) {
         Cable cable = cableFor(state);
         return cable != null && cable.detector();

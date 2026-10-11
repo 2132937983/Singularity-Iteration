@@ -27,7 +27,9 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 实体注册�? * 管理所有自定义实体的注册? */
+ * Entity registry.
+ * It registers all custom entities of the mod.
+ */
 @SuppressWarnings("null")
 public class mio_icif_entities {
 
@@ -35,7 +37,7 @@ public class mio_icif_entities {
     public static final DeferredRegister<EntityType<?>> ENTITIES =
         DeferredRegister.create(BuiltInRegistries.ENTITY_TYPE, Singularity_Iteration.MOD_ID);
 
-    // 注册激光子弹实�
+    // Register the laser bullet entity.
 public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_laser_bullet>> LASER_BULLET =
         ENTITIES.register("laser_bullet",
             () -> EntityType.Builder.<mio_icif_laser_bullet>of(mio_icif_laser_bullet::new, MobCategory.MISC)
@@ -44,7 +46,7 @@ public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_laser_bull
                 .updateInterval(10)
                 .build("laser_bullet"));
 
-    // 注册等离子子弹实�
+    // Register the plasma bullet entity.
 public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_plasma_bullet>> PLASMA_BULLET =
         ENTITIES.register("plasma_bullet",
             () -> EntityType.Builder.<mio_icif_plasma_bullet>of(mio_icif_plasma_bullet::new, MobCategory.MISC)
@@ -91,7 +93,7 @@ public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_plasma_bul
                 .updateInterval(10)
                 .build("nuke_primed"));
 
-    // 注册电动船实�
+    // Register the electric boat entity.
 public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_electric_boat>> ELECTRIC_BOAT =
         ENTITIES.register("electric_boat",
             () -> EntityType.Builder.<mio_icif_electric_boat>of(mio_icif_electric_boat::new, MobCategory.MISC)
@@ -99,7 +101,7 @@ public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_electric_b
                 .clientTrackingRange(10)
                 .build("electric_boat"));
 
-    // 注册橡胶船实�
+    // Register the rubber boat entity.
 public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_rubber_boat>> RUBBER_BOAT =
         ENTITIES.register("rubber_boat",
             () -> EntityType.Builder.<mio_icif_rubber_boat>of(mio_icif_rubber_boat::new, MobCategory.MISC)
@@ -124,7 +126,7 @@ public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_rubber_boa
                 .updateInterval(10)
                 .build("dynamite_entity"));
 
-    // 注册粘性炸药实�
+    // Register the sticky dynamite entity.
 public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_sticky_dynamite_entity>> STICKY_DYNAMITE_ENTITY =
         ENTITIES.register("sticky_dynamite_entity",
             () -> EntityType.Builder.<mio_icif_sticky_dynamite_entity>of(mio_icif_sticky_dynamite_entity::new, MobCategory.MISC)
@@ -140,7 +142,7 @@ public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_sticky_dyn
     public static void register(IEventBus eventBus) {
         ENTITIES.register(eventBus);
 
-        // 注册完成后，将实体类型设置给镭射�
+        // After registration, give the entity types to the weapons that fire them.
     eventBus.addListener(mio_icif_entities::onCommonSetup);
     }
 

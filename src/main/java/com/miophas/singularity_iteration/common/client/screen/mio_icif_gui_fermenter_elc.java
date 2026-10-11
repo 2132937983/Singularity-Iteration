@@ -45,10 +45,6 @@ public class mio_icif_gui_fermenter_elc extends mio_icif_screen<com.miophas.sing
     private static final int BIOGAS_TANK_HEIGHT = 51;
 
     // 流体颜色（临时占位，最终应读取流体纹理）
-    @SuppressWarnings("unused")
-    private static final int BIOMASS_COLOR = 0xFF4A7C31;
-    @SuppressWarnings("unused")
-    private static final int BIOGAS_COLOR = 0xFFD4C44A;
 
     public mio_icif_gui_fermenter_elc(FermenterElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

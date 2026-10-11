@@ -15,22 +15,24 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 机器完成工作事件
+ * Machine work complete event.
  *
- * <p><b>触发时机</b>：当机器完成一次配方加工后触发（例如：压缩机完成压缩、提取机完成提取）。
+ * <p><b>When</b>: the event fires when a machine completes one recipe operation
+ * (for example, when a compressor completes a compression or an extractor completes an extraction).
  *
- * <p><b>触发频率</b>：每次配方完成触发一次，频率取决于机器加工速度和配方时间。
+ * <p><b>Frequency</b>: the event fires one time for each completed recipe.
+ * The frequency depends on the machine speed and the recipe time.
  *
- * <p><b>覆盖范围</b>：所有实现 IProducerBlock 接口的机器类型，包括：
+ * <p><b>Scope</b>: all machine types that implement the IProducerBlock interface, including:
  * <ul>
- *   <li>压缩机、提取机、粉碎机、离心机等基础机器</li>
- *   <li>焊接机、精密组装机等多原料机器</li>
- *   <li>核反应堆（每次循环完成时）</li>
+ *   <li>Basic machines such as compressors, extractors, macerators and centrifuges</li>
+ *   <li>Machines with more than one ingredient, such as welders and precision assemblers</li>
+ *   <li>Nuclear reactors (at the end of each cycle)</li>
  * </ul>
  *
- * <p><b>注意</b>：此事件不可取消。可用于修改输出物品或执行额外操作。
+ * <p><b>Note</b>: you cannot cancel this event. Use it to change the output item or to do more operations.
  *
- * <p>示例用法：
+ * <p>Example:
  * <pre>{@code
  * @SubscribeEvent
  * public void onMachineWorkComplete(MachineWorkCompleteEvent event) {
@@ -69,14 +71,14 @@ public class MachineWorkCompleteEvent extends Event {
     }
 
     /**
-     * 获取机器只读信息视图
+     * Gets a read-only view of the machine information.
      */
     public IMachineInfo getMachineInfo() {
         return machineInfo;
     }
 
     /**
-     * @deprecated 使用 {@link #getMachineInfo()} 获取只读视图。此方法将在后续版本移除。
+     * @deprecated Use {@link #getMachineInfo()} to get a read-only view. A later version will remove this method.
      */
     @Deprecated
     public IProducerBlock getMachine() {

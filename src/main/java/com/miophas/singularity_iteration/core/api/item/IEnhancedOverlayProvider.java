@@ -7,23 +7,23 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
- * 增强覆盖层提供者接口。
+ * Interface for enhanced overlay providers.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IEnhancedOverlayProvider}。
- * 实现此接口的物品可以在手持时为方块提供增强覆盖层，
- * 显示额外的信息或交互界面。
+ * It is the equivalent of {@code IEnhancedOverlayProvider} in IC2 1.12.2.
+ * When a player holds an item that implements this interface, the item can give an enhanced overlay for a block.
+ * The overlay shows more information or an interaction interface.
  */
 public interface IEnhancedOverlayProvider {
 
     /**
-     * 检查此物品是否为指定方块提供增强覆盖层。
+     * Returns true if this item gives an enhanced overlay for the given block.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @param side 看向的面
-     * @param player 玩家
-     * @param stack 手持物品
-     * @return 如果提供增强覆盖层则返回 true
+     * @param world the world
+     * @param pos the block position
+     * @param side the face that the player looks at
+     * @param player the player
+     * @param stack the held item
+     * @return true if the item gives an enhanced overlay
      */
     boolean providesEnhancedOverlay(Level world, BlockPos pos, Direction side, Player player, ItemStack stack);
 }

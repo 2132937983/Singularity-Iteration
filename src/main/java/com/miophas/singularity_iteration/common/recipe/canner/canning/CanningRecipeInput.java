@@ -5,8 +5,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 
 /**
- * 装罐模式配方输入
- * 包装输入槽物品和材料槽物??? */
+ * Recipe input for the canning mode.
+ * It wraps the item in the input slot and the item in the material slot. */
 public record CanningRecipeInput(ItemStack inputCan, ItemStack material) implements RecipeInput {
 
     @Override

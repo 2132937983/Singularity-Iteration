@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Collection;
 
 /**
- * 作物 API 实现
+ * Implementation of the crop API. It delegates to {@link PlantRegistry}.
  */
 public class CropAPIImpl implements ICropAPI {
 
@@ -35,19 +35,19 @@ public class CropAPIImpl implements ICropAPI {
 
     @Override
     public void registerBaseSeed(ItemStack seed, PlantType plantType) {
-        // 使用默认属性注册基础种子
-        // stage=1 表示种子从初始生长阶段开始（而非 0）
+        // Register the base seed with the default properties.
+        // stage=1 means that the seed starts at the first growth stage (not 0).
         PlantRegistry.instance.registerBaseSeed(seed, plantType, 1, 0, 0, 0, 0);
     }
 
     @Override
     public void registerBaseSeed(ItemStack seed, PlantType plantType, int growthRate, int gain, int resistance, int weedEx) {
-        // 映射接口参数到 PlantRegistry 参数：
-        // growthRate -> growthSpeed (生长速度)
-        // gain -> yield (产量)
-        // resistance -> resilience (抗性)
-        // weedEx -> weedResistance (杂草抗性)
-        // stage 默认为 1（种子从初始生长阶段开始，而非 0）
+        // Map the interface parameters to the PlantRegistry parameters:
+        // growthRate -> growthSpeed (growth speed)
+        // gain -> yield (yield)
+        // resistance -> resilience (resistance)
+        // weedEx -> weedResistance (weed resistance)
+        // stage is 1 by default (the seed starts at the first growth stage, not 0).
         PlantRegistry.instance.registerBaseSeed(seed, plantType, 1, growthRate, gain, resistance, weedEx);
     }
 }

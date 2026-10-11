@@ -56,8 +56,8 @@ import org.jetbrains.annotations.Nullable;
         this.addUpgradeSlot(UPGRADE_SLOT, 152, 73);
     }
 
-    // GUI高度184，按照原版IC2逻辑调整玩家物品栏位置?
-    // 背包Y = 184 - 82 = 102, 快捷栏Y = 184 - 24 = 160
+    // The GUI height is 184. The player inventory position follows the original IC2 logic.
+    // Inventory Y = 184 - 82 = 102, hotbar Y = 184 - 24 = 160
     @Override
     protected int getPlayerInventoryY() { return 102; }
 

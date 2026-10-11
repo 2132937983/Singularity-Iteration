@@ -3,47 +3,57 @@ package com.miophas.singularity_iteration.core.api.kinetic;
 import net.minecraft.core.Direction;
 
 /**
- * KU (Kinetic Units) 动力源接受? * 用于可以产生动能的方法?物品
- * 
- * 动力源特点：
- * - 持续产生动能（如蒸汽轮机、水轮机、风力发电机等）
- * - 产生的动能可以输出到相邻的动能存储或传导�? * - 可能有启动条件（如需要蒸汽、水流、风力等�? */
+ * Source of KU (Kinetic Units).
+ * Blocks or items that produce kinetic energy implement this interface.
+ *
+ * Properties of a kinetic source:
+ * - It produces kinetic energy continuously. Examples: steam turbines, water mills, wind generators.
+ * - It can output the kinetic energy to an adjacent kinetic storage or conductor.
+ * - It can have start conditions. Examples: steam, water flow, wind.
+ */
 public interface IKineticSource {
     
     /**
-     * 获取当前产生的动能输出（KU/tick�?     * 
-     * @param side 输出方向
-     * @return 当前 tick 产生的动作?     */
+     * Gets the current kinetic output in KU/tick.
+     *
+     * @param side the output direction
+     * @return the kinetic energy produced this tick
+     */
     int getKineticOutput(Direction side);
     
     /**
-     * 获取最大动能输出（KU/tick�?     * 
-     * @param side 输出方向
-     * @return 最大可能的动能输出
+     * Gets the maximum kinetic output in KU/tick.
+     *
+     * @param side the output direction
+     * @return the maximum possible kinetic output
      */
     int getMaxKineticOutput(Direction side);
     
     /**
-     * 是否正在产生动能
-     * 
-     * @param side 输出方向
-     * @return 如果正在产生动能返回 true
+     * Checks if the source is producing kinetic energy.
+     *
+     * @param side the output direction
+     * @return true if the source is producing kinetic energy
      */
     boolean isProducingKinetic(Direction side);
     
     /**
-     * 是否可以在指定方向输出动作?     * 
-     * @param side 输出方向
-     * @return 如果可以输出返回 true
+     * Checks if the source can output kinetic energy to the specified direction.
+     *
+     * @param side the output direction
+     * @return true if the source can output
      */
     boolean canOutputKinetic(Direction side);
     
     /**
-     * 获取当前转速（RPM�?     * 动力源的转速可能影响输出效果?     */
+     * Gets the current rotation speed in RPM.
+     * The rotation speed of the source can change the output.
+     */
     int getCurrentRPM();
     
     /**
-     * 获取最大转速（RPM�?     */
+     * Gets the maximum rotation speed in RPM.
+     */
     int getMaxRPM();
 }
 

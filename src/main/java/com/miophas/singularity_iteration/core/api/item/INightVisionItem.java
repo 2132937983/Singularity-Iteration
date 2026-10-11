@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 夜视护目镜物品接口。
+ * Night vision goggles item interface.
  *
- * <p>用于标识夜视护目镜类物品，便于 API 统一查询与分类。
+ * <p>This interface marks night vision goggle items, so the API can query and classify them in one way.
  */
 public interface INightVisionItem {
 }

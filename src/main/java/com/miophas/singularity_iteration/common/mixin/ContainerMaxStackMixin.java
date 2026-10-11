@@ -7,8 +7,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
 /**
- * 修改 Container 的最大堆叠数限制
- * 允许容器中的物品堆叠数超???99
+ * Changes the maximum stack size limit of Container.
+ * Lets items in containers stack above 99.
  */
 @Mixin(Container.class)
 public interface ContainerMaxStackMixin {

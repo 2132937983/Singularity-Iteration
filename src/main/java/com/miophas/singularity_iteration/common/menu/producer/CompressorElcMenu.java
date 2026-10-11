@@ -12,7 +12,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 压缩�?Menu
+ * Menu for the compressor.
  */
 @SuppressWarnings("null")
 public class CompressorElcMenu extends mio_icif_machine_menu {
@@ -49,19 +49,19 @@ public class CompressorElcMenu extends mio_icif_machine_menu {
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
 
-        // 注册快速移动规则?
+        // Register the quick-move rules.
         registerMachineMoveRules();
     }
 
     @Override
     protected void addMachineSlots() {
-        // 输入�?
+        // Input slot
         addInputSlot(INPUT_SLOT, INPUT_X, INPUT_Y);
 
-        // 电池�?
+        // Battery slot
         addBatterySlot(BATTERY_SLOT, BATTERY_X, BATTERY_Y);
 
-        // 输出槽（大尺寸槽位?
+        // Output slot (large slot)
         this.addSlot(new LargeSlot(itemHandler, OUTPUT_SLOT, OUTPUT_X, OUTPUT_Y, 26, 26));
 
         // 4个升级槽
@@ -143,7 +143,7 @@ public class CompressorElcMenu extends mio_icif_machine_menu {
     }
 
     /**
-     * 大尺寸槽位类�?6x26�?
+     * Large slot type (26x26).
      */
     public static class LargeSlot extends SlotItemHandler {
         @SuppressWarnings("unused")

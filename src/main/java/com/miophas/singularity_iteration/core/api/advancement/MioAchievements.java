@@ -10,27 +10,27 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 进度的授予入口。
+ * Entry point to grant advancements.
  * <p>
- * 进度背后的世界事件（超压爆炸、核爆、反应堆熔毁与启动、复制机产出）大多发生在没有玩家上下文的
- * 方块实体、多方块管理器或能量网络里，所以统一照搬原版 {@code CrafterBlock} 的做法：把进度授予
- * 触发点附近 {@link #RADIUS} 格内的所有在线玩家。
+ * Most world events behind advancements (overpressure explosion, nuclear explosion, reactor meltdown and start, replicator output)
+ * occur in block entities, multiblock managers or energy networks that have no player context. Thus this class uses
+ * the same method as vanilla {@code CrafterBlock}: it grants the advancement to all online players in {@link #RADIUS} blocks of the trigger point.
  * <p>
- * 进度或 criterion 名字不存在时静默失败，因此调用点不需要额外判空。
+ * If the advancement or criterion name does not exist, the call fails silently. Thus callers do not need a null check.
  * <p>
- * 本类位于 {@code core} 源码集，因此命名空间按该源码集的既有约定（{@code EUApi.MOD_ID}、
- * {@code CoreSounds} 等）内联为字面量，不引用 {@code common} 下的模组主类。
+ * This class is in the {@code core} source set. Thus, as other classes in that source set do ({@code EUApi.MOD_ID},
+ * {@code CoreSounds}), it writes the namespace as an inline literal. It does not refer to the main mod class in {@code common}.
  */
 public final class MioAchievements {
-    /** 本模组的命名空间。 */
+    /** Namespace of this mod. */
     public static final String MOD_ID = "mio_icif";
 
-    /** 授予半径（格）。 */
+    /** Grant radius, in blocks. */
     public static final double RADIUS = 16.0D;
 
     private MioAchievements() {}
 
-    /** 按方块坐标授予。 */
+    /** Grants by block position. */
     public static void at(Level level, BlockPos pos, String path, String criterion) {
         if (pos == null) {
             return;
@@ -38,7 +38,7 @@ public final class MioAchievements {
         at(level, Vec3.atCenterOf(pos), path, criterion);
     }
 
-    /** 按世界坐标授予。 */
+    /** Grants by world coordinates. */
     public static void at(Level level, Vec3 center, String path, String criterion) {
         if (!(level instanceof ServerLevel server)) {
             return;
@@ -51,7 +51,7 @@ public final class MioAchievements {
         }
     }
 
-    /** 只授予指定玩家。 */
+    /** Grants to the given player only. */
     public static void grant(ServerPlayer player, String path, String criterion) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
         AdvancementHolder holder = player.server.getAdvancements().get(id);

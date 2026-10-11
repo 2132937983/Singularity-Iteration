@@ -26,17 +26,17 @@ public class mio_icif_treetap_elc extends mio_icif_tool_elc implements ITreeTapI
     public static final int TREETAP_ELC_ENERGY_PER_USE = 10;
 
     /**
-     * 默认构造函数（空电状态）
-     * @param properties 物品属性?
+     * Default constructor. The item has no energy.
+     * @param properties the item properties
      */
     public mio_icif_treetap_elc(Properties properties) {
         super(properties, TREETAP_ELC_MAX_ENERGY, TREETAP_ELC_MAX_ENERGY, "treetap_elc", TREETAP_ELC_MAX_ENERGY, TREETAP_ELC_ENERGY_PER_USE, 1);
     }
 
     /**
-     * 带初始能量的构造函数?
-     * @param properties 物品属性?
-     * @param initialEnergy 初始能量
+     * Constructor with initial energy.
+     * @param properties the item properties
+     * @param initialEnergy the initial energy
      */
     public mio_icif_treetap_elc(Properties properties, int initialEnergy) {
         super(properties, TREETAP_ELC_MAX_ENERGY, TREETAP_ELC_MAX_ENERGY - initialEnergy, "treetap_elc", TREETAP_ELC_MAX_ENERGY, TREETAP_ELC_ENERGY_PER_USE, 1);
@@ -64,20 +64,20 @@ public class mio_icif_treetap_elc extends mio_icif_tool_elc implements ITreeTapI
     }
 
     /**
-     * 重写：防止电动树脂提取器损坏
+     * Override. Prevents damage to the electric treetap.
      */
     @Override
     public <T extends net.minecraft.world.entity.LivingEntity> int damageItem(ItemStack stack, int amount, T entity, java.util.function.Consumer<net.minecraft.world.item.Item> onBroken) {
-        // 电动树脂提取器不通过damageItem损坏，而是通过消耗能量?
+        // The electric treetap does not take damage through damageItem. It uses energy instead.
         return 0;
     }
 
     /**
-     * 重写：电动树脂提取器永远不会消失
+     * Override. The electric treetap never breaks.
      */
     @Override
     public boolean isDamaged(ItemStack stack) {
-        // 当能量未满时返回true，显示耐久度信息?
+        // Return true when the energy is not full. This shows the durability information.
         return getEnergy(stack) < getMaxEnergy();
     }
 

@@ -29,13 +29,13 @@ public final class ActiveMultiblocks {
 
     private ActiveMultiblocks() {}
 
-    /** 框架内部注册点：成形时调用一次，不构成公开兼容承诺。 */
+    /** Internal framework registration point. Call it one time when the structure forms. It is not a public compatibility promise. */
     public static synchronized void register(Level level, IMultiblockStructure structure) {
         ACTIVE.computeIfAbsent(level, key -> new HashMap<>())
             .put(structure.getControllerPos(), structure);
     }
 
-    /** 框架内部注销点：拆除时调用一次，不构成公开兼容承诺。 */
+    /** Internal framework removal point. Call it one time when the structure is removed. It is not a public compatibility promise. */
     public static synchronized void unregister(Level level, IMultiblockStructure structure) {
         Map<BlockPos, IMultiblockStructure> structures = ACTIVE.get(level);
         if (structures != null) {

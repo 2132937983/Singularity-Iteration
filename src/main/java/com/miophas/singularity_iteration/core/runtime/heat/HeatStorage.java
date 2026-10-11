@@ -10,13 +10,13 @@ import net.minecraft.nbt.Tag;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 
 /**
- * HU (Heat Units) 热能存储的参考实现
- * 实现了 IHeatStorage 接口和 NBT 序列化
+ * Reference implementation of HU (Heat Units) heat storage.
+ * It implements the IHeatStorage interface and NBT serialization.
  * 
- * 与 FE 的区别：
- * - 热能会自然散失
- * - 有温度概念
- * - 传输效率受距离和介质影响
+ * Differences from FE:
+ * - Heat is lost naturally over time.
+ * - It has a temperature.
+ * - Distance and medium affect the transfer efficiency.
  */
 @SuppressWarnings("null")
 public class HeatStorage implements IHeatStorage, INBTSerializable<Tag> {

@@ -71,7 +71,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
     private Button prevPageButton;
     private Button nextPageButton;
     
-    // 缂撳瓨鍊肩敤浜庢��娴嬪彉鍖�
+    // Cached values. They detect changes in the category and the page.
     private int lastCategory = -1;
     private int lastPage = -1;
 

@@ -3,52 +3,52 @@ package com.miophas.singularity_iteration.core.api.upgrade.tile;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 处理升级接口。
+ * Processing upgrade interface.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IProcessingUpgrade}。
- * 实现此接口的升级可以改变机器的处理速度和能量消耗。
+ * Equivalent to {@code IProcessingUpgrade} in IC2 1.12.2.
+ * An upgrade that implements this interface can change the processing speed and energy use of the machine.
  */
 public interface IProcessingUpgrade extends IUpgradeItem {
 
     /**
-     * 获取额外的处理时间（tick）。
+     * Gets the additional processing time (ticks).
      * <p>
-     * 返回正值会延长处理时间，负值会缩短处理时间。
+     * A positive value makes the processing time longer. A negative value makes it shorter.
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @return 额外处理时间（tick）
+     * @param stack the upgrade item stack
+     * @param block the machine that contains this upgrade
+     * @return the additional processing time (ticks)
      */
     int getExtraProcessTime(ItemStack stack, IUpgradableBlock block);
 
     /**
-     * 获取处理时间乘数。
+     * Gets the processing time multiplier.
      * <p>
-     * 1.0 表示无变化，0.5 表示速度翻倍，2.0 表示速度减半。
+     * 1.0 means no change. 0.5 means double speed. 2.0 means half speed.
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @return 处理时间乘数
+     * @param stack the upgrade item stack
+     * @param block the machine that contains this upgrade
+     * @return the processing time multiplier
      */
     double getProcessTimeMultiplier(ItemStack stack, IUpgradableBlock block);
 
     /**
-     * 获取额外的每 tick 能量需求（EU）。
+     * Gets the additional energy demand per tick (EU).
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @return 额外能量需求（EU/tick）
+     * @param stack the upgrade item stack
+     * @param block the machine that contains this upgrade
+     * @return the additional energy demand (EU/tick)
      */
     long getExtraEnergyDemand(ItemStack stack, IUpgradableBlock block);
 
     /**
-     * 获取能量需求乘数。
+     * Gets the energy demand multiplier.
      * <p>
-     * 1.0 表示无变化，2.0 表示能耗翻倍。
+     * 1.0 means no change. 2.0 means double energy use.
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @return 能量需求乘数
+     * @param stack the upgrade item stack
+     * @param block the machine that contains this upgrade
+     * @return the energy demand multiplier
      */
     double getEnergyDemandMultiplier(ItemStack stack, IUpgradableBlock block);
 }

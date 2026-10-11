@@ -16,11 +16,11 @@ import com.miophas.singularity_iteration.core.api.recipe.IRecipeProcessingInfo;
 public class DynamicCanningRecipe implements Recipe<CanningRecipeInput>, IRecipeProcessingInfo {
 
     private final String group;
-    private final Ingredient canIngredient;      // 空锡�
+    private final Ingredient canIngredient;      // Empty tin can
 private final Ingredient foodIngredient;     // 食物（任意食物）
     private final int processingTime;
     private final int energyPerTick;
-    private final int nutritionMultiplier;       // 营养值倍数（默�?�?
+    private final int nutritionMultiplier;       // Nutrition multiplier
     public DynamicCanningRecipe(String group, Ingredient canIngredient, Ingredient foodIngredient,
                                 int processingTime, int energyPerTick, int nutritionMultiplier) {
         this.group = group;

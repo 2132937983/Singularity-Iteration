@@ -11,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.BiConsumer;
 
 /**
- * core 通用构建器实现：成形成功后立即执行 onFormed 回调，
- * 并把 onBroken 回调挂到结构拆除生命周期上。
+ * Generic builder implementation in core. It runs the onFormed callback immediately after the structure forms,
+ * and attaches the onBroken callback to the breakdown lifecycle of the structure.
  */
 public final class GenericMultiblockBuilder implements IMultiblockBuilder {
 

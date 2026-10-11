@@ -5,10 +5,17 @@ import net.minecraft.nbt.CompoundTag;
 /**
  * 期货价格事件基类
  * 
- * 职责�? * 1. 定义价格事件的基本属性和行为
- * 2. 提供事件的序列化和反序列化接受? * 3. 定义事件对价格的影响计算
- * 
- * 事件类型�? * - 持续上涨事件：未来N天价格持续上�? * - 持续下跌事件：未来N天价格持续下面? * - 波动增强事件：价格波动幅度增�? * - 波动减弱事件：价格波动幅度减�? * - 价格稳定事件：价格维持在基础价格附近
+ * Responsibilities:
+ * 1. Define the basic properties and behavior of a price event.
+ * 2. Provide serialization and deserialization of events.
+ * 3. Define how an event changes the price.
+ *
+ * Event types:
+ * - Rising trend: the price rises for the next N days.
+ * - Falling trend: the price falls for the next N days.
+ * - High volatility: the price fluctuation range increases.
+ * - Low volatility: the price fluctuation range decreases.
+ * - Price stabilization: the price stays near the base price.
  */
 @SuppressWarnings("null")
 public abstract class FuturePriceEvent {
@@ -18,23 +25,23 @@ public abstract class FuturePriceEvent {
 public enum EventType {
         RISING_TREND,         // 持续上涨
         FALLING_TREND,        // 持续下跌
-        HIGH_VOLATILITY,      // 高波�
-    LOW_VOLATILITY,       // 低波�
+        HIGH_VOLATILITY,      // High volatility
+    LOW_VOLATILITY,       // Low volatility
     PRICE_STABILIZATION,  // 价格稳定
         SHORT_BUBBLE,         // 短期暴涨暴跌（泡沫）
-        LONG_BUBBLE,          // 长期暴涨暴跌（大泡沫�
+        LONG_BUBBLE,          // Long-term surge then crash (large bubble)
     SHORT_CRASH_REBOUND,  // 短期暴跌暴涨（闪崩反弹）
         LONG_CRASH_REBOUND    // 长期暴跌暴涨（崩盘反弹）
     }
     
-    // ========== 事件属性?==========
+    // ========== Event properties ==========
     
     protected final String commodityId;  // 目标货品ID
-    protected final long startDay;       // 事件开始天�
+    protected final long startDay;       // Start day of the event
 protected final int duration;        // 事件持续天数
     protected final double intensity;    // 事件强度 (0.0 - 2.0)
     
-    // ========== 构造函数?==========
+    // ========== Constructor ==========
     
     public FuturePriceEvent(String commodityId, long startDay, int duration, double intensity) {
         this.commodityId = commodityId;
@@ -43,7 +50,7 @@ protected final int duration;        // 事件持续天数
         this.intensity = Math.max(0.0, Math.min(2.0, intensity));
     }
     
-    // ========== 抽象方法 ==========
+    // ========== Abstract methods ==========
     
     /**
      * 获取事件类型
@@ -54,9 +61,9 @@ protected final int duration;        // 事件持续天数
      * 计算事件对价格的影响
      * @param currentPrice 当前价格
      * @param basePrice 基础价格
-     * @param dayOffset 事件开始后的第几天 (0 = 第一�?
-     * @return 新价�
- */
+     * @param dayOffset the day number after the event start (0 = first day)
+     * @return the new price
+     */
     public abstract int applyEffect(int currentPrice, int basePrice, int dayOffset);
     
     /**
@@ -123,7 +130,7 @@ protected final int duration;        // 事件持续天数
         };
     }
     
-    // ========== Getter 方法 ==========
+    // ========== Getter methods ==========
     
     public String getCommodityId() { return commodityId; }
     public long getStartDay() { return startDay; }

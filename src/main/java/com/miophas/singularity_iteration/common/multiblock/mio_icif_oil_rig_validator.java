@@ -23,23 +23,72 @@ import java.util.Set;
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
+/**
+ * Shape check for the Oil Rig multiblock.
+ *
+ * <p>The Oil Rig has 22 blocks in a 3x6x3 box: the core, 10 modules and
+ * 11 frame blocks. The box covers X and Z offsets -1 to +1 and Y offsets 0 to +5.
+ *
+ * <p>Layout per layer. X goes to the right. Z goes down (north is at the top).
+ * {@code C} is the core at {@code (0, 0, 0)}. {@code M} is a module position.
+ * {@code F} is a frame position. The validator does not check the positions marked {@code .}.
+ * <pre>
+ *   Y = 3 to 5    Y = 1 and 2   Y = 0
+ *   . . .         . F .         M M M
+ *   . F .         F M F         M C M
+ *   . . .         . F .         M M M
+ * </pre>
+ * <p>The shape has no facing.
+ *
+ * <p>Module types. Each module position accepts each module type:
+ * <ul>
+ *   <li>{@code mio_icif_block_oil_rig_input}: energy input module. At least 1 is necessary.</li>
+ *   <li>{@code mio_icif_block_oil_rig_output}: output module for the drill product.
+ *       At least 1 is necessary.</li>
+ *   <li>{@code mio_icif_block_oil_rig_panel}: panel module. No count rule.</li>
+ *   <li>{@code mio_icif_block_oil_rig_base}: base module. No count rule.</li>
+ * </ul>
+ * <p>Each frame position must hold a {@code mio_icif_block_titanium_drill_frame}.
+ *
+ * <p>Structure data keys: {@code "inputCount"}, {@code "outputCount"},
+ * {@code "panelCount"} and {@code "baseCount"} (all {@code Integer}).
+ *
+ * <p>This structure is not in the {@code MultiblockControllers} registry.
+ * {@code mio_icif_oil_rig_core_entity} forms it from its tick.
+ */
 @SuppressWarnings("null")
 public class mio_icif_oil_rig_validator implements mio_icif_multiblock_validator {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
 
+    /**
+     * Module positions relative to the core: the 8 blocks around the core at Y = 0,
+     * then the 2 blocks above the core at Y = +1 and Y = +2.
+     */
     private static final int[][] MODULE_OFFSETS = {
         {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1},
         {1, 0, 1}, {1, 0, -1}, {-1, 0, 1}, {-1, 0, -1},
         {0, 1, 0}, {0, 2, 0}
     };
 
+    /**
+     * Frame positions relative to the core: a column at Y = +3 to +5 above the
+     * core, then 4 legs of 2 blocks at Y = +1 and +2 on the 4 sides of the module column.
+     */
     private static final int[][] SCAFFOLD_OFFSETS = {
         {0, 3, 0}, {0, 4, 0}, {0, 5, 0},
         {1, 1, 0}, {1, 2, 0}, {-1, 1, 0}, {-1, 2, 0},
         {0, 1, 1}, {0, 2, 1}, {0, 1, -1}, {0, 2, -1}
     };
 
+    /**
+     * Checks the core, the 10 module positions, the 11 frame positions and the
+     * module counts.
+     *
+     * <p>The core can be an Oil Rig core or a Dimension Oil Rig core. The check
+     * fails at the first position that does not hold the correct block type.
+     * The count rules run only after all positions are correct.
+     * The check reads 22 block states. It does not check that the chunks are loaded.
+     */
     @Override
     public mio_icif_multiblock_validation_result validate(Level level, BlockPos controllerPos) {
         BlockState controllerState = level.getBlockState(controllerPos);
@@ -109,6 +158,11 @@ public class mio_icif_oil_rig_validator implements mio_icif_multiblock_validator
                 .build();
     }
 
+    /**
+     * Connects the core block entity and the module block entities to the structure.
+     *
+     * <p>The frame blocks have no block entity. This method does not touch them.
+     */
     @Override
     public void onStructureFormed(Level level, BlockPos controllerPos, mio_icif_multiblock_manager<?> manager) {
         BlockEntity be = level.getBlockEntity(controllerPos);
@@ -128,6 +182,9 @@ public class mio_icif_oil_rig_validator implements mio_icif_multiblock_validator
         }
     }
 
+    /**
+     * Resets the core block entity and detaches each module that is still present.
+     */
     @Override
     public void onStructureBroken(Level level, BlockPos controllerPos, mio_icif_multiblock_manager<?> manager) {
         BlockEntity be = level.getBlockEntity(controllerPos);
@@ -151,6 +208,12 @@ public class mio_icif_oil_rig_validator implements mio_icif_multiblock_validator
         return "OilRig";
     }
 
+    /**
+     * Tells if a block can be a member of an Oil Rig.
+     *
+     * @param block the block to test
+     * @return {@code true} for both core types, the 4 module types and the titanium frame
+     */
     public static boolean isValidStructureBlock(Block block) {
         return block instanceof mio_icif_block_oil_rig_core
                 || block instanceof mio_icif_block_dimension_oil_rig_core

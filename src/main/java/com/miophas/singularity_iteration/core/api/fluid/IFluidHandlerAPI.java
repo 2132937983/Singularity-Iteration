@@ -7,82 +7,87 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import java.util.Collection;
 
 /**
- * 流体处理 API
+ * Fluid handling API.
  *
- * <p>提供查询和管理机器流体存储的接口。
+ * <p>Gives methods to query and manage the fluid storage of machines.
+ * All amounts are in mB.
  */
 
 public interface IFluidHandlerAPI {
 
     /**
-     * 检查指定位置是否有流体存储能力
+     * Checks if the block at a position has fluid storage.
      */
     boolean hasFluidHandler(Level world, BlockPos pos);
 
     /**
-     * 获取流体存储信息
+     * Gets the data of one fluid tank.
      */
     IFluidTankInfo getFluidTankInfo(Level world, BlockPos pos, int tank);
 
     /**
-     * 获取所有流体存储槽信息
+     * Gets the data of all fluid tanks.
      */
     Collection<IFluidTankInfo> getAllFluidTanks(Level world, BlockPos pos);
 
     /**
-     * 获取流体存储槽数量
+     * Gets the number of fluid tanks.
      */
     int getTankCount(Level world, BlockPos pos);
 
     /**
-     * 向指定槽位填充流体
-     * 
-     * <p>注意：此方法会先检查指定 tank 是否可以接受该流体（通过 isFluidValid），
-     * 但实际填充时 NeoForge 的 IFluidHandler.fill() 会自动路由流体到第一个可接受的槽位。
-     * 因此 tank 参数仅用于验证，无法强制填充到特定槽位。
-     * 
-     * <p>如果需要精确控制填充目标槽位，建议直接使用 NeoForge 的 IFluidHandler capability。
-     * 
-     * @param world 世界
-     * @param pos 方块位置
-     * @param tank 目标槽位索引（仅用于验证流体兼容性）
-     * @param fluid 要填充的流体
-     * @param simulate 是否仅模拟
-     * @return 实际填充的流体量
+     * Fills fluid into a tank.
+     *
+     * <p>Note: this method first checks if the given tank accepts the fluid (with isFluidValid).
+     * But the real fill uses NeoForge IFluidHandler.fill(), which sends the fluid to the first tank that accepts it.
+     * Thus the tank parameter is only for validation. It cannot force the fill into a specific tank.
+     *
+     * <p>For exact control of the target tank, use the NeoForge IFluidHandler capability directly.
+     *
+     * @param world the level
+     * @param pos the block position
+     * @param tank the target tank index (only used to check fluid compatibility)
+     * @param fluid the fluid to fill
+     * @param simulate true to only simulate
+     * @return the amount that was filled (mB)
      */
     int fillFluid(Level world, BlockPos pos, int tank, FluidStack fluid, boolean simulate);
 
     /**
-     * 从指定槽位抽取流体
+     * Drains fluid from a tank.
+     *
+     * @param maxDrain the maximum amount to drain (mB)
+     * @param simulate true to only simulate
+     * @return the drained fluid; an empty stack if nothing was drained
      */
     FluidStack drainFluid(Level world, BlockPos pos, int tank, int maxDrain, boolean simulate);
 
     /**
-     * 获取流体存储接口
+     * Data of one fluid tank.
      */
     public interface IFluidTankInfo {
         /**
-         * 获取槽位索引
+         * Gets the tank index.
          */
         int getTankIndex();
 
         /**
-         * 获取当前流体
+         * Gets the current fluid.
          */
         FluidStack getFluid();
 
         /**
-         * 获取当前流体数量
+         * Gets the current fluid amount (mB).
          */
         int getAmount();
 
         /**
-         * 获取容量
+         * Gets the capacity (mB).
          */
         int getCapacity();
 
         /**
-         * 获取填充百分比
+         * Gets the fill fraction (0.0 to 1.0). Returns 0.0 if the capacity is 0 or less.
          */
         default double getFillPercent() {
             if (getCapacity() <= 0) return 0.0;
@@ -90,14 +95,14 @@ public interface IFluidHandlerAPI {
         }
 
         /**
-         * 是否为空
+         * Checks if the tank is empty.
          */
         default boolean isEmpty() {
             return getFluid().isEmpty() || getAmount() <= 0;
         }
 
         /**
-         * 是否已满
+         * Checks if the tank is full.
          */
         default boolean isFull() {
             return getAmount() >= getCapacity();

@@ -5,92 +5,96 @@ import java.util.Set;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * 升级物品接口。
+ * Interface for upgrade items.
  * <p>
- * 对应 IC2 1.12.2 的 {@code IUpgradeItem}。
- * 实现此接口的物品可以作为机器的升级模块，提供特殊功能和行为。
+ * This is the equivalent of {@code IUpgradeItem} in IC2 for 1.12.2.
+ * An item that implements this interface can be a machine upgrade module.
+ * It gives the machine special functions and behavior.
  * <p>
- * 升级物品有三个主要回调：
+ * An upgrade item has three main callbacks:
  * <ul>
- *   <li>{@link #isSuitableFor} - 检查升级是否适用于指定机器</li>
- *   <li>{@link #onTick} - 每 tick 调用，可以执行持续效果</li>
- *   <li>{@link #onProcessEnd} - 配方处理完成后调用，可以修改输出</li>
+ *   <li>{@link #isSuitableFor} - checks if the upgrade applies to a given machine</li>
+ *   <li>{@link #onTick} - runs each tick and can apply continuous effects</li>
+ *   <li>{@link #onProcessEnd} - runs after a recipe is complete and can change the output</li>
  * </ul>
  */
 public interface IUpgradeItem {
 
     /**
-     * 检查此升级物品是否适用于具有指定属性的机器。
+     * Checks if this upgrade item applies to a machine with the given properties.
      *
-     * @param stack 升级物品堆
-     * @param properties 机器的可升级属性集合
-     * @return 如果适用则返回 true
+     * @param stack the upgrade item stack
+     * @param properties the set of upgradable properties of the machine
+     * @return true if the upgrade applies
      */
     boolean isSuitableFor(ItemStack stack, Set<UpgradableProperty> properties);
 
     /**
-     * 每 tick 调用此方法。
+     * The machine calls this method each tick.
      * <p>
-     * 升级可以在此执行持续效果，如自动弹出物品、红石控制等。
+     * The upgrade can apply continuous effects here, for example auto-eject of items or redstone control.
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @return 如果此 tick 被升级消耗（阻止机器正常 tick）则返回 true
+     * @param stack the upgrade item stack
+     * @param block the machine that has this upgrade installed
+     * @return true if the upgrade uses this tick (the machine then does not do its normal tick)
      */
     boolean onTick(ItemStack stack, IUpgradableBlock block);
 
     /**
-     * 配方处理完成后调用此方法。
+     * The machine calls this method after a recipe is complete.
      * <p>
-     * 升级可以在此修改输出物品，如增加产量、添加副产物等。
+     * The upgrade can change the output items here, for example to increase the yield or add by-products.
      *
-     * @param stack 升级物品堆
-     * @param block 安装了此升级的机器
-     * @param outputs 当前输出物品列表（可修改）
-     * @return 修改后的输出物品列表
+     * @param stack the upgrade item stack
+     * @param block the machine that has this upgrade installed
+     * @param outputs the current output items (you can change this collection)
+     * @return the changed output items
      */
     Collection<ItemStack> onProcessEnd(ItemStack stack, IUpgradableBlock block, Collection<ItemStack> outputs);
 
     /**
-     * 获取升级类型的名称
+     * Gets the name of the upgrade type.
      */
     default String getUpgradeTypeName() {
         return "unknown";
     }
 
     /**
-     * 获取 API 级升级类型枚举
+     * Gets the API-level upgrade type.
      */
     default com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI.UpgradeType getApiUpgradeType() {
         return com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI.UpgradeType.CUSTOM;
     }
 
     /**
-     * 获取升级类型枚举（便捷方法，等价于 {@link #getApiUpgradeType()}）
+     * Gets the upgrade type. This is a shortcut. It is the same as {@link #getApiUpgradeType()}.
      *
-     * <p>子类应覆盖此方法以返回正确的升级类型，
-     * 供 API 层在不加载具体实现类的情况下识别升级种类。
+     * <p>Subclasses should override this method to return the correct upgrade type.
+     * The API layer uses it to identify the upgrade kind without loading the implementation class.
      *
-     * @return 升级类型，默认返回 {@code CUSTOM}
+     * @return the upgrade type; the default is {@code CUSTOM}
      */
     default com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI.UpgradeType getUpgradeType() {
         return getApiUpgradeType();
     }
 
     /**
-     * 获取升级效果对象。
+     * Gets the upgrade effect object.
      *
-     * <p>将当前升级的所有效果参数（速度、能耗、容量等）封装为
-     * {@link com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI.IUpgradeEffect}，
-     * 供 API 层统一计算组合效果。
+     * <p>This method puts all effect parameters of this upgrade (speed, energy use, capacity and others) into an
+     * {@link com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI.IUpgradeEffect}.
+     * The API layer uses it to calculate the combined effect in one way for all upgrades.
      *
-     * <p>默认实现根据此接口的各 {@code getXxxBonus()} 方法组合出一个效果对象。
-     * 子类可覆盖以提供更精确的效果计算。
+     * <p>The default implementation makes an effect object from the {@code getXxxBonus()} methods of this interface.
+     * Subclasses can override it to give a more precise effect calculation.
      *
-     * @param stack 升级物品堆
-     * @return 升级效果对象，不为 null
+     * @param stack the upgrade item stack
+     * @return the upgrade effect object; never null
      */
     default com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI.IUpgradeEffect getUpgradeEffect(ItemStack stack) {
+        // Each method calls the outer IUpgradeItem method with "IUpgradeItem.this". A plain call
+        // resolves to the anonymous class itself and recurses until StackOverflowError
+        // (fixed in 0.1.7.36).
         return new com.miophas.singularity_iteration.core.api.upgrade.IUpgradeAPI.IUpgradeEffect() {
             @Override
             public double getSpeedMultiplier() {
@@ -104,101 +108,101 @@ public interface IUpgradeItem {
 
             @Override
             public long getExtraCapacity() {
-                return getExtraCapacity();
+                return IUpgradeItem.this.getExtraCapacity();
             }
 
             @Override
             public int getExtraOutputSlots() {
-                return getExtraOutputSlots();
+                return IUpgradeItem.this.getExtraOutputSlots();
             }
 
             @Override
             public boolean hasAutoEject() {
-                return hasAutoEject();
+                return IUpgradeItem.this.hasAutoEject();
             }
 
             @Override
             public boolean hasAutoImport() {
-                return hasAutoImport();
+                return IUpgradeItem.this.hasAutoImport();
             }
 
             @Override
             public boolean hasRedstoneControl() {
-                return hasRedstoneControl();
+                return IUpgradeItem.this.hasRedstoneControl();
             }
 
             @Override
             public int getTierUpgrade() {
-                return getTierUpgrade();
+                return IUpgradeItem.this.getTierUpgrade();
             }
         };
     }
 
     /**
-     * 是否有自动弹出功能
+     * Returns true if the upgrade has the auto-eject function.
      */
     default boolean hasAutoEject() {
         return false;
     }
 
     /**
-     * 是否有自动导入功能
+     * Returns true if the upgrade has the auto-import function.
      */
     default boolean hasAutoImport() {
         return false;
     }
 
     /**
-     * 是否有红石控制功能
+     * Returns true if the upgrade has the redstone control function.
      */
     default boolean hasRedstoneControl() {
         return false;
     }
 
     /**
-     * 获取额外能量容量加成
+     * Gets the additional energy capacity bonus in EU.
      */
     default long getExtraCapacity() {
         return 0;
     }
 
     /**
-     * 获取额外输出槽位数量
+     * Gets the number of additional output slots.
      */
     default int getExtraOutputSlots() {
         return 0;
     }
 
     /**
-     * 获取升级等级加成
+     * Gets the tier increase that the upgrade gives.
      */
     default int getTierUpgrade() {
         return 0;
     }
 
     /**
-     * 检查此升级是否是定向的
+     * Checks if this upgrade is directional.
      */
     default boolean isDirectional() {
         return false;
     }
 
     /**
-     * 获取速度加成倍率（值越小越快）
+     * Gets the speed multiplier. A smaller value means a faster machine.
      */
     default float getSpeedBonus() {
         return 1.0f;
     }
 
     /**
-     * 获取能量消耗倍率
+     * Gets the energy consumption multiplier.
      */
     default float getEnergyBonus() {
         return 1.0f;
     }
 
     /**
-     * 获取升级等级 (1-4, 对应 LV-MV-HV-EV)
+     * Gets the upgrade tier. The range is 1 to 4 (LV, MV, HV, EV).
      */
     default int getUpgradeTier(ItemStack stack) {
         return 1;

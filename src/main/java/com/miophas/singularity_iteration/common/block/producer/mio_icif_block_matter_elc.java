@@ -42,14 +42,14 @@ public class mio_icif_block_matter_elc extends mio_icif_entity_block {
 
     public mio_icif_block_matter_elc(Properties properties) {
         super(properties);
-        // 注册默认状态：未点�?
+        // Set the default state: not lit.
         this.registerDefaultState(this.stateDefinition.any().setValue(LIT, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        // 添加 LIT 属性到方块状态定�?
+        // Add the LIT property to the block state definition.
         builder.add(LIT);
     }
 
@@ -86,8 +86,8 @@ public class mio_icif_block_matter_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 方块被移除时的处理?
-     * 掉落方块实体中的物品
+     * Handles the removal of the block.
+     * Drops the items in the block entity.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
@@ -98,7 +98,7 @@ public class mio_icif_block_matter_elc extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_matter_elc matterElc) {
-                // 掉落物品栏中的所有物�?
+                // Drop all items in the inventory.
                 for (int i = 0; i < matterElc.getItemHandler().getSlots(); i++) {
                     ItemStack stack = matterElc.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {
@@ -119,8 +119,8 @@ public class mio_icif_block_matter_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取模拟输出信号强度（用于红石比较器�?
-     * 基于UU物质储量计算
+     * Returns the analog output signal for redstone comparators.
+     * The signal depends on the stored UU-matter.
      */
     @Override
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
@@ -144,7 +144,7 @@ public class mio_icif_block_matter_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取方块实体�?ticker
+     * Returns the block entity ticker.
      */
     @Nullable
     @Override

@@ -9,26 +9,26 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import java.util.Collection;
 
 /**
- * 发电机 API
+ * Generator API.
  * 
- * @deprecated 此 API 将在未来版本中被整合到 MachineAPI 中。请使用 IMachineAPI 和 IGeneratorBuilder 替代。
+ * @deprecated A future version will merge this API into MachineAPI. Use IMachineAPI and IGeneratorBuilder instead.
  * 
- * <p>提供注册和管理自定义发电机的接口，包括：
+ * <p>Gives an interface to register and manage custom generators. It lets you:
  * <ul>
- *   <li>注册自定义发电机类型</li>
- *   <li>查询发电机信息</li>
- *   <li>管理发电机状态</li>
+ *   <li>Register custom generator types</li>
+ *   <li>Query generator information</li>
+ *   <li>Manage generator state</li>
  * </ul>
  * 
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
- * // 获取 API
+ * // Get the API
  * IGeneratorAPI generatorAPI = MioIcifAPI.instance().getGeneratorAPI();
  * 
- * // 注册自定义发电机
+ * // Register a custom generator
  * generatorAPI.registerGeneratorType("advanced_solar", AdvancedSolarGeneratorBlockEntity::new);
  * 
- * // 查询位置的发电机信息
+ * // Query the generator information at a position
  * GeneratorInfo info = generatorAPI.getGeneratorInfo(world, pos);
  * if (info != null) {
  *     long rate = info.getGenerationRate();
@@ -40,87 +40,87 @@ import java.util.Collection;
 public interface IGeneratorAPI {
 
     /**
-     * 注册自定义发电机类型
+     * Registers a custom generator type.
      * 
-     * @param id 发电机类型 ID（唯一标识符）
-     * @param factory 发电机方块实体工厂
-     * @deprecated 请使用 IGeneratorBuilder 注册发电机
+     * @param id the generator type ID (unique identifier)
+     * @param factory the generator block entity factory
+     * @deprecated Use IGeneratorBuilder to register generators
      */
     @Deprecated
     <T extends BlockEntity> void registerGeneratorType(String id, BlockEntityType<T> type);
 
     /**
-     * 检查指定位置是否有发电机
+     * Checks if there is a generator at the given position.
      * 
-     * @param world 世界
-     * @param pos 方块位置
-     * @return true 如果位置有发电机
-     * @deprecated 请使用 IMachineAPI.hasMachine() 替代
+     * @param world the world
+     * @param pos the block position
+     * @return true if there is a generator at the position
+     * @deprecated Use IMachineAPI.hasMachine() instead
      */
     @Deprecated
     boolean isGenerator(Level world, BlockPos pos);
 
     /**
-     * 获取发电机信息
+     * Gets the generator information.
      * 
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 发电机信息，如果没有则返回 null
-     * @deprecated 请使用 IMachineAPI.getMachineInfo() 替代
+     * @param world the world
+     * @param pos the block position
+     * @return the generator information, or null if there is no generator
+     * @deprecated Use IMachineAPI.getMachineInfo() instead
      */
     @Deprecated
     IGeneratorInfo getGeneratorInfo(Level world, BlockPos pos);
 
     /**
-     * 获取指定世界中的所有发电机位置
+     * Gets all generator positions in the given world.
      * 
-     * @param world 世界
-     * @return 发电机位置集合
-     * @deprecated 请使用 IMachineAPI.getAllMachines() 替代
+     * @param world the world
+     * @return the set of generator positions
+     * @deprecated Use IMachineAPI.getAllMachines() instead
      */
     @Deprecated
     Collection<BlockPos> getAllGenerators(Level world);
 
     /**
-     * 获取指定类型的所有发电机位置
+     * Gets all generator positions of the given type.
      * 
-     * @param world 世界
-     * @param typeId 发电机类型 ID
-     * @return 发电机位置集合
-     * @deprecated 请使用 IMachineAPI.getMachinesByType() 替代
+     * @param world the world
+     * @param typeId the generator type ID
+     * @return the set of generator positions
+     * @deprecated Use IMachineAPI.getMachinesByType() instead
      */
     @Deprecated
     Collection<BlockPos> getGeneratorsByType(Level world, String typeId);
 
     /**
-     * 强制启动发电机（忽略正常启动条件）
+     * Starts the generator by force (it ignores the usual start conditions).
      * 
-     * @param world 世界
-     * @param pos 方块位置
-     * @return true 如果成功启动
-     * @deprecated 请使用 IMachineAPI.forceStartMachine() 替代
+     * @param world the world
+     * @param pos the block position
+     * @return true if the generator started
+     * @deprecated Use IMachineAPI.forceStartMachine() instead
      */
     @Deprecated
     boolean forceStart(Level world, BlockPos pos);
 
     /**
-     * 强制停止发电机
+     * Stops the generator by force.
      * 
-     * @param world 世界
-     * @param pos 方块位置
-     * @return true 如果成功停止
-     * @deprecated 请使用 IMachineAPI.forceStopMachine() 替代
+     * @param world the world
+     * @param pos the block position
+     * @return true if the generator stopped
+     * @deprecated Use IMachineAPI.forceStopMachine() instead
      */
     @Deprecated
     boolean forceStop(Level world, BlockPos pos);
 
     /**
-     * 获取发电机的电缆等级
+     * Gets the cable tier of the generator.
      * 
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 电缆等级，如果没有则返回 null
-     * @deprecated 请使用 IMachineAPI.getEffectiveCableTier() 替代
+     * @param world the world
+     * @param pos the block position
+     * @return the cable tier, or null if there is none
+     * @deprecated Use IMachineAPI.getEffectiveCableTier() instead
      */
     @Deprecated
     ICableTier getCableTier(Level world, BlockPos pos);

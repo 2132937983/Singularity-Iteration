@@ -296,7 +296,7 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity im
         // 水平 ±5（11 格）、垂直 -1..1（3 层）：与原版 scanX/scanY/scanZ 相同的推进顺序
         BlockPos target = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.target(worldPosition, scanIndex);
         boolean worked = false;
-        if (world.hasChunkAt(target)) {
+        if (world.isLoaded(target)) {
             if (world.getBlockEntity(target) instanceof com.miophas.singularity_iteration.core.api.crop.IPlanter crop) {
                 if (tryFertilize(crop)) { apiUseEnergy(10, false); worked = true; }
                 if (tryHydrate(crop)) { apiUseEnergy(10, false); worked = true; }

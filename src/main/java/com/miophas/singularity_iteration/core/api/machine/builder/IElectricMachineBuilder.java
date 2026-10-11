@@ -7,12 +7,12 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 
 
 /**
- * 电力机器构建器
+ * Builder for electric machines.
  *
- * <p>使用 Builder 模式创建符合 mio_icif 风格的电力机器。
- * 提供流畅的 API，让附属模组可以一步步配置机器属性。
+ * <p>Use this builder to make electric machines in the mio_icif style.
+ * The API is fluent. An addon mod sets the machine properties one step at a time.
  *
- * <p>使用示例：
+ * <p>Example:
  * <pre>{@code
  * CustomMachineBlock machine = builder
  *     .setName("advanced_compressor")
@@ -28,229 +28,230 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
  *     .setRecipeType(MioIcifAPI.instance().getRecipeAPI().getCompressorRecipeType())
  *     .setBlockProperties(BlockBehaviour.Properties.of().strength(3.5f))
  *     .onWorkStart((world, pos) -> {
- *         // 自定义工作开始逻辑
+ *         // Custom logic when work starts
  *     })
  *     .onWorkComplete((world, pos, output) -> {
- *         // 自定义工作完成逻辑
+ *         // Custom logic when work completes
  *     })
  *     .build();
  * }</pre>
  */
 public interface IElectricMachineBuilder {
 
-    // ========== 基础配置 ==========
+    // ========== Basic settings ==========
 
     /**
-     * 设置机器 ID（唯一标识符）
+     * Sets the machine ID (the unique identifier).
      *
-     * @param name 机器名称
-     * @return 构建器自身，用于链式调用
+     * @param name the machine name
+     * @return this builder, for chained calls
      */
     IElectricMachineBuilder setName(String name);
 
     /**
-     * 设置翻译键
+     * Sets the translation key.
      *
-     * @param translationKey 翻译键
-     * @return 构建器自身
+     * @param translationKey the translation key
+     * @return this builder
      */
     IElectricMachineBuilder setTranslationKey(String translationKey);
 
     /**
-     * 设置方块属性
+     * Sets the block properties.
      *
-     * @param properties 方块属性
-     * @return 构建器自身
+     * @param properties the block properties
+     * @return this builder
      */
     IElectricMachineBuilder setBlockProperties(BlockBehaviour.Properties properties);
 
-    // ========== 能量配置 ==========
+    // ========== Energy settings ==========
 
     /**
-     * 设置能量容量
+     * Sets the energy capacity.
      *
-     * @param capacity 容量 (EU)
-     * @return 构建器自身
+     * @param capacity the capacity, in EU
+     * @return this builder
      */
     IElectricMachineBuilder setEnergyCapacity(long capacity);
 
     /**
-     * 设置最大接收速率
+     * Sets the maximum input rate.
      *
-     * @param maxReceive 最大接收 (EU/t)
-     * @return 构建器自身
+     * @param maxReceive the maximum input, in EU/t
+     * @return this builder
      */
     IElectricMachineBuilder setMaxReceive(long maxReceive);
 
     /**
-     * 设置最大输出速率
+     * Sets the maximum output rate.
      *
-     * @param maxExtract 最大输出 (EU/t)
-     * @return 构建器自身
+     * @param maxExtract the maximum output, in EU/t
+     * @return this builder
      */
     IElectricMachineBuilder setMaxExtract(long maxExtract);
 
     /**
-     * 设置每 tick 能耗
+     * Sets the energy use per tick.
      *
-     * @param energyPerTick 能耗 (EU/t)
-     * @return 构建器自身
+     * @param energyPerTick the energy use, in EU/t
+     * @return this builder
      */
     IElectricMachineBuilder setEnergyPerTick(long energyPerTick);
 
     /**
-     * 设置电缆等级（自动配置相关能量参数）
+     * Sets the cable tier. This also sets the related energy parameters.
      *
-     * @param tier 电缆等级
-     * @return 构建器自身
+     * @param tier the cable tier
+     * @return this builder
      */
     IElectricMachineBuilder setCableTier(ICableTier tier);
 
     /**
-     * 使用默认模板配置（根据等级自动设置能量参数）
+     * Uses the default template for a tier. This sets the energy parameters from the tier.
      *
-     * @param tier 电缆等级
-     * @return 构建器自身
+     * @param tier the cable tier
+     * @return this builder
      */
     IElectricMachineBuilder useDefaultsForTier(ICableTier tier);
 
-    // ========== 工作配置 ==========
+    // ========== Work settings ==========
 
     /**
-     * 设置处理时间
+     * Sets the process time.
      *
-     * @param processTime 处理时间（刻）
-     * @return 构建器自身
+     * @param processTime the process time, in ticks
+     * @return this builder
      */
     IElectricMachineBuilder setProcessTime(int processTime);
 
     /**
-     * 设置配方类型
+     * Sets the recipe type.
      *
-     * @param recipeType 配方类型
-     * @return 构建器自身
+     * @param recipeType the recipe type
+     * @return this builder
      */
     IElectricMachineBuilder setRecipeType(RecipeType<?> recipeType);
 
     /**
-     * 设置是否支持升级
+     * Sets whether the machine accepts upgrades.
      *
-     * @param supportsUpgrades true 支持升级
-     * @return 构建器自身
+     * @param supportsUpgrades true if the machine accepts upgrades
+     * @return this builder
      */
     IElectricMachineBuilder setSupportsUpgrades(boolean supportsUpgrades);
 
-    // ========== 槽位配置 ==========
+    // ========== Slot settings ==========
 
     /**
-     * 添加输入槽
+     * Adds an input slot.
      *
-     * @param index 槽位索引
-     * @param maxStackSize 最大堆叠数
-     * @return 构建器自身
+     * @param index the slot index
+     * @param maxStackSize the maximum stack size
+     * @return this builder
      */
     IElectricMachineBuilder addInputSlot(int index, int maxStackSize);
 
     /**
-     * 添加输出槽
+     * Adds an output slot.
      *
-     * @param index 槽位索引
-     * @param maxStackSize 最大堆叠数
-     * @return 构建器自身
+     * @param index the slot index
+     * @param maxStackSize the maximum stack size
+     * @return this builder
      */
     IElectricMachineBuilder addOutputSlot(int index, int maxStackSize);
 
     /**
-     * 添加电池槽
+     * Adds a battery slot.
      *
-     * @param index 槽位索引
-     * @return 构建器自身
+     * @param index the slot index
+     * @return this builder
      */
     IElectricMachineBuilder addBatterySlot(int index);
 
     /**
-     * 添加升级槽
+     * Adds upgrade slots.
      *
-     * @param startIndex 起始索引
-     * @param count 数量
-     * @return 构建器自身
+     * @param startIndex the index of the first slot
+     * @param count the number of slots
+     * @return this builder
      */
     IElectricMachineBuilder addUpgradeSlots(int startIndex, int count);
 
     /**
-     * 使用标准槽位布局
+     * Uses the standard slot layout.
      *
-     * @param inputSlots 输入槽数量
-     * @param outputSlots 输出槽数量
-     * @param hasBattery 是否有电池槽
-     * @param upgradeSlots 升级槽数量
-     * @return 构建器自身
+     * @param inputSlots the number of input slots
+     * @param outputSlots the number of output slots
+     * @param hasBattery true to add a battery slot
+     * @param upgradeSlots the number of upgrade slots
+     * @return this builder
      */
     IElectricMachineBuilder useStandardLayout(int inputSlots, int outputSlots, boolean hasBattery, int upgradeSlots);
 
-    // ========== 流体配置 ==========
+    // ========== Fluid settings ==========
 
     /**
-     * 设置是否支持流体
+     * Sets whether the machine accepts fluids.
      *
-     * @param supportsFluids true 支持流体
-     * @return 构建器自身
+     * @param supportsFluids true if the machine accepts fluids
+     * @return this builder
      */
     IElectricMachineBuilder setSupportsFluids(boolean supportsFluids);
 
     /**
-     * 添加流体槽
+     * Adds a fluid tank.
      *
-     * @param capacity 容量 (mB)
-     * @return 构建器自身
+     * @param capacity the capacity, in mB
+     * @return this builder
      */
     IElectricMachineBuilder addFluidTank(int capacity);
 
     /**
-     * 设置机器类型
+     * Sets the machine type.
      *
-     * @param machineType 机器类型
-     * @return 构建器自身
+     * @param machineType the machine type
+     * @return this builder
      */
     IElectricMachineBuilder setMachineType(com.miophas.singularity_iteration.core.api.machine.IMachineAPI.MachineType machineType);
 
-    // ========== 事件回调 ==========
+    // ========== Event callbacks ==========
 
     /**
-     * 设置工作开始回调
+     * Sets the callback for work start.
      *
-     * @param callback 回调函数
-     * @return 构建器自身
+     * @param callback the callback
+     * @return this builder
      */
     IElectricMachineBuilder onWorkStart(MachineWorkCallback callback);
 
     /**
-     * 设置工作完成回调
+     * Sets the callback for work completion.
      *
-     * @param callback 回调函数
-     * @return 构建器自身
+     * @param callback the callback
+     * @return this builder
      */
     IElectricMachineBuilder onWorkComplete(MachineWorkCompleteCallback callback);
 
     /**
-     * 设置每 tick 更新回调
+     * Sets the callback for each tick update.
      *
-     * @param callback 回调函数
-     * @return 构建器自身
+     * @param callback the callback
+     * @return this builder
      */
     IElectricMachineBuilder onTick(MachineTickCallback callback);
 
-    // ========== 构建 ==========
+    // ========== Build ==========
 
     /**
-     * 设置已注册的 BlockEntityType
+     * Sets the registered BlockEntityType.
      *
-     * <p>附属模组在自己的模组初始化阶段创建 BlockEntityType 后，
-     * 通过此方法将其关联到构建器，使 {@link #build()} 返回的定义包含有效的 entityType。
+     * <p>An addon mod makes the BlockEntityType during its own mod initialization.
+     * Then it calls this method to link the type to the builder.
+     * The definition from {@link #build()} then has a valid entityType.
      *
-     * <p>使用示例：
+     * <p>Example:
      * <pre>{@code
-     * // 在模组初始化阶段
+     * // During mod initialization
      * public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GenericMachineBlockEntity>> MY_MACHINE =
      *     BLOCK_ENTITIES.register("my_machine", () ->
      *         BlockEntityType.Builder.of(GenericMachineBlockEntity::new, ModBlocks.MY_MACHINE.get()).build(null));
@@ -258,55 +259,59 @@ public interface IElectricMachineBuilder {
      * var definition = builder.createElectricMachineBuilder()
      *     .setName("my_machine")
      *     .setEnergyCapacity(10000)
-     *     .withEntityType(MY_MACHINE.get())  // 关联已注册的 BlockEntityType
+     *     .withEntityType(MY_MACHINE.get())  // Link the registered BlockEntityType
      *     .build();
      * }</pre>
      *
-     * @param entityType 已注册的 BlockEntityType
-     * @return 构建器自身
+     * @param entityType the registered BlockEntityType
+     * @return this builder
      */
     IElectricMachineBuilder withEntityType(net.minecraft.world.level.block.entity.BlockEntityType<?> entityType);
 
     /**
-     * 构建机器定义
+     * Builds the machine definition.
      *
-     * @return 机器定义
+     * @return the machine definition
      */
     IMachineDefinition build();
 
     /**
-     * 构建并注册机器
+     * Builds and registers the machine.
      *
-     * <p>如果已通过 {@link #withEntityType(BlockEntityType)} 设置了 BlockEntityType，
-     * 返回的定义将包含该 entityType，可直接使用。
-     * 否则返回的定义中 entityType 为 null，附属模组需自行注册。
+     * <p>If you set a BlockEntityType with {@link #withEntityType(BlockEntityType)},
+     * the returned definition contains that entityType. You can use it directly.
+     * If not, the entityType in the returned definition is null. The addon mod must register it.
      *
-     * @param modId 模组 ID
-     * @return 机器定义
+     * @param modId the mod ID
+     * @return the machine definition
      */
     IMachineDefinition buildAndRegister(String modId);
 
     /**
-     * 获取机器配置记录
+     * Gets the machine configuration record.
      *
-     * <p>提供创建机器所需的所有参数，供附属模组自行注册 BlockEntityType。
+     * <p>The record contains all parameters to make the machine.
+     * An addon mod uses it to register its own BlockEntityType.
      *
-     * @return 机器配置记录
+     * @return the machine configuration record
      */
     IMachineBuilderAPI.MachineConfiguration getConfiguration();
 
-    // ========== 回调接口 ==========
+    // ========== Callback interfaces ==========
 
+    /** Called when the machine starts work. Runs on the logical server. */
     @FunctionalInterface
     interface MachineWorkCallback {
         void onWorkStart(net.minecraft.world.level.Level world, net.minecraft.core.BlockPos pos);
     }
 
+    /** Called when the machine completes one operation and makes {@code output}. */
     @FunctionalInterface
     interface MachineWorkCompleteCallback {
         void onWorkComplete(net.minecraft.world.level.Level world, net.minecraft.core.BlockPos pos, net.minecraft.world.item.ItemStack output);
     }
 
+    /** Called each tick. {@code progress} and {@code maxProgress} are in ticks. */
     @FunctionalInterface
     interface MachineTickCallback {
         void onTick(net.minecraft.world.level.Level world, net.minecraft.core.BlockPos pos, int progress, int maxProgress);

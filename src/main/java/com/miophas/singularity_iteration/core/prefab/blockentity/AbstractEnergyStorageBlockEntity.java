@@ -29,162 +29,159 @@ import org.jetbrains.annotations.Nullable;
 
 
 /**
- * 能量容器方块实体基类
- * 继承自 AbstractEnergyBlockEntity，作为储电器方块实体的基类
- * 提供更大的能量容量和更高的能量传输速率
- * 使用 EU (Energy Unit) 能量系统
+ * Base class for energy container block entities.
+ * It extends AbstractEnergyBlockEntity. It is the base class for energy storage block entities.
+ * It gives a larger energy capacity and higher energy transfer rates.
+ * It uses the EU (Energy Unit) energy system.
  * 
- * <p>充放电操作通过 IItemAPI 进行，Addon 可以注册自定义电池和护甲类型。
+ * <p>Charge and discharge operations go through IItemAPI. Add-ons can register custom battery and armor types.
  * 
- * 红石模式说明（参考IC2）：
- * 0 - 不发出红石信号
- * 1 - 能量接近满时发出信号 (能量 >= 容量 - 输出*20)
- * 2 - 能量在中间范围时发出信号 (输出 < 能量 < 容量-输出)
- * 3 - 能量未满时发出信号 (能量 < 容量-输出)
- * 4 - 能量接近空时发出信号 (能量 < 输出)
- * 5 - 接收到红石信号时停止输出能量
- * 6 - 接收到红石信号时停止输出，或能量满时继续输出
- * 7 - 接收到红石信号时才输出能量
+ * Redstone modes (based on IC2):
+ * 0 - Do not emit a redstone signal.
+ * 1 - Emit a signal when the energy is almost full (energy >= capacity - output*20).
+ * 2 - Emit a signal when the energy is in the middle range (output < energy < capacity - output).
+ * 3 - Emit a signal when the energy is not full (energy < capacity - output).
+ * 4 - Emit a signal when the energy is almost empty (energy < output).
+ * 5 - Stop the energy output when a redstone signal is received.
+ * 6 - Stop the output when a redstone signal is received, but continue the output when the energy is full.
+ * 7 - Output energy only when a redstone signal is received.
  */
 @SuppressWarnings("null")
 public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity implements Container, com.miophas.singularity_iteration.core.api.machine.IEnergyContainerBlock {
 
-    // ==================== API 方法层 ====================
-    // 充放电操作通过 IItemAPI 进行，子类可以覆盖以支持自定义电池/护甲类型
+    // ==================== API method layer ====================
+    // Charge and discharge operations go through IItemAPI. Subclasses can override them to support custom battery or armor types.
 
     /**
-     * 获取物品 API 实例
+     * Gets the item API instance.
      */
     protected IItemAPI getItemAPI() {
         return MioIcifAPI.instance().getItemAPI();
     }
 
     /**
-     * 通过 API 检查物品是否为电池
+     * Uses the API to check if the item is a battery.
      */
     protected boolean apiIsBattery(ItemStack stack) {
         return getItemAPI().isBattery(stack);
     }
 
     /**
-     * 通过 API 检查物品是否为电力护甲
+     * Uses the API to check if the item is electric armor.
      */
     protected boolean apiIsElectricArmor(ItemStack stack) {
         return getItemAPI().isElectricArmor(stack);
     }
 
     /**
-     * 通过 API 检查物品是否为电动工具
+     * Uses the API to check if the item is an electric tool.
      */
     protected boolean apiIsElectricTool(ItemStack stack) {
         return getItemAPI().isElectricTool(stack);
     }
 
     /**
-     * 通过 API 获取电池容量
+     * Uses the API to get the battery capacity (EU).
      */
     protected long apiGetBatteryCapacity(ItemStack stack) {
         return getItemAPI().getBatteryCapacity(stack);
     }
 
     /**
-     * 通过 API 获取电池当前能量
+     * Uses the API to get the current battery energy (EU).
      */
     protected long apiGetBatteryStored(ItemStack stack) {
         return getItemAPI().getBatteryStored(stack);
     }
 
     /**
-     * 通过 API 获取电池充电速率
+     * Uses the API to get the battery charge rate (EU/t).
      */
     protected long apiGetChargeRate(ItemStack stack) {
         return getItemAPI().getChargeRate(stack);
     }
 
     /**
-     * 通过 API 为电池充电
+     * Uses the API to charge a battery.
      */
     protected long apiChargeBattery(ItemStack stack, long amount, boolean simulate) {
         return getItemAPI().chargeBattery(stack, amount, simulate);
     }
 
     /**
-     * 通过 API 从电池放电
+     * Uses the API to discharge a battery.
      */
     protected long apiDischargeBattery(ItemStack stack, long amount, boolean simulate) {
         return getItemAPI().dischargeBattery(stack, amount, simulate);
     }
 
     /**
-     * 通过 API 为电力护甲充电
+     * Uses the API to charge electric armor.
      */
     protected long apiChargeElectricArmor(ItemStack stack, long amount, boolean simulate) {
         return getItemAPI().chargeElectricArmor(stack, amount, simulate);
     }
 
     /**
-     * 通过 API 检查电池是否已充满
+     * Uses the API to check if the battery is full.
      */
     protected boolean apiIsBatteryFull(ItemStack stack) {
         return getItemAPI().isBatteryFull(stack);
     }
 
     /**
-     * 通过 API 检查电力护甲是否已充满
+     * Uses the API to check if the electric armor is full.
      */
     protected boolean apiIsArmorFull(ItemStack stack) {
         return getItemAPI().getElectricArmorStored(stack) >= getItemAPI().getElectricArmorMaxEnergy(stack);
     }
 
     /**
-     * 通过 API 获取电力护甲最大能量
+     * Uses the API to get the maximum energy of the electric armor (EU).
      */
     protected long apiGetArmorMaxEnergy(ItemStack stack) {
         return getItemAPI().getElectricArmorMaxEnergy(stack);
     }
 
     /**
-     * 通过 API 获取电力护甲当前能量
+     * Uses the API to get the current energy of the electric armor (EU).
      */
     protected long apiGetArmorStored(ItemStack stack) {
         return getItemAPI().getElectricArmorStored(stack);
     }
 
-    // 槽位布局：充电槽 + 放电槽 + 4个额外槽
+    // Slot layout: charge slot + discharge slot + 4 extra slots.
     protected static final SlotLayout LAYOUT = SlotLayout.builder()
         .battery()
         .battery()
         .extra(4)
         .build();
 
-    // 物品栏处理器
+    // Item handler.
     protected MachineItemHandler itemHandler;
 
-    // 槽位索引（按 builder 顺序：BATTERY=0, BATTERY=1, EXTRA=2-5）
+    // Slot indexes (in builder order: BATTERY=0, BATTERY=1, EXTRA=2-5).
     protected static final int CHARGE_SLOT = 0;
     protected static final int BATTERY_SLOT = 1;
     
-    // 红石模式（0-7）
+    // Redstone mode (0-7).
     protected byte redstoneMode = 0;
     public static final byte REDSTONE_MODES = 8;
     
     protected boolean hasRedstoneInput = false;
 
-    private static final int FE_COMPAT_SCAN_INTERVAL = 20;
-    private static final int REDSTONE_CHECK_INTERVAL = 1;
-    private int tickCounter = 0;
     private boolean lastRedstoneOutput = false;
     private final AABB chargepadDetectionBox;
 
     /**
-     * 构造函数
-     * @param pos 方块位置
-     * @param state 方块状态
-     * @param type 方块实体类型
-     * @param capacity 能量容量（EU）
-     * @param maxReceive 最大输入速率（EU/tick）
-     * @param maxExtract 最大输出速率（EU/tick）
-     * @param cableTier 电缆等级
+     * Constructor.
+     * @param pos block position
+     * @param state block state
+     * @param type block entity type
+     * @param capacity energy capacity (EU)
+     * @param maxReceive maximum input rate (EU/tick)
+     * @param maxExtract maximum output rate (EU/tick)
+     * @param cableTier cable tier
      */
     public AbstractEnergyStorageBlockEntity(BlockPos pos, BlockState state, BlockEntityType<?> type,
                                      long capacity, long maxReceive, long maxExtract, CableTier cableTier) {
@@ -194,10 +191,10 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     }
 
     /**
-     * 简化构造函数（使用默认参数）
+     * Simplified constructor (uses default values).
      */
     public AbstractEnergyStorageBlockEntity(BlockPos pos, BlockState state, BlockEntityType<?> type) {
-        super(pos, state, type, 100000, 1000, 1000, CableTier.MV); // 默认100000 EU 容量，1000 EU/t 输入/输出，MV等级
+        super(pos, state, type, 100000, 1000, 1000, CableTier.MV); // Default: 100000 EU capacity, 1000 EU/t input and output, MV tier.
         this.itemHandler = createItemHandler();
         this.chargepadDetectionBox = createChargepadDetectionBox(pos);
     }
@@ -229,22 +226,22 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     @Override
     public Component getDisplayName() {
         // the block's own name: CESU, chargers and the LESU family had no override and showed the
-        // generic "Energy Container" key, which zh_cn translates as BatBox ("储电盒")
+        // generic "Energy Container" key, which zh_cn translates with the BatBox name.
         return getBlockState().getBlock().getName();
     }
     
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        // 创建 BatBox 的 GUI 菜单，传入this 以便 Menu 可以访问能量数据
+        // Create the BatBox GUI menu. Pass this so that the menu can read the energy data.
         return MachinePresentation.storageMenu(containerId, playerInventory, this);
     }
     
     /**
-     * 每tick 更新逻辑
-     * 能量输出由IC2 电网系统通过 IEnergySource 接口自动处理
-     * 不再需要手动distributeEnergy()
-     * 额外通过 scexFeBridge 向相邻的 FE 能量存储（如 MI 机器）推送能量
+     * Update logic for each tick (server side only).
+     * The IC2 energy grid system handles the energy output automatically through the IEnergySource interface.
+     * A manual distributeEnergy() call is not necessary.
+     * This method also uses scexFeBridge to push energy to adjacent FE energy storages (for example MI machines).
      */
     public static void tick(Level level, BlockPos pos, BlockState state, AbstractEnergyStorageBlockEntity blockEntity) {
         if (level.isClientSide()) {
@@ -253,13 +250,10 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
 
         AbstractEnergyBlockEntity.tick(level, pos, state, blockEntity);
 
-        blockEntity.tickCounter++;
-
-        if ((blockEntity.tickCounter % REDSTONE_CHECK_INTERVAL) == 0) {
-            blockEntity.updateRedstoneInput(level, pos);
-            blockEntity.updateEnergyOutput();
-            blockEntity.checkRedstoneOutputChange();
-        }
+        // every tick: the redstone output must follow the stored energy without a delay
+        blockEntity.updateRedstoneInput(level, pos);
+        blockEntity.updateEnergyOutput();
+        blockEntity.checkRedstoneOutputChange();
 
         blockEntity.processBattery();
 
@@ -271,7 +265,7 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     }
     
     /**
-     * 检查红石信号输出状态是否改变，如果改变则通知邻居
+     * Checks if the redstone output state changed. If it changed, this method notifies the neighbors.
      */
     protected void checkRedstoneOutputChange() {
         boolean currentOutput = shouldEmitRedstone();
@@ -282,19 +276,19 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     }
     
     /**
-     * 检测红石信号输入
+     * Reads the redstone input signal.
      */
     protected void updateRedstoneInput(Level level, BlockPos pos) {
         this.hasRedstoneInput = level.hasNeighborSignal(pos);
     }
     
     /**
-     * 根据红石模式控制能量输出
+     * Controls the energy output from the redstone mode.
      */
     protected void updateEnergyOutput() {
-        // 红石模式 5: 接收到红石信号时停止输出
-        // 红石模式 6: 接收到红石信号时停止输出，或能量满时继续输出
-        // 红石模式 7: 接收到红石信号时才输出能量
+        // Redstone mode 5: stop the output when a redstone signal is received.
+        // Redstone mode 6: stop the output when a redstone signal is received, but continue the output when the energy is full.
+        // Redstone mode 7: output energy only when a redstone signal is received.
         boolean shouldEmit = shouldEmitEnergy();
         this.energyStorage.setOutputEnabled(shouldEmit);
     }
@@ -305,13 +299,13 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     }
     
     /**
-     * 检查是否应该输出能量（根据红石模式）
+     * Checks if the block must output energy (from the redstone mode).
      */
     public boolean shouldEmitEnergy() {
         switch (this.redstoneMode) {
-            case 5: // 接收到红石信号时停止输出
+            case 5: // Stop the output when a redstone signal is received.
                 return !this.hasRedstoneInput;
-            case 6: // 有红石输入时，仅释放接近满电的余量
+            case 6: // With redstone input, release only the surplus near full charge.
                 if (this.hasRedstoneInput) {
                     if (usesClassicRedstoneThresholds()) {
                         return this.energyStorage.getAmount() > this.energyStorage.getCapacity()
@@ -320,7 +314,7 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
                     return this.energyStorage.getAmount() >= this.energyStorage.getCapacity();
                 }
                 return true;
-            case 7: // 接收到红石信号时才输出能量
+            case 7: // Output energy only when a redstone signal is received.
                 return this.hasRedstoneInput;
             default:
                 return true;
@@ -328,26 +322,26 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     }
     
     /**
-     * 检查是否应该发出红石信号（根据红石模式）
+     * Checks if the block must emit a redstone signal (from the redstone mode).
      */
     public boolean shouldEmitRedstone() {
         switch (this.redstoneMode) {
-            case 1: // 原版范围储电箱在剩余空间不超过 20 包时发出信号
+            case 1: // Classic-range storage blocks emit a signal when 20 packets or less of free space remain.
                 if (usesClassicRedstoneThresholds()) {
                     return this.energyStorage.getAmount() >= this.energyStorage.getCapacity()
                             - 20L * this.energyStorage.getMaxExtract();
                 }
                 return this.energyStorage.getAmount() >= this.energyStorage.getCapacity();
-            case 2: // 能量在中间范围时发出信号
+            case 2: // Emit a signal when the energy is in the middle range.
                 return this.energyStorage.getAmount() > this.energyStorage.getMaxExtract() && 
                        this.energyStorage.getAmount() < this.energyStorage.getCapacity() - this.energyStorage.getMaxExtract();
-            case 3: // 能量未满时发出信号
+            case 3: // Emit a signal when the energy is not full.
                 if (usesClassicRedstoneThresholds()) {
                     return this.energyStorage.getAmount() < this.energyStorage.getCapacity()
                             - this.energyStorage.getMaxExtract();
                 }
                 return this.energyStorage.getAmount() < this.energyStorage.getCapacity();
-            case 4: // 原版范围储电箱不足一包时发出信号
+            case 4: // Classic-range storage blocks emit a signal when less than one packet remains.
                 if (usesClassicRedstoneThresholds()) {
                     return this.energyStorage.getAmount() < this.energyStorage.getMaxExtract();
                 }
@@ -358,64 +352,64 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     }
     
     /**
-     * 获取当前红石信号强度（0-15）
+     * Gets the current redstone signal strength (0-15).
      */
     public int getRedstoneSignalStrength() {
         return shouldEmitRedstone() ? 15 : 0;
     }
     
     /**
-     * 获取红石模式
+     * Gets the redstone mode.
      */
     public byte getRedstoneMode() {
         return this.redstoneMode;
     }
     
     /**
-     * 是否有红石输入信号
+     * Returns true if there is a redstone input signal.
      */
     public boolean hasRedstoneInput() {
         return this.hasRedstoneInput;
     }
     
     /**
-     * 设置红石模式
+     * Sets the redstone mode. Values outside 0 to REDSTONE_MODES - 1 are ignored.
      */
     public void setRedstoneMode(byte mode) {
         if (mode >= 0 && mode < REDSTONE_MODES && mode != this.redstoneMode) {
             this.redstoneMode = mode;
             setChanged();
-            // 通知邻居方块红石信号可能改变
+            // Tell the neighbor blocks that the redstone signal can change.
             notifyNeighborsRedstoneChange();
         }
     }
     
     /**
-     * 切换到下一个红石模式
+     * Changes to the next redstone mode.
      */
     public void cycleRedstoneMode() {
         byte oldMode = this.redstoneMode;
         this.redstoneMode = (byte) ((this.redstoneMode + 1) % REDSTONE_MODES);
         setChanged();
-        // 通知邻居方块红石信号可能改变
+        // Tell the neighbor blocks that the redstone signal can change.
         if (this.redstoneMode != oldMode) {
             notifyNeighborsRedstoneChange();
         }
     }
     
     /**
-     * 通知邻居方块红石信号改变
+     * Tells the neighbor blocks that the redstone signal changed (server side only).
      */
     protected void notifyNeighborsRedstoneChange() {
         if (this.level != null && !this.level.isClientSide()) {
             this.level.updateNeighborsAt(this.worldPosition, this.getBlockState().getBlock());
-            // 也更新自身方块状态
+            // Also update this block state.
             this.level.blockUpdated(this.worldPosition, this.getBlockState().getBlock());
         }
     }
     
     /**
-     * 获取红石模式名称（用于GUI显示）
+     * Gets the redstone mode name (translation key for the GUI).
      */
     public String getRedstoneModeName() {
         return switch (this.redstoneMode) {
@@ -431,10 +425,10 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
         };
     }
 
-    // ==================== IC2 电网系统覆盖 ====================
-    // 储能方块既是 Sink（从非正面接收能量）又是 Source（从正面输出能量）
-    // 父类 AbstractEnergyBlockEntity 的实现仅在isPowerSource=true 时才输出能量
-    // 但储能方块isPowerSource=false，因此必须覆盖这些方法
+    // ==================== IC2 energy grid overrides ====================
+    // A storage block is both a sink (it receives energy from the sides that are not the front) and a source (it outputs energy from the front).
+    // The parent class AbstractEnergyBlockEntity outputs energy only when isPowerSource=true.
+    // A storage block has isPowerSource=false. Thus these methods must be overridden.
 
     @Override
     public boolean emitsEnergyTo(IEnergyAcceptor acceptor, Direction direction) {
@@ -507,7 +501,7 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     }
 
     public long extractPowerForConsumer(long amount, boolean simulate) {
-        // 检查是否允许输出能量（红石模式控制）
+        // Check if the energy output is allowed (redstone mode control).
         if (!energyStorage.isOutputEnabled()) return 0L;
         if (amount <= 0L) {
             return 0L;
@@ -527,23 +521,23 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     /**
      * Drain charge-slot items into the internal buffer.
      * 
-     * <p>通过 IItemAPI 进行电池放电，Addon 可以注册自定义电池类型。
+     * <p>Battery discharge goes through IItemAPI. Add-ons can register custom battery types.
      */
     protected void processBattery() {
         if (!itemHandler.getStackInSlot(BATTERY_SLOT).isEmpty()) scexFeBridge().discharge(itemHandler, BATTERY_SLOT);
     }
 
     /**
-     * 给充电槽中的物品充电
-     * 支持电池和电力护甲
+     * Charges the item in the charge slot.
+     * Batteries and electric armor are supported.
      * 
-     * <p>通过 IItemAPI 进行充电操作，Addon 可以注册自定义电池和护甲类型。
+     * <p>Charge operations go through IItemAPI. Add-ons can register custom battery and armor types.
      */
     protected void chargeItems() {
         scexFeBridge().charge(itemHandler, CHARGE_SLOT);
     }
 
-    // Container 接口实现
+    // Container interface implementation
     @Override
     public int getContainerSize() {
         return itemHandler.getSlots();
@@ -621,8 +615,8 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     }
     
     /**
-     * 提供能量存储能力
-     * 储能方块：正面输出，其他方向输入
+     * Gives the energy storage capability.
+     * Storage block: the front outputs, the other sides input.
      */
     @Override
     @Deprecated(since = "0.1.7.14", forRemoval = false)
@@ -634,22 +628,22 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        // 保存物品栏（能量由父类自动保存）
+        // Save the inventory. The parent class saves the energy.
         if (itemHandler != null) {
             tag.put("Items", itemHandler.serializeNBT(registries));
         }
-        // 保存红石模式
+        // Save the redstone mode.
         tag.putByte("RedstoneMode", this.redstoneMode);
     }
 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        // 加载物品栏（能量由父类自动加载）
+        // Load the inventory. The parent class loads the energy.
         if (itemHandler != null && tag.contains("Items")) {
             itemHandler.deserializeNBT(registries, tag.getCompound("Items"));
         }
-        // 加载红石模式
+        // Load the redstone mode.
         if (tag.contains("RedstoneMode")) {
             this.redstoneMode = tag.getByte("RedstoneMode");
         }
@@ -658,11 +652,11 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        // 同步物品栏到客户端
+        // Send the inventory to the client.
         if (itemHandler != null) {
             tag.put("Items", itemHandler.serializeNBT(registries));
         }
-        // 同步红石模式到客户端
+        // Send the redstone mode to the client.
         tag.putByte("RedstoneMode", this.redstoneMode);
         return tag;
     }
@@ -670,17 +664,17 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
     @Override
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.handleUpdateTag(tag, registries);
-        // 从服务端同步物品栈
+        // Get the item stacks from the server.
         if (itemHandler != null && tag.contains("Items")) {
             itemHandler.deserializeNBT(registries, tag.getCompound("Items"));
         }
-        // 从服务端同步红石模式
+        // Get the redstone mode from the server.
         if (tag.contains("RedstoneMode")) {
             this.redstoneMode = tag.getByte("RedstoneMode");
         }
     }
 
-    // ==================== IEnergyContainerBlock 接口实现 ====================
+    // ==================== IEnergyContainerBlock interface implementation ====================
 
     @Override
     public net.neoforged.neoforge.items.IItemHandler getItemHandler() {
@@ -704,17 +698,17 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
 
     @Override
     public long getTotalCharged() {
-        return 0; // 储能容器不跟踪总充电量
+        return 0; // Energy containers do not track the total charged energy.
     }
 
     @Override
     public long getTotalDischarged() {
-        return 0; // 储能容器不跟踪总放电量
+        return 0; // Energy containers do not track the total discharged energy.
     }
 
     @Override
     public long getRunningTime() {
-        return 0; // 储能容器不跟踪运行时间
+        return 0; // Energy containers do not track the running time.
     }
 
     @Override
@@ -722,11 +716,11 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
         long energy = energyStorage.getAmount();
         long capacity = energyStorage.getCapacity();
         if (energy > 0 && energy < capacity) {
-            return "工作中";
+            return "Working";              // plain English API text (0.1.7.36)
         } else if (energy >= capacity) {
-            return "已满";
+            return "Full";
         } else {
-            return "空闲";
+            return "Idle";
         }
     }
 }

@@ -9,19 +9,19 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 多方块结构应实现的接口。
+ * Interface that multiblock structures must implement.
  *
- * <p>API 层通过此接口读取结构信息，而不直接依赖具体实现类
- * {@code mio_icif_multiblock_manager}。
+ * <p>The API layer reads structure data through this interface. It does not depend directly on the
+ * implementation class {@code mio_icif_multiblock_manager}.
  *
- * <p>使用 {@link #find(Level, BlockPos)} 查找指定位置的结构实例。
- * 使用 {@link #builder()} 创建新的多方块结构。
+ * <p>Use {@link #find(Level, BlockPos)} to find the structure at a position.
+ * Use {@link #builder()} to make a new multiblock structure.
  */
 public interface IMultiblockStructure {
 
     boolean isValid();
 
-    /** 主控方块位置；活动结构注册表以此为主键。 */
+    /** Gets the controller block position. The registry of active structures uses it as the primary key. */
     BlockPos getControllerPos();
 
     Set<BlockPos> getStructureBlocks();
@@ -32,36 +32,36 @@ public interface IMultiblockStructure {
 
     Set<BlockPos> getRedstonePorts();
 
-    /** 位置是否属于该结构（含主控与成员方块）。 */
+    /** Checks if a position is part of this structure (the controller and the member blocks). */
     boolean isPartOfStructure(BlockPos pos);
 
     /**
-     * 拆除当前结构并触发 onBroken 生命周期。
+     * Breaks this structure and runs the onBroken lifecycle callback.
      *
-     * @return 结构原本有效且已被拆除时返回 true
+     * @return true if the structure was valid and is now broken
      */
     boolean invalidate(Level level);
 
     /**
-     * 查找指定位置所属的多方块结构。
+     * Finds the multiblock structure that contains a position.
      *
-     * <p>这是 API 层与内部多块管理器之间的唯一桥接点。
-     * 如果内部实现类变更，只需修改此处。
+     * <p>This is the only bridge between the API layer and the internal multiblock manager.
+     * If the internal implementation class changes, change only this method.
      *
-     * @param level 世界
-     * @param pos 方块位置（主控或结构内任意方块）
-     * @return 结构实例，不存在则返回 null
+     * @param level the level
+     * @param pos the block position (the controller or any block in the structure)
+     * @return the structure, or null if there is none
      */
     static IMultiblockStructure find(Level level, BlockPos pos) {
         return MioIcifAPI.instance().getMultiblockAPI().findStructure(level, pos);
     }
 
     /**
-     * 创建多方块结构构建器。
+     * Makes a multiblock structure builder.
      *
-     * <p>附属开发者通过此方法创建自定义多方块结构，无需引用内部实现类。
+     * <p>Addon developers use this method to make custom multiblock structures. They do not need the internal implementation classes.
      *
-     * <p>使用示例：
+     * <p>Example:
      * <pre>{@code
      * IMultiblockStructure structure = IMultiblockStructure.builder()
      *     .validator(new MyValidator())
@@ -70,7 +70,7 @@ public interface IMultiblockStructure {
      *     .buildAndRegister(level, controllerPos);
      * }</pre>
      *
-     * @return 多方块结构构建器
+     * @return a multiblock structure builder
      */
     static IMultiblockBuilder builder() {
         return MioIcifAPI.instance().getMultiblockAPI().createBuilder();

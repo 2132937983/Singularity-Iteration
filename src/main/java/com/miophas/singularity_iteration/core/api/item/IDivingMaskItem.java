@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 潜水面具物品接口。
+ * Interface for a diving mask item.
  *
- * <p>用于标识潜水面具类物品，便于 API 统一查询与分类。
+ * <p>It marks diving mask items, so that the API can query and sort them in one way.
  */
 public interface IDivingMaskItem {
 }

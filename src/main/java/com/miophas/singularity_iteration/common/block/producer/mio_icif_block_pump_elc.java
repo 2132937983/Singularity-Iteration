@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 电力泵方块类
- * 能够将水或岩浆等流体抽到机器�?
+ * It pumps fluids such as water or lava into the machine.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_pump_elc extends mio_icif_entity_block {
@@ -46,7 +46,7 @@ public class mio_icif_block_pump_elc extends mio_icif_entity_block {
 
     public mio_icif_block_pump_elc(Properties properties) {
         super(properties);
-        // 注册默认状态：未点�?
+        // Default state: not lit.
         this.registerDefaultState(this.stateDefinition.any().setValue(LIT, false));
     }
 
@@ -108,8 +108,8 @@ public class mio_icif_block_pump_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 方块被移除时的处理?
-     * 掉落方块实体中的物品
+     * Handles the removal of the block.
+     * Drops the items that are in the block entity.
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
@@ -120,7 +120,7 @@ public class mio_icif_block_pump_elc extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_pump_elc pump) {
-                // 掉落物品栏中的所有物�?
+                // Drop all items in the inventory.
                 for (int i = 0; i < pump.getItemHandler().getSlots(); i++) {
                     ItemStack stack = pump.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {
@@ -141,14 +141,14 @@ public class mio_icif_block_pump_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取模拟输出信号强度（用于红石比较器�?
-     * 基于物品栏填充程度和流体储量计算
+     * Gets the analog output signal strength for redstone comparators.
+     * The signal is based on the inventory fill level and the stored fluid amount.
      */
     @Override
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof mio_icif_pump_elc pump) {
-            // 计算物品栏填充程�?
+            // Calculate the inventory fill level.
             var handler = pump.getItemHandler();
             int totalSlots = handler.getSlots();
             int filledSlots = 0;
@@ -175,8 +175,8 @@ public class mio_icif_block_pump_elc extends mio_icif_entity_block {
     }
 
     /**
-     * 获取方块实体更新器（Ticker�?
-     * 用于�?tick 更新方块实体逻辑
+     * Gets the block entity ticker.
+     * The ticker runs the block entity logic each tick on the server side only.
      */
     @Nullable
     @Override

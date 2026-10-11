@@ -8,66 +8,66 @@ import java.util.Collection;
 import java.util.Optional;
 
 /**
- * 热能 (HU) API
+ * Heat (HU) API.
  *
- * <p>提供与 mio_icif 热能系统交互的接口，包括：
+ * <p>Use it to interact with the mio_icif heat system. It can:
  * <ul>
- *   <li>查询方块的热能状态</li>
- *   <li>获取热能存储信息</li>
- *   <li>注入/提取热能</li>
- *   <li>查询热能连接</li>
+ *   <li>query the heat state of a block</li>
+ *   <li>get heat storage information</li>
+ *   <li>insert and extract heat</li>
+ *   <li>query heat connections</li>
  * </ul>
  */
 public interface IHeatAPI {
 
     /**
-     * 获取指定位置的热能存储信息
+     * Gets the heat storage at the given position.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 热能存储访问接口；如果位置没有热能方块或存储信息不可用则返回空 Optional
+     * @param world the world
+     * @param pos the block position
+     * @return the heat storage access, or an empty Optional if no heat block is at the position or the storage is not available
      */
     Optional<IHeatStorageAccess> getHeatStorage(Level world, BlockPos pos);
 
     /**
-     * 检查指定位置是否有热能方块
+     * Checks if a heat block is at the given position.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return true 如果位置有热能方块
+     * @param world the world
+     * @param pos the block position
+     * @return true if a heat block is at the position
      */
     boolean hasHeatTile(Level world, BlockPos pos);
 
     /**
-     * 获取指定位置的热能连接方向
+     * Gets the heat connection directions at the given position.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @return 连接方向集合
+     * @param world the world
+     * @param pos the block position
+     * @return the connected directions
      */
     Collection<Direction> getHeatConnections(Level world, BlockPos pos);
 
     /**
-     * 向指定位置的热能存储注入热量。
+     * Inserts heat into the heat storage at the given position.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @param amount 要注入的热量（HU），必须 ≥ 0
-     * @param simulate 如果 true 只模拟不实际修改
-     * @return 实际注入的热量（HU）；如果位置没有热能方块返回 0
+     * @param world the world
+     * @param pos the block position
+     * @param amount the heat to insert, in HU; must be 0 or more
+     * @param simulate if true, only simulate; do not change the storage
+     * @return the heat that was inserted, in HU; 0 if no heat block is at the position
      */
     default long insertHeat(Level world, BlockPos pos, long amount, boolean simulate) {
         return getHeatStorage(world, pos).map(s -> s.insertHeat(amount, simulate)).orElse(0L);
     }
 
     /**
-     * 从指定位置的热能存储提取热量。
+     * Extracts heat from the heat storage at the given position.
      *
-     * @param world 世界
-     * @param pos 方块位置
-     * @param amount 要提取的热量（HU），必须 ≥ 0
-     * @param simulate 如果 true 只模拟不实际修改
-     * @return 实际提取的热量（HU）；如果位置没有热能方块返回 0
+     * @param world the world
+     * @param pos the block position
+     * @param amount the heat to extract, in HU; must be 0 or more
+     * @param simulate if true, only simulate; do not change the storage
+     * @return the heat that was extracted, in HU; 0 if no heat block is at the position
      */
     default long extractHeat(Level world, BlockPos pos, long amount, boolean simulate) {
         return getHeatStorage(world, pos).map(s -> s.extractHeat(amount, simulate)).orElse(0L);

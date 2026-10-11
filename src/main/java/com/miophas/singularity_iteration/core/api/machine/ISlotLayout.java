@@ -1,88 +1,88 @@
 package com.miophas.singularity_iteration.core.api.machine;
 
 /**
- * API 级槽位布局接口
- * 使附属模组开发者与内部 SlotLayout 实现解耦
+ * API-level slot layout interface.
+ * It keeps addon developers independent of the internal SlotLayout implementation.
  */
 public interface ISlotLayout {
 
     /**
-     * 获取指定类型的槽位数量
-     * @param type 槽位类型
-     * @return 槽位数量
+     * Gets the number of slots of the given type.
+     * @param type the slot type
+     * @return the number of slots
      */
     int getCount(ISlotType type);
     
     /**
-     * 获取指定类型的槽位索引
-     * @param type 槽位类型
-     * @return 槽位索引数组
+     * Gets the slot indices of the given type.
+     * @param type the slot type
+     * @return the array of slot indices
      */
     int[] getSlotsOfType(ISlotType type);
     
     /**
-     * 获取指定槽位的类型
-     * @param slotIndex 槽位索引
-     * @return 槽位类型
+     * Gets the type of the given slot.
+     * @param slotIndex the slot index
+     * @return the slot type
      */
     ISlotType getType(int slotIndex);
     
     /**
-     * 获取总槽位数量
-     * @return 总槽位数
+     * Gets the total number of slots.
+     * @return the total number of slots
      */
     int getTotalCount();
     
     /**
-     * 获取输入槽索引
-     * @return 输入槽索引数组
+     * Gets the indices of the input slots.
+     * @return the array of input slot indices
      */
     int[] getInputSlots();
     
     /**
-     * 获取输出槽索引
-     * @return 输出槽索引数组
+     * Gets the indices of the output slots.
+     * @return the array of output slot indices
      */
     int[] getOutputSlots();
     
     /**
-     * 获取电池槽索引
-     * @return 电池槽索引数组
+     * Gets the indices of the battery slots.
+     * @return the array of battery slot indices
      */
     int[] getBatterySlots();
     
     /**
-     * 获取升级槽索引
-     * @return 升级槽索引数组
+     * Gets the indices of the upgrade slots.
+     * @return the array of upgrade slot indices
      */
     int[] getUpgradeSlots();
     
     /**
-     * 获取输入槽数量
-     * @return 输入槽数量
+     * Gets the number of input slots.
+     * @return the number of input slots
      */
     int getInputCount();
     
     /**
-     * 获取输出槽数量
-     * @return 输出槽数量
+     * Gets the number of output slots.
+     * @return the number of output slots
      */
     int getOutputCount();
     
     /**
-     * 获取电池槽数量
-     * @return 电池槽数量
+     * Gets the number of battery slots.
+     * @return the number of battery slots
      */
     int getBatteryCount();
     
     /**
-     * 获取升级槽数量
-     * @return 升级槽数量
+     * Gets the number of upgrade slots.
+     * @return the number of upgrade slots
      */
     int getUpgradeCount();
 
     /**
-     * 检查指定槽位是否为给定类型
+     * Checks if the given slot has the given type.
      */
     default boolean isType(int slot, ISlotType type) {
         for (int s : getSlotsOfType(type)) {
@@ -92,8 +92,8 @@ public interface ISlotLayout {
     }
 
     /**
-     * 获取指定类型的第一个槽位起始索引
-     * @return 起始索引，如果没有该类型的槽位返回 -1
+     * Gets the index of the first slot of the given type.
+     * @return the start index, or -1 if no slot has this type
      */
     default int getStart(ISlotType type) {
         int[] slots = getSlotsOfType(type);
@@ -101,14 +101,14 @@ public interface ISlotLayout {
     }
 
     /**
-     * 获取指定槽位的 API 级类型（等价于内部 getInternalSlotType）
+     * Gets the API-level type of the given slot (the same as the internal getInternalSlotType).
      */
     default ISlotType getSlotType(int slotIndex) {
         return getType(slotIndex);
     }
 
     /**
-     * 槽位布局构建器
+     * Builder for a slot layout.
      */
     interface Builder {
         Builder input(int count);

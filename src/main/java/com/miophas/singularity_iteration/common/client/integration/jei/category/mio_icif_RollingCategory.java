@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 金属成型�?轧制 JEI 配方类别
+ * JEI recipe category for metal former rolling.
  */
 @SuppressWarnings("null")
 public class mio_icif_RollingCategory extends AbstractJeiRecipeCategory<mio_icif_RollingRecipe> {
@@ -73,14 +73,14 @@ public class mio_icif_RollingCategory extends AbstractJeiRecipeCategory<mio_icif
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_RollingRecipe recipe, IFocusGroup focuses) {
-        // 修复：使�?addItemStacks 并设置正确的数量
+        // Use addItemStacks with the correct count.
         List<ItemStack> inputs = Arrays.stream(recipe.getIngredient().getItems())
                 .map(stack -> stack.copyWithCount(recipe.getIngredientCount()))
                 .toList();
         builder.addSlot(RecipeIngredientRole.INPUT, 10, 10)
                 .addItemStacks(inputs);
 
-        // 输出�
+        // Output slot
     builder.addSlot(RecipeIngredientRole.OUTPUT, 109, 28)
                 .addItemStack(recipe.getResultItem(null));
     }

@@ -13,9 +13,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 独立变压器的实体替换：登记过的方块在放置与读档时得到 core 的独立实体。
+ * Block entity substitution for independent transformers.
+ * A registered block gets the independent block entity of core when it is placed or loaded from a save.
  *
- * <p>替换表见 {@link IndependentSubstitutions}，由宿主注册。
+ * <p>For the substitution table, see {@link IndependentSubstitutions}. The host registers the entries.
  */
 public final class IndependentTransformerFactory {
 

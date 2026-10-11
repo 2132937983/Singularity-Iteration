@@ -1,9 +1,9 @@
 package com.miophas.singularity_iteration.core.api.item;
 
 /**
- * 存储方块接口。
+ * Storage block interface.
  *
- * <p>用于标识存储类方块实体（木桶 / 储物箱等），便于 API 统一查询与分类。
+ * <p>Marks storage block entities (barrels, storage boxes and similar). The API uses it to query and classify them in one way.
  */
 public interface IStorageBlock {
 }

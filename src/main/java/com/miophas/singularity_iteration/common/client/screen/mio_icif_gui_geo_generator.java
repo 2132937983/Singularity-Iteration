@@ -43,10 +43,6 @@ public class mio_icif_gui_geo_generator extends mio_icif_screen<com.miophas.sing
 
     // å²©æµæ§½çº¹çä½ç½®ï¼ç©ºæ§½ï¼?
 // 岩浆槽纹理位置（空槽）
-    @SuppressWarnings("unused")
-    private static final int LAVA_TANK_TEXTURE_X = 176;
-    @SuppressWarnings("unused")
-    private static final int LAVA_TANK_TEXTURE_Y = 17;
 
     // å²©æµæè´¨ä½ç½®
     private static final int LAVA_TANK_X = 74;
@@ -57,9 +53,6 @@ public class mio_icif_gui_geo_generator extends mio_icif_screen<com.miophas.sing
     // å»åº¦çº¹çä½ç½®
 // 刻度纹理位置
     @SuppressWarnings("unused")
-    private static final int SCALE_TEXTURE_X = 176;
-    @SuppressWarnings("unused")
-    private static final int SCALE_TEXTURE_Y = 72;
     private static final int SCALE_WIDTH = 20;
     private static final int SCALE_HEIGHT = 46;
     private static final int SCALE_X = 74;

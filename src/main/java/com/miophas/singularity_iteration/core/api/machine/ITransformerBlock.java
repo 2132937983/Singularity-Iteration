@@ -4,81 +4,82 @@ import com.miophas.singularity_iteration.core.api.energy.ICableTier;
 import net.minecraft.core.Direction;
 
 /**
- * 变压器方块接口。
+ * Interface for transformer blocks.
  *
- * <p>变压器是核心电力基础设施，用于在不同电压等级之间转换能量。
- * 实现此接口的方块可以将低压侧的能量升压到高压侧，或将高压侧的能量降压到低压侧。
+ * <p>A transformer is core power infrastructure. It converts energy between voltage tiers.
+ * A block that implements this interface can step up energy from the low-voltage side to the high-voltage side.
+ * It can also step down energy from the high-voltage side to the low-voltage side.
  *
- * <h3>工作模式</h3>
+ * <h3>Modes</h3>
  * <ul>
- *   <li>{@link TransformerMode#STEP_UP}   — 升压模式：低压侧输入 → 高压侧输出</li>
- *   <li>{@link TransformerMode#STEP_DOWN} — 降压模式：高压侧输入 → 低压侧输出</li>
+ *   <li>{@link TransformerMode#STEP_UP}   - step-up mode: input on the low-voltage side, output on the high-voltage side</li>
+ *   <li>{@link TransformerMode#STEP_DOWN} - step-down mode: input on the high-voltage side, output on the low-voltage side</li>
  * </ul>
  */
 public interface ITransformerBlock extends IEnergyBlock {
 
     /**
-     * 变压器工作模式枚举
+     * Transformer mode.
      */
     enum TransformerMode {
-        /** 升压模式：低压 → 高压 */
+        /** Step-up mode: low voltage to high voltage. */
         STEP_UP,
-        /** 降压模式：高压 → 低压 */
+        /** Step-down mode: high voltage to low voltage. */
         STEP_DOWN
     }
 
     /**
-     * 获取当前变压器模式
-     * @return 变压器模式
+     * Gets the current transformer mode.
+     * @return the transformer mode
      */
     TransformerMode getTransformerMode();
 
     /**
-     * 设置变压器模式
-     * @param mode 目标模式
+     * Sets the transformer mode.
+     * @param mode the new mode
      */
     void setTransformerMode(TransformerMode mode);
 
     /**
-     * 获取低压侧电缆等级
-     * @return 低压侧等级
+     * Gets the cable tier of the low-voltage side.
+     * @return the low-voltage tier
      */
     ICableTier getLowTier();
 
     /**
-     * 获取高压侧电缆等级
-     * @return 高压侧等级
+     * Gets the cable tier of the high-voltage side.
+     * @return the high-voltage tier
      */
     ICableTier getHighTier();
 
     /**
-     * 获取当前输入侧的电缆等级
-     * @return 输入侧等级
+     * Gets the cable tier of the current input side. It depends on the mode.
+     * @return the input-side tier
      */
     ICableTier getInputTier();
 
     /**
-     * 获取当前输出侧的电缆等级
-     * @return 输出侧等级
+     * Gets the cable tier of the current output side. It depends on the mode.
+     * @return the output-side tier
      */
     ICableTier getOutputTier();
 
     /**
- * 获取内部冲区当前能量
-     * @return 褰撳墠缂撳啿鑳介噺锛圗U锛�
+     * Gets the energy in the internal buffer.
+     * @return the current buffer energy in EU
      */
     long getInternalBuffer();
 
     /**
- * 获取内部冲区容量
- * @return 冲容量（EU）
+     * Gets the capacity of the internal buffer.
+     * @return the buffer capacity in EU
      */
     long getBufferCapacity();
 
     /**
-     * 检查指定方向是否连接到变压器
-     * @param side 方向
-     * @return true 如果该方向已连接
+     * Checks if the given side is connected to the transformer.
+     * @param side the side
+     * @return true if the side is connected
      */
     boolean isConnected(Direction side);
 }

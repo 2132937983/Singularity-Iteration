@@ -26,7 +26,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 放射性同位素温差加热机方法? * 通过RTG燃料靶丸产生热能，只在正面输出热�? */
+ * Block class for the radioisotope heat generator.
+ * It makes heat from RTG fuel pellets. It outputs heat only from the front face.
+ */
 @SuppressWarnings("null")
 public class mio_icif_block_rt_heat_generator extends mio_icif_entity_block {
 

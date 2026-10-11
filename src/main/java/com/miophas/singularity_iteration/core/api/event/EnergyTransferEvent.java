@@ -7,30 +7,30 @@ import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
 
 /**
- * 能量传输事件
+ * Energy transfer event.
  *
- * <p><b>触发时机</b>：当能量通过电缆网络从一个方块传输到另一个方块时触发。
+ * <p><b>When it fires</b>: when energy moves through the cable network from one block to another block.
  *
- * <p><b>触发频率</b>：每个游戏 tick 触发一次（如果有能量传输），频率极高。建议在事件处理中避免复杂计算。
+ * <p><b>Frequency</b>: one time each game tick (when energy moves). The frequency is very high. Do not do complex calculations in the handler.
  *
- * <p><b>覆盖范围</b>：所有通过 mio_icif 能量网络传输的能量，包括：
+ * <p><b>Scope</b>: all energy that moves through the mio_icif energy network, including:
  * <ul>
- *   <li>发电机 → 电缆 → 储能设备</li>
- *   <li>储能设备 → 电缆 → 机器</li>
- *   <li>电缆 → 电缆（网络中转）</li>
+ *   <li>generator → cable → energy storage</li>
+ *   <li>energy storage → cable → machine</li>
+ *   <li>cable → cable (relay in the network)</li>
  * </ul>
  *
- * <p>可通过取消事件阻止能量传输，或修改传输量。
+ * <p>Cancel the event to stop the energy transfer, or change the transfer amount.
  *
- * <p>示例用法：
+ * <p>Example:
  * <pre>{@code
  * @SubscribeEvent
  * public void onEnergyTransfer(EnergyTransferEvent event) {
- *     // 记录能量传输
+ *     // Record the energy transfer
  *     stats.recordTransfer(event.getFrom(), event.getTo(), event.getAmount());
  *
- *     // 减少传输损耗（例如：使用更好的电缆）
- *     long loss = event.getAmount() / 10; // 10% 损耗
+ *     // Decrease the transfer loss (for example, use a better cable)
+ *     long loss = event.getAmount() / 10; // 10% loss
  *     event.setAmount(event.getAmount() - loss);
  * }
  * }</pre>
@@ -54,63 +54,63 @@ public class EnergyTransferEvent extends Event implements ICancellableEvent {
     }
 
     /**
-     * 获取世界
+     * Returns the world.
      *
-     * @return 世界对象
+     * @return the world
      */
     public Level getWorld() {
         return world;
     }
 
     /**
-     * 获取源位置
+     * Returns the source position.
      *
-     * @return 能量来源位置
+     * @return the position of the energy source
      */
     public BlockPos getFrom() {
         return from;
     }
 
     /**
-     * 获取目标位置
+     * Returns the target position.
      *
-     * @return 能量目标位置
+     * @return the position of the energy target
      */
     public BlockPos getTo() {
         return to;
     }
 
     /**
-     * 获取传输方向
+     * Returns the transfer direction.
      *
-     * @return 传输方向
+     * @return the transfer direction
      */
     public Direction getDirection() {
         return direction;
     }
 
     /**
-     * 获取传输量
+     * Returns the transfer amount.
      *
-     * @return 传输的能量值
+     * @return the energy that moves (EU)
      */
     public long getAmount() {
         return amount;
     }
 
     /**
-     * 设置传输量
+     * Sets the transfer amount. The value is clamped to the range 0 to {@link #getMaxExtract()}.
      *
-     * @param amount 新的传输量
+     * @param amount the new transfer amount (EU)
      */
     public void setAmount(long amount) {
         this.amount = Math.max(0, Math.min(amount, maxExtract));
     }
 
     /**
-     * 获取最大可提取量
+     * Returns the maximum amount that can be extracted.
      *
-     * @return 最大提取限制
+     * @return the maximum extract limit (EU)
      */
     public long getMaxExtract() {
         return maxExtract;

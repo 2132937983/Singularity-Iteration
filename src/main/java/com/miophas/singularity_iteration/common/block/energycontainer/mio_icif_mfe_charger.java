@@ -29,7 +29,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * MFE 充电座方法? */
+ * MFE charge pad block.
+ */
 @SuppressWarnings("null")
 public class mio_icif_mfe_charger extends mio_icif_entity_block implements com.miophas.singularity_iteration.core.api.block.IChargepadBlock {
 

@@ -133,7 +133,7 @@ public abstract class mio_icif_pipe_default extends BlockEntity implements IPipe
 
         for (Direction dir : ALL_DIRECTIONS) {
             BlockPos adjacentPos = worldPosition.relative(dir);
-            if (!level.hasChunkAt(adjacentPos)) continue;
+            if (!level.isLoaded(adjacentPos)) continue;
             BlockEntity adjacentEntity = level.getBlockEntity(adjacentPos);
             if (adjacentEntity instanceof mio_icif_pipe_default pipe) {
                 pipe.markForUpdate();
@@ -222,7 +222,7 @@ public abstract class mio_icif_pipe_default extends BlockEntity implements IPipe
         if (level == null || level.isClientSide()) return;
         
         BlockPos neighborPos = worldPosition.relative(direction);
-        if (!level.hasChunkAt(neighborPos)) return;
+        if (!level.isLoaded(neighborPos)) return;
         BlockEntity neighborBe = level.getBlockEntity(neighborPos);
         
         if (neighborBe instanceof mio_icif_pipe_default neighborPipe) {

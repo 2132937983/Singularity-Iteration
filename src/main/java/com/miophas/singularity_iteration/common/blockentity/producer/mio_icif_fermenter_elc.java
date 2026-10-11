@@ -28,14 +28,14 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * ??��?�机?��??��?��??
- * 使用 HU ??��?��?��?��?��?�质为沼气�??并产?��??��??
+ * Electric fermenter block entity.
+ * It uses HU (heat units) to convert biomass into biogas and produces fertilizer as a by-product.
  *
- * 工�?��?��??�?
- * - 从正?��?���?HU ??��?��?????�?100 HU/t�?
- * - �???��?��?�质量?0mB/次�?��?��?��?��??4000 HU/次�?�产?��沼�?��??00mB/次�??
- * - 每累计算??�?500mB ??��?�质额�?�产�?1 个�?��??
- * - ??��?��?��?��??工�?��?�度越快
+ * Operation:
+ * - The machine pulls HU only from the heat source on its front side, at a maximum of 100 HU/t.
+ * - One run consumes 20 mB of biomass and 4000 HU, and produces 400 mB of biogas.
+ * - Each 500 mB of processed biomass produces 1 fertilizer.
+ * - A higher heat input makes the machine work faster.
  */
 @SuppressWarnings("null")
 public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
@@ -57,49 +57,49 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
             com.miophas.singularity_iteration.core.api.upgrade.tile.UpgradableProperty.FLUID_CONSUMING,
             com.miophas.singularity_iteration.core.api.upgrade.tile.UpgradableProperty.FLUID_PRODUCING);
 
-    // 槽位?��?��?��????? builder �??��顺�?��?�EXTRA=0-1, OUTPUT=2-3, UPGRADE=4-5, EXTRA=6�?
-    public static final int BIOMASS_CELL_SLOT = 0;         // ??��?�质??��??输�?�槽 (EXTRA)
-    public static final int EMPTY_CELL_SLOT = 1;           // ??��?�质??��??�???��?��??空气?��??输出�?(EXTRA)
-    public static final int BIOGAS_CELL_SLOT = 2;          // 沼�?��?��??输出�?(OUTPUT)
-    public static final int FERTILIZER_SLOT = 3;           // ??��?��?�出�?(OUTPUT)
-    public static final int UPGRADE_SLOT_START = 4;        // ???级槽起�??(UPGRADE)
-    public static final int UPGRADE_SLOT_COUNT = 2;        // ???级槽?���?（对齐 IC2：2 个）
-    public static final int EMPTY_CELL_INPUT_SLOT = 6;     // 沼�?��?��??专用???空气?��??输�?��??(EXTRA)
-    public static final int TOTAL_SLOTS = 7;               // ??�槽位数
+    // Slot indices follow the SlotLayout builder order: EXTRA=0-1, OUTPUT=2-3, UPGRADE=4-5, EXTRA=6.
+    public static final int BIOMASS_CELL_SLOT = 0;         // Input slot for filled biomass cells (EXTRA)
+    public static final int EMPTY_CELL_SLOT = 1;           // Output slot for empty cells after the biomass drains (EXTRA)
+    public static final int BIOGAS_CELL_SLOT = 2;          // Output slot for filled biogas cells (OUTPUT)
+    public static final int FERTILIZER_SLOT = 3;           // Fertilizer output slot (OUTPUT)
+    public static final int UPGRADE_SLOT_START = 4;        // First upgrade slot (UPGRADE)
+    public static final int UPGRADE_SLOT_COUNT = 2;        // Number of upgrade slots (2, same as IC2)
+    public static final int EMPTY_CELL_INPUT_SLOT = 6;     // Input slot for empty cells that receive biogas (EXTRA)
+    public static final int TOTAL_SLOTS = 7;               // Total number of slots
 
-    // ??��?��?�置
+    // Heat storage settings
     // 对齐 IC2 1.12.2：heatBuffer 上限即 hU_per_run = 4000，且原版发酵机没有热损耗。
     public static final int HEAT_CAPACITY = 4000;     // 热能容器：4000 HU
-    public static final int MAX_HEAT_RECEIVE = 100;   // ???大接受?100 HU/t
-    public static final int MAX_HEAT_EXTRACT = 0;     // 不�?�出??��??
-    public static final int MAX_TEMP = 1000;          // ???高温�?
+    public static final int MAX_HEAT_RECEIVE = 100;   // Maximum heat input: 100 HU/t
+    public static final int MAX_HEAT_EXTRACT = 0;     // The machine does not output heat
+    public static final int MAX_TEMP = 1000;          // Maximum temperature
     public static final float HEAT_LOSS_FACTOR = 0f;  // 原版无热损耗
 
-    // �?体�?�置
-    public static final int BIOMASS_TANK_CAPACITY = 10000; // ??��?�质量? 10000 mB
-    public static final int BIOGAS_TANK_CAPACITY = 2000;   // 沼�?��??2000 mB
-    public static final int BIOMASS_PER_OPERATION = 20;    // 每次�?�??20 mB ??��?��??
-    public static final int BIOGAS_PER_OPERATION = 400;    // 每次产出 400 mB 沼�??
-    public static final int HEAT_PER_OPERATION = 4000;     // 每次�?�??4000 HU
-    public static final int BIOMASS_PER_FERTILIZER = 500;  // �?500 mB ??��?�质产�??1 ??��??
+    // Fluid settings
+    public static final int BIOMASS_TANK_CAPACITY = 10000; // Biomass tank capacity: 10000 mB
+    public static final int BIOGAS_TANK_CAPACITY = 2000;   // Biogas tank capacity: 2000 mB
+    public static final int BIOMASS_PER_OPERATION = 20;    // Biomass consumed per run: 20 mB
+    public static final int BIOGAS_PER_OPERATION = 400;    // Biogas produced per run: 400 mB
+    public static final int HEAT_PER_OPERATION = 4000;     // Heat consumed per run: 4000 HU
+    public static final int BIOMASS_PER_FERTILIZER = 500;  // Each 500 mB of processed biomass produces 1 fertilizer
 
-    // 进度??�置�??���? 100 HU/t ?���?40 ticks 完成?��??次�?��?��??
-    public static final int BASE_PROGRESS_REQUIRED = HEAT_PER_OPERATION; // ??��?�度???�?= 4000 HU
+    // Progress settings. At 100 HU/t, one run takes 40 ticks.
+    public static final int BASE_PROGRESS_REQUIRED = HEAT_PER_OPERATION; // Heat required for one run = 4000 HU
 
-    // �?体�?��??
+    // Fluid tanks
     protected final FluidTank biomassTank;
     protected final FluidTank biogasTank;
     private final IFluidHandler combinedFluidHandler;
 
-    // 工�?��?�度�?使用??��?�累计算??
+    // Work progress, stored as accumulated HU
     private long workCredit;
     // 最近一次实际收到热量的游戏刻（用于 LIT 对齐 IC2 的“存在热源即点亮”）
     private long lastHeatTick = Long.MIN_VALUE;
 
-    // 累计算?????????��?�质量??��于�?��?�产?���?
+    // Total processed biomass in mB. The machine uses this value to produce fertilizer.
     private long biomassProcessed;
 
-    // ?��?���??��工�??
+    // True while the machine is working
     private boolean isWorking;
 
     private final ContainerData containerData = new ContainerData() {
@@ -127,7 +127,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     };
 
     /**
-     * ?????�函�?
+     * Creates the fermenter with the registered block entity type.
      */
     public mio_icif_fermenter_elc(BlockPos pos, BlockState state) {
         this(pos, state, mio_icif_block_entities.FERMENTER_ELC_ENTITY_TYPE.get());
@@ -141,18 +141,18 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         this.biomassProcessed = 0;
         this.isWorking = false;
 
-        // ??��?��?�槽位置??�???��?��??�?????��
+        // Set up the slot layout and the item handler
         this.slotLayout = LAYOUT;
         this.itemHandler = createItemHandler(LAYOUT);
         this.itemHandler.setValidator((slot, stack, slotType) -> mio_icif_fermenter_elc.this.isItemValidForSlot(slot, stack));
 
-        // ??��?��?��?��?�质量?体�??
+        // Create the biomass input tank
         this.biomassTank = new FluidTank(BIOMASS_TANK_CAPACITY, fluidStack ->
             FermenterFuels.accepts(fluidStack.getFluid())) {
                 @Override protected void onContentsChanged() { ContainerToTank.markUnsaved(mio_icif_fermenter_elc.this); }
             };
 
-        // ??��?��?�沼气�??体槽
+        // Create the biogas output tank
         this.biogasTank = new FluidTank(BIOGAS_TANK_CAPACITY, fluidStack ->
             FermenterFuels.isOutputFluid(fluidStack.getFluid())) {
                 @Override protected void onContentsChanged() { ContainerToTank.markUnsaved(mio_icif_fermenter_elc.this); }
@@ -162,7 +162,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     }
 
     /**
-     * �??��??��???��?��???????��??��??定槽位?
+     * Checks if the item stack is valid for the given slot.
      */
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (isUpgradeSlot(slot)) {
@@ -173,8 +173,8 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
             case BIOMASS_CELL_SLOT -> isInputContainer(stack);
             case EMPTY_CELL_SLOT -> mio_icif_cells.isEmptyCell(stack);
             case EMPTY_CELL_INPUT_SLOT -> mio_icif_cells.isEmptyCell(stack);
-            case BIOGAS_CELL_SLOT -> false; // 输出�?
-            case FERTILIZER_SLOT -> false;  // 输出�?
+            case BIOGAS_CELL_SLOT -> false; // Output slot
+            case FERTILIZER_SLOT -> false;  // Output slot
             default -> false;
         };
     }
@@ -200,7 +200,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
 
         Direction front = getFrontSide();
         BlockPos neighborPos = worldPosition.relative(front);
-        if (!level.hasChunkAt(neighborPos)) return;
+        if (!level.isLoaded(neighborPos)) return;
 
         IMioIcifCapabilities.IHeatStorage adjacentHeat = level.getCapability(
             IMioIcifCapabilities.HEAT_STORAGE_BLOCK, neighborPos, front.getOpposite());
@@ -221,7 +221,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     }
 
     /**
-     * ?��??�正?��?��??��????��?�接?��?���?
+     * Gets the front side of the block. Only this side accepts heat.
      */
     private Direction getFrontSide() {
         BlockState state = getBlockState();
@@ -232,7 +232,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     }
 
     /**
-     * ??��?��?��?��?��?��?��?��?�只??�正?��?��以接?��??��??
+     * Returns the heat capability. Only the front side (or a null side) can access it.
      */
     @Override
     public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
@@ -243,7 +243,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     }
 
     /**
-     * �?tick ?��?��??��??
+     * Runs the server-side logic once per tick.
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_fermenter_elc blockEntity) {
         if (!(level instanceof net.minecraft.server.level.ServerLevel server)
@@ -253,30 +253,30 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
 
         blockEntity.recalculateUpgradeStats();
 
-        // 应用??��??�?
+        // Apply heat loss
         blockEntity.applyHeatLoss();
 
         // 主动从相邻热源抽取 HU（对齐原版 IC2：热源不主动“推”，用热方按面抽取）
         blockEntity.receiveHeatFromSides();
 
-        // ???�?????��?��??��??级�??�?体弹簧??��??��?��????��???????��??�?填充??
-        // ??��?�沼气被优�??�?进�?��?????弹簧?��?�相??��?��??
+        // Handle the automation upgrades (item and fluid ejector/pulling upgrades) first.
+        // This lets the upgrades push out biogas before the cell slots fill from the tank.
         blockEntity.handleAutomationUpgrades();
 
-        // �??????��??槽位?��??体槽???交换??
+        // Exchange fluid between the cell slots and the tanks
         blockEntity.handleBiomassCellSlot();
         blockEntity.handleBiogasCellSlot();
 
         // 对齐 IC2 work()：先结算肥料（累计生物质达到 500 时投放，输出槽满也清零进度）
         blockEntity.emitFertilizerIfDue();
 
-        // ??��????��?�工�?
+        // Do one work step if the machine can work
         if (blockEntity.canWorkRedstone() && blockEntity.canWork()) {
             blockEntity.doWork();
         }
         blockEntity.isWorking = blockEntity.computeActive();
 
-        // ?��?��?��??�状态??
+        // Update the LIT block state
         boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_fermenter_elc.LIT);
         if (blockEntity.isWorking != isLit) {
             level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_fermenter_elc.LIT, blockEntity.isWorking), 3);
@@ -286,7 +286,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     }
 
     /**
-     * �??????��?�质??��??槽位?��????��??中�????��?�质转移??��??体�??
+     * Drains a filled biomass cell from the input slot into the biomass tank.
      */
     private void handleBiomassCellSlot() {
         var cell = itemHandler.getStackInSlot(BIOMASS_CELL_SLOT);
@@ -297,7 +297,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     }
 
     /**
-     * �????沼�?��?�出：用空气?��??从沼气槽位?填沼�?
+     * Fills biogas into cells. Empty cells from the cell slot receive fluid from the biogas tank.
      * 对齐 IC2：按输出罐当前流体充装（不硬编码沼气）。
      */
     private void handleBiogasCellSlot() {
@@ -361,7 +361,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     }
 
     /**
-     * �??��?��?��?��以工�?
+     * Checks if the machine can work.
      */
     protected boolean canWork() {
         FermenterFuels.Property property = currentProperty();
@@ -386,7 +386,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     }
 
     /**
-     * ??��????��?�工�?
+     * Does one work step.
      */
     protected void doWork() {
         var operation = prepareOperation();
@@ -424,7 +424,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         return new int[]{BIOMASS_CELL_SLOT, EMPTY_CELL_INPUT_SLOT};
     }
 
-    // ==================== Getter ?���? ====================
+    // ==================== Getters ====================
 
     public ItemStackHandler getItemHandler() {
         return itemHandler;
@@ -478,7 +478,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         return isWorking;
     }
 
-    // ==================== Capability ???�? ====================
+    // ==================== Capabilities ====================
 
     public net.neoforged.neoforge.items.IItemHandler getItemHandlerCapability(@Nullable Direction side) {
         // 对齐 IC2 的 InvSide：生物质容器输入仅顶面、沼气空容器输入仅底面，输出任意面可抽，升级槽外部不可访问。
@@ -537,7 +537,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         return combinedFluidHandler;
     }
 
-    // ==================== NBT 序�?��??====================
+    // ==================== NBT serialization ====================
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {

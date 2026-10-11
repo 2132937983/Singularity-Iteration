@@ -7,27 +7,28 @@ import net.minecraft.world.item.ItemStack;
 import java.util.*;
 
 /**
- * 植物注册管理器（内部实现）
- * 管理所有植物类型的注册和查询
+ * Plant registry manager (internal implementation).
+ * It manages the registration and lookup of all plant types.
  *
- * <p><strong>这是内部实现类，不应被 Addon 直接访问。</strong>
- * 请通过 ICropAPI 提供的公共接口进行植物注册操作。
+ * <p><strong>This is an internal implementation class. Addons must not access it directly.</strong>
+ * Use the public interface of ICropAPI to register plants.
  */
 public class PlantRegistry {
 
-    // 单例实例
+    // Singleton instance
     public static final PlantRegistry instance = new PlantRegistry();
 
-    // 存储所有注册的植物类型（线程安全）
+    // All registered plant types, keyed by "modId:typeId" (thread-safe)
     private final Map<String, PlantType> plants = new java.util.concurrent.ConcurrentHashMap<>();
 
-    // 存储基础种子（用于从原版种子转换，线程安全）
+    // Base seeds, used to convert vanilla seeds (thread-safe)
     private final List<BaseSeed> baseSeeds = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     private PlantRegistry() {}
 
     /**
-     * 注册植物类型
+     * Registers a plant type.
+     * If the key "modId:typeId" is already registered, the new plant type replaces the old one and a warning is logged.
      */
     public void registerPlant(PlantType plantType) {
         String key = plantType.getModId() + ":" + plantType.getTypeId();
@@ -39,38 +40,40 @@ public class PlantRegistry {
     }
 
     /**
-     * 根据ID获取植物类型
+     * Gets a plant type by its ID.
+     * Returns null if no plant type has this ID.
      */
     public PlantType getPlant(String modId, String typeId) {
         return plants.get(modId + ":" + typeId);
     }
 
     /**
-     * 获取所有注册的植物
+     * Gets all registered plants as an unmodifiable view.
      */
     public Collection<PlantType> getAllPlants() {
         return Collections.unmodifiableCollection(plants.values());
     }
 
     /**
-     * 注册基础种子
-     * 用于将原版种子转换为作物系统
+     * Registers a base seed.
+     * Use it to convert a vanilla seed into the crop system.
      */
     public void registerBaseSeed(ItemStack seed, PlantType plantType, int stage, int growthSpeed, int yield, int resilience, int weedResistance) {
         baseSeeds.add(new BaseSeed(seed, plantType, stage, growthSpeed, yield, resilience, weedResistance));
     }
 
     /**
-     * 注册基础种子（向后兼容，weedResistance 默认为 0）
+     * Registers a base seed (for backward compatibility; weedResistance is 0).
      */
     public void registerBaseSeed(ItemStack seed, PlantType plantType, int stage, int growthSpeed, int yield, int resilience) {
         registerBaseSeed(seed, plantType, stage, growthSpeed, yield, resilience, 0);
     }
 
     /**
-     * 根据种子查找对应的基础种子信息
+     * Finds the base seed data for the given seed.
+     * The stack count is ignored. Returns null if the stack is empty or no match exists.
      * 
-     * <p>注意：返回的 BaseSeed 是不可变对象，可以安全地持有引用。
+     * <p>Note: the returned BaseSeed has final fields, so it is safe to keep a reference to it.
      */
     public BaseSeed getBaseSeed(ItemStack seed) {
         if (seed.isEmpty()) return null;
@@ -87,23 +90,23 @@ public class PlantRegistry {
     }
 
     /**
-     * 获取所有注册的基础种子（返回防御性副本）
+     * Gets all registered base seeds (as a defensive copy).
      * 
-     * @return 不可修改的基础种子列表
+     * @return an unmodifiable list of base seeds
      */
     public List<BaseSeed> getAllBaseSeeds() {
         return Collections.unmodifiableList(new ArrayList<>(baseSeeds));
     }
 
     /**
-     * 检查物品是否是基础种子
+     * Checks if the item is a base seed.
      */
     public boolean isBaseSeed(ItemStack seed) {
         return getBaseSeed(seed) != null;
     }
 
     /**
-     * 基础种子信息
+     * Base seed data.
      */
     public static class BaseSeed {
         public final ItemStack seed;
@@ -125,7 +128,7 @@ public class PlantRegistry {
         }
 
         /**
-         * 向后兼容构造函数
+         * Constructor for backward compatibility (weedResistance is 0).
          */
         public BaseSeed(ItemStack seed, PlantType plantType, int stage, int growthSpeed, int yield, int resilience) {
             this(seed, plantType, stage, growthSpeed, yield, resilience, 0);

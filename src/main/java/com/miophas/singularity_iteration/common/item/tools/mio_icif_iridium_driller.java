@@ -31,19 +31,22 @@ import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.common.ItemAbility;
 
 /**
- * 铱钻�? * 继承电力工具基础类，使用电力驱动
- * 具有钻石镐的一切性质，不会因耐久度为0而损坏? * 速度是钻石镐的两倍，自带时运3效果
- * 蹲下右键可以切换为精准采集模式? */
+ * Iridium drill.
+ * It extends the electric tool base class and uses energy.
+ * It has all the properties of a diamond pickaxe. It does not break when the durability reaches 0.
+ * It mines twice as fast as a diamond pickaxe and has a built-in Fortune III effect.
+ * Sneak and right-click to switch to Silk Touch mode.
+ */
 @SuppressWarnings("null")
 public class mio_icif_iridium_driller extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider, IMiningDrill, IEquipmentHudProvider {
 
-    // 铱钻头默认最大能量?(IC2原版: 1000000 EU)
+    // Default maximum energy of the iridium drill (original IC2: 1000000 EU).
     public static final int IRIDIUM_DRILLER_MAX_ENERGY = 1000000;
 
-    // 铱钻头传输限制?(IC2原版: 2000 EU/t)
+    // Transfer limit of the iridium drill (original IC2: 2000 EU/t).
     public static final int IRIDIUM_DRILLER_TRANSFER_LIMIT = 2000;
 
-    // 铱钻头每次使用消耗的能量 (IC2原版: 800 EU)
+    // Energy that the iridium drill uses each time (original IC2: 800 EU).
     public static final int IRIDIUM_DRILLER_ENERGY_PER_USE = 800;
 
     // 铱钻头的攻击伤害 (IC2原版: 20.0)
@@ -55,14 +58,14 @@ public class mio_icif_iridium_driller extends mio_icif_tool_elc implements com.m
     // 钻石镐的挖掘等级（继承材质）
     private static final Tier DIAMOND_TIER = Tiers.DIAMOND;
 
-    // NBT�
+    // NBT key and mode values
 private static final String MODE_KEY = "iridium_driller_mode";
     private static final int MODE_FORTUNE = 0;  // 时运模式
     private static final int MODE_SILK_TOUCH = 1;  // 精准采集模式
 
     /**
-     * 默认构造函数（空电状态，默认时运模式�
- * @param properties 物品属性
+     * Default constructor. The drill has no energy and starts in Fortune mode.
+ * @param properties the item properties
  */
     public mio_icif_iridium_driller(Properties properties) {
         super(properties, IRIDIUM_DRILLER_MAX_ENERGY, IRIDIUM_DRILLER_MAX_ENERGY, "iridium_driller", IRIDIUM_DRILLER_TRANSFER_LIMIT, IRIDIUM_DRILLER_ENERGY_PER_USE, 3);
@@ -148,7 +151,7 @@ private static final String MODE_KEY = "iridium_driller_mode";
     public static void onGetEnchantmentLevel(GetEnchantmentLevelEvent event) {
         ItemStack stack = event.getStack();
         
-        // 检查是否是铱钻�
+        // Check that the item is an iridium drill.
     if (!(stack.getItem() instanceof mio_icif_iridium_driller driller)) {
             return;
         }
@@ -157,16 +160,16 @@ private static final String MODE_KEY = "iridium_driller_mode";
         ItemEnchantments.Mutable enchantments = event.getEnchantments();
         HolderLookup.RegistryLookup<Enchantment> lookup = event.getLookup();
         
-        // 根据模式添加相应的附�
+        // Add the enchantment for the current mode.
     if (currentMode == MODE_FORTUNE) {
-            // 时运模式：添加时间?
+            // Fortune mode: add Fortune.
             lookup.get(Enchantments.FORTUNE).ifPresent(holder -> {
                 if (event.isTargetting(holder)) {
                     enchantments.set(holder, 3);
                 }
             });
         } else if (currentMode == MODE_SILK_TOUCH) {
-            // 精准采集模式：添加精准采�
+            // Silk Touch mode: add Silk Touch.
         lookup.get(Enchantments.SILK_TOUCH).ifPresent(holder -> {
                 if (event.isTargetting(holder)) {
                     enchantments.set(holder, 1);
@@ -190,9 +193,9 @@ private static final String MODE_KEY = "iridium_driller_mode";
     }
 
     /**
-     * 检查是否可以执行特定动作（镐子+铲子动作�
- * 这是解决挖掘进度重置问题的关键方法
- * NeoForge在挖掘过程中会通过此方法验证工具能量
+     * Checks if the tool can perform an action (pickaxe and shovel actions).
+ * This method prevents the mining progress reset.
+ * NeoForge calls this method during mining to check the tool energy.
  */
     @Override
     public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
@@ -253,7 +256,7 @@ private static final String MODE_KEY = "iridium_driller_mode";
     }
 
     /**
-     * 检查是否正确工�
+     * Checks if the drill is the correct tool for drops.
  */
     @Override
     public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
@@ -294,7 +297,7 @@ private static final String MODE_KEY = "iridium_driller_mode";
     }
 
     /**
-     * 获取附魔能力�
+     * Returns the enchantability.
  */
     @Override
     public int getEnchantmentValue() {
@@ -302,7 +305,7 @@ private static final String MODE_KEY = "iridium_driller_mode";
     }
 
     /**
-     * 重写：在物品栏上方显示模式和电池信息（带颜色�
+     * Shows the mode and battery information above the hotbar, with colors.
  */
     @Override
     public Component getEquipmentHudText(ItemStack stack) {
@@ -314,8 +317,8 @@ private static final String MODE_KEY = "iridium_driller_mode";
     }
 
     /**
-     * 获取攻击伤害加成
-     * 铱钻头提取?2点伤�
+     * Returns the attack damage bonus.
+     * The iridium drill adds 20 points of damage.
  */
     @Override
     public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
@@ -349,6 +352,12 @@ private static final String MODE_KEY = "iridium_driller_mode";
         if (!(world instanceof Level level) || level.isClientSide) return false;
         if (!hasEnoughEnergy(stack)) return false;
         if (state.getDestroySpeed(level, pos) < 0.0F) return false;
+        // IMiningDrill is public API: an addon call must respect protection like the diamond driller
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            var actor = net.neoforged.neoforge.common.util.FakePlayerFactory.getMinecraft(server);
+            if (!level.mayInteract(actor, pos) || net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
+                    new net.neoforged.neoforge.event.level.BlockEvent.BreakEvent(level, pos, state, actor)).isCanceled()) return false;
+        }
         boolean removed = level.destroyBlock(pos, true);
         if (removed) consumeEnergy(stack);
         return removed;

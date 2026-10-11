@@ -8,10 +8,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 多方块结构验证结果。
+ * Result of a multiblock structure validation.
  *
- * <p>使用 {@link #success(Set)} 或 {@link #failure(String)} 创建结果，
- * 无需引用内部实现类。
+ * <p>Use {@link #success(Set)} or {@link #failure(String)} to create a result.
+ * You do not need to refer to the internal implementation class.
  */
 public interface IMultiblockValidationResult {
 

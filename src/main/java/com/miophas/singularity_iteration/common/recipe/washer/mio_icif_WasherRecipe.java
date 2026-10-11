@@ -18,13 +18,13 @@ public class mio_icif_WasherRecipe implements Recipe<mio_icif_WasherRecipeInput>
 
     private final String group;
     private final Ingredient ingredient;
-    // 主输出（输出�?�
+    // Primary output (output slot 1).
 private final ItemStack primaryResult;
     private final int primaryCount;
-    // 副输�?（输出槽2�
+    // Secondary output (output slot 2).
 private final ItemStack secondaryResult;
     private final int secondaryCount;
-    // 副输�?（输出槽3�
+    // Tertiary output (output slot 3).
 private final ItemStack tertiaryResult;
     private final int tertiaryCount;
     
@@ -137,7 +137,7 @@ private final ItemStack tertiaryResult;
     }
 
     /**
-     * 获取消耗的水量（mb�
+     * Returns the water that the recipe consumes, in mB.
  */
     public int getWaterAmount() {
         return waterAmount;
@@ -165,28 +165,28 @@ private final ItemStack tertiaryResult;
     }
 
     /**
-     * 获取副输�?结果
+     * Returns the secondary output (output slot 2).
      */
     public ItemStack getSecondaryResult() {
         return secondaryResult;
     }
 
     /**
-     * 获取副输�?数量
+     * Returns the item count of the secondary output.
      */
     public int getSecondaryCount() {
         return secondaryCount;
     }
 
     /**
-     * 获取副输�?结果
+     * Returns the tertiary output (output slot 3).
      */
     public ItemStack getTertiaryResult() {
         return tertiaryResult;
     }
 
     /**
-     * 获取副输�?数量
+     * Returns the item count of the tertiary output.
      */
     public int getTertiaryCount() {
         return tertiaryCount;

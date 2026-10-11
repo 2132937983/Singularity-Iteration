@@ -434,7 +434,7 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
             ItemStack stack = icon(d.blockId());
             List<Component> lines = new ArrayList<>();
             lines.add(stack.isEmpty() ? Component.literal(d.blockId()) : stack.getHoverName().copy());
-            lines.add(Component.translatable("gui.mio_icif.energy_terminal.category." + d.category().name().toLowerCase())
+            lines.add(Component.translatable("gui.mio_icif.energy_terminal.category." + d.category().name().toLowerCase(java.util.Locale.ROOT))
                 .withColor(CATEGORY_COLOR[d.category().ordinal()]));
             lines.add(Component.literal(String.format("in %s / out %s EU/t", DspUi.compact(d.input()), DspUi.compact(d.output()))).withStyle(ChatFormatting.GRAY));
             if (d.rated() > 0) lines.add(Component.translatable("gui.mio_icif.energy_terminal.tip.rated", rate(d.rated())).withStyle(ChatFormatting.GRAY));

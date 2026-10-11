@@ -9,7 +9,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import java.util.function.Supplier;
 
 /**
- * 自定义粒子类型注册? */
+ * Registration of custom particle types.
+ */
 @SuppressWarnings("null")
 public class mio_icif_Particles {
     public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = 

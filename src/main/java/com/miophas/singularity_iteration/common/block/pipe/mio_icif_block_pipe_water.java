@@ -27,18 +27,18 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 水管方方块?
- * 用于传输流体的管道方法?
- * 继承自实体方块基类，不包含能量系�?
+ * Water pipe block.
+ * Transports fluids.
+ * Extends the block entity base class. It has no energy system.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_pipe_water extends mio_icif_entity_block {
 
-    // 方块编码�?
+    // Block codec.
     public static final MapCodec<mio_icif_block_pipe_water> CODEC = RecordCodecBuilder.mapCodec(instance ->
         instance.group(propertiesCodec()).apply(instance, mio_icif_block_pipe_water::new));
 
-    // 6个方向的连接状态属性?
+    // Connection state properties for the 6 directions
     public static final BooleanProperty DOWN = BooleanProperty.create("down");
     public static final BooleanProperty UP = BooleanProperty.create("up");
     public static final BooleanProperty NORTH = BooleanProperty.create("north");
@@ -46,8 +46,8 @@ public class mio_icif_block_pipe_water extends mio_icif_entity_block {
     public static final BooleanProperty WEST = BooleanProperty.create("west");
     public static final BooleanProperty EAST = BooleanProperty.create("east");
 
-    // 碰撞箱定�?
-    // 中心部分 (8x8x8 像素，对�?4-12 的坐�?
+    // Collision shapes.
+    // Center part: 8x8x8 pixels, from coordinate 4 to 12.
     private static final VoxelShape CENTER = Block.box(4, 4, 4, 12, 12, 12);
     // 各个方向的连接部分（包含中心部分，避免缝隙）
     private static final VoxelShape DOWN_SHAPE = Block.box(4, 0, 4, 12, 12, 12);
@@ -59,7 +59,7 @@ public class mio_icif_block_pipe_water extends mio_icif_entity_block {
 
     public mio_icif_block_pipe_water(Properties properties) {
         super(properties);
-        // 注册默认状态：所有方向都不连�?
+        // Default state: no direction is connected.
         this.registerDefaultState(this.stateDefinition.any()
             .setValue(DOWN, false)
             .setValue(UP, false)
@@ -72,7 +72,7 @@ public class mio_icif_block_pipe_water extends mio_icif_entity_block {
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        // 添加6个方向的连接状态属性?
+        // Add the connection state properties for the 6 directions.
         builder.add(DOWN, UP, NORTH, SOUTH, WEST, EAST);
     }
 
@@ -150,8 +150,8 @@ public class mio_icif_block_pipe_water extends mio_icif_entity_block {
     }
 
     /**
-     * 更新方块的连接状态?
-     * 根据方块实体的连接状态更新方块状态?
+     * Updates the connection state of the block.
+     * Sets the block state from the connection state of the block entity.
      */
     public static void updateBlockState(Level level, BlockPos pos, BlockState state, mio_icif_pipe_fluid pipe) {
         if (level.isClientSide()) return;
@@ -170,11 +170,11 @@ public class mio_icif_block_pipe_water extends mio_icif_entity_block {
     }
 
     /**
-     * 检查是否可以连接到指定方向的方法?
-     * @param level 世界
-     * @param pos 当前位置
-     * @param direction 方向
-     * @return 是否可以连接
+     * Checks if the pipe can connect in the given direction.
+     * @param level the level
+     * @param pos the current position
+     * @param direction the direction
+     * @return true if the pipe can connect
      */
     public static boolean canConnectTo(Level level, BlockPos pos, Direction direction) {
         BlockPos adjacentPos = pos.relative(direction);
@@ -214,8 +214,8 @@ public class mio_icif_block_pipe_water extends mio_icif_entity_block {
     }
 
     /**
-     * 邻居方块改变时触�?
-     * 用于更新连接状态?
+     * Called when a neighbor block changes.
+     * Updates the connection state.
      */
     @Override
     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
@@ -224,7 +224,7 @@ public class mio_icif_block_pipe_water extends mio_icif_entity_block {
         if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_pipe_fluid pipe) {
-                // 标记需要更新连接状态?
+                // Mark the connection state for an update.
                 pipe.markForUpdate();
             }
         }
@@ -237,7 +237,7 @@ public class mio_icif_block_pipe_water extends mio_icif_entity_block {
         if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_pipe_fluid pipe) {
-                // 标记需要更新连接状态?
+                // Mark the connection state for an update.
                 pipe.markForUpdate();
             }
         }

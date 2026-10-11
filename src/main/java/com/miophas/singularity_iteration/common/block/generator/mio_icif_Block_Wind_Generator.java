@@ -24,7 +24,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 风力发电机方法? * 通过风力发电，发电量取决于风力强度、高度和周围障碍�? * 障碍检测范围：向下2格、向�?格、向四周延伸4格所形成�?x9x7空间
+ * Wind generator block.
+ * It makes power from wind.
+ * The output depends on the wind strength, the height and the obstacles around the block.
+ * The obstacle check covers a 9x9x7 space: 2 blocks down, 4 blocks up and 4 blocks to each side.
  */
 @SuppressWarnings("null")
 public class mio_icif_Block_Wind_Generator extends mio_icif_entity_block {
@@ -38,7 +41,7 @@ public class mio_icif_Block_Wind_Generator extends mio_icif_entity_block {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        // FACING 由父类添加，只需要添�?ACTIVE
+        // The parent class adds FACING. This class adds only ACTIVE.
         builder.add(ACTIVE);
         super.createBlockStateDefinition(builder);
     }

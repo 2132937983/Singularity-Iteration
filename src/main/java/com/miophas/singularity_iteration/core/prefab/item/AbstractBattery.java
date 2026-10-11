@@ -24,27 +24,27 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 电池抽象基类，提供完整的默认能量存储实现。
+ * Abstract base class for batteries. It gives a complete default energy storage implementation.
  *
- * <p>Addon 开发者只需继承此类并指定构造参数即可创建一个功能完整的电池物品，
- * 无需访问任何 mio_icif 内部类。
+ * <p>To make a complete battery item, an addon developer extends this class and supplies the constructor arguments.
+ * The addon does not need access to internal mio_icif classes.
  *
- * <h3>能量存储机制</h3>
- * <p>所有电池（无论是否可堆叠）统一使用 DataComponent {@code mio_icif:battery_energy}
- * （{@link BatteryEnergy}，含 energy / maxEnergy 两个字段）存储能量，
- * 每个物品堆独立存储能量值，不再依赖耐久度系统。
- * 旧存档中基于耐久度或 CUSTOM_DATA 存储的电量会在首次读取时自动迁移。
+ * <h3>Energy storage</h3>
+ * <p>All batteries (stackable or not) store energy in the DataComponent {@code mio_icif:battery_energy}
+ * ({@link BatteryEnergy}, with the fields energy and maxEnergy).
+ * Each item stack stores its own energy value. The durability system is not used.
+ * Energy that old saves stored in durability or CUSTOM_DATA moves to the component automatically on the first read.
  *
- * <h3>使用示例</h3>
+ * <h3>Example</h3>
  * <pre>{@code
- * // 不可堆叠电池（如 MFE、MFSU 等大型电池）
+ * // Non-stackable battery (for example, large batteries such as MFE or MFSU)
  * public class MyLargeBattery extends AbstractBattery {
  *     public MyLargeBattery() {
  *         super(new Properties(), 1_000_000, 0, 512);
  *     }
  * }
  *
- * // 可堆叠电池（如普通电池、充电电池）
+ * // Stackable battery (for example, a normal battery or a rechargeable battery)
  * public class MySmallBattery extends AbstractBattery {
  *     public MySmallBattery() {
  *         super(new Properties(), 10000, 10000, 10000, 64);
@@ -52,14 +52,14 @@ import java.util.function.Consumer;
  * }
  * }</pre>
  *
- * <h3>自动提供的功能</h3>
+ * <h3>Features that this class supplies</h3>
  * <ul>
- *   <li>能量存储（基于统一 DataComponent）</li>
- *   <li>能量条渲染（绿→红渐变）</li>
- *   <li>能量 Tooltip 显示</li>
- *   <li>右键给装备充电</li>
- *   <li>充电器兼容（通过 IBatteryItem 接口）</li>
- *   <li>防止原版耐久消耗</li>
+ *   <li>Energy storage (in the shared DataComponent).</li>
+ *   <li>Energy bar rendering (color changes from green to red).</li>
+ *   <li>Energy tooltip.</li>
+ *   <li>Right-click to charge equipment.</li>
+ *   <li>Charger compatibility (through the IBatteryItem interface).</li>
+ *   <li>No vanilla durability loss.</li>
  * </ul>
  */
 public class AbstractBattery extends Item implements IBatteryItem {
@@ -71,25 +71,25 @@ public class AbstractBattery extends Item implements IBatteryItem {
     private final boolean stackable;
 
     /**
-     * 创建不可堆叠电池（maxStackSize = 1）。
+     * Creates a non-stackable battery (maxStackSize = 1).
      *
-     * @param properties    物品属性
-     * @param maxEnergy     最大能量容量 (EU)
-     * @param initialEnergy 初始能量 (EU)
-     * @param chargeRate    充电速率 (EU/tick)
+     * @param properties    the item properties
+     * @param maxEnergy     the maximum energy capacity (EU)
+     * @param initialEnergy the initial energy (EU)
+     * @param chargeRate    the charge rate (EU/tick)
      */
     protected AbstractBattery(Properties properties, long maxEnergy, long initialEnergy, long chargeRate) {
         this(properties, maxEnergy, initialEnergy, chargeRate, 1);
     }
 
     /**
-     * 创建电池。
+     * Creates a battery.
      *
-     * @param properties    物品属性
-     * @param maxEnergy     最大能量容量 (EU)
-     * @param initialEnergy 初始能量 (EU)
-     * @param chargeRate    充电速率 (EU/tick)
-     * @param maxStackSize  最大堆叠数
+     * @param properties    the item properties
+     * @param maxEnergy     the maximum energy capacity (EU). A negative value becomes 0.
+     * @param initialEnergy the initial energy (EU). Only a non-stackable battery uses this value.
+     * @param chargeRate    the charge rate (EU/tick)
+     * @param maxStackSize  the maximum stack size
      */
     protected AbstractBattery(Properties properties, long maxEnergy, long initialEnergy, long chargeRate, int maxStackSize) {
         super(buildProperties(properties, maxEnergy, initialEnergy, maxStackSize));
@@ -103,14 +103,14 @@ public class AbstractBattery extends Item implements IBatteryItem {
             return properties
                 .stacksTo(maxStackSize);
         } else {
-            // 不可堆叠电池：通过默认组件携带初始电量（保持旧方案中 initialEnergy 的语义）
+            // Non-stackable battery: the default component holds the initial energy (this keeps the old meaning of initialEnergy)
             long clamped = Math.clamp(initialEnergy, 0L, Math.max(0, maxEnergy));
             return properties
                 .component(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(clamped, maxEnergy));
         }
     }
 
-    // ==================== IBatteryItem 实现 ====================
+    // ==================== IBatteryItem implementation ====================
 
     @Override
     public long getMaxEnergy() {
@@ -169,14 +169,15 @@ public class AbstractBattery extends Item implements IBatteryItem {
         return chargeRate;
     }
 
-    // ==================== 统一能量存储（DataComponent） ====================
+    // ==================== Shared energy storage (DataComponent) ====================
 
     /**
-     * 从物品堆的统一 DataComponent（{@code mio_icif:battery_energy}）中读取能量值。
-     * 子类可以覆盖此方法以使用不同的存储方式。
+     * Reads the energy value from the shared DataComponent ({@code mio_icif:battery_energy}) of the item stack.
+     * If the component is not present, this method reads and migrates legacy data.
+     * Subclasses can override this method to use a different storage.
      *
-     * @param stack 物品堆
-     * @return 当前存储的能量
+     * @param stack the item stack
+     * @return the stored energy (EU)
      */
     protected long readStoredEnergy(ItemStack stack) {
         BatteryEnergy data = stack.get(CoreDataComponents.BATTERY_ENERGY.get());
@@ -185,19 +186,21 @@ public class AbstractBattery extends Item implements IBatteryItem {
     }
 
     /**
-     * 向物品堆的统一 DataComponent（{@code mio_icif:battery_energy}）中写入能量值。
-     * 子类可以覆盖此方法以使用不同的存储方式。
+     * Writes the energy value to the shared DataComponent ({@code mio_icif:battery_energy}) of the item stack.
+     * Subclasses can override this method to use a different storage.
      *
-     * @param stack  物品堆
-     * @param energy 要设置的能量值
+     * @param stack  the item stack
+     * @param energy the energy value to set (EU)
      */
     protected void writeStoredEnergy(ItemStack stack, long energy) {
         stack.set(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(energy, maxEnergy));
     }
 
     /**
-     * 兼容旧存档：将旧版本通过耐久度系统（不可堆叠）或 CUSTOM_DATA（可堆叠）
-     * 存储的电量迁移到统一 DataComponent，仅在检测到旧数据时执行一次。
+     * Compatibility with old saves.
+     * Old versions stored energy in the durability system (non-stackable) or in CUSTOM_DATA (stackable).
+     * This method moves that energy to the shared DataComponent.
+     * The migration occurs one time, only when old data is found.
      */
     private long readLegacyEnergy(ItemStack stack) {
         if (stackable) {
@@ -218,7 +221,7 @@ public class AbstractBattery extends Item implements IBatteryItem {
         LOGGER.debug("AbstractBattery: migrated legacy energy {} -> DataComponent for {}", migrated, stack.getItem());
     }
 
-    // ==================== 能量条渲染 ====================
+    // ==================== Energy bar rendering ====================
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
@@ -241,7 +244,7 @@ public class AbstractBattery extends Item implements IBatteryItem {
         return r << 16 | g << 8;
     }
 
-    // ==================== 防止原版耐久消耗 ====================
+    // ==================== No vanilla durability loss ====================
 
     @Override
     public <T extends LivingEntity> int damageItem(ItemStack stack, int amount, T entity, Consumer<Item> onBroken) {
@@ -253,7 +256,7 @@ public class AbstractBattery extends Item implements IBatteryItem {
         return getEnergy(stack) < maxEnergy;
     }
 
-    // ==================== 右键分配能量 ====================
+    // ==================== Right-click energy distribution ====================
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
@@ -273,11 +276,11 @@ public class AbstractBattery extends Item implements IBatteryItem {
     }
 
     /**
-     * 追加能量信息到 Tooltip。
-     * 子类可以覆盖此方法来自定义能量显示格式。
+     * Adds energy information to the tooltip.
+     * Subclasses can override this method to change the energy display format.
      *
-     * @param stack             物品堆
-     * @param tooltipComponents Tooltip 列表
+     * @param stack             the item stack
+     * @param tooltipComponents the tooltip list
      */
     protected void appendEnergyTooltip(ItemStack stack, List<Component> tooltipComponents) {
         tooltipComponents.add(
@@ -291,7 +294,7 @@ public class AbstractBattery extends Item implements IBatteryItem {
         }
     }
 
-    // ==================== 生命周期 ====================
+    // ==================== Lifecycle ====================
 
     @Override
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
@@ -319,24 +322,24 @@ public class AbstractBattery extends Item implements IBatteryItem {
         return stack;
     }
 
-    // ==================== 辅助方法 ====================
+    // ==================== Helper methods ====================
 
     /**
-     * 获取充电速率
+     * Gets the charge rate (EU/tick).
      */
     public long getChargeRate() {
         return chargeRate;
     }
 
     /**
-     * 是否为可堆叠电池
+     * Returns true if the battery is stackable.
      */
     public boolean isStackable() {
         return stackable;
     }
 
     /**
-     * 获取能量剩余百分比 (0.0 ~ 1.0)
+     * Gets the remaining energy fraction (0.0 to 1.0).
      */
     public float getDurabilityPercent(ItemStack stack) {
         return maxEnergy <= 0 ? 0.0F : (float) getEnergy(stack) / maxEnergy;

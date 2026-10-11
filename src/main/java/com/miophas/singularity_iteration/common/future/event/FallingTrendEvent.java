@@ -7,8 +7,8 @@ import java.util.Random;
 /**
  * 持续下跌事件
  *
- * 效果：未来N天价格持续下跌，每天跌幅在基础价格�?%-15%之间
- * 强度影响：强度越高，跌幅越大
+ * Effect: the price falls for the next N days. The daily fall is 5%-15% of the price.
+ * Intensity effect: a higher intensity gives a larger fall.
  */
 @SuppressWarnings("null")
 public class FallingTrendEvent extends FuturePriceEvent {

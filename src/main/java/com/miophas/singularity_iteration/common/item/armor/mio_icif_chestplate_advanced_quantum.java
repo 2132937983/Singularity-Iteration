@@ -44,7 +44,6 @@ public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc imp
     private static final String TOGGLE_TIMER_KEY = "AdvQuantumToggleTimer";
     public static final int MODE_JETPACK = 0;
     public static final int MODE_HOVER = 1;
-    private static final int TOGGLE_COOLDOWN = 10;
 
     public static final float JETPACK_POWER = 1.0F;
     public static final float MAX_ASCENT_SPEED = 0.8F;

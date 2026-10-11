@@ -17,26 +17,28 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * 流体弹射/吸取升级的通用自动化组件。
+ * General automation component for the fluid ejector and fluid pulling upgrades.
  *
- * <p>只负责预算、方向、先扣后交付的缓冲与脏标记，不认识任何具体机器或流体。
- * 宿主（继承核心基类或自有 {@link BlockEntity}）提供世界上下文、本机与相邻
- * 流体处理器以及升级统计即可复用，避免每个基类各维护一份实现。
+ * <p>It is only responsible for the budget, the direction, the buffer (deduct first, then deliver)
+ * and the dirty flag. It does not know any specific machine or fluid.
+ * A host (a subclass of a core base class or its own {@link BlockEntity}) can reuse it.
+ * The host supplies the world context, its own fluid handler, the adjacent fluid handlers and the upgrade statistics.
+ * Thus each base class does not need its own copy of this logic.
  *
- * <p>NBT 键沿用 {@code scex_fluid_output_pending} / {@code scex_fluid_input_pending}。
+ * <p>The NBT keys stay {@code scex_fluid_output_pending} / {@code scex_fluid_input_pending}.
  */
 public final class FluidAutomationComponent {
 
-    /** 组件需要的宿主上下文。 */
+    /** Host context that the component needs. */
     public interface Host {
         @Nullable Level level();
 
         BlockPos worldPosition();
 
-        /** 本机器对外的流体处理器（不区分方向）。 */
+        /** The external fluid handler of this machine (the same for all sides). */
         @Nullable IFluidHandler ownFluidHandler();
 
-        /** 相邻位置的流体处理器；宿主决定是否做区块加载检查。 */
+        /** The fluid handler at an adjacent position. The host decides if it checks that the chunk is loaded. */
         @Nullable IFluidHandler adjacentFluidHandler(BlockPos pos, @Nullable Direction side);
 
         IMachineUpgradeStats upgradeStats();
@@ -72,7 +74,7 @@ public final class FluidAutomationComponent {
     public FluidStack pendingOutput() { return output.pending().copy(); }
     public FluidStack pendingInput() { return input.pending().copy(); }
 
-    /** 按升级数量驱动一次弹射/吸取；无相应升级时直接返回。 */
+    /** Runs one eject/pull cycle. The upgrade count sets the amount. Returns immediately if no related upgrade is installed. Does nothing on the client side. */
     public void runAutomation() {
         Level level = host.level();
         if (level == null || level.isClientSide()) {
@@ -148,7 +150,7 @@ public final class FluidAutomationComponent {
         input.load(registries, tag.getCompound("scex_fluid_input_pending"));
     }
 
-    /** 便捷实现：把相邻位置的方块实体标记为未保存，供宿主委托。 */
+    /** Shortcut implementation: marks the block entity at the adjacent position as unsaved. A host can delegate to it. */
     public static void markNeighborUnsaved(@Nullable Level level, BlockPos pos) {
         if (level == null) return;
         BlockEntity neighbor = level.getBlockEntity(pos);

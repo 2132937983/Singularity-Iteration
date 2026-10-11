@@ -11,7 +11,7 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 作物监管机的容器菜单独?
+ * Container menu for the crop matron.
  */
 @SuppressWarnings({"null"}) public class MatronElcMenu extends mio_icif_machine_menu {
 

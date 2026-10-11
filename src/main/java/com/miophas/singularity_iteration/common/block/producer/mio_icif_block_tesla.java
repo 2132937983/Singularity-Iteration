@@ -27,12 +27,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 特斯拉线圈方块类
- * 一种激活红石信号后能够使用电力持续对附???格造成伤害的防御性武???
- * 当内部储存电量达5000EU时才会正常工???
- * 每秒工作一次，对范围内未受到该线圈上一次攻击的生物造成24点伤???
- * 对于受到该线圈上一次攻击的生物则只造成10点~11点伤???
- * 最大输入电压为128EU/t (MV等级)
+ * Tesla coil block class.
+ * A defensive weapon. When it gets a redstone signal, it uses power to damage entities near it continuously.
+ * It operates correctly only when its internal storage contains 5000 EU.
+ * It attacks one time each second. It does 24 points of damage to each entity in range that the previous attack of this coil did not hit.
+ * It does only 10 to 11 points of damage to an entity that the previous attack of this coil hit.
+ * The maximum input voltage is 128 EU/t (MV tier).
  */
 @SuppressWarnings("null")
 public class mio_icif_block_tesla extends mio_icif_entity_block {
@@ -87,7 +87,7 @@ public class mio_icif_block_tesla extends mio_icif_entity_block {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_tesla tesla) {
-                // 掉落电池槽中的物???
+                // Drop the items in the battery slot.
                 for (int i = 0; i < tesla.getItemHandler().getSlots(); i++) {
                     ItemStack stack = tesla.getItemHandler().getStackInSlot(i);
                     if (!stack.isEmpty()) {

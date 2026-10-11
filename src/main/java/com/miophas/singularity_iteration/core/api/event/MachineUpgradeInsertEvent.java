@@ -8,26 +8,26 @@ import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
 
 /**
- * 升级插件插入事件
+ * Upgrade insert event.
  *
- * <p><b>触发时机</b>：当玩家或自动化系统将升级插件插入机器的升级槽时触发。
+ * <p><b>When it fires</b>: when a player or an automation system inserts an upgrade into an upgrade slot of a machine.
  *
- * <p><b>触发频率</b>：每次插入操作触发一次，通常在玩家点击升级槽或管道/漏斗插入物品时。
+ * <p><b>Frequency</b>: one time for each insert operation. Usually when a player clicks an upgrade slot, or when a pipe or hopper inserts an item.
  *
- * <p><b>覆盖范围</b>：所有实现 IProducerBlock 接口的机器类型，包括：
+ * <p><b>Scope</b>: all machine types that implement IProducerBlock, including:
  * <ul>
- *   <li>压缩机、提取机、粉碎机、离心机等基础机器</li>
- *   <li>焊接机、精密组装机等高级机器</li>
- *   <li>核反应堆、流体反应堆等发电设备</li>
+ *   <li>basic machines such as the compressor, extractor, macerator and centrifuge</li>
+ *   <li>advanced machines such as the welder and the precision assembler</li>
+ *   <li>power generation equipment such as the nuclear reactor and the fluid reactor</li>
  * </ul>
  *
- * <p>可通过取消事件阻止插入。
+ * <p>Cancel the event to stop the insertion.
  *
- * <p>示例用法：
+ * <p>Example:
  * <pre>{@code
  * @SubscribeEvent
  * public void onUpgradeInsert(MachineUpgradeInsertEvent event) {
- *     // 阻止特定升级插件插入
+ *     // Stop the insertion of a specific upgrade
  *     if (event.getUpgrade().getItem() == MyModItems.FORBIDDEN_UPGRADE.get()) {
  *         event.setCanceled(true);
  *     }
@@ -51,42 +51,42 @@ public class MachineUpgradeInsertEvent extends Event implements ICancellableEven
     }
 
     /**
-     * 获取世界
+     * Returns the world.
      */
     public Level getLevel() {
         return level;
     }
 
     /**
-     * 获取机器位置
+     * Returns the machine position.
      */
     public BlockPos getPos() {
         return pos;
     }
 
     /**
-     * 获取机器实例
+     * Returns the machine instance.
      */
     public IProducerBlock getMachine() {
         return machine;
     }
 
     /**
-     * 获取升级槽位索引
+     * Returns the index of the upgrade slot.
      */
     public int getSlot() {
         return slot;
     }
 
     /**
-     * 获取升级插件物品
+     * Returns the upgrade item.
      */
     public ItemStack getUpgrade() {
         return upgrade;
     }
 
     /**
-     * 替换升级插件物品
+     * Replaces the upgrade item.
      */
     public void setUpgrade(ItemStack upgrade) {
         this.upgrade = upgrade;

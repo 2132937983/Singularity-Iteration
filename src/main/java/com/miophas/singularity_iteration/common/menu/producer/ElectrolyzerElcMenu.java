@@ -11,7 +11,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 电解�?Menu
+ * Electrolyzer menu.
  */
 @SuppressWarnings("null")
 public class ElectrolyzerElcMenu extends mio_icif_machine_menu {
@@ -42,7 +42,7 @@ public class ElectrolyzerElcMenu extends mio_icif_machine_menu {
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
 
-        // 注册快速移动规则?
+        // Register the quick-move rules.
         registerMachineMoveRules();
     }
 

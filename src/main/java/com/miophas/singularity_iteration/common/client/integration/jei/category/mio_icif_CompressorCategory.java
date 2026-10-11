@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 压缩�?JEI 配方类别
+ * JEI recipe category for the compressor.
  */
 public class mio_icif_CompressorCategory extends AbstractJeiRecipeCategory<mio_icif_CompressorRecipe> {
 

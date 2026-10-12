@@ -50,6 +50,10 @@ public class mio_icif_crop_stick extends BaseEntityBlock {
     @Override
     @Nullable
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        // EN: The crop logic is server-only. No client ticker: a large farm then costs no client tick time.
+        // ZH: 作物逻辑仅在服务器运行。客户端不注册 ticker，大型农场因此不占用客户端 tick 时间。
+        // JA: 作物ロジックはサーバーのみ。クライアントにティッカーを登録しないので、大規模農場でもクライアントの tick 時間を使わない。
+        if (level.isClientSide) return null;
         return (tickLevel, pos, tickState, blockEntity) -> {
             if (blockEntity instanceof mio_icif_crop_entity crop) crop.tick(tickLevel, pos, tickState, crop);
         };
@@ -109,8 +113,12 @@ public class mio_icif_crop_stick extends BaseEntityBlock {
                 || server.getBlockEntity(pos) != crop) return;
         if (crop.getPlant() != null) crop.getPlant().onLeftClick(crop, player);
         else if (crop.isHybridBase()) {
-            crop.setHybridBase(false); crop.updateState();
-            Block.popResource(level, pos, new ItemStack(state.getBlock()));
+            // EN: 0.1.8.2: give back the stick that made the crossing (not the block item).
+            // ZH: 0.1.8.2：返还形成杂交的那根作物架（而不是方块物品）。
+            // JA: 0.1.8.2：交配に使った棒そのものを返す（ブロックのアイテムではない）。
+            ItemStack stick = crop.takeCrossStick();
+            crop.updateState();
+            Block.popResource(level, pos, stick);
         }
     }
 
@@ -139,7 +147,10 @@ public class mio_icif_crop_stick extends BaseEntityBlock {
     }
     @Override protected void onRemove(BlockState state, Level world, BlockPos pos, BlockState replacement, boolean moving) {
         if (!state.is(replacement.getBlock()) && !world.isClientSide && world.getBlockEntity(pos) instanceof mio_icif_crop_entity crop) {
-            if (crop.isHybridBase()) Block.popResource(world, pos, new ItemStack(state.getBlock()));
+            // EN: The loot table gives the base stick; the crossing stick comes back as the recorded item.
+            // ZH: 战利品表给出底座作物架；杂交用的作物架按记录的物品返还。
+            // JA: 土台の棒はルートテーブルが出す。交配用の棒は記録したアイテムとして戻る。
+            if (crop.isHybridBase()) Block.popResource(world, pos, crop.takeCrossStick());
             crop.pick();
         }
         super.onRemove(state, world, pos, replacement, moving);

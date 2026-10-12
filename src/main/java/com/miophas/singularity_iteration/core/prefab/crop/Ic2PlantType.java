@@ -32,5 +32,12 @@ public abstract class Ic2PlantType extends PlantType {
     @Override public ItemStack getSeedItem(IPlanter planter) {
         return planter.makeSeeds(this, 1, planter.getGrowthSpeed(), planter.getYield(), planter.getResilience());
     }
-    @Override public boolean onInteract(IPlanter planter, Player player) { return planter.doManualHarvest(); }
+    /**
+     * <p><b>EN:</b> Right-click harvest. 0.1.8.2: the drops go to the player (inventory, then feet).
+     * <p><b>ZH:</b> 右键收获。0.1.8.2：掉落物交给玩家（先物品栏，后脚下）。
+     * <p><b>JA:</b> 右クリック収穫。0.1.8.2：ドロップはプレイヤーに渡す（まずインベントリ、次に足元）。
+     */
+    @Override public boolean onInteract(IPlanter planter, Player player) {
+        return player == null ? planter.doManualHarvest() : planter.doManualHarvest(player);
+    }
 }

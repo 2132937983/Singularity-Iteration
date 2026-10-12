@@ -1,89 +1,21 @@
 package com.miophas.singularity_iteration.common.crop;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-
-import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
-import com.miophas.singularity_iteration.core.api.crop.IPlanter;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.core.api.crop.PlantStats;
-import com.miophas.singularity_iteration.core.api.crop.PlantType;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 
 /**
- * 钛叶子 - 产出小堆钛粉
- * IC2: 需要下方有钛矿石/钛块才能从size3长到size4
+ * <p><b>EN:</b> Titanium leaves: small titanium dust. The last stage needs titanium ore or a titanium block under the crop.
+ * <p><b>ZH:</b> 钛叶：产出小撮钛粉。最后阶段需要作物下方有钛矿石或钛块。
+ * <p><b>JA:</b> チタンの葉：小さなチタン粉を出す。最終段階には作物の下にチタン鉱石かチタンブロックが必要。
  */
-@SuppressWarnings("null")
-public class PlantTitanium extends PlantType {
+public class PlantTitanium extends OreRootCrop {
+    private static final PlantStats STATS = new PlantStats(4, 0, 3, 0, 1, 0);
 
-    @Override
-    public String getTypeId() {
-        return "titanium";
-    }
-
-    @Override
-    public String getModId() {
-        return Singularity_Iteration.MOD_ID;
-    }
-
-    @Override
-    public String getFoundBy() {
-        return "Notch";
-    }
-
-    @Override
-    public String[] getTraits() {
-        return new String[]{"White", "Leaves", "Metal"};
-    }
-
-    @Override
-    public PlantStats getStats() {
-        return new PlantStats(4, 0, 3, 0, 1, 0);
-    }
-
-    @Override
-    public int getMaxGrowthStage() {
-        return 4;
-    }
-
-    @Override
-    public int getHarvestStage() {
-        return 4;
-    }
-
-    @Override
-    public int getStageAfterHarvest() {
-        return 1;
-    }
-
-    @Override
-    public ItemStack[] getHarvest(IPlanter planter) {
-        int yield = planter.getYield();
-        int count = 1 + Math.max(0, yield) / 4;
-        return new ItemStack[]{new ItemStack(mio_icif_resources.TITANIUM_DUST_SMALL.get(), count)};
-    }
-
-    @Override
-    public String getTexture(int stage) {
-        if (stage < 1 || stage > getMaxGrowthStage()) {
-            stage = 1;
-        }
-        return "mio_icif:block/crop/titanium_" + stage;
-    }
-
-    @Override
-    public boolean canGrow(IPlanter planter) {
-        if (planter.getGrowthStage() < 3) return true;
-        if (planter.getGrowthStage() == 3) {
-            return planter.isBlockBelow(com.miophas.singularity_iteration.common.registry.mio_icif_blocks.BLOCK_ORE_TITANIUM.get()) ||
-                   planter.isBlockBelow(com.miophas.singularity_iteration.common.registry.mio_icif_blocks.BLOCK_ORE_TITANIUM_IN_DEEP.get()) ||
-                   planter.isBlockBelow(com.miophas.singularity_iteration.common.registry.mio_icif_blocks.BLOCK_TITANIUM.get());
-        }
-        return false;
-    }
-    // SI extension: retain legacy growth/output, but support the shared root and seed lifecycle.
-    @Override public int getRootDepth(IPlanter planter) { return 5; }
-    @Override public ItemStack getSeedItem(IPlanter planter) {
-        return planter.makeSeeds(this, 1, planter.getGrowthSpeed(), planter.getYield(), planter.getResilience());
+    public PlantTitanium() {
+        super("titanium", new String[]{"White", "Leaves", "Metal"}, STATS, mio_icif_resources.TITANIUM_DUST_SMALL::get,
+            () -> new Block[]{mio_icif_blocks.BLOCK_ORE_TITANIUM.get(), mio_icif_blocks.BLOCK_ORE_TITANIUM_IN_DEEP.get(),
+                mio_icif_blocks.BLOCK_TITANIUM.get()});
     }
 }

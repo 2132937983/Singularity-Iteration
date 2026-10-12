@@ -1,0 +1,65 @@
+# 0.1.8.1 trilingual comment scope (EN / ZH / JA). Checked by tools/doc_lint_181.py.
+# <path relative to src/main/java>           type comment must be trilingual
+# <path relative to src/main/java>  all      every Javadoc block must be trilingual
+
+# Public API (core.api): every Javadoc block
+com/miophas/singularity_iteration/core/api/package-info.java
+com/miophas/singularity_iteration/core/api/MioIcifAPI.java  all
+com/miophas/singularity_iteration/core/api/crop/ICropAPI.java  all
+com/miophas/singularity_iteration/core/api/crop/IPlanter.java  all
+com/miophas/singularity_iteration/core/api/crop/PlantType.java
+com/miophas/singularity_iteration/core/api/crop/PlantStats.java  all
+com/miophas/singularity_iteration/core/api/energy/EnergyNodeRegistry.java  all
+com/miophas/singularity_iteration/core/api/energy/EnergyNodeProfile.java  all
+com/miophas/singularity_iteration/core/api/item/IJetpackItem.java  all
+com/miophas/singularity_iteration/core/api/item/BallisticProfile.java  all
+com/miophas/singularity_iteration/core/api/item/IBallisticWeapon.java  all
+com/miophas/singularity_iteration/core/api/item/BallisticProfiles.java  all
+com/miophas/singularity_iteration/core/api/suit/SuitModuleSpec.java  all
+com/miophas/singularity_iteration/core/api/suit/SuitModuleRegistry.java  all
+com/miophas/singularity_iteration/core/api/suit/SuitModuleBehavior.java  all
+com/miophas/singularity_iteration/core/api/suit/ISuitModuleItem.java  all
+com/miophas/singularity_iteration/core/api/armory/ArmoryEvent.java  all
+com/miophas/singularity_iteration/core/api/machine/MachineStatus.java  all
+
+# Algorithms
+com/miophas/singularity_iteration/core/runtime/energy/engine/FairShareDistributor.java
+com/miophas/singularity_iteration/core/runtime/crop/CropGrowthMath.java  all
+com/miophas/singularity_iteration/core/runtime/crop/PlantHybridization.java
+com/miophas/singularity_iteration/core/runtime/crop/CropScanCursor.java
+com/miophas/singularity_iteration/common/builder/LitematicBits.java  all
+com/miophas/singularity_iteration/common/client/suit/BallisticSolver.java
+com/miophas/singularity_iteration/common/reactor/ReactorSimulation.java
+
+# Main classes
+com/miophas/singularity_iteration/common/Singularity_Iteration.java
+com/miophas/singularity_iteration/core/prefab/blockentity/AbstractEnergyBlockEntity.java
+com/miophas/singularity_iteration/core/prefab/blockentity/AbstractProcessingMachineBlockEntity.java
+com/miophas/singularity_iteration/core/prefab/flight/JetpackFlightController.java
+com/miophas/singularity_iteration/common/blockentity/crop/mio_icif_crop_entity.java
+com/miophas/singularity_iteration/common/blockentity/producer/mio_icif_harvest_elc.java
+com/miophas/singularity_iteration/common/blockentity/producer/mio_icif_matron_elc.java
+com/miophas/singularity_iteration/common/machine/MachineStatusTracker.java
+com/miophas/singularity_iteration/common/machine/ClientRunState.java  all
+com/miophas/singularity_iteration/common/client/machine/MachineSoundManager.java
+com/miophas/singularity_iteration/common/client/machine/MachineRunState.java
+com/miophas/singularity_iteration/common/client/flight/JetpackSoundClient.java
+com/miophas/singularity_iteration/common/flight/JetpackThrustSync.java
+com/miophas/singularity_iteration/common/flight/JetpackThrustPacket.java
+com/miophas/singularity_iteration/common/client/screen/EnergyTerminalScreen.java
+
+# 0.1.8.2: Advanced Crop Scanner, crop fixes, external farm compatibility
+com/miophas/singularity_iteration/core/api/item/ICropSeedItem.java
+com/miophas/singularity_iteration/core/runtime/crop/ScannerMath.java  all
+com/miophas/singularity_iteration/core/runtime/crop/BreedingResearch.java  all
+com/miophas/singularity_iteration/common/menu/tool/CropAnalyzerMenu.java
+com/miophas/singularity_iteration/common/menu/tool/CropScannerState.java
+com/miophas/singularity_iteration/common/menu/tool/CropScannerPacket.java
+com/miophas/singularity_iteration/common/client/screen/mio_icif_gui_crop_analyzer.java
+com/miophas/singularity_iteration/common/client/crop/CropScannerHud.java
+com/miophas/singularity_iteration/common/item/tools/CropAnalyzerItem.java
+com/miophas/singularity_iteration/common/crop/OreRootCrop.java
+com/miophas/singularity_iteration/common/crop/CropTaxonomy.java  all
+com/miophas/singularity_iteration/common/crop/CropDiagnosis.java
+com/miophas/singularity_iteration/common/recipe/CropSeedIngredient.java
+com/miophas/singularity_iteration/common/integration/EnderIOFarmIntegration.java

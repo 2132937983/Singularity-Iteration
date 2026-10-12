@@ -27,7 +27,10 @@ import javax.annotation.Nullable;
 
 
 @SuppressWarnings("null")
-public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBlockEntity {
+public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBlockEntity
+        implements com.miophas.singularity_iteration.common.machine.ClientRunState {
+    /** EN: 0.1.8.1: water-wheel loop sound; "IsGenerating" is synced. ZH: 0.1.8.1：水轮循环音效，“IsGenerating”已同步。JA: 0.1.8.1：水車音。「IsGenerating」は同期済み。 */
+    @Override public boolean clientRunning() { return isGenerating; }
 
     public static final int SLOT_COUNT = 1;
     public static final int ROTOR_SLOT = 0;

@@ -154,8 +154,25 @@ public class mio_icif_large_fabricator_core_entity extends MultiblockEnergyCore 
         return false;
     }
 
+    /** EN: Game time of the last produced millibucket. ZH: 最后一次产出 1 mB 的游戏时间。JA: 最後に 1 mB 生産したゲーム時刻。 */
+    private long lastProducedTick = Long.MIN_VALUE / 2;
+
+    /**
+     * <p><b>EN:</b> 0.1.8.1: RUNNING while the core produced UU-matter in the last second. The status
+     * tracker syncs this state to clients (lamp and loop sound).
+     * <p><b>ZH:</b> 0.1.8.1：核心在最近 1 秒内产出过 UU 物质时为 RUNNING。状态追踪器把此状态同步到客户端（指示灯与循环音效）。
+     * <p><b>JA:</b> 0.1.8.1：直近 1 秒以内に UU 物質を生産していれば RUNNING。状態トラッカーがクライアントへ同期する（ランプとループ音）。
+     */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.MachineStatus machineStatus() {
+        if (level != null && level.getGameTime() - lastProducedTick <= 20)
+            return com.miophas.singularity_iteration.core.api.machine.MachineStatus.RUNNING;
+        return super.machineStatus();
+    }
+
     private void produceUuMatter() {
         if (level == null) return;
+        lastProducedTick = level.getGameTime();
         for (Direction direction : Direction.values()) {
             BlockPos partPos = getBlockPos().relative(direction);
             BlockEntity partBe = level.getBlockEntity(partPos);

@@ -42,14 +42,17 @@ import java.util.EnumMap;
 import java.util.List;
 
 /**
- * Base class for producer machines.
- * It is the base class of all production machines. It gives basic functions such as work progress.
- * These are electrical machines. They use electricity, not fuel.
- * It implements the Container and WorldlyContainer interfaces, so that hoppers can interact with it.
- * It uses the EU (Energy Unit) energy system.
- *
- * <p>Recipe lookup and energy operations go through the API layer. Subclasses can override the protected methods
- * to change the behavior. Thus addons can safely extend machine behavior.
+ * <p><b>EN:</b> Base class of the electric production machines (EU, no fuel). It gives the work
+ * progress, the slot layout and the Container / WorldlyContainer access for hoppers and pipes. It
+ * also plays the completion cue ({@link #playCompletionCue()}, at most once per
+ * {@link #COMPLETE_SOUND_COOLDOWN} ticks). Recipe lookup and energy operations go through the API layer. Subclasses override the
+ * protected methods to change the behavior, so addons can extend a machine safely.
+ * <p><b>ZH:</b> 电力生产机器（使用 EU，不用燃料）的基类。提供工作进度、槽位布局、供漏斗与管道使用的 Container / WorldlyContainer 访问，
+ * 以及完成提示音（{@link #playCompletionCue()}，每 {@link #COMPLETE_SOUND_COOLDOWN} tick 最多一次）。配方查询与能量操作经由 API 层。
+ * 子类覆盖受保护方法来改变行为，因此附属可以安全地扩展机器。
+ * <p><b>JA:</b> 電気式の生産機械（EU を使い、燃料は使わない）の基底クラス。作業進捗、スロット配置、ホッパーとパイプ用の
+ * Container / WorldlyContainer アクセス、完了音（{@link #playCompletionCue()}、{@link #COMPLETE_SOUND_COOLDOWN} tick に最大 1 回）を提供する。
+ * レシピ検索と電力操作は API 層を通す。サブクラスは protected メソッドを上書きして動作を変えるので、アドオンは安全に機械を拡張できる。
  */
 @SuppressWarnings("null")
 public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnergyBlockEntity implements WorldlyContainer, ISlotValidator, com.miophas.singularity_iteration.core.api.machine.IProducerBlock {

@@ -92,6 +92,10 @@ public static final BooleanProperty WORKING = BooleanProperty.create("working");
                         Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);
                     }
                 }
+                // EN: 0.1.8.1: also drop the drops that waited for free storage.
+                // ZH: 0.1.8.1：同时掉落等待存储空位的物品。
+                // JA: 0.1.8.1：格納待ちのドロップも落とす。
+                harvest.dropPending(level, pos);
             }
             super.onRemove(state, level, pos, newState, movedByPiston);
         }

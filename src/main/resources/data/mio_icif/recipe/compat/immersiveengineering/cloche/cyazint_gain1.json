@@ -1,0 +1,29 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "immersiveengineering"
+    }
+  ],
+  "type": "immersiveengineering:cloche",
+  "input": {
+    "type": "mio_icif:crop_seed",
+    "plant": "mio_icif:cyazint",
+    "min_gain": 8,
+    "max_gain": 15
+  },
+  "render": {
+    "type": "immersiveengineering:generic",
+    "block": "minecraft:blue_orchid"
+  },
+  "results": [
+    {
+      "id": "minecraft:cyan_dye",
+      "count": 3
+    }
+  ],
+  "soil": {
+    "item": "minecraft:dirt"
+  },
+  "time": 800
+}

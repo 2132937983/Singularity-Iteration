@@ -50,9 +50,12 @@ public class PlantBaseSapling extends com.miophas.singularity_iteration.core.pre
         return traits;
     }
 
+    /** EN: Shared, immutable stats (the crossing loop reads them often). ZH: 共享的不可变数值（杂交循环频繁读取）。JA: 共有の不変値（交配ループが頻繁に読む）。 */
+    private static final PlantStats STATS = new PlantStats(3, 1, 0, 4, 4, 0);
+
     @Override
     public PlantStats getStats() {
-        return new PlantStats(3, 1, 0, 4, 4, 0);
+        return STATS;
     }
 
     @Override

@@ -196,6 +196,12 @@ public class mio_icif_chestplate_advanced_quantum extends mio_icif_armor_elc imp
         return JETPACK_POWER;
     }
 
+    /** EN: Deep ion hum (0.1.8.1). ZH: 低沉离子嗡鸣（0.1.8.1）。JA: 低いイオン音（0.1.8.1）。 */
+    @Override
+    public String getThrusterSound() {
+        return THRUSTER_IONIC;
+    }
+
     @Override
     public long getEnergyPerTickFlying() {
         return JETPACK_CONSUME_PER_TICK;

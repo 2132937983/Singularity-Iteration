@@ -77,6 +77,9 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  *   <tr><td>{@code LaserTowerSyncPacket}</td><td>S2C</td><td>statistics and target list for the open laser tower menu</td></tr>
  *   <tr><td>{@code LaserTowerConfigPacket}</td><td>C2S</td><td>edits the target list of the open laser tower menu</td></tr>
  *   <tr><td>{@code MinerFilterPacket}</td><td>C2S</td><td>sets a ghost filter slot of the Advanced Miner (JEI drag)</td></tr>
+ *   <tr><td>{@code CropScannerPacket.SetGene}</td><td>C2S</td><td>gene-editing slider of the open Advanced Crop Scanner menu (0.1.8.2)</td></tr>
+ *   <tr><td>{@code CropScannerPacket.HudRequest}</td><td>C2S</td><td>crop HUD: asks for the reading of a crop stick (0.1.8.2)</td></tr>
+ *   <tr><td>{@code CropScannerPacket.HudReply}</td><td>S2C</td><td>answer to {@code CropScannerPacket.HudRequest} (0.1.8.2)</td></tr>
  * </table>
  */
 @SuppressWarnings("null")
@@ -125,6 +128,13 @@ public class mio_icif_Network {
             com.miophas.singularity_iteration.common.future.FutureCommoditySync.TYPE,
             com.miophas.singularity_iteration.common.future.FutureCommoditySync.CODEC,
             com.miophas.singularity_iteration.common.future.FutureCommoditySync::handle
+        );
+
+        // S2C (0.1.8.1): jetpack thrust state of a tracked player, for the thruster sound.
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.flight.JetpackThrustPacket.TYPE,
+            com.miophas.singularity_iteration.common.flight.JetpackThrustPacket.CODEC,
+            com.miophas.singularity_iteration.common.flight.JetpackThrustPacket::handle
         );
 
         // S2C: nuclear explosion mushroom cloud animation.
@@ -398,6 +408,25 @@ public class mio_icif_Network {
             MinerFilterPacket.TYPE,
             MinerFilterPacket.CODEC,
             MinerFilterPacket::handle
+        );
+
+        // EN: 0.1.8.2 Advanced Crop Scanner: C2S gene slider, C2S HUD request, S2C HUD reply.
+        // ZH: 0.1.8.2 次世代作物扫描仪：C2S 基因滑块、C2S HUD 请求、S2C HUD 回复。
+        // JA: 0.1.8.2 次世代型作物スキャナー：C2S 遺伝子スライダー、C2S HUD 要求、S2C HUD 返信。
+        registrar.playToServer(
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerPacket.SetGene.TYPE,
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerPacket.SetGene.CODEC,
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerPacket::handleSetGene
+        );
+        registrar.playToServer(
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerPacket.HudRequest.TYPE,
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerPacket.HudRequest.CODEC,
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerPacket::handleHudRequest
+        );
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerPacket.HudReply.TYPE,
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerPacket.HudReply.CODEC,
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerPacket::handleHudReply
         );
     }
 

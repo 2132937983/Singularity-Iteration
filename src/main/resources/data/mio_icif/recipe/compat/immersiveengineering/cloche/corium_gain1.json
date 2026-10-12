@@ -1,0 +1,35 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "immersiveengineering"
+    }
+  ],
+  "type": "immersiveengineering:cloche",
+  "input": {
+    "type": "mio_icif:crop_seed",
+    "plant": "mio_icif:corium",
+    "min_gain": 8,
+    "max_gain": 15
+  },
+  "render": {
+    "type": "immersiveengineering:generic",
+    "block": "minecraft:vine"
+  },
+  "results": [
+    {
+      "id": "minecraft:leather",
+      "count": 1
+    },
+    {
+      "chance": 0.5,
+      "output": {
+        "id": "minecraft:leather"
+      }
+    }
+  ],
+  "soil": {
+    "item": "minecraft:dirt"
+  },
+  "time": 1440
+}

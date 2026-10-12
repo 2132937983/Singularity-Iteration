@@ -22,6 +22,7 @@ final class EatingPlantBehavior {
         if (crop.getCustomData().getBoolean("eaten")) {
             Block.popResource(world, pos, new ItemStack(Items.ROTTEN_FLESH));
             crop.getCustomData().putBoolean("eaten", false);
+            markDirty(crop);
         }
         double x = pos.getX() + 0.5, z = pos.getZ() + 0.5;
         var entities = world.getEntitiesOfClass(LivingEntity.class, new AABB(x - 1, pos.getY(), z - 1, x + 1, pos.getY() + 2, z + 1));
@@ -51,6 +52,18 @@ final class EatingPlantBehavior {
             if (plant.canGrow(crop)) crop.setProgress(crop.getProgress() + 100);
             world.playSound(null, pos, SoundEvents.PLAYER_BURP, SoundSource.BLOCKS, 1, 0.9f + world.random.nextFloat() * 0.1f);
             crop.getCustomData().putBoolean("eaten", true);
+            markDirty(crop);
         }
+    }
+
+    /**
+     * <p><b>EN:</b> 0.1.8.1: the "eaten" flag lives in the custom data, which is saved. A change
+     * must mark the block entity changed, or a chunk save can lose the rotten-flesh drop.
+     * <p><b>ZH:</b> 0.1.8.1：“eaten”标志保存在自定义数据中。修改后必须标记方块实体已更改，否则区块保存可能丢失腐肉掉落。
+     * <p><b>JA:</b> 0.1.8.1：「eaten」フラグは保存されるカスタムデータにある。変更したらブロックエンティティに変更済みの
+     * 印を付ける。付けないとチャンク保存で腐った肉のドロップが失われることがある。
+     */
+    private static void markDirty(IPlanter crop) {
+        if (crop instanceof net.minecraft.world.level.block.entity.BlockEntity entity) entity.setChanged();
     }
 }

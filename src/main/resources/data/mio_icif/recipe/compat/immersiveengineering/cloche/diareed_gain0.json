@@ -1,0 +1,29 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "immersiveengineering"
+    }
+  ],
+  "type": "immersiveengineering:cloche",
+  "input": {
+    "type": "mio_icif:crop_seed",
+    "plant": "mio_icif:diareed",
+    "min_gain": 0,
+    "max_gain": 7
+  },
+  "render": {
+    "type": "immersiveengineering:generic",
+    "block": "minecraft:sugar_cane"
+  },
+  "results": [
+    {
+      "id": "mio_icif:resource/item_diamond_dust_small",
+      "count": 1
+    }
+  ],
+  "soil": {
+    "item": "minecraft:dirt"
+  },
+  "time": 2400
+}

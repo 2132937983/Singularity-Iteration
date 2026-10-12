@@ -8,7 +8,29 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-/** Independent common crop policy used by SI plant implementations. */
+/**
+ * <p><b>EN:</b> A plant species of the crop-stick system. Identity is "modId:typeId" (equals and hashCode
+ * use it). Two growth models exist:
+ * <ul>
+ *   <li>IC2 crop cycle ({@link #usesIc2CropCycle()} true, see {@code Ic2PlantType}): the planter
+ *       adds growth points every 256 ticks from the environment quality; {@link #tick} is only a
+ *       hook for special behavior.</li>
+ *   <li>Legacy per-tick model (default): the planter calls {@link #tick} every tick and this class
+ *       adds 1 + growth points.</li>
+ * </ul>
+ * <p><b>ZH:</b> 作物架系统中的一个植物物种。身份为 “modId:typeId”（equals 与 hashCode 使用它）。存在两种生长模型：
+ * <ul>
+ *   <li>IC2 作物周期（{@link #usesIc2CropCycle()} 为真，见 {@code Ic2PlantType}）：作物架每 256 tick 按环境品质增加生长点；
+ *       {@link #tick} 仅作为特殊行为的挂钩。</li>
+ *   <li>旧的逐 tick 模型（默认）：作物架每 tick 调用 {@link #tick}，本类增加 1 + 生长属性的生长点。</li>
+ * </ul>
+ * <p><b>JA:</b> 作物棒システムの植物の種。識別子は「modId:typeId」（equals と hashCode がこれを使う）。成長モデルは 2 つ：
+ * <ul>
+ *   <li>IC2 作物サイクル（{@link #usesIc2CropCycle()} が真、{@code Ic2PlantType} 参照）：作物棒は 256 tick ごとに環境品質から
+ *       成長ポイントを加える。{@link #tick} は特殊動作のフックにすぎない。</li>
+ *   <li>旧来の毎 tick モデル（既定）：作物棒が毎 tick {@link #tick} を呼び、このクラスが 1 + 成長値のポイントを加える。</li>
+ * </ul>
+ */
 public abstract class PlantType {
     public abstract String getTypeId();
     public abstract String getModId();
@@ -33,7 +55,11 @@ public abstract class PlantType {
     public int getHarvestStage() { return getMaxGrowthStage(); }
     public int getOptimalHarvestStage() { return getHarvestStage(); }
     public int getStageAfterHarvest() { return 1; }
-    /** Opt in to the IC2 256-tick growth-point lifecycle. Legacy addons retain per-tick callbacks. */
+    /**
+     * <p><b>EN:</b> True to use the IC2 256-tick growth-point cycle. False (default) keeps the legacy per-tick {@link #tick} model for old addons.
+     * <p><b>ZH:</b> 返回 true 时使用 IC2 的 256 tick 生长点周期。false（默认）为旧附属保留逐 tick 的 {@link #tick} 模型。
+     * <p><b>JA:</b> true なら IC2 の 256 tick 成長ポイントサイクルを使う。false（既定）は旧アドオン向けに毎 tick の {@link #tick} モデルを保つ。
+     */
     public boolean usesIc2CropCycle() { return false; }
     public int getStageAfterHarvest(IPlanter planter) { return getStageAfterHarvest(); }
     public boolean onLeftClick(IPlanter planter, Player player) { return planter.pick(); }
@@ -58,6 +84,12 @@ public abstract class PlantType {
         };
     }
 
+    /**
+     * <p><b>EN:</b> True when the plant can grow now. Default: below the max stage, light 9 or more,
+     * stored water and nutrients above 0. IC2 plants override this.
+     * <p><b>ZH:</b> 植物现在能生长时为真。默认：未达最大阶段、光照不低于 9、储水与营养大于 0。IC2 植物会覆盖此方法。
+     * <p><b>JA:</b> 植物が今成長できるなら真。既定：最大段階未満、明るさ 9 以上、貯水と栄養が 0 より大きい。IC2 植物は上書きする。
+     */
     public boolean canGrow(IPlanter planter) {
         return planter != null
             && planter.getGrowthStage() < getMaxGrowthStage()
@@ -115,6 +147,11 @@ public abstract class PlantType {
 
     public double dropGainChance() { return 0.95D; }
 
+    /**
+     * <p><b>EN:</b> Number of harvest rolls. Each roll adds all items of {@link #getGains}. The result can be 0.
+     * <p><b>ZH:</b> 收获次数。每次加入 {@link #getGains} 的全部物品。结果可以为 0。
+     * <p><b>JA:</b> 収穫の回数。1 回ごとに {@link #getGains} のアイテムをすべて加える。結果は 0 になりうる。
+     */
     public int calculateDropCount(IPlanter planter) {
         if (planter == null) return 1;
         int bound = Math.max(1, 3 + planter.getYield());
@@ -131,6 +168,12 @@ public abstract class PlantType {
         return Mth.clamp(0.2F - resistance * 0.01F, 0.02F, 0.25F);
     }
 
+    /**
+     * <p><b>EN:</b> Environment quality before the ×5 factor of the crop cycle. A plant can weight
+     * humidity, nutrients and air quality differently (for example coffee needs nutrients).
+     * <p><b>ZH:</b> 作物周期 ×5 系数之前的环境品质。植物可以对湿度、营养与空气质量使用不同权重（例如咖啡更需要营养）。
+     * <p><b>JA:</b> 作物サイクルの ×5 係数を掛ける前の環境品質。植物ごとに湿度・栄養・空気品質の重みを変えられる（例：コーヒーは栄養を重視）。
+     */
     public int weightInfluences(IPlanter planter, int humidity, int nutrients, int airQuality) {
         int growth = planter == null ? 0 : planter.getGrowthSpeed();
         return humidity + nutrients + airQuality + growth - getStats().getLevel();

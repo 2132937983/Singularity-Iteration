@@ -49,6 +49,10 @@ public class mio_icif_crop_stick_upgraded extends BaseEntityBlock {
     @Override
     @Nullable
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        // EN: Server-only crop logic (see mio_icif_crop_stick).
+        // ZH: 作物逻辑仅在服务器运行。
+        // JA: 作物ロジックはサーバーのみ。
+        if (level.isClientSide) return null;
         return (tickLevel, pos, tickState, blockEntity) -> {
             if (blockEntity instanceof mio_icif_crop_entity crop) crop.tick(tickLevel, pos, tickState, crop);
         };
@@ -131,7 +135,10 @@ public class mio_icif_crop_stick_upgraded extends BaseEntityBlock {
     }
     @Override protected void onRemove(BlockState state, Level world, BlockPos pos, BlockState replacement, boolean moving) {
         if (!state.is(replacement.getBlock()) && !world.isClientSide && world.getBlockEntity(pos) instanceof mio_icif_crop_entity crop) {
-            if (crop.isHybridBase()) Block.popResource(world, pos, new ItemStack(state.getBlock()));
+            // EN: 0.1.8.2: the crossing stick comes back as the recorded item.
+            // ZH: 0.1.8.2：杂交用的作物架按记录的物品返还。
+            // JA: 0.1.8.2：交配用の棒は記録したアイテムとして戻る。
+            if (crop.isHybridBase()) Block.popResource(world, pos, crop.takeCrossStick());
             crop.pick();
         }
         super.onRemove(state, world, pos, replacement, moving);

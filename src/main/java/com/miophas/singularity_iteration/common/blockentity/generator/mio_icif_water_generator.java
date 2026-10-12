@@ -303,6 +303,16 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
     }
 
     /**
+     * <p><b>EN:</b> 0.1.8.1: green lamp (and loop sound) while the water generator generates.
+     * <p><b>ZH:</b> 0.1.8.1：水力发电机发电时指示灯为绿色（并播放循环音效）。
+     * <p><b>JA:</b> 0.1.8.1：水力発電機の発電中はランプを緑にする（ループ音も鳴る）。
+     */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.MachineStatus machineStatus() {
+        return isGenerating ? com.miophas.singularity_iteration.core.api.machine.MachineStatus.RUNNING : super.machineStatus();
+    }
+
+    /**
      * 获取当前水量
      */
     public int getWaterAmount() {

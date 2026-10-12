@@ -28,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Fire-control computer of the suit HUD. It predicts the path of the projectile that the held
+ * <p><b>EN:</b> Fire-control computer of the suit HUD. It predicts the path of the projectile that the held
  * weapon fires.
  *
  * <p><b>Integration model.</b> The solver steps the projectile one game tick at a time. Each step
@@ -51,6 +51,22 @@ import org.jetbrains.annotations.Nullable;
  * It does not model random inaccuracy, wind, or firework thrust.
  *
  * <p><b>Thread.</b> Call all methods on the client thread only. The player must be in a level.
+ *
+ * <p><b>ZH:</b> 套装 HUD 的火控计算机，预测手持武器射出的弹射物轨迹。
+ * <b>积分模型：</b>每次推进一个游戏 tick，每步依次执行：移动 {@code pos = pos + vel}；阻力 {@code vel = vel * drag}
+ * （新位置在流体源方块中时改用 {@code waterDrag}）；重力 {@code vel.y = vel.y - gravity}。原版箭与投掷物使用相同顺序，
+ * 因此预测轨迹就是游戏中的真实轨迹。解析抛物线不含阻力且每个 tick 的误差不同，所以不使用。
+ * <b>单位：</b>位置为方块坐标，速度为格/tick，重力为格/tick²，阻力为每 tick 的无量纲系数，时间为游戏 tick（20 tick = 1 秒）。
+ * <b>限制：</b>最多 {@link #MAX_STEPS} 步（12 秒飞行）；不模拟随机散布、风或烟花推力。
+ * <b>线程：</b>只在客户端线程调用，玩家必须在世界中。
+ *
+ * <p><b>JA:</b> スーツ HUD の火器管制コンピューター。手に持った武器が撃つ弾の軌道を予測する。
+ * <b>積分モデル：</b>1 ゲーム tick ずつ進め、各ステップで順に：移動 {@code pos = pos + vel}、抵抗 {@code vel = vel * drag}
+ * （新しい位置が液体の水源ブロック内なら {@code waterDrag}）、重力 {@code vel.y = vel.y - gravity}。バニラの矢と投擲物も同じ順序なので、
+ * 予測軌道はゲーム内の実際の軌道になる。解析的な放物線は抵抗を含まず tick ごとに誤差が違うため使わない。
+ * <b>単位：</b>位置はブロック座標、速度はブロック/tick、重力はブロック/tick²、抵抗は tick ごとの無次元係数、時間はゲーム tick（20 tick = 1 秒）。
+ * <b>制限：</b>最大 {@link #MAX_STEPS} ステップ（12 秒の飛行）。ランダムなばらつき、風、花火の推力は扱わない。
+ * <b>スレッド：</b>クライアントスレッドだけで呼ぶ。プレイヤーはレベル内にいる必要がある。
  */
 public final class BallisticSolver {
     private BallisticSolver() {}

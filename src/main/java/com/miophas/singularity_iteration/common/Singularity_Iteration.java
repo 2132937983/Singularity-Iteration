@@ -52,7 +52,18 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import java.util.Set;
 
-// The value here should match an entry in the META-INF/neoforge.mods.toml file
+/**
+ * <p><b>EN:</b> Mod entry point of Singularity Iteration ({@code mio_icif}; must match
+ * {@code META-INF/neoforge.mods.toml}). The constructor registers all registries on the mod event
+ * bus: blocks, items, block entities, menus, sounds, data components, armory, builder and logistics.
+ * It also registers the network payloads, the capabilities and the core services. Client-only
+ * setup is in {@code Singularity_Iteration_Client}.
+ * <p><b>ZH:</b> 奇点迭代的模组入口（{@code mio_icif}，必须与 {@code META-INF/neoforge.mods.toml} 一致）。构造函数在模组事件总线上注册所有注册表
+ * （方块、物品、方块实体、菜单、音效、数据组件、军械库、建造机、物流）、网络数据包、能力与核心服务。仅客户端的初始化位于 {@code Singularity_Iteration_Client}。
+ * <p><b>JA:</b> 奇点迭代の MOD 入口（{@code mio_icif}。{@code META-INF/neoforge.mods.toml} と一致させる）。コンストラクタは MOD イベントバス上で、
+ * すべてのレジストリ（ブロック、アイテム、ブロックエンティティ、メニュー、音、データコンポーネント、武装庫、ビルダー、物流）、
+ * ネットワークのペイロード、ケイパビリティ、コアサービスを登録する。クライアント専用の初期化は {@code Singularity_Iteration_Client} にある。
+ */
 @Mod(Singularity_Iteration.MOD_ID)
 @SuppressWarnings("null")
 public class Singularity_Iteration {
@@ -153,6 +164,13 @@ public class Singularity_Iteration {
 
         // Register custom ingredient types
         mio_icif_IngredientTypes.register(modEventBus);
+
+        // EN: 0.1.8.2: Ender IO Farming Station plants and harvests crop sticks (reflection; only with Ender IO).
+        // ZH: 0.1.8.2：Ender IO 农场站可种植与收获作物架（反射；仅在 Ender IO 存在时）。
+        // JA: 0.1.8.2：Ender IO の Farming Station が作物棒に植え、収穫する（リフレクション。Ender IO があるときだけ）。
+        if (net.neoforged.fml.ModList.get().isLoaded("enderio")) {
+            com.miophas.singularity_iteration.common.integration.EnderIOFarmIntegration.register(modEventBus);
+        }
 
         // Register tree decorators
         mio_icif_tree_decorators.register(modEventBus);

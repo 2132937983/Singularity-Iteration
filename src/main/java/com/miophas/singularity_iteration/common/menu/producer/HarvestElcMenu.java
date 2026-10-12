@@ -28,7 +28,7 @@ public class HarvestElcMenu extends mio_icif_base_menu {
     private final IItemHandler itemHandler;
 
     public HarvestElcMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, null, new SimpleContainerData(2));
+        this(containerId, playerInventory, null, new SimpleContainerData(3));
     }
 
     public HarvestElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_harvest_elc blockEntity, ContainerData data) {
@@ -97,6 +97,11 @@ public class HarvestElcMenu extends mio_icif_base_menu {
 
     public int getMaxEnergy() {
         return this.data.get(1);
+    }
+
+    /** EN: Stacks that wait for free storage (0.1.8.1). ZH: 等待存储空位的物品堆数（0.1.8.1）。JA: 格納の空き待ちスタック数（0.1.8.1）。 */
+    public int getPendingDrops() {
+        return this.data.getCount() > 2 ? this.data.get(2) : 0;
     }
 
     @Override

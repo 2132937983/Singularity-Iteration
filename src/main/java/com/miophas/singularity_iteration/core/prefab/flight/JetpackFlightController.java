@@ -10,13 +10,19 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Jetpack flight controller (a reusable base).
- *
- * <p>An item that implements {@link IJetpackItem} only needs to call
- * {@link #tick(Player, ItemStack, IJetpackItem, long, double, double, double, boolean)}
- * in its own tick. Then it gets the same lift, hover, forward thrust, height limit and energy use as the host.
- * {@link JetpackKeyHandler} supplies the jump, forward, sneak and boost key input
- * (the host already syncs it for all players).
+ * <p><b>EN:</b> Jetpack flight controller (a reusable base). An item that implements
+ * {@link IJetpackItem} calls {@link #tick(Player, ItemStack, IJetpackItem, long, double, double, double, boolean)}
+ * in its own tick. The item then gets the shared lift, hover, forward thrust, height limit and energy use.
+ * {@link JetpackKeyHandler} supplies the jump, forward, sneak and boost input (client to server).
+ * Since 0.1.8.1 each thrusting tick also records a {@link Thrust} sample (tick, throttle, sound
+ * profile) for the thruster sound; the client and server keep separate maps.
+ * <p><b>ZH:</b> 喷气背包飞行控制器（可复用基类）。实现 {@link IJetpackItem} 的物品在自己的 tick 中调用 {@code tick(...)}，
+ * 即可获得统一的升力、悬停、前向推力、高度限制与能耗。{@link JetpackKeyHandler} 提供跳跃、前进、潜行与加速输入（客户端到服务器）。
+ * 自 0.1.8.1 起，每个产生推力的 tick 还记录一个 {@link Thrust} 样本（tick、油门、音效档）用于推进器音效；客户端与服务器各自维护映射。
+ * <p><b>JA:</b> ジェットパック飛行制御（再利用できる基底）。{@link IJetpackItem} を実装したアイテムは自分の tick で {@code tick(...)} を呼ぶだけで、
+ * 共通の揚力・ホバー・前進推力・高度制限・電力消費を得る。{@link JetpackKeyHandler} がジャンプ・前進・スニーク・ブーストの入力
+ * （クライアントからサーバーへ）を提供する。0.1.8.1 以降、推力を出した各 tick で {@link Thrust} サンプル（tick、スロットル、音プロファイル）も
+ * 記録し、スラスター音に使う。クライアントとサーバーは別々のマップを持つ。
  */
 public final class JetpackFlightController {
     /*
@@ -24,11 +30,43 @@ public final class JetpackFlightController {
      * In singleplayer the client and server Player share a UUID but tick on different threads
      * against different game clocks; one shared map let each side overwrite the other.
      */
-    private static final Map<UUID, Long> SERVER_ACTIVE_TICKS = new ConcurrentHashMap<>();
-    private static final Map<UUID, Long> CLIENT_ACTIVE_TICKS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Thrust> SERVER_ACTIVE_TICKS = new ConcurrentHashMap<>();
+    private static final Map<UUID, Thrust> CLIENT_ACTIVE_TICKS = new ConcurrentHashMap<>();
 
-    private static Map<UUID, Long> activeTicks(Player player) {
+    private static Map<UUID, Thrust> activeTicks(Player player) {
         return player.level().isClientSide ? CLIENT_ACTIVE_TICKS : SERVER_ACTIVE_TICKS;
+    }
+
+    /**
+     * <p><b>EN:</b> Last thrust of a player (since 0.1.8.1): game tick, throttle (0..1) and the
+     * thruster sound profile ({@link IJetpackItem#getThrusterSound()}). The sound code reads it.
+     * <p><b>ZH:</b> 玩家最近一次推力（0.1.8.1 起）：游戏 tick、油门（0..1）与推进器音效档。音效代码读取它。
+     * <p><b>JA:</b> プレイヤーの最新の推力（0.1.8.1 以降）：ゲーム tick、スロットル（0..1）、スラスター音プロファイル。音のコードが読む。
+     */
+    public record Thrust(long tick, float throttle, String sound) {}
+
+    /**
+     * <p><b>EN:</b> Last thrust sample of the player on this side, or null.
+     * <p><b>ZH:</b> 本端该玩家最近的推力样本，没有则为 null。
+     * <p><b>JA:</b> この側でのプレイヤーの最新推力サンプル。なければ null。
+     */
+    public static Thrust lastThrust(Player player) {
+        return player == null ? null : activeTicks(player).get(player.getUUID());
+    }
+
+    /**
+     * <p><b>EN:</b> Throttle for the sound: 1.0 for full lift, 0.8 for a hover climb, 0.55 for a
+     * steady hover, 0.35 for a hover descent, +0.1 with boost and forward input. A nearly empty
+     * battery (5 % or less) scales the value down like the lift.
+     * <p><b>ZH:</b> 用于音效的油门：全力上升 1.0，悬停爬升 0.8，稳定悬停 0.55，悬停下降 0.35；加速且前进时 +0.1。
+     * 电量几乎耗尽（≤ 5%）时与升力一样按比例降低。
+     * <p><b>JA:</b> 音用のスロットル：全力上昇 1.0、ホバー上昇 0.8、定常ホバー 0.55、ホバー下降 0.35、ブーストと前進入力で +0.1。
+     * 電池がほぼ空（5 % 以下）なら揚力と同じく値を下げる。
+     */
+    static float throttle(boolean hover, boolean jumping, boolean descending, boolean boostForward, float powerRatio) {
+        float t = !hover ? 1.0F : jumping ? 0.8F : descending ? 0.35F : 0.55F;
+        if (boostForward) t += 0.1F;
+        return Math.max(0F, Math.min(1F, t * powerRatio));
     }
 
     private JetpackFlightController() {}
@@ -79,7 +117,11 @@ public final class JetpackFlightController {
 
         if (jetpackUsed) {
             player.fallDistance = 0.0F;
-            activeTicks(player).put(player.getUUID(), player.level().getGameTime());
+            float ratio = jetpackPower <= 0F ? 0F : calculatePower((int) currentEnergy, maxEnergy, jetpackPower) / jetpackPower;
+            boolean boostForward = JetpackKeyHandler.isBoostKeyDown(player) && (player.zza != 0F || JetpackKeyHandler.isForwardKeyDown(player));
+            activeTicks(player).put(player.getUUID(), new Thrust(player.level().getGameTime(),
+                throttle(currentMode == MODE_HOVER, isJumping, JetpackKeyHandler.isSneakKeyDown(player), boostForward, ratio),
+                jetpack.getThrusterSound()));
         } else {
             activeTicks(player).remove(player.getUUID());
         }
@@ -282,8 +324,8 @@ public final class JetpackFlightController {
 
     public static boolean isFlying(Player player) {
         if (player == null) return false;
-        Long tick = activeTicks(player).get(player.getUUID());
-        return tick != null && tick == player.level().getGameTime();
+        Thrust thrust = activeTicks(player).get(player.getUUID());
+        return thrust != null && thrust.tick() == player.level().getGameTime();
     }
 
     public static void removePlayer(Player player) {

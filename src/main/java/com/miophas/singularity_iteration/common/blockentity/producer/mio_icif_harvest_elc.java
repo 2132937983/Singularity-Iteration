@@ -22,10 +22,41 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-/** IC2 Experimental agriculture machine; cursor and resource tanks survive reloads. */
+/**
+ * <p><b>EN:</b> Crop Harvester (IC2 Experimental). It scans one position of the 9 x 3 x 9 area
+ * each tick ({@link com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor}) and
+ * harvests a ripe crop. The crop stays planted and regrows from its after-harvest stage.
+ * <ul>
+ *   <li>0.1.8.1: no item ever goes to the world. Drops that do not fit go to a saved pending
+ *       list. While the list is not empty, the machine does not scan and uses no energy. It
+ *       moves the pending items into storage as space becomes free.</li>
+ *   <li>0.1.8.1: the WORKING state stays on for {@link #WORKING_HOLD_TICKS} after the last
+ *       harvest. The block state, the lamp and the loop sound thus do not flicker each tick.</li>
+ * </ul>
+ * <p><b>ZH:</b> 作物收割机（IC2 Experimental）。每 tick 扫描 9 × 3 × 9 区域中的一个位置并收割成熟作物。
+ * 作物保留在作物架上，从收获后阶段重新生长。
+ * <ul>
+ *   <li>0.1.8.1：物品绝不掉落到世界中。放不下的掉落物进入已保存的待存列表。列表不为空时机器不扫描、不耗电，
+ *       有空位时再把待存物品移入存储。</li>
+ *   <li>0.1.8.1：最后一次收割后 WORKING 状态保持 {@link #WORKING_HOLD_TICKS} tick，方块状态、指示灯与循环音效不再逐 tick 闪烁。</li>
+ * </ul>
+ * <p><b>JA:</b> 作物収穫機（IC2 Experimental）。毎 tick、9 × 3 × 9 範囲の 1 か所を走査し、熟した作物を収穫する。
+ * 作物は作物棒に残り、収穫後の段階から再成長する。
+ * <ul>
+ *   <li>0.1.8.1：アイテムを地面に落とさない。入らないドロップは保存される保留リストに入る。リストが空でない間は
+ *       走査せず電力も使わない。空きができしだい保留アイテムを格納する。</li>
+ *   <li>0.1.8.1：最後の収穫から {@link #WORKING_HOLD_TICKS} tick の間 WORKING 状態を保つ。ブロックステート、
+ *       ランプ、ループ音が毎 tick 点滅しない。</li>
+ * </ul>
+ */
 @SuppressWarnings("null")
 public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider {
     private int scanIndex;
+    /** EN: Ticks the WORKING state stays on after a harvest. ZH: 收割后 WORKING 状态保持的 tick 数。JA: 収穫後に WORKING 状態を保つ tick 数。 */
+    public static final int WORKING_HOLD_TICKS = 40;
+    /** EN: Drops that did not fit into storage (saved). ZH: 未能放入存储的掉落物（会保存）。JA: 格納できなかったドロップ（保存される）。 */
+    private final List<ItemStack> pendingDrops = new java.util.ArrayList<>();
+    private int workingHold;
 
     // 对齐 1.7.10 TileEntityCropHavester：15 格收获存储 + 1 格作物分析仪 + 1 格升级，
     // 外加本项目有意保留的电池槽 1 格。
@@ -84,6 +115,7 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity i
                 return switch (index) {
                     case 0 -> (int) energyStorage.getAmount();
                     case 1 -> (int) energyStorage.getCapacity();
+                    case 2 -> pendingDrops.size();
                     default -> 0;
                 };
             }
@@ -94,7 +126,7 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity i
 
             @Override
             public int getCount() {
-                return 2;
+                return 3;
             }
         };
 
@@ -186,6 +218,13 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity i
         }
 
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
+        // EN: Storage full: move pending drops first; do not scan until all of them are stored.
+        // ZH: 存储已满：先移入待存掉落物；全部存入前不扫描。
+        // JA: 格納庫が満杯：先に保留ドロップを移す。すべて格納するまで走査しない。
+        if (!blockEntity.pendingDrops.isEmpty() && !blockEntity.flushPending()) {
+            blockEntity.updateWorkingState(level, pos, false);
+            return;
+        }
         // 每 tick 扫描一次，门槛见 MIN_START_ENERGY
         if (blockEntity.energyStorage.getAmount() < MIN_START_ENERGY) {
             blockEntity.updateWorkingState(level, pos, false);
@@ -236,16 +275,59 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity i
             return false;
         }
         for (ItemStack drop : drops) {
+            if (drop == null || drop.isEmpty()) continue;
             apiUseEnergy(ENERGY_PER_HARVEST, false);
             if (optimal) {
                 apiUseEnergy(ENERGY_PER_ANALYZER, false);
             }
-            boolean added = addItemToStorage(drop);
-            if (!added) {
-                dropItem(level, drop);
+            ItemStack rest = drop.copy();
+            if (!addItemToStorage(rest) && !rest.isEmpty()) {
+                // EN: 0.1.8.1: keep the rest in the machine; never spill it into the world.
+                // ZH: 0.1.8.1：剩余部分留在机器中，绝不撒到世界里。
+                // JA: 0.1.8.1：残りは機械内に保持し、地面にはこぼさない。
+                pendingDrops.add(rest);
             }
         }
+        setChanged();
         return true;
+    }
+
+    /**
+     * <p><b>EN:</b> Moves pending drops into storage. Returns true when the list is empty after the move.
+     * <p><b>ZH:</b> 把待存掉落物移入存储。移完后列表为空时返回 true。
+     * <p><b>JA:</b> 保留ドロップを格納庫へ移す。移動後にリストが空なら true を返す。
+     */
+    private boolean flushPending() {
+        boolean changed = false;
+        for (var it = pendingDrops.iterator(); it.hasNext(); ) {
+            ItemStack stack = it.next();
+            int before = stack.getCount();
+            if (addItemToStorage(stack) || stack.isEmpty()) {
+                it.remove();
+                changed = true;
+            } else if (stack.getCount() != before) {
+                changed = true;
+            }
+        }
+        if (changed) setChanged();
+        return pendingDrops.isEmpty();
+    }
+
+    /**
+     * <p><b>EN:</b> Drops the pending items at the machine. The block calls this when it is removed.
+     * <p><b>ZH:</b> 在机器处掉落待存物品。方块被移除时调用。
+     * <p><b>JA:</b> 保留アイテムを機械の位置に落とす。ブロックが壊されたときに呼ばれる。
+     */
+    public void dropPending(Level level, BlockPos pos) {
+        for (ItemStack stack : pendingDrops) {
+            if (!stack.isEmpty()) net.minecraft.world.Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);
+        }
+        pendingDrops.clear();
+    }
+
+    /** EN: Number of pending stacks (for the GUI and tests). ZH: 待存物品堆数（供界面与测试）。JA: 保留スタック数（GUI とテスト用）。 */
+    public int pendingCount() {
+        return pendingDrops.size();
     }
 
     private boolean isStorageFull() {
@@ -289,19 +371,18 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity i
         return false;
     }
 
-    private void dropItem(Level level, ItemStack stack) {
-        if (stack.isEmpty()) return;
-        net.minecraft.world.entity.item.ItemEntity itemEntity = new net.minecraft.world.entity.item.ItemEntity(
-            level, getBlockPos().getX() + 0.5, getBlockPos().getY() + 1.0, getBlockPos().getZ() + 0.5, stack);
-        level.addFreshEntity(itemEntity);
-    }
-
     private void updateWorkingState(Level level, BlockPos pos, boolean working) {
+        // EN: Hold the state for WORKING_HOLD_TICKS after the last harvest (no flicker).
+        // ZH: 最后一次收割后保持状态 WORKING_HOLD_TICKS tick（不闪烁）。
+        // JA: 最後の収穫から WORKING_HOLD_TICKS tick 状態を保つ（点滅しない）。
+        if (working) workingHold = WORKING_HOLD_TICKS;
+        else if (workingHold > 0) workingHold--;
+        boolean shown = workingHold > 0;
         BlockState state = level.getBlockState(pos);
         if (state.getBlock() instanceof com.miophas.singularity_iteration.common.block.producer.mio_icif_block_harvest) {
             boolean currentWorking = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_harvest.WORKING);
-            if (currentWorking != working) {
-                level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_harvest.WORKING, working), 3);
+            if (currentWorking != shown) {
+                level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_harvest.WORKING, shown), 3);
             }
         }
     }
@@ -309,10 +390,20 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity i
     @Override protected void saveAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putInt("CropScanIndex", scanIndex);
+        if (!pendingDrops.isEmpty()) {
+            net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+            for (ItemStack stack : pendingDrops) if (!stack.isEmpty()) list.add(stack.save(registries));
+            tag.put("PendingDrops", list);
+        }
     }
     @Override public void loadAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         scanIndex = com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.restore(tag.getInt("CropScanIndex"));
+        pendingDrops.clear();
+        net.minecraft.nbt.ListTag list = tag.getList("PendingDrops", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) {
+            ItemStack.parse(registries, list.getCompound(i)).filter(s -> !s.isEmpty()).ifPresent(pendingDrops::add);
+        }
     }
 
     @Override

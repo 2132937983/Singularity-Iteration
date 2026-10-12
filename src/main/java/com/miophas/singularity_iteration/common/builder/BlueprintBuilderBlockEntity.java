@@ -74,7 +74,10 @@ import org.jetbrains.annotations.Nullable;
  * one small update per leg.
  */
 @SuppressWarnings("null")
-public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockEntity {
+public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockEntity
+        implements com.miophas.singularity_iteration.common.machine.ClientRunState {
+    /** EN: 0.1.8.1: drone-bay loop sound; "Running" is in the update tag. ZH: 0.1.8.1：无人机舱循环音效，“Running”在更新标签中。JA: 0.1.8.1：ドローン格納庫の音。「Running」は更新タグに含まれる。 */
+    @Override public boolean clientRunning() { return running; }
     public static final int BATTERY_SLOT = 0, SCHEMATIC_SLOT = 1, SLOT_COUNT = 2;
     public static final long CAPACITY = 200_000L, MAX_RECEIVE = 512L, EU_PER_BLOCK = 40L;
     public static final int DRONES = 4, BATCH = 8, RANGE = 64, INTERFACE_RANGE = 16, SCAN_WINDOW = 512;

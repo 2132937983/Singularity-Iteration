@@ -71,6 +71,18 @@ import net.neoforged.neoforge.registries.DeferredRegister;
     public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_UU_FABRICATOR = sound("machine.loop.uu_fabricator");
     public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_KINETIC_DRIVE = sound("machine.loop.kinetic_drive");
 
+    // 0.1.8.1 (tools/sfx_181.py): loops for machines that were silent (see tools/sound_audit_181.py)
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_COMPRESSOR = sound("machine.loop.compressor");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_SERVO = sound("machine.loop.servo");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_DISCHARGE = sound("machine.loop.discharge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_BUBBLER = sound("machine.loop.bubbler");
+    // 0.1.8.1 (tools/sfx_181.py): jetpack thrusters, played by JetpackSoundClient
+    public static final DeferredHolder<SoundEvent, SoundEvent> JETPACK_ELECTRIC_LOOP = sound("jetpack.electric.loop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> JETPACK_ADVANCED_LOOP = sound("jetpack.advanced.loop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> JETPACK_IONIC_LOOP = sound("jetpack.ionic.loop");
+    public static final DeferredHolder<SoundEvent, SoundEvent> JETPACK_IGNITE = sound("jetpack.ignite");
+    public static final DeferredHolder<SoundEvent, SoundEvent> JETPACK_SHUTDOWN = sound("jetpack.shutdown");
+
     // 0.1.7.34 Special Maneuver Mode and FCS cues (original synthesized effects, tools/gen_sfx_034.py)
     public static final DeferredHolder<SoundEvent, SoundEvent> MANEUVER_BOOM = sound("maneuver.boom");
     public static final DeferredHolder<SoundEvent, SoundEvent> MANEUVER_WIND = sound("maneuver.wind");

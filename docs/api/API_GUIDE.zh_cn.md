@@ -1,4 +1,4 @@
-# 奇点迭代（Singularity Iteration）API 指南（0.1.8.0）
+# 奇点迭代（Singularity Iteration）API 指南（0.1.8.2）
 
 本指南面向附属模组作者。文字遵循 ASD-STE100 简明技术语言原则：短句、主动语态、每个步骤只有一个指令。
 
@@ -24,6 +24,7 @@ API 包不引用任何运行时、预制或 `common` 类。构建会检查这一
 * 除非某节另有规定，在服务器线程上调用 API。
 * 在模组构造期间或初始化事件中注册。服务器启动后不要注册。
 * API 中的注册表在两端都开放。请在两端都注册，因为客户端使用这些数据显示名称、颜色和界面。
+* `core.api` 主要类型（`docs/dev/trilingual_manifest.txt`）的注释包含英文（ASD-STE100）、中文与日文三部分（见 `docs/dev/COMMENT_STYLE.md`），以英文为准。
 * API 不改变世界存档格式。附属添加的数据保存在附属自己的数据组件或附件中。
 
 **注意：** 不要保留 API 传给回调的 `ItemStack` 引用。回调之后该物品堆可能改变。
@@ -102,6 +103,14 @@ API 包不引用任何运行时、预制或 `common` 类。构建会检查这一
 
 本地玩家用没有参数的武器射击时，客户端观察新弹射物一个 tick，测量发射速度、阻力和重力。每个物品最多保存 12 次射击，存放在 `config/mio_icif-ballistics.json`。在流体中的射击、带推力的射击和立即命中的射击不被采用。
 
+### 4.3 喷气背包推进器音效（0.1.8.1）
+
+实现 `IJetpackItem` 并调用 `JetpackFlightController.tick` 的喷气背包物品，无需其他代码即可获得推进器音效。客户端播放点火音、随推力变化的循环音和熄火音。其他玩家通过服务器只在推力状态变化时发送的小数据包听到声音。
+
+1. 覆盖 `getThrusterSound()` 选择音效档：`THRUSTER_ELECTRIC`（轻型涡轮，默认）、`THRUSTER_ADVANCED`（重型轰鸣）或 `THRUSTER_IONIC`（低沉离子嗡鸣）。
+2. 不要为同一次飞行再播放自己的循环音，两种声音会重叠。
+
+未知值使用 electric 档。
 ## 5. 军械库（`core.api.armory`）
 
 奇点迭代在服务器线程上把以下事件发布到 `NeoForge.EVENT_BUS`。
@@ -167,3 +176,25 @@ API 包不引用任何运行时、预制或 `common` 类。构建会检查这一
 * 小版本（0.1.8.x）保持 API 源码兼容。删除内容会提前一个版本公告。
 * 标记为 `@Deprecated` 的 API 保留一个小版本。
 * 运行时请检查 `MioIcifAPI.instance()`。不要调用内部类。
+
+## 11. 作物与次世代作物扫描仪（0.1.8.2）
+
+### 11.1 新增的默认方法
+
+| 方法 | 作用 |
+|---|---|
+| `IPlanter#doManualHarvest(Player)` | 为玩家手动收获。掉落物放入物品栏，放不下的掉在脚下。不会产出物品的收获不执行（植物保持阶段）。默认实现调用 `doManualHarvest()`。 |
+| `IPlanter#markTended(long)` / `isTended()` | 作物监护机照料。被照料的作物至少获得所需环境品质 + 50（无惩罚，生长至少 +50%）。默认实现不做任何事。 |
+| `ICropSeedItem#setCropTraits(ItemStack, int, int, int)` | 写入生长／产量／抗性（各 0..31）。基因编辑使用它。种子物品有自己的存储格式时请覆盖。 |
+
+### 11.2 数据
+
+* 配方材料 `mio_icif:crop_seed`：指定植物与产量范围的种子袋。使用 `Ingredient#test` 检查配方的机器可以按产量调整产物。
+  `{"type": "mio_icif:crop_seed", "plant": "mio_icif:wheat", "min_gain": 8, "max_gain": 15}`（`min_gain` 默认 0，`max_gain` 默认 31）。
+* 物品标签 `mio_icif:crop_seed_bags`：种子袋。种子袋不在 `c:seeds` 中，因为多个模组在配方中消耗 `#c:seeds`（种子油、磨盘），会毁掉已分析的种子袋。
+* 附属植物的学名（扫描仪 HUD 与菜单）：语言键 `<modId>.plant.<typeId>.scientific`。没有该键时显示 “<类型> sp.”。
+
+### 11.3 规则
+
+* 交配研究列出自然杂交的候选（`PlantHybridization#calculateRatio`）。自然杂交无法产生的植物也无法研究。
+* 附属不要调用 `CropAnalyzerMenu`。它是内部类，菜单与槽位布局可能改变。

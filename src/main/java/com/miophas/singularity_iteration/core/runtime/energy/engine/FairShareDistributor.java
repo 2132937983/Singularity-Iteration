@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Deterministic fair-share distributor for the smart grid mode.
+ * <p><b>EN:</b> Deterministic fair-share distributor for the smart grid mode.
  *
  * <p>This class replaces the packet priority walk of {@link FractionalDistributor}
  * when {@link IndependentEnergyMode#fairDistribution()} is on. It does not use
@@ -100,6 +100,53 @@ import java.util.Objects;
  *       plus the energy that it gives as a shared storage source.</li>
  *   <li>The inputs are not changed. No world state is read or written.</li>
  * </ul>
+ *
+ * <p><b>ZH:</b> 智能电网模式的确定性公平分配器。
+ * <ul>
+ *   <li><b>原因：</b>旧的数据包优先级遍历按固定顺序把一个包交给接收方，第一个接收方取走能容纳的全部能量，后面的只得到剩余部分，
+ *       且每次输送都按整 EU 支付完整路径损耗。因此同一条线上的机器出现 100 %、75 %、50 % 的逐级衰减。本类按需求比例分配，
+ *       同一阶段内所有接收方得到相同比例的需求量。不使用随机数，不依赖接收方顺序，相同输入得到相同结果。</li>
+ *   <li><b>模型：</b>源 = 本轮预算、包大小（电压）、类别（0 = 发电机或变压器中继，1 = 储能）；接收方 = 剩余容量、本轮额定输入
+ *       （{@code null} 为无限制）、类别（0 = 用电器或中继，1 = 储能）；域 = 一组路由（只读取可达性与损耗，忽略优先级）；
+ *       共享储能 = 同时为源与接收方的端口，其放出的能量会增加自身容量，且从不向自己供电。</li>
+ *   <li><b>四个阶段：</b>类别 0 的额定需求 {@code min(容量, 额定输入)} → 类别 0 的剩余容量 → 类别 1 的额定需求 → 类别 1 的剩余容量。
+ *       每个阶段内先由类别 0 的源供电，再由类别 1 的源供电；同类内从 {@code rotation mod 数量} 开始循环。每个源把剩余预算按
+ *       剩余需求比例分给可达的接收方；预算足够时每个接收方得到全部需求。结果：用电器与中继先于储能得到能量；储能只补足发电机
+ *       供不上的部分；发电机的盈余为储能充电。</li>
+ *   <li><b>线损：</b>{@link LineLoss#LOSSLESS} 无损（默认）；{@link LineLoss#PROPORTIONAL} 损耗 = {@code credit * lossMilli / (1000 * packet)}，
+ *       电压越高损耗比例越低；损耗比例不小于 1 的路由无法输送。</li>
+ *   <li><b>算术：</b>以 {@value #COARSE_BITS} 位小数的定点 {@code long}（2<sup>-24</sup> EU）规划；预算与容量向下取整，绝不超发。
+ *       比例系数为 {@code double}，每笔输送受源剩余预算限制，舍入误差不会超支。守恒是精确的：每笔扣款 = 输送量 + 损耗（同一网格）。
+ *       单个预算或容量超过 2<sup>38</sup> EU 时被截断。</li>
+ *   <li><b>开销：</b>每个已连接的（源、接收方）对访问固定次数（选路 1 次，每阶段 2 次），即 {@code O(S * R)}；循环中无排序、无宽整数运算。
+ *       引擎把一个窗口限制为 32 个源与 128 个接收方。</li>
+ *   <li><b>不变量：</b>扣款总和 = 输送总和 + 损耗（否则抛出 {@link IllegalStateException}）；源不会超出预算；接收方不会超过本轮开始时的容量
+ *       （加上其作为共享储能放出的能量）；不修改输入，不读写世界状态。</li>
+ * </ul>
+ *
+ * <p><b>JA:</b> スマート電力網モードの決定的な公平分配器。
+ * <ul>
+ *   <li><b>理由：</b>旧来のパケット優先度方式は、1 つのパケットを決まった順で受信側に渡していた。最初の受信側が入るだけ取り、後の受信側は
+ *       残りしか得られず、しかも毎回の送電で経路損失を整数 EU で丸ごと払っていた。そのため一列に並んだ機械が 100 %、75 %、50 % と
+ *       減衰した。このクラスは需要に比例して分け、同じ段階の受信側はすべて需要の同じ割合を得る。乱数を使わず、受信側の順序に依存せず、
+ *       同じ入力から同じ結果を出す。</li>
+ *   <li><b>モデル：</b>供給元 = 今回の予算、パケット量（電圧）、種別（0 = 発電機または変圧器の中継、1 = 蓄電）。受信側 = 空き容量、今回の定格入力
+ *       （{@code null} は無制限）、種別（0 = 消費機器または中継、1 = 蓄電）。ドメイン = 経路のまとまり（到達性と損失だけを読み、優先度は無視）。
+ *       共有蓄電 = 供給元と受信側を兼ねるポート。放出した分だけ自分の空きが増え、自分自身には送らない。</li>
+ *   <li><b>4 段階：</b>種別 0 の定格需要 {@code min(空き, 定格入力)} → 種別 0 の残りの空き → 種別 1 の定格需要 → 種別 1 の残りの空き。
+ *       各段階では種別 0 の供給元、次に種別 1 の供給元の順に送る。同じ種別では {@code rotation mod 数} から巡回する。各供給元は残り予算を、
+ *       到達できる受信側へ残り需要に比例して分ける。予算が足りれば各受信側は需要を全部得る。結果：消費機器と中継が蓄電より先に電力を得る。
+ *       蓄電は発電機で足りない分だけを出し、発電機の余剰が蓄電を充電する。</li>
+ *   <li><b>線路損失：</b>{@link LineLoss#LOSSLESS} は損失なし（既定）。{@link LineLoss#PROPORTIONAL} は損失 = {@code credit * lossMilli / (1000 * packet)}。
+ *       電圧が高いほど損失の割合は小さい。損失の割合が 1 以上の経路は送電できない。</li>
+ *   <li><b>演算：</b>小数 {@value #COARSE_BITS} ビットの固定小数点 {@code long}（2<sup>-24</sup> EU）で計画する。予算と空きは切り捨てるので、
+ *       実際より多く渡すことはない。比例係数は {@code double}。各送電量は供給元の残り予算で上限をかけるので、丸め誤差で使い過ぎない。
+ *       保存則は厳密：各引き落とし = 送電量 + 損失（同じ格子）。1 つの予算・空きが 2<sup>38</sup> EU を超えると切り詰める。</li>
+ *   <li><b>コスト：</b>接続済みの（供給元、受信側）の組を決まった回数（経路選択 1 回、各段階 2 回）だけ訪れるので {@code O(S * R)}。
+ *       ループ内にソートも多倍長演算もない。エンジンは 1 つのウィンドウを供給元 32、受信側 128 に制限する。</li>
+ *   <li><b>不変条件：</b>引き落とし合計 = 送電合計 + 損失（違えば {@link IllegalStateException}）。供給元は予算を超えない。受信側は今回開始時の
+ *       空き（＋共有蓄電として出した分）を超えない。入力を変えず、ワールドの状態を読み書きしない。</li>
+ * </ul>
  */
 public final class FairShareDistributor {
     private FairShareDistributor() { }
@@ -186,7 +233,9 @@ public final class FairShareDistributor {
     }
 
     /**
-     * Allocates one round.
+     * <p><b>EN:</b> Allocates one round (four stages, see the class comment). Pure function: no world access.
+     * <p><b>ZH:</b> 分配一轮（四个阶段，见类注释）。纯函数：不访问世界。
+     * <p><b>JA:</b> 1 ラウンド分を割り当てる（4 段階、クラスのコメント参照）。純粋関数：ワールドにアクセスしない。
      *
      * @param sources the sources, indexed as in the domains
      * @param domains the route groups. The priorities are ignored.
@@ -235,9 +284,10 @@ public final class FairShareDistributor {
             rateLeft[r] = receiver.rated() == null ? -1 : toCoarse(receiver.rated());
         }
 
-        // Select the best route for each (source, receiver) pair: the lowest loss.
-        // A tie keeps the first route in domain and entry order. This is deterministic.
-        // linkDomain < 0 means "no route".
+        // EN: Select the best route for each (source, receiver) pair: the lowest loss. A tie keeps
+        //     the first route in domain and entry order (deterministic). linkDomain < 0 = no route.
+        // ZH: 为每个（源、接收方）对选择损耗最低的路由；相同时保留域与条目顺序中的第一条（确定性）。linkDomain < 0 = 无路由。
+        // JA: 各（供給元、受信側）の組で損失が最小の経路を選ぶ。同点ならドメインと項目の順で最初の経路（決定的）。linkDomain < 0 = 経路なし。
         int[][] linkDomain = new int[sourceCount][receiverCount], linkEntry = new int[sourceCount][receiverCount];
         long[][] linkLoss = new long[sourceCount][receiverCount];
         for (int i = 0; i < sourceCount; i++) Arrays.fill(linkDomain[i], -1);
@@ -287,8 +337,10 @@ public final class FairShareDistributor {
             int stageClass = stage / 2;
             boolean rated = stage % 2 == 0;
             for (int[] pool : pools) {
-                // A pool is one source, or more sources of one class with the same
-                // links and no loss. It acts as one source with the summed budget.
+                // EN: A pool is one source, or more sources of one class with the same links and no loss.
+                //     It acts as one source with the summed budget.
+                // ZH: 池是一个源，或同类、连接相同且无损耗的多个源；它相当于预算相加后的单个源。
+                // JA: プールは 1 つの供給元、または同じ種別・同じ接続・損失なしの複数の供給元。予算を合計した 1 つの供給元として動く。
                 long poolBudget = 0;
                 for (int member : pool) poolBudget = saturatingAdd(poolBudget, budget[member]);
                 if (poolBudget <= 0) continue;
@@ -322,7 +374,9 @@ public final class FairShareDistributor {
                     if (demand[r] == 0) continue;
                     long credit = factor >= 1.0 ? demand[r] : Math.min(demand[r], (long) Math.floor(demand[r] * factor));
                     long pathLoss = f[c] == 0 ? 0 : (long) Math.floor(credit * f[c]);
-                    // Cap by the remaining budget: a rounding error cannot overspend.
+                    // EN: Cap by the remaining budget, so a rounding error cannot overspend.
+                    // ZH: 以剩余预算为上限，舍入误差不会超支。
+                    // JA: 残り予算で上限をかけるので、丸め誤差で使い過ぎない。
                     if (credit + pathLoss > poolBudget) {
                         credit = f[c] == 0 ? poolBudget : (long) Math.floor(poolBudget / (1.0 + f[c]));
                         pathLoss = f[c] == 0 ? 0 : Math.min(poolBudget - credit, (long) Math.floor(credit * f[c]));
@@ -333,8 +387,10 @@ public final class FairShareDistributor {
                     room[r] -= credit;
                     if (rateLeft[r] >= 0) rateLeft[r] = Math.max(0, rateLeft[r] - credit);
                     lossTotal += pathLoss;
-                    // Northwest corner: pay this credit from the pool members in
-                    // visit order. A pool with loss has exactly one member.
+                    // EN: Northwest-corner rule: pay this credit from the pool members in visit order.
+                    //     A pool with loss has exactly one member.
+                    // ZH: 西北角法则：按访问顺序由池成员支付这笔输送。有损耗的池只有一个成员。
+                    // JA: 北西隅ルール：この送電量をプールのメンバーが訪問順に支払う。損失のあるプールのメンバーは 1 つだけ。
                     long creditLeft = credit, lossLeft = pathLoss;
                     while (creditLeft > 0 || lossLeft > 0) {
                         while (budget[pool[member]] == 0) member++;

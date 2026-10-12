@@ -27,7 +27,19 @@ import org.jetbrains.annotations.Nullable;
 import java.util.EnumSet;
 import java.util.Set;
 
-/** IC2 Experimental agriculture machine; cursor and resource tanks survive reloads. */
+/**
+ * <p><b>EN:</b> Cropmatron (IC2 Experimental). It scans one position of the 9 x 3 x 9 area each tick
+ * ({@link com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor}) and supplies the
+ * crop there: fertilizer (+90 nutrients below 100), water (to 200) and Weed-EX (to 150), 10 EU each;
+ * it also wets dry farmland. The scan cursor and both tanks are saved. 0.1.8.1: the WORKING state
+ * stays on for {@link #WORKING_HOLD_TICKS} after the last supply.
+ * <p><b>ZH:</b> 作物监护机（IC2 Experimental）。每 tick 扫描 9 × 3 × 9 区域中的一个位置并为该处作物补给：肥料（营养低于 100 时 +90）、
+ * 水（补到 200）与除草剂（补到 150），各 10 EU；还会湿润干燥的耕地。扫描游标与两个储罐都会保存。0.1.8.1：最后一次补给后 WORKING 状态保持
+ * {@link #WORKING_HOLD_TICKS} tick。
+ * <p><b>JA:</b> 作物管理機（IC2 Experimental）。毎 tick、9 × 3 × 9 範囲の 1 か所を走査し、そこの作物に補給する：肥料（栄養 100 未満で +90）、
+ * 水（200 まで）、除草剤（150 まで）、各 10 EU。乾いた耕地も湿らせる。走査カーソルと 2 つのタンクは保存される。0.1.8.1：最後の補給から
+ * {@link #WORKING_HOLD_TICKS} tick の間 WORKING 状態を保つ。
+ */
 @SuppressWarnings("null")
 public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider {
 
@@ -240,10 +252,20 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity im
         blockEntity.processWeedExCell();
         // 对齐 1.7.10：每 tick 扫描一次，门槛 31 EU
         if (!blockEntity.canWork()) {
+            // EN: 0.1.8.1: count the hold down also without power, so the state turns off.
+            // ZH: 0.1.8.1：无电时也递减保持计数，使状态能够关闭。
+            // JA: 0.1.8.1：電力がなくても保持カウントを減らし、状態が消えるようにする。
+            blockEntity.updateWorkingState(level, pos, false);
             return;
         }
         blockEntity.processCrops();
     }
+
+    /** EN: Ticks the WORKING state stays on after a supply. ZH: 供给后 WORKING 状态保持的 tick 数。JA: 供給後に WORKING 状態を保つ tick 数。 */
+    public static final int WORKING_HOLD_TICKS = 40;
+    private int workingHold;
+    /** EN: Ticks a visit keeps a crop tended (two scan passes + 40). ZH: 一次访问使作物保持被照料的 tick 数（两个扫描周期 + 40）。JA: 1 回の訪問で管理状態が続く tick 数（走査 2 周 + 40）。 */
+    public static final int TEND_TICKS = 2 * com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.VOLUME + 40;
 
     private void processWaterCell() {
         processFluidContainer(SLOT_WATER_CELL_INPUT, waterTank, SLOT_WATER_CELL_OUTPUT);
@@ -298,6 +320,10 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity im
         boolean worked = false;
         if (world.isLoaded(target)) {
             if (world.getBlockEntity(target) instanceof com.miophas.singularity_iteration.core.api.crop.IPlanter crop) {
+                // EN: 0.1.8.2: tending lasts two full scan passes, so a crop stays tended between visits.
+                // ZH: 0.1.8.2：照料持续两个完整扫描周期，作物在两次访问之间保持被照料状态。
+                // JA: 0.1.8.2：管理状態は走査 2 周分続くので、訪問と訪問の間も管理下のままになる。
+                crop.markTended(world.getGameTime() + TEND_TICKS);
                 if (tryFertilize(crop)) { apiUseEnergy(10, false); worked = true; }
                 if (tryHydrate(crop)) { apiUseEnergy(10, false); worked = true; }
                 if (tryRemoveWeed(crop)) { apiUseEnergy(10, false); worked = true; }
@@ -306,12 +332,24 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity im
         updateWorkingState(world, worldPosition, worked);
     }
 
+    /**
+     * <p><b>EN:</b> 0.1.8.1: the WORKING state stays on for {@link #WORKING_HOLD_TICKS} after the
+     * last supply. Before, it was true only in the tick of a supply. This flipped the block state
+     * (and re-meshed the chunk section) up to every tick.
+     * <p><b>ZH:</b> 0.1.8.1：最后一次供给后 WORKING 状态保持 {@link #WORKING_HOLD_TICKS} tick。此前只在供给的那一 tick 为真，
+     * 方块状态（及区块网格重建）最多每 tick 切换一次。
+     * <p><b>JA:</b> 0.1.8.1：最後の供給から {@link #WORKING_HOLD_TICKS} tick の間 WORKING 状態を保つ。以前は供給した tick だけ真で、
+     * ブロックステート（とチャンクセクションの再メッシュ）が最大で毎 tick 切り替わっていた。
+     */
     private void updateWorkingState(Level level, BlockPos pos, boolean working) {
+        if (working) workingHold = WORKING_HOLD_TICKS;
+        else if (workingHold > 0) workingHold--;
+        boolean shown = workingHold > 0;
         BlockState state = level.getBlockState(pos);
         if (state.getBlock() instanceof com.miophas.singularity_iteration.common.block.producer.mio_icif_block_matron) {
             boolean currentWorking = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_matron.WORKING);
-            if (currentWorking != working) {
-                level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_matron.WORKING, working), 3);
+            if (currentWorking != shown) {
+                level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_matron.WORKING, shown), 3);
             }
         }
     }

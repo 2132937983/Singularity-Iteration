@@ -82,6 +82,38 @@ public class CropSeedItem extends Item implements ICropSeedItem {
     }
 
     /**
+     * <p><b>EN:</b> Plants a seed bag or a registered base seed on an empty crop stick for a machine
+     * (no player; since 0.1.8.2, used by the Ender IO Farming Station compatibility). The rules are
+     * the same as for a player: the planter must be empty and not a crossing base, and the plant
+     * must be able to grow there. It takes the seeds from {@code stack}. Server thread only.
+     * <p><b>ZH:</b> 供机器（无玩家）在空作物架上种植种子袋或已注册的基础种子（0.1.8.2 起，Ender IO 农场站兼容使用）。规则与玩家相同：
+     * 作物架必须为空且不是杂交基座，植物必须能在此生长。从 {@code stack} 扣除种子。仅限服务器线程。
+     * <p><b>JA:</b> 機械（プレイヤーなし）が空の作物棒に種子袋か登録済みの基本種子を植える（0.1.8.2 以降、Ender IO の Farming Station 互換が使う）。
+     * 規則はプレイヤーと同じ：作物棒は空で交配台ではなく、植物がそこで成長できること。{@code stack} から種子を取る。サーバースレッド専用。
+     */
+    public static boolean plantFromMachine(Level level, IPlanter planter, ItemStack stack) {
+        if (level == null || level.isClientSide || stack.isEmpty()) return false;
+        PlantRegistry.BaseSeed baseSeed = stack.getItem() instanceof ICropSeedItem ? null : PlantRegistry.instance.getBaseSeed(stack);
+        if (!(stack.getItem() instanceof ICropSeedItem) && (baseSeed == null || baseSeed.plantType == null)) return false;
+        if (planter.getPlant() != null || planter.isHybridBase()) return false;
+        PlantType plantType = baseSeed == null ? getPlantType(stack) : baseSeed.plantType;
+        int requiredSeeds = baseSeed == null ? 1 : Math.max(1, baseSeed.seed.getCount());
+        if (plantType == null || !plantType.canGrow(planter) || stack.getCount() < requiredSeeds) return false;
+        var traits = CropSeedData.traits(stack);
+        planter.setPlant(plantType);
+        planter.setGrowthStage(baseSeed == null ? 1 : Math.max(1, baseSeed.stage));
+        planter.setGrowthSpeed(baseSeed == null ? traits.growth() : baseSeed.growthSpeed);
+        planter.setYield(baseSeed == null ? traits.yield() : baseSeed.yield);
+        planter.setResilience(baseSeed == null ? traits.resilience() : baseSeed.resilience);
+        planter.setScanLevel(baseSeed == null ? traits.scan() : 1);
+        planter.setProgress(0);
+        planter.setHybridBase(false);
+        planter.updateState();
+        stack.shrink(requiredSeeds);
+        return true;
+    }
+
+    /**
      * 尝试种植作物
      */
     private static InteractionResult tryPlant(Level level, IPlanter planter, ItemStack stack, Player player,

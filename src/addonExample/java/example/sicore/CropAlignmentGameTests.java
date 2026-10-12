@@ -310,38 +310,9 @@ public final class CropAlignmentGameTests {
         h.succeed();
     }
 
-    @GameTest(template="reactor_loop", batch="agriculture", timeoutTicks=100)
-    public static void analyzerStopsAtOutputAndChargesEveryStageExactlyOnce(GameTestHelper h) throws Exception {
-        ItemStack analyzer = item("normal/item_crop_analyzer");
-        var battery = (com.miophas.singularity_iteration.core.api.item.IBatteryItem) analyzer.getItem();
-        battery.setEnergy(analyzer, 10000);
-        h.assertTrue(battery.getMaxEnergy() == 100000 && battery.getChargeRate(analyzer) == 128, "Analyzer energy parameters incorrect");
-        IPlanter crop = crop(h, new BlockPos(3, 2, 3), "wheat", 7);
-        ItemStack seed = crop.makeSeeds(crop.getPlant(), 1, 2, 3, 4);
-        var player = h.makeMockPlayer(GameType.SURVIVAL);
-        String menuClass = analyzer.getItem().getClass().getPackageName().replace("item.tools", "menu.tool") + ".CropAnalyzerMenu";
-        var menu = (net.minecraft.world.inventory.AbstractContainerMenu) Class.forName(menuClass)
-            .getConstructor(int.class, net.minecraft.world.entity.player.Inventory.class, ItemStack.class)
-            .newInstance(1, player.getInventory(), analyzer);
-        int[] costs = {10, 90, 900, 9000}; long remaining = 10000;
-        for (int step = 0; step < 4; step++) {
-            menu.getSlot(0).set(seed); menu.getSlot(1).set(ItemStack.EMPTY);
-            menu.broadcastChanges(); remaining -= costs[step];
-            seed = menu.getSlot(1).getItem();
-            h.assertTrue(!seed.isEmpty() && ((ICropSeedItem) seed.getItem()).cropScanLevel(seed) == step + 1
-                && battery.getEnergy(analyzer) == remaining, "Analyzer stage or cost incorrect");
-            menu.broadcastChanges();
-            h.assertTrue(menu.getSlot(0).getItem().isEmpty() && battery.getEnergy(analyzer) == remaining,
-                "Analyzer automatically recycled output or charged twice");
-        }
-        h.assertTrue(remaining == 0, "Complete analysis must cost 10000 EU");
-        ItemStack addonSeed = new ItemStack(CoreExampleMod.FOREIGN_CROP_SEED.get());
-        battery.setEnergy(analyzer, 10);
-        menu.getSlot(0).set(addonSeed); menu.getSlot(1).set(ItemStack.EMPTY); menu.broadcastChanges();
-        h.assertTrue(((ICropSeedItem) menu.getSlot(1).getItem().getItem()).cropScanLevel(menu.getSlot(1).getItem()) == 1
-            && battery.getEnergy(analyzer) == 0, "Analyzer ignored the addon seed contract");
-        h.succeed();
-    }
+    // EN: 0.1.8.2: the analyzer test moved to CropScanner182GameTests (the Advanced Crop Scanner replaced the three-slot analyzer).
+    // ZH: 0.1.8.2：分析仪测试移至 CropScanner182GameTests（次世代作物扫描仪取代了三槽分析仪）。
+    // JA: 0.1.8.2：分析機のテストは CropScanner182GameTests へ移した（次世代型作物スキャナーが 3 スロットの分析機に代わった）。
 
     @GameTest(template="reactor_loop", batch="agriculture", timeoutTicks=100)
     public static void harvesterUsesOptimalStageAndPaysPerReturnedStack(GameTestHelper h) {

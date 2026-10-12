@@ -39,7 +39,10 @@ import javax.annotation.Nullable;
  * 过载损伤：风力>最大风力时，耐久损伤×4
  */
 @SuppressWarnings("null")
-public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlockEntity {
+public class mio_icif_Wind_Kinetic_Generator extends AbstractKineticGeneratorBlockEntity
+        implements com.miophas.singularity_iteration.common.machine.ClientRunState {
+    /** EN: 0.1.8.1: rotor loop sound; "IsGenerating" is already in the update tag. ZH: 0.1.8.1：转子循环音效，“IsGenerating”已在更新标签中。JA: 0.1.8.1：ローター音。「IsGenerating」は更新タグに含まれる。 */
+    @Override public boolean clientRunning() { return isGenerating; }
 
     // 槽位数量：1个转子槽
     public static final int SLOT_COUNT = 1;

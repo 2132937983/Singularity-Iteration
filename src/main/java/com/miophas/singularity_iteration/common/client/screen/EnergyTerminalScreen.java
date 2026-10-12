@@ -29,11 +29,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Energy Management Terminal, styled as a holographic power-grid panel: four KPI gauges
- * (generation vs. nameplate capacity, consumption vs. full demand, storage charge, net balance
- * with time-to-full / time-to-empty), a 112 s trend chart (generation, consumption, charge
- * curve), a ranking of the biggest consumers grouped by machine type, and the filterable
- * device table with per-device read-outs and remote ON/OFF switches.
+ * <p><b>EN:</b> Energy Management Terminal, styled as a holographic power-grid panel. The top row has
+ * four gauges: generation, consumption, storage charge and net balance. The middle row has a 112 s
+ * trend chart and a side panel. The side panel shows the biggest consumers (local scope) or the
+ * sub-networks (global scope). The bottom has the filterable device table with remote ON/OFF
+ * switches. Text layout rule (0.1.8.1): each text gets a measured width in the current language.
+ * Right-aligned parts are drawn first; the left part is clipped with "…".
+ * <p><b>ZH:</b> 能源管理终端，全息电网面板风格：四个指标仪表（发电/铭牌容量、耗电/满需求、储能电量、净收支与充满/耗尽时间）、
+ * 112 秒趋势图、按机器类型的耗电排行（本网）或子网列表（全网），以及带远程开关的可筛选设备表。
+ * 文字布局规则（0.1.8.1）：每段文字按当前语言测量宽度；先绘制右对齐部分，左侧部分超出时以“…”截断。
+ * <p><b>JA:</b> エネルギー管理端末。ホログラムの電力網パネル風：4 つの指標メーター（発電/定格容量、消費/全需要、蓄電量、収支と満充電/枯渇までの時間）、
+ * 112 秒の推移グラフ、機械種別の消費ランキング（局所）またはサブネット一覧（全域）、遠隔入切スイッチ付きの絞り込み可能な機器表。
+ * 文字配置の規則（0.1.8.1）：各文字列の幅を現在の言語で測る。右寄せ部分を先に描き、左側ははみ出したら「…」で省略する。
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
@@ -45,9 +52,25 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
     private static final int RANK_X = 210, RANK_Y = 59, RANK_W = 103, RANK_H = 72, RANK_ROWS = 5;
     private static final int LIST_X = 7, LIST_Y = 150, LIST_W = 306, ROW_H = 14, ROWS = 4;
     private static final int[] CATEGORY_COLOR = {GEN, USE, CHARGE, DspUi.VIOLET};
+    /**
+     * <p><b>EN:</b> Sub-network panel (global scope), 0.1.8.1 layout. Each row has two lines of
+     * small text (7 px apart) and is {@link #SUBNET_ROW_H} px high; four rows fill the 72 px panel.
+     * Line 1: "#n tier voltage" (left, clipped) and the device count (right). Line 2: the flow
+     * (left, clipped) and the satisfaction meter (right, fixed {@link #SUBNET_METER_W} px). Text
+     * widths are measured in the current language, so no text runs under another text or the meter.
+     * <p><b>ZH:</b> 子网面板（全网范围），0.1.8.1 布局。每行两行小字（间距 7 px），行高 {@link #SUBNET_ROW_H} px，4 行填满 72 px 面板。
+     * 第 1 行：“#n 电压等级 电压”（左，超长截断）与设备数（右）。第 2 行：功率流（左，超长截断）与满足度条（右，固定 {@link #SUBNET_METER_W} px）。
+     * 文字宽度按当前语言测量，文字不会压到其他文字或进度条上。
+     * <p><b>JA:</b> サブネットパネル（全域表示）、0.1.8.1 のレイアウト。各行は小さい文字 2 行（間隔 7 px）で高さ {@link #SUBNET_ROW_H} px、
+     * 4 行で 72 px のパネルを埋める。1 行目：「#n 電圧階級 電圧」（左、はみ出しは省略）と機器数（右）。2 行目：電力の流れ（左、省略あり）と
+     * 充足率メーター（右、固定 {@link #SUBNET_METER_W} px）。文字幅は現在の言語で測るので、文字が他の文字やメーターに重ならない。
+     */
+    private static final int SUBNET_ROWS = 4, SUBNET_ROW_H = 15, SUBNET_METER_W = 16;
 
     private int filter = -1;     // -1 all, else Category ordinal
     private int scroll;
+    /** EN: First shown sub-network row (mouse wheel). ZH: 第一条显示的子网行（鼠标滚轮）。JA: 表示する最初のサブネット行（マウスホイール）。 */
+    private int subnetScroll;
     private final SiButton[] filterButtons = new SiButton[4];
     private SiButton scopeButton;
     private int cachedSync = -1, cachedFilter = -2;
@@ -183,17 +206,26 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
         DspUi.line(g, cx, cy, cw, ch, s.chargeHistory, 1F, CHARGE);
         if (isIn(mouseX, mouseY, cx, cy, cw, ch)) g.fill(mouseX, cy, mouseX + 1, cy + ch, 0x80FFFFFF);
 
-        // ranking bars (global mode: per-sub-network supply / demand bars)
+        // ranking bars (global mode: per-sub-network colour strip and satisfaction meter)
         if (s.global) {
-            int shown = 0;
-            for (int i = 0; i < s.subnets.size() && shown < 4; i++) {
+            List<Integer> shown = visibleSubnets(s);
+            for (int row = 0; row < shown.size(); row++) {
+                int i = shown.get(row);
                 EnergyNetworkSnapshot.Subnet n = s.subnets.get(i);
-                if (n.devices == 0 && n.conductors == 0) continue;
-                int ry = y + RANK_Y + 12 + shown * 15;
+                int ry = y + RANK_Y + 12 + row * SUBNET_ROW_H;
+                if (isIn(mouseX, mouseY, x + RANK_X, ry, RANK_W, SUBNET_ROW_H - 1)) g.fill(x + RANK_X + 1, ry - 1, x + RANK_X + RANK_W - 1, ry + 13, 0x305FD3F5);
                 g.fill(x + RANK_X + 2, ry, x + RANK_X + 3, ry + 13, subnetColor(i));
                 float need = Math.max(n.demand, n.consumption);
-                DspUi.meter(g, x + RANK_X + 60, ry + 2, RANK_W - 64 - 30, 2, need <= 0 ? 1F : n.consumption / need, n.consumption + 0.01F >= need ? GEN : DspUi.RED);
-                shown++;
+                // 0.1.8.1: the meter is on line 2, right of the clipped flow text (was on line 1, under the header text)
+                DspUi.meter(g, x + RANK_X + RANK_W - 4 - SUBNET_METER_W, ry + 9, SUBNET_METER_W, 2,
+                    need <= 0 ? 1F : n.consumption / need, n.consumption + 0.01F >= need ? GEN : DspUi.RED);
+            }
+            int total = nonEmptySubnets(s).size();
+            if (total > SUBNET_ROWS) {   // scroll bar on the right edge of the panel
+                int barY = y + RANK_Y + 12, barH = SUBNET_ROWS * SUBNET_ROW_H - 2;
+                int knob = Math.max(6, barH * SUBNET_ROWS / total);
+                int ky = barY + (barH - knob) * subnetScroll / Math.max(1, total - SUBNET_ROWS);
+                g.fill(x + RANK_X + RANK_W - 2, ky, x + RANK_X + RANK_W - 1, ky + knob, DspUi.CYAN_DIM);
             }
         }
         float top = ranking.isEmpty() ? 1 : Math.max(1e-3F, ranking.get(0).use());
@@ -299,25 +331,76 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
         renderDeviceTable(g);
     }
 
-    /** Global mode: the right panel lists every sub-network (voltage tier, generation / demand, devices). */
+    /**
+     * <p><b>EN:</b> Global mode: the right panel lists the sub-networks (Subnet Details). Layout rules
+     * (0.1.8.1, see {@link #SUBNET_ROWS}): the right-aligned part of each line is drawn first; the
+     * left part gets only the remaining width and is clipped with "…". The header shows
+     * "first-last/total" when the list scrolls. A tooltip shows the full values.
+     * <p><b>ZH:</b> 全网模式：右侧面板列出各子网（子网明细）。布局规则（0.1.8.1，见 {@link #SUBNET_ROWS}）：先绘制每行右对齐的部分；
+     * 左侧部分只占剩余宽度，超出部分以“…”截断。列表可滚动时标题显示“起-止/总数”。悬停提示显示完整数值。
+     * <p><b>JA:</b> 全域モード：右パネルにサブネット一覧（サブネット内訳）を表示する。レイアウト規則（0.1.8.1、{@link #SUBNET_ROWS} 参照）：
+     * 各行の右寄せ部分を先に描き、左側は残りの幅だけを使い「…」で省略する。一覧がスクロールするとき見出しに「先頭-末尾/総数」を出す。
+     * ツールチップで完全な値を表示する。
+     */
     private void renderSubnetLabels(GuiGraphics g, EnergyNetworkSnapshot s) {
-        small(g, tr("gui.mio_icif.energy_terminal.subnet_title") + " (" + s.subnets.size() + ")", RANK_X + 4, RANK_Y + 3, DspUi.TEXT_DIM);
-        int shown = 0;
-        for (int i = 0; i < s.subnets.size() && shown < 4; i++) {
+        List<Integer> all = nonEmptySubnets(s);
+        List<Integer> shown = visibleSubnets(s);
+        String count = all.size() > SUBNET_ROWS
+            ? (subnetScroll + 1) + "-" + (subnetScroll + shown.size()) + "/" + all.size()
+            : String.valueOf(all.size());
+        int countW = DspUi.smallWidth(font, count);
+        small(g, count, RANK_X + RANK_W - 4 - countW, RANK_Y + 3, DspUi.TEXT_DIM);
+        smallFitted(g, tr("gui.mio_icif.energy_terminal.subnet_title"), RANK_X + 4, RANK_Y + 3, RANK_W - 8 - countW - 4, DspUi.TEXT_DIM);
+        for (int row = 0; row < shown.size(); row++) {
+            int i = shown.get(row);
             EnergyNetworkSnapshot.Subnet n = s.subnets.get(i);
-            if (n.devices == 0 && n.conductors == 0) continue;
-            int ry = RANK_Y + 12 + shown * 15;
-            long packet = Math.max(n.ratedPacket, (long) n.measuredPacket);
-            String head = "#" + (i + 1) + " " + com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.tierName(packet)
-                + (packet > 0 ? " " + DspUi.compact(packet) + "V" : "");
-            small(g, head, RANK_X + 4, ry, subnetColor(i));
-            String dev = n.devices + "dev";
-            small(g, dev, RANK_X + RANK_W - 4 - DspUi.smallWidth(font, dev), ry, DspUi.TEXT_DIM);
-            String flow = "+" + DspUi.compact(n.generation) + " / -" + DspUi.compact(n.consumption) + " EU/t";
-            small(g, font.plainSubstrByWidth(flow, (int) ((RANK_W - 8) / 0.75F)), RANK_X + 4, ry + 7, n.generation >= n.consumption ? GEN : DspUi.RED);
-            shown++;
+            int ry = RANK_Y + 12 + row * SUBNET_ROW_H;
+            // line 1: device count (right) first, then the header in the remaining width
+            String dev = Component.translatable("gui.mio_icif.energy_terminal.subnet_devices", n.devices).getString();
+            int devW = DspUi.smallWidth(font, dev);
+            small(g, dev, RANK_X + RANK_W - 4 - devW, ry, DspUi.TEXT_DIM);
+            smallFitted(g, subnetHeader(i, n), RANK_X + 5, ry, RANK_W - 9 - devW - 3, subnetColor(i));
+            // line 2: the meter is at the right (renderBg); the flow uses the width left of it
+            int flowMax = RANK_W - 9 - SUBNET_METER_W - 3;
+            String flow = "+" + DspUi.compact(n.generation) + " / -" + DspUi.compact(n.consumption);
+            if (DspUi.smallWidth(font, flow + " EU/t") <= flowMax) flow += " EU/t";
+            smallFitted(g, flow, RANK_X + 5, ry + 7, flowMax, n.generation >= n.consumption ? GEN : DspUi.RED);
         }
-        if (s.subnets.size() > shown && shown == 4) small(g, "+" + (s.subnets.size() - 4), RANK_X + RANK_W - 12, RANK_Y + 3, DspUi.TEXT_DIM);
+    }
+
+    private static String subnetHeader(int index, EnergyNetworkSnapshot.Subnet n) {
+        long packet = Math.max(n.ratedPacket, (long) n.measuredPacket);
+        return "#" + (index + 1) + " " + com.miophas.singularity_iteration.common.blockentity.wiring.terminal.NetworkWalker.tierName(packet)
+            + (packet > 0 ? " " + DspUi.compact(packet) + "V" : "");
+    }
+
+    /** EN: Indexes of the sub-networks that have devices or cables. ZH: 有设备或线缆的子网索引。JA: 機器か電線がある子網の番号。 */
+    private static List<Integer> nonEmptySubnets(EnergyNetworkSnapshot s) {
+        List<Integer> result = new ArrayList<>();
+        for (int i = 0; i < s.subnets.size(); i++) {
+            EnergyNetworkSnapshot.Subnet n = s.subnets.get(i);
+            if (n.devices != 0 || n.conductors != 0) result.add(i);
+        }
+        return result;
+    }
+
+    /** EN: The rows on screen now (at most SUBNET_ROWS, from subnetScroll). ZH: 当前屏幕上的行。JA: 現在画面に出す行。 */
+    private List<Integer> visibleSubnets(EnergyNetworkSnapshot s) {
+        List<Integer> all = nonEmptySubnets(s);
+        subnetScroll = Mth.clamp(subnetScroll, 0, Math.max(0, all.size() - SUBNET_ROWS));
+        return all.subList(subnetScroll, Math.min(all.size(), subnetScroll + SUBNET_ROWS));
+    }
+
+    /**
+     * <p><b>EN:</b> Small (0.75 scale) text clipped to {@code maxPx} screen pixels, with "…" when clipped.
+     * <p><b>ZH:</b> 小字（0.75 缩放），截断到 {@code maxPx} 屏幕像素，被截断时加“…”。
+     * <p><b>JA:</b> 小さい文字（0.75 倍）を {@code maxPx} 画面ピクセルに収め、省略したときは「…」を付ける。
+     */
+    private void smallFitted(GuiGraphics g, String text, int x, int y, int maxPx, int color) {
+        if (maxPx <= 0) return;
+        if (DspUi.smallWidth(font, text) <= maxPx) { small(g, text, x, y, color); return; }
+        int room = (int) (maxPx / 0.75F) - font.width("…");
+        small(g, font.plainSubstrByWidth(text, Math.max(0, room)) + "…", x, y, color);
     }
 
     private static int subnetColor(int i) {
@@ -418,7 +501,35 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
                 Component.literal(String.format("%.1f%%", s.chargeHistory[i] * 100)).withColor(CHARGE)), mouseX, mouseY);
             return;
         }
-        for (int r = 0; r < Math.min(RANK_ROWS, ranking.size()); r++) {
+        if (s.global) {
+            // 0.1.8.1: the panel shows sub-networks here; the consumer ranking tooltips were shown
+            // for rows that were not drawn.
+            List<Integer> shown = visibleSubnets(s);
+            for (int row = 0; row < shown.size(); row++) {
+                if (!isIn(mouseX, mouseY, x + RANK_X, y + RANK_Y + 12 + row * SUBNET_ROW_H - 1, RANK_W, SUBNET_ROW_H)) continue;
+                int i = shown.get(row);
+                EnergyNetworkSnapshot.Subnet n = s.subnets.get(i);
+                long packet = Math.max(n.ratedPacket, (long) n.measuredPacket);
+                float need = Math.max(n.demand, n.consumption);
+                List<Component> lines = new ArrayList<>();
+                lines.add(Component.literal(subnetHeader(i, n)).withColor(subnetColor(i)));
+                lines.add(Component.translatable("gui.mio_icif.energy_terminal.tip.subnet.packet",
+                    DspUi.compact(n.measuredPacket), DspUi.compact(n.ratedPacket)).withStyle(ChatFormatting.GRAY));
+                lines.add(Component.translatable("gui.mio_icif.energy_terminal.tip.generation",
+                    rate(n.generation), rate(n.generationCapacity), pct(n.generationCapacity <= 0 ? 0 : Math.min(1F, n.generation / n.generationCapacity))).withStyle(ChatFormatting.GRAY));
+                lines.add(Component.translatable("gui.mio_icif.energy_terminal.tip.demand",
+                    rate(n.consumption), rate(n.demand), pct(need <= 0 ? 1F : Math.min(1F, n.consumption / need))).withStyle(ChatFormatting.GRAY));
+                lines.add(Component.translatable("gui.mio_icif.energy_terminal.storage_flow",
+                    DspUi.compact(n.storageIn), DspUi.compact(n.storageOut)).withStyle(ChatFormatting.GRAY));
+                lines.add(Component.translatable("gui.mio_icif.energy_terminal.summary", n.devices, n.conductors).withStyle(ChatFormatting.DARK_GRAY));
+                if (packet <= 0) lines.add(Component.translatable("gui.mio_icif.energy_terminal.tip.subnet.idle").withStyle(ChatFormatting.DARK_GRAY));
+                if (nonEmptySubnets(s).size() > SUBNET_ROWS)
+                    lines.add(Component.translatable("gui.mio_icif.energy_terminal.tip.subnet.scroll").withStyle(ChatFormatting.DARK_AQUA));
+                g.renderComponentTooltip(font, lines, mouseX, mouseY);
+                return;
+            }
+        }
+        for (int r = 0; r < Math.min(RANK_ROWS, ranking.size()) && !s.global; r++) {
             if (!isIn(mouseX, mouseY, x + RANK_X, y + RANK_Y + 11 + r * 12, RANK_W, 12)) continue;
             Rank rank = ranking.get(r);
             g.renderComponentTooltip(font, List.of(Component.literal(name(rank.blockId())),
@@ -475,6 +586,11 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (menu.snapshot().global && isIn(mouseX, mouseY, leftPos + RANK_X, topPos + RANK_Y, RANK_W, RANK_H)) {
+            subnetScroll = Mth.clamp(subnetScroll - (int) Math.signum(scrollY), 0,
+                Math.max(0, nonEmptySubnets(menu.snapshot()).size() - SUBNET_ROWS));
+            return true;
+        }
         if (isIn(mouseX, mouseY, leftPos + LIST_X, topPos + LIST_Y, LIST_W, ROWS * ROW_H)) {
             scroll = Mth.clamp(scroll - (int) Math.signum(scrollY), 0, Math.max(0, rows.size() - ROWS));
             return true;

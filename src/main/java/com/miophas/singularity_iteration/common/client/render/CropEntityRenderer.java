@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
@@ -20,6 +21,18 @@ import org.joml.Matrix4f;
  */
 @SuppressWarnings("null")
 public class CropEntityRenderer implements BlockEntityRenderer<mio_icif_crop_entity> {
+    /** EN: Texture string to parsed id (render thread only). ZH: 纹理字符串到已解析 ID（仅渲染线程）。JA: テクスチャ文字列から解析済み ID（描画スレッドのみ）。 */
+    private static final java.util.Map<String, ResourceLocation> TEXTURE_IDS = new java.util.HashMap<>();
+    /** EN: Neutral fallback plant (four growth frames). ZH: 中性备用植物（四个生长帧）。JA: 中立の代替植物（成長 4 コマ）。 */
+    private static final ResourceLocation[] FALLBACK = {
+        ResourceLocation.fromNamespaceAndPath("mio_icif", "block/crop/fallback_1"), ResourceLocation.fromNamespaceAndPath("mio_icif", "block/crop/fallback_2"),
+        ResourceLocation.fromNamespaceAndPath("mio_icif", "block/crop/fallback_3"), ResourceLocation.fromNamespaceAndPath("mio_icif", "block/crop/fallback_4")};
+
+    /** EN: Invalid ids (for example upper case from an addon) use the fallback instead of a crash. ZH: 非法 ID（例如附属的大写字母）使用备用纹理而不是崩溃。JA: 不正な ID（例：アドオンの大文字）はクラッシュせず代替テクスチャを使う。 */
+    private static ResourceLocation parseOrFallback(String path) {
+        ResourceLocation id = ResourceLocation.tryParse(path);
+        return id != null ? id : FALLBACK[0];
+    }
 
     public CropEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -40,13 +53,24 @@ public class CropEntityRenderer implements BlockEntityRenderer<mio_icif_crop_ent
             return;
         }
 
-        // 构建完整的资源位置
-    // getTexture returns a value in the format "mio_icif:block/crop/wheat_1".
-        ResourceLocation textureLoc = ResourceLocation.parse(texturePath);
+        // getTexture returns a value in the format "mio_icif:block/crop/wheat_1".
+        // EN: Parse each texture id once; the renderer runs every frame for every visible crop.
+        // ZH: 每个纹理 ID 只解析一次；渲染器每帧都会为每株可见作物运行。
+        // JA: テクスチャ ID は 1 回だけ解析する。レンダラーは毎フレーム、見えている作物ごとに動く。
+        ResourceLocation textureLoc = TEXTURE_IDS.computeIfAbsent(texturePath, CropEntityRenderer::parseOrFallback);
 
         // 获取纹理图集中的精灵
-        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(textureLoc);
-        
+        var atlas = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS);
+        TextureAtlasSprite sprite = atlas.apply(textureLoc);
+        // EN: 0.1.8.2: a plant without its stage texture (13 configured crops had none, addon plants can
+        //     have none) showed the purple-black missing texture. Use the neutral fallback plant instead.
+        // ZH: 0.1.8.2：缺少阶段纹理的植物（13 种配置作物此前没有纹理，附属植物也可能没有）会显示紫黑缺失纹理，现在改用中性的备用植物纹理。
+        // JA: 0.1.8.2：段階テクスチャのない植物（設定作物 13 種には無かった。アドオンの植物にも無いことがある）は紫と黒の欠落テクスチャになっていた。
+        //     代わりに中立の代替植物テクスチャを使う。
+        if (sprite == null || MissingTextureAtlasSprite.getLocation().equals(sprite.contents().name())) {
+            int frame = Math.clamp(Math.round(4f * Math.max(1, stage) / Math.max(1, plant.getMaxGrowthStage())), 1, 4);
+            sprite = atlas.apply(FALLBACK[frame - 1]);
+        }
         if (sprite == null) {
             return;
         }
@@ -171,9 +195,17 @@ public class CropEntityRenderer implements BlockEntityRenderer<mio_icif_crop_ent
                .setNormal(-nx, 0, -nz);
     }
 
+    /**
+     * <p><b>EN:</b> 0.1.8.1: false. The plant stays inside its own block, so the normal frustum
+     * culling is correct. The former value true drew every crop within 64 blocks each frame,
+     * also crops behind the camera.
+     * <p><b>ZH:</b> 0.1.8.1：返回 false。植物不超出自身方块，普通视锥剔除即可。原先的 true 会在每帧绘制 64 格内的所有作物，包括镜头后方的作物。
+     * <p><b>JA:</b> 0.1.8.1：false を返す。植物は自分のブロック内に収まるので、通常の視錐台カリングで正しい。
+     * 以前の true では、カメラの後ろも含め 64 ブロック以内の全作物を毎フレーム描画していた。
+     */
     @Override
     public boolean shouldRenderOffScreen(mio_icif_crop_entity blockEntity) {
-        return true; // 确保即使作物在视野外也能渲染
+        return false;
     }
 
     @Override

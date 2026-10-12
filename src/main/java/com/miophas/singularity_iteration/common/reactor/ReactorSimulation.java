@@ -6,12 +6,15 @@ import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Part;
 import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Profile;
 
 /**
- * Reactor design simulator (0.1.8.0, guide page "Reactor simulator"). It runs the same model as
- * the reactor block ({@link ReactorCycle}), from a cold reactor with new components and full
- * fuel. No Minecraft dependency.
- *
- * <p>One cycle is 20 ticks (1 second). The run stops at {@link #CYCLES} cycles or at a meltdown
- * (hull heat at or above the maximum hull heat).
+ * <p><b>EN:</b> Reactor design simulator (0.1.8.0, guide page "Reactor simulator"). It runs the same model
+ * as the reactor block ({@link ReactorCycle}), from a cold reactor with new components and full
+ * fuel. No Minecraft dependency. One cycle is 20 ticks (1 second). The run stops at
+ * {@link #CYCLES} cycles or at a meltdown (hull heat at or above the maximum hull heat).
+ * <p><b>ZH:</b> 反应堆设计模拟器（0.1.8.0，手册页“反应堆模拟器”）。使用与反应堆方块相同的模型（{@link ReactorCycle}），
+ * 从冷态、全新组件、满燃料开始。不依赖 Minecraft。一个周期为 20 tick（1 秒）。达到 {@link #CYCLES} 个周期或熔毁（外壳热量达到最大值）时停止。
+ * <p><b>JA:</b> 原子炉設計シミュレーター（0.1.8.0、ガイドページ「原子炉シミュレーター」）。原子炉ブロックと同じモデル（{@link ReactorCycle}）を、
+ * 冷えた炉・新品の部品・満タンの燃料から動かす。Minecraft に依存しない。1 サイクルは 20 tick（1 秒）。{@link #CYCLES} サイクル、
+ * または溶融（外殻熱が最大値以上）で停止する。
  */
 public final class ReactorSimulation {
     private ReactorSimulation() {}

@@ -1,4 +1,4 @@
-# Singularity Iteration API Guide (0.1.8.0)
+# Singularity Iteration API Guide (0.1.8.2)
 
 This guide is for addon authors. The text follows ASD-STE100 (Simplified Technical English):
 short sentences, active voice, one instruction in each step.
@@ -31,6 +31,8 @@ only.
   starts.
 * Registries in the API are open on both sides. Register on both sides, because the client uses
   the data for names, colours and screens.
+* The comments of the main `core.api` types (`docs/dev/trilingual_manifest.txt`) have English
+  (ASD-STE100), Chinese and Japanese parts (`docs/dev/COMMENT_STYLE.md`). English is the reference text.
 * The API does not change the save format of a world. Data that an addon adds stays in the
   addon's own data components or attachments.
 
@@ -124,6 +126,18 @@ one tick. It measures the launch speed, the drag and the gravity. It keeps up to
 item in `config/mio_icif-ballistics.json`. A shot in a fluid, a shot with thrust, and a shot that
 hits something at once are not used.
 
+### 4.3 Jetpack thruster sound (0.1.8.1)
+
+A jetpack item that implements `IJetpackItem` and calls `JetpackFlightController.tick` gets the
+thruster sound with no other code. The client plays an ignition cue, a loop that follows the
+thrust, and a shutdown cue. Other players hear the sound through a small packet that the server
+sends only when the thrust state changes.
+
+1. Override `getThrusterSound()` to select the profile: `THRUSTER_ELECTRIC` (light turbine,
+   default), `THRUSTER_ADVANCED` (heavy roar) or `THRUSTER_IONIC` (deep ion hum).
+2. Do not play your own loop for the same flight. The two sounds overlap.
+
+An unknown value uses the electric profile.
 ## 5. Armory (`core.api.armory`)
 
 Singularity Iteration posts these events on `NeoForge.EVENT_BUS`, on the server thread.
@@ -206,3 +220,30 @@ These rules are a proposal for the API. The project has not adopted them formall
   before.
 * `@Deprecated` API stays for one minor version.
 * Check `MioIcifAPI.instance()` at run time. Do not call internal classes.
+
+## 11. Crops and the Advanced Crop Scanner (0.1.8.2)
+
+### 11.1 New default methods
+
+| Method | Purpose |
+|---|---|
+| `IPlanter#doManualHarvest(Player)` | Harvest by hand for a player. The drops go into the inventory; what does not fit drops at the feet. A harvest that gives no item does nothing (the plant keeps its stage). The default calls `doManualHarvest()`. |
+| `IPlanter#markTended(long)` / `isTended()` | Cropmatron tending. A tended crop gets at least the required environment quality + 50 (no penalty, at least +50 % growth). The defaults do nothing. |
+| `ICropSeedItem#setCropTraits(ItemStack, int, int, int)` | Writes Growth / Gain / Resistance (each 0..31). Gene editing uses it. Override it when your seed item has its own storage. |
+
+### 11.2 Data
+
+* Ingredient `mio_icif:crop_seed`: a seed bag of one plant and a Gain range. A machine that tests
+  recipes with `Ingredient#test` can then scale the output with Gain.
+  `{"type": "mio_icif:crop_seed", "plant": "mio_icif:wheat", "min_gain": 8, "max_gain": 15}`
+  (`min_gain` default 0, `max_gain` default 31).
+* Item tag `mio_icif:crop_seed_bags`: the seed bag. The bag is not in `c:seeds`, because several
+  mods consume `#c:seeds` in recipes (seed oil, millstones) and would destroy analyzed bags.
+* Scientific name of an addon plant (scanner HUD and menu): language key
+  `<modId>.plant.<typeId>.scientific`. Without the key the name is "<Type> sp.".
+
+### 11.3 Rules
+
+* Breeding research lists the candidates of natural crossing (`PlantHybridization#calculateRatio`).
+  A plant that natural crossing cannot make cannot be researched either.
+* Do not call `CropAnalyzerMenu` from an addon. It is internal; the menu and its slot layout can change.

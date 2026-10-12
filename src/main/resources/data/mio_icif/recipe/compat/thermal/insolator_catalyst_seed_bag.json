@@ -1,0 +1,17 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "thermal"
+    }
+  ],
+  "type": "thermal:insolator_catalyst",
+  "ingredient": {
+    "tag": "mio_icif:crop_seed_bags"
+  },
+  "primary_mod": 1.5,
+  "secondary_mod": 1.25,
+  "energy_mod": 1.1,
+  "min_chance": 0.0,
+  "use_chance": 0.0
+}

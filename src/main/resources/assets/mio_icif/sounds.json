@@ -521,5 +521,86 @@
         "attenuation_distance": 16
       }
     ]
+  },
+  "jetpack.electric.loop": {
+    "subtitle": "mio_icif.subtitle.jetpack.electric.loop",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_jetpack_electric_loop",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "jetpack.advanced.loop": {
+    "subtitle": "mio_icif.subtitle.jetpack.advanced.loop",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_jetpack_advanced_loop",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "jetpack.ionic.loop": {
+    "subtitle": "mio_icif.subtitle.jetpack.ionic.loop",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_jetpack_ionic_loop",
+        "attenuation_distance": 28
+      }
+    ]
+  },
+  "jetpack.ignite": {
+    "subtitle": "mio_icif.subtitle.jetpack.ignite",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_jetpack_ignite",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "jetpack.shutdown": {
+    "subtitle": "mio_icif.subtitle.jetpack.shutdown",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_jetpack_shutdown",
+        "attenuation_distance": 20
+      }
+    ]
+  },
+  "machine.loop.compressor": {
+    "subtitle": "mio_icif.subtitle.machine.loop.compressor",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_compressor",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.servo": {
+    "subtitle": "mio_icif.subtitle.machine.loop.servo",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_servo",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.discharge": {
+    "subtitle": "mio_icif.subtitle.machine.loop.discharge",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_discharge",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.bubbler": {
+    "subtitle": "mio_icif.subtitle.machine.loop.bubbler",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_loop_bubbler",
+        "attenuation_distance": 16
+      }
+    ]
   }
 }

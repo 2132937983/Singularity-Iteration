@@ -1,0 +1,29 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "immersiveengineering"
+    }
+  ],
+  "type": "immersiveengineering:cloche",
+  "input": {
+    "type": "mio_icif:crop_seed",
+    "plant": "mio_icif:terrawart",
+    "min_gain": 16,
+    "max_gain": 23
+  },
+  "render": {
+    "type": "immersiveengineering:crop",
+    "block": "minecraft:nether_wart"
+  },
+  "results": [
+    {
+      "id": "mio_icif:resource/item_terra_wart",
+      "count": 2
+    }
+  ],
+  "soil": {
+    "item": "minecraft:snow_block"
+  },
+  "time": 1280
+}

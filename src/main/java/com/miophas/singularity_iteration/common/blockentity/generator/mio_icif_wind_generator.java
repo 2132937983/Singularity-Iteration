@@ -363,6 +363,20 @@ public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity implem
     }
 
     /**
+     * <p><b>EN:</b> 0.1.8.1: the lamp is green while the rotor generates. The prefab rule
+     * (green only while fuel burns) never applied to a wind generator. The status tracker
+     * syncs this state, so the client loop sound can start.
+     * <p><b>ZH:</b> 0.1.8.1：转子发电时指示灯为绿色。预制类规则（仅燃料燃烧时为绿色）从不适用于风力发电机。
+     * 状态追踪器会同步此状态，客户端循环音效因此可以启动。
+     * <p><b>JA:</b> 0.1.8.1：ローターが発電中はランプを緑にする。プレハブの規則（燃料燃焼中だけ緑）は風力発電機に
+     * 当てはまらなかった。状態トラッカーがこの状態を同期するので、クライアントのループ音が始まる。
+     */
+    @Override
+    public com.miophas.singularity_iteration.core.api.machine.MachineStatus machineStatus() {
+        return isGenerating ? com.miophas.singularity_iteration.core.api.machine.MachineStatus.RUNNING : super.machineStatus();
+    }
+
+    /**
      * 获取当前风力强度
      */
     public int getWindStrength() {

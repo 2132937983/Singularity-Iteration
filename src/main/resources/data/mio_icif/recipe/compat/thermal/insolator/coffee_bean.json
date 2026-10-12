@@ -1,0 +1,19 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "thermal"
+    }
+  ],
+  "type": "thermal:insolator",
+  "ingredient": {
+    "item": "mio_icif:resource/item_coffee_bean"
+  },
+  "result": [
+    {
+      "item": "mio_icif:resource/item_coffee_bean",
+      "chance": 2.0
+    }
+  ],
+  "energy": 40000
+}

@@ -1,0 +1,23 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "thermal"
+    }
+  ],
+  "type": "thermal:insolator",
+  "ingredient": {
+    "item": "mio_icif:crop/lead_rich_seed"
+  },
+  "result": [
+    {
+      "item": "mio_icif:resource/item_lead_dust_small",
+      "chance": 2.0
+    },
+    {
+      "item": "mio_icif:crop/lead_rich_seed",
+      "chance": 1.0
+    }
+  ],
+  "energy": 40000
+}

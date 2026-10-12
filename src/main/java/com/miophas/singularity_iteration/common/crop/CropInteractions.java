@@ -34,7 +34,9 @@ public final class CropInteractions {
         if (stack.getItem() instanceof BlockItem item && (item.getBlock() instanceof mio_icif_crop_stick
                 || item.getBlock() instanceof mio_icif_crop_stick_upgraded) && crop.getPlant() == null && !crop.isHybridBase()) {
             if (!level.isClientSide) {
-                crop.setHybridBase(true); crop.updateState();
+                crop.setHybridBase(true);
+                crop.setCrossStick(stack);   // 0.1.8.2: remember the exact stick for the return
+                crop.updateState();
                 if (!player.isCreative()) stack.shrink(1);
             }
             return ItemInteractionResult.sidedSuccess(level.isClientSide);

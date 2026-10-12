@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Server side of the front status lamps. It sends {@link MachineStatusPacket} (server to
- * client).
+ * <p><b>EN:</b> Server side of the front status lamps. It sends {@link MachineStatusPacket} (server to
+ * client). Since 0.1.8.1 the client machine loop sounds also use the synced state.
  *
  * <h2>How it works</h2>
  * <ul>
@@ -72,6 +72,31 @@ import java.util.Map;
  * <h2>Missing channel</h2>
  * A vanilla client cannot connect, because the channel is not optional. The send method checks
  * the channel for a single receiver. It ignores send errors from fake or detached connections.
+ *
+ * <p><b>ZH:</b> 正面状态灯的服务器端，发送 {@link MachineStatusPacket}（服务器到客户端）。自 0.1.8.1 起客户端机器循环音效也使用同步的状态。
+ * <b>工作方式：</b>机器加载时注册、移除时注销（{@link AbstractEnergyBlockEntity#STATUS_LIFECYCLE}）；每 {@link #INTERVAL} tick 读取所有被追踪机器的状态，
+ * 只收集自上次发送以来变化的机器；每个有变化的区块向追踪该区块的玩家发送一个数据包；玩家开始观察区块时，收到该区块所有非
+ * {@link MachineStatus#OFF} 的状态灯（客户端新方块实体默认为 OFF，因此不发送 OFF）。
+ * <b>频率规则：</b>每区块每 {@link #INTERVAL} tick（0.5 秒）最多一个数据包，只发送变化；每条 9 字节（位置 8、状态 1）。原版方块实体更新包会包含完整更新标签。
+ * 客户端只在状态灯变化时重建方块网格，因此无变化运行的工厂不消耗带宽与渲染。
+ * <b>保持规则：</b>最近 {@link #HOLD} tick 内运行过、现在报告 {@link MachineStatus#BLOCKED} 的机器保持 {@link MachineStatus#RUNNING}，
+ * 两次操作之间的短暂间隔不会让灯闪红；NO_POWER 与 OFF 立即显示。
+ * <b>线程与内存：</b>所有映射只在服务器线程使用；机器移除、区块卸载、世界卸载与服务器启停时清理数据。
+ * <b>缺少通道：</b>该通道不是可选的，原版客户端无法连接；发送方法对单个接收者检查通道，并忽略假连接或已断开连接的发送错误。
+ *
+ * <p><b>JA:</b> 正面ステータスランプのサーバー側。{@link MachineStatusPacket}（サーバーからクライアントへ）を送る。0.1.8.1 以降、クライアントの
+ * 機械ループ音も同期された状態を使う。
+ * <b>動作：</b>機械は読み込み時に登録し、削除時に登録を解除する（{@link AbstractEnergyBlockEntity#STATUS_LIFECYCLE}）。{@link #INTERVAL} tick ごとに
+ * 追跡中の全機械の状態を読み、前回送信から変化した機械だけを集める。変化のあるチャンクごとに、そのチャンクを追跡するプレイヤーへ 1 パケットを送る。
+ * プレイヤーがチャンクを見始めると、そのチャンクの {@link MachineStatus#OFF} 以外のランプをまとめて受け取る（クライアントの新しいブロックエンティティは
+ * OFF なので、OFF は送らない）。
+ * <b>頻度の規則：</b>チャンクごとに {@link #INTERVAL} tick（0.5 秒）に最大 1 パケット、変化だけを送る。1 項目 9 バイト（位置 8、状態 1）。バニラの
+ * ブロックエンティティ更新パケットは更新タグ全体を含む。クライアントはランプが変わったときだけ再メッシュするので、変化なく動く工場は帯域も描画も使わない。
+ * <b>保持の規則：</b>直近 {@link #HOLD} tick 以内に稼働し、今は {@link MachineStatus#BLOCKED} を報告する機械は {@link MachineStatus#RUNNING} のままにする。
+ * 2 つの作業の間の短い空きでランプが赤く点滅しない。NO_POWER と OFF はすぐに表示する。
+ * <b>スレッドとメモリ：</b>すべてのマップはサーバースレッド専用。機械の削除、チャンクの解放、レベルの解放、サーバーの起動・停止でデータを消す。
+ * <b>チャンネルなし：</b>チャンネルは必須なので、バニラのクライアントは接続できない。送信メソッドは単一の受信者についてチャンネルを確認し、
+ * 偽の接続や切断済みの接続の送信エラーは無視する。
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
 public final class MachineStatusTracker {

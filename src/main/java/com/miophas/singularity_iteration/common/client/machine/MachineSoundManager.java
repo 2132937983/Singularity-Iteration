@@ -1,7 +1,10 @@
 package com.miophas.singularity_iteration.common.client.machine;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.machine.ClientRunState;
 import com.miophas.singularity_iteration.common.registry.mio_icif_sounds;
+import com.miophas.singularity_iteration.core.api.machine.MachineStatus;
+import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
@@ -30,16 +33,43 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * Running-machine sound loops, entirely client side.
- *
- * <p>The running state comes from the block state the server already syncs (lit/active), so
- * there is no network traffic and no server tick cost (the old design broadcast a work sound
- * from every machine every 40 ticks). Every {@link #SCAN_INTERVAL} ticks the block entities of
- * the 3x3 chunks around the player are scanned; the nearest {@link #MAX_LOOPS} running machines
- * within {@link #RADIUS} blocks get a looping, fading sound instance, everything else is
- * silent. Big factories therefore cost one short scan every half second and at most a handful
- * of sound channels. Press and crusher loops start on the machine's animation phase so the
- * impacts line up with the moving parts.
+ * <p><b>EN:</b> Running-machine sound loops, entirely client side.
+ * <ul>
+ *   <li>Run state: the block-state property (active / lit / working / running), the synced status
+ *       lamp ({@link AbstractEnergyBlockEntity#clientMachineStatus()} = RUNNING), or a synced flag
+ *       ({@link ClientRunState}). No new network traffic and no server tick cost.</li>
+ *   <li>Every {@link #SCAN_INTERVAL} ticks the block entities of the 3 x 3 chunks around the
+ *       player are scanned. The nearest {@link #MAX_LOOPS} running machines within
+ *       {@link #RADIUS} blocks get a looping, fading sound; at most {@link #MAX_PER_SOUND} use the
+ *       same loop. Big factories thus cost one short scan every half second and a few channels.</li>
+ *   <li>Press and crusher loops start on the machine's animation phase, so the impacts line up
+ *       with the moving parts.</li>
+ *   <li>Each mod machine is either mapped to a loop ({@code map}) or marked silent with a reason
+ *       ({@code silent}). {@code tools/sound_audit_181.py} reads both lists and reports every
+ *       machine that has neither.</li>
+ * </ul>
+ * <p><b>ZH:</b> 运行中机器的循环音效，完全在客户端处理。
+ * <ul>
+ *   <li>运行状态：方块状态属性（active / lit / working / running）、已同步的状态灯（RUNNING）或已同步的标志
+ *       （{@link ClientRunState}）。不增加网络流量，也不占用服务器 tick。</li>
+ *   <li>每 {@link #SCAN_INTERVAL} tick 扫描玩家周围 3 × 3 区块的方块实体。{@link #RADIUS} 格内最近的
+ *       {@link #MAX_LOOPS} 台运行中机器播放带淡入淡出的循环音；同一循环音最多 {@link #MAX_PER_SOUND} 台。
+ *       大型工厂每半秒只需一次短扫描和少量声道。</li>
+ *   <li>冲压机与粉碎机的循环音在机器动画周期的起点开始，撞击声与运动部件对齐。</li>
+ *   <li>每台本模组机器要么映射到循环音（{@code map}），要么带理由标记为静音（{@code silent}）。
+ *       {@code tools/sound_audit_181.py} 读取这两个列表，并报告两者都没有的机器。</li>
+ * </ul>
+ * <p><b>JA:</b> 稼働中の機械のループ音。すべてクライアント側で処理する。
+ * <ul>
+ *   <li>稼働状態：ブロックステートのプロパティ（active / lit / working / running）、同期済みのステータスランプ（RUNNING）、
+ *       または同期済みフラグ（{@link ClientRunState}）。通信量もサーバーの tick コストも増えない。</li>
+ *   <li>{@link #SCAN_INTERVAL} tick ごとにプレイヤー周囲 3 × 3 チャンクのブロックエンティティを走査する。
+ *       {@link #RADIUS} ブロック以内で最も近い {@link #MAX_LOOPS} 台がフェード付きループ音を鳴らす。同じループ音は最大
+ *       {@link #MAX_PER_SOUND} 台。大工場でも 0.5 秒ごとの短い走査と少数のチャンネルで済む。</li>
+ *   <li>プレス機と粉砕機のループ音は機械のアニメーション周期の始点で始まり、打撃音が可動部と合う。</li>
+ *   <li>本 MOD の各機械は、ループ音への割り当て（{@code map}）か、理由付きの無音指定（{@code silent}）のどちらかを持つ。
+ *       {@code tools/sound_audit_181.py} が両方の一覧を読み、どちらもない機械を報告する。</li>
+ * </ul>
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
@@ -49,15 +79,15 @@ public final class MachineSoundManager {
     public static final double RADIUS = 16.0;
     public static final int MAX_PER_SOUND = 2;
 
-    /** Loop sound and volume per machine (registry path). Machines not listed are silent. */
-    record Profile(Supplier<SoundEvent> sound, float volume, boolean phased) {}
+    /** Loop sound, volume and pitch per machine (registry path). Machines not listed are silent. */
+    record Profile(Supplier<SoundEvent> sound, float volume, float pitch, boolean phased) {}
     private static final Map<String, Profile> BY_PATH = new HashMap<>();
     private static final Map<Block, Profile> CACHE = new IdentityHashMap<>();
-    private static final Profile SILENT = new Profile(() -> null, 0, false);
+    private static final Profile SILENT = new Profile(() -> null, 0, 1, false);
 
     static {
-        Profile motor = p(mio_icif_sounds.LOOP_MOTOR, 0.55F), press = new Profile(mio_icif_sounds.LOOP_PRESS::get, 0.6F, true),
-            crusher = new Profile(mio_icif_sounds.LOOP_CRUSHER::get, 0.6F, true), centrifuge = p(mio_icif_sounds.LOOP_CENTRIFUGE, 0.5F),
+        Profile motor = p(mio_icif_sounds.LOOP_MOTOR, 0.55F), press = new Profile(mio_icif_sounds.LOOP_PRESS::get, 0.6F, 1F, true),
+            crusher = new Profile(mio_icif_sounds.LOOP_CRUSHER::get, 0.6F, 1F, true), centrifuge = p(mio_icif_sounds.LOOP_CENTRIFUGE, 0.5F),
             saw = p(mio_icif_sounds.LOOP_SAW, 0.45F), furnace = p(mio_icif_sounds.LOOP_FURNACE, 0.5F), fluid = p(mio_icif_sounds.LOOP_FLUID, 0.5F),
             electric = p(mio_icif_sounds.LOOP_ELECTRIC, 0.45F), hum = p(mio_icif_sounds.LOOP_ELECTRIC, 0.25F),
             generator = p(mio_icif_sounds.LOOP_GENERATOR, 0.55F), turbine = p(mio_icif_sounds.LOOP_TURBINE, 0.5F),
@@ -81,7 +111,7 @@ public final class MachineSoundManager {
             "generator/block_twin_turbo_kinetic_generator");
         map(electric, "producer/block_replicator_elc", "producer/block_teleporter_elc",
             "producer/block_molecular_transformer", "producer/block_neutron_polymerizer", "producer/block_chunk_loader",
-            "producer/block_terra_elc", "producer/block_tesla", "generator/block_quantum_generator", "generator/block_geomagnetic_generator",
+            "producer/block_terra_elc", "generator/block_quantum_generator", "generator/block_geomagnetic_generator",
             "wiring/block_wireless_power_transmission_node");
         map(hum, "wiring/transformer_lv_mv", "wiring/transformer_mv_hv", "wiring/transformer_hv_ev", "wiring/transformer_ev_sc",
             "wiring/transformer_iv_luv", "wiring/transformer_luv_zpmv");
@@ -93,10 +123,43 @@ public final class MachineSoundManager {
         map(reactor, "generator/block_nuclear_reactor_generator", "generator/block_rt_generator", "hugenerator/block_rt_heat_generator");
         map(drill, "producer/block_miner_elc", "producer/block_advanced_miner_elc", "oilrig/block_oil_rig_panel");
         map(motor, "producer/block_batch_crafter");
+
+        // 0.1.8.1 sound audit (tools/sound_audit_181.py): loops for the machines that were silent
+        map(p(mio_icif_sounds.LOOP_DISCHARGE, 0.5F), "producer/block_tesla");
+        map(p(mio_icif_sounds.LOOP_COMPRESSOR, 0.45F), "producer/block_matron_elc");
+        map(p(mio_icif_sounds.LOOP_SERVO, 0.45F), "producer/block_harvest_elc", "producer/block_sorter_elc");
+        map(new Profile(mio_icif_sounds.LOOP_SERVO::get, 0.35F, 1.1F, false), "producer/block_blueprint_builder");
+        map(new Profile(mio_icif_sounds.LOOP_SERVO::get, 0.25F, 1.2F, false), "producer/block_item_buffer_elc");
+        map(p(mio_icif_sounds.LOOP_BUBBLER, 0.5F), "producer/block_electrolyzer_elc");
+        map(new Profile(mio_icif_sounds.LOOP_BUBBLER::get, 0.25F, 0.85F, false), "producer/block_barrel");
+        map(new Profile(mio_icif_sounds.LOOP_ELECTRIC::get, 0.4F, 0.75F, false), "producer/block_magnetizer");
+        map(new Profile(mio_icif_sounds.LOOP_ELECTRIC::get, 0.3F, 1.25F, false), "producer/block_scanner_elc");
+        map(new Profile(mio_icif_sounds.LOOP_ELECTRIC::get, 0.3F, 1.2F, false), "producer/block_quantum_modification_station");
+        map(new Profile(mio_icif_sounds.LOOP_ELECTRIC::get, 0.18F, 1.3F, false), "producer/block_pattern_storage");
+        map(new Profile(mio_icif_sounds.LOOP_ELECTRIC::get, 0.22F, 1.15F, false), "wiring/block_batbox_charger", "wiring/block_cesu_charger",
+            "wiring/block_mfe_charger", "wiring/block_mfsu_charger", "wiring/block_lesu_charger", "wiring/block_eesu_charger");
+        map(new Profile(mio_icif_sounds.LOOP_ELECTRIC::get, 0.18F, 1.35F, false), "generator/block_photon_resonance_solar_generator",
+            "generator/block_ultimate_photon_resonance_solar_generator", "generator/block_quantum_solar_panel");
+        map(new Profile(mio_icif_sounds.LOOP_UU_FABRICATOR::get, 0.6F, 0.85F, false), "producer/block_large_fabricator_core");
+        map(p(mio_icif_sounds.LOOP_MOTOR, 0.5F), "kugenerator/block_kinetic_generator_elc");
+        map(new Profile(mio_icif_sounds.LOOP_TURBINE::get, 0.28F, 0.6F, false), "generator/block_wind_generator",
+            "kugenerator/block_wind_kinetic_generator");
+        map(new Profile(mio_icif_sounds.LOOP_FLUID::get, 0.32F, 0.8F, false), "generator/block_water_generator",
+            "kugenerator/block_water_kinetic_generator");
+
+        silent("solar panel without moving parts", "generator/block_solar_generator", "generator/block_advanced_solar_panel",
+            "generator/block_hybrid_solar_panel", "generator/block_ultimate_hybrid_solar_panel", "generator/block_mets_advanced_solar_generator");
+        silent("creative test generator", "generator/block_unlimit_generator");
+        silent("plays its own suit-up sequence", "producer/block_armory");
+        silent("plays its own lock / charge / fire / hit cues", "producer/block_laser_defense_tower", "producer/block_sky_patrol_laser_tower");
+        silent("plays its own ambient cue (EnergyTerminalClient)", "wiring/block_energy_terminal");
+        silent("cable; the state is a redstone signal", "wiring/block_eu_detector_cable", "wiring/block_eu_splitter_cable");
     }
 
-    private static Profile p(Supplier<SoundEvent> s, float v) { return new Profile(s, v, false); }
+    private static Profile p(Supplier<SoundEvent> s, float v) { return new Profile(s, v, 1F, false); }
     private static void map(Profile p, String... paths) { for (String s : paths) BY_PATH.put(s, p); }
+    /** EN: Silent on purpose; the reason goes into the sound audit. ZH: 有意静音，理由写入音效审计。JA: 意図的に無音。理由は音の監査に載る。 */
+    private static void silent(String reason, String... paths) { for (String s : paths) BY_PATH.put(s, SILENT); }
 
     static Profile profile(Block block) {
         return CACHE.computeIfAbsent(block, b -> {
@@ -104,6 +167,17 @@ public final class MachineSoundManager {
             if (!key.getNamespace().equals(Singularity_Iteration.MOD_ID)) return SILENT;
             return BY_PATH.getOrDefault(key.getPath(), SILENT);
         });
+    }
+
+    /**
+     * <p><b>EN:</b> True when the client can see that the machine runs (property, lamp or flag).
+     * <p><b>ZH:</b> 客户端能看出机器在运行时为真（属性、状态灯或标志）。
+     * <p><b>JA:</b> クライアントから機械の稼働が分かるとき真（プロパティ、ランプ、フラグ）。
+     */
+    static boolean isRunning(BlockEntity be) {
+        if (MachineRunState.isRunning(be.getBlockState())) return true;
+        if (be instanceof AbstractEnergyBlockEntity energy && energy.clientMachineStatus() == MachineStatus.RUNNING) return true;
+        return be instanceof ClientRunState flag && flag.clientRunning();
     }
 
     private static final Map<BlockPos, MachineLoopSound> PLAYING = new HashMap<>();
@@ -152,7 +226,7 @@ public final class MachineSoundManager {
                 if (chunk == null) continue;
                 for (BlockEntity be : chunk.getBlockEntities().values()) {
                     Profile prof = profile(be.getBlockState().getBlock());
-                    if (prof == SILENT || !MachineRunState.isRunning(be.getBlockState())) continue;
+                    if (prof == SILENT || !isRunning(be)) continue;
                     BlockPos pos = be.getBlockPos();
                     if (pos.getCenter().distanceToSqr(player) > r2) continue;
                     candidates.add(pos);
@@ -203,7 +277,7 @@ public final class MachineSoundManager {
     private static void start(Minecraft mc, BlockPos pos, Profile prof) {
         SoundEvent sound = prof.sound.get();
         if (sound == null) return;
-        MachineLoopSound s = new MachineLoopSound(sound, pos, prof.volume);
+        MachineLoopSound s = new MachineLoopSound(sound, pos, prof.volume, prof.pitch);
         PLAYING.put(pos, s);
         mc.getSoundManager().play(s);
     }
@@ -220,14 +294,14 @@ public final class MachineSoundManager {
         private final float target;
         private boolean fading;
 
-        MachineLoopSound(SoundEvent sound, BlockPos pos, float volume) {
+        MachineLoopSound(SoundEvent sound, BlockPos pos, float volume, float pitch) {
             super(sound, SoundSource.BLOCKS, RandomSource.create(pos.asLong()));
             this.pos = pos;
             this.target = volume;
             this.looping = true;
             this.delay = 0;
             this.volume = 0.01F;
-            this.pitch = 0.97F + (MachineRunState.phaseOffset(pos) % 7) * 0.01F;   // slight per-machine detune
+            this.pitch = pitch * (0.97F + (MachineRunState.phaseOffset(pos) % 7) * 0.01F);   // slight per-machine detune
             this.x = pos.getX() + 0.5;
             this.y = pos.getY() + 0.5;
             this.z = pos.getZ() + 0.5;
@@ -243,7 +317,10 @@ public final class MachineSoundManager {
         public void tick() {
             ClientLevel level = Minecraft.getInstance().level;
             if (level == null) { stop(); return; }
-            if (!fading && (!level.isLoaded(pos) || !MachineRunState.isRunning(level.getBlockState(pos)))) fading = true;
+            if (!fading) {
+                BlockEntity be = level.isLoaded(pos) ? level.getBlockEntity(pos) : null;
+                if (be == null || !isRunning(be)) fading = true;
+            }
             if (fading) {
                 volume -= target / 8F;
                 if (volume <= 0.01F) stop();

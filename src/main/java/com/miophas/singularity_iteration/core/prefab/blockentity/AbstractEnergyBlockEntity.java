@@ -32,6 +32,21 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * <p><b>EN:</b> Base class of every EU block entity (machines, generators, storage, transformers).
+ * It owns the EU storage, the network endpoint (source and sink) and the upgrade and wrench hooks.
+ * It also owns the FE bridge for machines and storage, the remote switch of the Energy Management
+ * Terminal and the front status lamp ({@link #machineStatus()}). The server computes the lamp state;
+ * {@code MachineStatusTracker} syncs only changes; the client reads
+ * {@link #clientMachineStatus()} (models, and since 0.1.8.1 the machine loop sounds).
+ * <p><b>ZH:</b> 所有 EU 方块实体（机器、发电机、储能、变压器）的基类。负责 EU 存储、电网端点（源与汇）、升级与扳手挂钩、
+ * 机器与储能的 FE 桥接、能源管理终端的远程开关，以及正面状态灯（{@link #machineStatus()}）。服务器计算状态灯，
+ * {@code MachineStatusTracker} 只同步变化，客户端读取 {@link #clientMachineStatus()}（模型，以及自 0.1.8.1 起的机器循环音效）。
+ * <p><b>JA:</b> すべての EU ブロックエンティティ（機械、発電機、蓄電、変圧器）の基底クラス。EU ストレージ、電力網の端点（供給と受電）、
+ * アップグレードとレンチのフック、機械・蓄電の FE ブリッジ、エネルギー管理端末の遠隔スイッチ、正面ステータスランプ
+ * （{@link #machineStatus()}）を持つ。ランプ状態はサーバーが計算し、{@code MachineStatusTracker} が変化だけを同期し、
+ * クライアントは {@link #clientMachineStatus()} を読む（モデル、0.1.8.1 以降は機械ループ音も）。
+ */
 @SuppressWarnings("null")
 public abstract class AbstractEnergyBlockEntity extends BlockEntity implements MenuProvider,
         IEnergySource, IEnergySink,

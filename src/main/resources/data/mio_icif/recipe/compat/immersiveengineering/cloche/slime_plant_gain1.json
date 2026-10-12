@@ -1,0 +1,35 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "immersiveengineering"
+    }
+  ],
+  "type": "immersiveengineering:cloche",
+  "input": {
+    "type": "mio_icif:crop_seed",
+    "plant": "mio_icif:slime_plant",
+    "min_gain": 8,
+    "max_gain": 15
+  },
+  "render": {
+    "type": "immersiveengineering:generic",
+    "block": "minecraft:fern"
+  },
+  "results": [
+    {
+      "id": "minecraft:slime_ball",
+      "count": 1
+    },
+    {
+      "chance": 0.5,
+      "output": {
+        "id": "minecraft:slime_ball"
+      }
+    }
+  ],
+  "soil": {
+    "item": "minecraft:dirt"
+  },
+  "time": 1440
+}

@@ -2,200 +2,84 @@
   "parent": "block/block",
   "render_type": "minecraft:cutout",
   "textures": {
-    "particle": "mio_icif:block/producer/armor_showcase_side",
-    "side": "mio_icif:block/producer/armor_showcase_side",
-    "top": "mio_icif:block/producer/armor_showcase_top",
-    "bottom": "mio_icif:block/producer/armor_showcase_bottom"
+    "particle": "mio_icif:block/producer/holo_projector_side",
+    "side": "mio_icif:block/producer/holo_projector_side",
+    "top": "mio_icif:block/producer/holo_projector_top",
+    "bottom": "mio_icif:block/producer/holo_projector_bottom",
+    "lens": "mio_icif:block/producer/holo_projector_lens"
   },
   "elements": [
     {
-      "name": "plinth",
-      "from": [
-        0,
-        0,
-        0
-      ],
-      "to": [
-        16,
-        3,
-        16
-      ],
+      "name": "base plate",
+      "from": [0, 0, 0],
+      "to": [16, 3, 16],
       "faces": {
-        "north": {
-          "uv": [
-            0,
-            13,
-            16,
-            16
-          ],
-          "texture": "#side"
-        },
-        "south": {
-          "uv": [
-            0,
-            13,
-            16,
-            16
-          ],
-          "texture": "#side"
-        },
-        "east": {
-          "uv": [
-            0,
-            13,
-            16,
-            16
-          ],
-          "texture": "#side"
-        },
-        "west": {
-          "uv": [
-            0,
-            13,
-            16,
-            16
-          ],
-          "texture": "#side"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#bottom",
-          "cullface": "down"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#top"
-        }
+        "north": {"uv": [0, 13, 16, 16], "texture": "#side"},
+        "south": {"uv": [0, 13, 16, 16], "texture": "#side"},
+        "east": {"uv": [0, 13, 16, 16], "texture": "#side"},
+        "west": {"uv": [0, 13, 16, 16], "texture": "#side"},
+        "down": {"uv": [0, 0, 16, 16], "texture": "#bottom", "cullface": "down"},
+        "up": {"uv": [0, 0, 16, 16], "texture": "#top"}
       }
     },
     {
-      "name": "platter",
-      "from": [
-        2,
-        3,
-        2
-      ],
-      "to": [
-        14,
-        4,
-        14
-      ],
+      "name": "emitter lens",
+      "from": [6, 3, 6],
+      "to": [10, 4, 10],
       "faces": {
-        "north": {
-          "uv": [
-            2,
-            9,
-            14,
-            10
-          ],
-          "texture": "#side"
-        },
-        "south": {
-          "uv": [
-            2,
-            9,
-            14,
-            10
-          ],
-          "texture": "#side"
-        },
-        "east": {
-          "uv": [
-            2,
-            9,
-            14,
-            10
-          ],
-          "texture": "#side"
-        },
-        "west": {
-          "uv": [
-            2,
-            9,
-            14,
-            10
-          ],
-          "texture": "#side"
-        },
-        "up": {
-          "uv": [
-            2,
-            2,
-            14,
-            14
-          ],
-          "texture": "#top"
-        }
+        "north": {"uv": [6, 0, 10, 1], "texture": "#lens"},
+        "south": {"uv": [6, 0, 10, 1], "texture": "#lens"},
+        "east": {"uv": [6, 0, 10, 1], "texture": "#lens"},
+        "west": {"uv": [6, 0, 10, 1], "texture": "#lens"},
+        "up": {"uv": [0, 0, 16, 16], "texture": "#lens"}
       }
     },
     {
-      "name": "plaque",
-      "from": [
-        5,
-        0.5,
-        -0.5
-      ],
-      "to": [
-        11,
-        2.5,
-        0
-      ],
+      "name": "pylon nw",
+      "from": [0.5, 3, 0.5],
+      "to": [2.5, 4, 2.5],
       "faces": {
-        "north": {
-          "uv": [
-            5,
-            3,
-            11,
-            5
-          ],
-          "texture": "#side"
-        },
-        "east": {
-          "uv": [
-            0,
-            3,
-            0.5,
-            5
-          ],
-          "texture": "#side"
-        },
-        "west": {
-          "uv": [
-            0,
-            3,
-            0.5,
-            5
-          ],
-          "texture": "#side"
-        },
-        "up": {
-          "uv": [
-            5,
-            3,
-            11,
-            3.5
-          ],
-          "texture": "#side"
-        },
-        "down": {
-          "uv": [
-            5,
-            3,
-            11,
-            3.5
-          ],
-          "texture": "#side"
-        }
+        "north": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "south": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "east": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "west": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "up": {"uv": [5, 5, 11, 11], "texture": "#lens"}
+      }
+    },
+    {
+      "name": "pylon ne",
+      "from": [13.5, 3, 0.5],
+      "to": [15.5, 4, 2.5],
+      "faces": {
+        "north": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "south": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "east": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "west": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "up": {"uv": [5, 5, 11, 11], "texture": "#lens"}
+      }
+    },
+    {
+      "name": "pylon sw",
+      "from": [0.5, 3, 13.5],
+      "to": [2.5, 4, 15.5],
+      "faces": {
+        "north": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "south": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "east": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "west": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "up": {"uv": [5, 5, 11, 11], "texture": "#lens"}
+      }
+    },
+    {
+      "name": "pylon se",
+      "from": [13.5, 3, 13.5],
+      "to": [15.5, 4, 15.5],
+      "faces": {
+        "north": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "south": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "east": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "west": {"uv": [0, 12, 2, 13], "texture": "#side"},
+        "up": {"uv": [5, 5, 11, 11], "texture": "#lens"}
       }
     }
   ]

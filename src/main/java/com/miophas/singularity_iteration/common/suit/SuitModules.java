@@ -69,26 +69,31 @@ public final class SuitModules {
 
     public enum InstallCheck { OK, NOT_A_SUIT_PIECE, WRONG_SLOT, ALREADY_INSTALLED, FULL }
 
-    public static InstallCheck check(ItemStack piece, SuitModuleType type) {
+    public static InstallCheck check(ItemStack piece, SuitModuleType type) { return check(piece, UnitRef.of(type)); }
+    public static boolean install(ItemStack piece, SuitModuleType type) { return install(piece, UnitRef.of(type)); }
+    public static boolean remove(ItemStack piece, SuitModuleType type) { return remove(piece, UnitRef.of(type)); }
+
+    /** 0.1.8.0: install check for both kinds of unit (built-in and addon). Addon units count against the capacity too. */
+    public static InstallCheck check(ItemStack piece, UnitRef unit) {
         if (!isSuitPiece(piece)) return InstallCheck.NOT_A_SUIT_PIECE;
         EquipmentSlot slot = slotOf(piece);
-        if (slot == null || !type.fits(slot)) return InstallCheck.WRONG_SLOT;
+        if (slot == null || !unit.fits(slot)) return InstallCheck.WRONG_SLOT;
         InstalledModules modules = installed(piece);
-        if (modules.has(type)) return InstallCheck.ALREADY_INSTALLED;
-        if (modules.types().size() >= capacity(slot)) return InstallCheck.FULL;
+        if (modules.has(unit.key())) return InstallCheck.ALREADY_INSTALLED;
+        if (modules.units().size() >= capacity(slot)) return InstallCheck.FULL;
         return InstallCheck.OK;
     }
 
-    public static boolean install(ItemStack piece, SuitModuleType type) {
-        if (check(piece, type) != InstallCheck.OK) return false;
-        piece.set(mio_icif_data_components.SUIT_MODULES.get(), installed(piece).with(type));
+    public static boolean install(ItemStack piece, UnitRef unit) {
+        if (check(piece, unit) != InstallCheck.OK) return false;
+        piece.set(mio_icif_data_components.SUIT_MODULES.get(), installed(piece).with(unit.key()));
         return true;
     }
 
-    public static boolean remove(ItemStack piece, SuitModuleType type) {
+    public static boolean remove(ItemStack piece, UnitRef unit) {
         InstalledModules modules = installed(piece);
-        if (!modules.has(type)) return false;
-        InstalledModules next = modules.without(type);
+        if (!modules.has(unit.key())) return false;
+        InstalledModules next = modules.without(unit.key());
         if (next.ids().isEmpty()) piece.remove(mio_icif_data_components.SUIT_MODULES.get());
         else piece.set(mio_icif_data_components.SUIT_MODULES.get(), next);
         return true;
@@ -105,6 +110,16 @@ public final class SuitModules {
         return ItemStack.EMPTY;
     }
 
+    /** 0.1.8.0: the worn piece that carries {@code unit} (either kind), or EMPTY. */
+    public static ItemStack wornPieceWith(Player player, UnitRef unit) {
+        if (unit.builtin() != null) return wornPieceWith(player, unit.builtin());
+        for (EquipmentSlot slot : unit.slots()) {
+            ItemStack stack = player.getItemBySlot(slot);
+            if (isSuitPiece(stack) && installed(stack).has(unit.key())) return stack;
+        }
+        return ItemStack.EMPTY;
+    }
+
     public static boolean hasVisor(Player player) {
         return isSuitPiece(player.getItemBySlot(EquipmentSlot.HEAD));
     }
@@ -114,9 +129,37 @@ public final class SuitModules {
         ItemStack piece = wornPieceWith(player, type);
         if (piece.isEmpty()) return false;
         if (type.needsVisor() && !hasVisor(player)) return false;
-        if (energy(piece) < Math.max(1, type.drainPerTick())) return false;
+        // 0.1.8.0: a full set shares one energy pool (SuitEnergyPool).
+        if (SuitEnergyPool.available(player, piece) < Math.max(1, type.drainPerTick())) return false;
         // unit switches are toggle features: read the switch state directly, without building the feature list
         return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, type.featureKey());
+    }
+
+    /** 0.1.8.0: the same rule for either kind of unit. */
+    public static boolean isActive(Player player, UnitRef unit) {
+        if (unit.builtin() != null) return isActive(player, unit.builtin());
+        ItemStack piece = wornPieceWith(player, unit);
+        if (piece.isEmpty()) return false;
+        if (unit.needsVisor() && !hasVisor(player)) return false;
+        if (SuitEnergyPool.available(player, piece) < Math.max(1, unit.drainPerTick())) return false;
+        return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, unit.featureKey());
+    }
+
+    /**
+     * 0.1.8.0 public API: runs the behavior of each active addon unit once per tick (server).
+     * Free when no addon unit is registered.
+     */
+    public static void tickAddons(Player player) {
+        if (com.miophas.singularity_iteration.core.api.suit.SuitModuleRegistry.isEmpty()) return;
+        for (var entry : com.miophas.singularity_iteration.core.api.suit.SuitModuleRegistry.all()) {
+            UnitRef unit = UnitRef.of(entry.spec());
+            if (!isActive(player, unit)) continue;
+            try {
+                entry.behavior().activeTick(player, wornPieceWith(player, unit));
+            } catch (RuntimeException e) {
+                Singularity_Iteration.LOGGER.error("Addon suit unit {} failed; it stays off for this tick", entry.spec().id(), e);
+            }
+        }
     }
 
     public static long energy(ItemStack piece) {
@@ -127,6 +170,19 @@ public final class SuitModules {
         // suit units and Special Maneuver Mode pay through here: Energy Saving applies
         return piece.getItem() instanceof AbstractElectricArmor armor
             ? armor.extractEnergy(piece, com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(piece, amount)) : 0;
+    }
+
+    /**
+     * Pays a cost of {@code piece} for the wearer. With a full set the four
+     * pieces share the cost (0.1.8.0). Energy Saving of {@code piece} applies.
+     */
+    public static long extract(Player player, ItemStack piece, long amount) {
+        return SuitEnergyPool.pay(player, piece, amount);
+    }
+
+    /** Energy available to a cost of {@code piece}: the pool of a full set, else the piece. */
+    public static long energy(Player player, ItemStack piece) {
+        return SuitEnergyPool.available(player, piece);
     }
 
     /** Units active on the player right now (cheap: at most 4 worn pieces). */
@@ -143,11 +199,18 @@ public final class SuitModules {
         return sum;
     }
 
-    /** Server, once a second: collect the drain of every active unit from its own piece. */
+    /** Server, once a second: collect the drain of every active unit (shared by a full set). */
     public static void drain(Player player) {
         for (SuitModuleType type : SuitModuleType.VALUES) {
             if (type.drainPerTick() <= 0 || !isActive(player, type)) continue;
-            extract(wornPieceWith(player, type), type.drainPerTick() * DRAIN_INTERVAL);
+            extract(player, wornPieceWith(player, type), type.drainPerTick() * DRAIN_INTERVAL);
+        }
+        // 0.1.8.0: addon units of the public API pay the same way
+        if (com.miophas.singularity_iteration.core.api.suit.SuitModuleRegistry.isEmpty()) return;
+        for (var entry : com.miophas.singularity_iteration.core.api.suit.SuitModuleRegistry.all()) {
+            UnitRef unit = UnitRef.of(entry.spec());
+            if (unit.drainPerTick() <= 0 || !isActive(player, unit)) continue;
+            extract(player, wornPieceWith(player, unit), unit.drainPerTick() * DRAIN_INTERVAL);
         }
     }
 
@@ -159,7 +222,8 @@ public final class SuitModules {
         if (modules.ids().isEmpty()) return List.of();
         EquipmentSlot slot = slotOf(stack);
         List<ArmorFeatureInfo> out = new ArrayList<>();
-        for (SuitModuleType type : modules.types()) out.add(new ArmorFeatureInfo(slot, type.featureKey(), type.nameKey()));
+        // 0.1.8.0: addon units get a panel switch as the built-in ones do
+        for (UnitRef unit : modules.units()) out.add(new ArmorFeatureInfo(slot, unit.featureKey(), unit.nameKey()));
         return out;
     }
 
@@ -170,6 +234,7 @@ public final class SuitModules {
         if (bootstrapped) return;
         bootstrapped = true;
         ArmorFeatures.registerExtension(SuitModules::features);
+        com.miophas.singularity_iteration.core.api.suit.SuitModuleRegistry.setQuery((player, spec) -> isActive(player, UnitRef.of(spec)));
         ManeuverMode.bootstrap();
     }
 }

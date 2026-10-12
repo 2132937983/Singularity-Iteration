@@ -91,9 +91,10 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     public ItemStack suit() { return itemHandler.getStackInSlot(SUIT_SLOT); }
     public ItemStack unit() { return itemHandler.getStackInSlot(MODULE_SLOT); }
 
+    /** 0.1.8.0: built-in unit items and registered addon unit items (public API). */
     @Nullable
-    private static SuitModuleType unitType(ItemStack stack) {
-        return stack.getItem() instanceof SuitModuleItem item ? item.type() : null;
+    private static UnitRef unitType(ItemStack stack) {
+        return UnitRef.ofItem(stack);
     }
 
     @Override
@@ -101,7 +102,7 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         return switch (slot) {
             case BATTERY_SLOT -> isBattery(stack);
             case SUIT_SLOT -> SuitModules.isSuitPiece(stack);
-            case MODULE_SLOT -> stack.getItem() instanceof SuitModuleItem;
+            case MODULE_SLOT -> UnitRef.ofItem(stack) != null;
             default -> false;
         };
     }
@@ -118,7 +119,7 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     /** What the station would do with the current slots. */
     public Status evaluate() {
         ItemStack unit = unit();
-        SuitModuleType type = unitType(unit);
+        UnitRef type = unitType(unit);
         if (suit().isEmpty() || type == null) return Status.NO_UNIT;
         return switch (SuitModules.check(suit(), type)) {
             case OK -> Status.WORKING;
@@ -155,7 +156,7 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     private void finishInstall() {
         installProgress = 0;
         ItemStack suit = suit().copy();
-        SuitModuleType type = unitType(unit());
+        UnitRef type = unitType(unit());
         if (type == null || !SuitModules.install(suit, type)) return;
         ItemStack rest = unit().copy();
         rest.shrink(1);
@@ -170,12 +171,13 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
      */
     public boolean removeUnit(int index, Player player) {
         ItemStack suit = suit();
-        List<SuitModuleType> types = SuitModules.installed(suit).types();
+        List<UnitRef> types = SuitModules.installed(suit).units();
         if (index < 0 || index >= types.size()) return false;
-        SuitModuleType type = types.get(index);
+        UnitRef type = types.get(index);
         ItemStack copy = suit.copy();
         if (!SuitModules.remove(copy, type)) return false;
-        ItemStack unit = new ItemStack(SuitRegistry.unitItem(type));
+        ItemStack unit = type.unitStack();
+        if (unit.isEmpty()) return false;                    // addon item missing: keep the unit installed
         // ArmorFeatureState keeps the switch; a re-installed unit comes back in the same state
         ((MachineItemHandler) itemHandler).setStackInSlot(SUIT_SLOT, copy);
         ItemStack slot = unit();

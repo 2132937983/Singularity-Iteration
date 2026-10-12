@@ -36,7 +36,8 @@ public class mio_icif_gui_steam_repressurizer extends AbstractContainerScreen<St
             fluid.copyWithAmount(Math.min(fluid.getAmount(), capacity)), capacity);
     }
     @Override protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawString(font, title, (imageWidth - font.width(title)) / 2, 6, 0x404040, false);
+        int tw = Math.min(font.width(title), imageWidth - 16);
+        com.miophas.singularity_iteration.common.client.screen.mio_icif_screen.drawFitted(g, font, title, (imageWidth - tw) / 2, 6, imageWidth - 16, 0x404040, false);
     }
     @Override public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         super.render(g, mouseX, mouseY, partialTick);

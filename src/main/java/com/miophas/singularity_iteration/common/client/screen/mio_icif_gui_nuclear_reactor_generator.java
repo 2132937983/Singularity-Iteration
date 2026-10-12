@@ -156,7 +156,7 @@ public class mio_icif_gui_nuclear_reactor_generator extends mio_icif_screen<com.
     private void drawFeedRow(GuiGraphics g, int mouseX, int mouseY) {
         int left = (this.width - this.imageWidth) / 2, top = (this.height - this.imageHeight) / 2;
         int rate = this.menu.getFeedRate();
-        g.drawString(this.font, Component.translatable("gui.mio_icif.nuclear_reactor.feed", rate), 7, FEED_Y, 0x2A2E33, false);
+        drawFitted(g, this.font, Component.translatable("gui.mio_icif.nuclear_reactor.feed", rate), 7, FEED_Y, FEED_BUTTONS[0][0] - 10, 0x2A2E33, false);
         for (int i = 0; i < 3; i++) {
             int[] b = FEED_BUTTONS[i];
             boolean hover = isHovering(mouseX, mouseY, left + b[0], top + b[1], b[2], b[3]);

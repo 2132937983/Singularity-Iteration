@@ -57,6 +57,12 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
         super(material, type, properties, maxEnergy, initialEnergy, chargeRate, energyPerTick, armorTier, "mio_icif/" + texturePrefix);
     }
 
+    /**
+     * 0.1.8.0: armor sets that render a baked Blockbench model. The texture of a piece is
+     * {@code textures/models/armor/<set>_<piece>.png}, the same file the baked model uses.
+     */
+    public static final java.util.Set<String> BAKED_SETS = java.util.Set.of("quantum");
+
     @Override
     @Nullable
     public ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, ArmorMaterial.Layer layer, boolean innerModel) {
@@ -64,6 +70,15 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
         String prefix = getTexturePrefix();
         int slashIndex = prefix.indexOf('/');
         String path = slashIndex > 0 ? prefix.substring(slashIndex + 1) : prefix;
+        if (BAKED_SETS.contains(path)) {
+            String piece = switch (getType()) {
+                case HELMET -> "helmet";
+                case CHESTPLATE -> "chestplate";
+                case LEGGINGS -> "leggings";
+                default -> "boots";
+            };
+            return ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/models/armor/" + path + "_" + piece + ".png");
+        }
         return ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/armor/" + path + suffix + ".png");
     }
 
@@ -103,7 +118,12 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
         }
 
         if (!isEmpty(stack) && getArmorTier() >= 5 && getArmorTier() < 6 && slot == EquipmentSlot.CHEST) {
-            player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 100, 0, false, false, false));
+            // 0.1.8.0: renew only when the effect is near its end. The old code renewed it
+            // every tick: one effect packet and one advancement trigger per tick per player.
+            MobEffectInstance current = player.getEffect(MobEffects.DAMAGE_RESISTANCE);
+            if (current == null || current.getAmplifier() == 0 && !current.isInfiniteDuration() && current.getDuration() < 40) {
+                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 100, 0, false, false, false));
+            }
         }
     }
 

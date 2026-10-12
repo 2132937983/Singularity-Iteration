@@ -203,6 +203,9 @@ neoForge.runs.register('addonGameTestServer') {
     loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
     gameDirectory = file('build/addon-gametest')
     systemProperty 'neoforge.enabledGameTestNamespaces', 'si_core_example'
+    // 0.1.8.0: the existing engine GameTests verify the IC2-style packet walk.
+    // FairGridGameTests selects the fair distributor for its own batches.
+    systemProperty 'scex.independent.distribution', 'legacy'
     logLevel = org.slf4j.event.Level.INFO
 }
 
@@ -229,6 +232,14 @@ dependencies {
 
     // Jade
     compileOnly "curse.maven:jade-324717:${jade_id}"
+
+    // GuideME 21.1.17 - optional; compile only, for the code-built manual and its <ReactorSimulator> tag (0.1.8.0).
+    // Local copy (offline build). Online alternative: compileOnly "org.appliedenergistics:guideme:21.1.17" (modmaven.dev).
+    compileOnly files("libs/compile-only/guideme-21.1.17.jar")
+
+    // Ponder 1.0.82 (bundled in Create 6.0.10) - optional; compile only, for the Create ponder scenes (0.1.8.0).
+    // Local copy extracted from Create's jar-in-jar (offline build).
+    compileOnly files("libs/compile-only/ponder-neoforge-1.0.82+mc1.21.1.jar")
 
     // GregTech - Optional dependency for compatibility
     compileOnly "curse.maven:gregtechceu-modern-890405:6766269"
@@ -271,6 +282,23 @@ def coreSourcesJar = tasks.register('coreSourcesJar', Jar) {
     archiveClassifier = 'sources'
     from sourceSets.core.allSource
 }
+
+// 0.1.8.0: the public API alone (com/miophas/singularity_iteration/core/api/**) as `mio_icif-api`.
+// Addons that only use the API (suit units, armory events, ballistics, energy/item/reactor APIs)
+// compile against this JAR; the API packages reference no runtime or prefab class.
+def apiJar = tasks.register('apiJar', Jar) {
+    archiveBaseName = 'mio_icif-api'
+    from(sourceSets.core.output) { include 'com/miophas/singularity_iteration/core/api/**' }
+    manifest { attributes('Implementation-Title': 'mio_icif-api', 'Implementation-Version': project.version) }
+}
+
+def apiSourcesJar = tasks.register('apiSourcesJar', Jar) {
+    archiveBaseName = 'mio_icif-api'
+    archiveClassifier = 'sources'
+    from(sourceSets.core.allSource) { include 'com/miophas/singularity_iteration/core/api/**' }
+}
+
+tasks.named('assemble') { dependsOn apiJar, apiSourcesJar }
 
 // Deliberately consume the JAR, not sourceSets.main/core.output. No common or optional APIs.
 dependencies {
@@ -473,6 +501,7 @@ neoForge.runs.register('compatGameTestServer') {
     loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
     gameDirectory = file('build/compat-gametest')
     systemProperty 'neoforge.enabledGameTestNamespaces', 'si_core_example'
+    systemProperty 'scex.independent.distribution', 'legacy'
     logLevel = org.slf4j.event.Level.INFO
 }
 tasks.matching { it.name == 'prepareCompatGameTestServerRun' }.configureEach { dependsOn syncCompatMods }
@@ -493,6 +522,7 @@ neoForge.runs.register('compatClient') {
     loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
     gameDirectory = compatClientDir
     systemProperty 'neoforge.enabledGameTestNamespaces', 'si_core_example'
+    systemProperty 'scex.independent.distribution', 'legacy'
     systemProperty 'si.compattest', new File(compatClientDir, 'result.txt').absolutePath
     // Only the GregTech tests: everything else already ran on the compat server.
     systemProperty 'si.compattests', ['sicablefeedsgtmachine', 'sistoragefeedsadjacentgtmachine', 'sineverovervoltsgtmachine', 'gtnetworkfeedssistorage']

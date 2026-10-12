@@ -45,9 +45,17 @@ public class ArmoryConnectorItem extends Item {
         if (hand != InteractionHand.MAIN_HAND) return InteractionResultHolder.pass(kit);
         ItemStack target = player.getOffhandItem();
         if (!level.isClientSide) {
-            String result = bind(target, player.isShiftKeyDown());
-            player.displayClientMessage(Component.translatable(result, target.getHoverName()), true);
+            // 0.1.8.0: one kit binds exactly one item. A stacked off-hand item is split, so a
+            // stack of 16 no longer gets the link for the price of one kit.
+            boolean split = target.getCount() > 1;
+            ItemStack single = split ? target.copyWithCount(1) : target;
+            String result = bind(single, player.isShiftKeyDown());
+            player.displayClientMessage(Component.translatable(result, single.getHoverName()), true);
             if (result.endsWith(".bound")) {
+                if (split) {
+                    target.shrink(1);
+                    if (!player.getInventory().add(single)) player.drop(single, false);
+                }
                 if (!player.getAbilities().instabuild) kit.shrink(1);
                 level.playSound(null, player.blockPosition(), SoundEvents.SMITHING_TABLE_USE, SoundSource.PLAYERS, 0.8F, 1.4F);
             }

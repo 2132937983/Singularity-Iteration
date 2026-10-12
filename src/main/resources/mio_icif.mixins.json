@@ -7,7 +7,6 @@
     "ItemStackMaxStackMixin",
     "DataComponentMaxStackMixin",
     "ContainerMaxStackMixin",
-    "CropBiomeAccessor",
     "LivingEquipEnergyMixin",
     "ArmorEquipSoundMixin"
   ],

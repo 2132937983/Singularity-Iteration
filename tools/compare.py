@@ -1,10 +1,17 @@
-import sys, os, json
+import argparse, sys, os, json
+from pathlib import Path
 sys.path.insert(0, os.path.dirname(__file__))
 import refine_models as rm
 from PIL import Image, ImageDraw
-CUR = '/home/claude/work/src/src/main/resources/assets/mio_icif'
-ORG = '/home/claude/orig/src/main/resources/assets/mio_icif'
-ids = sys.argv[2:]; out = sys.argv[1]
+CUR = Path(__file__).resolve().parents[1] / 'src/main/resources/assets/mio_icif'
+parser = argparse.ArgumentParser(description='Render original and current block models side by side.')
+parser.add_argument('--baseline', required=True, type=Path, metavar='ASSETS_DIR',
+                    help='Original assets/mio_icif directory containing models and textures.')
+parser.add_argument('out', help='Output image path; use build/art-previews for temporary previews.')
+parser.add_argument('ids', nargs='+', help='Model paths relative to models/block, without .json.')
+args = parser.parse_args()
+ORG = args.baseline.expanduser().resolve()
+ids = args.ids; out = args.out
 def tex_of(assets, model):
     t = model['textures'].get('r') or model['textures'].get('all')
     if t is None:

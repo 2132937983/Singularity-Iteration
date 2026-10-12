@@ -243,10 +243,11 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         EnergyNetworkSnapshot s = menu.snapshot();
-        g.drawString(font, title, 8, 6, SiGuiTheme.TEXT, false);
         String info = Component.translatable("gui.mio_icif.energy_terminal.summary", s.devices.size(), s.conductors).getString()
             + (s.truncated ? " +" : "");
         small(g, info, W - 8 - 66 - DspUi.smallWidth(font, info), 7, SiGuiTheme.TEXT);
+        // 0.1.8.0: the title stops before the summary (no overlap with long translations)
+        com.miophas.singularity_iteration.common.client.screen.mio_icif_screen.drawFitted(g, font, title, 8, 6, W - 8 - 66 - DspUi.smallWidth(font, info) - 14, SiGuiTheme.TEXT, false);
 
         float balance = s.generation - s.consumption;
         tile(g, 0, "gui.mio_icif.energy_terminal.generation", DspUi.compact(s.generation),
@@ -353,9 +354,9 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
             g.drawString(font, value, LIST_X + LIST_W - 32 - font.width(value), ry + 3, vColor, false);
         }
         if (rows.isEmpty()) {
-            g.drawString(font, Component.translatable(menu.snapshot().devices.isEmpty()
+            com.miophas.singularity_iteration.common.client.screen.mio_icif_screen.drawFitted(g, font, Component.translatable(menu.snapshot().devices.isEmpty()
                 ? "gui.mio_icif.energy_terminal.no_network" : "gui.mio_icif.energy_terminal.no_match"),
-                LIST_X + 6, LIST_Y + 4, DspUi.TEXT_DIM, false);
+                LIST_X + 6, LIST_Y + 4, LIST_W - 12, DspUi.TEXT_DIM, false);
         }
     }
 

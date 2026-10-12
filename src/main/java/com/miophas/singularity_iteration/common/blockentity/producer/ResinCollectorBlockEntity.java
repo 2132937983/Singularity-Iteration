@@ -40,8 +40,45 @@ public class ResinCollectorBlockEntity extends BlockEntity implements MenuProvid
     public MachineItemHandler getItemHandler() { return items; }
     private void inventoryChanged() {
         setChanged();
-        if (level != null && !level.isClientSide && !isRemoved() && level.getBlockState(worldPosition).is(getBlockState().getBlock()))
+        if (level != null && !level.isClientSide && !isRemoved() && level.getBlockState(worldPosition).is(getBlockState().getBlock())) {
             level.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
+            // 0.1.8.0: the renderer shows the resin level in the tray (one update per change, which is rare)
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
+        }
+    }
+
+    // ---- 0.1.8.0 fluid animation: client copies of the resin count and of the last collection time
+    private long lastCollect = Long.MIN_VALUE;
+    private int clientCount;
+    private long clientLastCollect = Long.MIN_VALUE;
+    /** Client: resin items in the tray (0..64). */
+    public int clientCount() { return clientCount; }
+    /** Client: game time of the last collection (the stream runs for a short time after it). */
+    public long clientLastCollect() { return clientLastCollect; }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
+        CompoundTag tag = new CompoundTag();
+        tag.putInt("Count", items.getStackInSlot(0).getCount());
+        tag.putLong("LastCollect", lastCollect);
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider provider) {
+        clientCount = tag.getInt("Count");
+        clientLastCollect = tag.contains("LastCollect") ? tag.getLong("LastCollect") : Long.MIN_VALUE;
+    }
+
+    @Override
+    public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket packet,
+                             HolderLookup.Provider provider) {
+        handleUpdateTag(packet.getTag(), provider);
+    }
+
+    @Override
+    public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
     }
     public static void serverTick(Level level, BlockPos pos, BlockState state, ResinCollectorBlockEntity collector) {
         // Covers chunk loads and neighbor changes that external blocks do not notify. The check
@@ -69,6 +106,7 @@ public class ResinCollectorBlockEntity extends BlockEntity implements MenuProvid
         if (!items.insertItem(0, resin, true).isEmpty()) return false;
         // Server-thread operation: clear the wet state once before notifying storage observers.
         if (!level.setBlock(logPos, wood.withResin(log, false), 3)) return false;
+        lastCollect = level.getGameTime();                   // set before the insert: its change event syncs the clients
         ItemStack remaining = items.insertItem(0, resin, false);
         if (!remaining.isEmpty()) {
             level.setBlock(logPos, log, 3);

@@ -64,6 +64,15 @@ public final class FcsClient {
     @SubscribeEvent
     public static void onLayers(RegisterGuiLayersEvent event) {
         event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "fcs_hud"), FcsHud::render);
+        event.registerAbove(VanillaGuiLayers.CROSSHAIR, ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "smart_guidance"), SmartGuidanceClient::render);
+    }
+
+    /** 0.1.8.0: projectiles of the local player feed the learned ballistic profiles. */
+    @SubscribeEvent
+    public static void onEntityJoin(net.neoforged.neoforge.event.entity.EntityJoinLevelEvent event) {
+        if (event.getLevel().isClientSide() && event.getEntity() instanceof net.minecraft.world.entity.projectile.Projectile p) {
+            LearnedBallistics.onProjectile(p);
+        }
     }
 
     @SubscribeEvent
@@ -72,6 +81,7 @@ public final class FcsClient {
         SensorTracker.clear();
         OreScanner.reset();
         SuitSensorData.clear();
+        SmartGuidanceClient.clear();
     }
 
     @SubscribeEvent
@@ -94,6 +104,8 @@ public final class FcsClient {
             if (mc.screen == null) mc.setScreen(new HudLayoutScreen(null));
         }
         tick++;
+        LearnedBallistics.tick(player);                    // 0.1.8.0: learn the ballistics of any fired weapon
+        SmartGuidanceClient.tick(mc, player);              // 0.1.8.0: smart trajectory guidance lock frame
         FcsState.update(player);
         boolean hud = FcsClientConfig.hudEnabled();
         boolean esp = hud && FcsState.active(SuitModuleType.ENTITY_ESP);

@@ -14,10 +14,11 @@ import net.neoforged.fml.ModList;
 /**
  * In-game manual through GuideME (optional dependency, 0.1.7.33).
  *
- * <p>The guide is data driven: {@code assets/mio_icif/guideme_guides/manual.json} defines it and
- * the pages live in {@code assets/mio_icif/guides/mio_icif/manual/}. SI has no compile-time
- * reference to GuideME: this class finds GuideME's guide item and its {@code guideme:guide_id}
- * component through the registries, so SI runs unchanged without GuideME.
+ * <p>0.1.8.0: {@code GuideMeIntegration} builds the guide in code (it adds the
+ * {@code <ReactorSimulator>} tag); before 0.1.8.0 a data-driven file defined it. The pages live
+ * in {@code assets/mio_icif/guides/mio_icif/manual/}. This class has no reference to GuideME
+ * classes: it finds GuideME's guide item and its {@code guideme:guide_id} component through the
+ * registries, so SI runs unchanged without GuideME.
  */
 public final class GuideBook {
     private GuideBook() {}

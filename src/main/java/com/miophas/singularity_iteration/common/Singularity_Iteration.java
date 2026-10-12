@@ -110,6 +110,10 @@ public class Singularity_Iteration {
         mio_icif_blocks.register(modEventBus);
         // Armory (武装庫) system: block, items, entity, menus, data components
         com.miophas.singularity_iteration.common.armory.ArmoryRegistry.register(modEventBus);
+        // 0.1.8.0: Blueprint Builder (drone hangar) and Armory Material Interface
+        com.miophas.singularity_iteration.common.builder.BuilderRegistry.register(modEventBus);
+        // 0.1.8.0: Ejector Pipe
+        com.miophas.singularity_iteration.common.logistics.LogisticsRegistry.register(modEventBus);
         com.miophas.singularity_iteration.common.suit.SuitRegistry.register(modEventBus);
         
 
@@ -195,6 +199,10 @@ public class Singularity_Iteration {
     private static void syncVoltageOverloadConfig() {
         com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
             .setVoltageOverload(Singularity_Iteration_Config.ENERGY_NET_ENABLE_VOLTAGE_OVERLOAD.get());
+        com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
+            .setDistributionMode(Singularity_Iteration_Config.ENERGY_NET_DISTRIBUTION_MODE.get());
+        com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
+            .setLineLossModel(Singularity_Iteration_Config.ENERGY_NET_LINE_LOSS.get());
     }
 
     private void onConfigReload(net.neoforged.fml.event.config.ModConfigEvent event) {

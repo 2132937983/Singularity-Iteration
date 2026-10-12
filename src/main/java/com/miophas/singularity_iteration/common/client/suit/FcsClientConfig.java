@@ -50,6 +50,9 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue SHOW_COMPASS;
     public static final ModConfigSpec.BooleanValue FLIGHT_CAMERA_ROLL;
     public static final ModConfigSpec.BooleanValue FLIGHT_FOV;
+    /** 0.1.8.0: the gauntlet covers the hand in first person (the arm you see) and in third person. */
+    public static final ModConfigSpec.BooleanValue HAND_ARMOR_FIRST_PERSON;
+    public static final ModConfigSpec.BooleanValue HAND_ARMOR_THIRD_PERSON;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -63,6 +66,12 @@ public final class FcsClientConfig {
         b.push("flight");
         FLIGHT_CAMERA_ROLL = b.comment("The camera banks in turns in Special Maneuver Mode.").define("camera_roll", true);
         FLIGHT_FOV = b.comment("The field of view widens with speed in Special Maneuver Mode.").define("speed_fov", true);
+        b.pop();
+        b.push("suit_visuals");
+        HAND_ARMOR_FIRST_PERSON = b.comment("Nano and quantum chestplates show their arm armor and hand cover on your first-person arm.")
+            .define("first_person_hand_armor", true);
+        HAND_ARMOR_THIRD_PERSON = b.comment("Nano and quantum chestplates cover the hands of the worn model (third person, other players).")
+            .define("third_person_hand_armor", true);
         b.pop();
         b.push("layout");
         for (Panel panel : Panel.values()) {
@@ -82,6 +91,14 @@ public final class FcsClientConfig {
     public static void setShowCompass(boolean on) { if (loaded()) { SHOW_COMPASS.set(on); SPEC.save(); } }
     public static boolean cameraRoll() { return !loaded() || FLIGHT_CAMERA_ROLL.get(); }
     public static boolean speedFov() { return !loaded() || FLIGHT_FOV.get(); }
+    public static boolean handArmorFirstPerson() { return !loaded() || HAND_ARMOR_FIRST_PERSON.get(); }
+    public static boolean handArmorThirdPerson() { return !loaded() || HAND_ARMOR_THIRD_PERSON.get(); }
+    public static void setHandArmor(boolean firstPerson, boolean thirdPerson) {
+        if (!loaded()) return;
+        HAND_ARMOR_FIRST_PERSON.set(firstPerson);
+        HAND_ARMOR_THIRD_PERSON.set(thirdPerson);
+        SPEC.save();
+    }
 
     public static void save() {
         if (loaded()) SPEC.save();

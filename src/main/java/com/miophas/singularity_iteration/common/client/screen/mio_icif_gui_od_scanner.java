@@ -112,7 +112,8 @@ public class mio_icif_gui_od_scanner extends mio_icif_screen<mio_icif_od_scanner
         g.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
 
         // header
-        g.drawString(font, Component.translatable("gui.mio_icif.od_scanner.result_title"), x + TITLE_X, y + TITLE_Y, 0xFF2A2E33, false);
+        drawFitted(g, font, Component.translatable("gui.mio_icif.od_scanner.result_title"), x + TITLE_X, y + TITLE_Y,
+            163 - font.width(String.valueOf(lines.size())) - 6 - TITLE_X, 0xFF2A2E33, false);
         if (!lines.isEmpty()) {
             String total = String.valueOf(lines.size());
             g.drawString(font, total, x + 163 - font.width(total), y + TITLE_Y, 0xFF808890, false);

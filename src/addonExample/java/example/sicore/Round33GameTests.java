@@ -362,7 +362,9 @@ public final class Round33GameTests {
     @GameTest(batch = "round33_guide", template = "empty", timeoutTicks = 20)
     public static void guideManualIsComplete(GameTestHelper h) {
         String base = "/assets/mio_icif/guides/mio_icif/manual/";
-        h.assertTrue(resource("/assets/mio_icif/guideme_guides/manual.json") != null, "guide definition missing");
+        // 0.1.8.0: the guide is built in code (GuideMeIntegration); the reactor simulator page replaces the definition file check
+        for (String lang : new String[]{"", "_zh_cn/", "_ja_jp/"})
+            h.assertTrue(resource(base + lang + "machines/reactor_simulator.md") != null, "reactor simulator page missing for " + (lang.isEmpty() ? "en" : lang));
         for (String lang : new String[]{"", "_zh_cn/", "_ja_jp/"})
             h.assertTrue(resource(base + lang + "index.md") != null, "index missing for " + (lang.isEmpty() ? "en" : lang));
         List<String> missing = new ArrayList<>();

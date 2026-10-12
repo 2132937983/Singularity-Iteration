@@ -14,7 +14,7 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeaponItem {
+public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeaponItem, com.miophas.singularity_iteration.core.api.item.IBallisticWeapon {
     public static final int MAX_ENERGY = 1000000;
     public static final int CHARGE_RATE = 512;
     public static final int TIER = 3;
@@ -115,5 +115,11 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
     @Override
     public boolean isRanged() {
         return true;
+    }
+
+    /** 0.1.8.0 ballistic calculator profile (see IBallisticWeapon). */
+    @Override
+    public com.miophas.singularity_iteration.core.api.item.BallisticProfile ballistics(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, int useTicks) {
+        return com.miophas.singularity_iteration.core.api.item.BallisticProfile.thrown("ROCKET", 2.5, canShoot(stack));
     }
 }

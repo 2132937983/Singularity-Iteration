@@ -1,7 +1,10 @@
 from PIL import Image
-A='/home/claude/work/src/src/main/resources/assets/mio_icif/textures/'
-casing=Image.open(A+'block/producer/block_machine.png').convert('RGBA')
-tele=Image.open(A+'block/producer/block_teleporter_elc.png').convert('RGBA')
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[1]
+A = ROOT / 'src/main/resources/assets/mio_icif/textures'
+PREVIEW_DIR = ROOT / 'build/art-previews'
+casing=Image.open(A / 'block/producer/block_machine.png').convert('RGBA')
+tele=Image.open(A / 'block/producer/block_teleporter_elc.png').convert('RGBA')
 down=tele.crop((0,0,16,16))
 def face_front(lit):
     im=casing.copy(); p=im.load()
@@ -51,5 +54,6 @@ strip=Image.new('RGBA',(192,16))
 for half,lit in ((0,False),(96,True)):
     faces=[down,face_top(lit),face_side(lit),face_front(lit),face_side(lit),face_side(lit)]
     for i,f in enumerate(faces): strip.paste(f,(half+i*16,0))
-strip.save(A+'block/producer/block_armory.png')
-strip.resize((192*5,80),Image.NEAREST).save('/tmp/claude-0/-home-claude/74ca4c0f-0cf6-5fad-a66f-c52de96b116f/scratchpad/armory_strip.png')
+strip.save(A / 'block/producer/block_armory.png')
+PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
+strip.resize((192*5,80),Image.NEAREST).save(PREVIEW_DIR / 'armory_strip.png')

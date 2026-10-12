@@ -562,14 +562,18 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
             }
             return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
         }
-        if (player.isShiftKeyDown() && stack.getItem() instanceof com.miophas.singularity_iteration.core.api.item.ICutterItem
+        // 0.1.8.0: the cutter strips with or without Shift (the cutter item now bypasses the
+        // vanilla sneak rule). The stripped rubber goes to the player, or drops when the inventory is full.
+        if (stack.getItem() instanceof com.miophas.singularity_iteration.core.api.item.ICutterItem
                 && getBareCounterpart() != null && level.getBlockEntity(pos) instanceof mio_icif_wire wire) {
             if (!level.isClientSide) {
                 wire.changeInsulation(getBareCounterpart());
+                level.playSound(null, pos, SoundEvents.SHEEP_SHEAR, SoundSource.BLOCKS, 0.8F, 1.3F);
                 if (!player.getAbilities().instabuild) {
                     stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(hand));
-                    Block.popResource(level, pos, new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
-                        net.minecraft.resources.ResourceLocation.parse("mio_icif:resource/item_rubber"))));
+                    ItemStack rubber = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                        net.minecraft.resources.ResourceLocation.parse("mio_icif:resource/item_rubber")));
+                    if (!player.getInventory().add(rubber)) Block.popResource(level, pos, rubber);
                 }
             }
             return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);

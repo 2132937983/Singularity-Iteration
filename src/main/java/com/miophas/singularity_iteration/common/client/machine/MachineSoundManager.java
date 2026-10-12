@@ -75,7 +75,11 @@ public final class MachineSoundManager {
             "producer/block_solar_distiller", "producer/block_oil_refinery_elc", "producer/block_lapis_reactor_coolant_injector",
             "producer/block_redstone_reactor_coolant_injector", "producer/block_steam_repressurizer", "producer/block_steam_generator",
             "hugenerator/block_fluid_heat_generator", "hugenerator/block_heat_source_fluid");
-        map(electric, "producer/block_matter_elc", "producer/block_replicator_elc", "producer/block_teleporter_elc",
+        // 0.1.8.0: dedicated drive loops for the UU-matter fabricator and the kinetic generators
+        map(p(mio_icif_sounds.LOOP_UU_FABRICATOR, 0.5F), "producer/block_matter_elc");
+        map(p(mio_icif_sounds.LOOP_KINETIC_DRIVE, 0.5F), "generator/block_kinetic_generator", "generator/block_turbo_kinetic_generator",
+            "generator/block_twin_turbo_kinetic_generator");
+        map(electric, "producer/block_replicator_elc", "producer/block_teleporter_elc",
             "producer/block_molecular_transformer", "producer/block_neutron_polymerizer", "producer/block_chunk_loader",
             "producer/block_terra_elc", "producer/block_tesla", "generator/block_quantum_generator", "generator/block_geomagnetic_generator",
             "wiring/block_wireless_power_transmission_node");
@@ -84,8 +88,7 @@ public final class MachineSoundManager {
         map(generator, "generator/block_geo_generator", "generator/block_semifluid_generator", "generator/block_advanced_semifluid_generator",
             "generator/block_diesel_generator", "generator/block_drop_generator", "generator/block_advanced_drop_generator",
             "generator/block_experience_generator", "generator/block_advanced_experience_generator", "hugenerator/block_solid_heat_generator");
-        map(turbine, "generator/block_kinetic_generator", "generator/block_turbo_kinetic_generator", "generator/block_twin_turbo_kinetic_generator",
-            "generator/block_stirling_generator", "generator/block_advanced_stirling_generator", "kugenerator/block_stirling_kinetic_generator",
+        map(turbine, "generator/block_stirling_generator", "generator/block_advanced_stirling_generator", "kugenerator/block_stirling_kinetic_generator",
             "producer/block_steam_kinetic_generator");
         map(reactor, "generator/block_nuclear_reactor_generator", "generator/block_rt_generator", "hugenerator/block_rt_heat_generator");
         map(drill, "producer/block_miner_elc", "producer/block_advanced_miner_elc", "oilrig/block_oil_rig_panel");

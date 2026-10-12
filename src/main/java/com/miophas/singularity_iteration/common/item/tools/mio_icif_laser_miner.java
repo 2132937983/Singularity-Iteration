@@ -109,6 +109,7 @@ public class mio_icif_laser_miner extends mio_icif_tool_elc implements com.mioph
             }
         }
         player.getCooldowns().addCooldown(this, 4);
+        WeaponChargeFx.emit(player, hand, mode.cost, 0xFF9F1C);   // 0.1.8.0 charge / compression effect
         level.playSound(null, player.getX(), player.getY(), player.getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.LASER_SHOT.get(), SoundSource.PLAYERS, 0.7F, 0.95F + level.random.nextFloat() * 0.1F);
         return InteractionResultHolder.success(stack);
     }

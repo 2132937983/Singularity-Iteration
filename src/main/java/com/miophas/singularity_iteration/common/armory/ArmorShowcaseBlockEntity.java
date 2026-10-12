@@ -46,9 +46,116 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
         super(ArmoryRegistry.SHOWCASE_ENTITY.get(), pos, state);
     }
 
+    // ------------------------------------------------------------------ 0.1.8.0: holo projector
+    /** Ticks between two dock scans. */
+    public static final int DOCK_SCAN = 40;
+    /** Largest projector chain that docks to one Armory. */
+    public static final int MAX_CHAIN = 16;
+    /** EU per second that the contactless charger gives each displayed piece. */
+    public static final long CHARGE_PER_PIECE = 2048;
+    /** Longest custom name. */
+    public static final int NAME_LENGTH = 16;
+
+    /** Name from a name tag (own outfit). Shown above the hologram. */
+    private String customName = "";
+    /** Server: the Armory this projector is docked to (adjacent, or through adjacent projectors). */
+    @Nullable private BlockPos dockedArmory;
+    /** Position in the dock chain: 1 = next to the Armory, 0 = not docked. Synced. */
+    private int dockIndex;
+
+    /** True when the projector is docked to an Armory as an extension slot. */
+    public boolean docked() { return dockIndex > 0; }
+    public int dockIndex() { return dockIndex; }
+    @Nullable public BlockPos dockedArmory() { return dockedArmory; }
+
+    /**
+     * Finds the Armory of the dock chain: a breadth-first walk over adjacent projectors (six
+     * faces), at most {@link #MAX_CHAIN} projectors, loaded positions only. The chain distance
+     * becomes the extension number ("EXT-1" next to the Armory).
+     */
+    void scanDock() {
+        if (!(level instanceof ServerLevel world)) return;
+        BlockPos found = null;
+        int depth = 0;
+        java.util.ArrayDeque<BlockPos> queue = new java.util.ArrayDeque<>();
+        java.util.Map<BlockPos, Integer> seen = new java.util.HashMap<>();
+        queue.add(worldPosition);
+        seen.put(worldPosition, 1);
+        search:
+        while (!queue.isEmpty()) {
+            BlockPos at = queue.poll();
+            int d = seen.get(at);
+            for (net.minecraft.core.Direction side : net.minecraft.core.Direction.values()) {
+                BlockPos next = at.relative(side);
+                if (seen.containsKey(next) || !world.isLoaded(next)) continue;
+                BlockEntity be = world.getBlockEntity(next);
+                if (be instanceof mio_icif_armory) { found = next; depth = d; break search; }
+                if (be instanceof ArmorShowcaseBlockEntity && seen.size() < MAX_CHAIN) {
+                    seen.put(next, d + 1);
+                    queue.add(next);
+                }
+            }
+        }
+        int index = found == null ? 0 : depth;
+        boolean changedState = !java.util.Objects.equals(found, dockedArmory) || index != dockIndex;
+        dockedArmory = found;
+        dockIndex = index;
+        if (changedState) changed(null);
+    }
+
+    /**
+     * Contactless charger: once a second, the displayed electric pieces take EU from the
+     * storage block directly below (BatBox, MFE, MFSU...) or, without one, from the docked
+     * Armory. Each piece takes at most {@link #CHARGE_PER_PIECE} EU per second. The payment
+     * is exact: the charger pays only the EU that the piece accepted.
+     */
+    void chargeOutfit(ServerLevel world) {
+        if (link != null) return;
+        com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage source = null;
+        BlockEntity below = world.getBlockEntity(worldPosition.below());
+        if (below instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyStorageBlockEntity storage
+                && storage.getEnergyStorage().getAmount() > 0) source = storage.getEnergyStorageInternal();
+        else if (dockedArmory != null && world.getBlockEntity(dockedArmory) instanceof mio_icif_armory armory && armory.storedEnergy() > 0)
+            source = armory.getEnergyStorageInternal();
+        if (source == null) return;
+        var api = com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI();
+        boolean any = false;
+        for (int i = 0; i < SLOTS; i++) {
+            ItemStack stack = items.get(i);
+            if (stack.isEmpty()) continue;
+            long can = charge(api, stack, CHARGE_PER_PIECE, true);
+            if (can <= 0) continue;
+            var payment = source.scexReserveInternal(can);
+            if (payment == null) break;
+            long got = charge(api, stack, can, false);
+            if (got == can) payment.commit();
+            else {
+                payment.cancel();
+                if (got > 0) {
+                    var exact = source.scexReserveInternal(got);
+                    if (exact != null) exact.commit();
+                }
+            }
+            any |= got > 0;
+        }
+        if (any) changed(null);
+    }
+
+    private static long charge(com.miophas.singularity_iteration.core.api.item.IItemAPI api, ItemStack stack, long amount, boolean simulate) {
+        if (api.isElectricArmor(stack)) return api.chargeElectricArmor(stack, amount, simulate);
+        if (api.isElectricTool(stack)) return api.chargeElectricTool(stack, amount, simulate);
+        if (api.isBattery(stack)) return api.chargeBattery(stack, amount, simulate);
+        return 0;
+    }
+
     // ------------------------------------------------------------------ client view
     public List<ItemStack> display() { return display; }
-    public String label() { return label; }
+    /** Linked suit name, else the custom name, else "EXT-n" for a docked projector. */
+    public String label() {
+        if (link != null) return label;
+        if (!customName.isEmpty()) return customName;
+        return dockIndex > 0 ? "EXT-" + dockIndex : "";
+    }
     public boolean linked() { return link != null; }
     /** Turntable angle in degrees (45 degree steps). */
     public int rotation() { return rotation * 45; }
@@ -93,6 +200,16 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
     boolean useItem(Player player, InteractionHand hand, ItemStack held) {
         if (held.getItem() instanceof ArmoryRemoteItem) {
             useRemote(player, held);
+            return true;
+        }
+        // 0.1.8.0: a named name tag names the projector (individual naming)
+        if (held.is(net.minecraft.world.item.Items.NAME_TAG) && held.has(net.minecraft.core.component.DataComponents.CUSTOM_NAME)) {
+            String name = held.getHoverName().getString().strip();
+            if (name.length() > NAME_LENGTH) name = name.substring(0, NAME_LENGTH);
+            customName = name;
+            if (!player.getAbilities().instabuild) held.shrink(1);
+            player.displayClientMessage(Component.translatable("message.mio_icif.projector.named", name), true);
+            changed(SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT);
             return true;
         }
         if (link != null) {
@@ -161,7 +278,11 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
 
     // ------------------------------------------------------------------ linked mirror
     public static void serverTick(Level level, BlockPos pos, BlockState state, ArmorShowcaseBlockEntity showcase) {
-        if (showcase.link != null && level.getGameTime() % 20 == Math.floorMod(pos.asLong(), 20)) showcase.refreshLink();
+        long phase = Math.floorMod(pos.asLong(), 20);
+        if (showcase.link != null && level.getGameTime() % 20 == phase) showcase.refreshLink();
+        // 0.1.8.0: dock chain scan (every 2 s) and the contactless charger (every 1 s), spread over ticks
+        if (level.getGameTime() % DOCK_SCAN == Math.floorMod(pos.asLong(), DOCK_SCAN)) showcase.scanDock();
+        if (level.getGameTime() % 20 == (phase + 10) % 20 && level instanceof ServerLevel world) showcase.chargeOutfit(world);
     }
 
     /** Copies the linked suit (if its Armory is loaded) and syncs when it changed. */
@@ -212,6 +333,8 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
         tag.putInt("Rotation", rotation);
         tag.putInt("Suit", linkedSuit);
         tag.putString("Label", label);
+        tag.putString("ProjectorName", customName);
+        tag.putInt("DockIndex", dockIndex);
         if (link != null) GlobalPos.CODEC.encodeStart(NbtOps.INSTANCE, link).result().ifPresent(t -> tag.put("Link", t));
     }
 
@@ -220,6 +343,8 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
         rotation = tag.getInt("Rotation") & 7;
         linkedSuit = Math.floorMod(tag.getInt("Suit"), mio_icif_armory.SETS);
         label = tag.getString("Label");
+        customName = tag.getString("ProjectorName");
+        dockIndex = Math.max(0, Math.min(MAX_CHAIN, tag.getInt("DockIndex")));
         link = tag.contains("Link") ? GlobalPos.CODEC.parse(NbtOps.INSTANCE, tag.get("Link")).result().orElse(null) : null;
         if (link == null) label = "";
     }

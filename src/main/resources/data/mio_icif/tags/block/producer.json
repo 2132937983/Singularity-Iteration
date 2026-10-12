@@ -248,6 +248,8 @@
     {
       "id": "mio_icif:producer/block_quantum_modification_station",
       "required": false
-    }
+    },
+    "mio_icif:producer/block_blueprint_builder",
+    "mio_icif:producer/block_material_interface"
   ]
 }

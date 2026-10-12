@@ -131,8 +131,10 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock {
                 return drops;
             }
             if (state.is(mio_icif_tags.MACHINE)) {
+                // 0.1.8.0: the hull follows the recipe (see MachineSalvage). A machine without a
+                // hull in its recipe (for example the BatBox) no longer drops a basic hull.
                 List<ItemStack> drops = new ArrayList<>();
-                drops.add(new ItemStack(mio_icif_blocks.MACHINE_HULL_BASIC.get()));
+                drops.add(MachineSalvage.salvage(lootParams.getLevel(), this));
                 return drops;
             }
         }

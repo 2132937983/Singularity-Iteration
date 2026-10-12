@@ -246,6 +246,21 @@ public final class SuitPackets {
         registrar.playToServer(ChunkGridRequest.TYPE, ChunkGridRequest.CODEC, (p, c) -> c.enqueueWork(() -> {
             if (c.player() instanceof ServerPlayer player) SuitServer.answerChunkGrid(player);
         }));
+        // 0.1.8.0 tactical structure scanner: request (holomap unit check and rate limit on the server) and result
+        registrar.playToServer(TacticalScan.Request.TYPE, TacticalScan.Request.CODEC, (p, c) -> c.enqueueWork(() -> {
+            if (c.player() instanceof ServerPlayer player && com.miophas.singularity_iteration.common.util.PacketRateLimit.allow(player,
+                    com.miophas.singularity_iteration.common.util.PacketRateLimit.TACTICAL_SCAN)) TacticalScan.answer(player);
+        }));
+        registrar.playToClient(TacticalScan.Result.TYPE, TacticalScan.Result.CODEC, (p, c) -> client(c, () -> {
+            TacticalScan.LAST = p;
+            Runnable hook = TacticalScan.CLIENT_HOOK;
+            if (hook != null) hook.run();
+        }));
+        // 0.1.8.0 Smart Trajectory Guidance: locked target ids; the server checks each one when it uses it.
+        registrar.playToServer(SmartGuidance.Locks.TYPE, SmartGuidance.Locks.CODEC, (p, c) -> c.enqueueWork(() -> {
+            if (c.player() instanceof ServerPlayer player && com.miophas.singularity_iteration.common.util.PacketRateLimit.allow(player,
+                    com.miophas.singularity_iteration.common.util.PacketRateLimit.SMART_GUIDANCE)) SmartGuidance.setLocks(player, p.ids());
+        }));
     }
 
     /**

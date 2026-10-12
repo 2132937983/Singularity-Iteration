@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mio_icif:block/producer/block_blueprint_builder"
+    },
+    "facing=east": {
+      "model": "mio_icif:block/producer/block_blueprint_builder",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "mio_icif:block/producer/block_blueprint_builder",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "mio_icif:block/producer/block_blueprint_builder",
+      "y": 270
+    }
+  }
+}

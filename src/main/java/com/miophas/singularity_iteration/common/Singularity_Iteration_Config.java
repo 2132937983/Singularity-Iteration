@@ -174,6 +174,21 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
                     "服务端配置重载后生效；COMMON 配置不会自动同步到客户端")
             .define("enableVoltageOverload", true);
 
+    // 0.1.8.0: native EU distribution algorithm.
+    public static final ModConfigSpec.ConfigValue<String> ENERGY_NET_DISTRIBUTION_MODE = ENERGY_NET_BUILDER
+            .comment("电网分配算法 / Native EU distribution algorithm",
+                    "fair = 确定性均等分配（智能电网）：负载与变压器优先于储电设备；同一阶段的每台设备获得相同的需求满足比例。默认值。",
+                    "fair = deterministic fair share (smart grid). Loads and transformers first, storage last. Equal satisfaction ratio. Default.",
+                    "legacy = 0.1.7.x 的 IC2 式数据包优先级分配 / the IC2-style packet priority walk of 0.1.7.x")
+            .define("distributionMode", "fair", value -> "fair".equals(value) || "legacy".equals(value));
+
+    public static final ModConfigSpec.ConfigValue<String> ENERGY_NET_LINE_LOSS = ENERGY_NET_BUILDER
+            .comment("线路损耗模型（仅 fair 模式）/ Line loss model (fair mode only)",
+                    "lossless = 无线损。默认值。/ No cable loss. Default.",
+                    "proportional = 损耗 = 能量 × 电缆损耗 / 数据包电压；电压越高损耗比例越低。",
+                    "proportional = loss = energy * cable loss / packet voltage. A higher voltage has a lower loss fraction.")
+            .define("lineLossModel", "lossless", value -> "lossless".equals(value) || "proportional".equals(value));
+
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder ENERGY_NET_POP = BUILDER.pop();
     // ==================== 电网配置结束 ====================

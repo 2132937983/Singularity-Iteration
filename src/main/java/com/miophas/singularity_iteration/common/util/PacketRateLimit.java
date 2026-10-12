@@ -40,6 +40,10 @@ public final class PacketRateLimit {
     public static final Bucket ARMORY_CONSOLE = new Bucket("armory_console", 10, 4);
     /** Equipment console buttons. Slider updates bypass this bucket so the last value is not lost. */
     public static final Bucket EQUIPMENT_CONSOLE = new Bucket("equipment_console", 20, 2);
+    /** Smart Trajectory Guidance locks (0.1.8.0): the client sends on change, at most 5 per second. */
+    public static final Bucket SMART_GUIDANCE = new Bucket("smart_guidance", 10, 4);
+    /** Tactical structure scan (0.1.8.0): a scan reads up to 289 chunks, so at most one per 2 s. */
+    public static final Bucket TACTICAL_SCAN = new Bucket("tactical_scan", 2, 40);
 
     private static final class State {
         double tokens;

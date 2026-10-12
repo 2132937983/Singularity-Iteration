@@ -268,6 +268,7 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
             flying.add(p);
         }
         if (flying.isEmpty()) return SummonResult.fail("message.mio_icif.armory.empty", setName(set));
+        if (cancelled(player, player, set, flying)) return SummonResult.fail("message.mio_icif.armory.cancelled");
 
         boolean sameDimension = player.level() == world;
         double straight = sameDimension ? player.position().distanceTo(Vec3.atCenterOf(worldPosition)) : -1;
@@ -308,6 +309,8 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
             SoundSource.BLOCKS, 1.0F, 1.0F);
         playerLevel.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.6F, 1.8F);
 
+        // 0.1.8.0: this suit came from the Armory, so "return" sends it here (not to a projector)
+        player.setData(ArmoryRegistry.ORIGIN, ArmoryOrigin.NONE);
         log.addFirst(new ArmoryLogEntry(System.currentTimeMillis(), world.getGameTime(), ownerOrName(player),
             setName(set), cost, sameDimension ? straight : -1, flight, flying.size(),
             player.level().dimension().location().toString()));
@@ -315,6 +318,75 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         setChanged();
         sync();
         return new SummonResult(true, Component.translatable("message.mio_icif.armory.summoned", setName(set), cost), cost);
+    }
+
+    /**
+     * Fly suit {@code set} to a companion of the player (0.1.8.0, remote equip, for example a
+     * Touhou Little Maid maid). Same cost and sequence as {@link #summon}; the old pieces of the
+     * companion fly home to this Armory as each new piece arrives. Server side only.
+     */
+    public SummonResult summonTo(ServerPlayer player, net.minecraft.world.entity.LivingEntity wearer, int set) {
+        if (!(level instanceof ServerLevel world)) return SummonResult.fail("message.mio_icif.armory.failed");
+        if (set < 0 || set >= SETS) return SummonResult.fail("message.mio_icif.armory.failed");
+        if (!isOwner(player)) return SummonResult.fail("message.mio_icif.armory.not_owner");
+        if (isBusy()) return SummonResult.fail("message.mio_icif.armory.busy");
+        if (!wearer.isAlive() || !(wearer.level() instanceof ServerLevel wearerLevel)) return SummonResult.fail("message.mio_icif.armory.failed");
+
+        List<ArmoryPiece> flying = new ArrayList<>();
+        for (ArmoryPiece p : ArmoryFlight.SEQUENCE) {
+            if (piece(set, p).isEmpty()) continue;
+            if (EnchantmentHelper.has(wearer.getItemBySlot(p.slot), EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) continue;
+            flying.add(p);
+        }
+        if (flying.isEmpty()) return SummonResult.fail("message.mio_icif.armory.empty", setName(set));
+        if (cancelled(player, wearer, set, flying)) return SummonResult.fail("message.mio_icif.armory.cancelled");
+
+        boolean sameDimension = wearerLevel == world;
+        double straight = sameDimension ? wearer.position().distanceTo(Vec3.atCenterOf(worldPosition)) : -1;
+        long cost = cost(flying.size(), straight, sameDimension);
+        var payment = getEnergyStorageInternal().scexReserveInternal(cost);
+        if (payment == null) return SummonResult.fail("message.mio_icif.armory.no_energy", cost, getEnergyStorage().getAmount());
+        payment.commit();
+
+        Vec3 feet = wearer.position();
+        long latestArrival = 0;
+        double flight = 0;
+        int order = 0;
+        for (ArmoryPiece p : flying) {
+            ItemStack item = getItemHandler().extractItem(slotOf(set, p), 64, false);
+            if (item.isEmpty()) continue;
+            Vec3 dock = ArmoryFlight.dockPoint(feet, wearer.getBbHeight(), wearer.yBodyRot, p);
+            Vec3 hold = ArmoryFlight.holdPoint(dock, wearer.yBodyRot);
+            Vec3 start = ArmoryFlight.launchPoint(dock, launchTop(), sameDimension, p);
+            double length = ArmoryFlight.approachLength(start, hold, ArmoryFlight.forward(wearer.yBodyRot), p);
+            int duration = ArmoryFlight.ticksFor(length);
+            int delay = ArmoryFlight.SEQUENCE_LEAD + order++ * ArmoryFlight.STAGGER;
+            flight = Math.max(flight, length);
+            wearerLevel.addFreshEntity(ArmoryPieceEntity.deliverTo(wearerLevel, player, wearer, item, p, start,
+                GlobalPos.of(world.dimension(), worldPosition), set, delay, duration));
+            latestArrival = Math.max(latestArrival, delay + ArmoryFlight.arrivalTicks(duration));
+        }
+        busyUntil = world.getGameTime() + latestArrival + 20;
+        world.playSound(null, worldPosition, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ARMORY_ALARM.get(),
+            SoundSource.BLOCKS, 1.0F, 1.0F);
+        world.playSound(null, worldPosition, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ARMORY_HATCH.get(),
+            SoundSource.BLOCKS, 1.0F, 1.0F);
+        log.addFirst(new ArmoryLogEntry(System.currentTimeMillis(), world.getGameTime(), ownerOrName(player),
+            setName(set), cost, sameDimension ? straight : -1, flight, flying.size(),
+            wearer.level().dimension().location().toString()));
+        while (log.size() > LOG_SIZE) log.removeLast();
+        setChanged();
+        sync();
+        return new SummonResult(true, Component.translatable("message.mio_icif.companion.summoned", setName(set),
+            wearer.getDisplayName(), cost), cost);
+    }
+
+    /** 0.1.8.0 public API: posts {@code ArmoryEvent.Summon}; true when an addon cancelled it. */
+    private boolean cancelled(Player player, net.minecraft.world.entity.LivingEntity wearer, int set, List<ArmoryPiece> pieces) {
+        List<EquipmentSlot> slots = new ArrayList<>();
+        for (ArmoryPiece p : pieces) slots.add(p.slot);
+        return net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new com.miophas.singularity_iteration.core.api.armory.ArmoryEvent.Summon(
+            player, wearer, worldPosition, set, slots)).isCanceled();
     }
 
     private static String ownerOrName(Player player) {

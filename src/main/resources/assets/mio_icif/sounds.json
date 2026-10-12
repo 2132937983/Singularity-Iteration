@@ -494,5 +494,32 @@
         "attenuation_distance": 8
       }
     ]
+  },
+  "armory.seal": {
+    "subtitle": "mio_icif.subtitle.armory.seal",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_armory_seal",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.uu_fabricator": {
+    "subtitle": "mio_icif.subtitle.machine.loop.uu_fabricator",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_uu_fabricator",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "machine.loop.kinetic_drive": {
+    "subtitle": "mio_icif.subtitle.machine.loop.kinetic_drive",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_kinetic_drive",
+        "attenuation_distance": 16
+      }
+    ]
   }
 }

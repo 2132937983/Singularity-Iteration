@@ -21,8 +21,9 @@ import net.minecraft.world.item.ItemStack;
  */
 public class BakedArmorItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static final float[][] PIVOT = {
-        {0, 0, 0}, {0, 0, 0}, {-5, 2, 0}, {5, 2, 0}, {-1.9F, 12, 0}, {1.9F, 12, 0}};
-    private static final String[] PARTS = {"head", "body", "right_arm", "left_arm", "right_leg", "left_leg"};
+        {0, 0, 0}, {0, 0, 0}, {-5, 2, 0}, {5, 2, 0}, {-5, 2, 0}, {5, 2, 0}, {-1.9F, 12, 0}, {1.9F, 12, 0}};
+    /** The icon always shows the hand cover (0.1.8.0): it is part of the piece. */
+    private static final String[] PARTS = {"head", "body", "right_arm", "left_arm", "right_hand", "left_hand", "right_leg", "left_leg"};
 
     private final ResourceLocation geometry;
     private final ResourceLocation texture;
@@ -71,7 +72,23 @@ public class BakedArmorItemRenderer extends BlockEntityWithoutLevelRenderer {
         // model space is y down with the front at -z: turn it 180 deg about x so the front faces the viewer
         pose.scale(scale, -scale, -scale);
         pose.translate(-cx, -cy, -cz);
-        VertexConsumer vc = ItemRenderer.getArmorFoilBuffer(buffers, RenderType.armorCutoutNoCull(texture), stack.hasFoil());
+        // 0.1.8.0 suit palette: plates with the primary colour, then light strips with the accent colour.
+        var palette = com.miophas.singularity_iteration.common.suit.SuitPalette.of(stack);
+        if (palette == null) {
+            drawAll(pose, ItemRenderer.getArmorFoilBuffer(buffers, RenderType.armorCutoutNoCull(texture), stack.hasFoil()), geo, light, overlay, -1);
+        } else {
+            drawAll(pose, ItemRenderer.getArmorFoilBuffer(buffers, RenderType.armorCutoutNoCull(variant("_plating")), stack.hasFoil()),
+                geo, light, overlay, 0xFF000000 | palette.primary());
+            drawAll(pose, buffers.getBuffer(RenderType.armorCutoutNoCull(variant("_accent"))), geo, light, overlay, 0xFF000000 | palette.accent());
+        }
+        pose.popPose();
+    }
+
+    private ResourceLocation variant(String suffix) {
+        return texture.withPath(path -> path.replace(".png", suffix + ".png"));
+    }
+
+    private static void drawAll(PoseStack pose, VertexConsumer vc, Map<String, float[][]> geo, int light, int overlay, int color) {
         PoseStack.Pose last = pose.last();
         for (int p = 0; p < PARTS.length; p++) {
             float[][] quads = geo.get(PARTS[p]);
@@ -81,7 +98,7 @@ public class BakedArmorItemRenderer extends BlockEntityWithoutLevelRenderer {
                 for (int i = 0; i < 4; i++) {
                     int k = i * 5;
                     vc.addVertex(last, q[k] + px, q[k + 1] + py, q[k + 2] + pz)
-                        .setColor(-1)
+                        .setColor(color)
                         .setUv(q[k + 3], q[k + 4])
                         .setOverlay(overlay)
                         .setLight(light)
@@ -89,7 +106,6 @@ public class BakedArmorItemRenderer extends BlockEntityWithoutLevelRenderer {
                 }
             }
         }
-        pose.popPose();
     }
 
     public ResourceLocation geometryId() { return geometry; }

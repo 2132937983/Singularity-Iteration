@@ -201,7 +201,8 @@ public class mio_icif_crop_entity extends BlockEntity implements IPlanter {
         var biome = level.getBiome(worldPosition);
         if (initial || cropTicker % 10240 == 0) {
             float rain = biome.value().getModifiedClimateSettings().downfall();
-            float temp = ((com.miophas.singularity_iteration.common.mixin.CropBiomeAccessor) (Object) biome.value()).mio_icif$cropTemperature(worldPosition);
+            // 0.1.8.0: access transformer (META-INF/accesstransformer.cfg) instead of the invoker mixin
+            float temp = biome.value().getTemperature(worldPosition);
             int rainfall = Math.clamp((int) (25f * rain - 12.5), -10, 10);
             biomeHumidity = rainfall + Math.clamp((int) (Math.abs(rainfall) * (-2 * temp * temp + 4 * temp - 1)), -10, 10);
         }

@@ -27,6 +27,7 @@ public final class ArmoryClient {
         @SubscribeEvent
         static void renderers(EntityRenderersEvent.RegisterRenderers event) {
             event.registerEntityRenderer(ArmoryRegistry.PIECE_ENTITY.get(), ArmoryPieceRenderer::new);
+            event.registerEntityRenderer(ArmoryRegistry.WINGMAN.get(), WingmanRenderer::new);
             event.registerBlockEntityRenderer(ArmoryRegistry.SHOWCASE_ENTITY.get(), ArmorShowcaseRenderer::new);
         }
 

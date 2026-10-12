@@ -52,6 +52,8 @@ public final class EnergyNodeRegistry {
     public static Map<ResourceLocation, Long> conductors() { return conductors; }
     public static Long conductorLoss(ResourceLocation id) { return conductors.get(id); }
     public static boolean isGenerator(ResourceLocation id) { var p = profile(id); return p != null && p.role() == EnergyNodeProfile.Role.GENERATOR; }
+    /** True when the profile role is storage. The fair-share distributor charges storage after loads. */
+    public static boolean isStorage(ResourceLocation id) { var p = profile(id); return p != null && p.role() == EnergyNodeProfile.Role.STORAGE; }
     public static boolean standardProcessor(ResourceLocation id) { var p = profile(id); return p != null && p.standardProcessor(); }
     public static boolean specialCable(ResourceLocation id) { var p = profile(id); return p != null && p.specialCable(); }
     public static boolean measuredBlast(ResourceLocation id) { var p = profile(id); return p != null && p.measuredBlast(); }

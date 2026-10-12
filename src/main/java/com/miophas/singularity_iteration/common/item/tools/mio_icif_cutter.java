@@ -47,5 +47,16 @@ public class mio_icif_cutter extends Item implements ICutterItem {
     public UseAnim getUseAnimation(ItemStack stack) {
         return UseAnim.BLOCK;
     }
+
+    /**
+     * 0.1.8.0: Shift + use on a cable strips one insulation layer. Vanilla skips the block
+     * interaction when a sneaking player holds an item, unless the item returns true here.
+     * Before this fix, the strip code of the cable block was never reached.
+     */
+    @Override
+    public boolean doesSneakBypassUse(ItemStack stack, net.minecraft.world.level.LevelReader level,
+                                      net.minecraft.core.BlockPos pos, net.minecraft.world.entity.player.Player player) {
+        return level.getBlockState(pos).getBlock() instanceof com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire;
+    }
 }
 

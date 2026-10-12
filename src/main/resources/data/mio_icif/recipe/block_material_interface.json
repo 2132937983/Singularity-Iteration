@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": {
+      "tag": "c:plates/iron"
+    },
+    "C": {
+      "tag": "c:circuits/basic"
+    },
+    "H": {
+      "item": "minecraft:hopper"
+    },
+    "B": {
+      "item": "minecraft:chest"
+    }
+  },
+  "pattern": [
+    "PHP",
+    "CBC",
+    "PHP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:producer/block_material_interface"
+  },
+  "show_notification": true
+}

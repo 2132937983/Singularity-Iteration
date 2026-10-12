@@ -141,7 +141,11 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
             }
         }
         if (piece.isArmor() && stack.getItem() instanceof ArmorItem armor && armor.getEquipmentSlot() == piece.slot) {
-            drawn = renderArmor(pose, buffers, light, stack, armor, piece, height, target, flash, open, seat);
+            drawn = renderArmor(pose, buffers, light, stack, armor, piece, height, target, flash, open, seat,
+                new SegmentClock(ret, age, flight));
+        }
+        if (!drawn && isDrawnBlade(stack)) {
+            drawn = renderDrawnBlade(pose, buffers, light, stack, entity, k);
         }
         if (!drawn) {
             float s = 0.55F + 0.2F * k;
@@ -152,8 +156,176 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
         super.render(entity, entityYaw, partialTick, pose, buffers, light);
     }
 
+    /**
+     * Segment timing for any number of segments (0.1.8.0): a baked suit model has more segments
+     * than the vanilla model (for example back unit, front plate, two arms).
+     */
+    record SegmentClock(boolean ret, float age, int flight) {
+        float open(int j, int n) {
+            if (ret) return (float) ArmoryFlight.burstSpread(age);
+            if (age < flight) return 0;
+            float unfold = (float) ArmoryFlight.unfold(age - flight);
+            float since = age - flight - ArmoryFlight.HOVER_TICKS;
+            double close = since < 0 ? 0 : ArmoryFlight.segmentClose(since, j, n);
+            return unfold * (float) (1 - close);
+        }
+        boolean seat(int j, int n) {
+            if (ret || age < flight) return false;
+            float lockAge = age - flight - ArmoryFlight.HOVER_TICKS - ArmoryFlight.segmentLockTick(j, n);
+            return lockAge >= 0 && lockAge < 3;
+        }
+    }
+
+    /** One segment of a baked suit piece: the humanoid part, its baked part names and a quad filter. */
+    private record BakedSegment(String id, String[] parts, java.util.function.Predicate<float[]> filter) { }
+
+    /**
+     * Segments of a baked suit piece in locking order (0.1.8.0). The chestplate locks the back
+     * unit first, then the front plate, then the right and the left arm with their gauntlets; the
+     * helmet locks its shell, then the face plate. Quad centres are in part space, pixels; the
+     * front of the body is at negative z.
+     */
+    private static BakedSegment[] bakedSegments(EquipmentSlot slot) {
+        return switch (slot) {
+            case CHEST -> new BakedSegment[]{
+                new BakedSegment("back", new String[]{"body"}, c -> c[2] >= 1.0F),
+                new BakedSegment("front", new String[]{"body"}, c -> c[2] < 1.0F),
+                new BakedSegment("right_arm", new String[]{"right_arm", "right_hand"}, c -> true),
+                new BakedSegment("left_arm", new String[]{"left_arm", "left_hand"}, c -> true)};
+            case HEAD -> new BakedSegment[]{
+                new BakedSegment("shell", new String[]{"head"}, c -> c[2] >= -3.5F),
+                new BakedSegment("face", new String[]{"head"}, c -> c[2] < -3.5F)};
+            case LEGS -> new BakedSegment[]{
+                new BakedSegment("hip", new String[]{"body"}, c -> true),
+                new BakedSegment("right_leg", new String[]{"right_leg"}, c -> true),
+                new BakedSegment("left_leg", new String[]{"left_leg"}, c -> true)};
+            case FEET -> new BakedSegment[]{
+                new BakedSegment("right_leg", new String[]{"right_leg"}, c -> true),
+                new BakedSegment("left_leg", new String[]{"left_leg"}, c -> true)};
+            default -> new BakedSegment[0];
+        };
+    }
+
+    /** Humanoid part that carries a baked part. */
+    private static net.minecraft.client.model.geom.ModelPart partFor(HumanoidModel<?> m, String baked) {
+        return switch (baked) {
+            case "head" -> m.head;
+            case "body" -> m.body;
+            case "right_arm", "right_hand" -> m.rightArm;
+            case "left_arm", "left_hand" -> m.leftArm;
+            case "right_leg" -> m.rightLeg;
+            default -> m.leftLeg;
+        };
+    }
+
+    /** Pulls a baked segment off its joint and hinges it open, by {@code o} (0..1). */
+    private static void displaceBaked(net.minecraft.client.model.geom.ModelPart part, String id, float o) {
+        switch (id) {
+            case "back" -> { part.z += 7 * o; part.y -= 1.5F * o; part.xRot -= 0.3F * o; }
+            case "front" -> { part.z -= 7 * o; part.y += 1.0F * o; part.xRot += 0.35F * o; }
+            case "shell" -> { part.y -= 6 * o; part.z += 2.5F * o; part.xRot += 0.4F * o; }
+            case "face" -> { part.y -= 3 * o; part.z -= 6 * o; part.xRot -= 0.7F * o; }
+            case "hip" -> { part.z -= 4 * o; part.y += 1.5F * o; }
+            case "right_arm" -> { part.x -= 7 * o; part.y -= 2 * o; part.zRot += 0.95F * o; part.xRot -= 0.3F * o; }
+            case "left_arm" -> { part.x += 7 * o; part.y -= 2 * o; part.zRot -= 0.95F * o; part.xRot -= 0.3F * o; }
+            case "right_leg" -> { part.x -= 5 * o; part.y += 2.5F * o; part.z -= 2 * o; part.zRot += 0.4F * o; }
+            default -> { part.x += 5 * o; part.y += 2.5F * o; part.z -= 2 * o; part.zRot -= 0.4F * o; }
+        }
+    }
+
+    /**
+     * Segmented assembly of a baked suit piece (0.1.8.0). Each segment flies in with its own
+     * offset and slams shut in turn, with a glint flash when it locks. The textures and colours
+     * come from the same armour layers as the worn piece (palette included).
+     */
+    private static void renderBakedSegments(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack, ArmorMaterial material,
+                                            IClientItemExtensions ext, int fallback, LivingEntity wearer,
+                                            com.miophas.singularity_iteration.common.client.render.BakedArmorModel baked, HumanoidModel<LivingEntity> base,
+                                            EquipmentSlot slot, boolean innerLayer, boolean flash, SegmentClock clock) {
+        var geometry = baked.geometry();
+        base.copyPropertiesTo(baked);            // a shared model may hold the pose of the last wearer
+        BakedSegment[] segs = bakedSegments(slot);
+        int n = segs.length;
+        for (int j = 0; j < n; j++) {
+            BakedSegment seg = segs[j];
+            float o = clock.open(j, n);
+            boolean seat = flash || clock.seat(j, n);
+            for (int i = 0; i < material.layers().size(); i++) {
+                ArmorMaterial.Layer layer = material.layers().get(i);
+                int color = ext.getArmorLayerTintColor(stack, wearer, layer, i, fallback);
+                if (color == 0) continue;
+                ResourceLocation texture = ClientHooks.getArmorTexture(wearer, stack, layer, innerLayer, slot);
+                var vc = buffers.getBuffer(RenderType.armorCutoutNoCull(texture));
+                drawSegment(pose, vc, light, color, baked, geometry, seg, o);
+                if (i == 0 && (stack.hasFoil() || seat))
+                    drawSegment(pose, buffers.getBuffer(RenderType.armorEntityGlint()), light, -1, baked, geometry, seg, o);
+            }
+        }
+    }
+
+    private static void drawSegment(PoseStack pose, com.mojang.blaze3d.vertex.VertexConsumer vc, int light, int color,
+                                    com.miophas.singularity_iteration.common.client.render.BakedArmorModel baked,
+                                    java.util.Map<String, float[][]> geometry, BakedSegment seg, float o) {
+        for (String name : seg.parts()) {
+            var part = partFor(baked, name);
+            float sx = part.x, sy = part.y, sz = part.z, rx = part.xRot, ry = part.yRot, rz = part.zRot;
+            displaceBaked(part, seg.id(), o);
+            com.miophas.singularity_iteration.common.client.render.BakedArmorModel.drawFiltered(pose, vc, part, geometry.get(name),
+                seg.filter(), light, OverlayTexture.NO_OVERLAY, color);
+            part.x = sx; part.y = sy; part.z = sz; part.xRot = rx; part.yRot = ry; part.zRot = rz;
+        }
+    }
+
+    /**
+     * Items that fly in as a drawn blade: blades of SlashBlade: Resharped (only that fork, see
+     * {@link SlashBladeResharpedBridge}) and items in the {@code mio_icif:armory/drawn_blade} tag.
+     */
+    private static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> DRAWN_BLADES = net.minecraft.tags.TagKey.create(
+        net.minecraft.core.registries.Registries.ITEM, ResourceLocation.fromNamespaceAndPath("mio_icif", "armory/drawn_blade"));
+
+    static boolean isDrawnBlade(ItemStack stack) {
+        return SlashBladeResharpedBridge.isBlade(stack) || stack.is(DRAWN_BLADES);
+    }
+
+    /** Ready-stance tilt of the blade at the hand (degrees, tip up). */
+    private static final float READY_TILT = 30.0F;
+
+    /**
+     * Drawn-blade flight pose (0.1.8.0, SlashBlade: Resharped link). The blade flies out of its
+     * sheath, tip first along the flight path (local -z is the travel direction). As it squares
+     * up to the body (k to 1) it lifts into a ready stance, and the grip is at the dock point, so
+     * it arrives grip first in the hand. A Resharped blade uses its own OBJ blade part (the
+     * hand display contexts of Resharped draw nothing); a tagged item uses its item model.
+     */
+    private boolean renderDrawnBlade(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack,
+                                     ArmoryPieceEntity entity, float k) {
+        pose.pushPose();
+        pose.mulPose(Axis.XP.rotationDegrees(READY_TILT * k));
+        boolean drawn;
+        if (SlashBladeResharpedBridge.isBlade(stack)) {
+            // blade.obj: tip at -x, grip near x = GRIP_X; turn -x onto the path
+            pose.mulPose(Axis.YP.rotationDegrees(-90));
+            float s = SlashBladeResharpedBridge.MODEL_SCALE;
+            pose.scale(s, s, s);
+            pose.translate(-SlashBladeResharpedBridge.GRIP_X, 0, 0);
+            drawn = SlashBladeResharpedBridge.renderBlade(stack, pose, buffers, light);
+        } else {
+            // flat item model, no display transform: the tip is at the top right (+x, +y);
+            // turn the diagonal onto +y, move the grip to the pivot, then lay +y onto the path
+            pose.mulPose(Axis.XP.rotationDegrees(-90));
+            pose.translate(0, 0.4, 0);
+            pose.mulPose(Axis.ZP.rotationDegrees(45));
+            items.renderStatic(null, stack, ItemDisplayContext.NONE, false, pose, buffers, entity.level(),
+                light, OverlayTexture.NO_OVERLAY, entity.getId());
+            drawn = true;
+        }
+        pose.popPose();
+        return drawn;
+    }
+
     private boolean renderArmor(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack, ArmorItem armor,
-                                ArmoryPiece piece, float height, Entity target, boolean flash, float[] open, boolean[] seat) {
+                                ArmoryPiece piece, float height, Entity target, boolean flash, float[] open, boolean[] seat,
+                                SegmentClock clock) {
         LivingEntity wearer = target instanceof LivingEntity l ? l : Minecraft.getInstance().player;
         if (wearer == null) return false;
         pose.pushPose();
@@ -182,6 +354,11 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
             int fallback = ext.getDefaultDyeColor(stack);
             boolean anyOpen = false;
             for (float o : open) anyOpen |= o > 0.001F;
+            // 0.1.8.0: baked suit models (nano, quantum) assemble in finer segments
+            if (model instanceof com.miophas.singularity_iteration.common.client.render.BakedArmorModel baked) {
+                renderBakedSegments(pose, buffers, light, stack, material, ext, fallback, wearer, baked, base, slot, innerLayer, flash, clock);
+                return true;
+            }
             if (model == base && anyOpen) {
                 // vanilla armour model: draw each segment on its own, displaced off its joint and hinged open
                 net.minecraft.client.model.geom.ModelPart[][] segs = segments(base, slot);

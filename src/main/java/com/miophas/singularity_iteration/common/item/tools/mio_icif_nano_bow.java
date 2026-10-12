@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 @SuppressWarnings("null")
-public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem {
+public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem, com.miophas.singularity_iteration.core.api.item.IBallisticWeapon {
     public static final int MAX_ENERGY = 500000;
     public static final int ENERGY_PER_SHOT = 300;
     public static final int TIER = 3;
@@ -247,5 +247,11 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem 
     @Override
     public boolean isRanged() {
         return true;
+    }
+
+    /** 0.1.8.0 ballistic calculator profile (see IBallisticWeapon). */
+    @Override
+    public com.miophas.singularity_iteration.core.api.item.BallisticProfile ballistics(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, int useTicks) {
+        return com.miophas.singularity_iteration.core.api.item.BallisticProfile.straight("NANOBOW", getNanoArrowVelocity(Math.max(1, useTicks == 0 ? 72000 : useTicks)) * 3.0, 0.99, 0.6, useTicks > 0 && getNanoArrowVelocity(useTicks) >= getNanoArrowVelocity(72000) * 0.999F);
     }
 }

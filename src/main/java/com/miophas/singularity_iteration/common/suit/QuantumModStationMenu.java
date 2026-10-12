@@ -60,7 +60,8 @@ public class QuantumModStationMenu extends mio_icif_machine_menu {
 
     public ItemStack suit() { return getSlot(1).getItem(); }
     public ItemStack unit() { return getSlot(2).getItem(); }
-    public List<SuitModuleType> installed() { return SuitModules.installed(suit()).types(); }
+    /** 0.1.8.0: built-in and registered addon units, in install order (the removal buttons use this index). */
+    public List<UnitRef> installed() { return SuitModules.installed(suit()).units(); }
 
     /** Button id n = remove the n-th installed unit. */
     @Override

@@ -200,7 +200,9 @@ The remaining mixins and the reason for each:
 
 These rules are a proposal for the API. The project has not adopted them formally yet.
 
-* A minor version (0.1.x) keeps the API source compatible. A removal is announced one version
+* In the version iteration rules, the version format is 0.1.x.y.
+* Under this version format, 0 indicates an unofficial release; 1 represents the first series of Singularity Iteration releases; x represents the x-th major        update in that series; and y represents the y-th addition or bug fix made on top of the x-th update.
+* A minor version (0.1.8.x) keeps the API source compatible. A removal is announced one version
   before.
 * `@Deprecated` API stays for one minor version.
 * Check `MioIcifAPI.instance()` at run time. Do not call internal classes.

@@ -59,6 +59,8 @@ public class ArmoryPieceEntity extends Entity {
     // server-only state
     @Nullable private UUID owner;
     @Nullable private GlobalPos armory;
+    /** 0.1.8.0: the wearer when it is not the owner (a companion, for example a Touhou Little Maid maid). */
+    @Nullable private UUID companion;
     private int suit;
     private int missingOwnerTicks;
     private boolean finished;
@@ -88,7 +90,19 @@ public class ArmoryPieceEntity extends Entity {
         return e;
     }
 
-    public static ArmoryPieceEntity echo(ServerLevel level, Player from, ItemStack copy, ArmoryPiece piece, Vec3 start, Vec3 end) {
+    /**
+     * A deliver piece for a companion of {@code owner} (0.1.8.0, remote equip). The piece flies to
+     * {@code wearer} and is equipped there; the old piece of that slot flies home to the Armory.
+     */
+    public static ArmoryPieceEntity deliverTo(ServerLevel level, ServerPlayer owner, net.minecraft.world.entity.LivingEntity wearer, ItemStack item,
+                                              ArmoryPiece piece, Vec3 start, GlobalPos armory, int suit, int delayTicks, int durationTicks) {
+        ArmoryPieceEntity e = deliver(level, owner, item, piece, start, armory, suit, delayTicks, durationTicks);
+        e.companion = wearer.getUUID();
+        e.entityData.set(DATA_TARGET, wearer.getId());
+        return e;
+    }
+
+    public static ArmoryPieceEntity echo(ServerLevel level, Entity from, ItemStack copy, ArmoryPiece piece, Vec3 start, Vec3 end) {
         ArmoryPieceEntity e = new ArmoryPieceEntity(ArmoryRegistry.PIECE_ENTITY.get(), level);
         int duration = ArmoryFlight.PURGE_TICKS + ArmoryFlight.returnTicksFor(ArmoryFlight.length(start, end));
         e.setup(copy, piece, MODE_RETURN, from.getId(), start, end, level.getGameTime(), duration);
@@ -277,67 +291,103 @@ public class ArmoryPieceEntity extends Entity {
             return;
         }
         ServerPlayer player = owner == null ? null : level.getServer().getPlayerList().getPlayer(owner);
-        boolean present = player != null && player.isAlive() && player.level() == level;
-        if (present && entityData.get(DATA_TARGET) != player.getId()) entityData.set(DATA_TARGET, player.getId());
+        net.minecraft.world.entity.LivingEntity wearer = companion == null ? player
+            : level.getEntity(companion) instanceof net.minecraft.world.entity.LivingEntity l ? l : null;
+        boolean present = wearer != null && wearer.isAlive() && wearer.level() == level;
+        if (present && entityData.get(DATA_TARGET) != wearer.getId()) entityData.set(DATA_TARGET, wearer.getId());
         if (!present) {
-            if (++missingOwnerTicks > OWNER_GRACE_TICKS) giveBack(null);
+            if (++missingOwnerTicks > OWNER_GRACE_TICKS) giveBack(player);
             return;
         }
         missingOwnerTicks = 0;
         float age = age(0);
         // the old piece unlocks and leaves while the new one brakes and hovers in front
-        if (!purged && age >= duration()) purge(player);
-        if (age >= snapEnd() + ArmoryFlight.LATCH_TICKS) dock(player);
+        if (!purged && age >= duration()) purge(wearer, player);
+        if (age >= snapEnd() + ArmoryFlight.LATCH_TICKS) dock(wearer, player);
         else if (tickCount > snapEnd() + MAX_EXTRA_LIFETIME + 200) giveBack(player);
     }
 
-    /** The piece worn in this slot unlocks and is flown home ahead of the new one. */
-    private void purge(ServerPlayer player) {
-        purged = true;
-        ArmoryPiece piece = piece();
-        ItemStack old = player.getItemBySlot(piece.slot);
-        if (old.isEmpty() || old.getItem() instanceof ArmoryRemoteItem) return;   // the remote is stashed on docking instead
-        if (!player.isCreative() && net.minecraft.world.item.enchantment.EnchantmentHelper.has(old,
-                net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) return;
-        ItemStack copy = old.copy();
-        player.setItemSlot(piece.slot, ItemStack.EMPTY);
-        ServerLevel level = (ServerLevel) level();
-        Vec3 at = ArmoryFlight.dockPoint(player, 1.0F, piece);
-        ItemStack rest = storeHome(copy.copy(), piece);
-        if (!rest.isEmpty()) {
-            if (!player.getInventory().add(rest)) player.drop(rest, false);
-            return;
-        }
-        level.addFreshEntity(echo(level, player, copy, piece, at, homeTarget(player, at)));
+    /** An item that the Armory cannot take: owner inventory, else dropped at the wearer. */
+    private static void handOver(ItemStack rest, net.minecraft.world.entity.LivingEntity wearer, @Nullable ServerPlayer player) {
+        if (rest.isEmpty()) return;
+        if (player != null && player.getInventory().add(rest)) return;
+        if (wearer instanceof ServerPlayer p) p.drop(rest, false);
+        else wearer.spawnAtLocation(rest);
     }
 
-    private void dock(ServerPlayer player) {
+    /** The piece worn in this slot unlocks and is flown home ahead of the new one. */
+    private void purge(net.minecraft.world.entity.LivingEntity wearer, @Nullable ServerPlayer player) {
+        purged = true;
+        ArmoryPiece piece = piece();
+        ItemStack old = wearer.getItemBySlot(piece.slot);
+        if (old.isEmpty() || old.getItem() instanceof ArmoryRemoteItem) return;   // the remote is stashed on docking instead
+        boolean creative = wearer instanceof Player p && p.isCreative();
+        if (!creative && net.minecraft.world.item.enchantment.EnchantmentHelper.has(old,
+                net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)) return;
+        ItemStack copy = old.copy();
+        wearer.setItemSlot(piece.slot, ItemStack.EMPTY);
+        ServerLevel level = (ServerLevel) level();
+        Vec3 at = ArmoryFlight.dockPoint(wearer, 1.0F, piece);
+        ItemStack rest = storeHome(copy.copy(), piece);
+        if (!rest.isEmpty()) {
+            handOver(rest, wearer, player);
+            return;
+        }
+        level.addFreshEntity(echo(level, wearer, copy, piece, at, homeTarget(level, armory, at)));
+    }
+
+    private void dock(net.minecraft.world.entity.LivingEntity wearer, @Nullable ServerPlayer player) {
         if (finished) return;
         finished = true;
         ArmoryPiece piece = piece();
         ItemStack incoming = item().copy();
-        ItemStack old = player.getItemBySlot(piece.slot).copy();
-        player.setItemSlot(piece.slot, incoming);
+        ItemStack old = wearer.getItemBySlot(piece.slot).copy();
+        // 0.1.8.0: no vanilla armor equip sound on a player; the heavy mechanical seal below replaces it.
+        if (wearer instanceof ServerPlayer sp) equipSilently(sp, piece.slot, incoming);
+        else wearer.setItemSlot(piece.slot, incoming);
         entityData.set(DATA_ITEM, ItemStack.EMPTY);
+        if (player != null) {
+            // 0.1.8.0 public API
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new com.miophas.singularity_iteration.core.api.armory.ArmoryEvent.PieceDocked(
+                player, wearer, piece.slot, wearer.getItemBySlot(piece.slot)));
+        }
         ServerLevel level = (ServerLevel) level();
-        Vec3 at = ArmoryFlight.dockPoint(player, 1.0F, piece);
+        Vec3 at = ArmoryFlight.dockPoint(wearer, 1.0F, piece);
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z, 8, 0.25, 0.2, 0.25, 0.05);
+        level.playSound(null, at.x, at.y, at.z, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ARMORY_SEAL.get(),
+            net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 0.94F + level.random.nextFloat() * 0.12F);
         // the remote stays with its owner: it moves to a free inventory slot instead of flying home
-        if (old.getItem() instanceof ArmoryRemoteItem) {
-            stash(player, old);
+        if (old.getItem() instanceof ArmoryRemoteItem && wearer instanceof ServerPlayer sp) {
+            stash(sp, old);
             old = ItemStack.EMPTY;
         }
         // Normally the slot was purged before arrival; anything put there since goes home too.
         if (!old.isEmpty()) {
             ItemStack rest = storeHome(old, piece);
             boolean wentHome = rest.isEmpty();
-            if (!rest.isEmpty() && !player.getInventory().add(rest)) player.drop(rest, false);
+            handOver(rest, wearer, player);
             if (wentHome) {
-                Vec3 home = homeTarget(player, at);
-                level.addFreshEntity(echo(level, player, old, piece, at, home));
+                Vec3 home = homeTarget(level, armory, at);
+                level.addFreshEntity(echo(level, wearer, old, piece, at, home));
             }
         }
         discard();
+    }
+
+    /**
+     * Equips a stack without the vanilla equip sound (0.1.8.0). It writes the player inventory
+     * directly. Vanilla detects the equipment change in the next living tick: it updates the
+     * attributes, fires {@code LivingEquipmentChangeEvent} and sends the equipment to the clients.
+     * Only {@code setItemSlot} plays the armor equip sound.
+     */
+    static void equipSilently(ServerPlayer player, net.minecraft.world.entity.EquipmentSlot slot, ItemStack stack) {
+        var inv = player.getInventory();
+        switch (slot) {
+            case HEAD, CHEST, LEGS, FEET -> inv.armor.set(slot.getIndex(), stack);
+            case MAINHAND -> inv.items.set(inv.selected, stack);
+            case OFFHAND -> inv.offhand.set(0, stack);
+            default -> player.setItemSlot(slot, stack);
+        }
     }
 
     /** Puts a stack into a free main-inventory slot other than the selected one, else drops it. */
@@ -349,11 +399,6 @@ public class ArmoryPieceEntity extends Entity {
             return;
         }
         player.drop(stack, false);
-    }
-
-    /** Fly-home target for the echo of the old piece. */
-    private Vec3 homeTarget(ServerPlayer player, Vec3 from) {
-        return homeTarget(level(), armory, from);
     }
 
     /** Fly-home target: the home block's top when close, else a point high up towards it. */
@@ -473,6 +518,7 @@ public class ArmoryPieceEntity extends Entity {
         tag.putBoolean("Purged", purged);
         if (owner != null) tag.putUUID("Owner", owner);
         if (armory != null) GlobalPos.CODEC.encodeStart(NbtOps.INSTANCE, armory).result().ifPresent(t -> tag.put("Armory", t));
+        if (companion != null) tag.putUUID("Companion", companion);
     }
 
     @Override
@@ -488,6 +534,7 @@ public class ArmoryPieceEntity extends Entity {
         purged = tag.getBoolean("Purged");
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
         armory = tag.contains("Armory") ? GlobalPos.CODEC.parse(NbtOps.INSTANCE, tag.get("Armory")).result().orElse(null) : null;
+        companion = tag.hasUUID("Companion") ? tag.getUUID("Companion") : null;
         if (stack.isEmpty()) finished = true;
     }
 }

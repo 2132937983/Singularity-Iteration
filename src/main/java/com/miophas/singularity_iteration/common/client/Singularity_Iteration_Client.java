@@ -59,6 +59,14 @@ import org.jetbrains.annotations.Nullable;
 public class Singularity_Iteration_Client {
     public Singularity_Iteration_Client(ModContainer container, net.neoforged.bus.api.IEventBus modEventBus) {
         com.miophas.singularity_iteration.common.client.screen.mio_icif_screens.register(modEventBus);
+        // 0.1.8.0: the manual is a code-built GuideME guide (reactor simulator tag); only with GuideME loaded
+        if (net.neoforged.fml.ModList.get().isLoaded("guideme")) {
+            com.miophas.singularity_iteration.common.client.guide.GuideMeIntegration.register();
+        }
+        // 0.1.8.0: Create ponder scenes; only with the Ponder library (bundled in Create 6)
+        if (net.neoforged.fml.ModList.get().isLoaded("ponder")) {
+            com.miophas.singularity_iteration.common.client.ponder.PonderIntegration.register();
+        }
         // Allows NeoForge to create a config screen for this mod's configs.
         // The config screen is accessed by going to the Mods screen > clicking on your mod > clicking on config.
         // Do not forget to add translations for your config options to the en_us.json file.
@@ -193,14 +201,22 @@ public class Singularity_Iteration_Client {
             com.miophas.singularity_iteration.common.client.render.BakedArmorModel.invalidate());
     }
 
-    /** Nano suit (0.1.7.34): Blockbench geometry for each piece, shared by all wearers. */
+    /**
+     * Nano suit (0.1.7.34) and quantum suit (0.1.8.0): Blockbench geometry for each piece,
+     * shared by all wearers. The inventory icon renders the same 3D model.
+     */
     private static void registerNanoArmor(RegisterClientExtensionsEvent event) {
-        String[] names = {"nano_helmet", "nano_chestplate", "nano_leggings", "nano_boots"};
+        String[] names = {"nano_helmet", "nano_chestplate", "nano_leggings", "nano_boots",
+            "quantum_helmet", "quantum_chestplate", "quantum_leggings", "quantum_boots"};
         net.minecraft.world.item.Item[] items = {
             com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_HELMET.get(),
             com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get(),
             com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_LEGGINGS.get(),
-            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_BOOTS.get()};
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_BOOTS.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_QUANTUM_LEGGINGS.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get()};
         for (int i = 0; i < names.length; i++) {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor_models/" + names[i] + ".json");
             ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "textures/models/armor/" + names[i] + ".png");
@@ -216,6 +232,11 @@ public class Singularity_Iteration_Client {
                 public HumanoidModel<?> getHumanoidArmorModel(LivingEntity entity, ItemStack stack, net.minecraft.world.entity.EquipmentSlot slot, HumanoidModel<?> original) {
                     if (model == null) model = new com.miophas.singularity_iteration.common.client.render.BakedArmorModel(id);
                     return model;
+                }
+                /** 0.1.8.0 suit palette: layer 0 = plates (primary), layer 1 = light strips (accent) or skipped. */
+                @Override
+                public int getArmorLayerTintColor(ItemStack stack, LivingEntity entity, net.minecraft.world.item.ArmorMaterial.Layer layer, int layerIdx, int fallbackColor) {
+                    return com.miophas.singularity_iteration.common.suit.SuitPalette.tint(stack, layerIdx);
                 }
             }, items[i]);
         }
@@ -511,6 +532,9 @@ public class Singularity_Iteration_Client {
 
     @SubscribeEvent
     static void registerBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        // 0.1.8.0: resin collector fluid animation (tray level and stream)
+        event.registerBlockEntityRenderer(mio_icif_block_entities.RESIN_COLLECTOR.get(),
+            com.miophas.singularity_iteration.common.client.render.ResinCollectorRenderer::new);
         // 注册风力动能发生机转子渲染器
         event.registerBlockEntityRenderer(
             mio_icif_block_entities.WIND_KINETIC_GENERATOR_ENTITY_TYPE.get(),

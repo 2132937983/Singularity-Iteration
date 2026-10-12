@@ -65,6 +65,6 @@ public class mio_icif_leggings_nano extends mio_icif_armor_elc {
     @Override
     public net.minecraft.resources.ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
                                                                   net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
-        return net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/models/armor/nano_leggings.png");
+        return com.miophas.singularity_iteration.common.suit.SuitPalette.texture(stack, "textures/models/armor/nano_leggings", MioIcifArmorMaterials.isAccentLayer(layer));
     }
 }

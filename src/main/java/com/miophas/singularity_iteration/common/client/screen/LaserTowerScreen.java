@@ -319,8 +319,8 @@ public class LaserTowerScreen extends mio_icif_screen<LaserTowerMenu> {
             case TAB_STATS -> renderStatsLabels(g);
             default -> renderTargetLabels(g);
         }
-        g.drawString(font, Component.translatable("gui.mio_icif.laser_tower.cost_short", menu.costPerTarget()),
-            BAR_X, 86, SiGuiTheme.TEXT, false);
+        drawFitted(g, font, Component.translatable("gui.mio_icif.laser_tower.cost_short", menu.costPerTarget()),
+            BAR_X, 86, BAR_W, SiGuiTheme.TEXT, false);
     }
 
     private void renderControlLabels(GuiGraphics g) {
@@ -330,8 +330,8 @@ public class LaserTowerScreen extends mio_icif_screen<LaserTowerMenu> {
         Component stateText = Component.translatable("gui.mio_icif.laser_tower.state." + state);
         int room = RADAR_X - 19;
         drawFitted(g, font, stateText, 17, 19, room, SiGuiTheme.TEXT, false);
-        g.drawString(font, Component.translatable("gui.mio_icif.laser_tower.horizontal", menu.horizontalRange()), 8, 31, SiGuiTheme.TEXT, false);
-        g.drawString(font, Component.translatable("gui.mio_icif.laser_tower.vertical", menu.verticalRange()), 8, 56, SiGuiTheme.TEXT, false);
+        drawFitted(g, font, Component.translatable("gui.mio_icif.laser_tower.horizontal", menu.horizontalRange()), 8, 31, RADAR_X - 12, SiGuiTheme.TEXT, false);
+        drawFitted(g, font, Component.translatable("gui.mio_icif.laser_tower.vertical", menu.verticalRange()), 8, 56, RADAR_X - 12, SiGuiTheme.TEXT, false);
         small(g, Component.translatable("gui.mio_icif.laser_tower.volley", menu.lastVolley(), menu.maxTargets()).getString(),
             RADAR_X + 3, RADAR_Y + RADAR_S - 8, SiGuiTheme.TEXT_SCREEN);
     }
@@ -339,8 +339,8 @@ public class LaserTowerScreen extends mio_icif_screen<LaserTowerMenu> {
     private void renderStatsLabels(GuiGraphics g) {
         LaserTowerStats st = menu.stats();
         int lx = 77;
-        g.drawString(font, Component.translatable(pieShowsKills ? "gui.mio_icif.laser_tower.pie.kills" : "gui.mio_icif.laser_tower.pie.hits"),
-            lx, 21, SiGuiTheme.ACCENT, false);
+        drawFitted(g, font, Component.translatable(pieShowsKills ? "gui.mio_icif.laser_tower.pie.kills" : "gui.mio_icif.laser_tower.pie.hits"),
+            lx, 21, imageWidth - lx - 7, SiGuiTheme.ACCENT, false);
         for (int i = 0; i < Math.min(pieCount, 3); i++) {
             int ly = 31 + i * 8;
             g.fill(lx, ly + 1, lx + 5, ly + 6, PieChart.PALETTE[i]);
@@ -396,7 +396,7 @@ public class LaserTowerScreen extends mio_icif_screen<LaserTowerMenu> {
             g.drawString(font, "\u00d7", LIST_X + LIST_W - 8, ry, SiGuiTheme.BAD, false);
         }
         if (entries.isEmpty()) {
-            g.drawString(font, Component.translatable("gui.mio_icif.laser_tower.list_empty"), LIST_X + 2, LIST_Y + 2, SiGuiTheme.TEXT_SCREEN_DIM, false);
+            drawFitted(g, font, Component.translatable("gui.mio_icif.laser_tower.list_empty"), LIST_X + 2, LIST_Y + 2, LIST_W - 4, SiGuiTheme.TEXT_SCREEN_DIM, false);
         }
         String count = entries.size() + "/" + TargetFilter.MAX_ENTRIES;
         g.drawString(font, count, 8, 37, SiGuiTheme.TEXT, false);

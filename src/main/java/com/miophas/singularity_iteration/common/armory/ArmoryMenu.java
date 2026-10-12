@@ -68,6 +68,51 @@ public class ArmoryMenu extends mio_icif_machine_menu {
         };
     }
 
+    /**
+     * 0.1.8.0: Shift + click from the player inventory fills a suit slot first. Before, an electric
+     * armor piece went to the battery slot (the generic machine menu tries chargeable items there
+     * first). Order: an empty matching slot of a suit that already has other pieces (complete the
+     * suit), then the first empty matching slot of any suit, then the generic rules (battery slot).
+     */
+    @Override
+    public ItemStack quickMoveStack(Player player, int index) {
+        if (index >= mio_icif_armory.SLOT_COUNT && index < slots.size()) {
+            var source = slots.get(index);
+            if (source.hasItem()) {
+                ItemStack stack = source.getItem();
+                int target = suitSlotFor(stack);
+                if (target >= 0) {
+                    ItemStack copy = stack.copy();
+                    if (moveItemStackTo(stack, target, target + 1, false)) {
+                        if (stack.isEmpty()) source.setByPlayer(ItemStack.EMPTY); else source.setChanged();
+                        source.onTake(player, stack);
+                        return copy;
+                    }
+                }
+            }
+        }
+        return super.quickMoveStack(player, index);
+    }
+
+    /** Menu slot index of the best empty suit slot for {@code stack}, or -1. */
+    private int suitSlotFor(ItemStack stack) {
+        int firstFree = -1;
+        for (int set = 0; set < mio_icif_armory.SETS; set++) {
+            boolean partial = false;
+            int free = -1;
+            for (ArmoryPiece piece : ArmoryPiece.COLUMNS) {
+                int index = mio_icif_armory.slotOf(set, piece);
+                var slot = slots.get(index);
+                if (slot.hasItem()) partial = true;
+                else if (free < 0 && ArmoryRules.fits(stack, piece)) free = index;
+            }
+            if (free < 0) continue;
+            if (partial) return free;
+            if (firstFree < 0) firstFree = free;
+        }
+        return firstFree;
+    }
+
     @Override protected int getPlayerInventoryY() { return 150; }
     @Override protected int getPlayerHotbarY() { return 208; }
     @Override protected int getBatterySlotIndex() { return mio_icif_armory.BATTERY_SLOT; }

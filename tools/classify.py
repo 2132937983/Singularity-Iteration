@@ -1,6 +1,10 @@
-import json,glob,os,collections
-CUR='/home/claude/work/src/src/main/resources/assets/mio_icif'
-ORG='/home/claude/orig/src/main/resources/assets/mio_icif'
+import argparse,json,glob,os,collections
+from pathlib import Path
+CUR = str(Path(__file__).resolve().parents[1] / 'src/main/resources/assets/mio_icif')
+parser = argparse.ArgumentParser(description='Classify current block models against original assets.')
+parser.add_argument('--baseline', required=True, type=Path, metavar='ASSETS_DIR',
+                    help='Original assets/mio_icif directory containing models and textures.')
+ORG = parser.parse_args().baseline.expanduser().resolve()
 def load(p): return json.load(open(p,encoding='utf-8-sig'))
 restorable=[];new=[];texmiss=[]
 for f in glob.glob(CUR+'/models/block/**/*.json',recursive=True):

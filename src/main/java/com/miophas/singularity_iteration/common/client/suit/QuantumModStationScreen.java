@@ -56,7 +56,7 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
         ItemStack suit = menu.suit();
         EquipmentSlot slot = SuitModules.slotOf(suit);
         int cap = slot == null || !SuitModules.isSuitPiece(suit) ? 0 : SuitModules.capacity(slot);
-        List<SuitModuleType> units = menu.installed();
+        List<com.miophas.singularity_iteration.common.suit.UnitRef> units = menu.installed();
         int head = 0xFF7CFFB2;
         g.drawString(font, Component.translatable("gui.mio_icif.station.units", units.size(), cap), lx + 4, ly + 3, head, false);
         // capacity pips
@@ -65,12 +65,12 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
             g.fill(px, ly + 4, px + 5, ly + 9, i < units.size() ? 0xFF7CFFB2 : 0x407CFFB2);
         }
         for (int i = 0; i < units.size(); i++) {
-            SuitModuleType type = units.get(i);
+            var type = units.get(i);
             int ry = ly + QuantumModStationMenu.LIST_TOP + i * QuantumModStationMenu.ROW_H;
             boolean hover = mouseX >= lx + 2 && mouseX < lx + lw - 2 && mouseY >= ry && mouseY < ry + QuantumModStationMenu.ROW_H - 1;
             g.fill(lx + 2, ry, lx + lw - 2, ry + QuantumModStationMenu.ROW_H - 1, hover ? 0x40FFFFFF : 0x20FFFFFF);
             g.fill(lx + 2, ry, lx + 4, ry + QuantumModStationMenu.ROW_H - 1, 0xFF000000 | type.color());
-            g.renderItem(new ItemStack(com.miophas.singularity_iteration.common.suit.SuitRegistry.unitItem(type)), lx + 5, ry - 2);
+            g.renderItem(type.unitStack(), lx + 5, ry - 2);
             drawFitted(g, font, Component.translatable(type.nameKey()), lx + 22, ry + 3, lw - 40, 0xFFE8F4F8, false);
             boolean on = com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.isEnabled(suit, type.featureKey());
             g.fill(lx + lw - 25, ry + 4, lx + lw - 21, ry + 8, on ? 0xFF7CFFB2 : 0xFF5A5F66);
@@ -101,7 +101,7 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         int lx = leftPos + QuantumModStationMenu.LIST_X, ly = topPos + QuantumModStationMenu.LIST_Y, lw = QuantumModStationMenu.LIST_W;
-        List<SuitModuleType> units = menu.installed();
+        List<com.miophas.singularity_iteration.common.suit.UnitRef> units = menu.installed();
         for (int i = 0; i < units.size(); i++) {
             int ry = ly + QuantumModStationMenu.LIST_TOP + i * QuantumModStationMenu.ROW_H;
             int bx = lx + lw - 14, by = ry + 1;
@@ -131,15 +131,15 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
                     .withStyle(ChatFormatting.GRAY)), mouseX, mouseY);
         }
         int lx = x + QuantumModStationMenu.LIST_X, ly = y + QuantumModStationMenu.LIST_Y, lw = QuantumModStationMenu.LIST_W;
-        List<SuitModuleType> units = menu.installed();
+        List<com.miophas.singularity_iteration.common.suit.UnitRef> units = menu.installed();
         for (int i = 0; i < units.size(); i++) {
             int ry = ly + QuantumModStationMenu.LIST_TOP + i * QuantumModStationMenu.ROW_H;
             if (mouseX >= lx + 2 && mouseX < lx + lw - 2 && mouseY >= ry && mouseY < ry + QuantumModStationMenu.ROW_H - 1) {
-                SuitModuleType type = units.get(i);
+                var type = units.get(i);
                 List<Component> tip = new ArrayList<>();
                 tip.add(Component.translatable(type.nameKey()).withStyle(s -> s.withColor(type.color())));
                 tip.add(Component.translatable(type.descriptionKey()).withStyle(ChatFormatting.GRAY));
-                tip.add(type == SuitModuleType.DEFLECTOR
+                tip.add(type.builtin() == SuitModuleType.DEFLECTOR
                     ? Component.translatable("module.mio_icif.tooltip.deflector_cost", SuitModules.DEFLECTOR_EU_PER_DAMAGE, (int) SuitModules.DEFLECTOR_MAX_PER_HIT)
                     : Component.translatable("module.mio_icif.tooltip.drain", type.drainPerTick()));
                 tip.add(Component.translatable("gui.mio_icif.station.eject_hint").withStyle(ChatFormatting.DARK_GRAY));

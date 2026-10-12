@@ -126,7 +126,8 @@ public final class ManeuverMode {
 
     /** Switch on, quantum chestplate worn, power left. */
     public static boolean canUse(Player player) {
-        return isArmed(player) && SuitModules.energy(player.getItemBySlot(EquipmentSlot.CHEST)) >= MIN_ENERGY;
+        // 0.1.8.0: a full set shares its energy pool with the chestplate.
+        return isArmed(player) && SuitModules.energy(player, player.getItemBySlot(EquipmentSlot.CHEST)) >= MIN_ENERGY;
     }
 
     /**
@@ -137,7 +138,23 @@ public final class ManeuverMode {
      * @return the cost in EU for one tick.
      */
     public static double costPerTick(double speed) {
-        return BASE_COST + SPEED_COST * speed * speed;
+        return BASE_COST + SPEED_COST * speed * speed * dragFactor(speed);
+    }
+
+    /** Speed in blocks per tick where the aerodynamic deflection field starts and where it is complete. */
+    public static final double FIELD_START = 1.0, FIELD_FULL = 1.8;
+    /** Drag removed by a complete deflection field (0.1.8.0). */
+    public static final double FIELD_DRAG_CUT = 0.30;
+
+    /**
+     * Drag multiplier of the speed cost (0.1.8.0). The aerodynamic deflection field forms in cruise
+     * between {@link #FIELD_START} and {@link #FIELD_FULL} blocks per tick (smoothstep) and removes
+     * up to {@link #FIELD_DRAG_CUT} of the speed cost. Examples: the shock barrier (2.4 blocks/t)
+     * costs 127 EU/t instead of 179 EU/t, full speed (4 blocks/t) 342 EU/t instead of 486 EU/t.
+     */
+    public static double dragFactor(double speed) {
+        double x = Math.max(0, Math.min(1, (speed - FIELD_START) / (FIELD_FULL - FIELD_START)));
+        return 1 - FIELD_DRAG_CUT * x * x * (3 - 2 * x);
     }
 
     /**
@@ -198,7 +215,7 @@ public final class ManeuverMode {
         double speed = Math.min(MAX_SPEED * 1.5, now.distanceTo(before));
         double owed = bill.getOrDefault(player.getUUID(), 0.0) + costPerTick(speed);
         if (player.tickCount % BILL_INTERVAL == 0) {
-            SuitModules.extract(player.getItemBySlot(EquipmentSlot.CHEST), (long) Math.ceil(owed));
+            SuitModules.extract(player, player.getItemBySlot(EquipmentSlot.CHEST), (long) Math.ceil(owed));
             owed = 0;
         }
         bill.put(player.getUUID(), owed);

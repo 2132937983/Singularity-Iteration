@@ -125,7 +125,7 @@ side="BOTH"
 # Optional dependency on Curios API for trinket slots (rings, necklaces, belts)
 [[dependencies.${mod_id}]]
     modId="guideme"
-    # In-game manual (data-driven guide, assets/mio_icif/guideme_guides/manual.json). Optional.
+    # In-game manual (built in code by GuideMeIntegration since 0.1.8.0; pages in assets/mio_icif/guides/mio_icif/manual/). Optional.
     type="optional"
     versionRange="[21.1.1,)"
     ordering="NONE"

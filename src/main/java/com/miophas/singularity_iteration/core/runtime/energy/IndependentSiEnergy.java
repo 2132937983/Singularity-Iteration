@@ -21,6 +21,7 @@ import com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy;
 import com.miophas.singularity_iteration.core.api.energy.IEnergyPacketSource;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.FractionalDistributor;
+import com.miophas.singularity_iteration.core.runtime.energy.engine.FairShareDistributor;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.ReceiverOrder;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.RouteCosts;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.ReceiverContacts;
@@ -713,6 +714,38 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         EnergyAmount balance() { return potential != null ? potential : quote.exactAmount(); }
     }
     /**
+     * One planned delivery of a native window, for both distributors.
+     * {@code voltage}: the packet size for overvoltage effects and meters.
+     * The legacy distributor uses the source debit. The fair-share distributor
+     * uses {@link FairShareDistributor.Delivery#voltage()}.
+     */
+    private record PlannedDelivery(int domain, int entry, int source, int receiver,
+                                   EnergyAmount credit, EnergyAmount pathLoss, double voltage) {
+        EnergyAmount sourceDebit() { return credit.add(pathLoss); }
+    }
+    /** The result of one native allocation, for both distributors. Indexes match the window lists. */
+    private record PlannedRound(EnergyAmount[] debits, EnergyAmount[] credits, EnergyAmount dissipated,
+                                List<PlannedDelivery> deliveries) {
+        EnergyAmount debit(int source) { return debits[source]; }
+        EnergyAmount credit(int receiver) { return credits[receiver]; }
+        static PlannedRound of(FractionalDistributor.Round round, int sources, int receivers) {
+            var debits = new EnergyAmount[sources]; var credits = new EnergyAmount[receivers];
+            for (int i = 0; i < sources; i++) debits[i] = round.debit(i);
+            for (int i = 0; i < receivers; i++) credits[i] = round.credit(i);
+            var deliveries = round.deliveries().stream().map(d -> new PlannedDelivery(d.domain(), d.entry(), d.source(),
+                d.receiver(), d.credit(), d.pathLoss(), d.sourceDebit().toDouble())).toList();
+            return new PlannedRound(debits, credits, round.dissipated(), deliveries);
+        }
+        static PlannedRound of(FairShareDistributor.Round round) {
+            var debits = new EnergyAmount[round.sourceCount()]; var credits = new EnergyAmount[round.receiverCount()];
+            for (int i = 0; i < debits.length; i++) debits[i] = round.debit(i);
+            for (int i = 0; i < credits.length; i++) credits[i] = round.credit(i);
+            var deliveries = round.deliveries().stream().map(d -> new PlannedDelivery(d.domain(), d.entry(), d.source(),
+                d.receiver(), d.credit(), d.pathLoss(), d.voltage())).toList();
+            return new PlannedRound(debits, credits, round.dissipated(), deliveries);
+        }
+    }
+    /**
      * Identifies one native window inside one settlement. The native pass
      * settles each window at most once per settlement. A repeat key means that
      * the cursors went around once, so the pass stops the loop for that source.
@@ -869,6 +902,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final Set<BlockPos> failedOutputs = new HashSet<>();
         /** EU that each transformer received in {@code sampleTick}. It limits FE import to the input limit. */
         final Map<BlockPos, EnergyAmount> transformerReceived = new HashMap<>();
+        /**
+         * EU that each native sink received in {@code sampleTick}, in all windows
+         * and batches. The fair-share distributor subtracts it from the rated
+         * input, so a sink in two windows cannot get its rated input twice.
+         */
+        final Map<BlockPos, EnergyAmount> receivedThisTick = new HashMap<>();
         /** Anchor positions for foreign discovery: conductors, then endpoints. */
         List<BlockPos> scanAnchors = List.of();
         /** Foreign contacts that received an export in {@code sampleTick}. The import pass skips them. */
@@ -1462,6 +1501,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     private void settle(ServerLevel level, WorldGrid grid) {
         if (grid.sampleTick != server.getTickCount()) {
             grid.sampleTick = server.getTickCount(); grid.samples.clear(); grid.packetSpent.clear(); grid.failedOutputs.clear(); grid.transformerReceived.clear(); grid.exportedThisTick.clear();
+            grid.receivedThisTick.clear();
         }
         grid.shocks.clear();
         long started = System.nanoTime();
@@ -1769,7 +1809,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             source.partialPackets, source.packets)).toList();
         var budgets = sources.stream().map(source -> windowOffer(source, allowances, plan.packetLimit)).toList();
         var effectPaths = new ArrayList<List<ConductorRegistry.Path[]>>();
-        var domains = domains(plan, sources, sinks, snapshot, receivers, level.getGameTime(), grid, effectPaths, budgets);
+        final boolean fair = IndependentEnergyMode.fairDistribution();
+        var domains = domains(plan, sources, sinks, snapshot, receivers, level.getGameTime(), grid, effectPaths, budgets, fair);
         var shared = new ArrayList<DomainDistributor.SharedStorage>();
         var sinkIndices = new IdentityHashMap<Port, Integer>();
         for (int i = 0; i < sinks.size(); i++) sinkIndices.put(sinks.get(i), i);
@@ -1781,8 +1822,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (source.potential == null && receiver != null)
                 shared.add(new DomainDistributor.SharedStorage(i, receiver, source.capacity));
         }
-        var round = FractionalDistributor.allocateQuotedTraced(quotes, sources.stream().map(Port::balance).toList(),
-            domains, receivers, room, shared, budgets, selectionRandom);
+        // fair (default): deterministic fair share. legacy: the 0.1.7.x packet priority walk.
+        var round = fair
+            ? fairRound(level, grid, sources, sinks, domains, receivers, room, shared, budgets)
+            : PlannedRound.of(FractionalDistributor.allocateQuotedTraced(quotes, sources.stream().map(Port::balance).toList(),
+                domains, receivers, room, shared, budgets, selectionRandom), sources.size(), sinks.size());
         // Net balance change per port, in EnergyAmount units. A port that is a
         // source and a sink gets one merged delta.
         var deltas = new IdentityHashMap<Port, java.math.BigInteger>();
@@ -1850,13 +1894,15 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             traceLoss = traceLoss.add(delivery.pathLoss());
             var path = effectPaths.get(delivery.domain()).get(delivery.entry())[delivery.receiver()];
             double[] weakestMeasuredLimit = {Double.POSITIVE_INFINITY};
-            // Effects use the largest actual packet on the path, including loss.
+            // Effects use the packet that the source pushes on this path (see PlannedDelivery).
             // A source's tier only caps its offer. A partial delivery is not a full packet.
-            double deliveryVoltage = delivery.sourceDebit().toDouble();
+            double deliveryVoltage = delivery.voltage();
             if (path == null) {
                 if (!delivery.pathLoss().isZero()) throw new IllegalStateException("Direct delivery has conductor loss");
             } else {
-                if (!com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyLoss.fromMilli(path.lossMilli()).equals(delivery.pathLoss())) throw new IllegalStateException("Delivery path and quoted loss differ");
+                // The legacy walk pays the whole path loss per delivery. The fair-share
+                // proportional loss depends on the credit, so this check is legacy only.
+                if (!fair && !com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyLoss.fromMilli(path.lossMilli()).equals(delivery.pathLoss())) throw new IllegalStateException("Delivery path and quoted loss differ");
                 path.visit(position -> {
                     wireVisits[0] = Math.incrementExact(wireVisits[0]);
                     var at = new BlockPos(position.x(), position.y(), position.z());
@@ -1928,11 +1974,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             for (var delivery : round.deliveries()) {
                 var source = sources.get(delivery.source());
                 var sink = sinks.get(delivery.receiver());
-                double sent = delivery.sourceDebit().toDouble(), received = delivery.credit().toDouble();
-                double voltage = sent;
+                double received = delivery.credit().toDouble();
+                double voltage = delivery.voltage();
                 sample(grid, source.position, 0, received, voltage);
                 sample(grid, sink.position, received, 0, voltage);
                 if (sink.transformer != null) grid.transformerReceived.merge(sink.position, delivery.credit(), EnergyAmount::add);
+                grid.receivedThisTick.merge(sink.position, delivery.credit(), EnergyAmount::add);
                 grid.packetSpent.merge(source.position, delivery.sourceDebit(), EnergyAmount::add);
                 var path = effectPaths.get(delivery.domain()).get(delivery.entry())[delivery.receiver()];
                 if (path != null) path.visit(at -> sample(grid, new BlockPos(at.x(), at.y(), at.z()), received, received, voltage));
@@ -2010,6 +2057,61 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         return true;
     }
     /**
+     * Allocates one native window with the {@link FairShareDistributor}.
+     *
+     * <ul>
+     *   <li>Source class: 1 for a storage port, else 0 (generator, relay).</li>
+     *   <li>Receiver class: 0 for a transformer and a load, 1 for storage.</li>
+     *   <li>Rated input: a transformer accepts {@code outputPacket * outputPackets}
+     *       (4 low packets) per tick in both modes. Another sink accepts its
+     *       {@code maxReceive} per tick. The EU that the sink already received
+     *       in this tick ({@code receivedThisTick}) is subtracted. A value of 0
+     *       or less means no rated limit.</li>
+     *   <li>Rotation: the world time. Sources of one class take turns to give
+     *       first.</li>
+     * </ul>
+     */
+    private static PlannedRound fairRound(ServerLevel level, WorldGrid grid, List<Port> sources, List<Port> sinks,
+            List<DomainDistributor.Domain> domains, int[] receivers, List<EnergyAmount> room,
+            List<DomainDistributor.SharedStorage> shared, List<EnergyAmount> budgets) {
+        var fairSources = new ArrayList<FairShareDistributor.Source>(sources.size());
+        for (int i = 0; i < sources.size(); i++) {
+            var source = sources.get(i);
+            fairSources.add(new FairShareDistributor.Source(budgets.get(i), Math.max(1, source.packet), isStorage(source) ? 1 : 0));
+        }
+        var fairReceivers = new ArrayList<FairShareDistributor.Receiver>(sinks.size());
+        for (int r = 0; r < sinks.size(); r++) {
+            var sink = sinks.get(r);
+            fairReceivers.add(new FairShareDistributor.Receiver(room.get(r), ratedInput(grid, sink),
+                sink.transformer == null && isStorage(sink) ? 1 : 0));
+        }
+        return PlannedRound.of(FairShareDistributor.allocate(fairSources, domains, receivers, fairReceivers, shared,
+            IndependentEnergyMode.lineLoss(), level.getGameTime()));
+    }
+    /** True for a storage block: a storage prefab, a multiblock storage part or a STORAGE profile. */
+    private static boolean isStorage(Port port) {
+        if (port.transformer != null) return false;
+        var tile = port.tile;
+        return tile instanceof AbstractEnergyStorageBlockEntity
+            || tile instanceof com.miophas.singularity_iteration.core.prefab.blockentity.MultiblockEnergyCore
+            || tile instanceof com.miophas.singularity_iteration.core.prefab.blockentity.MultiblockEnergyPart
+            || EnergyNodeRegistry.isStorage(BuiltInRegistries.BLOCK.getKey(port.state.getBlock()));
+    }
+    /**
+     * Returns the rated input of a sink that remains in this tick, or
+     * {@code null} when the sink has no rated limit.
+     */
+    private static EnergyAmount ratedInput(WorldGrid grid, Port sink) {
+        long cap;
+        if (sink.transformer != null) {
+            var limits = sink.transformer.limits();
+            cap = limits.outputPacket() > Long.MAX_VALUE / limits.outputPackets() ? Long.MAX_VALUE
+                : limits.outputPacket() * limits.outputPackets();
+        } else cap = sink.quote.maxReceive();
+        if (cap <= 0) return null;
+        return grid.receivedThisTick.getOrDefault(sink.position, EnergyAmount.ZERO).roomBelow(cap);
+    }
+    /**
      * Builds one {@code Port} for each published endpoint in the settlement
      * scope.
      *
@@ -2054,8 +2156,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 int input = saved.stepUp() ? low : high, output = saved.stepUp() ? high : low;
                 var quote = new CustomEUEnergyStorage.NetworkQuote(level, at, saved.energy().amount(),
                     limits.capacity(), limits.inputLimit(), limits.outputPacket(), limits.outputPacket(), true, true, saved.energy());
+                // Fair mode: a transformer is a relay. It sends what it holds, up to
+                // outputPackets * outputPacket, also below one full packet.
                 ports.add(new Port(tile, at, saved.state(), null, quote, limits.capacity(), input, output,
-                    limits.outputPacket(), limits.outputPackets(), false, saved, null, null, List.of(at)));
+                    limits.outputPacket(), limits.outputPackets(), IndependentEnergyMode.fairDistribution(), saved, null, null, List.of(at)));
                 continue;
             }
             var machine = tile;
@@ -2120,7 +2224,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 var quote = new CustomEUEnergyStorage.NetworkQuote(level, port.position(), saved.energy().amount(),
                     limits.capacity(), limits.inputLimit(), limits.outputPacket(), limits.outputPacket(), true, true, saved.energy());
                 refreshed.add(new Port(tile, port.position(), port.state(), null, quote, limits.capacity(),
-                    port.inputs(), port.outputs(), limits.outputPacket(), limits.outputPackets(), false, saved, null, null, port.emitterPositions()));
+                    port.inputs(), port.outputs(), limits.outputPacket(), limits.outputPackets(),
+                    IndependentEnergyMode.fairDistribution(), saved, null, null, port.emitterPositions()));
                 continue;
             }
             var storage = ownedStorage(tile);
@@ -2560,8 +2665,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         if (!accessible(level, grid)) return;
         grid.exportSearch.reset(server.getTickCount());
         discoverForeign(level, grid);
+        // Check the foreign index first. Most grids have no FE contact, and a
+        // full ports() rebuild each tick was a measurable O(endpoints) cost.
+        if (grid.foreign.isEmpty()) return;
         var sources = ports(level, grid, true).stream().filter(port -> port.outputs != 0 && port.packet > 0 && port.packets > 0).toList();
-        if (sources.isEmpty() || grid.foreign.isEmpty()) return;
+        if (sources.isEmpty()) return;
         var targets = grid.foreign.snapshot();
         var graph = grid.conductors.snapshot();
         int pairs = boundedPairCount(sources.size(), targets.size());
@@ -2782,8 +2890,13 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             EnergyAmount receivedThisTick, java.util.function.BooleanSupplier current) {
         var before = transformer.snapshot(transformer.stepUpNow()).orElse(null);
         if (before == null || !current.getAsBoolean() || !source.canExtract()) return 0;
-        int room = FeLedger.fe(before.energy().exactAmount().roomBelow(before.limits().capacity())
-            .min(receivedThisTick.roomBelow(before.limits().inputLimit())));
+        // Fair mode: the per-tick intake is the throughput (4 low packets) in both
+        // modes, as for native input. Legacy: the input packet limit.
+        var limits = before.limits();
+        long intake = IndependentEnergyMode.fairDistribution()
+            ? limits.outputPacket() * limits.outputPackets() : limits.inputLimit();
+        int room = FeLedger.fe(before.energy().exactAmount().roomBelow(limits.capacity())
+            .min(receivedThisTick.roomBelow(intake)));
         if (room == 0) return 0;
         // long math, then clamp: room + lossFe can be above Integer.MAX_VALUE.
         int maximum = (int)Math.min(Integer.MAX_VALUE, (long)room + lossFe);
@@ -2824,7 +2937,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     private static int pushTransformer(IndependentTransformerBlockEntity transformer, RoutedFeTarget target,
             java.util.function.BooleanSupplier current) {
         var saved = transformer.snapshot(transformer.stepUpNow()).orElse(null);
-        if (saved == null || saved.energy().exactAmount().whole() < saved.limits().outputPacket() || !target.canReceive()) return 0;
+        // Legacy: a transformer sends FE only with one full output packet. Fair mode:
+        // it sends what it holds. RoutedFeTarget limits the amount to the allowance.
+        if (saved == null || !target.canReceive() || saved.energy().exactAmount().isZero()
+                || !IndependentEnergyMode.fairDistribution() && saved.energy().exactAmount().whole() < saved.limits().outputPacket()) return 0;
         int offered = target.receiveEnergy(FeLedger.fe(saved.energy().exactAmount()), true);
         if (offered <= 0) return 0;
         var debit = FeLedger.eu(offered);
@@ -3125,7 +3241,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             return java.util.Objects.requireNonNull(provider.getEnergyPacketPolicy(), "energy packet policy");
         int count = tile instanceof IEnergySource source
             ? Math.max(0, Math.min(EnergyPacketPolicy.MAX_PACKETS_PER_ROUND, source.getPacketCount())) : 1;
-        boolean partial = tile instanceof DemandEnergySource
+        // Fair mode: every source can send a partial packet. A storage block then
+        // supplies the exact demand instead of a full packet or nothing.
+        boolean partial = IndependentEnergyMode.fairDistribution()
+            || tile instanceof DemandEnergySource
             || tile instanceof EnergyComponentHost host && host.energyComponent().ports().generator()
             || tile instanceof AbstractEnergyBlockEntity block && block.isPowerSource();
         return new EnergyPacketPolicy(Math.max(1, portPacket(tile, type, quote)), count, partial);
@@ -3173,7 +3292,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     private List<DomainDistributor.Domain> domains(NativeRoutePlan plan, List<Port> sources, List<Port> sinks,
             ConductorRegistry.Snapshot graph, int[] receivers, long worldTime, WorldGrid grid,
-            List<List<ConductorRegistry.Path[]>> effectPaths, List<EnergyAmount> budgets) {
+            List<List<ConductorRegistry.Path[]>> effectPaths, List<EnergyAmount> budgets, boolean fair) {
         var result = new ArrayList<DomainDistributor.Domain>();
         for (var domainItem : plan.grouped.entrySet()) {
             var domain = new LinkedHashMap<Long, Map.Entry<long[], ConductorRegistry.Path[]>>();
@@ -3206,6 +3325,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     if (eligible[receiver]) eligibleCount++;
                 }
                 ids[index] = source; routes.add(costs);
+                // The fair-share distributor ignores receiver priorities. Skip the
+                // sort and the random order: an identity permutation is enough.
+                if (fair) { priorities[index++] = receivers.clone(); continue; }
                 int[] registration = receivers;
                 if (eligibleCount > 1 && contactEntry) {
                     registration = Arrays.stream(receivers).boxed().sorted(java.util.Comparator.comparingLong(

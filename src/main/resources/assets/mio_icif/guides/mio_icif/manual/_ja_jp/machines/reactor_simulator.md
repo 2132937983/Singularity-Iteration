@@ -1,0 +1,79 @@
+---
+navigation:
+  title: "原子炉シミュレーター"
+  icon: mio_icif:reactor/item_reactor_uranium_quad
+  parent: generators.md
+  position: 22
+---
+
+# 原子炉シミュレーター
+
+## 機能
+
+建設前に原子炉の設計を計算します。
+[原子炉発電機](generator_block_nuclear_reactor_generator.md)と同じ計算を使います。
+冷えた原子炉・新品の部品・満タンの燃料棒から開始し、100秒（100サイクル）を計算します。
+
+## 手順
+
+1. 下の2列から部品をクリックして選択します。
+2. 原子炉のスロットをクリックすると、選択中の部品が入ります。
+3. 部品を外すには、スロットを右クリックします。
+4. 「-」「+」で原子炉チャンバー数（0〜6）を設定します。
+5. 右側の数値を確認します。
+
+## 数値
+
+| 項目 | 意味 |
+|---|---|
+| 出力 | 1tickあたりの平均EU出力 |
+| 発熱 | 燃料棒が1サイクル（1秒）で発生させる熱 |
+| 放熱 | 放熱板が1サイクルで除去する熱 |
+| 外殻 | 計算終了時の外殻温度 / 最大外殻温度 |
+| 傾向 | 1サイクルあたりの外殻温度の変化（直近10サイクルの平均） |
+| 余裕 | 100% から最高外殻温度（最大値に対する割合）を引いた値 |
+
+次の3条件を満たす設計は **安全** です。
+
+* 溶ける部品がない。
+* 外殻温度が上昇しない。
+* メルトダウンが起きない。
+
+## 規則
+
+* 燃料棒の熱は、熱を蓄えられる隣接部品にのみ渡ります。隣接部品がない場合は外殻に渡ります。
+* 隣接する燃料棒・反射板ごとにパルスが1増えます。パルスが増えるとEUが増え、熱はそれ以上に増えます。
+* 放熱板は自身の熱を除去します。外殻から熱を吸い出す放熱板もあります。
+* 部品放熱板は隣接部品の熱を除去します。
+* 装甲板は最大外殻温度を上げます。
+* 容量を超える熱を受けた部品は溶け、その熱は外殻に移ります。
+
+## チュートリアル1：最初の原子炉（5 EU/t）
+
+単一燃料棒は1サイクルに4の熱を出します。基本放熱板4個はそれぞれ最大6の熱を除去します。
+
+<ReactorSimulator preset="_,vent,_/vent,uranium_simple,vent/_,vent,_" />
+
+## チュートリアル2：二重燃料棒（20 EU/t）
+
+二重燃料棒は1セルにつき2パルスで、1サイクルに24の熱を出します。4個の放熱板にそれぞれ6の熱が入ります。これが基本放熱板の上限です。
+
+<ReactorSimulator preset="_,vent,_/vent,uranium_dual,vent/_,vent,_" />
+
+## チュートリアル3：高出力（300 EU/t、チャンバー4個）
+
+4連燃料棒5本がそれぞれ1サイクルに96の熱を出します。各燃料棒は専用のイリジウム放熱板を持ち、2本の燃料棒に接する放熱板はありません。各放熱板は24〜32の熱を受け、36を除去します。
+
+<ReactorSimulator preset="iridium_vent,uranium_quad,iridium_vent,_,iridium_vent,uranium_quad,iridium_vent/_,iridium_vent,_,iridium_vent,_,iridium_vent,_/iridium_vent,iridium_vent,iridium_vent,uranium_quad,iridium_vent,iridium_vent,iridium_vent/iridium_vent,uranium_quad,iridium_vent,iridium_vent,iridium_vent,uranium_quad,iridium_vent/_,iridium_vent,_,_,_,iridium_vent,_/_,_,_,_,_,_,_" />
+
+## 失敗例
+
+<ReactorSimulator preset="vent,uranium_quad,vent/_,vent,_/_,_,_" />
+
+4連燃料棒は1サイクルに96の熱を出しますが、基本放熱板3個は18しか除去できません。放熱板が溶け、全ての熱が外殻に入ります。外殻温度は1サイクルに96ずつ上昇し、約143秒後にメルトダウンします。
+
+**警告：** メルトダウンは爆発を起こし、原子炉付近のブロックを破壊します。燃料棒を入れる前に、必ずシミュレーターで設計を確認してください。
+
+## 自由設計
+
+<ReactorSimulator chambers="6" />

@@ -38,10 +38,10 @@ public class mio_icif_items_armors {
     public static final DeferredItem<Item> ARMOR_LAPPACK = ITEMS.register("armor/item_armor_lappack", () -> new mio_icif_chestplate_lappack(ArmorMaterials.DIAMOND, new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON)));
 
     // 纳米装甲 (NanoSuit)
-    public static final DeferredItem<Item> ARMOR_NANO_HELMET = ITEMS.register("armor/item_armor_nano_helmet", () -> new mio_icif_helmet_nano(ArmorMaterials.DIAMOND, new Item.Properties()));
-    public static final DeferredItem<Item> ARMOR_NANO_CHESTPLATE = ITEMS.register("armor/item_armor_nano_chestplate", () -> new mio_icif_chestplate_nano(ArmorMaterials.DIAMOND, new Item.Properties()));
-    public static final DeferredItem<Item> ARMOR_NANO_LEGGINGS = ITEMS.register("armor/item_armor_nano_leggings", () -> new mio_icif_leggings_nano(ArmorMaterials.DIAMOND, new Item.Properties()));
-    public static final DeferredItem<Item> ARMOR_NANO_BOOTS = ITEMS.register("armor/item_armor_nano_boots", () -> new mio_icif_boots_nano(ArmorMaterials.DIAMOND, new Item.Properties()));
+    public static final DeferredItem<Item> ARMOR_NANO_HELMET = ITEMS.register("armor/item_armor_nano_helmet", () -> new mio_icif_helmet_nano(MioIcifArmorMaterials.NANO, new Item.Properties()));
+    public static final DeferredItem<Item> ARMOR_NANO_CHESTPLATE = ITEMS.register("armor/item_armor_nano_chestplate", () -> new mio_icif_chestplate_nano(MioIcifArmorMaterials.NANO, new Item.Properties()));
+    public static final DeferredItem<Item> ARMOR_NANO_LEGGINGS = ITEMS.register("armor/item_armor_nano_leggings", () -> new mio_icif_leggings_nano(MioIcifArmorMaterials.NANO, new Item.Properties()));
+    public static final DeferredItem<Item> ARMOR_NANO_BOOTS = ITEMS.register("armor/item_armor_nano_boots", () -> new mio_icif_boots_nano(MioIcifArmorMaterials.NANO, new Item.Properties()));
 
     // 量子装甲 (QuantumSuit)
     public static final DeferredItem<Item> ARMOR_QUANTUM_HELMET = ITEMS.register("armor/item_armor_quantum_helmet", () -> new mio_icif_helmet_quantum(MioIcifArmorMaterials.QUANTUM, new Item.Properties()));

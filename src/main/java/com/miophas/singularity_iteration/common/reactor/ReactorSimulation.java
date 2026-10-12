@@ -1,0 +1,124 @@
+// SPDX-License-Identifier: Apache-2.0
+package com.miophas.singularity_iteration.common.reactor;
+
+import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle;
+import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Part;
+import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Profile;
+
+/**
+ * Reactor design simulator (0.1.8.0, guide page "Reactor simulator"). It runs the same model as
+ * the reactor block ({@link ReactorCycle}), from a cold reactor with new components and full
+ * fuel. No Minecraft dependency.
+ *
+ * <p>One cycle is 20 ticks (1 second). The run stops at {@link #CYCLES} cycles or at a meltdown
+ * (hull heat at or above the maximum hull heat).
+ */
+public final class ReactorSimulation {
+    private ReactorSimulation() {}
+
+    /** Simulated time: 100 cycles = 100 seconds. */
+    public static final int CYCLES = 100;
+    /** Remaining cycles of a new fuel rod in the simulation (longer than the run). */
+    static final int FUEL = 20_000;
+
+    /**
+     * Result of one run.
+     *
+     * @param euPerTick      mean output over the run, EU/t
+     * @param heatPerCycle   heat that the fuel makes per cycle (mean of the last 10 cycles)
+     * @param ventPerCycle   heat that the vents remove per cycle (mean of the last 10 cycles)
+     * @param hullTrend      mean hull heat change per cycle over the last 10 cycles (0 or less = stable)
+     * @param hullHeat       hull heat at the end of the run
+     * @param maxHull        maximum hull heat (10 000 + plating)
+     * @param peakHull       highest hull heat in the run
+     * @param melted         components that melted (overheated and were destroyed)
+     * @param meltdownCycle  cycle of the meltdown, or -1
+     * @param cycles         cycles run
+     */
+    public record Report(double euPerTick, long heatPerCycle, long ventPerCycle, double hullTrend, long hullHeat,
+                         long maxHull, long peakHull, int melted, int meltdownCycle, int cycles) {
+        /** No meltdown, no melted component, and the hull does not heat up. */
+        public boolean stable() { return meltdownCycle < 0 && melted == 0 && hullTrend <= 0.0; }
+
+        /** 1 - peak hull heat / maximum hull heat (0..1). */
+        public double margin() { return maxHull <= 0 ? 0 : Math.max(0, 1.0 - (double) peakHull / maxHull); }
+
+        /** Seconds until the hull reaches its maximum at the current trend, or -1 when it does not rise. */
+        public int secondsToMeltdown() {
+            if (meltdownCycle >= 0) return meltdownCycle;
+            if (hullTrend <= 0) return -1;
+            return (int) Math.min(Integer.MAX_VALUE, cycles + Math.ceil((maxHull - hullHeat) / hullTrend));
+        }
+    }
+
+    /**
+     * Runs a design.
+     *
+     * @param profiles 54 slots (row-major, 9 per row; slot = row * 9 + column), null = empty
+     * @param columns  reactor columns: 3 + chambers (3..9)
+     */
+    public static Report run(Profile[] profiles, int columns) {
+        if (profiles.length != 54 || columns < 3 || columns > 9) throw new IllegalArgumentException("Invalid design");
+        Part[] parts = new Part[54];
+        for (int i = 0; i < 54; i++) {
+            Profile p = profiles[i];
+            if (p == null || i % 9 >= columns) continue;
+            parts[i] = new Part(p, 0, p.kind() == ReactorCycle.Kind.FUEL ? FUEL : 0);
+        }
+        long heat = 0, peak = 0, maxHull = 10_000;
+        double eu = 0;
+        int melted = 0, meltdown = -1, cycles = 0;
+        long[] history = new long[CYCLES + 1], made = new long[CYCLES + 1], vented = new long[CYCLES + 1];
+        for (int c = 0; c < CYCLES; c++) {
+            ReactorCycle.Result r = ReactorCycle.step(parts, columns, heat, true);
+            Part[] next = r.parts();
+            for (int i = 0; i < 54; i++) {
+                if (parts[i] != null && next[i] == null && parts[i].profile().storesHeat()) melted++;
+            }
+            parts = next;
+            heat = r.hullHeat();
+            maxHull = r.maxHullHeat();
+            peak = Math.max(peak, heat);
+            eu += r.euPerTick();
+            cycles = c + 1;
+            history[cycles] = heat;
+            made[cycles] = r.generatedHeat();
+            vented[cycles] = r.emittedHeat();
+            if (heat >= maxHull) { meltdown = cycles; break; }
+        }
+        // steady state: the components start cold, so the first cycles vent less than later ones
+        int window = Math.min(10, cycles);
+        double trend = 0, heatMean = 0, ventMean = 0;
+        if (window > 0) {
+            trend = (history[cycles] - history[cycles - window]) / (double) window;
+            for (int c = cycles - window + 1; c <= cycles; c++) { heatMean += made[c]; ventMean += vented[c]; }
+            heatMean /= window;
+            ventMean /= window;
+        }
+        return new Report(cycles == 0 ? 0 : eu / cycles, Math.round(heatMean), Math.round(ventMean), trend, heat, maxHull, peak, melted,
+            meltdown, cycles);
+    }
+
+    /**
+     * Parses a preset: rows separated by "/", cells by ",", each cell a component key of
+     * {@link ReactorInventory} or "_" for empty. The number of cells of the first row sets the
+     * columns. Unknown keys count as empty.
+     *
+     * @return the 54 profiles; {@code columnsOut[0]} receives the columns
+     */
+    public static Profile[] parse(String preset, int[] columnsOut) {
+        Profile[] out = new Profile[54];
+        String[] rows = preset == null || preset.isBlank() ? new String[0] : preset.trim().split("/");
+        int columns = 3;
+        for (int r = 0; r < rows.length && r < 6; r++) {
+            String[] cells = rows[r].split(",");
+            if (r == 0) columns = Math.max(3, Math.min(9, cells.length));
+            for (int c = 0; c < cells.length && c < columns; c++) {
+                String key = cells[c].trim();
+                if (!key.isEmpty() && !key.equals("_")) out[r * 9 + c] = ReactorInventory.profile(key);
+            }
+        }
+        if (columnsOut != null && columnsOut.length > 0) columnsOut[0] = columns;
+        return out;
+    }
+}

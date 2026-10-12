@@ -50,6 +50,7 @@ public final class SuitServer {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         int age = player.tickCount;
         if (age % SuitModules.DRAIN_INTERVAL == 0) SuitModules.drain(player);
+        SuitModules.tickAddons(player);                       // 0.1.8.0: addon unit behaviors (public API)
         if (age % THREAT_INTERVAL == 0) tickThreats(player);
     }
 
@@ -117,9 +118,9 @@ public final class SuitServer {
         float damage = event.getNewDamage();
         var piece = SuitModules.wornPieceWith(player, SuitModuleType.DEFLECTOR);
         float cancel = Math.min(Math.max(0, damage), SuitModules.DEFLECTOR_MAX_PER_HIT);
-        cancel = Math.min(cancel, SuitModules.energy(piece) / (float) SuitModules.DEFLECTOR_EU_PER_DAMAGE);
+        cancel = Math.min(cancel, SuitModules.energy(player, piece) / (float) SuitModules.DEFLECTOR_EU_PER_DAMAGE);
         if (cancel > 0) {
-            SuitModules.extract(piece, (long) Math.ceil(cancel * SuitModules.DEFLECTOR_EU_PER_DAMAGE));
+            SuitModules.extract(player, piece, (long) Math.ceil(cancel * SuitModules.DEFLECTOR_EU_PER_DAMAGE));
             event.setNewDamage(damage - cancel);
         }
         float stopped = original - event.getNewDamage();

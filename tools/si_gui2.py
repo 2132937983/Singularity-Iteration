@@ -13,7 +13,11 @@ replaced by a flat panel. new_*(): backgrounds for the code-drawn screens.
 from __future__ import annotations
 import os, sys
 from collections import deque
+from pathlib import Path
 from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[1]
+PREVIEW_DIR = ROOT / 'build/art-previews'
 
 # ------------------------------------------------------------------ palette
 PANEL_TOP = (224, 226, 227)
@@ -332,11 +336,12 @@ def restyle_atlas(src, out):
 
 
 if __name__ == '__main__':
+    PREVIEW_DIR.mkdir(parents=True, exist_ok=True)
     for p in sys.argv[1:]:
-        print(p, restyle(p, '/tmp/claude-0/' + os.path.basename(p)))
+        print(p, restyle(p, PREVIEW_DIR / os.path.basename(p)))
 
 
-GUI_DIR = '/home/claude/repo/src/main/resources/assets/mio_icif/textures/gui/'
+GUI_DIR = ROOT / 'src/main/resources/assets/mio_icif/textures/gui'
 
 
 def new_laser_tower():
@@ -346,14 +351,14 @@ def new_laser_tower():
     slot(img, 7, 85)
     groove(img, 4, 103, 168)         # above the player inventory
     inventory(img, 7, 117)
-    img.save(GUI_DIR + 'gui_laser_tower.png')
+    img.save(GUI_DIR / 'gui_laser_tower.png')
 
 
 def new_energy_terminal():
     img = new_canvas()
     panel(img, 0, 0, 240, 210)
     groove(img, 4, 15, 232)
-    img.save(GUI_DIR + 'gui_energy_terminal.png')
+    img.save(GUI_DIR / 'gui_energy_terminal.png')
 
 
 def new_generic():
@@ -362,7 +367,7 @@ def new_generic():
     slot(img, 79, 42)
     groove(img, 4, 77, 168)
     inventory(img, 7, 83)
-    img.save(GUI_DIR + 'gui_generic.png')
+    img.save(GUI_DIR / 'gui_generic.png')
 
 
 # atlas widget regions (x0, y0, x1, y1) whose dark "LCD" backgrounds become flat light meters

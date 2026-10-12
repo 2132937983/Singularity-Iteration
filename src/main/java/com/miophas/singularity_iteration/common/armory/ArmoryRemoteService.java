@@ -35,6 +35,14 @@ public final class ArmoryRemoteService {
 
     public static final int REQUEST = 0, SUMMON = 1, SHOWCASE = 2, RETURN = 3;
     /**
+     * Wingman actions (0.1.8.0). {@code WINGMAN_DEPLOY}: index = set + mode * 256.
+     * {@code WINGMAN_MODE}: index = mode (all Wingmen). {@code WINGMAN_RECALL}: index = row of
+     * the Wingman list, or {@link #ALL} for all.
+     */
+    public static final int WINGMAN_DEPLOY = 4, WINGMAN_MODE = 5, WINGMAN_RECALL = 6, ALL = 255;
+    /** Remote equip onto a companion (0.1.8.0, {@link CompanionEquip}). index = set. */
+    public static final int COMPANION_EQUIP = 7;
+    /**
      * Default ranges: showcases this close to the player, or to the paired Armory, belong to the
      * network. The live values come from {@code SiTuningValues.ARMORY_*_RANGE}
      * (datapack file {@code si_tuning/armory.json}).
@@ -139,6 +147,11 @@ public final class ArmoryRemoteService {
             }
             case RETURN -> message = armory == null ? Component.translatable("message.mio_icif.armory.missing")
                 : returnSuit(player, armory);
+            case WINGMAN_DEPLOY -> message = armory == null ? Component.translatable("message.mio_icif.armory.missing")
+                : WingmanService.deploy(player, armory, index & 0xFF, WingmanMode.byId((index >> 8) & 0xFF));
+            case WINGMAN_MODE -> message = WingmanService.setMode(player, WingmanMode.byId(index));
+            case WINGMAN_RECALL -> message = WingmanService.recall(player, index == ALL ? -1 : index);
+            case COMPANION_EQUIP -> message = CompanionEquip.equip(player, armory, index);
             default -> { }
         }
         if (!message.getString().isEmpty()) player.displayClientMessage(message, true);
@@ -162,7 +175,8 @@ public final class ArmoryRemoteService {
         }
         try {
             if (player.connection != null && player.connection.hasChannel(ArmoryConsoleSyncPacket.TYPE)) {
-                PacketDistributor.sendToPlayer(player, new ArmoryConsoleSyncPacket(hasRemote(player), snapshot, views, message));
+                PacketDistributor.sendToPlayer(player, new ArmoryConsoleSyncPacket(hasRemote(player), snapshot, views,
+                    WingmanService.views(player), message));
             }
         } catch (RuntimeException ignored) {
             // detached / fake connections (automation, tests) have no client to update
@@ -213,6 +227,8 @@ public final class ArmoryRemoteService {
         }
         // the worn suit bursts off and takes the showcase's place
         ArmoryPieceEntity.burstPurge(player, flying, home, showcase::storePiece);
+        // 0.1.8.0 auto return: the "return" action sends this suit back to this projector
+        player.setData(ArmoryRegistry.ORIGIN, ArmoryOrigin.of(home));
         world.playSound(null, showcase.getBlockPos(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ARMORY_ALARM.get(),
             SoundSource.BLOCKS, 0.8F, 1.15F);
         String label = showcase.label().isEmpty() ? showcase.getBlockPos().toShortString() : showcase.label();
@@ -231,8 +247,14 @@ public final class ArmoryRemoteService {
                     && ArmoryRules.isSummonable(stack) && ArmoryRules.fits(stack, p)) worn.add(p);
         }
         if (worn.isEmpty()) return Component.translatable("message.mio_icif.armory.nothing_worn");
-        int set = 0;
+        // 0.1.8.0 auto return: a suit summoned from a holo projector goes back to that projector;
+        // when every Armory suit position is in use, an empty docked projector takes it.
+        ArmorShowcaseBlockEntity projector = originProjector(player);
+        int set = -1;
         for (int s = 0; s < mio_icif_armory.SETS; s++) if (armory.pieceCount(s) == 0) { set = s; break; }
+        if (projector == null && set < 0) projector = freeDockedProjector(armory);
+        if (projector != null) return returnToProjector(player, armory, projector, worn);
+        if (set < 0) set = 0;
         boolean sameDimension = player.level() == world;
         double straight = sameDimension ? player.position().distanceTo(armory.launchTop()) : -1;
         long cost = mio_icif_armory.cost(worn.size(), straight, sameDimension) / 2;
@@ -243,5 +265,53 @@ public final class ArmoryRemoteService {
         int n = ArmoryPieceEntity.burstPurge(player, worn, GlobalPos.of(world.dimension(), armory.getBlockPos()),
             (p, stack) -> armory.store(target, p, stack));
         return Component.translatable("message.mio_icif.armory.returned", n, armory.setName(set));
+    }
+
+    /** The loaded projector of the player's origin attachment that can take a suit, else null (and the origin is cleared). */
+    @Nullable
+    static ArmorShowcaseBlockEntity originProjector(ServerPlayer player) {
+        ArmoryOrigin origin = player.getData(ArmoryRegistry.ORIGIN);
+        if (origin.projector().isEmpty()) return null;
+        GlobalPos at = origin.projector().get();
+        ServerLevel level = player.server.getLevel(at.dimension());
+        if (level != null && level.isLoaded(at.pos()) && level.getBlockEntity(at.pos()) instanceof ArmorShowcaseBlockEntity projector
+                && !projector.linked()) return projector;
+        player.setData(ArmoryRegistry.ORIGIN, ArmoryOrigin.NONE);
+        return null;
+    }
+
+    /** An empty projector docked to {@code armory}, else null. */
+    @Nullable
+    static ArmorShowcaseBlockEntity freeDockedProjector(mio_icif_armory armory) {
+        if (!(armory.getLevel() instanceof ServerLevel level)) return null;
+        BlockPos home = armory.getBlockPos();
+        int r = ArmorShowcaseBlockEntity.MAX_CHAIN;
+        ArmorShowcaseBlockEntity best = null;
+        for (int cx = (home.getX() - r) >> 4; cx <= (home.getX() + r) >> 4; cx++) {
+            for (int cz = (home.getZ() - r) >> 4; cz <= (home.getZ() + r) >> 4; cz++) {
+                if (!level.hasChunk(cx, cz)) continue;
+                for (var be : level.getChunk(cx, cz).getBlockEntities().values()) {
+                    if (be instanceof ArmorShowcaseBlockEntity projector && home.equals(projector.dockedArmory())
+                            && !projector.linked() && !projector.hasOwnOutfit()
+                            && (best == null || projector.dockIndex() < best.dockIndex())) best = projector;
+                }
+            }
+        }
+        return best;
+    }
+
+    /** Sends the worn suit to a holo projector (paid by the Armory, half the summon cost). */
+    static Component returnToProjector(ServerPlayer player, mio_icif_armory armory, ArmorShowcaseBlockEntity projector, List<ArmoryPiece> worn) {
+        if (!(projector.getLevel() instanceof ServerLevel world)) return Component.translatable("message.mio_icif.armory.failed");
+        boolean sameDimension = player.level() == world;
+        double straight = sameDimension ? player.position().distanceTo(projector.launchTop()) : -1;
+        long cost = mio_icif_armory.cost(worn.size(), straight, sameDimension) / 2;
+        var payment = armory.getEnergyStorageInternal().scexReserveInternal(cost);
+        if (payment == null) return Component.translatable("message.mio_icif.armory.no_energy", cost, armory.getEnergyStorage().getAmount());
+        payment.commit();
+        int n = ArmoryPieceEntity.burstPurge(player, worn, GlobalPos.of(world.dimension(), projector.getBlockPos()), projector::storePiece);
+        player.setData(ArmoryRegistry.ORIGIN, ArmoryOrigin.NONE);
+        String label = projector.label().isEmpty() ? projector.getBlockPos().toShortString() : projector.label();
+        return Component.translatable("message.mio_icif.projector.returned", n, label);
     }
 }

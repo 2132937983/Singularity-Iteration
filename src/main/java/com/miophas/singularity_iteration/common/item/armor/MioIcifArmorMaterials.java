@@ -86,6 +86,34 @@ public class MioIcifArmorMaterials {
         0.0F
     );
 
+    /**
+     * 0.1.8.0: nano suit material. The values are those of vanilla diamond (the nano suit used
+     * ArmorMaterials.DIAMOND before). It has two layers for the suit palette: layer 0 draws the
+     * plates (primary colour), layer 1 draws the light strips (accent colour). See SuitPalette.
+     */
+    public static final Holder<ArmorMaterial> NANO = create(
+        "nano",
+        Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
+            map.put(ArmorItem.Type.HELMET, 3);
+            map.put(ArmorItem.Type.CHESTPLATE, 8);
+            map.put(ArmorItem.Type.LEGGINGS, 6);
+            map.put(ArmorItem.Type.BOOTS, 3);
+            map.put(ArmorItem.Type.BODY, 11);
+        }),
+        10,
+        SoundEvents.ARMOR_EQUIP_DIAMOND,
+        () -> Ingredient.of(net.minecraft.world.item.Items.DIAMOND),
+        List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath("mio_icif", "nano")),
+            new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath("mio_icif", "nano_accent"))),
+        2.0F,
+        0.0F
+    );
+
+    /** True for the accent layer (layer 1) of a palette material. */
+    public static boolean isAccentLayer(ArmorMaterial.Layer layer) {
+        return layer != null && layer.texture(false).getPath().contains("_accent");
+    }
+
     private static Holder<ArmorMaterial> create(String name, EnumMap<ArmorItem.Type, Integer> defense, int enchantmentValue, Holder<SoundEvent> sound, Supplier<Ingredient> repairIngredient, List<ArmorMaterial.Layer> layers, float toughness, float knockbackResistance) {
         ArmorMaterial material = new ArmorMaterial(
             defense,

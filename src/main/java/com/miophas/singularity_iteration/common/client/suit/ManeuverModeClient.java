@@ -196,7 +196,7 @@ public final class ManeuverModeClient {
      */
     private static boolean active(LocalPlayer player) {
         return player.getAbilities().flying && !player.isSpectator() && !player.isPassenger() && armedChest(player)
-            && (player.isCreative() || SuitModules.energy(player.getItemBySlot(EquipmentSlot.CHEST)) >= ManeuverMode.MIN_ENERGY);
+            && (player.isCreative() || SuitModules.energy(player, player.getItemBySlot(EquipmentSlot.CHEST)) >= ManeuverMode.MIN_ENERGY);
     }
 
     /**
@@ -677,14 +677,27 @@ public final class ManeuverModeClient {
     }
 
     /**
-     * Limb pose. PlayerManeuverPoseMixin calls it after vanilla {@code setupAnim}. Angles are in
-     * radians. The method blends from the vanilla angles to the maneuver angles by the transition
-     * value.
+     * Limb pose (0.1.8.0: thrust-vector attitude control, "Iron Man" style).
+     * PlayerManeuverPoseMixin calls it after vanilla {@code setupAnim}. Angles are in radians.
+     * The method blends from the vanilla angles to the maneuver angles by the transition value.
      *
-     * <p>Hover: the arms are low and a little back, the fists out. The legs are together, the toes
-     * down. Cruise: the arms are back along the body, and the head turns up by 1.25 rad so the flyer
-     * looks forward while it lies flat. From throttle 0.75 to 0.95, the right arm moves forward
-     * above the head (lead). The left arm stays along the body.
+     * <p>The palms and the soles carry the thrusters. Each limb points its thruster against the
+     * motion that it makes:
+     * <ul>
+     *   <li><b>Hover.</b> The legs point straight down (lift). The arms hang a little out, palms
+     *       down. Forward stick swings both arms back (thrust to the rear) and the legs trail; back
+     *       stick swings the arms forward (brake). A strafe to one side opens the arm of the other
+     *       side (side thrust). Climbing brings the arms in; sinking opens them. Small fast motions
+     *       of the arms show the attitude corrections of the thrusters.</li>
+     *   <li><b>Cruise.</b> The body lies along the path (see {@link #onRenderPlayerPre}). The arms
+     *       lie along the body, palms aft; the legs are straight back and together. In a turn, the
+     *       arm on the inside of the turn opens as a control surface; the other arm stays in. A
+     *       strafe opens the arm on the far side.</li>
+     *   <li><b>Full burn</b> (throttle above 0.75): the arms press against the body and move a
+     *       little back, the legs close fully. The 0.1.7.x "lead arm" (one arm above the head) is
+     *       removed.</li>
+     *   <li>The head turns up by 1.25 rad in cruise, so the flyer looks forward while it lies flat.</li>
+     * </ul>
      */
     public static void applyLimbPose(net.minecraft.client.model.HumanoidModel<?> model, Player p) {
         Visual vis = VISUALS.get(p.getId());
@@ -692,22 +705,76 @@ public final class ManeuverModeClient {
         float t = vis.transition;
         float thr = throttleOf(p, 1.0F);
         float cruise = Mth.clamp(thr / 0.35F, 0, 1);
-        float lead = Mth.clamp((thr - 0.75F) / 0.2F, 0, 1);
-        float breath = (float) Math.sin(vis.heave * 1.7) * 0.03F;
-        // hover stance
-        float armX = 0.16F + breath, armZ = 0.20F;
-        float legX = 0.10F, legZ = 0.035F;
-        // cruise: arms swept back along the body
-        armX = Mth.lerp(cruise, armX, 0.25F);
-        armZ = Mth.lerp(cruise, armZ, 0.10F);
-        legX = Mth.lerp(cruise, legX, 0.05F);
-        mix(model.rightArm, armX, 0.04F, armZ, t);
-        mix(model.leftArm, armX, -0.04F, -armZ, t);
-        if (lead > 0) mix(model.rightArm, -2.95F, 0.0F, 0.12F, lead * t);
-        mix(model.rightLeg, legX, 0.03F, legZ, t);
-        mix(model.leftLeg, legX + 0.08F, -0.03F, -legZ, t);
+        float burn = Mth.clamp((thr - 0.75F) / 0.2F, 0, 1);
+        float[] stick = stickOf(p);
+        float f = stick[0], s = stick[1];   // forward stick, strafe (+1 = left)
+        double climb = p.getY() - p.yo;
+        float time = vis.heave;
+        // attitude corrections: small, fast, different on each arm
+        float jx = (float) Math.sin(time * 9.1) * 0.022F, jz = (float) Math.sin(time * 7.3 + 1.0) * 0.018F;
+
+        // ---- hover: legs give lift, arms vector the thrust against the motion
+        float hoverArmX = 0.05F + 0.55F * f;
+        float open = (float) Mth.clamp(1.0 - climb * 2.5, 0.6, 1.3);
+        float hoverRightZ = (0.30F + 0.45F * Math.max(s, 0) - 0.15F * Math.max(-s, 0)) * open;
+        float hoverLeftZ = -(0.30F + 0.45F * Math.max(-s, 0) - 0.15F * Math.max(s, 0)) * open;
+        float hoverLegX = 0.06F + 0.25F * Math.max(f, 0);
+
+        // ---- cruise: arms along the body; the inside arm opens in a turn
+        float turn = Mth.clamp(vis.turnSpeed / 120F, -1, 1);     // + = turning right
+        float tight = Mth.lerp(burn, 0.14F, 0.06F);
+        float cruiseRightZ = tight + 0.85F * Math.max(turn, 0) + 0.3F * Math.max(s, 0);
+        float cruiseLeftZ = -(tight + 0.85F * Math.max(-turn, 0) + 0.3F * Math.max(-s, 0));
+        float cruiseArmX = Mth.lerp(burn, 0.0F, 0.12F);
+        float cruiseLegZ = Mth.lerp(burn, 0.03F, 0.0F);
+
+        float rightX = Mth.lerp(cruise, hoverArmX + jx, cruiseArmX + jx * 0.4F);
+        float leftX = Mth.lerp(cruise, hoverArmX - jx, cruiseArmX - jx * 0.4F);
+        float rightZ = Mth.lerp(cruise, hoverRightZ + jz, cruiseRightZ);
+        float leftZ = Mth.lerp(cruise, hoverLeftZ - jz, cruiseLeftZ);
+        mix(model.rightArm, rightX, 0.10F, rightZ, t);
+        mix(model.leftArm, leftX, -0.10F, leftZ, t);
+        float legX = Mth.lerp(cruise, hoverLegX, 0.02F);
+        float legZ = Mth.lerp(cruise, 0.03F, cruiseLegZ);
+        mix(model.rightLeg, legX, 0.0F, legZ, t);
+        mix(model.leftLeg, legX + Mth.lerp(cruise, 0.04F, 0.02F), 0.0F, -legZ, t);
         model.head.xRot = Mth.lerp(cruise * t, model.head.xRot, -1.25F);
         model.hat.copyFrom(model.head);
+    }
+
+    /**
+     * Thruster output of each limb for the flight layer, 0..1: right hand, left hand, right foot,
+     * left foot. It follows the same rules as {@link #applyLimbPose}.
+     */
+    public static float[] thrusterOutput(Player p) {
+        Visual vis = VISUALS.get(p.getId());
+        if (vis == null || vis.transition <= 0.001F) return null;
+        float thr = throttleOf(p, 1.0F);
+        float cruise = Mth.clamp(thr / 0.35F, 0, 1);
+        float[] stick = stickOf(p);
+        float turn = Mth.clamp(vis.turnSpeed / 120F, -1, 1);
+        float hoverHands = 0.45F + 0.25F * Math.abs(stick[0]);
+        float hoverFeet = 0.75F;
+        float right = Mth.lerp(cruise, hoverHands + 0.3F * Math.max(stick[1], 0), 0.35F + 0.4F * thr + 0.3F * Math.max(turn, 0));
+        float left = Mth.lerp(cruise, hoverHands + 0.3F * Math.max(-stick[1], 0), 0.35F + 0.4F * thr + 0.3F * Math.max(-turn, 0));
+        float feet = Mth.lerp(cruise, hoverFeet, 0.5F + 0.5F * thr);
+        float t = vis.transition;
+        return new float[]{Math.min(1, right) * t, Math.min(1, left) * t, feet * t, feet * t};
+    }
+
+    /** Strength of the aerodynamic deflection field, 0..1 (cruise only). */
+    public static float deflectionField(Player p, float partial) {
+        Visual vis = VISUALS.get(p.getId());
+        if (vis == null) return 0;
+        float thr = throttleOf(p, partial);
+        float x = Mth.clamp((thr - 0.3F) / 0.4F, 0, 1);
+        return x * x * (3 - 2 * x) * vis.transition;
+    }
+
+    /** Animation time of a flyer in seconds (for the flight layer). */
+    static float visualTime(Player p) {
+        Visual vis = VISUALS.get(p.getId());
+        return vis == null ? 0 : vis.heave;
     }
 
     /** Blends the rotation of a model part to (x, y, z) radians by the weight w (0 = no change, 1 = full). */
@@ -746,12 +813,26 @@ public final class ManeuverModeClient {
             if (!vis.trail.isEmpty()) wake(vc, m, vis, cam);
         }
         buffers.endBatch(SiRenderTypes.VAPOR);
-        // the cone is a glow with additive blend. Thus shells that overlap get brighter, but they do not become opaque.
-        VertexConsumer glowCone = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        // 0.1.8.0: the condensation cone is an alpha-blended white veil, so it shows on a bright sky.
+        // (0.1.7.x drew it as an additive glow at about 6 % alpha at full throttle: it was not visible.)
+        // In first person the own cone fades near the camera and shows only at the edge of the view.
+        VertexConsumer veil = buffers.getBuffer(SiRenderTypes.VAPOR);
         for (Player p : mc.level.players()) {
             if (!VISUALS.containsKey(p.getId())) continue;
             float thr = throttleOf(p, partial);
-            if (thr > 0.5F && !(p == mc.player && firstPerson)) cone(glowCone, m, p, thr, partial, now);
+            if (thr > 0.5F) cone(veil, m, p, thr, partial, now, p == mc.player && firstPerson ? cam : null);
+        }
+        buffers.endBatch(SiRenderTypes.VAPOR);
+        // supersonic shock shell (additive) and the first-person rim of the deflection field
+        VertexConsumer glowCone = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        for (Player p : mc.level.players()) {
+            if (!VISUALS.containsKey(p.getId()) || p == mc.player && firstPerson) continue;
+            float thr = throttleOf(p, partial);
+            if (thr > ManeuverMode.SHOCK_THROTTLE) machShell(glowCone, m, p, thr, partial, now);
+        }
+        if (firstPerson && mc.player != null && VISUALS.containsKey(mc.player.getId())) {
+            float field = deflectionField(mc.player, partial);
+            if (field > 0.02F) fieldRim(glowCone, m, mc.player, field, partial, now);
         }
         buffers.endBatch(SiRenderTypes.FIELD_GLOW);
 
@@ -806,21 +887,25 @@ public final class ManeuverModeClient {
      * radius at distance z behind the apex is {@code 0.15 + (z / 1.9)^0.6 x 1.05} blocks. The apex
      * is 0.45 blocks ahead of the body centre.
      *
-     * <p>Strength: it is highest at throttle {@code SHOCK_THROTTLE + 0.08} = 0.68. It falls to the
-     * minimum of 0.15 at about 0.38 from that throttle. It fades in from throttle 0.5 to 0.6. Along the
-     * axis, a sine fades both ends. An animated noise breaks up the surface. Thus the cone looks like
-     * condensation, not a solid shell.
+     * <p>Strength (0.1.8.0): a transonic peak at throttle 0.66 (Mach 1.1 on the HUD) that falls to 0
+     * at +-0.14 from it, plus a thin sustained veil (0.18) above throttle 0.66. It fades in from
+     * throttle 0.5 to 0.6. Along the axis, a sine fades both ends. An animated noise breaks up the
+     * surface. Thus the cone looks like condensation, not a solid shell. Alpha blend, white.
      *
      * <p>The axis is the movement from the last tick position to the interpolated position. It
      * falls back to the view vector when that movement is shorter than 0.2 blocks.
+     *
+     * @param camera the camera position for the own cone in first person (near fade), else null
      */
-    private static void cone(VertexConsumer vc, Matrix4f m, Player p, float thr, float partial, long now) {
+    private static void cone(VertexConsumer vc, Matrix4f m, Player p, float thr, float partial, long now, Vec3 camera) {
         Vec3 v = p.getPosition(partial).subtract(p.xo, p.yo, p.zo);
         Vec3 axis = v.lengthSqr() > 0.04 ? v.normalize() : p.getViewVector(partial);
         Vec3 t = perp(axis), b = axis.cross(t).normalize();
         Vec3 apex = p.getPosition(partial).add(0, p.getBbHeight() * 0.55, 0).add(axis.scale(0.45));
-        float peak = 1 - Math.abs(thr - ManeuverMode.SHOCK_THROTTLE - 0.08F) / 0.45F;
-        float strength = Mth.clamp(peak, 0.15F, 1F) * Mth.clamp((thr - 0.5F) / 0.1F, 0, 1);
+        float bump = Mth.clamp(1 - Math.abs(thr - 0.66F) / 0.14F, 0, 1);
+        float sustain = 0.18F * Mth.clamp((thr - 0.66F) / 0.19F, 0, 1);
+        float strength = Math.max(bump, sustain) * Mth.clamp((thr - 0.5F) / 0.1F, 0, 1);
+        if (strength <= 0.01F) return;
         int seg = 32, rings = 6;
         // wrap the clock to 600 s: noise() floors its input to int, and epoch seconds x 2 overflow it
         double time = (now % 600_000L) / 1000.0;
@@ -835,12 +920,79 @@ public final class ManeuverModeClient {
                 Vec3 d0 = t.scale(Math.cos(a0)).add(b.scale(Math.sin(a0))), d1 = t.scale(Math.cos(a1)).add(b.scale(Math.sin(a1)));
                 Vec3 p0 = apex.subtract(axis.scale(z0)).add(d0.scale(rad0)), p1 = apex.subtract(axis.scale(z0)).add(d1.scale(rad0));
                 Vec3 p2 = apex.subtract(axis.scale(z1)).add(d1.scale(rad1)), p3 = apex.subtract(axis.scale(z1)).add(d0.scale(rad1));
-                float base = 0.22F * strength;
-                put(vc, m, p0, 1, 1, 1, base * fade0 * n0);
-                put(vc, m, p1, 1, 1, 1, base * fade0 * n1);
-                put(vc, m, p2, 1, 1, 1, base * fade1 * n2);
-                put(vc, m, p3, 1, 1, 1, base * fade1 * n3);
+                float base = 0.42F * strength;
+                put(vc, m, p0, 1, 1, 1, base * fade0 * n0 * near(p0, camera));
+                put(vc, m, p1, 1, 1, 1, base * fade0 * n1 * near(p1, camera));
+                put(vc, m, p2, 1, 1, 1, base * fade1 * n2 * near(p2, camera));
+                put(vc, m, p3, 1, 1, 1, base * fade1 * n3 * near(p3, camera));
             }
+        }
+    }
+
+    /** First-person near fade: 0 within 0.7 blocks of the camera, 1 beyond 2.2 blocks. 1 without a camera. */
+    private static float near(Vec3 point, Vec3 camera) {
+        if (camera == null) return 1;
+        return (float) Mth.clamp((point.distanceTo(camera) - 0.7) / 1.5, 0, 1);
+    }
+
+    /**
+     * Supersonic shock shell (0.1.8.0): a thin additive cone that starts at the nose and opens
+     * backwards. Its half angle follows the Mach angle {@code asin(1 / M)}; M is 1.0 at the shock
+     * throttle and 2.5 at full throttle. Bright bands run back along the shell.
+     */
+    private static void machShell(VertexConsumer vc, Matrix4f m, Player p, float thr, float partial, long now) {
+        Vec3 v = p.getPosition(partial).subtract(p.xo, p.yo, p.zo);
+        if (v.lengthSqr() < 0.25) return;
+        Vec3 axis = v.normalize();
+        Vec3 t = perp(axis), b = axis.cross(t).normalize();
+        float x = Mth.clamp((thr - ManeuverMode.SHOCK_THROTTLE) / (1 - ManeuverMode.SHOCK_THROTTLE), 0, 1);
+        double mach = 1.0 + 1.5 * x;
+        double half = Math.asin(Math.min(1.0, 1.0 / Math.max(1.02, mach)));
+        double length = 2.6, radiusEnd = Math.tan(half) * length;
+        radiusEnd = Math.min(radiusEnd, 3.2);
+        Vec3 nose = p.getPosition(partial).add(0, p.getBbHeight() * 0.55, 0).add(axis.scale(0.95));
+        float strength = 0.16F * Mth.clamp(x * 4, 0, 1);
+        double time = (now % 600_000L) / 1000.0;
+        int seg = 28, rings = 5;
+        for (int r = 0; r < rings; r++) {
+            double z0 = length * r / rings, z1 = length * (r + 1) / rings;
+            double r0 = radiusEnd * z0 / length, r1 = radiusEnd * z1 / length;
+            float band0 = 0.4F + 0.6F * (float) Math.max(0, Math.sin(z0 * 3.1 - time * 14));
+            float band1 = 0.4F + 0.6F * (float) Math.max(0, Math.sin(z1 * 3.1 - time * 14));
+            float fade0 = 1 - (float) (z0 / length), fade1 = 1 - (float) (z1 / length);
+            for (int s = 0; s < seg; s++) {
+                double a0 = s * Math.PI * 2 / seg, a1 = (s + 1) * Math.PI * 2 / seg;
+                Vec3 d0 = t.scale(Math.cos(a0)).add(b.scale(Math.sin(a0))), d1 = t.scale(Math.cos(a1)).add(b.scale(Math.sin(a1)));
+                put(vc, m, nose.subtract(axis.scale(z0)).add(d0.scale(r0)), 0.75F, 0.9F, 1, strength * fade0 * band0);
+                put(vc, m, nose.subtract(axis.scale(z0)).add(d1.scale(r0)), 0.75F, 0.9F, 1, strength * fade0 * band0);
+                put(vc, m, nose.subtract(axis.scale(z1)).add(d1.scale(r1)), 0.75F, 0.9F, 1, strength * fade1 * band1);
+                put(vc, m, nose.subtract(axis.scale(z1)).add(d0.scale(r1)), 0.75F, 0.9F, 1, strength * fade1 * band1);
+            }
+        }
+    }
+
+    /**
+     * First-person view of the aerodynamic deflection field (0.1.8.0): a faint hexagonal rim
+     * 1.5 blocks ahead of the eye, across the flight path. The flight layer draws the full field on
+     * the body in third person and for other players.
+     */
+    private static void fieldRim(VertexConsumer vc, Matrix4f m, Player p, float field, float partial, long now) {
+        Vec3 v = p.getPosition(partial).subtract(p.xo, p.yo, p.zo);
+        Vec3 axis = v.lengthSqr() > 0.04 ? v.normalize() : p.getViewVector(partial);
+        Vec3 t = perp(axis), b = axis.cross(t).normalize();
+        Vec3 centre = p.getEyePosition(partial).add(axis.scale(1.5));
+        double time = (now % 600_000L) / 1000.0;
+        int seg = 6 * 8;
+        double rOut = 1.15, rIn = 1.05;
+        for (int s = 0; s < seg; s++) {
+            double a0 = s * Math.PI * 2 / seg, a1 = (s + 1) * Math.PI * 2 / seg;
+            Vec3 d0 = t.scale(Math.cos(a0)).add(b.scale(Math.sin(a0))), d1 = t.scale(Math.cos(a1)).add(b.scale(Math.sin(a1)));
+            float pulse = 0.55F + 0.45F * (float) Math.sin(a0 * 6 + time * 5);
+            float alpha = 0.16F * field * pulse;
+            put(vc, m, centre.add(d0.scale(rOut)).subtract(axis.scale(0.35)), 0.45F, 0.85F, 1, 0);
+            put(vc, m, centre.add(d1.scale(rOut)).subtract(axis.scale(0.35)), 0.45F, 0.85F, 1, 0);
+            put(vc, m, centre.add(d1.scale(rIn)), 0.45F, 0.85F, 1, alpha);
+            put(vc, m, centre.add(d0.scale(rIn)), 0.45F, 0.85F, 1, alpha);
         }
     }
 

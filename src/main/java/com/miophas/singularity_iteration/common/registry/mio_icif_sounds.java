@@ -66,6 +66,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
     public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_HATCH = sound("armory.hatch");
     public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_BRAKE = sound("armory.brake");
     public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_PULSE = sound("armory.pulse");
+    // 0.1.8.0 (tools/sfx_180.py): heavy mechanical lock when a piece docks; machine drive loops
+    public static final DeferredHolder<SoundEvent, SoundEvent> ARMORY_SEAL = sound("armory.seal");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_UU_FABRICATOR = sound("machine.loop.uu_fabricator");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LOOP_KINETIC_DRIVE = sound("machine.loop.kinetic_drive");
 
     // 0.1.7.34 Special Maneuver Mode and FCS cues (original synthesized effects, tools/gen_sfx_034.py)
     public static final DeferredHolder<SoundEvent, SoundEvent> MANEUVER_BOOM = sound("maneuver.boom");

@@ -34,7 +34,19 @@ public enum SuitModuleType {
     /** Threat sensor: who looks at or targets the wearer (yellow / red). */
     THREAT_SENSOR("threat_sensor", 6, 0xFF3B30, true, EquipmentSlot.CHEST),
     /** Deflector: spends EU to cancel the damage the armour lets through. */
-    DEFLECTOR("deflector", 0, 0x5AB8FF, false, EquipmentSlot.CHEST);
+    DEFLECTOR("deflector", 0, 0x5AB8FF, false, EquipmentSlot.CHEST),
+    /**
+     * Smart Trajectory Guidance (0.1.8.0): a lock frame on the HUD; locked creatures pull the
+     * wearer's projectiles (vernier thrusters). Each guided projectile costs
+     * {@link SmartGuidance#GUIDED_EU} EU in addition to the drain.
+     */
+    SMART_GUIDANCE("smart_guidance", 6, 0xFF4D6D, true, EquipmentSlot.HEAD),
+    /**
+     * Resonance Deconstruction Field (0.1.8.0): a standing-wave field at the feet breaks the
+     * blocks around the body while the wearer walks and pulls the drops in. Each block costs
+     * EU in proportion to its hardness ({@link ResonanceField}).
+     */
+    RESONANCE_FIELD("resonance_field", 2, 0x9B7CFF, false, EquipmentSlot.FEET, EquipmentSlot.LEGS);
 
     private final String id;
     private final long drainPerTick;

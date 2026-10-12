@@ -110,6 +110,13 @@ public final class BallisticSolver {
     @Nullable
     public static Profile profile(LocalPlayer player, ItemStack stack) {
         if (stack.isEmpty()) return null;
+        // 0.1.8.0 universal calculator: public API (IBallisticWeapon, BallisticProfiles providers),
+        // then the profile learned from observed shots, then the built-in vanilla profiles
+        int use = player.isUsingItem() && player.getUseItem() == stack ? player.getTicksUsingItem() : 0;
+        var api = com.miophas.singularity_iteration.core.api.item.BallisticProfiles.find(stack, player, use);
+        if (api != null) return new Profile(api.name(), api.speed(), api.gravity(), api.drag(), api.waterDrag(), api.ready());
+        Profile learned = LearnedBallistics.profile(stack, use);
+        if (learned != null) return learned;
         if (stack.getItem() instanceof BowItem) {
             boolean drawing = player.isUsingItem() && player.getUseItem() == stack;
             float power = drawing ? BowItem.getPowerForTime(stack.getUseDuration(player) - player.getUseItemRemainingTicks()) : 1.0F;

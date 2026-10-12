@@ -240,8 +240,8 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         }
 
         // 绘制标题
-        guiGraphics.drawString(this.font, this.title, 
-            (int)(this.width * 0.05f), (int)(this.height * 0.05f), ink() & 0xFFFFFF, false);
+        drawFitted(guiGraphics, this.font, this.title, (int)(this.width * 0.05f), (int)(this.height * 0.05f),
+            this.width - BUTTON_WIDTH - 28 - (int)(this.width * 0.05f), ink() & 0xFFFFFF, false);
 
         // 绘制第几天显示
         Component dayText = Component.translatable("gui.mio_icif.future.day", menu.getDay() + 1);

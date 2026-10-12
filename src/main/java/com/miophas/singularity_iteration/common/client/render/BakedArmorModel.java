@@ -104,11 +104,43 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
         draw(pose, vc, body, geo.get("body"), light, overlay, color);
         draw(pose, vc, rightArm, geo.get("right_arm"), light, overlay, color);
         draw(pose, vc, leftArm, geo.get("left_arm"), light, overlay, color);
+        // 0.1.8.0: hand cover (gauntlet below the wrist), drawn with the arm transform. Optional.
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.handArmorThirdPerson()) {
+            draw(pose, vc, rightArm, geo.get("right_hand"), light, overlay, color);
+            draw(pose, vc, leftArm, geo.get("left_hand"), light, overlay, color);
+        }
         draw(pose, vc, rightLeg, geo.get("right_leg"), light, overlay, color);
         draw(pose, vc, leftLeg, geo.get("left_leg"), light, overlay, color);
     }
 
-    private static void draw(PoseStack pose, VertexConsumer vc, ModelPart part, float[][] quads, int light, int overlay, int color) {
+    /**
+     * Draws the quads of one part whose centre passes {@code filter}, with the transform of
+     * {@code part} (0.1.8.0: segmented suit-up of the Armory, for example the back unit and
+     * the front plate of a chestplate). The filter receives the quad centre in part space
+     * (pixels): {x, y, z}.
+     */
+    public static void drawFiltered(PoseStack pose, VertexConsumer vc, ModelPart part, float[][] quads,
+                                    java.util.function.Predicate<float[]> filter, int light, int overlay, int color) {
+        if (quads == null || quads.length == 0) return;
+        java.util.List<float[]> kept = new java.util.ArrayList<>(quads.length);
+        float[] centre = new float[3];
+        for (float[] q : quads) {
+            centre[0] = (q[0] + q[5] + q[10] + q[15]) / 4F;
+            centre[1] = (q[1] + q[6] + q[11] + q[16]) / 4F;
+            centre[2] = (q[2] + q[7] + q[12] + q[17]) / 4F;
+            if (filter.test(centre)) kept.add(q);
+        }
+        boolean visible = part.visible;
+        part.visible = true;
+        draw(pose, vc, part, kept.toArray(new float[0][]), light, overlay, color);
+        part.visible = visible;
+    }
+
+    /**
+     * Draws the baked quads of one part with the transform of {@code part}. Public for the
+     * first-person hand renderer, which uses the posed arm of the player model.
+     */
+    public static void draw(PoseStack pose, VertexConsumer vc, ModelPart part, float[][] quads, int light, int overlay, int color) {
         if (quads == null || quads.length == 0 || !part.visible || part.skipDraw) return;
         pose.pushPose();
         part.translateAndRotate(pose);

@@ -32,4 +32,10 @@ public class mio_icif_data_components {
         DATA_COMPONENTS.registerComponentType("suit_modules",
             builder -> builder.persistent(com.miophas.singularity_iteration.common.suit.InstalledModules.CODEC)
                 .networkSynchronized(com.miophas.singularity_iteration.common.suit.InstalledModules.STREAM_CODEC));
+
+    /** Colour palette of a suit piece (0.1.8.0): primary plate colour and accent light colour. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.miophas.singularity_iteration.common.suit.SuitPalette>> SUIT_PALETTE =
+        DATA_COMPONENTS.registerComponentType("suit_palette",
+            builder -> builder.persistent(com.miophas.singularity_iteration.common.suit.SuitPalette.CODEC)
+                .networkSynchronized(com.miophas.singularity_iteration.common.suit.SuitPalette.STREAM_CODEC));
 }

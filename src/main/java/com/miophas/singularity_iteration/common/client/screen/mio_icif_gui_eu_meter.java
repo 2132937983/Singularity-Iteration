@@ -93,11 +93,11 @@ public class mio_icif_gui_eu_meter extends mio_icif_screen<mio_icif_meter_menu> 
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawString(font, title, 8, 5, SiGuiTheme.TEXT, false);
         var net = menu.clientNetwork();
         String target = net == null ? "" : Component.translatable(net.conductor() ? "item.mio_icif.item_tool_meter.gui.target_network"
             : "item.mio_icif.item_tool_meter.gui.target_node").getString();
         DspUi.small(g, font, target, imageWidth - 8 - DspUi.smallWidth(font, target), 6, SiGuiTheme.TEXT);
+        drawFitted(g, font, title, 8, 5, imageWidth - 16 - DspUi.smallWidth(font, target) - 6, SiGuiTheme.TEXT, false);
         // scope legend
         DspUi.small(g, font, "EU/t", SX + 3, SY + 2, DspUi.CYAN);
         DspUi.small(g, font, "V", SX + 22, SY + 2, DspUi.ORANGE);

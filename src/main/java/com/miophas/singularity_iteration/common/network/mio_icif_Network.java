@@ -302,6 +302,23 @@ public class mio_icif_Network {
             com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket.CODEC,
             com.miophas.singularity_iteration.common.armory.ArmoryConsolePacket::handle
         );
+        // 0.1.8.0 Blueprint Builder: C2S button of the open builder menu; S2C RTS Building drone assist.
+        registrar.playToServer(
+            com.miophas.singularity_iteration.common.builder.BuilderActionPacket.TYPE,
+            com.miophas.singularity_iteration.common.builder.BuilderActionPacket.CODEC,
+            com.miophas.singularity_iteration.common.builder.BuilderActionPacket::handle
+        );
+        // 0.1.8.0 energy weapon charge / compression effect (one packet per shot, to the shooter and its trackers)
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.item.tools.WeaponChargeFx.Shot.TYPE,
+            com.miophas.singularity_iteration.common.item.tools.WeaponChargeFx.Shot.CODEC,
+            com.miophas.singularity_iteration.common.item.tools.WeaponChargeFx.Shot::handle
+        );
+        registrar.playToClient(
+            com.miophas.singularity_iteration.common.builder.RtsDroneAssist.Sites.TYPE,
+            com.miophas.singularity_iteration.common.builder.RtsDroneAssist.Sites.CODEC,
+            com.miophas.singularity_iteration.common.builder.RtsDroneAssist.Sites::handle
+        );
         // EU meter and voltage detector: C2S HUD request, S2C HUD reply, S2C open-menu data.
         registrar.playToServer(
             com.miophas.singularity_iteration.common.menu.tool.MeterHudPacket.Request.TYPE,
@@ -346,6 +363,12 @@ public class mio_icif_Network {
             EquipmentConsolePacket.TYPE,
             EquipmentConsolePacket.CODEC,
             EquipmentConsolePacket::handle
+        );
+        // C2S (0.1.8.0): suit palette of one worn piece.
+        registrar.playToServer(
+            SuitPalettePacket.TYPE,
+            SuitPalettePacket.CODEC,
+            SuitPalettePacket::handle
         );
         // Energy Terminal: S2C telemetry, C2S device toggle.
         registrar.playToClient(

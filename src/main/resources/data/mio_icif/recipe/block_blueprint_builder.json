@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": {
+      "tag": "c:plates/alloy"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "R": {
+      "item": "minecraft:map"
+    },
+    "M": {
+      "item": "mio_icif:producer/block_machine_hull_advanced"
+    },
+    "F": {
+      "item": "minecraft:feather"
+    }
+  },
+  "pattern": [
+    "PRP",
+    "CMC",
+    "FPF"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:producer/block_blueprint_builder"
+  },
+  "show_notification": true
+}

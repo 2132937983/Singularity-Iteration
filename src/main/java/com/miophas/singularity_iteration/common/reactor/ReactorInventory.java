@@ -50,6 +50,20 @@ public final class ReactorInventory {
         Map.entry("isotope_rod",Profile.isotope(ISOTOPE_THRESHOLD,ISOTOPE_PULSE_BONUS)),
         Map.entry("uranium_simple_depleted",INERT),Map.entry("uranium_dual_depleted",INERT),Map.entry("uranium_quad_deplete",INERT),
         Map.entry("mox_simple_depleted",INERT),Map.entry("mox_dual_deplete",INERT),Map.entry("mox_quad_deplete",INERT));
+    /**
+     * Components of the reactor simulator palette (0.1.8.0), in display order: fuel, heat
+     * storage, vents, exchangers, plating, reflectors, special. Depleted rods are not in it.
+     */
+    public static final java.util.List<String> PALETTE=java.util.List.of(
+        "uranium_simple","uranium_dual","uranium_quad","mox_simple","mox_dual","mox_quad",
+        "collant_simple","collant_triple","coolant_six","condensator","condensator_lap",
+        "vent","vent_core","golden_vent","diamond_vent","vent_spread","iridium_vent","iridium_oc_vent",
+        "heat_switch","heat_switch_core","heat_switch_spread","diamond_heat_switch",
+        "plate","heat_plate","explosive_plate","reflector","thick_reflector","iridium_reflector");
+    /** The numeric profile of component {@code key}, or null. */
+    public static Profile profile(String key){Profile p=PROFILES.get(key);return p==null||p.kind()==Kind.INERT?null:p;}
+    /** Item id of component {@code key}. */
+    public static ResourceLocation itemId(String key){return ResourceLocation.fromNamespaceAndPath("mio_icif","reactor/item_reactor_"+key);}
     private static String key(ItemStack stack){var id=BuiltInRegistries.ITEM.getKey(stack.getItem());String prefix="reactor/item_reactor_";
         return id.getNamespace().equals("mio_icif")&&id.getPath().startsWith(prefix)?id.getPath().substring(prefix.length()):"";}
     public static boolean supported(ItemStack stack){return stack.isEmpty()||PROFILES.containsKey(key(stack));}

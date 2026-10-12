@@ -14,7 +14,8 @@ import net.minecraft.world.level.Level;
 /**
  * Nightvision Goggles.
  * Based on the original IC2 nightvision goggles.
- * - Maximum energy: 200,000 EU (Tier 1).
+ * - Maximum energy: 400,000 EU (Tier 1). 0.1.8.0: the same capacity as the advanced RE-battery
+ *   in the recipe. The old value (200,000 EU) lost half of the battery energy at crafting time.
  * - Charge rate: 200 EU/t.
  * - With power, the goggles give night vision automatically (like the nano helmet).
  * - Night vision uses 1 EU each tick.
@@ -24,7 +25,7 @@ import net.minecraft.world.level.Level;
 public class mio_icif_nightvision_goggles extends mio_icif_armor_elc implements INightVisionItem {
 
     // IC2原版参数
-    public static final int MAX_ENERGY = 200000;
+    public static final int MAX_ENERGY = 400000;
     public static final int CHARGE_RATE = 200;
     public static final int ENERGY_PER_TICK = 1;
     public static final int ARMOR_TIER = 1;

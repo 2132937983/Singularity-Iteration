@@ -13,7 +13,7 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_electric_rifle extends mio_icif_tool_elc implements IWeaponItem {
+public class mio_icif_electric_rifle extends mio_icif_tool_elc implements IWeaponItem, com.miophas.singularity_iteration.core.api.item.IBallisticWeapon {
     public static final int RIFLE_MAX_ENERGY = 50000;
     public static final int RIFLE_CHARGE_RATE = 128;
     public static final int RIFLE_TIER = 2;
@@ -56,6 +56,7 @@ public class mio_icif_electric_rifle extends mio_icif_tool_elc implements IWeapo
             bullet.setMaxLife(BULLET_MAX_LIFE);
             bullet.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, BULLET_SPEED, 0.0F);
             level.addFreshEntity(bullet);
+            WeaponChargeFx.emit(player, hand, getEnergyPerShot(), 0x5AB8FF);   // 0.1.8.0 charge / compression effect
 
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 com.miophas.singularity_iteration.common.registry.mio_icif_sounds.RIFLE_SHOT.get(), net.minecraft.sounds.SoundSource.PLAYERS, 0.9F, 1.15F + level.random.nextFloat() * 0.08F);
@@ -94,5 +95,11 @@ public class mio_icif_electric_rifle extends mio_icif_tool_elc implements IWeapo
     @Override
     public boolean isRanged() {
         return true;
+    }
+
+    /** 0.1.8.0 ballistic calculator profile (see IBallisticWeapon). */
+    @Override
+    public com.miophas.singularity_iteration.core.api.item.BallisticProfile ballistics(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, int useTicks) {
+        return com.miophas.singularity_iteration.core.api.item.BallisticProfile.straight("RIFLE", BULLET_SPEED, 0.99, 0.8, canShoot(stack));
     }
 }

@@ -132,12 +132,14 @@ public final class AreaPreviewClient {
 
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);
+        // 0.1.8.0 hologram look: a faint fill (weaker than before), a block grid on the faces, a soft
+        // pulsing outline and a scan ring that moves up the volume (before: a strong fill and a wireframe)
         VertexConsumer fill = buffers.getBuffer(RenderType.debugFilledBox());
         for (Shown shown : SHOWN.values()) {
             for (WorkArea area : shown.areas) {
                 if (area.kind() == WorkArea.ENVELOPE || !visible(event, area.box(), cam)) continue;
                 Vector3f c = rgb(area.color());
-                float alpha = (area.kind() == WorkArea.MARKER ? 0.30F : 0.10F) * pulse;
+                float alpha = (area.kind() == WorkArea.MARKER ? 0.24F : 0.05F) * pulse;
                 AABB b = area.box().deflate(0.002);
                 LevelRenderer.addChainedFilledBoxVertices(pose, fill, b.minX, b.minY, b.minZ, b.maxX, b.maxY, b.maxZ, c.x, c.y, c.z, alpha);
             }
@@ -149,8 +151,13 @@ public final class AreaPreviewClient {
             for (WorkArea area : shown.areas) {
                 if (!visible(event, area.box(), cam)) continue;
                 Vector3f c = rgb(area.color());
-                float alpha = area.kind() == WorkArea.ENVELOPE ? 0.45F : 0.95F;
-                LevelRenderer.renderLineBox(pose, lines, area.box().deflate(0.001), c.x, c.y, c.z, alpha);
+                AABB box = area.box().deflate(0.001);
+                if (area.kind() == WorkArea.ENVELOPE) {
+                    LevelRenderer.renderLineBox(pose, lines, box, c.x, c.y, c.z, 0.35F);
+                    continue;
+                }
+                LevelRenderer.renderLineBox(pose, lines, box, c.x, c.y, c.z, 0.55F + 0.35F * pulse);
+                if (area.kind() != WorkArea.MARKER) HoloGrid.draw(pose, lines, box, c.x, c.y, c.z, 0.22F * pulse, t);
             }
         }
         buffers.endBatch(RenderType.lines());

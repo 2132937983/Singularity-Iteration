@@ -25,6 +25,7 @@
     "mio_icif:item_electric_lighter",
     "mio_icif:item_electric_nutrition_supply",
     "mio_icif:item_electric_wireless_manager",
+    "mio_icif:item_geomagnetic_detector",
     "mio_icif:item_tool_advanced_electric_rifle",
     "mio_icif:item_tool_diamond_driller",
     "mio_icif:item_tool_electric_plasma_gun",
@@ -51,6 +52,9 @@
     "mio_icif:item_tool_windmeter",
     "mio_icif:item_tool_wrench_elc",
     "mio_icif:normal/item_crop_analyzer",
-    "mio_icif:normal/item_solar_helmet"
+    "mio_icif:normal/item_solar_helmet",
+    { "id": "mio_icif:item_trinket_flight_ring", "required": false },
+    { "id": "mio_icif:item_trinket_life_support_ring", "required": false },
+    { "id": "mio_icif:item_trinket_fire_proof_necklace", "required": false }
   ]
 }

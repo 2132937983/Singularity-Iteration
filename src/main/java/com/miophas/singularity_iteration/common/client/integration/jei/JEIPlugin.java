@@ -29,6 +29,17 @@ public class JEIPlugin implements IModPlugin {
         return ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "jei_plugin");
     }
 
+    /** 0.1.8.0: the tactical map opens loot item recipes through the runtime (see JeiBridge). */
+    @Override
+    public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime jeiRuntime) {
+        JeiBridge.runtime = jeiRuntime;
+    }
+
+    @Override
+    public void onRuntimeUnavailable() {
+        JeiBridge.runtime = null;
+    }
+
     @Override
     public void registerItemSubtypes(ISubtypeRegistration registration) {
         mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> batteryInterpreter =

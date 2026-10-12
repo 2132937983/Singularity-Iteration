@@ -78,6 +78,23 @@ public final class ArmoryRegistry {
         () -> EntityType.Builder.<ArmoryPieceEntity>of(ArmoryPieceEntity::new, MobCategory.MISC)
             .sized(0.6F, 0.6F).clientTrackingRange(10).updateInterval(5).fireImmune().noSummon().build("armory_piece"));
 
+    /** Wingman (0.1.8.0): a stored suit that flies as a drone. Player size; saved with the chunk. */
+    public static final DeferredHolder<EntityType<?>, EntityType<WingmanEntity>> WINGMAN = ENTITIES.register("wingman",
+        () -> EntityType.Builder.<WingmanEntity>of(WingmanEntity::new, MobCategory.MISC)
+            .sized(0.6F, 1.8F).eyeHeight(1.62F).clientTrackingRange(10).updateInterval(2).noSummon().build("wingman"));
+
+    /** NeoForge data attachments of the Armory system (0.1.8.0). */
+    public static final DeferredRegister<net.neoforged.neoforge.attachment.AttachmentType<?>> ATTACHMENTS =
+        DeferredRegister.create(net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.ATTACHMENT_TYPES, Singularity_Iteration.MOD_ID);
+
+    /**
+     * Player attachment: the holo projector that the worn suit came from. The "return" action
+     * sends the suit back there (auto return). It is saved with the player and copied on death.
+     */
+    public static final java.util.function.Supplier<net.neoforged.neoforge.attachment.AttachmentType<ArmoryOrigin>> ORIGIN =
+        ATTACHMENTS.register("armory_origin", () -> net.neoforged.neoforge.attachment.AttachmentType.builder(() -> ArmoryOrigin.NONE)
+            .serialize(ArmoryOrigin.CODEC).copyOnDeath().build());
+
     public static void register(IEventBus modBus) {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
@@ -85,8 +102,14 @@ public final class ArmoryRegistry {
         MENUS.register(modBus);
         ENTITIES.register(modBus);
         PARTICLES.register(modBus);
+        ATTACHMENTS.register(modBus);
         ArmoryComponents.COMPONENTS.register(modBus);
         modBus.addListener(ArmoryRegistry::capabilities);
+        modBus.addListener(ArmoryRegistry::attributes);
+    }
+
+    private static void attributes(net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent event) {
+        event.put(WINGMAN.get(), WingmanEntity.createAttributes().build());
     }
 
     private static void capabilities(RegisterCapabilitiesEvent event) {

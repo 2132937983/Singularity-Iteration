@@ -74,6 +74,9 @@ public class mio_icif_creativeTabs {
                 output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.SHOWCASE_ITEM.get());
                 output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.REMOTE.get());
                 output.accept(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.CONNECTOR.get());
+                output.accept(com.miophas.singularity_iteration.common.builder.BuilderRegistry.BUILDER_ITEM.get());
+                output.accept(com.miophas.singularity_iteration.common.builder.BuilderRegistry.MATERIAL_INTERFACE_ITEM.get());
+                output.accept(com.miophas.singularity_iteration.common.logistics.LogisticsRegistry.EJECTOR_ITEM.get());
                 output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.STATION_ITEM.get());
                 for (var unit : com.miophas.singularity_iteration.common.suit.SuitRegistry.units()) output.accept(unit.get());
                 com.miophas.singularity_iteration.common.guide.GuideBook.addToTab(output);

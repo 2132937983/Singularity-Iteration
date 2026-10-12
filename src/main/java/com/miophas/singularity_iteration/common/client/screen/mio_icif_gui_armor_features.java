@@ -194,7 +194,8 @@ public class mio_icif_gui_armor_features extends Screen {
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         renderBackground(g, mouseX, mouseY, partialTick);
         SiGuiTheme.panel(g, left, top, W, H);
-        g.drawString(font, title, left + 8, top + 6, SiGuiTheme.TEXT, false);
+        // 0.1.8.0: the title stops before the tab strip (long translations of the panel name)
+        com.miophas.singularity_iteration.common.client.screen.mio_icif_screen.drawFitted(g, font, title, left + 8, top + 6, tabX(0) - left - 12, SiGuiTheme.TEXT, false);
         renderTabs(g, mouseX, mouseY);
         switch (tab) {
             case TAB_ENERGY -> renderEnergy(g, mouseX, mouseY);
@@ -490,6 +491,7 @@ public class mio_icif_gui_armor_features extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (paletteDrag >= 0) { paletteSlider(mouseX); return true; }
         if (draggingTune >= 0) {
             for (Row row : rows(current())) if (row.kind() == Kind.TUNE && row.index() == draggingTune) setTuneFromMouse(row, mouseX);
             return true;
@@ -500,6 +502,7 @@ public class mio_icif_gui_armor_features extends Screen {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         draggingTune = -1;
+        if (paletteDrag >= 0) { paletteDrag = -1; paletteSend(false); }
         return super.mouseReleased(mouseX, mouseY, button);
     }
 
@@ -740,7 +743,18 @@ public class mio_icif_gui_armor_features extends Screen {
 
     // ================================================================== ARMORY: remote summon / return / showcases
     private static final int AROW = 18, AROWS = 7;
-    private record ARow(int kind, int index) { }   // kind: 0 header-suits, 1 suit, 2 header-showcases, 3 showcase, 4 empty hint
+    // kind: 0 header-suits, 1 suit, 2 header-showcases, 3 showcase, 4 empty hint,
+    //       5 header-wingmen (0.1.8.0), 6 wingman
+    private record ARow(int kind, int index) { }
+
+    // ---- 0.1.8.0 Wingman: the suit button deploys a Wingman instead of a summon; mode for deploy and for all Wingmen
+    /** What the suit button does: 0 = wear (summon), 1 = deploy a Wingman, 2 = equip a companion. */
+    private int deployTarget;
+    private int wingmanMode;
+    private static final int TOGGLE_W = 46, TOGGLE_H = 11;
+    private static final String[] TOGGLE_KEYS = {"gui.mio_icif.wingman.toggle.wear", "gui.mio_icif.wingman.toggle.wingman", "gui.mio_icif.wingman.toggle.companion"};
+    /** Left edge of toggle button {@code i} (0 = wear, 1 = Wingman, 2 = companion), right-aligned in the header row. */
+    private int toggleX(int i) { return left + EX + EW - 4 - (3 - i) * (TOGGLE_W + 2) + 2; }
 
     private List<ARow> armoryRows(com.miophas.singularity_iteration.common.armory.ArmoryConsoleSyncPacket data) {
         List<ARow> rows = new ArrayList<>();
@@ -753,6 +767,10 @@ public class mio_icif_gui_armor_features extends Screen {
                 if (snap.pieces(s) == 0) { if (emptyShown) continue; emptyShown = true; }
                 rows.add(new ARow(1, s));
             }
+        }
+        if (deployTarget == 1 || !data.wingmen().isEmpty()) {
+            rows.add(new ARow(5, 0));
+            for (int i = 0; i < data.wingmen().size(); i++) rows.add(new ARow(6, i));
         }
         rows.add(new ARow(2, 0));
         if (data.showcases().isEmpty()) rows.add(new ARow(4, 0));
@@ -805,7 +823,43 @@ public class mio_icif_gui_armor_features extends Screen {
                 case 0, 2 -> {
                     String head = Component.translatable(r.kind() == 0 ? "gui.mio_icif.armory_console.suits" : "gui.mio_icif.armory_console.showcases").getString();
                     DspUi.small(g, font, head, x0 + 5, yy + 8, DspUi.CYAN);
-                    g.fill(x0 + 8 + DspUi.smallWidth(font, head), yy + 11, x0 + EW - 5, yy + 12, DspUi.FRAME);
+                    int lineEnd = r.kind() == 0 ? toggleX(0) - 4 : x0 + EW - 5;
+                    g.fill(x0 + 8 + DspUi.smallWidth(font, head), yy + 11, lineEnd, yy + 12, DspUi.FRAME);
+                    if (r.kind() == 0) {
+                        // 0.1.8.0: what the suit button does: wear the suit, deploy it as a Wingman, or equip a companion
+                        int[] colors = {DspUi.CYAN, DspUi.GREEN, DspUi.ORANGE};
+                        for (int t = 0; t < 3; t++) {
+                            dspButton(g, toggleX(t), yy + 4, TOGGLE_W, TOGGLE_H, Component.translatable(TOGGLE_KEYS[t]).getString(),
+                                in(mouseX, mouseY, toggleX(t), yy + 4, TOGGLE_W, TOGGLE_H), deployTarget == t ? colors[t] : DspUi.TEXT_DIM, true);
+                        }
+                    }
+                }
+                case 5 -> {
+                    String head = Component.translatable("gui.mio_icif.wingman.header", data.wingmen().size(),
+                        com.miophas.singularity_iteration.common.armory.WingmanService.MAX_PER_PLAYER).getString();
+                    DspUi.small(g, font, head, x0 + 5, yy + 8, DspUi.GREEN);
+                    g.fill(x0 + 8 + DspUi.smallWidth(font, head), yy + 11, x0 + EW - 140, yy + 12, DspUi.FRAME);
+                    var mode = com.miophas.singularity_iteration.common.armory.WingmanMode.byId(wingmanMode);
+                    dspButton(g, x0 + EW - 136, yy + 2, 66, 13, Component.translatable(mode.key()).getString(),
+                        in(mouseX, mouseY, x0 + EW - 136, yy + 2, 66, 13), DspUi.GREEN, true);
+                    dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.wingman.recall_all").getString(),
+                        in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.VIOLET, !data.wingmen().isEmpty());
+                }
+                case 6 -> {
+                    var w = data.wingmen().get(r.index());
+                    boolean hot = in(mouseX, mouseY, x0 + 3, yy, EW - 6, AROW - 1);
+                    if (hot) g.fill(x0 + 3, yy, x0 + EW - 3, yy + AROW - 1, 0x3050E080);
+                    String name = w.set() >= 0 && w.set() < snap.names().size() ? snap.names().get(w.set()) : "#" + (w.set() + 1);
+                    g.drawString(font, font.plainSubstrByWidth(name, 70), x0 + 6, yy + 2, DspUi.TEXT, false);
+                    String wingState = w.state() == 0
+                        ? Component.translatable(com.miophas.singularity_iteration.common.armory.WingmanMode.byId(w.mode()).key()).getString()
+                        : Component.translatable("gui.mio_icif.wingman.state." + w.state()).getString();
+                    DspUi.small(g, font, font.plainSubstrByWidth(wingState, 90), x0 + 6, yy + 11, w.state() == 0 ? DspUi.GREEN : DspUi.ORANGE);
+                    icons(g, w.items(), x0 + 80, yy + 1);
+                    DspUi.meter(g, x0 + 192, yy + 4, 22, 3, w.health(), w.health() > 0.35F ? DspUi.GREEN : DspUi.RED);
+                    if (w.energy() >= 0) DspUi.meter(g, x0 + 192, yy + 10, 22, 3, w.energy(), DspUi.CYAN);
+                    dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.wingman.recall").getString(),
+                        in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.VIOLET, w.state() != 1);
                 }
                 case 4 -> DspUi.small(g, font, Component.translatable("gui.mio_icif.armory_console.no_showcases",
                     com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.PLAYER_RANGE,
@@ -818,8 +872,17 @@ public class mio_icif_gui_armor_features extends Screen {
                     icons(g, snap.suits().get(r.index()), x0 + 80, yy + 1);
                     DspUi.small(g, font, pieces + "/6", x0 + 192, yy + 6, DspUi.TEXT_DIM);
                     boolean ok = pieces > 0 && !snap.busy();
-                    dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.armory_console.summon").getString(),
-                        in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.CYAN, ok);
+                    if (deployTarget == 1) {
+                        ok &= data.wingmen().size() < com.miophas.singularity_iteration.common.armory.WingmanService.MAX_PER_PLAYER;
+                        dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.wingman.deploy").getString(),
+                            in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.GREEN, ok);
+                    } else if (deployTarget == 2) {
+                        dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.companion.equip").getString(),
+                            in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.ORANGE, ok);
+                    } else {
+                        dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.armory_console.summon").getString(),
+                            in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.CYAN, ok);
+                    }
                 }
                 case 3 -> {
                     var view = data.showcases().get(r.index());
@@ -877,9 +940,35 @@ public class mio_icif_gui_armor_features extends Screen {
         for (int i = armoryScroll; i < Math.min(rows.size(), armoryScroll + AROWS); i++) {
             ARow r = rows.get(i);
             int yy = ly + (i - armoryScroll) * AROW;
+            if (r.kind() == 0) {
+                for (int t = 0; t < 3; t++) {
+                    if (in(mouseX, mouseY, toggleX(t), yy + 4, TOGGLE_W, TOGGLE_H)) { deployTarget = t; sound(false); return true; }
+                }
+                continue;
+            }
+            if (r.kind() == 5 && in(mouseX, mouseY, x0 + EW - 136, yy + 2, 66, 13)) {
+                wingmanMode = (wingmanMode + 1) % com.miophas.singularity_iteration.common.armory.WingmanMode.VALUES.length;
+                if (!data.wingmen().isEmpty()) sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.WINGMAN_MODE, wingmanMode);
+                else sound(false);
+                return true;
+            }
             if (!in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13)) continue;
+            if (r.kind() == 1 && deployTarget == 1) {
+                sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.WINGMAN_DEPLOY, r.index() | (wingmanMode << 8));
+                return true;
+            }
+            if (r.kind() == 1 && deployTarget == 2) {
+                sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.COMPANION_EQUIP, r.index());
+                return true;
+            }
             if (r.kind() == 1) { sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.SUMMON, r.index()); return true; }
             if (r.kind() == 3) { sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.SHOWCASE, r.index()); return true; }
+            if (r.kind() == 5) {
+                sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.WINGMAN_RECALL,
+                    com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.ALL);
+                return true;
+            }
+            if (r.kind() == 6) { sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.WINGMAN_RECALL, r.index()); return true; }
         }
         return false;
     }
@@ -903,8 +992,29 @@ public class mio_icif_gui_armor_features extends Screen {
         for (int i = armoryScroll; i < Math.min(rows.size(), armoryScroll + AROWS); i++) {
             ARow r = rows.get(i);
             int yy = ly + (i - armoryScroll) * AROW;
-            if (r.kind() != 1 && r.kind() != 3) continue;
-            List<ItemStack> items = r.kind() == 1 ? data.snapshot().suits().get(r.index()) : data.showcases().get(r.index()).items();
+            if (r.kind() == 5 && in(mouseX, mouseY, x0 + EW - 136, yy + 2, 66, 13)) {
+                var mode = com.miophas.singularity_iteration.common.armory.WingmanMode.byId(wingmanMode);
+                List<Component> lines = new ArrayList<>();
+                lines.add(Component.translatable(mode.key()).withStyle(ChatFormatting.GREEN));
+                for (var line : font.getSplitter().splitLines(Component.translatable(mode.key() + ".tip").getString(), 200, net.minecraft.network.chat.Style.EMPTY))
+                    lines.add(Component.literal(line.getString()).withStyle(ChatFormatting.GRAY));
+                lines.add(Component.translatable("gui.mio_icif.wingman.mode.cycle").withStyle(ChatFormatting.DARK_GRAY));
+                g.renderComponentTooltip(font, lines, mouseX, mouseY);
+                return;
+            }
+            if (r.kind() == 0) {
+                for (int t = 1; t < 3; t++) {
+                    if (!in(mouseX, mouseY, toggleX(t), yy + 4, TOGGLE_W, TOGGLE_H)) continue;
+                    List<Component> lines = new ArrayList<>();
+                    for (var line : font.getSplitter().splitLines(Component.translatable(TOGGLE_KEYS[t].replace(".toggle.", ".toggle.tip.")).getString(),
+                            220, net.minecraft.network.chat.Style.EMPTY)) lines.add(Component.literal(line.getString()).withStyle(ChatFormatting.GRAY));
+                    g.renderComponentTooltip(font, lines, mouseX, mouseY);
+                    return;
+                }
+            }
+            if (r.kind() != 1 && r.kind() != 3 && r.kind() != 6) continue;
+            List<ItemStack> items = r.kind() == 1 ? data.snapshot().suits().get(r.index())
+                : r.kind() == 6 ? data.wingmen().get(r.index()).items() : data.showcases().get(r.index()).items();
             for (int c = 0; c < items.size(); c++) {
                 if (in(mouseX, mouseY, x0 + 80 + c * 18, yy + 1, 17, 16) && !items.get(c).isEmpty()) {
                     g.renderTooltip(font, items.get(c), mouseX, mouseY);
@@ -926,9 +1036,33 @@ public class mio_icif_gui_armor_features extends Screen {
     private int cardX(int i) { return left + AX + 6 + i * (CARD_W + 6); }
     private int cardY() { return top + AY + 22; }
 
+    // ---- 0.1.8.0: appearance pages: 0 = texture style, 1 = suit palette
+    private int appearancePage;
+    private static final int SUB_W = 52, SUB_H = 11;
+    private int subX(int i) { return left + AX + AW - 4 - (2 - i) * (SUB_W + 2); }
+    private int subY() { return top + AY + 4; }
+
+    private void renderAppearanceTabs(GuiGraphics g, int mouseX, int mouseY) {
+        String[] keys = {"texture", "palette"};
+        for (int i = 0; i < 2; i++) {
+            int x = subX(i), y = subY();
+            boolean on = appearancePage == i, hot = in(mouseX, mouseY, x, y, SUB_W, SUB_H);
+            g.fill(x, y, x + SUB_W, y + SUB_H, on ? 0xFF15293A : hot ? 0xFF112130 : DspUi.BG_HI);
+            g.renderOutline(x, y, SUB_W, SUB_H, on ? DspUi.CYAN : DspUi.FRAME);
+            DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.page." + keys[i]).getString(),
+                x + 4, y + 3, on ? DspUi.TEXT : DspUi.TEXT_DIM);
+        }
+    }
+
     private void renderAppearance(GuiGraphics g, int mouseX, int mouseY) {
+        if (appearancePage == 1) {
+            renderPalette(g, mouseX, mouseY);
+            renderAppearanceTabs(g, mouseX, mouseY);
+            return;
+        }
         int x0 = left + AX, y0 = top + AY;
         DspUi.screen(g, x0, y0, AW, AH);
+        renderAppearanceTabs(g, mouseX, mouseY);
         DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.texture_style").getString(), x0 + 6, y0 + 6, DspUi.CYAN);
         DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.hint").getString(), x0 + 6, y0 + 13, DspUi.TEXT_DIM);
         // card 0: Default (classic IC2, ships in assets/), card 1: Experimental (built-in pack)
@@ -969,9 +1103,39 @@ public class mio_icif_gui_armor_features extends Screen {
         }
         DspUi.small(g, font, Component.translatable(available ? "gui.mio_icif.equipment_console.appearance.reload"
             : "gui.mio_icif.equipment_console.appearance.missing").getString(), x0 + 6, y0 + AH - 10, available ? DspUi.TEXT_DIM : DspUi.RED);
+        // 0.1.8.0: hand cover of the nano / quantum gauntlets
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.hands").getString(), x0 + 6, handY() - 9, DspUi.CYAN);
+        boolean[] states = {com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.handArmorFirstPerson(),
+            com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.handArmorThirdPerson()};
+        String[] keys = {"first_person", "third_person"};
+        for (int i = 0; i < 2; i++) {
+            int bx = x0 + 6 + i * 140, by = handY();
+            g.renderOutline(bx, by, 9, 9, DspUi.FRAME);
+            if (states[i]) g.fill(bx + 2, by + 2, bx + 7, by + 7, DspUi.CYAN);
+            DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.hands." + keys[i]).getString(), bx + 13, by + 2, DspUi.TEXT);
+        }
     }
 
+    private int handY() { return cardY() + CARD_H + 16; }
+
     private boolean appearanceClick(double mouseX, double mouseY) {
+        for (int i = 0; i < 2; i++) {
+            if (in(mouseX, mouseY, subX(i), subY(), SUB_W, SUB_H)) {
+                if (appearancePage != i) { appearancePage = i; sound(false); }
+                return true;
+            }
+        }
+        if (appearancePage == 1) return paletteClick(mouseX, mouseY);
+        for (int i = 0; i < 2; i++) {
+            if (in(mouseX, mouseY, left + AX + 6 + i * 140, handY(), 130, 9)) {
+                boolean first = com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.handArmorFirstPerson();
+                boolean third = com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.handArmorThirdPerson();
+                if (i == 0) first = !first; else third = !third;
+                com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.setHandArmor(first, third);
+                sound(true);
+                return true;
+            }
+        }
         for (int i = 0; i < 2; i++) {
             if (in(mouseX, mouseY, cardX(i), cardY(), CARD_W, CARD_H)) {
                 boolean experimental = i == 1;
@@ -983,5 +1147,194 @@ public class mio_icif_gui_armor_features extends Screen {
             }
         }
         return false;
+    }
+
+    // ================================================================== APPEARANCE: suit palette (0.1.8.0)
+    private static final String[] PALETTE_SLOTS = {"head", "chest", "legs", "feet"};
+    private static final net.minecraft.world.entity.EquipmentSlot[] PALETTE_EQUIP = {
+        net.minecraft.world.entity.EquipmentSlot.HEAD, net.minecraft.world.entity.EquipmentSlot.CHEST,
+        net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET};
+    private static final int PAL_ROW = 17, PAL_LIST_W = 106, PAL_RX = 116, PAL_TRACK = 120;
+    private int palettePiece;
+    /** 0 = plates (primary), 1 = light strips (accent). */
+    private int paletteTarget;
+    private boolean paletteAll;
+    /** Working colours of the editor: primary, accent. */
+    private final int[] paletteWork = {0x3A3F46, 0x37E35A};
+    private int paletteLoadedFor = -1;
+    private int paletteDrag = -1;
+
+    private ItemStack paletteStack(int piece) {
+        return minecraft == null || minecraft.player == null ? ItemStack.EMPTY : minecraft.player.getItemBySlot(PALETTE_EQUIP[piece]);
+    }
+
+    /** Loads the working colours from the selected piece when the selection changes. */
+    private void paletteLoad() {
+        if (paletteLoadedFor == palettePiece) return;
+        paletteLoadedFor = palettePiece;
+        var palette = com.miophas.singularity_iteration.common.suit.SuitPalette.of(paletteStack(palettePiece));
+        var first = com.miophas.singularity_iteration.common.suit.SuitPalette.PRESETS.get(0);
+        paletteWork[0] = palette == null ? first.primary() : palette.primary();
+        paletteWork[1] = palette == null ? first.accent() : palette.accent();
+    }
+
+    private int sliderY(int channel) { return top + AY + 70 + channel * 15; }
+    private int sliderX() { return left + AX + PAL_RX + 14; }
+
+    private void renderPalette(GuiGraphics g, int mouseX, int mouseY) {
+        int x0 = left + AX, y0 = top + AY;
+        DspUi.screen(g, x0, y0, AW, AH);
+        paletteLoad();
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.palette.title").getString(), x0 + 6, y0 + 6, DspUi.CYAN);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.palette.hint").getString(), x0 + 6, y0 + 14, DspUi.TEXT_DIM);
+        // ---- piece list
+        for (int i = 0; i < 4; i++) {
+            int x = x0 + 6, y = y0 + 24 + i * PAL_ROW;
+            ItemStack stack = paletteStack(i);
+            boolean ok = com.miophas.singularity_iteration.common.suit.SuitPalette.supports(stack);
+            boolean on = palettePiece == i, hot = ok && in(mouseX, mouseY, x, y, PAL_LIST_W, PAL_ROW - 2);
+            g.fill(x, y, x + PAL_LIST_W, y + PAL_ROW - 2, on ? 0xFF15293A : hot ? 0xFF112130 : DspUi.BG_HI);
+            g.renderOutline(x, y, PAL_LIST_W, PAL_ROW - 2, on ? DspUi.CYAN : DspUi.FRAME);
+            if (!stack.isEmpty()) {
+                g.pose().pushPose();
+                g.pose().translate(x + 2, y + 1, 0);
+                g.pose().scale(0.8F, 0.8F, 1);
+                g.renderItem(stack, 0, 0);
+                g.pose().popPose();
+            }
+            String label = Component.translatable("gui.mio_icif.palette.piece." + PALETTE_SLOTS[i]).getString();
+            DspUi.small(g, font, label, x + 17, y + 3, ok ? DspUi.TEXT : DspUi.TEXT_DIM);
+            if (ok) {
+                var palette = com.miophas.singularity_iteration.common.suit.SuitPalette.of(stack);
+                int p = palette == null ? 0xFF555A60 : 0xFF000000 | palette.primary(), a = palette == null ? 0xFF555A60 : 0xFF000000 | palette.accent();
+                g.fill(x + PAL_LIST_W - 22, y + 3, x + PAL_LIST_W - 13, y + 11, p);
+                g.fill(x + PAL_LIST_W - 12, y + 3, x + PAL_LIST_W - 3, y + 11, a);
+                if (palette == null) DspUi.small(g, font, Component.translatable("gui.mio_icif.palette.original").getString(), x + 17, y + 9, DspUi.TEXT_DIM);
+            } else {
+                DspUi.small(g, font, Component.translatable("gui.mio_icif.palette.unsupported").getString(), x + 17, y + 9, DspUi.TEXT_DIM);
+            }
+        }
+        // apply-to-all switch
+        int ay = y0 + 24 + 4 * PAL_ROW + 2;
+        g.renderOutline(x0 + 6, ay, 9, 9, DspUi.FRAME);
+        if (paletteAll) g.fill(x0 + 8, ay + 2, x0 + 13, ay + 7, DspUi.CYAN);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.palette.all").getString(), x0 + 18, ay + 2, DspUi.TEXT);
+        // ---- right column: target, presets, sliders
+        int rx = x0 + PAL_RX;
+        for (int t = 0; t < 2; t++) {
+            int bx = rx + t * 82, by = y0 + 24;
+            boolean on = paletteTarget == t;
+            g.fill(bx, by, bx + 80, by + 12, on ? 0xFF15293A : DspUi.BG_HI);
+            g.renderOutline(bx, by, 80, 12, on ? DspUi.CYAN : DspUi.FRAME);
+            g.fill(bx + 3, by + 3, bx + 9, by + 9, 0xFF000000 | paletteWork[t]);
+            DspUi.small(g, font, Component.translatable(t == 0 ? "gui.mio_icif.palette.primary" : "gui.mio_icif.palette.accent").getString(),
+                bx + 12, by + 3, on ? DspUi.TEXT : DspUi.TEXT_DIM);
+        }
+        var presets = com.miophas.singularity_iteration.common.suit.SuitPalette.PRESETS;
+        for (int i = 0; i < presets.size(); i++) {
+            int px = rx + i * 20, py = y0 + 42;
+            var preset = presets.get(i);
+            g.fill(px, py, px + 18, py + 14, DspUi.FRAME);
+            g.fill(px + 1, py + 1, px + 12, py + 13, 0xFF000000 | preset.primary());
+            g.fill(px + 12, py + 1, px + 17, py + 13, 0xFF000000 | preset.accent());
+        }
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.palette.presets").getString(), rx, y0 + 58, DspUi.TEXT_DIM);
+        int color = paletteWork[paletteTarget];
+        String[] names = {"R", "G", "B"};
+        int[] channelColor = {0xFFE04A4A, 0xFF4AD06A, 0xFF4A8AF0};
+        for (int c = 0; c < 3; c++) {
+            int value = (color >> (16 - c * 8)) & 255, sy = sliderY(c), sx = sliderX();
+            DspUi.small(g, font, names[c], rx, sy + 1, channelColor[c]);
+            g.fill(sx, sy + 2, sx + PAL_TRACK, sy + 5, 0xFF0A141C);
+            g.fill(sx, sy + 2, sx + value * PAL_TRACK / 255, sy + 5, channelColor[c]);
+            int knob = sx + value * PAL_TRACK / 255;
+            g.fill(knob - 1, sy, knob + 2, sy + 8, DspUi.TEXT);
+            DspUi.small(g, font, String.valueOf(value), sx + PAL_TRACK + 5, sy + 1, DspUi.TEXT);
+        }
+        int hy = sliderY(3) + 2;
+        g.fill(rx, hy, rx + 26, hy + 12, 0xFF000000 | paletteWork[0]);
+        g.fill(rx + 26, hy, rx + 40, hy + 12, 0xFF000000 | paletteWork[1]);
+        g.renderOutline(rx, hy, 40, 12, DspUi.FRAME);
+        DspUi.small(g, font, String.format("#%06X / #%06X", paletteWork[0], paletteWork[1]), rx + 46, hy + 3, DspUi.TEXT);
+        // buttons: apply, reset
+        int by = hy + 18;
+        String[] buttons = {"gui.mio_icif.palette.apply", "gui.mio_icif.palette.reset"};
+        for (int b = 0; b < 2; b++) {
+            int bx = rx + b * 82;
+            boolean hot = in(mouseX, mouseY, bx, by, 80, 13);
+            g.fill(bx, by, bx + 80, by + 13, hot ? 0xFF15293A : DspUi.BG_HI);
+            g.renderOutline(bx, by, 80, 13, b == 0 ? DspUi.CYAN : DspUi.FRAME);
+            DspUi.small(g, font, Component.translatable(buttons[b]).getString(), bx + 6, by + 4, DspUi.TEXT);
+        }
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.palette.note").getString(), x0 + 6, y0 + AH - 10, DspUi.TEXT_DIM);
+    }
+
+    private boolean paletteClick(double mouseX, double mouseY) {
+        int x0 = left + AX, y0 = top + AY, rx = x0 + PAL_RX;
+        for (int i = 0; i < 4; i++) {
+            if (in(mouseX, mouseY, x0 + 6, y0 + 24 + i * PAL_ROW, PAL_LIST_W, PAL_ROW - 2)
+                    && com.miophas.singularity_iteration.common.suit.SuitPalette.supports(paletteStack(i))) {
+                if (palettePiece != i) { palettePiece = i; sound(false); }
+                return true;
+            }
+        }
+        int ay = y0 + 24 + 4 * PAL_ROW + 2;
+        if (in(mouseX, mouseY, x0 + 6, ay, 90, 9)) { paletteAll = !paletteAll; sound(true); return true; }
+        for (int t = 0; t < 2; t++) {
+            if (in(mouseX, mouseY, rx + t * 82, y0 + 24, 80, 12)) { paletteTarget = t; sound(false); return true; }
+        }
+        var presets = com.miophas.singularity_iteration.common.suit.SuitPalette.PRESETS;
+        for (int i = 0; i < presets.size(); i++) {
+            if (in(mouseX, mouseY, rx + i * 20, y0 + 42, 18, 14)) {
+                paletteWork[0] = presets.get(i).primary();
+                paletteWork[1] = presets.get(i).accent();
+                paletteSend(false);
+                sound(true);
+                return true;
+            }
+        }
+        for (int c = 0; c < 3; c++) {
+            if (in(mouseX, mouseY, sliderX() - 3, sliderY(c), PAL_TRACK + 6, 9)) {
+                paletteDrag = c;
+                paletteSlider(mouseX);
+                return true;
+            }
+        }
+        int by = sliderY(3) + 20;
+        if (in(mouseX, mouseY, rx, by, 80, 13)) { paletteSend(false); sound(true); return true; }
+        if (in(mouseX, mouseY, rx + 82, by, 80, 13)) { paletteSend(true); sound(true); return true; }
+        return false;
+    }
+
+    private void paletteSlider(double mouseX) {
+        int c = paletteDrag;
+        int value = Mth.clamp((int) Math.round((mouseX - sliderX()) * 255.0 / PAL_TRACK), 0, 255);
+        int shift = 16 - c * 8;
+        int color = paletteWork[paletteTarget];
+        paletteWork[paletteTarget] = (color & ~(255 << shift)) | (value << shift);
+        // Live preview on the client copy; the server copy follows when the drag ends.
+        for (int i : paletteTargets()) {
+            com.miophas.singularity_iteration.common.suit.SuitPalette.set(paletteStack(i),
+                new com.miophas.singularity_iteration.common.suit.SuitPalette(paletteWork[0], paletteWork[1]));
+        }
+    }
+
+    private int[] paletteTargets() {
+        if (!paletteAll) return new int[]{palettePiece};
+        return java.util.stream.IntStream.range(0, 4)
+            .filter(i -> com.miophas.singularity_iteration.common.suit.SuitPalette.supports(paletteStack(i))).toArray();
+    }
+
+    /** Sends the working palette (or a reset) for the selected piece, or all nano pieces. */
+    private void paletteSend(boolean clear) {
+        for (int i : paletteTargets()) {
+            ItemStack stack = paletteStack(i);
+            if (!com.miophas.singularity_iteration.common.suit.SuitPalette.supports(stack)) continue;
+            com.miophas.singularity_iteration.common.suit.SuitPalette.set(stack,
+                clear ? null : new com.miophas.singularity_iteration.common.suit.SuitPalette(paletteWork[0], paletteWork[1]));
+            PacketDistributor.sendToServer(new com.miophas.singularity_iteration.common.network.SuitPalettePacket(
+                PALETTE_SLOTS[i], paletteWork[0], paletteWork[1], clear));
+        }
+        if (clear) paletteLoadedFor = -1;
     }
 }

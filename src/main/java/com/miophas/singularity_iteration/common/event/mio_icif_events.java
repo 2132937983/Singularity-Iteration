@@ -146,43 +146,22 @@ public class mio_icif_events {
         }
     }
 
-    private static final int QUANTUM_ARMOR_TIER = 6;
-    private static final int NANO_ARMOR_TIER = 5;
-
-    private static boolean isNanoArmor(ItemStack stack) {
-        return stack.getItem() instanceof IElectricArmorItem armor && armor.getArmorTier() == NANO_ARMOR_TIER;
-    }
-
     /** Shared array: the damage handler runs for every hit, so it must not allocate one each call. */
     private static final EquipmentSlot[] ARMOR_SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
 
-    private static boolean isWearingFullNanoSet(LivingEntity entity) {
-        for (EquipmentSlot slot : ARMOR_SLOTS) {
-            ItemStack stack = entity.getItemBySlot(slot);
-            if (stack.isEmpty() || !MioIcifAPI.instance().getItemAPI().isElectricArmor(stack) || !isNanoArmor(stack)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     /**
-     * 玩家受到伤害时处理电力护甲的能量吸收
+     * 玩家受到伤害时处理电力护甲的能量吸收（0.1.8.0 重写，见 {@link ElectricArmorDamage}）。
      *
      * <p>通过 {@link IElectricArmorItem#getDamageAbsorptionRatio(EquipmentSlot)} 和
      * {@link IElectricArmorItem#getEnergyPerDamage()} 两个 API 方法驱动伤害吸收逻辑，
      * Addon 开发者只需实现这两个方法即可自定义装甲的伤害吸收行为。
      *
-     * <p>量子套特殊规则（tier=6）：
-     * - 可以抵挡凋灵、龙息、魔法、爆炸等所有非BYPASSES_ARMOR伤害
-     * - 不能抵挡虚空伤害、/kill、饥饿、溺水等穿甲伤害
-     * - 全套总计吸收108%，完全抵挡所有非穿甲伤害
-     *
-     * <p>纳米套特殊规则（tier=5）：
-     * - 穿齐整套时：吸收90%伤害
-     * - 未穿齐时：各部件按独立比例减免伤害
-     *
-     * <p>其他电力护甲：通过 getDamageAbsorptionRatio + getEnergyPerDamage 驱动
+     * <ul>
+     *   <li>各部件比例相加（不再按剩余伤害连乘）；总比例上限 100%。量子全套 = 100%。</li>
+     *   <li>纳米全套：总比例 90%。</li>
+     *   <li>全套（四件同一 tier）：耗电由四件按剩余电量比例共同承担。</li>
+     *   <li>可吸收除虚空、/kill、饥饿、世界边界以外的全部原版伤害（含魔法、凋零、冰冻、音波、破甲攻击）。</li>
+     * </ul>
      */
     @SubscribeEvent
     public static void onLivingDamage(LivingDamageEvent.Pre event) {
@@ -201,12 +180,9 @@ public class mio_icif_events {
             return;
         }
 
-        boolean isUnblockable = source.is(DamageTypeTags.BYPASSES_ARMOR) || source.is(DamageTypeTags.BYPASSES_EFFECTS);
-        boolean isExplosion = source.is(DamageTypeTags.IS_EXPLOSION);
         boolean isRadiation = source.getMsgId().equals("mio_icif_killed_by_uranium");
 
         boolean radiationProtected = RadiationProtectionUtil.isRadiationProtected(entity);
-        boolean fullNanoSet = isWearingFullNanoSet(entity);
 
         if (radiationProtected && isRadiation) {
             event.setNewDamage(0);
@@ -218,75 +194,45 @@ public class mio_icif_events {
             return;
         }
 
-        float remainingDamage = damage;
-        float totalAbsorbed = 0;
-
-        EquipmentSlot[] armorSlots = {
-            EquipmentSlot.CHEST,
-            EquipmentSlot.HEAD,
-            EquipmentSlot.LEGS,
-            EquipmentSlot.FEET
-        };
-
-        var itemApi = MioIcifAPI.instance().getItemAPI();
-        for (EquipmentSlot slot : armorSlots) {
-            if (remainingDamage <= 0) {
-                break;
-            }
-
-            ItemStack armorStack = entity.getItemBySlot(slot);
-            if (armorStack.isEmpty() || !itemApi.isElectricArmor(armorStack)) {
-                continue;
-            }
-
-            if (itemApi.getElectricArmorStored(armorStack) <= 0) {
-                continue;
-            }
-
-            if (!(armorStack.getItem() instanceof IElectricArmorItem armorItem)) {
-                continue;
-            }
-
-            long energyPerDamage = com.miophas.singularity_iteration.core.api.item.EnergySaving.rate(armorStack, armorItem.getEnergyPerDamage());
-            float absorptionRatio = armorItem.getDamageAbsorptionRatio(slot);
-
-            if (energyPerDamage <= 0 || absorptionRatio <= 0) {
-                continue;
-            }
-
-            boolean isQuantum = armorItem.getArmorTier() == QUANTUM_ARMOR_TIER;
-            boolean isNano = armorItem.getArmorTier() == NANO_ARMOR_TIER;
-
-            if (isQuantum && isUnblockable && !isExplosion) {
-                continue;
-            }
-
-            if (isNano && fullNanoSet) {
-                absorptionRatio = 0.9F;
-            }
-
-            float absorbAmount = remainingDamage * absorptionRatio;
-            long energyCost = (long) (absorbAmount * energyPerDamage);
-
-            if (itemApi.getElectricArmorStored(armorStack) >= energyCost) {
-                itemApi.dischargeElectricArmor(armorStack, energyCost, false);
-                totalAbsorbed += absorbAmount;
-                remainingDamage -= absorbAmount;
-            } else {
-                long canAbsorb = itemApi.getElectricArmorStored(armorStack) / energyPerDamage;
-                if (canAbsorb > 0) {
-                    float actualAbsorbed = Math.min(canAbsorb, absorbAmount);
-                    itemApi.dischargeElectricArmor(armorStack, (long) (actualAbsorbed * energyPerDamage), false);
-                    totalAbsorbed += actualAbsorbed;
-                    remainingDamage -= actualAbsorbed;
-                }
-            }
+        // 0.1.8.0: additive ratios, full-set energy pool, all vanilla damage types
+        // except void / kill / starvation / world border. See ElectricArmorDamage.
+        var result = ElectricArmorDamage.absorb(entity, source, damage);
+        if (result.absorbed() > 0) {
+            event.setNewDamage(Math.max(0, damage - result.absorbed()));
         }
+    }
 
-        if (totalAbsorbed > 0) {
-            float finalDamage = Math.max(0, damage - totalAbsorbed);
-            event.setNewDamage(finalDamage);
+    /**
+     * Exhaustion of a player before a hit that electric armor (or the deflector)
+     * reduced. Vanilla adds the food exhaustion of the damage type after the
+     * Pre event. A powered suit carries that load, so the Post event restores it.
+     */
+    private static final java.util.Map<Player, Float> HIT_EXHAUSTION = new java.util.WeakHashMap<>();
+
+    /** Runs after the armor handler and the deflector (LOW): records the exhaustion of a reduced hit. */
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    public static void onLivingDamageGuard(LivingDamageEvent.Pre event) {
+        if (!(event.getEntity() instanceof Player player) || player.level().isClientSide) return;
+        if (event.getNewDamage() < event.getOriginalDamage() && wearsPoweredElectricArmor(player))
+            HIT_EXHAUSTION.put(player, player.getFoodData().getExhaustionLevel());
+        else HIT_EXHAUSTION.remove(player);
+    }
+
+    @SubscribeEvent
+    public static void onLivingDamagePost(LivingDamageEvent.Post event) {
+        if (!(event.getEntity() instanceof Player player) || player.level().isClientSide) return;
+        Float before = HIT_EXHAUSTION.remove(player);
+        if (before != null && player.getFoodData().getExhaustionLevel() > before)
+            player.getFoodData().setExhaustion(before);
+    }
+
+    private static boolean wearsPoweredElectricArmor(LivingEntity entity) {
+        var api = MioIcifAPI.instance().getItemAPI();
+        for (EquipmentSlot slot : ARMOR_SLOTS) {
+            ItemStack stack = entity.getItemBySlot(slot);
+            if (!stack.isEmpty() && api.isElectricArmor(stack) && api.getElectricArmorStored(stack) > 0) return true;
         }
+        return false;
     }
 
     /**

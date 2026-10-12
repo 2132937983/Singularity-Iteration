@@ -1,6 +1,6 @@
 # 0.1.8.0 更新说明
 
-基于 0.1.7.36。本次提交以已合并 0.1.7.35.1 和 0.1.7.36 的上游 `0.1.7.36-beta`（`dfa8edac378b75d9a9a8fa98ee869b542edd529c`）为基线。构建环境为 Gradle 8.10.2、JDK 21、NeoForge 21.1.218。
+构建环境为 Gradle 8.10.2、JDK 21、NeoForge 21.1.218。
 
 ## 交付方验证记录
 
@@ -19,7 +19,7 @@
 
 ## 本次提交核验（2026-10-12）
 
-* 来源：`SI_0.1.8.0_src.zip`，SHA-256：`5ee621be774af12c9d6314fd0a45da1fc94b8ec15580d2701d99f4b91072d9ef`。保留 0.1.7.35.1 的电动锄、蒸汽再加压机与配方，以及 0.1.7.36 的调节滑块修复。
+* 来源：`SI_0.1.8.0_src.zip`，SHA-256：`5ee621be774af12c9d6314fd0a45da1fc94b8ec15580d2701d99f4b91072d9ef`。
 * 使用缓存依赖完成离线构建与上述六类 JAR 打包；`checkCoreArchitecture`、`checkCoreDistribution` 通过。六个 JAR 解压后的文件内容均与交付包一致。`test` 为 `NO-SOURCE`，不代表运行过 GameTest。
 * 对当前生产源独立编译并复跑：FairShare 60,736 项功能断言、LitematicBits 1,211,179 个条目、4 个 Ponder NBT 回读均通过。FairShare 本轮排除了原测试中的一项性能阈值检查。
 * 4,033 个 JSON 解析通过；手册 STE 检查留下 12 条文风提示。五个资源工具已改用仓库相对路径或显式基线参数，移除六个 Python 缓存文件。

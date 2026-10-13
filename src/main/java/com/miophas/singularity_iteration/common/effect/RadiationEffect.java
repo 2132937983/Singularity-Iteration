@@ -17,6 +17,10 @@ public class RadiationEffect extends MobEffect {
         if (RadiationProtectionUtil.isRadiationProtected(livingEntity)) {
             return true;
         }
+        // 0.1.8.5: the nano toxin and radiation filter blocks 60 % of the radiation ticks
+        if (com.miophas.singularity_iteration.common.suit.nano.NanoEvents.filtersRadiationTick(livingEntity)) {
+            return true;
+        }
         livingEntity.hurt(livingEntity.damageSources().magic(), 1.0F);
         return true;
     }

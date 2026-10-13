@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
-/** Quantum modification station GUI: piece slot, unit slot, battery, installed-unit list. */
+/** Universal Suit Modification Station GUI: piece slot, unit slot, battery, installed-unit list (LP bar for nano pieces). */
 public class QuantumModStationMenu extends mio_icif_machine_menu {
     public static final int GUI_WIDTH = 176, GUI_HEIGHT = 206;
     public static final int SUIT_X = 30, SUIT_Y = 22;
@@ -34,12 +34,17 @@ public class QuantumModStationMenu extends mio_icif_machine_menu {
     protected void addMachineSlots() {
         addBatterySlot(QuantumModStationBlockEntity.BATTERY_SLOT, BATTERY_X, BATTERY_Y);
         addSlot(new SlotItemHandler(itemHandler, QuantumModStationBlockEntity.SUIT_SLOT, SUIT_X, SUIT_Y) {
-            @Override public boolean mayPlace(ItemStack stack) { return SuitModules.isSuitPiece(stack); }
+            @Override public boolean mayPlace(ItemStack stack) {
+                return SuitModules.isSuitPiece(stack) || com.miophas.singularity_iteration.common.suit.core.LegacyArmor.isLegacy(stack);
+            }
             @Override public int getMaxStackSize() { return 1; }
             @Override public int getMaxStackSize(ItemStack stack) { return 1; }
         }.setBackground(InventoryMenu.BLOCK_ATLAS, InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE));
         addSlot(new SlotItemHandler(itemHandler, QuantumModStationBlockEntity.MODULE_SLOT, UNIT_X, UNIT_Y) {
-            @Override public boolean mayPlace(ItemStack stack) { return stack.getItem() instanceof SuitModuleItem; }
+            // 0.1.8.5: addon units (public API) and the nano lattice densifier too
+            @Override public boolean mayPlace(ItemStack stack) {
+                return UnitRef.ofItem(stack) != null || QuantumModStationBlockEntity.isDensifier(stack) || QuantumModStationBlockEntity.isCore(stack);
+            }
         });
     }
 
@@ -63,9 +68,13 @@ public class QuantumModStationMenu extends mio_icif_machine_menu {
     /** 0.1.8.0: built-in and registered addon units, in install order (the removal buttons use this index). */
     public List<UnitRef> installed() { return SuitModules.installed(suit()).units(); }
 
-    /** Button id n = remove the n-th installed unit. */
+    /** Button id of the frame core eject button (0.1.9.0). */
+    public static final int CORE_BUTTON = 99;
+
+    /** Button id n = remove the n-th installed unit; {@link #CORE_BUTTON} = remove the frame core. */
     @Override
     public boolean clickMenuButton(Player player, int id) {
+        if (blockEntity instanceof QuantumModStationBlockEntity station && id == CORE_BUTTON) return station.removeCore(player);
         if (blockEntity instanceof QuantumModStationBlockEntity station) return station.removeUnit(id, player);
         return false;
     }

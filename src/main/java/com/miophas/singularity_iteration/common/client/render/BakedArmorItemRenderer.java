@@ -14,10 +14,12 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Item renderer of a baked armor piece (0.1.7.35): the inventory icon, the held item and the
- * dropped item show the same 3D Blockbench model as the worn armor, like the machine items show
- * their block model. The item model ({@code parent: builtin/entity}) holds the display transforms;
- * this renderer fits the piece into the unit item cube.
+ * Item renderer of a baked armor piece (0.1.7.35): the held item, the dropped item and the item
+ * frame show the same 3D Blockbench model as the worn armor. The 3D model
+ * ({@code item/3d/armor/*}, {@code parent: builtin/entity}) holds the display transforms; this
+ * renderer fits the piece into the unit item cube. Since 0.1.8.3 the inventory shows a flat icon
+ * instead (the "gui" perspective of the item model, drawn from the same Blockbench model by
+ * {@code tools/art/suit_icons_183.py}), so this renderer no longer runs for GUI slots.
  */
 public class BakedArmorItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static final float[][] PIVOT = {

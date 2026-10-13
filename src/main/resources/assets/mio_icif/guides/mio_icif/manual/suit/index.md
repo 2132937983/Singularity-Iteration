@@ -9,7 +9,7 @@ navigation:
 # Quantum suit upgrades
 
 The quantum suit accepts upgrade units. Each unit adds one sensor or one defense function.
-The quantum modification station installs and removes the units.
+The Universal Suit Modification Station installs and removes the units. Since 0.1.8.5 the nano suit takes units too (see Nano suit units).
 Each piece has a fixed number of unit slots: helmet 4, chestplate 3, leggings 2, boots 2.
 A HUD unit shows its data only when you wear a quantum helmet. The helmet is the visor.
 Each installed unit adds a switch to the equipment console. A unit uses power only while its switch is on.

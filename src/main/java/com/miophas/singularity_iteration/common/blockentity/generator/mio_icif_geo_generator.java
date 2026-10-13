@@ -258,7 +258,7 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
         
         // 实际存储生成的能量（使用generateEnergyInternal绕过maxReceive限制）
         if (totalEnergyGenerated > 0) {
-            apiGenerateEnergy(totalEnergyGenerated, false);
+            apiGenerateEnergy(scaleOutput(totalEnergyGenerated), false);   // 0.1.8.4 output multiplier
         }
     }
 
@@ -403,7 +403,7 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
                 credit += (long) needed * EU_PER_MB - ENERGY_GENERATION_RATE;
                 currentLavaBurning = (int) ((credit + (EU_PER_MB - 1L)) / EU_PER_MB);
                 currentLavaEnergyGenerated = (long) currentLavaBurning * EU_PER_MB - credit;
-                apiGenerateEnergy(ENERGY_GENERATION_RATE, false);
+                apiGenerateEnergy(scaleOutput(ENERGY_GENERATION_RATE), false);   // 0.1.8.4 output multiplier
                 generated = true;
             }
         }
@@ -412,7 +412,7 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
             long room = Math.max(0L, energyStorage.getCapacity() - energyStorage.getAmount());
             long lavaBlockEnergy = Math.min((long) nearbyLavaBlocks * LAVA_BLOCK_ENERGY_RATE, room);
             if (lavaBlockEnergy > 0) {
-                apiGenerateEnergy(lavaBlockEnergy, false);
+                apiGenerateEnergy(scaleOutput(lavaBlockEnergy), false);
                 generated = true;
             }
         }

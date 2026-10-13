@@ -195,7 +195,7 @@ public class mio_icif_AdvancedSolarGenerator extends mio_icif_solar_generator {
     protected void generateEnergy() {
         long rate = getCurrentGenerationRate();
         if (rate > 0) {
-            long energyGenerated = Math.min(rate, 
+            long energyGenerated = Math.min(scaleOutput(rate),   // 0.1.8.4 output multiplier
                 energyStorage.getCapacity() - energyStorage.getAmount());
             if (energyGenerated > 0) {
                 apiGenerateEnergy(energyGenerated, false);

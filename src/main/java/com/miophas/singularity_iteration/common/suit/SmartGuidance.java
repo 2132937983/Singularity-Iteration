@@ -77,6 +77,10 @@ public final class SmartGuidance {
         if (player.isAlliedTo(target)) return false;
         if (target instanceof OwnableEntity own && player.getUUID().equals(own.getOwnerUUID())) return false;
         if (target instanceof Player other && (!player.server.isPvpAllowed() || other.isCreative())) return false;
+        // 0.1.8.5: a nano EMP breaks the locks on its wearer for a few seconds
+        if (target instanceof Player other && com.miophas.singularity_iteration.common.suit.nano.NanoSuit.lockJammed(other)) return false;
+        // 0.1.8.6: a worn jammer keeps the lock off its wearer
+        if (target instanceof Player other && com.miophas.singularity_iteration.common.suit.nano.NanoSuit.jammerBlocksLock(other)) return false;
         return true;
     }
 
@@ -86,6 +90,8 @@ public final class SmartGuidance {
         if (!(p.getOwner() instanceof ServerPlayer player)) return;
         int[] locks = LOCKS.get(player.getUUID());
         if (locks == null || locks.length == 0 || !SuitModules.isActive(player, SuitModuleType.SMART_GUIDANCE)) return;
+        // 0.1.8.5: a nano EMP in range scrambles the guidance of other players for a few seconds
+        if (com.miophas.singularity_iteration.common.suit.nano.NanoSuit.guidanceJammed(player)) return;
         LivingEntity target = null;
         int start = NEXT.getOrDefault(player.getUUID(), 0);
         for (int k = 0; k < locks.length && target == null; k++) {

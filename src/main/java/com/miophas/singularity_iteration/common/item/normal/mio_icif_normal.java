@@ -1,7 +1,6 @@
 package com.miophas.singularity_iteration.common.item.normal;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.item.armor.mio_icif_solar_helmet;
 import com.miophas.singularity_iteration.common.item.crop.CropSeedItem;
 import com.miophas.singularity_iteration.common.item.lathe.LatheTurningBlanksItem;
 import com.miophas.singularity_iteration.common.item.build.CFSprayerItem;
@@ -142,7 +141,10 @@ public class mio_icif_normal {
     public static final DeferredItem<Item> SCRAPBOX = ITEMS.register("normal/item_scrapbox", () -> new mio_icif_scrapbox(new Item.Properties()));
     public static final DeferredItem<Item> SLAG = ITEMS.register("normal/item_slag", () -> new Item(new Item.Properties()));
     // IC2 原版 ItemArmorUtility 无防御，故使用 0 护甲值材料
-    public static final DeferredItem<mio_icif_solar_helmet> SOLAR_HELMET = ITEMS.register("normal/item_solar_helmet", () -> new mio_icif_solar_helmet(com.miophas.singularity_iteration.common.item.armor.MioIcifArmorMaterials.UTILITY, new Item.Properties()));
+    /** 0.1.9.0: retired; a legacy shell that turns into a solar skin unit. */
+    public static final DeferredItem<Item> SOLAR_HELMET = ITEMS.register("normal/item_solar_helmet",
+        () -> new com.miophas.singularity_iteration.common.suit.core.LegacyArmor.Shell(com.miophas.singularity_iteration.common.item.armor.MioIcifArmorMaterials.UTILITY,
+            net.minecraft.world.item.ArmorItem.Type.HELMET, new Item.Properties(), com.miophas.singularity_iteration.common.suit.core.LegacyArmor::solarSkin));
     public static final DeferredItem<Item> STATIC_BOOTS = ITEMS.register("normal/item_static_boots", () -> new Item(new Item.Properties()));
     // 蒸汽涡轮（转子）：对齐 IC2——它是消耗品，寿命由配置 rotorlivetime 决定（默认 86400 秒 = 24h），
     // 损耗为 1 点 / 20 tick，因此"耐久上限 = 秒数"。扇叶只是合成它的材料，不消耗。

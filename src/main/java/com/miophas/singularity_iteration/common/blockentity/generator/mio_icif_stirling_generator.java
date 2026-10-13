@@ -59,7 +59,18 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         if(server.getChunkSource().getChunkNow(at.getX()>>4,at.getZ()>>4)==null)return null;
         return server.getCapability(IMioIcifCapabilities.HEAT_STORAGE_BLOCK,at,side.getOpposite());
     }
-    private static EnergyAmount eu(long hu){return new EnergyAmount(hu/2,(hu%2)*(EnergyAmount.UNITS/2));}
+    /** EU for {@code hu} heat: 2 HU = 1 EU, times the output multiplier (0.1.8.4, config GeneratorOutput). */
+    private EnergyAmount eu(long hu){
+        double m=com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);
+        if(m==1.0)return new EnergyAmount(hu/2,(hu%2)*(EnergyAmount.UNITS/2));
+        return EnergyAmount.fromDouble(hu*0.5*m);
+    }
+    /** Whole HU whose EU fits into {@code room} at the current ratio (0.1.8.4). */
+    private long huFor(EnergyAmount room){
+        double m=com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);
+        if(m==1.0)return room.whole()*2+(room.fraction()>=EnergyAmount.UNITS/2?1:0);
+        return m<=0?0:(long)Math.floor(room.toDouble()/(0.5*m));
+    }
     private long availableHeat(){
         if(!live() || !energy.scexNetworkControlled() || acquiring || uncertainHu!=0 || !legacyHold.isEmpty())return 0;
         frame();long limit=Math.max(0,1000-frameHu);long owned=Math.min(limit,heatStorage.getHeatStored());
@@ -80,10 +91,11 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         var balance=energy.scexExactAmount();if(requested.compareTo(balance)<=0)return;
         frame();var need=requested.subtract(balance).min(balance.roomBelow(energy.getCapacity()));
         // At most 1000 integer HU per frame. A sub-half-EU route can leave a paid fractional remainder.
-        long count=need.whole()>=500?1000:need.whole()*2+(need.fraction()==0?0:need.fraction()<=EnergyAmount.UNITS/2?1:2);
+        double ratio=com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);
+        long count=ratio==1.0?(need.whole()>=500?1000:need.whole()*2+(need.fraction()==0?0:need.fraction()<=EnergyAmount.UNITS/2?1:2))
+            :ratio<=0?0:(long)Math.min(1000,Math.ceil(need.toDouble()/(0.5*ratio)));
         count=Math.min(count,Math.max(0,1000-frameHu));
-        long room=balance.roomBelow(energy.getCapacity()).whole();
-        if(room<500)count=Math.min(count,room*2+(balance.roomBelow(energy.getCapacity()).fraction()>=EnergyAmount.UNITS/2?1:0));
+        count=Math.min(count,huFor(balance.roomBelow(energy.getCapacity())));
         if(count==0)return;
         count-=convertOwnedHeat(count);
         if(count==0)return;
@@ -100,8 +112,10 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
     }
     private void credit(long hu){
         var value=eu(hu);var got=energy.scexGenerateEnergy(value,false);
-        if(!got.equals(value))throw new IllegalStateException("Owned HU exceeds reserved EU capacity");
-        frameHu+=hu;generatedFrame+=hu;if(hu>0){generatedAt=level.getGameTime();lastOutput=generatedFrame/2;}dirty();
+        double m=com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);
+        // a scaled ratio rounds the last EU fraction: only the stock 2 HU = 1 EU ratio is exact
+        if(!got.equals(value)&&m==1.0)throw new IllegalStateException("Owned HU exceeds reserved EU capacity");
+        frameHu+=hu;generatedFrame+=hu;if(hu>0){generatedAt=level.getGameTime();lastOutput=Math.round(generatedFrame/2.0*m);}dirty();
     }
     /**
      * 把自身 HU 缓冲里的热量转成 EU（2 HU = 1 EU），上限同时受本帧预算、内部 EU 剩余空间与缓冲实有量约束。
@@ -111,7 +125,7 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         if(maxHu<=0)return 0;
         var room=energy.scexExactAmount().roomBelow(energy.getCapacity());
         if(room.isZero())return 0;
-        long roomHu=room.whole()*2+(room.fraction()>=EnergyAmount.UNITS/2?1:0);
+        long roomHu=huFor(room);
         long owned=Math.min(Math.min(maxHu,roomHu),heatStorage.getHeatStored());
         if(owned<=0)return 0;
         heatStorage.consumeHeatInternal(owned,false);credit(owned);return owned;

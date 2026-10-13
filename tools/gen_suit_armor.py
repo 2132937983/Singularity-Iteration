@@ -173,6 +173,11 @@ def convert(path, name, turn):
             parts.setdefault(part, []).append({'v': verts, 'n': [round(nx / ln, 4), round(ny / ln, 4), round(nz / ln, 4)]})
     for k in parts:
         parts[k] = [q for q in parts[k] if area(q['v']) > 1e-6]
+    if piece == 'chestplate':
+        # 0.1.8.3: keep gauntlet faces off the skin and sleeve planes (first-person flicker)
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from armor_clearance import clear
+        clear(parts)
     texture = None
     for t in d.get('textures', []):
         src = t.get('source', '')

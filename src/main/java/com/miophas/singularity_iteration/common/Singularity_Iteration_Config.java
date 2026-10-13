@@ -218,7 +218,60 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder REPRESSURIZER_POP = BUILDER.pop();
 
+    // ==================== 0.1.8.4: Blueprint Builder UU supply ====================
+    private static final ModConfigSpec.Builder BUILDER_BUILDER = BUILDER.push("BlueprintBuilder");
+    public static final ModConfigSpec.BooleanValue BUILDER_REPLICATOR_SUPPLY = BUILDER_BUILDER
+        .comment("When no Material Interface has a material, the Blueprint Builder orders it from an idle Replicator",
+                 "in range that has the pattern (memory crystal or adjacent Pattern Storage). The Replicator pays the copy",
+                 "with its own UU matter and energy at the usual price.")
+        .translation("mio_icif.configuration.builder_replicator_supply")
+        .define("replicatorSupply", true);
+    public static final ModConfigSpec.IntValue BUILDER_REPLICATOR_RANGE = BUILDER_BUILDER
+        .comment("Distance in blocks in which the Blueprint Builder finds Replicators.")
+        .translation("mio_icif.configuration.builder_replicator_range")
+        .defineInRange("replicatorRange", 16, 4, 64);
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder BUILDER_POP = BUILDER.pop();
+
+    // ==================== 0.1.8.4: generator output ====================
+    private static final ModConfigSpec.Builder GENERATOR_BUILDER = BUILDER
+        .comment("Output multiplier of each EU generator (1.0 = stock EU/t). Fuel burns at the same speed,",
+                 "so the multiplier is also the EU per unit of fuel. 0 switches the generator off.")
+        .push("GeneratorOutput");
+    public static final java.util.Map<String, ModConfigSpec.DoubleValue> GENERATOR_OUTPUT =
+        com.miophas.singularity_iteration.common.energy.GeneratorOutput.define(GENERATOR_BUILDER);
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder GENERATOR_POP = BUILDER.pop();
+
+    // ==================== 0.1.8.5: nano suit units ====================
+    private static final ModConfigSpec.Builder NANO_BUILDER = BUILDER
+        .comment("Nano suit units (0.1.8.5): unit switches, PvP switches, nano core and burst numbers.")
+        .push("NanoSuit");
+    static {
+        com.miophas.singularity_iteration.common.suit.nano.NanoConfig.define(NANO_BUILDER);
+    }
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder NANO_POP = BUILDER.pop();
+
+    // ==================== 0.1.9.0: frame cores ====================
+    private static final ModConfigSpec.Builder CORE_BUILDER = BUILDER
+        .comment("Frame cores (0.1.9.0): core switches and the arc discharge of the advanced propulsion core.")
+        .push("FrameCores");
+    static {
+        com.miophas.singularity_iteration.common.suit.core.CoreConfig.define(CORE_BUILDER);
+    }
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder CORE_POP = BUILDER.pop();
+
     static final ModConfigSpec SPEC = BUILDER.build();
+
+    static {
+        com.miophas.singularity_iteration.common.energy.GeneratorOutput.bind(SPEC);
+        com.miophas.singularity_iteration.common.suit.nano.NanoConfig.bind(SPEC);
+        com.miophas.singularity_iteration.common.suit.core.CoreConfig.bind(SPEC);
+        com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity.OUTPUT_SCALE =
+            com.miophas.singularity_iteration.common.energy.GeneratorOutput::multiplier;
+    }
 
     /**
      * Validates the format of a commodity type entry.

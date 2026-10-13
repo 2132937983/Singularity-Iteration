@@ -47,6 +47,18 @@ public record UnitRef(@Nullable SuitModuleType builtin, @Nullable SuitModuleSpec
     public String nameKey() { return builtin != null ? builtin.nameKey() : addon.nameKey(); }
     public String descriptionKey() { return builtin != null ? builtin.descriptionKey() : addon.nameKey() + ".desc"; }
 
+    /** 0.1.8.5: suit classes, lattice points and burst (an addon unit registered without traits is quantum only). */
+    public com.miophas.singularity_iteration.core.api.suit.SuitModuleTraits traits() {
+        if (builtin != null) return builtin.traits();
+        var entry = SuitModuleRegistry.get(addon.key());
+        return entry == null ? com.miophas.singularity_iteration.core.api.suit.SuitModuleTraits.QUANTUM_ONLY : entry.traits();
+    }
+    public int latticePoints() { return traits().latticePoints(); }
+    public boolean allows(com.miophas.singularity_iteration.core.api.suit.SuitClass suitClass) { return traits().allows(suitClass); }
+    @Nullable public com.miophas.singularity_iteration.core.api.suit.SuitBurstSpec burst() { return traits().burst(); }
+    /** False for passive hardware without a panel switch. */
+    public boolean switchable() { return builtin == null || builtin.switchable(); }
+
     /** Slots in a fixed order (HEAD, CHEST, LEGS, FEET) that take the unit. */
     public EquipmentSlot[] slots() {
         if (builtin != null) return builtin.slotArray();
@@ -55,7 +67,12 @@ public record UnitRef(@Nullable SuitModuleType builtin, @Nullable SuitModuleSpec
 
     /** A new item of the unit (the station gives it back on removal). */
     public ItemStack unitStack() {
-        if (builtin != null) return new ItemStack(SuitRegistry.unitItem(builtin));
+        return unitStack(1);
+    }
+
+    /** 0.1.8.6: the item of the unit at {@code tier} (the Mk.II item for an installed Mk.II). */
+    public ItemStack unitStack(int tier) {
+        if (builtin != null) return new ItemStack(SuitRegistry.unitItem(builtin, tier));
         return new ItemStack(BuiltInRegistries.ITEM.get(addon.unitItem()));
     }
 }

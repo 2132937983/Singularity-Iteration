@@ -131,6 +131,8 @@ public class mio_icif_events {
             if (fallDistance <= mio_icif_boots_nano.FULL_ABSORB_FALL_DISTANCE) {
                 int blocksOverFree = (int) (fallDistance - mio_icif_boots_nano.FREE_FALL_DISTANCE);
                 long energyCost = com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(boots, (long) blocksOverFree * mio_icif_boots_nano.FALL_ENERGY_PER_BLOCK);
+                // 0.1.8.6 shock gel: the fall protection costs 70 % less (Mk.II 85 %)
+                energyCost = (long) Math.ceil(energyCost * com.miophas.singularity_iteration.common.suit.nano.NanoSuit.fallCostFactor(entity));
                 if (itemApi.getElectricArmorStored(boots) >= energyCost) {
                     itemApi.dischargeElectricArmor(boots, energyCost, false);
                     event.setCanceled(true);
@@ -138,6 +140,7 @@ public class mio_icif_events {
             } else {
                 long energyCost = com.miophas.singularity_iteration.core.api.item.EnergySaving.apply(boots, (long) (mio_icif_boots_nano.FULL_ABSORB_FALL_DISTANCE - mio_icif_boots_nano.FREE_FALL_DISTANCE)
                         * mio_icif_boots_nano.FALL_ENERGY_PER_BLOCK);
+                energyCost = (long) Math.ceil(energyCost * com.miophas.singularity_iteration.common.suit.nano.NanoSuit.fallCostFactor(entity));
                 if (itemApi.getElectricArmorStored(boots) >= energyCost) {
                     itemApi.dischargeElectricArmor(boots, energyCost, false);
                     event.setDistance(fallDistance - mio_icif_boots_nano.FULL_ABSORB_FALL_DISTANCE);

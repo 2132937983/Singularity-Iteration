@@ -197,17 +197,23 @@ public class Singularity_Iteration_Client {
 
     @SubscribeEvent
     static void registerReloadListeners(net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager ->
-            com.miophas.singularity_iteration.common.client.render.BakedArmorModel.invalidate());
+        event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager -> {
+            com.miophas.singularity_iteration.common.client.render.BakedArmorModel.invalidate();
+            com.miophas.singularity_iteration.common.client.render.CoreAttachmentModel.invalidate();
+        });
     }
 
     /**
-     * Nano suit (0.1.7.34) and quantum suit (0.1.8.0): Blockbench geometry for each piece,
-     * shared by all wearers. The inventory icon renders the same 3D model.
+     * Blockbench armor: nano suit (0.1.7.34), quantum suit (0.1.8.0), and since 0.1.8.3 the
+     * advanced quantum chestplate, the heavy quantum (gravity) chestplate and the four solar
+     * helmets. One baked geometry per piece, shared by all wearers. The held and dropped item
+     * draw the same 3D model; the inventory shows the flat icon (item model "gui" perspective).
      */
     private static void registerNanoArmor(RegisterClientExtensionsEvent event) {
         String[] names = {"nano_helmet", "nano_chestplate", "nano_leggings", "nano_boots",
-            "quantum_helmet", "quantum_chestplate", "quantum_leggings", "quantum_boots"};
+            "quantum_helmet", "quantum_chestplate", "quantum_leggings", "quantum_boots",
+            "advanced_quantum_chestplate", "heavy_quantum_chestplate",
+            "solar_helmet", "advanced_solar_helmet", "hybrid_solar_helmet", "ultimate_solar_helmet"};
         net.minecraft.world.item.Item[] items = {
             com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_HELMET.get(),
             com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get(),
@@ -216,7 +222,13 @@ public class Singularity_Iteration_Client {
             com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get(),
             com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get(),
             com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_QUANTUM_LEGGINGS.get(),
-            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get()};
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_ADVANCED_QUANTUM_CHESTPLATE.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_HEAVY_QUANTUM_CHESTPLATE.get(),
+            com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.SOLAR_HELMET.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_ADVANCED_SOLAR_HELMET.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_HYBRID_SOLAR_HELMET.get(),
+            com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors.ARMOR_ULTIMATE_SOLAR_HELMET.get()};
         for (int i = 0; i < names.length; i++) {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor_models/" + names[i] + ".json");
             ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "textures/models/armor/" + names[i] + ".png");
@@ -474,6 +486,23 @@ public class Singularity_Iteration_Client {
             public HumanoidModel.ArmPose getArmPose(LivingEntity entityLiving, InteractionHand hand, ItemStack itemStack) {
                 return HumanoidModel.ArmPose.BLOCK;
             }
+
+            /** 0.1.8.5 HF sync (nano myofiber + active saber): the blade trembles at high frequency in first person. */
+            @Override
+            public boolean applyForgeHandTransform(com.mojang.blaze3d.vertex.PoseStack poseStack, net.minecraft.client.player.LocalPlayer player,
+                                                   net.minecraft.world.entity.HumanoidArm arm, ItemStack itemInHand, float partialTick,
+                                                   float equipProcess, float swingProcess) {
+                if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.nanoHfJitter()
+                        && com.miophas.singularity_iteration.common.client.suit.nano.NanoClient.hfJitter(player, itemInHand)) {
+                    long n = System.nanoTime() / 9_000_000L;           // ~110 Hz pattern, stable within a frame
+                    float jx = ((n * 0x9E3779B1L >>> 7) % 1000) / 1000F - 0.5F, jy = ((n * 0x85EBCA77L >>> 9) % 1000) / 1000F - 0.5F;
+                    // 0.1.8.6: stronger sync, harder tremble (levels 1..3)
+                    float amp = 0.7F + 0.3F * com.miophas.singularity_iteration.common.client.suit.nano.NanoClient.hfLevel();
+                    poseStack.translate(jx * 0.006F * amp, jy * 0.006F * amp, 0);
+                    poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(jx * 0.6F * amp));
+                }
+                return false;
+            }
         }, mio_icif_items_tools.NANO_SABER.get());
         Singularity_Iteration.LOGGER.info("Nano saber client extensions registered");
 
@@ -503,32 +532,33 @@ public class Singularity_Iteration_Client {
         );
         Singularity_Iteration.LOGGER.info("Steel shield blocking property registered");
 
-        // 注册纳米复合弓的 pull 属性（用于拉弓纹理切换）
+        // Nano bow draw state (0.1.8.3). The bow is an electric item: every energy sync replaces the
+        // held stack, so the old identity test (getUseItem() == stack) flipped between the drawn and
+        // the idle model while charging (the bow flickered). The test is now by item, and "pull" is
+        // the arrow charge (full at the same tick as the shot power), not the vanilla 20-tick draw.
         ItemProperties.register(
             mio_icif_items_tools.NANO_BOW.get(),
             ResourceLocation.withDefaultNamespace("pull"),
-            (stack, level, entity, seed) -> {
-                if (entity == null) {
-                    return 0.0F;
-                } else {
-                    return entity.getUseItem().getItem() != mio_icif_items_tools.NANO_BOW.get() ? 0.0F
-                            : (float) (entity.getUseItem().getItem().getUseDuration(stack, entity) - entity.getUseItemRemainingTicks()) / 20.0F;
-                }
-            }
+            (stack, level, entity, seed) -> isDrawingNanoBow(entity, stack)
+                ? com.miophas.singularity_iteration.common.item.tools.mio_icif_nano_bow.drawProgress(entity.getTicksUsingItem()) : 0.0F
         );
-        Singularity_Iteration.LOGGER.info("Nano bow pull property registered");
-
-        // 注册纳米复合弓的 pulling 属性（用于拉弓状态切换）
         ItemProperties.register(
             mio_icif_items_tools.NANO_BOW.get(),
             ResourceLocation.withDefaultNamespace("pulling"),
-            (stack, level, entity, seed) -> entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F
+            (stack, level, entity, seed) -> isDrawingNanoBow(entity, stack) ? 1.0F : 0.0F
         );
-        Singularity_Iteration.LOGGER.info("Nano bow pulling property registered");
+        Singularity_Iteration.LOGGER.info("Nano bow draw properties registered");
 
     }
 
 
+
+    /** True while {@code entity} draws a nano bow and {@code stack} is that bow (same item, any stack copy). */
+    private static boolean isDrawingNanoBow(@Nullable LivingEntity entity, ItemStack stack) {
+        if (entity == null || !entity.isUsingItem()) return false;
+        ItemStack used = entity.getUseItem();
+        return used.is(mio_icif_items_tools.NANO_BOW.get()) && (used == stack || ItemStack.isSameItem(used, stack));
+    }
 
     @SubscribeEvent
     static void registerBlockEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {

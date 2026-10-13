@@ -211,9 +211,9 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
         IEnergyStorageAccess storage = blockEntity.getEnergyStorage();
         boolean isEnergyFull = storage.getAmount() >= storage.getCapacity();
 
-        if (!isEnergyFull && blockEntity.fuelTank.getFluidAmount() >= FUEL_CONSUME_PER_TICK) {
+        if (!isEnergyFull && blockEntity.outputScale() > 0 && blockEntity.fuelTank.getFluidAmount() >= FUEL_CONSUME_PER_TICK) {
             blockEntity.fuelTank.drain(FUEL_CONSUME_PER_TICK, IFluidHandler.FluidAction.EXECUTE);
-            long energyToGenerate = Math.min(ENERGY_GENERATION_RATE, storage.getCapacity() - storage.getAmount());
+            long energyToGenerate = Math.min(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, ENERGY_GENERATION_RATE), storage.getCapacity() - storage.getAmount());   // 0.1.8.4
             if (energyToGenerate > 0) {
                 storage.generateEnergy(energyToGenerate, false);
             }
@@ -414,8 +414,9 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
         boolean wasBurning = burnTime > 0;
         handleFuelBucketSlot();
         chargeItems();
+        if (outputScale() == 0) { burnTime = 0; setChanged(); return; }   // 0.1.8.4: switched off in the config
         var step = com.miophas.singularity_iteration.core.runtime.energy.FluidFuelGeneration.tick(fuelTank, energyStorage,
-            scexFuelCredit, FUEL_CONSUME_PER_TICK, ENERGY_GENERATION_RATE, ENERGY_GENERATION_RATE);
+            scexFuelCredit, FUEL_CONSUME_PER_TICK, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_GENERATION_RATE), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_GENERATION_RATE));   // 0.1.8.4
         scexFuelCredit = step.bufferedEnergy();
         burnTime = step.generated() > 0 ? 1 : 0;
         burnDuration = 1;

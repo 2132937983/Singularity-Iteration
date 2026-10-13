@@ -210,12 +210,16 @@ public final class Round32GameTests {
         h.succeed();
     }
 
-    /** Solar helmets feed the advanced quantum chestplate; hybrid / ultimate keep the quantum helmet traits. */
+    /**
+     * A solar array core feeds the chestplate, and the helmet keeps the quantum helmet traits
+     * (0.1.9.0: the hybrid solar helmet became a quantum helmet with a Solar Array II core).
+     */
     @GameTest(batch = "round32_helmet", template = "empty", timeoutTicks = 40)
     public static void solarHelmetChargesChestAndKeepsQuantumTraits(GameTestHelper h) {
         var player = h.makeMockServerPlayerInLevel();
-        var helmet = item("armor/item_armor_hybrid_solar_helmet");
-        var chest = item("armor/item_armor_advanced_quantum_chestplate");
+        h.getLevel().setDayTime(1000);
+        var helmet = Round190GameTests.withCore("armor/item_armor_quantum_helmet", "solar_array_2");
+        var chest = Round190GameTests.withCore("armor/item_armor_quantum_chestplate", "propulsion");
         var api = com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI();
         ((com.miophas.singularity_iteration.core.api.item.IBatteryItem) helmet.getItem()).setEnergy(helmet, 1_000_000);
         ((com.miophas.singularity_iteration.core.api.item.IBatteryItem) chest.getItem()).setEnergy(chest, 0);
@@ -224,12 +228,16 @@ public final class Round32GameTests {
         player.setAirSupply(10);
         var features = com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures.features(helmet);
         h.assertTrue(features.stream().anyMatch(f -> f.featureKey().equals("water_breathing"))
-            && features.stream().anyMatch(f -> f.featureKey().equals("auto_food")), "hybrid solar helmet lost the quantum helmet traits");
-        h.onEachTick(() -> player.getInventory().tick());
+            && features.stream().anyMatch(f -> f.featureKey().equals("auto_food")), "the solar quantum helmet lost the quantum helmet traits");
+        h.assertTrue(features.stream().anyMatch(f -> f.featureKey().equals("core_solar")), "no solar array switch on the helmet");
+        h.onEachTick(() -> {
+            player.getInventory().tick();
+            Round190GameTests.coreTick(player);
+        });
         h.runAfterDelay(20, () -> {
             var worn = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
             long charged = ((com.miophas.singularity_iteration.core.api.item.IBatteryItem) worn.getItem()).getEnergy(worn);
-            h.assertTrue(charged > 0, "the solar helmet did not charge the advanced quantum chestplate");
+            h.assertTrue(charged > 0, "the solar array core did not charge the chestplate");
             h.assertTrue(player.getAirSupply() > 10, "the helmet's air supply trait did not work");
             h.succeed();
         });
@@ -239,7 +247,7 @@ public final class Round32GameTests {
     @GameTest(batch = "round32_flight", template = "empty", timeoutTicks = 30)
     public static void creativeFlightDoesNotDrainTheChestJetpack(GameTestHelper h) {
         var player = h.makeMockServerPlayerInLevel();
-        var chest = item("armor/item_armor_advanced_quantum_chestplate");
+        var chest = Round190GameTests.withCore("armor/item_armor_quantum_chestplate", "propulsion");
         var battery = (com.miophas.singularity_iteration.core.api.item.IBatteryItem) chest.getItem();
         battery.setEnergy(chest, 1_000_000);
         var jet = (com.miophas.singularity_iteration.core.api.item.IJetpackItem) chest.getItem();

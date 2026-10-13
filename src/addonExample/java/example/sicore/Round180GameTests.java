@@ -136,8 +136,9 @@ public final class Round180GameTests {
             if (json == null) { problems.add("model missing: " + pieces[i]); continue; }
             var root = com.google.gson.JsonParser.parseString(json).getAsJsonObject().getAsJsonObject("parts");
             for (String part : parts[i]) if (!root.has(part) || root.getAsJsonArray(part).size() < 6) problems.add(pieces[i] + " lacks " + part);
-            String itemModel = Round33GameTests.resource("/assets/mio_icif/models/item/armor/item_armor_quantum_" + pieces[i] + ".json");
-            if (itemModel == null || !itemModel.contains("builtin/entity")) problems.add(pieces[i] + " item model is not builtin/entity");
+            // 0.1.8.3: 3D model in hand and on the ground, flat icon in the inventory
+            String problem = Round183GameTests.splitArmorItemModel("armor/item_armor_quantum_" + pieces[i]);
+            if (problem != null) problems.add(pieces[i] + " " + problem);
             var stack = new ItemStack(item("armor/item_armor_quantum_" + pieces[i]));
             if (stack.getItem() instanceof net.minecraft.world.item.ArmorItem armor) {
                 var layer = armor.getMaterial().value().layers().get(0);

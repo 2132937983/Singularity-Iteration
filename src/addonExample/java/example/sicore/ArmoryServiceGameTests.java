@@ -43,7 +43,7 @@ public final class ArmoryServiceGameTests {
         Class<?> type = target instanceof Class<?> c ? c : target.getClass();
         for (Class<?> k = type; k != null; k = k.getSuperclass()) {
             for (Method m : k.getDeclaredMethods()) {
-                if (!m.getName().equals(name) || m.getParameterCount() != args.length) continue;
+                if (!m.getName().equals(name) || m.getParameterCount() != args.length || !accepts(m, args)) continue;
                 try {
                     m.setAccessible(true);
                     return m.invoke(target instanceof Class<?> ? null : target, args);
@@ -53,6 +53,26 @@ public final class ArmoryServiceGameTests {
             }
         }
         throw new AssertionError("no method " + name + "/" + args.length + " on " + type);
+    }
+
+    /** 0.1.8.5: picks the overload whose parameter types take the arguments (boxed primitives included). */
+    private static boolean accepts(Method m, Object[] args) {
+        Class<?>[] types = m.getParameterTypes();
+        for (int i = 0; i < types.length; i++) {
+            Object a = args[i];
+            Class<?> t = types[i];
+            if (a == null) {
+                if (t.isPrimitive()) return false;
+                continue;
+            }
+            if (t.isPrimitive()) {
+                // Method.invoke unboxes and widens: a boolean takes a Boolean, a number type any boxed number or char
+                if (t == boolean.class ? !(a instanceof Boolean) : !(a instanceof Number || a instanceof Character)) return false;
+                continue;
+            }
+            if (!t.isInstance(a)) return false;
+        }
+        return true;
     }
 
     static Object field(Object target, String name) {

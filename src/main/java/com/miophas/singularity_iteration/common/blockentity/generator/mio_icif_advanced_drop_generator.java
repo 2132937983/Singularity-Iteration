@@ -67,9 +67,10 @@ public class mio_icif_advanced_drop_generator extends AbstractEnergyBlockEntity 
         blockEntity.isWorking = blockEntity.fuel > 0 &&
                 blockEntity.energyStorage.getAmount() < blockEntity.energyStorage.getCapacity();
 
-        if (blockEntity.fuel > 0 &&
+        if (blockEntity.fuel > 0 && com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(blockEntity) > 0 &&
                 blockEntity.energyStorage.getAmount() < blockEntity.energyStorage.getCapacity()) {
-            long energyGenerated = Math.min(PRODUCTION,
+            long energyGenerated = Math.min(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, PRODUCTION),   // 0.1.8.4
+
                     blockEntity.energyStorage.getCapacity() - blockEntity.energyStorage.getAmount());
             blockEntity.energyStorage.generateEnergyInternal(energyGenerated, false);
             blockEntity.fuel--;
@@ -86,8 +87,10 @@ public class mio_icif_advanced_drop_generator extends AbstractEnergyBlockEntity 
         if (!(level instanceof net.minecraft.server.level.ServerLevel server) || !server.getServer().isSameThread()) return;
         int previousFuel = fuel;
         long previousCredit = scexFuelCredit;
+        if (com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this) == 0) return;                      // 0.1.8.4: switched off in the config
         fuel = scexCollector.items(server, pos, SCAN_RANGE, fuel, stack -> getItemValue(stack.getRarity()));
-        var step = com.miophas.singularity_iteration.core.runtime.energy.StoredFuelGeneration.tick(energyStorage, fuel, scexFuelCredit, PRODUCTION);
+        var step = com.miophas.singularity_iteration.core.runtime.energy.StoredFuelGeneration.tick(energyStorage, fuel, scexFuelCredit,
+            com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, PRODUCTION));   // 0.1.8.4 output multiplier
         fuel = Math.toIntExact(step.fuelRemaining());
         scexFuelCredit = step.bufferedEnergy();
         boolean wasWorking = isWorking;

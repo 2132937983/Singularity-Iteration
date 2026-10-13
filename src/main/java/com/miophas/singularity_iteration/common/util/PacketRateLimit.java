@@ -44,6 +44,10 @@ public final class PacketRateLimit {
     public static final Bucket SMART_GUIDANCE = new Bucket("smart_guidance", 10, 4);
     /** Tactical structure scan (0.1.8.0): a scan reads up to 289 chunks, so at most one per 2 s. */
     public static final Bucket TACTICAL_SCAN = new Bucket("tactical_scan", 2, 40);
+    /** Nano burst keys (0.1.8.5): key presses, about 5 per second. */
+    public static final Bucket NANO_BURST = new Bucket("nano_burst", 6, 4);
+    /** Nano burst key assignment from the panel (0.1.8.5). */
+    public static final Bucket NANO_ASSIGN = new Bucket("nano_assign", 10, 4);
 
     private static final class State {
         double tokens;

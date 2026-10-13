@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "MIM",
+    "MEM"
+  ],
+  "key": {
+    "M": {
+      "tag": "mio_icif:nano_living_metals"
+    },
+    "I": {
+      "tag": "c:plates/iridium"
+    },
+    "E": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_nano_lattice_densifier",
+    "count": 1
+  }
+}

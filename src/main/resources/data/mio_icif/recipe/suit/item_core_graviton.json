@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "SLS",
+    "IBI",
+    "ICI"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:ingots/alloy"
+    },
+    "L": {
+      "item": "minecraft:lodestone"
+    },
+    "I": {
+      "item": "mio_icif:resource/item_iridium"
+    },
+    "B": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_core_graviton",
+    "count": 1
+  }
+}

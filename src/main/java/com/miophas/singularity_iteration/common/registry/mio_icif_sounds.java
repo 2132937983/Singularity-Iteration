@@ -91,6 +91,24 @@ import net.neoforged.neoforge.registries.DeferredRegister;
     public static final DeferredHolder<SoundEvent, SoundEvent> FCS_LOCK = sound("fcs.lock");
     public static final DeferredHolder<SoundEvent, SoundEvent> FCS_BLAST_BEEP = sound("fcs.blast_beep");
 
+    // 0.1.8.5 nano suit units (original synthesized effects, tools/sfx_185.py)
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_DASH = sound("nano.dash");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_EMP = sound("nano.emp");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_CAMO_ON = sound("nano.camo_on");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_CAMO_OFF = sound("nano.camo_off");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_OVERHEAT = sound("nano.overheat");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_DENIED = sound("nano.denied");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_HF_SYNC = sound("nano.hf_sync");
+    // 0.1.8.6 nano suit phase 2 (tools/sfx_186.py)
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_MESH_ON = sound("nano.mesh_on");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_MESH_HIT = sound("nano.mesh_hit");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_RECON = sound("nano.recon");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_REBOUND = sound("nano.rebound");
+    public static final DeferredHolder<SoundEvent, SoundEvent> NANO_REPAIR = sound("nano.repair");
+    // 0.1.9.0 frame cores (tools/sfx_190.py)
+    public static final DeferredHolder<SoundEvent, SoundEvent> CORE_DISCHARGE = sound("core.discharge");
+    public static final DeferredHolder<SoundEvent, SoundEvent> CORE_INSTALL = sound("core.install");
+
     private static DeferredHolder<SoundEvent, SoundEvent> sound(String name) {
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(
             ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, name)));

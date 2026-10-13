@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    {
+      "item": "mio_icif:module/item_core_solar_array_2"
+    },
+    {
+      "item": "mio_icif:generator/block_ultimate_hybrid_solar_panel"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:module/item_core_solar_array_3",
+    "count": 1
+  }
+}

@@ -33,6 +33,24 @@ public class mio_icif_data_components {
             builder -> builder.persistent(com.miophas.singularity_iteration.common.suit.InstalledModules.CODEC)
                 .networkSynchronized(com.miophas.singularity_iteration.common.suit.InstalledModules.STREAM_CODEC));
 
+    /** Lattice densifier level of a nano suit piece (0.1.8.5): each level adds 2 lattice points (LP). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SUIT_LATTICE =
+        DATA_COMPONENTS.registerComponentType("suit_lattice",
+            builder -> builder.persistent(com.mojang.serialization.Codec.intRange(0, 8))
+                .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT));
+
+    /** Units of a suit piece that are installed as Mk.II (0.1.8.6); same id format as {@link #SUIT_MODULES}. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.miophas.singularity_iteration.common.suit.InstalledModules>> SUIT_MK2 =
+        DATA_COMPONENTS.registerComponentType("suit_mk2",
+            builder -> builder.persistent(com.miophas.singularity_iteration.common.suit.InstalledModules.CODEC)
+                .networkSynchronized(com.miophas.singularity_iteration.common.suit.InstalledModules.STREAM_CODEC));
+
+    /** Frame core in the core socket of a suit helmet or chestplate (0.1.9.0): the core id. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> SUIT_CORE =
+        DATA_COMPONENTS.registerComponentType("suit_core",
+            builder -> builder.persistent(com.mojang.serialization.Codec.STRING)
+                .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8));
+
     /** Colour palette of a suit piece (0.1.8.0): primary plate colour and accent light colour. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.miophas.singularity_iteration.common.suit.SuitPalette>> SUIT_PALETTE =
         DATA_COMPONENTS.registerComponentType("suit_palette",

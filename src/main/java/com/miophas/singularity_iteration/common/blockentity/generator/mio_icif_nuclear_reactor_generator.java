@@ -245,7 +245,8 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             long hullCooling=Math.min(hullAfter,coolBudget-coolUsed);   // remaining flow then cools the hull
             coolUsed+=hullCooling;
             final long finalHull=hullAfter-hullCooling;final long finalCoolUsed=coolUsed;
-            final double finalEu=euSum;final long finalGenerated=Math.addExact(generatedSum,excessHeat);
+            final double finalEu=euSum*com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);   // 0.1.8.4 output multiplier (EU only, not heat)
+            final long finalGenerated=Math.addExact(generatedSum,excessHeat);
             final int finalCold=coldIn,finalHot=hotOut,finalConverted=convertedSum;
             // Decide from the final fluid-adjusted result. Never reject the pre-cooling input heat.
             // Freeze the post-cycle inventory and configured scale in the same accident transaction.

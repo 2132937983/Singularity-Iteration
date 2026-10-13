@@ -136,8 +136,9 @@ public final class ManeuverModeClient {
      * @param pos   the ring start position, at the body centre of the flyer.
      * @param axis  the unit flight direction at the time of the boom.
      * @param start the wall-clock start time in milliseconds.
+     * @param own   true for the boom of the local player (no flash at the camera in first person).
      */
-    private record Boom(Vec3 pos, Vec3 axis, long start) { }
+    private record Boom(Vec3 pos, Vec3 axis, long start, boolean own) { }
     /** Live shock rings. At most 8. A ring lives 900 ms. */
     private static final List<Boom> BOOMS = new ArrayList<>();
 
@@ -300,7 +301,9 @@ public final class ManeuverModeClient {
             throttle = 0;
             locked = false;
         } else if (!locked) {
-            throttle = accelerate ? Math.min(1F, throttle + ManeuverMode.THROTTLE_UP) : Math.max(0F, throttle - ManeuverMode.THROTTLE_DOWN);
+            // 0.1.9.0 advanced propulsion core: the throttle spools up faster
+            float spool = propulsionVectoring(player) > 1 ? 1.3F : 1F;
+            throttle = accelerate ? Math.min(1F, throttle + ManeuverMode.THROTTLE_UP * spool) : Math.max(0F, throttle - ManeuverMode.THROTTLE_DOWN);
         }
 
         Vec3 look = player.getViewVector(1.0F);
@@ -316,7 +319,8 @@ public final class ManeuverModeClient {
             // cruise: move the velocity towards the view axis by the grip fraction. The grip falls
             // when the throttle rises. Thus the old velocity stays longer at high speed (drift).
             Vec3 target = look.scale(throttle * ManeuverMode.MAX_SPEED);
-            double grip = ManeuverMode.grip(throttle);
+            // 0.1.9.0 advanced propulsion core: vector thrusters pull the velocity onto the view axis faster
+        double grip = Math.min(0.6, ManeuverMode.grip(throttle) * propulsionVectoring(player));
             v = v.add(target.subtract(v).scale(grip));
             // leftImpulse is positive for left. -strafe * right points to the left for a left key.
             if (strafe != 0) v = v.add(right.scale(-strafe * LATERAL));
@@ -427,7 +431,7 @@ public final class ManeuverModeClient {
         if (shock && !vis.wasShock) boom(p, p.position().subtract(p.xo, p.yo, p.zo), local);
         vis.wasShock = shock;
         recordTrail(p, vis, thr);
-        if (thr > 0.55F) vapour(p, thr);
+        if (thr > 0.55F && FcsClientConfig.vaporEffects()) vapour(p, thr);
     }
 
     // ------------------------------------------------------------------ effects
@@ -441,8 +445,22 @@ public final class ManeuverModeClient {
      */
     private static void boom(Player player, Vec3 dir, boolean local) {
         Vec3 axis = dir.lengthSqr() > 1.0E-4 ? dir.normalize() : player.getViewVector(1.0F);
-        BOOMS.add(new Boom(player.position().add(0, player.getBbHeight() * 0.5, 0), axis, System.currentTimeMillis()));
+        Vec3 centre = player.position().add(0, player.getBbHeight() * 0.5, 0);
+        BOOMS.add(new Boom(centre, axis, System.currentTimeMillis(), local));
         if (BOOMS.size() > 8) BOOMS.remove(0);
+        // 0.1.8.3: a burst of condensation around the ring plane, thrown outward and left behind
+        if (FcsClientConfig.vaporEffects()) {
+            var level = player.level();
+            Vec3 t = perp(axis), b = axis.cross(t).normalize();
+            int n = 26;
+            for (int i = 0; i < n; i++) {
+                double a = (i + level.random.nextDouble() * 0.6) * Math.PI * 2 / n;
+                Vec3 radial = t.scale(Math.cos(a)).add(b.scale(Math.sin(a)));
+                Vec3 at = centre.subtract(axis.scale(0.6)).add(radial.scale(0.9 + level.random.nextDouble() * 0.3));
+                Vec3 vel = radial.scale(0.22 + level.random.nextDouble() * 0.12).subtract(axis.scale(0.08));
+                level.addParticle(i % 3 == 0 ? ParticleTypes.POOF : ParticleTypes.CLOUD, at.x, at.y, at.z, vel.x, vel.y, vel.z);
+            }
+        }
         player.level().playLocalSound(player.getX(), player.getY(), player.getZ(), mio_icif_sounds.MANEUVER_BOOM.get(), SoundSource.PLAYERS,
             local ? 1.0F : 2.0F, 0.95F + player.level().random.nextFloat() * 0.1F, false);
     }
@@ -805,11 +823,13 @@ public final class ManeuverModeClient {
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
+        boolean vapour = FcsClientConfig.vaporEffects();
+        alphaScale = FcsClientConfig.vaporIntensity();
 
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.VAPOR);
         for (Player p : mc.level.players()) {
             Visual vis = VISUALS.get(p.getId());
-            if (vis == null) continue;
+            if (vis == null || !vapour) continue;
             if (!vis.trail.isEmpty()) wake(vc, m, vis, cam);
         }
         buffers.endBatch(SiRenderTypes.VAPOR);
@@ -818,7 +838,7 @@ public final class ManeuverModeClient {
         // In first person the own cone fades near the camera and shows only at the edge of the view.
         VertexConsumer veil = buffers.getBuffer(SiRenderTypes.VAPOR);
         for (Player p : mc.level.players()) {
-            if (!VISUALS.containsKey(p.getId())) continue;
+            if (!vapour || !VISUALS.containsKey(p.getId())) continue;
             float thr = throttleOf(p, partial);
             if (thr > 0.5F) cone(veil, m, p, thr, partial, now, p == mc.player && firstPerson ? cam : null);
         }
@@ -836,15 +856,24 @@ public final class ManeuverModeClient {
         }
         buffers.endBatch(SiRenderTypes.FIELD_GLOW);
 
+        if (!vapour) BOOMS.clear();
         if (!BOOMS.isEmpty()) {
-            VertexConsumer glow = buffers.getBuffer(SiRenderTypes.VAPOR);
+            // 0.1.8.3: condensation ring (alpha veil), then the additive shock front and flash
+            Vec3 ownCam = firstPerson ? cam : null;
+            VertexConsumer veilRing = buffers.getBuffer(SiRenderTypes.VAPOR);
             for (Iterator<Boom> it = BOOMS.iterator(); it.hasNext(); ) {
                 Boom b = it.next();
-                float age = (now - b.start) / 900F;
+                float age = (now - b.start) / (float) BOOM_LIFE_MS;
                 if (age >= 1) { it.remove(); continue; }
-                shockRing(glow, m, b, age);
+                shockRing(veilRing, m, b, age, b.own ? ownCam : null);
             }
             buffers.endBatch(SiRenderTypes.VAPOR);
+            VertexConsumer front = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            for (Boom b : BOOMS) {
+                float age = (now - b.start) / (float) BOOM_LIFE_MS;
+                shockFront(front, m, b, age, b.own ? ownCam : null);
+            }
+            buffers.endBatch(SiRenderTypes.FIELD_GLOW);
         }
         pose.popPose();
     }
@@ -881,19 +910,26 @@ public final class ManeuverModeClient {
     }
 
     /**
-     * Vapour cone: a translucent bell that opens backwards from the shoulders.
+     * Vapour cone (0.1.8.3 redesign): a condensation bell behind a bright collar.
      *
-     * <p>Shape: 6 rings of 0.32 blocks along the axis (1.92 blocks in total), 32 segments each. The
-     * radius at distance z behind the apex is {@code 0.15 + (z / 1.9)^0.6 x 1.05} blocks. The apex
-     * is 0.45 blocks ahead of the body centre.
+     * <p>0.1.8.0 drew a noisy veil of even density: it read as a grey lump. The cone now has
+     * the structure of a real Prandtl-Glauert cloud:
+     * <ul>
+     *   <li>Collar: the densest part is the leading edge just behind the apex,
+     *       {@code exp(-z / 0.22)}; the shell then thins out toward the tail,
+     *       {@code 0.32 (1 - z / L)^1.6}.</li>
+     *   <li>Shape: radius {@code 0.18 + 1.1 (1 - exp(-2.4 z))}, so the bell opens quickly and then
+     *       runs almost parallel. Length L = 2.2 blocks, 10 rings (denser at the front), 40 segments.</li>
+     *   <li>Striations: fine bright streaks run back along the shell
+     *       ({@code cos(14 a + drift)}), broken up by the slow noise of {@link #soft}.</li>
+     *   <li>Two shells: the outer one white, an inner one at 0.82 of the radius with a third of the
+     *       alpha and a cold blue tint, which gives the cloud depth.</li>
+     * </ul>
      *
-     * <p>Strength (0.1.8.0): a transonic peak at throttle 0.66 (Mach 1.1 on the HUD) that falls to 0
-     * at +-0.14 from it, plus a thin sustained veil (0.18) above throttle 0.66. It fades in from
-     * throttle 0.5 to 0.6. Along the axis, a sine fades both ends. An animated noise breaks up the
-     * surface. Thus the cone looks like condensation, not a solid shell. Alpha blend, white.
-     *
-     * <p>The axis is the movement from the last tick position to the interpolated position. It
-     * falls back to the view vector when that movement is shorter than 0.2 blocks.
+     * <p>Strength: a transonic peak at throttle 0.66 (Mach 1.1 on the HUD) that falls to 0 at
+     * +-0.14 from it, plus a thin sustained veil (0.2) above throttle 0.66, faded in from throttle
+     * 0.5 to 0.6. The axis is the movement from the last tick position to the interpolated position,
+     * or the view vector below 0.2 blocks of movement.
      *
      * @param camera the camera position for the own cone in first person (near fade), else null
      */
@@ -901,32 +937,50 @@ public final class ManeuverModeClient {
         Vec3 v = p.getPosition(partial).subtract(p.xo, p.yo, p.zo);
         Vec3 axis = v.lengthSqr() > 0.04 ? v.normalize() : p.getViewVector(partial);
         Vec3 t = perp(axis), b = axis.cross(t).normalize();
-        Vec3 apex = p.getPosition(partial).add(0, p.getBbHeight() * 0.55, 0).add(axis.scale(0.45));
+        Vec3 apex = p.getPosition(partial).add(0, p.getBbHeight() * 0.55, 0).add(axis.scale(0.5));
         float bump = Mth.clamp(1 - Math.abs(thr - 0.66F) / 0.14F, 0, 1);
-        float sustain = 0.18F * Mth.clamp((thr - 0.66F) / 0.19F, 0, 1);
+        float sustain = 0.2F * Mth.clamp((thr - 0.66F) / 0.19F, 0, 1);
         float strength = Math.max(bump, sustain) * Mth.clamp((thr - 0.5F) / 0.1F, 0, 1);
         if (strength <= 0.01F) return;
-        int seg = 32, rings = 6;
+        int seg = 40, rings = 10;
+        double length = 2.2;
         // wrap the clock to 600 s: noise() floors its input to int, and epoch seconds x 2 overflow it
         double time = (now % 600_000L) / 1000.0;
-        for (int r = 0; r < rings; r++) {
-            double z0 = r * 0.32, z1 = (r + 1) * 0.32;
-            double rad0 = 0.15 + Math.pow(z0 / 1.9, 0.6) * 1.05, rad1 = 0.15 + Math.pow(z1 / 1.9, 0.6) * 1.05;
-            float fade0 = (float) Math.sin(Math.PI * (r / (double) rings)), fade1 = (float) Math.sin(Math.PI * ((r + 1) / (double) rings));
-            for (int s = 0; s < seg; s++) {
-                double a0 = s * Math.PI * 2 / seg, a1 = (s + 1) * Math.PI * 2 / seg;
-                float n0 = soft(a0, z0, time), n1 = soft(a1, z0, time);
-                float n2 = soft(a1, z1, time), n3 = soft(a0, z1, time);
-                Vec3 d0 = t.scale(Math.cos(a0)).add(b.scale(Math.sin(a0))), d1 = t.scale(Math.cos(a1)).add(b.scale(Math.sin(a1)));
-                Vec3 p0 = apex.subtract(axis.scale(z0)).add(d0.scale(rad0)), p1 = apex.subtract(axis.scale(z0)).add(d1.scale(rad0));
-                Vec3 p2 = apex.subtract(axis.scale(z1)).add(d1.scale(rad1)), p3 = apex.subtract(axis.scale(z1)).add(d0.scale(rad1));
-                float base = 0.42F * strength;
-                put(vc, m, p0, 1, 1, 1, base * fade0 * n0 * near(p0, camera));
-                put(vc, m, p1, 1, 1, 1, base * fade0 * n1 * near(p1, camera));
-                put(vc, m, p2, 1, 1, 1, base * fade1 * n2 * near(p2, camera));
-                put(vc, m, p3, 1, 1, 1, base * fade1 * n3 * near(p3, camera));
+        for (int shell = 0; shell < 2; shell++) {
+            double scaleR = shell == 0 ? 1.0 : 0.82;
+            float shellAlpha = shell == 0 ? 1.0F : 0.34F;
+            float cr = shell == 0 ? 1.0F : 0.82F, cg = shell == 0 ? 1.0F : 0.92F;
+            for (int r = 0; r < rings; r++) {
+                double z0 = length * Math.pow(r / (double) rings, 1.5), z1 = length * Math.pow((r + 1) / (double) rings, 1.5);
+                double rad0 = scaleR * (0.18 + 1.1 * (1 - Math.exp(-2.4 * z0))), rad1 = scaleR * (0.18 + 1.1 * (1 - Math.exp(-2.4 * z1)));
+                float den0 = coneDensity(z0, length), den1 = coneDensity(z1, length);
+                for (int s = 0; s < seg; s++) {
+                    double a0 = s * Math.PI * 2 / seg, a1 = (s + 1) * Math.PI * 2 / seg;
+                    Vec3 d0 = t.scale(Math.cos(a0)).add(b.scale(Math.sin(a0))), d1 = t.scale(Math.cos(a1)).add(b.scale(Math.sin(a1)));
+                    Vec3 p0 = apex.subtract(axis.scale(z0)).add(d0.scale(rad0)), p1 = apex.subtract(axis.scale(z0)).add(d1.scale(rad0));
+                    Vec3 p2 = apex.subtract(axis.scale(z1)).add(d1.scale(rad1)), p3 = apex.subtract(axis.scale(z1)).add(d0.scale(rad1));
+                    float base = 0.5F * strength * shellAlpha;
+                    put(vc, m, p0, cr, cg, 1, base * den0 * streak(a0, z0, time) * near(p0, camera));
+                    put(vc, m, p1, cr, cg, 1, base * den0 * streak(a1, z0, time) * near(p1, camera));
+                    put(vc, m, p2, cr, cg, 1, base * den1 * streak(a1, z1, time) * near(p2, camera));
+                    put(vc, m, p3, cr, cg, 1, base * den1 * streak(a0, z1, time) * near(p3, camera));
+                }
             }
         }
+    }
+
+    /** Density along the cone: a bright collar right behind the apex, then a thin, fading veil. */
+    private static float coneDensity(double z, double length) {
+        double collar = Math.exp(-z / 0.22);
+        double veil = 0.32 * Math.pow(Math.max(0, 1 - z / length), 1.6);
+        double lead = Mth.clamp(z / 0.05, 0, 1);   // the apex itself is open
+        return (float) Math.min(1.0, (collar + veil) * lead);
+    }
+
+    /** Streaks that run back along the shell, broken up by the slow noise. Range about 0.25..1. */
+    private static float streak(double angle, double z, double time) {
+        double lines = 0.5 + 0.5 * Math.cos(angle * 14 + time * 0.8 + z * 1.4);
+        return (float) (0.25 + 0.75 * (0.55 * lines + 0.45 * soft(angle, z, time)));
     }
 
     /** First-person near fade: 0 within 0.7 blocks of the camera, 1 beyond 2.2 blocks. 1 without a camera. */
@@ -1026,32 +1080,98 @@ public final class ManeuverModeClient {
         return ((h ^ (h >>> 16)) & 0xFFFF) / 65535.0;
     }
 
+    /** Life of a boom (shock ring, front and flash) in milliseconds. */
+    private static final long BOOM_LIFE_MS = 1100;
+
     /**
-     * Shock ring: a thin condensation disc across the path. It grows and fades. In its 900 ms life
-     * (age 0..1), the outer radius grows from 0.6 to 9.6 blocks. The ring moves 3 blocks back along
-     * the axis. The alpha is {@code (1 - age)^2 x 0.55}. The outer edge has alpha 0, so the edge is
-     * soft.
+     * Condensation ring of a boom (0.1.8.3 redesign): a soft, slightly cupped torus of vapour
+     * across the path. The radius eases out ({@code 0.6 + 8.4 (1 - (1 - age)^2.4)}), so the ring
+     * bursts out and then slows like a real shock cloud; it drifts 3 blocks back along the axis.
+     * Across the ring the alpha rises from 0 at the outer rim to a peak at 0.86 of the radius and
+     * falls to 0 at 0.62, in three bands, so there is no hard edge. Turbulence (noise along the ring)
+     * breaks up the density; the alpha is {@code (1 - age)^1.6 x 0.5}.
+     *
+     * @param camera camera position for the own boom in first person (near fade), else null
      */
-    private static void shockRing(VertexConsumer vc, Matrix4f m, Boom b, float age) {
+    private static void shockRing(VertexConsumer vc, Matrix4f m, Boom b, float age, Vec3 camera) {
         Vec3 t = perp(b.axis), bn = b.axis.cross(t).normalize();
         Vec3 c = b.pos.subtract(b.axis.scale(age * 3.0));
-        float r0 = 0.6F + age * 9F, r1 = r0 * 0.78F;
-        float alpha = (1 - age) * (1 - age) * 0.55F;
-        int steps = 64;
+        float ease = 1 - (float) Math.pow(1 - age, 2.4);
+        float rOut = 0.6F + 8.4F * ease;
+        float[] radius = {rOut, rOut * 0.86F, rOut * 0.74F, rOut * 0.62F};
+        float[] weight = {0F, 1F, 0.55F, 0F};
+        float[] cup = {0F, 0.22F, 0.36F, 0.42F};        // the inner part trails behind: a shallow cup
+        float alpha = (float) Math.pow(1 - age, 1.6) * 0.5F;
+        int steps = 72;
         for (int i = 0; i < steps; i++) {
             double a0 = i * Math.PI * 2 / steps, a1 = (i + 1) * Math.PI * 2 / steps;
             Vec3 d0 = t.scale(Math.cos(a0)).add(bn.scale(Math.sin(a0))), d1 = t.scale(Math.cos(a1)).add(bn.scale(Math.sin(a1)));
-            float n = 0.55F + 0.45F * noise(a0 * 4, age * 8);
-            put(vc, m, c.add(d0.scale(r0)), 1, 1, 1, 0);
-            put(vc, m, c.add(d1.scale(r0)), 1, 1, 1, 0);
-            put(vc, m, c.add(d1.scale(r1)).add(b.axis.scale(0.4)), 1, 1, 1, alpha * n);
-            put(vc, m, c.add(d0.scale(r1)).add(b.axis.scale(0.4)), 1, 1, 1, alpha * n);
+            float n0 = 0.45F + 0.55F * noise(a0 * 3.2 + 11, age * 6), n1 = 0.45F + 0.55F * noise(a1 * 3.2 + 11, age * 6);
+            for (int k = 0; k < 3; k++) {
+                Vec3 o0 = c.add(d0.scale(radius[k])).add(b.axis.scale(cup[k])), o1 = c.add(d1.scale(radius[k])).add(b.axis.scale(cup[k]));
+                Vec3 i1 = c.add(d1.scale(radius[k + 1])).add(b.axis.scale(cup[k + 1])), i0 = c.add(d0.scale(radius[k + 1])).add(b.axis.scale(cup[k + 1]));
+                put(vc, m, o0, 1, 1, 1, alpha * weight[k] * n0 * near(o0, camera));
+                put(vc, m, o1, 1, 1, 1, alpha * weight[k] * n1 * near(o1, camera));
+                put(vc, m, i1, 0.9F, 0.95F, 1, alpha * weight[k + 1] * n1 * near(i1, camera));
+                put(vc, m, i0, 0.9F, 0.95F, 1, alpha * weight[k + 1] * n0 * near(i0, camera));
+            }
         }
     }
 
-    /** Adds one vertex at a world point. The method clamps the alpha to 0..1. */
+    /**
+     * Shock front and flash of a boom (0.1.8.3, additive). The front is a thin cyan-white ring that
+     * runs ahead of the vapour ring (radius {@code 0.8 + 15 x easeOut}, alive for the first 60 % of
+     * the life) with a sharp leading edge and a soft trailing glow. The flash is a radial glow disc
+     * in the first 15 %; it is skipped for the own boom in first person, where it would sit on the
+     * camera.
+     */
+    private static void shockFront(VertexConsumer vc, Matrix4f m, Boom b, float age, Vec3 camera) {
+        Vec3 t = perp(b.axis), bn = b.axis.cross(t).normalize();
+        int steps = 72;
+        if (age < 0.6F) {
+            float f = age / 0.6F;
+            float ease = 1 - (1 - f) * (1 - f) * (1 - f);
+            float r = 0.8F + 15F * ease, w = 0.12F + 0.55F * f;
+            float a = (1 - f) * (1 - f) * 0.85F;
+            Vec3 c = b.pos.subtract(b.axis.scale(age * 1.5));
+            for (int i = 0; i < steps; i++) {
+                double a0 = i * Math.PI * 2 / steps, a1 = (i + 1) * Math.PI * 2 / steps;
+                Vec3 d0 = t.scale(Math.cos(a0)).add(bn.scale(Math.sin(a0))), d1 = t.scale(Math.cos(a1)).add(bn.scale(Math.sin(a1)));
+                Vec3 o0 = c.add(d0.scale(r)), o1 = c.add(d1.scale(r));
+                Vec3 i0 = c.add(d0.scale(r - w)), i1 = c.add(d1.scale(r - w));
+                Vec3 e0 = c.add(d0.scale(r + 0.06F)), e1 = c.add(d1.scale(r + 0.06F));
+                // trailing glow (inner -> crest)
+                put(vc, m, i0, 0.45F, 0.8F, 1, 0);
+                put(vc, m, i1, 0.45F, 0.8F, 1, 0);
+                put(vc, m, o1, 0.8F, 0.95F, 1, a * near(o1, camera));
+                put(vc, m, o0, 0.8F, 0.95F, 1, a * near(o0, camera));
+                // sharp leading edge (crest -> just outside)
+                put(vc, m, o0, 1, 1, 1, a * near(o0, camera));
+                put(vc, m, o1, 1, 1, 1, a * near(o1, camera));
+                put(vc, m, e1, 1, 1, 1, 0);
+                put(vc, m, e0, 1, 1, 1, 0);
+            }
+        }
+        if (age < 0.15F && camera == null) {
+            float f = age / 0.15F;
+            float r = 1.2F + 2.5F * f, a = (1 - f) * 0.7F;
+            for (int i = 0; i < 24; i++) {
+                double a0 = i * Math.PI * 2 / 24, a1 = (i + 1) * Math.PI * 2 / 24;
+                Vec3 d0 = t.scale(Math.cos(a0)).add(bn.scale(Math.sin(a0))), d1 = t.scale(Math.cos(a1)).add(bn.scale(Math.sin(a1)));
+                put(vc, m, b.pos, 1, 1, 1, a);
+                put(vc, m, b.pos.add(d0.scale(r)), 0.6F, 0.85F, 1, 0);
+                put(vc, m, b.pos.add(d1.scale(r)), 0.6F, 0.85F, 1, 0);
+                put(vc, m, b.pos, 1, 1, 1, a);
+            }
+        }
+    }
+
+    /** Opacity scale of the flight effects for this frame (client option vapor_intensity). */
+    private static float alphaScale = 1.0F;
+
+    /** Adds one vertex at a world point. The alpha is scaled by {@link #alphaScale} and clamped to 0..1. */
     private static void put(VertexConsumer vc, Matrix4f m, Vec3 p, float r, float g, float b, float a) {
-        vc.addVertex(m, (float) p.x, (float) p.y, (float) p.z).setColor(r, g, b, Math.max(0, Math.min(1, a)));
+        vc.addVertex(m, (float) p.x, (float) p.y, (float) p.z).setColor(r, g, b, Math.max(0, Math.min(1, a * alphaScale)));
     }
 
     // ------------------------------------------------------------------ HUD (aircraft style)
@@ -1217,5 +1337,12 @@ public final class ManeuverModeClient {
         FcsDraw.line(g, bx + bw, cy - 5, bx + bw, cy + 6, 1F, col);
         FcsDraw.text(g, box, bx + 3, cy - 3, col, 0.75F);
         FcsDraw.triangle(g, leftSide ? x - 1 : x + 1, cy, leftSide ? x - 7 : x + 7, cy - 4, leftSide ? x - 7 : x + 7, cy + 4, col);
+    }
+
+    /** 0.1.9.0: vectoring multiplier of the worn chestplate (the advanced propulsion core sharpens the vectors). */
+    static double propulsionVectoring(net.minecraft.world.entity.player.Player player) {
+        var chest = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+        return com.miophas.singularity_iteration.common.suit.core.FrameCores.core(chest) == com.miophas.singularity_iteration.common.suit.core.FrameCore.PROPULSION
+            ? com.miophas.singularity_iteration.common.suit.core.FrameCores.PROPULSION_VECTORING : 1.0;
     }
 }

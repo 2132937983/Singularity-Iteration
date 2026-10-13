@@ -1,0 +1,8 @@
+{
+  "values": [
+    "mio_icif:armor/item_armor_nano_helmet",
+    "mio_icif:armor/item_armor_nano_chestplate",
+    "mio_icif:armor/item_armor_nano_leggings",
+    "mio_icif:armor/item_armor_nano_boots"
+  ]
+}

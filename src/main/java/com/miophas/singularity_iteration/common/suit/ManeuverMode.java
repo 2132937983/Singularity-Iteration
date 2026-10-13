@@ -2,7 +2,6 @@
 package com.miophas.singularity_iteration.common.suit;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.item.armor.mio_icif_chestplate_advanced_quantum;
 import com.miophas.singularity_iteration.common.item.armor.mio_icif_chestplate_quantum;
 import com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState;
 import com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures;
@@ -115,7 +114,7 @@ public final class ManeuverMode {
 
     /** True for the quantum chestplate and the advanced quantum chestplate. */
     public static boolean isFlightChest(ItemStack chest) {
-        return chest.getItem() instanceof mio_icif_chestplate_quantum || chest.getItem() instanceof mio_icif_chestplate_advanced_quantum;
+        return chest.getItem() instanceof mio_icif_chestplate_quantum;
     }
 
     /** The chestplate arms the mode (switch on), regardless of power. */

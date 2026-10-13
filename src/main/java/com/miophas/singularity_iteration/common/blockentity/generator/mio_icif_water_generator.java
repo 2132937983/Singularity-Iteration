@@ -159,9 +159,11 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
     @Override
     protected void generateEnergy() {
         if (energyStorage.scexNetworkControlled()) {
+            if (outputScale() == 0) return;                                  // 0.1.8.4: switched off in the config
             long room = energyStorage.scexExactAmount().roomBelow(energyStorage.getCapacity()).whole();
             var step = com.miophas.singularity_iteration.core.runtime.energy.engine.ConsumableGeneration.plan(waterAmount, scexBufferedWaterEnergy,
-                ENERGY_PER_BUCKET / WATER_PER_BUCKET, 4, room, hasWaterInFront ? WATER_FACE_GENERATION : 0);
+                com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_PER_BUCKET / WATER_PER_BUCKET), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, 4), room,
+                hasWaterInFront ? com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, WATER_FACE_GENERATION) : 0);   // 0.1.8.4 output multiplier
             if (step.generated() > 0) {
                 long generated = apiGenerateEnergy(step.generated(), false);
                 if (generated != step.generated()) throw new IllegalStateException("Stable water-generation capacity changed");
@@ -175,7 +177,7 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
         }
 
         // 使用 CustomEUEnergyStorage 的 generateEnergyInternal 方法
-        long energyGenerated = Math.min(currentEnergyOutput,
+        long energyGenerated = Math.min(scaleOutput(currentEnergyOutput),   // 0.1.8.4 output multiplier
             energyStorage.getCapacity() - energyStorage.getAmount());
         if (energyGenerated > 0) {
             apiGenerateEnergy(energyGenerated, false);

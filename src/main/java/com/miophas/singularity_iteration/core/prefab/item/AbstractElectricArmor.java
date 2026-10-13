@@ -140,21 +140,24 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
         return maxEnergy;
     }
 
+    /** 0.1.8.5: the base capacity plus {@link com.miophas.singularity_iteration.core.api.item.ArmorCapacityBonus} of this stack. */
     @Override
     public long getMaxEnergy(ItemStack stack) {
-        return maxEnergy;
+        long bonus = com.miophas.singularity_iteration.core.api.item.ArmorCapacityBonus.of(stack);
+        return bonus <= 0 ? maxEnergy : maxEnergy + bonus;
     }
 
     @Override
     public long getEnergy(ItemStack stack) {
         if (stack.isEmpty()) return 0;
-        return Math.clamp(readStoredEnergy(stack), 0L, Math.max(0, maxEnergy));
+        return Math.clamp(readStoredEnergy(stack), 0L, Math.max(0, getMaxEnergy(stack)));
     }
 
     @Override
     public void setEnergy(ItemStack stack, long energy) {
-        energy = Math.max(0, Math.min(maxEnergy, energy));
-        stack.set(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(energy, maxEnergy));
+        long max = getMaxEnergy(stack);
+        energy = Math.max(0, Math.min(max, energy));
+        stack.set(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(energy, max));
     }
 
     /**
@@ -176,7 +179,7 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
     public long addEnergy(ItemStack stack, long amount) {
         if (stack.isEmpty() || stack.getCount() != 1 || amount <= 0) return 0;
         long currentEnergy = getEnergy(stack);
-        long accepted = Math.min(amount, Math.max(0, maxEnergy - currentEnergy));
+        long accepted = Math.min(amount, Math.max(0, getMaxEnergy(stack) - currentEnergy));
         if (accepted == 0) return 0;
         setEnergy(stack, currentEnergy + accepted);
         return getEnergy(stack) - currentEnergy;
@@ -254,14 +257,16 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
     @Override
     public int getBarWidth(ItemStack stack) {
         long currentEnergy = getEnergy(stack);
-        if (maxEnergy <= 0) return 0;
-        return (int) Math.round(13.0 * currentEnergy / maxEnergy);
+        long max = getMaxEnergy(stack);
+        if (max <= 0) return 0;
+        return (int) Math.round(13.0 * currentEnergy / max);
     }
 
     @Override
     public int getBarColor(ItemStack stack) {
         long currentEnergy = getEnergy(stack);
-        float ratio = maxEnergy <= 0 ? 0.0F : (float) currentEnergy / maxEnergy;
+        long max = getMaxEnergy(stack);
+        float ratio = max <= 0 ? 0.0F : (float) currentEnergy / max;
         int r = Math.round(255 * (1.0F - ratio));
         int g = Math.round(255 * ratio);
         return r << 16 | g << 8;
@@ -302,7 +307,7 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
      */
     protected void appendEnergyTooltip(ItemStack stack, List<Component> tooltipComponents) {
         tooltipComponents.add(
-            Component.translatable("tooltip.mio_icif.armor.energy", getEnergy(stack), maxEnergy)
+            Component.translatable("tooltip.mio_icif.armor.energy", getEnergy(stack), getMaxEnergy(stack))
                 .withStyle(ChatFormatting.GRAY)
         );
     }
@@ -386,7 +391,8 @@ public abstract class AbstractElectricArmor extends ArmorItem implements IElectr
      * Gets the remaining energy fraction (0.0 to 1.0).
      */
     public float getDurabilityPercent(ItemStack stack) {
-        return maxEnergy <= 0 ? 0.0F : (float) getEnergy(stack) / maxEnergy;
+        long max = getMaxEnergy(stack);
+        return max <= 0 ? 0.0F : (float) getEnergy(stack) / max;
     }
 
     /**

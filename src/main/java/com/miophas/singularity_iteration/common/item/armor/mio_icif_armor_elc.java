@@ -60,8 +60,14 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
     /**
      * 0.1.8.0: armor sets that render a baked Blockbench model. The texture of a piece is
      * {@code textures/models/armor/<set>_<piece>.png}, the same file the baked model uses.
+     * 0.1.8.3: the advanced quantum and heavy quantum chestplates joined.
      */
-    public static final java.util.Set<String> BAKED_SETS = java.util.Set.of("quantum");
+    public static final java.util.Set<String> BAKED_SETS = java.util.Set.of("quantum", "advanced_quantum", "heavy_quantum");
+
+    /** Texture of a baked piece by its model name, for example {@code ultimate_solar_helmet} (0.1.8.3). */
+    public static ResourceLocation bakedTexture(String model) {
+        return ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/models/armor/" + model + ".png");
+    }
 
     @Override
     @Nullable

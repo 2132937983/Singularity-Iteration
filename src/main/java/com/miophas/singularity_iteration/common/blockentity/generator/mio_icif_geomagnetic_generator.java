@@ -191,7 +191,7 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
 
             if ((int)(ratio * 6) > 0) {
                 long scaledGeneration = (long)(ENERGY_GENERATION_RATE * ratio);
-                scaledGeneration = Math.max(1, scaledGeneration);
+                scaledGeneration = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, Math.max(1, scaledGeneration));   // 0.1.8.4 output multiplier
                 long energyToGenerate = Math.min(scaledGeneration, storage.getCapacity() - storage.getAmount());
                 if (energyToGenerate > 0) {
                     storage.generateEnergy(energyToGenerate, false);

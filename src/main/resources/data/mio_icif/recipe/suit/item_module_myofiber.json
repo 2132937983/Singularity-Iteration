@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PFP",
+    "SMS",
+    "PCP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "F": {
+      "item": "minecraft:rabbit_foot"
+    },
+    "S": {
+      "item": "minecraft:slime_ball"
+    },
+    "M": {
+      "tag": "mio_icif:nano_living_metals"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_myofiber",
+    "count": 1
+  }
+}

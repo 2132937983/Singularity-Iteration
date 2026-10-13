@@ -194,7 +194,7 @@ public final class LaserBeamRenderer {
             if (out == null) out = buffers.getBuffer(SiRenderTypes.ENERGY_BEAM);
             // Flash on the first tick, full for two ticks, then fade out.
             float fade = age < 2 ? 1.0F : 1.0F - (age - 2) / (LIFETIME - 2);
-            float flash = age < 1.5F ? 1.0F - age / 1.5F : 0.0F;
+            float flash = (age < 1.5F ? 1.0F - age / 1.5F : 0.0F) * com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.flashScale();
             float ax = (float) (ox - cam.x), ay = (float) (oy - cam.y), az = (float) (oz - cam.z);
             float bx = (float) (ex - cam.x), by = (float) (ey - cam.y), bz = (float) (ez - cam.z);
             drawBolt(out, pose, slot, ax, ay, az, bx, by, bz, tick, partial, fade);

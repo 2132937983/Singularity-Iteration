@@ -52,6 +52,7 @@ public class mio_icif_electric_rifle extends mio_icif_tool_elc implements IWeapo
             consumeEnergy(stack, ENERGY_PER_SHOT);
 
             mio_icif_energy_bullet bullet = new mio_icif_energy_bullet(RIFLE_BULLET_ENTITY, player, level);
+            bullet.setBeam(0x5AB8FF, getEnergyPerShot());   // 0.1.8.3 beam colour and width
             bullet.setDamage(BULLET_DAMAGE);
             bullet.setMaxLife(BULLET_MAX_LIFE);
             bullet.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, BULLET_SPEED, 0.0F);
@@ -102,4 +103,14 @@ public class mio_icif_electric_rifle extends mio_icif_tool_elc implements IWeapo
     public com.miophas.singularity_iteration.core.api.item.BallisticProfile ballistics(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, int useTicks) {
         return com.miophas.singularity_iteration.core.api.item.BallisticProfile.straight("RIFLE", BULLET_SPEED, 0.99, 0.8, canShoot(stack));
     }
+
+    /** 0.1.8.4: shot of an AI shooter (Wingman), same bolt as {@link #use}. */
+    @Override
+    public int fireFrom(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, net.minecraft.world.phys.Vec3 direction, boolean mainHand) {
+        return MobWeaponFire.energyBolt(this, stack, shooter, direction, mainHand, RIFLE_BULLET_ENTITY, ENERGY_PER_SHOT, 0x5AB8FF, BULLET_DAMAGE, BULLET_MAX_LIFE, BULLET_SPEED,
+            bullet -> {  }, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.RIFLE_SHOT.get(), 0.9F, 1.15F, COOLDOWN_TICKS);
+    }
+
+    @Override
+    public double projectileSpeed() { return BULLET_SPEED; }
 }

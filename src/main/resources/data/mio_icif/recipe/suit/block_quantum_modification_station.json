@@ -2,13 +2,13 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "ECE",
+    "ACA",
     "GHG",
-    "PLP"
+    "PEP"
   ],
   "key": {
-    "E": {
-      "tag": "c:circuits/elite"
+    "A": {
+      "tag": "c:circuits/advanced"
     },
     "C": {
       "item": "mio_icif:item_tool_ov_scanner"
@@ -20,10 +20,10 @@
       "item": "mio_icif:producer/block_machine_hull_advanced"
     },
     "P": {
-      "tag": "c:plates/iridium"
+      "tag": "c:plates/carbon"
     },
-    "L": {
-      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    "E": {
+      "item": "mio_icif:normal/item_crystal_lev0"
     }
   },
   "result": {

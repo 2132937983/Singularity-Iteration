@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " S ",
+    "CPC",
+    "GTG"
+  ],
+  "key": {
+    "S": {
+      "item": "mio_icif:generator/block_advanced_solar_panel"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    },
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "G": {
+      "item": "mio_icif:wiring/cable/block_gold_cable_1"
+    },
+    "T": {
+      "item": "mio_icif:wiring/transformer_lv_mv"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_core_solar_array_1",
+    "count": 1
+  }
+}

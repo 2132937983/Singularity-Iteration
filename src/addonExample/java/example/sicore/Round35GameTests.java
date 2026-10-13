@@ -157,12 +157,13 @@ public final class Round35GameTests {
         h.succeed();
     }
 
-    /** A solar helmet never charges a battery in auto mode (no helmet <-> battery loop). */
+    /** A solar helmet never charges a battery in auto mode (no helmet <-> battery loop). 0.1.9.0: nano helmet + Solar Array I. */
     @GameTest(batch = "round35_battery", template = "empty", timeoutTicks = 20)
     public static void solarHelmetSkipsAutoChargingBattery(GameTestHelper h) {
         ServerPlayer p = Round33GameTests.survivalPlayer(h);
-        ItemStack helmet = Round33GameTests.charged("armor/item_armor_advanced_solar_helmet");
-        h.assertTrue(helmet.getItem() instanceof IBatteryItem, "advanced solar helmet not found");
+        ItemStack helmet = Round33GameTests.charged("armor/item_armor_nano_helmet");
+        Round190GameTests.install(helmet, "solar_array_1");
+        h.assertTrue(helmet.getItem() instanceof IBatteryItem, "nano helmet not found");
         p.setItemSlot(EquipmentSlot.HEAD, helmet);
         ItemStack battery = firstBattery();
         IBatteryItem b = (IBatteryItem) battery.getItem();
@@ -213,8 +214,9 @@ public final class Round35GameTests {
     public static void nanoItemsUseTheirModelAndBootsFaceForward(GameTestHelper h) {
         List<String> problems = new ArrayList<>();
         for (String piece : new String[]{"helmet", "chestplate", "leggings", "boots"}) {
-            String json = Round33GameTests.resource("/assets/mio_icif/models/item/armor/item_armor_nano_" + piece + ".json");
-            if (json == null || !json.contains("builtin/entity")) problems.add(piece + " item model is not builtin/entity");
+            // 0.1.8.3: 3D model in hand and on the ground, flat icon in the inventory
+            String problem = Round183GameTests.splitArmorItemModel("armor/item_armor_nano_" + piece);
+            if (problem != null) problems.add(piece + " " + problem);
         }
         String boots = Round33GameTests.resource("/assets/mio_icif/armor_models/nano_boots.json");
         var parts = com.google.gson.JsonParser.parseString(boots).getAsJsonObject().getAsJsonObject("parts");

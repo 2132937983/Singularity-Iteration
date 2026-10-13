@@ -1,6 +1,18 @@
 {
-    "parent": "item/generated",
-    "textures": {
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
+  "textures": {
+    "particle": "mio_icif:item/armor/item_armor_hybrid_solar_helmet"
+  },
+  "base": {
+    "parent": "mio_icif:item/3d/armor/item_armor_hybrid_solar_helmet"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
         "layer0": "mio_icif:item/armor/item_armor_hybrid_solar_helmet"
+      }
     }
+  }
 }

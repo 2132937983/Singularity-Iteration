@@ -261,6 +261,8 @@ public final class SuitPackets {
             if (c.player() instanceof ServerPlayer player && com.miophas.singularity_iteration.common.util.PacketRateLimit.allow(player,
                     com.miophas.singularity_iteration.common.util.PacketRateLimit.SMART_GUIDANCE)) SmartGuidance.setLocks(player, p.ids());
         }));
+        // 0.1.8.5 nano suit: burst keys, key assignment, core state and burst effects
+        com.miophas.singularity_iteration.common.suit.nano.NanoPackets.register(registrar);
     }
 
     /**

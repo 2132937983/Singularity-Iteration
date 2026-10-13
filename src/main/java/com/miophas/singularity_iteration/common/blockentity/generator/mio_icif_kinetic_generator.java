@@ -140,7 +140,7 @@ public class mio_icif_kinetic_generator extends AbstractGeneratorBlockEntity {
             long kuToConsume = euToGenerate * KU_TO_EU_RATIO;
             kineticStorage.extractKinetic(kuToConsume, false);
 
-            apiGenerateEnergy(euToGenerate, false);
+            apiGenerateEnergy(scaleOutput(euToGenerate), false);   // 0.1.8.4 output multiplier: EU per KU
         }
     }
 

@@ -1,13 +1,14 @@
 {
-  "credit": "Singularity Iteration 0.1.7.33 (gen_suit_assets.py)",
+  "credit": "Singularity Iteration 0.1.8.5 (tools/station_185.py): Universal Suit Modification Station",
   "parent": "block/block",
+  "render_type": "minecraft:cutout",
   "textures": {
     "particle": "mio_icif:block/producer/block_quantum_modification_station",
     "t": "mio_icif:block/producer/block_quantum_modification_station"
   },
   "elements": [
     {
-      "name": "base",
+      "name": "plinth",
       "from": [
         0,
         0,
@@ -15,46 +16,46 @@
       ],
       "to": [
         16,
-        7,
+        6,
         16
       ],
       "faces": {
         "north": {
           "uv": [
+            0.0,
+            0.0,
             8.0,
-            4.5,
-            12.0,
-            8.0
+            3.0
           ],
           "texture": "#t",
           "cullface": "north"
         },
         "south": {
           "uv": [
-            4.0,
-            4.5,
+            0.0,
+            0.0,
             8.0,
-            8.0
+            3.0
           ],
           "texture": "#t",
           "cullface": "south"
         },
         "east": {
           "uv": [
-            4.0,
-            4.5,
+            0.0,
+            0.0,
             8.0,
-            8.0
+            3.0
           ],
           "texture": "#t",
           "cullface": "east"
         },
         "west": {
           "uv": [
-            4.0,
-            4.5,
+            0.0,
+            0.0,
             8.0,
-            8.0
+            3.0
           ],
           "texture": "#t",
           "cullface": "west"
@@ -62,17 +63,17 @@
         "up": {
           "uv": [
             0.0,
-            0.0,
-            4.0,
-            8.0
+            3.0,
+            8.0,
+            11.0
           ],
           "texture": "#t"
         },
         "down": {
           "uv": [
-            4.0,
-            8.0,
-            8.0,
+            12.0,
+            12.0,
+            16.0,
             16.0
           ],
           "texture": "#t",
@@ -81,281 +82,688 @@
       }
     },
     {
-      "name": "frame",
+      "name": "pad",
       "from": [
-        1,
-        7,
-        12
+        3,
+        6,
+        3
       ],
       "to": [
-        15,
-        16,
-        15
+        13,
+        7,
+        13
       ],
       "faces": {
         "north": {
           "uv": [
-            12.25,
-            1.5,
-            15.75,
-            6.0
+            8.0,
+            5.0,
+            13.0,
+            5.5
           ],
           "texture": "#t"
         },
         "south": {
           "uv": [
-            0.25,
-            9.5,
-            3.75,
-            14.0
+            8.0,
+            5.0,
+            13.0,
+            5.5
           ],
           "texture": "#t"
         },
         "east": {
           "uv": [
-            0.0,
-            9.5,
-            0.75,
-            14.0
+            8.0,
+            5.0,
+            13.0,
+            5.5
           ],
           "texture": "#t"
         },
         "west": {
           "uv": [
-            0.0,
-            9.5,
-            0.75,
-            14.0
+            8.0,
+            5.0,
+            13.0,
+            5.5
           ],
           "texture": "#t"
         },
         "up": {
           "uv": [
-            0.25,
             8.0,
-            3.75,
-            9.5
+            0.0,
+            13.0,
+            5.0
+          ],
+          "texture": "#t"
+        }
+      }
+    },
+    {
+      "name": "spine",
+      "from": [
+        4,
+        6,
+        12.5
+      ],
+      "to": [
+        12,
+        16,
+        15.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            8.0,
+            5.5,
+            12.0,
+            10.5
+          ],
+          "texture": "#t"
+        },
+        "south": {
+          "uv": [
+            8.0,
+            5.5,
+            12.0,
+            10.5
+          ],
+          "texture": "#t"
+        },
+        "east": {
+          "uv": [
+            12.0,
+            5.5,
+            13.5,
+            10.5
+          ],
+          "texture": "#t"
+        },
+        "west": {
+          "uv": [
+            12.0,
+            5.5,
+            13.5,
+            10.5
+          ],
+          "texture": "#t"
+        },
+        "up": {
+          "uv": [
+            8.0,
+            10.5,
+            12.0,
+            12.0
           ],
           "texture": "#t",
           "cullface": "up"
-        },
-        "down": {
-          "uv": [
-            0.25,
-            8.0,
-            3.75,
-            9.5
-          ],
-          "texture": "#t"
         }
       }
     },
     {
-      "name": "emitter",
+      "name": "emitter_head",
       "from": [
-        2,
-        14,
-        10.5
+        3,
+        13,
+        11
       ],
       "to": [
-        14,
+        13,
         15,
-        12
+        12.5
       ],
       "faces": {
         "north": {
           "uv": [
-            8.0,
+            0.0,
             11.0,
-            12.0,
-            13.0
-          ],
-          "texture": "#t"
-        },
-        "south": {
-          "uv": [
-            8.0,
-            11.0,
-            12.0,
-            13.0
+            5.0,
+            12.0
           ],
           "texture": "#t"
         },
         "east": {
           "uv": [
-            8.0,
+            5.0,
             11.0,
-            8.5,
-            13.0
+            5.75,
+            12.0
           ],
           "texture": "#t"
         },
         "west": {
           "uv": [
-            8.0,
+            5.0,
             11.0,
-            8.5,
-            13.0
+            5.75,
+            12.0
           ],
           "texture": "#t"
         },
         "up": {
           "uv": [
-            0.25,
-            8.0,
-            3.75,
-            9.0
+            0.0,
+            12.0,
+            5.0,
+            12.75
           ],
           "texture": "#t"
         },
         "down": {
           "uv": [
-            8.0,
-            10.0,
-            12.0,
-            14.0
+            0.0,
+            12.75,
+            5.0,
+            13.5
           ],
           "texture": "#t"
         }
       }
     },
     {
-      "name": "post0",
+      "name": "lens",
+      "from": [
+        4,
+        13.5,
+        10.95
+      ],
+      "to": [
+        12,
+        14.5,
+        11
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0.0,
+            13.5,
+            4.0,
+            14.0
+          ],
+          "texture": "#t"
+        }
+      },
+      "shade": false,
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
+      }
+    },
+    {
+      "name": "pylon_left",
       "from": [
         1,
-        7,
+        6,
         1
       ],
       "to": [
         3,
-        8.5,
+        11,
         3
       ],
       "faces": {
         "north": {
           "uv": [
+            13.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
+            14.0,
+            2.5
           ],
           "texture": "#t"
         },
         "south": {
           "uv": [
+            13.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
+            14.0,
+            2.5
           ],
           "texture": "#t"
         },
         "east": {
           "uv": [
+            13.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
+            14.0,
+            2.5
           ],
           "texture": "#t"
         },
         "west": {
           "uv": [
+            13.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
+            14.0,
+            2.5
           ],
           "texture": "#t"
         },
         "up": {
           "uv": [
+            14.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
-          ],
-          "texture": "#t"
-        },
-        "down": {
-          "uv": [
-            0.0,
-            8.0,
-            0.5,
-            9.0
+            15.0,
+            1.0
           ],
           "texture": "#t"
         }
       }
     },
     {
-      "name": "post1",
+      "name": "pylon_right",
       "from": [
         13,
-        7,
+        6,
         1
       ],
       "to": [
         15,
-        8.5,
+        11,
         3
       ],
       "faces": {
         "north": {
           "uv": [
+            13.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
+            14.0,
+            2.5
           ],
           "texture": "#t"
         },
         "south": {
           "uv": [
+            13.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
+            14.0,
+            2.5
           ],
           "texture": "#t"
         },
         "east": {
           "uv": [
+            13.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
+            14.0,
+            2.5
           ],
           "texture": "#t"
         },
         "west": {
           "uv": [
+            13.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
+            14.0,
+            2.5
           ],
           "texture": "#t"
         },
         "up": {
           "uv": [
+            14.0,
             0.0,
-            8.0,
-            0.5,
-            9.0
+            15.0,
+            1.0
+          ],
+          "texture": "#t"
+        }
+      }
+    },
+    {
+      "name": "cap_left",
+      "from": [
+        1.25,
+        11,
+        1.25
+      ],
+      "to": [
+        2.75,
+        11.75,
+        2.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            14.0,
+            1.0,
+            15.0,
+            2.0
           ],
           "texture": "#t"
         },
-        "down": {
+        "south": {
           "uv": [
-            0.0,
-            8.0,
-            0.5,
-            9.0
+            14.0,
+            1.0,
+            15.0,
+            2.0
+          ],
+          "texture": "#t"
+        },
+        "east": {
+          "uv": [
+            14.0,
+            1.0,
+            15.0,
+            2.0
+          ],
+          "texture": "#t"
+        },
+        "west": {
+          "uv": [
+            14.0,
+            1.0,
+            15.0,
+            2.0
+          ],
+          "texture": "#t"
+        },
+        "up": {
+          "uv": [
+            14.0,
+            1.0,
+            15.0,
+            2.0
+          ],
+          "texture": "#t"
+        }
+      },
+      "shade": false,
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
+      }
+    },
+    {
+      "name": "cap_right",
+      "from": [
+        13.25,
+        11,
+        1.25
+      ],
+      "to": [
+        14.75,
+        11.75,
+        2.75
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            15.0,
+            1.0,
+            16.0,
+            2.0
+          ],
+          "texture": "#t"
+        },
+        "south": {
+          "uv": [
+            15.0,
+            1.0,
+            16.0,
+            2.0
+          ],
+          "texture": "#t"
+        },
+        "east": {
+          "uv": [
+            15.0,
+            1.0,
+            16.0,
+            2.0
+          ],
+          "texture": "#t"
+        },
+        "west": {
+          "uv": [
+            15.0,
+            1.0,
+            16.0,
+            2.0
+          ],
+          "texture": "#t"
+        },
+        "up": {
+          "uv": [
+            15.0,
+            1.0,
+            16.0,
+            2.0
+          ],
+          "texture": "#t"
+        }
+      },
+      "shade": false,
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
+      }
+    },
+    {
+      "name": "clamp_left",
+      "from": [
+        0.5,
+        6,
+        5
+      ],
+      "to": [
+        2,
+        9,
+        11
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.0,
+            4.0,
+            13.75,
+            5.5
+          ],
+          "texture": "#t"
+        },
+        "south": {
+          "uv": [
+            13.0,
+            4.0,
+            13.75,
+            5.5
+          ],
+          "texture": "#t"
+        },
+        "west": {
+          "uv": [
+            13.0,
+            2.5,
+            16.0,
+            4.0
+          ],
+          "texture": "#t"
+        },
+        "east": {
+          "uv": [
+            13.0,
+            2.5,
+            16.0,
+            4.0
+          ],
+          "texture": "#t"
+        },
+        "up": {
+          "uv": [
+            14.0,
+            4.0,
+            14.75,
+            7.0
+          ],
+          "texture": "#t"
+        }
+      }
+    },
+    {
+      "name": "clamp_right",
+      "from": [
+        14,
+        6,
+        5
+      ],
+      "to": [
+        15.5,
+        9,
+        11
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            13.0,
+            4.0,
+            13.75,
+            5.5
+          ],
+          "texture": "#t"
+        },
+        "south": {
+          "uv": [
+            13.0,
+            4.0,
+            13.75,
+            5.5
+          ],
+          "texture": "#t"
+        },
+        "west": {
+          "uv": [
+            13.0,
+            2.5,
+            16.0,
+            4.0
+          ],
+          "texture": "#t"
+        },
+        "east": {
+          "uv": [
+            13.0,
+            2.5,
+            16.0,
+            4.0
+          ],
+          "texture": "#t"
+        },
+        "up": {
+          "uv": [
+            14.0,
+            4.0,
+            14.75,
+            7.0
           ],
           "texture": "#t"
         }
       }
     }
-  ]
+  ],
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.625,
+        0.625,
+        0.625
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.375,
+        0.375,
+        0.375
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    }
+  }
 }

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "NAN",
+    "AUA",
+    "NLN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:plates/neutron"
+    },
+    "A": {
+      "item": "minecraft:slime_block"
+    },
+    "U": {
+      "item": "mio_icif:module/item_module_shock_gel"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_living_circuit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_shock_gel_mk2",
+    "count": 1
+  }
+}

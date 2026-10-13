@@ -299,6 +299,9 @@ public class mio_icif_gui_armor_features extends Screen {
                 }
                 case TUNE -> drawTune(g, stack, (ITunableItem.Spec) row.ref(), x, ry, hot || draggingTune == row.index());
                 case INFO -> small(g, font.plainSubstrByWidth(((Component) row.ref()).getString(), (int) ((PW - 12) / 0.75F)), x + 2, ry + 3, SiGuiTheme.TEXT_SCREEN);
+                case LATTICE -> drawLattice(g, stack, x, ry);
+                case CORE -> drawCore(g, x, ry);
+                case BURST -> drawBurst(g, row.index(), x, ry, hot);
             }
         }
         if (rows.size() > FEATURE_ROWS) {
@@ -311,7 +314,7 @@ public class mio_icif_gui_armor_features extends Screen {
     }
 
     // ------------------------------------------------------------------ row model (render + hit testing)
-    private enum Kind { FEATURE, HEADER, MODE, TUNE, INFO }
+    private enum Kind { FEATURE, HEADER, MODE, TUNE, INFO, LATTICE, CORE, BURST }
     private record Row(Kind kind, int index, Object ref) { }
 
     private List<Row> rows(ItemStack stack) {
@@ -323,6 +326,14 @@ public class mio_icif_gui_armor_features extends Screen {
             List<Component> modes = tool.toolModes(stack);
             if (!modes.isEmpty()) rows.add(new Row(Kind.HEADER, 0, Component.translatable("gui.mio_icif.equipment_console.modes")));
             for (int i = 0; i < modes.size(); i++) rows.add(new Row(Kind.MODE, i, modes.get(i)));
+        }
+        // 0.1.8.5 nano lattice: LP bar, nano core gauges and the two burst keys
+        if (com.miophas.singularity_iteration.common.suit.SuitModules.isNanoPiece(stack)) {
+            rows.add(new Row(Kind.HEADER, 0, Component.translatable("gui.mio_icif.equipment_console.nano")));
+            rows.add(new Row(Kind.LATTICE, 0, null));
+            rows.add(new Row(Kind.CORE, 0, null));
+            rows.add(new Row(Kind.BURST, 0, null));
+            rows.add(new Row(Kind.BURST, 1, null));
         }
         if (stack.getItem() instanceof ITunableItem tunable) {
             List<ITunableItem.Spec> specs = tunable.tuningSpecs(stack);
@@ -380,6 +391,79 @@ public class mio_icif_gui_armor_features extends Screen {
             (index << 16) | (value & 0xFFFF)));
         if (minecraft != null) minecraft.getSoundManager().play(SimpleSoundInstance.forUI(mio_icif_sounds.UI_CLICK.get(),
             0.8F + 0.6F * (value - spec.min()) / Math.max(1F, spec.max() - spec.min()), 0.35F));
+    }
+
+    // ------------------------------------------------------------------ nano lattice rows (0.1.8.5)
+
+    private void drawLattice(GuiGraphics g, ItemStack stack, int x, int ry) {
+        var units = com.miophas.singularity_iteration.common.suit.SuitModules.installed(stack).units();
+        int cap = com.miophas.singularity_iteration.common.suit.SuitModules.latticeCapacity(stack);
+        int used = com.miophas.singularity_iteration.common.suit.SuitModules.latticeUsed(stack);
+        small(g, Component.translatable("gui.mio_icif.equipment_console.lattice", used, cap).getString(), x, ry + 3, SiGuiTheme.TEXT_SCREEN);
+        int bx = x + 62, bw = PW - 82, by = ry + 3;
+        g.fill(bx - 1, by - 1, bx + bw + 1, by + 6, SiGuiTheme.OUTLINE);
+        float cell = bw / (float) Math.max(1, cap);
+        int at = 0;
+        for (var u : units) for (int k = 0; k < u.latticePoints() && at < cap; k++, at++)
+            g.fill(bx + Math.round(at * cell), by, bx + Math.round((at + 1) * cell) - 1, by + 5, 0xFF000000 | u.color());
+        for (; at < cap; at++) g.fill(bx + Math.round(at * cell), by, bx + Math.round((at + 1) * cell) - 1, by + 5, SiGuiTheme.SCREEN_GRID);
+        int level = com.miophas.singularity_iteration.common.suit.SuitModules.latticeLevel(stack);
+        for (int k = 0; k < com.miophas.singularity_iteration.common.suit.SuitModules.LATTICE_MAX_LEVEL; k++) {
+            int dx = x + PW - 15 + k * 5, dy = ry + 5;
+            int c = k < level ? 0xFFE0A21B : 0x60E0A21B;
+            g.fill(dx - 1, dy - 2, dx + 1, dy + 2, c);
+            g.fill(dx - 2, dy - 1, dx + 2, dy + 1, c);
+        }
+    }
+
+    private void drawCore(GuiGraphics g, int x, int ry) {
+        var sync = com.miophas.singularity_iteration.common.client.suit.nano.NanoClient.sync();
+        if (sync == null || !sync.online()) {
+            small(g, Component.translatable("gui.mio_icif.equipment_console.nano_offline").getString(), x, ry + 3, SiGuiTheme.TEXT_SCREEN_DIM);
+            return;
+        }
+        small(g, Component.translatable("gui.mio_icif.equipment_console.reserve").getString(), x, ry + 3, SiGuiTheme.TEXT_SCREEN);
+        SiGuiTheme.bar(g, x + 34, ry + 4, 40, 4, sync.reserve() / 100.0, 0xFF2DB8D8, 0xFF7FE9FF);
+        small(g, Component.translatable("gui.mio_icif.equipment_console.heat").getString(), x + 80, ry + 3, sync.overheated() ? SiGuiTheme.BAD : SiGuiTheme.TEXT_SCREEN);
+        SiGuiTheme.bar(g, x + 104, ry + 4, PW - 116, 4, sync.heat() / Math.max(1F, sync.heatCap()), 0xFFE0A21B, sync.overheated() ? 0xFFE04030 : 0xFFF0C060);
+    }
+
+    private void drawBurst(GuiGraphics g, int slot, int x, int ry, boolean hot) {
+        if (hot) g.fill(x - 2, ry - 1, x + PW - 8, ry + FEATURE_ROW - 2, 0x263A6EA5);
+        var sync = com.miophas.singularity_iteration.common.client.suit.nano.NanoClient.sync();
+        String key = slot == 0 ? "V" : "B";
+        net.minecraft.client.KeyMapping mapping = slot == 0 ? com.miophas.singularity_iteration.common.client.suit.nano.NanoClient.PRIMARY_KEY
+            : com.miophas.singularity_iteration.common.client.suit.nano.NanoClient.SECONDARY_KEY;
+        if (mapping != null) key = mapping.getTranslatedKeyMessage().getString();
+        g.drawString(font, font.plainSubstrByWidth(Component.translatable("gui.mio_icif.equipment_console.burst_" + (slot == 0 ? "primary" : "secondary"), key).getString(), 70),
+            x, ry + 1, SiGuiTheme.TEXT_SCREEN, false);
+        String choice = sync == null ? "" : slot == 0 ? sync.primaryChoice() : sync.secondaryChoice();
+        String effective = sync == null ? "" : slot == 0 ? sync.primaryKey() : sync.secondaryKey();
+        String name = effective.isEmpty() ? Component.translatable("gui.mio_icif.equipment_console.burst_none").getString()
+            : Component.translatable(burstNameKey(effective)).getString();
+        if (choice.isEmpty() && !effective.isEmpty()) name = name + " " + Component.translatable("gui.mio_icif.equipment_console.burst_auto").getString();
+        String label = "\u25C0 " + font.plainSubstrByWidth(name, PW - 96) + " \u25B6";
+        g.drawString(font, label, x + PW - 10 - font.width(label), ry + 1, SiGuiTheme.ACCENT, false);
+    }
+
+    private static String burstNameKey(String key) {
+        var unit = com.miophas.singularity_iteration.common.suit.UnitRef.byKey(key);
+        return unit == null ? key : unit.nameKey();
+    }
+
+    /** Cycles burst key {@code slot} through: automatic, each worn burst unit, nothing. */
+    private void cycleBurst(int slot, int direction) {
+        if (minecraft == null || minecraft.player == null) return;
+        var sync = com.miophas.singularity_iteration.common.client.suit.nano.NanoClient.sync();
+        List<String> options = new ArrayList<>();
+        options.add("");
+        for (var unit : com.miophas.singularity_iteration.common.suit.nano.NanoSuit.availableBursts(minecraft.player)) options.add(unit.key());
+        options.add("-");
+        String current = sync == null ? "" : slot == 0 ? sync.primaryChoice() : sync.secondaryChoice();
+        int i = Math.max(0, options.indexOf(current));
+        String next = options.get(Math.floorMod(i + direction, options.size()));
+        com.miophas.singularity_iteration.common.client.suit.nano.NanoClient.assign(slot, next);
+        sound(true);
     }
 
     private void drawSwitch(GuiGraphics g, int sx, int sy, boolean on) {
@@ -485,6 +569,7 @@ public class mio_icif_gui_armor_features extends Screen {
             case FEATURE -> { toggleFeature(entry, (ArmorFeatureInfo) row.ref()); return true; }
             case MODE -> { selectMode(entry, row.index()); return true; }
             case TUNE -> { draggingTune = row.index(); setTuneFromMouse(row, mouseX); return true; }
+            case BURST -> { cycleBurst(row.index(), mouseX < left + PX + 4 + PW / 2 + 10 ? -1 : 1); return true; }
             default -> { return false; }
         }
     }
@@ -1114,7 +1199,14 @@ public class mio_icif_gui_armor_features extends Screen {
             if (states[i]) g.fill(bx + 2, by + 2, bx + 7, by + 7, DspUi.CYAN);
             DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.hands." + keys[i]).getString(), bx + 13, by + 2, DspUi.TEXT);
         }
+        // 0.1.9.0: frame core attachments
+        int cy = coreToggleY();
+        g.renderOutline(x0 + 6, cy, 9, 9, DspUi.FRAME);
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.coreAttachments()) g.fill(x0 + 8, cy + 2, x0 + 13, cy + 7, DspUi.CYAN);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.core_attachments").getString(), x0 + 19, cy + 2, DspUi.TEXT);
     }
+
+    private int coreToggleY() { return handY() + 12; }
 
     private int handY() { return cardY() + CARD_H + 16; }
 
@@ -1135,6 +1227,12 @@ public class mio_icif_gui_armor_features extends Screen {
                 sound(true);
                 return true;
             }
+        }
+        if (in(mouseX, mouseY, left + AX + 6, coreToggleY(), 200, 9)) {
+            com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.setCoreAttachments(
+                !com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.coreAttachments());
+            sound(true);
+            return true;
         }
         for (int i = 0; i < 2; i++) {
             if (in(mouseX, mouseY, cardX(i), cardY(), CARD_W, CARD_H)) {

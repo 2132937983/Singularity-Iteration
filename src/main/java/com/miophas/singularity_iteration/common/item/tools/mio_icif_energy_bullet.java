@@ -22,6 +22,8 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
     private float aoeRadius = 0.0F;
     private float aoeDamage = 0.0F;
     private float explosionPower = 0.0F;
+    /** 0.1.8.4: false for AI shooters (Wingman): the explosion hurts entities but breaks no blocks. Not saved. */
+    private boolean terrainDamage = true;
     private int remainingPierces = 0;
     private net.minecraft.world.effect.MobEffectInstance potionEffect = null;
     private final Set<Entity> hitEntities = new HashSet<>();
@@ -51,8 +53,30 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
         this.setNoGravity(true);
     }
 
+    /** 0.1.8.3: beam colour (0xRRGGBB) and power (0..1, from the shot energy) for the client renderer. */
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Integer> DATA_COLOR =
+        net.minecraft.network.syncher.SynchedEntityData.defineId(mio_icif_energy_bullet.class, net.minecraft.network.syncher.EntityDataSerializers.INT);
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Float> DATA_POWER =
+        net.minecraft.network.syncher.SynchedEntityData.defineId(mio_icif_energy_bullet.class, net.minecraft.network.syncher.EntityDataSerializers.FLOAT);
+
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(DATA_COLOR, 0x5AB8FF);
+        builder.define(DATA_POWER, 0.6F);
+    }
+
+    /** Sets the beam look: colour 0xRRGGBB and the shot energy in EU (0.1.8.3). Call before spawning. */
+    public void setBeam(int color, long energyPerShot) {
+        this.entityData.set(DATA_COLOR, color & 0xFFFFFF);
+        this.entityData.set(DATA_POWER, WeaponChargeFx.power(energyPerShot));
+    }
+
+    public int beamColor() {
+        return this.entityData.get(DATA_COLOR);
+    }
+
+    public float beamPower() {
+        return this.entityData.get(DATA_POWER);
     }
 
     public void setDamage(float damage) {
@@ -70,6 +94,10 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
 
     public void setExplosionPower(float power) {
         this.explosionPower = power;
+    }
+
+    public void setTerrainDamage(boolean terrain) {
+        this.terrainDamage = terrain;
     }
 
     public void setPierceCount(int count) {
@@ -191,7 +219,7 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
 
         if (this.explosionPower > 0.0F && owner != null) {
             this.level().explode(owner, this.getX(), this.getY(), this.getZ(),
-                this.explosionPower, Level.ExplosionInteraction.TNT);
+                this.explosionPower, terrainDamage ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
         }
 
         spawnImpactParticles();
@@ -206,8 +234,17 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
     protected void onHitBlock(net.minecraft.world.phys.BlockHitResult result) {
     }
 
+    /**
+     * Impact burst (0.1.8.3; the 0.1.7 effect had been removed): electric sparks and dust in the
+     * beam colour. Sent by the server, so every player near the impact sees it.
+     */
     private void spawnImpactParticles() {
-        // 击中粒子效果已移除
+        if (!(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
+        int c = beamColor();
+        var dust = new net.minecraft.core.particles.DustParticleOptions(
+            new org.joml.Vector3f((c >> 16 & 255) / 255F, (c >> 8 & 255) / 255F, (c & 255) / 255F), 0.9F + 0.8F * beamPower());
+        server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, getX(), getY(), getZ(), 8, 0.12, 0.12, 0.12, 0.35);
+        server.sendParticles(dust, getX(), getY(), getZ(), 6, 0.15, 0.15, 0.15, 0.0);
     }
 
     @Override

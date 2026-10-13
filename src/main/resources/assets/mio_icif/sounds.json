@@ -602,5 +602,131 @@
         "attenuation_distance": 16
       }
     ]
+  },
+  "nano.dash": {
+    "subtitle": "mio_icif.subtitle.nano.dash",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_dash",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "nano.emp": {
+    "subtitle": "mio_icif.subtitle.nano.emp",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_emp",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "nano.camo_on": {
+    "subtitle": "mio_icif.subtitle.nano.camo_on",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_camo_on",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "nano.camo_off": {
+    "subtitle": "mio_icif.subtitle.nano.camo_off",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_camo_off",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "nano.overheat": {
+    "subtitle": "mio_icif.subtitle.nano.overheat",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_overheat",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "nano.denied": {
+    "subtitle": "mio_icif.subtitle.nano.denied",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_denied",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "nano.hf_sync": {
+    "subtitle": "mio_icif.subtitle.nano.hf_sync",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_hf_sync",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "nano.mesh_on": {
+    "subtitle": "mio_icif.subtitle.nano.mesh_on",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_mesh_on",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "nano.mesh_hit": {
+    "subtitle": "mio_icif.subtitle.nano.mesh_hit",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_mesh_hit",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "nano.recon": {
+    "subtitle": "mio_icif.subtitle.nano.recon",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_recon",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "nano.rebound": {
+    "subtitle": "mio_icif.subtitle.nano.rebound",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_rebound",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "nano.repair": {
+    "subtitle": "mio_icif.subtitle.nano.repair",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_nano_repair",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "core.discharge": {
+    "subtitle": "mio_icif.subtitle.core.discharge",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_core_discharge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "core.install": {
+    "subtitle": "mio_icif.subtitle.core.install",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_core_install",
+        "attenuation_distance": 12
+      }
+    ]
   }
 }

@@ -3,6 +3,7 @@ package com.miophas.singularity_iteration.common.item.armor;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.item.armor.hazmat.*;
 
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterials;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
@@ -60,19 +61,23 @@ public class mio_icif_items_armors {
     // Advanced Electric Jetpack
     public static final DeferredItem<Item> ARMOR_ADVANCED_JETPACK = ITEMS.register("armor/item_armor_advanced_jetpack", () -> new mio_icif_chestplate_advanced_jetpack(ArmorMaterials.IRON, new Item.Properties()));
 
-    // Heavy Quantum Chestplate
-    public static final DeferredItem<Item> ARMOR_HEAVY_QUANTUM_CHESTPLATE = ITEMS.register("armor/item_armor_heavy_quantum_chestplate", () -> new mio_icif_chestplate_heavy_quantum(MioIcifArmorMaterials.HEAVY_QUANTUM, new Item.Properties()));
-
-    // Advanced Quantum Chestplate
-    public static final DeferredItem<Item> ARMOR_ADVANCED_QUANTUM_CHESTPLATE = ITEMS.register("armor/item_armor_advanced_quantum_chestplate", () -> new mio_icif_chestplate_advanced_quantum(MioIcifArmorMaterials.ADVANCED_QUANTUM, new Item.Properties()));
-
-    // ==================== ASP 太阳能头盔 ====================
-    // 高级太阳能头盔
-    public static final DeferredItem<Item> ARMOR_ADVANCED_SOLAR_HELMET = ITEMS.register("armor/item_armor_advanced_solar_helmet", () -> new mio_icif_advanced_solar_helmet(ArmorMaterials.DIAMOND, new Item.Properties()));
-    // 混合太阳能头盔
-    public static final DeferredItem<Item> ARMOR_HYBRID_SOLAR_HELMET = ITEMS.register("armor/item_armor_hybrid_solar_helmet", () -> new mio_icif_hybrid_solar_helmet(ArmorMaterials.DIAMOND, new Item.Properties()));
-    // 终极混合太阳能头盔
-    public static final DeferredItem<Item> ARMOR_ULTIMATE_SOLAR_HELMET = ITEMS.register("armor/item_armor_ultimate_solar_helmet", () -> new mio_icif_ultimate_solar_helmet(ArmorMaterials.NETHERITE, new Item.Properties()));
+    // 0.1.9.0: the heavy and advanced quantum chestplates and the solar helmets are retired. The ids
+    // stay as hidden legacy shells that turn into the standard piece with a frame core (LegacyArmor).
+    public static final DeferredItem<Item> ARMOR_HEAVY_QUANTUM_CHESTPLATE = ITEMS.register("armor/item_armor_heavy_quantum_chestplate",
+        () -> new com.miophas.singularity_iteration.common.suit.core.LegacyArmor.Shell(MioIcifArmorMaterials.HEAVY_QUANTUM, ArmorItem.Type.CHESTPLATE, new Item.Properties(),
+            () -> com.miophas.singularity_iteration.common.suit.core.LegacyArmor.quantumChest(com.miophas.singularity_iteration.common.suit.core.FrameCore.GRAVITON)));
+    public static final DeferredItem<Item> ARMOR_ADVANCED_QUANTUM_CHESTPLATE = ITEMS.register("armor/item_armor_advanced_quantum_chestplate",
+        () -> new com.miophas.singularity_iteration.common.suit.core.LegacyArmor.Shell(MioIcifArmorMaterials.ADVANCED_QUANTUM, ArmorItem.Type.CHESTPLATE, new Item.Properties(),
+            () -> com.miophas.singularity_iteration.common.suit.core.LegacyArmor.quantumChest(com.miophas.singularity_iteration.common.suit.core.FrameCore.PROPULSION)));
+    public static final DeferredItem<Item> ARMOR_ADVANCED_SOLAR_HELMET = ITEMS.register("armor/item_armor_advanced_solar_helmet",
+        () -> new com.miophas.singularity_iteration.common.suit.core.LegacyArmor.Shell(ArmorMaterials.DIAMOND, ArmorItem.Type.HELMET, new Item.Properties(),
+            () -> com.miophas.singularity_iteration.common.suit.core.LegacyArmor.nanoHelmet(com.miophas.singularity_iteration.common.suit.core.FrameCore.SOLAR_ARRAY_1)));
+    public static final DeferredItem<Item> ARMOR_HYBRID_SOLAR_HELMET = ITEMS.register("armor/item_armor_hybrid_solar_helmet",
+        () -> new com.miophas.singularity_iteration.common.suit.core.LegacyArmor.Shell(ArmorMaterials.DIAMOND, ArmorItem.Type.HELMET, new Item.Properties(),
+            () -> com.miophas.singularity_iteration.common.suit.core.LegacyArmor.quantumHelmet(com.miophas.singularity_iteration.common.suit.core.FrameCore.SOLAR_ARRAY_2)));
+    public static final DeferredItem<Item> ARMOR_ULTIMATE_SOLAR_HELMET = ITEMS.register("armor/item_armor_ultimate_solar_helmet",
+        () -> new com.miophas.singularity_iteration.common.suit.core.LegacyArmor.Shell(ArmorMaterials.NETHERITE, ArmorItem.Type.HELMET, new Item.Properties(),
+            () -> com.miophas.singularity_iteration.common.suit.core.LegacyArmor.quantumHelmet(com.miophas.singularity_iteration.common.suit.core.FrameCore.SOLAR_ARRAY_3)));
 
     // ==================== Hazmat Suit ====================
 

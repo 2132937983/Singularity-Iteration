@@ -117,6 +117,39 @@ public abstract class AbstractGeneratorBlockEntity extends AbstractEnergyBlockEn
         return getItemAPI().isBatteryFull(stack);
     }
 
+    // ------------------------------------------------------------------ output scale (0.1.8.4)
+
+    /**
+     * Output multiplier of a generator, by block entity. The mod sets it from its configuration
+     * ("GeneratorOutput", one value per generator); addons and other loaders get 1.
+     */
+    public static volatile java.util.function.ToDoubleFunction<net.minecraft.world.level.block.entity.BlockEntity> OUTPUT_SCALE = be -> 1.0;
+    /** Fraction of an EU left over by {@link #scaleOutput(long)}, carried to the next tick (not saved). */
+    private double outputCarry;
+
+    /** The output multiplier of this generator (0 stops it). */
+    protected double outputScale() {
+        double m = OUTPUT_SCALE.applyAsDouble(this);
+        return Double.isFinite(m) && m > 0 ? m : 0;
+    }
+
+    /** {@code eu} times the output multiplier, in whole EU; the fraction is carried to later ticks. */
+    protected long scaleOutput(long eu) {
+        double m = outputScale();
+        if (m == 1.0 || eu <= 0) return m == 0 ? 0 : eu;
+        double v = eu * m + outputCarry;
+        long whole = (long) Math.floor(v);
+        outputCarry = v - whole;
+        return whole;
+    }
+
+    /** An exact amount (network-controlled storage) times the output multiplier. */
+    protected com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount scaleOutput(
+            com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount amount) {
+        double m = outputScale();
+        return m == 1.0 ? amount : com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.fromDouble(amount.toDouble() * m);
+    }
+
     /**
      * Generates energy into the internal storage (internal generation), through the API.
      * This call bypasses the maxReceive limit.
@@ -321,7 +354,7 @@ protected static final int CHARGE_SLOT = 1;
         if (burnTime <= 0 && room >= energyGenerationRate) consumeFuel();
         boolean activeThisTick = burnTime > 0;
         if (activeThisTick) {
-            energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(energyGenerationRate), false);
+            energyStorage.scexGenerateEnergy(scaleOutput(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(energyGenerationRate)), false);
             burnTime--;
         }
         updateActiveState(world, at, activeThisTick);
@@ -448,7 +481,7 @@ protected static final int CHARGE_SLOT = 1;
      * Generates energy for one tick. The amount is the generation rate, limited by the free storage space.
      */
     protected void generateEnergy() {
-        long energyGenerated = Math.min(energyGenerationRate, 
+        long energyGenerated = Math.min(scaleOutput(energyGenerationRate),
             apiGetMaxEnergy() - apiGetStoredEnergy());
         // Write the energy through the API.
         apiGenerateEnergy(energyGenerated);

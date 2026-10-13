@@ -1,9 +1,6 @@
 package com.miophas.singularity_iteration.common.util;
 
 import com.miophas.singularity_iteration.common.item.armor.hazmat.*;
-import com.miophas.singularity_iteration.common.item.armor.mio_icif_chestplate_advanced_quantum;
-import com.miophas.singularity_iteration.common.item.armor.mio_icif_chestplate_heavy_quantum;
-import com.miophas.singularity_iteration.common.item.armor.mio_icif_ultimate_solar_helmet;
 import com.miophas.singularity_iteration.core.api.item.IElectricArmorItem;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -32,10 +29,8 @@ public final class RadiationProtectionUtil {
             || !(stack.getItem() instanceof IElectricArmorItem electric)) {
             return false;
         }
-        return electric.getArmorTier() == QUANTUM_ARMOR_TIER
-            || (slot == EquipmentSlot.CHEST
-                && (armor instanceof mio_icif_chestplate_advanced_quantum
-                    || armor instanceof mio_icif_chestplate_heavy_quantum));
+        // 0.1.9.0: the retired quantum chest variants are quantum chestplates with a frame core now
+        return electric.getArmorTier() == QUANTUM_ARMOR_TIER;
     }
 
     public static boolean isWearingFullHazmat(LivingEntity entity) {
@@ -67,30 +62,17 @@ public final class RadiationProtectionUtil {
     }
 
     /**
-     * The hybrid solar helmet is not a quantum-set component. It can still
-     * replace the quantum helmet for radiation protection when the remaining
-     * three armour slots contain quantum pieces, including quantum chest upgrades.
+     * 0.1.9.0: the ultimate solar helmet is a quantum helmet with a Solar Array III core now, so the
+     * full quantum set rule covers it. The former special rule is gone; kept for callers, always false.
      */
+    @Deprecated
     public static boolean isWearingUltimateSolarQuantumBody(LivingEntity entity) {
-        if (!(entity instanceof Player player)
-            || !(player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof mio_icif_ultimate_solar_helmet)) {
-            return false;
-        }
-
-        var itemApi = MioIcifAPI.instance().getItemAPI();
-        for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
-            ItemStack stack = player.getItemBySlot(slot);
-            if (stack.isEmpty() || !itemApi.isElectricArmor(stack) || !isQuantumSetPiece(stack, slot)) {
-                return false;
-            }
-        }
-        return true;
+        return false;
     }
 
     public static boolean isRadiationProtected(LivingEntity entity) {
         return isWearingFullHazmat(entity)
-            || isWearingFullQuantumSet(entity)
-            || isWearingUltimateSolarQuantumBody(entity);
+            || isWearingFullQuantumSet(entity);
     }
 
     public static int getRadiationProtectionLevel(LivingEntity entity) {

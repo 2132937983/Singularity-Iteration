@@ -1,0 +1,15 @@
+{
+  "values": [
+    "minecraft:creeper",
+    "minecraft:iron_golem",
+    "minecraft:snow_golem",
+    "minecraft:vex",
+    "minecraft:blaze",
+    {
+      "id": "minecraft:breeze",
+      "required": false
+    },
+    "minecraft:shulker",
+    "minecraft:guardian"
+  ]
+}

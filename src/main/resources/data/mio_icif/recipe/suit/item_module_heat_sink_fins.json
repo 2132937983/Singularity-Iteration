@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "VHV",
+    "PCP"
+  ],
+  "key": {
+    "V": {
+      "item": "mio_icif:reactor/item_reactor_vent"
+    },
+    "H": {
+      "item": "mio_icif:resource/item_heatconductor"
+    },
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_heat_sink_fins",
+    "count": 1
+  }
+}

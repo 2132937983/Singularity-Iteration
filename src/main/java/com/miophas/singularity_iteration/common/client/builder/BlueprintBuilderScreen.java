@@ -122,6 +122,22 @@ public class BlueprintBuilderScreen extends mio_icif_screen<BlueprintBuilderMenu
         int color = st == BlueprintBuilderBlockEntity.RUNNING ? SiGuiTheme.GOOD : st == BlueprintBuilderBlockEntity.TOO_FAR
             || st == BlueprintBuilderBlockEntity.READ_ERROR ? SiGuiTheme.BAD : st == BlueprintBuilderBlockEntity.DONE ? SiGuiTheme.ACCENT : SiGuiTheme.WARN;
         small(g, Component.translatable("gui.mio_icif.builder.status." + st, BlueprintBuilderBlockEntity.RANGE).getString(), tx, ty + 16, color);
+        // 0.1.8.4: materials that replicators are making for this build (UU supply)
+        if (be != null && !be.replicatingNames().isEmpty()) {
+            small(g, Component.translatable("gui.mio_icif.builder.replicating").getString(), tx, ty + 24, SiGuiTheme.ACCENT);
+            int ix = tx + 52;
+            for (String entry : be.replicatingNames()) {
+                ItemStack stack = stackOf(entry);
+                if (stack.isEmpty()) continue;
+                g.pose().pushPose();
+                g.pose().translate(ix, ty + 21, 0);
+                g.pose().scale(0.5F, 0.5F, 1);
+                g.renderItem(stack, 0, 0);
+                g.pose().popPose();
+                small(g, entry.substring(entry.indexOf('=') + 1), ix + 9, ty + 24, SiGuiTheme.TEXT_SCREEN);
+                ix += 22;
+            }
+        }
         small(g, Component.translatable("gui.mio_icif.builder.progress", menu.doneCount(), menu.total(), menu.placed()).getString(), tx, ty + 36, SiGuiTheme.TEXT_SCREEN);
         small(g, Component.translatable("gui.mio_icif.builder.obstructed", menu.obstructed()).getString(), tx, ty + 44, menu.obstructed() > 0 ? SiGuiTheme.WARN : SiGuiTheme.TEXT_SCREEN_DIM);
         small(g, Component.translatable("gui.mio_icif.builder.drones", menu.drones(), BlueprintBuilderBlockEntity.DRONES).getString(), tx + 76, ty + 44, SiGuiTheme.TEXT_SCREEN_DIM);

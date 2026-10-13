@@ -122,4 +122,30 @@ public class mio_icif_rocket_launcher extends mio_icif_tool_elc implements IWeap
     public com.miophas.singularity_iteration.core.api.item.BallisticProfile ballistics(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, int useTicks) {
         return com.miophas.singularity_iteration.core.api.item.BallisticProfile.thrown("ROCKET", 2.5, canShoot(stack));
     }
+
+    /**
+     * 0.1.8.4: shot of an AI shooter (Wingman). No rocket item is used; the shot costs the
+     * launcher charge. The blast hurts entities but breaks no blocks.
+     */
+    @Override
+    public int fireFrom(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, net.minecraft.world.phys.Vec3 direction, boolean mainHand) {
+        if (shooter.level().isClientSide || ROCKET_ENTITY == null || direction.lengthSqr() < 1.0E-6) return -1;
+        if (!hasEnoughEnergy(stack, ENERGY_PER_SHOT) || !consumeEnergy(stack, ENERGY_PER_SHOT)) return -1;
+        mio_icif_rocket_entity rocket = new mio_icif_rocket_entity(ROCKET_ENTITY, shooter, shooter.level());
+        rocket.setDamage(0);
+        rocket.setExplosionPower(5.0F);
+        rocket.setTerrainDamage(false);
+        var d = direction.normalize();
+        rocket.shoot(d.x, d.y, d.z, 2.5F, 0.0F);
+        shooter.level().addFreshEntity(rocket);
+        shooter.level().playSound(null, shooter.getX(), shooter.getY(), shooter.getZ(),
+            com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ROCKET_LAUNCH.get(), net.minecraft.sounds.SoundSource.NEUTRAL, 1.0F, 1.0F);
+        return COOLDOWN_TICKS * 3;
+    }
+
+    @Override
+    public double projectileSpeed() { return 2.5; }
+
+    @Override
+    public double[] engagementRange() { return new double[]{12, 24}; }
 }

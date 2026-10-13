@@ -223,9 +223,9 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
         FluidStack fuel = fuelTank.getFluid();
         SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : SemifluidFuels.generatorValue(fuel.getFluid());
         long generated = 0;
-        if (room > 0 && value != null) {
+        if (room > 0 && value != null && outputScale() > 0) {
             var plan = com.miophas.singularity_iteration.core.runtime.energy.engine.ConsumableGeneration.plan(
-                fuelTank.getFluidAmount(), scexFuelCredit, value.energyPerMb(), value.energyPerTick(), room, 0);
+                fuelTank.getFluidAmount(), scexFuelCredit, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()), room, 0);   // 0.1.8.4
             if (plan.fuelConsumed() > 0) {
                 fuelTank.drain((int) plan.fuelConsumed(), IFluidHandler.FluidAction.EXECUTE);
             }
@@ -490,9 +490,9 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
         chargeItems();
         FluidStack fuel = fuelTank.getFluid();
         SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : SemifluidFuels.generatorValue(fuel.getFluid());
-        if (value != null) {
+        if (value != null && outputScale() > 0) {
             var step = com.miophas.singularity_iteration.core.runtime.energy.FluidFuelGeneration.tick(fuelTank, energyStorage,
-                scexFuelCredit, 1, value.energyPerMb(), value.energyPerTick());
+                scexFuelCredit, 1, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()));   // 0.1.8.4 output multiplier
             scexFuelCredit = step.bufferedEnergy();
             burnTime = step.generated() > 0 ? 1 : 0;
         } else {

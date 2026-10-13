@@ -49,11 +49,16 @@ public final class FcsState {
     // ------------------------------------------------------------------ ESP outline hooks (mixins)
 
     public static boolean shouldGlow(Entity entity) {
-        return !GLOW.isEmpty() && GLOW.contains(entity.getId());
+        return !GLOW.isEmpty() && GLOW.contains(entity.getId())
+            || com.miophas.singularity_iteration.common.client.suit.nano.NanoFx.reconGlow(entity);   // 0.1.8.6 nano recon cloud
     }
 
     public static int glowColor(Entity entity) {
-        return GLOW_COLOR.getOrDefault(entity.getId(), -1);
+        int color = GLOW_COLOR.getOrDefault(entity.getId(), -1);
+        if (color == -1 && com.miophas.singularity_iteration.common.client.suit.nano.NanoFx.reconGlow(entity)) {
+            return com.miophas.singularity_iteration.common.client.suit.nano.NanoFx.reconColor(entity);
+        }
+        return color;
     }
 
     static void clear() {

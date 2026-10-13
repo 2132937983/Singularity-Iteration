@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Quantum Modification Station"
+  title: "Universal Suit Modification Station"
   icon: mio_icif:producer/block_quantum_modification_station
   parent: suit/index.md
   position: 0
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_quantum_modification_station
 ---
 
-# Quantum Modification Station
+# Universal Suit Modification Station
 
 <Row>
   <BlockImage id="mio_icif:producer/block_quantum_modification_station" scale="3" />
@@ -16,14 +16,15 @@ item_ids:
 
 ## Function
 
-The Quantum Modification Station installs upgrade units into quantum suit pieces. The station uses EU for each installation.
-Available units: Seismic Ore Scanner, Grid Telemetry Sensor, Biometric Scanner, Ballistic Computer, Blast Warning Timer.
-More units: Behavior Predictor, Tactical 3D Holomap, Threat Sensor, Quantum Deflector.
+The station installs upgrade units into quantum and nano suit pieces. Each installation uses EU.
+A quantum piece counts units: helmet 4, chestplate 3, leggings 2, boots 2.
+A nano piece has a nano lattice and counts lattice points (LP): helmet 4, chestplate 6, leggings 4, boots 4.
+Each nano unit takes 1 to 3 LP. A Nano Lattice Densifier adds 2 LP to a nano piece, at most twice per piece.
+Some units fit only one suit class. The tooltip of each unit shows its class and its LP.
 
 ## Power data
 
 | Item | Value |
-|---|---|
 | Input voltage tier | HV (512 EU) |
 | Maximum input | 512 EU/t |
 | Energy storage | 40,000 EU |
@@ -31,22 +32,20 @@ More units: Behavior Predictor, Tactical 3D Holomap, Threat Sensor, Quantum Defl
 | Operation time | 100 tick (5 s) |
 | Energy per operation | 6,400 EU |
 
-The game measured these values from the block entity of this version.
-
 ## Procedure
 
 1. Connect an HV cable to the station.
-2. Put a quantum suit piece in the top slot.
-3. Put an upgrade unit in the lower slot.
+2. Put a quantum or nano suit piece in the top slot.
+3. Put a unit or a lattice densifier in the lower slot.
 4. Wait until the station finishes the installation.
 5. Click the x next to an installed unit to remove the unit.
-6. Switch the unit on in the Equipment Console.
+6. Switch the unit on in the Singularity Management Panel.
 
 ## Notes
 
-- The helmet takes four units, the chestplate three, the leggings two and the boots two. Each unit fits only specific pieces.
-- Sensor units show data only through a quantum helmet visor. Each active unit uses EU from its suit piece.
-- The removal of a unit costs no EU and gives the unit back.
+- For a nano piece, the screen shows the lattice bar. Each cell is one LP in the colour of the unit that uses it. The unit in the lower slot blinks where it would go.
+- Sensor units show data only through a suit visor.
+- The removal of a unit costs no EU and gives the unit back. A densifier stays in the piece.
 
 ## Recipe
 

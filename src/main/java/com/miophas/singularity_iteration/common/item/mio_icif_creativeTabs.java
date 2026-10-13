@@ -79,6 +79,8 @@ public class mio_icif_creativeTabs {
                 output.accept(com.miophas.singularity_iteration.common.logistics.LogisticsRegistry.EJECTOR_ITEM.get());
                 output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.STATION_ITEM.get());
                 for (var unit : com.miophas.singularity_iteration.common.suit.SuitRegistry.units()) output.accept(unit.get());
+                output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.LATTICE_DENSIFIER.get());
+                for (var core : com.miophas.singularity_iteration.common.suit.SuitRegistry.cores()) output.accept(core.get());
                 com.miophas.singularity_iteration.common.guide.GuideBook.addToTab(output);
                 output.accept(mio_icif_items_tools.WRENCH_ELC.get());
                 // 电动扳手 - 空电版本
@@ -302,22 +304,7 @@ public class mio_icif_creativeTabs {
                 { ItemStack fullDivingMask = new ItemStack(mio_icif_items_armors.ARMOR_DIVING_MASK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullDivingMask, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullDivingMask)); output.accept(fullDivingMask); }
                 output.accept(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get());
                 { ItemStack fullAdvJetpack = new ItemStack(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullAdvJetpack, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullAdvJetpack)); output.accept(fullAdvJetpack); }
-                output.accept(mio_icif_items_armors.ARMOR_HEAVY_QUANTUM_CHESTPLATE.get());
-                { ItemStack fullHeavyQuantum = new ItemStack(mio_icif_items_armors.ARMOR_HEAVY_QUANTUM_CHESTPLATE.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullHeavyQuantum, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullHeavyQuantum)); output.accept(fullHeavyQuantum); }
-                output.accept(mio_icif_items_armors.ARMOR_ADVANCED_QUANTUM_CHESTPLATE.get());
-                { ItemStack fullAdvQuantum = new ItemStack(mio_icif_items_armors.ARMOR_ADVANCED_QUANTUM_CHESTPLATE.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullAdvQuantum, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullAdvQuantum)); output.accept(fullAdvQuantum); }
-                // Solar Helmet
-                output.accept(mio_icif_normal.SOLAR_HELMET.get());
-                { ItemStack fullSolarHelmet = new ItemStack(mio_icif_normal.SOLAR_HELMET.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullSolarHelmet, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullSolarHelmet)); output.accept(fullSolarHelmet); }
-                // ASP Advanced Solar Helmet
-                output.accept(mio_icif_items_armors.ARMOR_ADVANCED_SOLAR_HELMET.get());
-                { ItemStack fullAdvSolarHelmet = new ItemStack(mio_icif_items_armors.ARMOR_ADVANCED_SOLAR_HELMET.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullAdvSolarHelmet, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullAdvSolarHelmet)); output.accept(fullAdvSolarHelmet); }
-                // ASP Hybrid Solar Helmet
-                output.accept(mio_icif_items_armors.ARMOR_HYBRID_SOLAR_HELMET.get());
-                { ItemStack fullHybridSolarHelmet = new ItemStack(mio_icif_items_armors.ARMOR_HYBRID_SOLAR_HELMET.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullHybridSolarHelmet, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullHybridSolarHelmet)); output.accept(fullHybridSolarHelmet); }
-                // ASP Ultimate Solar Helmet
-                output.accept(mio_icif_items_armors.ARMOR_ULTIMATE_SOLAR_HELMET.get());
-                { ItemStack fullUltimateSolarHelmet = new ItemStack(mio_icif_items_armors.ARMOR_ULTIMATE_SOLAR_HELMET.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullUltimateSolarHelmet, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullUltimateSolarHelmet)); output.accept(fullUltimateSolarHelmet); }
+                // 0.1.9.0: heavy / advanced quantum chestplates and solar helmets retired (frame cores, see the suit tab)
                 // Static Boots
                 output.accept(mio_icif_normal.STATIC_BOOTS.get());
 

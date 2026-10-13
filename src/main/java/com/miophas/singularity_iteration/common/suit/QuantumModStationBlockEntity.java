@@ -25,9 +25,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Quantum modification station. Slot 1 holds a quantum suit piece, slot 2 an upgrade unit.
- * The station installs the unit in {@link SuitModules#INSTALL_TICKS} ticks at
+ * Universal Suit Modification Station (the quantum modification station, generalised in 0.1.8.5).
+ * Slot 1 holds a quantum or nano suit piece, slot 2 an upgrade unit or (nano pieces) a lattice
+ * densifier. The station installs the unit in {@link SuitModules#INSTALL_TICKS} ticks at
  * {@link SuitModules#INSTALL_EU_PER_TICK} EU/t. Removal is instant and free (GUI button).
+ * The block id stays {@code producer/block_quantum_modification_station} so that worlds keep it.
  */
 @SuppressWarnings("null")
 public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlockEntity {
@@ -37,12 +39,23 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     public static final int DATA_COUNT = 6;
 
     /** What the station is doing; shown in the GUI. */
-    public enum Status { IDLE, WORKING, NO_POWER, NOT_A_SUIT_PIECE, WRONG_SLOT, ALREADY_INSTALLED, FULL, NO_UNIT }
+    public enum Status { IDLE, WORKING, NO_POWER, NOT_A_SUIT_PIECE, WRONG_SLOT, ALREADY_INSTALLED, FULL, NO_UNIT,
+        /** 0.1.8.5: the unit does not fit this suit class / not enough lattice points / densifier limit reached. */
+        WRONG_CLASS, NO_LATTICE, LATTICE_MAX,
+        /** 0.1.8.6: Mk.I to Mk.II upgrade in place; one Mk.II item at a time (the Mk.I item comes back into the slot). */
+        UPGRADING, UPGRADE_ONE_AT_A_TIME,
+        /** 0.1.9.0: a frame core goes into the empty core socket / replaces the installed core (which comes back). */
+        CORE_INSTALL, CORE_SWAP,
+        /** 0.1.9.0: the core that a swap replaced waits in the unit slot until the player takes it out. */
+        CORE_RETURNED }
 
     private static final SlotLayout LAYOUT = SlotLayout.builder().battery().extra(2).build();
 
     private int installProgress;
     private Status status = Status.IDLE;
+    /** 0.1.9.0: the item in the unit slot was handed back by a core swap; it is not installed again until it leaves the slot. */
+    private boolean heldReturn;
+    private boolean placing;
     private boolean clientWorking;
 
     private final ContainerData data = new ContainerData() {
@@ -74,6 +87,7 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     protected MachineItemHandler createItemHandler(SlotLayout layout) {
         MachineItemHandler handler = new MachineItemHandler(layout) {
             @Override protected void onContentsChanged(int slot) {
+                if (slot == MODULE_SLOT && !placing) heldReturn = false;
                 onInventoryChanged(slot);
                 if (slot == SUIT_SLOT) sync();
             }
@@ -101,8 +115,8 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
             case BATTERY_SLOT -> isBattery(stack);
-            case SUIT_SLOT -> SuitModules.isSuitPiece(stack);
-            case MODULE_SLOT -> UnitRef.ofItem(stack) != null;
+            case SUIT_SLOT -> SuitModules.isSuitPiece(stack) || com.miophas.singularity_iteration.common.suit.core.LegacyArmor.isLegacy(stack);
+            case MODULE_SLOT -> UnitRef.ofItem(stack) != null || isDensifier(stack) || isCore(stack);
             default -> false;
         };
     }
@@ -116,25 +130,59 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     @Override protected boolean canWork() { return false; }
     @Override protected void doWork() { }
 
+    /** 0.1.8.5: the nano lattice densifier goes into the unit slot too. */
+    public static boolean isDensifier(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(SuitRegistry.LATTICE_DENSIFIER.get());
+    }
+
+    /** 0.1.9.0: frame core items go into the unit slot. */
+    public static boolean isCore(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() instanceof com.miophas.singularity_iteration.common.suit.core.FrameCoreItem;
+    }
+
     /** What the station would do with the current slots. */
     public Status evaluate() {
         ItemStack unit = unit();
+        if (heldReturn && isCore(unit)) return Status.CORE_RETURNED;
+        if (!suit().isEmpty() && isCore(unit)) {
+            var core = ((com.miophas.singularity_iteration.common.suit.core.FrameCoreItem) unit.getItem()).core();
+            return switch (com.miophas.singularity_iteration.common.suit.core.FrameCores.check(suit(), core)) {
+                case OK -> Status.CORE_INSTALL;
+                case SWAP -> unit.getCount() == 1 ? Status.CORE_SWAP : Status.UPGRADE_ONE_AT_A_TIME;
+                case NOT_A_SUIT_PIECE -> Status.NOT_A_SUIT_PIECE;
+                case WRONG_CLASS -> Status.WRONG_CLASS;
+                case WRONG_SLOT -> Status.WRONG_SLOT;
+                case ALREADY_INSTALLED -> Status.ALREADY_INSTALLED;
+            };
+        }
+        if (!suit().isEmpty() && isDensifier(unit)) {
+            if (!SuitModules.isNanoPiece(suit())) return SuitModules.isSuitPiece(suit()) ? Status.WRONG_CLASS : Status.NOT_A_SUIT_PIECE;
+            return SuitModules.canDensify(suit()) ? Status.WORKING : Status.LATTICE_MAX;
+        }
         UnitRef type = unitType(unit);
         if (suit().isEmpty() || type == null) return Status.NO_UNIT;
-        return switch (SuitModules.check(suit(), type)) {
+        int tier = SuitModuleItem.tierOf(unit);
+        if (SuitModules.isUpgrade(suit(), type, tier) && SuitModules.check(suit(), type, tier) == SuitModules.InstallCheck.OK) {
+            return unit.getCount() == 1 ? Status.UPGRADING : Status.UPGRADE_ONE_AT_A_TIME;
+        }
+        return switch (SuitModules.check(suit(), type, tier)) {
             case OK -> Status.WORKING;
             case NOT_A_SUIT_PIECE -> Status.NOT_A_SUIT_PIECE;
             case WRONG_SLOT -> Status.WRONG_SLOT;
             case ALREADY_INSTALLED -> Status.ALREADY_INSTALLED;
             case FULL -> Status.FULL;
+            case WRONG_CLASS -> Status.WRONG_CLASS;
+            case NO_LATTICE -> Status.NO_LATTICE;
         };
     }
 
     @Override
     protected void tickProduction() {
+        // 0.1.9.0: a legacy shell turns into its suit piece with the frame core at once
+        if (com.miophas.singularity_iteration.common.suit.core.LegacyArmor.isLegacy(suit())) convertLegacy();
         Status next = evaluate();
         boolean working = false;
-        if (next == Status.WORKING) {
+        if (next == Status.WORKING || next == Status.UPGRADING || next == Status.CORE_INSTALL || next == Status.CORE_SWAP) {
             if (getEnergyStorage().getAmount() >= SuitModules.INSTALL_EU_PER_TICK) {
                 apiUseEnergy(SuitModules.INSTALL_EU_PER_TICK, false);
                 working = true;
@@ -156,8 +204,40 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     private void finishInstall() {
         installProgress = 0;
         ItemStack suit = suit().copy();
-        UnitRef type = unitType(unit());
-        if (type == null || !SuitModules.install(suit, type)) return;
+        if (isCore(unit())) {
+            var core = ((com.miophas.singularity_iteration.common.suit.core.FrameCoreItem) unit().getItem()).core();
+            var check = com.miophas.singularity_iteration.common.suit.core.FrameCores.check(suit, core);
+            if (check != com.miophas.singularity_iteration.common.suit.core.FrameCores.Check.OK
+                    && check != com.miophas.singularity_iteration.common.suit.core.FrameCores.Check.SWAP) return;
+            var old = com.miophas.singularity_iteration.common.suit.core.FrameCores.install(suit, core);
+            ItemStack rest = unit().copy();
+            rest.shrink(1);
+            // a replaced core comes back into the (now empty) unit slot and waits there (no swap back)
+            placing = true;
+            ((MachineItemHandler) itemHandler).setStackInSlot(MODULE_SLOT, old != null ? new ItemStack(SuitRegistry.coreItem(old)) : rest);
+            placing = false;
+            heldReturn = old != null;
+            ((MachineItemHandler) itemHandler).setStackInSlot(SUIT_SLOT, suit);
+            if (level != null) level.playSound(null, worldPosition, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.CORE_INSTALL.get(),
+                SoundSource.BLOCKS, 0.8F, 1.0F);
+            return;
+        }
+        if (isDensifier(unit())) {
+            if (!SuitModules.densify(suit)) return;
+        } else {
+            UnitRef type = unitType(unit());
+            int tier = SuitModuleItem.tierOf(unit());
+            if (type == null) return;
+            boolean upgrade = SuitModules.isUpgrade(suit, type, tier);
+            if (!SuitModules.install(suit, type, tier)) return;
+            if (upgrade) {
+                // 0.1.8.6: the replaced Mk.I unit comes back into the (now empty) unit slot
+                ((MachineItemHandler) itemHandler).setStackInSlot(MODULE_SLOT, type.unitStack(1));
+                ((MachineItemHandler) itemHandler).setStackInSlot(SUIT_SLOT, suit);
+                if (level != null) level.playSound(null, worldPosition, SoundEvents.BEACON_POWER_SELECT, SoundSource.BLOCKS, 0.7F, 1.9F);
+                return;
+            }
+        }
         ItemStack rest = unit().copy();
         rest.shrink(1);
         ((MachineItemHandler) itemHandler).setStackInSlot(MODULE_SLOT, rest);
@@ -174,9 +254,10 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         List<UnitRef> types = SuitModules.installed(suit).units();
         if (index < 0 || index >= types.size()) return false;
         UnitRef type = types.get(index);
+        int tier = Math.max(1, SuitModules.tier(suit, type.key()));
         ItemStack copy = suit.copy();
         if (!SuitModules.remove(copy, type)) return false;
-        ItemStack unit = type.unitStack();
+        ItemStack unit = type.unitStack(tier);
         if (unit.isEmpty()) return false;                    // addon item missing: keep the unit installed
         // ArmorFeatureState keeps the switch; a re-installed unit comes back in the same state
         ((MachineItemHandler) itemHandler).setStackInSlot(SUIT_SLOT, copy);
@@ -195,6 +276,38 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         return true;
     }
 
+    /** 0.1.9.0 GUI button: takes the frame core out of the piece and gives it to the player. */
+    public boolean removeCore(Player player) {
+        ItemStack copy = suit().copy();
+        var old = com.miophas.singularity_iteration.common.suit.core.FrameCores.remove(copy);
+        if (old == null) return false;
+        ((MachineItemHandler) itemHandler).setStackInSlot(SUIT_SLOT, copy);
+        // to the player, not into the unit slot (the station would install it again at once)
+        ItemStack item = new ItemStack(SuitRegistry.coreItem(old));
+        if (!player.getInventory().add(item)) player.drop(item, false);
+        installProgress = 0;
+        if (level != null) level.playSound(null, worldPosition, SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 0.5F, 1.4F);
+        return true;
+    }
+
+    /** Converts a legacy shell in the piece slot; a result that is not a suit piece (solar skin) pops out above. */
+    private void convertLegacy() {
+        var result = com.miophas.singularity_iteration.common.suit.core.LegacyArmor.convert(suit());
+        if (result == null) return;
+        if (SuitModules.isSuitPiece(result.stack())) {
+            ((MachineItemHandler) itemHandler).setStackInSlot(SUIT_SLOT, result.stack());
+        } else {
+            ((MachineItemHandler) itemHandler).setStackInSlot(SUIT_SLOT, ItemStack.EMPTY);
+            pop(result.stack());
+        }
+        for (ItemStack extra : result.extras()) pop(extra);
+    }
+
+    private void pop(ItemStack stack) {
+        if (level == null || stack.isEmpty()) return;
+        net.minecraft.world.Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.1, worldPosition.getZ() + 0.5, stack);
+    }
+
     private void sync() {
         setChanged();
         if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -202,7 +315,7 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("block.mio_icif.producer.block_quantum_modification_station");
+        return Component.translatable("block.mio_icif.producer.block_quantum_modification_station");   // "Universal Suit Modification Station"
     }
 
     @Nullable
@@ -219,12 +332,14 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putInt("InstallProgress", installProgress);
+        if (heldReturn) tag.putBoolean("HeldReturn", true);
     }
 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         installProgress = Math.max(0, Math.min(SuitModules.INSTALL_TICKS, tag.getInt("InstallProgress")));
+        heldReturn = tag.getBoolean("HeldReturn");
         if (tag.contains("StationDisplay")) {
             // client copy for the renderer
             ItemStack shown = ItemStack.parseOptional(registries, tag.getCompound("StationDisplay"));

@@ -119,7 +119,10 @@ public final class FcsHud {
         float[] c = centre(FcsClientConfig.Panel.STATUS, w, h);
         int pw = 104, ph = 22 + units.size() * 8;
         int x = (int) (c[0] - pw / 2F), y = (int) (c[1] - ph / 2F);
-        FcsDraw.panel(g, x, y, pw, ph, "FCS  " + (SuitModules.hasVisor(player) ? "VISOR OK" : "NO VISOR"), primary);
+        // 0.1.8.5: the nano helmet is a visor for the units the nano suit can carry
+        String visorLabel = SuitModules.hasVisor(player) ? "VISOR OK"
+            : SuitModules.isNanoPiece(player.getItemBySlot(EquipmentSlot.HEAD)) ? "NANO VISOR" : "NO VISOR";
+        FcsDraw.panel(g, x, y, pw, ph, "FCS  " + visorLabel, primary);
         long visor = SuitModules.energy(player.getItemBySlot(EquipmentSlot.HEAD));
         long visorMax = player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor a
             ? a.getMaxEnergy(player.getItemBySlot(EquipmentSlot.HEAD)) : 1;
@@ -130,7 +133,8 @@ public final class FcsHud {
             int ry = y + 20 + row * 8;
             g.fill(x + 4, ry + 1, x + 7, ry + 4, FcsDraw.argb(type.color(), 1F));
             FcsDraw.text(g, Component.translatable(type.nameKey()), x + 10, ry, FcsDraw.argb(FcsDraw.WHITE, 0.9F), 0.55F);
-            FcsDraw.textRight(g, type.drainPerTick() > 0 ? type.drainPerTick() + "" : "HIT", x + pw - 3, ry, FcsDraw.argb(primary, 0.8F), 0.55F);
+            FcsDraw.textRight(g, type.drainPerTick() > 0 ? type.drainPerTick() + "" : type == SuitModuleType.DEFLECTOR ? "HIT" : "-",
+                x + pw - 3, ry, FcsDraw.argb(primary, 0.8F), 0.55F);
             row++;
         }
     }

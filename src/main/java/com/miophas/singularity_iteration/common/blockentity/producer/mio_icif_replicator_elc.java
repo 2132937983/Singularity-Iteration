@@ -58,6 +58,10 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     private int selectionCooldown;
     private CompoundTag held;
     private final int[] clientData=new int[8];
+    /** 0.1.8.4 build order (Blueprint Builder supply): item to make and copies still to make; saved outside the paid-work record. */
+    private ItemStack order=ItemStack.EMPTY;
+    private int orderLeft;
+    private static final String ORDER_KEY="scex_build_order";
     private final net.neoforged.neoforge.items.IItemHandlerModifiable guardedItems=new net.neoforged.neoforge.items.IItemHandlerModifiable(){
         public int getSlots(){return itemHandler.getSlots();}
         public ItemStack getStackInSlot(int slot){return itemHandler.getStackInSlot(slot).copy();}
@@ -178,6 +182,10 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         selected=quote==null?ItemStack.EMPTY:item.copyWithCount(1);price=quote==null?0:quote.buckets();quotedGeneration=generation;
     }
     protected ItemStack selectPatternItem(){
+        if(!order.isEmpty()){
+            if(hasPatternFor(order))return order.copy();
+            order=ItemStack.EMPTY;orderLeft=0;mode=WorkMode.STOPPED;ContainerToTank.markUnsaved(this);   // pattern gone: drop the order
+        }
         ItemStack item=ItemStack.EMPTY;var memory=itemHandler.getStackInSlot(MEMORY_SLOT);
         if(memory.getCount()==1&&memory.getItem() instanceof mio_icif_memory crystal)item=crystal.getStoredItemStack(memory);
         if(item.isEmpty()&&memory.isEmpty()&&level instanceof ServerLevel server){
@@ -228,6 +236,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         var after=selected.copyWithCount(before.isEmpty()?1:before.getCount()+1);
         if(itemHandler.scexCommitSlots(new int[]{OUTPUT_SLOT},new ItemStack[]{before},new ItemStack[]{after},()->{
             processed=0;completed++;selectionDirty=true;if(mode==WorkMode.SINGLE)mode=WorkMode.STOPPED;
+            if(!order.isEmpty()&&--orderLeft<=0){order=ItemStack.EMPTY;orderLeft=0;mode=WorkMode.STOPPED;}
         })){
             ContainerToTank.markUnsaved(this);
             com.miophas.singularity_iteration.core.api.advancement.MioAchievements
@@ -263,6 +272,50 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
             case 4->(int)Math.min(Integer.MAX_VALUE,energyStorage.getCapacity());case 5->tank.getFluidAmount();case 6->UUMATTER_CAPACITY;default->mode.ordinal();};}
         public void set(int i,int v){if(i<0||i>=8)throw new IndexOutOfBoundsException(i);clientData[i]=v;}
     };}
+    // ---- 0.1.8.4: build orders. A Blueprint Builder that runs out of a material asks an idle
+    // replicator nearby to make it from a stored pattern (UU matter and energy of this machine, the
+    // usual price). The replicator runs the order like LOOP mode and stops when it is done; the
+    // builder drones collect from the output slot. A replicator the player uses (not STOPPED, or
+    // with paid work) takes no orders.
+    /** True if the pattern of {@code item} is in the memory crystal or an adjacent pattern storage. */
+    private boolean hasPatternFor(ItemStack item){
+        var memory=itemHandler.getStackInSlot(MEMORY_SLOT);
+        if(memory.getCount()==1&&memory.getItem() instanceof mio_icif_memory crystal&&ItemStack.isSameItemSameComponents(crystal.getStoredItemStack(memory),item))return true;
+        if(!(level instanceof ServerLevel server))return false;
+        for(var side:Direction.values()){
+            var at=worldPosition.relative(side);var chunk=server.getChunkSource().getChunkNow(at.getX()>>4,at.getZ()>>4);
+            if(chunk!=null&&chunk.getBlockEntity(at) instanceof mio_icif_pattern_storage storage&&storage.hasPattern(item))return true;
+        }
+        return false;
+    }
+    /** True if a build order for {@code item} would be accepted now (or one is already running for it). */
+    public boolean canTakeOrder(ItemStack item){
+        if(item.isEmpty()||!serverThread()||changing||hasHeldReplicationData())return false;
+        if(!order.isEmpty())return ItemStack.isSameItemSameComponents(order,item);
+        if(mode!=WorkMode.STOPPED||processed>0||paidEu>0||pendingUu>0)return false;
+        var out=itemHandler.getStackInSlot(OUTPUT_SLOT);
+        if(!out.isEmpty()&&!ItemStack.isSameItemSameComponents(out,item))return false;
+        return hasPatternFor(item)&&trustedQuote(item.copyWithCount(1))!=null;
+    }
+    /** Adds {@code count} copies of {@code item} to the build order (at most 64 open). Returns false if refused. */
+    public boolean placeOrder(ItemStack item,int count){
+        if(count<=0||!canTakeOrder(item))return false;
+        if(order.isEmpty()){order=item.copyWithCount(1);orderLeft=0;}
+        orderLeft=Math.min(64,orderLeft+count);mode=WorkMode.LOOP;selectionDirty=true;ContainerToTank.markUnsaved(this);
+        return true;
+    }
+    /** Copies of {@code item} still to make for the build order (0 without an order for it). */
+    public int orderLeft(net.minecraft.world.item.Item item){return !order.isEmpty()&&order.is(item)?orderLeft:0;}
+    /** Count of {@code item} waiting in the output slot. */
+    public int outputCount(net.minecraft.world.item.Item item){
+        if(changing||hasHeldReplicationData())return 0;
+        var out=itemHandler.getStackInSlot(OUTPUT_SLOT);return out.is(item)?out.getCount():0;
+    }
+    /** Takes up to {@code max} of {@code item} from the output slot (builder drones). */
+    public ItemStack takeOutput(net.minecraft.world.item.Item item,int max){
+        if(max<=0||outputCount(item)<=0)return ItemStack.EMPTY;
+        return itemHandler.extractItem(OUTPUT_SLOT,max,false);
+    }
     private void hold(String why){held=new CompoundTag();held.putString("reason",why);isWorking=false;ContainerToTank.markUnsaved(this);}
     @Override public void saveAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.saveAdditional(tag,registries);var own=new CompoundTag();own.putInt("version",1);own.put("credit",credit.save());
@@ -270,10 +323,18 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         own.putDouble("price",price);own.putDouble("processed",processed);own.putDouble("pending_uu",pendingUu);own.putLong("pending_eu",pendingEu);
         own.putLong("paid_eu",paidEu);own.putLong("completed",completed);own.putInt("mode",mode.ordinal());
         if(held!=null)own.put("held",held.copy());tag.put(SAVE_KEY,own);
+        if(!order.isEmpty()){var o=new CompoundTag();o.put("item",order.save(registries));o.putInt("left",orderLeft);tag.put(ORDER_KEY,o);}
     }
     @Override public void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.loadAdditional(tag,registries);held=null;selected=ItemStack.EMPTY;mode=WorkMode.STOPPED;price=processed=pendingUu=0;paidEu=pendingEu=completed=0;
         tank.setFluid(FluidStack.EMPTY);selectionDirty=true;quotedGeneration=-1;lastTick=Long.MIN_VALUE;
+        order=ItemStack.EMPTY;orderLeft=0;
+        if(tag.contains(ORDER_KEY,Tag.TAG_COMPOUND)){
+            var o=tag.getCompound(ORDER_KEY);
+            order=o.contains("item",Tag.TAG_COMPOUND)?ItemStack.parseOptional(registries,o.getCompound("item")).copyWithCount(1):ItemStack.EMPTY;
+            orderLeft=Math.max(0,Math.min(64,o.getInt("left")));
+            if(order.isEmpty()||orderLeft==0){order=ItemStack.EMPTY;orderLeft=0;}
+        }
         if(!tag.contains(SAVE_KEY,Tag.TAG_COMPOUND)){isWorking=false;return;}   // item/pick-block data or empty: fresh machine
         var own=tag.getCompound(SAVE_KEY);
         var allowed=java.util.Set.of("version","credit","tank","item","price","processed","pending_uu","pending_eu","paid_eu","completed","mode","held");

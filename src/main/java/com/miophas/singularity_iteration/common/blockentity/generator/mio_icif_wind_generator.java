@@ -227,7 +227,7 @@ public class mio_icif_wind_generator extends AbstractGeneratorBlockEntity implem
         
          // 使用 CustomEUEnergyStorage 的 generateEnergyInternal 方法
          // 这样可以绕过 maxReceive=0 的限制
-        long energyGenerated = Math.min(currentEnergyOutput, 
+        long energyGenerated = Math.min(scaleOutput(currentEnergyOutput),   // 0.1.8.4 output multiplier
             energyStorage.getCapacity() - energyStorage.getAmount());
         if (energyGenerated > 0) {
             apiGenerateEnergy(energyGenerated, false);

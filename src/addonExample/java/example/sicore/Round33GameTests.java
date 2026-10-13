@@ -174,8 +174,12 @@ public final class Round33GameTests {
         slots(be).setStackInSlot(1, helmet);
         slots(be).setStackInSlot(2, unit("grid_telemetry"));
         h.assertTrue(String.valueOf(call(be, "evaluate")).equals("FULL"), "full helmet: " + call(be, "evaluate"));
+        // 0.1.8.5: the Universal Suit Modification Station takes nano pieces; a quantum-only unit does not fit them
+        h.assertTrue(slots(be).isItemValid(1, item("armor/item_armor_nano_helmet")), "the station refused a nano helmet");
         slots(be).setStackInSlot(1, item("armor/item_armor_nano_helmet"));
-        h.assertTrue(!slots(be).isItemValid(1, item("armor/item_armor_nano_helmet")), "the station accepted a nano helmet");
+        slots(be).setStackInSlot(2, unit("entity_esp"));
+        h.assertTrue(String.valueOf(call(be, "evaluate")).equals("WRONG_CLASS"), "quantum ESP on a nano helmet: " + call(be, "evaluate"));
+        h.assertTrue(!slots(be).isItemValid(1, new ItemStack(net.minecraft.world.item.Items.DIAMOND_HELMET)), "the station accepted a diamond helmet");
         h.succeed();
     }
 
@@ -218,8 +222,10 @@ public final class Round33GameTests {
         player.setItemSlot(EquipmentSlot.CHEST, chest);
         h.assertTrue(!active(player, "ore_scanner"), "ore scanner works without a visor");
         h.assertTrue(active(player, "deflector"), "deflector needs no visor");
-        player.setItemSlot(EquipmentSlot.HEAD, charged("armor/item_armor_ultimate_solar_helmet"));
-        h.assertTrue(active(player, "ore_scanner"), "the ultimate solar helmet (made from the quantum helmet) is a visor");
+        ItemStack visor = charged("armor/item_armor_quantum_helmet");
+        Round190GameTests.install(visor, "solar_array_3");
+        player.setItemSlot(EquipmentSlot.HEAD, visor);
+        h.assertTrue(active(player, "ore_scanner"), "a quantum helmet with a solar array core is still a visor");
         h.succeed();
     }
 
@@ -316,9 +322,9 @@ public final class Round33GameTests {
         ArmorFeatures.setEnabled(worn, "special_maneuver", false);
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
         h.assertTrue(!player.getAbilities().mayfly, "switch off: flight not removed");
-        // advanced quantum chestplate has it too
-        h.assertTrue(ArmorFeatures.features(item("armor/item_armor_advanced_quantum_chestplate")).stream()
-            .anyMatch(f -> f.featureKey().equals("special_maneuver")), "advanced quantum chestplate lacks Special Maneuver Mode");
+        // a quantum chestplate with the Advanced Propulsion core (was the advanced quantum chestplate) has it too
+        h.assertTrue(ArmorFeatures.features(Round190GameTests.withCore("armor/item_armor_quantum_chestplate", "propulsion")).stream()
+            .anyMatch(f -> f.featureKey().equals("special_maneuver")), "propulsion quantum chestplate lacks Special Maneuver Mode");
         double cruise = (double) call(common("suit.ManeuverMode"), "costPerTick", 1.1);
         h.assertTrue(cruise > 30 && cruise < 60, "cruise cost " + cruise);
         remove(player);
@@ -327,7 +333,7 @@ public final class Round33GameTests {
 
     // ------------------------------------------------------------------ data
 
-    /** Station and unit recipes load; the quantum suit tag holds the eight pieces. */
+    /** Station and unit recipes load; the quantum suit tag holds the four pieces (0.1.9.0: the retired variants left it). */
     @GameTest(batch = "round33_data", template = "empty", timeoutTicks = 20)
     public static void recipesAndTags(GameTestHelper h) {
         var recipes = h.getLevel().getRecipeManager();
@@ -341,8 +347,9 @@ public final class Round33GameTests {
         h.assertTrue(missing.isEmpty(), "recipes missing: " + missing);
         TagKey<Item> suit = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("mio_icif", "quantum_suit"));
         for (String p : new String[]{"armor/item_armor_quantum_helmet", "armor/item_armor_quantum_chestplate", "armor/item_armor_quantum_leggings",
-                "armor/item_armor_quantum_boots", "armor/item_armor_advanced_quantum_chestplate"})
+                "armor/item_armor_quantum_boots"})
             h.assertTrue(item(p).is(suit), p + " not in mio_icif:quantum_suit");
+        h.assertTrue(!item("armor/item_armor_advanced_quantum_chestplate").is(suit), "a legacy shell is still in mio_icif:quantum_suit");
         h.assertTrue(!item("armor/item_armor_nano_chestplate").is(suit), "nano suit must not take units");
         h.succeed();
     }

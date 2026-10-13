@@ -1,6 +1,18 @@
 {
-  "parent": "minecraft:item/generated",
+  "loader": "neoforge:separate_transforms",
+  "gui_light": "front",
   "textures": {
-    "layer0": "mio_icif:item/armor/item_armor_advanced_quantum_chestplate"
+    "particle": "mio_icif:item/armor/item_armor_advanced_quantum_chestplate"
+  },
+  "base": {
+    "parent": "mio_icif:item/3d/armor/item_armor_advanced_quantum_chestplate"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/armor/item_armor_advanced_quantum_chestplate"
+      }
+    }
   }
 }

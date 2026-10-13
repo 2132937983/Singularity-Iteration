@@ -185,6 +185,14 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
         return v;
     }
 
+    /**
+     * Draw progress for the bow model, 0..1 (0.1.8.3): the arrow speed after {@code ticks} of draw
+     * divided by the full speed. It reaches 1 at the tick the shot reaches full power (4 ticks).
+     */
+    public static float drawProgress(int ticks) {
+        return ticks <= 0 ? 0.0F : getNanoArrowVelocity(ticks) / MAX_VELOCITY;
+    }
+
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity entity) {
         return 72000;
@@ -248,6 +256,31 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
     public boolean isRanged() {
         return true;
     }
+
+    /**
+     * 0.1.8.4: shot of an AI shooter (Wingman): a full-power arrow (no ammunition is used; the
+     * arrow cannot be picked up), paid from the bow charge.
+     */
+    @Override
+    public int fireFrom(ItemStack stack, LivingEntity shooter, net.minecraft.world.phys.Vec3 direction, boolean mainHand) {
+        if (shooter.level().isClientSide || direction.lengthSqr() < 1.0E-6) return -1;
+        if (!hasEnoughEnergy(stack, ENERGY_PER_SHOT) || !consumeEnergy(stack, ENERGY_PER_SHOT)) return -1;
+        ItemStack ammo = new ItemStack(net.minecraft.world.item.Items.ARROW);
+        net.minecraft.world.entity.projectile.AbstractArrow arrow =
+            ((net.minecraft.world.item.ArrowItem) net.minecraft.world.item.Items.ARROW).createArrow(shooter.level(), ammo, shooter, stack);
+        arrow.setCritArrow(true);
+        arrow.setNoGravity(true);
+        arrow.pickup = net.minecraft.world.entity.projectile.AbstractArrow.Pickup.DISALLOWED;
+        var d = direction.normalize();
+        arrow.shoot(d.x, d.y, d.z, MAX_VELOCITY * 3.0F, 0.5F);
+        shooter.level().addFreshEntity(arrow);
+        shooter.level().playSound(null, shooter.getX(), shooter.getY(), shooter.getZ(), SoundEvents.ARROW_SHOOT, SoundSource.NEUTRAL,
+            1.0F, 1.1F + shooter.getRandom().nextFloat() * 0.2F);
+        return 12;
+    }
+
+    @Override
+    public double projectileSpeed() { return MAX_VELOCITY * 3.0; }
 
     /** 0.1.8.0 ballistic calculator profile (see IBallisticWeapon). */
     @Override

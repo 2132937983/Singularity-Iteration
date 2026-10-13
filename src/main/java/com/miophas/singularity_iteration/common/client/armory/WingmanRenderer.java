@@ -33,6 +33,8 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
         super(context, new Model(context.bakeLayer(ModelLayers.PLAYER)), 0.3F);
         addLayer(new HumanoidArmorLayer<>(this, new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
             new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)), context.getModelManager()));
+        // 0.1.9.0: frame core attachments of the worn helmet and chestplate
+        addLayer(new com.miophas.singularity_iteration.common.client.suit.CoreAttachmentLayer<>(this));
     }
 
     @Override

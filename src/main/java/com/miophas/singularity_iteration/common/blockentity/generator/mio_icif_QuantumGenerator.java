@@ -113,7 +113,7 @@ public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity impleme
 
         // 如果激活且未满，则发电
         if (blockEntity.active) {
-            long energyToGenerate = Math.min(blockEntity.production,
+            long energyToGenerate = Math.min(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, blockEntity.production),   // 0.1.8.4
                 blockEntity.energyStorage.getCapacity() - blockEntity.energyStorage.getAmount());
             if (energyToGenerate > 0) {
                 blockEntity.apiGenerateEnergy(energyToGenerate, false);

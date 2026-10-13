@@ -1,4 +1,4 @@
-# 奇点迭代（Singularity Iteration）API 指南（0.1.8.2）
+# 奇点迭代（Singularity Iteration）API 指南（0.1.9.0）
 
 本指南面向附属模组作者。文字遵循 ASD-STE100 简明技术语言原则：短句、主动语态、每个步骤只有一个指令。
 
@@ -73,6 +73,48 @@ API 包不引用任何运行时、预制或 `common` 类。构建会检查这一
 5. 为单元物品添加配方。
 
 面板开关键为 `fcs_<命名空间>_<路径>`（`SuitModuleSpec.featureKey()`）。
+
+### 3.3 纳米套装单元与爆发（0.1.8.5）
+
+自 0.1.8.5 起纳米套装也可以安装单元。纳米部件按晶格点数（LP）计：头盔 4、胸甲 6、护腿 4、靴子 4，每个致密剂 +2，最多 2 个。
+两参数的 `register` 不变：这样注册的单元仅限量子。
+
+| 类型 | 作用 |
+|---|---|
+| `SuitClass` | `QUANTUM` 或 `NANO`。 |
+| `SuitModuleTraits` | 纳米部件上的 LP（1..6）、适用的套装类别与可选的爆发。`nano(lp, burst)`、`shared(lp)`、`QUANTUM_ONLY`。 |
+| `SuitBurstSpec` | 爆发消耗：储备点、热量、冷却 tick、是否持续型。 |
+| `SuitBurstBehavior` | 服务器上的 `fire(player, piece, input)`。爆发成功时返回真；只有此时才支付消耗。 |
+| `SuitNanoCore` | 玩家储备、热量、热量上限与过热状态的只读视图。 |
+| `ArmorCapacityBonus`（`core.api.item`） | 单件电力护甲由自身数据带来的额外 EU 容量。 |
+
+步骤：带特性注册。
+
+```java
+SuitModuleRegistry.register(SPEC, SuitModuleBehavior.NONE,
+    SuitModuleTraits.nano(2, new SuitBurstSpec(15, 10, 60, false)),
+    (player, piece, input) -> { /* 爆发内容 */ return true; });
+```
+
+规则：
+
+* 爆发单元必须同时提供 `traits.burst()` 与爆发行为。
+* 穿戴者在奇点管理面板中把爆发分配给 V 或 B 键。
+* 调用 `fire` 之前，奇点迭代会检查单元（装在已穿戴的纳米部件中、已开启、有电）、过热锁定、冷却与储备。
+* 附属爆发为单次型；0.1.8.5 中附属单元的持续型标志会被忽略。
+
+### 3.4 框架核心（0.1.9.0）
+
+套装头盔或胸甲的核心插槽可装一个框架核心。插槽是数据组件 `mio_icif:suit_core`（字符串 ID：`solar_array_1`、`solar_array_2`、`solar_array_3`、`graviton`、`propulsion`）。可读取它来显示或响应核心；不要写入，请使用通用套装改装台。
+
+| 钩子（`core.prefab.flight.JetpackFlightController`） | 作用 |
+|---|---|
+| `THRUST_SCALE` | 胸甲喷气背包物品的推力倍率（高级推进：1.15）。 |
+| `NO_CEILING` | 胸甲喷气背包物品没有飞行高度上限时为 true。 |
+
+奇点迭代在启动时设置这两个钩子。附属若要修改，必须保留原函数并与之组合。
+
+太阳能头盔系列、高级量子胸甲与重型量子胸甲已退役。其 ID 保留为隐藏的旧式外壳，会转换为装有核心的标准部件。其类（`mio_icif_*_solar_helmet`、`mio_icif_chestplate_advanced_quantum`、`mio_icif_chestplate_heavy_quantum`）已删除；引用它们的附属应改为检查核心。
 
 ## 4. 弹道（`core.api.item`）
 

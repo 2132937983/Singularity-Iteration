@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PEP",
+    "AMA",
+    "PRP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "E": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "A": {
+      "tag": "c:circuits/advanced"
+    },
+    "M": {
+      "tag": "mio_icif:nano_living_metals"
+    },
+    "R": {
+      "item": "minecraft:comparator"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_jammer",
+    "count": 1
+  }
+}

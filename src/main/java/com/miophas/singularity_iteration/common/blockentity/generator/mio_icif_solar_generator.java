@@ -167,7 +167,7 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
     protected void generateEnergy() {
         // 使用 CustomEUEnergyStorage 的 generateEnergyInternal 方法
         // 这样可以绕过 maxReceive=0 的限制
-        long energyGenerated = Math.min(energyGenerationRate, 
+        long energyGenerated = Math.min(scaleOutput(energyGenerationRate),   // 0.1.8.4 output multiplier
             energyStorage.getCapacity() - energyStorage.getAmount());
         if (energyGenerated > 0) {
             apiGenerateEnergy(energyGenerated, false);
@@ -255,7 +255,7 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
 
         // 如果可以发电且能量未满，则生成能量
         if (blockEntity.isGenerating) {
-            if (controlled) blockEntity.energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.fromDouble(blockEntity.scexSolarRate), false);
+            if (controlled) blockEntity.energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.fromDouble(blockEntity.scexSolarRate * blockEntity.outputScale()), false);
             else blockEntity.generateEnergy();
         }
 

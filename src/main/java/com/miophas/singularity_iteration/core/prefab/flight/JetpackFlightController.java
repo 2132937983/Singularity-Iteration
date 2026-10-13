@@ -71,6 +71,13 @@ public final class JetpackFlightController {
 
     private JetpackFlightController() {}
 
+    /**
+     * 0.1.9.0 hooks for equipment upgrades installed in the jetpack stack (set by the mod; core does
+     * not know them): a thrust multiplier and "no flight ceiling".
+     */
+    public static volatile java.util.function.ToDoubleFunction<ItemStack> THRUST_SCALE = s -> 1.0;
+    public static volatile java.util.function.Predicate<ItemStack> NO_CEILING = s -> false;
+
     public static void tick(Player player, ItemStack stack, IJetpackItem jetpack,
             long hoverCost, double maxAscentSpeed, double hoverAscentSpeed,
             double hoverDescentSpeed, boolean advanced) {
@@ -89,7 +96,7 @@ public final class JetpackFlightController {
 
         long currentEnergy = jetpack.getEnergy(stack);
         long maxEnergy = jetpack.getMaxEnergy(stack);
-        float jetpackPower = jetpack.getThrust();
+        float jetpackPower = (float) (jetpack.getThrust() * THRUST_SCALE.applyAsDouble(stack));
         long flightCost = jetpack.getEnergyPerTickFlying();
 
         int requiredEnergy = (currentMode == MODE_HOVER) ? (int) hoverCost : (int) flightCost;
@@ -143,7 +150,7 @@ public final class JetpackFlightController {
 
         applyForwardThrust(player, power, false, advanced);
 
-        power = applyHeightLimit(player, jetpack, power);
+        power = applyHeightLimit(player, stack, jetpack, power);
 
         double currentY = player.getDeltaMovement().y;
 
@@ -183,7 +190,7 @@ public final class JetpackFlightController {
 
         applyForwardThrust(player, power, true, advanced);
 
-        power = applyHeightLimit(player, jetpack, power);
+        power = applyHeightLimit(player, stack, jetpack, power);
 
         double currentMotionY = player.getDeltaMovement().y;
 
@@ -295,8 +302,8 @@ public final class JetpackFlightController {
         }
     }
 
-    private static float applyHeightLimit(Player player, IJetpackItem jetpack, float power) {
-        if (!jetpack.hasHeightLimit()) {
+    private static float applyHeightLimit(Player player, ItemStack stack, IJetpackItem jetpack, float power) {
+        if (!jetpack.hasHeightLimit() || NO_CEILING.test(stack)) {
             return power;
         }
         int maxFlightHeight = (int) jetpack.getMaxHeight();

@@ -127,8 +127,8 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
      */
     private void generateEnergyInternal() {
         if (currentGenerationRate > 0) {
-            if (energyStorage.scexNetworkControlled()) energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(currentGenerationRate), false);
-            else apiGenerateEnergy(currentGenerationRate, false);
+            if (energyStorage.scexNetworkControlled()) energyStorage.scexGenerateEnergy(scaleOutput(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(currentGenerationRate)), false);   // 0.1.8.4
+            else apiGenerateEnergy(scaleOutput(currentGenerationRate), false);
         }
     }
 

@@ -40,6 +40,13 @@ public final class WeaponChargeFx {
         }
     }
 
+    /** Server: the effect of a shot by any living shooter (0.1.8.4: Wingman drones). */
+    public static void emit(net.minecraft.world.entity.LivingEntity shooter, boolean mainHand, long eu, int color) {
+        if (shooter instanceof ServerPlayer sp) { emit(sp, mainHand ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND, eu, color); return; }
+        if (shooter.level().isClientSide) return;
+        PacketDistributor.sendToPlayersTrackingEntity(shooter, new Shot(shooter.getId(), mainHand, power(eu), color));
+    }
+
     /** Server to client: one shot effect. Fields: shooter id, hand, power 0..1, colour. */
     public record Shot(int entityId, boolean mainHand, float power, int color) implements CustomPacketPayload {
         public static final Type<Shot> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "weapon_charge_fx"));

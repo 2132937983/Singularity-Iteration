@@ -6,6 +6,7 @@ import com.miophas.singularity_iteration.common.registry.mio_icif_data_component
 import com.miophas.singularity_iteration.core.api.item.ArmorFeatureInfo;
 import com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor;
 import com.miophas.singularity_iteration.core.prefab.item.ArmorFeatures;
+import com.miophas.singularity_iteration.core.api.suit.SuitClass;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.registries.Registries;
@@ -39,6 +40,14 @@ public final class SuitModules {
     /** Drain is collected once a second so the piece is not re-synced every tick. */
     public static final int DRAIN_INTERVAL = 20;
 
+    /** 0.1.8.5: the four nano suit pieces; they take units by lattice points (LP). */
+    public static final TagKey<Item> NANO_SUIT = TagKey.create(Registries.ITEM,
+        ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "nano_suit"));
+
+    /** LP that one lattice densifier adds to a nano piece, and the number of densifiers a piece takes. */
+    public static final int LATTICE_STEP = 2, LATTICE_MAX_LEVEL = 2;
+
+    /** Quantum pieces: number of units per piece. */
     public static int capacity(EquipmentSlot slot) {
         return switch (slot) {
             case HEAD -> 4;
@@ -48,8 +57,67 @@ public final class SuitModules {
         };
     }
 
+    /** Nano pieces (0.1.8.5): base lattice points per piece (head 4, chest 6, legs 4, feet 4). */
+    public static int latticeBase(EquipmentSlot slot) {
+        return switch (slot) {
+            case HEAD, LEGS, FEET -> 4;
+            case CHEST -> 6;
+            default -> 0;
+        };
+    }
+
+    /** Densifier level of a nano piece, 0..{@link #LATTICE_MAX_LEVEL}. */
+    public static int latticeLevel(ItemStack piece) {
+        Integer level = piece.isEmpty() ? null : piece.get(mio_icif_data_components.SUIT_LATTICE.get());
+        return level == null ? 0 : Math.max(0, Math.min(LATTICE_MAX_LEVEL, level));
+    }
+
+    /** Lattice points of a nano piece (base + densifiers); 0 for any other item. */
+    public static int latticeCapacity(ItemStack piece) {
+        EquipmentSlot slot = slotOf(piece);
+        if (!isNanoPiece(piece) || slot == null) return 0;
+        return latticeBase(slot) + LATTICE_STEP * latticeLevel(piece);
+    }
+
+    /** Lattice points the installed units take. */
+    public static int latticeUsed(ItemStack piece) {
+        int used = 0;
+        for (UnitRef unit : installed(piece).units()) used += unit.latticePoints();
+        return used;
+    }
+
+    /** True when a lattice densifier can still be applied to {@code piece}. */
+    public static boolean canDensify(ItemStack piece) {
+        return isNanoPiece(piece) && latticeLevel(piece) < LATTICE_MAX_LEVEL;
+    }
+
+    /** Applies one lattice densifier (+{@link #LATTICE_STEP} LP). */
+    public static boolean densify(ItemStack piece) {
+        if (!canDensify(piece)) return false;
+        piece.set(mio_icif_data_components.SUIT_LATTICE.get(), latticeLevel(piece) + 1);
+        return true;
+    }
+
+    /** 0.1.8.5: the suit class of a piece, or null when it takes no units. */
+    @Nullable
+    public static SuitClass suitClass(ItemStack stack) {
+        if (stack.isEmpty() || !(stack.getItem() instanceof ArmorItem)) return null;
+        if (stack.is(QUANTUM_SUIT)) return SuitClass.QUANTUM;
+        if (stack.is(NANO_SUIT)) return SuitClass.NANO;
+        return null;
+    }
+
+    /** A piece that takes units: a quantum piece or (0.1.8.5) a nano piece. */
     public static boolean isSuitPiece(ItemStack stack) {
-        return !stack.isEmpty() && stack.is(QUANTUM_SUIT) && stack.getItem() instanceof ArmorItem;
+        return suitClass(stack) != null;
+    }
+
+    public static boolean isQuantumPiece(ItemStack stack) {
+        return suitClass(stack) == SuitClass.QUANTUM;
+    }
+
+    public static boolean isNanoPiece(ItemStack stack) {
+        return suitClass(stack) == SuitClass.NANO;
     }
 
     @Nullable
@@ -67,7 +135,11 @@ public final class SuitModules {
         return installed(stack).has(type);
     }
 
-    public enum InstallCheck { OK, NOT_A_SUIT_PIECE, WRONG_SLOT, ALREADY_INSTALLED, FULL }
+    /**
+     * Result of an install check. 0.1.8.5: WRONG_CLASS (a nano-only unit on a quantum piece, or a
+     * quantum unit on a nano piece) and NO_LATTICE (not enough free lattice points on a nano piece).
+     */
+    public enum InstallCheck { OK, NOT_A_SUIT_PIECE, WRONG_SLOT, ALREADY_INSTALLED, FULL, WRONG_CLASS, NO_LATTICE }
 
     public static InstallCheck check(ItemStack piece, SuitModuleType type) { return check(piece, UnitRef.of(type)); }
     public static boolean install(ItemStack piece, SuitModuleType type) { return install(piece, UnitRef.of(type)); }
@@ -75,18 +147,62 @@ public final class SuitModules {
 
     /** 0.1.8.0: install check for both kinds of unit (built-in and addon). Addon units count against the capacity too. */
     public static InstallCheck check(ItemStack piece, UnitRef unit) {
-        if (!isSuitPiece(piece)) return InstallCheck.NOT_A_SUIT_PIECE;
+        return check(piece, unit, 1);
+    }
+
+    // ------------------------------------------------------------------ Mk.II (0.1.8.6)
+
+    /** Tier of an installed unit: 2 when it is installed as Mk.II, else 1 (0 when it is not installed). */
+    public static int tier(ItemStack piece, String key) {
+        if (!installed(piece).has(key)) return 0;
+        InstalledModules mk2 = piece.get(mio_icif_data_components.SUIT_MK2.get());
+        return mk2 != null && mk2.has(key) ? 2 : 1;
+    }
+
+    /** Tier of a built-in unit on the worn piece that carries it (0 when none). */
+    public static int tier(Player player, SuitModuleType type) {
+        ItemStack piece = wornPieceWith(player, type);
+        return piece.isEmpty() ? 0 : tier(piece, type.id());
+    }
+
+    /** True when the check of {@code unit} at {@code tier} on {@code piece} is an in-place Mk.I to Mk.II upgrade. */
+    public static boolean isUpgrade(ItemStack piece, UnitRef unit, int tier) {
+        return tier > 1 && tier(piece, unit.key()) == 1;
+    }
+
+    /**
+     * 0.1.8.6: install check for a unit item of {@code tier}. A Mk.II item over the installed Mk.I
+     * of the same unit is an upgrade (no extra lattice points or unit slot).
+     */
+    public static InstallCheck check(ItemStack piece, UnitRef unit, int tier) {
+        SuitClass suitClass = suitClass(piece);
+        if (suitClass == null) return InstallCheck.NOT_A_SUIT_PIECE;
+        if (!unit.allows(suitClass)) return InstallCheck.WRONG_CLASS;
         EquipmentSlot slot = slotOf(piece);
         if (slot == null || !unit.fits(slot)) return InstallCheck.WRONG_SLOT;
         InstalledModules modules = installed(piece);
-        if (modules.has(unit.key())) return InstallCheck.ALREADY_INSTALLED;
-        if (modules.units().size() >= capacity(slot)) return InstallCheck.FULL;
+        if (modules.has(unit.key())) return isUpgrade(piece, unit, tier) ? InstallCheck.OK : InstallCheck.ALREADY_INSTALLED;
+        if (suitClass == SuitClass.NANO) {
+            // 0.1.8.5: a nano piece counts lattice points, not units
+            if (latticeUsed(piece) + unit.latticePoints() > latticeCapacity(piece)) return InstallCheck.NO_LATTICE;
+        } else if (modules.units().size() >= capacity(slot)) {
+            return InstallCheck.FULL;
+        }
         return InstallCheck.OK;
     }
 
     public static boolean install(ItemStack piece, UnitRef unit) {
-        if (check(piece, unit) != InstallCheck.OK) return false;
+        return install(piece, unit, 1);
+    }
+
+    /** 0.1.8.6: installs (or upgrades to) {@code tier}. */
+    public static boolean install(ItemStack piece, UnitRef unit, int tier) {
+        if (check(piece, unit, tier) != InstallCheck.OK) return false;
         piece.set(mio_icif_data_components.SUIT_MODULES.get(), installed(piece).with(unit.key()));
+        if (tier > 1) {
+            InstalledModules mk2 = piece.getOrDefault(mio_icif_data_components.SUIT_MK2.get(), InstalledModules.EMPTY);
+            piece.set(mio_icif_data_components.SUIT_MK2.get(), mk2.with(unit.key()));
+        }
         return true;
     }
 
@@ -96,6 +212,12 @@ public final class SuitModules {
         InstalledModules next = modules.without(unit.key());
         if (next.ids().isEmpty()) piece.remove(mio_icif_data_components.SUIT_MODULES.get());
         else piece.set(mio_icif_data_components.SUIT_MODULES.get(), next);
+        InstalledModules mk2 = piece.get(mio_icif_data_components.SUIT_MK2.get());
+        if (mk2 != null && mk2.has(unit.key())) {
+            InstalledModules rest = mk2.without(unit.key());
+            if (rest.ids().isEmpty()) piece.remove(mio_icif_data_components.SUIT_MK2.get());
+            else piece.set(mio_icif_data_components.SUIT_MK2.get(), rest);
+        }
         return true;
     }
 
@@ -120,17 +242,29 @@ public final class SuitModules {
         return ItemStack.EMPTY;
     }
 
+    /** A quantum helmet visor (the HUD of the quantum-only sensor units). */
     public static boolean hasVisor(Player player) {
-        return isSuitPiece(player.getItemBySlot(EquipmentSlot.HEAD));
+        return isQuantumPiece(player.getItemBySlot(EquipmentSlot.HEAD));
     }
 
-    /** Installed, switched on, powered, and (for HUD units) seen through a quantum visor. */
+    /**
+     * 0.1.8.5: the visor rule of one unit. A quantum visor shows every HUD unit; the nano helmet
+     * visor shows the units that the nano suit can carry (blast warning, threat sensor).
+     */
+    public static boolean hasVisor(Player player, UnitRef unit) {
+        ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
+        SuitClass suitClass = suitClass(head);
+        return suitClass == SuitClass.QUANTUM || suitClass == SuitClass.NANO && unit.allows(SuitClass.NANO);
+    }
+
+    /** Installed, switched on, powered, and (for HUD units) seen through a suit visor. */
     public static boolean isActive(Player player, SuitModuleType type) {
         ItemStack piece = wornPieceWith(player, type);
         if (piece.isEmpty()) return false;
-        if (type.needsVisor() && !hasVisor(player)) return false;
-        // 0.1.8.0: a full set shares one energy pool (SuitEnergyPool).
-        if (SuitEnergyPool.available(player, piece) < Math.max(1, type.drainPerTick())) return false;
+        if (!type.switchable()) return true;               // passive hardware (micro-capacitor)
+        if (type.needsVisor() && !hasVisor(player, UnitRef.of(type))) return false;
+        // 0.1.8.0: a full set shares one energy pool (SuitEnergyPool). 0.1.8.6: the generators run on an empty suit.
+        if (type.needsPower() && SuitEnergyPool.available(player, piece) < Math.max(1, type.drainPerTick())) return false;
         // unit switches are toggle features: read the switch state directly, without building the feature list
         return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, type.featureKey());
     }
@@ -140,7 +274,7 @@ public final class SuitModules {
         if (unit.builtin() != null) return isActive(player, unit.builtin());
         ItemStack piece = wornPieceWith(player, unit);
         if (piece.isEmpty()) return false;
-        if (unit.needsVisor() && !hasVisor(player)) return false;
+        if (unit.needsVisor() && !hasVisor(player, unit)) return false;
         if (SuitEnergyPool.available(player, piece) < Math.max(1, unit.drainPerTick())) return false;
         return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, unit.featureKey());
     }
@@ -199,11 +333,18 @@ public final class SuitModules {
         return sum;
     }
 
+    /** 0.1.8.6: drain of one unit per second; a Mk.II unit draws 20 % less (config {@code mk2DrainFactor}). */
+    public static long drainPerSecond(SuitModuleType type, int tier) {
+        long base = type.drainPerTick() * DRAIN_INTERVAL;
+        return tier >= 2 ? Math.round(base * com.miophas.singularity_iteration.common.suit.nano.NanoConfig.mk2DrainFactor()) : base;
+    }
+
     /** Server, once a second: collect the drain of every active unit (shared by a full set). */
     public static void drain(Player player) {
         for (SuitModuleType type : SuitModuleType.VALUES) {
             if (type.drainPerTick() <= 0 || !isActive(player, type)) continue;
-            extract(player, wornPieceWith(player, type), type.drainPerTick() * DRAIN_INTERVAL);
+            ItemStack piece = wornPieceWith(player, type);
+            extract(player, piece, drainPerSecond(type, tier(piece, type.id())));
         }
         // 0.1.8.0: addon units of the public API pay the same way
         if (com.miophas.singularity_iteration.core.api.suit.SuitModuleRegistry.isEmpty()) return;
@@ -222,9 +363,18 @@ public final class SuitModules {
         if (modules.ids().isEmpty()) return List.of();
         EquipmentSlot slot = slotOf(stack);
         List<ArmorFeatureInfo> out = new ArrayList<>();
-        // 0.1.8.0: addon units get a panel switch as the built-in ones do
-        for (UnitRef unit : modules.units()) out.add(new ArmorFeatureInfo(slot, unit.featureKey(), unit.nameKey()));
+        // 0.1.8.0: addon units get a panel switch as the built-in ones do (0.1.8.5: passive hardware has none)
+        for (UnitRef unit : modules.units()) if (unit.switchable()) out.add(new ArmorFeatureInfo(slot, unit.featureKey(), unit.nameKey()));
         return out;
+    }
+
+    /** 0.1.8.5: extra EU capacity of a nano piece from its micro-capacitor lattice. */
+    static long capacityBonus(ItemStack stack) {
+        if (!stack.has(mio_icif_data_components.SUIT_MODULES.get())) return 0;
+        if (!installed(stack).has(SuitModuleType.MICRO_CAPACITOR) || !isNanoPiece(stack)) return 0;
+        long bonus = com.miophas.singularity_iteration.common.suit.nano.NanoConfig.capacitorBonus();
+        // 0.1.8.6 Mk.II: +400 000 EU at the default (bonus x 1.6)
+        return tier(stack, SuitModuleType.MICRO_CAPACITOR.id()) >= 2 ? bonus * 8 / 5 : bonus;
     }
 
     private static boolean bootstrapped;
@@ -235,6 +385,8 @@ public final class SuitModules {
         bootstrapped = true;
         ArmorFeatures.registerExtension(SuitModules::features);
         com.miophas.singularity_iteration.core.api.suit.SuitModuleRegistry.setQuery((player, spec) -> isActive(player, UnitRef.of(spec)));
+        com.miophas.singularity_iteration.core.api.item.ArmorCapacityBonus.register(SuitModules::capacityBonus);
         ManeuverMode.bootstrap();
+        com.miophas.singularity_iteration.common.suit.nano.NanoSuit.bootstrap();
     }
 }

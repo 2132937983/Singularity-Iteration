@@ -39,7 +39,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
-import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -98,6 +97,10 @@ public class WingmanEntity extends Mob {
     // server state (not saved)
     @Nullable private LivingEntity target;
     private int attackCooldown, deflectCooldown, lowPowerSeconds, stateTicks, slot, slotCount = 1;
+    // 0.1.8.4 combat state: circling direction (+1/-1), melee peel-off, blade dash, Slash Art timer, blocked line
+    private int strafeSign = 1, retreatTicks, dashTicks, artsCooldown, blockedTicks;
+    /** Ticks between two Slash Arts of a blade-wielding Wingman. */
+    private static final int ARTS_INTERVAL = 200;
     private int lastFulton = -1;
     private boolean secured, protectedReturn;
 
@@ -170,8 +173,22 @@ public class WingmanEntity extends Mob {
         super.customServerAiStep();
         if (!(level() instanceof ServerLevel world) || secured) return;
         stateTicks++;
+        // 0.1.9.0: a retired suit piece (legacy shell) turns into its suit piece with the frame core
+        if (stateTicks % 20 == 1) {
+            for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST}) {
+                ItemStack worn = getItemBySlot(slot);
+                if (!com.miophas.singularity_iteration.common.suit.core.LegacyArmor.isLegacy(worn)) continue;
+                var result = com.miophas.singularity_iteration.common.suit.core.LegacyArmor.convert(worn);
+                if (result == null) continue;
+                setItemSlot(slot, result.stack().getItem() instanceof net.minecraft.world.item.ArmorItem ? result.stack() : ItemStack.EMPTY);
+                if (!(result.stack().getItem() instanceof net.minecraft.world.item.ArmorItem)) spawnAtLocation(result.stack());
+                for (ItemStack extra : result.extras()) spawnAtLocation(extra);
+            }
+        }
         if (attackCooldown > 0) attackCooldown--;
         if (deflectCooldown > 0) deflectCooldown--;
+        if (artsCooldown > 0) artsCooldown--;
+        if (state() == ACTIVE) SlashBladeCombat.tick(this);   // a blade's combo actions run on the wielder's tick
         ServerPlayer player = owner == null ? null : world.getServer().getPlayerList().getPlayer(owner);
         boolean ownerHere = player != null && player.isAlive() && player.level() == world && !player.isSpectator();
         if (state() != RETURNING && !ownerHere) {
@@ -225,7 +242,9 @@ public class WingmanEntity extends Mob {
 
     // ---- modes
     private void tickOffensive(ServerPlayer player) {
-        if (tickCount % 10 == 0 || !valid(target, player, LEASH)) target = pickOffensive(player);
+        LivingEntity focus = ownerFocus(player);
+        if (focus != null && focus != target) target = focus;          // the owner's new target first, at once
+        else if (tickCount % 10 == 0 || !valid(target, player, LEASH)) target = pickOffensive(player);
         if (target != null) engage(target, player);
         else steer(formation(player), CRUISE, player);
     }
@@ -259,6 +278,8 @@ public class WingmanEntity extends Mob {
         if (tickCount % 10 == 0 || !valid(target, player, 10)) {
             LivingEntity attacker = player.getLastHurtByMob();
             target = attacker != null && player.tickCount - player.getLastHurtByMobTimestamp() < 100 && valid(attacker, player, 10) ? attacker : null;
+            // 0.1.8.4: body-block a hostile that closes in on the owner, even before it strikes
+            if (target == null) target = hunterOf(player, 6);
         }
         if (target != null) engage(target, player);
         else steer(formation(player), CRUISE, player);
@@ -410,42 +431,269 @@ public class WingmanEntity extends Mob {
         return hit != null && hit.getEntity() instanceof LivingEntity l && fultonCandidate(l, player) ? l : null;
     }
 
-    // ---- combat and flight
+    // ---- combat (0.1.8.4 rework)
+    //
+    // Weapon kinds: a SlashBlade: Resharped blade runs its real combos and Slash Arts
+    // (SlashBladeCombat); a ranged weapon (bow, crossbow, trident, any projectile weapon, and the
+    // energy guns through IWeaponItem#fireFrom) keeps a stand-off band around the target, circles
+    // it and fires with a lead on the target's motion; anything else is a melee weapon used with
+    // hit-and-run passes. All kinds turn smoothly, keep apart from the other Wingmen, and never
+    // shoot through the owner.
+
+    enum WeaponKind { MELEE, BLADE, RANGED }
+
+    /** Weapon kind of the main hand. */
+    WeaponKind weaponKind() {
+        ItemStack w = getMainHandItem();
+        if (SlashBladeCombat.isBlade(w)) return WeaponKind.BLADE;
+        var item = w.getItem();
+        if (item instanceof com.miophas.singularity_iteration.core.api.item.IWeaponItem gun && gun.isRanged()) return WeaponKind.RANGED;
+        if (item instanceof net.minecraft.world.item.ProjectileWeaponItem || item instanceof net.minecraft.world.item.TridentItem) return WeaponKind.RANGED;
+        return WeaponKind.MELEE;
+    }
+
     private void engage(LivingEntity enemy, ServerPlayer player) {
-        ItemStack weapon = getMainHandItem();
-        boolean ranged = weapon.getItem() instanceof BowItem || weapon.getItem() instanceof CrossbowItem;
-        face(enemy.getEyePosition());
-        if (ranged) {
-            Vec3 away = position().subtract(enemy.position());
-            Vec3 flat = new Vec3(away.x, 0, away.z);
-            Vec3 stand = enemy.position().add(flat.lengthSqr() < 1.0E-4 ? new Vec3(9, 0, 0) : flat.normalize().scale(9)).add(0, 4, 0);
-            steer(stand, CRUISE, player);
-            if (attackCooldown == 0 && hasLineOfSight(enemy)) { shoot(enemy, weapon); attackCooldown = 25; }
+        switch (weaponKind()) {
+            case RANGED -> engageRanged(enemy, player);
+            case BLADE -> engageBlade(enemy, player);
+            default -> engageMelee(enemy, player);
+        }
+    }
+
+    /** Melee: close in on the predicted position, strike, then peel off sideways and come back. */
+    private void engageMelee(LivingEntity enemy, ServerPlayer player) {
+        Vec3 aim = enemy.position().add(0, enemy.getBbHeight() * 0.5, 0);
+        faceSmooth(enemy.getEyePosition(), 35);
+        if (retreatTicks > 0) {                                   // peel off: sideways and up, then return
+            retreatTicks--;
+            Vec3 side = sideOf(enemy).scale(3.2).add(0, 1.6, 0);
+            steer(aim.add(side), COMBAT, player);
             return;
         }
-        steer(enemy.position().add(0, enemy.getBbHeight() * 0.5, 0), COMBAT, player);
+        steer(aim.add(enemy.getDeltaMovement().scale(4)), COMBAT, player);
         if (attackCooldown == 0 && isWithinMeleeAttackRange(enemy)) {
             swing(InteractionHand.MAIN_HAND);
             doHurtTarget(enemy);
             double speed = Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED));
             attackCooldown = Mth.ceil(20.0 / speed);
+            if (getRandom().nextInt(3) == 0) { retreatTicks = 8; strafeSign = -strafeSign; }
         }
     }
 
-    private void shoot(LivingEntity enemy, ItemStack weapon) {
+    /**
+     * SlashBlade: dash in with the rapid slash from 3.5 to 9 blocks, chain the combo in reach
+     * (one input every 5 ticks, the timing window of the combo), release a Slash Art every
+     * {@link #ARTS_INTERVAL} ticks of contact. The blade's own tick actions do the cutting.
+     */
+    private void engageBlade(LivingEntity enemy, ServerPlayer player) {
+        Vec3 aim = enemy.position().add(0, enemy.getBbHeight() * 0.5, 0);
+        faceSmooth(enemy.getEyePosition(), 45);
+        double d = distanceTo(enemy);
+        if (dashTicks > 0) {                                      // rapid slash: a straight burst through the target
+            dashTicks--;
+            Vec3 to = aim.subtract(position());
+            if (to.lengthSqr() > 1.0E-4) setDeltaMovement(to.normalize().scale(1.6));
+        } else {
+            steer(aim.add(enemy.getDeltaMovement().scale(3)).add(sideOf(enemy).scale(0.8)), COMBAT, player);
+        }
+        if (attackCooldown > 0) return;
+        if (artsCooldown == 0 && d < 7 && hasLineOfSight(enemy)) {
+            if (SlashBladeCombat.slashArts(this, enemy) != null) {
+                artsCooldown = ARTS_INTERVAL;
+                attackCooldown = 20;
+                return;
+            }
+        }
+        if (d > 3.5 && d < 9 && hasLineOfSight(enemy)) {
+            if (SlashBladeCombat.attack(this, enemy, SlashBladeCombat.Command.FORWARD, SlashBladeCombat.Command.SPRINT) != null) {
+                dashTicks = 5;
+                attackCooldown = 12;
+                return;
+            }
+        }
+        if (d <= 3.5) {
+            if (SlashBladeCombat.attack(this, enemy) != null) {
+                swing(InteractionHand.MAIN_HAND);
+                attackCooldown = 5;
+            } else if (isWithinMeleeAttackRange(enemy)) {        // bridge off: plain sword
+                swing(InteractionHand.MAIN_HAND);
+                doHurtTarget(enemy);
+                attackCooldown = Mth.ceil(20.0 / Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED)));
+            }
+        }
+    }
+
+    /**
+     * Ranged: hold the stand-off band (from the weapon, 8 to 16 blocks for a bow), 3 to 5 blocks
+     * above the target, circling it; fire with a lead when the line is clear and the owner is not
+     * in it. A blocked line makes the Wingman climb and swap the circling direction.
+     */
+    private void engageRanged(LivingEntity enemy, ServerPlayer player) {
+        ItemStack weapon = getMainHandItem();
+        double[] band = rangeBand(weapon);
+        Vec3 c = enemy.position();
+        Vec3 flat = new Vec3(getX() - c.x, 0, getZ() - c.z);
+        double r = flat.length();
+        if (r < 1.0E-3) { flat = new Vec3(1, 0, 0); r = 1; }
+        double want = Mth.clamp(r, band[0], band[1]);
+        if (r < band[0]) want = band[0] + 1.5;                    // too close: open the distance
+        else if (r > band[1]) want = band[1] - 1.5;               // too far: close in
+        Vec3 radial = flat.scale(1 / r);
+        Vec3 tangent = new Vec3(-radial.z, 0, radial.x);
+        Vec3 stand = c.add(radial.scale(want)).add(tangent.scale(strafeSign * 2.5)).add(0, 3.5 + (blockedTicks > 0 ? 3 : 0), 0);
+        steer(stand, CRUISE * 1.1, player);
+        Vec3 muzzle = getEyePosition();
+        Vec3 aim = lead(enemy, muzzle, projectileSpeed(weapon));
+        faceSmooth(aim, 40);
+        boolean clear = hasLineOfSight(enemy) && !ownerInLine(player, muzzle, aim);
+        if (!clear) {
+            if (++blockedTicks > 20) { strafeSign = -strafeSign; blockedTicks = 0; }
+            return;
+        }
+        blockedTicks = 0;
+        if (attackCooldown > 0 || facingError(aim) > 12) return;
+        if (splash(weapon) && enemy.distanceToSqr(player) < 5.5 * 5.5) return;   // no blast next to the owner
+        int cooldown = fire(weapon, aim.subtract(muzzle), enemy);
+        if (cooldown >= 0) attackCooldown = Math.max(2, cooldown);
+        else attackCooldown = 20;                                  // could not fire (no charge): try again later
+    }
+
+    /** Fires the held ranged weapon along {@code dir}. Returns the cooldown, or -1. */
+    private int fire(ItemStack weapon, Vec3 dir, LivingEntity enemy) {
+        var item = weapon.getItem();
+        if (item instanceof com.miophas.singularity_iteration.core.api.item.IWeaponItem gun) {
+            int cd = gun.fireFrom(weapon, this, dir, true);
+            if (cd >= 0) swing(InteractionHand.MAIN_HAND);
+            return cd;
+        }
+        if (item instanceof net.minecraft.world.item.TridentItem) {
+            var trident = new net.minecraft.world.entity.projectile.ThrownTrident(level(), this, weapon.copyWithCount(1));
+            trident.shoot(dir.x, dir.y, dir.z, 2.5F, 1.0F);
+            trident.pickup = AbstractArrow.Pickup.DISALLOWED;
+            level().addFreshEntity(trident);
+            playSound(SoundEvents.TRIDENT_THROW.value(), 1.0F, 1.0F);
+            return 30;
+        }
+        // bows, crossbows and other projectile weapons: an arrow from the weapon, gravity-compensated
         AbstractArrow arrow = ProjectileUtil.getMobArrow(this, new ItemStack(Items.ARROW), 1.0F, weapon);
-        double dx = enemy.getX() - getX(), dy = enemy.getY(0.3333) - arrow.getY(), dz = enemy.getZ() - getZ();
-        double flat = Math.sqrt(dx * dx + dz * dz);
-        arrow.shoot(dx, dy + flat * 0.2, dz, 1.6F, 1.0F);
+        double flat = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
+        float speed = item instanceof CrossbowItem ? 3.15F : 2.4F;
+        arrow.shoot(dir.x, dir.y + flat * (item instanceof CrossbowItem ? 0.05 : 0.11), dir.z, speed, 1.0F);
         arrow.pickup = AbstractArrow.Pickup.DISALLOWED;
         level().addFreshEntity(arrow);
-        playSound(SoundEvents.ARROW_SHOOT, 1.0F, 1.0F / (getRandom().nextFloat() * 0.4F + 0.8F));
+        playSound(item instanceof CrossbowItem ? SoundEvents.CROSSBOW_SHOOT : SoundEvents.ARROW_SHOOT, 1.0F,
+            1.0F / (getRandom().nextFloat() * 0.4F + 0.8F));
+        return item instanceof CrossbowItem ? 22 : 16;
+    }
+
+    private static double[] rangeBand(ItemStack weapon) {
+        var item = weapon.getItem();
+        if (item instanceof com.miophas.singularity_iteration.core.api.item.IWeaponItem gun) return gun.engagementRange();
+        if (item instanceof CrossbowItem) return new double[]{9, 16};
+        if (item instanceof net.minecraft.world.item.TridentItem) return new double[]{6, 12};
+        return new double[]{8, 16};
+    }
+
+    private static double projectileSpeed(ItemStack weapon) {
+        var item = weapon.getItem();
+        if (item instanceof com.miophas.singularity_iteration.core.api.item.IWeaponItem gun) return gun.projectileSpeed();
+        if (item instanceof CrossbowItem) return 3.15;
+        if (item instanceof net.minecraft.world.item.TridentItem) return 2.5;
+        return 2.4;
+    }
+
+    /** True for a weapon whose shot explodes (rockets, the plasma gun). */
+    private static boolean splash(ItemStack weapon) {
+        return weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_rocket_launcher
+            || weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_electric_plasma_gun;
+    }
+
+    /** Aim point with a lead on the target's motion (speed 0: the current position). */
+    private static Vec3 lead(LivingEntity enemy, Vec3 from, double speed) {
+        Vec3 at = enemy.position().add(0, enemy.getBbHeight() * 0.55, 0);
+        if (speed <= 0) return at;
+        Vec3 v = enemy.getDeltaMovement();
+        double t = 0;
+        for (int i = 0; i < 3; i++) t = at.add(v.scale(t)).distanceTo(from) / speed;   // fixed-point on the flight time
+        return at.add(v.x * t, Math.max(-0.5, v.y) * t, v.z * t);
+    }
+
+    /** True if the owner stands near the shot line from {@code from} to {@code to}. */
+    private static boolean ownerInLine(ServerPlayer owner, Vec3 from, Vec3 to) {
+        Vec3 seg = to.subtract(from);
+        double len2 = seg.lengthSqr();
+        if (len2 < 1.0E-4) return false;
+        Vec3 c = owner.getBoundingBox().getCenter();
+        double t = Mth.clamp(c.subtract(from).dot(seg) / len2, 0, 1);
+        return from.add(seg.scale(t)).distanceToSqr(c) < 1.3 * 1.3;
+    }
+
+    /** Horizontal unit vector to the side of the target the Wingman circles on. */
+    private Vec3 sideOf(LivingEntity enemy) {
+        Vec3 to = enemy.position().subtract(position());
+        Vec3 flat = new Vec3(to.x, 0, to.z);
+        if (flat.lengthSqr() < 1.0E-4) return new Vec3(strafeSign, 0, 0);
+        flat = flat.normalize();
+        return new Vec3(-flat.z * strafeSign, 0, flat.x * strafeSign);
+    }
+
+    /** Degrees between the current look and the direction to {@code at}. */
+    private double facingError(Vec3 at) {
+        Vec3 d = at.subtract(getEyePosition());
+        float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
+        float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
+        return Math.abs(Mth.wrapDegrees(yaw - getYRot())) + Math.abs(pitch - getXRot());
+    }
+
+    /** Turns toward {@code at} by at most {@code maxStep} degrees per tick (no snapping). */
+    private void faceSmooth(Vec3 at, float maxStep) {
+        Vec3 d = at.subtract(getEyePosition());
+        float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
+        float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
+        float dy = Mth.clamp(Mth.wrapDegrees(yaw - getYRot()), -maxStep, maxStep);
+        setYaw(getYRot() + dy);
+        setXRot(getXRot() + Mth.clamp(pitch - getXRot(), -maxStep, maxStep));
+    }
+
+    /** The mob the owner hit in the last 2 s, if it is a valid target (0.1.8.4: owner focus). */
+    @Nullable
+    private LivingEntity ownerFocus(ServerPlayer player) {
+        LivingEntity marked = player.getLastHurtMob();
+        return marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 40 && valid(marked, player, LEASH) ? marked : null;
+    }
+
+    /** Nearest hostile mob within {@code range} of the owner that hunts the owner. */
+    @Nullable
+    private LivingEntity hunterOf(ServerPlayer player, double range) {
+        LivingEntity best = null;
+        double bestD = Double.MAX_VALUE;
+        for (Mob mob : level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(range), m -> m instanceof Enemy && m.getTarget() == player)) {
+            if (!valid(mob, player, range + 2)) continue;
+            double d = mob.distanceToSqr(player);
+            if (d < bestD) { bestD = d; best = mob; }
+        }
+        return best;
+    }
+
+    /** Push away from the other Wingmen closer than 2.2 blocks, so the squad does not stack up. */
+    private Vec3 separation() {
+        Vec3 push = Vec3.ZERO;
+        for (WingmanEntity other : level().getEntitiesOfClass(WingmanEntity.class, getBoundingBox().inflate(2.2), w -> w != this)) {
+            Vec3 away = position().subtract(other.position());
+            double d = away.length();
+            if (d < 1.0E-3) away = new Vec3(getId() % 2 == 0 ? 1 : -1, 0, 0);
+            push = push.add(away.normalize().scale((2.2 - Math.min(2.2, d)) * 0.08));
+        }
+        return push;
     }
 
     /** Escort place of this Wingman: behind and to the side of the owner, at shoulder height. */
     private Vec3 formation(ServerPlayer player) {
         double[][] offsets = {{-1.6, 1.2, -1.8}, {1.6, 1.2, -1.8}, {-2.9, 1.7, -0.6}, {2.9, 1.7, -0.6}};
         double[] o = offsets[Math.floorMod(slot, offsets.length)];
+        // 0.1.8.4: tighter guard when the owner is below 40 % health
+        double k = player.getHealth() < player.getMaxHealth() * 0.4F ? 0.6 : 1.0;
+        o = new double[]{o[0] * k, o[1], o[2] * k};
         double yaw = Math.toRadians(player.getYRot());
         double fx = -Math.sin(yaw), fz = Math.cos(yaw);       // forward
         double rx = -Math.cos(yaw), rz = -Math.sin(yaw);      // right
@@ -457,6 +705,7 @@ public class WingmanEntity extends Mob {
         Vec3 to = goal.subtract(position());
         double dist = to.length();
         Vec3 want = dist < 1.0E-3 ? Vec3.ZERO : to.scale(Math.min(speed, dist * 0.3) / dist);
+        want = want.add(separation());
         Vec3 v = getDeltaMovement();
         Vec3 dv = want.subtract(v);
         if (dv.lengthSqr() > ACCEL * ACCEL) dv = dv.normalize().scale(ACCEL);
@@ -464,8 +713,8 @@ public class WingmanEntity extends Mob {
         if (horizontalCollision) v = v.add(0, 0.3, 0);
         setDeltaMovement(v);
         if (target == null) {
-            if (v.horizontalDistanceSqr() > 0.02) face(position().add(v));
-            else if (player != null) setYaw(player.getYRot());
+            if (v.horizontalDistanceSqr() > 0.02) faceSmooth(getEyePosition().add(v.x, 0, v.z), 20);
+            else if (player != null) setYaw(getYRot() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - getYRot()), -15, 15));
         }
     }
 

@@ -159,7 +159,7 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
                 long energyToGenerate = conversions * EU_PER_CONVERSION;
 
                 heatBuffer -= heatToConvert;
-                energyStorage.generateEnergyInternal(energyToGenerate, false);
+                energyStorage.generateEnergyInternal(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(this, energyToGenerate), false);   // 0.1.8.4 output multiplier
                 setChanged();
             }
         }

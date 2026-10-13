@@ -104,7 +104,7 @@ public class mio_icif_MetsSolarGeneratorBase extends AbstractGeneratorBlockEntit
      */
     @Override
     public long getPowerOutput() {
-        return scexProfile != null ? scexProfile.scaledOutput(skyLight) : (long) (dayPower * skyLight);
+        return Math.round((scexProfile != null ? scexProfile.scaledOutput(skyLight) : (long) (dayPower * skyLight)) * outputScale());
     }
 
     public boolean canGenerate(Level level, BlockPos pos) {
@@ -158,11 +158,11 @@ public class mio_icif_MetsSolarGeneratorBase extends AbstractGeneratorBlockEntit
     @Override
     protected void generateEnergy() {
         if (scexProfile != null) {
-            energyStorage.scexGenerateEnergy(EnergyAmount.of(scexProfile.scaledOutput(skyLight)), false);
+            energyStorage.scexGenerateEnergy(scaleOutput(EnergyAmount.of(scexProfile.scaledOutput(skyLight))), false);   // 0.1.8.4 output multiplier
             return;
         }
         if (skyLight > 0.0F) {
-            long energyToGenerate = (long) (dayPower * skyLight);
+            long energyToGenerate = scaleOutput((long) (dayPower * skyLight));   // 0.1.8.4 output multiplier
             if (energyToGenerate > 0) {
                 long energyGenerated = Math.min(energyToGenerate,
                     energyStorage.getCapacity() - energyStorage.getAmount());

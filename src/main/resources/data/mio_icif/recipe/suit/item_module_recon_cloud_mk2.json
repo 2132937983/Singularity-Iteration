@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "NAN",
+    "AUA",
+    "NLN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:plates/neutron"
+    },
+    "A": {
+      "item": "minecraft:ender_eye"
+    },
+    "U": {
+      "item": "mio_icif:module/item_module_recon_cloud"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_living_circuit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_recon_cloud_mk2",
+    "count": 1
+  }
+}

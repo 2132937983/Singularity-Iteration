@@ -33,8 +33,14 @@ import org.jetbrains.annotations.Nullable;
 public final class SuitModuleRegistry {
     private SuitModuleRegistry() {}
 
-    /** EN: A registered unit. ZH: 已注册的单元。JA: 登録済みのユニット。 */
-    public record Entry(SuitModuleSpec spec, SuitModuleBehavior behavior) { }
+    /**
+     * EN: A registered unit. {@code traits} and {@code burst} since 0.1.8.5 (quantum only and null for a unit registered without them).
+     * ZH: 已注册的单元。{@code traits} 与 {@code burst} 自 0.1.8.5 起（未提供时为仅量子与 null）。
+     * JA: 登録済みのユニット。{@code traits} と {@code burst} は 0.1.8.5 から（指定なしなら量子専用と null）。
+     */
+    public record Entry(SuitModuleSpec spec, SuitModuleBehavior behavior, SuitModuleTraits traits, @Nullable SuitBurstBehavior burst) {
+        public Entry(SuitModuleSpec spec, SuitModuleBehavior behavior) { this(spec, behavior, SuitModuleTraits.QUANTUM_ONLY, null); }
+    }
 
     /** EN: Implementation hook of Singularity Iteration (not for addons). ZH: 奇点迭代的实现挂钩（附属请勿使用）。JA: 奇点迭代の実装フック（アドオンは使わない）。 */
     public interface Query {
@@ -50,9 +56,23 @@ public final class SuitModuleRegistry {
      * <p><b>JA:</b> ユニットを登録する。ID に名前空間がない、または "minecraft" の場合は {@link IllegalArgumentException} を投げる。
      */
     public static void register(SuitModuleSpec spec, SuitModuleBehavior behavior) {
+        register(spec, behavior, SuitModuleTraits.QUANTUM_ONLY, null);
+    }
+
+    /**
+     * <p><b>EN:</b> Registers a unit with suit-class traits (0.1.8.5): a nano or shared unit, with an optional burst.
+     * A burst unit needs {@code traits.burst()} and {@code burst} together, else {@link IllegalArgumentException}.
+     * <p><b>ZH:</b> 带套装类别特性注册单元（0.1.8.5）：纳米或通用单元，可带爆发。爆发单元必须同时提供 {@code traits.burst()} 与 {@code burst}，否则抛出 {@link IllegalArgumentException}。
+     * <p><b>JA:</b> スーツ種別の特性付きでユニットを登録する（0.1.8.5）：ナノまたは共用ユニット、任意でバースト付き。
+     * バーストユニットには {@code traits.burst()} と {@code burst} の両方が必要で、片方だけなら {@link IllegalArgumentException}。
+     */
+    public static void register(SuitModuleSpec spec, SuitModuleBehavior behavior, SuitModuleTraits traits, @Nullable SuitBurstBehavior burst) {
         if (spec.id().getNamespace().isEmpty() || "minecraft".equals(spec.id().getNamespace()))
             throw new IllegalArgumentException("a unit id needs the addon namespace: " + spec.id());
-        ENTRIES.put(spec.key(), new Entry(spec, behavior == null ? SuitModuleBehavior.NONE : behavior));
+        java.util.Objects.requireNonNull(traits, "traits");
+        if ((traits.burst() == null) != (burst == null))
+            throw new IllegalArgumentException("a burst unit needs both the burst spec and the burst behavior: " + spec.id());
+        ENTRIES.put(spec.key(), new Entry(spec, behavior == null ? SuitModuleBehavior.NONE : behavior, traits, burst));
     }
 
     /** EN: Entry by key (the full id string), or null. ZH: 按键（完整 ID 字符串）获取条目，没有则为 null。JA: キー（完全な ID 文字列）で項目を得る。なければ null。 */

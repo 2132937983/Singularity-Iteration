@@ -52,6 +52,8 @@ public final class SuitServer {
         if (age % SuitModules.DRAIN_INTERVAL == 0) SuitModules.drain(player);
         SuitModules.tickAddons(player);                       // 0.1.8.0: addon unit behaviors (public API)
         if (age % THREAT_INTERVAL == 0) tickThreats(player);
+        com.miophas.singularity_iteration.common.suit.nano.NanoSuit.tick(player);   // 0.1.8.5: nano core and passive nano units
+        com.miophas.singularity_iteration.common.suit.core.FrameCores.tick(player); // 0.1.9.0: frame cores
     }
 
     @SubscribeEvent
@@ -135,7 +137,7 @@ public final class SuitServer {
     }
 
     /** Unit vector from the wearer's centre towards the hit. */
-    static Vec3 hitDirection(Player player, DamageSource source) {
+    public static Vec3 hitDirection(Player player, DamageSource source) {
         Vec3 centre = player.position().add(0, player.getBbHeight() * 0.55, 0);
         Vec3 from = source.getSourcePosition();
         if (from == null && source.getDirectEntity() != null) from = source.getDirectEntity().position();

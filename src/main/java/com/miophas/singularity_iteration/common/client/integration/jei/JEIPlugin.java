@@ -93,7 +93,6 @@ public class JEIPlugin implements IModPlugin {
         registration.registerSubtypeInterpreter(mio_icif_normal.LITHIUM_BATTERY.get(), batteryInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.ADV_LITHIUM_BATTERY.get(), batteryInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.THORIUM_BATTERY.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.SOLAR_HELMET.get(), energyInterpreter);
         // CF喷枪存储的是建筑泡沫流体（CUSTOM_DATA），按流体数据区分子类型
         registration.registerSubtypeInterpreter(mio_icif_normal.CF_SPRAYER.get(), fluidCellInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.CROP_ANALYZER.get(), energyInterpreter);
@@ -118,11 +117,6 @@ public class JEIPlugin implements IModPlugin {
         registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_JETPACK_ELECTRIC.get(), energyInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_DIVING_MASK.get(), energyInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_HEAVY_QUANTUM_CHESTPLATE.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_QUANTUM_CHESTPLATE.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_SOLAR_HELMET.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_HYBRID_SOLAR_HELMET.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ULTIMATE_SOLAR_HELMET.get(), energyInterpreter);
 
         registration.registerSubtypeInterpreter(mio_icif_blocks.BAT_BOX.get().asItem(), nbtInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_blocks.CESU.get().asItem(), nbtInterpreter);

@@ -215,6 +215,8 @@ public class ArmorShowcaseRenderer implements BlockEntityRenderer<ArmorShowcaseB
     static final class MannequinRenderer extends ArmorStandRenderer {
         MannequinRenderer(EntityRendererProvider.Context context) {
             super(context);
+            // 0.1.9.0: frame core attachments are part of the projected outfit
+            addLayer(new com.miophas.singularity_iteration.common.client.suit.CoreAttachmentLayer<>(this));
         }
 
         @Override

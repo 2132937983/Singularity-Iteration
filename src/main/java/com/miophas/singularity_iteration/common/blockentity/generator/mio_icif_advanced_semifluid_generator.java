@@ -165,7 +165,7 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
         }
         
         if (totalEnergyGenerated > 0) {
-            apiGenerateEnergy(totalEnergyGenerated, false);
+            apiGenerateEnergy(scaleOutput(totalEnergyGenerated), false);   // 0.1.8.4 output multiplier
         }
     }
 
@@ -412,8 +412,9 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
         boolean wasBurning = burnTime > 0;
         handleFuelBucketSlot();
         chargeItems();
+        if (outputScale() == 0) { burnTime = 0; setChanged(); return; }   // 0.1.8.4: switched off in the config
         var step = com.miophas.singularity_iteration.core.runtime.energy.FluidFuelGeneration.tick(fuelTank, energyStorage,
-            scexFuelCredit, 1, ENERGY_PER_BUCKET / FUEL_PER_BUCKET, ENERGY_GENERATION_RATE);
+            scexFuelCredit, 1, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_PER_BUCKET / FUEL_PER_BUCKET), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_GENERATION_RATE));   // 0.1.8.4
         scexFuelCredit = step.bufferedEnergy();
         burnTime = step.generated() > 0 ? 1 : 0;
         burnDuration = 1;

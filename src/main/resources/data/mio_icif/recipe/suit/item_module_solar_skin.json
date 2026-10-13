@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "DDD",
+    "PCP"
+  ],
+  "key": {
+    "D": {
+      "item": "minecraft:daylight_detector"
+    },
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_solar_skin",
+    "count": 1
+  }
+}

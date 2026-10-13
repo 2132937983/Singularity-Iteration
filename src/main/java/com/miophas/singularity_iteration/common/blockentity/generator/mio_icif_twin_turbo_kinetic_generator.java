@@ -184,7 +184,7 @@ public class mio_icif_twin_turbo_kinetic_generator extends AbstractGeneratorBloc
             kuToConsume = Math.min(kuToConsume, kineticStored);
             kineticStorage.extractKinetic(kuToConsume, false);
 
-            apiGenerateEnergy(euToGenerate, false);
+            apiGenerateEnergy(scaleOutput(euToGenerate), false);   // 0.1.8.4 output multiplier: EU per KU
         }
     }
 

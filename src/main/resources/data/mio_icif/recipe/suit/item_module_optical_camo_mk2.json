@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "NAN",
+    "AUA",
+    "NLN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:plates/neutron"
+    },
+    "A": {
+      "item": "minecraft:prismarine_crystals"
+    },
+    "U": {
+      "item": "mio_icif:module/item_module_optical_camo"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_living_circuit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_optical_camo_mk2",
+    "count": 1
+  }
+}

@@ -64,6 +64,9 @@ public final class LaserGunPose implements IClientItemExtensions {
     }
 
     private static void transform(HumanoidModel<?> model, LivingEntity entity, HumanoidArm arm) {
+        // 0.1.8.3: the first-person arm (empty main hand, gun in the other hand) keeps the plain
+        // hand pose; the carry/aim pose is for the third-person body and twisted that arm.
+        if (com.miophas.singularity_iteration.common.client.suit.FirstPersonArm.active()) return;
         boolean right = arm == HumanoidArm.RIGHT;
         ItemStack stack = right == (entity.getMainArm() == HumanoidArm.RIGHT) ? entity.getMainHandItem() : entity.getOffhandItem();
         float kick = recoil(entity, stack);

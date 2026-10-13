@@ -63,3 +63,9 @@ com/miophas/singularity_iteration/common/crop/CropTaxonomy.java  all
 com/miophas/singularity_iteration/common/crop/CropDiagnosis.java
 com/miophas/singularity_iteration/common/recipe/CropSeedIngredient.java
 com/miophas/singularity_iteration/common/integration/EnderIOFarmIntegration.java
+com/miophas/singularity_iteration/core/api/suit/SuitClass.java
+com/miophas/singularity_iteration/core/api/suit/SuitBurstSpec.java
+com/miophas/singularity_iteration/core/api/suit/SuitBurstBehavior.java
+com/miophas/singularity_iteration/core/api/suit/SuitModuleTraits.java
+com/miophas/singularity_iteration/core/api/suit/SuitNanoCore.java
+com/miophas/singularity_iteration/core/api/item/ArmorCapacityBonus.java

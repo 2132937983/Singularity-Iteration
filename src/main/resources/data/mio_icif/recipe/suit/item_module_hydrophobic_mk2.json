@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "NAN",
+    "AUA",
+    "NLN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:plates/neutron"
+    },
+    "A": {
+      "item": "minecraft:nautilus_shell"
+    },
+    "U": {
+      "item": "mio_icif:module/item_module_hydrophobic"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_living_circuit"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_hydrophobic_mk2",
+    "count": 1
+  }
+}

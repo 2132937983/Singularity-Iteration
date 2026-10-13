@@ -66,6 +66,13 @@ import org.jetbrains.annotations.Nullable;
  *       applies.</li>
  *   <li>Items are never lost: cargo is saved with the builder. A drone brings unused material
  *       back to the interface; when the builder is broken or stopped, cargo drops or goes back.</li>
+ *   <li>0.1.8.4 UU supply: when no Material Interface has a material, the builder orders it from
+ *       an idle Replicator within the supply range (common config {@code BlueprintBuilder}) that
+ *       has the pattern (memory crystal or adjacent Pattern Storage). The replicator pays the copy
+ *       with its own UU matter and energy at the usual price; the drones collect the copies from
+ *       its output slot. One order covers the rest of that material in the plan, at most 64.
+ *       Leftover cargo from a replicator goes to the nearest interface (without one it drops at the
+ *       drone, as other cargo without a source does).</li>
  * </ul>
  *
  * <p>The drones are not entities: the builder simulates them, saves them, and sends each new
@@ -104,6 +111,10 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     @Nullable private AABB bounds;
     private final Map<Item, Integer> missing = new HashMap<>();
     private final Map<Item, Long> missingUntil = new HashMap<>();
+    /** 0.1.8.4: materials ordered from replicators, by item (open copies), for the screen. */
+    private final Map<Item, Integer> replicating = new HashMap<>();
+    private List<BlockPos> replicators = List.of();
+    private List<String> clientReplicating = List.of();
     private List<String> files = List.of();
     // ---- drones (saved)
     private final Agent[] agents = new Agent[DRONES];
@@ -209,6 +220,8 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     public List<String> files() { return files; }
     public String blueprintName() { return clientName; }
     public List<String> missingNames() { return clientMissing; }
+    /** Client: materials being made by replicators ("id=count"). */
+    public List<String> replicatingNames() { return clientReplicating; }
     private String clientName = "";
     private List<String> clientMissing = List.of();
 
@@ -349,6 +362,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             }
         }
         if (status == RUNNING) status = PAUSED;
+        replicating.clear();
     }
 
     // ------------------------------------------------------------------ simulation
@@ -395,6 +409,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             case Agent.RETURNING -> {
                 if (!a.cargo.isEmpty()) {
                     ItemStack rest = a.source != null && world.getBlockEntity(a.source) instanceof MaterialInterfaceBlockEntity mi ? mi.insert(a.cargo) : a.cargo;
+                    if (!rest.isEmpty() && !interfaces.isEmpty() && world.getBlockEntity(interfaces.get(0)) instanceof MaterialInterfaceBlockEntity near) rest = near.insert(rest);
                     if (!rest.isEmpty()) net.minecraft.world.Containers.dropItemStack(world, a.to.x, a.to.y, a.to.z, rest);
                     a.cargo = ItemStack.EMPTY;
                 }
@@ -451,6 +466,11 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         BlockPos source = findSource(world, item);
         if (source == null) {
             release(a);
+            if (orderFromReplicator(world, item, first)) {
+                missingUntil.put(item, now + 40);                 // look again when the first copies may be ready
+                markSync();
+                return false;
+            }
             missing.merge(item, need, Integer::sum);
             missingUntil.put(item, now + 100);
             markSync();
@@ -466,8 +486,9 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         Item item = material(target(plan.get(a.tasks[0]).state()));
         int need = 0;
         for (int t : a.tasks) need += amount(target(plan.get(t).state()));
-        ItemStack got = a.source != null && item != null && world.getBlockEntity(a.source) instanceof MaterialInterfaceBlockEntity mi
-            ? mi.extract(item, need) : ItemStack.EMPTY;
+        var sourceEntity = a.source == null || item == null ? null : world.getBlockEntity(a.source);
+        ItemStack got = sourceEntity instanceof MaterialInterfaceBlockEntity mi ? mi.extract(item, need)
+            : sourceEntity instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc rep ? rep.takeOutput(item, need) : ItemStack.EMPTY;
         if (got.isEmpty()) {
             release(a);
             if (item != null) { missing.merge(item, need, Integer::sum); missingUntil.put(item, world.getGameTime() + 100); }
@@ -476,6 +497,7 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             return;
         }
         if (item != null && missing.remove(item) != null) markSync();
+        if (item != null && sourceEntity instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc rep && rep.orderLeft(item) == 0 && replicating.remove(item) != null) markSync();
         a.cargo = got;
         leg(a, Agent.PLACING, approach(plan.get(a.tasks[0]).pos()));
     }
@@ -524,6 +546,9 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     private void afterBatch(ServerLevel world, int i, Agent a) {
         a.tasks = new int[0];
         a.taskIndex = 0;
+        if (!a.cargo.isEmpty() && a.source != null && world.getBlockEntity(a.source) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc) {
+            a.source = interfaces.isEmpty() ? null : interfaces.get(0);          // leftovers: nearest interface, else the dock
+        }
         if (!a.cargo.isEmpty() && a.source != null) { leg(a, Agent.RETURNING, approach(a.source)); return; }
         if (!a.cargo.isEmpty()) { net.minecraft.world.Containers.dropItemStack(world, a.to.x, a.to.y, a.to.z, a.cargo); a.cargo = ItemStack.EMPTY; }
         if (!claim(world, i, a)) leg(a, Agent.TO_DOCK, dock(i));
@@ -566,11 +591,66 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
             }
             found.sort(java.util.Comparator.comparingDouble(p -> p.distSqr(worldPosition)));
             interfaces = List.copyOf(found);
+            replicators = supplyEnabled() ? scanReplicators(world) : List.of();
         }
         for (BlockPos p : interfaces) {
             if (world.getBlockEntity(p) instanceof MaterialInterfaceBlockEntity mi && mi.count(item) > 0) return p;
         }
+        for (BlockPos p : replicators) {
+            if (world.getBlockEntity(p) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc rep && rep.outputCount(item) > 0) return p;
+        }
         return null;
+    }
+
+    // ------------------------------------------------------------------ 0.1.8.4 UU supply
+    private static boolean supplyEnabled() {
+        return com.miophas.singularity_iteration.common.Singularity_Iteration_Config.BUILDER_REPLICATOR_SUPPLY.get();
+    }
+
+    /** Replicators within the supply range, nearest first (loaded chunks only). */
+    private List<BlockPos> scanReplicators(ServerLevel world) {
+        int r = com.miophas.singularity_iteration.common.Singularity_Iteration_Config.BUILDER_REPLICATOR_RANGE.get();
+        List<BlockPos> found = new ArrayList<>();
+        for (int cx = (worldPosition.getX() - r) >> 4; cx <= (worldPosition.getX() + r) >> 4; cx++) {
+            for (int cz = (worldPosition.getZ() - r) >> 4; cz <= (worldPosition.getZ() + r) >> 4; cz++) {
+                if (!world.hasChunk(cx, cz)) continue;
+                for (var be : world.getChunk(cx, cz).getBlockEntities().values()) {
+                    if (be instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc && be.getBlockPos().closerThan(worldPosition, r + 0.5)) found.add(be.getBlockPos());
+                }
+            }
+        }
+        found.sort(java.util.Comparator.comparingDouble(p -> p.distSqr(worldPosition)));
+        return List.copyOf(found);
+    }
+
+    /**
+     * Orders {@code item} from a replicator: one that already makes it, else the nearest idle one
+     * with the pattern. The order covers the rest of that material in the plan from task
+     * {@code from} (at most 64). Returns false when no replicator can make it.
+     */
+    private boolean orderFromReplicator(ServerLevel world, Item item, int from) {
+        if (!supplyEnabled() || plan == null) return false;
+        ItemStack want = new ItemStack(item);
+        int open = 0;
+        for (BlockPos p : replicators) {
+            if (world.getBlockEntity(p) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc rep) open += rep.orderLeft(item);
+        }
+        int rest = 0;
+        for (int t = from; t < plan.size() && rest < 64; t++) {
+            if (done[t] || claimed[t]) continue;
+            BlockState target = target(plan.get(t).state());
+            if (material(target) == item) rest += amount(target);
+        }
+        rest = Math.min(64, rest);
+        if (open >= rest && open > 0) { replicating.put(item, open); return true; }   // enough already on order
+        for (BlockPos p : replicators) {
+            if (world.getBlockEntity(p) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_replicator_elc rep && rep.canTakeOrder(want) && rep.placeOrder(want, rest - open)) {
+                replicating.put(item, rest);
+                missing.remove(item);
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Claim and protection checks with the owner identity. */
@@ -720,6 +800,10 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         missing.entrySet().stream().sorted((x, y) -> Integer.compare(y.getValue(), x.getValue())).limit(4)
             .forEach(en -> miss.add(StringTag.valueOf(BuiltInRegistries.ITEM.getKey(en.getKey()) + "=" + en.getValue())));
         tag.put("Missing", miss);
+        ListTag uu = new ListTag();
+        replicating.entrySet().stream().sorted((x, y) -> Integer.compare(y.getValue(), x.getValue())).limit(4)
+            .forEach(en -> uu.add(StringTag.valueOf(BuiltInRegistries.ITEM.getKey(en.getKey()) + "=" + en.getValue())));
+        tag.put("Replicating", uu);
         return tag;
     }
 
@@ -780,5 +864,9 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         ListTag miss = tag.getList("Missing", Tag.TAG_STRING);
         for (int i = 0; i < miss.size(); i++) m.add(miss.getString(i));
         clientMissing = List.copyOf(m);
+        List<String> u = new ArrayList<>();
+        ListTag uu = tag.getList("Replicating", Tag.TAG_STRING);
+        for (int i = 0; i < uu.size(); i++) u.add(uu.getString(i));
+        clientReplicating = List.copyOf(u);
     }
 }

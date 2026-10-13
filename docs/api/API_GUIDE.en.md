@@ -1,4 +1,4 @@
-# Singularity Iteration API Guide (0.1.8.2)
+# Singularity Iteration API Guide (0.1.9.0)
 
 This guide is for addon authors. The text follows ASD-STE100 (Simplified Technical English):
 short sentences, active voice, one instruction in each step.
@@ -90,6 +90,58 @@ switch, and its energy cost uses the full-set energy pool.
 5. Add a recipe for the unit item.
 
 The panel switch key is `fcs_<namespace>_<path>` (`SuitModuleSpec.featureKey()`).
+
+### 3.3 Nano suit units and bursts (0.1.8.5)
+
+Since 0.1.8.5 the nano suit takes units too. A nano piece counts lattice points (LP: helmet 4,
+chestplate 6, leggings 4, boots 4, +2 for each densifier, at most 2). The two-argument
+`register` is unchanged: such a unit is quantum only.
+
+| Type | Function |
+|---|---|
+| `SuitClass` | `QUANTUM` or `NANO`. |
+| `SuitModuleTraits` | LP on a nano piece (1..6), the suit classes, and an optional burst. `nano(lp, burst)`, `shared(lp)`, `QUANTUM_ONLY`. |
+| `SuitBurstSpec` | Burst costs: reserve points, heat, cooldown ticks, sustained flag. |
+| `SuitBurstBehavior` | `fire(player, piece, input)` on the server. Return true when the burst fired; only then the costs are paid. |
+| `SuitNanoCore` | Read-only reserve, heat, heat cap and overheat of a player. |
+| `ArmorCapacityBonus` (`core.api.item`) | Extra EU capacity of one electric armor piece from its own data. |
+
+Procedure: register with traits.
+
+```java
+SuitModuleRegistry.register(SPEC, SuitModuleBehavior.NONE,
+    SuitModuleTraits.nano(2, new SuitBurstSpec(15, 10, 60, false)),
+    (player, piece, input) -> { /* the burst */ return true; });
+```
+
+Rules:
+
+* A burst unit needs `traits.burst()` and the burst behavior together.
+* The wearer assigns the burst to the V or B key in the Singularity Management Panel.
+* Singularity Iteration checks the unit (installed in a worn nano piece, on, powered), the
+  overheat lock, the cooldown and the reserve before `fire`.
+* Addon bursts are single bursts. A sustained flag is ignored for addon units in 0.1.8.5.
+
+### 3.4 Frame cores (0.1.9.0)
+
+A suit helmet or chestplate may hold one frame core in its core socket. The socket is the data
+component `mio_icif:suit_core` (a string id: `solar_array_1`, `solar_array_2`, `solar_array_3`,
+`graviton`, `propulsion`). Read it to show or react to a core; do not write it, use the
+Universal Suit Modification Station.
+
+| Hook (`core.prefab.flight.JetpackFlightController`) | Function |
+|---|---|
+| `THRUST_SCALE` | Thrust multiplier of a chest jetpack stack (Advanced Propulsion: 1.15). |
+| `NO_CEILING` | True when the chest jetpack stack has no flight height limit. |
+
+Singularity Iteration sets both hooks at start-up. An addon that changes them must keep the
+previous function and combine it.
+
+The solar helmets, the advanced quantum chestplate and the heavy quantum chestplate were retired.
+Their ids stay as hidden legacy shells that convert into the standard piece with a core. Their
+classes (`mio_icif_*_solar_helmet`, `mio_icif_chestplate_advanced_quantum`,
+`mio_icif_chestplate_heavy_quantum`) were deleted; addons that referenced them must check the core
+instead.
 
 ## 4. Ballistics (`core.api.item`)
 

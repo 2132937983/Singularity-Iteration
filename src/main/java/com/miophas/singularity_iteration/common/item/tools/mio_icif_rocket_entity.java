@@ -43,6 +43,13 @@ public class mio_icif_rocket_entity extends ThrowableProjectile {
         this.damage = damage;
     }
 
+    /** 0.1.8.4: false for AI shooters (Wingman): the blast breaks no blocks. Not saved. */
+    private boolean terrainDamage = true;
+
+    public void setTerrainDamage(boolean terrain) {
+        this.terrainDamage = terrain;
+    }
+
     public void setExplosionPower(float power) {
         this.explosionPower = power;
     }
@@ -146,7 +153,7 @@ public class mio_icif_rocket_entity extends ThrowableProjectile {
                 e.hurt(source, this.explosionPower * 2);
             }
             this.level().explode(owner, this.getX(), this.getY(), this.getZ(),
-                this.explosionPower, Level.ExplosionInteraction.TNT);
+                this.explosionPower, terrainDamage ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
         }
 
         spawnImpactParticles();

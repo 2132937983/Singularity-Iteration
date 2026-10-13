@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PEP",
+    "SMS",
+    "PCP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "E": {
+      "item": "minecraft:spider_eye"
+    },
+    "S": {
+      "item": "minecraft:string"
+    },
+    "M": {
+      "tag": "mio_icif:nano_living_metals"
+    },
+    "C": {
+      "tag": "c:circuits/advanced"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_gecko_setae",
+    "count": 1
+  }
+}

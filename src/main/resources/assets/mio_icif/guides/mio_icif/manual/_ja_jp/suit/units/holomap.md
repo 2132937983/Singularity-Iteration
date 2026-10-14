@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 16
 item_ids:
+  - mio_icif:module/item_module_holomap_mk2
   - mio_icif:module/item_module_holomap
 ---
 
@@ -39,6 +40,12 @@ item_ids:
 
 - 箱は10 tickごとにブロックを取り直す。
 
+## Mk.II
+
+Mk.II は **3D ホロテーブル** も投影する：戦術マップキーを長押しするか、コマンドホイールでホロテーブルを選ぶ（「量子指揮」を参照）。
+
 ## レシピ
 
 <RecipesFor id="mio_icif:module/item_module_holomap" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_holomap_mk2" fallbackText="-" />

@@ -53,11 +53,17 @@ public final class ArmoryClient {
         /** Equipment fitted with a Connector Kit shows its Armory link. */
         @SubscribeEvent
         static void tooltip(ItemTooltipEvent event) {
-            ArmoryLink link = event.getItemStack().get(ArmoryComponents.LINK.get());
-            if (link == null) return;
-            event.getToolTip().add(Component.translatable("item.mio_icif.armory_link",
-                Component.translatable("gui.mio_icif.armory.piece." + link.pieceOrDefault().name().toLowerCase(java.util.Locale.ROOT)))
-                .withStyle(ChatFormatting.AQUA));
+            // 0.1.9.2: tooltips are built for every item, also by recipe viewers during their start-up; never throw here
+            try {
+                if (event.getItemStack().isEmpty()) return;
+                ArmoryLink link = event.getItemStack().get(ArmoryComponents.LINK.get());
+                if (link == null) return;
+                event.getToolTip().add(Component.translatable("item.mio_icif.armory_link",
+                    Component.translatable("gui.mio_icif.armory.piece." + link.pieceOrDefault().name().toLowerCase(java.util.Locale.ROOT)))
+                    .withStyle(ChatFormatting.AQUA));
+            } catch (RuntimeException e) {
+                com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("armory-tooltip", "Armory link tooltip", e);
+            }
         }
     }
 }

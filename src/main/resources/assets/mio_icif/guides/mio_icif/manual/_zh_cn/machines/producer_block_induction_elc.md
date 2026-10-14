@@ -5,6 +5,7 @@ navigation:
   parent: machines.md
   position: 31
 item_ids:
+  - mio_icif:upgrade/thermal_retention_upgrade
   - mio_icif:producer/block_induction_elc
 ---
 
@@ -45,6 +46,12 @@ item_ids:
 
 > **警告：** 电压高于MV时，机器因过压爆炸。安装变压升级可提高电压等级。
 
+
+## 保温
+
+打开保温开关（侧边栏的火焰按钮）后，没有物品可熔炼时也会加热到满热量并保持，下一个物品立即以最高速度熔炼。保持满热量耗电 1 EU/t。
+
+在升级槽中放入 <ItemLink id="mio_icif:upgrade/thermal_retention_upgrade" /> 后，空闲时不再散热，保温也不耗电。槽位上方的热量条以 HOLD 与 INS 显示这两种状态。
 
 ## 配方
 

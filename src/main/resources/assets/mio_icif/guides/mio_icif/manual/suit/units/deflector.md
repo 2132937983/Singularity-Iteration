@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 18
 item_ids:
+  - mio_icif:module/item_module_deflector_mk2
   - mio_icif:module/item_module_deflector
 ---
 
@@ -37,6 +38,12 @@ The unit does not stop damage that bypasses armor, except explosions.
 
 - The unit has no continuous drain. It uses EU only when it stops a hit.
 
+## Mk.II
+
+The Mk.II deflector pays 3000 EU per damage point instead of 4000 and adds the **Force Field** action (see Quantum actions).
+
 ## Recipe
 
 <RecipesFor id="mio_icif:module/item_module_deflector" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_deflector_mk2" fallbackText="-" />

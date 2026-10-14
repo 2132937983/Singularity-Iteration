@@ -103,7 +103,23 @@ public enum SuitModuleType {
     /** Kinetic generator (legs, 1 LP, shared): 1 EU per block walked, 2 EU per block sprinted. Works with an empty suit. */
     KINETIC_GENERATOR("kinetic_generator", 0, 0xFFEE58, false, SuitModuleTraits.shared(1), EquipmentSlot.LEGS),
     /** Solar skin (helmet or chest, 1 LP): 2 EU/t under open daylight. Works with an empty suit. */
-    SOLAR_SKIN("solar_skin", 0, 0xFFD740, false, SuitModuleTraits.nano(1, null), EquipmentSlot.HEAD, EquipmentSlot.CHEST);
+    SOLAR_SKIN("solar_skin", 0, 0xFFD740, false, SuitModuleTraits.nano(1, null), EquipmentSlot.HEAD, EquipmentSlot.CHEST),
+
+    // ---------------------------------------------------------------- quantum action units (0.1.10.0)
+
+    /** Phase jump drive (leggings or boots). Action: Quantum Blink, a jump to the point in view (12 blocks; Mk.II 20 blocks, two charges). */
+    PHASE_JUMP_DRIVE("phase_jump_drive", 0, 0x8F7CFF, false, EquipmentSlot.LEGS, EquipmentSlot.FEET),
+    /** Phase modulator (chestplate). Action: Phase Shift, 1 s out of phase (Mk.II 1.5 s and a shock wave when it ends). */
+    PHASE_MODULATOR("phase_modulator", 0, 0xD06BFF, false, EquipmentSlot.CHEST),
+    /** Coherence capacitor (leggings or boots): coherence maximum +50, regeneration +25 %. Passive. */
+    COHERENCE_CAPACITOR("coherence_capacitor", 0, 0x5CE1E6, false, EquipmentSlot.LEGS, EquipmentSlot.FEET),
+    /** Entanglement relay (chestplate or leggings). Action: Entangled Volley, every Wingman hits the lock targets at the same moment. */
+    ENTANGLEMENT_RELAY("entanglement_relay", 0, 0x6FF3D6, false, EquipmentSlot.CHEST, EquipmentSlot.LEGS),
+
+    // ---------------------------------------------------------------- quantum phase 2 (0.1.10.1)
+
+    /** Compute core (chestplate or leggings, 6 EU/t): compute bandwidth +8 QB and one more entanglement link. */
+    COMPUTE_CORE("compute_core", 6, 0x7FD8FF, false, EquipmentSlot.CHEST, EquipmentSlot.LEGS);
 
     private final String id;
     private final long drainPerTick;
@@ -164,7 +180,21 @@ public enum SuitModuleType {
      * 0.1.8.6: the unit has a Mk.II item (stronger effect, -20 % drain). Every unit made for the
      * nano lattice has one; the quantum sensors shared with the nano suit do not.
      */
-    public boolean hasMk2() { return allows(SuitClass.NANO) && this != BLAST_WARNING && this != THREAT_SENSOR; }
+    public boolean hasMk2() { return allows(SuitClass.NANO) && this != BLAST_WARNING && this != THREAT_SENSOR || quantumMk2(); }
+
+    /**
+     * 0.1.10.0: the quantum units with a Mk.II item. The deflector (force field action), the behaviour
+     * predictor (time dilation action) and the two movement action units; Mk.I keeps its old effect.
+     * 0.1.10.1: also the ore scanner, grid telemetry, entity ESP, ballistic computer, smart guidance
+     * and resonance field. 0.1.10.2: the holomap (the Mk.II projects the 3D holo table).
+     */
+    public boolean quantumMk2() {
+        return switch (this) {
+            case DEFLECTOR, BEHAVIOR_PREDICTOR, PHASE_JUMP_DRIVE, PHASE_MODULATOR,
+                 ORE_SCANNER, GRID_TELEMETRY, ENTITY_ESP, BALLISTIC, SMART_GUIDANCE, RESONANCE_FIELD, HOLOMAP -> true;
+            default -> false;
+        };
+    }
 
     @Nullable
     public static SuitModuleType byId(String id) {

@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 16
 item_ids:
+  - mio_icif:module/item_module_holomap_mk2
   - mio_icif:module/item_module_holomap
 ---
 
@@ -39,6 +40,12 @@ Diamonds on stalks show creatures within 24 blocks at their height. A white arro
 
 - The box samples the blocks again every 10 ticks.
 
+## Mk.II
+
+The Mk.II holomap also projects the **3D holo table**: hold the tactical map key or choose HOLO TABLE on the command wheel (see Quantum command).
+
 ## Recipe
 
 <RecipesFor id="mio_icif:module/item_module_holomap" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_holomap_mk2" fallbackText="-" />

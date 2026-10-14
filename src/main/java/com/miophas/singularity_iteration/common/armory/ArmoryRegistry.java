@@ -52,7 +52,7 @@ public final class ArmoryRegistry {
         () -> new ArmoryBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(4.0F, 30.0F)
             .sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
     public static final DeferredItem<BlockItem> ARMORY_ITEM = ITEMS.register("producer/block_armory",
-        () -> new BlockItem(ARMORY.get(), new Item.Properties().rarity(Rarity.UNCOMMON)));
+        () -> new com.miophas.singularity_iteration.common.block.MachineBlockItem(ARMORY.get(), new Item.Properties().rarity(Rarity.UNCOMMON)));
 
     public static final DeferredBlock<ArmorShowcaseBlock> SHOWCASE = BLOCKS.register("producer/block_armor_showcase",
         () -> new ArmorShowcaseBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(2.5F, 12.0F)

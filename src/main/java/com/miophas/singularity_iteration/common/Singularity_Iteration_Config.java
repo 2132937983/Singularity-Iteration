@@ -263,12 +263,23 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder CORE_POP = BUILDER.pop();
 
+    // ==================== 0.1.10.0: quantum suit actions ====================
+    private static final ModConfigSpec.Builder QUANTUM_BUILDER = BUILDER
+        .comment("Quantum suit (0.1.10.0): action switches, PvP switches, coherence and action numbers, single-player slow motion.")
+        .push("QuantumSuit");
+    static {
+        com.miophas.singularity_iteration.common.suit.quantum.QuantumConfig.define(QUANTUM_BUILDER);
+    }
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder QUANTUM_POP = BUILDER.pop();
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     static {
         com.miophas.singularity_iteration.common.energy.GeneratorOutput.bind(SPEC);
         com.miophas.singularity_iteration.common.suit.nano.NanoConfig.bind(SPEC);
         com.miophas.singularity_iteration.common.suit.core.CoreConfig.bind(SPEC);
+        com.miophas.singularity_iteration.common.suit.quantum.QuantumConfig.bind(SPEC);
         com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity.OUTPUT_SCALE =
             com.miophas.singularity_iteration.common.energy.GeneratorOutput::multiplier;
     }

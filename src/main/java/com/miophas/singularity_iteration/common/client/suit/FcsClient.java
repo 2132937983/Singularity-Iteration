@@ -51,6 +51,8 @@ public final class FcsClient {
     public static KeyMapping HUD_KEY;
     public static KeyMapping LAYOUT_KEY;
     private static int tick;
+    /** 0.1.10.0: the HUD was on last tick (the boot sequence runs on the rising edge). */
+    private static boolean visorOn;
     private static BlockPos telemetryPos;
 
     @SubscribeEvent
@@ -88,8 +90,12 @@ public final class FcsClient {
     public static void onTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
+        // 0.1.9.1: Wingman and quantum suit effects (they read synced state; run before the HUD gates)
+        com.miophas.singularity_iteration.common.client.armory.WingmanFx.tick(mc);
+        if (player != null && mc.level != null) QuantumFx.tick(mc);
         if (player == null || mc.level == null) {
             FcsState.clear();
+            visorOn = false;
             return;
         }
         while (HUD_KEY != null && HUD_KEY.consumeClick()) {
@@ -108,6 +114,16 @@ public final class FcsClient {
         SmartGuidanceClient.tick(mc, player);              // 0.1.8.0: smart trajectory guidance lock frame
         FcsState.update(player);
         boolean hud = FcsClientConfig.hudEnabled();
+        // 0.1.10.0: the visor boots when the HUD comes on (helmet on, HUD key, first HUD unit)
+        boolean visor = hud && FcsState.anyHud();
+        if (visor && !visorOn && FcsClientConfig.visorBoot()) {
+            FcsHud.boot();
+            play(mc, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.VISOR_BOOT.get(), 1.0F, 0.5F);
+        }
+        visorOn = visor;
+        // 0.1.10.0: a decoherent quantum core refreshes the sensors at half rate; 0.1.10.1: so does a saturated suit computer
+        if ((com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.decoherent()
+                || com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.saturated()) && (tick & 1) == 1) return;
         boolean esp = hud && FcsState.active(SuitModuleType.ENTITY_ESP);
         boolean predict = hud && FcsState.active(SuitModuleType.BEHAVIOR_PREDICTOR);
         boolean blast = hud && FcsState.active(SuitModuleType.BLAST_WARNING);
@@ -120,6 +136,7 @@ public final class FcsClient {
         if (hud && FcsState.active(SuitModuleType.HOLOMAP)) HoloMap.tick(mc.level, player);
 
         FcsState.ballistic = null;
+        FcsState.spread = java.util.List.of();
         FcsState.leadTarget = null;
         FcsState.leadPoint = null;
         if (hud && FcsState.active(SuitModuleType.BALLISTIC)) solveBallistics(mc, player);
@@ -127,9 +144,13 @@ public final class FcsClient {
 
         if (hud && FcsState.active(SuitModuleType.GRID_TELEMETRY)) {
             telemetryPos = null;
-            if (mc.hitResult instanceof BlockHitResult bhr && bhr.getType() == HitResult.Type.BLOCK
+            // 0.1.10.1 Mk.II: the sensor reads along the line of sight up to 36 blocks (Mk.I: the block in reach)
+            boolean mk2 = com.miophas.singularity_iteration.common.suit.SuitModules.tier(player, SuitModuleType.GRID_TELEMETRY) >= 2;
+            HitResult look = mk2 ? player.pick(36, 1.0F, false) : mc.hitResult;
+            double reach = mk2 ? 36 : 24;
+            if (look instanceof BlockHitResult bhr && bhr.getType() == HitResult.Type.BLOCK
                     && mc.level.getBlockEntity(bhr.getBlockPos()) != null
-                    && bhr.getBlockPos().distToCenterSqr(player.position()) < 24 * 24) {
+                    && bhr.getBlockPos().distToCenterSqr(player.position()) < reach * reach) {
                 telemetryPos = bhr.getBlockPos();
                 if (tick % 10 == 0) send(new MeterHudPacket.Request(telemetryPos));
             }
@@ -178,12 +199,34 @@ public final class FcsClient {
         FcsState.GLOW.clear();
         FcsState.GLOW_COLOR.clear();
         if (!esp || !FcsClientConfig.outlines()) return;
+        double range = SensorTracker.espRange();                      // 0.1.10.1 Mk.II range
         for (SensorTracker.Track t : SensorTracker.tracks()) {
-            if (t.entity().distanceToSqr(Minecraft.getInstance().player) > SensorTracker.ESP_RANGE * SensorTracker.ESP_RANGE) continue;
+            if (t.entity().distanceToSqr(Minecraft.getInstance().player) > range * range) continue;
             int threat = SuitSensorData.threatLevel(t.entity().getId());
             int color = threat == 2 ? FcsDraw.RED : threat == 1 ? FcsDraw.YELLOW : SensorTracker.color(t.kind());
             FcsState.GLOW.add(t.entity().getId());
             FcsState.GLOW_COLOR.put(t.entity().getId(), color);
+        }
+        // 0.1.10.1 Threat Sight synergy: every creature that hunts the wearer glows red through walls, out of ESP range too
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player != null && com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.active(player,
+                com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.THREAT_SIGHT)) {
+            for (var e : SuitSensorData.threats().int2ByteEntrySet()) {
+                if (e.getByteValue() < 2) continue;
+                FcsState.GLOW.add(e.getIntKey());
+                FcsState.GLOW_COLOR.put(e.getIntKey(), FcsDraw.RED);
+            }
+        }
+    }
+
+    /** True when {@code stack} has the multishot enchantment. */
+    private static boolean multishot(LocalPlayer player, net.minecraft.world.item.ItemStack stack) {
+        try {
+            var holder = player.level().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getHolderOrThrow(net.minecraft.world.item.enchantment.Enchantments.MULTISHOT);
+            return net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(holder, stack) > 0;
+        } catch (RuntimeException e) {
+            return false;
         }
     }
 
@@ -196,6 +239,11 @@ public final class FcsClient {
         }
         if (profile == null) return;
         FcsState.ballistic = BallisticSolver.solve(player, profile);
+        // 0.1.10.1 Mk.II: the two side shots of a multishot weapon (vanilla spread: 10 degrees)
+        FcsState.spread = java.util.List.of();
+        if (com.miophas.singularity_iteration.common.suit.SuitModules.tier(player, SuitModuleType.BALLISTIC) >= 2 && multishot(player, stack)) {
+            FcsState.spread = java.util.List.of(BallisticSolver.solve(player, profile, -10F), BallisticSolver.solve(player, profile, 10F));
+        }
         // lead: the creature nearest the aim line within 8 degrees and 96 m
         Vec3 eye = player.getEyePosition(), look = player.getViewVector(1.0F);
         LivingEntity best = null;
@@ -238,6 +286,10 @@ public final class FcsClient {
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             ShieldFieldRenderer.render(event);
             ManeuverModeClient.renderWorld(event);
+            QuantumFx.render(event);                                   // 0.1.9.1 photon barrier, active scan
+            com.miophas.singularity_iteration.common.client.armory.WingmanFx.render(event);   // 0.1.9.1 Wingman lock-on, flashes, jets
+            com.miophas.singularity_iteration.common.client.armory.CommandFx.render(event);   // 0.1.10.2 orders, markers, recall
+            com.miophas.singularity_iteration.common.client.armory.HoloTable.render(event);   // 0.1.10.2 3D holo table
         }
     }
 

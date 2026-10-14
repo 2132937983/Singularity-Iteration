@@ -47,7 +47,9 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         /** 0.1.9.0: a frame core goes into the empty core socket / replaces the installed core (which comes back). */
         CORE_INSTALL, CORE_SWAP,
         /** 0.1.9.0: the core that a swap replaced waits in the unit slot until the player takes it out. */
-        CORE_RETURNED }
+        CORE_RETURNED,
+        /** 0.1.10.0: the quantum piece already has its expansion bay. */
+        BAY_MAX }
 
     private static final SlotLayout LAYOUT = SlotLayout.builder().battery().extra(2).build();
 
@@ -116,7 +118,7 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         return switch (slot) {
             case BATTERY_SLOT -> isBattery(stack);
             case SUIT_SLOT -> SuitModules.isSuitPiece(stack) || com.miophas.singularity_iteration.common.suit.core.LegacyArmor.isLegacy(stack);
-            case MODULE_SLOT -> UnitRef.ofItem(stack) != null || isDensifier(stack) || isCore(stack);
+            case MODULE_SLOT -> UnitRef.ofItem(stack) != null || isDensifier(stack) || isCore(stack) || isBayExpander(stack);
             default -> false;
         };
     }
@@ -133,6 +135,11 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
     /** 0.1.8.5: the nano lattice densifier goes into the unit slot too. */
     public static boolean isDensifier(ItemStack stack) {
         return !stack.isEmpty() && stack.is(SuitRegistry.LATTICE_DENSIFIER.get());
+    }
+
+    /** 0.1.10.0: the quantum bay expander goes into the unit slot too. */
+    public static boolean isBayExpander(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(SuitRegistry.BAY_EXPANDER.get());
     }
 
     /** 0.1.9.0: frame core items go into the unit slot. */
@@ -158,6 +165,10 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         if (!suit().isEmpty() && isDensifier(unit)) {
             if (!SuitModules.isNanoPiece(suit())) return SuitModules.isSuitPiece(suit()) ? Status.WRONG_CLASS : Status.NOT_A_SUIT_PIECE;
             return SuitModules.canDensify(suit()) ? Status.WORKING : Status.LATTICE_MAX;
+        }
+        if (!suit().isEmpty() && isBayExpander(unit)) {
+            if (!SuitModules.isQuantumPiece(suit())) return SuitModules.isSuitPiece(suit()) ? Status.WRONG_CLASS : Status.NOT_A_SUIT_PIECE;
+            return SuitModules.canExpand(suit()) ? Status.WORKING : Status.BAY_MAX;
         }
         UnitRef type = unitType(unit);
         if (suit().isEmpty() || type == null) return Status.NO_UNIT;
@@ -224,6 +235,8 @@ public class QuantumModStationBlockEntity extends AbstractProcessingMachineBlock
         }
         if (isDensifier(unit())) {
             if (!SuitModules.densify(suit)) return;
+        } else if (isBayExpander(unit())) {
+            if (!SuitModules.expand(suit)) return;               // 0.1.10.0: +1 unit slot
         } else {
             UnitRef type = unitType(unit());
             int tier = SuitModuleItem.tierOf(unit());

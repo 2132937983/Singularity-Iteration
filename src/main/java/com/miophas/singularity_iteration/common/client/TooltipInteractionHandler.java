@@ -87,15 +87,21 @@ public class TooltipInteractionHandler {
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
         if (event.getEntity() == null) return;
+        // 0.1.9.2: guarded; a tooltip of another mod must never break here
+        try {
+            boolean altDown = isAltDown();
 
-        boolean altDown = isAltDown();
+            if (altDown && !frozenItem.isEmpty()) {
+                return;
+            }
 
-        if (altDown && !frozenItem.isEmpty()) {
-            return;
+            frozenLines = new ArrayList<>(event.getToolTip());
+            frozenItem = event.getItemStack().copy();
+        } catch (RuntimeException e) {
+            frozenLines = new ArrayList<>();
+            frozenItem = ItemStack.EMPTY;
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("tooltip-freeze", "Tooltip freeze (Alt)", e);
         }
-
-        frozenLines = new ArrayList<>(event.getToolTip());
-        frozenItem = event.getItemStack().copy();
     }
 
     @SubscribeEvent
@@ -130,10 +136,15 @@ public class TooltipInteractionHandler {
         Font font = event.getFont();
         int totalHeight = 0;
         int maxWidth = 0;
-        for (var ctc : event.getComponents()) {
-            totalHeight += ctc.getHeight();
-            int width = ctc.getWidth(font);
-            if (width > maxWidth) maxWidth = width;
+        try {
+            for (var ctc : event.getComponents()) {
+                if (ctc == null) continue;                        // 0.1.9.2: components of other mods may be broken
+                totalHeight += ctc.getHeight();
+                int width = ctc.getWidth(font);
+                if (width > maxWidth) maxWidth = width;
+            }
+        } catch (RuntimeException e) {
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("tooltip-measure", "Measuring a tooltip", e);
         }
 
         lastTooltipWidth = maxWidth;

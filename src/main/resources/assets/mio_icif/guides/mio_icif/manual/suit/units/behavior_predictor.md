@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 15
 item_ids:
+  - mio_icif:module/item_module_behavior_predictor_mk2
   - mio_icif:module/item_module_behavior_predictor
 ---
 
@@ -38,6 +39,12 @@ A red line shows the aim axis of a creature that aims a weapon.
 - Codes for close and ranged attacks: ATK melee, AIM ranged weapon, DET explosion.
 - Codes for special attacks: CAST spell, BEAM guardian, FIRE ghast, DIVE vex, AGGRO enderman.
 
+## Mk.II
+
+The Mk.II predictor adds the **Time Dilation** action (see Quantum actions); the paths and attack marks stay the same.
+
 ## Recipe
 
 <RecipesFor id="mio_icif:module/item_module_behavior_predictor" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_behavior_predictor_mk2" fallbackText="-" />

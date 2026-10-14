@@ -81,8 +81,11 @@ public class mio_icif_ClientEvents {
         );
         event.register(JETPACK_MODE_KEY);
 
+        // 0.1.10.2: G is shared with the quantum command wheel by context (see SharedGKeyContext)
         TOOL_TOGGLE_KEY = new KeyMapping(
             "key.mio_icif.tool_toggle",
+            com.miophas.singularity_iteration.common.client.input.SharedGKeyContext.INSTANCE,
+            com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_G,
             "key.category.mio_icif"
         );

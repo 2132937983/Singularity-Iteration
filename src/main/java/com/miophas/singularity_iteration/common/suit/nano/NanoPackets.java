@@ -63,13 +63,15 @@ public final class NanoPackets {
 
     /**
      * Server to client (the wearer): state of the nano core. Sent on change, at most every 2 ticks,
-     * and once a second without change while a nano piece is worn.
+     * and once a second without change while a nano piece is worn. 0.1.10.0: the keys also carry the
+     * quantum actions; {@code quantum} is true when a key fires one (the HUD and the panel then show
+     * the keys without a nano core).
      */
     public record CoreSync(float reserve, float heat, float heatCap, boolean overheated, int camoTicks, int camoMax,
                            String primaryChoice, String secondaryChoice, String primaryKey, String secondaryKey,
                            int primaryCooldown, int primaryCooldownMax, int secondaryCooldown, int secondaryCooldownMax,
                            boolean online, int meshTicks, int meshMax, int reconTicks, int reconMax, int hfLevel, int generated,
-                           float resumeHeat) implements CustomPacketPayload {
+                           float resumeHeat, boolean quantum) implements CustomPacketPayload {
         public static final Type<CoreSync> TYPE = new Type<>(id("nano_core_sync"));
         public static final StreamCodec<FriendlyByteBuf, CoreSync> CODEC = StreamCodec.of((b, p) -> {
             b.writeFloat(p.reserve); b.writeFloat(p.heat); b.writeFloat(p.heatCap); b.writeBoolean(p.overheated);
@@ -79,9 +81,11 @@ public final class NanoPackets {
             b.writeBoolean(p.online);
             b.writeVarInt(p.meshTicks); b.writeVarInt(p.meshMax); b.writeVarInt(p.reconTicks); b.writeVarInt(p.reconMax);
             b.writeVarInt(p.hfLevel); b.writeVarInt(Math.max(0, p.generated)); b.writeFloat(p.resumeHeat);
+            b.writeBoolean(p.quantum);
         }, b -> new CoreSync(b.readFloat(), b.readFloat(), b.readFloat(), b.readBoolean(), b.readVarInt(), b.readVarInt(),
             b.readUtf(128), b.readUtf(128), b.readUtf(128), b.readUtf(128), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(),
-            b.readBoolean(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readFloat()));
+            b.readBoolean(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readFloat(),
+            b.readBoolean()));
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 

@@ -108,6 +108,36 @@ import net.neoforged.neoforge.registries.DeferredRegister;
     // 0.1.9.0 frame cores (tools/sfx_190.py)
     public static final DeferredHolder<SoundEvent, SoundEvent> CORE_DISCHARGE = sound("core.discharge");
     public static final DeferredHolder<SoundEvent, SoundEvent> CORE_INSTALL = sound("core.install");
+    /** 0.1.9.1: Wingman thruster boost, Wingman target lock, deflector photon barrier, sensor active scan. */
+    public static final DeferredHolder<SoundEvent, SoundEvent> WINGMAN_BOOST = sound("wingman.boost");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WINGMAN_LOCK = sound("wingman.lock");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PHOTON_BARRIER = sound("suit.photon_barrier");
+    /** 0.1.10.0 quantum actions, decoherence and the visor boot (tools/sfx_1100.py). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> QUANTUM_BLINK = sound("suit.quantum_blink");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PHASE_ON = sound("suit.phase_on");
+    public static final DeferredHolder<SoundEvent, SoundEvent> PHASE_OFF = sound("suit.phase_off");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FIELD_ON = sound("suit.field_on");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FIELD_OFF = sound("suit.field_off");
+    public static final DeferredHolder<SoundEvent, SoundEvent> FIELD_CATCH = sound("suit.field_catch");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DILATION_ON = sound("suit.dilation_on");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DILATION_OFF = sound("suit.dilation_off");
+    public static final DeferredHolder<SoundEvent, SoundEvent> VOLLEY_ORDER = sound("suit.volley_order");
+    public static final DeferredHolder<SoundEvent, SoundEvent> VOLLEY_IMPACT = sound("suit.volley_impact");
+    public static final DeferredHolder<SoundEvent, SoundEvent> DECOHERENCE = sound("suit.decoherence");
+    public static final DeferredHolder<SoundEvent, SoundEvent> VISOR_BOOT = sound("suit.visor_boot");
+    /** 0.1.10.1 entanglement links, chain combos, the resonance burst (tools/sfx_1101.py). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> LINK_ON = sound("suit.link_on");
+    public static final DeferredHolder<SoundEvent, SoundEvent> LINK_OFF = sound("suit.link_off");
+    public static final DeferredHolder<SoundEvent, SoundEvent> COMBO = sound("suit.combo");
+    public static final DeferredHolder<SoundEvent, SoundEvent> RESONANCE_BURST = sound("suit.resonance_burst");
+    /** 0.1.10.2 quantum command, holo table and propulsion (tools/sfx_1102.py). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> WHEEL_OPEN = sound("command.wheel_open");
+    public static final DeferredHolder<SoundEvent, SoundEvent> WHEEL_SELECT = sound("command.wheel_select");
+    public static final DeferredHolder<SoundEvent, SoundEvent> ORDER_ACK = sound("command.order_ack");
+    public static final DeferredHolder<SoundEvent, SoundEvent> QUANTUM_RECALL = sound("command.quantum_recall");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HOLO_OPEN = sound("command.holo_open");
+    public static final DeferredHolder<SoundEvent, SoundEvent> HOLO_CLOSE = sound("command.holo_close");
+    public static final DeferredHolder<SoundEvent, SoundEvent> THRUSTER_LAND = sound("suit.thruster_land");
 
     private static DeferredHolder<SoundEvent, SoundEvent> sound(String name) {
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(

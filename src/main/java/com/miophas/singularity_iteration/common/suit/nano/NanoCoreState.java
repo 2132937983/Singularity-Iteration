@@ -74,6 +74,11 @@ public final class NanoCoreState {
         return s;
     }));
 
+    /** 0.1.10.0: the next sync goes out at once (the quantum actions change the keys from another package). */
+    public void dirty() {
+        sentHash = 0;
+    }
+
     public int cooldown(String key) {
         Integer v = cooldown.get(key);
         return v == null ? 0 : v;

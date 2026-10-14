@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 12
 item_ids:
+  - mio_icif:module/item_module_entity_esp_mk2
   - mio_icif:module/item_module_entity_esp
 ---
 
@@ -36,6 +37,12 @@ The visor draws a see-through outline around each tagged creature.
 
 - Colors: red is hostile, yellow is neutral, green is passive, cyan is a player.
 
+## Mk.II
+
+The Mk.II scanner marks creatures within 48 blocks, and the target card also shows the exact health and the armor.
+
 ## Recipe
 
 <RecipesFor id="mio_icif:module/item_module_entity_esp" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_entity_esp_mk2" fallbackText="-" />

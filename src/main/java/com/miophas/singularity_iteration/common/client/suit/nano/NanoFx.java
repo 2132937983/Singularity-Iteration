@@ -78,12 +78,18 @@ public final class NanoFx {
     private record Cloud(Vec3 eye, Vec3 dir, float range, boolean sphere, int born) { }
     private record Rebound(Vec3 at, int born, int tier) { }
     static final float[] AMBER = {1.0F, 0.66F, 0.16F}, VIOLET = {0.72F, 0.48F, 1.0F};
+    /** 0.1.9.1: quantum photon afterglow (Special Maneuver flight): its own "tier" and gold-white light. */
+    static final int PHOTON = 9;
+    static final float[] PHOTON_GOLD = {1.0F, 0.86F, 0.52F};
+    /** 0.1.10.0: quantum blink afterimages and phase-shift echoes (their own "tiers") and their light. */
+    static final int QUANTUM = 10, PHASE_ECHO = 11;
+    static final float[] Q_VIOLET = {0.62F, 0.5F, 1.0F}, Q_WHITE = {0.9F, 0.88F, 1.0F}, Q_MAGENTA = {0.82F, 0.42F, 1.0F};
     private static final class Camo {
         int on, off = -1, refresh;
         boolean hidden;
     }
     private record Queued(Player player, float partial, Matrix4f pose, Matrix3f normal, int light, float grid, float refract, boolean hideBody,
-                          float mesh) { }
+                          float mesh, boolean quantum) { }
 
     private static final List<Ghost> GHOSTS = new ArrayList<>();
     private static final Int2ObjectOpenHashMap<Dash> DASHES = new Int2ObjectOpenHashMap<>();
@@ -119,10 +125,21 @@ public final class NanoFx {
         PINGS.clear();
         CLOUDS.clear();
         REBOUNDS.clear();
+        ThrusterFx.clear();
     }
 
     static float fx() {
         return NanoClient.NanoFxIntensity.get();
+    }
+
+    /** 0.1.10.0: the effect clock (client ticks) for the quantum effects. */
+    static int now() {
+        return now;
+    }
+
+    /** 0.1.10.0: a hologram afterimage of {@code entity} at {@code pos} (quantum blink, phase echo). */
+    static void ghost(int entity, Vec3 pos, int tier) {
+        GHOSTS.add(new Ghost(entity, pos, now, tier));
     }
 
     // ------------------------------------------------------------------ packet entry points
@@ -139,6 +156,17 @@ public final class NanoFx {
             double a = RNG.nextDouble() * Math.PI * 2;
             mc.level.addParticle(ParticleTypes.CLOUD, start.x, start.y + 0.1, start.z, Math.cos(a) * 0.18, 0.02, Math.sin(a) * 0.18);
         }
+    }
+
+    /**
+     * 0.1.9.1 quantum photon afterglow: a short wake like a dash (spatial distortion ribbon, light
+     * ribbons, photon afterimages every second tick in gold and cyan), without the start puff.
+     */
+    public static void photonWake(int entityId, Vec3 start, Vec3 dir) {
+        Dash d = new Dash(entityId, now, start, dir, PHOTON);
+        DASHES.put(entityId, d);
+        TRAILS.add(d);
+        if (TRAILS.size() > 48) TRAILS.remove(0);
     }
 
     static void startEmp(NanoPackets.Fx fx, boolean self) {
@@ -301,8 +329,8 @@ public final class NanoFx {
             int age = now - d.born;
             if (e == null || age > NanoBursts.DASH_TICKS + 1) { it.remove(); continue; }
             d.path.add(e.position());
-            if (age <= NanoBursts.DASH_TICKS) GHOSTS.add(new Ghost(d.entity, e.position(), now, d.tier));
-            for (int k = 0; k < 3 * fx(); k++) {
+            if (age <= NanoBursts.DASH_TICKS && (d.tier != PHOTON || age % 2 == 0)) GHOSTS.add(new Ghost(d.entity, e.position(), now, d.tier));
+            for (int k = 0; k < (d.tier == PHOTON ? 0 : 3 * fx()); k++) {
                 mc.level.addParticle(ParticleTypes.ELECTRIC_SPARK, e.getRandomX(0.5), e.getRandomY(), e.getRandomZ(0.5),
                     -d.dir.x * 0.2, 0.02, -d.dir.z * 0.2);
             }
@@ -423,12 +451,12 @@ public final class NanoFx {
         return v * fx() * (m.tier >= 2 ? 1.15F : 1F);
     }
 
-    private static float smooth(float e0, float e1, float x) {
+    static float smooth(float e0, float e1, float x) {
         float t = Mth.clamp((x - e0) / (e1 - e0), 0, 1);
         return t * t * (3 - 2 * t);
     }
 
-    private static int hash(int a, int b) {
+    static int hash(int a, int b) {
         int h = a * 0x9E3779B1 + b * 0x85EBCA77;
         h ^= h >>> 15;
         return h & 0x7FFFFFFF;
@@ -443,19 +471,25 @@ public final class NanoFx {
         Player player = event.getEntity();
         float partial = event.getPartialTick();
         float[] phase = camoPhase(player, partial);
+        // 0.1.10.0: a phase shift dissolves the body into a violet interference hologram
+        boolean quantum = false;
+        if (phase == null) {
+            phase = QuantumActionFx.phaseLook(player, partial);
+            quantum = phase != null;
+        }
         float mesh = meshIntensity(player.getId(), partial);
         if (phase == null && mesh <= 0) return;
         if (phase == null) {
             PoseStack pose = event.getPoseStack();
             QUEUE.add(new Queued(player, partial, new Matrix4f(pose.last().pose()), new Matrix3f(pose.last().normal()), event.getPackedLight(),
-                0, 0, false, mesh));
+                0, 0, false, mesh, false));
             return;
         }
         // the body flickers out: a stable on/off pattern per half tick, weighted by visibility
         boolean bodyVisible = phase[0] >= 0.999F || phase[0] > 0.001F && (hash(player.getId() * 31, (int) ((now + partial) * 2)) % 100) < phase[0] * 100;
         PoseStack pose = event.getPoseStack();
         QUEUE.add(new Queued(player, partial, new Matrix4f(pose.last().pose()), new Matrix3f(pose.last().normal()), event.getPackedLight(),
-            phase[1], bodyVisible ? 0 : phase[2], !bodyVisible, mesh));
+            phase[1], bodyVisible ? 0 : phase[2], !bodyVisible, mesh, quantum));
         if (!bodyVisible) event.setCanceled(true);
     }
 
@@ -492,7 +526,7 @@ public final class NanoFx {
     /** Scene copy, then refracting bodies and haze; then the grid overlays of the queued players. */
     private static void refractionPass(RenderLevelStageEvent event, Minecraft mc) {
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        boolean haze = !TRAILS.isEmpty() || !EMPS.isEmpty() || !VENTS.isEmpty();
+        boolean haze = !TRAILS.isEmpty() || !EMPS.isEmpty() || !VENTS.isEmpty() || QuantumActionFx.hazeActive() | ThrusterFx.hazeActive();
         boolean refractNeeded = haze;
         for (Queued q : QUEUE) if (q.refract > 0.01F) refractNeeded = true;
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
@@ -516,6 +550,8 @@ public final class NanoFx {
                 for (Dash d : TRAILS) dashHaze(vc, m, d, cam, partial);
                 for (Emp e : EMPS) empHaze(vc, m, e, partial);
                 for (var v : VENTS.int2IntEntrySet()) ventHaze(vc, m, mc.level.getEntity(v.getIntKey()), v.getIntValue(), cam, partial);
+                QuantumActionFx.haze(vc, m, cam, partial, mc);          // 0.1.10.0 blink streak, field dome, dilation lens
+                ThrusterFx.haze(vc, m, cam, partial, mc);               // 0.1.10.2 thruster heat haze, landing rings
                 buffers.endBatch(NanoRender.HAZE);
                 pose.popPose();
             }
@@ -523,8 +559,14 @@ public final class NanoFx {
                 // without refraction a hidden body keeps a faint grid ghost
                 float grid = q.grid + (!refraction && q.hideBody ? 0.12F : 0);
                 if (grid <= 0.01F) continue;
+                // 0.1.10.0: a phase-shifted body beats between violet and cyan (interference)
+                float[] col = CYAN;
+                if (q.quantum) {
+                    float beat = 0.5F + 0.5F * (float) Math.sin((now + partial) * 0.9F + q.player.getId());
+                    col = new float[]{Mth.lerp(beat, Q_MAGENTA[0], CYAN[0]), Mth.lerp(beat, Q_MAGENTA[1], CYAN[1]), Mth.lerp(beat, Q_MAGENTA[2], CYAN[2])};
+                }
                 drawPlayer(mc, q.player, q.partial, stack(q), q.light, new RemapBuffers(buffers, NanoRender.HOLOGRID,
-                    CYAN[0] * grid, CYAN[1] * grid, CYAN[2] * grid, 1));
+                    col[0] * grid, col[1] * grid, col[2] * grid, 1));
             }
             buffers.endBatch(NanoRender.HOLOGRID);
             // 0.1.8.6: kinetic armor mesh plating (amber hexagons)
@@ -547,7 +589,7 @@ public final class NanoFx {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static void drawPlayer(Minecraft mc, Player player, float partial, PoseStack pose, int light, MultiBufferSource buffers) {
+    static void drawPlayer(Minecraft mc, Player player, float partial, PoseStack pose, int light, MultiBufferSource buffers) {
         EntityRenderer renderer = mc.getEntityRenderDispatcher().getRenderer(player);
         drawing = true;
         try {
@@ -562,7 +604,7 @@ public final class NanoFx {
     /** Afterimages, speed smears, EMP waves and arcs: additive glow after the particles. */
     private static void glowPass(RenderLevelStageEvent event, Minecraft mc) {
         if (GHOSTS.isEmpty() && TRAILS.isEmpty() && EMPS.isEmpty() && STUNNED.isEmpty() && MESH_HITS.isEmpty() && PINGS.isEmpty()
-            && REBOUNDS.isEmpty()) return;
+            && REBOUNDS.isEmpty() && !QuantumActionFx.glowActive() && !ThrusterFx.glowActive()) return;
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         Vec3 cam = event.getCamera().getPosition();
@@ -574,8 +616,11 @@ public final class NanoFx {
             float age = now - g.born + partial;
             float a = Mth.clamp(1 - age / 9F, 0, 1) * 0.9F * fx();
             if (a <= 0.02F) continue;
-            // Mk.II: every second afterimage is violet
-            float[] col = g.tier >= 2 && (g.born & 1) == 1 ? VIOLET : CYAN;
+            // Mk.II: every second afterimage is violet; 0.1.10.0 quantum blink: violet and white, phase echo: magenta
+            float[] col = g.tier == PHOTON ? ((g.born / 2 & 1) == 1 ? PHOTON_GOLD : CYAN)
+                : g.tier == QUANTUM ? ((g.born & 1) == 1 ? Q_WHITE : Q_VIOLET)
+                : g.tier == PHASE_ECHO ? Q_MAGENTA
+                : g.tier >= 2 && (g.born & 1) == 1 ? VIOLET : CYAN;
             PoseStack ps = new PoseStack();
             ps.mulPose(event.getPoseStack().last().pose());
             ps.translate(g.pos.x - cam.x, g.pos.y - cam.y, g.pos.z - cam.z);
@@ -601,6 +646,8 @@ public final class NanoFx {
             ringFlat(glow, m, r.at, 0.3F + age * 0.25F, 0.12F, c[0], c[1], c[2], 0.8F * a, 40, false);
             ringFlat(glow, m, r.at.add(0, 0.02, 0), 0.15F + age * 0.14F, 0.06F, 1F, 1F, 1F, 0.5F * a, 32, false);
         }
+        QuantumActionFx.glow(glow, m, cam, partial, mc, event);       // 0.1.10.0 quantum actions
+        ThrusterFx.glow(glow, m, cam, partial);                         // 0.1.10.2 landing light ring
         buffers.endBatch(SiRenderTypes.ENERGY_BEAM);
         pose.popPose();
     }
@@ -629,10 +676,12 @@ public final class NanoFx {
         for (int i = 1; i < d.path.size(); i++) {
             Vec3 a = d.path.get(i - 1), b = d.path.get(i);
             float k0 = (i - 1F) / d.path.size(), k1 = (float) i / d.path.size();
+            float[] c = d.tier == PHOTON ? PHOTON_GOLD : CYAN;
             for (float h : new float[]{0.35F, 0.95F, 1.45F}) {
-                ribbon(vc, m, a.add(0, h, 0), b.add(0, h, 0), cam, 0.06F, CYAN[0], CYAN[1], CYAN[2], 0.5F * s * k0, 0.5F * s * k1, false);
+                ribbon(vc, m, a.add(0, h, 0), b.add(0, h, 0), cam, 0.06F, c[0], c[1], c[2], 0.5F * s * k0, 0.5F * s * k1, false);
             }
         }
+        if (d.tier == PHOTON) return;                              // no ground ring in flight
         Vec3 o = d.path.get(0).add(0, 0.06, 0);
         ringFlat(vc, m, o, 0.4F + age * 0.22F, 0.08F, CYAN[0], CYAN[1], CYAN[2], 0.6F * s, 32, false);
     }
@@ -699,14 +748,14 @@ public final class NanoFx {
         }
     }
 
-    private static float easeOut(float k) {
+    static float easeOut(float k) {
         return 1 - (1 - k) * (1 - k) * (1 - k);
     }
 
     // ------------------------------------------------------------------ primitives (world space, translated by -camera)
 
     /** Camera-facing ribbon from a to b; {@code haze}: the alpha is the distortion strength. */
-    private static void ribbon(VertexConsumer vc, Matrix4f m, Vec3 a, Vec3 b, Vec3 cam, float width, float r, float g, float bl,
+    static void ribbon(VertexConsumer vc, Matrix4f m, Vec3 a, Vec3 b, Vec3 cam, float width, float r, float g, float bl,
                                float aa, float ab, boolean haze) {
         Vec3 dir = b.subtract(a);
         if (dir.lengthSqr() < 1.0E-6) return;
@@ -723,7 +772,7 @@ public final class NanoFx {
     }
 
     /** Flat ring (torus band) in the horizontal plane. */
-    private static void ringFlat(VertexConsumer vc, Matrix4f m, Vec3 c, float radius, float width, float r, float g, float b, float a,
+    static void ringFlat(VertexConsumer vc, Matrix4f m, Vec3 c, float radius, float width, float r, float g, float b, float a,
                                  int segments, boolean haze) {
         float r0 = Math.max(0, radius - width / 2), r1 = radius + width / 2;
         for (int i = 0; i < segments; i++) {
@@ -741,7 +790,7 @@ public final class NanoFx {
     }
 
     /** Vertical band (cylinder section) of the given radius and height around c. */
-    private static void ringBand(VertexConsumer vc, Matrix4f m, Vec3 c, float radius, float height, float r, float g, float b, float a,
+    static void ringBand(VertexConsumer vc, Matrix4f m, Vec3 c, float radius, float height, float r, float g, float b, float a,
                                  int segments, boolean haze) {
         for (int i = 0; i < segments; i++) {
             double a0 = i * Math.PI * 2 / segments, a1 = (i + 1) * Math.PI * 2 / segments;
@@ -758,7 +807,7 @@ public final class NanoFx {
     }
 
     /** A vertical great circle through c, turned by yaw, drawn as a thin camera-facing polyline. */
-    private static void meridian(VertexConsumer vc, Matrix4f m, Vec3 c, float radius, float yaw, float width, float[] col, float a, Vec3 cam) {
+    static void meridian(VertexConsumer vc, Matrix4f m, Vec3 c, float radius, float yaw, float width, float[] col, float a, Vec3 cam) {
         int n = 40;
         Vec3 prev = null;
         for (int i = 0; i <= n; i++) {
@@ -770,7 +819,7 @@ public final class NanoFx {
     }
 
     /** Jagged lightning between two points (camera-facing segments, a bright core). */
-    private static void arc(VertexConsumer vc, Matrix4f m, Vec3 from, Vec3 to, Vec3 cam, Random rng, float width, float a, float[] halo) {
+    static void arc(VertexConsumer vc, Matrix4f m, Vec3 from, Vec3 to, Vec3 cam, Random rng, float width, float a, float[] halo) {
         Vec3 d = to.subtract(from);
         double len = d.length();
         if (len < 0.05) return;
@@ -790,7 +839,7 @@ public final class NanoFx {
     }
 
     /** Camera-facing glowing disc (two crossed quads would show edges; a fan of quads looks round). */
-    private static void ball(VertexConsumer vc, Matrix4f m, Vec3 c, float radius, float[] col, float a, Vec3 cam) {
+    static void ball(VertexConsumer vc, Matrix4f m, Vec3 c, float radius, float[] col, float a, Vec3 cam) {
         Vec3 view = c.subtract(cam).normalize();
         Vec3 u = view.cross(new Vec3(0, 1, 0));
         if (u.lengthSqr() < 1.0E-6) u = new Vec3(1, 0, 0);
@@ -855,7 +904,7 @@ public final class NanoFx {
         ringFlat(vc, m, c, e.getBbWidth() * 0.8F + age * 0.04F, 0.06F, r, g, b, 0.8F * a, 28, false);
     }
 
-    private static void quad(VertexConsumer vc, Matrix4f m, Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3, float r, float g, float b,
+    static void quad(VertexConsumer vc, Matrix4f m, Vec3 p0, Vec3 p1, Vec3 p2, Vec3 p3, float r, float g, float b,
                              float a0, float a1, float a2, float a3) {
         vc.addVertex(m, (float) p0.x, (float) p0.y, (float) p0.z).setColor(r, g, b, a0);
         vc.addVertex(m, (float) p1.x, (float) p1.y, (float) p1.z).setColor(r, g, b, a1);

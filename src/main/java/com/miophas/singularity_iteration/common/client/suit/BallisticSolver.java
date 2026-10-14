@@ -181,8 +181,13 @@ public final class BallisticSolver {
      * @return the solved path. It is never null.
      */
     public static Solution solve(LocalPlayer player, Profile profile) {
+        return solve(player, profile, 0F);
+    }
+
+    /** 0.1.10.1: the same with the launch turned by {@code yawOffset} degrees (the side shots of a multishot crossbow). */
+    public static Solution solve(LocalPlayer player, Profile profile, float yawOffset) {
         Level level = player.level();
-        float pitch = player.getXRot(), yaw = player.getYRot();
+        float pitch = player.getXRot(), yaw = player.getYRot() + yawOffset;
         double rp = Math.toRadians(pitch), ry = Math.toRadians(yaw);
         // Minecraft view vector: yaw 0 looks to +Z (south), positive pitch looks down
         Vec3 dir = new Vec3(-Math.sin(ry) * Math.cos(rp), -Math.sin(rp), Math.cos(ry) * Math.cos(rp));

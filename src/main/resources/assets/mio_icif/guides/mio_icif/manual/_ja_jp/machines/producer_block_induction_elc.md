@@ -5,6 +5,7 @@ navigation:
   parent: machines.md
   position: 31
 item_ids:
+  - mio_icif:upgrade/thermal_retention_upgrade
   - mio_icif:producer/block_induction_elc
 ---
 
@@ -45,6 +46,12 @@ item_ids:
 
 > **警告：** MVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。
 
+
+## 保温
+
+保温スイッチ（サイドドックの炎のボタン）をオンにすると、溶かす物がない間も最大熱量まで加熱し、そのまま保つ。次のアイテムはすぐ最高速度で精錬される。最大熱量の保持は 1 EU/t。
+
+アップグレードスロットに <ItemLink id="mio_icif:upgrade/thermal_retention_upgrade" /> を入れると、待機中の放熱がなくなり保温も無料になる。スロット上の熱量ゲージに HOLD と INS で表示される。
 
 ## レシピ
 

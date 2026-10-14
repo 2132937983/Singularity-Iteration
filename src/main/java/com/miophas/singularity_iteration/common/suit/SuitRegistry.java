@@ -40,7 +40,7 @@ public final class SuitRegistry {
         () -> new QuantumModStationBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(4.0F, 30.0F)
             .sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().noOcclusion().lightLevel(s -> 6)));
     public static final DeferredItem<BlockItem> STATION_ITEM = ITEMS.register("producer/block_quantum_modification_station",
-        () -> new BlockItem(STATION.get(), new Item.Properties().rarity(Rarity.EPIC)));
+        () -> new com.miophas.singularity_iteration.common.block.MachineBlockItem(STATION.get(), new Item.Properties().rarity(Rarity.EPIC)));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<QuantumModStationBlockEntity>> STATION_ENTITY =
         BLOCK_ENTITIES.register("quantum_modification_station",
@@ -94,6 +94,23 @@ public final class SuitRegistry {
         ATTACHMENTS.register("nano_core", () -> net.neoforged.neoforge.attachment.AttachmentType
             .builder(com.miophas.singularity_iteration.common.suit.nano.NanoCoreState::new)
             .serialize(com.miophas.singularity_iteration.common.suit.nano.NanoCoreState.CODEC).copyOnDeath().build());
+
+    /** 0.1.10.0 player attachment: quantum core (coherence); saved and copied on death. */
+    public static final java.util.function.Supplier<net.neoforged.neoforge.attachment.AttachmentType<com.miophas.singularity_iteration.common.suit.quantum.QuantumCoreState>> QUANTUM_CORE =
+        ATTACHMENTS.register("quantum_core", () -> net.neoforged.neoforge.attachment.AttachmentType
+            .builder(com.miophas.singularity_iteration.common.suit.quantum.QuantumCoreState::new)
+            .serialize(com.miophas.singularity_iteration.common.suit.quantum.QuantumCoreState.CODEC).copyOnDeath().build());
+
+    /** 0.1.10.2 player attachment: quantum command settings (data link, squad mode); saved and copied on death. */
+    public static final java.util.function.Supplier<net.neoforged.neoforge.attachment.AttachmentType<com.miophas.singularity_iteration.common.armory.WingmanCommandState>> WINGMAN_COMMAND =
+        ATTACHMENTS.register("wingman_command", () -> net.neoforged.neoforge.attachment.AttachmentType
+            .builder(com.miophas.singularity_iteration.common.armory.WingmanCommandState::new)
+            .serialize(com.miophas.singularity_iteration.common.armory.WingmanCommandState.CODEC).copyOnDeath().build());
+
+    /** 0.1.10.0: quantum bay expander: +1 unit slot for a quantum piece in the station. */
+    public static final DeferredItem<com.miophas.singularity_iteration.common.suit.quantum.QuantumBayItem> BAY_EXPANDER =
+        ITEMS.register("module/item_quantum_bay_expander",
+            () -> new com.miophas.singularity_iteration.common.suit.quantum.QuantumBayItem(new Item.Properties()));
 
     public static final DeferredRegister<net.minecraft.world.effect.MobEffect> EFFECTS =
         DeferredRegister.create(BuiltInRegistries.MOB_EFFECT, Singularity_Iteration.MOD_ID);

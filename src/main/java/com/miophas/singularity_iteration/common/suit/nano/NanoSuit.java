@@ -228,8 +228,19 @@ public final class NanoSuit {
         return x == SuitModuleType.KINETIC_MESH && y == SuitModuleType.OPTICAL_CAMO || x == SuitModuleType.OPTICAL_CAMO && y == SuitModuleType.KINETIC_MESH;
     }
 
-    /** Burst units on worn nano pieces, in key priority order (built-in dash, camouflage, mesh, EMP, recon, then addon units). */
+    /**
+     * Units the burst keys can fire: burst units on worn nano pieces, in key priority order
+     * (built-in dash, camouflage, mesh, EMP, recon, then addon units), and since 0.1.10.0 the
+     * quantum action units on worn quantum pieces (one key system for both suit classes).
+     */
     public static List<UnitRef> availableBursts(Player player) {
+        List<UnitRef> out = nanoBursts(player);
+        out.addAll(com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.available(player));
+        return out;
+    }
+
+    /** Burst units on worn nano pieces only. */
+    private static List<UnitRef> nanoBursts(Player player) {
         List<UnitRef> out = new ArrayList<>(6);
         for (SuitModuleType type : BURST_PRIORITY) {
             ItemStack piece = SuitModules.wornPieceWith(player, type);
@@ -288,6 +299,17 @@ public final class NanoSuit {
     @Nullable
     public static SuitBurstSpec burstSpec(UnitRef unit) {
         return unit.builtin() != null ? NanoConfig.burst(unit.builtin()) : unit.burst();
+    }
+
+    /** 0.1.10.0: full cooldown of the key unit (a nano burst or a quantum action), for the HUD sweep. */
+    private static int cooldownMax(@Nullable UnitRef unit) {
+        if (unit == null) return 0;
+        if (com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isAction(unit)) {
+            var spec = com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.spec(unit);
+            return spec == null ? 0 : Math.max(1, spec.cooldownTicks());
+        }
+        SuitBurstSpec spec = burstSpec(unit);
+        return spec == null ? 0 : Math.max(1, spec.cooldownTicks());
     }
 
     // ------------------------------------------------------------------ server tick
@@ -483,19 +505,21 @@ public final class NanoSuit {
         UnitRef q = effectiveBurst(player, s.primary, s.secondary, 1);
         String pk = p == null ? "" : p.key(), qk = q == null ? "" : q.key();
         int pc = p == null ? 0 : s.cooldown(pk), qc = q == null ? 0 : s.cooldown(qk);
+        // 0.1.10.0: the keys also serve the quantum actions; "quantum" tells the client that a quantum action is on offer
+        boolean quantum = com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isAction(p)
+            || com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isAction(q);
         int hash = java.util.Objects.hash(s.overheated, s.camoTicks > 0, s.meshTicks > 0, s.reconTicks > 0, s.primary, s.secondary, pk, qk, pc, qc,
-            online, s.hfLevel, s.generatedLastSecond);
+            online, s.hfLevel, s.generatedLastSecond, quantum);
         boolean changed = hash != s.sentHash || Math.abs(s.reserve - s.sentReserve) >= 0.5F || Math.abs(s.heat - s.sentHeat) >= 0.5F
             || s.camoActive() || s.meshTicks > 0;
         if (!changed && s.syncTimer < 20) return;
         s.syncTimer = 0;
         s.sentHash = hash;
-        s.sentOffline = !online;
+        s.sentOffline = !online && !quantum;
         s.sentReserve = s.reserve;
         s.sentHeat = s.heat;
-        SuitBurstSpec ps = p == null ? null : burstSpec(p), qs = q == null ? null : burstSpec(q);
         SuitPackets.send(player, new NanoPackets.CoreSync(s.reserve, s.heat, heatCap(player), s.overheated, s.camoTicks, camoMaxTicks(player),
-            s.primary, s.secondary, pk, qk, pc, ps == null ? 0 : Math.max(1, ps.cooldownTicks()), qc, qs == null ? 0 : Math.max(1, qs.cooldownTicks()),
-            online, s.meshTicks, s.meshMax, s.reconTicks, s.reconMax, s.hfLevel, s.generatedLastSecond, resumeHeat(player)));
+            s.primary, s.secondary, pk, qk, pc, cooldownMax(p), qc, cooldownMax(q),
+            online, s.meshTicks, s.meshMax, s.reconTicks, s.reconMax, s.hfLevel, s.generatedLastSecond, resumeHeat(player), quantum));
     }
 }

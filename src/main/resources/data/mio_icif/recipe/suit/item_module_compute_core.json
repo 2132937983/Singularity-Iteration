@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PRP",
+    "CXC",
+    "PEP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/iridium"
+    },
+    "R": {
+      "item": "minecraft:comparator"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "X": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    },
+    "E": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_compute_core",
+    "count": 1
+  }
+}

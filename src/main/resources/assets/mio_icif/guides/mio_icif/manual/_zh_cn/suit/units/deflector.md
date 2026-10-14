@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 18
 item_ids:
+  - mio_icif:module/item_module_deflector_mk2
   - mio_icif:module/item_module_deflector
 ---
 
@@ -37,6 +38,12 @@ item_ids:
 
 - 该单元没有持续功耗。只在挡下命中时消耗EU。
 
+## Mk.II
+
+Mk.II 每点伤害只需 3000 EU（原为 4000 EU），并增加行动 **力场展开**（见“量子行动”）。
+
 ## 配方
 
 <RecipesFor id="mio_icif:module/item_module_deflector" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_deflector_mk2" fallbackText="-" />

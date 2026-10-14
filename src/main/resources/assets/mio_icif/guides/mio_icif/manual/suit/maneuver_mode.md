@@ -51,4 +51,9 @@ A full quantum chestplate gives about 3 hours of slow cruise or 17 minutes at fu
 
 The switch starts off. The jetpack keeps its normal controls while the switch is off.
 If you hit a wall, the throttle closes.
+While you ride (boat, minecart, horse or a seat), the jetpack and the maneuver thrusters stay off and use no energy.
 Set the camera roll and the speed field of view in the mod configuration screen.
+
+## Thruster effects
+
+Since 0.1.10.2 heat haze shimmers over the thruster flames, shock diamonds stand in the plumes at full burn, and a dust ring runs over the ground when you land. The Wingmen's jets shimmer too. Client option: thruster_fx.

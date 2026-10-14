@@ -89,6 +89,12 @@ public final class JetpackFlightController {
             activeTicks(player).remove(player.getUUID());
             return;
         }
+        // 0.1.10.3: riding (boat, minecart, horse, a seat of another mod) the jetpack cannot lift the
+        // player; hover mode took the rider for airborne and spent energy, thrust sound and effects
+        if (player.isPassenger()) {
+            activeTicks(player).remove(player.getUUID());
+            return;
+        }
 
         int currentMode = jetpack.getMode(stack) == IJetpackItem.JetpackMode.HOVER ? 1 : 0;
         int MODE_JETPACK = 0;

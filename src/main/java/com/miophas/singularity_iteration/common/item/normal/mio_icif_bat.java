@@ -38,7 +38,12 @@ public class mio_icif_bat extends AbstractBattery implements IEnergyDistributabl
     }
 
     public mio_icif_bat(Properties properties, long maxEnergy, long initialEnergy, String texturePrefix, long chargeRate, int maxStackSize) {
-        super(properties, maxEnergy, initialEnergy, chargeRate, maxStackSize);
+        this(properties, maxEnergy, initialEnergy, texturePrefix, chargeRate, maxStackSize, maxStackSize);
+    }
+
+    /** 0.1.10.3: 空电池可堆叠到 {@code emptyStackSize}（充电后单个）；{@code maxStackSize} 为 1 时保留默认初始电量。 */
+    public mio_icif_bat(Properties properties, long maxEnergy, long initialEnergy, String texturePrefix, long chargeRate, int maxStackSize, int emptyStackSize) {
+        super(properties, maxEnergy, initialEnergy, chargeRate, maxStackSize, emptyStackSize);
         this.texturePrefix = texturePrefix;
     }
 

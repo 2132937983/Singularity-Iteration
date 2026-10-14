@@ -55,6 +55,60 @@ public final class OreScanner {
 
     /** Scan sphere radius in blocks. */
     public static final int RADIUS = 16;
+    /** 0.1.10.1: scan radius of a Mk.II scanner (+50 %). */
+    public static final int RADIUS_MK2 = 24;
+    /** Radius of the sweep that runs now (fixed for the whole sweep; the first switch-on scan uses {@link #RADIUS}). */
+    private static int sweepRadius = RADIUS;
+    /** 0.1.10.1: radius of the sweep that made {@link #shown} (the echo and the cell fade use it). */
+    private static int shownRadius = RADIUS;
+    /** 0.1.10.1 Mk.II: the ore tag filter (null = all ores); the filter of the sweep that runs now. */
+    @org.jetbrains.annotations.Nullable private static net.minecraft.tags.TagKey<Block> filter, sweepFilter;
+
+    /** 0.1.10.1: radius of the sweep that runs now. */
+    public static int radius() { return sweepRadius; }
+
+    /** Radius for the next sweep: Mk.II on the local wearer, else the base. */
+    private static int targetRadius() {
+        var p = Minecraft.getInstance().player;
+        return p != null && com.miophas.singularity_iteration.common.suit.SuitModules.tier(p,
+            com.miophas.singularity_iteration.common.suit.SuitModuleType.ORE_SCANNER) >= 2 ? RADIUS_MK2 : RADIUS;
+    }
+    /** True when the local wearer has a Mk.II scanner. */
+    private static boolean mk2() {
+        return targetRadius() == RADIUS_MK2;
+    }
+
+    /** 0.1.10.1 Mk.II: the ore tag filter, or null for all ores (a Mk.I scanner ignores it). */
+    @org.jetbrains.annotations.Nullable
+    public static net.minecraft.tags.TagKey<Block> filter() {
+        return filter;
+    }
+
+    /** Short name of the filter: "ALL" or the tag path after "ores/" in upper case ("DIAMOND"). */
+    public static String filterName() {
+        if (filter == null) return "ALL";
+        String p = filter.location().getPath();
+        return p.substring(p.indexOf('/') + 1).toUpperCase(java.util.Locale.ROOT);
+    }
+
+    /**
+     * 0.1.10.1 Mk.II: steps the filter through all ores and every common ore tag ({@code c:ores/*})
+     * that the game knows (the server sends the tags, so ores of other mods with the common tags
+     * are in the list). The scan starts again with a pulse.
+     */
+    public static void cycleFilter(int direction) {
+        List<net.minecraft.tags.TagKey<Block>> options = new ArrayList<>();
+        options.add(null);
+        BuiltInRegistries.BLOCK.getTagNames()
+            .filter(t -> t.location().getNamespace().equals("c") && t.location().getPath().startsWith("ores/"))
+            .sorted((a, b) -> a.location().getPath().compareTo(b.location().getPath()))
+            .forEach(options::add);
+        int i = Math.max(0, options.indexOf(filter));
+        filter = options.get(Math.floorMod(i + direction, options.size()));
+        wasActive = false;                 // the next tick scans the sphere at once and pulses
+        cursor = 0;
+    }
+
     /** Ticks for one full sweep of the scan cube. */
     public static final int SWEEP_TICKS = 50;
     /** Maximum number of hits that the scanner keeps and draws, nearest to the sweep centre first. */
@@ -174,7 +228,12 @@ public final class OreScanner {
      * @param all true to test all cells in this call, false to test one tick budget of cells.
      */
     private static void sweep(ClientLevel level, BlockPos playerPos, boolean all) {
-        int side = RADIUS * 2 + 1;
+        if (cursor == 0) {                                              // 0.1.10.1: fixed for the whole sweep
+            sweepRadius = all ? RADIUS : targetRadius();
+            sweepFilter = mk2() ? filter : null;
+        }
+        int rad = sweepRadius;
+        int side = rad * 2 + 1;
         int total = side * side * side;
         if (cursor == 0) {
             // new sweep: fix the centre for the full sweep
@@ -186,14 +245,14 @@ public final class OreScanner {
         int perTick = all ? total : (total + SWEEP_TICKS - 1) / SWEEP_TICKS;
         int end = Math.min(total, cursor + perTick);
         BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
-        int r2 = RADIUS * RADIUS;
+        int r2 = rad * rad;
         for (int i = cursor; i < end; i++) {
-            int dx = i % side - RADIUS, dz = (i / side) % side - RADIUS, dy = i / (side * side) - RADIUS;
+            int dx = i % side - rad, dz = (i / side) % side - rad, dy = i / (side * side) - rad;
             if (dx * dx + dy * dy + dz * dz > r2) continue;
             m.set(centre.getX() + dx, centre.getY() + dy, centre.getZ() + dz);
             if (!level.isLoaded(m)) continue;
             BlockState state = level.getBlockState(m);
-            if (state.isAir() || !isOre(state)) continue;
+            if (state.isAir() || !isOre(state) || sweepFilter != null && !state.is(sweepFilter)) continue;
             Block block = state.getBlock();
             pending.add(new Hit(m.immutable(), color(block), label(block)));
         }
@@ -202,6 +261,7 @@ public final class OreScanner {
             Vec3 eye = Vec3.atCenterOf(centre);
             pending.sort((a, b) -> Double.compare(a.pos.distToCenterSqr(eye), b.pos.distToCenterSqr(eye)));
             shown = List.copyOf(pending.size() > MAX_SHOWN ? pending.subList(0, MAX_SHOWN) : pending);
+            shownRadius = rad;
             cursor = 0;
         }
     }
@@ -315,7 +375,9 @@ public final class OreScanner {
         long age = now - echoStart;
         int w = g.guiWidth(), h = g.guiHeight();
         // wavefront radius in blocks. A start time in the future shows the full sphere.
-        float front = age < 0 ? RADIUS : Math.min(RADIUS + 2, RADIUS * age / (float) ECHO_MS);
+        // 0.1.10.1: the radius of the sweep that made the hits (Mk.II: 24)
+        int rad = shownRadius;
+        float front = age < 0 ? rad : Math.min(rad + 2, rad * age / (float) ECHO_MS);
         boolean echo = age >= 0 && age <= ECHO_MS + 900;
         Vec3 origin = Vec3.atCenterOf(centre);
         if (echo) wavefront(g, origin, front, age);
@@ -344,9 +406,9 @@ public final class OreScanner {
         for (Hit hit : shown) {
             double dOrigin = Math.sqrt(hit.pos.distToCenterSqr(origin));
             if (dOrigin > front) continue;                 // the wave has not reached it yet
-            float since = (float) (age - dOrigin / RADIUS * ECHO_MS);   // ms since the wave passed
+            float since = (float) (age - dOrigin / shownRadius * ECHO_MS);   // ms since the wave passed
             double d = Math.sqrt(hit.pos.distToCenterSqr(cam));
-            float a = (float) Math.max(0.40, 1.0 - d / RADIUS * 0.5) * pulse;
+            float a = (float) Math.max(0.40, 1.0 - d / shownRadius * 0.5) * pulse;
             // jx, jy: GUI pixel offset of the flicker. Only jx changes. jy stays 0.
             float jx = 0, jy = 0;
             if (since >= 0 && since < 380) {
@@ -476,8 +538,9 @@ public final class OreScanner {
         }
         // pulse read-out under the crosshair
         float ta = age < ECHO_MS ? 1F : Math.max(0, 1 - (age - ECHO_MS) / 900F);
-        String label = age < ECHO_MS ? String.format(java.util.Locale.ROOT, "SONAR PULSE  %02dm", (int) (RADIUS * age / ECHO_MS))
+        String label = age < ECHO_MS ? String.format(java.util.Locale.ROOT, "SONAR PULSE  %02dm", (int) (shownRadius * age / ECHO_MS))
             : String.format(java.util.Locale.ROOT, "ECHO  %d CONTACTS", shown.size());
+        if (sweepFilter != null) label += "  [" + filterName() + "]";
         if (ta > 0) {
             float jitter = age < GLITCH_MS && noise(now / 60, 9) < 0.3F ? 2 : 0;
             FcsDraw.textCentered(g, label, cx + jitter, cy + 18, FcsDraw.argb(ECHO_RGB, ta), 0.62F);

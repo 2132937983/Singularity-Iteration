@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PRP",
+    "EXE",
+    "PIP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "R": {
+      "item": "minecraft:redstone_block"
+    },
+    "E": {
+      "item": "mio_icif:normal/item_crystal_lev0"
+    },
+    "X": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    },
+    "I": {
+      "tag": "c:plates/iridium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_coherence_capacitor",
+    "count": 1
+  }
+}

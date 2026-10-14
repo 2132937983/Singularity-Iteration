@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 12
 item_ids:
+  - mio_icif:module/item_module_entity_esp_mk2
   - mio_icif:module/item_module_entity_esp
 ---
 
@@ -36,6 +37,12 @@ item_ids:
 
 - 颜色：红色为敌对，黄色为中立，绿色为友好，青色为玩家。
 
+## Mk.II
+
+Mk.II 标记 48 格内的生物，目标卡片还会显示精确生命值与护甲值。
+
 ## 配方
 
 <RecipesFor id="mio_icif:module/item_module_entity_esp" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_entity_esp_mk2" fallbackText="-" />

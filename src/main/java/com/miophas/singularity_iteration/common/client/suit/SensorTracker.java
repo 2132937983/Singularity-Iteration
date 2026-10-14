@@ -52,6 +52,15 @@ public final class SensorTracker {
 
     /** Half size of the ESP query box, in blocks. The tracker uses it while the ESP unit is on. */
     public static final double ESP_RANGE = 32;
+    /** 0.1.10.1: the same for a Mk.II ESP unit (+50 %). */
+    public static final double ESP_RANGE_MK2 = 48;
+
+    /** 0.1.10.1: the ESP range of the local wearer (Mk.II: {@link #ESP_RANGE_MK2}). */
+    public static double espRange() {
+        var p = net.minecraft.client.Minecraft.getInstance().player;
+        return p != null && com.miophas.singularity_iteration.common.suit.SuitModules.tier(p,
+            com.miophas.singularity_iteration.common.suit.SuitModuleType.ENTITY_ESP) >= 2 ? ESP_RANGE_MK2 : ESP_RANGE;
+    }
     /**
      * Predictor range in blocks. It is the half size of the query box when ESP is off. It is also
      * the sphere radius in which the tracker calculates path and intent.
@@ -165,7 +174,7 @@ public final class SensorTracker {
             tracks = List.of();
             history.clear();
         } else {
-            double range = esp ? ESP_RANGE : PREDICT_RANGE;
+            double range = esp ? espRange() : PREDICT_RANGE;
             // the value is the feet position of the player
             Vec3 eye = player.position();
             List<LivingEntity> candidates = level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(range),

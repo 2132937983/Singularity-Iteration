@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 15
 item_ids:
+  - mio_icif:module/item_module_behavior_predictor_mk2
   - mio_icif:module/item_module_behavior_predictor
 ---
 
@@ -38,6 +39,12 @@ item_ids:
 - 近战与远程代码：ATK近战，AIM远程武器，DET爆炸。
 - 特殊攻击代码：CAST法术，BEAM守卫者，FIRE恶魂，DIVE恼鬼，AGGRO末影人。
 
+## Mk.II
+
+Mk.II 增加行动 **时间扭曲**（见“量子行动”）；路径与攻击预告的显示不变。
+
 ## 配方
 
 <RecipesFor id="mio_icif:module/item_module_behavior_predictor" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_behavior_predictor_mk2" fallbackText="-" />

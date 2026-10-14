@@ -1,4 +1,4 @@
-# Singularity Iteration API Guide (0.1.9.0)
+# Singularity Iteration API Guide (0.1.10.2)
 
 This guide is for addon authors. The text follows ASD-STE100 (Simplified Technical English):
 short sentences, active voice, one instruction in each step.
@@ -143,6 +143,68 @@ classes (`mio_icif_*_solar_helmet`, `mio_icif_chestplate_advanced_quantum`,
 `mio_icif_chestplate_heavy_quantum`) were deleted; addons that referenced them must check the core
 instead.
 
+### 3.5 Quantum actions (0.1.10.0)
+
+Since 0.1.10.0 a quantum unit may have an active ability on the action keys (V and B, shared with
+the nano bursts). Actions are paid with quantum coherence (0..100, +50 per coherence capacitor,
+regained from EU). At 0 the core decoheres for a few seconds and refuses every action.
+Nothing changed for units without an action: all 0.1.9.2 types and signatures are unchanged.
+
+| Type | Function |
+|---|---|
+| `SuitActionSpec` | Coherence cost, cooldown ticks, sustained flag, coherence per second of a sustained action. `single(cost, cooldown)`, `sustained(start, perSecond, cooldown)`. |
+| `SuitActionBehavior` | `fire(player, piece, input)` on the server; true when it fired (only then the cost is paid). Sustained actions also get `sustain` each tick (false ends it) and `end`. |
+| `SuitQuantumActions` | `register(unitId, spec, behavior)`, `get(key)`, `all()`. |
+| `SuitQuantumCore` | Read-only coherence, coherence maximum and decoherence lock of a player. |
+
+Procedure: register the unit as before, then its action.
+
+```java
+SuitModuleRegistry.register(SPEC, SuitModuleBehavior.NONE);                // a quantum unit
+SuitQuantumActions.register(SPEC.id(), SuitActionSpec.single(15, 200),
+    (player, piece, input) -> { /* the action */ return true; });
+```
+
+Rules:
+
+* The unit must allow the quantum class and sit on a worn quantum piece; the wearer assigns the
+  action to V or B in the Singularity Management Panel (quantum core rows).
+* Singularity Iteration checks the unit (installed, on, powered), the decoherence lock, the
+  cooldown and the coherence before `fire`. A sustained action needs more coherence than its start
+  cost; it ends when the key is pressed again, `sustain` returns false, the coherence runs out
+  (decoherence) or the unit stops.
+* The id needs the addon namespace; register on both sides before the server starts.
+
+### 3.6 Entanglement synergies and compute bandwidth (0.1.10.1)
+
+Since 0.1.10.1 the wearer can link two quantum units on the quantum chestplate (2 links, 3 with an
+active compute core). A linked pair is a synergy. Each active unit on a quantum piece also loads
+the suit computer (compute bandwidth, QB). Over the budget (20 QB, 28 with a compute core) the
+sensors refresh at half rate and coherence regenerates at half speed. Nothing changed for existing
+addons: all 0.1.10.0 types and signatures are unchanged.
+
+| Type | Function |
+|---|---|
+| `SuitSynergies` | `register(id, unitA, unitB)`, `get(key)`, `all()`, `active(player, id)`. The pair appears in the Entanglement Matrix; the addon implements the effect where `active` is true. Names: `Entry.nameKey()` and `nameKey + ".desc"`. |
+| `SuitBandwidth` | `register(unitId, cost)` (0..16 QB), `cost(key)`, `load(player)`, `budget(player)`. |
+
+Procedure: register the synergy, then test it where the effect applies.
+
+```java
+SuitSynergies.register(ResourceLocation.fromNamespaceAndPath(MODID, "deep_scan"), MODID + ":sonar_unit", "ore_scanner");
+SuitBandwidth.register(ResourceLocation.fromNamespaceAndPath(MODID, "sonar_unit"), 2);
+
+if (SuitSynergies.active(player, DEEP_SCAN)) { /* the synergy effect */ }
+```
+
+Rules:
+
+* Both units must be installed on worn quantum pieces and be active (installed, on, powered).
+* A unit key is a built-in id (`"entity_esp"`) or a registered addon id (`"addon:unit"`). The two keys must differ.
+* An addon unit without a registered cost loads 0 QB (the 0.1.10.0 behaviour).
+* The ids need the addon namespace; register on both sides before the server starts. A link to a
+  synergy of a removed addon stays stored on the chestplate and does nothing.
+
 ## 4. Ballistics (`core.api.item`)
 
 The fire-control HUD, the Smart Trajectory Guidance unit and the drones use one ballistic model.
@@ -199,6 +261,7 @@ Singularity Iteration posts these events on `NeoForge.EVENT_BUS`, on the server 
 | `ArmoryEvent.Summon` | Before a suit flies to a wearer (the player or a companion). | Yes. No energy is spent and no item moves. |
 | `ArmoryEvent.PieceDocked` | After a flying piece is equipped. | No. |
 | `ArmoryEvent.WingmanDeploy` | Before a stored suit deploys as a Wingman drone. | Yes. |
+| `ArmoryEvent.WingmanCommand` (0.1.10.2) | Before a quantum command order from the command wheel or the holo table: MOVE, HOLD, SUPPRESS, FOCUS, FORM_UP, MODE, SQUAD, RETURN, QUANTUM_RECALL. `getOrder()`, `getWingmen()`, `getPoint()` (anchored orders), `getTarget()` (FOCUS). | Yes: the order changes nothing. |
 
 ### 5.1 Data tags
 
@@ -222,6 +285,25 @@ distribution by default (`distributionMode=fair` in `config/core.ini`, or the co
    of the loads, then storages up to their rated input, then the remaining room of the storages.
    In each stage, a receiver gets energy in proportion to its remaining demand. Generators give
    before storages.
+
+### 6.1 Battery stacking (`core.prefab.item.AbstractBattery`, 0.1.10.3)
+
+* Only empty batteries stack. A battery built with a stack size above 1 stacks up to that size while
+  it holds no energy. As soon as it holds energy, `getMaxStackSize(ItemStack)` stops the stack from
+  growing, so two charged batteries never merge, even with the same charge.
+* New constructor `AbstractBattery(Properties, maxEnergy, initialEnergy, chargeRate, maxStackSize,
+  emptyStackSize)`: with `maxStackSize` 1 the battery keeps the non-stackable storage (the default
+  component holds `initialEnergy`, so old saves keep their charge), and empty batteries still stack
+  up to `emptyStackSize`. `getEmptyStackSize()` returns that size.
+* An empty stackable battery carries no `mio_icif:battery_energy` component. A new, a crafted and a
+  discharged battery are the same stack. Stacks that older versions saved with an explicit zero
+  are normalized when they load (`verifyComponentsAfterLoad`).
+* A stack of more than one battery never takes or gives energy: `addEnergy`, `extractEnergy`, the FE
+  capability and the item API transfer refuse it, and `setEnergy` ignores a positive value on such a
+  stack of a stacking battery. Machine battery slots hold one battery, so a stack put into a charge
+  slot leaves one battery there.
+* Addon batteries that relied on charged batteries with the same charge stacking can override
+  `getMaxStackSize(ItemStack)`.
 
 ## 7. Blueprint Builder and Material Interface
 

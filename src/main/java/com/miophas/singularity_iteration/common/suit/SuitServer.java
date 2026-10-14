@@ -54,6 +54,7 @@ public final class SuitServer {
         if (age % THREAT_INTERVAL == 0) tickThreats(player);
         com.miophas.singularity_iteration.common.suit.nano.NanoSuit.tick(player);   // 0.1.8.5: nano core and passive nano units
         com.miophas.singularity_iteration.common.suit.core.FrameCores.tick(player); // 0.1.9.0: frame cores
+        com.miophas.singularity_iteration.common.suit.quantum.QuantumCore.tick(player);  // 0.1.10.0: coherence and quantum actions
     }
 
     @SubscribeEvent
@@ -119,21 +120,40 @@ public final class SuitServer {
         float original = event.getOriginalDamage();
         float damage = event.getNewDamage();
         var piece = SuitModules.wornPieceWith(player, SuitModuleType.DEFLECTOR);
+        // 0.1.10.0: a Mk.II deflector pays 3 000 EU per point instead of 4 000
+        long perPoint = SuitModules.tier(piece, SuitModuleType.DEFLECTOR.id()) >= 2 ? SuitModules.DEFLECTOR_EU_PER_DAMAGE_MK2 : SuitModules.DEFLECTOR_EU_PER_DAMAGE;
         float cancel = Math.min(Math.max(0, damage), SuitModules.DEFLECTOR_MAX_PER_HIT);
-        cancel = Math.min(cancel, SuitModules.energy(player, piece) / (float) SuitModules.DEFLECTOR_EU_PER_DAMAGE);
+        cancel = Math.min(cancel, SuitModules.energy(player, piece) / (float) perPoint);
         if (cancel > 0) {
-            SuitModules.extract(player, piece, (long) Math.ceil(cancel * SuitModules.DEFLECTOR_EU_PER_DAMAGE));
+            SuitModules.extract(player, piece, (long) Math.ceil(cancel * perPoint));
             event.setNewDamage(damage - cancel);
         }
         float stopped = original - event.getNewDamage();
         if (stopped <= 0) return;
+        // 0.1.10.1 Resonant Deflection synergy: a share of the stopped damage charges the resonance burst
+        if (player instanceof ServerPlayer sp) com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergies.deflected(sp, stopped);
         Vec3 dir = hitDirection(player, source);
         float strength = Math.min(1.0F, 0.25F + stopped / 10.0F);
-        var hit = new SuitPackets.ShieldHit(player.getId(), (float) dir.x, (float) dir.y, (float) dir.z, strength);
+        // 0.1.10.1: the suit charge goes along (the hex cell shield cracks and changes colour as it falls)
+        var hit = new SuitPackets.ShieldHit(player.getId(), (float) dir.x, (float) dir.y, (float) dir.z, strength, suitCharge(player));
         // the wearer and everyone close enough to see the effect (channel-checked: no fake players)
         for (ServerPlayer viewer : ((ServerLevel) player.level()).players()) {
             if (viewer.distanceToSqr(player) <= 96 * 96) SuitPackets.send(viewer, hit);
         }
+    }
+
+    /** 0.1.10.1: stored share 0..1 of the worn electric armour (all pieces together). */
+    public static float suitCharge(Player player) {
+        long stored = 0, capacity = 0;
+        for (net.minecraft.world.entity.EquipmentSlot slot : new net.minecraft.world.entity.EquipmentSlot[]{net.minecraft.world.entity.EquipmentSlot.HEAD,
+                net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET}) {
+            var piece = player.getItemBySlot(slot);
+            if (piece.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor) {
+                stored += armor.getEnergy(piece);
+                capacity += armor.getMaxEnergy(piece);
+            }
+        }
+        return capacity <= 0 ? 0F : (float) Math.min(1.0, stored / (double) capacity);
     }
 
     /** Unit vector from the wearer's centre towards the hit. */

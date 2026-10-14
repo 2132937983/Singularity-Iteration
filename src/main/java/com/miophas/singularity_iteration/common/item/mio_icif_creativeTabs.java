@@ -80,6 +80,7 @@ public class mio_icif_creativeTabs {
                 output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.STATION_ITEM.get());
                 for (var unit : com.miophas.singularity_iteration.common.suit.SuitRegistry.units()) output.accept(unit.get());
                 output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.LATTICE_DENSIFIER.get());
+                output.accept(com.miophas.singularity_iteration.common.suit.SuitRegistry.BAY_EXPANDER.get());
                 for (var core : com.miophas.singularity_iteration.common.suit.SuitRegistry.cores()) output.accept(core.get());
                 com.miophas.singularity_iteration.common.guide.GuideBook.addToTab(output);
                 output.accept(mio_icif_items_tools.WRENCH_ELC.get());
@@ -965,6 +966,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_upgrades.PULLING_UPGRADE.get());
                 output.accept(mio_icif_upgrades.FLUID_EJECTOR_UPGRADE.get());
                 output.accept(mio_icif_upgrades.FLUID_PULLING_UPGRADE.get());
+            output.accept(mio_icif_upgrades.THERMAL_RETENTION_UPGRADE.get());   // 0.1.9.1
                 output.accept(mio_icif_upgrades.REDSTONE_INVERTER_UPGRADE.get());
 
                 // ============================================================

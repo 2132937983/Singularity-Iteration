@@ -135,7 +135,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
      */
     public static final BooleanProperty FOAM_HARDENED = BooleanProperty.create("foam_hardened");
     
-    // Center core: 4x4x4 pixels.
+    // Center core of a bare cable: 4x4x4 pixels. (0.1.10.3: the shape of each cable follows its own
+    // model thickness, see shapeRadius; these constants stay for the bare size.)
     protected static final VoxelShape CENTER_SHAPE = Block.box(6.0, 6.0, 6.0, 10.0, 10.0, 10.0);
     
     // Connection shape for each direction. Each one extends 6 pixels.
@@ -152,13 +153,25 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     private static final int WEST_SHAPE_BIT = 1 << 3;
     private static final int UP_SHAPE_BIT = 1 << 4;
     private static final int DOWN_SHAPE_BIT = 1 << 5;
-    private static final VoxelShape[] CONNECTION_SHAPES = createConnectionShapes();
+    private static final VoxelShape[] CONNECTION_SHAPES = createConnectionShapes(2);
+    /**
+     * 0.1.10.3: connection shapes by half width in pixels (2..6). The models draw a bare cable 4
+     * pixels thick and every insulation layer adds 1 pixel on each side (6, 8, 10 pixels); before,
+     * every cable used the bare 4-pixel shape, so the outline, the collision and the wrench sides
+     * did not match an insulated cable.
+     */
+    private static final VoxelShape[][] SHAPES_BY_RADIUS = new VoxelShape[7][];
+    static {
+        for (int r = 2; r <= 6; r++) SHAPES_BY_RADIUS[r] = r == 2 ? CONNECTION_SHAPES : createConnectionShapes(r);
+    }
     
     // 电缆等级
     protected final CableTier cableTier;
     /** 是否为绝缘电线 */
     protected final boolean insulated;
     private final int insulationLayers;
+    /** 0.1.10.3: half width of the cable in pixels, as its model draws it (see SHAPES_BY_RADIUS). */
+    private final int shapeRadius;
     private static final java.util.Map<CableTier, java.util.Map<Integer, mio_icif_block_wire>> LAYERS = new java.util.HashMap<>();
     private mio_icif_block_wire bareCounterpart;
     private mio_icif_block_wire insulatedCounterpart;
@@ -190,10 +203,20 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     }
 
     public mio_icif_block_wire(Properties properties, CableTier cableTier, int layers) {
+        // the superconductor is flagged insulated (no shock) but its model stays bare-thin
+        this(properties, cableTier, layers, layers <= 0 || cableTier == CableTier.UNLIMITED ? 2 : Math.min(6, 2 + layers));
+    }
+
+    /**
+     * 0.1.10.3: a cable whose model has its own thickness ({@code shapeRadius}, half width in pixels,
+     * 2..6): the detector and splitter cables are insulated but drawn bare-thin.
+     */
+    protected mio_icif_block_wire(Properties properties, CableTier cableTier, int layers, int shapeRadius) {
         super(properties);
         this.cableTier = cableTier;
         this.insulated = layers > 0;
         this.insulationLayers = layers;
+        this.shapeRadius = Math.clamp(shapeRadius, 2, 6);
         LAYERS.computeIfAbsent(cableTier, ignored -> new java.util.HashMap<>()).put(layers, this);
         this.registerDefaultState(this.stateDefinition.any()
             .setValue(NORTH, false)
@@ -223,6 +246,8 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         return insulated;
     }
     public int getInsulationLayers() { return insulationLayers; }
+    /** 0.1.10.3: half width of the cable in pixels (2 bare, +1 per insulation layer). */
+    public int getShapeRadius() { return shapeRadius; }
 
     public mio_icif_block_wire getBareCounterpart() {
         if (!insulated) return null;
@@ -309,7 +334,7 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         level.playSound(null, pos, SoundEvents.SAND_HIT, SoundSource.BLOCKS, 0.5F, 0.5F);
     }
     
-    private static VoxelShape getCombinedShape(BlockState state) {
+    private VoxelShape getCombinedShape(BlockState state) {
         int connectionMask = 0;
         if (state.getValue(NORTH)) connectionMask |= NORTH_SHAPE_BIT;
         if (state.getValue(SOUTH)) connectionMask |= SOUTH_SHAPE_BIT;
@@ -317,20 +342,26 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         if (state.getValue(WEST)) connectionMask |= WEST_SHAPE_BIT;
         if (state.getValue(UP)) connectionMask |= UP_SHAPE_BIT;
         if (state.getValue(DOWN)) connectionMask |= DOWN_SHAPE_BIT;
-        return CONNECTION_SHAPES[connectionMask];
+        return SHAPES_BY_RADIUS[shapeRadius][connectionMask];
     }
 
-    private static VoxelShape[] createConnectionShapes() {
+    /** All 64 connection shapes of a cable {@code r} pixels in half width (core plus arms to the block faces). */
+    private static VoxelShape[] createConnectionShapes(int r) {
+        double lo = 8 - r, hi = 8 + r;
+        VoxelShape center = Block.box(lo, lo, lo, hi, hi, hi);
+        VoxelShape north = Block.box(lo, lo, 0, hi, hi, lo), south = Block.box(lo, lo, hi, hi, hi, 16);
+        VoxelShape east = Block.box(hi, lo, lo, 16, hi, hi), west = Block.box(0, lo, lo, lo, hi, hi);
+        VoxelShape up = Block.box(lo, hi, lo, hi, 16, hi), down = Block.box(lo, 0, lo, hi, lo, hi);
         VoxelShape[] shapes = new VoxelShape[1 << 6];
         for (int connectionMask = 0; connectionMask < shapes.length; connectionMask++) {
-            VoxelShape shape = CENTER_SHAPE;
-            if ((connectionMask & NORTH_SHAPE_BIT) != 0) shape = Shapes.or(shape, NORTH_SHAPE);
-            if ((connectionMask & SOUTH_SHAPE_BIT) != 0) shape = Shapes.or(shape, SOUTH_SHAPE);
-            if ((connectionMask & EAST_SHAPE_BIT) != 0) shape = Shapes.or(shape, EAST_SHAPE);
-            if ((connectionMask & WEST_SHAPE_BIT) != 0) shape = Shapes.or(shape, WEST_SHAPE);
-            if ((connectionMask & UP_SHAPE_BIT) != 0) shape = Shapes.or(shape, UP_SHAPE);
-            if ((connectionMask & DOWN_SHAPE_BIT) != 0) shape = Shapes.or(shape, DOWN_SHAPE);
-            shapes[connectionMask] = shape;
+            VoxelShape shape = center;
+            if ((connectionMask & NORTH_SHAPE_BIT) != 0) shape = Shapes.or(shape, north);
+            if ((connectionMask & SOUTH_SHAPE_BIT) != 0) shape = Shapes.or(shape, south);
+            if ((connectionMask & EAST_SHAPE_BIT) != 0) shape = Shapes.or(shape, east);
+            if ((connectionMask & WEST_SHAPE_BIT) != 0) shape = Shapes.or(shape, west);
+            if ((connectionMask & UP_SHAPE_BIT) != 0) shape = Shapes.or(shape, up);
+            if ((connectionMask & DOWN_SHAPE_BIT) != 0) shape = Shapes.or(shape, down);
+            shapes[connectionMask] = shape.optimize();
         }
         return shapes;
     }
@@ -913,46 +944,62 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
         }
     }
 
+    /** The arm of the cable hit at {@code hitVec}, or null for the core. 0.1.10.3: the core size follows the cable thickness. */
     public static Direction getHitDirection(net.minecraft.world.phys.Vec3 hitVec, BlockPos pos, BlockState state) {
+        double r = coreHalf(state), lo = 0.5 - r, hi = 0.5 + r;
         double lx = hitVec.x - pos.getX();
         double ly = hitVec.y - pos.getY();
         double lz = hitVec.z - pos.getZ();
 
-        boolean inCenterX = lx >= 0.375 && lx <= 0.625;
-        boolean inCenterY = ly >= 0.375 && ly <= 0.625;
-        boolean inCenterZ = lz >= 0.375 && lz <= 0.625;
+        boolean inCenterX = lx >= lo && lx <= hi;
+        boolean inCenterY = ly >= lo && ly <= hi;
+        boolean inCenterZ = lz >= lo && lz <= hi;
 
         if (inCenterX && inCenterY && inCenterZ) {
             return null;
         }
 
         if (inCenterX && inCenterY) {
-            if (lz < 0.375 && state.getValue(NORTH)) return Direction.NORTH;
-            if (lz > 0.625 && state.getValue(SOUTH)) return Direction.SOUTH;
+            if (lz < lo && state.getValue(NORTH)) return Direction.NORTH;
+            if (lz > hi && state.getValue(SOUTH)) return Direction.SOUTH;
         }
         if (inCenterY && inCenterZ) {
-            if (lx < 0.375 && state.getValue(WEST)) return Direction.WEST;
-            if (lx > 0.625 && state.getValue(EAST)) return Direction.EAST;
+            if (lx < lo && state.getValue(WEST)) return Direction.WEST;
+            if (lx > hi && state.getValue(EAST)) return Direction.EAST;
         }
         if (inCenterX && inCenterZ) {
-            if (ly < 0.375 && state.getValue(DOWN)) return Direction.DOWN;
-            if (ly > 0.625 && state.getValue(UP)) return Direction.UP;
+            if (ly < lo && state.getValue(DOWN)) return Direction.DOWN;
+            if (ly > hi && state.getValue(UP)) return Direction.UP;
         }
 
-        if (lz < 0.375) return Direction.NORTH;
-        if (lz > 0.625) return Direction.SOUTH;
-        if (lx < 0.375) return Direction.WEST;
-        if (lx > 0.625) return Direction.EAST;
-        if (ly < 0.375) return Direction.DOWN;
-        if (ly > 0.625) return Direction.UP;
+        if (lz < lo) return Direction.NORTH;
+        if (lz > hi) return Direction.SOUTH;
+        if (lx < lo) return Direction.WEST;
+        if (lx > hi) return Direction.EAST;
+        if (ly < lo) return Direction.DOWN;
+        if (ly > hi) return Direction.UP;
 
         return null;
     }
 
+    /** True when {@code hitVec} lies on the core of a bare (4-pixel) cable. */
     public static boolean isHitInCenter(net.minecraft.world.phys.Vec3 hitVec, BlockPos pos) {
-        double lx = hitVec.x - pos.getX();
-        double ly = hitVec.y - pos.getY();
-        double lz = hitVec.z - pos.getZ();
-        return lx >= 0.375 && lx <= 0.625 && ly >= 0.375 && ly <= 0.625 && lz >= 0.375 && lz <= 0.625;
+        return inCore(hitVec, pos, 2 / 16.0);
+    }
+
+    /** 0.1.10.3: true when {@code hitVec} lies on the core of the cable in {@code state} (its own thickness). */
+    public static boolean isHitInCenter(net.minecraft.world.phys.Vec3 hitVec, BlockPos pos, BlockState state) {
+        return inCore(hitVec, pos, coreHalf(state));
+    }
+
+    private static boolean inCore(net.minecraft.world.phys.Vec3 hitVec, BlockPos pos, double r) {
+        double lx = hitVec.x - pos.getX(), ly = hitVec.y - pos.getY(), lz = hitVec.z - pos.getZ();
+        double lo = 0.5 - r - 1.0E-4, hi = 0.5 + r + 1.0E-4;
+        return lx >= lo && lx <= hi && ly >= lo && ly <= hi && lz >= lo && lz <= hi;
+    }
+
+    /** Half width of the core in blocks for a cable state (bare size for any other block). */
+    private static double coreHalf(BlockState state) {
+        return (state.getBlock() instanceof mio_icif_block_wire wire ? wire.shapeRadius : 2) / 16.0;
     }
 }

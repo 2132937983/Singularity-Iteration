@@ -86,6 +86,14 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     // Heat storage of the machine.
     protected final HeatStorage heatStorage;
 
+    /**
+     * 0.1.9.1 heat hold (GUI switch): the furnace keeps heating while it has nothing to smelt and
+     * holds full heat, so the next item smelts at full speed at once. Holding full heat costs
+     * {@link #HOLD_STANDBY_EU} EU/t, nothing with a Thermal Retention Unit.
+     */
+    private boolean heatHold;
+    public static final long HOLD_STANDBY_EU = 1;
+
 
 
     /**
@@ -254,13 +262,49 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
 
     @Override
     protected void onTick() {
-        boolean heating = canWork() || level != null && level.hasNeighborSignal(worldPosition);
+        boolean working = canWork();
+        boolean heating = working || heatHold || level != null && level.hasNeighborSignal(worldPosition);
+        boolean full = heatStorage.getHeatStored() >= heatStorage.getMaxHeatStored();
+        boolean insulated = thermalRetention();
+        if (heating && full && !working) {
+            // holding full heat: standby power, none when insulated
+            long standby = insulated ? 0 : scaledCost(HOLD_STANDBY_EU);
+            if (standby == 0 || apiGetStoredEnergy() >= standby && apiUseEnergy(standby, false) == standby) return;
+            if (!insulated) heatStorage.consumeHeatInternal(HEAT_COOL_RATE, false);
+            return;
+        }
         long heatCost = scaledCost(HEAT_UP_COST);
         if (heating && apiGetStoredEnergy() >= heatCost && apiUseEnergy(heatCost, false) == heatCost) {
             heatStorage.generateHeatInternal(Math.max(HEAT_UP_RATE, Math.round(HEAT_UP_RATE * overclockSpeed())), false);
-        } else {
+        } else if (!insulated) {
+            // 0.1.9.1: a Thermal Retention Unit stops the heat loss of an idle furnace
             heatStorage.consumeHeatInternal(HEAT_COOL_RATE, false);
         }
+    }
+
+    /** True with a Thermal Retention Unit in an upgrade slot (0.1.9.1). */
+    public boolean thermalRetention() {
+        for (int slot = UPGRADE_SLOT_1; slot <= UPGRADE_SLOT_2; slot++) {
+            ItemStack stack = itemHandler.getStackInSlot(slot);
+            if (stack.getItem() instanceof com.miophas.singularity_iteration.common.item.upgrade.mio_icif_upgrade u
+                    && u.getLocalUpgradeType() == com.miophas.singularity_iteration.common.item.upgrade.mio_icif_upgrade.UpgradeType.THERMAL_RETENTION) return true;
+        }
+        return false;
+    }
+
+    public boolean heatHold() { return heatHold; }
+
+    public void toggleHeatHold() {
+        heatHold = !heatHold;
+        setChanged();
+    }
+
+    /** Ticks until full heat at the current heating rate (0 when full). */
+    public int ticksToFullHeat() {
+        long missing = heatStorage.getMaxHeatStored() - heatStorage.getHeatStored();
+        if (missing <= 0) return 0;
+        long rate = Math.max(HEAT_UP_RATE, Math.round(HEAT_UP_RATE * overclockSpeed()));
+        return (int) Math.min(Integer.MAX_VALUE, (missing + rate - 1) / rate);
     }
 
     /**
@@ -367,6 +411,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         super.saveAdditional(tag, registries);
         tag.putLong("heat", heatStorage.getHeatStored());
         tag.putInt("progress", progress);
+        tag.putBoolean("heat_hold", heatHold);
         storedXp.save(tag);
     }
 
@@ -377,6 +422,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         else if (tag.contains("heat_percent", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC))
             heatStorage.setHeat(com.miophas.singularity_iteration.core.api.util.BoundedUnits.multiplyDivide(Math.max(0, Math.min(100, tag.getLong("heat_percent"))), HEAT_CAPACITY, 100));
         if (!tag.contains("progress") && tag.contains("progress1")) progress = tag.getInt("progress1");
+        heatHold = tag.getBoolean("heat_hold");
         progress = Math.max(0, Math.min(PROGRESS_TARGET, progress));
         storedXp.load(tag);
     }

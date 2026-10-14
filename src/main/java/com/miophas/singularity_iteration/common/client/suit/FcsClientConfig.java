@@ -55,6 +55,10 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue HAND_ARMOR_THIRD_PERSON;
     /** 0.1.9.0: frame core attachments (solar wings, graviton ring, boosters) on worn pieces. */
     public static final ModConfigSpec.BooleanValue CORE_ATTACHMENTS;
+    /** 0.1.9.1: quantum suit photon effects, sensor active scan, Wingman effects. */
+    public static final ModConfigSpec.BooleanValue PHOTON_FX;
+    public static final ModConfigSpec.BooleanValue SCAN_FX;
+    public static final ModConfigSpec.BooleanValue WINGMAN_FX;
     /** 0.1.8.3: flight visual effects (vapour cone, wake trails, boom rings) and their strength. */
     public static final ModConfigSpec.BooleanValue VAPOR_EFFECTS;
     public static final ModConfigSpec.DoubleValue VAPOR_INTENSITY;
@@ -71,6 +75,16 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue NANO_REFRACTION;
     public static final ModConfigSpec.DoubleValue NANO_FX_INTENSITY;
     public static final ModConfigSpec.BooleanValue NANO_HF_JITTER;
+    /** 0.1.10.0: quantum core HUD, visor boot sequence, action effect strength, decoherence glitch. */
+    public static final ModConfigSpec.BooleanValue QUANTUM_HUD;
+    public static final ModConfigSpec.BooleanValue VISOR_BOOT;
+    public static final ModConfigSpec.DoubleValue QUANTUM_FX_INTENSITY;
+    public static final ModConfigSpec.BooleanValue DECOHERENCE_GLITCH;
+    /** 0.1.10.2: squad panel, order markers, holo table cells, propulsion effects. */
+    public static final ModConfigSpec.BooleanValue SQUAD_HUD;
+    public static final ModConfigSpec.BooleanValue ORDER_MARKERS;
+    public static final ModConfigSpec.IntValue HOLO_TABLE_CELLS;
+    public static final ModConfigSpec.BooleanValue THRUSTER_FX;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -87,6 +101,8 @@ public final class FcsClientConfig {
         VAPOR_EFFECTS = b.comment("Vapour cone, wake trails, sonic boom rings and condensation bursts in Special Maneuver Mode.")
             .define("vapor_effects", true);
         VAPOR_INTENSITY = b.comment("Opacity of the flight vapour effects (1.0 = default).").defineInRange("vapor_intensity", 1.0, 0.25, 1.5);
+        THRUSTER_FX = b.comment("Heat haze over the thruster flames (suit and Wingmen), shock diamonds at full burn and on boosts,",
+                "and the dust ring when you land from Special Maneuver flight.").define("thruster_fx", true);
         b.pop();
         b.push("weapons");
         MUZZLE_FLASH = b.comment("A short glow at the muzzle when an energy weapon fires.").define("muzzle_flash", true);
@@ -108,6 +124,12 @@ public final class FcsClientConfig {
         CORE_ATTACHMENTS = b.comment("Frame cores show their exterior (solar wings, graviton ring, propulsion boosters) on worn helmets and",
                 "chestplates: players, Wingmen, armour stands and holo displays. Each piece also has its own switch.")
             .define("core_attachments", true);
+        PHOTON_FX = b.comment("Quantum suit photon effects: the geodesic photon barrier of the deflector and the photon afterglow",
+                "(spatial distortion wake and afterimages) of fast Special Maneuver flight.")
+            .define("photon_fx", true);
+        SCAN_FX = b.comment("Active scan: a scan sphere expands from you every 3 s while an entity sensor unit runs.").define("scan_fx", true);
+        WINGMAN_FX = b.comment("Wingman effects: lock-on scan laser and hologram marker, muzzle flashes, thruster boosts, attitude jets, slash arcs.")
+            .define("wingman_fx", true);
         b.pop();
         b.push("nano_suit");
         NANO_HUD = b.comment("Nano core HUD around the crosshair (reserve ring, heat meter, burst keys).").define("nano_hud", true);
@@ -117,6 +139,19 @@ public final class FcsClientConfig {
         NANO_FX_INTENSITY = b.comment("Strength of the nano burst effects (afterimages, EMP rings, discharge arcs). 1.0 = default.")
             .defineInRange("nano_fx_intensity", 1.0, 0.25, 1.5);
         NANO_HF_JITTER = b.comment("The nanosaber blade trembles in first person while HF sync runs.").define("nano_hf_jitter", true);
+        b.pop();
+        b.push("quantum_suit");
+        QUANTUM_HUD = b.comment("Quantum core HUD around the crosshair (coherence ring, action keys, action timers).").define("quantum_hud", true);
+        VISOR_BOOT = b.comment("The FCS visor runs its boot sequence when the HUD comes on (scan line, panels unfold, aim calibration).")
+            .define("visor_boot", true);
+        QUANTUM_FX_INTENSITY = b.comment("Strength of the quantum action effects (blink, phase shift, force field, time dilation, volley). 1.0 = default.")
+            .defineInRange("quantum_fx_intensity", 1.0, 0.25, 1.5);
+        DECOHERENCE_GLITCH = b.comment("The HUD glitches (colour split, tearing) while the quantum core decoheres. Off: a calm dim warning.")
+            .define("decoherence_glitch", true);
+        SQUAD_HUD = b.comment("Squad panel and the edge markers of off-screen Wingmen while the quantum command link works.").define("squad_hud", true);
+        ORDER_MARKERS = b.comment("World markers of your Wingmen's orders: hold points, suppression rings, focus brackets.").define("order_markers", true);
+        HOLO_TABLE_CELLS = b.comment("Terrain cells per side of the 3D holo table (more = finer, slower).")
+            .defineInRange("holo_table_cells", 49, 25, 65);
         b.pop();
         b.push("layout");
         for (Panel panel : Panel.values()) {
@@ -146,6 +181,9 @@ public final class FcsClientConfig {
     }
 
     public static boolean coreAttachments() { return !loaded() || CORE_ATTACHMENTS.get(); }
+    public static boolean photonFx() { return !loaded() || PHOTON_FX.get(); }
+    public static boolean scanFx() { return !loaded() || SCAN_FX.get(); }
+    public static boolean wingmanFx() { return !loaded() || WINGMAN_FX.get(); }
     public static void setCoreAttachments(boolean on) {
         if (!loaded()) return;
         CORE_ATTACHMENTS.set(on);
@@ -166,6 +204,15 @@ public final class FcsClientConfig {
     public static boolean nanoRefraction() { return !loaded() || NANO_REFRACTION.get(); }
     public static float nanoFx() { return loaded() ? NANO_FX_INTENSITY.get().floatValue() : 1.0F; }
     public static boolean nanoHfJitter() { return !loaded() || NANO_HF_JITTER.get(); }
+    public static boolean quantumHud() { return !loaded() || QUANTUM_HUD.get(); }
+    public static boolean visorBoot() { return !loaded() || VISOR_BOOT.get(); }
+    public static float quantumFx() { return loaded() ? QUANTUM_FX_INTENSITY.get().floatValue() : 1.0F; }
+    public static boolean decoherenceGlitch() { return !loaded() || DECOHERENCE_GLITCH.get(); }
+    public static boolean squadHud() { return !loaded() || SQUAD_HUD.get(); }
+    public static boolean orderMarkers() { return !loaded() || ORDER_MARKERS.get(); }
+    /** Odd number of holo table cells per side (25..65). */
+    public static int holoTableCells() { return loaded() ? HOLO_TABLE_CELLS.get() | 1 : 49; }
+    public static boolean thrusterFx() { return !loaded() || THRUSTER_FX.get(); }
 
     public static void save() {
         if (loaded()) SPEC.save();

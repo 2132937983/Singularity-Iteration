@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 13
 item_ids:
+  - mio_icif:module/item_module_ballistic_mk2
   - mio_icif:module/item_module_ballistic
 ---
 
@@ -41,6 +42,12 @@ item_ids:
 
 - 武器蓄力时轨迹为灰色，就绪时为琥珀色，命中生物时为红色。
 
+## Mk.II
+
+使用多重射击弩时，Mk.II 还会绘制左右 10 度两发的弹道。
+
 ## 配方
 
 <RecipesFor id="mio_icif:module/item_module_ballistic" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_ballistic_mk2" fallbackText="-" />

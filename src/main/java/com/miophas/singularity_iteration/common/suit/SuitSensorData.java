@@ -53,8 +53,9 @@ public final class SuitSensorData {
      * @param dz       z of the unit vector
      * @param strength effect size, 0.25..1
      * @param startMs  wall-clock time (ms) at which the client received the hit
+     * @param charge   0.1.10.1: stored share 0..1 of the wearer's suit at the hit
      */
-    public record Hit(int entityId, float dx, float dy, float dz, float strength, long startMs) {
+    public record Hit(int entityId, float dx, float dy, float dz, float strength, long startMs, float charge) {
         /** Age as a fraction of {@link #SHIELD_HIT_MS}: 0 at the start, 1 or more when the hit expired. */
         public float age(long now) { return (now - startMs) / (float) SHIELD_HIT_MS; }
     }
@@ -93,7 +94,7 @@ public final class SuitSensorData {
         long now = System.currentTimeMillis();
         hits.removeIf(h -> h.age(now) >= 1);
         if (hits.size() >= 32) hits.remove(0);
-        hits.add(new Hit(hit.entityId(), hit.dx(), hit.dy(), hit.dz(), hit.strength(), now));
+        hits.add(new Hit(hit.entityId(), hit.dx(), hit.dy(), hit.dz(), hit.strength(), now, hit.charge()));
     }
 
     /** A copy of the hits that did not expire. Removes the expired hits. */

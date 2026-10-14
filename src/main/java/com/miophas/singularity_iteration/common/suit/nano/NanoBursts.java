@@ -54,6 +54,11 @@ public final class NanoBursts {
         NanoCoreState s = NanoSuit.state(player);
         UnitRef unit = NanoSuit.effectiveBurst(player, s.primary, s.secondary, slot);
         if (unit == null) { deny(player, DENY_NONE); return; }
+        // 0.1.10.0: a quantum action unit on the key: the quantum core checks and pays (coherence)
+        if (com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isAction(unit)) {
+            com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.request(player, s, unit, input(player, forward, strafe));
+            return;
+        }
         SuitModuleType builtin = unit.builtin();
         // a second press ends a running camouflage, whatever its state
         if (builtin == SuitModuleType.OPTICAL_CAMO && s.camoActive()) { endCamo(player, s, 0); return; }

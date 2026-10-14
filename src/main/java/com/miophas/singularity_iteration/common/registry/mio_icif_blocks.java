@@ -218,7 +218,8 @@ public class mio_icif_blocks {
     }
 
     private static <T extends Block> void registerBlockItems(String name, DeferredBlock<T> block) {
-        mio_icif_items.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
+        // 0.1.9.1: machine items return their stored inventory when used as a crafting material
+        mio_icif_items.ITEMS.register(name, () -> new com.miophas.singularity_iteration.common.block.MachineBlockItem(block.get(), new Item.Properties()));
     }
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {

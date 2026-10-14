@@ -38,13 +38,13 @@ public final class BuilderRegistry {
         () -> new BlueprintBuilderBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(4.0F, 30.0F)
             .sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
     public static final DeferredItem<BlockItem> BUILDER_ITEM = ITEMS.register("producer/block_blueprint_builder",
-        () -> new BlockItem(BUILDER.get(), new Item.Properties().rarity(Rarity.UNCOMMON)));
+        () -> new com.miophas.singularity_iteration.common.block.MachineBlockItem(BUILDER.get(), new Item.Properties().rarity(Rarity.UNCOMMON)));
 
     public static final DeferredBlock<MaterialInterfaceBlock> MATERIAL_INTERFACE = BLOCKS.register("producer/block_material_interface",
         () -> new MaterialInterfaceBlock(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0F, 12.0F)
             .sound(net.minecraft.world.level.block.SoundType.METAL).requiresCorrectToolForDrops()));
     public static final DeferredItem<BlockItem> MATERIAL_INTERFACE_ITEM = ITEMS.register("producer/block_material_interface",
-        () -> new BlockItem(MATERIAL_INTERFACE.get(), new Item.Properties()));
+        () -> new com.miophas.singularity_iteration.common.block.MachineBlockItem(MATERIAL_INTERFACE.get(), new Item.Properties()));
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<BlueprintBuilderBlockEntity>> BUILDER_ENTITY =
         BLOCK_ENTITIES.register("blueprint_builder", () -> BlockEntityType.Builder.of(BlueprintBuilderBlockEntity::new, BUILDER.get()).build(null));

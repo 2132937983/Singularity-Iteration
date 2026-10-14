@@ -16,6 +16,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,13 @@ import java.util.function.Consumer;
  * ({@link BatteryEnergy}, with the fields energy and maxEnergy).
  * Each item stack stores its own energy value. The durability system is not used.
  * Energy that old saves stored in durability or CUSTOM_DATA moves to the component automatically on the first read.
+ *
+ * <h3>Stacking (0.1.10.3)</h3>
+ * <p>Only empty batteries stack. A battery with a stack size above 1 (or an empty stack size, see
+ * {@link #AbstractBattery(Properties, long, long, long, int, int)}) stacks up to that size while it holds
+ * no energy; as soon as it holds energy its stack cannot grow, so two charged batteries never merge.
+ * An empty stackable battery carries no energy component: a new, a crafted and a discharged battery are
+ * the same stack. A stack of more than one battery never takes or gives energy (charger slots hold one).
  *
  * <h3>Example</h3>
  * <pre>{@code
@@ -66,9 +74,13 @@ public class AbstractBattery extends Item implements IBatteryItem {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBattery.class);
 
+    /** Legacy CUSTOM_DATA key of stackable batteries (before the shared component). */
+    private static final String LEGACY_ENERGY_KEY = "energy";
+
     private final long maxEnergy;
     private final long chargeRate;
     private final boolean stackable;
+    private final int emptyStackSize;
 
     /**
      * Creates a non-stackable battery (maxStackSize = 1).
@@ -92,10 +104,29 @@ public class AbstractBattery extends Item implements IBatteryItem {
      * @param maxStackSize  the maximum stack size
      */
     protected AbstractBattery(Properties properties, long maxEnergy, long initialEnergy, long chargeRate, int maxStackSize) {
+        this(properties, maxEnergy, initialEnergy, chargeRate, maxStackSize, maxStackSize);
+    }
+
+    /**
+     * Creates a battery that stacks only while it is empty (0.1.10.3).
+     *
+     * <p>With a {@code maxStackSize} of 1 the battery keeps the non-stackable storage: the default
+     * component holds {@code initialEnergy}, so old saves keep their charge. Empty batteries of this
+     * item still stack up to {@code emptyStackSize}.
+     *
+     * @param properties     the item properties
+     * @param maxEnergy      the maximum energy capacity (EU). A negative value becomes 0.
+     * @param initialEnergy  the initial energy (EU). Only a battery with a stack size of 1 uses this value.
+     * @param chargeRate     the charge rate (EU/tick)
+     * @param maxStackSize   the stack size of the item (1 = non-stackable storage)
+     * @param emptyStackSize the stack size of empty batteries (1 to 99; it is at least {@code maxStackSize})
+     */
+    protected AbstractBattery(Properties properties, long maxEnergy, long initialEnergy, long chargeRate, int maxStackSize, int emptyStackSize) {
         super(buildProperties(properties, maxEnergy, initialEnergy, maxStackSize));
         this.maxEnergy = Math.max(0, maxEnergy);
         this.chargeRate = chargeRate;
         this.stackable = maxStackSize > 1;
+        this.emptyStackSize = Math.clamp(Math.max(maxStackSize, emptyStackSize), 1, 99);
     }
 
     private static Properties buildProperties(Properties properties, long maxEnergy, long initialEnergy, int maxStackSize) {
@@ -131,6 +162,8 @@ public class AbstractBattery extends Item implements IBatteryItem {
     @Override
     public void setEnergy(ItemStack stack, long energy) {
         energy = Math.max(0L, Math.min(maxEnergy, energy));
+        // 0.1.10.3: a stack of several empty batteries is never charged as one (each item would get the energy)
+        if (energy > 0 && emptyStackSize > 1 && stack.getCount() > 1) return;
         writeStoredEnergy(stack, energy);
     }
 
@@ -193,6 +226,12 @@ public class AbstractBattery extends Item implements IBatteryItem {
      * @param energy the energy value to set (EU)
      */
     protected void writeStoredEnergy(ItemStack stack, long energy) {
+        if (stackable && energy <= 0) {
+            // 0.1.10.3: an empty stackable battery carries no energy data, so it stacks with a new one
+            stack.remove(CoreDataComponents.BATTERY_ENERGY.get());
+            dropLegacyEnergyKey(stack);
+            return;
+        }
         stack.set(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(energy, maxEnergy));
     }
 
@@ -205,8 +244,8 @@ public class AbstractBattery extends Item implements IBatteryItem {
     private long readLegacyEnergy(ItemStack stack) {
         if (stackable) {
             var customData = stack.get(DataComponents.CUSTOM_DATA);
-            if (customData == null) return 0L;
-            long legacy = customData.copyTag().getLong("energy");
+            if (customData == null || !customData.contains(LEGACY_ENERGY_KEY)) return 0L;
+            long legacy = customData.copyTag().getLong(LEGACY_ENERGY_KEY);
             if (legacy > 0) migrateLegacyEnergy(stack, legacy);
             return legacy;
         }
@@ -218,7 +257,56 @@ public class AbstractBattery extends Item implements IBatteryItem {
     private void migrateLegacyEnergy(ItemStack stack, long legacy) {
         long migrated = Math.clamp(legacy, 0L, Math.max(0, maxEnergy));
         stack.set(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(migrated, maxEnergy));
+        // the key would bring the old charge back once the component is removed at 0 EU
+        if (stackable) dropLegacyEnergyKey(stack);
         LOGGER.debug("AbstractBattery: migrated legacy energy {} -> DataComponent for {}", migrated, stack.getItem());
+    }
+
+    private static void dropLegacyEnergyKey(ItemStack stack) {
+        var customData = stack.get(DataComponents.CUSTOM_DATA);
+        if (customData == null || !customData.contains(LEGACY_ENERGY_KEY)) return;
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.remove(LEGACY_ENERGY_KEY));
+    }
+
+    /**
+     * 0.1.10.3: older versions wrote an explicit zero charge when a stackable battery was crafted,
+     * discharged or taken from the creative menu. Such a battery differed from a new one and never
+     * stacked with it; the zero is dropped whenever a stack is loaded, received or copied.
+     */
+    @Override
+    public void verifyComponentsAfterLoad(ItemStack stack) {
+        super.verifyComponentsAfterLoad(stack);
+        if (!stackable) return;
+        var type = CoreDataComponents.BATTERY_ENERGY.get();
+        BatteryEnergy data = stack.get(type);
+        if (data != null && data.energy() <= 0) {
+            stack.remove(type);
+            data = null;
+        }
+        var customData = stack.get(DataComponents.CUSTOM_DATA);
+        if (customData != null && customData.contains(LEGACY_ENERGY_KEY)
+                && (data != null || customData.copyTag().getLong(LEGACY_ENERGY_KEY) <= 0)) {
+            dropLegacyEnergyKey(stack);   // stale (already migrated) or empty
+        }
+    }
+
+    // ==================== Stack size ====================
+
+    /**
+     * 0.1.10.3: empty batteries stack up to the empty stack size; a battery that holds energy never
+     * grows its stack, so two charged batteries (even with the same charge) stay apart.
+     */
+    @Override
+    public int getMaxStackSize(ItemStack stack) {
+        int base = super.getMaxStackSize(stack);
+        if (emptyStackSize <= 1) return base;
+        if (getEnergy(stack) > 0) return Math.max(1, Math.min(base, stack.getCount()));
+        return Math.max(base, emptyStackSize);
+    }
+
+    /** The stack size of empty batteries of this item (1 = never stacks). */
+    public int getEmptyStackSize() {
+        return emptyStackSize;
     }
 
     // ==================== Energy bar rendering ====================

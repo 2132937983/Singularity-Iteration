@@ -45,6 +45,21 @@ public class mio_icif_data_components {
             builder -> builder.persistent(com.miophas.singularity_iteration.common.suit.InstalledModules.CODEC)
                 .networkSynchronized(com.miophas.singularity_iteration.common.suit.InstalledModules.STREAM_CODEC));
 
+    /** Expansion bay level of a quantum suit piece (0.1.10.0): each level adds one unit slot. Absent = 0 (the pre-0.1.10.0 count). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SUIT_BAYS =
+        DATA_COMPONENTS.registerComponentType("suit_bays",
+            builder -> builder.persistent(com.mojang.serialization.Codec.intRange(0, 4))
+                .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.VAR_INT));
+
+    /**
+     * Entanglement links of a quantum chestplate (0.1.10.1): the ids of the linked synergies (a built-in
+     * id such as "predictive_guidance", or an addon "namespace:path"). Absent = no link.
+     */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<java.util.List<String>>> SUIT_LINKS =
+        DATA_COMPONENTS.registerComponentType("suit_links",
+            builder -> builder.persistent(com.mojang.serialization.Codec.STRING.listOf())
+                .networkSynchronized(net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8.apply(net.minecraft.network.codec.ByteBufCodecs.list(16))));
+
     /** Frame core in the core socket of a suit helmet or chestplate (0.1.9.0): the core id. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> SUIT_CORE =
         DATA_COMPONENTS.registerComponentType("suit_core",

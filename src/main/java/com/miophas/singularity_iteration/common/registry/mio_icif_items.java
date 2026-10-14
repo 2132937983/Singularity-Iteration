@@ -88,6 +88,10 @@ public enum Bronze_Tier implements Tier {
     public static final DeferredItem<mio_icif_rotor> ROTOR_SUPER_IRIDIUM = ITEMS.register("rotors/item_super_iridium_alloy_rotor", () -> new mio_icif_rotor(new Item.Properties(), 2147483647, 11, 1.00f, 18, 155, ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "textures/item/rotors/rotor_super_iridium_alloy_model.png"), true));
 
     //CarryEvent
+    /** 0.1.9.1: items that were inside a machine used as a crafting material. */
+    public static final DeferredItem<com.miophas.singularity_iteration.common.item.RecoveredPartsItem> RECOVERED_PARTS = ITEMS.register("normal/item_recovered_parts",
+        () -> new com.miophas.singularity_iteration.common.item.RecoveredPartsItem(new Item.Properties()));
+
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);
 

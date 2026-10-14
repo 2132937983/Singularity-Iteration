@@ -149,27 +149,44 @@ public class JEIPlugin implements IModPlugin {
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        // Register all recipe categories.
-        registration.addRecipeCategories(
-            // 生产机器
-            new mio_icif_PowderCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_WasherCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_CentrifugeCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_ExtractorCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_CompressorCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_BlockCutterCategory(registration.getJeiHelpers().getGuiHelper()),
-            // Metal former
-            new mio_icif_RollingCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_CuttingCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_ExtrudingCategory(registration.getJeiHelpers().getGuiHelper()),
-            // Canning machine
-            new mio_icif_CanningCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_MixCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_BlastFurnaceCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_MolecularTransformerCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_NeutronPolymerizerCategory(registration.getJeiHelpers().getGuiHelper()),
-            new mio_icif_FluidRefiningCategory(registration.getJeiHelpers().getGuiHelper())
-        );
+        // 0.1.9.2: each category is built on its own; a failing one is logged and skipped, so the
+        // others still register and JEI never gets an empty array (it rejects one).
+        var gui = registration.getJeiHelpers().getGuiHelper();
+        java.util.List<mezz.jei.api.recipe.category.IRecipeCategory<?>> categories = new java.util.ArrayList<>();
+        category(categories, "mio_icif_PowderCategory", () -> new mio_icif_PowderCategory(gui));
+        category(categories, "mio_icif_WasherCategory", () -> new mio_icif_WasherCategory(gui));
+        category(categories, "mio_icif_CentrifugeCategory", () -> new mio_icif_CentrifugeCategory(gui));
+        category(categories, "mio_icif_ExtractorCategory", () -> new mio_icif_ExtractorCategory(gui));
+        category(categories, "mio_icif_CompressorCategory", () -> new mio_icif_CompressorCategory(gui));
+        category(categories, "mio_icif_BlockCutterCategory", () -> new mio_icif_BlockCutterCategory(gui));
+        category(categories, "mio_icif_RollingCategory", () -> new mio_icif_RollingCategory(gui));
+        category(categories, "mio_icif_CuttingCategory", () -> new mio_icif_CuttingCategory(gui));
+        category(categories, "mio_icif_ExtrudingCategory", () -> new mio_icif_ExtrudingCategory(gui));
+        category(categories, "mio_icif_CanningCategory", () -> new mio_icif_CanningCategory(gui));
+        category(categories, "mio_icif_MixCategory", () -> new mio_icif_MixCategory(gui));
+        category(categories, "mio_icif_BlastFurnaceCategory", () -> new mio_icif_BlastFurnaceCategory(gui));
+        category(categories, "mio_icif_MolecularTransformerCategory", () -> new mio_icif_MolecularTransformerCategory(gui));
+        category(categories, "mio_icif_NeutronPolymerizerCategory", () -> new mio_icif_NeutronPolymerizerCategory(gui));
+        category(categories, "mio_icif_FluidRefiningCategory", () -> new mio_icif_FluidRefiningCategory(gui));
+        if (!categories.isEmpty()) registration.addRecipeCategories(categories.toArray(new mezz.jei.api.recipe.category.IRecipeCategory<?>[0]));
+    }
+
+    private static void category(java.util.List<mezz.jei.api.recipe.category.IRecipeCategory<?>> out, String name,
+                                 java.util.function.Supplier<mezz.jei.api.recipe.category.IRecipeCategory<?>> factory) {
+        try {
+            out.add(factory.get());
+        } catch (RuntimeException | LinkageError e) {
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("jei-category-" + name, "Building the JEI category " + name, e);
+        }
+    }
+
+    /** 0.1.9.2: runs one JEI registration step; a failure is logged and the next step still runs. */
+    private static void guarded(String name, Runnable step) {
+        try {
+            step.run();
+        } catch (RuntimeException | LinkageError e) {
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("jei-" + name, "JEI registration step " + name, e);
+        }
     }
 
     @Override
@@ -180,62 +197,92 @@ public class JEIPlugin implements IModPlugin {
         var recipeManager = level.getRecipeManager();
 
         // Register the macerator recipes.
-        var powderRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.POWDER_TYPE.get());
-        registration.addRecipes(mio_icif_PowderCategory.POWDER_TYPE, powderRecipes.stream().toList());
+        guarded("powder", () -> {
+            var powderRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.POWDER_TYPE.get());
+            registration.addRecipes(mio_icif_PowderCategory.POWDER_TYPE, powderRecipes.stream().toList());
+        });
 
         // Register the ore washing recipes.
-        var washerRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.WASHER_TYPE.get());
-        registration.addRecipes(mio_icif_WasherCategory.WASHER_TYPE, washerRecipes.stream().toList());
+        guarded("washer", () -> {
+            var washerRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.WASHER_TYPE.get());
+            registration.addRecipes(mio_icif_WasherCategory.WASHER_TYPE, washerRecipes.stream().toList());
+        });
 
         // Register the centrifuge recipes.
-        var centrifugeRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CENTRIFUGE_TYPE.get());
-        registration.addRecipes(mio_icif_CentrifugeCategory.CENTRIFUGE_TYPE, centrifugeRecipes.stream().toList());
+        guarded("centrifuge", () -> {
+            var centrifugeRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CENTRIFUGE_TYPE.get());
+            registration.addRecipes(mio_icif_CentrifugeCategory.CENTRIFUGE_TYPE, centrifugeRecipes.stream().toList());
+        });
 
         // Register the extractor recipes.
-        var extractorRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.EXTRACTOR_TYPE.get());
-        registration.addRecipes(mio_icif_ExtractorCategory.EXTRACTOR_TYPE, extractorRecipes.stream().toList());
+        guarded("extractor", () -> {
+            var extractorRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.EXTRACTOR_TYPE.get());
+            registration.addRecipes(mio_icif_ExtractorCategory.EXTRACTOR_TYPE, extractorRecipes.stream().toList());
+        });
 
         // Register the compressor recipes.
-        var compressorRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.COMPRESSOR_TYPE.get());
-        registration.addRecipes(mio_icif_CompressorCategory.COMPRESSOR_TYPE, compressorRecipes.stream().toList());
+        guarded("compressor", () -> {
+            var compressorRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.COMPRESSOR_TYPE.get());
+            registration.addRecipes(mio_icif_CompressorCategory.COMPRESSOR_TYPE, compressorRecipes.stream().toList());
+        });
 
         // Register the block cutter recipes.
-        var blockCutterRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLOCK_CUTTER_TYPE.get());
-        registration.addRecipes(mio_icif_BlockCutterCategory.BLOCK_CUTTER_TYPE, blockCutterRecipes.stream().toList());
+        guarded("blockCutter", () -> {
+            var blockCutterRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLOCK_CUTTER_TYPE.get());
+            registration.addRecipes(mio_icif_BlockCutterCategory.BLOCK_CUTTER_TYPE, blockCutterRecipes.stream().toList());
+        });
 
         // Register the metal former rolling recipes.
-        var rollingRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.ROLLING_TYPE.get());
-        registration.addRecipes(mio_icif_RollingCategory.ROLLING_TYPE, rollingRecipes.stream().toList());
+        guarded("rolling", () -> {
+            var rollingRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.ROLLING_TYPE.get());
+            registration.addRecipes(mio_icif_RollingCategory.ROLLING_TYPE, rollingRecipes.stream().toList());
+        });
 
         // Register the metal former cutting recipes.
-        var cuttingRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CUTTING_TYPE.get());
-        registration.addRecipes(mio_icif_CuttingCategory.CUTTING_TYPE, cuttingRecipes.stream().toList());
+        guarded("cutting", () -> {
+            var cuttingRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CUTTING_TYPE.get());
+            registration.addRecipes(mio_icif_CuttingCategory.CUTTING_TYPE, cuttingRecipes.stream().toList());
+        });
 
         // Register the metal former extruding recipes.
-        var extrudingRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.EXTRUDING_TYPE.get());
-        registration.addRecipes(mio_icif_ExtrudingCategory.EXTRUDING_TYPE, extrudingRecipes.stream().toList());
+        guarded("extruding", () -> {
+            var extrudingRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.EXTRUDING_TYPE.get());
+            registration.addRecipes(mio_icif_ExtrudingCategory.EXTRUDING_TYPE, extrudingRecipes.stream().toList());
+        });
 
         // Register the canner recipes.
-        var canningRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CANNING_TYPE.get());
-        registration.addRecipes(mio_icif_CanningCategory.CANNING_TYPE, canningRecipes.stream().toList());
+        guarded("canning", () -> {
+            var canningRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.CANNING_TYPE.get());
+            registration.addRecipes(mio_icif_CanningCategory.CANNING_TYPE, canningRecipes.stream().toList());
+        });
 
         // Register the mixing recipes.
-        var mixRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MIX_TYPE.get());
-        registration.addRecipes(mio_icif_MixCategory.MIX_TYPE, mixRecipes.stream().toList());
+        guarded("mix", () -> {
+            var mixRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MIX_TYPE.get());
+            registration.addRecipes(mio_icif_MixCategory.MIX_TYPE, mixRecipes.stream().toList());
+        });
 
         // Register the blast furnace recipes.
-        var blastFurnaceRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLAST_FURNACE_TYPE.get());
-        registration.addRecipes(mio_icif_BlastFurnaceCategory.BLAST_FURNACE_TYPE, blastFurnaceRecipes.stream().toList());
+        guarded("blastFurnace", () -> {
+            var blastFurnaceRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLAST_FURNACE_TYPE.get());
+            registration.addRecipes(mio_icif_BlastFurnaceCategory.BLAST_FURNACE_TYPE, blastFurnaceRecipes.stream().toList());
+        });
 
         // Register the molecular transformer recipes.
-        var molecularTransformerRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MOLECULAR_TRANSFORMER_TYPE.get());
-        registration.addRecipes(mio_icif_MolecularTransformerCategory.MOLECULAR_TRANSFORMER_TYPE, molecularTransformerRecipes.stream().toList());
+        guarded("molecularTransformer", () -> {
+            var molecularTransformerRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.MOLECULAR_TRANSFORMER_TYPE.get());
+            registration.addRecipes(mio_icif_MolecularTransformerCategory.MOLECULAR_TRANSFORMER_TYPE, molecularTransformerRecipes.stream().toList());
+        });
 
-        var neutronPolymerizerRecipes = recipeManager.getAllRecipesFor(com.miophas.singularity_iteration.common.recipe.generic.NeutronPolymerizerRecipes.NEUTRON_POLYMERIZER_TYPE.get());
-        registration.addRecipes(mio_icif_NeutronPolymerizerCategory.NEUTRON_POLYMERIZER_TYPE, neutronPolymerizerRecipes.stream().toList());
+        guarded("neutronPolymerizer", () -> {
+            var neutronPolymerizerRecipes = recipeManager.getAllRecipesFor(com.miophas.singularity_iteration.common.recipe.generic.NeutronPolymerizerRecipes.NEUTRON_POLYMERIZER_TYPE.get());
+            registration.addRecipes(mio_icif_NeutronPolymerizerCategory.NEUTRON_POLYMERIZER_TYPE, neutronPolymerizerRecipes.stream().toList());
+        });
 
-        var fluidRefiningRecipes = recipeManager.getAllRecipesFor(com.miophas.singularity_iteration.common.recipe.fluid_refining.FluidRefiningRecipes.FLUID_REFINING_TYPE.get());
-        registration.addRecipes(mio_icif_FluidRefiningCategory.FLUID_REFINING_TYPE, fluidRefiningRecipes.stream().toList());
+        guarded("fluidRefining", () -> {
+            var fluidRefiningRecipes = recipeManager.getAllRecipesFor(com.miophas.singularity_iteration.common.recipe.fluid_refining.FluidRefiningRecipes.FLUID_REFINING_TYPE.get());
+            registration.addRecipes(mio_icif_FluidRefiningCategory.FLUID_REFINING_TYPE, fluidRefiningRecipes.stream().toList());
+        });
     }
 
     @Override

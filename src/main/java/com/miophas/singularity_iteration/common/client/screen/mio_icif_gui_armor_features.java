@@ -302,6 +302,16 @@ public class mio_icif_gui_armor_features extends Screen {
                 case LATTICE -> drawLattice(g, stack, x, ry);
                 case CORE -> drawCore(g, x, ry);
                 case BURST -> drawBurst(g, row.index(), x, ry, hot);
+                case QSLOTS -> drawQuantumSlots(g, stack, x, ry);
+                case QCORE -> drawQuantumCore(g, x, ry);
+                case QLINKS -> drawQuantumLinks(g, x, ry, hot);
+                case ORE_FILTER -> {
+                    if (hot) g.fill(x - 2, ry - 1, x + PW - 8, ry + FEATURE_ROW - 2, 0x263A6EA5);
+                    g.drawString(font, font.plainSubstrByWidth(Component.translatable("gui.mio_icif.equipment_console.ore_filter").getString(), 70),
+                        x, ry + 1, SiGuiTheme.TEXT_SCREEN, false);
+                    String label = "\u25C0 " + com.miophas.singularity_iteration.common.client.suit.OreScanner.filterName() + " \u25B6";
+                    g.drawString(font, label, x + PW - 10 - font.width(label), ry + 1, SiGuiTheme.ACCENT, false);
+                }
             }
         }
         if (rows.size() > FEATURE_ROWS) {
@@ -314,7 +324,7 @@ public class mio_icif_gui_armor_features extends Screen {
     }
 
     // ------------------------------------------------------------------ row model (render + hit testing)
-    private enum Kind { FEATURE, HEADER, MODE, TUNE, INFO, LATTICE, CORE, BURST }
+    private enum Kind { FEATURE, HEADER, MODE, TUNE, INFO, LATTICE, CORE, BURST, QSLOTS, QCORE, QLINKS, ORE_FILTER }
     private record Row(Kind kind, int index, Object ref) { }
 
     private List<Row> rows(ItemStack stack) {
@@ -335,6 +345,19 @@ public class mio_icif_gui_armor_features extends Screen {
             rows.add(new Row(Kind.BURST, 0, null));
             rows.add(new Row(Kind.BURST, 1, null));
         }
+        // 0.1.10.0 quantum core: unit slots with the expansion bay, coherence and the two action keys
+        if (com.miophas.singularity_iteration.common.suit.SuitModules.isQuantumPiece(stack)) {
+            rows.add(new Row(Kind.HEADER, 0, Component.translatable("gui.mio_icif.equipment_console.quantum")));
+            rows.add(new Row(Kind.QSLOTS, 0, null));
+            rows.add(new Row(Kind.QCORE, 0, null));
+            // 0.1.10.1: the chestplate is the link hub; the row opens the Entanglement Matrix
+            if (com.miophas.singularity_iteration.common.suit.SuitModules.slotOf(stack) == net.minecraft.world.entity.EquipmentSlot.CHEST)
+                rows.add(new Row(Kind.QLINKS, 0, null));
+            rows.add(new Row(Kind.BURST, 0, null));
+            rows.add(new Row(Kind.BURST, 1, null));
+        }
+        // 0.1.10.1: the ore tag filter of a Mk.II ore scanner (client side: what the HUD shows)
+        if (com.miophas.singularity_iteration.common.suit.SuitModules.tier(stack, "ore_scanner") >= 2) rows.add(new Row(Kind.ORE_FILTER, 0, null));
         if (stack.getItem() instanceof ITunableItem tunable) {
             List<ITunableItem.Spec> specs = tunable.tuningSpecs(stack);
             if (!specs.isEmpty()) rows.add(new Row(Kind.HEADER, 0, Component.translatable("gui.mio_icif.equipment_console.tuning")));
@@ -448,7 +471,57 @@ public class mio_icif_gui_armor_features extends Screen {
 
     private static String burstNameKey(String key) {
         var unit = com.miophas.singularity_iteration.common.suit.UnitRef.byKey(key);
-        return unit == null ? key : unit.nameKey();
+        if (unit == null) return key;
+        // 0.1.10.0: a quantum action shows its action name (Force Field rather than Quantum Deflector)
+        return com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isAction(unit)
+            ? com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.nameKey(unit) : unit.nameKey();
+    }
+
+    // ------------------------------------------------------------------ quantum core rows (0.1.10.0)
+
+    private void drawQuantumSlots(GuiGraphics g, ItemStack stack, int x, int ry) {
+        int used = com.miophas.singularity_iteration.common.suit.SuitModules.installed(stack).units().size();
+        int cap = com.miophas.singularity_iteration.common.suit.SuitModules.capacity(stack);
+        int bays = com.miophas.singularity_iteration.common.suit.SuitModules.bayLevel(stack);
+        small(g, Component.translatable("gui.mio_icif.equipment_console.quantum_slots", used, cap).getString(), x, ry + 3, SiGuiTheme.TEXT_SCREEN);
+        int base = cap - bays;
+        for (int i = 0; i < cap; i++) {
+            int px = x + PW - 14 - (cap - 1 - i) * 8;
+            boolean bay = i >= base;
+            int on = bay ? 0xFFB98CFF : 0xFF7CFFB2, off = bay ? 0x50B98CFF : 0x407CFFB2;
+            g.fill(px, ry + 3, px + 6, ry + 8, i < used ? on : off);
+        }
+        if (bays > 0) small(g, "+BAY", x + PW - 30 - cap * 8, ry + 3, 0xFFB98CFF);
+    }
+
+    private void drawQuantumCore(GuiGraphics g, int x, int ry) {
+        var q = com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.sync();
+        if (q == null || !q.online()) {
+            small(g, Component.translatable("gui.mio_icif.equipment_console.quantum_offline").getString(), x, ry + 3, SiGuiTheme.TEXT_SCREEN_DIM);
+            return;
+        }
+        boolean dec = q.decoherent() > 0;
+        small(g, Component.translatable(dec ? "gui.mio_icif.equipment_console.decoherent" : "gui.mio_icif.equipment_console.coherence").getString(),
+            x, ry + 3, dec ? SiGuiTheme.BAD : SiGuiTheme.TEXT_SCREEN);
+        SiGuiTheme.bar(g, x + 50, ry + 4, PW - 98, 4, q.coherence() / Math.max(1F, q.max()), dec ? 0xFFE04030 : 0xFF5CEBFF, dec ? 0xFFF07060 : 0xFFB98CFF);
+        String v = Math.round(q.coherence()) + "/" + Math.round(q.max());
+        small(g, v, x + PW - 10 - (int) (font.width(v) * 0.75F), ry + 3, q.max() > 100 ? 0xFFFFD27A : SiGuiTheme.ACCENT);
+    }
+
+    /** 0.1.10.1: links in use, the capacity and the compute bandwidth; a click opens the Entanglement Matrix. */
+    private void drawQuantumLinks(GuiGraphics g, int x, int ry, boolean hot) {
+        if (hot) g.fill(x - 2, ry - 1, x + PW - 8, ry + FEATURE_ROW - 2, 0x263A6EA5);
+        var player = minecraft == null ? null : minecraft.player;
+        if (player == null) return;
+        int cap = com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.capacity(player);
+        int on = com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.activeLinks().size();
+        int load = com.miophas.singularity_iteration.common.suit.quantum.QuantumBandwidth.load(player);
+        int budget = com.miophas.singularity_iteration.common.suit.quantum.QuantumBandwidth.budget(player);
+        small(g, Component.translatable("gui.mio_icif.equipment_console.links", on, cap).getString(), x, ry + 3, SiGuiTheme.TEXT_SCREEN);
+        String qb = load + "/" + budget + " QB";
+        small(g, qb, x + 58, ry + 3, load > budget ? SiGuiTheme.BAD : SiGuiTheme.TEXT_SCREEN_DIM);
+        String open = Component.translatable("gui.mio_icif.equipment_console.links_open").getString() + " \u25B6";
+        g.drawString(font, open, x + PW - 10 - font.width(open), ry + 1, SiGuiTheme.ACCENT, false);
     }
 
     /** Cycles burst key {@code slot} through: automatic, each worn burst unit, nothing. */
@@ -570,6 +643,16 @@ public class mio_icif_gui_armor_features extends Screen {
             case MODE -> { selectMode(entry, row.index()); return true; }
             case TUNE -> { draggingTune = row.index(); setTuneFromMouse(row, mouseX); return true; }
             case BURST -> { cycleBurst(row.index(), mouseX < left + PX + 4 + PW / 2 + 10 ? -1 : 1); return true; }
+            case ORE_FILTER -> {
+                com.miophas.singularity_iteration.common.client.suit.OreScanner.cycleFilter(mouseX < left + PX + 4 + PW / 2 + 10 ? -1 : 1);
+                sound(true);
+                return true;
+            }
+            case QLINKS -> {
+                sound(false);
+                if (minecraft != null) minecraft.setScreen(new com.miophas.singularity_iteration.common.client.suit.EntanglementScreen(this));
+                return true;
+            }
             default -> { return false; }
         }
     }

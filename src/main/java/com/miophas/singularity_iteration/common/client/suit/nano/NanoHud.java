@@ -154,8 +154,14 @@ public final class NanoHud {
         return spec == null ? 0 : spec.reserveCost();
     }
 
-    private static String label(String key) {
+    static String label(String key) {
         SuitModuleType type = SuitModuleType.byId(key);
+        // 0.1.10.0 quantum actions
+        if (type == SuitModuleType.PHASE_JUMP_DRIVE) return "BLNK";
+        if (type == SuitModuleType.PHASE_MODULATOR) return "PHAS";
+        if (type == SuitModuleType.DEFLECTOR) return "FELD";
+        if (type == SuitModuleType.BEHAVIOR_PREDICTOR) return "TIME";
+        if (type == SuitModuleType.ENTANGLEMENT_RELAY) return "VOLY";
         if (type == SuitModuleType.MYOFIBER) return "DASH";
         if (type == SuitModuleType.EMP_EMITTER) return "EMP";
         if (type == SuitModuleType.OPTICAL_CAMO) return "CAMO";
@@ -166,21 +172,26 @@ public final class NanoHud {
         return path.length() > 4 ? path.substring(0, 4).toUpperCase(Locale.ROOT) : path.toUpperCase(Locale.ROOT);
     }
 
-    private static int color(String key) {
+    static int color(String key) {
         SuitModuleType type = SuitModuleType.byId(key);
+        if (type == SuitModuleType.DEFLECTOR) return 0x5AB8FF;             // 0.1.10.0: force field
+        if (type == SuitModuleType.BEHAVIOR_PREDICTOR) return 0xC77DFF;    // time dilation
+        if (type != null && com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isActionKey(key)) return type.color();
         if (type == SuitModuleType.KINETIC_MESH) return 0xFFB300;
         if (type == SuitModuleType.RECON_CLOUD) return 0x64FFDA;
         return type == SuitModuleType.EMP_EMITTER ? ELECTRIC : type == SuitModuleType.OPTICAL_CAMO ? 0xBFF6FF : type == SuitModuleType.MYOFIBER ? 0x3DFFB4 : VIOLET;
     }
 
-    private static void chip(GuiGraphics g, float x, float y, int slot, String key, int cd, int cdMax, NanoPackets.CoreSync s, float t, float a, String keyName) {
+    static void chip(GuiGraphics g, float x, float y, int slot, String key, int cd, int cdMax, NanoPackets.CoreSync s, float t, float a, String keyName) {
         float w = 30, hgt = 11;
         float x0 = x - w / 2, y0 = y - hgt / 2;
         boolean empty = key.isEmpty();
         int col = empty ? 0x6A7A86 : color(key);
-        boolean camoOn = SuitModuleType.byId(key) == SuitModuleType.OPTICAL_CAMO && s.camoTicks() > 0;
+        // 0.1.10.0: a quantum action key is ready by coherence, not by reserve and heat; a standing force field reads OFF
+        boolean quantum = com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isActionKey(key);
+        boolean camoOn = SuitModuleType.byId(key) == SuitModuleType.OPTICAL_CAMO && s.camoTicks() > 0 || quantum && QuantumClient.togglesOff(key);
         boolean meshOn = SuitModuleType.byId(key) == SuitModuleType.KINETIC_MESH && s.meshTicks() > 0;
-        boolean ready = !empty && cd <= 0 && !s.overheated() && s.reserve() >= cost(key);
+        boolean ready = !empty && (quantum ? QuantumClient.ready(key, cd) : cd <= 0 && !s.overheated() && s.reserve() >= cost(key));
         float sinceDeny = t - NanoClient.deniedAt[slot], sinceUse = t - NanoClient.usedAt[slot];
         float shake = sinceDeny < 8 ? (float) Math.sin(sinceDeny * 3.2F) * (8 - sinceDeny) * 0.35F : 0;
         x0 += shake;
@@ -226,6 +237,12 @@ public final class NanoHud {
                 case NanoBursts.DENY_RESERVE -> "LOW RSV";
                 case NanoBursts.DENY_OFF -> "OFFLINE";
                 case NanoBursts.DENY_CONFLICT -> "CONFLICT";
+                // 0.1.10.0 quantum actions
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_DECOHERENT -> "DECOHERENT";
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_COHERENCE -> "LOW COH";
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_BLOCKED -> "NO PATH";
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_NO_TARGET -> "NO TARGET";
+                case com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.DENY_NO_WINGMAN -> "NO WINGMAN";
                 default -> "NO UNIT";
             };
             FcsDraw.textCentered(g, why, x + shake, y0 + hgt + 2, FcsDraw.argb(RED, k * a), 0.45F);

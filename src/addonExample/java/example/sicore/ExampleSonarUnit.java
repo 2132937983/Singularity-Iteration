@@ -4,6 +4,8 @@ import com.miophas.singularity_iteration.core.api.armory.ArmoryEvent;
 import com.miophas.singularity_iteration.core.api.suit.ISuitModuleItem;
 import com.miophas.singularity_iteration.core.api.suit.SuitModuleRegistry;
 import com.miophas.singularity_iteration.core.api.suit.SuitModuleSpec;
+import com.miophas.singularity_iteration.core.api.suit.SuitActionSpec;
+import com.miophas.singularity_iteration.core.api.suit.SuitQuantumActions;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -18,6 +20,7 @@ import net.neoforged.neoforge.common.NeoForge;
 /**
  * Example of the 0.1.8.0 public suit unit API: a sonar unit for the quantum helmet. While it is
  * on, it pings every 40 ticks and makes the hostile mobs within 16 blocks glow for 3 seconds.
+ * Since 0.1.10.0 it also shows the quantum action API: a "deep ping" on the action keys.
  * Uses only the published core JAR.
  */
 public final class ExampleSonarUnit extends Item implements ISuitModuleItem {
@@ -37,6 +40,13 @@ public final class ExampleSonarUnit extends Item implements ISuitModuleItem {
             for (Mob mob : player.level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(16), m -> m instanceof Enemy)) {
                 mob.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60, 0, false, false));
             }
+        });
+        // 0.1.10.0 quantum action API: the sonar unit also gets an action key choice ("deep ping").
+        // It costs 15 coherence, has a 10 s cooldown, and makes the hostile mobs within 32 blocks glow for 10 s.
+        SuitQuantumActions.register(ID, SuitActionSpec.single(15, 200), (player, piece, input) -> {
+            var mobs = player.level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(32), m -> m instanceof Enemy);
+            for (Mob mob : mobs) mob.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0, false, false));
+            return !mobs.isEmpty();                     // nothing to ping: no coherence spent
         });
         // Armory hook: event.setCanceled(true) stops a summon before energy or items move.
         // This example only stops an empty summon (it cannot happen; it shows the call).

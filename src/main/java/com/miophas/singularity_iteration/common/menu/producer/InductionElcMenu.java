@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public InductionElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_induction_elc blockEntity) {
-        super(mio_icif_menus.INDUCTION_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 9);
+        super(mio_icif_menus.INDUCTION_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, SLOT_COUNT, 11);
     }
 
     @Override
@@ -79,7 +79,18 @@ import org.jetbrains.annotations.Nullable;
     protected int getBatterySlotIndex() { return BATTERY_SLOT; }
 
     @Override
-    protected int getDataSlotCount() { return 9; }
+    protected int getDataSlotCount() { return 11; }
+
+    /** 0.1.9.1: the Thermal Retention Unit goes into this furnace's upgrade slots. */
+    @Override
+    protected boolean acceptsThermalRetention() { return true; }
+
+    /** 0.1.9.1: heat hold switch on. */
+    public boolean isHeatHold() { return (data.get(9) & 1) != 0; }
+    /** 0.1.9.1: a Thermal Retention Unit is installed. */
+    public boolean isInsulated() { return (data.get(9) & 2) != 0; }
+    /** Seconds until full heat (0 when full). */
+    public int secondsToFullHeat() { return data.get(10); }
 
     public int getProgress1() { return data.get(0); }
     public int getMaxProgress1() { return data.get(1); }
@@ -90,7 +101,7 @@ import org.jetbrains.annotations.Nullable;
     /** Banked XP x10. */
     public int getStoredXpTenths() { return data.get(8); }
 
-    public static final int BUTTON_COLLECT_XP = 0;
+    public static final int BUTTON_COLLECT_XP = 0, BUTTON_HEAT_HOLD = 1;
 
     void collectXp(net.minecraft.world.entity.player.Player player) {
         if (blockEntity instanceof mio_icif_induction_elc induction && player instanceof net.minecraft.server.level.ServerPlayer sp) induction.collectExperience(sp);
@@ -98,6 +109,10 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+        if (id == BUTTON_HEAT_HOLD) {
+            if (blockEntity instanceof mio_icif_induction_elc induction) induction.toggleHeatHold();
+            return true;
+        }
         if (id != BUTTON_COLLECT_XP) return false;
         collectXp(player);
         return true;
@@ -135,6 +150,8 @@ import org.jetbrains.annotations.Nullable;
             this.setSyncData(6, (int) induction.getEnergyStorage().getCapacity());
             this.setSyncData(7, induction.getHeatPercent());
             this.setSyncData(8, (int) Math.min(Integer.MAX_VALUE, induction.getStoredExperience() * 10));
+            this.setSyncData(9, (induction.heatHold() ? 1 : 0) | (induction.thermalRetention() ? 2 : 0));
+            this.setSyncData(10, (induction.ticksToFullHeat() + 19) / 20);
         }
     }
 }

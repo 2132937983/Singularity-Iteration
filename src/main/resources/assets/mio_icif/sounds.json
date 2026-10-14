@@ -728,5 +728,239 @@
         "attenuation_distance": 12
       }
     ]
+  },
+  "wingman.boost": {
+    "subtitle": "mio_icif.subtitle.wingman.boost",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_wingman_boost",
+        "attenuation_distance": 20
+      }
+    ]
+  },
+  "wingman.lock": {
+    "subtitle": "mio_icif.subtitle.wingman.lock",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_wingman_lock",
+        "attenuation_distance": 12
+      }
+    ]
+  },
+  "suit.photon_barrier": {
+    "subtitle": "mio_icif.subtitle.suit.photon_barrier",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_photon_barrier",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "suit.quantum_blink": {
+    "subtitle": "mio_icif.subtitle.suit.quantum_blink",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_quantum_blink",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "suit.phase_on": {
+    "subtitle": "mio_icif.subtitle.suit.phase_on",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_phase_on",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "suit.phase_off": {
+    "subtitle": "mio_icif.subtitle.suit.phase_off",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_phase_off",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "suit.field_on": {
+    "subtitle": "mio_icif.subtitle.suit.field_on",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_field_on",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "suit.field_off": {
+    "subtitle": "mio_icif.subtitle.suit.field_off",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_field_off",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "suit.field_catch": {
+    "subtitle": "mio_icif.subtitle.suit.field_catch",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_field_catch",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "suit.dilation_on": {
+    "subtitle": "mio_icif.subtitle.suit.dilation_on",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_dilation_on",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "suit.dilation_off": {
+    "subtitle": "mio_icif.subtitle.suit.dilation_off",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_dilation_off",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "suit.volley_order": {
+    "subtitle": "mio_icif.subtitle.suit.volley_order",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_volley_order",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "suit.volley_impact": {
+    "subtitle": "mio_icif.subtitle.suit.volley_impact",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_volley_impact",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "suit.decoherence": {
+    "subtitle": "mio_icif.subtitle.suit.decoherence",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_decoherence",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "suit.visor_boot": {
+    "subtitle": "mio_icif.subtitle.suit.visor_boot",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_visor_boot",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "suit.link_on": {
+    "subtitle": "mio_icif.subtitle.suit.link_on",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_link_on",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "suit.link_off": {
+    "subtitle": "mio_icif.subtitle.suit.link_off",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_link_off",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "suit.combo": {
+    "subtitle": "mio_icif.subtitle.suit.combo",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_combo",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "suit.resonance_burst": {
+    "subtitle": "mio_icif.subtitle.suit.resonance_burst",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_resonance_burst",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "command.wheel_open": {
+    "subtitle": "mio_icif.subtitle.command.wheel_open",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_command_wheel_open",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "command.wheel_select": {
+    "subtitle": "mio_icif.subtitle.command.wheel_select",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_command_wheel_select",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "command.order_ack": {
+    "subtitle": "mio_icif.subtitle.command.order_ack",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_command_order_ack",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "command.quantum_recall": {
+    "subtitle": "mio_icif.subtitle.command.quantum_recall",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_command_quantum_recall",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "command.holo_open": {
+    "subtitle": "mio_icif.subtitle.command.holo_open",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_command_holo_open",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "command.holo_close": {
+    "subtitle": "mio_icif.subtitle.command.holo_close",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_command_holo_close",
+        "attenuation_distance": 8
+      }
+    ]
+  },
+  "suit.thruster_land": {
+    "subtitle": "mio_icif.subtitle.suit.thruster_land",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_suit_thruster_land",
+        "attenuation_distance": 16
+      }
+    ]
   }
 }

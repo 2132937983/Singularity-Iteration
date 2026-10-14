@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PEP",
+    "CXC",
+    "PIP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/carbon"
+    },
+    "E": {
+      "item": "minecraft:echo_shard"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "X": {
+      "item": "minecraft:ender_eye"
+    },
+    "I": {
+      "tag": "c:plates/iridium"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_module_phase_jump_drive",
+    "count": 1
+  }
+}

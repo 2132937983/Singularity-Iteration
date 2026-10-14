@@ -179,7 +179,7 @@ public class mio_icif_normal {
 
     // METS 移植电池
     // 超级兰波顿水晶 - 100,000,000 EU, 8192 EU/t, Tier 5, 不可堆叠
-    public static final DeferredItem<Item> SUPER_LAPOTRON_CRYSTAL = ITEMS.register("normal/item_super_lapotron_crystal", () -> new mio_icif_bat(new Item.Properties(), 100000000, 100000000, "item_super_lapotron_crystal", 8192));
+    public static final DeferredItem<Item> SUPER_LAPOTRON_CRYSTAL = ITEMS.register("normal/item_super_lapotron_crystal", () -> new mio_icif_bat(new Item.Properties(), 100000000, 100000000, "item_super_lapotron_crystal", 8192, 1, 16)); // 0.1.10.3: 空时可堆叠 16（默认电量组件保留，旧存档满电不丢）
     // 充电超级兰波顿水晶 - 400,000,000 EU, 8192 EU/t, Tier 5, 不可堆叠
     public static final DeferredItem<Item> CHARGING_SUPER_LAPOTRON_CRYSTAL = ITEMS.register("normal/item_charging_super_lapotron_crystal", () -> new mio_icif_bat(new Item.Properties(), 400000000, 400000000, "item_charging_super_lapotron_crystal", 8192));
     // 锂电池 - 50,000 EU, 128 EU/t, Tier 2, 可堆叠16

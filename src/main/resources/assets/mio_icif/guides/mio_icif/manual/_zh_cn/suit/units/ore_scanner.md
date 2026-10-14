@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 10
 item_ids:
+  - mio_icif:module/item_module_ore_scanner_mk2
   - mio_icif:module/item_module_ore_scanner
 ---
 
@@ -40,6 +41,12 @@ item_ids:
 - 第一次脉冲后，单元每50 tick再次扫描，不显示脉冲特效。
 - 关闭再打开单元可发出新的脉冲。
 
+## Mk.II
+
+Mk.II 扫描半径为 24 格。安装它的部件会在奇点管理面板中出现 **矿石筛选** 行：点击即可在“全部矿石”与各个通用矿石标签（c:ores/...）之间切换。切换后扫描会带脉冲重新开始，回波读数中显示筛选条件。
+
 ## 配方
 
 <RecipesFor id="mio_icif:module/item_module_ore_scanner" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_ore_scanner_mk2" fallbackText="-" />

@@ -45,6 +45,10 @@ public static final DeferredItem<mio_icif_upgrade> FLUID_EJECTOR_UPGRADE = UPGRA
     public static final DeferredItem<mio_icif_upgrade> FLUID_PULLING_UPGRADE = UPGRADES.register("upgrade/fluid_pulling_upgrade",
         () -> new mio_icif_upgrade(new net.minecraft.world.item.Item.Properties(), mio_icif_upgrade.UpgradeType.FLUID_PULLING));
 
+    // 0.1.9.1: Thermal Retention Unit (induction furnace)
+    public static final DeferredItem<mio_icif_upgrade> THERMAL_RETENTION_UPGRADE = UPGRADES.register("upgrade/thermal_retention_upgrade",
+        () -> new mio_icif_upgrade(new net.minecraft.world.item.Item.Properties(), mio_icif_upgrade.UpgradeType.THERMAL_RETENTION));
+
     public static void register(IEventBus eventBus) {
         UPGRADES.register(eventBus);
     }

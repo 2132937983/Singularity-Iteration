@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 10
 item_ids:
+  - mio_icif:module/item_module_ore_scanner_mk2
   - mio_icif:module/item_module_ore_scanner
 ---
 
@@ -40,6 +41,12 @@ After the pulse, a small tag shows the nearest ore of each type and its distance
 - After the first pulse, the unit scans again every 50 ticks without a pulse effect.
 - Switch the unit off and on again to send a new pulse.
 
+## Mk.II
+
+The Mk.II scanner reaches 24 blocks. The suit piece that carries it gets an **Ore filter** row in the Singularity Management Panel: click it to step through all ores and each common ore tag (c:ores/...). The scan starts again with a pulse, and the echo read-out shows the filter.
+
 ## Recipe
 
 <RecipesFor id="mio_icif:module/item_module_ore_scanner" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_ore_scanner_mk2" fallbackText="-" />

@@ -41,12 +41,36 @@ public final class FcsHud {
         if (!hud && !flight) return;
         int w = g.guiWidth(), h = g.guiHeight();
         int primary = FcsClientConfig.primary();
+        // 0.1.10.0: visor boot (the view opens from a line) and the decoherence glitch (the HUD jumps sideways)
+        float boot = bootProgress();
+        float glitch = com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.glitch(partial);
+        boolean transformed = boot < 1 || glitch > 0;
+        if (transformed) {
+            g.flush();
+            g.pose().pushPose();
+            if (boot < 1) {
+                float open = Mth.clamp(boot / 0.3F, 0, 1);
+                float sy = 0.02F + 0.98F * open * open * (3 - 2 * open);
+                g.pose().translate(0, h / 2F, 0);
+                g.pose().scale(1, sy, 1);
+                g.pose().translate(0, -h / 2F, 0);
+            }
+            if (glitch > 0) {
+                java.util.Random r = new java.util.Random((long) (System.currentTimeMillis() / 45));
+                if (r.nextFloat() < glitch * 0.5F) g.pose().translate((r.nextFloat() - 0.5F) * 10 * glitch, (r.nextFloat() - 0.5F) * 3 * glitch, 0);
+            }
+        }
         if (hud) {
             if (FcsState.active(SuitModuleType.ORE_SCANNER)) {
                 float pulse = 0.8F + 0.2F * (float) Math.sin(System.currentTimeMillis() / 320.0);
                 OreScanner.renderHud(g, FcsProjection.camera(), pulse);
             }
             frame(g, mc, player, w, h, primary, partial);
+            if (glitch > 0.05F) {
+                // colour split: red and cyan copies of the sight frame just beside it
+                FcsDraw.brackets(g, 8 - 2 * glitch, 8, w - 16, h - 16, 22, 1.2F, FcsDraw.argb(0xFF2050, 0.4F * glitch));
+                FcsDraw.brackets(g, 8 + 2 * glitch, 8, w - 16, h - 16, 22, 1.2F, FcsDraw.argb(0x20E0FF, 0.4F * glitch));
+            }
             if (FcsState.active(SuitModuleType.ENTITY_ESP) || FcsState.active(SuitModuleType.BEHAVIOR_PREDICTOR)) tags(g, primary);
             if (FcsState.active(SuitModuleType.BALLISTIC)) ballistic(g, w, h, primary, partial);
             if (FcsState.active(SuitModuleType.BLAST_WARNING)) blast(g, w, h, primary, partial);
@@ -57,7 +81,66 @@ public final class FcsHud {
             if (!flight) status(g, player, w, h, primary);
         }
         if (flight) ManeuverModeClient.renderHud(g, w, h, primary, partial);
+        if (transformed) {
+            g.flush();
+            g.pose().popPose();
+        }
+        if (boot < 1 && hud) bootOverlay(g, w, h, primary, boot);
         g.flush();
+    }
+
+    // ------------------------------------------------------------------ 0.1.10.0 visor boot sequence
+
+    /** Duration of the visor boot, ms. */
+    static final long BOOT_MS = 900;
+    private static long bootStart = -10_000;
+
+    /** Starts the boot sequence (the FCS turns on: helmet on, HUD key, first unit). */
+    static void boot() {
+        bootStart = System.currentTimeMillis();
+    }
+
+    /** 0..1 through the boot, 1 when done (or when the client option is off). */
+    static float bootProgress() {
+        if (!FcsClientConfig.visorBoot()) return 1;
+        return Mth.clamp((System.currentTimeMillis() - bootStart) / (float) BOOT_MS, 0, 1);
+    }
+
+    /**
+     * Boot overlay: a bright scan line sweeps down, the aim point calibrates (a ring closing in
+     * with tick marks), and the boot log types itself at the left.
+     */
+    private static void bootOverlay(GuiGraphics g, int w, int h, int primary, float k) {
+        // scan line (after the view opened)
+        if (k > 0.25F && k < 0.8F) {
+            float u = (k - 0.25F) / 0.55F;
+            float y = u * h;
+            g.fill(0, (int) y - 1, w, (int) y + 1, FcsDraw.argb(0xFFFFFF, 0.55F * (1 - u)));
+            g.fill(0, (int) y - 6, w, (int) y - 1, FcsDraw.argb(primary, 0.12F * (1 - u)));
+            g.fill(0, (int) y + 1, w, (int) y + 5, FcsDraw.argb(primary, 0.06F * (1 - u)));
+        }
+        // aim calibration
+        float cx = w / 2F, cy = h / 2F;
+        if (k > 0.35F) {
+            float u = Mth.clamp((k - 0.35F) / 0.5F, 0, 1);
+            float r = 40 - 30 * u;
+            float a = u < 0.85F ? 0.8F : 0.8F * (1 - (u - 0.85F) / 0.15F);
+            FcsDraw.circle(g, cx, cy, r, 1F, FcsDraw.argb(primary, a));
+            for (int i = 0; i < 12; i++) {
+                float ang = (float) (i * Math.PI / 6 + u * Math.PI);
+                FcsDraw.line(g, cx + (float) Math.sin(ang) * (r + 2), cy - (float) Math.cos(ang) * (r + 2),
+                    cx + (float) Math.sin(ang) * (r + 5), cy - (float) Math.cos(ang) * (r + 5), 1F, FcsDraw.argb(primary, a));
+            }
+        }
+        // boot log
+        String[] log = {"FCS VISOR // BOOT", "OPTICS ........ OK", "SENSOR BUS ..... OK", "QUANTUM LINK ... OK", "CALIBRATING AIM", "READY"};
+        int lines = (int) Math.min(log.length, Math.floor(k * (log.length + 1)));
+        for (int i = 0; i < lines; i++) {
+            boolean last = i == lines - 1;
+            String s = log[i];
+            if (last && k < 1) s = s.substring(0, Math.max(1, (int) (s.length() * ((k * (log.length + 1)) % 1F))));
+            FcsDraw.text(g, s, 20, h * 0.3F + i * 7, FcsDraw.argb(i == log.length - 1 ? 0xFFFFFF : primary, 0.85F), 0.55F);
+        }
     }
 
     static float[] centre(FcsClientConfig.Panel panel, int w, int h) {
@@ -145,6 +228,10 @@ public final class FcsHud {
         boolean esp = FcsState.active(SuitModuleType.ENTITY_ESP);
         boolean predict = FcsState.active(SuitModuleType.BEHAVIOR_PREDICTOR);
         LocalPlayer player = Minecraft.getInstance().player;
+        // 0.1.10.1: Mk.II ESP reads health and armour; the Threat Sight synergy adds an impact countdown on the hunters
+        boolean espMk2 = esp && SuitModules.tier(player, SuitModuleType.ENTITY_ESP) >= 2;
+        boolean threatSight = com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.active(player,
+            com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.THREAT_SIGHT);
         int shown = 0;
         for (SensorTracker.Track t : SensorTracker.tracks()) {
             LivingEntity e = t.entity();
@@ -166,8 +253,13 @@ public final class FcsHud {
                 float hp = e.getHealth() / Math.max(1, e.getMaxHealth());
                 g.fill((int) (top[0] - wid / 2), (int) (top[1] + hgt + 2), (int) (top[0] - wid / 2 + wid * hp), (int) (top[1] + hgt + 3),
                     FcsDraw.argb(color, 0.85F));
+                if (espMk2) {
+                    String stats = String.format(Locale.ROOT, "HP %.0f/%.0f  AR %d", e.getHealth(), e.getMaxHealth(), e.getArmorValue());
+                    FcsDraw.textCentered(g, stats, top[0], top[1] + hgt + 5, FcsDraw.argb(color, 0.85F), 0.45F);
+                }
                 shown++;
             }
+            if (threatSight && threat == 2) threatEta(g, e, t.velocity(), player, top, bottom, wid, hgt);
             if (predict && t.intent() != null) {
                 int ic = t.intentHot() ? FcsDraw.RED : 0xFF9F1C;
                 float blink = t.intentHot() ? (float) (0.6 + 0.4 * Math.sin(System.currentTimeMillis() / 90.0)) : 1F;
@@ -176,6 +268,32 @@ public final class FcsHud {
                 FcsDraw.text(g, t.intent(), ix + 6, iy, FcsDraw.argb(ic, blink), 0.55F);
             }
         }
+    }
+
+    /**
+     * 0.1.10.1 Threat Sight: a red ring around a hunter that closes in as its attack gets near, with
+     * the estimated time to reach the wearer (distance less 1.5 blocks over the closing speed).
+     */
+    private static void threatEta(GuiGraphics g, LivingEntity e, Vec3 velocity, LocalPlayer player, float[] top, float[] bottom, float wid, float hgt) {
+        Vec3 to = player.position().subtract(e.position());
+        double d = to.length();
+        if (d < 1.0E-3) return;
+        double closing = velocity.dot(to.scale(1 / d)) * 20;          // blocks per second toward the wearer
+        float eta = closing > 0.3 ? (float) (Math.max(0, d - 1.5) / closing) : -1;
+        float cx = top[0], cy = (top[1] + bottom[1]) / 2;
+        float base = Math.max(wid, hgt) * 0.6F + 3;
+        float k = eta < 0 ? 1F : Mth.clamp(eta / 3F, 0, 1);
+        float pulse = eta >= 0 && eta < 0.8F ? (float) (0.55 + 0.45 * Math.sin(System.currentTimeMillis() / 60.0)) : 0.85F;
+        FcsDraw.circle(g, cx, cy, base + 14 * k, 1.1F, FcsDraw.argb(FcsDraw.RED, 0.75F * pulse));
+        // four inward ticks that tighten with the countdown
+        for (int i = 0; i < 4; i++) {
+            float a = (float) (i * Math.PI / 2 + System.currentTimeMillis() / 400.0);
+            float r0 = base + 14 * k + 2, r1 = r0 + 4;
+            FcsDraw.line(g, cx + (float) Math.sin(a) * r0, cy - (float) Math.cos(a) * r0, cx + (float) Math.sin(a) * r1, cy - (float) Math.cos(a) * r1,
+                1.2F, FcsDraw.argb(FcsDraw.RED, pulse));
+        }
+        String label = eta < 0 ? "HUNTING" : String.format(Locale.ROOT, "ETA %.1fs", eta);
+        FcsDraw.textCentered(g, label, cx, cy + base + 14 * k + 3, FcsDraw.argb(FcsDraw.RED, pulse), 0.5F);
     }
 
     private static String tagName(Entity e) {
@@ -226,6 +344,22 @@ public final class FcsHud {
                 next += spacing;
             }
             run += seg;
+        }
+        // 0.1.10.1 Mk.II: the side shots of a multishot weapon, thin dotted arcs with a small impact diamond
+        for (BallisticSolver.Solution side : FcsState.spread) {
+            float[] last = null;
+            List<Vec3> sp = side.path();
+            for (int i = 1; i < sp.size(); i += 2) {
+                float[] q = FcsProjection.project(sp.get(i));
+                if (q != null && last != null) FcsDraw.line(g, last[0], last[1], q[0], q[1], 0.6F, FcsDraw.argb(c, 0.15F + 0.3F * i / sp.size()));
+                if (q != null) last = q;
+            }
+            if (side.impact() != null) {
+                float[] q = FcsProjection.project(side.impact());
+                if (q != null) {
+                    FcsDraw.quad(g, q[0], q[1] - 2.5F, q[0] + 2.5F, q[1], q[0], q[1] + 2.5F, q[0] - 2.5F, q[1], FcsDraw.argb(side.target() != null ? FcsDraw.RED : c, 0.85F));
+                }
+            }
         }
         // impact reticle
         if (s.impact() != null) {
@@ -332,6 +466,9 @@ public final class FcsHud {
         long now = System.currentTimeMillis();
         float cx = w / 2F, cy = h / 2F;
         boolean inside = false;
+        // 0.1.10.1 Blast Forecast synergy: the blast as a 3D sphere and an escape arrow
+        boolean forecast = com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.active(player,
+            com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.BLAST_FORECAST);
         for (SensorTracker.Blast b : blasts) {
             double d = Math.sqrt(b.entity().distanceToSqr(player));
             boolean in = d < b.radius();
@@ -340,6 +477,7 @@ public final class FcsHud {
             int col = b.seconds() < 1 || in ? FcsDraw.RED : FcsDraw.YELLOW;
             float flash = b.seconds() < 1 ? (float) (0.6 + 0.4 * Math.sin(now / 55.0)) : 1F;
             Vec3 at = b.entity().getPosition(partial);
+            if (forecast) blastForecast(g, b, at, player, partial, col, flash, in, w, h);
             // ground danger zone
             dangerZone(g, at.add(0, 0.06, 0), b.radius(), burnt, col, flash);
             // fuse ring icon over the charge
@@ -387,6 +525,52 @@ public final class FcsHud {
             }
             FcsDraw.textRight(g, String.format(Locale.ROOT, "%.1f", Math.max(0, b.seconds())), x + pw - 4, ry, FcsDraw.argb(col, 1F), 0.55F);
         }
+    }
+
+    /**
+     * 0.1.10.1 Blast Forecast: the blast as a wire sphere (latitude rings and meridians, the front
+     * half brighter), and for a blast that reaches the wearer an escape arrow from the aim point to
+     * the nearest safe spot, with the distance to run and the seconds left.
+     */
+    private static void blastForecast(GuiGraphics g, SensorTracker.Blast b, Vec3 at, LocalPlayer player, float partial, int col, float flash,
+                                      boolean in, int w, int h) {
+        Vec3 c = at.add(0, b.entity().getBbHeight() * 0.5, 0);
+        float r = b.radius();
+        float spin = (System.currentTimeMillis() % 6000) / 6000F * (float) Math.PI * 2;
+        for (int i = -2; i <= 2; i++) {
+            double lat = i * Math.PI / 6;
+            Vec3 rc = c.add(0, Math.sin(lat) * r, 0);
+            worldArc(g, rc, new Vec3(1, 0, 0), new Vec3(0, 0, 1), Math.cos(lat) * r, 0, (float) Math.PI * 2, i == 0 ? 1.2F : 0.7F,
+                FcsDraw.argb(col, (i == 0 ? 0.55F : 0.3F) * flash));
+        }
+        for (int j = 0; j < 4; j++) {
+            double lon = j * Math.PI / 4 + spin * 0.2;
+            Vec3 ax = new Vec3(Math.cos(lon), 0, Math.sin(lon));
+            worldArc(g, c, ax, new Vec3(0, 1, 0), r, 0, (float) Math.PI * 2, 0.6F, FcsDraw.argb(col, 0.25F * flash));
+        }
+        if (!in && player.distanceTo(b.entity()) > r * 1.4F) return;
+        Vec3 away = player.position().subtract(at);
+        away = new Vec3(away.x, 0, away.z);
+        if (away.lengthSqr() < 1.0E-4) away = player.getViewVector(partial).multiply(-1, 0, -1);
+        away = away.normalize();
+        double run = Math.max(0, r - Math.sqrt(player.distanceToSqr(at.x, player.getY(), at.z))) + 1.0;
+        Vec3 safe = player.getPosition(partial).add(away.scale(run)).add(0, 0.1, 0);
+        float[] p = FcsProjection.project(safe);
+        float sx = w / 2F, sy = h / 2F;
+        float tx, ty;
+        if (p != null) { tx = p[0]; ty = p[1]; }
+        else {                                                         // behind the wearer: point to the edge of the view
+            float bearing = FcsProjection.bearing(safe.x, safe.y, safe.z);
+            tx = sx + (float) Math.sin(bearing) * 70;
+            ty = sy - (float) Math.cos(bearing) * 70;
+        }
+        float dx = tx - sx, dy = ty - sy, len = (float) Math.sqrt(dx * dx + dy * dy);
+        if (len < 12) return;
+        float ux = dx / len, uy = dy / len;
+        float x0 = sx + ux * 14, y0 = sy + uy * 14, x1 = sx + ux * Math.min(len, 90), y1 = sy + uy * Math.min(len, 90);
+        FcsDraw.line(g, x0, y0, x1, y1, 2.2F, FcsDraw.argb(0x5CFF9A, 0.9F * flash));
+        FcsDraw.triangle(g, x1 + ux * 7, y1 + uy * 7, x1 - uy * 5, y1 + ux * 5, x1 + uy * 5, y1 - ux * 5, FcsDraw.argb(0x5CFF9A, flash));
+        FcsDraw.text(g, String.format(Locale.ROOT, "EVADE %.1fm  %.1fs", run, Math.max(0, b.seconds())), x1 + 8, y1 - 3, FcsDraw.argb(0x5CFF9A, flash), 0.55F);
     }
 
     /** Disc icon: dark core, warning glyph, ring that empties as the fuse burns, countdown chip. */

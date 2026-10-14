@@ -66,8 +66,10 @@ public class SuitModuleItem extends Item {
             .withStyle(nano && !quantum ? ChatFormatting.AQUA : quantum && !nano ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.GREEN));
         if (type == SuitModuleType.DEFLECTOR) {
             tooltip.add(Component.translatable("module.mio_icif.tooltip.deflector_cost",
-                SuitModules.DEFLECTOR_EU_PER_DAMAGE, (int) SuitModules.DEFLECTOR_MAX_PER_HIT).withStyle(ChatFormatting.DARK_AQUA));
-        } else if (type.drainPerTick() > 0 || type.burst() == null) {
+                tier >= 2 ? SuitModules.DEFLECTOR_EU_PER_DAMAGE_MK2 : SuitModules.DEFLECTOR_EU_PER_DAMAGE, (int) SuitModules.DEFLECTOR_MAX_PER_HIT)
+                .withStyle(ChatFormatting.DARK_AQUA));
+        } else if (type.drainPerTick() > 0 || type.burst() == null && com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.kind(UnitRef.of(type)) == null
+                && type != SuitModuleType.COHERENCE_CAPACITOR) {
             double drain = tier >= 2 ? SuitModules.drainPerSecond(type, 2) / (double) SuitModules.DRAIN_INTERVAL : type.drainPerTick();
             tooltip.add(Component.translatable("module.mio_icif.tooltip.drain", drain == Math.rint(drain) ? String.valueOf((long) drain)
                 : String.format(java.util.Locale.ROOT, "%.1f", drain)).withStyle(ChatFormatting.DARK_AQUA));
@@ -77,6 +79,33 @@ public class SuitModuleItem extends Item {
             tooltip.add(Component.translatable("module.mio_icif.tooltip.burst." + (burst.sustained() ? "sustained" : "single"),
                 burst.reserveCost(), burst.heat(), String.format(java.util.Locale.ROOT, "%.1f", burst.cooldownTicks() / 20F))
                 .withStyle(ChatFormatting.GOLD));
+        }
+        // 0.1.10.0: the quantum action of the unit (the deflector and the predictor: Mk.II only)
+        var kind = com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.kind(UnitRef.of(type));
+        if (kind != null) {
+            var spec = com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.spec(UnitRef.of(type));
+            Component name = Component.translatable(kind.nameKey());
+            if (tier < kind.minTier) {
+                tooltip.add(Component.translatable("module.mio_icif.tooltip.action_mk2", name).withStyle(ChatFormatting.DARK_PURPLE));
+            } else if (spec != null) {
+                String cd = String.format(java.util.Locale.ROOT, "%.1f", spec.cooldownTicks() / 20F);
+                tooltip.add((spec.sustained()
+                    ? Component.translatable("module.mio_icif.tooltip.action.sustained", name, spec.coherenceCost(), spec.sustainPerSecond(), cd)
+                    : Component.translatable("module.mio_icif.tooltip.action.single", name, spec.coherenceCost(), cd)).withStyle(ChatFormatting.LIGHT_PURPLE));
+            }
+        }
+        // 0.1.10.1: compute bandwidth on a quantum piece, and the synergies the unit takes part in
+        int qb = com.miophas.singularity_iteration.common.suit.quantum.QuantumBandwidth.cost(UnitRef.of(type), tier);
+        if (quantum && qb > 0) tooltip.add(Component.translatable("module.mio_icif.tooltip.bandwidth", qb).withStyle(ChatFormatting.DARK_AQUA));
+        if (type == SuitModuleType.COMPUTE_CORE) {
+            tooltip.add(Component.translatable("module.mio_icif.tooltip.compute_core",
+                com.miophas.singularity_iteration.common.suit.quantum.QuantumBandwidth.CORE_BONUS).withStyle(ChatFormatting.AQUA));
+        }
+        for (var syn : com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.VALUES) {
+            SuitModuleType other = syn.a == type ? syn.b : syn.b == type ? syn.a : null;
+            if (other == null) continue;
+            tooltip.add(Component.translatable("module.mio_icif.tooltip.synergy", Component.translatable(syn.nameKey()),
+                Component.translatable(other.nameKey())).withStyle(ChatFormatting.DARK_PURPLE));
         }
         if (type == SuitModuleType.MYOFIBER) tooltip.add(Component.translatable("module.mio_icif.tooltip.hf_sync").withStyle(ChatFormatting.BLUE));
         if (type.needsVisor()) tooltip.add(Component.translatable("module.mio_icif.tooltip.visor").withStyle(ChatFormatting.DARK_GRAY));

@@ -11,6 +11,9 @@ navigation:
 The quantum suit accepts upgrade units. Each unit adds one sensor or one defense function.
 The Universal Suit Modification Station installs and removes the units. Since 0.1.8.5 the nano suit takes units too (see Nano suit units).
 Each piece has a fixed number of unit slots: helmet 4, chestplate 3, leggings 2, boots 2.
+A Quantum Bay Expander adds one more slot to a piece (see Quantum actions).
+Two quantum units can be entangled for a synergy; the suit computer has a compute bandwidth (see Entanglement and synergies).
+With an Entanglement Relay the suit commands its Wingmen: command wheel, orders, holo table (see Quantum command).
 A HUD unit shows its data only when you wear a quantum helmet. The helmet is the visor.
 Each installed unit adds a switch to the equipment console. A unit uses power only while its switch is on.
 
@@ -25,5 +28,10 @@ Each installed unit adds a switch to the equipment console. A unit uses power on
 | <ItemLink id="mio_icif:module/item_module_holomap" /> | Helmet | 10 EU/t while on |
 | <ItemLink id="mio_icif:module/item_module_threat_sensor" /> | Chestplate | 6 EU/t while on |
 | <ItemLink id="mio_icif:module/item_module_deflector" /> | Chestplate | 4000 EU per damage point, max 12 points per hit |
+| <ItemLink id="mio_icif:module/item_module_phase_jump_drive" /> | Leggings / Boots | Action: Quantum Blink (coherence) |
+| <ItemLink id="mio_icif:module/item_module_phase_modulator" /> | Chestplate | Action: Phase Shift (coherence) |
+| <ItemLink id="mio_icif:module/item_module_entanglement_relay" /> | Chestplate / Leggings | Action: Entangled Volley (coherence) |
+| <ItemLink id="mio_icif:module/item_module_coherence_capacitor" /> | Leggings / Boots | Passive: coherence maximum +50 |
+| <ItemLink id="mio_icif:module/item_module_compute_core" /> | Chestplate / Leggings | 6 EU/t while on; bandwidth +8 QB, links +1 |
 
 <SubPages id="suit/index.md" icons={true} />

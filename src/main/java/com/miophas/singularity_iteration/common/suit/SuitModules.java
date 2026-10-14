@@ -32,6 +32,8 @@ public final class SuitModules {
 
     /** EU the deflector spends for one point of damage it cancels. */
     public static final long DEFLECTOR_EU_PER_DAMAGE = 4_000;
+    /** 0.1.10.0: the same for a Mk.II deflector. */
+    public static final long DEFLECTOR_EU_PER_DAMAGE_MK2 = 3_000;
     /** Damage the deflector can cancel in one hit (two hearts more than a diamond sword crit). */
     public static final float DEFLECTOR_MAX_PER_HIT = 12.0F;
     /** Station work per unit: ticks and EU per tick. */
@@ -55,6 +57,36 @@ public final class SuitModules {
             case LEGS, FEET -> 2;
             default -> 0;
         };
+    }
+
+    /** 0.1.10.0: unit slots that one quantum bay expander adds, and the number of expanders a piece takes. */
+    public static final int BAY_STEP = 1, BAY_MAX_LEVEL = 1;
+
+    /**
+     * 0.1.10.0: unit slots of a quantum piece: the base of its slot plus its expansion bays.
+     * A piece without the bay component has the base count, as before 0.1.10.0.
+     */
+    public static int capacity(ItemStack piece) {
+        EquipmentSlot slot = slotOf(piece);
+        return slot == null ? 0 : capacity(slot) + BAY_STEP * bayLevel(piece);
+    }
+
+    /** Expansion bay level of a quantum piece, 0..{@link #BAY_MAX_LEVEL}. */
+    public static int bayLevel(ItemStack piece) {
+        Integer level = piece.isEmpty() ? null : piece.get(mio_icif_data_components.SUIT_BAYS.get());
+        return level == null ? 0 : Math.max(0, Math.min(BAY_MAX_LEVEL, level));
+    }
+
+    /** True when a quantum bay expander can still be applied to {@code piece}. */
+    public static boolean canExpand(ItemStack piece) {
+        return isQuantumPiece(piece) && slotOf(piece) != null && bayLevel(piece) < BAY_MAX_LEVEL;
+    }
+
+    /** Applies one quantum bay expander (+{@link #BAY_STEP} unit slot). */
+    public static boolean expand(ItemStack piece) {
+        if (!canExpand(piece)) return false;
+        piece.set(mio_icif_data_components.SUIT_BAYS.get(), bayLevel(piece) + 1);
+        return true;
     }
 
     /** Nano pieces (0.1.8.5): base lattice points per piece (head 4, chest 6, legs 4, feet 4). */
@@ -185,7 +217,7 @@ public final class SuitModules {
         if (suitClass == SuitClass.NANO) {
             // 0.1.8.5: a nano piece counts lattice points, not units
             if (latticeUsed(piece) + unit.latticePoints() > latticeCapacity(piece)) return InstallCheck.NO_LATTICE;
-        } else if (modules.units().size() >= capacity(slot)) {
+        } else if (modules.units().size() >= capacity(piece)) {             // 0.1.10.0: + expansion bays
             return InstallCheck.FULL;
         }
         return InstallCheck.OK;
@@ -388,5 +420,6 @@ public final class SuitModules {
         com.miophas.singularity_iteration.core.api.item.ArmorCapacityBonus.register(SuitModules::capacityBonus);
         ManeuverMode.bootstrap();
         com.miophas.singularity_iteration.common.suit.nano.NanoSuit.bootstrap();
+        com.miophas.singularity_iteration.common.suit.quantum.QuantumCore.bootstrap();   // 0.1.10.0 quantum core view
     }
 }

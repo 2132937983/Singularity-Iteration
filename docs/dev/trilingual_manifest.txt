@@ -69,3 +69,13 @@ com/miophas/singularity_iteration/core/api/suit/SuitBurstBehavior.java
 com/miophas/singularity_iteration/core/api/suit/SuitModuleTraits.java
 com/miophas/singularity_iteration/core/api/suit/SuitNanoCore.java
 com/miophas/singularity_iteration/core/api/item/ArmorCapacityBonus.java
+
+# 0.1.10.0 quantum actions (public API)
+com/miophas/singularity_iteration/core/api/suit/SuitActionSpec.java  all
+com/miophas/singularity_iteration/core/api/suit/SuitActionBehavior.java
+com/miophas/singularity_iteration/core/api/suit/SuitQuantumActions.java  all
+com/miophas/singularity_iteration/core/api/suit/SuitQuantumCore.java  all
+
+# 0.1.10.1 entanglement synergies and compute bandwidth (public API)
+com/miophas/singularity_iteration/core/api/suit/SuitSynergies.java  all
+com/miophas/singularity_iteration/core/api/suit/SuitBandwidth.java  all

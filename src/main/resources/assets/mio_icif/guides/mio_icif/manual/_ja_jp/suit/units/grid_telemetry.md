@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 11
 item_ids:
+  - mio_icif:module/item_module_grid_telemetry_mk2
   - mio_icif:module/item_module_grid_telemetry
 ---
 
@@ -38,6 +39,12 @@ item_ids:
 
 - OVカウンターは、電圧Tierを超えるパケットを受けたチャンク内の機械数を示す。
 
+## Mk.II
+
+Mk.II は手の届く範囲だけでなく、視線の先 36 ブロックまでのブロックを読み取る。
+
 ## レシピ
 
 <RecipesFor id="mio_icif:module/item_module_grid_telemetry" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_grid_telemetry_mk2" fallbackText="-" />

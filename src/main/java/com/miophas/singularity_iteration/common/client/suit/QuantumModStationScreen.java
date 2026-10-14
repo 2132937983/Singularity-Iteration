@@ -101,7 +101,7 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
         ItemStack suit = menu.suit();
         EquipmentSlot slot = SuitModules.slotOf(suit);
         boolean nano = SuitModules.isNanoPiece(suit);
-        int cap = slot == null || !SuitModules.isSuitPiece(suit) ? 0 : nano ? SuitModules.latticeCapacity(suit) : SuitModules.capacity(slot);
+        int cap = slot == null || !SuitModules.isSuitPiece(suit) ? 0 : nano ? SuitModules.latticeCapacity(suit) : SuitModules.capacity(suit);
         List<com.miophas.singularity_iteration.common.suit.UnitRef> units = menu.installed();
         int head = nano ? 0xFF6FE6FF : 0xFF7CFFB2;
         if (nano) {
@@ -137,10 +137,17 @@ public class QuantumModStationScreen extends mio_icif_screen<QuantumModStationMe
             }
         } else {
             g.drawString(font, Component.translatable("gui.mio_icif.station.units", units.size(), cap), lx + 4, ly + 3, head, false);
-            // capacity pips
-            for (int i = 0; i < cap; i++) {
-                int px = lx + lw - 6 - (cap - 1 - i) * 7;
-                g.fill(px, ly + 4, px + 5, ly + 9, i < units.size() ? 0xFF7CFFB2 : 0x407CFFB2);
+            // capacity pips; 0.1.10.0: the expansion bay slot is violet, and a bay expander in the unit slot previews it
+            int base = cap - SuitModules.bayLevel(suit);
+            boolean preview = QuantumModStationBlockEntity.isBayExpander(menu.unit()) && SuitModules.canExpand(suit);
+            float blink = 0.5F + 0.5F * (float) Math.sin(System.currentTimeMillis() / 160.0);
+            int shown = cap + (preview ? 1 : 0);
+            for (int i = 0; i < shown; i++) {
+                int px = lx + lw - 6 - (shown - 1 - i) * 7;
+                boolean bay = i >= base;
+                int c = i >= cap ? ((int) (0x50 + 0x80 * blink) << 24) | 0xB98CFF
+                    : bay ? (i < units.size() ? 0xFFB98CFF : 0x50B98CFF) : (i < units.size() ? 0xFF7CFFB2 : 0x407CFFB2);
+                g.fill(px, ly + 4, px + 5, ly + 9, c);
             }
         }
         int rh = rowH();

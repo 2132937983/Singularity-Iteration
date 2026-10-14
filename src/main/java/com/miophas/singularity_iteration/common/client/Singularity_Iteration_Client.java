@@ -80,6 +80,9 @@ public class Singularity_Iteration_Client {
         // Some client setup code
         Singularity_Iteration.LOGGER.info("HELLO FROM CLIENT SETUP");
         Singularity_Iteration.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+        // 0.1.9.1: registry lookup for the machine contents of crafting remainders on the client side
+        com.miophas.singularity_iteration.common.block.MachineContents.clientLookup =
+            () -> Minecraft.getInstance().level == null ? null : Minecraft.getInstance().level.registryAccess();
         
         // Register the battery energy property. The battery texture changes with the energy level.
     ResourceLocation energyProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "energy_level");

@@ -6,7 +6,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.ICancellableEvent;
 
@@ -16,13 +18,15 @@ import net.neoforged.bus.api.ICancellableEvent;
  * {@link Summon}: before a suit flies to a wearer (the player or a companion); cancel it to stop the
  * summon, then no energy is spent and no item moves. {@link PieceDocked}: after a flying piece is
  * equipped. {@link WingmanDeploy}: before a stored suit deploys as a Wingman drone; cancel it to stop
- * the deploy.
+ * the deploy. {@link WingmanCommand} (0.1.10.2): before a quantum command order; cancel it to refuse
+ * the order.
  * <p><b>ZH:</b> 军械库事件（0.1.8.0 起的公共 API）。奇点迭代在服务器线程上把它们发布到 {@code NeoForge.EVENT_BUS}。
  * {@link Summon}：套装飞向穿戴者（玩家或同伴）之前；取消即停止召唤，不消耗能量、不移动物品。{@link PieceDocked}：飞行部件装备完成之后。
- * {@link WingmanDeploy}：储存的套装作为僚机出动之前；取消即停止出动。
+ * {@link WingmanDeploy}：储存的套装作为僚机出动之前；取消即停止出动。{@link WingmanCommand}（0.1.10.2）：量子指挥命令执行之前；取消即拒绝该命令。
  * <p><b>JA:</b> 武装庫イベント（0.1.8.0 以降の公開 API）。奇点迭代はサーバースレッドで {@code NeoForge.EVENT_BUS} に投稿する。
  * {@link Summon}：スーツが装着者（プレイヤーまたは随伴者）へ飛ぶ前。キャンセルすると召喚を止め、電力も消費せずアイテムも動かない。
  * {@link PieceDocked}：飛行部位の装着完了後。{@link WingmanDeploy}：保管スーツがウィングマンとして出撃する前。キャンセルで出撃を止める。
+ * {@link WingmanCommand}（0.1.10.2）：量子指揮の命令の前。キャンセルで命令を拒否する。
  */
 public abstract class ArmoryEvent extends Event {
     private final Player player;
@@ -109,5 +113,38 @@ public abstract class ArmoryEvent extends Event {
         public int getSet() { return set; }
         /** EN: Tactical mode: OFFENSIVE, DISPERSAL, ESCORT or FULTON. ZH: 战术模式：OFFENSIVE、DISPERSAL、ESCORT 或 FULTON。JA: 戦術モード：OFFENSIVE、DISPERSAL、ESCORT、FULTON。 */
         public String getMode() { return mode; }
+    }
+
+    /**
+     * <p><b>EN:</b> Before a quantum command order (0.1.10.2) from the command wheel or the holo table. Cancelable; a
+     * canceled order changes nothing. Orders: MOVE, HOLD, SUPPRESS, FOCUS, FORM_UP, MODE, SQUAD, RETURN, QUANTUM_RECALL.
+     * <p><b>ZH:</b> 来自指挥轮盘或全息台的量子指挥命令执行之前（0.1.10.2）。可取消；被取消的命令不改变任何东西。命令：MOVE、HOLD、
+     * SUPPRESS、FOCUS、FORM_UP、MODE、SQUAD、RETURN、QUANTUM_RECALL。
+     * <p><b>JA:</b> コマンドホイールまたはホロテーブルからの量子指揮の命令の前（0.1.10.2）。キャンセル可能。キャンセルされた命令は何も
+     * 変えない。命令：MOVE、HOLD、SUPPRESS、FOCUS、FORM_UP、MODE、SQUAD、RETURN、QUANTUM_RECALL。
+     */
+    public static final class WingmanCommand extends ArmoryEvent implements ICancellableEvent {
+        private final String order;
+        private final int wingmen;
+        @org.jetbrains.annotations.Nullable private final Vec3 point;
+        @org.jetbrains.annotations.Nullable private final Entity target;
+
+        public WingmanCommand(Player player, String order, int wingmen, @org.jetbrains.annotations.Nullable Vec3 point,
+                              @org.jetbrains.annotations.Nullable Entity target) {
+            super(player);
+            this.order = order;
+            this.wingmen = wingmen;
+            this.point = point;
+            this.target = target;
+        }
+
+        /** EN: The order name (see the class comment). ZH: 命令名称（见类注释）。JA: 命令の名前（クラスのコメントを参照）。 */
+        public String getOrder() { return order; }
+        /** EN: Number of Wingmen the order goes to. ZH: 接收命令的僚机数量。JA: 命令を受けるウィングマンの数。 */
+        public int getWingmen() { return wingmen; }
+        /** EN: The order point (MOVE, HOLD, SUPPRESS), else null. ZH: 命令地点（MOVE、HOLD、SUPPRESS），否则为 null。JA: 命令地点（MOVE、HOLD、SUPPRESS）。それ以外は null。 */
+        @org.jetbrains.annotations.Nullable public Vec3 getPoint() { return point; }
+        /** EN: The focus target (FOCUS), else null. ZH: 集火目标（FOCUS），否则为 null。JA: 集中攻撃の目標（FOCUS）。それ以外は null。 */
+        @org.jetbrains.annotations.Nullable public Entity getTarget() { return target; }
     }
 }

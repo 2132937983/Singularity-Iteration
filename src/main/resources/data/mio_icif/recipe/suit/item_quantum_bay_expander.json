@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "ICI",
+    "LXL",
+    "ICI"
+  ],
+  "key": {
+    "I": {
+      "tag": "c:plates/iridium"
+    },
+    "C": {
+      "tag": "c:circuits/elite"
+    },
+    "L": {
+      "item": "mio_icif:normal/item_lapotron_crystal_lev0"
+    },
+    "X": {
+      "item": "minecraft:shulker_shell"
+    }
+  },
+  "result": {
+    "id": "mio_icif:module/item_quantum_bay_expander",
+    "count": 1
+  }
+}

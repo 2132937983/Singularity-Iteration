@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 18
 item_ids:
+  - mio_icif:module/item_module_deflector_mk2
   - mio_icif:module/item_module_deflector
 ---
 
@@ -37,6 +38,12 @@ item_ids:
 
 - このユニットに常時消費はない。命中を止めたときだけEUを使う。
 
+## Mk.II
+
+Mk.II はダメージ 1 点あたり 4000 EU ではなく 3000 EU を払い、アクション **力場展開** が加わる（「量子アクション」を参照）。
+
 ## レシピ
 
 <RecipesFor id="mio_icif:module/item_module_deflector" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_deflector_mk2" fallbackText="-" />

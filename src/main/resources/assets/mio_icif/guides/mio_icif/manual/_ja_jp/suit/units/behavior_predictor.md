@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 15
 item_ids:
+  - mio_icif:module/item_module_behavior_predictor_mk2
   - mio_icif:module/item_module_behavior_predictor
 ---
 
@@ -38,6 +39,12 @@ item_ids:
 - 近接と遠隔のコード：ATK近接、AIM遠隔武器、DET爆発。
 - 特殊攻撃のコード：CAST呪文、BEAMガーディアン、FIREガスト、DIVEヴェックス、AGGROエンダーマン。
 
+## Mk.II
+
+Mk.II ではアクション **時間歪曲** が加わる（「量子アクション」を参照）。進路と攻撃予告の表示は同じ。
+
 ## レシピ
 
 <RecipesFor id="mio_icif:module/item_module_behavior_predictor" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_behavior_predictor_mk2" fallbackText="-" />

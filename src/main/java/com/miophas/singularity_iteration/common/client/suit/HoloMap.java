@@ -121,7 +121,10 @@ public final class HoloMap {
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(CONTACT_RANGE),
                 e -> e != player && e.isAlive() && !e.isInvisible())) {
             int threat = SuitSensorData.threatLevel(e.getId());
+            // 0.1.10.2: the Wingmen in their own colour; a creature the Wingmen report (data link) in teal
             int color = threat == 2 ? FcsDraw.RED : threat == 1 ? FcsDraw.YELLOW
+                : e instanceof com.miophas.singularity_iteration.common.armory.WingmanEntity ? 0x5CEBFF
+                : com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.datalinkSeen().contains(e.getId()) ? 0x6FF3D6
                 : e instanceof Enemy ? 0xFF6A5C : e instanceof Player ? FcsDraw.CYAN : e instanceof NeutralMob ? 0xFFE08A : 0x9FE8B0;
             list.add(new Contact(e.getX() - player.getX(), e.getY() - player.getY(), e.getZ() - player.getZ(), color, false));
             if (list.size() >= 48) break;
@@ -397,6 +400,12 @@ public final class HoloMap {
             float r = edge ? 1.6F : 2.4F;
             FcsDraw.quad(g, a[0], a[1] - r - 2, a[0] + r, a[1] - 2, a[0], a[1] + r - 2, a[0] - r, a[1] - 2, FcsDraw.argb(ct.color, edge ? 0.7F : 1F));
         }
+        // 0.1.10.1 Ore Hologram synergy: the ores of the last scan as glowing voxels in their colour
+        var wearer = net.minecraft.client.Minecraft.getInstance().player;
+        if (wearer != null && com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.active(wearer,
+                com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.ORE_HOLO)) {
+            oreVoxels(g, now, a, b);
+        }
         // self: a chevron at the centre of the centre block, pointing forward (into the box), and a
         // 1.8-block vertical line for the body height
         project(0.5F, 0, 0.5F, a);
@@ -428,6 +437,24 @@ public final class HoloMap {
         long age = now - sampledAtMs;
         // "SCAN" shows for 250 ms after each sample
         if (age < 250) FcsDraw.textRight(g, "SCAN", cx + half - 4, cy - panelH / 2 + 2, FcsDraw.argb(0x050A0C, 0.9F), 0.5F);
+    }
+
+    /** 0.1.10.1 Ore Hologram: each scanned ore inside the box as a wire cube with a pulsing core (at most 160). */
+    private static void oreVoxels(GuiGraphics g, long now, float[] a, float[] b) {
+        int drawn = 0;
+        float pulse = 0.65F + 0.35F * (float) Math.sin(now / 180.0);
+        float[][] p = new float[8][3];
+        for (OreScanner.Hit hit : OreScanner.hits()) {
+            int rx = hit.pos().getX() - centreX, ry = hit.pos().getY() - centreY, rz = hit.pos().getZ() - centreZ;
+            if (Math.abs(rx) > RADIUS || Math.abs(rz) > RADIUS || ry < -BELOW || ry > ABOVE) continue;
+            for (int i = 0; i < 8; i++) project(rx + 0.15F + (i & 1) * 0.7F, ry + 0.15F + ((i >> 1) & 1) * 0.7F, rz + 0.15F + ((i >> 2) & 1) * 0.7F, p[i]);
+            int edge = FcsDraw.argb(hit.color(), 0.9F * pulse);
+            int[][] edges = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+            for (int[] e : edges) FcsDraw.line(g, p[e[0]][0], p[e[0]][1], p[e[1]][0], p[e[1]][1], 0.6F, edge);
+            project(rx + 0.5F, ry + 0.5F, rz + 0.5F, a);
+            FcsDraw.disc(g, a[0], a[1], 1.2F, FcsDraw.argb(hit.color(), pulse));
+            if (++drawn >= 160) break;
+        }
     }
 
     /**

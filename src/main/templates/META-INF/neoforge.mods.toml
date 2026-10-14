@@ -65,6 +65,10 @@ config="${mod_id}.mixins.json"
 [[mixins]]
 config="scex-independent-platform.mixins.json"
 
+# 0.1.9.1: optional compatibility mixins (applied only when the target mod is installed)
+[[mixins]]
+config="${mod_id}.compat.mixins.json"
+
 [[mods]]
 modId="scex_energy_platform"
 version="${mod_version}"

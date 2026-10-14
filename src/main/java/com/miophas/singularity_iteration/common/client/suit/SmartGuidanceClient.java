@@ -74,7 +74,8 @@ public final class SmartGuidanceClient {
             if (p == null || p[0] < x0 || p[0] > x1 || p[1] < y0 || p[1] > y1 || !player.hasLineOfSight(e)) continue;
             inside.add(e.getId());
         }
-        for (int id : inside) PROGRESS.merge(id, 1.0F / LOCK_TICKS, (a, b) -> Math.min(1, a + b));
+        float step = 1.0F / lockTicks(player);
+        for (int id : inside) PROGRESS.merge(id, step, (a, b) -> Math.min(1, a + b));
         for (Iterator<Map.Entry<Integer, Float>> it = PROGRESS.entrySet().iterator(); it.hasNext(); ) {
             var en = it.next();
             boolean alive = mc.level.getEntity(en.getKey()) instanceof LivingEntity l && l.isAlive();
@@ -90,7 +91,8 @@ public final class SmartGuidanceClient {
             var ea = mc.level.getEntity(a); var eb = mc.level.getEntity(b);
             return Double.compare(ea == null ? 1e9 : ea.distanceToSqr(player), eb == null ? 1e9 : eb.distanceToSqr(player));
         });
-        while (locked.size() > SmartGuidance.MAX_LOCKS) locked.remove(locked.size() - 1);
+        int max = SmartGuidance.maxLocks(player);                     // 0.1.10.1 Mk.II and Predictive Guidance
+        while (locked.size() > max) locked.remove(locked.size() - 1);
         for (int id : locked) {
             if (!LOCKED.contains(id)) {
                 mc.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
@@ -101,6 +103,23 @@ public final class SmartGuidanceClient {
         LOCKED.addAll(locked);
         int[] ids = locked.stream().mapToInt(Integer::intValue).toArray();
         if (!Arrays.equals(ids, sent)) send(ids);
+    }
+
+    /**
+     * 0.1.10.1: ticks to a full lock: {@link #LOCK_TICKS}, 30 % less with the Ballistic Sync synergy,
+     * and 2 inside one's own time dilation (the Frozen Volley combo locks at once).
+     */
+    static int lockTicks(LocalPlayer player) {
+        var q = com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.sync();
+        if (q != null && q.dilationTicks() > 0) return 2;
+        boolean sync = com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.active(player,
+            com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.BALLISTIC_SYNC);
+        return sync ? Math.round(LOCK_TICKS * 0.7F) : LOCK_TICKS;
+    }
+
+    /** 0.1.10.1: the locked entity ids, nearest first (Ballistic Sync draws their guided paths). */
+    public static List<Integer> locked() {
+        return List.copyOf(LOCKED);
     }
 
     private static boolean eligible(LocalPlayer player, LivingEntity e) {
@@ -170,7 +189,7 @@ public final class SmartGuidanceClient {
                 FcsDraw.text(g, String.valueOf(LOCKED.indexOf(en.getKey()) + 1), p[0] + 9, p[1] - 9, FcsDraw.argb(RED, 1.0F), 0.6F);
             }
         }
-        String label = "SMART LOCK " + LOCKED.size() + "/" + SmartGuidance.MAX_LOCKS;
+        String label = "SMART LOCK " + LOCKED.size() + "/" + (mc.player == null ? SmartGuidance.MAX_LOCKS : SmartGuidance.maxLocks(mc.player));
         FcsDraw.textCentered(g, label, w / 2, fy + fh + 4, FcsDraw.argb(RED, 0.9F), 0.6F);
     }
 

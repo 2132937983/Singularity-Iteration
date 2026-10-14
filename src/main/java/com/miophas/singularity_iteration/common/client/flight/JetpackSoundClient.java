@@ -47,18 +47,24 @@ import net.neoforged.neoforge.event.level.LevelEvent;
  *       instead of being replaced; cues need {@link #REIGNITE_TICKS} of silence and at least
  *       {@link #CUE_GAP_TICKS} between two cues of one flier.</li>
  *   <li>Range: players farther than {@link #RANGE} blocks are not played.</li>
+ *   <li>0.1.10.3: quieter (profile volumes about -4 dB, cues lower, files rebuilt about 5 dB lower by
+ *       {@code tools/sfx_1103.py}). The fade-out keeps the pitch; its downward glide made a short
+ *       falling "biu" on the tonal loops. The shutdown cue is a noise flame-out, not a sine sweep.</li>
  * </ul>
  * <p><b>ZH:</b> 客户端的喷气背包推进器音效（0.1.8.1，0.1.8.4 重做）。本地玩家用客户端飞行控制器的推力，无网络延迟；
  * 其他玩家用 JetpackThrustPacket。每位飞行者一个连续循环音，音量与音高平滑趋近油门目标。0.1.8.4 修复左右平移与转向时的卡顿：
  * 本地循环音曾作为定位声源放在脚下 0.8 格的 tick 位置，插值后的听者在 tick 之间越过它，转向时方位摆动，左右声像来回跳；
  * 现在本地循环音与提示音相对听者播放（居中，与原版鞘翅风声相同）。1–3 tick 的推力空档曾导致停止→熄火音→点火音→重启；
  * 现在短于 HOLD_TICKS 的空档只降低音量，淡出中的循环音直接恢复，提示音需要 REIGNITE_TICKS 的静默且同一飞行者两次提示音间隔至少 CUE_GAP_TICKS。
+ * 0.1.10.3：整体更安静（档位音量约 -4 dB，提示音更低，tools/sfx_1103.py 重建的音频约低 5 dB）。淡出时音高保持不变（以前下滑，在有音调的循环音上形成短促下降的“biu”）。熄火音改为噪声熄焰，不再是正弦扫频。
  * <p><b>JA:</b> クライアントのジェットパック・スラスター音（0.1.8.1、0.1.8.4 で作り直し）。ローカルプレイヤーはクライアントの飛行制御の推力で、
  * 通信遅延なしに鳴らす。他プレイヤーは JetpackThrustPacket。飛行者ごとに連続した 1 本のループ音で、音量と音程はスロットル目標へなめらかに近づく。
  * 0.1.8.4 の左右移動・旋回時の途切れ修正：自分のループ音は足元 0.8 ブロックの tick 位置に置いた定位音で、tick 間に補間後の聴取位置が
  * それを追い越し、旋回で方位が振れるため左右の定位が跳ねていた。自分のループ音と合図音は聴取者基準（中央）で鳴らす（バニラのエリトラの風音と同じ）。
  * 1〜3 tick の推力の切れ目で停止→停止音→点火音→再始動していた。HOLD_TICKS 未満の切れ目は音量が下がるだけにし、フェード中のループは再開し、
  * 合図音には REIGNITE_TICKS の無音と、同じ飛行者で CUE_GAP_TICKS 以上の間隔を必要とする。
+ * 0.1.10.3：全体を静かにした（プロファイル音量は約 -4 dB、合図音も下げ、tools/sfx_1103.py で作り直した音源は約 5 dB 低い）。フェードアウト中は音程を保つ
+ * （以前は下降し、音程のあるループで短く下がる「biu」になっていた）。停止音は正弦スイープではなく、ノイズによる消炎音にした。
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
@@ -75,10 +81,15 @@ public final class JetpackSoundClient {
 
     /** EN: Sound set of one thruster profile. ZH: 一个推进器音效档的声音组。JA: 1 つのスラスター音プロファイルの音のセット。 */
     record Profile(Supplier<SoundEvent> loop, float volume, float pitch) {}
+    // EN: 0.1.10.3: volumes lowered (0.55 / 0.7 / 0.62 before); the electric pitch is no longer raised (it sharpened the fan tone).
+    // ZH: 0.1.10.3：降低音量（原为 0.55 / 0.7 / 0.62）；电动档不再升高音高（会使风扇音变尖）。
+    // JA: 0.1.10.3：音量を下げた（以前は 0.55 / 0.7 / 0.62）。電動の音程はもう上げない（ファン音が鋭くなっていた）。
     private static final Map<String, Profile> PROFILES = Map.of(
-        IJetpackItem.THRUSTER_ELECTRIC, new Profile(mio_icif_sounds.JETPACK_ELECTRIC_LOOP::get, 0.55F, 1.15F),
-        IJetpackItem.THRUSTER_ADVANCED, new Profile(mio_icif_sounds.JETPACK_ADVANCED_LOOP::get, 0.7F, 0.95F),
-        IJetpackItem.THRUSTER_IONIC, new Profile(mio_icif_sounds.JETPACK_IONIC_LOOP::get, 0.62F, 0.8F));
+        IJetpackItem.THRUSTER_ELECTRIC, new Profile(mio_icif_sounds.JETPACK_ELECTRIC_LOOP::get, 0.36F, 1.0F),
+        IJetpackItem.THRUSTER_ADVANCED, new Profile(mio_icif_sounds.JETPACK_ADVANCED_LOOP::get, 0.44F, 0.95F),
+        IJetpackItem.THRUSTER_IONIC, new Profile(mio_icif_sounds.JETPACK_IONIC_LOOP::get, 0.4F, 0.85F));
+    /** EN: Fade-out length in ticks. ZH: 淡出时长（tick）。JA: フェードアウトの長さ（tick）。 */
+    static final int FADE_TICKS = 10;
 
     /** EN: Remote thrust states by entity id (packed, see JetpackThrustSync#pack). ZH: 按实体 ID 的远程推力状态。JA: エンティティ ID ごとのリモート推力状態。 */
     private static final Map<Integer, Integer> REMOTE = new HashMap<>();
@@ -142,7 +153,7 @@ public final class JetpackSoundClient {
             }
             if (wasSilent) {
                 if (now - track.silentSince > REIGNITE_TICKS && now - track.lastCue >= CUE_GAP_TICKS) {
-                    cue(mc, entity, mio_icif_sounds.JETPACK_IGNITE.get(), profile, 1.0F);
+                    cue(mc, entity, mio_icif_sounds.JETPACK_IGNITE.get(), profile, 0.7F);
                     track.lastCue = now;
                 }
                 track.loop = new ThrusterLoop(profile, entity, entity == mc.player);
@@ -167,7 +178,7 @@ public final class JetpackSoundClient {
                 loop.fadeOut();
                 track.silentSince = now;
                 if (!gone && now - track.flightStart >= MIN_CUE_TICKS && now - track.lastCue >= CUE_GAP_TICKS) {
-                    cue(mc, entity, mio_icif_sounds.JETPACK_SHUTDOWN.get(), loop.profile, 0.8F);
+                    cue(mc, entity, mio_icif_sounds.JETPACK_SHUTDOWN.get(), loop.profile, 0.6F);
                     track.lastCue = now;
                 }
             } else if (loop != null && !loop.fading && !loop.isStopped()) {
@@ -187,7 +198,7 @@ public final class JetpackSoundClient {
         if (!FcsClientConfig.jetpackCues()) return;
         float scale = FcsClientConfig.jetpackVolume();
         if (scale <= 0) return;
-        float v = volume * scale * profile.volume / 0.6F;
+        float v = volume * scale * profile.volume / 0.4F;
         if (entity == mc.player) {
             // 0.1.8.4: the own cues are centred on the listener, like the own loop
             mc.getSoundManager().play(new SimpleSoundInstance(sound.getLocation(), SoundSource.PLAYERS, v, profile.pitch,
@@ -208,14 +219,15 @@ public final class JetpackSoundClient {
      * <p><b>EN:</b> Looping thruster sound of one flier. Target volume = profile volume × (0.45 +
      * 0.55 × throttle) × option volume; target pitch = profile pitch × (0.85 + 0.3 × throttle). The
      * volume moves 15 % of the way per tick; the pitch at most 0.015 per tick (no warble). During a
-     * short thrust gap the target is the idle level (55 %). Fading takes 6 ticks and can be resumed.
+     * short thrust gap the target is the idle level (55 %). Fading takes {@link #FADE_TICKS} ticks with
+     * the pitch held (0.1.10.3: no downward glide) and can be resumed.
      * The own loop is listener-relative (centred); other fliers are positional and followed.
      * <p><b>ZH:</b> 一位飞行者的推进器循环音。目标音量 = 档位音量 × (0.45 + 0.55 × 油门) × 选项音量；目标音高 = 档位音高 × (0.85 + 0.3 × 油门)。
-     * 音量每 tick 趋近 15%，音高每 tick 最多变化 0.015（不颤音）。短暂推力空档时目标为怠速（55%）。淡出 6 tick，可恢复。
+     * 音量每 tick 趋近 15%，音高每 tick 最多变化 0.015（不颤音）。短暂推力空档时目标为怠速（55%）。淡出 FADE_TICKS tick，期间音高保持不变（0.1.10.3：不再下滑），可恢复。
      * 本地循环音相对听者（居中），其他飞行者为定位声源并跟随。
      * <p><b>JA:</b> 1 人の飛行者のスラスター・ループ音。目標音量 = プロファイル音量 × (0.45 + 0.55 × スロットル) × 設定音量、
      * 目標音程 = プロファイル音程 × (0.85 + 0.3 × スロットル)。音量は毎 tick 15 % ずつ、音程は毎 tick 最大 0.015 ずつ近づく（揺れない）。
-     * 推力の短い切れ目ではアイドル（55 %）を目標にする。フェードは 6 tick で、再開できる。自分のループは聴取者基準（中央）、他の飛行者は定位音で追従する。
+     * 推力の短い切れ目ではアイドル（55 %）を目標にする。フェードは FADE_TICKS tick で音程を保ったまま（0.1.10.3：下降しない）行い、再開できる。自分のループは聴取者基準（中央）、他の飛行者は定位音で追従する。
      */
     static final class ThrusterLoop extends AbstractTickableSoundInstance {
         final Profile profile;
@@ -264,9 +276,9 @@ public final class JetpackSoundClient {
             if (!own) follow();
             float option = FcsClientConfig.jetpackVolume();
             float targetVolume = fading ? 0F : profile.volume * (0.45F + 0.55F * throttle) * option * (idle ? 0.55F : 1F);
-            float targetPitch = profile.pitch * (0.85F + 0.3F * throttle) * (fading ? 0.8F : 1F);
-            volume = fading ? Math.max(0F, volume - profile.volume / 6F) : Mth.lerp(0.15F, volume, targetVolume);
-            pitch = pitch + Mth.clamp(targetPitch - pitch, -0.015F, 0.015F);
+            float targetPitch = profile.pitch * (0.85F + 0.3F * throttle);
+            volume = fading ? Math.max(0F, volume - profile.volume / FADE_TICKS) : Mth.lerp(0.15F, volume, targetVolume);
+            if (!fading) pitch = pitch + Mth.clamp(targetPitch - pitch, -0.015F, 0.015F);   // held while fading
             idle = false;
             if (fading && volume <= 0.01F) stop();
         }

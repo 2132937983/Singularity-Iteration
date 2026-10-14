@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 16
 item_ids:
+  - mio_icif:module/item_module_holomap_mk2
   - mio_icif:module/item_module_holomap
 ---
 
@@ -39,6 +40,12 @@ item_ids:
 
 - 盒体每10 tick重新采样方块。
 
+## Mk.II
+
+Mk.II 还能投射 **3D 全息台**：按住战术地图键，或在指挥轮盘中选择全息台（见“量子指挥”）。
+
 ## 配方
 
 <RecipesFor id="mio_icif:module/item_module_holomap" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_holomap_mk2" fallbackText="-" />

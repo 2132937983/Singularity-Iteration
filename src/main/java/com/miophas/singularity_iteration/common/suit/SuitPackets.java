@@ -98,19 +98,21 @@ public final class SuitPackets {
      *       source of the hit. Each component is in -1..1.</li>
      *   <li>{@code strength}: effect size, 0.25..1. The server calculates
      *       {@code min(1, 0.25 + stopped damage / 10)}.</li>
+     *   <li>{@code charge}: 0.1.10.1, stored share 0..1 of the worn electric armour (the hex cell
+     *       shield changes colour and cracks as it falls).</li>
      * </ul>
      *
      * <p>Receiver: the client stores at most 32 hits. Each hit shows for
      * {@link SuitSensorData#SHIELD_HIT_MS}.
      */
-    public record ShieldHit(int entityId, float dx, float dy, float dz, float strength) implements CustomPacketPayload {
+    public record ShieldHit(int entityId, float dx, float dy, float dz, float strength, float charge) implements CustomPacketPayload {
         public static final Type<ShieldHit> TYPE = new Type<>(id("suit_shield_hit"));
         public static final StreamCodec<ByteBuf, ShieldHit> CODEC = StreamCodec.of((b, p) -> {
             FriendlyByteBuf f = new FriendlyByteBuf(b);
-            f.writeVarInt(p.entityId); f.writeFloat(p.dx); f.writeFloat(p.dy); f.writeFloat(p.dz); f.writeFloat(p.strength);
+            f.writeVarInt(p.entityId); f.writeFloat(p.dx); f.writeFloat(p.dy); f.writeFloat(p.dz); f.writeFloat(p.strength); f.writeFloat(p.charge);
         }, b -> {
             FriendlyByteBuf f = new FriendlyByteBuf(b);
-            return new ShieldHit(f.readVarInt(), f.readFloat(), f.readFloat(), f.readFloat(), f.readFloat());
+            return new ShieldHit(f.readVarInt(), f.readFloat(), f.readFloat(), f.readFloat(), f.readFloat(), f.readFloat());
         });
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
@@ -263,6 +265,8 @@ public final class SuitPackets {
         }));
         // 0.1.8.5 nano suit: burst keys, key assignment, core state and burst effects
         com.miophas.singularity_iteration.common.suit.nano.NanoPackets.register(registrar);
+        // 0.1.10.0 quantum core state (the action keys and effects share the nano payloads)
+        com.miophas.singularity_iteration.common.suit.quantum.QuantumPackets.register(registrar);
     }
 
     /**

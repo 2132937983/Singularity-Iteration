@@ -156,6 +156,9 @@ public final class ManeuverModeClient {
     static final class Visual {
         float pitch, roll, turnSpeed, lastYaw, heave, transition, lean;
         boolean wasShock;
+        /** 0.1.10.2: in maneuver flight in the last tick (for the landing ring); the last fall speed. */
+        boolean wasFlying;
+        double lastVy;
         final ArrayDeque<Vec3[]> trail = new ArrayDeque<>();
         long lastTick;
     }
@@ -218,7 +221,7 @@ public final class ManeuverModeClient {
      */
     public static boolean inManeuver(Player p) {
         if (p == Minecraft.getInstance().player) return flying;
-        return armedChest(p) && !p.onGround() && SuitSensorData.maneuver(p.getId()) != null;
+        return armedChest(p) && !p.onGround() && !p.isPassenger() && SuitSensorData.maneuver(p.getId()) != null;
     }
 
     /** Stick of a player as {forward, sideways}, each -1..1. {0, 0} when no state is known. */
@@ -422,10 +425,20 @@ public final class ManeuverModeClient {
         }
         if (!inManeuver(p)) {
             Visual vis = VISUALS.get(p.getId());
-            if (vis != null) vis.trail.clear();
+            if (vis != null) {
+                vis.trail.clear();
+                // 0.1.10.2: a touchdown from maneuver flight raises a dust ring
+                if (vis.wasFlying && p.onGround()) {
+                    float strength = (float) Mth.clamp(0.55 + Math.abs(vis.lastVy) * 1.6, 0.55, 1.4);
+                    com.miophas.singularity_iteration.common.client.suit.nano.ThrusterFx.landing(p, strength);
+                }
+                vis.wasFlying = false;
+            }
             return;
         }
         Visual vis = VISUALS.computeIfAbsent(p.getId(), k -> new Visual());
+        vis.wasFlying = true;
+        vis.lastVy = p.getY() - p.yo;
         float thr = throttleOf(p, 1.0F);
         boolean shock = thr >= ManeuverMode.SHOCK_THROTTLE;
         if (shock && !vis.wasShock) boom(p, p.position().subtract(p.xo, p.yo, p.zo), local);

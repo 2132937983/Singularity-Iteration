@@ -43,7 +43,8 @@ public class QuantumModStationMenu extends mio_icif_machine_menu {
         addSlot(new SlotItemHandler(itemHandler, QuantumModStationBlockEntity.MODULE_SLOT, UNIT_X, UNIT_Y) {
             // 0.1.8.5: addon units (public API) and the nano lattice densifier too
             @Override public boolean mayPlace(ItemStack stack) {
-                return UnitRef.ofItem(stack) != null || QuantumModStationBlockEntity.isDensifier(stack) || QuantumModStationBlockEntity.isCore(stack);
+                return UnitRef.ofItem(stack) != null || QuantumModStationBlockEntity.isDensifier(stack) || QuantumModStationBlockEntity.isCore(stack)
+                    || QuantumModStationBlockEntity.isBayExpander(stack);
             }
         });
     }

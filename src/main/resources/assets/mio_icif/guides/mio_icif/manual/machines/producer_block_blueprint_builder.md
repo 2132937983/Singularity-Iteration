@@ -38,7 +38,7 @@ The drones take the building material from an [Armory Material Interface](produc
 
 1. Put an Armory Material Interface within 16 blocks of the builder.
 2. Put the building material into the interface, or into a storage next to it.
-3. Put a deployed Create schematic into the slot, or select a file with "<" and ">".
+3. Put a deployed Create schematic into the slot, or select a file with the `<` and `>` buttons.
 4. For a file, set the turn (R), the mirror (M) and the offset (X, Y, Z). The offset is from the builder to the minimum corner of the blueprint.
 5. Click "Load". The hologram shows the work area.
 6. Click "Start".

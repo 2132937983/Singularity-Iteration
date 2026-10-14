@@ -27,6 +27,9 @@ import org.joml.Matrix4f;
  *       posed limbs of the player model, so each flame points along its limb, as the thrust vector
  *       of {@link ManeuverModeClient#applyLimbPose}. The output of each limb comes from
  *       {@link ManeuverModeClient#thrusterOutput}.</li>
+ *   <li><b>Shock diamonds</b> (0.1.10.2): at full burn the plume grows longer and four bright Mach
+ *       nodes (double cones) stand in it, flickering. Each flame is also recorded in world space
+ *       for the heat haze of {@code ThrusterFx}.</li>
  *   <li><b>Aerodynamic deflection field.</b> In cruise, a streamlined paraboloid shell of energy in
  *       front of the head and along the body. Flow bands run from the nose to the tail. The shell
  *       follows the body pose (the body lies along the path in cruise). The field also lowers the
@@ -60,11 +63,14 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         PlayerModel<AbstractClientPlayer> model = getParentModel();
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         float time = ManeuverModeClient.visualTime(player);
+        // 0.1.10.2: full burn (throttle above 0.72) lengthens the plume and lights the shock diamonds
+        float burn = net.minecraft.util.Mth.clamp((ManeuverModeClient.throttleOf(player, partial) - 0.72F) / 0.2F, 0, 1);
+        int id = player.getId();
         // limb tip in the limb frame (pixels): arms 10 px below the shoulder pivot, legs 12 px below the hip
-        thruster(pose, vc, model.rightArm, -1F / 16F, 10.5F / 16F, output[0], time, 0);
-        thruster(pose, vc, model.leftArm, 1F / 16F, 10.5F / 16F, output[1], time, 1);
-        thruster(pose, vc, model.rightLeg, 0, 12.2F / 16F, output[2], time, 2);
-        thruster(pose, vc, model.leftLeg, 0, 12.2F / 16F, output[3], time, 3);
+        thruster(pose, vc, model.rightArm, -1F / 16F, 10.5F / 16F, output[0], time, 0, burn, id);
+        thruster(pose, vc, model.leftArm, 1F / 16F, 10.5F / 16F, output[1], time, 1, burn, id);
+        thruster(pose, vc, model.rightLeg, 0, 12.2F / 16F, output[2], time, 2, burn, id);
+        thruster(pose, vc, model.leftLeg, 0, 12.2F / 16F, output[3], time, 3, burn, id);
         float field = ManeuverModeClient.deflectionField(player, partial);
         if (field > 0.02F) {
             pose.pushPose();
@@ -76,7 +82,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
 
     /** Glow disc at the tip of one limb and a flame along the limb axis (+y of the limb). */
     private static void thruster(PoseStack pose, VertexConsumer vc, ModelPart part, float tipX, float tipY,
-                                 float power, float time, int seed) {
+                                 float power, float time, int seed, float burn, int owner) {
         if (power <= 0.02F || !part.visible) return;
         pose.pushPose();
         part.translateAndRotate(pose);
@@ -84,7 +90,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         Matrix4f m = pose.last().pose();
         float flicker = 0.85F + 0.15F * (float) Math.sin(time * 37 + seed * 1.7) * (float) Math.sin(time * 23 + seed);
         float p = power * flicker;
-        float radius = 0.06F + 0.05F * p, length = 0.12F + 0.42F * p;
+        float radius = 0.06F + 0.05F * p, length = 0.12F + 0.42F * p + 0.5F * burn * power;
         int seg = 10;
         for (int s = 0; s < seg; s++) {
             double a0 = s * Math.PI * 2 / seg, a1 = (s + 1) * Math.PI * 2 / seg;
@@ -101,7 +107,42 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
             put(vc, m, x1 * 0.2F, length, z1 * 0.2F, 0.2F, 0.45F, 1F, 0);
             put(vc, m, x0 * 0.2F, length, z0 * 0.2F, 0.2F, 0.45F, 1F, 0);
         }
+        boolean fx = FcsClientConfig.thrusterFx();
+        if (burn > 0.02F && fx) {
+            for (int i = 0; i < 4; i++) {
+                float y = length * (0.36F + 0.19F * i);
+                float rr = radius * (0.62F - 0.09F * i);
+                float al = burn * power * (0.9F - 0.18F * i) * (0.72F + 0.28F * (float) Math.sin(time * 41 + i * 1.3F + seed));
+                shockDiamond(vc, m, y, rr, rr * 1.5F, al);
+            }
+        }
+        // 0.1.10.2: the flame in world space for the heat haze (the layer pose is relative to the camera)
+        if (fx) {
+            org.joml.Vector3f a = m.transformPosition(new org.joml.Vector3f(0, 0, 0)), b = m.transformPosition(new org.joml.Vector3f(0, length, 0));
+            net.minecraft.world.phys.Vec3 cam = net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            com.miophas.singularity_iteration.common.client.suit.nano.ThrusterFx.jet(owner * 8L + seed,
+                new net.minecraft.world.phys.Vec3(a.x + cam.x, a.y + cam.y, a.z + cam.z), new net.minecraft.world.phys.Vec3(b.x + cam.x, b.y + cam.y, b.z + cam.z),
+                p * (0.7F + 0.5F * burn));
+        }
         pose.popPose();
+    }
+
+    /** One Mach node: two cones base to base around {@code y} on the limb axis, a white-violet core. */
+    private static void shockDiamond(VertexConsumer vc, Matrix4f m, float y, float radius, float half, float alpha) {
+        int seg = 8;
+        for (int s = 0; s < seg; s++) {
+            double a0 = s * Math.PI * 2 / seg, a1 = (s + 1) * Math.PI * 2 / seg;
+            float x0 = (float) Math.cos(a0) * radius, z0 = (float) Math.sin(a0) * radius;
+            float x1 = (float) Math.cos(a1) * radius, z1 = (float) Math.sin(a1) * radius;
+            put(vc, m, 0, y - half, 0, 0.8F, 0.75F, 1F, 0);
+            put(vc, m, x0, y, z0, 1F, 0.95F, 1F, alpha);
+            put(vc, m, x1, y, z1, 1F, 0.95F, 1F, alpha);
+            put(vc, m, 0, y - half, 0, 0.8F, 0.75F, 1F, 0);
+            put(vc, m, x0, y, z0, 1F, 0.95F, 1F, alpha);
+            put(vc, m, 0, y + half, 0, 0.8F, 0.75F, 1F, 0);
+            put(vc, m, 0, y + half, 0, 0.8F, 0.75F, 1F, 0);
+            put(vc, m, x1, y, z1, 1F, 0.95F, 1F, alpha);
+        }
     }
 
     /**

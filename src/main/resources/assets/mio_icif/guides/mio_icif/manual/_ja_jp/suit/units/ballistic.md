@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 13
 item_ids:
+  - mio_icif:module/item_module_ballistic_mk2
   - mio_icif:module/item_module_ballistic
 ---
 
@@ -41,6 +42,12 @@ item_ids:
 
 - 軌道は武器の準備中は灰色、準備完了で琥珀色、生物に当たると赤になる。
 
+## Mk.II
+
+マルチショットのクロスボウでは、Mk.II が左右 10 度の 2 発の軌道も描く。
+
 ## レシピ
 
 <RecipesFor id="mio_icif:module/item_module_ballistic" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_ballistic_mk2" fallbackText="-" />

@@ -1,4 +1,4 @@
-# 奇点迭代（Singularity Iteration）API 指南（0.1.9.0）
+# 奇点迭代（Singularity Iteration）API 指南（0.1.10.2）
 
 本指南面向附属模组作者。文字遵循 ASD-STE100 简明技术语言原则：短句、主动语态、每个步骤只有一个指令。
 
@@ -116,6 +116,58 @@ SuitModuleRegistry.register(SPEC, SuitModuleBehavior.NONE,
 
 太阳能头盔系列、高级量子胸甲与重型量子胸甲已退役。其 ID 保留为隐藏的旧式外壳，会转换为装有核心的标准部件。其类（`mio_icif_*_solar_helmet`、`mio_icif_chestplate_advanced_quantum`、`mio_icif_chestplate_heavy_quantum`）已删除；引用它们的附属应改为检查核心。
 
+### 3.5 量子行动（0.1.10.0）
+
+自 0.1.10.0 起，量子单元可以在行动键（V 与 B，与纳米爆发共用）上拥有主动能力。行动消耗量子相干度（0..100，每个相干电容器 +50，由 EU 回复）。相干度降到 0 时核心退相干数秒，拒绝一切行动。没有行动的单元不受影响：0.1.9.2 的所有类型与签名均未改变。
+
+| 类型 | 作用 |
+|---|---|
+| `SuitActionSpec` | 相干度消耗、冷却 tick、是否持续型、持续型每秒消耗。`single(cost, cooldown)`、`sustained(start, perSecond, cooldown)`。 |
+| `SuitActionBehavior` | 服务器上的 `fire(player, piece, input)`；成功时返回真（只有此时才支付消耗）。持续型行动每 tick 还会收到 `sustain`（返回假则结束）与最后的 `end`。 |
+| `SuitQuantumActions` | `register(unitId, spec, behavior)`、`get(key)`、`all()`。 |
+| `SuitQuantumCore` | 玩家相干度、相干度上限与退相干锁定的只读视图。 |
+
+步骤：照旧注册单元，再注册其行动。
+
+```java
+SuitModuleRegistry.register(SPEC, SuitModuleBehavior.NONE);                // 量子单元
+SuitQuantumActions.register(SPEC.id(), SuitActionSpec.single(15, 200),
+    (player, piece, input) -> { /* 行动 */ return true; });
+```
+
+规则：
+
+* 单元必须允许量子类别，并位于穿戴中的量子部件上；穿戴者在奇点管理面板（量子核心分区）把行动分配给 V 或 B。
+* 奇点迭代在 `fire` 之前检查单元（已安装、开启、有能量）、退相干锁定、冷却与相干度。持续型行动需要多于启动消耗的相干度；再次按键、`sustain` 返回假、相干度耗尽（退相干）或单元停止时结束。
+* ID 必须带附属命名空间；请在服务器启动前在两端注册。
+
+### 3.6 纠缠协同与演算带宽（0.1.10.1）
+
+自 0.1.10.1 起，穿戴者可以在量子胸甲上把两个量子单元链接起来（2 条链接，演算核心启用时 3 条）。链接的一对单元构成协同。
+量子部件上每个生效的单元还会占用套装计算机（演算带宽，QB）。超出预算（20 QB，装有演算核心时 28 QB）时，传感器刷新减半，相干度回复速度减半。
+现有附属不受影响：0.1.10.0 的所有类型与签名均未改变。
+
+| 类型 | 功能 |
+|---|---|
+| `SuitSynergies` | `register(id, unitA, unitB)`、`get(key)`、`all()`、`active(player, id)`。这一对单元会显示在纠缠矩阵中；效果由附属在 `active` 为真处实现。名称：`Entry.nameKey()` 与 `nameKey + ".desc"`。 |
+| `SuitBandwidth` | `register(unitId, cost)`（0..16 QB）、`cost(key)`、`load(player)`、`budget(player)`。 |
+
+步骤：注册协同，然后在效果生效处检测。
+
+```java
+SuitSynergies.register(ResourceLocation.fromNamespaceAndPath(MODID, "deep_scan"), MODID + ":sonar_unit", "ore_scanner");
+SuitBandwidth.register(ResourceLocation.fromNamespaceAndPath(MODID, "sonar_unit"), 2);
+
+if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
+```
+
+规则：
+
+* 两个单元都必须安装在穿戴中的量子部件上并处于生效状态（已安装、开启、有能量）。
+* 单元键为内置 ID（`"entity_esp"`）或已注册的附属 ID（`"addon:unit"`）。两个键必须不同。
+* 未注册消耗的附属单元占用 0 QB（与 0.1.10.0 相同）。
+* ID 必须带附属命名空间；请在服务器启动前在两端注册。指向已移除附属协同的链接会保留在胸甲上，但不起作用。
+
 ## 4. 弹道（`core.api.item`）
 
 火控 HUD、智能弹道诱导单元和无人机使用同一个弹道模型。每一步为一个 tick：先移动，再阻力，再重力。
@@ -162,6 +214,7 @@ SuitModuleRegistry.register(SPEC, SuitModuleBehavior.NONE,
 | `ArmoryEvent.Summon` | 套装飞向穿戴者（玩家或同伴）之前。 | 是。不消耗能量，不移动物品。 |
 | `ArmoryEvent.PieceDocked` | 飞行部件装备完成之后。 | 否。 |
 | `ArmoryEvent.WingmanDeploy` | 储存的套装作为僚机出动之前。 | 是。 |
+| `ArmoryEvent.WingmanCommand`（0.1.10.2） | 来自指挥轮盘或全息台的量子指挥命令执行之前：MOVE、HOLD、SUPPRESS、FOCUS、FORM_UP、MODE、SQUAD、RETURN、QUANTUM_RECALL。`getOrder()`、`getWingmen()`、`getPoint()`（定点命令）、`getTarget()`（FOCUS）。 | 是：该命令不改变任何东西。 |
 
 ### 5.1 数据标签
 
@@ -179,6 +232,14 @@ SuitModuleRegistry.register(SPEC, SuitModuleBehavior.NONE,
 1. 用 `EnergyNodeRegistry.register(id, profile)` 注册每个方块的角色。使用 `EnergyNodeProfile.generator(packet)`、`storage(packet)` 或 `consumer()`。
 2. 提供方块能力 `EUApi.SIDED`。对于预制方块实体，调用 `CoreCapabilityRegistration.registerEntity(event, type)`。
 3. 网络分四个阶段供电：先按额定输入向用电器供电，再填满用电器的剩余空间，然后按额定输入向储能设备供电，最后填满储能设备的剩余空间。每个阶段内，接收方按其剩余需求的比例获得能量。发电机先于储能设备供电。
+
+### 6.1 电池堆叠（`core.prefab.item.AbstractBattery`，0.1.10.3）
+
+* 只有空电池可以堆叠。堆叠数大于 1 的电池在没有电量时可堆叠到该数量；一旦有电量，`getMaxStackSize(ItemStack)` 使该堆不再增长，因此两个有电的电池即使电量相同也不会合并。
+* 新构造函数 `AbstractBattery(Properties, maxEnergy, initialEnergy, chargeRate, maxStackSize, emptyStackSize)`：`maxStackSize` 为 1 时保留不可堆叠的存储方式（默认组件保存 `initialEnergy`，旧存档电量不变），空电池仍可堆叠到 `emptyStackSize`。`getEmptyStackSize()` 返回该数量。
+* 可堆叠的空电池不带 `mio_icif:battery_energy` 组件：新的、合成的与放空的电池是同一种堆。旧版本以显式 0 保存的堆在加载时规范化（`verifyComponentsAfterLoad`）。
+* 多于一个的电池堆从不接收或输出电量：`addEnergy`、`extractEnergy`、FE 能力与物品 API 的转移都拒绝它；对可堆叠电池的这种堆，`setEnergy` 忽略正值。机器电池槽只放一个电池，所以把一堆放进充电槽时只留下一个。
+* 依赖“同电量的有电电池可堆叠”的附属电池可以重写 `getMaxStackSize(ItemStack)`。
 
 ## 7. 蓝图建造机与资材接口
 

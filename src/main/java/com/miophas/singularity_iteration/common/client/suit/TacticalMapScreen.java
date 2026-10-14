@@ -164,6 +164,7 @@ public class TacticalMapScreen extends Screen {
         if (showTerrain) drawTerrain(g);
         drawGrid(g);
         if (showStructures) drawStructures(g);
+        drawOres(g);
         if (showContacts) drawContacts(g, partial);
         drawPlayer(g, partial);
         drawToolbar(g, mouseX, mouseY);
@@ -282,6 +283,37 @@ public class TacticalMapScreen extends Screen {
         for (int[] e : edges) FcsDraw.line(g, v[e[0]][0], v[e[0]][1], v[e[1]][0], v[e[1]][1], w, argb);
     }
 
+    private final float[][] ore = new float[8][3];
+
+    /**
+     * 0.1.10.1 Ore Hologram (holomap + ore scanner linked): the ores of the last seismic sweep as
+     * small voxels in their ore colour, drawn over the terrain like an x-ray, with a slow shimmer.
+     * With a slice, the ores above the slice level are hidden.
+     */
+    private void drawOres(GuiGraphics g) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || !com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.active(mc.player,
+                com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.ORE_HOLO)) return;
+        long now = System.currentTimeMillis();
+        // corner i: x = bit 0, y = bit 1, z = bit 2; the top face is 2-3-7-6
+        int[][] faces = {{2, 3, 7, 6}, {0, 1, 5, 4}, {0, 1, 3, 2}, {4, 5, 7, 6}, {0, 2, 6, 4}, {1, 3, 7, 5}};
+        for (OreScanner.Hit hit : OreScanner.hits()) {
+            BlockPos pos = hit.pos();
+            if (slice != null && pos.getY() > slice) continue;
+            for (int i = 0; i < 8; i++) project(pos.getX() + (i & 1), pos.getY() + (i >> 1 & 1), pos.getZ() + (i >> 2 & 1), ore[i]);
+            float shimmer = 0.75F + 0.25F * (float) Math.sin(now / 260.0 + pos.asLong() % 17);
+            int fill = FcsDraw.argb(hit.color(), 0.30F * shimmer);
+            for (int[] f : faces) {
+                FcsDraw.quad(g, ore[f[0]][0], ore[f[0]][1], ore[f[1]][0], ore[f[1]][1], ore[f[2]][0], ore[f[2]][1], ore[f[3]][0], ore[f[3]][1], fill);
+            }
+            int edge = FcsDraw.argb(hit.color(), 0.9F * shimmer);
+            FcsDraw.line(g, ore[2][0], ore[2][1], ore[3][0], ore[3][1], 0.6F, edge);
+            FcsDraw.line(g, ore[3][0], ore[3][1], ore[7][0], ore[7][1], 0.6F, edge);
+            FcsDraw.line(g, ore[7][0], ore[7][1], ore[6][0], ore[6][1], 0.6F, edge);
+            FcsDraw.line(g, ore[6][0], ore[6][1], ore[2][0], ore[2][1], 0.6F, edge);
+        }
+    }
+
     private void drawContacts(GuiGraphics g, float partial) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
@@ -290,8 +322,13 @@ public class TacticalMapScreen extends Screen {
             if (e == mc.player) continue;
             var at = e.getPosition(partial);
             project(at.x, at.y + e.getBbHeight() * 0.5, at.z, p);
-            int col = e instanceof Player ? 0xFF4DE1FF : e instanceof Enemy ? 0xFFFF4D4D : 0xFF7CFFB2;
+            int col = e instanceof Player ? 0xFF4DE1FF : e instanceof Enemy ? 0xFFFF4D4D
+                : e instanceof com.miophas.singularity_iteration.common.armory.WingmanEntity ? 0xFF5CEBFF : 0xFF7CFFB2;
             g.fill((int) p[0] - 1, (int) p[1] - 1, (int) p[0] + 2, (int) p[1] + 2, col);
+            // 0.1.10.2 data link: the creatures the Wingmen see get a ring
+            if (com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.datalinkSeen().contains(e.getId())) {
+                FcsDraw.circle(g, p[0] + 0.5F, p[1] + 0.5F, 4.5F, 1F, 0xFF6FF3D6);
+            }
         }
     }
 

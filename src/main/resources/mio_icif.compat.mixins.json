@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "package": "com.miophas.singularity_iteration.common.mixin.compat",
+  "plugin": "com.miophas.singularity_iteration.common.mixin.compat.CompatMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8",
+  "mixins": [
+    "AECraftingPatternMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

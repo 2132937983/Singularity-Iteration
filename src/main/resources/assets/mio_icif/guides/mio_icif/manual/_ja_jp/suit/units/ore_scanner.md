@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 10
 item_ids:
+  - mio_icif:module/item_module_ore_scanner_mk2
   - mio_icif:module/item_module_ore_scanner
 ---
 
@@ -40,6 +41,12 @@ item_ids:
 - 最初のパルスの後、ユニットは50 tickごとにパルス効果なしで再スキャンする。
 - ユニットをオフにしてから再びオンにすると、新しいパルスを送る。
 
+## Mk.II
+
+Mk.II は半径 24 ブロックを探知する。取り付けた部位には特異点管理パネルに **鉱石フィルター** 行が出る：クリックすると「全鉱石」と各共通鉱石タグ（c:ores/...）を順に切り替える。切り替えると探知がパルス付きでやり直され、エコー表示にフィルターが出る。
+
 ## レシピ
 
 <RecipesFor id="mio_icif:module/item_module_ore_scanner" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_ore_scanner_mk2" fallbackText="-" />

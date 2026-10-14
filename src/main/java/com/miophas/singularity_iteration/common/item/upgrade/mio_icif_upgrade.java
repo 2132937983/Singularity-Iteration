@@ -209,7 +209,9 @@ public class mio_icif_upgrade extends Item implements IUpgradeItem {
         PULLING("pulling", true),
         FLUID_EJECTOR("fluid_ejector", true),
         REDSTONE_INVERTER("redstone_inverter", false),
-        FLUID_PULLING("fluid_pulling", true);
+        FLUID_PULLING("fluid_pulling", true),
+        /** 0.1.9.1: induction furnace insulation (no heat loss while idle; holding the heat costs no EU). */
+        THERMAL_RETENTION("thermal_retention", false);
 
         private final String name;
         public final boolean directional;
@@ -239,6 +241,7 @@ public class mio_icif_upgrade extends Item implements IUpgradeItem {
             case FLUID_EJECTOR -> properties.contains(UpgradableProperty.FLUID_PRODUCING);
             case FLUID_PULLING -> properties.contains(UpgradableProperty.FLUID_CONSUMING);
             case REDSTONE_INVERTER -> properties.contains(UpgradableProperty.REDSTONE_SENSITIVE);
+            case THERMAL_RETENTION -> false;   // induction furnace only (InductionElcMenu)
         };
     }
 

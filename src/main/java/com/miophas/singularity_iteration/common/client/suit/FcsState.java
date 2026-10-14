@@ -18,6 +18,8 @@ public final class FcsState {
     private static final Set<SuitModuleType> ACTIVE = EnumSet.noneOf(SuitModuleType.class);
     private static long drain;
     static BallisticSolver.Solution ballistic;
+    /** 0.1.10.1 Mk.II ballistic computer: the side shots of a multishot weapon (empty otherwise). */
+    static java.util.List<BallisticSolver.Solution> spread = java.util.List.of();
     @Nullable static Entity leadTarget;
     @Nullable static Vec3 leadPoint;
     /** ESP outline set (entity ids) and their outline colours. */

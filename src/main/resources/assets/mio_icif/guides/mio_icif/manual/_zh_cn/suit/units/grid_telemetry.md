@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 11
 item_ids:
+  - mio_icif:module/item_module_grid_telemetry_mk2
   - mio_icif:module/item_module_grid_telemetry
 ---
 
@@ -38,6 +39,12 @@ item_ids:
 
 - OV计数显示区块内收到超过自身电压等级电力包的机器数量。
 
+## Mk.II
+
+Mk.II 不仅读取触及范围内的方块，还能读取视线方向 36 格内的方块。
+
 ## 配方
 
 <RecipesFor id="mio_icif:module/item_module_grid_telemetry" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_grid_telemetry_mk2" fallbackText="-" />

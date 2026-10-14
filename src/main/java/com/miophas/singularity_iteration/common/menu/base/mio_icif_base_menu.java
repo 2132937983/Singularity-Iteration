@@ -292,7 +292,17 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     }
 
     protected boolean isUpgrade(ItemStack stack) {
+        // 0.1.9.1: the Thermal Retention Unit only fits the machines that use it
+        if (stack.getItem() instanceof com.miophas.singularity_iteration.common.item.upgrade.mio_icif_upgrade u
+                && u.getLocalUpgradeType() == com.miophas.singularity_iteration.common.item.upgrade.mio_icif_upgrade.UpgradeType.THERMAL_RETENTION) {
+            return acceptsThermalRetention();
+        }
         return MioIcifAPI.instance().getItemAPI().isUpgrade(stack);
+    }
+
+    /** True for the menus whose machine uses the Thermal Retention Unit (0.1.9.1). */
+    protected boolean acceptsThermalRetention() {
+        return false;
     }
 
     protected int getBatterySlotIndex() {

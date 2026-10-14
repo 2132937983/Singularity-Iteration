@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 13
 item_ids:
+  - mio_icif:module/item_module_ballistic_mk2
   - mio_icif:module/item_module_ballistic
 ---
 
@@ -41,6 +42,12 @@ For a moving creature near the aim line, a yellow LEAD diamond shows the point t
 
 - The path is grey while the weapon charges, amber when it is ready and red when it hits a creature.
 
+## Mk.II
+
+With a multishot crossbow the Mk.II computer also draws the paths of the two side shots (10 degrees left and right).
+
 ## Recipe
 
 <RecipesFor id="mio_icif:module/item_module_ballistic" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_ballistic_mk2" fallbackText="-" />

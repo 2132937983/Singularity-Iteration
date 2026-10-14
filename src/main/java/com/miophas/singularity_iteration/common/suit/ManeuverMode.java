@@ -207,7 +207,8 @@ public final class ManeuverMode {
         }
         Vec3 now = player.position();
         Vec3 before = lastPos.put(player.getUUID(), now);
-        if (!use || creative || !player.getAbilities().flying || before == null) {
+        // 0.1.10.3: no bill while riding (a mount moves the player, not the thrusters)
+        if (!use || creative || !player.getAbilities().flying || player.isPassenger() || before == null) {
             bill.remove(player.getUUID());
             return;
         }

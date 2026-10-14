@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 11
 item_ids:
+  - mio_icif:module/item_module_grid_telemetry_mk2
   - mio_icif:module/item_module_grid_telemetry
 ---
 
@@ -38,6 +39,12 @@ For the chunk, the panel shows generators, consumers, storage blocks, cables, st
 
 - The OV counter shows machines in the chunk that receive packets above their voltage tier.
 
+## Mk.II
+
+The Mk.II sensor reads the block in your line of sight up to 36 blocks away, not only the block in reach.
+
 ## Recipe
 
 <RecipesFor id="mio_icif:module/item_module_grid_telemetry" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_grid_telemetry_mk2" fallbackText="-" />

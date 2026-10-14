@@ -27,7 +27,7 @@ public class mio_icif_block_wire_splitter extends mio_icif_block_wire {
         instance.group(propertiesCodec()).apply(instance, mio_icif_block_wire_splitter::new));
 
     public mio_icif_block_wire_splitter(Properties properties) {
-        super(properties, CableTier.IV, true);
+        super(properties, CableTier.IV, 1, 2);   // 0.1.10.3: insulated, but the model is 4 px thick (outline radius 2)
         this.registerDefaultState(this.defaultBlockState().setValue(ACTIVE, true));
     }
 

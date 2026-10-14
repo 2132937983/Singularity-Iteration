@@ -31,6 +31,8 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
  * <p>Owner registry: a map from owner to the loaded Wingmen of the owner. An entry is added when
  * the entity enters a level and removed when it leaves (unload, removal). Thus a lookup costs no
  * entity scan, and the map holds no unloaded entity. The map is cleared when the server stops.
+ * 0.1.10.2: a Wingman that leaves with its chunk goes to the saved {@link WingmanRoster} instead,
+ * and comes off it when it loads again ({@link WingmanCommands} reads both).
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
 public final class WingmanService {
@@ -66,10 +68,22 @@ public final class WingmanService {
         List<WingmanEntity> list = BY_OWNER.computeIfAbsent(w.owner(), k -> new ArrayList<>());
         if (!list.contains(w)) list.add(w);
         renumber(list);
+        // 0.1.10.2: loaded again, so not on the roster of unloaded Wingmen
+        WingmanRoster roster = WingmanRoster.get(w.level().getServer());
+        if (roster != null) roster.remove(w.getUUID());
     }
 
     static void untrack(WingmanEntity w) {
         if (w.owner() == null) return;
+        // 0.1.10.2: a Wingman that leaves with its chunk stays on the roster (the quantum recall can reach it)
+        WingmanRoster roster = WingmanRoster.get(w.level().getServer());
+        if (roster != null) {
+            if (w.getRemovalReason() == net.minecraft.world.entity.Entity.RemovalReason.UNLOADED_TO_CHUNK) {
+                roster.put(new WingmanRoster.Entry(w.getUUID(), w.owner(), w.level().dimension(), w.position(), w.set()));
+            } else {
+                roster.remove(w.getUUID());
+            }
+        }
         List<WingmanEntity> list = BY_OWNER.get(w.owner());
         if (list == null) return;
         list.remove(w);
@@ -151,11 +165,15 @@ public final class WingmanService {
             Component.translatable(mode.key()), cost);
     }
 
-    /** Sets the mode of all Wingmen of {@code player}. */
+    /**
+     * Sets the squad mode: every Wingman of {@code player} takes it, except a Wingman with an
+     * individual mode (0.1.10.2 command wheel), which keeps its own.
+     */
     public static Component setMode(ServerPlayer player, WingmanMode mode) {
+        player.getData(com.miophas.singularity_iteration.common.suit.SuitRegistry.WINGMAN_COMMAND).squadMode = mode.ordinal();
         List<WingmanEntity> list = of(player);
         if (list.isEmpty()) return Component.translatable("message.mio_icif.wingman.none");
-        for (WingmanEntity w : list) if (w.state() == WingmanEntity.ACTIVE) w.setMode(mode);
+        for (WingmanEntity w : list) if (w.state() == WingmanEntity.ACTIVE && !w.individual()) w.setMode(mode);
         return Component.translatable("message.mio_icif.wingman.mode", Component.translatable(mode.key()));
     }
 

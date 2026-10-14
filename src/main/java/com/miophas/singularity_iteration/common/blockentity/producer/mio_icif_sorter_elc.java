@@ -123,6 +123,14 @@ public class mio_icif_sorter_elc extends AbstractProcessingMachineBlockEntity {
      */
     private static boolean ic2ItemEquality(ItemStack a, ItemStack b) {
         if (!ItemStack.isSameItem(a, b)) return false;
+        // 0.1.9.1: an electric item matches its filter whatever its charge
+        var energy = com.miophas.singularity_iteration.core.platform.neoforge.CoreDataComponents.BATTERY_ENERGY.get();
+        if (a.has(energy) || b.has(energy)) {
+            ItemStack x = a.copy(), y = b.copy();
+            x.remove(net.minecraft.core.component.DataComponents.REPAIR_COST);
+            y.remove(net.minecraft.core.component.DataComponents.REPAIR_COST);
+            return com.miophas.singularity_iteration.common.item.EnergyStackDiff.sameIgnoringCharge(x, y);
+        }
         boolean aDamageable = a.isDamageableItem();
         boolean bDamageable = b.isDamageableItem();
         if (aDamageable || bDamageable) {

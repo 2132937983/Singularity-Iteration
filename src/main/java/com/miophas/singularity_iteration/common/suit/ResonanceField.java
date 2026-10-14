@@ -62,16 +62,23 @@ public final class ResonanceField {
     public static final long BASE_EU = 60, EU_PER_HARDNESS = 40;
     public static final TagKey<Block> IMMUNE = TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath("mio_icif", "resonance_immune"));
 
+    /** 0.1.10.1 Mk.II: radius +50 % and half as many more blocks per tick. */
+    public static final double RADIUS_MK2 = RADIUS * 1.5;
+    public static final int MAX_PER_TICK_MK2 = 9;
+
     private static final Map<UUID, Vec3> LAST = new HashMap<>();
-    private static final List<BlockPos> OFFSETS = new ArrayList<>();
-    static {
-        int r = (int) Math.ceil(RADIUS);
+    private static final List<BlockPos> OFFSETS = offsets(RADIUS), OFFSETS_MK2 = offsets(RADIUS_MK2);
+
+    private static List<BlockPos> offsets(double radius) {
+        List<BlockPos> out = new ArrayList<>();
+        int r = (int) Math.ceil(radius);
         for (int dx = -r; dx <= r; dx++) for (int dy = 0; dy <= 3; dy++) for (int dz = -r; dz <= r; dz++) {
             // centre at the waist (feet + 1): dy 0 = feet layer, dy 3 = above the head
             double cy = dy - 1.0;
-            if (dx * dx + cy * cy + dz * dz <= RADIUS * RADIUS) OFFSETS.add(new BlockPos(dx, dy, dz));
+            if (dx * dx + cy * cy + dz * dz <= radius * radius) out.add(new BlockPos(dx, dy, dz));
         }
-        OFFSETS.sort((a, b) -> Integer.compare(a.distManhattan(BlockPos.ZERO.above()), b.distManhattan(BlockPos.ZERO.above())));
+        out.sort((a, b) -> Integer.compare(a.distManhattan(BlockPos.ZERO.above()), b.distManhattan(BlockPos.ZERO.above())));
+        return out;
     }
 
     @SubscribeEvent
@@ -85,9 +92,11 @@ public final class ResonanceField {
         if (!SuitModules.isActive(player, SuitModuleType.RESONANCE_FIELD)) return;
         ItemStack piece = SuitModules.wornPieceWith(player, SuitModuleType.RESONANCE_FIELD);
         BlockPos feet = player.blockPosition();
+        boolean mk2 = SuitModules.tier(piece, SuitModuleType.RESONANCE_FIELD.id()) >= 2;
+        int limit = mk2 ? MAX_PER_TICK_MK2 : MAX_PER_TICK;
         int broken = 0;
-        for (BlockPos off : OFFSETS) {
-            if (broken >= MAX_PER_TICK) break;
+        for (BlockPos off : mk2 ? OFFSETS_MK2 : OFFSETS) {
+            if (broken >= limit) break;
             BlockPos pos = feet.offset(off);
             BlockState state = level.getBlockState(pos);
             if (state.isAir() || !state.getFluidState().isEmpty() && state.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock) continue;

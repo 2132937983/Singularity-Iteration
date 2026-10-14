@@ -5,6 +5,7 @@ navigation:
   parent: suit/index.md
   position: 12
 item_ids:
+  - mio_icif:module/item_module_entity_esp_mk2
   - mio_icif:module/item_module_entity_esp
 ---
 
@@ -36,6 +37,12 @@ item_ids:
 
 - 色：赤は敵対、黄は中立、緑は友好、シアンはプレイヤー。
 
+## Mk.II
+
+Mk.II は 48 ブロック以内の生物を表示し、目標カードに正確な体力と防具値も出す。
+
 ## レシピ
 
 <RecipesFor id="mio_icif:module/item_module_entity_esp" fallbackText="-" />
+
+<RecipesFor id="mio_icif:module/item_module_entity_esp_mk2" fallbackText="-" />

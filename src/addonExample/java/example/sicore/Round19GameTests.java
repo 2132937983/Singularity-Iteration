@@ -40,8 +40,13 @@ public final class Round19GameTests {
             if (!"mio_icif".equals(BuiltInRegistries.ITEM.getKey(item).getNamespace())) continue;
             if (!(item instanceof IBatteryItem)) continue;
             checked++;
-            h.assertTrue(new ItemStack(item).getMaxStackSize() == 1,
-                "Chargeable item stacks: " + BuiltInRegistries.ITEM.getKey(item) + " max " + new ItemStack(item).getMaxStackSize());
+            // 0.1.10.3: empty batteries may stack (crystals, RE / lithium batteries); a charged one never does
+            ItemStack charged = new ItemStack(item);
+            IBatteryItem battery = (IBatteryItem) item;
+            if (battery.getEnergy(charged) <= 0) battery.setEnergy(charged, Math.max(1, battery.getMaxEnergy(charged)));
+            if (battery.getEnergy(charged) <= 0) continue;   // setEnergy is optional
+            h.assertTrue(charged.getMaxStackSize() == 1,
+                "Chargeable item stacks: " + BuiltInRegistries.ITEM.getKey(item) + " max " + charged.getMaxStackSize());
         }
         h.assertTrue(checked > 20, "Expected many chargeable items, found " + checked);
         h.assertTrue(item("item_tool_laser_miner").getMaxStackSize() == 1, "Mining laser must not stack");

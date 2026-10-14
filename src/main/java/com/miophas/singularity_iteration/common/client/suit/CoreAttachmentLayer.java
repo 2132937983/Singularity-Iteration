@@ -11,6 +11,8 @@ import com.miophas.singularity_iteration.core.prefab.flight.JetpackFlightControl
 import com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import net.minecraft.client.model.HumanoidModel;
@@ -85,8 +87,21 @@ public final class CoreAttachmentLayer<T extends LivingEntity, M extends Humanoi
         draw(getParentModel(), pose, buffers, light, entity, partial);
     }
 
-    /** Draws the attachments of the worn pieces of {@code entity} with the posed parts of {@code model}. */
+    /** One worn attachment, prepared once per frame for both passes. */
+    private record Job(CoreAttachmentModel attachment, boolean active, float time, float solar, float thrust) { }
+
+    /**
+     * Draws the attachments of the worn pieces of {@code entity} with the posed parts of {@code model}.
+     *
+     * <p>0.1.9.2: two passes, and each {@link VertexConsumer} is taken from {@code buffers} right
+     * before its quads and never used after another {@code getBuffer} call. An immediate buffer
+     * source (the inventory preview, AE2 terminal previews, the world without a batching renderer)
+     * shares one buffer between render types: asking it for the glow type ends the armour batch,
+     * and a consumer kept from before then throws "Not building!". Pass 1 draws every segment of
+     * one attachment with its armour type; pass 2 draws the glowing segments with the eyes type.
+     */
     public static void draw(HumanoidModel<?> model, PoseStack pose, MultiBufferSource buffers, int light, LivingEntity entity, float partial) {
+        List<Job> jobs = null;
         Motion motion = null;
         for (EquipmentSlot slot : SLOTS) {
             ItemStack stack = entity.getItemBySlot(slot);
@@ -99,26 +114,42 @@ public final class CoreAttachmentLayer<T extends LivingEntity, M extends Humanoi
             if (motion == null) motion = motion(entity, partial);
             boolean active = core.isSolar() || SuitModules.energy(stack) > 0;
             boolean solarOn = core.isSolar() && ArmorFeatureState.isEnabled(stack, FrameCore.KEY_SOLAR);
-            float time = (entity.tickCount + partial) / 20F;
-            float solar = solarOn ? motion.solar(partial) : 0F;
-            float thrust = active ? motion.thrust(partial) : 0F;
-            VertexConsumer solid = buffers.getBuffer(RenderType.armorCutoutNoCull(attachment.texture()));
-            for (CoreAttachmentModel.Segment segment : attachment.segments()) {
-                ModelPart part = part(model, segment.part());
-                if (part == null || !part.visible || part.skipDraw || segment.quads().length == 0) continue;
-                pose.pushPose();
-                part.translateAndRotate(pose);
-                if (segment.anim() != null) animate(pose, segment.anim(), time, solar, thrust, active);
+            if (jobs == null) jobs = new ArrayList<>(2);
+            jobs.add(new Job(attachment, active, (entity.tickCount + partial) / 20F, solarOn ? motion.solar(partial) : 0F,
+                active ? motion.thrust(partial) : 0F));
+        }
+        if (jobs == null) return;
+        // pass 1: the plates, lit by the world (emissive segments full bright)
+        for (Job job : jobs) {
+            VertexConsumer solid = buffers.getBuffer(RenderType.armorCutoutNoCull(job.attachment().texture()));
+            for (CoreAttachmentModel.Segment segment : job.attachment().segments()) {
+                if (!begin(model, pose, segment, job)) continue;
                 quads(pose, solid, segment.quads(), segment.emissive() ? LightTexture.FULL_BRIGHT : light, 0xFFFFFFFF);
-                float glow = glow(segment, time, solar, thrust, active, entity.getId());
-                if (glow > 0.02F) {
-                    int c = Mth.clamp((int) (glow * 255), 0, 255);
-                    quads(pose, buffers.getBuffer(RenderType.eyes(attachment.texture())), segment.quads(), LightTexture.FULL_BRIGHT,
-                        FastColor.ARGB32.color(255, c, c, c));
-                }
                 pose.popPose();
             }
         }
+        // pass 2: the additive glow of the lit segments
+        for (Job job : jobs) {
+            VertexConsumer glowBuffer = null;
+            for (CoreAttachmentModel.Segment segment : job.attachment().segments()) {
+                float glow = glow(segment, job.time(), job.solar(), job.thrust(), job.active(), entity.getId());
+                if (glow <= 0.02F || !begin(model, pose, segment, job)) continue;
+                if (glowBuffer == null) glowBuffer = buffers.getBuffer(RenderType.eyes(job.attachment().texture()));
+                int c = Mth.clamp((int) (glow * 255), 0, 255);
+                quads(pose, glowBuffer, segment.quads(), LightTexture.FULL_BRIGHT, FastColor.ARGB32.color(255, c, c, c));
+                pose.popPose();
+            }
+        }
+    }
+
+    /** Pushes the pose of {@code segment} (its part, then its animation); false (nothing pushed) when it is hidden. */
+    private static boolean begin(HumanoidModel<?> model, PoseStack pose, CoreAttachmentModel.Segment segment, Job job) {
+        ModelPart part = part(model, segment.part());
+        if (part == null || !part.visible || part.skipDraw || segment.quads().length == 0) return false;
+        pose.pushPose();
+        part.translateAndRotate(pose);
+        if (segment.anim() != null) animate(pose, segment.anim(), job.time(), job.solar(), job.thrust(), job.active());
+        return true;
     }
 
     /** Baked model name of a socketed piece; null for other items. */

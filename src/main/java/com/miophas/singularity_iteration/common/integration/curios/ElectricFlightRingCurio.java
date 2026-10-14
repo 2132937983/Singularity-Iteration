@@ -77,7 +77,8 @@ public class ElectricFlightRingCurio extends MioIcifTrinketBase {
                 player.onUpdateAbilities();
             }
 
-            if (player.getAbilities().flying) {
+            // 0.1.10.3: no drain while riding (the flight flag can stay set on a mount)
+            if (player.getAbilities().flying && !player.isPassenger()) {
                 boolean isBoosting = JetpackKeyHandler.isBoostKeyDown(player);
                 int cost = isBoosting ? FLIGHT_ENERGY_COST + BOOST_ENERGY_COST : FLIGHT_ENERGY_COST;
                 if (hasEnoughEnergy(stack, cost)) {
@@ -92,7 +93,7 @@ public class ElectricFlightRingCurio extends MioIcifTrinketBase {
     }
 
     private void curioTickClient(Player player, ItemStack stack) {
-        if (!player.getAbilities().flying) return;
+        if (!player.getAbilities().flying || player.isPassenger()) return;
 
         boolean isBoosting = JetpackKeyHandler.isBoostKeyDown(player);
         if (!isBoosting) return;

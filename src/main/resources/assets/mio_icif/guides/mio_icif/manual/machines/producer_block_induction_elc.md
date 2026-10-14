@@ -5,6 +5,7 @@ navigation:
   parent: machines.md
   position: 31
 item_ids:
+  - mio_icif:upgrade/thermal_retention_upgrade
   - mio_icif:producer/block_induction_elc
 ---
 
@@ -45,6 +46,12 @@ The game measured these values from the block entity of this version.
 
 > **WARNING:** The machine explodes on overvoltage above MV. Install a Transformer Upgrade for a higher voltage tier.
 
+
+## Heat hold
+
+The heat hold switch (flame button in the side dock) keeps the furnace heating while it has nothing to smelt, up to full heat, and holds it there. The next item smelts at full speed at once. Holding full heat costs 1 EU/t.
+
+A <ItemLink id="mio_icif:upgrade/thermal_retention_upgrade" /> in an upgrade slot stops the heat loss of an idle furnace and makes the hold free. The heat gauge above the slots shows HOLD and INS for the two.
 
 ## Recipe
 

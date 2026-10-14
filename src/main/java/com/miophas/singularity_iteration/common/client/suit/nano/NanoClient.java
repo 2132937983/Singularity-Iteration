@@ -174,7 +174,10 @@ public final class NanoClient {
                     play(mio_icif_sounds.NANO_DENIED.get(), 0.85F, 0.6F);
                 }
             }
-            default -> { }
+            default -> {
+                // 0.1.10.0: quantum action effects share this payload (kinds 32 and up)
+                if (fx.kind() >= com.miophas.singularity_iteration.common.suit.quantum.QuantumPackets.FX_BLINK) QuantumClient.acceptFx(fx, self);
+            }
         }
     }
 
@@ -209,6 +212,8 @@ public final class NanoClient {
             hfLevel = level;
             hfSync = level > 0;
             NanoFx.tick(mc, ticks);
+            QuantumActionFx.tick(mc, ticks);                  // 0.1.10.0 quantum action effects
+            QuantumClient.tick(mc);                           // 0.1.10.1 bandwidth and synergies
         }
 
         /** The local Kinetic Dash: the client drives its own motion (smooth, no rubber band). */
@@ -288,19 +293,26 @@ public final class NanoClient {
         if (mc.screen != null || player.isSpectator()) return;
         lastSlot = slot;
         NanoPackets.CoreSync s = sync;
-        if (s == null || !s.online()) {
+        // 0.1.10.0: the keys also serve the quantum actions (no nano core needed for those)
+        if (s == null || !s.online() && !s.quantum()) {
             player.displayClientMessage(Component.translatable("hud.mio_icif.nano.no_core"), true);
             deny(NanoBursts.DENY_NONE);
             return;
         }
         String key = slot == 0 ? s.primaryKey() : s.secondaryKey();
         if (key.isEmpty()) { deny(NanoBursts.DENY_NONE); return; }
-        // a running camouflage always accepts the key (it switches off)
-        boolean camoOff = key.equals(com.miophas.singularity_iteration.common.suit.SuitModuleType.OPTICAL_CAMO.id()) && s.camoTicks() > 0;
-        if (!camoOff) {
-            if (s.overheated()) { deny(NanoBursts.DENY_OVERHEAT); return; }
-            int cd = slot == 0 ? s.primaryCooldown() : s.secondaryCooldown();
-            if (cd > 2) { deny(NanoBursts.DENY_COOLDOWN); return; }
+        int cd = slot == 0 ? s.primaryCooldown() : s.secondaryCooldown();
+        if (com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isActionKey(key)) {
+            int why = QuantumClient.gate(key);
+            if (why != 0) { deny(why); return; }
+            if (cd > 2 && !QuantumClient.togglesOff(key)) { deny(NanoBursts.DENY_COOLDOWN); return; }
+        } else {
+            // a running camouflage always accepts the key (it switches off)
+            boolean camoOff = key.equals(com.miophas.singularity_iteration.common.suit.SuitModuleType.OPTICAL_CAMO.id()) && s.camoTicks() > 0;
+            if (!camoOff) {
+                if (s.overheated()) { deny(NanoBursts.DENY_OVERHEAT); return; }
+                if (cd > 2) { deny(NanoBursts.DENY_COOLDOWN); return; }
+            }
         }
         var connection = mc.getConnection();
         if (connection == null || !connection.hasChannel(NanoPackets.BurstRequest.TYPE)) return;
@@ -361,6 +373,7 @@ public final class NanoClient {
         hfSync = false;
         hfLevel = 0;
         NanoFx.clear();
+        QuantumClient.clear();
     }
 
     /** Effect strength from the client config. */

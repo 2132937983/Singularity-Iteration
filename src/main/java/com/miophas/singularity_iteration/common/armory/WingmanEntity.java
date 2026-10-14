@@ -89,6 +89,10 @@ public class WingmanEntity extends Mob {
 
     private static final EntityDataAccessor<Byte> DATA_MODE = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Byte> DATA_STATE = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BYTE);
+    /** 0.1.9.1 client effects: locked target (entity id, -1 none), shot counter, thruster boost counter. */
+    private static final EntityDataAccessor<Integer> DATA_TARGET = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_SHOTS = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_BOOSTS = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
 
     // server state (saved)
     @Nullable private UUID owner;
@@ -103,6 +107,17 @@ public class WingmanEntity extends Mob {
     private static final int ARTS_INTERVAL = 200;
     private int lastFulton = -1;
     private boolean secured, protectedReturn;
+    // 0.1.9.1 tactics: firing station (re-planned every STATION_TICKS), evasion cooldown
+    @Nullable private Vec3 station;
+    private int stationTicks, boostCooldown;
+    private static final int STATION_TICKS = 8, BOOST_COOLDOWN = 26;
+    // 0.1.10.2 quantum command (saved): an individual mode survives a squad mode change; an order
+    // anchors the Wingman at a point instead of the owner (see WingmanOrder)
+    private boolean individual;
+    private WingmanOrder order = WingmanOrder.NONE;
+    @Nullable private Vec3 orderPos;
+    // not saved: the focus target and the age of the order
+    private int orderTarget = -1, orderAge;
 
     public WingmanEntity(EntityType<? extends WingmanEntity> type, Level level) {
         super(type, level);
@@ -142,6 +157,9 @@ public class WingmanEntity extends Mob {
         super.defineSynchedData(builder);
         builder.define(DATA_MODE, (byte) 0);
         builder.define(DATA_STATE, ACTIVE);
+        builder.define(DATA_TARGET, -1);
+        builder.define(DATA_SHOTS, 0);
+        builder.define(DATA_BOOSTS, 0);
     }
 
     // ------------------------------------------------------------------ accessors
@@ -150,9 +168,65 @@ public class WingmanEntity extends Mob {
     public byte state() { return entityData.get(DATA_STATE); }
     private void setState(byte state) { entityData.set(DATA_STATE, state); stateTicks = 0; }
     @Nullable public UUID owner() { return owner; }
+    /** Server: the current target. */
+    @Nullable LivingEntity currentTarget() { return target; }
+    /** Client: the locked target id (-1 none), the shot and boost counters (effects start when they change). */
+    public int lockedTargetId() { return entityData.get(DATA_TARGET); }
+    public int shotCount() { return entityData.get(DATA_SHOTS); }
+    public int boostCount() { return entityData.get(DATA_BOOSTS); }
     public int set() { return set; }
     @Nullable GlobalPos armory() { return armory; }
     void setSlot(int slot, int count) { this.slot = slot; this.slotCount = Math.max(1, count); }
+
+    /** 0.1.10.2: true when the Wingman keeps its own mode when the squad mode changes. */
+    public boolean individual() { return individual; }
+    /** 0.1.10.2: the current order ({@link WingmanOrder#NONE} without one). */
+    public WingmanOrder order() { return order; }
+    /** 0.1.10.2: the point of an anchored order, else null. */
+    @Nullable public Vec3 orderPos() { return orderPos; }
+    /** 0.1.10.2: entity id of the focus target (-1 none). */
+    public int orderTargetId() { return orderTarget; }
+    /** 0.1.10.2: index of this Wingman in the owner's squad (0-based), as the formation uses it. */
+    public int squadSlot() { return slot; }
+
+    /** 0.1.10.2: the mode of this Wingman alone ({@code individual}) or as part of the squad. */
+    public void setMode(WingmanMode mode, boolean individual) {
+        setMode(mode);
+        this.individual = individual;
+    }
+
+    /**
+     * 0.1.10.2: gives an order. {@code pos}: the point of an anchored order (null: where the Wingman
+     * is now); {@code focus}: the target of a focus order (a focus order without a target is no order).
+     */
+    public void order(WingmanOrder order, @Nullable Vec3 pos, @Nullable LivingEntity focus) {
+        if (order == WingmanOrder.FOCUS && focus == null) order = WingmanOrder.NONE;
+        this.order = order;
+        this.orderPos = order.anchored() ? (pos != null ? pos : position()) : null;
+        this.orderTarget = order == WingmanOrder.FOCUS ? focus.getId() : -1;
+        orderAge = 0;
+        target = order == WingmanOrder.FOCUS ? focus : null;
+        station = null;
+    }
+
+    /** 0.1.10.2 "form up": the order ends and the tactical mode applies again. */
+    public void clearOrder() {
+        order = WingmanOrder.NONE;
+        orderPos = null;
+        orderTarget = -1;
+        target = null;
+        station = null;
+    }
+
+    /**
+     * 0.1.10.0: one shot of an entangled volley of the owner's quantum suit: the Wingman turns to
+     * {@code at} and its muzzle flashes (the bolts themselves are resolved by the suit).
+     */
+    public void entangledShot(Vec3 at) {
+        face(at);
+        swing(InteractionHand.MAIN_HAND);
+        entityData.set(DATA_SHOTS, entityData.get(DATA_SHOTS) + 1);
+    }
 
     /** Fraction of the stored energy of the electric pieces, or -1 without electric pieces. */
     public float energyFraction() {
@@ -187,6 +261,8 @@ public class WingmanEntity extends Mob {
         }
         if (attackCooldown > 0) attackCooldown--;
         if (deflectCooldown > 0) deflectCooldown--;
+        if (boostCooldown > 0) boostCooldown--;
+        syncTarget(world);
         if (artsCooldown > 0) artsCooldown--;
         if (state() == ACTIVE) SlashBladeCombat.tick(this);   // a blade's combo actions run on the wielder's tick
         ServerPlayer player = owner == null ? null : world.getServer().getPlayerList().getPlayer(owner);
@@ -200,6 +276,8 @@ public class WingmanEntity extends Mob {
             case LIFTING -> tickLift(world, player);
             default -> {
                 if (!ownerHere) return;
+                // 0.1.10.2 quantum command: an order replaces the mode and the owner leash
+                if (order != WingmanOrder.NONE) { tickOrder(world, player); return; }
                 if (distanceToSqr(player) > CATCH_UP * CATCH_UP) catchUp(player);
                 switch (mode()) {
                     case OFFENSIVE -> tickOffensive(player);
@@ -244,7 +322,11 @@ public class WingmanEntity extends Mob {
     private void tickOffensive(ServerPlayer player) {
         LivingEntity focus = ownerFocus(player);
         if (focus != null && focus != target) target = focus;          // the owner's new target first, at once
-        else if (tickCount % 10 == 0 || !valid(target, player, LEASH)) target = pickOffensive(player);
+        else if (tickCount % 5 == 0 || !valid(target, player, LEASH)) {
+            // 0.1.9.1: threat scoring (owner's call, fusing creepers, attackers, hunters, focus fire)
+            target = WingmanTactics.select(this, player, player.position(), SCAN_RANGE, valid(target, player, LEASH) ? target : null,
+                e -> valid(e, player, LEASH));
+        }
         if (target != null) engage(target, player);
         else steer(formation(player), CRUISE, player);
     }
@@ -253,7 +335,7 @@ public class WingmanEntity extends Mob {
         double angle = Math.toRadians(player.getYRot()) + slot * (Math.PI * 2 / slotCount);
         Vec3 station = player.position().add(-Math.sin(angle) * 10, 3.5, Math.cos(angle) * 10);
         if (tickCount % 10 == 0 || !valid(target, player, LEASH)) {
-            target = nearestHostile(station, 14, player);
+            target = WingmanTactics.select(this, player, station, 14, valid(target, player, LEASH) ? target : null, e -> valid(e, player, LEASH));
             // decoy: the mobs near the station that hunt the owner turn to this Wingman
             for (Mob mob : level().getEntitiesOfClass(Mob.class, new AABB(station, station).inflate(12),
                     m -> m instanceof Enemy && m.getTarget() == player)) mob.setTarget(this);
@@ -275,9 +357,11 @@ public class WingmanEntity extends Mob {
             }
             return;
         }
-        if (tickCount % 10 == 0 || !valid(target, player, 10)) {
-            LivingEntity attacker = player.getLastHurtByMob();
-            target = attacker != null && player.tickCount - player.getLastHurtByMobTimestamp() < 100 && valid(attacker, player, 10) ? attacker : null;
+        if (tickCount % 5 == 0 || !valid(target, player, 10)) {
+            // 0.1.9.1: escort scores only the threats at the owner (attackers, hunters, creepers within 10 blocks)
+            target = WingmanTactics.select(this, player, player.position(), 10, valid(target, player, 10) ? target : null,
+                e -> valid(e, player, 10) && (e instanceof Mob m && m.getTarget() == player || e == player.getLastHurtByMob()
+                    || e instanceof net.minecraft.world.entity.monster.Creeper && e.distanceTo(player) < 7));
             // 0.1.8.4: body-block a hostile that closes in on the owner, even before it strikes
             if (target == null) target = hunterOf(player, 6);
         }
@@ -360,6 +444,67 @@ public class WingmanEntity extends Mob {
             }
         }
         return Vec3.atCenterOf(home).add(0, 1.2, 0);
+    }
+
+    // ---- orders (0.1.10.2)
+
+    /** Height of the hold point above the order point, and the spread of the squad around it. */
+    private static final double ORDER_HEIGHT = 2.6, ORDER_SPREAD = 2.4;
+
+    /**
+     * An order: FOCUS chases its target anywhere in the dimension (within the focus range) and
+     * ends when the target is down. MOVE flies to the point (no fighting on the way), then guards it
+     * like HOLD: the squad spreads on a small ring above the point and engages the hostile creatures
+     * within the hold radius. SUPPRESS patrols a ring above the area and engages everything in the
+     * suppression radius. The owner leash and the catch-up jump do not apply.
+     */
+    private void tickOrder(ServerLevel world, ServerPlayer player) {
+        orderAge++;
+        if (order == WingmanOrder.FOCUS) {
+            Entity e = world.getEntity(orderTarget);
+            if (!(e instanceof LivingEntity focus) || !focusValid(focus, player)) {
+                clearOrder();
+                return;
+            }
+            target = focus;
+            engage(focus, player);
+            return;
+        }
+        Vec3 anchor = orderPos != null ? orderPos : position();
+        boolean suppress = order == WingmanOrder.SUPPRESS;
+        double radius = suppress ? com.miophas.singularity_iteration.common.suit.quantum.QuantumConfig.suppressRadius()
+            : com.miophas.singularity_iteration.common.suit.quantum.QuantumConfig.holdRadius();
+        Vec3 post;
+        if (suppress) {
+            double a = orderAge * 0.025 + slot * Math.PI * 2 / slotCount;
+            post = anchor.add(Math.cos(a) * radius * 0.65, 5.0, Math.sin(a) * radius * 0.65);
+        } else {
+            double a = slot * Math.PI * 2 / slotCount;
+            double spread = slotCount > 1 ? ORDER_SPREAD : 0;
+            post = anchor.add(Math.cos(a) * spread, ORDER_HEIGHT, Math.sin(a) * spread);
+        }
+        boolean travelling = order == WingmanOrder.MOVE && target == null && position().distanceToSqr(post) > 6 * 6;
+        if (!travelling && (tickCount % 5 == 0 || !guards(target, player, anchor, radius + 6))) {
+            target = WingmanTactics.select(this, player, anchor, radius, guards(target, player, anchor, radius + 6) ? target : null,
+                e -> guards(e, player, anchor, radius + 6), anchor);
+        }
+        if (target != null && !travelling) engage(target, player);
+        else steer(post, travelling ? COMBAT : CRUISE, player);
+    }
+
+    /** A valid target near the order point (the owner leash does not apply). */
+    private boolean guards(@Nullable LivingEntity e, ServerPlayer player, Vec3 anchor, double radius) {
+        return e != null && e.isAlive() && e.level() == level() && !e.isRemoved() && e != player
+            && !(e instanceof Player) && !(e instanceof WingmanEntity) && e.distanceToSqr(anchor) < radius * radius
+            && !player.isAlliedTo(e) && !(e instanceof net.minecraft.world.entity.OwnableEntity own && player.getUUID().equals(own.getOwnerUUID()));
+    }
+
+    /** A focus target: alive, in this dimension, within the focus range of this Wingman; never a player, a Wingman or an ally. */
+    boolean focusValid(LivingEntity e, ServerPlayer player) {
+        double range = com.miophas.singularity_iteration.common.suit.quantum.QuantumConfig.focusRange();
+        return e.isAlive() && !e.isRemoved() && e.level() == level() && !(e instanceof Player) && !(e instanceof WingmanEntity)
+            && e.distanceToSqr(this) < range * range && !player.isAlliedTo(e)
+            && !(e instanceof net.minecraft.world.entity.OwnableEntity own && player.getUUID().equals(own.getOwnerUUID()));
     }
 
     // ---- targets
@@ -470,13 +615,27 @@ public class WingmanEntity extends Mob {
             steer(aim.add(side), COMBAT, player);
             return;
         }
-        steer(aim.add(enemy.getDeltaMovement().scale(4)), COMBAT, player);
+        // 0.1.9.1: come in from the flank / behind the target's back while far, straight in the last blocks
+        Vec3 approach = aim.add(enemy.getDeltaMovement().scale(4));
+        if (distanceToSqr(enemy) > 4.5 * 4.5) {
+            Vec3 look = enemy.getViewVector(1.0F);
+            approach = approach.add(new Vec3(-look.x, 0, -look.z).scale(1.5)).add(sideOf(enemy).scale(1.5));
+        }
+        steer(approach, COMBAT, player);
         if (attackCooldown == 0 && isWithinMeleeAttackRange(enemy)) {
             swing(InteractionHand.MAIN_HAND);
             doHurtTarget(enemy);
             double speed = Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED));
             attackCooldown = Mth.ceil(20.0 / speed);
-            if (getRandom().nextInt(3) == 0) { retreatTicks = 8; strafeSign = -strafeSign; }
+            // a creeper is thrown away from the owner
+            if (enemy instanceof net.minecraft.world.entity.monster.Creeper) {
+                Vec3 away = enemy.position().subtract(player.position());
+                enemy.knockback(1.6, -away.x, -away.z);
+            }
+            // 0.1.9.1 hit and away: a thruster boost out of reach, then a new pass from the other side
+            boost(position().subtract(enemy.position()).add(sideOf(enemy).scale(0.8)));
+            retreatTicks = 10;
+            strafeSign = -strafeSign;
         }
     }
 
@@ -501,6 +660,7 @@ public class WingmanEntity extends Mob {
             if (SlashBladeCombat.slashArts(this, enemy) != null) {
                 artsCooldown = ARTS_INTERVAL;
                 attackCooldown = 20;
+                boost(position().subtract(enemy.position()));     // 0.1.9.1: break away after the art
                 return;
             }
         }
@@ -531,17 +691,21 @@ public class WingmanEntity extends Mob {
     private void engageRanged(LivingEntity enemy, ServerPlayer player) {
         ItemStack weapon = getMainHandItem();
         double[] band = rangeBand(weapon);
-        Vec3 c = enemy.position();
-        Vec3 flat = new Vec3(getX() - c.x, 0, getZ() - c.z);
-        double r = flat.length();
-        if (r < 1.0E-3) { flat = new Vec3(1, 0, 0); r = 1; }
-        double want = Mth.clamp(r, band[0], band[1]);
-        if (r < band[0]) want = band[0] + 1.5;                    // too close: open the distance
-        else if (r > band[1]) want = band[1] - 1.5;               // too far: close in
-        Vec3 radial = flat.scale(1 / r);
-        Vec3 tangent = new Vec3(-radial.z, 0, radial.x);
-        Vec3 stand = c.add(radial.scale(want)).add(tangent.scale(strafeSign * 2.5)).add(0, 3.5 + (blockedTicks > 0 ? 3 : 0), 0);
-        steer(stand, CRUISE * 1.1, player);
+        // 0.1.9.1: kiting - a hostile inside the danger radius triggers a boost away
+        Mob danger = WingmanTactics.danger(this, Math.max(3.5, band[0] * 0.55));
+        if (danger != null && boostCooldown == 0) {
+            boost(position().subtract(danger.position()));
+            station = null;
+        }
+        // 0.1.9.1: tactical firing station (line of fire, flank, height, owner clear), re-planned every 8 ticks
+        if (station == null || --stationTicks <= 0 || blockedTicks > 10) {
+            station = WingmanTactics.station(this, enemy, player, band, blockedTicks > 10 ? null : station);
+            stationTicks = STATION_TICKS;
+            if (blockedTicks > 10) blockedTicks = 0;
+        }
+        // drift around the station so the drone never hangs still
+        Vec3 stand = station.add(sideOf(enemy).scale(0.9 * Mth.sin(tickCount * 0.09F)));
+        steer(stand, CRUISE * 1.15, player);
         Vec3 muzzle = getEyePosition();
         Vec3 aim = lead(enemy, muzzle, projectileSpeed(weapon));
         faceSmooth(aim, 40);
@@ -554,6 +718,7 @@ public class WingmanEntity extends Mob {
         if (attackCooldown > 0 || facingError(aim) > 12) return;
         if (splash(weapon) && enemy.distanceToSqr(player) < 5.5 * 5.5) return;   // no blast next to the owner
         int cooldown = fire(weapon, aim.subtract(muzzle), enemy);
+        if (cooldown >= 0) entityData.set(DATA_SHOTS, entityData.get(DATA_SHOTS) + 1);   // muzzle flash on the clients
         if (cooldown >= 0) attackCooldown = Math.max(2, cooldown);
         else attackCooldown = 20;                                  // could not fire (no charge): try again later
     }
@@ -659,7 +824,10 @@ public class WingmanEntity extends Mob {
     @Nullable
     private LivingEntity ownerFocus(ServerPlayer player) {
         LivingEntity marked = player.getLastHurtMob();
-        return marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 40 && valid(marked, player, LEASH) ? marked : null;
+        if (marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 40 && valid(marked, player, LEASH)) return marked;
+        // 0.1.10.1 Fleet Datalink synergy: the creature in the owner's sights
+        LivingEntity sighted = com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergies.mark(player);
+        return sighted != null && valid(sighted, player, LEASH * 2) ? sighted : null;
     }
 
     /** Nearest hostile mob within {@code range} of the owner that hunts the owner. */
@@ -705,7 +873,7 @@ public class WingmanEntity extends Mob {
         Vec3 to = goal.subtract(position());
         double dist = to.length();
         Vec3 want = dist < 1.0E-3 ? Vec3.ZERO : to.scale(Math.min(speed, dist * 0.3) / dist);
-        want = want.add(separation());
+        want = WingmanTactics.avoid(this, want.add(separation()));   // 0.1.9.1: look ahead, climb or slide past walls
         Vec3 v = getDeltaMovement();
         Vec3 dv = want.subtract(v);
         if (dv.lengthSqr() > ACCEL * ACCEL) dv = dv.normalize().scale(ACCEL);
@@ -730,6 +898,31 @@ public class WingmanEntity extends Mob {
         yHeadRot = yaw;
     }
 
+    /**
+     * 0.1.9.1 thruster boost: an impulse along {@code dir} (flattened, a little upwards), with a
+     * flare on the clients and a short burst sound. Has a cooldown.
+     */
+    private void boost(Vec3 dir) {
+        if (boostCooldown > 0) return;
+        Vec3 flat = new Vec3(dir.x, 0, dir.z);
+        if (flat.lengthSqr() < 1.0E-4) flat = new Vec3(strafeSign, 0, 0);
+        Vec3 impulse = WingmanTactics.avoid(this, flat.normalize().scale(1.1).add(0, 0.38, 0));
+        setDeltaMovement(getDeltaMovement().scale(0.3).add(impulse));
+        boostCooldown = BOOST_COOLDOWN;
+        entityData.set(DATA_BOOSTS, entityData.get(DATA_BOOSTS) + 1);
+        level().playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_BOOST.get(), SoundSource.NEUTRAL, 0.7F,
+            0.95F + getRandom().nextFloat() * 0.1F);
+    }
+
+    /** Publishes the target for the lock-on effect; a new lock beeps once. */
+    private void syncTarget(ServerLevel world) {
+        int id = target != null && target.isAlive() && state() == ACTIVE ? target.getId() : -1;
+        if (id == entityData.get(DATA_TARGET)) return;
+        entityData.set(DATA_TARGET, id);
+        station = null;
+        if (id >= 0) world.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_LOCK.get(), SoundSource.NEUTRAL, 0.5F, 1.0F);
+    }
+
     private void catchUp(ServerPlayer player) {
         Vec3 at = formation(player).add(0, 2, 0);
         teleportTo(at.x, at.y, at.z);
@@ -741,7 +934,7 @@ public class WingmanEntity extends Mob {
     void startReturn(@Nullable Component message) {
         if (state() == RETURNING || secured) return;
         dropCargo();
-        target = null;
+        clearOrder();
         setState(RETURNING);
         if (message != null && level() instanceof ServerLevel world && owner != null) {
             ServerPlayer player = world.getServer().getPlayerList().getPlayer(owner);
@@ -921,6 +1114,14 @@ public class WingmanEntity extends Mob {
         tag.putByte("Mode", entityData.get(DATA_MODE));
         tag.putByte("State", state());
         tag.putBoolean("Protected", protectedReturn);
+        // 0.1.10.2 (absent in older saves: squad mode, no order); a focus order is not saved
+        tag.putBoolean("Individual", individual);
+        if (order.anchored() && orderPos != null) {
+            tag.putByte("Order", (byte) order.ordinal());
+            tag.putDouble("OrderX", orderPos.x);
+            tag.putDouble("OrderY", orderPos.y);
+            tag.putDouble("OrderZ", orderPos.z);
+        }
     }
 
     @Override
@@ -932,6 +1133,15 @@ public class WingmanEntity extends Mob {
         entityData.set(DATA_MODE, tag.getByte("Mode"));
         entityData.set(DATA_STATE, tag.getByte("State"));
         protectedReturn = tag.getBoolean("Protected");
+        individual = tag.getBoolean("Individual");
+        WingmanOrder saved = tag.contains("Order") ? WingmanOrder.byId(tag.getByte("Order")) : WingmanOrder.NONE;
+        if (saved.anchored() && tag.contains("OrderX")) {
+            order = saved;
+            orderPos = new Vec3(tag.getDouble("OrderX"), tag.getDouble("OrderY"), tag.getDouble("OrderZ"));
+        } else {
+            order = WingmanOrder.NONE;
+            orderPos = null;
+        }
         setNoGravity(true);
     }
 

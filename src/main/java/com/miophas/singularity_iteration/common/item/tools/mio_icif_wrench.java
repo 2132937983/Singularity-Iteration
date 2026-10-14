@@ -172,7 +172,7 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
             return;
         }
 
-        boolean inCenter = mio_icif_block_wire.isHitInCenter(hitVec, pos);
+        boolean inCenter = mio_icif_block_wire.isHitInCenter(hitVec, pos, state);   // 0.1.10.3: the cable's own thickness
 
         if (inCenter) {
             if (wireEntity.isDirectionBlocked(clickedFace)) {

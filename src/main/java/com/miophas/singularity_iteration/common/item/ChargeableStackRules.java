@@ -18,6 +18,10 @@ import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
  * Anything that stores charge is a single item: two tools with different charge must never merge
  * into one stack (the energy would be lost or duplicated). Applied to every SI item that is a
  * battery, electric tool, electric armor, energy pack or carries a default charge component.
+ *
+ * <p>0.1.10.3: this sets the item default only. An empty battery with an empty stack size (energy and
+ * lapotron crystals, RE and lithium batteries, the super lapotron crystal) still stacks through
+ * {@code AbstractBattery#getMaxStackSize(ItemStack)}; it becomes a single item again once it holds charge.
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public final class ChargeableStackRules {

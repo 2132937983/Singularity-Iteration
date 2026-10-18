@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NNN",
+    "NNN",
+    "NNN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:nuggets/lead"
+    }
+  },
+  "result": {
+    "id": "mio_icif:resource/item_lead_ingot",
+    "count": 1
+  }
+}

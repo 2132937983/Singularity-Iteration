@@ -345,7 +345,7 @@ public final class NanoSuit {
         if (core != null && s.reserve < 100 && player.tickCount % 10 == 0) {
             float points = (float) Math.min(100 - s.reserve, NanoConfig.reserveRegen() / 2.0);
             long cost = (long) Math.ceil(points * NanoConfig.euPerReserve());
-            if (points > 0 && (cost == 0 || SuitModules.energy(player, core) >= cost)) {
+            if (points > 0 && (cost == 0 || SuitModules.canPay(player, core, cost))) {
                 if (cost > 0) SuitModules.extract(player, core, cost);
                 s.reserve = Math.min(100, s.reserve + points);
             }
@@ -413,7 +413,7 @@ public final class NanoSuit {
                 && now - s.lastHit >= (repair >= 2 ? 80 : 100) && player.tickCount % (repair >= 2 ? 40 : 60) == 0) {
             ItemStack piece = SuitModules.wornPieceWith(player, SuitModuleType.SELF_REPAIR);
             long cost = NanoConfig.repairEu();
-            if (cost == 0 || SuitModules.energy(player, piece) >= cost) {
+            if (cost == 0 || SuitModules.canPay(player, piece, cost)) {
                 if (cost > 0) SuitModules.extract(player, piece, cost);
                 player.heal(repair >= 2 ? 1.0F : 0.5F);
                 level.sendParticles(REPAIR_DUST, player.getX(), player.getY() + 1.0, player.getZ(), 10, 0.35, 0.5, 0.35, 0.0);

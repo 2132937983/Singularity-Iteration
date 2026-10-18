@@ -17,7 +17,8 @@ public interface IElectricArmorItem extends IBatteryItem {
     int getArmorTier();
 
     default boolean hasEnoughEnergy(ItemStack stack) {
-        return getEnergy(stack) >= getEnergyPerTick();
+        // 0.1.10.5: the cost after Energy Saving, as the debit takes it
+        return getEnergy(stack) >= EnergySaving.maxCost(stack, getEnergyPerTick());
     }
 
     default boolean consumeEnergy(ItemStack stack, long amount) {

@@ -31,6 +31,14 @@ This block uses no EU.
 3. Put a lava bucket or a hot coolant cell into the hot fluid input slot.
 4. Put empty containers into the cold fluid slot to collect the output fluid.
 
+## Heat face
+
+- The machine gives heat only through its front: the face with the copper heat plate. The plate turns red while the machine works.
+- When you place the machine, the heat plate faces you.
+- The heat input face of the heat user must touch the plate: a Stirling Generator takes heat through its back face (opposite to the face that looked at you when you placed it), a Kinetic Stirling Generator through every face except its shaft, a Steam Generator through every face except its front.
+- Use a wrench on the face where you want the heat plate. Sneak and use the wrench to turn the plate to the opposite face. A wrench on the plate itself picks the machine up.
+- The other five faces never give heat; use them for pipes, cells and automation.
+
 ## Notes
 
 - The machine stops when the output tank is full.

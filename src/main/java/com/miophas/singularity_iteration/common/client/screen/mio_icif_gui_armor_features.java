@@ -519,7 +519,14 @@ public class mio_icif_gui_armor_features extends Screen {
         int budget = com.miophas.singularity_iteration.common.suit.quantum.QuantumBandwidth.budget(player);
         small(g, Component.translatable("gui.mio_icif.equipment_console.links", on, cap).getString(), x, ry + 3, SiGuiTheme.TEXT_SCREEN);
         String qb = load + "/" + budget + " QB";
-        small(g, qb, x + 58, ry + 3, load > budget ? SiGuiTheme.BAD : SiGuiTheme.TEXT_SCREEN_DIM);
+        small(g, qb, x + 52, ry + 3, load > budget ? SiGuiTheme.BAD : SiGuiTheme.TEXT_SCREEN_DIM);
+        // 0.1.10.4: compute core marker: CPU (working), CPU- (switched off), CPU! (no suit energy)
+        var core = com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.computeCoreState(player);
+        if (core != com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.CoreState.NONE) {
+            boolean coreOn = core == com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.CoreState.ACTIVE;
+            String tag = coreOn ? "CPU" : core == com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.CoreState.OFF ? "CPU-" : "CPU!";
+            small(g, tag, x + 52 + (int) (font.width(qb) * 0.75F) + 4, ry + 3, coreOn ? SiGuiTheme.ACCENT : SiGuiTheme.BAD);
+        }
         String open = Component.translatable("gui.mio_icif.equipment_console.links_open").getString() + " \u25B6";
         g.drawString(font, open, x + PW - 10 - font.width(open), ry + 1, SiGuiTheme.ACCENT, false);
     }

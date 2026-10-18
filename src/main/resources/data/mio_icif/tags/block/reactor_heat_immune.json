@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:bedrock",
+    "minecraft:barrier",
+    "minecraft:end_portal_frame",
+    "minecraft:reinforced_deepslate",
+    { "id": "mio_icif:build/block_construction_foam", "required": false },
+    { "id": "mio_icif:build/block_cf_wall", "required": false },
+    { "id": "mio_icif:build/block_construction_wall", "required": false },
+    { "id": "mio_icif:constructionfoam", "required": false },
+    { "id": "mio_icif:generator/block_nuclear_reactor_generator", "required": false },
+    { "id": "mio_icif:reactor/block_reactor_chamber", "required": false },
+    { "id": "mio_icif:reactor/block_reactor_vessel", "required": false },
+    { "id": "mio_icif:reactor/block_reactor_access_hatch", "required": false },
+    { "id": "mio_icif:reactor/block_reactor_fluid_port", "required": false },
+    { "id": "mio_icif:reactor/block_reactor_redstone_port", "required": false },
+    { "id": "mio_icif:producer/block_redstone_reactor_coolant_injector", "required": false },
+    { "id": "mio_icif:producer/block_lapis_reactor_coolant_injector", "required": false }
+  ]
+}

@@ -290,19 +290,52 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         var random=server.random;
         if(power>=0.85F&&random.nextFloat()<=0.2F*hem)igniteOrLava(server,randomCoord(server,2));
         if(power>=0.7F){
+            // 7x7x7 around the reactor. 0.1.10.4: radiation damage (the nano toxin filter applies), and a
+            // full hazmat suit or a full quantum suit protects completely (was magic damage nothing stopped)
             var area=new net.minecraft.world.phys.AABB(worldPosition.getX()-3,worldPosition.getY()-3,worldPosition.getZ()-3,
                 worldPosition.getX()+4,worldPosition.getY()+4,worldPosition.getZ()+4);
-            for(var entity:server.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,area))
-                entity.hurt(server.damageSources().magic(),(int)(random.nextInt(4)*hem));
+            for(var entity:server.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,area)){
+                int dose=(int)(random.nextInt(4)*hem);
+                if(dose<=0||com.miophas.singularity_iteration.common.util.RadiationProtectionUtil.isRadiationProtected(entity))continue;
+                // 0.1.10.5: lead (and weaker shielding blocks) between the reactor and the creature
+                double through=com.miophas.singularity_iteration.common.util.RadiationShielding.transmission(server,
+                    com.miophas.singularity_iteration.common.util.RadiationShielding.centre(worldPosition),entity,worldPosition);
+                float damage=(float)(dose*through);
+                if(damage<0.25F)continue;
+                entity.hurt(new net.minecraft.world.damagesource.DamageSource(server.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.DAMAGE_TYPE)
+                    .getHolderOrThrow(com.miophas.singularity_iteration.common.event.mio_icif_DamageTypes.RADIATION)),damage);
+            }
         }
-        if(power>=0.5F&&random.nextFloat()<=hem){
-            var at=randomCoord(server,2);
-            if(server.getBlockState(at).getFluidState().is(net.minecraft.world.level.material.Fluids.WATER))server.removeBlock(at,false);
-        }
+        if(power>=0.5F&&random.nextFloat()<=hem)evaporate(server,randomCoord(server,2));
         if(power>=0.4F&&random.nextFloat()<=hem){
             var at=randomCoord(server,2);
-            if(server.getBlockEntity(at)==null&&flammable(server.getBlockState(at)))
+            var state=server.getBlockState(at);
+            if(server.getBlockEntity(at)==null&&!state.is(HEAT_IMMUNE)&&flammable(state))
                 server.setBlockAndUpdate(at,net.minecraft.world.level.block.Blocks.FIRE.defaultBlockState());
+        }
+    }
+    /**
+     * 0.1.10.4: blocks the heat stages never change (data tag {@code mio_icif:reactor_heat_immune}): bedrock,
+     * construction foam and its walls, the reactor, its chambers, the pressure vessel and its interface
+     * blocks, the coolant injectors. Blocks with a block entity and unbreakable blocks are skipped as before.
+     */
+    public static final net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> HEAT_IMMUNE=net.minecraft.tags.TagKey.create(
+        net.minecraft.core.registries.Registries.BLOCK,net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif","reactor_heat_immune"));
+    /**
+     * 50 % stage: water at the spot boils away. 0.1.10.4: a waterlogged block only loses its water (before,
+     * removeBlock replaced a waterlogged block, e.g. stairs, with a water source); kelp, seagrass and bubble
+     * columns dry up; protected blocks keep their water.
+     */
+    private static void evaporate(ServerLevel server,BlockPos at){
+        var state=server.getBlockState(at);
+        if(!state.getFluidState().is(net.minecraft.world.level.material.Fluids.WATER)||state.is(HEAT_IMMUNE))return;
+        if(state.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock){
+            server.setBlockAndUpdate(at,net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+        }else if(state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)){
+            if(state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED))
+                server.setBlockAndUpdate(at,state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED,false));
+        }else if(server.getBlockEntity(at)==null&&state.getDestroySpeed(server,at)>=0){
+            server.setBlockAndUpdate(at,net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
         }
     }
     /** IC2 getRandCoord：2 格半径内的随机坐标，且不等于反应堆自身位置。 */
@@ -312,10 +345,16 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         while(at.equals(worldPosition));
         return at;
     }
-    /** IC2 的高温喷发：空气 → 火；可破坏且无方块实体的方块按材质给出岩浆或火。 */
+    /**
+     * IC2 的高温喷发：空气 → 火；可破坏且无方块实体的方块按材质给出岩浆或火。
+     * 0.1.10.4: protected blocks ({@link #HEAT_IMMUNE}) and liquids stay as they are. Lava placed next to
+     * water turns into obsidian (a flowing edge into cobblestone) by the vanilla fluid rules; the
+     * protected blocks themselves never change.
+     */
     private void igniteOrLava(ServerLevel server,BlockPos at){
         var state=server.getBlockState(at);
         if(state.isAir()){server.setBlockAndUpdate(at,net.minecraft.world.level.block.Blocks.FIRE.defaultBlockState());return;}
+        if(state.is(HEAT_IMMUNE)||state.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock)return;
         if(state.getDestroySpeed(server,at)<0||server.getBlockEntity(at)!=null)return;
         server.setBlockAndUpdate(at,lavaMaterial(state)
             ?net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState()

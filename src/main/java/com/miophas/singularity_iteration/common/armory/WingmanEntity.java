@@ -98,6 +98,8 @@ public class WingmanEntity extends Mob {
     @Nullable private UUID owner;
     @Nullable private GlobalPos armory;
     private int set;
+    /** 0.1.10.5: the token of this sortie ({@link WingmanSorties}); null in a save of an older version. */
+    @Nullable private UUID sortie;
     // server state (not saved)
     @Nullable private LivingEntity target;
     private int attackCooldown, deflectCooldown, lowPowerSeconds, stateTicks, slot, slotCount = 1;
@@ -127,6 +129,13 @@ public class WingmanEntity extends Mob {
         for (EquipmentSlot s : EquipmentSlot.values()) setDropChance(s, 0);   // items leave only through secure()
     }
 
+    /**
+     * Mob attributes plus every attribute a player has (0.1.10.5). Weapon mods read player
+     * attributes from any wielder: SlashBlade: Resharped reads {@code SWEEPING_DAMAGE_RATIO} and
+     * {@code ENTITY_INTERACTION_RANGE}, and a missing attribute throws in
+     * {@code getAttributeValue}, which crashed the server in every tick of a slash effect. The map
+     * is built from this supplier at construction, so saved Wingmen get the new attributes too.
+     */
     public static AttributeSupplier.Builder createAttributes() {
         return Mob.createMobAttributes()
             .add(Attributes.MAX_HEALTH, 20.0)
@@ -134,7 +143,15 @@ public class WingmanEntity extends Mob {
             .add(Attributes.ATTACK_SPEED, 4.0)
             .add(Attributes.FLYING_SPEED, 0.6)
             .add(Attributes.MOVEMENT_SPEED, 0.3)
-            .add(Attributes.FOLLOW_RANGE, SCAN_RANGE);
+            .add(Attributes.FOLLOW_RANGE, SCAN_RANGE)
+            .add(Attributes.LUCK)
+            .add(Attributes.BLOCK_INTERACTION_RANGE, 4.5)
+            .add(Attributes.ENTITY_INTERACTION_RANGE, 3.0)
+            .add(Attributes.BLOCK_BREAK_SPEED)
+            .add(Attributes.SUBMERGED_MINING_SPEED)
+            .add(Attributes.SNEAKING_SPEED)
+            .add(Attributes.MINING_EFFICIENCY)
+            .add(Attributes.SWEEPING_DAMAGE_RATIO);
     }
 
     /** A new Wingman that wears {@code items} (indexed by {@link ArmoryPiece#ordinal()}). */
@@ -149,6 +166,8 @@ public class WingmanEntity extends Mob {
             if (stack != null && !stack.isEmpty()) w.setItemSlot(p.slot, stack);   // first tick: no equip sound
         }
         w.moveTo(at.x, at.y, at.z, owner.getYRot(), 0);
+        WingmanSorties ledger = WingmanSorties.get(level.getServer());
+        if (ledger != null) w.sortie = ledger.open(w.getUUID());
         return w;
     }
 
@@ -176,6 +195,8 @@ public class WingmanEntity extends Mob {
     public int boostCount() { return entityData.get(DATA_BOOSTS); }
     public int set() { return set; }
     @Nullable GlobalPos armory() { return armory; }
+    /** 0.1.10.5: the sortie token (server), see {@link WingmanSorties}. */
+    @Nullable UUID sortie() { return sortie; }
     void setSlot(int slot, int count) { this.slot = slot; this.slotCount = Math.max(1, count); }
 
     /** 0.1.10.2: true when the Wingman keeps its own mode when the squad mode changes. */
@@ -265,6 +286,7 @@ public class WingmanEntity extends Mob {
         syncTarget(world);
         if (artsCooldown > 0) artsCooldown--;
         if (state() == ACTIVE) SlashBladeCombat.tick(this);   // a blade's combo actions run on the wielder's tick
+        disarmIdle();                                          // 0.1.10.4: the nanosaber goes off after a fight
         ServerPlayer player = owner == null ? null : world.getServer().getPlayerList().getPlayer(owner);
         boolean ownerHere = player != null && player.isAlive() && player.level() == world && !player.isSpectator();
         if (state() != RETURNING && !ownerHere) {
@@ -290,20 +312,23 @@ public class WingmanEntity extends Mob {
     }
 
     private void upkeep(ServerLevel world, @Nullable ServerPlayer player) {
-        long paid = 0;
+        // 0.1.10.5: count the nominal EU that is covered. Energy Saving makes a piece pay less EU
+        // for the same share; before, the saved EU counted as unpaid (the Armory paid it again, or
+        // the Wingman flew home for low power).
+        long due = UPKEEP_EU;
         var api = MioIcifAPI.instance().getItemAPI();
         for (EquipmentSlot s : SuitEnergyPool.ARMOR_SLOTS) {
             ItemStack piece = getItemBySlot(s);
             if (piece.isEmpty() || !api.isElectricArmor(piece) || SuitEnergyPool.available(this, piece) <= 0) continue;
-            paid += SuitEnergyPool.pay(this, piece, UPKEEP_EU - paid);
-            if (paid >= UPKEEP_EU) break;
+            due -= SuitEnergyPool.payPart(this, piece, due);
+            if (due <= 0) break;
         }
-        if (paid < UPKEEP_EU) {
+        if (due > 0) {
             mio_icif_armory home = loadedArmory(world);
-            var payment = home == null ? null : home.getEnergyStorageInternal().scexReserveInternal(UPKEEP_EU - paid);
-            if (payment != null) { payment.commit(); paid = UPKEEP_EU; }
+            var payment = home == null ? null : home.getEnergyStorageInternal().scexReserveInternal(due);
+            if (payment != null) { payment.commit(); due = 0; }
         }
-        if (paid >= UPKEEP_EU) { lowPowerSeconds = 0; return; }
+        if (due <= 0) { lowPowerSeconds = 0; return; }
         if (++lowPowerSeconds >= LOW_POWER_LIMIT) {
             startReturn(player == null ? null : Component.translatable("message.mio_icif.wingman.low_power"));
         }
@@ -622,6 +647,7 @@ public class WingmanEntity extends Mob {
             approach = approach.add(new Vec3(-look.x, 0, -look.z).scale(1.5)).add(sideOf(enemy).scale(1.5));
         }
         steer(approach, COMBAT, player);
+        armElectric();                                          // 0.1.10.4: switch the nanosaber on
         if (attackCooldown == 0 && isWithinMeleeAttackRange(enemy)) {
             swing(InteractionHand.MAIN_HAND);
             doHurtTarget(enemy);
@@ -636,6 +662,66 @@ public class WingmanEntity extends Mob {
             boost(position().subtract(enemy.position()).add(sideOf(enemy).scale(0.8)));
             retreatTicks = 10;
             strafeSign = -strafeSign;
+        }
+    }
+
+    // ---- electric weapons (0.1.10.4)
+
+    /** Ticks without a target; the nanosaber switches off after {@link #DISARM_TICKS}. */
+    private int idleTicks;
+    private static final int DISARM_TICKS = 60;
+
+    /**
+     * Melee hit with the held weapon. Mob#doHurtTarget only reads the attack damage attribute and
+     * never calls the item. The electric melee weapons add their damage in
+     * {@code Item#getAttackDamageBonus} (nanosaber 20 when on, chainsaw 9, quantum sword +12.5 in
+     * hyper mode) and pay their charge in {@code Item#hurtEnemy}, so in a Wingman's hand they hit
+     * for 1 and never drew power. For an SI electric tool the hit now works as for a player: the
+     * bonus is added (enchantments still apply), and after a hit the weapon's hurtEnemy runs (it pays
+     * the charge and switches off when empty). Other weapons keep the vanilla mob attack.
+     */
+    @Override
+    public boolean doHurtTarget(Entity target) {
+        ItemStack weapon = getMainHandItem();
+        if (!(weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_tool_elc tool)) return super.doHurtTarget(target);
+        float base = (float) getAttributeValue(Attributes.ATTACK_DAMAGE);
+        DamageSource source = damageSources().mobAttack(this);
+        float damage = base + tool.getAttackDamageBonus(target, base, source);
+        if (level() instanceof ServerLevel world) damage = net.minecraft.world.item.enchantment.EnchantmentHelper.modifyDamage(world, weapon, target, source, damage);
+        boolean hit = target.hurt(source, damage);
+        if (hit) {
+            float knock = getKnockback(target, source);
+            if (knock > 0.0F && target instanceof LivingEntity living) {
+                living.knockback(knock * 0.5F, Mth.sin(getYRot() * Mth.DEG_TO_RAD), -Mth.cos(getYRot() * Mth.DEG_TO_RAD));
+                setDeltaMovement(getDeltaMovement().multiply(0.6, 1.0, 0.6));
+            }
+            if (level() instanceof ServerLevel world) net.minecraft.world.item.enchantment.EnchantmentHelper.doPostAttackEffects(world, target, source);
+            if (target instanceof LivingEntity living) tool.hurtEnemy(weapon, living, this);
+            setLastHurtMob(target);
+        }
+        return hit;
+    }
+
+    /** Switches a held nanosaber on for a fight (it needs its activation charge, as for a player). */
+    private void armElectric() {
+        idleTicks = 0;
+        ItemStack weapon = getMainHandItem();
+        if (weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber saber
+                && !com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.isActive(weapon)
+                && saber.hasEnoughEnergy(weapon, com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.ACTIVATE_COST)) {
+            com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.setActive(weapon, true);
+            playSound(mio_icif_sounds.NANO_HF_SYNC.get(), 0.6F, 1.3F);
+        }
+    }
+
+    /** Server tick: a nanosaber goes off again {@link #DISARM_TICKS} ticks after the last fight. */
+    private void disarmIdle() {
+        if (target != null) { idleTicks = 0; return; }
+        if (++idleTicks != DISARM_TICKS) return;
+        ItemStack weapon = getMainHandItem();
+        if (weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber
+                && com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.isActive(weapon)) {
+            com.miophas.singularity_iteration.common.item.tools.mio_icif_nanosaber.setActive(weapon, false);
         }
     }
 
@@ -965,10 +1051,6 @@ public class WingmanEntity extends Mob {
         }
     }
 
-    /**
-     * Puts every item back: the Armory first (suit {@link #set}), then the owner inventory, then
-     * the ground at this Wingman. Runs at most once. The Armory chunk can load for it.
-     */
     /** Lets go of a Fulton cargo in the air; the cargo gets 10 s of Slow Falling. */
     private void dropCargo() {
         for (Entity cargo : getPassengers()) {
@@ -979,14 +1061,30 @@ public class WingmanEntity extends Mob {
         ejectPassengers();
     }
 
+    /**
+     * Puts every item back: the Armory first (suit {@link #set}), then the owner inventory, then
+     * the ground at this Wingman. Runs at most once. The Armory chunk can load for it.
+     * 0.1.10.5: closes the sortie, so a saved copy of this Wingman cannot bring the items back.
+     */
     void secure() {
         if (secured || !(level() instanceof ServerLevel world)) return;
         secured = true;
-        dropCargo();
+        WingmanSorties ledger = WingmanSorties.get(world.getServer());
+        if (ledger != null) ledger.close(sortie);
+        try {
+            dropCargo();
+        } catch (RuntimeException e) {
+            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Wingman {}: dropping the cargo failed", getUUID(), e);
+        }
         mio_icif_armory home = null;
-        if (armory != null) {
-            ServerLevel level = world.getServer().getLevel(armory.dimension());
-            if (level != null && level.isInWorldBounds(armory.pos()) && level.getBlockEntity(armory.pos()) instanceof mio_icif_armory a) home = a;
+        try {
+            if (armory != null) {
+                ServerLevel level = world.getServer().getLevel(armory.dimension());
+                if (level != null && level.isInWorldBounds(armory.pos()) && level.getBlockEntity(armory.pos()) instanceof mio_icif_armory a) home = a;
+            }
+        } catch (RuntimeException e) {
+            // the items go to the owner or the ground instead
+            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Wingman {}: the Armory at {} cannot be reached", getUUID(), armory, e);
         }
         ServerPlayer player = owner == null ? null : world.getServer().getPlayerList().getPlayer(owner);
         for (ArmoryPiece p : ArmoryPiece.VALUES) {
@@ -1000,6 +1098,57 @@ public class WingmanEntity extends Mob {
             if (!rest.isEmpty()) spawnAtLocation(rest);
         }
         if (home != null) home.markStorageChanged();
+    }
+
+    /**
+     * 0.1.10.5: the sortie check when this Wingman enters a level (server; see
+     * {@link WingmanSorties}). False for a copy: a captured Wingman released after its suit went
+     * home, or a second Wingman of a sortie that is in flight. A copy loses its items without a
+     * drop and must not enter. A Wingman saved before 0.1.10.5 gets a token now.
+     */
+    boolean admit() {
+        if (secured || !(level() instanceof ServerLevel world)) return !secured;
+        WingmanSorties ledger = WingmanSorties.get(world.getServer());
+        if (ledger == null) return true;
+        if (sortie == null) {
+            sortie = UUID.randomUUID();
+            ledger.adopt(sortie, getUUID());
+            return true;
+        }
+        WingmanSorties.Status status = ledger.status(sortie);
+        boolean twin = WingmanService.flying(owner, sortie, this);
+        if (status == WingmanSorties.Status.CLOSED || twin) {
+            voidCopy(world, twin ? "a Wingman of this sortie is in flight" : "the suit of this sortie went home");
+            return false;
+        }
+        if (status == WingmanSorties.Status.UNKNOWN) ledger.adopt(sortie, getUUID());
+        else ledger.rebind(sortie, getUUID());
+        return true;
+    }
+
+    /** Empties a copy without a drop: its items exist elsewhere (the Armory, the first Wingman). */
+    private void voidCopy(ServerLevel world, String reason) {
+        secured = true;                 // remove() and die() must not send these items home
+        setSilent(true);
+        for (EquipmentSlot s : EquipmentSlot.values()) setItemSlot(s, ItemStack.EMPTY);
+        com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.warn(
+            "Wingman {} (owner {}, sortie {}) is a copy and was turned away without its items: {}", getUUID(), owner, sortie, reason);
+        ServerPlayer player = owner == null ? null : world.getServer().getPlayerList().getPlayer(owner);
+        if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.copy_removed"), false);
+    }
+
+    /**
+     * 0.1.10.5: a tick of this Wingman threw ({@link WingmanTickGuard}). On the server the suit
+     * goes home and the Wingman leaves, instead of a crash that the world would hit again at
+     * every load. On a client nothing happens (the server decides).
+     */
+    void fault(Throwable error) {
+        if (level().isClientSide || isRemoved()) return;
+        if (level() instanceof ServerLevel world && owner != null) {
+            ServerPlayer player = world.getServer().getPlayerList().getPlayer(owner);
+            if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.fault"), false);
+        }
+        discard();   // remove() sends the suit home
     }
 
     // ------------------------------------------------------------------ damage, death, removal
@@ -1027,8 +1176,14 @@ public class WingmanEntity extends Mob {
 
     @Override
     public void remove(RemovalReason reason) {
-        if (!level().isClientSide && reason.shouldDestroy()) secure();
-        super.remove(reason);
+        try {
+            if (!level().isClientSide && reason.shouldDestroy()) secure();
+        } catch (RuntimeException e) {
+            // 0.1.10.5: the removal itself must go through, or the error comes back every tick
+            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Wingman {}: sending the suit home failed", getUUID(), e);
+        } finally {
+            super.remove(reason);
+        }
     }
 
     @Override
@@ -1077,13 +1232,18 @@ public class WingmanEntity extends Mob {
         return super.isAlliedTo(other);
     }
 
-    /** The owner crouches and uses an empty hand on the Wingman: it returns home. */
+    /**
+     * The owner crouches and uses an empty hand on the Wingman: it returns home. 0.1.10.5: an item
+     * used on a Wingman does nothing and goes no further (no {@code interactLivingEntity}), so mob
+     * capture tools cannot take it (see also {@link WingmanService#onInteract}).
+     */
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (owner != null && owner.equals(player.getUUID()) && player.isSecondaryUseActive() && player.getItemInHand(hand).isEmpty()) {
             if (!level().isClientSide) startReturn(Component.translatable("message.mio_icif.wingman.recalled", 1));
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
+        if (!player.getItemInHand(hand).isEmpty()) return InteractionResult.CONSUME;
         return InteractionResult.PASS;
     }
 
@@ -1111,6 +1271,7 @@ public class WingmanEntity extends Mob {
         if (owner != null) tag.putUUID("Owner", owner);
         if (armory != null) GlobalPos.CODEC.encodeStart(NbtOps.INSTANCE, armory).result().ifPresent(t -> tag.put("Armory", t));
         tag.putInt("Set", set);
+        if (sortie != null) tag.putUUID("Sortie", sortie);   // 0.1.10.5
         tag.putByte("Mode", entityData.get(DATA_MODE));
         tag.putByte("State", state());
         tag.putBoolean("Protected", protectedReturn);
@@ -1130,6 +1291,7 @@ public class WingmanEntity extends Mob {
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
         armory = tag.contains("Armory") ? GlobalPos.CODEC.parse(NbtOps.INSTANCE, tag.get("Armory")).result().orElse(null) : null;
         set = tag.getInt("Set");
+        sortie = tag.hasUUID("Sortie") ? tag.getUUID("Sortie") : null;
         entityData.set(DATA_MODE, tag.getByte("Mode"));
         entityData.set(DATA_STATE, tag.getByte("State"));
         protectedReturn = tag.getBoolean("Protected");

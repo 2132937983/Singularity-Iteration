@@ -68,10 +68,9 @@ public final class QuantumHud {
 
         // chips: only without a nano core (the nano HUD draws them otherwise)
         if (keys != null && !keys.online() && keys.quantum()) {
-            String vk = NanoClient.PRIMARY_KEY == null ? "V" : NanoClient.PRIMARY_KEY.getTranslatedKeyMessage().getString();
-            String bk = NanoClient.SECONDARY_KEY == null ? "B" : NanoClient.SECONDARY_KEY.getTranslatedKeyMessage().getString();
-            NanoHud.chip(g, cx - 30, cy + 26, 0, keys.primaryKey(), keys.primaryCooldown(), keys.primaryCooldownMax(), keys, t, a, shortKey(vk));
-            NanoHud.chip(g, cx + 30, cy + 26, 1, keys.secondaryKey(), keys.secondaryCooldown(), keys.secondaryCooldownMax(), keys, t, a, shortKey(bk));
+            String vk = NanoClient.keyLabel(NanoClient.PRIMARY_KEY, "V"), bk = NanoClient.keyLabel(NanoClient.SECONDARY_KEY, "B");
+            NanoHud.chip(g, cx - 30, cy + 26, 0, keys.primaryKey(), keys.primaryCooldown(), keys.primaryCooldownMax(), keys, t, a, vk);
+            NanoHud.chip(g, cx + 30, cy + 26, 1, keys.secondaryKey(), keys.secondaryCooldown(), keys.secondaryCooldownMax(), keys, t, a, bk);
             chargePips(g, q, keys.primaryKey(), cx - 30, cy + 19, a);
             chargePips(g, q, keys.secondaryKey(), cx + 30, cy + 19, a);
         }
@@ -135,10 +134,6 @@ public final class QuantumHud {
         FcsDraw.textCentered(g, "COMBO // " + COMBO_NAMES[kind], cx + slide, y + 1, FcsDraw.argb(0xFFFFFF, a), 0.7F);
     }
 
-    private static String shortKey(String k) {
-        return k.length() > 2 ? k.substring(0, 2) : k;
-    }
-
     // ------------------------------------------------------------------ coherence ring
 
     private static void coherenceRing(GuiGraphics g, QuantumPackets.CoreSync q, NanoPackets.CoreSync keys, float cx, float cy, float t, float a,
@@ -175,10 +170,10 @@ public final class QuantumHud {
                 g.fill((int) x, (int) y, (int) x + 1, (int) y + 1, FcsDraw.argb(0xFFFFFF, (0.9F - k * 0.17F) * a));
             }
         }
-        // cost ticks of the two keys
+        // cost ticks of the two keys (0.1.10.4: labelled with the bound keys)
         if (keys != null) {
-            costTick(g, cx, cy, r, keys.primaryKey(), "V", q, a);
-            costTick(g, cx, cy, r, keys.secondaryKey(), "B", q, a);
+            costTick(g, cx, cy, r, keys.primaryKey(), NanoClient.keyLabel(NanoClient.PRIMARY_KEY, "V"), q, a);
+            costTick(g, cx, cy, r, keys.secondaryKey(), NanoClient.keyLabel(NanoClient.SECONDARY_KEY, "B"), q, a);
         }
         // read-out
         String text = dec ? "DECOHERENT" : String.format(Locale.ROOT, "COH %03d", Math.round(q.coherence()));

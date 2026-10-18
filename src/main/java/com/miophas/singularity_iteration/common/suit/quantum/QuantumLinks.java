@@ -62,8 +62,32 @@ public final class QuantumLinks {
 
     /** True while a compute core is active on a worn quantum piece. */
     public static boolean computeCore(Player player) {
-        ItemStack piece = SuitModules.wornPieceWith(player, SuitModuleType.COMPUTE_CORE);
-        return !piece.isEmpty() && SuitModules.isQuantumPiece(piece) && SuitModules.isActive(player, SuitModuleType.COMPUTE_CORE);
+        return computeCoreState(player) == CoreState.ACTIVE;
+    }
+
+    /** 0.1.10.4: state of the compute core of the wearer, best piece first (panel and matrix read-out). */
+    public enum CoreState { NONE, OFF, NO_POWER, ACTIVE }
+
+    private static final EquipmentSlot[] CORE_SLOTS = {EquipmentSlot.CHEST, EquipmentSlot.LEGS};
+
+    /**
+     * 0.1.10.4: every worn quantum chestplate or leggings that carries a compute core is checked on
+     * its own (switch on, suit energy for its drain); the best state counts. Before, only the first
+     * piece that carried the unit was looked at, so a core switched off on one piece hid an active
+     * core on the other.
+     */
+    public static CoreState computeCoreState(Player player) {
+        CoreState best = CoreState.NONE;
+        SuitModuleType core = SuitModuleType.COMPUTE_CORE;
+        for (EquipmentSlot slot : CORE_SLOTS) {
+            ItemStack piece = player.getItemBySlot(slot);
+            if (!SuitModules.isQuantumPiece(piece) || !SuitModules.has(piece, core)) continue;
+            CoreState state = !com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, core.featureKey()) ? CoreState.OFF
+                : !com.miophas.singularity_iteration.common.suit.SuitEnergyPool.canPay(player, piece, Math.max(1, core.drainPerTick())) ? CoreState.NO_POWER
+                : CoreState.ACTIVE;
+            if (state.ordinal() > best.ordinal()) best = state;
+        }
+        return best;
     }
 
     /** True when {@code key} is linked and within the capacity. */

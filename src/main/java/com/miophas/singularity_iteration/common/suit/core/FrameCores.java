@@ -178,13 +178,13 @@ public final class FrameCores {
         if (headCore != null && headCore.isSolar() && active(player, headCore) && feature(head, FrameCore.KEY_SOLAR)) solar(player, head, headCore);
         // graviton emergency repair: below 20 % health, 1 health per tick for 5 000 EU (as the heavy quantum chestplate)
         if (graviton && feature(chest, FrameCore.KEY_HEALING) && player.getHealth() < player.getMaxHealth() * GRAVITON_HEAL_THRESHOLD
-                && SuitModules.energy(player, chest) >= GRAVITON_HEAL_EU) {
+                && SuitModules.canPay(player, chest, GRAVITON_HEAL_EU)) {
             SuitModules.extract(player, chest, GRAVITON_HEAL_EU);
             player.heal(1.0F);
         }
         // propulsion repair: 2.0 health per second (normalised from the old 10 per second)
         if (propulsion && feature(chest, FrameCore.KEY_HEALING) && player.getHealth() < player.getMaxHealth()
-                && player.tickCount % 10 == 0 && SuitModules.energy(player, chest) >= PROPULSION_HEAL_EU) {
+                && player.tickCount % 10 == 0 && SuitModules.canPay(player, chest, PROPULSION_HEAL_EU)) {
             SuitModules.extract(player, chest, PROPULSION_HEAL_EU);
             player.heal(1.0F);
         }

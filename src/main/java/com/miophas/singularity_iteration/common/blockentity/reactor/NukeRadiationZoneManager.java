@@ -3,6 +3,7 @@ package com.miophas.singularity_iteration.common.blockentity.reactor;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.effect.mio_icif_effects;
 import com.miophas.singularity_iteration.common.util.RadiationProtectionUtil;
+import com.miophas.singularity_iteration.common.util.RadiationShielding;
 import com.miophas.singularity_iteration.core.runtime.radiation.RadiationState;
 import com.miophas.singularity_iteration.core.runtime.radiation.NuclearFalloutState;
 import java.util.Map;
@@ -27,6 +28,8 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
 public class NukeRadiationZoneManager {
     public static final long RADIATION_DURATION_MS = RadiationState.DURATION;
+    /** 0.1.10.5: blocks above the eyes that count as the roof of a fallout shelter. */
+    static final double ROOF_CHECK = 16;
 
     /** Retained public value type; it does not register itself or retain a Level. */
     public static class RadiationZone {
@@ -126,6 +129,13 @@ public class NukeRadiationZoneManager {
             for (var entity : level.getEntitiesOfClass(LivingEntity.class, box)) {
                 if (RadiationProtectionUtil.isWearingFullHazmat(entity)) continue;
                 float factor = intensity(level,entry.getKey(),zone, entity.getX(), entity.getY(), entity.getZ());
+                if (factor <= 0) continue;
+                // 0.1.10.5: a shelter needs shielding toward the blast centre and a shielding roof
+                // (fallout comes from both): the more open of the two lines sets the exposure
+                var eyes = entity.getEyePosition();
+                double toCentre = RadiationShielding.transmission(level, RadiationShielding.centre(c), entity, null);
+                double toSky = RadiationShielding.transmission(level, eyes.add(0, ROOF_CHECK, 0), eyes, null);
+                factor *= (float) Math.max(toCentre, toSky);
                 if (factor <= 0) continue;
                 var value = exposure.computeIfAbsent(entity, ignored -> new float[2]);
                 value[0] = Math.max(value[0], zone.power() / 500 * factor);

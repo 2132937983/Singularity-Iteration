@@ -224,6 +224,17 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 | `mio_icif:armory/drawn_blade` | 物品 | 以拔刀姿态飞到手中的物品。拔刀剑：重锋（SlashBlade: Resharped）的刀无需此标签即可识别。 |
 | `mio_icif:wingman/fulton_immune` | 实体类型 | 富尔顿回收不能带走的生物。首领（`c:bosses`）始终免疫。 |
 | `mio_icif:resonance_immune` | 方块 | 力场共振解体不会破坏的方块。 |
+| `mio_icif:radiation_shielding`（0.1.10.5） | 方块 | 强辐射屏蔽：直线上每个方块只让 10 % 通过。默认：铅块与 `#c:storage_blocks/lead`。 |
+| `mio_icif:radiation_shielding_weak`（0.1.10.5） | 方块 | 弱辐射屏蔽：每个方块让 50 % 通过。默认：强化石头、黑曜石、哭泣的黑曜石、强化深板岩、铁块、下界合金块、`#c:storage_blocks/steel`。 |
+| `mio_icif:blast_warning`（0.1.10.5） | 实体类型 | 爆炸预警单元把该实体视为爆炸物（半径 4）。半径、引信与标签用同名数据映射设置（见第 12 节）。 |
+| `c:capturing_not_supported` 等（0.1.10.5） | 实体类型 | 僚机加入 `c:capturing_not_supported`、`c:teleporting_not_supported`、`industrialforegoing:mob_imprisonment_tool_blacklist`、`ars_nouveau:jar_blacklist`、`enderio:soul_vial_blacklist`。 |
+
+### 5.2 僚机的出击令牌与崩溃保护（0.1.10.5）
+
+* 每次出动生成一个出击令牌（实体 NBT `Sortie`，世界数据 `mio_icif_wingman_sorties`）。套装归还时令牌关闭。带着已关闭令牌、或与已加载僚机同令牌进入世界的僚机是副本：`EntityJoinLevelEvent` 被取消，其物品清空且不掉落。没有令牌的旧僚机会被收养。
+* 对僚机使用任何物品都无效（`mobInteract` 返回 CONSUME，`PlayerInteractEvent.EntityInteract` 与 `EntityInteractSpecific` 被取消）。不要依赖“对僚机右键物品”的交互。
+* `LevelEntityTickGuardMixin` 包住每个实体的 tick：僚机或其所有者链通向僚机的实体（或带实体标签 `mio_icif.wingman_owned`）抛出异常时，僚机归还套装并离开，衍生实体被移除；其他实体照常走原版崩溃报告。
+* 僚机拥有玩家的全部属性（`ENTITY_INTERACTION_RANGE`、`SWEEPING_DAMAGE_RATIO` 等），给 `Mob` 读取玩家属性的武器模组不再抛出异常。
 
 ## 6. 能量（`core.api.energy`）
 
@@ -240,6 +251,18 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 * 可堆叠的空电池不带 `mio_icif:battery_energy` 组件：新的、合成的与放空的电池是同一种堆。旧版本以显式 0 保存的堆在加载时规范化（`verifyComponentsAfterLoad`）。
 * 多于一个的电池堆从不接收或输出电量：`addEnergy`、`extractEnergy`、FE 能力与物品 API 的转移都拒绝它；对可堆叠电池的这种堆，`setEnergy` 忽略正值。机器电池槽只放一个电池，所以把一堆放进充电槽时只留下一个。
 * 依赖“同电量的有电电池可堆叠”的附属电池可以重写 `getMaxStackSize(ItemStack)`。
+
+### 6.2 机器关闭的面（`IEnergyBlock#canConnect`，0.1.10.4）
+
+* EU 网络建立端口时，会向每个基于 `AbstractEnergyBlockEntity` 的机器询问 `canConnect(side)`。返回 false 的面不接收也不输出 EU，直接相贴的发电机或多方块电源（核反应堆及其反应仓）也一样；该面的外部 EU 与 FE 能力同样拒绝。
+* 基类开放全部六个面，因此现有机器的面不变。
+* 结果会变化的机器（例如取决于相邻方块）调用 `IndependentSiEnergy.changed(blockEntity)`，让网络重建端口。反应堆冷却液注入器用它关闭接触反应堆的面。
+
+### 6.3 节能附魔与费用检查（`core.api.item.EnergySaving`，0.1.10.5）
+
+* 每次扣费都先经过 `EnergySaving.apply`，实际扣除的 EU 低于名义费用，而且小额费用可能为 0。**不要拿实际扣除量和名义费用比较。**
+* 扣费前的电量检查使用新方法 `EnergySaving.maxCost(stack, amount)`（节能后的费用向上取整，`apply` 永远不会更多）。`IWeaponItem#canShoot`、`IJetpackItem#canFlyTick`、`IElectricToolItem#hasEnoughEnergy`、`IElectricArmorItem#hasEnoughEnergy` 与预制类 `AbstractElectricTool`、`AbstractElectricArmor` 的同名方法已改用它。
+* 套装费用：`SuitEnergyPool.canPay` / `payAll`（全有或全无，返回是否付清）/ `payPart`（返回名义费用中被覆盖的部分）。旧版本中智能诱导把扣除量与名义费用比较，带节能头盔时从不生效。
 
 ## 7. 蓝图建造机与资材接口
 
@@ -268,6 +291,7 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 | `client.AdvancementTabMiophaMixin`、`client.AdvancementWidgetHintMixin` | 进度界面布局。没有对应事件。 |
 | `client.FcsGlowMixin`、`client.FcsTeamColorMixin` | 套装传感器的客户端描边发光。没有对应事件。 |
 | `client.PlayerManeuverPoseMixin` | 飞行时的肢体姿态。`RenderPlayerEvent` 只能修改姿态矩阵，不能修改模型部件。 |
+| `LevelEntityTickGuardMixin`（0.1.10.5） | 包住 `Level#guardEntityTick` 中的实体 tick：僚机及其衍生实体出错时不再让世界崩溃。没有对应事件。 |
 | `IndependentChunkMixin`（核心） | 能量网络拓扑时钟，以及电缆/变压器方块实体工厂。NeoForge 没有创建方块实体的挂钩。 |
 
 ## 10. 版本规则（建议方案）
@@ -301,3 +325,38 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 
 * 交配研究列出自然杂交的候选（`PlantHybridization#calculateRatio`）。自然杂交无法产生的植物也无法研究。
 * 附属不要调用 `CropAnalyzerMenu`。它是内部类，菜单与槽位布局可能改变。
+
+## 12. 数据包扩展（0.1.10.5）
+
+### 12.1 复制清单（`data/<命名空间>/uu_replication/*.json`）
+
+复制机的价格先来自 IC2 参照表与配方推导，复制清单在其上加入固定价格、能量费用或禁止项。清单条目是“固定价格”：优先于参照表和配方价格，由它们合成的物品也会推导出价格。
+
+```json
+{
+  "entries": [
+    { "item": "minecraft:netherite_scrap", "uu": 1500 },
+    { "item": "minecraft:nether_star", "uu": 100000, "eu": 60000000 },
+    { "tag": "c:ores/tin", "uu": 1.4 },
+    { "item": "minecraft:dragon_egg", "deny": true },
+    { "item": "othermod:gem", "uu": 40, "required": false }
+  ]
+}
+```
+
+* `item` 或 `tag`（二选一）；`uu`：每件 mB（大于 0）；`eu`：可选，每件 EU（默认每 mB 5,120 EU，复制机每 tick 最多 8,192 EU）；`deny: true`：不可扫描、不可复制；`required: false`：未知 ID 静默跳过。
+* 文件按 ID（命名空间、路径）排序加载，同一物品以后者为准。错误条目只写警告并跳过，不影响其他价格。上限 4096 个物品，每个标签 512 个。
+* 默认清单 `data/mio_icif/uu_replication/defaults.json`（95 条）；数据包在同一路径放文件即可替换。
+* 运行时：`UuQuoteBook.energy(server, item)` 返回清单给出的每件 EU（无则 -1）。
+
+### 12.2 爆炸预警数据映射（`mio_icif:blast_warning`）
+
+实体类型数据映射，同步到客户端：`data/<命名空间>/data_maps/entity_type/blast_warning.json`。
+
+```json
+{ "values": { "othermod:c4": { "radius": 6, "fuse": 5, "label": "C4" } } }
+```
+
+* `radius`：危险半径（格，必填）；`fuse`：完整引信秒数（可选）；`label`：HUD 标签（可选，最多 9 个字符）。
+* 计时来源顺序：实体的公开 `getFuse()`（或 `getFuseTime`、`getFuseTicks`、`getFuseTimer`，单位 tick）→ `fuse` 减去客户端上的实体年龄 → 无计时（HUD 显示“--”）。
+* 没有数据映射时，实体类型标签 `mio_icif:blast_warning`、原版 `PrimedTnt` 子类、苦力怕子类、爆炸类投射物和名称含爆炸词的实体也会被识别（见指南“爆炸预警计时器”）。

@@ -1268,8 +1268,8 @@
   "quantum.mio_icif.action.force_field": "力場展開",
   "quantum.mio_icif.action.time_dilation": "時間歪曲",
   "quantum.mio_icif.action.volley": "一斉射撃",
-  "module.mio_icif.tooltip.action.single": "アクション（V/B）：%s、コヒーレンス %s、クールダウン %s 秒",
-  "module.mio_icif.tooltip.action.sustained": "トグルアクション（V/B）：%s、開始にコヒーレンス %s、毎秒 %s、終了後クールダウン %s 秒",
+  "module.mio_icif.tooltip.action.single": "アクション（%4$s）：%1$s、コヒーレンス %2$s、クールダウン %3$s 秒",
+  "module.mio_icif.tooltip.action.sustained": "トグルアクション（%5$s）：%1$s、開始にコヒーレンス %2$s、毎秒 %3$s、終了後クールダウン %4$s 秒",
   "module.mio_icif.tooltip.action_mk2": "Mk.II でアクション解放：%s",
   "gui.mio_icif.station.status.bay_max": "拡張ベイは装着済み",
   "gui.mio_icif.equipment_console.quantum": "量子コア",
@@ -1503,5 +1503,12 @@
   "mio_icif.subtitle.command.quantum_recall": "スーツが量子回収される",
   "mio_icif.subtitle.command.holo_open": "ホロテーブルが投影される",
   "mio_icif.subtitle.command.holo_close": "ホロテーブルが閉じる",
-  "mio_icif.subtitle.suit.thruster_land": "スラスターで着地する"
+  "mio_icif.subtitle.suit.thruster_land": "スラスターで着地する",
+  "gui.mio_icif.entangle.core.active": "演算コア 稼働",
+  "gui.mio_icif.entangle.core.off": "演算コア オフ",
+  "gui.mio_icif.entangle.core.no_power": "演算コア 電力不足",
+  "message.mio_icif.wingman.fault": "ウィングマンでエラーが起きたため、スーツを武装庫に戻しました（サーバーログを参照）。",
+  "message.mio_icif.wingman.copy_removed": "スーツがすでに帰還したウィングマンの複製を、アイテムなしで消去しました。",
+  "tooltip.mio_icif.containment_box.slots": "使用中のスロット：%1$s / %2$s",
+  "tooltip.mio_icif.containment_box.info": "使うと開く。中の放射性アイテムは被曝させない。"
 }

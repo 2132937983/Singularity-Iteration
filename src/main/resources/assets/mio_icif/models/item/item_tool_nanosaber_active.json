@@ -1,7 +1,15 @@
 {
-  "parent": "minecraft:item/handheld",
-  "render_type": "minecraft:translucent",
-  "textures": {
-    "layer0": "mio_icif:item/weapon/nanosaber_active"
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "mio_icif:item/3d/weapon/nanosaber_active"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/weapon/nanosaber_active"
+      },
+      "render_type": "minecraft:translucent"
+    }
   }
 }

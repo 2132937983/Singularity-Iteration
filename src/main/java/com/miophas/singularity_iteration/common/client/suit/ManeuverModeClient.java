@@ -156,6 +156,8 @@ public final class ManeuverModeClient {
     static final class Visual {
         float pitch, roll, turnSpeed, lastYaw, heave, transition, lean;
         boolean wasShock;
+        /** 0.1.10.4: wall-clock time of the last barrier crossing (start of the vapour-cone burst), 0 none. */
+        long coneAt;
         /** 0.1.10.2: in maneuver flight in the last tick (for the landing ring); the last fall speed. */
         boolean wasFlying;
         double lastVy;
@@ -441,10 +443,28 @@ public final class ManeuverModeClient {
         vis.lastVy = p.getY() - p.yo;
         float thr = throttleOf(p, 1.0F);
         boolean shock = thr >= ManeuverMode.SHOCK_THROTTLE;
-        if (shock && !vis.wasShock) boom(p, p.position().subtract(p.xo, p.yo, p.zo), local);
-        vis.wasShock = shock;
+        if (shock && !vis.wasShock) {
+            boom(p, p.position().subtract(p.xo, p.yo, p.zo), local);
+            vis.coneAt = System.currentTimeMillis();           // 0.1.10.4: the vapour cone bursts only now
+        }
+        // 0.1.10.4: re-armed only below the barrier minus a margin, so a throttle that hovers at the
+        // barrier does not boom and burst again and again
+        vis.wasShock = shock || vis.wasShock && thr >= ManeuverMode.SHOCK_THROTTLE - REARM_MARGIN;
         recordTrail(p, vis, thr);
-        if (thr > 0.55F && FcsClientConfig.vaporEffects()) vapour(p, thr);
+        // condensation puffs only during the burst (they used to stream all the time above throttle 0.55)
+        if (FcsClientConfig.vaporEffects() && coneAge(vis, System.currentTimeMillis()) < 0.45F) vapour(p, thr);
+    }
+
+    /** 0.1.10.4: throttle below the barrier at which a new barrier crossing counts again. */
+    private static final float REARM_MARGIN = 0.06F;
+    /** 0.1.10.4: life of the vapour-cone burst at a barrier crossing, in milliseconds. */
+    private static final long CONE_BURST_MS = 650;
+
+    /** Age of the vapour-cone burst of a flyer, 0..1, or 1 when there is none. */
+    private static float coneAge(Visual vis, long now) {
+        if (vis.coneAt == 0) return 1F;
+        float age = (now - vis.coneAt) / (float) CONE_BURST_MS;
+        return age < 0 ? 1F : Math.min(1F, age);
     }
 
     // ------------------------------------------------------------------ effects
@@ -479,10 +499,11 @@ public final class ManeuverModeClient {
     }
 
     /**
-     * Condensation puffs that come off the cone edge near the barrier. They need a speed of at least
-     * 0.5 blocks per tick. In each tick, one puff appears with a probability of 30 %, or 60 % above
-     * throttle 0.8. The puff is on a circle of radius 0.9..1.3 blocks around the flight axis, 0.8
-     * blocks behind the body centre.
+     * Condensation puffs that come off the cone edge during the burst at the barrier crossing
+     * (0.1.10.4; before, they streamed all the time above throttle 0.55). They need a speed of at
+     * least 0.5 blocks per tick. In each tick of the burst, two puffs appear with a probability of
+     * 70 %. A puff is on a circle of radius 0.9..1.3 blocks around the flight axis, 0.8 blocks behind
+     * the body centre.
      */
     private static void vapour(Player p, float thr) {
         var level = p.level();
@@ -490,8 +511,8 @@ public final class ManeuverModeClient {
         if (v.lengthSqr() < 0.25) return;
         Vec3 axis = v.normalize();
         Vec3 t = perp(axis), b = axis.cross(t).normalize();
-        if (level.random.nextFloat() > (thr > 0.8F ? 0.6F : 0.3F)) return;
-        for (int i = 0; i < 1; i++) {
+        if (level.random.nextFloat() > 0.7F) return;
+        for (int i = 0; i < 2; i++) {
             double a = level.random.nextDouble() * Math.PI * 2;
             double r = 0.9 + level.random.nextDouble() * 0.4;
             Vec3 at = p.position().add(0, p.getBbHeight() * 0.55, 0).subtract(axis.scale(0.8)).add(t.scale(Math.cos(a) * r)).add(b.scale(Math.sin(a) * r));
@@ -849,11 +870,13 @@ public final class ManeuverModeClient {
         // 0.1.8.0: the condensation cone is an alpha-blended white veil, so it shows on a bright sky.
         // (0.1.7.x drew it as an additive glow at about 6 % alpha at full throttle: it was not visible.)
         // In first person the own cone fades near the camera and shows only at the edge of the view.
+        // 0.1.10.4: the cone is a short burst at the barrier crossing, not a lasting cloud.
         VertexConsumer veil = buffers.getBuffer(SiRenderTypes.VAPOR);
         for (Player p : mc.level.players()) {
-            if (!vapour || !VISUALS.containsKey(p.getId())) continue;
-            float thr = throttleOf(p, partial);
-            if (thr > 0.5F) cone(veil, m, p, thr, partial, now, p == mc.player && firstPerson ? cam : null);
+            Visual vis = VISUALS.get(p.getId());
+            if (!vapour || vis == null) continue;
+            float age = coneAge(vis, now);
+            if (age < 1F) cone(veil, m, p, age, partial, now, p == mc.player && firstPerson ? cam : null);
         }
         buffers.endBatch(SiRenderTypes.VAPOR);
         // supersonic shock shell (additive) and the first-person rim of the deflection field
@@ -939,28 +962,32 @@ public final class ManeuverModeClient {
      *       alpha and a cold blue tint, which gives the cloud depth.</li>
      * </ul>
      *
-     * <p>Strength: a transonic peak at throttle 0.66 (Mach 1.1 on the HUD) that falls to 0 at
-     * +-0.14 from it, plus a thin sustained veil (0.2) above throttle 0.66, faded in from throttle
-     * 0.5 to 0.6. The axis is the movement from the last tick position to the interpolated position,
-     * or the view vector below 0.2 blocks of movement.
+     * <p>Strength (0.1.10.4): a burst of {@link #CONE_BURST_MS} at the barrier crossing. It snaps
+     * in over the first 10 % of its life, then fades with {@code (1 - t)^1.8} while the bell opens
+     * 50 % wider and 60 % longer and drifts back along the path, so the cloud is torn off behind the
+     * flyer. Up to 0.1.10.3 the cone peaked at throttle 0.66 and kept a thin veil at any higher
+     * throttle: at cruise it hung in front of the view all the time. The axis is the movement from
+     * the last tick position to the interpolated position, or the view vector below 0.2 blocks of
+     * movement.
      *
+     * @param age    age of the burst, 0..1
      * @param camera the camera position for the own cone in first person (near fade), else null
      */
-    private static void cone(VertexConsumer vc, Matrix4f m, Player p, float thr, float partial, long now, Vec3 camera) {
+    private static void cone(VertexConsumer vc, Matrix4f m, Player p, float age, float partial, long now, Vec3 camera) {
         Vec3 v = p.getPosition(partial).subtract(p.xo, p.yo, p.zo);
         Vec3 axis = v.lengthSqr() > 0.04 ? v.normalize() : p.getViewVector(partial);
         Vec3 t = perp(axis), b = axis.cross(t).normalize();
-        Vec3 apex = p.getPosition(partial).add(0, p.getBbHeight() * 0.55, 0).add(axis.scale(0.5));
-        float bump = Mth.clamp(1 - Math.abs(thr - 0.66F) / 0.14F, 0, 1);
-        float sustain = 0.2F * Mth.clamp((thr - 0.66F) / 0.19F, 0, 1);
-        float strength = Math.max(bump, sustain) * Mth.clamp((thr - 0.5F) / 0.1F, 0, 1);
+        float open = 1 - (float) Math.pow(1 - age, 2);
+        Vec3 apex = p.getPosition(partial).add(0, p.getBbHeight() * 0.55, 0).add(axis.scale(0.5 - 1.6 * open));
+        float strength = age < 0.1F ? age / 0.1F : (float) Math.pow(1 - (age - 0.1F) / 0.9F, 1.8);
         if (strength <= 0.01F) return;
         int seg = 40, rings = 10;
-        double length = 2.2;
+        double length = 2.2 * (1 + 0.6 * open);
+        double widen = 1 + 0.5 * open;
         // wrap the clock to 600 s: noise() floors its input to int, and epoch seconds x 2 overflow it
         double time = (now % 600_000L) / 1000.0;
         for (int shell = 0; shell < 2; shell++) {
-            double scaleR = shell == 0 ? 1.0 : 0.82;
+            double scaleR = (shell == 0 ? 1.0 : 0.82) * widen;
             float shellAlpha = shell == 0 ? 1.0F : 0.34F;
             float cr = shell == 0 ? 1.0F : 0.82F, cg = shell == 0 ? 1.0F : 0.92F;
             for (int r = 0; r < rings; r++) {

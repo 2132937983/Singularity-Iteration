@@ -132,6 +132,58 @@ public final class SuitEnergyPool {
         return MioIcifAPI.instance().getItemAPI().dischargeElectricArmor(consumer, cost, false);
     }
 
+    /**
+     * 0.1.10.5: the most a cost of {@code consumer} can take after its Energy Saving. Ask
+     * {@link #canPay} before a cost; never compare the EU that {@link #pay} returns with the
+     * nominal cost: with Energy Saving it is lower although the cost was met (up to 0.1.10.4 the
+     * guided-shot check failed on an enchanted helmet, and a Wingman in an enchanted suit flew home
+     * for low power).
+     */
+    public static long cost(ItemStack consumer, long amount) {
+        return EnergySaving.maxCost(consumer, amount);
+    }
+
+    /** 0.1.10.5: true when a cost of {@code consumer} can be paid now (Energy Saving applied). */
+    public static boolean canPay(LivingEntity entity, ItemStack consumer, long amount) {
+        if (amount <= 0) return true;
+        return !consumer.isEmpty() && available(entity, consumer) >= cost(consumer, amount);
+    }
+
+    /**
+     * 0.1.10.5: pays a cost of {@code consumer} in full or not at all. Energy Saving applies first;
+     * a cost that it reduces to 0 is met at no charge.
+     *
+     * @return true when the cost was met
+     */
+    public static boolean payAll(LivingEntity entity, ItemStack consumer, long amount) {
+        if (amount <= 0) return true;
+        if (consumer.isEmpty()) return false;
+        long cost = EnergySaving.apply(consumer, amount);
+        if (cost <= 0) return true;
+        var api = MioIcifAPI.instance().getItemAPI();
+        ItemStack[] set = fullSet(entity);
+        boolean pooled = set != null && contains(set, consumer);
+        long have = pooled ? stored(set) : Math.max(0, api.getElectricArmorStored(consumer));
+        if (have < cost) return false;
+        long paid = pooled ? drain(set, cost) : api.dischargeElectricArmor(consumer, cost, false);
+        return paid >= cost;
+    }
+
+    /**
+     * 0.1.10.5: pays as much of a cost of {@code consumer} as there is (Energy Saving applied) and
+     * returns the part of the nominal {@code amount} that is covered: all of it when the reduced
+     * cost was paid, else the paid share. For costs that several payers share (Wingman upkeep).
+     */
+    public static long payPart(LivingEntity entity, ItemStack consumer, long amount) {
+        if (consumer.isEmpty() || amount <= 0) return 0;
+        long cost = EnergySaving.apply(consumer, amount);
+        if (cost <= 0) return amount;
+        ItemStack[] set = fullSet(entity);
+        long paid = set != null && contains(set, consumer) ? drain(set, cost)
+            : MioIcifAPI.instance().getItemAPI().dischargeElectricArmor(consumer, cost, false);
+        return paid >= cost ? amount : (long) Math.floor((double) amount * paid / cost);
+    }
+
     private static boolean contains(ItemStack[] pieces, ItemStack stack) {
         for (ItemStack piece : pieces) if (piece == stack) return true;
         return false;

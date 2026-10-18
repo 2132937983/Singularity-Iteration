@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "mio_icif:normal/item_re_enriched_uranium"
+    },
+    {
+      "tag": "c:dusts/coal"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:resource/item_uran",
+    "count": 1
+  }
+}

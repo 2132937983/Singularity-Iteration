@@ -193,7 +193,7 @@ public final class QuantumCore {
         double rate = QuantumConfig.coherenceRegen() * (capacitor(player) ? 1.25 : 1.0) * (QuantumBandwidth.saturated(player) ? 0.5 : 1.0);
         float points = (float) Math.min(max - s.coherence, rate / 4.0);
         long cost = (long) Math.ceil(points * QuantumConfig.euPerCoherence());
-        if (points <= 0 || cost > 0 && SuitModules.energy(player, core) < cost) return;
+        if (points <= 0 || cost > 0 && !SuitModules.canPay(player, core, cost)) return;
         if (cost > 0) SuitModules.extract(player, core, cost);
         s.coherence = Math.min(max, s.coherence + points);
     }

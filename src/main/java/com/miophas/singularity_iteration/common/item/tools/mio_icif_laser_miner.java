@@ -21,7 +21,8 @@ import net.minecraft.world.phys.Vec3;
 
 /** Ten SI-declared modes with independent, explicit candidate tuning. */
 @SuppressWarnings("deprecation")
-public class mio_icif_laser_miner extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider {
+public class mio_icif_laser_miner extends mio_icif_tool_elc implements com.miophas.singularity_iteration.core.api.tool.IToolModeProvider,
+        com.miophas.singularity_iteration.core.api.item.IWeaponItem {
     public static final long LASER_MAX_ENERGY = 300_000;
     public static EntityType<mio_icif_laser_bullet> LASER_BULLET_ENTITY;
     private static final String MODE_KEY = "ScexLaserMode";
@@ -82,36 +83,82 @@ public class mio_icif_laser_miner extends mio_icif_tool_elc implements com.mioph
         }
         if (!hasEnoughEnergy(stack, mode.cost) || LASER_BULLET_ENTITY == null) return InteractionResultHolder.fail(stack);
         if (level.isClientSide) return InteractionResultHolder.consume(stack);   // no melee swing: the gun recoils instead
+        if (!fire(stack, player, mode, player.getYRot(), player.getXRot())) return InteractionResultHolder.fail(stack);
+        player.getCooldowns().addCooldown(this, 4);
+        WeaponChargeFx.emit(player, hand, mode.cost, 0xFF9F1C);   // 0.1.8.0 charge / compression effect
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.LASER_SHOT.get(), SoundSource.PLAYERS, 0.7F, 0.95F + level.random.nextFloat() * 0.1F);
+        return InteractionResultHolder.success(stack);
+    }
+
+    /** The bolts of one shot from {@code shooter} along yaw/pitch; pays {@code mode.cost}. False: nothing fired. */
+    private boolean fire(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, Mode mode, float yawDeg, float pitchDeg) {
+        Level level = shooter.level();
         var bullets = new ArrayList<mio_icif_laser_bullet>();
         boolean multiple = mode == Mode.SCATTER || mode == Mode.THREE_BY_THREE;
         int radius = multiple ? 1 : 0;
-        Vec3 direction = player.getLookAngle().normalize();
-        Vec3 right = Vec3.directionFromRotation(0, player.getYRot() + 90);
+        Vec3 direction = Vec3.directionFromRotation(pitchDeg, yawDeg).normalize();
+        Vec3 right = Vec3.directionFromRotation(0, yawDeg + 90);
         Vec3 up = right.cross(direction).normalize();
         for (int x = -radius; x <= radius; x++) for (int y = -radius; y <= radius; y++) {
-            var bullet = new mio_icif_laser_bullet(LASER_BULLET_ENTITY, player, level);
+            var bullet = new mio_icif_laser_bullet(LASER_BULLET_ENTITY, shooter, level);
             bullet.configure(mode);
             if (mode == Mode.THREE_BY_THREE) bullet.setPos(bullet.position().add(right.scale(x)).add(up.scale(y)));
-            float pitch = mode == Mode.HORIZONTAL ? 0 : player.getXRot();
-            float yaw = player.getYRot();
+            float pitch = mode == Mode.HORIZONTAL ? 0 : pitchDeg;
+            float yaw = yawDeg;
             if (mode == Mode.SCATTER) { pitch += y * 5; yaw += x * 5; }
             // A straight beam does not inherit the shooter's movement.
             Vec3 velocity = Vec3.directionFromRotation(pitch, yaw);
             bullet.shoot(velocity.x, velocity.y, velocity.z, 3.0F, 0.0F);
             bullets.add(bullet);
         }
-        if (!consumeEnergy(stack, mode.cost)) return InteractionResultHolder.fail(stack);
+        if (!consumeEnergy(stack, mode.cost)) return false;
         for (var bullet : bullets) {
             if (!level.addFreshEntity(bullet)) {
                 for (var spawned : bullets) spawned.discard();
                 addEnergy(stack, mode.cost);
-                return InteractionResultHolder.fail(stack);
+                return false;
             }
         }
-        player.getCooldowns().addCooldown(this, 4);
-        WeaponChargeFx.emit(player, hand, mode.cost, 0xFF9F1C);   // 0.1.8.0 charge / compression effect
-        level.playSound(null, player.getX(), player.getY(), player.getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.LASER_SHOT.get(), SoundSource.PLAYERS, 0.7F, 0.95F + level.random.nextFloat() * 0.1F);
-        return InteractionResultHolder.success(stack);
+        return true;
+    }
+
+    // ---- 0.1.10.4: AI shooters (Armory Wingman, IWeaponItem)
+    //
+    // A Wingman fires the selected mode. Its bolts never mine or blast (the laser bolt breaks blocks
+    // and explodes only for a player who may build), so the mining, explosive and nuclear modes hit
+    // living targets with their damage only; a mode without damage is fired as the combat mode.
+
+    /** Ticks between two shots of an AI shooter (a player: 4). */
+    public static final int AI_COOLDOWN = 10;
+
+    private static Mode aiMode(ItemStack stack) {
+        Mode mode = getMode(stack);
+        return mode.damage <= 0 || mode == Mode.NUCLEAR_EXPLOSIVE ? Mode.COMBAT : mode;
+    }
+
+    @Override public float getDamage() { return Mode.COMBAT.damage; }
+    @Override public float getRange() { return (float) Mode.MINING.range; }
+    @Override public long getEnergyPerShot() { return Mode.MINING.cost; }
+    @Override public boolean isRanged() { return true; }
+    @Override public int getFireRate() { return AI_COOLDOWN; }
+    @Override public double projectileSpeed() { return 3.0; }
+    @Override public double[] engagementRange() { return new double[]{8, 24}; }
+    @Override public boolean canShoot(ItemStack stack) { return hasEnoughEnergy(stack, aiMode(stack).cost); }
+
+    @Override
+    public int fireFrom(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, Vec3 direction, boolean mainHand) {
+        Level level = shooter.level();
+        if (level.isClientSide || LASER_BULLET_ENTITY == null || direction.lengthSqr() < 1.0E-6) return -1;
+        Mode mode = aiMode(stack);
+        if (!hasEnoughEnergy(stack, mode.cost)) return -1;
+        Vec3 d = direction.normalize();
+        float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
+        float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
+        if (!fire(stack, shooter, mode, yaw, pitch)) return -1;
+        WeaponChargeFx.emit(shooter, mainHand, mode.cost, 0xFF9F1C);
+        level.playSound(null, shooter.getX(), shooter.getY(), shooter.getZ(), com.miophas.singularity_iteration.common.registry.mio_icif_sounds.LASER_SHOT.get(),
+            SoundSource.NEUTRAL, 0.7F, 0.95F + level.random.nextFloat() * 0.1F);
+        return AI_COOLDOWN;
     }
     @Override public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);

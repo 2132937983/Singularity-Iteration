@@ -44,6 +44,7 @@ public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_laser_bull
                 .sized(0.5f, 0.5f)
                 .clientTrackingRange(4)
                 .updateInterval(10)
+                .setShouldReceiveVelocityUpdates(false)   // 0.1.10.4: exact velocity in the spawn data
                 .build("laser_bullet"));
 
     // Register the plasma bullet entity.
@@ -53,7 +54,8 @@ public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_plasma_bul
                 .sized(0.5f, 0.5f)
                 .clientTrackingRange(8)
                 .updateInterval(10)
-                 .build("plasma_bullet"));
+                .setShouldReceiveVelocityUpdates(false)   // 0.1.10.4: exact velocity in the spawn data
+                .build("plasma_bullet"));
 
     // 注册通用能量子弹实体
     public static final DeferredHolder<EntityType<?>, EntityType<mio_icif_energy_bullet>> ENERGY_BULLET =

@@ -296,7 +296,8 @@ public final class SuitModules {
         if (!type.switchable()) return true;               // passive hardware (micro-capacitor)
         if (type.needsVisor() && !hasVisor(player, UnitRef.of(type))) return false;
         // 0.1.8.0: a full set shares one energy pool (SuitEnergyPool). 0.1.8.6: the generators run on an empty suit.
-        if (type.needsPower() && SuitEnergyPool.available(player, piece) < Math.max(1, type.drainPerTick())) return false;
+        // 0.1.10.5: the drain after Energy Saving (SuitEnergyPool#canPay)
+        if (type.needsPower() && !SuitEnergyPool.canPay(player, piece, Math.max(1, type.drainPerTick()))) return false;
         // unit switches are toggle features: read the switch state directly, without building the feature list
         return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, type.featureKey());
     }
@@ -307,7 +308,7 @@ public final class SuitModules {
         ItemStack piece = wornPieceWith(player, unit);
         if (piece.isEmpty()) return false;
         if (unit.needsVisor() && !hasVisor(player, unit)) return false;
-        if (SuitEnergyPool.available(player, piece) < Math.max(1, unit.drainPerTick())) return false;
+        if (!SuitEnergyPool.canPay(player, piece, Math.max(1, unit.drainPerTick()))) return false;
         return com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, unit.featureKey());
     }
 
@@ -349,6 +350,14 @@ public final class SuitModules {
     /** Energy available to a cost of {@code piece}: the pool of a full set, else the piece. */
     public static long energy(Player player, ItemStack piece) {
         return SuitEnergyPool.available(player, piece);
+    }
+
+    /**
+     * 0.1.10.5: true when the wearer can pay a cost of {@code piece} now. Energy Saving of the
+     * piece applies, as it does to the payment ({@link SuitEnergyPool#canPay}).
+     */
+    public static boolean canPay(Player player, ItemStack piece, long amount) {
+        return SuitEnergyPool.canPay(player, piece, amount);
     }
 
     /** Units active on the player right now (cheap: at most 4 worn pieces). */

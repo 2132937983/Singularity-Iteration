@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:block_lead",
+    { "id": "#c:storage_blocks/lead", "required": false }
+  ]
+}

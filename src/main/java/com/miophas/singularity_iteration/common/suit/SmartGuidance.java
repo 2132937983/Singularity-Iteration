@@ -126,7 +126,8 @@ public final class SmartGuidance {
         }
         if (target == null) return;
         var piece = SuitModules.wornPieceWith(player, SuitModuleType.SMART_GUIDANCE);
-        if (piece.isEmpty() || SuitModules.extract(player, piece, GUIDED_EU) < GUIDED_EU) return;
+        // 0.1.10.5: all or nothing; the paid EU is lower than GUIDED_EU with Energy Saving
+        if (piece.isEmpty() || !SuitEnergyPool.payAll(player, piece, GUIDED_EU)) return;
         // pre-lock: the projectile leaves already pointed at the lead point
         Vec3 v = p.getDeltaMovement();
         double speed = v.length();

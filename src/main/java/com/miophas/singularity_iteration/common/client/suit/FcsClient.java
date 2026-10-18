@@ -176,7 +176,7 @@ public final class FcsClient {
             double d = Math.sqrt(b.entity().distanceToSqr(player));
             if (d > b.radius() * 2.5) continue;
             close = true;
-            soonest = Math.min(soonest, b.seconds());
+            soonest = Math.min(soonest, b.timed() ? b.seconds() : 3F);   // 0.1.10.5: a charge without a timer beeps slowly
         }
         if (!close) return;
         // cadence speeds up as the fuse burns: 12 ticks apart at 3 s, 2 ticks apart near zero

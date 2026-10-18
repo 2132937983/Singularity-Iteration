@@ -15,11 +15,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 /**
@@ -89,6 +93,19 @@ public final class WingmanService {
         list.remove(w);
         if (list.isEmpty()) BY_OWNER.remove(w.owner());
         else renumber(list);
+    }
+
+    /** 0.1.10.5: true while a Wingman is loaded anywhere on the server. */
+    static boolean anyTracked() {
+        return !BY_OWNER.isEmpty();
+    }
+
+    /** 0.1.10.5: true when a loaded Wingman other than {@code self} flies sortie {@code token}. */
+    static boolean flying(@org.jetbrains.annotations.Nullable UUID owner, UUID token, WingmanEntity self) {
+        List<WingmanEntity> list = owner == null ? null : BY_OWNER.get(owner);
+        if (list == null) return false;
+        for (WingmanEntity w : list) if (w != self && !w.isRemoved() && token.equals(w.sortie())) return true;
+        return false;
     }
 
     private static void renumber(List<WingmanEntity> list) {
@@ -203,5 +220,36 @@ public final class WingmanService {
     @SubscribeEvent
     static void onServerStopped(ServerStoppedEvent event) {
         BY_OWNER.clear();
+    }
+
+    /** 0.1.10.5: a copy of a Wingman does not enter a level (see {@link WingmanSorties}). */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    static void onJoin(EntityJoinLevelEvent event) {
+        if (event.getLevel().isClientSide() || !(event.getEntity() instanceof WingmanEntity w)) return;
+        if (!w.admit()) event.setCanceled(true);
+    }
+
+    /**
+     * 0.1.10.5: no item works on a Wingman. Mob capture tools (soul vials, the mob imprisonment
+     * tool, containment jars, capture balls used by hand) take a mob through this interaction; a
+     * captured Wingman kept its suit in the item while the Armory got the suit back. The owner's
+     * empty-hand recall ({@link WingmanEntity#mobInteract}) is not affected. Tools that skip these
+     * events are stopped by the entity type tags ({@code c:capturing_not_supported} and others)
+     * and, in the end, by the sortie check.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    static void onInteract(PlayerInteractEvent.EntityInteract event) {
+        if (event.getTarget() instanceof WingmanEntity && !event.getItemStack().isEmpty()) {
+            event.setCancellationResult(InteractionResult.CONSUME);
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    static void onInteractAt(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (event.getTarget() instanceof WingmanEntity && !event.getItemStack().isEmpty()) {
+            event.setCancellationResult(InteractionResult.CONSUME);
+            event.setCanceled(true);
+        }
     }
 }

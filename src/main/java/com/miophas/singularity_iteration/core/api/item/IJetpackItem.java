@@ -73,7 +73,8 @@ public interface IJetpackItem extends IBatteryItem, IArmorModeFeatureItem {
     /** EN: True when the stack has the energy for one flight tick. ZH: 物品有足够一个飞行 tick 的能量时为真。JA: 1 飛行 tick 分の電力があれば真。 */
     default boolean canFlyTick(ItemStack stack) {
         long cost = Math.max(0L, getEnergyPerTickFlying());
-        return !stack.isEmpty() && stack.getCount() == 1 && getEnergy(stack) >= cost;
+        // 0.1.10.5: the cost after Energy Saving, as consumeFlyTick takes it
+        return !stack.isEmpty() && stack.getCount() == 1 && getEnergy(stack) >= EnergySaving.maxCost(stack, cost);
     }
 
     /** EN: Takes the energy of one flight tick (Energy Saving applies); all or nothing. ZH: 扣除一个飞行 tick 的能量（适用节能），要么全部要么不扣。JA: 1 飛行 tick 分の電力を取る（省エネ適用）。全部取るか、まったく取らない。 */

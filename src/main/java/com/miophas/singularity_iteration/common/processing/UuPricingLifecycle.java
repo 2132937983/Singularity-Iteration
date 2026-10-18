@@ -88,6 +88,13 @@ public final class UuPricingLifecycle {
                     .orElseThrow(() -> new IOException("Missing explicit scanner eligibility")).openAsReader()) {
                 scanEligible = UuScanEligibility.read(reader, server.registryAccess(), reference.denied());
             }
+            // 0.1.10.5: data-pack replication lists (uu_replication/*.json) are fixed prices on top
+            // of the reference catalog; an item they price is no longer denied (and needs no
+            // denied-scan eligibility), an item they deny loses its price
+            var overrides = UuReplicationOverrides.load(server.getResourceManager(), server.registryAccess());
+            reference = overrides.apply(reference);
+            var stillDenied = reference.denied();
+            scanEligible = scanEligible.stream().filter(stillDenied::contains).collect(java.util.stream.Collectors.toUnmodifiableSet());
             long catalogNanos = System.nanoTime() - started;
             long solveStarted = System.nanoTime();
             var recipes = UuCraftingRecipes.read(server.getRecipeManager(), server.registryAccess());
@@ -105,7 +112,9 @@ public final class UuPricingLifecycle {
             var index = new IndependentUuValueIndex(16384);
             for (var row : solved.values().entrySet())
                 if (!index.register(row.getKey(), row.getValue())) throw new IllegalStateException("Invalid resolved quote");
-            long generation = UuQuoteBook.install(server, index, reference.denied(), scanEligible);
+            var energy = new HashMap<IndependentUuValueIndex.Key, Long>();
+            for (var row : overrides.energy().entrySet()) if (index.lookup(row.getKey()).isPresent()) energy.put(row.getKey(), row.getValue());
+            long generation = UuQuoteBook.install(server, index, reference.denied(), scanEligible, energy);
             var result = new Report(generation, reference.prices().size(), reference.denied().size(), solved.derived(),
                     reference.unmapped(), recipes.unsupported() + processing.unsupported() + processing.policyDisabled() + componentScopedRecipes,
                     solved.work(), mappings.migrations() - priorMigrations,
@@ -113,6 +122,8 @@ public final class UuPricingLifecycle {
             synchronized (REPORTS) { REPORTS.put(server, result); }
             LogUtils.getLogger().info("[UU] Published {} reference and {} derived quotes; {} denied, {} unmapped, {} unsupported recipes",
                     result.reference(), result.derived(), result.denied(), result.unmapped(), result.unsupportedRecipes());
+            LogUtils.getLogger().info("[UU] Replication lists: {} entries from {} files ({} skipped, {} items priced, {} denied, {} with an EU cost)",
+                    overrides.entries(), overrides.files(), overrides.skipped(), overrides.prices().size(), overrides.denied().size(), energy.size());
         } catch (Exception failure) {
             // A failed new generation must not keep old prices valid against changed recipes.
             UuQuoteBook.remove(server);

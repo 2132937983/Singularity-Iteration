@@ -91,7 +91,7 @@ public class mio_icif_normal {
     public static final DeferredItem<MugDrinkItem> COFFEE_1 = ITEMS.register("normal/item_coffee_1", () -> new MugDrinkItem(MugDrinkItem.MugType.DARK_COFFEE, new Item.Properties().stacksTo(1)));
     public static final DeferredItem<MugDrinkItem> COFFEE_2 = ITEMS.register("normal/item_coffee_2", () -> new MugDrinkItem(MugDrinkItem.MugType.COFFEE, new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item> COIN = ITEMS.register("normal/item_coin", () -> new mio_icif_coin(new Item.Properties()));
-    public static final DeferredItem<Item> CONTAIN_MENT_BOX = ITEMS.register("normal/item_contain_ment_box", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> CONTAIN_MENT_BOX = ITEMS.register("normal/item_contain_ment_box", () -> new ContainmentBoxItem(new Item.Properties()));   // 0.1.10.5: a real box
 
     public static final DeferredItem<Item> CROP_ANALYZER = ITEMS.register("normal/item_crop_analyzer", () -> new CropAnalyzerItem(new Item.Properties()));
 

@@ -70,9 +70,10 @@ public final class NanoHud {
         float res = Mth.clamp(s.reserve() / 100F, 0, 1);
         segmented(g, cx, cy, r, l0, l1, segs, 1F, 2.2F, FcsDraw.argb(CYAN, 0.16F * a));
         segmented(g, cx, cy, r, l0, l1, segs, res, 2.2F, FcsDraw.argb(CYAN, 0.9F * a));
-        // cost markers of the two keys on the reserve arc
-        costMarker(g, cx, cy, r, l0, l1, s.primaryKey(), "V", a, s.reserve());
-        costMarker(g, cx, cy, r, l0, l1, s.secondaryKey(), "B", a, s.reserve());
+        // cost markers of the two keys on the reserve arc (0.1.10.4: labelled with the bound keys)
+        String vk = NanoClient.keyLabel(NanoClient.PRIMARY_KEY, "V"), bk = NanoClient.keyLabel(NanoClient.SECONDARY_KEY, "B");
+        costMarker(g, cx, cy, r, l0, l1, s.primaryKey(), vk, a, s.reserve());
+        costMarker(g, cx, cy, r, l0, l1, s.secondaryKey(), bk, a, s.reserve());
         float heat = Mth.clamp(s.heat() / Math.max(1, s.heatCap()), 0, 1);
         int heatCol = s.overheated() ? RED : heat > 0.7F ? RED : heat > 0.4F ? AMBER : CYAN;
         float pulse = s.overheated() ? 0.55F + 0.45F * (float) Math.sin(t * 0.6F) : 1F;
@@ -100,8 +101,8 @@ public final class NanoHud {
         FcsDraw.text(g, heatText, cx + r + 5, cy + 9, FcsDraw.argb(heatCol, 0.85F * a * pulse), 0.5F);
 
         // ---- burst chips
-        chip(g, cx - 30, cy + 22, 0, s.primaryKey(), s.primaryCooldown(), s.primaryCooldownMax(), s, t, a, "V");
-        chip(g, cx + 30, cy + 22, 1, s.secondaryKey(), s.secondaryCooldown(), s.secondaryCooldownMax(), s, t, a, "B");
+        chip(g, cx - 30, cy + 22, 0, s.primaryKey(), s.primaryCooldown(), s.primaryCooldownMax(), s, t, a, vk);
+        chip(g, cx + 30, cy + 22, 1, s.secondaryKey(), s.secondaryCooldown(), s.secondaryCooldownMax(), s, t, a, bk);
 
         // ---- HF sync
         if (NanoClient.hfSync) hfSync(g, cx, cy - 27, t, a);
@@ -152,6 +153,11 @@ public final class NanoHud {
         if (type == null) return 0;
         var spec = com.miophas.singularity_iteration.common.suit.nano.NanoConfig.burst(type);
         return spec == null ? 0 : spec.reserveCost();
+    }
+
+    /** 0.1.10.4: text scale that fits a key label into the 7 px key cap (at most {@code max}). */
+    static float keyScale(String keyName, float max) {
+        return Math.min(max, 6.6F / Math.max(1F, FcsDraw.width(keyName, 1F)));
     }
 
     static String label(String key) {
@@ -219,7 +225,8 @@ public final class NanoHud {
         FcsDraw.line(g, x0, y0 + 3, x0 + 3, y0, 0.8F, edge);
         // key cap
         g.fill((int) x0 + 2, (int) y0 + 2, (int) x0 + 9, (int) y0 + 9, FcsDraw.argb(col, (empty ? 0.25F : 0.85F) * a));
-        FcsDraw.textCentered(g, keyName, x0 + 5.5F, y0 + 3.2F, FcsDraw.argb(0x041014, 0.95F * a), 0.5F);
+        float ks = keyScale(keyName, 0.5F);
+        FcsDraw.textCentered(g, keyName, x0 + 5.5F, y0 + 3.2F + (0.5F - ks) * 4, FcsDraw.argb(0x041014, 0.95F * a), ks);
         FcsDraw.text(g, camoOn ? "OFF" : label(key), x0 + 11, y0 + 3.2F, FcsDraw.argb(ready || camoOn ? 0xEAF6FF : 0x8A9AA6, 0.95F * a), 0.5F);
         // use flash: expanding bracket
         if (sinceUse < 8) {
@@ -412,10 +419,10 @@ public final class NanoHud {
         FcsDraw.line(g, x0, y + h, x0 + w, y + h, 0.8F, ec);
         FcsDraw.line(g, x0, y, x0, y + h, 0.8F, ec);
         FcsDraw.line(g, x0 + w, y, x0 + w, y + h, 0.8F, ec);
-        String key = NanoClient.CORE_KEY == null ? "R" : NanoClient.CORE_KEY.getTranslatedKeyMessage().getString();
-        if (key.length() > 3) key = key.substring(0, 3);
+        String key = NanoClient.keyLabel(NanoClient.CORE_KEY, "R");
         g.fill((int) x0 + 2, (int) y + 2, (int) x0 + 9, (int) y + 8, FcsDraw.argb(col, 0.85F));
-        FcsDraw.textCentered(g, key, x0 + 5.5F, y + 2.6F, FcsDraw.argb(0x140A02, 0.95F), 0.45F);
+        float ks = keyScale(key, 0.45F);
+        FcsDraw.textCentered(g, key, x0 + 5.5F, y + 2.6F + (0.45F - ks) * 4, FcsDraw.argb(0x140A02, 0.95F), ks);
         FcsDraw.text(g, "ARC", x0 + 11, y + 2.8F, FcsDraw.argb(cd <= 0 ? 0xFFF3E0 : 0x9A8A7A, 0.95F), 0.5F);
         if (cd > 0) {
             float k = 1 - cd / (float) cdMax;

@@ -1,7 +1,15 @@
 {
-  "parent": "minecraft:item/handheld",
-  "textures": {
-    "layer0": "mio_icif:item/weapon/nanosaber"
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "mio_icif:item/3d/weapon/nanosaber"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/weapon/nanosaber"
+      }
+    }
   },
   "overrides": [
     {

@@ -103,20 +103,22 @@ public class AbstractElectricTool extends AbstractBattery implements IElectricTo
 
     @Override
     public boolean hasEnoughEnergy(ItemStack stack) {
-        return getEnergy(stack) >= energyPerUse;
+        // 0.1.10.5: the cost after Energy Saving, as the debit takes it
+        return getEnergy(stack) >= com.miophas.singularity_iteration.core.api.item.EnergySaving.maxCost(stack, energyPerUse);
     }
 
     // ==================== Energy use ====================
 
     /**
      * Checks if the tool has enough energy for the given amount.
+     * 0.1.10.5: Energy Saving of the stack applies, as it does to {@link #consumeEnergy}.
      *
      * @param stack  the item stack
-     * @param amount the necessary energy (EU)
-     * @return true if the stored energy is at least {@code amount}; false if {@code amount} is negative
+     * @param amount the necessary energy (EU) before Energy Saving
+     * @return true if the stored energy covers {@code amount} after Energy Saving; false if {@code amount} is negative
      */
     public boolean hasEnoughEnergy(ItemStack stack, long amount) {
-        return amount >= 0 && getEnergy(stack) >= amount;
+        return amount >= 0 && getEnergy(stack) >= com.miophas.singularity_iteration.core.api.item.EnergySaving.maxCost(stack, amount);
     }
 
     /**

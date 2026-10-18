@@ -3076,8 +3076,8 @@
   "quantum.mio_icif.action.force_field": "力场展开",
   "quantum.mio_icif.action.time_dilation": "时间扭曲",
   "quantum.mio_icif.action.volley": "纠缠齐射",
-  "module.mio_icif.tooltip.action.single": "行动（V/B）：%s，%s 相干度，冷却 %s 秒",
-  "module.mio_icif.tooltip.action.sustained": "开关行动（V/B）：%s，启动 %s 相干度，每秒 %s，结束后冷却 %s 秒",
+  "module.mio_icif.tooltip.action.single": "行动（%4$s）：%1$s，%2$s 相干度，冷却 %3$s 秒",
+  "module.mio_icif.tooltip.action.sustained": "开关行动（%5$s）：%1$s，启动 %2$s 相干度，每秒 %3$s，结束后冷却 %4$s 秒",
   "module.mio_icif.tooltip.action_mk2": "Mk.II 解锁行动：%s",
   "gui.mio_icif.station.status.bay_max": "已装有扩展槽",
   "gui.mio_icif.equipment_console.quantum": "量子核心",
@@ -3311,5 +3311,12 @@
   "mio_icif.subtitle.command.quantum_recall": "套装量子回收",
   "mio_icif.subtitle.command.holo_open": "全息台投射",
   "mio_icif.subtitle.command.holo_close": "全息台收起",
-  "mio_icif.subtitle.suit.thruster_land": "推进器着陆"
+  "mio_icif.subtitle.suit.thruster_land": "推进器着陆",
+  "gui.mio_icif.entangle.core.active": "演算核心 运行",
+  "gui.mio_icif.entangle.core.off": "演算核心 已关闭",
+  "gui.mio_icif.entangle.core.no_power": "演算核心 缺电",
+  "message.mio_icif.wingman.fault": "僚机发生错误，已将套装归还武装库（详见服务器日志）。",
+  "message.mio_icif.wingman.copy_removed": "一个套装已归还的僚机副本已被移除，不带任何物品。",
+  "tooltip.mio_icif.containment_box.slots": "已用格数：%1$s / %2$s",
+  "tooltip.mio_icif.containment_box.info": "使用即可打开。放在里面的放射性物品不会辐射你。"
 }

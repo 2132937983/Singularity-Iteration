@@ -155,6 +155,11 @@ public class mio_icif_lapis_reactor_coolant_injector extends AbstractProcessingM
         // 调用父类tick方法处理升级和充放电等逻辑
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
+        // 0.1.10.4: faces toward the reactor stay closed for energy (see ReactorInjectorFaces)
+        if (blockEntity.closedFaces < 0 || level.getGameTime() % 20 == 0) {
+            blockEntity.closedFaces = ReactorInjectorFaces.refresh(blockEntity, blockEntity.closedFaces);
+        }
+
         // 尝试修复操作无需冷却延迟，直接尝试修复
         blockEntity.tryRepairCondensators();
     }
@@ -280,6 +285,18 @@ public class mio_icif_lapis_reactor_coolant_injector extends AbstractProcessingM
             }
         }
         return -1;
+    }
+
+    /** 0.1.10.4: closed faces of the last check (-1 before the first one). */
+    private int closedFaces = -1;
+
+    /**
+     * 0.1.10.4: no electrical connection on the front (toward the reactor) nor on any face that
+     * touches a reactor part: the reactor's packets (up to 8192 EU) would blow up this MV machine.
+     */
+    @Override
+    public boolean canConnect(@Nullable Direction side) {
+        return !ReactorInjectorFaces.closed(this, side) && super.canConnect(side);
     }
 
     @Override

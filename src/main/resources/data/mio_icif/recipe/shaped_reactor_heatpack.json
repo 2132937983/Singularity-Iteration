@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PRP",
+    "RLR",
+    "PRP"
+  ],
+  "key": {
+    "P": {
+      "tag": "c:plates/copper"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "L": {
+      "item": "minecraft:lava_bucket"
+    }
+  },
+  "result": {
+    "id": "mio_icif:reactor/item_reactor_heatpack",
+    "count": 1
+  }
+}

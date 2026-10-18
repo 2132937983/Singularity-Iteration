@@ -67,6 +67,36 @@ public final class NanoClient {
     private static float airFall;
     private static boolean wasOnGround = true;
 
+    /**
+     * 0.1.10.4: HUD label of a key as it is bound now (Controls screen), not its default letter.
+     * Short names stay as they are ("V", "F4"); longer names become the initials of their words
+     * plus their digits ("Left Alt" = LA, "Mouse Button 4" = MB4, "Keypad 1" = K1), else their
+     * first three characters. An unbound key reads "-"; {@code fallback} is used before the key
+     * mappings are registered.
+     */
+    public static String keyLabel(@Nullable KeyMapping key, String fallback) {
+        if (key == null) return fallback;
+        if (key.isUnbound()) return "-";
+        return compactKey(key.getTranslatedKeyMessage().getString());
+    }
+
+    static String compactKey(String name) {
+        String s = name.trim();
+        if (s.isEmpty()) return "?";
+        if (s.length() <= 3) return s.toUpperCase(java.util.Locale.ROOT);
+        String[] words = s.split("[\\s_\\-]+");
+        if (words.length > 1) {
+            StringBuilder out = new StringBuilder();
+            for (String w : words) {
+                if (w.isEmpty()) continue;
+                if (w.chars().allMatch(Character::isDigit)) out.append(w);
+                else out.append(Character.toUpperCase(w.charAt(0)));
+            }
+            if (out.length() > 0) return out.length() > 3 ? out.substring(0, 3) : out.toString();
+        }
+        return s.substring(0, 3);
+    }
+
     /** Speed profile of the dash over {@link NanoBursts#DASH_TICKS} ticks (sum normalised at use). */
     private static final float[] DASH_PROFILE = {1.0F, 1.0F, 0.92F, 0.78F, 0.56F, 0.34F};
 
@@ -109,6 +139,12 @@ public final class NanoClient {
                 view.camoTicks = s.camoTicks();
                 return view;
             };
+            // 0.1.10.4: unit tooltips name the keys as they are bound now
+            com.miophas.singularity_iteration.common.suit.SuitModuleItem.ACTION_KEYS = () -> fullName(PRIMARY_KEY, "V") + "/" + fullName(SECONDARY_KEY, "B");
+        }
+
+        private static String fullName(@Nullable KeyMapping key, String fallback) {
+            return key == null ? fallback : key.getTranslatedKeyMessage().getString();
         }
     }
 

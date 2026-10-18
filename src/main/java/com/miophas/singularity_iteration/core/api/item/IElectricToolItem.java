@@ -19,9 +19,9 @@ public interface IElectricToolItem extends IBatteryItem {
     int getToolTier();
 
     /**
-     * Checks if the stack has sufficient energy for one use.
+     * Checks if the stack has sufficient energy for one use (0.1.10.5: after Energy Saving).
      */
     default boolean hasEnoughEnergy(ItemStack stack) {
-        return getEnergy(stack) >= getEnergyPerUse();
+        return getEnergy(stack) >= EnergySaving.maxCost(stack, getEnergyPerUse());
     }
 }

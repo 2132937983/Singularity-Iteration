@@ -271,6 +271,17 @@ Singularity Iteration posts these events on `NeoForge.EVENT_BUS`, on the server 
 | `mio_icif:armory/drawn_blade` | Items | Items that fly to the hand as a drawn blade. SlashBlade: Resharped blades are found without the tag. |
 | `mio_icif:wingman/fulton_immune` | Entity types | Mobs that the Fulton recovery cannot take. Bosses (`c:bosses`) are always immune. |
 | `mio_icif:resonance_immune` | Blocks | Blocks that the Resonance Deconstruction Field does not break. |
+| `mio_icif:radiation_shielding` (0.1.10.5) | Blocks | Strong radiation shielding: each block on the line lets 10 % through. Default: lead blocks and `#c:storage_blocks/lead`. |
+| `mio_icif:radiation_shielding_weak` (0.1.10.5) | Blocks | Weak radiation shielding: each block lets 50 % through. Default: Reinforced Stone, obsidian, crying obsidian, reinforced deepslate, iron block, netherite block, `#c:storage_blocks/steel`. |
+| `mio_icif:blast_warning` (0.1.10.5) | Entity types | The blast warning unit treats the entity as an explosive (radius 4). The data map of the same name sets radius, fuse and label (section 12). |
+| `c:capturing_not_supported` and others (0.1.10.5) | Entity types | The Wingman is in `c:capturing_not_supported`, `c:teleporting_not_supported`, `industrialforegoing:mob_imprisonment_tool_blacklist`, `ars_nouveau:jar_blacklist`, `enderio:soul_vial_blacklist`. |
+
+### 5.2 Wingman sortie tokens and crash guard (0.1.10.5)
+
+* Each deployment gets a sortie token (entity NBT `Sortie`, world data `mio_icif_wingman_sorties`). The token closes when the suit goes home. A Wingman that enters a level with a closed token, or with the token of a loaded Wingman, is a copy: its `EntityJoinLevelEvent` is cancelled and its items are cleared without a drop. An old Wingman without a token is adopted.
+* No item works on a Wingman (`mobInteract` returns CONSUME; `PlayerInteractEvent.EntityInteract` and `EntityInteractSpecific` are cancelled). Do not rely on item interactions with a Wingman.
+* `LevelEntityTickGuardMixin` wraps the tick of every entity: when a Wingman, or an entity whose owner chain leads to a Wingman (or that carries the entity tag `mio_icif.wingman_owned`), throws, the Wingman sends its suit home and leaves and the other entity is removed. Every other entity goes to the vanilla crash report as before.
+* A Wingman has every player attribute (`ENTITY_INTERACTION_RANGE`, `SWEEPING_DAMAGE_RATIO` and the others), so weapon mods that read player attributes from a `Mob` no longer throw.
 
 ## 6. Energy (`core.api.energy`)
 
@@ -304,6 +315,23 @@ distribution by default (`distributionMode=fair` in `config/core.ini`, or the co
   slot leaves one battery there.
 * Addon batteries that relied on charged batteries with the same charge stacking can override
   `getMaxStackSize(ItemStack)`.
+
+### 6.2 Closed faces of a machine (`IEnergyBlock#canConnect`, 0.1.10.4)
+
+* The EU network now asks every machine built on `AbstractEnergyBlockEntity` for
+  `canConnect(side)` when it builds its ports. A side that returns false takes and gives no EU,
+  also from a generator or a multi-block source (a nuclear reactor and its chambers) that touches
+  it directly; the external EU and FE capabilities of that side refuse too.
+* The base class opens all six sides, so existing machines keep their faces.
+* A machine whose answer changes (for example by its neighbours) calls
+  `IndependentSiEnergy.changed(blockEntity)` so the network rebuilds its ports. The reactor coolant
+  injectors use this to close the faces that touch the reactor.
+
+### 6.3 Energy Saving and cost checks (`core.api.item.EnergySaving`, 0.1.10.5)
+
+* Every debit goes through `EnergySaving.apply` first: the EU taken is lower than the nominal cost, and a small cost can be 0. **Never compare the EU taken with the nominal cost.**
+* An energy check before a debit uses the new `EnergySaving.maxCost(stack, amount)` (the reduced cost rounded up; `apply` never takes more). `IWeaponItem#canShoot`, `IJetpackItem#canFlyTick`, `IElectricToolItem#hasEnoughEnergy`, `IElectricArmorItem#hasEnoughEnergy` and the same methods of the prefabs `AbstractElectricTool` and `AbstractElectricArmor` use it now.
+* Suit costs: `SuitEnergyPool.canPay` / `payAll` (all or nothing, returns whether the cost was met) / `payPart` (returns the share of the nominal cost that is covered). Up to 0.1.10.4 Smart Guidance compared the EU taken with the nominal cost and never worked with an enchanted helmet.
 
 ## 7. Blueprint Builder and Material Interface
 
@@ -342,6 +370,7 @@ The remaining mixins and the reason for each:
 | `client.AdvancementTabMiophaMixin`, `client.AdvancementWidgetHintMixin` | Advancement screen layout. No event exists. |
 | `client.FcsGlowMixin`, `client.FcsTeamColorMixin` | Client-only outline glow of the suit sensors. No event exists. |
 | `client.PlayerManeuverPoseMixin` | Limb poses of the flight. `RenderPlayerEvent` changes only the pose stack, not the model parts. |
+| `LevelEntityTickGuardMixin` (0.1.10.5) | Wraps the entity tick in `Level#guardEntityTick`: an error of a Wingman or of an entity it made no longer crashes the level. No event exists. |
 | `IndependentChunkMixin` (core) | The energy network topology clock and the cable / transformer block entity factory. No NeoForge hook creates a block entity. |
 
 ## 10. Version rules (proposed policy)
@@ -381,3 +410,38 @@ These rules are a proposal for the API. The project has not adopted them formall
 * Breeding research lists the candidates of natural crossing (`PlantHybridization#calculateRatio`).
   A plant that natural crossing cannot make cannot be researched either.
 * Do not call `CropAnalyzerMenu` from an addon. It is internal; the menu and its slot layout can change.
+
+## 12. Data pack extensions (0.1.10.5)
+
+### 12.1 Replication lists (`data/<namespace>/uu_replication/*.json`)
+
+The replicator prices come from the IC2 reference table and from the recipes. A replication list adds fixed prices, energy costs or denials on top. Its entries are fixed prices: they win over the reference table and the recipe prices, and items made from them get derived prices.
+
+```json
+{
+  "entries": [
+    { "item": "minecraft:netherite_scrap", "uu": 1500 },
+    { "item": "minecraft:nether_star", "uu": 100000, "eu": 60000000 },
+    { "tag": "c:ores/tin", "uu": 1.4 },
+    { "item": "minecraft:dragon_egg", "deny": true },
+    { "item": "othermod:gem", "uu": 40, "required": false }
+  ]
+}
+```
+
+* `item` or `tag` (exactly one); `uu`: mB per copy (above 0); `eu`: optional EU per copy (standard: 5,120 EU per mB; the replicator takes at most 8,192 EU per tick); `deny: true`: never scanned or replicated; `required: false`: an unknown id is skipped without a warning.
+* Files load in the order of their ids (namespace, then path); a later entry for the same item wins. A wrong entry is skipped with a warning; the other prices still load. At most 4096 items, 512 per tag.
+* The default list is `data/mio_icif/uu_replication/defaults.json` (95 entries); a data pack replaces it with a file at the same path.
+* At run time `UuQuoteBook.energy(server, item)` returns the EU per copy of a list (-1 without one).
+
+### 12.2 Blast warning data map (`mio_icif:blast_warning`)
+
+A data map on entity types, synced to the clients: `data/<namespace>/data_maps/entity_type/blast_warning.json`.
+
+```json
+{ "values": { "othermod:c4": { "radius": 6, "fuse": 5, "label": "C4" } } }
+```
+
+* `radius`: danger radius in blocks (required); `fuse`: full fuse in seconds (optional); `label`: HUD label (optional, at most 9 characters).
+* The timer: a public `getFuse()` of the entity (or `getFuseTime`, `getFuseTicks`, `getFuseTimer`, in ticks), else `fuse` minus the age of the entity on the client, else no timer (the HUD shows "--").
+* Without a data map entry, the entity type tag `mio_icif:blast_warning`, subclasses of vanilla `PrimedTnt` and of the creeper, explosive projectiles and entities with an explosive word in their id also count (see the guide page "Blast Warning Timer").

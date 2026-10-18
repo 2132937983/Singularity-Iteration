@@ -53,15 +53,19 @@ public class mio_icif_radioactive_block extends Block {
                 double distanceSquared = living.distanceToSqr(pos.getX(), pos.getY(), pos.getZ());
                 if (distanceSquared <= rangeSquared) {
                     double distance = Math.sqrt(distanceSquared);
-                    int effectDuration = (int) ((1.0 - distance / range) * 200 * radiationLevel);
-                    int effectLevel = Math.max(0, radiationLevel - 1);
-                    
+                    // 0.1.10.5: lead (and weaker shielding blocks) between this block and the creature
+                    double through = com.miophas.singularity_iteration.common.util.RadiationShielding.transmission(level,
+                        com.miophas.singularity_iteration.common.util.RadiationShielding.centre(pos), living, pos);
+                    if (through <= 0) continue;
+                    int effectDuration = (int) ((1.0 - distance / range) * 200 * radiationLevel * through);
+                    int effectLevel = through >= 0.5 ? Math.max(0, radiationLevel - 1) : 0;
+
                     if (effectDuration > 20) {
                         living.addEffect(new MobEffectInstance(mio_icif_effects.RADIATION, effectDuration, effectLevel));
-                        if (radiationLevel >= 2) {
+                        if (radiationLevel >= 2 && through >= 0.5) {
                             living.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, effectDuration, effectLevel));
                         }
-                        if (radiationLevel >= 3) {
+                        if (radiationLevel >= 3 && through >= 0.5) {
                             living.addEffect(new MobEffectInstance(MobEffects.WITHER, effectDuration / 2, 0));
                         }
                     }

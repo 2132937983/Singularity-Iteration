@@ -83,6 +83,11 @@ public interface IEnergyBlock {
     /**
      * Returns true if a connection is possible on the given side.
      *
+     * <p>Since 0.1.10.4 the SI energy network also uses this for machines (an
+     * {@code AbstractEnergyBlockEntity}): a side that returns false takes and gives no EU, also from
+     * a directly touching generator. A machine whose answer changes calls
+     * {@code IndependentSiEnergy.changed(blockEntity)}. The base class opens all sides.
+     *
      * @param side the side, or null for no specific side
      * @return true if a connection is possible
      */

@@ -103,15 +103,16 @@ public final class Round183GameTests {
         h.succeed();
     }
 
-    /** The swords and the nano bow are flat item icons again (no 3D elements), and their textures exist. */
+    /**
+     * The bronze sword and the nano bow are flat item icons (no 3D elements), and their textures exist.
+     * 0.1.10.4: the nanosaber and the quantum sword carry the user's 3D models in the hand and their
+     * 2D icons in the inventory (Round1104GameTests checks those).
+     */
     @GameTest(template = "empty", batch = "round183_data")
     public static void weaponsAreFlatIcons(GameTestHelper h) {
         List<String> problems = new ArrayList<>();
         String[][] models = {
             {"item_tool_bronze_sword", "minecraft:item/handheld", "weapon/bronze_sword"},
-            {"item_tool_nanosaber", "minecraft:item/handheld", "weapon/nanosaber"},
-            {"item_tool_nanosaber_active", "minecraft:item/handheld", "weapon/nanosaber_active"},
-            {"item_tool_quantum_sword", "minecraft:item/handheld", "weapon/quantum_sword"},
             {"item_tool_nano_bow", "minecraft:item/bow", "item_tool_nano_bow"},
             {"item_tool_nano_bow_pull2", "minecraft:item/bow", "item_tool_nano_bow_pull2"}};
         for (String[] m : models) {
@@ -124,7 +125,7 @@ public final class Round183GameTests {
             if (!layer.equals("mio_icif:item/" + m[2])) problems.add(m[0] + " layer0 " + layer);
             if (!Round180GameTests.modResourceExists("assets/mio_icif/textures/item/" + m[2] + ".png")) problems.add(m[2] + " texture missing");
         }
-        for (String animated : new String[]{"weapon/nanosaber_active", "weapon/quantum_sword"})
+        for (String animated : new String[]{"weapon/quantum_sword", "weapon/quantum_sword_hyper"})
             if (!Round180GameTests.modResourceExists("assets/mio_icif/textures/item/" + animated + ".png.mcmeta")) problems.add(animated + " mcmeta missing");
         String saber = Round33GameTests.resource("/assets/mio_icif/models/item/item_tool_nanosaber.json");
         if (saber == null || !saber.contains("mio_icif:nanosaber_active")) problems.add("nanosaber lost its active override");

@@ -64,6 +64,24 @@ public final class EnergySaving {
         return whole;
     }
 
+    /**
+     * 0.1.10.5: the most that one debit of {@code amount} from {@code stack} can cost (the reduced
+     * cost rounded up; {@link #apply} never returns more). An energy check before a debit compares
+     * the stored energy with this value. The EU that a debit took must not be compared with the
+     * nominal {@code amount}: with Energy Saving it is lower although the cost was met.
+     */
+    public static long maxCost(ItemStack stack, long amount) {
+        return maxCost(level(stack), amount);
+    }
+
+    public static long maxCost(int level, long amount) {
+        if (amount <= 0 || level <= 0) return amount;
+        long percent = 100 - (long) PERCENT_PER_LEVEL * Math.min(MAX_LEVEL, level);
+        long whole = amount / 100 * percent;
+        long rest = amount % 100 * percent;
+        return whole + (rest + 99) / 100;
+    }
+
     /** A per-unit rate (EU per damage point, EU per tick): reduced, never below 1 when it was above 0. */
     public static long rate(ItemStack stack, long rate) {
         int level = level(stack);

@@ -63,7 +63,8 @@ public interface IWeaponItem extends IBatteryItem {
      * @return true if the energy is sufficient
      */
     default boolean canShoot(ItemStack stack) {
-        return getEnergy(stack) >= getEnergyPerShot();
+        // 0.1.10.5: the cost after Energy Saving, as shoot() takes it
+        return getEnergy(stack) >= EnergySaving.maxCost(stack, getEnergyPerShot());
     }
 
     /**

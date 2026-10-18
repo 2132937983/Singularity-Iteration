@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "NNN",
+    "NNN",
+    "NNN"
+  ],
+  "key": {
+    "N": {
+      "tag": "c:nuggets/tin"
+    }
+  },
+  "result": {
+    "id": "mio_icif:resource/item_ingot_tin",
+    "count": 1
+  }
+}

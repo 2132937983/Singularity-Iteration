@@ -13,7 +13,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.NeutralMob;
-import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.EnderMan;
@@ -23,7 +22,6 @@ import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.entity.monster.SpellcasterIllager;
 import net.minecraft.world.entity.monster.Vex;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.MinecartTNT;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -101,14 +99,27 @@ public final class SensorTracker {
      * One explosive that counts down.
      *
      * @param entity  the explosive entity.
-     * @param seconds the time to the explosion, in seconds.
+     * @param seconds the time to the explosion, in seconds; -1 for a charge without a timer
+     *                (0.1.10.5: a remote charge, an explosive of another mod without a fuse).
      * @param radius  the explosion power. The HUD uses it as the danger radius in blocks.
      * @param label   the HUD label.
      * @param fuse    the full fuse length in seconds. {@link #burnt()} uses it.
      */
     public record Blast(Entity entity, float seconds, float radius, String label, float fuse) {
-        /** Burnt part of the fuse, from 0 (just lit) to 1 (explosion). It is 1 when {@code fuse <= 0}. */
-        public float burnt() { return fuse <= 0 ? 1F : Math.max(0F, Math.min(1F, 1F - seconds / fuse)); }
+        /** Burnt part of the fuse, from 0 (just lit) to 1 (explosion). It is 1 when {@code fuse <= 0}, 0 without a timer. */
+        public float burnt() {
+            if (!timed()) return 0F;
+            return fuse <= 0 ? 1F : Math.max(0F, Math.min(1F, 1F - seconds / fuse));
+        }
+
+        /** 0.1.10.5: false for a charge without a timer. */
+        public boolean timed() { return seconds >= 0; }
+
+        /** 0.1.10.5: less than a second to go (the HUD flashes red). */
+        public boolean urgent() { return timed() && seconds < 1; }
+
+        /** 0.1.10.5: the countdown text, "--" without a timer. */
+        public String secondsText() { return timed() ? String.format(java.util.Locale.ROOT, "%.1f", seconds) : "--"; }
     }
 
     /**
@@ -131,6 +142,7 @@ public final class SensorTracker {
         history.clear();
         tracks = List.of();
         blasts = List.of();
+        BlastDetector.invalidate();
     }
 
     /** Classifies an entity. The order of the tests is important: a player is never HOSTILE. */
@@ -296,7 +308,8 @@ public final class SensorTracker {
     }
 
     /**
-     * Finds the explosives that count down near the player.
+     * Finds the explosives near the player (0.1.10.5: {@link BlastDetector} has the rules; before,
+     * only vanilla TNT, TNT minecarts and creepers counted).
      *
      * <p>TNT and TNT minecarts: the time is the fuse in ticks / 20. The full fuse is 4 seconds
      * (80 ticks, the vanilla default). The power is 4.
@@ -305,19 +318,9 @@ public final class SensorTracker {
      * time left is {@code (1 - swell) * 30 / 20} seconds. Thus the full fuse is 1.5 seconds. The
      * power is 3, or 6 for a charged creeper.
      *
-     * @return the explosives, soonest explosion first.
+     * @return the explosives, soonest explosion first, then the ones without a timer.
      */
     private static List<Blast> scanBlasts(ClientLevel level, LocalPlayer player) {
-        List<Blast> out = new ArrayList<>();
-        for (Entity e : level.getEntities(player, player.getBoundingBox().inflate(BLAST_RANGE))) {
-            if (e instanceof PrimedTnt tnt) out.add(new Blast(e, tnt.getFuse() / 20F, 4F, "TNT", 4F));
-            else if (e instanceof MinecartTNT cart && cart.isPrimed()) out.add(new Blast(e, cart.getFuse() / 20F, 4F, "TNT-CART", 4F));
-            else if (e instanceof Creeper creeper && creeper.getSwelling(1.0F) > 0.02F) {
-                float left = (1F - creeper.getSwelling(1.0F)) * 30F / 20F;
-                out.add(new Blast(e, left, creeper.isPowered() ? 6F : 3F, creeper.isPowered() ? "CREEPER+" : "CREEPER", 1.5F));
-            }
-        }
-        out.sort((a, b) -> Float.compare(a.seconds, b.seconds));
-        return out;
+        return BlastDetector.scan(level, player);
     }
 }

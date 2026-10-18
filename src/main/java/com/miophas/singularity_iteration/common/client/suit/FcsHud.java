@@ -474,8 +474,8 @@ public final class FcsHud {
             boolean in = d < b.radius();
             inside |= in;
             float burnt = b.burnt();
-            int col = b.seconds() < 1 || in ? FcsDraw.RED : FcsDraw.YELLOW;
-            float flash = b.seconds() < 1 ? (float) (0.6 + 0.4 * Math.sin(now / 55.0)) : 1F;
+            int col = b.urgent() || in ? FcsDraw.RED : FcsDraw.YELLOW;
+            float flash = b.urgent() ? (float) (0.6 + 0.4 * Math.sin(now / 55.0)) : 1F;
             Vec3 at = b.entity().getPosition(partial);
             if (forecast) blastForecast(g, b, at, player, partial, col, flash, in, w, h);
             // ground danger zone
@@ -515,7 +515,7 @@ public final class FcsHud {
             SensorTracker.Blast b = blasts.get(i);
             int ry = y + 12 + i * 9;
             double d = Math.sqrt(b.entity().distanceToSqr(player));
-            int col = b.seconds() < 1 || d < b.radius() ? FcsDraw.RED : FcsDraw.YELLOW;
+            int col = b.urgent() || d < b.radius() ? FcsDraw.RED : FcsDraw.YELLOW;
             FcsDraw.text(g, b.label(), x + 5, ry, FcsDraw.argb(col, 1F), 0.55F);
             FcsDraw.text(g, String.format(Locale.ROOT, "%.0fm", d), x + 46, ry, FcsDraw.argb(FcsDraw.WHITE, 0.9F), 0.55F);
             // segmented fuse bar
@@ -523,7 +523,7 @@ public final class FcsHud {
             for (int k = 0; k < segs; k++) {
                 g.fill(x + 64 + k * 4, ry + 1, x + 67 + k * 4, ry + 5, k < filled ? FcsDraw.argb(col, 0.95F) : 0x40FFFFFF);
             }
-            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.1f", Math.max(0, b.seconds())), x + pw - 4, ry, FcsDraw.argb(col, 1F), 0.55F);
+            FcsDraw.textRight(g, b.secondsText(), x + pw - 4, ry, FcsDraw.argb(col, 1F), 0.55F);
         }
     }
 
@@ -570,7 +570,7 @@ public final class FcsHud {
         float x0 = sx + ux * 14, y0 = sy + uy * 14, x1 = sx + ux * Math.min(len, 90), y1 = sy + uy * Math.min(len, 90);
         FcsDraw.line(g, x0, y0, x1, y1, 2.2F, FcsDraw.argb(0x5CFF9A, 0.9F * flash));
         FcsDraw.triangle(g, x1 + ux * 7, y1 + uy * 7, x1 - uy * 5, y1 + ux * 5, x1 + uy * 5, y1 - ux * 5, FcsDraw.argb(0x5CFF9A, flash));
-        FcsDraw.text(g, String.format(Locale.ROOT, "EVADE %.1fm  %.1fs", run, Math.max(0, b.seconds())), x1 + 8, y1 - 3, FcsDraw.argb(0x5CFF9A, flash), 0.55F);
+        FcsDraw.text(g, String.format(Locale.ROOT, "EVADE %.1fm  %ss", run, b.secondsText()), x1 + 8, y1 - 3, FcsDraw.argb(0x5CFF9A, flash), 0.55F);
     }
 
     /** Disc icon: dark core, warning glyph, ring that empties as the fuse burns, countdown chip. */
@@ -582,7 +582,7 @@ public final class FcsHud {
         // "!" glyph
         FcsDraw.quad(g, x - 0.9F, y - r * 0.55F, x + 0.9F, y - r * 0.55F, x + 0.6F, y + r * 0.15F, x - 0.6F, y + r * 0.15F, FcsDraw.argb(col, flash));
         FcsDraw.disc(g, x, y + r * 0.42F, 0.9F, FcsDraw.argb(col, flash));
-        FcsDraw.chip(g, String.format(Locale.ROOT, "%.1f", Math.max(0, b.seconds())), x + r + 2, y - 4, col, 0.5F);
+        FcsDraw.chip(g, b.secondsText(), x + r + 2, y - 4, col, 0.5F);
     }
 
     /** Ground circle of the blast radius: faint fill, a sector that fills with the burnt fuse, rim. */

@@ -3048,8 +3048,8 @@
   "quantum.mio_icif.action.force_field": "Force Field",
   "quantum.mio_icif.action.time_dilation": "Time Dilation",
   "quantum.mio_icif.action.volley": "Entangled Volley",
-  "module.mio_icif.tooltip.action.single": "Action (V/B): %s, %s coherence, cooldown %s s",
-  "module.mio_icif.tooltip.action.sustained": "Toggle action (V/B): %s, %s coherence to start, %s per second, cooldown %s s after",
+  "module.mio_icif.tooltip.action.single": "Action (%4$s): %1$s, %2$s coherence, cooldown %3$s s",
+  "module.mio_icif.tooltip.action.sustained": "Toggle action (%5$s): %1$s, %2$s coherence to start, %3$s per second, cooldown %4$s s after",
   "module.mio_icif.tooltip.action_mk2": "Mk.II unlocks the action: %s",
   "gui.mio_icif.station.status.bay_max": "EXPANSION BAY ALREADY FITTED",
   "gui.mio_icif.equipment_console.quantum": "Quantum core",
@@ -3283,5 +3283,12 @@
   "mio_icif.subtitle.command.quantum_recall": "Suits fold away",
   "mio_icif.subtitle.command.holo_open": "Holo table projects",
   "mio_icif.subtitle.command.holo_close": "Holo table folds",
-  "mio_icif.subtitle.suit.thruster_land": "Thrusters touch down"
+  "mio_icif.subtitle.suit.thruster_land": "Thrusters touch down",
+  "gui.mio_icif.entangle.core.active": "Core ON",
+  "gui.mio_icif.entangle.core.off": "Core switched off",
+  "gui.mio_icif.entangle.core.no_power": "Core: no suit EU",
+  "message.mio_icif.wingman.fault": "A Wingman had an error and returned its suit to the Armory (see the server log).",
+  "message.mio_icif.wingman.copy_removed": "A copy of a Wingman whose suit had already returned was removed without its items.",
+  "tooltip.mio_icif.containment_box.slots": "Slots used: %1$s / %2$s",
+  "tooltip.mio_icif.containment_box.info": "Use to open. Radioactive items inside do not irradiate you."
 }

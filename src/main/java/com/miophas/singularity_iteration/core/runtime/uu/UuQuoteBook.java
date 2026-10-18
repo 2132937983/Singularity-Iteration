@@ -33,7 +33,8 @@ public final class UuQuoteBook {
         }
     }
     private record Snapshot(long generation, Map<IndependentUuValueIndex.Key, Quote> prices,
-                            Set<IndependentUuValueIndex.Key> denied, Set<IndependentUuValueIndex.Key> scanEligible) { }
+                            Set<IndependentUuValueIndex.Key> denied, Set<IndependentUuValueIndex.Key> scanEligible,
+                            Map<IndependentUuValueIndex.Key, Long> energy) { }
     private UuQuoteBook() { }
 
     /** A reviewed recipe/config resolver publishes one bounded generation after reload. */
@@ -42,7 +43,18 @@ public final class UuQuoteBook {
     }
     public static synchronized long install(MinecraftServer server, IndependentUuValueIndex prices,
             Set<IndependentUuValueIndex.Key> denied, Set<IndependentUuValueIndex.Key> scanEligible) {
-        if (server == null || !server.isSameThread() || prices == null || denied == null || scanEligible == null)
+        return install(server, prices, denied, scanEligible, Map.of());
+    }
+
+    /**
+     * 0.1.10.5: the same with the EU per copy of the items that a data-pack replication list
+     * gives an energy cost ({@code uu_replication}); the other items use the replicator's
+     * standard rate. Every key of {@code energy} must have a finite price.
+     */
+    public static synchronized long install(MinecraftServer server, IndependentUuValueIndex prices,
+            Set<IndependentUuValueIndex.Key> denied, Set<IndependentUuValueIndex.Key> scanEligible,
+            Map<IndependentUuValueIndex.Key, Long> energy) {
+        if (server == null || !server.isSameThread() || prices == null || denied == null || scanEligible == null || energy == null)
             throw new IllegalArgumentException("Server-owned bounded prices required");
         var entries=prices.snapshot();
         if(entries.size()>16384)throw new IllegalArgumentException("Price snapshot too large");
@@ -57,8 +69,19 @@ public final class UuQuoteBook {
                 throw new IllegalArgumentException("Invalid finite UU price");
             quoted.put(entry.getKey(), new Quote(entry.getValue(), generation));
         }
-        var snapshot = new Snapshot(generation, Map.copyOf(quoted), exclusions, eligible);
+        for (var row : energy.entrySet())
+            if (!quoted.containsKey(row.getKey()) || row.getValue() == null || row.getValue() <= 0)
+                throw new IllegalArgumentException("Energy cost without a finite UU price");
+        var snapshot = new Snapshot(generation, Map.copyOf(quoted), exclusions, eligible, Map.copyOf(energy));
         nextGeneration = snapshot.generation(); SERVERS.put(server, snapshot); return nextGeneration;
+    }
+
+    /** 0.1.10.5: EU per copy of {@code item} from a replication list, or -1 for the standard rate. */
+    public static long energy(MinecraftServer server, ItemStack item) {
+        if (server == null || !server.isSameThread() || item == null || item.isEmpty()) return -1;
+        var snapshot = SERVERS.get(server); if (snapshot == null) return -1;
+        Long eu = snapshot.energy().get(IndependentUuValueIndex.keyOf(item));
+        return eu == null ? -1 : eu;
     }
     public static long generation(MinecraftServer server) {
         if (server == null || !server.isSameThread()) return -1;

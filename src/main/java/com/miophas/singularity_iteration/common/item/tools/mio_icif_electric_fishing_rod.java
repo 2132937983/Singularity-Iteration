@@ -107,6 +107,7 @@ public class mio_icif_electric_fishing_rod extends mio_icif_tool_elc implements 
     }
 
     public boolean hasEnoughEnergy(ItemStack stack, int amount) {
-        return getEnergy(stack) >= amount;
+        // 0.1.10.5: the cost after Energy Saving, as the debit takes it
+        return getEnergy(stack) >= com.miophas.singularity_iteration.core.api.item.EnergySaving.maxCost(stack, amount);
     }
 }

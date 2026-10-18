@@ -17,6 +17,11 @@ import net.minecraft.world.item.TooltipFlag;
 public class SuitModuleItem extends Item {
     private final SuitModuleType type;
     private final int tier;
+    /**
+     * 0.1.10.4: names of the two action keys for the tooltips ("V/B" until the client sets the
+     * bound keys; the key mappings exist on the client only).
+     */
+    public static java.util.function.Supplier<String> ACTION_KEYS = () -> "V/B";
 
     public SuitModuleItem(SuitModuleType type, Properties properties) {
         this(type, 1, properties);
@@ -89,9 +94,10 @@ public class SuitModuleItem extends Item {
                 tooltip.add(Component.translatable("module.mio_icif.tooltip.action_mk2", name).withStyle(ChatFormatting.DARK_PURPLE));
             } else if (spec != null) {
                 String cd = String.format(java.util.Locale.ROOT, "%.1f", spec.cooldownTicks() / 20F);
+                String keys = ACTION_KEYS.get();                   // 0.1.10.4: the keys as bound now
                 tooltip.add((spec.sustained()
-                    ? Component.translatable("module.mio_icif.tooltip.action.sustained", name, spec.coherenceCost(), spec.sustainPerSecond(), cd)
-                    : Component.translatable("module.mio_icif.tooltip.action.single", name, spec.coherenceCost(), cd)).withStyle(ChatFormatting.LIGHT_PURPLE));
+                    ? Component.translatable("module.mio_icif.tooltip.action.sustained", name, spec.coherenceCost(), spec.sustainPerSecond(), cd, keys)
+                    : Component.translatable("module.mio_icif.tooltip.action.single", name, spec.coherenceCost(), cd, keys)).withStyle(ChatFormatting.LIGHT_PURPLE));
             }
         }
         // 0.1.10.1: compute bandwidth on a quantum piece, and the synergies the unit takes part in

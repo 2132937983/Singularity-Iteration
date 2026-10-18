@@ -223,6 +223,14 @@ public final class EntanglementScreen extends Screen {
         int load = QuantumBandwidth.load(player), budget = QuantumBandwidth.budget(player);
         Component qb = Component.translatable("gui.mio_icif.entangle.bandwidth", load, budget);
         g.drawString(font, qb, left + W - 8 - font.width(qb), fy, load > budget ? 0xFFC8423C : SiGuiTheme.TEXT, false);
+        // 0.1.10.4: the compute core state between the two (why the third link and the +8 QB are there or not)
+        QuantumLinks.CoreState core = QuantumLinks.computeCoreState(player);
+        if (core != QuantumLinks.CoreState.NONE) {
+            Component cs = Component.translatable("gui.mio_icif.entangle.core." + core.name().toLowerCase(java.util.Locale.ROOT));
+            int csx = left + 8 + font.width(links) + 8, room = left + W - 8 - font.width(qb) - 8 - csx;
+            if (room > 20) g.drawString(font, font.plainSubstrByWidth(cs.getString(), room), csx, fy,
+                core == QuantumLinks.CoreState.ACTIVE ? 0xFF7FD8FF : 0xFFFFB347, false);
+        }
         SiGuiTheme.bar(g, left + 8, fy + 11, W - 16, 4, Math.min(1.0, load / (double) Math.max(1, budget)),
             load > budget ? 0xFFE04030 : SiGuiTheme.BAR_FROM, load > budget ? 0xFFF07060 : SiGuiTheme.BAR_TO);
         // tooltips

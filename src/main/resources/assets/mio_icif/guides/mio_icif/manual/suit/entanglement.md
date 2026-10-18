@@ -72,6 +72,7 @@ The budget is **20 QB**, 28 QB with an active compute core. Every suit that 0.1.
 ## Quantum Compute Core
 
 The <ItemLink id="mio_icif:module/item_module_compute_core" /> (chestplate or leggings, 6 EU/t) adds 8 QB to the budget and one more link to the hub.
+Only a working core counts: switched on in the panel and powered by the suit. The footer of the matrix shows its state (Core ON, switched off, or no suit EU); the links row of the Equipment Console shows CPU, CPU- or CPU!.
 
 ## Mk.II: guidance and resonance field
 

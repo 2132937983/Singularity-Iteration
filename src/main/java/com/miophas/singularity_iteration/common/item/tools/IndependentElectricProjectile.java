@@ -13,11 +13,24 @@ import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
-/** Shared projectile lifecycle; all mutations are server authoritative and chunk bounded. */
-abstract class IndependentElectricProjectile extends ThrowableProjectile {
+/**
+ * Shared projectile lifecycle; all mutations are server authoritative and chunk bounded.
+ *
+ * <p>0.1.10.4: the exact velocity and the launch point travel with the spawn data. The vanilla
+ * entity packets clamp each velocity axis to 3.9 blocks per tick, so a plasma bolt (8 blocks per
+ * tick) flew off at an angle on the client: aimed 30 degrees to the side, x stayed 3.9 while z was
+ * cut from 6.9 to 3.9, and the bolt drifted away from the crosshair until the next position
+ * update pulled it back. The client now keeps the exact direction and ignores the clamped motion
+ * packets (both sides apply the same drag).
+ */
+abstract class IndependentElectricProjectile extends ThrowableProjectile implements net.neoforged.neoforge.entity.IEntityWithComplexSpawn {
     private int remainingTicks = 200;
     private double remainingRange = 64.0D;
     private Vec3 resumeAt;
+    /** 0.1.10.4: launch point (shooter eye), for the trail of the renderers. */
+    private Vec3 origin = Vec3.ZERO;
+    /** 0.1.10.4 client: the exact velocity came with the spawn data; clamped motion packets are ignored. */
+    private boolean exactMotion;
 
     protected IndependentElectricProjectile(EntityType<? extends IndependentElectricProjectile> type, Level level) {
         super(type, level);
@@ -27,8 +40,39 @@ abstract class IndependentElectricProjectile extends ThrowableProjectile {
         super(type, owner, level);
         setNoGravity(true);
         setPos(owner.getX(), owner.getEyeY() - 0.1D, owner.getZ());
+        origin = position();
     }
     @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {}
+
+    /** 0.1.10.4: the launch point (client: from the spawn data). */
+    public Vec3 origin() { return origin; }
+
+    @Override
+    public void writeSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buffer) {
+        Vec3 v = getDeltaMovement();
+        buffer.writeDouble(v.x); buffer.writeDouble(v.y); buffer.writeDouble(v.z);
+        buffer.writeDouble(origin.x); buffer.writeDouble(origin.y); buffer.writeDouble(origin.z);
+    }
+
+    @Override
+    public void readSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buffer) {
+        Vec3 v = new Vec3(buffer.readDouble(), buffer.readDouble(), buffer.readDouble());
+        origin = new Vec3(buffer.readDouble(), buffer.readDouble(), buffer.readDouble());
+        if (!Double.isFinite(v.x) || !Double.isFinite(v.y) || !Double.isFinite(v.z)) return;
+        setDeltaMovement(v);
+        double flat = v.horizontalDistance();
+        setYRot((float) (net.minecraft.util.Mth.atan2(v.x, v.z) * (180F / Math.PI)));
+        setXRot((float) (net.minecraft.util.Mth.atan2(v.y, flat) * (180F / Math.PI)));
+        yRotO = getYRot();
+        xRotO = getXRot();
+        exactMotion = true;
+    }
+
+    @Override
+    public void lerpMotion(double x, double y, double z) {
+        if (exactMotion) return;            // a motion packet would clamp the direction again
+        super.lerpMotion(x, y, z);
+    }
 
     protected final void setRange(double range) {
         remainingRange = Double.isFinite(range) ? Math.clamp(range, 0.0D, 256.0D) : 0.0D;
@@ -73,6 +117,11 @@ abstract class IndependentElectricProjectile extends ThrowableProjectile {
         // Vanilla/NeoForge explosion events remain available to protection mods.
         level.explode(player, center.x, center.y, center.z, strength,
                 terrain ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+    }
+
+    /** 0.1.10.4: an AI shooter (Wingman) never changes terrain; only a player who may build does. */
+    protected final boolean terrainAllowed() {
+        return getOwner() instanceof ServerPlayer player && player.mayBuild();
     }
 
     @Override protected void addAdditionalSaveData(CompoundTag tag) {

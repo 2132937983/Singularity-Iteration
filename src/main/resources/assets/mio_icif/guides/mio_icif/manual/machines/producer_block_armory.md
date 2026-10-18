@@ -45,6 +45,13 @@ The game measured these values from the block entity of this version.
 - Equipment from other mods needs a Connector Kit before the Armory accepts the equipment.
 - Each summon costs EU. The cost increases with the distance and with a change of dimension.
 
+## Wingman safety
+
+- Mob capture tools (soul vials, the mob imprisonment tool, containment jars, capture balls) cannot take a Wingman: an item used on a Wingman does nothing, and the Wingman is in the capture blacklist tags of these mods and in c:capturing_not_supported.
+- Each deployment has a sortie token. A copy of a Wingman whose suit already went home (for example from a capture tool of an older version) is removed when it appears, without items. The owner gets a chat message.
+- If the tick of a Wingman or of an effect that it made (a slash of SlashBlade, for example) fails, the suit goes home and the Wingman leaves instead of a crash. The server log has the details.
+- A Wingman has all player attributes (reach, sweeping, luck and others), so weapons of other mods work in its hands.
+
 ## Wingman tactics
 
 - **Targets:** the mob you hit (all Wingmen focus it), a creeper near you (first of all when it fuses), the mob that hit you, mobs that hunt you (ranged attackers first), then the nearest hostile mobs. Wingmen spread over different targets unless you call one.

@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "mio_icif:build/block_construction_wall",
+    "minecraft:obsidian",
+    "minecraft:crying_obsidian",
+    "minecraft:reinforced_deepslate",
+    "minecraft:iron_block",
+    "minecraft:netherite_block",
+    { "id": "#c:storage_blocks/steel", "required": false }
+  ]
+}

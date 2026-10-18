@@ -141,6 +141,9 @@ public class Singularity_Iteration_Client {
     ResourceLocation nanoSaberActiveProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "nanosaber_active");
         ItemProperties.register(mio_icif_items_tools.NANO_SABER.get(), nanoSaberActiveProperty, new NanoSaberActiveProperty());
         Singularity_Iteration.LOGGER.info("Nano Saber active property registered successfully");
+        // 0.1.10.4: the quantum sword's 3D model and icon turn red in hyper mode
+        ItemProperties.register(mio_icif_items_tools.QUANTUM_SWORD.get(), ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "quantum_sword_hyper"),
+            (stack, level, entity, seed) -> com.miophas.singularity_iteration.common.item.tools.mio_icif_quantum_sword.isHyperState(stack) ? 1.0F : 0.0F);
 
         ResourceLocation cellTypeProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "cell_type");
         ItemProperties.register(mio_icif_cells.CELL_EMPTY.get(), cellTypeProperty, new DynamicCellFluidProperty());

@@ -69,7 +69,14 @@ public final class SlashBladeCombat {
     public static void tick(LivingEntity wielder) {
         ItemStack blade = wielder.getMainHandItem();
         if (!isBlade(blade)) return;
-        blade.inventoryTick(wielder.level(), wielder, 0, true);
+        try {
+            blade.inventoryTick(wielder.level(), wielder, 0, true);
+        } catch (Throwable t) {
+            // An inventory tick for a non-player is not something the blade expects; any error
+            // turns the bridge off (the Wingman keeps the blade as a plain sword) instead of
+            // crashing the entity tick.
+            fail(t);
+        }
     }
 
     /**
@@ -187,6 +194,11 @@ public final class SlashBladeCombat {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static void remove(EnumSet set, Command c) { set.remove(enumConstant(c)); }
+
+    /** 0.1.10.5: an entity of SlashBlade that a Wingman made threw in its tick ({@link WingmanTickGuard}). */
+    static void failExternal(Throwable t) {
+        fail(t);
+    }
 
     private static void fail(Throwable t) {
         if (state == READY) {

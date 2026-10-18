@@ -103,7 +103,7 @@ public final class ResonanceField {
             float hardness = state.getDestroySpeed(level, pos);
             if (hardness < 0 || hardness > MAX_HARDNESS || state.hasBlockEntity() || state.is(IMMUNE)) continue;
             long cost = BASE_EU + (long) Math.ceil(hardness * EU_PER_HARDNESS);
-            if (SuitModules.energy(player, piece) < cost) break;
+            if (!SuitModules.canPay(player, piece, cost)) break;
             if (!level.mayInteract(player, pos) || player.blockActionRestricted(level, pos, player.gameMode.getGameModeForPlayer())) continue;
             if (NeoForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, state, player)).isCanceled()) continue;
             SuitModules.extract(player, piece, cost);

@@ -123,7 +123,10 @@ public final class SuitServer {
         // 0.1.10.0: a Mk.II deflector pays 3 000 EU per point instead of 4 000
         long perPoint = SuitModules.tier(piece, SuitModuleType.DEFLECTOR.id()) >= 2 ? SuitModules.DEFLECTOR_EU_PER_DAMAGE_MK2 : SuitModules.DEFLECTOR_EU_PER_DAMAGE;
         float cancel = Math.min(Math.max(0, damage), SuitModules.DEFLECTOR_MAX_PER_HIT);
-        cancel = Math.min(cancel, SuitModules.energy(player, piece) / (float) perPoint);
+        // 0.1.10.5: Energy Saving lowers the EU per point, so the same charge stops more damage
+        double paidPerPoint = perPoint * com.miophas.singularity_iteration.core.api.item.EnergySaving.factor(
+            com.miophas.singularity_iteration.core.api.item.EnergySaving.level(piece));
+        cancel = Math.min(cancel, (float) (SuitModules.energy(player, piece) / paidPerPoint));
         if (cancel > 0) {
             SuitModules.extract(player, piece, (long) Math.ceil(cancel * perPoint));
             event.setNewDamage(damage - cancel);

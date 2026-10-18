@@ -1,0 +1,9 @@
+{
+  "values": {
+    "mio_icif:ic_tnt_primed": { "radius": 8, "fuse": 4, "label": "ITNT" },
+    "mio_icif:nuke_primed": { "radius": 40, "fuse": 30, "label": "NUKE" },
+    "mio_icif:dynamite_entity": { "radius": 3, "fuse": 2.5, "label": "DYNAMITE" },
+    "mio_icif:sticky_dynamite_entity": { "radius": 2, "fuse": 2.5, "label": "STICKY" },
+    "mio_icif:rocket_entity": { "radius": 5, "label": "ROCKET" }
+  }
+}

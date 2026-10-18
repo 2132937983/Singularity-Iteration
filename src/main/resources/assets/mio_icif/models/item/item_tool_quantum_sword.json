@@ -1,7 +1,23 @@
 {
-  "parent": "minecraft:item/handheld",
-  "render_type": "minecraft:translucent",
-  "textures": {
-    "layer0": "mio_icif:item/weapon/quantum_sword"
-  }
+  "loader": "neoforge:separate_transforms",
+  "base": {
+    "parent": "mio_icif:item/3d/weapon/quantum_sword"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "mio_icif:item/weapon/quantum_sword"
+      },
+      "render_type": "minecraft:translucent"
+    }
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "mio_icif:quantum_sword_hyper": 1
+      },
+      "model": "mio_icif:item/item_tool_quantum_sword_hyper"
+    }
+  ]
 }

@@ -15,7 +15,7 @@ One switch starts all parts of the mode: free flight, the throttle, the drift, t
 The sprint key or the boost key opens the throttle. When you release the key, the throttle closes.
 The suit flies along the view axis. Speed is throttle x 80 m/s.
 At high speed the suit does not turn at once. It drifts wide through the turn and then follows the view axis.
-At throttle 60 % (48 m/s) the suit breaks the shock barrier. You hear a boom and see a vapor cone and a shock ring.
+At throttle 60 % (48 m/s) the suit breaks the shock barrier: a boom sounds, and a vapor cone and a shock ring flash up for about 0.6 s. The cone does not stay in front of the view while you cruise.
 Wake trails come from the hands and the feet at high speed.
 
 ## Procedure

@@ -60,7 +60,7 @@ public final class CoreEvents {
         if (s.cooldown(DISCHARGE_KEY) > 0) { deny(player, DENY_COOLDOWN); return; }
         var chest = FrameCores.wornWith(player, FrameCore.PROPULSION);
         long cost = CoreConfig.dischargeEu();
-        if (SuitModules.energy(player, chest) < cost) { deny(player, DENY_ENERGY); return; }
+        if (!SuitModules.canPay(player, chest, cost)) { deny(player, DENY_ENERGY); return; }
         SuitModules.extract(player, chest, cost);
         s.cooldown.put(DISCHARGE_KEY, CoreConfig.dischargeCooldown());
         ServerLevel level = player.serverLevel();

@@ -43,6 +43,8 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     public static final long DEFAULT_CAPACITY=2000000,DEFAULT_MAX_RECEIVE=8192,DEFAULT_MAX_EXTRACT=0,DEFAULT_ENERGY_PER_TICK=512;
     public static final int DEFAULT_WORK_TIME=100,UUMATTER_CAPACITY=64000;
     private static final double BASE_RATE=.0001;
+    /** 0.1.10.5: most EU of one 0.1 mB step (an EV packet), for items with an EU cost in a replication list. */
+    public static final long MAX_STEP_EU=8192;
     private static final String SAVE_KEY="scex_replication_v1";
     private static final SlotLayout LAYOUT=SlotLayout.builder().fluidInput(1).output(1).memory().output(1).battery().upgrade(4).build();
     private final FluidTank tank;
@@ -52,6 +54,8 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     private double price,processed,pendingUu;
     private long paidEu,pendingEu,completed,lastTick=Long.MIN_VALUE;
     private long quotedGeneration=-1;
+    /** 0.1.10.5: EU of one 0.1 mB step of the selected item (not saved; from the quote). */
+    private long stepEu=DEFAULT_ENERGY_PER_TICK;
     private long migratedGeneration=Long.MIN_VALUE;
     private WorkMode mode=WorkMode.STOPPED;
     private boolean changing,selectionDirty=true;
@@ -99,6 +103,15 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     protected boolean serverThread(){return level instanceof ServerLevel s&&s.getServer().isSameThread();}
     protected UuQuoteBook.Quote trustedQuote(ItemStack item){return level instanceof ServerLevel s?UuQuoteBook.quote(s.getServer(),item):null;}
     protected long priceGeneration(){return level instanceof ServerLevel s?UuQuoteBook.generation(s.getServer()):-1;}
+    /** 0.1.10.5: EU per copy from a replication list ({@code uu_replication}), or -1 for the standard rate. */
+    protected long euPerCopy(ItemStack item){return level instanceof ServerLevel s&&!item.isEmpty()?UuQuoteBook.energy(s.getServer(),item):-1;}
+    /** 0.1.10.5: EU of one step: 512, or the EU per copy of the list spread over the steps (1 to {@link #MAX_STEP_EU}). */
+    private long stepEnergy(){
+        long total=euPerCopy(selected);
+        if(total<=0||price<=0)return DEFAULT_ENERGY_PER_TICK;
+        double steps=Math.ceil(price/BASE_RATE);
+        return Math.max(1,Math.min(MAX_STEP_EU,(long)Math.ceil(total/steps)));
+    }
     public boolean hasHeldReplicationData(){return held!=null||credit.blocked();}
     public double getUuCreditBuckets(){return credit.creditBuckets();}
     public double getProcessedUuBuckets(){return processed;}
@@ -171,7 +184,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
             if(generation!=quotedGeneration){
                 var next=trustedQuote(selected);
                 if(next==null||Double.compare(next.buckets(),price)!=0){hold("Price changed during paid work");return;}
-                quotedGeneration=next.generation();
+                quotedGeneration=next.generation();stepEu=stepEnergy();
             }
             return;
         }
@@ -179,7 +192,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         selectionDirty=false;selectionCooldown=20;
         ItemStack item=selectPatternItem();
         var quote=item.isEmpty()?null:trustedQuote(item);
-        selected=quote==null?ItemStack.EMPTY:item.copyWithCount(1);price=quote==null?0:quote.buckets();quotedGeneration=generation;
+        selected=quote==null?ItemStack.EMPTY:item.copyWithCount(1);price=quote==null?0:quote.buckets();quotedGeneration=generation;stepEu=stepEnergy();
     }
     protected ItemStack selectPatternItem(){
         if(!order.isEmpty()){
@@ -211,8 +224,8 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
             if(processed>=price){commitOutput();return;}
             if(pendingUu==0){
                 double next=Math.min(BASE_RATE,price-processed);
-                if(credit.creditBuckets()+tank.getFluidAmount()/1000.0<next||energyStorage.getAmount()<DEFAULT_ENERGY_PER_TICK)return;
-                pendingUu=next;pendingEu=DEFAULT_ENERGY_PER_TICK;
+                if(credit.creditBuckets()+tank.getFluidAmount()/1000.0<next||energyStorage.getAmount()<stepEu)return;
+                pendingUu=next;pendingEu=stepEu;
             }
             long due=pendingEu-paidEu;
             if(credit.creditBuckets()+tank.getFluidAmount()/1000.0<pendingUu||energyStorage.getAmount()<due)return;
@@ -261,7 +274,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     public int getUuMatterCapacity(){return UUMATTER_CAPACITY;}
     /** Legacy integer display only; payment always uses getCurrentUuCostBuckets. */
     public long getCurrentUuCost(){return (long)Math.ceil(price*1000);}
-    public long getCurrentEuCost(){return (long)Math.min(Long.MAX_VALUE,Math.ceil(price/BASE_RATE)*DEFAULT_ENERGY_PER_TICK);}
+    public long getCurrentEuCost(){return (long)Math.min(Long.MAX_VALUE,Math.ceil(price/BASE_RATE)*stepEu);}
     @Override public long getTotalProcessed(){return completed;}
     @Override public Component getDisplayName(){return Component.translatable("container.mio_icif.replicator_elc");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return new ReplicatorElcMenu(id,inventory,this);}
@@ -351,7 +364,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         selected=own.contains("item",Tag.TAG_COMPOUND)?ItemStack.parseOptional(registries,own.getCompound("item")):ItemStack.EMPTY;
         price=own.getDouble("price");processed=own.getDouble("processed");pendingUu=own.getDouble("pending_uu");pendingEu=own.getLong("pending_eu");paidEu=own.getLong("paid_eu");completed=own.getLong("completed");int modeId=own.getInt("mode");
         if(!Double.isFinite(price)||price<0||!Double.isFinite(processed)||processed<0||processed>price||!Double.isFinite(pendingUu)||pendingUu<0||pendingUu>BASE_RATE
-            ||pendingUu>price-processed||pendingEu<0||pendingEu>DEFAULT_ENERGY_PER_TICK||(pendingEu==0)!=(pendingUu==0)||paidEu<0||paidEu>pendingEu||completed<0||modeId<0||modeId>2
+            ||pendingUu>price-processed||pendingEu<0||pendingEu>MAX_STEP_EU||(pendingEu==0)!=(pendingUu==0)||paidEu<0||paidEu>pendingEu||completed<0||modeId<0||modeId>2
             ||!selected.isEmpty()&&!StoredPattern.valid(selected,price,0)||selected.isEmpty()&&(price!=0||processed!=0||pendingUu!=0||paidEu!=0||pendingEu!=0)){
             held=tag.copy();isWorking=false;return;
         }

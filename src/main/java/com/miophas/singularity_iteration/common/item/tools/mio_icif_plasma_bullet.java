@@ -62,18 +62,43 @@ public class mio_icif_plasma_bullet extends IndependentElectricProjectile {
 
     @Override
     public void tick() {
-        if (!level().isClientSide && !isRemoved()) {
+        // 0.1.10.4: only a player who may build melts the path (a Wingman's bolt leaves the terrain)
+        if (!level().isClientSide && !isRemoved() && terrainAllowed()) {
             Vec3 start = position();
             Vec3 end = start.add(getDeltaMovement());
             meltAlongPath(start, end);
         }
+        if (level().isClientSide && tickCount > 0) trailParticles();
         super.tick();
+    }
+
+    /** 0.1.10.4 client: sparks and violet embers shed along the path of the last tick. */
+    private void trailParticles() {
+        Vec3 v = getDeltaMovement(), p = position(), from = origin();
+        for (int i = 0; i < 5; i++) {
+            Vec3 at = p.subtract(v.scale(random.nextDouble()));
+            if (at.distanceToSqr(from) < 9) continue;            // keep the shooter's view clear
+            level().addParticle(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, at.x + (random.nextDouble() - 0.5) * 0.3,
+                at.y + (random.nextDouble() - 0.5) * 0.3, at.z + (random.nextDouble() - 0.5) * 0.3,
+                (random.nextDouble() - 0.5) * 0.12, (random.nextDouble() - 0.5) * 0.12, (random.nextDouble() - 0.5) * 0.12);
+        }
+        for (int i = 0; i < 2; i++) {
+            Vec3 at = p.subtract(v.scale(random.nextDouble()));
+            if (at.distanceToSqr(from) < 9) continue;
+            level().addParticle(new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(0.72F, 0.38F, 1.0F), 1.3F),
+                at.x, at.y, at.z, 0, 0.02, 0);
+        }
     }
 
     @Override
     protected void onHitEntity(EntityHitResult hit) {
         if (level().isClientSide) return;
-        detonate(hit.getLocation());
+        // 0.1.10.4: a bolt that may not blast (Wingman, or no build right) burns the target instead
+        if (!detonate(hit.getLocation())) {
+            damage(hit.getEntity(), mio_icif_plasma_launcher.AI_HIT_DAMAGE);
+            hit.getEntity().igniteForSeconds(5.0F);
+        }
+        impact(hit.getLocation());
         discard();
     }
 
@@ -82,7 +107,20 @@ public class mio_icif_plasma_bullet extends IndependentElectricProjectile {
         super.onHitBlock(hit);
         if (level().isClientSide) return;
         detonate(hit.getLocation());
+        impact(hit.getLocation());
         discard();
+    }
+
+    /** 0.1.10.4: impact flash: a white core flash, a ring of violet sparks and rising embers. */
+    private void impact(Vec3 at) {
+        if (!(level() instanceof ServerLevel level)) return;
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, at.x, at.y, at.z, 1, 0, 0, 0, 0);
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, at.x, at.y, at.z, 36, 0.35, 0.35, 0.35, 0.45);
+        level.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, at.x, at.y, at.z, 14, 0.2, 0.2, 0.2, 0.12);
+        level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(0.72F, 0.38F, 1.0F), 1.6F),
+            at.x, at.y, at.z, 24, 0.5, 0.5, 0.5, 0.05);
+        level.playSound(null, at.x, at.y, at.z, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.ENERGY_HIT.get(),
+            net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 0.6F + random.nextFloat() * 0.15F);
     }
 
     /**
@@ -93,20 +131,22 @@ public class mio_icif_plasma_bullet extends IndependentElectricProjectile {
      * 这里通过自定义 {@link ExplosionDamageCalculator} 复刻该判定：抗性超过威力的方块返回超高抗性，
      * 既使其不被破坏，也耗尽射线从而保留遮挡关系（硬方块后方的软方块同样不会被波及）。
      */
-    private void detonate(Vec3 center) {
-        if (!(level() instanceof ServerLevel level)) return;
-        if (!(getOwner() instanceof ServerPlayer player) || !player.mayBuild()) return;
+    /** Returns true when the heat explosion happened (0.1.10.4: the callers burn the target otherwise). */
+    private boolean detonate(Vec3 center) {
+        if (!(level() instanceof ServerLevel level)) return false;
+        if (!(getOwner() instanceof ServerPlayer player) || !player.mayBuild()) return false;
 
         BlockPos pos = BlockPos.containing(center);
         int radius = (int) Math.ceil(EXPLOSION_POWER) + 1;
         if (!level.isLoaded(pos.offset(-radius, -radius, -radius))
                 || !level.isLoaded(pos.offset(radius, radius, radius))
                 || !level.mayInteract(player, pos)) {
-            return;
+            return false;
         }
 
         level.explode(this, level.damageSources().explosion(this, player), new HeatExplosionCalculator(),
             center.x, center.y, center.z, EXPLOSION_POWER, false, Level.ExplosionInteraction.TNT);
+        return true;
     }
 
     /**

@@ -480,6 +480,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     }
 
     /**
+     * 0.1.10.4: faces that a machine opens through {@code canConnect(side)} (bit i = {@code Direction}
+     * ordinal i). A machine that changes this mask calls {@link #changed(BlockEntity)}.
+     */
+    private static int connectFaces(AbstractEnergyBlockEntity tile) {
+        int result = 0;
+        for (Direction side : Direction.values()) if (tile.canConnect(side)) result |= 1 << side.ordinal();
+        return result;
+    }
+
+    /**
      * Applies a face edit of a conductor at once, without a wait for the next
      * frame. Stale routes through the closed faces stop in the same tick.
      * The method does not load or create a chunk.
@@ -2181,6 +2191,13 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 var policy = host.energyComponent().ports();
                 inputs = policy.inputs();
                 outputs = policy.outputs();
+            }
+            // 0.1.10.4: a machine closes single faces through IEnergyBlock#canConnect(side)
+            // (the reactor coolant injectors close the faces that touch the reactor). The base
+            // class opens all six faces, so other machines keep their faces.
+            if (tile instanceof AbstractEnergyBlockEntity faced) {
+                int open = connectFaces(faced);
+                inputs &= open; outputs &= open;
             }
             var storage = ownedStorage(machine); var quote = storage.scexNetworkQuote();
             int electricalFaces = conductorFaces(tile);

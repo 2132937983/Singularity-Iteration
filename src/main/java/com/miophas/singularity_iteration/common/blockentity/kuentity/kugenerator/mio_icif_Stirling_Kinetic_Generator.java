@@ -187,6 +187,11 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
     }
 
     private boolean isValidWaterContainer(ItemStack stack) {
+        // 0.1.10.6: also partly filled cells and water containers of other mods (through the fluid capability)
+        return isKnownWaterContainer(stack) || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, Fluids.WATER);
+    }
+
+    private boolean isKnownWaterContainer(ItemStack stack) {
         return stack.is(Items.WATER_BUCKET)
             || mio_icif_cells.isCellContainingFluid(stack, Fluids.WATER);
     }
@@ -199,7 +204,11 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
      */
     private void handleCoolFluidInput() {
         ItemStack input = itemHandler.getStackInSlot(COOL_FLUID_INPUT_SLOT);
-        if (input.isEmpty() || !isValidWaterContainer(input)) {
+        if (input.isEmpty()) {
+            return;
+        }
+        if (!isKnownWaterContainer(input)) {
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, COOL_FLUID_INPUT_SLOT, COOL_OUTPUT_SLOT, waterTank, Fluids.WATER)) setChanged();
             return;
         }
         if (waterTank.getFluidAmount() + FluidType.BUCKET_VOLUME > waterTank.getCapacity()) {
@@ -219,6 +228,10 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
             return;
         }
 
+        // 0.1.10.6: only a whole container (the capacity check above uses the stored amount, not the fluid kind)
+        if (waterTank.fill(new FluidStack(Fluids.WATER, FluidType.BUCKET_VOLUME), IFluidHandler.FluidAction.SIMULATE) < FluidType.BUCKET_VOLUME) {
+            return;
+        }
         int filled = waterTank.fill(new FluidStack(Fluids.WATER, FluidType.BUCKET_VOLUME),
             IFluidHandler.FluidAction.EXECUTE);
         if (filled >= FluidType.BUCKET_VOLUME) {
@@ -310,8 +323,7 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
             }
 
             BlockPos neighborPos = worldPosition.relative(direction);
-            IMioIcifCapabilities.IHeatStorage heatStorage = level.getCapability(
-                IMioIcifCapabilities.HEAT_STORAGE_BLOCK, neighborPos, direction.getOpposite());
+            IMioIcifCapabilities.IHeatStorage heatStorage = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.HEAT_STORAGE_BLOCK, direction);
             if (heatStorage == null) {
                 BlockEntity neighborBe = level.getBlockEntity(neighborPos);
                 heatStorage = MioIcifAPI.instance().getCapabilities().adaptHeatStorage(neighborBe);
@@ -583,7 +595,8 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
         blockEntity.handleAutomation();
 
         blockEntity.updateBlockState(blockEntity.isWorking(), state, level, pos);
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     private Direction getFacing() {
@@ -784,7 +797,15 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
 
     // ==================== 热能能力（对外只接收） ====================
 
+    /** 0.1.10.10 (D3): the heat view is made once (it was a new object on every capability lookup). */
+    private IMioIcifCapabilities.IHeatStorage heatView;
+
     public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
+        if (heatView == null) heatView = createHeatView();
+        return heatView;
+    }
+
+    private IMioIcifCapabilities.IHeatStorage createHeatView() {
         return new IMioIcifCapabilities.IHeatStorage() {
             @Override
             public long receiveHeat(long maxReceive, boolean simulate) {

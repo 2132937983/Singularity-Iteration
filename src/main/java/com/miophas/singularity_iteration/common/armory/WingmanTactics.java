@@ -59,6 +59,47 @@ public final class WingmanTactics {
 
     /** 0.1.10.2: the same, with the distance terms measured from {@code guard} (the owner, or the order point). */
     static double threat(WingmanEntity self, ServerPlayer owner, LivingEntity e, @Nullable LivingEntity current, Vec3 guard) {
+        return withSight(self, owner, e, threatBeforeSight(self, owner, e, current, guard, new Squad(self, owner)));
+    }
+
+    /**
+     * 0.1.10.8: the line-of-sight term of {@link #threat}, applied last as before: a target that
+     * neither the Wingman nor the owner sees loses 12. It only lowers the score, so the score before
+     * it is an upper bound (the target choice casts the rays only for the best candidates).
+     */
+    private static double withSight(WingmanEntity self, ServerPlayer owner, LivingEntity e, double score) {
+        if (score == Double.NEGATIVE_INFINITY) return score;
+        if (!self.hasLineOfSight(e) && !owner.hasLineOfSight(e)) score -= 12;
+        return score;
+    }
+
+    /**
+     * 0.1.10.8: the targets of the owner's other Wingmen within 48 blocks, fetched once per target
+     * choice on first use (before, every candidate fetched them again).
+     */
+    private static final class Squad {
+        private final WingmanEntity self;
+        private final ServerPlayer owner;
+        @Nullable private java.util.Set<LivingEntity> engaged;
+
+        Squad(WingmanEntity self, ServerPlayer owner) { this.self = self; this.owner = owner; }
+
+        boolean engages(LivingEntity e) {
+            if (engaged == null) {
+                engaged = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+                for (WingmanEntity other : self.level().getEntitiesOfClass(WingmanEntity.class, self.getBoundingBox().inflate(48),
+                        w -> w != self && owner.getUUID().equals(w.owner()))) {
+                    LivingEntity t = other.currentTarget();
+                    if (t != null) engaged.add(t);
+                }
+            }
+            return engaged.contains(e);
+        }
+    }
+
+    /** The score of {@link #threat} before its line-of-sight term. */
+    private static double threatBeforeSight(WingmanEntity self, ServerPlayer owner, LivingEntity e, @Nullable LivingEntity current,
+                                            Vec3 guard, Squad squad) {
         double score = 0;
         int now = owner.tickCount;
         boolean called = e == owner.getLastHurtMob() && now - owner.getLastHurtMobTimestamp() < 60;
@@ -89,8 +130,7 @@ public final class WingmanTactics {
         score -= 1.8 * toOwner + 0.7 * e.distanceTo(self);
         score += 14 * (1 - e.getHealth() / Math.max(1, e.getMaxHealth()));
         if (e == current) score += 22;
-        if (!called && !fusing && engagedByOther(self, owner, e)) score -= 28;
-        if (!self.hasLineOfSight(e) && !owner.hasLineOfSight(e)) score -= 12;
+        if (!called && !fusing && squad.engages(e)) score -= 28;
         return score;
     }
 
@@ -114,18 +154,26 @@ public final class WingmanTactics {
     @Nullable
     static LivingEntity select(WingmanEntity self, ServerPlayer owner, Vec3 around, double range, @Nullable LivingEntity current,
                                java.util.function.Predicate<LivingEntity> valid, Vec3 guard) {
-        LivingEntity best = null;
-        double bestScore = Double.NEGATIVE_INFINITY;
+        // 0.1.10.8: every candidate is scored without its line-of-sight term (an upper bound), then
+        // the rays are cast from the best bound down until no bound can reach the best score. The
+        // choice is the same as scoring every candidate in scan order (the first of equal scores wins).
+        Squad squad = new Squad(self, owner);
+        var candidates = new java.util.ArrayList<LivingEntity>();
         for (LivingEntity e : self.level().getEntitiesOfClass(LivingEntity.class, new AABB(around, around).inflate(range),
                 e -> e instanceof Mob && e.isAlive())) {
-            if (!valid.test(e)) continue;
-            double s = threat(self, owner, e, current, guard);
-            if (s > bestScore) { bestScore = s; best = e; }
+            if (valid.test(e)) candidates.add(e);
         }
+        int n = candidates.size();
+        double[] bounds = new double[n];
+        for (int i = 0; i < n; i++) bounds[i] = threatBeforeSight(self, owner, candidates.get(i), current, guard, squad);
+        double[] top = new double[1];
+        int pick = bestIndex(bounds, Double.NEGATIVE_INFINITY, i -> withSight(self, owner, candidates.get(i), bounds[i]), top);
+        LivingEntity best = pick < 0 ? null : candidates.get(pick);
+        double bestScore = top[0];
         // the owner's call may be outside the scan box (a long shot): keep it
         LivingEntity called = owner.getLastHurtMob();
         if (called != null && owner.tickCount - owner.getLastHurtMobTimestamp() < 60 && valid.test(called)) {
-            double s = threat(self, owner, called, current, guard);
+            double s = withSight(self, owner, called, threatBeforeSight(self, owner, called, current, guard, squad));
             if (s > bestScore) best = called;
         }
         return best;
@@ -146,39 +194,74 @@ public final class WingmanTactics {
         double[] heights = {2.5, 4.5, 7.0};
         Vec3 fromOwner = new Vec3(c.x - owner.getX(), 0, c.z - owner.getZ());
         Vec3 flank = fromOwner.lengthSqr() < 1.0E-4 ? Vec3.ZERO : fromOwner.normalize();
-        Vec3 best = null;
-        double bestScore = -1.0E9;
+        Vec3[] points = new Vec3[36], dirs = new Vec3[36];
+        double[] hs = new double[36];
+        int n = 0;
         for (int k = 0; k < 12; k++) {
             double a = k * Math.PI * 2 / 12 + (self.getId() % 7) * 0.13;
             Vec3 dir = new Vec3(Math.cos(a), 0, Math.sin(a));
             for (int ri = 0; ri < radii.length; ri++) {
                 double r = radii[ri];
                 double h = heights[(k + ri) % heights.length];
-                Vec3 p = c.add(dir.scale(r)).add(0, h, 0);
-                double s = stationScore(self, level, target, owner, c, p, flank, dir, h);
-                if (s > bestScore) { bestScore = s; best = p; }
+                points[n] = c.add(dir.scale(r)).add(0, h, 0); dirs[n] = dir; hs[n] = h; n++;
             }
         }
-        if (previous != null && best != null) {
+        Vec3 pdir = null;
+        if (previous != null) {
             Vec3 pd = previous.subtract(c);
-            Vec3 pdir = new Vec3(pd.x, 0, pd.z);
+            pdir = new Vec3(pd.x, 0, pd.z);
+        }
+        // 0.1.10.8: the Wingmen and hostiles near any station are fetched once (before: two box
+        // queries per station). A station counts exactly the ones whose box meets its own box.
+        AABB around = new AABB(points[0], points[0]);
+        for (int i = 1; i < n; i++) around = around.minmax(new AABB(points[i], points[i]));
+        if (previous != null) around = around.minmax(new AABB(previous, previous));
+        var near = new StationNeighbours(
+            level.getEntitiesOfClass(WingmanEntity.class, around.inflate(3.0), w -> w != self),
+            level.getEntitiesOfClass(Mob.class, around.inflate(4.0), m -> m instanceof Enemy && m != target));
+        Vec3 look = target.getViewVector(1.0F);
+        Vec3 lookFlat = new Vec3(look.x, 0, look.z).normalize();
+        // Every station is scored with a clear line of fire (an upper bound: a blocked line only
+        // subtracts), then the rays are cast from the best bound down until no bound can reach the
+        // best score. The result is the same as before (the first of equal scores wins).
+        double[] bounds = new double[n];
+        boolean[] room = new boolean[n];
+        for (int i = 0; i < n; i++) {
+            room[i] = free(level, points[i]);
+            bounds[i] = room[i] ? stationRest(0, self, owner, c, points[i], flank, dirs[i], hs[i], lookFlat, near) : -1.0E6;
+        }
+        double[] top = new double[1];
+        int pick = bestIndex(bounds, -1.0E9, i -> !room[i] || clear(level, points[i].add(0, 0.2, 0), c, self) ? bounds[i]
+            : stationRest(-120, self, owner, c, points[i], flank, dirs[i], hs[i], lookFlat, near), top);
+        Vec3 best = pick < 0 ? null : points[pick];
+        double bestScore = top[0];
+        if (previous != null && best != null) {
             double prevScore = pdir.lengthSqr() < 1.0E-4 ? -1.0E9
-                : stationScore(self, level, target, owner, c, previous, flank, pdir.normalize(), pd.y);
+                : stationScore(self, level, owner, c, previous, flank, pdir.normalize(), previous.subtract(c).y, lookFlat, near);
             if (prevScore > bestScore - 8) return previous;
         }
         return best == null ? c.add(0, 4, 0) : best;
     }
 
-    private static double stationScore(WingmanEntity self, Level level, LivingEntity target, ServerPlayer owner, Vec3 c, Vec3 p,
-                                       Vec3 flank, Vec3 dir, double h) {
-        double s = 0;
+    /** 0.1.10.8: the Wingmen (not this one) and the hostiles (not the target) near the stations of one choice. */
+    private record StationNeighbours(java.util.List<WingmanEntity> squad, java.util.List<Mob> hostiles) { }
+
+    private static double stationScore(WingmanEntity self, Level level, ServerPlayer owner, Vec3 c, Vec3 p,
+                                       Vec3 flank, Vec3 dir, double h, Vec3 lookFlat, StationNeighbours near) {
         if (!free(level, p)) return -1.0E6;
-        if (!clear(level, p.add(0, 0.2, 0), c, self)) s -= 120;
+        return stationRest(clear(level, p.add(0, 0.2, 0), c, self) ? 0 : -120, self, owner, c, p, flank, dir, h, lookFlat, near);
+    }
+
+    /**
+     * The terms of a station after its line-of-fire term, added to {@code s} in the order of
+     * 0.1.9.1 (0 for a clear line, -120 for a blocked one).
+     */
+    private static double stationRest(double s, WingmanEntity self, ServerPlayer owner, Vec3 c, Vec3 p,
+                                      Vec3 flank, Vec3 dir, double h, Vec3 lookFlat, StationNeighbours near) {
         // flanking: the far side of the target as seen from the owner (behind its back)
         s += 22 * dir.dot(flank);
         // the target faces somebody: behind its head is better
-        Vec3 look = target.getViewVector(1.0F);
-        s += 8 * -new Vec3(look.x, 0, look.z).normalize().dot(dir);
+        s += 8 * -lookFlat.dot(dir);
         // height: high ground, but not out of reach
         s += Math.min(h, 6) * 2.2;
         // owner not in the shot line, and not standing in the owner's line of fire
@@ -187,10 +270,44 @@ public final class WingmanTactics {
         // smooth: stay near the current place
         s -= 0.55 * p.distanceTo(self.position());
         // the squad spreads out
-        for (WingmanEntity other : level.getEntitiesOfClass(WingmanEntity.class, new AABB(p, p).inflate(3.0), w -> w != self)) s -= 22;
+        AABB squadBox = new AABB(p, p).inflate(3.0);
+        for (WingmanEntity other : near.squad()) if (other.getBoundingBox().intersects(squadBox)) s -= 22;
         // keep clear of other hostiles
-        for (Mob mob : level.getEntitiesOfClass(Mob.class, new AABB(p, p).inflate(4.0), m -> m instanceof Enemy && m != target)) s -= 14;
+        AABB hostileBox = new AABB(p, p).inflate(4.0);
+        for (Mob mob : near.hostiles()) if (mob.getBoundingBox().intersects(hostileBox)) s -= 14;
         return s;
+    }
+
+    /**
+     * 0.1.10.8: the index that a scan in index order picks with {@code if (s > best)} from the start
+     * value {@code floor} (the first of equal best scores; -1 when no score is above the floor), when
+     * every {@code exact(i) <= bounds[i]}. The exact scores (the rays) are computed from the highest
+     * bound down, and only while a bound can still reach the best score. {@code top[0]} receives
+     * the best score ({@code floor} for -1).
+     */
+    static int bestIndex(double[] bounds, double floor, java.util.function.IntToDoubleFunction exact, double[] top) {
+        double bestScore = floor;
+        int best = -1;
+        for (int i : byBound(bounds)) {
+            if (bounds[i] < bestScore) break;
+            double s = exact.applyAsDouble(i);
+            if (s > bestScore || s == bestScore && best >= 0 && i < best) { bestScore = s; best = i; }
+        }
+        top[0] = bestScore;
+        return best;
+    }
+
+    /** Indexes by bound, highest first; equal bounds in index order. */
+    private static int[] byBound(double[] bounds) {
+        Integer[] order = new Integer[bounds.length];
+        for (int i = 0; i < order.length; i++) order[i] = i;
+        java.util.Arrays.sort(order, (x, y) -> {
+            int c = Double.compare(bounds[y], bounds[x]);
+            return c != 0 ? c : Integer.compare(x, y);
+        });
+        int[] result = new int[order.length];
+        for (int i = 0; i < order.length; i++) result[i] = order[i];
+        return result;
     }
 
     /** Room for the Wingman's body at {@code p} (two blocks of air). */

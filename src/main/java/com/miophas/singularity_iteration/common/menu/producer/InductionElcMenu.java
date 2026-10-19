@@ -154,4 +154,7 @@ import org.jetbrains.annotations.Nullable;
             this.setSyncData(10, (induction.ticksToFullHeat() + 19) / 20);
         }
     }
+
+    /** 0.1.10.6: index 0 of the synced data is not a progress. */
+    @Override protected int progressDataIndex() { return -1; }
 }

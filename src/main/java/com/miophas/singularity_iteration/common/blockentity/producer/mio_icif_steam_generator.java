@@ -254,7 +254,8 @@ IC2 风格
         if (AUX_SLOTS_ENABLED) {
             blockEntity.handleAutomationUpgrades();
         }
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     /** IC2 requestHeat: inspect all six neighbours; each heat source restricts its output face. */
@@ -270,7 +271,7 @@ IC2 风格
             if (heatNeeded <= 0) return;
 
             BlockPos neighborPos = worldPosition.relative(direction);
-            IMioIcifCapabilities.IHeatStorage adjacentHeat = level.getCapability(IMioIcifCapabilities.HEAT_STORAGE_BLOCK, neighborPos, direction.getOpposite());
+            IMioIcifCapabilities.IHeatStorage adjacentHeat = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.HEAT_STORAGE_BLOCK, direction);
 
             if (adjacentHeat != null && adjacentHeat.canExtractHeat()) {
                 long heatToExtract = Math.min(heatNeeded, adjacentHeat.getHeatStored());

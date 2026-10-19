@@ -304,6 +304,12 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
     /**
      * 每 tick 更新方法
      */
+    /** 0.1.10.8: canWork depends only on the inventory, the saved state and the stored energy. */
+    @Override
+    protected boolean idleSleepAllowed() {
+        return true;
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_powder_elc blockEntity) {
         if (level.isClientSide()) {
             return;

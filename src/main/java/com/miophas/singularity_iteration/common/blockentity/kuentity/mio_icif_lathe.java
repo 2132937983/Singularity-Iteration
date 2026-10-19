@@ -110,7 +110,8 @@ tick 更新逻辑
         // 从相邻动能源获取 KU
         blockEntity.getKU();
 
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     /**

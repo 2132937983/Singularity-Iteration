@@ -137,8 +137,7 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
         BlockPos frontPos = worldPosition.relative(facing);
 
         // 获取前方方块的动能存储能
-        IMioIcifCapabilities.IKineticStorage frontKinetic = level.getCapability(
-            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, frontPos, facing.getOpposite());
+        IMioIcifCapabilities.IKineticStorage frontKinetic = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, facing);
         if (frontKinetic == null) {
             BlockEntity be = level.getBlockEntity(frontPos);
             frontKinetic = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(be);
@@ -282,8 +281,7 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
         BlockPos frontPos = worldPosition.relative(facing);
 
         // 获取前方方块的动能存储能
-        IMioIcifCapabilities.IKineticStorage frontKinetic = level.getCapability(
-            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, frontPos, facing.getOpposite());
+        IMioIcifCapabilities.IKineticStorage frontKinetic = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, facing);
         if (frontKinetic == null) {
             BlockEntity be = level.getBlockEntity(frontPos);
             frontKinetic = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(be);

@@ -60,7 +60,7 @@ public class mio_icif_resources {
     public static final DeferredItem<Item> DIAMOND_CUT_BLADE = ITEMS.register("resource/item_diamond_cut_blade", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> DIAMOND_DUST_SMALL = ITEMS.register("resource/item_diamond_dust_small", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> ENDER_PEARL_DUST = ITEMS.register("resource/item_ender_pearl_dust", () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> MILK_WART = ITEMS.register("resource/item_milk_wart", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MILK_WART = ITEMS.register("resource/item_milk_wart", () -> new MilkWartItem(new Item.Properties()));
     public static final DeferredItem<Item> OIL_BERRY = ITEMS.register("resource/item_oil_berry", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> BOBS_BERRY = ITEMS.register("resource/item_bobs_yer_uncle_ranks_berry", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> EMERALD_DUST = ITEMS.register("resource/item_emerald_dust", () -> new Item(new Item.Properties()));

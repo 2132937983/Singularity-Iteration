@@ -52,7 +52,8 @@ public class mio_icif_oil_rig_input_entity extends MultiblockEnergyPart {
                 }
             }
         }
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     private static List<mio_icif_oil_rig_input_entity> findOtherInputs(Level level, BlockPos corePos, BlockPos selfPos) {

@@ -20,6 +20,14 @@ import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
 public class AbstractKineticBlockEntity extends BlockEntity implements MenuProvider, IMioIcifCapabilities.IKineticStorage, IWrenchable {
+    /** 0.1.10.10 (D7): counts server-side setChanged() calls for /mio_icif perf. */
+    @Override
+    public void setChanged() {
+        if (level != null && !level.isClientSide)
+            com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.SET_CHANGED);
+        super.setChanged();
+    }
+
     
     protected final IMioIcifCapabilities.IKineticStorage kineticStorage;
     
@@ -147,8 +155,7 @@ public class AbstractKineticBlockEntity extends BlockEntity implements MenuProvi
             BlockPos adjacentPos = worldPosition.relative(direction);
             if (!level.isLoaded(adjacentPos)) continue;
 
-            IMioIcifCapabilities.IKineticStorage adjacentKinetic = level.getCapability(
-                IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, adjacentPos, direction.getOpposite());
+            IMioIcifCapabilities.IKineticStorage adjacentKinetic = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, direction);
 
             if (adjacentKinetic == null) {
                 adjacentKinetic = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(

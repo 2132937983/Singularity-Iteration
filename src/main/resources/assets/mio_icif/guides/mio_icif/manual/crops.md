@@ -105,6 +105,17 @@ At night the sky light falls to 4. A torch gives light 9 at a distance of 5 bloc
 - With only one crop neighbour, the crossing stick copies that crop with the same traits.
 - The environment does not change the crossing chance. It changes how fast the parents get mature and if the new crop can grow at the stick.
 
+## Milk Wart
+
+- <ItemLink id="mio_icif:resource/item_milk_wart" /> is the harvest of the milk wart crop. Eat it like milk: it removes the status effects that milk removes and gives a little food. You can eat it when you are full.
+- Recipes that ask for milk by tag take it (c:buckets/milk, c:drinks/milk, c:milks, forge:milk). A cake can use milk warts in place of milk buckets, also mixed.
+
+## UU-Matter for gene editing
+
+- The gene page of the <ItemLink id="mio_icif:normal/item_crop_analyzer" /> has a UU tank (4,000 mB) under the catalyst slot.
+- Put UU-Matter cells, UU-Matter buckets or other UU containers into the catalyst slot: they empty into the tank, and the empty containers go to your inventory. A bucket waits until 1,000 mB fit.
+- 1 mB of UU-Matter is one catalyst, the same as one UU-Matter item. The tank pays first, items in the slot pay the rest.
+
 ## Tips
 
 - Plant in a jungle or a swamp: humidity +19 and nutrients +10.

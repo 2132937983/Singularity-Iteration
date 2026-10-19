@@ -18,7 +18,7 @@ public final class ThermalOutput {
         var pos = owner.getBlockPos().relative(facing);
         var chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
         if (chunk == null) return null;
-        var target = level.getCapability(IMioIcifCapabilities.HEAT_STORAGE_BLOCK, pos, facing.getOpposite());
+        var target = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(owner, IMioIcifCapabilities.HEAT_STORAGE_BLOCK, facing);
         if (target != null) return target;
         var tile = chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
         return tile instanceof IMioIcifCapabilities.IHeatStorage heat ? heat : null;

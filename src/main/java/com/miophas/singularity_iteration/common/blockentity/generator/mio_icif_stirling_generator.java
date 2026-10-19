@@ -52,10 +52,16 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         return chunk!=null && chunk.getBlockEntity(worldPosition,LevelChunk.EntityCreationType.CHECK)==this;
     }
     private void frame(){long now=level==null?0:level.getGameTime();if(lastFrame!=now){lastFrame=now;frameHu=0;generatedFrame=0;}}
+    /** The back face: a heat input face, and the only face without EU output (as before 0.1.10.9). */
     private Direction input(){return getBlockState().getValue(mio_icif_block_stirling_generator.FACING).getOpposite();}
-    private IMioIcifCapabilities.IHeatStorage supplier(){
+    /** 0.1.10.9: the front face (the copper plate, toward the player at placement) takes heat too; it still outputs EU. */
+    private Direction front(){return getBlockState().getValue(mio_icif_block_stirling_generator.FACING);}
+    /** The heat input faces in the order they are asked: the back first (the old face), then the front. */
+    private Direction[] heatFaces(){return new Direction[]{input(),front()};}
+    private boolean heatFace(Direction side){return side==input() || side==front();}
+    private IMioIcifCapabilities.IHeatStorage supplier(Direction side){
         if(!(level instanceof ServerLevel server))return null;
-        var side=input();var at=worldPosition.relative(side);
+        var at=worldPosition.relative(side);
         if(server.getChunkSource().getChunkNow(at.getX()>>4,at.getZ()>>4)==null)return null;
         return server.getCapability(IMioIcifCapabilities.HEAT_STORAGE_BLOCK,at,side.getOpposite());
     }
@@ -75,11 +81,18 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         if(!live() || !energy.scexNetworkControlled() || acquiring || uncertainHu!=0 || !legacyHold.isEmpty())return 0;
         frame();long limit=Math.max(0,1000-frameHu);long owned=Math.min(limit,heatStorage.getHeatStored());
         if(owned==limit)return owned;
-        try{
-            var source=supplier();if(source==null || source==this || !source.canExtractHeat())return owned;
-            long reply=source.extractHeat(limit-owned,true);
-            return reply>=0 && reply<=limit-owned ? owned+reply : owned;
-        }catch(RuntimeException unavailable){return owned;}
+        // 0.1.10.9: the back, then the front; a source seen at both faces is asked once
+        long total=owned;IMioIcifCapabilities.IHeatStorage first=null;
+        for(var side:heatFaces()){
+            if(total>=limit)break;
+            try{
+                var source=supplier(side);if(source==null || source==this || source==first || !source.canExtractHeat())continue;
+                if(first==null)first=source;
+                long reply=source.extractHeat(limit-total,true);
+                if(reply>=0 && reply<=limit-total)total+=reply;
+            }catch(RuntimeException unavailable){}
+        }
+        return total;
     }
     @Override public CustomEUEnergyStorage ownedEnergy(){return energy;}
     @Override public int outputFaces(){return 63 ^ (1 << input().get3DDataValue());}
@@ -101,12 +114,19 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         if(count==0)return;
         acquiring=true;
         try{
-            var source=supplier();if(source==null || source==this || !source.canExtractHeat())return;
-            long proposed=source.extractHeat(count,true);if(proposed<=0 || proposed>count)return;
-            uncertainHu=proposed;dirty();
-            long actual=source.extractHeat(proposed,false);
-            if(actual<0 || actual>proposed){failure="Invalid external HU extraction receipt";dirty();return;}
-            uncertainHu=0;credit(actual);failure="";dirty();
+            // 0.1.10.9: the back first, then the front for what is still needed (one receipt at a time)
+            IMioIcifCapabilities.IHeatStorage first=null;
+            for(var side:heatFaces()){
+                if(count<=0)break;
+                var source=supplier(side);if(source==null || source==this || source==first || !source.canExtractHeat())continue;
+                if(first==null)first=source;
+                long proposed=source.extractHeat(count,true);if(proposed<=0 || proposed>count)continue;
+                uncertainHu=proposed;dirty();
+                long actual=source.extractHeat(proposed,false);
+                if(actual<0 || actual>proposed){failure="Invalid external HU extraction receipt";dirty();return;}
+                uncertainHu=0;credit(actual);failure="";dirty();
+                count-=actual;
+            }
         }catch(RuntimeException problem){if(uncertainHu>0){failure=problem.getClass().getName();dirty();}}
         finally{acquiring=false;}
     }
@@ -157,12 +177,12 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
     public CustomEUEnergyStorage getEnergyStorage(){return energy;}
     public IEUEnergyStorage getEnergyStorageCapability(Direction side){return side==input()?null:energy;}
     // 基类按构造参数 (capacity=20000, maxReceive=1000, maxExtract=0) 已给出正确语义：
-    // 背面可被动接收 HU（≤1000/t、缓冲 20000），但任何设备都不能从它抽取热量。
+    // 背面与正面（0.1.10.9 起）可被动接收 HU（≤1000/t、缓冲 20000），但任何设备都不能从它抽取热量。
     // 这里曾经用四个覆写把接收/抽取全部掐死，导致 getHeatStorageCapability 暴露的背面入口形同虚设
     // （注册处是侧面感知的 lambda，只有 input() 面会拿到它），同时让 availableHeat()/prepareEnergy()
     // 里"优先消耗自身缓冲"的分支永远空跑。现直接沿用基类实现。
-    // 真正的"按需抽取"仍由 supplier() 在电网需要电力时执行，两条路径互补。
-    public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(Direction side){return side==null?this:side==input()?this:null;}
+    // 真正的"按需抽取"仍由 supplier(side)（先背面、后正面）在电网需要电力时执行，两条路径互补。
+    public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(Direction side){return side==null?this:heatFace(side)?this:null;}
     public long getHeatBuffer(){return heatStorage.getHeatStored();}
     public long getEnergyStored(){return energy.getAmount();}
     public long getEnergyCapacity(){return energy.getCapacity();}

@@ -199,7 +199,27 @@ public class MachineUpgradeStats implements IMachineUpgradeStats {
 
     @Override
     public long getEnergyCapacityBonus() {
-        return energyStorageCount * ENERGY_STORAGE_BONUS + overclockerCount * OVERCLOCKER_ENERGY_BONUS;
+        int capacityOverclockers = this.capacityOverclockers >= 0 ? this.capacityOverclockers : overclockerCount;
+        return energyStorageCount * ENERGY_STORAGE_BONUS + capacityOverclockers * OVERCLOCKER_ENERGY_BONUS;
+    }
+
+    /** 0.1.10.6: installed overclockers that size the energy buffer when a throttle lowers the active ones (-1: all active). */
+    private int capacityOverclockers = -1;
+
+    /**
+     * 0.1.10.6: the same statistics with only {@code active} of the installed overclockers working
+     * (the overclock slider of the machine GUI). Speed and energy use follow the active count; the
+     * energy buffer keeps the bonus of every installed overclocker, so a lower throttle never cuts
+     * stored energy.
+     */
+    public MachineUpgradeStats withActiveOverclockers(int active) {
+        int clamped = Math.max(0, Math.min(overclockerCount, active));
+        if (clamped == overclockerCount) return this;
+        MachineUpgradeStats copy = new MachineUpgradeStats(clamped, energyStorageCount, transformerCount, ejectorCount,
+            pullingCount, fluidEjectorCount, fluidPullingCount, redstoneInverted,
+            ejectorDirections, pullingDirections, fluidEjectorDirections, fluidPullingDirections);
+        copy.capacityOverclockers = overclockerCount;
+        return copy;
     }
 
     public long getHeatCapacity(long baseCapacity) {

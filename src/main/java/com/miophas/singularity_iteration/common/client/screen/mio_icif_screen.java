@@ -331,14 +331,160 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         return this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu m ? m.dockedUpgradeSlots() : 0;
     }
 
-    public boolean hasDock() { return dockSlots() > 0 || !dockButtons.isEmpty(); }
+    public boolean hasDock() { return dockSlots() > 0 || !dockButtons.isEmpty() || overclock() != null; }
 
     /** Dock bounds in screen coordinates: x, y, w, h (w = 0 when there is no dock). */
     public int[] dockBounds() {
         if (!hasDock()) return new int[]{leftPos, topPos, 0, 0};
         int slots = dockSlots();
         int h = 4 + slots * 18 + (slots > 0 && !dockButtons.isEmpty() ? 4 : 0) + dockButtons.size() * (DOCK_BUTTON + 2) + 2;
+        if (overclock() != null) h = ocTop() - topPos - 3 + OC_H + 2;
         return new int[]{leftPos - DOCK_W - 1, topPos + 3, DOCK_W, h};
+    }
+
+    // ================================================================ 0.1.10.6: overclock slider
+    /*
+     * With at least one overclocker in the upgrade slots, the dock ends with a vertical slider:
+     * how many of the installed overclockers work. Click or drag on the bar, or scroll over it.
+     * The tooltip shows the throttle, the speed (progress per tick, ticks per operation) and the
+     * energy use; while the new value is on its way to the server it shows estimates ("~").
+     */
+    private static final int OC_H = 66, OC_TRACK_Y = 10, OC_TRACK_H = 44;
+    private boolean ocDragging;
+    private int ocPending = -1;
+    private long ocPendingAt;
+
+    @org.jetbrains.annotations.Nullable
+    private com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu.OverclockInfo overclock() {
+        return this.menu instanceof com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu m ? m.overclockInfo() : null;
+    }
+
+    /** Top of the overclock section of the dock (screen coordinates). */
+    private int ocTop() {
+        int slots = dockSlots();
+        if (!dockButtons.isEmpty()) return dockButtonY(dockButtons.size()) + 2;
+        return topPos + 7 + slots * 18 + (slots > 0 ? 4 : 0);
+    }
+
+    private boolean overOcTrack(double mx, double my) {
+        int bx = leftPos - DOCK_W + 2, y = ocTop();
+        return mx >= bx && mx < bx + DOCK_BUTTON && my >= y + OC_TRACK_Y - 2 && my < y + OC_TRACK_Y + OC_TRACK_H + 2;
+    }
+
+    private boolean overOcSection(double mx, double my) {
+        int bx = leftPos - DOCK_W + 2, y = ocTop();
+        return mx >= bx && mx < bx + DOCK_BUTTON && my >= y && my < y + OC_H;
+    }
+
+    /** Overclockers shown: the value sent last until the server confirms it, else the active ones. */
+    private int ocShown(com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu.OverclockInfo info) {
+        if (ocPending >= 0) {
+            boolean confirmed = info.active() == ocPending;
+            boolean stale = this.minecraft != null && this.minecraft.level != null && this.minecraft.level.getGameTime() - ocPendingAt > 40;
+            if (confirmed || stale) ocPending = -1;
+        }
+        return ocPending >= 0 ? Math.min(ocPending, info.installed()) : info.active();
+    }
+
+    private void ocSet(int active, boolean send) {
+        var info = overclock();
+        if (info == null) return;
+        int k = Math.max(0, Math.min(info.installed(), active));
+        if (k == ocShown(info) && !send) return;
+        ocPending = k;
+        ocPendingAt = this.minecraft != null && this.minecraft.level != null ? this.minecraft.level.getGameTime() : 0;
+        if (send) {
+            int percent = (int) Math.round(k * 100.0 / info.installed());
+            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                new com.miophas.singularity_iteration.common.network.MachineOverclockPacket(this.menu.containerId, percent));
+        }
+    }
+
+    private int ocFromMouse(double my) {
+        var info = overclock();
+        if (info == null) return 0;
+        int ty = ocTop() + OC_TRACK_Y;
+        double f = 1.0 - (my - ty) / OC_TRACK_H;
+        return (int) Math.round(Math.max(0, Math.min(1, f)) * info.installed());
+    }
+
+    private void renderOverclock(GuiGraphics g, int mouseX, int mouseY) {
+        var info = overclock();
+        if (info == null) return;
+        int bx = leftPos - DOCK_W + 2, y = ocTop();
+        int k = ocShown(info);
+        float f = info.installed() == 0 ? 0F : (float) k / info.installed();
+        if (!dockButtons.isEmpty() || dockSlots() > 0) SiGuiTheme.groove(g, bx + 2, y - 2, DOCK_BUTTON - 4);
+        String label = "OC";
+        DspUi.small(g, this.font, label, bx + (DOCK_BUTTON - DspUi.smallWidth(this.font, label)) / 2, y + 2, 0xFF2A4A63);
+        int tx = bx + 6, tw = 6, ty = y + OC_TRACK_Y, th = OC_TRACK_H;
+        boolean hov = overOcTrack(mouseX, mouseY) || ocDragging;
+        g.fill(tx - 1, ty - 1, tx + tw + 1, ty + th + 1, hov ? SiGuiTheme.ACCENT : SiGuiTheme.OUTLINE);
+        g.fill(tx, ty, tx + tw, ty + th, 0xFF20262C);
+        int fill = Math.round(th * f);
+        if (fill > 0) {
+            // cool cyan at low throttle, warm orange near full power
+            int top = f > 0.66F ? 0xFFFFB347 : f > 0.33F ? 0xFF8FE3A0 : 0xFF5FD3F5;
+            g.fillGradient(tx, ty + th - fill, tx + tw, ty + th, top, 0xFF2F8FB8);
+        }
+        int ky = ty + th - fill;
+        g.fill(tx - 2, ky - 1, tx + tw + 2, ky + 1, 0xFFF4F7FA);
+        g.renderOutline(tx - 2, ky - 2, tw + 4, 4, 0xFF2A2E33);
+        String n = k + "/" + info.installed();
+        DspUi.small(g, this.font, n, bx + (DOCK_BUTTON - DspUi.smallWidth(this.font, n)) / 2, ty + th + 4, 0xFF2A2E33);
+    }
+
+    private void renderOverclockTooltip(GuiGraphics g, int mouseX, int mouseY) {
+        var info = overclock();
+        if (info == null || !(overOcSection(mouseX, mouseY) || ocDragging)) return;
+        int k = ocShown(info);
+        boolean estimate = k != info.active();
+        int percent = (int) Math.round(k * 100.0 / info.installed());
+        int perTick = info.progressPerTick(), ticks = info.ticksPerOperation(), eu = info.energyPerTick();
+        double energyFactor = Math.pow(1.6, k);
+        if (estimate) {
+            // same rules as the machine: progress per tick = ceil(1 / 0.7^k), EU x 1.6^k
+            int maxProgress = Math.max(1, ticks * Math.max(1, perTick));
+            perTick = Math.max(1, (int) Math.ceil(1.0 / Math.pow(0.7, k)));
+            ticks = Math.max(1, (maxProgress + perTick - 1) / perTick);
+            eu = (int) Math.min(Integer.MAX_VALUE, Math.max(1, Math.round(eu * Math.pow(1.6, k - info.active()))));
+        }
+        String approx = estimate ? "~" : "";
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.translatable("gui.mio_icif.overclock.title", percent, k, info.installed()).withStyle(ChatFormatting.AQUA));
+        lines.add(Component.translatable("gui.mio_icif.overclock.speed", approx + perTick, approx + ticks));
+        lines.add(Component.translatable("gui.mio_icif.overclock.energy", approx + String.format(java.util.Locale.ROOT, "%.1f", energyFactor), approx + eu));
+        lines.add(Component.translatable("gui.mio_icif.overclock.hint").withStyle(ChatFormatting.GRAY));
+        g.renderComponentTooltip(this.font, lines, mouseX, mouseY);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (ocDragging) {
+            ocSet(ocFromMouse(mouseY), false);
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (ocDragging) {
+            ocDragging = false;
+            ocSet(ocFromMouse(mouseY), true);
+            return true;
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        var info = overclock();
+        if (info != null && scrollY != 0 && overOcSection(mouseX, mouseY)) {
+            ocSet(ocShown(info) + (scrollY > 0 ? 1 : -1), true);
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     private int dockButtonY(int i) {
@@ -381,6 +527,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
             if (hov) g.renderOutline(bx, by, DOCK_BUTTON, DOCK_BUTTON, SiGuiTheme.ACCENT);
             dockButtons.get(i).icon().draw(g, bx + 1, by + 1, hov);
         }
+        renderOverclock(g, mouseX, mouseY);
     }
 
     private void renderDockTooltip(GuiGraphics g, int mouseX, int mouseY) {
@@ -393,6 +540,12 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         int i = button == 0 ? dockButtonAt(mouseX, mouseY) : -1;
         if (i >= 0) {
             dockButtons.get(i).onClick().run();
+            return true;
+        }
+        if (button == 0 && overclock() != null && overOcTrack(mouseX, mouseY)) {
+            ocDragging = true;
+            ocSet(ocFromMouse(mouseY), false);
+            playClick();
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -482,6 +635,7 @@ public abstract class mio_icif_screen<T extends net.minecraft.world.inventory.Ab
         // 空格子的升级槽默认提示该机器支持的升级（放在最后以覆盖在物品 tooltip 之上）
         renderUpgradeSlotTooltip(guiGraphics, mouseX, mouseY);
         renderDockTooltip(guiGraphics, mouseX, mouseY);
+        renderOverclockTooltip(guiGraphics, mouseX, mouseY);
     }
 
     /**

@@ -8,7 +8,7 @@
       "item": "minecraft:sugar"
     },
     {
-      "item": "minecraft:milk_bucket"
+      "tag": "c:buckets/milk"
     }
   ],
   "result": {

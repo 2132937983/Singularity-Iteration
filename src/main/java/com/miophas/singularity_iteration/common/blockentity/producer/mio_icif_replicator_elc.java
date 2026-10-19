@@ -128,7 +128,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     @Override public boolean isItemValidForSlot(int slot,ItemStack item){
         if(item.isEmpty())return false;
         if(slot==MEMORY_SLOT)return item.getCount()==1&&item.getItem() instanceof mio_icif_memory;
-        if(slot==UU_CELL_SLOT)return !cellContent(item).isEmpty();
+        if(slot==UU_CELL_SLOT)return !cellContent(item).isEmpty()||com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(item,uuFluid());
         if(slot==BATTERY_SLOT)return apiIsBattery(item);
         if(slot>=UPGRADE_SLOT_START&&slot<SLOT_COUNT){var type=getItemAPI().getUpgradeType(item);return type!=null&&!type.isEmpty();}
         return false;
@@ -174,6 +174,9 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         if(!content.isEmpty()){
             var empty=input.is(mio_icif_fluids.UUMATTER_BUCKET.get())?new ItemStack(Items.BUCKET):mio_icif_cells.getEmptyCellForStack(input);
             changing=true;try{ContainerToTank.transfer(itemHandler,UU_CELL_SLOT,EMPTY_CELL_SLOT,tank,content,empty);}finally{changing=false;}
+        }else if(com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(input,uuFluid())){
+            // 0.1.10.6: UU containers of other mods go through the fluid capability
+            changing=true;try{com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler,UU_CELL_SLOT,EMPTY_CELL_SLOT,tank,uuFluid());}finally{changing=false;}
         }
         refreshSelection();
     }

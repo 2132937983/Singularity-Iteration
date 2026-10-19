@@ -156,6 +156,11 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
      * 检查物品是否是水桶或水单元
      */
     private boolean isWaterBucket(ItemStack stack) {
+        // 0.1.10.6: also partly filled cells and water containers of other mods (through the fluid capability)
+        return isKnownWaterBucket(stack) || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, Fluids.WATER);
+    }
+
+    private boolean isKnownWaterBucket(ItemStack stack) {
         return stack.is(Items.WATER_BUCKET) || mio_icif_cells.isCellContainingFluid(stack, Fluids.WATER);
     }
 
@@ -303,7 +308,11 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
      */
     private void handleWaterBucketSlot() {
         var input = itemHandler.getStackInSlot(WATER_BUCKET_SLOT);
-        if (input.isEmpty() || !isWaterBucket(input)) return;
+        if (input.isEmpty()) return;
+        if (!isKnownWaterBucket(input)) {
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, WATER_BUCKET_SLOT, EMPTY_BUCKET_SLOT, fluidTank, Fluids.WATER)) setChanged();
+            return;
+        }
         boolean cell = mio_icif_cells.isFluidCell(input);
         var content = cell ? mio_icif_cells.getCellFluid(input.copyWithCount(1)) : new FluidStack(Fluids.WATER, 1000);
         var empty = cell ? mio_icif_cells.getEmptyCellForStack(input.copyWithCount(1)) : new ItemStack(Items.BUCKET);

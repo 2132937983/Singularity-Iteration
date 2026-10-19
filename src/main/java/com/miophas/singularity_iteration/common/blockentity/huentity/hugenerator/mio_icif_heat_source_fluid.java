@@ -217,7 +217,8 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
         // 升级槽生效（对齐原版 IC2 LHE 的 upgradeSlot.tick()）
         blockEntity.handleAutomationUpgrades();
 
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     /**
@@ -359,7 +360,16 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
      * 处理输入液体容器
      */
     private void handleInputFluidSlot() {
-        if (com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.enabled()) {
+        ItemStack held = itemHandler.getStackInSlot(INPUT_FLUID_BUCKET_SLOT);
+        if (held.isEmpty()) return;
+        boolean thermal = com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.enabled();
+        boolean known = held.is(Items.LAVA_BUCKET) || (thermal ? mio_icif_cells.isFluidCell(held)
+            : mio_icif_cells.isCellContainingAnyFluid(held, Fluids.LAVA, mio_icif_fluids.HOTCOOLANT.get()));
+        if (!known) {
+            if (emptyOtherHotContainer(held)) setChanged();
+            return;
+        }
+        if (thermal) {
             var input = itemHandler.getStackInSlot(INPUT_FLUID_BUCKET_SLOT);
             if (input.isEmpty()) return;
             boolean cell = mio_icif_cells.isFluidCell(input);
@@ -455,6 +465,24 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
         setChanged();
     }
 
+    /** 输入罐接受的热流体：岩浆或热冷却液（含流动形态）。 */
+    private static boolean isHotFluid(Fluid fluid) {
+        return fluid.isSame(Fluids.LAVA) || fluid.isSame(mio_icif_fluids.HOTCOOLANT.get());
+    }
+
+    /**
+     * 0.1.10.6：旧代码只认岩浆桶和满的 SI 单元，热冷却液桶、半满的通用单元和其他模组的容器都被拒收。
+     * 这些容器经流体能力倒入输入罐，空容器进空容器输出槽；与旧代码一样，不让两种产物在输出罐混装。
+     */
+    private boolean emptyOtherHotContainer(ItemStack held) {
+        FluidStack offered = com.miophas.singularity_iteration.common.util.FluidContainerSlots.peek(held);
+        if (offered.isEmpty() || !isHotFluid(offered.getFluid())) return false;
+        Fluid product = offered.getFluid().isSame(Fluids.LAVA) ? mio_icif_fluids.PAHOEHOELAVA.get() : mio_icif_fluids.COOLANT.get();
+        if (!outputTank.isEmpty() && outputTank.getFluid().getFluid() != product) return false;
+        return com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler,
+            INPUT_FLUID_BUCKET_SLOT, INPUT_EMPTY_BUCKET_SLOT, inputTank, mio_icif_heat_source_fluid::isHotFluid);
+    }
+
     /**
      * 处理输出液体容器
      */
@@ -538,7 +566,9 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == INPUT_FLUID_BUCKET_SLOT) {
             // 输入槽：接受岩浆桶或岩浆/热冷却剂单元
-            return stack.is(Items.LAVA_BUCKET) || mio_icif_cells.isCellContainingAnyFluid(stack, Fluids.LAVA, mio_icif_fluids.HOTCOOLANT.get());
+            // 0.1.10.6：也接受热冷却液桶、半满单元和其他模组的岩浆/热冷却液容器
+            return stack.is(Items.LAVA_BUCKET) || mio_icif_cells.isCellContainingAnyFluid(stack, Fluids.LAVA, mio_icif_fluids.HOTCOOLANT.get())
+                || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, mio_icif_heat_source_fluid::isHotFluid);
         } else if (slot == INPUT_EMPTY_BUCKET_SLOT) {
             // 空容器输出槽：不允许手动放入
             return false;
@@ -661,10 +691,9 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
 
     public void consumeHeat(int amount) {
         heatStorage.consumeHeatInternal(amount, false);
-        setChanged();
-        if (level != null && !level.isClientSide()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        // 0.1.10.10 (D1/D4): save mark and a throttled update (was: every call)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
+        if (level != null && !level.isClientSide()) com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);
     }
 
     public int getInputFluidAmount() {

@@ -14,6 +14,12 @@ public final class CoreConfig {
     private static final String RESOURCE_PATH = "/assets/mio_icif/config/core.ini";
     private static final Map<String, Section> sections = new LinkedHashMap<>();
     private static volatile boolean loaded = false;
+    /**
+     * 0.1.10.7: counts every change of the values (the first load and each override). A caller
+     * that caches a value derived from this config compares this number instead of reading the
+     * config again; see {@code IndependentEnergyMode}.
+     */
+    private static volatile int revision = 0;
 
     private CoreConfig() { }
 
@@ -23,9 +29,16 @@ public final class CoreConfig {
             if (in == null) throw new IllegalStateException("Core config resource not found: " + RESOURCE_PATH);
             parse(in);
             loaded = true;
+            revision++;
         } catch (IOException e) {
             throw new RuntimeException("Failed to load core config", e);
         }
+    }
+
+    /** 0.1.10.7: the change counter of the values (loads the config first). */
+    public static int revision() {
+        if (!loaded) load();
+        return revision;
     }
 
     public static boolean getBool(String section, String key, boolean defaultValue) {
@@ -69,7 +82,10 @@ public final class CoreConfig {
 
     public static void overrideBool(String section, String key, boolean value) {
         load();
-        sections.computeIfAbsent(section, s -> new Section()).entries.put(key, String.valueOf(value));
+        synchronized (CoreConfig.class) {
+            sections.computeIfAbsent(section, s -> new Section()).entries.put(key, String.valueOf(value));
+            revision++;
+        }
     }
 
     private static void parse(InputStream in) throws IOException {

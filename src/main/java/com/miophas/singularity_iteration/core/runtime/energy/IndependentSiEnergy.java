@@ -318,6 +318,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     /** Maximum sum of search weights of all origins of one native plan. */
     private static final long MAX_PLAN_ROUTE_VERTICES = 800_000;
     /**
+     * 0.1.10.8: bounds of the plan cache of one grid: plans, route array cells, and the search
+     * weights of the routes that the cached plans keep (2 full plans).
+     */
+    private static final int PLAN_CACHE_PLANS = 64;
+    private static final long PLAN_CACHE_CELLS = 1_000_000L, PLAN_CACHE_ROUTE_VERTICES = 2 * MAX_PLAN_ROUTE_VERTICES;
+    /**
      * Maximum conductor visits per grid per tick for native world effects. One
      * delivery visits its path twice (effect scan and meter samples), so the
      * code multiplies vertex counts by 2 before it compares them with this value.
@@ -610,6 +616,17 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     private EnergyAmount totalDebit = EnergyAmount.ZERO, totalCredit = EnergyAmount.ZERO, totalLoss = EnergyAmount.ZERO;
     /** Effect counters: deliveries, conductor visits, melted conductors, exploded sinks, blocks removed by blasts. */
     private long deliveryCount, deliveryWireVisits, fusedWires, destroyedReceivers, blastBlocks;
+    /**
+     * 0.1.10.7 performance counters (diagnostics only): deliveries whose world effects came from a
+     * cached path profile, deliveries that visited their path conductor by conductor, idle native
+     * passes answered from the idle memo, and commit validations that reused the check of the same
+     * window.
+     */
+    private long pathProfileHits, pathSlowVisits, idleMemoHits, reusedValidations;
+    /** 0.1.10.8: native windows taken from the plan cache instead of a new plan. */
+    private long planCacheHits;
+    /** 0.1.10.10: windows ended early because none of their sinks had room (E11). */
+    private long saturatedWindows;
     /** Number of foreign queries that threw. It saturates at {@link Long#MAX_VALUE}. */
     private long foreignQueryFailures;
     /**
@@ -816,6 +833,33 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final RouteBuildBudget routeBudget = new RouteBuildBudget();
         /** The native plan in progress, or {@code null}. A plan with origins left resumes on the next tick. */
         NativeRoutePlan nativePlan;
+        /**
+         * 0.1.10.8: released plans of a multi-window cycle, by first source and first receiver
+         * ({@link #planKey}). A plan is a function of the snapshot, the routing view and generation,
+         * the endpoint edits, its first source and its first receiver. So a plan of the same epoch
+         * and key is the plan that the constructor would build again. The cache belongs to one epoch
+         * ({@code planCache*} fields) and is emptied when the epoch changes.
+         */
+        final HashMap<Long, NativeRoutePlan> planCache = new HashMap<>();
+        /** Reachable sink count per first source of the cached plans. It is the same for every plan of one source in one epoch. */
+        final HashMap<Integer, Integer> planCacheCounts = new HashMap<>();
+        /** The epoch of {@code planCache}. */
+        ConductorRegistry.Snapshot planCacheSnapshot;
+        RoutingView planCacheView;
+        long planCacheGeneration = -1, planCacheEdits = -1;
+        /** Route array cells and route search weights held by {@code planCache}. */
+        long planCacheCells, planCacheVertices;
+        /**
+         * 0.1.10.10 (E12): per tile, the parts of its port that change only with its block state or
+         * with an endpoint edit (block type, conductor faces, emission positions), for
+         * {@code skeletonEdits}. Live parts (balance, faces a machine opens, output switch, remote
+         * switch, packet policy) are read every tick.
+         */
+        final IdentityHashMap<BlockEntity, PortSkeleton> skeletons = new IdentityHashMap<>();
+        long skeletonEdits = -1;
+        /** 0.1.10.10 (E12): the endpoint list that {@code ports} walks, for {@code machinesRevision}. */
+        List<Map.Entry<BlockPos, BlockEntity>> machineList;
+        long machineListRevision = -1, machinesRevision;
         /** Routing identities of all sources and sinks for {@code portsGeneration}, or {@code null}. */
         RoutingView routingView;
         /** Routing generation. It only increases. See the class comment. */
@@ -906,6 +950,24 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          * voltage per position. The values for a node are sums over the tick.
          */
         final Map<BlockPos, NodeStats> samples = new HashMap<>();
+        /**
+         * 0.1.10.7: meter samples of {@code sampleTick} that are not yet in {@code samples}, in the
+         * order they were taken. A meter read adds them ({@link #flushSamples}); the order keeps the
+         * sums bit-identical to adding them at once. Most ticks nobody reads a meter, so the per-wire
+         * work of a delivery is never done.
+         */
+        final ArrayList<PendingSample> pendingSamples = new ArrayList<>();
+        /** 0.1.10.7: effect profiles of the delivery paths of {@code profileSnapshot} ({@link PathProfile}). */
+        ConductorRegistry.Snapshot profileSnapshot;
+        final HashMap<Object, PathProfile> pathProfiles = new HashMap<>();
+        /**
+         * 0.1.10.7: idle native passes (no source has an allowance): start cursor to {end cursor,
+         * plans built}, valid for one snapshot, routing generation, endpoint edit count and source count.
+         */
+        final HashMap<Integer, long[]> idleRuns = new HashMap<>();
+        ConductorRegistry.Snapshot idleSnapshot;
+        long idleGeneration = Long.MIN_VALUE, idleEdits = Long.MIN_VALUE;
+        int idleSources = -1;
         /** EU that each source sent in {@code sampleTick}, native and FE together. */
         final Map<BlockPos, EnergyAmount> packetSpent = new HashMap<>();
         /** Sources whose FE export threw in {@code sampleTick}. The export pass skips them. */
@@ -1063,7 +1125,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     if (next.tile instanceof IEnergyConductiveEndpoint) {
                         // The fast path only refreshed the conductor index. A dual tile
                         // keeps its endpoint registration and its port.
-                        machines.put(at, next.tile);
+                        machines.put(at, next.tile); machinesRevision++;
                         contactOrder.putEndpoint(point(at));
                     } else {
                         contactOrder.putConductor(point(at), next.conductorLoss, next.faces);
@@ -1082,7 +1144,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     // A null result removes the key, so the map never holds a zero count.
                     conductorChunks.compute(chunk, (key, count) -> count == 1 ? null : count - 1);
                 }
-                machines.remove(at);
+                machines.remove(at); machinesRevision++;
                 receiverCursors.remove(at);
                 transformerRouting.remove(at);
                 transformers.remove(at);
@@ -1099,7 +1161,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     if (after.tile instanceof IEnergyConductiveEndpoint) {
                         // IC2 dual-node layout: the position carries routes to endpoints
                         // beyond it and still owns a port, so its balance keeps charging.
-                        machines.put(at, after.tile);
+                        machines.put(at, after.tile); machinesRevision++;
                         contactOrder.putEndpoint(point(at));
                     } else {
                         contactOrder.putConductor(point(at), after.conductorLoss, after.faces);
@@ -1112,7 +1174,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                                 ENDPOINT_LIMIT, endpointLimitDrops);
                         continue;
                     }
-                    machines.put(at, after.tile);
+                    machines.put(at, after.tile); machinesRevision++;
                     contactOrder.putEndpoint(point(at));
                     if (after.tile instanceof IndependentTransformerBlockEntity transformer) {
                         transformerRouting.put(at, after.routing); transformers.put(at, transformer);
@@ -1133,9 +1195,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (closed) return;
             closed = true;
             nativePlan = null; routingView = null; exportPlan = null; importPlan = null; receiverCursors.clear();
+            planCache.clear(); planCacheCounts.clear(); planCacheSnapshot = null; planCacheView = null;
+            skeletons.clear(); machineList = null;
             catchUpEndpoints.clear(); effectEndpoints.clear(); shocks.clear(); includedEndpoints = null; excludedEndpoints = null;
             registered.clear(); foreign.clear(); failedQueries.clear(); samples.clear(); packetSpent.clear(); scanAnchors = List.of();
-            entries.close(); conductors.close(); contactOrder.close(); machines.clear(); transformerRouting.clear(); transformers.clear(); specialCables.clear(); specialObserved.clear(); specialPublished.clear(); specialPending.clear(); initialGeneratorContacts.clear(); conductorChunks.clear(); conductorTypes.clear(); conductorOwners.clear(); catchUp = false; effectPauseFrame = -1;
+            entries.close(); conductors.close(); contactOrder.close(); machines.clear(); machinesRevision++; transformerRouting.clear(); transformers.clear(); specialCables.clear(); specialObserved.clear(); specialPublished.clear(); specialPending.clear(); initialGeneratorContacts.clear(); conductorChunks.clear(); conductorTypes.clear(); conductorOwners.clear(); catchUp = false; effectPauseFrame = -1;
         }
     }
     /**
@@ -1510,17 +1574,20 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     private void settle(ServerLevel level, WorldGrid grid) {
         if (grid.sampleTick != server.getTickCount()) {
-            grid.sampleTick = server.getTickCount(); grid.samples.clear(); grid.packetSpent.clear(); grid.failedOutputs.clear(); grid.transformerReceived.clear(); grid.exportedThisTick.clear();
+            grid.sampleTick = server.getTickCount(); grid.samples.clear(); grid.pendingSamples.clear(); grid.packetSpent.clear(); grid.failedOutputs.clear(); grid.transformerReceived.clear(); grid.exportedThisTick.clear();
             grid.receivedThisTick.clear();
         }
         grid.shocks.clear();
         long started = System.nanoTime();
+        chunkStatus.clear();   // 0.1.10.7: the chunk cache of the port scans lives for one settlement
+        chunkStatusLevel = level;
         var allowances = new IdentityHashMap<BlockEntity, PacketAllowance>();
         try {
             settle(level, grid, true, allowances);
             settleForeign(level, grid, allowances);
             importForeign(level, grid);
         } finally {
+            chunkStatusLevel = null; chunkStatus.clear();
             grid.shocks.apply((entity, damage) -> {
                 if (entity.isAlive()) entity.hurt(level.damageSources().lightningBolt(), damage);
             });
@@ -1631,6 +1698,13 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 }
                 checkView = false;
             }
+            // 0.1.10.7: no source has an allowance, so no window can offer: the pass only walks
+            // the source windows. The same walk on the same topology gives the same cursor, so it
+            // is answered from the idle memo after the first time.
+            if (batch == 0 && grid.nativePlan == null && noAllowance(allSources, allowances)) {
+                settleIdle(grid, snapshot, allSources, allSinks);
+                return;
+            }
             var plan = grid.nativePlan;
             // Shape guard: drop a plan whose window does not fit inside the live lists.
             if (plan != null) {
@@ -1654,8 +1728,13 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     if (++skipped == allSources.size()) return;
                     start = (start + 1) % allSources.size();
                 }
-                plan = new NativeRoutePlan(snapshot, allSources, allSinks, start, grid);
-                grid.plansBuilt++;
+                // 0.1.10.8: a window of a multi-window cycle comes from the plan cache when its
+                // epoch and first receiver are unchanged (the same plan as a new one).
+                plan = cachedPlan(grid, snapshot, allSources, start);
+                if (plan == null) {
+                    plan = new NativeRoutePlan(snapshot, allSources, allSinks, start, grid);
+                    grid.plansBuilt++;
+                }
                 grid.nativePlan = plan;
             } else if (plan.originIndex < plan.origins.size()) {
                 grid.plansResumed++;
@@ -1665,7 +1744,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             // wrapped. Mark its sources as done and move to the next source group.
             if (windows.contains(windowKey)) {
                 visited.addAll(plan.sources.stream().map(RouteEndpoint::position).toList());
-                grid.nativeCursor = plan.nextSource; grid.nativePlan = null;
+                grid.nativeCursor = plan.nextSource; releasePlan(grid, plan);
                 continue;
             }
             boolean offering = false;
@@ -1679,7 +1758,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             }
             if (!offering) {
                 visited.addAll(plan.sources.stream().map(RouteEndpoint::position).toList());
-                grid.nativeCursor = plan.nextSource; grid.nativePlan = null;
+                grid.nativeCursor = plan.nextSource; releasePlan(grid, plan);
                 if (visited.size() == allSources.size()) return;
                 continue;
             }
@@ -1703,9 +1782,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             grid.receiverCursors.put(plan.sources.getFirst().position, plan.nextReceiver);
             grid.nativeCursor = plan.nextSource;
             // Keep a complete single-window plan hot. A multi-window cycle
-            // releases old paths before admitting another working set.
+            // releases the plan into the bounded plan cache (0.1.10.8).
             if (plan.nextSource != plan.firstSource || plan.nextReceiver != plan.firstReceiver)
-                grid.nativePlan = null;
+                releasePlan(grid, plan);
             if (visited.size() == allSources.size()) return;
             if (!accessible(level, grid)) return;
         }
@@ -1814,7 +1893,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final List<Port> involved = List.copyOf(involvedSet);
         var snapshot = plan.graph; var room = new ArrayList<EnergyAmount>();
         int[] receivers = new int[sinks.size()];
-        for (int i = 0; i < sinks.size(); i++) { room.add(sinks.get(i).quote.exactAmount().roomBelow(sinks.get(i).capacity)); receivers[i] = i; }
+        boolean anyRoom = false;
+        for (int i = 0; i < sinks.size(); i++) {
+            var space = sinks.get(i).quote.exactAmount().roomBelow(sinks.get(i).capacity);
+            room.add(space); receivers[i] = i; anyRoom |= !space.isZero();
+        }
+        // 0.1.10.10 (E11): no sink of the window has room, so the fair distribution moves nothing
+        // (every credit is bounded by the room, every debit by its credits and losses): the window
+        // ends as it would after the round, without building the domains and the round. The legacy
+        // walk draws random numbers for its receiver order, so it still runs in full.
+        if (!anyRoom && IndependentEnergyMode.fairDistribution()) { saturatedWindows++; return true; }
         var quotes = sources.stream().map(source -> new DomainDistributor.Source(source.balance().whole(), source.packet,
             source.partialPackets, source.packets)).toList();
         var budgets = sources.stream().map(source -> windowOffer(source, allowances, plan.packetLimit)).toList();
@@ -1837,28 +1925,37 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             ? fairRound(level, grid, sources, sinks, domains, receivers, room, shared, budgets)
             : PlannedRound.of(FractionalDistributor.allocateQuotedTraced(quotes, sources.stream().map(Port::balance).toList(),
                 domains, receivers, room, shared, budgets, selectionRandom), sources.size(), sinks.size());
-        // Net balance change per port, in EnergyAmount units. A port that is a
-        // source and a sink gets one merged delta.
-        var deltas = new IdentityHashMap<Port, java.math.BigInteger>();
+        // Net balance change per port: the credits and the debits of the port. A port
+        // that is a source and a sink gets both. 0.1.10.8: two exact EnergyAmount sums
+        // instead of one signed BigInteger per port (see applyDelta).
+        var portDebits = new IdentityHashMap<Port, EnergyAmount>();
+        var portCredits = new IdentityHashMap<Port, EnergyAmount>();
         var outputDebits = new ArrayList<FeLedger.OutputDebit>();
         EnergyAmount loss = round.dissipated(), debit = EnergyAmount.ZERO, credit = EnergyAmount.ZERO;
         for (int i = 0; i < sources.size(); i++) {
             var value = round.debit(i); debit = debit.add(value);
-            deltas.merge(sources.get(i), value.units().negate(), java.math.BigInteger::add);
+            portDebits.merge(sources.get(i), value, EnergyAmount::add);
             if (!value.isZero() && sources.get(i).outputBudget != null)
                 outputDebits.add(new FeLedger.OutputDebit(sources.get(i).outputBudget, value));
         }
         for (int receiver = 0; receiver < sinks.size(); receiver++) {
             var value = round.credit(receiver); credit = credit.add(value);
-            deltas.merge(sinks.get(receiver), value.units(), java.math.BigInteger::add);
+            portCredits.merge(sinks.get(receiver), value, EnergyAmount::add);
         }
         // Nothing to move: the window is finished without a write.
         if (debit.isZero()) return true;
         // External HU is acquired only for a routable, nonzero demand. It is credited to owned EU first.
         // A fresh bounded second plan then settles only actual owned balances, never simulated fuel.
         boolean acquired = false;
+        // 0.1.10.7: when this window was validated just now and nothing was written in between
+        // (same tick, balance writes, endpoint edits, topology readiness and snapshot), the commit
+        // reuses that validation. The commit still checks every written storage itself.
+        boolean prevalidated = false;
+        long validTick = server.getTickCount(), validWrites = grid.balanceWrites, validEdits = grid.endpointEdits;
+        long validReadiness = topology.readinessRevision();
         if (prepareDemand) {
             if (!valid(level, grid, snapshot, involved)) { rejected++; return true; }
+            prevalidated = true;
             for (int i = 0; i < sources.size(); i++) {
                 var source = sources.get(i);
                 if (source.tile instanceof DemandEnergySource demand && round.debit(i).compareTo(source.quote.exactAmount()) > 0) {
@@ -1898,7 +1995,19 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         var poweredConductors = new java.util.LinkedHashSet<IEnergyConductor>();
         var detectorDeliveries = new HashSet<IndependentSpecialCableBlockEntity>();
         var shockPlan = new LinkedHashMap<ShockRoute, Map<BlockPos, Double>>();
+        // 0.1.10.7: switches read once per window (they were read for every conductor), the wire of
+        // each delivery for the meter samples, and the conductor runs of profiled paths.
+        final boolean meltdown = IndependentEnergyMode.enetCableMeltdown(), shocking = IndependentEnergyMode.enetShockDamage();
+        // 0.1.10.8: the explosion switch once per window, and each sink's packet limit once per
+        // window (it depends only on the sink: block, tier, transformer and quote).
+        final boolean explosions = IndependentEnergyMode.enetExplosions();
+        var receiverLimits = new Long[sinks.size()];
+        var receiverLimitKnown = new boolean[sinks.size()];
+        var deliveryWires = new BlockPos[round.deliveries().size()][];
+        var poweredRuns = java.util.Collections.newSetFromMap(new IdentityHashMap<IEnergyConductor[], Boolean>());
+        int deliveryIndex = -1;
         for (var delivery : round.deliveries()) {
+            deliveryIndex++;
             traceDebit = traceDebit.add(delivery.sourceDebit());
             traceCredit = traceCredit.add(delivery.credit());
             traceLoss = traceLoss.add(delivery.pathLoss());
@@ -1906,16 +2015,35 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             double[] weakestMeasuredLimit = {Double.POSITIVE_INFINITY};
             // Effects use the packet that the source pushes on this path (see PlannedDelivery).
             // A source's tier only caps its offer. A partial delivery is not a full packet.
-            double deliveryVoltage = delivery.voltage();
+            // 0.1.10.11: a debug source (IOverloadFreeEnergySource, the creative generator) never causes
+            // overload effects; its deliveries are metered with their real voltage below
+            double deliveryVoltage = sources.get(delivery.source()).tile instanceof com.miophas.singularity_iteration.core.api.energy.IOverloadFreeEnergySource free
+                && free.ignoresOverload() ? 0 : delivery.voltage();
             if (path == null) {
                 if (!delivery.pathLoss().isZero()) throw new IllegalStateException("Direct delivery has conductor loss");
             } else {
                 // The legacy walk pays the whole path loss per delivery. The fair-share
                 // proportional loss depends on the credit, so this check is legacy only.
                 if (!fair && !com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyLoss.fromMilli(path.lossMilli()).equals(delivery.pathLoss())) throw new IllegalStateException("Delivery path and quoted loss differ");
+                // 0.1.10.7: a delivery below every limit of its path (the normal case) has no world
+                // effect. Its profile gives the same visit count, detector cables, powered conductors
+                // and weakest limit without visiting the path. Otherwise the path is visited as before.
+                var profile = pathProfile(level, grid, snapshot, path);
+                if (profile != null && profile.quiet(deliveryVoltage, meltdown, shocking) && profile.live()) {
+                    pathProfileHits++;
+                    wireVisits[0] = Math.addExact(wireVisits[0], profile.positions.length);
+                    for (var special : profile.specials) if (special.detector()) detectorDeliveries.add(special);
+                    poweredRuns.add(profile.conductors);
+                    weakestMeasuredLimit[0] = Math.min(weakestMeasuredLimit[0], profile.weakest);
+                    deliveryWires[deliveryIndex] = profile.positions;
+                } else {
+                pathSlowVisits++;
+                if (profile != null && !profile.live()) grid.pathProfiles.remove(path.key());
+                var wire = new ArrayList<BlockPos>();
                 path.visit(position -> {
                     wireVisits[0] = Math.incrementExact(wireVisits[0]);
                     var at = new BlockPos(position.x(), position.y(), position.z());
+                    wire.add(at);
                     var type = grid.conductorTypes.get(at);
                     if (type == null) throw new IllegalStateException("Published conductor has no material identity");
                     var special = grid.specialCables.get(at);
@@ -1924,7 +2052,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     if (conductorLimit == null) conductorLimit = EnergyNodeRegistry.fuseLimit(type);
                     if (conductorLimit != null) {
                         weakestMeasuredLimit[0] = Math.min(weakestMeasuredLimit[0], conductorLimit);
-                        if (IndependentEnergyMode.enetCableMeltdown() && deliveryVoltage > conductorLimit) {
+                        if (meltdown && deliveryVoltage > conductorLimit) {
                             fusePlan.put(at, type);
                         }
                     }
@@ -1934,10 +2062,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         if (be instanceof IEnergyConductor conductor) {
                             poweredConductors.add(conductor);
                             weakestMeasuredLimit[0] = Math.min(weakestMeasuredLimit[0], conductor.getInsulationBreakdownEnergy());
-                            if (IndependentEnergyMode.enetCableMeltdown() && !fusePlan.containsKey(at) && deliveryVoltage > conductor.getInsulationBreakdownEnergy()) {
+                            if (meltdown && !fusePlan.containsKey(at) && deliveryVoltage > conductor.getInsulationBreakdownEnergy()) {
                                 stripPlan.put(at, type);
                             }
-                            if (IndependentEnergyMode.enetShockDamage() && deliveryVoltage > conductor.getInsulationEnergyAbsorption()) {
+                            if (shocking && deliveryVoltage > conductor.getInsulationEnergyAbsorption()) {
                                 double shockEnergy = deliveryVoltage - conductor.getInsulationEnergyAbsorption();
                                 shockPlan.computeIfAbsent(new ShockRoute(sources.get(delivery.source()).position,
                                     sinks.get(delivery.receiver()).position), ignored -> new LinkedHashMap<>())
@@ -1946,18 +2074,20 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         }
                     }
                 });
+                deliveryWires[deliveryIndex] = wire.toArray(BlockPos[]::new);
+                }
             }
             var sink = sinks.get(delivery.receiver());
-            var receiverType = BuiltInRegistries.BLOCK.getKey(sink.state.getBlock());
-            Long receiverLimit = tierReceiverLimit(sink.tile);
-            if (receiverLimit == null) receiverLimit = EnergyNodeRegistry.storagePacket(receiverType);
-            if (sink.transformer != null) receiverLimit = Long.valueOf(sink.transformer.limits().inputLimit());
-            else if (receiverLimit == null && EnergyNodeRegistry.standardProcessor(receiverType)) receiverLimit = Long.valueOf(sink.quote.maxReceive());
+            if (!receiverLimitKnown[delivery.receiver()]) {
+                receiverLimits[delivery.receiver()] = receiverLimit(sink);
+                receiverLimitKnown[delivery.receiver()] = true;
+            }
+            Long receiverLimit = receiverLimits[delivery.receiver()];
             // weakestMeasuredLimit holds the lowest conductor breakdown limit and the
             // lowest insulation breakdown energy on the path. A delivery above it does
             // not explode the sink. This test does not depend on enetCableMeltdown().
             boolean fused = deliveryVoltage > weakestMeasuredLimit[0];
-            if (IndependentEnergyMode.enetExplosions() && receiverLimit != null && !fused
+            if (explosions && receiverLimit != null && !fused
                     && deliveryVoltage > receiverLimit) {
                 receiverPlan.merge(sink, deliveryVoltage, Math::max);
             }
@@ -1969,19 +2099,29 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         var writes = new ArrayList<CustomEUEnergyStorage.NetworkWrite>();
         var additional = new ArrayList<NetworkCell.Write>();
         for (var port : involved) {
-            var delta = deltas.getOrDefault(port, java.math.BigInteger.ZERO);
-            var next = EnergyAmount.fromUnits(port.quote.exactAmount().units().add(delta));
+            var portCredit = portCredits.getOrDefault(port, EnergyAmount.ZERO);
+            var portDebit = portDebits.getOrDefault(port, EnergyAmount.ZERO);
+            var next = applyDelta(port.quote.exactAmount(), portCredit, portDebit);
             if (port.transformer != null) additional.add(new NetworkCell.Write(port.transformer.energy(), next));
-            else if (delta.signum() != 0) writes.add(new CustomEUEnergyStorage.NetworkWrite(port.storage, port.quote, next));
+            else if (!portCredit.equals(portDebit)) writes.add(new CustomEUEnergyStorage.NetworkWrite(port.storage, port.quote, next));
         }
+        final boolean checked = prevalidated && !acquired;
+        java.util.function.BooleanSupplier stillValid = () -> {
+            if (checked && server.getTickCount() == validTick && grid.balanceWrites == validWrites
+                    && grid.endpointEdits == validEdits && topology.readinessRevision() == validReadiness
+                    && currentWorld(level, grid) && grid.conductors.isCurrent(snapshot)) { reusedValidations++; return true; }
+            return valid(level, grid, snapshot, involved);
+        };
         if (FeLedger.commitNativeOutput(outputDebits, budgetCurrent -> CustomEUEnergyStorage.scexCommitNetwork(
-                writes, additional, loss, () -> valid(level, grid, snapshot, involved) && budgetCurrent.getAsBoolean()))) {
+                writes, additional, loss, () -> stillValid.getAsBoolean() && budgetCurrent.getAsBoolean()))) {
             // The commit succeeded. Only from here may the method spend allowances or change the world.
             for (int i = 0; i < sources.size(); i++) {
                 var allowance = allowances.get(sources.get(i).tile);
                 if (allowance != null) allowance.debit(round.debit(i));
             }
+            int sampleIndex = -1;
             for (var delivery : round.deliveries()) {
+                sampleIndex++;
                 var source = sources.get(delivery.source());
                 var sink = sinks.get(delivery.receiver());
                 double received = delivery.credit().toDouble();
@@ -1991,12 +2131,15 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if (sink.transformer != null) grid.transformerReceived.merge(sink.position, delivery.credit(), EnergyAmount::add);
                 grid.receivedThisTick.merge(sink.position, delivery.credit(), EnergyAmount::add);
                 grid.packetSpent.merge(source.position, delivery.sourceDebit(), EnergyAmount::add);
-                var path = effectPaths.get(delivery.domain()).get(delivery.entry())[delivery.receiver()];
-                if (path != null) path.visit(at -> sample(grid, new BlockPos(at.x(), at.y(), at.z()), received, received, voltage));
+                // 0.1.10.7: the wire samples wait until a meter reads (same order, same sums)
+                var wire = deliveryWires[sampleIndex];
+                if (wire != null) sampleWire(grid, wire, received, voltage);
             }
             poweredConductors.forEach(IEnergyConductor::onEnergyPass);
+            for (var run : poweredRuns) for (var conductor : run) conductor.onEnergyPass();
             detectorDeliveries.forEach(IndependentSpecialCableBlockEntity::delivered);
-            for (var port : involved) if (port.transformer != null && deltas.getOrDefault(port, java.math.BigInteger.ZERO).signum() != 0)
+            for (var port : involved) if (port.transformer != null
+                    && !portCredits.getOrDefault(port, EnergyAmount.ZERO).equals(portDebits.getOrDefault(port, EnergyAmount.ZERO)))
                 ((IndependentTransformerBlockEntity) port.tile).markNetworkChanged();
             commits++; grid.balanceWrites++;
             for (var port : involved) grid.lastCommitted.add(port.position);
@@ -2012,6 +2155,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             removedByEffects.addAll(fuseConductors(level, grid, fusePlan));
             stripPlan.keySet().removeAll(fusePlan.keySet());
             removedByEffects.addAll(stripInsulation(level, grid, stripPlan));
+            // 0.1.10.7: a fused or stripped conductor changes the limits of every path through it
+            if (!fusePlan.isEmpty() || !stripPlan.isEmpty()) grid.pathProfiles.clear();
             for (var overload : receiverPlan.entrySet()) {
                 var sink = overload.getKey();
                 var at = sink.position;
@@ -2036,7 +2181,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 }
                 if (level.removeBlock(at, false)) {
                     grid.endpointEdits++;
-                    grid.machines.remove(at);
+                    grid.machines.remove(at); grid.machinesRevision++;
                     grid.contactOrder.remove(point(at));
                     grid.initialGeneratorContacts.remove(at);
                     topology.changed(level, at);
@@ -2143,12 +2288,19 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     private List<Port> ports(ServerLevel level, WorldGrid grid, boolean prepareDemand) {
         var ports = new ArrayList<Port>();
-        for (var entry : List.copyOf(grid.machines.entrySet())) {
+        // 0.1.10.10 (E12): the copy of the endpoint list is kept while the map is unchanged (it was
+        // copied every tick); the skeletons belong to one endpoint edit count
+        if (grid.machineList == null || grid.machineListRevision != grid.machinesRevision) {
+            grid.machineList = List.copyOf(grid.machines.entrySet());
+            grid.machineListRevision = grid.machinesRevision;
+        }
+        if (grid.skeletonEdits != grid.endpointEdits) { grid.skeletons.clear(); grid.skeletonEdits = grid.endpointEdits; }
+        for (var entry : grid.machineList) {
             try {
             BlockPos at = entry.getKey(); var tile = entry.getValue();
             if (!participates(grid, at)) continue;
-            var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
-            if (chunk == null || !level.shouldTickBlocksAt(ChunkPos.asLong(at)) || !topology.chunkReady(level, ChunkPos.asLong(at)) || tile.isRemoved()
+            var chunk = readyChunk(level, at);   // 0.1.10.7: loaded, ticking and ready; cached per chunk
+            if (chunk == null || tile.isRemoved()
                 || chunk.getBlockEntity(at, LevelChunk.EntityCreationType.CHECK) != tile) continue;
             if (tile instanceof IndependentTransformerBlockEntity transformer) {
                 if (!transformer.validMode()) continue;
@@ -2175,7 +2327,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             var machine = tile;
             // Default role: a sink on all six faces. The tests below override it.
             int inputs = 63, outputs = 0;
-            var type = BuiltInRegistries.BLOCK.getKey(tile.getBlockState().getBlock());
+            var skeleton = skeleton(grid, tile);
+            var type = skeleton.type();
             boolean generator = tile instanceof AbstractEnergyBlockEntity block && block.isPowerSource()
                 || tile instanceof DemandEnergySource;
             if (generator) { inputs = 0; outputs = 63; }
@@ -2200,7 +2353,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 inputs &= open; outputs &= open;
             }
             var storage = ownedStorage(machine); var quote = storage.scexNetworkQuote();
-            int electricalFaces = conductorFaces(tile);
+            int electricalFaces = skeleton.conductorFaces();
             inputs &= electricalFaces; outputs &= electricalFaces;
             if (!quote.outputEnabled()) outputs = 0;
             if (tile instanceof com.miophas.singularity_iteration.core.api.energy.IRemoteSwitchable remote
@@ -2212,12 +2365,30 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             var packets = packetPolicy(machine, type, quote);
             var potential = prepareDemand && machine instanceof DemandEnergySource demand ? demand.potentialEnergy() : null;
             ports.add(new Port(tile, at, tile.getBlockState(), storage, quote, ownedCapacity(machine), inputs, outputs,
-                packets.packetSize(), packets.packetCount(), packets.partialPackets(), null, outputBudget, potential, emissionPositions(tile)));
-            } catch (RuntimeException error) { topology.isolateChunk(level, entry.getKey(), error); }
+                packets.packetSize(), packets.packetCount(), packets.partialPackets(), null, outputBudget, potential,
+                skeleton.emitters() != null ? skeleton.emitters() : emissionPositions(tile)));
+            } catch (RuntimeException error) { topology.isolateChunk(level, entry.getKey(), error); chunkStatus.clear(); }
         }
         ports.removeIf(port -> !topology.chunkReady(level, ChunkPos.asLong(port.position)) || grid.machines.get(port.position) != port.tile);
         return ports;
     }
+    /**
+     * 0.1.10.10 (E12): the parts of a port that change only with the block state or with an endpoint
+     * edit (a conductor face edit, a colour, a neighbour conductor and a multiblock structure are
+     * published as edits). {@code emitters} is null for a multiblock emission source (read live).
+     */
+    private record PortSkeleton(BlockState state, ResourceLocation type, int conductorFaces, @org.jetbrains.annotations.Nullable List<BlockPos> emitters) { }
+
+    private static PortSkeleton skeleton(WorldGrid grid, BlockEntity tile) {
+        BlockState state = tile.getBlockState();
+        var known = grid.skeletons.get(tile);
+        if (known != null && known.state() == state) return known;
+        var made = new PortSkeleton(state, BuiltInRegistries.BLOCK.getKey(state.getBlock()), conductorFaces(tile),
+            tile instanceof com.miophas.singularity_iteration.core.api.energy.IEnergyEmissionSource ? null : emissionPositions(tile));
+        grid.skeletons.put(tile, made);
+        return made;
+    }
+
     /** Rebuilds only the live quote, packet policy and FE output allowance of each cached port.
      * The expensive per-machine skeleton — chunk checks, face masks, packet
      * tiers, emitter positions — is commit-invariant within one tick and is
@@ -2407,6 +2578,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     public NodeStats nodeStats(ServerLevel level, BlockPos at) {
         var grid = worlds.get(level);
+        if (grid != null) flushSamples(grid);
         // sampleTick starts at Long.MIN_VALUE: test the sentinel before subtracting (overflow)
         return grid == null || !loaded(level, at) || grid.sampleTick == Long.MIN_VALUE
             || server.getTickCount() - grid.sampleTick > 1 ? null : grid.samples.get(at);
@@ -2417,6 +2589,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     public NodeStats currentTickNodeStats(ServerLevel level, BlockPos at) {
         var grid = worlds.get(level);
         if (closed || !failure.isEmpty() || grid == null || !grid.failure.isEmpty() || tileAt(level, at) == null) return null;
+        flushSamples(grid);
         NodeStats measured = grid.sampleTick == server.getTickCount() ? grid.samples.get(at) : null;
         return measured == null ? new NodeStats(0, 0, 0) : measured;
     }
@@ -2429,8 +2602,31 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * @param voltage EU per packet, or 0 for FE
      */
     private static void sample(WorldGrid grid, BlockPos at, double input, double output, double voltage) {
+        // 0.1.10.7: queued; flushSamples adds the queue in order when a meter reads
+        grid.pendingSamples.add(new PendingSample(at.immutable(), null, input, output, voltage));
+    }
+
+    /** 0.1.10.7: the same sample for every conductor of a delivery wire (EU through: in = out = {@code amount}). */
+    private static void sampleWire(WorldGrid grid, BlockPos[] wire, double amount, double voltage) {
+        grid.pendingSamples.add(new PendingSample(null, wire, amount, amount, voltage));
+    }
+
+    /** 0.1.10.7: one queued meter sample: one position, or every position of a wire. */
+    private record PendingSample(BlockPos at, BlockPos[] wire, double input, double output, double voltage) { }
+
+    /** 0.1.10.7: adds the queued samples to {@code samples}, in the order they were taken. */
+    private static void flushSamples(WorldGrid grid) {
+        if (grid.pendingSamples.isEmpty()) return;
+        for (var pending : grid.pendingSamples) {
+            if (pending.wire() == null) addSample(grid, pending.at(), pending.input(), pending.output(), pending.voltage());
+            else for (var at : pending.wire()) addSample(grid, at, pending.input(), pending.output(), pending.voltage());
+        }
+        grid.pendingSamples.clear();
+    }
+
+    private static void addSample(WorldGrid grid, BlockPos at, double input, double output, double voltage) {
         var before = grid.samples.get(at);
-        grid.samples.put(at.immutable(), before == null ? new NodeStats(input, output, voltage)
+        grid.samples.put(at, before == null ? new NodeStats(input, output, voltage)
             : new NodeStats(before.energyIn() + input, before.energyOut() + output, Math.max(before.voltage(), voltage)));
     }
     /**
@@ -3145,7 +3341,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 grid.conductors.remove(point(at));
                 grid.contactOrder.remove(point(at));
                 grid.accessibilityTick = Long.MIN_VALUE;
-                grid.machines.remove(at);
+                grid.machines.remove(at); grid.machinesRevision++;
                 grid.initialGeneratorContacts.remove(at);
                 topology.changed(level, at);
                 removed.add(at);
@@ -3464,6 +3660,292 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * {@code graph} is the current snapshot and {@code portsGeneration} is the
      * current generation.
      */
+    // ------------------------------------------------------------------ 0.1.10.7 performance
+    /** Cached path profiles per grid; the map is cleared when it reaches this size. */
+    private static final int PATH_PROFILE_LIMIT = 8192;
+    /** Ticks before a path that could not be profiled (unloaded chunk, no block entity) is tried again. */
+    private static final int PATH_PROFILE_RETRY = 100;
+
+    /**
+     * 0.1.10.7: what one delivery path needs for its world effects, computed once per conductor
+     * snapshot. Before, every delivery visited its path conductor by conductor, every tick, to test
+     * the fuse, insulation and shock limits (and read the overload switches for each conductor);
+     * a server profile put this at 14 % of the server thread. A profile keeps the lowest limits of
+     * the path: a delivery at or below all of them has no effect, so it needs no visit. A delivery
+     * above one of them, or a path whose conductors changed, is visited exactly as before.
+     */
+    private static final class PathProfile {
+        /** The wire, in visit order (immutable positions). */
+        final BlockPos[] positions;
+        /** The conductor block entities of the wire, in visit order, and the same objects as block entities. */
+        final IEnergyConductor[] conductors;
+        final BlockEntity[] owners;
+        /** Special cables on the wire (detector() is read at each delivery, it can change). */
+        final IndependentSpecialCableBlockEntity[] specials;
+        /** Lowest fuse limit, insulation breakdown and insulation absorption of the wire (infinity: none). */
+        final double minFuse, minBreakdown, minAbsorption;
+        /** The lowest of the fuse limits and breakdowns: the "weakest measured limit" of the old visit. */
+        final double weakest;
+        /** 0 for a profile; for a path that could not be profiled, the tick after which it is tried again. */
+        long retryAfter;
+
+        PathProfile(BlockPos[] positions, IEnergyConductor[] conductors, BlockEntity[] owners,
+                    IndependentSpecialCableBlockEntity[] specials, double minFuse, double minBreakdown, double minAbsorption) {
+            this.positions = positions; this.conductors = conductors; this.owners = owners; this.specials = specials;
+            this.minFuse = minFuse; this.minBreakdown = minBreakdown; this.minAbsorption = minAbsorption;
+            this.weakest = Math.min(minFuse, minBreakdown);
+        }
+
+        /** True when a delivery at {@code voltage} fuses, strips or shocks nothing on this path. */
+        boolean quiet(double voltage, boolean meltdown, boolean shocking) {
+            return (!meltdown || voltage <= minFuse && voltage <= minBreakdown) && (!shocking || voltage <= minAbsorption);
+        }
+
+        /** True while every block entity of the profile is still in the world. */
+        boolean live() {
+            for (var owner : owners) if (owner.isRemoved()) return false;
+            for (var special : specials) if (special.isRemoved()) return false;
+            return true;
+        }
+    }
+
+    /** The profile of {@code path}, built on first use, or {@code null} when the path cannot be profiled now. */
+    private PathProfile pathProfile(ServerLevel level, WorldGrid grid, ConductorRegistry.Snapshot snapshot, ConductorRegistry.Path path) {
+        if (grid.profileSnapshot != snapshot) { grid.pathProfiles.clear(); grid.profileSnapshot = snapshot; }
+        var key = path.key();
+        var cached = grid.pathProfiles.get(key);
+        long tick = server.getTickCount();
+        if (cached != null) {
+            if (cached.retryAfter == 0) return cached;   // a profile
+            if (tick < cached.retryAfter) return null;   // could not be profiled; not yet tried again
+        }
+        var built = buildPathProfile(level, grid, path);
+        if (grid.pathProfiles.size() >= PATH_PROFILE_LIMIT) grid.pathProfiles.clear();
+        if (built == null) {
+            var none = new PathProfile(new BlockPos[0], new IEnergyConductor[0], new BlockEntity[0],
+                new IndependentSpecialCableBlockEntity[0], 0, 0, 0);
+            none.retryAfter = Math.max(1, tick + PATH_PROFILE_RETRY);
+            grid.pathProfiles.put(key, none);
+            return null;
+        }
+        grid.pathProfiles.put(key, built);
+        return built;
+    }
+
+    /** Visits the path once, as the effect visit does, and keeps its limits; {@code null} when not every conductor is loaded. */
+    private static PathProfile buildPathProfile(ServerLevel level, WorldGrid grid, ConductorRegistry.Path path) {
+        var positions = new ArrayList<BlockPos>();
+        var conductors = new ArrayList<IEnergyConductor>();
+        var owners = new ArrayList<BlockEntity>();
+        var specials = new ArrayList<IndependentSpecialCableBlockEntity>();
+        double[] limits = {Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
+        boolean[] complete = {true};
+        path.visit(position -> {
+            if (!complete[0]) return;
+            var at = new BlockPos(position.x(), position.y(), position.z());
+            positions.add(at);
+            var type = grid.conductorTypes.get(at);
+            if (type == null) { complete[0] = false; return; }
+            var special = grid.specialCables.get(at);
+            if (special != null) specials.add(special);
+            Long fuse = tierFuseLimit(type);
+            if (fuse == null) fuse = EnergyNodeRegistry.fuseLimit(type);
+            if (fuse != null) limits[0] = Math.min(limits[0], fuse);
+            var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
+            if (chunk == null) { complete[0] = false; return; }
+            var be = chunk.getBlockEntity(at, LevelChunk.EntityCreationType.CHECK);
+            // No block entity yet: the effect visit could see one later, so this path is not profiled now.
+            // A block entity that is no conductor (a switching or detector cable) has no insulation limits.
+            if (be == null) { complete[0] = false; return; }
+            owners.add(be);
+            if (be instanceof IEnergyConductor conductor) {
+                conductors.add(conductor);
+                limits[1] = Math.min(limits[1], conductor.getInsulationBreakdownEnergy());
+                limits[2] = Math.min(limits[2], conductor.getInsulationEnergyAbsorption());
+            }
+        });
+        if (!complete[0]) return null;
+        return new PathProfile(positions.toArray(BlockPos[]::new), conductors.toArray(IEnergyConductor[]::new),
+            owners.toArray(BlockEntity[]::new), specials.toArray(IndependentSpecialCableBlockEntity[]::new), limits[0], limits[1], limits[2]);
+    }
+
+    /** True when no source has an allowance left: then no window of the native pass can offer energy. */
+    private static boolean noAllowance(List<Port> sources, IdentityHashMap<BlockEntity, PacketAllowance> allowances) {
+        for (var source : sources) {
+            var allowance = allowances.get(source.tile);
+            if (allowance != null && !allowance.remaining().isZero()) return false;
+        }
+        return true;
+    }
+
+    /**
+     * 0.1.10.7: the native pass when no source has an allowance. It is the loop of
+     * {@code settle} without the steps that cannot happen then: build the window at the cursor,
+     * see that it offers nothing, mark its sources, move the cursor. The result depends only on
+     * the snapshot, the routing generation, the endpoints and the start cursor, so it is kept per
+     * start cursor and replayed while those stay the same.
+     */
+    private void settleIdle(WorldGrid grid, ConductorRegistry.Snapshot snapshot, List<Port> allSources, List<Port> allSinks) {
+        int first = Math.floorMod(grid.nativeCursor, allSources.size());
+        if (grid.idleSnapshot == snapshot && grid.idleGeneration == grid.portsGeneration
+                && grid.idleEdits == grid.endpointEdits && grid.idleSources == allSources.size()) {
+            var memo = grid.idleRuns.get(first);
+            if (memo != null) {
+                grid.nativeCursor = (int) memo[0]; grid.plansBuilt += memo[1]; grid.nativePlan = null; idleMemoHits++;
+                return;
+            }
+        } else {
+            grid.idleRuns.clear(); grid.idleSnapshot = snapshot; grid.idleGeneration = grid.portsGeneration;
+            grid.idleEdits = grid.endpointEdits; grid.idleSources = allSources.size();
+        }
+        long plansBefore = grid.plansBuilt;
+        var visited = new HashSet<BlockPos>();
+        for (int batch = 0; batch < 128; batch++) {
+            int start = Math.floorMod(grid.nativeCursor, allSources.size());
+            int skipped = 0; boolean all = false;
+            while (visited.contains(allSources.get(start).position)) {
+                if (++skipped == allSources.size()) { all = true; break; }
+                start = (start + 1) % allSources.size();
+            }
+            if (all) break;
+            var plan = new NativeRoutePlan(snapshot, allSources, allSinks, start, grid);
+            grid.plansBuilt++;
+            visited.addAll(plan.sources.stream().map(RouteEndpoint::position).toList());
+            grid.nativeCursor = plan.nextSource;
+            if (visited.size() == allSources.size()) break;
+        }
+        grid.nativePlan = null;
+        grid.idleRuns.put(first, new long[]{grid.nativeCursor, grid.plansBuilt - plansBefore});
+    }
+
+    /** 0.1.10.7: per settlement, chunk status of the port scan: the chunk when loaded, ticking and ready, else NOT_READY. */
+    private final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Object> chunkStatus = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+    /** The level of the settlement in progress; {@code null} outside a settlement (then nothing is cached). */
+    private ServerLevel chunkStatusLevel;
+    private static final Object NOT_READY = new Object();
+
+    /** The chunk of {@code at} when it is loaded, ticks blocks and is ready in the topology, else {@code null}. */
+    private LevelChunk readyChunk(ServerLevel level, BlockPos at) {
+        long key = ChunkPos.asLong(at);
+        if (level != chunkStatusLevel) {
+            // a query outside a settlement (connections, hasReachableSink): no cache
+            var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
+            return chunk != null && level.shouldTickBlocksAt(key) && topology.chunkReady(level, key) ? chunk : null;
+        }
+        Object status = chunkStatus.get(key);
+        if (status == null) {
+            var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
+            status = chunk != null && level.shouldTickBlocksAt(key) && topology.chunkReady(level, key) ? chunk : NOT_READY;
+            chunkStatus.put(key, status);
+        }
+        return status == NOT_READY ? null : (LevelChunk) status;
+    }
+
+    /**
+     * 0.1.10.7: the performance counters (since the server started): deliveries settled from a path
+     * profile, deliveries that visited their path, idle passes answered from the memo, commit
+     * validations reused, (0.1.10.8) native windows taken from the plan cache, and (0.1.10.10)
+     * windows that ended early because no sink had room. Read on the server thread.
+     */
+    public long[] optimizationCounters() {
+        if (Thread.currentThread().threadId() != ownerThread) throw new IllegalStateException("Read engine metrics on server thread");
+        return new long[]{pathProfileHits, pathSlowVisits, idleMemoHits, reusedValidations, planCacheHits, saturatedWindows};
+    }
+
+    /**
+     * 0.1.10.8: the balance after a window: {@code balance + credit - debit}, exactly as the signed
+     * BigInteger sum before: the same value, and the same exception when the result is negative or
+     * outside the EnergyAmount range.
+     */
+    static EnergyAmount applyDelta(EnergyAmount balance, EnergyAmount credit, EnergyAmount debit) {
+        EnergyAmount raised;
+        try {
+            raised = balance.add(credit);
+        } catch (ArithmeticException beyondLong) {
+            // above the long range before the debit: the wide sum, as before
+            return EnergyAmount.fromUnits(balance.units().add(credit.units()).subtract(debit.units()));
+        }
+        if (raised.compareTo(debit) < 0) throw new IllegalArgumentException("Negative EU units");
+        return raised.subtract(debit);
+    }
+
+    /** The packet limit of a sink for the explosion test, or {@code null} when it has none. */
+    private static Long receiverLimit(Port sink) {
+        var receiverType = BuiltInRegistries.BLOCK.getKey(sink.state.getBlock());
+        Long receiverLimit = tierReceiverLimit(sink.tile);
+        if (receiverLimit == null) receiverLimit = EnergyNodeRegistry.storagePacket(receiverType);
+        if (sink.transformer != null) receiverLimit = Long.valueOf(sink.transformer.limits().inputLimit());
+        else if (receiverLimit == null && EnergyNodeRegistry.standardProcessor(receiverType)) receiverLimit = Long.valueOf(sink.quote.maxReceive());
+        return receiverLimit;
+    }
+
+    /** 0.1.10.8: the plan cache key of a window: first source, first receiver. */
+    static long planKey(int firstSource, int firstReceiver) {
+        return ((long) firstSource << 32) | (firstReceiver & 0xFFFF_FFFFL);
+    }
+
+    /** True when the plan cache of {@code grid} belongs to the current snapshot, routing view, generation and endpoint edits. */
+    private static boolean planCacheCurrent(WorldGrid grid, ConductorRegistry.Snapshot snapshot) {
+        var view = grid.routingView;
+        return view != null && grid.planCacheSnapshot == snapshot && grid.planCacheView == view
+            && view.isCurrent(snapshot, grid.portsGeneration)
+            && grid.planCacheGeneration == grid.portsGeneration && grid.planCacheEdits == grid.endpointEdits;
+    }
+
+    private static void clearPlanCache(WorldGrid grid) {
+        grid.planCache.clear(); grid.planCacheCounts.clear();
+        grid.planCacheCells = 0; grid.planCacheVertices = 0;
+        grid.planCacheSnapshot = null; grid.planCacheView = null; grid.planCacheGeneration = -1; grid.planCacheEdits = -1;
+    }
+
+    /**
+     * 0.1.10.8: takes the cached plan of the window at source {@code start} out of the cache, or
+     * returns {@code null}. The first receiver comes from the live receiver cursor and the reachable
+     * sink count of that source, as in the constructor.
+     */
+    private NativeRoutePlan cachedPlan(WorldGrid grid, ConductorRegistry.Snapshot snapshot, List<Port> allSources, int start) {
+        if (grid.planCache.isEmpty()) return null;
+        if (!planCacheCurrent(grid, snapshot)) { clearPlanCache(grid); return null; }
+        Integer count = grid.planCacheCounts.get(start);
+        if (count == null) return null;
+        int firstReceiver = count == 0 ? 0 : Math.floorMod(grid.receiverCursors.getOrDefault(allSources.get(start).position, 0), count);
+        var plan = grid.planCache.remove(planKey(start, firstReceiver));
+        if (plan == null) return null;
+        grid.planCacheCells -= plan.cachedCells; grid.planCacheVertices -= plan.routeVertices;
+        if (plan.firstSource != start || plan.firstReceiver != firstReceiver || plan.receiverCount != count
+                || plan.graph != snapshot || plan.portsGeneration != grid.portsGeneration
+                || plan.endpointEdits != grid.endpointEdits || plan.allSources != grid.routingView.sources
+                || plan.allSinks != grid.routingView.sinks) return null;
+        planCacheHits++;
+        return plan;
+    }
+
+    /**
+     * 0.1.10.8: ends the use of {@code plan} as the grid's plan in progress and keeps it in the plan
+     * cache when it belongs to the live epoch and the cache has room. A full cache keeps its plans
+     * (a cycle of more windows than the cache holds still reuses the cached ones).
+     */
+    private static void releasePlan(WorldGrid grid, NativeRoutePlan plan) {
+        grid.nativePlan = null;
+        var view = grid.routingView;
+        if (view == null || plan.allSources != view.sources || plan.allSinks != view.sinks
+                || plan.portsGeneration != grid.portsGeneration || !view.isCurrent(plan.graph, grid.portsGeneration)
+                || plan.endpointEdits != grid.endpointEdits || !grid.conductors.isCurrent(plan.graph)) return;
+        if (!planCacheCurrent(grid, plan.graph)) {
+            clearPlanCache(grid);
+            grid.planCacheSnapshot = plan.graph; grid.planCacheView = view;
+            grid.planCacheGeneration = grid.portsGeneration; grid.planCacheEdits = grid.endpointEdits;
+        }
+        long key = planKey(plan.firstSource, plan.firstReceiver);
+        if (grid.planCache.containsKey(key) || grid.planCache.size() >= PLAN_CACHE_PLANS
+                || grid.planCacheCells + plan.arrayCells > PLAN_CACHE_CELLS
+                || grid.planCacheVertices + plan.routeVertices > PLAN_CACHE_ROUTE_VERTICES) return;
+        plan.cachedCells = plan.arrayCells;
+        grid.planCache.put(key, plan);
+        grid.planCacheCounts.put(plan.firstSource, plan.receiverCount);
+        grid.planCacheCells += plan.cachedCells; grid.planCacheVertices += plan.routeVertices;
+    }
+
     private static final class NativeRoutePlan {
         /** The conductor snapshot that this plan was built for. */
         final ConductorRegistry.Snapshot graph;
@@ -3483,6 +3965,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final int firstSource, nextSource, firstReceiver, nextReceiver, packetLimit;
         /** The routing generation that this plan was built for. */
         final long portsGeneration;
+        /**
+         * 0.1.10.8: the endpoint edits at construction (the initial generator contacts of
+         * {@link #origins}), the number of sinks reachable from the window sources (the modulus of
+         * {@code firstReceiver}), and the search weight of all origins (the routes that the plan keeps).
+         */
+        final long endpointEdits;
+        final int receiverCount;
+        final long routeVertices;
+        /** 0.1.10.8: {@code arrayCells} when the plan entered the plan cache. */
+        long cachedCells;
         /** Index of the origin in progress. {@code origins.size()} means complete. */
         int originIndex;
         /** Route array cells this plan allocated (one per window sink per new entry). */
@@ -3522,6 +4014,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             allSources = view.sources; allSinks = view.sinks;
             firstSource = first;
             portsGeneration = grid.portsGeneration;
+            endpointEdits = grid.endpointEdits;
             int end = first; long vertices = 0, effectVertices = 0;
             while (end < allSources.size() && end - first < MAX_PLAN_SOURCES) {
                 var next = origins(allSources.get(end), end - first, graph, grid);
@@ -3539,6 +4032,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         || (effectVertices + effectWeight) * 2 > MAX_NATIVE_PATH_VISITS_PER_TICK)) break;
                 vertices += weight; effectVertices += effectWeight; origins.addAll(next); end++;
             }
+            routeVertices = vertices;
             sources = List.copyOf(allSources.subList(first, end));
             int declaredPackets = sources.stream().mapToInt(p -> p.packets.packetCount()).max().orElse(1);
             // Math.max(1, ...) avoids a division by 0 for a window with no wired origin.
@@ -3556,6 +4050,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     for (var contact : globalContacts.inComponent(origin.component)) reachable.set(contact.receiver());
             }
             int count = reachable.cardinality();
+            receiverCount = count;
             // The stored cursor can be from an older, larger sink set. floorMod brings it
             // into [0, count). The count == 0 test avoids floorMod by 0.
             firstReceiver = count == 0 ? 0 : Math.floorMod(grid.receiverCursors.getOrDefault(sources.getFirst().position, 0), count);

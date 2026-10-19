@@ -45,6 +45,8 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
     private static final int BAR_X = 28, BAR_Y = 78, BAR_W = 116;
     private static final int STAT_X = 28, STAT_Y = 31, STAT_H = 15, TRACK_X = 92, TRACK_W = 48;
     private static final int ENERGY_X = 120, ENERGY_Y = 90, ENERGY_W = 48;
+    /** 0.1.10.6: UU tank gauge of the gene page, under the catalyst slot. */
+    private static final int UU_GAUGE_X = 8, UU_GAUGE_Y = 82, UU_GAUGE_W = 16;
 
     private final SiButton[] tabs = new SiButton[3];
     private SiButton unlock, breedToggle, geneToggle;
@@ -240,6 +242,14 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
         SiGuiTheme.slot(g, x + 7, y + 32);
         SiGuiTheme.slot(g, x + 7, y + 62);
         if (menu.getSlot(CropAnalyzerMenu.SLOT_CATALYST).getItem().isEmpty()) DspUi.small(g, font, "UU", x + 11, y + 68, 0x80585D63);
+        // 0.1.10.6: UU tank gauge under the catalyst slot (cells and buckets fill it)
+        int uu = Math.min(menu.uuStored(), com.miophas.singularity_iteration.common.menu.tool.CropScannerState.UU_CAPACITY);
+        g.fill(x + UU_GAUGE_X - 1, y + UU_GAUGE_Y - 1, x + UU_GAUGE_X + UU_GAUGE_W + 1, y + UU_GAUGE_Y + 3, SiGuiTheme.SLOT_SHADOW);
+        g.fill(x + UU_GAUGE_X, y + UU_GAUGE_Y, x + UU_GAUGE_X + UU_GAUGE_W, y + UU_GAUGE_Y + 2, SiGuiTheme.SCREEN_BG);
+        if (uu > 0) {
+            int w = Math.max(1, uu * UU_GAUGE_W / com.miophas.singularity_iteration.common.menu.tool.CropScannerState.UU_CAPACITY);
+            g.fill(x + UU_GAUGE_X, y + UU_GAUGE_Y, x + UU_GAUGE_X + w, y + UU_GAUGE_Y + 2, 0xFFB04ADB);
+        }
         int[] cur = menu.geneCurrent(), tgt = menu.geneTarget();
         String[] labels = {"stat.growth", "stat.gain", "stat.resistance"};
         int[] colors = {0xFF3C9A52, 0xFFC07A10, 0xFF2A6E8A};
@@ -476,6 +486,9 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
             tip.add(Component.translatable(K + "tip.oc", menu.data(CropAnalyzerMenu.D_OC), ScannerMath.MAX_OVERCLOCKERS));
             tip.add(Component.translatable(K + "tip.oc_time", String.format("%.2f", ScannerMath.timeFactor(oc))).withStyle(ChatFormatting.GRAY));
             tip.add(Component.translatable(K + "tip.oc_power", String.format("%.2f", ScannerMath.powerFactor(oc))).withStyle(ChatFormatting.GRAY));
+        } else if (menu.page() == CropAnalyzerMenu.PAGE_GENE && menu.pageUnlocked(CropAnalyzerMenu.PAGE_GENE)
+                && rx >= UU_GAUGE_X - 1 && rx <= UU_GAUGE_X + UU_GAUGE_W && ry >= UU_GAUGE_Y - 2 && ry <= UU_GAUGE_Y + 3) {
+            uuTankTip(tip);
         } else if (hoveredSlot != null && !hoveredSlot.hasItem() && hoveredSlot.index < CropAnalyzerMenu.SIZE) {
             String key = switch (hoveredSlot.index) {
                 case CropAnalyzerMenu.SLOT_BATTERY -> "tip.slot_battery";
@@ -487,6 +500,7 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
                     ? "tip.slot_upgrade" : null;
             };
             if (key != null) tip.add(Component.translatable(K + key));
+            if (hoveredSlot.index == CropAnalyzerMenu.SLOT_CATALYST) uuTankTip(tip);
             if (hoveredSlot.index == CropAnalyzerMenu.SLOT_BREED_OUT && menu.selectedCandidate() != null) previewResult(tip);
         } else {
             int row = listRowAt(mouseX, mouseY);
@@ -544,4 +558,11 @@ public class mio_icif_gui_crop_analyzer extends mio_icif_screen<CropAnalyzerMenu
 
     @Override
     protected boolean showUpgradeHint() { return false; }
+
+    /** 0.1.10.6: UU tank lines (amount, how to fill it). */
+    private void uuTankTip(List<Component> tip) {
+        tip.add(Component.translatable(K + "tip.uu_tank", menu.uuStored(),
+            com.miophas.singularity_iteration.common.menu.tool.CropScannerState.UU_CAPACITY));
+        tip.add(Component.translatable(K + "tip.uu_tank_hint").withStyle(ChatFormatting.GRAY));
+    }
 }

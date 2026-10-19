@@ -71,6 +71,11 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
     }
 
     private boolean isFuelBucket(ItemStack stack) {
+        // 0.1.10.6: also partly filled cells and containers of other mods (through the fluid capability)
+        return isKnownFuelBucket(stack) || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, mio_icif_fluids.BIOGAS.get());
+    }
+
+    private boolean isKnownFuelBucket(ItemStack stack) {
         return stack.is(mio_icif_fluids.BIOGAS_BUCKET.get()) || mio_icif_cells.isCellContainingFluid(stack, mio_icif_fluids.BIOGAS.get());
     }
 
@@ -83,6 +88,11 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
     }
 
     private void handleFuelBucketSlot() {
+        ItemStack held = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
+        if (!held.isEmpty() && !isKnownFuelBucket(held)) {
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, FUEL_BUCKET_SLOT, EMPTY_BUCKET_SLOT, fuelTank, mio_icif_fluids.BIOGAS.get())) setChanged();
+            return;
+        }
         if (energyStorage.scexNetworkControlled()) { scexFillFuelContainer(); return; }
         ItemStack fuelBucketStack = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
         if (fuelBucketStack.isEmpty() || !isFuelBucket(fuelBucketStack)) {
@@ -104,6 +114,8 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
             }
         }
 
+        // 0.1.10.6: only a whole container; before, a nearly full tank kept the part it took and the container stayed
+        if (fuelTank.fill(new FluidStack(mio_icif_fluids.BIOGAS.get(), FUEL_PER_BUCKET), IFluidHandler.FluidAction.SIMULATE) < FUEL_PER_BUCKET) return;
         int filled = fuelTank.fill(new FluidStack(mio_icif_fluids.BIOGAS.get(), FUEL_PER_BUCKET), IFluidHandler.FluidAction.EXECUTE);
         if (filled >= FUEL_PER_BUCKET) {
             fuelBucketStack.shrink(1);
@@ -114,7 +126,7 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
             }
             setChanged();
             if (level != null && !level.isClientSide()) {
-                level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+                com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);   // 0.1.10.10 (D4): throttled
             }
         }
     }
@@ -260,7 +272,8 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
             }
         }
 
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     @Override

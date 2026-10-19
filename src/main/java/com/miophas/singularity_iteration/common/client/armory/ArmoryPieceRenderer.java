@@ -106,6 +106,13 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
         float nextYaw = vel2.horizontalDistanceSqr() > 1.0E-5 ? (float) Math.toDegrees(Math.atan2(-vel2.x, vel2.z)) : travelYaw;
         float pitch = (float) Math.toDegrees(Math.atan2(vel.y, Math.sqrt(vel.horizontalDistanceSqr()) + 1.0E-4));
         float roll = Mth.clamp(Mth.wrapDegrees(nextYaw - travelYaw) * 4.5F, -55.0F, 55.0F);
+        // 0.1.10.6: a blade has no thrusters: it glides (no buffeting, a light bank, a soft flare)
+        boolean blade = isDrawnBlade(stack);
+        if (blade) {
+            jitterAmp = 0;
+            roll *= 0.25F;
+            thrustPitch *= 0.3F;
+        }
         // thruster buffeting: two incommensurate frequencies so it never looks periodic
         float buffet = jitterAmp * (Mth.sin(age * 2.3F) + 0.5F * Mth.sin(age * 5.1F + 1.3F));
         float buffetYaw = jitterAmp * 0.6F * Mth.sin(age * 3.7F + 0.4F);
@@ -287,20 +294,27 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
         return SlashBladeResharpedBridge.isBlade(stack) || stack.is(DRAWN_BLADES);
     }
 
-    /** Ready-stance tilt of the blade at the hand (degrees, tip up). */
-    private static final float READY_TILT = 30.0F;
+    /**
+     * Stance of the blade once it squares up to the wearer (degrees from tip-forward to tip-up).
+     * 0.1.10.6: 75, an upright blade leaning slightly forward, presented hilt-down while it hovers
+     * in front of the wearer and held upright at the hand; with 30 the blade pointed away from the
+     * wearer, level with the hand, and then vanished into a hand that holds nothing like it.
+     */
+    private static final float READY_TILT = 75.0F;
 
     /**
      * Drawn-blade flight pose (0.1.8.0, SlashBlade: Resharped link). The blade flies out of its
      * sheath, tip first along the flight path (local -z is the travel direction). As it squares
-     * up to the body (k to 1) it lifts into a ready stance, and the grip is at the dock point, so
-     * it arrives grip first in the hand. A Resharped blade uses its own OBJ blade part (the
+     * up to the body (k to 1) it turns upright into a ready stance with the grip at the dock point,
+     * so it arrives grip first in the hand. A Resharped blade uses its own OBJ blade part (the
      * hand display contexts of Resharped draw nothing); a tagged item uses its item model.
+     * 0.1.10.6: eased stance turn and a gentle glide (no thruster buffeting) for blades.
      */
     private boolean renderDrawnBlade(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack,
                                      ArmoryPieceEntity entity, float k) {
         pose.pushPose();
-        pose.mulPose(Axis.XP.rotationDegrees(READY_TILT * k));
+        float stance = k * k * (3 - 2 * k);                 // smoothstep: no snap at the start of the brake
+        pose.mulPose(Axis.XP.rotationDegrees(READY_TILT * stance));
         boolean drawn;
         if (SlashBladeResharpedBridge.isBlade(stack)) {
             // blade.obj: tip at -x, grip near x = GRIP_X; turn -x onto the path

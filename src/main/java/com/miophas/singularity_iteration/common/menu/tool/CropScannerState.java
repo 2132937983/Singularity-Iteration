@@ -29,6 +29,12 @@ public final class CropScannerState {
     public static final int SLOT_PARENT_A = 32, SLOT_PARENT_B = 33, SLOT_BREED_OUT = 34;
     public static final int SLOT_GENE = 35, SLOT_CATALYST = 36, SIZE = 37;
     public static final int UNLOCK_BREED = 1, UNLOCK_GENE = 2;
+    /**
+     * EN: 0.1.10.6: capacity of the internal UU-Matter tank (mB). 1 mB is one catalyst, the same as one UU-Matter item.
+     * ZH: 0.1.10.6：内部 UU 物质储罐容量（mB）。1 mB 等于 1 个催化剂，与 1 个 UU 物质物品相同。
+     * JA: 0.1.10.6：内蔵 UU 物質タンクの容量（mB）。1 mB は触媒 1 個で、UU 物質アイテム 1 個と同じ。
+     */
+    public static final int UU_CAPACITY = 4000;
 
     public final ItemStack[] items = new ItemStack[SIZE];
     /** EN: Scan ticks done per analysis slot. ZH: 每个分析槽位已完成的扫描 tick。JA: 分析スロットごとの走査済み tick。 */
@@ -40,6 +46,8 @@ public final class CropScannerState {
     public final int[] geneTarget = {0, 0, 0};
     public int geneProgress;
     public boolean geneRun;
+    /** EN: UU-Matter in the internal tank (mB, 0.1.10.6). ZH: 内部储罐中的 UU 物质（mB，0.1.10.6）。JA: 内蔵タンクの UU 物質（mB、0.1.10.6）。 */
+    public int uuMb;
 
     public CropScannerState() {
         java.util.Arrays.fill(items, ItemStack.EMPTY);
@@ -79,6 +87,7 @@ public final class CropScannerState {
             for (int i = 0; i < Math.min(3, t.length); i++) state.geneTarget[i] = Math.clamp(t[i], 0, 31);
             state.geneProgress = tag.getInt("GeneProgress");
             state.geneRun = tag.getBoolean("GeneRun");
+            state.uuMb = Math.clamp(tag.getInt("UuMb"), 0, UU_CAPACITY);
         } else if (root.contains("HandHeldItems", Tag.TAG_LIST)) {
             ItemStack[] old = new ItemStack[3];
             com.miophas.singularity_iteration.core.prefab.item.AbstractElectricTool.loadHandHeldInventory(scanner, old, registries);
@@ -110,6 +119,7 @@ public final class CropScannerState {
         tag.putIntArray("GeneTarget", geneTarget.clone());
         tag.putInt("GeneProgress", geneProgress);
         tag.putBoolean("GeneRun", geneRun);
+        if (uuMb > 0) tag.putInt("UuMb", uuMb);
         root.put("Scanner", tag);
         root.remove("HandHeldItems");
         scanner.set(DataComponents.CUSTOM_DATA, CustomData.of(root));

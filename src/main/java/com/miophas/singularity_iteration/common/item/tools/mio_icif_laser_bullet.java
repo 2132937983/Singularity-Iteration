@@ -89,7 +89,20 @@ public class mio_icif_laser_bullet extends IndependentElectricProjectile {
     private void detonate(net.minecraft.world.phys.Vec3 center) {
         boolean nuclear = mode == mio_icif_laser_miner.Mode.NUCLEAR_EXPLOSIVE;
         if (nuclear && !Singularity_Iteration_Config.ENABLE_LASER_NUCLEAR_EXPLOSIVE.get()) return;
-        explode(center, mode.explosion, !nuclear || Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get());
+        boolean terrain = !nuclear || Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get();
+        if (!nuclear) {
+            explode(center, mode.explosion, terrain);
+            return;
+        }
+        // 0.1.10.11: Ultra-High Energy Blast: its own sound and a plasma blast on the clients
+        // (core flash, shock rings, plasma column, sparks, screen flash and shake) instead of the
+        // vanilla explosion puffs; the explosion itself (damage, terrain, protection events) is unchanged.
+        if (explode(center, mode.explosion, terrain, net.minecraft.core.particles.ParticleTypes.FLASH,
+                net.minecraft.core.particles.ParticleTypes.FLASH,
+                com.miophas.singularity_iteration.common.registry.mio_icif_sounds.LASER_ULTRA_BLAST)
+                && level() instanceof ServerLevel level) {
+            com.miophas.singularity_iteration.common.network.mio_icif_Network.sendLaserBlast(level, center.x, center.y, center.z, mode.explosion);
+        }
     }
 
     @Override protected void addAdditionalSaveData(CompoundTag tag) {

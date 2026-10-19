@@ -60,6 +60,8 @@ public class mio_icif_block_chunk_loader extends mio_icif_entity_block {
         if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof mio_icif_chunk_loader loader) {
+                // 0.1.10.11: the placing player owns the loader (player limits, offline rule, admin list)
+                if (placer instanceof Player player) loader.setOwner(player);
                 ChunkPos selfChunk = new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);
                 loader.addChunkToLoaded(selfChunk);
             }

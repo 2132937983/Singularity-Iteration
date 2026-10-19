@@ -116,8 +116,7 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
         BlockPos frontPos = worldPosition.relative(facing);
         if (!level.isLoaded(frontPos)) return false;
 
-        IMioIcifCapabilities.IKineticStorage frontKinetic = level.getCapability(
-            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, frontPos, facing.getOpposite());
+        IMioIcifCapabilities.IKineticStorage frontKinetic = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, facing);
         if (frontKinetic == null) {
             frontKinetic = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(
                 level.getBlockEntity(frontPos));
@@ -174,7 +173,8 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
         }
 
         // Mark the block entity as changed
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     /**
@@ -192,8 +192,7 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
         Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
         if (!level.isLoaded(frontPos)) return;
-        IMioIcifCapabilities.IKineticStorage frontKinetic = level.getCapability(
-            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, frontPos, facing.getOpposite());
+        IMioIcifCapabilities.IKineticStorage frontKinetic = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, facing);
         if (frontKinetic == null) {
             frontKinetic = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(
                 level.getBlockEntity(frontPos));
@@ -217,8 +216,7 @@ public abstract class AbstractKineticGeneratorBlockEntity extends AbstractKineti
 
                 BlockPos adjacentPos = worldPosition.relative(direction);
                 if (!level.isLoaded(adjacentPos)) continue;
-                IMioIcifCapabilities.IKineticStorage adjacentKinetic = level.getCapability(
-                    IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, adjacentPos, direction.getOpposite());
+                IMioIcifCapabilities.IKineticStorage adjacentKinetic = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, direction);
                 if (adjacentKinetic == null) {
                     adjacentKinetic = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(
                         level.getBlockEntity(adjacentPos));

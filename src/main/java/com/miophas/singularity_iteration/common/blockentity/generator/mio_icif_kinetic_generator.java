@@ -82,7 +82,8 @@ public class mio_icif_kinetic_generator extends AbstractGeneratorBlockEntity {
             level.setBlock(pos, state.setValue(mio_icif_Block_kinetic_generator.ACTIVE, shouldBeActive), 3);
         }
 
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     @Override
@@ -99,8 +100,7 @@ public class mio_icif_kinetic_generator extends AbstractGeneratorBlockEntity {
         BlockPos sourcePos = worldPosition.relative(facing);
         if (!level.isLoaded(sourcePos)) return;
 
-        IMioIcifCapabilities.IKineticStorage source = level.getCapability(
-            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, sourcePos, facing.getOpposite());
+        IMioIcifCapabilities.IKineticStorage source = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, facing);
         if (source == null) {
             net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(sourcePos);
             if (be != null) {

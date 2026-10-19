@@ -83,4 +83,7 @@ import org.jetbrains.annotations.Nullable;
             setSyncData(5, condenser.getDistilledTank().getFluidAmount());
         }
     }
+
+    /** 0.1.10.6: the progress is at index 3 of the synced data. */
+    @Override protected int progressDataIndex() { return 3; }
 }

@@ -31,6 +31,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
     public static final DeferredHolder<SoundEvent, SoundEvent> TACHYON_SHOT = sound("weapon.tachyon.shot");
     public static final DeferredHolder<SoundEvent, SoundEvent> TACHYON_HIT = sound("weapon.tachyon.hit");
     public static final DeferredHolder<SoundEvent, SoundEvent> ENERGY_HIT = sound("weapon.energy.hit");
+    /** 0.1.10.11: the mining laser's Ultra-High Energy Blast (replaces the vanilla explosion sound). */
+    public static final DeferredHolder<SoundEvent, SoundEvent> LASER_ULTRA_BLAST = sound("weapon.laser.ultra_blast");
     public static final DeferredHolder<SoundEvent, SoundEvent> AIR_CANNON_CHARGE = sound("weapon.air_cannon.charge");
     public static final DeferredHolder<SoundEvent, SoundEvent> AIR_CANNON_BLAST = sound("weapon.air_cannon.blast");
     public static final DeferredHolder<SoundEvent, SoundEvent> AIR_CANNON_HIT = sound("weapon.air_cannon.hit");

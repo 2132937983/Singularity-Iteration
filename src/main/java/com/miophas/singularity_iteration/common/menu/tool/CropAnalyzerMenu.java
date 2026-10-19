@@ -83,7 +83,8 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
     public static final int D_PAGE = 0, D_UNLOCK = 1, D_PROGRESS = 2, D_ENERGY = D_PROGRESS + GRID, D_CAPACITY = D_ENERGY + 1,
         D_OC = D_CAPACITY + 1, D_BREED_PROGRESS = D_OC + 1, D_BREED_SELECT = D_BREED_PROGRESS + 1, D_BREED_RUN = D_BREED_SELECT + 1,
         D_GENE_PROGRESS = D_BREED_RUN + 1, D_GENE_TARGET = D_GENE_PROGRESS + 1, D_GENE_RUN = D_GENE_TARGET + 3,
-        D_SCAN_STATUS = D_GENE_RUN + 1, D_BREED_STATUS = D_SCAN_STATUS + 1, D_GENE_STATUS = D_BREED_STATUS + 1, D_COUNT = D_GENE_STATUS + 1;
+        D_SCAN_STATUS = D_GENE_RUN + 1, D_BREED_STATUS = D_SCAN_STATUS + 1, D_GENE_STATUS = D_BREED_STATUS + 1,
+        D_UU = D_GENE_STATUS + 1, D_COUNT = D_UU + 1;
 
     /** EN: Status codes shown by the screen. ZH: 界面显示的状态码。JA: 画面に出す状態コード。 */
     public static final int ST_IDLE = 0, ST_RUNNING = 1, ST_NO_ENERGY = 2, ST_NEED_CATALYST = 3, ST_OUTPUT_FULL = 4,
@@ -169,7 +170,7 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
         addSlot(new PageSlot(container, SLOT_PARENT_B, 8, 63, PAGE_BREED, 64, s -> s.getItem() instanceof ICropSeedItem));
         addSlot(new PageSlot(container, SLOT_BREED_OUT, 152, 33, PAGE_BREED, 64, s -> false));
         addSlot(new PageSlot(container, SLOT_GENE, 8, 33, PAGE_GENE, 1, s -> s.getItem() instanceof ICropSeedItem));
-        addSlot(new PageSlot(container, SLOT_CATALYST, 8, 63, PAGE_GENE, 64, CropAnalyzerMenu::isCatalyst));
+        addSlot(new PageSlot(container, SLOT_CATALYST, 8, 63, PAGE_GENE, 64, CropAnalyzerMenu::isCatalystInput));
     }
 
     private void addPlayerInventorySlots(Inventory inventory) {
@@ -184,6 +185,19 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
 
     public static boolean isCatalyst(ItemStack stack) {
         return !stack.isEmpty() && BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(CATALYST);
+    }
+
+    /**
+     * EN: 0.1.10.6: the catalyst slot also takes UU-Matter cells, buckets and other UU containers; they are
+     * emptied into the internal UU tank. ZH: 0.1.10.6：催化剂槽也接受 UU 物质单元、桶与其他 UU 容器，倒入内部 UU 储罐。
+     * JA: 0.1.10.6：触媒スロットは UU 物質セル、バケツ、その他の UU 容器も受け付け、内蔵 UU タンクに空ける。
+     */
+    public static boolean isCatalystInput(ItemStack stack) {
+        return isCatalyst(stack) || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, uuMatter());
+    }
+
+    private static net.minecraft.world.level.material.Fluid uuMatter() {
+        return com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.UUMATTER.get();
     }
 
     private boolean client() { return player != null && player.level().isClientSide; }
@@ -354,6 +368,7 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
         // ZH: 2. 交配研究，3. 基因编辑。
         // JA: 2. 交配研究、3. 遺伝子改変。
         spent += tickBreeding(cards, budget - spent);
+        fillUuTank();
         spent += tickGene(cards, budget - spent);
 
         if (spent > 0) scanner.consumeEnergy(containerStack, spent);
@@ -432,7 +447,10 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
         if (++state.geneProgress >= ticks) {
             ItemStack seed = state.items[SLOT_GENE];
             ((ICropSeedItem) seed.getItem()).setCropTraits(seed, state.geneTarget[0], state.geneTarget[1], state.geneTarget[2]);
-            state.items[SLOT_CATALYST].shrink(need);
+            // 0.1.10.6: the UU tank pays first, UU-Matter items the rest
+            int fromTank = Math.min(state.uuMb, need);
+            state.uuMb -= fromTank;
+            if (need > fromTank && isCatalyst(state.items[SLOT_CATALYST])) state.items[SLOT_CATALYST].shrink(need - fromTank);
             if (state.items[SLOT_CATALYST].isEmpty()) state.items[SLOT_CATALYST] = ItemStack.EMPTY;
             state.geneProgress = 0;
             state.geneRun = false;
@@ -443,6 +461,28 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
             if (player != null) player.level().playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.7F, 1.5F);
         }
         return cost;
+    }
+
+    /**
+     * EN: 0.1.10.6: empties one UU container of the catalyst slot into the UU tank (only what fits; a
+     * bucket waits for 1000 mB of room). The emptied container goes to the player's inventory.
+     * ZH: 0.1.10.6：把催化剂槽中的一个 UU 容器倒入 UU 储罐（只倒能装下的量；桶需要 1000 mB 空间）。空容器放入玩家物品栏。
+     * JA: 0.1.10.6：触媒スロットの UU 容器を 1 つ UU タンクに空ける（入る分だけ。バケツは 1000 mB の空きを待つ）。空の容器はプレイヤーのインベントリへ。
+     */
+    private void fillUuTank() {
+        ItemStack held = state.items[SLOT_CATALYST];
+        if (held.isEmpty() || isCatalyst(held) || state.uuMb >= CropScannerState.UU_CAPACITY) return;
+        var tank = new net.neoforged.neoforge.fluids.capability.templates.FluidTank(CropScannerState.UU_CAPACITY,
+            f -> f.getFluid().isSame(uuMatter()));
+        if (state.uuMb > 0) tank.setFluid(new net.neoforged.neoforge.fluids.FluidStack(uuMatter(), state.uuMb));
+        var work = new net.neoforged.neoforge.items.ItemStackHandler(2);
+        work.setStackInSlot(0, held.copy());
+        if (!com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(work, 0, 1, tank, uuMatter())) return;
+        state.uuMb = Math.min(CropScannerState.UU_CAPACITY, tank.getFluidAmount());
+        state.items[SLOT_CATALYST] = work.getStackInSlot(0);
+        ItemStack rest = work.getStackInSlot(1);
+        if (!rest.isEmpty() && player != null && !player.getInventory().add(rest)) player.drop(rest, false);
+        dirty = true;
     }
 
     private void chargeFromBattery(CropAnalyzerItem scanner) {
@@ -528,9 +568,15 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
         return state.geneTarget.clone();
     }
 
+    /** EN: Catalysts available: UU-Matter items plus the UU tank (1 mB each). ZH: 可用催化剂：UU 物质物品加 UU 储罐（每 mB 一个）。JA: 使える触媒：UU 物質アイテムと UU タンク（1 mB ごとに 1 個）。 */
     public int catalystCount() {
         ItemStack s = slots.get(SLOT_CATALYST).getItem();
-        return isCatalyst(s) ? s.getCount() : 0;
+        return (isCatalyst(s) ? s.getCount() : 0) + uuStored();
+    }
+
+    /** EN: UU-Matter in the tank, mB (client: synced). ZH: 储罐中的 UU 物质（mB，客户端为同步值）。JA: タンクの UU 物質（mB、クライアントは同期値）。 */
+    public int uuStored() {
+        return client() ? Math.max(0, data.get(D_UU)) : state.uuMb;
     }
 
     private static String traitKey(ItemStack stack) {
@@ -574,7 +620,7 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
                 case PAGE_GENE -> pageUnlocked(PAGE_GENE) && moveItemStackTo(stack, SLOT_GENE, SLOT_GENE + 1, false);
                 default -> moveItemStackTo(stack, 0, GRID, false);
             };
-            else if (isCatalyst(stack)) moved = pageUnlocked(PAGE_GENE) && moveItemStackTo(stack, SLOT_CATALYST, SLOT_CATALYST + 1, false);
+            else if (isCatalystInput(stack)) moved = pageUnlocked(PAGE_GENE) && moveItemStackTo(stack, SLOT_CATALYST, SLOT_CATALYST + 1, false);
             else moved = false;
             if (!moved) return ItemStack.EMPTY;
         }
@@ -664,6 +710,7 @@ public class CropAnalyzerMenu extends AbstractContainerMenu {
                 case D_SCAN_STATUS -> scanStatus;
                 case D_BREED_STATUS -> breedStatus;
                 case D_GENE_STATUS -> geneStatus;
+                case D_UU -> state.uuMb;
                 default -> 0;
             };
         }

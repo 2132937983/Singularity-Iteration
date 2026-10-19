@@ -86,7 +86,7 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
         @Override
         public int get(int index) {
             return switch (index) {
-                case 0 -> progress;
+                case 0 -> getDisplayProgress();
                 case 1 -> maxProgress;
                 case 2 -> isWorking ? 1 : 0;
                 case 3 -> (int) energyStorage.getAmount();

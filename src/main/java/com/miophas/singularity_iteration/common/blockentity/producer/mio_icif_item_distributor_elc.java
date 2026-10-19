@@ -151,9 +151,8 @@ public class mio_icif_item_distributor_elc extends BlockEntity implements net.mi
     @Override
     public void setChanged() {
         super.setChanged();
-        if (level != null && !level.isClientSide()) {
-            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
-        }
+        // 0.1.10.10 (D4): throttled (was: one block update for every change, e.g. each item moved)
+        if (level != null && !level.isClientSide) com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);
     }
 
     @Nullable

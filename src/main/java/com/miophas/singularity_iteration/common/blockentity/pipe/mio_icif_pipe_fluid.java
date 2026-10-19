@@ -49,6 +49,10 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
         .mapToObj(i -> new com.miophas.singularity_iteration.core.runtime.processing.FluidTransferBuffer(this::setChanged))
         .toArray(com.miophas.singularity_iteration.core.runtime.processing.FluidTransferBuffer[]::new);
     private final IFluidHandler[] sidedHandlers = new IFluidHandler[6];
+    /** 0.1.10.7: neighbour fluid capabilities per side (was: a capability lookup per side every tick). */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private final net.neoforged.neoforge.capabilities.BlockCapabilityCache<IFluidHandler, Direction>[] neighbourCaches =
+        new net.neoforged.neoforge.capabilities.BlockCapabilityCache[6];
     private final IFluidHandler internalHandler = new PipeFluidHandler(null);
     private long retryAfter;
     private boolean transferring;
@@ -96,7 +100,7 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
                         || isDirectionBlocked(side)) continue;
                 var at = worldPosition.relative(side);
                 if (!level.getChunkSource().hasChunk(at.getX() >> 4, at.getZ() >> 4)) continue;
-                var target = level.getCapability(Capabilities.FluidHandler.BLOCK, at, side.getOpposite());
+                var target = neighbourFluid(side);
                 if (!liveOwner()) return;
                 if (target != null) deliver(side, target, outputRate);
                 if (!liveOwner()) return;
@@ -117,6 +121,22 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
             setChanged();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
+    }
+
+    /** 0.1.10.7: the fluid capability of the neighbour on {@code side}, through a capability cache. */
+    @Nullable
+    private IFluidHandler neighbourFluid(Direction side) {
+        BlockPos at = worldPosition.relative(side);
+        if (!(level instanceof net.minecraft.server.level.ServerLevel server)) {
+            return level.getCapability(Capabilities.FluidHandler.BLOCK, at, side.getOpposite());
+        }
+        var cache = neighbourCaches[side.ordinal()];
+        if (cache == null || cache.level() != server) {
+            cache = net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(
+                Capabilities.FluidHandler.BLOCK, server, at, side.getOpposite());
+            neighbourCaches[side.ordinal()] = cache;
+        }
+        return cache.getCapability();
     }
 
     private void deferRetryAfterFailure() {
@@ -196,9 +216,7 @@ public class mio_icif_pipe_fluid extends mio_icif_pipe_default {
             BlockEntity adjacentEntity = adjacentChunk.getBlockEntity(adjacentPos,
                 net.minecraft.world.level.chunk.LevelChunk.EntityCreationType.CHECK);
 
-            IFluidHandler handler = level.getCapability(
-                Capabilities.FluidHandler.BLOCK, adjacentPos, facing.getOpposite()
-            );
+            IFluidHandler handler = neighbourFluid(facing);
 
             if (!liveOwner()) return;
 

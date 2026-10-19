@@ -220,6 +220,24 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         drawTitle(guiGraphics);
+        // 0.1.10.11: why the loader does not load (all) its chunks, as a band over the top of the map
+        int status = menu.getStatus();
+        if (status != com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader.STATUS_ACTIVE
+                && status != com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader.STATUS_STARTING) {
+            int left = MAP_CENTER_X - MAP_RADIUS * MAP_CELL_SIZE, width = MAP_SIZE;
+            int top = MAP_CENTER_Y - MAP_RADIUS * MAP_CELL_SIZE;
+            guiGraphics.fill(left, top, left + width, top + 12, 0xB0000000);
+            Component text = statusText(status);
+            int drawn = Math.min(font.width(text), width - 6);
+            int color = status == com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader.STATUS_LIMITED ? 0xFFFFD27A : 0xFFFF8A80;
+            drawFitted(guiGraphics, font, text, left + (width - drawn) / 2, top + 2, width - 6, color, false);
+        }
+    }
+
+    private Component statusText(int status) {
+        String[] names = com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader.STATUS_NAMES;
+        String name = status >= 0 && status < names.length ? names[status] : "starting";
+        return Component.translatable("gui.mio_icif.chunk_loader.status." + name, menu.getForcedChunkCount(), menu.getLoadedChunkCount());
     }
 
     @Override
@@ -237,6 +255,14 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
                     Component.literal("Energy: " + menu.getEnergy() + "/" + menu.getMaxEnergy() + " EU"),
                     mouseX, mouseY);
             }
+            return;
+        }
+
+        // 0.1.10.11: the chunk count tells the state and how many selected chunks hold a ticket
+        if (mouseX >= x + CHUNK_COUNT_X && mouseX <= x + CHUNK_COUNT_X + 16 && mouseY >= y + CHUNK_COUNT_Y && mouseY <= y + CHUNK_COUNT_Y + 26) {
+            guiGraphics.renderComponentTooltip(this.font, java.util.List.of(statusText(menu.getStatus()),
+                Component.translatable("gui.mio_icif.chunk_loader.granted", menu.getForcedChunkCount(), menu.getLoadedChunkCount(), menu.getMaxChunks())),
+                mouseX, mouseY);
             return;
         }
 

@@ -78,9 +78,23 @@ public abstract class AbstractWireBlockEntity extends AbstractEnergyBlockEntity 
     protected float getElectricDamage() { return electricDamage; }
     public CableTier getCableTier() { return cableTier; }
 
+    /**
+     * 0.1.10.7: game time until which the wire counts as powered. A wire of the independent energy
+     * network does not tick any more (its tick only counted {@code poweredTicksRemaining} down), so
+     * the powered state is a time comparison. {@code poweredTicksRemaining} is still set and counted
+     * down by wires that tick (the legacy path), for subclasses that read it.
+     */
+    private long poweredUntil = Long.MIN_VALUE;
+
     @Override public void onEnergyPass() { setPowered(); }
-    public void setPowered() { this.poweredTicksRemaining = POWERED_DURATION; }
-    public boolean isPowered() { return this.poweredTicksRemaining > 0; }
+    public void setPowered() {
+        this.poweredTicksRemaining = POWERED_DURATION;
+        if (level != null) this.poweredUntil = level.getGameTime() + POWERED_DURATION;
+    }
+    public boolean isPowered() {
+        if (level != null && poweredUntil != Long.MIN_VALUE) return level.getGameTime() < poweredUntil;
+        return this.poweredTicksRemaining > 0;
+    }
 
     protected void tickPoweredState() {
         if (poweredTicksRemaining > 0) poweredTicksRemaining--;

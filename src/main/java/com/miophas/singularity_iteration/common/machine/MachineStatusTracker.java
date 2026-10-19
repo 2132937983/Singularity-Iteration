@@ -136,18 +136,20 @@ public final class MachineStatusTracker {
     static void serverStarting(ServerStartingEvent event) {
         install();
         TRACKED.clear();
+        STALE.clear();
     }
 
     /** Releases the level, and through it the integrated server, when the level unloads. */
     @SubscribeEvent
     static void levelUnload(net.neoforged.neoforge.event.level.LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel level) TRACKED.remove(level);
+        if (event.getLevel() instanceof ServerLevel level) { TRACKED.remove(level); STALE.remove(level); }
     }
 
     /** Removes all data when the server stops. */
     @SubscribeEvent
     static void serverStopped(net.neoforged.neoforge.event.server.ServerStoppedEvent event) {
         TRACKED.clear();
+        STALE.clear();
     }
 
     /**
@@ -172,15 +174,60 @@ public final class MachineStatusTracker {
     }
 
     /**
-     * Last sent status of a tracked machine, after the hold rule. Null when the tracker does not
-     * track the machine. For tests and tools.
+     * The status that a player who watches the machine sees, after the hold rule: the last sent
+     * status in a watched chunk. 0.1.10.10: the tracker does not read the machines of a chunk that no
+     * player watches; for such a machine this returns its current status. Null when the tracker does
+     * not track the machine. For tests and tools.
      */
     public static MachineStatus sentStatus(AbstractEnergyBlockEntity machine) {
         if (!(machine.getLevel() instanceof ServerLevel level)) return null;
         var chunks = TRACKED.get(level);
-        var inChunk = chunks == null ? null : chunks.get(ChunkPos.asLong(machine.getBlockPos()));
+        long key = ChunkPos.asLong(machine.getBlockPos());
+        var inChunk = chunks == null ? null : chunks.get(key);
         Entry e = inChunk == null ? null : inChunk.get(machine);
-        return e == null ? null : e.sent;
+        if (e == null) return null;
+        if (!watched(level, key)) {
+            try { return machine.machineStatus(); } catch (RuntimeException ex) { return e.sent; }
+        }
+        return e.sent;
+    }
+
+    /**
+     * 0.1.10.10 (D2): the tick of the interval at which a chunk is read (0 .. INTERVAL - 1), from its
+     * position. The chunks of a level are spread over the interval instead of all at one tick.
+     */
+    static int phase(long chunk) {
+        return Math.floorMod(ChunkPos.getX(chunk) * 31 + ChunkPos.getZ(chunk), INTERVAL);
+    }
+
+    /** True when at least one player tracks the chunk. */
+    private static boolean watched(ServerLevel level, long chunk) {
+        return !level.getChunkSource().chunkMap.getPlayers(new ChunkPos(chunk), false).isEmpty();
+    }
+
+    /**
+     * 0.1.10.10 (D2): chunks whose machines were not read because no player watched them. Their
+     * {@link Entry#sent} values are old; the first watcher gets freshly read lamps.
+     */
+    private static final Map<ServerLevel, it.unimi.dsi.fastutil.longs.LongOpenHashSet> STALE = new IdentityHashMap<>();
+
+    /** Reads the status of one machine with the hold rule and records it as sent; true when it changed. */
+    private static boolean read(AbstractEnergyBlockEntity machine, Entry entry, long now) {
+        MachineStatus status;
+        try {
+            status = machine.machineStatus();
+        } catch (RuntimeException ex) {
+            return false;                                   // A lamp error must never stop a machine tick.
+        }
+        com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.LAMP_CHECKS);
+        // Hold rule: BLOCKED shortly after RUNNING stays RUNNING.
+        if (status == MachineStatus.RUNNING) entry.lastRunning = now;
+        else if (entry.sent == MachineStatus.RUNNING && status == MachineStatus.BLOCKED && now - entry.lastRunning < HOLD) {
+            status = MachineStatus.RUNNING;             // Gap between two operations.
+        }
+        if (status == entry.sent) return false;
+        entry.sent = status;
+        return true;
     }
 
     /** Reused snapshot lists for {@link #levelTick}. Server thread only. They save one allocation per tick. */
@@ -188,21 +235,31 @@ public final class MachineStatusTracker {
     private static final List<Map.Entry<AbstractEnergyBlockEntity, Entry>> MACHINE_SCRATCH = new ArrayList<>();
 
     /**
-     * Reads the status of each tracked machine of the level every {@link #INTERVAL} ticks.
-     * Sends the changes, one packet per chunk, to the players that track the chunk.
+     * Reads the status of each tracked machine every {@link #INTERVAL} ticks and sends the changes,
+     * one packet per chunk, to the players that track the chunk. 0.1.10.10 (D2): each chunk is read at
+     * its own tick of the interval ({@link #phase}), and a chunk that no player watches is not read
+     * (it is marked stale; {@link #chunkWatched} reads it for the first watcher).
      */
     @SubscribeEvent
     static void levelTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
         long now = level.getGameTime();
-        if (now % INTERVAL != 0) return;
         var chunks = TRACKED.get(level);
         if (chunks == null || chunks.isEmpty()) return;
+        int slot = (int) Math.floorMod(now, (long) INTERVAL);
         // Iterate over snapshots in reused scratch lists. A status read can load or unload a
         // machine, and that changes the maps.
         CHUNK_SCRATCH.clear();
-        CHUNK_SCRATCH.addAll(chunks.entrySet());
+        for (var chunkEntry : chunks.entrySet()) if (phase(chunkEntry.getKey()) == slot) CHUNK_SCRATCH.add(chunkEntry);
         for (var chunkEntry : CHUNK_SCRATCH) {
+            long key = chunkEntry.getKey();
+            if (chunkEntry.getValue().isEmpty()) { chunks.remove(key); continue; }
+            if (!watched(level, key)) {
+                STALE.computeIfAbsent(level, l -> new it.unimi.dsi.fastutil.longs.LongOpenHashSet()).add(key);
+                continue;
+            }
+            var stale = STALE.get(level);
+            if (stale != null) stale.remove(key);
             List<Long> pos = null; List<Byte> st = null;
             MACHINE_SCRATCH.clear();
             MACHINE_SCRATCH.addAll(chunkEntry.getValue().entrySet());
@@ -212,26 +269,13 @@ public final class MachineStatusTracker {
                 // Never load a chunk for a lamp. The redstone check reads the neighbour blocks.
                 var p = machine.getBlockPos();
                 if (!level.hasChunksAt(p.offset(-1, -1, -1), p.offset(1, 1, 1))) continue;
-                MachineStatus status;
-                try {
-                    status = machine.machineStatus();
-                } catch (RuntimeException ex) {
-                    continue;                                   // A lamp error must never stop a machine tick.
-                }
-                Entry entry = e.getValue();
-                // Hold rule: BLOCKED shortly after RUNNING stays RUNNING.
-                if (status == MachineStatus.RUNNING) entry.lastRunning = now;
-                else if (entry.sent == MachineStatus.RUNNING && status == MachineStatus.BLOCKED && now - entry.lastRunning < HOLD) {
-                    status = MachineStatus.RUNNING;             // Gap between two operations.
-                }
-                if (status == entry.sent) continue;
-                entry.sent = status;
+                if (!read(machine, e.getValue(), now)) continue;
                 if (pos == null) { pos = new ArrayList<>(); st = new ArrayList<>(); }
                 pos.add(machine.getBlockPos().asLong());
-                st.add((byte) status.ordinal());
+                st.add((byte) e.getValue().sent.ordinal());
             }
-            if (pos != null) send(level, new ChunkPos(chunkEntry.getKey()), pos, st, null);
-            if (chunkEntry.getValue().isEmpty()) chunks.remove(chunkEntry.getKey());
+            if (pos != null) send(level, new ChunkPos(key), pos, st, null);
+            if (chunkEntry.getValue().isEmpty()) chunks.remove(key);
         }
         CHUNK_SCRATCH.clear();
         MACHINE_SCRATCH.clear();
@@ -247,6 +291,16 @@ public final class MachineStatusTracker {
         var chunks = TRACKED.get(event.getLevel());
         var inChunk = chunks == null ? null : chunks.get(event.getPos().toLong());
         if (inChunk == null || inChunk.isEmpty()) return;
+        // 0.1.10.10 (D2): a chunk that nobody watched has old lamps: read them now (nobody else has them)
+        var stale = STALE.get(event.getLevel());
+        if (stale != null && stale.remove(event.getPos().toLong())) {
+            long now = event.getLevel().getGameTime();
+            for (var e : List.copyOf(inChunk.entrySet())) {
+                if (e.getKey().isRemoved()) { inChunk.remove(e.getKey()); continue; }
+                var p = e.getKey().getBlockPos();
+                if (event.getLevel().hasChunksAt(p.offset(-1, -1, -1), p.offset(1, 1, 1))) read(e.getKey(), e.getValue(), now);
+            }
+        }
         List<Long> pos = new ArrayList<>(); List<Byte> st = new ArrayList<>();
         for (var e : inChunk.entrySet()) {
             if (e.getValue().sent == MachineStatus.OFF) continue;

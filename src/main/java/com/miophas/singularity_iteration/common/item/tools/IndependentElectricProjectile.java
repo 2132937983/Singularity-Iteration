@@ -108,15 +108,31 @@ abstract class IndependentElectricProjectile extends ThrowableProjectile impleme
     }
 
     protected final void explode(Vec3 center, float strength, boolean terrain) {
+        explode(center, strength, terrain, null, null, null);
+    }
+
+    /**
+     * 0.1.10.11: an explosion with its own particles and sound (null: the vanilla ones). Returns
+     * true when it went off (the owner may build there and the area is loaded).
+     */
+    protected final boolean explode(Vec3 center, float strength, boolean terrain,
+            @org.jetbrains.annotations.Nullable net.minecraft.core.particles.ParticleOptions small,
+            @org.jetbrains.annotations.Nullable net.minecraft.core.particles.ParticleOptions large,
+            @org.jetbrains.annotations.Nullable net.minecraft.core.Holder<net.minecraft.sounds.SoundEvent> sound) {
         if (!(level() instanceof ServerLevel level) || !(getOwner() instanceof ServerPlayer player)
-                || !player.mayBuild() || strength <= 0.0F) return;
+                || !player.mayBuild() || strength <= 0.0F) return false;
         BlockPos pos = BlockPos.containing(center);
         int radius = (int)Math.ceil(strength * 2.0D) + 1;
         if (!level.mayInteract(player, pos)
-                || !level.hasChunksAt(pos.offset(-radius, 0, -radius), pos.offset(radius, 0, radius))) return;
+                || !level.hasChunksAt(pos.offset(-radius, 0, -radius), pos.offset(radius, 0, radius))) return false;
         // Vanilla/NeoForge explosion events remain available to protection mods.
-        level.explode(player, center.x, center.y, center.z, strength,
-                terrain ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE);
+        Level.ExplosionInteraction interaction = terrain ? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE;
+        if (small == null || large == null || sound == null) {
+            level.explode(player, center.x, center.y, center.z, strength, interaction);
+        } else {
+            level.explode(player, null, null, center.x, center.y, center.z, strength, false, interaction, small, large, sound);
+        }
+        return true;
     }
 
     /** 0.1.10.4: an AI shooter (Wingman) never changes terrain; only a player who may build does. */

@@ -19,8 +19,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Entanglement links (0.1.10.1). The worn quantum chestplate is the link hub: its component
  * {@code mio_icif:suit_links} lists the linked synergy ids (by unit, not by piece, so a link holds
- * when the units move between pieces). It takes {@link #BASE_LINKS} links, one more while a compute
- * core is active. When the capacity falls, the first links in the list keep working.
+ * when the units move between pieces). It takes {@link #BASE_LINKS} links, one more for each active
+ * compute core (0.1.10.6: a core on the chestplate and one on the leggings give two). When the
+ * capacity falls, the first links in the list keep working.
  *
  * <p>A link works when its synergy switch is on (server config), it is within the capacity, and
  * both units are active on worn pieces. A link to a missing unit stays stored (broken) until the
@@ -57,7 +58,22 @@ public final class QuantumLinks {
     /** Links the hub takes now: 2, 3 with an active compute core, 0 without a quantum chestplate. */
     public static int capacity(Player player) {
         if (hub(player).isEmpty()) return 0;
-        return BASE_LINKS + (computeCore(player) ? 1 : 0);
+        return BASE_LINKS + activeComputeCores(player);
+    }
+
+    /**
+     * 0.1.10.6: the number of active compute cores: each worn quantum chestplate or leggings that
+     * carries a switched-on core with suit energy for its drain counts once. Before, the cores did
+     * not stack: two cores gave the bonus of one.
+     */
+    public static int activeComputeCores(Player player) {
+        int count = 0;
+        SuitModuleType core = SuitModuleType.COMPUTE_CORE;
+        for (EquipmentSlot slot : CORE_SLOTS) {
+            ItemStack piece = player.getItemBySlot(slot);
+            if (SuitModules.isQuantumPiece(piece) && SuitModules.has(piece, core) && coreState(player, piece) == CoreState.ACTIVE) count++;
+        }
+        return count;
     }
 
     /** True while a compute core is active on a worn quantum piece. */
@@ -82,12 +98,17 @@ public final class QuantumLinks {
         for (EquipmentSlot slot : CORE_SLOTS) {
             ItemStack piece = player.getItemBySlot(slot);
             if (!SuitModules.isQuantumPiece(piece) || !SuitModules.has(piece, core)) continue;
-            CoreState state = !com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, core.featureKey()) ? CoreState.OFF
-                : !com.miophas.singularity_iteration.common.suit.SuitEnergyPool.canPay(player, piece, Math.max(1, core.drainPerTick())) ? CoreState.NO_POWER
-                : CoreState.ACTIVE;
+            CoreState state = coreState(player, piece);
             if (state.ordinal() > best.ordinal()) best = state;
         }
         return best;
+    }
+
+    private static CoreState coreState(Player player, ItemStack piece) {
+        SuitModuleType core = SuitModuleType.COMPUTE_CORE;
+        return !com.miophas.singularity_iteration.core.prefab.item.ArmorFeatureState.isEnabled(piece, core.featureKey()) ? CoreState.OFF
+            : !com.miophas.singularity_iteration.common.suit.SuitEnergyPool.canPay(player, piece, Math.max(1, core.drainPerTick())) ? CoreState.NO_POWER
+            : CoreState.ACTIVE;
     }
 
     /** True when {@code key} is linked and within the capacity. */

@@ -163,10 +163,9 @@ public class mio_icif_fluid_distributor_elc extends AbstractProcessingMachineBlo
 
         // 坌步浝体状思到客户端（原版水的纹睆坯以坳时渲染，但自定义浝体需覝手动坌步）
         if (fluidTank.getFluidAmount() != oldFluidAmount) {
-            setChanged();
-            if (level != null && !level.isClientSide) {
-                level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
-            }
+            // 0.1.10.10 (D1/D4): save mark and a throttled update (was: every tick while fluid flows)
+            com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
+            if (level != null && !level.isClientSide) com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);
         }
     }
 

@@ -45,25 +45,44 @@ public class mio_icif_events {
     // 每20 tick 检查一次
     private static final int TICK_INTERVAL = 20; // 每秒检查一次
 
+    /**
+     * 0.1.10.10 (D6): the radiation check (every {@link #TICK_INTERVAL} ticks) runs for players from
+     * the player tick and for other creatures only while they wear a nuclear item (noticed by the
+     * equipment change event). Before, a hook ran for every entity every tick. Each entity is checked
+     * at its own tick of the interval (by id), not all at once.
+     */
+    private static boolean radiationDue(LivingEntity entity) {
+        return Math.floorMod(entity.level().getGameTime() + entity.getId(), (long) TICK_INTERVAL) == 0;
+    }
+
     @SubscribeEvent
-    public static void onEntityTick(EntityTickEvent.Pre event) {
-        // 只处理生物实体
-        if (!(event.getEntity() instanceof LivingEntity livingEntity)) {
-            return;
-        }
+    public static void onRadiationPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event) {
+        Player player = event.getEntity();
+        if (player.level().isClientSide || !radiationDue(player)) return;
+        if (NuclearRadiationHandler.hasNuclearItem(player)) NuclearRadiationHandler.applyRadiationEffect(player);
+    }
 
-        // 只在服务端执行
-        if (livingEntity.level().isClientSide) {
-            return;
-        }
+    /** Creatures (not players) that wear a nuclear item in an armour or body slot. Server thread only. */
+    private static final java.util.Set<LivingEntity> NUCLEAR_WEARERS = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
 
-        // 每20 tick检查一次
-        if (livingEntity.level().getGameTime() % TICK_INTERVAL != 0) {
-            return;
+    @SubscribeEvent
+    public static void onRadiationEquipment(LivingEquipmentChangeEvent event) {
+        LivingEntity entity = event.getEntity();
+        if (entity instanceof Player || entity.level().isClientSide) return;
+        if (event.getSlot().isArmor() || event.getSlot() == EquipmentSlot.BODY) {
+            if (event.getTo().is(com.miophas.singularity_iteration.common.util.mio_icif_tags.NUCLEAR)) NUCLEAR_WEARERS.add(entity);
         }
+    }
 
-        if (NuclearRadiationHandler.hasNuclearItem(livingEntity)) {
-            NuclearRadiationHandler.applyRadiationEffect(livingEntity);
+    @SubscribeEvent
+    public static void onRadiationLevelTick(LevelTickEvent.Post event) {
+        if (event.getLevel().isClientSide() || NUCLEAR_WEARERS.isEmpty()) return;
+        for (LivingEntity entity : java.util.List.copyOf(NUCLEAR_WEARERS)) {
+            if (entity.level() != event.getLevel()) continue;
+            if (entity.isRemoved() || !entity.isAlive()) { NUCLEAR_WEARERS.remove(entity); continue; }
+            if (!radiationDue(entity)) continue;
+            if (NuclearRadiationHandler.hasNuclearItem(entity)) NuclearRadiationHandler.applyRadiationEffect(entity);
+            else NUCLEAR_WEARERS.remove(entity);
         }
     }
     

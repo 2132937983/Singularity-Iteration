@@ -140,9 +140,8 @@ public class mio_icif_storage_box_entity extends BlockEntity implements Containe
     @Override
     public void setChanged() {
         super.setChanged();
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        // 0.1.10.10 (D4): throttled (was: one block update for every change, e.g. each item moved)
+        if (level != null && !level.isClientSide) com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);
     }
 
     @Override

@@ -172,6 +172,11 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
     }
 
     private void handleFuelBucketSlot() {
+        ItemStack held = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
+        if (!held.isEmpty() && fuelContentOf(held) == null) {
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, FUEL_BUCKET_SLOT, EMPTY_BUCKET_SLOT, fuelTank, SemifluidFuels::accepts)) setChanged();
+            return;
+        }
         if (com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.enabled()) { scexFillFuel(); return; }
         ItemStack fuelBucketStack = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
         FluidStack content = fuelContentOf(fuelBucketStack);
@@ -192,6 +197,8 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
             }
         }
 
+        // 0.1.10.6: only a whole container; before, a nearly full tank kept the part it took and the container stayed
+        if (fuelTank.fill(content, IFluidHandler.FluidAction.SIMULATE) < content.getAmount()) return;
         int filled = fuelTank.fill(content, IFluidHandler.FluidAction.EXECUTE);
         if (filled >= content.getAmount()) {
             fuelBucketStack.shrink(1);
@@ -208,7 +215,8 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
     }
 
     private boolean isFuelBucket(ItemStack stack) {
-        return fuelContentOf(stack) != null;
+        // 0.1.10.6: also partly filled cells and containers of other mods (through the fluid capability)
+        return fuelContentOf(stack) != null || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, SemifluidFuels::accepts);
     }
 
     /** 取出容器内的半流质燃料内容（整桶/整单元），非燃料容器返回 null。 */

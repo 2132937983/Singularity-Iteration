@@ -218,7 +218,8 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
 
         blockEntity.handleFluidUpgrades();
 
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     /**
@@ -264,7 +265,11 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
         var input = itemHandler.getStackInSlot(WATER_INPUT_SLOT);
         if (input.isEmpty()) return;
         boolean cell = mio_icif_cells.isCellContainingFluid(input, Fluids.WATER);
-        if (!cell && !input.is(Items.WATER_BUCKET)) return;
+        if (!cell && !input.is(Items.WATER_BUCKET)) {
+            // 0.1.10.6: partly filled cells and water containers of other mods
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, WATER_INPUT_SLOT, WATER_OUTPUT_SLOT, waterTank, Fluids.WATER)) setChanged();
+            return;
+        }
         var single = input.copyWithCount(1);
         var content = cell ? mio_icif_cells.getCellFluid(single) : new FluidStack(Fluids.WATER, 1000);
         var empty = cell ? mio_icif_cells.getEmptyCellForStack(single) : new ItemStack(Items.BUCKET);
@@ -304,7 +309,8 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
             return MioIcifAPI.instance().getItemAPI().isUpgrade(stack);
         }
         return switch (slot) {
-            case WATER_INPUT_SLOT -> stack.is(Items.WATER_BUCKET) || mio_icif_cells.isCellContainingFluid(stack, Fluids.WATER);
+            case WATER_INPUT_SLOT -> stack.is(Items.WATER_BUCKET) || mio_icif_cells.isCellContainingFluid(stack, Fluids.WATER)
+                || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, Fluids.WATER);
             case DISTILLED_INPUT_SLOT -> stack.is(Items.BUCKET) || mio_icif_cells.isEmptyCell(stack);
             case WATER_OUTPUT_SLOT -> false; // Output only. Manual insertion is not permitted.
             case DISTILLED_OUTPUT_SLOT -> false; // Output only. Manual insertion is not permitted.

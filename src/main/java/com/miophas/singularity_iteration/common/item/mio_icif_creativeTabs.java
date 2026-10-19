@@ -1129,6 +1129,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.RT_GENERATOR.get());
                 output.accept(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get());
                 output.accept(mio_icif_blocks.UNLIMIT_GENERATOR.get());
+                output.accept(mio_icif_blocks.CREATIVE_GENERATOR.get());
 
                 // ============================================================
                 //  17. BLOCKS - KINETIC GENERATORS

@@ -179,8 +179,14 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         };
     }
 
-    /** 是否为装满任一已注册输入流体（如生物质）的单元。 */
+    /** 0.1.10.6：也接受生物质桶、半满单元与其他模组的容器（经流体能力倒入）。 */
     private static boolean isInputContainer(ItemStack stack) {
+        return isFullInputCell(stack)
+            || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, FermenterFuels::accepts);
+    }
+
+    /** 是否为装满任一已注册输入流体（如生物质）的单元。 */
+    private static boolean isFullInputCell(ItemStack stack) {
         FluidStack content = mio_icif_cells.getCellFluid(stack);
         return !content.isEmpty() && FermenterFuels.accepts(content.getFluid())
             && content.getAmount() >= mio_icif_cells.getCellCapacity(stack);
@@ -291,6 +297,11 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     private void handleBiomassCellSlot() {
         var cell = itemHandler.getStackInSlot(BIOMASS_CELL_SLOT);
         if (cell.isEmpty() || !isInputContainer(cell)) return;
+        if (!isFullInputCell(cell)) {
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler,
+                    BIOMASS_CELL_SLOT, EMPTY_CELL_SLOT, biomassTank, FermenterFuels::accepts)) setChanged();
+            return;
+        }
         var single = cell.copyWithCount(1);
         if (ContainerToTank.transfer(itemHandler, BIOMASS_CELL_SLOT, EMPTY_CELL_SLOT, biomassTank,
                 mio_icif_cells.getCellFluid(single), mio_icif_cells.getEmptyCellForStack(single))) setChanged();

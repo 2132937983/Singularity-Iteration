@@ -17,7 +17,7 @@ Since 0.1.10.1 two quantum units can be **entangled**. An entangled pair works t
 ## Links
 
 - The quantum chestplate is the **link hub**: it stores the links. Without a quantum chestplate no synergy works.
-- The hub holds **2 links**, 3 with an active <ItemLink id="mio_icif:module/item_module_compute_core" />.
+- The hub holds **2 links**, plus one for each active <ItemLink id="mio_icif:module/item_module_compute_core" /> (one on the chestplate and one on the leggings: up to 4).
 - Both units of a pair must be installed on worn quantum pieces. A synergy works while both units are switched on and powered.
 - Links stay stored on the chestplate when you change units; they work again when the units come back. A link to a unit of a removed mod stays stored but does nothing.
 
@@ -67,11 +67,11 @@ Every active unit on a quantum piece loads the suit computer, measured in QB. A 
 | 1 | ballistic computer, blast warning, grid telemetry, deflector, resonance field |
 | 0 | all other units |
 
-The budget is **20 QB**, 28 QB with an active compute core. Every suit that 0.1.9.2 allowed fits in 20 QB. Over the budget the suit **saturates**: the sensors refresh at half rate and the coherence regenerates at half speed. Nothing switches off. The QB meter near the crosshair turns red.
+The budget is **20 QB**, plus 8 QB for each active compute core (36 QB with two). Every suit that 0.1.9.2 allowed fits in 20 QB. Over the budget the suit **saturates**: the sensors refresh at half rate and the coherence regenerates at half speed. Nothing switches off. The QB meter near the crosshair turns red.
 
 ## Quantum Compute Core
 
-The <ItemLink id="mio_icif:module/item_module_compute_core" /> (chestplate or leggings, 6 EU/t) adds 8 QB to the budget and one more link to the hub.
+The <ItemLink id="mio_icif:module/item_module_compute_core" /> (chestplate or leggings, 6 EU/t) adds 8 QB to the budget and one more link to the hub. Cores on the chestplate and on the leggings stack: two working cores give 16 QB and two more links.
 Only a working core counts: switched on in the panel and powered by the suit. The footer of the matrix shows its state (Core ON, switched off, or no suit EU); the links row of the Equipment Console shows CPU, CPU- or CPU!.
 
 ## Mk.II: guidance and resonance field

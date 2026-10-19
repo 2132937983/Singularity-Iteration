@@ -13,7 +13,8 @@ import java.util.WeakHashMap;
 
 /**
  * Limits the rate of {@code sendBlockUpdated} calls for block entities whose data can change
- * every tick (for example a tank that a pipe fills).
+ * every tick (for example a tank that a pipe fills). 0.1.10.10: also the voltage detector, the item
+ * and fluid distributors, the storage box, the liquid heat source and the semifluid generators.
  *
  * <h2>What it sends</h2>
  * This class sends no custom payload. It calls {@link ServerLevel#sendBlockUpdated} with flag 3.
@@ -102,6 +103,7 @@ public final class ClientSyncThrottle {
             return;
         }
         install();
+        com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.SYNC_REQUESTS);
         long now = level.getGameTime();
         Long last = LAST_SENT.get(tile);
         // Quiet period passed, first request, or game time went back: send now.
@@ -144,6 +146,7 @@ public final class ClientSyncThrottle {
      * Flag 3 = {@code UPDATE_NEIGHBORS | UPDATE_CLIENTS}. The block state does not change.
      */
     private static void send(ServerLevel level, BlockEntity tile) {
+        com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.SYNC_SENT);
         var state = tile.getBlockState();
         level.sendBlockUpdated(tile.getBlockPos(), state, state, 3);
     }

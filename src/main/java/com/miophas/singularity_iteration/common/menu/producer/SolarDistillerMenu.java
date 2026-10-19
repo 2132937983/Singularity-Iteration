@@ -83,4 +83,7 @@ import org.jetbrains.annotations.Nullable;
     protected void addCustomMoveRules() {
         addCustomMoveRule(stack -> MioIcifAPI.instance().getItemAPI().isUpgrade(stack), UPGRADE_SLOT_1, SLOT_COUNT);
     }
+
+    /** 0.1.10.6: the progress is at index 1 of the synced data. */
+    @Override protected int progressDataIndex() { return 1; }
 }

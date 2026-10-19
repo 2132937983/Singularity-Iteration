@@ -47,6 +47,12 @@ public record ChunkLoaderTogglePacket(BlockPos pos, int dx, int dz) implements C
                 if (blockEntity instanceof mio_icif_chunk_loader loader) {
                     if (menu.getBlockEntity() != loader || serverPlayer.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > 64.0) return;
                     if (!loader.isChunkInRange(packet.dx, packet.dz)) return;
+                    // 0.1.10.11: config ChunkLoaders.ownerOnlyEdit
+                    if (!loader.mayEdit(serverPlayer)) {
+                        serverPlayer.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                            "message.mio_icif.chunk_loader.not_owner", loader.ownerName()), true);
+                        return;
+                    }
 
                     ChunkPos selfChunk = loader.getSelfChunkPos();
                     ChunkPos targetChunk = new ChunkPos(selfChunk.x + packet.dx, selfChunk.z + packet.dz);

@@ -73,6 +73,10 @@ item_ids:
 - ハズマット一式と量子スーツ一式は、これまでどおり完全に防ぐ。
 - <ItemLink id="mio_icif:normal/item_contain_ment_box" /> に入れた放射性アイテムは被曝させない。箱は 18 スロット：使うと開く。
 
+## 事故調査
+
+原子炉は最新 40 サイクルを記録している。事故の後、<ItemLink id="mio_icif:reactor/item_reactor_blackbox" /> が現場に落ちる。それを使うか `/mio_icif reactor audit` を実行すると、主因、融解した部品を示す炉心レイアウト、炉熱グラフのレポートを読める。詳しくは[原子炉事故調査](reactor_audit.md)を参照。
+
 ## 注意
 
 

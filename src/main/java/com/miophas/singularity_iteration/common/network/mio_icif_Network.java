@@ -40,6 +40,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  *   <tr><td>{@code FutureCommoditySync}</td><td>S2C</td><td>datapack futures commodity list and the commodities that the player has not unlocked</td></tr>
  *   <tr><td>{@code NuclearExplosionAnimationPacket}</td><td>S2C</td><td>starts the mushroom cloud animation of a nuclear explosion</td></tr>
  *   <tr><td>{@code LaserBlastFxPacket}</td><td>S2C</td><td>plasma blast effect of the mining laser's Ultra-High Energy Blast (0.1.10.11)</td></tr>
+ *   <tr><td>{@code ReactorAuditPacket}</td><td>S2C</td><td>one reactor incident for the accident audit report (0.1.10.12)</td></tr>
  *   <tr><td>{@code ODScannerResultPacket}</td><td>S2C</td><td>result of an ore dictionary (OD) scan</td></tr>
  *   <tr><td>{@code FutureTradePacket}</td><td>C2S</td><td>a futures trade request at a market block</td></tr>
  *   <tr><td>{@code ScannerButtonPacket}</td><td>C2S</td><td>delete or save button of the Scanner</td></tr>
@@ -157,6 +158,12 @@ public class mio_icif_Network {
             LaserBlastFxPacket.TYPE,
             LaserBlastFxPacket.CODEC,
             LaserBlastFxPacket::handle
+        );
+        // 0.1.10.12, S2C: one reactor incident for the accident audit report.
+        registrar.playToClient(
+            ReactorAuditPacket.TYPE,
+            ReactorAuditPacket.CODEC,
+            ReactorAuditPacket::handle
         );
 
         // S2C: OD scanner result.

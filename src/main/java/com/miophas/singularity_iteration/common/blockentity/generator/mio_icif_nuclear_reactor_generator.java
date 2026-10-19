@@ -79,6 +79,16 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     private CompoundTag hold=new CompoundTag();
     private String failure="";
     private final IItemHandler automation=new Automation();
+    // 0.1.10.12 accident audit: the flight recorder of the last 40 cycles (memory only), the incident of a
+    // pending accident, and the player who placed the reactor
+    private final com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox blackbox=new com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox();
+    private int incidentId;
+    /** A meltdown with the explosions off in the config was logged (until the hull is below 90 % again). */
+    private boolean containedLogged;
+    @org.jetbrains.annotations.Nullable private java.util.UUID auditOwner;
+    private String auditOwnerName="";
+    public com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox blackbox(){return blackbox;}
+    public void setAuditOwner(Player player){auditOwner=player.getUUID();auditOwnerName=player.getGameProfile().getName();dirty();}
     public mio_icif_nuclear_reactor_generator(BlockPos pos,BlockState state){this(pos,state,mio_icif_block_entities.NUCLEAR_REACTOR_GENERATOR_ENTITY_TYPE.get());}
     public mio_icif_nuclear_reactor_generator(BlockPos pos,BlockState state,BlockEntityType<?> type){
         super(pos,state,type,SlotLayout.builder().extra(54).build(),0,ENERGY_CAPACITY,0,MAX_EXTRACT,CableTier.EV);
@@ -192,6 +202,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             if(i%9<columns&&stack.getItem() instanceof mio_icif_reactor)continue;
             itemHandler.setStackInSlot(i,ItemStack.EMPTY);
             Block.popResource(level,worldPosition,stack);
+            blackbox.dropped(1);   // 0.1.10.12: a lost chamber column throws its components out
         }
     }
     /** 对齐 IC2 {@code isUsefulItem(stack,true)}：流体模式拒绝已经吸过热的冷却单元，其余一律放行。 */
@@ -221,12 +232,19 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             long hull=heat.getHeatStored();int coldIn=liquid?fluid.getInputFluidAmount():0,hotOut=liquid?fluid.getOutputFluidAmount():0,convertedSum=0;
             double euSum=0;long generatedSum=0;
             long coolBudget=liquid?0:cooling.budget(),coolUsed=0;
+            // 0.1.10.12 blackbox: the hull before the cycle, the vented heat, the parts that melted
+            final long hullBefore=hull;long emittedSum=0;final boolean poweredOn=enabled();
+            var melts=new java.util.ArrayList<com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Melt>();
             FluidReactorCycle.Result converted=null;ReactorCycle.Result result=null;
             for(int feed=0;feed<feeds;feed++){
                 if(feed>0)for(int i=0;i<54;i++)parts[i]=i%9<columns?ReactorInventory.read(current[i]):null;
                 converted=liquid?FluidReactorCycle.step(parts,columns,hull,enabled(),coldIn,hotOut,fluid.FLUID_CAPACITY,coolant.huPerMB(),fluid.isOutputCompatible()):null;
                 result=liquid?converted.cycle():ReactorCycle.step(parts,columns,hull,enabled());
                 var next=result.parts();var depleted=result.depletedFuel();
+                emittedSum+=result.emittedHeat();
+                for(int i=0;i<54;i++)if(parts[i]!=null&&next[i]==null)
+                    melts.add(new com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Melt(i,
+                        com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Slot.of(current[i],parts[i]),level.getGameTime()));
                 // liquid cooling: coolant drains heat stored in vents/cells/exchangers first -> no wear while it flows
                 for(int i=0;i<54&&coolUsed<coolBudget;i++){
                     var p=next[i];
@@ -272,7 +290,39 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
                 if(hasReactorAccident())frameUsed=EnergyAmount.ZERO;
                 failure=hasReactorAccident()?accidentFailure():"";syncOutputGate();
             })){failure="Reactor inventory changed during cycle";rate=EnergyAmount.ZERO;cycleVerified=false;syncOutputGate();}
-            if(hasReactorAccident()&&live())IndependentSiEnergy.changed(this);
+            else{
+                // 0.1.10.12: one blackbox sample per committed cycle
+                long partHeat=0,partCapacity=0;int rods=0,coolingParts=0,meltedCount=0,expired=0;
+                var after=new com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Slot[54];
+                for(int i=0;i<54;i++){
+                    var p=accidentParts[i];
+                    after[i]=i%9<columns?com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Slot.of(replacement[i],p)
+                        :com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Slot.EMPTY.withFlags(com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.FLAG_OUTSIDE);
+                    if(p==null)continue;
+                    if(p.profile().storesHeat()){partHeat+=p.stored();partCapacity+=p.profile().capacity();}
+                    if(p.profile().kind()==ReactorCycle.Kind.FUEL&&p.remaining()>0)rods++;
+                    if(p.profile().storesHeat()||p.profile().kind()==ReactorCycle.Kind.COMPONENT_VENT)coolingParts++;
+                }
+                for(var m:melts)if(m.component().kind()==ReactorCycle.Kind.REFLECTOR.ordinal())expired++;else meltedCount++;
+                int unloaded=0;
+                for(var side:Direction.values()){var at=worldPosition.relative(side);
+                    if(((ServerLevel)level).getChunkSource().getChunkNow(at.getX()>>4,at.getZ()>>4)==null)unloaded++;}
+                blackbox.record(new com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Sample(level.getGameTime(),
+                    hullBefore,Math.min(finalHull,finalResult.maxHullHeat()),finalResult.maxHullHeat(),generatedSum,emittedSum,excessHeat,
+                    finalEu,feeds,columns,unloaded,poweredOn,liquid,finalCold,finalHot,liquid?fluid.FLUID_CAPACITY:0,finalConverted,
+                    coolBudget,finalCoolUsed,cooling.coldFluid().getAmount(),cooling.hotFluid().getAmount(),partHeat,partCapacity,
+                    rods,coolingParts,meltedCount,expired,blackbox.pendingDropped(),blackbox.pendingAutomationIn(),blackbox.pendingAutomationOut()),
+                    after,melts);
+                // explosions off in the config: no accident is armed and the hull stops at its limit; log that
+                // meltdown once (it does not take incidentId, so a later real accident is still recorded)
+                if(blastProfile.disabled()&&finalHull>=finalResult.maxHullHeat()){
+                    if(!containedLogged&&live()){containedLogged=true;recordIncident(null);}
+                }else if(finalHull*10<finalResult.maxHullHeat()*9)containedLogged=false;
+            }
+            if(hasReactorAccident()&&live()){
+                IndependentSiEnergy.changed(this);
+                if(trigger!=null&&incidentId==0)incidentId=recordIncident(trigger);
+            }
             if(!hasReactorAccident()&&live())applyHeatEffects();
         }catch(IllegalArgumentException|ArithmeticException error){failure=error.getMessage();rate=EnergyAmount.ZERO;cycleVerified=false;syncOutputGate();}
         if(live())dirty();
@@ -373,6 +423,57 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             ||state.is(net.minecraft.tags.BlockTags.FLOWERS)||state.is(net.minecraft.tags.BlockTags.CROPS)
             ||state.is(net.minecraft.tags.BlockTags.REPLACEABLE_BY_TREES);
     }
+    // ---- 0.1.10.12 accident audit
+
+    /**
+     * Saves the incident of the accident that {@code trigger} armed (null: a meltdown with the explosions
+     * off in the config); returns its id.
+     */
+    private int recordIncident(@org.jetbrains.annotations.Nullable ReactorAccidentLatch.Trigger trigger){
+        if(!(level instanceof ServerLevel server))return 0;
+        try{
+            boolean blastsOff=Singularity_Iteration_Config.REACTOR_EXPLOSION_POWER_LIMIT.get()<=0||Singularity_Iteration_Config.REACTOR_EXPLOSION_MULTIPLIER.get()<=0;
+            String type=blastsOff?com.miophas.singularity_iteration.common.reactor.audit.ReactorIncidents.CONTAINED
+                :trigger!=null&&trigger.effect()==ReactorAccidentLatch.Effect.NUCLEAR_TERRAIN&&Singularity_Iteration_Config.ENABLE_NUCLEAR_EXPLOSION.get()
+                ?com.miophas.singularity_iteration.common.reactor.audit.ReactorIncidents.NUCLEAR
+                :com.miophas.singularity_iteration.common.reactor.audit.ReactorIncidents.LOCAL;
+            return com.miophas.singularity_iteration.common.reactor.audit.ReactorIncidents.record(server,worldPosition,blackbox,
+                new com.miophas.singularity_iteration.common.reactor.audit.ReactorIncidents.Facts(type,server.getGameTime(),auditOwner,auditOwnerName,
+                    trigger==null?0:trigger.powerMillis(),mode.getName(),feedRate,heat.getHeatStored(),heat.getMaxHeatStored()));
+        }catch(RuntimeException error){
+            // the audit must never stop the accident itself
+            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Reactor incident record failed at {}",worldPosition,error);
+            return 0;
+        }
+    }
+
+    /**
+     * The reactor block is being removed (not by its own accident): a reactor that was running or held
+     * at least 10 % of its hull heat leaves an incident of the kind "removed".
+     */
+    public void recordRemoval(){
+        if(!(level instanceof ServerLevel)||hasReactorAccident())return;
+        long max=heat.getMaxHeatStored();
+        if(!isRunning()&&(max<=0||heat.getHeatStored()*10<max))return;
+        try{
+            com.miophas.singularity_iteration.common.reactor.audit.ReactorIncidents.record((ServerLevel)level,worldPosition,blackbox,
+                new com.miophas.singularity_iteration.common.reactor.audit.ReactorIncidents.Facts(com.miophas.singularity_iteration.common.reactor.audit.ReactorIncidents.REMOVED,
+                    level.getGameTime(),auditOwner,auditOwnerName,0,mode.getName(),feedRate,heat.getHeatStored(),max));
+        }catch(RuntimeException error){
+            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Reactor removal record failed at {}",worldPosition,error);
+        }
+    }
+
+    /** After the effect: the blackbox drops at the site (an accident restored from a save gets its incident now). */
+    private void dropBlackbox(ServerLevel server){
+        try{
+            if(incidentId==0)incidentId=recordIncident(accident.trigger());
+            com.miophas.singularity_iteration.common.reactor.audit.ReactorIncidents.dropBlackbox(server,worldPosition,incidentId);
+        }catch(RuntimeException error){
+            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.error("Reactor blackbox drop failed at {}",worldPosition,error);
+        }
+    }
+
     private void dispatchAccident(){
         if(accident.state()!=ReactorAccidentLatch.State.PENDING||!live())return;
         if(Singularity_Iteration_Config.REACTOR_EXPLOSION_POWER_LIMIT.get()<=0
@@ -389,6 +490,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             server.explode(null,worldPosition.getX()+.5,worldPosition.getY()+.5,worldPosition.getZ()+.5,1.5F,Level.ExplosionInteraction.NONE);
             if(live())server.removeBlock(worldPosition,false);
             accident.closeEffect();
+            dropBlackbox(server);   // 0.1.10.12
             com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(server,worldPosition,"meltdown","reactor_meltdown");
         }catch(RuntimeException|Error effectFailure){
             if(accident.state()==ReactorAccidentLatch.State.DISPATCHING)accident.markUncertain();
@@ -434,6 +536,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             if(accident.state()==ReactorAccidentLatch.State.DISPATCHING)accident.markUncertain();
         }
         blast.present();
+        dropBlackbox(server);   // 0.1.10.12
         try{
             com.miophas.singularity_iteration.core.api.advancement.MioAchievements.at(server,worldPosition,"meltdown","reactor_meltdown");
         }catch(RuntimeException presentationFailure){
@@ -491,8 +594,14 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     private final class Automation implements IItemHandler {
         @Override public int getSlots(){return 54;}
         @Override public ItemStack getStackInSlot(int slot){return itemHandler.getStackInSlot(slot).copy();}
-        @Override public ItemStack insertItem(int slot,ItemStack stack,boolean simulate){return operational()?itemHandler.insertItem(slot,stack,simulate):stack;}
-        @Override public ItemStack extractItem(int slot,int amount,boolean simulate){return operational()?itemHandler.extractItem(slot,amount,simulate):ItemStack.EMPTY;}
+        @Override public ItemStack insertItem(int slot,ItemStack stack,boolean simulate){
+            if(!operational())return stack;var rest=itemHandler.insertItem(slot,stack,simulate);
+            if(!simulate&&rest.getCount()<stack.getCount())blackbox.automation(true);   // 0.1.10.12
+            return rest;}
+        @Override public ItemStack extractItem(int slot,int amount,boolean simulate){
+            if(!operational())return ItemStack.EMPTY;var out=itemHandler.extractItem(slot,amount,simulate);
+            if(!simulate&&!out.isEmpty())blackbox.automation(false);   // 0.1.10.12
+            return out;}
         @Override public int getSlotLimit(int slot){return 1;}
         @Override public boolean isItemValid(int slot,ItemStack stack){return operational()&&itemHandler.isItemValid(slot,stack);}
     }
@@ -528,10 +637,12 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         tag.putInt("CurrentHeatGeneration",lastHeat);tag.putLong("CurrentEnergyGeneration",rate.whole());tag.putBoolean("IsRunning",isRunning());tag.putInt("ReactorCycleTicks",cycleRemaining);tag.putString("ReactorMode",mode.getName());tag.putInt("FeedRate",feedRate);tag.put("LiquidCooling",cooling.save(provider));
         ListTag legacy=new ListTag();for(int i=0;i<54;i++)if(!getItem(i).isEmpty()){CompoundTag item=(CompoundTag)getItem(i).save(provider);item.putByte("Slot",(byte)i);legacy.add(item);}tag.put("ReactorItems",legacy);
         CompoundTag fluidTag=new CompoundTag();fluid.saveToNBT(fluidTag,provider);tag.put("FluidHandler",fluidTag);
+        if(auditOwner!=null){tag.putUUID("AuditOwner",auditOwner);tag.putString("AuditOwnerName",auditOwnerName);}   // 0.1.10.12
         CompoundTag saved=new CompoundTag();saved.putInt("version",2);saved.putLong("rate",rate.whole());saved.putLong("rate_fraction",rate.fraction());saved.put("hold",hold.copy());saved.putString("failure",failure);saved.put("accident",saveAccident());tag.put("scex_reactor",saved);
     }
     @Override public void loadAdditional(CompoundTag tag,HolderLookup.Provider provider){
         super.loadAdditional(tag,provider);hold=new CompoundTag();failure="";lastHeat=0;accident=new ReactorAccidentLatch();closeAccess();frameAt=Long.MIN_VALUE;
+        auditOwner=tag.hasUUID("AuditOwner")?tag.getUUID("AuditOwner"):null;auditOwnerName=tag.getString("AuditOwnerName");   // 0.1.10.12
         long stored=tag.getLong("HeatStored");if(stored<0){hold.put("invalid_heat",tag.get("HeatStored").copy());stored=0;}heat.setHeat(stored);
         long max=tag.getLong("MaxHeatStored");heat.setCapacity(max>0?max:10000);
         cycleRemaining=tag.contains("ReactorCycleTicks")?tag.getInt("ReactorCycleTicks"):19;

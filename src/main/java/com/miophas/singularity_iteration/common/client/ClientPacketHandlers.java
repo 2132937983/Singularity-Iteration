@@ -18,6 +18,11 @@ public class ClientPacketHandlers {
         NuclearExplosionAnimationHandler.startAnimation(centerX, centerY, centerZ, explosionRadius);
     }
 
+    /** 0.1.10.12: opens the reactor accident audit report. */
+    public static void handleReactorAudit(net.minecraft.nbt.CompoundTag incident) {
+        Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.ReactorAuditScreen(incident));
+    }
+
     /** 0.1.10.11: the mining laser's Ultra-High Energy Blast. */
     public static void handleLaserBlast(double x, double y, double z, float strength) {
         LaserBlastFx.start(x, y, z, strength);

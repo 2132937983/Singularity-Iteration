@@ -583,3 +583,28 @@ The results do not change; the changes remove work that had no effect.
 * The SI chunk loader is owned by the player who places it and follows the server rules of the config
   section `ChunkLoaders`; an addon that places a loader for a player should place it through the block
   (so `setPlacedBy` sets the owner).
+
+## 18. Max-min fair share and the reactor accident audit (0.1.10.12)
+
+* Fair mode shares each stage max-min fair (water-filling): every receiver gets `min(demand, level)`,
+  where the level is the highest one the budget pays. Small demands are met in full before a large one
+  gets more. Before 0.1.10.12 every receiver got the same fraction of its demand, so a receiver with an
+  unlimited rated input (the Molecular Transformer, 120M EU of room) took almost the whole output and
+  the machines behind storage blocks starved. An addon machine with a huge `maxReceive` still gets at
+  least the level, but it no longer takes the share of the others. The stage order is unchanged: loads
+  and transformers first, then storage.
+* `core.runtime.energy.engine.FairShareDistributor.Receiver` has a fourth component, `relay` (EU in this
+  tick). A storage block (class 1) with a relay asks for `min(rated, relay)` in stage 0, together with
+  the loads. The engine sets the relay to the part of one tick of output (packet size times packets)
+  that the storage block cannot offer from its own buffer, and only when its output reaches another
+  receiver. A storage block that feeds nothing charges after the loads, as before. The constructor
+  with three arguments stays (relay 0).
+* Receiver windows (at most 128 receivers each) rotate: in each tick the first window starts after the
+  receiver where the previous tick stopped, so the receivers of a long bus share in turn.
+* `core.runtime.energy.OverloadBlastLog`: the last 64 overvoltage explosions of receivers (dimension,
+  position, game time), `near(dimension, x, y, z, radius, since)`. It is cleared when the server stops.
+  The reactor audit uses it to name an external overvoltage as a cause.
+* Reactor accident audit (in common, not API): a Nuclear Reactor Generator keeps its last 40 cycles in
+  memory. An accident, a meltdown with the explosions off, or the removal of a running or hot reactor
+  becomes an incident (`/mio_icif reactor audit`). An addon that destroys a reactor should remove the
+  block normally, so `onRemove` records the removal.

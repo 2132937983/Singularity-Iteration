@@ -20,8 +20,8 @@ import java.util.Objects;
  * get only the remainder. Each delivery also pays the full path loss in whole
  * EU. Thus receivers far from the source, or late in the order, got less
  * energy. Players saw this as 100 %, 75 %, 50 % power on machines in one line.
- * This class divides the energy in proportion to the demand. All receivers in
- * one stage get the same fraction of their demand.
+ * This class divides the energy without an order. Since 0.1.10.12 it uses a
+ * max-min share (see below); until then the share was in proportion to the demand.
  *
  * <h2>Model</h2>
  * <ul>
@@ -42,7 +42,9 @@ import java.util.Objects;
  * <h2>Stages</h2>
  * <p>The round has four stages, in this order:
  * <ol>
- *   <li>Class 0 receivers, rated demand: {@code min(room, rated input)}.</li>
+ *   <li>Priority demand: the rated demand {@code min(room, rated input)} of the
+ *       class 0 receivers, and the relay demand {@code min(room, rated input,
+ *       relay)} of the class 1 receivers (0.1.10.12).</li>
  *   <li>Class 0 receivers, surplus demand: the remaining room.</li>
  *   <li>Class 1 receivers, rated demand.</li>
  *   <li>Class 1 receivers, surplus demand.</li>
@@ -50,16 +52,30 @@ import java.util.Objects;
  * <p>In each stage, the sources give energy in this order: class 0 sources,
  * then class 1 sources. In one class, the order starts at index
  * {@code rotation mod count} and wraps. Each source divides its remaining
- * budget among the receivers that it can reach, in proportion to their
- * remaining demand of the stage. When the budget is sufficient, each receiver
- * gets its full demand.
+ * budget among the receivers that it can reach by max-min share (0.1.10.12;
+ * before: in proportion to the demand). When the budget is sufficient, each
+ * receiver gets its full demand.
  *
  * <p><b>Result:</b> loads and relays get energy before storage. A storage
  * block gives energy only for demand that the generators cannot supply. The
- * surplus of the generators charges the storage blocks. When one source
- * supplies all receivers of one stage, all receivers get the same fraction of
- * their demand. This property also holds for more sources that reach the same
- * receivers: the fractions add.
+ * surplus of the generators charges the storage blocks.
+ *
+ * <h2>0.1.10.12: max-min share and storage relays</h2>
+ * <ul>
+ *   <li><b>Max-min share (water filling).</b> In each stage a source gives every
+ *       receiver the same amount, up to the demand of the receiver. The budget
+ *       that a small demand does not use goes to the larger demands. Before, the
+ *       split was in proportion to the demand: a machine with a demand of 32 EU
+ *       next to a Molecular Transformer with a demand of 120,000,000 EU got almost
+ *       nothing. Now a small demand is filled first. Receivers with equal demand
+ *       still get equal shares.</li>
+ *   <li><b>Relay demand of storage.</b> A storage receiver can declare a relay
+ *       demand ({@link Receiver#relay()}): the EU that it needs to send its next
+ *       tick of output to the machines behind it. Stage 1 serves this demand
+ *       together with the rated demand of the loads. Before, a storage block
+ *       that feeds a branch of machines got energy only after every load that
+ *       the source reached directly was full. Thus the whole branch starved.</li>
+ * </ul>
  *
  * <h2>Line loss</h2>
  * <ul>
@@ -74,7 +90,8 @@ import java.util.Objects;
  * <p>The planner works in fixed-point {@code long} values with
  * {@value #COARSE_BITS} fraction bits (2<sup>-24</sup> EU). It reads each
  * budget and room rounded down to this grid, so it never gives more than the
- * real budget or room. The proportional factor is a {@code double}. Each
+ * real budget or room. The level of the share with line loss is a
+ * {@code double}. Each
  * credit is capped by the remaining budget of its source, so a rounding error
  * cannot overspend. Conservation is exact: each debit is the sum of its credit
  * and its loss in the same {@code long} grid. The method converts the result
@@ -85,9 +102,10 @@ import java.util.Objects;
  * <h2>Cost</h2>
  * <p>The method visits each linked (source, receiver) pair of the route table a
  * fixed number of times: once to select the best route, and twice per stage.
- * Thus the cost is {@code O(S * R)}, where S is the number of sources and R is
- * the number of receivers in the window. This is linear in the size of the
- * route table. There is no sort and no wide integer arithmetic in the loops.
+ * The max-min share sorts the demands of one pool in each stage (0.1.10.12).
+ * Thus the cost is {@code O(S * R log R)}, where S is the number of sources
+ * and R is the number of receivers in the window. There is no wide integer
+ * arithmetic in the loops.
  * The engine limits a window to 32 sources and 128 receivers.
  *
  * <h2>Invariants</h2>
@@ -104,21 +122,25 @@ import java.util.Objects;
  * <p><b>ZH:</b> 智能电网模式的确定性公平分配器。
  * <ul>
  *   <li><b>原因：</b>旧的数据包优先级遍历按固定顺序把一个包交给接收方，第一个接收方取走能容纳的全部能量，后面的只得到剩余部分，
- *       且每次输送都按整 EU 支付完整路径损耗。因此同一条线上的机器出现 100 %、75 %、50 % 的逐级衰减。本类按需求比例分配，
- *       同一阶段内所有接收方得到相同比例的需求量。不使用随机数，不依赖接收方顺序，相同输入得到相同结果。</li>
+ *       且每次输送都按整 EU 支付完整路径损耗。因此同一条线上的机器出现 100 %、75 %、50 % 的逐级衰减。本类不按顺序分配，
+ *       0.1.10.12 起按最大最小均分（此前按需求比例）。不使用随机数，不依赖接收方顺序，相同输入得到相同结果。</li>
  *   <li><b>模型：</b>源 = 本轮预算、包大小（电压）、类别（0 = 发电机或变压器中继，1 = 储能）；接收方 = 剩余容量、本轮额定输入
  *       （{@code null} 为无限制）、类别（0 = 用电器或中继，1 = 储能）；域 = 一组路由（只读取可达性与损耗，忽略优先级）；
  *       共享储能 = 同时为源与接收方的端口，其放出的能量会增加自身容量，且从不向自己供电。</li>
- *   <li><b>四个阶段：</b>类别 0 的额定需求 {@code min(容量, 额定输入)} → 类别 0 的剩余容量 → 类别 1 的额定需求 → 类别 1 的剩余容量。
+ *   <li><b>四个阶段：</b>优先需求（类别 0 的额定需求 {@code min(容量, 额定输入)} 与类别 1 的中继需求，0.1.10.12）→ 类别 0 的剩余容量 → 类别 1 的额定需求 → 类别 1 的剩余容量。
  *       每个阶段内先由类别 0 的源供电，再由类别 1 的源供电；同类内从 {@code rotation mod 数量} 开始循环。每个源把剩余预算按
- *       剩余需求比例分给可达的接收方；预算足够时每个接收方得到全部需求。结果：用电器与中继先于储能得到能量；储能只补足发电机
+ *       最大最小均分分给可达的接收方（0.1.10.12 之前按需求比例）；预算足够时每个接收方得到全部需求。结果：用电器、中继与为机器供电的储能先于其他储能得到能量；储能只补足发电机
  *       供不上的部分；发电机的盈余为储能充电。</li>
+ *   <li><b>0.1.10.12：</b>（1）最大最小均分（注水法）：每个阶段内，源给每个接收方相同的电量，以其需求为上限，小需求用不完的预算分给大需求。
+ *       此前按需求比例分配，需求 32 EU 的机器与需求 1.2 亿 EU 的分子重组仪同时存在时，前者几乎分不到电。需求相同的接收方仍得到相同份额。
+ *       （2）储能的中继需求：储能接收方可以声明中继需求（{@link Receiver#relay()}），即向其后方机器送出下一 tick 输出所需的电量；
+ *       第 1 阶段与用电器的额定需求一起满足它。此前为一组机器供电的储能，要等源直接连接的所有用电器都充满后才能得到电，整个支路因此断电。</li>
  *   <li><b>线损：</b>{@link LineLoss#LOSSLESS} 无损（默认）；{@link LineLoss#PROPORTIONAL} 损耗 = {@code credit * lossMilli / (1000 * packet)}，
  *       电压越高损耗比例越低；损耗比例不小于 1 的路由无法输送。</li>
  *   <li><b>算术：</b>以 {@value #COARSE_BITS} 位小数的定点 {@code long}（2<sup>-24</sup> EU）规划；预算与容量向下取整，绝不超发。
- *       比例系数为 {@code double}，每笔输送受源剩余预算限制，舍入误差不会超支。守恒是精确的：每笔扣款 = 输送量 + 损耗（同一网格）。
+ *       带线损的均分水位为 {@code double}，每笔输送受源剩余预算限制，舍入误差不会超支。守恒是精确的：每笔扣款 = 输送量 + 损耗（同一网格）。
  *       单个预算或容量超过 2<sup>38</sup> EU 时被截断。</li>
- *   <li><b>开销：</b>每个已连接的（源、接收方）对访问固定次数（选路 1 次，每阶段 2 次），即 {@code O(S * R)}；循环中无排序、无宽整数运算。
+ *   <li><b>开销：</b>每个已连接的（源、接收方）对访问固定次数（选路 1 次，每阶段 2 次），最大最小均分在每个阶段对一个池的需求排序（0.1.10.12），即 {@code O(S * R log R)}；循环中无宽整数运算。
  *       引擎把一个窗口限制为 32 个源与 128 个接收方。</li>
  *   <li><b>不变量：</b>扣款总和 = 输送总和 + 损耗（否则抛出 {@link IllegalStateException}）；源不会超出预算；接收方不会超过本轮开始时的容量
  *       （加上其作为共享储能放出的能量）；不修改输入，不读写世界状态。</li>
@@ -128,22 +150,27 @@ import java.util.Objects;
  * <ul>
  *   <li><b>理由：</b>旧来のパケット優先度方式は、1 つのパケットを決まった順で受信側に渡していた。最初の受信側が入るだけ取り、後の受信側は
  *       残りしか得られず、しかも毎回の送電で経路損失を整数 EU で丸ごと払っていた。そのため一列に並んだ機械が 100 %、75 %、50 % と
- *       減衰した。このクラスは需要に比例して分け、同じ段階の受信側はすべて需要の同じ割合を得る。乱数を使わず、受信側の順序に依存せず、
+ *       減衰した。このクラスは順序なしで分け、0.1.10.12 からは最大最小の均等配分を使う（以前は需要比例）。乱数を使わず、受信側の順序に依存せず、
  *       同じ入力から同じ結果を出す。</li>
  *   <li><b>モデル：</b>供給元 = 今回の予算、パケット量（電圧）、種別（0 = 発電機または変圧器の中継、1 = 蓄電）。受信側 = 空き容量、今回の定格入力
  *       （{@code null} は無制限）、種別（0 = 消費機器または中継、1 = 蓄電）。ドメイン = 経路のまとまり（到達性と損失だけを読み、優先度は無視）。
  *       共有蓄電 = 供給元と受信側を兼ねるポート。放出した分だけ自分の空きが増え、自分自身には送らない。</li>
- *   <li><b>4 段階：</b>種別 0 の定格需要 {@code min(空き, 定格入力)} → 種別 0 の残りの空き → 種別 1 の定格需要 → 種別 1 の残りの空き。
+ *   <li><b>4 段階：</b>優先需要（種別 0 の定格需要 {@code min(空き, 定格入力)} と種別 1 の中継需要、0.1.10.12）→ 種別 0 の残りの空き → 種別 1 の定格需要 → 種別 1 の残りの空き。
  *       各段階では種別 0 の供給元、次に種別 1 の供給元の順に送る。同じ種別では {@code rotation mod 数} から巡回する。各供給元は残り予算を、
- *       到達できる受信側へ残り需要に比例して分ける。予算が足りれば各受信側は需要を全部得る。結果：消費機器と中継が蓄電より先に電力を得る。
+ *       到達できる受信側へ最大最小の均等配分で分ける（0.1.10.12 より前は需要比例）。予算が足りれば各受信側は需要を全部得る。結果：消費機器・中継・機械へ給電する蓄電が、ほかの蓄電より先に電力を得る。
  *       蓄電は発電機で足りない分だけを出し、発電機の余剰が蓄電を充電する。</li>
+ *   <li><b>0.1.10.12：</b>(1) 最大最小の均等配分（水位法）：各段階で、供給元は各受信側に同じ量を、その需要を上限として渡す。
+ *       小さな需要が使い切らない予算は大きな需要に回る。以前は需要比例だったため、需要 32 EU の機械と需要 1.2 億 EU の分子再構築機が
+ *       並ぶと、前者はほとんど電力を得られなかった。需要が同じ受信側は今も同じ量を得る。(2) 蓄電の中継需要：蓄電の受信側は中継需要
+ *       （{@link Receiver#relay()}）を申告できる。後ろの機械へ次の tick の出力を送るのに必要な量で、第 1 段階で消費機器の定格需要と
+ *       一緒に満たす。以前は、機械群に給電する蓄電は、供給元が直接つながる消費機器がすべて満タンになるまで電力を得られず、系統全体が止まった。</li>
  *   <li><b>線路損失：</b>{@link LineLoss#LOSSLESS} は損失なし（既定）。{@link LineLoss#PROPORTIONAL} は損失 = {@code credit * lossMilli / (1000 * packet)}。
  *       電圧が高いほど損失の割合は小さい。損失の割合が 1 以上の経路は送電できない。</li>
  *   <li><b>演算：</b>小数 {@value #COARSE_BITS} ビットの固定小数点 {@code long}（2<sup>-24</sup> EU）で計画する。予算と空きは切り捨てるので、
- *       実際より多く渡すことはない。比例係数は {@code double}。各送電量は供給元の残り予算で上限をかけるので、丸め誤差で使い過ぎない。
+ *       実際より多く渡すことはない。線路損失ありの均等配分の水位は {@code double}。各送電量は供給元の残り予算で上限をかけるので、丸め誤差で使い過ぎない。
  *       保存則は厳密：各引き落とし = 送電量 + 損失（同じ格子）。1 つの予算・空きが 2<sup>38</sup> EU を超えると切り詰める。</li>
- *   <li><b>コスト：</b>接続済みの（供給元、受信側）の組を決まった回数（経路選択 1 回、各段階 2 回）だけ訪れるので {@code O(S * R)}。
- *       ループ内にソートも多倍長演算もない。エンジンは 1 つのウィンドウを供給元 32、受信側 128 に制限する。</li>
+ *   <li><b>コスト：</b>接続済みの（供給元、受信側）の組を決まった回数（経路選択 1 回、各段階 2 回）だけ訪れる。
+ *       最大最小の均等配分は各段階で 1 つのプールの需要を並べ替える（0.1.10.12）ので {@code O(S * R log R)}。ループ内に多倍長演算はない。エンジンは 1 つのウィンドウを供給元 32、受信側 128 に制限する。</li>
  *   <li><b>不変条件：</b>引き落とし合計 = 送電合計 + 損失（違えば {@link IllegalStateException}）。供給元は予算を超えない。受信側は今回開始時の
  *       空き（＋共有蓄電として出した分）を超えない。入力を変えず、ワールドの状態を読み書きしない。</li>
  * </ul>
@@ -182,12 +209,21 @@ public final class FairShareDistributor {
      * @param room the free capacity at the start of the round
      * @param rated the rated input for this round, or {@code null} for no limit
      * @param receiverClass 0 for a load or relay, 1 for storage
+     * @param relay 0.1.10.12: for a class 1 receiver, the part of its demand that
+     *        stage 1 serves with the loads (a storage block that feeds machines);
+     *        ignored for class 0. Zero for none.
      */
-    public record Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass) {
+    public record Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass, EnergyAmount relay) {
         public Receiver {
             Objects.requireNonNull(room, "room");
             if (receiverClass < 0 || receiverClass > 1)
                 throw new IllegalArgumentException("Invalid fair-share receiver");
+            if (relay == null) relay = EnergyAmount.ZERO;
+        }
+
+        /** A receiver without relay demand. */
+        public Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass) {
+            this(room, rated, receiverClass, EnergyAmount.ZERO);
         }
     }
 
@@ -276,12 +312,14 @@ public final class FairShareDistributor {
         }
         int[] receiverClass = new int[receiverCount];
         long[] room = new long[receiverCount], initialRoom = new long[receiverCount], rateLeft = new long[receiverCount];
+        long[] relayLeft = new long[receiverCount];
         for (int r = 0; r < receiverCount; r++) {
             var receiver = receivers.get(r);
             receiverClass[r] = receiver.receiverClass();
             room[r] = toCoarse(receiver.room());
             initialRoom[r] = room[r];
             rateLeft[r] = receiver.rated() == null ? -1 : toCoarse(receiver.rated());
+            relayLeft[r] = receiver.receiverClass() == 1 ? toCoarse(receiver.relay()) : 0;
         }
 
         // EN: Select the best route for each (source, receiver) pair: the lowest loss. A tie keeps
@@ -334,8 +372,6 @@ public final class FairShareDistributor {
         long[] demand = new long[receiverCount];
 
         for (int stage = 0; stage < 4; stage++) {
-            int stageClass = stage / 2;
-            boolean rated = stage % 2 == 0;
             for (int[] pool : pools) {
                 // EN: A pool is one source, or more sources of one class with the same links and no loss.
                 //     It acts as one source with the summed budget.
@@ -347,32 +383,24 @@ public final class FairShareDistributor {
                 int lead = pool[0];
                 int[] targets = linked[lead];
                 double[] f = fraction[lead];
-                double weight = 0;
-                long exactDemand = 0;
+                long[] want = new long[targets.length];
                 boolean any = false;
                 for (int c = 0; c < targets.length; c++) {
                     int r = targets[c];
-                    long want = 0;
-                    if (receiverClass[r] == stageClass) {
-                        want = room[r];
-                        if (rated && rateLeft[r] >= 0) want = Math.min(want, rateLeft[r]);
-                    }
-                    demand[r] = Math.max(0, want);
-                    if (demand[r] == 0) continue;
-                    any = true;
-                    weight += demand[r] * (1.0 + f[c]);
-                    exactDemand = saturatingAdd(exactDemand, demand[r]);
+                    want[c] = Math.max(0, stageDemand(stage, receiverClass[r], room[r], rateLeft[r], relayLeft[r]));
+                    demand[r] = want[c];
+                    any |= want[c] > 0;
                 }
                 if (!any) continue;
-                // Lossless with an exact long sum: full when the budget covers the demand.
-                double factor = loss == LineLoss.LOSSLESS
-                    ? (exactDemand <= poolBudget ? 1.0 : (double) poolBudget / exactDemand)
-                    : Math.min(1.0, poolBudget / weight);
+                // EN: 0.1.10.12: max-min share (water filling) instead of a share in proportion to the demand.
+                // ZH: 0.1.10.12：最大最小均分（注水法），取代按需求比例分配。
+                // JA: 0.1.10.12：需要比例の配分に代えて、最大最小の均等配分（水位法）。
+                long[] planned = loss == LineLoss.LOSSLESS ? maxMinLossless(want, poolBudget) : maxMinWeighted(want, f, poolBudget);
                 int member = 0;
                 for (int c = 0; c < targets.length && poolBudget > 0; c++) {
                     int r = targets[c];
                     if (demand[r] == 0) continue;
-                    long credit = factor >= 1.0 ? demand[r] : Math.min(demand[r], (long) Math.floor(demand[r] * factor));
+                    long credit = Math.min(demand[r], planned[c]);
                     long pathLoss = f[c] == 0 ? 0 : (long) Math.floor(credit * f[c]);
                     // EN: Cap by the remaining budget, so a rounding error cannot overspend.
                     // ZH: 以剩余预算为上限，舍入误差不会超支。
@@ -386,6 +414,7 @@ public final class FairShareDistributor {
                     credits[r] += credit;
                     room[r] -= credit;
                     if (rateLeft[r] >= 0) rateLeft[r] = Math.max(0, rateLeft[r] - credit);
+                    if (stage == 0 && receiverClass[r] == 1) relayLeft[r] = Math.max(0, relayLeft[r] - credit);
                     lossTotal += pathLoss;
                     // EN: Northwest-corner rule: pay this credit from the pool members in visit order.
                     //     A pool with loss has exactly one member.
@@ -439,6 +468,89 @@ public final class FairShareDistributor {
         if (debitTotal != Math.addExact(creditTotal, lossTotal))
             throw new IllegalStateException("Fair-share allocation lost energy");
         return new Round(debitAmounts, creditAmounts, fromCoarse(lossTotal), deliveries);
+    }
+
+    /**
+     * The demand of one receiver in one stage (0.1.10.12): stage 0 is the
+     * priority stage (rated demand of a load, relay demand of a storage block),
+     * stage 1 the surplus of the loads, stage 2 the rated demand of the storage
+     * blocks, stage 3 their surplus. {@code rateLeft < 0} means no rated limit.
+     */
+    static long stageDemand(int stage, int receiverClass, long room, long rateLeft, long relayLeft) {
+        long rated = rateLeft >= 0 ? Math.min(room, rateLeft) : room;
+        return switch (stage) {
+            case 0 -> receiverClass == 0 ? rated : Math.min(rated, relayLeft);
+            case 1 -> receiverClass == 0 ? room : 0;
+            case 2 -> receiverClass == 1 ? rated : 0;
+            default -> receiverClass == 1 ? room : 0;
+        };
+    }
+
+    /**
+     * Max-min share without loss (0.1.10.12), exact in the planning grid: every
+     * receiver gets {@code min(want, level)}; the level is the highest one that
+     * the budget pays. The rest of a level that does not divide evenly (less than
+     * one grid unit per receiver) goes to the first receivers above the level, so
+     * the budget is used in full when the demand is larger.
+     *
+     * @return the planned credit per entry of {@code want}
+     */
+    static long[] maxMinLossless(long[] want, long budget) {
+        long total = 0;
+        int count = 0;
+        for (long w : want) if (w > 0) { total = saturatingAdd(total, w); count++; }
+        if (total <= budget) return want.clone();
+        long[] sorted = new long[count];
+        int at = 0;
+        for (long w : want) if (w > 0) sorted[at++] = w;
+        Arrays.sort(sorted);
+        long left = budget, level = 0, extra = 0;
+        int remaining = count;
+        for (long w : sorted) {
+            // w * remaining <= left, without an overflow
+            if (w <= left / remaining) { left -= w; remaining--; continue; }
+            level = left / remaining;
+            extra = left - level * remaining;
+            break;
+        }
+        long[] planned = new long[want.length];
+        for (int c = 0; c < want.length; c++) {
+            if (want[c] <= 0) continue;
+            if (want[c] <= level) { planned[c] = want[c]; continue; }
+            planned[c] = level;
+            if (extra > 0) { planned[c]++; extra--; }
+        }
+        return planned;
+    }
+
+    /**
+     * Max-min share with proportional line loss (0.1.10.12): the same credit level
+     * for every receiver, where a credit {@code c} to entry {@code i} costs
+     * {@code c * (1 + f[i])}. The caller caps each credit by the remaining budget.
+     *
+     * @return the planned credit per entry of {@code want}
+     */
+    static long[] maxMinWeighted(long[] want, double[] f, long budget) {
+        int n = want.length;
+        double cost = 0;
+        for (int c = 0; c < n; c++) if (want[c] > 0) cost += want[c] * (1.0 + f[c]);
+        if (cost <= budget) return want.clone();
+        Integer[] order = new Integer[n];
+        int count = 0;
+        for (int c = 0; c < n; c++) if (want[c] > 0) order[count++] = c;
+        order = Arrays.copyOf(order, count);
+        Arrays.sort(order, (a, b) -> Long.compare(want[a], want[b]));
+        double weight = 0;
+        for (int c : order) weight += 1.0 + f[c];
+        double left = budget, level = Double.MAX_VALUE;
+        for (int c : order) {
+            if (want[c] * weight <= left) { left -= want[c] * (1.0 + f[c]); weight -= 1.0 + f[c]; continue; }
+            level = left / weight;
+            break;
+        }
+        long[] planned = new long[n];
+        for (int c = 0; c < n; c++) if (want[c] > 0) planned[c] = Math.min(want[c], (long) Math.floor(level));
+        return planned;
     }
 
     /**

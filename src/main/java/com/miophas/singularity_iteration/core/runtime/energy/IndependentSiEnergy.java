@@ -980,6 +980,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          * input, so a sink in two windows cannot get its rated input twice.
          */
         final Map<BlockPos, EnergyAmount> receivedThisTick = new HashMap<>();
+        /** 0.1.10.12: storage blocks whose output reaches a receiver, for one routing view ({@code relayFeedsView}). */
+        final Map<BlockPos, Boolean> relayFeeds = new HashMap<>();
+        Object relayFeedsView;
         /** Anchor positions for foreign discovery: conductors, then endpoints. */
         List<BlockPos> scanAnchors = List.of();
         /** Foreign contacts that received an export in {@code sampleTick}. The import pass skips them. */
@@ -1744,6 +1747,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             // wrapped. Mark its sources as done and move to the next source group.
             if (windows.contains(windowKey)) {
                 visited.addAll(plan.sources.stream().map(RouteEndpoint::position).toList());
+                // 0.1.10.12: a source group with more than one receiver window went around all of
+                // them in this tick. Start the next tick one window later. Until 0.1.10.11 the
+                // cursor came back to the same first window every tick: its receivers took the
+                // allowance of the group first every tick and the last windows starved.
+                if (plan.nextReceiver != plan.firstReceiver)
+                    grid.receiverCursors.put(plan.sources.getFirst().position, plan.nextReceiver);
                 grid.nativeCursor = plan.nextSource; releasePlan(grid, plan);
                 continue;
             }
@@ -2194,6 +2203,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         net.minecraft.sounds.SoundSource.BLOCKS, 1.2F, 1.0F);
                     applySmallEntityBlast(level, at);
                     applySmallBlockBlast(level, grid, at, removedByEffects);
+                    // 0.1.10.12: for the reactor accident audit
+                    OverloadBlastLog.record(level.dimension().location().toString(), at.getX(), at.getY(), at.getZ(), level.getGameTime());
                     com.miophas.singularity_iteration.core.api.advancement.MioAchievements
                         .at(level, at, "industrial_accident", "machine_exploded");
                 }
@@ -2216,7 +2227,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      *
      * <ul>
      *   <li>Source class: 1 for a storage port, else 0 (generator, relay).</li>
-     *   <li>Receiver class: 0 for a transformer and a load, 1 for storage.</li>
+     *   <li>Receiver class: 0 for a transformer and a load, 1 for storage. A
+     *       storage receiver also declares its relay demand ({@code relayDemand},
+     *       0.1.10.12).</li>
      *   <li>Rated input: a transformer accepts {@code outputPacket * outputPackets}
      *       (4 low packets) per tick in both modes. Another sink accepts its
      *       {@code maxReceive} per tick. The EU that the sink already received
@@ -2237,11 +2250,55 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         var fairReceivers = new ArrayList<FairShareDistributor.Receiver>(sinks.size());
         for (int r = 0; r < sinks.size(); r++) {
             var sink = sinks.get(r);
+            boolean storage = sink.transformer == null && isStorage(sink);
+            var relay = storage ? relayDemand(sink) : EnergyAmount.ZERO;
+            if (!relay.isZero() && !feedsReceivers(grid, sink)) relay = EnergyAmount.ZERO;
             fairReceivers.add(new FairShareDistributor.Receiver(room.get(r), ratedInput(grid, sink),
-                sink.transformer == null && isStorage(sink) ? 1 : 0));
+                storage ? 1 : 0, relay));
         }
         return PlannedRound.of(FairShareDistributor.allocate(fairSources, domains, receivers, fairReceivers, shared,
             IndependentEnergyMode.lineLoss(), level.getGameTime()));
+    }
+    /**
+     * 0.1.10.12: the relay demand of a storage receiver: one tick of its output
+     * ({@code packet * packets}) minus the EU that it holds, or zero. A storage
+     * block that feeds machines is drained every tick and asks for that tick of
+     * output with load priority (stage 1 of the fair round). Until 0.1.10.11 it
+     * was served only after every load that the source reached directly was full:
+     * a large load next to the source (a Molecular Transformer holds 120,000,000
+     * EU) starved the whole branch behind the storage block. A storage block that
+     * holds more than one tick of output asks nothing with priority; its charging
+     * stays behind the loads, as before.
+     */
+    private static EnergyAmount relayDemand(Port sink) {
+        if (sink.outputs == 0 || sink.packet <= 0 || sink.packets <= 0) return EnergyAmount.ZERO;
+        long perTick = sink.packet > Long.MAX_VALUE / sink.packets ? Long.MAX_VALUE : sink.packet * sink.packets;
+        return sink.quote.exactAmount().roomBelow(perTick);
+    }
+    /**
+     * 0.1.10.12: true when the output of the storage block {@code port} reaches at
+     * least one other receiver (directly or through its conductor component), so
+     * its relay demand feeds machines. A storage block whose output touches nothing
+     * keeps the old order (it charges after the loads). Kept per routing view; no
+     * route search, only the origins of the port and the contact index of the view.
+     */
+    private static boolean feedsReceivers(WorldGrid grid, Port port) {
+        var view = grid.routingView;
+        if (view == null) return false;
+        if (grid.relayFeedsView != view) { grid.relayFeeds.clear(); grid.relayFeedsView = view; }
+        Boolean known = grid.relayFeeds.get(port.position);
+        if (known != null) return known;
+        boolean feeds = false;
+        for (var origin : NativeRoutePlan.origins(RouteEndpoint.of(port), 0, view.graph, grid)) {
+            for (int receiver : view.contacts.at(origin.position()))
+                if (!view.sinks.get(receiver).position.equals(port.position)) { feeds = true; break; }
+            if (feeds) break;
+            if (origin.component() >= 0) for (var contact : view.contacts.inComponent(origin.component()))
+                if (!view.sinks.get(contact.receiver()).position.equals(port.position)) { feeds = true; break; }
+            if (feeds) break;
+        }
+        grid.relayFeeds.put(port.position, feeds);
+        return feeds;
     }
     /** True for a storage block: a storage prefab, a multiblock storage part or a STORAGE profile. */
     private static boolean isStorage(Port port) {
@@ -4258,6 +4315,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     public void stopped(ServerStoppedEvent event) {
         if (event.getServer() != server) return;
         topology.close(); cleared(); closed = true;
+        OverloadBlastLog.clear();
         synchronized (IndependentSiEnergy.class) { SERVERS.remove(server); }
         server = null;
         NeoForge.EVENT_BUS.unregister(this);

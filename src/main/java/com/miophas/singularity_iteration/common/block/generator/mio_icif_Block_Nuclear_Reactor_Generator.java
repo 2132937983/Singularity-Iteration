@@ -82,8 +82,20 @@ public class mio_icif_Block_Nuclear_Reactor_Generator extends mio_icif_entity_bl
         }
     }
 
+    /** 0.1.10.12: the placing player owns the reactor (accident audit). */
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable net.minecraft.world.entity.LivingEntity placer,
+                            net.minecraft.world.item.ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (!level.isClientSide && placer instanceof Player player && level.getBlockEntity(pos) instanceof mio_icif_nuclear_reactor_generator reactor)
+            reactor.setAuditOwner(player);
+    }
+
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        // 0.1.10.12: a running or hot reactor that is taken away leaves an audit incident (not its own accident)
+        if (!level.isClientSide() && !state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof mio_icif_nuclear_reactor_generator reactor)
+            reactor.recordRemoval();
         // R123 normal heated command-removal controls: dismantling below capacity has no blast.
         // Always complete vanilla removal so caches and inventories cannot outlive the block.
         super.onRemove(state, level, pos, newState, isMoving);

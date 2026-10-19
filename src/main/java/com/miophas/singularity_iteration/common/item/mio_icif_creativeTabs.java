@@ -881,6 +881,9 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_reactors.MOX_QUAD.get());
                 output.accept(mio_icif_reactors.MOX_QUAD_DEPLETED.get());
 
+                // Accident audit (0.1.10.12)
+                output.accept(mio_icif_reactors.REACTOR_BLACKBOX.get());
+
                 // ============================================================
                 //  10. FLUID BUCKETS
                 // ============================================================

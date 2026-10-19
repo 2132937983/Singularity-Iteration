@@ -169,6 +169,11 @@ public class mio_icif_reactors {
             new Item.Properties().component(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(), ReactorComponentData.full(ReactorInventory.ISOTOPE_THRESHOLD))));
 
 
+    /** 0.1.10.12: the blackbox a failed reactor drops (opens the accident audit). Not a reactor component. */
+    public static final DeferredItem<ReactorBlackboxItem> REACTOR_BLACKBOX = ITEMS.register("reactor/item_reactor_blackbox",
+        () -> new ReactorBlackboxItem(new Item.Properties().stacksTo(1).fireResistant()
+            .rarity(net.minecraft.world.item.Rarity.UNCOMMON)));
+
     // ??
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);

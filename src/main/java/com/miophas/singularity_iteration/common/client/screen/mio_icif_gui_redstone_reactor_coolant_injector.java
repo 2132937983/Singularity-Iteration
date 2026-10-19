@@ -80,9 +80,10 @@ guiGraphics.blit(ATLAS_TEXTURE, x + ENERGY_ICON_X, drawY, 0, (float) 144, (float
         }
 
         // 显示红石块数量
-        guiGraphics.drawString(this.font,
-            Component.translatable("gui.mio_icif.redstone_injector.redstone_blocks", menu.getRedstoneBlockCount()),
-            28, 6, 0x404040, false);
+        // 0.1.10.11: the block count was drawn at (28, 6), on top of the centred title; it now sits on
+        // the free row between the injector slots and the player inventory
+        drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.redstone_injector.redstone_blocks", menu.getRedstoneBlockCount()),
+            8, this.imageHeight - 94, this.imageWidth - 16, 0x404040, false);
     }
 
     @Override

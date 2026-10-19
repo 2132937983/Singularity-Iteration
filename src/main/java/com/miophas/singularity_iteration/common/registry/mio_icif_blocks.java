@@ -737,6 +737,10 @@ public static final DeferredBlock<com.miophas.singularity_iteration.common.block
 public static final DeferredBlock<com.miophas.singularity_iteration.common.block.generator.mio_icif_block_unlimit_generator> UNLIMIT_GENERATOR =
         registerBlock("generator/block_unlimit_generator", () -> new com.miophas.singularity_iteration.common.block.generator.mio_icif_block_unlimit_generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops().lightLevel(state -> 15)));
 
+    // 0.1.10.11: Creative Generator (debug, creative mode only): unbreakable in survival, no drops
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.generator.mio_icif_block_creative_generator> CREATIVE_GENERATOR =
+        registerBlock("generator/block_creative_generator", () -> new com.miophas.singularity_iteration.common.block.generator.mio_icif_block_creative_generator(Block.Properties.of().mapColor(MapColor.COLOR_MAGENTA).strength(-1.0f, 3600000.0f).noLootTable().sound(mio_icif_sounds.getMachineSoundType()).lightLevel(state -> state.getValue(com.miophas.singularity_iteration.common.block.generator.mio_icif_block_creative_generator.ACTIVE) ? 15 : 4)));
+
     // 注册核反应堆发电机方法
 public static final DeferredBlock<mio_icif_Block_Nuclear_Reactor_Generator> NUCLEAR_REACTOR_GENERATOR =
         registerBlock("generator/block_nuclear_reactor_generator", () -> new mio_icif_Block_Nuclear_Reactor_Generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));

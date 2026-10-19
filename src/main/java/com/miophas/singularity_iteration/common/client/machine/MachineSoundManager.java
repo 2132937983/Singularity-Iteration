@@ -149,7 +149,7 @@ public final class MachineSoundManager {
 
         silent("solar panel without moving parts", "generator/block_solar_generator", "generator/block_advanced_solar_panel",
             "generator/block_hybrid_solar_panel", "generator/block_ultimate_hybrid_solar_panel", "generator/block_mets_advanced_solar_generator");
-        silent("creative test generator", "generator/block_unlimit_generator");
+        silent("creative test generator", "generator/block_unlimit_generator", "generator/block_creative_generator");
         silent("plays its own suit-up sequence", "producer/block_armory");
         silent("plays its own lock / charge / fire / hit cues", "producer/block_laser_defense_tower", "producer/block_sky_patrol_laser_tower");
         silent("plays its own ambient cue (EnergyTerminalClient)", "wiring/block_energy_terminal");

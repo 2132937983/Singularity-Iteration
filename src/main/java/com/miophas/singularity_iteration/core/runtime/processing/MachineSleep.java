@@ -30,5 +30,8 @@ public final class MachineSleep {
     public static long skippedTicks() { return skippedTicks; }
 
     /** Counts one skipped machine tick (server thread). */
-    public static void noteSkipped() { skippedTicks++; }
+    public static void noteSkipped() {
+        skippedTicks++;
+        com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.SLEEP_SKIPS);   // 0.1.10.10
+    }
 }

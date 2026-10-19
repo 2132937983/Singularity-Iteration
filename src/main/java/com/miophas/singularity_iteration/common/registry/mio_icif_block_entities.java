@@ -810,6 +810,11 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("unlimit_generator", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_unlimit_generator::new, mio_icif_blocks.UNLIMIT_GENERATOR.get()).build(null));
 
+    // 0.1.10.11: Creative Generator
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_creative_generator>> CREATIVE_GENERATOR_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("creative_generator", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_creative_generator::new, mio_icif_blocks.CREATIVE_GENERATOR.get()).build(null));
+
     // 注册 金属成型机 MenuType
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_metal_former>> METAL_FORMER_ENTITY_TYPE =
         BLOCK_ENTITIES.register("metal_former", () ->

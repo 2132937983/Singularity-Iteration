@@ -292,6 +292,48 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder PERFORMANCE_POP = BUILDER.pop();
 
+    // ==================== 0.1.10.11: chunk loaders ====================
+    private static final ModConfigSpec.Builder CHUNK_LOADER_BUILDER = BUILDER
+        .comment("Chunk loaders (0.1.10.11): server rules. A loader that stops for one of these rules also lets its own chunk unload;",
+                 "it starts again by itself when the reason is gone (owner logs in, admin re-enables it, switch on again, budget freed).",
+                 "Admins: /mio_icif chunkloaders (list, player, disable, enable, disable_all).",
+                 "区块加载器（0.1.10.11）：服务器规则。因规则停止的加载器也会让自身所在区块卸载；原因消除后（所有者上线、管理员重新启用、开关重新打开、额度释放）自动恢复。",
+                 "管理员命令：/mio_icif chunkloaders（list、player、disable、enable、disable_all）。")
+        .translation("mio_icif.configuration.chunk_loaders").push("ChunkLoaders");
+    public static final ModConfigSpec.BooleanValue CHUNK_LOADERS_ENABLED = CHUNK_LOADER_BUILDER
+        .comment("false = every SI chunk loader releases its chunks (selections are kept). 关闭后所有 SI 区块加载器释放区块（保留选择）。")
+        .translation("mio_icif.configuration.chunk_loaders.enabled").define("enabled", true);
+    public static final ModConfigSpec.IntValue CHUNK_LOADERS_MAX_PER_LOADER = CHUNK_LOADER_BUILDER
+        .comment("Chunks one loader may load (1-25). Over the limit it keeps its own chunk, then the nearest selected ones.",
+                 "单个加载器可加载的区块数（1-25）。超出时优先保留自身区块，其次是最近的已选区块。")
+        .translation("mio_icif.configuration.chunk_loaders.maxChunksPerLoader").defineInRange("maxChunksPerLoader", 25, 1, 25);
+    public static final ModConfigSpec.IntValue CHUNK_LOADERS_MAX_PER_PLAYER = CHUNK_LOADER_BUILDER
+        .comment("Chunks all loaders of one player may load together, in all dimensions. 0 = no limit. First come, first served.",
+                 "同一玩家所有加载器（所有维度）合计可加载的区块数。0 = 不限。先到先得。")
+        .translation("mio_icif.configuration.chunk_loaders.maxChunksPerPlayer").defineInRange("maxChunksPerPlayer", 0, 0, 1_000_000);
+    public static final ModConfigSpec.IntValue CHUNK_LOADERS_MAX_LOADERS_PER_PLAYER = CHUNK_LOADER_BUILDER
+        .comment("Active loaders per player. 0 = no limit. 每名玩家同时工作的加载器数。0 = 不限。")
+        .translation("mio_icif.configuration.chunk_loaders.maxLoadersPerPlayer").defineInRange("maxLoadersPerPlayer", 0, 0, 100_000);
+    public static final ModConfigSpec.IntValue CHUNK_LOADERS_OFFLINE_MINUTES = CHUNK_LOADER_BUILDER
+        .comment("Minutes a loader keeps working after its owner logged off. -1 = always (as before 0.1.10.11), 0 = stop at once.",
+                 "Loaders placed before 0.1.10.11 have no owner and are not affected.",
+                 "所有者下线后加载器继续工作的分钟数。-1 = 一直工作（0.1.10.11 之前的行为），0 = 立即停止。0.1.10.11 之前放置的加载器没有所有者，不受影响。")
+        .translation("mio_icif.configuration.chunk_loaders.offlineOwnerMinutes").defineInRange("offlineOwnerMinutes", -1, -1, 525_600);
+    public static final ModConfigSpec.DoubleValue CHUNK_LOADERS_EU_PER_CHUNK = CHUNK_LOADER_BUILDER
+        .comment("EU per loaded chunk and tick. 每个已加载区块每 tick 消耗的 EU。")
+        .translation("mio_icif.configuration.chunk_loaders.euPerChunkPerTick").defineInRange("euPerChunkPerTick", 1.0, 0.0, 1_000_000.0);
+    public static final ModConfigSpec.BooleanValue CHUNK_LOADERS_RANDOM_TICKS = CHUNK_LOADER_BUILDER
+        .comment("true = loaded chunks get random ticks and natural mob spawning as if a player stood there (as before 0.1.10.11).",
+                 "false = machines, block entities and entities keep running, but no random ticks (crops, leaves, fire) and no natural spawning: much cheaper.",
+                 "true = 已加载区块像有玩家在场一样进行随机刻和自然生成（0.1.10.11 之前的行为）。",
+                 "false = 机器、方块实体和实体照常运行，但没有随机刻（作物、树叶、火）和自然生成：开销小得多。")
+        .translation("mio_icif.configuration.chunk_loaders.randomTicks").define("randomTicks", true);
+    public static final ModConfigSpec.BooleanValue CHUNK_LOADERS_OWNER_ONLY_EDIT = CHUNK_LOADER_BUILDER
+        .comment("true = only the owner (and operators) may change the chunk selection. true = 仅所有者（及管理员）可修改区块选择。")
+        .translation("mio_icif.configuration.chunk_loaders.ownerOnlyEdit").define("ownerOnlyEdit", false);
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder CHUNK_LOADER_POP = BUILDER.pop();
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     static {

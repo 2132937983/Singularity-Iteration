@@ -234,6 +234,7 @@ public class mio_icif_capacities {
             mio_icif_block_entities.INDUCTION_ELC_ENTITY_TYPE.get(),
             mio_icif_block_entities.MATTER_ELC_ENTITY_TYPE.get(),
             mio_icif_block_entities.UNLIMIT_GENERATOR_ENTITY_TYPE.get(),
+            mio_icif_block_entities.CREATIVE_GENERATOR_ENTITY_TYPE.get(),
             mio_icif_block_entities.METAL_FORMER_ENTITY_TYPE.get(),
             mio_icif_block_entities.CENTRIFUGE_ELC_ENTITY_TYPE.get(),
             mio_icif_block_entities.NUCLEAR_REACTOR_GENERATOR_ENTITY_TYPE.get(),
@@ -2269,6 +2270,14 @@ public class mio_icif_capacities {
         );
 
         Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Unlimited Generator");
+
+        // 0.1.10.11: Creative Generator (EU output on all six faces; no inventory)
+        event.registerBlockEntity(
+            EUApi.SIDED,
+            mio_icif_block_entities.CREATIVE_GENERATOR_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity instanceof AbstractEnergyBlockEntity energyBlock
+                ? energyBlock.getEnergyStorageCapability(direction) : null
+        );
 
         // Register capabilities for Metal Former (金属成型机)
         // 注册 EU 能量存储能力

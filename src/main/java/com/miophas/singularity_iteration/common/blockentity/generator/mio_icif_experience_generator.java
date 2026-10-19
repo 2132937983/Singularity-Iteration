@@ -79,7 +79,8 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
             blockEntity.updateBlockState(blockEntity.isWorking);
         }
 
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     private void scexTickStoredFuel(Level level, BlockPos pos) {

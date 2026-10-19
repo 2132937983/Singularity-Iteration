@@ -52,6 +52,14 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         IEnergySource, IEnergySink,
         com.miophas.singularity_iteration.core.api.machine.IEnergyBlock,
         IUpgradableBlock, IWrenchable, com.miophas.singularity_iteration.core.api.energy.IRemoteSwitchable {
+    /** 0.1.10.10 (D7): counts server-side setChanged() calls for /mio_icif perf. */
+    @Override
+    public void setChanged() {
+        if (level != null && !level.isClientSide)
+            com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.SET_CHANGED);
+        super.setChanged();
+    }
+
     
     /** Legacy implementation field. Addons should use getEnergyStorage() and the protected api* operations. */
     @org.jetbrains.annotations.ApiStatus.Internal
@@ -148,14 +156,26 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
     /** True when the block state carries a set run flag (lit / active / working / running). */
     protected boolean runFlag() {
         BlockState state = getBlockState();
-        for (var property : state.getProperties()) {
-            if (property instanceof net.minecraft.world.level.block.state.properties.BooleanProperty flag) {
-                String name = flag.getName();
-                if ((name.equals("lit") || name.equals("active") || name.equals("working") || name.equals("running"))
-                        && state.getValue(flag)) return true;
-            }
+        // 0.1.10.10 (D2): the run flag properties of a block are found once, not by name every time
+        for (var flag : RUN_FLAGS.computeIfAbsent(state.getBlock(), AbstractEnergyBlockEntity::runFlagsOf)) {
+            if (state.getValue(flag)) return true;
         }
         return false;
+    }
+
+    /** The boolean properties named lit / active / working / running of each block. */
+    private static final java.util.concurrent.ConcurrentHashMap<net.minecraft.world.level.block.Block,
+        net.minecraft.world.level.block.state.properties.BooleanProperty[]> RUN_FLAGS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static net.minecraft.world.level.block.state.properties.BooleanProperty[] runFlagsOf(net.minecraft.world.level.block.Block block) {
+        var found = new java.util.ArrayList<net.minecraft.world.level.block.state.properties.BooleanProperty>();
+        for (var property : block.getStateDefinition().getProperties()) {
+            if (property instanceof net.minecraft.world.level.block.state.properties.BooleanProperty flag) {
+                String name = flag.getName();
+                if (name.equals("lit") || name.equals("active") || name.equals("working") || name.equals("running")) found.add(flag);
+            }
+        }
+        return found.toArray(new net.minecraft.world.level.block.state.properties.BooleanProperty[0]);
     }
 
     /** Client: lamp state last received from the server. */

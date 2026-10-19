@@ -544,3 +544,42 @@ change when a machine looks again (at most 1 second later); both have a config s
   choice, and the line-of-sight rays are cast only for the best candidates. The choice is the same.
   The separation push and the projectile scan of the escort run every 2nd tick.
 * The suit HUD eases the reserve, heat and coherence bars toward the synced values.
+
+## 16. Server performance, phase D (0.1.10.10)
+
+The results do not change; the changes remove work that had no effect.
+
+* `core.runtime.TickMarks.saved(BlockEntity)`: marks the chunk for saving without the neighbour and
+  comparator update of `setChanged()`. SI generators and heat/kinetic machines use it for the counters
+  of a tick. Use `setChanged()` when a neighbour must react or a comparator value can change.
+* `core.runtime.NeighbourCaps.get(owner, capability, face)`: the capability of the neighbour on `face`
+  (context `face.getOpposite()`), kept while the neighbour has the same block state object and block
+  entity, at most 100 ticks; `null` for an unloaded neighbour (it never loads a chunk). A provider
+  whose answer depends on data inside its block entity is asked again at least every 100 ticks; call
+  `NeighbourCaps.forget(owner)` to drop the kept answers of an owner.
+* `core.runtime.sync.ClientSyncThrottle.request(be)` is now used by more SI blocks; addons that send a
+  block entity update on every change should use it too (at most one update per 5 ticks, the last
+  state always arrives).
+* `MachineStatusTracker.sentStatus(machine)` returns the current status for a machine in a chunk that
+  no player watches (the tracker reads only watched chunks, each chunk at its own tick of the 10-tick
+  interval).
+* Energy network: a fair-mode window whose sinks all have no room ends before the distribution
+  (`optimizationCounters()[5]`). The block type, conductor faces and emission positions of a port are
+  kept per tile until its block state or the endpoint edit count changes; the faces a machine opens
+  (`canConnect`), storage output sides, the output switch and the remote switch are read every tick.
+* Diagnostics: `core.runtime.PerfCounters` (per-tick averages of the last 100 ticks) and the new load
+  line of `/mio_icif perf`. `AbstractEnergyBlockEntity`, `AbstractHeatBlockEntity` and
+  `AbstractKineticBlockEntity` count their server-side `setChanged()` calls.
+
+## 17. Debug sources without overload effects (0.1.10.11)
+
+* `core.api.energy.IOverloadFreeEnergySource`: a source block entity that implements it (and returns
+  `true` from `ignoresOverload()`) never causes overload effects in the independent energy network:
+  no melted cable, no stripped insulation, no shock and no exploding receiver, whatever its packet
+  size. Its deliveries are settled, metered (EU detector cables see the real voltage) and limited by
+  the room and the rated input of the receivers as usual; cable loss applies. Meant for creative and
+  test blocks only; the SI Creative Generator uses it together with `IEnergyPacketSource` (one packet
+  of the whole output per tick).
+* The SI chunk loader is owned by the player who places it and follows the server rules of the config
+  section `ChunkLoaders`; an addon that places a loader for a player should place it through the block
+  (so `setPlacedBy` sets the owner).

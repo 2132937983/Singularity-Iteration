@@ -195,7 +195,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
             setChanged();
             // 通知客户端更新方块实体数据
             if (level != null && !level.isClientSide()) {
-                level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+                com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);   // 0.1.10.10 (D4): throttled
             }
         }
     }

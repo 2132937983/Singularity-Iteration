@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.command;
 
+import com.miophas.singularity_iteration.core.runtime.PerfCounters;
 import com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
@@ -23,7 +24,10 @@ import java.util.Locale;
  *       deliveries that visited their path, idle passes answered from the memo, commit validations
  *       reused;</li>
  *   <li>(0.1.10.8) native windows taken from the route plan cache, and machine ticks skipped by
- *       the idle sleep since the game started.</li>
+ *       the idle sleep since the game started;</li>
+ *   <li>(0.1.10.10) per tick over the last 100 ticks: setChanged calls, save marks, client syncs
+ *       sent and requested, lamp checks, neighbour capability lookups and how many came from the
+ *       cache, machine ticks skipped by the sleep; and the saturated windows since the start.</li>
  * </ul>
  */
 public final class PerfCommand {
@@ -61,7 +65,19 @@ public final class PerfCommand {
         // 0.1.10.8: native windows from the plan cache, machine ticks skipped by idle sleep
         long skipped = com.miophas.singularity_iteration.core.runtime.processing.MachineSleep.skippedTicks();
         source.sendSuccess(() -> Component.translatable("command.mio_icif.perf.reuse", counters[4], skipped), false);
+        // 0.1.10.10 (D7): the load of the last 100 ticks, per tick
+        source.sendSuccess(() -> Component.translatable("command.mio_icif.perf.load",
+            avg(PerfCounters.Kind.SET_CHANGED), avg(PerfCounters.Kind.SAVE_MARKS),
+            avg(PerfCounters.Kind.SYNC_SENT), avg(PerfCounters.Kind.SYNC_REQUESTS),
+            avg(PerfCounters.Kind.LAMP_CHECKS), avg(PerfCounters.Kind.CAP_LOOKUPS), avg(PerfCounters.Kind.CAP_CACHED),
+            avg(PerfCounters.Kind.SLEEP_SKIPS), counters[5]), false);
         return 1;
+    }
+
+    /** Average per tick of the last window with one decimal, or "-" before the first window. */
+    private static String avg(PerfCounters.Kind kind) {
+        double value = PerfCounters.perTick(kind);
+        return value < 0 ? "-" : String.format(Locale.ROOT, "%.1f", value);
     }
 
     private static String ms(double value) {

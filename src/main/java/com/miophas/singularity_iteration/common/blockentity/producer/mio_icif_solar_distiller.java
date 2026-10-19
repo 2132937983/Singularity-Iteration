@@ -218,7 +218,8 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
 
         blockEntity.handleFluidUpgrades();
 
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     /**

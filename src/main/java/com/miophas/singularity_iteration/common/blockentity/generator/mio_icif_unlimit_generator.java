@@ -47,7 +47,8 @@ public class mio_icif_unlimit_generator extends AbstractGeneratorBlockEntity {
         blockEntity.distributeEnergy();
 
         blockEntity.updateActiveState(level, pos, true);
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     @Override

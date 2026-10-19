@@ -34,6 +34,14 @@ import java.util.List;
 
 @SuppressWarnings("null")
 public class AbstractHeatBlockEntity extends BlockEntity implements MenuProvider, IMioIcifCapabilities.IHeatStorage, IWrenchable {
+    /** 0.1.10.10 (D7): counts server-side setChanged() calls for /mio_icif perf. */
+    @Override
+    public void setChanged() {
+        if (level != null && !level.isClientSide)
+            com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.SET_CHANGED);
+        super.setChanged();
+    }
+
     private static final int[] EMPTY_SLOTS = new int[0];
     private static final List<Direction> ALL_DIRECTIONS = List.of(Direction.values());
 

@@ -405,6 +405,15 @@
       }
     ]
   },
+  "weapon.laser.ultra_blast": {
+    "subtitle": "mio_icif.subtitle.weapon.laser.ultra_blast",
+    "sounds": [
+      {
+        "name": "mio_icif:sfx_laser_ultra_blast",
+        "attenuation_distance": 96
+      }
+    ]
+  },
   "weapon.air_cannon.charge": {
     "subtitle": "mio_icif.subtitle.weapon.air_cannon.charge",
     "sounds": [

@@ -217,7 +217,8 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
         // 升级槽生效（对齐原版 IC2 LHE 的 upgradeSlot.tick()）
         blockEntity.handleAutomationUpgrades();
 
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     /**
@@ -690,10 +691,9 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
 
     public void consumeHeat(int amount) {
         heatStorage.consumeHeatInternal(amount, false);
-        setChanged();
-        if (level != null && !level.isClientSide()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        // 0.1.10.10 (D1/D4): save mark and a throttled update (was: every call)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
+        if (level != null && !level.isClientSide()) com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);
     }
 
     public int getInputFluidAmount() {

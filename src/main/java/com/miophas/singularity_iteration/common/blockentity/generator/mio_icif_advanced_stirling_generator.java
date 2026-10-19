@@ -119,8 +119,7 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
             BlockPos neighborPos = worldPosition.relative(direction);
             if (!level.isLoaded(neighborPos)) continue;
 
-            IMioIcifCapabilities.IHeatStorage adjacentHeat = level.getCapability(
-                IMioIcifCapabilities.HEAT_STORAGE_BLOCK, neighborPos, direction.getOpposite());
+            IMioIcifCapabilities.IHeatStorage adjacentHeat = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.HEAT_STORAGE_BLOCK, direction);
             if (adjacentHeat == null || !adjacentHeat.canExtractHeat()) continue;
 
             long toExtract = Math.min(needed, Math.min(adjacentHeat.getHeatStored(), perTick));
@@ -236,9 +235,14 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
     protected void distributeHeat() {
     }
 
+    /** 0.1.10.10 (D3): one heat view per side (it was a new object on every capability lookup). */
+    private final HeatStorageWrapper[] heatViews = new HeatStorageWrapper[7];
+
     @Override
     public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
-        return new HeatStorageWrapper(heatStorage, side);
+        int index = side == null ? 6 : side.ordinal();
+        if (heatViews[index] == null) heatViews[index] = new HeatStorageWrapper(heatStorage, side);
+        return heatViews[index];
     }
 
     public long getHeatBuffer() {

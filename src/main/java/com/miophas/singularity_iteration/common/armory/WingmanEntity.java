@@ -93,6 +93,11 @@ public class WingmanEntity extends Mob {
     private static final EntityDataAccessor<Integer> DATA_TARGET = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_SHOTS = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_BOOSTS = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
+    /** 0.1.10.11: standing on the ground while idle (no thrusters, standing pose). */
+    private static final EntityDataAccessor<Boolean> DATA_LANDED = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BOOLEAN);
+    /** 0.1.10.11: blade slash counter (high bits) and kind (low 2 bits: {@link #SLASH_COMBO}, {@link #SLASH_DASH}, {@link #SLASH_ARTS}). */
+    private static final EntityDataAccessor<Integer> DATA_SLASH = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
+    public static final int SLASH_COMBO = 0, SLASH_DASH = 1, SLASH_ARTS = 2;
 
     // server state (saved)
     @Nullable private UUID owner;
@@ -179,6 +184,8 @@ public class WingmanEntity extends Mob {
         builder.define(DATA_TARGET, -1);
         builder.define(DATA_SHOTS, 0);
         builder.define(DATA_BOOSTS, 0);
+        builder.define(DATA_LANDED, false);
+        builder.define(DATA_SLASH, 0);
     }
 
     // ------------------------------------------------------------------ accessors
@@ -193,6 +200,8 @@ public class WingmanEntity extends Mob {
     public int lockedTargetId() { return entityData.get(DATA_TARGET); }
     public int shotCount() { return entityData.get(DATA_SHOTS); }
     public int boostCount() { return entityData.get(DATA_BOOSTS); }
+    /** 0.1.10.11: true while the Wingman stands on the ground (idle landing). */
+    public boolean landed() { return entityData.get(DATA_LANDED); }
     public int set() { return set; }
     @Nullable GlobalPos armory() { return armory; }
     /** 0.1.10.5: the sortie token (server), see {@link WingmanSorties}. */
@@ -293,22 +302,136 @@ public class WingmanEntity extends Mob {
             startReturn(null);
         }
         if (tickCount % 20 == 0 && state() != RETURNING) upkeep(world, player);
-        switch (state()) {
-            case RETURNING -> tickReturn(world);
-            case LIFTING -> tickLift(world, player);
-            default -> {
-                if (!ownerHere) return;
-                // 0.1.10.2 quantum command: an order replaces the mode and the owner leash
-                if (order != WingmanOrder.NONE) { tickOrder(world, player); return; }
-                if (distanceToSqr(player) > CATCH_UP * CATCH_UP) catchUp(player);
-                switch (mode()) {
-                    case OFFENSIVE -> tickOffensive(player);
-                    case DISPERSAL -> tickDispersal(player);
-                    case ESCORT -> tickEscort(world, player);
-                    case FULTON -> tickFulton(world, player);
+        if (ownerHere) trackOwner(player);
+        idleThisTick = false;
+        try {
+            switch (state()) {
+                case RETURNING -> tickReturn(world);
+                case LIFTING -> tickLift(world, player);
+                default -> {
+                    if (!ownerHere) return;
+                    // 0.1.10.2 quantum command: an order replaces the mode and the owner leash
+                    if (order != WingmanOrder.NONE) { tickOrder(world, player); return; }
+                    if (distanceToSqr(player) > CATCH_UP * CATCH_UP) catchUp(player);
+                    switch (mode()) {
+                        case OFFENSIVE -> tickOffensive(player);
+                        case DISPERSAL -> tickDispersal(player);
+                        case ESCORT -> tickEscort(world, player);
+                        case FULTON -> tickFulton(world, player);
+                    }
                 }
             }
+        } finally {
+            // 0.1.10.11: anything but idling (a target, an order on the move, the way home) takes off
+            if (!idleThisTick) {
+                quietTicks = 0;
+                if (landed()) takeOff();
+            }
         }
+    }
+
+    // ---- idle landing (0.1.10.11)
+    //
+    // With nothing to do for LAND_DELAY ticks (no target, no cargo) while the owner stands on the
+    // ground (or at the post of a HOLD / arrived MOVE order), the Wingman sets down on the ground
+    // below its post: thrusters off, standing pose, no upkeep change. It stays while the owner
+    // stays within LAND_STAY blocks of where they stood; a target, an order, the owner walking off,
+    // jumping into flight or gliding make it take off at once.
+
+    private static final int LAND_DELAY = 40;
+    private static final double LAND_STAY = 3.5;
+    private boolean idleThisTick;
+    private int quietTicks, ownerStill;
+    @Nullable private Vec3 ownerLast, landSpot, landPost, landOwner;
+
+    private void trackOwner(ServerPlayer player) {
+        Vec3 p = player.position();
+        boolean still = ownerLast != null && player.onGround() && !player.isFallFlying() && !player.getAbilities().flying
+            && p.subtract(ownerLast).horizontalDistanceSqr() < 0.06 * 0.06 && Math.abs(p.y - ownerLast.y) < 0.1;
+        ownerStill = still ? ownerStill + 1 : 0;
+        ownerLast = p;
+    }
+
+    /** Idle at {@code post}: hover there, or land below it (see above). {@code anchored}: a post of an order. */
+    private void idle(Vec3 post, ServerPlayer player, boolean anchored) {
+        idleThisTick = true;
+        quietTicks++;
+        if (landed()) {
+            boolean stay = anchored ? landPost != null && post.distanceToSqr(landPost) < 2.0 * 2.0
+                : landOwner != null && player.position().distanceToSqr(landOwner) < LAND_STAY * LAND_STAY
+                    && !player.isFallFlying() && !player.getAbilities().flying;
+            if (stay) { holdLanded(player); return; }
+            takeOff();
+        }
+        boolean wantLand = quietTicks >= LAND_DELAY && getPassengers().isEmpty() && (anchored || ownerStill >= LAND_DELAY);
+        if (wantLand) {
+            if (landSpot == null || landPost == null || landPost.distanceToSqr(post) > 1.0) {
+                landSpot = findLanding(post);
+                landPost = post;
+                landOwner = player.position();
+            }
+            if (landSpot != null) {
+                Vec3 to = landSpot.subtract(position());
+                if (to.lengthSqr() < 0.25 * 0.25) { touchDown(); holdLanded(player); return; }
+                if (to.horizontalDistanceSqr() > 0.4 * 0.4) {
+                    // line up above the spot first (with the usual obstacle avoidance) ...
+                    steer(new Vec3(landSpot.x, Math.max(getY(), landSpot.y + 1.2), landSpot.z), CRUISE * 0.7, player);
+                } else {
+                    // ... then sink straight down: the column above the spot was checked free
+                    double down = Math.min(0.14, Math.max(0.03, -to.y * 0.35));
+                    setDeltaMovement(to.x * 0.4, to.y < 0 ? -down : Math.min(0.1, to.y), to.z * 0.4);
+                }
+                return;
+            }
+        }
+        steer(post, CRUISE, player);
+    }
+
+    /** Ground below {@code post} within 8 blocks with room for the suit, or null (water, lava, blocked, too deep). */
+    @Nullable
+    private Vec3 findLanding(Vec3 post) {
+        Level level = level();
+        BlockPos start = BlockPos.containing(post);
+        for (int dy = 0; dy <= 8; dy++) {
+            BlockPos feet = start.below(dy), below = feet.below();
+            if (!level.isLoaded(below) || !free(level, feet) || !free(level, feet.above())) return null;
+            var floor = level.getBlockState(below).getCollisionShape(level, below);
+            if (!floor.isEmpty()) {
+                double top = below.getY() + floor.max(net.minecraft.core.Direction.Axis.Y);
+                return top > feet.getY() + 0.01 ? null : new Vec3(post.x, top, post.z);
+            }
+            if (!level.getFluidState(below).isEmpty()) return null;
+        }
+        return null;
+    }
+
+    private static boolean free(Level level, BlockPos pos) {
+        return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty() && level.getFluidState(pos).isEmpty();
+    }
+
+    private void touchDown() {
+        if (landSpot != null) setPos(landSpot.x, landSpot.y, landSpot.z);
+        setDeltaMovement(Vec3.ZERO);
+        entityData.set(DATA_LANDED, true);
+        if (level() instanceof ServerLevel world) {
+            world.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.05, getZ(), 6, 0.25, 0.02, 0.25, 0.02);
+            world.playSound(null, getX(), getY(), getZ(), SoundEvents.ARMOR_EQUIP_IRON.value(), SoundSource.NEUTRAL, 0.5F, 0.8F);
+        }
+    }
+
+    private void holdLanded(ServerPlayer player) {
+        setDeltaMovement(Vec3.ZERO);
+        // face the way the owner looks, slowly; head level
+        setYaw(getYRot() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - getYRot()), -6, 6));
+        setXRot(getXRot() * 0.8F);
+    }
+
+    private void takeOff() {
+        entityData.set(DATA_LANDED, false);
+        landSpot = null;
+        landPost = null;
+        quietTicks = 0;
+        setDeltaMovement(getDeltaMovement().add(0, 0.22, 0));
     }
 
     private void upkeep(ServerLevel world, @Nullable ServerPlayer player) {
@@ -353,7 +476,7 @@ public class WingmanEntity extends Mob {
                 e -> valid(e, player, LEASH));
         }
         if (target != null) engage(target, player);
-        else steer(formation(player), CRUISE, player);
+        else idle(formation(player), player, false);
     }
 
     private void tickDispersal(ServerPlayer player) {
@@ -366,7 +489,7 @@ public class WingmanEntity extends Mob {
                     m -> m instanceof Enemy && m.getTarget() == player)) mob.setTarget(this);
         }
         if (target != null) engage(target, player);
-        else steer(station, CRUISE, player);
+        else idle(station, player, false);
     }
 
     private void tickEscort(ServerLevel world, ServerPlayer player) {
@@ -391,12 +514,12 @@ public class WingmanEntity extends Mob {
             if (target == null) target = hunterOf(player, 6);
         }
         if (target != null) engage(target, player);
-        else steer(formation(player), CRUISE, player);
+        else idle(formation(player), player, false);
     }
 
     private void tickFulton(ServerLevel world, ServerPlayer player) {
         if (tickCount % 10 == 0 && !fultonCandidate(target, player)) target = pickFulton(player);
-        if (target == null) { steer(formation(player), CRUISE, player); return; }
+        if (target == null) { idle(formation(player), player, false); return; }
         steer(target.position().add(0, target.getBbHeight() + 0.7, 0), COMBAT, player);
         face(target.position());
         if (distanceToSqr(target.position().add(0, target.getBbHeight(), 0)) < 1.9 * 1.9) {
@@ -514,7 +637,8 @@ public class WingmanEntity extends Mob {
                 e -> guards(e, player, anchor, radius + 6), anchor);
         }
         if (target != null && !travelling) engage(target, player);
-        else steer(post, travelling ? COMBAT : CRUISE, player);
+        else if (travelling || suppress) steer(post, travelling ? COMBAT : CRUISE, player);
+        else idle(post, player, true);   // 0.1.10.11: a quiet HOLD / arrived MOVE post sets down
     }
 
     /** A valid target near the order point (the owner leash does not apply). */
@@ -740,10 +864,26 @@ public class WingmanEntity extends Mob {
         }
     }
 
+    /** 0.1.10.11: ticks between two combo inputs in reach, so each slash of the blade plays out. */
+    static final int BLADE_COMBO_TICKS = 8;
+
+    /**
+     * 0.1.10.11: a slash for the clients: the arm plays the cut ({@code WingmanRenderer}). The blade
+     * combos no longer call {@code swing}: the vanilla arm swing restarted every few ticks and
+     * fought the blade's own motion (the twitching hand).
+     */
+    private void slash(int kind) {
+        entityData.set(DATA_SLASH, (((entityData.get(DATA_SLASH) >>> 2) + 1) << 2) | (kind & 3));
+    }
+
+    /** Client: the slash counter and kind ({@link #slash}). */
+    public int slashData() { return entityData.get(DATA_SLASH); }
+
     /**
      * SlashBlade: dash in with the rapid slash from 3.5 to 9 blocks, chain the combo in reach
-     * (one input every 5 ticks, the timing window of the combo), release a Slash Art every
-     * {@link #ARTS_INTERVAL} ticks of contact. The blade's own tick actions do the cutting.
+     * (0.1.10.11: one input every {@link #BLADE_COMBO_TICKS} ticks, so every cut is seen; before,
+     * every 5 ticks cut each motion short), release a Slash Art every {@link #ARTS_INTERVAL} ticks
+     * of contact. The blade's own tick actions do the cutting.
      */
     private void engageBlade(LivingEntity enemy, ServerPlayer player) {
         Vec3 aim = enemy.position().add(0, enemy.getBbHeight() * 0.5, 0);
@@ -759,6 +899,7 @@ public class WingmanEntity extends Mob {
         if (attackCooldown > 0) return;
         if (artsCooldown == 0 && d < 7 && hasLineOfSight(enemy)) {
             if (SlashBladeCombat.slashArts(this, enemy) != null) {
+                slash(SLASH_ARTS);
                 artsCooldown = ARTS_INTERVAL;
                 attackCooldown = 20;
                 boost(position().subtract(enemy.position()));     // 0.1.9.1: break away after the art
@@ -767,6 +908,7 @@ public class WingmanEntity extends Mob {
         }
         if (d > 3.5 && d < 9 && hasLineOfSight(enemy)) {
             if (SlashBladeCombat.attack(this, enemy, SlashBladeCombat.Command.FORWARD, SlashBladeCombat.Command.SPRINT) != null) {
+                slash(SLASH_DASH);
                 dashTicks = 5;
                 attackCooldown = 12;
                 return;
@@ -774,8 +916,8 @@ public class WingmanEntity extends Mob {
         }
         if (d <= 3.5) {
             if (SlashBladeCombat.attack(this, enemy) != null) {
-                swing(InteractionHand.MAIN_HAND);
-                attackCooldown = 5;
+                slash(SLASH_COMBO);
+                attackCooldown = BLADE_COMBO_TICKS;
             } else if (isWithinMeleeAttackRange(enemy)) {        // bridge off: plain sword
                 swing(InteractionHand.MAIN_HAND);
                 doHurtTarget(enemy);
@@ -1274,10 +1416,47 @@ public class WingmanEntity extends Mob {
     }
 
     // ------------------------------------------------------------------ client effects
+
+    // 0.1.10.11 client animation state: the flight factor and the landing blend are filtered per
+    // tick and read with the partial tick (before, the lean and the arms jumped at every tick with
+    // the raw speed of the last tick); the slash counter starts the arm cut.
+    private float flight, flightO, land, landO;
+    private int seenSlash = Integer.MIN_VALUE, slashStart = -100, slashKind;
+
+    private void tickAnimation() {
+        flightO = flight;
+        landO = land;
+        boolean down = landed();
+        double dx = getX() - xo, dz = getZ() - zo;
+        float want = down ? 0 : (float) Mth.clamp(Math.sqrt(dx * dx + dz * dz) * 1.6, 0, 1);
+        flight += (want - flight) * 0.2F;
+        land += ((down ? 1 : 0) - land) * 0.2F;
+        int s = entityData.get(DATA_SLASH);
+        if (s != seenSlash) {
+            if (seenSlash != Integer.MIN_VALUE) { slashStart = tickCount; slashKind = s & 3; }
+            seenSlash = s;
+        }
+    }
+
+    /** Client: 0 (hover) .. 1 (full speed), smoothed. */
+    public float flight(float partialTick) { return Mth.lerp(partialTick, flightO, flight); }
+    /** Client: 0 (flying) .. 1 (standing on the ground), smoothed. */
+    public float landBlend(float partialTick) { return Mth.lerp(partialTick, landO, land); }
+    /** Client: progress 0..1 of the current blade slash, or -1 without one. */
+    public float slashProgress(float partialTick) {
+        int ticks = slashKind == SLASH_ARTS ? 14 : slashKind == SLASH_DASH ? 7 : BLADE_COMBO_TICKS;
+        float t = (tickCount - slashStart + partialTick) / ticks;
+        return t < 0 || t > 1 ? -1 : t;
+    }
+    /** Client: kind of the current slash ({@link #SLASH_COMBO}, {@link #SLASH_DASH}, {@link #SLASH_ARTS}). */
+    public int slashKind() { return slashKind; }
+
     @Override
     public void tick() {
         super.tick();
         if (level().isClientSide && isAlive()) {
+            tickAnimation();
+            if (landed()) return;   // 0.1.10.11: thrusters off on the ground
             // boot thrusters: two jets, stronger when the drone climbs or moves fast
             Vec3 v = getDeltaMovement();
             double yaw = Math.toRadians(yBodyRot);

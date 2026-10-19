@@ -42,7 +42,7 @@ public class ChunkLoaderMenu extends mio_icif_machine_menu {
 
     public ChunkLoaderMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_chunk_loader blockEntity, @Nullable ContainerData data) {
         super(mio_icif_menus.CHUNK_LOADER_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory,
-            blockEntity != null ? blockEntity.getItemHandler() : null, data, 8, blockEntity);
+            blockEntity != null ? blockEntity.getItemHandler() : null, data, mio_icif_chunk_loader.DATA_COUNT, blockEntity);
         if (blockEntity != null) {
             this.blockPos = blockEntity.getBlockPos();
         }
@@ -136,6 +136,10 @@ public class ChunkLoaderMenu extends mio_icif_machine_menu {
     public boolean isActive() { return data.get(2) == 1; }
     public int getLoadedChunkCount() { return data.get(3); }
     public int getMaxChunks() { return data.get(4); }
+    /** 0.1.10.11: {@code mio_icif_chunk_loader.STATUS_*}. */
+    public int getStatus() { return data.getCount() > 8 ? data.get(8) : 0; }
+    /** 0.1.10.11: chunks that hold a ticket now. */
+    public int getForcedChunkCount() { return data.getCount() > 9 ? data.get(9) : 0; }
 
     public boolean isChunkLoaded(int dx, int dz) {
         int radius = 4;

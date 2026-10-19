@@ -201,8 +201,7 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
         Direction backDirection = facing.getOpposite();
         BlockPos backPos = worldPosition.relative(backDirection);
 
-        IMioIcifCapabilities.IKineticStorage backKinetic = level.getCapability(
-            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, backPos, facing);
+        IMioIcifCapabilities.IKineticStorage backKinetic = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, backDirection);
         if (backKinetic == null) {
             BlockEntity be = level.getBlockEntity(backPos);
             backKinetic = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(be);

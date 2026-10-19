@@ -1292,7 +1292,10 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
                 if (adjacent == null) continue;
                 BlockEntity neighbor = level.getBlockEntity(neighborPos);
                 if (neighbor instanceof com.miophas.singularity_iteration.core.api.fluid.IFluidPorts other) {
-                    adjacent = other.fluidPort(!eject, face.getOpposite());
+                    // 0.1.10.11: ejecting goes into the neighbour's input port (the left tank of a
+                    // canner), pulling takes from its output port. Before, the ports were swapped: a
+                    // canner ejecting into the next canner filled that canner's right (output) tank.
+                    adjacent = other.fluidPort(eject, face.getOpposite());
                 }
                 IFluidHandler from = eject ? canner.fluidPort(false, null) : adjacent;
                 IFluidHandler to = eject ? adjacent : canner.fluidPort(true, null);

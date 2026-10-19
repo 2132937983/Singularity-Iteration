@@ -39,6 +39,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  *   <tr><td>{@code MetalFormerModePacket}</td><td>C2S</td><td>sets the mode of a Metal Former</td></tr>
  *   <tr><td>{@code FutureCommoditySync}</td><td>S2C</td><td>datapack futures commodity list and the commodities that the player has not unlocked</td></tr>
  *   <tr><td>{@code NuclearExplosionAnimationPacket}</td><td>S2C</td><td>starts the mushroom cloud animation of a nuclear explosion</td></tr>
+ *   <tr><td>{@code LaserBlastFxPacket}</td><td>S2C</td><td>plasma blast effect of the mining laser's Ultra-High Energy Blast (0.1.10.11)</td></tr>
  *   <tr><td>{@code ODScannerResultPacket}</td><td>S2C</td><td>result of an ore dictionary (OD) scan</td></tr>
  *   <tr><td>{@code FutureTradePacket}</td><td>C2S</td><td>a futures trade request at a market block</td></tr>
  *   <tr><td>{@code ScannerButtonPacket}</td><td>C2S</td><td>delete or save button of the Scanner</td></tr>
@@ -76,6 +77,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  *   <tr><td>{@code EnergyTerminalTogglePacket}</td><td>C2S</td><td>switches one device of the terminal network on or off</td></tr>
  *   <tr><td>{@code LaserTowerSyncPacket}</td><td>S2C</td><td>statistics and target list for the open laser tower menu</td></tr>
  *   <tr><td>{@code LaserTowerConfigPacket}</td><td>C2S</td><td>edits the target list of the open laser tower menu</td></tr>
+ *   <tr><td>{@code CreativeGeneratorPacket}</td><td>C2S</td><td>output typed into the open Creative Generator screen (0.1.10.11)</td></tr>
  *   <tr><td>{@code MinerFilterPacket}</td><td>C2S</td><td>sets a ghost filter slot of the Advanced Miner (JEI drag)</td></tr>
  *   <tr><td>{@code CropScannerPacket.SetGene}</td><td>C2S</td><td>gene-editing slider of the open Advanced Crop Scanner menu (0.1.8.2)</td></tr>
  *   <tr><td>{@code CropScannerPacket.HudRequest}</td><td>C2S</td><td>crop HUD: asks for the reading of a crop stick (0.1.8.2)</td></tr>
@@ -149,6 +151,12 @@ public class mio_icif_Network {
             NuclearExplosionAnimationPacket.TYPE,
             NuclearExplosionAnimationPacket.CODEC,
             NuclearExplosionAnimationPacket::handle
+        );
+        // 0.1.10.11, S2C: plasma blast effect of the mining laser's Ultra-High Energy Blast.
+        registrar.playToClient(
+            LaserBlastFxPacket.TYPE,
+            LaserBlastFxPacket.CODEC,
+            LaserBlastFxPacket::handle
         );
 
         // S2C: OD scanner result.
@@ -409,6 +417,12 @@ public class mio_icif_Network {
             LaserTowerConfigPacket.CODEC,
             LaserTowerConfigPacket::handle
         );
+        // 0.1.10.11, C2S: output typed into the Creative Generator screen.
+        registrar.playToServer(
+            CreativeGeneratorPacket.TYPE,
+            CreativeGeneratorPacket.CODEC,
+            CreativeGeneratorPacket::handle
+        );
 
         // C2S: Advanced Miner filter slot (JEI ghost drag).
         registrar.playToServer(
@@ -461,6 +475,17 @@ public class mio_icif_Network {
         for (var player : level.players()) {
             if (player.connection != null && player.connection.hasChannel(NuclearExplosionAnimationPacket.TYPE)
                     && player.distanceToSqr(centerX, centerY, centerZ) <= distance * distance)
+                PacketDistributor.sendToPlayer(player, packet);
+        }
+    }
+
+    /** 0.1.10.11: the plasma blast effect to the players within {@link LaserBlastFxPacket#RANGE} blocks. */
+    public static void sendLaserBlast(ServerLevel level, double x, double y, double z, float strength) {
+        var packet = new LaserBlastFxPacket(x, y, z, strength);
+        double range = LaserBlastFxPacket.RANGE;
+        for (var player : level.players()) {
+            if (player.connection != null && player.connection.hasChannel(LaserBlastFxPacket.TYPE)
+                    && player.distanceToSqr(x, y, z) <= range * range)
                 PacketDistributor.sendToPlayer(player, packet);
         }
     }

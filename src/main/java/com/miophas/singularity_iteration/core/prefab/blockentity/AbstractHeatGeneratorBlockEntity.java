@@ -122,8 +122,7 @@ protected static final int FUEL_SLOT = 0;
         if (!level.isLoaded(frontPos)) return false;
 
         // Get the heat storage of the front block
-    IMioIcifCapabilities.IHeatStorage frontHeat = level.getCapability(
-            IMioIcifCapabilities.HEAT_STORAGE_BLOCK, frontPos, facing.getOpposite());
+    IMioIcifCapabilities.IHeatStorage frontHeat = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.HEAT_STORAGE_BLOCK, facing);
 
         // Check if the front machine can receive heat
     if (frontHeat != null && frontHeat.canReceiveHeat()) {
@@ -187,7 +186,8 @@ protected static final int FUEL_SLOT = 0;
         }
         
         // Mark the block entity as changed
-    blockEntity.setChanged();
+    // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+    com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
     
     /**

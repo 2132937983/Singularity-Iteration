@@ -382,7 +382,8 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
         }
 
         // 标记方块实体已更新
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     /**
@@ -434,7 +435,8 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
             && current.getValue(mio_icif_Block_Geo_Generator.ACTIVE) != isActive) {
             level.setBlock(pos, current.setValue(mio_icif_Block_Geo_Generator.ACTIVE, isActive), 3);
         }
-        setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
     }
 
     /**

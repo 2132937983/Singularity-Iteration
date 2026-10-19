@@ -82,8 +82,9 @@ public class mio_icif_checker extends AbstractEnergyBlockEntity {
         // 更新上一tick的输入电力
         if (inputEnergy != lastInputEnergy) {
             lastInputEnergy = inputEnergy;
-            setChanged();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            // 0.1.10.10 (D4): save mark and a throttled update (was: neighbour update and a full packet every change)
+            com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
+            com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);
         }
 
         // 重置当前tick输入电能计数
@@ -107,9 +108,9 @@ public class mio_icif_checker extends AbstractEnergyBlockEntity {
         if (totalPower != this.detectedVoltage || tier != this.detectedTier) {
             this.detectedVoltage = totalPower;
             this.detectedTier = tier;
-            setChanged();
-            // 同步数据到客户端
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
+            // 同步数据到客户端（0.1.10.10: throttled）
+            com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);
         }
     }
 

@@ -323,8 +323,7 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
             }
 
             BlockPos neighborPos = worldPosition.relative(direction);
-            IMioIcifCapabilities.IHeatStorage heatStorage = level.getCapability(
-                IMioIcifCapabilities.HEAT_STORAGE_BLOCK, neighborPos, direction.getOpposite());
+            IMioIcifCapabilities.IHeatStorage heatStorage = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.HEAT_STORAGE_BLOCK, direction);
             if (heatStorage == null) {
                 BlockEntity neighborBe = level.getBlockEntity(neighborPos);
                 heatStorage = MioIcifAPI.instance().getCapabilities().adaptHeatStorage(neighborBe);
@@ -596,7 +595,8 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
         blockEntity.handleAutomation();
 
         blockEntity.updateBlockState(blockEntity.isWorking(), state, level, pos);
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     private Direction getFacing() {
@@ -797,7 +797,15 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
 
     // ==================== 热能能力（对外只接收） ====================
 
+    /** 0.1.10.10 (D3): the heat view is made once (it was a new object on every capability lookup). */
+    private IMioIcifCapabilities.IHeatStorage heatView;
+
     public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
+        if (heatView == null) heatView = createHeatView();
+        return heatView;
+    }
+
+    private IMioIcifCapabilities.IHeatStorage createHeatView() {
         return new IMioIcifCapabilities.IHeatStorage() {
             @Override
             public long receiveHeat(long maxReceive, boolean simulate) {

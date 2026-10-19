@@ -606,6 +606,12 @@ public class mio_icif_screens {
             LaserTowerScreen::new
         );
 
+        // 0.1.10.11: Creative Generator
+        event.register(
+            mio_icif_menus.CREATIVE_GENERATOR_MENU_TYPE.get(),
+            CreativeGeneratorScreen::new
+        );
+
         event.register(
             mio_icif_menus.CHUNK_LOADER_MENU_TYPE.get(),
             mio_icif_gui_chunk_loader::new

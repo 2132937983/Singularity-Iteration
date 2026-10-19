@@ -625,6 +625,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     private long pathProfileHits, pathSlowVisits, idleMemoHits, reusedValidations;
     /** 0.1.10.8: native windows taken from the plan cache instead of a new plan. */
     private long planCacheHits;
+    /** 0.1.10.10: windows ended early because none of their sinks had room (E11). */
+    private long saturatedWindows;
     /** Number of foreign queries that threw. It saturates at {@link Long#MAX_VALUE}. */
     private long foreignQueryFailures;
     /**
@@ -847,6 +849,17 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         long planCacheGeneration = -1, planCacheEdits = -1;
         /** Route array cells and route search weights held by {@code planCache}. */
         long planCacheCells, planCacheVertices;
+        /**
+         * 0.1.10.10 (E12): per tile, the parts of its port that change only with its block state or
+         * with an endpoint edit (block type, conductor faces, emission positions), for
+         * {@code skeletonEdits}. Live parts (balance, faces a machine opens, output switch, remote
+         * switch, packet policy) are read every tick.
+         */
+        final IdentityHashMap<BlockEntity, PortSkeleton> skeletons = new IdentityHashMap<>();
+        long skeletonEdits = -1;
+        /** 0.1.10.10 (E12): the endpoint list that {@code ports} walks, for {@code machinesRevision}. */
+        List<Map.Entry<BlockPos, BlockEntity>> machineList;
+        long machineListRevision = -1, machinesRevision;
         /** Routing identities of all sources and sinks for {@code portsGeneration}, or {@code null}. */
         RoutingView routingView;
         /** Routing generation. It only increases. See the class comment. */
@@ -1112,7 +1125,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     if (next.tile instanceof IEnergyConductiveEndpoint) {
                         // The fast path only refreshed the conductor index. A dual tile
                         // keeps its endpoint registration and its port.
-                        machines.put(at, next.tile);
+                        machines.put(at, next.tile); machinesRevision++;
                         contactOrder.putEndpoint(point(at));
                     } else {
                         contactOrder.putConductor(point(at), next.conductorLoss, next.faces);
@@ -1131,7 +1144,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     // A null result removes the key, so the map never holds a zero count.
                     conductorChunks.compute(chunk, (key, count) -> count == 1 ? null : count - 1);
                 }
-                machines.remove(at);
+                machines.remove(at); machinesRevision++;
                 receiverCursors.remove(at);
                 transformerRouting.remove(at);
                 transformers.remove(at);
@@ -1148,7 +1161,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     if (after.tile instanceof IEnergyConductiveEndpoint) {
                         // IC2 dual-node layout: the position carries routes to endpoints
                         // beyond it and still owns a port, so its balance keeps charging.
-                        machines.put(at, after.tile);
+                        machines.put(at, after.tile); machinesRevision++;
                         contactOrder.putEndpoint(point(at));
                     } else {
                         contactOrder.putConductor(point(at), after.conductorLoss, after.faces);
@@ -1161,7 +1174,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                                 ENDPOINT_LIMIT, endpointLimitDrops);
                         continue;
                     }
-                    machines.put(at, after.tile);
+                    machines.put(at, after.tile); machinesRevision++;
                     contactOrder.putEndpoint(point(at));
                     if (after.tile instanceof IndependentTransformerBlockEntity transformer) {
                         transformerRouting.put(at, after.routing); transformers.put(at, transformer);
@@ -1183,9 +1196,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             closed = true;
             nativePlan = null; routingView = null; exportPlan = null; importPlan = null; receiverCursors.clear();
             planCache.clear(); planCacheCounts.clear(); planCacheSnapshot = null; planCacheView = null;
+            skeletons.clear(); machineList = null;
             catchUpEndpoints.clear(); effectEndpoints.clear(); shocks.clear(); includedEndpoints = null; excludedEndpoints = null;
             registered.clear(); foreign.clear(); failedQueries.clear(); samples.clear(); packetSpent.clear(); scanAnchors = List.of();
-            entries.close(); conductors.close(); contactOrder.close(); machines.clear(); transformerRouting.clear(); transformers.clear(); specialCables.clear(); specialObserved.clear(); specialPublished.clear(); specialPending.clear(); initialGeneratorContacts.clear(); conductorChunks.clear(); conductorTypes.clear(); conductorOwners.clear(); catchUp = false; effectPauseFrame = -1;
+            entries.close(); conductors.close(); contactOrder.close(); machines.clear(); machinesRevision++; transformerRouting.clear(); transformers.clear(); specialCables.clear(); specialObserved.clear(); specialPublished.clear(); specialPending.clear(); initialGeneratorContacts.clear(); conductorChunks.clear(); conductorTypes.clear(); conductorOwners.clear(); catchUp = false; effectPauseFrame = -1;
         }
     }
     /**
@@ -1879,7 +1893,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final List<Port> involved = List.copyOf(involvedSet);
         var snapshot = plan.graph; var room = new ArrayList<EnergyAmount>();
         int[] receivers = new int[sinks.size()];
-        for (int i = 0; i < sinks.size(); i++) { room.add(sinks.get(i).quote.exactAmount().roomBelow(sinks.get(i).capacity)); receivers[i] = i; }
+        boolean anyRoom = false;
+        for (int i = 0; i < sinks.size(); i++) {
+            var space = sinks.get(i).quote.exactAmount().roomBelow(sinks.get(i).capacity);
+            room.add(space); receivers[i] = i; anyRoom |= !space.isZero();
+        }
+        // 0.1.10.10 (E11): no sink of the window has room, so the fair distribution moves nothing
+        // (every credit is bounded by the room, every debit by its credits and losses): the window
+        // ends as it would after the round, without building the domains and the round. The legacy
+        // walk draws random numbers for its receiver order, so it still runs in full.
+        if (!anyRoom && IndependentEnergyMode.fairDistribution()) { saturatedWindows++; return true; }
         var quotes = sources.stream().map(source -> new DomainDistributor.Source(source.balance().whole(), source.packet,
             source.partialPackets, source.packets)).toList();
         var budgets = sources.stream().map(source -> windowOffer(source, allowances, plan.packetLimit)).toList();
@@ -1992,7 +2015,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             double[] weakestMeasuredLimit = {Double.POSITIVE_INFINITY};
             // Effects use the packet that the source pushes on this path (see PlannedDelivery).
             // A source's tier only caps its offer. A partial delivery is not a full packet.
-            double deliveryVoltage = delivery.voltage();
+            // 0.1.10.11: a debug source (IOverloadFreeEnergySource, the creative generator) never causes
+            // overload effects; its deliveries are metered with their real voltage below
+            double deliveryVoltage = sources.get(delivery.source()).tile instanceof com.miophas.singularity_iteration.core.api.energy.IOverloadFreeEnergySource free
+                && free.ignoresOverload() ? 0 : delivery.voltage();
             if (path == null) {
                 if (!delivery.pathLoss().isZero()) throw new IllegalStateException("Direct delivery has conductor loss");
             } else {
@@ -2155,7 +2181,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 }
                 if (level.removeBlock(at, false)) {
                     grid.endpointEdits++;
-                    grid.machines.remove(at);
+                    grid.machines.remove(at); grid.machinesRevision++;
                     grid.contactOrder.remove(point(at));
                     grid.initialGeneratorContacts.remove(at);
                     topology.changed(level, at);
@@ -2262,7 +2288,14 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     private List<Port> ports(ServerLevel level, WorldGrid grid, boolean prepareDemand) {
         var ports = new ArrayList<Port>();
-        for (var entry : List.copyOf(grid.machines.entrySet())) {
+        // 0.1.10.10 (E12): the copy of the endpoint list is kept while the map is unchanged (it was
+        // copied every tick); the skeletons belong to one endpoint edit count
+        if (grid.machineList == null || grid.machineListRevision != grid.machinesRevision) {
+            grid.machineList = List.copyOf(grid.machines.entrySet());
+            grid.machineListRevision = grid.machinesRevision;
+        }
+        if (grid.skeletonEdits != grid.endpointEdits) { grid.skeletons.clear(); grid.skeletonEdits = grid.endpointEdits; }
+        for (var entry : grid.machineList) {
             try {
             BlockPos at = entry.getKey(); var tile = entry.getValue();
             if (!participates(grid, at)) continue;
@@ -2294,7 +2327,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             var machine = tile;
             // Default role: a sink on all six faces. The tests below override it.
             int inputs = 63, outputs = 0;
-            var type = BuiltInRegistries.BLOCK.getKey(tile.getBlockState().getBlock());
+            var skeleton = skeleton(grid, tile);
+            var type = skeleton.type();
             boolean generator = tile instanceof AbstractEnergyBlockEntity block && block.isPowerSource()
                 || tile instanceof DemandEnergySource;
             if (generator) { inputs = 0; outputs = 63; }
@@ -2319,7 +2353,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 inputs &= open; outputs &= open;
             }
             var storage = ownedStorage(machine); var quote = storage.scexNetworkQuote();
-            int electricalFaces = conductorFaces(tile);
+            int electricalFaces = skeleton.conductorFaces();
             inputs &= electricalFaces; outputs &= electricalFaces;
             if (!quote.outputEnabled()) outputs = 0;
             if (tile instanceof com.miophas.singularity_iteration.core.api.energy.IRemoteSwitchable remote
@@ -2331,12 +2365,30 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             var packets = packetPolicy(machine, type, quote);
             var potential = prepareDemand && machine instanceof DemandEnergySource demand ? demand.potentialEnergy() : null;
             ports.add(new Port(tile, at, tile.getBlockState(), storage, quote, ownedCapacity(machine), inputs, outputs,
-                packets.packetSize(), packets.packetCount(), packets.partialPackets(), null, outputBudget, potential, emissionPositions(tile)));
+                packets.packetSize(), packets.packetCount(), packets.partialPackets(), null, outputBudget, potential,
+                skeleton.emitters() != null ? skeleton.emitters() : emissionPositions(tile)));
             } catch (RuntimeException error) { topology.isolateChunk(level, entry.getKey(), error); chunkStatus.clear(); }
         }
         ports.removeIf(port -> !topology.chunkReady(level, ChunkPos.asLong(port.position)) || grid.machines.get(port.position) != port.tile);
         return ports;
     }
+    /**
+     * 0.1.10.10 (E12): the parts of a port that change only with the block state or with an endpoint
+     * edit (a conductor face edit, a colour, a neighbour conductor and a multiblock structure are
+     * published as edits). {@code emitters} is null for a multiblock emission source (read live).
+     */
+    private record PortSkeleton(BlockState state, ResourceLocation type, int conductorFaces, @org.jetbrains.annotations.Nullable List<BlockPos> emitters) { }
+
+    private static PortSkeleton skeleton(WorldGrid grid, BlockEntity tile) {
+        BlockState state = tile.getBlockState();
+        var known = grid.skeletons.get(tile);
+        if (known != null && known.state() == state) return known;
+        var made = new PortSkeleton(state, BuiltInRegistries.BLOCK.getKey(state.getBlock()), conductorFaces(tile),
+            tile instanceof com.miophas.singularity_iteration.core.api.energy.IEnergyEmissionSource ? null : emissionPositions(tile));
+        grid.skeletons.put(tile, made);
+        return made;
+    }
+
     /** Rebuilds only the live quote, packet policy and FE output allowance of each cached port.
      * The expensive per-machine skeleton — chunk checks, face masks, packet
      * tiers, emitter positions — is commit-invariant within one tick and is
@@ -3289,7 +3341,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 grid.conductors.remove(point(at));
                 grid.contactOrder.remove(point(at));
                 grid.accessibilityTick = Long.MIN_VALUE;
-                grid.machines.remove(at);
+                grid.machines.remove(at); grid.machinesRevision++;
                 grid.initialGeneratorContacts.remove(at);
                 topology.changed(level, at);
                 removed.add(at);
@@ -3792,12 +3844,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     /**
      * 0.1.10.7: the performance counters (since the server started): deliveries settled from a path
      * profile, deliveries that visited their path, idle passes answered from the memo, commit
-     * validations reused, and (0.1.10.8) native windows taken from the plan cache. Read on the
-     * server thread.
+     * validations reused, (0.1.10.8) native windows taken from the plan cache, and (0.1.10.10)
+     * windows that ended early because no sink had room. Read on the server thread.
      */
     public long[] optimizationCounters() {
         if (Thread.currentThread().threadId() != ownerThread) throw new IllegalStateException("Read engine metrics on server thread");
-        return new long[]{pathProfileHits, pathSlowVisits, idleMemoHits, reusedValidations, planCacheHits};
+        return new long[]{pathProfileHits, pathSlowVisits, idleMemoHits, reusedValidations, planCacheHits, saturatedWindows};
     }
 
     /**

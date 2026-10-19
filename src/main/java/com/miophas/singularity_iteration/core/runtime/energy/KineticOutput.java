@@ -21,7 +21,7 @@ public final class KineticOutput {
         var pos = owner.getBlockPos().relative(side);
         var chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
         if (chunk == null) return null;
-        var target = level.getCapability(IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, pos, side.getOpposite());
+        var target = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(owner, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, side);
         if (target != null) return target;
         var tile = chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
         return tile instanceof IMioIcifCapabilities.IKineticStorage storage ? storage : null;

@@ -437,3 +437,19 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 * 套装同步哈希改为无装箱计算（数值与 `Objects.hash` 相同）。
 * 僚机的目标选择与射击位置：每次选择只获取一次小队与附近敌对生物，视线射线只对得分最高的候选计算。选择结果相同。护卫模式的分离推力与弹道扫描每 2 tick 运行一次。
 * 套装 HUD 的储备、热量与相干度条会平滑趋近同步值。
+
+## 16. 服务器性能 Phase D（0.1.10.10）
+
+结果不变；这些改动去掉的是没有效果的工作。
+
+* `core.runtime.TickMarks.saved(BlockEntity)`：只标记区块需要保存，不做 `setChanged()` 的邻居与比较器更新。SI 发电机与热能／动能机器用它记录每 tick 的计数。需要邻居响应或比较器数值可能变化时，仍应调用 `setChanged()`。
+* `core.runtime.NeighbourCaps.get(owner, capability, face)`：`face` 面邻居的能力（上下文为 `face.getOpposite()`），在邻居的方块状态对象与方块实体不变时保留，最长 100 tick；邻居未加载时返回 `null`（从不加载区块）。答案依赖方块实体内部数据的提供者至少每 100 tick 重新询问；可用 `NeighbourCaps.forget(owner)` 清除某个所有者保存的答案。
+* `core.runtime.sync.ClientSyncThrottle.request(be)` 现在被更多 SI 方块使用；每次变化都发送方块实体更新的附属模组也应使用它（每 5 tick 最多一次，最终状态必定送达）。
+* `MachineStatusTracker.sentStatus(machine)`：对于无人观察的区块中的机器，返回当前状态（追踪器只读取有人观察的区块，每个区块在 10 tick 间隔中的固定一 tick 读取）。
+* 电网：公平模式下，所有用电器都没有空间的窗口在分配之前结束（`optimizationCounters()[5]`）。端口的方块类型、导线面与发射位置按方块实体保留，直到其方块状态或端点编辑次数变化；机器开放的面（`canConnect`）、储电输出面、输出开关与遥控开关每 tick 读取。
+* 诊断：`core.runtime.PerfCounters`（最近 100 tick 的每 tick 平均值）与 `/mio_icif perf` 新增的负载行。`AbstractEnergyBlockEntity`、`AbstractHeatBlockEntity` 与 `AbstractKineticBlockEntity` 统计服务器端的 `setChanged()` 调用次数。
+
+## 17. 无过载效果的调试电源（0.1.10.11）
+
+* `core.api.energy.IOverloadFreeEnergySource`：实现该接口（且 `ignoresOverload()` 返回 `true`）的电源方块实体，在独立电网中无论数据包多大都不会造成过载效果：不熔断导线、不击穿绝缘层、不电击、不使接收端爆炸。其输送照常结算、计量（EU 检测导线看到真实电压），并受接收端剩余容量与额定输入限制；导线损耗照常计算。仅用于创造模式与测试方块；SI 创造模式发电机将其与 `IEnergyPacketSource` 一起使用（每 tick 一个包含全部输出的数据包）。
+* SI 区块加载器归放置它的玩家所有，并遵守配置 `ChunkLoaders` 节的服务器规则；为玩家放置加载器的附属模组应通过方块放置（由 `setPlacedBy` 设置所有者）。

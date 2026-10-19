@@ -163,7 +163,7 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
             }
             setChanged();
             if (level != null && !level.isClientSide()) {
-                level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+                com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);   // 0.1.10.10 (D4): throttled
             }
         }
     }
@@ -246,7 +246,8 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
             }
         }
 
-        blockEntity.setChanged();
+        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     @Override

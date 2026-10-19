@@ -2,6 +2,7 @@
 package com.miophas.singularity_iteration.common.client.armory;
 
 import com.miophas.singularity_iteration.common.armory.WingmanEntity;
+import com.miophas.singularity_iteration.common.armory.WingmanPose;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.model.HumanoidModel;
@@ -33,6 +34,8 @@ import org.jetbrains.annotations.Nullable;
  *       twitching hand), and every slash of the Wingman plays a cut on the arm: a diagonal cut for a
  *       combo, a flat sweep for the dash, an overhead two-handed cut for a Slash Art.</li>
  * </ul>
+ *
+ * <p>0.1.10.13: the arms of every held item follow {@link WingmanPose} (see {@link Model}).
  */
 @OnlyIn(Dist.CLIENT)
 public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanRenderer.Model> {
@@ -74,28 +77,61 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
         return entity.flight(partialTick) * (1 - entity.landBlend(partialTick));
     }
 
-    /** Humanoid model with the flight pose, the landed pose and the blade pose. */
+    /**
+     * Humanoid model with the flight pose, the landed pose, the weapon poses and the blade pose.
+     *
+     * <p>0.1.10.13: the arms come from {@link WingmanPose} for every held item (the jitter of the
+     * nanosaber, the quantum sword, guns and tools): no walking swing (the suit flies), no switch to
+     * the vanilla pose during a swing, a fail-safe smoothing of the pose per Wingman, and the cut, the
+     * recoil and the blade slash added on top (all zero at their start and end).
+     */
     public static final class Model extends HumanoidModel<WingmanEntity> {
+        /** Smoothed arm pose per Wingman (6 angles and the time), see {@link WingmanPose#smooth}. */
+        private final java.util.Map<WingmanEntity, float[]> poses = new java.util.WeakHashMap<>();
+
         public Model(ModelPart root) { super(root); }
 
         @Override
         public void setupAnim(WingmanEntity entity, float limbSwing, float limbSwingAmount, float age, float netHeadYaw, float headPitch) {
-            super.setupAnim(entity, limbSwing, limbSwingAmount, age, netHeadYaw, headPitch);
+            // no walking swing and no vanilla attack pose: both are replaced below
+            float attack = attackTime;
+            attackTime = 0;
+            super.setupAnim(entity, 0, 0, age, netHeadYaw, headPitch);
+            attackTime = attack;
             float partial = Mth.clamp(age - entity.tickCount, 0, 1);
             float f = flightFactor(entity, partial);
             float landed = entity.landBlend(partial);
             float air = 1 - landed;
             float sway = Mth.sin(age * 0.08F) * 0.05F * air;
+            boolean leftHanded = entity.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT;
             boolean blade = SlashBladeResharpedBridge.isBlade(entity.getMainHandItem());
-            if (blade) {
-                bladePose(entity, partial);
-            } else if (attackTime <= 0) {
-                // arms trail along the body, palms back (stabilisers); standing on the ground: as is
-                rightArm.xRot = Mth.lerp(air, rightArm.xRot, Mth.lerp(f, rightArm.xRot * 0.3F + sway, 0.45F));
-                leftArm.xRot = Mth.lerp(air, leftArm.xRot, Mth.lerp(f, leftArm.xRot * 0.3F - sway, 0.45F));
-                rightArm.zRot = Mth.lerp(air, rightArm.zRot, Mth.lerp(f, 0.10F, 0.22F));
-                leftArm.zRot = Mth.lerp(air, leftArm.zRot, -Mth.lerp(f, 0.10F, 0.22F));
+            WingmanPose.Hold hold = WingmanPose.holdOf(entity.getMainHandItem(), blade);
+            float pitch = headPitch * Mth.DEG_TO_RAD, yaw = netHeadYaw * Mth.DEG_TO_RAD;
+            float[] pose = WingmanPose.base(hold, leftHanded, f, air, entity.combat(partial), sway, pitch, yaw,
+                f * MAX_LEAN * Mth.DEG_TO_RAD);
+            WingmanPose.smooth(poses.computeIfAbsent(entity, e -> new float[7]), pose, age);
+            float twist = 0;
+            switch (hold) {
+                case BLADE -> WingmanPose.slash(pose, entity.slashKind(), entity.slashProgress(partial));
+                case RANGED -> {
+                    WingmanPose.recoil(pose, leftHanded, entity.recoil(partial));
+                    twist = WingmanPose.swing(pose, leftHanded, attack, pitch);
+                }
+                default -> twist = WingmanPose.swing(pose, leftHanded, attack, pitch);
             }
+            rightArm.xRot = pose[WingmanPose.RX]; rightArm.yRot = pose[WingmanPose.RY]; rightArm.zRot = pose[WingmanPose.RZ];
+            leftArm.xRot = pose[WingmanPose.LX]; leftArm.yRot = pose[WingmanPose.LY]; leftArm.zRot = pose[WingmanPose.LZ];
+            if (hold != WingmanPose.Hold.BLADE) {
+                // the small idle bob of the arms (continuous in time), as vanilla
+                net.minecraft.client.model.AnimationUtils.bobModelPart(rightArm, age, 1.0F);
+                net.minecraft.client.model.AnimationUtils.bobModelPart(leftArm, age, -1.0F);
+            }
+            // the body turns with a cut, and the shoulders with it (as vanilla)
+            body.yRot = twist;
+            rightArm.z = Mth.sin(twist) * 5.0F;
+            rightArm.x = -Mth.cos(twist) * 5.0F;
+            leftArm.z = -Mth.sin(twist) * 5.0F;
+            leftArm.x = Mth.cos(twist) * 5.0F;
             // legs straight and together; a small hover sway; straight under the suit when landed
             rightLeg.xRot = Mth.lerp(f, sway, 0.10F) * air;
             leftLeg.xRot = Mth.lerp(f, -sway, 0.10F) * air;
@@ -106,53 +142,6 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             // the head looks forward in fast flight
             head.xRot -= f * Mth.DEG_TO_RAD * MAX_LEAN * 0.6F;
             hat.copyFrom(head);
-        }
-
-        /** Ready pose (still) and the cut of the current slash. */
-        private void bladePose(WingmanEntity entity, float partial) {
-            // ready: the right hand near the hilt in front of the left hip, the left arm relaxed
-            float rx = -0.42F, ry = 0.32F, rz = 0.04F;
-            float lx = -0.12F, ly = 0.0F, lz = -0.10F;
-            float p = entity.slashProgress(partial);
-            if (p >= 0) {
-                switch (entity.slashKind()) {
-                    case WingmanEntity.SLASH_DASH -> {          // flat sweep, right to left
-                        rx = keys(p, rx, -1.45F, -1.45F, -1.30F, rx);
-                        ry = keys(p, ry, -1.05F, 0.95F, 0.80F, ry);
-                        rz = keys(p, rz, 0.10F, -0.10F, -0.05F, rz);
-                    }
-                    case WingmanEntity.SLASH_ARTS -> {          // overhead, two hands
-                        rx = keys(p, rx, -2.95F, -0.45F, -0.55F, rx);
-                        ry = keys(p, ry, -0.12F, 0.10F, 0.10F, ry);
-                        lx = keys(p, lx, -2.85F, -0.50F, -0.60F, lx);
-                        ly = keys(p, ly, 0.30F, 0.40F, 0.35F, ly);
-                        lz = keys(p, lz, 0.05F, 0.05F, 0.0F, lz);
-                    }
-                    default -> {                                // diagonal cut, high right to low left
-                        rx = keys(p, rx, -2.55F, -0.50F, -0.65F, rx);
-                        ry = keys(p, ry, -0.55F, 0.75F, 0.60F, ry);
-                        rz = keys(p, rz, 0.15F, -0.05F, 0.0F, rz);
-                    }
-                }
-            }
-            rightArm.xRot = rx; rightArm.yRot = ry; rightArm.zRot = rz;
-            leftArm.xRot = lx; leftArm.yRot = ly; leftArm.zRot = lz;
-        }
-
-        /**
-         * Four phases over 0..1: wind-up (to {@code wind} at 0.25), cut (to {@code cut} at 0.55),
-         * follow-through (to {@code follow} at 0.75), back to {@code end} at 1. Smoothstep in between.
-         */
-        private static float keys(float p, float start, float wind, float cut, float follow, float end) {
-            if (p < 0.25F) return Mth.lerp(ease(p / 0.25F), start, wind);
-            if (p < 0.55F) return Mth.lerp(ease((p - 0.25F) / 0.30F), wind, cut);
-            if (p < 0.75F) return Mth.lerp(ease((p - 0.55F) / 0.20F), cut, follow);
-            return Mth.lerp(ease((p - 0.75F) / 0.25F), follow, end);
-        }
-
-        private static float ease(float t) {
-            t = Mth.clamp(t, 0, 1);
-            return t * t * (3 - 2 * t);
         }
     }
 }

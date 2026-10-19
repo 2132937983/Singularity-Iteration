@@ -235,8 +235,10 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     private Optional<RecipeSlots.Prepared> prepareLane(int inputSlot, int outputSlot) {
         var recipe = findRecipe(inputSlot);
         if (recipe.isEmpty()) return Optional.empty();
-        return RecipeSlots.prepare(itemHandler, inputSlot, 1, new int[]{outputSlot},
-            java.util.List.of(recipe.get().value().getResultItem(level.registryAccess())));
+        // 0.1.10.13: a smelting recipe of another mod may give a null result (GitHub issue #18)
+        ItemStack result = com.miophas.singularity_iteration.common.util.RecipeResults.of(recipe.get().value(), level.registryAccess());
+        if (result.isEmpty()) return Optional.empty();
+        return RecipeSlots.prepare(itemHandler, inputSlot, 1, new int[]{outputSlot}, java.util.List.of(result));
     }
 
     private Optional<RecipeSlots.Prepared> prepareWorkingLanes() {

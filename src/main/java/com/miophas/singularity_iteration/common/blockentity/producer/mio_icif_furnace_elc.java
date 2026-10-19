@@ -244,7 +244,11 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
         }
 
         // 检查输出槽是否可以容纳结果
-        ItemStack result = recipe.get().value().getResultItem(level.registryAccess());
+        // 0.1.10.13: a smelting recipe of another mod may give a null result (GitHub issue #18)
+        ItemStack result = com.miophas.singularity_iteration.common.util.RecipeResults.of(recipe.get().value(), level.registryAccess());
+        if (result.isEmpty()) {
+            return false;
+        }
         ItemStack currentOutput = itemHandler.getStackInSlot(OUTPUT_SLOT);
 
         if (currentOutput.isEmpty()) {
@@ -289,7 +293,11 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
      * @param recipe 冶炼配方
      */
     private void finishSmelting(RecipeHolder<SmeltingRecipe> recipe) {
-        ItemStack result = recipe.value().getResultItem(level.registryAccess());
+        ItemStack result = com.miophas.singularity_iteration.common.util.RecipeResults.of(recipe.value(), level.registryAccess());
+        if (result.isEmpty()) {   // 0.1.10.13: no usable result, nothing is consumed
+            stopWork();
+            return;
+        }
         ItemStack currentOutput = itemHandler.getStackInSlot(OUTPUT_SLOT);
 
         // 添加结果到输出槽
@@ -326,7 +334,7 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
             return ItemStack.EMPTY;
         }
         Optional<RecipeHolder<SmeltingRecipe>> recipe = findRecipe();
-        return recipe.map(r -> r.value().getResultItem(level.registryAccess())).orElse(ItemStack.EMPTY);
+        return recipe.map(r -> com.miophas.singularity_iteration.common.util.RecipeResults.of(r.value(), level.registryAccess())).orElse(ItemStack.EMPTY);
     }
 
     /**

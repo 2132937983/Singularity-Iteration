@@ -1,7 +1,7 @@
 package com.miophas.singularity_iteration.common.blockentity.producer;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
+import com.miophas.singularity_iteration.common.util.FluidContainerSlots;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
@@ -193,12 +193,13 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity im
 
     @Override
     protected boolean canInsertItem(int slot, ItemStack stack, @Nullable Direction side) {
-        boolean topOnly = slot == SLOT_WATER_CELL_INPUT
+        boolean supplySlot = slot == SLOT_WATER_CELL_INPUT
             || (slot >= SLOT_FERTILIZER_START && slot < SLOT_FERTILIZER_START + SLOT_FERTILIZER_COUNT)
             || (slot >= SLOT_WEEDEX_START && slot < SLOT_WEEDEX_START + SLOT_WEEDEX_COUNT);
-        if (topOnly) {
-            // 对齐原版 InvSlot.InvSide.TOP：肥料/除草剂/水容器仅可从顶面自动化输入
-            return side == Direction.UP && isItemValidForSlot(slot, stack);
+        if (supplySlot) {
+            // 0.1.10.6：肥料/除草剂/水容器可从任意面自动化输入。此前按原版 InvSide.TOP 只认顶面，
+            // 从侧面接入的物品管道送不进任何东西（玩家报告的“自动搬入失败”）。
+            return isItemValidForSlot(slot, stack);
         }
         return super.canInsertItem(slot, stack, side);
     }
@@ -222,25 +223,27 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity im
     protected void doWork() {
     }
 
+    /** 0.1.10.6：任何能放出水的容器（水桶、满或半满的单元、其他模组的容器）。此前只认水桶与满的 SI 水单元。 */
     private boolean isWaterCell(ItemStack stack) {
         if (stack.isEmpty()) return false;
         if (stack.is(net.minecraft.world.item.Items.WATER_BUCKET)) return true;
-        return mio_icif_cells.isCellContainingFluid(stack, net.minecraft.world.level.material.Fluids.WATER);
+        return FluidContainerSlots.holds(stack, net.minecraft.world.level.material.Fluids.WATER);
     }
 
     private boolean isWeedExCell(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        var handler = stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
-        return handler != null && !handler.drain(new FluidStack(
-            com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.WEED_EX.get(),
-            Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE).isEmpty();
+        return FluidContainerSlots.holds(stack, weedEx());
+    }
+
+    private static net.minecraft.world.level.material.Fluid weedEx() {
+        return com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.WEED_EX.get();
     }
 
     @SuppressWarnings("unused")
     private boolean isEmptyCell(ItemStack stack) {
         if (stack.isEmpty()) return false;
         if (stack.is(net.minecraft.world.item.Items.BUCKET)) return true;
-        return mio_icif_cells.isEmptyCell(stack);
+        return com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.isEmptyCell(stack);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_matron_elc blockEntity) {
@@ -268,45 +271,48 @@ public class mio_icif_matron_elc extends AbstractProcessingMachineBlockEntity im
     public static final int TEND_TICKS = 2 * com.miophas.singularity_iteration.core.runtime.crop.CropScanCursor.VOLUME + 40;
 
     private void processWaterCell() {
-        processFluidContainer(SLOT_WATER_CELL_INPUT, waterTank, SLOT_WATER_CELL_OUTPUT);
+        if (FluidContainerSlots.emptyInto(itemHandler, SLOT_WATER_CELL_INPUT, SLOT_WATER_CELL_OUTPUT, waterTank,
+                net.minecraft.world.level.material.Fluids.WATER)) setChanged();
     }
 
+    /**
+     * 除草剂罐（耐久型）每次放出 50 mB，耗尽后直接消失。0.1.10.6：桶和单元这类会留下空容器的除草剂容器，
+     * 空容器改放进空容器输出槽（与水共用），此前空容器会被直接删除。
+     */
     private void processWeedExCell() {
-        // 除草剂为耐久型容器，耗尽后直接消失，无需空容器输出槽
         for (int i = 0; i < SLOT_WEEDEX_COUNT; i++) {
-            if (processFluidContainer(SLOT_WEEDEX_START + i, weedExTank, -1)) break;
-        }
-    }
-
-    private boolean processFluidContainer(int slot, FluidTank tank, int outputSlot) {
-        ItemStack input = itemHandler.getStackInSlot(slot);
-        if (input.isEmpty()) return false;
-        ItemStack working = input.copyWithCount(1);
-        var handler = working.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
-        if (handler == null) return false;
-        FluidStack offered = handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
-        int amount = tank.fill(offered, IFluidHandler.FluidAction.SIMULATE);
-        if (amount <= 0) return false;
-        FluidStack actual = handler.drain(offered.copyWithAmount(amount), IFluidHandler.FluidAction.EXECUTE);
-        if (actual.isEmpty() || actual.getAmount() > amount) return false;
-        ItemStack result = handler.getContainer();
-        boolean retain = !result.isEmpty() && result.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null
-            && !result.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM).drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE).isEmpty();
-        ItemStack output = outputSlot >= 0 ? itemHandler.getStackInSlot(outputSlot) : ItemStack.EMPTY;
-        if (!retain && !result.isEmpty() && !output.isEmpty()
-                && (!ItemStack.isSameItemSameComponents(output, result) || output.getCount() + result.getCount() > output.getMaxStackSize())) return false;
-        if (retain && input.getCount() > 1) return false;
-        tank.fill(actual, IFluidHandler.FluidAction.EXECUTE);
-        if (retain) itemHandler.setStackInSlot(slot, result);
-        else {
-            input.shrink(1);
-            if (!result.isEmpty() && outputSlot >= 0) {
-                if (output.isEmpty()) itemHandler.setStackInSlot(outputSlot, result);
-                else output.grow(result.getCount());
+            if (FluidContainerSlots.emptyInto(itemHandler, SLOT_WEEDEX_START + i, SLOT_WATER_CELL_OUTPUT, weedExTank, weedEx())) {
+                setChanged();
+                break;
             }
         }
-        setChanged();
-        return true;
+    }
+
+    /**
+     * 0.1.10.6: the fluid pulling upgrade asks each neighbour for water and for Weed-EX by name.
+     * The generic pull drains whatever the neighbour offers first, so a neighbour whose first tank
+     * held another fluid (or water while only Weed-EX was missing) gave nothing.
+     */
+    @Override
+    protected void pullFluids(IFluidHandler own, int upgradeCount) {
+        if (upgradeCount <= 0 || level == null) return;
+        var configured = upgradeStats.getFluidPullingDirections();
+        for (Direction direction : configured.isEmpty() ? java.util.List.of(Direction.values()) : configured) {
+            int budget = upgradeStats.getFluidPullingCount() == upgradeCount
+                ? upgradeStats.getFluidPullingTransferLimit(direction)
+                : com.miophas.singularity_iteration.core.api.machine.IMachineUpgradeStats.fluidTransferPerStack(upgradeCount);
+            if (budget <= 0) continue;
+            BlockPos at = worldPosition.relative(direction);
+            IFluidHandler neighbour = getAdjacentFluidHandler(at, direction.getOpposite());
+            if (neighbour == null) continue;
+            int moved = FluidContainerSlots.pull(neighbour, waterTank, net.minecraft.world.level.material.Fluids.WATER, budget);
+            moved += FluidContainerSlots.pull(neighbour, weedExTank, weedEx(), budget - moved);
+            if (moved > 0) {
+                setChanged();
+                var neighbourEntity = level.getBlockEntity(at);
+                if (neighbourEntity != null) neighbourEntity.setChanged();
+            }
+        }
     }
 
     private void processCrops() {

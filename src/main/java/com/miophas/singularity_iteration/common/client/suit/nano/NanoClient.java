@@ -240,6 +240,7 @@ public final class NanoClient {
                 return;
             }
             ticks++;
+            tickShown();
             while (PRIMARY_KEY != null && PRIMARY_KEY.consumeClick()) press(mc, player, 0);
             while (SECONDARY_KEY != null && SECONDARY_KEY.consumeClick()) press(mc, player, 1);
             while (CORE_KEY != null && CORE_KEY.consumeClick()) pressCore(mc, player);
@@ -403,8 +404,21 @@ public final class NanoClient {
         return Math.max(0, com.miophas.singularity_iteration.common.suit.core.CoreConfig.dischargeCooldown() - (ticks - dischargeAt));
     }
 
+    /** 0.1.10.8: the reserve, heat and coherence that the HUD draws (eased toward the synced values). */
+    static final HudLerp SHOWN_RESERVE = new HudLerp(), SHOWN_HEAT = new HudLerp(), SHOWN_COHERENCE = new HudLerp();
+
+    private static void tickShown() {
+        NanoPackets.CoreSync s = sync;
+        if (s == null) { SHOWN_RESERVE.reset(); SHOWN_HEAT.reset(); }
+        else { SHOWN_RESERVE.tick(s.reserve(), 100F); SHOWN_HEAT.tick(s.heat(), s.heatCap()); }
+        var q = QuantumClient.sync;
+        if (q == null) SHOWN_COHERENCE.reset();
+        else SHOWN_COHERENCE.tick(q.coherence(), q.max());
+    }
+
     static void clear() {
         sync = null;
+        SHOWN_RESERVE.reset(); SHOWN_HEAT.reset(); SHOWN_COHERENCE.reset();
         dashTick = -1;
         hfSync = false;
         hfLevel = 0;

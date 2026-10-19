@@ -328,6 +328,12 @@ private mio_icif_ExtractorRecipe currentRecipe = null;
      * 
 tick 更新逻辑
      */
+    /** 0.1.10.8: canWork depends only on the inventory, the saved state and the stored energy. */
+    @Override
+    protected boolean idleSleepAllowed() {
+        return true;
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_extrator_elc blockEntity) {
         if (level.isClientSide()) {
             return;

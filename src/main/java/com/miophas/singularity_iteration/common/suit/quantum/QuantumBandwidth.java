@@ -70,7 +70,7 @@ public final class QuantumBandwidth {
     }
 
     public static int budget(Player player) {
-        return BASE_BUDGET + (QuantumLinks.computeCore(player) ? CORE_BONUS : 0);
+        return BASE_BUDGET + CORE_BONUS * QuantumLinks.activeComputeCores(player);   // 0.1.10.6: the cores stack
     }
 
     public static boolean saturated(Player player) {

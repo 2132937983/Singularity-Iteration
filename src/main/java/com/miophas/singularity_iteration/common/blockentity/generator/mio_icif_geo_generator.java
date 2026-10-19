@@ -102,6 +102,11 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
      * 检查物品是否是岩浆桶或岩浆单元
      */
     private boolean isLavaBucket(ItemStack stack) {
+        // 0.1.10.6: also partly filled cells and containers of other mods (through the fluid capability)
+        return isKnownLavaBucket(stack) || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, Fluids.LAVA);
+    }
+
+    private boolean isKnownLavaBucket(ItemStack stack) {
         return stack.is(Items.LAVA_BUCKET) || mio_icif_cells.isCellContainingFluid(stack, Fluids.LAVA);
     }
 
@@ -129,7 +134,11 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
      */
     private void handleLavaBucketSlot() {
         ItemStack lavaBucketStack = itemHandler.getStackInSlot(LAVA_BUCKET_SLOT);
-        if (lavaBucketStack.isEmpty() || !isLavaBucket(lavaBucketStack)) {
+        if (lavaBucketStack.isEmpty()) {
+            return;
+        }
+        if (!isKnownLavaBucket(lavaBucketStack)) {
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, LAVA_BUCKET_SLOT, EMPTY_BUCKET_SLOT, lavaTank, Fluids.LAVA)) setChanged();
             return;
         }
 

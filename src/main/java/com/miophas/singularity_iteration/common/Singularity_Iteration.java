@@ -221,6 +221,10 @@ public class Singularity_Iteration {
             .setDistributionMode(Singularity_Iteration_Config.ENERGY_NET_DISTRIBUTION_MODE.get());
         com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
             .setLineLossModel(Singularity_Iteration_Config.ENERGY_NET_LINE_LOSS.get());
+        com.miophas.singularity_iteration.core.runtime.processing.AutomationPacing
+            .setEnabled(Singularity_Iteration_Config.AUTOMATION_PACING.get());   // 0.1.10.7
+        com.miophas.singularity_iteration.core.runtime.processing.MachineSleep
+            .setEnabled(Singularity_Iteration_Config.MACHINE_SLEEP.get());       // 0.1.10.8
     }
 
     private void onConfigReload(net.neoforged.fml.event.config.ModConfigEvent event) {
@@ -304,6 +308,7 @@ com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.
     public void onRegisterCommands(RegisterCommandsEvent event) {
         com.miophas.singularity_iteration.common.command.ToggleCommand.register(event.getDispatcher());
         com.miophas.singularity_iteration.common.processing.PipeRecoveryCommand.register(event.getDispatcher());
+        com.miophas.singularity_iteration.common.command.PerfCommand.register(event.getDispatcher());   // 0.1.10.7
     }
 
     private void onBlockEntityTypeAddBlocks(BlockEntityTypeAddBlocksEvent event) {

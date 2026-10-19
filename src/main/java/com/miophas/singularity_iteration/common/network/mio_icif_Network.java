@@ -123,6 +123,13 @@ public class mio_icif_Network {
             MetalFormerModePacket::handle
         );
 
+        // C2S (0.1.10.6): overclock slider of a machine GUI.
+        registrar.playToServer(
+            MachineOverclockPacket.TYPE,
+            MachineOverclockPacket.CODEC,
+            MachineOverclockPacket::handle
+        );
+
         // S2C: datapack futures commodities, and the commodities that the player has not unlocked.
         registrar.playToClient(
             com.miophas.singularity_iteration.common.future.FutureCommoditySync.TYPE,

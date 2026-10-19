@@ -273,6 +273,25 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder QUANTUM_POP = BUILDER.pop();
 
+    // ==================== 0.1.10.7: performance ====================
+    private static final ModConfigSpec.Builder PERFORMANCE_BUILDER = BUILDER
+        .comment("Performance (0.1.10.7).")
+        .push("Performance");
+    public static final ModConfigSpec.BooleanValue AUTOMATION_PACING = PERFORMANCE_BUILDER
+        .comment("Item ejector / pulling upgrades (0.1.10.8: also the fluid ones): after a run that moved nothing, wait 4, 8, 16, then 20 ticks",
+                 "before the next run (a change of the machine's inventory or tanks runs them at once). false = run every tick, as before 0.1.10.7.",
+                 "物品弹出／抽入升级（0.1.10.8 起也包括流体升级）：一次未移动任何东西后，依次等待 4、8、16、20 tick 再运行（机器物品栏或储罐变化时立即运行）。false = 每 tick 运行（0.1.10.7 之前的行为）。")
+        .define("automationPacing", true);
+    public static final ModConfigSpec.BooleanValue MACHINE_SLEEP = PERFORMANCE_BUILDER
+        .comment("Idle sleep (0.1.10.8): a macerator, electric furnace, extractor, compressor, recycler or metal former that stood idle",
+                 "for 1 second skips its recipe checks until its inventory, settings or stored energy change (at the latest 1 second later).",
+                 "false = check every tick, as before 0.1.10.8.",
+                 "空闲休眠（0.1.10.8）：粉碎机、电炉、提取机、压缩机、回收机、金属成型机空闲 1 秒后，在物品栏、设置或储电变化之前（最迟 1 秒后）不再检查配方。",
+                 "false = 每 tick 检查（0.1.10.8 之前的行为）。")
+        .define("machineSleep", true);
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder PERFORMANCE_POP = BUILDER.pop();
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     static {

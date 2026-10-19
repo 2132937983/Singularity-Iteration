@@ -524,7 +524,8 @@ public class mio_icif_gui_armor_features extends Screen {
         var core = com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.computeCoreState(player);
         if (core != com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.CoreState.NONE) {
             boolean coreOn = core == com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.CoreState.ACTIVE;
-            String tag = coreOn ? "CPU" : core == com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.CoreState.OFF ? "CPU-" : "CPU!";
+            int cores = com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.activeComputeCores(player);
+            String tag = coreOn ? (cores > 1 ? "CPU×" + cores : "CPU") : core == com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.CoreState.OFF ? "CPU-" : "CPU!";
             small(g, tag, x + 52 + (int) (font.width(qb) * 0.75F) + 4, ry + 3, coreOn ? SiGuiTheme.ACCENT : SiGuiTheme.BAD);
         }
         String open = Component.translatable("gui.mio_icif.equipment_console.links_open").getString() + " \u25B6";

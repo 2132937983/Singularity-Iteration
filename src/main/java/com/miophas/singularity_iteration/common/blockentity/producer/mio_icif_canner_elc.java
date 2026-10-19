@@ -244,8 +244,10 @@ public final FluidTank inputFluidTank;
         return switch (mode) {
             case CANNING -> hasMatchingCanningCan(level, stack);
             case EMPTY_TO_TANK -> {
+                // 0.1.10.6: also any other container that can give fluid (milk bucket, containers of other mods)
                 yield (mio_icif_cells.isFluidCell(stack) && !mio_icif_cells.isEmptyCell(stack))
-                    || stack.getItem() instanceof net.minecraft.world.item.BucketItem;
+                    || stack.getItem() instanceof net.minecraft.world.item.BucketItem
+                    || !com.miophas.singularity_iteration.common.util.FluidContainerSlots.peek(stack).isEmpty();
             }
             case FILL_FROM_TANK -> {
                 yield mio_icif_cells.isEmptyCell(stack)
@@ -599,7 +601,8 @@ public final FluidTank inputFluidTank;
         // 检查输出槽是否有空间放置空容器
         ItemStack emptyContainer = getEmptyContainerOutput(input);
         if (emptyContainer.isEmpty()) {
-            return false; // 无法获取对应的空容器
+            // 0.1.10.6：其他模组的一次性容器倒空后消失，无需输出槽
+            return !isTypedContainer(input); // 无法获取对应的空容器
         }
 
         ItemStack currentOutput = itemHandler.getStackInSlot(OUTPUT_SLOT);
@@ -870,7 +873,18 @@ public final FluidTank inputFluidTank;
             return cellItem.getEmptyContainer(input);
         }
 
+        // 0.1.10.6: another container: what is left after it gives all its fluid (EMPTY if it vanishes)
+        IFluidHandlerItem handler = input.copyWithCount(1).getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM);
+        if (handler != null && !handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE).isEmpty()) {
+            return handler.getContainer();
+        }
         return ItemStack.EMPTY;
+    }
+
+    /** True for containers that the canner knows by type (buckets and SI cells); others use the fluid capability. */
+    private static boolean isTypedContainer(ItemStack input) {
+        return input.getItem() instanceof net.minecraft.world.item.BucketItem
+            || input.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IFluidCellItem;
     }
 
     /**
@@ -899,6 +913,9 @@ public final FluidTank inputFluidTank;
             }
         }
 
+        if (!isTypedContainer(input)) {
+            return com.miophas.singularity_iteration.common.util.FluidContainerSlots.peek(input);
+        }
         return FluidStack.EMPTY;
     }
 
@@ -1117,6 +1134,13 @@ public final FluidTank inputFluidTank;
 
         // 获取对应的空容器
         ItemStack emptyContainer = getEmptyContainerOutput(input);
+        boolean vanishes = emptyContainer.isEmpty() && !isTypedContainer(input);
+        if (vanishes) {
+            // 0.1.10.6: a container of another mod that is used up when emptied
+            if (!fillFluidExactly(outputFluidTank, fluid)) return false;
+            input.shrink(1);
+            return true;
+        }
         if (emptyContainer.isEmpty()) {
             return false; // 无法获取对应的空容器
         }

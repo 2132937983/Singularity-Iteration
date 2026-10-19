@@ -99,7 +99,8 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
      * 检查物品是否是任意半流质燃料桶或燃料单元。
      */
     private boolean isFuelBucket(ItemStack stack) {
-        return fuelContentOf(stack) != null;
+        // 0.1.10.6: also partly filled cells and containers of other mods (through the fluid capability)
+        return fuelContentOf(stack) != null || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, SemifluidFuels::accepts);
     }
 
     /**
@@ -149,6 +150,11 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
      * 将燃料桶/单元中的燃料转移到流体存储，空桶/空单元放入空桶输出槽
      */
     private void handleFuelBucketSlot() {
+        ItemStack held = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
+        if (!held.isEmpty() && fuelContentOf(held) == null) {
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, FUEL_BUCKET_SLOT, EMPTY_BUCKET_SLOT, fuelTank, SemifluidFuels::accepts)) setChanged();
+            return;
+        }
         if (energyStorage.scexNetworkControlled()) { scexFillFuelContainer(); return; }
         ItemStack fuelBucketStack = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
         FluidStack content = fuelContentOf(fuelBucketStack);
@@ -174,6 +180,8 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
         }
 
         // 转移燃料：按容器实际内容（整桶/整单元 = 1000 mB）
+        // 0.1.10.6: only a whole container; before, a nearly full tank kept the part it took and the container stayed
+        if (fuelTank.fill(content, IFluidHandler.FluidAction.SIMULATE) < content.getAmount()) return;
         int filled = fuelTank.fill(content, IFluidHandler.FluidAction.EXECUTE);
         if (filled >= content.getAmount()) {
             // 消耗燃料桶/单元

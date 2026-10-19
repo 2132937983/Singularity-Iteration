@@ -560,25 +560,40 @@ public class WingmanEntity extends Mob {
         return best;
     }
 
+    /** 0.1.10.8: the projectile scan runs every 2nd tick; in between the last threat is kept while it still flies at the owner. */
+    @Nullable private Projectile lastThreat;
+    private int threatScanAt = -10;
+
     @Nullable
     private Projectile nearestThreat(ServerPlayer player) {
-        Vec3 c = player.getBoundingBox().getCenter();
+        if (tickCount >= threatScanAt && tickCount - threatScanAt < 2) {
+            Projectile kept = lastThreat;
+            return kept != null && !kept.isRemoved() && kept.level() == level() && incoming(kept, player) ? kept : null;
+        }
+        threatScanAt = tickCount;
         Projectile best = null;
         double bestD = Double.MAX_VALUE;
         for (Projectile p : level().getEntitiesOfClass(Projectile.class, player.getBoundingBox().inflate(8))) {
-            Entity shooter = p.getOwner();
-            if (shooter == player || shooter instanceof WingmanEntity) continue;
-            Vec3 v = p.getDeltaMovement();
-            double v2 = v.lengthSqr();
-            if (v2 < 0.01) continue;                                   // lying still (an arrow in the ground)
-            Vec3 rel = c.subtract(p.position());
-            double t = rel.dot(v) / v2;                                // ticks to the closest approach
-            if (t <= 0 || t > 20) continue;
-            if (p.position().add(v.scale(t)).distanceToSqr(c) > 2.2 * 2.2) continue;
+            if (!incoming(p, player)) continue;
             double d = p.distanceToSqr(this);
             if (d < bestD) { bestD = d; best = p; }
         }
+        lastThreat = best;
         return best;
+    }
+
+    /** A projectile of somebody else that passes within 2.2 blocks of the owner in the next 20 ticks. */
+    private static boolean incoming(Projectile p, ServerPlayer player) {
+        Entity shooter = p.getOwner();
+        if (shooter == player || shooter instanceof WingmanEntity) return false;
+        Vec3 c = player.getBoundingBox().getCenter();
+        Vec3 v = p.getDeltaMovement();
+        double v2 = v.lengthSqr();
+        if (v2 < 0.01) return false;                                   // lying still (an arrow in the ground)
+        Vec3 rel = c.subtract(p.position());
+        double t = rel.dot(v) / v2;                                    // ticks to the closest approach
+        if (t <= 0 || t > 20) return false;
+        return p.position().add(v.scale(t)).distanceToSqr(c) <= 2.2 * 2.2;
     }
 
     private boolean fultonCandidate(@Nullable LivingEntity e, ServerPlayer player) {
@@ -929,8 +944,19 @@ public class WingmanEntity extends Mob {
         return best;
     }
 
+    /** 0.1.10.8: the separation push, measured every 2nd tick and reused in between. */
+    private Vec3 separationPush = Vec3.ZERO;
+    private int separationAt = -10;
+
     /** Push away from the other Wingmen closer than 2.2 blocks, so the squad does not stack up. */
     private Vec3 separation() {
+        if (tickCount >= separationAt && tickCount - separationAt < 2) return separationPush;
+        separationAt = tickCount;
+        separationPush = measureSeparation();
+        return separationPush;
+    }
+
+    private Vec3 measureSeparation() {
         Vec3 push = Vec3.ZERO;
         for (WingmanEntity other : level().getEntitiesOfClass(WingmanEntity.class, getBoundingBox().inflate(2.2), w -> w != this)) {
             Vec3 away = position().subtract(other.position());

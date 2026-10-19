@@ -19,13 +19,18 @@ import net.minecraft.world.phys.AABB;
 /** Public world entities only. One collector per block; no global entity or chunk references. */
 public final class WorldFuelCollection {
     public static final int MAX_ENTITIES_PER_TICK = 64;
+    /** 0.1.10.7: ticks without a search after a search that found nothing (was: two entity searches every tick). */
+    public static final int IDLE_TICKS = 10;
     private int cursor = Integer.MIN_VALUE;
+    private long idleUntil = Long.MIN_VALUE;
 
     // This bounds returned lists and affected entities, not the engine's predicate visits.
     // Advance by entity ID so an unconsumable first page cannot permanently starve others.
     private <T extends Entity> List<T> next(ServerLevel level, BlockPos pos, int range, Class<T> type) {
         if (!level.getServer().isSameThread() || range < 0 || range > 16)
             throw new IllegalStateException("World fuel collection requires bounded server-thread access");
+        long now = level.getGameTime();
+        if (now < idleUntil) return List.of();
         var bounds = new AABB(pos).inflate(range);
         var result = new ArrayList<T>(MAX_ENTITIES_PER_TICK);
         var test = EntityTypeTest.<Entity, T>forClass(type);
@@ -36,6 +41,7 @@ public final class WorldFuelCollection {
             level.getEntities(test, bounds, e -> !e.isRemoved() && e.getId() <= previous,
                 result, MAX_ENTITIES_PER_TICK);
         if (!result.isEmpty()) cursor = result.getLast().getId();
+        else idleUntil = now + IDLE_TICKS;
         return result;
     }
     public int items(ServerLevel level, BlockPos pos, int range, int fuel, ToIntFunction<ItemStack> value) {

@@ -226,7 +226,9 @@ public final class EntanglementScreen extends Screen {
         // 0.1.10.4: the compute core state between the two (why the third link and the +8 QB are there or not)
         QuantumLinks.CoreState core = QuantumLinks.computeCoreState(player);
         if (core != QuantumLinks.CoreState.NONE) {
+            int cores = QuantumLinks.activeComputeCores(player);
             Component cs = Component.translatable("gui.mio_icif.entangle.core." + core.name().toLowerCase(java.util.Locale.ROOT));
+            if (cores > 1) cs = cs.copy().append(" ×" + cores);   // 0.1.10.6: stacked cores
             int csx = left + 8 + font.width(links) + 8, room = left + W - 8 - font.width(qb) - 8 - csx;
             if (room > 20) g.drawString(font, font.plainSubstrByWidth(cs.getString(), room), csx, fy,
                 core == QuantumLinks.CoreState.ACTIVE ? 0xFF7FD8FF : 0xFFFFB347, false);

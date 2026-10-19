@@ -43,6 +43,10 @@ The game measured these values from the block entity of this version.
 ## Notes
 
 - A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.
+- Water, Weed-EX and fertilizer can come in from every side: item pipes and hoppers on any face, fluid pipes on any face.
+- The water slot takes every container with water (buckets, cells, partly filled cells, containers of other mods). The herbicide slots take Crop Manager Herbicide and every container with Weed-EX (Weed-EX buckets and cells).
+- Empty buckets and cells go to the output slot under the water slot. Take them out, or let an item pipe pull them.
+- A Fluid Pulling Upgrade asks the neighbour for water and for Weed-EX separately, so a tank with both fluids feeds both tanks.
 
 > **WARNING:** The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier.
 

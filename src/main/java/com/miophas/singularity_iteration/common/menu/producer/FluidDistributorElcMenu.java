@@ -92,4 +92,7 @@ public class FluidDistributorElcMenu extends mio_icif_machine_menu {
             this.setSyncData(3, fluid.isEmpty() ? -1 : BuiltInRegistries.FLUID.getId(fluid.getFluid()));
         }
     }
+
+    /** 0.1.10.6: index 0 of the synced data is not a progress. */
+    @Override protected int progressDataIndex() { return -1; }
 }

@@ -84,6 +84,12 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
     }
 
     private boolean isFuelBucket(ItemStack stack) {
+        // 0.1.10.6: also partly filled cells and containers of other mods (through the fluid capability)
+        Fluid diesel = resolveDieselFluid();
+        return isKnownFuelBucket(stack) || (diesel != null && com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, diesel));
+    }
+
+    private boolean isKnownFuelBucket(ItemStack stack) {
         IItemAPI itemAPI = MioIcifAPI.instance().getItemAPI();
         Fluid dieselFluid = resolveDieselFluid();
         if (dieselFluid == null) return false;
@@ -111,6 +117,12 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
     }
 
     private void handleFuelBucketSlot() {
+        ItemStack held = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
+        if (!held.isEmpty() && !isKnownFuelBucket(held)) {
+            Fluid diesel = resolveDieselFluid();
+            if (diesel != null && com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, FUEL_BUCKET_SLOT, EMPTY_BUCKET_SLOT, fuelTank, diesel)) setChanged();
+            return;
+        }
         if (energyStorage.scexNetworkControlled()) { scexFillFuelContainer(); return; }
         ItemStack fuelBucketStack = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
         if (fuelBucketStack.isEmpty() || !isFuelBucket(fuelBucketStack)) return;
@@ -139,6 +151,8 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
             }
         }
 
+        // 0.1.10.6: only a whole container; before, a nearly full tank kept the part it took and the container stayed
+        if (fuelTank.fill(new FluidStack(dieselFluid, FUEL_PER_BUCKET), IFluidHandler.FluidAction.SIMULATE) < FUEL_PER_BUCKET) return;
         int filled = fuelTank.fill(new FluidStack(dieselFluid, FUEL_PER_BUCKET), IFluidHandler.FluidAction.EXECUTE);
         if (filled >= FUEL_PER_BUCKET) {
             fuelBucketStack.shrink(1);

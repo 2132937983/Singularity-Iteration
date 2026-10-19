@@ -182,10 +182,19 @@ public abstract class mio_icif_machine_menu extends mio_icif_base_menu {
      * Sets a synced data value. The Screen calls this from containerTick.
      */
     public void setSyncData(int index, int value) {
+        // 0.1.10.6: an overclocked machine can finish an operation in the tick it starts it, so the
+        // progress it reports is 0 at every sync; right after an operation the bar shows full
+        if (index == progressDataIndex() && blockEntity instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity machine
+                && value == machine.getProgress()) {
+            value = machine.getDisplayProgress();
+        }
         if (index >= 0 && index < data.getCount()) {
             data.set(index, value);
         }
     }
+
+    /** 0.1.10.6: index of the progress in the synced data (-1: the menu syncs no progress at index 0..n). */
+    protected int progressDataIndex() { return 0; }
 
     // ===== 快速移动逻辑扩展 =====
 

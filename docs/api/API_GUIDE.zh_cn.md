@@ -360,3 +360,80 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 * `radius`：危险半径（格，必填）；`fuse`：完整引信秒数（可选）；`label`：HUD 标签（可选，最多 9 个字符）。
 * 计时来源顺序：实体的公开 `getFuse()`（或 `getFuseTime`、`getFuseTicks`、`getFuseTimer`，单位 tick）→ `fuse` 减去客户端上的实体年龄 → 无计时（HUD 显示“--”）。
 * 没有数据映射时，实体类型标签 `mio_icif:blast_warning`、原版 `PrimedTnt` 子类、苦力怕子类、爆炸类投射物和名称含爆炸词的实体也会被识别（见指南“爆炸预警计时器”）。
+
+## 13. 机器预制类：物流路由、超频调节、流体容器（0.1.10.6）
+
+### 13.1 弹出与抽入升级的物品路由（`AbstractProcessingMachineBlockEntity`）
+
+* 未设定方向时按以下顺序尝试各面：先存储，再其他方块，最后机器。`protected int neighbourKind(Direction)` 返回 0（存储：方块标签 `mio_icif:automation/storage`、箱子、木桶、潜影盒）、1（其他）或 2（机器：方块标签 `mio_icif:automation/processor`、所有 `AbstractProcessingMachineBlockEntity`、熔炉类、酿造台）。`protected Direction[] byTargetPriority(Iterable<Direction>)` 按此稳定排序。特殊邻居可重写 `neighbourKind`。
+* 防来回传递，`protected boolean pingPong(Direction face, boolean eject)`：机器不会弹出到最近 `PING_PONG_TICKS`（200 tick）内从中抽入过的机器，不会从自己弹出过的机器抽入，也不会弹出到弹出口朝向自己的相邻机器（`public boolean ejectsToward(Direction)`）。存储邻居从不受限。
+* 标签：`mio_icif:automation/storage`（默认 `#c:chests`、`#c:barrels`、`#minecraft:shulker_boxes` 与 SI 的储物箱）与 `mio_icif:automation/processor`（空）。可把你的模组方块加入其中。
+
+### 13.2 超频调节
+
+* `getInstalledOverclockers()`、`getOverclockThrottle()`（0～100 %）、`getActiveOverclockers()`、`setOverclockThrottle(int percent)`（服务器端；会限制范围、重算属性并标记方块实体已更改）。`static activeOverclockers(int installed, int percent)` 四舍五入到整数个超频升级。
+* 属性来自 `MachineUpgradeStats.withActiveOverclockers(int)`：速度与能耗按生效的超频升级计算，储能加成保留全部已安装的升级。自行构建属性的子类调用 `throttled(MachineUpgradeStats)`。
+* 保存为 NBT 键 `scex_oc_throttle`（不存在即 100 %）。安装至少 1 个超频升级时机器界面显示滑块，发送 C2S 数据包 `mio_icif:machine_overclock`（容器 ID、百分比）。服务器只在该机器的菜单打开且有效时应用。
+
+### 13.3 显示用进度
+
+* 超频后的快速加工可能在同一 tick 内完成并重置进度，界面因此总是显示 0。`getDisplayProgress()` 在加工完成后的那一 tick 返回满进度；菜单同步它而不是 `getProgress()`。`getDisplayProgressPerTick()` 与 `getTicksPerOperation()` 给出当前设定下的速度。
+
+### 13.4 流体容器与标签
+
+* 流体机器通过物品流体能力（`Capabilities.FluidHandler.ITEM`）接受所有流体容器：桶、部分装满的单元、其他模组的容器。仍有流体的容器留在原槽，倒空的容器进入空容器槽。你的容器只需提供正确的 `IFluidHandlerItem`（`getContainer()` 返回剩下的物品）。
+* 作物监管机从任意面接收水与除草剂；其流体抽入升级按名称向相邻方块分别索取每种流体（`drain(FluidStack)`）。
+* 除草剂流体类型的描述 ID 为 `fluid_type.mio_icif.weed_ex`。
+* 牛奶疣（`mio_icif:resource/item_milk_wart`）属于物品标签 `c:buckets/milk`、`c:drinks/milk`、`c:milks` 与 `forge:milk`。需要牛奶的配方请使用这些标签。
+* 次世代作物扫描仪把 UU 物质保存在扫描仪自定义数据中（`Scanner` / `UuMb`，最多 4,000 mB）；1 mB 等于 1 个基因编辑催化剂。
+
+### 13.5 量子演算核心
+
+* 胸甲与护腿上的核心可以叠加：每个启用的核心增加 1 条链接与 8 QB。
+
+## 14. 服务器性能（0.1.10.7）
+
+以下改动不改变任何结果（电力分配、损耗、熔断、电击、电表数值），只是让同样的工作更省。除非特别说明，附属模组无需修改。
+
+### 14.1 电网
+
+* `IndependentEnergyMode`：过载开关（`voltageOverload`、`enetExplosions`、`enetCableMeltdown`、`enetShockDamage`）在 `CoreConfig.revision()` 变化（每次 `CoreConfig.overrideBool` 都计入）或本类的设置方法运行之前保持缓存。`enabled()` 与 `feature(String)` 只读取一次启动属性。分配模式、线损模型与损耗取整仍在每次调用时读取系统属性。
+* 路径档案：每个导线快照、每条送电路径，引擎保存该路径的最低熔断上限、绝缘击穿值与绝缘吸收值。不高于全部限值的送电无需逐格遍历；其他送电，以及有未加载区块或缺少方块实体的路径，照旧遍历。发生熔断或绝缘烧毁时清空档案。
+* 电表采样（`IEnergyNetAPI#getNodeStats`）：一个 tick 的采样先排队，读取电表时按采样顺序加入（数值与以前相同）。
+* 若原生结算中没有任何电源还有配额，则复用之前 tick 同一轮结算的结果（快照、路由代次、端点编辑次数与起始游标都相同）。
+* 窗口提交时，若同一窗口刚校验过且其间没有任何写入，则复用该校验；提交仍会检查每个被写入的储能。
+* 诊断：`IndependentSiEnergy#optimizationCounters()`（档案命中、路径遍历、空闲复用、校验复用）以及管理员命令 `/mio_icif perf`。
+
+### 14.2 电缆
+
+* 独立电网的电缆没有方块实体 ticker。`AbstractWireBlockEntity#isPowered()` 用游戏时间与最近一次 `onEnergyPass()` 的时间比较（20 tick）；`poweredTicksRemaining` 仍会设置，只由仍在 tick 的电线（旧电网）递减。
+* 方块实体继承 `AbstractWireBlockEntity` 的附属电缆方块，在 `IndependentSiEnergy.controls(state)` 为真时应返回空 ticker。
+
+### 14.3 机器与自动化
+
+* 物品弹出／抽入升级（`AbstractProcessingMachineBlockEntity`）：一次未移动任何物品后依次等待 4、8、16、20 tick（`core.runtime.processing.AutomationPacing`；配置 `Performance.automationPacing`）。`onInventoryChanged` 会唤醒它们。自带物品传输的子类在移动后调用新方法 `noteAutomationMove()`。流体升级每 tick 运行。
+* `neighbourKind(Direction)` 按面缓存，直到该面的方块变化（能力失效通知），最长 200 tick。
+* `WorldFuelCollection`（物品与经验发电机）：一次搜索为空后，10 tick 后再搜索。
+* 地磁发电机在相邻天线或底座放置／移除时、加载后以及每 40 tick 检查结构；生物群系每 600 tick 检查一次。
+
+## 15. 服务器性能 Phase C（0.1.10.8）
+
+与第 14 节相同，电网的结果不变。机器休眠与流体升级节流会改变机器再次检查的时机（最迟 1 秒），二者都有配置开关。
+
+### 15.1 电网
+
+* 路由计划缓存：有多个原生窗口的电网（超过 32 个电源、超过 128 个可达用电器，或达到路由顶点上限）在窗口结算后保留该窗口的计划。下一轮在导线快照、路由视图与代次、端点编辑次数、首个电源与首个接收端都相同时直接取用；这样的计划与重新构建的计划相同。每个电网最多缓存 64 个计划、1,000,000 个路由数组单元以及两个完整计划的路由；任一键变化时清空。每个窗口仍照常预留每 tick 的路由预算。
+* 窗口的余额变化改为在 `EnergyAmount` 中分别累加收入与支出（此前每个端口一个带符号的 `BigInteger`）；结果与异常都相同。
+* `IndependentSiEnergy#optimizationCounters()` 增加第 5 个值：从计划缓存取用的窗口数。`/mio_icif perf` 同时显示休眠跳过的机器 tick 数。
+
+### 15.2 机器
+
+* `AbstractProcessingMachineBlockEntity#idleSleepAllowed()`（新增，protected，默认 `false`）：返回 `true` 的机器空闲 20 tick 后休眠（不工作、无进度、红石允许工作、无 `setChanged()`、储电不变、电池槽为空）。休眠期间只运行自动化升级。任何 `setChanged()`（包括每次物品栏变化）、储电变化、`forceStartWork()` 或 20 tick 后都会唤醒。只有当 `canWork()` 不依赖其他条件时才应返回 `true`。SI 为粉碎机、电炉、提取机、压缩机、回收机与金属成型机启用。`isIdleAsleep()` 与 `wakeFromIdleSleep()` 为 public。配置 `Performance.machineSleep`；`core.runtime.processing.MachineSleep`。
+* 使用内置传输的机器，其流体弹出／抽入升级与物品升级采用相同的等待（一次未移动后 4、8、16、20 tick）；自身储罐或物品栏变化时下一 tick 运行。重写了 `handleFluidUpgrades`、`ejectFluids` 或 `pullFluids` 的机器照旧每 tick 运行。配置 `Performance.automationPacing` 同时控制二者。
+* 回收机空闲时不再每 tick 调用 `setChanged()`。
+
+### 15.3 套装与僚机
+
+* 套装同步哈希改为无装箱计算（数值与 `Objects.hash` 相同）。
+* 僚机的目标选择与射击位置：每次选择只获取一次小队与附近敌对生物，视线射线只对得分最高的候选计算。选择结果相同。护卫模式的分离推力与弹道扫描每 2 tick 运行一次。
+* 套装 HUD 的储备、热量与相干度条会平滑趋近同步值。

@@ -44,6 +44,22 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
     private float lastSourceValue = 0.0f;
     private boolean shouldMachineWork = false;
 
+    // ------------------------------------------------------------------ 0.1.10.7: cached world checks
+    /** Ticks between structure checks when no antenna or pedestal reported a change. */
+    public static final int STRUCTURE_RECHECK = 40;
+    /** Ticks between biome checks (the biome of a position changes only by commands). */
+    public static final int BIOME_RECHECK = 600;
+    /** Ticks between field (blocks below) checks, as before (it was also checked every tick while the value was 0). */
+    public static final int SOURCE_RECHECK = 15;
+    private static volatile net.minecraft.world.level.block.Block antennaBlock, pedestalBlock;
+    /** True when the structure must be checked at the next tick (placement, load, a structure block changed). */
+    private boolean structureDirty = true;
+    private boolean sourceValid = false;
+    private float biomeMultiplier = 1.0f;
+    private long biomeCheckedAt = Long.MIN_VALUE;
+    /** Phase of the periodic checks, so that many generators do not check in the same tick. */
+    private int phase = -1;
+
     public mio_icif_geomagnetic_generator(BlockPos pos, BlockState state) {
         this(pos, state, resolveEntityType());
     }
@@ -67,9 +83,14 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
     private boolean checkStructureCompleted() {
         if (level == null) return false;
 
-        IMioIcifRegistries registries = MioIcifAPI.instance().getRegistries();
-        var antennaBlock = registries.getBlock(ANTENNA_ID);
-        var pedestalBlock = registries.getBlock(PEDESTAL_ID);
+        // 0.1.10.7: the two blocks are looked up once (was: two registry lookups every tick)
+        var antennaBlock = mio_icif_geomagnetic_generator.antennaBlock;
+        var pedestalBlock = mio_icif_geomagnetic_generator.pedestalBlock;
+        if (antennaBlock == null || pedestalBlock == null) {
+            IMioIcifRegistries registries = MioIcifAPI.instance().getRegistries();
+            mio_icif_geomagnetic_generator.antennaBlock = antennaBlock = registries.getBlock(ANTENNA_ID);
+            mio_icif_geomagnetic_generator.pedestalBlock = pedestalBlock = registries.getBlock(PEDESTAL_ID);
+        }
 
         if (antennaBlock == null || pedestalBlock == null) return false;
 
@@ -93,7 +114,9 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
     }
 
     private float getMagneticSource() {
-        if (lastSourceValue != 0 && currentTick % 15 != 0) {
+        // 0.1.10.7: a field of 0 is cached as well (before, a generator with no field read up to
+        // 20 blocks below it every tick)
+        if (sourceValid && currentTick % SOURCE_RECHECK != 0) {
             return lastSourceValue;
         }
         float source = 1.0f;
@@ -116,7 +139,18 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
             source = 0;
         }
         lastSourceValue = source;
+        sourceValid = true;
         return source;
+    }
+
+    /** 0.1.10.7: the biome multiplier, worked out on the first tick and every {@link #BIOME_RECHECK} ticks (was: every tick, with a new string). */
+    private float cachedBiomeMultiplier() {
+        long now = level.getGameTime();
+        if (biomeCheckedAt == Long.MIN_VALUE || now - biomeCheckedAt >= BIOME_RECHECK) {
+            biomeMultiplier = getBiomeMultiplier();
+            biomeCheckedAt = now;
+        }
+        return biomeMultiplier;
     }
 
     private float getBiomeMultiplier() {
@@ -171,8 +205,15 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
         if (level.isClientSide()) return;
 
         boolean wasWorking = blockEntity.shouldMachineWork;
+        if (blockEntity.phase < 0) blockEntity.phase = Math.floorMod(pos.hashCode(), STRUCTURE_RECHECK);
+        long energyBefore = blockEntity.getEnergyStorage().getAmount();
 
-        blockEntity.shouldMachineWork = blockEntity.checkStructureCompleted();
+        // 0.1.10.7: the structure is checked when an antenna or pedestal changed next to it, after
+        // loading, and every STRUCTURE_RECHECK ticks (was: every tick)
+        if (blockEntity.structureDirty || (level.getGameTime() + blockEntity.phase) % STRUCTURE_RECHECK == 0) {
+            blockEntity.structureDirty = false;
+            blockEntity.shouldMachineWork = blockEntity.checkStructureCompleted();
+        }
 
         blockEntity.chargeItems();
 
@@ -187,7 +228,7 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
 
         if (blockEntity.shouldMachineWork && !isEnergyFull) {
             float ratio = blockEntity.getMagneticSource();
-            ratio *= blockEntity.getBiomeMultiplier();
+            ratio *= blockEntity.cachedBiomeMultiplier();
 
             if ((int)(ratio * 6) > 0) {
                 long scaledGeneration = (long)(ENERGY_GENERATION_RATE * ratio);
@@ -214,9 +255,27 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
                 newState = newState.setValue(mio_icif_Block_Geomagnetic_Generator.ACTIVE, isWorking);
                 level.setBlock(pos, newState, 3);
             }
+            blockEntity.setChanged();
+        } else if (blockEntity.getEnergyStorage().getAmount() != energyBefore) {
+            // 0.1.10.7: only the stored energy changed: the chunk must be saved, but no neighbour or
+            // comparator update is needed (was: setChanged() every tick, also when nothing changed)
+            com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank.markUnsaved(blockEntity);
         }
+    }
 
-        blockEntity.setChanged();
+    /**
+     * 0.1.10.7: an antenna or pedestal at {@code changed} was placed or removed: the generators
+     * whose structure can include it check their structure at their next tick.
+     */
+    public static void structureChanged(Level level, BlockPos changed) {
+        if (level.isClientSide()) return;
+        BlockPos[] owners = {changed.below(1), changed.below(2),   // antennas: one and two blocks above the generator
+            changed.offset(-1, 1, 0), changed.offset(1, 1, 0), changed.offset(0, 1, -1), changed.offset(0, 1, 1)};   // pedestals
+        for (BlockPos owner : owners) {
+            if (level.isLoaded(owner) && level.getBlockEntity(owner) instanceof mio_icif_geomagnetic_generator generator) {
+                generator.structureDirty = true;
+            }
+        }
     }
 
     @Override
@@ -233,6 +292,9 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        structureDirty = true;
+        sourceValid = false;
+        biomeCheckedAt = Long.MIN_VALUE;
         if (itemHandler != null && tag.contains("Items")) {
             itemHandler.deserializeNBT(registries, tag.getCompound("Items"));
         }

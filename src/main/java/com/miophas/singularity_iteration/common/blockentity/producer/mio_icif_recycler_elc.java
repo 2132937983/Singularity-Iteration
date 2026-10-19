@@ -55,7 +55,7 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
         @Override
         public int get(int index) {
             return switch (index) {
-                case 0 -> progress;
+                case 0 -> getDisplayProgress();   // 0.1.10.6: fast (overclocked) cycles show a full bar
                 case 1 -> maxProgress;
                 case 2 -> (int) energyStorage.getAmount();
                 case 3 -> (int) energyStorage.getCapacity();
@@ -221,13 +221,22 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
         scexRecycleOutcome = outcome >= 0 && outcome <= 1 ? outcome : -1;
     }
 
+    /** 0.1.10.8: canWork depends only on the inventory, the saved state and the stored energy. */
+    @Override
+    protected boolean idleSleepAllowed() {
+        return true;
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_recycler_elc blockEntity) {
         if (level.isClientSide()) {
             return;
         }
 
+        // 0.1.10.8: marked changed while it works or when its state changed (was: every tick, also idle)
+        boolean wasWorking = blockEntity.isWorking;
+        int wasProgress = blockEntity.progress;
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
-        blockEntity.setChanged();
+        if (blockEntity.isWorking || wasWorking || blockEntity.progress != wasProgress) blockEntity.setChanged();
 
         // 更新方块状态（运行/停止）
         boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_recycler_elc.LIT);

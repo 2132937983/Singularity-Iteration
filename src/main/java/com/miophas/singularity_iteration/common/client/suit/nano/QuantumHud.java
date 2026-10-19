@@ -61,7 +61,7 @@ public final class QuantumHud {
         // glitch: the whole ring jumps sideways for a frame now and then
         float jx = 0;
         if (glitch > 0 && new Random((long) (t * 3)).nextFloat() < glitch * 0.4F) jx = (new Random((long) (t * 7)).nextFloat() - 0.5F) * 6 * glitch;
-        coherenceRing(g, q, keys, cx + jx, cy, t, a, glitch);
+        coherenceRing(g, q, keys, cx + jx, cy, t, a, glitch, NanoClient.SHOWN_COHERENCE.get(partial, q.coherence()));
         bandwidth(g, cx + jx, cy - 47, t, a);                      // 0.1.10.1 compute bandwidth
         linkChips(g, cx - 52, cy - 14, t, a);                      // 0.1.10.1 working synergies
         comboBanner(g, w, h, t);                                   // 0.1.10.1 chain combos
@@ -136,11 +136,12 @@ public final class QuantumHud {
 
     // ------------------------------------------------------------------ coherence ring
 
+    /** @param shown the coherence to draw (0.1.10.8: eased toward the synced value, see HudLerp) */
     private static void coherenceRing(GuiGraphics g, QuantumPackets.CoreSync q, NanoPackets.CoreSync keys, float cx, float cy, float t, float a,
-                                      float glitch) {
+                                      float glitch, float shown) {
         float r = 24;
         int segs = 36;
-        float fill = Mth.clamp(q.coherence() / Math.max(1, q.max()), 0, 1);
+        float fill = Mth.clamp(shown / Math.max(1, q.max()), 0, 1);
         boolean dec = q.decoherent() > 0;
         float step = (float) (Math.PI * 2 / segs);
         for (int i = 0; i < segs; i++) {
@@ -176,7 +177,7 @@ public final class QuantumHud {
             costTick(g, cx, cy, r, keys.secondaryKey(), NanoClient.keyLabel(NanoClient.SECONDARY_KEY, "B"), q, a);
         }
         // read-out
-        String text = dec ? "DECOHERENT" : String.format(Locale.ROOT, "COH %03d", Math.round(q.coherence()));
+        String text = dec ? "DECOHERENT" : String.format(Locale.ROOT, "COH %03d", Math.round(shown));
         FcsDraw.textCentered(g, text, cx, cy - r - 8, FcsDraw.argb(dec ? RED : q.max() > 100 ? GOLD : CYAN, 0.85F * a), 0.5F);
         if (dec) {
             float left = q.decoherent() / (float) Math.max(1, q.decoherentMax());

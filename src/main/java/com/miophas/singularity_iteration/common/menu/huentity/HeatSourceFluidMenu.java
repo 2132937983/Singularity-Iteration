@@ -227,4 +227,7 @@ import org.jetbrains.annotations.Nullable;
         }
         return false;
     }
+
+    /** 0.1.10.6: index 0 of the synced data is not a progress. */
+    @Override protected int progressDataIndex() { return -1; }
 }

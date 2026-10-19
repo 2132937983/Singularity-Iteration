@@ -187,6 +187,11 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
     }
 
     private boolean isValidWaterContainer(ItemStack stack) {
+        // 0.1.10.6: also partly filled cells and water containers of other mods (through the fluid capability)
+        return isKnownWaterContainer(stack) || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, Fluids.WATER);
+    }
+
+    private boolean isKnownWaterContainer(ItemStack stack) {
         return stack.is(Items.WATER_BUCKET)
             || mio_icif_cells.isCellContainingFluid(stack, Fluids.WATER);
     }
@@ -199,7 +204,11 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
      */
     private void handleCoolFluidInput() {
         ItemStack input = itemHandler.getStackInSlot(COOL_FLUID_INPUT_SLOT);
-        if (input.isEmpty() || !isValidWaterContainer(input)) {
+        if (input.isEmpty()) {
+            return;
+        }
+        if (!isKnownWaterContainer(input)) {
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, COOL_FLUID_INPUT_SLOT, COOL_OUTPUT_SLOT, waterTank, Fluids.WATER)) setChanged();
             return;
         }
         if (waterTank.getFluidAmount() + FluidType.BUCKET_VOLUME > waterTank.getCapacity()) {
@@ -219,6 +228,10 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
             return;
         }
 
+        // 0.1.10.6: only a whole container (the capacity check above uses the stored amount, not the fluid kind)
+        if (waterTank.fill(new FluidStack(Fluids.WATER, FluidType.BUCKET_VOLUME), IFluidHandler.FluidAction.SIMULATE) < FluidType.BUCKET_VOLUME) {
+            return;
+        }
         int filled = waterTank.fill(new FluidStack(Fluids.WATER, FluidType.BUCKET_VOLUME),
             IFluidHandler.FluidAction.EXECUTE);
         if (filled >= FluidType.BUCKET_VOLUME) {

@@ -60,7 +60,12 @@ public class mio_icif_fluid_reactor_handler implements IFluidHandler {
     /** IC2 流体反应堆 GUI 显示的 {@code EmitHeat}（HU）= 本周期实际被冷媒吸收的热量。 */
     public int getEmitHeat(){return (int)Math.min(Integer.MAX_VALUE,(long)currentHeatGeneration*currentHuPerMB);}
     private boolean live(){return available.getAsBoolean()&&hold.isEmpty();}
+    /** 0.1.10.6: also any other container that can give coolant or water (a container of another mod). */
     private static boolean isColdContainer(ItemStack stack){
+        return isKnownColdContainer(stack)||com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack,f->coldCoolant(f)!=null);
+    }
+    /** Coolant and water buckets and SI cells: emptied by the original code below. */
+    private static boolean isKnownColdContainer(ItemStack stack){
         if(stack.is(mio_icif_fluids.COOLANT_BUCKET.get())||stack.is(Items.WATER_BUCKET))return true;
         return coldCoolant(mio_icif_cells.getCellFluid(stack).getFluid())!=null;
     }
@@ -80,7 +85,10 @@ public class mio_icif_fluid_reactor_handler implements IFluidHandler {
     public void processContainers(){
         if(!live())return;
         ItemStack cold=itemHandler.getStackInSlot(0),empty=itemHandler.getStackInSlot(2);
-        if(isColdContainer(cold)){
+        if(!isKnownColdContainer(cold)&&isColdContainer(cold)){
+            // 0.1.10.6: other containers go through the fluid capability; the emptied container goes to slot 1
+            if(com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler,0,1,inputTank,f->coldCoolant(f)!=null))changed.run();
+        }else if(isKnownColdContainer(cold)){
             var content=coldContainerContent(cold);
             var remainder=cold.is(mio_icif_fluids.COOLANT_BUCKET.get())||cold.is(Items.WATER_BUCKET)
                 ?new ItemStack(Items.BUCKET):mio_icif_cells.getEmptyCellForStack(cold);

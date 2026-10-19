@@ -1452,7 +1452,7 @@ public class mio_icif_capacities {
             }
         );
 
-        // 注册 HU 热能接收能力（只从背面接收：FACING 朝玩家，input() = FACING 的反面 = 背对玩家的一面）
+        // 注册 HU 热能接收能力（背面与正面接收：FACING 朝玩家 = 正面（铜板，0.1.10.9 起），input() = FACING 的反面 = 背面）
         event.registerBlockEntity(
             IMioIcifCapabilities.HEAT_STORAGE_BLOCK,
             mio_icif_block_entities.STIRLING_GENERATOR_ENTITY_TYPE.get(),

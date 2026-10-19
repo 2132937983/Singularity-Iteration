@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.suit.quantum;
 
+import com.miophas.singularity_iteration.common.suit.SyncHash;
+
 import com.miophas.singularity_iteration.common.registry.mio_icif_sounds;
 import com.miophas.singularity_iteration.common.suit.SuitModuleType;
 import com.miophas.singularity_iteration.common.suit.SuitModules;
@@ -154,11 +156,11 @@ public final class QuantumCore {
         if (s.dilationTicks > 0) QuantumDilation.tick(player, s);
         else if (!s.slowed.isEmpty() || !s.projectileSpeed.isEmpty() || s.realSlow) QuantumDilation.end(player, s, false);
         if (!s.addonKey.isEmpty()) QuantumActions.tickAddon(player, s);
-        blinkCharges(player, s);
+        int blinkMax = blinkCharges(player, s);   // 0.1.10.8: once per tick (also for the sync)
         QuantumSynergies.tickDecoy(player, s);             // 0.1.10.1 Afterimage Decoy
         if (online || s.markedTarget != -1) QuantumSynergies.tickDatalink(player, s);   // 0.1.10.1 Fleet Datalink
         regen(player, s, core, max);
-        sync(player, s, online, max);
+        sync(player, s, online, max, blinkMax);
     }
 
     private static boolean wearsQuantum(Player player) {
@@ -166,17 +168,18 @@ public final class QuantumCore {
         return false;
     }
 
-    private static void blinkCharges(ServerPlayer player, QuantumCoreState s) {
+    /** Recharges the blink charges; returns the maximum charges of the worn phase jump drive. */
+    private static int blinkCharges(ServerPlayer player, QuantumCoreState s) {
         int max = QuantumActions.blinkMaxCharges(player);
         if (max == 0) {
             s.blinkCharges = -1;
             s.blinkRecharge = 0;
-            return;
+            return max;
         }
         if (s.blinkCharges < 0 || s.blinkCharges > max) s.blinkCharges = max;
         if (s.blinkCharges >= max) {
             s.blinkRecharge = 0;
-            return;
+            return max;
         }
         if (s.blinkRecharge <= 0) s.blinkRecharge = Math.max(1, QuantumConfig.blinkCooldown());
         if (--s.blinkRecharge <= 0) {
@@ -184,6 +187,7 @@ public final class QuantumCore {
             s.blinkRecharge = s.blinkCharges < max ? Math.max(1, QuantumConfig.blinkCooldown()) : 0;
             s.sentHash = 0;
         }
+        return max;
     }
 
     private static void regen(ServerPlayer player, QuantumCoreState s, @Nullable ItemStack core, float max) {
@@ -206,12 +210,20 @@ public final class QuantumCore {
 
     // ------------------------------------------------------------------ sync
 
-    static void sync(ServerPlayer player, QuantumCoreState s, boolean online, float max) {
+    static void sync(ServerPlayer player, QuantumCoreState s, boolean online, float max, int blinkMax) {
         if (++s.syncTimer < 2) return;
         boolean regen = regenerating(player, s, online, max);
-        int blinkMax = QuantumActions.blinkMaxCharges(player);
-        int hash = java.util.Objects.hash(online, regen, s.decoherentTicks > 0, s.phaseTicks > 0, s.fieldOn, s.dilationTicks > 0,
-            s.blinkCharges, blinkMax, max);
+        // 0.1.10.8: the values of Objects.hash(...) without the array and the boxing
+        int hash = SyncHash.START;
+        hash = SyncHash.add(hash, online);
+        hash = SyncHash.add(hash, regen);
+        hash = SyncHash.add(hash, s.decoherentTicks > 0);
+        hash = SyncHash.add(hash, s.phaseTicks > 0);
+        hash = SyncHash.add(hash, s.fieldOn);
+        hash = SyncHash.add(hash, s.dilationTicks > 0);
+        hash = SyncHash.add(hash, s.blinkCharges);
+        hash = SyncHash.add(hash, blinkMax);
+        hash = SyncHash.add(hash, max);
         boolean running = s.phaseTicks > 0 || s.fieldOn || s.dilationTicks > 0 || s.decoherentTicks > 0 || s.blinkRecharge > 0;
         boolean changed = hash != s.sentHash || Math.abs(s.coherence - s.sentCoherence) >= 0.5F || running;
         if (!changed && s.syncTimer < 20) return;

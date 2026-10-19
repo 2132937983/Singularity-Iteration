@@ -246,10 +246,36 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
     }
 
     /** Four unsigned position words followed by the exact BE type id plus one as readiness. */
+    // ------------------------------------------------------------------ 0.1.10.6: overclock throttle
+    /**
+     * Overclock state of the machine of this menu: installed overclockers, throttle (percent),
+     * active overclockers, progress per tick, ticks per operation, EU per tick. The server reads
+     * it from the machine; the client from the synced binding data.
+     */
+    public record OverclockInfo(int installed, int throttle, int active, int progressPerTick, int ticksPerOperation, int energyPerTick) { }
+
+    /** The overclock state, or null when the machine has no overclocker (or no throttle). */
+    @org.jetbrains.annotations.Nullable
+    public OverclockInfo overclockInfo() {
+        if (machineBinding == null) return null;
+        int installed = machineBinding.get(MachineBinding.OC_INSTALLED);
+        if (installed <= 0) return null;
+        return new OverclockInfo(installed, machineBinding.get(MachineBinding.OC_THROTTLE), machineBinding.get(MachineBinding.OC_ACTIVE),
+            machineBinding.get(MachineBinding.OC_PER_TICK), machineBinding.get(MachineBinding.OC_TICKS), machineBinding.get(MachineBinding.OC_EU));
+    }
+
+    /** Server: sets the throttle of the bound machine for {@code player} (from the overclock slider packet). */
+    public final void applyOverclockThrottle(Player player, int percent) {
+        if (player.level().isClientSide || machineBinding == null || !isMachineMenuValid(player)) return;
+        if (machineBinding.owner.get() instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity machine)
+            machine.setOverclockThrottle(percent);
+    }
+
     private static final class MachineBinding implements ContainerData {
+        static final int OC_INSTALLED = 5, OC_THROTTLE = 6, OC_ACTIVE = 7, OC_PER_TICK = 8, OC_TICKS = 9, OC_EU = 10;
         private final Level level;
         private final Supplier<?> owner;
-        private final int[] received = new int[5];
+        private final int[] received = new int[11];
         private int receivedMask;
         MachineBinding(Level level, Supplier<?> owner) { this.level = level; this.owner = owner; }
         @Override public int getCount() { return received.length; }
@@ -259,16 +285,31 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
             Object value = owner.get();
             if (!(value instanceof BlockEntity tile) || tile.isRemoved() || tile.getLevel() != level) return 0;
             if (index < 4) return (int)(tile.getBlockPos().asLong() >>> (index * 16)) & 0xffff;
+            if (index >= OC_INSTALLED) return overclock(tile, index);
             int id = BuiltInRegistries.BLOCK_ENTITY_TYPE.getId(tile.getType()) + 1;
             return id > 0 && id <= 0xffff ? id : 0;
         }
+        private static int overclock(BlockEntity tile, int index) {
+            if (!(tile instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity m)) return 0;
+            int installed = m.getInstalledOverclockers();
+            if (installed <= 0) return 0;
+            return switch (index) {
+                case OC_INSTALLED -> installed;
+                case OC_THROTTLE -> m.getOverclockThrottle();
+                case OC_ACTIVE -> m.getActiveOverclockers();
+                case OC_PER_TICK -> m.getDisplayProgressPerTick();
+                case OC_TICKS -> m.getTicksPerOperation();
+                default -> (int) Math.min(Integer.MAX_VALUE, m.getEffectiveEnergyPerTick());
+            };
+        }
         @Override public void set(int index, int value) {
-            received[index] = value & 0xffff;
+            // the base indices carry 16 bits; the overclock indices are whole ints (two 16-bit halves)
+            received[index] = index < OC_INSTALLED ? value & 0xffff : value;
             receivedMask |= 1 << index;
         }
         IItemHandler clientHandler() {
             int type = received[4];
-            if (receivedMask != 0x1f || type == 0) return null;
+            if ((receivedMask & 0x1f) != 0x1f || type == 0) return null;
             long packed = 0;
             for (int i = 0; i < 4; i++) packed |= (long)received[i] << (i * 16);
             BlockPos pos = BlockPos.of(packed);

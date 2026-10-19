@@ -508,8 +508,22 @@ public final class NanoSuit {
         // 0.1.10.0: the keys also serve the quantum actions; "quantum" tells the client that a quantum action is on offer
         boolean quantum = com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isAction(p)
             || com.miophas.singularity_iteration.common.suit.quantum.QuantumActions.isAction(q);
-        int hash = java.util.Objects.hash(s.overheated, s.camoTicks > 0, s.meshTicks > 0, s.reconTicks > 0, s.primary, s.secondary, pk, qk, pc, qc,
-            online, s.hfLevel, s.generatedLastSecond, quantum);
+        // 0.1.10.8: the values of Objects.hash(...) without the array and the boxing
+        int hash = com.miophas.singularity_iteration.common.suit.SyncHash.START;
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, s.overheated);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, s.camoTicks > 0);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, s.meshTicks > 0);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, s.reconTicks > 0);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, s.primary);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, s.secondary);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, pk);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, qk);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, pc);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, qc);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, online);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, s.hfLevel);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, s.generatedLastSecond);
+        hash = com.miophas.singularity_iteration.common.suit.SyncHash.add(hash, quantum);
         boolean changed = hash != s.sentHash || Math.abs(s.reserve - s.sentReserve) >= 0.5F || Math.abs(s.heat - s.sentHeat) >= 0.5F
             || s.camoActive() || s.meshTicks > 0;
         if (!changed && s.syncTimer < 20) return;

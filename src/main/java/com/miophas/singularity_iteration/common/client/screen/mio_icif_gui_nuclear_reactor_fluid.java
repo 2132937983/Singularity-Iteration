@@ -71,15 +71,10 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
     private static final int FLUID_WIDTH = 12;
     private static final int FLUID_HEIGHT = 47;
 
-    // 输出液体: 位置 192, 54, uv12, 47
-    private static final int OUTPUT_FLUID_X = 192;
+    // 输出液体: 位置 190, 54, uv12, 47（0.1.10.6：原为 192，越出右侧槽框 2 像素；
+    // 槽框内腔为 190..201，与输入槽 10..21 对称。刻度 192 本就右对齐，不变）
+    private static final int OUTPUT_FLUID_X = 190;
     private static final int OUTPUT_FLUID_Y = 54;
-
-    // 热量条位置
-    private static final int HEAT_BAR_X = 188;
-    private static final int HEAT_BAR_Y = 145;
-    private static final int HEAT_BAR_WIDTH = 16;
-    private static final int HEAT_BAR_HEIGHT = 54;
 
     public mio_icif_gui_nuclear_reactor_fluid(FluidReactorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -127,20 +122,18 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
                     FLUID_WIDTH, FLUID_HEIGHT,
                     new FluidStack(coolantFluid(menu.getOutputCoolantKind(), false), outputFluidAmount), outputCapacity);
             }
-
-            // 绘制热量条
-            int heatProgress = menu.getHeatProgressPixels();
-            if (heatProgress > 0) {
-                // 热量条从下往上填充
-                int heatBarFillHeight = (int) ((float) heatProgress / 100 * HEAT_BAR_HEIGHT);
-                guiGraphics.blit(ATLAS_TEXTURE, x + HEAT_BAR_X, y + HEAT_BAR_Y + (HEAT_BAR_HEIGHT - heatBarFillHeight), 0, (float) 126, (float) 2 + (HEAT_BAR_HEIGHT - heatBarFillHeight), HEAT_BAR_WIDTH, heatBarFillHeight, ATLAS_WIDTH, ATLAS_HEIGHT);
-            }
+            // 0.1.10.6：移除旧热量条（188,145）。该位置没有槽框，图集区域几乎透明，只会在
+            // 物品栏右侧画出一条灰线；热量改由下方信息面板的文字颜色表示。
         }
     }
 
     // 信息文本显示位置 - 与核反应堆发电模式相同
-    private static final int INFO_TEXT_X = 7;
+    private static final int INFO_TEXT_X = 9;
     private static final int INFO_TEXT_Y = 138;
+    // 纹理中的绿色网格信息面板：外框 6..205 × 136..147，内腔 7..204 × 137..146
+    private static final int PANEL_X0 = 7, PANEL_Y0 = 137, PANEL_X1 = 205, PANEL_Y1 = 147;
+    private static final int PANEL_BACKING = 0xD00B140D;
+    private static final int OUTPUT_INK = 0xFF8FE9FF;
 
     /** 按冷媒下标取冷/热流体（0 = 冷却液，1 = 水；其余按冷却液处理）。 */
     private static net.minecraft.world.level.material.Fluid coolantFluid(int kind, boolean cold) {
@@ -168,12 +161,21 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
         int maxHeat = menu.getMaxHeat();
         int heatOutput = menu.getHeatOutput();
 
-        // 使用翻译键
-        String heatText = Component.translatable("gui.mio_icif.nuclear_reactor.heat", heat, maxHeat).getString();
-        String outputText = Component.translatable("gui.mio_icif.reactor.heat_output", heatOutput).getString();
-        String infoText = heatText + "    " + outputText;
+        // 0.1.10.6：面板底色是深绿色网格，旧的深灰文字（0x2A2E33）几乎看不清。
+        // 先在面板内腔铺一层深色半透明底，再用带阴影的亮色文字：热量在左（按热量比例由绿变黄变红），
+        // 发热功率在右（青色）。文字过长时自动缩小，不会越出面板。
+        float heatFraction = maxHeat > 0 ? Math.max(0F, Math.min(1F, heat / (float) maxHeat)) : 0F;
+        guiGraphics.fill(PANEL_X0, PANEL_Y0, PANEL_X1, PANEL_Y1, PANEL_BACKING);
+        Component outputLine = Component.translatable("gui.mio_icif.reactor.heat_output", heatOutput);
+        int outputMax = (PANEL_X1 - PANEL_X0) / 2 - 4;
+        int outputWidth = Math.min(this.font.width(outputLine), outputMax);
+        drawFittedRight(guiGraphics, this.font, outputLine, PANEL_X1 - 2, INFO_TEXT_Y, outputMax, OUTPUT_INK, true);
+        drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.nuclear_reactor.heat", heat, maxHeat),
+            INFO_TEXT_X, INFO_TEXT_Y, PANEL_X1 - 2 - outputWidth - 8 - INFO_TEXT_X, heatInk(heatFraction), true);
+    }
 
-        // 绘制绿色文本 (0x2A2E33 是绿色)
-        guiGraphics.drawString(this.font, infoText, INFO_TEXT_X, INFO_TEXT_Y, 0x2A2E33, false);
+    /** 热量文字颜色：低于 50 % 为浅绿，低于 85 % 为琥珀色，其余为红色。 */
+    static int heatInk(float fraction) {
+        return fraction < 0.5F ? 0xFFB8FFB0 : fraction < 0.85F ? 0xFFFFD36A : 0xFFFF7A6A;
     }
 }

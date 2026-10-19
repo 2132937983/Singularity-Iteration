@@ -362,5 +362,14 @@ public final class ConductorRegistry implements AutoCloseable {
             Objects.requireNonNull(visitor, "visitor"); snapshot.active();
             routes.visitPath(receiver, id -> visitor.accept(snapshot.position(id)));
         }
+        /**
+         * 0.1.10.7: an identity of this path within its snapshot (the cached route search and the
+         * receiver vertex). Two {@code Path} objects of the same search and receiver have equal keys,
+         * so a caller can keep per-path data while the snapshot lives.
+         */
+        public Object key() { return new PathKey(routes, receiver); }
     }
+
+    /** Route search (by identity: {@code Routes} has no equals) and receiver vertex of a path. */
+    private record PathKey(ConductorGraph.Routes routes, int receiver) { }
 }

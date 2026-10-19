@@ -60,6 +60,7 @@ public final class SuitServer {
     @SubscribeEvent
     public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         threatSent.remove(event.getEntity().getUUID());
+        threatLast.remove(event.getEntity().getUUID());
         gridAsked.remove(event.getEntity().getUUID());
     }
 
@@ -78,9 +79,26 @@ public final class SuitServer {
             int level = threatLevel(other, player);
             if (level > 0 && ids.size() < 256) { ids.add(other.getId()); levels.add((byte) level); }
         }
+        // 0.1.10.7: send only when the list changed, and refresh an unchanged list every
+        // THREAT_REFRESH ticks (the client forgets a list after 1.5 s). Before, the list went out
+        // every 5 ticks also when nothing changed. An empty list is not refreshed: it stays empty.
+        int[] idArray = ids.toIntArray();
+        byte[] levelArray = levels.toByteArray();
+        long hash = 31L * java.util.Arrays.hashCode(idArray) + java.util.Arrays.hashCode(levelArray);
+        long now = player.serverLevel().getGameTime();
+        long[] last = threatLast.get(player.getUUID());
+        boolean changed = last == null || last[0] != hash || threatSent.get(player.getUUID()) == null;
+        boolean refresh = idArray.length > 0 && last != null && now - last[1] >= THREAT_REFRESH;
+        if (!changed && !refresh) return;
         threatSent.put(player.getUUID(), Boolean.TRUE);
-        SuitPackets.send(player, new SuitPackets.Threats(ids.toIntArray(), levels.toByteArray()));
+        threatLast.put(player.getUUID(), new long[]{hash, now});
+        SuitPackets.send(player, new SuitPackets.Threats(idArray, levelArray));
     }
+
+    /** 0.1.10.7: ticks after which an unchanged, non-empty threat list is sent again. */
+    public static final int THREAT_REFRESH = 20;
+    /** 0.1.10.7: per player, the hash of the last threat list sent and the game time it was sent. */
+    private static final Map<UUID, long[]> threatLast = new HashMap<>();
 
     /**
      * 2 (red): a mob targets the wearer, or a hostile mob looks at the wearer.

@@ -445,3 +445,102 @@ A data map on entity types, synced to the clients: `data/<namespace>/data_maps/e
 * `radius`: danger radius in blocks (required); `fuse`: full fuse in seconds (optional); `label`: HUD label (optional, at most 9 characters).
 * The timer: a public `getFuse()` of the entity (or `getFuseTime`, `getFuseTicks`, `getFuseTimer`, in ticks), else `fuse` minus the age of the entity on the client, else no timer (the HUD shows "--").
 * Without a data map entry, the entity type tag `mio_icif:blast_warning`, subclasses of vanilla `PrimedTnt` and of the creeper, explosive projectiles and entities with an explosive word in their id also count (see the guide page "Blast Warning Timer").
+
+## 13. Machine prefab: routing, overclock throttle, fluid containers (0.1.10.6)
+
+### 13.1 Item routing of the Ejector and Pulling upgrades (`AbstractProcessingMachineBlockEntity`)
+
+* Faces without a direction are tried in this order: storage first, then other blocks, then machines. `protected int neighbourKind(Direction)` returns 0 (storage: block tag `mio_icif:automation/storage`, chests, barrels, shulker boxes), 1 (other) or 2 (machine: block tag `mio_icif:automation/processor`, every `AbstractProcessingMachineBlockEntity`, furnaces, brewing stands). `protected Direction[] byTargetPriority(Iterable<Direction>)` sorts stably by this kind. Override `neighbourKind` for special neighbours.
+* Ping-pong guard, `protected boolean pingPong(Direction face, boolean eject)`: a machine does not eject into a machine that it pulled from in the last `PING_PONG_TICKS` (200 ticks), does not pull from a machine that it ejected into, and does not eject into a neighbouring machine whose ejector points back (`public boolean ejectsToward(Direction)`). Storage neighbours are never limited.
+* Tags: `mio_icif:automation/storage` (default: `#c:chests`, `#c:barrels`, `#minecraft:shulker_boxes`, the storage crates of SI) and `mio_icif:automation/processor` (empty). Add the blocks of your mod to them.
+
+### 13.2 Overclock throttle
+
+* `getInstalledOverclockers()`, `getOverclockThrottle()` (0..100 %), `getActiveOverclockers()`, `setOverclockThrottle(int percent)` (server; clamps, recalculates the stats, marks the block entity changed). `static activeOverclockers(int installed, int percent)` rounds to the nearest whole overclocker.
+* The stats come from `MachineUpgradeStats.withActiveOverclockers(int)`: speed and energy use follow the working overclockers, the energy storage bonus keeps all installed ones. A subclass that builds its own stats calls `throttled(MachineUpgradeStats)`.
+* Saved as the NBT key `scex_oc_throttle` (absent = 100 %). The machine screen shows a slider when at least one overclocker is installed; it sends the C2S packet `mio_icif:machine_overclock` (container id, percent). The server applies it only while the menu of that machine is open and valid.
+
+### 13.3 Displayed progress
+
+* A fast overclocked operation can finish and reset its progress in one tick, so the GUI always saw 0. `getDisplayProgress()` returns the full progress for the tick after an operation finishes; menus sync it instead of `getProgress()`. `getDisplayProgressPerTick()` and `getTicksPerOperation()` give the speed of the current setting.
+
+### 13.4 Fluid containers and tags
+
+* Fluid machines accept every fluid container through the item fluid capability (`Capabilities.FluidHandler.ITEM`): buckets, partly filled cells, containers of other mods. A container that still holds fluid stays in its slot; an emptied one goes to the empty-container slot. Make your container work by giving it a correct `IFluidHandlerItem` (`getContainer()` returns what is left).
+* The Crop Manager takes water and Weed-EX from every face; its Fluid Pulling Upgrade asks the neighbour for each fluid by name (`drain(FluidStack)`).
+* The fluid type of Weed-EX has the description id `fluid_type.mio_icif.weed_ex`.
+* Milk Wart (`mio_icif:resource/item_milk_wart`) is in the item tags `c:buckets/milk`, `c:drinks/milk`, `c:milks` and `forge:milk`. Recipes that want milk should use one of these tags.
+* The Next-Gen Crop Analyzer stores UU-Matter in the scanner custom data (`Scanner` / `UuMb`, at most 4,000 mB); 1 mB is one gene-editing catalyst.
+
+### 13.5 Quantum Compute Cores
+
+* Cores on the chestplate and on the leggings stack: each active core adds one link and 8 QB.
+
+## 14. Server performance (0.1.10.7)
+
+The changes below keep every result (energy split, losses, fuses, shocks, meter values) and make the
+same work cheaper. Addons need to change nothing unless a point says so.
+
+### 14.1 Energy network
+
+* `IndependentEnergyMode`: the overload switches (`voltageOverload`, `enetExplosions`, `enetCableMeltdown`, `enetShockDamage`) are cached until `CoreConfig.revision()` changes (every `CoreConfig.overrideBool` counts) or a setter of the class runs. `enabled()` and `feature(String)` read their launch property once. The distribution mode, line loss model and loss rounding still read their system property at each call.
+* Path profiles: per conductor snapshot and delivery path, the engine keeps the lowest fuse limit, insulation breakdown and insulation absorption of the path. A delivery at or below all of them is settled without visiting the path cable by cable; any other delivery, and any path with an unloaded chunk or a missing block entity, is visited as before. A fuse or stripped insulation clears the profiles.
+* Meter samples (`IEnergyNetAPI#getNodeStats`): the samples of a tick are queued and added when a meter reads, in the order they were taken (same values as before).
+* A native pass in which no source has an allowance replays the result of the same pass of an earlier tick (same snapshot, routing generation, endpoint edits and start cursor).
+* The commit of a window reuses the validation done for the same window when nothing was written in between; the commit still checks every written storage.
+* Diagnostics: `IndependentSiEnergy#optimizationCounters()` (profile hits, path visits, idle replays, reused validations) and the operator command `/mio_icif perf`.
+
+### 14.2 Cables
+
+* A cable of the independent network has no block entity ticker. `AbstractWireBlockEntity#isPowered()` compares the game time with the time of the last `onEnergyPass()` (20 ticks); `poweredTicksRemaining` is still set and is counted down only by wires that tick (legacy network).
+* An addon cable block whose block entity extends `AbstractWireBlockEntity` should return no ticker when `IndependentSiEnergy.controls(state)` is true.
+
+### 14.3 Machines and automation
+
+* Item ejector / pulling upgrades (`AbstractProcessingMachineBlockEntity`): after a run that moved nothing they wait 4, 8, 16, then 20 ticks (`core.runtime.processing.AutomationPacing`; config `Performance.automationPacing`). `onInventoryChanged` wakes them. A subclass with its own item transfers calls the new `noteAutomationMove()` after a move. Fluid upgrades run every tick.
+* `neighbourKind(Direction)` is cached per face until the block on that face changes (capability invalidation), at most 200 ticks.
+* `WorldFuelCollection` (item and experience generators): after a search that found nothing it searches again after 10 ticks.
+* The geomagnetic generator checks its structure when an antenna or pedestal next to it is placed or removed, after loading, and every 40 ticks; the biome every 600 ticks.
+
+## 15. Server performance, phase C (0.1.10.8)
+
+As in section 14, the energy results do not change. The machine sleep and the fluid upgrade pacing
+change when a machine looks again (at most 1 second later); both have a config switch.
+
+### 15.1 Energy network
+
+* Route plan cache: a network with more than one native window (more than 32 sources, more than 128
+  reachable sinks, or the route vertex bound) keeps the plan of each window after its settlement. The
+  next pass takes it again when the conductor snapshot, the routing view and generation, the endpoint
+  edits, the first source and the first receiver are the same; such a plan is the plan that would be
+  built again. The cache holds at most 64 plans, 1,000,000 route array cells and the routes of two full
+  plans per grid, and is emptied when any of these keys changes. The per-tick route budgets are still
+  reserved for every window.
+* The balance change of a window is summed as credits and debits in `EnergyAmount` (was one signed
+  `BigInteger` per port); the result and the exceptions are the same.
+* `IndependentSiEnergy#optimizationCounters()` has a fifth value: windows taken from the plan cache.
+  `/mio_icif perf` shows it with the machine ticks skipped by the sleep.
+
+### 15.2 Machines
+
+* `AbstractProcessingMachineBlockEntity#idleSleepAllowed()` (new, protected, default `false`): a
+  machine that returns `true` sleeps after 20 idle ticks (no work, no progress, redstone allows work,
+  no `setChanged()`, stored energy unchanged, empty battery slot). While it sleeps, only its automation
+  upgrades run. Any `setChanged()` (also every inventory change), a change of the stored energy,
+  `forceStartWork()`, or 20 ticks wake it. Return `true` only when `canWork()` depends on nothing else.
+  SI enables it for the macerator, electric furnace, extractor, compressor, recycler and metal former.
+  `isIdleAsleep()` and `wakeFromIdleSleep()` are public. Config `Performance.machineSleep`;
+  `core.runtime.processing.MachineSleep`.
+* Fluid ejector / pulling upgrades use the waits of the item upgrades (4, 8, 16, 20 ticks after a
+  run that moved nothing) when the machine uses the built-in transfer; a change of its own tanks or
+  inventory runs them at the next tick. A machine that overrides `handleFluidUpgrades`, `ejectFluids`
+  or `pullFluids` runs them every tick as before. Config `Performance.automationPacing` covers both.
+* The recycler no longer calls `setChanged()` every tick while idle.
+
+### 15.3 Suits and Wingmen
+
+* The suit sync hashes are computed without boxing (the same values as `Objects.hash`).
+* Wingman target choice and firing station: the squad and the nearby hostiles are fetched once per
+  choice, and the line-of-sight rays are cast only for the best candidates. The choice is the same.
+  The separation push and the projectile scan of the escort run every 2nd tick.
+* The suit HUD eases the reserve, heat and coherence bars toward the synced values.

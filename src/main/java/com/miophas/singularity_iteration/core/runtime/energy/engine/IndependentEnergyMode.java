@@ -3,6 +3,7 @@ package com.miophas.singularity_iteration.core.runtime.energy.engine;
 
 import com.miophas.singularity_iteration.core.runtime.CoreConfig;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * One admission policy for numerical ownership and placement/load factories.
@@ -22,41 +23,69 @@ import java.util.Locale;
  * then the value that the common config set with a setter of this class, then
  * {@code core.ini}, then the default. The system property is read at each
  * call, so a test server can select a mode for one batch.
+ *
+ * <h2>Cached switches (0.1.10.7)</h2>
+ * The energy settlement asks the overload switches once per conductor of every delivery path,
+ * every tick. A server profile showed these config reads at 7 % of the server thread. The
+ * switches are now computed once and kept until {@link CoreConfig#revision()} changes (a config
+ * override) or a setter of this class runs. {@link #enabled()} and {@link #feature(String)} read
+ * their launch properties once. The distribution mode, the line loss model and the loss rounding
+ * still read their system property at each call (tests select them per batch); only their config
+ * part is cached.
  */
 public final class IndependentEnergyMode {
     private IndependentEnergyMode() { }
-    public static boolean enabled() { return Boolean.parseBoolean(System.getProperty("scex.independent.energy", "true")); }
+
+    private static final boolean ENABLED = Boolean.parseBoolean(System.getProperty("scex.independent.energy", "true"));
+    private static final ConcurrentHashMap<String, Boolean> FEATURES = new ConcurrentHashMap<>();
+
+    public static boolean enabled() { return ENABLED; }
     public static boolean feature(String feature) {
-        return enabled() && Boolean.parseBoolean(System.getProperty("scex.independent." + feature, "true"));
+        return ENABLED && FEATURES.computeIfAbsent(feature,
+            name -> Boolean.parseBoolean(System.getProperty("scex.independent." + name, "true")));
     }
 
     private static volatile Boolean voltageOverloadOverride = null;
     private static volatile String distributionOverride = null;
     private static volatile String lineLossOverride = null;
 
-    public static boolean voltageOverload() {
-        if (voltageOverloadOverride != null) return voltageOverloadOverride;
-        return CoreConfig.getBool("energynet", "enableVoltageOverload", true);
+    /** The switches derived from the config and the overrides, for one config revision. */
+    private record Switches(int revision, Boolean overloadOverride, String distributionOverride, String lineLossOverride,
+                            boolean overload, boolean explosions, boolean meltdown, boolean shock, boolean roundLoss,
+                            String distribution, String lineLoss) { }
+
+    private static volatile Switches switches;
+
+    private static Switches switches() {
+        Switches current = switches;
+        int revision = CoreConfig.revision();
+        Boolean overload = voltageOverloadOverride;
+        String distribution = distributionOverride, loss = lineLossOverride;
+        if (current != null && current.revision == revision && current.overloadOverride == overload
+                && current.distributionOverride == distribution && current.lineLossOverride == loss) return current;
+        boolean on = overload != null ? overload : CoreConfig.getBool("energynet", "enableVoltageOverload", true);
+        current = new Switches(revision, overload, distribution, loss, on,
+            on && CoreConfig.getBool("energynet", "enableEnetExplosions", true),
+            on && CoreConfig.getBool("energynet", "enableEnetCableMeltdown", true),
+            on && CoreConfig.getBool("energynet", "enableEnetShockDamage", true),
+            CoreConfig.getBool("energynet", "roundEnetLoss", true),
+            distribution != null ? distribution : CoreConfig.getString("energynet", "distributionMode", "fair"),
+            loss != null ? loss : CoreConfig.getString("energynet", "lineLossModel", "lossless"));
+        switches = current;
+        return current;
     }
 
-    public static boolean enetExplosions() {
-        if (!voltageOverload()) return false;
-        return CoreConfig.getBool("energynet", "enableEnetExplosions", true);
-    }
+    public static boolean voltageOverload() { return switches().overload(); }
 
-    public static boolean enetCableMeltdown() {
-        if (!voltageOverload()) return false;
-        return CoreConfig.getBool("energynet", "enableEnetCableMeltdown", true);
-    }
+    public static boolean enetExplosions() { return switches().explosions(); }
 
-    public static boolean enetShockDamage() {
-        if (!voltageOverload()) return false;
-        return CoreConfig.getBool("energynet", "enableEnetShockDamage", true);
-    }
+    public static boolean enetCableMeltdown() { return switches().meltdown(); }
+
+    public static boolean enetShockDamage() { return switches().shock(); }
 
     public static boolean roundEnetLoss() {
-        return Boolean.parseBoolean(System.getProperty("scex.independent.roundEnetLoss",
-            Boolean.toString(CoreConfig.getBool("energynet", "roundEnetLoss", true))));
+        String property = System.getProperty("scex.independent.roundEnetLoss");
+        return property != null ? Boolean.parseBoolean(property) : switches().roundLoss();
     }
 
     public static void setVoltageOverload(boolean enabled) {
@@ -77,16 +106,14 @@ public final class IndependentEnergyMode {
     /** Returns {@code fair} or {@code legacy}. An unknown value gives {@code fair}. */
     public static String distributionMode() {
         String value = System.getProperty("scex.independent.distribution");
-        if (value == null) value = distributionOverride;
-        if (value == null) value = CoreConfig.getString("energynet", "distributionMode", "fair");
+        if (value == null) value = switches().distribution();
         return "legacy".equalsIgnoreCase(value.trim()) ? "legacy" : "fair";
     }
 
     /** Returns the line loss model of the fair-share distributor. An unknown value gives LOSSLESS. */
     public static FairShareDistributor.LineLoss lineLoss() {
         String value = System.getProperty("scex.independent.lineLoss");
-        if (value == null) value = lineLossOverride;
-        if (value == null) value = CoreConfig.getString("energynet", "lineLossModel", "lossless");
+        if (value == null) value = switches().lineLoss();
         return "proportional".equals(value.trim().toLowerCase(Locale.ROOT))
             ? FairShareDistributor.LineLoss.PROPORTIONAL : FairShareDistributor.LineLoss.LOSSLESS;
     }

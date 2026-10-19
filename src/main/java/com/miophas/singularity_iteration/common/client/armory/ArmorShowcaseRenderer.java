@@ -211,12 +211,55 @@ public class ArmorShowcaseRenderer implements BlockEntityRenderer<ArmorShowcaseB
         @Override public VertexConsumer setNormal(float x, float y, float z) { delegate.setNormal(x, y, z); return this; }
     }
 
+    /**
+     * Blades of SlashBlade: Resharped in the hands of the hologram (0.1.10.6). Resharped draws a
+     * held blade only through its own player layer: for every hand display context its item
+     * renderer draws nothing, so on the projector (an armour stand) the blade was invisible. This
+     * layer draws the blade part of the blade model at the hand, held like a vanilla sword: the
+     * grip in the fist, the tip along the item's up axis (as the handheld display transform puts
+     * a sword), with the same size as the Armory flight ({@link SlashBladeResharpedBridge#MODEL_SCALE}).
+     */
+    static final class BladeHandLayer extends net.minecraft.client.renderer.entity.layers.RenderLayer<ArmorStand, net.minecraft.client.model.ArmorStandArmorModel> {
+        BladeHandLayer(net.minecraft.client.renderer.entity.RenderLayerParent<ArmorStand, net.minecraft.client.model.ArmorStandArmorModel> parent) {
+            super(parent);
+        }
+
+        @Override
+        public void render(PoseStack pose, MultiBufferSource buffers, int light, ArmorStand stand, float limbSwing, float limbSwingAmount,
+                           float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
+            renderHand(pose, buffers, light, stand.getMainHandItem(), net.minecraft.world.entity.HumanoidArm.RIGHT);
+            renderHand(pose, buffers, light, stand.getOffhandItem(), net.minecraft.world.entity.HumanoidArm.LEFT);
+        }
+
+        private void renderHand(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack, net.minecraft.world.entity.HumanoidArm arm) {
+            if (!SlashBladeResharpedBridge.isBlade(stack)) return;
+            pose.pushPose();
+            // the frame of a held item, as vanilla ItemInHandLayer sets it up
+            getParentModel().translateToHand(arm, pose);
+            pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90.0F));
+            pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180.0F));
+            pose.translate((arm == net.minecraft.world.entity.HumanoidArm.LEFT ? -1 : 1) / 16.0F, 0.125F, -0.625F);
+            // where the handheld display transform puts the grip of a sword, then the blade:
+            // tip (-x of blade.obj) onto +y, leaning 10 degrees like a held sword
+            pose.translate(0.0F, -0.19F, 0.11F);
+            pose.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-10.0F));
+            pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-90.0F));
+            float s = SlashBladeResharpedBridge.MODEL_SCALE;
+            pose.scale(s, s, s);
+            pose.translate(-SlashBladeResharpedBridge.GRIP_X, 0, 0);
+            SlashBladeResharpedBridge.renderBlade(stack, pose, buffers, light);
+            pose.popPose();
+        }
+    }
+
     /** Armour stand renderer with the graphite mannequin texture (the body is invisible in hologram mode). */
     static final class MannequinRenderer extends ArmorStandRenderer {
         MannequinRenderer(EntityRendererProvider.Context context) {
             super(context);
             // 0.1.9.0: frame core attachments are part of the projected outfit
             addLayer(new com.miophas.singularity_iteration.common.client.suit.CoreAttachmentLayer<>(this));
+            // 0.1.10.6: SlashBlade blades (their hand render contexts draw nothing on a non-player)
+            addLayer(new BladeHandLayer(this));
         }
 
         @Override

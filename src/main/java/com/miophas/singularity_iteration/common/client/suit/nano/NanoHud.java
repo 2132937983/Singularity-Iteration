@@ -67,14 +67,17 @@ public final class NanoHud {
         float l0 = (float) Math.toRadians(200), l1 = (float) Math.toRadians(340);    // bottom-left .. top-left
         float h0 = (float) Math.toRadians(160), h1 = (float) Math.toRadians(20);     // bottom-right .. top-right
         int segs = 14;
-        float res = Mth.clamp(s.reserve() / 100F, 0, 1);
+        // 0.1.10.8: the bars and read-outs draw the eased values (HudLerp); the logic uses the synced ones
+        float shownReserve = NanoClient.SHOWN_RESERVE.get(partial, s.reserve());
+        float shownHeat = NanoClient.SHOWN_HEAT.get(partial, s.heat());
+        float res = Mth.clamp(shownReserve / 100F, 0, 1);
         segmented(g, cx, cy, r, l0, l1, segs, 1F, 2.2F, FcsDraw.argb(CYAN, 0.16F * a));
         segmented(g, cx, cy, r, l0, l1, segs, res, 2.2F, FcsDraw.argb(CYAN, 0.9F * a));
         // cost markers of the two keys on the reserve arc (0.1.10.4: labelled with the bound keys)
         String vk = NanoClient.keyLabel(NanoClient.PRIMARY_KEY, "V"), bk = NanoClient.keyLabel(NanoClient.SECONDARY_KEY, "B");
         costMarker(g, cx, cy, r, l0, l1, s.primaryKey(), vk, a, s.reserve());
         costMarker(g, cx, cy, r, l0, l1, s.secondaryKey(), bk, a, s.reserve());
-        float heat = Mth.clamp(s.heat() / Math.max(1, s.heatCap()), 0, 1);
+        float heat = Mth.clamp(shownHeat / Math.max(1, s.heatCap()), 0, 1);
         int heatCol = s.overheated() ? RED : heat > 0.7F ? RED : heat > 0.4F ? AMBER : CYAN;
         float pulse = s.overheated() ? 0.55F + 0.45F * (float) Math.sin(t * 0.6F) : 1F;
         segmented(g, cx, cy, r, h0, h1, segs, 1F, 2.2F, FcsDraw.argb(heatCol, 0.14F * a));
@@ -96,8 +99,8 @@ public final class NanoHud {
                 cx + (float) Math.sin(ang) * (r + 3), cy - (float) Math.cos(ang) * (r + 3), 1F, FcsDraw.argb(0xFFFFFF, 0.9F * a));
         }
         // read-outs
-        FcsDraw.textRight(g, String.format(Locale.ROOT, "RSV %02d", Math.round(s.reserve())), cx - r - 5, cy + 9, FcsDraw.argb(CYAN, 0.85F * a), 0.5F);
-        String heatText = s.overheated() ? "VENT" : String.format(Locale.ROOT, "HEAT %02d", Math.round(s.heat()));
+        FcsDraw.textRight(g, String.format(Locale.ROOT, "RSV %02d", Math.round(shownReserve)), cx - r - 5, cy + 9, FcsDraw.argb(CYAN, 0.85F * a), 0.5F);
+        String heatText = s.overheated() ? "VENT" : String.format(Locale.ROOT, "HEAT %02d", Math.round(shownHeat));
         FcsDraw.text(g, heatText, cx + r + 5, cy + 9, FcsDraw.argb(heatCol, 0.85F * a * pulse), 0.5F);
 
         // ---- burst chips

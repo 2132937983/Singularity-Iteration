@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "#c:chests", "required": false },
+    { "id": "#c:barrels", "required": false },
+    { "id": "#minecraft:shulker_boxes", "required": false },
+    "mio_icif:build/block_wood_storage",
+    "mio_icif:build/block_bronze_storage",
+    "mio_icif:build/block_iron_storage",
+    "mio_icif:build/block_adviron_storage",
+    "mio_icif:build/block_iridium_storage",
+    "mio_icif:build/block_titanium_storage"
+  ]
+}

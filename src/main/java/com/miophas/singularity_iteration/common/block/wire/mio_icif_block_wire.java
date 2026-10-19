@@ -872,7 +872,11 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     @Override
     @Nullable
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return level.isClientSide ? null :
+        // 0.1.10.7: a wire that the independent energy network controls does nothing in its tick but
+        // count its powered state down, which is now a time comparison (AbstractWireBlockEntity):
+        // it gets no ticker. Thousands of cables no longer tick every game tick.
+        if (level.isClientSide || com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.controls(state)) return null;
+        return
             (l, p, s, blockEntity) -> {
                 if (blockEntity instanceof mio_icif_wire wire) {
                     mio_icif_wire.tick(l, p, s, wire);

@@ -77,6 +77,10 @@ Lead stops radiation. Radiation goes in a straight line from the reactor to a cr
 - A full hazmat suit or a full quantum suit still protects completely.
 - Radioactive items in a <ItemLink id="mio_icif:normal/item_contain_ment_box" /> do not irradiate you. The box has 18 slots: use it to open it.
 
+## Accident audit
+
+The reactor records its last 40 cycles. After an accident a <ItemLink id="mio_icif:reactor/item_reactor_blackbox" /> drops at the site. Use it, or run `/mio_icif reactor audit`, to read the report: the main cause, the core layout with the melted parts and the hull heat graph. See [Reactor Accident Audit](reactor_audit.md).
+
 ## Notes
 
 

@@ -177,8 +177,8 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     // 0.1.8.0: native EU distribution algorithm.
     public static final ModConfigSpec.ConfigValue<String> ENERGY_NET_DISTRIBUTION_MODE = ENERGY_NET_BUILDER
             .comment("电网分配算法 / Native EU distribution algorithm",
-                    "fair = 确定性均等分配（智能电网）：负载与变压器优先于储电设备；同一阶段的每台设备获得相同的需求满足比例。默认值。",
-                    "fair = deterministic fair share (smart grid). Loads and transformers first, storage last. Equal satisfaction ratio. Default.",
+                    "fair = 确定性均等分配（智能电网）：负载与变压器优先于储电设备；同一阶段按最大最小公平（注水）分配，需求小的设备先被满足，大需求设备不能独占；为下游机器供电的储电设备在优先阶段获得其输出额度（0.1.10.12）。默认值。",
+                    "fair = deterministic fair share (smart grid). Loads and transformers first, storage last. Within a stage max-min fair (water-filling): small demands are met first, one huge demand cannot take everything; storage that feeds machines gets its output rate in the first stage (0.1.10.12). Default.",
                     "legacy = 0.1.7.x 的 IC2 式数据包优先级分配 / the IC2-style packet priority walk of 0.1.7.x")
             .define("distributionMode", "fair", value -> "fair".equals(value) || "legacy".equals(value));
 

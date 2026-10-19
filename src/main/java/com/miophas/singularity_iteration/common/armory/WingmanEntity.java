@@ -254,8 +254,20 @@ public class WingmanEntity extends Mob {
      */
     public void entangledShot(Vec3 at) {
         face(at);
-        swing(InteractionHand.MAIN_HAND);
+        // 0.1.10.13: no arm swing per shot (it restarted every few ticks: the jittering arm); the shot
+        // counter drives the muzzle flash and the recoil of the arms on the clients
         entityData.set(DATA_SHOTS, entityData.get(DATA_SHOTS) + 1);
+    }
+
+    /**
+     * 0.1.10.13: a swing that is still running is not restarted. Vanilla restarts a swing after half
+     * of it, and the arm snapped back mid-cut; the next swing now waits for the end of the current one.
+     * Runs on both sides (the client gets the swing as an animation packet).
+     */
+    @Override
+    public void swing(InteractionHand hand, boolean updateSelf) {
+        if (swinging) return;
+        super.swing(hand, updateSelf);
     }
 
     /** Fraction of the stored energy of the electric pieces, or -1 without electric pieces. */
@@ -753,12 +765,13 @@ public class WingmanEntity extends Mob {
 
     /** Weapon kind of the main hand. */
     WeaponKind weaponKind() {
-        ItemStack w = getMainHandItem();
+        return kindOf(getMainHandItem());
+    }
+
+    /** Weapon kind of {@code w} (0.1.10.13: the ranged test is shared with the arm pose, {@link WingmanPose#ranged}). */
+    static WeaponKind kindOf(ItemStack w) {
         if (SlashBladeCombat.isBlade(w)) return WeaponKind.BLADE;
-        var item = w.getItem();
-        if (item instanceof com.miophas.singularity_iteration.core.api.item.IWeaponItem gun && gun.isRanged()) return WeaponKind.RANGED;
-        if (item instanceof net.minecraft.world.item.ProjectileWeaponItem || item instanceof net.minecraft.world.item.TridentItem) return WeaponKind.RANGED;
-        return WeaponKind.MELEE;
+        return WingmanPose.ranged(w) ? WeaponKind.RANGED : WeaponKind.MELEE;
     }
 
     private void engage(LivingEntity enemy, ServerPlayer player) {
@@ -970,9 +983,8 @@ public class WingmanEntity extends Mob {
     private int fire(ItemStack weapon, Vec3 dir, LivingEntity enemy) {
         var item = weapon.getItem();
         if (item instanceof com.miophas.singularity_iteration.core.api.item.IWeaponItem gun) {
-            int cd = gun.fireFrom(weapon, this, dir, true);
-            if (cd >= 0) swing(InteractionHand.MAIN_HAND);
-            return cd;
+            // 0.1.10.13: no arm swing per shot (see entangledShot); the clients show the recoil
+            return gun.fireFrom(weapon, this, dir, true);
         }
         if (item instanceof net.minecraft.world.item.TridentItem) {
             var trident = new net.minecraft.world.entity.projectile.ThrownTrident(level(), this, weapon.copyWithCount(1));
@@ -1422,21 +1434,42 @@ public class WingmanEntity extends Mob {
     // the raw speed of the last tick); the slash counter starts the arm cut.
     private float flight, flightO, land, landO;
     private int seenSlash = Integer.MIN_VALUE, slashStart = -100, slashKind;
+    // 0.1.10.13: combat (a target is locked: the weapon guard, the aim) and the recoil of firing, both
+    // filtered per tick like the flight factor; the recoil holds while shots keep coming, so a fast gun
+    // gives a steady braced pose instead of a kick every 2 ticks
+    private float combat, combatO, recoil, recoilO;
+    private int seenShots = Integer.MIN_VALUE, lastShot = -100;
+    /** The recoil holds this many ticks after a shot (a gun firing faster keeps a steady braced pose). */
+    private static final int RECOIL_HOLD = 8;
 
     private void tickAnimation() {
         flightO = flight;
         landO = land;
+        combatO = combat;
+        recoilO = recoil;
         boolean down = landed();
         double dx = getX() - xo, dz = getZ() - zo;
         float want = down ? 0 : (float) Mth.clamp(Math.sqrt(dx * dx + dz * dz) * 1.6, 0, 1);
         flight += (want - flight) * 0.2F;
         land += ((down ? 1 : 0) - land) * 0.2F;
+        combat += ((lockedTargetId() >= 0 ? 1 : 0) - combat) * 0.25F;
+        int shots = entityData.get(DATA_SHOTS);
+        if (shots != seenShots) {
+            if (seenShots != Integer.MIN_VALUE) lastShot = tickCount;
+            seenShots = shots;
+        }
+        recoil += ((tickCount - lastShot <= RECOIL_HOLD ? 1 : 0) - recoil) * 0.35F;
         int s = entityData.get(DATA_SLASH);
         if (s != seenSlash) {
             if (seenSlash != Integer.MIN_VALUE) { slashStart = tickCount; slashKind = s & 3; }
             seenSlash = s;
         }
     }
+
+    /** Client: 0 (no target) .. 1 (target locked), smoothed (0.1.10.13). */
+    public float combat(float partialTick) { return Mth.lerp(partialTick, combatO, combat); }
+    /** Client: 0 .. 1 while firing, smoothed (0.1.10.13). */
+    public float recoil(float partialTick) { return Mth.lerp(partialTick, recoilO, recoil); }
 
     /** Client: 0 (hover) .. 1 (full speed), smoothed. */
     public float flight(float partialTick) { return Mth.lerp(partialTick, flightO, flight); }

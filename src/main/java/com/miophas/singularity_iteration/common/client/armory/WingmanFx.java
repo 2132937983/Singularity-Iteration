@@ -221,10 +221,9 @@ public final class WingmanFx {
         pose.popPose();
     }
 
+    /** 0.1.10.13: the same test as the combat logic and the arm pose ({@link com.miophas.singularity_iteration.common.armory.WingmanPose#ranged}). */
     private static boolean isRanged(WingmanEntity w) {
-        var item = w.getMainHandItem().getItem();
-        if (item instanceof com.miophas.singularity_iteration.core.api.item.IWeaponItem gun) return gun.isRanged();
-        return item instanceof net.minecraft.world.item.ProjectileWeaponItem || item instanceof net.minecraft.world.item.TridentItem;
+        return com.miophas.singularity_iteration.common.armory.WingmanPose.ranged(w.getMainHandItem());
     }
 
     /** Hologram marker on a locked target. */

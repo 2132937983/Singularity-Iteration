@@ -71,6 +71,10 @@ item_ids:
 - 全套防化服或全套量子套装仍然完全防护。
 - 放入 <ItemLink id="mio_icif:normal/item_contain_ment_box" /> 的放射性物品不会辐射你。箱子有 18 格：使用即可打开。
 
+## 事故调查
+
+反应堆会记录最近 40 个周期。事故发生后，<ItemLink id="mio_icif:reactor/item_reactor_blackbox" /> 会掉落在现场。使用它或执行 `/mio_icif reactor audit` 即可阅读报告：主因、标出熔毁元件的堆芯布局和外壳热量曲线。详见[反应堆事故调查](reactor_audit.md)。
+
 ## 注意
 
 

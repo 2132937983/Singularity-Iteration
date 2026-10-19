@@ -320,6 +320,7 @@ com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.
         com.miophas.singularity_iteration.common.processing.PipeRecoveryCommand.register(event.getDispatcher());
         com.miophas.singularity_iteration.common.command.PerfCommand.register(event.getDispatcher());   // 0.1.10.7
         com.miophas.singularity_iteration.common.command.ChunkLoaderCommand.register(event.getDispatcher());   // 0.1.10.11
+        com.miophas.singularity_iteration.common.command.ReactorAuditCommand.register(event.getDispatcher());  // 0.1.10.12
     }
 
     private void onBlockEntityTypeAddBlocks(BlockEntityTypeAddBlocksEvent event) {

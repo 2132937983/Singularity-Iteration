@@ -2,6 +2,8 @@ package com.miophas.singularity_iteration.common.blockentity.producer;
 
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
 import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotType;
@@ -93,6 +95,14 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
     // Operation parameters
     public static final int PRODUCTION_INTERVAL = 80; // Makes 1 mB every 80 ticks
     public static final int FLUID_PER_CYCLE = 1;      // 1 mB for each cycle
+
+    /** For recipe viewers: in daylight, {@link #FLUID_PER_CYCLE} mB of water becomes distilled water every {@link #PRODUCTION_INTERVAL} ticks. */
+    public static List<MachineConversion> conversions() {
+        return List.of(MachineConversion.of(mio_icif_blocks.SOLAR_DISTILLER.get())
+            .fluidIn(FLUID_PER_CYCLE, Fluids.WATER).fluidOut(mio_icif_fluids.DISTILLEDWATER.get(), FLUID_PER_CYCLE)
+            .time(PRODUCTION_INTERVAL)
+            .note("conversion.mio_icif.solar_distiller.rate", FLUID_PER_CYCLE, MachineConversion.seconds(PRODUCTION_INTERVAL)).build());
+    }
 
     // Operation time window. It is the same as the time window of the solar generator.
     public static final int GENERATION_START_TIME = 333;

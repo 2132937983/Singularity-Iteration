@@ -446,6 +446,26 @@ A data map on entity types, synced to the clients: `data/<namespace>/data_maps/e
 * The timer: a public `getFuse()` of the entity (or `getFuseTime`, `getFuseTicks`, `getFuseTimer`, in ticks), else `fuse` minus the age of the entity on the client, else no timer (the HUD shows "--").
 * Without a data map entry, the entity type tag `mio_icif:blast_warning`, subclasses of vanilla `PrimedTnt` and of the creeper, explosive projectiles and entities with an explosive word in their id also count (see the guide page "Blast Warning Timer").
 
+### 12.3 Fermenter recipes (`"type": "mio_icif:fermenter"`)
+
+The Fermenter has no built-in recipes: it ferments what the recipe type `mio_icif:fermenter` lists. The default recipe is `data/mio_icif/recipe/fermenter/biomass_to_biogas.json` (the IC2 values).
+
+```json
+{
+  "type": "mio_icif:fermenter",
+  "input": { "fluid": "mio_icif:biomass", "amount": 20 },
+  "heat": 4000,
+  "output": { "id": "mio_icif:biogas", "amount": 400 },
+  "byproduct": { "id": "mio_icif:resource/item_fertilizer", "count": 1 },
+  "byproduct_interval": 500
+}
+```
+
+* One run takes `input` (a fluid or a fluid `tag`, and the mB per run) and `heat` (HU, above 0) and gives `output`.
+* Every `byproduct_interval` mB of input fermented (default 500) gives `byproduct` (optional).
+* A fluid has one fermenter recipe: the first that takes it. The input tank only accepts recipe inputs, the output tank only recipe outputs.
+* Java: `IRecipeRegistrationAPI#registerFermenterRecipe(id, FluidStack input, int heat, FluidStack output)` (no by-product) and `IRecipeAPI#findFermenterRecipe(FluidStack, Level)`. The item forms of both are deprecated and do nothing: the fermenter takes fluids.
+
 ## 13. Machine prefab: routing, overclock throttle, fluid containers (0.1.10.6)
 
 ### 13.1 Item routing of the Ejector and Pulling upgrades (`AbstractProcessingMachineBlockEntity`)

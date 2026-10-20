@@ -6,23 +6,22 @@ import com.miophas.singularity_iteration.core.api.item.ILatheItem;
 import com.miophas.singularity_iteration.common.menu.base.mio_icif_machine_menu;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 车床 Menu
+ * Lathe menu, aligned with IC2 ContainerLathe: workpiece (10, 12), tool (10, 30), output (10, 57),
+ * player inventory for a 166 px high GUI. The five cut buttons arrive as menu button clicks 0-4.
  */
 @SuppressWarnings("null")
 public class LatheMenu extends mio_icif_machine_menu {
 
-    public static final int INPUT_SLOT = 0;  // 车刀
-    public static final int TOOL_SLOT = 1;    // Workpiece
-    public static final int OUTPUT_SLOT = 2;
-    public static final int SLOT_COUNT = 3;
-
-    private final ContainerLevelAccess access;
+    // Menu slot indices (equal to the block entity's handler slots)
+    public static final int TOOL_SLOT = mio_icif_lathe.TOOL_SLOT;
+    public static final int LATHE_SLOT = mio_icif_lathe.LATHE_SLOT;
+    public static final int OUTPUT_SLOT = mio_icif_lathe.OUTPUT_SLOT;
+    public static final int SLOT_COUNT = mio_icif_lathe.TOTAL_SLOTS;
 
     public LatheMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null);
@@ -34,38 +33,27 @@ public class LatheMenu extends mio_icif_machine_menu {
             blockEntity != null ? blockEntity.getItemHandler() : null,
             null, 0, blockEntity);
 
-        this.access = ContainerLevelAccess.create(playerInventory.player.level(),
-            blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
-
-        // Register the custom quick-move rules.
-        addCustomMoveRule(
-            stack -> stack.getItem() instanceof ILatheItem.ILatheTool,
-            INPUT_SLOT, INPUT_SLOT + 1);
-        addCustomMoveRule(
-            stack -> stack.getItem() instanceof ILatheItem,
-            TOOL_SLOT, TOOL_SLOT + 1);
+        addCustomMoveRule(stack -> stack.getItem() instanceof ILatheItem.ILatheTool, TOOL_SLOT, TOOL_SLOT + 1);
+        addCustomMoveRule(stack -> stack.getItem() instanceof ILatheItem, LATHE_SLOT, LATHE_SLOT + 1);
     }
 
     @Override
     protected void addMachineSlots() {
-        // Lathe tool slot (0) at position (10, 30)
-        this.addSlot(new SlotItemHandler(itemHandler, 0, 10, 30) {
+        this.addSlot(new SlotItemHandler(itemHandler, TOOL_SLOT, 10, 30) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof ILatheItem.ILatheTool;
             }
         });
 
-        // 加工件槽 (1) - 位置 (10, 12)
-        this.addSlot(new SlotItemHandler(itemHandler, 1, 10, 12) {
+        this.addSlot(new SlotItemHandler(itemHandler, LATHE_SLOT, 10, 12) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof ILatheItem;
             }
         });
 
-        // Output slot (2) at position (10, 57)
-        this.addSlot(new SlotItemHandler(itemHandler, 2, 10, 57) {
+        this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT, 10, 57) {
             @Override
             public boolean mayPlace(ItemStack stack) { return false; }
         });
@@ -73,7 +61,7 @@ public class LatheMenu extends mio_icif_machine_menu {
 
     @Override
     protected int getInputSlotStart() {
-        return INPUT_SLOT;
+        return TOOL_SLOT;
     }
 
     @Override
@@ -116,29 +104,10 @@ public class LatheMenu extends mio_icif_machine_menu {
         return this.blockEntity instanceof mio_icif_lathe be ? be : null;
     }
 
-    /**
-     * Returns the KU buffer bar size in pixels, for the GUI.
-     */
-    public int getKUBufferPixels() {
-        var be = getBlockEntity();
-        if (be == null) return 0;
-        return be.kUBuffer;
-    }
-
+    /** IC2 onNetworkEvent: button {@code id} (0-4) cuts that position (server side). */
     @Override
     public boolean clickMenuButton(Player player, int id) {
         var be = getBlockEntity();
-        if (id >= 0 && id < 5 && be != null) {
-            return be.process(id);
-        }
-        return false;
-    }
-
-    @Override
-    public boolean stillValid(Player player) {
-        return this.access.evaluate((level, pos) ->
-            level.getBlockState(pos).getBlock() instanceof com.miophas.singularity_iteration.common.block.producer.mio_icif_block_lathe
-                && player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 64.0, true);
+        return be != null && !player.level().isClientSide() && be.process(id);
     }
 }
-

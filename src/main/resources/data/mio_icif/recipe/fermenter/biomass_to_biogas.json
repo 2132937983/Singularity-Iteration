@@ -1,0 +1,17 @@
+{
+  "type": "mio_icif:fermenter",
+  "input": {
+    "fluid": "mio_icif:biomass",
+    "amount": 20
+  },
+  "heat": 4000,
+  "output": {
+    "id": "mio_icif:biogas",
+    "amount": 400
+  },
+  "byproduct": {
+    "id": "mio_icif:resource/item_fertilizer",
+    "count": 1
+  },
+  "byproduct_interval": 500
+}

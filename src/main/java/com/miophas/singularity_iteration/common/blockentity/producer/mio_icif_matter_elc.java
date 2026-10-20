@@ -3,6 +3,8 @@ package com.miophas.singularity_iteration.common.blockentity.producer;
 
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
 import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.common.block.producer.mio_icif_block_matter_elc;
@@ -37,6 +39,8 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import net.neoforged.neoforge.items.IItemHandler;
+import java.util.ArrayList;
+import java.util.List;
 
 /** R115 independent implementation from R114 normal gameplay observations and public SI ABI.
  * Fabrication progress is not electrical storage. Only newly received EU can consume amplifier
@@ -45,6 +49,8 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
     public static final int SLOT_COUNT=7,AMPLIFIER_SLOT=0,OUTPUT_SLOT=1,CONTAINER_SLOT=2,UPGRADE_SLOT_START=3,UPGRADE_SLOT_COUNT=4;
     public static final long DEFAULT_CAPACITY=1000000,DEFAULT_MAX_RECEIVE=8192,DEFAULT_MAX_EXTRACT=0,DEFAULT_ENERGY_PER_TICK=0,EU_PER_MB=1000000;
     public static final int DEFAULT_WORK_TIME=1,UUMATTER_CAPACITY=8000,SCRAP_BONUS=5000,SCRAPBOX_BONUS=45000,THORIUM_SCRAP_BONUS=360000,UUMATTER_OUTPUT_AMOUNT=1;
+    /** Received EU covered by amplifier credit counts this many times. */
+    public static final int AMPLIFIER_MULTIPLIER=6;
     private static final SlotLayout LAYOUT=SlotLayout.builder().input(1).output(1).fluidInput(1).upgrade(4).build();
     private static final EnergyAmount UNIT=EnergyAmount.of(EU_PER_MB),PRELOAD=EnergyAmount.of(10000);
     private EnergyAmount work=EnergyAmount.ZERO,amplifier=EnergyAmount.ZERO;
@@ -80,6 +86,18 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
         if(stack.is(mio_icif_normal.SCRAPBOX.get()))return SCRAPBOX_BONUS;
         // Existing SI extension, not an original-game equivalence claim.
         return stack.is(mio_icif_resources.THORIUM_SCRAP.get())?THORIUM_SCRAP_BONUS:0;
+    }
+    /** For recipe viewers: {@link #EU_PER_MB} EU per mB of UU-matter; each amplifier's credit makes that much EU count {@link #AMPLIFIER_MULTIPLIER} times. */
+    public static List<MachineConversion> conversions(){
+        var block=mio_icif_blocks.MATTER_ELC.get();var uu=mio_icif_fluids.UUMATTER.get();
+        var all=new ArrayList<MachineConversion>();
+        all.add(MachineConversion.of(block).fluidOut(uu,UUMATTER_OUTPUT_AMOUNT).note("conversion.mio_icif.fabricator.energy",EU_PER_MB).build());
+        for(var amplifier:List.of(new ItemStack(mio_icif_normal.SCRAP.get()),new ItemStack(mio_icif_normal.SCRAPBOX.get()),new ItemStack(mio_icif_resources.THORIUM_SCRAP.get())))
+            all.add(MachineConversion.of(block).itemIn(amplifier).fluidOut(uu,UUMATTER_OUTPUT_AMOUNT)
+                .note("conversion.mio_icif.fabricator.energy",EU_PER_MB)
+                .note("conversion.mio_icif.matter.amplifier",bonus(amplifier),AMPLIFIER_MULTIPLIER)
+                .note("conversion.mio_icif.fabricator.saves",(long)bonus(amplifier)*(AMPLIFIER_MULTIPLIER-1)).build());
+        return all;
     }
     public boolean isItemValidForSlot(int slot,ItemStack stack){
         if(stack.isEmpty())return false;
@@ -123,7 +141,7 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
             if(!energyStorage.scexNetworkControlled())offered=EnergyAmount.of(offered.whole());
             var boosted=offered.min(amplifier);
             var next=work.add(offered);
-            for(int i=0;i<5;i++)next=next.add(boosted);
+            for(int i=1;i<AMPLIFIER_MULTIPLIER;i++)next=next.add(boosted);
             var paid=energyStorage.scexNetworkControlled()?energyStorage.scexConsumeEnergy(offered,false)
                 :EnergyAmount.of(energyStorage.consumeEnergyInternal(offered.whole(),false));
             if(!paid.equals(offered))throw new IllegalStateException("Owned input changed during fabrication");

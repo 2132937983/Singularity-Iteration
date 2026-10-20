@@ -1,16 +1,1 @@
-{
-  "type": "minecraft:crafting_shapeless",
-  "category": "misc",
-  "ingredients": [
-    {
-      "item": "mio_icif:producer/block_machine_hull_basic"
-    },
-    {
-      "item": "minecraft:lever"
-    }
-  ],
-  "result": {
-    "count": 1,
-    "id": "mio_icif:kugenerator/block_manual_kinetic_generator"
-  }
-}
+{"type": "minecraft:crafting_shapeless","category": "misc","ingredients":[{"item":"mio_icif:producer/block_machine_hull_basic"},{"item":"minecraft:lever"},{"type":"mio_icif:lathe_state","item":"mio_icif:normal/item_iron_turning_blanks","state":[5,5,5,2,2]}],"result":{"count":1,"id":"mio_icif:kugenerator/block_manual_kinetic_generator"}}

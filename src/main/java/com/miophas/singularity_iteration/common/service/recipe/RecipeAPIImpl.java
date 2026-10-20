@@ -274,6 +274,12 @@ public class RecipeAPIImpl implements IRecipeAPI {
         );
     }
 
+    @Override
+    public Optional<? extends RecipeHolder<?>> findFermenterRecipe(FluidStack input, Level level) {
+        if (level == null || input == null || input.isEmpty()) return Optional.empty();
+        return Optional.ofNullable(com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes.find(level, input.getFluid()));
+    }
+
     // ========== 流体精炼配方 API 实现 ==========
 
     @Override

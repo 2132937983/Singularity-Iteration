@@ -57,6 +57,9 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
     // 动能存储（用于能力系统注册，实际动能直接输出到前方方块）
     private final KineticStorage kineticStorage;
     private final com.miophas.singularity_iteration.common.energy.ElectricMotorKinetics scexMotor = new com.miophas.singularity_iteration.common.energy.ElectricMotorKinetics(this);
+    // KU the front block accepted from the last push, and its game tick (GUI)
+    private int lastPushed;
+    private long lastPushedAt = Long.MIN_VALUE;
 
     /**
      * 构造函
@@ -297,7 +300,11 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
                 long maxReceive = frontKinetic.getMaxKineticStored() - frontKinetic.getKineticStored();
                 long kineticToTransfer = Math.min(kineticAmount, maxReceive);
                 if (kineticToTransfer > 0) {
-                    frontKinetic.receiveKinetic(kineticToTransfer, false);
+                    long accepted = frontKinetic.receiveKinetic(kineticToTransfer, false);
+                    if (accepted > 0) {
+                        lastPushed = (int) Math.min(Integer.MAX_VALUE, accepted);
+                        lastPushedAt = level.getGameTime();
+                    }
                 }
             }
         }
@@ -352,6 +359,45 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
         return kineticStorage != null ? kineticStorage.getRPM() : 0;
     }
 
+    /** KU the machine handed to the block in front in the last finished tick (both energy modes). */
+    public int getKineticDeliveredLastTick() {
+        if (energyStorage.scexNetworkControlled()) return (int) Math.min(Integer.MAX_VALUE, scexMotor.deliveredLastTick());
+        return level != null && level.getGameTime() - lastPushedAt <= 1 ? lastPushed : 0;
+    }
+
+    /** IC2 getMaxKU: the KU/t the installed motors allow, 100 each. */
+    public int getMaxKineticForMotors() {
+        return getMotorCount() * KINETIC_PER_MOTOR;
+    }
+
+    /**
+     * GUI data (KineticGeneratorElcMenu): working, energy, capacity, motors, KU delivered last tick,
+     * KU/t of the motors. The menu sends each value as two 16-bit halves.
+     */
+    private final net.minecraft.world.inventory.ContainerData menuData = new net.minecraft.world.inventory.ContainerData() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> isWorking ? 1 : 0;
+                case 1 -> (int) Math.min(Integer.MAX_VALUE, Math.max(0, energyStorage.getAmount()));
+                case 2 -> (int) Math.min(Integer.MAX_VALUE, Math.max(0, energyStorage.getCapacity()));
+                case 3 -> getMotorCount();
+                case 4 -> getKineticDeliveredLastTick();
+                case 5 -> getMaxKineticForMotors();
+                default -> 0;
+            };
+        }
+
+        @Override
+        public void set(int index, int value) {
+        }
+
+        @Override
+        public int getCount() {
+            return 6;
+        }
+    };
+
     /**
      * 获取每个马达的动能产生速率
      */
@@ -397,7 +443,7 @@ public class mio_icif_Kinetic_Generator_elc extends AbstractProcessingMachineBlo
 
     @Override
     public @org.jetbrains.annotations.Nullable net.minecraft.world.inventory.AbstractContainerMenu createMenu(int id, net.minecraft.world.entity.player.Inventory playerInventory, net.minecraft.world.entity.player.Player player) {
-        return new com.miophas.singularity_iteration.common.menu.kuentity.KineticGeneratorElcMenu(id, playerInventory, this.getItemHandler(), null, this);
+        return new com.miophas.singularity_iteration.common.menu.kuentity.KineticGeneratorElcMenu(id, playerInventory, this.getItemHandler(), menuData, this);
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.miophas.singularity_iteration.common.blockentity.producer;
 
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractHeatBlockEntity;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
@@ -30,6 +32,8 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * 蒸汽机方块实
@@ -78,7 +82,9 @@ public static final float HEAT_PER_HU = 5.0E-4F;   //
     public static final float COOLING_PER_TICK = 0.01F; // 不工作时
     public static final float MAX_SYSTEM_HEAT = 500.0F; // 系统热量上限（超过爆炸）
     public static final int MAX_HU_PER_TICK = 1200;     // 
-    public static final int STEAM_EXPANSION = 100;      // 1mB 
+    public static final int STEAM_EXPANSION = 100;      // 1mB
+    public static final int MAX_PRESSURE = 300;         // 压力阀上限（bar）
+    public static final int SUPERHEATED_PRESSURE = 220; // 从该压力起目标温度达到 374℃，产出过热蒸汽
 
     public static final int MAX_CALCIFICATION = 100000; // 钙化上限（原版）
     public static final float EPSILON = 1.0E-4F;
@@ -389,7 +395,7 @@ IC2 风格
             return true;
         }
 
-        float hUneeded = 100.0F + pressure / 220.0F * 100.0F;
+        float hUneeded = huPerMb(pressure);
         float targetTemp = 100.0F + pressure / 220.0F * 100.0F * 2.74F;
         float reqHeat = targetTemp - systemHeat;
 
@@ -504,6 +510,31 @@ IC2 风格
 
         lastSteamOutput = filledInternal + transferredToNeighbors;
         return true;
+    }
+
+    /** 在 {@code pressure} bar 下烧开 1 mB 水所需的 HU（IC2：0 bar 100 HU，220 bar 200 HU）。 */
+    public static float huPerMb(int pressure) {
+        return 100.0F + pressure / 220.0F * 100.0F;
+    }
+
+    /**
+     * 供 JEI 展示的产汽转换：1 mB 水膨胀为 100 mB 蒸汽，低于 {@link #SUPERHEATED_PRESSURE} 出普通蒸汽，
+     * 达到后出过热蒸汽。
+     */
+    public static List<MachineConversion> conversions() {
+        var machine = mio_icif_blocks.STEAM_GENERATOR.get();
+        Fluid[] water = {Fluids.WATER, mio_icif_fluids.DISTILLEDWATER.get()};
+        return List.of(
+            MachineConversion.of(machine).fluidIn(1, water).fluidOut(mio_icif_fluids.STEAM.get(), STEAM_EXPANSION)
+                .note("conversion.mio_icif.steam_generator.below", SUPERHEATED_PRESSURE)
+                .note("conversion.mio_icif.steam_generator.heat", huPerMb(0), huPerMb(SUPERHEATED_PRESSURE))
+                .note("conversion.mio_icif.steam_generator.calcification")
+                .build(),
+            MachineConversion.of(machine).fluidIn(1, water).fluidOut(mio_icif_fluids.SUPERHEATEDSTEAM.get(), STEAM_EXPANSION)
+                .note("conversion.mio_icif.steam_generator.pressure", SUPERHEATED_PRESSURE, MAX_PRESSURE)
+                .note("conversion.mio_icif.steam_generator.heat", huPerMb(SUPERHEATED_PRESSURE), huPerMb(MAX_PRESSURE))
+                .note("conversion.mio_icif.steam_generator.calcification")
+                .build());
     }
 
     private void heatup(float huInput) {
@@ -731,11 +762,11 @@ IC2 压力/流量调节
         if (eventId >= 2000) {
             // 左侧：压力调
         int delta = eventId - 2000;
-            pressure = Math.min(300, Math.max(0, pressure + delta));
+            pressure = Math.min(MAX_PRESSURE, Math.max(0, pressure + delta));
         } else if (eventId <= -2000) {
             // 左侧：压力减
         int delta = -(eventId + 2000);
-            pressure = Math.min(300, Math.max(0, pressure - delta));
+            pressure = Math.min(MAX_PRESSURE, Math.max(0, pressure - delta));
         } else if (eventId > 0) {
             // 右侧：流量增
         inputMB = Math.min(1000, inputMB + eventId);

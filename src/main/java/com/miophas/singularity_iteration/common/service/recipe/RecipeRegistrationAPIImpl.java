@@ -121,8 +121,21 @@ public class RecipeRegistrationAPIImpl implements IRecipeRegistrationAPI {
     }
 
     @Override
+    @Deprecated
     public boolean registerFermenterRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime) {
-        return registerRecipe(id, "fermenter", () -> RecipeFactoryBridge.fermenter("", input, output, processTime, 5, 0.0f));
+        LOGGER.error("Fermenter recipe {} not registered: the fermenter takes fluids and heat; use "
+            + "registerFermenterRecipe(id, FluidStack input, int heat, FluidStack output)", id);
+        return false;
+    }
+
+    @Override
+    public boolean registerFermenterRecipe(ResourceLocation id, net.neoforged.neoforge.fluids.FluidStack input, int heat,
+                                           net.neoforged.neoforge.fluids.FluidStack output) {
+        if (input == null || input.isEmpty() || output == null || output.isEmpty() || heat <= 0) {
+            LOGGER.error("Fermenter recipe {} needs an input fluid, an output fluid and a positive heat", id);
+            return false;
+        }
+        return registerRecipe(id, "fermenter", () -> RecipeFactoryBridge.fermenter("", input, heat, output));
     }
 
     @Override

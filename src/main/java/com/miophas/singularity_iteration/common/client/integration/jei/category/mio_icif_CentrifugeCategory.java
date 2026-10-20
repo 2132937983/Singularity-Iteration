@@ -1,146 +1,68 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_centrifuge_elc;
 import com.miophas.singularity_iteration.common.recipe.centrifuge.mio_icif_CentrifugeRecipe;
-import mezz.jei.api.constants.VanillaTypes;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
-import mezz.jei.api.gui.drawable.IDrawableAnimated;
-import mezz.jei.api.gui.drawable.IDrawableStatic;
-import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
-import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Thermal Centrifuge: one input, up to three outputs, the minimum heat of the recipe and the machine's
+ * time and energy.
+ * <pre>
+ *   [in] ==> [o1][o2][o3]
+ *        Heat >= 500 HU
+ *   25 s · 48 EU/t · 24,000 EU
+ * </pre>
+ */
 @SuppressWarnings("null")
 public class mio_icif_CentrifugeCategory extends AbstractJeiRecipeCategory<mio_icif_CentrifugeRecipe> {
 
     public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "centrifuge");
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
-            "textures/gui/gui_centrifuge_elc.png");
-    public static final RecipeType<RecipeHolder<mio_icif_CentrifugeRecipe>> CENTRIFUGE_TYPE =
-            RecipeType.createRecipeHolderType(UID);
+    public static final RecipeType<RecipeHolder<mio_icif_CentrifugeRecipe>> CENTRIFUGE_TYPE = RecipeType.createRecipeHolderType(UID);
 
-    private static final int BG_X = 5;
-    private static final int BG_Y = 5;
-    private static final int BG_WIDTH = 166;
-    private static final int BG_HEIGHT = 78;
+    private static final int WIDTH = 150, HEIGHT = 53;
+    private static final int IN_X = 20, ARROW_X = 44, OUT_X = 76, ROW_Y = 6, LINES_Y = 31;
 
-    private final IDrawable background;
     private final IDrawable icon;
-    private final IDrawableAnimated progressBar;
-    private final IDrawableAnimated energyBar;
-    private final IDrawableAnimated heatBar;
-    private final IDrawableStatic greenLight;
 
     public mio_icif_CentrifugeCategory(IGuiHelper helper) {
-        this.background = helper.createDrawable(TEXTURE, BG_X, BG_Y, BG_WIDTH, BG_HEIGHT);
-        this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
-                new ItemStack(mio_icif_blocks.CENTRIFUGE_ELC.get()));
-
-        IDrawableStatic progressBg = helper.createDrawable(TEXTURE, 176, 50, 5, 30);
-        this.progressBar = helper.createAnimatedDrawable(progressBg,
-                40, IDrawableAnimated.StartDirection.BOTTOM, false);
-
-        IDrawableStatic energyBg = helper.createDrawable(TEXTURE, 176, 0, 14, 15);
-        this.energyBar = helper.createAnimatedDrawable(energyBg,
-                300, IDrawableAnimated.StartDirection.BOTTOM, true);
-
-        IDrawableStatic heatBg = helper.createDrawable(TEXTURE, 176, 28, 23, 8);
-        this.heatBar = helper.createAnimatedDrawable(heatBg,
-                200, IDrawableAnimated.StartDirection.LEFT, false);
-
-        this.greenLight = helper.createDrawable(TEXTURE, 176, 36, 14, 14);
+        this.icon = helper.createDrawableItemLike(mio_icif_blocks.CENTRIFUGE_ELC.get());
     }
 
-    @Override
-    public RecipeType<RecipeHolder<mio_icif_CentrifugeRecipe>> getRecipeType() {
-        return CENTRIFUGE_TYPE;
-    }
-
-    @Override
-    public Component getTitle() {
-        return Component.translatable("jei.mio_icif.centrifuge");
-    }
-
-    @Override
-    public int getWidth() {
-        return BG_WIDTH;
-    }
-
-    @Override
-    public int getHeight() {
-        return BG_HEIGHT;
-    }
-
-    @Override
-    public @Nullable IDrawable getIcon() {
-        return this.icon;
-    }
+    @Override public RecipeType<RecipeHolder<mio_icif_CentrifugeRecipe>> getRecipeType() { return CENTRIFUGE_TYPE; }
+    @Override public Component getTitle() { return Component.translatable("jei.mio_icif.centrifuge"); }
+    @Override public @Nullable IDrawable getIcon() { return icon; }
+    @Override public int getWidth() { return WIDTH; }
+    @Override public int getHeight() { return HEIGHT; }
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_CentrifugeRecipe recipe, IFocusGroup focuses) {
-        int ox = -BG_X;
-        int oy = -BG_Y;
-
-        // A data pack recipe can have no ingredients. JEI must not crash on it.
-        if (!recipe.getIngredients().isEmpty()) {
-            builder.addSlot(RecipeIngredientRole.INPUT, 11 + ox, 21 + oy)
-                    .addIngredients(recipe.getIngredients().get(0));
-        }
-
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 124 + ox, 18 + oy)
-                .addItemStack(new ItemStack(recipe.getPrimaryResult().getItem(), recipe.getPrimaryCount()));
-
-        if (recipe.getSecondaryCount() > 0) {
-            builder.addSlot(RecipeIngredientRole.OUTPUT, 124 + ox, 36 + oy)
-                    .addItemStack(new ItemStack(recipe.getSecondaryResult().getItem(), recipe.getSecondaryCount()));
-        }
-
-        if (recipe.getTertiaryCount() > 0) {
-            builder.addSlot(RecipeIngredientRole.OUTPUT, 124 + ox, 54 + oy)
-                    .addItemStack(new ItemStack(recipe.getTertiaryResult().getItem(), recipe.getTertiaryCount()));
+        SiJei.input(builder, IN_X, ROW_Y).addIngredients(recipe.getIngredient());
+        ItemStack[] results = {
+            recipe.getPrimaryResult().copyWithCount(recipe.getPrimaryCount()),
+            recipe.getSecondaryCount() > 0 ? recipe.getSecondaryResult().copyWithCount(recipe.getSecondaryCount()) : ItemStack.EMPTY,
+            recipe.getTertiaryCount() > 0 ? recipe.getTertiaryResult().copyWithCount(recipe.getTertiaryCount()) : ItemStack.EMPTY};
+        for (int i = 0; i < results.length; i++) {
+            if (!results[i].isEmpty()) SiJei.output(builder, OUT_X + i * 18, ROW_Y).addItemStack(results[i]);
         }
     }
 
     @Override
-    protected void drawFor(mio_icif_CentrifugeRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
-        this.background.draw(guiGraphics, 0, 0);
-
-        int ox = -BG_X;
-        int oy = -BG_Y;
-
-        this.energyBar.draw(guiGraphics, 12 + ox, 41 + oy);
-
-        this.heatBar.draw(guiGraphics, 67 + ox, 65 + oy);
-
-        this.greenLight.draw(guiGraphics, 92 + ox, 62 + oy);
-
-        this.progressBar.draw(guiGraphics, 83 + ox, 24 + oy);
-
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.font != null) {
-            String timeText = recipe.getProcessingTime() / 20 + "s";
-            guiGraphics.drawString(minecraft.font, timeText,
-                    (BG_WIDTH - minecraft.font.width(timeText)) / 2, BG_HEIGHT - 10, 0x808080, false);
-
-            String euText = recipe.getEnergyPerTick() + " EU/t";
-            guiGraphics.drawString(minecraft.font, euText, 2, 35, 0x808080, false);
-
-            if (recipe.getMinHeatRequired() > 0) {
-                String heatText = recipe.getMinHeatRequired() + " HU";
-                guiGraphics.drawString(minecraft.font, heatText, 62, 70, 0xFF6600, false);
-            }
-        }
+    protected void createExtrasFor(IRecipeExtrasBuilder builder, mio_icif_CentrifugeRecipe recipe, IFocusGroup focuses) {
+        int ticks = mio_icif_centrifuge_elc.DEFAULT_WORK_TIME;
+        SiJei.arrow(builder, ARROW_X, ROW_Y, ticks);
+        SiJei.line(builder, Component.translatable("jei.mio_icif.centrifuge.heat", SiJei.number(recipe.getMinHeatRequired())), WIDTH, LINES_Y);
+        SiJei.line(builder, SiJei.cost(ticks, mio_icif_centrifuge_elc.DEFAULT_ENERGY_PER_TICK), WIDTH, LINES_Y + SiJei.LINE_HEIGHT);
     }
 }
-

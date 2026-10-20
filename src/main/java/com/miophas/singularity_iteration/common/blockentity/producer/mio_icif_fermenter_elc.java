@@ -4,8 +4,11 @@ import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractHeatBlo
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
-import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
+import com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipe;
+import com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes;
 import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank;
 import com.miophas.singularity_iteration.core.runtime.processing.OwnedFluidConversion;
 import net.minecraft.core.BlockPos;
@@ -29,12 +32,13 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Electric fermenter block entity.
- * It uses HU (heat units) to convert biomass into biogas and produces fertilizer as a by-product.
+ * It uses HU (heat units) to ferment fluids by the {@code mio_icif:fermenter} recipes (JSON, see
+ * {@link FermenterRecipe}); the default recipe turns biomass into biogas with fertilizer as a by-product.
  *
  * Operation:
  * - The machine pulls HU only from the heat source on its front side, at a maximum of 100 HU/t.
- * - One run consumes 20 mB of biomass and 4000 HU, and produces 400 mB of biogas.
- * - Each 500 mB of processed biomass produces 1 fertilizer.
+ * - One run consumes the recipe's input and heat (biomass: 20 mB and 4000 HU) and produces its output (400 mB of biogas).
+ * - Each by-product interval of fermented input (biomass: 500 mB) produces the by-product (1 fertilizer).
  * - A higher heat input makes the machine work faster.
  */
 @SuppressWarnings("null")
@@ -75,16 +79,9 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     public static final int MAX_TEMP = 1000;          // Maximum temperature
     public static final float HEAT_LOSS_FACTOR = 0f;  // 原版无热损耗
 
-    // Fluid settings
-    public static final int BIOMASS_TANK_CAPACITY = 10000; // Biomass tank capacity: 10000 mB
-    public static final int BIOGAS_TANK_CAPACITY = 2000;   // Biogas tank capacity: 2000 mB
-    public static final int BIOMASS_PER_OPERATION = 20;    // Biomass consumed per run: 20 mB
-    public static final int BIOGAS_PER_OPERATION = 400;    // Biogas produced per run: 400 mB
-    public static final int HEAT_PER_OPERATION = 4000;     // Heat consumed per run: 4000 HU
-    public static final int BIOMASS_PER_FERTILIZER = 500;  // Each 500 mB of processed biomass produces 1 fertilizer
-
-    // Progress settings. At 100 HU/t, one run takes 40 ticks.
-    public static final int BASE_PROGRESS_REQUIRED = HEAT_PER_OPERATION; // Heat required for one run = 4000 HU
+    // Fluid settings (the amounts per run, the heat and the by-product come from the recipe)
+    public static final int BIOMASS_TANK_CAPACITY = 10000; // Input tank capacity: 10000 mB
+    public static final int BIOGAS_TANK_CAPACITY = 2000;   // Output tank capacity: 2000 mB
 
     // Fluid tanks
     protected final FluidTank biomassTank;
@@ -96,8 +93,14 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     // 最近一次实际收到热量的游戏刻（用于 LIT 对齐 IC2 的“存在热源即点亮”）
     private long lastHeatTick = Long.MIN_VALUE;
 
-    // Total processed biomass in mB. The machine uses this value to produce fertilizer.
+    // Input fermented since the last by-product, in mB (IC2: biomass toward the next fertilizer)
     private long biomassProcessed;
+    // The recipe of the last run: its by-product and interval apply to biomassProcessed
+    @Nullable
+    private ResourceLocation byproductRecipeId;
+    // The recipe of the input tank's fluid, revalidated against the recipe manager
+    @Nullable
+    private RecipeHolder<FermenterRecipe> recipeMemo;
 
     // True while the machine is working
     private boolean isWorking;
@@ -107,7 +110,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         public int get(int index) {
             return switch (index) {
                 case 0 -> getProgress();
-                case 1 -> BIOMASS_PER_FERTILIZER;
+                case 1 -> getMaxProgress();
                 case 2 -> isWorking ? 1 : 0;
                 case 3 -> (int) heatStorage.getHeatStored();
                 case 4 -> (int) heatStorage.getMaxHeatStored();
@@ -146,15 +149,15 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         this.itemHandler = createItemHandler(LAYOUT);
         this.itemHandler.setValidator((slot, stack, slotType) -> mio_icif_fermenter_elc.this.isItemValidForSlot(slot, stack));
 
-        // Create the biomass input tank
+        // Create the input tank: fluids that a fermenter recipe takes
         this.biomassTank = new FluidTank(BIOMASS_TANK_CAPACITY, fluidStack ->
-            FermenterFuels.accepts(fluidStack.getFluid())) {
+            acceptsFluid(fluidStack.getFluid())) {
                 @Override protected void onContentsChanged() { ContainerToTank.markUnsaved(mio_icif_fermenter_elc.this); }
             };
 
-        // Create the biogas output tank
+        // Create the output tank: fluids that a fermenter recipe gives
         this.biogasTank = new FluidTank(BIOGAS_TANK_CAPACITY, fluidStack ->
-            FermenterFuels.isOutputFluid(fluidStack.getFluid())) {
+            FermenterRecipes.isOutput(level, fluidStack.getFluid())) {
                 @Override protected void onContentsChanged() { ContainerToTank.markUnsaved(mio_icif_fermenter_elc.this); }
             };
         this.combinedFluidHandler = com.miophas.singularity_iteration.core.prefab.fluid.FluidTankGroup
@@ -179,16 +182,21 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         };
     }
 
-    /** 0.1.10.6：也接受生物质桶、半满单元与其他模组的容器（经流体能力倒入）。 */
-    private static boolean isInputContainer(ItemStack stack) {
-        return isFullInputCell(stack)
-            || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, FermenterFuels::accepts);
+    /** Whether a fermenter recipe takes {@code fluid}. */
+    private boolean acceptsFluid(net.minecraft.world.level.material.Fluid fluid) {
+        return FermenterRecipes.accepts(level, fluid);
     }
 
-    /** 是否为装满任一已注册输入流体（如生物质）的单元。 */
-    private static boolean isFullInputCell(ItemStack stack) {
+    /** 0.1.10.6：也接受生物质桶、半满单元与其他模组的容器（经流体能力倒入）。 */
+    private boolean isInputContainer(ItemStack stack) {
+        return isFullInputCell(stack)
+            || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, this::acceptsFluid);
+    }
+
+    /** 是否为装满任一配方输入流体（如生物质）的单元。 */
+    private boolean isFullInputCell(ItemStack stack) {
         FluidStack content = mio_icif_cells.getCellFluid(stack);
-        return !content.isEmpty() && FermenterFuels.accepts(content.getFluid())
+        return !content.isEmpty() && acceptsFluid(content.getFluid())
             && content.getAmount() >= mio_icif_cells.getCellCapacity(stack);
     }
 
@@ -299,7 +307,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         if (cell.isEmpty() || !isInputContainer(cell)) return;
         if (!isFullInputCell(cell)) {
             if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler,
-                    BIOMASS_CELL_SLOT, EMPTY_CELL_SLOT, biomassTank, FermenterFuels::accepts)) setChanged();
+                    BIOMASS_CELL_SLOT, EMPTY_CELL_SLOT, biomassTank, this::acceptsFluid)) setChanged();
             return;
         }
         var single = cell.copyWithCount(1);
@@ -326,20 +334,30 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
 
     /**
      * 对齐 IC2 {@code TileEntityFermenter.work()} 开头的肥料结算：
-     * 累计生物质达到 500 mB 时向肥料槽投放 1 个肥料，并<b>无条件清零进度</b>
-     * （输出槽满时该肥料会被丢弃——与 IC2 的 {@code fertiliserSlot.add()} 行为一致）。
+     * 累计输入达到配方的副产物间隔（生物质 500 mB）时向肥料槽投放副产物，并<b>无条件清零进度</b>
+     * （输出槽满时该副产物会被丢弃——与 IC2 的 {@code fertiliserSlot.add()} 行为一致）。
      */
     private void emitFertilizerIfDue() {
-        if (biomassProcessed < BIOMASS_PER_FERTILIZER) return;
-        ItemStack fertilizer = new ItemStack(mio_icif_resources.FERTILIZER.get());
-        ItemStack existing = itemHandler.getStackInSlot(FERTILIZER_SLOT);
-        int limit = Math.min(itemHandler.getSlotLimit(FERTILIZER_SLOT), fertilizer.getMaxStackSize());
-        if (existing.isEmpty()) {
-            itemHandler.setStackInSlot(FERTILIZER_SLOT, fertilizer);
-        } else if (ItemStack.isSameItemSameComponents(existing, fertilizer) && existing.getCount() < limit) {
-            existing.grow(1);
+        FermenterRecipe recipe = byproductRecipe();
+        if (recipe == null || biomassProcessed < recipe.getByproductInterval()) return;
+        ItemStack byproduct = recipe.getByproduct();
+        if (!byproduct.isEmpty()) {
+            ItemStack existing = itemHandler.getStackInSlot(FERTILIZER_SLOT);
+            int limit = Math.min(itemHandler.getSlotLimit(FERTILIZER_SLOT), byproduct.getMaxStackSize());
+            if (existing.isEmpty()) {
+                itemHandler.setStackInSlot(FERTILIZER_SLOT, byproduct);
+            } else if (ItemStack.isSameItemSameComponents(existing, byproduct) && existing.getCount() + byproduct.getCount() <= limit) {
+                existing.grow(byproduct.getCount());
+            }
         }
         biomassProcessed = 0;
+    }
+
+    /** The recipe whose by-product the fermented input counts toward: the last run's, else the current one. */
+    @Nullable
+    private FermenterRecipe byproductRecipe() {
+        var last = FermenterRecipes.byId(level, byproductRecipeId);
+        return last != null ? last.value() : currentProperty();
     }
 
     /**
@@ -375,25 +393,38 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
      * Checks if the machine can work.
      */
     protected boolean canWork() {
-        FermenterFuels.Property property = currentProperty();
-        return property != null && (workCredit >= property.heat() || heatStorage.getHeatStored() > 0)
+        FermenterRecipe recipe = currentProperty();
+        return recipe != null && (workCredit >= recipe.getHeat() || heatStorage.getHeatStored() > 0)
             && prepareOperation().isPresent();
     }
 
-    /** 当前输入流体对应的发酵配方；无有效输入返回 null。 */
+    /** 当前输入流体对应的发酵配方（mio_icif:fermenter）；无有效输入返回 null。 */
     @Nullable
-    private FermenterFuels.Property currentProperty() {
+    private FermenterRecipe currentProperty() {
+        RecipeHolder<FermenterRecipe> holder = currentRecipeHolder();
+        return holder == null ? null : holder.value();
+    }
+
+    @Nullable
+    private RecipeHolder<FermenterRecipe> currentRecipeHolder() {
         FluidStack input = biomassTank.getFluid();
-        return input.isEmpty() ? null : FermenterFuels.get(input.getFluid());
+        if (input.isEmpty() || level == null) return null;
+        RecipeHolder<FermenterRecipe> memo = recipeMemo;
+        if (memo != null && memo.value().accepts(input.getFluid())
+                && level.getRecipeManager().byKey(memo.id()).orElse(null) == memo) {
+            return memo;
+        }
+        recipeMemo = FermenterRecipes.find(level, input.getFluid());
+        return recipeMemo;
     }
 
     /** 对齐 IC2 work() 的“能否发酵”条件：配方在、输入量够、输出罐有空间。 */
     private java.util.Optional<OwnedFluidConversion.Prepared> prepareOperation() {
-        FermenterFuels.Property property = currentProperty();
-        if (property == null) return java.util.Optional.empty();
+        FermenterRecipe recipe = currentProperty();
+        if (recipe == null) return java.util.Optional.empty();
         FluidStack input = biomassTank.getFluid();
-        return OwnedFluidConversion.prepare(biomassTank, new FluidStack(input.getFluid(), property.inputAmount()),
-            biogasTank, new FluidStack(property.output(), property.outputAmount()), itemHandler, -1, ItemStack.EMPTY);
+        return OwnedFluidConversion.prepare(biomassTank, new FluidStack(input.getFluid(), recipe.getInput().amount()),
+            biogasTank, recipe.getOutput(), itemHandler, -1, ItemStack.EMPTY);
     }
 
     /**
@@ -402,9 +433,10 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     protected void doWork() {
         var operation = prepareOperation();
         if (operation.isEmpty()) return;
-        FermenterFuels.Property property = currentProperty();
-        if (property == null) return;
-        int heatRequired = property.heat();
+        RecipeHolder<FermenterRecipe> holder = currentRecipeHolder();
+        if (holder == null) return;
+        FermenterRecipe property = holder.value();
+        int heatRequired = property.getHeat();
         if (workCredit < heatRequired) {
             long remaining = heatRequired - workCredit;
             long requested = Math.min(remaining, Math.min(MAX_HEAT_RECEIVE, heatStorage.getHeatStored()));
@@ -414,10 +446,12 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         }
         if (workCredit >= heatRequired) {
             long creditBefore = workCredit, processedBefore = biomassProcessed;
+            ResourceLocation recipeBefore = byproductRecipeId;
             workCredit -= heatRequired;
-            biomassProcessed += property.inputAmount();
+            biomassProcessed += property.getInput().amount();
+            byproductRecipeId = holder.id();
             if (!operation.get().commit()) {
-                workCredit = creditBefore; biomassProcessed = processedBefore;
+                workCredit = creditBefore; biomassProcessed = processedBefore; byproductRecipeId = recipeBefore;
                 setChanged();
                 return;
             }
@@ -470,11 +504,13 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
      * 而不是单次运行的 BTU 进度；单次运行的热量进度由热量条（heatStorage）表示。
      */
     public int getProgress() {
-        return (int) Math.min(BIOMASS_PER_FERTILIZER, biomassProcessed);
+        return (int) Math.min(getMaxProgress(), biomassProcessed);
     }
 
+    /** The by-product interval of the last or current recipe (biomass: 500 mB). */
     public int getMaxProgress() {
-        return BIOMASS_PER_FERTILIZER;
+        FermenterRecipe recipe = byproductRecipe();
+        return recipe != null ? recipe.getByproductInterval() : FermenterRecipe.DEFAULT_BYPRODUCT_INTERVAL;
     }
 
     public long getHeatStored() {
@@ -560,6 +596,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         tag.putInt("progress", (int) Math.min(Integer.MAX_VALUE, workCredit));
         tag.putLong("scex_work_credit", workCredit);
         tag.putLong("biomassProcessed", biomassProcessed);
+        if (byproductRecipeId != null) tag.putString("byproductRecipe", byproductRecipeId.toString());
         tag.putBoolean("isWorking", isWorking);
     }
 
@@ -578,6 +615,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         workCredit = Math.max(0, tag.contains("scex_work_credit", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)
             ? tag.getLong("scex_work_credit") : tag.getLong("progress"));
         biomassProcessed = Math.max(0, tag.getLong("biomassProcessed"));
+        byproductRecipeId = tag.contains("byproductRecipe") ? ResourceLocation.tryParse(tag.getString("byproductRecipe")) : null;
         isWorking = level != null && level.isClientSide() && tag.getBoolean("isWorking");
     }
 

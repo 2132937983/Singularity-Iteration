@@ -15,7 +15,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 /** R110/R111: one paid 1000 KU source buffer; 4 KU per EU; 100 KU/t per installed motor. */
 public final class ElectricMotorKinetics {
     private final mio_icif_Kinetic_Generator_elc owner;
-    private long ku,uncertain,frame=Long.MIN_VALUE,extracted,activeAt=Long.MIN_VALUE;
+    private long ku,uncertain,frame=Long.MIN_VALUE,extracted,lastExtracted,activeAt=Long.MIN_VALUE;
     private boolean transferring;
     private String failure="";
     private CompoundTag hold=new CompoundTag();
@@ -29,7 +29,9 @@ public final class ElectricMotorKinetics {
     }
     private Direction front(){return owner.getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);}
     private void dirty(){owner.setChanged();if(live())ContainerToTank.markUnsaved(owner);}
-    private void frame(){long now=owner.getLevel()==null?0:owner.getLevel().getGameTime();if(frame!=now){frame=now;extracted=0;}}
+    private void frame(){long now=owner.getLevel()==null?0:owner.getLevel().getGameTime();if(frame!=now){lastExtracted=frame==now-1?extracted:0;frame=now;extracted=0;}}
+    /** KU handed to consumers (pushed or pulled) in the last finished tick, for the GUI. */
+    public long deliveredLastTick(){long now=owner.getLevel()==null?0:owner.getLevel().getGameTime();return frame==now?lastExtracted:frame==now-1?extracted:0;}
     private boolean enabled(){return live()&&!transferring&&uncertain==0&&hold.isEmpty()&&owner.getEnergyStorageInternal().scexNetworkControlled();}
     public static EnergyAmount cost(long ku){return new EnergyAmount(ku/4,(ku%4)*(EnergyAmount.UNITS/4));}
     public boolean tick(){
@@ -70,7 +72,7 @@ public final class ElectricMotorKinetics {
         if(tag.contains("scex_motor",Tag.TAG_COMPOUND)){var state=tag.getCompound("scex_motor");
             if(state.getInt("version")==1){hold.merge(state.getCompound("hold").copy());uncertain=Math.max(0,state.getLong("uncertain"));failure=state.getString("failure");}
             else hold.put("unknown_motor_version",state.copy());}
-        frame=Long.MIN_VALUE;extracted=0;activeAt=Long.MIN_VALUE;transferring=false;
+        frame=Long.MIN_VALUE;extracted=0;lastExtracted=0;activeAt=Long.MIN_VALUE;transferring=false;
     }
     private final class Port implements IMioIcifCapabilities.IKineticStorage {
         private final Direction side;Port(Direction side){this.side=side;}

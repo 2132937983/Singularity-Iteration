@@ -3,6 +3,8 @@ package com.miophas.singularity_iteration.common.blockentity.producer;
 
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
@@ -32,6 +34,8 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * Independent condenser: R50 public input/output observations, no predecessor body used.
  * 对齐 IC2 {@code TileEntityCondenser}：inputTank 同时接受蒸汽与过热蒸汽；
@@ -51,8 +55,18 @@ public class mio_icif_condenser extends AbstractProcessingMachineBlockEntity {
     public static final int VENT_BONUS = 100;
     /** IC2 ventEUCost：每个散热片 2 EU/t。 */
     public static final long VENT_EU_COST = 2;
-    private static final int PRODUCT_PER_BATCH = 100;
+    public static final int PRODUCT_PER_BATCH = 100;
     private static final String SAVE_KEY = "scex_condenser_v1";
+
+    /** For recipe viewers: a batch of steam or superheated steam becomes {@link #PRODUCT_PER_BATCH} mB of distilled water; vents speed it up for EU. */
+    public static List<MachineConversion> conversions() {
+        int ticks = MAX_PROGRESS / BASE_CONDENSE_RATE;
+        return List.of(MachineConversion.of(mio_icif_blocks.CONDENSER.get())
+            .fluidIn(MAX_PROGRESS, mio_icif_fluids.STEAM.get(), mio_icif_fluids.SUPERHEATEDSTEAM.get())
+            .fluidOut(mio_icif_fluids.DISTILLEDWATER.get(), PRODUCT_PER_BATCH).time(ticks)
+            .note("conversion.mio_icif.condenser.batch", MachineConversion.seconds(ticks), BASE_CONDENSE_RATE)
+            .note("conversion.mio_icif.condenser.vent", VENT_BONUS, VENT_EU_COST).build());
+    }
     private static final SlotLayout LAYOUT = SlotLayout.builder().extra(4).input(1).output(1).battery().upgrade(1).build();
     private final FluidTank steamTank;
     private final FluidTank distilledTank;

@@ -1,106 +1,61 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.recipe.canner.canning.CanningRecipe;
-import mezz.jei.api.constants.VanillaTypes;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
-import mezz.jei.api.gui.drawable.IDrawableAnimated;
-import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
-import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * JEI recipe category for the canning machine in canning mode.
+ * Canner: the container and its content make the filled item; the recipe sets time and energy.
+ * <pre>
+ *   [can] + [food] ==> [ out ]
+ *     10 s · 1 EU/t · 200 EU
+ * </pre>
  */
 @SuppressWarnings("null")
 public class mio_icif_CanningCategory extends AbstractJeiRecipeCategory<CanningRecipe> {
 
     public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "canning");
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
-            "textures/gui/gui_canner_elc.png");
-    public static final RecipeType<RecipeHolder<CanningRecipe>> CANNING_TYPE =
-            RecipeType.createRecipeHolderType(UID);
+    public static final RecipeType<RecipeHolder<CanningRecipe>> CANNING_TYPE = RecipeType.createRecipeHolderType(UID);
 
-    private final IDrawable background;
+    private static final int WIDTH = 150, HEIGHT = 45;
+    private static final int CAN_X = 17, PLUS_X = 38, FOOD_X = 56, ARROW_X = 79, OUT_X = 113, ROW_Y = 9, LINES_Y = 34;
+
     private final IDrawable icon;
-    private final IDrawableAnimated progressBar;
 
     public mio_icif_CanningCategory(IGuiHelper helper) {
-        // GUI 尺寸 176x104
-        this.background = helper.createDrawable(TEXTURE, 0, 0, 176, 104);
-        this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
-                new ItemStack(mio_icif_blocks.CANNER_ELC.get()));
-        // Progress bar texture at (233, 0), size 24x15.
-        this.progressBar = helper.createAnimatedDrawable(
-                helper.createDrawable(TEXTURE, 233, 0, 24, 15),
-                40, IDrawableAnimated.StartDirection.LEFT, false);
+        this.icon = helper.createDrawableItemLike(mio_icif_blocks.CANNER_ELC.get());
     }
 
-    @Override
-    public RecipeType<RecipeHolder<CanningRecipe>> getRecipeType() {
-        return CANNING_TYPE;
-    }
-
-    @Override
-    public Component getTitle() {
-        return Component.translatable("jei.mio_icif.canning");
-    }
-
-    @Override
-    public int getWidth() {
-        return 176;
-    }
-
-    @Override
-    public int getHeight() {
-        return 104;
-    }
-
-    @Override
-    public @Nullable IDrawable getIcon() {
-        return this.icon;
-    }
+    @Override public RecipeType<RecipeHolder<CanningRecipe>> getRecipeType() { return CANNING_TYPE; }
+    @Override public Component getTitle() { return Component.translatable("jei.mio_icif.canning"); }
+    @Override public @Nullable IDrawable getIcon() { return icon; }
+    @Override public int getWidth() { return WIDTH; }
+    @Override public int getHeight() { return HEIGHT; }
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, CanningRecipe recipe, IFocusGroup focuses) {
-        // Input slot (41, 17), material slot (80, 44), output slot (119, 17). The positions match the machine GUI.
-    // A data pack recipe can have no ingredients. JEI must not crash on it.
-    if (!recipe.getIngredients().isEmpty()) {
-        builder.addSlot(RecipeIngredientRole.INPUT, 41, 17)
-                .addIngredients(recipe.getIngredients().get(0));
-    }
-
-        // Material slot.
-    builder.addSlot(RecipeIngredientRole.INPUT, 80, 44)
-                .addIngredients(recipe.getIngredients().get(1));
-
-        // Output slot (right side).
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 119, 17)
-                .addItemStack(recipe.getResultItem(null));
+        var ingredients = recipe.getIngredients();
+        if (ingredients.size() > 0) SiJei.input(builder, CAN_X, ROW_Y).addIngredients(ingredients.get(0));
+        if (ingredients.size() > 1) SiJei.input(builder, FOOD_X, ROW_Y).addIngredients(ingredients.get(1));
+        SiJei.mainOutput(builder, OUT_X, ROW_Y).addItemStack(recipe.getResult());
+        for (var ingredient : ingredients) SiJei.contents(builder, mezz.jei.api.recipe.RecipeIngredientRole.INPUT, java.util.List.of(ingredient.getItems()));
+        SiJei.contents(builder, mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT, java.util.List.of(recipe.getResult()));
     }
 
     @Override
-    protected void drawFor(CanningRecipe recipe, IRecipeSlotsView recipeSlotsView, net.minecraft.client.gui.GuiGraphics guiGraphics, double mouseX, double mouseY) {
-        this.background.draw(guiGraphics, 0, 0);
-        // Progress bar at (74, 22). The position matches the machine GUI.
-    this.progressBar.draw(guiGraphics, 74, 22);
-
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.font != null) {
-            String timeText = recipe.getProcessingTime() / 20 + "s";
-            guiGraphics.drawString(minecraft.font, timeText, 86 - minecraft.font.width(timeText) / 2, 65, 0x808080, false);
-        }
+    protected void createExtrasFor(IRecipeExtrasBuilder builder, CanningRecipe recipe, IFocusGroup focuses) {
+        builder.addRecipePlusSign().setPosition(PLUS_X, ROW_Y + 2);
+        SiJei.arrow(builder, ARROW_X, ROW_Y, recipe.getProcessingTime());
+        SiJei.line(builder, SiJei.cost(recipe.getProcessingTime(), recipe.getEnergyPerTick()), WIDTH, LINES_Y);
     }
 }
-
-

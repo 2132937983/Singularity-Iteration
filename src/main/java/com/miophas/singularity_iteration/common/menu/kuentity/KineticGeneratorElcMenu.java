@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
     private static final int MOTOR_ROWS = 2;
     private static final int MOTOR_SPACING = 18;
 
+    // filled by mio_icif_Kinetic_Generator_elc
     private static final int DATA_IS_WORKING = 0;
     private static final int DATA_ENERGY = 1;
     private static final int DATA_MAX_ENERGY = 2;
@@ -52,13 +53,10 @@ import org.jetbrains.annotations.Nullable;
         super(mio_icif_menus.KINETIC_GENERATOR_ELC_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, DATA_COUNT, blockEntity);
     }
 
-    public void setSyncData(boolean isWorking, int energy, int maxEnergy, int motorCount, int kineticGeneration, int maxKineticGeneration) {
-        this.data.set(DATA_IS_WORKING, isWorking ? 1 : 0);
-        this.data.set(DATA_ENERGY, energy);
-        this.data.set(DATA_MAX_ENERGY, maxEnergy);
-        this.data.set(DATA_MOTOR_COUNT, motorCount);
-        this.data.set(DATA_KINETIC_GENERATION, kineticGeneration);
-        this.data.set(DATA_MAX_KINETIC_GENERATION, maxKineticGeneration);
+    /** The synced data carries no progress. */
+    @Override
+    protected int progressDataIndex() {
+        return -1;
     }
 
     public boolean isWorking() {
@@ -77,10 +75,12 @@ import org.jetbrains.annotations.Nullable;
         return this.data.get(DATA_MOTOR_COUNT);
     }
 
+    /** KU handed to the block in front in the last tick. */
     public int getKineticGeneration() {
         return this.data.get(DATA_KINETIC_GENERATION);
     }
 
+    /** KU/t the installed motors allow (100 each). */
     public int getMaxKineticGeneration() {
         return this.data.get(DATA_MAX_KINETIC_GENERATION);
     }

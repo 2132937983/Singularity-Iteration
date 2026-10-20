@@ -112,6 +112,9 @@ public class mio_icif_resources {
     public static final DeferredItem<Item> LITHIUM_DUST_SMALL = ITEMS.register("resource/item_lithium_dust_small", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> NETHERRACK_DUST = ITEMS.register("resource/item_netherrack_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MOTOR = ITEMS.register("resource/item_motor", () -> new Item(new Item.Properties()));
+    // Heads of the Mining Drill and the Chainsaw: the iron plates of their IC2 recipes as a part
+    public static final DeferredItem<Item> DRILL_BIT = ITEMS.register("resource/item_drill_bit", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> CHAINSAW_BLADE = ITEMS.register("resource/item_chainsaw_blade", () -> new Item(new Item.Properties()));
     // MOX燃料 - 放射性约为铀238的2-3倍
     public static final DeferredItem<Item> MOX = ITEMS.register("resource/item_mox", () -> new mio_icif_nuclear_material(new Item.Properties(), 2.5F));
     public static final DeferredItem<Item> MOX_PELLET = ITEMS.register("resource/item_mox_pellet", () -> new mio_icif_nuclear_material(new Item.Properties(), 2.5F));

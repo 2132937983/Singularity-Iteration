@@ -1,6 +1,8 @@
 package com.miophas.singularity_iteration.common.blockentity.oilrig;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.block.oilrig.mio_icif_block_oil_rig_panel;
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
@@ -36,9 +38,10 @@ public class mio_icif_dimension_oil_rig_core_entity extends MultiblockEnergyCore
     private static final long DEFAULT_CAPACITY = 200000L;
     private static final ICableTier TIER = MioIcifAPI.instance().getEnergyNetAPI().getCableTier("ev");
 
-    private static final long ENERGY_PER_DRILL = 2000L;
-    private static final long ENERGY_PER_IDLE = 1000L;
-    private static final int OIL_PER_DRILL = 200;
+    public static final long ENERGY_PER_DRILL = 2000L;
+    public static final long ENERGY_PER_IDLE = 1000L;
+    public static final int OIL_PER_DRILL = 200;
+    public static final int DRILL_INTERVAL = 20;
 
     @Nullable
     private IMultiblockStructure multiblockStructure;
@@ -78,7 +81,7 @@ public class mio_icif_dimension_oil_rig_core_entity extends MultiblockEnergyCore
             blockEntity.checkStructureComplete(level, pos);
         }
 
-        if (blockEntity.tickCounter % 20 == 0 && blockEntity.isStructureComplete()) {
+        if (blockEntity.tickCounter % DRILL_INTERVAL == 0 && blockEntity.isStructureComplete()) {
             blockEntity.tryOperate(level, pos);
         }
     }
@@ -231,23 +234,16 @@ public class mio_icif_dimension_oil_rig_core_entity extends MultiblockEnergyCore
 
             level.setBlock(targetPos, Blocks.AIR.defaultBlockState(), 2);
 
-            if (isOreBlock(targetState) || targetState.is(Blocks.LAVA)) {
-                return Math.random() < 0.80;
-            } else if (targetState.is(Blocks.OBSIDIAN)) {
-                return Math.random() < 0.95;
-            } else if (targetState.is(Blocks.GRAVEL) || targetState.is(Blocks.SAND)) {
-                return Math.random() < 0.10;
-            } else {
-                return Math.random() < 0.20;
-            }
+            return Math.random() < mio_icif_oil_rig_core_entity.strikeChance(targetState);
         }
         offsetY++;
         return false;
     }
 
-    private boolean isOreBlock(BlockState state) {
-        String path = state.getBlock().getDescriptionId();
-        return path.contains("ore") || path.contains("Ore");
+    /** For recipe viewers: the Oil Rig's drilling, twice the oil and twice as often. */
+    public static List<MachineConversion> conversions() {
+        return List.of(mio_icif_oil_rig_core_entity.drilling(mio_icif_blocks.DIMENSION_OIL_RIG_CORE.get(),
+            OIL_PER_DRILL, DRILL_INTERVAL, ENERGY_PER_DRILL, ENERGY_PER_IDLE));
     }
 
     private static final int[][] MODULE_OFFSETS = {

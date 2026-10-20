@@ -1,118 +1,45 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.recipe.extractor.mio_icif_ExtractorRecipe;
-import com.miophas.singularity_iteration.common.util.mio_icif_gui_global_variables;
-import mezz.jei.api.constants.VanillaTypes;
-import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
-import mezz.jei.api.gui.drawable.IDrawable;
-import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.recipe.IFocusGroup;
-import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
-/**
- * JEI recipe category for the extractor.
- */
+import java.util.List;
+
+/** Extractor: the machine runs every recipe for its own time and energy (IC2: 300 ticks, 2 EU/t). */
 @SuppressWarnings("null")
-public class mio_icif_ExtractorCategory extends AbstractJeiRecipeCategory<mio_icif_ExtractorRecipe> {
+public class mio_icif_ExtractorCategory extends SiItemMachineCategory<mio_icif_ExtractorRecipe> {
 
     public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "extractor");
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
-            "textures/gui/gui_extractor_elc.png");
-    public static final ResourceLocation ATLAS_TEXTURE = mio_icif_gui_global_variables.ATLAS_TEXTURE;
-    public static final RecipeType<RecipeHolder<mio_icif_ExtractorRecipe>> EXTRACTOR_TYPE =
-            RecipeType.createRecipeHolderType(UID);
-
-    private final IDrawable background;
-    private final IDrawable icon;
+    public static final RecipeType<RecipeHolder<mio_icif_ExtractorRecipe>> EXTRACTOR_TYPE = RecipeType.createRecipeHolderType(UID);
 
     public mio_icif_ExtractorCategory(IGuiHelper helper) {
-        // Draw only the machine content area as the background. Do not draw the border.
-        this.background = helper.createDrawable(TEXTURE, 7, 7, 162, 72);
-        this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
-                new ItemStack(mio_icif_blocks.EXTRACTOR_ELC.get()));
+        super(helper, EXTRACTOR_TYPE, "jei.mio_icif.extractor", mio_icif_blocks.EXTRACTOR_ELC.get(), 1);
     }
 
     @Override
-    public RecipeType<RecipeHolder<mio_icif_ExtractorRecipe>> getRecipeType() {
-        return EXTRACTOR_TYPE;
+    protected List<ItemStack> inputs(mio_icif_ExtractorRecipe recipe) {
+        return SiJei.withCount(recipe.getIngredient(), 1);
     }
 
     @Override
-    public Component getTitle() {
-        return Component.translatable("jei.mio_icif.extractor");
+    protected ItemStack result(mio_icif_ExtractorRecipe recipe) {
+        return recipe.getResult();
     }
 
     @Override
-    public int getWidth() {
-        return 162;
+    protected int ticks(mio_icif_ExtractorRecipe recipe) {
+        return (int) com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_extrator_elc.DEFAULT_WORK_TIME;
     }
 
     @Override
-    public int getHeight() {
-        return 72;
-    }
-
-    @Override
-    public @Nullable IDrawable getIcon() {
-        return this.icon;
-    }
-
-    @Override
-    protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_ExtractorRecipe recipe, IFocusGroup focuses) {
-        // The slot coordinates are adjusted for the new background area.
-        // A data pack recipe can have no ingredients. JEI must not crash on it.
-        if (!recipe.getIngredients().isEmpty()) {
-            builder.addSlot(RecipeIngredientRole.INPUT, 49, 10)
-                    .addIngredients(recipe.getIngredients().get(0));
-        }
-
-        // Output slot
-    builder.addSlot(RecipeIngredientRole.OUTPUT, 109, 28)
-                .addItemStack(recipe.getResultItem(null));
-    }
-
-    @Override
-    protected void drawFor(mio_icif_ExtractorRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
-        this.background.draw(guiGraphics, 0, 0);
-        
-        // Draw the extractor progress bar. Use the same method as the Screen base class.
-        int progressX = 72;
-        int progressY = 27;
-        int progressPixels = mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_U; // Full progress
-        
-        // Render the background first.
-        guiGraphics.blit(ATLAS_TEXTURE, progressX, progressY, 0,
-            (float) mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_BG_X,
-            (float) mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_BG_Y,
-            mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_BG_U,
-            mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_BG_V,
-            mio_icif_gui_global_variables.ATLAS_WIDTH,
-            mio_icif_gui_global_variables.ATLAS_HEIGHT);
-        
-        // Then render the progress bar.
-        guiGraphics.blit(ATLAS_TEXTURE, progressX, progressY, 0,
-            (float) mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_X,
-            (float) mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_Y,
-            progressPixels,
-            mio_icif_gui_global_variables.EXTRACTOR_WORK_PROGRESS_V,
-            mio_icif_gui_global_variables.ATLAS_WIDTH,
-            mio_icif_gui_global_variables.ATLAS_HEIGHT);
-
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.font != null) {
-            String timeText = recipe.getProcessingTime() / 20 + "s";
-            guiGraphics.drawString(minecraft.font, timeText, 86 - minecraft.font.width(timeText) / 2, 65, 0x808080, false);
-        }
+    protected long euPerTick(mio_icif_ExtractorRecipe recipe) {
+        return com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_extrator_elc.DEFAULT_ENERGY_PER_TICK;
     }
 }

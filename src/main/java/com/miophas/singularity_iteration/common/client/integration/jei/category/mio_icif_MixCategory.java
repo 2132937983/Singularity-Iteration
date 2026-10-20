@@ -1,123 +1,69 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.recipe.canner.mix.MixRecipe;
-import mezz.jei.api.constants.VanillaTypes;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
-import mezz.jei.api.gui.drawable.IDrawableAnimated;
-import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.fluids.FluidStack;
-
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.List;
-
 /**
- * JEI recipe category for the canning machine in mix mode.
+ * Canner, mix mode: a fluid and a material give a fluid (and/or a filled cell); the recipe sets time and energy.
+ * <pre>
+ *   [fluid] + [mat] ==> [fluid][cell]
+ *       10 s · 1 EU/t · 200 EU
+ * </pre>
  */
 @SuppressWarnings("null")
 public class mio_icif_MixCategory extends AbstractJeiRecipeCategory<MixRecipe> {
 
     public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "mix");
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
-            "textures/gui/gui_canner_elc.png");
-    public static final RecipeType<RecipeHolder<MixRecipe>> MIX_TYPE =
-            RecipeType.createRecipeHolderType(UID);
+    public static final RecipeType<RecipeHolder<MixRecipe>> MIX_TYPE = RecipeType.createRecipeHolderType(UID);
 
-    private final IDrawable background;
+    private static final int WIDTH = 150, HEIGHT = 41;
+    private static final int FLUID_X = 13, PLUS_X = 34, MAT_X = 52, ARROW_X = 75, OUT_X = 105, ROW_Y = 6, LINES_Y = 30;
+
     private final IDrawable icon;
-    private final IDrawableAnimated progressBar;
 
     public mio_icif_MixCategory(IGuiHelper helper) {
-        // GUI 尺寸 176x104
-        this.background = helper.createDrawable(TEXTURE, 0, 0, 176, 104);
-        this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
-                new ItemStack(mio_icif_blocks.CANNER_ELC.get()));
-        // Progress bar texture at (233, 0), size 24x15.
-        this.progressBar = helper.createAnimatedDrawable(
-                helper.createDrawable(TEXTURE, 233, 0, 24, 15),
-                40, IDrawableAnimated.StartDirection.LEFT, false);
+        this.icon = helper.createDrawableItemLike(mio_icif_blocks.CANNER_ELC.get());
     }
 
-    @Override
-    public RecipeType<RecipeHolder<MixRecipe>> getRecipeType() {
-        return MIX_TYPE;
-    }
-
-    @Override
-    public Component getTitle() {
-        return Component.translatable("jei.mio_icif.mix");
-    }
-
-    @Override
-    public int getWidth() {
-        return 176;
-    }
-
-    @Override
-    public int getHeight() {
-        return 104;
-    }
-
-    @Override
-    public @Nullable IDrawable getIcon() {
-        return this.icon;
-    }
+    @Override public RecipeType<RecipeHolder<MixRecipe>> getRecipeType() { return MIX_TYPE; }
+    @Override public Component getTitle() { return Component.translatable("jei.mio_icif.mix"); }
+    @Override public @Nullable IDrawable getIcon() { return icon; }
+    @Override public int getWidth() { return WIDTH; }
+    @Override public int getHeight() { return HEIGHT; }
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, MixRecipe recipe, IFocusGroup focuses) {
-        builder.addSlot(RecipeIngredientRole.INPUT, 41, 17)
-                .addFluidStack(recipe.getInputFluid().getFluid(), recipe.getInputFluid().getAmount())
-                .setFluidRenderer(1000, false, 16, 16);
-
-        List<ItemStack> materials = Arrays.stream(recipe.getMaterialIngredient().getItems())
-                .map(stack -> stack.copyWithCount(recipe.getMaterialCount()))
-                .toList();
-        builder.addSlot(RecipeIngredientRole.INPUT, 80, 44)
-                .addItemStacks(materials);
-
+        if (!recipe.getInputFluid().isEmpty()) SiJei.fluid(builder, RecipeIngredientRole.INPUT, FLUID_X, ROW_Y, recipe.getInputFluid());
+        SiJei.input(builder, MAT_X, ROW_Y).addItemStacks(SiJei.withCount(recipe.getMaterialIngredient(), recipe.getMaterialCount()));
+        int x = OUT_X;
         FluidStack resultFluid = recipe.getResultFluid();
-        ItemStack dynamicResultCell = recipe.getDynamicResultCell();
-
-        if (!resultFluid.isEmpty() && !dynamicResultCell.isEmpty()) {
-            builder.addSlot(RecipeIngredientRole.OUTPUT, 119, 17)
-                    .addFluidStack(resultFluid.getFluid(), resultFluid.getAmount())
-                    .setFluidRenderer(1000, false, 16, 16);
-
-            builder.addSlot(RecipeIngredientRole.OUTPUT, 141, 44)
-                    .addItemStack(dynamicResultCell);
-        } else if (!resultFluid.isEmpty()) {
-            builder.addSlot(RecipeIngredientRole.OUTPUT, 119, 17)
-                    .addFluidStack(resultFluid.getFluid(), resultFluid.getAmount())
-                    .setFluidRenderer(1000, false, 16, 16);
-        } else if (!dynamicResultCell.isEmpty()) {
-            builder.addSlot(RecipeIngredientRole.OUTPUT, 119, 17)
-                    .addItemStack(dynamicResultCell);
+        if (!resultFluid.isEmpty()) {
+            SiJei.fluid(builder, RecipeIngredientRole.OUTPUT, x, ROW_Y, resultFluid);
+            x += 18;
         }
+        ItemStack cell = recipe.getDynamicResultCell();
+        if (!cell.isEmpty()) SiJei.output(builder, x, ROW_Y).addItemStack(cell);
+        SiJei.contents(builder, RecipeIngredientRole.INPUT, java.util.List.of(recipe.getMaterialIngredient().getItems()));
     }
 
     @Override
-    protected void drawFor(MixRecipe recipe, IRecipeSlotsView recipeSlotsView, net.minecraft.client.gui.GuiGraphics guiGraphics, double mouseX, double mouseY) {
-        this.background.draw(guiGraphics, 0, 0);
-        // Progress bar at (74, 22). The position matches the machine GUI.
-    this.progressBar.draw(guiGraphics, 74, 22);
-
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.font != null) {
-            String timeText = recipe.getProcessingTime() / 20 + "s";
-            guiGraphics.drawString(minecraft.font, timeText, 86 - minecraft.font.width(timeText) / 2, 65, 0x808080, false);
-        }
+    protected void createExtrasFor(IRecipeExtrasBuilder builder, MixRecipe recipe, IFocusGroup focuses) {
+        builder.addRecipePlusSign().setPosition(PLUS_X, ROW_Y + 2);
+        SiJei.arrow(builder, ARROW_X, ROW_Y, recipe.getProcessingTime());
+        SiJei.line(builder, SiJei.cost(recipe.getProcessingTime(), recipe.getEnergyPerTick()), WIDTH, LINES_Y);
     }
 }

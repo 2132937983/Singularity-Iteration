@@ -2914,7 +2914,18 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered item handler capability for Lathe");
+        // KU input on every side (IC2 TileEntityLathe takes KU from any adjacent kinetic source)
+        event.registerBlockEntity(
+            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK,
+            mio_icif_block_entities.LATHE_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> {
+                if (blockEntity instanceof mio_icif_lathe lathe) {
+                    return lathe.getKineticStorageCapability(direction);
+                }
+                return null;
+            }
+        );
+        Singularity_Iteration.LOGGER.info("Registered item handler and KU capabilities for Lathe");
 
         // Register capabilities for Electric Sorter (电动分拣机)
         event.registerBlockEntity(

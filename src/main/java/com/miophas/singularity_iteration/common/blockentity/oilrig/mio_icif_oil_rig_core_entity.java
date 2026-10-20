@@ -1,6 +1,8 @@
 package com.miophas.singularity_iteration.common.blockentity.oilrig;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.block.oilrig.mio_icif_block_oil_rig_panel;
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
@@ -19,6 +21,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -36,9 +39,12 @@ public class mio_icif_oil_rig_core_entity extends MultiblockEnergyCore {
     private static final long DEFAULT_CAPACITY = 50000L;
     private static final ICableTier TIER = MioIcifAPI.instance().getEnergyNetAPI().getCableTier("hv");
 
-    private static final long ENERGY_PER_DRILL = 1000L;
-    private static final long ENERGY_PER_IDLE = 500L;
-    private static final int OIL_PER_DRILL = 100;
+    public static final long ENERGY_PER_DRILL = 1000L;
+    public static final long ENERGY_PER_IDLE = 500L;
+    public static final int OIL_PER_DRILL = 100;
+    public static final int DRILL_INTERVAL = 45;
+    public static final double ORE_STRIKE_CHANCE = 0.8, OBSIDIAN_STRIKE_CHANCE = 0.95,
+        LOOSE_STRIKE_CHANCE = 0.1, OTHER_STRIKE_CHANCE = 0.2;
 
     @Nullable
     private IMultiblockStructure multiblockStructure;
@@ -70,7 +76,7 @@ public class mio_icif_oil_rig_core_entity extends MultiblockEnergyCore {
             blockEntity.checkStructureComplete(level, pos);
         }
 
-        if (blockEntity.tickCounter % 45 == 0 && blockEntity.isStructureComplete()) {
+        if (blockEntity.tickCounter % DRILL_INTERVAL == 0 && blockEntity.isStructureComplete()) {
             blockEntity.tryOperate(level, pos);
         }
     }
@@ -196,15 +202,7 @@ public class mio_icif_oil_rig_core_entity extends MultiblockEnergyCore {
 
             level.setBlock(targetPos, Blocks.AIR.defaultBlockState(), 2);
 
-            if (isOreBlock(targetState) || targetState.is(Blocks.LAVA)) {
-                return Math.random() < 0.8;
-            } else if (targetState.is(Blocks.OBSIDIAN)) {
-                return Math.random() < 0.95;
-            } else if (targetState.is(Blocks.GRAVEL) || targetState.is(Blocks.SAND)) {
-                return Math.random() < 0.1;
-            } else {
-                return Math.random() < 0.2;
-            }
+            return Math.random() < strikeChance(targetState);
         }
         offsetY++;
         return false;
@@ -222,9 +220,32 @@ public class mio_icif_oil_rig_core_entity extends MultiblockEnergyCore {
         return new int[]{base[idx][0] * scale, base[idx][1] * scale};
     }
 
-    private boolean isOreBlock(BlockState state) {
+    /** The chance that drilling {@code state} strikes oil (dense rock and ore often, loose ground rarely). */
+    public static double strikeChance(BlockState state) {
+        if (isOreBlock(state) || state.is(Blocks.LAVA)) return ORE_STRIKE_CHANCE;
+        if (state.is(Blocks.OBSIDIAN)) return OBSIDIAN_STRIKE_CHANCE;
+        if (state.is(Blocks.GRAVEL) || state.is(Blocks.SAND)) return LOOSE_STRIKE_CHANCE;
+        return OTHER_STRIKE_CHANCE;
+    }
+
+    private static boolean isOreBlock(BlockState state) {
         String path = state.getBlock().getDescriptionId();
         return path.contains("ore") || path.contains("Ore");
+    }
+
+    /** For recipe viewers: {@link #OIL_PER_DRILL} mB of crude oil per strike. */
+    public static List<MachineConversion> conversions() {
+        return List.of(drilling(mio_icif_blocks.OIL_RIG_CORE.get(), OIL_PER_DRILL, DRILL_INTERVAL, ENERGY_PER_DRILL, ENERGY_PER_IDLE));
+    }
+
+    /** A rig drilling one block every {@code interval} ticks; shared with the Dimension Oil Rig. */
+    public static MachineConversion drilling(ItemLike rig, int oil, int interval, long energy, long idleEnergy) {
+        return MachineConversion.of(rig).fluidOut(mio_icif_fluids.CRUDEOIL.get(), oil).time(interval)
+            .note("conversion.mio_icif.oil_rig.interval", MachineConversion.seconds(interval))
+            .note("conversion.mio_icif.oil_rig.energy", energy, idleEnergy)
+            .note("conversion.mio_icif.oil_rig.chance.dense", MachineConversion.percent(ORE_STRIKE_CHANCE), MachineConversion.percent(OBSIDIAN_STRIKE_CHANCE))
+            .note("conversion.mio_icif.oil_rig.chance.loose", MachineConversion.percent(LOOSE_STRIKE_CHANCE), MachineConversion.percent(OTHER_STRIKE_CHANCE))
+            .build();
     }
 
     private <T extends BlockEntity> List<T> findModules(Level level, BlockPos pos, Class<T> clazz) {

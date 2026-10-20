@@ -1,0 +1,16 @@
+// Optional development capture: screenshots of every SI JEI recipe category in a disposable flat world.
+// ./gradlew --init-script tools/jei-capture.init.gradle runJeiCapture [-PsiCaptureJei=uid,uid]
+allprojects { project ->
+    afterEvaluate {
+        project.neoForge.runs.register('jeiCapture') {
+            client()
+            loadedMods = [project.neoForge.mods[project.mod_id]]
+            gameDirectory = project.file('build/jei-capture-game')
+            systemProperty 'si.capture', project.file('build/jei-capture').absolutePath
+            systemProperty 'si.capture.jei', project.findProperty('siCaptureJei') ?: 'ALL'
+            programArguments.addAll '--width', '1280', '--height', '900'
+            jvmArguments.addAll '-Xmx3G', '-Xms512m'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}

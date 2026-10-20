@@ -1,185 +1,76 @@
 package com.miophas.singularity_iteration.common.client.integration.jei.category;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 import com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipe;
-import mezz.jei.api.constants.VanillaTypes;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
-import mezz.jei.api.gui.drawable.IDrawableAnimated;
-import mezz.jei.api.gui.drawable.IDrawableStatic;
-import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings({"null", "deprecation"})
+import java.util.List;
+
+/**
+ * Blast Furnace: the ore and the compressed air cells for the air of the whole run give the result
+ * and the slag.
+ * <pre>
+ *   [ore] + [air cells] ==> [ out ][slag]
+ *        30 s · Air 1 mB/t
+ * </pre>
+ */
+@SuppressWarnings("null")
 public class mio_icif_BlastFurnaceCategory extends AbstractJeiRecipeCategory<mio_icif_BlastFurnaceRecipe> {
 
     public static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "blast_furnace");
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
-            "textures/gui/gui_blast_furnace.png");
-    public static final RecipeType<RecipeHolder<mio_icif_BlastFurnaceRecipe>> BLAST_FURNACE_TYPE =
-            RecipeType.createRecipeHolderType(UID);
+    public static final RecipeType<RecipeHolder<mio_icif_BlastFurnaceRecipe>> BLAST_FURNACE_TYPE = RecipeType.createRecipeHolderType(UID);
 
-    private static final int BG_X = 5;
-    private static final int BG_Y = 5;
-    private static final int BG_WIDTH = 166;
-    private static final int BG_HEIGHT = 78;
+    private static final int WIDTH = 150, HEIGHT = 45;
+    private static final int ORE_X = 9, PLUS_X = 30, AIR_X = 48, ARROW_X = 71, OUT_X = 105, SLAG_X = 127, ROW_Y = 9, LINES_Y = 34;
 
-    private static final int AIR_BAR_X = 73;
-    private static final int AIR_BAR_Y = 32;
-    private static final int AIR_BAR_WIDTH = 21;
-    private static final int AIR_BAR_HEIGHT = 21;
-    private static final int AIR_CAPACITY = 8000;
-
-    private final IDrawable background;
     private final IDrawable icon;
-    private final IDrawableAnimated progressBar;
-    private final IDrawableAnimated heatBar;
-    private final IDrawableStatic heatOkIcon;
-    private final IDrawableStatic airOkIcon;
 
     public mio_icif_BlastFurnaceCategory(IGuiHelper helper) {
-        this.background = helper.createDrawable(TEXTURE, BG_X, BG_Y, BG_WIDTH, BG_HEIGHT);
-        this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
-                new ItemStack(mio_icif_blocks.BLAST_FURNACE.get()));
-
-        IDrawableStatic progressBg = helper.createDrawable(TEXTURE, 176, 51, 27, 27);
-        this.progressBar = helper.createAnimatedDrawable(progressBg,
-                100, IDrawableAnimated.StartDirection.BOTTOM, false);
-
-        IDrawableStatic heatBg = helper.createDrawable(TEXTURE, 176, 0, 23, 8);
-        this.heatBar = helper.createAnimatedDrawable(heatBg,
-                200, IDrawableAnimated.StartDirection.LEFT, false);
-
-        this.heatOkIcon = helper.createDrawable(TEXTURE, 176, 8, 14, 14);
-        this.airOkIcon = helper.createDrawable(TEXTURE, 176, 23, 27, 27);
+        this.icon = helper.createDrawableItemLike(mio_icif_blocks.BLAST_FURNACE.get());
     }
 
-    @Override
-    public RecipeType<RecipeHolder<mio_icif_BlastFurnaceRecipe>> getRecipeType() {
-        return BLAST_FURNACE_TYPE;
-    }
-
-    @Override
-    public Component getTitle() {
-        return Component.translatable("jei.mio_icif.blast_furnace");
-    }
-
-    @Override
-    public int getWidth() {
-        return BG_WIDTH;
-    }
-
-    @Override
-    public int getHeight() {
-        return BG_HEIGHT;
-    }
-
-    @Override
-    public @Nullable IDrawable getIcon() {
-        return this.icon;
-    }
+    @Override public RecipeType<RecipeHolder<mio_icif_BlastFurnaceRecipe>> getRecipeType() { return BLAST_FURNACE_TYPE; }
+    @Override public Component getTitle() { return Component.translatable("jei.mio_icif.blast_furnace"); }
+    @Override public @Nullable IDrawable getIcon() { return icon; }
+    @Override public int getWidth() { return WIDTH; }
+    @Override public int getHeight() { return HEIGHT; }
 
     @Override
     protected void setRecipeFor(IRecipeLayoutBuilder builder, mio_icif_BlastFurnaceRecipe recipe, IFocusGroup focuses) {
-        int ox = -BG_X;
-        int oy = -BG_Y;
-
-        builder.addSlot(RecipeIngredientRole.INPUT, 35 + ox, 33 + oy)
-                .addIngredients(recipe.getIngredient());
-
-        builder.addSlot(RecipeIngredientRole.INPUT, 26 + ox, 56 + oy)
-                .addItemStack(new ItemStack(mio_icif_cells.CELL_AIR.get()));
-
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 44 + ox, 56 + oy)
-                .addItemStack(new ItemStack(mio_icif_cells.CELL_EMPTY.get()));
-
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 134 + ox, 56 + oy)
-                .addItemStack(recipe.getResult());
-
-        if (!recipe.getSecondaryResult().isEmpty()) {
-            builder.addSlot(RecipeIngredientRole.OUTPUT, 152 + ox, 56 + oy)
-                    .addItemStack(recipe.getSecondaryResult());
+        SiJei.input(builder, ORE_X, ROW_Y).addItemStacks(SiJei.withCount(recipe.getIngredient(), recipe.getIngredientCount()));
+        long air = (long) recipe.getAirCostPerTick() * recipe.getDuration();
+        if (air > 0) {
+            // the furnace fills its air tank from compressed air cells; the fluid itself is nearly invisible
+            ItemStack cell = new ItemStack(mio_icif_cells.CELL_AIR.get());
+            int perCell = Math.max(1, mio_icif_cells.getCellCapacity(cell));
+            SiJei.input(builder, AIR_X, ROW_Y).addItemStack(cell.copyWithCount((int) Math.min(64, (air + perCell - 1) / perCell)));
+            SiJei.contents(builder, RecipeIngredientRole.INPUT, List.of(cell));
         }
-    }
-
-    private void renderFluidBar(GuiGraphics guiGraphics, int x, int y, int width, int height,
-                                FluidStack fluid, int capacity) {
-        if (fluid.isEmpty() || capacity <= 0) return;
-
-        int fillHeight = (int) ((float) fluid.getAmount() / capacity * height);
-        if (fillHeight <= 0) return;
-
-        IClientFluidTypeExtensions extensions = IClientFluidTypeExtensions.of(fluid.getFluidType());
-        TextureAtlasSprite sprite = Minecraft.getInstance()
-                .getTextureAtlas(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)
-                .apply(extensions.getStillTexture());
-
-        int color = extensions.getTintColor(fluid);
-        float a = ((color >> 24) & 0xFF) / 255f;
-        float r = ((color >> 16) & 0xFF) / 255f;
-        float g = ((color >> 8) & 0xFF) / 255f;
-        float b = (color & 0xFF) / 255f;
-
-        int tileSize = sprite.contents().width();
-        int fillTop = y + height - fillHeight;
-
-        guiGraphics.setColor(r, g, b, a);
-        guiGraphics.enableScissor(x, fillTop, x + width, y + height);
-
-        for (int tileY = fillTop; tileY < y + height; tileY += tileSize) {
-            for (int tileX = x; tileX < x + width; tileX += tileSize) {
-                guiGraphics.blit(tileX, tileY, 0, tileSize, tileSize, sprite);
-            }
-        }
-
-        guiGraphics.disableScissor();
-        guiGraphics.setColor(1f, 1f, 1f, 1f);
+        SiJei.mainOutput(builder, OUT_X, ROW_Y).addItemStack(recipe.getResult());
+        if (!recipe.getSecondaryResult().isEmpty()) SiJei.output(builder, SLAG_X, ROW_Y).addItemStack(recipe.getSecondaryResult());
     }
 
     @Override
-    protected void drawFor(mio_icif_BlastFurnaceRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics, double mouseX, double mouseY) {
-        this.background.draw(guiGraphics, 0, 0);
-
-        int ox = -BG_X;
-        int oy = -BG_Y;
-
-        this.heatBar.draw(guiGraphics, 70 + ox, 69 + oy);
-        this.heatOkIcon.draw(guiGraphics, 95 + ox, 66 + oy);
-
-        renderFluidBar(guiGraphics, AIR_BAR_X, AIR_BAR_Y, AIR_BAR_WIDTH, AIR_BAR_HEIGHT,
-                new FluidStack(com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.AIR.get(), AIR_CAPACITY),
-                AIR_CAPACITY);
-
-        this.airOkIcon.draw(guiGraphics, 75 + ox, 34 + oy);
-
-        this.progressBar.draw(guiGraphics, 75 + ox, 34 + oy);
-
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.font != null) {
-            String timeText = recipe.getDuration() / 20 + "s";
-            guiGraphics.drawString(minecraft.font, timeText,
-                    (BG_WIDTH - minecraft.font.width(timeText)) / 2, BG_HEIGHT - 10, 0x808080, false);
-
-            if (recipe.getAirCostPerTick() > 0) {
-                String airText = recipe.getAirCostPerTick() + " mB/t";
-                guiGraphics.drawString(minecraft.font, airText, 70 + ox, 74 + oy, 0x808080, false);
-            }
-        }
+    protected void createExtrasFor(IRecipeExtrasBuilder builder, mio_icif_BlastFurnaceRecipe recipe, IFocusGroup focuses) {
+        if (recipe.getAirCostPerTick() > 0) builder.addRecipePlusSign().setPosition(PLUS_X, ROW_Y + 2);
+        SiJei.arrow(builder, ARROW_X, ROW_Y, recipe.getDuration());
+        Component line = recipe.getAirCostPerTick() > 0
+            ? Component.translatable("jei.mio_icif.blast_furnace.air", SiJei.seconds(recipe.getDuration()), SiJei.number(recipe.getAirCostPerTick()))
+            : Component.literal(SiJei.seconds(recipe.getDuration()));
+        SiJei.line(builder, line, WIDTH, LINES_Y);
     }
 }
-

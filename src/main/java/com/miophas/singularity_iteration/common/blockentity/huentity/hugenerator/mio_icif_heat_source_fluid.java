@@ -1,6 +1,8 @@
 package com.miophas.singularity_iteration.common.blockentity.huentity.hugenerator;
 
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
@@ -31,6 +33,8 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * 流体热源
@@ -238,6 +242,20 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
         }
 
         return adjacentHeat != null && adjacentHeat.canReceiveHeat();
+    }
+
+    /** 供 JEI 展示的换热转换：岩浆→绳状熔岩、热冷却剂→冷却剂，1:1，每 mB 放出 {@link #HU_PER_MB} HU。 */
+    public static List<MachineConversion> conversions() {
+        return List.of(exchange(Fluids.LAVA, mio_icif_fluids.PAHOEHOELAVA.get()),
+            exchange(mio_icif_fluids.HOTCOOLANT.get(), mio_icif_fluids.COOLANT.get()));
+    }
+
+    private static MachineConversion exchange(Fluid hot, Fluid cooled) {
+        return MachineConversion.of(mio_icif_blocks.HEAT_SOURCE_FLUID.get())
+            .fluidIn(FLUID_PER_OPERATION, hot).fluidOut(cooled, FLUID_PER_OPERATION)
+            .note("conversion.mio_icif.hu_per_mb", HU_PER_MB)
+            .note("conversion.mio_icif.heat_exchanger.rate", MAX_HEAT_OUTPUT, MAX_HEAT_OUTPUT / HEAT_PER_CONDUCTOR)
+            .build();
     }
 
     /**

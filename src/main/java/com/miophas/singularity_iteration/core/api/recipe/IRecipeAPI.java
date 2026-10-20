@@ -201,11 +201,20 @@ public interface IRecipeAPI {
     }
 
     /**
-     * Finds the fermenter recipe for the input item.
+     * Fermenter recipes take fluids, not items: always empty.
+     *
+     * @deprecated use {@link #findFermenterRecipe(net.neoforged.neoforge.fluids.FluidStack, Level)}
      */
-    @SuppressWarnings("unchecked")
+    @Deprecated
     default Optional<? extends RecipeHolder<?>> findFermenterRecipe(ItemStack input, Level level) {
-        return findRecipe((RecipeType) getFermenterRecipeType(), input, level);
+        return Optional.empty();
+    }
+
+    /**
+     * Finds the fermenter recipe that ferments the input fluid (the amount is not checked).
+     */
+    default Optional<? extends RecipeHolder<?>> findFermenterRecipe(net.neoforged.neoforge.fluids.FluidStack input, Level level) {
+        return Optional.empty();
     }
 
     /**

@@ -74,8 +74,8 @@ public class mio_icif_gui_kinetic_generator_elc extends mio_icif_screen<com.miop
                 }
             }
 
-            // 绘制动能标志（根据动能产生速率填充）
-            int kineticGeneration = menu.isWorking() ? menu.getKineticGeneration() : 0;
+            // 绘制动能标志：上一 tick 输出的 KU 相对马达允许的 KU/t（IC2 getMaxKU）
+            int kineticGeneration = menu.getKineticGeneration();
             int maxKineticGeneration = menu.getMaxKineticGeneration();
             if (kineticGeneration > 0 && maxKineticGeneration > 0) {
                 int kineticHeight = (kineticGeneration * KINETIC_ICON_HEIGHT) / maxKineticGeneration;
@@ -86,10 +86,8 @@ public class mio_icif_gui_kinetic_generator_elc extends mio_icif_screen<com.miop
                 }
             }
 
-            // 绘制动能产生速率文本
-            int kineticGen = menu.isWorking() ? menu.getKineticGeneration() : 0;
-            int maxKineticGen = menu.getMaxKineticGeneration();
-            String kineticText = kineticGen + " KU/" + Component.translatable("gui.mio_icif.max").getString() + " " + maxKineticGen + " KU";
+            // 绘制动能输出文本：实际输出 KU/t 与马达允许的最大 KU/t
+            String kineticText = kineticGeneration + " KU/t  " + Component.translatable("gui.mio_icif.max").getString() + " " + maxKineticGeneration + " KU/t";
             guiGraphics.drawString(this.font, kineticText, x + KINETIC_TEXT_X, y + KINETIC_TEXT_Y, KINETIC_TEXT_COLOR);
         }
     }
@@ -117,7 +115,7 @@ public class mio_icif_gui_kinetic_generator_elc extends mio_icif_screen<com.miop
         if (mouseX >= x + KINETIC_ICON_X && mouseX <= x + KINETIC_ICON_X + KINETIC_ICON_WIDTH &&
                 mouseY >= y + KINETIC_ICON_Y && mouseY <= y + KINETIC_ICON_Y + KINETIC_ICON_HEIGHT) {
             guiGraphics.renderTooltip(this.font,
-                    Component.literal("Kinetic: " + (menu.isWorking() ? menu.getKineticGeneration() : 0) + "/" + menu.getMaxKineticGeneration() + " KU"),
+                    Component.literal("Kinetic: " + menu.getKineticGeneration() + "/" + menu.getMaxKineticGeneration() + " KU/t"),
                     mouseX - x, mouseY - y);
         }
     }

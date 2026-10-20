@@ -1,31 +1,28 @@
-// SCEX 2026-09-12: repaired malformed UTF-8 bytes in comments only.
 package com.miophas.singularity_iteration.common.item.lathe;
 
 import com.miophas.singularity_iteration.core.api.item.ILatheItem;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
+import com.miophas.singularity_iteration.core.api.util.IBoxable;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.CustomData;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 /**
- * 车床车刀物品
- * 对应 IC2 ???ItemLathingTool
- * 
- * 用于车床加工，有耐久度，需要硬度大于加工件才能加工
+ * Lathe tool, aligned with IC2 ItemLathingTool: its durability is the vanilla item damage (IC2
+ * setMaxDamage(50)), a cut costs 1 point, it only cuts workpieces softer than itself, and it fits
+ * into the toolbox.
  */
 @SuppressWarnings("null")
-public class LathingToolItem extends Item implements ILatheItem.ILatheTool {
+public class LathingToolItem extends Item implements ILatheItem.ILatheTool, IBoxable {
 
     private final ToolMaterial material;
 
     public LathingToolItem(ToolMaterial material) {
-        super(new Item.Properties().stacksTo(1));
+        super(new Item.Properties().durability(material.maxDamage));
         this.material = material;
     }
 
@@ -36,76 +33,48 @@ public class LathingToolItem extends Item implements ILatheItem.ILatheTool {
 
     @Override
     public int getCustomDamage(ItemStack stack) {
-        CompoundTag tag = getCustomDataTag(stack);
-        if (tag != null && tag.contains("customDamage")) {
-            return tag.getInt("customDamage");
-        }
-        return 0;
-    }
-
-    @Override
-    public void setCustomDamage(ItemStack stack, int damage) {
-        CompoundTag tag = getCustomDataTag(stack);
-        if (tag == null) {
-            tag = new CompoundTag();
-        }
-        tag.putInt("customDamage", Math.max(0, Math.min(damage, getMaxCustomDamage(stack))));
-        setCustomDataTag(stack, tag);
+        return stack.getDamageValue();
     }
 
     @Override
     public int getMaxCustomDamage(ItemStack stack) {
-        return material.maxDamage;
+        return stack.getMaxDamage();
     }
 
     @Override
-    public boolean isBarVisible(ItemStack stack) {
-        return getCustomDamage(stack) > 0;
+    public void setCustomDamage(ItemStack stack, int damage) {
+        stack.setDamageValue(damage);
+    }
+
+    /** IC2: stack.damageItem(damage, src), i.e. vanilla damage (unbreaking, creative, breaking). */
+    @Override
+    public boolean applyCustomDamage(ItemStack stack, int damage, LivingEntity entity) {
+        if (entity != null && entity.level() instanceof ServerLevel level) {
+            stack.hurtAndBreak(damage, level, entity, item -> {});
+        } else {
+            setCustomDamage(stack, getCustomDamage(stack) + damage);
+        }
+        return damage > 0;
     }
 
     @Override
-    public int getBarWidth(ItemStack stack) {
-        int customDamage = getCustomDamage(stack);
-        int maxDamage = getMaxCustomDamage(stack);
-        if (maxDamage <= 0) return 0;
-        return Math.round((1.0f - (float) customDamage / maxDamage) * 13.0f);
-    }
-
-    @Override
-    public int getBarColor(ItemStack stack) {
-        float f = Math.max(0.0F, ((float) getMaxCustomDamage(stack) - (float) getCustomDamage(stack)) / (float) getMaxCustomDamage(stack));
-        return java.awt.Color.HSBtoRGB(f / 3.0F, 1.0F, 1.0F);
+    public boolean canBeStoredInToolbox(ItemStack stack) {
+        return true;
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);
-        int damage = getCustomDamage(stack);
-        int maxDamage = getMaxCustomDamage(stack);
         tooltip.add(Component.translatable("item.mio_icif.lathing_tool.tooltip.hardness", material.hardness));
-        tooltip.add(Component.translatable("item.mio_icif.lathing_tool.tooltip.damage", maxDamage - damage, maxDamage));
-    }
-
-    @Nullable
-    private CompoundTag getCustomDataTag(ItemStack stack) {
-        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
-        if (customData != null) {
-            return customData.copyTag();
-        }
-        return null;
-    }
-
-    private void setCustomDataTag(ItemStack stack, CompoundTag tag) {
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
     /**
-     * 车刀材质枚举
+     * Lathe tool materials.
      */
     @SuppressWarnings("null")
 public enum ToolMaterial {
-        IRON(2, 32),    // Iron lathe tool: hardness 2, durability 32
-        DIAMOND(4, 64); // Diamond lathe tool: hardness 4, durability 64
+        IRON(3, 50),    // IC2 ItemLathingTool: hardness 3, 50 uses
+        DIAMOND(4, 64); // project extension: hardness 4, 64 uses
 
         public final int hardness;
         public final int maxDamage;
@@ -116,4 +85,3 @@ public enum ToolMaterial {
         }
     }
 }
-

@@ -145,6 +145,37 @@ public final class CaptureDirector {
         else galleryShots(list.split(","));
     }
 
+    /**
+     * JEI review mode: -Dsi.capture.jei=ALL (or uid,uid,...) opens each SI JEI recipe category at GUI
+     * scale 3 and screenshots it (tools/jei-capture.init.gradle).
+     */
+    private static void jeiGallery(String list) {
+        server(40, sp -> {
+            sp.serverLevel().setDayTime(6000);
+            sp.setGameMode(GameType.CREATIVE);
+            look(sp, 0.5, -60, -3.5, 0, 0);
+        });
+        client(5, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.hideGui = false;
+            mc.options.guiScale().set(3);
+            mc.resizeDisplay();
+        });
+        // JEI builds its runtime after the world is joined
+        until(600, () -> !com.miophas.singularity_iteration.common.client.integration.jei.JeiBridge.categories("mio_icif").isEmpty());
+        client(20, () -> {
+            java.util.List<ResourceLocation> uids = "ALL".equals(list)
+                ? com.miophas.singularity_iteration.common.client.integration.jei.JeiBridge.categories("mio_icif")
+                : java.util.Arrays.stream(list.split(",")).map(s -> ResourceLocation.parse(s.contains(":") ? s.strip() : "mio_icif:" + s.strip())).toList();
+            for (var uid : uids) {
+                client(2, () -> com.miophas.singularity_iteration.common.client.integration.jei.JeiBridge.showCategory(uid));
+                shot(15, "jei/" + uid.getPath());
+                client(1, () -> Minecraft.getInstance().setScreen(null));
+            }
+            client(10, () -> Minecraft.getInstance().stop());
+        });
+    }
+
     private static void galleryShots(String[] ids) {
         for (int i = 0; i < ids.length; i++) {
             String id = ids[i].strip();
@@ -1677,8 +1708,12 @@ public final class CaptureDirector {
             new File(OUT).mkdirs();
             scene();
         } else {
+        String jeiList = System.getProperty("si.capture.jei");
         String galleryList = System.getProperty("si.capture.gallery");
-        if (OUT != null && galleryList != null) {
+        if (OUT != null && jeiList != null) {
+            new File(OUT).mkdirs();
+            jeiGallery(jeiList);
+        } else if (OUT != null && galleryList != null) {
             new File(OUT).mkdirs();
             gallery(galleryList);
         } else if (OUT != null) {

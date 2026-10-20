@@ -40,7 +40,7 @@ final class RecipeTypeBridge {
     static RecipeType<?> vacuumFreezer() { return VacuumFreezerRecipes.VACUUM_FREEZER_TYPE.get(); }
     static RecipeType<?> blender() { return BlenderRecipes.BLENDER_TYPE.get(); }
     static RecipeType<?> electrolyzer() { return ElectrolyzerRecipes.ELECTROLYZER_TYPE.get(); }
-    static RecipeType<?> fermenter() { return FermenterRecipes.FERMENTER_TYPE.get(); }
+    static RecipeType<?> fermenter() { return com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes.FERMENTER_TYPE.get(); }
     static RecipeType<?> recycler() { return RecyclerRecipes.RECYCLER_TYPE.get(); }
     static RecipeType<?> neutronPolymerizer() { return NeutronPolymerizerRecipes.NEUTRON_POLYMERIZER_TYPE.get(); }
     static RecipeType<?> fluidRefining() { return com.miophas.singularity_iteration.common.recipe.fluid_refining.FluidRefiningRecipes.FLUID_REFINING_TYPE.get(); }

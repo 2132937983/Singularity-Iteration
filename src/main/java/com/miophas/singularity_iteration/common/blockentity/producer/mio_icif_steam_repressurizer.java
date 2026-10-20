@@ -3,6 +3,8 @@ package com.miophas.singularity_iteration.common.blockentity.producer;
 import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 import com.miophas.singularity_iteration.common.block.producer.mio_icif_block_steam_repressurizer;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractHeatBlockEntity;
@@ -29,6 +31,8 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * IC2 2.8.221 steam repressurizer: 10 mB input + 1 HU per batch, producing
  * 16 / 32 mB ordinary steam. Heat is drawn on demand from all six neighbours.
@@ -39,6 +43,7 @@ public class mio_icif_steam_repressurizer extends AbstractHeatBlockEntity {
     public static final int INPUT_TANK_CAPACITY = 10_000;
     public static final int OUTPUT_TANK_CAPACITY = 10_000;
     public static final int INPUT_BATCH = 10;
+    public static final int HEAT_PER_BATCH = 1;
     public static final int NORMAL_OUTPUT_BATCH = 16;
     public static final int SUPERHEATED_OUTPUT_BATCH = 32;
     public static final int DATA_COUNT = 8;
@@ -98,7 +103,7 @@ public class mio_icif_steam_repressurizer extends AbstractHeatBlockEntity {
                             mio_icif_steam_repressurizer machine) {
         if (level.isClientSide()) return;
         int batches = machine.inputTank.getFluidAmount() / INPUT_BATCH;
-        if (batches > 0 && machine.getHeatStored() < batches) machine.drawHeat(batches);
+        if (batches > 0 && machine.getHeatStored() < (long) batches * HEAT_PER_BATCH) machine.drawHeat(batches * HEAT_PER_BATCH);
         machine.isWorking = machine.repressurizeSteam() > 0;
         // Keep the project's lit model, but never claim work without an actual conversion.
         BlockState actual = machine.getBlockState();
@@ -139,13 +144,28 @@ public class mio_icif_steam_repressurizer extends AbstractHeatBlockEntity {
         var product = new FluidStack(mio_icif_fluids.STEAM.get(), outputPerBatch);
         int freeOutput = outputTank.fill(product.copyWithAmount(Integer.MAX_VALUE),
             IFluidHandler.FluidAction.SIMULATE);
-        int batches = (int) Math.min(getHeatStored(), Math.min(input.getAmount() / INPUT_BATCH,
+        int batches = (int) Math.min(getHeatStored() / HEAT_PER_BATCH, Math.min(input.getAmount() / INPUT_BATCH,
             freeOutput / outputPerBatch));
         if (batches <= 0) return 0;
-        consumeHeatInternal(batches, false);
+        consumeHeatInternal((long) batches * HEAT_PER_BATCH, false);
         inputTank.drain(batches * INPUT_BATCH, IFluidHandler.FluidAction.EXECUTE);
         outputTank.fill(product.copyWithAmount(batches * outputPerBatch), IFluidHandler.FluidAction.EXECUTE);
         return batches;
+    }
+
+    /**
+     * The repressurizer's conversions for recipe viewers: a batch of steam or superheated steam and
+     * {@link #HEAT_PER_BATCH} HU give the configured amount of ordinary steam.
+     */
+    public static List<MachineConversion> conversions() {
+        var machine = mio_icif_blocks.STEAM_REPRESSURIZER.get();
+        return List.of(
+            MachineConversion.of(machine).fluidIn(INPUT_BATCH, mio_icif_fluids.STEAM.get())
+                .fluidOut(mio_icif_fluids.STEAM.get(), Singularity_Iteration_Config.REPRESSURIZER_STEAM_OUTPUT.get())
+                .note("conversion.mio_icif.steam_repressurizer.heat", HEAT_PER_BATCH).build(),
+            MachineConversion.of(machine).fluidIn(INPUT_BATCH, mio_icif_fluids.SUPERHEATEDSTEAM.get())
+                .fluidOut(mio_icif_fluids.STEAM.get(), Singularity_Iteration_Config.REPRESSURIZER_SUPERHEATED_OUTPUT.get())
+                .note("conversion.mio_icif.steam_repressurizer.heat", HEAT_PER_BATCH).build());
     }
 
     // The source owns its direction/bandwidth; this consumer draws HU instead of accepting

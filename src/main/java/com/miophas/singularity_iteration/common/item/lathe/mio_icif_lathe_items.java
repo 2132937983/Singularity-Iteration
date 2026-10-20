@@ -14,7 +14,7 @@ public class mio_icif_lathe_items {
 
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Singularity_Iteration.MOD_ID);
 
-    // Lathing tools.
+    // Lathing tools: the iron one is IC2's Lathing Tool, the diamond one a project extension.
     public static final DeferredItem<LathingToolItem> IRON_LATHING_TOOL = 
         ITEMS.register("item_iron_lathing_tool", 
             () -> new LathingToolItem(LathingToolItem.ToolMaterial.IRON));

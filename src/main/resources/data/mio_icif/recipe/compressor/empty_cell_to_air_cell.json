@@ -7,10 +7,7 @@
   },
   "processingtime": 100,
   "result": {
-    "id": "mio_icif:cell/item_cell_empty",
-    "count": 1,
-    "components": {
-      "minecraft:custom_data": "{fluid:\"mio_icif:air\",amount:1000}"
-    }
+    "id": "mio_icif:cell/item_cell_air",
+    "count": 1
   }
 }

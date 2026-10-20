@@ -2,6 +2,8 @@
 package com.miophas.singularity_iteration.common.blockentity.generator;
 
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
@@ -31,6 +33,15 @@ public class mio_icif_fluid_reactor_handler implements IFluidHandler {
     public static final Coolant COOLANT=new Coolant(mio_icif_fluids.COOLANT.get(),mio_icif_fluids.HOTCOOLANT.get(),FluidReactorCycle.COOLANT_HU_PER_MB);
     public static final Coolant WATER=new Coolant(Fluids.WATER,mio_icif_fluids.HOTWATER.get(),FluidReactorCycle.WATER_HU_PER_MB);
     public static final List<Coolant> COOLANTS=List.of(COOLANT,WATER);
+    /** 供 JEI 展示的冷媒循环：反应堆热量 ×{@link FluidReactorCycle#HU_OUTPUT_MODIFIER} 后由冷媒按 huPerMB 吸收。 */
+    public static List<MachineConversion> conversions(){
+        return COOLANTS.stream().map(kind->MachineConversion.of(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get(),
+                mio_icif_blocks.REACTOR_VESSEL.get(),mio_icif_blocks.REACTOR_FLUID_PORT.get())
+            .fluidIn(1000,kind.cold()).fluidOut(kind.hot(),1000)
+            .note("conversion.mio_icif.hu_per_mb",kind.huPerMB())
+            .note("conversion.mio_icif.fluid_reactor.modifier",FluidReactorCycle.HU_OUTPUT_MODIFIER)
+            .note("conversion.mio_icif.fluid_reactor.vessel").build()).toList();
+    }
 
     private final BooleanSupplier available;
     private final Runnable changed;

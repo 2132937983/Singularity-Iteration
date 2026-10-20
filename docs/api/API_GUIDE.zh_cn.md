@@ -361,6 +361,26 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 * 计时来源顺序：实体的公开 `getFuse()`（或 `getFuseTime`、`getFuseTicks`、`getFuseTimer`，单位 tick）→ `fuse` 减去客户端上的实体年龄 → 无计时（HUD 显示“--”）。
 * 没有数据映射时，实体类型标签 `mio_icif:blast_warning`、原版 `PrimedTnt` 子类、苦力怕子类、爆炸类投射物和名称含爆炸词的实体也会被识别（见指南“爆炸预警计时器”）。
 
+### 12.3 发酵机配方（`"type": "mio_icif:fermenter"`）
+
+发酵机没有内置配方：它发酵配方类型 `mio_icif:fermenter` 中列出的流体。默认配方为 `data/mio_icif/recipe/fermenter/biomass_to_biogas.json`（IC2 数值）。
+
+```json
+{
+  "type": "mio_icif:fermenter",
+  "input": { "fluid": "mio_icif:biomass", "amount": 20 },
+  "heat": 4000,
+  "output": { "id": "mio_icif:biogas", "amount": 400 },
+  "byproduct": { "id": "mio_icif:resource/item_fertilizer", "count": 1 },
+  "byproduct_interval": 500
+}
+```
+
+* 每次运行消耗 `input`（流体或流体 `tag`，以及每次的 mB）与 `heat`（HU，大于 0），产出 `output`。
+* 每发酵 `byproduct_interval` mB 输入（默认 500）产出一次 `byproduct`（可选）。
+* 一种流体只对应一个发酵配方：第一个接受它的配方。输入罐只接受配方输入，输出罐只接受配方输出。
+* Java：`IRecipeRegistrationAPI#registerFermenterRecipe(id, FluidStack input, int heat, FluidStack output)`（无副产物）与 `IRecipeAPI#findFermenterRecipe(FluidStack, Level)`。两者的物品形式已弃用且不起作用：发酵机处理的是流体。
+
 ## 13. 机器预制类：物流路由、超频调节、流体容器（0.1.10.6）
 
 ### 13.1 弹出与抽入升级的物品路由（`AbstractProcessingMachineBlockEntity`）

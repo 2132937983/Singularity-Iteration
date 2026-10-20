@@ -73,8 +73,10 @@ final class RecipeFactoryBridge {
         return new BlenderRecipe(group, input, output, processTime, energyPerTick, experience);
     }
 
-    static Recipe<?> fermenter(String group, Ingredient input, ItemStack output, int processTime, int energyPerTick, float experience) {
-        return new FermenterRecipe(group, input, output, processTime, energyPerTick, experience);
+    static Recipe<?> fermenter(String group, FluidStack input, int heat, FluidStack output) {
+        return new com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipe(group,
+            net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient.of(input), heat, output.copy(), ItemStack.EMPTY,
+            com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipe.DEFAULT_BYPRODUCT_INTERVAL);
     }
 
     static Recipe<?> mix(String group, FluidStack fluidInput, Ingredient itemInput, int itemInputCount,

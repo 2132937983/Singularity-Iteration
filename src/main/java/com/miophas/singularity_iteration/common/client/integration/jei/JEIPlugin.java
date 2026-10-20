@@ -168,6 +168,15 @@ public class JEIPlugin implements IModPlugin {
         category(categories, "mio_icif_MolecularTransformerCategory", () -> new mio_icif_MolecularTransformerCategory(gui));
         category(categories, "mio_icif_NeutronPolymerizerCategory", () -> new mio_icif_NeutronPolymerizerCategory(gui));
         category(categories, "mio_icif_FluidRefiningCategory", () -> new mio_icif_FluidRefiningCategory(gui));
+        category(categories, "mio_icif_FermenterCategory", () -> new mio_icif_FermenterCategory(gui));
+        category(categories, "mio_icif_LatheCategory", () -> new mio_icif_LatheCategory(gui));
+        category(categories, "mio_icif_CannerTankCategory(fill)", () -> new mio_icif_CannerTankCategory(gui, false));
+        category(categories, "mio_icif_CannerTankCategory(empty)", () -> new mio_icif_CannerTankCategory(gui, true));
+        // One category per machine with hardcoded outputs, tall enough for its longest note list.
+        java.util.Map<net.minecraft.world.level.ItemLike, Integer> lines = new java.util.LinkedHashMap<>();
+        for (var conversion : conversions()) lines.merge(conversion.machine(), conversion.notes().size(), Math::max);
+        lines.forEach((machine, count) -> category(categories, "conversion " + machine,
+            () -> new mio_icif_MachineConversionCategory(gui, machine, count)));
         if (!categories.isEmpty()) registration.addRecipeCategories(categories.toArray(new mezz.jei.api.recipe.category.IRecipeCategory<?>[0]));
     }
 
@@ -177,6 +186,16 @@ public class JEIPlugin implements IModPlugin {
             out.add(factory.get());
         } catch (RuntimeException | LinkageError e) {
             com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("jei-category-" + name, "Building the JEI category " + name, e);
+        }
+    }
+
+    /** The machines' own conversions ({@link com.miophas.singularity_iteration.common.blockentity.MachineConversions}); empty if building them fails. */
+    private static java.util.List<com.miophas.singularity_iteration.common.blockentity.MachineConversion> conversions() {
+        try {
+            return com.miophas.singularity_iteration.common.blockentity.MachineConversions.all();
+        } catch (RuntimeException | LinkageError e) {
+            com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("jei-conversions", "Building the machine conversions for JEI", e);
+            return java.util.List.of();
         }
     }
 
@@ -283,6 +302,22 @@ public class JEIPlugin implements IModPlugin {
             var fluidRefiningRecipes = recipeManager.getAllRecipesFor(com.miophas.singularity_iteration.common.recipe.fluid_refining.FluidRefiningRecipes.FLUID_REFINING_TYPE.get());
             registration.addRecipes(mio_icif_FluidRefiningCategory.FLUID_REFINING_TYPE, fluidRefiningRecipes.stream().toList());
         });
+
+        guarded("fermenter", () -> registration.addRecipes(mio_icif_FermenterCategory.FERMENTER_TYPE,
+            recipeManager.getAllRecipesFor(com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes.FERMENTER_TYPE.get())));
+        guarded("lathe", () -> registration.addRecipes(mio_icif_LatheCategory.LATHE_TYPE,
+            com.miophas.singularity_iteration.common.item.lathe.LatheShapes.ALL));
+        guarded("cannerTank", () -> {
+            var cellFills = mio_icif_CannerTankCategory.recipes();
+            registration.addRecipes(mio_icif_CannerTankCategory.FILL_FROM_TANK_TYPE, cellFills);
+            registration.addRecipes(mio_icif_CannerTankCategory.EMPTY_TO_TANK_TYPE, cellFills);
+        });
+        guarded("conversions", () -> {
+            var byMachine = new java.util.LinkedHashMap<net.minecraft.world.level.ItemLike,
+                java.util.List<com.miophas.singularity_iteration.common.blockentity.MachineConversion>>();
+            for (var conversion : conversions()) byMachine.computeIfAbsent(conversion.machine(), m -> new java.util.ArrayList<>()).add(conversion);
+            byMachine.forEach((machine, list) -> registration.addRecipes(mio_icif_MachineConversionCategory.typeFor(machine), list));
+        });
     }
 
     @Override
@@ -341,6 +376,17 @@ public class JEIPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.MOLECULAR_TRANSFORMER.get()), mio_icif_MolecularTransformerCategory.MOLECULAR_TRANSFORMER_TYPE);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.NEUTRON_POLYMERIZER.get()), mio_icif_NeutronPolymerizerCategory.NEUTRON_POLYMERIZER_TYPE);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.OIL_REFINERY_ELC.get()), mio_icif_FluidRefiningCategory.FLUID_REFINING_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.FERMENTER_ELC.get()), mio_icif_FermenterCategory.FERMENTER_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.LATHE.get()), mio_icif_LatheCategory.LATHE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.CANNER_ELC.get()), mio_icif_CannerTankCategory.FILL_FROM_TANK_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.CANNER_ELC.get()), mio_icif_CannerTankCategory.EMPTY_TO_TANK_TYPE);
+        // Each conversion category: its machine, then the other blocks the conversions run in.
+        var catalysts = new java.util.LinkedHashMap<net.minecraft.world.level.ItemLike, java.util.Set<net.minecraft.world.level.ItemLike>>();
+        for (var conversion : conversions()) catalysts.computeIfAbsent(conversion.machine(), m -> new java.util.LinkedHashSet<>()).addAll(conversion.machines());
+        catalysts.forEach((machine, blocks) -> {
+            var type = mio_icif_MachineConversionCategory.typeFor(machine);
+            for (var block : blocks) registration.addRecipeCatalyst(new ItemStack(block), type);
+        });
         // Advanced / upgraded machines run the same recipe sets as their basic versions.
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.POWDER_ADVANCED_ELC.get()), mio_icif_PowderCategory.POWDER_TYPE);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.COMPRESSOR_ADVANCED_ELC.get()), mio_icif_CompressorCategory.COMPRESSOR_TYPE);

@@ -15,6 +15,10 @@ public class mio_icif_IngredientTypes {
     public static final net.neoforged.neoforge.registries.DeferredHolder<IngredientType<?>, IngredientType<CropSeedIngredient>> CROP_SEED =
             INGREDIENT_TYPES.register("crop_seed", () -> CropSeedIngredient.TYPE);
 
+    /** A lathe workpiece turned to one shape (IC2 itemTurningBlanks@numeric state). */
+    public static final net.neoforged.neoforge.registries.DeferredHolder<IngredientType<?>, IngredientType<LatheStateIngredient>> LATHE_STATE =
+            INGREDIENT_TYPES.register("lathe_state", () -> LatheStateIngredient.TYPE);
+
     public static void register(net.neoforged.bus.api.IEventBus modEventBus) {
         INGREDIENT_TYPES.register(modEventBus);
     }

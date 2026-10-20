@@ -294,9 +294,11 @@ public final class Round33GameTests {
         h.setBlock(new BlockPos(2, 2, 2), BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "wiring/block_mfe")));
         h.setBlock(new BlockPos(3, 2, 2), BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "generator/block_thermal_generator")));
         h.runAfterDelay(5, () -> {
+            // Each block is read from its own chunk: where the test lands, a chunk border can run between them.
             Object grid = call(common("suit.SuitServer"), "chunkGrid", h.getLevel(), new ChunkPos(h.absolutePos(new BlockPos(2, 2, 2))));
+            Object generatorGrid = call(common("suit.SuitServer"), "chunkGrid", h.getLevel(), new ChunkPos(h.absolutePos(new BlockPos(3, 2, 2))));
             h.assertTrue((int) call(grid, "storages") >= 1, "MFE not counted: " + grid);
-            h.assertTrue((int) call(grid, "generators") >= 1, "generator not counted: " + grid);
+            h.assertTrue((int) call(generatorGrid, "generators") >= 1, "generator not counted: " + generatorGrid);
             h.assertTrue((long) call(grid, "capacity") > 0, "no capacity summed: " + grid);
             h.succeed();
         });

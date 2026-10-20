@@ -6,12 +6,12 @@ import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities;
 import com.miophas.singularity_iteration.core.api.item.ILatheItem;
-import com.miophas.singularity_iteration.core.api.kinetic.IKineticSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -26,24 +26,20 @@ import org.jetbrains.annotations.Nullable;
 import com.miophas.singularity_iteration.core.api.machine.ISlotLayout;
 
 /**
- * 车床方块实体
- * 对齐 IC2 原版机制
- * - 3 个槽位：车刀(0)、加工件(1)、输
-2)
- * - KU 鍔ㄨ兘缂撳啿锛屾渶
-10000
- * - 
-tick KU 衰减 1%
- * - 从相邻动能源获取 KU
- * - 5 个位置独立加工，每个位置有厚度
- * - 车刀需要硬度大于加工件
- * - 每次加工消
-1000 KU
- * - 每次加工消耗车刀 1 点耐久
- * - 有概率产
+ * Lathe block entity, aligned with IC2 TileEntityLathe (2.2.828 experimental).
+ * <ul>
+ *   <li>3 slots: tool (0), workpiece (1), output (2). Automation inserts tools and workpieces from any
+ *       side and extracts only the output (IC2 InvSlotConsumableClass / InvSlotOutput).</li>
+ *   <li>KU buffer of 10000. Every tick: the lathe is active while the buffer is above 500, the buffer
+ *       loses 1% (integer part, rounded), then the lathe requests KU from the first adjacent kinetic
+ *       source that offers any. Sources that push KU into neighbours fill the buffer too.</li>
+ *   <li>A cut (GUI button, position 0-4) needs 1000 KU and a tool harder than the workpiece. It thins
+ *       the position by 1 (never below 1), gives the workpiece's by-product with its chance, costs the
+ *       tool 1 durability (the tool is destroyed at its maximum) and 1000 KU.</li>
+ * </ul>
  */
 @SuppressWarnings("null")
-public class mio_icif_lathe extends BlockEntity implements MenuProvider, com.miophas.singularity_iteration.core.api.machine.IProducerBlock {
+public class mio_icif_lathe extends BlockEntity implements MenuProvider, Container, com.miophas.singularity_iteration.core.api.machine.IProducerBlock {
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .tool()
@@ -51,28 +47,62 @@ public class mio_icif_lathe extends BlockEntity implements MenuProvider, com.mio
         .output(1)
         .build();
 
-    // 槽位定义（按 builder 调用顺序：TOOL=0, INPUT=1, OUTPUT=2
-public static final int TOTAL_SLOTS = 3;
+    // Slots, in builder order: TOOL=0, INPUT=1, OUTPUT=2
+    public static final int TOTAL_SLOTS = 3;
     public static final int TOOL_SLOT = 0;
     public static final int LATHE_SLOT = 1;
     public static final int OUTPUT_SLOT = 2;
 
-    // KU 参数
+    // IC2 TileEntityLathe constants
     public static final int MAX_KU_BUFFER = 10000;
     public static final int KU_COST_PER_OPERATION = 1000;
-    public static final int KU_DECAY_DIVISOR = 100; // 
-
-    // 位置数量
+    public static final int ACTIVE_THRESHOLD = 500;
     public static final int POSITION_COUNT = 5;
 
-    // 物品存储
     protected MachineItemHandler itemHandler;
-    
-    // KU 缓冲
+
+    /** Automation view: inserts into the tool and workpiece slots, extracts only from the output. */
+    private final IItemHandler automationHandler = new IItemHandler() {
+        @Override public int getSlots() { return itemHandler.getSlots(); }
+        @Override public ItemStack getStackInSlot(int slot) { return itemHandler.getStackInSlot(slot); }
+        @Override public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            return slot == OUTPUT_SLOT ? stack : itemHandler.insertItem(slot, stack, simulate);
+        }
+        @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            return slot == OUTPUT_SLOT ? itemHandler.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
+        }
+        @Override public int getSlotLimit(int slot) { return itemHandler.getSlotLimit(slot); }
+        @Override public boolean isItemValid(int slot, ItemStack stack) {
+            return slot != OUTPUT_SLOT && itemHandler.isItemValid(slot, stack);
+        }
+    };
+
+    /** Receive-only KU input on every side, for kinetic sources that push into their neighbours. */
+    private final IMioIcifCapabilities.IKineticStorage kineticInput = new IMioIcifCapabilities.IKineticStorage() {
+        @Override public long getKineticStored() { return kUBuffer; }
+        @Override public long getMaxKineticStored() { return MAX_KU_BUFFER; }
+        @Override public long receiveKinetic(long maxReceive, boolean simulate) {
+            long accepted = Math.min(Math.max(0, maxReceive), MAX_KU_BUFFER - kUBuffer);
+            if (accepted <= 0) return 0;
+            if (!simulate) {
+                kUBuffer += (int) accepted;
+                com.miophas.singularity_iteration.core.runtime.TickMarks.saved(mio_icif_lathe.this);
+            }
+            return accepted;
+        }
+        @Override public long extractKinetic(long maxExtract, boolean simulate) { return 0; }
+        @Override public boolean canExtractKinetic() { return false; }
+        @Override public boolean canReceiveKinetic() { return true; }
+        @Override public int getRPM() { return 0; }
+        @Override public boolean isOverspeed() { return false; }
+        @Override public long getKineticLossPerTick() { return 0; }
+        @Override public long getMaxReceive() { return MAX_KU_BUFFER; }
+        @Override public long getMaxExtract() { return 0; }
+    };
+
     public int kUBuffer = 0;
 
-    // 是否激活工作状
-protected boolean active = false;
+    protected boolean active = false;
 
     public mio_icif_lathe(BlockPos pos, BlockState state) {
         this(pos, state, mio_icif_block_entities.LATHE_ENTITY_TYPE.get());
@@ -89,172 +119,119 @@ protected boolean active = false;
         this.itemHandler.setValidator((slot, stack, slotType) -> mio_icif_lathe.this.isItemValidForSlot(slot, stack));
     }
 
-    /**
-     * 
-tick 更新逻辑
-     */
+    /** IC2 updateEntityServer: active state, 1% decay, then the KU request. */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_lathe blockEntity) {
         if (level.isClientSide()) return;
 
-        // 更新激活状态（KU > 500 时激活）
-        boolean shouldBeActive = blockEntity.kUBuffer > 500;
+        boolean shouldBeActive = blockEntity.kUBuffer > ACTIVE_THRESHOLD;
         if (blockEntity.active != shouldBeActive) {
             blockEntity.active = shouldBeActive;
             blockEntity.updateBlockState();
         }
 
-        // KU 
-        blockEntity.kUBuffer = (int) (blockEntity.kUBuffer - (blockEntity.kUBuffer / 100.0f) + 0.5f);
-        if (blockEntity.kUBuffer < 0) blockEntity.kUBuffer = 0;
+        // IC2: (int)(kUBuffer - (kUBuffer / 100) + 0.5F), integer division (no decay below 100 KU)
+        blockEntity.kUBuffer = (int) (blockEntity.kUBuffer - (blockEntity.kUBuffer / 100) + 0.5F);
 
-        // 从相邻动能源获取 KU
-        blockEntity.getKU();
+        blockEntity.requestKU();
 
         // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
         com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
     /**
-     * 从相邻动能源获取 KU
-     * 使用 KUCapabilities 系统
-IKineticSource 接口
+     * IC2 getKU: asks the adjacent sides in order and takes KU from the first source that offers any,
+     * at most what the source offers this tick and what the buffer has room for.
      */
-    private void getKU() {
+    private void requestKU() {
         if (level == null) return;
-        
         for (Direction dir : Direction.values()) {
-            BlockPos adjacentPos = worldPosition.relative(dir);
-            IMioIcifCapabilities.IKineticStorage adjacentStorage = level.getCapability(
-                IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, adjacentPos, dir.getOpposite());
-            if (adjacentStorage == null) {
-                net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(adjacentPos);
-                adjacentStorage = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(be);
+            IMioIcifCapabilities.IKineticStorage source = kineticNeighbour(dir);
+            if (source == null || !source.canExtractKinetic()) continue;
+            long bandwidth = Math.min(source.getMaxExtract(), source.extractKinetic(MAX_KU_BUFFER, true));
+            if (bandwidth <= 0) continue;
+            long diff = Math.min(bandwidth, MAX_KU_BUFFER - kUBuffer);
+            if (diff > 0) {
+                kUBuffer += (int) Math.max(0, Math.min(diff, source.extractKinetic(diff, false)));
             }
-            
-            if (adjacentStorage != null && adjacentStorage.canExtractKinetic()) {
-                long available = Math.min(adjacentStorage.getKineticStored(), adjacentStorage.getMaxExtract());
-                if (available > 0) {
-                    long space = MAX_KU_BUFFER - kUBuffer;
-                    if (space > 0) {
-                        long toExtract = Math.min(available, space);
-                        long extracted = adjacentStorage.extractKinetic(toExtract, false);
-                        if (extracted > 0) {
-                            kUBuffer = Math.min(MAX_KU_BUFFER,
-                                kUBuffer + (int) Math.min(extracted, space));
-                        }
-                        break;
-                    }
-                }
-            }
-            
-            // 同时尝试 IKineticSource 接口（直接产出的动能源，如动能发电机
-    
-            BlockEntity te = level.getBlockEntity(adjacentPos);
-            if (te instanceof IKineticSource source) {
-                if (source.isProducingKinetic(dir.getOpposite()) && source.getKineticOutput(dir.getOpposite()) > 0) {
-                    int bandwidth = source.getKineticOutput(dir.getOpposite());
-                    if (bandwidth > 0) {
-                        int diff = Math.min(bandwidth, MAX_KU_BUFFER - kUBuffer);
-                        if (diff > 0) {
-                            kUBuffer += diff;
-                        }
-                        break;
-                    }
-                }
-            }
+            break;
         }
     }
 
+    @Nullable
+    private IMioIcifCapabilities.IKineticStorage kineticNeighbour(Direction dir) {
+        IMioIcifCapabilities.IKineticStorage storage = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(
+            this, IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, dir);
+        if (storage != null) return storage;
+        BlockPos adjacentPos = worldPosition.relative(dir);
+        if (!level.isLoaded(adjacentPos)) return null;
+        return MioIcifAPI.instance().getCapabilities().adaptKineticStorage(level.getBlockEntity(adjacentPos));
+    }
+
     /**
-     * 处理指定位置的加
- * 
-GUI 按钮触发，对
-IC2 原版 process 方法
-     * @param position 段位
-(0-4)
-     * @return 是否成功加工
+     * IC2 process: cuts the workpiece at {@code position} (0-4). Sent by the GUI buttons.
+     * @return true if the cut was made
      */
     public boolean process(int position) {
+        if (position < 0 || position >= POSITION_COUNT) return false;
         if (!canWork(false)) return false;
 
         ItemStack latheStack = itemHandler.getStackInSlot(LATHE_SLOT);
         ItemStack toolStack = itemHandler.getStackInSlot(TOOL_SLOT);
-
-        if (latheStack.isEmpty() || toolStack.isEmpty()) return false;
-        if (!(latheStack.getItem() instanceof ILatheItem)) return false;
-        if (!(toolStack.getItem() instanceof ILatheItem.ILatheTool)) return false;
-
         ILatheItem l = (ILatheItem) latheStack.getItem();
         ILatheItem.ILatheTool t = (ILatheItem.ILatheTool) toolStack.getItem();
 
-        // 检查输出槽是否能容
-ItemStack outputItem = l.getOutputItem(latheStack, position);
-        if (!outputItem.isEmpty()) {
-            ItemStack currentOutput = itemHandler.getStackInSlot(OUTPUT_SLOT);
-            if (!currentOutput.isEmpty()) {
-                if (!currentOutput.is(outputItem.getItem())) return false;
-                if (currentOutput.getCount() + 1 > currentOutput.getMaxStackSize()) return false;
-            }
-        }
-
-        // 获取当前状态，检查该位置是否还可以加
-int[] currentState = l.getCurrentState(latheStack);
+        if (!canAddOutput(l.getOutputItem(latheStack, position))) return false;
+        int[] currentState = l.getCurrentState(latheStack);
         if (currentState[position] <= 1) return false;
-
-        // 减少该位置的厚度
         l.setState(latheStack, position, currentState[position] - 1);
-
-        // 随机产出
         if (level != null && level.random.nextFloat() < l.getOutputChance(latheStack, position)) {
-            ItemStack produced = l.getOutputItem(latheStack, position);
-            if (!produced.isEmpty()) {
-                ItemStack out = itemHandler.getStackInSlot(OUTPUT_SLOT);
-                if (out.isEmpty()) {
-                    itemHandler.setStackInSlot(OUTPUT_SLOT, produced.copy());
-                } else {
-                    out.grow(1);
-                }
-            }
+            addOutput(l.getOutputItem(latheStack, position));
         }
-
-        // 消耗车刀耐久
-        t.applyCustomDamage(toolStack, 1, null);
+        t.setCustomDamage(toolStack, t.getCustomDamage(toolStack) + 1);
         if (t.getCustomDamage(toolStack) >= t.getMaxCustomDamage(toolStack)) {
             itemHandler.setStackInSlot(TOOL_SLOT, ItemStack.EMPTY);
         }
-
-        // 消
         kUBuffer -= KU_COST_PER_OPERATION;
-        if (kUBuffer < 0) kUBuffer = 0;
 
         setChanged();
         return true;
     }
 
     /**
-     * 检查是否能工作
-     * @param power 是否忽略 KU 检
- */
+     * IC2 canWork: a lathe tool and a workpiece are present, the tool is harder than the workpiece,
+     * and (unless {@code power}) the buffer holds the KU of one cut.
+     */
     public boolean canWork(boolean power) {
         ItemStack toolStack = itemHandler.getStackInSlot(TOOL_SLOT);
         ItemStack latheStack = itemHandler.getStackInSlot(LATHE_SLOT);
 
-        if (toolStack.isEmpty() || !(toolStack.getItem() instanceof ILatheItem.ILatheTool)) return false;
-        if (latheStack.isEmpty() || !(latheStack.getItem() instanceof ILatheItem)) return false;
+        if (toolStack.isEmpty() || !(toolStack.getItem() instanceof ILatheItem.ILatheTool t)) return false;
+        if (latheStack.isEmpty() || !(latheStack.getItem() instanceof ILatheItem l)) return false;
         if (kUBuffer < KU_COST_PER_OPERATION && !power) return false;
 
-        ILatheItem l = (ILatheItem) latheStack.getItem();
-        ILatheItem.ILatheTool t = (ILatheItem.ILatheTool) toolStack.getItem();
+        return t.getHardness(toolStack) > l.getHardness(latheStack);
+    }
 
-        // 车刀硬度必须大于加工件硬
-return t.getHardness(toolStack) > l.getHardness(latheStack);
+    /** IC2 InvSlotOutput.canAdd: the whole stack fits into the output slot. */
+    private boolean canAddOutput(ItemStack stack) {
+        if (stack.isEmpty()) return true;
+        ItemStack current = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        int limit = Math.min(stack.getMaxStackSize(), itemHandler.getSlotLimit(OUTPUT_SLOT));
+        if (current.isEmpty()) return stack.getCount() <= limit;
+        return ItemStack.isSameItemSameComponents(current, stack) && current.getCount() + stack.getCount() <= limit;
+    }
+
+    private void addOutput(ItemStack stack) {
+        if (stack.isEmpty()) return;
+        ItemStack current = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        itemHandler.setStackInSlot(OUTPUT_SLOT,
+            current.isEmpty() ? stack.copy() : current.copyWithCount(current.getCount() + stack.getCount()));
     }
 
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
             case TOOL_SLOT -> stack.getItem() instanceof ILatheItem.ILatheTool;
             case LATHE_SLOT -> stack.getItem() instanceof ILatheItem;
-            case OUTPUT_SLOT -> false;
             default -> false;
         };
     }
@@ -268,10 +245,14 @@ return t.getHardness(toolStack) > l.getHardness(latheStack);
         }
     }
 
-    // ========== 对外接口 ==========
+    // ========== Capabilities ==========
 
     public IItemHandler getItemHandlerCapability(@Nullable Direction side) {
-        return itemHandler;
+        return automationHandler;
+    }
+
+    public IMioIcifCapabilities.IKineticStorage getKineticStorageCapability(@Nullable Direction side) {
+        return kineticInput;
     }
 
     public MachineItemHandler getItemHandler() {
@@ -279,49 +260,57 @@ return t.getHardness(toolStack) > l.getHardness(latheStack);
     }
 
     public boolean isActive() { return active; }
-    
-    /**
-     * 获取 KU 缓冲（供 GUI 显示
- */
+
     public int getKUBuffer() { return kUBuffer; }
-    
+
     public int getMaxKUBuffer() { return MAX_KU_BUFFER; }
 
-    /**
-     * 获取加工件当前状态（
-GUI 显示
- */
-    public int[] getLatheState() {
-        ItemStack stack = itemHandler.getStackInSlot(LATHE_SLOT);
-        if (stack.isEmpty() || !(stack.getItem() instanceof ILatheItem)) {
-            return new int[0];
+    // ==================== Container (spilled on removal, carried by the wrench) ====================
+
+    @Override
+    public boolean isEmpty() {
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
+            if (!itemHandler.getStackInSlot(i).isEmpty()) return false;
         }
-        return ((ILatheItem) stack.getItem()).getCurrentState(stack);
+        return true;
     }
 
-    /**
-     * 获取加工件宽度（
-GUI 显示
- */
-    public int getLatheWidth() {
-        ItemStack stack = itemHandler.getStackInSlot(LATHE_SLOT);
-        if (stack.isEmpty() || !(stack.getItem() instanceof ILatheItem)) {
-            return 0;
-        }
-        return ((ILatheItem) stack.getItem()).getWidth(stack);
+    @Override
+    public ItemStack getItem(int slot) {
+        return itemHandler.getStackInSlot(slot);
     }
 
-    /**
-     * 获取加工件纹理（
-GUI 渲染
- */
-    @Nullable
-    public net.minecraft.resources.ResourceLocation getLatheTexture() {
-        ItemStack stack = itemHandler.getStackInSlot(LATHE_SLOT);
-        if (stack.isEmpty() || !(stack.getItem() instanceof ILatheItem)) {
-            return null;
+    @Override
+    public ItemStack removeItem(int slot, int amount) {
+        ItemStack stack = itemHandler.getStackInSlot(slot);
+        if (stack.isEmpty() || amount <= 0) return ItemStack.EMPTY;
+        ItemStack removed = stack.split(amount);
+        itemHandler.setStackInSlot(slot, stack);
+        return removed;
+    }
+
+    @Override
+    public ItemStack removeItemNoUpdate(int slot) {
+        ItemStack stack = itemHandler.getStackInSlot(slot);
+        itemHandler.setStackInSlot(slot, ItemStack.EMPTY);
+        return stack;
+    }
+
+    @Override
+    public void setItem(int slot, ItemStack stack) {
+        itemHandler.setStackInSlot(slot, stack);
+    }
+
+    @Override
+    public boolean stillValid(Player player) {
+        return Container.stillValidBlockEntity(this, player);
+    }
+
+    @Override
+    public void clearContent() {
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
+            itemHandler.setStackInSlot(i, ItemStack.EMPTY);
         }
-        return ((ILatheItem) stack.getItem()).getTexture(stack);
     }
 
     // ==================== IProducerBlock API ====================
@@ -411,7 +400,7 @@ GUI 渲染
         return 0;
     }
 
-    // ========== NBT 持久
+    // ========== NBT ==========
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
@@ -431,7 +420,7 @@ GUI 渲染
         active = tag.getBoolean("active");
     }
 
-    // ========== 菜单/显示名称 ==========
+    // ========== Menu ==========
 
     @Override
     public Component getDisplayName() {

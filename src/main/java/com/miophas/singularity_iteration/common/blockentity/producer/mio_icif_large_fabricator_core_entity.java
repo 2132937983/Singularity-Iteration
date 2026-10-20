@@ -3,6 +3,10 @@ package com.miophas.singularity_iteration.common.blockentity.producer;
 import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
+import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
+import com.miophas.singularity_iteration.common.blockentity.MachineConversion;
+import com.miophas.singularity_iteration.common.item.normal.mio_icif_normal;
+import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
 import com.miophas.singularity_iteration.common.menu.producer.LargeFabricatorCoreMenu;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import com.miophas.singularity_iteration.core.api.energy.ICableTier;
@@ -19,6 +23,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -27,6 +32,9 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings("null")
 public class mio_icif_large_fabricator_core_entity extends MultiblockEnergyCore {
@@ -111,6 +119,29 @@ public class mio_icif_large_fabricator_core_entity extends MultiblockEnergyCore 
         if (blockEntity.isStructureComplete()) {
             blockEntity.processFabrication(level, pos);
         }
+    }
+
+    /**
+     * For recipe viewers: {@link #ENERGY_PER_MB} EU per mB of UU-matter; the scrap module's value pays
+     * that EU one for one.
+     */
+    public static List<MachineConversion> conversions() {
+        var core = mio_icif_blocks.LARGE_FABRICATOR_CORE.get();
+        var uu = mio_icif_fluids.UUMATTER.get();
+        List<MachineConversion> all = new ArrayList<>();
+        all.add(MachineConversion.of(core, mio_icif_blocks.LARGE_FABRICATOR_INPUT_IV.get(), mio_icif_blocks.LARGE_FABRICATOR_TANK.get())
+            .fluidOut(uu, 1).note("conversion.mio_icif.fabricator.energy", ENERGY_PER_MB).build());
+        record Scrap(ItemStack stack, int value) {}
+        for (Scrap scrap : List.of(
+                new Scrap(new ItemStack(mio_icif_normal.SCRAP.get()), mio_icif_large_fabricator_scrap_entity.SCRAP_BONUS),
+                new Scrap(new ItemStack(mio_icif_normal.SCRAPBOX.get()), mio_icif_large_fabricator_scrap_entity.SCRAPBOX_BONUS),
+                new Scrap(new ItemStack(mio_icif_resources.THORIUM_SCRAP.get()), mio_icif_large_fabricator_scrap_entity.THORIUM_SCRAP_BONUS))) {
+            all.add(MachineConversion.of(core, mio_icif_blocks.LARGE_FABRICATOR_SCRAP.get())
+                .itemIn(scrap.stack()).fluidOut(uu, 1)
+                .note("conversion.mio_icif.fabricator.energy", ENERGY_PER_MB)
+                .note("conversion.mio_icif.fabricator.saves", scrap.value()).build());
+        }
+        return all;
     }
 
     private void processFabrication(Level level, BlockPos pos) {

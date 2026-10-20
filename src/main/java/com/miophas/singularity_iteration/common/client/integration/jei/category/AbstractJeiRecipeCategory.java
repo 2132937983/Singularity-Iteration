@@ -43,6 +43,17 @@ public abstract class AbstractJeiRecipeCategory<T extends Recipe<?>> implements 
         drawFor(recipe.value(), recipeSlotsView, guiGraphics, mouseX, mouseY);
     }
 
+    @Override
+    public void createRecipeExtras(mezz.jei.api.gui.widgets.IRecipeExtrasBuilder builder, RecipeHolder<T> recipe, IFocusGroup focuses) {
+        createExtrasFor(builder, recipe.value(), focuses);
+    }
+
+    /**
+     * 子类实现：配方小部件（动画箭头、文字等，见 {@link SiJei}）。默认空实现。
+     */
+    protected void createExtrasFor(mezz.jei.api.gui.widgets.IRecipeExtrasBuilder builder, T recipe, IFocusGroup focuses) {
+    }
+
     /**
      * 子类实现：绘制额外内容。默认空实现，子类可选覆写。
      */

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "S": {
+      "tag": "c:plates/steel"
+    },
+    "I": {
+      "tag": "c:casings/iron"
+    }
+  },
+  "pattern": [
+    "S  ",
+    " I ",
+    "  I"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mio_icif:item_iron_lathing_tool"
+  }
+}

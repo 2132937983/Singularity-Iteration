@@ -188,11 +188,11 @@ public static final DeferredHolder<RecipeType<?>, RecipeType<mio_icif_RollingRec
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> BLENDER_SERIALIZER =
         com.miophas.singularity_iteration.common.recipe.generic.BlenderRecipes.BLENDER_SERIALIZER;
 
-    // 注册发酵机配方
-    public static final DeferredHolder<RecipeType<?>, RecipeType<com.miophas.singularity_iteration.common.recipe.generic.FermenterRecipe>> FERMENTER_TYPE =
-        com.miophas.singularity_iteration.common.recipe.generic.FermenterRecipes.FERMENTER_TYPE;
-    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> FERMENTER_SERIALIZER =
-        com.miophas.singularity_iteration.common.recipe.generic.FermenterRecipes.FERMENTER_SERIALIZER;
+    // 注册发酵机配方（流体配方，data/<ns>/recipe/*.json，"type": "mio_icif:fermenter"）
+    public static final DeferredHolder<RecipeType<?>, RecipeType<com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipe>> FERMENTER_TYPE =
+        com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes.FERMENTER_TYPE;
+    public static final DeferredHolder<RecipeSerializer<?>, com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipeSerializer> FERMENTER_SERIALIZER =
+        com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes.FERMENTER_SERIALIZER;
 
     // 注册电解机配方
     public static final DeferredHolder<RecipeType<?>, RecipeType<com.miophas.singularity_iteration.common.recipe.generic.ElectrolyzerRecipe>> ELECTROLYZER_TYPE =
@@ -298,6 +298,8 @@ public static final DeferredHolder<RecipeType<?>, RecipeType<mio_icif_RollingRec
         // 注册流体精炼配方
         FluidRefiningRecipes.RECIPE_TYPES.register(eventBus);
         FluidRefiningRecipes.RECIPE_SERIALIZERS.register(eventBus);
+        // 注册发酵机配方
+        com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes.register(eventBus);
         // 注册电量传递合成配方
         ChargeCarryingRecipes.register(eventBus);
     }

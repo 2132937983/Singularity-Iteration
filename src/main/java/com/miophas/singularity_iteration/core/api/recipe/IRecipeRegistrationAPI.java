@@ -135,15 +135,29 @@ public interface IRecipeRegistrationAPI {
     boolean registerBlenderRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * Registers a fermenter recipe.
+     * Item fermenter recipes do not exist: the fermenter takes fluids and heat. Always returns false.
+     *
+     * @deprecated use {@link #registerFermenterRecipe(ResourceLocation, net.neoforged.neoforge.fluids.FluidStack, int, net.neoforged.neoforge.fluids.FluidStack)}
+     *             or a {@code mio_icif:fermenter} JSON recipe
+     */
+    @Deprecated
+    boolean registerFermenterRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
+
+    /**
+     * Registers a fermenter recipe (IC2 FermentationProperty): one run takes {@code input} (fluid and
+     * amount) and {@code heat} HU and gives {@code output}. A fluid has one fermenter recipe; JSON
+     * recipes ({@code "type": "mio_icif:fermenter"}) can also give a by-product.
      *
      * @param id the recipe ID
-     * @param input the input ingredient
-     * @param output the output item
-     * @param processTime the process time, in ticks
+     * @param input the input fluid and the amount one run takes
+     * @param heat the HU one run takes
+     * @param output the output fluid and the amount one run gives
      * @return true if the registration is successful
      */
-    boolean registerFermenterRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
+    default boolean registerFermenterRecipe(ResourceLocation id, net.neoforged.neoforge.fluids.FluidStack input, int heat,
+                                            net.neoforged.neoforge.fluids.FluidStack output) {
+        return false;
+    }
 
     /**
      * Registers a fluid/solid canning machine recipe.

@@ -574,6 +574,8 @@ public class mio_icif_creativeTabs {
                 // Mechanical Parts
                 output.accept(mio_icif_resources.MOTOR.get());
                 output.accept(mio_icif_resources.COIL.get());
+                output.accept(mio_icif_resources.DRILL_BIT.get());
+                output.accept(mio_icif_resources.CHAINSAW_BLADE.get());
                 output.accept(mio_icif_resources.HEATCONDUCTOR.get());
                 output.accept(mio_icif_resources.HARZ.get());
 

@@ -28,7 +28,7 @@ public class PrecisionAssemblerRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> PRECISION_ASSEMBLER_SERIALIZER =
-        RECIPE_SERIALIZERS.register("precision_assembler", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("precision_assembler", () -> new GenericSingleInputRecipeSerializer(PrecisionAssemblerRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

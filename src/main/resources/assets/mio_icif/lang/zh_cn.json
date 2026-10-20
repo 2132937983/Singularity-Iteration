@@ -1304,6 +1304,7 @@
   "message.mio_icif.generator.gui_open_failed": "%s - 无法打开界面",
   "gui.mio_icif.lapis_injector.lapis_blocks": "青金石块: %s",
   "gui.mio_icif.redstone_injector.redstone_blocks": "红石块: %s",
+  "gui.mio_icif.reactor_coolant_injector.reserve": "储备：%s",
   "message.mio_icif.reactor.no_reactor_found": "没有找到相邻的核反应堆!",
   "message.mio_icif.reactor.hint_placement": "提示: 访问接口应该放置在距离核反应堆2格范围内的位置",
   "message.mio_icif.reactor.multiple_reactors": "连接了多个核反应堆，这会导致爆炸!",

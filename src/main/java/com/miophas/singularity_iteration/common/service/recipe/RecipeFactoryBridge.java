@@ -93,10 +93,6 @@ final class RecipeFactoryBridge {
         return new LaserEngraverRecipe(group, input, output, processTime, energyPerTick, experience);
     }
 
-    static Recipe<?> lathe(String group, Ingredient input, ItemStack output, int processTime, int energyPerTick, float experience) {
-        return new LatheRecipe(group, input, output, processTime, energyPerTick, experience);
-    }
-
     static Recipe<?> welder(String group, Ingredient input, ItemStack output, int processTime, int energyPerTick, float experience) {
         return new WelderRecipe(group, input, output, processTime, energyPerTick, experience);
     }
@@ -113,16 +109,8 @@ final class RecipeFactoryBridge {
         return new PrecisionAssemblerRecipe(group, input, output, processTime, energyPerTick, experience);
     }
 
-    static Recipe<?> massFabricator(String group, Ingredient input, ItemStack output, int processTime, int energyPerTick, float experience) {
-        return new MassFabricatorRecipe(group, input, output, processTime, energyPerTick, experience);
-    }
-
-    static Recipe<?> replicator(String group, Ingredient input, ItemStack output, int processTime, int energyPerTick, float experience) {
-        return new ReplicatorRecipe(group, input, output, processTime, energyPerTick, experience);
-    }
-
-    static Recipe<?> scanner(String group, Ingredient input, ItemStack output, int processTime, int energyPerTick, float experience) {
-        return new ScannerRecipe(group, input, output, processTime, energyPerTick, experience);
+    static Recipe<?> massFabricatorAmplifier(String group, Ingredient amplifier, int credit) {
+        return new MassFabricatorRecipe(group, amplifier, credit);
     }
 
     static Recipe<?> plasmaFurnace(String group, Ingredient input, ItemStack output, int processTime, int energyPerTick, float experience) {

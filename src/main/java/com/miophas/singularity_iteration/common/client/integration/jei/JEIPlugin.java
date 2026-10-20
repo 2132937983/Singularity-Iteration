@@ -192,7 +192,8 @@ public class JEIPlugin implements IModPlugin {
     /** The machines' own conversions ({@link com.miophas.singularity_iteration.common.blockentity.MachineConversions}); empty if building them fails. */
     private static java.util.List<com.miophas.singularity_iteration.common.blockentity.MachineConversion> conversions() {
         try {
-            return com.miophas.singularity_iteration.common.blockentity.MachineConversions.all();
+            var level = Minecraft.getInstance().level;
+            return com.miophas.singularity_iteration.common.blockentity.MachineConversions.all(level == null ? null : level.getRecipeManager());
         } catch (RuntimeException | LinkageError e) {
             com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("jei-conversions", "Building the machine conversions for JEI", e);
             return java.util.List.of();
@@ -306,7 +307,7 @@ public class JEIPlugin implements IModPlugin {
         guarded("fermenter", () -> registration.addRecipes(mio_icif_FermenterCategory.FERMENTER_TYPE,
             recipeManager.getAllRecipesFor(com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes.FERMENTER_TYPE.get())));
         guarded("lathe", () -> registration.addRecipes(mio_icif_LatheCategory.LATHE_TYPE,
-            com.miophas.singularity_iteration.common.item.lathe.LatheShapes.ALL));
+            com.miophas.singularity_iteration.common.item.lathe.LatheShapes.all()));
         guarded("cannerTank", () -> {
             var cellFills = mio_icif_CannerTankCategory.recipes();
             registration.addRecipes(mio_icif_CannerTankCategory.FILL_FROM_TANK_TYPE, cellFills);

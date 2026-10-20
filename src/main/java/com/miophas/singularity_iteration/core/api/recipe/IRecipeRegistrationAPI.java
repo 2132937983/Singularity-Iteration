@@ -55,7 +55,8 @@ public interface IRecipeRegistrationAPI {
     boolean registerExtractorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
- * Registers an electric furnace recipe.
+     * Registers an electric furnace recipe. The Electric and Induction Furnaces check these before vanilla
+     * smelting, at their own speed ({@code processTime} is for add-on machines).
      *
      * @param id the recipe ID
      * @param input the input ingredient
@@ -89,12 +90,13 @@ public interface IRecipeRegistrationAPI {
     boolean registerCentrifugeRecipe(ResourceLocation id, Ingredient input, ItemStack[] outputs, int processTime);
 
     /**
-     * Registers a recycler recipe.
+     * Registers a recycler recipe: recycling an item that matches {@code input} gives the output instead of
+     * scrap, with the given chance (else nothing). The recycler keeps its own speed.
      *
      * @param id the recipe ID
      * @param input the input ingredient
-     * @param outputs the possible output items (each output is random)
-     * @param chances the chance for each output, from 0 to 1. Index i applies to {@code outputs[i]}
+     * @param outputs exactly one output item
+     * @param chances at most one chance, from 0 to 1; none (null or empty) for the recycler's own 1/8
      * @param processTime the process time, in ticks
      * @return true if the registration is successful
      */
@@ -125,6 +127,9 @@ public interface IRecipeRegistrationAPI {
 
     /**
      * Registers a blender recipe.
+     *
+     * <p>No Singularity Iteration machine reads these recipes: they are for add-on machines, which find
+     * them through {@code IRecipeAPI}.
      *
      * @param id the recipe ID
      * @param input the input ingredient
@@ -183,11 +188,13 @@ public interface IRecipeRegistrationAPI {
     boolean registerCannerRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * Registers an electrolyzer recipe.
+     * Registers an electrolyzer recipe: the Electrolyzer takes items that match {@code input} as well as
+     * water cells, gives the output and stores 200 EU of chemical energy per item, like a water cell (it
+     * keeps its own rate). A recipe for water cells takes the place of the built-in one.
      *
      * @param id the recipe ID
      * @param input the input ingredient
-     * @param outputs the output items
+     * @param outputs exactly one output item
      * @param processTime the process time, in ticks
      * @return true if the registration is successful
      */
@@ -205,15 +212,32 @@ public interface IRecipeRegistrationAPI {
     boolean registerExtruderRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * Registers a lathe recipe.
+     * The lathe does not turn items into items: it cuts turning blanks to profiles that crafting recipes
+     * ask for. Always returns false.
      *
-     * @param id the recipe ID
-     * @param input the input ingredient
-     * @param output the output item
-     * @param processTime the process time, in ticks
-     * @return true if the registration is successful
+     * @deprecated name the profile with {@link #registerLatheShape} and ask for it in a crafting recipe
+     *             with a {@code mio_icif:lathe_state} ingredient
      */
+    @Deprecated
     boolean registerLatheRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
+
+    /**
+     * Names a lathe profile (like IC2's 5-4-3-2-1 Drill Tip) as the part for {@code part}. Turning blanks
+     * cut to it show the name and the part, the Shift list of a blank shows how many cuts it is away, and
+     * JEI shows it on the lathe page. A crafting recipe asks for the part with an ingredient like
+     * {@code {"type": "mio_icif:lathe_state", "item": "mio_icif:normal/item_iron_turning_blanks", "state": [5, 4, 3, 2, 1]}}.
+     * The name is the translation key {@code lathe_shape.<namespace>.<path>} of {@code id} (the profile
+     * when there is none). Call it on both sides, for example in {@code FMLCommonSetupEvent}.
+     *
+     * @param id the shape ID, also its name key
+     * @param blank the turning blank: the iron or the wooden one
+     * @param profile the thickness of the 5 positions, 1 to 5 for iron and 1 to 3 for wood
+     * @param part the item the part is for
+     * @return true if it was added; false for a bad profile or one that is already named
+     */
+    default boolean registerLatheShape(ResourceLocation id, net.minecraft.world.item.Item blank, int[] profile, ItemStack part) {
+        return false;
+    }
 
     /**
      * Registers a rolling machine recipe.
@@ -240,6 +264,9 @@ public interface IRecipeRegistrationAPI {
     /**
      * Registers a welder recipe.
      *
+     * <p>No Singularity Iteration machine reads these recipes: they are for add-on machines, which find
+     * them through {@code IRecipeAPI}.
+     *
      * @param id the recipe ID
      * @param input the input ingredient
      * @param output the output item
@@ -250,6 +277,9 @@ public interface IRecipeRegistrationAPI {
 
     /**
      * Registers a welder recipe with more than one input.
+     *
+     * <p>No Singularity Iteration machine reads these recipes: they are for add-on machines, which find
+     * them through {@code IRecipeAPI}.
      *
      * @param id the recipe ID
      * @param inputs the input ingredients
@@ -262,6 +292,9 @@ public interface IRecipeRegistrationAPI {
     /**
      * Registers a laser engraver recipe.
      *
+     * <p>No Singularity Iteration machine reads these recipes: they are for add-on machines, which find
+     * them through {@code IRecipeAPI}.
+     *
      * @param id the recipe ID
      * @param input the input ingredient
      * @param output the output item
@@ -272,6 +305,9 @@ public interface IRecipeRegistrationAPI {
 
     /**
      * Registers a precision assembler recipe.
+     *
+     * <p>No Singularity Iteration machine reads these recipes: they are for add-on machines, which find
+     * them through {@code IRecipeAPI}.
      *
      * @param id the recipe ID
      * @param input the input ingredient
@@ -284,6 +320,9 @@ public interface IRecipeRegistrationAPI {
     /**
      * Registers a precision assembler recipe with more than one input.
      *
+     * <p>No Singularity Iteration machine reads these recipes: they are for add-on machines, which find
+     * them through {@code IRecipeAPI}.
+     *
      * @param id the recipe ID
      * @param inputs the input ingredients
      * @param output the output item
@@ -294,6 +333,9 @@ public interface IRecipeRegistrationAPI {
 
     /**
      * Registers a vacuum freezer recipe.
+     *
+     * <p>No Singularity Iteration machine reads these recipes: they are for add-on machines, which find
+     * them through {@code IRecipeAPI}.
      *
      * @param id the recipe ID
      * @param input the input ingredient
@@ -306,6 +348,9 @@ public interface IRecipeRegistrationAPI {
     /**
      * Registers a plasma furnace recipe.
      *
+     * <p>No Singularity Iteration machine reads these recipes: they are for add-on machines, which find
+     * them through {@code IRecipeAPI}.
+     *
      * @param id the recipe ID
      * @param input the input ingredient
      * @param output the output item
@@ -316,6 +361,9 @@ public interface IRecipeRegistrationAPI {
 
     /**
      * Registers a fusion reactor recipe.
+     *
+     * <p>No Singularity Iteration machine reads these recipes: they are for add-on machines, which find
+     * them through {@code IRecipeAPI}.
      *
      * @param id the recipe ID
      * @param input1 the first input ingredient
@@ -328,36 +376,44 @@ public interface IRecipeRegistrationAPI {
     boolean registerFusionReactorRecipe(ResourceLocation id, Ingredient input1, Ingredient input2, ItemStack output, long energyRequired, int processTime);
 
     /**
-     * Registers a mass fabricator recipe.
+     * The Mass Fabricator makes only UU-matter, from EU; items are amplifiers. Always returns false.
      *
-     * @param id the recipe ID
-     * @param input the input ingredient
-     * @param output the output item
-     * @param processTime the process time, in ticks
-     * @return true if the registration is successful
+     * @deprecated use {@link #registerMassFabricatorAmplifier}
      */
+    @Deprecated
     boolean registerMassFabricatorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * Registers a replicator recipe.
+     * Registers a Mass Fabricator amplifier (IC2 matter amplifier, like scrap): one item that matches
+     * {@code amplifier} adds {@code euCredit} EU of amplifier credit, and received EU covered by the credit
+     * counts six times. It comes before the built-in amplifiers (scrap 5,000, scrap box 45,000). Datapacks:
+     * {@code {"type": "mio_icif:mass_fabricator", "ingredient": {...}, "credit": 5000}}.
      *
      * @param id the recipe ID
-     * @param input the input ingredient
-     * @param output the output item
-     * @param processTime the process time, in ticks
+     * @param amplifier the amplifier items
+     * @param euCredit the EU of credit one item adds, more than 0
      * @return true if the registration is successful
      */
+    default boolean registerMassFabricatorAmplifier(ResourceLocation id, Ingredient amplifier, int euCredit) {
+        return false;
+    }
+
+    /**
+     * The replicator copies scanned patterns for their UU-matter price; it has no recipes. Always returns false.
+     *
+     * @deprecated set prices with a replication list, {@code data/<namespace>/uu_replication/*.json} (API
+     *             guide 12.1); an item made by recipes from priced items gets a derived price of its own
+     */
+    @Deprecated
     boolean registerReplicatorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**
-     * Registers a scanner recipe.
+     * The scanner records any item that has a UU-matter price; it has no recipes. Always returns false.
      *
-     * @param id the recipe ID
-     * @param input the input ingredient
-     * @param output the output item
-     * @param processTime the process time, in ticks
-     * @return true if the registration is successful
+     * @deprecated set prices with a replication list, {@code data/<namespace>/uu_replication/*.json} (API
+     *             guide 12.1); an item made by recipes from priced items gets a derived price of its own
      */
+    @Deprecated
     boolean registerScannerRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime);
 
     /**

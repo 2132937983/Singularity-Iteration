@@ -34,7 +34,7 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
     // Energy that the iron drill uses for each operation (IC2 original: 50 EU).
     public static final int IRON_DRILLER_ENERGY_PER_USE = 50;
 
-    // Attack damage of the iron drill (IC2 original: 8.0).
+    // Attack damage of the iron drill (SI value; IC2 gives drills only their material's damage).
     public static final float IRON_DRILLER_ATTACK_DAMAGE = 8.0F;
 
     // Mining efficiency of the iron drill (IC2 original: 8.0).
@@ -60,13 +60,12 @@ public class mio_icif_iron_driller extends mio_icif_tool_elc implements IMiningD
         super(properties, IRON_DRILLER_MAX_ENERGY, IRON_DRILLER_MAX_ENERGY - initialEnergy, "iron_driller", IRON_DRILLER_TRANSFER_LIMIT, IRON_DRILLER_ENERGY_PER_USE, 1);
     }
 
-    /**
-     * Returns the attack damage bonus.
-     * The iron drill deals 8 extra damage (as in the original IC2).
-     */
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers ATTACK = attackDamage(IRON_DRILLER_ATTACK_DAMAGE);
+
+    /** 8 attack damage (9 in a player's hand), as an attribute: shown and used by mobs too. */
     @Override
-    public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
-        return IRON_DRILLER_ATTACK_DAMAGE;
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return ATTACK;
     }
 
     /**

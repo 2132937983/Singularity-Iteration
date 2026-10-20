@@ -28,7 +28,7 @@ public class ElectricFurnaceRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> ELECTRIC_FURNACE_SERIALIZER =
-        RECIPE_SERIALIZERS.register("electric_furnace", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("electric_furnace", () -> new GenericSingleInputRecipeSerializer(ElectricFurnaceRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

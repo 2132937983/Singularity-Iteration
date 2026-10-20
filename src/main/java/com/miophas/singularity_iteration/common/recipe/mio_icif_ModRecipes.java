@@ -239,7 +239,7 @@ public static final DeferredHolder<RecipeType<?>, RecipeType<mio_icif_RollingRec
     // 注册物质生成机配方
     public static final DeferredHolder<RecipeType<?>, RecipeType<com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipe>> MASS_FABRICATOR_TYPE =
         com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipes.MASS_FABRICATOR_TYPE;
-    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> MASS_FABRICATOR_SERIALIZER =
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipe>> MASS_FABRICATOR_SERIALIZER =
         com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipes.MASS_FABRICATOR_SERIALIZER;
 
     // 注册复制机配方
@@ -302,5 +302,21 @@ public static final DeferredHolder<RecipeType<?>, RecipeType<mio_icif_RollingRec
         com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes.register(eventBus);
         // 注册电量传递合成配方
         ChargeCarryingRecipes.register(eventBus);
+        // The generic types behind the recipe API (registerWelderRecipe, findBlenderRecipe, ...). Unregistered,
+        // their recipes failed on getType() and took the whole runtime recipe sync down with them.
+        com.miophas.singularity_iteration.common.recipe.generic.BlenderRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.ElectricFurnaceRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.ElectrolyzerRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.FusionReactorRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.LaserEngraverRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.LatheRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.PlasmaFurnaceRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.PrecisionAssemblerRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.RecyclerRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.ReplicatorRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.ScannerRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.VacuumFreezerRecipes.register(eventBus);
+        com.miophas.singularity_iteration.common.recipe.generic.WelderRecipes.register(eventBus);
     }
 }

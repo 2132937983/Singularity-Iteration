@@ -28,7 +28,7 @@ public class PlasmaFurnaceRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> PLASMA_FURNACE_SERIALIZER =
-        RECIPE_SERIALIZERS.register("plasma_furnace", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("plasma_furnace", () -> new GenericSingleInputRecipeSerializer(PlasmaFurnaceRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

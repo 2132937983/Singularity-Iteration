@@ -25,6 +25,7 @@ import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -220,17 +221,16 @@ public class mio_icif_oil_rig_core_entity extends MultiblockEnergyCore {
         return new int[]{base[idx][0] * scale, base[idx][1] * scale};
     }
 
-    /** The chance that drilling {@code state} strikes oil (dense rock and ore often, loose ground rarely). */
+    /**
+     * The chance that drilling {@code state} strikes oil (dense rock and ore often, loose ground rarely).
+     * Ore is the {@code c:ores} tag: the old name test ("ore" anywhere in the description id) also took
+     * blocks like the rig's own core and other "core" or "more" blocks for ore.
+     */
     public static double strikeChance(BlockState state) {
-        if (isOreBlock(state) || state.is(Blocks.LAVA)) return ORE_STRIKE_CHANCE;
+        if (state.is(Tags.Blocks.ORES) || state.is(Blocks.LAVA)) return ORE_STRIKE_CHANCE;
         if (state.is(Blocks.OBSIDIAN)) return OBSIDIAN_STRIKE_CHANCE;
         if (state.is(Blocks.GRAVEL) || state.is(Blocks.SAND)) return LOOSE_STRIKE_CHANCE;
         return OTHER_STRIKE_CHANCE;
-    }
-
-    private static boolean isOreBlock(BlockState state) {
-        String path = state.getBlock().getDescriptionId();
-        return path.contains("ore") || path.contains("Ore");
     }
 
     /** For recipe viewers: {@link #OIL_PER_DRILL} mB of crude oil per strike. */

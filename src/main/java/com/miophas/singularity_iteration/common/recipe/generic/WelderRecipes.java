@@ -28,7 +28,7 @@ public class WelderRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> WELDER_SERIALIZER =
-        RECIPE_SERIALIZERS.register("welder", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("welder", () -> new GenericSingleInputRecipeSerializer(WelderRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

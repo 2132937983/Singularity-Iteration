@@ -28,7 +28,7 @@ public class LaserEngraverRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> LASER_ENGRAVER_SERIALIZER =
-        RECIPE_SERIALIZERS.register("laser_engraver", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("laser_engraver", () -> new GenericSingleInputRecipeSerializer(LaserEngraverRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

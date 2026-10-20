@@ -87,21 +87,38 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
         // Existing SI extension, not an original-game equivalence claim.
         return stack.is(mio_icif_resources.THORIUM_SCRAP.get())?THORIUM_SCRAP_BONUS:0;
     }
+    /** mass_fabricator amplifier recipes (recipe API, datapacks), before the built-in amplifiers */
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput,
+        com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipe> amplifiers=new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(
+        com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipes.MASS_FABRICATOR_TYPE);
+    /** The EU of credit one amplifier item adds: an amplifier recipe's, else the built-in value, else 0. */
+    public int amplifierCredit(ItemStack stack){
+        if(stack.isEmpty())return 0;
+        var recipe=level==null?null:amplifiers.findValue(level,new com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput(stack.copyWithCount(1)));
+        return recipe!=null?recipe.getCredit():bonus(stack);
+    }
     /** For recipe viewers: {@link #EU_PER_MB} EU per mB of UU-matter; each amplifier's credit makes that much EU count {@link #AMPLIFIER_MULTIPLIER} times. */
-    public static List<MachineConversion> conversions(){
+    public static List<MachineConversion> conversions(){return conversions(null);}
+    /** {@link #conversions()} and the amplifier recipes of {@code recipes} (when given). */
+    public static List<MachineConversion> conversions(@org.jetbrains.annotations.Nullable net.minecraft.world.item.crafting.RecipeManager recipes){
         var block=mio_icif_blocks.MATTER_ELC.get();var uu=mio_icif_fluids.UUMATTER.get();
         var all=new ArrayList<MachineConversion>();
         all.add(MachineConversion.of(block).fluidOut(uu,UUMATTER_OUTPUT_AMOUNT).note("conversion.mio_icif.fabricator.energy",EU_PER_MB).build());
+        if(recipes!=null)for(var holder:recipes.getAllRecipesFor(com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipes.MASS_FABRICATOR_TYPE.get()))
+            all.add(amplifierConversion(holder.value().getIngredient().getItems(),holder.value().getCredit()));
         for(var amplifier:List.of(new ItemStack(mio_icif_normal.SCRAP.get()),new ItemStack(mio_icif_normal.SCRAPBOX.get()),new ItemStack(mio_icif_resources.THORIUM_SCRAP.get())))
-            all.add(MachineConversion.of(block).itemIn(amplifier).fluidOut(uu,UUMATTER_OUTPUT_AMOUNT)
-                .note("conversion.mio_icif.fabricator.energy",EU_PER_MB)
-                .note("conversion.mio_icif.matter.amplifier",bonus(amplifier),AMPLIFIER_MULTIPLIER)
-                .note("conversion.mio_icif.fabricator.saves",(long)bonus(amplifier)*(AMPLIFIER_MULTIPLIER-1)).build());
+            all.add(amplifierConversion(new ItemStack[]{amplifier},bonus(amplifier)));
         return all;
+    }
+    private static MachineConversion amplifierConversion(ItemStack[] items,int credit){
+        return MachineConversion.of(mio_icif_blocks.MATTER_ELC.get()).itemIn(items).fluidOut(mio_icif_fluids.UUMATTER.get(),UUMATTER_OUTPUT_AMOUNT)
+            .note("conversion.mio_icif.fabricator.energy",EU_PER_MB)
+            .note("conversion.mio_icif.matter.amplifier",credit,AMPLIFIER_MULTIPLIER)
+            .note("conversion.mio_icif.fabricator.saves",(long)credit*(AMPLIFIER_MULTIPLIER-1)).build();
     }
     public boolean isItemValidForSlot(int slot,ItemStack stack){
         if(stack.isEmpty())return false;
-        if(slot==AMPLIFIER_SLOT)return bonus(stack)>0;
+        if(slot==AMPLIFIER_SLOT)return amplifierCredit(stack)>0;
         if(slot==CONTAINER_SLOT)return stack.is(Items.BUCKET)||mio_icif_cells.isEmptyCell(stack);
         return slot>=UPGRADE_SLOT_START&&slot<SLOT_COUNT&&MioIcifAPI.instance().getItemAPI().isUpgrade(stack);
     }
@@ -149,7 +166,7 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
         }
         isWorking=!work.isZero();
         if(!work.isZero()&&amplifier.compareTo(PRELOAD)<0){
-            var before=itemHandler.getStackInSlot(AMPLIFIER_SLOT).copy();int add=bonus(before);
+            var before=itemHandler.getStackInSlot(AMPLIFIER_SLOT).copy();int add=amplifierCredit(before);
             if(add>0){var next=amplifier.add(EnergyAmount.of(add));
                 itemHandler.scexCommitSlots(new int[]{AMPLIFIER_SLOT},new ItemStack[]{before},
                     new ItemStack[]{before.copyWithCount(before.getCount()-1)},()->{amplifier=next;dirty();});

@@ -28,7 +28,7 @@ public class VacuumFreezerRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> VACUUM_FREEZER_SERIALIZER =
-        RECIPE_SERIALIZERS.register("vacuum_freezer", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("vacuum_freezer", () -> new GenericSingleInputRecipeSerializer(VacuumFreezerRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

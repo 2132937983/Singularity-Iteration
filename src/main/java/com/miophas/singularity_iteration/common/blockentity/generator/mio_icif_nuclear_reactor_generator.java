@@ -162,6 +162,15 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         var c=w.getChunkSource().getChunkNow(at.getX()>>4,at.getZ()>>4);
         return c!=null&&c.getBlockEntity(at,LevelChunk.EntityCreationType.CHECK) instanceof com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_chamber chamber&&chamber.getConnectedReactor()==this;
     }
+    /** Coolant injectors serving this reactor: next to it or to one of its chambers (see {@link com.miophas.singularity_iteration.common.blockentity.producer.AbstractReactorCoolantInjector#reactor()}). */
+    public List<com.miophas.singularity_iteration.common.blockentity.producer.AbstractReactorCoolantInjector> coolantInjectors(){
+        var out=new ArrayList<com.miophas.singularity_iteration.common.blockentity.producer.AbstractReactorCoolantInjector>();
+        for(var contact:electricalContactPositions())for(var side:Direction.values()){
+            var at=contact.relative(side);
+            if(level.isLoaded(at)&&level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.AbstractReactorCoolantInjector injector&&!out.contains(injector)&&injector.reactor()==this)out.add(injector);
+        }
+        return out;
+    }
     public List<BlockPos> electricalContactPositions(){
         if(!live())return List.of();var out=new ArrayList<BlockPos>();out.add(worldPosition);
         for(var side:Direction.values()){var at=worldPosition.relative(side);if(isChamber(at))out.add(at);}return List.copyOf(out);
@@ -236,8 +245,13 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             final long hullBefore=hull;long emittedSum=0;final boolean poweredOn=enabled();
             var melts=new java.util.ArrayList<com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Melt>();
             FluidReactorCycle.Result converted=null;ReactorCycle.Result result=null;
+            // 0.1.10.14: coolant injectors refill between the feeds of one operation, as between two IC2 cycles
+            var injectors=feeds>1?coolantInjectors():List.<com.miophas.singularity_iteration.common.blockentity.producer.AbstractReactorCoolantInjector>of();
             for(int feed=0;feed<feeds;feed++){
-                if(feed>0)for(int i=0;i<54;i++)parts[i]=i%9<columns?ReactorInventory.read(current[i]):null;
+                if(feed>0){
+                    for(var injector:injectors)injector.refillBetweenFeeds(current);
+                    for(int i=0;i<54;i++)parts[i]=i%9<columns?ReactorInventory.read(current[i]):null;
+                }
                 converted=liquid?FluidReactorCycle.step(parts,columns,hull,enabled(),coldIn,hotOut,fluid.FLUID_CAPACITY,coolant.huPerMB(),fluid.isOutputCompatible()):null;
                 result=liquid?converted.cycle():ReactorCycle.step(parts,columns,hull,enabled());
                 var next=result.parts();var depleted=result.depletedFuel();

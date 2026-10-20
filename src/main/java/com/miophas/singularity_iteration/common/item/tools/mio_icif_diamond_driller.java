@@ -23,6 +23,15 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 @SuppressWarnings("deprecation")
 public class mio_icif_diamond_driller extends mio_icif_tool_elc implements IMiningDrill {
     public static final int DIAMOND_DRILLER_MAX_ENERGY = 30_000;
+    /** Attack damage, the iron drill's (SI value). */
+    public static final float DIAMOND_DRILLER_ATTACK_DAMAGE = mio_icif_iron_driller.IRON_DRILLER_ATTACK_DAMAGE;
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers ATTACK = attackDamage(DIAMOND_DRILLER_ATTACK_DAMAGE);
+
+    /** 8 attack damage (9 in a player's hand), as an attribute: shown and used by mobs too. */
+    @Override
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return ATTACK;
+    }
     public static final int DIAMOND_DRILLER_TRANSFER_LIMIT = 100;
     public static final int DIAMOND_DRILLER_ENERGY_PER_USE = 80;
     public static final float DIAMOND_DRILLER_EFFICIENCY = 16.0F;

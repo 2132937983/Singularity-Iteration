@@ -1278,6 +1278,7 @@
   "message.mio_icif.generator.gui_open_failed": "%s - Failed to open GUI",
   "gui.mio_icif.lapis_injector.lapis_blocks": "Lapis Blocks: %s",
   "gui.mio_icif.redstone_injector.redstone_blocks": "Redstone Blocks: %s",
+  "gui.mio_icif.reactor_coolant_injector.reserve": "Reserve: %s",
   "message.mio_icif.reactor.no_reactor_found": "No adjacent nuclear reactor found!",
   "message.mio_icif.reactor.hint_placement": "Hint: Access Hatch should be placed within 2 blocks of the reactor",
   "message.mio_icif.reactor.multiple_reactors": "Multiple reactors connected — this will cause an explosion!",

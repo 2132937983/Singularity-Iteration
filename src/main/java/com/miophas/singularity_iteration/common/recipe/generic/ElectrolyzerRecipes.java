@@ -28,7 +28,7 @@ public class ElectrolyzerRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> ELECTROLYZER_SERIALIZER =
-        RECIPE_SERIALIZERS.register("electrolyzer", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("electrolyzer", () -> new GenericSingleInputRecipeSerializer(ElectrolyzerRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

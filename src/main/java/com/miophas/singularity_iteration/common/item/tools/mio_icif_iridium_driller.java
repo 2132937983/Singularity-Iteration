@@ -49,7 +49,7 @@ public class mio_icif_iridium_driller extends mio_icif_tool_elc implements com.m
     // Energy that the iridium drill uses each time (original IC2: 800 EU).
     public static final int IRIDIUM_DRILLER_ENERGY_PER_USE = 800;
 
-    // 铱钻头的攻击伤害 (IC2原版: 20.0)
+    // 铱钻头的攻击伤害（SI 数值；IC2 的钻头只有材料伤害）
     public static final float IRIDIUM_DRILLER_ATTACK_DAMAGE = 20.0F;
 
     // 铱钻头的挖掘效率 (IC2原版: 25.0)
@@ -316,13 +316,12 @@ private static final String MODE_KEY = "iridium_driller_mode";
             modeName, getEnergy(stack), getMaxEnergy());
     }
 
-    /**
-     * Returns the attack damage bonus.
-     * The iridium drill adds 20 points of damage.
- */
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers ATTACK = attackDamage(IRIDIUM_DRILLER_ATTACK_DAMAGE);
+
+    /** 20 attack damage (21 in a player's hand), as an attribute: shown and used by mobs too. */
     @Override
-    public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
-        return IRIDIUM_DRILLER_ATTACK_DAMAGE;
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return ATTACK;
     }
 
     @Override

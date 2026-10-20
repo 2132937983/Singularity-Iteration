@@ -28,7 +28,7 @@ public class LatheRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> LATHE_SERIALIZER =
-        RECIPE_SERIALIZERS.register("lathe", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("lathe", () -> new GenericSingleInputRecipeSerializer(LatheRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

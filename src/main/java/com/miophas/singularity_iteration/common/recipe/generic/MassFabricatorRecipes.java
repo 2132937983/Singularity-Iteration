@@ -27,8 +27,8 @@ public class MassFabricatorRecipes {
             }
         });
 
-    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> MASS_FABRICATOR_SERIALIZER =
-        RECIPE_SERIALIZERS.register("mass_fabricator", () -> new GenericSingleInputRecipeSerializer());
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<MassFabricatorRecipe>> MASS_FABRICATOR_SERIALIZER =
+        RECIPE_SERIALIZERS.register("mass_fabricator", MassFabricatorRecipe.Serializer::new);
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

@@ -119,7 +119,7 @@ public class LatheTurningBlanksItem extends Item implements ILatheItem {
 
         var named = LatheShapes.of(stack);
         if (named.isPresent()) {
-            tooltip.add(Component.translatable(named.get().nameKey()).withStyle(ChatFormatting.AQUA));
+            tooltip.add(named.get().name().copy().withStyle(ChatFormatting.AQUA));
             tooltip.add(Component.translatable("item.mio_icif.turning_blanks.used_in",
                 named.get().usedInItem().getDescription()).withStyle(ChatFormatting.DARK_AQUA));
         } else {
@@ -148,7 +148,7 @@ public class LatheTurningBlanksItem extends Item implements ILatheItem {
         }
         tooltip.add(Component.translatable("item.mio_icif.turning_blanks.targets").withStyle(ChatFormatting.GRAY));
         for (LatheShapes.Shape target : targets) {
-            tooltip.add(Component.translatable("item.mio_icif.turning_blanks.target", Component.translatable(target.nameKey()),
+            tooltip.add(Component.translatable("item.mio_icif.turning_blanks.target", target.name(),
                 target.profile(), LatheShapes.cutsTo(stack, target)).withStyle(ChatFormatting.DARK_AQUA));
         }
     }

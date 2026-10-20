@@ -38,6 +38,20 @@ public class mio_icif_tool_elc extends AbstractElectricTool {
         super(properties, maxEnergy, initialEnergy, chargeRate, energyPerUse, toolTier);
     }
 
+    /**
+     * A main-hand attack damage modifier, as swords and axes have it: shown in the tooltip and used by
+     * every wielder. Players add it to their 1 base damage; mobs (and maids of maid mods, which only
+     * take an item with an attack damage modifier as a weapon) to theirs.
+     */
+    protected static net.minecraft.world.item.component.ItemAttributeModifiers attackDamage(double amount) {
+        return net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+            .add(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                new net.minecraft.world.entity.ai.attributes.AttributeModifier(BASE_ATTACK_DAMAGE_ID, amount,
+                    net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE),
+                net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+            .build();
+    }
+
     protected long apiGetEnergy(ItemStack stack) {
         return super.getEnergy(stack);
     }

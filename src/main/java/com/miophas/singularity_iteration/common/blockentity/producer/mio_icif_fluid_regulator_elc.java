@@ -200,37 +200,29 @@ public class mio_icif_fluid_regulator_elc extends AbstractProcessingMachineBlock
         return false;
     }
 
+    /**
+     * IC2 {@code wasserinputSlot.processIntoTank}: one whole container goes into the tank and its emptied
+     * container (the item handler's {@code getContainer()}, e.g. an empty cell) to the output slot, only
+     * when both fit. It used to move the fluid first and put a copy of the full container out, so a cell
+     * that its handler empties as a copy (every SI cell) gave its fluid again and again.
+     */
     private void processInputSlot() {
-        ItemStack inputStack = itemHandler.getStackInSlot(FLUID_INPUT_SLOT);
-        if (inputStack.isEmpty()) return;
-
-        IFluidHandler itemFluidHandler = inputStack.getCapability(Capabilities.FluidHandler.ITEM);
-        if (itemFluidHandler == null) return;
-
-        ItemStack outputStack = itemHandler.getStackInSlot(FLUID_OUTPUT_SLOT);
-
-        FluidStack itemFluid = itemFluidHandler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
-        if (itemFluid.isEmpty()) return;
-
-        int fillAmount = fluidTank.fill(itemFluid, IFluidHandler.FluidAction.SIMULATE);
-        if (fillAmount <= 0) return;
-
-        FluidStack drained = itemFluidHandler.drain(fillAmount, IFluidHandler.FluidAction.EXECUTE);
-        if (drained.isEmpty()) return;
-
-        fluidTank.fill(drained, IFluidHandler.FluidAction.EXECUTE);
-
-        ItemStack containerResult = inputStack.copy();
-        if (inputStack.getCount() == 1) {
-            if (outputStack.isEmpty()) {
-                itemHandler.setStackInSlot(FLUID_INPUT_SLOT, ItemStack.EMPTY);
-                itemHandler.setStackInSlot(FLUID_OUTPUT_SLOT, containerResult);
-            } else if (ItemStack.isSameItemSameComponents(outputStack, containerResult) && outputStack.getCount() < outputStack.getMaxStackSize()) {
-                itemHandler.setStackInSlot(FLUID_INPUT_SLOT, ItemStack.EMPTY);
-                outputStack.grow(1);
-                itemHandler.setStackInSlot(FLUID_OUTPUT_SLOT, outputStack);
+        ItemStack input = itemHandler.getStackInSlot(FLUID_INPUT_SLOT);
+        if (input.isEmpty()) return;
+        var container = input.copyWithCount(1).getCapability(Capabilities.FluidHandler.ITEM);
+        if (container == null) return;
+        FluidStack content = container.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.EXECUTE);
+        if (content.isEmpty()) return;
+        ItemStack emptied = container.getContainer();
+        if (emptied.isEmpty()) {
+            // the container is used up with its fluid
+            if (com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank.fillOwnedTank(fluidTank, content)) {
+                itemHandler.setStackInSlot(FLUID_INPUT_SLOT, input.copyWithCount(input.getCount() - 1));
             }
+            return;
         }
+        com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank.transfer(itemHandler, FLUID_INPUT_SLOT, FLUID_OUTPUT_SLOT,
+            fluidTank, content, emptied);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_fluid_regulator_elc blockEntity) {

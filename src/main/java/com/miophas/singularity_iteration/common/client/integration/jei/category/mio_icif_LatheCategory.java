@@ -95,6 +95,7 @@ public class mio_icif_LatheCategory implements IRecipeCategory<LatheShapes.Shape
 
     @Override
     public @Nullable ResourceLocation getRegistryName(LatheShapes.Shape shape) {
+        if (shape.id() != null) return ResourceLocation.fromNamespaceAndPath(shape.id().getNamespace(), "lathe/" + shape.id().getPath());
         return ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
             "lathe/" + Integer.toHexString(LatheTurningBlanksItem.getNumericState(shape.state())));
     }

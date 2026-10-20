@@ -95,7 +95,9 @@ public final class NuclearFalloutGameTests {
         h.getLevel().setBlock(center.east(),Blocks.SEAGRASS.defaultBlockState(),2);
         h.getLevel().setBlock(center.west(),Blocks.TALL_GRASS.defaultBlockState(),18);
         h.getLevel().setBlock(center.west().above(),Blocks.TALL_GRASS.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.DOUBLE_BLOCK_HALF,net.minecraft.world.level.block.state.properties.DoubleBlockHalf.UPPER),18);
-        finishChunk(h,region,h.getLevel().getChunkAt(center));
+        // Every chunk the plants are in: where the test lands, a chunk border can run between them.
+        var chunks=new java.util.LinkedHashSet<ChunkPos>();
+        for(BlockPos p:new BlockPos[]{center,center.east(),center.west()})if(chunks.add(new ChunkPos(p)))finishChunk(h,region,h.getLevel().getChunkAt(p));
         for(int y:new int[]{0,1,3})h.assertTrue(h.getLevel().getBlockState(center.above(y)).isAir(),"Vegetation survived inside vertical fallout range");
         h.assertTrue(h.getLevel().getBlockState(center.above(2)).is(Blocks.BRICKS),"Fallout removed non-vegetation cover");
         h.assertTrue(h.getLevel().getBlockState(center.east()).is(Blocks.WATER),"Removed waterlogged plant deleted its water");

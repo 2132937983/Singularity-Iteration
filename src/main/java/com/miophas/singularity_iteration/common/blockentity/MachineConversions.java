@@ -23,6 +23,11 @@ public final class MachineConversions {
     private MachineConversions() {}
 
     public static List<MachineConversion> all() {
+        return all(null);
+    }
+
+    /** {@link #all()} and the conversions that recipes add (Mass Fabricator amplifiers), when {@code recipes} is given. */
+    public static List<MachineConversion> all(@org.jetbrains.annotations.Nullable net.minecraft.world.item.crafting.RecipeManager recipes) {
         List<MachineConversion> all = new ArrayList<>();
         all.addAll(mio_icif_steam_generator.conversions());
         all.addAll(mio_icif_steam_repressurizer.conversions());
@@ -30,7 +35,7 @@ public final class MachineConversions {
         all.addAll(mio_icif_solar_distiller.conversions());
         all.addAll(mio_icif_heat_source_fluid.conversions());
         all.addAll(mio_icif_fluid_reactor_handler.conversions());
-        all.addAll(mio_icif_matter_elc.conversions());
+        all.addAll(mio_icif_matter_elc.conversions(recipes));
         all.addAll(mio_icif_large_fabricator_core_entity.conversions());
         all.addAll(mio_icif_oil_rig_core_entity.conversions());
         all.addAll(mio_icif_dimension_oil_rig_core_entity.conversions());

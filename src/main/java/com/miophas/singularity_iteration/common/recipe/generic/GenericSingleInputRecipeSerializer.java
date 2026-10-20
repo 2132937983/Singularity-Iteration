@@ -13,18 +13,31 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
 /**
- * 通用单输入配方序列化器
+ * 通用单输入配方序列化器。The sixth factory argument is one optional float: {@code "experience"} by
+ * default (electric furnace XP), or another field such as the recycler's {@code "chance"}.
  */
 public class GenericSingleInputRecipeSerializer implements RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>> {
 
     private final RecipeFactory factory;
+    private final String extraField;
+    private final float extraDefault;
+    private final java.util.function.Function<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>, Float> extra;
 
     public GenericSingleInputRecipeSerializer() {
         this(ElectricFurnaceRecipe::new);
     }
 
     public GenericSingleInputRecipeSerializer(RecipeFactory factory) {
+        this(factory, "experience", 0.0f, r -> r instanceof ElectricFurnaceRecipe e ? e.getExperience() : 0.0f);
+    }
+
+    /** {@code extraField}: the JSON name of the sixth factory argument; {@code extra} reads it back from a recipe. */
+    public GenericSingleInputRecipeSerializer(RecipeFactory factory, String extraField, float extraDefault,
+                                              java.util.function.Function<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>, Float> extra) {
         this.factory = factory;
+        this.extraField = extraField;
+        this.extraDefault = extraDefault;
+        this.extra = extra;
     }
 
     @Override
@@ -36,7 +49,7 @@ public class GenericSingleInputRecipeSerializer implements RecipeSerializer<Abst
                 ItemStack.CODEC.fieldOf("result").forGetter(r -> r.getResult()),
                 Codec.INT.optionalFieldOf("processingtime", 200).forGetter(r -> r.getProcessingTime()),
                 Codec.INT.optionalFieldOf("energyPerTick", 10).forGetter(r -> r.getEnergyPerTick()),
-                Codec.FLOAT.optionalFieldOf("experience", 0.0f).forGetter(r -> r instanceof ElectricFurnaceRecipe e ? e.getExperience() : 0.0f)
+                Codec.FLOAT.optionalFieldOf(extraField, extraDefault).forGetter(extra)
             ).apply(instance, factory::create)
         );
     }
@@ -65,7 +78,7 @@ public class GenericSingleInputRecipeSerializer implements RecipeSerializer<Abst
         ItemStack.STREAM_CODEC.encode(buf, recipe.getResult());
         buf.writeVarInt(recipe.getProcessingTime());
         buf.writeVarInt(recipe.getEnergyPerTick());
-        buf.writeFloat(recipe instanceof ElectricFurnaceRecipe e ? e.getExperience() : 0.0f);
+        buf.writeFloat(extra.apply(recipe));
     }
 
     @FunctionalInterface

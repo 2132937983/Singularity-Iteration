@@ -28,7 +28,7 @@ public class ReplicatorRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> REPLICATOR_SERIALIZER =
-        RECIPE_SERIALIZERS.register("replicator", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("replicator", () -> new GenericSingleInputRecipeSerializer(ReplicatorRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

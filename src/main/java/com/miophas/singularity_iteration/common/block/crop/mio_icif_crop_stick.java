@@ -32,7 +32,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.level.BlockEvent;
 
 /** Independent crop-stick block with a seven-stage synchronized render property. */
-public class mio_icif_crop_stick extends BaseEntityBlock {
+public class mio_icif_crop_stick extends BaseEntityBlock implements net.minecraft.world.level.block.LiquidBlockContainer {
     public static final MapCodec<mio_icif_crop_stick> CODEC = simpleCodec(mio_icif_crop_stick::new);
     public static final IntegerProperty AGE = IntegerProperty.create("age", 0, 7);
     public static final net.minecraft.world.level.block.state.properties.BooleanProperty CROSSING = net.minecraft.world.level.block.state.properties.BooleanProperty.create("crossing");
@@ -160,5 +160,15 @@ public class mio_icif_crop_stick extends BaseEntityBlock {
         if (world.getBlockEntity(pos) instanceof mio_icif_crop_entity crop && crop.getPlant() != null)
             return crop.makeSeeds(crop.getPlant(), 1, crop.getGrowthSpeed(), crop.getYield(), crop.getResilience());
         return new ItemStack(this);
+    }
+
+    /** Water washes a planted rack away for two seed bags ({@link com.miophas.singularity_iteration.common.crop.CropWashing}). */
+    @Override public boolean canPlaceLiquid(@Nullable Player player, BlockGetter level, BlockPos pos, BlockState state,
+            net.minecraft.world.level.material.Fluid fluid) {
+        return com.miophas.singularity_iteration.common.crop.CropWashing.canPlaceLiquid();
+    }
+    @Override public boolean placeLiquid(net.minecraft.world.level.LevelAccessor level, BlockPos pos, BlockState state,
+            net.minecraft.world.level.material.FluidState fluid) {
+        return com.miophas.singularity_iteration.common.crop.CropWashing.placeLiquid(level, pos, state, fluid);
     }
 }

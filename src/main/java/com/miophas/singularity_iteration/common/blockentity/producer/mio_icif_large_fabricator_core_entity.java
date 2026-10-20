@@ -153,16 +153,14 @@ public class mio_icif_large_fabricator_core_entity extends MultiblockEnergyCore 
             BlockPos partPos = pos.relative(direction);
             BlockEntity partBe = level.getBlockEntity(partPos);
             if (partBe instanceof mio_icif_large_fabricator_input_iv_entity inputEntity) {
-                if (inputEntity.getStoredEnergy() >= ENERGY_PER_MB) {
-                    if (canProduceUuMatter()) {
-                        float discount = 0.0f;
-                        if (scrapModule != null) {
-                            discount = scrapModule.consumeScrapValue((float) ENERGY_PER_MB);
-                        }
-                        inputEntity.consumeEnergy((long)(ENERGY_PER_MB - discount), false);
-                        produceUuMatter();
-                        break;
-                    }
+                // The scrap module's value pays first; the input only needs the EU the scrap leaves.
+                long discount = scrapModule == null ? 0L : (long) Math.min(scrapModule.getScrapValue(), (float) ENERGY_PER_MB);
+                long cost = ENERGY_PER_MB - discount;
+                if (inputEntity.getStoredEnergy() >= cost && canProduceUuMatter()) {
+                    if (discount > 0) scrapModule.consumeScrapValue(discount);
+                    inputEntity.consumeEnergy(cost, false);
+                    produceUuMatter();
+                    break;
                 }
             }
         }

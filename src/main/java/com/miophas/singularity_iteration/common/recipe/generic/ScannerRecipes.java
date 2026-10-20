@@ -28,7 +28,7 @@ public class ScannerRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> SCANNER_SERIALIZER =
-        RECIPE_SERIALIZERS.register("scanner", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("scanner", () -> new GenericSingleInputRecipeSerializer(ScannerRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

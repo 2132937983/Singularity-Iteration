@@ -28,7 +28,8 @@ public class RecyclerRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> RECYCLER_SERIALIZER =
-        RECIPE_SERIALIZERS.register("recycler", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("recycler", () -> new GenericSingleInputRecipeSerializer(RecyclerRecipe::new,
+            "chance", RecyclerRecipe.DEFAULT_CHANCE, r -> ((RecyclerRecipe) r).getChance()));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

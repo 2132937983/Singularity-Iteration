@@ -240,6 +240,7 @@ public class RecipeAPIImpl implements IRecipeAPI {
         return findRecipe(getCentrifugeRecipeType(), input, level);
     }
 
+    /** The registry ids of the SI machine recipe types (each one is in the recipe type registry). */
     @Override
     public List<ResourceLocation> getAllRecipeTypeIds() {
         return List.of(
@@ -248,13 +249,15 @@ public class RecipeAPIImpl implements IRecipeAPI {
             ResourceLocation.fromNamespaceAndPath("mio_icif", "extractor"),
             ResourceLocation.fromNamespaceAndPath("mio_icif", "washer"),
             ResourceLocation.fromNamespaceAndPath("mio_icif", "centrifuge"),
-            ResourceLocation.fromNamespaceAndPath("mio_icif", "rolling"),
-            ResourceLocation.fromNamespaceAndPath("mio_icif", "cutting"),
-            ResourceLocation.fromNamespaceAndPath("mio_icif", "extruding"),
+            ResourceLocation.fromNamespaceAndPath("mio_icif", "metal_former_rolling"),
+            ResourceLocation.fromNamespaceAndPath("mio_icif", "metal_former_cutting"),
+            ResourceLocation.fromNamespaceAndPath("mio_icif", "metal_former_extruding"),
             ResourceLocation.fromNamespaceAndPath("mio_icif", "blast_furnace"),
             ResourceLocation.fromNamespaceAndPath("mio_icif", "canning"),
             ResourceLocation.fromNamespaceAndPath("mio_icif", "mix"),
             ResourceLocation.fromNamespaceAndPath("mio_icif", "block_cutter"),
+            ResourceLocation.fromNamespaceAndPath("mio_icif", "molecular_transformer"),
+            ResourceLocation.fromNamespaceAndPath("mio_icif", "neutron_polymerizer"),
             ResourceLocation.fromNamespaceAndPath("mio_icif", "condensator_repair"),
             ResourceLocation.fromNamespaceAndPath("mio_icif", "welder"),
             ResourceLocation.fromNamespaceAndPath("mio_icif", "precision_assembler"),

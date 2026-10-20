@@ -3236,7 +3236,9 @@ public class mio_icif_capacities {
             com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_PAHOEHOELAVA.get(),
             com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_STEAM.get(),
             com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_SUPERHEATEDSTEAM.get(),
-            com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_UUMATTER.get()
+            com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_UUMATTER.get(),
+            // the compressor makes this one: without the capability no fluid machine or pipe could empty it
+            com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_AIR.get()
         );
 
         for (var cellItem : cellItems) {

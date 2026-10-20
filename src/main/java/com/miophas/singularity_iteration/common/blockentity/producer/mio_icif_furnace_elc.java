@@ -16,7 +16,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -40,8 +39,9 @@ import java.util.Optional;
 @SuppressWarnings("null")
 public class mio_icif_furnace_elc extends AbstractStandardMachineBlockEntity {
     // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
-    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<net.minecraft.world.item.crafting.SingleRecipeInput, net.minecraft.world.item.crafting.SmeltingRecipe> recipeCache1 = com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache.of(RecipeType.SMELTING);
-    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<net.minecraft.world.item.crafting.SingleRecipeInput, net.minecraft.world.item.crafting.SmeltingRecipe> recipeCache2 = com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache.of(RecipeType.SMELTING);
+    // electric_furnace recipes (recipe API, datapacks) first, then vanilla smelting
+    private final com.miophas.singularity_iteration.common.recipe.generic.ElectricSmelting recipeCache1 = new com.miophas.singularity_iteration.common.recipe.generic.ElectricSmelting();
+    private final com.miophas.singularity_iteration.common.recipe.generic.ElectricSmelting recipeCache2 = new com.miophas.singularity_iteration.common.recipe.generic.ElectricSmelting();
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(1)
@@ -175,10 +175,7 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
         if (level == null || stack.isEmpty()) {
             return false;
         }
-        SimpleContainer container = new SimpleContainer(1);
-        container.setItem(0, stack);
-        SingleRecipeInput input = new SingleRecipeInput(stack);
-        return recipeCache1.find(level, input).isPresent();
+        return recipeCache1.find(level, stack).isPresent();
     }
 
     /**
@@ -208,8 +205,7 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
             return currentRecipe;
         }
 
-        SingleRecipeInput recipeInput = new SingleRecipeInput(input);
-        currentRecipe = recipeCache2.find(level, recipeInput);
+        currentRecipe = recipeCache2.find(level, input);
         recipeInputSnapshot = input.copy();
         recipeManagerSnapshot = manager;
         return currentRecipe;
@@ -424,8 +420,10 @@ tick 更新逻辑
         List<RecipeHolder<?>> list = new ArrayList<>();
         for (Object2IntMap.Entry<ResourceLocation> entry : recipesUsed.object2IntEntrySet()) {
             player.serverLevel().getRecipeManager().byKey(entry.getKey()).ifPresent(holder -> {
+                // electric_furnace recipes have no recipe book: their XP is already banked
+                if (!(holder.value() instanceof SmeltingRecipe smelting)) return;
                 list.add(holder);
-                if (legacyXp && holder.value() instanceof SmeltingRecipe smelting) storedXp.add(entry.getIntValue() * smelting.getExperience());
+                if (legacyXp) storedXp.add(entry.getIntValue() * smelting.getExperience());
             });
         }
         legacyXp = false;

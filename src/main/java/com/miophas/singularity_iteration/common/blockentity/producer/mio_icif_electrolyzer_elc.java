@@ -32,6 +32,8 @@ import org.jetbrains.annotations.Nullable;
  *
  * Behavior:
  * 1. It uses electricity to electrolyze water cells. It outputs empty cells.
+ *    Electrolyzer recipes (recipe API, datapacks) add inputs: each gives its recipe output and
+ *    stores ENERGY_PER_WATER_CELL like a water cell (the machine keeps its IC2 rate).
  * 2. It stores the energy as chemical energy, up to DEFAULT_CAPACITY EU.
  * 3. It outputs the chemical energy to adjacent blocks at a maximum of 32 EU/t.
  * 4. It sends energy to an adjacent machine only when that machine is not full.
@@ -51,6 +53,13 @@ public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEnt
 
     // Stored chemical energy in EU.
     protected long chemicalEnergy = 0;
+
+    /** electrolyzer recipes (recipe API, datapacks): more inputs, each stored like a water cell */
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<
+        com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput,
+        com.miophas.singularity_iteration.common.recipe.generic.ElectrolyzerRecipe> recipes =
+        new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(
+            com.miophas.singularity_iteration.common.recipe.generic.ElectrolyzerRecipes.ELECTROLYZER_TYPE);
 
     // Energy paid toward the current water cell, in EU.
     protected long energyAccumulator = 0;
@@ -94,7 +103,8 @@ public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEnt
     @Override
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
-            case INPUT_SLOT -> mio_icif_cells.isCellContainingFluid(stack, net.minecraft.world.level.material.Fluids.WATER);
+            case INPUT_SLOT -> mio_icif_cells.isCellContainingFluid(stack, net.minecraft.world.level.material.Fluids.WATER)
+                || recipeOutput(stack.copyWithCount(1)).isPresent();
             case OUTPUT_SLOT -> false; // Players cannot put items into the output slot
             default -> false;
         };
@@ -152,10 +162,20 @@ public class mio_icif_electrolyzer_elc extends AbstractProcessingMachineBlockEnt
         return energyAccumulator >= freshNeeded || apiGetStoredEnergy() > 0;
     }
 
+    /** The output of an electrolyzer recipe for {@code single}, if one matches. */
+    protected Optional<ItemStack> recipeOutput(ItemStack single) {
+        if (level == null || single.isEmpty()) return Optional.empty();
+        var recipe = recipes.findValue(level, new com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput(single));
+        return recipe == null || recipe.getResult().isEmpty() ? Optional.empty() : Optional.of(recipe.getResult().copy());
+    }
+
     protected Optional<RecipeSlots.Prepared> prepareCell() {
         var input = itemHandler.getStackInSlot(INPUT_SLOT);
         if (input.isEmpty()) return Optional.empty();
         var single = input.copyWithCount(1);
+        // A recipe for the item comes first (an add-on may electrolyze water cells differently).
+        var output = recipeOutput(single);
+        if (output.isPresent()) return RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1, new int[]{OUTPUT_SLOT}, List.of(output.get()));
         if (!mio_icif_cells.isCellContainingFluid(single, net.minecraft.world.level.material.Fluids.WATER)) return Optional.empty();
         var contents = mio_icif_cells.getCellFluid(single);
         if (contents.isEmpty()) return Optional.empty();

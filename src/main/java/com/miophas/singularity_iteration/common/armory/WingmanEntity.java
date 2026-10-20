@@ -825,17 +825,24 @@ public class WingmanEntity extends Mob {
 
     /**
      * Melee hit with the held weapon. Mob#doHurtTarget only reads the attack damage attribute and
-     * never calls the item. The electric melee weapons add their damage in
-     * {@code Item#getAttackDamageBonus} (nanosaber 20 when on, chainsaw 9, quantum sword +12.5 in
-     * hyper mode) and pay their charge in {@code Item#hurtEnemy}, so in a Wingman's hand they hit
-     * for 1 and never drew power. For an SI electric tool the hit now works as for a player: the
-     * bonus is added (enchantments still apply), and after a hit the weapon's hurtEnemy runs (it pays
-     * the charge and switches off when empty). Other weapons keep the vanilla mob attack.
+     * never calls the item. The electric melee weapons pay their charge in {@code Item#hurtEnemy}, and
+     * some add damage in {@code Item#getAttackDamageBonus} (quantum sword +12.5 in hyper mode; the
+     * nanosaber, chainsaw and drills give theirs as an attack damage attribute since 0.1.10.14). For an
+     * SI electric tool the hit works as for a player: the weapon's attribute counts as the weapon is
+     * now (a nanosaber switched on in this tick is on), the bonus is added (enchantments still apply),
+     * and after a hit the weapon's hurtEnemy runs (it pays the charge and switches off when empty).
+     * Other weapons keep the vanilla mob attack.
      */
     @Override
     public boolean doHurtTarget(Entity target) {
         ItemStack weapon = getMainHandItem();
         if (!(weapon.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_tool_elc tool)) return super.doHurtTarget(target);
+        // the equipment check applies a changed weapon's modifiers only at the next tick: apply them now
+        // (same ids as the held item's, so they replace what is there)
+        weapon.forEachModifier(net.minecraft.world.entity.EquipmentSlot.MAINHAND, (attribute, modifier) -> {
+            var instance = getAttribute(attribute);
+            if (instance != null) instance.addOrUpdateTransientModifier(modifier);
+        });
         float base = (float) getAttributeValue(Attributes.ATTACK_DAMAGE);
         DamageSource source = damageSources().mobAttack(this);
         float damage = base + tool.getAttackDamageBonus(target, base, source);

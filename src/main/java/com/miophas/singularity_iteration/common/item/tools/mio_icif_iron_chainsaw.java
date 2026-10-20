@@ -66,13 +66,12 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
         super(properties, IRON_CHAINSAW_MAX_ENERGY, IRON_CHAINSAW_MAX_ENERGY - initialEnergy, "iron_chainsaw", IRON_CHAINSAW_TRANSFER_LIMIT, IRON_CHAINSAW_ENERGY_PER_USE, 1);
     }
 
-    /**
-     * Returns the attack damage bonus.
-     * The iron chainsaw adds 9 points of damage (IC2 original value).
-     */
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers ATTACK = attackDamage(IRON_CHAINSAW_ATTACK_DAMAGE);
+
+    /** 9 attack damage (10 in a player's hand, the IC2 value), as an attribute: shown and used by mobs too. */
     @Override
-    public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
-        return IRON_CHAINSAW_ATTACK_DAMAGE;
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return ATTACK;
     }
 
     /**

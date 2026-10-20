@@ -43,8 +43,9 @@ import java.util.Optional;
 @SuppressWarnings("null")
 public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity {
     // Per-call-site recipe memo: canWork() runs every tick, getRecipeFor is a linear scan.
-    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<net.minecraft.world.item.crafting.SingleRecipeInput, net.minecraft.world.item.crafting.SmeltingRecipe> recipeCache1 = com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache.of(RecipeType.SMELTING);
-    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<net.minecraft.world.item.crafting.SingleRecipeInput, net.minecraft.world.item.crafting.SmeltingRecipe> recipeCache2 = com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache.of(RecipeType.SMELTING);
+    // electric_furnace recipes (recipe API, datapacks) first, then vanilla smelting
+    private final com.miophas.singularity_iteration.common.recipe.generic.ElectricSmelting recipeCache1 = new com.miophas.singularity_iteration.common.recipe.generic.ElectricSmelting();
+    private final com.miophas.singularity_iteration.common.recipe.generic.ElectricSmelting recipeCache2 = new com.miophas.singularity_iteration.common.recipe.generic.ElectricSmelting();
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .input(2)
@@ -168,8 +169,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         if (level == null || stack.isEmpty()) {
             return false;
         }
-        SingleRecipeInput input = new SingleRecipeInput(stack);
-        return recipeCache1.find(level, input).isPresent();
+        return recipeCache1.find(level, stack).isPresent();
     }
 
     /**
@@ -183,8 +183,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         if (input.isEmpty()) {
             return Optional.empty();
         }
-        SingleRecipeInput recipeInput = new SingleRecipeInput(input);
-        return recipeCache2.find(level, recipeInput);
+        return recipeCache2.find(level, input);
     }
 
     /**

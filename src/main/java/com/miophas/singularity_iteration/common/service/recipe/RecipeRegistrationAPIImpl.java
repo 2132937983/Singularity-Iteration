@@ -87,11 +87,9 @@ public class RecipeRegistrationAPIImpl implements IRecipeRegistrationAPI {
     public boolean registerRecyclerRecipe(ResourceLocation id, Ingredient input, ItemStack[] outputs, float[] chances, int processTime) {
         if (outputs == null || outputs.length != 1) { LOGGER.error("Recycler recipe {} requires exactly one output; multi-output recipes are not supported by this API", id); return false; }
         if (chances != null && chances.length > 1) { LOGGER.error("Recycler recipe {} requires at most one chance", id); return false; }
-        float chance = chances == null || chances.length == 0 ? 0.0f : chances[0];
-        if (chance < 0.0f || chance > 1.0f) { LOGGER.error("Recycler recipe {} has invalid chance {}", id, chance); return false; }
-        // RecyclerRecipe has no per-recipe chance: the recycler always uses its fixed scrap chance.
-        // Accept the call for compatibility, but say that the value has no effect.
-        if (chance != 0.0f) LOGGER.warn("Recycler recipe {}: chance {} is ignored (the recycler uses its fixed scrap chance)", id, chance);
+        // No chance given: the recycler's own scrap chance (1/8) applies to the recipe's output.
+        float chance = chances == null || chances.length == 0 ? -1.0f : chances[0];
+        if (chances != null && chances.length == 1 && (chance < 0.0f || chance > 1.0f)) { LOGGER.error("Recycler recipe {} has invalid chance {}", id, chance); return false; }
         return registerRecipe(id, "recycler", () -> RecipeFactoryBridge.recycler("", input, outputs[0], processTime, 2, chance));
     }
 
@@ -182,8 +180,29 @@ public class RecipeRegistrationAPIImpl implements IRecipeRegistrationAPI {
     }
 
     @Override
+    @Deprecated
     public boolean registerLatheRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime) {
-        return registerRecipe(id, "lathe", () -> RecipeFactoryBridge.lathe("", input, output, processTime, 10, 0.0f));
+        LOGGER.error("Lathe recipe {} not registered: the lathe cuts turning blanks to profiles; name one with "
+            + "registerLatheShape(id, blank, profile, part) and ask for it with a mio_icif:lathe_state ingredient", id);
+        return false;
+    }
+
+    @Override
+    public boolean registerLatheShape(ResourceLocation id, net.minecraft.world.item.Item blank, int[] profile, ItemStack part) {
+        if (id == null || !(blank instanceof com.miophas.singularity_iteration.common.item.lathe.LatheTurningBlanksItem turning)
+                || part == null || part.isEmpty()) {
+            LOGGER.error("Lathe shape {} not registered: it needs an id, a turning blank and a part", id);
+            return false;
+        }
+        var shape = new com.miophas.singularity_iteration.common.item.lathe.LatheShapes.Shape(turning.getMaterial(),
+            profile == null ? null : profile.clone(), BuiltInRegistries.ITEM.getKey(part.getItem()).toString(), id);
+        var refused = com.miophas.singularity_iteration.common.item.lathe.LatheShapes.register(shape);
+        if (refused.isPresent()) {
+            LOGGER.error("Lathe shape {} not registered: {}", id, refused.get());
+            return false;
+        }
+        LOGGER.info("Successfully registered lathe shape {} ({})", id, shape.profile());
+        return true;
     }
 
     @Override
@@ -239,18 +258,36 @@ public class RecipeRegistrationAPIImpl implements IRecipeRegistrationAPI {
     }
 
     @Override
+    @Deprecated
     public boolean registerMassFabricatorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime) {
-        return registerRecipe(id, "mass_fabricator", () -> RecipeFactoryBridge.massFabricator("", input, output, processTime, 100, 0.0f));
+        LOGGER.error("Mass fabricator recipe {} not registered: the Mass Fabricator makes UU-matter from EU and takes "
+            + "items only as amplifiers; use registerMassFabricatorAmplifier(id, amplifier, euCredit)", id);
+        return false;
     }
 
     @Override
+    public boolean registerMassFabricatorAmplifier(ResourceLocation id, Ingredient amplifier, int euCredit) {
+        if (amplifier == null || amplifier.isEmpty() || euCredit <= 0) {
+            LOGGER.error("Mass fabricator amplifier {} needs amplifier items and a positive EU credit", id);
+            return false;
+        }
+        return registerRecipe(id, "mass_fabricator", () -> RecipeFactoryBridge.massFabricatorAmplifier("", amplifier, euCredit));
+    }
+
+    @Override
+    @Deprecated
     public boolean registerReplicatorRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime) {
-        return registerRecipe(id, "replicator", () -> RecipeFactoryBridge.replicator("", input, output, processTime, 50, 0.0f));
+        LOGGER.error("Replicator recipe {} not registered: the replicator copies scanned patterns for their UU-matter "
+            + "price; set prices with a replication list, data/<namespace>/uu_replication/*.json", id);
+        return false;
     }
 
     @Override
+    @Deprecated
     public boolean registerScannerRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime) {
-        return registerRecipe(id, "scanner", () -> RecipeFactoryBridge.scanner("", input, output, processTime, 20, 0.0f));
+        LOGGER.error("Scanner recipe {} not registered: the scanner records any item with a UU-matter price; prices "
+            + "come from replication lists, data/<namespace>/uu_replication/*.json", id);
+        return false;
     }
 
     @Override

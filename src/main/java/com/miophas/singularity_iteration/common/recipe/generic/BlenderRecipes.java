@@ -28,7 +28,7 @@ public class BlenderRecipes {
         });
 
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput>>> BLENDER_SERIALIZER =
-        RECIPE_SERIALIZERS.register("blender", () -> new GenericSingleInputRecipeSerializer());
+        RECIPE_SERIALIZERS.register("blender", () -> new GenericSingleInputRecipeSerializer(BlenderRecipe::new));
 
     public static void register(IEventBus eventBus) {
         RECIPE_TYPES.register(eventBus);

@@ -49,6 +49,12 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
     public static final long DEFAULT_ENERGY_PER_TICK = 1L; // 每tick耗电（1 EU），对应 IC2 原版
 
     private static final double RECYCLE_CHANCE = 0.125;
+    /** recycler recipes (recipe API, datapacks): their own product and chance for matching items */
+    private final com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<
+        com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput,
+        com.miophas.singularity_iteration.common.recipe.generic.RecyclerRecipe> recipes =
+        new com.miophas.singularity_iteration.core.runtime.processing.RecipeLookupCache<>(
+            com.miophas.singularity_iteration.common.recipe.generic.RecyclerRecipes.RECYCLER_TYPE);
     private int scexRecycleOutcome = -1;
 
     private final ContainerData containerData = new ContainerData() {
@@ -156,8 +162,28 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
     }
 
     private boolean hasOutputSpace() {
-        return RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1, new int[]{OUTPUT_SLOT},
-            java.util.List.of(new ItemStack(mio_icif_normal.SCRAP.get()))).isPresent();
+        ItemStack product = product();
+        return product.isEmpty() || RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1, new int[]{OUTPUT_SLOT},
+            java.util.List.of(product)).isPresent();
+    }
+
+    /** The recycler recipe for the input item, if any. */
+    private @Nullable com.miophas.singularity_iteration.common.recipe.generic.RecyclerRecipe recipe() {
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty() || level == null) return null;
+        return recipes.findValue(level, new com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput(input.copyWithCount(1)));
+    }
+
+    /** What a successful recycle gives: the recipe's result, else scrap. */
+    private ItemStack product() {
+        var recipe = recipe();
+        return recipe != null ? recipe.getResult().copy() : new ItemStack(mio_icif_normal.SCRAP.get());
+    }
+
+    /** The chance that recycling gives the product: the recipe's own, else the IC2 1/8. */
+    private double chance() {
+        var recipe = recipe();
+        return recipe != null && recipe.getChance() >= 0 ? recipe.getChance() : RECYCLE_CHANCE;
     }
 
     @Override
@@ -176,9 +202,10 @@ public class mio_icif_recycler_elc extends AbstractProcessingMachineBlockEntity 
 
     private void finishRecycling() {
         if (level == null || !hasOutputSpace()) { stopWork(); return; }
-        if (scexRecycleOutcome < 0) scexRecycleOutcome = level.random.nextDouble() < RECYCLE_CHANCE ? 1 : 0;
-        var operation = scexRecycleOutcome == 1 ? RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1,
-            new int[]{OUTPUT_SLOT}, java.util.List.of(new ItemStack(mio_icif_normal.SCRAP.get())))
+        if (scexRecycleOutcome < 0) scexRecycleOutcome = level.random.nextDouble() < chance() ? 1 : 0;
+        ItemStack product = product();
+        var operation = scexRecycleOutcome == 1 && !product.isEmpty() ? RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1,
+            new int[]{OUTPUT_SLOT}, java.util.List.of(product))
             : RecipeSlots.consumeOnly(itemHandler, INPUT_SLOT, 1);
         if (operation.isEmpty()) { stopWork(); return; }
         int completed = progress, outcome = scexRecycleOutcome;

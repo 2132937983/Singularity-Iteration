@@ -23,7 +23,8 @@ import java.util.List;
  *
  * Properties:
  * - Right-click turns the saber on or off.
- * - Attack damage is 20 when on and 4 when off.
+ * - Attack damage is 20 when on and 4 when off (attribute modifiers: mobs and maids use them too).
+ * - Cobwebs: it cuts them and gets the string (IC2: speed 50 on cobwebs and 4 on other blocks when on, 1 when off).
  * - Each attack uses 100 EU.
  * - When on, it does extra electric damage to nano and quantum armor.
  * - Maximum storage: 160000 EU. Transfer limit: 500 EU/t. Tier: 3 (HV).
@@ -59,8 +60,10 @@ public class mio_icif_nanosaber extends mio_icif_tool_elc implements com.miophas
     @Override
     public void inventoryTick(ItemStack stack, net.minecraft.world.level.Level level, Entity entity, int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
+        // a mob (a maid of a maid mod) holding it keeps it lit: isSelected is only true for a player's hotbar
         if (!level.isClientSide && !isSelected && isActive(stack) && feature(stack, FEATURE_AUTO_SHUTOFF)
-                && !(entity instanceof LivingEntity living && living.getOffhandItem() == stack)) {
+                && !(entity instanceof LivingEntity living && (living.getOffhandItem() == stack
+                    || !(entity instanceof Player) && living.getMainHandItem() == stack))) {
             setActive(stack, false);
         }
     }
@@ -127,15 +130,36 @@ public class mio_icif_nanosaber extends mio_icif_tool_elc implements com.miophas
         }
     }
 
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers ACTIVE_DAMAGE = attackDamage(DAMAGE_ACTIVE);
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers INACTIVE_DAMAGE = attackDamage(DAMAGE_INACTIVE);
+
+    /** IC2 {@code getAttributeModifiers}: 20 when on, 4 when off, as an attack damage attribute. */
+    @Override
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return isActive(stack) ? ACTIVE_DAMAGE : INACTIVE_DAMAGE;
+    }
+
+    /** Protect allies: against them a lit blade hits like an unlit one. */
     @Override
     public float getAttackDamageBonus(Entity target, float damage, DamageSource damageSource) {
-        Entity directEntity = damageSource.getDirectEntity();
-        if (directEntity instanceof LivingEntity living) {
+        if (damageSource.getDirectEntity() instanceof LivingEntity living) {
             ItemStack held = living.getMainHandItem();
-            if (isActive(held) && feature(held, FEATURE_PROTECT_ALLIES) && isAlly(target)) return DAMAGE_INACTIVE;
-            return isActive(held) ? DAMAGE_ACTIVE : DAMAGE_INACTIVE;
+            if (isActive(held) && feature(held, FEATURE_PROTECT_ALLIES) && isAlly(target)) return DAMAGE_INACTIVE - DAMAGE_ACTIVE;
         }
-        return DAMAGE_INACTIVE;
+        return 0.0F;
+    }
+
+    /** IC2 {@code getDestroySpeed}: on, 50 on cobwebs and 4 on everything else; off, 1. */
+    @Override
+    public float getDestroySpeed(ItemStack stack, net.minecraft.world.level.block.state.BlockState state) {
+        if (!isActive(stack)) return 1.0F;
+        return state.is(net.minecraft.world.level.block.Blocks.COBWEB) ? 50.0F : 4.0F;
+    }
+
+    /** IC2 tool class Sword: cobwebs drop their string. */
+    @Override
+    public boolean isCorrectToolForDrops(ItemStack stack, net.minecraft.world.level.block.state.BlockState state) {
+        return state.is(net.minecraft.world.level.block.Blocks.COBWEB) || super.isCorrectToolForDrops(stack, state);
     }
 
     @Override

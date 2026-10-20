@@ -87,7 +87,8 @@ public final class MachineItemData {
         // miner ore list Ore{i}X/Y/Z
         tag.getAllKeys().removeIf(k -> k.matches("Ore\\d+[XYZ]"));
         if (!withInventory) {
-            for (String k : new String[]{"inventory", "Inventory", "Items", "items"}) tag.remove(k);
+            // rci_reserve: the coolant reserve of a reactor coolant injector saved before 0.1.10.14
+            for (String k : new String[]{"inventory", "Inventory", "Items", "items", "rci_reserve"}) tag.remove(k);
         }
         // energy stays under "energy" for tooltips and for the legacy placement path
         if (be instanceof AbstractEnergyBlockEntity energy) tag.putLong("energy", energy.getEnergyStorage().getAmount());

@@ -375,8 +375,12 @@ public class mio_icif_cell extends Item implements IFluidCellItem {
             this.cell = cell;
         }
 
+        /** A drained cell is an empty cell (IC2), not this fluid's cell marked empty. */
         @Override
         public ItemStack getContainer() {
+            if (cell.getFluid(container).isEmpty()) {
+                return mio_icif_cells.getEmptyCellForStack(container).copyWithCount(container.getCount());
+            }
             return container.copy();
         }
 

@@ -8,7 +8,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -17,13 +16,14 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Energy faces of the reactor coolant injectors (0.1.10.4).
  *
- * <p>An injector is an MV machine (128 EU per packet) and must touch the reactor with its front.
- * Up to 0.1.10.3 it took energy on all six faces, so the reactor (and every chamber, which are
- * electrical contacts of the reactor) fed its own output straight into it: as soon as the reactor
- * made more than 128 EU/t, the packet blew the injector up (sink overvoltage), right next to the
- * reactor. Now the injector never connects electrically on its front, nor on a face that touches
- * a reactor part (reactor, chamber, vessel, access hatch, fluid or redstone port). Power it through
- * a cable from an MV (or lower) source on one of its free faces.
+ * <p>An injector is an MV machine (128 EU per packet) and touches the reactor with its back (IC2
+ * {@code TileEntityAbstractRCI}). Up to 0.1.10.3 it took energy on all six faces, so the reactor (and
+ * every chamber, which are electrical contacts of the reactor) fed its own output straight into it: as
+ * soon as the reactor made more than 128 EU/t, the packet blew the injector up (sink overvoltage), right
+ * next to the reactor. Like IC2 ({@code updateEnergyFacings}) the injector never connects electrically on
+ * a face that touches a reactor part (reactor, chamber, and here also vessel, access hatch, fluid or
+ * redstone port); every other face, the front included, takes energy. Power it through a cable from an
+ * MV (or lower) source on one of its free faces.
  *
  * <p>The injector has no redstone output (only a comparator level) and moves no heat; it changes
  * nothing in the reactor but the stored heat of the condensators it repairs.
@@ -34,8 +34,6 @@ final class ReactorInjectorFaces {
     /** True when the injector must not connect on {@code side}. Never loads a chunk. */
     static boolean closed(BlockEntity injector, @Nullable Direction side) {
         if (side == null) return false;
-        BlockState own = injector.getBlockState();
-        if (own.hasProperty(HorizontalDirectionalBlock.FACING) && own.getValue(HorizontalDirectionalBlock.FACING) == side) return true;
         Level level = injector.getLevel();
         if (level == null) return false;
         BlockPos at = injector.getBlockPos().relative(side);

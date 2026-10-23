@@ -4,7 +4,7 @@
   "key": {
     "F": {"tag": "c:plates/niobium_titanium"},
     "G": {"tag": "c:plates/irradiant_reinforced"},
-    "R": {"item": "minecraft:diamond"}
+    "R": {"tag": "c:gems/diamond"}
   },
   "result": {"id": "mio_icif:normal/item_diamond_lens", "count": 1}
 }

@@ -659,7 +659,7 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
             public boolean mayPickup(net.minecraft.world.entity.player.Player player) {
                 ItemStack stack = getItem();
                 if (isTransformerUpgrade(stack)) {
-                    return com.miophas.singularity_iteration.common.network.mio_icif_KeyboardManager.isSafetyKeyDown(player);
+                    return com.miophas.singularity_iteration.common.network.mio_icif_KeyboardManager.mayTakeTransformerUpgrade(player);
                 }
                 return super.mayPickup(player);
             }

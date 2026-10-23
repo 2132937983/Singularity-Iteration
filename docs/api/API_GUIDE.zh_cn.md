@@ -381,6 +381,30 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 * 一种流体只对应一个发酵配方：第一个接受它的配方。输入罐只接受配方输入，输出罐只接受配方输出。
 * Java：`IRecipeRegistrationAPI#registerFermenterRecipe(id, FluidStack input, int heat, FluidStack output)`（无副产物）与 `IRecipeAPI#findFermenterRecipe(FluidStack, Level)`。两者的物品形式已弃用且不起作用：发酵机处理的是流体。
 
+### 12.4 配方 API 与机器（0.1.10.14）
+
+`IRecipeAPI#getAllRecipeTypeIds()` 中的每个配方类型都已注册，各类型的配方都能同步（0.1.10.14 之前，一个未注册类型的配方会让全部运行时配方同步失败）。机器读取以下类型：
+
+| 配方类型 | 机器 | 配方的作用 |
+|---|---|---|
+| `mio_icif:electric_furnace` | 电炉、感应炉 | 先于原版冶炼配方使用，并给予其经验。 |
+| `mio_icif:recycler` | 回收机 | 该物品按配方的概率给出配方产物（未给概率时为 1/8），否则什么也不给。 |
+| `mio_icif:electrolyzer` | 电解机 | 水单元之外的另一种输入：给出产物，并像水单元一样储存 200 EU。针对水单元的配方优先。 |
+| `mio_icif:mass_fabricator` | 物质生成机 | 增幅剂：每个物品增加 `credit` EU 的增幅额度，优先于内置的废料数值。 |
+| `blender`、`welder`、`laser_engraver`、`precision_assembler`、`vacuum_freezer`、`plasma_furnace`、`fusion_reactor`、`lathe`、`scanner`、`replicator` | 无 | 供附属模组的机器使用（`IRecipeAPI#find...`）。 |
+
+* 机器保持自身的速度与 EU/t（IC2 数值），与其 JSON 配方相同：配方的 `processTime` 与 EU/t 供附属模组的机器使用。
+* 物质生成机增幅剂：`IRecipeRegistrationAPI#registerMassFabricatorAmplifier(id, Ingredient, int euCredit)`，或数据包配方：
+
+```json
+{ "type": "mio_icif:mass_fabricator", "ingredient": { "item": "minecraft:nether_star" }, "credit": 700000 }
+```
+
+* 车床部件：`IRecipeRegistrationAPI#registerLatheShape(id, blank, int[] profile, ItemStack part)` 把一个型面（5 个位置，铁坯料 1 到 5，木坯料 1 到 3）命名为某物品的部件。车到该型面的坯料显示其名称（翻译键 `lathe_shape.<命名空间>.<路径>`，没有时显示型面），JEI 也会列出。合成配方用 `{"type": "mio_icif:lathe_state", "item": "mio_icif:normal/item_iron_turning_blanks", "state": [5, 4, 3, 2, 1]}` 要求该部件。型面不是配方：请在两端注册（例如在 `FMLCommonSetupEvent` 中）。
+* JSON 回收机配方可写 `"chance"`（0 到 1，可选）。
+* 已弃用，始终返回 `false`：`registerLatheRecipe`（改用 `registerLatheShape`）、`registerMassFabricatorRecipe`（改用 `registerMassFabricatorAmplifier`）、`registerScannerRecipe` 与 `registerReplicatorRecipe`（扫描机与复制机依据 UU 物质价格工作：请使用复制清单，见 12.1）。
+* `syncToRecipeManager()` 只改变服务端的配方；客户端（以及 JEI）看到的是数据包配方。
+
 ## 13. 机器预制类：物流路由、超频调节、流体容器（0.1.10.6）
 
 ### 13.1 弹出与抽入升级的物品路由（`AbstractProcessingMachineBlockEntity`）

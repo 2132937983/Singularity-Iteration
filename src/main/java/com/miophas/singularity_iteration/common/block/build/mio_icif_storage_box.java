@@ -156,7 +156,10 @@ public class mio_icif_storage_box extends BaseEntityBlock {
         if (customData != null) {
             CompoundTag tag = customData.copyTag();
             if (tag.contains("Items")) {
-                net.minecraft.nbt.ListTag itemsList = tag.getList("Items", net.minecraft.nbt.Tag.TAG_COMPOUND);
+                // The block entity saves MachineItemHandler.serializeNBT: {Size, Items: [{Slot, Item}]}, one entry per filled slot.
+                net.minecraft.nbt.ListTag itemsList = tag.contains("Items", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                        ? tag.getCompound("Items").getList("Items", net.minecraft.nbt.Tag.TAG_COMPOUND)
+                        : tag.getList("Items", net.minecraft.nbt.Tag.TAG_COMPOUND);
                 int itemCount = 0;
                 for (int i = 0; i < itemsList.size(); i++) {
                     CompoundTag itemTag = itemsList.getCompound(i);
@@ -165,7 +168,8 @@ public class mio_icif_storage_box extends BaseEntityBlock {
                     }
                 }
                 if (itemCount > 0) {
-                    tooltip.add(Component.translatable("tooltip.mio_icif.storage_box.items", itemCount, slotCount)
+                    int slots = tag.contains("SlotCount") ? tag.getInt("SlotCount") : slotCount;
+                    tooltip.add(Component.translatable("tooltip.mio_icif.storage_box.items", itemCount, slots)
                             .withStyle(net.minecraft.ChatFormatting.GRAY));
                 }
             }

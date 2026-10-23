@@ -140,6 +140,11 @@ public class mio_icif_upgrade extends Item implements IUpgradeItem {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         tooltipComponents.add(Component.translatable("item.mio_icif.upgrade." + type.getName() + ".tooltip"));
+        if (type == UpgradeType.TRANSFORMER) {
+            // 0.1.10.14: the machine slots keep it unless the Safety Key is held (mio_icif_KeyboardManager.mayTakeTransformerUpgrade).
+            tooltipComponents.add(Component.translatable("item.mio_icif.upgrade.transformer.safety", Component.keybind("key.mio_icif.safety"))
+                .withStyle(net.minecraft.ChatFormatting.GRAY));
+        }
 
         if (type.directional) {
             Direction dir = getDirection(stack);

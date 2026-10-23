@@ -64,6 +64,8 @@ public class mio_icif_chestplate_quantum extends mio_icif_armor_elc implements I
     }
     @Override public float getThrust() { return 1.0F; }
     @Override public long getEnergyPerTickFlying() { return FLIGHT_COST; }
+    /** EN: No ceiling: IC2's quantum divisor (0.9) put it above the world top (0.1.10.14). ZH: 无高度上限：IC2 量子胸甲的除数 0.9 使上限高于世界顶部（0.1.10.14）。JA: 上限なし：IC2 の除数 0.9 で上限は世界の上端より上（0.1.10.14）。 */
+    @Override public boolean hasHeightLimit() { return false; }
     /** EN: Deep ion hum (0.1.8.1). ZH: 低沉离子嗡鸣（0.1.8.1）。JA: 低いイオン音（0.1.8.1）。 */
     @Override public String getThrusterSound() { return THRUSTER_IONIC; }
     @Override public JetpackMode getMode(ItemStack stack) {

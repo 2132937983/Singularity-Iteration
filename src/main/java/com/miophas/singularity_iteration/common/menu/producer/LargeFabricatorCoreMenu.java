@@ -34,7 +34,7 @@ public class LargeFabricatorCoreMenu extends mio_icif_base_menu {
         this.blockEntity = blockEntity;
         this.container = new SimpleContainer(0);
         this.data = new ContainerData() {
-            private final int[] data = new int[10];
+            private final int[] data = new int[20];   // 10 values, two 16-bit slots each
 
             @Override
             public int get(int index) {
@@ -58,36 +58,49 @@ public class LargeFabricatorCoreMenu extends mio_icif_base_menu {
         markPlayerSlots(36);
     }
 
+    /**
+     * 0.1.10.15: logical value {@code index}, kept in two data slots of 16 bits. Vanilla syncs container
+     * data as shorts, so the scrap value (50,000 per scrap) and UU-matter above 32,767 mB showed wrong.
+     */
+    private int value(int index) {
+        return (this.data.get(2 * index + 1) << 16) | (this.data.get(2 * index) & 0xFFFF);
+    }
+
+    private void put(int index, int value) {
+        this.data.set(2 * index, value & 0xFFFF);
+        this.data.set(2 * index + 1, value >>> 16);
+    }
+
     public long getEnergy() {
-        return ((long) this.data.get(0) << 32) | (this.data.get(1) & 0xFFFFFFFFL);
+        return ((long) value(0) << 32) | (value(1) & 0xFFFFFFFFL);
     }
 
     public long getMaxEnergy() {
-        return ((long) this.data.get(2) << 32) | (this.data.get(3) & 0xFFFFFFFFL);
+        return ((long) value(2) << 32) | (value(3) & 0xFFFFFFFFL);
     }
 
     public int getFluidAmount() {
-        return this.data.get(4);
+        return value(4);
     }
 
     public int getFluidCapacity() {
-        return this.data.get(5);
+        return value(5);
     }
 
     public int getScrapValue() {
-        return this.data.get(6);
+        return value(6);
     }
 
     public int getInputModuleCount() {
-        return this.data.get(7);
+        return value(7);
     }
 
     public int getTankModuleCount() {
-        return this.data.get(8);
+        return value(8);
     }
 
     public int getScrapModuleCount() {
-        return this.data.get(9);
+        return value(9);
     }
 
     public int getEnergyProgressPixels() {
@@ -115,16 +128,16 @@ public class LargeFabricatorCoreMenu extends mio_icif_base_menu {
         if (blockEntity != null) {
             long energy = blockEntity.getStoredEnergy();
             long maxEnergy = blockEntity.getEnergyCapacity();
-            this.data.set(0, (int) (energy >> 32));
-            this.data.set(1, (int) energy);
-            this.data.set(2, (int) (maxEnergy >> 32));
-            this.data.set(3, (int) maxEnergy);
-            this.data.set(4, blockEntity.getTotalUuMatterAmount());
-            this.data.set(5, blockEntity.getTotalUuMatterCapacity());
-            this.data.set(6, (int) blockEntity.getScrapValue());
-            this.data.set(7, blockEntity.getInputModuleCount());
-            this.data.set(8, blockEntity.getTankModuleCount());
-            this.data.set(9, blockEntity.getScrapModuleCount());
+            put(0, (int) (energy >> 32));
+            put(1, (int) energy);
+            put(2, (int) (maxEnergy >> 32));
+            put(3, (int) maxEnergy);
+            put(4, blockEntity.getTotalUuMatterAmount());
+            put(5, blockEntity.getTotalUuMatterCapacity());
+            put(6, (int) blockEntity.getScrapValue());
+            put(7, blockEntity.getInputModuleCount());
+            put(8, blockEntity.getTankModuleCount());
+            put(9, blockEntity.getScrapModuleCount());
         }
     }
 }

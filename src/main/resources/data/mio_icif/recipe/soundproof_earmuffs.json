@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " I ",
+    "R R",
+    "W W"
+  ],
+  "key": {
+    "I": {
+      "tag": "c:plates/iron"
+    },
+    "R": {
+      "tag": "c:rubber"
+    },
+    "W": {
+      "tag": "minecraft:wool"
+    }
+  },
+  "result": {
+    "id": "mio_icif:armor/item_soundproof_earmuffs",
+    "count": 1
+  }
+}

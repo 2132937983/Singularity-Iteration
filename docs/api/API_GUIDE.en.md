@@ -466,6 +466,30 @@ The Fermenter has no built-in recipes: it ferments what the recipe type `mio_ici
 * A fluid has one fermenter recipe: the first that takes it. The input tank only accepts recipe inputs, the output tank only recipe outputs.
 * Java: `IRecipeRegistrationAPI#registerFermenterRecipe(id, FluidStack input, int heat, FluidStack output)` (no by-product) and `IRecipeAPI#findFermenterRecipe(FluidStack, Level)`. The item forms of both are deprecated and do nothing: the fermenter takes fluids.
 
+### 12.4 The recipe API and the machines (0.1.10.14)
+
+Every recipe type of `IRecipeAPI#getAllRecipeTypeIds()` is registered, and recipes of every type sync (before 0.1.10.14 one recipe of an unregistered type stopped the sync of all runtime recipes). The machines read these types:
+
+| Recipe type | Machine | What a recipe does |
+|---|---|---|
+| `mio_icif:electric_furnace` | Electric Furnace, Induction Furnace | Smelted before vanilla smelting, with its XP. |
+| `mio_icif:recycler` | Recycler | The item gives the recipe's output with the recipe's chance (none given: 1/8), else nothing. |
+| `mio_icif:electrolyzer` | Electrolyzer | Another input besides water cells: it gives the output and stores 200 EU like a water cell. A recipe for water cells comes first. |
+| `mio_icif:mass_fabricator` | Mass Fabricator | An amplifier: one item adds `credit` EU of amplifier credit, before the built-in scrap values. |
+| `blender`, `welder`, `laser_engraver`, `precision_assembler`, `vacuum_freezer`, `plasma_furnace`, `fusion_reactor`, `lathe`, `scanner`, `replicator` | none | For add-on machines (`IRecipeAPI#find...`). |
+
+* The machines keep their own speed and EU/t (the IC2 values), as for their JSON recipes: `processTime` and EU/t of a recipe are for add-on machines.
+* Mass Fabricator amplifiers: `IRecipeRegistrationAPI#registerMassFabricatorAmplifier(id, Ingredient, int euCredit)`, or a data pack recipe:
+
+```json
+{ "type": "mio_icif:mass_fabricator", "ingredient": { "item": "minecraft:nether_star" }, "credit": 700000 }
+```
+
+* Lathe parts: `IRecipeRegistrationAPI#registerLatheShape(id, blank, int[] profile, ItemStack part)` names a profile (5 positions, 1 to 5 for the iron blank, 1 to 3 for the wooden one) as the part for an item. Blanks cut to it show its name (translation key `lathe_shape.<namespace>.<path>`, else the profile) and JEI lists it. A crafting recipe asks for the part with `{"type": "mio_icif:lathe_state", "item": "mio_icif:normal/item_iron_turning_blanks", "state": [5, 4, 3, 2, 1]}`. Shapes are not recipes: register them on both sides (for example in `FMLCommonSetupEvent`).
+* Recycler recipes in JSON take `"chance"` (0 to 1, optional).
+* Deprecated, always `false`: `registerLatheRecipe` (use `registerLatheShape`), `registerMassFabricatorRecipe` (use `registerMassFabricatorAmplifier`), `registerScannerRecipe` and `registerReplicatorRecipe` (the scanner and the replicator work from UU-matter prices: use a replication list, 12.1).
+* `syncToRecipeManager()` changes the server's recipes only; clients (and JEI) see data pack recipes.
+
 ## 13. Machine prefab: routing, overclock throttle, fluid containers (0.1.10.6)
 
 ### 13.1 Item routing of the Ejector and Pulling upgrades (`AbstractProcessingMachineBlockEntity`)

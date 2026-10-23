@@ -126,44 +126,70 @@ public class mio_icif_large_fabricator_core_entity extends MultiblockEnergyCore 
      * that EU one for one.
      */
     public static List<MachineConversion> conversions() {
+        return conversions(null);
+    }
+
+    /**
+     * {@link #conversions()} with the scrap module's amplifiers: the Mass Fabricator amplifier recipes of
+     * {@code recipes} (when given), then the built-in amplifiers no recipe covers, each item worth its
+     * amplifier value × {@link mio_icif_large_fabricator_scrap_entity#AMPLIFIER_MULTIPLIER} EU.
+     */
+    public static List<MachineConversion> conversions(@Nullable net.minecraft.world.item.crafting.RecipeManager recipes) {
         var core = mio_icif_blocks.LARGE_FABRICATOR_CORE.get();
         var uu = mio_icif_fluids.UUMATTER.get();
         List<MachineConversion> all = new ArrayList<>();
         all.add(MachineConversion.of(core, mio_icif_blocks.LARGE_FABRICATOR_INPUT_IV.get(), mio_icif_blocks.LARGE_FABRICATOR_TANK.get())
             .fluidOut(uu, 1).note("conversion.mio_icif.fabricator.energy", ENERGY_PER_MB).build());
-        record Scrap(ItemStack stack, int value) {}
-        for (Scrap scrap : List.of(
-                new Scrap(new ItemStack(mio_icif_normal.SCRAP.get()), mio_icif_large_fabricator_scrap_entity.SCRAP_BONUS),
-                new Scrap(new ItemStack(mio_icif_normal.SCRAPBOX.get()), mio_icif_large_fabricator_scrap_entity.SCRAPBOX_BONUS),
-                new Scrap(new ItemStack(mio_icif_resources.THORIUM_SCRAP.get()), mio_icif_large_fabricator_scrap_entity.THORIUM_SCRAP_BONUS))) {
-            all.add(MachineConversion.of(core, mio_icif_blocks.LARGE_FABRICATOR_SCRAP.get())
-                .itemIn(scrap.stack()).fluidOut(uu, 1)
-                .note("conversion.mio_icif.fabricator.energy", ENERGY_PER_MB)
-                .note("conversion.mio_icif.fabricator.saves", scrap.value()).build());
+        var amplifierRecipes = recipes == null ? List.<net.minecraft.world.item.crafting.RecipeHolder<com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipe>>of()
+            : recipes.getAllRecipesFor(com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipes.MASS_FABRICATOR_TYPE.get());
+        for (var holder : amplifierRecipes) {
+            all.add(scrapConversion(holder.value().getIngredient().getItems(),
+                (long) holder.value().getCredit() * mio_icif_large_fabricator_scrap_entity.AMPLIFIER_MULTIPLIER));
+        }
+        for (ItemStack amplifier : List.of(new ItemStack(mio_icif_normal.SCRAP.get()), new ItemStack(mio_icif_normal.SCRAPBOX.get()),
+                new ItemStack(mio_icif_resources.THORIUM_SCRAP.get()))) {
+            if (amplifierRecipes.stream().anyMatch(holder -> holder.value().getIngredient().test(amplifier))) continue;
+            all.add(scrapConversion(new ItemStack[] {amplifier}, mio_icif_large_fabricator_scrap_entity.scrapValueOf(null, amplifier)));
         }
         return all;
     }
 
+    private static MachineConversion scrapConversion(ItemStack[] items, long value) {
+        return MachineConversion.of(mio_icif_blocks.LARGE_FABRICATOR_CORE.get(), mio_icif_blocks.LARGE_FABRICATOR_SCRAP.get())
+            .itemIn(items).fluidOut(mio_icif_fluids.UUMATTER.get(), 1)
+            .note("conversion.mio_icif.fabricator.energy", ENERGY_PER_MB)
+            .note("conversion.mio_icif.fabricator.saves", value).build();
+    }
+
+    /**
+     * One mB per tick at most, like IC2 {@code TileEntityMatter.attemptGeneration}. 0.1.10.14: the input
+     * modules' buffers are pooled, as IC2's single buffer: the EU may come from several modules. Until
+     * then one module had to hold the whole {@link #ENERGY_PER_MB} by itself.
+     */
     private void processFabrication(Level level, BlockPos pos) {
         distributeUuMatterToTanks();
 
-        mio_icif_large_fabricator_scrap_entity scrapModule = findScrapModule();
-
+        List<mio_icif_large_fabricator_input_iv_entity> inputs = new ArrayList<>();
+        long pooled = 0;
         for (Direction direction : Direction.values()) {
-            BlockPos partPos = pos.relative(direction);
-            BlockEntity partBe = level.getBlockEntity(partPos);
-            if (partBe instanceof mio_icif_large_fabricator_input_iv_entity inputEntity) {
-                // The scrap module's value pays first; the input only needs the EU the scrap leaves.
-                long discount = scrapModule == null ? 0L : (long) Math.min(scrapModule.getScrapValue(), (float) ENERGY_PER_MB);
-                long cost = ENERGY_PER_MB - discount;
-                if (inputEntity.getStoredEnergy() >= cost && canProduceUuMatter()) {
-                    if (discount > 0) scrapModule.consumeScrapValue(discount);
-                    inputEntity.consumeEnergy(cost, false);
-                    produceUuMatter();
-                    break;
-                }
+            if (level.getBlockEntity(pos.relative(direction)) instanceof mio_icif_large_fabricator_input_iv_entity input) {
+                inputs.add(input);
+                pooled += input.getStoredEnergy();
             }
         }
+        if (inputs.isEmpty() || !canProduceUuMatter()) return;
+
+        // The scrap module's value pays first; the inputs only need the EU the scrap leaves.
+        mio_icif_large_fabricator_scrap_entity scrapModule = findScrapModule();
+        long discount = scrapModule == null ? 0L : (long) Math.min(scrapModule.getScrapValue(), (float) ENERGY_PER_MB);
+        long cost = ENERGY_PER_MB - discount;
+        if (pooled < cost) return;
+        if (discount > 0) scrapModule.consumeScrapValue(discount);
+        for (var input : inputs) {
+            if (cost <= 0) break;
+            cost -= input.consumeEnergy(cost, false);
+        }
+        produceUuMatter();
     }
 
     private boolean canProduceUuMatter() {

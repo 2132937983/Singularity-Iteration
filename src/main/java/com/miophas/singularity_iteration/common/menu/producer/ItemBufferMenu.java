@@ -60,7 +60,7 @@ public class ItemBufferMenu extends AbstractContainerMenu {
             @Override
             public boolean mayPickup(net.minecraft.world.entity.player.Player player) {
                 if (isTransformerUpgrade(getItem())) {
-                    return com.miophas.singularity_iteration.common.network.mio_icif_KeyboardManager.isSafetyKeyDown(player);
+                    return com.miophas.singularity_iteration.common.network.mio_icif_KeyboardManager.mayTakeTransformerUpgrade(player);
                 }
                 return super.mayPickup(player);
             }
@@ -73,7 +73,7 @@ public class ItemBufferMenu extends AbstractContainerMenu {
             @Override
             public boolean mayPickup(net.minecraft.world.entity.player.Player player) {
                 if (isTransformerUpgrade(getItem())) {
-                    return com.miophas.singularity_iteration.common.network.mio_icif_KeyboardManager.isSafetyKeyDown(player);
+                    return com.miophas.singularity_iteration.common.network.mio_icif_KeyboardManager.mayTakeTransformerUpgrade(player);
                 }
                 return super.mayPickup(player);
             }

@@ -39,6 +39,40 @@ public final class JeiBridge {
             .toList();
     }
 
+    /**
+     * Dev capture tooling (0.1.10.14): JEI's crafting "+" for {@code recipeId} in the open menu, as the
+     * button would see it: "ok", or the error type with the items of the slots JEI finds missing.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static String transferCheck(net.minecraft.resources.ResourceLocation recipeId) {
+        IJeiRuntime rt = runtime;
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        if (rt == null || mc.player == null || mc.level == null) return "no JEI runtime";
+        var holder = mc.level.getRecipeManager().byKey(recipeId).orElse(null);
+        if (holder == null || !(holder.value() instanceof net.minecraft.world.item.crafting.CraftingRecipe)) return "no crafting recipe";
+        var menu = mc.player.containerMenu;
+        var category = rt.getRecipeManager().getRecipeCategory(mezz.jei.api.constants.RecipeTypes.CRAFTING);
+        var handler = rt.getRecipeTransferManager().getRecipeTransferHandler(menu, category);
+        if (handler.isEmpty()) return "no transfer handler for " + menu.getClass().getSimpleName();
+        var layout = rt.getRecipeManager().createRecipeLayoutDrawable((mezz.jei.api.recipe.category.IRecipeCategory) category, holder,
+            rt.getJeiHelpers().getFocusFactory().getEmptyFocusGroup());
+        if (layout.isEmpty()) return "no recipe layout";
+        var error = ((mezz.jei.api.recipe.transfer.IRecipeTransferHandler) handler.get())
+            .transferRecipe(menu, holder, ((mezz.jei.api.gui.IRecipeLayoutDrawable<?>) layout.get()).getRecipeSlotsView(), mc.player, false, false);
+        if (error == null) return "ok";
+        StringBuilder missing = new StringBuilder();
+        try {
+            var field = error.getClass().getDeclaredField("slots");
+            field.setAccessible(true);
+            for (var slot : (java.util.Collection<mezz.jei.api.gui.ingredient.IRecipeSlotView>) field.get(error)) {
+                missing.append(' ').append(slot.getDisplayedItemStack().map(s -> s.getHoverName().getString()).orElse("?"));
+            }
+        } catch (ReflectiveOperationException ignored) {
+            missing.append(" (slots not readable)");
+        }
+        return error.getType() + " missing " + error.getMissingCountHint() + ":" + missing;
+    }
+
     /** Opens the JEI recipes of one category. False without a runtime or category. Dev capture tooling. */
     public static boolean showCategory(net.minecraft.resources.ResourceLocation uid) {
         IJeiRuntime rt = runtime;

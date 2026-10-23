@@ -1,0 +1,13 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "mio_icif:item/armor/item_soundproof_earmuffs"
+    },
+    "display": {
+        "head": {
+            "rotation": [0, 180, 0],
+            "translation": [0, 3, 0],
+            "scale": [1.5, 1.5, 1.5]
+        }
+    }
+}

@@ -1,8 +1,6 @@
 package com.miophas.singularity_iteration.common.blockentity.producer;
 
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-import com.miophas.singularity_iteration.common.item.normal.mio_icif_normal;
-import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import com.miophas.singularity_iteration.core.api.energy.ICableTier;
 import com.miophas.singularity_iteration.core.prefab.blockentity.MultiblockEnergyPart;
@@ -28,9 +26,19 @@ public class mio_icif_large_fabricator_scrap_entity extends MultiblockEnergyPart
     public static final int SLOT_COUNT = 1;
     public static final float SCRAP_PROCESS_THRESHOLD = 100000.0f;
 
-    public static final int SCRAP_BONUS = 5000;
-    public static final int SCRAPBOX_BONUS = 45000;
-    public static final int THORIUM_SCRAP_BONUS = 1200000;
+    /**
+     * 0.1.10.15: an item adds its matter-amplifier value times this as EU of scrap value (METS
+     * {@code TileEntityFabricatorScrap}: the IC2 amplifier output × 10). The amplifier value is the Mass
+     * Fabricator's ({@link mio_icif_matter_elc#amplifierCredit(Level, ItemStack)}): an amplifier recipe, else
+     * IC2's scrap 5,000 and scrap box 45,000 (and SI's thorium scrap 360,000). Before, three items were
+     * hardcoded at 5,000, 45,000 and 1,200,000 and amplifier recipes were ignored.
+     */
+    public static final int AMPLIFIER_MULTIPLIER = 10;
+
+    /** EU of scrap value one {@code stack} item adds; 0 when it is no amplifier. */
+    public static long scrapValueOf(@org.jetbrains.annotations.Nullable Level level, ItemStack stack) {
+        return (long) mio_icif_matter_elc.amplifierCredit(level, stack) * AMPLIFIER_MULTIPLIER;
+    }
 
     private float scrapValue = 0.0f;
     protected final ItemStackHandler itemHandler;
@@ -66,19 +74,11 @@ public class mio_icif_large_fabricator_scrap_entity extends MultiblockEnergyPart
         ItemStack scrapStack = itemHandler.getStackInSlot(SCRAP_SLOT);
         if (scrapStack.isEmpty()) return;
 
-        if (scrapStack.is(mio_icif_normal.SCRAP.get())) {
-            scrapValue += SCRAP_BONUS;
-            scrapStack.shrink(1);
-            setChanged();
-        } else if (scrapStack.is(mio_icif_normal.SCRAPBOX.get())) {
-            scrapValue += SCRAPBOX_BONUS;
-            scrapStack.shrink(1);
-            setChanged();
-        } else if (scrapStack.is(mio_icif_resources.THORIUM_SCRAP.get())) {
-            scrapValue += THORIUM_SCRAP_BONUS;
-            scrapStack.shrink(1);
-            setChanged();
-        }
+        long value = scrapValueOf(level, scrapStack);
+        if (value <= 0) return;
+        scrapValue += value;
+        scrapStack.shrink(1);
+        setChanged();
     }
 
     public float consumeScrapValue(float value) {
@@ -95,10 +95,9 @@ public class mio_icif_large_fabricator_scrap_entity extends MultiblockEnergyPart
         return 0;
     }
 
+    /** Any matter amplifier: the Mass Fabricator's amplifier recipes and built-in values. */
     private boolean isScrapItem(ItemStack stack) {
-        return !stack.isEmpty() && (stack.is(mio_icif_normal.SCRAP.get())
-            || stack.is(mio_icif_normal.SCRAPBOX.get())
-            || stack.is(mio_icif_resources.THORIUM_SCRAP.get()));
+        return scrapValueOf(level, stack) > 0;
     }
 
     public float getScrapValue() { return scrapValue; }

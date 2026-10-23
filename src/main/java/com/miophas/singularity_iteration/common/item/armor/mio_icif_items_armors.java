@@ -61,6 +61,9 @@ public class mio_icif_items_armors {
     // Advanced Electric Jetpack
     public static final DeferredItem<Item> ARMOR_ADVANCED_JETPACK = ITEMS.register("armor/item_armor_advanced_jetpack", () -> new mio_icif_chestplate_advanced_jetpack(ArmorMaterials.IRON, new Item.Properties()));
 
+    // 0.1.10.14: Soundproof Earmuffs (helmet slot or Curios head slot): mute machine noise for the wearer
+    public static final DeferredItem<Item> SOUNDPROOF_EARMUFFS = ITEMS.register("armor/item_soundproof_earmuffs", () -> new mio_icif_soundproof_earmuffs(new Item.Properties()));
+
     // 0.1.9.0: the heavy and advanced quantum chestplates and the solar helmets are retired. The ids
     // stay as hidden legacy shells that turn into the standard piece with a frame core (LegacyArmor).
     public static final DeferredItem<Item> ARMOR_HEAVY_QUANTUM_CHESTPLATE = ITEMS.register("armor/item_armor_heavy_quantum_chestplate",

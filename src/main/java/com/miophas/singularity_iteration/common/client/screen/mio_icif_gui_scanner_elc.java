@@ -133,6 +133,14 @@ guiGraphics.blit(ATLAS_TEXTURE, x + SAVE_BTN_X, y + SAVE_BTN_Y, 0, (float) 50, (
                 stateText = "Failed";
                 color = 0xD74242;
                 break;
+            case 6: // TRANSFER_ERROR
+                stateText = "Transfer Error";
+                color = 0xD74242;
+                break;
+            case 7: // ALREADY_RECORDED
+                stateText = "Already Recorded";
+                color = 0xA86A00;
+                break;
             default:
                 stateText = "";
                 color = 0x2A2E33;

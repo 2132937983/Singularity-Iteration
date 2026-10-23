@@ -305,6 +305,8 @@ public class mio_icif_creativeTabs {
                 { ItemStack fullDivingMask = new ItemStack(mio_icif_items_armors.ARMOR_DIVING_MASK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullDivingMask, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullDivingMask)); output.accept(fullDivingMask); }
                 output.accept(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get());
                 { ItemStack fullAdvJetpack = new ItemStack(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullAdvJetpack, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullAdvJetpack)); output.accept(fullAdvJetpack); }
+                // 0.1.10.14: Soundproof Earmuffs
+                output.accept(mio_icif_items_armors.SOUNDPROOF_EARMUFFS.get());
                 // 0.1.9.0: heavy / advanced quantum chestplates and solar helmets retired (frame cores, see the suit tab)
                 // Static Boots
                 output.accept(mio_icif_normal.STATIC_BOOTS.get());

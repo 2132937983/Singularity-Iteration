@@ -10,7 +10,6 @@ import com.miophas.singularity_iteration.common.util.mio_icif_tags;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
@@ -121,12 +120,9 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock {
                     CompoundTag data = MachineItemData.takeCarried(blockEntity.getBlockPos());
                     if (data == null) data = MachineItemData.capture(blockEntity, lootParams.getLevel().registryAccess(), false);
                     MachineItemData.apply(dropStack, data);
-                } else if (blockEntity instanceof AbstractEnergyBlockEntity energyBlock) {
-                    CompoundTag tag = new CompoundTag();
-                    tag.putString("id", BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(blockEntity.getType()).toString());
-                    tag.putLong("energy", energyBlock.getEnergyStorage().getAmount());
-                    dropStack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(tag));
                 }
+                // 0.1.10.15: a cable drops a plain item. It used to get {id, energy} (the EU passing
+                // through, often 0), so a wrenched cable never stacked with a crafted one.
                 drops.add(dropStack);
                 return drops;
             }

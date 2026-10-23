@@ -5,8 +5,6 @@ import com.miophas.singularity_iteration.common.item.armor.mio_icif_items_armors
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
 import com.miophas.singularity_iteration.common.item.normal.mio_icif_normal;
 import com.miophas.singularity_iteration.common.item.tools.mio_icif_items_tools;
-import com.miophas.singularity_iteration.common.menu.producer.IndustrialWorkbenchMenu;
-import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.core.api.item.IBatteryItem;
 import com.miophas.singularity_iteration.common.integration.CuriosIntegration;
@@ -42,34 +40,36 @@ public class JEIPlugin implements IModPlugin {
 
     @Override
     public void registerItemSubtypes(ISubtypeRegistration registration) {
-        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> batteryInterpreter =
-            (itemStack, context) -> {
-                // Recipe lookups match on the item alone: a half-charged tool must still find its recipes/uses.
-                if (context == mezz.jei.api.ingredients.subtypes.UidContext.Recipe) return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
-                if (itemStack.getItem() instanceof IBatteryItem bat) {
-                    return String.valueOf(bat.getEnergy(itemStack));
-                }
-                return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
-            };
-        // 能量感知子类型：能量物品（工具/装甲/电池/饰品）用“当前电量/最大电量”区分，
+        // Recipe lookups match on the item alone: a half-charged tool must still find its recipes/uses.
+        // 0.1.10.14: the Ingredient context only tells charged from empty (see ChargedInputs), so
+        // JEI 19.21's "+" matches any charge while its list keeps the empty and the full variant apart.
+        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> batteryInterpreter = ChargedInputs::subtype;
+        // 能量感知子类型：能量物品（工具/装甲/电池/饰品）按“有电/无电”区分，
         // 其余物品退回耐久值区分。这样创造模式标签页里同时收录“空电”与“满电”两个版本时，
         // JEI 不会把它们判定为重复物品。
         mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> energyInterpreter =
             (itemStack, context) -> {
+                if (itemStack.getItem() instanceof IBatteryItem) return ChargedInputs.subtype(itemStack, context);
                 if (context == mezz.jei.api.ingredients.subtypes.UidContext.Recipe) return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
-                if (itemStack.getItem() instanceof IBatteryItem bat) {
-                    return bat.getEnergy(itemStack) + "/" + bat.getMaxEnergy(itemStack);
-                }
                 return String.valueOf(itemStack.getDamageValue());
             };
-        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> nbtInterpreter =
+        // Storage blocks: the "energy" of their BLOCK_ENTITY_DATA.
+        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> nbtInterpreter = ChargedInputs::subtype;
+        // 0.1.10.14: a turning blank by its cut shape in both contexts, so "+" and recipe lookups
+        // tell the shape a recipe needs (lathe_state ingredient) from an uncut or other blank.
+        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> latheInterpreter =
             (itemStack, context) -> {
-                if (context == mezz.jei.api.ingredients.subtypes.UidContext.Recipe) return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
-                var beData = itemStack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
-                if (beData != null) {
-                    return beData.copyTag().toString();
+                if (!(itemStack.getItem() instanceof com.miophas.singularity_iteration.common.item.lathe.LatheTurningBlanksItem blank)) {
+                    return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
                 }
-                return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
+                int width = blank.getWidth(itemStack);
+                boolean cut = false;
+                StringBuilder shape = new StringBuilder();
+                for (int position : blank.getCurrentState(itemStack)) {
+                    shape.append(position).append(',');
+                    cut |= position != width;
+                }
+                return cut ? shape.toString() : mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
             };
         mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> fluidCellInterpreter =
             (itemStack, context) -> {
@@ -80,71 +80,78 @@ public class JEIPlugin implements IModPlugin {
                 return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
             };
 
-        registration.registerSubtypeInterpreter(mio_icif_normal.BAT_LEV0.get(), batteryInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.ADVBAT_LEV0.get(), batteryInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.ADVCHARGEBAT_0.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.CHARGEBAT_LEV0.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.CRYSTAL_CHARGEBAT_LEV0.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.CRYSTAL_LEV0.get(), batteryInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.LAPOTRON_CRYSTAL_LEV0.get(), batteryInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.LAMACRYSTAL_CHARGEBAT_LEV0.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.SUPER_LAPOTRON_CRYSTAL.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.CHARGING_SUPER_LAPOTRON_CRYSTAL.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.LITHIUM_BATTERY.get(), batteryInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.ADV_LITHIUM_BATTERY.get(), batteryInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.THORIUM_BATTERY.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.BAT_LEV0.get(), batteryInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.ADVBAT_LEV0.get(), batteryInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.ADVCHARGEBAT_0.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.CHARGEBAT_LEV0.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.CRYSTAL_CHARGEBAT_LEV0.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.CRYSTAL_LEV0.get(), batteryInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.LAPOTRON_CRYSTAL_LEV0.get(), batteryInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.LAMACRYSTAL_CHARGEBAT_LEV0.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.SUPER_LAPOTRON_CRYSTAL.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.CHARGING_SUPER_LAPOTRON_CRYSTAL.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.LITHIUM_BATTERY.get(), batteryInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.ADV_LITHIUM_BATTERY.get(), batteryInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.THORIUM_BATTERY.get(), energyInterpreter);
         // CF喷枪存储的是建筑泡沫流体（CUSTOM_DATA），按流体数据区分子类型
         registration.registerSubtypeInterpreter(mio_icif_normal.CF_SPRAYER.get(), fluidCellInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_normal.CROP_ANALYZER.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_normal.CROP_ANALYZER.get(), energyInterpreter);
         registration.registerSubtypeInterpreter(mio_icif_normal.CROP_SEED.get(), fluidCellInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_tools.WRENCH_ELC.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_tools.DIAMOND_DRILLER.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_tools.TOOL_LASER_MINER.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_tools.WRENCH_ELC.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_tools.DIAMOND_DRILLER.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_tools.TOOL_LASER_MINER.get(), energyInterpreter);
 
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_BATPACK.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADV_BATPACK.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ENERGYPACK.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_LAPPACK.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NIGHTVISION_GOGGLES.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_HELMET.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_LEGGINGS.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_NANO_BOOTS.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_LEGGINGS.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_JETPACK_ELECTRIC.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_DIVING_MASK.get(), energyInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_BATPACK.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_ADV_BATPACK.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_ENERGYPACK.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_LAPPACK.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_NIGHTVISION_GOGGLES.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_NANO_HELMET.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_NANO_CHESTPLATE.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_NANO_LEGGINGS.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_NANO_BOOTS.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_QUANTUM_HELMET.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_QUANTUM_CHESTPLATE.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_QUANTUM_LEGGINGS.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_QUANTUM_BOOTS.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_JETPACK_ELECTRIC.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_DIVING_MASK.get(), energyInterpreter);
+        ChargedInputs.register(registration, mio_icif_items_armors.ARMOR_ADVANCED_JETPACK.get(), energyInterpreter);
 
-        registration.registerSubtypeInterpreter(mio_icif_blocks.BAT_BOX.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.CESU.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.MFE.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.MFSU.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.LESU.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.EESU.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.GESU_CORE.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.BAT_BOX.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.CESU.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.MFE.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.MFSU.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.LESU.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.EESU.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.GESU_CORE.get().asItem(), nbtInterpreter);
         // 充电座方块：同样通过 BLOCK_ENTITY_DATA 里的电量区分“空电/满电”
-        registration.registerSubtypeInterpreter(mio_icif_blocks.BATBOX_CHARGER.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.CESU_CHARGER.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.MFE_CHARGER.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.MFSU_CHARGER.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.LESU_CHARGER.get().asItem(), nbtInterpreter);
-        registration.registerSubtypeInterpreter(mio_icif_blocks.EESU_CHARGER.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.BATBOX_CHARGER.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.CESU_CHARGER.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.MFE_CHARGER.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.MFSU_CHARGER.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.LESU_CHARGER.get().asItem(), nbtInterpreter);
+        ChargedInputs.register(registration, mio_icif_blocks.EESU_CHARGER.get().asItem(), nbtInterpreter);
 
         registration.registerSubtypeInterpreter(mio_icif_cells.CELL_EMPTY.get(), fluidCellInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.IRON_TURNING_BLANKS.get(), latheInterpreter);
+        registration.registerSubtypeInterpreter(mio_icif_normal.WOODEN_TURNING_BLANKS.get(), latheInterpreter);
 
         if (net.neoforged.fml.ModList.get().isLoaded("curios")) {
             try {
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_FIREPROOF_NECKLACE.get(), energyInterpreter);
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_ENERGY_CRYSTAL_BELT.get(), energyInterpreter);
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_LAPORTON_CRYSTAL_BELT.get(), energyInterpreter);
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_LIFE_SUPPORT_RING.get(), energyInterpreter);
-                registration.registerSubtypeInterpreter(CuriosIntegration.TRINKET_FLIGHT_RING.get(), energyInterpreter);
+                ChargedInputs.register(registration, CuriosIntegration.TRINKET_FIREPROOF_NECKLACE.get(), energyInterpreter);
+                ChargedInputs.register(registration, CuriosIntegration.TRINKET_ENERGY_CRYSTAL_BELT.get(), energyInterpreter);
+                ChargedInputs.register(registration, CuriosIntegration.TRINKET_LAPORTON_CRYSTAL_BELT.get(), energyInterpreter);
+                ChargedInputs.register(registration, CuriosIntegration.TRINKET_LIFE_SUPPORT_RING.get(), energyInterpreter);
+                ChargedInputs.register(registration, CuriosIntegration.TRINKET_FLIGHT_RING.get(), energyInterpreter);
             } catch (Exception e) {
             }
         }
+    }
+
+    @Override
+    public void registerVanillaCategoryExtensions(IVanillaCategoryExtensionRegistration registration) {
+        ChargedInputs.registerExtensions(registration);
     }
 
     @Override
@@ -344,16 +351,8 @@ public class JEIPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        // 注册工业工作台的配方转移支持（JEI "+" 按钮）
-        registration.addRecipeTransferHandler(
-            IndustrialWorkbenchMenu.class,
-            mio_icif_menus.INDUSTRIAL_WORKBENCH_MENU_TYPE.get(),
-            RecipeTypes.CRAFTING,
-            1,  // 合成网格起始槽位（Menu 索引 1）
-            9,  // 合成网格槽位数量（3x3 = 9）
-            10, // 玩家背包起始槽位（Menu 索引 10）
-            36  // 玩家背包槽位数量
-        );
+        // 注册工业工作台的配方转移支持（JEI "+" 按钮）：网格 1-9，取材于缓冲区 10-27 与玩家背包 34-69
+        registration.addRecipeTransferHandler(new IndustrialWorkbenchTransferInfo());
 
         // 批量工作台：JEI "+" 只写入上方的 3x3 影子模板格，不消耗玩家物品（对齐 IC2 TransferHandlerBatchCrafter）
         registration.addRecipeTransferHandler(new BatchCrafterTransferHandler(), RecipeTypes.CRAFTING);

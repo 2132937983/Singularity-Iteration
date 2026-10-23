@@ -47,7 +47,13 @@ import java.util.List;
  * credit. Pending EU, completed work and fractional credit each survive saves independently. */
 public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
     public static final int SLOT_COUNT=7,AMPLIFIER_SLOT=0,OUTPUT_SLOT=1,CONTAINER_SLOT=2,UPGRADE_SLOT_START=3,UPGRADE_SLOT_COUNT=4;
-    public static final long DEFAULT_CAPACITY=1000000,DEFAULT_MAX_RECEIVE=8192,DEFAULT_MAX_EXTRACT=0,DEFAULT_ENERGY_PER_TICK=0,EU_PER_MB=1000000;
+    public static final long DEFAULT_CAPACITY=1000000,DEFAULT_MAX_EXTRACT=0,DEFAULT_ENERGY_PER_TICK=0,EU_PER_MB=1000000;
+    /**
+     * @deprecated 0.1.10.15: no longer a limit. Like IC2 {@code TileEntityMatter} (demand = capacity - energy)
+     * the fabricator takes any EU per tick up to the room in its buffer; its tier (EV, raised by Transformer
+     * Upgrades) only limits the packet voltage. Output stays at most 1 mB per tick.
+     */
+    @Deprecated public static final long DEFAULT_MAX_RECEIVE=8192;
     public static final int DEFAULT_WORK_TIME=1,UUMATTER_CAPACITY=8000,SCRAP_BONUS=5000,SCRAPBOX_BONUS=45000,THORIUM_SCRAP_BONUS=360000,UUMATTER_OUTPUT_AMOUNT=1;
     /** Received EU covered by amplifier credit counts this many times. */
     public static final int AMPLIFIER_MULTIPLIER=6;
@@ -62,7 +68,7 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
 
     public mio_icif_matter_elc(BlockPos pos,BlockState state){this(pos,state,mio_icif_block_entities.MATTER_ELC_ENTITY_TYPE.get());}
     public mio_icif_matter_elc(BlockPos pos,BlockState state,BlockEntityType<?> type){
-        super(pos,state,type,DEFAULT_CAPACITY,DEFAULT_MAX_RECEIVE,0,DEFAULT_WORK_TIME,LAYOUT,0,CableTier.EV);
+        super(pos,state,type,DEFAULT_CAPACITY,DEFAULT_CAPACITY,0,DEFAULT_WORK_TIME,LAYOUT,0,CableTier.EV);
         matter=new FluidTank(UUMATTER_CAPACITY,f->f.getFluid()==mio_icif_fluids.UUMATTER.get()){
             @Override protected void onContentsChanged(){dirty();}
         };
@@ -97,6 +103,19 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
         var recipe=level==null?null:amplifiers.findValue(level,new com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput(stack.copyWithCount(1)));
         return recipe!=null?recipe.getCredit():bonus(stack);
     }
+    /**
+     * 0.1.10.15: {@link #amplifierCredit(ItemStack)} for other machines (the Large Fabricator's scrap module):
+     * an amplifier recipe's credit, else the built-in IC2 value, else 0. Looks the recipe up without a cache.
+     */
+    public static int amplifierCredit(@org.jetbrains.annotations.Nullable Level level,ItemStack stack){
+        if(stack.isEmpty())return 0;
+        if(level!=null){
+            var recipe=level.getRecipeManager().getRecipeFor(com.miophas.singularity_iteration.common.recipe.generic.MassFabricatorRecipes.MASS_FABRICATOR_TYPE.get(),
+                new com.miophas.singularity_iteration.common.recipe.mio_icif_SingleItemRecipeInput(stack.copyWithCount(1)),level);
+            if(recipe.isPresent())return recipe.get().value().getCredit();
+        }
+        return bonus(stack);
+    }
     /** For recipe viewers: {@link #EU_PER_MB} EU per mB of UU-matter; each amplifier's credit makes that much EU count {@link #AMPLIFIER_MULTIPLIER} times. */
     public static List<MachineConversion> conversions(){return conversions(null);}
     /** {@link #conversions()} and the amplifier recipes of {@code recipes} (when given). */
@@ -129,7 +148,9 @@ public class mio_icif_matter_elc extends AbstractProcessingMachineBlockEntity {
     @Override protected void recalculateUpgradeStats(){
         upgradeStats=MachineUpgradeStats.fromInventory(itemHandler,UPGRADE_SLOT_START,UPGRADE_SLOT_COUNT);
         capacity=Math.addExact(DEFAULT_CAPACITY,Math.max(0,upgradeStats.getEnergyCapacityBonus()));
-        energyStorage.setMaxReceive(DEFAULT_MAX_RECEIVE);updateAdmission();
+        // 0.1.10.15: no rate of its own (IC2); the buffer room set in updateAdmission is the only intake limit.
+        // A Transformer Upgrade raises the tier (packet voltage) through upgradeStats.
+        energyStorage.setMaxReceive(capacity);updateAdmission();
     }
     @Override public long getEffectiveCapacity(){return !ready||work==null||hold==null||hasUnmappedState()||!canWorkRedstone()?0:Math.max(0,capacity-Math.min(capacity,work.whole()));}
     private void updateAdmission(){

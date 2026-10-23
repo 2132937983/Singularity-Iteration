@@ -11,6 +11,7 @@ import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -22,6 +23,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 
 import java.util.ArrayList;
@@ -202,11 +204,39 @@ public final class MachineSoundManager {
             if (level == null) stopAll();
             return;
         }
+        if (muted()) {
+            if (!PLAYING.isEmpty() || !PENDING.isEmpty()) stopAll();
+            return;
+        }
         if (!PENDING.isEmpty()) startPhased(mc, level);
         if (++tick % SCAN_INTERVAL != 0) return;
         long t0 = System.nanoTime();
         scan(mc, level);
         lastScanNanos = System.nanoTime() - t0;
+    }
+
+    /**
+     * 0.1.10.14: machine noise is off: the client config ({@code machine_sounds}) or the local player wears
+     * the Soundproof Earmuffs. The loops fade out and the machine sounds the server sends are dropped.
+     */
+    public static boolean muted() {
+        Minecraft mc = Minecraft.getInstance();
+        return !com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.machineSounds()
+            || mc.player != null && com.miophas.singularity_iteration.common.item.armor.mio_icif_soundproof_earmuffs.isWorn(mc.player);
+    }
+
+    /** Machine working sounds of this mod: the loops, the job-finished chime, the work and switch cues, the terminal hum. */
+    static boolean isMachineNoise(ResourceLocation id) {
+        if (!id.getNamespace().equals(Singularity_Iteration.MOD_ID)) return false;
+        String path = id.getPath();
+        return path.startsWith("machine.") && !path.equals("machine.demolish") || path.equals("terminal.ambient");
+    }
+
+    /** Drops the machine sounds the server broadcasts (the job-finished chime above all) while muted. */
+    @SubscribeEvent
+    static void onPlaySound(PlaySoundEvent event) {
+        SoundInstance sound = event.getSound();
+        if (sound != null && isMachineNoise(sound.getLocation()) && muted()) event.setSound(null);
     }
 
     @SubscribeEvent

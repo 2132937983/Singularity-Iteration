@@ -70,6 +70,8 @@ public final class FcsClientConfig {
     /** 0.1.8.3: jetpack sound. */
     public static final ModConfigSpec.DoubleValue JETPACK_VOLUME;
     public static final ModConfigSpec.BooleanValue JETPACK_CUES;
+    /** 0.1.10.14: machine working sounds (the loops and the job-finished chime). */
+    public static final ModConfigSpec.BooleanValue MACHINE_SOUNDS;
     /** 0.1.8.5: nano suit HUD and effects. */
     public static final ModConfigSpec.BooleanValue NANO_HUD;
     public static final ModConfigSpec.BooleanValue NANO_REFRACTION;
@@ -115,6 +117,8 @@ public final class FcsClientConfig {
         b.push("sound");
         JETPACK_VOLUME = b.comment("Volume of the jetpack and flight-suit thrusters (1.0 = default).").defineInRange("jetpack_volume", 1.0, 0.0, 1.5);
         JETPACK_CUES = b.comment("Ignition and shutdown sounds of the thrusters.").define("jetpack_cues", true);
+        MACHINE_SOUNDS = b.comment("Working sounds of machines: their loops and the job-finished chime. Alarms, explosions and tool sounds",
+                "still play. Soundproof Earmuffs mute the same sounds while worn.").define("machine_sounds", true);
         b.pop();
         b.push("suit_visuals");
         HAND_ARMOR_FIRST_PERSON = b.comment("Nano and quantum chestplates show their arm armor and hand cover on your first-person arm.")
@@ -199,6 +203,7 @@ public final class FcsClientConfig {
     public static boolean beamTracers() { return !loaded() || BEAM_TRACERS.get(); }
     public static float jetpackVolume() { return loaded() ? JETPACK_VOLUME.get().floatValue() : 1.0F; }
     public static boolean jetpackCues() { return !loaded() || JETPACK_CUES.get(); }
+    public static boolean machineSounds() { return !loaded() || MACHINE_SOUNDS.get(); }
 
     public static boolean nanoHud() { return !loaded() || NANO_HUD.get(); }
     public static boolean nanoRefraction() { return !loaded() || NANO_REFRACTION.get(); }

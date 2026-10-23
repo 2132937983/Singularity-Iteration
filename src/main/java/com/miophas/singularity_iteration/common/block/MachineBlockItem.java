@@ -34,6 +34,23 @@ public class MachineBlockItem extends BlockItem {
         return contents.size() == 1 ? contents.get(0) : RecoveredPartsItem.pack(contents);
     }
 
+    /**
+     * 0.1.10.15: a cable broken with a wrench used to drop with {@code {id, energy}} block-entity data
+     * and never stacked with crafted cables. Such items lose the {@code energy} when they load (save,
+     * chest, network), so stacks already in the world merge again. A painted cable keeps its colour.
+     */
+    @Override
+    public void verifyComponentsAfterLoad(ItemStack stack) {
+        super.verifyComponentsAfterLoad(stack);
+        if (!(getBlock() instanceof com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire)) return;
+        var data = stack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
+        if (data == null || !data.contains("energy")) return;
+        var tag = data.copyTag();
+        tag.remove("energy");
+        if (tag.contains("CableColor")) stack.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA, net.minecraft.world.item.component.CustomData.of(tag));
+        else stack.remove(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, context, tooltip, flag);

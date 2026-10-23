@@ -19,7 +19,7 @@
       "tag": "c:circuits/advanced"
     },
     "D": {
-      "item": "minecraft:diamond"
+      "tag": "c:gems/diamond"
     }
   },
   "result": {

@@ -104,7 +104,8 @@ public class mio_icif_chestplate_advanced_jetpack extends mio_icif_armor_elc
 
     @Override public float getThrust() { return JETPACK_POWER; }
     @Override public long getEnergyPerTickFlying() { return JETPACK_ENERGY_PER_TICK; }
-    @Override public float getMaxHeight() { return 310.0F; }
+    /** EN: No ceiling; the Electric Jetpack keeps its 310 (0.1.10.14). ZH: 无高度上限；电力喷气背包仍为 310（0.1.10.14）。JA: 上限なし。電気ジェットパックは 310 のまま（0.1.10.14）。 */
+    @Override public boolean hasHeightLimit() { return false; }
     /** EN: Heavy thruster roar (0.1.8.1). ZH: 重型推进器轰鸣（0.1.8.1）。JA: 重いスラスター音（0.1.8.1）。 */
     @Override public String getThrusterSound() { return THRUSTER_ADVANCED; }
 

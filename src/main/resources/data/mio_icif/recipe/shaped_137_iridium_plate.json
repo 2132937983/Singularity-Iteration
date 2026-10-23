@@ -4,7 +4,7 @@
   "key": {
     "I":{"item":"mio_icif:resource/item_iridium"},
     "A":{"tag": "c:plates/alloy"},
-    "D":{"item":"minecraft:diamond"}
+    "D":{"tag":"c:gems/diamond"}
   },
   "result":{"id":"mio_icif:resource/item_iridium_plate","count":1}
 }

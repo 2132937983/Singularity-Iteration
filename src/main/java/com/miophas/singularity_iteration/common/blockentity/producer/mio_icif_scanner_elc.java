@@ -97,7 +97,12 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
     public boolean hasHeldScanData(){return held!=null||session!=null&&session.state()==IndependentScanSession.State.FAILED;}
     public boolean hasStoredScanData(){return hasHeldScanData()||result!=null||session!=null&&(session.progress()>0||session.paidTick()>0||session.pendingPayment()>0);}
     private boolean active(){return session!=null&&!session.sourceStack().isEmpty()&&session.state()!=IndependentScanSession.State.CANCELLED;}
-    private boolean locked(int slot){return changing||hasHeldScanData()||slot==SCANNER_SLOT&&(active()||result!=null);}
+    /**
+     * Slots the GUI may not change. 0.1.10.14: the item being scanned is no longer locked; as in IC2
+     * {@code TileEntityScanner}, taking it out ends the scan. Only a finished pattern waiting to be
+     * stored keeps the slot. Automation still may not pull the item mid-scan ({@link #canExtractItem}).
+     */
+    private boolean locked(int slot){return changing||hasHeldScanData()||slot==SCANNER_SLOT&&result!=null;}
     @Override protected MachineItemHandler createItemHandler(SlotLayout layout){
         var handler=new MachineItemHandler(layout){@Override protected void onContentsChanged(int slot){onInventoryChanged(slot);ContainerToTank.markUnsaved(mio_icif_scanner_elc.this);}};
         handler.setValidator(this);return handler;
@@ -109,7 +114,7 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
     @Override protected int getBatterySlot(){return BATTERY_SLOT;}
     @Override protected int[] getSlotsForDirection(Direction side){return new int[]{SCANNER_SLOT};}
     @Override protected boolean canInsertItem(int slot,ItemStack stack,@Nullable Direction side){return !locked(slot)&&super.canInsertItem(slot,stack,side);}
-    @Override protected boolean canExtractItem(int slot,@Nullable Direction side){return !locked(slot)&&slot==SCANNER_SLOT;}
+    @Override protected boolean canExtractItem(int slot,@Nullable Direction side){return !locked(slot)&&!active()&&slot==SCANNER_SLOT;}
     @Override public IItemHandler getItemHandler(){return guardedItems;}
     @Override public ItemStack getItem(int slot){return guardedItems.getStackInSlot(slot);}
     @Override public ItemStack removeItem(int slot,int amount){return guardedItems.extractItem(slot,amount,false);}
@@ -144,9 +149,10 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
         lastTick=gameTime();
         if(hasHeldScanData()){recover(held!=null?held.getString("reason"):"scan session failed");return;}
         if(result!=null){state=State.COMPLETED;return;}
-        if(isDeniedScanComplete()){state=State.FAILED;return;}
         var input=itemHandler.getStackInSlot(SCANNER_SLOT);
-        if(active()&&(input.isEmpty()||!ItemStack.isSameItemSameComponents(input,session.sourceStack()))){hold("Paid input identity changed");return;}
+        // 0.1.10.14: IC2 TileEntityScanner: the item taken out or swapped ends the scan (IDLE, progress 0, no refund).
+        if(active()&&(input.isEmpty()||!ItemStack.isSameItemSameComponents(input,session.sourceStack()))){resetScan();state=State.IDLE;return;}
+        if(isDeniedScanComplete()){state=State.FAILED;return;}
         if(input.isEmpty()){state=State.IDLE;return;}
         var assessment=trustedAssessment(input.copyWithCount(1));
         boolean denied=assessment.disposition()==UuQuoteBook.Disposition.KNOWN_DENIED && assessment.deniedScanEligible();
@@ -154,7 +160,9 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
         if(quote==null&&!denied){state=State.FAILED;return;}
         // A valid new generation can resume matching work; it cannot reinterpret a paid completion kind.
         if(active()&&denied!=(session.completionKind()==IndependentScanSession.CompletionKind.KNOWN_DENIED)){state=State.FAILED;return;}
-        if(!storageAvailable(input))return;
+        // 0.1.10.14: like IC2 (NO_STORAGE / ALREADY_RECORDED call reset()), no usable storage ends the scan
+        // instead of freezing it with the item locked in.
+        if(!storageAvailable(input)){if(active())resetScan();return;}
         if(!active()&&!(denied?session.beginDenied(input.copyWithCount(1)):session.begin(input.copyWithCount(1),quote.buckets(),TOTAL_ENERGY_COST))){state=State.FAILED;return;}
         changing=true;
         try{
@@ -221,6 +229,16 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
      * scanner returns to idle. The reason is logged for diagnostics.
      */
     private void hold(String reason){recover(reason);}
+    /** IC2 {@code reset()}: the unfinished scan ends; the energy spent is not refunded, the item stays in its slot. */
+    private void resetScan(){session=newSession();progress=0;isWorking=false;ContainerToTank.markUnsaved(this);}
+    /**
+     * 0.1.10.14: the scanner is being broken. As in IC2, an unfinished scan ends there and the block
+     * spills its slots; only a finished pattern waiting to be stored still travels in the dropped scanner.
+     */
+    public void abandonScan(){
+        if(result!=null)return;
+        held=null;resetScan();state=State.IDLE;
+    }
     private void recover(String reason){
         com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.warn("Pattern scanner at {} recovered from an inconsistent scan state: {}",worldPosition,reason);
         held=null;session=newSession();progress=0;state=State.IDLE;isWorking=false;ContainerToTank.markUnsaved(this);

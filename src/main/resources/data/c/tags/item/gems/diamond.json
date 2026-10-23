@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mio_icif:normal/item_industrial_diamond",
+      "required": false
+    }
+  ]
+}

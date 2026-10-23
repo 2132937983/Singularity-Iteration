@@ -78,6 +78,9 @@ public class mio_icif_block_scanner_elc extends mio_icif_entity_block {
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
+            // 0.1.10.14: an unfinished scan ends here and the shared removal spills the slots (IC2); only a
+            // finished pattern waiting to be stored is still packed into the dropped scanner.
+            if (blockEntity instanceof mio_icif_scanner_elc scanner && !level.isClientSide()) scanner.abandonScan();
             if (blockEntity instanceof mio_icif_scanner_elc scanner&&scanner.hasStoredScanData()) {
                 if(!level.isClientSide()) {
                     var packed=new ItemStack(this);

@@ -150,6 +150,10 @@ public final class CaptureDirector {
      * scale 3 and screenshots it (tools/jei-capture.init.gradle).
      */
     private static void jeiGallery(String list) {
+        if ("TRANSFER".equals(list)) {
+            jeiTransferCheck();
+            return;
+        }
         server(40, sp -> {
             sp.serverLevel().setDayTime(6000);
             sp.setGameMode(GameType.CREATIVE);
@@ -173,6 +177,74 @@ public final class CaptureDirector {
                 client(1, () -> Minecraft.getInstance().setScreen(null));
             }
             client(10, () -> Minecraft.getInstance().stop());
+        });
+    }
+
+    /**
+     * -Dsi.capture.jei=TRANSFER (0.1.10.14): JEI's crafting "+" on a crafting table and on an Industrial
+     * Workbench, with charged and empty batteries and with the right and an uncut turning blank. One line
+     * per case goes to jei_transfer.txt ("ok" or the slots JEI finds missing).
+     */
+    private static void jeiTransferCheck() {
+        BlockPos table = new BlockPos(2, -60, 0), bench = new BlockPos(-2, -60, 0);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            sp.setGameMode(GameType.CREATIVE);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 0);
+            level.setBlock(table, net.minecraft.world.level.block.Blocks.CRAFTING_TABLE.defaultBlockState(), 3);
+            level.setBlock(bench, block("producer/block_industrial_workbench").defaultBlockState(), 3);
+        });
+        until(600, () -> !com.miophas.singularity_iteration.common.client.integration.jei.JeiBridge.categories("mio_icif").isEmpty());
+        transferCase(table, "shaped_8_batbox", true, false, false);
+        transferCase(table, "shaped_8_batbox", false, false, false);
+        transferCase(table, "shaped_9_mfe", true, false, false);
+        transferCase(table, "shaped_350_laser_miner", true, false, false);
+        transferCase(table, "shaped_350_laser_miner", true, true, false);
+        transferCase(bench, "shaped_8_batbox", true, false, true);
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Gives the player one of each input of {@code recipe}, opens the menu at {@code at} and records JEI's verdict. */
+    private static void transferCase(BlockPos at, String recipe, boolean charged, boolean uncutBlank, boolean hotbar) {
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("mio_icif", recipe);
+        server(5, sp -> {
+            sp.closeContainer();
+            sp.getInventory().clearContent();
+            var holder = sp.serverLevel().getRecipeManager().byKey(id).orElse(null);
+            if (holder == null) return;
+            int slot = 0;
+            for (var ingredient : holder.value().getIngredients()) {
+                ItemStack[] options = ingredient.getItems();
+                if (options.length == 0) continue;
+                ItemStack stack = options[0].copyWithCount(1);
+                if (uncutBlank && stack.getItem() instanceof com.miophas.singularity_iteration.common.item.lathe.LatheTurningBlanksItem) {
+                    stack = new ItemStack(stack.getItem());
+                }
+                if (charged && stack.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem) {
+                    var items = com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI();
+                    items.setBatteryEnergy(stack, items.getBatteryCapacity(stack));
+                }
+                if (hotbar) sp.getInventory().setItem(slot++, stack);
+                else sp.getInventory().add(stack);
+            }
+            var level = sp.serverLevel();
+            if (level.getBlockState(at).is(net.minecraft.world.level.block.Blocks.CRAFTING_TABLE)) {
+                sp.openMenu(new net.minecraft.world.SimpleMenuProvider((containerId, inventory, player) -> new net.minecraft.world.inventory.CraftingMenu(
+                    containerId, inventory, net.minecraft.world.inventory.ContainerLevelAccess.create(level, at)), net.minecraft.network.chat.Component.literal("Crafting")));
+            } else if (level.getBlockEntity(at) instanceof net.minecraft.world.MenuProvider provider) {
+                sp.openMenu(provider);
+            }
+        });
+        client(10, () -> {
+            var menu = Minecraft.getInstance().player.containerMenu;
+            String line = recipe + (charged ? " charged" : " empty") + (uncutBlank ? " uncut-blank" : "") + (hotbar ? " hotbar" : "")
+                + " in " + menu.getClass().getSimpleName() + ": "
+                + com.miophas.singularity_iteration.common.client.integration.jei.JeiBridge.transferCheck(id) + "\n";
+            try {
+                java.nio.file.Files.writeString(java.nio.file.Path.of(OUT, "jei_transfer.txt"), line,
+                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+            } catch (java.io.IOException ignored) { }
         });
     }
 
@@ -1656,6 +1728,222 @@ public final class CaptureDirector {
         }
     }
 
+    // ------------------------------------------------------------------ 0.1.10.15 player feedback review
+
+    static {
+        if (OUT != null && "feedback".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            feedbackScene();
+        }
+    }
+
+    /** Chat lines the client received (feedback scene). */
+    private static final List<String> CHAT = new ArrayList<>();
+    /** Lets the chat show in the feedback screenshots (the other scenes hide it). */
+    private static boolean showChat;
+    /** Machine sounds that reached the sound engine, after the mute filter (feedback scene). */
+    private static int machineSoundsPlayed, playedBefore;
+
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    static void countMachineSounds(net.neoforged.neoforge.client.event.sound.PlaySoundEvent event) {
+        if (OUT == null || event.getSound() == null) return;
+        var id = event.getSound().getLocation();
+        if (id.getNamespace().equals(Singularity_Iteration.MOD_ID) && id.getPath().startsWith("machine.")) machineSoundsPlayed++;
+    }
+
+    @SubscribeEvent
+    static void recordChat(net.neoforged.neoforge.client.event.ClientChatReceivedEvent event) {
+        if (OUT != null) CHAT.add(event.getMessage().getString());
+    }
+
+    private static void note(String line) {
+        Singularity_Iteration.LOGGER.info("[feedback] {}", line);
+        try {
+            java.nio.file.Files.writeString(java.nio.file.Path.of(OUT, "feedback.txt"), line + "\n",
+                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+        } catch (java.io.IOException ignored) { }
+    }
+
+    /** Machine sound instances the sound engine is playing now. */
+    private static int activeMachineSounds() {
+        try {
+            var engineField = net.minecraft.client.sounds.SoundManager.class.getDeclaredField("soundEngine");
+            engineField.setAccessible(true);
+            Object engine = engineField.get(Minecraft.getInstance().getSoundManager());
+            var channels = net.minecraft.client.sounds.SoundEngine.class.getDeclaredField("instanceToChannel");
+            channels.setAccessible(true);
+            int n = 0;
+            for (Object o : ((java.util.Map<?, ?>) channels.get(engine)).keySet()) {
+                var id = ((net.minecraft.client.resources.sounds.SoundInstance) o).getLocation();
+                if (id.getNamespace().equals(Singularity_Iteration.MOD_ID) && id.getPath().startsWith("machine.")) n++;
+            }
+            return n;
+        } catch (ReflectiveOperationException e) {
+            return -1;
+        }
+    }
+
+    private static void soundPhase(String phase, boolean expectSound) {
+        int played = machineSoundsPlayed - playedBefore, active = activeMachineSounds();
+        boolean ok = expectSound ? active > 0 : active == 0 && played == 0;
+        var head = Minecraft.getInstance().player.getItemBySlot(EquipmentSlot.HEAD);
+        note((ok ? "PASS " : "FAIL ") + phase + ": head slot " + (head.isEmpty() ? "empty" : head.getItem()) + ", playing " + active + " machine sounds, " + played + " new machine sounds since the phase began, muted "
+            + com.miophas.singularity_iteration.common.client.machine.MachineSoundManager.muted() + "; " + com.miophas.singularity_iteration.common.client.machine.MachineSoundManager.describe());
+    }
+
+    /** The job-finished chime from the server, next to the player (what a finishing machine sends). */
+    private static void chime(ServerPlayer sp) {
+        sp.serverLevel().playSound(null, sp.blockPosition(), com.miophas.singularity_iteration.core.platform.neoforge.CoreSounds.MACHINE_COMPLETE.get(),
+            net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+    }
+
+    /** Puts {@code stack} into the Curios head slot (reflection: Curios is optional). False without Curios. */
+    private static boolean curiosHead(ServerPlayer sp, ItemStack stack) {
+        if (!net.neoforged.fml.ModList.get().isLoaded("curios")) return false;
+        try {
+            Class<?> api = Class.forName("top.theillusivec4.curios.api.CuriosApi");
+            Object inventory = ((java.util.Optional<?>) api.getMethod("getCuriosInventory", net.minecraft.world.entity.LivingEntity.class).invoke(null, sp)).orElseThrow();
+            Object handler = ((java.util.Optional<?>) Class.forName("top.theillusivec4.curios.api.type.capability.ICuriosItemHandler")
+                .getMethod("getStacksHandler", String.class).invoke(inventory, "head")).orElseThrow();
+            Object stacks = Class.forName("top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler").getMethod("getStacks").invoke(handler);
+            ((net.neoforged.neoforge.items.IItemHandlerModifiable) stacks).setStackInSlot(0, stack);
+            return true;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            note("FAIL Curios head slot: " + e);
+            return false;
+        }
+    }
+
+    /** The menu slot holding a Transformer Upgrade, or -1. */
+    private static int transformerSlot() {
+        var menu = Minecraft.getInstance().player.containerMenu;
+        for (int i = 0; i < menu.slots.size(); i++) if (menu.getSlot(i).getItem().is(item("upgrade/transformer_upgrade").getItem())) return i;
+        return -1;
+    }
+
+    private static void sendSafetyKey(boolean down) {
+        int state = down ? 1 << com.miophas.singularity_iteration.common.network.mio_icif_KeyboardManager.KEY_SAFETY : 0;
+        com.miophas.singularity_iteration.common.network.mio_icif_KeyboardManager.processKeyUpdate(Minecraft.getInstance().player, state);
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(new com.miophas.singularity_iteration.common.network.KeyboardStatePacket(state));
+    }
+
+    /**
+     * -Dsi.capture.scene=feedback (0.1.10.15): the in-game pass over the player-feedback fixes that GameTests
+     * cannot see. Machine sound muting by the config toggle, by the earmuffs in the helmet slot and (with
+     * Curios installed) in the Curios head slot; the chat line when a Transformer Upgrade refuses a click,
+     * and the click that works with the Safety Key; the cable icons. Results go to feedback.txt, with
+     * screenshots under feedback/.
+     */
+    private static void feedbackScene() {
+        BlockPos fab = new BlockPos(1, -60, 3), gen = new BlockPos(2, -60, 3), furnace = new BlockPos(-1, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            // survival: the inventory screen shows the armor slots (creative opens the creative inventory)
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 15);
+            level.setBlock(fab, block("producer/block_matter_elc").defaultBlockState(), 3);
+            level.setBlock(gen, block("generator/block_creative_generator").defaultBlockState(), 3);
+            if (level.getBlockEntity(gen) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_creative_generator g) g.configure(100_000L, true);
+            level.setBlock(furnace, block("producer/block_furnace_elc").defaultBlockState(), 3);
+            if (level.getBlockEntity(furnace) instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity m) {
+                var slots = m.getItemHandler();
+                ItemStack upgrade = item("upgrade/transformer_upgrade");
+                for (int i = 0; i < slots.getSlots(); i++) {
+                    if (slots.getStackInSlot(i).isEmpty() && slots.isItemValid(i, upgrade)) { slots.insertItem(i, upgrade, false); break; }
+                }
+            }
+            sp.getInventory().clearContent();
+            String[] cables = {"wiring/cable/block_gold_cable", "wiring/cable/block_gold_cable_1", "wiring/cable/block_gold_cable_2",
+                "wiring/cable/block_iron_cable", "wiring/cable/block_iron_cable_1", "wiring/cable/block_iron_cable_2", "wiring/cable/block_iron_cable_3"};
+            for (int i = 0; i < cables.length; i++) sp.getInventory().setItem(i, item(cables[i]));
+            sp.getInventory().setItem(8, item("armor/item_soundproof_earmuffs"));
+            sp.getInventory().selected = 7;
+        });
+        client(5, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.hideGui = false;
+            mc.options.showSubtitles().set(true);
+            mc.options.guiScale().set(3);
+            mc.resizeDisplay();
+            com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.MACHINE_SOUNDS.set(true);
+            note("Curios installed: " + net.neoforged.fml.ModList.get().isLoaded("curios"));
+        });
+        // ---- cable icons: gold (HV) bare, 1x, 2x; iron (EV) bare, 1x, 2x, 3x; slot 9 the earmuffs
+        shot(40, "feedback/cable_icons_hotbar");
+        // ---- machine sounds: a running Mass Fabricator two blocks away
+        client(1, () -> playedBefore = machineSoundsPlayed);
+        client(100, () -> soundPhase("baseline (machine_sounds on, no earmuffs)", true));
+        shot(1, "feedback/sounds_1_baseline");
+        client(1, () -> com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.MACHINE_SOUNDS.set(false));
+        client(20, () -> playedBefore = machineSoundsPlayed);
+        server(1, CaptureDirector::chime);
+        client(60, () -> soundPhase("machine_sounds = false (loops and a server chime)", false));
+        shot(1, "feedback/sounds_2_toggle_off");
+        client(1, () -> com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.MACHINE_SOUNDS.set(true));
+        client(1, () -> playedBefore = machineSoundsPlayed);
+        client(80, () -> soundPhase("machine_sounds back on", true));
+        server(1, sp -> sp.setItemSlot(EquipmentSlot.HEAD, item("armor/item_soundproof_earmuffs")));
+        client(20, () -> playedBefore = machineSoundsPlayed);
+        server(1, CaptureDirector::chime);
+        client(60, () -> soundPhase("earmuffs in the helmet slot (loops and a server chime)", false));
+        shot(1, "feedback/sounds_3_earmuffs_helmet");
+        client(1, () -> Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(Minecraft.getInstance().player)));
+        shot(10, "feedback/earmuffs_helmet_inventory");
+        client(1, () -> { Minecraft.getInstance().setScreen(null); Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(10, "feedback/earmuffs_worn_front");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
+        server(1, sp -> sp.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY));
+        client(1, () -> playedBefore = machineSoundsPlayed);
+        client(80, () -> soundPhase("earmuffs taken off", true));
+        server(1, sp -> { if (!curiosHead(sp, item("armor/item_soundproof_earmuffs"))) note("SKIP Curios head slot: Curios is not installed"); });
+        client(20, () -> playedBefore = machineSoundsPlayed);
+        server(1, CaptureDirector::chime);
+        client(60, () -> {
+            if (net.neoforged.fml.ModList.get().isLoaded("curios")) soundPhase("earmuffs in the Curios head slot (loops and a server chime)", false);
+        });
+        shot(1, "feedback/sounds_4_earmuffs_curios");
+        server(1, sp -> curiosHead(sp, ItemStack.EMPTY));
+        client(1, () -> playedBefore = machineSoundsPlayed);
+        client(80, () -> {
+            if (net.neoforged.fml.ModList.get().isLoaded("curios")) soundPhase("earmuffs out of the Curios head slot", true);
+        });
+        // ---- Transformer Upgrade: a click without the Safety Key is refused with a chat line
+        client(1, () -> { showChat = true; CHAT.clear(); });
+        server(1, sp -> { if (sp.serverLevel().getBlockEntity(furnace) instanceof net.minecraft.world.MenuProvider p) sp.openMenu(p); });
+        client(10, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            int slot = transformerSlot();
+            if (slot < 0) { note("FAIL no Transformer Upgrade slot in " + mc.player.containerMenu.getClass().getSimpleName()); return; }
+            mc.gameMode.handleInventoryMouseClick(mc.player.containerMenu.containerId, slot, 0, net.minecraft.world.inventory.ClickType.PICKUP, mc.player);
+        });
+        client(10, () -> {
+            var menu = Minecraft.getInstance().player.containerMenu;
+            boolean kept = transformerSlot() >= 0 && menu.getCarried().isEmpty();
+            boolean told = CHAT.stream().anyMatch(s -> s.contains("Safety Key"));
+            note((kept && told ? "PASS " : "FAIL ") + "click without the Safety Key: upgrade kept " + kept + ", chat " + CHAT);
+        });
+        client(1, () -> Minecraft.getInstance().player.closeContainer());
+        shot(5, "feedback/transformer_refused_chat");
+        // with the Safety Key held the same click takes it
+        client(1, () -> sendSafetyKey(true));
+        server(2, sp -> { if (sp.serverLevel().getBlockEntity(furnace) instanceof net.minecraft.world.MenuProvider p) sp.openMenu(p); });
+        client(10, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            int slot = transformerSlot();
+            if (slot >= 0) mc.gameMode.handleInventoryMouseClick(mc.player.containerMenu.containerId, slot, 0, net.minecraft.world.inventory.ClickType.PICKUP, mc.player);
+        });
+        client(10, () -> {
+            var carried = Minecraft.getInstance().player.containerMenu.getCarried();
+            boolean taken = carried.is(item("upgrade/transformer_upgrade").getItem());
+            note((taken ? "PASS " : "FAIL ") + "click with the Safety Key: carried " + carried);
+        });
+        client(1, () -> { sendSafetyKey(false); Minecraft.getInstance().player.closeContainer(); showChat = false; });
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
     static {
         if (OUT != null && "14".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
@@ -1953,7 +2241,7 @@ public final class CaptureDirector {
         }
         if (mc.player == null || index >= STEPS.size()) return;
         mc.getToasts().clear();
-        mc.options.chatVisibility().set(net.minecraft.world.entity.player.ChatVisiblity.HIDDEN);
+        mc.options.chatVisibility().set(showChat ? net.minecraft.world.entity.player.ChatVisiblity.FULL : net.minecraft.world.entity.player.ChatVisiblity.HIDDEN);
         if (hoverGui != null) hover(mc, hoverGui[0], hoverGui[1]);
         Step step = STEPS.get(index);
         if (step.until() != null) {

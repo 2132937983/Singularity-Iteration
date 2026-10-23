@@ -59,7 +59,11 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     private long migratedGeneration=Long.MIN_VALUE;
     private WorkMode mode=WorkMode.STOPPED;
     private boolean changing,selectionDirty=true;
+    /** 0.1.10.14: the crystal slot was changed by a player or automation (not by a pattern migration). */
+    private boolean patternChanged;
     private int selectionCooldown;
+    /** Game time of the last paid step, for {@link #isReplicating()} (not saved). */
+    private long lastWorkedTick=Long.MIN_VALUE/2;
     private CompoundTag held;
     private final int[] clientData=new int[8];
     /** 0.1.8.4 build order (Blueprint Builder supply): item to make and copies still to make; saved outside the paid-work record. */
@@ -119,7 +123,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     @Override protected MachineItemHandler createItemHandler(SlotLayout layout){
         var handler=new MachineItemHandler(layout){
             @Override protected void onContentsChanged(int slot){
-                if(slot==MEMORY_SLOT)selectionDirty=true;
+                if(slot==MEMORY_SLOT){selectionDirty=true;if(!changing)patternChanged=true;}
                 mio_icif_replicator_elc.this.onInventoryChanged(slot);
                 ContainerToTank.markUnsaved(mio_icif_replicator_elc.this);
             }
@@ -184,6 +188,9 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         long generation=priceGeneration();
         if(generation<0)return;
         if(!selected.isEmpty()&&(processed>0||paidEu>0||pendingUu>0)){
+            // 0.1.10.14: like IC2 refreshInfo, a pattern that changed or left (the crystal taken out or
+            // swapped) ends the copy: the UU already processed is lost and the machine stops.
+            if(patternChanged){patternChanged=false;if(!hasPatternFor(selected)){cancelCopy();return;}}
             if(generation!=quotedGeneration){
                 var next=trustedQuote(selected);
                 if(next==null||Double.compare(next.buckets(),price)!=0){hold("Price changed during paid work");return;}
@@ -192,10 +199,27 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
             return;
         }
         if(!selectionDirty&&generation==quotedGeneration&&selectionCooldown-->0)return;
-        selectionDirty=false;selectionCooldown=20;
+        selectionDirty=false;patternChanged=false;selectionCooldown=20;
         ItemStack item=selectPatternItem();
         var quote=item.isEmpty()?null:trustedQuote(item);
         selected=quote==null?ItemStack.EMPTY:item.copyWithCount(1);price=quote==null?0:quote.buckets();quotedGeneration=generation;stepEu=stepEnergy();
+        // 0.1.10.14: no pattern left (IC2 refreshInfo): Single and Loop stop instead of showing a mode that copies nothing.
+        // A pattern storage in a neighbour chunk that is not loaded yet (world load) is not gone.
+        if(item.isEmpty()&&mode!=WorkMode.STOPPED&&neighboursLoaded()){mode=WorkMode.STOPPED;ContainerToTank.markUnsaved(this);}
+    }
+    private boolean neighboursLoaded(){
+        if(!(level instanceof ServerLevel server))return false;
+        for(var side:Direction.values()){
+            var at=worldPosition.relative(side);
+            if(server.getChunkSource().getChunkNow(at.getX()>>4,at.getZ()>>4)==null)return false;
+        }
+        return true;
+    }
+    /** 0.1.10.14: IC2 Stop ({@code uuProcessed = 0}): the copy in progress and a build order are dropped, the paid UU and EU are lost. */
+    private void cancelCopy(){
+        processed=0;pendingUu=0;pendingEu=0;paidEu=0;selected=ItemStack.EMPTY;price=0;selectionDirty=true;
+        order=ItemStack.EMPTY;orderLeft=0;mode=WorkMode.STOPPED;isWorking=false;lastWorkedTick=Long.MIN_VALUE/2;
+        updateProgress();ContainerToTank.markUnsaved(this);
     }
     protected ItemStack selectPatternItem(){
         if(!order.isEmpty()){
@@ -241,7 +265,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
                 public int drainMilliBuckets(int requested){return tank.drain(requested,IFluidHandler.FluidAction.EXECUTE).getAmount();}
             });
             if(!paid)return;
-            processed=Math.min(price,processed+pendingUu);pendingUu=0;pendingEu=0;paidEu=0;isWorking=true;
+            processed=Math.min(price,processed+pendingUu);pendingUu=0;pendingEu=0;paidEu=0;isWorking=true;lastWorkedTick=level.getGameTime();
             if(processed>=price)commitOutput();
             updateProgress();ContainerToTank.markUnsaved(this);
         }finally{changing=false;}
@@ -266,9 +290,17 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     public void stopGeneration(){setWorkMode(0);}
     public void generateOnce(){setWorkMode(1);}
     public void loopGeneration(){setWorkMode(2);}
-    public void setWorkMode(int value){if(serverThread()&&!changing&&!hasHeldReplicationData()&&value>=0&&value<3){mode=WorkMode.values()[value];selectionDirty=true;ContainerToTank.markUnsaved(this);}}
+    public void setWorkMode(int value){
+        if(!serverThread()||changing||hasHeldReplicationData()||value<0||value>=3)return;
+        if(value==0){cancelCopy();return;}
+        mode=WorkMode.values()[value];selectionDirty=true;ContainerToTank.markUnsaved(this);
+    }
     public WorkMode getWorkMode(){return mode;}
-    public boolean isReplicating(){return isWorking;}
+    /**
+     * Copying: a 0.1 mB step was paid in the last second. 0.1.10.14: {@code isWorking} alone is true only
+     * on the tick a step completes, so with EU arriving slower than a step the lamp and the GUI status flickered off.
+     */
+    public boolean isReplicating(){return isWorking||mode!=WorkMode.STOPPED&&!selected.isEmpty()&&level!=null&&level.getGameTime()-lastWorkedTick<=20;}
     public int getReplicateProgress(){return progress;}
     public int getReplicateMaxProgress(){return 10000;}
     @Override public int getMaxProgress(){return 10000;}
@@ -284,7 +316,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     public ContainerData getContainerData(){return new ContainerData(){
         public int getCount(){return 8;}
         public int get(int i){if(i<0||i>=8)throw new IndexOutOfBoundsException(i);if(level!=null&&level.isClientSide())return clientData[i];return switch(i){
-            case 0->progress;case 1->10000;case 2->isWorking?1:0;case 3->(int)Math.min(Integer.MAX_VALUE,energyStorage.getAmount());
+            case 0->progress;case 1->10000;case 2->isReplicating()?1:0;case 3->(int)Math.min(Integer.MAX_VALUE,energyStorage.getAmount());
             case 4->(int)Math.min(Integer.MAX_VALUE,energyStorage.getCapacity());case 5->tank.getFluidAmount();case 6->UUMATTER_CAPACITY;default->mode.ordinal();};}
         public void set(int i,int v){if(i<0||i>=8)throw new IndexOutOfBoundsException(i);clientData[i]=v;}
     };}
@@ -344,6 +376,7 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
     @Override public void loadAdditional(CompoundTag tag,HolderLookup.Provider registries){
         super.loadAdditional(tag,registries);held=null;selected=ItemStack.EMPTY;mode=WorkMode.STOPPED;price=processed=pendingUu=0;paidEu=pendingEu=completed=0;
         tank.setFluid(FluidStack.EMPTY);selectionDirty=true;quotedGeneration=-1;lastTick=Long.MIN_VALUE;
+        patternChanged=false;   // loading the inventory is not a player changing the crystal
         order=ItemStack.EMPTY;orderLeft=0;
         if(tag.contains(ORDER_KEY,Tag.TAG_COMPOUND)){
             var o=tag.getCompound(ORDER_KEY);

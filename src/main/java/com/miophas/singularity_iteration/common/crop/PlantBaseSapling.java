@@ -14,7 +14,7 @@ public class PlantBaseSapling extends com.miophas.singularity_iteration.core.pre
     protected final String[] traits;
     protected final ItemStack cropDrop;
     protected final ItemStack saplingDrop;
-    protected final ItemStack logDrop; // 次要作物：原木
+    protected final ItemStack logDrop; // 主产物：原木（IC2 CropBaseSapling 的 cropDrop）
     protected final boolean isOak;
 
     public PlantBaseSapling(String cropName, String[] traits, ItemStack cropDrop, ItemStack saplingDrop, boolean isOak) {
@@ -78,10 +78,15 @@ public class PlantBaseSapling extends com.miophas.singularity_iteration.core.pre
         return 4;
     }
 
+    /**
+     * IC2 {@code CropBaseSapling.getGains}: one log, a sapling 25% of the time, and for oak an apple 25% of
+     * the time. 0.1.10.15: the log was registered but never dropped (the leaves came instead), so trees on
+     * crop sticks gave no wood. A tree registered without a log (the five-argument constructor) keeps its drop.
+     */
     @Override
     public ItemStack[] getHarvest(IPlanter planter) {
         java.util.List<ItemStack> drops = new java.util.ArrayList<>();
-        drops.add(cropDrop.copy());
+        drops.add((logDrop != null && !logDrop.isEmpty() ? logDrop : cropDrop).copy());
         if (planter.getPlanterWorld().random.nextInt(100) >= 75) {
             drops.add(saplingDrop.copy());
         }

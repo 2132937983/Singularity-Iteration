@@ -72,7 +72,8 @@ public class BatchCrafterTransferHandler implements IRecipeTransferHandler<Batch
             if (index >= GRID) break;
             Optional<ItemStack> displayed = view.getDisplayedItemStack();
             if (displayed.isPresent() && !displayed.get().isEmpty()) {
-                sequential[index] = displayed.get().copyWithCount(1);
+                // The template keeps the recipe's own stack, not the charged variant JEI may be cycling through.
+                sequential[index] = ChargedInputs.recipeStack(view, displayed.get()).copyWithCount(1);
             }
             index++;
         }

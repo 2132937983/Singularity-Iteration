@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Reactor Access Hatch"
+  title: "原子炉アクセスハッチ"
   icon: mio_icif:reactor/block_reactor_access_hatch
   parent: heavy.md
   position: 10
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:reactor/block_reactor_access_hatch
 ---
 
-# Reactor Access Hatch
+# 原子炉アクセスハッチ
 
 <Row>
   <BlockImage id="mio_icif:reactor/block_reactor_access_hatch" scale="3" />

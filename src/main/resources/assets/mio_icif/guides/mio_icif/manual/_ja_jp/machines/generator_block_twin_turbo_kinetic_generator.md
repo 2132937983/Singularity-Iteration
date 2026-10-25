@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Twin-turbocharged Kinetic Generator"
+  title: "ツインターボ運動エネルギー発電機"
   icon: mio_icif:generator/block_twin_turbo_kinetic_generator
   parent: generators.md
   position: 34
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_twin_turbo_kinetic_generator
 ---
 
-# Twin-turbocharged Kinetic Generator
+# ツインターボ運動エネルギー発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_twin_turbo_kinetic_generator" scale="3" />

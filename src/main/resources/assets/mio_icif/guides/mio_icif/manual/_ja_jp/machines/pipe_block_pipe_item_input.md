@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Item Extraction Pipe"
+  title: "アイテム抽出パイプ"
   icon: mio_icif:pipe/block_pipe_item_input
   parent: heavy.md
   position: 2
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:pipe/block_pipe_item_input
 ---
 
-# Item Extraction Pipe
+# アイテム抽出パイプ
 
 <Row>
   <BlockImage id="mio_icif:pipe/block_pipe_item_input" scale="3" />

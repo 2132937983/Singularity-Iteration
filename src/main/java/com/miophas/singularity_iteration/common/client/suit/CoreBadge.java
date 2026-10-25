@@ -19,7 +19,7 @@ import net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent;
  * core at the top left of the slot, with one pip per solar array tier. The icon itself stays the
  * plain helmet or chestplate.
  */
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public final class CoreBadge implements IItemDecorator {
     private static final CoreBadge INSTANCE = new CoreBadge();
 

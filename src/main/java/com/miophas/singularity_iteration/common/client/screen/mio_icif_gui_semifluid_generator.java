@@ -59,7 +59,7 @@ public class mio_icif_gui_semifluid_generator extends mio_icif_screen<com.miopha
             int fuelAmount = menu.getFuelAmount();
             int fuelCapacity = menu.getFuelCapacity();
             drawFluidTank(guiGraphics, x + FUEL_TANK_X, y + FUEL_TANK_Y,
-                new FluidStack(mio_icif_fluids.BIOGAS.get(), fuelAmount), fuelAmount, fuelCapacity);
+                menu.getFuelFluid(), fuelAmount, fuelCapacity);   // 0.1.10.19: the fuel actually in the tank
 
             // 绘制能量条
             int energyProgressPixels = menu.getEnergyProgressPixels();
@@ -89,7 +89,7 @@ public class mio_icif_gui_semifluid_generator extends mio_icif_screen<com.miopha
         if (mouseX >= x + FUEL_TANK_X && mouseX <= x + FUEL_TANK_X + FLUID_TANK_BG_WIDTH &&
             mouseY >= y + FUEL_TANK_Y && mouseY <= y + FUEL_TANK_Y + FLUID_TANK_BG_HEIGHT) {
             guiGraphics.renderTooltip(this.font,
-                Component.literal((menu.getFuelAmount() > 0 ? com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.BIOGAS.get().getFluidType().getDescription().getString() + ": " : "") + menu.getFuelAmount() + "/" + menu.getFuelCapacity() + " mB"),
+                Component.literal((!menu.getFuelFluid().isEmpty() ? menu.getFuelFluid().getHoverName().getString() + ": " : "") + menu.getFuelAmount() + "/" + menu.getFuelCapacity() + " mB"),
                 mouseX - x, mouseY - y);
         }
     }

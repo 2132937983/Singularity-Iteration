@@ -50,7 +50,7 @@ public final class QuantumClient {
     static String linkResultKey = "";
     static int linkResult = -1, linkResultAt = -1000;
 
-    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
     public static final class ModEvents {
         @SubscribeEvent
         static void setup(FMLClientSetupEvent event) {

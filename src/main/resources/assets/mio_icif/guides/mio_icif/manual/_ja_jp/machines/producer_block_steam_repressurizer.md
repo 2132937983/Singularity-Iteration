@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Steam Repressurizer"
+  title: "蒸気再加圧機"
   icon: mio_icif:producer/block_steam_repressurizer
   parent: machines.md
   position: 63
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_steam_repressurizer
 ---
 
-# Steam Repressurizer
+# 蒸気再加圧機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_steam_repressurizer" scale="3" />

@@ -109,7 +109,7 @@ public final class PowerUnitRecipeGameTests {
     public static void everyLatheShapeInRecipesIsNamed(GameTestHelper h) {
         java.lang.reflect.Method of;
         try {
-            of = Class.forName("com.miophas.singularity_iteration.common.item.lathe.LatheShapes").getMethod("of", ItemStack.class);
+            of = Class.forName("com.miophas.singularity_iteration" + ".common.item.lathe.LatheShapes").getMethod("of", ItemStack.class);
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }

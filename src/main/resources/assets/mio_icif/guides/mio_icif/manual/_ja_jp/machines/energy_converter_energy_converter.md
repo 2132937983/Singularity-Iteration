@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Energy Converter"
+  title: "エネルギー変換器"
   icon: mio_icif:energy_converter/energy_converter
   parent: machines.md
   position: 24
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:energy_converter/energy_converter
 ---
 
-# Energy Converter
+# エネルギー変換器
 
 <Row>
   <BlockImage id="mio_icif:energy_converter/energy_converter" scale="3" />

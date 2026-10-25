@@ -618,6 +618,18 @@ public class mio_icif_crop_entity extends BlockEntity implements IPlanter {
     }
 
     @Override public Packet<ClientGamePacketListener> getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
-    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) { return saveWithoutMetadata(registries); }
+    /** 0.1.10.17 (E-2): save keys the client never reads (growth progress, tick phase, timers, save version). */
+    private static final String[] SERVER_ONLY_KEYS = {"Progress", "CropTicker", "FertilizerCooldown", "TendedUntil", "CropCycleVersion"};
+
+    /**
+     * 0.1.10.17 (E-2): the visible state: plant, stage, traits, scan level, resources, crossing and the
+     * addon data (the renderer, the light level and addon plants read them on the client). The keys in
+     * {@link #SERVER_ONLY_KEYS} stay on the server; the scanner HUD asks the server for its readings.
+     */
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = saveWithoutMetadata(registries);
+        for (String key : SERVER_ONLY_KEYS) tag.remove(key);
+        return tag;
+    }
     @Override public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) { loadAdditional(tag, registries); }
 }

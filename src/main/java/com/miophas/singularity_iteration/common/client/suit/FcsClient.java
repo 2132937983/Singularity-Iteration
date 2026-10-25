@@ -265,11 +265,60 @@ public final class FcsClient {
             }
         }
         if (best != null) {
-            Vec3 v = best.position().subtract(best.xo, best.yo, best.zo);
-            if (best.onGround()) v = new Vec3(v.x, 0, v.z);
             FcsState.leadTarget = best;
-            FcsState.leadPoint = BallisticSolver.lead(player, profile, best, v);
+            FcsState.leadPoint = aimPipper(player, profile, best);
+        } else {
+            leadTracker = null;
         }
+    }
+
+    // ------------------------------------------------------------------ 0.1.10.20: fire control (P1, P3)
+
+    /** The motion estimate of the lead target (one target; a new target starts a new estimate). */
+    private static com.miophas.singularity_iteration.common.fcs.TargetTracker leadTracker;
+    private static int leadTrackerId = Integer.MIN_VALUE;
+    private static com.miophas.singularity_iteration.common.fcs.Intercept.Solution leadSolution;
+
+    /**
+     * The aim pipper: the point on the launch direction that hits {@code target} (the diamond "LEAD" of the HUD; put the
+     * crosshair on it), or null when the shot cannot reach it. The solution includes gravity, drag, the player's own
+     * velocity and the target motion during the flight ({@code common.fcs.Intercept}); the target motion comes from a
+     * {@code TargetTracker} (three-step velocity, arcs for a circling target). Before 0.1.10.20 the diamond was the target
+     * position after a flight time that ignored gravity and the needed pitch (one pass, a one-tick velocity): at 30 m with
+     * a full bow it was about 2.5 blocks off, at 60 m about 10.
+     */
+    private static Vec3 aimPipper(LocalPlayer player, BallisticSolver.Profile profile, LivingEntity target) {
+        if (leadTracker == null || leadTrackerId != target.getId()) {
+            leadTracker = new com.miophas.singularity_iteration.common.fcs.TargetTracker();
+            leadTrackerId = target.getId();
+            leadSolution = null;
+        }
+        Vec3 feet = target.position();
+        leadTracker.update(feet.x, feet.y, feet.z);
+        double lift = target.getBbHeight() * 0.5, y0 = feet.y + lift;
+        double[] v = new double[3];
+        leadTracker.velocity(v);
+        boolean flying = !target.onGround() && target.isNoGravity();
+        double vy = flying ? v[1] : 0;
+        var tracker = leadTracker;
+        double[] horizontal = new double[2];
+        com.miophas.singularity_iteration.common.fcs.Intercept.TargetPath path = (ticks, out) -> {
+            tracker.predictHorizontal(ticks, horizontal);
+            out[0] = horizontal[0]; out[1] = y0 + vy * ticks; out[2] = horizontal[1];
+        };
+        Vec3 own = player.getDeltaMovement();
+        double[] launch = {player.getX(), player.getEyeY() - 0.1, player.getZ()};
+        double[] shooter = {own.x, player.onGround() ? 0.0 : own.y, own.z};
+        var solution = com.miophas.singularity_iteration.common.fcs.Intercept.solve(
+            new com.miophas.singularity_iteration.common.fcs.Intercept.Profile(profile.speed(), profile.gravity(), profile.drag()),
+            launch, shooter, path, leadSolution);
+        leadSolution = solution;
+        if (solution == null) return null;
+        double[] hit = new double[3];
+        path.at(solution.ticks(), hit);
+        double range = Math.sqrt((hit[0] - launch[0]) * (hit[0] - launch[0]) + (hit[1] - launch[1]) * (hit[1] - launch[1])
+            + (hit[2] - launch[2]) * (hit[2] - launch[2]));
+        return new Vec3(launch[0] + solution.dx() * range, launch[1] + solution.dy() * range, launch[2] + solution.dz() * range);
     }
 
     // ------------------------------------------------------------------ world pass

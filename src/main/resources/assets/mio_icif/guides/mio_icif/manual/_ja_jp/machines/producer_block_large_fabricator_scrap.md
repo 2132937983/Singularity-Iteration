@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Large Matter Fabricator Scrap Input Module"
+  title: "大型物質生成機 スクラップ投入モジュール"
   icon: mio_icif:producer/block_large_fabricator_scrap
   parent: machines.md
   position: 36
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_large_fabricator_scrap
 ---
 
-# Large Matter Fabricator Scrap Input Module
+# 大型物質生成機 スクラップ投入モジュール
 
 <Row>
   <BlockImage id="mio_icif:producer/block_large_fabricator_scrap" scale="3" />

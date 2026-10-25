@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Reactor Coolant Injector (RSH)"
+  title: "原子炉冷却液注入器（RSH）"
   icon: mio_icif:producer/block_redstone_reactor_coolant_injector
   parent: machines.md
   position: 55
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_redstone_reactor_coolant_injector
 ---
 
-# Reactor Coolant Injector (RSH)
+# 原子炉冷却液注入器（RSH）
 
 <Row>
   <BlockImage id="mio_icif:producer/block_redstone_reactor_coolant_injector" scale="3" />

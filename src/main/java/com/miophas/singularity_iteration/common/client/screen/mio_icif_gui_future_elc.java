@@ -259,6 +259,22 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<com.miophas.singula
         Component coinText = Component.literal(String.valueOf(menu.getPlayerCoins()));
         guiGraphics.drawString(this.font, coinText, coinDisplayX + 20, coinDisplayY + 4, 0x9A6A10, false);
 
+        // 0.1.10.20: the quote for the trade quantity (buy at the price plus half the spread, sell at the price
+        // minus half the spread) and the rest of the market's daily buy budget
+        if (menu.getSelectedCommodity() != null) {
+            int quoteY = coinDisplayY + 22, quoteWidth = BUTTON_WIDTH + 14;
+            drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.future.quote.buy", menu.getBuyCost()),
+                dayDisplayX, quoteY, quoteWidth, 0xC8423C, false);
+            long payout = menu.getSellPayout();
+            drawFitted(guiGraphics, this.font, payout > 0 ? Component.translatable("gui.mio_icif.future.quote.sell", payout)
+                : Component.translatable("gui.mio_icif.future.quote.sell_none"), dayDisplayX, quoteY + 11, quoteWidth, 0x3C9A52, false);
+            int room = menu.getMarketRoom();
+            if (room < 32767) {
+                drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.future.quote.room", room),
+                    dayDisplayX, quoteY + 22, quoteWidth, ink() & 0xFFFFFF, false);
+            }
+        }
+
         // 绘制中央黑色矩形背景
         int commodityButtonWidth = 60;
         int commodityButtonHeight = 20;

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Mining Drill Tip"
+  title: "採掘ドリルチップ"
   icon: mio_icif:produce/block_mining_tip
   parent: machines.md
   position: 45
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:produce/block_mining_tip
 ---
 
-# Mining Drill Tip
+# 採掘ドリルチップ
 
 <Row>
   <BlockImage id="mio_icif:produce/block_mining_tip" scale="3" />

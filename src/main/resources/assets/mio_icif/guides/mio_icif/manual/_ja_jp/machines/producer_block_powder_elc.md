@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Macerator"
+  title: "粉砕機"
   icon: mio_icif:producer/block_powder_elc
   parent: machines.md
   position: 40
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_powder_elc
 ---
 
-# Macerator
+# 粉砕機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_powder_elc" scale="3" />

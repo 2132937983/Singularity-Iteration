@@ -58,6 +58,21 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
             .comment("Maximum price multiplier", "The highest price, as a multiple of the base price", "Example: 10.0 sets the highest price to 10 times the base price")
             .defineInRange("maxPriceMultiplier", 10.0, 1.0, 100.0);
 
+    // 0.1.10.20 (M1): the market quotes two prices, and buys only a limited amount of each commodity per day.
+    public static final ModConfigSpec.DoubleValue FUTURE_SPREAD = FUTURE_BUILDER
+            .comment("Bid-ask spread as a fraction of the price (0.1.10.20)",
+                     "A purchase costs price x (1 + spread / 2); a sale pays price x (1 - spread / 2).",
+                     "Before 0.1.10.20 both were the price (0), so buying low and selling after the price came back made coins without risk.")
+            .defineInRange("spread", 0.06, 0.0, 0.5);
+    public static final ModConfigSpec.IntValue FUTURE_SYSTEM_BUY_PER_DAY = FUTURE_BUILDER
+            .comment("Items of one commodity that the market buys from all players together each game day (0.1.10.20)",
+                     "When the budget is used up, the machine does not buy that commodity until the next day. 0 = no limit (the behaviour before 0.1.10.20).")
+            .defineInRange("systemBuyPerDay", 256, 0, 1_000_000);
+    public static final ModConfigSpec.DoubleValue FUTURE_BUDGET_PRICE_DROP = FUTURE_BUILDER
+            .comment("How far the sale price falls while the daily buy budget of a commodity is used up (0.1.10.20)",
+                     "0.3: the last items of the budget sell for 30 % less than the first ones.")
+            .defineInRange("budgetPriceDrop", 0.3, 0.0, 0.9);
+
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder FUTURE_POP = BUILDER.pop();
     // ==================== End of futures machine settings ====================

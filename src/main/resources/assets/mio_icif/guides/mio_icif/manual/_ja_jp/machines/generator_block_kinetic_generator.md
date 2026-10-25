@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Kinetic Generator"
+  title: "運動エネルギー発電機"
   icon: mio_icif:generator/block_kinetic_generator
   parent: generators.md
   position: 18
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_kinetic_generator
 ---
 
-# Kinetic Generator
+# 運動エネルギー発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_kinetic_generator" scale="3" />

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Electrolyzer"
+  title: "電気分解機"
   icon: mio_icif:producer/block_electrolyzer_elc
   parent: machines.md
   position: 23
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_electrolyzer_elc
 ---
 
-# Electrolyzer
+# 電気分解機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_electrolyzer_elc" scale="3" />

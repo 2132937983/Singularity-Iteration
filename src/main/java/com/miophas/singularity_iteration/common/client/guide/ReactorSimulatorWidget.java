@@ -38,6 +38,8 @@ public class ReactorSimulatorWidget extends AbstractWidget {
     private int columns;
     private int selected;
     private ReactorSimulation.Report report;
+    /** 0.1.10.19: the same design for a full fuel load (stops at the steady state); it decides the verdict. */
+    private ReactorSimulation.Report full;
     private final List<ItemStack> palette = new ArrayList<>();
 
     public ReactorSimulatorWidget(int columns, String preset) {
@@ -66,6 +68,7 @@ public class ReactorSimulatorWidget extends AbstractWidget {
 
     private void recompute() {
         report = ReactorSimulation.run(layout, columns);
+        full = ReactorSimulation.fullRun(layout, columns);
     }
 
     // ------------------------------------------------------------------ drawing
@@ -116,8 +119,11 @@ public class ReactorSimulatorWidget extends AbstractWidget {
         if (rep.melted() > 0) small(g, font, Component.translatable("guide.mio_icif.simulator.melted", rep.melted()).getString(), x0 + STATS_X, ty + 60, BAD);
         String verdict;
         int color;
-        if (rep.stable()) { verdict = Component.translatable("guide.mio_icif.simulator.safe").getString(); color = GOOD; }
-        else if (rep.secondsToMeltdown() >= 0) { verdict = Component.translatable("guide.mio_icif.simulator.meltdown", rep.secondsToMeltdown()).getString(); color = BAD; }
+        // 0.1.10.19: 100 s can call a design safe while its vents still heat up; the full run sees them melt
+        ReactorSimulation.Report life = full;
+        if (life.stable()) { verdict = Component.translatable("guide.mio_icif.simulator.safe").getString(); color = GOOD; }
+        else if (life.secondsToMeltdown() >= 0) { verdict = Component.translatable("guide.mio_icif.simulator.meltdown", life.secondsToMeltdown()).getString(); color = BAD; }
+        else if (life.firstMeltCycle() >= 0) { verdict = Component.translatable("guide.mio_icif.simulator.melts_later", life.firstMeltCycle()).getString(); color = WARN; }
         else { verdict = Component.translatable("guide.mio_icif.simulator.unsafe").getString(); color = WARN; }
         g.fill(x0 + STATS_X - 2, ty + 74, x0 + W - 4, ty + 88, (color & 0x00FFFFFF) | 0x30000000);
         small(g, font, verdict, x0 + STATS_X, ty + 78, color);

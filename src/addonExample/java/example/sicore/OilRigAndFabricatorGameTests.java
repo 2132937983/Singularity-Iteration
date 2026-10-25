@@ -27,7 +27,7 @@ public final class OilRigAndFabricatorGameTests {
 
     private static Class<?> type(String name) {
         try {
-            return Class.forName("com.miophas.singularity_iteration.common." + name);
+            return Class.forName("com.miophas.singularity_iteration" + ".common." + name);
         } catch (ClassNotFoundException e) {
             throw new AssertionError(e);
         }

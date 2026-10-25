@@ -38,17 +38,7 @@ public abstract class mio_icif_base_menu extends AbstractContainerMenu {
             super.addDataSlots(data);
             return;
         }
-        for (int i = 0; i < data.getCount(); i++) {
-            final int index = i;
-            addDataSlot(new net.minecraft.world.inventory.DataSlot() {
-                @Override public int get() { return data.get(index) & 0xFFFF; }
-                @Override public void set(int value) { data.set(index, (data.get(index) & 0xFFFF0000) | (value & 0xFFFF)); }
-            });
-            addDataSlot(new net.minecraft.world.inventory.DataSlot() {
-                @Override public int get() { return data.get(index) >>> 16; }
-                @Override public void set(int value) { data.set(index, (data.get(index) & 0xFFFF) | ((value & 0xFFFF) << 16)); }
-            });
-        }
+        for (net.minecraft.world.inventory.DataSlot slot : WideDataSlots.of(data)) addDataSlot(slot);   // 0.1.10.16: shared helper
     }
 
 

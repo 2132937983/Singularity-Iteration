@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "EU Splitter Cable"
+  title: "EU 分流ケーブル"
   icon: mio_icif:wiring/block_eu_splitter_cable
   parent: power.md
   position: 10
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_eu_splitter_cable
 ---
 
-# EU Splitter Cable
+# EU 分流ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_eu_splitter_cable" scale="3" />

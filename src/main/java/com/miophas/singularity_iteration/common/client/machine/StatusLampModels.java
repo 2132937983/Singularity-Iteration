@@ -41,7 +41,7 @@ import java.util.Map;
  * of the block entity (read into the model data when the chunk is meshed). Only a status change re-meshes the block; the
  * amber blink is a texture animation, so nothing ticks on the client.
  */
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public final class StatusLampModels {
     private StatusLampModels() {}
 

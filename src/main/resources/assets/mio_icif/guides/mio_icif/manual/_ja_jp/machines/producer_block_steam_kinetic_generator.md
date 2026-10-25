@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Steam Kinetic Generator"
+  title: "蒸気運動エネルギー発生器"
   icon: mio_icif:producer/block_steam_kinetic_generator
   parent: machines.md
   position: 62
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_steam_kinetic_generator
 ---
 
-# Steam Kinetic Generator
+# 蒸気運動エネルギー発生器
 
 <Row>
   <BlockImage id="mio_icif:producer/block_steam_kinetic_generator" scale="3" />

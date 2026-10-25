@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Electric Sorter"
+  title: "電動ソーター"
   icon: mio_icif:producer/block_sorter_elc
   parent: machines.md
   position: 22
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_sorter_elc
 ---
 
-# Electric Sorter
+# 電動ソーター
 
 <Row>
   <BlockImage id="mio_icif:producer/block_sorter_elc" scale="3" />

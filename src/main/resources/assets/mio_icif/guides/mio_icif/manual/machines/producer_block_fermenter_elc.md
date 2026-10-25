@@ -36,6 +36,16 @@ This block uses no EU.
 - A redstone signal has no effect on the Fermenter.
 - The upgrade slots accept item and fluid ejector and pulling upgrades only.
 
+## Heat source placement
+
+Drag the view to turn it. The list gives the blocks and their rules. JEI shows the same plan in the category "Multiblock Structures".
+
+<GameScene zoom="5" interactive={true}>
+  <SiStructure id="mio_icif:fermenter" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:fermenter" />
+
 ## Recipe
 
 <RecipesFor id="mio_icif:producer/block_fermenter_elc" fallbackText="-" />

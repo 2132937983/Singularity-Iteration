@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "GESU Core"
+  title: "GESU コア"
   icon: mio_icif:wiring/block_gesu_core
   parent: power.md
   position: 13
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_gesu_core
 ---
 
-# GESU Core
+# GESU コア
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_gesu_core" scale="3" />
@@ -42,6 +42,16 @@ GESUコアはGESUマルチブロックの中心で、EUを蓄える。
 - 構造はコアと6個のモジュールからなる7ブロックの十字形だ。
 - モジュールを1個外すと、モジュールを戻すまでGESUが停止する。
 - GUIには、アイテムを充電するスロットと、バッテリーからEUを取り出すスロットがある。
+
+## 構造
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があります。
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:gesu" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:gesu" />
 
 ## レシピ
 

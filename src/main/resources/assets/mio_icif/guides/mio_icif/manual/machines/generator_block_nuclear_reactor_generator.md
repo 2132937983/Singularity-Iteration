@@ -90,6 +90,16 @@ The reactor records its last 40 cycles. After an accident a <ItemLink id="mio_ic
 > **WARNING:** From 40 % hull heat the reactor sets blocks on fire, boils water, irradiates creatures and makes lava (see Heat stages).
 
 
+## Structure
+
+Drag the view to turn it. The list gives the blocks and their rules. JEI shows the same plan in the category "Multiblock Structures".
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:nuclear_reactor" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:nuclear_reactor" />
+
 ## Recipe
 
 <RecipesFor id="mio_icif:generator/block_nuclear_reactor_generator" fallbackText="-" />

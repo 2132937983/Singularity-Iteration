@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Solid Heat Generator"
+  title: "固体熱発生器"
   icon: mio_icif:hugenerator/block_solid_heat_generator
   parent: generators.md
   position: 29
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:hugenerator/block_solid_heat_generator
 ---
 
-# Solid Heat Generator
+# 固体熱発生器
 
 <Row>
   <BlockImage id="mio_icif:hugenerator/block_solid_heat_generator" scale="3" />

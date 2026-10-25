@@ -69,15 +69,6 @@ repositories {
         }
     }
     maven {
-        name = "Shedaniel's maven"
-        url = "https://maven.shedaniel.me/"
-    }
-    maven {
-        name = "Architectury maven"
-        url = "https://maven.architectury.dev/"
-    }
-
-    maven {
         url "https://modmaven.dev/"
         content {
             includeGroup "dev.technici4n"
@@ -91,11 +82,6 @@ repositories {
         content {
             includeGroup "dev.emi"
         }
-    }
-
-    // REI Maven
-    repositories {
-        maven { url "https://maven.shedaniel.me" }
     }
 
     // Curios Maven
@@ -252,13 +238,8 @@ dependencies {
     // EMI full mod (runtime only, optional)
     // localRuntime "dev.emi:emi-neoforge:${emi_version}"
 
-    // Architectury API (required for REI)
-    compileOnly "dev.architectury:architectury-neoforge:13.0.8"
-    // localRuntime "dev.architectury:architectury-neoforge:13.0.8"
-
-    // REI (Roughly Enough Items) - Optional dependency for compatibility
-    compileOnly "curse.maven:roughly-enough-items-310111:6199140"
-    // localRuntime "curse.maven:roughly-enough-items-310111:6199140"
+    // 0.1.10.16: REI support retired; the recipe viewers are JEI and EMI (REI can show JEI plugins
+    // through its JEI compatibility layer).
 
     // Curios API (compile-time only, optional dependency)
     compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"

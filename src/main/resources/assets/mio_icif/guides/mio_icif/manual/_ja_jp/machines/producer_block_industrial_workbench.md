@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Industrial Workbench"
+  title: "工業用作業台"
   icon: mio_icif:producer/block_industrial_workbench
   parent: machines.md
   position: 32
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_industrial_workbench
 ---
 
-# Industrial Workbench
+# 工業用作業台
 
 <Row>
   <BlockImage id="mio_icif:producer/block_industrial_workbench" scale="3" />

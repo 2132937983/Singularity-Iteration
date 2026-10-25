@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Machine Hull"
+  title: "高度機械筐体"
   icon: mio_icif:producer/block_machine_hull_advanced
   parent: machines.md
   position: 4
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_machine_hull_advanced
 ---
 
-# Advanced Machine Hull
+# 高度機械筐体
 
 <Row>
   <BlockImage id="mio_icif:producer/block_machine_hull_advanced" scale="3" />

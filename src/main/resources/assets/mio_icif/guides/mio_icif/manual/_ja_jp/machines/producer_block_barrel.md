@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Barrel"
+  title: "樽"
   icon: mio_icif:producer/block_barrel
   parent: machines.md
   position: 10
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_barrel
 ---
 
-# Barrel
+# 樽
 
 <Row>
   <BlockImage id="mio_icif:producer/block_barrel" scale="3" />

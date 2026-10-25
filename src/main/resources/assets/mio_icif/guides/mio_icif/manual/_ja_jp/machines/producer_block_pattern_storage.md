@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Pattern Storage"
+  title: "パターンストレージ"
   icon: mio_icif:producer/block_pattern_storage
   parent: machines.md
   position: 52
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_pattern_storage
 ---
 
-# Pattern Storage
+# パターンストレージ
 
 <Row>
   <BlockImage id="mio_icif:producer/block_pattern_storage" scale="3" />

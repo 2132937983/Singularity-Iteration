@@ -43,6 +43,16 @@ item_ids:
 > **警告：** 钻头摧毁路径上的方块，且不掉落物品。钻探区域无限扩大。
 
 
+## 结构
+
+拖动视图可旋转。下方列表给出所需方块及其规则。JEI 的“多方块结构”分类中也有相同的建造图。
+
+<GameScene zoom="2" interactive={true}>
+  <SiStructure id="mio_icif:dimension_oil_rig" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:dimension_oil_rig" />
+
 ## 配方
 
 <RecipesFor id="mio_icif:oilrig/block_dimension_oil_rig_core" fallbackText="-" />

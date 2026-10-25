@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Condenser"
+  title: "凝縮機"
   icon: mio_icif:producer/block_condenser
   parent: machines.md
   position: 18
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_condenser
 ---
 
-# Condenser
+# 凝縮機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_condenser" scale="3" />

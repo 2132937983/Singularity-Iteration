@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Induction Furnace"
+  title: "誘導炉"
   icon: mio_icif:producer/block_induction_elc
   parent: machines.md
   position: 31
@@ -9,7 +9,7 @@ item_ids:
   - mio_icif:producer/block_induction_elc
 ---
 
-# Induction Furnace
+# 誘導炉
 
 <Row>
   <BlockImage id="mio_icif:producer/block_induction_elc" scale="3" />

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Nuclear Bomb"
+  title: "核爆弾"
   icon: mio_icif:reactor/block_reactor_nuke
   parent: heavy.md
   position: 4
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:reactor/block_reactor_nuke
 ---
 
-# Nuclear Bomb
+# 核爆弾
 
 <Row>
   <BlockImage id="mio_icif:reactor/block_reactor_nuke" scale="3" />

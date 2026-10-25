@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Miner"
+  title: "採掘機"
   icon: mio_icif:producer/block_miner_elc
   parent: machines.md
   position: 44
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_miner_elc
 ---
 
-# Miner
+# 採掘機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_miner_elc" scale="3" />

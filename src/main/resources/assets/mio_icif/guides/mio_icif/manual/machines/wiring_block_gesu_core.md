@@ -43,6 +43,16 @@ The game measured these values from the block entity of this version.
 - If you remove one module, the GESU stops until you replace the module.
 - The GUI has one slot to charge an item and one slot to take EU from a battery.
 
+## Structure
+
+Drag the view to turn it. The list gives the blocks and their rules. JEI shows the same plan in the category "Multiblock Structures".
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:gesu" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:gesu" />
+
 ## Recipe
 
 <RecipesFor id="mio_icif:wiring/block_gesu_core" fallbackText="-" />

@@ -44,6 +44,16 @@ The game measured these values from the block entity of this version.
 > **WARNING:** The drill destroys the blocks in its columns and drops no items. Do not build the rig above your base.
 
 
+## Structure
+
+Drag the view to turn it. The list gives the blocks and their rules. JEI shows the same plan in the category "Multiblock Structures".
+
+<GameScene zoom="3" interactive={true}>
+  <SiStructure id="mio_icif:oil_rig" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:oil_rig" />
+
 ## Recipe
 
 <RecipesFor id="mio_icif:oilrig/block_oil_rig_core" fallbackText="-" />

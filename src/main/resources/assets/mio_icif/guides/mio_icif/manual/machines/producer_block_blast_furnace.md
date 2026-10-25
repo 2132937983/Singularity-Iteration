@@ -36,6 +36,16 @@ This block uses no EU.
 - The furnace accepts heat only while the input slot holds a valid item.
 - A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.
 
+## Heat source placement
+
+Drag the view to turn it. The list gives the blocks and their rules. JEI shows the same plan in the category "Multiblock Structures".
+
+<GameScene zoom="5" interactive={true}>
+  <SiStructure id="mio_icif:blast_furnace" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:blast_furnace" />
+
 ## Recipe
 
 <RecipesFor id="mio_icif:producer/block_blast_furnace" fallbackText="-" />

@@ -34,6 +34,16 @@ item_ids:
 
 - レッドストーン信号は高炉を熱いまま保ち、処理を止める。
 
+## 熱源の配置
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があります。
+
+<GameScene zoom="5" interactive={true}>
+  <SiStructure id="mio_icif:blast_furnace" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:blast_furnace" />
+
 ## レシピ
 
 <RecipesFor id="mio_icif:producer/block_blast_furnace_advanced" fallbackText="-" />

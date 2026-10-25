@@ -78,8 +78,7 @@ public class Singularity_Iteration_Client {
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
         // Some client setup code
-        Singularity_Iteration.LOGGER.info("HELLO FROM CLIENT SETUP");
-        Singularity_Iteration.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+        Singularity_Iteration.LOGGER.debug("HELLO FROM CLIENT SETUP");
         // 0.1.9.1: registry lookup for the machine contents of crafting remainders on the client side
         com.miophas.singularity_iteration.common.block.MachineContents.clientLookup =
             () -> Minecraft.getInstance().level == null ? null : Minecraft.getInstance().level.registryAccess();
@@ -135,19 +134,19 @@ public class Singularity_Iteration_Client {
             }
         }
 
-        Singularity_Iteration.LOGGER.info("Battery energy property registered successfully");
+        Singularity_Iteration.LOGGER.debug("Battery energy property registered successfully");
 
         // Register the nano saber active property. The texture changes between the on state and the off state.
     ResourceLocation nanoSaberActiveProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "nanosaber_active");
         ItemProperties.register(mio_icif_items_tools.NANO_SABER.get(), nanoSaberActiveProperty, new NanoSaberActiveProperty());
-        Singularity_Iteration.LOGGER.info("Nano Saber active property registered successfully");
+        Singularity_Iteration.LOGGER.debug("Nano Saber active property registered successfully");
         // 0.1.10.4: the quantum sword's 3D model and icon turn red in hyper mode
         ItemProperties.register(mio_icif_items_tools.QUANTUM_SWORD.get(), ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "quantum_sword_hyper"),
             (stack, level, entity, seed) -> com.miophas.singularity_iteration.common.item.tools.mio_icif_quantum_sword.isHyperState(stack) ? 1.0F : 0.0F);
 
         ResourceLocation cellTypeProperty = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "cell_type");
         ItemProperties.register(mio_icif_cells.CELL_EMPTY.get(), cellTypeProperty, new DynamicCellFluidProperty());
-        Singularity_Iteration.LOGGER.info("Dynamic cell fluid property registered successfully");
+        Singularity_Iteration.LOGGER.debug("Dynamic cell fluid property registered successfully");
     }
     
     @SubscribeEvent
@@ -174,7 +173,7 @@ public class Singularity_Iteration_Client {
             // Use the average foliage color of the biome.
             return BiomeColors.getAverageFoliageColor(level, pos);
         }, mio_icif_blocks.BLOCK_RUBBER_LEAF.get());
-        Singularity_Iteration.LOGGER.info("Rubber leaves block color handler registered");
+        Singularity_Iteration.LOGGER.debug("Rubber leaves block color handler registered");
     }
 
     @SubscribeEvent
@@ -195,10 +194,10 @@ public class Singularity_Iteration_Client {
             // 物品栏中显示默认 foliage 颜色
             return FoliageColor.getDefaultColor();
         }, mio_icif_blocks.BLOCK_RUBBER_LEAF.get().asItem());
-        Singularity_Iteration.LOGGER.info("Rubber leaves item color handler registered");
+        Singularity_Iteration.LOGGER.debug("Rubber leaves item color handler registered");
 
         event.register(new DynamicCellColorProvider(), mio_icif_cells.CELL_EMPTY.get());
-        Singularity_Iteration.LOGGER.info("Dynamic cell color handler registered");
+        Singularity_Iteration.LOGGER.debug("Dynamic cell color handler registered");
     }
 
     @SubscribeEvent
@@ -279,7 +278,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.BIOGAS_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.BIOGAS_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Biogas fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Biogas fluid client extensions registered");
 
         // Register the client extensions for the hot water fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -293,7 +292,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.HOTWATER_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.HOTWATER_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Hotwater fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Hotwater fluid client extensions registered");
 
         // 注册生物质流体客户端扩展
         event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -307,7 +306,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.BIOMASS_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.BIOMASS_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Biomass fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Biomass fluid client extensions registered");
 
         // Register the client extensions for the construction foam fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -321,7 +320,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.CONSTRUCTIONFOAM_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.CONSTRUCTIONFOAM_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Construction foam fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Construction foam fluid client extensions registered");
 
         // 注册冷却液流体客户端扩展
         event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -335,7 +334,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.COOLANT_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.COOLANT_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Coolant fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Coolant fluid client extensions registered");
 
         // 注册蒸馏水流体客户端扩展
         event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -349,7 +348,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.DISTILLEDWATER_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.DISTILLEDWATER_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Distilled water fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Distilled water fluid client extensions registered");
 
         // Register the client extensions for the hot coolant fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -363,7 +362,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.HOTCOOLANT_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.HOTCOOLANT_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Hot coolant fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Hot coolant fluid client extensions registered");
 
         // Register the client extensions for the pahoehoe lava fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -377,7 +376,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.PAHOEHOELAVA_STILL_TEXTURE;
             }
         }, mio_icif_fluids.PAHOEHOELAVA_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Pahoehoe lava fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Pahoehoe lava fluid client extensions registered");
 
         // Register the client extensions for the steam fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -391,7 +390,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.STEAM_STILL_TEXTURE;
             }
         }, mio_icif_fluids.STEAM_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Steam fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Steam fluid client extensions registered");
 
         // Register the client extensions for the superheated steam fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -405,7 +404,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.SUPERHEATEDSTEAM_STILL_TEXTURE;
             }
         }, mio_icif_fluids.SUPERHEATEDSTEAM_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Superheated steam fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Superheated steam fluid client extensions registered");
 
         // Register the client extensions for the UU matter fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -419,7 +418,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.UUMATTER_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.UUMATTER_TYPE.get());
-        Singularity_Iteration.LOGGER.info("UU matter fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("UU matter fluid client extensions registered");
 
         // Register the client extensions for the compressed air fluid.
     event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -433,7 +432,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.AIR_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.AIR_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Air fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Air fluid client extensions registered");
 
         // 注册原油流体客户端扩展
         event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -447,7 +446,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.CRUDEOIL_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.CRUDEOIL_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Crude oil fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Crude oil fluid client extensions registered");
 
         // 注册柴油流体客户端扩展
         event.registerFluidType(new IClientFluidTypeExtensions() {
@@ -461,7 +460,7 @@ public class Singularity_Iteration_Client {
                 return mio_icif_fluids.DIESELOIL_FLOWING_TEXTURE;
             }
         }, mio_icif_fluids.DIESELOIL_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Diesel oil fluid client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Diesel oil fluid client extensions registered");
 
         // Every two-handed gun: low-ready carry, shouldered aim when firing, first-person recoil.
         // The item models' hand transforms are anchored on each gun's grip (0.1.7.29).
@@ -483,7 +482,7 @@ public class Singularity_Iteration_Client {
                 return HumanoidModel.ArmPose.BLOCK;
             }
         }, mio_icif_items.TOOL_BRONZE_SWORD.get());
-        Singularity_Iteration.LOGGER.info("Bronze sword client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Bronze sword client extensions registered");
 
         // 注册纳米剑客户端扩展 - 设置第三人称手臂姿势为BLOCK（剑的握持姿势）
         event.registerItem(new IClientItemExtensions() {
@@ -510,7 +509,7 @@ public class Singularity_Iteration_Client {
                 return false;
             }
         }, mio_icif_items_tools.NANO_SABER.get());
-        Singularity_Iteration.LOGGER.info("Nano saber client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Nano saber client extensions registered");
 
         // 注册钢制防爆盾客户端扩展 - 设置盾牌渲染器和举盾姿势
         event.registerItem(new IClientItemExtensions() {
@@ -528,7 +527,7 @@ public class Singularity_Iteration_Client {
                 return null;
             }
         }, mio_icif_items_tools.STEEL_SHIELD.get());
-        Singularity_Iteration.LOGGER.info("Steel shield client extensions registered");
+        Singularity_Iteration.LOGGER.debug("Steel shield client extensions registered");
 
         // 注册盾牌的 blocking 属性（用于模型切换）
         ItemProperties.register(
@@ -536,7 +535,7 @@ public class Singularity_Iteration_Client {
             ResourceLocation.withDefaultNamespace("blocking"),
             (stack, level, entity, seed) -> entity != null && entity.isUsingItem() && ItemStack.matches(entity.getUseItem(), stack) ? 1.0F : 0.0F
         );
-        Singularity_Iteration.LOGGER.info("Steel shield blocking property registered");
+        Singularity_Iteration.LOGGER.debug("Steel shield blocking property registered");
 
         // Nano bow draw state (0.1.8.3). The bow is an electric item: every energy sync replaces the
         // held stack, so the old identity test (getUseItem() == stack) flipped between the drawn and
@@ -553,7 +552,7 @@ public class Singularity_Iteration_Client {
             ResourceLocation.withDefaultNamespace("pulling"),
             (stack, level, entity, seed) -> isDrawingNanoBow(entity, stack) ? 1.0F : 0.0F
         );
-        Singularity_Iteration.LOGGER.info("Nano bow draw properties registered");
+        Singularity_Iteration.LOGGER.debug("Nano bow draw properties registered");
 
     }
 
@@ -576,62 +575,62 @@ public class Singularity_Iteration_Client {
             mio_icif_block_entities.WIND_KINETIC_GENERATOR_ENTITY_TYPE.get(),
             mio_icif_RotorRender::new
         );
-        Singularity_Iteration.LOGGER.info("Wind kinetic generator rotor renderer registered");
+        Singularity_Iteration.LOGGER.debug("Wind kinetic generator rotor renderer registered");
 
         // 注册水力动能发生机转子渲染器
         event.registerBlockEntityRenderer(
             mio_icif_block_entities.WATER_KINETIC_GENERATOR_ENTITY_TYPE.get(),
             mio_icif_WaterRotorRender::new
         );
-        Singularity_Iteration.LOGGER.info("Water kinetic generator rotor renderer registered");
+        Singularity_Iteration.LOGGER.debug("Water kinetic generator rotor renderer registered");
 
         // Register the crop block entity renderer.
     event.registerBlockEntityRenderer(
             mio_icif_block_entities.CROP_ENTITY_TYPE.get(),
             com.miophas.singularity_iteration.common.client.render.CropEntityRenderer::new
         );
-        Singularity_Iteration.LOGGER.info("Crop entity renderer registered");
+        Singularity_Iteration.LOGGER.debug("Crop entity renderer registered");
 
         // 注册激光子弹实体渲染器
         event.registerEntityRenderer(
             mio_icif_entities.LASER_BULLET.get(),
             mio_icif_LaserBullet::new
         );
-        Singularity_Iteration.LOGGER.info("Laser bullet entity renderer registered");
+        Singularity_Iteration.LOGGER.debug("Laser bullet entity renderer registered");
 
         // 注册等离子子弹实体渲染器
         event.registerEntityRenderer(
             mio_icif_entities.PLASMA_BULLET.get(),
             mio_icif_PlasmaBullet::new
         );
-        Singularity_Iteration.LOGGER.info("Plasma bullet entity renderer registered");
+        Singularity_Iteration.LOGGER.debug("Plasma bullet entity renderer registered");
 
         // Register the renderer for the primed industrial TNT entity.
     event.registerEntityRenderer(
             mio_icif_entities.IC_TNT_PRIMED.get(),
             mio_icif_IC_TNT_Renderer::new
         );
-        Singularity_Iteration.LOGGER.info("IC TNT primed entity renderer registered");
+        Singularity_Iteration.LOGGER.debug("IC TNT primed entity renderer registered");
 
         // Register the renderer for the primed nuke entity.
     event.registerEntityRenderer(
             mio_icif_entities.NUKE_PRIMED.get(),
             mio_icif_Nuke_Renderer::new
         );
-        Singularity_Iteration.LOGGER.info("Nuke primed entity renderer registered");
+        Singularity_Iteration.LOGGER.debug("Nuke primed entity renderer registered");
 
         // 注册建筑泡沫方块实体渲染器（用于遮蔽器伪装纹理）
         event.registerBlockEntityRenderer(
             mio_icif_block_entities.FOAM_ENTITY_TYPE.get(),
             com.miophas.singularity_iteration.common.client.render.FoamEntityRenderer::new
         );
-        Singularity_Iteration.LOGGER.info("Foam entity renderer registered");
+        Singularity_Iteration.LOGGER.debug("Foam entity renderer registered");
 
         event.registerBlockEntityRenderer(
             mio_icif_block_entities.WIRELESS_POWER_TRANSMISSION_NODE.get(),
             com.miophas.singularity_iteration.common.client.render.WirelessTransmissionNodeRenderer::new
         );
-        Singularity_Iteration.LOGGER.info("Wireless transmission node renderer registered");
+        Singularity_Iteration.LOGGER.debug("Wireless transmission node renderer registered");
 
         // 注册基础/高级采矿机工作范围边界渲染器
         event.registerBlockEntityRenderer(
@@ -642,11 +641,11 @@ public class Singularity_Iteration_Client {
             mio_icif_block_entities.ADVANCED_MINER_ELC_ENTITY_TYPE.get(),
             com.miophas.singularity_iteration.common.client.render.mio_icif_MinerRangeRenderer.provider()
         );
-        Singularity_Iteration.LOGGER.info("Miner range renderer registered");
+        Singularity_Iteration.LOGGER.debug("Miner range renderer registered");
 
         // 注册电线方块实体渲染器（用于泡沫化电线的遮蔽器伪装纹理渲染）
         com.miophas.singularity_iteration.common.client.render.WireDisguiseRenderer.registerAll(event);
-        Singularity_Iteration.LOGGER.info("Wire disguise renderer registered");
+        Singularity_Iteration.LOGGER.debug("Wire disguise renderer registered");
 
         event.registerEntityRenderer(
             mio_icif_entities.ELECTRIC_BOAT.get(),
@@ -689,7 +688,7 @@ public class Singularity_Iteration_Client {
         event.registerLayerDefinition(mio_icif_boat_renderer.CARBON_BOAT_LAYER, net.minecraft.client.model.BoatModel::createBodyModel);
         event.registerLayerDefinition(mio_icif_boat_renderer.RUBBER_BOAT_LAYER, net.minecraft.client.model.BoatModel::createBodyModel);
         event.registerLayerDefinition(mio_icif_boat_renderer.ELECTRIC_BOAT_LAYER, net.minecraft.client.model.BoatModel::createBodyModel);
-        Singularity_Iteration.LOGGER.info("Boat layer definitions registered");
+        Singularity_Iteration.LOGGER.debug("Boat layer definitions registered");
     }
 
 }

@@ -221,8 +221,9 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity 
     
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        // 0.1.10.17 (E-2): the client tag of the parent and the mode. This used to add the whole save.
         CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
+        tag.putBoolean("Mode", mode);
         return tag;
     }
     

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Item Transport Pipe"
+  title: "アイテム輸送パイプ"
   icon: mio_icif:pipe/block_pipe_item
   parent: heavy.md
   position: 3
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:pipe/block_pipe_item
 ---
 
-# Item Transport Pipe
+# アイテム輸送パイプ
 
 <Row>
   <BlockImage id="mio_icif:pipe/block_pipe_item" scale="3" />

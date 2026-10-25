@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Stirling Kinetic Generator"
+  title: "スターリング運動エネルギー発生器"
   icon: mio_icif:kugenerator/block_stirling_kinetic_generator
   parent: generators.md
   position: 31
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:kugenerator/block_stirling_kinetic_generator
 ---
 
-# Stirling Kinetic Generator
+# スターリング運動エネルギー発生器
 
 <Row>
   <BlockImage id="mio_icif:kugenerator/block_stirling_kinetic_generator" scale="3" />

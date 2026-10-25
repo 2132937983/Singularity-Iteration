@@ -84,6 +84,16 @@ item_ids:
 > **警告：** 堆温达到 40 % 起，反应堆会点燃方块、蒸发水、辐射生物并生成岩浆（见“堆温阶段”）。
 
 
+## 结构
+
+拖动视图可旋转。下方列表给出所需方块及其规则。JEI 的“多方块结构”分类中也有相同的建造图。
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:nuclear_reactor" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:nuclear_reactor" />
+
 ## 配方
 
 <RecipesFor id="mio_icif:generator/block_nuclear_reactor_generator" fallbackText="-" />

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Particle Aggregator"
+  title: "粒子集積機"
   icon: mio_icif:producer/block_neutron_polymerizer
   parent: machines.md
   position: 50
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_neutron_polymerizer
 ---
 
-# Particle Aggregator
+# 粒子集積機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_neutron_polymerizer" scale="3" />

@@ -34,6 +34,16 @@ This block uses no EU.
 
 - A redstone signal keeps the furnace hot and pauses the process.
 
+## Heat source placement
+
+Drag the view to turn it. The list gives the blocks and their rules. JEI shows the same plan in the category "Multiblock Structures".
+
+<GameScene zoom="5" interactive={true}>
+  <SiStructure id="mio_icif:blast_furnace" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:blast_furnace" />
+
 ## Recipe
 
 <RecipesFor id="mio_icif:producer/block_blast_furnace_advanced" fallbackText="-" />

@@ -36,6 +36,16 @@ item_ids:
 - 入力スロットに有効なアイテムがある間だけ、高炉は熱を受け取る。
 - レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。
 
+## 熱源の配置
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があります。
+
+<GameScene zoom="5" interactive={true}>
+  <SiStructure id="mio_icif:blast_furnace" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:blast_furnace" />
+
 ## レシピ
 
 <RecipesFor id="mio_icif:producer/block_blast_furnace" fallbackText="-" />

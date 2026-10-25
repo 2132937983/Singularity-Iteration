@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Manual Kinetic Generator"
+  title: "手動運動エネルギー発生器"
   icon: mio_icif:kugenerator/block_manual_kinetic_generator
   parent: generators.md
   position: 20
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:kugenerator/block_manual_kinetic_generator
 ---
 
-# Manual Kinetic Generator
+# 手動運動エネルギー発生器
 
 <Row>
   <BlockImage id="mio_icif:kugenerator/block_manual_kinetic_generator" scale="3" />

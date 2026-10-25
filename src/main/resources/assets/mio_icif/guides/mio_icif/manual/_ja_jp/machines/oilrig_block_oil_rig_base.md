@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Oil Rig Base Module"
+  title: "油井ベースモジュール"
   icon: mio_icif:oilrig/block_oil_rig_base
   parent: heavy.md
   position: 5
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:oilrig/block_oil_rig_base
 ---
 
-# Oil Rig Base Module
+# 油井ベースモジュール
 
 <Row>
   <BlockImage id="mio_icif:oilrig/block_oil_rig_base" scale="3" />

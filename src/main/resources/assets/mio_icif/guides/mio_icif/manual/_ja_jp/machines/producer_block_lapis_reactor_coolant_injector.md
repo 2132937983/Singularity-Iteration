@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Reactor Coolant Injector (LZH)"
+  title: "原子炉冷却液注入器（LZH）"
   icon: mio_icif:producer/block_lapis_reactor_coolant_injector
   parent: machines.md
   position: 54
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_lapis_reactor_coolant_injector
 ---
 
-# Reactor Coolant Injector (LZH)
+# 原子炉冷却液注入器（LZH）
 
 <Row>
   <BlockImage id="mio_icif:producer/block_lapis_reactor_coolant_injector" scale="3" />

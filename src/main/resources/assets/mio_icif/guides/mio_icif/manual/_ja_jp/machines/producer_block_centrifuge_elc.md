@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Thermal Centrifuge"
+  title: "熱遠心分離機"
   icon: mio_icif:producer/block_centrifuge_elc
   parent: machines.md
   position: 67
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_centrifuge_elc
 ---
 
-# Thermal Centrifuge
+# 熱遠心分離機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_centrifuge_elc" scale="3" />

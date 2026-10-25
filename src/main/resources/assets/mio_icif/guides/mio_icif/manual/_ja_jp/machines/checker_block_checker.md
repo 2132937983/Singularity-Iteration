@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Voltage Detector"
+  title: "電圧検出器"
   icon: mio_icif:checker/block_checker
   parent: machines.md
   position: 68
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:checker/block_checker
 ---
 
-# Voltage Detector
+# 電圧検出器
 
 <Row>
   <BlockImage id="mio_icif:checker/block_checker" scale="3" />

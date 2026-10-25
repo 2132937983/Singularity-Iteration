@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "METS Advanced Solar Generator"
+  title: "METS 高度ソーラー発電機"
   icon: mio_icif:generator/block_mets_advanced_solar_generator
   parent: generators.md
   position: 19
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_mets_advanced_solar_generator
 ---
 
-# METS Advanced Solar Generator
+# METS 高度ソーラー発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_mets_advanced_solar_generator" scale="3" />

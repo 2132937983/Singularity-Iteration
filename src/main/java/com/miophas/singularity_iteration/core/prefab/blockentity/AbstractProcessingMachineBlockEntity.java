@@ -1881,11 +1881,24 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         energyStorage.scexLoadFraction(tag.getLong("scex_energy_fraction"));
     }
 
+    /**
+     * 0.1.10.17 (E-2): whether {@link #getUpdateTag} includes the inventory. Default false: no SI client
+     * code reads the items of a machine outside its menu, and the menu gets them from the vanilla slot
+     * sync. Return true when a client renderer (or other client code) reads the items of this block
+     * entity. The loaders apply an inventory only when the tag has one, so a tag without it never clears
+     * the client's items.
+     */
+    protected boolean syncInventoryToClient() {
+        return false;
+    }
+
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        // Synchronize the inventory to the client
-        tag.put("inventory", itemHandler.serializeNBT(registries));
+        // 0.1.10.17 (E-2): the inventory only when a subclass asks for it. A screen gets the items from
+        // its menu (vanilla sends all slots when the menu opens); the update tag goes to every player
+        // that tracks the chunk, with every chunk load.
+        if (syncInventoryToClient()) tag.put("inventory", itemHandler.serializeNBT(registries));
         // Synchronize the work progress
         tag.putInt("progress", progress);
         // Synchronize the work state

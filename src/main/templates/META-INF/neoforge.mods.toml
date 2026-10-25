@@ -117,14 +117,6 @@ side="BOTH"
     ordering="NONE"
     side="BOTH"
 
-# Optional dependency on REI for recipe viewing
-[[dependencies.${mod_id}]]
-    modId="roughlyenoughitems"
-    type="optional"
-    reason="For recipe viewing compatibility"
-    versionRange="[16.0,)"
-    ordering="NONE"
-    side="CLIENT"
 
 # Optional dependency on Curios API for trinket slots (rings, necklaces, belts)
 [[dependencies.${mod_id}]]

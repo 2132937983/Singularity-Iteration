@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Electric Heat Generator"
+  title: "電気熱発生器"
   icon: mio_icif:hugenerator/block_heat_generator_elc
   parent: generators.md
   position: 7
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:hugenerator/block_heat_generator_elc
 ---
 
-# Electric Heat Generator
+# 電気熱発生器
 
 <Row>
   <BlockImage id="mio_icif:hugenerator/block_heat_generator_elc" scale="3" />

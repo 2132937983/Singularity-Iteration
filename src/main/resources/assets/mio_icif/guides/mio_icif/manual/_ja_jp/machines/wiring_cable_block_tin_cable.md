@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Low-Voltage Cable"
+  title: "低圧ケーブル"
   icon: mio_icif:wiring/cable/block_tin_cable
   parent: power.md
   position: 25
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_tin_cable
 ---
 
-# Low-Voltage Cable
+# 低圧ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_tin_cable" scale="3" />

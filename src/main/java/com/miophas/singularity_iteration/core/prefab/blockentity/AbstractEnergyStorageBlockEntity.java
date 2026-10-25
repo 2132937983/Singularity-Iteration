@@ -649,11 +649,22 @@ public class AbstractEnergyStorageBlockEntity extends AbstractEnergyBlockEntity 
         }
     }
 
+    /**
+     * 0.1.10.17 (E-2): whether {@link #getUpdateTag} includes the inventory. Default false: no SI client
+     * code reads these items outside the menu, and the menu gets them from the vanilla slot sync. Return
+     * true when a client renderer (or other client code) reads the items of this block entity. The
+     * loader applies an inventory only when the tag has one, so a tag without it never clears the
+     * client's items.
+     */
+    protected boolean syncInventoryToClient() {
+        return false;
+    }
+
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        // Send the inventory to the client.
-        if (itemHandler != null) {
+        // 0.1.10.17 (E-2): the inventory only when a subclass asks for it (see syncInventoryToClient).
+        if (itemHandler != null && syncInventoryToClient()) {
             tag.put("Items", itemHandler.serializeNBT(registries));
         }
         // Send the redstone mode to the client.

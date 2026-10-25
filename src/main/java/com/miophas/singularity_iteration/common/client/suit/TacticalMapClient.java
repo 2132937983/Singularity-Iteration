@@ -27,7 +27,7 @@ public final class TacticalMapClient {
     private static int held = -1;
     private static final int HOLD_TICKS = 8;
 
-    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
     public static final class ModEvents {
         @SubscribeEvent
         static void keys(RegisterKeyMappingsEvent event) {

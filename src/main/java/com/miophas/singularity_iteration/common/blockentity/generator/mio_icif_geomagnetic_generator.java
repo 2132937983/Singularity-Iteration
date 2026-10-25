@@ -306,9 +306,7 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        if (itemHandler != null) {
-            tag.put("Items", itemHandler.serializeNBT(registries));
-        }
+        // 0.1.10.17 (E-2): the parent decides on the inventory (syncInventoryToClient).
         tag.putBoolean("ShouldMachineWork", shouldMachineWork);
         return tag;
     }

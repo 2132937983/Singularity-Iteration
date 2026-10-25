@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Fermenter"
+  title: "発酵槽"
   icon: mio_icif:producer/block_fermenter_elc
   parent: machines.md
   position: 26
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_fermenter_elc
 ---
 
-# Fermenter
+# 発酵槽
 
 <Row>
   <BlockImage id="mio_icif:producer/block_fermenter_elc" scale="3" />
@@ -35,6 +35,16 @@ item_ids:
 
 - レッドストーン信号は発酵槽に影響しない。
 - アップグレードスロットはアイテムと流体のエジェクターと吸入のアップグレードだけを受け付ける。
+
+## 熱源の配置
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があります。
+
+<GameScene zoom="5" interactive={true}>
+  <SiStructure id="mio_icif:fermenter" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:fermenter" />
 
 ## レシピ
 

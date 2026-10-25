@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Fluid Heat Generator"
+  title: "流体熱発生器"
   icon: mio_icif:hugenerator/block_fluid_heat_generator
   parent: generators.md
   position: 10
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:hugenerator/block_fluid_heat_generator
 ---
 
-# Fluid Heat Generator
+# 流体熱発生器
 
 <Row>
   <BlockImage id="mio_icif:hugenerator/block_fluid_heat_generator" scale="3" />

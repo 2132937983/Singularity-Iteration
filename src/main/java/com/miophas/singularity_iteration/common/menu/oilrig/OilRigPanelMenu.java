@@ -115,6 +115,15 @@ public class OilRigPanelMenu extends AbstractContainerMenu {
         addPlayerInventorySlots(playerInventory);
     }
 
+    /**
+     * 0.1.10.16: the drill coordinates are sent as full ints. Vanilla data slots are 16-bit, so a rig
+     * more than 32767 blocks from the origin showed wrong coordinates on the panel.
+     */
+    @Override
+    protected void addDataSlots(ContainerData data) {
+        for (net.minecraft.world.inventory.DataSlot slot : com.miophas.singularity_iteration.common.menu.base.WideDataSlots.of(data)) addDataSlot(slot);
+    }
+
     private void addPlayerInventorySlots(Inventory playerInventory) {
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 9; ++j) {

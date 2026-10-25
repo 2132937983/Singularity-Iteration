@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Hybrid Solar Panel"
+  title: "ハイブリッドソーラーパネル"
   icon: mio_icif:generator/block_hybrid_solar_panel
   parent: generators.md
   position: 16
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_hybrid_solar_panel
 ---
 
-# Hybrid Solar Panel
+# ハイブリッドソーラーパネル
 
 <Row>
   <BlockImage id="mio_icif:generator/block_hybrid_solar_panel" scale="3" />

@@ -79,6 +79,13 @@ import java.util.List;
     public int getEnergy() { return data.get(mio_icif_future_elc.DATA_ENERGY); }
     public int getMaxEnergy() { return data.get(mio_icif_future_elc.DATA_MAX_ENERGY); }
     public int getDailyVolume() { return data.get(mio_icif_future_elc.DATA_DAILY_VOLUME); }
+    /** 0.1.10.20: coins that buying the trade quantity of the selected commodity costs. */
+    public long getBuyCost() { return wide(mio_icif_future_elc.DATA_BUY_COST_LOW, mio_icif_future_elc.DATA_BUY_COST_HIGH); }
+    /** 0.1.10.20: coins that selling the trade quantity pays; 0 when the market does not buy that many today. */
+    public long getSellPayout() { return wide(mio_icif_future_elc.DATA_SELL_PAYOUT_LOW, mio_icif_future_elc.DATA_SELL_PAYOUT_HIGH); }
+    /** 0.1.10.20: items of the selected commodity that the market still buys today (32767 = no limit or more). */
+    public int getMarketRoom() { return data.get(mio_icif_future_elc.DATA_MARKET_ROOM); }
+    private long wide(int low, int high) { return ((long) (data.get(high) & 0xFFFF) << 16) | (data.get(low) & 0xFFFF); }
     public int getDay() { return data.get(mio_icif_future_elc.DATA_CURRENT_DAY); }
     public int getSelectedCommodityIndex() { return data.get(mio_icif_future_elc.DATA_SELECTED_COMMODITY); }
     public int getTradeQuantity() { return data.get(mio_icif_future_elc.DATA_TRADE_QUANTITY); }
@@ -220,18 +227,8 @@ import java.util.List;
         }
     }
 
-    @Override
-    public void broadcastChanges() {
-        super.broadcastChanges();
-        var future = getBlockEntity();
-        if (future != null && future.getLevel() instanceof ServerLevel world && world.getServer().isSameThread()) {
-            for (Player player : world.players()) {
-                if (player.containerMenu == this && stillValid(player)) {
-                    future.updatePlayerCoinsCache(player);
-                    break;
-                }
-            }
-        }
-    }
+    // 0.1.10.20: no broadcastChanges override. The coins and the daily count come from the menu data of the
+    // viewer (mio_icif_future_elc.viewerData). Before, each tick of an open screen wrote the coins of one viewer
+    // into the machine, marked it changed and sent a block update.
 }
 

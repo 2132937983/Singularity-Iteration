@@ -34,6 +34,16 @@ item_ids:
 
 - 红石信号使高炉保持高温，并暂停加工。
 
+## 热源摆放
+
+拖动视图可旋转。下方列表给出所需方块及其规则。JEI 的“多方块结构”分类中也有相同的建造图。
+
+<GameScene zoom="5" interactive={true}>
+  <SiStructure id="mio_icif:blast_furnace" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:blast_furnace" />
+
 ## 配方
 
 <RecipesFor id="mio_icif:producer/block_blast_furnace_advanced" fallbackText="-" />

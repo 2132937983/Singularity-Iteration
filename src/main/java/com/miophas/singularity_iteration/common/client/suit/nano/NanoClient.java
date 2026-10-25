@@ -100,7 +100,7 @@ public final class NanoClient {
     /** Speed profile of the dash over {@link NanoBursts#DASH_TICKS} ticks (sum normalised at use). */
     private static final float[] DASH_PROFILE = {1.0F, 1.0F, 0.92F, 0.78F, 0.56F, 0.34F};
 
-    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
     public static final class ModEvents {
         @SubscribeEvent
         static void keys(RegisterKeyMappingsEvent event) {

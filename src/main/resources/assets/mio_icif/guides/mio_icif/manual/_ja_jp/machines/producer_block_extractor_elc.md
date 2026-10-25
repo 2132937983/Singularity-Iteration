@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Extractor"
+  title: "抽出機"
   icon: mio_icif:producer/block_extractor_elc
   parent: machines.md
   position: 25
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_extractor_elc
 ---
 
-# Extractor
+# 抽出機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_extractor_elc" scale="3" />

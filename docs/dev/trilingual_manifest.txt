@@ -21,6 +21,10 @@ com/miophas/singularity_iteration/core/api/suit/SuitModuleBehavior.java  all
 com/miophas/singularity_iteration/core/api/suit/ISuitModuleItem.java  all
 com/miophas/singularity_iteration/core/api/armory/ArmoryEvent.java  all
 com/miophas/singularity_iteration/core/api/machine/MachineStatus.java  all
+com/miophas/singularity_iteration/core/api/reactor/ReactorLayout.java  all
+com/miophas/singularity_iteration/core/api/reactor/ReactorLayoutRegistry.java  all
+com/miophas/singularity_iteration/core/api/multiblock/StructureBlueprint.java  all
+com/miophas/singularity_iteration/core/api/multiblock/StructureBlueprintRegistry.java  all
 
 # Algorithms
 com/miophas/singularity_iteration/core/runtime/energy/engine/FairShareDistributor.java

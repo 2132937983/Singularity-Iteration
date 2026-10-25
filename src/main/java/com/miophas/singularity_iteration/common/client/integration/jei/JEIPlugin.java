@@ -43,24 +43,24 @@ public class JEIPlugin implements IModPlugin {
         // Recipe lookups match on the item alone: a half-charged tool must still find its recipes/uses.
         // 0.1.10.14: the Ingredient context only tells charged from empty (see ChargedInputs), so
         // JEI 19.21's "+" matches any charge while its list keeps the empty and the full variant apart.
-        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> batteryInterpreter = ChargedInputs::subtype;
+        var batteryInterpreter = ChargedInputs.interpreter(ChargedInputs::subtype);
         // 能量感知子类型：能量物品（工具/装甲/电池/饰品）按“有电/无电”区分，
         // 其余物品退回耐久值区分。这样创造模式标签页里同时收录“空电”与“满电”两个版本时，
         // JEI 不会把它们判定为重复物品。
-        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> energyInterpreter =
+        var energyInterpreter = ChargedInputs.interpreter(
             (itemStack, context) -> {
                 if (itemStack.getItem() instanceof IBatteryItem) return ChargedInputs.subtype(itemStack, context);
-                if (context == mezz.jei.api.ingredients.subtypes.UidContext.Recipe) return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
+                if (context == mezz.jei.api.ingredients.subtypes.UidContext.Recipe) return ChargedInputs.NONE;
                 return String.valueOf(itemStack.getDamageValue());
-            };
+            });
         // Storage blocks: the "energy" of their BLOCK_ENTITY_DATA.
-        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> nbtInterpreter = ChargedInputs::subtype;
+        var nbtInterpreter = ChargedInputs.interpreter(ChargedInputs::subtype);
         // 0.1.10.14: a turning blank by its cut shape in both contexts, so "+" and recipe lookups
         // tell the shape a recipe needs (lathe_state ingredient) from an uncut or other blank.
-        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> latheInterpreter =
+        var latheInterpreter = ChargedInputs.interpreter(
             (itemStack, context) -> {
                 if (!(itemStack.getItem() instanceof com.miophas.singularity_iteration.common.item.lathe.LatheTurningBlanksItem blank)) {
-                    return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
+                    return ChargedInputs.NONE;
                 }
                 int width = blank.getWidth(itemStack);
                 boolean cut = false;
@@ -69,16 +69,16 @@ public class JEIPlugin implements IModPlugin {
                     shape.append(position).append(',');
                     cut |= position != width;
                 }
-                return cut ? shape.toString() : mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
-            };
-        mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter<ItemStack> fluidCellInterpreter =
+                return cut ? shape.toString() : ChargedInputs.NONE;
+            });
+        var fluidCellInterpreter = ChargedInputs.interpreter(
             (itemStack, context) -> {
                 var customData = itemStack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
                 if (customData != null) {
                     return customData.copyTag().toString();
                 }
-                return mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter.NONE;
-            };
+                return ChargedInputs.NONE;
+            });
 
         ChargedInputs.register(registration, mio_icif_normal.BAT_LEV0.get(), batteryInterpreter);
         ChargedInputs.register(registration, mio_icif_normal.ADVBAT_LEV0.get(), batteryInterpreter);
@@ -145,6 +145,7 @@ public class JEIPlugin implements IModPlugin {
                 ChargedInputs.register(registration, CuriosIntegration.TRINKET_LIFE_SUPPORT_RING.get(), energyInterpreter);
                 ChargedInputs.register(registration, CuriosIntegration.TRINKET_FLIGHT_RING.get(), energyInterpreter);
             } catch (Exception e) {
+                com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("jei-curios-subtypes", "JEI subtypes of the Curios trinkets", e);
             }
         }
     }
@@ -184,6 +185,9 @@ public class JEIPlugin implements IModPlugin {
         for (var conversion : conversions()) lines.merge(conversion.machine(), conversion.notes().size(), Math::max);
         lines.forEach((machine, count) -> category(categories, "conversion " + machine,
             () -> new mio_icif_MachineConversionCategory(gui, machine, count)));
+        // 0.1.10.19: reactor designs (IC2 Classic style) and multiblock build plans, both from public API registries
+        category(categories, "reactor_layouts", () -> new com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory(gui));
+        category(categories, "structures", () -> new com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_StructureCategory(gui));
         if (!categories.isEmpty()) registration.addRecipeCategories(categories.toArray(new mezz.jei.api.recipe.category.IRecipeCategory<?>[0]));
     }
 
@@ -326,6 +330,15 @@ public class JEIPlugin implements IModPlugin {
             for (var conversion : conversions()) byMachine.computeIfAbsent(conversion.machine(), m -> new java.util.ArrayList<>()).add(conversion);
             byMachine.forEach((machine, list) -> registration.addRecipes(mio_icif_MachineConversionCategory.typeFor(machine), list));
         });
+        guarded("reactorLayouts", () -> {
+            var layouts = new java.util.ArrayList<com.miophas.singularity_iteration.common.reactor.ReactorLayoutAnalysis>();
+            for (var layout : com.miophas.singularity_iteration.core.api.reactor.ReactorLayoutRegistry.all())
+                layouts.add(com.miophas.singularity_iteration.common.reactor.ReactorLayoutAnalysis.of(layout));
+            registration.addRecipes(com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory.TYPE, layouts);
+        });
+        guarded("structures", () -> registration.addRecipes(
+            com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_StructureCategory.TYPE,
+            java.util.List.copyOf(com.miophas.singularity_iteration.core.api.multiblock.StructureBlueprintRegistry.all())));
     }
 
     @Override
@@ -397,5 +410,10 @@ public class JEIPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.BLAST_FURNACE_ADVANCED.get()), mio_icif_BlastFurnaceCategory.BLAST_FURNACE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.FURNACE_ELC.get()), RecipeTypes.SMELTING);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.INDUCTION_ELC.get()), RecipeTypes.SMELTING);
+        // 0.1.10.19: the reactor runs the layouts; a chamber adds one column
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get()),
+            com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory.TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.REACTOR_CHAMBER.get()),
+            com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory.TYPE);
     }
 }

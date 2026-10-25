@@ -52,7 +52,7 @@ public final class CommandWheelClient {
     /** Point and creature in the crosshair when the wheel opened. */
     public record Target(Vec3 point, boolean sky, int entityId, @Nullable Component entityName, double distance) { }
 
-    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
     public static final class ModEvents {
         @SubscribeEvent
         static void keys(RegisterKeyMappingsEvent event) {

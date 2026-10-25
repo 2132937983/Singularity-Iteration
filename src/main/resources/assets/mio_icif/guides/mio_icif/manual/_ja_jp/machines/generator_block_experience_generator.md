@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Experience Generator"
+  title: "経験値発電機"
   icon: mio_icif:generator/block_experience_generator
   parent: generators.md
   position: 9
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_experience_generator
 ---
 
-# Experience Generator
+# 経験値発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_experience_generator" scale="3" />

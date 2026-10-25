@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Molecular Transformer"
+  title: "分子変換機"
   icon: mio_icif:producer/block_molecular_transformer
   parent: machines.md
   position: 47
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_molecular_transformer
 ---
 
-# Molecular Transformer
+# 分子変換機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_molecular_transformer" scale="3" />

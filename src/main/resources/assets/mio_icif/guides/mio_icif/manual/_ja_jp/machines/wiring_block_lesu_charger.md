@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "LESU Charger"
+  title: "LESU 充電台"
   icon: mio_icif:wiring/block_lesu_charger
   parent: power.md
   position: 24
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_lesu_charger
 ---
 
-# LESU Charger
+# LESU 充電台
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_lesu_charger" scale="3" />

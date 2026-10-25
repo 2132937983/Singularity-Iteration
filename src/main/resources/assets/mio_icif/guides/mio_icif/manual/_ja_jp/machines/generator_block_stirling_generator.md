@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Stirling Generator"
+  title: "スターリング発電機"
   icon: mio_icif:generator/block_stirling_generator
   parent: generators.md
   position: 30
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_stirling_generator
 ---
 
-# Stirling Generator
+# スターリング発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_stirling_generator" scale="3" />

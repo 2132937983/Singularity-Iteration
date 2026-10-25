@@ -421,7 +421,9 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = new CompoundTag(); saveAdditional(tag, registries); return tag;
+        // 0.1.10.17 (E-2): the client tag of the parent only. This used to add the whole save (inventory,
+        // tanks, credits); the screen gets those from its menu data, and nothing else reads them on the client.
+        return super.getUpdateTag(registries);
     }
 
     @Override

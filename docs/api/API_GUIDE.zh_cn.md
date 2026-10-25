@@ -284,7 +284,8 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 
 | Mixin | 原因 |
 |---|---|
-| `ItemStackMaxStackMixin`、`DataComponentMaxStackMixin`、`ContainerMaxStackMixin` | 堆叠数超过 99。NeoForge 没有针对编解码器上限的挂钩。 |
+| `ItemStackMaxStackMixin`、`DataComponentMaxStackMixin` | 存取超过 99 的物品堆（物品数量与 `max_stack_size` 组件）。NeoForge 没有针对编解码器上限的挂钩。自 0.1.10.16 起只放宽编解码范围，不会让任何物品堆得更多。 |
+| `LargeStackContainerMixin`、`LargeStackSlotMixin`（0.1.10.16） | `Container#getMaxStackSize(ItemStack)` 与 `Slot#getMaxStackSize(ItemStack)` 只对奇点迭代的 `LargeStackItem`（工业货币）给出超过 99 的上限，并且只在默认上限为 99、能保存大堆叠的容器中（原版容器、奇点迭代的 `LargeStackContainer`）。取代此前让所有容器报告 9,999 的全局 `ContainerMaxStackMixin`。可选（`require = 0`），启动时自检。 |
 | `LivingEquipEnergyMixin` | 只有储能不同的物品堆不能触发装备音效和游戏事件。没有可取消的 NeoForge 事件。 |
 | `ArmorEquipSoundMixin` | 其他模组的空装备音效会使脚步声模组崩溃。该 mixin 提供回退值。 |
 | `client.ItemInHandReequipMixin` | 对所有物品（包括附属物品）的纯能量变化不播放重新装备动画。`IItemExtension` 只覆盖本模组的物品。 |
@@ -505,3 +506,39 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 * 接收端窗口（每个最多 128 个接收端）轮换：每个 tick 的第一个窗口从上一 tick 停下的接收端之后开始，长母线上的接收端轮流分配。
 * `core.runtime.energy.OverloadBlastLog`：最近 64 次接收端过电压爆炸（维度、坐标、游戏时间），`near(dimension, x, y, z, radius, since)`。服务器停止时清空。反应堆事故调查用它判断外部过电压原因。
 * 反应堆事故调查（位于 common，不属于 API）：核反应堆发电机在内存中保留最近 40 个周期。事故、关闭爆炸时的熔毁，以及运行中或高温时被拆除，都会成为一起事故记录（`/mio_icif reactor audit`）。摧毁反应堆的附属模组应正常移除方块，以便 `onRemove` 记录拆除。
+
+## 19. 不含库存的更新标签（0.1.10.17）
+
+方块实体的更新标签（`getUpdateTag`）会在每次区块加载时、以及每个方块实体数据包（`getUpdatePacket`）中，发送给追踪该区块的每个玩家。自 0.1.10.17 起，SI 的更新标签只包含客户端代码会读取的数据。
+
+* `AbstractProcessingMachineBlockEntity`、`AbstractEnergyStorageBlockEntity`、`AbstractGeneratorBlockEntity`、`AbstractHeatGeneratorBlockEntity` 与 `AbstractKineticGeneratorBlockEntity` 新增 `syncInventoryToClient()`（protected，默认 `false`）：只有返回 `true` 时，更新标签才包含库存（`inventory` 或 `Items`）。0.1.10.17 之前库存总在标签中。
+* 当客户端代码读取附属模组方块实体的物品时（例如绘制所存物品的方块实体渲染器），请返回 `true`。界面不需要：菜单打开时由原版的槽位同步取得物品。
+* 预制基类的加载器只在标签含有库存时才应用库存，因此不含库存的标签不会清空客户端副本的物品（区块加载与方块实体数据包两种情况都是如此）。
+* 附属模组 `getUpdateTag` 的规则：写入客户端读取的键，而不是存档（`saveWithoutMetadata` 或 `saveAdditional`）。存档可能包含服务器数据（所有者、积分、计时器），并会发送给方块附近的每个玩家。若方块实体还会发送数据包，请让其 `loadAdditional` 能容忍缺失的键，或在 `handleUpdateTag` 与 `onDataPacket` 中自行应用更新标签：两者的原版默认实现都会对标签执行完整的 `loadAdditional`。
+
+## 20. 反应堆布局与多方块建造图（0.1.10.19）
+
+两个只保存数据的注册表为 JEI 分类“反应堆布局”“多方块结构”与手册提供内容。请在模组构造函数或初始化事件中注册。同一 ID 的第二次注册会替换第一次；拒绝命名空间 `minecraft`。JEI 在加载配方时（进入世界时）读取这两个注册表。
+
+* `core.api.reactor.ReactorLayout` / `ReactorLayoutRegistry`：反应堆设计，使用手册模拟器的预设形式：自上而下的行用 `/` 分隔，单元格用 `,` 分隔。单元格可以是 SI 组件键（`uranium_quad`、`iridium_vent`）、SI 反应堆组件的物品 ID，或表示空槽的 `_`。第一行决定列数（3 到 9 = 3 + 反应仓数）。SI 用反应堆模型让每个布局运行一次完整的铀燃料周期（20,000 个周期，或到达稳态为止），并显示 EU/t、热量平衡、风险（稳定、组件熔化、熔毁及其时间）、按本地配置计算的爆炸，以及燃料时长。不是 SI 组件的单元格会在物品存在时显示，并在页面上说明该设计无法模拟。标题键默认为 `reactor_layout.<命名空间>.<路径>`；说明键可选。
+
+```java
+ReactorLayoutRegistry.register(ReactorLayout.of(ResourceLocation.fromNamespaceAndPath("mymod", "starter"),
+    "_,vent,_/vent,uranium_simple,vent/_,vent,_", null, "reactor_layout.mymod.starter.note"));
+```
+
+* `core.api.multiblock.StructureBlueprint` / `StructureBlueprintRegistry`：建造图。层自下而上；每层是由北向南的行列表；每行由西向东，每个方块一个符号。每个符号有一个键：允许的方块（`BlockRef`：方块 ID 加按名称指定的方块状态属性，因此可在注册表完成前引用方块）与可选的说明键。空格或 `.` 表示结构不使用的位置。`controller(char)` 标记控制器，它必须在图中恰好出现一次。`build()` 会拒绝大小不同的层或行、超过 32 的尺寸，以及没有键的符号。标题键默认为 `structure.<命名空间>.<路径>`。
+* JEI：3D 视图（拖动：旋转；滚轮：缩放；点击层标签：逐层查看）、作为输入槽并带数量的材料（查看某方块的用途即可找到包含它的建造图）、槽位提示中的键说明，以及视图下方的建造图说明。方块按模型绘制，不使用方块实体渲染器；所属模组缺失的方块不显示。
+* 手册（GuideME）：在 `<GameScene>` 中使用 `<SiStructure id="mymod:plan" />`，会在每个位置放置第一个允许的方块（可选 `x`、`y`、`z` 偏移）；`<SiStructureInfo id="mymod:plan" />` 列出材料及其规则和说明。SI 只为自己的手册（`mio_icif:manual`）注册这两个标签；建造图本身来自注册表，因此附属的建造图无论如何都会显示在 JEI 分类中。
+* 建造图只描述结构。控制器仍用其验证器（`core.api.machine.IMultiblockValidator`）在世界中检查结构；请保持两者一致。
+
+```java
+StructureBlueprintRegistry.register(StructureBlueprint.builder(ResourceLocation.fromNamespaceAndPath("mymod", "boiler"))
+    .layer("CCC", "CCC", "CCC")
+    .layer("CCC", "CMC", "CCC")
+    .key('C', "structure.mymod.boiler.casing", BlockRef.of("mymod:casing"), BlockRef.of("mymod:port"))
+    .key('M', BlockRef.of("mymod:boiler_controller").with("facing", "north"))
+    .controller('M')
+    .note("structure.mymod.boiler.note")
+    .build());
+```

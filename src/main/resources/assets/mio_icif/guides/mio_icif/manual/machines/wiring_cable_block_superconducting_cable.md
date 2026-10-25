@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "block_superconducting_cable"
+  title: "Superconducting Cable"
   icon: mio_icif:wiring/cable/block_superconducting_cable
   parent: power.md
   position: 38
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_superconducting_cable
 ---
 
-# block_superconducting_cable
+# Superconducting Cable
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_superconducting_cable" scale="3" />

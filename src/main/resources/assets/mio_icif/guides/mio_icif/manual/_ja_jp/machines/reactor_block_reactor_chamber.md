@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Reactor Chamber"
+  title: "原子炉チャンバー"
   icon: mio_icif:reactor/block_reactor_chamber
   parent: heavy.md
   position: 11
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:reactor/block_reactor_chamber
 ---
 
-# Reactor Chamber
+# 原子炉チャンバー
 
 <Row>
   <BlockImage id="mio_icif:reactor/block_reactor_chamber" scale="3" />

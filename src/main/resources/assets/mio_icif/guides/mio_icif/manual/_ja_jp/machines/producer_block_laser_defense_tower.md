@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Laser Defense Tower"
+  title: "レーザー防衛タワー"
   icon: mio_icif:producer/block_laser_defense_tower
   parent: machines.md
   position: 38
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_laser_defense_tower
 ---
 
-# Laser Defense Tower
+# レーザー防衛タワー
 
 <Row>
   <BlockImage id="mio_icif:producer/block_laser_defense_tower" scale="3" />

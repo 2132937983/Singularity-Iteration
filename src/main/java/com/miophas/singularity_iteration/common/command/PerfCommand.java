@@ -65,6 +65,9 @@ public final class PerfCommand {
         // 0.1.10.8: native windows from the plan cache, machine ticks skipped by idle sleep
         long skipped = com.miophas.singularity_iteration.core.runtime.processing.MachineSleep.skippedTicks();
         source.sendSuccess(() -> Component.translatable("command.mio_icif.perf.reuse", counters[4], skipped), false);
+        // 0.1.10.20: grid zones (G1) and steady windows (G2)
+        long[] zones = engine.gridReuseCounters();
+        source.sendSuccess(() -> Component.translatable("command.mio_icif.perf.zones", zones[0], zones[1], zones[2]), false);
         // 0.1.10.10 (D7): the load of the last 100 ticks, per tick
         source.sendSuccess(() -> Component.translatable("command.mio_icif.perf.load",
             avg(PerfCounters.Kind.SET_CHANGED), avg(PerfCounters.Kind.SAVE_MARKS),

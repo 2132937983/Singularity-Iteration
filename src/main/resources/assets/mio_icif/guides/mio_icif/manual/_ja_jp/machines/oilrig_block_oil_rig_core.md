@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Oil Rig Core"
+  title: "油井コア"
   icon: mio_icif:oilrig/block_oil_rig_core
   parent: heavy.md
   position: 6
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:oilrig/block_oil_rig_core
 ---
 
-# Oil Rig Core
+# 油井コア
 
 <Row>
   <BlockImage id="mio_icif:oilrig/block_oil_rig_core" scale="3" />
@@ -43,6 +43,16 @@ item_ids:
 
 > **警告：** ドリルは掘削列のブロックを壊し、アイテムを落とさない。拠点の上にリグを作らない。
 
+
+## 構造
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があります。
+
+<GameScene zoom="3" interactive={true}>
+  <SiStructure id="mio_icif:oil_rig" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:oil_rig" />
 
 ## レシピ
 

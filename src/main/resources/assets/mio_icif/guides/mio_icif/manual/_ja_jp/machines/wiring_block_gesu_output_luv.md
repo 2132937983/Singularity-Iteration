@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "GESU Output Module (LuV)"
+  title: "GESU 出力モジュール（LuV）"
   icon: mio_icif:wiring/block_gesu_output_luv
   parent: power.md
   position: 16
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_gesu_output_luv
 ---
 
-# GESU Output Module (LuV)
+# GESU 出力モジュール（LuV）
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_gesu_output_luv" scale="3" />

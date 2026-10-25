@@ -5,7 +5,7 @@ import com.miophas.singularity_iteration.core.api.item.IBatteryItem;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.ingredient.ICraftingGridHelper;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
-import mezz.jei.api.ingredients.subtypes.IIngredientSubtypeInterpreter;
+import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
 import mezz.jei.api.ingredients.subtypes.UidContext;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.category.extensions.vanilla.crafting.ICraftingCategoryExtension;
@@ -57,8 +57,38 @@ public final class ChargedInputs {
     private static IIngredientManager ingredients;
     private static boolean listed;
 
+    /** No subtype (0.1.10.16: the value of the former {@code IIngredientSubtypeInterpreter.NONE}). */
+    static final String NONE = "";
+
+    /** A subtype as text, {@link #NONE} for none (the form the interpreters had up to 0.1.10.15). */
+    @FunctionalInterface
+    interface TextSubtype {
+        String apply(ItemStack stack, UidContext context);
+    }
+
+    /**
+     * 0.1.10.16: the JEI interpreter of a text subtype ({@code IIngredientSubtypeInterpreter} is marked for
+     * removal). The subtype data is the same text, and none for {@link #NONE}, so JEI tells the same stacks
+     * apart as before.
+     */
+    static ISubtypeInterpreter<ItemStack> interpreter(TextSubtype text) {
+        return new ISubtypeInterpreter<>() {
+            @Override
+            public @Nullable Object getSubtypeData(ItemStack stack, UidContext context) {
+                String key = text.apply(stack, context);
+                return key == null || key.isEmpty() ? null : key;
+            }
+
+            @Override
+            public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext context) {
+                String key = text.apply(stack, context);
+                return key == null ? NONE : key;
+            }
+        };
+    }
+
     /** Registers {@code interpreter} for {@code item} and remembers the item as an energy input. */
-    static void register(ISubtypeRegistration registration, ItemLike item, IIngredientSubtypeInterpreter<ItemStack> interpreter) {
+    static void register(ISubtypeRegistration registration, ItemLike item, ISubtypeInterpreter<ItemStack> interpreter) {
         registration.registerSubtypeInterpreter(item.asItem(), interpreter);
         ITEMS.add(item.asItem());
     }
@@ -72,8 +102,8 @@ public final class ChargedInputs {
 
     /** {@link #CHARGED} or none: the Ingredient context only, recipes match on the item alone. */
     static String subtype(ItemStack stack, UidContext context) {
-        if (context == UidContext.Recipe) return IIngredientSubtypeInterpreter.NONE;
-        return isCharged(stack) ? CHARGED : IIngredientSubtypeInterpreter.NONE;
+        if (context == UidContext.Recipe) return NONE;
+        return isCharged(stack) ? CHARGED : NONE;
     }
 
     static void registerExtensions(IVanillaCategoryExtensionRegistration registration) {

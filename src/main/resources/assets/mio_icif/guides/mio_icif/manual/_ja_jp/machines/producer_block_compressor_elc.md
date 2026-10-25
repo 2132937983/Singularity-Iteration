@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Compressor"
+  title: "圧縮機"
   icon: mio_icif:producer/block_compressor_elc
   parent: machines.md
   position: 17
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_compressor_elc
 ---
 
-# Compressor
+# 圧縮機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_compressor_elc" scale="3" />

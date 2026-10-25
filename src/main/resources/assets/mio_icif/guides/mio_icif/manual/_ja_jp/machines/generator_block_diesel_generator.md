@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Diesel Generator"
+  title: "ディーゼル発電機"
   icon: mio_icif:generator/block_diesel_generator
   parent: generators.md
   position: 5
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_diesel_generator
 ---
 
-# Diesel Generator
+# ディーゼル発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_diesel_generator" scale="3" />

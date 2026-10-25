@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Fluid Flow Regulator"
+  title: "流量調整器"
   icon: mio_icif:producer/block_fluid_regulator_elc
   parent: machines.md
   position: 28
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_fluid_regulator_elc
 ---
 
-# Fluid Flow Regulator
+# 流量調整器
 
 <Row>
   <BlockImage id="mio_icif:producer/block_fluid_regulator_elc" scale="3" />

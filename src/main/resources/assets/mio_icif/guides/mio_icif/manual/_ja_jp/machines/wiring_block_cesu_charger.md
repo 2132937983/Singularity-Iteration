@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "CESU Charger"
+  title: "CESU 充電台"
   icon: mio_icif:wiring/block_cesu_charger
   parent: power.md
   position: 6
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_cesu_charger
 ---
 
-# CESU Charger
+# CESU 充電台
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_cesu_charger" scale="3" />

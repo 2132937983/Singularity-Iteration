@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Wireless Power Transmission Node"
+  title: "無線送電ノード"
   icon: mio_icif:wiring/block_wireless_power_transmission_node
   parent: power.md
   position: 37
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_wireless_power_transmission_node
 ---
 
-# Wireless Power Transmission Node
+# 無線送電ノード
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_wireless_power_transmission_node" scale="3" />

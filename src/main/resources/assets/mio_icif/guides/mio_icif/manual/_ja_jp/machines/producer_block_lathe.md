@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Lathe"
+  title: "旋盤"
   icon: mio_icif:producer/block_lathe
   parent: machines.md
   position: 39
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_lathe
 ---
 
-# Lathe
+# 旋盤
 
 <Row>
   <BlockImage id="mio_icif:producer/block_lathe" scale="3" />

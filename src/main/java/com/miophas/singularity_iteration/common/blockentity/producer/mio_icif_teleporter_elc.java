@@ -174,6 +174,9 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
      * 客户端tick - 显示粒子效果
      */
     private void tickClient() {
+        // 0.1.10.18: the client counts its copy of the cooldown down itself, so one packet when the
+        // cooldown starts is enough for the colour to change back when it ends.
+        if (cooldown > 0) cooldown--;
         if (!isActive) return;
 
         Level level = this.level;
@@ -190,6 +193,12 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
     /**
      * 生成粒子效果
      */
+    /** 0.1.10.18: the particle colours (cooling down: green, ready: blue), built once. */
+    private static final net.minecraft.core.particles.DustParticleOptions COOLING_DUST =
+        new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(0.0F, 1.0F, 0.0F), 1.0F);
+    private static final net.minecraft.core.particles.DustParticleOptions READY_DUST =
+        new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(0.0F, 0.0F, 1.0F), 1.0F);
+
     private void spawnParticles(Level level, BlockPos pos, float r, float g, float b) {
         if (level.random.nextInt(5) != 0) return;
 
@@ -197,8 +206,9 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
         double y = pos.getY() + 1.0 + level.random.nextDouble();
         double z = pos.getZ() + 0.5 + (level.random.nextDouble() - 0.5) * 1.5;
 
-        level.addParticle(net.minecraft.core.particles.DustParticleOptions.REDSTONE,
-            x, y, z, r, g, b);
+        // 0.1.10.18: the colour is part of the dust options. This used to be the red redstone dust with
+        // the colour passed as the velocity, so the particles were red and drifted up or sideways.
+        level.addParticle(g > b ? COOLING_DUST : READY_DUST, x, y, z, 0.0, 0.0, 0.0);
     }
 
     /**
@@ -343,6 +353,7 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
     private void onTeleportFrom(mio_icif_teleporter_elc from) {
         this.cooldown = com.miophas.singularity_iteration.common.tuning.SiTuningValues.TELEPORTER_COOLDOWN.get();
         setChanged();
+        syncParticleState();
     }
 
     /**
@@ -442,7 +453,51 @@ public class mio_icif_teleporter_elc extends AbstractProcessingMachineBlockEntit
         if (this.isActive != active) {
             this.isActive = active;
             setChanged();
+            syncParticleState();
         }
+    }
+
+    /**
+     * 0.1.10.18: sends the particle state (active, cooldown) to the players that track the chunk. Up to
+     * 0.1.10.17 neither value reached the client (only the save had them), so the pads showed no
+     * particles. At most one packet per 5 ticks; the last state always arrives.
+     */
+    private void syncParticleState() {
+        if (level != null && !level.isClientSide()) com.miophas.singularity_iteration.core.runtime.sync.ClientSyncThrottle.request(this);
+    }
+
+    /** 0.1.10.18: the update tag also carries the particle state (for a chunk load). */
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.merge(particleTag());
+        return tag;
+    }
+
+    /** 0.1.10.18: the teleporter sends a packet with its particle state (two values) when it changes. */
+    @Override
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this, (be, registries) -> particleTag());
+    }
+
+    /** The particle state: active (redstone and a linked target) and the cooldown in ticks. */
+    CompoundTag particleTag() {
+        CompoundTag tag = new CompoundTag();
+        tag.putBoolean("isActive", isActive);
+        tag.putInt("cooldown", cooldown);
+        return tag;
+    }
+
+    /**
+     * 0.1.10.18: a packet changes the particle state only. The vanilla default would run the whole
+     * loadAdditional on the update tag and reset client fields that the tag does not carry.
+     */
+    @Override
+    public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket packet,
+                             HolderLookup.Provider registries) {
+        CompoundTag tag = packet.getTag();
+        if (tag.contains("isActive")) isActive = tag.getBoolean("isActive");
+        if (tag.contains("cooldown")) cooldown = tag.getInt("cooldown");
     }
 
     /**

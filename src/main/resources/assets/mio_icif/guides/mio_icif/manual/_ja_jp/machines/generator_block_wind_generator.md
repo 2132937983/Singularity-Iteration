@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Wind Generator"
+  title: "風力発電機"
   icon: mio_icif:generator/block_wind_generator
   parent: generators.md
   position: 39
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_wind_generator
 ---
 
-# Wind Generator
+# 風力発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_wind_generator" scale="3" />

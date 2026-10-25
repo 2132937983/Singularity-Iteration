@@ -41,7 +41,7 @@ import org.joml.Matrix4f;
  * It draws nothing when the player is not in maneuver flight. The local player in first person is
  * not rendered by vanilla, so this layer does not run then (see {@code ManeuverModeClient.fieldRim}).
  */
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     public ManeuverFlightLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
         super(parent);

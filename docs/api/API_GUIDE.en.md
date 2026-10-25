@@ -363,7 +363,8 @@ The remaining mixins and the reason for each:
 
 | Mixin | Reason |
 |---|---|
-| `ItemStackMaxStackMixin`, `DataComponentMaxStackMixin`, `ContainerMaxStackMixin` | Stack sizes above 99. NeoForge has no hook for the codec limit. |
+| `ItemStackMaxStackMixin`, `DataComponentMaxStackMixin` | Save and load of stacks above 99 (the item count and the `max_stack_size` component). NeoForge has no hook for the codec limit. Since 0.1.10.16 they only widen the codec range; they make no stack larger. |
+| `LargeStackContainerMixin`, `LargeStackSlotMixin` (0.1.10.16) | `Container#getMaxStackSize(ItemStack)` and `Slot#getMaxStackSize(ItemStack)` give more than 99 only to an SI `LargeStackItem` (the coin), only with the default limit of 99, and only in a container that keeps large stacks (vanilla containers, SI `LargeStackContainer`s). They replace the global `ContainerMaxStackMixin`, which gave 9,999 to every container. Optional (`require = 0`) with a start-up self check. |
 | `LivingEquipEnergyMixin` | A stack that differs only in stored energy must not trigger the equip sound and the game event. No cancelable NeoForge event exists. |
 | `ArmorEquipSoundMixin` | A null equip sound of a different mod crashes footstep mods. The mixin gives a fallback. |
 | `client.ItemInHandReequipMixin` | No re-equip animation for energy-only changes on all items (also addon items). `IItemExtension` covers only own items. |
@@ -652,3 +653,76 @@ The results do not change; the changes remove work that had no effect.
   memory. An accident, a meltdown with the explosions off, or the removal of a running or hot reactor
   becomes an incident (`/mio_icif reactor audit`). An addon that destroys a reactor should remove the
   block normally, so `onRemove` records the removal.
+
+## 19. Update tags without inventories (0.1.10.17)
+
+The update tag of a block entity (`getUpdateTag`) goes to every player that tracks the chunk, with
+every chunk load, and with every block entity packet (`getUpdatePacket`). Since 0.1.10.17 the SI tags
+carry only what client code reads.
+
+* `syncInventoryToClient()` (protected, default `false`) in `AbstractProcessingMachineBlockEntity`,
+  `AbstractEnergyStorageBlockEntity`, `AbstractGeneratorBlockEntity`, `AbstractHeatGeneratorBlockEntity`
+  and `AbstractKineticGeneratorBlockEntity`: the update tag contains the inventory (`inventory` or
+  `Items`) only when it returns `true`. Before 0.1.10.17 the inventory was always in the tag.
+* Return `true` in an addon block entity when client code reads its items: a block entity renderer
+  that draws a stored item, for example. A screen does not need it: the menu gets the items from the
+  vanilla slot sync when it opens.
+* The prefab loaders apply an inventory only when the tag has one, so a tag without the inventory never
+  clears the items of the client copy (both on a chunk load and on a block entity packet).
+* Rule for an addon `getUpdateTag`: write the keys the client reads, not the save
+  (`saveWithoutMetadata` or `saveAdditional`). A save can hold server data (owners, credits, timers)
+  and is sent to every player near the block. When the block entity also sends packets, make its
+  `loadAdditional` tolerate missing keys, or apply the update tag in `handleUpdateTag` and
+  `onDataPacket` yourself: the vanilla default of both runs the full `loadAdditional` on the tag.
+
+## 20. Reactor layouts and multiblock blueprints (0.1.10.19)
+
+Two data-only registries feed the JEI categories "Reactor Layouts" and "Multiblock Structures" and the
+guide. Register in the mod constructor or in a setup event. A second registration of the same id
+replaces the first; the namespace `minecraft` is refused. JEI reads both registries when it loads its
+recipes (when a world is joined).
+
+* `core.api.reactor.ReactorLayout` / `ReactorLayoutRegistry`: a reactor design in the preset form of the
+  guide simulator, rows from the top separated by `/`, cells by `,`. A cell is an SI component key
+  (`uranium_quad`, `iridium_vent`), the item id of an SI reactor component, or `_` for an empty slot. The
+  first row sets the columns (3 to 9 = 3 + chambers). SI runs each layout through the reactor model for a
+  full uranium load (20,000 cycles, or until the steady state) and shows EU/t, the heat balance, the risk
+  (stable, components melt, meltdown, with the time), the explosion with the local config, and the fuel
+  life. A cell that is not an SI component is shown when its item exists, and the page says that the
+  design cannot be simulated. Title key: `reactor_layout.<namespace>.<path>` unless given; the note key
+  is optional.
+
+```java
+ReactorLayoutRegistry.register(ReactorLayout.of(ResourceLocation.fromNamespaceAndPath("mymod", "starter"),
+    "_,vent,_/vent,uranium_simple,vent/_,vent,_", null, "reactor_layout.mymod.starter.note"));
+```
+
+* `core.api.multiblock.StructureBlueprint` / `StructureBlueprintRegistry`: a build plan. Layers go from
+  the bottom up; a layer is a list of rows from north to south; a row has one symbol per block from west
+  to east. Each symbol has a key: the permitted blocks (`BlockRef`: a block id plus block state
+  properties by name, so a plan can name blocks before the registry is complete) and an optional note
+  key. A space or `.` is a position the structure does not use. `controller(char)` marks the controller,
+  which must be in the plan exactly once. `build()` refuses layers or rows of different sizes, a size above
+  32, and a symbol without a key. Title key: `structure.<namespace>.<path>` unless given.
+* JEI: a 3D view (drag: turn, wheel: zoom, click the layer label: one layer), the materials as input
+  slots with their counts (looking up the uses of a block finds the plans that contain it), the key note
+  in the slot tooltip, and the plan notes under the view. Blocks are drawn from their models, without
+  block entity renderers; a block whose mod is missing is left out.
+* Guide (GuideME): `<SiStructure id="mymod:plan" />` inside a `<GameScene>` places the first permitted
+  block of each position (optional `x`, `y`, `z` offset); `<SiStructureInfo id="mymod:plan" />` lists the
+  materials with their rules and the notes. SI registers both tags for its own manual (guide
+  `mio_icif:manual`) only; the plans themselves come from the registry, so the JEI category shows an
+  addon plan in any case.
+* A blueprint only describes the structure. The controller still checks it in the world with its
+  validator (`core.api.machine.IMultiblockValidator`); keep the two in agreement.
+
+```java
+StructureBlueprintRegistry.register(StructureBlueprint.builder(ResourceLocation.fromNamespaceAndPath("mymod", "boiler"))
+    .layer("CCC", "CCC", "CCC")
+    .layer("CCC", "CMC", "CCC")
+    .key('C', "structure.mymod.boiler.casing", BlockRef.of("mymod:casing"), BlockRef.of("mymod:port"))
+    .key('M', BlockRef.of("mymod:boiler_controller").with("facing", "north"))
+    .controller('M')
+    .note("structure.mymod.boiler.note")
+    .build());
+```

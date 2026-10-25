@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Insulated High-Voltage Cable"
+  title: "絶縁高圧ケーブル"
   icon: mio_icif:wiring/cable/block_gold_cable_1
   parent: power.md
   position: 20
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_gold_cable_1
 ---
 
-# Insulated High-Voltage Cable
+# 絶縁高圧ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_gold_cable_1" scale="3" />

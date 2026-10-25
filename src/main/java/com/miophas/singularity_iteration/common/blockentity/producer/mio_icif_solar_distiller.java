@@ -365,7 +365,9 @@ public class mio_icif_solar_distiller extends BlockEntity implements MenuProvide
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag tag = new CompoundTag(); saveAdditional(tag, registries); return tag;
+        // 0.1.10.17 (E-2): no client data. This used to send the whole save (inventory, tanks); the screen
+        // gets those from its menu data, and nothing else reads them on the client.
+        return new CompoundTag();
     }
 
     @Override

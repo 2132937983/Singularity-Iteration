@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Drop Generator"
+  title: "高度ドロップ発電機"
   icon: mio_icif:generator/block_advanced_drop_generator
   parent: generators.md
   position: 0
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_advanced_drop_generator
 ---
 
-# Advanced Drop Generator
+# 高度ドロップ発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_advanced_drop_generator" scale="3" />

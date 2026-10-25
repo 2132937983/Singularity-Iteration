@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Chunk Loader"
+  title: "チャンクローダー"
   icon: mio_icif:producer/block_chunk_loader
   parent: machines.md
   position: 16
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_chunk_loader
 ---
 
-# Chunk Loader
+# チャンクローダー
 
 <Row>
   <BlockImage id="mio_icif:producer/block_chunk_loader" scale="3" />

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Water Pipe"
+  title: "送水パイプ"
   icon: mio_icif:pipe/block_pipe_water
   parent: heavy.md
   position: 16
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:pipe/block_pipe_water
 ---
 
-# Water Pipe
+# 送水パイプ
 
 <Row>
   <BlockImage id="mio_icif:pipe/block_pipe_water" scale="3" />

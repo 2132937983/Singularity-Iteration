@@ -58,6 +58,19 @@ public class mio_icif_wrench extends Item implements IWrenchItem {
         super(properties.durability(WRENCH_DURABILITY));
     }
 
+    /**
+     * 0.1.10.19: mining an SI machine or cable with the wrench (it is a correct tool for them, see
+     * {@code WrenchHarvest}) wears it by one. Runs only for a real mining break, not for a dismantle.
+     */
+    @Override
+    public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, net.minecraft.world.entity.LivingEntity miner) {
+        if (!level.isClientSide && com.miophas.singularity_iteration.common.event.WrenchHarvest.wrenchable(state)
+                && !(miner instanceof Player player && player.isCreative())) {
+            stack.hurtAndBreak(1, miner, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+        }
+        return true;
+    }
+
     @Override
     public InteractionResult useOn(UseOnContext context) {
         return InteractionResult.PASS;

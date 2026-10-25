@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "BatBox"
+  title: "バットボックス"
   icon: mio_icif:wiring/block_bat_box
   parent: power.md
   position: 3
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_bat_box
 ---
 
-# BatBox
+# バットボックス
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_bat_box" scale="3" />

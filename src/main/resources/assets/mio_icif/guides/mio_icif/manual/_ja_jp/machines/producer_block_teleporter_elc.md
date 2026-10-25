@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Teleporter"
+  title: "テレポーター"
   icon: mio_icif:producer/block_teleporter_elc
   parent: machines.md
   position: 64
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_teleporter_elc
 ---
 
-# Teleporter
+# テレポーター
 
 <Row>
   <BlockImage id="mio_icif:producer/block_teleporter_elc" scale="3" />

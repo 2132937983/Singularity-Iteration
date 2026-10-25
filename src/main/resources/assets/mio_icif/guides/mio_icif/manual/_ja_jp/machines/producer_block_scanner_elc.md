@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Pattern Scanner"
+  title: "パターンスキャナー"
   icon: mio_icif:producer/block_scanner_elc
   parent: machines.md
   position: 51
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_scanner_elc
 ---
 
-# Pattern Scanner
+# パターンスキャナー
 
 <Row>
   <BlockImage id="mio_icif:producer/block_scanner_elc" scale="3" />

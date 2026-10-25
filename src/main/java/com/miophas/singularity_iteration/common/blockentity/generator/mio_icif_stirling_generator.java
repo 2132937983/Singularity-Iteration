@@ -90,7 +90,7 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
                 if(first==null)first=source;
                 long reply=source.extractHeat(limit-total,true);
                 if(reply>=0 && reply<=limit-total)total+=reply;
-            }catch(RuntimeException unavailable){}
+            }catch(RuntimeException unavailable){com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("stirling-heat-pull","Stirling generator heat from a neighbour",unavailable);}
         }
         return total;
     }

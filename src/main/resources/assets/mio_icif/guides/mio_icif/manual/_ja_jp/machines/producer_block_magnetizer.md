@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Magnetizer"
+  title: "磁化装置"
   icon: mio_icif:producer/block_magnetizer
   parent: machines.md
   position: 41
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_magnetizer
 ---
 
-# Magnetizer
+# 磁化装置
 
 <Row>
   <BlockImage id="mio_icif:producer/block_magnetizer" scale="3" />

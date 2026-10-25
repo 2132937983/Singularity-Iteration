@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Reactor Pressure Vessel"
+  title: "原子炉圧力容器"
   icon: mio_icif:reactor/block_reactor_vessel
   parent: heavy.md
   position: 13
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:reactor/block_reactor_vessel
 ---
 
-# Reactor Pressure Vessel
+# 原子炉圧力容器
 
 <Row>
   <BlockImage id="mio_icif:reactor/block_reactor_vessel" scale="3" />
@@ -33,6 +33,16 @@ item_ids:
 ## 注意
 
 - 外殻には流体ポート、アクセスハッチ、レッドストーンポートのどれかが1個以上必要だ。
+
+## 構造
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があります。
+
+<GameScene zoom="2.5" interactive={true}>
+  <SiStructure id="mio_icif:fluid_reactor" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:fluid_reactor" />
 
 ## レシピ
 

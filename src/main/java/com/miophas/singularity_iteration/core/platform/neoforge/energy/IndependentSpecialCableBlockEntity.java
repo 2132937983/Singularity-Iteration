@@ -101,6 +101,11 @@ public final class IndependentSpecialCableBlockEntity extends BlockEntity {
         if (detector) tag.putInt("RedstoneLevel", signal());
     }
 
-    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) { return saveWithoutMetadata(registries); }
+    /** 0.1.10.17 (E-2): the client gets the switch state only; the poll age and the detector level are server data. */
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        tag.putBoolean("active", active);
+        return tag;
+    }
     @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
 }

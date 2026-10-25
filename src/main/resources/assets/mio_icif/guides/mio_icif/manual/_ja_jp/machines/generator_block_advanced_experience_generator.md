@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Experience Generator"
+  title: "高度経験値発電機"
   icon: mio_icif:generator/block_advanced_experience_generator
   parent: generators.md
   position: 1
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_advanced_experience_generator
 ---
 
-# Advanced Experience Generator
+# 高度経験値発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_advanced_experience_generator" scale="3" />

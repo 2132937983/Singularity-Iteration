@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Mining Pipe"
+  title: "採掘パイプ"
   icon: mio_icif:produce/block_mining_pipe
   parent: machines.md
   position: 46
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:produce/block_mining_pipe
 ---
 
-# Mining Pipe
+# 採掘パイプ
 
 <Row>
   <BlockImage id="mio_icif:produce/block_mining_pipe" scale="3" />

@@ -408,7 +408,11 @@ public class mio_icif_replicator_elc extends AbstractProcessingMachineBlockEntit
         if(own.contains("held",Tag.TAG_COMPOUND))com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.warn("Replicator at {}: discarding held record {} on load",worldPosition,own.getCompound("held"));
         isWorking=false;updateProgress();
     }
-    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){var tag=super.getUpdateTag(registries);saveAdditional(tag,registries);return tag;}
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries){
+        // 0.1.10.17 (E-2): the client tag of the parent only. This used to add the whole save (inventory,
+        // tanks, credits); the screen gets those from its menu data, and nothing else reads them on the client.
+        return super.getUpdateTag(registries);
+    }
     @Override public void serverTick(){if(level!=null)tick(level,worldPosition,getBlockState(),this);}
     public static void tick(Level level,BlockPos pos,BlockState state,mio_icif_replicator_elc machine){
         if(!machine.serverThread()||machine.hasHeldReplicationData()||machine.lastTick==level.getGameTime())return;

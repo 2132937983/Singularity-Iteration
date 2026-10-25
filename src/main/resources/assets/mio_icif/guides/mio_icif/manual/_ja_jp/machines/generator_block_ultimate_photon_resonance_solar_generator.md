@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Ultimate Photon Resonance Solar Generator"
+  title: "アルティメット光子共振ソーラー発電機"
   icon: mio_icif:generator/block_ultimate_photon_resonance_solar_generator
   parent: generators.md
   position: 36
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_ultimate_photon_resonance_solar_generator
 ---
 
-# Ultimate Photon Resonance Solar Generator
+# アルティメット光子共振ソーラー発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_ultimate_photon_resonance_solar_generator" scale="3" />

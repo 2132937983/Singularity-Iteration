@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
     public static final int EMPTY_BUCKET_SLOT = 1;
     public static final int BATTERY_SLOT = 2;
     public static final int SLOT_COUNT = 3;
+    /** Menu data values (0.1.10.19: 5, the fuel fluid id at index 4). */
+    public static final int DATA_COUNT = 5;
 
     public SemifluidGeneratorMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, null, null);
@@ -27,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
                                    @Nullable IItemHandler itemHandler,
                                    @Nullable ContainerData data) {
         super(mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT,
-              playerInventory, itemHandler, data, 4, blockEntity);
+              playerInventory, itemHandler, data, DATA_COUNT, blockEntity);
     }
 
     @Override
@@ -52,6 +54,10 @@ import org.jetbrains.annotations.Nullable;
 
     public int getFuelAmount() { return data.get(2); }
     public int getFuelCapacity() { return data.get(3); }
+    /** 0.1.10.19: the fuel in the tank (synced fluid id at index 4); the screen drew biogas for every fuel. */
+    public net.neoforged.neoforge.fluids.FluidStack getFuelFluid() {
+        return com.miophas.singularity_iteration.common.menu.base.FluidIds.stackOf(data.get(4), getFuelAmount());
+    }
 
     protected boolean isValidFuel(ItemStack stack) {
         if (stack.isEmpty()) return false;
@@ -75,6 +81,7 @@ import org.jetbrains.annotations.Nullable;
             setSyncData(1, (int) gen.getEnergyStorage().getCapacity());
             setSyncData(2, gen.getFuelAmount());
             setSyncData(3, gen.getFuelCapacity());
+            setSyncData(4, com.miophas.singularity_iteration.common.menu.base.FluidIds.idOf(gen.getFuel()));
         }
     }
 }

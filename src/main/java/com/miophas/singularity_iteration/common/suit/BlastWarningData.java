@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
  * one; else from {@code fuse} minus the age of the entity on the client; else the HUD shows the
  * charge without a timer. See {@code BlastDetector} for every rule.
  */
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
 public final class BlastWarningData {
     private BlastWarningData() {}
 

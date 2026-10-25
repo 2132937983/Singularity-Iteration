@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "EESU Charger"
+  title: "EESU 充電台"
   icon: mio_icif:wiring/block_eesu_charger
   parent: power.md
   position: 8
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_eesu_charger
 ---
 
-# EESU Charger
+# EESU 充電台
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_eesu_charger" scale="3" />

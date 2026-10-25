@@ -13,7 +13,7 @@ import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
  */
 @SuppressWarnings({"null", "removal"})
 @OnlyIn(Dist.CLIENT)
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public class mio_icif_ParticleProviders {
 
     @SubscribeEvent

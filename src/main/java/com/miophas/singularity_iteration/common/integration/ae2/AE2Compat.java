@@ -108,7 +108,7 @@ public class AE2Compat {
                 storage = world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, dir);
                 if (storage != null && storage.canReceive()) return storage;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception failure) { com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("ae2-compat-storage", "AE2 energy storage lookup", failure); }
         return null;
     }
 }

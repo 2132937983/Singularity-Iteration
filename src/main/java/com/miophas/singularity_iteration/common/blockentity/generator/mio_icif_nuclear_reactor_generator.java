@@ -747,6 +747,11 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             ReactorAccidentLatch.Effect.valueOf(tag.getString("effect")),powerMillis);
         return ReactorAccidentLatch.restore(new ReactorAccidentLatch.Saved(state,trigger));
     }
-    @Override public CompoundTag getUpdateTag(HolderLookup.Provider provider){return saveWithoutMetadata(provider);}
+    @Override public CompoundTag getUpdateTag(HolderLookup.Provider provider){
+        // 0.1.10.17 (E-2): the client tag of the parent only. This used to send the whole save: the 54
+        // reactor slots, the fluid handler, the cooling state and the audit owner (UUID and name) to every
+        // player that tracks the chunk. The screens get their data from the menus.
+        return super.getUpdateTag(provider);
+    }
     @Override public void handleUpdateTag(CompoundTag tag,HolderLookup.Provider provider){loadAdditional(tag,provider);}
 }

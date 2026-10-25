@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "3x Insulated HV Iron Cable"
+  title: "三重絶縁超高圧ケーブル"
   icon: mio_icif:wiring/cable/block_iron_cable_3
   parent: power.md
   position: 2
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_iron_cable_3
 ---
 
-# 3x Insulated HV Iron Cable
+# 三重絶縁超高圧ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_iron_cable_3" scale="3" />

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Photon Resonance Solar Generator"
+  title: "光子共振ソーラー発電機"
   icon: mio_icif:generator/block_photon_resonance_solar_generator
   parent: generators.md
   position: 22
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_photon_resonance_solar_generator
 ---
 
-# Photon Resonance Solar Generator
+# 光子共振ソーラー発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_photon_resonance_solar_generator" scale="3" />

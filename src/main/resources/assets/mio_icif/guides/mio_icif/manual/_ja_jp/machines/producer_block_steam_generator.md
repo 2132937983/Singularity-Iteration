@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Steam Generator"
+  title: "蒸気発生器"
   icon: mio_icif:producer/block_steam_generator
   parent: machines.md
   position: 61
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_steam_generator
 ---
 
-# Steam Generator
+# 蒸気発生器
 
 <Row>
   <BlockImage id="mio_icif:producer/block_steam_generator" scale="3" />

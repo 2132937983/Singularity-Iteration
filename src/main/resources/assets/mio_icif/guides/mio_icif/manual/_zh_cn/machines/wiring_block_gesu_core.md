@@ -43,6 +43,16 @@ GESU核心是GESU多方块结构的中心，储存EU。
 - 拆除一个模块后，GESU停止工作，直到补回模块。
 - 界面有一个槽位为物品充电，一个槽位从电池取出EU。
 
+## 结构
+
+拖动视图可旋转。下方列表给出所需方块及其规则。JEI 的“多方块结构”分类中也有相同的建造图。
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:gesu" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:gesu" />
+
 ## 配方
 
 <RecipesFor id="mio_icif:wiring/block_gesu_core" fallbackText="-" />

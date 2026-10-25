@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Water Extraction Pipe"
+  title: "揚水パイプ"
   icon: mio_icif:pipe/block_pipe_water_extract
   parent: heavy.md
   position: 15
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:pipe/block_pipe_water_extract
 ---
 
-# Water Extraction Pipe
+# 揚水パイプ
 
 <Row>
   <BlockImage id="mio_icif:pipe/block_pipe_water_extract" scale="3" />

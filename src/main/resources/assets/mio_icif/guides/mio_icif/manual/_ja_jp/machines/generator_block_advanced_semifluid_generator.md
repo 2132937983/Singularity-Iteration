@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Semifluid Generator"
+  title: "高度半流体発電機"
   icon: mio_icif:generator/block_advanced_semifluid_generator
   parent: generators.md
   position: 2
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_advanced_semifluid_generator
 ---
 
-# Advanced Semifluid Generator
+# 高度半流体発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_advanced_semifluid_generator" scale="3" />

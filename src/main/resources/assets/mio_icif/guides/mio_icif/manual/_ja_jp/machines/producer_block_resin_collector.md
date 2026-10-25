@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Resin Collector"
+  title: "樹脂採取機"
   icon: mio_icif:producer/block_resin_collector
   parent: machines.md
   position: 58
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_resin_collector
 ---
 
-# Resin Collector
+# 樹脂採取機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_resin_collector" scale="3" />

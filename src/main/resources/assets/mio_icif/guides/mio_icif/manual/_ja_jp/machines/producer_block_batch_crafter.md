@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Batch Crafter"
+  title: "一括クラフター"
   icon: mio_icif:producer/block_batch_crafter
   parent: machines.md
   position: 12
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_batch_crafter
 ---
 
-# Batch Crafter
+# 一括クラフター
 
 <Row>
   <BlockImage id="mio_icif:producer/block_batch_crafter" scale="3" />

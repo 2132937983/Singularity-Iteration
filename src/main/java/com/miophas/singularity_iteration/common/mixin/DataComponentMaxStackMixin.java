@@ -10,6 +10,11 @@ import org.spongepowered.asm.mixin.injection.At;
 /**
  * Changes the serialization Codec of DataComponents.MAX_STACK_SIZE.
  * It lets the maximum stack size in the data component go above 64.
+ *
+ * <p>0.1.10.16: kept as a compatibility range only. A stack saved with a {@code max_stack_size} above 99
+ * (set by a command, a data pack or another mod in a world of an earlier version) still loads; without
+ * this range the vanilla codec (1 to 99) rejects the whole stack. It makes no stack larger: a container
+ * or slot gives such an item at most its own limit (99 by default), see {@code LargeStacks}.
  */
 @Mixin(DataComponents.class)
 @SuppressWarnings("null")

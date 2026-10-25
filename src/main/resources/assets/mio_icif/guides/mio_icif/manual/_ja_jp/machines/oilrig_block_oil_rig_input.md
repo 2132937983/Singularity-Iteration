@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Oil Rig Input Module"
+  title: "油井入力モジュール"
   icon: mio_icif:oilrig/block_oil_rig_input
   parent: heavy.md
   position: 7
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:oilrig/block_oil_rig_input
 ---
 
-# Oil Rig Input Module
+# 油井入力モジュール
 
 <Row>
   <BlockImage id="mio_icif:oilrig/block_oil_rig_input" scale="3" />

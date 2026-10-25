@@ -237,56 +237,6 @@ public final class BallisticSolver {
         return new Solution(profile, path, null, null, null, MAX_STEPS, 0);
     }
 
-    /**
-     * Calculates the lead (intercept) point for a moving target. The lead point is the position
-     * of the target at the time when a shot fired now arrives at the target range.
-     *
-     * <p>Method:
-     * <ol>
-     *   <li>The aim point is the centre of the target box, at half its height.</li>
-     *   <li>The range is the horizontal distance from the eye to the aim point.</li>
-     *   <li>The horizontal launch speed is {@code speed * cos(pitch)}. The pitch is the current
-     *       view pitch of the player.</li>
-     *   <li>The loop adds the horizontal speed for each tick and multiplies the speed by the air
-     *       drag. It counts the ticks {@code t} until the sum reaches the range. This is the time of
-     *       flight.</li>
-     *   <li>The lead point is {@code aimPoint + velocityPerTick * t}.</li>
-     * </ol>
-     *
-     * <p>Assumptions and limits:
-     * <ul>
-     *   <li>The target velocity stays constant during the time of flight.</li>
-     *   <li>The method does one pass only. It does not iterate the intercept. The time of flight is
-     *       for the current range, not for the range of the lead point. Thus the error increases
-     *       when the target moves towards or away from the shooter.</li>
-     *   <li>The method ignores gravity, water drag, and the player velocity. It also ignores the
-     *       pitch that the shot really needs to hit the target.</li>
-     * </ul>
-     *
-     * @param player          the local player.
-     * @param profile         the launch profile.
-     * @param target          the target creature.
-     * @param velocityPerTick the target velocity in blocks per tick.
-     * @return the lead point in world blocks, or null when the shot cannot reach the range in
-     *         {@link #MAX_STEPS} ticks, or when the horizontal speed falls below 0.001 blocks per
-     *         tick.
-     */
-    @Nullable
-    public static Vec3 lead(LocalPlayer player, Profile profile, LivingEntity target, Vec3 velocityPerTick) {
-        Vec3 eye = player.getEyePosition();
-        Vec3 aimPoint = target.position().add(0, target.getBbHeight() * 0.5, 0);
-        double range = Math.sqrt(Math.pow(aimPoint.x - eye.x, 2) + Math.pow(aimPoint.z - eye.z, 2));
-        // horizontal distance after t ticks with drag: sum of speed * drag^i for i = 0 .. t-1
-        double travelled = 0, v = profile.speed() * Math.cos(Math.toRadians(player.getXRot()));
-        int t = 0;
-        while (travelled < range && t < MAX_STEPS) {
-            travelled += v;
-            v *= profile.drag();
-            t++;
-            // with drag < 1 the speed goes to 0. Stop when the shot cannot go further.
-            if (v < 1.0E-3) return null;
-        }
-        if (t >= MAX_STEPS) return null;
-        return aimPoint.add(velocityPerTick.scale(t));
-    }
+    // 0.1.10.20: the lead point ("lead") is replaced by the fire-control solution of common.fcs.Intercept
+    // (FcsClient.aimPipper): it included neither gravity nor the needed pitch.
 }

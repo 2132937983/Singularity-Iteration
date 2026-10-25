@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Block Cutter"
+  title: "ブロックカッター"
   icon: mio_icif:producer/block_block_cutter
   parent: machines.md
   position: 14
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_block_cutter
 ---
 
-# Block Cutter
+# ブロックカッター
 
 <Row>
   <BlockImage id="mio_icif:producer/block_block_cutter" scale="3" />

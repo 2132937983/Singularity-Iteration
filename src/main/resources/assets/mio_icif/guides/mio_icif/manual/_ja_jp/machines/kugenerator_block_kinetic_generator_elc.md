@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Electric Kinetic Generator"
+  title: "電気運動エネルギー発生器"
   icon: mio_icif:kugenerator/block_kinetic_generator_elc
   parent: generators.md
   position: 8
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:kugenerator/block_kinetic_generator_elc
 ---
 
-# Electric Kinetic Generator
+# 電気運動エネルギー発生器
 
 <Row>
   <BlockImage id="mio_icif:kugenerator/block_kinetic_generator_elc" scale="3" />

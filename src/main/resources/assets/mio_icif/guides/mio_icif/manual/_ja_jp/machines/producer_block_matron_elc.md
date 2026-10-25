@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Crop Manager"
+  title: "作物管理機"
   icon: mio_icif:producer/block_matron_elc
   parent: machines.md
   position: 19
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_matron_elc
 ---
 
-# Crop Manager
+# 作物管理機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_matron_elc" scale="3" />

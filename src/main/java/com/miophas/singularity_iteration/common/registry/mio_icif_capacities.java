@@ -276,7 +276,7 @@ public class mio_icif_capacities {
                 }
             );
         }
-        Singularity_Iteration.LOGGER.info("Registered ILongEnergyStorage capabilities for all energy block entities");
+        Singularity_Iteration.LOGGER.debug("Registered ILongEnergyStorage capabilities for all energy block entities");
     }
 
     /**
@@ -307,95 +307,95 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy, FE and item capabilities for Thermal Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, FE and item capabilities for Thermal Generator");
 
         // Register EU energy storage capability for BatBox
         registerEnergyCapabilities(event, mio_icif_block_entities.BATBOX.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for BatBox");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for BatBox");
 
         // Register EU energy storage capability for MFSU
         registerEnergyCapabilities(event, mio_icif_block_entities.MFSU.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for MFSU");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for MFSU");
 
         // Register EU energy storage capability for MFE
         registerEnergyCapabilities(event, mio_icif_block_entities.MFE.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for MFE");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for MFE");
 
         // Register EU energy storage capability for CESU
         registerEnergyCapabilities(event, mio_icif_block_entities.CESU.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for CESU");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for CESU");
 
         // Register EU energy storage capability for LESU
         registerEnergyCapabilities(event, mio_icif_block_entities.LESU.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for LESU");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for LESU");
 
         // Register EU energy storage capability for LESU Charger
         registerEnergyCapabilities(event, mio_icif_block_entities.LESU_CHARGER.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for LESU Charger");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for LESU Charger");
 
         // Register EU energy storage capability for EESU
         registerEnergyCapabilities(event, mio_icif_block_entities.EESU.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for EESU");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for EESU");
 
         // Register EU energy storage capability for EESU Charger
         registerEnergyCapabilities(event, mio_icif_block_entities.EESU_CHARGER.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for EESU Charger");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for EESU Charger");
 
         // Register EU energy storage capability for GESU Core
         registerEnergyCapabilities(event, mio_icif_block_entities.GESU_CORE.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for GESU Core");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for GESU Core");
 
         // Register EU energy storage capability for GESU Input Module IV
         registerEnergyCapabilities(event, mio_icif_block_entities.GESU_INPUT_IV.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for GESU Input Module IV");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for GESU Input Module IV");
 
         // Register EU energy storage capability for GESU Output Module IV
         registerEnergyCapabilities(event, mio_icif_block_entities.GESU_OUTPUT_IV.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for GESU Output Module IV");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for GESU Output Module IV");
 
         // Register EU energy storage capability for GESU Output Module LuV
         registerEnergyCapabilities(event, mio_icif_block_entities.GESU_OUTPUT_LUV.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for GESU Output Module LuV");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for GESU Output Module LuV");
 
         // Register EU energy storage capability for Oil Rig Core
         registerEnergyCapabilities(event, mio_icif_block_entities.OIL_RIG_CORE.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for Oil Rig Core");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for Oil Rig Core");
 
         // Register EU energy storage capability for Oil Rig Base
         registerEnergyCapabilities(event, mio_icif_block_entities.OIL_RIG_BASE.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for Oil Rig Base");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for Oil Rig Base");
 
         // Register EU energy storage capability for Oil Rig Input
         registerEnergyCapabilities(event, mio_icif_block_entities.OIL_RIG_INPUT.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for Oil Rig Input");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for Oil Rig Input");
 
         // Register EU energy storage capability for Oil Rig Output
         registerEnergyCapabilities(event, mio_icif_block_entities.OIL_RIG_OUTPUT.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for Oil Rig Output");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for Oil Rig Output");
 
         // Register EU energy storage capability for Oil Rig Panel
         registerEnergyCapabilities(event, mio_icif_block_entities.OIL_RIG_PANEL.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for Oil Rig Panel");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for Oil Rig Panel");
 
         // Register EU energy storage capability for Dimension Oil Rig Core
         registerEnergyCapabilities(event, mio_icif_block_entities.DIMENSION_OIL_RIG_CORE.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for Dimension Oil Rig Core");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for Dimension Oil Rig Core");
 
         // Register EU energy storage capability for BatBox Charger
         registerEnergyCapabilities(event, mio_icif_block_entities.BATBOX_CHARGER.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for BatBox Charger");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for BatBox Charger");
 
         // Register EU energy storage capability for CESU Charger
         registerEnergyCapabilities(event, mio_icif_block_entities.CESU_CHARGER.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for CESU Charger");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for CESU Charger");
 
         // Register EU energy storage capability for MFE Charger
         registerEnergyCapabilities(event, mio_icif_block_entities.MFE_CHARGER.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for MFE Charger");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for MFE Charger");
 
         // Register EU energy storage capability for MFSU Charger
         registerEnergyCapabilities(event, mio_icif_block_entities.MFSU_CHARGER.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy and FE capabilities for MFSU Charger");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and FE capabilities for MFSU Charger");
 
         registerEnergyCapabilities(event, mio_icif_block_entities.WIRELESS_POWER_TRANSMISSION_NODE.get());
 
@@ -432,7 +432,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU and FE energy capabilities for Energy Converter");
+        Singularity_Iteration.LOGGER.debug("Registered EU and FE energy capabilities for Energy Converter");
 
         // Register EU energy storage capability for all Wire tiers
         registerWireCapabilities(event, mio_icif_block_entities.WIRE_LV_ENTITY_TYPE.get());
@@ -441,14 +441,14 @@ public class mio_icif_capacities {
         registerWireCapabilities(event, mio_icif_block_entities.WIRE_EV_ENTITY_TYPE.get());
         registerWireCapabilities(event, mio_icif_block_entities.WIRE_IV_ENTITY_TYPE.get());
         registerWireCapabilities(event, mio_icif_block_entities.WIRE_LuV_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for all Wire tiers");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for all Wire tiers");
 
         // Register EU energy storage capability for all Isolation Wire tiers
         registerWireCapabilities(event, mio_icif_block_entities.WIRE_ISOLATION_LV_ENTITY_TYPE.get());
         registerWireCapabilities(event, mio_icif_block_entities.WIRE_ISOLATION_MV_ENTITY_TYPE.get());
         registerWireCapabilities(event, mio_icif_block_entities.WIRE_ISOLATION_HV_ENTITY_TYPE.get());
         registerWireCapabilities(event, mio_icif_block_entities.WIRE_ISOLATION_EV_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for all Isolation Wire tiers");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for all Isolation Wire tiers");
 
         // Register EU energy storage capability for Electric Furnace
         event.registerBlockEntity(
@@ -473,7 +473,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Electric Furnace");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Electric Furnace");
 
         // Register EU energy storage capability for Powder Machine (打粉机)
         event.registerBlockEntity(
@@ -498,7 +498,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Powder Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Powder Machine");
 
         // Register EU energy storage capability for Advanced Powder Machine (进阶旋风打粉机)
         event.registerBlockEntity(
@@ -523,7 +523,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Advanced Powder Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Advanced Powder Machine");
 
         // Register capabilities for Advanced Compressor Machine (进阶压缩机)
         event.registerBlockEntity(
@@ -593,7 +593,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Extractor Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Extractor Machine");
 
         // Register capabilities for Washer Machine (洗矿机)
         // Register EU energy storage capability
@@ -632,7 +632,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item and fluid capabilities for Washer Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item and fluid capabilities for Washer Machine");
 
         // Register capabilities for Fermenter Machine (发酵机)
         // Register HU heat storage capability
@@ -672,7 +672,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIHeatCapability(event, mio_icif_block_entities.FERMENTER_ELC_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered HU heat, item and fluid capabilities for Fermenter Machine");
+        Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Fermenter Machine");
 
         // Register capabilities for Oil Refinery (精炼机)
         event.registerBlockEntity(
@@ -707,7 +707,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item and fluid capabilities for Oil Refinery Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item and fluid capabilities for Oil Refinery Machine");
 
         // Register capabilities for Blast Furnace (高炉)
         // Register HU heat storage capability
@@ -747,7 +747,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIHeatCapability(event, mio_icif_block_entities.BLAST_FURNACE_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered HU heat, item and fluid capabilities for Blast Furnace");
+        Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Blast Furnace");
 
         // Register capabilities for Advanced Titanium Alloy Blast Furnace (进阶钛合金高炉)
         // Register HU heat storage capability
@@ -787,7 +787,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIHeatCapability(event, mio_icif_block_entities.BLAST_FURNACE_ADVANCED_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered HU heat, item and fluid capabilities for Advanced Titanium Alloy Blast Furnace");
+        Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Advanced Titanium Alloy Blast Furnace");
 
  // Register capabilities for Electric Nano Blast Furnace (电力纳米高)
         event.registerBlockEntity(
@@ -810,7 +810,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Electric Nano Blast Furnace");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Electric Nano Blast Furnace");
 
         // Register capabilities for Steam Generator (蒸汽机)
         // Register HU heat storage capability
@@ -850,7 +850,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIHeatCapability(event, mio_icif_block_entities.STEAM_GENERATOR_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered HU heat, item and fluid capabilities for Steam Generator");
+        Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Steam Generator");
 
         // Register capabilities for Steam Repressurizer (蒸汽再加压机)
         // Register HU heat storage capability
@@ -890,7 +890,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIHeatCapability(event, mio_icif_block_entities.STEAM_REPRESSURIZER_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered HU heat, item and fluid capabilities for Steam Repressurizer");
+        Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Steam Repressurizer");
 
         // Register capabilities for Steam Kinetic Generator (蒸汽动能发生机)
         // Register KU kinetic storage capability
@@ -930,7 +930,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIKineticCapability(event, mio_icif_block_entities.STEAM_KINETIC_GENERATOR_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered KU kinetic, item and fluid capabilities for Steam Kinetic Generator");
+        Singularity_Iteration.LOGGER.debug("Registered KU kinetic, item and fluid capabilities for Steam Kinetic Generator");
 
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.FLUID_PIPE_ENTITY_TYPE.get(),
             (pipe, direction) -> pipe.getFluidHandlerCapability(direction));
@@ -946,7 +946,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered fluid capabilities for Water Pipe");
+        Singularity_Iteration.LOGGER.debug("Registered fluid capabilities for Water Pipe");
 
         // Register fluid handler capability for Water Extract Pipe (抽水管)
         event.registerBlockEntity(
@@ -959,7 +959,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered fluid capabilities for Water Extract Pipe");
+        Singularity_Iteration.LOGGER.debug("Registered fluid capabilities for Water Extract Pipe");
 
         // Register item handler capability for Item Pipe - Input (输入型物流管)
         event.registerBlockEntity(
@@ -984,7 +984,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered item capabilities for Item Pipes (Input, Output, Transport)");
+        Singularity_Iteration.LOGGER.debug("Registered item capabilities for Item Pipes (Input, Output, Transport)");
 
         // Register capabilities for Geo Generator (地热发电机)
         // Register EU energy storage capability
@@ -1023,7 +1023,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item and fluid capabilities for Geo Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item and fluid capabilities for Geo Generator");
 
         // Register capabilities for Solar Generator (太阳能发电机)
         // Register EU energy storage capability
@@ -1050,7 +1050,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Solar Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Solar Generator");
 
         // Register capabilities for Advanced Solar Panel (高级太阳能发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.ADVANCED_SOLAR_PANEL_ENTITY_TYPE.get());
@@ -1064,7 +1064,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Advanced Solar Panel");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Advanced Solar Panel");
 
         // Register capabilities for Hybrid Solar Panel (混合太阳能发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.HYBRID_SOLAR_PANEL_ENTITY_TYPE.get());
@@ -1078,7 +1078,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Hybrid Solar Panel");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Hybrid Solar Panel");
 
         // Register capabilities for Ultimate Hybrid Solar Panel (终极混合太阳能发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.ULTIMATE_HYBRID_SOLAR_PANEL_ENTITY_TYPE.get());
@@ -1092,7 +1092,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Ultimate Hybrid Solar Panel");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Ultimate Hybrid Solar Panel");
 
         // Register capabilities for Quantum Solar Panel (量子太阳能发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.QUANTUM_SOLAR_PANEL_ENTITY_TYPE.get());
@@ -1106,7 +1106,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Quantum Solar Panel");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Quantum Solar Panel");
 
         // Register capabilities for METS Advanced Solar Generator (METS进阶太阳能发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.METS_ADVANCED_SOLAR_GENERATOR_ENTITY_TYPE.get());
@@ -1120,7 +1120,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for METS Advanced Solar Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for METS Advanced Solar Generator");
 
         // Register capabilities for Photon Resonance Solar Generator (光子振谐太阳能发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.PHOTON_RESONANCE_SOLAR_GENERATOR_ENTITY_TYPE.get());
@@ -1134,7 +1134,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Photon Resonance Solar Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Photon Resonance Solar Generator");
 
         // Register capabilities for Ultimate Photon Resonance Solar Generator (终极光子振谐太阳能发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR_ENTITY_TYPE.get());
@@ -1148,11 +1148,11 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Ultimate Photon Resonance Solar Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Ultimate Photon Resonance Solar Generator");
 
         // Register capabilities for Quantum Generator (量子发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.QUANTUM_GENERATOR_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for Quantum Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for Quantum Generator");
 
         // Register capabilities for Wind Generator (风力发电机)
         // Register EU energy storage capability
@@ -1179,7 +1179,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Wind Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Wind Generator");
 
         // Register capabilities for Water Generator (水力发电机)
         // Register EU energy storage capability
@@ -1206,7 +1206,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Water Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Water Generator");
 
         // Register capabilities for Semifluid Generator (半流质发电机)
         // Register EU energy storage capability
@@ -1245,7 +1245,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item and fluid capabilities for Semifluid Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item and fluid capabilities for Semifluid Generator");
 
         event.registerBlockEntity(
             EUApi.SIDED,
@@ -1342,7 +1342,7 @@ public class mio_icif_capacities {
         );
 
         // R106: the explicit directional provider above owns this capability; no fallback may bypass it.
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item handler and HU heat capabilities for Heat Generator Electric");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item handler and HU heat capabilities for Heat Generator Electric");
 
         // Register capabilities for Solid Heat Generator (固体加热机)
         // 注册物品栏能力（用于燃料输入和灰烬输出）
@@ -1370,7 +1370,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIHeatCapability(event, mio_icif_block_entities.SOLID_HEAT_GENERATOR.get());
-        Singularity_Iteration.LOGGER.info("Registered item handler and HU heat capabilities for Solid Heat Generator");
+        Singularity_Iteration.LOGGER.debug("Registered item handler and HU heat capabilities for Solid Heat Generator");
 
         // Register capabilities for Fluid Heat Generator (流体加热机)
         // 注册物品栏能力（用于燃料桶输入和空桶输出）
@@ -1410,7 +1410,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIHeatCapability(event, mio_icif_block_entities.FLUID_HEAT_GENERATOR.get());
-        Singularity_Iteration.LOGGER.info("Registered item handler, fluid handler and HU heat capabilities for Fluid Heat Generator");
+        Singularity_Iteration.LOGGER.debug("Registered item handler, fluid handler and HU heat capabilities for Fluid Heat Generator");
 
         // Register capabilities for RTG Heat Generator (放射性同位素温差加热机)
         // 注册物品栏能力（6个槽位用于RTG靶丸）
@@ -1438,7 +1438,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIHeatCapability(event, mio_icif_block_entities.RT_HEAT_GENERATOR.get());
-        Singularity_Iteration.LOGGER.info("Registered item handler and HU heat capabilities for RTG Heat Generator");
+        Singularity_Iteration.LOGGER.debug("Registered item handler and HU heat capabilities for RTG Heat Generator");
 
         // Register capabilities for Stirling Generator (斯特林发电机)
         // 斯特林发电机接收 HU 热能并转换为 EU 电能
@@ -1466,7 +1466,7 @@ public class mio_icif_capacities {
         );
 
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and HU heat capabilities for Stirling Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and HU heat capabilities for Stirling Generator");
 
         event.registerBlockEntity(
             EUApi.SIDED,
@@ -1526,7 +1526,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIKineticCapability(event, mio_icif_block_entities.MANUAL_KINETIC_GENERATOR_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered KU kinetic capabilities for Manual Kinetic Generator");
+        Singularity_Iteration.LOGGER.debug("Registered KU kinetic capabilities for Manual Kinetic Generator");
 
         // Register capabilities for Kinetic Generator (动能发电机)
         // 注册 KU 动能接收能力（只从正面接收，由方块实体控制）
@@ -1566,7 +1566,7 @@ public class mio_icif_capacities {
         );
 
 
-        Singularity_Iteration.LOGGER.info("Registered KU kinetic and EU energy capabilities for Kinetic Generator");
+        Singularity_Iteration.LOGGER.debug("Registered KU kinetic and EU energy capabilities for Kinetic Generator");
 
         // Register capabilities for Turbo Kinetic Generator (涡轮增压动能发电机)
         event.registerBlockEntity(
@@ -1600,7 +1600,7 @@ public class mio_icif_capacities {
             }
         );
         registerAPIKineticCapability(event, mio_icif_block_entities.TURBO_KINETIC_GENERATOR_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered KU kinetic and EU energy capabilities for Turbo Kinetic Generator");
+        Singularity_Iteration.LOGGER.debug("Registered KU kinetic and EU energy capabilities for Turbo Kinetic Generator");
 
         // Register capabilities for Twin Turbo Kinetic Generator (双涡轮增压动能发电机)
         event.registerBlockEntity(
@@ -1634,7 +1634,7 @@ public class mio_icif_capacities {
             }
         );
         registerAPIKineticCapability(event, mio_icif_block_entities.TWIN_TURBO_KINETIC_GENERATOR_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered KU kinetic and EU energy capabilities for Twin Turbo Kinetic Generator");
+        Singularity_Iteration.LOGGER.debug("Registered KU kinetic and EU energy capabilities for Twin Turbo Kinetic Generator");
 
         // Register capabilities for Wind Kinetic Generator (风力动能发生机)
         // 注册 KU 动能存储能力
@@ -1662,7 +1662,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIKineticCapability(event, mio_icif_block_entities.WIND_KINETIC_GENERATOR_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered KU kinetic and item capabilities for Wind Kinetic Generator");
+        Singularity_Iteration.LOGGER.debug("Registered KU kinetic and item capabilities for Wind Kinetic Generator");
 
         // Register capabilities for Electric Kinetic Generator (电力动能机)
         // 注册 EU 能量存储能力（输入）
@@ -1702,7 +1702,7 @@ public class mio_icif_capacities {
         );
 
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item handler and KU kinetic capabilities for Electric Kinetic Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item handler and KU kinetic capabilities for Electric Kinetic Generator");
 
         // Register capabilities for Stirling Kinetic Generator (斯特林动能发生机)
         // 注册 KU 动能输出能力（只从正面输出）
@@ -1761,33 +1761,33 @@ public class mio_icif_capacities {
 
         registerAPIKineticCapability(event, mio_icif_block_entities.STIRLING_KINETIC_GENERATOR_ENTITY_TYPE.get());
         registerAPIHeatCapability(event, mio_icif_block_entities.STIRLING_KINETIC_GENERATOR_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered KU kinetic, item handler, fluid and HU heat capabilities for Stirling Kinetic Generator");
+        Singularity_Iteration.LOGGER.debug("Registered KU kinetic, item handler, fluid and HU heat capabilities for Stirling Kinetic Generator");
 
         // Register capabilities for LV-MV Transformer (LV-MV 变压器)
         // 注册 EU 能量存储能力（输入面和输出面有不同的电压等级）
         registerLegacyTransformerCapability(event, mio_icif_block_entities.TRANSFORMER_LV_MV.get());
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for LV-MV Transformer");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for LV-MV Transformer");
 
         // Register capabilities for MV-HV Transformer (MV-HV 变压器)
         registerLegacyTransformerCapability(event, mio_icif_block_entities.TRANSFORMER_MV_HV.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for MV-HV Transformer");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for MV-HV Transformer");
 
         // Register capabilities for HV-EV Transformer (HV-EV 变压器)
         registerLegacyTransformerCapability(event, mio_icif_block_entities.TRANSFORMER_HV_EV.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for HV-EV Transformer");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for HV-EV Transformer");
 
         // Register capabilities for EV-SC Transformer (EV-SC 变压器)
         registerLegacyTransformerCapability(event, mio_icif_block_entities.TRANSFORMER_EV_SC.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for EV-SC Transformer");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for EV-SC Transformer");
 
         // Register capabilities for IV-LuV Transformer (IV-LuV 变压器)
         registerLegacyTransformerCapability(event, mio_icif_block_entities.TRANSFORMER_IV_LUV.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for IV-LuV Transformer");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for IV-LuV Transformer");
 
         // Register capabilities for LuV-ZPMV Transformer (LuV-ZPMV 变压器)
         registerLegacyTransformerCapability(event, mio_icif_block_entities.TRANSFORMER_LUV_ZPMV.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for LuV-ZPMV Transformer");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for LuV-ZPMV Transformer");
 
         // Register capabilities for Voltage Checker (电压检测器)
         // 注册 EU 能量存储能力（检测器只检测不存储，使用自定义包装器）
@@ -1802,7 +1802,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy capabilities for Voltage Checker");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy capabilities for Voltage Checker");
 
         // Register capabilities for Futures Machine (期货机)
         // 注册 EU 能量存储能力
@@ -1830,7 +1830,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Futures Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Futures Machine");
 
         // Register capabilities for Heat Source Fluid (热交换机)
         // Register item handler capability
@@ -1874,7 +1874,7 @@ public class mio_icif_capacities {
         // 不再对热交换机调用通用的 registerAPIHeatCapability：
         // 那条路径会绕过上面的正面朝向判断（adaptHeatStorage 直接包装方块实体、忽略 side），
         // 导致热量能从 6 个面被抽走，与原版 IC2「只允许正面」不符。
-        Singularity_Iteration.LOGGER.info("Registered item, fluid and heat capabilities for Heat Source Fluid");
+        Singularity_Iteration.LOGGER.debug("Registered item, fluid and heat capabilities for Heat Source Fluid");
 
         // Register capabilities for Compressor Machine (压缩机)
         // Register EU energy storage capability
@@ -1900,7 +1900,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Compressor Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Compressor Machine");
 
         // Register capabilities for Canner Machine (装罐机)
         // Register EU energy storage capability
@@ -1939,7 +1939,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item and fluid capabilities for Canner Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item and fluid capabilities for Canner Machine");
 
         // Register capabilities for Miner Machine (采矿机)
         // Register EU energy storage capability
@@ -1965,7 +1965,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Miner Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Miner Machine");
 
         // Register capabilities for Advanced Miner Machine (高级采矿机)
         // Register EU energy storage capability
@@ -1991,7 +1991,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Advanced Miner Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Advanced Miner Machine");
 
         // Register capabilities for Pump Machine (泵)
         // 注册 EU 能量存储能力
@@ -2030,7 +2030,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item and fluid capabilities for Pump Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item and fluid capabilities for Pump Machine");
 
         // Register capabilities for Electrolyzer Machine (电解机)
         // 注册 EU 能量存储能力
@@ -2058,7 +2058,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Electrolyzer Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Electrolyzer Machine");
 
         // Register capabilities for Recycler Machine (回收机)
         // 注册 EU 能量存储能力
@@ -2086,7 +2086,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Recycler Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Recycler Machine");
 
         // Register capabilities for Induction Furnace (感应炉)
         // 注册 EU 能量存储能力
@@ -2127,7 +2127,7 @@ public class mio_icif_capacities {
         );
 
         registerAPIHeatCapability(event, mio_icif_block_entities.INDUCTION_ELC_ENTITY_TYPE.get());
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item handler and HU heat capabilities for Induction Furnace");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item handler and HU heat capabilities for Induction Furnace");
 
         // Register capabilities for Matter Fabricator (UU物质生成机)
         // 注册 EU 能量存储能力
@@ -2167,7 +2167,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item handler and fluid capabilities for Matter Fabricator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item handler and fluid capabilities for Matter Fabricator");
 
         // Register capabilities for Large Fabricator Core (大型物质生成机核心)
         event.registerBlockEntity(
@@ -2227,7 +2227,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered capabilities for Large Fabricator modules");
+        Singularity_Iteration.LOGGER.debug("Registered capabilities for Large Fabricator modules");
 
         // Register capabilities for Neutron Polymerizer (粒子聚合发生器)
         registerEnergyCapabilities(event, mio_icif_block_entities.NEUTRON_POLYMERIZER_ENTITY_TYPE.get());
@@ -2269,7 +2269,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Unlimited Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Unlimited Generator");
 
         // 0.1.10.11: Creative Generator (EU output on all six faces; no inventory)
         event.registerBlockEntity(
@@ -2305,7 +2305,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Metal Former");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Metal Former");
 
         // Register capabilities for Centrifuge Machine (热能离心机)
         // 注册 EU 能量存储能力
@@ -2333,7 +2333,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item capabilities for Centrifuge Machine");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Centrifuge Machine");
 
         // Register capabilities for Nuclear Reactor Generator (核反应堆发电机)
         // 注册 EU 能量存储能力（输出）
@@ -2385,7 +2385,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item handler, HU heat and fluid capabilities for Nuclear Reactor Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item handler, HU heat and fluid capabilities for Nuclear Reactor Generator");
 
         // Register capabilities for Reactor Fluid Port (流体反应堆流体端口)
         // 注册流体处理能力（作为流体反应堆的流体访问接口）
@@ -2412,7 +2412,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered fluid and item capabilities for Reactor Fluid Port");
+        Singularity_Iteration.LOGGER.debug("Registered fluid and item capabilities for Reactor Fluid Port");
 
         // Register capabilities for Reactor Chamber (核反应仓)
         // 核反应仓本身没有存储，只是转发到连接的核反应堆
@@ -2455,7 +2455,7 @@ public class mio_icif_capacities {
             }
         );
         
-        Singularity_Iteration.LOGGER.info("Registered EU energy, HU heat and item handler capabilities for Reactor Chamber");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, HU heat and item handler capabilities for Reactor Chamber");
 
         // Register capabilities for Redstone Reactor Coolant Injector (反应堆冷却液注入器)
         // 注册 EU 能量存储能力
@@ -2482,7 +2482,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Redstone Reactor Coolant Injector");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Redstone Reactor Coolant Injector");
 
         // Register capabilities for Lapis Reactor Coolant Injector (青金石反应堆冷却液注入器)
         // 注册 EU 能量存储能力
@@ -2509,7 +2509,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Lapis Reactor Coolant Injector");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Lapis Reactor Coolant Injector");
 
         // Register capabilities for RTG Generator (放射性同位素温差发电机)
         // 注册 EU 能量存储能力（输出）
@@ -2537,7 +2537,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for RTG Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for RTG Generator");
 
         // 注册磁化机的 EU 能量存储能力
         event.registerBlockEntity(
@@ -2563,7 +2563,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Magnetizer");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Magnetizer");
 
         // Register capabilities for Terra ELC (地形转换机)
         // 注册 EU 能量存储能力
@@ -2591,7 +2591,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Terra ELC");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Terra ELC");
 
         // Register capabilities for Teleporter (传送机)
         // 注册 EU 能量存储能力
@@ -2620,7 +2620,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Teleporter");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Teleporter");
 
         // Register capabilities for Tesla Coil (特斯拉线圈)
         // 注册 EU 能量存储能力
@@ -2648,7 +2648,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Tesla Coil");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Tesla Coil");
 
         // Laser defence towers: EU input and the battery slot
         for (var towerType : java.util.List.of(mio_icif_block_entities.LASER_DEFENSE_TOWER_ENTITY_TYPE.get(),
@@ -2698,7 +2698,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item handler and fluid handler capabilities for Crop Matron");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item handler and fluid handler capabilities for Crop Matron");
 
         // Register capabilities for Crop Harvester (作物收割机)
         // 注册 EU 能量存储能力
@@ -2726,7 +2726,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Crop Harvester");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Crop Harvester");
 
         // Register capabilities for Pattern Scanner (模式扫描机)
         // 注册 EU 能量存储能力
@@ -2754,7 +2754,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Pattern Scanner");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Pattern Scanner");
 
         // Register capabilities for Pattern Storage (模式存储机)
         // 注册 EU 能量存储能力
@@ -2782,7 +2782,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Pattern Storage");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Pattern Storage");
 
         // Register capabilities for Replicator (复制机)
         // 注册 EU 能量存储能力
@@ -2822,7 +2822,7 @@ public class mio_icif_capacities {
             }
         );
 
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item handler and fluid handler capabilities for Replicator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item handler and fluid handler capabilities for Replicator");
 
         // Register capabilities for Solar Distiller (太阳能蒸馏机)
         event.registerBlockEntity(
@@ -2845,7 +2845,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered item handler and fluid handler capabilities for Solar Distiller");
+        Singularity_Iteration.LOGGER.debug("Registered item handler and fluid handler capabilities for Solar Distiller");
 
         // Register capabilities for Condenser (冷凝机)
         event.registerBlockEntity(
@@ -2878,7 +2878,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy, item handler and fluid handler capabilities for Condenser");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy, item handler and fluid handler capabilities for Condenser");
 
         // Register capabilities for Block Cutter (方块切割机)
         event.registerBlockEntity(
@@ -2901,7 +2901,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Block Cutter");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Block Cutter");
 
         // Register capabilities for Lathe (车床)
         event.registerBlockEntity(
@@ -2925,7 +2925,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered item handler and KU capabilities for Lathe");
+        Singularity_Iteration.LOGGER.debug("Registered item handler and KU capabilities for Lathe");
 
         // Register capabilities for Electric Sorter (电动分拣机)
         event.registerBlockEntity(
@@ -2948,7 +2948,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Electric Sorter");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Electric Sorter");
 
         // Register capabilities for Item Buffer (物品缓冲机)
         event.registerBlockEntity(
@@ -2961,7 +2961,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered item handler capability for Item Buffer");
+        Singularity_Iteration.LOGGER.debug("Registered item handler capability for Item Buffer");
 
         // Register capabilities for Advanced Item Distributor (高级物品分配机 - 无需电力)
         event.registerBlockEntity(
@@ -2974,7 +2974,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered item handler capability for Advanced Item Distributor");
+        Singularity_Iteration.LOGGER.debug("Registered item handler capability for Advanced Item Distributor");
 
         // Register capabilities for Fluid Distributor (流体分配机)
         event.registerBlockEntity(
@@ -2997,7 +2997,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and fluid handler capabilities for Fluid Distributor");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and fluid handler capabilities for Fluid Distributor");
 
         // Register capabilities for Advanced Fluid Distributor (高级流体分配机)
         event.registerBlockEntity(
@@ -3020,7 +3020,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and fluid handler capabilities for Advanced Fluid Distributor");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and fluid handler capabilities for Advanced Fluid Distributor");
 
         // Register capabilities for Fluid Regulator (流体流量调节机)
         event.registerBlockEntity(
@@ -3076,7 +3076,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and fluid handler capabilities for Fluid Regulator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and fluid handler capabilities for Fluid Regulator");
 
         // Register fluid handler capability for Oil Rig Output (储油模块)
         event.registerBlockEntity(
@@ -3089,7 +3089,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered fluid handler capability for Oil Rig Output");
+        Singularity_Iteration.LOGGER.debug("Registered fluid handler capability for Oil Rig Output");
 
         // Register capabilities for Molecular Transformer (分子重组仪)
         // 注册 EU 能量存储能力
@@ -3115,7 +3115,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Molecular Transformer");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Molecular Transformer");
 
         // Register capabilities for Geomagnetic Generator (地磁发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.GEOMAGNETIC_GENERATOR_ENTITY_TYPE.get());
@@ -3129,7 +3129,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Geomagnetic Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Geomagnetic Generator");
 
         // Register capabilities for Diesel Generator (柴油发电机)
         registerEnergyCapabilities(event, mio_icif_block_entities.DIESEL_GENERATOR_ENTITY_TYPE.get());
@@ -3143,7 +3143,7 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered EU energy and item handler capabilities for Diesel Generator");
+        Singularity_Iteration.LOGGER.debug("Registered EU energy and item handler capabilities for Diesel Generator");
 
         // 注册青铜储罐的流体能力 (16桶 = 16000 mB)
         event.registerBlockEntity(
@@ -3200,12 +3200,14 @@ public class mio_icif_capacities {
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.info("Registered fluid handler capabilities for all tanks (Bronze/Iron/Titanium/Adviron/Iridium)");
+        Singularity_Iteration.LOGGER.debug("Registered fluid handler capabilities for all tanks (Bronze/Iron/Titanium/Adviron/Iridium)");
 
         // 注册流体单元的 Forge Fluid Capability
         registerCellFluidCapabilities(event);
         registerBatteryItemCapabilities(event);
         MekanismStrictEnergyBridge.register(event);
+        // 0.1.10.16: the per-type lines above are DEBUG; one line at INFO
+        Singularity_Iteration.LOGGER.info("Registered Singularity Iteration capabilities (details at DEBUG level)");
     }
 
     /**
@@ -3261,7 +3263,7 @@ public class mio_icif_capacities {
             );
         }
         
-        Singularity_Iteration.LOGGER.info("Registered FluidHandler.ITEM capabilities for all fluid cells including dynamic cell");
+        Singularity_Iteration.LOGGER.debug("Registered FluidHandler.ITEM capabilities for all fluid cells including dynamic cell");
     }
 
     /** Expose SI batteries, tools and armour to standard FE item chargers. */
@@ -3273,7 +3275,7 @@ public class mio_icif_capacities {
                 (stack, context) -> BatteryFeCapability.create(stack), item);
             registered++;
         }
-        Singularity_Iteration.LOGGER.info("Registered EnergyStorage.ITEM capabilities for {} SI battery items", registered);
+        Singularity_Iteration.LOGGER.debug("Registered EnergyStorage.ITEM capabilities for {} SI battery items", registered);
     }
 
     /**

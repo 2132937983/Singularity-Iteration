@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Recycler"
+  title: "リサイクラー"
   icon: mio_icif:producer/block_recycler_elc
   parent: machines.md
   position: 56
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_recycler_elc
 ---
 
-# Recycler
+# リサイクラー
 
 <Row>
   <BlockImage id="mio_icif:producer/block_recycler_elc" scale="3" />

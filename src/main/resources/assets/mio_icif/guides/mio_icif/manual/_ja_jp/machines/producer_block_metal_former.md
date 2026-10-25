@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Metal Former"
+  title: "金属成型機"
   icon: mio_icif:producer/block_metal_former
   parent: machines.md
   position: 43
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_metal_former
 ---
 
-# Metal Former
+# 金属成型機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_metal_former" scale="3" />

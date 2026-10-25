@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Radioisotope Thermoelectric Generator"
+  title: "放射性同位体熱電発電機"
   icon: mio_icif:generator/block_rt_generator
   parent: generators.md
   position: 26
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_rt_generator
 ---
 
-# Radioisotope Thermoelectric Generator
+# 放射性同位体熱電発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_rt_generator" scale="3" />

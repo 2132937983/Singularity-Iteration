@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Industrial TNT"
+  title: "工業用 TNT"
   icon: mio_icif:reactor/block_ic_tnt
   parent: heavy.md
   position: 1
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:reactor/block_ic_tnt
 ---
 
-# Industrial TNT
+# 工業用 TNT
 
 <Row>
   <BlockImage id="mio_icif:reactor/block_ic_tnt" scale="3" />

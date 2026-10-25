@@ -28,7 +28,7 @@ import java.util.Deque;
  * recharging everything it stores. Slides in, holds for five seconds, slides out; several
  * notices queue up. Drawn in the Modern-IC panel style of the machine GUIs.
  */
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public final class ArmoryToastOverlay {
     private static final int W = 176, H = 38, SLIDE = 250, HOLD = 5000;
     private static final Deque<Entry> QUEUE = new ArrayDeque<>();

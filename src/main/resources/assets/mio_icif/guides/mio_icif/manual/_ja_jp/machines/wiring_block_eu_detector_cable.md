@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "EU Detector Cable"
+  title: "EU 検出ケーブル"
   icon: mio_icif:wiring/block_eu_detector_cable
   parent: power.md
   position: 9
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_eu_detector_cable
 ---
 
-# EU Detector Cable
+# EU 検出ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_eu_detector_cable" scale="3" />

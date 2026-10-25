@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Wind Kinetic Generator"
+  title: "風力運動エネルギー発生器"
   icon: mio_icif:kugenerator/block_wind_kinetic_generator
   parent: generators.md
   position: 40
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:kugenerator/block_wind_kinetic_generator
 ---
 
-# Wind Kinetic Generator
+# 風力運動エネルギー発生器
 
 <Row>
   <BlockImage id="mio_icif:kugenerator/block_wind_kinetic_generator" scale="3" />

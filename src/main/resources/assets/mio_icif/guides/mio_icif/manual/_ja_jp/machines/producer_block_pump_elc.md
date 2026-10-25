@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Pump"
+  title: "ポンプ"
   icon: mio_icif:producer/block_pump_elc
   parent: machines.md
   position: 53
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_pump_elc
 ---
 
-# Pump
+# ポンプ
 
 <Row>
   <BlockImage id="mio_icif:producer/block_pump_elc" scale="3" />

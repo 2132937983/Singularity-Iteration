@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Geomagnetic Antenna"
+  title: "地磁気アンテナ"
   icon: mio_icif:generator/block_geomagnetic_antenna
   parent: generators.md
   position: 11
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_geomagnetic_antenna
 ---
 
-# Geomagnetic Antenna
+# 地磁気アンテナ
 
 <Row>
   <BlockImage id="mio_icif:generator/block_geomagnetic_antenna" scale="3" />

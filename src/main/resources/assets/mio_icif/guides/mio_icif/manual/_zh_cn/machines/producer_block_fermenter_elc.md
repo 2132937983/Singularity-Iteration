@@ -36,6 +36,16 @@ item_ids:
 - 红石信号对发酵机没有作用。
 - 升级槽位只接受物品和流体的弹出与抽入升级。
 
+## 热源摆放
+
+拖动视图可旋转。下方列表给出所需方块及其规则。JEI 的“多方块结构”分类中也有相同的建造图。
+
+<GameScene zoom="5" interactive={true}>
+  <SiStructure id="mio_icif:fermenter" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:fermenter" />
+
 ## 配方
 
 <RecipesFor id="mio_icif:producer/block_fermenter_elc" fallbackText="-" />

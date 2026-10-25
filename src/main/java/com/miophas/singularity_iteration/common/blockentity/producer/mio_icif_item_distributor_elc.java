@@ -141,7 +141,7 @@ public class mio_icif_item_distributor_elc extends BlockEntity implements net.mi
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        tag.put("inventory", itemHandler.serializeNBT(registries));
+        // 0.1.10.17 (E-2): no inventory. The menu gets the items from the vanilla slot sync.
         if (!priority.isEmpty()) {
             tag.putIntArray("priority", priority.stream().mapToInt(Direction::get3DDataValue).toArray());
         }

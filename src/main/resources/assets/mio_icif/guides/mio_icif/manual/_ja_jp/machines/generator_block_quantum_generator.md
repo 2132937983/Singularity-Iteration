@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Quantum Generator"
+  title: "量子発電機"
   icon: mio_icif:generator/block_quantum_generator
   parent: generators.md
   position: 23
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_quantum_generator
 ---
 
-# Quantum Generator
+# 量子発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_quantum_generator" scale="3" />

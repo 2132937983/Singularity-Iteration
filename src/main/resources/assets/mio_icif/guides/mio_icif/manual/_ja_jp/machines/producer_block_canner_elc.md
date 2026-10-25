@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Canner"
+  title: "缶詰機"
   icon: mio_icif:producer/block_canner_elc
   parent: machines.md
   position: 15
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_canner_elc
 ---
 
-# Canner
+# 缶詰機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_canner_elc" scale="3" />

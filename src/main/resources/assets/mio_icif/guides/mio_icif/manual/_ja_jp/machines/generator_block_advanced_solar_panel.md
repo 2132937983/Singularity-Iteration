@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Solar Panel"
+  title: "高度ソーラーパネル"
   icon: mio_icif:generator/block_advanced_solar_panel
   parent: generators.md
   position: 3
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_advanced_solar_panel
 ---
 
-# Advanced Solar Panel
+# 高度ソーラーパネル
 
 <Row>
   <BlockImage id="mio_icif:generator/block_advanced_solar_panel" scale="3" />

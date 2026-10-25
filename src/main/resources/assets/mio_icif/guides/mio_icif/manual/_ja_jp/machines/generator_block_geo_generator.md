@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Geothermal Generator"
+  title: "地熱発電機"
   icon: mio_icif:generator/block_geo_generator
   parent: generators.md
   position: 14
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_geo_generator
 ---
 
-# Geothermal Generator
+# 地熱発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_geo_generator" scale="3" />

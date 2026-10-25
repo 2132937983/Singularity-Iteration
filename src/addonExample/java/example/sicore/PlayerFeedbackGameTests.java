@@ -310,7 +310,7 @@ public final class PlayerFeedbackGameTests {
         BlockEntity machine = h.getBlockEntity(former);
         setStored(machine, 100_000L);
         try {
-            Class<?> modes = Class.forName("com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_metal_former$MetalFormerMode");
+            Class<?> modes = Class.forName("com.miophas.singularity_iteration" + ".common.blockentity.producer.mio_icif_metal_former$MetalFormerMode");
             call(machine, "setMode", modes.getField("EXTRUDING").get(null));
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);

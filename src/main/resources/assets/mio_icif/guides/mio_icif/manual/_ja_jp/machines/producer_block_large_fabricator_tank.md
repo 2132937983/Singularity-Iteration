@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Large Matter Fabricator Tank Module"
+  title: "大型物質生成機 タンクモジュール"
   icon: mio_icif:producer/block_large_fabricator_tank
   parent: machines.md
   position: 37
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_large_fabricator_tank
 ---
 
-# Large Matter Fabricator Tank Module
+# 大型物質生成機 タンクモジュール
 
 <Row>
   <BlockImage id="mio_icif:producer/block_large_fabricator_tank" scale="3" />

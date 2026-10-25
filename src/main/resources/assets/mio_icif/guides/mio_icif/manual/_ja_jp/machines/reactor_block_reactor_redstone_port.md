@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Reactor Redstone Port"
+  title: "原子炉レッドストーンポート"
   icon: mio_icif:reactor/block_reactor_redstone_port
   parent: heavy.md
   position: 14
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:reactor/block_reactor_redstone_port
 ---
 
-# Reactor Redstone Port
+# 原子炉レッドストーンポート
 
 <Row>
   <BlockImage id="mio_icif:reactor/block_reactor_redstone_port" scale="3" />

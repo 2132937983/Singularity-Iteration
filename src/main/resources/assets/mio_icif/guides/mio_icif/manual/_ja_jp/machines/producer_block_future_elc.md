@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Futures Machine"
+  title: "先物取引機"
   icon: mio_icif:producer/block_future_elc
   parent: machines.md
   position: 29
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_future_elc
 ---
 
-# Futures Machine
+# 先物取引機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_future_elc" scale="3" />

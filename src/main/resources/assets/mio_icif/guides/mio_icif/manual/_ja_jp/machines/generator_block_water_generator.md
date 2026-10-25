@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Water Generator"
+  title: "水力発電機"
   icon: mio_icif:generator/block_water_generator
   parent: generators.md
   position: 37
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_water_generator
 ---
 
-# Water Generator
+# 水力発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_water_generator" scale="3" />

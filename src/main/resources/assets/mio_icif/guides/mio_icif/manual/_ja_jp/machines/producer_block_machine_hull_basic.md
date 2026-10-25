@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Basic Machine Hull"
+  title: "基本機械筐体"
   icon: mio_icif:producer/block_machine_hull_basic
   parent: machines.md
   position: 11
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_machine_hull_basic
 ---
 
-# Basic Machine Hull
+# 基本機械筐体
 
 <Row>
   <BlockImage id="mio_icif:producer/block_machine_hull_basic" scale="3" />

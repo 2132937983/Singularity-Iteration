@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Tesla Coil"
+  title: "テスラコイル"
   icon: mio_icif:producer/block_tesla
   parent: machines.md
   position: 66
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_tesla
 ---
 
-# Tesla Coil
+# テスラコイル
 
 <Row>
   <BlockImage id="mio_icif:producer/block_tesla" scale="3" />

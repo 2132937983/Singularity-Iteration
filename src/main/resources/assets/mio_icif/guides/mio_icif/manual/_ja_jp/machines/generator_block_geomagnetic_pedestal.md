@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Geomagnetic Pedestal"
+  title: "地磁気台座"
   icon: mio_icif:generator/block_geomagnetic_pedestal
   parent: generators.md
   position: 13
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_geomagnetic_pedestal
 ---
 
-# Geomagnetic Pedestal
+# 地磁気台座
 
 <Row>
   <BlockImage id="mio_icif:generator/block_geomagnetic_pedestal" scale="3" />

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Matter Generator"
+  title: "物質生成機"
   icon: mio_icif:producer/block_matter_elc
   parent: machines.md
   position: 42
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_matter_elc
 ---
 
-# Matter Generator
+# 物質生成機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_matter_elc" scale="3" />

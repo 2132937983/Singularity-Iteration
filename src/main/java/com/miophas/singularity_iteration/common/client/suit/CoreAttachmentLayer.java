@@ -59,7 +59,7 @@ import org.joml.Quaternionf;
  * follows the client option {@code suit_visuals.core_attachments} and the "core exterior" switch
  * of each piece.
  */
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public final class CoreAttachmentLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends RenderLayer<T, M> {
     private static final EquipmentSlot[] SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST};
     private static final Map<LivingEntity, Motion> MOTION = new WeakHashMap<>();

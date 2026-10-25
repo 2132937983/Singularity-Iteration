@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Large Matter Fabricator Input Module (IV)"
+  title: "大型物質生成機 入力モジュール（IV）"
   icon: mio_icif:producer/block_large_fabricator_input_iv
   parent: machines.md
   position: 35
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_large_fabricator_input_iv
 ---
 
-# Large Matter Fabricator Input Module (IV)
+# 大型物質生成機 入力モジュール（IV）
 
 <Row>
   <BlockImage id="mio_icif:producer/block_large_fabricator_input_iv" scale="3" />

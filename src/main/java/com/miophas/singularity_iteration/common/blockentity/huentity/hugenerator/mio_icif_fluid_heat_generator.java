@@ -47,6 +47,8 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
 
 
     public static final int FUEL_CAPACITY = 10000; // 对齐原版 IC2 流体加热机储罐容量 10000 mB
+    /** Menu data values (0.1.10.19: 7, the fuel fluid id at index 6). */
+    public static final int DATA_COUNT = 7;
     public static final int FUEL_PER_BUCKET = 1000;
     public static final int HU_PER_BUCKET = 64000;
 
@@ -267,9 +269,9 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        var tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
+        // 0.1.10.17 (E-2): the client tag of the parent only. This used to add the whole save (inventory,
+        // tanks, credits); the screen gets those from its menu data, and nothing else reads them on the client.
+        return super.getUpdateTag(registries);
     }
 
     @Override
@@ -455,6 +457,8 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
                     case 3 -> FUEL_CAPACITY;
                     case 4 -> transmitHeat;
                     case 5 -> currentHeatOutput;
+                    // 0.1.10.19: the fuel in the tank (fluid registry id, -1 when empty); the screen drew biogas
+                    case 6 -> com.miophas.singularity_iteration.common.menu.base.FluidIds.idOf(fuelTank.getFluid());
                     default -> 0;
                 };
             }
@@ -469,7 +473,7 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
 
             @Override
             public int getCount() {
-                return 6;
+                return DATA_COUNT;
             }
         };
     }

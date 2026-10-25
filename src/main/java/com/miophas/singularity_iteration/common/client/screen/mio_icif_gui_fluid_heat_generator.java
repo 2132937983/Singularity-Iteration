@@ -7,8 +7,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import com.miophas.singularity_iteration.common.menu.huentity.FluidHeatGeneratorMenu;
-import net.neoforged.neoforge.fluids.FluidStack;
-import com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids;
 
 /**
  * 流体加热机的 GUI类
@@ -67,8 +65,9 @@ public class mio_icif_gui_fluid_heat_generator extends mio_icif_screen<com.mioph
             // 绘制标准流体槽（背景+流体+刻度）
             int fuelAmount = menu.getFuelAmount();
             int fuelCapacity = menu.getFuelCapacity();
+            // 0.1.10.19: the fuel actually in the tank (it was always drawn as biogas)
             drawFluidTank(guiGraphics, x + FUEL_TANK_X, y + FUEL_TANK_Y,
-                new FluidStack(mio_icif_fluids.BIOGAS.get(), fuelAmount), fuelAmount, fuelCapacity);
+                menu.getFuelFluid(), fuelAmount, fuelCapacity);
 
             // 绘制火焰标志（根据燃烧进度从上往下消失）
             int burnProgress = menu.getBurnProgress();
@@ -106,7 +105,7 @@ public class mio_icif_gui_fluid_heat_generator extends mio_icif_screen<com.mioph
         if (mouseX >= x + FUEL_TANK_X && mouseX <= x + FUEL_TANK_X + FLUID_TANK_BG_WIDTH &&
             mouseY >= y + FUEL_TANK_Y && mouseY <= y + FUEL_TANK_Y + FLUID_TANK_BG_HEIGHT) {
             guiGraphics.renderTooltip(this.font,
-                Component.literal((menu.getFuelAmount() > 0 ? com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.BIOGAS.get().getFluidType().getDescription().getString() + ": " : "") + menu.getFuelAmount() + "/" + menu.getFuelCapacity() + " mB"),
+                Component.literal((!menu.getFuelFluid().isEmpty() ? menu.getFuelFluid().getHoverName().getString() + ": " : "") + menu.getFuelAmount() + "/" + menu.getFuelCapacity() + " mB"),
                 mouseX - x, mouseY - y);
         }
     }

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Energy Management Terminal"
+  title: "エネルギー管理端末"
   icon: mio_icif:wiring/block_energy_terminal
   parent: power.md
   position: 11
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_energy_terminal
 ---
 
-# Energy Management Terminal
+# エネルギー管理端末
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_energy_terminal" scale="3" />

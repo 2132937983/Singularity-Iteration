@@ -251,6 +251,7 @@ public class mio_icif_creativeTabs {
                           MioIcifAPI.instance().getItemAPI().setElectricToolEnergy(fullFlightRing, MioIcifAPI.instance().getItemAPI().getElectricToolMaxEnergy(fullFlightRing));
                           output.accept(fullFlightRing); }
                     } catch (Exception e) {
+                        com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("creative-tab-curios", "Creative tab entries of the Curios trinkets", e);
                     }
                 }
 

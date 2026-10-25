@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Quantum Solar Panel"
+  title: "量子ソーラーパネル"
   icon: mio_icif:generator/block_quantum_solar_panel
   parent: generators.md
   position: 24
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_quantum_solar_panel
 ---
 
-# Quantum Solar Panel
+# 量子ソーラーパネル
 
 <Row>
   <BlockImage id="mio_icif:generator/block_quantum_solar_panel" scale="3" />

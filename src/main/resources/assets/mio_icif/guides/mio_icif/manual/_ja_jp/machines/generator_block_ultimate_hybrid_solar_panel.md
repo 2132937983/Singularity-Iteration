@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Ultimate Hybrid Solar Panel"
+  title: "アルティメットハイブリッドソーラーパネル"
   icon: mio_icif:generator/block_ultimate_hybrid_solar_panel
   parent: generators.md
   position: 35
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_ultimate_hybrid_solar_panel
 ---
 
-# Ultimate Hybrid Solar Panel
+# アルティメットハイブリッドソーラーパネル
 
 <Row>
   <BlockImage id="mio_icif:generator/block_ultimate_hybrid_solar_panel" scale="3" />

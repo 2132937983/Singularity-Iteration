@@ -34,6 +34,16 @@ This block uses no EU.
 
 - The shell needs at least one Fluid Port, Access Hatch or Redstone Port.
 
+## Structure
+
+Drag the view to turn it. The list gives the blocks and their rules. JEI shows the same plan in the category "Multiblock Structures".
+
+<GameScene zoom="2.5" interactive={true}>
+  <SiStructure id="mio_icif:fluid_reactor" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:fluid_reactor" />
+
 ## Recipe
 
 <RecipesFor id="mio_icif:reactor/block_reactor_vessel" fallbackText="-" />

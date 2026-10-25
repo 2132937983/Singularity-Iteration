@@ -92,11 +92,27 @@ public final class ArmoryRemoteService {
             if (last != null && now - last < LOAD_COOLDOWN && now >= last) return null;
             LAST_FORCED_LOAD.put(player.getUUID(), now);
         }
-        return level.getBlockEntity(target.pos()) instanceof mio_icif_armory a ? a : null;
+        mio_icif_armory found = level.getBlockEntity(target.pos()) instanceof mio_icif_armory a ? a : null;
+        // 0.1.10.19: keep the chunk loaded while the console uses it. A synchronous load only gets the
+        // one-tick vanilla ticket, so the chunk unloaded again at once; the console refreshes every 20
+        // ticks, so every click came inside the forced-load cooldown and found no Armory ("missing").
+        // That broke every Armory in another dimension (a Galacticraft space station, for example) or in
+        // an unloaded chunk. Each lookup renews the ticket; it expires REMOTE_TICKET_TICKS after the last.
+        if (found != null) {
+            var chunk = new net.minecraft.world.level.ChunkPos(target.pos());
+            level.getChunkSource().addRegionTicket(REMOTE_TICKET, chunk, 0, chunk);
+        }
+        return found;
     }
 
     /** Ticks between two forced chunk loads for one player's remote Armory lookups. */
     static final int LOAD_COOLDOWN = 20;
+    /** 0.1.10.19: ticks a remote Armory's chunk stays loaded after the last console lookup (30 s). */
+    static final int REMOTE_TICKET_TICKS = 600;
+    /** 0.1.10.19: the chunk ticket of a remote Armory (full chunk, not ticking; renewed by every lookup). */
+    static final net.minecraft.server.level.TicketType<net.minecraft.world.level.ChunkPos> REMOTE_TICKET =
+        net.minecraft.server.level.TicketType.create("mio_icif_armory_remote",
+            java.util.Comparator.comparingLong(net.minecraft.world.level.ChunkPos::toLong), REMOTE_TICKET_TICKS);
     /** Server thread only (packet handlers run on the main thread). Pruned on logout. */
     private static final java.util.Map<java.util.UUID, Long> LAST_FORCED_LOAD = new java.util.HashMap<>();
 

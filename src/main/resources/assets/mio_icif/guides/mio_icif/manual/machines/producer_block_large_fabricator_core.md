@@ -35,6 +35,16 @@ This block uses no EU.
 
 - The GUI shows the module counts and a message when the structure is incomplete.
 
+## Structure
+
+Drag the view to turn it. The list gives the blocks and their rules. JEI shows the same plan in the category "Multiblock Structures".
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:large_fabricator" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:large_fabricator" />
+
 ## Recipe
 
 <RecipesFor id="mio_icif:producer/block_large_fabricator_core" fallbackText="-" />

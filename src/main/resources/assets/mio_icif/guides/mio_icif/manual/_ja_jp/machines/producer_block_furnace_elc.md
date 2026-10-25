@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Electric Furnace"
+  title: "電気炉"
   icon: mio_icif:producer/block_furnace_elc
   parent: machines.md
   position: 20
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_furnace_elc
 ---
 
-# Electric Furnace
+# 電気炉
 
 <Row>
   <BlockImage id="mio_icif:producer/block_furnace_elc" scale="3" />

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "GESU Input Module (IV)"
+  title: "GESU 入力モジュール（IV）"
   icon: mio_icif:wiring/block_gesu_input_iv
   parent: power.md
   position: 14
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_gesu_input_iv
 ---
 
-# GESU Input Module (IV)
+# GESU 入力モジュール（IV）
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_gesu_input_iv" scale="3" />

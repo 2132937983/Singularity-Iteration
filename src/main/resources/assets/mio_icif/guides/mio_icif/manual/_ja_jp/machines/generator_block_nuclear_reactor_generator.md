@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Nuclear Reactor Generator"
+  title: "原子炉発電機"
   icon: mio_icif:generator/block_nuclear_reactor_generator
   parent: generators.md
   position: 21
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_nuclear_reactor_generator
 ---
 
-# Nuclear Reactor Generator
+# 原子炉発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_nuclear_reactor_generator" scale="3" />
@@ -85,6 +85,16 @@ item_ids:
 
 > **警告：** 炉温 40 % から、原子炉はブロックに火をつけ、水を蒸発させ、生物を被曝させ、溶岩を作る（「炉温の段階」を参照）。
 
+
+## 構造
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があります。
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:nuclear_reactor" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:nuclear_reactor" />
 
 ## レシピ
 

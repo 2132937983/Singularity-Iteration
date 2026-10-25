@@ -244,6 +244,8 @@ public class Singularity_Iteration {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
+        // 0.1.10.16: the coin's large stacks come from optional mixins; report it if they did not apply
+        com.miophas.singularity_iteration.common.item.LargeStacks.selfCheck();
         NeoForge.EVENT_BUS.addListener(mio_icif_iridium_driller::onGetEnchantmentLevel);
         // 电动锄：自带时运 3（收获作物掉落受时运加成）
         NeoForge.EVENT_BUS.addListener(mio_icif_electric_hoe::onGetEnchantmentLevel);

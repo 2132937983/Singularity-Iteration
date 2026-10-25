@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Fluid Distributor"
+  title: "流体分配機"
   icon: mio_icif:producer/block_fluid_distributor_elc
   parent: machines.md
   position: 27
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_fluid_distributor_elc
 ---
 
-# Fluid Distributor
+# 流体分配機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_fluid_distributor_elc" scale="3" />

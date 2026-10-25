@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Miner"
+  title: "高度採掘機"
   icon: mio_icif:producer/block_advanced_miner_elc
   parent: machines.md
   position: 6
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_advanced_miner_elc
 ---
 
-# Advanced Miner
+# 高度採掘機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_advanced_miner_elc" scale="3" />

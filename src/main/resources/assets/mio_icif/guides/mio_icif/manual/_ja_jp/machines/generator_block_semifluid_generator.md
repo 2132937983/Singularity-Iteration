@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Semifluid Generator"
+  title: "半流体発電機"
   icon: mio_icif:generator/block_semifluid_generator
   parent: generators.md
   position: 27
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_semifluid_generator
 ---
 
-# Semifluid Generator
+# 半流体発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_semifluid_generator" scale="3" />

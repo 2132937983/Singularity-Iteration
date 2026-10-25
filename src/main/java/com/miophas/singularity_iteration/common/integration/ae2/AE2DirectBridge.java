@@ -22,7 +22,7 @@ public class AE2DirectBridge implements AE2Bridge {
             try {
                 IGridNode node = GridHelper.getExposedNode(world, pos, dir);
                 if (node != null) return true;
-            } catch (Exception ignored) {}
+            } catch (Exception failure) { com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("ae2-direct-bridge", "AE2 grid node or energy service lookup", failure); }
         }
 
         BlockEntity be = world.getBlockEntity(pos);
@@ -33,7 +33,7 @@ public class AE2DirectBridge implements AE2Bridge {
                     IGridNode node = mainNode.getNode();
                     if (node != null) return true;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception failure) { com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("ae2-direct-bridge", "AE2 grid node or energy service lookup", failure); }
         }
 
         return false;
@@ -46,7 +46,7 @@ public class AE2DirectBridge implements AE2Bridge {
             try {
                 IGridNode node = GridHelper.getExposedNode(world, pos, dir);
                 if (node != null) return node;
-            } catch (Exception ignored) {}
+            } catch (Exception failure) { com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("ae2-direct-bridge", "AE2 grid node or energy service lookup", failure); }
         }
 
         BlockEntity be = world.getBlockEntity(pos);
@@ -57,7 +57,7 @@ public class AE2DirectBridge implements AE2Bridge {
                     IGridNode node = mainNode.getNode();
                     if (node != null) return node;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception failure) { com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("ae2-direct-bridge", "AE2 grid node or energy service lookup", failure); }
         }
 
         return null;
@@ -72,7 +72,7 @@ public class AE2DirectBridge implements AE2Bridge {
             if (grid != null) {
                 return grid.getEnergyService();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception failure) { com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("ae2-direct-bridge", "AE2 grid node or energy service lookup", failure); }
         return null;
     }
 

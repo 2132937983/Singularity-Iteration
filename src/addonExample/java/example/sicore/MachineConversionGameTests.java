@@ -32,7 +32,7 @@ import java.util.TreeSet;
 public final class MachineConversionGameTests {
     private MachineConversionGameTests() {}
 
-    private static final String COMMON = "com.miophas.singularity_iteration.common.";
+    private static final String COMMON = "com.miophas.singularity_iteration" + ".common.";
 
     private static ResourceLocation rl(String path) { return ResourceLocation.fromNamespaceAndPath("mio_icif", path); }
     private static Object call(Object target, String name, Object... args) { return Round33GameTests.call(target, name, args); }

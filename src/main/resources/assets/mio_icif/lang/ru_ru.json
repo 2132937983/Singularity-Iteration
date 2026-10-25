@@ -3,7 +3,6 @@
   "gui.mio_icif.steam_repressurizer.tank": "%s: %s / %s mB",
   "subtitles.mio_icif.nuclear_explosion": "Ударная волна ядерного взрыва",
   "itemGroup.mio_icif": "Сингулярная Итерация",
-
   "mio_icif.configuration.FutureMarket": "Настройки фьючерсного аппарата",
   "mio_icif.configuration.FutureMarket.commodities": "Типы товаров",
   "mio_icif.configuration.FutureMarket.maxDailyItems": "Макс. торгуемых предметов в день",
@@ -21,7 +20,6 @@
   "mio_icif.configuration.maxReceive": "Макс. вход энергии",
   "mio_icif.configuration.minPriceMultiplier": "Мин. множитель цены",
   "mio_icif.configuration.maxPriceMultiplier": "Макс. множитель цены",
-
   "mio_icif.configuration.NuclearExplosion": "Настройки ядерного взрыва",
   "mio_icif.configuration.NuclearExplosion.enableNuclearExplosion": "Включить ядерный взрыв",
   "mio_icif.configuration.NuclearExplosion.mushroomCloudParticleMultiplier": "Множитель частиц грибовидного облака",
@@ -29,13 +27,11 @@
   "mio_icif.configuration.enableNuclearExplosion": "Включить ядерный взрыв",
   "mio_icif.configuration.mushroomCloudParticleMultiplier": "Множитель частиц грибовидного облака",
   "mio_icif.configuration.enableLaserNuclearExplosive": "Включить режим лазерного сверхмощного взрыва",
-
   "mio_icif.configuration.TerraELC": "Настройки терраформера",
   "mio_icif.configuration.TerraELC.blocksPerTick": "Блоков за тик",
   "mio_icif.configuration.TerraELC.range": "Радиус действия",
   "mio_icif.configuration.blocksPerTick": "Блоков за тик",
   "mio_icif.configuration.range": "Радиус действия",
-
   "mio_icif.configuration.Scanner": "Настройки сканера",
   "mio_icif.configuration.Scanner.uuMultiplier": "Множитель расхода UU-материи",
   "mio_icif.configuration.Scanner.euMultiplier": "Множитель расхода энергии EU",
@@ -43,11 +39,9 @@
   "mio_icif.configuration.uuMultiplier": "Множитель расхода UU-материи",
   "mio_icif.configuration.euMultiplier": "Множитель расхода энергии EU",
   "mio_icif.configuration.customCosts": "Пользовательские затраты предметов",
-
   "mio_icif.configuration.EnergyNet": "Настройки энергосети",
   "mio_icif.configuration.EnergyNet.enableVoltageOverload": "Включить эффекты перенапряжения",
   "mio_icif.configuration.enableVoltageOverload": "Включить эффекты перенапряжения",
-
   "block.mio_icif.block_ore_tin": "Оловянная руда",
   "block.mio_icif.block_ore_tin_in_deep": "Глубинносланцевая оловянная руда",
   "block.mio_icif.block_tin": "Оловянный блок",
@@ -68,7 +62,6 @@
   "block.mio_icif.block_titanium": "Титановый блок",
   "block.mio_icif.block_raw_niobium": "Блок необработанного ниобия",
   "block.mio_icif.block_raw_titanium": "Блок необработанного титана",
-
   "block.mio_icif.producer.block_furnace_elc": "Электрическая печь",
   "block.mio_icif.producer.block_matron_elc": "Управляющий культурами",
   "block.mio_icif.producer.block_harvest_elc": "Комбайн",
@@ -126,7 +119,6 @@
   "block.mio_icif.producer.block_batch_crafter": "Пакетный крафтер",
   "block.mio_icif.producer.block_chunk_loader": "Загрузчик чанков",
   "block.mio_icif.producer.block_industrial_workbench": "Промышленный верстак",
-
   "block.mio_icif.generator.block_thermal_generator": "Термальный генератор",
   "block.mio_icif.generator.block_geo_generator": "Геотермальный генератор",
   "block.mio_icif.generator.block_solar_generator": "Солнечный генератор",
@@ -155,13 +147,11 @@
   "block.mio_icif.generator.block_rt_generator": "Радиоизотопный термоэлектрический генератор",
   "block.mio_icif.generator.block_nuclear_reactor_generator": "Генератор ядерного реактора",
   "block.mio_icif.generator.block_unlimit_generator": "Бесконечный генератор",
-
   "block.mio_icif.heat_generator.block_heat_generator_elc": "Электрический теплогенератор",
   "block.mio_icif.heat_generator.block_solid_heat_generator": "Твёрдотопливный теплогенератор",
   "block.mio_icif.heat_generator.block_fluid_heat_generator": "Жидкостный теплогенератор",
   "block.mio_icif.heat_generator.block_rt_heat_generator": "Радиоизотопный теплогенератор",
   "block.mio_icif.heat_generator.block_heat_source_fluid": "Жидкостный источник тепла",
-
   "block.mio_icif.kinetic_generator.block_kinetic_generator_elc": "Электрический кинетический генератор",
   "block.mio_icif.kinetic_generator.block_stirling_kinetic_generator": "Кинетический генератор Стирлинга",
   "block.mio_icif.kinetic_generator.block_manual_kinetic_generator": "Ручной кинетический генератор",
@@ -169,7 +159,6 @@
   "block.mio_icif.kinetic_generator.block_kinetic_generator": "Кинетический генератор",
   "block.mio_icif.kinetic_generator.block_water_kinetic_generator": "Водяной кинетический генератор",
   "block.mio_icif.kinetic_generator.block_steam_kinetic_generator": "Паровой кинетический генератор",
-
   "block.mio_icif.energycontainer.block_bat_box": "BatBox",
   "block.mio_icif.energycontainer.block_cesu": "CESU",
   "block.mio_icif.energycontainer.block_mfe": "MFE",
@@ -178,14 +167,11 @@
   "block.mio_icif.wiring.block_cesu_charger": "Зарядник CESU",
   "block.mio_icif.wiring.block_mfe_charger": "Зарядник MFE",
   "block.mio_icif.wiring.block_mfsu_charger": "Зарядник MFSU",
-
   "block.mio_icif.transformer_ltom": "Трансформатор LV→MV",
   "block.mio_icif.transformer_mtoh": "Трансформатор MV→HV",
   "block.mio_icif.transformer_htoe": "Трансформатор HV→EV",
   "block.mio_icif.transformer_etos": "Трансформатор EV→IV",
-
   "block.mio_icif.checker.block_checker": "Детектор напряжения",
-
   "block.mio_icif.wire_lv": "Низковольтный кабель",
   "block.mio_icif.wire_mv": "Средневольтный кабель",
   "block.mio_icif.wire_hv": "Высоковольтный кабель",
@@ -195,15 +181,12 @@
   "block.mio_icif.wire_isolation_mv": "Изолированный средневольтный кабель",
   "block.mio_icif.wire_isolation_hv": "Изолированный высоковольтный кабель",
   "block.mio_icif.wire_isolation_ev": "Изолированный сверхвысоковольтный кабель",
-
   "block.mio_icif.producer.block_machine_hull_basic": "Базовый корпус машины",
   "block.mio_icif.producer.block_machine_hull_advanced": "Продвинутый корпус машины",
-
   "block.mio_icif.pipe_water": "Водяная труба",
   "block.mio_icif.pipe_water_extract": "Труба забора воды",
   "block.mio_icif.pipe_item_input": "Труба извлечения предметов",
   "block.mio_icif.pipe_item_transport": "Труба транспортировки предметов",
-
   "block.mio_icif.block_rubber_sapling": "Саженец каучукового дерева",
   "block.mio_icif.block_rubber_tree": "Каучуковое дерево",
   "block.mio_icif.block_rubber_leaf": "Каучуковые листья",
@@ -213,24 +196,19 @@
   "block.mio_icif.block_fence_iron": "Железная изгородь",
   "block.mio_icif.block_rub_leaves": "Каучуковые листья",
   "block.mio_icif.block_rub_sapling": "Саженец каучукового дерева",
-
   "block.mio_icif.crop.stick": "Палочка для культур",
   "block.mio_icif.crop.stick_upgraded": "Улучшенная палочка для культур",
   "block.mio_icif.crop.weed": "Сорняк",
-
   "block.mio_icif.reactor.block_reactorvessel": "Корпус ядерного реактора",
   "block.mio_icif.reactor.block_reactor_chamber": "Камера реактора",
   "block.mio_icif.reactor.block_reactor_redstone_port": "Редстоуновый порт реактора",
   "block.mio_icif.reactor.block_reactor_fluid_port": "Жидкостный порт реактора",
   "block.mio_icif.reactor.block_reactor_access_hatch": "Люк доступа к реактору",
-
   "block.mio_icif.reactor.block_ic_tnt": "Промышленный динамит",
   "block.mio_icif.reactor.block_nuke": "Ядерная бомба",
-
   "block.mio_icif.block_radiating_stone": "Радиоактивный камень",
   "block.mio_icif.block_radiating_dirt": "Радиоактивная земля",
   "block.mio_icif.block_radiating_deepslate": "Радиоактивный глубинносланец",
-
   "block.mio_icif.build.block_alloy_door": "Взрывозащитная дверь",
   "block.mio_icif.build.block_alloy_glass": "Взрывозащитное стекло",
   "block.mio_icif.block_bronze": "Бронзовый блок",
@@ -255,7 +233,6 @@
   "block.mio_icif.build.block_titanium_tank": "Титановый резервуар",
   "block.mio_icif.build.block_adviron_tank": "Резервуар из очищенного железа",
   "block.mio_icif.build.block_iridium_tank": "Иридиевый резервуар",
-
   "block.mio_icif.build.rubber_planks": "Каучуковые доски",
   "block.mio_icif.build.rubber_stairs": "Каучуковые ступени",
   "block.mio_icif.build.rubber_slab": "Каучуковая плита",
@@ -267,7 +244,6 @@
   "block.mio_icif.build.rubber_button": "Каучуковая кнопка",
   "block.mio_icif.build.rubber_sign": "Каучуковая табличка",
   "block.mio_icif.build.rubber_hanging_sign": "Каучуковая подвесная табличка",
-
   "block.mio_icif.biogas": "Биогаз",
   "block.mio_icif.hotwater": "Горячая вода",
   "block.mio_icif.biomass": "Биомасса",
@@ -282,7 +258,6 @@
   "block.mio_icif.air": "Сжатый воздух",
   "block.mio_icif.crudeoil": "Сырая нефть",
   "block.mio_icif.dieseloil": "Дизельное топливо",
-
   "fluid_type.mio_icif.biogas": "Биогаз",
   "fluid_type.mio_icif.hotwater": "Горячая вода",
   "fluid_type.mio_icif.biomass": "Биомасса",
@@ -297,7 +272,6 @@
   "fluid_type.mio_icif.air": "Сжатый воздух",
   "fluid_type.mio_icif.crudeoil": "Сырая нефть",
   "fluid_type.mio_icif.dieseloil": "Дизельное топливо",
-
   "item.mio_icif.item_tool_bronze_pickaxe": "Бронзовая кирка",
   "item.mio_icif.item_tool_bronze_axe": "Бронзовый топор",
   "item.mio_icif.item_tool_bronze_shovel": "Бронзовая лопата",
@@ -346,7 +320,6 @@
   "item.mio_icif.item_tool_meter.gui.max_min": "Макс/Мин",
   "item.mio_icif.item_tool_meter.gui.cycle": "Выборка: %dс",
   "item.mio_icif.item_tool_meter.gui.reset": "Сброс",
-
   "item.mio_icif.armor.item_armor_jetpack_electric": "Электрический реактивный ранец",
   "item.mio_icif.armor.item_armor_batpack": "BatPack",
   "item.mio_icif.armor.item_armor_advbatpack": "Продвинутый BatPack",
@@ -373,7 +346,6 @@
   "message.mio_icif.scrapbox.empty": "§cЯщик утильсырья пуст!",
   "message.mio_icif.scrapbox.got": "§aВы получили %s",
   "item.mio_icif.armor.item_armor_hazmat_boots": "Ботинки химзащиты",
-
   "item.mio_icif.armor.item_armor_advanced_solar_helmet": "Продвинутый солнечный шлем (устар.)",
   "item.mio_icif.armor.item_armor_hybrid_solar_helmet": "Гибридный солнечный шлем (устар.)",
   "item.mio_icif.armor.item_armor_ultimate_solar_helmet": "Ультимативный гибридный солнечный шлем (устар.)",
@@ -388,7 +360,6 @@
   "tooltip.mio_icif.ultimate_solar_helmet.night": "§bГенерация ночью: %s EU/t",
   "tooltip.mio_icif.ultimate_solar_helmet.transfer": "§aЛимит передачи: %s EU/t",
   "tooltip.mio_icif.ultimate_solar_helmet.water_breathing": "§9Подводное дыхание",
-
   "item.mio_icif.reactor.item_reactor_collant_simple": "Теплоноситель 10k",
   "item.mio_icif.reactor.item_reactor_collant_triple": "Теплоноситель 30k",
   "item.mio_icif.reactor.item_reactor_coolant_six": "Теплоноситель 60k",
@@ -431,7 +402,6 @@
   "item.mio_icif.reactor.item_reactor_iridium_reflector": "Иридиевый нейтронный отражатель",
   "item.mio_icif.reactor.item_reactor_lithium_cell": "Литиевая ячейка",
   "item.mio_icif.reactor.item_reactor_isotope_rod": "Почти отработанный изотопный стержень",
-
   "item.mio_icif.cell.item_cell_empty": "Пустая капсула",
   "item.mio_icif.cell.item_cell_water": "Капсула с водой",
   "item.mio_icif.cell.item_cell_lava": "Капсула с лавой",
@@ -449,10 +419,8 @@
   "item.mio_icif.cell.item_cell_air": "Капсула со сжатым воздухом",
   "item.mio_icif.cell.item_cell_dynamic": "Капсула с жидкостью",
   "item.mio_icif.cell_dynamic_named": "Капсула: %s",
-
   "tooltip.mio_icif.fluid_content": "§7%s/%s mB %s",
   "tooltip.mio_icif.empty_cell": "§7Пустая капсула",
-
   "item.mio_icif.upgrade.overclocker_upgrade": "Улучшение «Разгон»",
   "item.mio_icif.upgrade.energy_storage_upgrade": "Улучшение «Хранилище энергии»",
   "item.mio_icif.upgrade.transformer_upgrade": "Улучшение «Трансформатор»",
@@ -463,7 +431,6 @@
   "item.mio_icif.upgrade.fluid_pulling_upgrade": "Улучшение «Притягиватель жидкостей»",
   "item.mio_icif.upgrade.thermal_retention_upgrade": "Улучшение «Термоудержание»",
   "item.mio_icif.upgrade.thermal_retention.tooltip": "Индукционная печь: в простое не остывает, сохраняет полный нагрев без затрат энергии",
-
   "item.mio_icif.env_template.evt_empty": "Шаблон терраформера — Пустой",
   "item.mio_icif.env_template.evt_cultivation": "Шаблон терраформера — Возделывание",
   "item.mio_icif.env_template.evt_desert": "Шаблон терраформера — Пустыня",
@@ -471,7 +438,6 @@
   "item.mio_icif.env_template.evt_chilling": "Шаблон терраформера — Охлаждение",
   "item.mio_icif.env_template.evt_flatification": "Шаблон терраформера — Выравнивание",
   "item.mio_icif.env_template.evt_mushroom": "Шаблон терраформера — Грибы",
-
   "item.mio_icif.resource.item_adviron_casing": "Корпус из очищенного железа",
   "item.mio_icif.resource.item_adviron_cutblade": "Режущее лезвие из очищенного железа",
   "item.mio_icif.resource.item_adviron_denseplate": "Плотная пластина из очищенного железа",
@@ -635,7 +601,6 @@
   "item.mio_icif.resource.item_raw_titanium_ore": "Необработанная титановая руда",
   "item.mio_icif.resource.item_wood_rotor_blade": "Деревянная лопасть ротора",
   "item.mio_icif.resource.item_zip_coal_block": "Блок сжатого угля",
-
   "item.mio_icif.build.item_cf_sprayer": "Распылитель строительной пены",
   "item.mio_icif.build.item_obscurator": "Обскуратор",
   "item.mio_icif.normal.item_crop_unknown": "Неизвестная культура",
@@ -736,7 +701,6 @@
   "item.mio_icif.normal.item_wooden_turning_blanks": "Деревянные заготовки для точения",
   "item.mio_icif.normal.item_youngster": "Газированная вода",
   "item.mio_icif.normal.item_modify": "Модификатор",
-
   "item.mio_icif.rotor_wood": "Деревянный ротор",
   "item.mio_icif.rotor_iron": "Железный ротор",
   "item.mio_icif.rotor_carbon": "Углеродный ротор",
@@ -748,7 +712,6 @@
   "item.mio_icif.rotors.item_adviron_rotor": "Стальной ротор",
   "item.mio_icif.rotors.item_super_iridium_alloy_rotor": "Ротор из супер-иридиевого сплава",
   "item.mio_icif.rotors.item_titanium_iron_alloy_rotor": "Ротор из титано-железного сплава",
-
   "item.mio_icif.biogas_bucket": "Ведро биогаза",
   "item.mio_icif.hotwater_bucket": "Ведро горячей воды",
   "item.mio_icif.biomass_bucket": "Ведро биомассы",
@@ -762,7 +725,6 @@
   "item.mio_icif.uumatter_bucket": "Ведро UU-материи",
   "item.mio_icif.crudeoil_bucket": "Ведро сырой нефти",
   "item.mio_icif.dieseloil_bucket": "Ведро дизельного топлива",
-
   "crop.mio_icif.weed": "Сорняк",
   "crop.mio_icif.wheat": "Пшеница",
   "crop.mio_icif.carrots": "Морковь",
@@ -790,14 +752,12 @@
   "crop.mio_icif.shining": "Сияние",
   "crop.mio_icif.titanium": "Титановые листья",
   "crop.mio_icif.uranium": "Урановые листья",
-
   "block.mio_icif.crop.iron_rich_crop": "Железоносная культура",
   "block.mio_icif.crop.copper_rich_crop": "Меденосная культура",
   "block.mio_icif.crop.tin_rich_crop": "Оловоносная культура",
   "block.mio_icif.crop.titanium_rich_crop": "Титаноносная культура",
   "block.mio_icif.crop.lead_rich_crop": "Свинцоносная культура",
   "block.mio_icif.crop.uranium_rich_crop": "Ураноносная культура",
-
   "item.mio_icif.crop.iron_rich_seed": "Железоносные семена",
   "item.mio_icif.crop.copper_rich_seed": "Меденосные семена",
   "item.mio_icif.crop.tin_rich_seed": "Оловоносные семена",
@@ -807,7 +767,6 @@
   "crop.mio_icif.blackthorn": "Чёрный шип",
   "crop.mio_icif.venomilia": "Веномилия",
   "crop.mio_icif.eatingplant": "Хищное растение",
-
   "mio_icif.plant.weed": "Сорняк",
   "mio_icif.plant.wheat": "Пшеница",
   "mio_icif.plant.carrots": "Морковь",
@@ -863,7 +822,6 @@
   "mio_icif.plant.jungle_sapling": "Саженец тропического дерева",
   "mio_icif.plant.acacia_sapling": "Саженец акации",
   "mio_icif.plant.dark_oak_sapling": "Саженец тёмного дуба",
-
   "gui.mio_icif.max": "Макс",
   "gui.mio_icif.upgrades.compatible": "Совместимые улучшения",
   "gui.mio_icif.upgrades.none": "Нет совместимых улучшений",
@@ -932,9 +890,7 @@
   "message.mio_icif.crop_analyzer.remaining_energy": "§7Остаток энергии: %s/%s EU",
   "item.mio_icif.crop_analyzer.tooltip": "Анализирует информацию о культурах на палочках",
   "item.mio_icif.crop_analyzer.energy_cost": "§7Стоимость за использование: %s EU",
-
   "gui.mio_icif.crop_analyzer.title": "Анализатор культур нового поколения",
-
   "ic2.crop_analyzer.crop_name": "Культура: %s",
   "ic2.crop.analyzer.crop_discovered_by": "Обнаружено: %s",
   "ic2.crop_analyzer.crop_age": "Возраст: %s",
@@ -1252,7 +1208,6 @@
   "item.mio_icif.upgrade.fluid_ejector.direction": "Направление выброса жидкости: %s",
   "item.mio_icif.upgrade.fluid_pulling.direction": "Направление извлечения жидкости: %s",
   "effect.mio_icif.radiation": "Радиация",
-
   "hud.mio_icif.jetpack.mode_jetpack": "Режим реактивного ранца",
   "hud.mio_icif.jetpack.mode_hover": "Режим парения",
   "hud.mio_icif.jetpack.hover_enabled": "§aРежим парения включён",
@@ -1260,22 +1215,17 @@
   "hud.mio_icif.jetpack.display": "Режим ранца: %s | Энергия: %s / %s EU",
   "hud.mio_icif.jetpack.switch_mode": "§bРежим ранца переключён на: %s",
   "message.mio_icif.jetpack.mode_switched": "§bРежим ранца переключён на: %s",
-
   "message.mio_icif.crop_stick_empty": "Палочка для культур пуста, невозможно собрать семена",
-
   "tooltip.mio_icif.crop.level": "Уровень: %s",
   "tooltip.mio_icif.crop.growth_speed": "Скорость роста: %s/31",
   "tooltip.mio_icif.crop.yield": "Урожайность: %s/31",
   "tooltip.mio_icif.crop.resilience": "Устойчивость: %s/31",
   "tooltip.mio_icif.crop.scan_level": "Уровень сканирования: %s/4",
   "tooltip.mio_icif.crop.scan_level_0": "§7Не просканировано — используйте анализатор культур",
-
   "gui.mio_icif.crop_analyzer.growth": "Рост:",
   "gui.mio_icif.crop_analyzer.yield": "Урожайность:",
   "gui.mio_icif.crop_analyzer.resilience": "Устойчивость:",
-
   "ic2.crop.unknown": "Неизвестное семя",
-
   "tooltip.mio_icif.ore.coal": "Уголь",
   "tooltip.mio_icif.ore.iron": "Железо",
   "tooltip.mio_icif.ore.copper": "Медь",
@@ -1295,10 +1245,8 @@
   "tooltip.mio_icif.ore.ruby": "Рубин",
   "tooltip.mio_icif.ore.sapphire": "Сапфир",
   "tooltip.mio_icif.ore.quartz": "Кварц",
-
   "gui.mio_icif.od_scanner.no_ore_found": "Руда не найдена",
   "gui.mio_icif.od_scanner.ore_count_suffix": "найдено",
-
   "hud.mio_icif.driller.mode_fortune": "Удача",
   "hud.mio_icif.driller.mode_silk": "Шёлковое касание",
   "hud.mio_icif.driller.display": "Иридиевый бур переключён на: %s Батарея:%s/%s EU",
@@ -1313,7 +1261,6 @@
   "hud.mio_icif.iron_hoe.tooltip_fortune": "Встроенная удача %s",
   "hud.mio_icif.iron_hoe.tooltip_offhand": "Левая рука: семена → автопосадка, удобрение → внесение по радиусу",
   "hud.mio_icif.iron_hoe.tooltip_weed": "Автоматически убирает траву перед вспашкой (можно ПКМ по траве)",
-
   "hud.mio_icif.laser_miner.mode_mining": "Режим добычи",
   "hud.mio_icif.laser_miner.mode_low_focus": "Режим низкого фокуса",
   "hud.mio_icif.laser_miner.mode_long_range": "Режим дальнего действия",
@@ -1327,7 +1274,6 @@
   "hud.mio_icif.laser_miner.mode_disabled": "§c%s отключён сервером",
   "hud.mio_icif.laser_miner.switch_mode": "Режим лазера переключён на: %s",
   "hud.mio_icif.laser_miner.display": "Режим лазера: %s | Энергия: %s / %s EU",
-
   "gui.mio_icif.canner.mode_canning": "Консервирование",
   "gui.mio_icif.canner.mode_empty_to_tank": "Капсула → Резервуар",
   "gui.mio_icif.canner.mode_fill_from_tank": "Резервуар → Капсула",
@@ -1337,7 +1283,6 @@
   "gui.mio_icif.canner.swap_fluids": "Поменять жидкости",
   "gui.mio_icif.canner.clear_input_tank": "Очистить входной резервуар",
   "gui.mio_icif.canner.clear_output_tank": "Очистить выходной резервуар",
-
   "gui.mio_icif.advanced_miner.upgrade_overclocker": "  Разгон: %s",
   "gui.mio_icif.advanced_miner.upgrade_energy_storage": "  Хранилище энергии: %s",
   "gui.mio_icif.advanced_miner.upgrade_tractor_beam": "  Лучевой захват: %s",
@@ -1348,7 +1293,6 @@
   "gui.mio_icif.advanced_miner.mode.blacklist": "Режим чёрного списка",
   "gui.mio_icif.advanced_miner.silk_touch.on": "Шёлковое касание: вкл",
   "gui.mio_icif.advanced_miner.silk_touch.off": "Шёлковое касание: выкл",
-
   "gui.mio_icif.water_kinetic.kinetic": "Кинетика: %s/%s KU",
   "gui.mio_icif.water_kinetic.generating": "Генерация: %s KU/t",
   "gui.mio_icif.water_kinetic.not_generating": "Не генерирует — %s",
@@ -1360,25 +1304,20 @@
   "gui.mio_icif.water_kinetic.need_natural_water": "Требуется природный источник воды",
   "gui.mio_icif.water_kinetic.need_rotor": "Требуется ротор",
   "gui.mio_icif.water_kinetic.checking": "Проверка...",
-
   "gui.mio_icif.wind_kinetic.kinetic": "Кинетика: %s/%s KU",
   "gui.mio_icif.wind_kinetic.generating": "Генерация: %s KU/t",
   "gui.mio_icif.wind_kinetic.not_generating": "Не генерирует",
-
   "gui.mio_icif.metal_former.mode_rolling": "Режим прокатки",
   "gui.mio_icif.metal_former.mode_cutting": "Режим резки",
   "gui.mio_icif.metal_former.mode_extruding": "Режим экструзии",
   "gui.mio_icif.metal_former.mode_tooltip": "Режим: %s (нажмите для переключения)",
-
   "gui.mio_icif.nuke.explosion_power": "Мощность взрыва: %s",
-
   "gui.mio_icif.checker.no_voltage": "Нет напряжения",
   "gui.mio_icif.checker.voltage_display": "%s EU/t (%s)",
   "gui.mio_icif.checker.no_input": "Нет входа",
   "gui.mio_icif.checker.input_energy_display": "Вход: %s EU/t",
   "gui.mio_icif.sorter.default_output": "Выход по умолчанию",
   "gui.mio_icif.sorter.whitelist": "Фильтр",
-
   "message.mio_icif.pattern_storage.info_header": "[%s] Информация о хранилище шаблонов:",
   "message.mio_icif.pattern_storage.stored_count": "Сохранено: %s/%s",
   "message.mio_icif.pattern_storage.current_index": "Текущий индекс: %s",
@@ -1386,12 +1325,9 @@
   "message.mio_icif.pattern_storage.item_entry": "  [%s] %s",
   "message.mio_icif.pattern_storage.more_items": "  ... и ещё %s",
   "message.mio_icif.pattern_storage.empty": "Список хранилища пуст",
-
   "message.mio_icif.generator.gui_open_failed": "%s — не удалось открыть интерфейс",
-
   "gui.mio_icif.lapis_injector.lapis_blocks": "Лазуритовые блоки: %s",
   "gui.mio_icif.redstone_injector.redstone_blocks": "Блоки редстоуна: %s",
-
   "message.mio_icif.reactor.no_reactor_found": "Рядом не найден ядерный реактор!",
   "message.mio_icif.reactor.hint_placement": "Подсказка: люк доступа должен быть размещён в пределах 2 блоков от реактора",
   "message.mio_icif.reactor.multiple_reactors": "Подключено несколько реакторов — это приведёт к взрыву!",
@@ -1404,7 +1340,6 @@
   "message.mio_icif.reactor.frame_complete": "Каркас завершён: %s (%s ошибок)",
   "message.mio_icif.reactor.functional_blocks_count": "Функциональные блоки: %s",
   "message.mio_icif.reactor.multiblock_status": "Мультиблочная структура: %s",
-
   "gui.mio_icif.future.event_rising": "Событие роста",
   "gui.mio_icif.future.event_falling": "Событие падения",
   "gui.mio_icif.future.event_high_volatility": "Событие высокой волатильности",
@@ -1420,7 +1355,6 @@
   "gui.mio_icif.future.intensity_strong": "Интенсивность: сильная",
   "gui.mio_icif.future.intensity_extreme": "Интенсивность: экстремальная",
   "message.mio_icif.future.event_broadcast": "[Фьючерсный рынок] %s вызвал %s (длится %s дней, %s)",
-
   "message.mio_icif.intelligence.no_commodities": "Нет информации о фьючерсных товарах!",
   "message.mio_icif.intelligence.no_market_data": "Не удалось получить рыночные данные!",
   "message.mio_icif.intelligence.no_events": "Разведка: в настоящее время нет активных особых событий для товаров",
@@ -1430,7 +1364,6 @@
   "message.mio_icif.intelligence.intensity": " | Интенсивность: %s",
   "tooltip.mio_icif.intelligence.usage": "ПКМ для отображения разведки по фьючерсным товарам",
   "tooltip.mio_icif.intelligence.usage_desc": "Показывает текущую информацию о событии для случайного товара",
-
   "message.mio_icif.modify.offhand_required": "В левой руке должен быть фьючерсный товар!",
   "message.mio_icif.modify.no_market_data": "Не удалось получить рыночные данные!",
   "message.mio_icif.modify.not_commodity": "Предмет в левой руке не является фьючерсным товаром!",
@@ -1438,7 +1371,6 @@
   "tooltip.mio_icif.modify.usage": "ПКМ для обновления цены фьючерсного товара",
   "tooltip.mio_icif.modify.usage_desc": "MODIFY в основной руке + фьючерсный товар в левой",
   "tooltip.mio_icif.modify.usage_desc2": "Обновляет сегодняшнюю цену для этого товара",
-
   "tooltip.mio_icif.cf_sprayer.foam": "Пена: %s / %s",
   "tooltip.mio_icif.cf_sprayer.current_mode": "Режим: %s",
   "tooltip.mio_icif.cf_sprayer.mode.normal": "Обычный (до 10 блоков)",
@@ -1453,7 +1385,6 @@
   "tooltip.mio_icif.cf_sprayer.refill": "§7Заправка в режиме смешивания консервного автомата",
   "tooltip.mio_icif.cf_sprayer.mode_switch_hint": "§7Shift+ПКМ в воздухе для смены режима",
   "tooltip.mio_icif.cf_sprayer.canner_refill": "§7Поместите распылитель пены в слот материалов консервного автомата и подайте строительную пену в резервуар",
-
   "item.mio_icif.build.item_painter_white": "Краситель (белый)",
   "item.mio_icif.build.item_painter_orange": "Краситель (оранжевый)",
   "item.mio_icif.build.item_painter_magenta": "Краситель (пурпурный)",
@@ -1470,12 +1401,10 @@
   "item.mio_icif.build.item_painter_green": "Краситель (зелёный)",
   "item.mio_icif.build.item_painter_red": "Краситель (красный)",
   "item.mio_icif.build.item_painter_black": "Краситель (чёрный)",
-
   "tooltip.mio_icif.painter.color": "§6Цвет: %s",
   "tooltip.mio_icif.painter.usage": "§7ПКМ по блоку для окрашивания (Укреплённый камень/Камень → Бетон, перекраска бетона, Терракота → Глазурованная терракота)",
   "message.mio_icif.painter.painted": "§aОкрашено в %s",
   "message.mio_icif.painter.same_color": "§eЭтот блок уже такого цвета",
-
   "tooltip.mio_icif.obscurator.energy": "Энергия: %s / %s EU",
   "tooltip.mio_icif.obscurator.scanned_block": "Отсканированный блок: %s",
   "tooltip.mio_icif.obscurator.scanned_side": "Отсканированная грань: %s",
@@ -1494,7 +1423,6 @@
   "message.mio_icif.nanosaber.activated": "§aНаносабля активирована!",
   "message.mio_icif.nanosaber.deactivated": "§7Наносабля деактивирована",
   "message.mio_icif.nanosaber.no_energy": "§cНедостаточно энергии для активации наносабли!",
-
   "item.mio_icif.item_tool_plasma_launcher": "Плазменная пусковая установка",
   "tooltip.mio_icif.plasma_launcher.active": "§aПлазменная пусковая установка: активна",
   "tooltip.mio_icif.plasma_launcher.inactive": "§7Плазменная пусковая установка: неактивна",
@@ -1504,15 +1432,12 @@
   "message.mio_icif.plasma_launcher.deactivated": "§7Плазменная пусковая установка деактивирована",
   "message.mio_icif.plasma_launcher.no_energy": "§cНедостаточно энергии для активации плазменной пусковой установки!",
   "message.mio_icif.plasma_launcher.not_active": "§cПлазменная пусковая установка неактивна!",
-
   "hud.mio_icif.nanosaber.mode_active": "§aАктивна",
   "hud.mio_icif.nanosaber.mode_inactive": "§7Неактивна",
   "hud.mio_icif.nanosaber.display": "Наносабля: %s | Энергия: %s / %s EU",
-
   "hud.mio_icif.plasma_launcher.mode_active": "§aАктивна",
   "hud.mio_icif.plasma_launcher.mode_inactive": "§7Неактивна",
   "hud.mio_icif.plasma_launcher.display": "Плазменная пусковая установка: %s | Энергия: %s / %s EU",
-
   "jei.mio_icif.extruding": "Формовщик металла: экструзия",
   "jei.mio_icif.rolling": "Формовщик металла: прокатка",
   "jei.mio_icif.cutting": "Формовщик металла: резка",
@@ -1532,7 +1457,6 @@
   "jei.mio_icif.fluid_refining": "Нефтеперерабатывающий завод",
   "jei.mio_icif.condenser": "Конденсатор",
   "jei.mio_icif.solar_distiller": "Солнечный дистиллятор",
-
   "emi.category.mio_icif.extruding": "Формовщик металла: экструзия",
   "emi.category.mio_icif.rolling": "Формовщик металла: прокатка",
   "emi.category.mio_icif.cutting": "Формовщик металла: резка",
@@ -1548,11 +1472,9 @@
   "emi.category.mio_icif.mix": "Консервный автомат: смешивание",
   "emi.category.mio_icif.molecular_transformer": "Молекулярный трансформер",
   "emi.category.mio_icif.blast_furnace": "Доменная печь",
-
   "block.mio_icif.environment.block_radiating_deepslate": "Радиоактивный глубинносланец",
   "block.mio_icif.environment.block_radiating_dirt": "Радиоактивная земля",
   "block.mio_icif.environment.block_radiating_stone": "Радиоактивный камень",
-
   "block.mio_icif.generator.block_kinetic_generator": "Кинетический генератор",
   "block.mio_icif.generator.block_turbo_kinetic_generator": "Турбокинетический генератор",
   "block.mio_icif.generator.block_twin_turbo_kinetic_generator": "Двухтурбинный кинетический генератор",
@@ -1561,31 +1483,25 @@
   "block.mio_icif.hugenerator.block_heat_source_fluid": "Теплообменник",
   "block.mio_icif.hugenerator.block_rt_heat_generator": "Радиоизотопный теплогенератор",
   "block.mio_icif.hugenerator.block_solid_heat_generator": "Твёрдотопливный теплогенератор",
-
   "block.mio_icif.kugenerator.block_kinetic_generator_elc": "Электрический кинетический генератор",
   "block.mio_icif.kugenerator.block_manual_kinetic_generator": "Ручной кинетический генератор",
   "block.mio_icif.kugenerator.block_stirling_kinetic_generator": "Кинетический генератор Стирлинга",
   "block.mio_icif.kugenerator.block_water_kinetic_generator": "Водяной кинетический генератор",
   "block.mio_icif.kugenerator.block_wind_kinetic_generator": "Ветровой кинетический генератор",
-
   "block.mio_icif.pipe.block_pipe_item": "Труба транспортировки предметов",
   "block.mio_icif.pipe.block_pipe_item_input": "Труба извлечения предметов",
   "block.mio_icif.pipe.block_pipe_water": "Водяная труба",
   "block.mio_icif.pipe.block_pipe_water_extract": "Труба забора воды",
   "block.mio_icif.pipe.block_pipe_ejector": "Выбрасывающая труба",
-
   "block.mio_icif.produce.block_mining_pipe": "Буровая труба",
   "block.mio_icif.produce.block_mining_tip": "Буровое долото",
-
   "block.mio_icif.producer.block_extractor_elc": "Экстрактор",
   "block.mio_icif.producer.block_pattern_storage": "Хранилище шаблонов",
   "block.mio_icif.producer.block_steam_kinetic_generator": "Паровой кинетический генератор",
   "block.mio_icif.producer.block_barrel": "Бочка",
   "block.mio_icif.block_barrel": "Бочка",
-
   "block.mio_icif.reactor.block_reactor_nuke": "Ядерная бомба",
   "block.mio_icif.reactor.block_reactor_vessel": "Корпус ядерного реактора",
-
   "block.mio_icif.wiring.block_bat_box": "BatBox",
   "block.mio_icif.wiring.block_cesu": "CESU",
   "block.mio_icif.wiring.block_mfe": "MFE",
@@ -1615,7 +1531,6 @@
   "block.mio_icif.oilrig.block_oil_rig_panel": "Панель нефтяной вышки",
   "block.mio_icif.build.block_scaffold_titanium": "Титановая буровая рама",
   "block.mio_icif.oilrig.block_dimension_oil_rig_core": "Ядро межпространственной нефтяной вышки",
-
   "block.mio_icif.wiring.transformer_ev_sc": "Трансформатор EV→SC",
   "block.mio_icif.wiring.transformer_iv_luv": "Трансформатор IV→LuV",
   "block.mio_icif.wiring.transformer_luv_zpmv": "Трансформатор LuV→ZPMV",
@@ -1626,14 +1541,10 @@
   "block.mio_icif.wiring.block_eu_splitter_cable": "EU-кабель-разветвитель",
   "block.mio_icif.wiring.block_wireless_power_transmission_node": "Узел беспроводной передачи энергии",
   "block.mio_icif.wiring.block_energy_terminal": "Терминал управления энергией",
-
   "item.mio_icif.build.item_painter": "Пустой краситель",
-
   "item.mio_icif.item_iron_lathing_tool": "Железный токарный резец",
   "item.mio_icif.item_diamond_lathing_tool": "Алмазный токарный резец",
   "item.mio_icif.lathing_tool.tooltip.hardness": "§7Твёрдость: %s",
-  "item.mio_icif.lathing_tool.tooltip.damage": "§7Прочность: %s / %s",
-
   "item.mio_icif.cell_empty": "Пустая капсула",
   "item.mio_icif.cell_water": "Капсула с водой",
   "item.mio_icif.cell_lava": "Капсула с лавой",
@@ -1649,12 +1560,9 @@
   "item.mio_icif.cell_superheatedsteam": "Капсула с перегретым паром",
   "item.mio_icif.cell_uumatter": "Капсула с UU-материей",
   "item.mio_icif.cell_air": "Капсула со сжатым воздухом",
-
   "item.mio_icif.air_bucket": "Ведро сжатого воздуха",
-
   "item.mio_icif.crop_seed": "Семена: %s",
   "item.mio_icif.empty_seed_bag": "Пустой мешочек для семян",
-
   "tooltip.mio_icif.energy_container.stored": "§aТекущий заряд: %s / %s EU",
   "tooltip.mio_icif.energy_container.capacity": "§7Ёмкость: %s EU",
   "tooltip.mio_icif.energy_container.io_rate": "§7Вход/Выход: %s EU/t",
@@ -1675,7 +1583,6 @@
   "tooltip.mio_icif.oil_rig.output_module": "§cВыходной модуль — хранит добытую сырую нефть",
   "tooltip.mio_icif.oil_rig.tank_capacity": "§7Ёмкость резервуара: %s B",
   "tooltip.mio_icif.oil_rig.panel_module": "§aПанельный модуль — отображает статус бурения",
-
   "container.mio_icif.oil_rig_panel": "Панель нефтяной вышки",
   "gui.mio_icif.oil_rig.coordinate": "Координата бурения",
   "gui.mio_icif.oil_rig.state": "Статус вышки",
@@ -1696,43 +1603,35 @@
   "gui.mio_icif.tank.mixed": "Смешанные жидкости",
   "gui.mio_icif.tank.amount": "Объём: %s / %s",
   "tooltip.mio_icif.voltage_tier": "§bУровень энергии %s",
-
   "message.mio_icif.cable.block": "§cОтключено направлений: %s",
   "message.mio_icif.cable.unblock": "§aВосстановлено направлений: %s",
-
   "message.mio_icif.pipe.block": "§cЗаблокировано подключений труб: %s",
   "message.mio_icif.pipe.unblock": "§aВосстановлено подключений труб: %s",
-
   "item.mio_icif.item_tool_windmeter": "Анемометр",
   "message.mio_icif.windmeter.info": "§bТекущая сила ветра: %s MCU",
   "message.mio_icif.windmeter.no_energy": "§cНедостаточно энергии!",
   "message.mio_icif.windmeter.rotor.none": "§cВ этом ветровом кинетическом генераторе нет ротора",
   "message.mio_icif.windmeter.rotor.blocked": "§eРотор заблокирован или ветер слишком слабый",
   "tooltip.mio_icif.windmeter.usage": "§7ПКМ в воздухе для замера ветра; ПКМ по ветровому кинетическому генератору для замера эффективного ветра",
-
   "message.mio_icif.barrel.empty": "§7Бочка пуста",
   "message.mio_icif.barrel.beer_brew": "§eИнгредиенты для пива добавлены, ожидание ферментации...",
   "message.mio_icif.barrel.beer_fermenting": "§eПиво ферментируется... %s%%",
   "message.mio_icif.barrel.beer_ready": "§aПиво готово! ПКМ каменной кружкой для сбора",
   "message.mio_icif.barrel.rum_fermenting": "§eРом ферментируется... %s%%",
   "message.mio_icif.barrel.rum_ready": "§aРом готов! ПКМ каменной кружкой для сбора",
-
   "gui.mio_icif.fluid_distributor.mode_info": "Режим",
   "gui.mio_icif.fluid_distributor.mode_concentrate": "Режим концентрации",
   "gui.mio_icif.fluid_distributor.mode_distribute": "Режим распределения",
   "gui.mio_icif.fluid_distributor.toggle_mode": "Переключить режим",
-
   "item.mio_icif.resource.item_flint_dust": "Кремневая пыль",
   "item.mio_icif.resource.item_charcoal_dust": "Пыль древесного угля",
   "item.mio_icif.resource.item_nitre_dust": "Селитровая пыль",
-
   "block.mio_icif.energy_converter.energy_converter": "Преобразователь энергии",
   "tooltip.mio_icif.energy_converter.desc": "Преобразует энергию между EU и FE",
   "tooltip.mio_icif.energy_converter.sneak_to_switch": "Shift + ПКМ для смены режима преобразования",
   "tooltip.mio_icif.api_battery.desc": "§bЧистая API-реализация — заряжается всеми устройствами mio_icif",
   "message.mio_icif.energy_converter.mode_eu_to_fe": "Режим: EU → FE (1EU = 4FE)",
   "message.mio_icif.energy_converter.mode_fe_to_eu": "Режим: FE → EU (4FE = 1EU)",
-
   "gui.mio_icif.armor_features.title": "Панель управления Сингулярностью",
   "gui.mio_icif.armor_features.on": "Вкл",
   "gui.mio_icif.armor_features.off": "Выкл",
@@ -1749,7 +1648,6 @@
   "gui.mio_icif.armor_features.quantum_boots_jump": "Квантовый прыжок",
   "gui.mio_icif.armor_features.quantum_boots_boost": "Квантовое ускорение",
   "gui.mio_icif.armor_features.hud_layout": "Раскладка HUD",
-
   "item.mio_icif.resource.item_sunnarium": "Суннариум",
   "item.mio_icif.resource.item_sunnarium_alloy": "Обогащённый суннариевый сплав",
   "item.mio_icif.resource.item_sunnarium_small": "Малый кусок суннариума",
@@ -1775,9 +1673,7 @@
   "item.mio_icif.resource.item_nano_living_metal": "Нано-живой металл",
   "item.mio_icif.resource.item_neutron_plate": "Нейтронная пластина",
   "item.mio_icif.normal.item_field_generator": "Генератор поля",
-
   "block.mio_icif.build.block_irradiant_glass_pane": "Облучённая стеклянная панель",
-
   "mode.redstone.none": "§7Режим редстоуна: игнорировать редстоун",
   "mode.redstone.full": "§aРежим редстоуна: сигнал при полном заряде",
   "mode.redstone.partial": "§eРежим редстоуна: сигнал при наличии заряда",
@@ -1787,7 +1683,6 @@
   "mode.redstone.conditional": "§dРежим редстоуна: вывод при полном заряде И наличии сигнала",
   "mode.redstone.redstone_on": "§9Режим редстоуна: вывод энергии при наличии сигнала",
   "mode.redstone.unknown": "§8Режим редстоуна: неизвестно",
-
   "item.mio_icif.item_electric_nutrition_supply": "Электрическое питание",
   "item.mio_icif.item_electric_first_aid_life_support": "Электрическая аптечка жизнеобеспечения",
   "item.mio_icif.item_electric_force_field_generator": "Электрический генератор силового поля",
@@ -1795,55 +1690,45 @@
   "item.mio_icif.item_electric_lighter": "Электрическая зажигалка",
   "item.mio_icif.item_electric_wireless_manager": "Электрический беспроводной менеджер",
   "item.mio_icif.item_geomagnetic_detector": "Геомагнитный детектор",
-
   "message.mio_icif.electric_nutrition_supply.auto_on": "§aЭлектрическое питание: автоподпитка включена",
   "message.mio_icif.electric_nutrition_supply.auto_off": "§cЭлектрическое питание: автоподпитка выключена",
   "tooltip.mio_icif.electric_nutrition_supply.mode": "Режим: %s",
   "tooltip.mio_icif.electric_nutrition_supply.auto_on": "§aВкл",
   "tooltip.mio_icif.electric_nutrition_supply.auto_off": "§cВыкл",
   "tooltip.mio_icif.electric_nutrition_supply.desc": "§9Автоматически восстанавливает голод при удержании",
-
   "message.mio_icif.electric_first_aid_life_support.auto_on": "§aЭлектрическая аптечка: авто-лечение включено",
   "message.mio_icif.electric_first_aid_life_support.auto_off": "§cЭлектрическая аптечка: авто-лечение выключено",
   "tooltip.mio_icif.electric_first_aid_life_support.mode": "Режим: %s",
   "tooltip.mio_icif.electric_first_aid_life_support.auto_on": "§aВкл",
   "tooltip.mio_icif.electric_first_aid_life_support.auto_off": "§cВыкл",
   "tooltip.mio_icif.electric_first_aid_life_support.desc": "§9Автоматически восстанавливает здоровье при удержании",
-
   "tooltip.mio_icif.electric_force_field_generator.desc": "§9Автоматически даёт поглощающие сердца при удержании",
   "message.mio_icif.electric_force_field_generator.auto_on": "§aЭлектрический генератор силового поля: поглощение включено",
   "message.mio_icif.electric_force_field_generator.auto_off": "§cЭлектрический генератор силового поля: поглощение выключено",
   "tooltip.mio_icif.electric_force_field_generator.mode": "Режим: %s",
   "tooltip.mio_icif.electric_force_field_generator.auto_on": "§aВкл",
   "tooltip.mio_icif.electric_force_field_generator.auto_off": "§cВыкл",
-
   "tooltip.mio_icif.electric_fishing_rod.desc": "§9Удочка, работающая на электричестве",
-
   "message.mio_icif.electric_lighter.no_energy": "§cНедостаточно энергии для установки источника света",
   "tooltip.mio_icif.electric_lighter.desc": "§9ПКМ по грани блока для установки источника света",
   "message.mio_icif.electric_lighter.cleared": "§aУдалено ближайших источников света: %s",
   "tooltip.mio_icif.electric_lighter.remove": "ПКМ по источнику света для удаления; Shift+ПКМ удаляет источники в радиусе 8 блоков (при удержании источники видны)",
-
   "message.mio_icif.electric_wireless_manager.target_set": "§aЦелевая позиция установлена: (%s, %s, %s)",
   "message.mio_icif.electric_wireless_manager.node_set": "§aБеспроводной узел настроен: из (%s, %s, %s) в (%s, %s, %s)",
   "message.mio_icif.electric_wireless_manager.no_target": "§cСначала задайте целевую позицию через Shift+ПКМ",
   "tooltip.mio_icif.electric_wireless_manager.desc": "§9Используется для настройки узлов беспроводной передачи энергии",
   "tooltip.mio_icif.electric_wireless_manager.target": "Целевая позиция: (%s, %s, %s)",
   "message.mio_icif.electric_wireless_manager.target_info": "§bСохранённая цель: (%s, %s, %s)",
-
   "message.mio_icif.geomagnetic_detector.value": "§9Напряжённость геомагнитного поля: %s",
   "tooltip.mio_icif.geomagnetic_detector.desc": "§9Измеряет напряжённость геомагнитного поля в текущей позиции",
-
   "item.mio_icif.armor.item_armor_diving_mask": "Маска для подводного плавания",
   "item.mio_icif.armor.item_armor_advanced_jetpack": "Продвинутый электрический реактивный ранец",
   "item.mio_icif.armor.item_armor_heavy_quantum_chestplate": "Тяжёлый квантовый нагрудник (устар.)",
   "item.mio_icif.armor.item_armor_advanced_quantum_chestplate": "Продвинутый квантовый нагрудник (устар.)",
-
   "tooltip.mio_icif.diving_mask.desc": "§9Обеспечивает кислород и подводное дыхание под водой",
   "tooltip.mio_icif.advanced_jetpack.desc": "§9Продвинутый реактивный ранец с режимами полёта и парения",
   "tooltip.mio_icif.heavy_quantum.desc": "§9Тяжёлый квантовый нагрудник с лечением и сопротивлением отбрасыванию",
   "tooltip.mio_icif.advanced_quantum.desc": "§9Продвинутый квантовый нагрудник с полётом, лечением и сопротивлением отбрасыванию",
-
   "item.mio_icif.item_tool_quantum_sword": "Квантовый меч",
   "item.mio_icif.item_tool_electric_rifle": "Электрическая лазерная винтовка",
   "item.mio_icif.item_tool_advanced_electric_rifle": "Продвинутая электрическая лазерная винтовка",
@@ -1855,13 +1740,11 @@
   "item.mio_icif.item_tool_nano_bow": "Нано-композитный лук",
   "item.mio_icif.item_tool_rocket_launcher": "Электрическая ракетная установка",
   "item.mio_icif.item_rocket": "Ракета",
-
   "item.mio_icif.item_trinket_fire_proof_necklace": "Электрическое огнеупорное ожерелье",
   "item.mio_icif.item_trinket_energy_crystal_belt": "Пояс с батареей «Кристалл энергии»",
   "item.mio_icif.item_trinket_lapotron_crystal_belt": "Лапотронный кристальный пояс",
   "item.mio_icif.item_trinket_life_support_ring": "Кольцо ультимативной жизнеобеспеченности",
   "item.mio_icif.item_trinket_flight_ring": "Электрическое кольцо полёта",
-
   "tooltip.mio_icif.quantum_sword.hyper": "§aГиперсостояние активно",
   "hud.mio_icif.quantum_sword.display": "Квантовый меч: %s | Энергия: %s / %s EU",
   "hud.mio_icif.quantum_sword.mode_hyper": "§aГипер",
@@ -1869,29 +1752,21 @@
   "message.mio_icif.quantum_sword.activated": "§aГиперрежим квантового меча активирован!",
   "message.mio_icif.quantum_sword.deactivated": "§7Гиперрежим квантового меча деактивирован",
   "message.mio_icif.quantum_sword.no_energy": "§cНедостаточно энергии для активации гиперрежима!",
-
   "tooltip.mio_icif.electric_rifle.damage": "Урон: %s",
   "message.mio_icif.electric_rifle.no_energy": "§cНедостаточно энергии!",
-
   "tooltip.mio_icif.advanced_electric_rifle.damage": "Урон: %s",
   "message.mio_icif.advanced_electric_rifle.no_energy": "§cНедостаточно энергии!",
-
   "tooltip.mio_icif.tactical_laser_rifle.damage": "Урон пули: %s",
   "tooltip.mio_icif.tactical_laser_rifle.melee": "Урон в ближнем бою: %s",
   "message.mio_icif.tactical_laser_rifle.no_energy": "§cНедостаточно энергии!",
-
   "tooltip.mio_icif.plasma_air_cannon.damage": "Базовый урон: %s",
   "message.mio_icif.plasma_air_cannon.no_energy": "§cНедостаточно энергии!",
-
   "tooltip.mio_icif.electric_plasma_gun.damage": "Урон: %s (по области)",
   "message.mio_icif.electric_plasma_gun.no_energy": "§cНедостаточно энергии!",
-
   "tooltip.mio_icif.tachyon_disruptor.damage": "Урон: %s (пробивающий)",
   "message.mio_icif.tachyon_disruptor.no_energy": "§cНедостаточно энергии!",
-
   "tooltip.mio_icif.steel_shield.energy": "Энергия: %s / %s EU",
   "message.mio_icif.steel_shield.no_energy": "§cНедостаточно энергии для блокировки!",
-
   "tooltip.mio_icif.rocket_launcher.ammo": "Требуются ракеты",
   "message.mio_icif.rocket_launcher.no_energy": "§cНедостаточно энергии!",
   "message.mio_icif.rocket_launcher.no_ammo": "§cРакеты не найдены!",
@@ -2910,8 +2785,8 @@
   "quantum.mio_icif.action.force_field": "Развёртывание поля",
   "quantum.mio_icif.action.time_dilation": "Искажение времени",
   "quantum.mio_icif.action.volley": "Запутанный залп",
-  "module.mio_icif.tooltip.action.single": "Действие (V/B): %s, %s когерентности, перезарядка %s с",
-  "module.mio_icif.tooltip.action.sustained": "Переключаемое действие (V/B): %s, запуск %s когерентности, %s в секунду, перезарядка после %s с",
+  "module.mio_icif.tooltip.action.single": "Действие (%4$s): %1$s, %2$s когерентности, перезарядка %3$s с",
+  "module.mio_icif.tooltip.action.sustained": "Переключаемое действие (%5$s): %1$s, запуск %2$s когерентности, %3$s в секунду, перезарядка после %4$s с",
   "module.mio_icif.tooltip.action_mk2": "Mk.II открывает действие: %s",
   "gui.mio_icif.station.status.bay_max": "Расширитель уже установлен",
   "gui.mio_icif.equipment_console.quantum": "Квантовое ядро",
@@ -3206,5 +3081,10 @@
   "conversion.mio_icif.oil_rig.chance.dense": "Руда, лава %s · обсидиан %s",
   "conversion.mio_icif.oil_rig.chance.loose": "Песок, гравий %s · прочее %s",
   "mio_icif.configuration.machine_sounds": "Звуки машин",
-  "mio_icif.configuration.machine_sounds.tooltip": "Рабочие звуки машин: их циклические звуки и сигнал завершения работы. Звукоизолирующие наушники заглушают те же звуки, пока надеты."
+  "mio_icif.configuration.machine_sounds.tooltip": "Рабочие звуки машин: их циклические звуки и сигнал завершения работы. Звукоизолирующие наушники заглушают те же звуки, пока надеты.",
+  "block.mio_icif.block_have_rub_wood": "Каучуковая древесина со смолой",
+  "block.mio_icif.build.rubber_wall_sign": "Каучуковая настенная табличка",
+  "block.mio_icif.build.rubber_wall_hanging_sign": "Каучуковая настенная подвесная табличка",
+  "block.mio_icif.superheatedsteam": "Перегретый пар",
+  "item.mio_icif.normal.crop_unknown": "Неизвестная культура"
 }

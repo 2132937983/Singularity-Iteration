@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Insulated Extra-High-Voltage Cable"
+  title: "絶縁超高圧ケーブル"
   icon: mio_icif:wiring/cable/block_iron_cable_1
   parent: power.md
   position: 19
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_iron_cable_1
 ---
 
-# Insulated Extra-High-Voltage Cable
+# 絶縁超高圧ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_iron_cable_1" scale="3" />

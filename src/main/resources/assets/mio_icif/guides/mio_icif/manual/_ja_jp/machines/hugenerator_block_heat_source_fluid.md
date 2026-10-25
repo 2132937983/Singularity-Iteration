@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Heat Exchanger"
+  title: "熱交換器"
   icon: mio_icif:hugenerator/block_heat_source_fluid
   parent: generators.md
   position: 15
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:hugenerator/block_heat_source_fluid
 ---
 
-# Heat Exchanger
+# 熱交換器
 
 <Row>
   <BlockImage id="mio_icif:hugenerator/block_heat_source_fluid" scale="3" />

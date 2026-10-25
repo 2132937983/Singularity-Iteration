@@ -17,7 +17,7 @@ import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 public final class ArmoryClient {
     private ArmoryClient() {}
 
-    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
     public static final class ModEvents {
         @SubscribeEvent
         static void screens(RegisterMenuScreensEvent event) {

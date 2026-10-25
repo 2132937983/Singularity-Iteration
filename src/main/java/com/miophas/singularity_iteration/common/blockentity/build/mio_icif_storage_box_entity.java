@@ -23,7 +23,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
-public class mio_icif_storage_box_entity extends BlockEntity implements Container, MenuProvider, IStorageBlock {
+public class mio_icif_storage_box_entity extends BlockEntity implements Container, MenuProvider, IStorageBlock,
+        com.miophas.singularity_iteration.common.item.LargeStackContainer {
 
     private MachineItemHandler itemHandler;
     private int slotCount;
@@ -130,8 +131,11 @@ public class mio_icif_storage_box_entity extends BlockEntity implements Containe
     public void setItem(int slot, ItemStack stack) {
         if (slot >= 0 && slot < itemHandler.getSlots()) {
             itemHandler.setStackInSlot(slot, stack);
-            if (stack.getCount() > getMaxStackSize()) {
-                stack.setCount(getMaxStackSize());
+            // 0.1.10.16: the per-stack limit (an SI coin keeps up to 9,999, see LargeStackContainer). The
+            // plain limit is 99 now that the global container mixin is gone and would cut a coin stack.
+            int limit = getMaxStackSize(stack);
+            if (stack.getCount() > limit) {
+                stack.setCount(limit);
             }
             setChanged();
         }

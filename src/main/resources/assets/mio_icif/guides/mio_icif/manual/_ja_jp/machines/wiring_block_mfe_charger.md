@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "MFE Charger"
+  title: "MFE 充電台"
   icon: mio_icif:wiring/block_mfe_charger
   parent: power.md
   position: 27
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_mfe_charger
 ---
 
-# MFE Charger
+# MFE 充電台
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_mfe_charger" scale="3" />

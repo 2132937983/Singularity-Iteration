@@ -195,8 +195,15 @@ public final class IndependentTransformerBlockEntity extends BlockEntity {
         tag.putBoolean("active", observedStepUp);
     }
 
+    /**
+     * 0.1.10.17 (E-2): the client gets the mode and the step-up flag only. The stored energy reaches the
+     * screen through the menu data; the buffer is server data.
+     */
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return saveWithoutMetadata(registries);
+        CompoundTag tag = new CompoundTag();
+        tag.putInt("mode", savedMode);
+        tag.putBoolean("active", observedStepUp);
+        return tag;
     }
 
     @Override public ClientboundBlockEntityDataPacket getUpdatePacket() {

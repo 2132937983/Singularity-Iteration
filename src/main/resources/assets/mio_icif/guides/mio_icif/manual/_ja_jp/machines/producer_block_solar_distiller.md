@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Solar Distiller"
+  title: "太陽熱蒸留器"
   icon: mio_icif:producer/block_solar_distiller
   parent: machines.md
   position: 60
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_solar_distiller
 ---
 
-# Solar Distiller
+# 太陽熱蒸留器
 
 <Row>
   <BlockImage id="mio_icif:producer/block_solar_distiller" scale="3" />

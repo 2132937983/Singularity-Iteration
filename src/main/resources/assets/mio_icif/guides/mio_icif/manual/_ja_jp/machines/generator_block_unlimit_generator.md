@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Infinite Generator"
+  title: "無限発電機"
   icon: mio_icif:generator/block_unlimit_generator
   parent: generators.md
   position: 17
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_unlimit_generator
 ---
 
-# Infinite Generator
+# 無限発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_unlimit_generator" scale="3" />

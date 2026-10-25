@@ -15,6 +15,7 @@ import com.miophas.singularity_iteration.common.future.CommodityCategory;
 import com.miophas.singularity_iteration.common.future.FutureCommodity;
 import com.miophas.singularity_iteration.common.future.FutureCommodityManager;
 import com.miophas.singularity_iteration.common.future.FutureMarketData;
+import com.miophas.singularity_iteration.common.future.MarketQuote;
 import com.miophas.singularity_iteration.common.future.event.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -58,7 +59,7 @@ public class mio_icif_future_elc extends AbstractEnergyBlockEntity {
     }
 
     // 数据槽位定义
-    public static final int DATA_COUNT = 121;  // 增加槽位数量以支持更多商品
+    public static final int DATA_COUNT = 126;  // 0.1.10.20: + buy cost, sale payout, market room (121..125)
 public static final int DATA_ENERGY = 0;
     public static final int DATA_MAX_ENERGY = 1;
     public static final int DATA_CURRENT_DAY = 2;
@@ -79,6 +80,13 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     public static final int DATA_PRICES_START = 51;
     public static final int DATA_PRICES_END = 120;
 
+    // 0.1.10.20: the quote of the selected commodity for the trade quantity (wide values: low / high 16 bits)
+    public static final int DATA_BUY_COST_LOW = 121, DATA_BUY_COST_HIGH = 122;
+    /** Sale payout; 0 when the market does not buy that many today. */
+    public static final int DATA_SELL_PAYOUT_LOW = 123, DATA_SELL_PAYOUT_HIGH = 124;
+    /** Items of the selected commodity that the market still buys today (32767 = no limit or more). */
+    public static final int DATA_MARKET_ROOM = 125;
+
     // ========== 状态变化 ==========
     
     /** 当前选中的货品种类 */
@@ -96,8 +104,9 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     /** 当前日期（本游戏天数） */
     private long currentDay = 0;
     
-    /** 今日已交易量 */
-    private int dailyTradeVolume = 0;
+    // 0.1.10.20: the daily trade count is per player in FutureMarketData (all machines of the server). The old
+    // field of each machine multiplied the limit by the number of machines, and only the machine that rolled
+    // the day reset its own count: on the other machines the count of the last day stayed.
 
     // One synchronous trade per machine and per player, including calls into another machine.
     private boolean tradeInProgress;
@@ -167,8 +176,13 @@ public static final int DATA_CURRENT_CATEGORY = 7;
             case DATA_PLAYER_COINS_HIGH -> (int) ((cachedPlayerCoins >> 16) & 0xFFFF); // 高16位
             case DATA_CURRENT_CATEGORY -> currentCategory.ordinal();
                 case DATA_CURRENT_PAGE -> currentPage;
-                case DATA_DAILY_VOLUME -> Math.min(dailyTradeVolume, 32767); // 限制在short范围内
+                case DATA_DAILY_VOLUME -> 0; // 0.1.10.20: per player, filled in by viewerData
             case DATA_DAILY_LIMIT -> Math.min(Singularity_Iteration_Config.FUTURE_DAILY_LIMIT.get(), 32767); // 限制在short范围内
+                case DATA_BUY_COST_LOW -> (int) (quote(true) & 0xFFFF);
+                case DATA_BUY_COST_HIGH -> (int) ((quote(true) >>> 16) & 0xFFFF);
+                case DATA_SELL_PAYOUT_LOW -> (int) (Math.max(0, quote(false)) & 0xFFFF);
+                case DATA_SELL_PAYOUT_HIGH -> (int) ((Math.max(0, quote(false)) >>> 16) & 0xFFFF);
+                case DATA_MARKET_ROOM -> marketRoom();
             default -> {
                     // 价格历史数据 (11-50) - 每个价格拆分为高16位和低16位
                 if (index >= DATA_HISTORY_START && index <= DATA_HISTORY_END) {
@@ -211,6 +225,74 @@ public static final int DATA_CURRENT_CATEGORY = 7;
 
     public ContainerData getContainerData() {
         return data;
+    }
+
+    /**
+     * 0.1.10.20: the menu data for one viewer. The daily count and the coins are the viewer's own; before,
+     * all viewers saw the count of the machine and the coins of one of them.
+     */
+    public ContainerData viewerData(Player viewer) {
+        return new ContainerData() {
+            @Override
+            public int get(int index) {
+                return switch (index) {
+                    case DATA_DAILY_VOLUME -> level instanceof ServerLevel
+                        ? Math.min(FutureMarketData.get(level).getPlayerVolume(viewer.getUUID()), 32767) : 0;
+                    case DATA_PLAYER_COINS_LOW -> countPlayerCoins(viewer) & 0xFFFF;
+                    case DATA_PLAYER_COINS_HIGH -> (countPlayerCoins(viewer) >>> 16) & 0xFFFF;
+                    default -> data.get(index);
+                };
+            }
+
+            @Override
+            public void set(int index, int value) { }
+
+            @Override
+            public int getCount() {
+                return DATA_COUNT;
+            }
+        };
+    }
+
+    // ========== 0.1.10.20: quotes (spread and daily buy budget, see MarketQuote) ==========
+
+    private static double spread() {
+        return Singularity_Iteration_Config.FUTURE_SPREAD.get();
+    }
+
+    private static int buyBudget() {
+        return Singularity_Iteration_Config.FUTURE_SYSTEM_BUY_PER_DAY.get();
+    }
+
+    private static double budgetDrop() {
+        return Singularity_Iteration_Config.FUTURE_BUDGET_PRICE_DROP.get();
+    }
+
+    /** Coins a purchase of {@code quantity} costs now. */
+    public long buyCost(FutureCommodity commodity, int quantity) {
+        return MarketQuote.buyCost(getCurrentPrice(commodity), quantity, spread());
+    }
+
+    /** Coins a sale of {@code quantity} pays now, or -1 when the market does not buy that many today. */
+    public long sellPayout(FutureCommodity commodity, int quantity) {
+        if (!(level instanceof ServerLevel)) return -1;
+        int bought = FutureMarketData.get(level).getSystemBought(commodity.getItemId());
+        return MarketQuote.sellPayout(getCurrentPrice(commodity), quantity, spread(), bought, buyBudget(), budgetDrop());
+    }
+
+    /** The quote of the selected commodity for the trade quantity (server side; 0 / -1 without a selection). */
+    private long quote(boolean buying) {
+        FutureCommodity commodity = level instanceof ServerLevel ? getSelectedCommodity() : null;
+        if (commodity == null) return buying ? 0 : -1;
+        long coins = buying ? buyCost(commodity, tradeQuantity) : sellPayout(commodity, tradeQuantity);
+        return Math.min(coins, 0xFFFFFFFFL);
+    }
+
+    private int marketRoom() {
+        FutureCommodity commodity = level instanceof ServerLevel ? getSelectedCommodity() : null;
+        if (commodity == null) return 0;
+        int left = MarketQuote.budgetLeft(FutureMarketData.get(level).getSystemBought(commodity.getItemId()), buyBudget());
+        return Math.min(left, 32767);
     }
 
     // ========== 业务逻辑 - 价格管理 ==========
@@ -543,7 +625,6 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         marketData.setInitialized(true);
         
         currentDay = gameDay;
-        dailyTradeVolume = 0;
         
         setChanged();
         syncToClient();
@@ -574,8 +655,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         
         // 6. 更新天数和重置限制
     currentDay = newDay;
-        marketData.setCurrentDay(newDay);
-        dailyTradeVolume = 0;
+        marketData.setCurrentDay(newDay);   // the daily counters of the market start again with the new day
         
         // 7. 刷新内存缓存
         updatePriceHistoryCache();
@@ -634,40 +714,51 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         try {
             if (!(customer.containerMenu instanceof FutureElcMenu menu) || !authorized(world, customer, menu)) return false;
             final int quantity = tradeQuantity;
-            final int volume = dailyTradeVolume;
+            final FutureMarketData market = FutureMarketData.get(world);
+            final java.util.UUID trader = customer.getUUID();
+            final int volume = market.getPlayerVolume(trader);
             final long day = currentDay;
             final CommodityCategory category = currentCategory;
             final int page = currentPage, selected = selectedCommodityIndex;
             final int fee = Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.get();
             final int limit = Singularity_Iteration_Config.FUTURE_DAILY_LIMIT.get();
-            if (quantity < 1 || quantity > 64 || volume < 0 || (long) volume + quantity > limit
-                    || fee < 0 || fee > 10000) return false;
+            if (quantity < 1 || quantity > 64 || volume < 0 || fee < 0 || fee > 10000) return false;
+            if ((long) volume + quantity > limit) return refuse(customer, "message.mio_icif.future.item_limit_reached");
             FutureCommodity commodity = getSelectedCommodity();
-            if (commodity == null || commodity.getItem() == Items.AIR) return false;
+            if (commodity == null || commodity.getItem() == Items.AIR) return refuse(customer, "message.mio_icif.future.no_commodity_selected");
             if (!FutureCommodityManager.isUnlocked(customer, commodity)) return false;   // datapack unlock condition
             final int price = getCurrentPrice(commodity);
             if (price <= 0) return false;
-            final long coins = (long) price * quantity;
+            // 0.1.10.20: buy at the price plus half the spread; sell at the price minus half the spread, within the daily budget
+            final int bought = market.getSystemBought(commodity.getItemId());
+            final long coins = buying ? buyCost(commodity, quantity) : sellPayout(commodity, quantity);
+            if (coins < 0) return refuse(customer, "message.mio_icif.future.market_full",
+                MarketQuote.budgetLeft(bought, buyBudget()), commodity.getItem().getDescription());
+            if (coins == 0 && !buying) return false;
             final Inventory inventory = customer.getInventory();
             final TradeInventory plan = new TradeInventory(inventory, menu);
             // Zero is explicitly free. Positive action fees bypass public transfer-rate limits.
             if (fee > 0) {
                 payment = energyStorage.scexReserveInternal(fee);
-                if (payment == null) return false;
+                if (payment == null) return refuse(customer, "message.mio_icif.future.no_energy");
             }
             Item currency = mio_icif_normal.COIN.get();
-            if (!plan.removeMain(buying ? currency : commodity.getItem(), buying ? coins : quantity)) return false;
-            if (!plan.insert(buying ? commodity.getItem() : currency, buying ? quantity : coins)) return false;
+            if (!plan.removeMain(buying ? currency : commodity.getItem(), buying ? coins : quantity))
+                return refuse(customer, buying ? "message.mio_icif.future.not_enough_coins" : "message.mio_icif.future.not_enough_items");
+            if (!plan.insert(buying ? commodity.getItem() : currency, buying ? quantity : coins))
+                return refuse(customer, "message.mio_icif.future.inventory_full");
             long nextCoins = plan.countMain(currency);
             // Every item stack limit query and component comparison precedes the commit.
             if (!authorized(world, customer, menu) || getSelectedCommodity() != commodity
-                    || getCurrentPrice(commodity) != price || currentDay != day || dailyTradeVolume != volume
+                    || getCurrentPrice(commodity) != price || currentDay != day || market.getPlayerVolume(trader) != volume
+                    || market.getSystemBought(commodity.getItemId()) != bought
                     || tradeQuantity != quantity || currentCategory != category || currentPage != page
                     || selectedCommodityIndex != selected || Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.get() != fee
                     || Singularity_Iteration_Config.FUTURE_DAILY_LIMIT.get() != limit
                     || customer.getInventory() != inventory || !plan.unchanged(menu)) return false;
             // Component equality may be supplied by a dependency; recheck ownership after it.
-            if (!authorized(world, customer, menu) || currentDay != day || dailyTradeVolume != volume
+            if (!authorized(world, customer, menu) || currentDay != day || market.getPlayerVolume(trader) != volume
+                    || market.getSystemBought(commodity.getItemId()) != bought
                     || tradeQuantity != quantity || currentCategory != category || currentPage != page
                     || selectedCommodityIndex != selected || getSelectedCommodity() != commodity
                     || getCurrentPrice(commodity) != price || Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.get() != fee
@@ -676,7 +767,8 @@ public static final int DATA_CURRENT_CATEGORY = 7;
             // Lists have fixed sizes, and every staged replacement is already non-null.
             if (payment != null && !payment.commit()) throw new IllegalStateException("Future payment settled twice");
             plan.commit();
-            dailyTradeVolume = volume + quantity;
+            market.addPlayerVolume(trader, quantity);
+            if (!buying) market.addSystemBought(commodity.getItemId(), quantity);
             cachedPlayerCoins = nextCoins;
             committed = true;
             // Notification failures cannot turn a completed trade into a retryable failure or refund.
@@ -699,6 +791,12 @@ public static final int DATA_CURRENT_CATEGORY = 7;
                 TRADING_PLAYERS.remove(customer);
             }
         }
+    }
+
+    /** 0.1.10.20: tells the trader why a trade did not happen (before, a refused trade showed nothing). */
+    private static boolean refuse(ServerPlayer player, String key, Object... args) {
+        player.displayClientMessage(Component.translatable(key, args), true);
+        return false;
     }
 
     /** An isolated inventory plan; prepare may call item queries, commit only assigns vanilla fixed lists. */
@@ -988,7 +1086,6 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         tag.putInt("SelectedIndex", selectedCommodityIndex);
         tag.putInt("TradeQuantity", tradeQuantity);
         tag.putLong("CurrentDay", currentDay);
-        tag.putInt("DailyVolume", dailyTradeVolume);
     }
     
     @Override
@@ -1003,7 +1100,6 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         selectedCommodityIndex = tag.getInt("SelectedIndex");
         tradeQuantity = Math.max(1, Math.min(64, tag.getInt("TradeQuantity")));
         currentDay = tag.getLong("CurrentDay");
-        dailyTradeVolume = Math.max(0, tag.getInt("DailyVolume"));
     }
 
     @Override
@@ -1014,7 +1110,6 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         tag.putInt("SelectedIndex", selectedCommodityIndex);
         tag.putInt("TradeQuantity", tradeQuantity);
         tag.putLong("CurrentDay", currentDay);
-        tag.putInt("DailyVolume", dailyTradeVolume);
         return tag;
     }
 
@@ -1030,7 +1125,6 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         selectedCommodityIndex = tag.getInt("SelectedIndex");
         tradeQuantity = Math.max(1, Math.min(64, tag.getInt("TradeQuantity")));
         currentDay = tag.getLong("CurrentDay");
-        dailyTradeVolume = Math.max(0, tag.getInt("DailyVolume"));
     }
     
     // ========== 工具方法 ==========
@@ -1046,7 +1140,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.producer.FutureElcMenu(id, inventory, this, null, this.getContainerData());
+        return new com.miophas.singularity_iteration.common.menu.producer.FutureElcMenu(id, inventory, this, null, viewerData(player));
     }
     
     @Override

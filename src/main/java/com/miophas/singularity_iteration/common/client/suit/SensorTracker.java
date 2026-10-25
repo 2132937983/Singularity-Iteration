@@ -3,7 +3,8 @@ package com.miophas.singularity_iteration.common.client.suit;
 
 import com.miophas.singularity_iteration.common.suit.SuitSensorData;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import java.util.ArrayDeque;
+import com.miophas.singularity_iteration.common.fcs.DeadReckoning;
+import com.miophas.singularity_iteration.common.fcs.TargetTracker;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -68,13 +69,10 @@ public final class SensorTracker {
     public static final double BLAST_RANGE = 28;
     /** Dead reckoning horizon in ticks (20 ticks = 1 second). */
     public static final int PREDICT_TICKS = 20;
-    /**
-     * Maximum number of position samples per entity. The velocity estimate uses only the last 4
-     * samples (3 steps).
-     */
     /** Maximum number of tracks per tick: the nearest creatures win. */
     static final int MAX_TRACKS = 64;
-    private static final int HISTORY = 6;
+    /** 0.1.10.20 (P8): a predicted path is computed again after this many ticks; in between it moves with its creature. */
+    static final int PATH_INTERVAL = 2;
 
     /** Classification of a creature. It sets the ESP colour. */
     public enum Kind { HOSTILE, NEUTRAL, PASSIVE, PLAYER }
@@ -123,10 +121,25 @@ public final class SensorTracker {
     }
 
     /**
-     * Position samples per entity id, oldest first. One sample per tick. The tracker keeps only
-     * the entities that it saw in the last tick. Thus the map has at most 64 entries.
+     * 0.1.10.20: the memory of one tracked creature: its motion estimate ({@link TargetTracker}: the three-step
+     * velocity of 0.1.7.36 and the turn rate of a circling creature) and its last computed path.
      */
-    private static final Int2ObjectOpenHashMap<ArrayDeque<Vec3>> history = new Int2ObjectOpenHashMap<>();
+    private static final class Memory {
+        final TargetTracker tracker = new TargetTracker();
+        List<Vec3> path = List.of();
+        Vec3 pathOrigin;
+        long pathTick = Long.MIN_VALUE;
+    }
+
+    /**
+     * The memory per entity id. The tracker keeps only the entities that it saw in the last tick. Thus the map has
+     * at most 64 entries.
+     */
+    private static final Int2ObjectOpenHashMap<Memory> memory = new Int2ObjectOpenHashMap<>();
+    /** 0.1.10.20 (P8): block answers of this tick per cell, shared by all paths (cleared every tick). */
+    private static final LevelBlocks blocks = new LevelBlocks();
+    private static final DeadReckoning.Cache blockCache = new DeadReckoning.Cache(blocks);
+    private static long ticks;
     private static List<Track> tracks = List.of();
     private static List<Blast> blasts = List.of();
     /** The level of the last tick. A new level clears all state, because entity ids are per level. */
@@ -139,7 +152,8 @@ public final class SensorTracker {
 
     /** Removes all tracks, explosives and position history. */
     public static void clear() {
-        history.clear();
+        memory.clear();
+        blockCache.clear();
         tracks = List.of();
         blasts = List.of();
         BlastDetector.invalidate();
@@ -182,9 +196,12 @@ public final class SensorTracker {
      */
     public static void tick(ClientLevel level, LocalPlayer player, boolean esp, boolean predict, boolean blast) {
         if (level != boundLevel) { clear(); boundLevel = level; }
+        ticks++;
+        blocks.level = level;
+        blockCache.clear();
         if (!esp && !predict) {
             tracks = List.of();
-            history.clear();
+            memory.clear();
         } else {
             double range = esp ? espRange() : PREDICT_RANGE;
             // the value is the feet position of the player
@@ -194,46 +211,31 @@ public final class SensorTracker {
             candidates.sort((a, b) -> Double.compare(a.distanceToSqr(eye), b.distanceToSqr(eye)));
             int count = Math.min(MAX_TRACKS, candidates.size());
             List<Track> out = new ArrayList<>(count);
-            Int2ObjectOpenHashMap<ArrayDeque<Vec3>> seen = new Int2ObjectOpenHashMap<>(count);
+            Int2ObjectOpenHashMap<Memory> seen = new Int2ObjectOpenHashMap<>(count);
+            double[] vel = new double[3];
             for (int i = 0; i < count; i++) {
                 LivingEntity e = candidates.get(i);
-                ArrayDeque<Vec3> h = history.get(e.getId());
-                if (h == null) h = new ArrayDeque<>(HISTORY + 1);
-                h.addLast(e.position());
-                while (h.size() > HISTORY) h.removeFirst();
-                seen.put(e.getId(), h);
-                Vec3 v = velocity(h);
+                Memory m = memory.get(e.getId());
+                if (m == null) m = new Memory();
+                Vec3 at = e.position();
+                m.tracker.update(at.x, at.y, at.z);
+                seen.put(e.getId(), m);
+                m.tracker.velocity(vel);
+                Vec3 v = new Vec3(vel[0], vel[1], vel[2]);
                 boolean near = e.distanceToSqr(player) <= PREDICT_RANGE * PREDICT_RANGE;
-                List<Vec3> path = predict && near ? path(level, e, v) : List.of();
+                List<Vec3> path = predict && near ? path(e, m, v) : List.of();
                 String intent = predict && near ? intent(e, player) : null;
                 boolean hot = intent != null && (SuitSensorData.threatLevel(e.getId()) == 2 || intent.equals("DET"));
                 out.add(new Track(e, kind(e), v, path, intent, hot));
             }
-            // keep the history of the creatures seen in this tick only: this bounds the memory
-            history.clear();
-            history.putAll(seen);
+            // keep the memory of the creatures seen in this tick only: this bounds the memory
+            memory.clear();
+            memory.putAll(seen);
             tracks = out;                       // already nearest first
         }
         blasts = blast ? scanBlasts(level, player) : List.of();
     }
 
-    /**
-     * Velocity estimate in blocks per tick. It is the mean of the last {@code n} position steps,
-     * with {@code n = min(3, samples - 1)}. The mean of the steps is equal to
-     * {@code (newest - sample n steps before) / n}. The 3-tick window removes most jitter from
-     * the client position interpolation. A longer window adds lag when the creature turns.
-     *
-     * @param h position samples, oldest first, one per tick.
-     * @return the velocity, or zero when there are fewer than 2 samples.
-     */
-    private static Vec3 velocity(ArrayDeque<Vec3> h) {
-        if (h.size() < 2) return Vec3.ZERO;
-        Vec3[] p = h.toArray(new Vec3[0]);
-        int n = Math.min(3, p.length - 1);
-        Vec3 sum = Vec3.ZERO;
-        for (int i = p.length - n; i < p.length; i++) sum = sum.add(p[i].subtract(p[i - 1]));
-        return sum.scale(1.0 / n);
-    }
 
     /**
      * Dead reckoning for {@link #PREDICT_TICKS} ticks (1 second).
@@ -252,29 +254,49 @@ public final class SensorTracker {
      * </ul>
      * The method stores every second point. Thus the result has at most 11 points.
      *
+     * <p>0.1.10.20: the rules live in {@code common.fcs.DeadReckoning} (with block answers cached per cell for the
+     * tick); a circling creature gets an arc ({@code TargetTracker#turnRate}); the path is computed every
+     * {@link #PATH_INTERVAL} ticks and moves with the creature in between.
+     *
      * @return the predicted positions, or an empty list when the horizontal speed is below 0.02
      *         blocks per tick and the vertical speed is below 0.02 blocks per tick.
      */
-    private static List<Vec3> path(ClientLevel level, LivingEntity e, Vec3 v) {
-        if (v.horizontalDistanceSqr() < 0.0004 && Math.abs(v.y) < 0.02) return List.of();
-        List<Vec3> pts = new ArrayList<>(PREDICT_TICKS / 2 + 1);
-        Vec3 p = e.position();
-        Vec3 vel = v;
-        boolean grounded = e.onGround();
-        pts.add(p);
-        for (int t = 1; t <= PREDICT_TICKS; t++) {
-            if (!grounded && !e.isNoGravity()) vel = new Vec3(vel.x * 0.91, (vel.y - 0.08) * 0.98, vel.z * 0.91);
-            Vec3 next = p.add(vel);
-            BlockPos at = BlockPos.containing(next.x, next.y + 0.3, next.z);
-            if (!level.getBlockState(at).getCollisionShape(level, at).isEmpty()) break;
-            if (!grounded && vel.y < 0 && !level.getBlockState(BlockPos.containing(next.x, next.y - 0.05, next.z)).isAir()) {
-                grounded = true;
-                vel = new Vec3(vel.x, 0, vel.z);
-            }
-            p = next;
-            if (t % 2 == 0) pts.add(p);
+    private static List<Vec3> path(LivingEntity e, Memory m, Vec3 v) {
+        // 0.1.10.20 (P8): computed every PATH_INTERVAL ticks; in between the last path moves with the creature
+        if (m.pathOrigin != null && ticks - m.pathTick < PATH_INTERVAL) {
+            Vec3 shift = e.position().subtract(m.pathOrigin);
+            if (shift.lengthSqr() < 1.0E-10) return m.path;
+            List<Vec3> moved = new ArrayList<>(m.path.size());
+            for (Vec3 point : m.path) moved.add(point.add(shift));
+            return moved;
         }
-        return pts;
+        Vec3 p = e.position();
+        double[] flat = DeadReckoning.path(blockCache, p.x, p.y, p.z, v.x, v.y, v.z, e.onGround(), e.isNoGravity(), PREDICT_TICKS,
+            m.tracker.turnRate());
+        List<Vec3> pts = new ArrayList<>(flat.length / 3);
+        for (int i = 0; i < flat.length; i += 3) pts.add(new Vec3(flat[i], flat[i + 1], flat[i + 2]));
+        m.path = List.copyOf(pts);
+        m.pathOrigin = p;
+        m.pathTick = ticks;
+        return m.path;
+    }
+
+    /** 0.1.10.20: the client level as the predictor sees it (collision shape, air). */
+    private static final class LevelBlocks implements DeadReckoning.Blocks {
+        ClientLevel level;
+        private final BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+
+        @Override
+        public boolean solid(int x, int y, int z) {
+            at.set(x, y, z);
+            return !level.getBlockState(at).getCollisionShape(level, at).isEmpty();
+        }
+
+        @Override
+        public boolean air(int x, int y, int z) {
+            at.set(x, y, z);
+            return level.getBlockState(at).isAir();
+        }
     }
 
     /**

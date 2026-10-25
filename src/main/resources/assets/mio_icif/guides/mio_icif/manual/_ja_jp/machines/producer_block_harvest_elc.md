@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Harvester"
+  title: "収穫機"
   icon: mio_icif:producer/block_harvest_elc
   parent: machines.md
   position: 30
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_harvest_elc
 ---
 
-# Harvester
+# 収穫機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_harvest_elc" scale="3" />

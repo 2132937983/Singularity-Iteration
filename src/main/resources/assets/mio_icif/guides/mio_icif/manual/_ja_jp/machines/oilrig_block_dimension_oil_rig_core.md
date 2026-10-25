@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Dimension Oil Rig Core"
+  title: "次元油井コア"
   icon: mio_icif:oilrig/block_dimension_oil_rig_core
   parent: heavy.md
   position: 0
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:oilrig/block_dimension_oil_rig_core
 ---
 
-# Dimension Oil Rig Core
+# 次元油井コア
 
 <Row>
   <BlockImage id="mio_icif:oilrig/block_dimension_oil_rig_core" scale="3" />
@@ -42,6 +42,16 @@ item_ids:
 
 > **警告：** ドリルは経路上のブロックを壊し、アイテムを落とさない。掘削範囲は際限なく広がる。
 
+
+## 構造
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があります。
+
+<GameScene zoom="2" interactive={true}>
+  <SiStructure id="mio_icif:dimension_oil_rig" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:dimension_oil_rig" />
 
 ## レシピ
 

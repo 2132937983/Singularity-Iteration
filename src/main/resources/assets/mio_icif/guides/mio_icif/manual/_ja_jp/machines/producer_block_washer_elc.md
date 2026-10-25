@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Ore Washer"
+  title: "鉱石洗浄機"
   icon: mio_icif:producer/block_washer_elc
   parent: machines.md
   position: 49
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_washer_elc
 ---
 
-# Ore Washer
+# 鉱石洗浄機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_washer_elc" scale="3" />

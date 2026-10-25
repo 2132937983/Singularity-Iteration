@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Terraformer"
+  title: "テラフォーマー"
   icon: mio_icif:producer/block_terra_elc
   parent: machines.md
   position: 65
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_terra_elc
 ---
 
-# Terraformer
+# テラフォーマー
 
 <Row>
   <BlockImage id="mio_icif:producer/block_terra_elc" scale="3" />

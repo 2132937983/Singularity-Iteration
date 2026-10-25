@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Stirling Generator"
+  title: "高度スターリング発電機"
   icon: mio_icif:generator/block_advanced_stirling_generator
   parent: generators.md
   position: 4
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_advanced_stirling_generator
 ---
 
-# Advanced Stirling Generator
+# 高度スターリング発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_advanced_stirling_generator" scale="3" />

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Item Distributor"
+  title: "高度アイテム分配機"
   icon: mio_icif:producer/block_item_distributor_elc
   parent: machines.md
   position: 3
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_item_distributor_elc
 ---
 
-# Advanced Item Distributor
+# 高度アイテム分配機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_item_distributor_elc" scale="3" />

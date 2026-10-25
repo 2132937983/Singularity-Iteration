@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Geomagnetic Generator"
+  title: "地磁気発電機"
   icon: mio_icif:generator/block_geomagnetic_generator
   parent: generators.md
   position: 12
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_geomagnetic_generator
 ---
 
-# Geomagnetic Generator
+# 地磁気発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_geomagnetic_generator" scale="3" />

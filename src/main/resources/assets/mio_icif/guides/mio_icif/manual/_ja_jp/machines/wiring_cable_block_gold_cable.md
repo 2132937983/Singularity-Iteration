@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "High-Voltage Cable"
+  title: "高圧ケーブル"
   icon: mio_icif:wiring/cable/block_gold_cable
   parent: power.md
   position: 17
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_gold_cable
 ---
 
-# High-Voltage Cable
+# 高圧ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_gold_cable" scale="3" />

@@ -15,7 +15,7 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
  * Turning blanks on the client: the item is drawn by its current profile (IC2 LatheRenderer; the
  * item models use builtin/entity) and its tooltip shows the profile.
  */
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public final class LatheBlankClient {
     private LatheBlankClient() {}
 

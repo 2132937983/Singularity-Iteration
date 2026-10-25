@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Oil Rig Panel"
+  title: "油井パネル"
   icon: mio_icif:oilrig/block_oil_rig_panel
   parent: heavy.md
   position: 9
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:oilrig/block_oil_rig_panel
 ---
 
-# Oil Rig Panel
+# 油井パネル
 
 <Row>
   <BlockImage id="mio_icif:oilrig/block_oil_rig_panel" scale="3" />

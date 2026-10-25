@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Oil Rig Output Module"
+  title: "油井出力モジュール"
   icon: mio_icif:oilrig/block_oil_rig_output
   parent: heavy.md
   position: 8
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:oilrig/block_oil_rig_output
 ---
 
-# Oil Rig Output Module
+# 油井出力モジュール
 
 <Row>
   <BlockImage id="mio_icif:oilrig/block_oil_rig_output" scale="3" />

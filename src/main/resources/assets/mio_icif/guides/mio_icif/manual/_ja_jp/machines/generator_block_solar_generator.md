@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Solar Generator"
+  title: "ソーラー発電機"
   icon: mio_icif:generator/block_solar_generator
   parent: generators.md
   position: 28
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_solar_generator
 ---
 
-# Solar Generator
+# ソーラー発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_solar_generator" scale="3" />

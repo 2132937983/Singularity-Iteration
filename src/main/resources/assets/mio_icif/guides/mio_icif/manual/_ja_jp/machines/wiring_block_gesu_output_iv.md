@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "GESU Output Module (IV)"
+  title: "GESU 出力モジュール（IV）"
   icon: mio_icif:wiring/block_gesu_output_iv
   parent: power.md
   position: 15
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_gesu_output_iv
 ---
 
-# GESU Output Module (IV)
+# GESU 出力モジュール（IV）
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_gesu_output_iv" scale="3" />

@@ -34,6 +34,16 @@ item_ids:
 
 - 外壳中至少需要一个流体接口、访问接口或红石接口。
 
+## 结构
+
+拖动视图可旋转。下方列表给出所需方块及其规则。JEI 的“多方块结构”分类中也有相同的建造图。
+
+<GameScene zoom="2.5" interactive={true}>
+  <SiStructure id="mio_icif:fluid_reactor" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:fluid_reactor" />
+
 ## 配方
 
 <RecipesFor id="mio_icif:reactor/block_reactor_vessel" fallbackText="-" />

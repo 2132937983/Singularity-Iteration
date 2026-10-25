@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Reactor Fluid Port"
+  title: "原子炉流体ポート"
   icon: mio_icif:reactor/block_reactor_fluid_port
   parent: heavy.md
   position: 12
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:reactor/block_reactor_fluid_port
 ---
 
-# Reactor Fluid Port
+# 原子炉流体ポート
 
 <Row>
   <BlockImage id="mio_icif:reactor/block_reactor_fluid_port" scale="3" />

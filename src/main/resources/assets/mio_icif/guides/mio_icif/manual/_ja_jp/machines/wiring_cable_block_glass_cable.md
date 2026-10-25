@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "IV Cable"
+  title: "IV ケーブル"
   icon: mio_icif:wiring/cable/block_glass_cable
   parent: power.md
   position: 18
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_glass_cable
 ---
 
-# IV Cable
+# IV ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_glass_cable" scale="3" />

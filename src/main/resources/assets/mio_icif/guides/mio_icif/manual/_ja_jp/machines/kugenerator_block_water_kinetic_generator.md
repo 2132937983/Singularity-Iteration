@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Water Kinetic Generator"
+  title: "水力運動エネルギー発生器"
   icon: mio_icif:kugenerator/block_water_kinetic_generator
   parent: generators.md
   position: 38
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:kugenerator/block_water_kinetic_generator
 ---
 
-# Water Kinetic Generator
+# 水力運動エネルギー発生器
 
 <Row>
   <BlockImage id="mio_icif:kugenerator/block_water_kinetic_generator" scale="3" />

@@ -11,6 +11,12 @@ import org.spongepowered.asm.mixin.injection.At;
 /**
  * Changes the Codec that serializes the item count of an ItemStack.
  * This lets network sync send stack sizes larger than 64.
+ *
+ * <p>0.1.10.16: kept as a compatibility range only. It lets a stack above 99 be saved and loaded (an SI
+ * coin stack of up to 9,999 in any container, and the stacks of worlds saved before); it makes no stack
+ * larger. Which items may stack above 99 is decided by {@code LargeStacks} (SI large-stack items only);
+ * the former global container mixin was removed ({@code DataComponentMaxStackMixin} stays, also as a
+ * compatibility range only).
  */
 @Mixin(ItemStack.class)
 @SuppressWarnings("null")

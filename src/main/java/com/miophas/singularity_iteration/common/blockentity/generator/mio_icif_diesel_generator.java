@@ -282,9 +282,7 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         if (energyStorage.scexNetworkControlled() || scexFuelCredit > 0) tag.putLong("scex_fuel_credit_eu", scexFuelCredit);
-        if (itemHandler != null) {
-            tag.put("Items", itemHandler.serializeNBT(registries));
-        }
+        // 0.1.10.17 (E-2): the parent decides on the inventory (syncInventoryToClient).
         tag.putInt("BurnTime", burnTime);
         tag.putInt("BurnDuration", burnDuration);
         if (fuelTank != null) {

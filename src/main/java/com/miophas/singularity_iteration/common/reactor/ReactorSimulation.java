@@ -23,6 +23,8 @@ public final class ReactorSimulation {
     public static final int CYCLES = 100;
     /** Remaining cycles of a new fuel rod in the simulation (longer than the run). */
     static final int FUEL = 20_000;
+    /** 0.1.10.19: cycles of the full run ({@link #fullRun}): the life of a uranium rod (5 h 33 min). */
+    public static final int FULL_CYCLES = FUEL;
 
     /**
      * Result of one run.
@@ -37,9 +39,12 @@ public final class ReactorSimulation {
      * @param melted         components that melted (overheated and were destroyed)
      * @param meltdownCycle  cycle of the meltdown, or -1
      * @param cycles         cycles run
+     * @param firstMeltCycle cycle in which the first component melted, or -1 (0.1.10.19)
+     * @param steadyCycle    first cycle after which no heat value changes any more (steady state), or -1 (0.1.10.19)
      */
     public record Report(double euPerTick, long heatPerCycle, long ventPerCycle, double hullTrend, long hullHeat,
-                         long maxHull, long peakHull, int melted, int meltdownCycle, int cycles) {
+                         long maxHull, long peakHull, int melted, int meltdownCycle, int cycles, int firstMeltCycle,
+                         int steadyCycle) {
         /** No meltdown, no melted component, and the hull does not heat up. */
         public boolean stable() { return meltdownCycle < 0 && melted == 0 && hullTrend <= 0.0; }
 
@@ -61,6 +66,20 @@ public final class ReactorSimulation {
      * @param columns  reactor columns: 3 + chambers (3..9)
      */
     public static Report run(Profile[] profiles, int columns) {
+        return simulate(profiles, columns, CYCLES, false);
+    }
+
+    /**
+     * 0.1.10.19: runs a design for the life of a uranium rod ({@link #FULL_CYCLES}), and stops early at the
+     * steady state (no component heat and no hull heat changes from one cycle to the next; the model has no
+     * randomness, so the state then stays until the fuel ends). The 100 cycles of {@link #run} can call a design
+     * stable while its vents still heat up; this run sees them melt. Used by the JEI reactor layouts.
+     */
+    public static Report fullRun(Profile[] profiles, int columns) {
+        return simulate(profiles, columns, FULL_CYCLES, true);
+    }
+
+    private static Report simulate(Profile[] profiles, int columns, int maxCycles, boolean stopWhenSteady) {
         if (profiles.length != 54 || columns < 3 || columns > 9) throw new IllegalArgumentException("Invalid design");
         Part[] parts = new Part[54];
         for (int i = 0; i < 54; i++) {
@@ -70,13 +89,18 @@ public final class ReactorSimulation {
         }
         long heat = 0, peak = 0, maxHull = 10_000;
         double eu = 0;
-        int melted = 0, meltdown = -1, cycles = 0;
-        long[] history = new long[CYCLES + 1], made = new long[CYCLES + 1], vented = new long[CYCLES + 1];
-        for (int c = 0; c < CYCLES; c++) {
+        int melted = 0, meltdown = -1, cycles = 0, firstMelt = -1, steady = -1;
+        long[] history = new long[maxCycles + 1], made = new long[maxCycles + 1], vented = new long[maxCycles + 1];
+        for (int c = 0; c < maxCycles; c++) {
             ReactorCycle.Result r = ReactorCycle.step(parts, columns, heat, true);
             Part[] next = r.parts();
+            boolean same = r.hullHeat() == heat;
             for (int i = 0; i < 54; i++) {
-                if (parts[i] != null && next[i] == null && parts[i].profile().storesHeat()) melted++;
+                if (parts[i] != null && next[i] == null && parts[i].profile().storesHeat()) {
+                    melted++;
+                    if (firstMelt < 0) firstMelt = c + 1;
+                }
+                if (same && !sameHeat(parts[i], next[i])) same = false;
             }
             parts = next;
             heat = r.hullHeat();
@@ -88,6 +112,12 @@ public final class ReactorSimulation {
             made[cycles] = r.generatedHeat();
             vented[cycles] = r.emittedHeat();
             if (heat >= maxHull) { meltdown = cycles; break; }
+            if (same) {
+                if (steady < 0) steady = cycles;
+            } else {
+                steady = -1;
+            }
+            if (stopWhenSteady && steady >= 0) break;
         }
         // steady state: the components start cold, so the first cycles vent less than later ones
         int window = Math.min(10, cycles);
@@ -98,8 +128,20 @@ public final class ReactorSimulation {
             heatMean /= window;
             ventMean /= window;
         }
+        if (stopWhenSteady && steady >= 0) {
+            // at the steady state the hull does not change and the vents remove what the fuel makes
+            trend = 0;
+            heatMean = made[cycles];
+            ventMean = vented[cycles];
+        }
         return new Report(cycles == 0 ? 0 : eu / cycles, Math.round(heatMean), Math.round(ventMean), trend, heat, maxHull, peak, melted,
-            meltdown, cycles);
+            meltdown, cycles, firstMelt, steady);
+    }
+
+    /** The same component with the same stored value (heat, reflector use, breeding progress), or both slots empty; fuel time is not compared. */
+    private static boolean sameHeat(Part before, Part after) {
+        if (before == null || after == null) return before == after;
+        return before.profile() == after.profile() && before.stored() == after.stored();
     }
 
     /**

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Oil Refinery"
+  title: "石油精製機"
   icon: mio_icif:producer/block_oil_refinery_elc
   parent: machines.md
   position: 48
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_oil_refinery_elc
 ---
 
-# Oil Refinery
+# 石油精製機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_oil_refinery_elc" scale="3" />

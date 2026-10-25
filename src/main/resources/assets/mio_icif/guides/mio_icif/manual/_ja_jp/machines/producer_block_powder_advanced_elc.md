@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Cyclone Macerator"
+  title: "高度サイクロン粉砕機"
   icon: mio_icif:producer/block_powder_advanced_elc
   parent: machines.md
   position: 0
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_powder_advanced_elc
 ---
 
-# Advanced Cyclone Macerator
+# 高度サイクロン粉砕機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_powder_advanced_elc" scale="3" />

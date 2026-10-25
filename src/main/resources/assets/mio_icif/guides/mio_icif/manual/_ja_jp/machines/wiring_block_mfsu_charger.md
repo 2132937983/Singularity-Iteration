@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "MFSU Charger"
+  title: "MFSU 充電台"
   icon: mio_icif:wiring/block_mfsu_charger
   parent: power.md
   position: 29
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/block_mfsu_charger
 ---
 
-# MFSU Charger
+# MFSU 充電台
 
 <Row>
   <BlockImage id="mio_icif:wiring/block_mfsu_charger" scale="3" />

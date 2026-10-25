@@ -23,7 +23,7 @@ import net.neoforged.neoforge.event.ModifyDefaultComponentsEvent;
  * lapotron crystals, RE and lithium batteries, the super lapotron crystal) still stacks through
  * {@code AbstractBattery#getMaxStackSize(ItemStack)}; it becomes a single item again once it holds charge.
  */
-@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
 public final class ChargeableStackRules {
     private ChargeableStackRules() {}
 

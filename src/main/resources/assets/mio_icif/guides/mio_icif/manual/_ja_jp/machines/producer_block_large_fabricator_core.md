@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Large Matter Fabricator Core"
+  title: "大型物質生成機コア"
   icon: mio_icif:producer/block_large_fabricator_core
   parent: machines.md
   position: 34
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_large_fabricator_core
 ---
 
-# Large Matter Fabricator Core
+# 大型物質生成機コア
 
 <Row>
   <BlockImage id="mio_icif:producer/block_large_fabricator_core" scale="3" />
@@ -34,6 +34,16 @@ item_ids:
 ## 注意
 
 - GUIはモジュールの数と、構造が不完全なときのメッセージを表示する。
+
+## 構造
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があります。
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:large_fabricator" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:large_fabricator" />
 
 ## レシピ
 

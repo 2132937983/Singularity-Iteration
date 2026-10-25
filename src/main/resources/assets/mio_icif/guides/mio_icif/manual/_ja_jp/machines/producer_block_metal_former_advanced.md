@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Metal Former"
+  title: "高度金属成型機"
   icon: mio_icif:producer/block_metal_former_advanced
   parent: machines.md
   position: 5
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_metal_former_advanced
 ---
 
-# Advanced Metal Former
+# 高度金属成型機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_metal_former_advanced" scale="3" />

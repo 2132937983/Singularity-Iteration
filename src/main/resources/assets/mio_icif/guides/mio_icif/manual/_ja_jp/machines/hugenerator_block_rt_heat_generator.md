@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Radioisotope Heat Generator"
+  title: "放射性同位体熱発生器"
   icon: mio_icif:hugenerator/block_rt_heat_generator
   parent: generators.md
   position: 25
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:hugenerator/block_rt_heat_generator
 ---
 
-# Radioisotope Heat Generator
+# 放射性同位体熱発生器
 
 <Row>
   <BlockImage id="mio_icif:hugenerator/block_rt_heat_generator" scale="3" />

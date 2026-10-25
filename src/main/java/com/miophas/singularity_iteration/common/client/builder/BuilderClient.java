@@ -16,7 +16,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 public final class BuilderClient {
     private BuilderClient() {}
 
-    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
     public static final class ModEvents {
         @SubscribeEvent
         static void screens(RegisterMenuScreensEvent event) {

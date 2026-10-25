@@ -627,6 +627,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     private long planCacheHits;
     /** 0.1.10.10: windows ended early because none of their sinks had room (E11). */
     private long saturatedWindows;
+    /** 0.1.10.20 (G2): fair windows whose allocation was replayed from an earlier tick with equal inputs. */
+    private long steadyReplays;
     /** Number of foreign queries that threw. It saturates at {@link Long#MAX_VALUE}. */
     private long foreignQueryFailures;
     /**
@@ -968,25 +970,27 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         ConductorRegistry.Snapshot idleSnapshot;
         long idleGeneration = Long.MIN_VALUE, idleEdits = Long.MIN_VALUE;
         int idleSources = -1;
+        // 0.1.10.16 (E-3): the per-tick lookup tables below are keyed by BlockPos.asLong() (fastutil, no
+        // entry object per put). The engine only reads, merges and clears them, never iterates them.
         /** EU that each source sent in {@code sampleTick}, native and FE together. */
-        final Map<BlockPos, EnergyAmount> packetSpent = new HashMap<>();
+        final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<EnergyAmount> packetSpent = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         /** Sources whose FE export threw in {@code sampleTick}. The export pass skips them. */
-        final Set<BlockPos> failedOutputs = new HashSet<>();
+        final it.unimi.dsi.fastutil.longs.LongOpenHashSet failedOutputs = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
         /** EU that each transformer received in {@code sampleTick}. It limits FE import to the input limit. */
-        final Map<BlockPos, EnergyAmount> transformerReceived = new HashMap<>();
+        final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<EnergyAmount> transformerReceived = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         /**
          * EU that each native sink received in {@code sampleTick}, in all windows
          * and batches. The fair-share distributor subtracts it from the rated
          * input, so a sink in two windows cannot get its rated input twice.
          */
-        final Map<BlockPos, EnergyAmount> receivedThisTick = new HashMap<>();
+        final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<EnergyAmount> receivedThisTick = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         /** 0.1.10.12: storage blocks whose output reaches a receiver, for one routing view ({@code relayFeedsView}). */
-        final Map<BlockPos, Boolean> relayFeeds = new HashMap<>();
+        final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Boolean> relayFeeds = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         Object relayFeedsView;
         /** Anchor positions for foreign discovery: conductors, then endpoints. */
         List<BlockPos> scanAnchors = List.of();
         /** Foreign contacts that received an export in {@code sampleTick}. The import pass skips them. */
-        final Set<BlockPos> exportedThisTick = new HashSet<>();
+        final it.unimi.dsi.fastutil.longs.LongOpenHashSet exportedThisTick = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
         /** Positions whose balances the latest native commit wrote (its window's ports). */
         final Set<BlockPos> lastCommitted = new HashSet<>();
         /** Bumped on every native balance write (commit or demand acquisition). It drives the quote refresh. */
@@ -1912,12 +1916,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         // ends as it would after the round, without building the domains and the round. The legacy
         // walk draws random numbers for its receiver order, so it still runs in full.
         if (!anyRoom && IndependentEnergyMode.fairDistribution()) { saturatedWindows++; return true; }
-        var quotes = sources.stream().map(source -> new DomainDistributor.Source(source.balance().whole(), source.packet,
-            source.partialPackets, source.packets)).toList();
         var budgets = sources.stream().map(source -> windowOffer(source, allowances, plan.packetLimit)).toList();
-        var effectPaths = new ArrayList<List<ConductorRegistry.Path[]>>();
         final boolean fair = IndependentEnergyMode.fairDistribution();
-        var domains = domains(plan, sources, sinks, snapshot, receivers, level.getGameTime(), grid, effectPaths, budgets, fair);
         var shared = new ArrayList<DomainDistributor.SharedStorage>();
         var sinkIndices = new IdentityHashMap<Port, Integer>();
         for (int i = 0; i < sinks.size(); i++) sinkIndices.put(sinks.get(i), i);
@@ -1930,10 +1930,43 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 shared.add(new DomainDistributor.SharedStorage(i, receiver, source.capacity));
         }
         // fair (default): deterministic fair share. legacy: the 0.1.7.x packet priority walk.
-        var round = fair
-            ? fairRound(level, grid, sources, sinks, domains, receivers, room, shared, budgets)
-            : PlannedRound.of(FractionalDistributor.allocateQuotedTraced(quotes, sources.stream().map(Port::balance).toList(),
+        List<List<ConductorRegistry.Path[]>> effectPaths;
+        PlannedRound round;
+        if (fair) {
+            // 0.1.10.20 (G2): steady-window replay. The fair round is a pure function of its inputs (the source
+            // budgets, packets and classes, the receiver rooms, rated inputs, classes and relay demands, the
+            // shared storage, the line loss mode, and the rotation start of each source class), and the fair
+            // domains depend only on this plan and on which budgets are zero. A window of a factory in steady
+            // state has the same inputs every tick: the plan keeps the last rounds per rotation start, and
+            // equal inputs reuse the domains and the allocation. The commit, its validation and the world
+            // effects below still run every tick.
+            var fairSources = fairSources(sources, budgets);
+            var fairReceivers = fairReceivers(grid, sinks, room);
+            var lineLoss = IndependentEnergyMode.lineLoss();
+            long rotation = level.getGameTime();
+            long key = rotationKey(fairSources, rotation);
+            var memo = plan.steady.get(key);
+            if (memo != null && memo.matches(lineLoss, fairSources, fairReceivers, shared)) {
+                steadyReplays++;
+                effectPaths = memo.effectPaths();
+                round = memo.round();
+            } else {
+                var paths = new ArrayList<List<ConductorRegistry.Path[]>>();
+                var domains = domains(plan, sources, sinks, snapshot, receivers, rotation, grid, paths, budgets, true);
+                round = PlannedRound.of(FairShareDistributor.allocate(fairSources, domains, receivers, fairReceivers, shared,
+                    lineLoss, rotation));
+                effectPaths = paths;
+                plan.rememberSteady(key, new SteadyRound(lineLoss, fairSources, fairReceivers, List.copyOf(shared), List.copyOf(paths), round));
+            }
+        } else {
+            var quotes = sources.stream().map(source -> new DomainDistributor.Source(source.balance().whole(), source.packet,
+                source.partialPackets, source.packets)).toList();
+            var paths = new ArrayList<List<ConductorRegistry.Path[]>>();
+            var domains = domains(plan, sources, sinks, snapshot, receivers, level.getGameTime(), grid, paths, budgets, false);
+            round = PlannedRound.of(FractionalDistributor.allocateQuotedTraced(quotes, sources.stream().map(Port::balance).toList(),
                 domains, receivers, room, shared, budgets, selectionRandom), sources.size(), sinks.size());
+            effectPaths = paths;
+        }
         // Net balance change per port: the credits and the debits of the port. A port
         // that is a source and a sink gets both. 0.1.10.8: two exact EnergyAmount sums
         // instead of one signed BigInteger per port (see applyDelta).
@@ -2137,9 +2170,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 double voltage = delivery.voltage();
                 sample(grid, source.position, 0, received, voltage);
                 sample(grid, sink.position, received, 0, voltage);
-                if (sink.transformer != null) grid.transformerReceived.merge(sink.position, delivery.credit(), EnergyAmount::add);
-                grid.receivedThisTick.merge(sink.position, delivery.credit(), EnergyAmount::add);
-                grid.packetSpent.merge(source.position, delivery.sourceDebit(), EnergyAmount::add);
+                if (sink.transformer != null) grid.transformerReceived.merge(sink.position.asLong(), delivery.credit(), EnergyAmount::add);
+                grid.receivedThisTick.merge(sink.position.asLong(), delivery.credit(), EnergyAmount::add);
+                grid.packetSpent.merge(source.position.asLong(), delivery.sourceDebit(), EnergyAmount::add);
                 // 0.1.10.7: the wire samples wait until a meter reads (same order, same sums)
                 var wire = deliveryWires[sampleIndex];
                 if (wire != null) sampleWire(grid, wire, received, voltage);
@@ -2239,14 +2272,18 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      *       first.</li>
      * </ul>
      */
-    private static PlannedRound fairRound(ServerLevel level, WorldGrid grid, List<Port> sources, List<Port> sinks,
-            List<DomainDistributor.Domain> domains, int[] receivers, List<EnergyAmount> room,
-            List<DomainDistributor.SharedStorage> shared, List<EnergyAmount> budgets) {
+    /** The sources of a fair round: the window budget, the packet size and the class (1 for storage). */
+    private static List<FairShareDistributor.Source> fairSources(List<Port> sources, List<EnergyAmount> budgets) {
         var fairSources = new ArrayList<FairShareDistributor.Source>(sources.size());
         for (int i = 0; i < sources.size(); i++) {
             var source = sources.get(i);
             fairSources.add(new FairShareDistributor.Source(budgets.get(i), Math.max(1, source.packet), isStorage(source) ? 1 : 0));
         }
+        return List.copyOf(fairSources);
+    }
+
+    /** The receivers of a fair round: room, rated input, class (1 for storage) and relay demand. */
+    private static List<FairShareDistributor.Receiver> fairReceivers(WorldGrid grid, List<Port> sinks, List<EnergyAmount> room) {
         var fairReceivers = new ArrayList<FairShareDistributor.Receiver>(sinks.size());
         for (int r = 0; r < sinks.size(); r++) {
             var sink = sinks.get(r);
@@ -2256,8 +2293,30 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             fairReceivers.add(new FairShareDistributor.Receiver(room.get(r), ratedInput(grid, sink),
                 storage ? 1 : 0, relay));
         }
-        return PlannedRound.of(FairShareDistributor.allocate(fairSources, domains, receivers, fairReceivers, shared,
-            IndependentEnergyMode.lineLoss(), level.getGameTime()));
+        return List.copyOf(fairReceivers);
+    }
+
+    /**
+     * 0.1.10.20 (G2): the part of the world time that the fair round uses: the start of the visit order of
+     * each source class ({@code rotation mod size}, see {@code FairShareDistributor.sourceOrder}).
+     */
+    private static long rotationKey(List<FairShareDistributor.Source> sources, long rotation) {
+        int storage = 0;
+        for (var source : sources) if (source.sourceClass() == 1) storage++;
+        int other = sources.size() - storage;
+        long start0 = other == 0 ? 0 : Math.floorMod(rotation, (long) other);
+        long start1 = storage == 0 ? 0 : Math.floorMod(rotation, (long) storage);
+        return (start0 << 32) | start1;
+    }
+
+    /** 0.1.10.20 (G2): the inputs and the result of one fair round of a window, for the steady-window replay. */
+    private record SteadyRound(FairShareDistributor.LineLoss lineLoss, List<FairShareDistributor.Source> sources,
+            List<FairShareDistributor.Receiver> receivers, List<DomainDistributor.SharedStorage> shared,
+            List<List<ConductorRegistry.Path[]>> effectPaths, PlannedRound round) {
+        boolean matches(FairShareDistributor.LineLoss loss, List<FairShareDistributor.Source> fairSources,
+                List<FairShareDistributor.Receiver> fairReceivers, List<DomainDistributor.SharedStorage> sharedStorage) {
+            return lineLoss == loss && sources.equals(fairSources) && receivers.equals(fairReceivers) && shared.equals(sharedStorage);
+        }
     }
     /**
      * 0.1.10.12: the relay demand of a storage receiver: one tick of its output
@@ -2286,7 +2345,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         var view = grid.routingView;
         if (view == null) return false;
         if (grid.relayFeedsView != view) { grid.relayFeeds.clear(); grid.relayFeedsView = view; }
-        Boolean known = grid.relayFeeds.get(port.position);
+        Boolean known = grid.relayFeeds.get(port.position.asLong());
         if (known != null) return known;
         boolean feeds = false;
         for (var origin : NativeRoutePlan.origins(RouteEndpoint.of(port), 0, view.graph, grid)) {
@@ -2297,7 +2356,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if (!view.sinks.get(contact.receiver()).position.equals(port.position)) { feeds = true; break; }
             if (feeds) break;
         }
-        grid.relayFeeds.put(port.position, feeds);
+        grid.relayFeeds.put(port.position.asLong(), Boolean.valueOf(feeds));
         return feeds;
     }
     /** True for a storage block: a storage prefab, a multiblock storage part or a STORAGE profile. */
@@ -2321,7 +2380,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 : limits.outputPacket() * limits.outputPackets();
         } else cap = sink.quote.maxReceive();
         if (cap <= 0) return null;
-        return grid.receivedThisTick.getOrDefault(sink.position, EnergyAmount.ZERO).roomBelow(cap);
+        return grid.receivedThisTick.getOrDefault(sink.position.asLong(), EnergyAmount.ZERO).roomBelow(cap);
     }
     /**
      * Builds one {@code Port} for each published endpoint in the settlement
@@ -2954,7 +3013,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             int index = Math.floorMod(grid.transferCursor, pairs);
             var source = sources.get(index / targets.size()); var entry = targets.get(index % targets.size());
             var target = entry.getValue();
-            if (grid.failedOutputs.contains(source.position)) {
+            if (grid.failedOutputs.contains(source.position.asLong())) {
                 grid.transferCursor = index + 1 == pairs ? 0 : index + 1;
                 grid.exportPlan = null; continue;
             }
@@ -2973,7 +3032,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (route == null) continue;
             // Saturating multiply: packet * packets in EU/t, capped at Long.MAX_VALUE.
             long allowance = source.packet > Long.MAX_VALUE / source.packets ? Long.MAX_VALUE : source.packet * source.packets;
-            var remaining = grid.packetSpent.getOrDefault(source.position, EnergyAmount.ZERO).roomBelow(allowance);
+            var remaining = grid.packetSpent.getOrDefault(source.position.asLong(), EnergyAmount.ZERO).roomBelow(allowance);
             // Native EU and engine-driven FE exports share the initial packet
             // offer. In particular a full-packet source cannot leak a sub-packet
             // through FE, or renew an already spent native allowance here.
@@ -2999,8 +3058,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if (sent == 0) continue;
                 // Not null: limit > 0 above needs a nonzero windowOffer, which needs an allowance.
                 allowances.get(source.tile).debit(FeLedger.eu(sent));
-                grid.exportedThisTick.add(entry.getKey().at);
-                grid.packetSpent.merge(source.position, FeLedger.eu(sent), EnergyAmount::add);
+                grid.exportedThisTick.add(entry.getKey().at.asLong());
+                grid.packetSpent.merge(source.position.asLong(), FeLedger.eu(sent), EnergyAmount::add);
                 // FE to EU for meters: 4 FE = 1 EU. The voltage is the EU that the source sent.
                 double output = sent / 4.0, input = routed.delivered() / 4.0;
                 double voltage = output;
@@ -3044,7 +3103,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             } catch (RuntimeException foreignFailure) {
                 // A foreign callback may have accepted before throwing. The pre-debit stays
                 // charged. The native graph keeps running and does not invent a refund.
-                grid.failedOutputs.add(source.position);
+                grid.failedOutputs.add(source.position.asLong());
                 rejected++; LOG.warn("Foreign energy endpoint threw during transfer; skipped", foreignFailure);
             }
         }
@@ -3079,7 +3138,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             // overflowing post-increment to detect the wrap point.
             int index = Math.floorMod(grid.importCursor, pairs);
             var source = sources.get(index / sinks.size()); var sink = sinks.get(index % sinks.size());
-            if (grid.exportedThisTick.contains(source.getKey().at)) {
+            if (grid.exportedThisTick.contains(source.getKey().at.asLong())) {
                 grid.importCursor = index + 1 == pairs ? 0 : index + 1;
                 grid.importPlan = null; continue;
             }
@@ -3110,12 +3169,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     extracted = machine.scexFeBridge().pullRouted(source.getValue(), inputSide, lossFe, current);
                 else if (sink.tile instanceof IndependentTransformerBlockEntity transformer)
                     extracted = pullTransformer(transformer, source.getValue(), lossFe,
-                        grid.transformerReceived.getOrDefault(sink.position, EnergyAmount.ZERO), current);
+                        grid.transformerReceived.getOrDefault(sink.position.asLong(), EnergyAmount.ZERO), current);
                 else continue;
                 if (extracted == 0) continue;
                 int received = Math.max(0, extracted - lossFe);
                 if (sink.transformer != null && received > 0)
-                    grid.transformerReceived.merge(sink.position, FeLedger.eu(received), EnergyAmount::add);
+                    grid.transformerReceived.merge(sink.position.asLong(), FeLedger.eu(received), EnergyAmount::add);
                 double output = extracted / 4.0, input = received / 4.0;
                 // FE has no packet voltage. Meters use zero for this unpacketized intake.
                 sample(grid, source.getKey().at, 0, output, 0);
@@ -3910,6 +3969,21 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     }
 
     /**
+     * 0.1.10.20: the grid zone counters (since the server started): conductor components built again after
+     * edits (G1), components kept by the last rebuilds (summed over the dimensions), and fair windows replayed
+     * from an earlier tick with equal inputs (G2). Read on the server thread.
+     */
+    public long[] gridReuseCounters() {
+        if (Thread.currentThread().threadId() != ownerThread) throw new IllegalStateException("Read engine metrics on server thread");
+        long rebuilt = 0, kept = 0;
+        for (var grid : worlds.values()) {
+            rebuilt += grid.conductors.rebuiltComponentsTotal();
+            kept += grid.conductors.lastKeptComponents();
+        }
+        return new long[]{rebuilt, kept, steadyReplays};
+    }
+
+    /**
      * 0.1.10.8: the balance after a window: {@code balance + credit - debit}, exactly as the signed
      * BigInteger sum before: the same value, and the same exception when the result is negative or
      * outside the EnergyAmount range.
@@ -4004,6 +4078,18 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     }
 
     private static final class NativeRoutePlan {
+        /** 0.1.10.20 (G2): most rounds kept per plan (one per rotation start of the source classes). */
+        static final int STEADY_ROUNDS = 8;
+        /** 0.1.10.20 (G2): the last fair rounds of this window by rotation key, newest last. */
+        final LinkedHashMap<Long, SteadyRound> steady = new LinkedHashMap<>(4, .75f, true);
+        void rememberSteady(long key, SteadyRound round) {
+            steady.put(key, round);
+            while (steady.size() > STEADY_ROUNDS) {
+                var eldest = steady.entrySet().iterator();
+                eldest.next();
+                eldest.remove();
+            }
+        }
         /** The conductor snapshot that this plan was built for. */
         final ConductorRegistry.Snapshot graph;
         /** {@code allSources}, {@code allSinks}: the full lists of the routing view. {@code sources}, {@code sinks}: this window. */

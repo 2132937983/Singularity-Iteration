@@ -35,6 +35,16 @@ item_ids:
 
 - 界面显示模块数量，并在结构不完整时显示提示。
 
+## 结构
+
+拖动视图可旋转。下方列表给出所需方块及其规则。JEI 的“多方块结构”分类中也有相同的建造图。
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:large_fabricator" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:large_fabricator" />
+
 ## 配方
 
 <RecipesFor id="mio_icif:producer/block_large_fabricator_core" fallbackText="-" />

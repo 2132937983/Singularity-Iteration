@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Replicator"
+  title: "複製機"
   icon: mio_icif:producer/block_replicator_elc
   parent: machines.md
   position: 57
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_replicator_elc
 ---
 
-# Replicator
+# 複製機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_replicator_elc" scale="3" />

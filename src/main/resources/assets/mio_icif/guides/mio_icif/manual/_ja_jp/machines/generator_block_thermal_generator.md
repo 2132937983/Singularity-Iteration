@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Thermal Generator"
+  title: "火力発電機"
   icon: mio_icif:generator/block_thermal_generator
   parent: generators.md
   position: 32
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_thermal_generator
 ---
 
-# Thermal Generator
+# 火力発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_thermal_generator" scale="3" />

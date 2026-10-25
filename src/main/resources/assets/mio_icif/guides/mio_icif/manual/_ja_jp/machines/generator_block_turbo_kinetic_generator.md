@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Turbocharged Kinetic Generator"
+  title: "ターボ運動エネルギー発電機"
   icon: mio_icif:generator/block_turbo_kinetic_generator
   parent: generators.md
   position: 33
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:generator/block_turbo_kinetic_generator
 ---
 
-# Turbocharged Kinetic Generator
+# ターボ運動エネルギー発電機
 
 <Row>
   <BlockImage id="mio_icif:generator/block_turbo_kinetic_generator" scale="3" />

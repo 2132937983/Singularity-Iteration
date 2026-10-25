@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Insulated Low-Voltage Cable"
+  title: "絶縁低圧ケーブル"
   icon: mio_icif:wiring/cable/block_tin_cable_1
   parent: power.md
   position: 21
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_tin_cable_1
 ---
 
-# Insulated Low-Voltage Cable
+# 絶縁低圧ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_tin_cable_1" scale="3" />

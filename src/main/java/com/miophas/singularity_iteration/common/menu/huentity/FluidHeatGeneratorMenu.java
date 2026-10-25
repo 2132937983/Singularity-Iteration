@@ -26,13 +26,13 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public FluidHeatGeneratorMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
-        super(mio_icif_menus.FLUID_HEAT_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, 6);
+        super(mio_icif_menus.FLUID_HEAT_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, mio_icif_fluid_heat_generator.DATA_COUNT);
     }
 
     public FluidHeatGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_fluid_heat_generator blockEntity) {
         super(mio_icif_menus.FLUID_HEAT_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory,
               blockEntity != null ? blockEntity.getItemHandler() : null,
-              blockEntity != null ? blockEntity.createContainerData() : null, 6, blockEntity);
+              blockEntity != null ? blockEntity.createContainerData() : null, mio_icif_fluid_heat_generator.DATA_COUNT, blockEntity);
     }
 
     @Override
@@ -64,6 +64,11 @@ import org.jetbrains.annotations.Nullable;
     public int getTransmitHeat() { return data.get(4); }
     /** 当前燃料的产热能力 HU/t，无燃料为 0。 */
     public int getMaxHeatOutput() { return data.get(5); }
+
+    /** 0.1.10.19: the fuel in the tank, from the synced fluid id (index 6) and amount; empty when none. */
+    public net.neoforged.neoforge.fluids.FluidStack getFuelFluid() {
+        return com.miophas.singularity_iteration.common.menu.base.FluidIds.stackOf(data.get(6), getFuelAmount());
+    }
 
     public int getBurnProgress() {
         int maxBurnTime = getMaxBurnTime();

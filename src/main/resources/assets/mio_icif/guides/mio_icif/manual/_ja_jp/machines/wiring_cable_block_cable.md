@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Insulated Medium-Voltage Cable"
+  title: "絶縁中圧ケーブル"
   icon: mio_icif:wiring/cable/block_cable
   parent: power.md
   position: 22
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_cable
 ---
 
-# Insulated Medium-Voltage Cable
+# 絶縁中圧ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_cable" scale="3" />

@@ -564,7 +564,9 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
     }
     // 将方块实体的完整数据序列化为网络同步标签，供客户端渲染/显示使用
     @Override public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        var tag = super.getUpdateTag(registries); saveAdditional(tag, registries); return tag;
+        // 0.1.10.17 (E-2): the client tag of the parent only. This used to add the whole save (inventory,
+        // tanks, credits); the screen gets those from its menu data, and nothing else reads them on the client.
+        return super.getUpdateTag(registries);
     }
 
     @Override

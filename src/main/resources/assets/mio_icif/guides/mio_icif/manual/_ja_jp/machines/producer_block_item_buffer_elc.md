@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Item Buffer"
+  title: "アイテムバッファ"
   icon: mio_icif:producer/block_item_buffer_elc
   parent: machines.md
   position: 33
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_item_buffer_elc
 ---
 
-# Item Buffer
+# アイテムバッファ
 
 <Row>
   <BlockImage id="mio_icif:producer/block_item_buffer_elc" scale="3" />

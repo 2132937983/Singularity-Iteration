@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Sky Patrol Laser Defense Station"
+  title: "天空哨戒レーザー防衛ステーション"
   icon: mio_icif:producer/block_sky_patrol_laser_tower
   parent: machines.md
   position: 59
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_sky_patrol_laser_tower
 ---
 
-# Sky Patrol Laser Defense Station
+# 天空哨戒レーザー防衛ステーション
 
 <Row>
   <BlockImage id="mio_icif:producer/block_sky_patrol_laser_tower" scale="3" />

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced Fluid Distributor"
+  title: "高度流体分配機"
   icon: mio_icif:producer/block_weighted_fluid_distributor_elc
   parent: machines.md
   position: 1
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_weighted_fluid_distributor_elc
 ---
 
-# Advanced Fluid Distributor
+# 高度流体分配機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_weighted_fluid_distributor_elc" scale="3" />

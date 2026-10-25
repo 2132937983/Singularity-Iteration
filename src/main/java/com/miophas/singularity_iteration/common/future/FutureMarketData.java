@@ -49,15 +49,36 @@ public class FutureMarketData extends SavedData {
     /** True when the data is initialized. */
     private boolean initialized = false;
 
+    /**
+     * 0.1.10.20: the market day of the two daily counters below. When the market day moves on, the
+     * counters start again from zero (on the first read or write of the new day).
+     */
+    private long countersDay = Long.MIN_VALUE;
+
+    /** 0.1.10.20: items each player bought or sold today, over all futures machines (the daily limit). */
+    private final Map<java.util.UUID, Integer> playerVolume = new HashMap<>();
+
+    /** 0.1.10.20: items of each commodity that the market bought from all players today (the daily buy budget). */
+    private final Map<String, Integer> systemBought = new HashMap<>();
+
+    /** Most players and commodities kept in the daily counters (a bound for a damaged save). */
+    private static final int MAX_COUNTER_ENTRIES = 65_536;
+
     // ========== Constructor ==========
 
     public FutureMarketData() {}
 
     // ========== Singleton access ==========
 
+    /**
+     * The market of the server. 0.1.10.20: one market for all dimensions, kept in the overworld storage.
+     * Before, each dimension had its own prices, day and history, so a machine in another dimension (the
+     * Nether, a space station) was a second market with its own daily limit.
+     */
     public static FutureMarketData get(Level level) {
         if (level instanceof ServerLevel serverLevel) {
-            DimensionDataStorage storage = serverLevel.getDataStorage();
+            ServerLevel overworld = serverLevel.getServer().overworld();
+            DimensionDataStorage storage = (overworld != null ? overworld : serverLevel).getDataStorage();
             return storage.computeIfAbsent(
                 new Factory<>(FutureMarketData::new, FutureMarketData::load),
                 DATA_NAME
@@ -73,6 +94,23 @@ public class FutureMarketData extends SavedData {
 
         data.currentDay = tag.getLong("CurrentDay");
         data.initialized = tag.getBoolean("Initialized");
+
+        // 0.1.10.20: the daily counters (missing in older saves: they start at zero)
+        if (tag.contains("CountersDay")) data.countersDay = tag.getLong("CountersDay");
+        CompoundTag volumeTag = tag.getCompound("PlayerVolume");
+        for (String key : volumeTag.getAllKeys()) {
+            if (data.playerVolume.size() >= MAX_COUNTER_ENTRIES) break;
+            try {
+                data.playerVolume.put(java.util.UUID.fromString(key), Math.max(0, volumeTag.getInt(key)));
+            } catch (IllegalArgumentException ignored) {
+                // not a UUID: skip the entry
+            }
+        }
+        CompoundTag boughtTag = tag.getCompound("SystemBought");
+        for (String key : boughtTag.getAllKeys()) {
+            if (data.systemBought.size() >= MAX_COUNTER_ENTRIES) break;
+            data.systemBought.put(key, Math.max(0, boughtTag.getInt(key)));
+        }
 
         // Load the current prices.
         CompoundTag pricesTag = tag.getCompound("CurrentPrices");
@@ -117,6 +155,14 @@ public class FutureMarketData extends SavedData {
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putLong("CurrentDay", currentDay);
         tag.putBoolean("Initialized", initialized);
+
+        tag.putLong("CountersDay", countersDay);
+        CompoundTag volumeTag = new CompoundTag();
+        playerVolume.forEach((id, items) -> volumeTag.putInt(id.toString(), items));
+        tag.put("PlayerVolume", volumeTag);
+        CompoundTag boughtTag = new CompoundTag();
+        systemBought.forEach(boughtTag::putInt);
+        tag.put("SystemBought", boughtTag);
 
         // Save the current prices.
         CompoundTag pricesTag = new CompoundTag();
@@ -262,6 +308,46 @@ public class FutureMarketData extends SavedData {
             priceHistory.put(commodityId, history);
             setDirty();
         }
+    }
+
+    // ========== 0.1.10.20: daily counters (per player, per commodity) ==========
+
+    /** Starts the counters again when the market day has moved on. */
+    private void rollCounters() {
+        if (countersDay != currentDay) {
+            countersDay = currentDay;
+            playerVolume.clear();
+            systemBought.clear();
+            setDirty();
+        }
+    }
+
+    /** Items that {@code player} bought or sold today on all futures machines of the server. */
+    public int getPlayerVolume(java.util.UUID player) {
+        rollCounters();
+        return playerVolume.getOrDefault(player, 0);
+    }
+
+    /** Adds a trade of {@code items} to the daily count of {@code player}. */
+    public void addPlayerVolume(java.util.UUID player, int items) {
+        rollCounters();
+        if (items <= 0 || !playerVolume.containsKey(player) && playerVolume.size() >= MAX_COUNTER_ENTRIES) return;
+        playerVolume.merge(player, items, (a, b) -> (int) Math.min(Integer.MAX_VALUE, (long) a + b));
+        setDirty();
+    }
+
+    /** Items of {@code commodityId} that the market bought from all players today. */
+    public int getSystemBought(String commodityId) {
+        rollCounters();
+        return systemBought.getOrDefault(commodityId, 0);
+    }
+
+    /** Adds {@code items} that the market bought to the daily count of {@code commodityId}. */
+    public void addSystemBought(String commodityId, int items) {
+        rollCounters();
+        if (items <= 0 || !systemBought.containsKey(commodityId) && systemBought.size() >= MAX_COUNTER_ENTRIES) return;
+        systemBought.merge(commodityId, items, (a, b) -> (int) Math.min(Integer.MAX_VALUE, (long) a + b));
+        setDirty();
     }
 
     // ========== Standard database operations: day count ==========

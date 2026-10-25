@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Medium-Voltage Cable"
+  title: "中圧ケーブル"
   icon: mio_icif:wiring/cable/block_cable_o
   parent: power.md
   position: 30
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_cable_o
 ---
 
-# Medium-Voltage Cable
+# 中圧ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_cable_o" scale="3" />

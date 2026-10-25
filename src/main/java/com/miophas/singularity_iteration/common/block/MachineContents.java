@@ -27,8 +27,13 @@ import org.jetbrains.annotations.Nullable;
 public final class MachineContents {
     private MachineContents() {}
 
-    /** Inventory keys of the SI machines (the keys {@link MachineItemData} strips for a settings-only copy). */
-    static final String[] KEYS = {"inventory", "Inventory", "Items", "items", "ItemHandler"};
+    /**
+     * Inventory keys of the SI machines (the keys {@link MachineItemData} strips for a settings-only copy).
+     * 0.1.10.16: with {@code rci_reserve}, the coolant reserve of a reactor coolant injector (a list of
+     * item stacks, 0.1.10.14), which was stripped but not returned, so a wrenched injector used as a
+     * crafting material lost it.
+     */
+    static final String[] KEYS = {"inventory", "Inventory", "Items", "items", "ItemHandler", "rci_reserve"};
 
     /** Registry lookup on the client (set by the client setup; the server uses the running server). */
     public static volatile Supplier<HolderLookup.Provider> clientLookup = () -> null;

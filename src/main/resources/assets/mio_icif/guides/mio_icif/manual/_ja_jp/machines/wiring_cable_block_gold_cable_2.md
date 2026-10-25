@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "2x Insulated Gold Cable"
+  title: "二重絶縁高圧ケーブル"
   icon: mio_icif:wiring/cable/block_gold_cable_2
   parent: power.md
   position: 0
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_gold_cable_2
 ---
 
-# 2x Insulated Gold Cable
+# 二重絶縁高圧ケーブル
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_gold_cable_2" scale="3" />

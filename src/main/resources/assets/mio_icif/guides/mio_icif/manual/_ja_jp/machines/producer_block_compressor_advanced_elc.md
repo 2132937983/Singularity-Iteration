@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "Advanced High-Pressure Compressor"
+  title: "高度高圧圧縮機"
   icon: mio_icif:producer/block_compressor_advanced_elc
   parent: machines.md
   position: 2
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_compressor_advanced_elc
 ---
 
-# Advanced High-Pressure Compressor
+# 高度高圧圧縮機
 
 <Row>
   <BlockImage id="mio_icif:producer/block_compressor_advanced_elc" scale="3" />

@@ -6,7 +6,8 @@
   "mixins": [
     "ItemStackMaxStackMixin",
     "DataComponentMaxStackMixin",
-    "ContainerMaxStackMixin",
+    "LargeStackContainerMixin",
+    "LargeStackSlotMixin",
     "LivingEquipEnergyMixin",
     "ArmorEquipSoundMixin",
     "LevelEntityTickGuardMixin"

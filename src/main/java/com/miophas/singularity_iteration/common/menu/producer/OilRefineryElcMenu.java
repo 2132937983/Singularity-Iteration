@@ -104,20 +104,19 @@ public class OilRefineryElcMenu extends mio_icif_machine_menu {
     public int getOutputFluidAmount() { return data.get(7); }
     public int getOutputFluidCapacity() { return data.get(8); }
 
+    /**
+     * 0.1.10.17: from the synced menu data (fluid id 9, amount 5). The client block entity used before
+     * only had the tanks of the chunk load, so the screen showed an old fluid and amount.
+     */
     public FluidStack getInputFluid() {
-        if (blockEntity instanceof mio_icif_oil_refinery_elc refinery) {
-            return refinery.getInputFluid();
-        }
         int fluidId = data.get(9);
         if (fluidId == -1) return FluidStack.EMPTY;
         var fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.byId(fluidId);
         return fluid != null ? new FluidStack(fluid, getInputFluidAmount()) : FluidStack.EMPTY;
     }
 
+    /** 0.1.10.17: from the synced menu data (fluid id 10, amount 7), as {@link #getInputFluid}. */
     public FluidStack getOutputFluid() {
-        if (blockEntity instanceof mio_icif_oil_refinery_elc refinery) {
-            return refinery.getOutputFluid();
-        }
         int fluidId = data.get(10);
         if (fluidId == -1) return FluidStack.EMPTY;
         var fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.byId(fluidId);

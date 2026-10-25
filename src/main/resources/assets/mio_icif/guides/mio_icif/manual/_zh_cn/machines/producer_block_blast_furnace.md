@@ -36,6 +36,16 @@ item_ids:
 - 只有输入槽位有有效物品时，高炉才接收热量。
 - 红石信号使机器停止。红石信号反转升级可反转此行为。
 
+## 热源摆放
+
+拖动视图可旋转。下方列表给出所需方块及其规则。JEI 的“多方块结构”分类中也有相同的建造图。
+
+<GameScene zoom="5" interactive={true}>
+  <SiStructure id="mio_icif:blast_furnace" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:blast_furnace" />
+
 ## 配方
 
 <RecipesFor id="mio_icif:producer/block_blast_furnace" fallbackText="-" />

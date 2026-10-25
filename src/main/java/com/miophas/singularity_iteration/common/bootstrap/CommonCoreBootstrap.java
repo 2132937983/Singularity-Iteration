@@ -21,6 +21,9 @@ public final class CommonCoreBootstrap {
         com.miophas.singularity_iteration.common.energy.BuiltinEnergyProfiles.install();
         com.miophas.singularity_iteration.common.energy.BuiltinIndependentSubstitutions.install();
         com.miophas.singularity_iteration.common.multiblock.BuiltinMultiblockControllers.install();
+        // 0.1.10.19: data for the JEI categories "Reactor Layouts" / "Multiblock Structures" and the guide
+        com.miophas.singularity_iteration.common.reactor.BuiltinReactorLayouts.install();
+        com.miophas.singularity_iteration.common.multiblock.BuiltinStructureBlueprints.install();
         CoreDataComponents.DATA_COMPONENTS.register(modEventBus);
         CoreSounds.register(modEventBus);
         EnergyCompatibility.install(new CommonEnergyCompatibility());

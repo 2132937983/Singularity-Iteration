@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.exchange;
 
-import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 import com.miophas.singularity_iteration.common.future.FutureCommodityManager;
 import com.miophas.singularity_iteration.common.future.FutureMarketData;
-import com.miophas.singularity_iteration.common.future.MarketQuote;
 import com.miophas.singularity_iteration.common.item.normal.mio_icif_normal;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -43,14 +41,14 @@ public final class ExchangeViews {
         ExchangeView.Detail detail = null;
         ExchangeService.Market m = selected == null || selected.isEmpty() ? null : ExchangeService.market(server, selected);
         if (m != null) {
-            long ask = 0, bid = 0, supply = 0;
-            int budgetLeft = 0;
+            long ask = 0, bid = 0, supply = 0, pressure = 0, mine = 0;
             if (m.system()) {
                 supply = ExchangeService.supply(d, m.id(), day);
                 if (supply > 0) ask = ExchangeService.systemCost(d, m, 1);
-                budgetLeft = Math.min(Integer.MAX_VALUE, MarketQuote.budgetLeft(fm.getSystemBought(m.id()),
-                    Singularity_Iteration_Config.FUTURE_SYSTEM_BUY_PER_DAY.get()));
-                if (budgetLeft > 0) bid = Math.max(0, ExchangeService.systemPayout(server, m, 1));
+                // 0.1.10.25 (X1): the bid of this player's next item on the sell curve
+                bid = ExchangeService.nextBid(d, m, player.getUUID(), day);
+                pressure = Math.round(ExchangeService.pressure(d, m.id()));
+                mine = ExchangeService.soldToday(d, player.getUUID(), m.id(), day);
             }
             ExchangeData.Book book = d.books.get(m.id());
             List<ExchangeView.Level> bids = new ArrayList<>(), asks = new ArrayList<>();
@@ -73,9 +71,10 @@ public final class ExchangeViews {
                 var q7 = ExchangeService.futuresQuote(server, m, 7);
                 l3 = q3.longPrice(); s3 = q3.shortPrice(); l7 = q7.longPrice(); s7 = q7.shortPrice();
             }
-            detail = new ExchangeView.Detail(m.id(), m.currency().ordinal(), m.system(), m.price(), ask, bid, supply, budgetLeft,
+            int buyLeft = ExchangeService.buyLeft(server, player.getUUID());
+            detail = new ExchangeView.Detail(m.id(), m.currency().ordinal(), m.system(), m.price(), ask, bid, supply, pressure,
                 Math.round(m.fundamental()), m.depth(), m.low(), Math.min(m.high(), Long.MAX_VALUE / 8), bars(d, fm, m, day), bids, asks, trades,
-                l3, s3, l7, s7, ExchangeService.dailyLeft(server, player.getUUID()));
+                l3, s3, l7, s7, mine, buyLeft == Integer.MAX_VALUE ? -1 : buyLeft);
         }
 
         List<ExchangeView.MyOrder> orders = new ArrayList<>();
@@ -129,8 +128,56 @@ public final class ExchangeViews {
         candidates.sort((a, b) -> Integer.compare(b.fulfilled(), a.fulfilled()));
         if (candidates.size() > ExchangeView.MAX_CANDIDATES) candidates = candidates.subList(0, ExchangeView.MAX_CANDIDATES);
 
+        // 0.1.10.25 (X1): the sell box of the open menu and the player's auction orders
+        long allowance = ExchangeService.allowanceLeft(server, d, player.getUUID(), day);
+        List<ExchangeView.BoxLine> boxLines = new ArrayList<>();
+        if (player.containerMenu instanceof com.miophas.singularity_iteration.common.menu.producer.FutureElcMenu menu) {
+            for (Map.Entry<String, Long> e : ExchangeService.boxContents(player, menu.sellBox()).entrySet()) {
+                if (boxLines.size() >= ExchangeView.MAX_BOX) break;
+                ExchangeService.Market bm = ExchangeService.market(server, e.getKey());
+                if (bm == null || !bm.system()) continue;
+                SellDepth.Curve c = ExchangeService.curve(bm);
+                long before = ExchangeService.soldToday(d, player.getUUID(), bm.id(), day);
+                double pressure = ExchangeService.pressure(d, bm.id());
+                long now = SellDepth.maxForMarginal(c, before, pressure, 1, e.getValue());
+                if (allowance != Long.MAX_VALUE) now = SellDepth.maxForCoins(c, before, pressure, allowance, now);
+                long nowCoins = (long) Math.floor(SellDepth.payout(c, before, pressure, now));
+                ExchangeData.AuctionOrder probe = new ExchangeData.AuctionOrder();
+                probe.owner = player.getUUID();
+                probe.item = bm.id();
+                probe.quantity = e.getValue();
+                ExchangeData.AuctionOrder existing = null;
+                for (ExchangeData.AuctionOrder a : d.auction) if (a.owner.equals(player.getUUID()) && a.item.equals(bm.id())) existing = a;
+                if (existing != null) { probe.quantity += existing.quantity; probe.minPercent = existing.minPercent; }
+                List<ExchangeData.AuctionOrder> others = new ArrayList<>();
+                for (ExchangeData.AuctionOrder a : d.auction) if (a.item.equals(bm.id()) && a != existing) others.add(a);
+                others.add(probe);
+                SellDepth.Fill est = ExchangeService.clearing(server, d, bm, others, day).get(others.size() - 1);
+                // the box's share: the estimate of the order with the box minus the estimate without it
+                SellDepth.Fill without = existing == null ? new SellDepth.Fill(0, 0) : ExchangeService.auctionEstimate(server, d, existing, day);
+                boxLines.add(new ExchangeView.BoxLine(bm.id(), e.getValue(), now, nowCoins, Math.max(0, est.quantity() - without.quantity()),
+                    Math.max(0, est.coins() - without.coins())));
+            }
+        }
+        List<ExchangeView.AuctionLine> auctions = new ArrayList<>();
+        for (ExchangeData.AuctionOrder a : d.auction) {
+            if (!a.owner.equals(player.getUUID()) || auctions.size() >= ExchangeView.MAX_AUCTIONS) continue;
+            SellDepth.Fill est = ExchangeService.auctionEstimate(server, d, a, day);
+            auctions.add(new ExchangeView.AuctionLine(a.id, a.item, a.quantity, a.minPercent, est.quantity(), est.coins()));
+        }
+        // 0.1.10.26 (X3): the bounties and their weekly budgets
+        BountyBoard.Rules rules = Bounties.rules(server);
+        BountyBoard board = d.board;
+        long vaultItems = 0;
+        for (long v : board.vault.values()) vaultItems += v;
+        boolean thisWeek = board.week == BountyMath.week(day);
+        ExchangeView.BountyBudget budget = new ExchangeView.BountyBudget(
+            thisWeek ? board.issued[BountyTables.Tier.ADVANCED.ordinal()] : 0, rules.issueAdvanced(),
+            thisWeek ? board.issued[BountyTables.Tier.SPECIAL.ordinal()] : 0, rules.issueSpecial(),
+            thisWeek ? board.uuIssued : 0, rules.uuPerWeek(), board.vault.size(), vaultItems);
         return new ExchangeView(day, coins, box.uu, box.coins, box.items.size(), energy, rows, detail, orders, mail, commissions, positions,
-            ledger, stocks, List.copyOf(candidates));
+            ledger, stocks, List.copyOf(candidates), allowance == Long.MAX_VALUE ? -1 : allowance, boxLines, auctions,
+            Bounties.lines(player, d, day), budget);
     }
 
     /** Closing prices for the sparkline: the 20-day history of a datapack commodity, the daily bars of a listing. */

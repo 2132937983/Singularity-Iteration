@@ -52,6 +52,7 @@ public final class SuitServer {
         if (age % SuitModules.DRAIN_INTERVAL == 0) SuitModules.drain(player);
         SuitModules.tickAddons(player);                       // 0.1.8.0: addon unit behaviors (public API)
         if (age % THREAT_INTERVAL == 0) tickThreats(player);
+        if (age % PathLink.INTERVAL == 2) PathLink.tick(player);  // 0.1.10.23 (P2): path nodes for Behavior Predictor Mk.II
         com.miophas.singularity_iteration.common.suit.nano.NanoSuit.tick(player);   // 0.1.8.5: nano core and passive nano units
         com.miophas.singularity_iteration.common.suit.core.FrameCores.tick(player); // 0.1.9.0: frame cores
         com.miophas.singularity_iteration.common.suit.quantum.QuantumCore.tick(player);  // 0.1.10.0: coherence and quantum actions
@@ -62,6 +63,7 @@ public final class SuitServer {
         threatSent.remove(event.getEntity().getUUID());
         threatLast.remove(event.getEntity().getUUID());
         gridAsked.remove(event.getEntity().getUUID());
+        PathLink.forget(event.getEntity().getUUID());
     }
 
     // ------------------------------------------------------------------ threat sensor

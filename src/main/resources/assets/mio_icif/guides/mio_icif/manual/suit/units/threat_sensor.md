@@ -38,6 +38,14 @@ Markers on the outer ring of the HUD point to each threat. The holomap shows the
 
 - The banner at the top counts LOCK (red) and WATCH (yellow) contacts.
 
+## Incoming projectiles
+
+- The sensor also watches the arrows, tridents, thrown items, llama spit and fireballs within 48 blocks that you did not fire. It follows each one for the next 2 seconds with its own gravity and drag.
+- Each one that will pass within 1.5 blocks of you gets an orange marker on the ring with the seconds to its closest pass.
+- One that will hit you turns red and beeps once. An arrow beside the aim point shows which way to step: across its path, away from the side it comes at.
+- The banner shows INCOMING and the number of hits.
+- Homing shulker bullets and rockets are not shown.
+
 ## Recipe
 
 <RecipesFor id="mio_icif:module/item_module_threat_sensor" fallbackText="-" />

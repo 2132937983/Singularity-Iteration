@@ -1,0 +1,16 @@
+{
+  "bounties": [
+    { "id": "mio_icif:dragon_head", "tier": "special", "weight": 4, "cooldown_days": 14,
+      "conditions": { "min_day": 14, "advancement": "minecraft:end/kill_dragon" },
+      "requirements": [ { "item": "minecraft:dragon_head", "count": 1, "value": 20000 } ] },
+    { "id": "mio_icif:elytra", "tier": "special", "weight": 4, "cooldown_days": 14,
+      "conditions": { "min_day": 14, "advancement": "minecraft:end/elytra" },
+      "requirements": [ { "item": "minecraft:elytra", "count": 1, "value": 20000 } ] },
+    { "id": "mio_icif:nether_star", "tier": "special", "weight": 4, "cooldown_days": 14,
+      "conditions": { "min_day": 14, "advancement": "minecraft:nether/summon_wither" },
+      "requirements": [ { "item": "minecraft:nether_star", "count": 1, "value": 15000 } ] },
+    { "id": "mio_icif:heart_of_the_sea", "tier": "special", "weight": 3, "cooldown_days": 14,
+      "conditions": { "min_day": 7 },
+      "requirements": [ { "item": "minecraft:heart_of_the_sea", "count": 1, "value": 6000 } ] }
+  ]
+}

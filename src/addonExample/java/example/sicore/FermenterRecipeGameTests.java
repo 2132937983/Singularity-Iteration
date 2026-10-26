@@ -90,8 +90,11 @@ public final class FermenterRecipeGameTests {
             throw new AssertionError(e);
         }
         Class<?> type = be.getClass();
+        // 0.1.10.24: the fermenter takes at most 100 HU per game tick (IC2) and this test runs inside one game tick, so the
+        // heat of the run is put into the store directly; each tick() moves 100 HU of it into the run (Round1124GameTests
+        // tests the intake over real ticks)
+        ((com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities.IHeatStorage) be).setHeat(4000);
         for (int i = 0; i < 41; i++) {
-            ((com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities.IHeatStorage) be).receiveHeat(100, false);
             call(type, "tick", h.getLevel(), abs, h.getLevel().getBlockState(abs), be);
         }
         IFluidHandler biogas = (IFluidHandler) call(be, "getBiogasTank");

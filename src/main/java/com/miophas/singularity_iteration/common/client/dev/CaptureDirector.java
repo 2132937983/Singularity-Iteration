@@ -760,9 +760,7 @@ public final class CaptureDirector {
             mc.setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()
                 .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_APPEARANCE)); });
         shot(30, "scene6/console_appearance");
-        // 8) classic look: switch, reload, re-shoot fronts + suits + icons, switch back
-        client(2, () -> com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(false));
-        until(1200, () -> Minecraft.getInstance().getOverlay() == null);
+        // 8) classic look: fronts + suits + icons (0.1.10.24: the only look; the experimental pack and its switch are gone)
         shot(20, "scene6/console_appearance_classic");
         client(2, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.hideGui = true; });
         server(1, sp -> { sp.getAbilities().flying = true; sp.onUpdateAbilities(); look(sp, 1.5, -59.4, 10.8, 0, 6); });
@@ -781,10 +779,6 @@ public final class CaptureDirector {
         client(10, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false;
             mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
         shot(20, "scene6/classic_icons");
-        client(2, () -> { Minecraft.getInstance().setScreen(null); com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(true); });
-        until(1200, () -> Minecraft.getInstance().getOverlay() == null);
-        client(10, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
-        shot(20, "scene6/refined_icons");
         client(10, () -> Minecraft.getInstance().stop());
     }
 
@@ -997,17 +991,7 @@ public final class CaptureDirector {
         client(2, () -> { Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()
             .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_APPEARANCE)); });
         shot(20, "scene8/look_tab_default");
-        // Experimental look
-        client(2, () -> com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(true));
-        until(1200, () -> Minecraft.getInstance().getOverlay() == null);
-        shot(20, "scene8/look_tab_experimental");
-        client(2, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.hideGui = true; });
-        shot(25, "scene8/experimental_blocks");
-        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false;
-            mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
-        shot(20, "scene8/experimental_items");
-        client(2, () -> { Minecraft.getInstance().setScreen(null); com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(false); });
-        until(1200, () -> Minecraft.getInstance().getOverlay() == null);
+        // 0.1.10.24: the experimental look (built-in pack) is gone, no second set of shots
         client(10, () -> Minecraft.getInstance().stop());
     }
 

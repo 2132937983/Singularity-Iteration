@@ -748,3 +748,48 @@ public final class MyBoilerGenerator extends AbstractGeneratorBlockEntity implem
     @Override public DispatchClass dispatchClass() { return DispatchClass.DISPATCHABLE; }
 }
 ```
+
+## 22. Exchange API, bounties and events (0.1.10.26)
+
+`core.api.exchange` is the SI exchange for pack makers and addons. Call it on the server thread (another thread throws);
+before Singularity Iteration installs the service, `ExchangeApi.isAvailable()` is false and every method returns an empty
+result. The datapack side (bounty tables, reward pools, listings, `economy.json`) is in `docs/datapacks/si_exchange.md`.
+
+* Read: `commodities(server)`, `quoteSell(server, player, item, quantity)` (an instant sale now: sell depth, pressure, the
+  player's allowance), `quoteBuy(...)` (treasury, then import at a premium, the daily buy limit), `treasury(server)`,
+  `vault(server)`, `ledger(server, days)` (coins created and destroyed per market day, of them the bounties' coins, items
+  and UU-matter that bounties made, and the coins of this API per reason code), `mailboxCoins(server, player)`,
+  `bounties(server)` (`BountyInfo`). A quote changes nothing.
+* Write: `deposit(server, player, coins, reason)` pays coins into the player's exchange mailbox (collected at any futures
+  machine) and counts them as created; `withdraw(...)` takes them out, all or nothing, and counts them as destroyed. The
+  reason code matches `[a-z0-9_.:/-]{1,64}`. `postBounty(server, tableId)` posts a datapack table now (weight, cooldown
+  and conditions are not checked); `postBounty(server, BountySpec)` posts your own bounty (empty rewards: drawn from the
+  tier's pool); both return the id or -1. `cancelBounty(server, id)` removes a bounty; its unpaid reserved rewards go back.
+* A bounty follows the rules of the market's own: rewards from the treasury and the vault must be in stock and are
+  reserved when it is posted; items and UU-matter made for it count against the weekly cap of its tier when it is posted;
+  lines that cannot be paid are dropped; a NORMAL or ADVANCED bounty without any line pays coins (value x multiplier), a
+  SPECIAL one is not posted. Delivered commodities go to the treasury, other items to the vault.
+* Events on `NeoForge.EVENT_BUS` (server thread):
+  * `BountyPostingEvent` (cancelable): before a bounty is posted. The needs, rewards, days and split may be changed; the
+    bounty is checked again afterwards.
+  * `BountyCompletedEvent`: after a bounty is complete and paid; `getBounty().contribution()` holds the value each player
+    delivered.
+  * `ExchangeTradeEvent`: after a trade (market purchase or sale, a fill between players, a sale at the daily auction),
+    posted when the action is complete; `getSeller()` / `getBuyer()` are UUIDs or `"system"`.
+  * `MarketDayEvent`: after the day's work of a new market day.
+
+```java
+// a quest reward: 2,000 coins into the exchange mailbox, recorded under the reason "mypack:quest"
+ExchangeApi.deposit(server, player.getUUID(), 2000, "mypack:quest");
+
+// a server event bounty: 64 diamonds, paid with two ultimate hybrid solar panels from the weekly budget of specials
+long id = ExchangeApi.postBounty(server, new BountySpec(BountyTier.SPECIAL,
+    List.of(new BountyNeed("minecraft:diamond", 64, 0)),
+    List.of(BountyReward.item("mio_icif:generator/block_ultimate_hybrid_solar_panel", 2, BountyReward.Source.ISSUE)),
+    7, BountySplit.CONTRIBUTION, 0));
+
+@SubscribeEvent
+public static void onPosting(BountyPostingEvent event) {
+    if (event.getTier() == BountyTier.NORMAL) event.getRewards().add(BountyReward.uu(100));   // a little UU-matter on top
+}
+```

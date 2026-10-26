@@ -20,13 +20,12 @@ public class Singularity_Iteration_Config {
     // Futures commodities moved to datapacks in 0.1.7.32: data/<namespace>/si_futures/*.json
     // (see FutureCommodityLoader). The old "commodities" list here is ignored and removed.
 
-    // Maximum number of items that a player can trade each day.
-public static final ModConfigSpec.IntValue FUTURE_MAX_DAILY_ITEMS = FUTURE_BUILDER
-            .comment("Maximum number of items traded each day", "The total number of items that a player can buy or sell each day")
-            .defineInRange("maxDailyItems", 100, 1, 10000);
-
-    // Daily trade limit. This is an alias of FUTURE_MAX_DAILY_ITEMS.
-public static final ModConfigSpec.IntValue FUTURE_DAILY_LIMIT = FUTURE_MAX_DAILY_ITEMS;
+    // 0.1.10.25 (X1): buying and selling have separate limits. Buying from the market burns coins and is limited by the
+    // market's stock; selling is limited by the sell depth (below). Before, both shared "maxDailyItems" (100 items a day).
+    public static final ModConfigSpec.IntValue FUTURE_BUY_ITEMS_PER_DAY = FUTURE_BUILDER
+            .comment("Items a player can buy from the market each day, all commodities together (0.1.10.25). 0 = no limit (the market's stock limits it).",
+                     "Before 0.1.10.25 \"maxDailyItems\" (100) counted buying and selling together.")
+            .defineInRange("buyItemsPerDay", 0, 0, 1_000_000);
 
     // 每页显示货品数量
     public static final ModConfigSpec.IntValue FUTURE_ITEMS_PER_PAGE = FUTURE_BUILDER
@@ -64,14 +63,29 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
                      "A purchase costs price x (1 + spread / 2); a sale pays price x (1 - spread / 2).",
                      "Before 0.1.10.20 both were the price (0), so buying low and selling after the price came back made coins without risk.")
             .defineInRange("spread", 0.06, 0.0, 0.5);
-    public static final ModConfigSpec.IntValue FUTURE_SYSTEM_BUY_PER_DAY = FUTURE_BUILDER
-            .comment("Items of one commodity that the market buys from all players together each game day (0.1.10.20)",
-                     "When the budget is used up, the machine does not buy that commodity until the next day. 0 = no limit (the behaviour before 0.1.10.20).")
-            .defineInRange("systemBuyPerDay", 256, 0, 1_000_000);
-    public static final ModConfigSpec.DoubleValue FUTURE_BUDGET_PRICE_DROP = FUTURE_BUILDER
-            .comment("How far the sale price falls while the daily buy budget of a commodity is used up (0.1.10.20)",
-                     "0.3: the last items of the budget sell for 30 % less than the first ones.")
-            .defineInRange("budgetPriceDrop", 0.3, 0.0, 0.9);
+    // 0.1.10.25 (X1): the sell depth replaces "systemBuyPerDay" (256 items of a commodity a day for all players, 30 % fall).
+    public static final ModConfigSpec.IntValue EXCHANGE_SELL_DEPTH_PLAYER = FUTURE_BUILDER
+            .comment("Personal sell depth in items (0.1.10.25): each item a player sold of a commodity today lowers that player's bid by the factor exp(-1/depth).",
+                     "One player can never take more than price x 0.97 / (1/player + 1/server) coins of one commodity in a day. A datapack commodity can set its own depth.")
+            .defineInRange("sellDepthPlayer", 256, 1, 1_000_000);
+    public static final ModConfigSpec.IntValue EXCHANGE_SELL_DEPTH_SERVER = FUTURE_BUILDER
+            .comment("Server sell depth in items (0.1.10.25): every item sold of a commodity by anyone, not yet exported, lowers all bids by exp(-1/depth).",
+                     "All players together (any number of accounts) can take at most price x 0.97 x depth coins of one commodity on the first day,",
+                     "and about a quarter of that every day while the export share is 0.5.")
+            .defineInRange("sellDepthServer", 1024, 1, 10_000_000);
+    public static final ModConfigSpec.DoubleValue EXCHANGE_SELL_EXPORT = FUTURE_BUILDER
+            .comment("Share of the sell pressure that the market passes on (exports) each game day (0.1.10.25); the bids recover by this share each day")
+            .defineInRange("sellExportPerDay", 0.5, 0.05, 1.0);
+    public static final ModConfigSpec.IntValue EXCHANGE_SELL_ALLOWANCE = FUTURE_BUILDER
+            .comment("Coins a player can receive from the market for sales each day (0.1.10.25); unused coins carry over up to sellAllowanceDays days. 0 = no limit.",
+                     "Coins from trades between players do not count.")
+            .defineInRange("sellAllowancePerDay", 50_000, 0, Integer.MAX_VALUE);
+    public static final ModConfigSpec.IntValue EXCHANGE_SELL_ALLOWANCE_DAYS = FUTURE_BUILDER
+            .comment("Days of sellAllowancePerDay that a player can keep (0.1.10.25)")
+            .defineInRange("sellAllowanceDays", 3, 1, 30);
+    public static final ModConfigSpec.BooleanValue EXCHANGE_SELL_ALLOWANCE_SINGLEPLAYER = FUTURE_BUILDER
+            .comment("Use sellAllowancePerDay in single player as well (0.1.10.25). Off by default: the depths alone limit a single player.")
+            .define("sellAllowanceInSingleplayer", false);
 
     // 0.1.10.21 (M2-M5): the SI exchange.
     public static final ModConfigSpec.DoubleValue EXCHANGE_FEE = FUTURE_BUILDER
@@ -97,9 +111,70 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
             .comment("Crafting depth from which a player listing is traded in UU-matter instead of coins (0.1.10.21)",
                      "Depth 0: no recipe makes the item; each processing step adds 1. 0 = always UU-matter, 99 = always coins.")
             .defineInRange("uuDepth", 3, 0, 99);
-    public static final ModConfigSpec.IntValue EXCHANGE_SYSTEM_COMMISSIONS = FUTURE_BUILDER
-            .comment("Commissions that the market posts each day for commodities it lacks (0.1.10.21)")
-            .defineInRange("systemCommissionsPerDay", 3, 0, 20);
+    // 0.1.10.26 (X3): the system bounties in three tiers replace "systemCommissionsPerDay" (3 market commissions a day, the
+    // reward 1.15 x the ask paid in new coins). A datapack can set all of these in data/<ns>/si_exchange/economy.json; a
+    // value changed here wins over the datapack.
+    public static final ModConfigSpec.IntValue BOUNTY_NORMAL_MIN = FUTURE_BUILDER
+            .comment("NORMAL bounties the board keeps open: at least this many on a day (0.1.10.26). The number for a day is drawn from bountyNormalMin..bountyNormalMax.")
+            .defineInRange("bountyNormalMin", 3, 0, 20);
+    public static final ModConfigSpec.IntValue BOUNTY_NORMAL_MAX = FUTURE_BUILDER
+            .comment("NORMAL bounties the board keeps open: at most this many on a day (0.1.10.26)")
+            .defineInRange("bountyNormalMax", 5, 0, 20);
+    public static final ModConfigSpec.IntValue BOUNTY_NORMAL_VALUE = FUTURE_BUILDER
+            .comment("Value in coins of a generated NORMAL request (0.1.10.26): each one asks for value x 0.5..1.5 at the market's ask,",
+                     "bountyNormalMinQuantity..bountyNormalMaxQuantity items (a commodity outside that range is not asked for).")
+            .defineInRange("bountyNormalValue", 4000, 10, 100_000_000);
+    public static final ModConfigSpec.IntValue BOUNTY_NORMAL_DAYS = FUTURE_BUILDER
+            .comment("Days a NORMAL bounty stays open (0.1.10.26)")
+            .defineInRange("bountyNormalDays", 3, 1, 30);
+    public static final ModConfigSpec.DoubleValue BOUNTY_NORMAL_MULTIPLIER = FUTURE_BUILDER
+            .comment("Reward of a NORMAL bounty as a multiple of the value of what it asks for (0.1.10.26)")
+            .defineInRange("bountyNormalMultiplier", 1.15, 0.1, 10.0);
+    public static final ModConfigSpec.IntValue BOUNTY_NORMAL_MIN_QUANTITY = FUTURE_BUILDER
+            .comment("Fewest items a generated NORMAL request asks for (0.1.10.26)")
+            .defineInRange("bountyNormalMinQuantity", 16, 1, 100_000);
+    public static final ModConfigSpec.IntValue BOUNTY_NORMAL_MAX_QUANTITY = FUTURE_BUILDER
+            .comment("Most items a generated NORMAL request asks for (0.1.10.26)")
+            .defineInRange("bountyNormalMaxQuantity", 256, 1, 100_000);
+    public static final ModConfigSpec.IntValue BOUNTY_ADVANCED_MIN = FUTURE_BUILDER
+            .comment("ADVANCED bounties posted in a market week (7 days): at least (0.1.10.26). They come from the datapack tables (si_exchange/bounties).")
+            .defineInRange("bountyAdvancedPerWeekMin", 2, 0, 21);
+    public static final ModConfigSpec.IntValue BOUNTY_ADVANCED_MAX = FUTURE_BUILDER
+            .comment("ADVANCED bounties posted in a market week: at most (0.1.10.26)")
+            .defineInRange("bountyAdvancedPerWeekMax", 3, 0, 21);
+    public static final ModConfigSpec.IntValue BOUNTY_ADVANCED_DAYS = FUTURE_BUILDER
+            .comment("Days an ADVANCED bounty stays open (0.1.10.26)")
+            .defineInRange("bountyAdvancedDays", 7, 1, 60);
+    public static final ModConfigSpec.DoubleValue BOUNTY_ADVANCED_MULTIPLIER = FUTURE_BUILDER
+            .comment("Reward of an ADVANCED bounty as a multiple of the value of what it asks for (0.1.10.26)")
+            .defineInRange("bountyAdvancedMultiplier", 1.3, 0.1, 10.0);
+    public static final ModConfigSpec.DoubleValue BOUNTY_ADVANCED_SHARE = FUTURE_BUILDER
+            .comment("Share of an ADVANCED bounty's value one player may deliver in multiplayer, until its last day (0.1.10.26). 1 = no limit.")
+            .defineInRange("bountyAdvancedPlayerShare", 0.5, 0.05, 1.0);
+    public static final ModConfigSpec.DoubleValue BOUNTY_SPECIAL_CHANCE = FUTURE_BUILDER
+            .comment("Chance per market day that a SPECIAL bounty is posted (0.1.10.26)")
+            .defineInRange("bountySpecialChancePerDay", 0.05, 0.0, 1.0);
+    public static final ModConfigSpec.IntValue BOUNTY_SPECIAL_MAX_OPEN = FUTURE_BUILDER
+            .comment("SPECIAL bounties open at the same time, at most (0.1.10.26)")
+            .defineInRange("bountySpecialMaxOpen", 1, 0, 8);
+    public static final ModConfigSpec.IntValue BOUNTY_SPECIAL_DAYS = FUTURE_BUILDER
+            .comment("Days a SPECIAL bounty stays open (0.1.10.26)")
+            .defineInRange("bountySpecialDays", 7, 1, 60);
+    public static final ModConfigSpec.IntValue BOUNTY_ISSUE_NORMAL = FUTURE_BUILDER
+            .comment("Items that NORMAL bounties may create as rewards in a market week (reward source \"issue\", counted when posted; 0.1.10.26)")
+            .defineInRange("bountyIssuePerWeekNormal", 0, 0, 1_000_000);
+    public static final ModConfigSpec.IntValue BOUNTY_ISSUE_ADVANCED = FUTURE_BUILDER
+            .comment("Items that ADVANCED bounties may create as rewards in a market week (0.1.10.26)")
+            .defineInRange("bountyIssuePerWeekAdvanced", 16, 0, 1_000_000);
+    public static final ModConfigSpec.IntValue BOUNTY_ISSUE_SPECIAL = FUTURE_BUILDER
+            .comment("Items that SPECIAL bounties may create as rewards in a market week (0.1.10.26)")
+            .defineInRange("bountyIssuePerWeekSpecial", 1, 0, 1_000_000);
+    public static final ModConfigSpec.IntValue BOUNTY_UU_PER_WEEK = FUTURE_BUILDER
+            .comment("UU-matter (mB) that bounties of all tiers may pay as rewards in a market week (0.1.10.26)")
+            .defineInRange("bountyUuPerWeek", 4000, 0, 1_000_000_000);
+    public static final ModConfigSpec.IntValue BOUNTY_TREASURY_LOW = FUTURE_BUILDER
+            .comment("A generated NORMAL request asks only for commodities of which the market owns fewer than this many items (0.1.10.26)")
+            .defineInRange("bountyTreasuryLow", 64, 0, 1_000_000);
 
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder FUTURE_POP = BUILDER.pop();

@@ -35,6 +35,7 @@ This block uses no EU.
 
 - A redstone signal has no effect on the Fermenter.
 - The upgrade slots accept item and fluid ejector and pulling upgrades only.
+- The Fermenter takes heat only when it can run: the tank holds Biomass for one run (20 mB) and the Biogas tank has room for one run (400 mB). It takes at most 100 HU per tick. The heat bar shows the heat for the current run (4000 HU).
 
 ## Heat source placement
 

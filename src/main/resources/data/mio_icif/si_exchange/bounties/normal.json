@@ -1,0 +1,10 @@
+{
+  "bounties": [
+    { "id": "mio_icif:diamonds", "tier": "normal", "weight": 6, "cooldown_days": 3,
+      "requirements": [ { "item": "minecraft:diamond", "count": 6 } ] },
+    { "id": "mio_icif:emeralds", "tier": "normal", "weight": 6, "cooldown_days": 3,
+      "requirements": [ { "item": "minecraft:emerald", "count": 8 } ] },
+    { "id": "mio_icif:gold", "tier": "normal", "weight": 6, "cooldown_days": 3,
+      "requirements": [ { "item": "minecraft:gold_ingot", "count": 12 } ] }
+  ]
+}

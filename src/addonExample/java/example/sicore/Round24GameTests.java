@@ -79,9 +79,9 @@ public final class Round24GameTests {
 
     @GameTest(batch = "round24", template = "empty")
     public static void lampModelsAndBlockListShip(GameTestHelper h) {
-        String list = read("resourcepacks", "si_experimental", "assets", "mio_icif", "si_status_lamps.json");
-        for (String b : List.of("producer/block_compressor_elc", "producer/block_furnace_elc", "generator/block_geo_generator", "wiring/block_mfsu"))
-            h.assertTrue(list.contains("mio_icif:" + b), b + " gets a status lamp");
+        // 0.1.10.24: the lamp list of the refined machines came with the experimental resource pack, which is gone; the base
+        // list stays empty (no lamps on the classic full-cube machines), the lamp models stay for resource packs
+        h.assertTrue(read("assets", "mio_icif", "si_status_lamps.json").contains("\"blocks\": []"), "The base look lists no status lamps");
         for (String lamp : List.of("off", "run", "nopower", "blocked")) {
             String model = read("assets", "mio_icif", "models", "block", "status", "lamp_" + lamp + ".json");
             h.assertTrue(model.contains("status_slit"), "lamp_" + lamp);
@@ -89,29 +89,10 @@ public final class Round24GameTests {
         }
         h.assertTrue(read("assets", "mio_icif", "textures", "block", "status", "lamp_nopower.png.mcmeta").contains("animation"),
             "The amber lamp blinks (texture animation)");
-        String compressor = read("resourcepacks", "si_experimental", "assets", "mio_icif", "models", "block", "producer", "block_compressor_elc.json");
-        h.assertTrue(!compressor.contains("dsp_status_slit"), "The static slit is replaced by the lamp");
         h.succeed();
     }
 
-    @GameTest(batch = "round24", template = "empty")
-    public static void refinedFrontsShareTheLayoutAndDiffer(GameTestHelper h) {
-        var file = net.neoforged.fml.ModList.get().getModFileById("mio_icif").getFile();
-        int[][] fronts = new int[3][];
-        String[] ids = {"block_compressor_elc", "block_powder_elc", "block_furnace_elc"};
-        for (int i = 0; i < ids.length; i++) {
-            try (var in = java.nio.file.Files.newInputStream(file.findResource("resourcepacks", "si_experimental", "assets", "mio_icif", "textures", "block", "refined", "producer", ids[i] + ".png"))) {
-                var img = javax.imageio.ImageIO.read(in);
-                // shared layout: dark recessed window frame at (6,9) and a header bar at (10,6)
-                int frame = img.getRGB(6, 12), header = img.getRGB(10, 6);
-                h.assertTrue(lum(frame) < 80 && lum(header) < 110, ids[i] + ": window frame / header present");
-                fronts[i] = img.getRGB(7, 10, 18, 14, null, 0, 18);
-            } catch (java.io.IOException e) { throw new AssertionError(e); }
-        }
-        h.assertTrue(!java.util.Arrays.equals(fronts[0], fronts[1]) && !java.util.Arrays.equals(fronts[1], fronts[2]),
-            "Each machine has its own mechanism window");
-        h.succeed();
-    }
+    // 0.1.10.24: refinedFrontsShareTheLayoutAndDiffer removed: it read the refined fronts of the experimental pack, which is gone
 
     private static int lum(int rgb) {
         return (((rgb >> 16) & 255) * 299 + ((rgb >> 8) & 255) * 587 + (rgb & 255) * 114) / 1000;

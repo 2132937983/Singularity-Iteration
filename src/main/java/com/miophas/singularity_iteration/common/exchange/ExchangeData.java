@@ -73,10 +73,16 @@ public final class ExchangeData extends SavedData {
         public String item;
         public Currency currency;
         public long reference, listedDay, lastTradeDay;
+        /** 0.1.10.26: listed by a datapack ({@code si_exchange/listings}); never delisted for lack of trades while it is there. */
+        public boolean datapack;
     }
 
     public static final class LedgerDay {
         public long day, minted, burned;
+        /** 0.1.10.26 (X3): of {@link #minted}, the coins bounties paid; items and UU-matter (mB) bounties created ("issue"). */
+        public long bountyCoins, bountyItems, bountyUu;
+        /** 0.1.10.26: coins that the Java API paid into ({@code [0]}) or took out of ({@code [1]}) mailboxes, per reason code. */
+        public final Map<String, long[]> external = new java.util.TreeMap<>();
     }
 
     public static final class Position {
@@ -97,6 +103,18 @@ public final class ExchangeData extends SavedData {
         public boolean isEmpty() { return items.isEmpty() && coins == 0 && uu == 0; }
     }
 
+    /** 0.1.10.25 (X1): an order of the daily auction; its items are held until the market day changes. */
+    public static final class AuctionOrder {
+        public long id;
+        public UUID owner;
+        public String ownerName = "";
+        public String item = "";
+        public long quantity;
+        /** The lowest average price the seller accepts, in percent of the bid without pressure on the clearing day (0 = any). */
+        public int minPercent;
+        public long day;
+    }
+
     public long nextId = 1;
     public final Map<String, Book> books = new LinkedHashMap<>();
     public final Map<String, Long> treasury = new HashMap<>();
@@ -111,6 +129,18 @@ public final class ExchangeData extends SavedData {
     public final ArrayDeque<LedgerDay> ledger = new ArrayDeque<>();
     public final List<Position> positions = new ArrayList<>();
     public long lastDay = Long.MIN_VALUE;
+    /** 0.1.10.25 (X1): items sold to the market that it has not passed on yet, per commodity; a share leaves each day. */
+    public final Map<String, Double> pressure = new HashMap<>();
+    public long pressureDay = Long.MIN_VALUE;
+    /** 0.1.10.25: items each player sold to the market today, per commodity (the personal depth), for day {@link #soldDay}. */
+    public final Map<UUID, Map<String, Long>> sold = new HashMap<>();
+    public long soldDay = Long.MIN_VALUE;
+    /** 0.1.10.25: coins each player may still receive from the market: {balance, day of the balance}. */
+    public final Map<UUID, long[]> allowance = new HashMap<>();
+    /** 0.1.10.25: the open orders of the daily auction. */
+    public final List<AuctionOrder> auction = new ArrayList<>();
+    /** 0.1.10.26 (X3): the system bounties, the vault and the weekly budgets. */
+    public final BountyBoard board = new BountyBoard();
 
     public static ExchangeData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(ExchangeData::new, ExchangeData::load), NAME);
@@ -129,6 +159,16 @@ public final class ExchangeData extends SavedData {
 
     public Mailbox mailbox(UUID player) {
         return mail.computeIfAbsent(player, p -> new Mailbox());
+    }
+
+    /** 0.1.10.25: the items {@code player} sold to the market on {@code day}, per commodity (a new day starts empty). */
+    public Map<String, Long> sold(UUID player, long day) {
+        if (soldDay != day) {
+            sold.clear();
+            soldDay = day;
+            setDirty();
+        }
+        return sold.computeIfAbsent(player, p -> new HashMap<>());
     }
 
     public LedgerDay ledger(long day) {
@@ -191,6 +231,7 @@ public final class ExchangeData extends SavedData {
             Listing x = new Listing();
             x.item = l.getString("Item"); x.currency = currency(l.getString("Currency")); x.reference = Math.max(1, l.getLong("Reference"));
             x.listedDay = l.getLong("ListedDay"); x.lastTradeDay = l.getLong("LastTradeDay");
+            x.datapack = l.getBoolean("Datapack");
             d.listings.put(x.item, x);
         }
         CompoundTag ev = tag.getCompound("Evidence");
@@ -229,6 +270,9 @@ public final class ExchangeData extends SavedData {
             CompoundTag x = (CompoundTag) t;
             LedgerDay l = new LedgerDay();
             l.day = x.getLong("Day"); l.minted = x.getLong("Minted"); l.burned = x.getLong("Burned");
+            l.bountyCoins = x.getLong("BountyCoins"); l.bountyItems = x.getLong("BountyItems"); l.bountyUu = x.getLong("BountyUu");
+            CompoundTag ext = x.getCompound("External");
+            for (String k : ext.getAllKeys()) { long[] v = ext.getLongArray(k); if (v.length == 2) l.external.put(k, v); }
             d.ledger.addLast(l);
         }
         for (Tag t : tag.getList("Positions", Tag.TAG_COMPOUND)) {
@@ -239,6 +283,34 @@ public final class ExchangeData extends SavedData {
             p.expiry = x.getLong("Expiry");
             if (p.owner != null && p.price > 0 && p.quantity > 0) d.positions.add(p);
         }
+        // 0.1.10.25 (X1)
+        CompoundTag pr = tag.getCompound("Pressure");
+        for (String k : pr.getAllKeys()) { double v = pr.getDouble(k); if (v > 0 && Double.isFinite(v)) d.pressure.put(k, v); }
+        d.pressureDay = tag.contains("PressureDay") ? tag.getLong("PressureDay") : Long.MIN_VALUE;
+        d.soldDay = tag.contains("SoldDay") ? tag.getLong("SoldDay") : Long.MIN_VALUE;
+        CompoundTag so = tag.getCompound("Sold");
+        for (String k : so.getAllKeys()) {
+            UUID id = uuid(k);
+            if (id == null) continue;
+            Map<String, Long> m = new HashMap<>();
+            readLongMap(so.getCompound(k), m);
+            if (!m.isEmpty()) d.sold.put(id, m);
+        }
+        CompoundTag al = tag.getCompound("Allowance");
+        for (String k : al.getAllKeys()) {
+            UUID id = uuid(k);
+            long[] v = al.getLongArray(k);
+            if (id != null && v.length == 2 && v[0] >= 0) d.allowance.put(id, v);
+        }
+        for (Tag t : tag.getList("Auction", Tag.TAG_COMPOUND)) {
+            CompoundTag x = (CompoundTag) t;
+            AuctionOrder a = new AuctionOrder();
+            a.id = x.getLong("Id"); a.owner = uuid(x.getString("Owner")); a.ownerName = x.getString("Name"); a.item = x.getString("Item");
+            a.quantity = x.getLong("Quantity"); a.minPercent = Math.max(0, Math.min(100, x.getInt("MinPercent"))); a.day = x.getLong("Day");
+            if (a.owner != null && a.quantity > 0 && !a.item.isEmpty()) d.auction.add(a);
+        }
+        // 0.1.10.26 (X3)
+        BountyNbt.load(tag.getCompound("Bounties"), d.board);
         return d;
     }
 
@@ -294,6 +366,7 @@ public final class ExchangeData extends SavedData {
             CompoundTag x = new CompoundTag();
             x.putString("Item", l.item); x.putString("Currency", l.currency.name()); x.putLong("Reference", l.reference);
             x.putLong("ListedDay", l.listedDay); x.putLong("LastTradeDay", l.lastTradeDay);
+            if (l.datapack) x.putBoolean("Datapack", true);
             lis.add(x);
         }
         tag.put("Listings", lis);
@@ -338,6 +411,14 @@ public final class ExchangeData extends SavedData {
         for (LedgerDay l : ledger) {
             CompoundTag x = new CompoundTag();
             x.putLong("Day", l.day); x.putLong("Minted", l.minted); x.putLong("Burned", l.burned);
+            if (l.bountyCoins != 0) x.putLong("BountyCoins", l.bountyCoins);
+            if (l.bountyItems != 0) x.putLong("BountyItems", l.bountyItems);
+            if (l.bountyUu != 0) x.putLong("BountyUu", l.bountyUu);
+            if (!l.external.isEmpty()) {
+                CompoundTag ext = new CompoundTag();
+                l.external.forEach(ext::putLongArray);
+                x.put("External", ext);
+            }
             led.add(x);
         }
         tag.put("Ledger", led);
@@ -350,6 +431,28 @@ public final class ExchangeData extends SavedData {
             pos.add(x);
         }
         tag.put("Positions", pos);
+        // 0.1.10.25 (X1)
+        CompoundTag pr = new CompoundTag();
+        pressure.forEach((k, v) -> { if (v > 0) pr.putDouble(k, v); });
+        tag.put("Pressure", pr);
+        tag.putLong("PressureDay", pressureDay);
+        tag.putLong("SoldDay", soldDay);
+        CompoundTag so = new CompoundTag();
+        sold.forEach((id, m) -> { if (!m.isEmpty()) so.put(id.toString(), writeLongMap(m)); });
+        tag.put("Sold", so);
+        CompoundTag al = new CompoundTag();
+        allowance.forEach((id, v) -> al.putLongArray(id.toString(), v));
+        tag.put("Allowance", al);
+        ListTag auc = new ListTag();
+        for (AuctionOrder a : auction) {
+            CompoundTag x = new CompoundTag();
+            x.putLong("Id", a.id); x.putString("Owner", a.owner.toString()); x.putString("Name", a.ownerName); x.putString("Item", a.item);
+            x.putLong("Quantity", a.quantity); x.putInt("MinPercent", a.minPercent); x.putLong("Day", a.day);
+            auc.add(x);
+        }
+        tag.put("Auction", auc);
+        // 0.1.10.26 (X3)
+        tag.put("Bounties", BountyNbt.save(board));
         return tag;
     }
 

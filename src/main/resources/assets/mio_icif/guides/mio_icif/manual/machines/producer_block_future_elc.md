@@ -21,10 +21,12 @@ Each action costs the EU of one trade.
 
 - **Market**: the datapack commodities, which the market itself buys and sells, and player listings, which only players trade. The chart shows daily candles with volume, the 5-day mean and the fundamental value (from the UU-matter value).
 - **Order book**: an order trades with the best orders of other players first, then with the market. An order that does not fill can wait in the book for 7 days. Orders of one player or one team never trade with each other.
-- **Treasury**: the market sells only what it bought before, plus a small daily import at a higher price. When a commodity runs short, the market posts commissions for it and stops selling it until they end.
+- **Treasury**: the market sells only what it bought before, plus a small daily import at a higher price. When a commodity runs short, the market posts a bounty for it (Bounties tab) and does not sell it while a normal or advanced bounty needs it.
 - **Commissions**: ask other players for items and pay coins, items or UU-matter. The reward is held until delivery. When several players ask for the same item, it gets listed on the exchange.
 - **Futures**: cash-settled contracts for 3 or 7 days. The contract price already includes the expected price movement (events too), so futures only pay off when you foresee more than the market.
 - **Mailbox**: what the exchange owes you (sales, refunds, items that did not fit). Collect it in the Orders and Mail tab.
+- **Sell page**: put items in the sell box (shift-click, or Fill takes every sellable stack outside the hotbar). The page shows what each commodity pays now and at the daily auction. Sell now, or give the items to the auction: it sells them together with everyone's at the change of the market day, so the order of the sellers does not matter. What stays in the box comes back when you close the panel.
+- **Bounties**: the market posts system bounties in three tiers. Normal: a commodity it lacks, every day, for 3 days, reward 1.15 times the value. Advanced: a set of goods, two or three a week, for 7 days, reward 1.3 times; in multiplayer one player may deliver at most half of it until its last day. Special: a rare item, now and then, with a rare reward. Rewards are coins, goods of the market's stock, UU-matter or items made within a weekly limit; rare items delivered to special bounties go to a vault and pay later ones. Press Deliver to hand over what you carry: you are paid at once in proportion, or by contribution when the bounty says so. In single player you can complete every bounty alone.
 
 ## Power data
 
@@ -45,11 +47,13 @@ The game measured these values from the block entity of this version.
 
 ## Notes
 
-- A daily limit per player applies to trades with the market.
+- Selling to the market has no item limit. Each item you sold of a commodity today, and each item everyone sold that the market has not passed on yet, lowers the bid; half of that sell pressure leaves each day. Small sales get almost the full price, bulk sales a lower average price.
+- In multiplayer the market pays each player at most 50,000 coins a day for sales (unused coins are kept up to 3 days). Buying from the market has no daily limit; its stock limits it.
 - Player listings of complex items (by default 3 crafting steps or more) trade in UU-matter (mB). Deposit UU-matter from cells or buckets in the Orders and Mail tab.
 - Market events change the price trend for a number of days.
 - Some commodities stay locked until you get the advancement.
-- Operators can check the exchange with /mio_icif market audit.
+- Operators can check the exchange with /mio_icif market audit, and price a sale (simulate), look for recipe loops (arbitrage), compare prices with UU-matter values (calibrate) and see the coins created and destroyed (ledger) with /mio_icif market.
+- Operators can list, post and cancel bounties and see the datapack problems and the economy settings with /mio_icif bounty. Pack makers set bounty tables, reward pools, listings that are open from the start and economy defaults in the datapack folder data/(namespace)/si_exchange; a value changed in the server config wins.
 
 ## Recipe
 

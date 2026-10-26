@@ -1207,19 +1207,14 @@ public class mio_icif_gui_armor_features extends Screen {
 
     // ================================================================== APPEARANCE: texture style
     private static final int AX = 7, AY = 18, AW = 286, AH = H - 18 - 7;
-    private static final int CARD_W = 134, CARD_H = 96;
-
-    private int cardX(int i) { return left + AX + 6 + i * (CARD_W + 6); }
-    private int cardY() { return top + AY + 22; }
-
-    // ---- 0.1.8.0: appearance pages: 0 = texture style, 1 = suit palette
+    // ---- 0.1.8.0: appearance pages: 0 = suit display (0.1.10.24: was the texture style), 1 = suit palette
     private int appearancePage;
     private static final int SUB_W = 52, SUB_H = 11;
     private int subX(int i) { return left + AX + AW - 4 - (2 - i) * (SUB_W + 2); }
     private int subY() { return top + AY + 4; }
 
     private void renderAppearanceTabs(GuiGraphics g, int mouseX, int mouseY) {
-        String[] keys = {"texture", "palette"};
+        String[] keys = {"suit", "palette"};
         for (int i = 0; i < 2; i++) {
             int x = subX(i), y = subY();
             boolean on = appearancePage == i, hot = in(mouseX, mouseY, x, y, SUB_W, SUB_H);
@@ -1239,46 +1234,7 @@ public class mio_icif_gui_armor_features extends Screen {
         int x0 = left + AX, y0 = top + AY;
         DspUi.screen(g, x0, y0, AW, AH);
         renderAppearanceTabs(g, mouseX, mouseY);
-        DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.texture_style").getString(), x0 + 6, y0 + 6, DspUi.CYAN);
-        DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.hint").getString(), x0 + 6, y0 + 13, DspUi.TEXT_DIM);
-        // card 0: Default (classic IC2, ships in assets/), card 1: Experimental (built-in pack)
-        boolean experimental = com.miophas.singularity_iteration.common.client.AppearanceStyle.isExperimental();
-        boolean available = com.miophas.singularity_iteration.common.client.AppearanceStyle.available();
-        for (int i = 0; i < 2; i++) {
-            int x = cardX(i), y = cardY();
-            boolean on = (i == 1) == experimental, hot = in(mouseX, mouseY, x, y, CARD_W, CARD_H);
-            g.fill(x, y, x + CARD_W, y + CARD_H, on ? 0xFF15293A : hot ? 0xFF112130 : DspUi.BG_HI);
-            g.renderOutline(x, y, CARD_W, CARD_H, on ? DspUi.CYAN : hot ? DspUi.CYAN_DIM : DspUi.FRAME);
-            // swatch: a little machine front in each style
-            int sx = x + 8, sy = y + 18;
-            if (i == 1) {
-                g.fill(sx, sy, sx + 34, sy + 34, 0xFF8C96A0);
-                g.fill(sx + 2, sy + 2, sx + 32, sy + 7, 0xFF3A4652);
-                g.fill(sx + 4, sy + 10, sx + 30, sy + 26, 0xFF1A232C);
-                g.fill(sx + 6, sy + 12, sx + 28, sy + 24, 0xFF2E4E68);
-                g.fill(sx + 8, sy + 29, sx + 26, sy + 31, (System.currentTimeMillis() / 500) % 2 == 0 ? DspUi.GREEN : 0xFF2E6B45);
-                g.fill(sx + 29, sy + 3, sx + 31, sy + 5, DspUi.CYAN);
-            } else {
-                g.fill(sx, sy, sx + 34, sy + 34, 0xFF9AA1A8);
-                g.renderOutline(sx, sy, 34, 34, 0xFF5E656C);
-                g.fill(sx + 9, sy + 9, sx + 25, sy + 25, 0xFF6B7178);
-                g.fill(sx + 11, sy + 11, sx + 23, sy + 23, 0xFF3C4146);
-            }
-            String key = i == 0 ? "default" : "experimental";
-            DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance." + key).getString(), x + 6, y + 6, on ? DspUi.TEXT : DspUi.TEXT_DIM);
-            int ty = sy;
-            for (String line : font.getSplitter().splitLines(Component.translatable("gui.mio_icif.equipment_console.appearance." + key + ".desc").getString(),
-                    (int) ((CARD_W - 52) / 0.75F), net.minecraft.network.chat.Style.EMPTY).stream().map(net.minecraft.network.chat.FormattedText::getString).toList()) {
-                if (ty > y + CARD_H - 20) break;
-                DspUi.small(g, font, line, x + 48, ty, DspUi.TEXT_DIM);
-                ty += 7;
-            }
-            String state = on ? "● " + Component.translatable("gui.mio_icif.equipment_console.appearance.active").getString()
-                : "○ " + Component.translatable("gui.mio_icif.equipment_console.appearance.select").getString();
-            DspUi.small(g, font, state, x + 6, y + CARD_H - 10, on ? DspUi.CYAN : (available ? DspUi.TEXT_DIM : DspUi.RED));
-        }
-        DspUi.small(g, font, Component.translatable(available ? "gui.mio_icif.equipment_console.appearance.reload"
-            : "gui.mio_icif.equipment_console.appearance.missing").getString(), x0 + 6, y0 + AH - 10, available ? DspUi.TEXT_DIM : DspUi.RED);
+        // 0.1.10.24: the texture style cards (Default / Experimental) are gone with the built-in experimental resource pack
         // 0.1.8.0: hand cover of the nano / quantum gauntlets
         DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.hands").getString(), x0 + 6, handY() - 9, DspUi.CYAN);
         boolean[] states = {com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.handArmorFirstPerson(),
@@ -1299,7 +1255,7 @@ public class mio_icif_gui_armor_features extends Screen {
 
     private int coreToggleY() { return handY() + 12; }
 
-    private int handY() { return cardY() + CARD_H + 16; }
+    private int handY() { return top + AY + 30; }
 
     private boolean appearanceClick(double mouseX, double mouseY) {
         for (int i = 0; i < 2; i++) {
@@ -1324,16 +1280,6 @@ public class mio_icif_gui_armor_features extends Screen {
                 !com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.coreAttachments());
             sound(true);
             return true;
-        }
-        for (int i = 0; i < 2; i++) {
-            if (in(mouseX, mouseY, cardX(i), cardY(), CARD_W, CARD_H)) {
-                boolean experimental = i == 1;
-                if (experimental != com.miophas.singularity_iteration.common.client.AppearanceStyle.isExperimental()) {
-                    sound(true);
-                    com.miophas.singularity_iteration.common.client.AppearanceStyle.setExperimental(experimental);
-                }
-                return true;
-            }
         }
         return false;
     }

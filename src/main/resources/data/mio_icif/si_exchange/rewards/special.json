@@ -1,0 +1,11 @@
+{
+  "entries": [
+    { "type": "item", "item": "mio_icif:generator/block_hybrid_solar_panel", "count": 1, "source": "issue", "weight": 3 },
+    { "type": "item", "item": "mio_icif:generator/block_ultimate_hybrid_solar_panel", "count": 1, "source": "issue", "weight": 1 },
+    { "type": "item", "item": "minecraft:elytra", "count": 1, "source": "vault", "weight": 2 },
+    { "type": "item", "item": "minecraft:nether_star", "count": 1, "source": "vault", "weight": 2 },
+    { "type": "item", "item": "minecraft:dragon_head", "count": 1, "source": "vault", "weight": 1 },
+    { "type": "item", "item": "minecraft:heart_of_the_sea", "count": 1, "source": "vault", "weight": 1 },
+    { "type": "uu", "mb": 2000, "weight": 1 }
+  ]
+}

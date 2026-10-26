@@ -265,7 +265,16 @@ public final class FcsHud {
                 float blink = t.intentHot() ? (float) (0.6 + 0.4 * Math.sin(System.currentTimeMillis() / 90.0)) : 1F;
                 float ix = top[0] + wid / 2 + 3, iy = top[1];
                 FcsDraw.triangle(g, ix, iy, ix + 5, iy + 3, ix, iy + 6, FcsDraw.argb(ic, blink));
-                FcsDraw.text(g, t.intent(), ix + 6, iy, FcsDraw.argb(ic, blink), 0.55F);
+                // 0.1.10.23 (P7): the intent with its countdown ("AIM 0.6s")
+                FcsDraw.text(g, t.intentText(), ix + 6, iy, FcsDraw.argb(ic, blink), 0.55F);
+            }
+            // 0.1.10.23 (P6): priority rank "#1".."#3"; (P2) "LINK" when the path follows the server's path nodes
+            if (predict && t.rank() > 0) {
+                int rc = t.rank() == 1 ? FcsDraw.RED : 0xFF9F1C;
+                FcsDraw.textRight(g, "#" + t.rank(), top[0] - wid / 2 - 3, top[1], FcsDraw.argb(rc, 1F), 0.6F);
+            }
+            if (predict && t.linked()) {
+                FcsDraw.textRight(g, "LINK", top[0] - wid / 2 - 3, top[1] + 7, FcsDraw.argb(SuitModuleType.BEHAVIOR_PREDICTOR.color(), 0.9F), 0.45F);
             }
         }
     }
@@ -651,7 +660,55 @@ public final class FcsHud {
 
     // ------------------------------------------------------------------ threats
 
+    /** 0.1.10.23 (P7): colour of the incoming projectile markers. */
+    private static final int INCOMING = 0xFFB347;
+
+    /**
+     * 0.1.10.23 (P7): the incoming projectiles ({@link ProjectileWatch}): a marker on the ring at the bearing of each
+     * with the seconds to its closest approach; one that hits flashes red and the soonest hit gets an arrow beside the
+     * aim point that shows which way to step; a banner "INCOMING n".
+     */
+    private static void incoming(GuiGraphics g, Minecraft mc, int w, int h, float partial) {
+        List<ProjectileWatch.Alert> alerts = ProjectileWatch.alerts();
+        if (alerts.isEmpty() || mc.player == null) return;
+        float cx = w / 2F, cy = h / 2F, r = Math.min(w, h) * 0.34F;
+        float flash = (float) (0.55 + 0.45 * Math.sin(System.currentTimeMillis() / 60.0));
+        ProjectileWatch.Alert soonestHit = null;
+        int hits = 0;
+        for (ProjectileWatch.Alert a : alerts) {
+            Vec3 p = a.projectile().getPosition(partial);
+            float bearing = FcsProjection.bearing(p.x, p.y, p.z);
+            boolean hit = a.warning().hit();
+            if (hit) { hits++; if (soonestHit == null) soonestHit = a; }
+            int c = hit ? FcsDraw.RED : INCOMING;
+            float alpha = hit ? flash : 0.8F;
+            float bx = (float) Math.sin(bearing), by = (float) -Math.cos(bearing);
+            float tx = cx + bx * r, ty = cy + by * r;
+            // an inward chevron at the bearing
+            FcsDraw.triangle(g, tx - bx * 6, ty - by * 6, tx - by * 4, ty + bx * 4, tx + by * 4, ty - bx * 4, FcsDraw.argb(c, alpha));
+            FcsDraw.textCentered(g, String.format(Locale.ROOT, "%.1fs", a.seconds()), tx + bx * 8, ty + by * 8 - 3, FcsDraw.argb(c, alpha), 0.5F);
+        }
+        if (soonestHit != null) {
+            // step-aside arrow beside the aim point (world direction -> screen bearing)
+            LocalPlayer player = mc.player;
+            var ww = soonestHit.warning();
+            Vec3 eye = player.getEyePosition(partial);
+            float b = FcsProjection.bearing(eye.x + ww.evadeX() * 3, eye.y, eye.z + ww.evadeZ() * 3);
+            float bx = (float) Math.sin(b), by = (float) -Math.cos(b);
+            float ax = cx + bx * 26, ay = cy + by * 26;
+            int col = FcsDraw.argb(FcsDraw.RED, flash);
+            FcsDraw.line(g, cx + bx * 14, cy + by * 14, ax, ay, 2F, col);
+            FcsDraw.triangle(g, ax + bx * 7, ay + by * 7, ax - by * 4, ay + bx * 4, ax + by * 4, ay - bx * 4, col);
+            FcsDraw.textCentered(g, "EVADE", ax + bx * 14, ay + by * 14 - 3, col, 0.5F);
+        }
+        String banner = "INCOMING " + alerts.size() + (hits > 0 ? "  HIT " + hits : "");
+        float bw = FcsDraw.width(banner, 0.7F) + 8, by0 = 52;
+        g.fill((int) (cx - bw / 2), (int) by0, (int) (cx + bw / 2), (int) by0 + 10, hits > 0 ? FcsDraw.argb(FcsDraw.RED, 0.35F * flash) : 0x50403000);
+        FcsDraw.textCentered(g, banner, cx, by0 + 2, FcsDraw.argb(hits > 0 ? FcsDraw.RED : INCOMING, 1F), 0.7F);
+    }
+
     private static void threats(GuiGraphics g, Minecraft mc, int w, int h, float partial) {
+        incoming(g, mc, w, h, partial);
         Int2ByteMap map = SuitSensorData.threats();
         if (map.isEmpty()) return;
         float cx = w / 2F, cy = h / 2F;

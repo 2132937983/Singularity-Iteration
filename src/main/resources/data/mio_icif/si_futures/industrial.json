@@ -1,0 +1,62 @@
+{
+  "category": "industrial",
+  "commodities": [
+    {
+      "item": "mio_icif:resource/item_ingot_tin",
+      "base_price": 110,
+      "volatility": 0.08
+    },
+    {
+      "item": "mio_icif:resource/item_ingot_bronze",
+      "base_price": 120,
+      "volatility": 0.06
+    },
+    {
+      "item": "mio_icif:resource/item_lead_ingot",
+      "base_price": 160,
+      "volatility": 0.08
+    },
+    {
+      "item": "mio_icif:resource/item_silver_ingot",
+      "base_price": 300,
+      "volatility": 0.1
+    },
+    {
+      "item": "mio_icif:resource/item_adviron_ingot",
+      "base_price": 210,
+      "volatility": 0.05
+    },
+    {
+      "item": "mio_icif:resource/item_rubber",
+      "base_price": 30,
+      "volatility": 0.08
+    },
+    {
+      "item": "mio_icif:normal/item_circuit",
+      "base_price": 800,
+      "volatility": 0.05
+    },
+    {
+      "item": "mio_icif:normal/item_advcircuit",
+      "base_price": 2000,
+      "volatility": 0.06
+    },
+    {
+      "item": "mio_icif:resource/item_alloy_ingot",
+      "base_price": 700,
+      "volatility": 0.06
+    },
+    {
+      "item": "mio_icif:resource/item_carbon_plate",
+      "base_price": 210,
+      "volatility": 0.06
+    },
+    {
+      "item": "mio_icif:resource/item_iridium",
+      "base_price": 3000,
+      "volatility": 0.15,
+      "period_days": 3,
+      "depth": { "player": 64, "server": 256 }
+    }
+  ]
+}

@@ -28,6 +28,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  *   <tr><td>{@link ChunkGrid}</td><td>server to client</td><td>EU grid summary of one chunk</td></tr>
  *   <tr><td>{@link ManeuverInput}</td><td>client to server</td><td>throttle and stick of the local flyer</td></tr>
  *   <tr><td>{@link ManeuverState}</td><td>server to client</td><td>throttle and stick of a different flyer</td></tr>
+ *   <tr><td>{@link PathNodes}</td><td>server to client</td><td>0.1.10.23: next path nodes of nearby creatures (Behavior Predictor Mk.II)</td></tr>
  * </table>
  *
  * <h2>Threading</h2>
@@ -230,7 +231,69 @@ public final class SuitPackets {
     }
 
     /**
-     * Registers the six suit payloads. {@code mio_icif_Network.register} calls this method.
+     * 0.1.10.23 (FCS P2) server to client (the wearer only): the next path nodes of the nearby creatures for a Behavior
+     * Predictor Mk.II ({@link PathLink}). Each packet replaces the previous list.
+     *
+     * <p>Fields: {@code ids} (at most {@link #MAX} entity ids) and {@code nodes} (per id, x, y, z triples of at most
+     * {@link #MAX_NODES} node blocks). On the wire the first node is a packed {@code BlockPos} and the others are signed
+     * byte steps from the node before; a list whose step does not fit in a byte is cut there.
+     *
+     * <p>Receiver: the decoder rejects more than {@link #MAX} entries or {@link #MAX_NODES} nodes. The client keeps the
+     * list for {@link SuitSensorData#THREAT_TTL_MS}.
+     */
+    public record PathNodes(int[] ids, int[][] nodes) implements CustomPacketPayload {
+        public static final int MAX = 8, MAX_NODES = 6;
+        public static final Type<PathNodes> TYPE = new Type<>(id("suit_path_nodes"));
+        public static final StreamCodec<FriendlyByteBuf, PathNodes> CODEC = StreamCodec.of((b, p) -> {
+            int count = com.miophas.singularity_iteration.common.util.PacketLimits.writeCount(b, Math.min(p.ids.length, p.nodes.length), MAX);
+            for (int i = 0; i < count; i++) {
+                b.writeVarInt(p.ids[i]);
+                int[] n = p.nodes[i];
+                int nodes = Math.min(MAX_NODES, n.length / 3);
+                // cut the list at a step that does not fit in a byte
+                int keep = nodes == 0 ? 0 : 1;
+                while (keep < nodes && fits(n, keep)) keep++;
+                b.writeByte(keep);
+                if (keep == 0) continue;
+                b.writeLong(net.minecraft.core.BlockPos.asLong(n[0], n[1], n[2]));
+                for (int k = 1; k < keep; k++) {
+                    b.writeByte(n[3 * k] - n[3 * k - 3]); b.writeByte(n[3 * k + 1] - n[3 * k - 2]); b.writeByte(n[3 * k + 2] - n[3 * k - 1]);
+                }
+            }
+        }, b -> {
+            int count = com.miophas.singularity_iteration.common.util.PacketLimits.readCount(b, MAX, "path node list");
+            int[] ids = new int[count];
+            int[][] nodes = new int[count][];
+            for (int i = 0; i < count; i++) {
+                ids[i] = b.readVarInt();
+                int keep = b.readUnsignedByte();
+                if (keep > MAX_NODES) throw new io.netty.handler.codec.DecoderException("too many path nodes: " + keep);
+                int[] n = new int[3 * keep];
+                if (keep > 0) {
+                    long first = b.readLong();
+                    n[0] = net.minecraft.core.BlockPos.getX(first); n[1] = net.minecraft.core.BlockPos.getY(first); n[2] = net.minecraft.core.BlockPos.getZ(first);
+                    for (int k = 1; k < keep; k++) {
+                        n[3 * k] = n[3 * k - 3] + b.readByte(); n[3 * k + 1] = n[3 * k - 2] + b.readByte(); n[3 * k + 2] = n[3 * k - 1] + b.readByte();
+                    }
+                }
+                nodes[i] = n;
+            }
+            return new PathNodes(ids, nodes);
+        });
+
+        private static boolean fits(int[] n, int k) {
+            for (int a = 0; a < 3; a++) {
+                int d = n[3 * k + a] - n[3 * k - 3 + a];
+                if (d < Byte.MIN_VALUE || d > Byte.MAX_VALUE) return false;
+            }
+            return true;
+        }
+
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    /**
+     * Registers the suit payloads. {@code mio_icif_Network.register} calls this method.
      *
      * @param registrar the registrar of the mod channel version
      */
@@ -244,6 +307,8 @@ public final class SuitPackets {
         registrar.playToClient(Threats.TYPE, Threats.CODEC, (p, c) -> client(c, () -> SuitSensorData.acceptThreats(p.ids, p.levels)));
         registrar.playToClient(ShieldHit.TYPE, ShieldHit.CODEC, (p, c) -> client(c, () -> SuitSensorData.acceptShieldHit(p)));
         registrar.playToClient(ChunkGrid.TYPE, ChunkGrid.CODEC, (p, c) -> client(c, () -> SuitSensorData.acceptChunkGrid(p)));
+        // 0.1.10.23 (FCS P2): path nodes of the nearby creatures for Behavior Predictor Mk.II
+        registrar.playToClient(PathNodes.TYPE, PathNodes.CODEC, (p, c) -> client(c, () -> SuitSensorData.acceptPathNodes(p.ids(), p.nodes())));
         // No client data: the server picks the chunk. answerChunkGrid applies the module check and the rate limit.
         registrar.playToServer(ChunkGridRequest.TYPE, ChunkGridRequest.CODEC, (p, c) -> c.enqueueWork(() -> {
             if (c.player() instanceof ServerPlayer player) SuitServer.answerChunkGrid(player);

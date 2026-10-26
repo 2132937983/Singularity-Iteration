@@ -24,7 +24,9 @@ import java.util.List;
  * again when the player earns an advancement that unlocks a commodity.
  */
 public record FutureCommoditySync(List<Entry> entries, List<String> locked) implements CustomPacketPayload {
-    public record Entry(String item, int basePrice, float volatility, String category, int periodDays, String unlock) {
+    /** 0.1.10.26: {@code tag} and {@code acceptComponents} of the sell box ({@link FutureCommodity.Selling}). */
+    public record Entry(String item, int basePrice, float volatility, String category, int periodDays, String unlock, String tag,
+                        boolean acceptComponents) {
         static final StreamCodec<ByteBuf, Entry> CODEC = StreamCodec.of((buf, e) -> {
             ByteBufCodecs.STRING_UTF8.encode(buf, e.item);
             ByteBufCodecs.VAR_INT.encode(buf, e.basePrice);
@@ -32,12 +34,15 @@ public record FutureCommoditySync(List<Entry> entries, List<String> locked) impl
             ByteBufCodecs.STRING_UTF8.encode(buf, e.category);
             ByteBufCodecs.VAR_INT.encode(buf, e.periodDays);
             ByteBufCodecs.STRING_UTF8.encode(buf, e.unlock);
+            ByteBufCodecs.STRING_UTF8.encode(buf, e.tag);
+            ByteBufCodecs.BOOL.encode(buf, e.acceptComponents);
         }, buf -> new Entry(ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.FLOAT.decode(buf),
-            ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf)));
+            ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.VAR_INT.decode(buf), ByteBufCodecs.STRING_UTF8.decode(buf),
+            ByteBufCodecs.STRING_UTF8.decode(buf), ByteBufCodecs.BOOL.decode(buf)));
 
         FutureCommodity toCommodity() {
             return new FutureCommodity(item, basePrice, volatility, CommodityCategory.fromId(category), periodDays,
-                unlock.isEmpty() ? null : ResourceLocation.parse(unlock));
+                unlock.isEmpty() ? null : ResourceLocation.parse(unlock)).withSelling(new FutureCommodity.Selling(tag, acceptComponents));
         }
     }
 
@@ -85,11 +90,15 @@ public record FutureCommoditySync(List<Entry> entries, List<String> locked) impl
         @SubscribeEvent
         public static void onReloadListeners(AddReloadListenerEvent event) {
             event.addListener(new FutureCommodityLoader());
+            // 0.1.10.26 (X3): bounty tables, reward pools, listings and economy settings of data/<ns>/si_exchange
+            event.addListener(new com.miophas.singularity_iteration.common.exchange.ExchangeTables.Loader());
         }
 
         @SubscribeEvent
         public static void onDatapackSync(OnDatapackSyncEvent event) {
             event.getRelevantPlayers().forEach(FutureCommoditySync::send);
+            // 0.1.10.26: after /reload (no single player joining) the datapack listings are applied at once
+            if (event.getPlayer() == null) com.miophas.singularity_iteration.common.exchange.Bounties.applyListings(event.getPlayerList().getServer());
         }
 
         @SubscribeEvent

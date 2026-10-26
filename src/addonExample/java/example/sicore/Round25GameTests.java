@@ -217,30 +217,8 @@ public final class Round25GameTests {
         });
     }
 
-    private static int screenPixels(String path) {
-        var file = net.neoforged.fml.ModList.get().getModFileById("mio_icif").getFile();
-        try (var in = java.nio.file.Files.newInputStream(file.findResource(("resourcepacks/si_experimental/assets/mio_icif/textures/block/refined/" + path + ".png").split("/")))) {
-            var img = javax.imageio.ImageIO.read(in);
-            int n = 0;
-            for (int y = 4; y < 30; y++) for (int x = 4; x < 28; x++) {
-                int rgb = img.getRGB(x, y), r = (rgb >> 16) & 255, g = (rgb >> 8) & 255, b = rgb & 255;
-                if (b > r + 25 && (r * 299 + g * 587 + b * 114) / 1000 < 90) n++;
-            }
-            return n;
-        } catch (java.io.IOException e) { throw new AssertionError(e); }
-    }
-
-    /** Storage boxes show an output socket, kinetic machines a shaft coupling, heat machines a copper port - no screens. */
-    @GameTest(batch = "round25_fronts", template = "empty")
-    public static void physicalFrontsHaveNoScreen(GameTestHelper h) {
-        h.assertTrue(screenPixels("producer/block_compressor_elc") > 50, "Sanity: a processing machine still has its display window");
-        for (String p : List.of("wiring/block_bat_box", "wiring/block_cesu", "wiring/block_mfe", "wiring/block_mfsu",
-                "kugenerator/block_kinetic_generator_elc", "kugenerator/block_stirling_kinetic_generator",
-                "hugenerator/block_solid_heat_generator", "hugenerator/block_fluid_heat_generator")) {
-            h.assertTrue(screenPixels(p) < 8, p + " must not carry a display window, " + screenPixels(p) + " screen pixels");
-        }
-        h.succeed();
-    }
+    // 0.1.10.24: physicalFrontsHaveNoScreen (and its screenPixels helper) removed: it read the refined fronts of the
+    // experimental resource pack, which is gone
 
     /** 0.1.7.26: the dedicated suit models are sealed - Nano / Quantum render with the classic 64x32 armour again. */
     @GameTest(batch = "round25_suits", template = "empty")
@@ -248,9 +226,8 @@ public final class Round25GameTests {
         var file = net.neoforged.fml.ModList.get().getModFileById("mio_icif").getFile();
         h.assertTrue(!java.nio.file.Files.exists(file.findResource("assets", "mio_icif", "textures", "armor", "suit", "quantum.png")),
             "The sealed suit atlases are no longer shipped");
-        h.assertTrue(java.nio.file.Files.exists(file.findResource("resourcepacks", "si_experimental", "pack.mcmeta")), "Experimental pack ships");
-        h.assertTrue(java.nio.file.Files.exists(file.findResource("resourcepacks", "si_experimental", "assets", "mio_icif", "models", "block", "producer", "block_compressor_elc.json")),
-            "The experimental pack carries the refined machine models");
+        // 0.1.10.24: the built-in experimental pack was removed
+        h.assertTrue(!java.nio.file.Files.exists(file.findResource("resourcepacks", "si_experimental", "pack.mcmeta")), "The experimental pack is gone");
         // 0.1.7.34: the nano suit now has its own Blockbench model and per-piece textures (Round34GameTests)
         for (String suit : List.of("quantum")) {
             for (var slot : List.of(net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS)) {

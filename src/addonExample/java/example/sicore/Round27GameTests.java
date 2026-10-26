@@ -190,13 +190,8 @@ public final class Round27GameTests {
         h.assertTrue(!read("assets", "mio_icif", "models", "block", "producer", "block_compressor_elc.json").contains("panels_ns"),
             "Default compressor is the classic full cube");
         h.assertTrue(!Files.exists(file.findResource("resourcepacks", "si_classic", "pack.mcmeta")), "The old classic pack is gone");
-        // experimental pack: refined block + DSP icon item, both switched together
-        String expItem = read("resourcepacks", "si_experimental", "assets", "mio_icif", "models", "item", "producer", "block_compressor_elc.json");
-        h.assertTrue(expItem.contains("item/icon/producer/block_compressor_elc"), "Experimental item uses the DSP icon");
-        h.assertTrue(Files.exists(file.findResource("resourcepacks", "si_experimental", "assets", "mio_icif", "textures", "item", "icon", "producer", "block_compressor_elc.png")),
-            "Experimental pack carries the icon texture");
-        h.assertTrue(read("resourcepacks", "si_experimental", "assets", "mio_icif", "models", "block", "producer", "block_compressor_elc.json").contains("panels_ns"),
-            "Experimental compressor is the refined model");
+        // 0.1.10.24: the experimental pack (refined blocks + DSP icon items) was removed as well
+        h.assertTrue(!Files.exists(file.findResource("resourcepacks", "si_experimental", "pack.mcmeta")), "The experimental pack is gone");
         h.succeed();
     }
 }

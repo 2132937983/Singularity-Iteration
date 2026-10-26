@@ -999,6 +999,8 @@ public class mio_icif_creativeTabs {
                 // EU Detector Cable & EU Splitter Cable
                 output.accept(mio_icif_blocks.WIRE_DETECTOR.get());
                 output.accept(mio_icif_blocks.WIRE_SPLITTER.get());
+                output.accept(mio_icif_blocks.WIRE_BREAKER.get());   // 0.1.10.22
+                output.accept(mio_icif_blocks.WIRE_FUSE.get());
                 // Transformers
                 output.accept(mio_icif_blocks.TRANSFORMER_LV_MV.get());
                 output.accept(mio_icif_blocks.TRANSFORMER_MV_HV.get());

@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.future.event;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 
-import java.util.Random;
 
 /**
  * Short-term crash and rebound event (flash crash rebound).
@@ -14,7 +13,6 @@ import java.util.Random;
 @SuppressWarnings("null")
 public class ShortCrashReboundEvent extends FuturePriceEvent {
 
-    private static final Random RANDOM = new Random();
 
     public ShortCrashReboundEvent(String commodityId, long startDay, int duration, double intensity) {
         super(commodityId, startDay, duration, intensity);
@@ -26,7 +24,7 @@ public class ShortCrashReboundEvent extends FuturePriceEvent {
     }
 
     @Override
-    public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
+    public int applyEffect(int currentPrice, int basePrice, int dayOffset, java.util.function.DoubleSupplier random) {
         double totalChange;
 
         // Find whether the day is in the crash phase or in the rebound phase.
@@ -40,7 +38,7 @@ public class ShortCrashReboundEvent extends FuturePriceEvent {
         totalChange = -baseFall * dayMultiplier;
 
             // Add a random fluctuation.
-            double randomFactor = 0.85 + (RANDOM.nextDouble() * 0.3);
+            double randomFactor = 0.85 + (random.getAsDouble() * 0.3);
             totalChange *= randomFactor;
         } else {
             // Rebound phase: the price rises sharply by 25% - 45% each day.
@@ -50,7 +48,7 @@ public class ShortCrashReboundEvent extends FuturePriceEvent {
         totalChange = baseRise * dayMultiplier;
 
             // Add a random fluctuation.
-            double randomFactor = 0.85 + (RANDOM.nextDouble() * 0.3);
+            double randomFactor = 0.85 + (random.getAsDouble() * 0.3);
             totalChange *= randomFactor;
         }
 

@@ -58,7 +58,8 @@ public final class BuiltinEnergyProfiles {
     private static final Set<ResourceLocation> TRANSFORMERS = Set.of(id("wiring/transformer_lv_mv"),
         id("wiring/transformer_mv_hv"), id("wiring/transformer_hv_ev"), id("wiring/transformer_ev_sc"),
         id("wiring/transformer_iv_luv"), id("wiring/transformer_luv_zpmv"));
-    private static final Set<ResourceLocation> SPECIAL_CABLES = Set.of(id("wiring/block_eu_detector_cable"), id("wiring/block_eu_splitter_cable"));
+    private static final Set<ResourceLocation> SPECIAL_CABLES = Set.of(id("wiring/block_eu_detector_cable"), id("wiring/block_eu_splitter_cable"),
+        id("wiring/block_eu_breaker_cable"), id("wiring/block_eu_fuse_cable"));   // 0.1.10.22: breaker and fuse
     // IC2 TileEntityConversionGenerator semantics: a KU->EU conversion generator reports a
     // packet of min(live offer, getPowerFromTier(live source tier)), so an EV wire melts only
     // above its own rated voltage instead of at one fixed packet size.
@@ -109,6 +110,7 @@ public final class BuiltinEnergyProfiles {
         Map.entry(id("wiring/cable/block_iron_cable_2"), 800L), Map.entry(id("wiring/cable/block_iron_cable_3"), 800L),
         Map.entry(id("wiring/cable/block_glass_cable"), 25L),
         Map.entry(id("wiring/block_eu_detector_cable"), 500L), Map.entry(id("wiring/block_eu_splitter_cable"), 500L),
+        Map.entry(id("wiring/block_eu_breaker_cable"), 500L), Map.entry(id("wiring/block_eu_fuse_cable"), 500L),
         // The wireless node also passes native energy through its position (IC2 dual-node
         // layout), so a cable run can be continued by swapping one cable for a node.
         Map.entry(id("wiring/block_wireless_power_transmission_node"), 0L));

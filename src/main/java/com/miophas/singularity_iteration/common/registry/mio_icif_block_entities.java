@@ -332,6 +332,19 @@ public class mio_icif_block_entities {
             BlockEntityType.Builder.of((pos, state) -> new IndependentSpecialCableBlockEntity(mio_icif_block_entities.WIRE_SPLITTER.get(), pos, state, false),
                 mio_icif_blocks.WIRE_SPLITTER.get()).build(null));
 
+    // 0.1.10.22 (G5): protective cables (breaker, fuse)
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndependentSpecialCableBlockEntity>> WIRE_BREAKER =
+        BLOCK_ENTITIES.register("wire_breaker", () ->
+            BlockEntityType.Builder.of((pos, state) -> new IndependentSpecialCableBlockEntity(mio_icif_block_entities.WIRE_BREAKER.get(), pos, state,
+                    com.miophas.singularity_iteration.core.runtime.energy.engine.ProtectionRelay.Kind.BREAKER),
+                mio_icif_blocks.WIRE_BREAKER.get()).build(null));
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<IndependentSpecialCableBlockEntity>> WIRE_FUSE =
+        BLOCK_ENTITIES.register("wire_fuse", () ->
+            BlockEntityType.Builder.of((pos, state) -> new IndependentSpecialCableBlockEntity(mio_icif_block_entities.WIRE_FUSE.get(), pos, state,
+                    com.miophas.singularity_iteration.core.runtime.energy.engine.ProtectionRelay.Kind.FUSE),
+                mio_icif_blocks.WIRE_FUSE.get()).build(null));
+
  // Register the electric furnace block entity type
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_furnace_elc>> FURNACE_ELC_ENTITY_TYPE =
         BLOCK_ENTITIES.register("furnace_elc", () ->

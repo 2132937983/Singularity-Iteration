@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.future.event;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 
-import java.util.Random;
 
 /**
  * High volatility event.
@@ -13,7 +12,6 @@ import java.util.Random;
 @SuppressWarnings("null")
 public class HighVolatilityEvent extends FuturePriceEvent {
 
-    private static final Random RANDOM = new Random();
 
     public HighVolatilityEvent(String commodityId, long startDay, int duration, double intensity) {
         super(commodityId, startDay, duration, intensity);
@@ -25,10 +23,10 @@ public class HighVolatilityEvent extends FuturePriceEvent {
     }
 
     @Override
-    public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
+    public int applyEffect(int currentPrice, int basePrice, int dayOffset, java.util.function.DoubleSupplier random) {
         // High volatility: the change is between -30% and +30%, multiplied by the intensity.
     double volatility = 0.30 * intensity;
-        double change = (RANDOM.nextDouble() * 2 - 1) * volatility;
+        double change = (random.getAsDouble() * 2 - 1) * volatility;
 
         int newPrice = (int) (currentPrice * (1.0 + change));
 

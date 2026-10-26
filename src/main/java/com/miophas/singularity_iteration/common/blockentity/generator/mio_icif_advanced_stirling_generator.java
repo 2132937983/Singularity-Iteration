@@ -25,7 +25,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
-public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntity implements IEnergySource, IGeneratorBlock {
+public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, IEnergySource, IGeneratorBlock {
 
     private boolean registered = false;
 
@@ -411,4 +411,8 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
             return 0;
         }
     }
+
+    /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
+    @Override
+    public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
 }

@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * The grid uses extractPowerForConsumer to take energy from the energyStorage of the generator.
  */
 @SuppressWarnings("null")
-public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity {
+public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch {
     
     // LV tier: matches original IC2. Capacity is 4000 EU. Generation rate is 10 EU/tick. Maximum output is 32 EU/tick.
     public mio_icif_Thermal_Generator(BlockPos pos, BlockState state) {
@@ -100,4 +100,8 @@ public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity {
     public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) {
         return new com.miophas.singularity_iteration.common.menu.generator.ThermalGeneratorMenu(id, playerInventory, this, this.getItemHandler(), null);
     }
+
+    /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
+    @Override
+    public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
 }

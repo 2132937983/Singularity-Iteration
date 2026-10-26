@@ -16,8 +16,15 @@ item_ids:
 
 ## Function
 
-The Futures Machine buys and sells commodities for Industrial Coins at prices that change every day.
-Each trade costs EU. The machine takes the items and the coins from your inventory. A daily limit applies.
+The Futures Machine opens the exchange of the server: one market for all players and all machines.
+Each action costs the EU of one trade.
+
+- **Market**: the datapack commodities, which the market itself buys and sells, and player listings, which only players trade. The chart shows daily candles with volume, the 5-day mean and the fundamental value (from the UU-matter value).
+- **Order book**: an order trades with the best orders of other players first, then with the market. An order that does not fill can wait in the book for 7 days. Orders of one player or one team never trade with each other.
+- **Treasury**: the market sells only what it bought before, plus a small daily import at a higher price. When a commodity runs short, the market posts commissions for it and stops selling it until they end.
+- **Commissions**: ask other players for items and pay coins, items or UU-matter. The reward is held until delivery. When several players ask for the same item, it gets listed on the exchange.
+- **Futures**: cash-settled contracts for 3 or 7 days. The contract price already includes the expected price movement (events too), so futures only pay off when you foresee more than the market.
+- **Mailbox**: what the exchange owes you (sales, refunds, items that did not fit). Collect it in the Orders and Mail tab.
 
 ## Power data
 
@@ -32,14 +39,17 @@ The game measured these values from the block entity of this version.
 ## Procedure
 
 1. Connect an LV cable to the machine.
-2. Open the GUI and select a category and a commodity.
-3. Set the quantity of the trade.
-4. Click Buy or Sell.
+2. Open the GUI and pick a market in the watchlist on the left.
+3. In the order panel on the right, choose Buy or Sell, Now or Order, the limit price and the quantity.
+4. Click the place button. Collect sales and refunds in the Orders and Mail tab.
 
 ## Notes
 
+- A daily limit per player applies to trades with the market.
+- Player listings of complex items (by default 3 crafting steps or more) trade in UU-matter (mB). Deposit UU-matter from cells or buckets in the Orders and Mail tab.
 - Market events change the price trend for a number of days.
-- Some commodities stay locked until you get the advancement that the GUI shows.
+- Some commodities stay locked until you get the advancement.
+- Operators can check the exchange with /mio_icif market audit.
 
 ## Recipe
 

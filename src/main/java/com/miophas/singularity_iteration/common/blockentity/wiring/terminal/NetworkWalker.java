@@ -132,6 +132,27 @@ public final class NetworkWalker {
         public int conductors;
         /** True if a conductor or device limit stopped part of the walk. */
         public boolean truncated;
+        /**
+         * 0.1.10.22 (G7): links of the single-line diagram: {device index, sub-network} for each buffer or protective
+         * cable that a sub-network other than its own touches (a transformer between two voltages, an open breaker).
+         */
+        public final List<int[]> links = new ArrayList<>();
+        /** 0.1.10.22 (G7): the bounding box of every conductor and device of the walk (min x, y, z, max x, y, z). */
+        public int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE,
+            maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        /** Device index by position, for the links. */
+        final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap indexOf = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
+
+        void include(BlockPos at) {
+            minX = Math.min(minX, at.getX()); minY = Math.min(minY, at.getY()); minZ = Math.min(minZ, at.getZ());
+            maxX = Math.max(maxX, at.getX()); maxY = Math.max(maxY, at.getY()); maxZ = Math.max(maxZ, at.getZ());
+        }
+
+        /** True when {@code at} lies in the bounding box grown by {@code margin}. */
+        public boolean near(BlockPos at, int margin) {
+            return minX <= maxX && at.getX() >= minX - margin && at.getX() <= maxX + margin && at.getY() >= minY - margin
+                && at.getY() <= maxY + margin && at.getZ() >= minZ - margin && at.getZ() <= maxZ + margin;
+        }
         /** {@link TopologyClock} stamp and game time at which this result was made. Used by the cache. */
         long stamp, madeAt;
 
@@ -158,7 +179,13 @@ public final class NetworkWalker {
     /** Transformers and storage boxes: they buffer energy and start a new voltage segment. */
     public static boolean isBuffer(@Nullable BlockEntity be) {
         return isTransformer(be) || be instanceof AbstractEnergyStorageBlockEntity
-            || be instanceof com.miophas.singularity_iteration.core.api.machine.IStorageMember;
+            || be instanceof com.miophas.singularity_iteration.core.api.machine.IStorageMember
+            || isProtective(be) && !((IndependentSpecialCableBlockEntity) be).conducts();   // 0.1.10.22: an open breaker or fuse
+    }
+
+    /** 0.1.10.22 (G5 / G7): a breaker or fuse cable. */
+    public static boolean isProtective(@Nullable BlockEntity be) {
+        return be instanceof IndependentSpecialCableBlockEntity special && special.protective();
     }
 
     /**
@@ -181,6 +208,7 @@ public final class NetworkWalker {
     @Nullable
     public static EnergyNetworkSnapshot.Category categorize(@Nullable BlockEntity be) {
         if (be == null || be instanceof EnergyTerminalBlockEntity) return null;
+        if (isProtective(be)) return EnergyNetworkSnapshot.Category.PROTECTION;   // 0.1.10.22
         if (isTransformer(be)) return EnergyNetworkSnapshot.Category.TRANSFORMER;
         if (be instanceof AbstractEnergyStorageBlockEntity
             || be instanceof com.miophas.singularity_iteration.core.api.machine.IStorageMember) return EnergyNetworkSnapshot.Category.STORAGE;
@@ -326,7 +354,8 @@ public final class NetworkWalker {
                     if (visited.contains(next.asLong()) || !level.isLoaded(next)) continue;
                     BlockEntity be = level.getBlockEntity(next);
                     if (isConductor(be)) {
-                        flood(level, next, r, visited, devices, buffers, maxConductors, maxDevices);
+                        int flooded = flood(level, next, r, visited, devices, buffers, maxConductors, maxDevices);
+                        touch(r, b, flooded);   // 0.1.10.22: the buffer links its own sub-network and this one
                     } else if (isBuffer(be) && !devices.contains(next.asLong())) {
                         bufferNeighbour(r, devices, buffers, next, be, maxDevices);
                     } else if (!devices.contains(next.asLong())) {
@@ -362,9 +391,20 @@ public final class NetworkWalker {
         // The position goes into the seen set before the limit check, so a dropped device is not tried again.
         if (cat == null || !devices.add(at.asLong())) return;
         if (r.devices.size() >= maxDevices) { r.truncated = true; return; }
+        r.indexOf.put(at.asLong(), r.devices.size());
         r.devices.add(at.immutable());
         r.categories.add(cat);
         r.deviceSubnet.add(subnet);
+        r.include(at);
+    }
+
+    /** 0.1.10.22 (G7): sub-network {@code subnet} touches the listed buffer or protective cable at {@code at}. */
+    private static void touch(Result r, BlockPos at, int subnet) {
+        if (subnet < 0 || !r.indexOf.containsKey(at.asLong())) return;
+        int index = r.indexOf.get(at.asLong());
+        if (r.deviceSubnet.get(index) == subnet) return;
+        for (int[] link : r.links) if (link[0] == index && link[1] == subnet) return;
+        if (r.links.size() < 512) r.links.add(new int[] {index, subnet});
     }
 
     /**
@@ -388,6 +428,9 @@ public final class NetworkWalker {
         BlockEntity startBe = level.getBlockEntity(start);
         subnet.conductors++; r.conductors++;
         subnet.ratedPacket = Math.max(subnet.ratedPacket, rating(startBe));
+        r.include(start);
+        // 0.1.10.22: a closed breaker or fuse is a conductor and also a device of its sub-network
+        if (isProtective(startBe)) addDevice(r, devices, start, EnergyNetworkSnapshot.Category.PROTECTION, subnet.index, maxDevices);
         while (!queue.isEmpty()) {
             BlockPos at = queue.poll();
             BlockEntity from = level.getBlockEntity(at);
@@ -409,6 +452,8 @@ public final class NetworkWalker {
                     visited.add(key);
                     subnet.conductors++; r.conductors++;
                     subnet.ratedPacket = Math.max(subnet.ratedPacket, rating(be));
+                    r.include(next);
+                    if (isProtective(be)) addDevice(r, devices, next, EnergyNetworkSnapshot.Category.PROTECTION, subnet.index, maxDevices);
                     queue.add(next.immutable());
                     continue;
                 }
@@ -417,7 +462,7 @@ public final class NetworkWalker {
                 EnergyNetworkSnapshot.Category cat = categorize(be);
                 if (cat == null) continue;
                 addDevice(r, devices, next, cat, subnet.index, maxDevices);
-                if (isBuffer(be)) buffers.add(next.immutable());
+                if (isBuffer(be)) { buffers.add(next.immutable()); touch(r, next, subnet.index); }
             }
         }
         return subnet.index;

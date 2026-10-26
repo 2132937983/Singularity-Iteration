@@ -48,6 +48,7 @@ public final class IndependentEnergyMode {
     private static volatile Boolean voltageOverloadOverride = null;
     private static volatile String distributionOverride = null;
     private static volatile String lineLossOverride = null;
+    private static volatile String dispatchOverride = null;
 
     /** The switches derived from the config and the overrides, for one config revision. */
     private record Switches(int revision, Boolean overloadOverride, String distributionOverride, String lineLossOverride,
@@ -131,4 +132,29 @@ public final class IndependentEnergyMode {
      * @param model {@code lossless}, {@code proportional}, or {@code null} to remove the override
      */
     public static void setLineLossModel(String model) { lineLossOverride = model; }
+
+    /**
+     * <p><b>EN:</b> 0.1.10.22 (G3): the dispatch order of the fair distribution. {@code MERIT} (default): must-run
+     * sources and relays, then dispatchable (fuel) generators, then storage; fuel charges storage. {@code ECONOMIC}:
+     * must-run sources and relays, then storage, then fuel; fuel does not charge storage. {@code ROTATION}: the order
+     * before 0.1.10.22 (all generators and relays take turns, then storage).
+     * <p><b>ZH:</b> 0.1.10.22（G3）：公平分配的调度次序。{@code MERIT}（默认）：必须运行的电源与中继 → 可调度（燃料）发电机 → 储能，燃料为储能充电。
+     * {@code ECONOMIC}：必须运行的电源与中继 → 储能 → 燃料，燃料不为储能充电。{@code ROTATION}：0.1.10.22 之前的次序（发电机与中继轮流，然后储能）。
+     * <p><b>JA:</b> 0.1.10.22（G3）：公平分配の給電順。{@code MERIT}（既定）：必ず使う電源と中継 → 調整できる（燃料）発電機 → 蓄電。燃料は蓄電を充電する。
+     * {@code ECONOMIC}：必ず使う電源と中継 → 蓄電 → 燃料。燃料は蓄電を充電しない。{@code ROTATION}：0.1.10.22 より前の順（発電機と中継が交代、次に蓄電）。
+     */
+    public enum DispatchMode { MERIT, ECONOMIC, ROTATION }
+
+    public static DispatchMode dispatchMode() {
+        String value = System.getProperty("scex.independent.dispatch");
+        if (value == null) value = dispatchOverride;
+        if (value == null) value = CoreConfig.getString("energynet", "dispatchMode", "merit");
+        return switch (value.trim().toLowerCase(Locale.ROOT)) {
+            case "economic" -> DispatchMode.ECONOMIC;
+            case "rotation" -> DispatchMode.ROTATION;
+            default -> DispatchMode.MERIT;
+        };
+    }
+
+    public static void setDispatchMode(String mode) { dispatchOverride = mode; }
 }

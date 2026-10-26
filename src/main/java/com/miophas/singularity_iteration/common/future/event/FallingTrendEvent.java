@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.future.event;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 
-import java.util.Random;
 
 /**
  * 持续下跌事件
@@ -13,7 +12,6 @@ import java.util.Random;
 @SuppressWarnings("null")
 public class FallingTrendEvent extends FuturePriceEvent {
 
-    private static final Random RANDOM = new Random();
 
     public FallingTrendEvent(String commodityId, long startDay, int duration, double intensity) {
         super(commodityId, startDay, duration, intensity);
@@ -25,7 +23,7 @@ public class FallingTrendEvent extends FuturePriceEvent {
     }
 
     @Override
-    public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
+    public int applyEffect(int currentPrice, int basePrice, int dayOffset, java.util.function.DoubleSupplier random) {
         // 基础跌幅 5% - 15%，受强度影响
         double baseFall = 0.05 + (0.10 * intensity);
         // 随天数递增，最后一天跌幅最终
@@ -33,7 +31,7 @@ public class FallingTrendEvent extends FuturePriceEvent {
         double totalChange = baseFall * dayMultiplier;
 
         // 添加随机波动 (-20% to +20%)
-        double randomFactor = 0.8 + (RANDOM.nextDouble() * 0.4);
+        double randomFactor = 0.8 + (random.getAsDouble() * 0.4);
         totalChange *= randomFactor;
 
         int newPrice = (int) (currentPrice * (1.0 - totalChange));

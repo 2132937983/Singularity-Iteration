@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.future.event;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 
-import java.util.Random;
 
 /**
  * Long-term crash and surge event (crash rebound).
@@ -14,7 +13,6 @@ import java.util.Random;
 @SuppressWarnings("null")
 public class LongCrashReboundEvent extends FuturePriceEvent {
 
-    private static final Random RANDOM = new Random();
 
     public LongCrashReboundEvent(String commodityId, long startDay, int duration, double intensity) {
         super(commodityId, startDay, duration, intensity);
@@ -26,7 +24,7 @@ public class LongCrashReboundEvent extends FuturePriceEvent {
     }
 
     @Override
-    public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
+    public int applyEffect(int currentPrice, int basePrice, int dayOffset, java.util.function.DoubleSupplier random) {
         double totalChange;
 
         // Decide if the event is in the crash phase or the rebound phase.
@@ -41,7 +39,7 @@ public class LongCrashReboundEvent extends FuturePriceEvent {
             totalChange = -baseFall * dayMultiplier;
 
             // Use a small random fluctuation to keep the price relatively stable.
-            double randomFactor = 0.90 + (RANDOM.nextDouble() * 0.2);
+            double randomFactor = 0.90 + (random.getAsDouble() * 0.2);
             totalChange *= randomFactor;
         } else {
             // Rebound phase: the price rises sharply by 25% - 45% each day.
@@ -51,7 +49,7 @@ public class LongCrashReboundEvent extends FuturePriceEvent {
         totalChange = baseRise * dayMultiplier;
 
             // Use a large random fluctuation to simulate panic buying.
-        double randomFactor = 0.80 + (RANDOM.nextDouble() * 0.4);
+        double randomFactor = 0.80 + (random.getAsDouble() * 0.4);
             totalChange *= randomFactor;
         }
 

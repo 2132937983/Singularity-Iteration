@@ -73,6 +73,34 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
                      "0.3: the last items of the budget sell for 30 % less than the first ones.")
             .defineInRange("budgetPriceDrop", 0.3, 0.0, 0.9);
 
+    // 0.1.10.21 (M2-M5): the SI exchange.
+    public static final ModConfigSpec.DoubleValue EXCHANGE_FEE = FUTURE_BUILDER
+            .comment("Fee on trades between players, as a fraction of the price; the seller pays it and it is destroyed (0.1.10.21)")
+            .defineInRange("exchangeFee", 0.01, 0.0, 0.2);
+    public static final ModConfigSpec.IntValue EXCHANGE_IMPORT_PER_DAY = FUTURE_BUILDER
+            .comment("Items of one commodity that the market can import each day when its treasury is empty (0.1.10.21)",
+                     "The market sells its treasury stock (the items it bought) first. 0 = the market sells only what it owns.")
+            .defineInRange("importPerDay", 64, 0, 100_000);
+    public static final ModConfigSpec.DoubleValue EXCHANGE_IMPORT_PREMIUM = FUTURE_BUILDER
+            .comment("Extra price of imported items over the purchase price (0.1.10.21)")
+            .defineInRange("importPremium", 0.1, 0.0, 2.0);
+    public static final ModConfigSpec.IntValue EXCHANGE_LISTING_REQUESTERS = FUTURE_BUILDER
+            .comment("Different players whose commissions for an item are needed to list it on the exchange (multiplayer, 0.1.10.21)")
+            .defineInRange("listingRequesters", 3, 1, 100);
+    public static final ModConfigSpec.IntValue EXCHANGE_LISTING_FULFILLED = FUTURE_BUILDER
+            .comment("Delivered commissions for an item within 7 days that list it (single player: on different days, 0.1.10.21)")
+            .defineInRange("listingFulfilled", 3, 1, 100);
+    public static final ModConfigSpec.IntValue EXCHANGE_LISTING_MIN_PLAY_MINUTES = FUTURE_BUILDER
+            .comment("Play time a requester needs before their commissions count as demand for a listing (0.1.10.21)")
+            .defineInRange("listingMinPlayMinutes", 120, 0, 100_000);
+    public static final ModConfigSpec.IntValue EXCHANGE_UU_DEPTH = FUTURE_BUILDER
+            .comment("Crafting depth from which a player listing is traded in UU-matter instead of coins (0.1.10.21)",
+                     "Depth 0: no recipe makes the item; each processing step adds 1. 0 = always UU-matter, 99 = always coins.")
+            .defineInRange("uuDepth", 3, 0, 99);
+    public static final ModConfigSpec.IntValue EXCHANGE_SYSTEM_COMMISSIONS = FUTURE_BUILDER
+            .comment("Commissions that the market posts each day for commodities it lacks (0.1.10.21)")
+            .defineInRange("systemCommissionsPerDay", 3, 0, 20);
+
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder FUTURE_POP = BUILDER.pop();
     // ==================== End of futures machine settings ====================
@@ -203,6 +231,16 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
                     "proportional = 损耗 = 能量 × 电缆损耗 / 数据包电压；电压越高损耗比例越低。",
                     "proportional = loss = energy * cable loss / packet voltage. A higher voltage has a lower loss fraction.")
             .define("lineLossModel", "lossless", value -> "lossless".equals(value) || "proportional".equals(value));
+
+    // 0.1.10.22 (G3): order in which the fair distribution takes energy from the sources.
+    public static final ModConfigSpec.ConfigValue<String> ENERGY_NET_DISPATCH_MODE = ENERGY_NET_BUILDER
+            .comment("电源调度次序（仅 fair 模式）/ Dispatch order of the sources (fair mode only, 0.1.10.22)",
+                    "merit = 经济次序：先用必须运行的电源（太阳能、风力、水力、核能等），再用燃料发电机，最后用储能；燃料发电机仍为储能充电。默认值。",
+                    "merit = merit order: must-run sources (solar, wind, water, nuclear...) first, then fuel generators, storage last; fuel still charges storage. Default.",
+                    "economic = 经济调度：必须运行的电源 → 储能 → 燃料发电机；燃料不为储能充电（储能只由盈余充电）。",
+                    "economic = economic dispatch: must-run sources, then storage, then fuel; fuel never charges storage (storage charges from surplus only).",
+                    "rotation = 0.1.10.21 之前：所有发电机轮流，储能最后 / before 0.1.10.22: all generators take turns, storage last")
+            .define("dispatchMode", "merit", value -> "merit".equals(value) || "economic".equals(value) || "rotation".equals(value));
 
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder ENERGY_NET_POP = BUILDER.pop();

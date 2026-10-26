@@ -16,5 +16,10 @@ public final class BuiltinIndependentSubstitutions {
         IndependentSubstitutions.registerTransformer("mio_icif:wiring/transformer_luv_zpmv", "mio_icif:transformer_luv_zpmv", 32768);
         IndependentSubstitutions.registerCable("mio_icif:wiring/block_eu_detector_cable", "mio_icif:wire_detector", true);
         IndependentSubstitutions.registerCable("mio_icif:wiring/block_eu_splitter_cable", "mio_icif:wire_splitter", false);
+        // 0.1.10.22 (G5)
+        IndependentSubstitutions.registerProtectiveCable("mio_icif:wiring/block_eu_breaker_cable", "mio_icif:wire_breaker",
+            com.miophas.singularity_iteration.core.runtime.energy.engine.ProtectionRelay.Kind.BREAKER);
+        IndependentSubstitutions.registerProtectiveCable("mio_icif:wiring/block_eu_fuse_cable", "mio_icif:wire_fuse",
+            com.miophas.singularity_iteration.core.runtime.energy.engine.ProtectionRelay.Kind.FUSE);
     }
 }

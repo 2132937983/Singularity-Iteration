@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.future.event;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 
-import java.util.Random;
 
 /**
  * Rising trend event.
@@ -13,7 +12,6 @@ import java.util.Random;
 @SuppressWarnings("null")
 public class RisingTrendEvent extends FuturePriceEvent {
     
-    private static final Random RANDOM = new Random();
     
     public RisingTrendEvent(String commodityId, long startDay, int duration, double intensity) {
         super(commodityId, startDay, duration, intensity);
@@ -25,7 +23,7 @@ public class RisingTrendEvent extends FuturePriceEvent {
     }
     
     @Override
-    public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
+    public int applyEffect(int currentPrice, int basePrice, int dayOffset, java.util.function.DoubleSupplier random) {
         // Base rise is 5% - 15%. The intensity changes it.
         double baseRise = 0.05 + (0.10 * intensity);
         // The rise increases each day. The last day has the largest rise.
@@ -33,7 +31,7 @@ public class RisingTrendEvent extends FuturePriceEvent {
         double totalChange = baseRise * dayMultiplier;
         
         // Add a random fluctuation (-20% to +20%).
-        double randomFactor = 0.8 + (RANDOM.nextDouble() * 0.4);
+        double randomFactor = 0.8 + (random.getAsDouble() * 0.4);
         totalChange *= randomFactor;
         
         int newPrice = (int) (currentPrice * (1.0 + totalChange));

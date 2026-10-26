@@ -37,6 +37,7 @@ public final class IndependentCableFactory {
             .getOptional(ResourceLocation.parse(entry.entityType())).orElseThrow();
         if (requested != null && requested != type) return null;
         if (!type.isValid(state)) throw new IllegalStateException("Special cable type does not admit observed block");
+        if (entry.protection() != null) return new IndependentSpecialCableBlockEntity(type, at, state, entry.protection());
         return new IndependentSpecialCableBlockEntity(type, at, state, detector(state));
     }
 

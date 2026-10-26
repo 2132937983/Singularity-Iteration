@@ -77,6 +77,21 @@ import java.util.Objects;
  *       the source reached directly was full. Thus the whole branch starved.</li>
  * </ul>
  *
+ * <h2>0.1.10.22: merit order and load tiers</h2>
+ * <ul>
+ *   <li><b>Rank of a source</b> ({@link Source#rank()}): the visit order of the sources in each
+ *       stage, from rank 0 up. The engine gives must-run generators and relays rank 0. In merit order,
+ *       fuel generators come next and storage last; in economic dispatch, storage comes before fuel.
+ *       The rotation works inside one rank. With rank = class, the order is the one before.</li>
+ *   <li><b>Charging of storage</b> ({@link Source#chargesStorage()}): a source without it gives
+ *       nothing in the two storage stages (economic dispatch: fuel does not charge storage).</li>
+ *   <li><b>Tier of a receiver</b> ({@link Receiver#tier()}, 0 critical, 1 normal, 2 deferrable):
+ *       each stage runs once per tier, the critical tier first. Thus a shortage stops the deferrable
+ *       loads first and the critical loads last (lexicographic max-min). The relay demand of a storage
+ *       receiver has the tier of that receiver. With only normal receivers, the stages are the four
+ *       stages before.</li>
+ * </ul>
+ *
  * <h2>Line loss</h2>
  * <ul>
  *   <li>{@link LineLoss#LOSSLESS}: a delivery has no loss. This is the default.</li>
@@ -135,6 +150,12 @@ import java.util.Objects;
  *       此前按需求比例分配，需求 32 EU 的机器与需求 1.2 亿 EU 的分子重组仪同时存在时，前者几乎分不到电。需求相同的接收方仍得到相同份额。
  *       （2）储能的中继需求：储能接收方可以声明中继需求（{@link Receiver#relay()}），即向其后方机器送出下一 tick 输出所需的电量；
  *       第 1 阶段与用电器的额定需求一起满足它。此前为一组机器供电的储能，要等源直接连接的所有用电器都充满后才能得到电，整个支路因此断电。</li>
+ *   <li><b>0.1.10.22：</b>（1）源的次序（{@link Source#rank()}）：每个阶段内按次序从 0 起访问源。引擎给必须运行的发电机与中继次序 0；
+ *       经济次序下燃料发电机其次、储能最后；经济调度下储能在燃料之前。轮转只在同一次序内进行。次序等于类别时与此前相同。
+ *       （2）储能充电（{@link Source#chargesStorage()}）：不充电的源在两个储能阶段不供电（经济调度：燃料不为储能充电）。
+ *       （3）接收方的优先级（{@link Receiver#tier()}，0 重要、1 普通、2 可延后）：每个阶段按优先级各执行一次，重要的先。
+ *       因此电力不足时先停可延后的负荷，最后才停重要负荷（字典序最大最小）。储能接收方的中继需求使用该接收方的优先级。
+ *       只有普通接收方时，阶段与此前的四个阶段相同。</li>
  *   <li><b>线损：</b>{@link LineLoss#LOSSLESS} 无损（默认）；{@link LineLoss#PROPORTIONAL} 损耗 = {@code credit * lossMilli / (1000 * packet)}，
  *       电压越高损耗比例越低；损耗比例不小于 1 的路由无法输送。</li>
  *   <li><b>算术：</b>以 {@value #COARSE_BITS} 位小数的定点 {@code long}（2<sup>-24</sup> EU）规划；预算与容量向下取整，绝不超发。
@@ -164,6 +185,12 @@ import java.util.Objects;
  *       並ぶと、前者はほとんど電力を得られなかった。需要が同じ受信側は今も同じ量を得る。(2) 蓄電の中継需要：蓄電の受信側は中継需要
  *       （{@link Receiver#relay()}）を申告できる。後ろの機械へ次の tick の出力を送るのに必要な量で、第 1 段階で消費機器の定格需要と
  *       一緒に満たす。以前は、機械群に給電する蓄電は、供給元が直接つながる消費機器がすべて満タンになるまで電力を得られず、系統全体が止まった。</li>
+ *   <li><b>0.1.10.22：</b>(1) 供給元の順位（{@link Source#rank()}）：各段階で順位 0 から供給元を訪れる。エンジンは必ず使う発電機と中継に順位 0 を与える。
+ *       メリットオーダーでは燃料発電機が次、蓄電が最後。経済給電では蓄電が燃料より先。巡回は同じ順位の中で行う。順位が種別と同じなら以前と同じ順。
+ *       (2) 蓄電の充電（{@link Source#chargesStorage()}）：充電しない供給元は 2 つの蓄電段階で何も出さない（経済給電：燃料で蓄電を充電しない）。
+ *       (3) 受信側の優先度（{@link Receiver#tier()}、0 重要、1 通常、2 後回し）：各段階を優先度ごとに 1 回ずつ、重要から行う。
+ *       電力不足では後回しの負荷から止まり、重要な負荷は最後まで止まらない（辞書式の最大最小）。蓄電の受信側の中継需要は、その受信側の優先度を使う。
+ *       通常の受信側だけなら、段階は以前の 4 段階と同じ。</li>
  *   <li><b>線路損失：</b>{@link LineLoss#LOSSLESS} は損失なし（既定）。{@link LineLoss#PROPORTIONAL} は損失 = {@code credit * lossMilli / (1000 * packet)}。
  *       電圧が高いほど損失の割合は小さい。損失の割合が 1 以上の経路は送電できない。</li>
  *   <li><b>演算：</b>小数 {@value #COARSE_BITS} ビットの固定小数点 {@code long}（2<sup>-24</sup> EU）で計画する。予算と空きは切り捨てるので、
@@ -188,18 +215,30 @@ public final class FairShareDistributor {
     /** The line loss model. */
     public enum LineLoss { LOSSLESS, PROPORTIONAL }
 
+    /** 0.1.10.22: the highest source rank. */
+    public static final int MAX_RANK = 3;
+    /** 0.1.10.22: receiver tiers: 0 critical, 1 normal (the default), 2 deferrable. */
+    public static final int TIERS = 3, NORMAL_TIER = 1;
+
     /**
      * One source of the round.
      *
      * @param budget the EU that the source can give in this round
      * @param packet the packet size (voltage) of the source, in EU. Must be above 0.
      * @param sourceClass 0 for a generator or relay, 1 for storage
+     * @param rank 0.1.10.22: the visit order in each stage (0 first, at most {@link #MAX_RANK})
+     * @param chargesStorage 0.1.10.22: false when the source gives nothing in the storage stages
      */
-    public record Source(EnergyAmount budget, long packet, int sourceClass) {
+    public record Source(EnergyAmount budget, long packet, int sourceClass, int rank, boolean chargesStorage) {
         public Source {
             Objects.requireNonNull(budget, "budget");
-            if (packet <= 0 || sourceClass < 0 || sourceClass > 1)
+            if (packet <= 0 || sourceClass < 0 || sourceClass > 1 || rank < 0 || rank > MAX_RANK)
                 throw new IllegalArgumentException("Invalid fair-share source");
+        }
+
+        /** The order before 0.1.10.22: rank = class, charges storage. */
+        public Source(EnergyAmount budget, long packet, int sourceClass) {
+            this(budget, packet, sourceClass, sourceClass, true);
         }
     }
 
@@ -212,18 +251,24 @@ public final class FairShareDistributor {
      * @param relay 0.1.10.12: for a class 1 receiver, the part of its demand that
      *        stage 1 serves with the loads (a storage block that feeds machines);
      *        ignored for class 0. Zero for none.
+     * @param tier 0.1.10.22: 0 critical, 1 normal, 2 deferrable
      */
-    public record Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass, EnergyAmount relay) {
+    public record Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass, EnergyAmount relay, int tier) {
         public Receiver {
             Objects.requireNonNull(room, "room");
-            if (receiverClass < 0 || receiverClass > 1)
+            if (receiverClass < 0 || receiverClass > 1 || tier < 0 || tier >= TIERS)
                 throw new IllegalArgumentException("Invalid fair-share receiver");
             if (relay == null) relay = EnergyAmount.ZERO;
         }
 
-        /** A receiver without relay demand. */
+        /** A normal-tier receiver. */
+        public Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass, EnergyAmount relay) {
+            this(room, rated, receiverClass, relay, NORMAL_TIER);
+        }
+
+        /** A normal-tier receiver without relay demand. */
         public Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass) {
-            this(room, rated, receiverClass, EnergyAmount.ZERO);
+            this(room, rated, receiverClass, EnergyAmount.ZERO, NORMAL_TIER);
         }
     }
 
@@ -301,21 +346,27 @@ public final class FairShareDistributor {
         }
 
         long[] packet = new long[sourceCount];
-        int[] sourceClass = new int[sourceCount];
+        int[] sourceClass = new int[sourceCount], rank = new int[sourceCount];
+        boolean[] charges = new boolean[sourceCount];
         long[] budget = new long[sourceCount], initialBudget = new long[sourceCount];
         for (int i = 0; i < sourceCount; i++) {
             var source = sources.get(i);
             packet[i] = source.packet();
             sourceClass[i] = source.sourceClass();
+            rank[i] = source.rank();
+            charges[i] = source.chargesStorage();
             budget[i] = toCoarse(source.budget());
             initialBudget[i] = budget[i];
         }
-        int[] receiverClass = new int[receiverCount];
+        int[] receiverClass = new int[receiverCount], tier = new int[receiverCount];
         long[] room = new long[receiverCount], initialRoom = new long[receiverCount], rateLeft = new long[receiverCount];
         long[] relayLeft = new long[receiverCount];
+        boolean[] tierUsed = new boolean[TIERS];
         for (int r = 0; r < receiverCount; r++) {
             var receiver = receivers.get(r);
             receiverClass[r] = receiver.receiverClass();
+            tier[r] = receiver.tier();
+            tierUsed[tier[r]] = true;
             room[r] = toCoarse(receiver.room());
             initialRoom[r] = room[r];
             rateLeft[r] = receiver.rated() == null ? -1 : toCoarse(receiver.rated());
@@ -364,15 +415,21 @@ public final class FairShareDistributor {
             }
         }
 
-        int[] order = sourceOrder(sourceClass, rotation);
-        int[][] pools = pools(order, sourceClass, linked, fraction);
+        int[] order = sourceOrder(rank, rotation);
+        int[][] pools = pools(order, sourceClass, rank, charges, linked, fraction);
         long[] debits = new long[sourceCount], credits = new long[receiverCount];
         long lossTotal = 0;
         long[][] pairCredit = new long[sourceCount][], pairLoss = new long[sourceCount][];
         long[] demand = new long[receiverCount];
 
-        for (int stage = 0; stage < 4; stage++) {
+        // EN: 0.1.10.22: each of the four stages runs once per used tier, the critical tier first.
+        // ZH: 0.1.10.22：四个阶段各按使用中的优先级执行一次，重要的先。
+        // JA: 0.1.10.22：4 つの段階をそれぞれ使われている優先度ごとに 1 回、重要から行う。
+        for (int step = 0; step < 4 * TIERS; step++) {
+            int stage = step / TIERS, stageTier = step % TIERS;
+            if (!tierUsed[stageTier]) continue;
             for (int[] pool : pools) {
+                if (stage >= 2 && !charges[pool[0]]) continue;
                 // EN: A pool is one source, or more sources of one class with the same links and no loss.
                 //     It acts as one source with the summed budget.
                 // ZH: 池是一个源，或同类、连接相同且无损耗的多个源；它相当于预算相加后的单个源。
@@ -387,7 +444,7 @@ public final class FairShareDistributor {
                 boolean any = false;
                 for (int c = 0; c < targets.length; c++) {
                     int r = targets[c];
-                    want[c] = Math.max(0, stageDemand(stage, receiverClass[r], room[r], rateLeft[r], relayLeft[r]));
+                    want[c] = tier[r] != stageTier ? 0 : Math.max(0, stageDemand(stage, receiverClass[r], room[r], rateLeft[r], relayLeft[r]));
                     demand[r] = want[c];
                     any |= want[c] > 0;
                 }
@@ -563,12 +620,12 @@ public final class FairShareDistributor {
      * {@code S + R} on a shared bus, instead of {@code S * R}. Each other source
      * is a pool of one.
      */
-    static int[][] pools(int[] order, int[] sourceClass, int[][] linked, double[][] fraction) {
+    static int[][] pools(int[] order, int[] sourceClass, int[] rank, boolean[] charges, int[][] linked, double[][] fraction) {
         var groups = new java.util.LinkedHashMap<Object, java.util.ArrayList<Integer>>();
         for (int source : order) {
             boolean lossless = true;
             for (double value : fraction[source]) if (value != 0) { lossless = false; break; }
-            Object key = lossless ? new PoolKey(sourceClass[source], linked[source]) : Integer.valueOf(-1 - source);
+            Object key = lossless ? new PoolKey(sourceClass[source], rank[source], charges[source], linked[source]) : Integer.valueOf(-1 - source);
             groups.computeIfAbsent(key, ignored -> new java.util.ArrayList<>()).add(source);
         }
         int[][] result = new int[groups.size()][];
@@ -578,11 +635,12 @@ public final class FairShareDistributor {
     }
 
     /** Pool identity: source class and linked receivers. */
-    private record PoolKey(int sourceClass, int[] linked) {
+    private record PoolKey(int sourceClass, int rank, boolean charges, int[] linked) {
         @Override public boolean equals(Object other) {
-            return other instanceof PoolKey key && key.sourceClass == sourceClass && Arrays.equals(key.linked, linked);
+            return other instanceof PoolKey key && key.sourceClass == sourceClass && key.rank == rank && key.charges == charges
+                && Arrays.equals(key.linked, linked);
         }
-        @Override public int hashCode() { return 31 * sourceClass + Arrays.hashCode(linked); }
+        @Override public int hashCode() { return 31 * (31 * (31 * sourceClass + rank) + (charges ? 1 : 0)) + Arrays.hashCode(linked); }
     }
 
     private static long saturatingAdd(long left, long right) {
@@ -594,19 +652,36 @@ public final class FairShareDistributor {
      * Returns the source visit order: all class 0 sources, then all class 1
      * sources. Each class starts at {@code rotation mod size} and wraps.
      */
-    static int[] sourceOrder(int[] sourceClass, long rotation) {
-        int[] order = new int[sourceClass.length];
+    static int[] sourceOrder(int[] rank, long rotation) {
+        int[] order = new int[rank.length];
         int at = 0;
-        for (int wanted = 0; wanted <= 1; wanted++) {
+        for (int wanted = 0; wanted <= MAX_RANK; wanted++) {
             int size = 0;
-            for (int value : sourceClass) if (value == wanted) size++;
+            for (int value : rank) if (value == wanted) size++;
             if (size == 0) continue;
             int[] members = new int[size];
             int m = 0;
-            for (int i = 0; i < sourceClass.length; i++) if (sourceClass[i] == wanted) members[m++] = i;
+            for (int i = 0; i < rank.length; i++) if (rank[i] == wanted) members[m++] = i;
             int start = (int) Math.floorMod(rotation, (long) size);
             for (int k = 0; k < size; k++) order[at++] = members[(start + k) % size];
         }
         return order;
+    }
+
+    /**
+     * <p><b>EN:</b> 0.1.10.20 (G2), 0.1.10.22: the part of {@code rotation} that the round uses: the start of the visit
+     * order in each rank ({@code rotation mod size}). Equal keys give equal visit orders.
+     * <p><b>ZH:</b> 0.1.10.20（G2）、0.1.10.22：本轮实际使用的 {@code rotation} 部分，即每个次序内访问的起点（{@code rotation mod 数量}）。键相同则访问顺序相同。
+     * <p><b>JA:</b> 0.1.10.20（G2）、0.1.10.22：ラウンドが使う {@code rotation} の部分。各順位の中で訪れる起点（{@code rotation mod 数}）。キーが同じなら訪れる順も同じ。
+     */
+    public static long rotationKey(List<Source> sources, long rotation) {
+        long key = 0;
+        for (int wanted = 0; wanted <= MAX_RANK; wanted++) {
+            int size = 0;
+            for (var source : sources) if (source.rank() == wanted) size++;
+            long start = size == 0 ? 0 : Math.floorMod(rotation, (long) size);
+            key = key * 4096 + start;
+        }
+        return key;
     }
 }

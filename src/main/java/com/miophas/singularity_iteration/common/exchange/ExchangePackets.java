@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: Apache-2.0
+package com.miophas.singularity_iteration.common.exchange;
+
+import com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_future_elc;
+import com.miophas.singularity_iteration.common.menu.producer.FutureElcMenu;
+import com.miophas.singularity_iteration.common.util.PacketRateLimit;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+
+/**
+ * 0.1.10.21 (futures M4): the exchange panel packets.
+ * <ul>
+ *   <li>C2S {@link Request}: the view for the selected market (on open, on selection, once per second while open).</li>
+ *   <li>C2S {@link Action}: one exchange action; it costs the energy fee of a trade.</li>
+ *   <li>S2C {@link View}: the {@link ExchangeView} of the player.</li>
+ * </ul>
+ * The server acts only for a player whose open menu is a live futures machine in reach ({@code serves}), under the
+ * {@link PacketRateLimit#EXCHANGE} bucket. Client values are never trusted: every rule is checked again in
+ * {@link ExchangeService}.
+ */
+public final class ExchangePackets {
+    private ExchangePackets() {}
+
+    public static final int PLACE = 1, CANCEL = 2, COLLECT = 3, POST = 4, DELIVER = 5, WITHDRAW = 6, UU_IN = 7, UU_OUT = 8, FUTURE = 9;
+
+    public record Request(String selected) implements CustomPacketPayload {
+        public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_request"));
+        public static final StreamCodec<FriendlyByteBuf, Request> CODEC = StreamCodec.of(
+            (b, p) -> b.writeUtf(p.selected, 128), b -> new Request(b.readUtf(128)));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    /**
+     * One action. Fields by kind: PLACE (id = market, flag = buy, c = 1 to rest, a = limit, d = quantity); CANCEL (a = order);
+     * COLLECT; POST (id = item, d = quantity, c = reward kind 0 coins / 1 item / 2 UU, a = amount, text = reward item, b = days);
+     * DELIVER (a = commission, d = quantity); WITHDRAW (a = commission); UU_IN; UU_OUT;
+     * FUTURE (id = market, flag = long, d = quantity, c = days).
+     */
+    public record Action(int kind, String id, long a, long b, int c, int d, boolean flag, String text, String selected) implements CustomPacketPayload {
+        public static final Type<Action> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_action"));
+        public static final StreamCodec<FriendlyByteBuf, Action> CODEC = StreamCodec.of((buf, p) -> {
+            buf.writeVarInt(p.kind); buf.writeUtf(p.id, 128); buf.writeVarLong(p.a); buf.writeVarLong(p.b); buf.writeVarInt(p.c); buf.writeVarInt(p.d);
+            buf.writeBoolean(p.flag); buf.writeUtf(p.text, 128); buf.writeUtf(p.selected, 128);
+        }, buf -> new Action(buf.readVarInt(), buf.readUtf(128), buf.readVarLong(), buf.readVarLong(), buf.readVarInt(), buf.readVarInt(),
+            buf.readBoolean(), buf.readUtf(128), buf.readUtf(128)));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    public record View(ExchangeView view) implements CustomPacketPayload {
+        public static final Type<View> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_view"));
+        public static final StreamCodec<FriendlyByteBuf, View> CODEC = StreamCodec.of((b, p) -> p.view.write(b), b -> new View(ExchangeView.read(b)));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
+    public static void register(PayloadRegistrar registrar) {
+        registrar.playToServer(Request.TYPE, Request.CODEC, ExchangePackets::onRequest);
+        registrar.playToServer(Action.TYPE, Action.CODEC, ExchangePackets::onAction);
+        registrar.playToClient(View.TYPE, View.CODEC, (packet, context) -> context.enqueueWork(() -> ExchangeClientState.set(packet.view())));
+    }
+
+    private static mio_icif_future_elc machine(ServerPlayer player) {
+        if (!(player.containerMenu instanceof FutureElcMenu menu)) return null;
+        mio_icif_future_elc machine = menu.getBlockEntity();
+        return machine != null && machine.serves(player) ? machine : null;
+    }
+
+    private static void onRequest(Request packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) return;
+            mio_icif_future_elc machine = machine(player);
+            if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) return;
+            send(player, packet.selected, machine);
+        });
+    }
+
+    private static void onAction(Action p, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            if (!(context.player() instanceof ServerPlayer player)) return;
+            mio_icif_future_elc machine = machine(player);
+            if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) return;
+            machine.exchangeAction(player, () -> switch (p.kind) {
+                case PLACE -> ExchangeService.place(player, p.id, p.flag, p.c == 1, p.a, p.d);
+                case CANCEL -> ExchangeService.cancel(player, p.a);
+                case COLLECT -> ExchangeService.collect(player);
+                case POST -> ExchangeService.post(player, p.id, p.d, switch (p.c) {
+                        case 1 -> ExchangeData.RewardKind.ITEM;
+                        case 2 -> ExchangeData.RewardKind.UU;
+                        default -> ExchangeData.RewardKind.COIN;
+                    }, p.text, p.a, (int) Math.max(1, Math.min(ExchangeService.COMMISSION_MAX_DAYS, p.b)));
+                case DELIVER -> ExchangeService.deliver(player, p.a, p.d);
+                case WITHDRAW -> ExchangeService.withdraw(player, p.a);
+                case UU_IN -> ExchangeService.depositUu(player);
+                case UU_OUT -> ExchangeService.withdrawUu(player);
+                case FUTURE -> ExchangeService.openFuture(player, p.id, p.flag, p.d, p.c);
+                default -> new ExchangeService.Result(false, "message.mio_icif.exchange.unknown_action");
+            });
+            send(player, p.selected, machine);
+        });
+    }
+
+    static void send(ServerPlayer player, String selected, mio_icif_future_elc machine) {
+        PacketDistributor.sendToPlayer(player, new View(ExchangeViews.build(player, selected, machine.hasEnoughEnergy())));
+    }
+}

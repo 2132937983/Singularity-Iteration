@@ -73,6 +73,10 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
         super.init();
         this.imageWidth = this.width;
         this.imageHeight = this.height;
+        // 0.1.10.24: super.init() centred the panel with the old imageWidth (0 on first open), so leftPos was width / 2 and
+        // JEI / EMI took the left half of the screen as free space for their bookmark / favourite lists (clicks went to them)
+        this.leftPos = 0;
+        this.topPos = 0;
         priceBox = box("1", 9);
         qtyBox = box("1", 4);
         postQty = box("64", 4);

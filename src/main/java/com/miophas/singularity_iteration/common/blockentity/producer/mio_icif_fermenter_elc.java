@@ -4,6 +4,7 @@ import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractHeatBlo
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.common.item.cell.mio_icif_cells;
+import com.miophas.singularity_iteration.common.recipe.fermenter.FermenterHeatIntake;
 import com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipe;
 import com.miophas.singularity_iteration.common.recipe.fermenter.FermenterRecipes;
 import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities;
@@ -36,7 +37,10 @@ import org.jetbrains.annotations.Nullable;
  * {@link FermenterRecipe}); the default recipe turns biomass into biogas with fertilizer as a by-product.
  *
  * Operation:
- * - The machine pulls HU only from the heat source on its front side, at a maximum of 100 HU/t.
+ * - The machine takes HU only from the heat source on its front side, at a maximum of 100 HU/t.
+ * - 0.1.10.24 (IC2 1.12.2 work()): it takes heat only in a tick in which a run can start (a recipe for the input fluid,
+ *   one run of input, room for one run of output); the 100 HU/t cover heat pushed in and heat pulled together
+ *   ({@link FermenterHeatIntake}). Before, the 4000 HU store filled whenever it had room, also with no biomass.
  * - One run consumes the recipe's input and heat (biomass: 20 mB and 4000 HU) and produces its output (400 mB of biogas).
  * - Each by-product interval of fermented input (biomass: 500 mB) produces the by-product (1 fertilizer).
  * - A higher heat input makes the machine work faster.
@@ -90,8 +94,13 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
 
     // Work progress, stored as accumulated HU
     private long workCredit;
-    // 最近一次实际收到热量的游戏刻（用于 LIT 对齐 IC2 的“存在热源即点亮”）
+    // 最近一次收到热量或把热量投入本次运行的游戏刻（用于 LIT）
     private long lastHeatTick = Long.MIN_VALUE;
+    // 0.1.10.24: heat allowance per tick (IC2 draws only while a run can start, 100 HU per tick)
+    private final FermenterHeatIntake heatIntake = new FermenterHeatIntake();
+    // 0.1.10.24: "a run can start", kept for one game tick; a tank change clears it
+    private long canRunTick = Long.MIN_VALUE;
+    private boolean canRunMemo;
 
     // Input fermented since the last by-product, in mB (IC2: biomass toward the next fertilizer)
     private long biomassProcessed;
@@ -112,8 +121,8 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
                 case 0 -> getProgress();
                 case 1 -> getMaxProgress();
                 case 2 -> isWorking ? 1 : 0;
-                case 3 -> (int) heatStorage.getHeatStored();
-                case 4 -> (int) heatStorage.getMaxHeatStored();
+                case 3 -> (int) getRunHeat();
+                case 4 -> getRunHeatRequired();
                 case 5 -> biomassTank.getFluidAmount();
                 case 6 -> biomassTank.getCapacity();
                 case 7 -> biogasTank.getFluidAmount();
@@ -152,13 +161,19 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         // Create the input tank: fluids that a fermenter recipe takes
         this.biomassTank = new FluidTank(BIOMASS_TANK_CAPACITY, fluidStack ->
             acceptsFluid(fluidStack.getFluid())) {
-                @Override protected void onContentsChanged() { ContainerToTank.markUnsaved(mio_icif_fermenter_elc.this); }
+                @Override protected void onContentsChanged() {
+                    canRunTick = Long.MIN_VALUE;
+                    ContainerToTank.markUnsaved(mio_icif_fermenter_elc.this);
+                }
             };
 
         // Create the output tank: fluids that a fermenter recipe gives
         this.biogasTank = new FluidTank(BIOGAS_TANK_CAPACITY, fluidStack ->
             FermenterRecipes.isOutput(level, fluidStack.getFluid())) {
-                @Override protected void onContentsChanged() { ContainerToTank.markUnsaved(mio_icif_fermenter_elc.this); }
+                @Override protected void onContentsChanged() {
+                    canRunTick = Long.MIN_VALUE;
+                    ContainerToTank.markUnsaved(mio_icif_fermenter_elc.this);
+                }
             };
         this.combinedFluidHandler = com.miophas.singularity_iteration.core.prefab.fluid.FluidTankGroup
             .inputOutput(biomassTank, biogasTank);
@@ -203,14 +218,13 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     /**
      * 对齐原版 IC2 {@code TileEntityFermenter.work()}：只从“正面”那一格热源抽取 HU，
      * 且每 tick 请求上限固定为 100 HU（不随相邻热源数量放大）。
+     * 0.1.10.24: only in a tick in which a run can start, and the 100 HU/t include heat a generator pushed in.
      */
     private void receiveHeatFromSides() {
         if (level == null || level.isClientSide()) return;
-        long needed = heatStorage.getMaxHeatStored() - heatStorage.getHeatStored();
-        if (needed <= 0) return;
-
-        long perTick = Math.max(0, heatStorage.getMaxReceive());
-        if (perTick <= 0) return;
+        long room = Math.min(heatIntake.room(currentTick(), canStartRun()),
+            heatStorage.getMaxHeatStored() - heatStorage.getHeatStored());
+        if (room <= 0) return;
 
         Direction front = getFrontSide();
         BlockPos neighborPos = worldPosition.relative(front);
@@ -220,17 +234,16 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
             IMioIcifCapabilities.HEAT_STORAGE_BLOCK, neighborPos, front.getOpposite());
         if (adjacentHeat == null || !adjacentHeat.canExtractHeat()) return;
 
-        long toExtract = Math.min(needed, Math.min(adjacentHeat.getHeatStored(), perTick));
+        long toExtract = Math.min(room, adjacentHeat.getHeatStored());
         if (toExtract <= 0) return;
 
         long extracted = adjacentHeat.extractHeat(toExtract, false);
         if (extracted <= 0) return;
 
-        long received = heatStorage.receiveHeat(extracted, false);
+        long received = receiveHeat(extracted, false);   // counts toward the allowance, records the tick
         if (received < extracted) {
             heatStorage.generateHeatInternal(extracted - received, false);
         }
-        if (level != null) lastHeatTick = level.getGameTime();
         setChanged();
     }
 
@@ -270,9 +283,6 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         // Apply heat loss
         blockEntity.applyHeatLoss();
 
-        // 主动从相邻热源抽取 HU（对齐原版 IC2：热源不主动“推”，用热方按面抽取）
-        blockEntity.receiveHeatFromSides();
-
         // Handle the automation upgrades (item and fluid ejector/pulling upgrades) first.
         // This lets the upgrades push out biogas before the cell slots fill from the tank.
         blockEntity.handleAutomationUpgrades();
@@ -284,11 +294,16 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
         // 对齐 IC2 work()：先结算肥料（累计生物质达到 500 时投放，输出槽满也清零进度）
         blockEntity.emitFertilizerIfDue();
 
+        // 主动从相邻热源抽取 HU（对齐原版 IC2：热源不主动“推”，用热方按面抽取）
+        // 0.1.10.24: after the cell slots and the fertilizer, like IC2 (processIntoTank / processFromTank, then work())
+        blockEntity.receiveHeatFromSides();
+
         // Do one work step if the machine can work
+        boolean runnable = blockEntity.canStartRun();
         if (blockEntity.canWorkRedstone() && blockEntity.canWork()) {
             blockEntity.doWork();
         }
-        blockEntity.isWorking = blockEntity.computeActive();
+        blockEntity.isWorking = blockEntity.computeActive(runnable);
 
         // Update the LIT block state
         boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_fermenter_elc.LIT);
@@ -370,23 +385,53 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
     }
 
     /**
-     * 对齐 IC2 的活化状态：发酵配方就绪且存在热量（缓冲/在途/最近收到热）时点亮。
+     * 活化状态：本 tick 开始时配方可运行，且最近一 tick 有热量到达或投入运行。
+     * 0.1.10.24: heat left in the store or in the run credit no longer keeps the lamp on without a heat source. IC2 lights
+     * the machine whenever a heat source block is in front and a run can start, also when the source gives nothing (an
+     * unfuelled generator); that case is not copied.
      */
-    private boolean computeActive() {
-        if (currentProperty() == null || prepareOperation().isEmpty()) return false;
-        return heatStorage.getHeatStored() > 0 || workCredit > 0 || lastHeatTick >= currentTick() - 1;
+    private boolean computeActive(boolean runnable) {
+        return runnable && lastHeatTick >= currentTick() - 1;
     }
 
     private long currentTick() {
         return level == null ? 0 : level.getGameTime();
     }
 
-    /** 记录热量到达时刻，用于 LIT 判定（含热源“推入”与本机“拉取”两条路径）。 */
+    /**
+     * 0.1.10.24 (IC2 1.12.2 work()): a run can start: a recipe for the input fluid, one run of input in the tank and room
+     * for one run of output. Kept for the game tick; a tank change clears it.
+     */
+    private boolean canStartRun() {
+        long now = currentTick();
+        if (canRunTick != now) {
+            canRunMemo = currentProperty() != null && prepareOperation().isPresent();
+            canRunTick = now;
+        }
+        return canRunMemo;
+    }
+
+    /**
+     * 0.1.10.24 (IC2 1.12.2 work()): heat comes in only in a tick in which a run can start, at most 100 HU per tick over
+     * both paths (a generator pushing, {@link #receiveHeatFromSides} pulling). 记录热量到达时刻，用于 LIT 判定。
+     */
     @Override
     public long receiveHeat(long toReceive, boolean simulate) {
-        long received = super.receiveHeat(toReceive, simulate);
-        if (!simulate && received > 0 && level != null) lastHeatTick = level.getGameTime();
+        long now = currentTick();
+        long allowed = Math.min(toReceive, heatIntake.room(now, canStartRun()));
+        if (allowed <= 0) return 0;
+        long received = super.receiveHeat(allowed, simulate);
+        if (!simulate && received > 0) {
+            heatIntake.took(now, received);
+            lastHeatTick = now;
+        }
         return received;
+    }
+
+    /** 0.1.10.24: generators see no room while no run can start or the tick's 100 HU are in (ThermalOutput.room). */
+    @Override
+    public boolean canReceiveHeat() {
+        return super.canReceiveHeat() && heatIntake.room(currentTick(), canStartRun()) > 0;
     }
 
     /**
@@ -443,6 +488,7 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
             long consumed = heatStorage.consumeHeatInternal(requested, false);
             if (consumed <= 0) return;
             workCredit += consumed;
+            lastHeatTick = currentTick();   // heat went into the run this tick (LIT)
         }
         if (workCredit >= heatRequired) {
             long creditBefore = workCredit, processedBefore = biomassProcessed;
@@ -515,6 +561,21 @@ public class mio_icif_fermenter_elc extends AbstractHeatBlockEntity {
 
     public long getHeatStored() {
         return heatStorage.getHeatStored();
+    }
+
+    /**
+     * 0.1.10.24 (IC2 {@code GuiFermenter} "heat" gauge = heatBuffer / heat of the recipe): heat toward the current run,
+     * at most one run. Before 0.1.10.24 the heat bar showed the 4000 HU store, which filled while the machine stood idle.
+     */
+    public long getRunHeat() {
+        return Math.min(getRunHeatRequired(), Math.max(0, heatStorage.getHeatStored()) + workCredit);
+    }
+
+    /** The heat of one run: the input fluid's recipe, else the last run's, else 4000 HU (IC2 hU_per_run). */
+    public int getRunHeatRequired() {
+        FermenterRecipe recipe = currentProperty();
+        if (recipe == null) recipe = byproductRecipe();
+        return recipe != null ? recipe.getHeat() : HEAT_CAPACITY;
     }
 
     public int getHeatCapacity() {

@@ -360,6 +360,20 @@ public class JEIPlugin implements IModPlugin {
                     return b[2] <= 0 ? java.util.List.of() : java.util.List.of(new net.minecraft.client.renderer.Rect2i(b[0], b[1], b[2] + 2, b[3]));
                 }
             });
+        // 0.1.10.24: the full-screen data panels (futures exchange, grid monitoring) use the whole window: no JEI overlay on them
+        registration.addGuiContainerHandler(
+            com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_future_elc.class, new FullScreenPanel<>());
+        registration.addGuiContainerHandler(
+            com.miophas.singularity_iteration.common.client.screen.GridScadaScreen.class, new FullScreenPanel<>());
+    }
+
+    /** 0.1.10.24: marks the whole window of a full-screen panel as GUI area, so JEI draws neither its list nor its bookmarks there. */
+    private static final class FullScreenPanel<T extends net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>>
+            implements mezz.jei.api.gui.handlers.IGuiContainerHandler<T> {
+        @Override
+        public java.util.List<net.minecraft.client.renderer.Rect2i> getGuiExtraAreas(T screen) {
+            return java.util.List.of(new net.minecraft.client.renderer.Rect2i(0, 0, screen.width, screen.height));
+        }
     }
 
     @Override

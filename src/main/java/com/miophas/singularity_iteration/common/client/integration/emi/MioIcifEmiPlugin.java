@@ -8,6 +8,9 @@ import com.miophas.singularity_iteration.common.menu.producer.IndustrialWorkbenc
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
 import com.miophas.singularity_iteration.common.recipe.mio_icif_ModRecipes;
+import com.miophas.singularity_iteration.common.client.screen.GridScadaScreen;
+import com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_future_elc;
+import com.miophas.singularity_iteration.common.client.screen.mio_icif_screen;
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
@@ -16,6 +19,7 @@ import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.recipe.VanillaEmiRecipeCategories;
 import dev.emi.emi.api.recipe.handler.StandardRecipeHandler;
 import dev.emi.emi.api.stack.EmiStack;
+import dev.emi.emi.api.widget.Bounds;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.crafting.RecipeManager;
@@ -122,6 +126,17 @@ public class MioIcifEmiPlugin implements EmiPlugin {
         // 注册工业工作台配方转移处理器
         registry.addRecipeHandler(mio_icif_menus.INDUSTRIAL_WORKBENCH_MENU_TYPE.get(),
                 new IndustrialWorkbenchRecipeHandler());
+
+        // 0.1.10.24: keep EMI's side panels off the full-screen data panels (futures exchange, grid monitoring) and off the
+        // left utility dock of machine GUIs (same areas as the JEI GUI handlers)
+        registry.addGenericExclusionArea((screen, out) -> {
+            if (screen instanceof mio_icif_gui_future_elc || screen instanceof GridScadaScreen) {
+                out.accept(new Bounds(0, 0, screen.width, screen.height));
+            } else if (screen instanceof mio_icif_screen<?> machine) {
+                int[] b = machine.dockBounds();
+                if (b[2] > 0) out.accept(new Bounds(b[0], b[1], b[2] + 2, b[3]));
+            }
+        });
 
         // 获取配方管理器并注册配方
         RecipeManager recipeManager = registry.getRecipeManager();

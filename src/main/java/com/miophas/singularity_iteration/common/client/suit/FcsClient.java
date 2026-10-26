@@ -84,6 +84,7 @@ public final class FcsClient {
         OreScanner.reset();
         SuitSensorData.clear();
         SmartGuidanceClient.clear();
+        ProjectileWatch.clear();
     }
 
     @SubscribeEvent
@@ -128,6 +129,8 @@ public final class FcsClient {
         boolean predict = hud && FcsState.active(SuitModuleType.BEHAVIOR_PREDICTOR);
         boolean blast = hud && FcsState.active(SuitModuleType.BLAST_WARNING);
         SensorTracker.tick(mc.level, player, esp, predict, blast);
+        // 0.1.10.23 (P7): incoming projectile warning of the Threat Sensor
+        ProjectileWatch.tick(mc, mc.level, player, hud && FcsState.active(SuitModuleType.THREAT_SENSOR));
         updateGlow(esp);
 
         if (hud && FcsState.active(SuitModuleType.ORE_SCANNER)) OreScanner.tick(mc.level, player.blockPosition());
@@ -357,7 +360,8 @@ public final class FcsClient {
 
         if (FcsState.active(SuitModuleType.BEHAVIOR_PREDICTOR)) {
             for (SensorTracker.Track t : SensorTracker.tracks()) {
-                int c = t.intentHot() ? FcsDraw.RED : SensorTracker.color(t.kind());
+                // 0.1.10.23 (P2): a path from the server's path nodes (data link) takes the predictor colour
+                int c = t.intentHot() ? FcsDraw.RED : t.linked() ? SuitModuleType.BEHAVIOR_PREDICTOR.color() : SensorTracker.color(t.kind());
                 List<Vec3> path = t.path();
                 for (int i = 1; i < path.size(); i++) {
                     float a = 0.95F - 0.6F * i / path.size();

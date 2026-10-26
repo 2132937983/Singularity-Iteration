@@ -39,6 +39,17 @@ public final class TargetTracker {
         if (count < SIZE) count++;
     }
 
+    /**
+     * 0.1.10.23: starts a new estimate that already moves with {@code (vx, vy, vz)} blocks per tick: four samples on
+     * the line that ends at {@code (x, y, z)} (the server knows a mob's velocity when a guided shot starts; the turn
+     * rate still needs {@value #TURN_WINDOW} + 7 real samples).
+     */
+    public void prime(double x, double y, double z, double vx, double vy, double vz) {
+        count = 0;
+        head = 0;
+        for (int k = 3; k >= 0; k--) update(x - vx * k, y - vy * k, z - vz * k);
+    }
+
     /** Samples kept (at most {@value #TURN_WINDOW} + 8). */
     public int samples() { return count; }
 

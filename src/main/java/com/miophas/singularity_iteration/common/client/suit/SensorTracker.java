@@ -2,9 +2,15 @@
 package com.miophas.singularity_iteration.common.client.suit;
 
 import com.miophas.singularity_iteration.common.suit.SuitSensorData;
+import com.miophas.singularity_iteration.common.suit.TargetRating;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import com.miophas.singularity_iteration.common.fcs.AttackTimer;
 import com.miophas.singularity_iteration.common.fcs.DeadReckoning;
+import com.miophas.singularity_iteration.common.fcs.PathFollower;
+import com.miophas.singularity_iteration.common.fcs.TargetPriority;
 import com.miophas.singularity_iteration.common.fcs.TargetTracker;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.CrossbowItem;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -73,6 +79,16 @@ public final class SensorTracker {
     static final int MAX_TRACKS = 64;
     /** 0.1.10.20 (P8): a predicted path is computed again after this many ticks; in between it moves with its creature. */
     static final int PATH_INTERVAL = 2;
+    /**
+     * 0.1.10.23 (P5): the path interval of a far creature (beyond {@link #NEAR_RANGE}, not after the wearer, not in the
+     * top three ranks). In the offline test this cut the path computations of an even crowd to 63 %; such a path moved
+     * between refreshes stays within 0.6 blocks of a fresh one (0.58 for a zigzag walker, 0.29 circling, 0 straight).
+     */
+    static final int FAR_PATH_INTERVAL = 4;
+    /** 0.1.10.23 (P5): creatures nearer than this keep {@link #PATH_INTERVAL}. */
+    static final double NEAR_RANGE = 12;
+    /** 0.1.10.23 (P6): ranks shown on the tags ("#1" to "#3"). */
+    static final int SHOWN_RANKS = 3;
 
     /** Classification of a creature. It sets the ESP colour. */
     public enum Kind { HOSTILE, NEUTRAL, PASSIVE, PLAYER }
@@ -90,8 +106,21 @@ public final class SensorTracker {
      * @param intent    the short intent code from {@link #intent}, or null.
      * @param intentHot true when the intent is urgent: the server marks the creature as threat
      *                  level 2, or a creeper is about to explode ("DET").
+     * @param countdown 0.1.10.23 (P7): ticks to its attack ({@code fcs.AttackTimer}: bow draw, crossbow load, ghast
+     *                  charge, creeper swell, learned melee swing), or -1.
+     * @param rank      0.1.10.23 (P6): 1 to {@link #SHOWN_RANKS} for the highest {@code fcs.TargetPriority} scores of
+     *                  the hostile creatures in the predictor range, else 0.
+     * @param linked    0.1.10.23 (P2): the path follows the path nodes the server sent (Behavior Predictor Mk.II).
      */
-    public record Track(LivingEntity entity, Kind kind, Vec3 velocity, List<Vec3> path, @Nullable String intent, boolean intentHot) { }
+    public record Track(LivingEntity entity, Kind kind, Vec3 velocity, List<Vec3> path, @Nullable String intent, boolean intentHot,
+                        int countdown, int rank, boolean linked) {
+        /** 0.1.10.23: the intent with its countdown ("AIM 0.6s"), or the intent alone. */
+        @Nullable
+        public String intentText() {
+            if (intent == null) return null;
+            return countdown >= 0 ? String.format(java.util.Locale.ROOT, "%s %.1fs", intent, countdown / 20F) : intent;
+        }
+    }
 
     /**
      * One explosive that counts down.
@@ -129,6 +158,21 @@ public final class SensorTracker {
         List<Vec3> path = List.of();
         Vec3 pathOrigin;
         long pathTick = Long.MIN_VALUE;
+        boolean linked;
+        /** 0.1.10.23 (P2): the motion it keeps under its own power (its velocity while it is not hurt). */
+        double driveX, driveZ;
+        boolean driveKnown;
+        /** 0.1.10.23 (P7): its learned melee swing interval and the rise of a ghast's charge flag. */
+        final AttackTimer.Swings swings = new AttackTimer.Swings();
+        final AttackTimer.Edge charge = new AttackTimer.Edge();
+    }
+
+    /** 0.1.10.23 (P6): the priority score of each tracked creature in the last tick. */
+    private static final it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap priorities = new it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap();
+
+    /** 0.1.10.23 (P6): the priority score of a creature tracked in the last tick, or NaN. */
+    public static double priority(int entityId) {
+        return priorities.containsKey(entityId) ? priorities.get(entityId) : Double.NaN;
     }
 
     /**
@@ -153,6 +197,7 @@ public final class SensorTracker {
     /** Removes all tracks, explosives and position history. */
     public static void clear() {
         memory.clear();
+        priorities.clear();
         blockCache.clear();
         tracks = List.of();
         blasts = List.of();
@@ -202,6 +247,7 @@ public final class SensorTracker {
         if (!esp && !predict) {
             tracks = List.of();
             memory.clear();
+            priorities.clear();
         } else {
             double range = esp ? espRange() : PREDICT_RANGE;
             // the value is the feet position of the player
@@ -210,9 +256,15 @@ public final class SensorTracker {
                 e -> e != player && e.isAlive() && !e.isSpectator() && (!e.isInvisible() || e.isCurrentlyGlowing()));
             candidates.sort((a, b) -> Double.compare(a.distanceToSqr(eye), b.distanceToSqr(eye)));
             int count = Math.min(MAX_TRACKS, candidates.size());
-            List<Track> out = new ArrayList<>(count);
             Int2ObjectOpenHashMap<Memory> seen = new Int2ObjectOpenHashMap<>(count);
+            // pass 1 (0.1.10.23): motion, intent, countdown and priority of every track
+            Vec3[] vs = new Vec3[count];
+            String[] intents = new String[count];
+            int[] countdowns = new int[count];
+            double[] scores = new double[count];
+            boolean[] nears = new boolean[count];
             double[] vel = new double[3];
+            priorities.clear();
             for (int i = 0; i < count; i++) {
                 LivingEntity e = candidates.get(i);
                 Memory m = memory.get(e.getId());
@@ -221,12 +273,39 @@ public final class SensorTracker {
                 m.tracker.update(at.x, at.y, at.z);
                 seen.put(e.getId(), m);
                 m.tracker.velocity(vel);
-                Vec3 v = new Vec3(vel[0], vel[1], vel[2]);
-                boolean near = e.distanceToSqr(player) <= PREDICT_RANGE * PREDICT_RANGE;
-                List<Vec3> path = predict && near ? path(e, m, v) : List.of();
-                String intent = predict && near ? intent(e, player) : null;
-                boolean hot = intent != null && (SuitSensorData.threatLevel(e.getId()) == 2 || intent.equals("DET"));
-                out.add(new Track(e, kind(e), v, path, intent, hot));
+                vs[i] = new Vec3(vel[0], vel[1], vel[2]);
+                if (e.hurtTime <= 0) { m.driveX = vel[0]; m.driveZ = vel[2]; m.driveKnown = true; }
+                m.swings.observe(ticks, e.swinging);
+                if (e instanceof Ghast ghast) m.charge.observe(ticks, ghast.isCharging());
+                nears[i] = e.distanceToSqr(player) <= PREDICT_RANGE * PREDICT_RANGE;
+                intents[i] = predict && nears[i] ? intent(e, player) : null;
+                countdowns[i] = intents[i] == null ? -1 : countdown(e, m, intents[i]);
+                int threat = SuitSensorData.threatLevel(e.getId());
+                scores[i] = TargetPriority.score(TargetRating.rating(e, player.position(), vs[i], threat, countdowns[i]));
+                priorities.put(e.getId(), scores[i]);
+            }
+            // ranks: the highest scores among the hostile creatures in the predictor range
+            int[] ranks = new int[count];
+            Integer[] order = new Integer[count];
+            for (int i = 0; i < count; i++) order[i] = i;
+            java.util.Arrays.sort(order, (a, b) -> Double.compare(scores[b], scores[a]));
+            int rank = 0;
+            for (int k = 0; k < count && rank < SHOWN_RANKS; k++) {
+                LivingEntity e = candidates.get(order[k]);
+                if (!nears[order[k]] || TargetRating.hostility(e, SuitSensorData.threatLevel(e.getId())) < 2) continue;
+                ranks[order[k]] = ++rank;
+            }
+            // pass 2: paths (near, threatening and ranked creatures every PATH_INTERVAL ticks, the others every FAR_PATH_INTERVAL)
+            List<Track> out = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                LivingEntity e = candidates.get(i);
+                Memory m = seen.get(e.getId());
+                int threat = SuitSensorData.threatLevel(e.getId());
+                boolean hot = intents[i] != null && (threat == 2 || intents[i].equals("DET"));
+                boolean close = e.distanceToSqr(player) <= NEAR_RANGE * NEAR_RANGE;
+                int interval = close || threat > 0 || hot || ranks[i] > 0 ? PATH_INTERVAL : FAR_PATH_INTERVAL;
+                List<Vec3> path = predict && nears[i] ? path(e, m, vs[i], player, threat, interval) : List.of();
+                out.add(new Track(e, kind(e), vs[i], path, intents[i], hot, countdowns[i], ranks[i], predict && nears[i] && m.linked));
             }
             // keep the memory of the creatures seen in this tick only: this bounds the memory
             memory.clear();
@@ -258,12 +337,19 @@ public final class SensorTracker {
      * tick); a circling creature gets an arc ({@code TargetTracker#turnRate}); the path is computed every
      * {@link #PATH_INTERVAL} ticks and moves with the creature in between.
      *
+     * <p>0.1.10.23 (P2): {@code DeadReckoning#walk}, the vanilla movement: the friction of the block under its feet
+     * (ice), water drag, a step up to 0.6 blocks and a jump onto a 1-block ledge (before, the path stopped at slabs and
+     * at every ledge), falling off an edge; a hit creature slides with the server's velocity and comes back to its own
+     * motion with the friction; a melee creature after the wearer stops at {@code DeadReckoning#HUNTER_STOP}. With path
+     * nodes from the server (Behavior Predictor Mk.II) the path follows them ({@code PathFollower}). Far creatures that
+     * do not threaten the wearer get a new path every {@link #FAR_PATH_INTERVAL} ticks (P5).
+     *
      * @return the predicted positions, or an empty list when the horizontal speed is below 0.02
      *         blocks per tick and the vertical speed is below 0.02 blocks per tick.
      */
-    private static List<Vec3> path(LivingEntity e, Memory m, Vec3 v) {
-        // 0.1.10.20 (P8): computed every PATH_INTERVAL ticks; in between the last path moves with the creature
-        if (m.pathOrigin != null && ticks - m.pathTick < PATH_INTERVAL) {
+    private static List<Vec3> path(LivingEntity e, Memory m, Vec3 v, LocalPlayer player, int threat, int interval) {
+        // 0.1.10.20 (P8): computed every interval ticks; in between the last path moves with the creature
+        if (m.pathOrigin != null && ticks - m.pathTick < interval) {
             Vec3 shift = e.position().subtract(m.pathOrigin);
             if (shift.lengthSqr() < 1.0E-10) return m.path;
             List<Vec3> moved = new ArrayList<>(m.path.size());
@@ -271,8 +357,28 @@ public final class SensorTracker {
             return moved;
         }
         Vec3 p = e.position();
-        double[] flat = DeadReckoning.path(blockCache, p.x, p.y, p.z, v.x, v.y, v.z, e.onGround(), e.isNoGravity(), PREDICT_TICKS,
-            m.tracker.turnRate());
+        double[] flat;
+        double[] nodes = SuitSensorData.pathNodes(e.getId());
+        m.linked = nodes != null;
+        if (nodes != null) {
+            flat = PathFollower.follow(nodes, p.x, p.y, p.z, Math.hypot(v.x, v.z), PREDICT_TICKS);
+        } else {
+            DeadReckoning.Body body = new DeadReckoning.Body();
+            boolean hit = e.hurtTime > 0 && m.driveKnown;
+            Vec3 server = e.getDeltaMovement();
+            body.vx = hit ? server.x : v.x; body.vy = hit ? server.y : v.y; body.vz = hit ? server.z : v.z;
+            body.packet = hit;
+            body.driveX = m.driveKnown ? m.driveX : v.x; body.driveZ = m.driveKnown ? m.driveZ : v.z;
+            body.onGround = e.onGround();
+            body.noGravity = e.isNoGravity();
+            body.height = e.getBbHeight();
+            body.turnRate = m.tracker.turnRate();
+            boolean hunter = threat == 2 || e instanceof Mob mob && mob.isAggressive() && e instanceof Enemy;
+            if (hunter && !TargetRating.ranged(e)) {
+                body.stopX = player.getX(); body.stopZ = player.getZ(); body.stopRadius = DeadReckoning.HUNTER_STOP;
+            }
+            flat = DeadReckoning.walk(blockCache, p.x, p.y, p.z, body, PREDICT_TICKS);
+        }
         List<Vec3> pts = new ArrayList<>(flat.length / 3);
         for (int i = 0; i < flat.length; i += 3) pts.add(new Vec3(flat[i], flat[i + 1], flat[i + 2]));
         m.path = List.copyOf(pts);
@@ -281,7 +387,23 @@ public final class SensorTracker {
         return m.path;
     }
 
-    /** 0.1.10.20: the client level as the predictor sees it (collision shape, air). */
+    /**
+     * 0.1.10.23 (P7): ticks to the attack shown with the intent: the bow draw, the crossbow load, the ghast charge, the
+     * creeper swell, or the learned melee swing (ATK); -1 when unknown.
+     */
+    private static int countdown(LivingEntity e, Memory m, String intent) {
+        if (e instanceof Creeper creeper && "DET".equals(intent)) return Math.round((1 - creeper.getSwelling(1.0F)) * 30);
+        if (e instanceof Ghast && "FIRE".equals(intent)) return m.charge.left(ticks, AttackTimer.GHAST_AFTER_FLAG);
+        if (e.isUsingItem()) {
+            var stack = e.getUseItem();
+            if (stack.getItem() instanceof BowItem) return AttackTimer.bowLeft(e.getTicksUsingItem());
+            if (stack.getItem() instanceof CrossbowItem) return AttackTimer.crossbowLeft(e.getTicksUsingItem(), CrossbowItem.getChargeDuration(stack, e));
+        }
+        if ("ATK".equals(intent)) return m.swings.left(ticks);
+        return -1;
+    }
+
+    /** 0.1.10.20: the client level as the predictor sees it (collision shape, air; 0.1.10.23: shape top, water, friction). */
     private static final class LevelBlocks implements DeadReckoning.Blocks {
         ClientLevel level;
         private final BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
@@ -296,6 +418,25 @@ public final class SensorTracker {
         public boolean air(int x, int y, int z) {
             at.set(x, y, z);
             return level.getBlockState(at).isAir();
+        }
+
+        @Override
+        public double top(int x, int y, int z) {
+            at.set(x, y, z);
+            var shape = level.getBlockState(at).getCollisionShape(level, at);
+            return shape.isEmpty() ? 0 : Math.max(0, shape.max(net.minecraft.core.Direction.Axis.Y));
+        }
+
+        @Override
+        public boolean water(int x, int y, int z) {
+            at.set(x, y, z);
+            return level.getFluidState(at).is(net.minecraft.tags.FluidTags.WATER);
+        }
+
+        @Override
+        public double friction(int x, int y, int z) {
+            at.set(x, y, z);
+            return level.getBlockState(at).getFriction(level, at, null);
         }
     }
 

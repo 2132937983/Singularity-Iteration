@@ -115,8 +115,9 @@ import org.jetbrains.annotations.Nullable;
             setSyncData(0, fermenter.getProgress());
             setSyncData(1, fermenter.getMaxProgress());
             setSyncData(2, fermenter.isWorking() ? 1 : 0);
-            setSyncData(3, (int) fermenter.getHeatStored());
-            setSyncData(4, fermenter.getHeatCapacity());
+            // 0.1.10.24: the heat bar shows the heat toward the current run (IC2 GuiFermenter "heat" gauge)
+            setSyncData(3, (int) fermenter.getRunHeat());
+            setSyncData(4, fermenter.getRunHeatRequired());
             setSyncData(5, fermenter.getBiomassAmount());
             setSyncData(6, fermenter.getBiomassCapacity());
             setSyncData(7, fermenter.getBiogasAmount());

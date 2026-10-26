@@ -2,7 +2,11 @@
 package com.miophas.singularity_iteration.common.suit;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import com.miophas.singularity_iteration.common.fcs.Guidance;
+import com.miophas.singularity_iteration.common.fcs.TargetPriority;
+import com.miophas.singularity_iteration.common.fcs.TargetTracker;
 import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -39,18 +43,29 @@ import org.jetbrains.annotations.Nullable;
  *       level, within {@link #RANGE} blocks, not the shooter, not allied, not a pet of the
  *       shooter, and a player only with PvP on.</li>
  *   <li>Each new projectile of the wearer (arrows, tridents, thrown items, energy bolts, the
- *       projectiles of other mods: any {@link Projectile} with the wearer as owner) takes the next
- *       locked target in turn (multishot spreads over the locks) and costs {@link #GUIDED_EU} EU
- *       from the suit. Without energy the projectile flies unguided.</li>
+ *       projectiles of other mods: any {@link Projectile} with the wearer as owner) costs
+ *       {@link #GUIDED_EU} EU from the suit. Without energy the projectile flies unguided.
+ *       0.1.10.23 (P6): it takes the locked target with the best {@code fcs.TargetPriority#assign}
+ *       value (priority x hit chance x the share of the remaining health it takes, with the shots
+ *       already flying at each target); before, the locks were taken in turn. A multishot volley
+ *       still spreads, but a weak target gets one arrow and the dangerous one the rest.</li>
  *   <li>At launch the projectile turns to the lead point of its target (pre-lock: an energy bolt
  *       flies straight to it). In flight it turns at most {@link #TURN_DEGREES} degrees per tick
- *       to the lead point and keeps its speed (the turn also cancels gravity). It stops homing
- *       after {@link #LIFETIME} ticks, when it stops (hit, stuck) or when the target dies.</li>
+ *       and keeps its speed. It stops homing after {@link #LIFETIME} ticks, when it stops (hit,
+ *       stuck) or when the target dies.</li>
+ *   <li>0.1.10.23 (P4): the steering law comes from {@code fcs.Guidance#choose}: a fast shot that
+ *       falls (from 2.0 blocks per tick, with gravity) flies proportional navigation with a gravity
+ *       term (a smoother arc, about 1 degree less turning per full bow shot in the offline test,
+ *       same hit rate), APN with Predictive Guidance; slower shots, shots without gravity and
+ *       (without Predictive Guidance) shots at a flying target keep the pursuit of the lead point,
+ *       where PN was not better. The target motion comes from one {@code fcs.TargetTracker} per
+ *       target (its centre each tick; the server velocity of a player is not reliable).</li>
  *   <li>Vernier thruster sparks show behind a guided projectile.</li>
  * </ul>
  *
- * <p>Cost: one map entry per guided projectile, steered once per server tick. Entries go away
- * with their projectile; the maps are cleared on logout and server stop.
+ * <p>Cost: one list entry per guided projectile, steered once per server tick, and one tracker per
+ * target of a PN shot. Entries go away with their projectile; the lists are cleared on logout and
+ * server stop.
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID)
 public final class SmartGuidance {
@@ -63,9 +78,21 @@ public final class SmartGuidance {
     public static final int LOCK_LIMIT = 12;
 
     private static final Map<UUID, int[]> LOCKS = new HashMap<>();
-    private static final Map<UUID, Integer> NEXT = new HashMap<>();
-    private record Guided(Projectile projectile, int target, int born, double turn, boolean predictive) { }
+
+    /**
+     * One guided projectile. 0.1.10.23: {@code law} and {@code gravity} for P4, {@code expected} = hit chance x damage
+     * (the damage in flight of P6).
+     */
+    private record Guided(Projectile projectile, int target, int born, double turn, boolean predictive,
+                          Guidance.Law law, double gravity, double expected) { }
     private static final List<Guided> GUIDED = new ArrayList<>();
+
+    /** 0.1.10.23 (P4): the motion estimate of each target of a PN / APN shot, fed once per tick. */
+    private static final class Track {
+        final TargetTracker tracker = new TargetTracker();
+        long tick;
+    }
+    private static final Int2ObjectOpenHashMap<Track> TRACKS = new Int2ObjectOpenHashMap<>();
 
     static void setLocks(ServerPlayer player, int[] ids) {
         if (ids.length == 0) LOCKS.remove(player.getUUID());
@@ -87,6 +114,15 @@ public final class SmartGuidance {
         double base = SuitModules.tier(player, SuitModuleType.SMART_GUIDANCE) >= 2 ? 20 : TURN_DEGREES;
         return base + (com.miophas.singularity_iteration.common.suit.quantum.QuantumLinks.active(player,
             com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergy.PREDICTIVE_GUIDANCE) ? 4 : 0);
+    }
+
+    /**
+     * 0.1.10.23 (P5): ticks a full lock stays in the lock frame while its creature is out of sight or out of the frame
+     * ({@code fcs.MobTrack}): 20, 40 with a Mk.II unit.
+     */
+    public static int lockMemory(Player player) {
+        return SuitModules.tier(player, SuitModuleType.SMART_GUIDANCE) >= 2 ? com.miophas.singularity_iteration.common.fcs.MobTrack.MEMORY_MK2
+            : com.miophas.singularity_iteration.common.fcs.MobTrack.MEMORY_MK1;
     }
 
     /** 0.1.10.0: the entity ids the client of {@code player} has locked (a copy; may hold stale ids: check each with {@link #valid}). */
@@ -117,31 +153,94 @@ public final class SmartGuidance {
         if (locks == null || locks.length == 0 || !SuitModules.isActive(player, SuitModuleType.SMART_GUIDANCE)) return;
         // 0.1.8.5: a nano EMP in range scrambles the guidance of other players for a few seconds
         if (com.miophas.singularity_iteration.common.suit.nano.NanoSuit.guidanceJammed(player)) return;
-        LivingEntity target = null;
-        int start = NEXT.getOrDefault(player.getUUID(), 0);
-        for (int k = 0; k < locks.length && target == null; k++) {
-            int index = Math.floorMod(start + k, locks.length);
-            Entity e = player.level().getEntity(locks[index]);
-            if (valid(player, e)) { target = (LivingEntity) e; NEXT.put(player.getUUID(), index + 1); }
-        }
+        Vec3 v = p.getDeltaMovement();
+        double speed = v.length();
+        double damage = shotDamage(p, speed);
+        LivingEntity target = assign(player, locks, damage);
         if (target == null) return;
         var piece = SuitModules.wornPieceWith(player, SuitModuleType.SMART_GUIDANCE);
         // 0.1.10.5: all or nothing; the paid EU is lower than GUIDED_EU with Energy Saving
         if (piece.isEmpty() || !SuitEnergyPool.payAll(player, piece, GUIDED_EU)) return;
+        boolean predictive = predictive(player);
         // pre-lock: the projectile leaves already pointed at the lead point
-        Vec3 v = p.getDeltaMovement();
-        double speed = v.length();
         if (speed > 0.05) {
-            Vec3 aim = lead(target, p.position(), speed, predictive(player)).subtract(p.position());
+            Vec3 aim = lead(target, p.position(), speed, predictive).subtract(p.position());
             if (aim.lengthSqr() > 1.0E-4) p.setDeltaMovement(aim.normalize().scale(speed));
         }
-        GUIDED.add(new Guided(p, target.getId(), p.tickCount, turnDegrees(player), predictive(player)));
+        double gravity = p.getGravity();
+        Guidance.Law law = Guidance.choose(speed, gravity, predictive, TargetRating.flies(target));
+        if (law != Guidance.Law.PURSUIT) track(target, player.server.getTickCount());
+        double expected = TargetPriority.hitChance(target.distanceTo(player), target.getDeltaMovement().horizontalDistance()) * damage;
+        GUIDED.add(new Guided(p, target.getId(), p.tickCount, turnDegrees(player), predictive, law, gravity, expected));
         if (GUIDED.size() > 512) GUIDED.remove(0);
+    }
+
+    /**
+     * 0.1.10.23 (P6): the valid lock with the best {@link TargetPriority#assign} value for one more shot of
+     * {@code damage}, or null. The shots already flying at a target count with their expected damage.
+     */
+    @Nullable
+    static LivingEntity assign(ServerPlayer player, int[] locks, double damage) {
+        List<LivingEntity> targets = new ArrayList<>(locks.length);
+        for (int id : locks) {
+            Entity e = player.level().getEntity(id);
+            if (valid(player, e) && !targets.contains(e)) targets.add((LivingEntity) e);
+        }
+        if (targets.isEmpty()) return null;
+        if (targets.size() == 1) return targets.get(0);
+        int n = targets.size();
+        double[] weight = new double[n], pHit = new double[n], health = new double[n], inFlight = new double[n];
+        for (int i = 0; i < n; i++) {
+            LivingEntity e = targets.get(i);
+            int level = SuitServer.threatLevel(e, player);
+            weight[i] = TargetPriority.score(TargetRating.rating(e, player.position(), e.getDeltaMovement(), level, attackTicks(e)));
+            pHit[i] = TargetPriority.hitChance(e.distanceTo(player), e.getDeltaMovement().horizontalDistance());
+            health[i] = e.getHealth() + e.getAbsorptionAmount();
+        }
+        for (Guided g : GUIDED) {
+            if (g.projectile().isRemoved()) continue;
+            for (int i = 0; i < n; i++) if (targets.get(i).getId() == g.target()) inFlight[i] += g.expected();
+        }
+        int best = TargetPriority.assign(weight, pHit, health, inFlight, damage);
+        return best < 0 ? null : targets.get(best);
+    }
+
+    /** 0.1.10.23: ticks to the attack the server can see coming (a drawn bow, a swelling creeper), else -1. */
+    static double attackTicks(LivingEntity e) {
+        if (e instanceof net.minecraft.world.entity.monster.Creeper c && c.getSwellDir() > 0)
+            return Math.max(0, (1 - c.getSwelling(1.0F)) * 30);
+        if (e.isUsingItem() && e.getUseItem().getItem() instanceof net.minecraft.world.item.BowItem)
+            return Math.max(0, 20 - e.getTicksUsingItem());
+        return -1;
+    }
+
+    /** 0.1.10.23: the damage of one shot: an arrow's base damage x speed (the vanilla hit), 4 for other projectiles. */
+    static double shotDamage(Projectile p, double speed) {
+        if (p instanceof net.minecraft.world.entity.projectile.AbstractArrow arrow) return Math.max(1, Math.ceil(arrow.getBaseDamage() * speed));
+        return 4;
+    }
+
+    /** 0.1.10.23 (P4): starts or keeps the tracker of {@code target} (primed with its server velocity). */
+    private static Track track(LivingEntity target, long now) {
+        Track t = TRACKS.get(target.getId());
+        if (t == null) {
+            t = new Track();
+            Vec3 c = target.getBoundingBox().getCenter(), vel = target.getDeltaMovement();
+            t.tracker.prime(c.x, c.y, c.z, vel.x, target.onGround() ? 0 : vel.y, vel.z);
+            t.tick = now;
+            TRACKS.put(target.getId(), t);
+        }
+        return t;
     }
 
     @SubscribeEvent
     static void onTick(ServerTickEvent.Post event) {
-        if (GUIDED.isEmpty()) return;
+        if (GUIDED.isEmpty()) {
+            TRACKS.clear();
+            return;
+        }
+        long serverTick = event.getServer().getTickCount();
+        double[] pos = new double[3], heading = new double[3], centre = new double[3], vel = new double[3], acc = new double[3], out = new double[3];
         for (Iterator<Guided> it = GUIDED.iterator(); it.hasNext(); ) {
             Guided g = it.next();
             Projectile p = g.projectile();
@@ -150,13 +249,34 @@ public final class SmartGuidance {
             Vec3 v = p.getDeltaMovement();
             double speed = v.length();
             if (!(e instanceof LivingEntity target) || !target.isAlive() || speed < 0.05) { it.remove(); continue; }
-            Vec3 want = lead(target, p.position(), speed, g.predictive()).subtract(p.position());
-            double dist = want.length();
-            if (dist < 1.0E-3) continue;
-            Vec3 now = v.scale(1 / speed), goal = want.scale(1 / dist);
-            double angle = Math.acos(Math.max(-1, Math.min(1, now.dot(goal))));
-            double max = Math.toRadians(g.turn());
-            Vec3 dir = angle <= max ? goal : now.scale(1 - max / angle).add(goal.scale(max / angle)).normalize();
+            Vec3 dir;
+            if (g.law() == Guidance.Law.PURSUIT) {
+                Vec3 want = lead(target, p.position(), speed, g.predictive()).subtract(p.position());
+                double dist = want.length();
+                if (dist < 1.0E-3) continue;
+                Vec3 now = v.scale(1 / speed), goal = want.scale(1 / dist);
+                double angle = Math.acos(Math.max(-1, Math.min(1, now.dot(goal))));
+                double max = Math.toRadians(g.turn());
+                dir = angle <= max ? goal : now.scale(1 - max / angle).add(goal.scale(max / angle)).normalize();
+            } else {
+                // 0.1.10.23 (P4): PN / APN with the gravity term, the target motion from its tracker (fed once per tick)
+                Track track = track(target, serverTick);
+                Vec3 c = target.getBoundingBox().getCenter();
+                if (track.tick != serverTick) { track.tracker.update(c.x, c.y, c.z); track.tick = serverTick; }
+                track.tracker.velocity(vel);
+                pos[0] = p.getX(); pos[1] = p.getY(); pos[2] = p.getZ();
+                heading[0] = v.x / speed; heading[1] = v.y / speed; heading[2] = v.z / speed;
+                centre[0] = c.x; centre[1] = c.y; centre[2] = c.z;
+                double[] a = null;
+                if (g.law() == Guidance.Law.APN) {
+                    double rate = track.tracker.turnRate();
+                    acc[0] = -rate * vel[2]; acc[1] = 0; acc[2] = rate * vel[0];
+                    a = acc;
+                }
+                Guidance.navigate(pos, heading, speed, centre, vel, a, Guidance.NAV, Guidance.TERMINAL_TICKS, g.gravity(),
+                    Math.toRadians(g.turn()), out);
+                dir = new Vec3(out[0], out[1], out[2]);
+            }
             p.setDeltaMovement(dir.scale(speed));
             p.hurtMarked = true;                                        // send the new velocity to the clients
             if (p.tickCount % 2 == 0) {
@@ -164,6 +284,8 @@ public final class SmartGuidance {
                 level.sendParticles(com.miophas.singularity_iteration.common.armory.ArmoryRegistry.CORE.get(), back.x, back.y, back.z, 1, 0.02, 0.02, 0.02, 0.0);
             }
         }
+        // trackers that no shot fed in the last two ticks go away
+        if (!TRACKS.isEmpty()) TRACKS.int2ObjectEntrySet().removeIf(en -> serverTick - en.getValue().tick > 2);
     }
 
     /** Lead point: the target centre after the time of flight at the current speed. */
@@ -228,14 +350,13 @@ public final class SmartGuidance {
     @SubscribeEvent
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         LOCKS.remove(event.getEntity().getUUID());
-        NEXT.remove(event.getEntity().getUUID());
     }
 
     @SubscribeEvent
     static void onStopped(ServerStoppedEvent event) {
         LOCKS.clear();
-        NEXT.clear();
         GUIDED.clear();
+        TRACKS.clear();
     }
 
     // ------------------------------------------------------------------ packet

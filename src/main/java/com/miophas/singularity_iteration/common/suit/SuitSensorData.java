@@ -135,6 +135,29 @@ public final class SuitSensorData {
         return System.currentTimeMillis() - at > 3000 ? null : maneuver.get(entityId);
     }
 
+    /** 0.1.10.23 (P2): entity id to its next path nodes (x, y, z of the bottom centres), from {@link SuitPackets.PathNodes}. */
+    private static final it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<double[]> pathNodes = new it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap<>();
+    private static long pathNodesAt;
+
+    /** 0.1.10.23: replaces the path node list with a new list from {@link SuitPackets.PathNodes}. */
+    public static synchronized void acceptPathNodes(int[] ids, int[][] nodes) {
+        pathNodes.clear();
+        for (int i = 0; i < Math.min(ids.length, nodes.length); i++) {
+            int[] n = nodes[i];
+            if (n.length < 3) continue;
+            double[] centres = new double[n.length];
+            for (int k = 0; k + 2 < n.length; k += 3) { centres[k] = n[k] + 0.5; centres[k + 1] = n[k + 1]; centres[k + 2] = n[k + 2] + 0.5; }
+            pathNodes.put(ids[i], centres);
+        }
+        pathNodesAt = System.currentTimeMillis();
+    }
+
+    /** 0.1.10.23: the next path nodes of an entity, or null (none, or the list is older than {@link #THREAT_TTL_MS}). */
+    public static synchronized double[] pathNodes(int entityId) {
+        if (System.currentTimeMillis() - pathNodesAt > THREAT_TTL_MS) return null;
+        return pathNodes.get(entityId);
+    }
+
     /**
      * Removes all stored data. {@code FcsClient} calls this method at client logout, so no data
      * of one server stays for the next server. Entity ids are not valid across connections.
@@ -145,5 +168,6 @@ public final class SuitSensorData {
         threats.clear();
         hits.clear();
         chunkGrid = null;
+        pathNodes.clear();
     }
 }

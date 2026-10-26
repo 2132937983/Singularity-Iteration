@@ -182,30 +182,8 @@ public final class Round22GameTests {
         h.succeed();
     }
 
-    @GameTest(batch = "round22", template = "empty")
-    public static void machineIconsAreBadgeFreeAndModelsCarryStatusLights(GameTestHelper h) {
-        var file = net.neoforged.fml.ModList.get().getModFileById("mio_icif").getFile();
-        int icons = 0;
-        for (String icon : List.of("producer/block_compressor_elc", "generator/block_solar_generator", "wiring/block_mfsu", "reactor/block_reactor_chamber")) {
-            try (var in = java.nio.file.Files.newInputStream(file.findResource("resourcepacks", "si_experimental", "assets", "mio_icif", "textures", "item", "icon", icon.split("/")[0], icon.split("/")[1] + ".png"))) {
-                var image = javax.imageio.ImageIO.read(in);
-                // 0.1.7.23: no corner badge any more - the lower-right corner stays transparent
-                int corner = image.getRGB(image.getWidth() - 1, image.getHeight() - 1);
-                int inBadge = image.getRGB(image.getWidth() - 7, image.getHeight() - 1);
-                h.assertTrue(((corner >> 24) & 255) == 0 && ((inBadge >> 24) & 255) == 0, icon + " must not carry a corner badge");
-                icons++;
-            } catch (java.io.IOException e) { throw new AssertionError(e); }
-        }
-        for (String model : List.of("producer/block_compressor_elc", "producer/block_compressor_elc_on")) {
-            try {
-                String json = java.nio.file.Files.readString(file.findResource("resourcepacks", "si_experimental", "assets", "mio_icif", "models", "block", model.split("/")[0], model.split("/")[1] + ".json"));
-                h.assertTrue(json.contains("dsp_indicator"), model + " has its category LED (the status slit is the 0.1.7.24 lamp)");
-                h.assertTrue(json.contains("block_light") == model.endsWith("_on"), model + ": only the running model glows");
-            } catch (java.io.IOException e) { throw new AssertionError(e); }
-        }
-        h.assertTrue(icons == 4, "icons checked");
-        h.succeed();
-    }
+    // 0.1.10.24: machineIconsAreBadgeFreeAndModelsCarryStatusLights removed: it read the DSP icons and refined models of the
+    // built-in experimental resource pack, which is gone
 
     @GameTest(batch = "round22_grid", template = "empty", timeoutTicks = 200)
     public static void energyTerminalSeesARowOfMachines(GameTestHelper h) {

@@ -28,6 +28,8 @@ public final class ExchangePackets {
     private ExchangePackets() {}
 
     public static final int PLACE = 1, CANCEL = 2, COLLECT = 3, POST = 4, DELIVER = 5, WITHDRAW = 6, UU_IN = 7, UU_OUT = 8, FUTURE = 9;
+    /** 0.1.10.25 (X1): the sell box (BOX_SELL: flag = into the auction, c = minimum percent) and the auction (AUCTION_CANCEL: a = order). */
+    public static final int BOX_SELL = 10, BOX_FILL = 11, BOX_RETURN = 12, AUCTION_CANCEL = 13;
 
     public record Request(String selected) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_request"));
@@ -40,7 +42,8 @@ public final class ExchangePackets {
      * One action. Fields by kind: PLACE (id = market, flag = buy, c = 1 to rest, a = limit, d = quantity); CANCEL (a = order);
      * COLLECT; POST (id = item, d = quantity, c = reward kind 0 coins / 1 item / 2 UU, a = amount, text = reward item, b = days);
      * DELIVER (a = commission, d = quantity); WITHDRAW (a = commission); UU_IN; UU_OUT;
-     * FUTURE (id = market, flag = long, d = quantity, c = days).
+     * FUTURE (id = market, flag = long, d = quantity, c = days); BOX_SELL (flag = auction, c = minimum percent); BOX_FILL;
+     * BOX_RETURN; AUCTION_CANCEL (a = order).
      */
     public record Action(int kind, String id, long a, long b, int c, int d, boolean flag, String text, String selected) implements CustomPacketPayload {
         public static final Type<Action> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_action"));
@@ -84,6 +87,13 @@ public final class ExchangePackets {
             if (!(context.player() instanceof ServerPlayer player)) return;
             mio_icif_future_elc machine = machine(player);
             if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) return;
+            // 0.1.10.25: moving items between the inventory and the sell box is not a trade (no energy fee)
+            if (p.kind == BOX_FILL || p.kind == BOX_RETURN) {
+                FutureElcMenu menu = (FutureElcMenu) player.containerMenu;
+                if (p.kind == BOX_FILL) menu.fillSellBox(player); else menu.returnSellBox(player);
+                send(player, p.selected, machine);
+                return;
+            }
             machine.exchangeAction(player, () -> switch (p.kind) {
                 case PLACE -> ExchangeService.place(player, p.id, p.flag, p.c == 1, p.a, p.d);
                 case CANCEL -> ExchangeService.cancel(player, p.a);
@@ -98,6 +108,8 @@ public final class ExchangePackets {
                 case UU_IN -> ExchangeService.depositUu(player);
                 case UU_OUT -> ExchangeService.withdrawUu(player);
                 case FUTURE -> ExchangeService.openFuture(player, p.id, p.flag, p.d, p.c);
+                case BOX_SELL -> ExchangeService.sellBox(player, ((FutureElcMenu) player.containerMenu).sellBox(), p.flag, Math.max(0, Math.min(100, p.c)));
+                case AUCTION_CANCEL -> ExchangeService.cancelAuction(player, p.a);
                 default -> new ExchangeService.Result(false, "message.mio_icif.exchange.unknown_action");
             });
             send(player, p.selected, machine);

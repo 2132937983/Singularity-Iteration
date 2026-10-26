@@ -13,6 +13,7 @@ public enum CommodityCategory {
     // commodities fell back to OTHER
     WOOD("wood", "gui.mio_icif.future.category.wood"),              // 木材
     FOOD("food", "gui.mio_icif.future.category.food"),              // 食物
+    INDUSTRIAL("industrial", "gui.mio_icif.future.category.industrial"),  // 0.1.10.25: 工业品（锡、青铜、橡胶、电路……）
     OTHER("other", "gui.mio_icif.future.category.other");           // 其他
 
     private final String id;

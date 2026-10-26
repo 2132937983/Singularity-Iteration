@@ -97,6 +97,18 @@ public final class ExchangeData extends SavedData {
         public boolean isEmpty() { return items.isEmpty() && coins == 0 && uu == 0; }
     }
 
+    /** 0.1.10.25 (X1): an order of the daily auction; its items are held until the market day changes. */
+    public static final class AuctionOrder {
+        public long id;
+        public UUID owner;
+        public String ownerName = "";
+        public String item = "";
+        public long quantity;
+        /** The lowest average price the seller accepts, in percent of the bid without pressure on the clearing day (0 = any). */
+        public int minPercent;
+        public long day;
+    }
+
     public long nextId = 1;
     public final Map<String, Book> books = new LinkedHashMap<>();
     public final Map<String, Long> treasury = new HashMap<>();
@@ -111,6 +123,16 @@ public final class ExchangeData extends SavedData {
     public final ArrayDeque<LedgerDay> ledger = new ArrayDeque<>();
     public final List<Position> positions = new ArrayList<>();
     public long lastDay = Long.MIN_VALUE;
+    /** 0.1.10.25 (X1): items sold to the market that it has not passed on yet, per commodity; a share leaves each day. */
+    public final Map<String, Double> pressure = new HashMap<>();
+    public long pressureDay = Long.MIN_VALUE;
+    /** 0.1.10.25: items each player sold to the market today, per commodity (the personal depth), for day {@link #soldDay}. */
+    public final Map<UUID, Map<String, Long>> sold = new HashMap<>();
+    public long soldDay = Long.MIN_VALUE;
+    /** 0.1.10.25: coins each player may still receive from the market: {balance, day of the balance}. */
+    public final Map<UUID, long[]> allowance = new HashMap<>();
+    /** 0.1.10.25: the open orders of the daily auction. */
+    public final List<AuctionOrder> auction = new ArrayList<>();
 
     public static ExchangeData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(ExchangeData::new, ExchangeData::load), NAME);
@@ -129,6 +151,16 @@ public final class ExchangeData extends SavedData {
 
     public Mailbox mailbox(UUID player) {
         return mail.computeIfAbsent(player, p -> new Mailbox());
+    }
+
+    /** 0.1.10.25: the items {@code player} sold to the market on {@code day}, per commodity (a new day starts empty). */
+    public Map<String, Long> sold(UUID player, long day) {
+        if (soldDay != day) {
+            sold.clear();
+            soldDay = day;
+            setDirty();
+        }
+        return sold.computeIfAbsent(player, p -> new HashMap<>());
     }
 
     public LedgerDay ledger(long day) {
@@ -238,6 +270,32 @@ public final class ExchangeData extends SavedData {
             p.isLong = x.getBoolean("Long"); p.price = x.getLong("Price"); p.quantity = x.getInt("Quantity"); p.openDay = x.getLong("Open");
             p.expiry = x.getLong("Expiry");
             if (p.owner != null && p.price > 0 && p.quantity > 0) d.positions.add(p);
+        }
+        // 0.1.10.25 (X1)
+        CompoundTag pr = tag.getCompound("Pressure");
+        for (String k : pr.getAllKeys()) { double v = pr.getDouble(k); if (v > 0 && Double.isFinite(v)) d.pressure.put(k, v); }
+        d.pressureDay = tag.contains("PressureDay") ? tag.getLong("PressureDay") : Long.MIN_VALUE;
+        d.soldDay = tag.contains("SoldDay") ? tag.getLong("SoldDay") : Long.MIN_VALUE;
+        CompoundTag so = tag.getCompound("Sold");
+        for (String k : so.getAllKeys()) {
+            UUID id = uuid(k);
+            if (id == null) continue;
+            Map<String, Long> m = new HashMap<>();
+            readLongMap(so.getCompound(k), m);
+            if (!m.isEmpty()) d.sold.put(id, m);
+        }
+        CompoundTag al = tag.getCompound("Allowance");
+        for (String k : al.getAllKeys()) {
+            UUID id = uuid(k);
+            long[] v = al.getLongArray(k);
+            if (id != null && v.length == 2 && v[0] >= 0) d.allowance.put(id, v);
+        }
+        for (Tag t : tag.getList("Auction", Tag.TAG_COMPOUND)) {
+            CompoundTag x = (CompoundTag) t;
+            AuctionOrder a = new AuctionOrder();
+            a.id = x.getLong("Id"); a.owner = uuid(x.getString("Owner")); a.ownerName = x.getString("Name"); a.item = x.getString("Item");
+            a.quantity = x.getLong("Quantity"); a.minPercent = Math.max(0, Math.min(100, x.getInt("MinPercent"))); a.day = x.getLong("Day");
+            if (a.owner != null && a.quantity > 0 && !a.item.isEmpty()) d.auction.add(a);
         }
         return d;
     }
@@ -350,6 +408,26 @@ public final class ExchangeData extends SavedData {
             pos.add(x);
         }
         tag.put("Positions", pos);
+        // 0.1.10.25 (X1)
+        CompoundTag pr = new CompoundTag();
+        pressure.forEach((k, v) -> { if (v > 0) pr.putDouble(k, v); });
+        tag.put("Pressure", pr);
+        tag.putLong("PressureDay", pressureDay);
+        tag.putLong("SoldDay", soldDay);
+        CompoundTag so = new CompoundTag();
+        sold.forEach((id, m) -> { if (!m.isEmpty()) so.put(id.toString(), writeLongMap(m)); });
+        tag.put("Sold", so);
+        CompoundTag al = new CompoundTag();
+        allowance.forEach((id, v) -> al.putLongArray(id.toString(), v));
+        tag.put("Allowance", al);
+        ListTag auc = new ListTag();
+        for (AuctionOrder a : auction) {
+            CompoundTag x = new CompoundTag();
+            x.putLong("Id", a.id); x.putString("Owner", a.owner.toString()); x.putString("Name", a.ownerName); x.putString("Item", a.item);
+            x.putLong("Quantity", a.quantity); x.putInt("MinPercent", a.minPercent); x.putLong("Day", a.day);
+            auc.add(x);
+        }
+        tag.put("Auction", auc);
         return tag;
     }
 

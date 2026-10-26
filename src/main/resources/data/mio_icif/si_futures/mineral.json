@@ -44,17 +44,20 @@
     {
       "item": "minecraft:raw_iron",
       "base_price": 160,
-      "volatility": 0.1
+      "volatility": 0.1,
+      "import_per_day": 0
     },
     {
       "item": "minecraft:raw_copper",
       "base_price": 100,
-      "volatility": 0.12
+      "volatility": 0.12,
+      "import_per_day": 0
     },
     {
       "item": "minecraft:raw_gold",
       "base_price": 320,
-      "volatility": 0.18
+      "volatility": 0.18,
+      "import_per_day": 0
     },
     {
       "item": "minecraft:ancient_debris",

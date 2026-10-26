@@ -42,6 +42,76 @@ import java.util.List;
 
     public FutureElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_future_elc blockEntity, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
         super(mio_icif_menus.FUTURE_ELC_MENU_TYPE.get(), containerId, 1, playerInventory, itemHandler, data, mio_icif_future_elc.DATA_COUNT, blockEntity);
+        // 0.1.10.25 (X1): the sell box and the player inventory, shown on the sell page of the panel (the panel places them)
+        this.owner = playerInventory.player;
+        this.sellBox = new SimpleContainer(SELL_BOX_SIZE);
+        for (int i = 0; i < SELL_BOX_SIZE; i++) this.addSlot(new BoxSlot(sellBox, i));
+        for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++) this.addSlot(new PanelSlot(playerInventory, 9 + row * 9 + col));
+        for (int col = 0; col < 9; col++) this.addSlot(new PanelSlot(playerInventory, col));
+    }
+
+    /** 0.1.10.25 (X1): slots 1-18 are the sell box, 19-54 the player inventory (27 main, then the hotbar). */
+    public static final int SELL_BOX_SIZE = 18, SELL_BOX_FIRST = 1, INVENTORY_FIRST = SELL_BOX_FIRST + SELL_BOX_SIZE,
+        INVENTORY_END = INVENTORY_FIRST + 36;
+
+    private final Player owner;
+    private final SimpleContainer sellBox;
+    /** Client: the panel shows its sell page; only then are the box and inventory slots drawn and clickable. */
+    public boolean sellView;
+
+    /** A slot that the panel shows on its sell page only. */
+    private class PanelSlot extends Slot {
+        PanelSlot(net.minecraft.world.Container container, int index) { super(container, index, -10000, -10000); }
+
+        @Override
+        public boolean isActive() { return !owner.level().isClientSide || sellView; }
+    }
+
+    /** A slot of the sell box: plain stacks of commodities the player has unlocked only. */
+    private final class BoxSlot extends PanelSlot {
+        BoxSlot(SimpleContainer box, int index) { super(box, index); }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return com.miophas.singularity_iteration.common.exchange.ExchangeService.sellable(owner, stack) != null;
+        }
+    }
+
+    /** 0.1.10.25: the sell box of this menu (each player has their own while the panel is open). */
+    public SimpleContainer sellBox() { return sellBox; }
+
+    /** 0.1.10.25: moves the sellable stacks of the main inventory (not the hotbar) into the sell box. */
+    public void fillSellBox(Player player) {
+        for (int i = INVENTORY_FIRST; i < INVENTORY_FIRST + 27; i++) {
+            Slot slot = slots.get(i);
+            ItemStack stack = slot.getItem();
+            if (com.miophas.singularity_iteration.common.exchange.ExchangeService.sellable(player, stack) == null) continue;
+            if (moveItemStackTo(stack, SELL_BOX_FIRST, INVENTORY_FIRST, false)) slot.setChanged();
+        }
+        broadcastChanges();
+    }
+
+    /** 0.1.10.25: puts the sell box back into the inventory; what does not fit goes to the exchange mailbox. */
+    public void returnSellBox(Player player) {
+        for (int i = 0; i < sellBox.getContainerSize(); i++) {
+            ItemStack stack = sellBox.removeItemNoUpdate(i);
+            if (stack.isEmpty()) continue;
+            if (!player.getInventory().add(stack) && !stack.isEmpty()) {
+                if (player instanceof ServerPlayer sp) {
+                    com.miophas.singularity_iteration.common.exchange.ExchangeService.toMailbox(sp, stack);
+                } else {
+                    player.drop(stack, false);
+                }
+            }
+        }
+        sellBox.setChanged();
+        broadcastChanges();
+    }
+
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        if (player instanceof ServerPlayer) returnSellBox(player);
     }
 
     @Override
@@ -179,7 +249,19 @@ import java.util.List;
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
+        // 0.1.10.25 (X1): shift-click between the sell box and the inventory
+        if (index < SELL_BOX_FIRST || index >= INVENTORY_END) return ItemStack.EMPTY;
+        Slot slot = slots.get(index);
+        if (!slot.hasItem()) return ItemStack.EMPTY;
+        ItemStack stack = slot.getItem(), copy = stack.copy();
+        if (index < INVENTORY_FIRST) {
+            if (!moveItemStackTo(stack, INVENTORY_FIRST, INVENTORY_END, true)) return ItemStack.EMPTY;
+        } else if (com.miophas.singularity_iteration.common.exchange.ExchangeService.sellable(player, stack) == null
+                || !moveItemStackTo(stack, SELL_BOX_FIRST, INVENTORY_FIRST, false)) {
+            return ItemStack.EMPTY;
+        }
+        if (stack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY); else slot.setChanged();
+        return copy;
     }
 
     @Override

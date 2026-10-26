@@ -27,8 +27,24 @@ public class FutureCommodity {
         this(itemId, basePrice, volatility, category, 1, null);
     }
 
+    /**
+     * 0.1.10.25 (X1): the market of this commodity from the datapack ({@code depth.player}, {@code depth.server},
+     * {@code export_per_day}, {@code import_per_day}, {@code import_premium}); -1 = the config value. Server side only (not
+     * synced: the client gets quotes in the exchange view).
+     */
+    public record Market(int depthPlayer, int depthServer, double exportPerDay, int importPerDay, double importPremium) {
+        public static final Market DEFAULT = new Market(-1, -1, -1, -1, -1);
+    }
+
+    private final Market market;
+
     public FutureCommodity(String itemId, int basePrice, float volatility, CommodityCategory category,
                            int periodDays, @org.jetbrains.annotations.Nullable ResourceLocation unlockAdvancement) {
+        this(itemId, basePrice, volatility, category, periodDays, unlockAdvancement, Market.DEFAULT);
+    }
+
+    public FutureCommodity(String itemId, int basePrice, float volatility, CommodityCategory category,
+                           int periodDays, @org.jetbrains.annotations.Nullable ResourceLocation unlockAdvancement, Market market) {
         this.itemId = itemId;
         this.item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(itemId));
         this.name = item.getDescriptionId();
@@ -37,7 +53,11 @@ public class FutureCommodity {
         this.category = category;
         this.periodDays = Math.max(1, periodDays);
         this.unlockAdvancement = unlockAdvancement;
+        this.market = market == null ? Market.DEFAULT : market;
     }
+
+    /** 0.1.10.25: the datapack market settings (-1 = the config value). */
+    public Market getMarket() { return market; }
 
     public int getPeriodDays() { return periodDays; }
 

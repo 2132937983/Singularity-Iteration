@@ -3,6 +3,7 @@ package com.miophas.singularity_iteration.common.client.screen;
 import com.miophas.singularity_iteration.common.client.screen.panel.PanelCharts;
 import com.miophas.singularity_iteration.common.exchange.ExchangeClientState;
 import com.miophas.singularity_iteration.common.exchange.ExchangePackets;
+import com.miophas.singularity_iteration.common.exchange.ExchangeService;
 import com.miophas.singularity_iteration.common.exchange.ExchangeView;
 import com.miophas.singularity_iteration.common.item.normal.mio_icif_normal;
 import com.miophas.singularity_iteration.common.menu.producer.FutureElcMenu;
@@ -14,6 +15,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -41,7 +43,7 @@ import org.lwjgl.glfw.GLFW;
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
-    private static final int TABS = 5, ROW = 20;
+    private static final int TABS = 6, ROW = 20;   // 0.1.10.25: tab 5 = the sell page
     private static final String K = "gui.mio_icif.exchange.";
 
     private record Region(int x, int y, int w, int h, Runnable left, Runnable right) {
@@ -60,7 +62,9 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
     private Item target = Items.AIR, rewardItem = Items.AIR;
     private int rewardKind, pickMode;
 
-    private EditBox priceBox, qtyBox, postQty, postAmount, postDays, futQty;
+    private EditBox priceBox, qtyBox, postQty, postAmount, postDays, futQty, minBox;
+    // 0.1.10.25 (X1): the sell box as last requested (a change asks the server for a new quote)
+    private String boxSeen = "";
 
     public mio_icif_gui_future_elc(FutureElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -78,11 +82,12 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
         this.leftPos = 0;
         this.topPos = 0;
         priceBox = box("1", 9);
-        qtyBox = box("1", 4);
-        postQty = box("64", 4);
+        qtyBox = box("1", 6);
+        postQty = box("64", 6);
         postAmount = box("100", 9);
         postDays = box("3", 1);
         futQty = box("16", 4);
+        minBox = box("0", 3);
         request();
     }
 
@@ -114,6 +119,15 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
     @Override
     public void containerTick() {
         super.containerTick();
+        // 0.1.10.25: a new quote as soon as the sell box changes
+        if (tab == 5) {
+            StringBuilder seen = new StringBuilder();
+            for (int i = 0; i < FutureElcMenu.SELL_BOX_SIZE; i++) {
+                ItemStack s = menu.sellBox().getItem(i);
+                if (!s.isEmpty()) seen.append(i).append(':').append(BuiltInRegistries.ITEM.getKey(s.getItem())).append('x').append(s.getCount()).append(';');
+            }
+            if (!seen.toString().equals(boxSeen)) { boxSeen = seen.toString(); request(); }
+        }
         if (++requestTimer >= 20) request();
     }
 
@@ -127,7 +141,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
-        for (EditBox b : List.of(priceBox, qtyBox, postQty, postAmount, postDays, futQty)) {
+        for (EditBox b : List.of(priceBox, qtyBox, postQty, postAmount, postDays, futQty, minBox)) {
             if (b.isVisible() && b.mouseClicked(mx, my, button)) { setFocused(b); return true; }
         }
         if (getFocused() instanceof EditBox b) { b.setFocused(false); setFocused(null); }
@@ -137,7 +151,8 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
             Runnable action = button == 1 ? r.right() : r.left();
             if (action != null) { action.run(); return true; }
         }
-        return false;
+        // 0.1.10.25: the slots of the sell page (vanilla clicks, drags, shift-clicks)
+        return tab == 5 && super.mouseClicked(mx, my, button);
     }
 
     @Override
@@ -184,19 +199,13 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
 
     // ------------------------------------------------------------------ render
 
+    /**
+     * 0.1.10.25: the whole panel is drawn as the background, so the vanilla screen draws the widgets, the slots of the sell
+     * page, the carried stack and the item tooltips on top of it (before, the panel drew everything itself and had no slots).
+     */
     @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) { }
-
-    @Override
-    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) { }
-
-    @Override
-    public void render(GuiGraphics g, int mx, int my, float pt) {
-        this.renderBackground(g, mx, my, pt);
+    protected void renderBg(GuiGraphics g, float partialTick, int mx, int my) {
         g.fill(0, 0, width, height, 0xE00D1117);
-        regions.clear();
-        hoverText = null;
-        for (EditBox b : List.of(priceBox, qtyBox, postQty, postAmount, postDays, futQty)) b.setVisible(false);
         ExchangeView v = ExchangeClientState.view();
         header(g, v, mx, my);
         if (v == null) {
@@ -207,10 +216,26 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
                 case 1 -> commissions(g, v, mx, my);
                 case 2 -> futures(g, v, mx, my);
                 case 3 -> orders(g, v, mx, my);
-                default -> treasury(g, v, mx, my);
+                case 4 -> treasury(g, v, mx, my);
+                default -> sell(g, v, mx, my);
             }
         }
-        for (var widget : this.renderables) widget.render(g, mx, my, pt);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) { }
+
+    @Override
+    protected int statusLampColor() { return 0; }
+
+    @Override
+    public void render(GuiGraphics g, int mx, int my, float pt) {
+        regions.clear();
+        hoverText = null;
+        for (EditBox b : List.of(priceBox, qtyBox, postQty, postAmount, postDays, futQty, minBox)) b.setVisible(false);
+        menu.sellView = tab == 5;
+        layoutSellSlots();
+        super.render(g, mx, my, pt);
         if (hoverText != null) g.renderTooltip(font, Component.literal(hoverText), mx, my);
     }
 
@@ -313,8 +338,11 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
             line(g, cx + 4, ty, half - 8, K + "ask", d.ask() > 0 ? PanelCharts.number(d.ask()) : "-", d.ask() > 0 ? PanelCharts.down() : PanelCharts.DIM);
             line(g, cx + 4, ty + 10, half - 8, K + "supply", PanelCharts.number(d.supply()), PanelCharts.TEXT);
             line(g, cx + 4, ty + 20, half - 8, K + "bid", d.bid() > 0 ? PanelCharts.number(d.bid()) : "-", d.bid() > 0 ? PanelCharts.up() : PanelCharts.DIM);
-            line(g, cx + 4, ty + 30, half - 8, K + "budget", PanelCharts.number(d.budgetLeft()), PanelCharts.TEXT);
-            line(g, cx + 4, ty + 40, half - 8, K + "daily_left", PanelCharts.number(d.dailyLeft()), PanelCharts.TEXT);
+            // 0.1.10.25 (X1): the sell pressure and this player's sales today (or the buy room when there is a buy limit)
+            line(g, cx + 4, ty + 30, half - 8, K + "pressure", PanelCharts.number(d.pressure()), PanelCharts.TEXT);
+            if (d.buyLeft() >= 0) line(g, cx + 4, ty + 40, half - 8, K + "buy_left", PanelCharts.number(d.buyLeft()), PanelCharts.TEXT);
+            else line(g, cx + 4, ty + 40, half - 8, K + "sold_today", PanelCharts.number(d.mine()), PanelCharts.TEXT);
+            hover(cx + 4, ty + 20, half - 8, 30, Component.translatable(K + "sell_curve_help").getString(), mx, my);
         } else {
             g.drawString(font, font.plainSubstrByWidth(Component.translatable(K + "listing_only_book").getString(), half - 8), cx + 4, ty, PanelCharts.DIM, false);
         }
@@ -387,17 +415,128 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
         button(g, x + w - 4 - 70 - 30, ty + 56, 13, 12, Component.literal("-"), false,
             () -> qtyBox.setValue(Long.toString(Math.max(1, num(qtyBox, 1) - (hasShiftDown() ? 64 : 1)))), mx, my);
         button(g, x + w - 4 - 70 - 15, ty + 56, 13, 12, Component.literal("+"), false,
-            () -> qtyBox.setValue(Long.toString(Math.min(1024, num(qtyBox, 1) + (hasShiftDown() ? 64 : 1)))), mx, my);
+            () -> qtyBox.setValue(Long.toString(Math.min(ExchangeService.MAX_QUANTITY, num(qtyBox, 1) + (hasShiftDown() ? 64 : 1)))), mx, my);
         long price = num(priceBox, 0), qty = num(qtyBox, 0);
         line(g, x + 4, ty + 74, w - 8, K + "total", PanelCharts.number(price * qty) + " " + unit(d.currency()).getString(), PanelCharts.TEXT);
         String note = Component.translatable(resting ? K + "rest_help" : K + "now_help").getString();
         g.drawString(font, font.plainSubstrByWidth(note, w - 8), x + 4, ty + 86, PanelCharts.DIM, false);
         button(g, x + 4, ty + 98, w - 8, 16, Component.translatable(buySide ? K + "submit_buy" : K + "submit_sell"), false,
-            () -> act(ExchangePackets.PLACE, d.id(), num(priceBox, 0), 0, resting ? 1 : 0, (int) Math.min(1024, num(qtyBox, 0)), buySide, ""), mx, my);
+            () -> act(ExchangePackets.PLACE, d.id(), num(priceBox, 0), 0, resting ? 1 : 0, (int) Math.min(ExchangeService.MAX_QUANTITY, num(qtyBox, 0)), buySide, ""), mx, my);
     }
 
     private void place(EditBox b, int x, int y, int w) {
         b.setX(x); b.setY(y); b.setWidth(w); b.setVisible(true);
+    }
+
+    // ------------------------------------------------------------------ sell page (0.1.10.25, X1)
+
+    private static final int SELL_TOP = 26, BOX_LEFT = 12;
+
+    private int boxTop() { return SELL_TOP + 16; }
+
+    private int invTop() { return boxTop() + 2 * 18 + 4 + 14 + 16; }
+
+    /**
+     * Places the sell box and inventory slots for the window (the slot positions are mutable through the mod's access
+     * transformer: the panel is the whole window and changes with it). Off the sell page they are inactive.
+     */
+    private void layoutSellSlots() {
+        for (int i = 0; i < FutureElcMenu.SELL_BOX_SIZE; i++) {
+            Slot slot = menu.slots.get(FutureElcMenu.SELL_BOX_FIRST + i);
+            slot.x = BOX_LEFT + (i % 9) * 18;
+            slot.y = boxTop() + (i / 9) * 18;
+        }
+        for (int i = 0; i < 36; i++) {
+            Slot slot = menu.slots.get(FutureElcMenu.INVENTORY_FIRST + i);
+            slot.x = BOX_LEFT + (i % 9) * 18;
+            slot.y = i < 27 ? invTop() + (i / 9) * 18 : invTop() + 3 * 18 + 4;
+        }
+    }
+
+    private void slotFrame(GuiGraphics g, int x, int y) {
+        g.fill(x - 1, y - 1, x + 17, y + 17, PanelCharts.PANEL_LINE);
+        g.fill(x, y, x + 16, y + 16, 0xFF0D1117);
+    }
+
+    private void sell(GuiGraphics g, ExchangeView v, int mx, int my) {
+        int top = SELL_TOP, bottom = height - 6, lw = 9 * 18 + 12;
+        // left: the box and the inventory (the slots themselves are drawn by the screen on top)
+        PanelCharts.panel(g, 6, top, lw, bottom - top);
+        g.drawString(font, Component.translatable(K + "box.title"), BOX_LEFT, top + 4, PanelCharts.ACCENT, false);
+        for (int i = 0; i < FutureElcMenu.SELL_BOX_SIZE; i++) slotFrame(g, BOX_LEFT + (i % 9) * 18, boxTop() + (i / 9) * 18);
+        int by = boxTop() + 2 * 18 + 4, half = (lw - 16) / 2;
+        button(g, BOX_LEFT, by, half, 14, Component.translatable(K + "box.fill"), false,
+            () -> act(ExchangePackets.BOX_FILL, "", 0, 0, 0, 0, false, ""), mx, my);
+        hover(BOX_LEFT, by, half, 14, Component.translatable(K + "box.fill_help").getString(), mx, my);
+        button(g, BOX_LEFT + half + 4, by, half, 14, Component.translatable(K + "box.return"), false,
+            () -> act(ExchangePackets.BOX_RETURN, "", 0, 0, 0, 0, false, ""), mx, my);
+        g.drawString(font, Component.translatable(K + "box.inventory"), BOX_LEFT, invTop() - 11, PanelCharts.DIM, false);
+        for (int i = 0; i < 36; i++) slotFrame(g, BOX_LEFT + (i % 9) * 18, i < 27 ? invTop() + (i / 9) * 18 : invTop() + 3 * 18 + 4);
+
+        // right: the quote, the actions and the auction orders
+        int x = 6 + lw + 6, w = width - x - 6;
+        int quoteH = Math.max(120, (bottom - top) * 3 / 5);
+        PanelCharts.panel(g, x, top, w, quoteH);
+        g.drawString(font, Component.translatable(K + "box.quote"), x + 4, top + 4, PanelCharts.ACCENT, false);
+        int cQty = x + w * 45 / 100, cNow = x + w * 70 / 100, cAuc = x + w - 6;
+        PanelCharts.right(g, font, Component.translatable(K + "box.qty").getString(), cQty, top + 16, PanelCharts.DIM);
+        PanelCharts.right(g, font, Component.translatable(K + "box.now").getString(), cNow, top + 16, PanelCharts.DIM);
+        PanelCharts.right(g, font, Component.translatable(K + "box.auction").getString(), cAuc, top + 16, PanelCharts.DIM);
+        int y = top + 27;
+        long nowCoins = 0, aucCoins = 0;
+        if (v.box().isEmpty()) {
+            for (var line : font.split(Component.translatable(K + "box.empty"), w - 8)) {
+                g.drawString(font, line, x + 4, y, PanelCharts.DIM, false);
+                y += 10;
+            }
+        }
+        for (ExchangeView.BoxLine l : v.box()) {
+            if (y > top + quoteH - 60) break;
+            g.renderItem(new ItemStack(item(l.id())), x + 4, y - 4);
+            g.drawString(font, font.plainSubstrByWidth(name(l.id()), Math.max(20, cQty - x - 60)), x + 24, y, PanelCharts.TEXT, false);
+            PanelCharts.right(g, font, PanelCharts.number(l.quantity()), cQty, y, PanelCharts.TEXT);
+            String now = (l.nowQuantity() < l.quantity() ? PanelCharts.number(l.nowQuantity()) + ": " : "") + PanelCharts.number(l.nowCoins());
+            String auc = (l.auctionQuantity() < l.quantity() ? PanelCharts.number(l.auctionQuantity()) + ": " : "") + PanelCharts.number(l.auctionCoins());
+            PanelCharts.right(g, font, now, cNow, y, l.nowQuantity() < l.quantity() ? PanelCharts.WARN : PanelCharts.up());
+            PanelCharts.right(g, font, auc, cAuc, y, l.auctionQuantity() < l.quantity() ? PanelCharts.WARN : PanelCharts.up());
+            hover(x + 2, y - 4, w - 4, 16, Component.translatable(K + "box.line_help", PanelCharts.number(l.quantity()), PanelCharts.number(l.nowQuantity()),
+                PanelCharts.number(l.nowCoins()), PanelCharts.number(l.auctionQuantity()), PanelCharts.number(l.auctionCoins())).getString(), mx, my);
+            nowCoins += l.nowCoins();
+            aucCoins += l.auctionCoins();
+            y += 18;
+        }
+        int fy = top + quoteH - 56;
+        g.fill(x + 2, fy - 3, x + w - 2, fy - 2, PanelCharts.PANEL_LINE);
+        g.drawString(font, Component.translatable(K + "box.total"), x + 4, fy, PanelCharts.DIM, false);
+        PanelCharts.right(g, font, PanelCharts.number(nowCoins), cNow, fy, PanelCharts.TEXT);
+        PanelCharts.right(g, font, PanelCharts.number(aucCoins), cAuc, fy, PanelCharts.TEXT);
+        line(g, x + 4, fy + 11, w - 8, K + "box.allowance",
+            v.allowance() < 0 ? Component.translatable(K + "box.unlimited").getString() : PanelCharts.number(v.allowance()), PanelCharts.TEXT);
+        g.drawString(font, Component.translatable(K + "box.min"), x + 4, fy + 24, PanelCharts.DIM, false);
+        place(minBox, x + w - 4 - 40, fy + 22, 40);
+        int bw = (w - 12) / 2;
+        button(g, x + 4, fy + 38, bw, 16, Component.translatable(K + "box.sell_now"), false,
+            () -> act(ExchangePackets.BOX_SELL, "", 0, 0, 0, 0, false, ""), mx, my);
+        hover(x + 4, fy + 38, bw, 16, Component.translatable(K + "box.sell_now_help").getString(), mx, my);
+        button(g, x + 8 + bw, fy + 38, bw, 16, Component.translatable(K + "box.sell_auction"), false,
+            () -> act(ExchangePackets.BOX_SELL, "", 0, 0, (int) Math.min(100, num(minBox, 0)), 0, true, ""), mx, my);
+        hover(x + 8 + bw, fy + 38, bw, 16, Component.translatable(K + "box.sell_auction_help").getString(), mx, my);
+
+        int ay = top + quoteH + 4;
+        PanelCharts.panel(g, x, ay, w, bottom - ay);
+        g.drawString(font, Component.translatable(K + "auction.title"), x + 4, ay + 4, PanelCharts.ACCENT, false);
+        int row = ay + 16;
+        if (v.auctions().isEmpty()) g.drawString(font, Component.translatable(K + "auction.none"), x + 4, row, PanelCharts.DIM, false);
+        for (ExchangeView.AuctionLine a : v.auctions()) {
+            if (row > bottom - 12) break;
+            String text = Component.translatable(K + "auction.line", name(a.item()), PanelCharts.number(a.quantity()), a.minPercent(),
+                PanelCharts.number(a.estQuantity()), PanelCharts.number(a.estCoins())).getString();
+            g.drawString(font, font.plainSubstrByWidth(text, w - 60), x + 4, row, PanelCharts.TEXT, false);
+            final long id = a.id();
+            button(g, x + w - 52, row - 2, 48, 12, Component.translatable(K + "auction.cancel"), false,
+                () -> act(ExchangePackets.AUCTION_CANCEL, "", id, 0, 0, 0, false, ""), mx, my);
+            row += 13;
+        }
     }
 
     // ------------------------------------------------------------------ commissions tab
@@ -469,7 +608,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
         button(g, fx + 4, y, formW - 8, 16, Component.translatable(K + "post_button"), false, () -> {
             if (target == Items.AIR) return;
             act(ExchangePackets.POST, BuiltInRegistries.ITEM.getKey(target).toString(), num(postAmount, 0), num(postDays, 3), rewardKind,
-                (int) Math.min(1024, num(postQty, 0)), false, rewardItem == Items.AIR ? "" : BuiltInRegistries.ITEM.getKey(rewardItem).toString());
+                (int) Math.min(ExchangeService.MAX_QUANTITY, num(postQty, 0)), false, rewardItem == Items.AIR ? "" : BuiltInRegistries.ITEM.getKey(rewardItem).toString());
         }, mx, my);
         y += 20;
         // inventory picker

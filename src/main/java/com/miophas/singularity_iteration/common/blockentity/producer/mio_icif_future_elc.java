@@ -177,7 +177,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
             case DATA_CURRENT_CATEGORY -> currentCategory.ordinal();
                 case DATA_CURRENT_PAGE -> currentPage;
                 case DATA_DAILY_VOLUME -> 0; // 0.1.10.20: per player, filled in by viewerData
-            case DATA_DAILY_LIMIT -> Math.min(Singularity_Iteration_Config.FUTURE_DAILY_LIMIT.get(), 32767); // 限制在short范围内
+            case DATA_DAILY_LIMIT -> buyLimit(); // 0.1.10.25: the daily buy limit (32767 = none)
                 case DATA_BUY_COST_LOW -> (int) (quote(true) & 0xFFFF);
                 case DATA_BUY_COST_HIGH -> (int) ((quote(true) >>> 16) & 0xFFFF);
                 case DATA_SELL_PAYOUT_LOW -> (int) (Math.max(0, quote(false)) & 0xFFFF);
@@ -260,12 +260,10 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         return Singularity_Iteration_Config.FUTURE_SPREAD.get();
     }
 
-    private static int buyBudget() {
-        return Singularity_Iteration_Config.FUTURE_SYSTEM_BUY_PER_DAY.get();
-    }
-
-    private static double budgetDrop() {
-        return Singularity_Iteration_Config.FUTURE_BUDGET_PRICE_DROP.get();
+    /** 0.1.10.25 (X1): the daily buy limit for the menu data (32767 = none or more). */
+    private static int buyLimit() {
+        int cap = Singularity_Iteration_Config.FUTURE_BUY_ITEMS_PER_DAY.get();
+        return cap <= 0 ? 32767 : Math.min(cap, 32767);
     }
 
     /** Coins a purchase of {@code quantity} costs now. */
@@ -273,11 +271,18 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         return MarketQuote.buyCost(getCurrentPrice(commodity), quantity, spread());
     }
 
-    /** Coins a sale of {@code quantity} pays now, or -1 when the market does not buy that many today. */
+    /**
+     * Coins a sale of {@code quantity} pays now on the sell curve (0.1.10.25: without the seller's own sales today, which
+     * the exchange adds per player), or -1 off the server.
+     */
     public long sellPayout(FutureCommodity commodity, int quantity) {
-        if (!(level instanceof ServerLevel)) return -1;
-        int bought = FutureMarketData.get(level).getSystemBought(commodity.getItemId());
-        return MarketQuote.sellPayout(getCurrentPrice(commodity), quantity, spread(), bought, buyBudget(), budgetDrop());
+        if (!(level instanceof ServerLevel server)) return -1;
+        var market = com.miophas.singularity_iteration.common.exchange.ExchangeService.market(server.getServer(), commodity.getItemId());
+        if (market == null) return -1;
+        var d = com.miophas.singularity_iteration.common.exchange.ExchangeData.get(server.getServer());
+        return (long) Math.floor(com.miophas.singularity_iteration.common.exchange.SellDepth.payout(
+            com.miophas.singularity_iteration.common.exchange.ExchangeService.curve(market), 0,
+            com.miophas.singularity_iteration.common.exchange.ExchangeService.pressure(d, market.id()), quantity));
     }
 
     /** The quote of the selected commodity for the trade quantity (server side; 0 / -1 without a selection). */
@@ -288,11 +293,9 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         return Math.min(coins, 0xFFFFFFFFL);
     }
 
+    /** 0.1.10.25: the market buys any amount (on the sell curve); kept for the menu data layout. */
     private int marketRoom() {
-        FutureCommodity commodity = level instanceof ServerLevel ? getSelectedCommodity() : null;
-        if (commodity == null) return 0;
-        int left = MarketQuote.budgetLeft(FutureMarketData.get(level).getSystemBought(commodity.getItemId()), buyBudget());
-        return Math.min(left, 32767);
+        return 32767;
     }
 
     // ========== 业务逻辑 - 价格管理 ==========

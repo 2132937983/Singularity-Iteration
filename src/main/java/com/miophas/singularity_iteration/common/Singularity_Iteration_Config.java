@@ -20,13 +20,12 @@ public class Singularity_Iteration_Config {
     // Futures commodities moved to datapacks in 0.1.7.32: data/<namespace>/si_futures/*.json
     // (see FutureCommodityLoader). The old "commodities" list here is ignored and removed.
 
-    // Maximum number of items that a player can trade each day.
-public static final ModConfigSpec.IntValue FUTURE_MAX_DAILY_ITEMS = FUTURE_BUILDER
-            .comment("Maximum number of items traded each day", "The total number of items that a player can buy or sell each day")
-            .defineInRange("maxDailyItems", 100, 1, 10000);
-
-    // Daily trade limit. This is an alias of FUTURE_MAX_DAILY_ITEMS.
-public static final ModConfigSpec.IntValue FUTURE_DAILY_LIMIT = FUTURE_MAX_DAILY_ITEMS;
+    // 0.1.10.25 (X1): buying and selling have separate limits. Buying from the market burns coins and is limited by the
+    // market's stock; selling is limited by the sell depth (below). Before, both shared "maxDailyItems" (100 items a day).
+    public static final ModConfigSpec.IntValue FUTURE_BUY_ITEMS_PER_DAY = FUTURE_BUILDER
+            .comment("Items a player can buy from the market each day, all commodities together (0.1.10.25). 0 = no limit (the market's stock limits it).",
+                     "Before 0.1.10.25 \"maxDailyItems\" (100) counted buying and selling together.")
+            .defineInRange("buyItemsPerDay", 0, 0, 1_000_000);
 
     // 每页显示货品数量
     public static final ModConfigSpec.IntValue FUTURE_ITEMS_PER_PAGE = FUTURE_BUILDER
@@ -64,14 +63,29 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
                      "A purchase costs price x (1 + spread / 2); a sale pays price x (1 - spread / 2).",
                      "Before 0.1.10.20 both were the price (0), so buying low and selling after the price came back made coins without risk.")
             .defineInRange("spread", 0.06, 0.0, 0.5);
-    public static final ModConfigSpec.IntValue FUTURE_SYSTEM_BUY_PER_DAY = FUTURE_BUILDER
-            .comment("Items of one commodity that the market buys from all players together each game day (0.1.10.20)",
-                     "When the budget is used up, the machine does not buy that commodity until the next day. 0 = no limit (the behaviour before 0.1.10.20).")
-            .defineInRange("systemBuyPerDay", 256, 0, 1_000_000);
-    public static final ModConfigSpec.DoubleValue FUTURE_BUDGET_PRICE_DROP = FUTURE_BUILDER
-            .comment("How far the sale price falls while the daily buy budget of a commodity is used up (0.1.10.20)",
-                     "0.3: the last items of the budget sell for 30 % less than the first ones.")
-            .defineInRange("budgetPriceDrop", 0.3, 0.0, 0.9);
+    // 0.1.10.25 (X1): the sell depth replaces "systemBuyPerDay" (256 items of a commodity a day for all players, 30 % fall).
+    public static final ModConfigSpec.IntValue EXCHANGE_SELL_DEPTH_PLAYER = FUTURE_BUILDER
+            .comment("Personal sell depth in items (0.1.10.25): each item a player sold of a commodity today lowers that player's bid by the factor exp(-1/depth).",
+                     "One player can never take more than price x 0.97 / (1/player + 1/server) coins of one commodity in a day. A datapack commodity can set its own depth.")
+            .defineInRange("sellDepthPlayer", 256, 1, 1_000_000);
+    public static final ModConfigSpec.IntValue EXCHANGE_SELL_DEPTH_SERVER = FUTURE_BUILDER
+            .comment("Server sell depth in items (0.1.10.25): every item sold of a commodity by anyone, not yet exported, lowers all bids by exp(-1/depth).",
+                     "All players together (any number of accounts) can take at most price x 0.97 x depth coins of one commodity on the first day,",
+                     "and about a quarter of that every day while the export share is 0.5.")
+            .defineInRange("sellDepthServer", 1024, 1, 10_000_000);
+    public static final ModConfigSpec.DoubleValue EXCHANGE_SELL_EXPORT = FUTURE_BUILDER
+            .comment("Share of the sell pressure that the market passes on (exports) each game day (0.1.10.25); the bids recover by this share each day")
+            .defineInRange("sellExportPerDay", 0.5, 0.05, 1.0);
+    public static final ModConfigSpec.IntValue EXCHANGE_SELL_ALLOWANCE = FUTURE_BUILDER
+            .comment("Coins a player can receive from the market for sales each day (0.1.10.25); unused coins carry over up to sellAllowanceDays days. 0 = no limit.",
+                     "Coins from trades between players do not count.")
+            .defineInRange("sellAllowancePerDay", 50_000, 0, Integer.MAX_VALUE);
+    public static final ModConfigSpec.IntValue EXCHANGE_SELL_ALLOWANCE_DAYS = FUTURE_BUILDER
+            .comment("Days of sellAllowancePerDay that a player can keep (0.1.10.25)")
+            .defineInRange("sellAllowanceDays", 3, 1, 30);
+    public static final ModConfigSpec.BooleanValue EXCHANGE_SELL_ALLOWANCE_SINGLEPLAYER = FUTURE_BUILDER
+            .comment("Use sellAllowancePerDay in single player as well (0.1.10.25). Off by default: the depths alone limit a single player.")
+            .define("sellAllowanceInSingleplayer", false);
 
     // 0.1.10.21 (M2-M5): the SI exchange.
     public static final ModConfigSpec.DoubleValue EXCHANGE_FEE = FUTURE_BUILDER

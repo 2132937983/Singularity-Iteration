@@ -99,8 +99,26 @@ public final class FutureCommodityLoader extends SimpleJsonResourceReloadListene
             JsonObject u = GsonHelper.getAsJsonObject(entry, "unlock");
             if (u.has("advancement")) unlock = ResourceLocation.parse(GsonHelper.getAsString(u, "advancement"));
         }
+        // 0.1.10.25 (X1): the market of this commodity (-1 = the config value)
+        FutureCommodity.Market market = FutureCommodity.Market.DEFAULT;
+        if (entry.has("depth") || entry.has("export_per_day") || entry.has("import_per_day") || entry.has("import_premium")) {
+            int player = -1, server = -1;
+            if (entry.has("depth")) {
+                JsonObject d = GsonHelper.getAsJsonObject(entry, "depth");
+                player = GsonHelper.getAsInt(d, "player", -1);
+                server = GsonHelper.getAsInt(d, "server", -1);
+                if (player == 0 || player < -1 || server == 0 || server < -1) throw new IllegalArgumentException("depth.player / depth.server must be positive");
+            }
+            double export = GsonHelper.getAsDouble(entry, "export_per_day", -1);
+            if (export != -1 && !(export >= 0.05 && export <= 1)) throw new IllegalArgumentException("export_per_day must be 0.05..1");
+            int imports = GsonHelper.getAsInt(entry, "import_per_day", -1);
+            if (imports < -1) throw new IllegalArgumentException("import_per_day must be 0 or more");
+            double premium = GsonHelper.getAsDouble(entry, "import_premium", -1);
+            if (premium != -1 && !(premium >= 0 && premium <= 2)) throw new IllegalArgumentException("import_premium must be 0..2");
+            market = new FutureCommodity.Market(player, server, export, imports, premium);
+        }
         byItem.remove(key);   // a replacement moves to the end, after the entries it overrides
-        byItem.put(key, new FutureCommodity(key, basePrice, volatility, category, period, unlock));
+        byItem.put(key, new FutureCommodity(key, basePrice, volatility, category, period, unlock, market));
     }
 
     /** Entries in sync-packet form. */

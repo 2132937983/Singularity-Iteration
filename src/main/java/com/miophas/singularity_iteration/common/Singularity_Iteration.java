@@ -326,6 +326,7 @@ com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.
         com.miophas.singularity_iteration.common.command.ChunkLoaderCommand.register(event.getDispatcher());   // 0.1.10.11
         com.miophas.singularity_iteration.common.command.ReactorAuditCommand.register(event.getDispatcher());  // 0.1.10.12
         com.miophas.singularity_iteration.common.command.MarketAuditCommand.register(event.getDispatcher());   // 0.1.10.21
+        com.miophas.singularity_iteration.common.command.MarketToolsCommand.register(event.getDispatcher());   // 0.1.10.25
     }
 
     private void onBlockEntityTypeAddBlocks(BlockEntityTypeAddBlocksEvent event) {

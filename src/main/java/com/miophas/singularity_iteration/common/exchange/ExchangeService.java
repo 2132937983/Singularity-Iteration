@@ -151,7 +151,7 @@ public final class ExchangeService {
      * Before 0.1.10.25 buying and selling shared one limit of 100 items a day.
      */
     public static int buyLeft(MinecraftServer server, UUID player) {
-        int cap = Singularity_Iteration_Config.FUTURE_BUY_ITEMS_PER_DAY.get();
+        int cap = EconomySettings.buyItemsPerDay();
         if (cap <= 0) return Integer.MAX_VALUE;
         int used = FutureMarketData.get(server.overworld()).getPlayerVolume(player);
         return Math.max(0, cap - used);
@@ -161,12 +161,12 @@ public final class ExchangeService {
     static int importPerDay(String id) {
         FutureCommodity c = FutureCommodityManager.getCommodityById(id);
         int v = c == null ? -1 : c.getMarket().importPerDay();
-        return v >= 0 ? v : Singularity_Iteration_Config.EXCHANGE_IMPORT_PER_DAY.get();
+        return v >= 0 ? v : EconomySettings.importPerDay();
     }
 
     static double importPremium(Market m) {
         double v = m.commodity() == null ? -1 : m.commodity().getMarket().importPremium();
-        return v >= 0 ? v : Singularity_Iteration_Config.EXCHANGE_IMPORT_PREMIUM.get();
+        return v >= 0 ? v : EconomySettings.importPremium();
     }
 
     /**
@@ -177,6 +177,8 @@ public final class ExchangeService {
     public static long supply(ExchangeData d, String id, long day) {
         if (d.importedDay != day) { d.imported.clear(); d.importedDay = day; d.setDirty(); }
         for (Commission c : d.commissions) if (c.system && c.item.equals(id)) return 0;
+        // 0.1.10.26 (X3): the same for the NORMAL and ADVANCED bounties (their reward is above the ask)
+        if (d.board.blocks(id)) return 0;
         long stock = d.treasury.getOrDefault(id, 0L);
         int importLeft = Math.max(0, importPerDay(id) - d.imported.getOrDefault(id, 0));
         return stock + importLeft;
@@ -186,7 +188,7 @@ public final class ExchangeService {
     static long systemCost(ExchangeData d, Market m, int n) {
         long stock = d.treasury.getOrDefault(m.id(), 0L);
         int fromStock = (int) Math.min(n, stock), imported = n - fromStock;
-        double spread = Singularity_Iteration_Config.FUTURE_SPREAD.get();
+        double spread = EconomySettings.spread();
         long cost = MarketQuote.buyCost((int) m.price(), fromStock, spread);
         if (imported > 0) cost += (long) Math.ceil(MarketQuote.buyCost((int) m.price(), imported, spread) * (1 + importPremium(m)));
         return cost;
@@ -200,15 +202,15 @@ public final class ExchangeService {
     /** The bid curve of a datapack commodity at its price now (datapack depths, else the config). */
     public static SellDepth.Curve curve(Market m) {
         FutureCommodity.Market cm = m.commodity() == null ? FutureCommodity.Market.DEFAULT : m.commodity().getMarket();
-        int lp = cm.depthPlayer() > 0 ? cm.depthPlayer() : Singularity_Iteration_Config.EXCHANGE_SELL_DEPTH_PLAYER.get();
-        int lg = cm.depthServer() > 0 ? cm.depthServer() : Singularity_Iteration_Config.EXCHANGE_SELL_DEPTH_SERVER.get();
-        return new SellDepth.Curve(m.price() * (1.0 - Singularity_Iteration_Config.FUTURE_SPREAD.get() / 2.0), lp, lg);
+        int lp = cm.depthPlayer() > 0 ? cm.depthPlayer() : EconomySettings.sellDepthPlayer();
+        int lg = cm.depthServer() > 0 ? cm.depthServer() : EconomySettings.sellDepthServer();
+        return new SellDepth.Curve(m.price() * (1.0 - EconomySettings.spread() / 2.0), lp, lg);
     }
 
     static double exportShare(String id) {
         FutureCommodity c = FutureCommodityManager.getCommodityById(id);
         double v = c == null ? -1 : c.getMarket().exportPerDay();
-        return v > 0 ? v : Singularity_Iteration_Config.EXCHANGE_SELL_EXPORT.get();
+        return v > 0 ? v : EconomySettings.sellExportPerDay();
     }
 
     /** Items sold of {@code id} that the market has not passed on yet. */
@@ -228,18 +230,18 @@ public final class ExchangeService {
 
     /** The coin allowance applies: config above 0, and in single player only when switched on there. */
     static boolean allowanceOn(MinecraftServer server) {
-        if (Singularity_Iteration_Config.EXCHANGE_SELL_ALLOWANCE.get() <= 0) return false;
+        if (EconomySettings.sellAllowancePerDay() <= 0) return false;
         boolean single = server.isSingleplayer() && !server.isPublished();
-        return !single || Singularity_Iteration_Config.EXCHANGE_SELL_ALLOWANCE_SINGLEPLAYER.get();
+        return !single || EconomySettings.sellAllowanceInSingleplayer();
     }
 
     /** Coins {@code player} may still receive from the market today ({@link Long#MAX_VALUE} without a limit). */
     public static long allowanceLeft(MinecraftServer server, ExchangeData d, UUID player, long day) {
         if (!allowanceOn(server)) return Long.MAX_VALUE;
-        long perDay = Singularity_Iteration_Config.EXCHANGE_SELL_ALLOWANCE.get();
+        long perDay = EconomySettings.sellAllowancePerDay();
         long[] a = d.allowance.get(player);
         if (a == null) return perDay;
-        return SellDepth.allowance(a[0], a[1], day, perDay, Singularity_Iteration_Config.EXCHANGE_SELL_ALLOWANCE_DAYS.get());
+        return SellDepth.allowance(a[0], a[1], day, perDay, EconomySettings.sellAllowanceDays());
     }
 
     static void spendAllowance(MinecraftServer server, ExchangeData d, UUID player, long day, long coins) {
@@ -269,6 +271,7 @@ public final class ExchangeService {
         spendAllowance(server, d, uuid, day, coins);
         d.ledger(day).minted += coins;
         trade(d, m.id(), day, server.overworld().getGameTime(), Math.max(1, coins / take), (int) Math.min(Integer.MAX_VALUE, take), uuid.toString(), SYSTEM);
+        ExchangeEvents.trade(m.id(), day, Math.max(1, coins / take), take, Currency.COIN, uuid.toString(), SYSTEM);
         d.setDirty();
         return new long[] {take, coins};
     }
@@ -331,6 +334,7 @@ public final class ExchangeService {
                     d.ledger(day).burned += cost;
                     FutureMarketData.get(server.overworld()).addPlayerVolume(uuid, take);
                     trade(d, id, day, server.overworld().getGameTime(), Math.max(1, cost / take), take, SYSTEM, owner);
+                    ExchangeEvents.trade(id, day, Math.max(1, cost / take), take, Currency.COIN, SYSTEM, owner);
                 }
             } else {
                 // 0.1.10.25 (X1): the sell depth instead of the daily budget; any amount, each item at a bid of at least limit
@@ -383,7 +387,7 @@ public final class ExchangeService {
     static void matchBook(MinecraftServer server, ExchangeData d, ExchangeData.Book book, Market m, String id, String owner, String team,
                           boolean buy, long limit, long matchLimit, long day, Matched x) {
         if (x.left <= 0) return;
-        double fee = Singularity_Iteration_Config.EXCHANGE_FEE.get();
+        double fee = EconomySettings.exchangeFee();
         for (OrderBook.Fill f : book.book.match(owner, team, buy, matchLimit, x.left)) {
             long value = Math.multiplyExact(f.price(), (long) f.quantity());
             long cut = (long) Math.ceil(value * fee);
@@ -399,6 +403,7 @@ public final class ExchangeService {
             if (m.currency() == Currency.COIN) d.ledger(day).burned += cut;
             x.left -= f.quantity();
             trade(d, id, day, server.overworld().getGameTime(), f.price(), f.quantity(), f.makerOwner(), owner);
+            ExchangeEvents.trade(id, day, f.price(), f.quantity(), m.currency(), buy ? f.makerOwner() : owner, buy ? owner : f.makerOwner());
         }
     }
 
@@ -515,13 +520,27 @@ public final class ExchangeService {
     /**
      * The commodity a stack of the sell box sells as, or null: a datapack commodity the player has unlocked, and a plain
      * stack (no name, enchantment, damage or other changed component), so nothing valuable is sold by mistake.
+     * 0.1.10.26 (X3): or an item of the commodity's {@code tag} (sold as the commodity), and a stack with changed components
+     * when the commodity sets {@code accept_components}.
      */
     public static String sellable(net.minecraft.world.entity.player.Player player, ItemStack stack) {
-        if (stack.isEmpty() || !stack.isComponentsPatchEmpty()) return null;
-        String id = id(stack.getItem());
-        FutureCommodity c = FutureCommodityManager.getCommodityById(id);
-        if (c == null || c.getItem() != stack.getItem() || FutureCommodityManager.isLocked(player, c)) return null;
-        return id;
+        if (stack.isEmpty()) return null;
+        FutureCommodity c = FutureCommodityManager.getCommodityById(id(stack.getItem()));
+        if (c == null || c.getItem() != stack.getItem()) c = byTag(stack);
+        if (c == null || FutureCommodityManager.isLocked(player, c)) return null;
+        if (!stack.isComponentsPatchEmpty() && !c.getSelling().acceptComponents()) return null;
+        return c.getItemId();
+    }
+
+    /** 0.1.10.26: the first commodity (in datapack order) whose tag holds the stack's item, or null. */
+    static FutureCommodity byTag(ItemStack stack) {
+        for (FutureCommodity c : FutureCommodityManager.getCommodities()) {
+            String tag = c.getSelling().tag();
+            if (tag.isEmpty()) continue;
+            ResourceLocation rl = ResourceLocation.tryParse(tag);
+            if (rl != null && stack.is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, rl))) return c;
+        }
+        return null;
     }
 
     /** Items of the sell box per commodity, in the order they first appear. */
@@ -544,11 +563,11 @@ public final class ExchangeService {
         d.setDirty();
     }
 
-    /** Takes {@code amount} plain stacks of {@code item} out of the box. */
-    static void takeFromBox(net.minecraft.world.Container box, Item item, long amount) {
+    /** Takes {@code amount} items that sell as commodity {@code id} out of the box (0.1.10.26: tag items and components too). */
+    static void takeFromBox(net.minecraft.world.entity.player.Player player, net.minecraft.world.Container box, String id, long amount) {
         for (int i = 0; i < box.getContainerSize() && amount > 0; i++) {
             ItemStack s = box.getItem(i);
-            if (s.isEmpty() || s.getItem() != item || !s.isComponentsPatchEmpty()) continue;
+            if (s.isEmpty() || !id.equals(sellable(player, s))) continue;
             int n = (int) Math.min(amount, s.getCount());
             s.shrink(n);
             if (s.isEmpty()) box.setItem(i, ItemStack.EMPTY);
@@ -583,7 +602,7 @@ public final class ExchangeService {
                 take = sold[0];
                 coins += sold[1];
             }
-            takeFromBox(box, m.item(), take);
+            takeFromBox(player, box, m.id(), take);
             items += take;
         }
         if (coins > 0) {
@@ -691,6 +710,7 @@ public final class ExchangeService {
                     mine.merge(a.item, f.quantity(), Long::sum);
                     trade(d, a.item, closing, server.overworld().getGameTime(), Math.max(1, f.coins() / f.quantity()),
                         (int) Math.min(Integer.MAX_VALUE, f.quantity()), a.owner.toString(), SYSTEM);
+                    ExchangeEvents.trade(a.item, closing, Math.max(1, f.coins() / f.quantity()), f.quantity(), Currency.COIN, a.owner.toString(), SYSTEM);
                     soldAll += f.quantity();
                 }
                 if (a.quantity > f.quantity()) addItems(d.mailbox(a.owner), a.item, a.quantity - f.quantity());
@@ -756,7 +776,7 @@ public final class ExchangeService {
         c.rewardTotal = amount;
         c.day = today(server);
         c.expiry = c.day + days;
-        c.counted = playMinutes(player) >= Singularity_Iteration_Config.EXCHANGE_LISTING_MIN_PLAY_MINUTES.get();
+        c.counted = playMinutes(player) >= EconomySettings.listingMinPlayMinutes();
         d.commissions.add(c);
         d.ledger(c.day).burned += fee;
         d.setDirty();
@@ -847,10 +867,10 @@ public final class ExchangeService {
         Item item = item(itemId);
         if (item == null) return;
         int depth = CraftDepthIndex.depth(server, item);
-        Currency currency = depth >= Singularity_Iteration_Config.EXCHANGE_UU_DEPTH.get() ? Currency.UU : Currency.COIN;
+        Currency currency = depth >= EconomySettings.uuDepth() ? Currency.UU : Currency.COIN;
         double fundamental = fundamentalIn(server, item, currency);
         var decision = ListingRules.evaluate(d.evidence.getOrDefault(itemId, List.of()), day, server.isSingleplayer(),
-            Singularity_Iteration_Config.EXCHANGE_LISTING_REQUESTERS.get(), Singularity_Iteration_Config.EXCHANGE_LISTING_FULFILLED.get(),
+            EconomySettings.listingRequesters(), EconomySettings.listingFulfilled(),
             0, fundamental);
         if (!decision.list()) return;
         ExchangeData.Listing l = new ExchangeData.Listing();
@@ -927,7 +947,7 @@ public final class ExchangeService {
         long day = today(server);
         FuturePriceEvent active = FutureMarketData.get(server.overworld()).getActiveEvent(m.id(), day);
         int start = (int) Math.min(Integer.MAX_VALUE, m.price());
-        double spread = Singularity_Iteration_Config.FUTURE_SPREAD.get();
+        double spread = EconomySettings.spread();
         String key = m.id() + '|' + day + '|' + start + '|' + days + '|' + System.identityHashCode(active) + '|' + spread + '|'
             + c.getBasePrice() + '|' + c.getVolatility() + '|' + FuturePriceModel.minPrice(c.getBasePrice()) + '|'
             + FuturePriceModel.maxPrice(c.getBasePrice());
@@ -988,7 +1008,8 @@ public final class ExchangeService {
 
     /**
      * The daily work, called when the market day changes: expire old orders and commissions (escrow to the mailboxes),
-     * settle due futures, open the day's bars, post the market's commissions, delist idle listings, prune evidence.
+     * settle due futures, open the day's bars, delist idle listings, prune evidence, then the bounties of the day
+     * (0.1.10.26: {@link Bounties}; the system commissions of earlier versions are no longer posted) and the market day event.
      */
     public static void onNewDay(MinecraftServer server, long day) {
         ExchangeData d = data(server);
@@ -1031,45 +1052,16 @@ public final class ExchangeService {
             bar(d, c.getItemId(), day, price);
         }
         // listings without trades for a long time go (their resting orders stay until they expire)
-        d.listings.values().removeIf(l -> day - l.lastTradeDay > DELIST_DAYS && (d.books.get(l.item) == null || d.books.get(l.item).book.size() == 0));
+        d.listings.values().removeIf(l -> !l.datapack && day - l.lastTradeDay > DELIST_DAYS
+            && (d.books.get(l.item) == null || d.books.get(l.item).book.size() == 0));
         d.evidence.values().forEach(list -> list.removeIf(e -> day - e.day() > EVIDENCE_DAYS));
         d.evidence.values().removeIf(List::isEmpty);
         for (String item : new ArrayList<>(d.evidence.keySet())) tryList(server, d, item, day);
-        postSystemCommissions(server, d, day);
+        // 0.1.10.26 (X3): the bounties of three tiers replace postSystemCommissions (3 market commissions a day, paid in new coins)
+        Bounties.onNewDay(server, d, day);
         d.ledger(day);
         d.setDirty();
-    }
-
-    /** The market asks for commodities it lacks: reward 15 % over its ask, 3 days; paid with new coins. */
-    static void postSystemCommissions(MinecraftServer server, ExchangeData d, long day) {
-        int wanted = Singularity_Iteration_Config.EXCHANGE_SYSTEM_COMMISSIONS.get();
-        int open = 0;
-        for (Commission c : d.commissions) if (c.system) open++;
-        if (open >= wanted || d.commissions.size() >= MAX_COMMISSIONS) return;
-        List<FutureCommodity> lacking = new ArrayList<>();
-        for (FutureCommodity c : FutureCommodityManager.getCommodities())
-            if (d.treasury.getOrDefault(c.getItemId(), 0L) < 64 && c.getUnlockAdvancement() == null) lacking.add(c);
-        var random = server.overworld().getRandom();
-        while (open < wanted && !lacking.isEmpty()) {
-            FutureCommodity c = lacking.remove(random.nextInt(lacking.size()));
-            boolean already = false;
-            for (Commission x : d.commissions) if (x.system && x.item.equals(c.getItemId())) already = true;
-            if (already) continue;
-            int quantity = 16 * (2 + random.nextInt(7));
-            int price = FutureMarketData.get(server.overworld()).getPrice(c.getItemId(), c.getBasePrice());
-            Commission x = new Commission();
-            x.id = d.newId();
-            x.system = true;
-            x.requesterName = "";
-            x.item = c.getItemId();
-            x.quantity = quantity;
-            x.kind = RewardKind.COIN;
-            x.rewardTotal = (long) Math.ceil(MarketQuote.buyCost(price, quantity, Singularity_Iteration_Config.FUTURE_SPREAD.get()) * 1.15);
-            x.day = day;
-            x.expiry = day + 3;
-            d.commissions.add(x);
-            open++;
-        }
+        ExchangeEvents.marketDay(server, day);
     }
 
     // ------------------------------------------------------------------ audit (M5)

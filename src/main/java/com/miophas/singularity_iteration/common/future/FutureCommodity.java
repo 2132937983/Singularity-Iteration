@@ -38,6 +38,26 @@ public class FutureCommodity {
 
     private final Market market;
 
+    /**
+     * 0.1.10.26 (X3): how the sell box and the daily auction take this commodity (datapack {@code tag},
+     * {@code accept_components}). {@code tag}: an item tag whose items are also bought as this commodity ("" = none);
+     * {@code acceptComponents}: stacks with changed components (name, damage, enchantments) are bought too. Synced to clients.
+     */
+    public record Selling(String tag, boolean acceptComponents) {
+        public static final Selling DEFAULT = new Selling("", false);
+    }
+
+    private Selling selling = Selling.DEFAULT;
+
+    /** 0.1.10.26: the sell-box settings of this commodity. */
+    public Selling getSelling() { return selling; }
+
+    /** 0.1.10.26: sets the sell-box settings (loader and sync only). */
+    public FutureCommodity withSelling(Selling selling) {
+        this.selling = selling == null ? Selling.DEFAULT : selling;
+        return this;
+    }
+
     public FutureCommodity(String itemId, int basePrice, float volatility, CommodityCategory category,
                            int periodDays, @org.jetbrains.annotations.Nullable ResourceLocation unlockAdvancement) {
         this(itemId, basePrice, volatility, category, periodDays, unlockAdvancement, Market.DEFAULT);

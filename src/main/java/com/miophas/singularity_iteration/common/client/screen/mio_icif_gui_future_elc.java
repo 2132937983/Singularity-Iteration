@@ -36,6 +36,8 @@ import org.lwjgl.glfw.GLFW;
  *   <li><b>Futures</b>: contract prices for 3 and 7 days, open long or short, the open positions.</li>
  *   <li><b>Orders and mail</b>: resting orders (cancel), the mailbox (collect), the UU-matter account (deposit, withdraw).</li>
  *   <li><b>Treasury</b>: coins created and destroyed per day, the market's stock, listings.</li>
+ *   <li><b>Bounties</b> (0.1.10.26): the system bounties of three tiers (needs, rewards, days left, the player's share),
+ *       deliver from the inventory, the weekly budgets of issued rewards and the vault.</li>
  * </ul>
  * The panel shows the {@link ExchangeView} that the server sends (on request, once per second while open); every action is a
  * packet that the server checks again. Before 0.1.10.21 the screen was a price chart with buy and sell buttons.
@@ -43,7 +45,7 @@ import org.lwjgl.glfw.GLFW;
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
-    private static final int TABS = 6, ROW = 20;   // 0.1.10.25: tab 5 = the sell page
+    private static final int TABS = 7, ROW = 20;   // 0.1.10.25: tab 5 = the sell page; 0.1.10.26: tab 6 = bounties
     private static final String K = "gui.mio_icif.exchange.";
 
     private record Region(int x, int y, int w, int h, Runnable left, Runnable right) {
@@ -54,7 +56,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
     private int tab;
     private String selected = "";
     private boolean prefilled;
-    private int listScroll, boardScroll;
+    private int listScroll, boardScroll, bountyScroll;
     private boolean buySide = true, resting;
     private int requestTimer;
     private String hoverText;
@@ -165,6 +167,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
     public boolean mouseScrolled(double mx, double my, double sx, double sy) {
         if (tab == 0 && mx < leftW() + 6) { listScroll = Math.max(0, listScroll - (int) Math.signum(sy)); return true; }
         if (tab == 1) { boardScroll = Math.max(0, boardScroll - (int) Math.signum(sy)); return true; }
+        if (tab == 6) { bountyScroll = Math.max(0, bountyScroll - (int) Math.signum(sy)); return true; }
         return super.mouseScrolled(mx, my, sx, sy);
     }
 
@@ -217,7 +220,8 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
                 case 2 -> futures(g, v, mx, my);
                 case 3 -> orders(g, v, mx, my);
                 case 4 -> treasury(g, v, mx, my);
-                default -> sell(g, v, mx, my);
+                case 5 -> sell(g, v, mx, my);
+                default -> bounties(g, v, mx, my);
             }
         }
     }
@@ -770,5 +774,108 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
         }
         long listings = v.markets().stream().filter(r -> !r.system()).count();
         g.drawString(font, Component.translatable(K + "listings", listings), x + 4, bottom - 14, PanelCharts.DIM, false);
+    }
+
+    // ------------------------------------------------------------------ 0.1.10.26 (X3): bounties tab
+
+    private static final int[] TIER_COLOR = {0xFF57606A, 0xFF1F6FEB, 0xFFBB8009};
+
+    private void bounties(GuiGraphics g, ExchangeView v, int mx, int my) {
+        int top = 26, bottom = height - 6, sideW = Math.max(170, Math.min(230, width / 4)), listW = width - sideW - 18;
+        PanelCharts.panel(g, 6, top, listW, bottom - top);
+        g.drawString(font, Component.translatable(K + "bounty.board"), 10, top + 4, PanelCharts.ACCENT, false);
+        int rowH = 40, rows = Math.max(1, (bottom - top - 18) / rowH);
+        List<ExchangeView.BountyLine> list = v.bounties();
+        bountyScroll = Math.min(bountyScroll, Math.max(0, list.size() - rows));
+        if (list.isEmpty()) g.drawString(font, Component.translatable(K + "bounty.none"), 10, top + 20, PanelCharts.DIM, false);
+        int buttonX = 6 + listW - 64;
+        for (int i = 0; i < rows && i + bountyScroll < list.size(); i++) {
+            ExchangeView.BountyLine b = list.get(i + bountyScroll);
+            int y = top + 16 + i * rowH;
+            g.fill(7, y, 6 + listW - 1, y + rowH - 1, i % 2 == 0 ? 0x10FFFFFF : 0);
+            int tier = Math.max(0, Math.min(2, b.tier()));
+            Component tierName = Component.translatable(K + "bounty.tier." + tier);
+            int tw = font.width(tierName) + 6;
+            g.fill(10, y + 2, 10 + tw, y + 12, TIER_COLOR[tier]);
+            g.drawString(font, tierName, 13, y + 3, 0xFFFFFFFF, false);
+            hover(10, y + 2, tw, 10, Component.translatable(K + "bounty.tier_help." + tier).getString(), mx, my);
+            long count = 0, done = 0;
+            for (ExchangeView.NeedLine n : b.needs()) { count += n.count(); done += Math.min(n.delivered(), n.count()); }
+            StringBuilder info = new StringBuilder(Component.translatable(K + "days_left", Math.max(0, b.expiry() - v.day())).getString());
+            info.append(" \u00b7 ").append(count <= 0 ? 0 : done * 100 / count).append('%');
+            if (b.split() == 1) info.append(" \u00b7 ").append(Component.translatable(K + "bounty.shared").getString());
+            if (b.contributors() > 0) info.append(" \u00b7 ").append(Component.translatable(K + "bounty.contributors", b.contributors()).getString());
+            g.drawString(font, font.plainSubstrByWidth(info.toString(), listW / 2 - tw - 12), 16 + tw, y + 3, PanelCharts.DIM, false);
+            if (b.split() == 1) hover(16 + tw, y + 2, listW / 2 - tw - 12, 10, Component.translatable(K + "bounty.shared_help").getString(), mx, my);
+            // needs
+            int nx = 10;
+            for (ExchangeView.NeedLine n : b.needs()) {
+                String c = PanelCharts.number(n.delivered()) + "/" + PanelCharts.number(n.count());
+                if (nx + 20 + font.width(c) > 6 + listW / 2) break;
+                g.renderItem(new ItemStack(item(n.item())), nx, y + 15);
+                g.drawString(font, c, nx + 18, y + 20, n.delivered() >= n.count() ? PanelCharts.up() : PanelCharts.TEXT, false);
+                hover(nx, y + 15, 18 + font.width(c), 16, name(n.item()) + "  " + c, mx, my);
+                nx += 24 + font.width(c);
+            }
+            // rewards
+            int rx = 6 + listW / 2 + 4, rEnd = buttonX - 6;
+            g.drawString(font, Component.translatable(K + "bounty.reward"), rx, y + 3, PanelCharts.WARN, false);
+            for (ExchangeView.RewardLine r : b.rewards()) {
+                String amount, tip;
+                String source = Component.translatable(K + "bounty.source." + Math.max(0, Math.min(3, r.source()))).getString();
+                String paid = r.paid() > 0 ? "  " + Component.translatable(K + "bounty.paid", PanelCharts.number(r.paid()), PanelCharts.number(r.amount())).getString() : "";
+                if (r.kind() == 1) {
+                    amount = "x" + PanelCharts.number(r.amount());
+                    if (rx + 18 + font.width(amount) > rEnd) break;
+                    g.renderItem(new ItemStack(item(r.item())), rx, y + 15);
+                    g.drawString(font, amount, rx + 17, y + 20, PanelCharts.WARN, false);
+                    tip = name(r.item()) + " " + amount + " (" + source + ")" + paid;
+                    hover(rx, y + 15, 17 + font.width(amount), 16, tip, mx, my);
+                    rx += 22 + font.width(amount);
+                } else {
+                    amount = r.kind() == 2 ? Component.translatable(K + "bounty.uu_amount", PanelCharts.number(r.amount())).getString()
+                        : Component.translatable(K + "bounty.coin_amount", PanelCharts.number(r.amount())).getString();
+                    if (rx + font.width(amount) > rEnd) break;
+                    g.drawString(font, amount, rx, y + 20, PanelCharts.WARN, false);
+                    tip = amount + " (" + source + ")" + paid;
+                    hover(rx, y + 18, font.width(amount), 12, tip, mx, my);
+                    rx += 8 + font.width(amount);
+                }
+            }
+            // deliver, and this player's part
+            final long id = b.id();
+            button(g, buttonX, y + 3, 58, 15, Component.translatable(K + "deliver"), false,
+                () -> act(ExchangePackets.BOUNTY_DELIVER, "", id, 0, 0, 0, false, ""), mx, my);
+            hover(buttonX, y + 3, 58, 15, Component.translatable(K + "bounty.deliver_help").getString(), mx, my);
+            String mine = b.room() >= 0
+                ? Component.translatable(K + "bounty.mine_room", PanelCharts.number(b.mine()), PanelCharts.number(b.room()), b.sharePermille() / 10).getString()
+                : b.mine() > 0 ? Component.translatable(K + "bounty.mine", PanelCharts.number(b.mine())).getString() : "";
+            if (!mine.isEmpty()) {
+                String fit = font.plainSubstrByWidth(mine, 6 + listW - 4 - rx);
+                PanelCharts.right(g, font, fit, 6 + listW - 4, y + 22, PanelCharts.DIM);
+                hover(6 + listW - 4 - font.width(fit), y + 21, font.width(fit), 10, mine + " - " + Component.translatable(K + "bounty.value_help").getString(), mx, my);
+            }
+        }
+        // weekly budgets, vault, help
+        int x = width - sideW - 6;
+        PanelCharts.panel(g, x, top, sideW, bottom - top);
+        g.drawString(font, Component.translatable(K + "bounty.budget"), x + 4, top + 4, PanelCharts.ACCENT, false);
+        ExchangeView.BountyBudget q = v.budget();
+        int y = top + 18;
+        for (String line : new String[] {
+            Component.translatable(K + "bounty.budget_advanced", PanelCharts.number(q.advancedIssued()), PanelCharts.number(q.advancedCap())).getString(),
+            Component.translatable(K + "bounty.budget_special", PanelCharts.number(q.specialIssued()), PanelCharts.number(q.specialCap())).getString(),
+            Component.translatable(K + "bounty.budget_uu", PanelCharts.number(q.uuIssued()), PanelCharts.number(q.uuCap())).getString(),
+            Component.translatable(K + "bounty.vault", q.vaultTypes(), PanelCharts.number(q.vaultItems())).getString()}) {
+            g.drawString(font, font.plainSubstrByWidth(line, sideW - 8), x + 4, y, PanelCharts.TEXT, false);
+            y += 11;
+        }
+        hover(x, top + 16, sideW, 46, Component.translatable(K + "bounty.budget_help").getString(), mx, my);
+        y += 6;
+        for (var seq : font.split(Component.translatable(K + "bounty.help"), sideW - 8)) {
+            if (y > bottom - 12) break;
+            g.drawString(font, seq, x + 4, y, PanelCharts.DIM, false);
+            y += 10;
+        }
     }
 }

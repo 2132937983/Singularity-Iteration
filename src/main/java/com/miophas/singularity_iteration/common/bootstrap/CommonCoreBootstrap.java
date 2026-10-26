@@ -24,6 +24,8 @@ public final class CommonCoreBootstrap {
         // 0.1.10.19: data for the JEI categories "Reactor Layouts" / "Multiblock Structures" and the guide
         com.miophas.singularity_iteration.common.reactor.BuiltinReactorLayouts.install();
         com.miophas.singularity_iteration.common.multiblock.BuiltinStructureBlueprints.install();
+        // 0.1.10.26 (X3): the exchange API for pack makers (core.api.exchange)
+        com.miophas.singularity_iteration.core.api.exchange.ExchangeApi.install(new com.miophas.singularity_iteration.common.exchange.ExchangeApiImpl());
         CoreDataComponents.DATA_COMPONENTS.register(modEventBus);
         CoreSounds.register(modEventBus);
         EnergyCompatibility.install(new CommonEnergyCompatibility());

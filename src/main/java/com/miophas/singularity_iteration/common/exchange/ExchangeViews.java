@@ -165,8 +165,19 @@ public final class ExchangeViews {
             SellDepth.Fill est = ExchangeService.auctionEstimate(server, d, a, day);
             auctions.add(new ExchangeView.AuctionLine(a.id, a.item, a.quantity, a.minPercent, est.quantity(), est.coins()));
         }
+        // 0.1.10.26 (X3): the bounties and their weekly budgets
+        BountyBoard.Rules rules = Bounties.rules(server);
+        BountyBoard board = d.board;
+        long vaultItems = 0;
+        for (long v : board.vault.values()) vaultItems += v;
+        boolean thisWeek = board.week == BountyMath.week(day);
+        ExchangeView.BountyBudget budget = new ExchangeView.BountyBudget(
+            thisWeek ? board.issued[BountyTables.Tier.ADVANCED.ordinal()] : 0, rules.issueAdvanced(),
+            thisWeek ? board.issued[BountyTables.Tier.SPECIAL.ordinal()] : 0, rules.issueSpecial(),
+            thisWeek ? board.uuIssued : 0, rules.uuPerWeek(), board.vault.size(), vaultItems);
         return new ExchangeView(day, coins, box.uu, box.coins, box.items.size(), energy, rows, detail, orders, mail, commissions, positions,
-            ledger, stocks, List.copyOf(candidates), allowance == Long.MAX_VALUE ? -1 : allowance, boxLines, auctions);
+            ledger, stocks, List.copyOf(candidates), allowance == Long.MAX_VALUE ? -1 : allowance, boxLines, auctions,
+            Bounties.lines(player, d, day), budget);
     }
 
     /** Closing prices for the sparkline: the 20-day history of a datapack commodity, the daily bars of a listing. */

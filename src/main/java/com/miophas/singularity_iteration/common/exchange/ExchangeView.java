@@ -14,10 +14,12 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
                            List<Row> markets, Detail detail, List<MyOrder> orders, List<MailLine> mail,
                            List<CommissionLine> commissions, List<PositionLine> positions, List<LedgerLine> ledger,
                            List<StockLine> stocks, List<Candidate> candidates, long allowance, List<BoxLine> box,
-                           List<AuctionLine> auctions) {
+                           List<AuctionLine> auctions, List<BountyLine> bounties, BountyBudget budget) {
     public static final int MAX_MARKETS = 160, MAX_SPARK = 20, MAX_BARS = 30, MAX_LEVELS = 8, MAX_TRADES = 12;
     public static final int MAX_ORDERS = 32, MAX_MAIL = 40, MAX_COMMISSIONS = 64, MAX_POSITIONS = 8, MAX_LEDGER = 14;
     public static final int MAX_STOCKS = 12, MAX_CANDIDATES = 8, MAX_BOX = 18, MAX_AUCTIONS = 96;
+    /** 0.1.10.26 (X3). */
+    public static final int MAX_BOUNTIES = 48, MAX_BOUNTY_NEEDS = 8, MAX_BOUNTY_REWARDS = 8;
 
     /** A watchlist row. {@code currency}: 0 coins, 1 UU-matter (mB). */
     public record Row(String id, int currency, boolean system, long price, int changePermille, long volume, long[] spark, boolean locked) { }
@@ -64,6 +66,26 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
     /** Progress of an item toward a listing (multiplayer: requesters / fulfilled / deliverers; single player: days). */
     public record Candidate(String item, int requesters, int fulfilled, int deliverers) { }
 
+    /** 0.1.10.26 (X3): one item a bounty asks for. */
+    public record NeedLine(String item, long count, long delivered) { }
+
+    /** 0.1.10.26: one reward of a bounty; {@code kind} 0 coins / 1 item / 2 UU (mB), {@code source} 0 minted / 1 treasury / 2 vault / 3 issue. */
+    public record RewardLine(int kind, int source, String item, long amount, long paid) { }
+
+    /**
+     * 0.1.10.26: an open system bounty. {@code tier} 0 normal / 1 advanced / 2 special; {@code split} 0 first / 1 contribution;
+     * {@code sharePermille} the share of the value one player may deliver; {@code mine} / {@code all} the value this player
+     * delivered / the whole value (coins); {@code room} the value this player may still deliver (-1 = no limit).
+     */
+    public record BountyLine(long id, int tier, long expiry, int split, int sharePermille, List<NeedLine> needs, List<RewardLine> rewards,
+                             long mine, long all, long room, int contributors) { }
+
+    /** 0.1.10.26: the weekly budgets of the bounties (issued items and UU-matter against the caps) and the vault. */
+    public record BountyBudget(long advancedIssued, long advancedCap, long specialIssued, long specialCap, long uuIssued, long uuCap,
+                               int vaultTypes, long vaultItems) {
+        public static final BountyBudget NONE = new BountyBudget(0, 0, 0, 0, 0, 0, 0, 0);
+    }
+
     // ------------------------------------------------------------------ codec
 
     public void write(FriendlyByteBuf b) {
@@ -106,6 +128,17 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
             b.writeVarLong(x.auctionQuantity()); b.writeVarLong(x.auctionCoins()); });
         list(b, auctions, MAX_AUCTIONS, x -> { b.writeVarLong(x.id()); b.writeUtf(x.item(), 128); b.writeVarLong(x.quantity()); b.writeVarInt(x.minPercent());
             b.writeVarLong(x.estQuantity()); b.writeVarLong(x.estCoins()); });
+        // 0.1.10.26 (X3)
+        list(b, bounties, MAX_BOUNTIES, x -> {
+            b.writeVarLong(x.id()); b.writeVarInt(x.tier()); b.writeVarLong(x.expiry()); b.writeVarInt(x.split()); b.writeVarInt(x.sharePermille());
+            list(b, x.needs(), MAX_BOUNTY_NEEDS, n -> { b.writeUtf(n.item(), 128); b.writeVarLong(n.count()); b.writeVarLong(n.delivered()); });
+            list(b, x.rewards(), MAX_BOUNTY_REWARDS, r -> { b.writeVarInt(r.kind()); b.writeVarInt(r.source()); b.writeUtf(r.item(), 128);
+                b.writeVarLong(r.amount()); b.writeVarLong(r.paid()); });
+            b.writeVarLong(x.mine()); b.writeVarLong(x.all()); b.writeLong(x.room()); b.writeVarInt(x.contributors());
+        });
+        BountyBudget g = budget == null ? BountyBudget.NONE : budget;
+        b.writeVarLong(g.advancedIssued()); b.writeVarLong(g.advancedCap()); b.writeVarLong(g.specialIssued()); b.writeVarLong(g.specialCap());
+        b.writeVarLong(g.uuIssued()); b.writeVarLong(g.uuCap()); b.writeVarInt(g.vaultTypes()); b.writeVarLong(g.vaultItems());
     }
 
     public static ExchangeView read(FriendlyByteBuf b) {
@@ -148,8 +181,16 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
         List<BoxLine> box = read(b, MAX_BOX, () -> new BoxLine(b.readUtf(128), b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong()));
         List<AuctionLine> auctions = read(b, MAX_AUCTIONS, () -> new AuctionLine(b.readVarLong(), b.readUtf(128), b.readVarLong(), b.readVarInt(),
             b.readVarLong(), b.readVarLong()));
+        List<BountyLine> bounties = read(b, MAX_BOUNTIES, () -> {
+            long id = b.readVarLong(); int tier = b.readVarInt(); long expiry = b.readVarLong(); int split = b.readVarInt(); int share = b.readVarInt();
+            List<NeedLine> needs = read(b, MAX_BOUNTY_NEEDS, () -> new NeedLine(b.readUtf(128), b.readVarLong(), b.readVarLong()));
+            List<RewardLine> rewards = read(b, MAX_BOUNTY_REWARDS, () -> new RewardLine(b.readVarInt(), b.readVarInt(), b.readUtf(128), b.readVarLong(), b.readVarLong()));
+            return new BountyLine(id, tier, expiry, split, share, needs, rewards, b.readVarLong(), b.readVarLong(), b.readLong(), b.readVarInt());
+        });
+        BountyBudget budget = new BountyBudget(b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong(),
+            b.readVarInt(), b.readVarLong());
         return new ExchangeView(day, coins, uu, mailCoins, mailTypes, energy, markets, detail, orders, mail, commissions, positions, ledger, stocks, candidates,
-            allowance, box, auctions);
+            allowance, box, auctions, bounties, budget);
     }
 
     private interface Writer<T> { void write(T value); }

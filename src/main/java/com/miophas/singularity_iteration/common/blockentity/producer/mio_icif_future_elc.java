@@ -257,12 +257,12 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     // ========== 0.1.10.20: quotes (spread and daily buy budget, see MarketQuote) ==========
 
     private static double spread() {
-        return Singularity_Iteration_Config.FUTURE_SPREAD.get();
+        return com.miophas.singularity_iteration.common.exchange.EconomySettings.spread();
     }
 
     /** 0.1.10.25 (X1): the daily buy limit for the menu data (32767 = none or more). */
     private static int buyLimit() {
-        int cap = Singularity_Iteration_Config.FUTURE_BUY_ITEMS_PER_DAY.get();
+        int cap = com.miophas.singularity_iteration.common.exchange.EconomySettings.buyItemsPerDay();
         return cap <= 0 ? 32767 : Math.min(cap, 32767);
     }
 
@@ -685,6 +685,8 @@ public static final int DATA_CURRENT_CATEGORY = 7;
             return ok;
         } finally {
             if (payment != null && payment.isPending()) payment.cancel();
+            // 0.1.10.26 (X3): the trade and bounty events of the action, after it is complete
+            com.miophas.singularity_iteration.common.exchange.ExchangeEvents.flush(player.server);
         }
     }
 

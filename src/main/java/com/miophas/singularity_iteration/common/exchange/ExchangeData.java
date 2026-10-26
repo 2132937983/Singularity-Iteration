@@ -73,10 +73,16 @@ public final class ExchangeData extends SavedData {
         public String item;
         public Currency currency;
         public long reference, listedDay, lastTradeDay;
+        /** 0.1.10.26: listed by a datapack ({@code si_exchange/listings}); never delisted for lack of trades while it is there. */
+        public boolean datapack;
     }
 
     public static final class LedgerDay {
         public long day, minted, burned;
+        /** 0.1.10.26 (X3): of {@link #minted}, the coins bounties paid; items and UU-matter (mB) bounties created ("issue"). */
+        public long bountyCoins, bountyItems, bountyUu;
+        /** 0.1.10.26: coins that the Java API paid into ({@code [0]}) or took out of ({@code [1]}) mailboxes, per reason code. */
+        public final Map<String, long[]> external = new java.util.TreeMap<>();
     }
 
     public static final class Position {
@@ -133,6 +139,8 @@ public final class ExchangeData extends SavedData {
     public final Map<UUID, long[]> allowance = new HashMap<>();
     /** 0.1.10.25: the open orders of the daily auction. */
     public final List<AuctionOrder> auction = new ArrayList<>();
+    /** 0.1.10.26 (X3): the system bounties, the vault and the weekly budgets. */
+    public final BountyBoard board = new BountyBoard();
 
     public static ExchangeData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(ExchangeData::new, ExchangeData::load), NAME);
@@ -223,6 +231,7 @@ public final class ExchangeData extends SavedData {
             Listing x = new Listing();
             x.item = l.getString("Item"); x.currency = currency(l.getString("Currency")); x.reference = Math.max(1, l.getLong("Reference"));
             x.listedDay = l.getLong("ListedDay"); x.lastTradeDay = l.getLong("LastTradeDay");
+            x.datapack = l.getBoolean("Datapack");
             d.listings.put(x.item, x);
         }
         CompoundTag ev = tag.getCompound("Evidence");
@@ -261,6 +270,9 @@ public final class ExchangeData extends SavedData {
             CompoundTag x = (CompoundTag) t;
             LedgerDay l = new LedgerDay();
             l.day = x.getLong("Day"); l.minted = x.getLong("Minted"); l.burned = x.getLong("Burned");
+            l.bountyCoins = x.getLong("BountyCoins"); l.bountyItems = x.getLong("BountyItems"); l.bountyUu = x.getLong("BountyUu");
+            CompoundTag ext = x.getCompound("External");
+            for (String k : ext.getAllKeys()) { long[] v = ext.getLongArray(k); if (v.length == 2) l.external.put(k, v); }
             d.ledger.addLast(l);
         }
         for (Tag t : tag.getList("Positions", Tag.TAG_COMPOUND)) {
@@ -297,6 +309,8 @@ public final class ExchangeData extends SavedData {
             a.quantity = x.getLong("Quantity"); a.minPercent = Math.max(0, Math.min(100, x.getInt("MinPercent"))); a.day = x.getLong("Day");
             if (a.owner != null && a.quantity > 0 && !a.item.isEmpty()) d.auction.add(a);
         }
+        // 0.1.10.26 (X3)
+        BountyNbt.load(tag.getCompound("Bounties"), d.board);
         return d;
     }
 
@@ -352,6 +366,7 @@ public final class ExchangeData extends SavedData {
             CompoundTag x = new CompoundTag();
             x.putString("Item", l.item); x.putString("Currency", l.currency.name()); x.putLong("Reference", l.reference);
             x.putLong("ListedDay", l.listedDay); x.putLong("LastTradeDay", l.lastTradeDay);
+            if (l.datapack) x.putBoolean("Datapack", true);
             lis.add(x);
         }
         tag.put("Listings", lis);
@@ -396,6 +411,14 @@ public final class ExchangeData extends SavedData {
         for (LedgerDay l : ledger) {
             CompoundTag x = new CompoundTag();
             x.putLong("Day", l.day); x.putLong("Minted", l.minted); x.putLong("Burned", l.burned);
+            if (l.bountyCoins != 0) x.putLong("BountyCoins", l.bountyCoins);
+            if (l.bountyItems != 0) x.putLong("BountyItems", l.bountyItems);
+            if (l.bountyUu != 0) x.putLong("BountyUu", l.bountyUu);
+            if (!l.external.isEmpty()) {
+                CompoundTag ext = new CompoundTag();
+                l.external.forEach(ext::putLongArray);
+                x.put("External", ext);
+            }
             led.add(x);
         }
         tag.put("Ledger", led);
@@ -428,6 +451,8 @@ public final class ExchangeData extends SavedData {
             auc.add(x);
         }
         tag.put("Auction", auc);
+        // 0.1.10.26 (X3)
+        tag.put("Bounties", BountyNbt.save(board));
         return tag;
     }
 

@@ -1,0 +1,10 @@
+{
+  "entries": [
+    { "type": "coins", "weight": 6 },
+    { "type": "item", "item": "mio_icif:normal/item_circuit", "source": "treasury", "weight": 1 },
+    { "type": "item", "item": "mio_icif:resource/item_rubber", "source": "treasury", "weight": 1 },
+    { "type": "item", "item": "mio_icif:resource/item_alloy_ingot", "source": "treasury", "weight": 1 },
+    { "type": "item", "item": "mio_icif:resource/item_ingot_bronze", "source": "treasury", "weight": 1 },
+    { "type": "item", "item": "mio_icif:resource/item_carbon_plate", "source": "treasury", "weight": 1 }
+  ]
+}

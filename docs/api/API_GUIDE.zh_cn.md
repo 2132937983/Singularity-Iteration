@@ -554,3 +554,41 @@ public final class MyBoilerGenerator extends AbstractGeneratorBlockEntity implem
     @Override public DispatchClass dispatchClass() { return DispatchClass.DISPATCHABLE; }
 }
 ```
+
+## 22. 交易所 API、悬赏与事件（0.1.10.26）
+
+`core.api.exchange` 是面向整合包作者与附属模组的 SI 交易所。请在服务器线程调用（其他线程会抛出异常）；奇点迭代安装服务之前
+`ExchangeApi.isAvailable()` 为 false，所有方法返回空结果。数据包部分（悬赏表、奖励池、初始上市品、`economy.json`）见
+`docs/datapacks/si_exchange.md`。
+
+* 读取：`commodities(server)`、`quoteSell(server, player, item, quantity)`（此刻立即卖出：卖出深度、卖压、玩家额度）、`quoteBuy(...)`
+  （先国库，再加价进口；每日购买上限）、`treasury(server)`、`vault(server)`、`ledger(server, days)`（每个交易日发行与销毁的货币，其中悬赏的货币、
+  悬赏制作的物品与 UU 物质，以及本 API 按原因代码的货币）、`mailboxCoins(server, player)`、`bounties(server)`（`BountyInfo`）。报价不改变任何状态。
+* 写入：`deposit(server, player, coins, reason)` 向玩家的交易所邮箱存入货币（可在任意期货交易机领取），计为发行；`withdraw(...)` 全额取出或不取，
+  计为销毁。原因代码须匹配 `[a-z0-9_.:/-]{1,64}`。`postBounty(server, tableId)` 立即发布数据包表（不检查权重、冷却与条件）；
+  `postBounty(server, BountySpec)` 发布自定义悬赏（奖励为空时从该等级的奖励池抽取）；两者返回编号或 -1。`cancelBounty(server, id)` 取消悬赏，
+  未支付的预留奖励退回。
+* 悬赏遵循与市场自己的悬赏相同的规则：来自国库与宝库的奖励必须有库存，并在发布时预留；为其制作的物品与 UU 物质在发布时计入该等级的每周上限；
+  无法支付的奖励项被去掉；没有任何奖励的普通或高级悬赏改为支付货币（价值 × 倍率），特别悬赏不发布。交付的商品进入国库，其他物品进入宝库。
+* 事件（`NeoForge.EVENT_BUS`，服务器线程）：
+  * `BountyPostingEvent`（可取消）：悬赏发布之前。可以修改要求、奖励、天数与分配方式；之后会再次检查。
+  * `BountyCompletedEvent`：悬赏完成并支付之后；`getBounty().contribution()` 为每名玩家交付的价值。
+  * `ExchangeTradeEvent`：成交之后（从市场买入或卖给市场、玩家之间的成交、集中清算中的出售），在操作完成后发布；`getSeller()` / `getBuyer()`
+    为 UUID 或 `"system"`。
+  * `MarketDayEvent`：新交易日的处理完成之后。
+
+```java
+// 任务奖励：向交易所邮箱存入 2,000 货币，原因记为 "mypack:quest"
+ExchangeApi.deposit(server, player.getUUID(), 2000, "mypack:quest");
+
+// 服务器活动悬赏：64 颗钻石，奖励为特别悬赏每周预算内制作的两块终极混合太阳能板
+long id = ExchangeApi.postBounty(server, new BountySpec(BountyTier.SPECIAL,
+    List.of(new BountyNeed("minecraft:diamond", 64, 0)),
+    List.of(BountyReward.item("mio_icif:generator/block_ultimate_hybrid_solar_panel", 2, BountyReward.Source.ISSUE)),
+    7, BountySplit.CONTRIBUTION, 0));
+
+@SubscribeEvent
+public static void onPosting(BountyPostingEvent event) {
+    if (event.getTier() == BountyTier.NORMAL) event.getRewards().add(BountyReward.uu(100));   // 额外加一点 UU 物质
+}
+```

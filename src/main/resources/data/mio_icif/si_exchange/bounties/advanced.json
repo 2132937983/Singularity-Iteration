@@ -1,0 +1,25 @@
+{
+  "bounties": [
+    { "id": "mio_icif:electronics", "tier": "advanced", "weight": 10, "cooldown_days": 7,
+      "requirements": [ { "item": "mio_icif:normal/item_circuit", "count": 16 }, { "item": "mio_icif:resource/item_rubber", "count": 64 },
+                        { "item": "mio_icif:resource/item_ingot_tin", "count": 64 } ] },
+    { "id": "mio_icif:alloy_works", "tier": "advanced", "weight": 10, "cooldown_days": 7,
+      "requirements": [ { "item": "mio_icif:resource/item_alloy_ingot", "count": 16 }, { "item": "mio_icif:resource/item_carbon_plate", "count": 16 },
+                        { "item": "mio_icif:resource/item_adviron_ingot", "count": 32 } ] },
+    { "id": "mio_icif:advanced_electronics", "tier": "advanced", "weight": 6, "cooldown_days": 7, "conditions": { "min_day": 14 },
+      "requirements": [ { "item": "mio_icif:normal/item_advcircuit", "count": 8 }, { "item": "mio_icif:normal/item_circuit", "count": 16 },
+                        { "item": "mio_icif:resource/item_lead_ingot", "count": 32 } ] },
+    { "id": "mio_icif:metals", "tier": "advanced", "weight": 10, "cooldown_days": 7,
+      "requirements": [ { "item": "minecraft:iron_ingot", "count": 64 }, { "item": "minecraft:copper_ingot", "count": 64 },
+                        { "item": "minecraft:gold_ingot", "count": 32 } ] },
+    { "id": "mio_icif:provisions", "tier": "advanced", "weight": 8, "cooldown_days": 7,
+      "requirements": [ { "item": "minecraft:bread", "count": 128 }, { "item": "minecraft:cooked_beef", "count": 64 },
+                        { "item": "minecraft:pumpkin_pie", "count": 32 } ] },
+    { "id": "mio_icif:timber", "tier": "advanced", "weight": 8, "cooldown_days": 7,
+      "requirements": [ { "item": "minecraft:oak_log", "count": 256 }, { "item": "minecraft:spruce_log", "count": 256 },
+                        { "item": "minecraft:birch_log", "count": 128 } ] },
+    { "id": "mio_icif:iridium", "tier": "advanced", "weight": 4, "cooldown_days": 14, "conditions": { "min_day": 30 },
+      "requirements": [ { "item": "mio_icif:resource/item_iridium", "count": 4 }, { "item": "mio_icif:normal/item_advcircuit", "count": 4 } ],
+      "reward": { "rolls": 2 } }
+  ]
+}

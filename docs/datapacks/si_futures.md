@@ -8,6 +8,8 @@ data/<命名空间>/si_futures/<任意名称>.json
 
 模组自带的默认商品位于 `data/mio_icif/si_futures/`（mineral / agriculture / wood / food 四个文件）。
 
+0.1.10.26 起，同样格式的商品也可以放在 `data/<命名空间>/si_exchange/commodities/`，它们在所有 si_futures 文件之后读取。悬赏、奖励池、初始上市品与经济设置见 [si_exchange.md](si_exchange.md)。
+
 ## 文件格式
 
 ```json
@@ -36,6 +38,8 @@ data/<命名空间>/si_futures/<任意名称>.json
 | `export_per_day` | 否（0.1.10.25） | 每天转出的卖压比例（0.05～1），不写时用配置 `sellExportPerDay`（0.5）。 |
 | `import_per_day` | 否（0.1.10.25） | 国库为空时每天的进口数量，不写时用配置 `importPerDay`（64）。经加工可以倍增的原料（例如粗矿：粉碎后得到 2 个锭）应设为 0，否则市场进口会成为货币来源。 |
 | `import_premium` | 否（0.1.10.25） | 进口的加价（0～2），不写时用配置 `importPremium`（0.1）。 |
+| `tag` | 否（0.1.10.26） | 物品标签（例如 `c:ingots/tin`，可带 `#`）。出售箱与每日集中清算也收购该标签中的物品，按本商品出售，市场卖出时给出 `item`。挂单（订单簿）仍只接受 `item` 本身。 |
+| `accept_components` | 否（0.1.10.26） | `true` 时出售箱与集中清算也收购带有改动组件（名称、耐久、附魔等）的物品，按普通物品计价。默认 `false`，防止误卖贵重物品。 |
 
 文件也可以只写单个条目对象（不带 `commodities`）。
 

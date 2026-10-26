@@ -30,6 +30,8 @@ public final class ExchangePackets {
     public static final int PLACE = 1, CANCEL = 2, COLLECT = 3, POST = 4, DELIVER = 5, WITHDRAW = 6, UU_IN = 7, UU_OUT = 8, FUTURE = 9;
     /** 0.1.10.25 (X1): the sell box (BOX_SELL: flag = into the auction, c = minimum percent) and the auction (AUCTION_CANCEL: a = order). */
     public static final int BOX_SELL = 10, BOX_FILL = 11, BOX_RETURN = 12, AUCTION_CANCEL = 13;
+    /** 0.1.10.26 (X3): delivers what the player carries to a system bounty (a = bounty). */
+    public static final int BOUNTY_DELIVER = 14;
 
     public record Request(String selected) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_request"));
@@ -43,7 +45,7 @@ public final class ExchangePackets {
      * COLLECT; POST (id = item, d = quantity, c = reward kind 0 coins / 1 item / 2 UU, a = amount, text = reward item, b = days);
      * DELIVER (a = commission, d = quantity); WITHDRAW (a = commission); UU_IN; UU_OUT;
      * FUTURE (id = market, flag = long, d = quantity, c = days); BOX_SELL (flag = auction, c = minimum percent); BOX_FILL;
-     * BOX_RETURN; AUCTION_CANCEL (a = order).
+     * BOX_RETURN; AUCTION_CANCEL (a = order); BOUNTY_DELIVER (a = bounty).
      */
     public record Action(int kind, String id, long a, long b, int c, int d, boolean flag, String text, String selected) implements CustomPacketPayload {
         public static final Type<Action> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_action"));
@@ -110,9 +112,12 @@ public final class ExchangePackets {
                 case FUTURE -> ExchangeService.openFuture(player, p.id, p.flag, p.d, p.c);
                 case BOX_SELL -> ExchangeService.sellBox(player, ((FutureElcMenu) player.containerMenu).sellBox(), p.flag, Math.max(0, Math.min(100, p.c)));
                 case AUCTION_CANCEL -> ExchangeService.cancelAuction(player, p.a);
+                case BOUNTY_DELIVER -> Bounties.deliver(player, p.a);
                 default -> new ExchangeService.Result(false, "message.mio_icif.exchange.unknown_action");
             });
             send(player, p.selected, machine);
+            // 0.1.10.26: the trade and bounty events of the action, after it is complete
+            ExchangeEvents.flush(player.server);
         });
     }
 

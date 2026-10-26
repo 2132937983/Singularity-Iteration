@@ -1,0 +1,14 @@
+{
+  "entries": [
+    { "type": "coins", "weight": 3 },
+    { "type": "item", "item": "mio_icif:normal/item_circuit", "source": "treasury", "weight": 2 },
+    { "type": "item", "item": "mio_icif:normal/item_advcircuit", "source": "treasury", "weight": 2 },
+    { "type": "item", "item": "mio_icif:resource/item_alloy_ingot", "source": "treasury", "weight": 2 },
+    { "type": "item", "item": "mio_icif:resource/item_iridium", "source": "treasury", "weight": 1 },
+    { "type": "item", "item": "mio_icif:upgrade/overclocker_upgrade", "count": 4, "source": "issue", "weight": 2 },
+    { "type": "item", "item": "mio_icif:upgrade/energy_storage_upgrade", "count": 4, "source": "issue", "weight": 1 },
+    { "type": "item", "item": "mio_icif:upgrade/transformer_upgrade", "count": 2, "source": "issue", "weight": 1 },
+    { "type": "item", "item": "mio_icif:producer/block_machine_hull_advanced", "count": 2, "source": "issue", "weight": 1 },
+    { "type": "uu", "mb": 1000, "weight": 1 }
+  ]
+}

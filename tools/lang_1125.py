@@ -7,6 +7,7 @@ Usage: lang_1125.py <repo root> [--check]
 """
 import json
 import os
+import re
 import sys
 from collections import OrderedDict
 
@@ -55,7 +56,7 @@ KEYS = {
     G + 'box.total': ('Total', '合计', '合計'),
     G + 'box.allowance': ('Coins the market can still pay you today', '市场今天还能付给你的货币', '市場が今日まだ払える硬貨'),
     G + 'box.unlimited': ('no limit', '无限制', '制限なし'),
-    G + 'box.min': ('Auction minimum (% of the bid)', '清算最低价（买价的 %）', '一括清算の最低価格（買値の %）'),
+    G + 'box.min': ('Auction minimum (%% of the bid)', '清算最低价（买价的 %%）', '一括清算の最低価格（買値の %%）'),
     G + 'box.sell_now': ('Sell now', '立即出售', '今すぐ売る'),
     G + 'box.sell_now_help': (
         'Each commodity sells down its bid curve now; the coins go to your inventory. What the market does not take stays in the box.',
@@ -150,6 +151,10 @@ def main():
         eol = '\r\n' if b'\r\n' in raw else '\n'
         data = json.loads(raw.decode('utf-8-sig'), object_pairs_hook=OrderedDict)
         if CHECK:
+            # a % that is not a format code: shown raw by Component.translatable, an error through String.format
+            stray = [k for k, t in KEYS.items() if '%' in re.sub(r'%(?:\d+\$)?([A-Za-z%]|$)', '', t[i])]
+            bad += len(stray)
+            if stray: print(lang, 'stray %:', stray)
             wrong = [k for k, t in KEYS.items() if data.get(k) != t[i]]
             bad += len(wrong)
             print(lang, 'missing or different:', len(wrong), wrong[:5])

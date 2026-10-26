@@ -89,3 +89,16 @@ com/miophas/singularity_iteration/core/api/suit/SuitQuantumCore.java  all
 # 0.1.10.1 entanglement synergies and compute bandwidth (public API)
 com/miophas/singularity_iteration/core/api/suit/SuitSynergies.java  all
 com/miophas/singularity_iteration/core/api/suit/SuitBandwidth.java  all
+
+# 0.1.10.26 exchange API and events (public API)
+com/miophas/singularity_iteration/core/api/exchange/ExchangeApi.java  all
+com/miophas/singularity_iteration/core/api/exchange/BountyTier.java  all
+com/miophas/singularity_iteration/core/api/exchange/BountySplit.java  all
+com/miophas/singularity_iteration/core/api/exchange/BountyNeed.java  all
+com/miophas/singularity_iteration/core/api/exchange/BountyReward.java  all
+com/miophas/singularity_iteration/core/api/exchange/BountySpec.java  all
+com/miophas/singularity_iteration/core/api/exchange/BountyInfo.java  all
+com/miophas/singularity_iteration/core/api/exchange/MarketDayEvent.java  all
+com/miophas/singularity_iteration/core/api/exchange/ExchangeTradeEvent.java  all
+com/miophas/singularity_iteration/core/api/exchange/BountyPostingEvent.java  all
+com/miophas/singularity_iteration/core/api/exchange/BountyCompletedEvent.java  all

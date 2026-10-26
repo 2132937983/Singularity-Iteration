@@ -726,3 +726,25 @@ StructureBlueprintRegistry.register(StructureBlueprint.builder(ResourceLocation.
     .note("structure.mymod.boiler.note")
     .build());
 ```
+
+## 21. Merit order, load priority and grid protection (0.1.10.22)
+
+* `core.api.energy.grid.DispatchClass` / `IGridDispatch`: a generator block entity declares `MUST_RUN` (its output is
+  lost when nobody takes it: solar, wind, water, nuclear) or `DISPATCHABLE` (it burns fuel only while its energy is
+  taken). The fair distribution reads the class in every round. The order follows the common config
+  `EnergyNet.dispatchMode`: `merit` (default: must-run sources and transformers, then dispatchable generators, then
+  storage; fuel charges storage), `economic` (must-run, storage, then fuel; fuel does not charge storage) or `rotation`
+  (before 0.1.10.22). A generator without the interface is must-run, so an addon keeps its old behaviour.
+* `core.api.energy.grid.LoadPriority` / `ILoadPriority`: `CRITICAL`, `NORMAL` (default) or `DEFERRABLE` for a load or
+  a storage block. Each stage of the fair round runs once per priority, critical first: a shortage stops the
+  deferrable loads first. `AbstractEnergyBlockEntity` implements the interface and saves the value (`load_priority`);
+  the player sets it in the monitoring panel of the energy management terminal. A change is an input of the next
+  round, not a topology change.
+* Breaker and fuse cables are special cables of the engine (`IndependentSpecialCableBlockEntity` with a protection
+  relay). They are internal; an addon sees them as cables that conduct or not.
+
+```java
+public final class MyBoilerGenerator extends AbstractGeneratorBlockEntity implements IGridDispatch {
+    @Override public DispatchClass dispatchClass() { return DispatchClass.DISPATCHABLE; }
+}
+```

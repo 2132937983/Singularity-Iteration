@@ -542,3 +542,15 @@ StructureBlueprintRegistry.register(StructureBlueprint.builder(ResourceLocation.
     .note("structure.mymod.boiler.note")
     .build());
 ```
+
+## 21. 经济次序、负荷优先级与电网保护（0.1.10.22）
+
+* `core.api.energy.grid.DispatchClass` / `IGridDispatch`：发电机方块实体声明 `MUST_RUN`（无人取用时其输出损失：太阳能、风力、水力、核能）或 `DISPATCHABLE`（只在能量被取用时消耗燃料）。公平分配每一轮读取该类别。次序由通用配置 `EnergyNet.dispatchMode` 决定：`merit`（默认：必须运行的电源与变压器 → 可调度发电机 → 储能，燃料为储能充电）、`economic`（必须运行 → 储能 → 燃料，燃料不为储能充电）或 `rotation`（0.1.10.22 之前）。未实现该接口的发电机视为必须运行，附属的行为不变。
+* `core.api.energy.grid.LoadPriority` / `ILoadPriority`：用电器或储能的 `CRITICAL`、`NORMAL`（默认）或 `DEFERRABLE`。公平分配的每个阶段按优先级各执行一次，重要的先：电力不足时先停可延后的负荷。`AbstractEnergyBlockEntity` 实现该接口并保存该值（`load_priority`）；玩家在能源管理终端的监控面板中设置。修改是下一轮的输入，不是拓扑变化。
+* 断路器导线与保险丝导线是引擎的特殊导线（带保护继电器的 `IndependentSpecialCableBlockEntity`），属于内部实现；对附属而言，它们只是导通或不导通的导线。
+
+```java
+public final class MyBoilerGenerator extends AbstractGeneratorBlockEntity implements IGridDispatch {
+    @Override public DispatchClass dispatchClass() { return DispatchClass.DISPATCHABLE; }
+}
+```

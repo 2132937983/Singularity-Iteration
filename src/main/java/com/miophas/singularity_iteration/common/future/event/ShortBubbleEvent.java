@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.future.event;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 
-import java.util.Random;
 
 /**
  * Short-term spike and crash event (bubble).
@@ -14,7 +13,6 @@ import java.util.Random;
 @SuppressWarnings("null")
 public class ShortBubbleEvent extends FuturePriceEvent {
 
-    private static final Random RANDOM = new Random();
 
     public ShortBubbleEvent(String commodityId, long startDay, int duration, double intensity) {
         super(commodityId, startDay, duration, intensity);
@@ -26,7 +24,7 @@ public class ShortBubbleEvent extends FuturePriceEvent {
     }
 
     @Override
-    public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
+    public int applyEffect(int currentPrice, int basePrice, int dayOffset, java.util.function.DoubleSupplier random) {
         double totalChange;
 
         // Check if the price is in the rise phase or the crash phase.
@@ -40,7 +38,7 @@ public class ShortBubbleEvent extends FuturePriceEvent {
         totalChange = baseRise * dayMultiplier;
 
             // 添加随机波动
-            double randomFactor = 0.85 + (RANDOM.nextDouble() * 0.3);
+            double randomFactor = 0.85 + (random.getAsDouble() * 0.3);
             totalChange *= randomFactor;
         } else {
             // Crash phase: the price falls 20% - 40% each day.
@@ -50,7 +48,7 @@ public class ShortBubbleEvent extends FuturePriceEvent {
         totalChange = -baseFall * dayMultiplier;
 
             // 添加随机波动
-            double randomFactor = 0.85 + (RANDOM.nextDouble() * 0.3);
+            double randomFactor = 0.85 + (random.getAsDouble() * 0.3);
             totalChange *= randomFactor;
         }
 

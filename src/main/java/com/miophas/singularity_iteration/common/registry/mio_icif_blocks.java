@@ -520,6 +520,9 @@ public static final DeferredBlock<mio_icif_block_transformer_eTos> TRANSFORMER_E
 
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wire_detector> WIRE_DETECTOR = registerBlock("wiring/block_eu_detector_cable", () -> new com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wire_detector(Block.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).strength(0.5f).sound(net.minecraft.world.level.block.SoundType.WOOL).noOcclusion().lightLevel(state -> state.getValue(com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wire_detector.ACTIVE) ? 13 : 0)));
 
+    // 0.1.10.22 (G5): protective cables
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wire_breaker> WIRE_BREAKER = registerBlock("wiring/block_eu_breaker_cable", () -> new com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wire_breaker(Block.Properties.of().mapColor(MapColor.COLOR_ORANGE).strength(0.5f).sound(net.minecraft.world.level.block.SoundType.WOOL).noOcclusion()));
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wire_fuse> WIRE_FUSE = registerBlock("wiring/block_eu_fuse_cable", () -> new com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wire_fuse(Block.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).strength(0.5f).sound(net.minecraft.world.level.block.SoundType.WOOL).noOcclusion()));
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wire_splitter> WIRE_SPLITTER = registerBlock("wiring/block_eu_splitter_cable", () -> new com.miophas.singularity_iteration.common.block.wiring.mio_icif_block_wire_splitter(Block.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE).strength(0.5f).sound(net.minecraft.world.level.block.SoundType.WOOL).noOcclusion()));
 
     // 注册电压检测器方块

@@ -26,11 +26,18 @@ public final class IndependentSubstitutions {
         }
     }
 
-    /** Special cable substitution entry: target entity type ID + whether it is a detector cable. */
-    public record Cable(String entityType, boolean detector) {
+    /**
+     * Special cable substitution entry: target entity type ID + whether it is a detector cable; 0.1.10.22: the
+     * protection kind of a breaker or fuse cable (null for none).
+     */
+    public record Cable(String entityType, boolean detector,
+                        com.miophas.singularity_iteration.core.runtime.energy.engine.ProtectionRelay.Kind protection) {
         public Cable {
             if (entityType == null || entityType.isBlank()) throw new IllegalArgumentException("entity type");
+            if (detector && protection != null) throw new IllegalArgumentException("a detector cable is not protective");
         }
+
+        public Cable(String entityType, boolean detector) { this(entityType, detector, null); }
     }
 
     private static final Map<String, Transformer> TRANSFORMERS = Collections.synchronizedMap(new LinkedHashMap<>());
@@ -46,6 +53,13 @@ public final class IndependentSubstitutions {
     public static void registerCable(String blockId, String entityTypeId, boolean detector) {
         if (blockId == null || blockId.isBlank()) throw new IllegalArgumentException("block id");
         CABLES.put(blockId, new Cable(entityTypeId, detector));
+    }
+
+    /** 0.1.10.22 (G5): a breaker or fuse cable. */
+    public static void registerProtectiveCable(String blockId, String entityTypeId,
+            com.miophas.singularity_iteration.core.runtime.energy.engine.ProtectionRelay.Kind kind) {
+        if (blockId == null || blockId.isBlank()) throw new IllegalArgumentException("block id");
+        CABLES.put(blockId, new Cable(entityTypeId, false, java.util.Objects.requireNonNull(kind, "kind")));
     }
 
     private static String idOf(BlockState state) {

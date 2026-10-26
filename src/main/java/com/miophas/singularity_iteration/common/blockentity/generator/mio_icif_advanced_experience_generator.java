@@ -26,7 +26,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_advanced_experience_generator extends AbstractEnergyBlockEntity implements com.miophas.singularity_iteration.common.area.WorkAreaProvider, IGeneratorBlock {
+public class mio_icif_advanced_experience_generator extends AbstractEnergyBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, com.miophas.singularity_iteration.common.area.WorkAreaProvider, IGeneratorBlock {
 
     private boolean registered = false;
 
@@ -322,4 +322,8 @@ public class mio_icif_advanced_experience_generator extends AbstractEnergyBlockE
     public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
         return java.util.List.of(com.miophas.singularity_iteration.common.area.WorkArea.cube(worldPosition, SCAN_RANGE, com.miophas.singularity_iteration.common.area.WorkArea.COLLECT));
     }
+
+    /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
+    @Override
+    public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
 }

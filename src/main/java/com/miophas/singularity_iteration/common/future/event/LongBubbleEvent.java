@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.future.event;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
 
-import java.util.Random;
 
 /**
  * Long-term rise and crash event (large bubble).
@@ -14,7 +13,6 @@ import java.util.Random;
 @SuppressWarnings("null")
 public class LongBubbleEvent extends FuturePriceEvent {
 
-    private static final Random RANDOM = new Random();
 
     public LongBubbleEvent(String commodityId, long startDay, int duration, double intensity) {
         super(commodityId, startDay, duration, intensity);
@@ -26,7 +24,7 @@ public class LongBubbleEvent extends FuturePriceEvent {
     }
 
     @Override
-    public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
+    public int applyEffect(int currentPrice, int basePrice, int dayOffset, java.util.function.DoubleSupplier random) {
         double totalChange;
 
         // Find whether the day is in the rise phase or in the crash phase.
@@ -41,7 +39,7 @@ public class LongBubbleEvent extends FuturePriceEvent {
             totalChange = baseRise * dayMultiplier;
 
             // Small random change. The price stays almost stable.
-            double randomFactor = 0.90 + (RANDOM.nextDouble() * 0.2);
+            double randomFactor = 0.90 + (random.getAsDouble() * 0.2);
             totalChange *= randomFactor;
         } else {
             // Crash phase: the price falls 25% - 45% each day.
@@ -51,7 +49,7 @@ public class LongBubbleEvent extends FuturePriceEvent {
         totalChange = -baseFall * dayMultiplier;
 
             // Large random change that simulates panic selling.
-        double randomFactor = 0.80 + (RANDOM.nextDouble() * 0.4);
+        double randomFactor = 0.80 + (random.getAsDouble() * 0.4);
             totalChange *= randomFactor;
         }
 

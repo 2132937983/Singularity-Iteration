@@ -51,7 +51,7 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
     private static final int GRAPH_X = 7, GRAPH_Y = 59, GRAPH_W = 200, GRAPH_H = 72;
     private static final int RANK_X = 210, RANK_Y = 59, RANK_W = 103, RANK_H = 72, RANK_ROWS = 5;
     private static final int LIST_X = 7, LIST_Y = 150, LIST_W = 306, ROW_H = 14, ROWS = 4;
-    private static final int[] CATEGORY_COLOR = {GEN, USE, CHARGE, DspUi.VIOLET};
+    private static final int[] CATEGORY_COLOR = {GEN, USE, CHARGE, DspUi.VIOLET, 0xFFFFB347};   // 0.1.10.22: protection amber
     /**
      * <p><b>EN:</b> Sub-network panel (global scope), 0.1.8.1 layout. Each row has two lines of
      * small text (7 px apart) and is {@link #SUBNET_ROW_H} px high; four rows fill the 72 px panel.
@@ -99,6 +99,13 @@ public class EnergyTerminalScreen extends AbstractContainerScreen<EnergyTerminal
                 Component.translatable("gui.mio_icif.energy_terminal.filter." + keys[i]), b -> setFilter(id)));
         }
         setFilter(filter);
+        // 0.1.10.22 (G7): the full-screen monitoring panel for the same menu (the menu stays open)
+        addRenderableWidget(new SiButton(leftPos + W - 8 - 62 - 4 - 50, topPos + 4, 50, 11,
+            Component.translatable("gui.mio_icif.grid_panel.open"), b -> {
+                click();
+                if (minecraft != null && minecraft.player != null)
+                    minecraft.setScreen(new GridScadaScreen(menu, minecraft.player.getInventory(), getTitle()));
+            }));
         // scope: this sub-network / the whole system across transformers (global aggregation)
         scopeButton = addRenderableWidget(new SiButton(leftPos + W - 8 - 62, topPos + 4, 62, 11, Component.empty(), b -> {
             if (minecraft != null && minecraft.gameMode != null)

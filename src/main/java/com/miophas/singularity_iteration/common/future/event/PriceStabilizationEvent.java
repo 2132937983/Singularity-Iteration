@@ -1,7 +1,6 @@
 // SCEX 2026-09-12: repaired malformed UTF-8 bytes in comments only.
 package com.miophas.singularity_iteration.common.future.event;
 
-import java.util.Random;
 
 /**
  * Price stabilization event.
@@ -12,7 +11,6 @@ import java.util.Random;
 @SuppressWarnings("null")
 public class PriceStabilizationEvent extends FuturePriceEvent {
 
-    private static final Random RANDOM = new Random();
 
     public PriceStabilizationEvent(String commodityId, long startDay, int duration, double intensity) {
         super(commodityId, startDay, duration, intensity);
@@ -24,7 +22,7 @@ public class PriceStabilizationEvent extends FuturePriceEvent {
     }
 
     @Override
-    public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
+    public int applyEffect(int currentPrice, int basePrice, int dayOffset, java.util.function.DoubleSupplier random) {
         // Calculate the deviation from the base price.
         double deviation = (double) (currentPrice - basePrice) / basePrice;
 
@@ -34,7 +32,7 @@ public class PriceStabilizationEvent extends FuturePriceEvent {
         double totalRegression = deviation * regressionStrength * (1 + dayProgress);
 
         // Add a small random fluctuation (-2% to +2%).
-        double randomFactor = 0.98 + (RANDOM.nextDouble() * 0.04);
+        double randomFactor = 0.98 + (random.getAsDouble() * 0.04);
 
         // Calculate the new price.
         int newPrice = (int) (currentPrice * (1.0 - totalRegression) * randomFactor);

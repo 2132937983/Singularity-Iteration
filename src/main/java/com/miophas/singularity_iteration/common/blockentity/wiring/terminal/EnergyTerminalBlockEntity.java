@@ -12,6 +12,7 @@ import com.miophas.singularity_iteration.core.api.energy.grid.NodeStats;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyStorageBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.component.EnergyComponentHost;
+import com.miophas.singularity_iteration.core.platform.neoforge.energy.IndependentSpecialCableBlockEntity;
 import com.miophas.singularity_iteration.core.runtime.energy.DemandEnergySource;
 import com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -69,6 +70,11 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
     private final float[] genHistory = new float[EnergyNetworkSnapshot.HISTORY];
     private final float[] useHistory = new float[EnergyNetworkSnapshot.HISTORY];
     private final float[] chargeHistory = new float[EnergyNetworkSnapshot.HISTORY];
+    /** 0.1.10.22 (G7): engine cost history, the walk's links and bounding box, the cost counters of the last window. */
+    private final float[] costHistory = new float[EnergyNetworkSnapshot.HISTORY];
+    private List<int[]> links = new ArrayList<>();
+    @Nullable private NetworkWalker.Result lastWalk;
+    private long[] lastNanos = new long[0];
     private EnergyNetworkSnapshot latest = new EnergyNetworkSnapshot();
     private int version;
 
@@ -141,6 +147,11 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
         accIn = new double[devicePos.size()];
         accOut = new double[devicePos.size()];
         accV = new double[devicePos.size()];
+        links = r.links;
+        lastWalk = r;
+        lastNanos = new long[devicePos.size()];
+        IndependentSiEnergy engine = IndependentSiEnergy.current(level.getServer());
+        if (engine != null) for (int i = 0; i < devicePos.size(); i++) lastNanos[i] = engine.settleNanos(level, devicePos.get(i));
     }
 
     public boolean globalMode() { return globalMode; }
@@ -187,6 +198,34 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
             int subnetIndex = i < deviceSubnet.size() ? deviceSubnet.get(i) : -1;
             EnergyNetworkSnapshot.Subnet sub = subnetIndex >= 0 && subnetIndex < s.subnets.size() ? s.subnets.get(subnetIndex) : null;
             float voltage = i < accV.length ? (float) accV[i] : 0F;
+            // 0.1.10.22 (G3 / G4): dispatch class of generators, priority of loads and storage
+            int dispatch = -1, priority = -1;
+            if (cat == EnergyNetworkSnapshot.Category.GENERATOR) {
+                boolean fuel = be instanceof com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch g
+                    && g.dispatchClass() == com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE;
+                dispatch = fuel ? 1 : 0;
+                if (fuel) s.generationFuel += out; else s.generationMustRun += out;
+            }
+            if ((cat == EnergyNetworkSnapshot.Category.CONSUMER || cat == EnergyNetworkSnapshot.Category.STORAGE)
+                    && be instanceof com.miophas.singularity_iteration.core.api.energy.grid.ILoadPriority p) {
+                priority = p.loadPriority().ordinal();
+                if (priority == 0 && cat == EnergyNetworkSnapshot.Category.CONSUMER && !disabled) {
+                    s.criticalDemand += rated;
+                    float missing = Math.max(0F, rated - in);
+                    // more than 5 % and 1 EU/t short: the critical load did not get its energy
+                    if (missing > 1F && missing > rated * 0.05F) {
+                        s.criticalShortfall += missing;
+                        com.miophas.singularity_iteration.core.runtime.energy.GridAlarms.shortfall(level, at, missing);
+                    }
+                }
+            }
+            if (cat == EnergyNetworkSnapshot.Category.PROTECTION && be instanceof IndependentSpecialCableBlockEntity cable
+                    && cable.protective() && s.breakers.size() < EnergyNetworkSnapshot.MAX_BREAKERS) {
+                var relay = cable.relay();
+                s.breakers.add(new EnergyNetworkSnapshot.Breaker(at, relay.kind().ordinal(), relay.state().ordinal(), relay.lastCause().ordinal(),
+                    (float) relay.lastFlow(), relay.ratedFlow(), relay.ratedVoltage(), relay.delay(), relay.autoReclose(), relay.recloseIn(),
+                    relay.recentTrips(), (float) relay.heat()));
+            }
             switch (cat) {
                 case GENERATOR -> { s.generation += out; s.generationCapacity += rated;
                     if (sub != null) { sub.generation += out; sub.generationCapacity += rated; } }
@@ -199,8 +238,34 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
             if (sub != null) { sub.devices++; sub.measuredPacket = Math.max(sub.measuredPacket, voltage); }
             if (firstOfOwner) { bufferStored += stored; bufferCap += cap; }
             s.devices.add(new EnergyNetworkSnapshot.Device(at, BuiltInRegistries.BLOCK.getKey(be.getBlockState().getBlock()).toString(),
-                cat, in, out, stored, cap, switchable, disabled, rated, subnetIndex, voltage));
+                cat, in, out, stored, cap, switchable, disabled, rated, subnetIndex, voltage, priority, dispatch));
         }
+        // 0.1.10.22 (G7): links of the diagram, alarms near this network, engine cost of its windows
+        for (int[] link : links) if (link[0] < devicePos.size()) s.links.add(new EnergyNetworkSnapshot.Link(link[0], link[1]));
+        var walk = lastWalk;
+        if (walk != null) {
+            var all = com.miophas.singularity_iteration.core.runtime.energy.GridAlarms.recent(level);
+            for (int i = all.size() - 1; i >= 0 && s.alarms.size() < EnergyNetworkSnapshot.MAX_ALARMS; i--) {
+                var alarm = all.get(i);
+                BlockPos at = BlockPos.of(alarm.pos());
+                if (!walk.near(at, 2)) continue;
+                s.alarms.add(new EnergyNetworkSnapshot.Alarm(alarm.time(), alarm.type().ordinal(), at, alarm.detail(), (float) alarm.value()));
+            }
+        }
+        IndependentSiEnergy costEngine = IndependentSiEnergy.current(level.getServer());
+        long nanos = 0;
+        if (costEngine != null && lastNanos.length == devicePos.size()) {
+            for (int i = 0; i < devicePos.size(); i++) {
+                long now = costEngine.settleNanos(level, devicePos.get(i));
+                if (now >= lastNanos[i]) nanos += now - lastNanos[i];
+                lastNanos[i] = now;
+            }
+        }
+        s.costMicros = nanos / 1000F / WINDOW;
+        shift(costHistory, s.costMicros);
+        System.arraycopy(costHistory, 0, s.costHistory, 0, costHistory.length);
+        s.gameTime = level.getGameTime();
+        s.dispatchMode = com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode.dispatchMode().ordinal();
         java.util.Arrays.fill(accIn, 0);
         java.util.Arrays.fill(accOut, 0);
         java.util.Arrays.fill(accV, 0);
@@ -265,11 +330,39 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
             var d = rows.get(i);
             if (d.pos().equals(target)) {
                 rows.set(i, new EnergyNetworkSnapshot.Device(d.pos(), d.blockId(), d.category(), d.input(), d.output(),
-                    d.stored(), d.capacity(), true, switchable.isRemotelyDisabled(), d.rated(), d.subnet(), d.voltage()));
+                    d.stored(), d.capacity(), true, switchable.isRemotelyDisabled(), d.rated(), d.subnet(), d.voltage(), d.priority(), d.dispatch()));
             }
         }
         version++;
         return true;
+    }
+
+    /** 0.1.10.22 (G4): GUI request: the load priority of a consumer or storage block on this network. */
+    public boolean setPriority(BlockPos target, int priority) {
+        if (!(level instanceof ServerLevel server) || !devicePos.contains(target) || !server.isLoaded(target)) return false;
+        if (priority < 0 || priority >= com.miophas.singularity_iteration.core.api.energy.grid.LoadPriority.values().length) return false;
+        if (!(server.getBlockEntity(target) instanceof com.miophas.singularity_iteration.core.api.energy.grid.ILoadPriority prioritized)) return false;
+        var value = com.miophas.singularity_iteration.core.api.energy.grid.LoadPriority.values()[priority];
+        prioritized.setLoadPriority(value);
+        server.playSound(null, worldPosition, mio_icif_sounds.UI_TOGGLE.get(), SoundSource.BLOCKS, 0.6F, 1.0F + 0.2F * (1 - priority));
+        List<EnergyNetworkSnapshot.Device> rows = latest.devices;
+        for (int i = 0; i < rows.size(); i++) {
+            var d = rows.get(i);
+            if (d.pos().equals(target)) rows.set(i, new EnergyNetworkSnapshot.Device(d.pos(), d.blockId(), d.category(), d.input(), d.output(),
+                d.stored(), d.capacity(), d.switchable(), d.disabled(), d.rated(), d.subnet(), d.voltage(), priority, d.dispatch()));
+        }
+        version++;
+        return true;
+    }
+
+    /** 0.1.10.22 (G5): GUI request: close an open breaker of this network (a fuse needs a new fuse item). */
+    public boolean resetProtection(BlockPos target) {
+        if (!(level instanceof ServerLevel server) || !devicePos.contains(target) || !server.isLoaded(target)) return false;
+        if (!(server.getBlockEntity(target) instanceof IndependentSpecialCableBlockEntity cable) || !cable.protective()
+                || cable.relay().kind() != com.miophas.singularity_iteration.core.runtime.energy.engine.ProtectionRelay.Kind.BREAKER) return false;
+        boolean changed = cable.resetProtection();
+        if (changed) { windowTick = WINDOW - 1; version++; }
+        return changed;
     }
 
     /** Neighbour or cable change near the terminal: walk the network again soon. */

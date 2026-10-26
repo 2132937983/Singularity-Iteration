@@ -51,7 +51,8 @@ import java.util.Set;
 public abstract class AbstractEnergyBlockEntity extends BlockEntity implements MenuProvider,
         IEnergySource, IEnergySink,
         com.miophas.singularity_iteration.core.api.machine.IEnergyBlock,
-        IUpgradableBlock, IWrenchable, com.miophas.singularity_iteration.core.api.energy.IRemoteSwitchable {
+        IUpgradableBlock, IWrenchable, com.miophas.singularity_iteration.core.api.energy.IRemoteSwitchable,
+        com.miophas.singularity_iteration.core.api.energy.grid.ILoadPriority {
     /** 0.1.10.10 (D7): counts server-side setChanged() calls for /mio_icif perf. */
     @Override
     public void setChanged() {
@@ -87,6 +88,20 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
     protected long powerOutput = 0;
     /** Cut from the grid by a remote switch (energy management terminal). */
     private boolean remoteDisabled;
+    /** 0.1.10.22 (G4): priority of this load or storage block when the grid has too little energy. */
+    private com.miophas.singularity_iteration.core.api.energy.grid.LoadPriority loadPriority =
+        com.miophas.singularity_iteration.core.api.energy.grid.LoadPriority.NORMAL;
+
+    @Override
+    public com.miophas.singularity_iteration.core.api.energy.grid.LoadPriority loadPriority() { return loadPriority; }
+
+    /** 0.1.10.22 (G4): a new priority takes effect in the next grid round (it is an input of the round, not a topology change). */
+    @Override
+    public void setLoadPriority(com.miophas.singularity_iteration.core.api.energy.grid.LoadPriority priority) {
+        if (priority == null || priority == loadPriority) return;
+        loadPriority = priority;
+        setChanged();
+    }
 
     @Override
     public boolean isRemotelyDisabled() { return remoteDisabled; }
@@ -442,6 +457,8 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         tag.putBoolean("is_power_source", isPowerSource);
         tag.putLong("power_output", powerOutput);
         if (remoteDisabled) tag.putBoolean("remote_disabled", true);
+        if (loadPriority != com.miophas.singularity_iteration.core.api.energy.grid.LoadPriority.NORMAL)
+            tag.putString("load_priority", loadPriority.name());
     }
     
     @Override
@@ -454,6 +471,14 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
         }
         energyStorage.scexLoadFraction(tag.getLong("scex_energy_fraction"));
         remoteDisabled = tag.getBoolean("remote_disabled");
+        loadPriority = com.miophas.singularity_iteration.core.api.energy.grid.LoadPriority.NORMAL;
+        if (tag.contains("load_priority")) {
+            try {
+                loadPriority = com.miophas.singularity_iteration.core.api.energy.grid.LoadPriority.valueOf(tag.getString("load_priority"));
+            } catch (IllegalArgumentException ignored) {
+                // an unknown name keeps the normal priority
+            }
+        }
         int uncertainFe = tag.getInt("scex_fe_uncertain_output");
         if (uncertainFe != 0 || scexFe != null) scexFeBridge().loadUncertainOutput(uncertainFe);
         if (tag.contains("is_power_source")) {

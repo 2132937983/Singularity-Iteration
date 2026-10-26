@@ -48,6 +48,10 @@ public final class PacketRateLimit {
     public static final Bucket NANO_BURST = new Bucket("nano_burst", 6, 4);
     /** Nano burst key assignment from the panel (0.1.8.5). */
     public static final Bucket NANO_ASSIGN = new Bucket("nano_assign", 10, 4);
+    /** Exchange panel (0.1.10.21): a view refresh per second plus clicks; actions also cost machine energy. */
+    public static final Bucket EXCHANGE = new Bucket("exchange", 12, 4);
+    /** 0.1.10.22: protection settings and terminal actions (priority, reset). */
+    public static final Bucket GRID = new Bucket("grid", 10, 4);
 
     private static final class State {
         double tokens;

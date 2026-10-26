@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
  * 即每桶 1000 mB = 10,000 EU、持续 500 tick；管网输出上限 LV = 32 EU/packet。
  */
 @SuppressWarnings("null")
-public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
+public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch {
 
     // 槽位数量：3个槽位
     public static final int SLOT_COUNT = 3;
@@ -610,4 +610,8 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new com.miophas.singularity_iteration.common.menu.generator.GeoGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
     }
+
+    /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
+    @Override
+    public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
 }

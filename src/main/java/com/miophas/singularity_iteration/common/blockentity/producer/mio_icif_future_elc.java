@@ -341,50 +341,12 @@ public static final int DATA_CURRENT_CATEGORY = 7;
             return activeEvent.applyEffect(currentPrice, basePrice, dayOffset);
         }
         
-        // 没有事件时使用默认计算逻辑
-        double volatility = commodity.getVolatility();
+        // 没有事件时使用默认计算逻辑 (0.1.10.21: the formula moved unchanged to FuturePriceModel.step, which the futures pricing simulates)
         net.minecraft.util.RandomSource random = level != null ? level.random : net.minecraft.util.RandomSource.create();
-
-        // 计算与基础价格的偏差
-        double deviation = (double) (currentPrice - basePrice) / basePrice;
-
-        // 回归因子：使用非线性回归，价格偏离越远回归越强
-        // 价格暴跌时（负偏差）回归力度更强，加快价格恢复
-        // 价格暴涨时（正偏差）回归力度相对较弱，允许价格维持高位
-    double baseRegression = 0.15; // 基础回归力度 15%
-
-        // 根据偏差方向调整回归力度：暴跌时回归更快
-        double directionMultiplier;
-        if (deviation < 0) {
-            // 价格低于基础价格（暴跌后）：回归力度增强 50%
-            directionMultiplier = 1.5;
-        } else {
-            // 价格高于基础价格（暴涨后）：回归力度正常
-            directionMultiplier = 1.0;
-        }
-
-        double extremeMultiplier = Math.max(0, Math.abs(deviation) - 0.5); // 超过0.5倍偏差时开始增强回归
-    double regressionFactor = baseRegression * directionMultiplier + extremeMultiplier * 0.2;
-        regressionFactor = Math.min(regressionFactor, 0.6); // 最高不超过60%
-
-        // 随机波动
-        double randomChange = (random.nextDouble() - 0.5) * 2 * volatility;
-
-        // 综合变化 = 随机波动 - 回归调整
-        // 如果价格高于基础价格，回归调整为负，拉低价格
-        // 如果价格低于基础价格，回归调整为正，拉高价格
-        double totalChange = randomChange - deviation * regressionFactor;
-        
-        // 计算新价格（基于当前价格变化）
-    int newPrice = (int) (currentPrice * (1 + totalChange));
-        
-        // 确保价格在配置范围内（默认基础价格10%~1000%）
-    double minMultiplier = Singularity_Iteration_Config.FUTURE_MIN_PRICE_MULTIPLIER.get();
-        double maxMultiplier = Singularity_Iteration_Config.FUTURE_MAX_PRICE_MULTIPLIER.get();
-        int minPrice = Math.max(1, (int) (basePrice * minMultiplier));
-        int maxPrice = (int) (basePrice * maxMultiplier);
-        
-        return Math.max(minPrice, Math.min(maxPrice, newPrice));
+        int base = commodity.getBasePrice();
+        return com.miophas.singularity_iteration.common.future.FuturePriceModel.step(currentPrice, base, commodity.getVolatility(),
+            random.nextDouble(), com.miophas.singularity_iteration.common.future.FuturePriceModel.minPrice(base),
+            com.miophas.singularity_iteration.common.future.FuturePriceModel.maxPrice(base));
     }
     
     /**
@@ -408,7 +370,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
             }
             
             // 20% 概率生成事件
-            if (random.nextDouble() < 0.2) {
+            if (random.nextDouble() < com.miophas.singularity_iteration.common.future.FuturePriceModel.EVENT_CHANCE) {
                 FuturePriceEvent event = createRandomEvent(commodity, random);
                 if (event != null) {
                     marketData.addEvent(commodity.getItemId(), event);
@@ -469,45 +431,8 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         return "gui.mio_icif.future.intensity_extreme";
     }
     private FuturePriceEvent createRandomEvent(FutureCommodity commodity, net.minecraft.util.RandomSource random) {
-        FuturePriceEvent.EventType[] types = FuturePriceEvent.EventType.values();
-        FuturePriceEvent.EventType type = types[random.nextInt(types.length)];
-
-        String commodityId = commodity.getItemId();
-        long startDay = currentDay;
-
-        // 根据事件类型设置不同的持续时间和强度
-        int duration;
-        double intensity;
-
-        switch (type) {
-            case SHORT_BUBBLE, SHORT_CRASH_REBOUND -> {
-        // 短期事件：3-5天，高强化
-            duration = 3 + random.nextInt(3);
-                intensity = 0.8 + random.nextDouble() * 0.7; // 0.8 - 1.5
-            }
-            case LONG_BUBBLE, LONG_CRASH_REBOUND -> {
-                // 长期事件：6-10天，中等强度
-                duration = 6 + random.nextInt(5);
-                intensity = 0.6 + random.nextDouble() * 0.6; // 0.6 - 1.2
-            }
-            default -> {
-                // 普通事件：3-7天，标准强度
-                duration = 3 + random.nextInt(5);
-                intensity = 0.5 + random.nextDouble(); // 0.5 - 1.5
-            }
-        }
-
-        return switch (type) {
-            case RISING_TREND -> new RisingTrendEvent(commodityId, startDay, duration, intensity);
-            case FALLING_TREND -> new FallingTrendEvent(commodityId, startDay, duration, intensity);
-            case HIGH_VOLATILITY -> new HighVolatilityEvent(commodityId, startDay, duration, intensity);
-            case LOW_VOLATILITY -> new LowVolatilityEvent(commodityId, startDay, duration, intensity);
-            case PRICE_STABILIZATION -> new PriceStabilizationEvent(commodityId, startDay, duration, intensity);
-            case SHORT_BUBBLE -> new ShortBubbleEvent(commodityId, startDay, duration, intensity);
-            case LONG_BUBBLE -> new LongBubbleEvent(commodityId, startDay, duration, intensity);
-            case SHORT_CRASH_REBOUND -> new ShortCrashReboundEvent(commodityId, startDay, duration, intensity);
-            case LONG_CRASH_REBOUND -> new LongCrashReboundEvent(commodityId, startDay, duration, intensity);
-        };
+        // 0.1.10.21: moved unchanged to FuturePriceModel (the futures pricing draws events the same way)
+        return com.miophas.singularity_iteration.common.future.FuturePriceModel.randomEvent(commodity.getItemId(), currentDay, random);
     }
     
     /**
@@ -656,6 +581,8 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         // 6. 更新天数和重置限制
     currentDay = newDay;
         marketData.setCurrentDay(newDay);   // the daily counters of the market start again with the new day
+        // 0.1.10.21: the exchange day (expiries, settlements, bars, the market's commissions)
+        if (level instanceof ServerLevel server) com.miophas.singularity_iteration.common.exchange.ExchangeService.onNewDay(server.getServer(), newDay);
         
         // 7. 刷新内存缓存
         updatePriceHistoryCache();
@@ -704,92 +631,57 @@ public static final int DATA_CURRENT_CATEGORY = 7;
                 worldPosition.getZ() + 0.5) <= 64.0;
     }
 
+    /**
+     * 0.1.10.21: the Buy / Sell buttons trade the trade quantity now through the exchange ({@code ExchangeService}):
+     * cheaper resting orders of other players first, then the market (its treasury and daily import for a purchase,
+     * its daily budget for a sale), never worse than the market's own price. The rest is not kept as an order.
+     */
     private boolean executeTrade(Player player, boolean buying) {
         if (!(level instanceof ServerLevel world) || !world.getServer().isSameThread()
-                || !(player instanceof ServerPlayer customer) || tradeInProgress
-                || !TRADING_PLAYERS.add(customer)) return false;
+                || !(player instanceof ServerPlayer customer) || tradeInProgress || !TRADING_PLAYERS.add(customer)) return false;
         tradeInProgress = true;
-        CustomEUEnergyStorage.InternalPayment payment = null;
-        boolean committed = false;
         try {
-            if (!(customer.containerMenu instanceof FutureElcMenu menu) || !authorized(world, customer, menu)) return false;
-            final int quantity = tradeQuantity;
-            final FutureMarketData market = FutureMarketData.get(world);
-            final java.util.UUID trader = customer.getUUID();
-            final int volume = market.getPlayerVolume(trader);
-            final long day = currentDay;
-            final CommodityCategory category = currentCategory;
-            final int page = currentPage, selected = selectedCommodityIndex;
-            final int fee = Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.get();
-            final int limit = Singularity_Iteration_Config.FUTURE_DAILY_LIMIT.get();
-            if (quantity < 1 || quantity > 64 || volume < 0 || fee < 0 || fee > 10000) return false;
-            if ((long) volume + quantity > limit) return refuse(customer, "message.mio_icif.future.item_limit_reached");
+            if (!serves(customer)) return false;
             FutureCommodity commodity = getSelectedCommodity();
             if (commodity == null || commodity.getItem() == Items.AIR) return refuse(customer, "message.mio_icif.future.no_commodity_selected");
-            if (!FutureCommodityManager.isUnlocked(customer, commodity)) return false;   // datapack unlock condition
-            final int price = getCurrentPrice(commodity);
-            if (price <= 0) return false;
-            // 0.1.10.20: buy at the price plus half the spread; sell at the price minus half the spread, within the daily budget
-            final int bought = market.getSystemBought(commodity.getItemId());
-            final long coins = buying ? buyCost(commodity, quantity) : sellPayout(commodity, quantity);
-            if (coins < 0) return refuse(customer, "message.mio_icif.future.market_full",
-                MarketQuote.budgetLeft(bought, buyBudget()), commodity.getItem().getDescription());
-            if (coins == 0 && !buying) return false;
-            final Inventory inventory = customer.getInventory();
-            final TradeInventory plan = new TradeInventory(inventory, menu);
-            // Zero is explicitly free. Positive action fees bypass public transfer-rate limits.
-            if (fee > 0) {
-                payment = energyStorage.scexReserveInternal(fee);
-                if (payment == null) return refuse(customer, "message.mio_icif.future.no_energy");
-            }
-            Item currency = mio_icif_normal.COIN.get();
-            if (!plan.removeMain(buying ? currency : commodity.getItem(), buying ? coins : quantity))
-                return refuse(customer, buying ? "message.mio_icif.future.not_enough_coins" : "message.mio_icif.future.not_enough_items");
-            if (!plan.insert(buying ? commodity.getItem() : currency, buying ? quantity : coins))
-                return refuse(customer, "message.mio_icif.future.inventory_full");
-            long nextCoins = plan.countMain(currency);
-            // Every item stack limit query and component comparison precedes the commit.
-            if (!authorized(world, customer, menu) || getSelectedCommodity() != commodity
-                    || getCurrentPrice(commodity) != price || currentDay != day || market.getPlayerVolume(trader) != volume
-                    || market.getSystemBought(commodity.getItemId()) != bought
-                    || tradeQuantity != quantity || currentCategory != category || currentPage != page
-                    || selectedCommodityIndex != selected || Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.get() != fee
-                    || Singularity_Iteration_Config.FUTURE_DAILY_LIMIT.get() != limit
-                    || customer.getInventory() != inventory || !plan.unchanged(menu)) return false;
-            // Component equality may be supplied by a dependency; recheck ownership after it.
-            if (!authorized(world, customer, menu) || currentDay != day || market.getPlayerVolume(trader) != volume
-                    || market.getSystemBought(commodity.getItemId()) != bought
-                    || tradeQuantity != quantity || currentCategory != category || currentPage != page
-                    || selectedCommodityIndex != selected || getSelectedCommodity() != commodity
-                    || getCurrentPrice(commodity) != price || Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.get() != fee
-                    || Singularity_Iteration_Config.FUTURE_DAILY_LIMIT.get() != limit) return false;
-            // No external call is made between settling this exact token and fixed-list assignment.
-            // Lists have fixed sizes, and every staged replacement is already non-null.
-            if (payment != null && !payment.commit()) throw new IllegalStateException("Future payment settled twice");
-            plan.commit();
-            market.addPlayerVolume(trader, quantity);
-            if (!buying) market.addSystemBought(commodity.getItemId(), quantity);
-            cachedPlayerCoins = nextCoins;
-            committed = true;
-            // Notification failures cannot turn a completed trade into a retryable failure or refund.
-            inventory.setChanged();
-            setChanged();
-            customer.inventoryMenu.broadcastChanges();
-            menu.broadcastChanges();
-            syncToClient();
-            return true;
-        } catch (RuntimeException failure) {
-            com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.warn(
-                "Future trade {} at {}: {}", committed ? "committed; notification failed" : "aborted before inventory commit",
-                worldPosition, failure.toString());
-            return committed;
+            var market = com.miophas.singularity_iteration.common.exchange.ExchangeService.market(world.getServer(), commodity.getItemId());
+            if (market == null) return false;
+            long quoted = buying ? Math.max(1, (buyCost(commodity, 1) * 11 + 9) / 10) : Math.max(1, sellPayout(commodity, 1));
+            final long limit = Math.max(market.low(), Math.min(market.high(), quoted));
+            return exchangeAction(customer, () -> com.miophas.singularity_iteration.common.exchange.ExchangeService.place(
+                customer, commodity.getItemId(), buying, false, limit, tradeQuantity));
         } finally {
-            try {
-                if (payment != null && payment.isPending()) payment.cancel();
-            } finally {
-                tradeInProgress = false;
-                TRADING_PLAYERS.remove(customer);
-            }
+            tradeInProgress = false;
+            TRADING_PLAYERS.remove(customer);
+        }
+    }
+
+    /** 0.1.10.21: the player uses this machine now (open menu, in reach, live machine): it may act on the exchange. */
+    public boolean serves(ServerPlayer player) {
+        return level instanceof ServerLevel world && player.containerMenu instanceof FutureElcMenu menu && authorized(world, player, menu);
+    }
+
+    /**
+     * 0.1.10.21: runs one exchange action for the energy fee of a trade: the fee is reserved first and kept only when
+     * the action succeeds. The result message goes to the action bar.
+     */
+    public boolean exchangeAction(ServerPlayer player, java.util.function.Supplier<com.miophas.singularity_iteration.common.exchange.ExchangeService.Result> action) {
+        int fee = Singularity_Iteration_Config.FUTURE_ENERGY_PER_TRADE.get();
+        CustomEUEnergyStorage.InternalPayment payment = null;
+        if (fee > 0) {
+            payment = energyStorage.scexReserveInternal(fee);
+            if (payment == null) return refuse(player, "message.mio_icif.future.no_energy");
+        }
+        boolean ok = false;
+        try {
+            var result = action.get();
+            ok = result.ok();
+            player.displayClientMessage(Component.translatable(result.key(), result.args()), true);
+            if (ok && payment != null && !payment.commit()) throw new IllegalStateException("Future payment settled twice");
+            if (ok) { setChanged(); player.inventoryMenu.broadcastChanges(); }
+            return ok;
+        } finally {
+            if (payment != null && payment.isPending()) payment.cancel();
         }
     }
 

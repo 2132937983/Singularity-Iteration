@@ -222,6 +222,8 @@ public class Singularity_Iteration {
             .setDistributionMode(Singularity_Iteration_Config.ENERGY_NET_DISTRIBUTION_MODE.get());
         com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
             .setLineLossModel(Singularity_Iteration_Config.ENERGY_NET_LINE_LOSS.get());
+        com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
+            .setDispatchMode(Singularity_Iteration_Config.ENERGY_NET_DISPATCH_MODE.get());   // 0.1.10.22
         com.miophas.singularity_iteration.core.runtime.processing.AutomationPacing
             .setEnabled(Singularity_Iteration_Config.AUTOMATION_PACING.get());   // 0.1.10.7
         com.miophas.singularity_iteration.core.runtime.processing.MachineSleep
@@ -323,6 +325,7 @@ com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.
         com.miophas.singularity_iteration.common.command.PerfCommand.register(event.getDispatcher());   // 0.1.10.7
         com.miophas.singularity_iteration.common.command.ChunkLoaderCommand.register(event.getDispatcher());   // 0.1.10.11
         com.miophas.singularity_iteration.common.command.ReactorAuditCommand.register(event.getDispatcher());  // 0.1.10.12
+        com.miophas.singularity_iteration.common.command.MarketAuditCommand.register(event.getDispatcher());   // 0.1.10.21
     }
 
     private void onBlockEntityTypeAddBlocks(BlockEntityTypeAddBlocksEvent event) {

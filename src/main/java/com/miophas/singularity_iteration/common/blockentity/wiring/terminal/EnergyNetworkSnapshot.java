@@ -15,13 +15,20 @@ public final class EnergyNetworkSnapshot {
     public static final int HISTORY = 112;
     public static final int MAX_DEVICES = 256;
 
-    public enum Category { GENERATOR, CONSUMER, STORAGE, TRANSFORMER }
+    /** 0.1.10.22: PROTECTION = a breaker or fuse cable. */
+    public enum Category { GENERATOR, CONSUMER, STORAGE, TRANSFORMER, PROTECTION }
 
     /** One endpoint on the network. Rates are EU/t averaged over the last second. */
     /** {@code rated}: theoretical EU/t of the device (generator nameplate / consumer draw while working). */
     /** {@code subnet}: index into {@link #subnets} (-1 unknown); {@code voltage}: largest EU packet seen in the window. */
+    /** 0.1.10.22: {@code priority}: load priority 0 critical, 1 normal, 2 deferrable (-1: none); {@code dispatch}: 0 must-run, 1 dispatchable (-1: none). */
     public record Device(BlockPos pos, String blockId, Category category, float input, float output,
-                         long stored, long capacity, boolean switchable, boolean disabled, float rated, int subnet, float voltage) {
+                         long stored, long capacity, boolean switchable, boolean disabled, float rated, int subnet, float voltage,
+                         int priority, int dispatch) {
+        public Device(BlockPos pos, String blockId, Category category, float input, float output,
+                      long stored, long capacity, boolean switchable, boolean disabled, float rated, int subnet, float voltage) {
+            this(pos, blockId, category, input, output, stored, capacity, switchable, disabled, rated, subnet, voltage, -1, -1);
+        }
         public Device(BlockPos pos, String blockId, Category category, float input, float output,
                       long stored, long capacity, boolean switchable, boolean disabled, float rated) {
             this(pos, blockId, category, input, output, stored, capacity, switchable, disabled, rated, -1, 0F);
@@ -40,6 +47,27 @@ public final class EnergyNetworkSnapshot {
         public long ratedPacket;
         public float measuredPacket;
     }
+
+    /** 0.1.10.22 (G7): a link of the single-line diagram: device {@code device} (a buffer or an open breaker) also touches {@code subnet}. */
+    public record Link(int device, int subnet) { }
+    /** 0.1.10.22 (G5 / G7): one breaker or fuse: kind (0 breaker, 1 fuse), state, last cause, flow in the last tick, settings, counters. */
+    public record Breaker(BlockPos pos, int kind, int state, int cause, float flow, long ratedFlow, long ratedVoltage, int delay,
+                          boolean reclose, int recloseIn, int trips, float heat) { }
+    /** 0.1.10.22 (G7): one alarm of this network (see {@code GridAlarms}). */
+    public record Alarm(long time, int type, BlockPos pos, int detail, float value) { }
+
+    public static final int MAX_LINKS = 512, MAX_BREAKERS = 64, MAX_ALARMS = 40;
+    public final List<Link> links = new ArrayList<>();
+    public final List<Breaker> breakers = new ArrayList<>();
+    public final List<Alarm> alarms = new ArrayList<>();
+    /** 0.1.10.22: generation by dispatch class and storage discharge (EU/t), unmet demand of critical loads. */
+    public float generationMustRun, generationFuel, criticalDemand, criticalShortfall;
+    /** 0.1.10.22: engine time of the windows of this network's sources (microseconds per tick), and its history. */
+    public float costMicros;
+    public final float[] costHistory = new float[HISTORY];
+    /** 0.1.10.22: game time of the snapshot (alarm ages) and the dispatch mode (0 merit, 1 economic, 2 rotation). */
+    public long gameTime;
+    public int dispatchMode;
 
     /** Global mode: the walk crossed transformers and {@link #subnets} breaks the system down. */
     public boolean global;
@@ -93,6 +121,29 @@ public final class EnergyNetworkSnapshot {
             buf.writeFloat(sn.storageIn); buf.writeFloat(sn.storageOut);
             buf.writeVarLong(Math.max(0, sn.ratedPacket)); buf.writeFloat(sn.measuredPacket);
         }
+        // 0.1.10.22
+        for (int i = 0; i < n; i++) { Device d = devices.get(i); buf.writeByte(d.priority() + 1); buf.writeByte(d.dispatch() + 1); }
+        int links = Math.min(this.links.size(), MAX_LINKS);
+        buf.writeVarInt(links);
+        for (int i = 0; i < links; i++) { buf.writeVarInt(this.links.get(i).device()); buf.writeVarInt(this.links.get(i).subnet()); }
+        int breakers = Math.min(this.breakers.size(), MAX_BREAKERS);
+        buf.writeVarInt(breakers);
+        for (int i = 0; i < breakers; i++) {
+            Breaker b = this.breakers.get(i);
+            buf.writeBlockPos(b.pos()); buf.writeByte(b.kind()); buf.writeByte(b.state()); buf.writeByte(b.cause()); buf.writeFloat(b.flow());
+            buf.writeVarLong(b.ratedFlow()); buf.writeVarLong(b.ratedVoltage()); buf.writeVarInt(b.delay()); buf.writeBoolean(b.reclose());
+            buf.writeVarInt(b.recloseIn()); buf.writeVarInt(b.trips()); buf.writeFloat(b.heat());
+        }
+        int alarms = Math.min(this.alarms.size(), MAX_ALARMS);
+        buf.writeVarInt(alarms);
+        for (int i = 0; i < alarms; i++) {
+            Alarm a = this.alarms.get(i);
+            buf.writeVarLong(a.time()); buf.writeByte(a.type()); buf.writeBlockPos(a.pos()); buf.writeVarInt(a.detail()); buf.writeFloat(a.value());
+        }
+        buf.writeFloat(generationMustRun); buf.writeFloat(generationFuel); buf.writeFloat(criticalDemand); buf.writeFloat(criticalShortfall);
+        buf.writeFloat(costMicros);
+        for (int i = 0; i < HISTORY; i++) buf.writeFloat(costHistory[i]);
+        buf.writeVarLong(gameTime); buf.writeByte(dispatchMode);
     }
 
     public static EnergyNetworkSnapshot read(FriendlyByteBuf buf) {
@@ -128,6 +179,36 @@ public final class EnergyNetworkSnapshot {
             sn.ratedPacket = buf.readVarLong(); sn.measuredPacket = buf.readFloat();
             s.subnets.add(sn);
         }
+        // 0.1.10.22
+        for (int i = 0; i < n; i++) {
+            int priority = buf.readUnsignedByte() - 1, dispatch = buf.readUnsignedByte() - 1;
+            Device d = s.devices.get(i);
+            s.devices.set(i, new Device(d.pos(), d.blockId(), d.category(), d.input(), d.output(), d.stored(), d.capacity(), d.switchable(),
+                d.disabled(), d.rated(), d.subnet(), d.voltage(), Math.max(-1, Math.min(2, priority)), Math.max(-1, Math.min(1, dispatch))));
+        }
+        int links = buf.readVarInt();
+        if (links < 0 || links > MAX_LINKS) throw new IllegalArgumentException("Bad link count " + links);
+        for (int i = 0; i < links; i++) s.links.add(new Link(buf.readVarInt(), buf.readVarInt()));
+        int breakers = buf.readVarInt();
+        if (breakers < 0 || breakers > MAX_BREAKERS) throw new IllegalArgumentException("Bad breaker count " + breakers);
+        for (int i = 0; i < breakers; i++) {
+            BlockPos pos = buf.readBlockPos();
+            int kind = buf.readUnsignedByte(), state = buf.readUnsignedByte(), cause = buf.readUnsignedByte();
+            float flow = buf.readFloat();
+            long ratedFlow = buf.readVarLong(), ratedVoltage = buf.readVarLong();
+            int delay = buf.readVarInt();
+            boolean reclose = buf.readBoolean();
+            int recloseIn = buf.readVarInt(), trips = buf.readVarInt();
+            float heat = buf.readFloat();
+            s.breakers.add(new Breaker(pos, kind, state, cause, flow, ratedFlow, ratedVoltage, delay, reclose, recloseIn, trips, heat));
+        }
+        int alarms = buf.readVarInt();
+        if (alarms < 0 || alarms > MAX_ALARMS) throw new IllegalArgumentException("Bad alarm count " + alarms);
+        for (int i = 0; i < alarms; i++) s.alarms.add(new Alarm(buf.readVarLong(), buf.readUnsignedByte(), buf.readBlockPos(), buf.readVarInt(), buf.readFloat()));
+        s.generationMustRun = buf.readFloat(); s.generationFuel = buf.readFloat(); s.criticalDemand = buf.readFloat(); s.criticalShortfall = buf.readFloat();
+        s.costMicros = buf.readFloat();
+        for (int i = 0; i < HISTORY; i++) s.costHistory[i] = buf.readFloat();
+        s.gameTime = buf.readVarLong(); s.dispatchMode = buf.readUnsignedByte();
         return s;
     }
 }

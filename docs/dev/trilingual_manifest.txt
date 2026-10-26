@@ -25,9 +25,15 @@ com/miophas/singularity_iteration/core/api/reactor/ReactorLayout.java  all
 com/miophas/singularity_iteration/core/api/reactor/ReactorLayoutRegistry.java  all
 com/miophas/singularity_iteration/core/api/multiblock/StructureBlueprint.java  all
 com/miophas/singularity_iteration/core/api/multiblock/StructureBlueprintRegistry.java  all
+com/miophas/singularity_iteration/core/api/energy/grid/DispatchClass.java  all
+com/miophas/singularity_iteration/core/api/energy/grid/IGridDispatch.java  all
+com/miophas/singularity_iteration/core/api/energy/grid/LoadPriority.java  all
+com/miophas/singularity_iteration/core/api/energy/grid/ILoadPriority.java  all
 
 # Algorithms
 com/miophas/singularity_iteration/core/runtime/energy/engine/FairShareDistributor.java
+com/miophas/singularity_iteration/core/runtime/energy/engine/ProtectionRelay.java
+com/miophas/singularity_iteration/core/runtime/energy/GridAlarms.java
 com/miophas/singularity_iteration/core/runtime/crop/CropGrowthMath.java  all
 com/miophas/singularity_iteration/core/runtime/crop/PlantHybridization.java
 com/miophas/singularity_iteration/core/runtime/crop/CropScanCursor.java

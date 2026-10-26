@@ -64,7 +64,17 @@ protected final int duration;        // 事件持续天数
      * @param dayOffset the day number after the event start (0 = first day)
      * @return the new price
      */
-    public abstract int applyEffect(int currentPrice, int basePrice, int dayOffset);
+    public int applyEffect(int currentPrice, int basePrice, int dayOffset) {
+        return applyEffect(currentPrice, basePrice, dayOffset, SHARED_RANDOM::nextDouble);
+    }
+
+    /**
+     * 0.1.10.21: the same with the random numbers (uniform in [0, 1)) from {@code random}, so that the futures pricing
+     * can simulate the event on its own random source ({@code FuturePriceModel}).
+     */
+    public abstract int applyEffect(int currentPrice, int basePrice, int dayOffset, java.util.function.DoubleSupplier random);
+
+    private static final java.util.Random SHARED_RANDOM = new java.util.Random();
     
     /**
      * 检查事件在指定天数是否有效

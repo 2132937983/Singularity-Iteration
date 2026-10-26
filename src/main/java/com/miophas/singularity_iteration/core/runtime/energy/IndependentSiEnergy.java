@@ -902,6 +902,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final Map<BlockPos, IndependentTransformerBlockEntity> transformers = new LinkedHashMap<>();
         /** Published special cables (switching and detector cables). */
         final Map<BlockPos, IndependentSpecialCableBlockEntity> specialCables = new LinkedHashMap<>();
+        /** 0.1.10.22 (G7): nanoseconds spent on the windows that start at each source position (cumulative). */
+        final it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap settleNanos = new it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap();
         /** Special cable state: last observed value and last published value per position. */
         final Map<BlockPos, Element> specialObserved = new HashMap<>(), specialPublished = new HashMap<>();
         /** Special cable changes per publication frame. {@code observeSpecial} throws when more than 4 frames are pending. */
@@ -1446,6 +1448,14 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 grid.catchUp = !grid.catchUpEndpoints.isEmpty();
                 settleScoped(level, grid, null, affected);
             }
+            // 0.1.10.22 (G5): protective cables after this tick's settlement: overload, reclosing, cooling. A change of
+            // conduction reaches the topology at the next tick start (refreshInput), like a splitter cable.
+            for (var cable : grid.specialCables.values()) {
+                if (!cable.protective() || cable.isRemoved()) continue;
+                var at = cable.getBlockPos();
+                if (level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4) != null
+                        && level.shouldTickBlocksAt(ChunkPos.asLong(at))) cable.evaluateProtection();
+            }
         } catch (RuntimeException error) { fail(level, grid, error); }
     }
     /**
@@ -1780,7 +1790,14 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             // Reserve the eligibility and priority vectors (including copies)
             // before finalizing, not after performing an unbounded allocation.
             if (!grid.routeBudget.reserveArrays(plan.arrayCells * 3)) return;
-            if (!settlePlan(level, grid, prepareDemand, ports, plan, cachedByPosition, allowances)) return;
+            // 0.1.10.22 (G7): the cost of each window, kept per first source for the monitoring panel
+            long settleStart = System.nanoTime();
+            boolean settled = settlePlan(level, grid, prepareDemand, ports, plan, cachedByPosition, allowances);
+            if (!plan.sources.isEmpty()) {
+                if (grid.settleNanos.size() > 65536) grid.settleNanos.clear();
+                grid.settleNanos.addTo(plan.sources.get(0).position().asLong(), System.nanoTime() - settleStart);
+            }
+            if (!settled) return;
             windows.add(windowKey);
             // The sources are done when every allowance is empty, or when this
             // window started at sink 0 and covered all reachable sinks (or no sink
@@ -2047,9 +2064,14 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         var receiverLimitKnown = new boolean[sinks.size()];
         var deliveryWires = new BlockPos[round.deliveries().size()][];
         var poweredRuns = java.util.Collections.newSetFromMap(new IdentityHashMap<IEnergyConductor[], Boolean>());
+        // 0.1.10.22 (G5): the protective cables of each delivery (path order) and the cables that open for an overvoltage
+        var deliveryGuards = new IndependentSpecialCableBlockEntity[round.deliveries().size()][];
+        var voltageTrips = new java.util.LinkedHashSet<IndependentSpecialCableBlockEntity>();
         int deliveryIndex = -1;
         for (var delivery : round.deliveries()) {
             deliveryIndex++;
+            // 0.1.10.22 (G5): set when a protective cable on the path opens for this packet; the effects behind it are skipped
+            final boolean[] guarded = {false};
             traceDebit = traceDebit.add(delivery.sourceDebit());
             traceCredit = traceCredit.add(delivery.credit());
             traceLoss = traceLoss.add(delivery.pathLoss());
@@ -2075,6 +2097,14 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     pathProfileHits++;
                     wireVisits[0] = Math.addExact(wireVisits[0], profile.positions.length);
                     for (var special : profile.specials) if (special.detector()) detectorDeliveries.add(special);
+                    if (profile.guards.length > 0) {
+                        deliveryGuards[deliveryIndex] = profile.guards;
+                        for (var guard : profile.guards) {
+                            // an open cable (tripped earlier in this tick; the topology follows at the next tick start) also guards
+                            if (!guard.relay().conducts()) { guarded[0] = true; break; }
+                            if (guard.voltageExceeded(deliveryVoltage)) { voltageTrips.add(guard); guarded[0] = true; break; }
+                        }
+                    }
                     poweredRuns.add(profile.conductors);
                     weakestMeasuredLimit[0] = Math.min(weakestMeasuredLimit[0], profile.weakest);
                     deliveryWires[deliveryIndex] = profile.positions;
@@ -2082,6 +2112,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 pathSlowVisits++;
                 if (profile != null && !profile.live()) grid.pathProfiles.remove(path.key());
                 var wire = new ArrayList<BlockPos>();
+                var guards = new ArrayList<IndependentSpecialCableBlockEntity>();
                 path.visit(position -> {
                     wireVisits[0] = Math.incrementExact(wireVisits[0]);
                     var at = new BlockPos(position.x(), position.y(), position.z());
@@ -2090,11 +2121,18 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     if (type == null) throw new IllegalStateException("Published conductor has no material identity");
                     var special = grid.specialCables.get(at);
                     if (special != null && special.detector()) detectorDeliveries.add(special);
+                    // 0.1.10.22 (G5): the first protective cable that the packet exceeds opens at once; the cables
+                    // and the machine behind it get no overvoltage effect from this delivery
+                    if (special != null && special.protective()) {
+                        guards.add(special);
+                        if (!guarded[0] && !special.relay().conducts()) guarded[0] = true;   // opened earlier in this tick
+                        if (!guarded[0] && special.voltageExceeded(deliveryVoltage)) { voltageTrips.add(special); guarded[0] = true; }
+                    }
                     Long conductorLimit = tierFuseLimit(type);
                     if (conductorLimit == null) conductorLimit = EnergyNodeRegistry.fuseLimit(type);
                     if (conductorLimit != null) {
                         weakestMeasuredLimit[0] = Math.min(weakestMeasuredLimit[0], conductorLimit);
-                        if (meltdown && deliveryVoltage > conductorLimit) {
+                        if (meltdown && !guarded[0] && deliveryVoltage > conductorLimit) {
                             fusePlan.put(at, type);
                         }
                     }
@@ -2104,10 +2142,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         if (be instanceof IEnergyConductor conductor) {
                             poweredConductors.add(conductor);
                             weakestMeasuredLimit[0] = Math.min(weakestMeasuredLimit[0], conductor.getInsulationBreakdownEnergy());
-                            if (meltdown && !fusePlan.containsKey(at) && deliveryVoltage > conductor.getInsulationBreakdownEnergy()) {
+                            if (meltdown && !guarded[0] && !fusePlan.containsKey(at) && deliveryVoltage > conductor.getInsulationBreakdownEnergy()) {
                                 stripPlan.put(at, type);
                             }
-                            if (shocking && deliveryVoltage > conductor.getInsulationEnergyAbsorption()) {
+                            if (shocking && !guarded[0] && deliveryVoltage > conductor.getInsulationEnergyAbsorption()) {
                                 double shockEnergy = deliveryVoltage - conductor.getInsulationEnergyAbsorption();
                                 shockPlan.computeIfAbsent(new ShockRoute(sources.get(delivery.source()).position,
                                     sinks.get(delivery.receiver()).position), ignored -> new LinkedHashMap<>())
@@ -2117,6 +2155,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     }
                 });
                 deliveryWires[deliveryIndex] = wire.toArray(BlockPos[]::new);
+                if (!guards.isEmpty()) deliveryGuards[deliveryIndex] = guards.toArray(IndependentSpecialCableBlockEntity[]::new);
                 }
             }
             var sink = sinks.get(delivery.receiver());
@@ -2129,7 +2168,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             // lowest insulation breakdown energy on the path. A delivery above it does
             // not explode the sink. This test does not depend on enetCableMeltdown().
             boolean fused = deliveryVoltage > weakestMeasuredLimit[0];
-            if (explosions && receiverLimit != null && !fused
+            if (explosions && receiverLimit != null && !fused && !guarded[0]
                     && deliveryVoltage > receiverLimit) {
                 receiverPlan.merge(sink, deliveryVoltage, Math::max);
             }
@@ -2176,7 +2215,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 // 0.1.10.7: the wire samples wait until a meter reads (same order, same sums)
                 var wire = deliveryWires[sampleIndex];
                 if (wire != null) sampleWire(grid, wire, received, voltage);
+                // 0.1.10.22 (G5): the energy through each protective cable of the path
+                var guards = deliveryGuards[sampleIndex];
+                if (guards != null) for (var guard : guards) guard.carry(received, voltage);
             }
+            // 0.1.10.22 (G5): the voltage element opens after the commit; the topology change follows at the next tick start
+            for (var trip : voltageTrips) trip.tripForVoltage();
             poweredConductors.forEach(IEnergyConductor::onEnergyPass);
             for (var run : poweredRuns) for (var conductor : run) conductor.onEnergyPass();
             detectorDeliveries.forEach(IndependentSpecialCableBlockEntity::delivered);
@@ -2194,8 +2238,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             receiverPlan.keySet().forEach(port -> effectPositions.add(port.position));
             if (!effectPositions.isEmpty()) grid.effectEndpoints.addAll(affectedEndpoints(grid, effectPositions));
             shockPlan.forEach((route, exposures) -> collectShockDamage(level, grid, route, exposures));
+            // 0.1.10.22 (G7): alarms for the monitoring panel
+            if (!fusePlan.isEmpty()) GridAlarms.record(level, GridAlarms.Type.CABLE_MELTED, fusePlan.keySet().iterator().next(), fusePlan.size(), 0);
             removedByEffects.addAll(fuseConductors(level, grid, fusePlan));
             stripPlan.keySet().removeAll(fusePlan.keySet());
+            if (!stripPlan.isEmpty()) GridAlarms.record(level, GridAlarms.Type.INSULATION_BURNED, stripPlan.keySet().iterator().next(), stripPlan.size(), 0);
             removedByEffects.addAll(stripInsulation(level, grid, stripPlan));
             // 0.1.10.7: a fused or stripped conductor changes the limits of every path through it
             if (!fusePlan.isEmpty() || !stripPlan.isEmpty()) grid.pathProfiles.clear();
@@ -2238,6 +2285,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     applySmallBlockBlast(level, grid, at, removedByEffects);
                     // 0.1.10.12: for the reactor accident audit
                     OverloadBlastLog.record(level.dimension().location().toString(), at.getX(), at.getY(), at.getZ(), level.getGameTime());
+                    GridAlarms.record(level, GridAlarms.Type.MACHINE_EXPLODED, at, 0, receiverPlan.get(sink));   // 0.1.10.22 (G7)
                     com.miophas.singularity_iteration.core.api.advancement.MioAchievements
                         .at(level, at, "industrial_accident", "machine_exploded");
                 }
@@ -2272,12 +2320,27 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      *       first.</li>
      * </ul>
      */
-    /** The sources of a fair round: the window budget, the packet size and the class (1 for storage). */
+    /**
+     * The sources of a fair round: the window budget, the packet size, the class (1 for storage) and, since 0.1.10.22
+     * (G3), the dispatch rank and whether the source charges storage ({@link IndependentEnergyMode#dispatchMode()}):
+     * merit order = must-run and relays, fuel, storage; economic = must-run and relays, storage, fuel (no charging);
+     * rotation = the order before (generators and relays, storage).
+     */
     private static List<FairShareDistributor.Source> fairSources(List<Port> sources, List<EnergyAmount> budgets) {
+        var mode = IndependentEnergyMode.dispatchMode();
         var fairSources = new ArrayList<FairShareDistributor.Source>(sources.size());
         for (int i = 0; i < sources.size(); i++) {
             var source = sources.get(i);
-            fairSources.add(new FairShareDistributor.Source(budgets.get(i), Math.max(1, source.packet), isStorage(source) ? 1 : 0));
+            boolean storage = isStorage(source);
+            boolean fuel = !storage && source.transformer == null && source.tile instanceof com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch dispatch
+                && dispatch.dispatchClass() == com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE;
+            int rank = switch (mode) {
+                case MERIT -> storage ? 2 : fuel ? 1 : 0;
+                case ECONOMIC -> storage ? 1 : fuel ? 2 : 0;
+                case ROTATION -> storage ? 1 : 0;
+            };
+            boolean charges = !(mode == IndependentEnergyMode.DispatchMode.ECONOMIC && fuel);
+            fairSources.add(new FairShareDistributor.Source(budgets.get(i), Math.max(1, source.packet), storage ? 1 : 0, rank, charges));
         }
         return List.copyOf(fairSources);
     }
@@ -2290,23 +2353,21 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             boolean storage = sink.transformer == null && isStorage(sink);
             var relay = storage ? relayDemand(sink) : EnergyAmount.ZERO;
             if (!relay.isZero() && !feedsReceivers(grid, sink)) relay = EnergyAmount.ZERO;
+            // 0.1.10.22 (G4): the load priority of the endpoint (transformers stay normal)
+            int tier = sink.transformer == null && sink.tile instanceof com.miophas.singularity_iteration.core.api.energy.grid.ILoadPriority prioritized
+                ? prioritized.loadPriority().ordinal() : FairShareDistributor.NORMAL_TIER;
             fairReceivers.add(new FairShareDistributor.Receiver(room.get(r), ratedInput(grid, sink),
-                storage ? 1 : 0, relay));
+                storage ? 1 : 0, relay, tier));
         }
         return List.copyOf(fairReceivers);
     }
 
     /**
      * 0.1.10.20 (G2): the part of the world time that the fair round uses: the start of the visit order of
-     * each source class ({@code rotation mod size}, see {@code FairShareDistributor.sourceOrder}).
+     * each source rank ({@code rotation mod size}, see {@code FairShareDistributor.sourceOrder}; 0.1.10.22: per rank).
      */
     private static long rotationKey(List<FairShareDistributor.Source> sources, long rotation) {
-        int storage = 0;
-        for (var source : sources) if (source.sourceClass() == 1) storage++;
-        int other = sources.size() - storage;
-        long start0 = other == 0 ? 0 : Math.floorMod(rotation, (long) other);
-        long start1 = storage == 0 ? 0 : Math.floorMod(rotation, (long) storage);
-        return (start0 << 32) | start1;
+        return FairShareDistributor.rotationKey(sources, rotation);
     }
 
     /** 0.1.10.20 (G2): the inputs and the result of one fair round of a window, for the steady-window replay. */
@@ -2700,6 +2761,15 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             || server.getTickCount() - grid.sampleTick > 1 ? null : grid.samples.get(at);
     }
 
+    /**
+     * 0.1.10.22 (G7): the nanoseconds that the engine spent on the windows that start at the source {@code at}, summed
+     * since the grid started (0 for none). The monitoring panel reads the change per second.
+     */
+    public long settleNanos(ServerLevel level, BlockPos at) {
+        var grid = worlds.get(level);
+        return grid == null ? 0 : grid.settleNanos.get(at.asLong());
+    }
+
     /** Query after level settlement. An idle registered node contributes a zero tick,
      * never the previous tick's packet. The existing sparse query remains unchanged. */
     public NodeStats currentTickNodeStats(ServerLevel level, BlockPos at) {
@@ -3086,6 +3156,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         }
                     }
                     var detector = grid.specialCables.get(pos); if (detector != null && detector.detector()) detector.delivered();
+                    if (detector != null && detector.protective()) detector.carry(input, voltage);   // 0.1.10.22 (G5)
                 });
                 commits++; totalDebit = totalDebit.add(FeLedger.eu(sent)); totalCredit = totalCredit.add(FeLedger.eu(routed.delivered()));
                 totalLoss = totalLoss.add(FeLedger.eu(sent - routed.delivered()));
@@ -3182,6 +3253,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if (route.path != null && accessible(level, grid) && grid.conductors.isCurrent(graph)) route.path.visit(at -> {
                     var pos = new BlockPos(at.x(), at.y(), at.z()); sample(grid, pos, output, output, 0);
                     var detector = grid.specialCables.get(pos); if (detector != null && detector.detector()) detector.delivered();
+                    if (detector != null && detector.protective()) detector.carry(output, 0);   // 0.1.10.22 (G5)
                 });
                 commits++; totalDebit = totalDebit.add(FeLedger.eu(extracted)); totalCredit = totalCredit.add(FeLedger.eu(received));
                 totalLoss = totalLoss.add(FeLedger.eu(extracted - received));
@@ -3798,6 +3870,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final BlockEntity[] owners;
         /** Special cables on the wire (detector() is read at each delivery, it can change). */
         final IndependentSpecialCableBlockEntity[] specials;
+        /** 0.1.10.22 (G5): the protective cables among them, in path order. */
+        final IndependentSpecialCableBlockEntity[] guards;
         /** Lowest fuse limit, insulation breakdown and insulation absorption of the wire (infinity: none). */
         final double minFuse, minBreakdown, minAbsorption;
         /** The lowest of the fuse limits and breakdowns: the "weakest measured limit" of the old visit. */
@@ -3808,6 +3882,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         PathProfile(BlockPos[] positions, IEnergyConductor[] conductors, BlockEntity[] owners,
                     IndependentSpecialCableBlockEntity[] specials, double minFuse, double minBreakdown, double minAbsorption) {
             this.positions = positions; this.conductors = conductors; this.owners = owners; this.specials = specials;
+            this.guards = java.util.Arrays.stream(specials).filter(IndependentSpecialCableBlockEntity::protective)
+                .toArray(IndependentSpecialCableBlockEntity[]::new);
             this.minFuse = minFuse; this.minBreakdown = minBreakdown; this.minAbsorption = minAbsorption;
             this.weakest = Math.min(minFuse, minBreakdown);
         }

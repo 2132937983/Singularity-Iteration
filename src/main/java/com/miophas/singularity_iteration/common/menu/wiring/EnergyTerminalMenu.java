@@ -64,6 +64,16 @@ public class EnergyTerminalMenu extends AbstractContainerMenu {
         return true;
     }
 
+    /** 0.1.10.22 (G4): server side: the load priority of a device on this network. */
+    public void setPriority(BlockPos device, int priority) {
+        if (terminal != null) terminal.setPriority(device, priority);
+    }
+
+    /** 0.1.10.22 (G5): server side: closes an open breaker of this network. */
+    public void resetProtection(BlockPos device) {
+        if (terminal != null) terminal.resetProtection(device);
+    }
+
     /** Server side: validated toggle request from the GUI. */
     public void toggle(BlockPos device) {
         if (terminal != null) terminal.toggle(device);

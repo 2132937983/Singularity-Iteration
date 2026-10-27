@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ACA",
+    "BEB",
+    "AHA"
+  ],
+  "key": {
+    "A": {
+      "tag": "c:circuits/basic"
+    },
+    "B": {
+      "item": "minecraft:hopper"
+    },
+    "C": {
+      "item": "minecraft:emerald"
+    },
+    "E": {
+      "item": "mio_icif:producer/block_future_elc"
+    },
+    "H": {
+      "item": "minecraft:chest"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_trade_terminal",
+    "count": 1
+  }
+}

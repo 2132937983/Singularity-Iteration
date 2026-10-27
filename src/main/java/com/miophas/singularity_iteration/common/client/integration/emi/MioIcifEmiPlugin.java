@@ -162,7 +162,11 @@ public class MioIcifEmiPlugin implements EmiPlugin {
                     .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(COMPRESSOR, recipe)));
 
             // 注册方块切割机配方
-            recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLOCK_CUTTER_TYPE.get())
+            // 0.1.10.29: the wood recipe is shown once per planks recipe.
+            var cutterLevel = net.minecraft.client.Minecraft.getInstance().level;
+            com.miophas.singularity_iteration.common.recipe.block_cutter.mio_icif_BlockCutterRecipe.displays(recipeManager,
+                    cutterLevel == null ? null : cutterLevel.registryAccess(),
+                    recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLOCK_CUTTER_TYPE.get()))
                     .forEach(recipe -> registry.addRecipe(new MioIcifEmiRecipe(BLOCK_CUTTER, recipe)));
 
             // 注册金属成型机 - 轧制配方

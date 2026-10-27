@@ -188,8 +188,11 @@ public class mio_icif_block_cutter extends AbstractProcessingMachineBlockEntity 
         var recipe = getCurrentRecipe();
         var blade = itemHandler.getStackInSlot(BLADE_SLOT);
         if (recipe == null || !isValidBlade(blade) || getBladeHardness(blade) < recipe.getHardness()) return Optional.empty();
+        // 0.1.10.29: a wood recipe gives the planks of the log in the input slot.
+        ItemStack output = recipe.resultFor(this.level, itemHandler.getStackInSlot(INPUT_SLOT));
+        if (output.isEmpty()) return Optional.empty();
         return RecipeSlots.prepare(itemHandler, INPUT_SLOT, recipe.getIngredientCount(),
-            new int[]{OUTPUT_SLOT}, java.util.List.of(recipe.getResult()));
+            new int[]{OUTPUT_SLOT}, java.util.List.of(output));
     }
 
     /**

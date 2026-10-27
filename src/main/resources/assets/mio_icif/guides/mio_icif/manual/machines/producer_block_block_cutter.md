@@ -18,6 +18,7 @@ item_ids:
 
 The Block Cutter uses EU and a cutting blade to cut blocks. Metal blocks become plates. Logs become planks.
 Each recipe needs a minimum blade hardness. The Diamond Cutting Blade is harder than the Iron Cutting Blade.
+Logs give the planks of their own wood: every log, wood, stem and stripped variant, bamboo blocks, and the woods of other mods that have a crafting recipe to planks. A log gives 6 planks (4 by hand), a bamboo block 3 (2 by hand).
 
 ## Power data
 

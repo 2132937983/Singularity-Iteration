@@ -223,6 +223,7 @@ public class mio_icif_capacities {
             mio_icif_block_entities.TRANSFORMER_IV_LUV.get(),
             mio_icif_block_entities.TRANSFORMER_LUV_ZPMV.get(),
             mio_icif_block_entities.FUTURE_ELC_ENTITY_TYPE.get(),
+            mio_icif_block_entities.TRADE_TERMINAL_ENTITY_TYPE.get(),
             mio_icif_block_entities.HEAT_SOURCE_FLUID.get(),
             mio_icif_block_entities.COMPRESSOR_ELC_ENTITY_TYPE.get(),
             mio_icif_block_entities.CANNER_ELC_ENTITY_TYPE.get(),
@@ -1831,6 +1832,18 @@ public class mio_icif_capacities {
         );
 
         Singularity_Iteration.LOGGER.debug("Registered EU energy and item capabilities for Futures Machine");
+
+        // 0.1.10.27 (X2): the Trade Terminal (EU, and the sell / output buffers for pipes and hoppers)
+        event.registerBlockEntity(
+            EUApi.SIDED,
+            mio_icif_block_entities.TRADE_TERMINAL_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity instanceof AbstractEnergyBlockEntity energyBlock ? energyBlock.getEnergyStorageCapability(direction) : null
+        );
+        event.registerBlockEntity(
+            Capabilities.ItemHandler.BLOCK,
+            mio_icif_block_entities.TRADE_TERMINAL_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getItemHandlerCapability(direction)
+        );
 
         // Register capabilities for Heat Source Fluid (热交换机)
         // Register item handler capability

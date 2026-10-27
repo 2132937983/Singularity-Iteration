@@ -32,6 +32,16 @@ public final class ExchangePackets {
     public static final int BOX_SELL = 10, BOX_FILL = 11, BOX_RETURN = 12, AUCTION_CANCEL = 13;
     /** 0.1.10.26 (X3): delivers what the player carries to a system bounty (a = bounty). */
     public static final int BOUNTY_DELIVER = 14;
+    /**
+     * 0.1.10.27 (X2): the settlement slot. SETTLE_SELL (flag = into the auction, c = minimum percent), SETTLE_BOUNTY (a = bounty),
+     * SETTLE_COMMISSION (a = commission, d = quantity), SETTLE_UU, SETTLE_BUY (id = market, a = limit, d = quantity).
+     */
+    public static final int SETTLE_SELL = 15, SETTLE_BOUNTY = 16, SETTLE_COMMISSION = 17, SETTLE_UU = 18, SETTLE_BUY = 19;
+    /**
+     * 0.1.10.29: the coin account. COIN_IN (a = coins of the inventory, 0 = all), COIN_OUT (a = coins, 0 = all), BANK_MODE (flag = on),
+     * SETTLE_COINS (the coins of the settlement container). BOX_SELL and SETTLE_SELL: a = minimum coins per item (0 = c percent).
+     */
+    public static final int COIN_IN = 20, COIN_OUT = 21, BANK_MODE = 22, SETTLE_COINS = 23;
 
     public record Request(String selected) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_request"));
@@ -79,7 +89,8 @@ public final class ExchangePackets {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             mio_icif_future_elc machine = machine(player);
-            if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) return;
+            // 0.1.10.29: the views have their own bucket, so refreshes never use up the actions'
+            if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE_VIEW)) return;
             send(player, packet.selected, machine);
         });
     }
@@ -88,7 +99,12 @@ public final class ExchangePackets {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             mio_icif_future_elc machine = machine(player);
-            if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) return;
+            if (machine == null) return;
+            if (!PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) {
+                // 0.1.10.29: a dropped action says so (before, the click did nothing)
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.mio_icif.exchange.too_fast"), true);
+                return;
+            }
             // 0.1.10.25: moving items between the inventory and the sell box is not a trade (no energy fee)
             if (p.kind == BOX_FILL || p.kind == BOX_RETURN) {
                 FutureElcMenu menu = (FutureElcMenu) player.containerMenu;
@@ -110,15 +126,37 @@ public final class ExchangePackets {
                 case UU_IN -> ExchangeService.depositUu(player);
                 case UU_OUT -> ExchangeService.withdrawUu(player);
                 case FUTURE -> ExchangeService.openFuture(player, p.id, p.flag, p.d, p.c);
-                case BOX_SELL -> ExchangeService.sellBox(player, ((FutureElcMenu) player.containerMenu).sellBox(), p.flag, Math.max(0, Math.min(100, p.c)));
+                case BOX_SELL -> ExchangeService.sellBox(player, ((FutureElcMenu) player.containerMenu).sellBox(), p.flag, Math.max(0, Math.min(100, p.c)), p.b == 1,
+                    Math.max(0, p.a));
+                case COIN_IN -> ExchangeService.depositCoins(player, Math.max(0, p.a));
+                case COIN_OUT -> ExchangeService.withdrawCoins(player, Math.max(0, p.a));
+                case BANK_MODE -> ExchangeService.setBankMode(player, p.flag);
                 case AUCTION_CANCEL -> ExchangeService.cancelAuction(player, p.a);
                 case BOUNTY_DELIVER -> Bounties.deliver(player, p.a);
+                case SETTLE_SELL, SETTLE_BOUNTY, SETTLE_COMMISSION, SETTLE_UU, SETTLE_BUY, SETTLE_COINS -> settle(player, p);
                 default -> new ExchangeService.Result(false, "message.mio_icif.exchange.unknown_action");
             });
             send(player, p.selected, machine);
             // 0.1.10.26: the trade and bounty events of the action, after it is complete
             ExchangeEvents.flush(player.server);
         });
+    }
+
+    /** 0.1.10.27 (X2): an action on the container of the menu's settlement slot. */
+    static ExchangeService.Result settle(ServerPlayer player, Action p) {
+        FutureElcMenu menu = (FutureElcMenu) player.containerMenu;
+        SettlementStorage st = SettlementStorages.open(menu.settlementSlot(), 0);
+        if (st == null) return new ExchangeService.Result(false, "message.mio_icif.exchange.settle_empty");
+        ExchangeService.Result r = switch (p.kind) {
+            case SETTLE_SELL -> Settlement.sell(player, st, p.flag, Math.max(0, Math.min(100, p.c)), p.b == 1, Math.max(0, p.a));
+            case SETTLE_COINS -> Settlement.depositCoins(player, st);
+            case SETTLE_BOUNTY -> Settlement.deliverBounty(player, st, p.a);
+            case SETTLE_COMMISSION -> Settlement.deliverCommission(player, st, p.a, Math.max(1, p.d));
+            case SETTLE_UU -> Settlement.depositUu(player, st);
+            default -> Settlement.buyInto(player, st, p.id, p.a, p.d);
+        };
+        menu.broadcastChanges();
+        return r;
     }
 
     static void send(ServerPlayer player, String selected, mio_icif_future_elc machine) {

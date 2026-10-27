@@ -168,6 +168,11 @@ public final class Bounties {
      * the account; a contribution split pays at completion, other contributors through their mailboxes.
      */
     public static Result deliver(ServerPlayer player, long id) {
+        return deliver(player, id, null);
+    }
+
+    /** 0.1.10.27 (X2): {@link #deliver} with the items from {@code from} (a settlement container; null = the inventory). */
+    public static Result deliver(ServerPlayer player, long id, ItemSource from) {
         MinecraftServer server = player.server;
         ExchangeData d = ExchangeData.get(server);
         Bounty b = d.board.find(id);
@@ -177,6 +182,7 @@ public final class Bounties {
         boolean mp = multiplayer(server);
         BountyBoard.Prices prices = prices(server);
         InventoryPlan plan = new InventoryPlan(player.getInventory());
+        ItemSource src = from != null ? from : ItemSource.of(plan);
         List<Payout> payouts = new ArrayList<>();
         long delivered = 0;
         boolean completed = false, capped = false;
@@ -185,10 +191,10 @@ public final class Bounties {
             Item item = ExchangeService.item(n.item);
             if (item == null || n.left() <= 0) continue;
             long can = d.board.canDeliver(b, i, uuid, day, mp);
-            long have = plan.count(item, true);
+            long have = src.count(item);
             if (can <= 0 && have > 0) capped = true;
             long take = Math.min(can, have);
-            if (take <= 0 || !plan.removeMain(item, take, true)) continue;
+            if (take <= 0 || !src.take(item, take)) continue;
             Delivery x = d.board.deliver(b, i, take, uuid, player.getGameProfile().getName(), d.treasury, prices);
             payouts.addAll(x.payouts());
             delivered += take;

@@ -33,6 +33,12 @@ public class mio_icif_data_components {
             builder -> builder.persistent(com.miophas.singularity_iteration.common.suit.InstalledModules.CODEC)
                 .networkSynchronized(com.miophas.singularity_iteration.common.suit.InstalledModules.STREAM_CODEC));
 
+    /** 0.1.10.28 (X4): the data of a written ID card of the exchange (absent = blank card). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<com.miophas.singularity_iteration.common.exchange.IdCardData>> ID_CARD =
+        DATA_COMPONENTS.registerComponentType("id_card",
+            builder -> builder.persistent(com.miophas.singularity_iteration.common.exchange.IdCardData.CODEC)
+                .networkSynchronized(com.miophas.singularity_iteration.common.exchange.IdCardData.STREAM_CODEC));
+
     /** Lattice densifier level of a nano suit piece (0.1.8.5): each level adds 2 lattice points (LP). */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Integer>> SUIT_LATTICE =
         DATA_COMPONENTS.registerComponentType("suit_lattice",

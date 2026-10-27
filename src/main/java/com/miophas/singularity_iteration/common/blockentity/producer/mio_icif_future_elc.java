@@ -14,6 +14,7 @@ import net.minecraft.world.item.Items;
 import com.miophas.singularity_iteration.common.future.CommodityCategory;
 import com.miophas.singularity_iteration.common.future.FutureCommodity;
 import com.miophas.singularity_iteration.common.future.FutureCommodityManager;
+import com.miophas.singularity_iteration.common.future.MarketDayDriver;
 import com.miophas.singularity_iteration.common.future.FutureMarketData;
 import com.miophas.singularity_iteration.common.future.MarketQuote;
 import com.miophas.singularity_iteration.common.future.event.*;
@@ -353,37 +354,6 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     }
     
     /**
-     * 随机生成价格事件
-     * 每天有概率为某些货品生成事件
-     */
-    private void generateRandomEvents() {
-        if (level == null || level.isClientSide) return;
-        
-        FutureMarketData marketData = FutureMarketData.get(level);
-        net.minecraft.util.RandomSource random = level.random;
-        
-        // 清理过期事件
-        marketData.cleanupExpiredEvents(currentDay);
-        
-        // 为每个货品检查是否生成事件（20%概率）
-    for (FutureCommodity commodity : FutureCommodityManager.getCommodities()) {
-            // 如果该货品已有活跃事件，跳过
-            if (marketData.getActiveEvent(commodity.getItemId(), currentDay) != null) {
-                continue;
-            }
-            
-            // 20% 概率生成事件
-            if (random.nextDouble() < com.miophas.singularity_iteration.common.future.FuturePriceModel.EVENT_CHANCE) {
-                FuturePriceEvent event = createRandomEvent(commodity, random);
-                if (event != null) {
-                    marketData.addEvent(commodity.getItemId(), event);
-                    // 事件通知已禁用（可在配置中开启）
-                }
-            }
-        }
-    }
-    
-    /**
      * 广播事件消息到所有玩家
  */
     @SuppressWarnings("unused")
@@ -433,11 +403,6 @@ public static final int DATA_CURRENT_CATEGORY = 7;
         if (intensity < 1.3) return "gui.mio_icif.future.intensity_strong";
         return "gui.mio_icif.future.intensity_extreme";
     }
-    private FuturePriceEvent createRandomEvent(FutureCommodity commodity, net.minecraft.util.RandomSource random) {
-        // 0.1.10.21: moved unchanged to FuturePriceModel (the futures pricing draws events the same way)
-        return com.miophas.singularity_iteration.common.future.FuturePriceModel.randomEvent(commodity.getItemId(), currentDay, random);
-    }
-    
     /**
      * 更新所有货品价格（新的一天）
      */
@@ -509,101 +474,23 @@ public static final int DATA_CURRENT_CATEGORY = 7;
     // ========== 业务逻辑 - 天数更新 ==========
     
     /**
-     * 检查并执行每日更新
-     * 在游戏每天第 1 tick 调用
+     * Checks the market day. 0.1.10.27 (X2): the change of the day moved unchanged to {@link MarketDayDriver} (initialize the
+     * market, prices, events, history, the exchange day), which the Trade Terminal runs as well; this machine then follows the
+     * market's day.
      */
     public void checkDayUpdate(Level level) {
         if (tradeInProgress) return;
-        if (level.isClientSide) return;
-        
-        long gameDay = level.getDayTime() / 24000L;
-        FutureMarketData marketData = FutureMarketData.get(level);
-        
-        // 首次运行：初始化
-        if (!marketData.isInitialized()) {
-            initializeMarket(marketData, gameDay);
-            return;
-        }
-        
-        // 始终同步天数，确保与数据库一致
-    long marketDay = marketData.getCurrentDay();
-        if (currentDay != marketDay) {
-            // 如果市场数据的天数与本地不一致，以市场数据为准
-        currentDay = marketDay;
-        }
-        
-        // 天数变化：执行每日更新
-    if (gameDay != currentDay) {
-            performDayUpdate(marketData, gameDay);
+        if (!(level instanceof ServerLevel server)) return;
+        boolean changed = MarketDayDriver.check(server);
+        long marketDay = FutureMarketData.get(level).getCurrentDay();
+        if (changed || currentDay != marketDay) {
+            currentDay = marketDay;
+            updatePriceHistoryCache();
+            setChanged();
+            syncToClient();
         }
     }
-    
-    /**
-     * 初始化市场数据
- */
-    private void initializeMarket(FutureMarketData marketData, long gameDay) {
-        // 初始化所有货品价格为基础价格
-        for (FutureCommodity commodity : FutureCommodityManager.getCommodities()) {
-            String id = commodity.getItemId();
-            marketData.setPrice(id, commodity.getBasePrice());
-            marketData.initializeCommodityHistory(id, commodity.getBasePrice());
-        }
-        
-        marketData.setCurrentDay(gameDay);
-        marketData.setInitialized(true);
-        
-        currentDay = gameDay;
-        
-        setChanged();
-        syncToClient();
-    }
-    
-    /**
-     * 执行每日更新
-     */
-    private void performDayUpdate(FutureMarketData marketData, long newDay) {
-        // 1. 记录今天的价格到历史
-        recordTodayPrices(marketData);
-        
-        // 2. 滚动价格历史
-        marketData.rollPriceHistory();
-        
-        // 3. 生成随机价格事件
-        generateRandomEvents();
-        
-        // 4. 更新所有货品价格
-    for (FutureCommodity commodity : FutureCommodityManager.getCommodities()) {
-            if (!commodity.repricesOn(newDay)) continue;   // datapack period_days: price holds between periods
-            int newPrice = calculateNewPrice(commodity);
-            setPrice(commodity, newPrice);
-        }
-        
-        // 5. 记录新价格到历史
-        recordTodayPrices(marketData);
-        
-        // 6. 更新天数和重置限制
-    currentDay = newDay;
-        marketData.setCurrentDay(newDay);   // the daily counters of the market start again with the new day
-        // 0.1.10.21: the exchange day (expiries, settlements, bars, the market's commissions)
-        if (level instanceof ServerLevel server) com.miophas.singularity_iteration.common.exchange.ExchangeService.onNewDay(server.getServer(), newDay);
-        
-        // 7. 刷新内存缓存
-        updatePriceHistoryCache();
-        
-        setChanged();
-        syncToClient();
-    }
-    
-    /**
-     * 记录今天所有货品的价格到历史
- */
-    private void recordTodayPrices(FutureMarketData marketData) {
-        for (FutureCommodity commodity : FutureCommodityManager.getCommodities()) {
-            int price = getCurrentPrice(commodity);
-            marketData.recordTodayPrice(commodity.getItemId(), price);
-        }
-    }
-    
+
     // ========== 业务逻辑 - 交易 ==========
     
     /**

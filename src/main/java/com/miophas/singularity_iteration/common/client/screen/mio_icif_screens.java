@@ -318,6 +318,8 @@ public class mio_icif_screens {
             mio_icif_menus.FUTURE_ELC_MENU_TYPE.get(),
             mio_icif_gui_future_elc::new
         );
+        // 0.1.10.27 (X2): the Trade Terminal
+        event.register(mio_icif_menus.TRADE_TERMINAL_MENU_TYPE.get(), TradeTerminalScreen::new);
 
         // 注册热交换机的GUI 界面
         event.register(

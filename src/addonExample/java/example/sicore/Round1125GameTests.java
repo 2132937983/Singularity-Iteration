@@ -182,7 +182,7 @@ public final class Round1125GameTests {
             double p = p0 == null ? 0 : p0;
             int quantity = 300;
             long low = (long) call(m, "low");
-            long sold = (long) call(depth(), "maxForMarginal", curve, 0.0, p, (double) low, (long) quantity);
+            long sold = (long) call(depth(), "maxForItemPrice", curve, 0.0, p, (double) low, (long) quantity);
             long allowance = (long) call(service(), "allowanceLeft", server, d, player.getUUID(), day);
             if (allowance != Long.MAX_VALUE) sold = (long) call(depth(), "maxForCoins", curve, 0.0, p, (double) allowance, sold);
             long paid = (long) Math.floor(payout(curve, 0, p, sold));
@@ -256,7 +256,7 @@ public final class Round1125GameTests {
             named.set(DataComponents.CUSTOM_NAME, Component.literal("keep"));
             box.setItem(2, named);
             h.assertTrue(call(service(), "sellable", player, named) == null, "a renamed stack is sellable");
-            long now = (long) call(depth(), "maxForMarginal", curve, 0.0, p, 1.0, 100L);
+            long now = (long) call(depth(), "maxForItemPrice", curve, 0.0, p, 1.0, 100L);
             long paid = (long) Math.floor(payout(curve, 0, p, now));
             expect(h, call(service(), "sellBox", player, box, false, 0), true, "box_sold", "box sold now");
             h.assertTrue(coins(d, player) == paid, "paid " + coins(d, player) + ", the curve pays " + paid);

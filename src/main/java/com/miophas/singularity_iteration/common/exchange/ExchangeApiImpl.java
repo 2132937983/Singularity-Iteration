@@ -47,7 +47,7 @@ public final class ExchangeApiImpl implements ExchangeApi.Service {
         SellDepth.Curve c = ExchangeService.curve(m);
         long before = ExchangeService.soldToday(d, player, m.id(), day);
         double pressure = ExchangeService.pressure(d, m.id());
-        long take = SellDepth.maxForMarginal(c, before, pressure, 1, quantity);
+        long take = SellDepth.maxForItemPrice(c, before, pressure, 1, quantity);
         long allowance = ExchangeService.allowanceLeft(server, d, player, day);
         if (allowance != Long.MAX_VALUE) take = SellDepth.maxForCoins(c, before, pressure, allowance, take);
         return new ExchangeApi.Quote(take, take <= 0 ? 0 : (long) Math.floor(SellDepth.payout(c, before, pressure, take)));

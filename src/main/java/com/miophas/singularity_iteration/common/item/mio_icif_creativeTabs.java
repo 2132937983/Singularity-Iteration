@@ -1224,6 +1224,8 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.TELEPORTER_ELC.get());
                 output.accept(mio_icif_blocks.TERRA_ELC.get());
                 output.accept(mio_icif_blocks.FUTURE_ELC.get());
+                output.accept(mio_icif_blocks.TRADE_TERMINAL.get());
+                output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.ID_CARD.get());
                 output.accept(mio_icif_blocks.TESLA.get());
                 output.accept(mio_icif_blocks.ENERGY_TERMINAL.get());
                 output.accept(mio_icif_blocks.LASER_DEFENSE_TOWER.get());

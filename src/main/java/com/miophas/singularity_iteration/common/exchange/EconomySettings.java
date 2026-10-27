@@ -69,6 +69,14 @@ public final class EconomySettings {
         put(k, "bountyIssuePerWeekSpecial", () -> Singularity_Iteration_Config.BOUNTY_ISSUE_SPECIAL, 0, 1_000_000, 'i');
         put(k, "bountyUuPerWeek", () -> Singularity_Iteration_Config.BOUNTY_UU_PER_WEEK, 0, 1_000_000_000, 'i');
         put(k, "bountyTreasuryLow", () -> Singularity_Iteration_Config.BOUNTY_TREASURY_LOW, 0, 1_000_000, 'i');
+        // 0.1.10.28 (X4)
+        put(k, "uuBoard", () -> Singularity_Iteration_Config.EXCHANGE_UU_BOARD, 0, 1, 'b');
+        put(k, "scrapThreshold", () -> Singularity_Iteration_Config.EXCHANGE_SCRAP_THRESHOLD, 0, 1, 'd');
+        put(k, "stabilizerEnabled", () -> Singularity_Iteration_Config.EXCHANGE_STABILIZER, 0, 1, 'b');
+        put(k, "stabilizerTargetPerPlayerWeek", () -> Singularity_Iteration_Config.EXCHANGE_STABILIZER_PER_PLAYER, 0, Integer.MAX_VALUE, 'i');
+        put(k, "stabilizerTargetPercentPerWeek", () -> Singularity_Iteration_Config.EXCHANGE_STABILIZER_PERCENT, 0, 100, 'd');
+        put(k, "stabilizerStep", () -> Singularity_Iteration_Config.EXCHANGE_STABILIZER_STEP, 0.001, 0.5, 'd');
+        put(k, "stabilizerMinFactor", () -> Singularity_Iteration_Config.EXCHANGE_STABILIZER_MIN, 0.05, 1, 'd');
         // datapack only
         k.put("bountyNormalPool", new Key("bountyNormalPool", null, 0, 0, 's', "mio_icif:normal"));
         k.put("bountyAdvancedPool", new Key("bountyAdvancedPool", null, 0, 0, 's', "mio_icif:advanced"));
@@ -179,6 +187,15 @@ public final class EconomySettings {
     public static int listingFulfilled() { return (int) i("listingFulfilled"); }
     public static int listingMinPlayMinutes() { return (int) i("listingMinPlayMinutes"); }
     public static int uuDepth() { return (int) i("uuDepth"); }
+    /** 0.1.10.28 (X4). */
+    public static boolean uuBoard() { return b("uuBoard"); }
+    public static double scrapThreshold() { return d("scrapThreshold"); }
+
+    /** 0.1.10.28 (X4): the settings of the stabiliser. */
+    public static Stabilizer.Rules stabilizerRules() {
+        return new Stabilizer.Rules(b("stabilizerEnabled"), d("stabilizerTargetPercentPerWeek"), i("stabilizerTargetPerPlayerWeek"),
+            d("stabilizerStep"), d("stabilizerMinFactor"));
+    }
 
     /** The settings of the bounty tiers; {@code seed} fixes the random choices of a world. */
     public static BountyBoard.Rules rules(long seed) {

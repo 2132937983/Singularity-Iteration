@@ -38,6 +38,9 @@ import org.lwjgl.glfw.GLFW;
  *   <li><b>Treasury</b>: coins created and destroyed per day, the market's stock, listings.</li>
  *   <li><b>Bounties</b> (0.1.10.26): the system bounties of three tiers (needs, rewards, days left, the player's share),
  *       deliver from the inventory, the weekly budgets of issued rewards and the vault.</li>
+ *   <li><b>Settlement</b> (0.1.10.27): a container in the settlement slot (shulker box, backpack, AE2 cell, UU-matter
+ *       container): its quote, sell now or into the auction, deliver to bounties and commissions, UU-matter onto the account,
+ *       buy the selected market into it.</li>
  * </ul>
  * The panel shows the {@link ExchangeView} that the server sends (on request, once per second while open); every action is a
  * packet that the server checks again. Before 0.1.10.21 the screen was a price chart with buy and sell buttons.
@@ -45,7 +48,7 @@ import org.lwjgl.glfw.GLFW;
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
 public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
-    private static final int TABS = 7, ROW = 20;   // 0.1.10.25: tab 5 = the sell page; 0.1.10.26: tab 6 = bounties
+    private static final int TABS = 8, ROW = 20;   // 0.1.10.25: tab 5 = the sell page; 0.1.10.26: tab 6 = bounties; 0.1.10.27: tab 7 = settlement
     private static final String K = "gui.mio_icif.exchange.";
 
     private record Region(int x, int y, int w, int h, Runnable left, Runnable right) {
@@ -67,6 +70,8 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
     private EditBox priceBox, qtyBox, postQty, postAmount, postDays, futQty, minBox;
     // 0.1.10.25 (X1): the sell box as last requested (a change asks the server for a new quote)
     private String boxSeen = "";
+    // 0.1.10.27 (X2): the settlement slot as last requested
+    private String settleSeen = "";
 
     public mio_icif_gui_future_elc(FutureElcMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -130,6 +135,11 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
             }
             if (!seen.toString().equals(boxSeen)) { boxSeen = seen.toString(); request(); }
         }
+        if (tab == 7) {
+            ItemStack s = menu.slots.get(FutureElcMenu.SETTLEMENT_SLOT).getItem();
+            String seen = s.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(s.getItem()) + "#" + s.getComponents().hashCode();
+            if (!seen.equals(settleSeen)) { settleSeen = seen; request(); }
+        }
         if (++requestTimer >= 20) request();
     }
 
@@ -153,8 +163,8 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
             Runnable action = button == 1 ? r.right() : r.left();
             if (action != null) { action.run(); return true; }
         }
-        // 0.1.10.25: the slots of the sell page (vanilla clicks, drags, shift-clicks)
-        return tab == 5 && super.mouseClicked(mx, my, button);
+        // 0.1.10.25: the slots of the sell page (vanilla clicks, drags, shift-clicks); 0.1.10.27: and of the settlement page
+        return (tab == 5 || tab == 7) && super.mouseClicked(mx, my, button);
     }
 
     @Override
@@ -188,11 +198,19 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
     private int rightW() { return Math.max(140, Math.min(190, width * 3 / 10)); }
 
     private static Item item(String id) {
+        // 0.1.10.28 (X4): the coin <-> UU board shows the UU-matter bucket
+        if (com.miophas.singularity_iteration.common.exchange.UuBoard.is(id)) return BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "uumatter_bucket"));
         ResourceLocation rl = ResourceLocation.tryParse(id);
         return rl == null || !BuiltInRegistries.ITEM.containsKey(rl) ? Items.BARRIER : BuiltInRegistries.ITEM.get(rl);
     }
 
-    private static String name(String id) { return new ItemStack(item(id)).getHoverName().getString(); }
+    private static String name(String id) {
+        if (com.miophas.singularity_iteration.common.exchange.UuBoard.is(id)) return Component.translatable(K + "uu_board").getString();
+        return new ItemStack(item(id)).getHoverName().getString();
+    }
+
+    // 0.1.10.28 (X4): the scrap sink of the instant sales (sell page, settlement page)
+    private boolean scrapRest;
 
     private Component unit(int currency) { return Component.translatable(currency == 1 ? K + "uu" : K + "coins"); }
 
@@ -221,6 +239,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
                 case 3 -> orders(g, v, mx, my);
                 case 4 -> treasury(g, v, mx, my);
                 case 5 -> sell(g, v, mx, my);
+                case 7 -> settlement(g, v, mx, my);
                 default -> bounties(g, v, mx, my);
             }
         }
@@ -238,9 +257,18 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
         hoverText = null;
         for (EditBox b : List.of(priceBox, qtyBox, postQty, postAmount, postDays, futQty, minBox)) b.setVisible(false);
         menu.sellView = tab == 5;
+        menu.settleView = tab == 7;
         layoutSellSlots();
         super.render(g, mx, my, pt);
         if (hoverText != null) g.renderTooltip(font, Component.literal(hoverText), mx, my);
+    }
+
+    /** 0.1.10.27: changes the page; the server learns whether the settlement page is shown (shift-clicks go to its slot). */
+    private void page(int t) {
+        boolean was = tab == 7;
+        tab = t;
+        if (was != (t == 7) && minecraft != null && minecraft.gameMode != null)
+            minecraft.gameMode.handleInventoryButtonClick(menu.containerId, t == 7 ? FutureElcMenu.BUTTON_SETTLE_PAGE : FutureElcMenu.BUTTON_OTHER_PAGE);
     }
 
     private void header(GuiGraphics g, ExchangeView v, int mx, int my) {
@@ -251,7 +279,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
             Component label = Component.translatable(K + "tab." + i);
             int w = font.width(label) + 12;
             final int t = i;
-            button(g, x, 4, w, 14, label, tab == i, () -> { tab = t; request(); }, mx, my);
+            button(g, x, 4, w, 14, label, tab == i, () -> { page(t); request(); }, mx, my);
             x += w + 3;
         }
         if (v != null) {
@@ -422,6 +450,13 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
             () -> qtyBox.setValue(Long.toString(Math.min(ExchangeService.MAX_QUANTITY, num(qtyBox, 1) + (hasShiftDown() ? 64 : 1)))), mx, my);
         long price = num(priceBox, 0), qty = num(qtyBox, 0);
         line(g, x + 4, ty + 74, w - 8, K + "total", PanelCharts.number(price * qty) + " " + unit(d.currency()).getString(), PanelCharts.TEXT);
+        if (com.miophas.singularity_iteration.common.exchange.UuBoard.is(d.id())) {
+            // 0.1.10.28 (X4): one unit of the board is a lot of 100 mB of the UU account
+            String hint = Component.translatable(K + "uu_lot", PanelCharts.number(qty * com.miophas.singularity_iteration.common.exchange.UuBoard.LOT_MB),
+                PanelCharts.number(v.uu())).getString();
+            g.drawString(font, font.plainSubstrByWidth(hint, w - 8), x + 4, ty + 64 + 1, PanelCharts.WARN, false);
+            hover(x + 4, ty + 64, w - 8, 10, Component.translatable(K + "uu_board_help").getString(), mx, my);
+        }
         String note = Component.translatable(resting ? K + "rest_help" : K + "now_help").getString();
         g.drawString(font, font.plainSubstrByWidth(note, w - 8), x + 4, ty + 86, PanelCharts.DIM, false);
         button(g, x + 4, ty + 98, w - 8, 16, Component.translatable(buySide ? K + "submit_buy" : K + "submit_sell"), false,
@@ -455,6 +490,9 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
             slot.x = BOX_LEFT + (i % 9) * 18;
             slot.y = i < 27 ? invTop() + (i / 9) * 18 : invTop() + 3 * 18 + 4;
         }
+        Slot settle = menu.slots.get(FutureElcMenu.SETTLEMENT_SLOT);
+        settle.x = BOX_LEFT;
+        settle.y = boxTop();
     }
 
     private void slotFrame(GuiGraphics g, int x, int y) {
@@ -518,9 +556,10 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
             v.allowance() < 0 ? Component.translatable(K + "box.unlimited").getString() : PanelCharts.number(v.allowance()), PanelCharts.TEXT);
         g.drawString(font, Component.translatable(K + "box.min"), x + 4, fy + 24, PanelCharts.DIM, false);
         place(minBox, x + w - 4 - 40, fy + 22, 40);
+        scrapToggle(g, x + w - 4 - 40 - 6 - 96, fy + 22, mx, my);
         int bw = (w - 12) / 2;
         button(g, x + 4, fy + 38, bw, 16, Component.translatable(K + "box.sell_now"), false,
-            () -> act(ExchangePackets.BOX_SELL, "", 0, 0, 0, 0, false, ""), mx, my);
+            () -> act(ExchangePackets.BOX_SELL, "", 0, scrapRest ? 1 : 0, 0, 0, false, ""), mx, my);
         hover(x + 4, fy + 38, bw, 16, Component.translatable(K + "box.sell_now_help").getString(), mx, my);
         button(g, x + 8 + bw, fy + 38, bw, 16, Component.translatable(K + "box.sell_auction"), false,
             () -> act(ExchangePackets.BOX_SELL, "", 0, 0, (int) Math.min(100, num(minBox, 0)), 0, true, ""), mx, my);
@@ -540,6 +579,108 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
             button(g, x + w - 52, row - 2, 48, 12, Component.translatable(K + "auction.cancel"), false,
                 () -> act(ExchangePackets.AUCTION_CANCEL, "", id, 0, 0, 0, false, ""), mx, my);
             row += 13;
+        }
+    }
+
+    /** 0.1.10.28 (X4): the scrap sink toggle of an instant sale. */
+    private void scrapToggle(GuiGraphics g, int x, int y, int mx, int my) {
+        button(g, x, y, 96, 13, Component.translatable(K + (scrapRest ? "scrap_on" : "scrap_off")), scrapRest, () -> scrapRest = !scrapRest, mx, my);
+        hover(x, y, 96, 13, Component.translatable(K + "scrap_help").getString(), mx, my);
+    }
+
+    // ------------------------------------------------------------------ settlement page (0.1.10.27, X2)
+
+    private void settlement(GuiGraphics g, ExchangeView v, int mx, int my) {
+        int top = SELL_TOP, bottom = height - 6, lw = 9 * 18 + 12;
+        ExchangeView.SettleView st = v.settle();
+        PanelCharts.panel(g, 6, top, lw, bottom - top);
+        g.drawString(font, Component.translatable(K + "settle.title"), BOX_LEFT, top + 4, PanelCharts.ACCENT, false);
+        slotFrame(g, BOX_LEFT, boxTop());
+        Component kind = Component.translatable(K + "settle.kind." + Math.max(0, Math.min(3, st.kind())));
+        g.drawString(font, font.plainSubstrByWidth(kind.getString(), lw - 34), BOX_LEFT + 22, boxTop() + 4, st.kind() == 0 ? PanelCharts.DIM : PanelCharts.TEXT, false);
+        int hy = boxTop() + 22;
+        for (var line : font.split(Component.translatable(K + "settle.help"), lw - 12)) {
+            if (hy > invTop() - 14) break;
+            g.drawString(font, line, BOX_LEFT, hy, PanelCharts.DIM, false);
+            hy += 10;
+        }
+        g.drawString(font, Component.translatable(K + "box.inventory"), BOX_LEFT, invTop() - 11, PanelCharts.DIM, false);
+        for (int i = 0; i < 36; i++) slotFrame(g, BOX_LEFT + (i % 9) * 18, i < 27 ? invTop() + (i / 9) * 18 : invTop() + 3 * 18 + 4);
+
+        int x = 6 + lw + 6, w = width - x - 6;
+        int quoteH = Math.max(120, (bottom - top) / 2);
+        PanelCharts.panel(g, x, top, w, quoteH);
+        g.drawString(font, Component.translatable(K + "settle.quote"), x + 4, top + 4, PanelCharts.ACCENT, false);
+        int cQty = x + w * 45 / 100, cNow = x + w * 70 / 100, cAuc = x + w - 6;
+        PanelCharts.right(g, font, Component.translatable(K + "box.qty").getString(), cQty, top + 16, PanelCharts.DIM);
+        PanelCharts.right(g, font, Component.translatable(K + "box.now").getString(), cNow, top + 16, PanelCharts.DIM);
+        PanelCharts.right(g, font, Component.translatable(K + "box.auction").getString(), cAuc, top + 16, PanelCharts.DIM);
+        int y = top + 27;
+        long nowCoins = 0, aucCoins = 0;
+        if (st.lines().isEmpty())
+            g.drawString(font, Component.translatable(st.kind() == 0 ? K + "settle.empty" : K + "settle.no_commodity"), x + 4, y, PanelCharts.DIM, false);
+        for (ExchangeView.BoxLine l : st.lines()) {
+            nowCoins += l.nowCoins();
+            aucCoins += l.auctionCoins();
+            if (y > top + quoteH - 60) continue;
+            g.renderItem(new ItemStack(item(l.id())), x + 4, y - 4);
+            g.drawString(font, font.plainSubstrByWidth(name(l.id()), Math.max(20, cQty - x - 60)), x + 24, y, PanelCharts.TEXT, false);
+            PanelCharts.right(g, font, PanelCharts.number(l.quantity()), cQty, y, PanelCharts.TEXT);
+            String now = (l.nowQuantity() < l.quantity() ? PanelCharts.number(l.nowQuantity()) + ": " : "") + PanelCharts.number(l.nowCoins());
+            String auc = (l.auctionQuantity() < l.quantity() ? PanelCharts.number(l.auctionQuantity()) + ": " : "") + PanelCharts.number(l.auctionCoins());
+            PanelCharts.right(g, font, now, cNow, y, l.nowQuantity() < l.quantity() ? PanelCharts.WARN : PanelCharts.up());
+            PanelCharts.right(g, font, auc, cAuc, y, l.auctionQuantity() < l.quantity() ? PanelCharts.WARN : PanelCharts.up());
+            y += 18;
+        }
+        int fy = top + quoteH - 56;
+        g.fill(x + 2, fy - 3, x + w - 2, fy - 2, PanelCharts.PANEL_LINE);
+        g.drawString(font, Component.translatable(K + "box.total"), x + 4, fy, PanelCharts.DIM, false);
+        PanelCharts.right(g, font, PanelCharts.number(nowCoins), cNow, fy, PanelCharts.TEXT);
+        PanelCharts.right(g, font, PanelCharts.number(aucCoins), cAuc, fy, PanelCharts.TEXT);
+        line(g, x + 4, fy + 11, w - 8, K + "settle.other", PanelCharts.number(st.other()), PanelCharts.TEXT);
+        g.drawString(font, Component.translatable(K + "box.min"), x + 4, fy + 24, PanelCharts.DIM, false);
+        place(minBox, x + w - 4 - 40, fy + 22, 40);
+        scrapToggle(g, x + w - 4 - 40 - 6 - 96, fy + 22, mx, my);
+        int bw = (w - 12) / 2;
+        button(g, x + 4, fy + 38, bw, 16, Component.translatable(K + "box.sell_now"), false,
+            () -> act(ExchangePackets.SETTLE_SELL, "", 0, scrapRest ? 1 : 0, 0, 0, false, ""), mx, my);
+        hover(x + 4, fy + 38, bw, 16, Component.translatable(K + "settle.sell_now_help").getString(), mx, my);
+        button(g, x + 8 + bw, fy + 38, bw, 16, Component.translatable(K + "box.sell_auction"), false,
+            () -> act(ExchangePackets.SETTLE_SELL, "", 0, 0, (int) Math.min(100, num(minBox, 0)), 0, true, ""), mx, my);
+        hover(x + 8 + bw, fy + 38, bw, 16, Component.translatable(K + "box.sell_auction_help").getString(), mx, my);
+
+        // deliveries, UU-matter, buying into the container
+        int ay = top + quoteH + 4;
+        PanelCharts.panel(g, x, ay, w, bottom - ay);
+        g.drawString(font, Component.translatable(K + "settle.uu", PanelCharts.number(st.uu())), x + 4, ay + 5, st.uu() > 0 ? PanelCharts.TEXT : PanelCharts.DIM, false);
+        button(g, x + w - 92, ay + 2, 88, 13, Component.translatable(K + "settle.uu_in"), false,
+            () -> act(ExchangePackets.SETTLE_UU, "", 0, 0, 0, 0, false, ""), mx, my);
+        int by = ay + 19;
+        g.drawString(font, Component.translatable(K + "settle.buy", name(selected.isEmpty() ? "minecraft:air" : selected)), x + 4, by + 3, PanelCharts.TEXT, false);
+        hover(x + 4, by, w / 2, 12, Component.translatable(K + "settle.buy_help").getString(), mx, my);
+        int bx = x + w - 4 - 64;
+        button(g, bx, by, 64, 13, Component.translatable(K + "settle.buy_go"), false, () -> {
+            if (!selected.isEmpty()) act(ExchangePackets.SETTLE_BUY, selected, num(priceBox, 1), 0, 0, (int) Math.max(1, Math.min(ExchangeService.MAX_QUANTITY, num(qtyBox, 1))), true, "");
+        }, mx, my);
+        place(qtyBox, bx - 4 - 44, by, 44);
+        place(priceBox, bx - 8 - 44 - 60, by, 60);
+        hover(bx - 8 - 44 - 60, by, 60, 12, Component.translatable(K + "settle.limit_help").getString(), mx, my);
+        int ty = by + 18;
+        g.drawString(font, Component.translatable(K + "settle.targets"), x + 4, ty, PanelCharts.ACCENT, false);
+        ty += 12;
+        if (st.targets().isEmpty()) g.drawString(font, Component.translatable(K + "settle.no_targets"), x + 4, ty, PanelCharts.DIM, false);
+        for (ExchangeView.SettleTarget t : st.targets()) {
+            if (ty > bottom - 14) break;
+            g.renderItem(new ItemStack(item(t.item())), x + 4, ty - 4);
+            String text = Component.translatable(K + (t.type() == 0 ? "settle.target_bounty" : "settle.target_commission"), name(t.item()),
+                PanelCharts.number(t.count())).getString();
+            g.drawString(font, font.plainSubstrByWidth(text, w - 90), x + 24, ty, PanelCharts.TEXT, false);
+            final long id = t.id();
+            final int count = (int) Math.min(Integer.MAX_VALUE, t.count());
+            final boolean bounty = t.type() == 0;
+            button(g, x + w - 62, ty - 2, 58, 13, Component.translatable(K + "deliver"), false,
+                () -> act(bounty ? ExchangePackets.SETTLE_BOUNTY : ExchangePackets.SETTLE_COMMISSION, "", id, 0, 0, count, false, ""), mx, my);
+            ty += 16;
         }
     }
 
@@ -774,6 +915,15 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> {
         }
         long listings = v.markets().stream().filter(r -> !r.system()).count();
         g.drawString(font, Component.translatable(K + "listings", listings), x + 4, bottom - 14, PanelCharts.DIM, false);
+        // 0.1.10.28 (X4): the stabiliser and the scrap sink of the last 7 days
+        ExchangeView.StabilizerLine st = v.stabilizer();
+        String stab = st.enabled()
+            ? Component.translatable(K + "stabilizer_on", String.format("%.0f%%", st.factor() * 100), PanelCharts.number(st.net7()), PanelCharts.number(st.target())).getString()
+            : Component.translatable(K + "stabilizer_off", PanelCharts.number(st.net7())).getString();
+        g.drawString(font, font.plainSubstrByWidth(stab, half - 8), x + 4, bottom - 38, st.enabled() && st.factor() < 1 ? PanelCharts.WARN : PanelCharts.TEXT, false);
+        hover(x + 4, bottom - 39, half - 8, 10, Component.translatable(K + "stabilizer_help", PanelCharts.number(st.supply()), st.active()).getString(), mx, my);
+        g.drawString(font, font.plainSubstrByWidth(Component.translatable(K + "scrap_week", PanelCharts.number(st.scrapIn()), PanelCharts.number(st.scrapOut())).getString(),
+            half - 8), x + 4, bottom - 26, PanelCharts.DIM, false);
     }
 
     // ------------------------------------------------------------------ 0.1.10.26 (X3): bounties tab

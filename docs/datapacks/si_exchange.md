@@ -116,6 +116,7 @@ data/<命名空间>/si_exchange/
 ```
 
 - 优先顺序：**服务器配置中修改过的值**（与默认值不同）＞ 数据包 ＞ 模组默认值。整合包作者用数据包发布默认值，服务器管理员仍可在配置文件中覆盖。
+- 0.1.10.28 新增的键：`uuBoard`（货币与 UU 物质交易板）、`scrapThreshold`（废料回收的下限，0 = 不回收）、`stabilizerEnabled`、`stabilizerTargetPerPlayerWeek`、`stabilizerTargetPercentPerWeek`、`stabilizerStep`、`stabilizerMinFactor`（自动稳定器，见 `docs/releases/0.1.10.28/UPDATE.md` 第 4 节）。整合包作者可以在数据包中默认开启稳定器。
 - 可用的键：`buyItemsPerDay`、`spread`、`sellDepthPlayer`、`sellDepthServer`、`sellExportPerDay`、`sellAllowancePerDay`、`sellAllowanceDays`、`sellAllowanceInSingleplayer`、`exchangeFee`、`importPerDay`、`importPremium`、`listingRequesters`、`listingFulfilled`、`listingMinPlayMinutes`、`uuDepth`、所有 `bounty*` 键，以及只能在数据包中设置的 `bountyNormalPool`、`bountyAdvancedPool`、`bountySpecialPool`。
 - 未知的键、类型错误与超出范围的值会被报告并忽略。`/mio_icif bounty settings` 显示每个值及其来源（config / datapack / default）。
 
@@ -129,6 +130,10 @@ data/<命名空间>/si_exchange/
 | `/mio_icif bounty cancel <编号>` | 取消悬赏，未支付的预留奖励退回 |
 | `/mio_icif bounty errors` | 最近一次加载时 si_exchange 数据包的问题 |
 | `/mio_icif bounty settings` | 经济设置的值与来源 |
+
+## 商品的 tag 与 accept_components 在 0.1.10.27 的作用范围
+
+除出售箱与每日集中清算外，交易终端的出售缓冲区（管道搬入）与大宗结算槽（容器中的商品）也按这两个字段收购，按本商品出售。挂单与悬赏交付仍只接受物品本身（普通物品）。
 
 ## Java API 与事件
 

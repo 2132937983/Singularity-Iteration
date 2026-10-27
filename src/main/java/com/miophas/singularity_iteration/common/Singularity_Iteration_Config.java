@@ -176,6 +176,31 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
             .comment("A generated NORMAL request asks only for commodities of which the market owns fewer than this many items (0.1.10.26)")
             .defineInRange("bountyTreasuryLow", 64, 0, 1_000_000);
 
+    // 0.1.10.28 (X4): the coin <-> UU board, the scrap sink, the stabiliser
+    public static final ModConfigSpec.BooleanValue EXCHANGE_UU_BOARD = FUTURE_BUILDER
+            .comment("Players trade UU-matter for coins on an order book (lots of 100 mB; 0.1.10.28). The market never buys or sells UU-matter.")
+            .define("uuBoard", true);
+    public static final ModConfigSpec.DoubleValue EXCHANGE_SCRAP_THRESHOLD = FUTURE_BUILDER
+            .comment("Scrap sink (0.1.10.28): with the option, the items an instant sale leaves are recycled (the SI recycler's rate, scrap 1/8)",
+                     "when the next bid is below this share of the bid without pressure (and below 1 coin in any case). 0 = no sink.")
+            .defineInRange("scrapThreshold", 0.05, 0.0, 1.0);
+    public static final ModConfigSpec.BooleanValue EXCHANGE_STABILIZER = FUTURE_BUILDER
+            .comment("Stabiliser (0.1.10.28): when the net coins the market created in the last 7 days pass the target, the sell depths and the",
+                     "daily allowance shrink step by step (they grow back below 80 % of the target)")
+            .define("stabilizerEnabled", false);
+    public static final ModConfigSpec.IntValue EXCHANGE_STABILIZER_PER_PLAYER = FUTURE_BUILDER
+            .comment("Stabiliser target: net coins a week per player who sold to the market in the last 7 days (0.1.10.28)")
+            .defineInRange("stabilizerTargetPerPlayerWeek", 100_000, 0, Integer.MAX_VALUE);
+    public static final ModConfigSpec.DoubleValue EXCHANGE_STABILIZER_PERCENT = FUTURE_BUILDER
+            .comment("Stabiliser target: net coins a week in percent of the money supply (the net coins since the record began), when that is more (0.1.10.28)")
+            .defineInRange("stabilizerTargetPercentPerWeek", 2.0, 0.0, 100.0);
+    public static final ModConfigSpec.DoubleValue EXCHANGE_STABILIZER_STEP = FUTURE_BUILDER
+            .comment("Stabiliser: the change of the factor per market day (0.1.10.28)")
+            .defineInRange("stabilizerStep", 0.05, 0.001, 0.5);
+    public static final ModConfigSpec.DoubleValue EXCHANGE_STABILIZER_MIN = FUTURE_BUILDER
+            .comment("Stabiliser: the lowest factor of the sell depths and the allowance (0.1.10.28)")
+            .defineInRange("stabilizerMinFactor", 0.5, 0.05, 1.0);
+
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder FUTURE_POP = BUILDER.pop();
     // ==================== End of futures machine settings ====================

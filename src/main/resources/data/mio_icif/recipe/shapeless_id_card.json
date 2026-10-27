@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "minecraft:gold_nugget"
+    },
+    {
+      "tag": "c:circuits/basic"
+    }
+  ],
+  "result": {
+    "id": "mio_icif:normal/item_id_card",
+    "count": 2
+  }
+}

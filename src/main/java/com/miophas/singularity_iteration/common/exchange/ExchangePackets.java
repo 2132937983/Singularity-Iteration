@@ -32,6 +32,11 @@ public final class ExchangePackets {
     public static final int BOX_SELL = 10, BOX_FILL = 11, BOX_RETURN = 12, AUCTION_CANCEL = 13;
     /** 0.1.10.26 (X3): delivers what the player carries to a system bounty (a = bounty). */
     public static final int BOUNTY_DELIVER = 14;
+    /**
+     * 0.1.10.27 (X2): the settlement slot. SETTLE_SELL (flag = into the auction, c = minimum percent), SETTLE_BOUNTY (a = bounty),
+     * SETTLE_COMMISSION (a = commission, d = quantity), SETTLE_UU, SETTLE_BUY (id = market, a = limit, d = quantity).
+     */
+    public static final int SETTLE_SELL = 15, SETTLE_BOUNTY = 16, SETTLE_COMMISSION = 17, SETTLE_UU = 18, SETTLE_BUY = 19;
 
     public record Request(String selected) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_request"));
@@ -110,15 +115,32 @@ public final class ExchangePackets {
                 case UU_IN -> ExchangeService.depositUu(player);
                 case UU_OUT -> ExchangeService.withdrawUu(player);
                 case FUTURE -> ExchangeService.openFuture(player, p.id, p.flag, p.d, p.c);
-                case BOX_SELL -> ExchangeService.sellBox(player, ((FutureElcMenu) player.containerMenu).sellBox(), p.flag, Math.max(0, Math.min(100, p.c)));
+                case BOX_SELL -> ExchangeService.sellBox(player, ((FutureElcMenu) player.containerMenu).sellBox(), p.flag, Math.max(0, Math.min(100, p.c)), p.b == 1);
                 case AUCTION_CANCEL -> ExchangeService.cancelAuction(player, p.a);
                 case BOUNTY_DELIVER -> Bounties.deliver(player, p.a);
+                case SETTLE_SELL, SETTLE_BOUNTY, SETTLE_COMMISSION, SETTLE_UU, SETTLE_BUY -> settle(player, p);
                 default -> new ExchangeService.Result(false, "message.mio_icif.exchange.unknown_action");
             });
             send(player, p.selected, machine);
             // 0.1.10.26: the trade and bounty events of the action, after it is complete
             ExchangeEvents.flush(player.server);
         });
+    }
+
+    /** 0.1.10.27 (X2): an action on the container of the menu's settlement slot. */
+    static ExchangeService.Result settle(ServerPlayer player, Action p) {
+        FutureElcMenu menu = (FutureElcMenu) player.containerMenu;
+        SettlementStorage st = SettlementStorages.open(menu.settlementSlot(), 0);
+        if (st == null) return new ExchangeService.Result(false, "message.mio_icif.exchange.settle_empty");
+        ExchangeService.Result r = switch (p.kind) {
+            case SETTLE_SELL -> Settlement.sell(player, st, p.flag, Math.max(0, Math.min(100, p.c)), p.b == 1);
+            case SETTLE_BOUNTY -> Settlement.deliverBounty(player, st, p.a);
+            case SETTLE_COMMISSION -> Settlement.deliverCommission(player, st, p.a, Math.max(1, p.d));
+            case SETTLE_UU -> Settlement.depositUu(player, st);
+            default -> Settlement.buyInto(player, st, p.id, p.a, p.d);
+        };
+        menu.broadcastChanges();
+        return r;
     }
 
     static void send(ServerPlayer player, String selected, mio_icif_future_elc machine) {

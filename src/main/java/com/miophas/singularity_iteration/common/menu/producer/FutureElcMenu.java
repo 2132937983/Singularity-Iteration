@@ -48,7 +48,35 @@ import java.util.List;
         for (int i = 0; i < SELL_BOX_SIZE; i++) this.addSlot(new BoxSlot(sellBox, i));
         for (int row = 0; row < 3; row++) for (int col = 0; col < 9; col++) this.addSlot(new PanelSlot(playerInventory, 9 + row * 9 + col));
         for (int col = 0; col < 9; col++) this.addSlot(new PanelSlot(playerInventory, col));
+        // 0.1.10.27 (X2): the settlement slot (slot 55), shown on the settlement page
+        this.settlement = new SimpleContainer(1);
+        this.addSlot(new SettlementSlot(settlement));
     }
+
+    /** 0.1.10.27 (X2): slot 55 holds a container for bulk settlement (shulker box, backpack, AE2 cell, UU-matter container). */
+    public static final int SETTLEMENT_SLOT = 55;
+    private final SimpleContainer settlement;
+    /** Client: the panel shows its settlement page (the inventory and the settlement slot are drawn and clickable). */
+    public boolean settleView;
+
+    /** The settlement slot: one container that {@link com.miophas.singularity_iteration.common.exchange.SettlementStorages} opens. */
+    private final class SettlementSlot extends Slot {
+        SettlementSlot(SimpleContainer c) { super(c, 0, -10000, -10000); }
+
+        @Override
+        public boolean isActive() { return !owner.level().isClientSide || settleView; }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return com.miophas.singularity_iteration.common.exchange.SettlementStorages.accepts(stack);
+        }
+
+        @Override
+        public int getMaxStackSize() { return 1; }
+    }
+
+    /** 0.1.10.27: the settlement container of this menu (returned to the player when the menu closes). */
+    public SimpleContainer settlementSlot() { return settlement; }
 
     /** 0.1.10.25 (X1): slots 1-18 are the sell box, 19-54 the player inventory (27 main, then the hotbar). */
     public static final int SELL_BOX_SIZE = 18, SELL_BOX_FIRST = 1, INVENTORY_FIRST = SELL_BOX_FIRST + SELL_BOX_SIZE,
@@ -64,12 +92,15 @@ import java.util.List;
         PanelSlot(net.minecraft.world.Container container, int index) { super(container, index, -10000, -10000); }
 
         @Override
-        public boolean isActive() { return !owner.level().isClientSide || sellView; }
+        public boolean isActive() { return !owner.level().isClientSide || sellView || settleView; }
     }
 
     /** A slot of the sell box: plain stacks of commodities the player has unlocked only. */
     private final class BoxSlot extends PanelSlot {
         BoxSlot(SimpleContainer box, int index) { super(box, index); }
+
+        @Override
+        public boolean isActive() { return !owner.level().isClientSide || sellView; }
 
         @Override
         public boolean mayPlace(ItemStack stack) {
@@ -111,7 +142,12 @@ import java.util.List;
     @Override
     public void removed(Player player) {
         super.removed(player);
-        if (player instanceof ServerPlayer) returnSellBox(player);
+        if (player instanceof ServerPlayer) {
+            returnSellBox(player);
+            // 0.1.10.27 (X2): the settlement container goes back to the player (dropped when the inventory is full)
+            ItemStack held = settlement.removeItemNoUpdate(0);
+            if (!held.isEmpty() && !player.getInventory().add(held) && !held.isEmpty()) player.drop(held, false);
+        }
     }
 
     @Override
@@ -249,6 +285,20 @@ import java.util.List;
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
+        // 0.1.10.27 (X2): on the settlement page, shift-click between the settlement slot and the inventory
+        if (index == SETTLEMENT_SLOT || index >= INVENTORY_FIRST && index < INVENTORY_END && settlementPage(player)) {
+            Slot slot = slots.get(index);
+            if (!slot.hasItem()) return ItemStack.EMPTY;
+            ItemStack stack = slot.getItem(), copy = stack.copy();
+            if (index == SETTLEMENT_SLOT) {
+                if (!moveItemStackTo(stack, INVENTORY_FIRST, INVENTORY_END, true)) return ItemStack.EMPTY;
+            } else if (!slots.get(SETTLEMENT_SLOT).mayPlace(stack) || slots.get(SETTLEMENT_SLOT).hasItem()
+                    || !moveItemStackTo(stack, SETTLEMENT_SLOT, SETTLEMENT_SLOT + 1, false)) {
+                return ItemStack.EMPTY;
+            }
+            if (stack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY); else slot.setChanged();
+            return copy;
+        }
         // 0.1.10.25 (X1): shift-click between the sell box and the inventory
         if (index < SELL_BOX_FIRST || index >= INVENTORY_END) return ItemStack.EMPTY;
         Slot slot = slots.get(index);
@@ -264,8 +314,21 @@ import java.util.List;
         return copy;
     }
 
+    /**
+     * 0.1.10.27: shift-clicks of the inventory go to the settlement slot while the panel shows the settlement page (the client
+     * sets {@link #settleView}; the server learns it from the page button {@link #BUTTON_SETTLE_PAGE}).
+     */
+    private boolean settlementPage(Player player) { return settleView; }
+
+    /** 0.1.10.27: the panel tells the server which page it shows (settlement page on / off). */
+    public static final int BUTTON_SETTLE_PAGE = 106, BUTTON_OTHER_PAGE = 107;
+
     @Override
     public boolean clickMenuButton(Player player, int id) {
+        if (id == BUTTON_SETTLE_PAGE || id == BUTTON_OTHER_PAGE) {
+            settleView = id == BUTTON_SETTLE_PAGE;
+            return true;
+        }
         var future = getBlockEntity();
         if (future == null || player.containerMenu != this || !stillValid(player)) return false;
 

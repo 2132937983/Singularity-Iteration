@@ -68,9 +68,12 @@ public final class ExchangeService {
         static Result done(String key, Object... args) { return new Result(true, "message.mio_icif.exchange." + key, args); }
     }
 
-    /** A tradable market: a datapack commodity (the market quotes it) or a player listing (only the book). */
+    /**
+     * A tradable market: a datapack commodity (the market quotes it), a player listing (only the book) or (0.1.10.28) the
+     * coin &lt;-&gt; UU board ({@link UuBoard}). {@code depthFactor}: the stabiliser's factor of the sell depths (1 = none).
+     */
     public record Market(String id, Item item, Currency currency, boolean system, FutureCommodity commodity, long price,
-                         double fundamental, int depth, long low, long high) { }
+                         double fundamental, int depth, long low, long high, double depthFactor) { }
 
     // ------------------------------------------------------------------ markets
 
@@ -83,7 +86,14 @@ public final class ExchangeService {
             long low = Math.max(1, Math.round(c.getBasePrice() * Singularity_Iteration_Config.FUTURE_MIN_PRICE_MULTIPLIER.get()));
             long high = Math.max(low, Math.round(c.getBasePrice() * Singularity_Iteration_Config.FUTURE_MAX_PRICE_MULTIPLIER.get()));
             return new Market(id, c.getItem(), Currency.COIN, true, c, price, Valuation.fundamental(uuBuckets(server, c.getItem()),
-                coinsPerBucket(server)), CraftDepthIndex.depth(server, c.getItem()), low, high);
+                coinsPerBucket(server)), CraftDepthIndex.depth(server, c.getItem()), low, high, depthFactor(server));
+        }
+        // 0.1.10.28 (X4): the coin <-> UU board (players only; the market never trades UU-matter)
+        if (UuBoard.is(id)) {
+            if (!EconomySettings.uuBoard()) return null;
+            long reference = UuBoard.reference(coinsPerBucket(server));
+            return new Market(id, com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.UUMATTER_BUCKET.get(),
+                Currency.COIN, false, null, lastPrice(data(server), id, reference), reference, 0, 1, UuBoard.HIGH, 1.0);
         }
         ExchangeData.Listing l = data(server).listings.get(id);
         if (l == null) return null;
@@ -93,7 +103,7 @@ public final class ExchangeService {
         long low = fundamental > 0 ? Math.max(1, Math.round(fundamental * Valuation.BAND_LOW)) : 1;
         long high = fundamental > 0 ? Math.max(low, Math.round(fundamental * Valuation.BAND_HIGH)) : Long.MAX_VALUE / 4;
         return new Market(id, item, l.currency, false, null, lastPrice(data(server), id, l.reference), fundamental,
-            CraftDepthIndex.depth(server, item), low, high);
+            CraftDepthIndex.depth(server, item), low, high, 1.0);
     }
 
     /** All markets: the datapack commodities, then the player listings. */
@@ -101,6 +111,9 @@ public final class ExchangeService {
         List<Market> out = new ArrayList<>();
         for (FutureCommodity c : FutureCommodityManager.getCommodities()) { Market m = market(server, c.getItemId()); if (m != null) out.add(m); }
         for (String id : data(server).listings.keySet()) { Market m = market(server, id); if (m != null) out.add(m); }
+        // 0.1.10.28 (X4)
+        Market uu = market(server, UuBoard.MARKET);
+        if (uu != null) out.add(uu);
         return out;
     }
 
@@ -199,12 +212,20 @@ public final class ExchangeService {
 
     // ------------------------------------------------------------------ 0.1.10.25 (X1): sell depth, allowance
 
-    /** The bid curve of a datapack commodity at its price now (datapack depths, else the config). */
+    /**
+     * The bid curve of a datapack commodity at its price now (datapack depths, else the config); 0.1.10.28: the depths scaled by
+     * the stabiliser's factor.
+     */
     public static SellDepth.Curve curve(Market m) {
         FutureCommodity.Market cm = m.commodity() == null ? FutureCommodity.Market.DEFAULT : m.commodity().getMarket();
         int lp = cm.depthPlayer() > 0 ? cm.depthPlayer() : EconomySettings.sellDepthPlayer();
         int lg = cm.depthServer() > 0 ? cm.depthServer() : EconomySettings.sellDepthServer();
-        return new SellDepth.Curve(m.price() * (1.0 - EconomySettings.spread() / 2.0), lp, lg);
+        return Stabilizer.scale(new SellDepth.Curve(m.price() * (1.0 - EconomySettings.spread() / 2.0), lp, lg), m.depthFactor());
+    }
+
+    /** 0.1.10.28 (X4): the stabiliser's factor now (1 when it is off). */
+    public static double depthFactor(MinecraftServer server) {
+        return EconomySettings.stabilizerRules().enabled() ? data(server).stabFactor : 1.0;
     }
 
     static double exportShare(String id) {
@@ -238,7 +259,8 @@ public final class ExchangeService {
     /** Coins {@code player} may still receive from the market today ({@link Long#MAX_VALUE} without a limit). */
     public static long allowanceLeft(MinecraftServer server, ExchangeData d, UUID player, long day) {
         if (!allowanceOn(server)) return Long.MAX_VALUE;
-        long perDay = EconomySettings.sellAllowancePerDay();
+        // 0.1.10.28 (X4): scaled by the stabiliser's factor
+        long perDay = Stabilizer.allowance(EconomySettings.sellAllowancePerDay(), depthFactor(server));
         long[] a = d.allowance.get(player);
         if (a == null) return perDay;
         return SellDepth.allowance(a[0], a[1], day, perDay, EconomySettings.sellAllowanceDays());
@@ -267,6 +289,7 @@ public final class ExchangeService {
         long coins = (long) Math.floor(SellDepth.payout(c, before, pressure, take));
         mine.put(m.id(), before + take);
         d.pressure.put(m.id(), pressure + take);
+        d.lastSale.put(uuid, day);   // 0.1.10.28: an active seller of the stabiliser
         d.treasury.merge(m.id(), take, Long::sum);
         spendAllowance(server, d, uuid, day, coins);
         d.ledger(day).minted += coins;
@@ -289,6 +312,14 @@ public final class ExchangeService {
      * @param limit the worst price per item the player accepts (coins, or mB of UU-matter)
      */
     public static Result place(ServerPlayer player, String id, boolean buy, boolean rest, long limit, int quantity) {
+        return place(player, id, buy, rest, limit, quantity, null);
+    }
+
+    /**
+     * 0.1.10.27 (X2): {@link #place} with the purchased items going into a settlement container first ({@code into}, may be
+     * null); what does not fit goes to the inventory, then the mailbox. The rules are those of a manual order.
+     */
+    public static Result place(ServerPlayer player, String id, boolean buy, boolean rest, long limit, int quantity, SettlementStorage into) {
         MinecraftServer server = player.server;
         ExchangeData d = data(server);
         Market m = market(server, id);
@@ -305,37 +336,70 @@ public final class ExchangeService {
         Mailbox box = d.mailbox(uuid);
         // escrow first: the whole order at the limit price (or the items)
         long escrow = buy ? Math.multiplyExact(limit, (long) quantity) : quantity;
+        boolean uuLots = UuBoard.is(id);
         if (buy) {
             if (m.currency() == Currency.UU) { if (box.uu < escrow) return Result.fail("not_enough_uu"); }
             else if (!plan.removeMain(coin, escrow, false)) return Result.fail("not_enough_coins");
+        } else if (uuLots) {
+            // 0.1.10.28 (X4): a sale on the coin <-> UU board holds lots of the UU account
+            if (box.uu < UuBoard.mb(quantity)) return Result.fail("not_enough_uu");
         } else if (!plan.removeMain(m.item(), quantity, true)) return Result.fail("not_enough_items");
         if (buy && m.currency() == Currency.UU) box.uu -= escrow;
+        if (!buy && uuLots) box.uu -= UuBoard.mb(quantity);
+        ExchangeData.Book book = d.book(id, m.currency());
+        Matched x = execute(server, d, m, id, uuid, team, buy, limit, quantity, day);
+        int left = x.left;
+        long refund = x.refund, proceeds = x.proceeds, received = x.received;
+        // the rest rests or goes back
+        if (left > 0 && rest) {
+            long orderId = d.newId();
+            book.book.rest(new OrderBook.Order(orderId, owner, team, buy, limit, left, day));
+            book.names.put(orderId, player.getGameProfile().getName());
+        } else if (left > 0) {
+            if (buy) refund += limit * left;
+            else if (uuLots) box.uu += UuBoard.mb(left);
+            else addBack(plan, d, uuid, m.item(), id, left);
+        }
+        // results to the inventory (or the mailbox)
+        if (buy && uuLots) {
+            // 0.1.10.28: UU-matter bought on the board goes to the account
+            credit(d, uuid, Currency.UU, UuBoard.mb(received));
+            pay(plan, d, uuid, m.currency(), refund);
+        } else if (buy) {
+            // 0.1.10.27 (X2): into the settlement container first
+            if (into != null && received > 0) received -= into.insert(new ItemStack(m.item()), received, false);
+            give(plan, d, uuid, m.item(), id, received);
+            pay(plan, d, uuid, m.currency(), refund);
+        } else {
+            pay(plan, d, uuid, m.currency(), proceeds);
+        }
+        if (!plan.unchanged()) throw new IllegalStateException("inventory changed during an exchange action");
+        plan.commit();
+        if (into != null) into.commit();
+        d.setDirty();
+        int filled = quantity - left;
+        if (filled == 0 && rest) return Result.done("order_rested", quantity);
+        if (filled == 0) return Result.fail("no_match");
+        return Result.done(buy ? "bought" : "sold", filled, quantity);
+    }
+
+    /**
+     * 0.1.10.27 (X2): the passes of one order, moved unchanged out of {@link #place} so that an account (the Trade Terminal)
+     * trades by the same rules: the book (a sale meets resting bids of players first only where they pay at least the
+     * market's own bid), the market of a datapack commodity (sell depth and allowance, or treasury and import), then for a
+     * sale the rest of the resting bids down to the limit. The caller holds the escrow and moves the results.
+     */
+    static Matched execute(MinecraftServer server, ExchangeData d, Market m, String id, UUID uuid, String team, boolean buy, long limit,
+                           int quantity, long day) {
+        String owner = uuid.toString();
         ExchangeData.Book book = d.book(id, m.currency());
         Matched x = new Matched(quantity);
-        // 0.1.10.25: a sale meets resting bids of players first only where they pay at least the market's own bid
         long firstLimit = !buy && m.system() ? Math.max(limit, nextBid(d, m, uuid, day)) : limit;
         matchBook(server, d, book, m, id, owner, team, buy, limit, firstLimit, day, x);
         // the market for a datapack commodity
         if (x.left > 0 && m.system()) {
             if (buy) {
-                int take = (int) Math.min(Math.min(x.left, buyLeft(server, uuid)), supply(d, id, day));
-                while (take > 0 && systemCost(d, m, take) > limit * take) take--;
-                if (take > 0) {
-                    long cost = systemCost(d, m, take);
-                    long stock = d.treasury.getOrDefault(id, 0L);
-                    int fromStock = (int) Math.min(take, stock);
-                    if (fromStock > 0) d.treasury.put(id, stock - fromStock);
-                    if (take > fromStock) d.imported.merge(id, take - fromStock, Integer::sum);
-                    // 0.1.10.25: stock that leaves the treasury no longer weighs on the bids
-                    if (fromStock > 0) d.pressure.computeIfPresent(id, (k, v) -> v - fromStock > 0 ? v - fromStock : null);
-                    x.refund += limit * take - cost;
-                    x.received += take;
-                    x.left -= take;
-                    d.ledger(day).burned += cost;
-                    FutureMarketData.get(server.overworld()).addPlayerVolume(uuid, take);
-                    trade(d, id, day, server.overworld().getGameTime(), Math.max(1, cost / take), take, SYSTEM, owner);
-                    ExchangeEvents.trade(id, day, Math.max(1, cost / take), take, Currency.COIN, SYSTEM, owner);
-                }
+                marketBuy(server, d, m, id, uuid, limit, day, x);
             } else {
                 // 0.1.10.25 (X1): the sell depth instead of the daily budget; any amount, each item at a bid of at least limit
                 long[] sold = sellToMarket(server, d, uuid, m, x.left, limit, day);
@@ -345,32 +409,78 @@ public final class ExchangeService {
                 }
             }
         }
-        // a sale: the rest of the resting bids down to the limit
         if (x.left > 0 && !buy && firstLimit > limit) matchBook(server, d, book, m, id, owner, team, false, limit, limit, day, x);
-        int left = x.left;
-        long refund = x.refund, proceeds = x.proceeds, received = x.received;
-        // the rest rests or goes back
-        if (left > 0 && rest) {
-            long orderId = d.newId();
-            book.book.rest(new OrderBook.Order(orderId, owner, team, buy, limit, left, day));
-            book.names.put(orderId, player.getGameProfile().getName());
-        } else if (left > 0) {
-            if (buy) refund += limit * left; else addBack(plan, d, uuid, m.item(), id, left);
-        }
-        // results to the inventory (or the mailbox)
-        if (buy) {
-            give(plan, d, uuid, m.item(), id, received);
-            pay(plan, d, uuid, m.currency(), refund);
-        } else {
-            pay(plan, d, uuid, m.currency(), proceeds);
-        }
-        if (!plan.unchanged()) throw new IllegalStateException("inventory changed during an exchange action");
-        plan.commit();
+        return x;
+    }
+
+    /** The market's part of a purchase: treasury stock, then the daily import, within the buyer's daily limit. */
+    static void marketBuy(MinecraftServer server, ExchangeData d, Market m, String id, UUID uuid, long limit, long day, Matched x) {
+        String owner = uuid.toString();
+        int take = (int) Math.min(Math.min(x.left, buyLeft(server, uuid)), supply(d, id, day));
+        while (take > 0 && systemCost(d, m, take) > limit * take) take--;
+        if (take <= 0) return;
+        long cost = systemCost(d, m, take);
+        long stock = d.treasury.getOrDefault(id, 0L);
+        int fromStock = (int) Math.min(take, stock);
+        if (fromStock > 0) d.treasury.put(id, stock - fromStock);
+        if (take > fromStock) d.imported.merge(id, take - fromStock, Integer::sum);
+        // 0.1.10.25: stock that leaves the treasury no longer weighs on the bids
+        if (fromStock > 0) d.pressure.computeIfPresent(id, (k, v) -> v - fromStock > 0 ? v - fromStock : null);
+        x.refund += limit * take - cost;
+        x.received += take;
+        x.left -= take;
+        d.ledger(day).burned += cost;
+        FutureMarketData.get(server.overworld()).addPlayerVolume(uuid, take);
+        trade(d, id, day, server.overworld().getGameTime(), Math.max(1, cost / take), take, SYSTEM, owner);
+        ExchangeEvents.trade(id, day, Math.max(1, cost / take), take, Currency.COIN, SYSTEM, owner);
+    }
+
+    // ------------------------------------------------------------------ 0.1.10.27 (X2): trades of an account
+
+    /** The vanilla team of a player by name (works while the player is offline); "" without one. */
+    public static String team(MinecraftServer server, String name) {
+        var t = server.getScoreboard().getPlayersTeam(name);
+        return t == null ? "" : t.getName();
+    }
+
+    /**
+     * 0.1.10.27 (X2): an instant sale for an account (the Trade Terminal): the passes of a manual sale now
+     * ({@link #execute}: book, sell depth, allowance, ledger, pressure) under {@code owner}. The caller has taken the
+     * {@code quantity} items and keeps the unsold ones; the coins go to the owner's mailbox. Returns {sold, coins}.
+     * A datapack commodity of coins only; the caller checks the unlock.
+     */
+    public static long[] sellForAccount(MinecraftServer server, UUID owner, String team, String id, long limit, int quantity) {
+        Market m = market(server, id);
+        if (m == null || !m.system() || m.currency() != Currency.COIN || quantity < 1) return new long[] {0, 0};
+        ExchangeData d = data(server);
+        long day = today(server);
+        Matched x = execute(server, d, m, id, owner, team, false, Math.max(1, limit), Math.min(quantity, MAX_QUANTITY), day);
+        credit(d, owner, Currency.COIN, x.proceeds);
         d.setDirty();
-        int filled = quantity - left;
-        if (filled == 0 && rest) return Result.done("order_rested", quantity);
-        if (filled == 0) return Result.fail("no_match");
-        return Result.done(buy ? "bought" : "sold", filled, quantity);
+        return new long[] {Math.min(quantity, MAX_QUANTITY) - x.left, x.proceeds};
+    }
+
+    /**
+     * 0.1.10.27 (X2): a purchase for an account (the Trade Terminal): the passes of a manual purchase now under
+     * {@code owner}, paid from the owner's mailbox coins (escrow at the limit, the rest back to the mailbox). The caller
+     * places the bought items. Returns {bought, coins paid}; {0, 0} when the mailbox does not hold the escrow.
+     */
+    public static long[] buyForAccount(MinecraftServer server, UUID owner, String team, String id, long limit, int quantity) {
+        Market m = market(server, id);
+        if (m == null || !m.system() || m.currency() != Currency.COIN || quantity < 1 || limit < 1) return new long[] {0, 0};
+        if (limit < m.low() || limit > m.high()) return new long[] {0, 0};
+        ExchangeData d = data(server);
+        Mailbox box = d.mailbox(owner);
+        int n = Math.min(quantity, MAX_QUANTITY);
+        long escrow = Math.multiplyExact(limit, (long) n);
+        if (box.coins < escrow) return new long[] {0, 0};
+        box.coins -= escrow;
+        long day = today(server);
+        Matched x = execute(server, d, m, id, owner, team, true, limit, n, day);
+        long back = x.refund + limit * x.left;
+        box.coins += back;
+        d.setDirty();
+        return new long[] {x.received, escrow - back};
     }
 
     /** What the matching of one order has done so far. */
@@ -398,7 +508,7 @@ public final class ExchangeService {
                 credit(d, maker, m.currency(), value - cut);
             } else {
                 x.proceeds += value - cut;
-                addItems(d.mailbox(maker), id, f.quantity());
+                deliverGoods(d, maker, id, f.quantity());
             }
             if (m.currency() == Currency.COIN) d.ledger(day).burned += cut;
             x.left -= f.quantity();
@@ -434,7 +544,14 @@ public final class ExchangeService {
     static void refundOrder(ExchangeData d, UUID owner, ExchangeData.Book b, boolean buy, long price, int left) {
         if (left <= 0) return;
         if (buy) credit(d, owner, b.currency, price * left);
-        else addItems(d.mailbox(owner), b.commodity, left);
+        else deliverGoods(d, owner, b.commodity, left);
+    }
+
+    /** The goods of a market to an account: items to the mailbox, or (0.1.10.28) UU-matter lots of the board to the UU account. */
+    static void deliverGoods(ExchangeData d, UUID owner, String id, long quantity) {
+        if (quantity <= 0) return;
+        if (UuBoard.is(id)) credit(d, owner, Currency.UU, UuBoard.mb(quantity));
+        else addItems(d.mailbox(owner), id, quantity);
     }
 
     // ------------------------------------------------------------------ mailbox, UU
@@ -524,12 +641,33 @@ public final class ExchangeService {
      * when the commodity sets {@code accept_components}.
      */
     public static String sellable(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+        String id = sellableAs(stack);
+        if (id == null) return null;
+        FutureCommodity c = FutureCommodityManager.getCommodityById(id);
+        return c == null || FutureCommodityManager.isLocked(player, c) ? null : id;
+    }
+
+    /**
+     * 0.1.10.27 (X2): the commodity a stack sells as without a player (the rules of {@link #sellable} except the unlock): the
+     * Trade Terminal's sell buffer takes such stacks, and its orders check the owner's unlock when they run.
+     */
+    public static String sellableAs(ItemStack stack) {
         if (stack.isEmpty()) return null;
         FutureCommodity c = FutureCommodityManager.getCommodityById(id(stack.getItem()));
         if (c == null || c.getItem() != stack.getItem()) c = byTag(stack);
-        if (c == null || FutureCommodityManager.isLocked(player, c)) return null;
+        if (c == null) return null;
         if (!stack.isComponentsPatchEmpty() && !c.getSelling().acceptComponents()) return null;
         return c.getItemId();
+    }
+
+    /** 0.1.10.27 (X2): a plain stack into an account's mailbox (true), or false for a stack with changed components. */
+    public static boolean mailStack(MinecraftServer server, UUID owner, ItemStack stack) {
+        if (stack.isEmpty()) return true;
+        if (!stack.isComponentsPatchEmpty() || owner == null) return false;
+        ExchangeData d = data(server);
+        addItems(d.mailbox(owner), id(stack.getItem()), stack.getCount());
+        d.setDirty();
+        return true;
     }
 
     /** 0.1.10.26: the first commodity (in datapack order) whose tag holds the stack's item, or null. */
@@ -582,6 +720,15 @@ public final class ExchangeService {
      * {@code minPercent}: the lowest average price in percent of the bid without pressure on that day).
      */
     public static Result sellBox(ServerPlayer player, net.minecraft.world.Container box, boolean toAuction, int minPercent) {
+        return sellBox(player, box, toAuction, minPercent, false);
+    }
+
+    /**
+     * 0.1.10.28 (X4): {@link #sellBox} with the scrap sink ({@code scrap}): after an instant sale of a commodity, what stays in
+     * the box goes to the recycler's rate when the next bid is below the floor ({@link ScrapSink}); the products go to the
+     * inventory (else the mailbox).
+     */
+    public static Result sellBox(ServerPlayer player, net.minecraft.world.Container box, boolean toAuction, int minPercent, boolean scrap) {
         MinecraftServer server = player.server;
         ExchangeData d = data(server);
         UUID uuid = player.getUUID();
@@ -590,6 +737,7 @@ public final class ExchangeService {
         if (contents.isEmpty()) return Result.fail("box_empty");
         if (toAuction && d.auction.size() + contents.size() > MAX_AUCTION_ORDERS) return Result.fail("auction_full");
         long items = 0, coins = 0;
+        long[] scrapped = new long[2];
         for (Map.Entry<String, Long> e : contents.entrySet()) {
             Market m = market(server, e.getKey());
             if (m == null || !m.system()) continue;
@@ -604,6 +752,7 @@ public final class ExchangeService {
             }
             takeFromBox(player, box, m.id(), take);
             items += take;
+            if (scrap && !toAuction && take < e.getValue() && ScrapSink.eligible(d, m, uuid, day)) scrapBox(player, box, m.id(), day, scrapped);
         }
         if (coins > 0) {
             InventoryPlan plan = new InventoryPlan(player.getInventory());
@@ -611,14 +760,49 @@ public final class ExchangeService {
             plan.commit();
         }
         d.setDirty();
+        if (scrapped[0] > 0) return Result.done("box_sold_scrap", items, coins, scrapped[0], scrapped[1]);
         if (items == 0) return Result.fail(toAuction ? "box_empty" : "box_nothing_sold");
         return toAuction ? Result.done("auction_submitted", items) : Result.done("box_sold", items, coins);
     }
 
+    /** 0.1.10.28: the stacks of the box that sell as {@code id} to the scrap sink (grouped by item and components). */
+    static void scrapBox(ServerPlayer player, net.minecraft.world.Container box, String id, long day, long[] totals) {
+        List<ItemStack> protos = new ArrayList<>();
+        List<Long> counts = new ArrayList<>();
+        for (int i = 0; i < box.getContainerSize(); i++) {
+            ItemStack s = box.getItem(i);
+            if (s.isEmpty() || !id.equals(sellable(player, s))) continue;
+            int at = -1;
+            for (int k = 0; k < protos.size() && at < 0; k++) if (ItemStack.isSameItemSameComponents(protos.get(k), s)) at = k;
+            if (at < 0) { protos.add(s.copyWithCount(1)); counts.add(0L); at = protos.size() - 1; }
+            counts.set(at, counts.get(at) + s.getCount());
+        }
+        long[] n = new long[counts.size()];
+        for (int k = 0; k < n.length; k++) n[k] = counts.get(k);
+        long[] stay = ScrapSink.recycle(player.server, data(player.server), protos, n, day, p -> Settlement.give(player, p, p.getCount()), totals);
+        for (int k = 0; k < protos.size(); k++) {
+            long remove = n[k] - stay[k];
+            for (int i = 0; i < box.getContainerSize() && remove > 0; i++) {
+                ItemStack s = box.getItem(i);
+                if (s.isEmpty() || !ItemStack.isSameItemSameComponents(s, protos.get(k))) continue;
+                int t = (int) Math.min(remove, s.getCount());
+                s.shrink(t);
+                if (s.isEmpty()) box.setItem(i, ItemStack.EMPTY);
+                remove -= t;
+            }
+        }
+        box.setChanged();
+    }
+
     /** One auction order per player and commodity a day: a new submission adds to it (the latest minimum counts). */
     static void addAuction(ExchangeData d, ServerPlayer player, String item, long quantity, int minPercent, long day) {
+        addAuction(d, player.getUUID(), player.getGameProfile().getName(), item, quantity, minPercent, day);
+    }
+
+    /** 0.1.10.27 (X2): the same for an account (the Trade Terminal submits for its owner). */
+    public static void addAuction(ExchangeData d, UUID owner, String ownerName, String item, long quantity, int minPercent, long day) {
         for (ExchangeData.AuctionOrder a : d.auction) {
-            if (a.owner.equals(player.getUUID()) && a.item.equals(item)) {
+            if (a.owner.equals(owner) && a.item.equals(item)) {
                 a.quantity += quantity;
                 a.minPercent = Math.max(0, Math.min(100, minPercent));
                 a.day = day;
@@ -627,8 +811,8 @@ public final class ExchangeService {
         }
         ExchangeData.AuctionOrder a = new ExchangeData.AuctionOrder();
         a.id = d.newId();
-        a.owner = player.getUUID();
-        a.ownerName = player.getGameProfile().getName();
+        a.owner = owner;
+        a.ownerName = ownerName;
         a.item = item;
         a.quantity = quantity;
         a.minPercent = Math.max(0, Math.min(100, minPercent));
@@ -638,6 +822,14 @@ public final class ExchangeService {
 
     /** Cancels an auction order; its items come back (inventory, else mailbox). */
     public static Result cancelAuction(ServerPlayer player, long orderId) {
+        return cancelAuction(player, orderId, false);
+    }
+
+    /**
+     * 0.1.10.28 (X4): {@code toMailbox} (the remote account of an ID card): the items go to the mailbox, nothing moves into the
+     * inventory from afar.
+     */
+    public static Result cancelAuction(ServerPlayer player, long orderId, boolean toMailbox) {
         ExchangeData d = data(player.server);
         ExchangeData.AuctionOrder found = null;
         for (ExchangeData.AuctionOrder a : d.auction) if (a.id == orderId) found = a;
@@ -646,7 +838,7 @@ public final class ExchangeService {
         d.auction.remove(found);
         Item item = item(found.item);
         InventoryPlan plan = new InventoryPlan(player.getInventory());
-        if (item != null) give(plan, d, player.getUUID(), item, found.item, found.quantity);
+        if (item != null && !toMailbox) give(plan, d, player.getUUID(), item, found.item, found.quantity);
         else addItems(d.mailbox(player.getUUID()), found.item, found.quantity);
         plan.commit();
         d.setDirty();
@@ -703,6 +895,7 @@ public final class ExchangeService {
                 ExchangeData.AuctionOrder a = orders.get(i);
                 SellDepth.Fill f = fills.get(i);
                 if (f.quantity() > 0) {
+                    d.lastSale.put(a.owner, closing);
                     credit(d, a.owner, Currency.COIN, f.coins());
                     spendAllowance(server, d, a.owner, closing, f.coins());
                     d.ledger(closing).minted += f.coins();
@@ -789,6 +982,11 @@ public final class ExchangeService {
 
     /** Delivers items to a commission (not one's own); the reward is paid in proportion. */
     public static Result deliver(ServerPlayer player, long id, int quantity) {
+        return deliver(player, id, quantity, null);
+    }
+
+    /** 0.1.10.27 (X2): {@link #deliver} with the items from {@code from} (a settlement container; null = the inventory). */
+    public static Result deliver(ServerPlayer player, long id, int quantity, ItemSource from) {
         MinecraftServer server = player.server;
         ExchangeData d = data(server);
         Commission c = commission(d, id);
@@ -799,8 +997,9 @@ public final class ExchangeService {
         int take = Math.min(quantity, c.quantity - c.delivered);
         if (take < 1) return Result.fail("bad_quantity");
         InventoryPlan plan = new InventoryPlan(player.getInventory());
-        take = (int) Math.min(take, plan.count(item, true));
-        if (take < 1 || !plan.removeMain(item, take, true)) return Result.fail("not_enough_items");
+        ItemSource src = from != null ? from : ItemSource.of(plan);
+        take = (int) Math.min(take, src.count(item));
+        if (take < 1 || !src.take(item, take)) return Result.fail("not_enough_items");
         c.delivered += take;
         long due = c.rewardTotal * c.delivered / c.quantity - c.rewardPaid;
         c.rewardPaid += due;
@@ -1060,8 +1259,28 @@ public final class ExchangeService {
         // 0.1.10.26 (X3): the bounties of three tiers replace postSystemCommissions (3 market commissions a day, paid in new coins)
         Bounties.onNewDay(server, d, day);
         d.ledger(day);
+        // 0.1.10.28 (X4): the stabiliser looks at the closed days; expired delegate ID cards leave the registers
+        stabilize(d, closing);
+        IdCards.prune(d, day);
         d.setDirty();
         ExchangeEvents.marketDay(server, day);
+    }
+
+    /**
+     * 0.1.10.28 (X4): the money supply estimate takes the closed days not counted yet; the factor follows the net issue of
+     * the last {@link Stabilizer#WINDOW_DAYS} closed days against the target ({@link Stabilizer}).
+     */
+    static void stabilize(ExchangeData d, long closing) {
+        long net7 = 0;
+        for (ExchangeData.LedgerDay l : d.ledger) {
+            if (l.day > closing) continue;
+            if (d.supplyDay == Long.MIN_VALUE || l.day > d.supplyDay) d.supply = Stabilizer.supply(d.supply, l.minted, l.burned);
+            if (closing - l.day < Stabilizer.WINDOW_DAYS) net7 += l.minted - l.burned;
+        }
+        d.supplyDay = Math.max(d.supplyDay, closing);
+        d.lastSale.values().removeIf(v -> closing - v >= Stabilizer.WINDOW_DAYS);
+        int active = d.lastSale.size();
+        d.stabFactor = Stabilizer.next(EconomySettings.stabilizerRules(), d.stabFactor, net7, d.supply, active);
     }
 
     // ------------------------------------------------------------------ audit (M5)

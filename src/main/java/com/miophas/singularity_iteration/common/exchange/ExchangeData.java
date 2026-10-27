@@ -83,6 +83,17 @@ public final class ExchangeData extends SavedData {
         public long bountyCoins, bountyItems, bountyUu;
         /** 0.1.10.26: coins that the Java API paid into ({@code [0]}) or took out of ({@code [1]}) mailboxes, per reason code. */
         public final Map<String, long[]> external = new java.util.TreeMap<>();
+        /** 0.1.10.28 (X4): items the scrap sink took and the products (scrap) it gave. */
+        public long scrapIn, scrapOut;
+    }
+
+    /** 0.1.10.28 (X4): a delegate ID card in its issuer's register (a card not in the register is revoked). */
+    public static final class CardRecord {
+        public long serial;
+        public UUID holder;
+        public String holderName = "";
+        public int level;
+        public long expiry;
     }
 
     public static final class Position {
@@ -141,6 +152,16 @@ public final class ExchangeData extends SavedData {
     public final List<AuctionOrder> auction = new ArrayList<>();
     /** 0.1.10.26 (X3): the system bounties, the vault and the weekly budgets. */
     public final BountyBoard board = new BountyBoard();
+    /** 0.1.10.28 (X4): the stabiliser's factor of the sell depths and the allowance, the money supply estimate, the closed day counted. */
+    public double stabFactor = 1.0;
+    public long supply;
+    public long supplyDay = Long.MIN_VALUE;
+    /** 0.1.10.28: the last day each player sold to the market (active sellers of the stabiliser). */
+    public final Map<UUID, Long> lastSale = new HashMap<>();
+    /** 0.1.10.28: the secret that signs ID cards (0 = not made yet), the next serial, the delegate cards per issuer. */
+    public long cardSecret;
+    public long cardSerial = 1;
+    public final Map<UUID, List<CardRecord>> cards = new HashMap<>();
 
     public static ExchangeData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(ExchangeData::new, ExchangeData::load), NAME);
@@ -271,6 +292,7 @@ public final class ExchangeData extends SavedData {
             LedgerDay l = new LedgerDay();
             l.day = x.getLong("Day"); l.minted = x.getLong("Minted"); l.burned = x.getLong("Burned");
             l.bountyCoins = x.getLong("BountyCoins"); l.bountyItems = x.getLong("BountyItems"); l.bountyUu = x.getLong("BountyUu");
+            l.scrapIn = x.getLong("ScrapIn"); l.scrapOut = x.getLong("ScrapOut");
             CompoundTag ext = x.getCompound("External");
             for (String k : ext.getAllKeys()) { long[] v = ext.getLongArray(k); if (v.length == 2) l.external.put(k, v); }
             d.ledger.addLast(l);
@@ -311,6 +333,31 @@ public final class ExchangeData extends SavedData {
         }
         // 0.1.10.26 (X3)
         BountyNbt.load(tag.getCompound("Bounties"), d.board);
+        // 0.1.10.28 (X4)
+        CompoundTag st = tag.getCompound("Stabilizer");
+        double factor = st.contains("Factor") ? st.getDouble("Factor") : 1.0;
+        d.stabFactor = Double.isFinite(factor) ? Math.max(0.05, Math.min(1.0, factor)) : 1.0;
+        d.supply = Math.max(0, st.getLong("Supply"));
+        d.supplyDay = st.contains("SupplyDay") ? st.getLong("SupplyDay") : Long.MIN_VALUE;
+        CompoundTag ls = tag.getCompound("LastSale");
+        for (String k : ls.getAllKeys()) { UUID id = uuid(k); if (id != null) d.lastSale.put(id, ls.getLong(k)); }
+        CompoundTag cd = tag.getCompound("Cards");
+        d.cardSecret = cd.getLong("Secret");
+        d.cardSerial = Math.max(1, cd.getLong("Serial"));
+        CompoundTag issuers = cd.getCompound("Issuers");
+        for (String k : issuers.getAllKeys()) {
+            UUID issuer = uuid(k);
+            if (issuer == null) continue;
+            List<CardRecord> list = new ArrayList<>();
+            for (Tag t : issuers.getList(k, Tag.TAG_COMPOUND)) {
+                CompoundTag x = (CompoundTag) t;
+                CardRecord c = new CardRecord();
+                c.serial = x.getLong("Serial"); c.holder = uuid(x.getString("Holder")); c.holderName = x.getString("Name");
+                c.level = x.getInt("Level"); c.expiry = x.getLong("Expiry");
+                if (c.holder != null) list.add(c);
+            }
+            if (!list.isEmpty()) d.cards.put(issuer, list);
+        }
         return d;
     }
 
@@ -414,6 +461,8 @@ public final class ExchangeData extends SavedData {
             if (l.bountyCoins != 0) x.putLong("BountyCoins", l.bountyCoins);
             if (l.bountyItems != 0) x.putLong("BountyItems", l.bountyItems);
             if (l.bountyUu != 0) x.putLong("BountyUu", l.bountyUu);
+            if (l.scrapIn != 0) x.putLong("ScrapIn", l.scrapIn);
+            if (l.scrapOut != 0) x.putLong("ScrapOut", l.scrapOut);
             if (!l.external.isEmpty()) {
                 CompoundTag ext = new CompoundTag();
                 l.external.forEach(ext::putLongArray);
@@ -453,6 +502,31 @@ public final class ExchangeData extends SavedData {
         tag.put("Auction", auc);
         // 0.1.10.26 (X3)
         tag.put("Bounties", BountyNbt.save(board));
+        // 0.1.10.28 (X4)
+        CompoundTag st = new CompoundTag();
+        st.putDouble("Factor", stabFactor);
+        st.putLong("Supply", supply);
+        st.putLong("SupplyDay", supplyDay);
+        tag.put("Stabilizer", st);
+        CompoundTag ls = new CompoundTag();
+        lastSale.forEach((id, dd) -> ls.putLong(id.toString(), dd));
+        tag.put("LastSale", ls);
+        CompoundTag cd = new CompoundTag();
+        cd.putLong("Secret", cardSecret);
+        cd.putLong("Serial", cardSerial);
+        CompoundTag issuers = new CompoundTag();
+        cards.forEach((issuer, list) -> {
+            ListTag lt = new ListTag();
+            for (CardRecord c : list) {
+                CompoundTag x = new CompoundTag();
+                x.putLong("Serial", c.serial); x.putString("Holder", c.holder.toString()); x.putString("Name", c.holderName);
+                x.putInt("Level", c.level); x.putLong("Expiry", c.expiry);
+                lt.add(x);
+            }
+            if (!lt.isEmpty()) issuers.put(issuer.toString(), lt);
+        });
+        cd.put("Issuers", issuers);
+        tag.put("Cards", cd);
         return tag;
     }
 

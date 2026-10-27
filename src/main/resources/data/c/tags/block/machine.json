@@ -386,6 +386,10 @@
       "required": false
     },
     {
+      "id": "mio_icif:producer/block_trade_terminal",
+      "required": false
+    },
+    {
       "id": "mio_icif:producer/block_induction_elc",
       "required": false
     },

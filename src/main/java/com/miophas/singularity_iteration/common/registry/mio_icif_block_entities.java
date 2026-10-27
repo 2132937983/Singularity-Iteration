@@ -723,6 +723,11 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("future_elc", () ->
             BlockEntityType.Builder.of(mio_icif_future_elc::new, mio_icif_blocks.FUTURE_ELC.get()).build(null));
 
+    // 0.1.10.27 (X2): the Trade Terminal
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.TradeTerminalBlockEntity>> TRADE_TERMINAL_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("trade_terminal", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.producer.TradeTerminalBlockEntity::new, mio_icif_blocks.TRADE_TERMINAL.get()).build(null));
+
     // 注册热源流体 MenuType
 
     // 注册 heat source fluid MenuType

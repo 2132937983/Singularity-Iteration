@@ -131,33 +131,11 @@ public final class ExchangeViews {
         // 0.1.10.25 (X1): the sell box of the open menu and the player's auction orders
         long allowance = ExchangeService.allowanceLeft(server, d, player.getUUID(), day);
         List<ExchangeView.BoxLine> boxLines = new ArrayList<>();
+        ExchangeView.SettleView settle = ExchangeView.SettleView.NONE;
         if (player.containerMenu instanceof com.miophas.singularity_iteration.common.menu.producer.FutureElcMenu menu) {
-            for (Map.Entry<String, Long> e : ExchangeService.boxContents(player, menu.sellBox()).entrySet()) {
-                if (boxLines.size() >= ExchangeView.MAX_BOX) break;
-                ExchangeService.Market bm = ExchangeService.market(server, e.getKey());
-                if (bm == null || !bm.system()) continue;
-                SellDepth.Curve c = ExchangeService.curve(bm);
-                long before = ExchangeService.soldToday(d, player.getUUID(), bm.id(), day);
-                double pressure = ExchangeService.pressure(d, bm.id());
-                long now = SellDepth.maxForMarginal(c, before, pressure, 1, e.getValue());
-                if (allowance != Long.MAX_VALUE) now = SellDepth.maxForCoins(c, before, pressure, allowance, now);
-                long nowCoins = (long) Math.floor(SellDepth.payout(c, before, pressure, now));
-                ExchangeData.AuctionOrder probe = new ExchangeData.AuctionOrder();
-                probe.owner = player.getUUID();
-                probe.item = bm.id();
-                probe.quantity = e.getValue();
-                ExchangeData.AuctionOrder existing = null;
-                for (ExchangeData.AuctionOrder a : d.auction) if (a.owner.equals(player.getUUID()) && a.item.equals(bm.id())) existing = a;
-                if (existing != null) { probe.quantity += existing.quantity; probe.minPercent = existing.minPercent; }
-                List<ExchangeData.AuctionOrder> others = new ArrayList<>();
-                for (ExchangeData.AuctionOrder a : d.auction) if (a.item.equals(bm.id()) && a != existing) others.add(a);
-                others.add(probe);
-                SellDepth.Fill est = ExchangeService.clearing(server, d, bm, others, day).get(others.size() - 1);
-                // the box's share: the estimate of the order with the box minus the estimate without it
-                SellDepth.Fill without = existing == null ? new SellDepth.Fill(0, 0) : ExchangeService.auctionEstimate(server, d, existing, day);
-                boxLines.add(new ExchangeView.BoxLine(bm.id(), e.getValue(), now, nowCoins, Math.max(0, est.quantity() - without.quantity()),
-                    Math.max(0, est.coins() - without.coins())));
-            }
+            boxLines = quoteLines(player, d, ExchangeService.boxContents(player, menu.sellBox()), day, ExchangeView.MAX_BOX);
+            // 0.1.10.27 (X2): the settlement slot
+            settle = settleView(player, d, menu.settlementSlot(), day);
         }
         List<ExchangeView.AuctionLine> auctions = new ArrayList<>();
         for (ExchangeData.AuctionOrder a : d.auction) {
@@ -177,7 +155,93 @@ public final class ExchangeViews {
             thisWeek ? board.uuIssued : 0, rules.uuPerWeek(), board.vault.size(), vaultItems);
         return new ExchangeView(day, coins, box.uu, box.coins, box.items.size(), energy, rows, detail, orders, mail, commissions, positions,
             ledger, stocks, List.copyOf(candidates), allowance == Long.MAX_VALUE ? -1 : allowance, boxLines, auctions,
-            Bounties.lines(player, d, day), budget);
+            Bounties.lines(player, d, day), budget, settle, stabilizerLine(d, day));
+    }
+
+    /** 0.1.10.28 (X4): the stabiliser and the scrap sink of the last closed days, for the treasury tab. */
+    static ExchangeView.StabilizerLine stabilizerLine(ExchangeData d, long day) {
+        Stabilizer.Rules rules = EconomySettings.stabilizerRules();
+        long net7 = 0, scrapIn = 0, scrapOut = 0;
+        for (ExchangeData.LedgerDay l : d.ledger) {
+            if (l.day >= day || day - l.day > Stabilizer.WINDOW_DAYS) continue;
+            net7 += l.minted - l.burned;
+            scrapIn += l.scrapIn;
+            scrapOut += l.scrapOut;
+        }
+        int active = 0;
+        for (long last : d.lastSale.values()) if (day - last <= Stabilizer.WINDOW_DAYS) active++;
+        return new ExchangeView.StabilizerLine(rules.enabled(), rules.enabled() ? d.stabFactor : 1.0, net7,
+            Math.round(Stabilizer.target(rules, d.supply, active)), d.supply, active, scrapIn, scrapOut);
+    }
+
+    /**
+     * The quote of items per commodity (the sell box since 0.1.10.25; 0.1.10.27 also the settlement container): what an instant
+     * sale would sell and pay now, and the share of the daily auction if the day changed now.
+     */
+    static List<ExchangeView.BoxLine> quoteLines(ServerPlayer player, ExchangeData d, Map<String, Long> contents, long day, int max) {
+        MinecraftServer server = player.server;
+        long allowance = ExchangeService.allowanceLeft(server, d, player.getUUID(), day);
+        List<ExchangeView.BoxLine> boxLines = new ArrayList<>();
+        for (Map.Entry<String, Long> e : contents.entrySet()) {
+            if (boxLines.size() >= max) break;
+            ExchangeService.Market bm = ExchangeService.market(server, e.getKey());
+            if (bm == null || !bm.system()) continue;
+            SellDepth.Curve c = ExchangeService.curve(bm);
+            long before = ExchangeService.soldToday(d, player.getUUID(), bm.id(), day);
+            double pressure = ExchangeService.pressure(d, bm.id());
+            long now = SellDepth.maxForMarginal(c, before, pressure, 1, e.getValue());
+            if (allowance != Long.MAX_VALUE) now = SellDepth.maxForCoins(c, before, pressure, allowance, now);
+            long nowCoins = (long) Math.floor(SellDepth.payout(c, before, pressure, now));
+            ExchangeData.AuctionOrder probe = new ExchangeData.AuctionOrder();
+            probe.owner = player.getUUID();
+            probe.item = bm.id();
+            probe.quantity = e.getValue();
+            ExchangeData.AuctionOrder existing = null;
+            for (ExchangeData.AuctionOrder a : d.auction) if (a.owner.equals(player.getUUID()) && a.item.equals(bm.id())) existing = a;
+            if (existing != null) { probe.quantity += existing.quantity; probe.minPercent = existing.minPercent; }
+            List<ExchangeData.AuctionOrder> others = new ArrayList<>();
+            for (ExchangeData.AuctionOrder a : d.auction) if (a.item.equals(bm.id()) && a != existing) others.add(a);
+            others.add(probe);
+            SellDepth.Fill est = ExchangeService.clearing(server, d, bm, others, day).get(others.size() - 1);
+            // the box's share: the estimate of the order with the box minus the estimate without it
+            SellDepth.Fill without = existing == null ? new SellDepth.Fill(0, 0) : ExchangeService.auctionEstimate(server, d, existing, day);
+            boxLines.add(new ExchangeView.BoxLine(bm.id(), e.getValue(), now, nowCoins, Math.max(0, est.quantity() - without.quantity()),
+                Math.max(0, est.coins() - without.coins())));
+        }
+        return boxLines;
+    }
+
+    /** 0.1.10.27 (X2): the view of the container in a settlement slot ({@link ExchangeView.SettleView#NONE} when empty). */
+    public static ExchangeView.SettleView settleView(ServerPlayer player, ExchangeData d, net.minecraft.world.Container slot, long day) {
+        if (slot == null || slot.getItem(0).isEmpty()) return ExchangeView.SettleView.NONE;
+        SettlementStorage st = SettlementStorages.open(slot, 0);
+        if (st == null) return ExchangeView.SettleView.NONE;
+        List<ExchangeView.BoxLine> lines = quoteLines(player, d, Settlement.contents(player, st), day, ExchangeView.MAX_SETTLE_LINES);
+        List<ExchangeView.SettleTarget> targets = new ArrayList<>();
+        boolean mp = Bounties.multiplayer(player.server);
+        for (BountyBoard.Bounty b : d.board.bounties) {
+            if (targets.size() >= ExchangeView.MAX_SETTLE_TARGETS) break;
+            long n = 0;
+            String first = "";
+            for (int i = 0; i < b.needs.size(); i++) {
+                BountyBoard.Need need = b.needs.get(i);
+                net.minecraft.world.item.Item item = ExchangeService.item(need.item);
+                if (item == null || need.left() <= 0) continue;
+                long can = Math.min(d.board.canDeliver(b, i, player.getUUID(), day, mp), st.plain(item));
+                if (can > 0 && first.isEmpty()) first = need.item;
+                n += Math.max(0, can);
+            }
+            if (n > 0) targets.add(new ExchangeView.SettleTarget(0, b.id, first, n));
+        }
+        for (ExchangeData.Commission c : d.commissions) {
+            if (targets.size() >= ExchangeView.MAX_SETTLE_TARGETS) break;
+            if (player.getUUID().equals(c.requester)) continue;
+            net.minecraft.world.item.Item item = ExchangeService.item(c.item);
+            if (item == null) continue;
+            long n = Math.min(c.quantity - c.delivered, st.plain(item));
+            if (n > 0) targets.add(new ExchangeView.SettleTarget(1, c.id, c.item, n));
+        }
+        return new ExchangeView.SettleView(st.kind(), lines, Settlement.otherItems(player, st), st.uu(), targets);
     }
 
     /** Closing prices for the sparkline: the 20-day history of a datapack commodity, the daily bars of a listing. */

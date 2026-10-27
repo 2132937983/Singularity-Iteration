@@ -29,6 +29,7 @@ public final class ArmoryClient {
             event.registerEntityRenderer(ArmoryRegistry.PIECE_ENTITY.get(), ArmoryPieceRenderer::new);
             event.registerEntityRenderer(ArmoryRegistry.WINGMAN.get(), WingmanRenderer::new);
             event.registerBlockEntityRenderer(ArmoryRegistry.SHOWCASE_ENTITY.get(), ArmorShowcaseRenderer::new);
+            event.registerBlockEntityRenderer(ArmoryRegistry.ARMORY_ENTITY.get(), ArmoryRenderer::new);     // 0.1.10.32 gantry
         }
 
         @SubscribeEvent

@@ -480,6 +480,7 @@ public final class NanoFx {
         float mesh = meshIntensity(player.getId(), partial);
         if (phase == null && mesh <= 0) return;
         if (phase == null) {
+            if (!com.miophas.singularity_iteration.common.client.render.FxBudget.allow(player)) return;     // 0.1.10.32 (P-3): the mesh overlay is a budgeted pass
             PoseStack pose = event.getPoseStack();
             QUEUE.add(new Queued(player, partial, new Matrix4f(pose.last().pose()), new Matrix3f(pose.last().normal()), event.getPackedLight(),
                 0, 0, false, mesh, false));
@@ -613,6 +614,7 @@ public final class NanoFx {
             Entity e = mc.level.getEntity(g.entity);
             if (!(e instanceof AbstractClientPlayer player)) continue;
             if (g.pos.distanceToSqr(cam) < 1.6 * 1.6) continue;          // not inside the camera
+            if (com.miophas.singularity_iteration.common.client.render.FxBudget.tier(g.pos) != com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR) continue;     // 0.1.10.32 (P-3): afterimages only near
             float age = now - g.born + partial;
             float a = Mth.clamp(1 - age / 9F, 0, 1) * 0.9F * fx();
             if (a <= 0.02F) continue;

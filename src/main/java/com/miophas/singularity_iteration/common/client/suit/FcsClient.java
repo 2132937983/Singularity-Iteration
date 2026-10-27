@@ -119,6 +119,7 @@ public final class FcsClient {
         boolean visor = hud && FcsState.anyHud();
         if (visor && !visorOn && FcsClientConfig.visorBoot()) {
             FcsHud.boot();
+            SuitBoot.visor(player);                                     // 0.1.10.32 the visor lights from its centre
             play(mc, com.miophas.singularity_iteration.common.registry.mio_icif_sounds.VISOR_BOOT.get(), 1.0F, 0.5F);
         }
         visorOn = visor;
@@ -338,6 +339,8 @@ public final class FcsClient {
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             ShieldFieldRenderer.render(event);
             ManeuverModeClient.renderWorld(event);
+            SuitMotionFx.render(event);                                // 0.1.10.31 sprint streaks of the quantum leggings
+            com.miophas.singularity_iteration.common.client.armory.GateFx.render(event);      // 0.1.10.32 transfer gates
             QuantumFx.render(event);                                   // 0.1.9.1 photon barrier, active scan
             com.miophas.singularity_iteration.common.client.armory.WingmanFx.render(event);   // 0.1.9.1 Wingman lock-on, flashes, jets
             com.miophas.singularity_iteration.common.client.armory.CommandFx.render(event);   // 0.1.10.2 orders, markers, recall

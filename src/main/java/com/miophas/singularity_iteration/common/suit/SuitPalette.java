@@ -49,10 +49,15 @@ public record SuitPalette(int primary, int accent) {
         new Preset("violet", 0x6C3FB0, 0xFF5AE8),
         new Preset("graphite", 0x5B6168, 0xFF3B30));
 
-    /** Items that accept a palette. The nano suit first. */
+    /**
+     * Items that accept a palette: the nano suit (0.1.8.0) and the quantum suit (0.1.10.30; the advanced and heavy quantum
+     * chestplates are quantum chestplates with a frame core since 0.1.9.0, so they are included).
+     */
     private static final List<ResourceLocation> SUPPORTED = List.of(
         id("armor/item_armor_nano_helmet"), id("armor/item_armor_nano_chestplate"),
-        id("armor/item_armor_nano_leggings"), id("armor/item_armor_nano_boots"));
+        id("armor/item_armor_nano_leggings"), id("armor/item_armor_nano_boots"),
+        id("armor/item_armor_quantum_helmet"), id("armor/item_armor_quantum_chestplate"),
+        id("armor/item_armor_quantum_leggings"), id("armor/item_armor_quantum_boots"));
 
     private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("mio_icif", path); }
 
@@ -64,8 +69,19 @@ public record SuitPalette(int primary, int accent) {
     /** The palette of a stack, or {@code null}. */
     @Nullable
     public static SuitPalette of(ItemStack stack) {
-        return stack.isEmpty() ? null : stack.get(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_PALETTE.get());
+        if (stack.isEmpty()) return null;
+        if (!PREVIEW.isEmpty()) {
+            SuitPalette p = PREVIEW.get(stack);
+            if (p != null) return p;
+        }
+        return stack.get(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_PALETTE.get());
     }
+
+    /**
+     * 0.1.10.32: palettes shown instead of the stored ones while the Look page preview draws (keys: the worn stacks, by
+     * identity). The client fills it right before the preview render and clears it right after; empty otherwise.
+     */
+    public static final java.util.Map<ItemStack, SuitPalette> PREVIEW = new java.util.IdentityHashMap<>();
 
     /** Sets or removes ({@code null}) the palette. Unsupported items are not changed. */
     public static void set(ItemStack stack, @Nullable SuitPalette palette) {

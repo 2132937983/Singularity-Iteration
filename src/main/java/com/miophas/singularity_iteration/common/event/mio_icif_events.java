@@ -219,6 +219,8 @@ public class mio_icif_events {
         // 0.1.8.0: additive ratios, full-set energy pool, all vanilla damage types
         // except void / kill / starvation / world border. See ElectricArmorDamage.
         var result = ElectricArmorDamage.absorb(entity, source, damage);
+        // 0.1.10.32 (S-6): the hit ripple over a quantum suit
+        com.miophas.singularity_iteration.common.suit.ArmorHitFx.absorbed(entity, source, damage, result.absorbed());
         if (result.absorbed() > 0) {
             event.setNewDamage(Math.max(0, damage - result.absorbed()));
         }

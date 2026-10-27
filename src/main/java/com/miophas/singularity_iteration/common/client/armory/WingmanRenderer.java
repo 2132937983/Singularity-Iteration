@@ -49,6 +49,9 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)), context.getModelManager()));
         // 0.1.9.0: frame core attachments of the worn helmet and chestplate
         addLayer(new com.miophas.singularity_iteration.common.client.suit.CoreAttachmentLayer<>(this));
+        // 0.1.10.30: the light of a worn nano or quantum suit
+        addLayer(new com.miophas.singularity_iteration.common.client.suit.SuitGlowLayer<>(this));
+        addLayer(new com.miophas.singularity_iteration.common.client.suit.SuitRippleLayer<>(this));     // 0.1.10.32 hit ripple
     }
 
     @Override

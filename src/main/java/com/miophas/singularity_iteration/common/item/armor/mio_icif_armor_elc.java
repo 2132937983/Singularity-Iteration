@@ -83,7 +83,9 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
                 case LEGGINGS -> "leggings";
                 default -> "boots";
             };
-            return ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/models/armor/" + path + "_" + piece + ".png");
+            // 0.1.10.30: the palette layers (plating, accent) of the quantum suit, the original texture without a palette
+            return com.miophas.singularity_iteration.common.suit.SuitPalette.texture(stack, "textures/models/armor/" + path + "_" + piece,
+                MioIcifArmorMaterials.isAccentLayer(layer));
         }
         return ResourceLocation.fromNamespaceAndPath("mio_icif", "textures/armor/" + path + suffix + ".png");
     }

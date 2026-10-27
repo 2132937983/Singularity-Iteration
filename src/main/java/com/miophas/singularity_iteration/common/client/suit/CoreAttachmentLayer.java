@@ -27,6 +27,7 @@ import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
@@ -87,8 +88,16 @@ public final class CoreAttachmentLayer<T extends LivingEntity, M extends Humanoi
         draw(getParentModel(), pose, buffers, light, entity, partial);
     }
 
-    /** One worn attachment, prepared once per frame for both passes. */
-    private record Job(CoreAttachmentModel attachment, boolean active, float time, float solar, float thrust) { }
+    /**
+     * One worn attachment, prepared once per frame for both passes. {@code accent}: the light colour of the piece's palette
+     * (0.1.10.30), -1 without one.
+     */
+    private record Job(CoreAttachmentModel attachment, boolean active, float time, float solar, float thrust, int accent) {
+        /** The texture of a segment: with a palette, the glowing segments use the luminance copy ({@code _lum}). */
+        ResourceLocation texture(boolean glowing) {
+            return glowing && accent >= 0 ? attachment.texture().withPath(p -> p.replace(".png", "_lum.png")) : attachment.texture();
+        }
+    }
 
     /**
      * Draws the attachments of the worn pieces of {@code entity} with the posed parts of {@code model}.
@@ -115,16 +124,18 @@ public final class CoreAttachmentLayer<T extends LivingEntity, M extends Humanoi
             boolean active = core.isSolar() || SuitModules.energy(stack) > 0;
             boolean solarOn = core.isSolar() && ArmorFeatureState.isEnabled(stack, FrameCore.KEY_SOLAR);
             if (jobs == null) jobs = new ArrayList<>(2);
+            var palette = com.miophas.singularity_iteration.common.suit.SuitPalette.of(stack);
             jobs.add(new Job(attachment, active, (entity.tickCount + partial) / 20F, solarOn ? motion.solar(partial) : 0F,
-                active ? motion.thrust(partial) : 0F));
+                active ? motion.thrust(partial) : 0F, palette == null ? -1 : palette.accent() & 0xFFFFFF));
         }
         if (jobs == null) return;
-        // pass 1: the plates, lit by the world (emissive segments full bright)
+        // pass 1: the plates, lit by the world (emissive segments full bright; 0.1.10.30: in the palette's light colour)
         for (Job job : jobs) {
-            VertexConsumer solid = buffers.getBuffer(RenderType.armorCutoutNoCull(job.attachment().texture()));
             for (CoreAttachmentModel.Segment segment : job.attachment().segments()) {
                 if (!begin(model, pose, segment, job)) continue;
-                quads(pose, solid, segment.quads(), segment.emissive() ? LightTexture.FULL_BRIGHT : light, 0xFFFFFFFF);
+                boolean tinted = segment.emissive() && job.accent() >= 0;
+                VertexConsumer solid = buffers.getBuffer(RenderType.armorCutoutNoCull(job.texture(segment.emissive())));
+                quads(pose, solid, segment.quads(), segment.emissive() ? LightTexture.FULL_BRIGHT : light, tinted ? 0xFF000000 | job.accent() : 0xFFFFFFFF);
                 pose.popPose();
             }
         }
@@ -134,9 +145,12 @@ public final class CoreAttachmentLayer<T extends LivingEntity, M extends Humanoi
             for (CoreAttachmentModel.Segment segment : job.attachment().segments()) {
                 float glow = glow(segment, job.time(), job.solar(), job.thrust(), job.active(), entity.getId());
                 if (glow <= 0.02F || !begin(model, pose, segment, job)) continue;
-                if (glowBuffer == null) glowBuffer = buffers.getBuffer(RenderType.eyes(job.attachment().texture()));
+                if (glowBuffer == null) glowBuffer = buffers.getBuffer(RenderType.eyes(job.texture(true)));
                 int c = Mth.clamp((int) (glow * 255), 0, 255);
-                quads(pose, glowBuffer, segment.quads(), LightTexture.FULL_BRIGHT, FastColor.ARGB32.color(255, c, c, c));
+                int a = job.accent();
+                int colour = a < 0 ? FastColor.ARGB32.color(255, c, c, c)
+                    : FastColor.ARGB32.color(255, ((a >> 16) & 255) * c / 255, ((a >> 8) & 255) * c / 255, (a & 255) * c / 255);
+                quads(pose, glowBuffer, segment.quads(), LightTexture.FULL_BRIGHT, colour);
                 pose.popPose();
             }
         }

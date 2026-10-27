@@ -63,6 +63,19 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
     /** Position in the dock chain: 1 = next to the Armory, 0 = not docked. Synced. */
     private int dockIndex;
 
+    /** 0.1.10.31 (A-3): the physical display (the real gear on the mannequin and its cradle) instead of the hologram. Synced. */
+    private boolean physical;
+
+    public boolean physical() { return physical; }
+
+    /** 0.1.10.31 (A-3): switches between the hologram and the physical display. */
+    void toggleDisplay(Player player) {
+        physical = !physical;
+        player.displayClientMessage(Component.translatable(physical ? "message.mio_icif.projector.mode_physical"
+            : "message.mio_icif.projector.mode_hologram"), true);
+        changed(physical ? SoundEvents.PISTON_EXTEND : SoundEvents.BEACON_ACTIVATE);
+    }
+
     /** True when the projector is docked to an Armory as an extension slot. */
     public boolean docked() { return dockIndex > 0; }
     public int dockIndex() { return dockIndex; }
@@ -335,6 +348,7 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
         tag.putString("Label", label);
         tag.putString("ProjectorName", customName);
         tag.putInt("DockIndex", dockIndex);
+        tag.putBoolean("Physical", physical);
         if (link != null) GlobalPos.CODEC.encodeStart(NbtOps.INSTANCE, link).result().ifPresent(t -> tag.put("Link", t));
     }
 
@@ -345,6 +359,7 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
         label = tag.getString("Label");
         customName = tag.getString("ProjectorName");
         dockIndex = Math.max(0, Math.min(MAX_CHAIN, tag.getInt("DockIndex")));
+        physical = tag.getBoolean("Physical");
         link = tag.contains("Link") ? GlobalPos.CODEC.parse(NbtOps.INSTANCE, tag.get("Link")).result().orElse(null) : null;
         if (link == null) label = "";
     }

@@ -30,6 +30,9 @@ import org.joml.Matrix4f;
  *   <li><b>Shock diamonds</b> (0.1.10.2): at full burn the plume grows longer and four bright Mach
  *       nodes (double cones) stand in it, flickering. Each flame is also recorded in world space
  *       for the heat haze of {@code ThrusterFx}.</li>
+ *   <li><b>Flame look</b> (0.1.10.31, S-5): the disc and the cone take the colour of the thrust (white, blue, violet,
+ *       {@link FlameRules}) and an animated flame strip lies over each cone ({@link ThrusterFlame}); at full thrust the
+ *       nozzles throw sparks.</li>
  *   <li><b>Aerodynamic deflection field.</b> In cruise, a streamlined paraboloid shell of energy in
  *       front of the head and along the body. Flow bands run from the nose to the tail. The shell
  *       follows the body pose (the body lies along the path in cruise). The field also lowers the
@@ -46,6 +49,12 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
     public ManeuverFlightLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
         super(parent);
     }
+
+    /** 0.1.10.32 (P-3): detail tier of the player being drawn (render thread only). */
+    private static int lodTier;
+
+    /** 0.1.10.31: the flame strips of one player, drawn after the glow pass. */
+    private final ThrusterFlame.Strips strips = new ThrusterFlame.Strips();
 
     @SubscribeEvent
     public static void addLayers(EntityRenderersEvent.AddLayers event) {
@@ -64,13 +73,16 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         float time = ManeuverModeClient.visualTime(player);
         // 0.1.10.2: full burn (throttle above 0.72) lengthens the plume and lights the shock diamonds
-        float burn = net.minecraft.util.Mth.clamp((ManeuverModeClient.throttleOf(player, partial) - 0.72F) / 0.2F, 0, 1);
+        float thr = ManeuverModeClient.throttleOf(player, partial);
+        lodTier = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(player);                    // 0.1.10.32 (P-3)
+        float burn = net.minecraft.util.Mth.clamp((thr - 0.72F) / 0.2F, 0, 1);
         int id = player.getId();
+        strips.clear();
         // limb tip in the limb frame (pixels): arms 10 px below the shoulder pivot, legs 12 px below the hip
-        thruster(pose, vc, model.rightArm, -1F / 16F, 10.5F / 16F, output[0], time, 0, burn, id);
-        thruster(pose, vc, model.leftArm, 1F / 16F, 10.5F / 16F, output[1], time, 1, burn, id);
-        thruster(pose, vc, model.rightLeg, 0, 12.2F / 16F, output[2], time, 2, burn, id);
-        thruster(pose, vc, model.leftLeg, 0, 12.2F / 16F, output[3], time, 3, burn, id);
+        thruster(pose, vc, model.rightArm, -1F / 16F, 10.5F / 16F, output[0], time, 0, burn, id, thr, strips);
+        thruster(pose, vc, model.leftArm, 1F / 16F, 10.5F / 16F, output[1], time, 1, burn, id, thr, strips);
+        thruster(pose, vc, model.rightLeg, 0, 12.2F / 16F, output[2], time, 2, burn, id, thr, strips);
+        thruster(pose, vc, model.leftLeg, 0, 12.2F / 16F, output[3], time, 3, burn, id, thr, strips);
         float field = ManeuverModeClient.deflectionField(player, partial);
         if (field > 0.02F) {
             pose.pushPose();
@@ -78,11 +90,13 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
             deflectionField(pose.last().pose(), vc, field, time);
             pose.popPose();
         }
+        // 0.1.10.31: the textured flames last (taking their buffer ends the glow batch of an immediate source)
+        strips.draw(buffers);
     }
 
     /** Glow disc at the tip of one limb and a flame along the limb axis (+y of the limb). */
     private static void thruster(PoseStack pose, VertexConsumer vc, ModelPart part, float tipX, float tipY,
-                                 float power, float time, int seed, float burn, int owner) {
+                                 float power, float time, int seed, float burn, int owner, float throttle, ThrusterFlame.Strips strips) {
         if (power <= 0.02F || !part.visible) return;
         pose.pushPose();
         part.translateAndRotate(pose);
@@ -91,23 +105,11 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         float flicker = 0.85F + 0.15F * (float) Math.sin(time * 37 + seed * 1.7) * (float) Math.sin(time * 23 + seed);
         float p = power * flicker;
         float radius = 0.06F + 0.05F * p, length = 0.12F + 0.42F * p + 0.5F * burn * power;
-        int seg = 10;
-        for (int s = 0; s < seg; s++) {
-            double a0 = s * Math.PI * 2 / seg, a1 = (s + 1) * Math.PI * 2 / seg;
-            float x0 = (float) Math.cos(a0) * radius, z0 = (float) Math.sin(a0) * radius;
-            float x1 = (float) Math.cos(a1) * radius, z1 = (float) Math.sin(a1) * radius;
-            // disc: bright white-blue centre, cyan edge
-            put(vc, m, 0, 0, 0, 0.9F, 0.97F, 1F, 0.85F * p);
-            put(vc, m, x0, 0, z0, 0.35F, 0.75F, 1F, 0.35F * p);
-            put(vc, m, x1, 0, z1, 0.35F, 0.75F, 1F, 0.35F * p);
-            put(vc, m, 0, 0, 0, 0.9F, 0.97F, 1F, 0.85F * p);
-            // flame: a cone that narrows and fades along +y (out of the palm / sole)
-            put(vc, m, x0 * 0.9F, 0.01F, z0 * 0.9F, 0.5F, 0.8F, 1F, 0.55F * p);
-            put(vc, m, x1 * 0.9F, 0.01F, z1 * 0.9F, 0.5F, 0.8F, 1F, 0.55F * p);
-            put(vc, m, x1 * 0.2F, length, z1 * 0.2F, 0.2F, 0.45F, 1F, 0);
-            put(vc, m, x0 * 0.2F, length, z0 * 0.2F, 0.2F, 0.45F, 1F, 0);
-        }
-        boolean fx = FcsClientConfig.thrusterFx();
+        // 0.1.10.31 (S-5): disc and cone in the colour of the thrust, and the animated flame strip
+        float colour = Math.max(throttle, 0.5F * power);
+        ThrusterFlame.glow(vc, m, radius, length, power, colour, flicker, time, owner * 4 + seed,
+            lodTier == com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR ? null : strips, com.miophas.singularity_iteration.common.client.render.FxLodRules.segments(10, lodTier));
+        boolean fx = FcsClientConfig.thrusterFx() && lodTier == com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR;
         if (burn > 0.02F && fx) {
             for (int i = 0; i < 4; i++) {
                 float y = length * (0.36F + 0.19F * i);
@@ -122,7 +124,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
             net.minecraft.world.phys.Vec3 cam = net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
             com.miophas.singularity_iteration.common.client.suit.nano.ThrusterFx.jet(owner * 8L + seed,
                 new net.minecraft.world.phys.Vec3(a.x + cam.x, a.y + cam.y, a.z + cam.z), new net.minecraft.world.phys.Vec3(b.x + cam.x, b.y + cam.y, b.z + cam.z),
-                p * (0.7F + 0.5F * burn));
+                p * (0.7F + 0.5F * burn), Math.max(throttle, 0.5F * power));
         }
         pose.popPose();
     }

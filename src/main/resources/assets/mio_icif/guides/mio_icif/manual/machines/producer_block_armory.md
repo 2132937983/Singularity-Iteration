@@ -44,6 +44,7 @@ The game measured these values from the block entity of this version.
 - The Armory needs stored EU before it accepts an owner. Only the owner can open, use or break a bound Armory.
 - Equipment from other mods needs a Connector Kit before the Armory accepts the equipment.
 - Each summon costs EU. The cost increases with the distance and with a change of dimension.
+- Since 0.1.10.32 the Armory is a gantry: an iris hatch on top twists open before a piece launches and as a returning piece comes in; small holograms of the stored suits circle above it (within 8 blocks); while it repairs and charges a ring with running arcs lies on the floor and a scan ring moves along its sides (amber or violet blinking: waiting for power or mana). A summon from far away or from another dimension opens a transfer gate in the sky for each piece: the piece leaves it with afterimages, and a piece that flies home to the sky goes into a gate. The console shows the suit under the mouse as a hologram beside its window, and a frame in the colour of the charge round each stored suit piece. Client option armory_fx.
 
 ## Wingman safety
 

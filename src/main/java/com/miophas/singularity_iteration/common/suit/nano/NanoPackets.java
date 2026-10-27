@@ -100,6 +100,11 @@ public final class NanoPackets {
     public static final byte FX_MESH_ON = 7, FX_MESH_OFF = 8, FX_MESH_HIT = 9, FX_RECON = 10, FX_RECON_CLOUD = 11, FX_REBOUND = 12;
     /** 0.1.9.0 frame cores. DISCHARGE: arc discharge at x,y,z, a = radius, targets = creatures hit. CORE_DENIED: the wearer only, a = reason. */
     public static final byte FX_DISCHARGE = 13, FX_CORE_DENIED = 14;
+    /**
+     * 0.1.10.32 (S-6): electric armour of a quantum suit absorbed a hit: a,b,c = direction from the body to the hit (unit
+     * vector), x = the absorbed share of the damage (0..1). Everyone near.
+     */
+    public static final byte FX_ARMOR_HIT = 15;
 
     /** Client to server (0.1.9.0): the core burst key (arc discharge of the advanced propulsion core). No fields. */
     public record CoreBurst() implements CustomPacketPayload {

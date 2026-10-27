@@ -422,6 +422,60 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
 
+    // ------------------------------------------------------------------ 0.1.10.32 (A-1): what the gantry shows
+    /** Client: the icon piece of each suit (synced) and the maintenance state. */
+    private final net.minecraft.core.NonNullList<ItemStack> icons = net.minecraft.core.NonNullList.withSize(SETS, ItemStack.EMPTY);
+    private int shownMaintenance;
+    /** Server: the last synced signature of the icons and the maintenance state. */
+    private long iconSignature = Long.MIN_VALUE;
+
+    /** Icon piece of suit {@code set}: the chestplate, else the helmet, else the first stored piece. */
+    ItemStack iconOf(int set) {
+        ItemStack chest = piece(set, ArmoryPiece.CHEST);
+        if (!chest.isEmpty()) return chest;
+        ItemStack head = piece(set, ArmoryPiece.HEAD);
+        if (!head.isEmpty()) return head;
+        for (ArmoryPiece p : ArmoryPiece.COLUMNS) if (!piece(set, p).isEmpty()) return piece(set, p);
+        return ItemStack.EMPTY;
+    }
+
+    /** Client side: the icons of the stored suits (empty stacks for empty suits). */
+    public java.util.List<ItemStack> icons() { return icons; }
+
+    /** Client side: the maintenance state ({@link ArmoryMaintenance#IDLE}, WORKING, NEED_POWER, NEED_MANA). */
+    public int shownMaintenance() { return shownMaintenance; }
+
+    private long signature() {
+        long h = maintenance.state();
+        for (int set = 0; set < SETS; set++) {
+            ItemStack icon = iconOf(set);
+            h = h * 31 + (icon.isEmpty() ? 0 : net.minecraft.core.registries.BuiltInRegistries.ITEM.getId(icon.getItem()) + 1);
+            h = h * 31 + pieceCount(set);
+        }
+        return h;
+    }
+
+    private void writeIcons(CompoundTag tag, HolderLookup.Provider registries) {
+        ListTag list = new ListTag();
+        for (int set = 0; set < SETS; set++) {
+            ItemStack icon = iconOf(set);
+            CompoundTag entry = new CompoundTag();
+            if (!icon.isEmpty()) entry.put("Item", icon.copyWithCount(1).save(registries));
+            list.add(entry);
+        }
+        tag.put("ArmoryIcons", list);
+        tag.putInt("ArmoryMaint", maintenance.state());
+    }
+
+    private void readIcons(CompoundTag tag, HolderLookup.Provider registries) {
+        ListTag list = tag.getList("ArmoryIcons", Tag.TAG_COMPOUND);
+        for (int set = 0; set < SETS; set++) {
+            CompoundTag entry = set < list.size() ? list.getCompound(set) : new CompoundTag();
+            icons.set(set, entry.contains("Item") ? ItemStack.parse(registries, entry.getCompound("Item")).orElse(ItemStack.EMPTY) : ItemStack.EMPTY);
+        }
+        shownMaintenance = tag.getInt("ArmoryMaint");
+    }
+
     // ------------------------------------------------------------------ machine plumbing
     @Override
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
@@ -470,6 +524,14 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
         if (level instanceof ServerLevel server) {
             ArmoryMaintenance.Report done = maintenance.tick(server.getGameTime());
             if (done != null) notifyOwner(server, done);
+            // 0.1.10.32 (A-1): the gantry icons and the maintenance rings follow the stored suits
+            if (server.getGameTime() % 20 == (worldPosition.asLong() & 15)) {
+                long sig = signature();
+                if (sig != iconSignature) {
+                    iconSignature = sig;
+                    sync();
+                }
+            }
         }
         boolean lit = owner != null && getEnergyStorage().getAmount() >= BIND_ENERGY;
         BlockState state = getBlockState();
@@ -529,6 +591,7 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
             automation = Automation.LOCKED;
         }
         mana = Math.max(0, Math.min(MANA_CAPACITY, tag.getInt("ArmoryMana")));
+        if (tag.contains("ArmoryIcons")) readIcons(tag, registries);
     }
 
     private void writeShared(CompoundTag tag) {
@@ -554,6 +617,7 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         writeShared(tag);
+        writeIcons(tag, registries);
         return tag;
     }
 

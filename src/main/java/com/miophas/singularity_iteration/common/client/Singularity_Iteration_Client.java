@@ -205,6 +205,7 @@ public class Singularity_Iteration_Client {
         event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager -> {
             com.miophas.singularity_iteration.common.client.render.BakedArmorModel.invalidate();
             com.miophas.singularity_iteration.common.client.render.CoreAttachmentModel.invalidate();
+            com.miophas.singularity_iteration.common.client.render.GlowMasks.invalidate();
         });
     }
 
@@ -248,7 +249,7 @@ public class Singularity_Iteration_Client {
                 @Override
                 public HumanoidModel<?> getHumanoidArmorModel(LivingEntity entity, ItemStack stack, net.minecraft.world.entity.EquipmentSlot slot, HumanoidModel<?> original) {
                     if (model == null) model = new com.miophas.singularity_iteration.common.client.render.BakedArmorModel(id);
-                    return model;
+                    return model.wearer(entity);            // 0.1.10.32: the moving parts follow the wearer
                 }
                 /** 0.1.8.0 suit palette: layer 0 = plates (primary), layer 1 = light strips (accent) or skipped. */
                 @Override

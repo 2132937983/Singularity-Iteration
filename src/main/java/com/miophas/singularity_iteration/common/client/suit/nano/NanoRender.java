@@ -71,6 +71,25 @@ public final class NanoRender extends RenderType {
             .setWriteMaskState(COLOR_WRITE)
             .createCompositeState(false));
 
+    /**
+     * 0.1.10.30: the hologram grid four times finer, for gear with 128 x 128 textures (the holo projector): the grid cells
+     * of {@link #HOLOGRID} were laid out for 64 x 64 skins.
+     */
+    public static final RenderType HOLOGRID_FINE = create("mio_icif_nano_hologrid_fine", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS,
+        1536, false, true, CompositeState.builder()
+            .setShaderState(RENDERTYPE_ENERGY_SWIRL_SHADER)
+            .setTextureState(new TextureStateShard(HOLOGRID_TEXTURE, false, false))
+            .setTexturingState(new TexturingStateShard("mio_icif_nano_hologrid_fine_scroll",
+                () -> RenderSystem.setTextureMatrix(new Matrix4f().translation(scrollU, scrollV * 0.5F, 0.0F).scale(4.0F, 4.0F, 1.0F)),
+                RenderSystem::resetTextureMatrix))
+            .setTransparencyState(ADDITIVE_TRANSPARENCY)
+            .setCullState(NO_CULL)
+            .setLightmapState(LIGHTMAP)
+            .setOverlayState(OVERLAY)
+            .setDepthTestState(LEQUAL_DEPTH_TEST)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
+
     public static final ResourceLocation HEXMESH_TEXTURE = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
         "textures/effect/nano_hexmesh.png");
 
@@ -132,9 +151,13 @@ public final class NanoRender extends RenderType {
         }
     }
 
-    /** True when the refraction pass may run this frame. */
+    /**
+     * True when the refraction pass may run this frame. 0.1.10.30 (P-1): not while an Iris shader pack is on (the scene copy
+     * would read the wrong buffer; the effects use their fallbacks).
+     */
     public static boolean refraction() {
-        return !failed && refractShader != null && hazeShader != null && FcsClientConfig.nanoRefraction();
+        return !failed && refractShader != null && hazeShader != null && FcsClientConfig.nanoRefraction()
+            && !com.miophas.singularity_iteration.common.client.render.IrisCompat.shaderPackInUse();
     }
 
     static void setScroll(float u, float v) {

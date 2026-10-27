@@ -34,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>use with a piece of armour / a weapon - puts it on the mannequin (swapping what was there)</li>
  *   <li>sneak-use with an empty hand - swaps the whole outfit with what you are wearing</li>
  *   <li>use with an empty hand - turns the mannequin by 45 degrees</li>
+ *   <li>use a side of the base plate with an empty hand - switches between the hologram and the physical display (0.1.10.31)</li>
  *   <li>use with a bound Armory Remote - mirrors a suit stored in that Armory (use again to pick
  *       the next suit, sneak-use to unlink)</li>
  *   <li>a redstone signal makes the turntable spin</li>
@@ -99,8 +100,15 @@ public class ArmorShowcaseBlock extends BaseEntityBlock {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!(level.getBlockEntity(pos) instanceof ArmorShowcaseBlockEntity showcase)) return InteractionResult.PASS;
         if (level.isClientSide) return InteractionResult.SUCCESS;
-        showcase.useEmptyHand(player);
+        // 0.1.10.31 (A-3): a side of the base plate switches the display mode; the top keeps turning the mannequin
+        if (sideSwitches(hit.getDirection(), player.isShiftKeyDown())) showcase.toggleDisplay(player);
+        else showcase.useEmptyHand(player);
         return InteractionResult.CONSUME;
+    }
+
+    /** 0.1.10.31: an empty-hand use on a side face (not sneaking) switches the display mode. */
+    public static boolean sideSwitches(net.minecraft.core.Direction face, boolean sneaking) {
+        return !sneaking && face.getAxis().isHorizontal();
     }
 
     @Override

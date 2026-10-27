@@ -200,7 +200,10 @@ public class mio_icif_gui_armor_features extends Screen {
         switch (tab) {
             case TAB_ENERGY -> renderEnergy(g, mouseX, mouseY);
             case TAB_ARMORY -> renderArmory(g, mouseX, mouseY);
-            case TAB_APPEARANCE -> renderAppearance(g, mouseX, mouseY);
+            case TAB_APPEARANCE -> {
+                renderAppearance(g, mouseX, mouseY);
+                renderPreview(g);                                   // 0.1.10.32 (G-1)
+            }
             default -> {
                 SiGuiTheme.well(g, left + LIST_X, top + LIST_Y, LIST_W, H - LIST_Y - 7);
                 SiGuiTheme.well(g, left + PX, top + LIST_Y, PW, H - LIST_Y - 7);
@@ -621,6 +624,7 @@ public class mio_icif_gui_armor_features extends Screen {
     // ------------------------------------------------------------------ input
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && preview.click(mouseX, mouseY, previewBox())) return true;
         if (button == 0) {
             for (int i = 0; i < TAB_COUNT; i++) {
                 if (in(mouseX, mouseY, tabX(i), top + 4, TAB_W, TAB_H)) {
@@ -667,6 +671,7 @@ public class mio_icif_gui_armor_features extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (preview.drag(dragX)) return true;
         if (paletteDrag >= 0) { paletteSlider(mouseX); return true; }
         if (draggingTune >= 0) {
             for (Row row : rows(current())) if (row.kind() == Kind.TUNE && row.index() == draggingTune) setTuneFromMouse(row, mouseX);
@@ -677,6 +682,7 @@ public class mio_icif_gui_armor_features extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        preview.release();
         draggingTune = -1;
         if (paletteDrag >= 0) { paletteDrag = -1; paletteSend(false); }
         return super.mouseReleased(mouseX, mouseY, button);
@@ -684,6 +690,7 @@ public class mio_icif_gui_armor_features extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (preview.scroll(mouseX, mouseY, scrollY, previewBox())) return true;
         if (tab == TAB_ARMORY) {
             armoryScroll = Math.max(0, armoryScroll - (int) Math.signum(scrollY));
             return true;
@@ -1251,9 +1258,23 @@ public class mio_icif_gui_armor_features extends Screen {
         g.renderOutline(x0 + 6, cy, 9, 9, DspUi.FRAME);
         if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.coreAttachments()) g.fill(x0 + 8, cy + 2, x0 + 13, cy + 7, DspUi.CYAN);
         DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.core_attachments").getString(), x0 + 19, cy + 2, DspUi.TEXT);
+        // 0.1.10.30: suit glow
+        int gy = glowToggleY();
+        g.renderOutline(x0 + 6, gy, 9, 9, DspUi.FRAME);
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.suitGlow()) g.fill(x0 + 8, gy + 2, x0 + 13, gy + 7, DspUi.CYAN);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.suit_glow").getString(), x0 + 19, gy + 2, DspUi.TEXT);
+        // 0.1.10.31: visor glass (off by default)
+        int vy = visorToggleY();
+        g.renderOutline(x0 + 6, vy, 9, 9, DspUi.FRAME);
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.visorGlass()) g.fill(x0 + 8, vy + 2, x0 + 13, vy + 7, DspUi.CYAN);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.visor_glass").getString(), x0 + 19, vy + 2, DspUi.TEXT);
     }
 
     private int coreToggleY() { return handY() + 12; }
+
+    private int glowToggleY() { return coreToggleY() + 12; }
+
+    private int visorToggleY() { return glowToggleY() + 12; }
 
     private int handY() { return top + AY + 30; }
 
@@ -1281,7 +1302,77 @@ public class mio_icif_gui_armor_features extends Screen {
             sound(true);
             return true;
         }
+        if (in(mouseX, mouseY, left + AX + 6, visorToggleY(), 200, 9)) {
+            com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.setVisorGlass(!com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.visorGlass());
+            sound(true);
+            return true;
+        }
+        if (in(mouseX, mouseY, left + AX + 6, glowToggleY(), 200, 9)) {
+            com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.setSuitGlow(
+                !com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.suitGlow());
+            sound(true);
+            return true;
+        }
         return false;
+    }
+
+    // ================================================================== APPEARANCE: 3D preview (0.1.10.32, G-1)
+    private final SuitPreview.View preview = new SuitPreview.View();
+    /** The colours the preview showed last (to start the scan line when they change), -1 = none yet. */
+    private final int[] previewShown = {-1, -1};
+    private final int[] previewOld = {-1, -1};
+
+    /** The preview panel beside the window on the Look page, or null (other pages, no room). */
+    private int[] previewBox() {
+        return tab == TAB_APPEARANCE ? SuitPreview.place(left, top, W, H, width) : null;
+    }
+
+    private void renderPreview(GuiGraphics g) {
+        int[] box = previewBox();
+        if (box == null || minecraft == null || minecraft.player == null) return;
+        SuitPreview.background(g, font, box, Component.translatable("gui.mio_icif.preview.title").getString(),
+            Component.translatable("gui.mio_icif.preview.hint").getString());
+        var player = minecraft.player;
+        boolean palettePage = appearancePage == 1;
+        if (palettePage) {
+            if (previewShown[0] >= 0 && (previewShown[0] != paletteWork[0] || previewShown[1] != paletteWork[1])) {
+                previewOld[0] = previewShown[0];
+                previewOld[1] = previewShown[1];
+                preview.scan();
+            }
+            previewShown[0] = paletteWork[0];
+            previewShown[1] = paletteWork[1];
+        }
+        try {
+            if (palettePage && preview.scanning() && previewOld[0] >= 0) {
+                float t = SuitPreview.scanY(preview);
+                previewPalette(previewOld[0], previewOld[1]);
+                SuitPreview.figure(g, box, player, preview, null);
+                int[] done = SuitPreview.scanned(box, t);
+                if (done[3] > 0) {
+                    g.enableScissor(done[0], done[1], done[0] + done[2], done[1] + done[3]);
+                    previewPalette(paletteWork[0], paletteWork[1]);
+                    SuitPreview.figure(g, box, player, preview, null);
+                    g.disableScissor();
+                }
+                SuitPreview.scanLine(g, box, t);
+            } else {
+                if (palettePage) previewPalette(paletteWork[0], paletteWork[1]);
+                SuitPreview.figure(g, box, player, preview, null);
+            }
+        } finally {
+            com.miophas.singularity_iteration.common.suit.SuitPalette.PREVIEW.clear();
+        }
+    }
+
+    /** Shows the working colours on the selected piece (or every piece with "apply to all") in the preview render only. */
+    private void previewPalette(int primary, int accent) {
+        com.miophas.singularity_iteration.common.suit.SuitPalette.PREVIEW.clear();
+        for (int i = 0; i < 4; i++) {
+            if (!paletteAll && i != palettePiece) continue;
+            ItemStack stack = paletteStack(i);
+            if (com.miophas.singularity_iteration.common.suit.SuitPalette.supports(stack)) com.miophas.singularity_iteration.common.suit.SuitPalette.PREVIEW.put(stack, new com.miophas.singularity_iteration.common.suit.SuitPalette(primary, accent));
+        }
     }
 
     // ================================================================== APPEARANCE: suit palette (0.1.8.0)

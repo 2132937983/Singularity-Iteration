@@ -46,6 +46,8 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
     @Override
     public void tick(ArmoryPieceEntity piece) {
         if (piece.item().isEmpty() && !piece.isReturn()) return;
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx()) PieceFx.record(piece);   // 0.1.10.31 ion trail
+        GateFx.tick(piece);                                         // 0.1.10.32 transfer gates of far summons
         float age = piece.age(0);
         if (piece.isReturn()) {
             if (age >= 0) tickReturn(piece, age);
@@ -137,7 +139,21 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
         if (latch >= ArmoryFlight.LATCH_TICKS - 1) once(piece, HISS, () -> {
             play(piece, mio_icif_sounds.ARMORY_HISS.get(), 0.7F, 1.0F);
             burst(piece, ParticleTypes.CLOUD, 3, 0.05);
+            // 0.1.10.32 (A-5): the last piece of the suit-up locked: the suit boots
+            if (piece.target() instanceof net.minecraft.world.entity.LivingEntity wearer && lastToLock(piece))
+                com.miophas.singularity_iteration.common.client.suit.SuitBoot.start(wearer);
         });
+    }
+
+    /** 0.1.10.32: true when no other delivery piece for the same wearer is still on its way (this one locks last). */
+    static boolean lastToLock(ArmoryPieceEntity piece) {
+        var target = piece.target();
+        if (target == null) return false;
+        for (ArmoryPieceEntity other : piece.level().getEntitiesOfClass(ArmoryPieceEntity.class, target.getBoundingBox().inflate(96))) {
+            if (other == piece || other.isReturn() || other.isRemoved() || other.item().isEmpty() || other.target() != target) continue;
+            if (other.latchAge(0) < ArmoryFlight.LATCH_TICKS - 1) return false;
+        }
+        return true;
     }
 
     // ------------------------------------------------------------------ return

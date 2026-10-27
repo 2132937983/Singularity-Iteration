@@ -30,11 +30,14 @@ This block uses no EU.
 3. Right-click the showcase with an empty hand to turn the mannequin.
 4. Right-click the showcase with a paired Armory Remote to mirror a suit of the Armory.
 5. Apply a redstone signal to the showcase to spin the turntable.
+6. Right-click a side of the base plate with an empty hand to switch between the hologram and the physical display (the top of the plate still turns the mannequin).
 
 ## Notes
 
 - A showcase that mirrors an Armory suit holds no items. Sneak and use the remote on the showcase to unlink the showcase.
 - The console exchange works only with showcases near you or near the Armory.
+- The outfit is shown as a hologram: see-through cyan light with a hologram grid, a scan band rising through it and short glitches now and then. When the outfit changes, the new one builds up from the feet along a scan line.
+- Physical display: the real gear stands on the graphite mannequin in the light of the world, held by a mechanical cradle (a mast behind the figure, clamp arms to the shoulders and the hips) that unfolds when you switch; a nano or quantum suit keeps its breathing glow. Each projector keeps its own mode.
 
 ## Recipe
 

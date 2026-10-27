@@ -87,6 +87,9 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue ORDER_MARKERS;
     public static final ModConfigSpec.IntValue HOLO_TABLE_CELLS;
     public static final ModConfigSpec.BooleanValue THRUSTER_FX;
+    /** 0.1.10.30: the light of the worn nano and quantum suits (glow layer) and its strength. */
+    public static final ModConfigSpec.BooleanValue SUIT_GLOW;
+    public static final ModConfigSpec.DoubleValue SUIT_GLOW_STRENGTH;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -134,11 +137,17 @@ public final class FcsClientConfig {
         SCAN_FX = b.comment("Active scan: a scan sphere expands from you every 3 s while an entity sensor unit runs.").define("scan_fx", true);
         WINGMAN_FX = b.comment("Wingman effects: lock-on scan laser and hologram marker, muzzle flashes, thruster boosts, attitude jets, slash arcs.")
             .define("wingman_fx", true);
+        SUIT_GLOW = b.comment("Nano and quantum suits glow: their lights and circuit lines shine in the light colour (palette accent),",
+                "amber and red as the charge falls, with breathing, an energy band and a power-on sweep. Players, Wingmen, armour stands.")
+            .define("suit_glow", true);
+        SUIT_GLOW_STRENGTH = b.comment("Strength of the suit glow. 1.0 = default.")
+            .defineInRange("suit_glow_strength", 1.0, 0.25, 1.5);
         b.pop();
         b.push("nano_suit");
         NANO_HUD = b.comment("Nano core HUD around the crosshair (reserve ring, heat meter, burst keys).").define("nano_hud", true);
         NANO_REFRACTION = b.comment("Refraction shader of the optical camouflage and the dash and EMP shock waves.",
-                "Turn it off if a shader pack shows black or white shapes; a hologram grid is drawn instead.")
+                "Turned off by itself while an Iris shader pack is on; turn it off if another shader mod shows black or white",
+                "shapes. A hologram grid is drawn instead.")
             .define("nano_refraction", true);
         NANO_FX_INTENSITY = b.comment("Strength of the nano burst effects (afterimages, EMP rings, discharge arcs). 1.0 = default.")
             .defineInRange("nano_fx_intensity", 1.0, 0.25, 1.5);
@@ -218,6 +227,13 @@ public final class FcsClientConfig {
     /** Odd number of holo table cells per side (25..65). */
     public static int holoTableCells() { return loaded() ? HOLO_TABLE_CELLS.get() | 1 : 49; }
     public static boolean thrusterFx() { return !loaded() || THRUSTER_FX.get(); }
+    public static boolean suitGlow() { return !loaded() || SUIT_GLOW.get(); }
+    public static float suitGlowStrength() { return loaded() ? SUIT_GLOW_STRENGTH.get().floatValue() : 1.0F; }
+    public static void setSuitGlow(boolean on) {
+        if (!loaded()) return;
+        SUIT_GLOW.set(on);
+        SPEC.save();
+    }
 
     public static void save() {
         if (loaded()) SPEC.save();

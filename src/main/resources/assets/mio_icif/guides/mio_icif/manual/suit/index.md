@@ -16,6 +16,8 @@ Two quantum units can be entangled for a synergy; the suit computer has a comput
 With an Entanglement Relay the suit commands its Wingmen: command wheel, orders, holo table (see Quantum command).
 A HUD unit shows its data only when you wear a quantum helmet. The helmet is the visor.
 Each installed unit adds a switch to the equipment console. A unit uses power only while its switch is on.
+The nano and quantum suits glow: their lights and circuit lines shine in the light colour, amber below half charge and red below a quarter, with a slow breath, an energy band that runs down the body and a heartbeat when the charge is low. An empty piece is dark. When a charged piece comes on (put on, the Armory suit-up, charged from empty) the light spreads from the chest core. Shader packs treat the light as emissive. Client options suit_glow and suit_glow_strength, or the Look page of the equipment console.
+Since 0.1.10.30 the quantum suit takes a palette like the nano suit (equipment console, Look page, Palette): the plate colour and the light colour of each piece. The light colour also colours the glowing parts of a frame core exterior.
 
 | Unit | Fits | Power |
 |---|---|---|

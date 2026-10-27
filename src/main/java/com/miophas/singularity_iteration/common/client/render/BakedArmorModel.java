@@ -122,18 +122,28 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
     public static void drawFiltered(PoseStack pose, VertexConsumer vc, ModelPart part, float[][] quads,
                                     java.util.function.Predicate<float[]> filter, int light, int overlay, int color) {
         if (quads == null || quads.length == 0) return;
-        java.util.List<float[]> kept = new java.util.ArrayList<>(quads.length);
-        float[] centre = new float[3];
-        for (float[] q : quads) {
-            centre[0] = (q[0] + q[5] + q[10] + q[15]) / 4F;
-            centre[1] = (q[1] + q[6] + q[11] + q[16]) / 4F;
-            centre[2] = (q[2] + q[7] + q[12] + q[17]) / 4F;
-            if (filter.test(centre)) kept.add(q);
-        }
+        float[][] kept = filtered(quads, filter);
         boolean visible = part.visible;
         part.visible = true;
-        draw(pose, vc, part, kept.toArray(new float[0][]), light, overlay, color);
+        draw(pose, vc, part, kept, light, overlay, color);
         part.visible = visible;
+    }
+
+    /** 0.1.10.30: the quads of {@code filter} per geometry array (a weak key: a reload drops them with the old geometry). */
+    private static final java.util.Map<float[][], java.util.Map<java.util.function.Predicate<float[]>, float[][]>> FILTERED = new java.util.WeakHashMap<>();
+
+    static synchronized float[][] filtered(float[][] quads, java.util.function.Predicate<float[]> filter) {
+        return FILTERED.computeIfAbsent(quads, q -> new java.util.IdentityHashMap<>()).computeIfAbsent(filter, f -> {
+            java.util.List<float[]> kept = new java.util.ArrayList<>(quads.length);
+            float[] centre = new float[3];
+            for (float[] q : quads) {
+                centre[0] = (q[0] + q[5] + q[10] + q[15]) / 4F;
+                centre[1] = (q[1] + q[6] + q[11] + q[16]) / 4F;
+                centre[2] = (q[2] + q[7] + q[12] + q[17]) / 4F;
+                if (f.test(centre)) kept.add(q);
+            }
+            return kept.toArray(new float[0][]);
+        });
     }
 
     /**

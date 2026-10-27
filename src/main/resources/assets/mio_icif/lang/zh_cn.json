@@ -2386,7 +2386,7 @@
   "gui.mio_icif.equipment_console.appearance.hands.first_person": "第一人称",
   "gui.mio_icif.equipment_console.appearance.hands.third_person": "第三人称",
   "gui.mio_icif.palette.title": "装甲配色",
-  "gui.mio_icif.palette.hint": "为纳米套装的每个部位设置装甲板颜色与灯光颜色。",
+  "gui.mio_icif.palette.hint": "设置每个纳米或量子套装部件的装甲色和发光色。",
   "gui.mio_icif.palette.piece.head": "头盔",
   "gui.mio_icif.palette.piece.chest": "胸甲",
   "gui.mio_icif.palette.piece.legs": "护腿",
@@ -4272,5 +4272,10 @@
   "gui.mio_icif.exchange.ticket_estimate": "市场即时：%2$s 中 %1$s 件，%3$s 货币（均价 %4$s）",
   "gui.mio_icif.exchange.ticket_estimate_help": "市场收购的每件价格不低于 %1$s 货币（最后一件 %2$s，下一件 %3$s），整批一次支付。不含玩家的挂单买价。",
   "gui.mio_icif.terminal.min_price_percent": "最低 %%",
-  "gui.mio_icif.terminal.order_estimate": "现在：限价 %s，可卖 %s 件，得 %s 货币"
+  "gui.mio_icif.terminal.order_estimate": "现在：限价 %s，可卖 %s 件，得 %s 货币",
+  "mio_icif.configuration.suit_glow": "套装发光",
+  "mio_icif.configuration.suit_glow.tooltip": "纳米套装和量子套装以发光色发光：电量下降时变为琥珀色和红色，带有呼吸、能量带和启动时的扫过效果。",
+  "mio_icif.configuration.suit_glow_strength": "套装发光强度",
+  "mio_icif.configuration.suit_glow_strength.tooltip": "套装发光的强度。1.0 = 默认。",
+  "gui.mio_icif.equipment_console.appearance.suit_glow": "套装发光（灯光与电路线）"
 }

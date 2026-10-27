@@ -193,6 +193,16 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
      * front of the body is at negative z.
      */
     private static BakedSegment[] bakedSegments(EquipmentSlot slot) {
+        return SEGMENTS.get(slot);
+    }
+
+    /** 0.1.10.30: the segments of each slot, built once (the filters are the keys of the quad cache of BakedArmorModel). */
+    private static final java.util.Map<EquipmentSlot, BakedSegment[]> SEGMENTS = new java.util.EnumMap<>(EquipmentSlot.class);
+    static {
+        for (EquipmentSlot slot : EquipmentSlot.values()) SEGMENTS.put(slot, buildSegments(slot));
+    }
+
+    private static BakedSegment[] buildSegments(EquipmentSlot slot) {
         return switch (slot) {
             case CHEST -> new BakedSegment[]{
                 new BakedSegment("back", new String[]{"body"}, c -> c[2] >= 1.0F),

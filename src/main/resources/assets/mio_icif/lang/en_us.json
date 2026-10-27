@@ -2359,7 +2359,7 @@
   "gui.mio_icif.equipment_console.appearance.hands.first_person": "First person",
   "gui.mio_icif.equipment_console.appearance.hands.third_person": "Third person",
   "gui.mio_icif.palette.title": "Suit palette",
-  "gui.mio_icif.palette.hint": "Set the plate colour and the light colour of each nano suit piece.",
+  "gui.mio_icif.palette.hint": "Set the plate colour and the light colour of each nano or quantum suit piece.",
   "gui.mio_icif.palette.piece.head": "Helmet",
   "gui.mio_icif.palette.piece.chest": "Chestplate",
   "gui.mio_icif.palette.piece.legs": "Leggings",
@@ -4272,5 +4272,10 @@
   "gui.mio_icif.exchange.ticket_estimate": "Market now: %1$s of %2$s for %3$s coins (avg. %4$s)",
   "gui.mio_icif.exchange.ticket_estimate_help": "Every item the market takes is paid at least %1$s coins (last item %2$s, next %3$s), one payout for the batch. Resting bids of players are not counted.",
   "gui.mio_icif.terminal.min_price_percent": "Min. %%",
-  "gui.mio_icif.terminal.order_estimate": "now: limit %s, sells %s for %s coins"
+  "gui.mio_icif.terminal.order_estimate": "now: limit %s, sells %s for %s coins",
+  "mio_icif.configuration.suit_glow": "Suit glow",
+  "mio_icif.configuration.suit_glow.tooltip": "Nano and quantum suits glow in their light colour: amber and red as the charge falls, breathing, an energy band and a power-on sweep.",
+  "mio_icif.configuration.suit_glow_strength": "Suit glow strength",
+  "mio_icif.configuration.suit_glow_strength.tooltip": "Strength of the suit glow. 1.0 = default.",
+  "gui.mio_icif.equipment_console.appearance.suit_glow": "Suit glow (lights and circuit lines)"
 }

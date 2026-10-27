@@ -49,10 +49,15 @@ public record SuitPalette(int primary, int accent) {
         new Preset("violet", 0x6C3FB0, 0xFF5AE8),
         new Preset("graphite", 0x5B6168, 0xFF3B30));
 
-    /** Items that accept a palette. The nano suit first. */
+    /**
+     * Items that accept a palette: the nano suit (0.1.8.0) and the quantum suit (0.1.10.30; the advanced and heavy quantum
+     * chestplates are quantum chestplates with a frame core since 0.1.9.0, so they are included).
+     */
     private static final List<ResourceLocation> SUPPORTED = List.of(
         id("armor/item_armor_nano_helmet"), id("armor/item_armor_nano_chestplate"),
-        id("armor/item_armor_nano_leggings"), id("armor/item_armor_nano_boots"));
+        id("armor/item_armor_nano_leggings"), id("armor/item_armor_nano_boots"),
+        id("armor/item_armor_quantum_helmet"), id("armor/item_armor_quantum_chestplate"),
+        id("armor/item_armor_quantum_leggings"), id("armor/item_armor_quantum_boots"));
 
     private static ResourceLocation id(String path) { return ResourceLocation.fromNamespaceAndPath("mio_icif", path); }
 

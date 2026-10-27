@@ -42,6 +42,9 @@ import org.joml.Matrix4f;
  *       meridians in the HUD colour. Where the front passes a creature, corner brackets flash
  *       around it.</li>
  * </ul>
+ * <p>0.1.10.30 (S-7): the barrier and the cells shine brighter where the view grazes the hull (Fresnel rim), dimmer where it
+ * looks straight through; the cells at the impact flash full for the first moment of the hit.
+ *
  * Client options {@code suit_visuals.photon_fx} and {@code suit_visuals.scan_fx}.
  */
 public final class QuantumFx {
@@ -144,21 +147,21 @@ public final class QuantumFx {
         float front = age * 2.6F;                                  // wave front, in radians from the impact
         float fade = (1 - age) * (0.5F + 0.5F * hit.strength()) * flash;
         // 0.1.10.1: hex cell shield in the colour of the suit charge (cyan, amber below 50 %, red below 25 %)
-        hexCells(vc, m, c, rx, ry, impact, front, fade, hit, cam);
+        hexCells(vc, m, c, rx, ry, impact, front, fade, age, hit, cam);
         // the prism fringe of the photon barrier stays as a faint outer shell on the wave front
         float[][] fringe = {{0.72F, 0.48F, 1.0F, 1.06F}, {1.0F, 0.84F, 0.4F, 0.95F}};
         for (float[] f : fringe) {
             float scale = f[3];
-            for (int[] edge : EDGES) {
+            for (int ei = 0; ei < EDGES.size(); ei++) {
+                int[] edge = EDGES.get(ei);
                 Vec3 a = VERTS.get(edge[0]), b = VERTS.get(edge[1]);
-                Vec3 mid = a.add(b).normalize();
-                float angle = (float) Math.acos(Mth.clamp(mid.dot(impact), -1, 1));
+                double[] mid = EDGE_MIDS[ei];
+                float angle = (float) Math.acos(Mth.clamp(mid[0] * impact.x + mid[1] * impact.y + mid[2] * impact.z, -1, 1));
                 float wave = Mth.clamp(1 - Math.abs(angle - front) * 2.2F, 0, 1);
-                float alpha = wave * fade * 0.4F;
+                float alpha = wave * fade * 0.4F * rim(c, mid[0], mid[1], mid[2], rx, ry, cam);
                 if (alpha < 0.02F) continue;
-                Vec3 pa = c.add(a.x * rx * scale, a.y * ry * scale, a.z * rx * scale);
-                Vec3 pb = c.add(b.x * rx * scale, b.y * ry * scale, b.z * rx * scale);
-                FxDraw.line(vc, m, pa, pb, cam, 0.018F, f[0], f[1], f[2], alpha);
+                FxDraw.line(vc, m, c.x + a.x * rx * scale, c.y + a.y * ry * scale, c.z + a.z * rx * scale,
+                    c.x + b.x * rx * scale, c.y + b.y * ry * scale, c.z + b.z * rx * scale, cam, 0.018F, f[0], f[1], f[2], alpha);
             }
         }
         // lens star at the impact point and the inner glow of the struck facet
@@ -173,7 +176,51 @@ public final class QuantumFx {
 
     /** 0.1.10.1: cell centres of the hex shield (a frequency-4 geodesic sphere, 162 cells: 150 hexagons and 12 pentagon spots). */
     private static final List<Vec3> CELLS = new ArrayList<>();
-    static { buildCells(); }
+    /** 0.1.10.30: per cell the six corner directions (unit sphere, x y z each), the first tangent and the hash. */
+    private static double[][] CORNERS, TANGENTS;
+    private static int[] HASHES;
+    /** 0.1.10.30: per geodesic edge its unit midpoint direction. */
+    private static double[][] EDGE_MIDS;
+    static {
+        buildCells();
+        double cell = 0.135;                                           // cell radius on the unit sphere
+        CORNERS = new double[CELLS.size()][18];
+        TANGENTS = new double[CELLS.size()][];
+        HASHES = new int[CELLS.size()];
+        for (int i = 0; i < CELLS.size(); i++) {
+            Vec3 v = CELLS.get(i);
+            int h = (i * 0x9E3779B1) >>> 8;
+            HASHES[i] = h;
+            Vec3 t1 = FxDraw.perp(v), t2 = v.cross(t1).normalize();
+            TANGENTS[i] = new double[]{t1.x, t1.y, t1.z};
+            for (int k = 0; k < 6; k++) {
+                double ang = k * Math.PI / 3 + (h % 7) * 0.05;
+                Vec3 d = v.add(t1.scale(Math.cos(ang) * cell)).add(t2.scale(Math.sin(ang) * cell)).normalize();
+                CORNERS[i][k * 3] = d.x;
+                CORNERS[i][k * 3 + 1] = d.y;
+                CORNERS[i][k * 3 + 2] = d.z;
+            }
+        }
+        EDGE_MIDS = new double[EDGES.size()][];
+        for (int e = 0; e < EDGES.size(); e++) {
+            Vec3 mid = VERTS.get(EDGES.get(e)[0]).add(VERTS.get(EDGES.get(e)[1])).normalize();
+            EDGE_MIDS[e] = new double[]{mid.x, mid.y, mid.z};
+        }
+    }
+
+    /**
+     * 0.1.10.30 (S-7): Fresnel term of the hull at the unit direction {@code (dx, dy, dz)}: 0.55 where the view looks straight
+     * through the hull, up to 1.3 where it grazes it (the rim of the bubble).
+     */
+    static float rim(Vec3 c, double dx, double dy, double dz, double rx, double ry, Vec3 cam) {
+        double px = c.x + dx * rx - cam.x, py = c.y + dy * ry - cam.y, pz = c.z + dz * rx - cam.z;
+        double nx = dx / rx, ny = dy / ry, nz = dz / rx;
+        double pl = Math.sqrt(px * px + py * py + pz * pz), nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
+        if (pl < 1.0E-6 || nl < 1.0E-9) return 1F;
+        double cos = Math.abs((px * nx + py * ny + pz * nz) / (pl * nl));
+        double graze = 1 - cos;
+        return (float) (0.55 + 0.75 * graze * graze);
+    }
 
     /**
      * Hex cell shield (0.1.10.1). Each cell is a hexagon tangent to the shell around its centre.
@@ -182,51 +229,66 @@ public final class QuantumFx {
      * 50 %, red below 25 %. Below 50 % more and more cells are cracked: two edges missing, a
      * jagged crack across, a flicker.
      */
-    private static void hexCells(VertexConsumer vc, Matrix4f m, Vec3 c, double rx, double ry, Vec3 impact, float front, float fade,
-                                 SuitSensorData.Hit hit, Vec3 cam) {
+    static void hexCells(VertexConsumer vc, Matrix4f m, Vec3 c, double rx, double ry, Vec3 impact, float front, float fade, float age,
+                         SuitSensorData.Hit hit, Vec3 cam) {
         float charge = Mth.clamp(hit.charge(), 0, 1);
         float[] col = charge >= 0.5F ? new float[]{0.36F, 0.86F, 1.0F} : charge >= 0.25F ? new float[]{1.0F, 0.66F, 0.22F} : new float[]{1.0F, 0.26F, 0.2F};
         float crackShare = charge < 0.5F ? (0.5F - charge) * 1.6F : 0F;
         long time = System.currentTimeMillis();
-        double cell = 0.135;                                           // cell radius on the unit sphere
+        double[] corner = new double[18];
         for (int i = 0; i < CELLS.size(); i++) {
             Vec3 v = CELLS.get(i);
-            float angle = (float) Math.acos(Mth.clamp(v.dot(impact), -1, 1));
+            float angle = (float) Math.acos(Mth.clamp(v.x * impact.x + v.y * impact.y + v.z * impact.z, -1, 1));
             float wave = Mth.clamp(1 - Math.abs(angle - front) * 2.6F, 0, 1);
             float base = 0.10F + 0.22F * Mth.clamp(1 - angle / 1.1F, 0, 1);
-            float alpha = (base + wave) * fade;
+            // 0.1.10.30: Fresnel rim, and the struck cells flash full for the first moment of the hit
+            float rim = rim(c, v.x, v.y, v.z, rx, ry, cam);
+            float flash = age < 0.18F && angle < 0.34F ? (1 - age / 0.18F) * (1 - angle / 0.34F) : 0F;
+            float alpha = (base + wave) * fade * rim + 0.6F * flash * fade;
             if (alpha < 0.02F) continue;
-            int h = (i * 0x9E3779B1) >>> 8;
+            int h = HASHES[i];
             boolean cracked = crackShare > 0 && (h % 1000) / 1000F < crackShare;
             if (cracked && ((time / 70 + i) % 5 == 0)) continue;           // a cracked cell flickers out now and then
-            Vec3 t1 = FxDraw.perp(v), t2 = v.cross(t1).normalize();
-            Vec3[] corner = new Vec3[6];
+            double[] d = CORNERS[i];
             for (int k = 0; k < 6; k++) {
-                double ang = k * Math.PI / 3 + (h % 7) * 0.05;
-                Vec3 d = v.add(t1.scale(Math.cos(ang) * cell)).add(t2.scale(Math.sin(ang) * cell)).normalize();
-                corner[k] = c.add(d.x * rx, d.y * ry, d.z * rx);
+                corner[k * 3] = c.x + d[k * 3] * rx;
+                corner[k * 3 + 1] = c.y + d[k * 3 + 1] * ry;
+                corner[k * 3 + 2] = c.z + d[k * 3 + 2] * rx;
             }
-            Vec3 centre = c.add(v.x * rx, v.y * ry, v.z * rx);
+            double ox = c.x + v.x * rx, oy = c.y + v.y * ry, oz = c.z + v.z * rx;
             int skipA = cracked ? h % 6 : -1, skipB = cracked ? (h / 6 + 2) % 6 : -1;
             for (int k = 0; k < 6; k++) {
                 if (k == skipA || k == skipB) continue;
-                FxDraw.line(vc, m, corner[k], corner[(k + 1) % 6], cam, 0.02F, col[0], col[1], col[2], alpha);
+                int n = (k + 1) % 6;
+                FxDraw.line(vc, m, corner[k * 3], corner[k * 3 + 1], corner[k * 3 + 2], corner[n * 3], corner[n * 3 + 1], corner[n * 3 + 2],
+                    cam, 0.02F, col[0], col[1], col[2], alpha);
             }
-            if (wave > 0.05F) {                                          // the front fills the cell softly
+            float fill = Math.max(wave > 0.05F ? wave : 0F, flash);
+            if (fill > 0.05F) {                                          // the front fills the cell softly (and the flash fully)
+                float centreA = (0.28F * (wave > 0.05F ? wave : 0F) + 0.5F * flash) * fade, edgeA = (0.06F * (wave > 0.05F ? wave : 0F) + 0.2F * flash) * fade;
                 for (int k = 0; k < 6; k++) {
-                    FxDraw.vertex(vc, m, centre, col[0], col[1], col[2], 0.28F * wave * fade);
-                    FxDraw.vertex(vc, m, corner[k], col[0], col[1], col[2], 0.06F * wave * fade);
-                    FxDraw.vertex(vc, m, corner[(k + 1) % 6], col[0], col[1], col[2], 0.06F * wave * fade);
-                    FxDraw.vertex(vc, m, centre, col[0], col[1], col[2], 0.28F * wave * fade);
+                    int n = (k + 1) % 6;
+                    put(vc, m, ox, oy, oz, col, centreA);
+                    put(vc, m, corner[k * 3], corner[k * 3 + 1], corner[k * 3 + 2], col, edgeA);
+                    put(vc, m, corner[n * 3], corner[n * 3 + 1], corner[n * 3 + 2], col, edgeA);
+                    put(vc, m, ox, oy, oz, col, centreA);
                 }
             }
             if (cracked) {                                               // a jagged crack across the cell
-                Vec3 a = corner[skipA], b = corner[(skipA + 3) % 6];
-                Vec3 mid = a.add(b).scale(0.5).add(centre.subtract(c).normalize().scale(0.02)).add(t1.scale(0.03));
-                FxDraw.line(vc, m, a, mid, cam, 0.016F, 1F, 1F, 1F, alpha * 0.8F);
-                FxDraw.line(vc, m, mid, b, cam, 0.016F, 1F, 1F, 1F, alpha * 0.8F);
+                int a = skipA, b = (skipA + 3) % 6;
+                double[] t1 = TANGENTS[i];
+                double vl = Math.sqrt(v.x * rx * v.x * rx + v.y * ry * v.y * ry + v.z * rx * v.z * rx);
+                double mx = (corner[a * 3] + corner[b * 3]) * 0.5 + v.x * rx / vl * 0.02 + t1[0] * 0.03;
+                double my = (corner[a * 3 + 1] + corner[b * 3 + 1]) * 0.5 + v.y * ry / vl * 0.02 + t1[1] * 0.03;
+                double mz = (corner[a * 3 + 2] + corner[b * 3 + 2]) * 0.5 + v.z * rx / vl * 0.02 + t1[2] * 0.03;
+                FxDraw.line(vc, m, corner[a * 3], corner[a * 3 + 1], corner[a * 3 + 2], mx, my, mz, cam, 0.016F, 1F, 1F, 1F, alpha * 0.8F);
+                FxDraw.line(vc, m, mx, my, mz, corner[b * 3], corner[b * 3 + 1], corner[b * 3 + 2], cam, 0.016F, 1F, 1F, 1F, alpha * 0.8F);
             }
         }
+    }
+
+    private static void put(VertexConsumer vc, Matrix4f m, double x, double y, double z, float[] col, float a) {
+        vc.addVertex(m, (float) x, (float) y, (float) z).setColor(col[0], col[1], col[2], Mth.clamp(a, 0, 1));
     }
 
     private static void buildCells() {

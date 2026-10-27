@@ -30,7 +30,9 @@ public class MioIcifArmorMaterials {
         25,
         SoundEvents.ARMOR_EQUIP_NETHERITE,
         () -> Ingredient.of(net.minecraft.world.item.Items.NETHERITE_INGOT),
-        List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath("mio_icif", "quantum"))),
+        // 0.1.10.30: layer 1 = the light strips of the palette (accent), skipped without a palette
+        List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath("mio_icif", "quantum")),
+            new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath("mio_icif", "quantum_accent"))),
         3.0F,
         0.1F
     );

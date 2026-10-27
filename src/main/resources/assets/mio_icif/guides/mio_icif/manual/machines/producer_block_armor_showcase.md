@@ -35,6 +35,7 @@ This block uses no EU.
 
 - A showcase that mirrors an Armory suit holds no items. Sneak and use the remote on the showcase to unlink the showcase.
 - The console exchange works only with showcases near you or near the Armory.
+- The outfit is shown as a hologram: see-through cyan light with a hologram grid, a scan band rising through it and short glitches now and then. When the outfit changes, the new one builds up from the feet along a scan line.
 
 ## Recipe
 

@@ -429,7 +429,7 @@
   "gui.mio_icif.equipment_console.appearance.hands.first_person": "一人称",
   "gui.mio_icif.equipment_console.appearance.hands.third_person": "三人称",
   "gui.mio_icif.palette.title": "スーツ配色",
-  "gui.mio_icif.palette.hint": "ナノスーツの部位ごとに装甲板と発光部の色を設定します。",
+  "gui.mio_icif.palette.hint": "ナノスーツと量子スーツの部位ごとに装甲色と発光色を設定する。",
   "gui.mio_icif.palette.piece.head": "ヘルメット",
   "gui.mio_icif.palette.piece.chest": "チェストプレート",
   "gui.mio_icif.palette.piece.legs": "レギンス",
@@ -4272,5 +4272,10 @@
   "gui.mio_icif.exchange.ticket_estimate": "市場に即時：%2$s 個中 %1$s 個、%3$s 硬貨（平均 %4$s）",
   "gui.mio_icif.exchange.ticket_estimate_help": "市場が引き取る 1 個ごとの価格は %1$s 硬貨以上（最後の 1 個 %2$s、次の 1 個 %3$s）で、まとめて一度に支払われます。プレイヤーの買い注文は含みません。",
   "gui.mio_icif.terminal.min_price_percent": "最低 %%",
-  "gui.mio_icif.terminal.order_estimate": "現在：指値 %s、%s 個を %s 硬貨で売却"
+  "gui.mio_icif.terminal.order_estimate": "現在：指値 %s、%s 個を %s 硬貨で売却",
+  "mio_icif.configuration.suit_glow": "スーツの発光",
+  "mio_icif.configuration.suit_glow.tooltip": "ナノスーツと量子スーツが発光色で光る。充電が減ると琥珀色・赤に変わり、呼吸、エネルギーの帯、起動時のスイープがある。",
+  "mio_icif.configuration.suit_glow_strength": "スーツの発光の強さ",
+  "mio_icif.configuration.suit_glow_strength.tooltip": "スーツの発光の強さ。1.0 = 既定。",
+  "gui.mio_icif.equipment_console.appearance.suit_glow": "スーツの発光（ライトと回路ライン）"
 }

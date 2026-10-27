@@ -46,6 +46,7 @@ public final class ArmoryClientEffects implements ArmoryPieceEntity.Effects {
     @Override
     public void tick(ArmoryPieceEntity piece) {
         if (piece.item().isEmpty() && !piece.isReturn()) return;
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx()) PieceFx.record(piece);   // 0.1.10.31 ion trail
         float age = piece.age(0);
         if (piece.isReturn()) {
             if (age >= 0) tickReturn(piece, age);

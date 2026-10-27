@@ -40,6 +40,10 @@ import java.util.WeakHashMap;
  * emitter, scan rings that rise through the figure, a flicker, and a soft ground glow. Every armour, dyed layer, custom
  * armour model from other mods, trim and held item still renders through the vanilla armour stand renderer.
  *
+ * <p>0.1.10.31 (A-3): a projector can show the outfit physically instead: the real gear (world light) on the visible graphite
+ * mannequin, held by a mechanical cradle ({@link ShowcaseCradle}) that unfolds when the mode is switched; the suit glow of a
+ * nano or quantum suit breathes on it. Only the emitter ring of the projector effects stays.
+ *
  * <p>Facing follows the block and the 45 degree turntable steps; while powered by redstone the
  * hologram turns slowly. The label (name tag, linked suit name or "EXT-n" of a docked projector)
  * floats above the figure.
@@ -51,6 +55,8 @@ public class ArmorShowcaseRenderer implements BlockEntityRenderer<ArmorShowcaseB
     private final Map<ArmorShowcaseBlockEntity, ArmorStand> stands = new WeakHashMap<>();
     /** 0.1.10.30: per projector {outfit hash, game time when it changed} (the build-up). */
     private final Map<ArmorShowcaseBlockEntity, long[]> builds = new WeakHashMap<>();
+    /** 0.1.10.31: per projector {shown mode (1 physical), game time of the switch} (the cradle unfolds). */
+    private final Map<ArmorShowcaseBlockEntity, long[]> modes = new WeakHashMap<>();
     /** Build-up time, ticks. */
     static final float BUILD_TICKS = 24F;
     private MannequinRenderer renderer;
@@ -103,7 +109,26 @@ public class ArmorShowcaseRenderer implements BlockEntityRenderer<ArmorShowcaseB
         }
         float buildAge = build[1] == Long.MIN_VALUE ? BUILD_TICKS : showcase.getLevel().getGameTime() - build[1] + partialTick;
         float buildY = buildAge < BUILD_TICKS ? -0.05F + 2.15F * (buildAge / BUILD_TICKS) : -1F;
-        if (any) {
+        // 0.1.10.31: the fake stand ticks with the world (the suit glow breathes, its band runs)
+        stand.tickCount = (int) (showcase.getLevel().getGameTime() & 0x3FFFFFFF);
+        boolean physical = showcase.physical();
+        long[] mode = modes.computeIfAbsent(showcase, s -> new long[]{physical ? 1 : 0, Long.MIN_VALUE});
+        if (mode[0] != (physical ? 1 : 0)) {
+            mode[0] = physical ? 1 : 0;
+            mode[1] = showcase.getLevel().getGameTime();
+        }
+        if (physical) {
+            // 0.1.10.31 (A-3): the real gear on the visible mannequin and its cradle, in the light of the world
+            int lit = LevelRenderer.getLightColor(showcase.getLevel(), showcase.getBlockPos().above());
+            float unfold = mode[1] == Long.MIN_VALUE ? ShowcaseCradle.UNFOLD_TICKS : showcase.getLevel().getGameTime() - mode[1] + partialTick;
+            stand.setInvisible(false);
+            pose.pushPose();
+            pose.translate(0.5, 0.28, 0.5);
+            renderer().render(stand, yaw, partialTick, pose, buffers, lit);
+            ShowcaseCradle.draw(pose, buffers, yaw, lit, unfold, time);
+            pose.popPose();
+        } else if (any) {
+            stand.setInvisible(true);
             pose.pushPose();
             pose.translate(0.5, 0.28, 0.5);
             Holo holo = new Holo(new org.joml.Matrix4f(pose.last().pose()).invert(), flicker, time, buildY, slices(seed, time));
@@ -111,8 +136,8 @@ public class ArmorShowcaseRenderer implements BlockEntityRenderer<ArmorShowcaseB
             renderer().render(stand, yaw, partialTick, pose, new HoloSource(buffers, holo, true), LightTexture.FULL_BRIGHT);
             pose.popPose();
         }
-        effects(pose, buffers, time, flicker, any, showcase.docked());
-        if (any && buildY >= 0) {
+        effects(pose, buffers, time, flicker, any && !physical, showcase.docked());
+        if (any && !physical && buildY >= 0) {
             // the build-up scan line
             VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
             ring(vc, pose.last().pose(), 0.5F, 0.28F + buildY, 0.5F, 0.0F, 0.46F, 0.6F, 0.95F, 1F, 0.9F * flicker);

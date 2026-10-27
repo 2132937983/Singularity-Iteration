@@ -4277,5 +4277,12 @@
   "mio_icif.configuration.suit_glow.tooltip": "ナノスーツと量子スーツが発光色で光る。充電が減ると琥珀色・赤に変わり、呼吸、エネルギーの帯、起動時のスイープがある。",
   "mio_icif.configuration.suit_glow_strength": "スーツの発光の強さ",
   "mio_icif.configuration.suit_glow_strength.tooltip": "スーツの発光の強さ。1.0 = 既定。",
-  "gui.mio_icif.equipment_console.appearance.suit_glow": "スーツの発光（ライトと回路ライン）"
+  "gui.mio_icif.equipment_console.appearance.suit_glow": "スーツの発光（ライトと回路ライン）",
+  "mio_icif.configuration.motion_fx": "スーツの動作エフェクト",
+  "mio_icif.configuration.motion_fx.tooltip": "通常モードの量子スーツ：ジェットパック飛行の背中と足裏の噴射、ブーストジャンプの踏み切りリング、強い着地の衝撃リング、疾走時の気流の筋。武装庫のパーツのイオン軌跡・突入発光・継ぎ目の光も含む。",
+  "mio_icif.configuration.visor_glass": "バイザーガラス",
+  "mio_icif.configuration.visor_glass.tooltip": "既定はオフ。ナノか量子のヘルメットを着けた一人称で：かすかな縁、色のにじみ、振り向くと流れる映り込み、雨粒、ヘルメットがほぼ空のときのヒビ。",
+  "gui.mio_icif.equipment_console.appearance.visor_glass": "バイザーガラス（一人称）",
+  "message.mio_icif.projector.mode_physical": "実体展示：本物の装備を台座のアームに固定",
+  "message.mio_icif.projector.mode_hologram": "ホログラム展示"
 }

@@ -4277,5 +4277,12 @@
   "mio_icif.configuration.suit_glow.tooltip": "Nano and quantum suits glow in their light colour: amber and red as the charge falls, breathing, an energy band and a power-on sweep.",
   "mio_icif.configuration.suit_glow_strength": "Suit glow strength",
   "mio_icif.configuration.suit_glow_strength.tooltip": "Strength of the suit glow. 1.0 = default.",
-  "gui.mio_icif.equipment_console.appearance.suit_glow": "Suit glow (lights and circuit lines)"
+  "gui.mio_icif.equipment_console.appearance.suit_glow": "Suit glow (lights and circuit lines)",
+  "mio_icif.configuration.motion_fx": "Suit motion effects",
+  "mio_icif.configuration.motion_fx.tooltip": "Quantum suit in normal mode: back and sole jets in jetpack flight, the take-off ring of a boost jump, the shock ring of a hard landing, the air streaks of the sprint. Also the ion trail, re-entry glow and seam light of Armory pieces.",
+  "mio_icif.configuration.visor_glass": "Visor glass",
+  "mio_icif.configuration.visor_glass.tooltip": "Off by default. In first person with a nano or quantum helmet: a faint rim, colour fringes, a reflection that slides as you turn, raindrops in the rain, cracks when the helmet is almost empty.",
+  "gui.mio_icif.equipment_console.appearance.visor_glass": "Visor glass (first person)",
+  "message.mio_icif.projector.mode_physical": "Physical display: the real gear on the cradle",
+  "message.mio_icif.projector.mode_hologram": "Hologram display"
 }

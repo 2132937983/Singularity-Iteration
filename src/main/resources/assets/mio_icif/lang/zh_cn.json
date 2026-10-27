@@ -4277,5 +4277,12 @@
   "mio_icif.configuration.suit_glow.tooltip": "纳米套装和量子套装以发光色发光：电量下降时变为琥珀色和红色，带有呼吸、能量带和启动时的扫过效果。",
   "mio_icif.configuration.suit_glow_strength": "套装发光强度",
   "mio_icif.configuration.suit_glow_strength.tooltip": "套装发光的强度。1.0 = 默认。",
-  "gui.mio_icif.equipment_console.appearance.suit_glow": "套装发光（灯光与电路线）"
+  "gui.mio_icif.equipment_console.appearance.suit_glow": "套装发光（灯光与电路线）",
+  "mio_icif.configuration.motion_fx": "套装动作效果",
+  "mio_icif.configuration.motion_fx.tooltip": "普通模式下的量子套装：喷气背包飞行时背部与脚底的喷射、强化跳跃的起跳光环、重落地的冲击环、疾跑时的气流线。以及武装库飞行部件的离子尾迹、再入发光与接缝光线。",
+  "mio_icif.configuration.visor_glass": "面罩玻璃",
+  "mio_icif.configuration.visor_glass.tooltip": "默认关闭。第一人称佩戴纳米或量子头盔时：淡淡的边缘、彩色边纹、随转头滑动的反光、雨中的水滴、头盔几乎没电时的裂纹。",
+  "gui.mio_icif.equipment_console.appearance.visor_glass": "面罩玻璃（第一人称）",
+  "message.mio_icif.projector.mode_physical": "实体展示：实物装备装在支架上",
+  "message.mio_icif.projector.mode_hologram": "全息展示"
 }

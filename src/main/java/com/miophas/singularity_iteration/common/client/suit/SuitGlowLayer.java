@@ -63,6 +63,8 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
         "armor/item_armor_quantum_leggings", "quantum_leggings", "armor/item_armor_quantum_boots", "quantum_boots");
     private static final Map<String, BakedArmorModel> MODELS = new HashMap<>();
     private static final Map<LivingEntity, Power> POWER = new WeakHashMap<>();
+    /** 0.1.10.31 (S-9): the last energy weapon shot per entity id: {right hand 1/0, colour, power x 1000, nano time}. */
+    private static final Map<Integer, long[]> SHOTS = new HashMap<>();
     /** The chest core (model pixels): the power-on sweep starts here. */
     private static final float CORE_X = 0F, CORE_Y = 4F, CORE_Z = -2.5F;
 
@@ -180,8 +182,8 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
                     part(pose, vc, model.rightArm, mask, "right_arm", light);
                     part(pose, vc, model.leftArm, mask, "left_arm", light);
                     if (FcsClientConfig.handArmorThirdPerson()) {
-                        part(pose, vc, model.rightArm, mask, "right_hand", light);
-                        part(pose, vc, model.leftArm, mask, "left_hand", light);
+                        part(pose, vc, model.rightArm, mask, "right_hand", fist(entity, true, light));
+                        part(pose, vc, model.leftArm, mask, "left_hand", fist(entity, false, light));
                     }
                 }
                 case LEGS -> {
@@ -211,7 +213,25 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
         if (mask.isEmpty()) return;
         VertexConsumer vc = buffers.getBuffer(RenderType.eyes(mask.texture()));
         part(pose, vc, arm, mask, right ? "right_arm" : "left_arm", light);
-        if (hand) part(pose, vc, arm, mask, right ? "right_hand" : "left_hand", light);
+        if (hand) part(pose, vc, arm, mask, right ? "right_hand" : "left_hand", fist(entity, right, light));
+    }
+
+    /** 0.1.10.31 (S-9): an energy weapon shot of {@code shooter} (from the shot effect, every client). */
+    public static void fired(LivingEntity shooter, boolean mainHand, int colour, float power) {
+        boolean right = mainHand == (shooter.getMainArm() == net.minecraft.world.entity.HumanoidArm.RIGHT);
+        long now = System.nanoTime();
+        if (SHOTS.size() > 32) SHOTS.values().removeIf(s -> now - s[3] > 1_000_000_000L);
+        SHOTS.put(shooter.getId(), new long[]{right ? 1 : 0, colour & 0xFFFFFF, Math.round(power * 1000), now});
+    }
+
+    /** The light of a hand: after a shot of that hand brighter and towards the gun colour ({@link SuitGlowRules#fist}). */
+    private static Light fist(LivingEntity entity, boolean right, Light light) {
+        long[] shot = SHOTS.get(entity.getId());
+        if (shot == null || shot[0] != (right ? 1 : 0)) return light;
+        float k = SuitGlowRules.fist((System.nanoTime() - shot[3]) / 1.0E9F, shot[2] / 1000F);
+        if (k <= 0F) return light;
+        return new Light(light.model(), SuitGlowRules.mix(light.colour(), (int) shot[1], 0.6F * k), light.strength() * (1F + 1.6F * k),
+            light.seconds(), light.since());
     }
 
     /** The lit quads of one baked part with the transform of {@code part}; light per vertex from its height and its distance to the core. */

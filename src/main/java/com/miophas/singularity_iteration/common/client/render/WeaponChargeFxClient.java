@@ -68,6 +68,8 @@ public final class WeaponChargeFxClient {
         Vec3 upv = right.cross(look).normalize();
         boolean firstPerson = shooter == mc.player && mc.options.getCameraType().isFirstPerson();
         Vec3 muzzle = BeamFx.muzzle(shooter, shot.mainHand(), 1.0F);
+        // 0.1.10.31 (S-9): the fist light of a suit gauntlet flashes with the shot
+        com.miophas.singularity_iteration.common.client.suit.SuitGlowLayer.fired(shooter, shot.mainHand(), shot.color(), shot.power());
         float p = shot.power();
         int c = shot.color();
         Vector3f rgb = new Vector3f((c >> 16 & 255) / 255F, (c >> 8 & 255) / 255F, (c & 255) / 255F);

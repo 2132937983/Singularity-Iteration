@@ -107,6 +107,22 @@ public final class JetpackSoundClient {
 
     private JetpackSoundClient() {}
 
+    /**
+     * 0.1.10.31: jetpack thrust of a player now, 0..1 (0 when it does not fly on a jetpack), for the thruster effects: the own
+     * player from its local thrust (continuous), another player from the relayed state (three levels, as the sound uses them).
+     */
+    public static float throttle(Player player) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || player == null) return 0F;
+        if (player == mc.player) {
+            var thrust = JetpackFlightController.lastThrust(player);
+            return thrust == null || mc.level.getGameTime() - thrust.tick() > JetpackThrustSync.GRACE_TICKS ? 0F : thrust.throttle();
+        }
+        Integer state = REMOTE.get(player.getId());
+        if (state == null) return 0F;
+        return switch (state & 15) { case 1 -> 0.35F; case 2 -> 0.6F; default -> 1.0F; };
+    }
+
     /** EN: Packet handler entry (client main thread). ZH: 数据包处理入口（客户端主线程）。JA: パケット処理の入口（クライアントのメインスレッド）。 */
     public static void remoteState(int entityId, int state) {
         if (state == 0) REMOTE.remove(entityId);

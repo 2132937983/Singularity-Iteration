@@ -102,6 +102,20 @@ public final class SuitGlowRules {
         return (r << 16) | (g << 8) | b;
     }
 
+    /** 0.1.10.31 (S-9): how long the fist light of a shot lasts, seconds. */
+    public static final float FIST_SECONDS = 0.3F;
+
+    /**
+     * 0.1.10.31 (S-9): the fist light of the hand that fired an energy weapon, 0..1, {@code since} seconds after the shot of
+     * {@code power} (0..1): a flash that fades in {@link #FIST_SECONDS} with a fast flicker; stronger shots flash brighter.
+     */
+    public static float fist(float since, float power) {
+        if (since < 0F || since >= FIST_SECONDS) return 0F;
+        float t = 1F - since / FIST_SECONDS;
+        float flicker = 0.75F + 0.25F * (float) Math.cos(since * 95F);
+        return (0.6F + 0.4F * clamp(power)) * t * t * flicker;
+    }
+
     static int mix(int a, int b, float t) {
         float k = clamp(t);
         int r = Math.round(((a >> 16) & 255) + (((b >> 16) & 255) - ((a >> 16) & 255)) * k);

@@ -1256,11 +1256,18 @@ public class mio_icif_gui_armor_features extends Screen {
         g.renderOutline(x0 + 6, gy, 9, 9, DspUi.FRAME);
         if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.suitGlow()) g.fill(x0 + 8, gy + 2, x0 + 13, gy + 7, DspUi.CYAN);
         DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.suit_glow").getString(), x0 + 19, gy + 2, DspUi.TEXT);
+        // 0.1.10.31: visor glass (off by default)
+        int vy = visorToggleY();
+        g.renderOutline(x0 + 6, vy, 9, 9, DspUi.FRAME);
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.visorGlass()) g.fill(x0 + 8, vy + 2, x0 + 13, vy + 7, DspUi.CYAN);
+        DspUi.small(g, font, Component.translatable("gui.mio_icif.equipment_console.appearance.visor_glass").getString(), x0 + 19, vy + 2, DspUi.TEXT);
     }
 
     private int coreToggleY() { return handY() + 12; }
 
     private int glowToggleY() { return coreToggleY() + 12; }
+
+    private int visorToggleY() { return glowToggleY() + 12; }
 
     private int handY() { return top + AY + 30; }
 
@@ -1285,6 +1292,11 @@ public class mio_icif_gui_armor_features extends Screen {
         if (in(mouseX, mouseY, left + AX + 6, coreToggleY(), 200, 9)) {
             com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.setCoreAttachments(
                 !com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.coreAttachments());
+            sound(true);
+            return true;
+        }
+        if (in(mouseX, mouseY, left + AX + 6, visorToggleY(), 200, 9)) {
+            com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.setVisorGlass(!com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.visorGlass());
             sound(true);
             return true;
         }

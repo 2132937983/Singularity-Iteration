@@ -129,6 +129,11 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
         part.visible = visible;
     }
 
+    /** 0.1.10.31: the kept quads of {@code filter} (as {@link #drawFiltered} draws them), for the seam light of the Armory. */
+    public static float[][] segment(float[][] quads, java.util.function.Predicate<float[]> filter) {
+        return quads == null ? null : filtered(quads, filter);
+    }
+
     /** 0.1.10.30: the quads of {@code filter} per geometry array (a weak key: a reload drops them with the old geometry). */
     private static final java.util.Map<float[][], java.util.Map<java.util.function.Predicate<float[]>, float[][]>> FILTERED = new java.util.WeakHashMap<>();
 

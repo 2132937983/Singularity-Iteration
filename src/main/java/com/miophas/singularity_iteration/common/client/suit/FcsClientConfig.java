@@ -90,6 +90,9 @@ public final class FcsClientConfig {
     /** 0.1.10.30: the light of the worn nano and quantum suits (glow layer) and its strength. */
     public static final ModConfigSpec.BooleanValue SUIT_GLOW;
     public static final ModConfigSpec.DoubleValue SUIT_GLOW_STRENGTH;
+    /** 0.1.10.31: thruster and motion effects of the suits in normal mode; the visor glass (off by default). */
+    public static final ModConfigSpec.BooleanValue MOTION_FX;
+    public static final ModConfigSpec.BooleanValue VISOR_GLASS;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -108,6 +111,9 @@ public final class FcsClientConfig {
         VAPOR_INTENSITY = b.comment("Opacity of the flight vapour effects (1.0 = default).").defineInRange("vapor_intensity", 1.0, 0.25, 1.5);
         THRUSTER_FX = b.comment("Heat haze over the thruster flames (suit and Wingmen), shock diamonds at full burn and on boosts,",
                 "and the dust ring when you land from Special Maneuver flight.").define("thruster_fx", true);
+        MOTION_FX = b.comment("Quantum suit motion in normal mode: back and sole jets in jetpack flight, the take-off ring and sole burst",
+                "of a boost jump, the shock ring of a hard landing, the air streaks of the sprint (also seen on other players).")
+            .define("motion_fx", true);
         b.pop();
         b.push("weapons");
         MUZZLE_FLASH = b.comment("A short glow at the muzzle when an energy weapon fires.").define("muzzle_flash", true);
@@ -157,6 +163,9 @@ public final class FcsClientConfig {
         QUANTUM_HUD = b.comment("Quantum core HUD around the crosshair (coherence ring, action keys, action timers).").define("quantum_hud", true);
         VISOR_BOOT = b.comment("The FCS visor runs its boot sequence when the HUD comes on (scan line, panels unfold, aim calibration).")
             .define("visor_boot", true);
+        VISOR_GLASS = b.comment("Visor glass in first person while a nano or quantum helmet is worn: a faint rim, colour fringes, a reflection",
+                "that slides as you turn, raindrops in the rain and cracks when the helmet is almost empty.")
+            .define("visor_glass", false);
         QUANTUM_FX_INTENSITY = b.comment("Strength of the quantum action effects (blink, phase shift, force field, time dilation, volley). 1.0 = default.")
             .defineInRange("quantum_fx_intensity", 1.0, 0.25, 1.5);
         DECOHERENCE_GLITCH = b.comment("The HUD glitches (colour split, tearing) while the quantum core decoheres. Off: a calm dim warning.")
@@ -232,6 +241,13 @@ public final class FcsClientConfig {
     public static void setSuitGlow(boolean on) {
         if (!loaded()) return;
         SUIT_GLOW.set(on);
+        SPEC.save();
+    }
+    public static boolean motionFx() { return !loaded() || MOTION_FX.get(); }
+    public static boolean visorGlass() { return loaded() && VISOR_GLASS.get(); }
+    public static void setVisorGlass(boolean on) {
+        if (!loaded()) return;
+        VISOR_GLASS.set(on);
         SPEC.save();
     }
 

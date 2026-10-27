@@ -39,6 +39,9 @@ import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
  * arrival the ghost coincides with the player, so the piece clicks seamlessly into the
  * worn armour layer. During the cruise it tumbles, then for the last quarter it turns to
  * the wearer's body yaw and settles. Hand-held items are drawn as their item model.
+ *
+ * <p>0.1.10.31 (A-6, {@link PieceFx}): an ion trail behind the flying piece, a white-orange re-entry glow when it comes down
+ * fast from the sky, and a line of light that runs down the seams of each segment of a baked suit piece as it locks.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
@@ -149,7 +152,7 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
         }
         if (piece.isArmor() && stack.getItem() instanceof ArmorItem armor && armor.getEquipmentSlot() == piece.slot) {
             drawn = renderArmor(pose, buffers, light, stack, armor, piece, height, target, flash, open, seat,
-                new SegmentClock(ret, age, flight));
+                new SegmentClock(ret, age, flight), flash ? latch : -1F);
         }
         if (!drawn && isDrawnBlade(stack)) {
             drawn = renderDrawnBlade(pose, buffers, light, stack, entity, k);
@@ -160,6 +163,8 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
             items.renderStatic(stack, ItemDisplayContext.FIXED, light, OverlayTexture.NO_OVERLAY, pose, buffers, entity.level(), entity.getId());
         }
         pose.popPose();
+        // 0.1.10.31 (A-6): ion trail and re-entry glow, in world axes around the render position
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx()) PieceFx.flight(entity, pose, buffers, origin, at, partialTick);
         super.render(entity, entityYaw, partialTick, pose, buffers, light);
     }
 
@@ -180,6 +185,12 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
             if (ret || age < flight) return false;
             float lockAge = age - flight - ArmoryFlight.HOVER_TICKS - ArmoryFlight.segmentLockTick(j, n);
             return lockAge >= 0 && lockAge < 3;
+        }
+        /** 0.1.10.31: ticks since segment j locked while its seam light runs, else -1. */
+        float seatAge(int j, int n) {
+            if (ret || age < flight) return -1F;
+            float lockAge = age - flight - ArmoryFlight.HOVER_TICKS - ArmoryFlight.segmentLockTick(j, n);
+            return lockAge >= 0 && lockAge < PieceFxRules.SEAM_TICKS ? lockAge : -1F;
         }
     }
 
@@ -258,7 +269,7 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
     private static void renderBakedSegments(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack, ArmorMaterial material,
                                             IClientItemExtensions ext, int fallback, LivingEntity wearer,
                                             com.miophas.singularity_iteration.common.client.render.BakedArmorModel baked, HumanoidModel<LivingEntity> base,
-                                            EquipmentSlot slot, boolean innerLayer, boolean flash, SegmentClock clock) {
+                                            EquipmentSlot slot, boolean innerLayer, boolean flash, SegmentClock clock, float latch) {
         var geometry = baked.geometry();
         base.copyPropertiesTo(baked);            // a shared model may hold the pose of the last wearer
         BakedSegment[] segs = bakedSegments(slot);
@@ -277,6 +288,23 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
                 if (i == 0 && (stack.hasFoil() || seat))
                     drawSegment(pose, buffers.getBuffer(RenderType.armorEntityGlint()), light, -1, baked, geometry, seg, o);
             }
+            // 0.1.10.31 (A-6): the seam light of a locking segment (and of every segment at the final latch)
+            float seamAge = latch >= 0 ? latch : clock.seatAge(j, n);
+            if (seamAge >= 0 && com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx())
+                drawSeams(pose, buffers, baked, geometry, seg, o, seamAge);
+        }
+    }
+
+    /** 0.1.10.31: the seam light of one segment, with its parts displaced as {@link #drawSegment} draws them. */
+    private static void drawSeams(PoseStack pose, MultiBufferSource buffers, com.miophas.singularity_iteration.common.client.render.BakedArmorModel baked,
+                                  java.util.Map<String, float[][]> geometry, BakedSegment seg, float o, float age) {
+        for (String name : seg.parts()) {
+            var part = partFor(baked, name);
+            float sx = part.x, sy = part.y, sz = part.z, rx = part.xRot, ry = part.yRot, rz = part.zRot;
+            displaceBaked(part, seg.id(), o);
+            PieceFx.seams(pose, buffers, part,
+                com.miophas.singularity_iteration.common.client.render.BakedArmorModel.segment(geometry.get(name), seg.filter()), age);
+            part.x = sx; part.y = sy; part.z = sz; part.xRot = rx; part.yRot = ry; part.zRot = rz;
         }
     }
 
@@ -349,7 +377,7 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
 
     private boolean renderArmor(PoseStack pose, MultiBufferSource buffers, int light, ItemStack stack, ArmorItem armor,
                                 ArmoryPiece piece, float height, Entity target, boolean flash, float[] open, boolean[] seat,
-                                SegmentClock clock) {
+                                SegmentClock clock, float latch) {
         LivingEntity wearer = target instanceof LivingEntity l ? l : Minecraft.getInstance().player;
         if (wearer == null) return false;
         pose.pushPose();
@@ -380,7 +408,7 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
             for (float o : open) anyOpen |= o > 0.001F;
             // 0.1.8.0: baked suit models (nano, quantum) assemble in finer segments
             if (model instanceof com.miophas.singularity_iteration.common.client.render.BakedArmorModel baked) {
-                renderBakedSegments(pose, buffers, light, stack, material, ext, fallback, wearer, baked, base, slot, innerLayer, flash, clock);
+                renderBakedSegments(pose, buffers, light, stack, material, ext, fallback, wearer, baked, base, slot, innerLayer, flash, clock, latch);
                 return true;
             }
             if (model == base && anyOpen) {

@@ -100,6 +100,8 @@ public final class SuitHandRenderer {
         }
         // 0.1.10.30: the light of the gauntlet (suit glow)
         SuitGlowLayer.drawArm(pose, buffers, player, arm, right, FcsClientConfig.handArmorFirstPerson());
+        // 0.1.10.31 (S-9): the palm thruster while hovering in Special Maneuver flight
+        SuitThrustLayer.drawPalm(pose, buffers, player, arm, right);
         event.setCanceled(true);
     }
 

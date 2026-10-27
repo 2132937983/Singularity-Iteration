@@ -338,6 +338,7 @@ public final class FcsClient {
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             ShieldFieldRenderer.render(event);
             ManeuverModeClient.renderWorld(event);
+            SuitMotionFx.render(event);                                // 0.1.10.31 sprint streaks of the quantum leggings
             QuantumFx.render(event);                                   // 0.1.9.1 photon barrier, active scan
             com.miophas.singularity_iteration.common.client.armory.WingmanFx.render(event);   // 0.1.9.1 Wingman lock-on, flashes, jets
             com.miophas.singularity_iteration.common.client.armory.CommandFx.render(event);   // 0.1.10.2 orders, markers, recall

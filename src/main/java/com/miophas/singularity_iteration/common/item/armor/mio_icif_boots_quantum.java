@@ -27,6 +27,12 @@ public class mio_icif_boots_quantum extends mio_icif_armor_elc {
 
     private float jumpCharge = 0.0F;
 
+    /**
+     * 0.1.10.31: called on the client when the boots give the own player the first boost of a jump (set by the client's
+     * SuitMotionFx for the take-off ring and the sole burst; no-op on a server).
+     */
+    public static java.util.function.Consumer<Player> BOOST_JUMP = p -> { };
+
     public mio_icif_boots_quantum(Holder<ArmorMaterial> material, Properties properties) {
         super(material, Type.BOOTS, properties, MAX_ENERGY, 0, "quantum", 12_000, 0, 6);
     }
@@ -102,6 +108,7 @@ public class mio_icif_boots_quantum extends mio_icif_armor_elc {
             if (player.getDeltaMovement().y >= 0.0D && this.jumpCharge > 0.0F && !player.isInWater()) {
                 if (isJumpKeyDown && isBoostKeyDown) {
                     if (this.jumpCharge == 1.0F) {
+                        BOOST_JUMP.accept(player);
                         player.setDeltaMovement(
                             player.getDeltaMovement().x * 3.5D,
                             player.getDeltaMovement().y,

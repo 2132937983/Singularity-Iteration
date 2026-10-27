@@ -32,6 +32,9 @@ Each action costs the EU of one trade.
 - **Scrap sink**: with "Rest to scrap" on the sell or settlement page, what an instant sale leaves goes to the recycler when the market pays almost nothing for it (the next bid below 5 % of the price or below 1 coin): scrap at the IC2 recycler's rate, 1 for 8 items. The coins of the sale stay the same.
 - **Stabiliser** (off unless the server turns it on): when the market creates more coins in 7 days than its target, the sell depths and the daily allowance shrink a little each day; small sales keep nearly their price. The Treasury tab shows its state.
 - **ID card**: use a blank card to make it your personal card; using it anywhere opens your account (mailbox, orders, auction orders, cancel; refunds go to the mailbox) and the delegate cards you wrote at your Trade Terminals.
+- **Coin account**: the coins the exchange keeps for you (the coins of the mailbox). Deposit the coins of the inventory or of the settlement container, and withdraw them, in the Orders and Mail tab (amount 0 = all). Purchases, buy orders, commissions and futures collateral take from the inventory and the account together. In bank mode sales and payouts go to the account and payments take from it first, so large trades do not fill the inventory.
+- **Minimum price**: the sell and settlement pages take a minimum, in percent of the bid without pressure or in coins per item. An instant sale sells of each commodity the most items whose own price is still at least the minimum, in one batch, and pays the sum at once; the page shows what each commodity sells for before you click. In the order panel a sale can name its limit in percent (the c / % button), and the panel shows what the market part of the sale pays now.
+- **Number fields**: a click selects the number, so typing replaces it; the mouse wheel and the arrow keys change it (Shift: 64, Ctrl: 10).
 
 ## Power data
 

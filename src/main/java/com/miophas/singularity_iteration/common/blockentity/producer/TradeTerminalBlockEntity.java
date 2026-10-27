@@ -416,6 +416,7 @@ public class TradeTerminalBlockEntity extends AbstractEnergyBlockEntity {
             t.putString("mode", o.mode().name());
             t.putLong("limit", o.limit());
             t.putBoolean("enabled", o.enabled());
+            if (o.percent()) t.putBoolean("percent", true);
             ord.add(t);
         }
         tag.put("Orders", ord);
@@ -458,7 +459,7 @@ public class TradeTerminalBlockEntity extends AbstractEnergyBlockEntity {
             CompoundTag o = (CompoundTag) t;
             try {
                 orders.add(new Order(TerminalRules.Side.valueOf(o.getString("side")), o.getString("item"), o.getLong("amount"),
-                    TerminalRules.Mode.valueOf(o.getString("mode")), o.getLong("limit"), o.getBoolean("enabled")));
+                    TerminalRules.Mode.valueOf(o.getString("mode")), o.getLong("limit"), o.getBoolean("enabled"), o.getBoolean("percent")));
             } catch (IllegalArgumentException ignored) {
                 // an order of an unknown form is dropped
             }

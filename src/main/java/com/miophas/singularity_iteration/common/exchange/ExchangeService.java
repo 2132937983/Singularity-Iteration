@@ -273,8 +273,9 @@ public final class ExchangeService {
     }
 
     /**
-     * One instant sale to the market: at most {@code quantity}, each item at a bid of at least {@code limit}, within the
-     * seller's allowance. Records the pressure, the seller's volume today, the allowance, the treasury, the ledger and
+     * One instant sale to the market: at most {@code quantity}, each item paid at least {@code limit} (0.1.10.29: the item's own
+     * price, {@link SellDepth#maxForItemPrice}; before, the bid at its start), within the seller's allowance; one payout for
+     * the whole batch. Records the pressure, the seller's volume today, the allowance, the treasury, the ledger and
      * the trade. The caller moves the items and the coins. Returns {sold, coins}.
      */
     static long[] sellToMarket(MinecraftServer server, ExchangeData d, UUID uuid, Market m, long quantity, long limit, long day) {
@@ -282,7 +283,7 @@ public final class ExchangeService {
         Map<String, Long> mine = d.sold(uuid, day);
         long before = mine.getOrDefault(m.id(), 0L);
         double pressure = pressure(d, m.id());
-        long take = SellDepth.maxForMarginal(c, before, pressure, Math.max(1, limit), quantity);
+        long take = SellDepth.maxForItemPrice(c, before, pressure, Math.max(1, limit), quantity);
         long allowance = allowanceLeft(server, d, uuid, day);
         if (allowance != Long.MAX_VALUE) take = SellDepth.maxForCoins(c, before, pressure, allowance, take);
         if (take <= 0) return new long[] {0, 0};
@@ -339,7 +340,7 @@ public final class ExchangeService {
         boolean uuLots = UuBoard.is(id);
         if (buy) {
             if (m.currency() == Currency.UU) { if (box.uu < escrow) return Result.fail("not_enough_uu"); }
-            else if (!plan.removeMain(coin, escrow, false)) return Result.fail("not_enough_coins");
+            else if (!takeCoins(plan, d, uuid, escrow)) return Result.fail("not_enough_coins");
         } else if (uuLots) {
             // 0.1.10.28 (X4): a sale on the coin <-> UU board holds lots of the UU account
             if (box.uu < UuBoard.mb(quantity)) return Result.fail("not_enough_uu");
@@ -562,7 +563,8 @@ public final class ExchangeService {
         Mailbox box = d.mailbox(player.getUUID());
         InventoryPlan plan = new InventoryPlan(player.getInventory());
         long moved = 0;
-        if (box.coins > 0) {
+        // 0.1.10.29: in bank mode the coins stay on the account (Withdraw takes them)
+        if (box.coins > 0 && !d.bankMode.contains(player.getUUID())) {
             long rest = plan.insert(mio_icif_normal.COIN.get(), box.coins);
             moved += box.coins - rest;
             box.coins = rest;
@@ -591,12 +593,68 @@ public final class ExchangeService {
         box.items.merge(id, amount, Long::sum);
     }
 
-    /** Currency to the player: coins to the inventory (rest to the mailbox), UU to the account. */
+    /**
+     * Currency to the player: coins to the inventory (rest to the coin account), UU to the account. 0.1.10.29: in bank mode the
+     * coins go to the coin account.
+     */
     static void pay(InventoryPlan plan, ExchangeData d, UUID player, Currency currency, long amount) {
         if (amount <= 0) return;
-        if (currency == Currency.UU) { credit(d, player, currency, amount); return; }
+        if (currency == Currency.UU || d.bankMode.contains(player)) { credit(d, player, currency, amount); return; }
         long rest = plan.insert(mio_icif_normal.COIN.get(), amount);
         credit(d, player, Currency.COIN, rest);
+    }
+
+    /**
+     * 0.1.10.29: takes the coins of a payment from the coin account and the inventory together ({@link CoinAccount#split}: the
+     * account first in bank mode, else the inventory first). False, and nothing taken, when both together hold less. Call it as
+     * the last check of an action: the account changes at once, the inventory with the plan.
+     */
+    static boolean takeCoins(InventoryPlan plan, ExchangeData d, UUID player, long amount) {
+        if (amount <= 0) return amount == 0;
+        Item coin = mio_icif_normal.COIN.get();
+        Mailbox box = d.mailbox(player);
+        long[] split = CoinAccount.split(amount, box.coins, plan.count(coin, false), d.bankMode.contains(player));
+        if (split == null) return false;
+        if (split[1] > 0 && !plan.removeMain(coin, split[1], false)) return false;
+        box.coins -= split[0];
+        return true;
+    }
+
+    /** 0.1.10.29: coins of the inventory onto the coin account ({@code amount} 0 = all). */
+    public static Result depositCoins(ServerPlayer player, long amount) {
+        ExchangeData d = data(player.server);
+        Item coin = mio_icif_normal.COIN.get();
+        InventoryPlan plan = new InventoryPlan(player.getInventory());
+        long n = CoinAccount.deposit(amount, plan.count(coin, false));
+        if (n <= 0 || !plan.removeMain(coin, n, false)) return Result.fail("no_coins");
+        plan.commit();
+        credit(d, player.getUUID(), Currency.COIN, n);
+        d.setDirty();
+        return Result.done("coins_deposited", n);
+    }
+
+    /** 0.1.10.29: coins of the coin account into the inventory as far as they fit ({@code amount} 0 = all). */
+    public static Result withdrawCoins(ServerPlayer player, long amount) {
+        ExchangeData d = data(player.server);
+        Mailbox box = d.mailbox(player.getUUID());
+        long want = CoinAccount.withdraw(amount, box.coins);
+        if (want <= 0) return Result.fail("no_account_coins");
+        InventoryPlan plan = new InventoryPlan(player.getInventory());
+        long rest = plan.insert(mio_icif_normal.COIN.get(), want);
+        long moved = want - rest;
+        if (moved <= 0) return Result.fail("inventory_full");
+        plan.commit();
+        box.coins -= moved;
+        d.setDirty();
+        return Result.done("coins_withdrawn", moved);
+    }
+
+    /** 0.1.10.29: bank mode on or off. */
+    public static Result setBankMode(ServerPlayer player, boolean on) {
+        ExchangeData d = data(player.server);
+        if (on) d.bankMode.add(player.getUUID()); else d.bankMode.remove(player.getUUID());
+        d.setDirty();
+        return Result.done(on ? "bank_mode_on" : "bank_mode_off");
     }
 
     static void give(InventoryPlan plan, ExchangeData d, UUID player, Item item, String id, long amount) {
@@ -729,6 +787,16 @@ public final class ExchangeService {
      * inventory (else the mailbox).
      */
     public static Result sellBox(ServerPlayer player, net.minecraft.world.Container box, boolean toAuction, int minPercent, boolean scrap) {
+        return sellBox(player, box, toAuction, minPercent, scrap, 0);
+    }
+
+    /**
+     * 0.1.10.29: {@link #sellBox} with a minimum for both ways: {@code minCoins} coins per item (0 = use {@code minPercent}). An
+     * instant sale sells of each commodity the items paid at least the minimum ({@link #minLimit}); the auction takes the
+     * minimum as its average in percent ({@link MinPrice#percentOf} of a coin minimum).
+     */
+    public static Result sellBox(ServerPlayer player, net.minecraft.world.Container box, boolean toAuction, int minPercent, boolean scrap,
+                                 long minCoins) {
         MinecraftServer server = player.server;
         ExchangeData d = data(server);
         UUID uuid = player.getUUID();
@@ -744,9 +812,9 @@ public final class ExchangeService {
             long take;
             if (toAuction) {
                 take = e.getValue();
-                addAuction(d, player, m.id(), take, minPercent, day);
+                addAuction(d, player, m.id(), take, auctionPercent(m, minPercent, minCoins), day);
             } else {
-                long[] sold = sellToMarket(server, d, uuid, m, e.getValue(), 1, day);
+                long[] sold = sellToMarket(server, d, uuid, m, e.getValue(), minLimit(m, minPercent, minCoins), day);
                 take = sold[0];
                 coins += sold[1];
             }
@@ -763,6 +831,16 @@ public final class ExchangeService {
         if (scrapped[0] > 0) return Result.done("box_sold_scrap", items, coins, scrapped[0], scrapped[1]);
         if (items == 0) return Result.fail(toAuction ? "box_empty" : "box_nothing_sold");
         return toAuction ? Result.done("auction_submitted", items) : Result.done("box_sold", items, coins);
+    }
+
+    /** 0.1.10.29: the lowest price per item of an instant sale: {@code minCoins}, else {@code minPercent} of the bid without pressure. */
+    public static long minLimit(Market m, int minPercent, long minCoins) {
+        return minCoins > 0 ? minCoins : MinPrice.limit(curve(m).unit(), true, minPercent);
+    }
+
+    /** 0.1.10.29: the auction minimum (percent) of a sale's minimum. */
+    static int auctionPercent(Market m, int minPercent, long minCoins) {
+        return minCoins > 0 ? MinPrice.percentOf(curve(m).unit(), minCoins) : Math.max(0, Math.min(100, minPercent));
     }
 
     /** 0.1.10.28: the stacks of the box that sell as {@code id} to the scrap sink (grouped by item and components). */
@@ -950,11 +1028,12 @@ public final class ExchangeService {
         long fee = kind == RewardKind.COIN ? Math.max(1, (long) Math.ceil(amount * COMMISSION_FEE)) : BARTER_POST_FEE;
         InventoryPlan plan = new InventoryPlan(player.getInventory());
         Mailbox box = d.mailbox(player.getUUID());
-        if (kind == RewardKind.COIN) { if (!plan.removeMain(coin, Math.addExact(amount, fee), false)) return Result.fail("not_enough_coins"); }
+        // 0.1.10.29: coins from the coin account and the inventory, taken after every other check
+        if (kind == RewardKind.COIN) { if (!takeCoins(plan, d, player.getUUID(), Math.addExact(amount, fee))) return Result.fail("not_enough_coins"); }
         else {
-            if (!plan.removeMain(coin, fee, false)) return Result.fail("not_enough_coins");
             if (kind == RewardKind.ITEM && !plan.removeMain(reward, amount, true)) return Result.fail("not_enough_items");
             if (kind == RewardKind.UU && box.uu < amount) return Result.fail("not_enough_uu");
+            if (!takeCoins(plan, d, player.getUUID(), fee)) return Result.fail("not_enough_coins");
         }
         plan.commit();
         if (kind == RewardKind.UU) box.uu -= amount;
@@ -1107,7 +1186,7 @@ public final class ExchangeService {
         long price = futuresPrice(server, m, isLong, days);
         long collateral = Forwards.collateral(price, quantity);
         InventoryPlan plan = new InventoryPlan(player.getInventory());
-        if (!plan.removeMain(mio_icif_normal.COIN.get(), collateral, false)) return Result.fail("not_enough_coins");
+        if (!takeCoins(plan, d, player.getUUID(), collateral)) return Result.fail("not_enough_coins");
         plan.commit();
         ExchangeData.Position p = new ExchangeData.Position();
         p.id = d.newId();

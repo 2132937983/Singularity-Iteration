@@ -153,9 +153,23 @@ public final class ExchangeViews {
             thisWeek ? board.issued[BountyTables.Tier.ADVANCED.ordinal()] : 0, rules.issueAdvanced(),
             thisWeek ? board.issued[BountyTables.Tier.SPECIAL.ordinal()] : 0, rules.issueSpecial(),
             thisWeek ? board.uuIssued : 0, rules.uuPerWeek(), board.vault.size(), vaultItems);
+        // 0.1.10.29: the curves of the selected market, the box and the container (the panel's minimum-price previews)
+        List<ExchangeView.CurveLine> curves = new ArrayList<>();
+        if (m != null && m.system() && m.currency() == ExchangeData.Currency.COIN) addCurve(curves, server, d, player.getUUID(), m.id(), day);
+        for (ExchangeView.BoxLine l : boxLines) addCurve(curves, server, d, player.getUUID(), l.id(), day);
+        for (ExchangeView.BoxLine l : settle.lines()) addCurve(curves, server, d, player.getUUID(), l.id(), day);
         return new ExchangeView(day, coins, box.uu, box.coins, box.items.size(), energy, rows, detail, orders, mail, commissions, positions,
             ledger, stocks, List.copyOf(candidates), allowance == Long.MAX_VALUE ? -1 : allowance, boxLines, auctions,
-            Bounties.lines(player, d, day), budget, settle, stabilizerLine(d, day));
+            Bounties.lines(player, d, day), budget, settle, stabilizerLine(d, day), d.bankMode.contains(player.getUUID()), curves);
+    }
+
+    /** 0.1.10.29: adds the curve of {@code id} for {@code player} (once; datapack commodities only). */
+    static void addCurve(List<ExchangeView.CurveLine> out, MinecraftServer server, ExchangeData d, java.util.UUID player, String id, long day) {
+        if (out.size() >= ExchangeView.MAX_CURVES || ExchangeView.CurveLine.find(out, id) != null) return;
+        ExchangeService.Market m = ExchangeService.market(server, id);
+        if (m == null || !m.system()) return;
+        SellDepth.Curve c = ExchangeService.curve(m);
+        out.add(new ExchangeView.CurveLine(id, c.unit(), c.lp(), c.lg(), ExchangeService.soldToday(d, player, id, day), ExchangeService.pressure(d, id)));
     }
 
     /** 0.1.10.28 (X4): the stabiliser and the scrap sink of the last closed days, for the treasury tab. */
@@ -189,7 +203,7 @@ public final class ExchangeViews {
             SellDepth.Curve c = ExchangeService.curve(bm);
             long before = ExchangeService.soldToday(d, player.getUUID(), bm.id(), day);
             double pressure = ExchangeService.pressure(d, bm.id());
-            long now = SellDepth.maxForMarginal(c, before, pressure, 1, e.getValue());
+            long now = SellDepth.maxForItemPrice(c, before, pressure, 1, e.getValue());
             if (allowance != Long.MAX_VALUE) now = SellDepth.maxForCoins(c, before, pressure, allowance, now);
             long nowCoins = (long) Math.floor(SellDepth.payout(c, before, pressure, now));
             ExchangeData.AuctionOrder probe = new ExchangeData.AuctionOrder();
@@ -241,7 +255,8 @@ public final class ExchangeViews {
             long n = Math.min(c.quantity - c.delivered, st.plain(item));
             if (n > 0) targets.add(new ExchangeView.SettleTarget(1, c.id, c.item, n));
         }
-        return new ExchangeView.SettleView(st.kind(), lines, Settlement.otherItems(player, st), st.uu(), targets);
+        return new ExchangeView.SettleView(st.kind(), lines, Settlement.otherItems(player, st), st.uu(), targets,
+            st.plain(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.COIN.get()));
     }
 
     /** Closing prices for the sparkline: the 20-day history of a datapack commodity, the daily bars of a listing. */

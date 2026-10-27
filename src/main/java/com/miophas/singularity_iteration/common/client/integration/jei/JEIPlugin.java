@@ -260,7 +260,10 @@ public class JEIPlugin implements IModPlugin {
         // Register the block cutter recipes.
         guarded("blockCutter", () -> {
             var blockCutterRecipes = recipeManager.getAllRecipesFor(mio_icif_ModRecipes.BLOCK_CUTTER_TYPE.get());
-            registration.addRecipes(mio_icif_BlockCutterCategory.BLOCK_CUTTER_TYPE, blockCutterRecipes.stream().toList());
+            // 0.1.10.29: the wood recipe is shown once per planks recipe (spruce logs -> spruce planks ...).
+            registration.addRecipes(mio_icif_BlockCutterCategory.BLOCK_CUTTER_TYPE,
+                com.miophas.singularity_iteration.common.recipe.block_cutter.mio_icif_BlockCutterRecipe.displays(
+                    recipeManager, level.registryAccess(), blockCutterRecipes));
         });
 
         // Register the metal former rolling recipes.

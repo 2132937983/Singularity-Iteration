@@ -34,7 +34,7 @@ public final class TerminalPackets {
 
     /**
      * Kinds: ORDER_SET (c = index or -1 for a new one, text = commodity, a = amount, b = limit, flags: 1 buy, 2 instant,
-     * 4 enabled); ORDER_REMOVE (c); ORDER_TOGGLE (c); OUTPUT_MODE (flags 1 = on); ACCESS_SET (text = player name, a = level,
+     * 4 enabled, 8 scrap, 16 the limit is a percent (0.1.10.29)); ORDER_REMOVE (c); ORDER_TOGGLE (c); OUTPUT_MODE (flags 1 = on); ACCESS_SET (text = player name, a = level,
      * 0 removes); TEAM_LEVEL (a); SETTLE_SELL (flags 1 = auction, a = minimum percent); SETTLE_UU; SETTLE_LOAD (settlement
      * container into the sell buffer); SETTLE_UNLOAD (output buffer into the settlement container); RUN_NOW; SETTLE_BOUNTY
      * (a = bounty); SETTLE_COMMISSION (a = commission, c = quantity); SETTLE_BUY (text = commodity, a = limit, c = quantity).
@@ -47,6 +47,8 @@ public final class TerminalPackets {
      * becomes a delegate card for that player), REVOKE_CARD (a = serial), REVOKE_ALL_CARDS. SETTLE_SELL flags 2 = scrap sink.
      */
     public static final int ISSUE_CARD = 15, REVOKE_CARD = 16, REVOKE_ALL_CARDS = 17;
+    /** 0.1.10.29: SETTLE_COINS (the coins of the settlement container onto the viewer's coin account). SETTLE_SELL b = minimum coins per item. */
+    public static final int SETTLE_COINS = 18;
 
     public record Request() implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "terminal_request"));
@@ -83,7 +85,7 @@ public final class TerminalPackets {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             TradeTerminalMenu menu = menu(player);
-            if (menu == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) return;
+            if (menu == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE_VIEW)) return;
             send(player, menu);
         });
     }
@@ -92,11 +94,15 @@ public final class TerminalPackets {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             TradeTerminalMenu menu = menu(player);
-            if (menu == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) return;
+            if (menu == null) return;
+            if (!PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) {
+                player.displayClientMessage(Component.translatable("message.mio_icif.exchange.too_fast"), true);
+                return;
+            }
             TradeTerminalBlockEntity t = menu.terminal();
             int level = t.levelOf(player);
             Result r = switch (p.kind) {
-                case SETTLE_SELL, SETTLE_UU, SETTLE_BOUNTY, SETTLE_COMMISSION, SETTLE_BUY -> {
+                case SETTLE_SELL, SETTLE_UU, SETTLE_BOUNTY, SETTLE_COMMISSION, SETTLE_BUY, SETTLE_COINS -> {
                     if (!TerminalRules.may(level, Action.SETTLE)) yield Result.fail("terminal.denied");
                     // a trade of the viewer at this terminal: the energy fee of a trade, the result on the action bar
                     t.exchangeAction(player, () -> settle(player, menu, p));
@@ -114,7 +120,9 @@ public final class TerminalPackets {
         SettlementStorage st = SettlementStorages.open(menu.settlementSlot(), 0);
         if (st == null) return Result.fail("settle_empty");
         return switch (p.kind) {
-            case SETTLE_SELL -> Settlement.sell(player, st, (p.flags & 1) != 0, (int) Math.max(0, Math.min(100, p.a)), (p.flags & 2) != 0);
+            case SETTLE_SELL -> Settlement.sell(player, st, (p.flags & 1) != 0, (int) Math.max(0, Math.min(100, p.a)), (p.flags & 2) != 0,
+                Math.max(0, p.b));
+            case SETTLE_COINS -> Settlement.depositCoins(player, st);
             case SETTLE_BOUNTY -> Settlement.deliverBounty(player, st, p.a);
             case SETTLE_COMMISSION -> Settlement.deliverCommission(player, st, p.a, Math.max(1, p.c));
             case SETTLE_BUY -> Settlement.buyInto(player, st, p.text, p.a, Math.max(1, Math.min(ExchangeService.MAX_QUANTITY, p.c)));
@@ -133,7 +141,7 @@ public final class TerminalPackets {
                     o = new TerminalRules.Order((p.flags & 1) != 0 ? TerminalRules.Side.BUY : TerminalRules.Side.SELL, p.text,
                         Math.min(p.a, ExchangeService.MAX_QUANTITY * 10L),
                         (p.flags & 8) != 0 ? TerminalRules.Mode.SCRAP : (p.flags & 2) != 0 ? TerminalRules.Mode.INSTANT : TerminalRules.Mode.AUCTION,
-                        p.b, (p.flags & 4) != 0);
+                        p.b, (p.flags & 4) != 0, (p.flags & 16) != 0);
                 } catch (IllegalArgumentException e) {
                     return Result.fail("terminal.bad_order");
                 }
@@ -146,7 +154,7 @@ public final class TerminalPackets {
                 if (p.c < 0 || p.c >= t.orders().size()) return Result.fail("terminal.bad_order");
                 if (p.kind == ORDER_REMOVE) { t.removeOrder(p.c); return Result.done("terminal.order_removed"); }
                 TerminalRules.Order o = t.orders().get(p.c);
-                t.setOrder(p.c, new TerminalRules.Order(o.side(), o.item(), o.amount(), o.mode(), o.limit(), !o.enabled()));
+                t.setOrder(p.c, o.withEnabled(!o.enabled()));
                 return Result.done("terminal.order_saved");
             }
             case OUTPUT_MODE -> {
@@ -221,8 +229,10 @@ public final class TerminalPackets {
         for (int i = 0; i < t.orders().size(); i++) {
             TerminalRules.Order o = t.orders().get(i);
             TerminalRules.Status s = t.status(i);
+            // 0.1.10.29: an instant sale order shows its limit now and what the surplus of the sell buffer would sell for
+            long[] est = estimate(server, d, t, o, day);
             orders.add(new TerminalView.OrderLine(o.side().ordinal(), o.item(), o.amount(), o.mode().ordinal(), o.limit(), o.enabled(),
-                s == null ? -1 : s.ordinal()));
+                s == null ? -1 : s.ordinal(), o.percent(), est[0], est[1], est[2]));
         }
         List<TerminalView.AccessLine> access = new ArrayList<>();
         for (Map.Entry<UUID, Integer> e : t.access().entrySet()) access.add(new TerminalView.AccessLine(t.accessName(e.getKey()), e.getValue()));
@@ -241,7 +251,27 @@ public final class TerminalPackets {
         if (level == TerminalRules.OWNER && player.getUUID().equals(t.owner().uuid()))
             for (ExchangeData.CardRecord c : IdCards.issued(server, player.getUUID()))
                 if (cards.size() < CardView.MAX_LINES) cards.add(new CardView.CardLine(c.serial, c.holderName, c.level, c.expiry));
+        ExchangeView.SettleView settle = ExchangeViews.settleView(player, d, menu.settlementSlot(), day);
+        List<ExchangeView.CurveLine> curves = new ArrayList<>();
+        for (ExchangeView.BoxLine l : settle.lines()) ExchangeViews.addCurve(curves, server, d, player.getUUID(), l.id(), day);
         return new TerminalView(t.ownerName(), t.ownerOnline(server), level, t.energy(), t.maxEnergy(), t.hasEnoughEnergy(), t.outputMode(),
-            t.teamLevel(), coins, day, orders, access, log, ExchangeViews.settleView(player, d, menu.settlementSlot(), day), cards);
+            t.teamLevel(), coins, day, orders, access, log, settle, cards, curves);
+    }
+
+    /**
+     * 0.1.10.29: {limit now, items, coins} of an instant sale of the sell buffer's surplus by a SELL INSTANT / SCRAP order at the
+     * market now (the owner's curve, sales today and allowance; resting bids of players not counted); zeros for other orders.
+     */
+    static long[] estimate(MinecraftServer server, ExchangeData d, TradeTerminalBlockEntity t, TerminalRules.Order o, long day) {
+        if (o.side() != TerminalRules.Side.SELL || o.mode() == TerminalRules.Mode.AUCTION || t.owner().uuid() == null) return new long[3];
+        ExchangeService.Market m = ExchangeService.market(server, o.item());
+        if (m == null || !m.system() || m.currency() != ExchangeData.Currency.COIN) return new long[3];
+        long limit = TerminalOrders.limitOf(o, m);
+        long surplus = Math.min(ExchangeService.MAX_QUANTITY, TerminalOrders.count(t.sellBuffer(), o.item()) - o.amount());
+        if (surplus <= 0) return new long[] {limit, 0, 0};
+        UUID owner = t.owner().uuid();
+        MinPrice.Quote q = MinPrice.quote(ExchangeService.curve(m), ExchangeService.soldToday(d, owner, m.id(), day), ExchangeService.pressure(d, m.id()),
+            limit, surplus, ExchangeService.allowanceLeft(server, d, owner, day));
+        return new long[] {limit, q.quantity(), q.coins()};
     }
 }

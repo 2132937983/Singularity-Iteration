@@ -113,7 +113,7 @@ public final class TerminalOrders {
                     traded = true;
                     return Status.OK;
                 }
-                long[] r = ExchangeService.sellForAccount(server, owner, team, o.item(), Math.max(1, o.limit()), (int) got);
+                long[] r = ExchangeService.sellForAccount(server, owner, team, o.item(), limitOf(o, m), (int) got);
                 long[] scrapped = new long[2];
                 if (got > r[0] && o.mode() == Mode.SCRAP && ScrapSink.eligible(d, m, owner, day)) {
                     // 0.1.10.28 (X4): the unsold to the scrap sink; the products to the output buffer or the owner's mailbox
@@ -168,6 +168,11 @@ public final class TerminalOrders {
         } finally {
             if (traded) fee.commit(); else fee.cancel();
         }
+    }
+
+    /** 0.1.10.29: the lowest price per item of an instant sale order now: its coins, or its percent of the bid without pressure. */
+    public static long limitOf(Order o, Market m) {
+        return o.percent() ? MinPrice.limit(ExchangeService.curve(m).unit(), true, o.limit()) : Math.max(1, o.limit());
     }
 
     /** 0.1.10.28: a product of the scrap sink: the output buffer (output mode), else the owner's mailbox; what fits nowhere overflows. */

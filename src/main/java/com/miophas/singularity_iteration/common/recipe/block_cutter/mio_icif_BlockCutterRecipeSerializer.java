@@ -27,7 +27,8 @@ public class mio_icif_BlockCutterRecipeSerializer implements RecipeSerializer<mi
             Codec.INT.optionalFieldOf("processingtime", DEFAULT_PROCESSING_TIME).forGetter(mio_icif_BlockCutterRecipe::getProcessingTime),
             Codec.INT.optionalFieldOf("energypertick", DEFAULT_ENERGY_PER_TICK).forGetter(mio_icif_BlockCutterRecipe::getEnergyPerTick),
             Codec.INT.optionalFieldOf("count", DEFAULT_INGREDIENT_COUNT).forGetter(mio_icif_BlockCutterRecipe::getIngredientCount),
-            Codec.INT.optionalFieldOf("hardness", DEFAULT_HARDNESS).forGetter(mio_icif_BlockCutterRecipe::getHardness)
+            Codec.INT.optionalFieldOf("hardness", DEFAULT_HARDNESS).forGetter(mio_icif_BlockCutterRecipe::getHardness),
+            Codec.BOOL.optionalFieldOf("wood", false).forGetter(mio_icif_BlockCutterRecipe::isWood)
         ).apply(instance, mio_icif_BlockCutterRecipe::new)
     );
 
@@ -54,7 +55,8 @@ public class mio_icif_BlockCutterRecipeSerializer implements RecipeSerializer<mi
         int energyPerTick = buffer.readVarInt();
         int ingredientCount = buffer.readVarInt();
         int hardness = buffer.readVarInt();
-        return new mio_icif_BlockCutterRecipe(group, ingredient, result, processingTime, energyPerTick, ingredientCount, hardness);
+        boolean wood = buffer.readBoolean();
+        return new mio_icif_BlockCutterRecipe(group, ingredient, result, processingTime, energyPerTick, ingredientCount, hardness, wood);
     }
 
     private static void toNetwork(RegistryFriendlyByteBuf buffer, mio_icif_BlockCutterRecipe recipe) {
@@ -65,6 +67,7 @@ public class mio_icif_BlockCutterRecipeSerializer implements RecipeSerializer<mi
         buffer.writeVarInt(recipe.getEnergyPerTick());
         buffer.writeVarInt(recipe.getIngredientCount());
         buffer.writeVarInt(recipe.getHardness());
+        buffer.writeBoolean(recipe.isWood());
     }
 }
 

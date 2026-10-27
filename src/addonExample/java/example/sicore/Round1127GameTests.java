@@ -61,7 +61,10 @@ public final class Round1127GameTests {
 
     private static Object make(String name, Object... args) {
         try {
-            Constructor<?> c = common(name).getDeclaredConstructors()[0];
+            // 0.1.10.29: by the number of arguments (TerminalRules.Order has a second constructor)
+            Constructor<?> c = null;
+            for (Constructor<?> k : common(name).getDeclaredConstructors()) if (k.getParameterCount() == args.length && c == null) c = k;
+            if (c == null) throw new AssertionError(name + ": no constructor of " + args.length + " arguments");
             c.setAccessible(true);
             return c.newInstance(args);
         } catch (ReflectiveOperationException e) {
@@ -160,7 +163,7 @@ public final class Round1127GameTests {
             h.assertTrue(st != null && (int) call(st, "kind") == 1, "the shulker box does not open as an item container");
             Object curve = call(service(), "curve", m);
             double p = p0 == null ? 0 : p0;
-            long now = (long) call(common("exchange.SellDepth"), "maxForMarginal", curve, 0.0, p, 1.0, 64L);
+            long now = (long) call(common("exchange.SellDepth"), "maxForItemPrice", curve, 0.0, p, 1.0, 64L);
             long paid = (long) Math.floor((double) call(common("exchange.SellDepth"), "payout", curve, 0.0, p, (double) now));
             long before = coins(d, player);
             expect(h, call(common("exchange.Settlement"), "sell", player, st, false, 0), true, "box_sold", "settlement sold now");

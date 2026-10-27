@@ -162,6 +162,8 @@ public final class ExchangeData extends SavedData {
     public long cardSecret;
     public long cardSerial = 1;
     public final Map<UUID, List<CardRecord>> cards = new HashMap<>();
+    /** 0.1.10.29: players whose coin account comes first (payments from it first, receipts onto it). */
+    public final Set<UUID> bankMode = new HashSet<>();
 
     public static ExchangeData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(ExchangeData::new, ExchangeData::load), NAME);
@@ -341,6 +343,8 @@ public final class ExchangeData extends SavedData {
         d.supplyDay = st.contains("SupplyDay") ? st.getLong("SupplyDay") : Long.MIN_VALUE;
         CompoundTag ls = tag.getCompound("LastSale");
         for (String k : ls.getAllKeys()) { UUID id = uuid(k); if (id != null) d.lastSale.put(id, ls.getLong(k)); }
+        // 0.1.10.29
+        for (Tag t : tag.getList("BankMode", Tag.TAG_STRING)) { UUID id = uuid(t.getAsString()); if (id != null) d.bankMode.add(id); }
         CompoundTag cd = tag.getCompound("Cards");
         d.cardSecret = cd.getLong("Secret");
         d.cardSerial = Math.max(1, cd.getLong("Serial"));
@@ -511,6 +515,10 @@ public final class ExchangeData extends SavedData {
         CompoundTag ls = new CompoundTag();
         lastSale.forEach((id, dd) -> ls.putLong(id.toString(), dd));
         tag.put("LastSale", ls);
+        // 0.1.10.29
+        ListTag bank = new ListTag();
+        for (UUID id : bankMode) bank.add(StringTag.valueOf(id.toString()));
+        tag.put("BankMode", bank);
         CompoundTag cd = new CompoundTag();
         cd.putLong("Secret", cardSecret);
         cd.putLong("Serial", cardSerial);

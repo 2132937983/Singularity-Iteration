@@ -179,7 +179,7 @@ public final class Round1128GameTests {
             for (int i = 0; i < 18; i++) box.setItem(i, new ItemStack(item, 64));
             Object curve = call(service(), "curve", m);
             double p = p0 == null ? 0 : p0;
-            long take = (long) call(common("exchange.SellDepth"), "maxForMarginal", curve, 0.0, p, 1.0, 1152L);
+            long take = (long) call(common("exchange.SellDepth"), "maxForItemPrice", curve, 0.0, p, 1.0, 1152L);
             long coinsExpected = (long) Math.floor((double) call(common("exchange.SellDepth"), "payout", curve, 0.0, p, (double) take));
             Object y = call(common("exchange.ScrapSink"), "yieldOf", server, new ItemStack(item));
             long before = coins(d, player);

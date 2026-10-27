@@ -104,6 +104,11 @@ public final class Settlement {
 
     /** 0.1.10.28 (X4): {@link #sell} with the scrap sink for what an instant sale leaves ({@link ScrapSink}). */
     public static Result sell(ServerPlayer player, SettlementStorage st, boolean toAuction, int minPercent, boolean scrap) {
+        return sell(player, st, toAuction, minPercent, scrap, 0);
+    }
+
+    /** 0.1.10.29: {@link #sell} with a minimum as for the sell box ({@code minCoins} per item, 0 = {@code minPercent}). */
+    public static Result sell(ServerPlayer player, SettlementStorage st, boolean toAuction, int minPercent, boolean scrap, long minCoins) {
         MinecraftServer server = player.server;
         ExchangeData d = ExchangeService.data(server);
         UUID uuid = player.getUUID();
@@ -124,10 +129,11 @@ public final class Settlement {
             if (got <= 0) continue;
             long sold;
             if (toAuction) {
-                ExchangeService.addAuction(d, uuid, player.getGameProfile().getName(), m.id(), got, Math.max(0, Math.min(100, minPercent)), day);
+                ExchangeService.addAuction(d, uuid, player.getGameProfile().getName(), m.id(), got,
+                    ExchangeService.auctionPercent(m, minPercent, minCoins), day);
                 sold = got;
             } else {
-                long[] r = ExchangeService.sellToMarket(server, d, uuid, m, got, 1, day);
+                long[] r = ExchangeService.sellToMarket(server, d, uuid, m, got, ExchangeService.minLimit(m, minPercent, minCoins), day);
                 sold = r[0];
                 coins += r[1];
             }
@@ -175,6 +181,20 @@ public final class Settlement {
         Result r = ExchangeService.deliver(player, id, quantity, st.source());
         st.commit();
         return r;
+    }
+
+    /** 0.1.10.29: the coins of the container onto the coin account. */
+    public static Result depositCoins(ServerPlayer player, SettlementStorage st) {
+        net.minecraft.world.item.Item coin = com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.COIN.get();
+        long have = st.plain(coin);
+        if (have <= 0) return Result.fail("no_coins");
+        long got = st.extract(new ItemStack(coin), have, false);
+        st.commit();
+        if (got <= 0) return Result.fail("no_coins");
+        ExchangeData d = ExchangeService.data(player.server);
+        ExchangeService.credit(d, player.getUUID(), Currency.COIN, got);
+        d.setDirty();
+        return Result.done("coins_deposited", got);
     }
 
     /** UU-matter of the container onto the account. */

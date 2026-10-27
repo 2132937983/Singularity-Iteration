@@ -90,6 +90,34 @@ public final class SellDepth {
         return (long) Math.min(upTo, last + 1);
     }
 
+    /**
+     * 0.1.10.29: the price of the {@code j}-th item of a sale from this state ({@code j} from 1): its share of {@link #payout}
+     * (the bid between the start and the end of the item). The prices fall by the factor exp(-k) from item to item.
+     */
+    public static double itemPrice(Curve c, double mine, double pressure, long j) {
+        if (j < 1 || c.unit() <= 0) return 0;
+        double k = c.k();
+        return marginal(c, mine, pressure) * Math.exp(-k * (j - 1)) * -Math.expm1(-k) / k;
+    }
+
+    /**
+     * 0.1.10.29: the most items (at most {@code upTo}) of a minimum-price sale: every item is paid at least {@code limit}
+     * ({@link #itemPrice}), so the average is too. Closed form (the logarithm of the first item price over the limit, in
+     * steps of k), checked against rounding on the last and the next item. {@link #maxForMarginal} counted the bid at the start
+     * of each item, so the last item could be paid up to about k/2 below the limit.
+     */
+    public static long maxForItemPrice(Curve c, double mine, double pressure, double limit, long upTo) {
+        if (upTo <= 0) return 0;
+        if (limit <= 0) return upTo;
+        double first = itemPrice(c, mine, pressure, 1);
+        if (!(first >= limit)) return 0;
+        double n = Math.floor(Math.log(first / limit) / c.k()) + 1;
+        long q = n >= upTo ? upTo : (long) Math.max(1, n);
+        while (q > 0 && itemPrice(c, mine, pressure, q) < limit) q--;
+        while (q < upTo && itemPrice(c, mine, pressure, q + 1) >= limit) q++;
+        return q;
+    }
+
     // ------------------------------------------------------------------ daily auction
 
     /**

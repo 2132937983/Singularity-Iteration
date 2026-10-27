@@ -66,14 +66,24 @@ public final class TerminalRules {
     /**
      * A standing order. SELL: {@code amount} = items to keep, {@code limit} = lowest price per item (INSTANT, 0 = any) or the
      * lowest average in percent of the bid without pressure (AUCTION, 0..100). BUY: {@code amount} = target stock,
-     * {@code limit} = highest price per item.
+     * {@code limit} = highest price per item. 0.1.10.29: {@code percent} (SELL INSTANT / SCRAP only): {@code limit} is the lowest
+     * price per item in percent of the bid without pressure at the time of the sale (0..100, {@link MinPrice#limit}).
      */
-    public record Order(Side side, String item, long amount, Mode mode, long limit, boolean enabled) {
+    public record Order(Side side, String item, long amount, Mode mode, long limit, boolean enabled, boolean percent) {
         public Order {
             if (side == null || item == null || item.isEmpty() || mode == null) throw new IllegalArgumentException("order");
             if (amount < 0 || limit < 0) throw new IllegalArgumentException("order amounts");
             if (side == Side.SELL && mode == Mode.AUCTION && limit > 100) throw new IllegalArgumentException("auction minimum 0..100 %");
+            percent = percent && side == Side.SELL && mode != Mode.AUCTION;
+            if (percent && limit > MinPrice.MAX_PERCENT) throw new IllegalArgumentException("minimum 0..100 %");
         }
+
+        public Order(Side side, String item, long amount, Mode mode, long limit, boolean enabled) {
+            this(side, item, amount, mode, limit, enabled, false);
+        }
+
+        /** The same order, enabled or not. */
+        public Order withEnabled(boolean on) { return new Order(side, item, amount, mode, limit, on, percent); }
     }
 
     /**

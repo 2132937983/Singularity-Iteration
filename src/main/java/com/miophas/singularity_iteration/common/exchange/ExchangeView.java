@@ -15,7 +15,7 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
                            List<CommissionLine> commissions, List<PositionLine> positions, List<LedgerLine> ledger,
                            List<StockLine> stocks, List<Candidate> candidates, long allowance, List<BoxLine> box,
                            List<AuctionLine> auctions, List<BountyLine> bounties, BountyBudget budget, SettleView settle,
-                           StabilizerLine stabilizer) {
+                           StabilizerLine stabilizer, boolean bankMode, List<CurveLine> curves) {
     public static final int MAX_MARKETS = 160, MAX_SPARK = 20, MAX_BARS = 30, MAX_LEVELS = 8, MAX_TRADES = 12;
     public static final int MAX_ORDERS = 32, MAX_MAIL = 40, MAX_COMMISSIONS = 64, MAX_POSITIONS = 8, MAX_LEDGER = 14;
     public static final int MAX_STOCKS = 12, MAX_CANDIDATES = 8, MAX_BOX = 18, MAX_AUCTIONS = 96;
@@ -23,6 +23,41 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
     public static final int MAX_BOUNTIES = 48, MAX_BOUNTY_NEEDS = 8, MAX_BOUNTY_REWARDS = 8;
     /** 0.1.10.27 (X2). */
     public static final int MAX_SETTLE_LINES = 32, MAX_SETTLE_TARGETS = 16;
+    /** 0.1.10.29: the curves of the selected market, the sell box and the settlement container. */
+    public static final int MAX_CURVES = 1 + MAX_BOX + MAX_SETTLE_LINES;
+
+    /**
+     * 0.1.10.29: the bid curve of a datapack commodity for this player now ({@link SellDepth.Curve}: the bid without pressure,
+     * the depths; the items this player sold of it today, the pressure): the panels compute the minimum-price sale with it
+     * ({@link MinPrice#quote}) without asking the server.
+     */
+    public record CurveLine(String id, double unit, double lp, double lg, long mine, double pressure) {
+        public SellDepth.Curve curve() { return new SellDepth.Curve(unit, lp, lg); }
+
+        /** The curve of {@code id} in {@code curves}, or null. */
+        public static CurveLine find(List<CurveLine> curves, String id) {
+            if (curves == null || id == null) return null;
+            for (CurveLine c : curves) if (c.id().equals(id)) return c;
+            return null;
+        }
+    }
+
+    static void writeCurves(FriendlyByteBuf b, List<CurveLine> curves, int max) {
+        list(b, curves == null ? List.of() : curves, max, c -> { b.writeUtf(c.id(), 128); b.writeDouble(c.unit()); b.writeDouble(c.lp());
+            b.writeDouble(c.lg()); b.writeVarLong(c.mine()); b.writeDouble(c.pressure()); });
+    }
+
+    static List<CurveLine> readCurves(FriendlyByteBuf b, int max) {
+        return read(b, max, () -> {
+            String id = b.readUtf(128);
+            double unit = b.readDouble(), lp = b.readDouble(), lg = b.readDouble();
+            long mine = b.readVarLong();
+            double pressure = b.readDouble();
+            if (!(lp > 0) || !(lg > 0) || !Double.isFinite(unit) || !Double.isFinite(pressure))
+                throw new io.netty.handler.codec.DecoderException("curve");
+            return new CurveLine(id, unit, lp, lg, mine, pressure);
+        });
+    }
 
     /** A watchlist row. {@code currency}: 0 coins, 1 UU-matter (mB). */
     public record Row(String id, int currency, boolean system, long price, int changePermille, long volume, long[] spark, boolean locked) { }
@@ -94,8 +129,8 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
      * the quote per commodity (as for the sell box), the items that sell as no commodity, the UU-matter (mB) and the bounties
      * and commissions that its plain items can serve now.
      */
-    public record SettleView(int kind, List<BoxLine> lines, long other, long uu, List<SettleTarget> targets) {
-        public static final SettleView NONE = new SettleView(0, List.of(), 0, 0, List.of());
+    public record SettleView(int kind, List<BoxLine> lines, long other, long uu, List<SettleTarget> targets, long coins) {
+        public static final SettleView NONE = new SettleView(0, List.of(), 0, 0, List.of(), 0);
     }
 
     /** 0.1.10.27: {@code type} 0 a system bounty / 1 a player commission; {@code count} the items the container can deliver now. */
@@ -117,6 +152,8 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
             b.writeVarLong(l.nowCoins()); b.writeVarLong(l.auctionQuantity()); b.writeVarLong(l.auctionCoins()); });
         b.writeVarLong(x.other()); b.writeVarLong(x.uu());
         list(b, x.targets(), MAX_SETTLE_TARGETS, t -> { b.writeVarInt(t.type()); b.writeVarLong(t.id()); b.writeUtf(t.item(), 128); b.writeVarLong(t.count()); });
+        // 0.1.10.29: the coins of the container (onto the coin account)
+        b.writeVarLong(x.coins());
     }
 
     public static SettleView readSettle(FriendlyByteBuf b) {
@@ -125,7 +162,8 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
             b.readVarLong(), b.readVarLong()));
         long other = b.readVarLong(), uu = b.readVarLong();
         List<SettleTarget> targets = read(b, MAX_SETTLE_TARGETS, () -> new SettleTarget(b.readVarInt(), b.readVarLong(), b.readUtf(128), b.readVarLong()));
-        return new SettleView(kind, lines, other, uu, targets);
+        long coins = b.readVarLong();
+        return new SettleView(kind, lines, other, uu, targets, coins);
     }
 
     // ------------------------------------------------------------------ codec
@@ -187,6 +225,9 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
         StabilizerLine s = stabilizer == null ? StabilizerLine.NONE : stabilizer;
         b.writeBoolean(s.enabled()); b.writeDouble(s.factor()); b.writeLong(s.net7()); b.writeVarLong(s.target()); b.writeVarLong(s.supply());
         b.writeVarInt(s.active()); b.writeVarLong(s.scrapIn()); b.writeVarLong(s.scrapOut());
+        // 0.1.10.29
+        b.writeBoolean(bankMode);
+        writeCurves(b, curves, MAX_CURVES);
     }
 
     public static ExchangeView read(FriendlyByteBuf b) {
@@ -240,8 +281,10 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
         SettleView settle = readSettle(b);
         StabilizerLine stabilizer = new StabilizerLine(b.readBoolean(), b.readDouble(), b.readLong(), b.readVarLong(), b.readVarLong(), b.readVarInt(),
             b.readVarLong(), b.readVarLong());
+        boolean bankMode = b.readBoolean();
+        List<CurveLine> curves = readCurves(b, MAX_CURVES);
         return new ExchangeView(day, coins, uu, mailCoins, mailTypes, energy, markets, detail, orders, mail, commissions, positions, ledger, stocks, candidates,
-            allowance, box, auctions, bounties, budget, settle, stabilizer);
+            allowance, box, auctions, bounties, budget, settle, stabilizer, bankMode, curves);
     }
 
     interface Writer<T> { void write(T value); }

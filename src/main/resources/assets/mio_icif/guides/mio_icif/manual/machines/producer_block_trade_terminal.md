@@ -29,6 +29,8 @@ Each trade costs the EU of one trade, like the Futures Machine. A terminal also 
 - **Breaking** the terminal sends the buffers to the owner's mailbox; items with names, enchantments or damage drop.
 - **Scrap mode**: a sell order in the mode "Scrap rest" sells at once like an instant order and sends what the market no longer pays for to the scrap sink; the scrap goes to the output buffer (output mode) or the owner's mailbox.
 - **ID cards**: on the Cards page the owner writes a blank ID card for a player, with a level (view, trade or configure) and up to 30 days. The card gives that player the level at all the owner's terminals; it works only for that player, and the owner revokes it here or with the personal card.
+- **Minimum in percent**: an instant or scrap sell order can name its lowest price in percent of the bid without pressure (the c / % button); the percent becomes coins at each run. The tooltip of an order shows its limit now and what the surplus of the sell buffer would sell for.
+- **Settlement**: the minimum (percent or coins) applies to Sell now as well; "Coins to account" puts the coins of the container onto your coin account.
 
 ## Power data
 

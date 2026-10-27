@@ -50,6 +50,11 @@ public final class PacketRateLimit {
     public static final Bucket NANO_ASSIGN = new Bucket("nano_assign", 10, 4);
     /** Exchange panel (0.1.10.21): a view refresh per second plus clicks; actions also cost machine energy. */
     public static final Bucket EXCHANGE = new Bucket("exchange", 12, 4);
+    /**
+     * 0.1.10.29: the view refreshes of the exchange panel and the Trade Terminal (one a second plus one per page, market or box
+     * change). Before they took tokens of {@link #EXCHANGE}, so quick page changes could leave a click without a token.
+     */
+    public static final Bucket EXCHANGE_VIEW = new Bucket("exchange_view", 10, 4);
     /** 0.1.10.22: protection settings and terminal actions (priority, reset). */
     public static final Bucket GRID = new Bucket("grid", 10, 4);
 

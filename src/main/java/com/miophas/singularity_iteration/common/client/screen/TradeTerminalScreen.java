@@ -4,6 +4,7 @@ package com.miophas.singularity_iteration.common.client.screen;
 import com.miophas.singularity_iteration.common.client.screen.panel.PanelCharts;
 import com.miophas.singularity_iteration.common.exchange.CardView;
 import com.miophas.singularity_iteration.common.exchange.ExchangeView;
+import com.miophas.singularity_iteration.common.exchange.MinPrice;
 import com.miophas.singularity_iteration.common.exchange.TerminalClientState;
 import com.miophas.singularity_iteration.common.exchange.TerminalOrders;
 import com.miophas.singularity_iteration.common.exchange.TerminalPackets;
@@ -58,12 +59,17 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
     // 0.1.10.28 (X4): the scrap sink of the settlement sale; the ID card form
     private boolean scrapRest;
     private int cardLevel = TerminalRules.TRADE;
-    private EditBox cardDays;
+    private NumberBox cardDays;
     // access editor
     private int newLevel = TerminalRules.VIEW;
     // settlement page: the commodity to buy into the container
     private int buyCommodity;
-    private EditBox amountBox, limitBox, nameBox, minBox, buyQty, buyLimit;
+    // 0.1.10.29: number boxes; nameBox stays a text field
+    private NumberBox amountBox, limitBox, minBox, buyQty, buyLimit;
+    private EditBox nameBox;
+    /** 0.1.10.29: the editor's limit of an instant sale is a percent; the settlement minimum is in coins. */
+    private boolean editPercent, minCoins;
+    private static final long MAX_COINS = 999_999_999L;
 
     public TradeTerminalScreen(TradeTerminalMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -74,26 +80,32 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
     @Override
     protected void init() {
         super.init();
-        amountBox = box("64", 7, true);
-        limitBox = box("0", 9, true);
-        nameBox = box("", 16, false);
-        minBox = box("0", 3, true);
-        buyQty = box("64", 6, true);
-        cardDays = box("7", 2, true);
-        buyLimit = box("0", 9, true);
+        // 0.1.10.29: number boxes with the ranges of the actions; a new init (window resized) keeps what was typed
+        amountBox = box(amountBox, 0, com.miophas.singularity_iteration.common.exchange.ExchangeService.MAX_QUANTITY * 10L, 64);
+        limitBox = box(limitBox, 0, MAX_COINS, 0);
+        String name = nameBox == null ? "" : nameBox.getValue();
+        nameBox = new EditBox(font, 0, 0, 40, 12, Component.empty());
+        nameBox.setMaxLength(16);
+        nameBox.setValue(name);
+        addRenderableWidget(nameBox);
+        minBox = box(minBox, 0, minCoins ? MAX_COINS : MinPrice.MAX_PERCENT, 0);
+        buyQty = box(buyQty, 1, 100_000, 64);
+        cardDays = box(cardDays, 1, 30, 7);
+        buyLimit = box(buyLimit, 0, MAX_COINS, 0);
         request();
     }
 
-    private EditBox box(String value, int length, boolean digits) {
-        EditBox b = new EditBox(font, 0, 0, 40, 12, Component.empty());
-        b.setMaxLength(length);
-        if (digits) b.setFilter(s -> s.chars().allMatch(Character::isDigit));
-        b.setValue(value);
+    private NumberBox box(NumberBox old, long min, long max, long value) {
+        NumberBox b = new NumberBox(font, min, max, old == null ? value : old.value());
         addRenderableWidget(b);
         return b;
     }
 
+    private List<EditBox> boxes() { return List.of(amountBox, limitBox, nameBox, minBox, buyQty, buyLimit, cardDays); }
+
+    /** The number of a box (0.1.10.29: clamped to its range), {@code fallback} when it is empty. */
     private static long num(EditBox b, long fallback) {
+        if (b instanceof NumberBox n) return n.getValue().isEmpty() ? fallback : n.value();
         try { return b.getValue().isEmpty() ? fallback : Long.parseLong(b.getValue()); } catch (NumberFormatException e) { return fallback; }
     }
 
@@ -127,7 +139,7 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
-        for (EditBox b : List.of(amountBox, limitBox, nameBox, minBox, buyQty, buyLimit, cardDays)) {
+        for (EditBox b : boxes()) {
             if (b.isVisible() && b.mouseClicked(mx, my, button)) { setFocused(b); return true; }
         }
         if (getFocused() instanceof EditBox b) { b.setFocused(false); setFocused(null); }
@@ -146,8 +158,17 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
         return super.keyPressed(key, scan, modifiers);
     }
 
+    /** 0.1.10.29: typed characters go to the focused box and stop there. */
+    @Override
+    public boolean charTyped(char c, int modifiers) {
+        if (getFocused() instanceof EditBox b && b.isVisible()) return b.charTyped(c, modifiers) || true;
+        return super.charTyped(c, modifiers);
+    }
+
     @Override
     public boolean mouseScrolled(double mx, double my, double sx, double sy) {
+        // 0.1.10.29: the wheel over a number box steps it (before the pages' commodity wheel)
+        for (EditBox b : boxes()) if (b instanceof NumberBox n && n.mouseScrolled(mx, my, sx, sy)) return true;
         if (tab == 1 || tab == 4) {
             List<FutureCommodity> all = FutureCommodityManager.getCommodities();
             if (tab == 1 && !all.isEmpty()) commodity = Math.floorMod(commodity - (int) Math.signum(sy), all.size());
@@ -222,7 +243,7 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
     public void render(GuiGraphics g, int mx, int my, float pt) {
         regions.clear();
         hoverText = null;
-        for (EditBox b : List.of(amountBox, limitBox, nameBox, minBox, buyQty, buyLimit, cardDays)) b.setVisible(false);
+        for (EditBox b : boxes()) b.setVisible(false);
         menu.bufferView = tab == 0;
         menu.settleView = tab == 4;
         // the settlement slot: in the right column of the buffer page, top left on the settlement page
@@ -284,32 +305,34 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
         g.drawString(font, font.plainSubstrByWidth(kind.getString(), W - TradeTerminalMenu.SETTLE_X - 26), leftPos + TradeTerminalMenu.SETTLE_X + 20,
             topPos + TradeTerminalMenu.SETTLE_Y + 4, PanelCharts.DIM, false);
         hover(x, 22, w, 32, Component.translatable(K + "settle_help").getString(), mx, my);
+        // 0.1.10.29: the instant column at the minimum (from the curves); the rows two to a line, so the column ends above the
+        // terminal block (before, Unload at y 139 lay under Output mode at y 141)
+        now = nowCoins(v, st);
         int y = 56;
         text(g, font.plainSubstrByWidth(Component.translatable(K + "settle_quote", PanelCharts.number(items), PanelCharts.number(now),
             PanelCharts.number(auc)).getString(), w), x, y, PanelCharts.TEXT);
         hover(x, y - 1, w, 10, Component.translatable(K + "settle_quote_help").getString(), mx, my);
         y += 11;
-        text(g, font.plainSubstrByWidth(Component.translatable(K + "settle_uu", PanelCharts.number(st.uu())).getString(), w), x, y, PanelCharts.DIM);
-        y += 12;
+        text(g, font.plainSubstrByWidth(Component.translatable(K + "settle_uu_coins", PanelCharts.number(st.uu()), PanelCharts.number(st.coins())).getString(), w),
+            x, y, PanelCharts.DIM);
+        y += 11;
         int half = (w - 2) / 2;
-        button(g, x, y, half, 13, Component.translatable(K + "sell_now"), false, trade,
-            () -> act(TerminalPackets.SETTLE_SELL, 0, "", 0, 0, scrapRest ? 2 : 0), mx, my);
-        button(g, x + half + 2, y, half, 13, Component.translatable(K + "sell_auction"), false, trade,
-            () -> act(TerminalPackets.SETTLE_SELL, 0, "", Math.min(100, num(minBox, 0)), 0, 1), mx, my);
-        y += 15;
-        text(g, Component.translatable(K + "min_percent"), x, y + 2, PanelCharts.DIM);
-        place(minBox, x + w - 30, y, 30);
-        scrapToggle(g, x + w - 30 - 4 - 64, y, mx, my);
-        y += 15;
-        button(g, x, y, w, 13, Component.translatable(K + "uu_in"), false, trade, () -> act(TerminalPackets.SETTLE_UU, 0, "", 0, 0, 0), mx, my);
-        y += 15;
-        button(g, x, y, w, 13, Component.translatable(K + "load"), false, trade, () -> act(TerminalPackets.SETTLE_LOAD, 0, "", 0, 0, 0), mx, my);
-        hover(x, y, w, 13, Component.translatable(K + "load_help").getString(), mx, my);
-        y += 15;
-        button(g, x, y, w, 13, Component.translatable(K + "unload"), false, config, () -> act(TerminalPackets.SETTLE_UNLOAD, 0, "", 0, 0, 0), mx, my);
-        hover(x, y, w, 13, Component.translatable(K + "unload_help").getString(), mx, my);
+        sellButtons(g, x, y, half, trade, mx, my);
+        y += 14;
+        minRow(g, x, y, w, mx, my);
+        y += 14;
+        button(g, x, y, half, 13, Component.translatable(K + "uu_in_short"), false, trade, () -> act(TerminalPackets.SETTLE_UU, 0, "", 0, 0, 0), mx, my);
+        hover(x, y, half, 13, Component.translatable(K + "uu_in").getString(), mx, my);
+        button(g, x + half + 2, y, half, 13, Component.translatable(K + "coins_in_short"), false, trade && st.coins() > 0,
+            () -> act(TerminalPackets.SETTLE_COINS, 0, "", 0, 0, 0), mx, my);
+        hover(x + half + 2, y, half, 13, Component.translatable(K + "coins_in_help").getString(), mx, my);
+        y += 14;
+        button(g, x, y, half, 13, Component.translatable(K + "load"), false, trade, () -> act(TerminalPackets.SETTLE_LOAD, 0, "", 0, 0, 0), mx, my);
+        hover(x, y, half, 13, Component.translatable(K + "load_help").getString(), mx, my);
+        button(g, x + half + 2, y, half, 13, Component.translatable(K + "unload"), false, config, () -> act(TerminalPackets.SETTLE_UNLOAD, 0, "", 0, 0, 0), mx, my);
+        hover(x + half + 2, y, half, 13, Component.translatable(K + "unload_help").getString(), mx, my);
         // the terminal itself
-        y = TradeTerminalMenu.INV_Y - 10;
+        y = TradeTerminalMenu.INV_Y - 4;
         text(g, Component.translatable(K + "terminal"), x, y, PanelCharts.ACCENT);
         y += 11;
         button(g, x, y, w, 13, Component.translatable(K + (v.outputMode() ? "output_on" : "output_off")), v.outputMode(), config,
@@ -342,9 +365,12 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
             String what = buy
                 ? Component.translatable(K + "order_buy", PanelCharts.number(o.amount()), PanelCharts.number(o.limit())).getString()
                 : Component.translatable(o.mode() == 0 ? K + "order_sell_auction" : o.mode() == 2 ? K + "order_sell_scrap" : K + "order_sell_now",
-                    PanelCharts.number(o.amount()), o.limit()).getString();
+                    PanelCharts.number(o.amount()), o.percent() ? o.limit() + "%" : PanelCharts.number(o.limit())).getString();
             text(g, font.plainSubstrByWidth(what, 128), 26, y + 2, o.enabled() ? PanelCharts.TEXT : PanelCharts.DIM);
-            hover(4, y - 2, 150, 15, name(o.item()) + " - " + what, mx, my);
+            // 0.1.10.29: an instant sale order: its limit now and what the surplus of the sell buffer would sell for now
+            String est = !buy && o.mode() > 0 ? " | " + Component.translatable(K + "order_estimate", PanelCharts.number(o.estLimit()),
+                PanelCharts.number(o.estQuantity()), PanelCharts.number(o.estCoins())).getString() : "";
+            hover(4, y - 2, 150, 15, name(o.item()) + " - " + what + est, mx, my);
             String status = o.status() < 0 ? "" : Component.translatable(K + "status." + o.status()).getString();
             int sc = o.status() == 0 ? PanelCharts.up() : o.status() == 1 || o.status() == 2 ? PanelCharts.DIM : PanelCharts.WARN;
             text(g, font.plainSubstrByWidth(status, 62), 158, y + 2, sc);
@@ -378,13 +404,22 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
         ey += 18;
         text(g, Component.translatable(K + (editBuy ? "target" : "keep")), 6, ey + 2, PanelCharts.DIM);
         place(amountBox, 50, ey, 46);
-        text(g, Component.translatable(K + (editBuy ? "max_price" : editMode > 0 ? "min_price" : "min_percent")), 102, ey + 2, PanelCharts.DIM);
+        // 0.1.10.29: an instant sale's limit in coins or in percent of the bid without pressure (toggle)
+        boolean pct = !editBuy && (editMode == 0 || editPercent);
+        limitBox.setRange(editBuy ? 1 : 0, pct ? MinPrice.MAX_PERCENT : MAX_COINS);
+        text(g, font.plainSubstrByWidth(Component.translatable(K + (editBuy ? "max_price" : editMode > 0 ? (editPercent ? "min_price_percent" : "min_price")
+            : "min_percent")).getString(), 50), 102, ey + 2, PanelCharts.DIM);
+        if (!editBuy && editMode > 0) {
+            button(g, 154, ey, 12, 13, Component.literal(editPercent ? "%" : "c"), editPercent, config, () -> editPercent = !editPercent, mx, my);
+            hover(154, ey, 12, 13, Component.translatable("gui.mio_icif.exchange.percent_toggle_help").getString(), mx, my);
+        }
         place(limitBox, 168, ey, 46);
         button(g, 218, ey, 56, 13, Component.translatable(K + (editEnabled ? "enabled" : "disabled")), editEnabled, config,
             () -> editEnabled = !editEnabled, mx, my);
         ey += 17;
         button(g, 6, ey, 80, 14, Component.translatable(K + "save"), false, config && !id.isEmpty(), () -> {
-            int flags = (editBuy ? 1 : 0) | (editMode == 1 && !editBuy ? 2 : 0) | (editMode == 2 && !editBuy ? 8 : 0) | (editEnabled ? 4 : 0);
+            int flags = (editBuy ? 1 : 0) | (editMode == 1 && !editBuy ? 2 : 0) | (editMode == 2 && !editBuy ? 8 : 0) | (editEnabled ? 4 : 0)
+                | (editPercent && !editBuy && editMode > 0 ? 16 : 0);
             act(TerminalPackets.ORDER_SET, editing, id, num(amountBox, 0), num(limitBox, 0), flags);
             editing = -1;
         }, mx, my);
@@ -400,8 +435,10 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
         editBuy = o.side() == 1;
         editMode = Math.max(0, Math.min(2, o.mode()));
         editEnabled = o.enabled();
-        amountBox.setValue(Long.toString(o.amount()));
-        limitBox.setValue(Long.toString(o.limit()));
+        editPercent = o.percent();
+        amountBox.set(o.amount());
+        limitBox.setRange(0, MAX_COINS);
+        limitBox.set(o.limit());
         List<FutureCommodity> all = FutureCommodityManager.getCommodities();
         for (int i = 0; i < all.size(); i++) if (all.get(i).getItemId().equals(o.item())) commodity = i;
     }
@@ -458,23 +495,25 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
         Component kind = Component.translatable("gui.mio_icif.exchange.settle.kind." + Math.max(0, Math.min(3, st.kind())));
         text(g, font.plainSubstrByWidth(kind.getString(), 112), SETTLE_PAGE_X + 20, SETTLE_PAGE_Y + 4, st.kind() == 0 ? PanelCharts.DIM : PanelCharts.TEXT);
         // the quote
-        long now = 0, auc = 0, items = 0;
-        for (ExchangeView.BoxLine l : st.lines()) { now += l.nowCoins(); auc += l.auctionCoins(); items += l.quantity(); }
+        long now = nowCoins(v, st), auc = 0, items = 0;
+        for (ExchangeView.BoxLine l : st.lines()) { auc += l.auctionCoins(); items += l.quantity(); }
         int y = 56;
         text(g, font.plainSubstrByWidth(Component.translatable(K + "settle_quote", PanelCharts.number(items), PanelCharts.number(now),
             PanelCharts.number(auc)).getString(), 136), 8, y, PanelCharts.TEXT);
         hover(8, y - 1, 136, 10, Component.translatable(K + "settle_quote_help").getString(), mx, my);
         y += 11;
-        text(g, font.plainSubstrByWidth(Component.translatable(K + "settle_uu", PanelCharts.number(st.uu())).getString(), 136), 8, y, PanelCharts.DIM);
-        y += 12;
-        button(g, 8, y, 50, 13, Component.translatable(K + "sell_now"), false, trade, () -> act(TerminalPackets.SETTLE_SELL, 0, "", 0, 0, scrapRest ? 2 : 0), mx, my);
-        button(g, 60, y, 50, 13, Component.translatable(K + "sell_auction"), false, trade,
-            () -> act(TerminalPackets.SETTLE_SELL, 0, "", Math.min(100, num(minBox, 0)), 0, 1), mx, my);
-        place(minBox, 112, y, 30);
-        hover(112, y, 30, 13, Component.translatable(K + "min_percent").getString(), mx, my);
-        y += 15;
-        scrapToggle(g, 8, y, mx, my);
-        button(g, 76, y, 66, 13, Component.translatable(K + "uu_in"), false, trade, () -> act(TerminalPackets.SETTLE_UU, 0, "", 0, 0, 0), mx, my);
+        text(g, font.plainSubstrByWidth(Component.translatable(K + "settle_uu_coins", PanelCharts.number(st.uu()), PanelCharts.number(st.coins())).getString(), 136),
+            8, y, PanelCharts.DIM);
+        y += 11;
+        sellButtons(g, 8, y, 67, trade, mx, my);
+        y += 14;
+        minRow(g, 8, y, 136, mx, my);
+        y += 14;
+        button(g, 8, y, 67, 13, Component.translatable(K + "uu_in_short"), false, trade, () -> act(TerminalPackets.SETTLE_UU, 0, "", 0, 0, 0), mx, my);
+        hover(8, y, 67, 13, Component.translatable(K + "uu_in").getString(), mx, my);
+        button(g, 77, y, 67, 13, Component.translatable(K + "coins_in_short"), false, trade && st.coins() > 0,
+            () -> act(TerminalPackets.SETTLE_COINS, 0, "", 0, 0, 0), mx, my);
+        hover(77, y, 67, 13, Component.translatable(K + "coins_in_help").getString(), mx, my);
         // deliveries
         int x = 150, w = W - x - 6, ty = 24;
         text(g, Component.translatable("gui.mio_icif.exchange.settle.targets"), x, ty, PanelCharts.ACCENT);
@@ -521,11 +560,48 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
             slotFrame(g, TradeTerminalMenu.SELL_X + (i % 9) * 18, i < 27 ? TradeTerminalMenu.INV_Y + (i / 9) * 18 : TradeTerminalMenu.HOTBAR_Y);
     }
 
+    /** 0.1.10.29: sell now and into the auction at the minimum of {@link #minRow} (two buttons of width {@code half}). */
+    private void sellButtons(GuiGraphics g, int x, int y, int half, boolean trade, int mx, int my) {
+        long value = num(minBox, 0);
+        long coins = minCoins ? value : 0, percent = minCoins ? 0 : Math.min(MinPrice.MAX_PERCENT, value);
+        button(g, x, y, half, 13, Component.translatable(K + "sell_now"), false, trade,
+            () -> act(TerminalPackets.SETTLE_SELL, 0, "", percent, coins, scrapRest ? 2 : 0), mx, my);
+        button(g, x + half + 2, y, half, 13, Component.translatable(K + "sell_auction"), false, trade,
+            () -> act(TerminalPackets.SETTLE_SELL, 0, "", percent, coins, 1), mx, my);
+    }
+
+    /** 0.1.10.29: the minimum of the settlement sale: the scrap toggle, the unit toggle (coins / percent) and the box. */
+    private void minRow(GuiGraphics g, int x, int y, int w, int mx, int my) {
+        int boxW = 40, boxX = x + w - boxW, toggleX = boxX - 2 - 12;
+        scrapToggle(g, x, y, mx, my);
+        button(g, toggleX, y, 12, 13, Component.literal(minCoins ? "c" : "%"), minCoins, true, () -> {
+            minCoins = !minCoins;
+            minBox.setRange(0, minCoins ? MAX_COINS : MinPrice.MAX_PERCENT);
+            minBox.set(0);
+        }, mx, my);
+        hover(toggleX, y, 12, 13, Component.translatable("gui.mio_icif.exchange.box.min_toggle_help").getString(), mx, my);
+        place(minBox, boxX, y, boxW);
+        hover(boxX, y, boxW, 13, Component.translatable(minCoins ? "gui.mio_icif.exchange.box.min_coins" : "gui.mio_icif.exchange.box.min").getString()
+            + " - " + Component.translatable("gui.mio_icif.exchange.box.min_help").getString(), mx, my);
+    }
+
+    /** 0.1.10.29: the coins of an instant sale of the container at the minimum (the curves of the view; the server's quote without one). */
+    private long nowCoins(TerminalView v, ExchangeView.SettleView st) {
+        long value = num(minBox, 0), total = 0;
+        for (ExchangeView.BoxLine l : st.lines()) {
+            ExchangeView.CurveLine c = ExchangeView.CurveLine.find(v.curves(), l.id());
+            if (c == null) { total += l.nowCoins(); continue; }
+            long limit = minCoins ? Math.max(1, value) : MinPrice.limit(c.unit(), true, Math.min(MinPrice.MAX_PERCENT, value));
+            total += MinPrice.quote(c.curve(), c.mine(), c.pressure(), limit, l.quantity(), Long.MAX_VALUE).coins();
+        }
+        return total;
+    }
+
     /** 0.1.10.28 (X4): the scrap sink toggle of the settlement sale. */
     private void scrapToggle(GuiGraphics g, int x, int y, int mx, int my) {
-        button(g, x, y, 64, 13, Component.translatable("gui.mio_icif.exchange." + (scrapRest ? "scrap_on" : "scrap_off")), scrapRest, true,
+        button(g, x, y, 60, 13, Component.translatable("gui.mio_icif.exchange." + (scrapRest ? "scrap_on" : "scrap_off")), scrapRest, true,
             () -> scrapRest = !scrapRest, mx, my);
-        hover(x, y, 64, 13, Component.translatable("gui.mio_icif.exchange.scrap_help").getString(), mx, my);
+        hover(x, y, 60, 13, Component.translatable("gui.mio_icif.exchange.scrap_help").getString(), mx, my);
     }
 
     // ------------------------------------------------------------------ ID cards page (0.1.10.28, X4)

@@ -51,6 +51,7 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
         addLayer(new com.miophas.singularity_iteration.common.client.suit.CoreAttachmentLayer<>(this));
         // 0.1.10.30: the light of a worn nano or quantum suit
         addLayer(new com.miophas.singularity_iteration.common.client.suit.SuitGlowLayer<>(this));
+        addLayer(new com.miophas.singularity_iteration.common.client.suit.SuitRippleLayer<>(this));     // 0.1.10.32 hit ripple
     }
 
     @Override

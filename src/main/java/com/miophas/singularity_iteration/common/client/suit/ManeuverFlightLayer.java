@@ -50,6 +50,9 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         super(parent);
     }
 
+    /** 0.1.10.32 (P-3): detail tier of the player being drawn (render thread only). */
+    private static int lodTier;
+
     /** 0.1.10.31: the flame strips of one player, drawn after the glow pass. */
     private final ThrusterFlame.Strips strips = new ThrusterFlame.Strips();
 
@@ -71,6 +74,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         float time = ManeuverModeClient.visualTime(player);
         // 0.1.10.2: full burn (throttle above 0.72) lengthens the plume and lights the shock diamonds
         float thr = ManeuverModeClient.throttleOf(player, partial);
+        lodTier = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(player);                    // 0.1.10.32 (P-3)
         float burn = net.minecraft.util.Mth.clamp((thr - 0.72F) / 0.2F, 0, 1);
         int id = player.getId();
         strips.clear();
@@ -103,8 +107,9 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         float radius = 0.06F + 0.05F * p, length = 0.12F + 0.42F * p + 0.5F * burn * power;
         // 0.1.10.31 (S-5): disc and cone in the colour of the thrust, and the animated flame strip
         float colour = Math.max(throttle, 0.5F * power);
-        ThrusterFlame.glow(vc, m, radius, length, power, colour, flicker, time, owner * 4 + seed, strips);
-        boolean fx = FcsClientConfig.thrusterFx();
+        ThrusterFlame.glow(vc, m, radius, length, power, colour, flicker, time, owner * 4 + seed,
+            lodTier == com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR ? null : strips, com.miophas.singularity_iteration.common.client.render.FxLodRules.segments(10, lodTier));
+        boolean fx = FcsClientConfig.thrusterFx() && lodTier == com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR;
         if (burn > 0.02F && fx) {
             for (int i = 0; i < 4; i++) {
                 float y = length * (0.36F + 0.19F * i);

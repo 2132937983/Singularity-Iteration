@@ -4284,5 +4284,17 @@
   "mio_icif.configuration.visor_glass.tooltip": "既定はオフ。ナノか量子のヘルメットを着けた一人称で：かすかな縁、色のにじみ、振り向くと流れる映り込み、雨粒、ヘルメットがほぼ空のときのヒビ。",
   "gui.mio_icif.equipment_console.appearance.visor_glass": "バイザーガラス（一人称）",
   "message.mio_icif.projector.mode_physical": "実体展示：本物の装備を台座のアームに固定",
-  "message.mio_icif.projector.mode_hologram": "ホログラム展示"
+  "message.mio_icif.projector.mode_hologram": "ホログラム展示",
+  "mio_icif.configuration.hit_ripple": "装甲の被弾波紋とスーツ起動",
+  "mio_icif.configuration.hit_ripple.tooltip": "量子スーツが攻撃を吸収すると、被弾点から六角形の光の輪が装甲を広がる。武装庫が最後のパーツを固定すると起動する：胸のコアから光が広がり、バイザーが中央から灯り、コアから輪が走る。",
+  "mio_icif.configuration.suit_gimmicks": "スーツの可動ギミック",
+  "mio_icif.configuration.suit_gimmicks.tooltip": "量子スーツ：飛行中は背中の排気口が開いて光り、疾走中は肩装甲が後ろへずれ、バイザーは点灯時に中央から灯る。",
+  "mio_icif.configuration.armory_fx": "武装庫のガントリーとゲート",
+  "mio_icif.configuration.armory_fx.tooltip": "武装庫のアイリスハッチ、収納スーツのアイコン、整備リング。遠隔召喚の空間転送ゲート。",
+  "mio_icif.configuration.fx_lod": "遠くのエフェクトを簡略化",
+  "mio_icif.configuration.fx_lod.tooltip": "24 ブロックより遠くは分割を減らし残像を省き、64 ブロックより遠くは光だけにする。",
+  "mio_icif.configuration.fx_budget": "全身エフェクトの描画上限",
+  "mio_icif.configuration.fx_budget.tooltip": "1 フレームに描く全身エフェクトの最大数（被弾波紋、ホログラム格子、ナノメッシュ）。近いものから描く。",
+  "gui.mio_icif.preview.title": "3D プレビュー",
+  "gui.mio_icif.preview.hint": "ドラッグ：回転 / ホイール：拡大"
 }

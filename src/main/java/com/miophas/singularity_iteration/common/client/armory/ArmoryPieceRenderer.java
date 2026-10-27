@@ -42,6 +42,9 @@ import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
  *
  * <p>0.1.10.31 (A-6, {@link PieceFx}): an ion trail behind the flying piece, a white-orange re-entry glow when it comes down
  * fast from the sky, and a line of light that runs down the seams of each segment of a baked suit piece as it locks.
+ *
+ * <p>0.1.10.32 (A-4, {@link GateFx}): a piece that left a transfer gate drags three violet afterimages for its first 10 ticks
+ * (near the camera only); a piece that flies home into a gate shrinks into it.
  */
 @OnlyIn(Dist.CLIENT)
 @SuppressWarnings("null")
@@ -60,11 +63,34 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
 
     @Override
     public void render(ArmoryPieceEntity entity, float entityYaw, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
+        if (!renderPiece(entity, partialTick, pose, buffers, light)) return;
+        Vec3 at = entity.flightPosition(partialTick);
+        Vec3 origin = entity.getPosition(partialTick);
+        // 0.1.10.31 (A-6): ion trail and re-entry glow, in world axes around the render position
+        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx()) PieceFx.flight(entity, pose, buffers, origin, at, partialTick);
+        // 0.1.10.32 (A-4): afterimages of a piece that just left a transfer gate
+        float age = entity.age(partialTick);
+        if (!entity.isReturn() && age >= 0 && age < 10 && com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.armoryFx()
+                && GateFx.gated(entity) && GateFx.ghostsShown(entity)) {
+            for (int k = 1; k <= 3; k++) {
+                float back = partialTick - 1.5F * k;
+                Vec3 o2 = entity.getPosition(back);
+                pose.pushPose();
+                pose.translate(o2.x - origin.x, o2.y - origin.y, o2.z - origin.z);
+                renderPiece(entity, back, pose, GateFx.ghosts(buffers, (1 - age / 10F) * (0.8F - 0.2F * k)), light);
+                pose.popPose();
+            }
+        }
+        super.render(entity, entityYaw, partialTick, pose, buffers, light);
+    }
+
+    /** The piece itself at {@code partialTick} (afterimages draw it at earlier ticks); false when nothing is drawn. */
+    private boolean renderPiece(ArmoryPieceEntity entity, float partialTick, PoseStack pose, MultiBufferSource buffers, int light) {
         ItemStack stack = entity.item();
         boolean ret = entity.isReturn();
         float age = entity.age(partialTick);
-        if (stack.isEmpty() || (ret && (age < 0 || age > entity.duration() + 1))) return;
-        if (!ret && age < -ArmoryFlight.HATCH_TICKS) return;                // still inside the Armory
+        if (stack.isEmpty() || (ret && (age < 0 || age > entity.duration() + 1))) return false;
+        if (!ret && age < -ArmoryFlight.HATCH_TICKS) return false;          // still inside the Armory
         Vec3 at = entity.flightPosition(partialTick);
         Vec3 origin = entity.getPosition(partialTick);
         Entity target = entity.target();
@@ -123,6 +149,7 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
         float yaw = Mth.rotLerp(k, 180.0F - travelYaw, 180.0F - bodyYaw) + buffetYaw;
         float scale = ret ? 1 + 0.08F * (float) Math.sin(Math.min(age, ArmoryFlight.PURGE_TICKS) / ArmoryFlight.PURGE_TICKS * Math.PI)
             : ArmoryFlight.latchScale(latch);
+        if (ret && GateFx.gated(entity)) scale *= ArmoryFxRules.swallow(age, flight);       // 0.1.10.32 into the homecoming gate
         float wobble = buffet - thrustPitch;
         pose.pushPose();
         pose.translate(at.x - origin.x, at.y - origin.y, at.z - origin.z);
@@ -163,9 +190,7 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
             items.renderStatic(stack, ItemDisplayContext.FIXED, light, OverlayTexture.NO_OVERLAY, pose, buffers, entity.level(), entity.getId());
         }
         pose.popPose();
-        // 0.1.10.31 (A-6): ion trail and re-entry glow, in world axes around the render position
-        if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.motionFx()) PieceFx.flight(entity, pose, buffers, origin, at, partialTick);
-        super.render(entity, entityYaw, partialTick, pose, buffers, light);
+        return true;
     }
 
     /**

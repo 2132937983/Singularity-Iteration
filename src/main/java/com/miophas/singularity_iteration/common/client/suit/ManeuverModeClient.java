@@ -864,7 +864,7 @@ public final class ManeuverModeClient {
         for (Player p : mc.level.players()) {
             Visual vis = VISUALS.get(p.getId());
             if (vis == null || !vapour) continue;
-            if (!vis.trail.isEmpty()) wake(vc, m, vis, cam);
+            if (!vis.trail.isEmpty() && com.miophas.singularity_iteration.common.client.render.FxBudget.tier(p) != com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR) wake(vc, m, vis, cam);     // 0.1.10.32 (P-3)
         }
         buffers.endBatch(SiRenderTypes.VAPOR);
         // 0.1.8.0: the condensation cone is an alpha-blended white veil, so it shows on a bright sky.

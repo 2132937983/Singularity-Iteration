@@ -49,6 +49,8 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
     /** Back thruster pods of the quantum chestplate (body space, pixels). */
     static final float POD_X = 2.92F, POD_Y = 12.0F, POD_Z = 5.4F, POD_TILT = 12F;
     private final ThrusterFlame.Strips strips = new ThrusterFlame.Strips();
+    /** 0.1.10.32 (P-3): detail tier of the player being drawn. */
+    private int lodTier;
     private static final ThrusterFlame.Strips PALM = new ThrusterFlame.Strips();
 
     public SuitThrustLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
@@ -78,6 +80,7 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         PlayerModel<AbstractClientPlayer> model = getParentModel();
         float seconds = (player.tickCount + partial) / 20F;
         int id = player.getId();
+        lodTier = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(player);                    // 0.1.10.32 (P-3)
         strips.clear();
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         if (jet > 0.02F) {
@@ -110,8 +113,9 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
     private void nozzle(PoseStack pose, VertexConsumer vc, float radius, float length, float power, float throttle, float seconds, int id, int seed) {
         Matrix4f m = pose.last().pose();
         float flicker = 0.88F + 0.12F * (float) Math.sin(seconds * 37 + seed * 1.7) * (float) Math.sin(seconds * 23 + seed);
-        ThrusterFlame.glow(vc, m, radius, length, power, throttle, flicker, seconds, id * 8 + seed, strips);
-        if (FcsClientConfig.thrusterFx()) {
+        ThrusterFlame.glow(vc, m, radius, length, power, throttle, flicker, seconds, id * 8 + seed,
+            lodTier == com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR ? null : strips, com.miophas.singularity_iteration.common.client.render.FxLodRules.segments(10, lodTier));
+        if (FcsClientConfig.thrusterFx() && lodTier == com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR) {
             Vector3f a = m.transformPosition(0, 0, 0, new Vector3f()), b = m.transformPosition(0, length, 0, new Vector3f());
             Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
             ThrusterFx.jet(id * 8L + seed, new Vec3(a.x + cam.x, a.y + cam.y, a.z + cam.z), new Vec3(b.x + cam.x, b.y + cam.y, b.z + cam.z),

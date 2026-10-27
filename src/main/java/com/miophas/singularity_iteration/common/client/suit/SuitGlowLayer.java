@@ -91,7 +91,7 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
     }
 
     /** The light of one worn piece this frame. */
-    record Light(String model, int colour, float strength, float seconds, float since) { }
+    record Light(String model, int colour, float strength, float seconds, float since, float visor) { }
 
     /** Baked model name of a glowing piece, else null. */
     @Nullable
@@ -122,7 +122,13 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
         if (strength <= 0.01F) return null;
         SuitPalette palette = SuitPalette.of(stack);
         int base = palette != null ? palette.accent() : model.startsWith("nano") ? SuitGlowRules.NANO : SuitGlowRules.QUANTUM;
-        return new Light(model, SuitGlowRules.colour(base, charge), strength, seconds, since);
+        // 0.1.10.32 (S-8): the visor lights from its centre when the helmet comes on, at the suit boot and at the own HUD boot
+        float visor = -1F;
+        if (slot == EquipmentSlot.HEAD && FcsClientConfig.suitGimmicks()) {
+            visor = SuitBoot.visorSince(entity);
+            if (visor < 0 && since >= 0 && since < (SuitFxRules.VISOR_HALF + 2F) / SuitFxRules.VISOR_SPEED) visor = since;
+        }
+        return new Light(model, SuitGlowRules.colour(base, charge), strength, seconds, since, visor);
     }
 
     /** Thrust 0..1 of the wearer (Special Maneuver throttle, jetpack flight). */
@@ -154,7 +160,18 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
         final boolean[] seen = new boolean[4];
     }
 
-    private static BakedArmorModel model(String name) {
+    /** 0.1.10.32 (S-8): the offsets of the moving parts while the chestplate draws (render thread only). */
+    private static float ventSlide, shoulderSlide;
+
+    /** 0.1.10.32 (A-5): the suit boot runs the power-on sweep of every worn piece again. */
+    static void restartPower(LivingEntity entity) {
+        Power p = POWER.get(entity);
+        if (p == null) return;
+        long now = System.currentTimeMillis();
+        for (int i = 0; i < 4; i++) if (p.item[i] != null) p.onAt[i] = now;
+    }
+
+    static BakedArmorModel model(String name) {
         return MODELS.computeIfAbsent(name, n -> new BakedArmorModel(
             ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "armor_models/" + n + ".json")));
     }
@@ -178,13 +195,20 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
             switch (slot) {
                 case HEAD -> part(pose, vc, model.head, mask, "head", light);
                 case CHEST -> {
+                    // 0.1.10.32 (S-8): the moving parts follow the worn model (the same offsets as BakedArmorModel)
+                    boolean moving = "quantum_chestplate".equals(light.model()) && FcsClientConfig.suitGimmicks();
+                    float vent = moving ? SuitGimmicks.vent(entity, partial) : 0F;
+                    ventSlide = SuitFxRules.VENT_SLIDE * vent;
+                    shoulderSlide = moving ? SuitGimmicks.shoulder(entity, partial) : 0F;
                     part(pose, vc, model.body, mask, "body", light);
                     part(pose, vc, model.rightArm, mask, "right_arm", light);
                     part(pose, vc, model.leftArm, mask, "left_arm", light);
+                    ventSlide = shoulderSlide = 0F;
                     if (FcsClientConfig.handArmorThirdPerson()) {
                         part(pose, vc, model.rightArm, mask, "right_hand", fist(entity, true, light));
                         part(pose, vc, model.leftArm, mask, "left_hand", fist(entity, false, light));
                     }
+                    if (vent > 0.02F) ventLight(pose, buffers, model.body, light, vent, entity.tickCount + partial);
                 }
                 case LEGS -> {
                     part(pose, vc, model.body, mask, "body", light);
@@ -231,7 +255,34 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
         float k = SuitGlowRules.fist((System.nanoTime() - shot[3]) / 1.0E9F, shot[2] / 1000F);
         if (k <= 0F) return light;
         return new Light(light.model(), SuitGlowRules.mix(light.colour(), (int) shot[1], 0.6F * k), light.strength() * (1F + 1.6F * k),
-            light.seconds(), light.since());
+            light.seconds(), light.since(), light.visor());
+    }
+
+    /**
+     * 0.1.10.32 (S-8): the light in the vent slots of the quantum chestplate (between the spine at x = +-1 and the fins that
+     * slid out), additive, in the light colour, flickering a little.
+     */
+    private static void ventLight(PoseStack pose, MultiBufferSource buffers, ModelPart body, Light light, float vent, float ticks) {
+        VertexConsumer vc = buffers.getBuffer(com.miophas.singularity_iteration.common.client.render.SiRenderTypes.FIELD_GLOW);
+        pose.pushPose();
+        body.translateAndRotate(pose);
+        org.joml.Matrix4f m = pose.last().pose();
+        float r = ((light.colour() >> 16) & 255) / 255F, g = ((light.colour() >> 8) & 255) / 255F, b = (light.colour() & 255) / 255F;
+        float a = vent * (0.75F + 0.25F * (float) Math.sin(ticks * 0.9F)) * Math.min(1F, light.strength());
+        float slide = SuitFxRules.VENT_SLIDE * vent;
+        for (int side = -1; side <= 1; side += 2) {
+            float x0 = side * 1.02F / 16F, x1 = side * (1.1F + slide) / 16F, y0 = -0.9F / 16F, y1 = 8.0F / 16F, z0 = 4.0F / 16F, z1 = 6.95F / 16F;
+            // the slot seen from behind, and its inner wall
+            vc.addVertex(m, x0, y0, z1).setColor(r, g, b, a);
+            vc.addVertex(m, x1, y0, z1).setColor(r, g, b, a);
+            vc.addVertex(m, x1, y1, z1).setColor(r, g, b, a * 0.6F);
+            vc.addVertex(m, x0, y1, z1).setColor(r, g, b, a * 0.6F);
+            vc.addVertex(m, x0, y0, z0).setColor(r, g, b, a * 0.5F);
+            vc.addVertex(m, x0, y0, z1).setColor(r, g, b, a);
+            vc.addVertex(m, x0, y1, z1).setColor(r, g, b, a * 0.6F);
+            vc.addVertex(m, x0, y1, z0).setColor(r, g, b, a * 0.3F);
+        }
+        pose.popPose();
     }
 
     /** The lit quads of one baked part with the transform of {@code part}; light per vertex from its height and its distance to the core. */
@@ -241,15 +292,30 @@ public final class SuitGlowLayer<T extends LivingEntity, M extends HumanoidModel
         pose.pushPose();
         part.translateAndRotate(pose);
         PoseStack.Pose last = pose.last();
+        boolean head = light.visor() >= 0 && "head".equals(name);
         for (float[] q : quads) {
+            // 0.1.10.32: the face quads of a helmet follow the visor light-up
+            boolean face = head && (q[2] + q[7] + q[12] + q[17]) / 4F < -3.5F;
+            float ox = 0, oy = 0, oz = 0;
+            if (ventSlide > 0 && "body".equals(name)) {
+                float cx = (q[0] + q[5] + q[10] + q[15]) / 4F, cy = (q[1] + q[6] + q[11] + q[16]) / 4F, cz = (q[2] + q[7] + q[12] + q[17]) / 4F;
+                if (Math.abs(cx) >= 1.1F && Math.abs(cx) <= 2.3F && cz >= 3.8F && cz <= 7.3F && cy >= -1.5F && cy <= 8.2F) {
+                    ox = Math.signum(cx) * ventSlide;
+                    oz = 0.2F * ventSlide;
+                }
+            } else if (shoulderSlide > 0 && ("right_arm".equals(name) || "left_arm".equals(name)) && (q[1] + q[6] + q[11] + q[16]) / 4F < -1.0F) {
+                oy = -SuitFxRules.SHOULDER_UP * shoulderSlide;
+                oz = SuitFxRules.SHOULDER_BACK * shoulderSlide;
+            }
             for (int i = 0; i < 4; i++) {
                 int k = i * 5;
                 float mx = part.x + q[k], my = part.y + q[k + 1], mz = part.z + q[k + 2];
                 float dx = mx - CORE_X, dy = my - CORE_Y, dz = mz - CORE_Z;
                 float l = SuitGlowRules.vertexLight(light.strength(), SuitGlowRules.band(my, light.seconds()),
                     SuitGlowRules.powerOn((float) Math.sqrt(dx * dx + dy * dy + dz * dz), light.since()));
+                if (face) l *= SuitFxRules.visor(Math.abs(q[k]), light.visor());
                 int rgb = SuitGlowRules.scale(light.colour(), l);
-                vc.addVertex(last, q[k] / 16F, q[k + 1] / 16F, q[k + 2] / 16F)
+                vc.addVertex(last, (q[k] + ox) / 16F, (q[k + 1] + oy) / 16F, (q[k + 2] + oz) / 16F)
                     .setColor((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255, 255)
                     .setUv(q[k + 3], q[k + 4])
                     .setOverlay(OverlayTexture.NO_OVERLAY)

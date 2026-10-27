@@ -36,6 +36,11 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
     private EditBox renameBox;
     private int renaming = -1;
 
+    // ---- 0.1.10.32 (G-2): the hologram preview of a stored suit
+    private final com.miophas.singularity_iteration.common.client.screen.SuitPreview.View preview = new com.miophas.singularity_iteration.common.client.screen.SuitPreview.View();
+    private net.minecraft.world.entity.decoration.ArmorStand previewStand;
+    private int previewSet = -1;
+
     public ArmoryScreen(ArmoryMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         imageWidth = 176;
@@ -142,6 +147,72 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
                 g.fill(x + NAME_X + 1, ry + 1, x + NAME_X + NAME_W - 1, ry + 17, 0x303A6EA5);
             }
         }
+        chargeFrames(g);
+        renderPreview(g, mouseX, mouseY);
+    }
+
+    /** 0.1.10.32 (G-2): a frame round each stored electric armour piece in the colour of its charge. */
+    private void chargeFrames(GuiGraphics g) {
+        for (int i = 1; i < mio_icif_armory.SLOT_COUNT; i++) {
+            var slot = menu.getSlot(i);
+            var stack = slot.getItem();
+            if (!(stack.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor)) continue;
+            long max = armor.getMaxEnergy(stack);
+            float charge = max <= 0 ? 0F : (float) Math.min(1.0, armor.getEnergy(stack) / (double) max);
+            int rgb = charge >= 0.5F ? 0x46E070 : charge >= 0.25F ? 0xFFA838 : 0xFF3B30;
+            int a = charge > 0.98F ? 0x70 : 0xB0;
+            int c = a << 24 | rgb, x = leftPos + slot.x, y = topPos + slot.y;
+            g.fill(x - 1, y - 1, x + 17, y, c);
+            g.fill(x - 1, y + 16, x + 17, y + 17, c);
+            g.fill(x - 1, y, x, y + 16, c);
+            g.fill(x + 16, y, x + 17, y + 16, c);
+        }
+    }
+
+    /** The suit row under the mouse (slots of the row), or -1. */
+    private int rowAt(double mouseX, double mouseY) {
+        for (int r = 0; r < mio_icif_armory.SETS; r++) {
+            if (over(NAME_X, 18 + r * 18, imageWidth - NAME_X - 6, 18, mouseX, mouseY)) return r;
+        }
+        return -1;
+    }
+
+    private int[] previewBox() {
+        return com.miophas.singularity_iteration.common.client.screen.SuitPreview.place(leftPos, topPos, imageWidth, 140, width);
+    }
+
+    /** 0.1.10.32 (G-2): the suit under the mouse (or the last one shown) as a hologram on a stand beside the window. */
+    private void renderPreview(GuiGraphics g, int mouseX, int mouseY) {
+        int[] box = previewBox();
+        if (box == null || minecraft == null || minecraft.level == null) return;
+        int row = rowAt(mouseX, mouseY);
+        if (row >= 0) previewSet = row;
+        if (previewSet < 0) {
+            for (int r = 0; r < mio_icif_armory.SETS && previewSet < 0; r++) {
+                for (int c = 0; c < mio_icif_armory.PIECES; c++) if (!menu.getSlot(1 + r * mio_icif_armory.PIECES + c).getItem().isEmpty()) previewSet = r;
+            }
+        }
+        mio_icif_armory armory = armory();
+        String name = previewSet < 0 ? "-" : armory != null ? armory.setName(previewSet) : mio_icif_armory.defaultName(previewSet);
+        com.miophas.singularity_iteration.common.client.screen.SuitPreview.background(g, font, box, font.plainSubstrByWidth(name, box[2] - 8),
+            Component.translatable("gui.mio_icif.preview.hint").getString());
+        if (previewSet < 0) return;
+        if (previewStand == null || previewStand.level() != minecraft.level) {
+            previewStand = new net.minecraft.world.entity.decoration.ArmorStand(net.minecraft.world.entity.EntityType.ARMOR_STAND, minecraft.level);
+            previewStand.setShowArms(true);
+            previewStand.setNoBasePlate(true);
+            previewStand.setInvisible(true);
+        }
+        for (int c = 0; c < mio_icif_armory.PIECES; c++) {
+            var stack = menu.getSlot(1 + previewSet * mio_icif_armory.PIECES + c).getItem();
+            var equip = com.miophas.singularity_iteration.common.armory.ArmoryPiece.COLUMNS[c].slot;
+            if (!net.minecraft.world.item.ItemStack.matches(stack, previewStand.getItemBySlot(equip))) previewStand.setItemSlot(equip, stack.copy());
+        }
+        previewStand.tickCount = (int) (minecraft.level.getGameTime() & 0x3FFFFFFF);
+        float time = minecraft.level.getGameTime();
+        var holo = new ArmorShowcaseRenderer.Holo(new org.joml.Matrix4f(), 0.92F + 0.08F * (float) Math.sin(time * 0.37F), time, -1F, new float[0]);
+        com.miophas.singularity_iteration.common.client.screen.SuitPreview.figure(g, box, previewStand, preview, b -> new ArmorShowcaseRenderer.HoloSource(b, holo, false));
+        com.miophas.singularity_iteration.common.client.screen.SuitPreview.figure(g, box, previewStand, preview, b -> new ArmorShowcaseRenderer.HoloSource(b, holo, true));
     }
 
     /** The Armory shows its own bind/energy lamp beside the owner line. */
@@ -229,6 +300,7 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && preview.click(mouseX, mouseY, previewBox())) return true;
         for (int r = 0; r < mio_icif_armory.SETS; r++) {
             if (over(NAME_X, 18 + r * 18, NAME_W, 18, mouseX, mouseY)) {
                 startRename(r);
@@ -266,6 +338,24 @@ public class ArmoryScreen extends mio_icif_screen<ArmoryMenu> {
             return renameBox.keyPressed(keyCode, scanCode, modifiers) || true;
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (preview.drag(dragX)) return true;
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        preview.release();
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (preview.scroll(mouseX, mouseY, scrollY, previewBox())) return true;
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override

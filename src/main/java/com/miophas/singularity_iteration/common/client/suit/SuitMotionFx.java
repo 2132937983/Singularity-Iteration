@@ -158,6 +158,7 @@ public final class SuitMotionFx {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.isPaused()) return;
         ThrusterFx.tick(mc);                                        // 0.1.10.31 (S-5) sparks of full-thrust jets
+        SuitRippleLayer.prune(mc.level.getGameTime());              // 0.1.10.32 finished hit ripples
     }
 
     /** World pass (after particles): the calf streaks, an alpha veil that thins out behind the runner. */

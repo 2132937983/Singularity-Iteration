@@ -29,11 +29,16 @@ public final class ThrusterFlame {
     public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID,
         "textures/effect/thruster_flame.png");
     private static final int SEGMENTS = 10;
-    private static final double[] COS = new double[SEGMENTS + 1], SIN = new double[SEGMENTS + 1];
+    /** 0.1.10.32: cosine and sine tables per segment count (3..16, the level of detail asks for fewer far away). */
+    private static final double[][] COS = new double[17][], SIN = new double[17][];
     static {
-        for (int i = 0; i <= SEGMENTS; i++) {
-            COS[i] = Math.cos(i * Math.PI * 2 / SEGMENTS);
-            SIN[i] = Math.sin(i * Math.PI * 2 / SEGMENTS);
+        for (int n = 3; n <= 16; n++) {
+            COS[n] = new double[n + 1];
+            SIN[n] = new double[n + 1];
+            for (int i = 0; i <= n; i++) {
+                COS[n][i] = Math.cos(i * Math.PI * 2 / n);
+                SIN[n][i] = Math.sin(i * Math.PI * 2 / n);
+            }
         }
     }
 
@@ -87,14 +92,22 @@ public final class ThrusterFlame {
      */
     public static void glow(VertexConsumer vc, Matrix4f m, float radius, float length, float power, float throttle, float flicker,
                             float seconds, int seed, Strips strips) {
+        glow(vc, m, radius, length, power, throttle, flicker, seconds, seed, strips, SEGMENTS);
+    }
+
+    /** 0.1.10.32 (P-3): {@link #glow} with {@code segments} (3..16) round the cone. */
+    public static void glow(VertexConsumer vc, Matrix4f m, float radius, float length, float power, float throttle, float flicker,
+                            float seconds, int seed, Strips strips, int segments) {
+        int n = Math.max(3, Math.min(16, segments));
+        double[] cos = COS[n], sin = SIN[n];
         int c = FlameRules.colour(throttle);
         float cr = ((c >> 16) & 255) / 255F, cg = ((c >> 8) & 255) / 255F, cb = (c & 255) / 255F;
         float p = power * flicker;
         // white-hot centre that takes a little of the flame colour
         float hr = 0.75F + 0.25F * cr, hg = 0.75F + 0.25F * cg, hb = 0.75F + 0.25F * cb;
-        for (int s = 0; s < SEGMENTS; s++) {
-            float x0 = (float) COS[s] * radius, z0 = (float) SIN[s] * radius;
-            float x1 = (float) COS[s + 1] * radius, z1 = (float) SIN[s + 1] * radius;
+        for (int s = 0; s < n; s++) {
+            float x0 = (float) cos[s] * radius, z0 = (float) sin[s] * radius;
+            float x1 = (float) cos[s + 1] * radius, z1 = (float) sin[s + 1] * radius;
             put(vc, m, 0, 0, 0, hr, hg, hb, 0.85F * p);
             put(vc, m, x0, 0, z0, cr, cg, cb, 0.35F * p);
             put(vc, m, x1, 0, z1, cr, cg, cb, 0.35F * p);

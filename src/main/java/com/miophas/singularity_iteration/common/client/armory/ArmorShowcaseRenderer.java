@@ -133,7 +133,10 @@ public class ArmorShowcaseRenderer implements BlockEntityRenderer<ArmorShowcaseB
             pose.translate(0.5, 0.28, 0.5);
             Holo holo = new Holo(new org.joml.Matrix4f(pose.last().pose()).invert(), flicker, time, buildY, slices(seed, time));
             renderer().render(stand, yaw, partialTick, pose, new HoloSource(buffers, holo, false), LightTexture.FULL_BRIGHT);
-            renderer().render(stand, yaw, partialTick, pose, new HoloSource(buffers, holo, true), LightTexture.FULL_BRIGHT);
+            // 0.1.10.32 (P-3): the grid is a whole-body pass within the frame budget (the body always draws)
+            if (com.miophas.singularity_iteration.common.client.render.FxBudget.allow(-1 - (int) (showcase.getBlockPos().asLong() & 0x3FFFFFFF),
+                    net.minecraft.world.phys.Vec3.atCenterOf(showcase.getBlockPos())))
+                renderer().render(stand, yaw, partialTick, pose, new HoloSource(buffers, holo, true), LightTexture.FULL_BRIGHT);
             pose.popPose();
         }
         effects(pose, buffers, time, flicker, any && !physical, showcase.docked());

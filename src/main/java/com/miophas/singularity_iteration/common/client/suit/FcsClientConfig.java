@@ -93,6 +93,12 @@ public final class FcsClientConfig {
     /** 0.1.10.31: thruster and motion effects of the suits in normal mode; the visor glass (off by default). */
     public static final ModConfigSpec.BooleanValue MOTION_FX;
     public static final ModConfigSpec.BooleanValue VISOR_GLASS;
+    /** 0.1.10.32: armour hit ripple and suit boot, moving parts, Armory gantry and transfer gates, level of detail and its budget. */
+    public static final ModConfigSpec.BooleanValue HIT_RIPPLE;
+    public static final ModConfigSpec.BooleanValue SUIT_GIMMICKS;
+    public static final ModConfigSpec.BooleanValue ARMORY_FX;
+    public static final ModConfigSpec.BooleanValue FX_LOD;
+    public static final ModConfigSpec.IntValue FX_BUDGET;
 
     static {
         ModConfigSpec.Builder b = new ModConfigSpec.Builder();
@@ -148,6 +154,18 @@ public final class FcsClientConfig {
             .define("suit_glow", true);
         SUIT_GLOW_STRENGTH = b.comment("Strength of the suit glow. 1.0 = default.")
             .defineInRange("suit_glow_strength", 1.0, 0.25, 1.5);
+        HIT_RIPPLE = b.comment("A hexagonal ring of light runs over a quantum suit from where a hit was absorbed; the full boot when the Armory",
+                "locks the last piece (light from the chest core, the visor from its centre, a ring from the core).")
+            .define("hit_ripple", true);
+        SUIT_GIMMICKS = b.comment("Moving parts of the quantum suit: the back vents slide open and glow in flight, the shoulder plates slide",
+                "back while sprinting, the visor lights from its centre when it comes on.")
+            .define("suit_gimmicks", true);
+        ARMORY_FX = b.comment("Armory gantry (iris hatch, suit icons above it, maintenance rings) and the transfer gates of far summons.")
+            .define("armory_fx", true);
+        FX_LOD = b.comment("Simpler effects far away: fewer segments and no afterimages beyond 24 blocks, only the light beyond 64.")
+            .define("fx_lod", true);
+        FX_BUDGET = b.comment("Most whole-body effect passes a frame (hit ripples, hologram grids, nano mesh); the nearest are drawn.")
+            .defineInRange("fx_budget", 4, 1, 16);
         b.pop();
         b.push("nano_suit");
         NANO_HUD = b.comment("Nano core HUD around the crosshair (reserve ring, heat meter, burst keys).").define("nano_hud", true);
@@ -244,6 +262,11 @@ public final class FcsClientConfig {
         SPEC.save();
     }
     public static boolean motionFx() { return !loaded() || MOTION_FX.get(); }
+    public static boolean hitRipple() { return !loaded() || HIT_RIPPLE.get(); }
+    public static boolean suitGimmicks() { return !loaded() || SUIT_GIMMICKS.get(); }
+    public static boolean armoryFx() { return !loaded() || ARMORY_FX.get(); }
+    public static boolean fxLod() { return !loaded() || FX_LOD.get(); }
+    public static int fxBudget() { return loaded() ? FX_BUDGET.get() : 4; }
     public static boolean visorGlass() { return loaded() && VISOR_GLASS.get(); }
     public static void setVisorGlass(boolean on) {
         if (!loaded()) return;

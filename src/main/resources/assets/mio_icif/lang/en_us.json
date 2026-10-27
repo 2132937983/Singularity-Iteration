@@ -4284,5 +4284,17 @@
   "mio_icif.configuration.visor_glass.tooltip": "Off by default. In first person with a nano or quantum helmet: a faint rim, colour fringes, a reflection that slides as you turn, raindrops in the rain, cracks when the helmet is almost empty.",
   "gui.mio_icif.equipment_console.appearance.visor_glass": "Visor glass (first person)",
   "message.mio_icif.projector.mode_physical": "Physical display: the real gear on the cradle",
-  "message.mio_icif.projector.mode_hologram": "Hologram display"
+  "message.mio_icif.projector.mode_hologram": "Hologram display",
+  "mio_icif.configuration.hit_ripple": "Armour hit ripple and suit boot",
+  "mio_icif.configuration.hit_ripple.tooltip": "A hexagonal ring of light runs over a quantum suit from where a hit was absorbed. When the Armory locks the last piece, the suit boots: light from the chest core, the visor from its centre, a ring from the core.",
+  "mio_icif.configuration.suit_gimmicks": "Suit moving parts",
+  "mio_icif.configuration.suit_gimmicks.tooltip": "Quantum suit: the back vents slide open and glow in flight, the shoulder plates slide back while sprinting, the visor lights from its centre when it comes on.",
+  "mio_icif.configuration.armory_fx": "Armory gantry and gates",
+  "mio_icif.configuration.armory_fx.tooltip": "The iris hatch of the Armory, the icons of its suits and its maintenance rings; the transfer gates of summons from far away.",
+  "mio_icif.configuration.fx_lod": "Simpler effects far away",
+  "mio_icif.configuration.fx_lod.tooltip": "Fewer segments and no afterimages beyond 24 blocks, only the light beyond 64.",
+  "mio_icif.configuration.fx_budget": "Whole-body effect passes",
+  "mio_icif.configuration.fx_budget.tooltip": "Most whole-body effect passes a frame (hit ripples, hologram grids, nano mesh); the nearest are drawn.",
+  "gui.mio_icif.preview.title": "3D preview",
+  "gui.mio_icif.preview.hint": "Drag: turn / Wheel: zoom"
 }

@@ -69,8 +69,19 @@ public record SuitPalette(int primary, int accent) {
     /** The palette of a stack, or {@code null}. */
     @Nullable
     public static SuitPalette of(ItemStack stack) {
-        return stack.isEmpty() ? null : stack.get(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_PALETTE.get());
+        if (stack.isEmpty()) return null;
+        if (!PREVIEW.isEmpty()) {
+            SuitPalette p = PREVIEW.get(stack);
+            if (p != null) return p;
+        }
+        return stack.get(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_PALETTE.get());
     }
+
+    /**
+     * 0.1.10.32: palettes shown instead of the stored ones while the Look page preview draws (keys: the worn stacks, by
+     * identity). The client fills it right before the preview render and clears it right after; empty otherwise.
+     */
+    public static final java.util.Map<ItemStack, SuitPalette> PREVIEW = new java.util.IdentityHashMap<>();
 
     /** Sets or removes ({@code null}) the palette. Unsupported items are not changed. */
     public static void set(ItemStack stack, @Nullable SuitPalette palette) {

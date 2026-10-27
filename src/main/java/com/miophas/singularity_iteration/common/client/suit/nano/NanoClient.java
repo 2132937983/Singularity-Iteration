@@ -191,6 +191,8 @@ public final class NanoClient {
             }
             case NanoPackets.FX_MESH_OFF -> NanoFx.meshOff(fx.entityId());
             case NanoPackets.FX_MESH_HIT -> NanoFx.meshHit(fx.entityId(), new Vec3(fx.a(), fx.b(), fx.c()));
+            case NanoPackets.FX_ARMOR_HIT -> com.miophas.singularity_iteration.common.client.suit.SuitRippleLayer.hit(fx.entityId(),
+                new Vec3(fx.a(), fx.b(), fx.c()), fx.x());
             case NanoPackets.FX_RECON -> {
                 if (self) {
                     usedAt[lastSlot] = ticks;

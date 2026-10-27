@@ -50,6 +50,33 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
 
     public ResourceLocation source() { return source; }
 
+    /**
+     * 0.1.10.32 (S-8): the entity the next {@link #renderToBuffer} draws for (set by the armour layer hook before each piece;
+     * null for item icons and other renders): a worn quantum chestplate moves its vents and shoulder plates by
+     * {@code SuitGimmicks}.
+     */
+    @org.jetbrains.annotations.Nullable private LivingEntity wearer;
+
+    public BakedArmorModel wearer(@org.jetbrains.annotations.Nullable LivingEntity entity) {
+        this.wearer = entity;
+        return this;
+    }
+
+    /** 0.1.10.32: the back fins (vents) of the quantum chestplate, right and left of the spine (body pixels, quad centres). */
+    static final java.util.function.Predicate<float[]> FINS_POS = c -> c[0] >= 1.1F && c[0] <= 2.3F && c[2] >= 3.8F && c[2] <= 7.3F
+        && c[1] >= -1.5F && c[1] <= 8.2F;
+    static final java.util.function.Predicate<float[]> FINS_NEG = c -> c[0] <= -1.1F && c[0] >= -2.3F && c[2] >= 3.8F && c[2] <= 7.3F
+        && c[1] >= -1.5F && c[1] <= 8.2F;
+    static final java.util.function.Predicate<float[]> BODY_REST = c -> !FINS_POS.test(c) && !FINS_NEG.test(c);
+    /** 0.1.10.32: the upper shoulder plates of the quantum chestplate arms (arm pixels, quad centres above the shoulder line). */
+    static final java.util.function.Predicate<float[]> PAULDRON = c -> c[1] < -1.0F;
+    static final java.util.function.Predicate<float[]> ARM_REST = c -> c[1] >= -1.0F;
+
+    private boolean moving() {
+        return wearer != null && source.getPath().endsWith("/quantum_chestplate.json")
+            && com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.suitGimmicks();
+    }
+
     /** Baked quads per part ("head", "body", "right_arm", ...), each float[23]: 4 x (x y z u v) + normal. */
     public Map<String, float[][]> geometry() {
         synchronized (BakedArmorModel.class) {
@@ -101,9 +128,30 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
         Map<String, float[][]> geo = geometry();
         if (geo.isEmpty()) return;
         draw(pose, vc, head, geo.get("head"), light, overlay, color);
-        draw(pose, vc, body, geo.get("body"), light, overlay, color);
-        draw(pose, vc, rightArm, geo.get("right_arm"), light, overlay, color);
-        draw(pose, vc, leftArm, geo.get("left_arm"), light, overlay, color);
+        // 0.1.10.32 (S-8): the vents slide out in flight, the shoulder plates slide back while sprinting
+        float partial = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
+        float vent = moving() ? com.miophas.singularity_iteration.common.client.suit.SuitGimmicks.vent(wearer, partial) : 0F;
+        float shoulder = moving() ? com.miophas.singularity_iteration.common.client.suit.SuitGimmicks.shoulder(wearer, partial) : 0F;
+        if (vent > 0.001F && geo.get("body") != null) {
+            float slide = com.miophas.singularity_iteration.common.client.suit.SuitFxRules.VENT_SLIDE * vent;
+            drawOffset(pose, vc, body, filtered(geo.get("body"), BODY_REST), 0, 0, 0, light, overlay, color);
+            drawOffset(pose, vc, body, filtered(geo.get("body"), FINS_POS), slide, 0, 0.2F * slide, light, overlay, color);
+            drawOffset(pose, vc, body, filtered(geo.get("body"), FINS_NEG), -slide, 0, 0.2F * slide, light, overlay, color);
+        } else {
+            draw(pose, vc, body, geo.get("body"), light, overlay, color);
+        }
+        if (shoulder > 0.001F && geo.get("right_arm") != null && geo.get("left_arm") != null) {
+            float up = -com.miophas.singularity_iteration.common.client.suit.SuitFxRules.SHOULDER_UP * shoulder;
+            float back = com.miophas.singularity_iteration.common.client.suit.SuitFxRules.SHOULDER_BACK * shoulder;
+            for (ModelPart arm : new ModelPart[]{rightArm, leftArm}) {
+                float[][] quads = geo.get(arm == rightArm ? "right_arm" : "left_arm");
+                drawOffset(pose, vc, arm, filtered(quads, ARM_REST), 0, 0, 0, light, overlay, color);
+                drawOffset(pose, vc, arm, filtered(quads, PAULDRON), 0, up, back, light, overlay, color);
+            }
+        } else {
+            draw(pose, vc, rightArm, geo.get("right_arm"), light, overlay, color);
+            draw(pose, vc, leftArm, geo.get("left_arm"), light, overlay, color);
+        }
         // 0.1.8.0: hand cover (gauntlet below the wrist), drawn with the arm transform. Optional.
         if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.handArmorThirdPerson()) {
             draw(pose, vc, rightArm, geo.get("right_hand"), light, overlay, color);
@@ -149,6 +197,28 @@ public class BakedArmorModel extends HumanoidModel<LivingEntity> {
             }
             return kept.toArray(new float[0][]);
         });
+    }
+
+    /** 0.1.10.32: {@link #draw} with an extra offset (pixels) after the part transform (the moving parts). */
+    static void drawOffset(PoseStack pose, VertexConsumer vc, ModelPart part, float[][] quads, float dx, float dy, float dz,
+                           int light, int overlay, int color) {
+        if (quads == null || quads.length == 0 || !part.visible || part.skipDraw) return;
+        pose.pushPose();
+        part.translateAndRotate(pose);
+        pose.translate(dx / 16F, dy / 16F, dz / 16F);
+        PoseStack.Pose last = pose.last();
+        for (float[] q : quads) {
+            for (int i = 0; i < 4; i++) {
+                int k = i * 5;
+                vc.addVertex(last, q[k] / 16F, q[k + 1] / 16F, q[k + 2] / 16F)
+                    .setColor(color)
+                    .setUv(q[k + 3], q[k + 4])
+                    .setOverlay(overlay)
+                    .setLight(light)
+                    .setNormal(last, q[20], q[21], q[22]);
+            }
+        }
+        pose.popPose();
     }
 
     /**

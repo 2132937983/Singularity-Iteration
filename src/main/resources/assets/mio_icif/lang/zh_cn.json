@@ -4284,5 +4284,17 @@
   "mio_icif.configuration.visor_glass.tooltip": "默认关闭。第一人称佩戴纳米或量子头盔时：淡淡的边缘、彩色边纹、随转头滑动的反光、雨中的水滴、头盔几乎没电时的裂纹。",
   "gui.mio_icif.equipment_console.appearance.visor_glass": "面罩玻璃（第一人称）",
   "message.mio_icif.projector.mode_physical": "实体展示：实物装备装在支架上",
-  "message.mio_icif.projector.mode_hologram": "全息展示"
+  "message.mio_icif.projector.mode_hologram": "全息展示",
+  "mio_icif.configuration.hit_ripple": "装甲受击波纹与套装启动",
+  "mio_icif.configuration.hit_ripple.tooltip": "量子套装吸收一次攻击时，六角形光环从受击点沿装甲扩散。武装库扣上最后一个部件时套装启动：光从胸口核心扩散，面罩从中央亮起，核心放出一道光环。",
+  "mio_icif.configuration.suit_gimmicks": "套装可动机构",
+  "mio_icif.configuration.suit_gimmicks.tooltip": "量子套装：飞行时背部排气口滑开并发光，疾跑时肩甲向后滑动，面罩启用时从中央亮起。",
+  "mio_icif.configuration.armory_fx": "武装库机库与传送门",
+  "mio_icif.configuration.armory_fx.tooltip": "武装库的光圈舱门、所存套装的图标与维护光环；远距离召唤的空间传送门。",
+  "mio_icif.configuration.fx_lod": "远处简化特效",
+  "mio_icif.configuration.fx_lod.tooltip": "24 格外减少分段、不画残影，64 格外只画光。",
+  "mio_icif.configuration.fx_budget": "全身特效次数上限",
+  "mio_icif.configuration.fx_budget.tooltip": "每帧最多绘制的全身特效次数（受击波纹、全息网格、纳米网甲）；优先绘制最近的。",
+  "gui.mio_icif.preview.title": "3D 预览",
+  "gui.mio_icif.preview.hint": "拖动：旋转 / 滚轮：缩放"
 }

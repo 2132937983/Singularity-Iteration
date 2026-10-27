@@ -71,7 +71,9 @@ public final class PieceFx {
         float glow = piece.isReturn() ? 0F : PieceFxRules.reentry(speed, v.y, height);
         if (t != null) t.glow += (glow - t.glow) * 0.3F;
         float g = t == null ? glow : t.glow;
-        boolean trail = t != null && t.n >= 1;
+        // 0.1.10.32 (P-3): half the trail points beyond 24 blocks, no trail beyond 64; a simpler cap
+        int tier = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(at);
+        boolean trail = t != null && t.n >= 1 && tier < com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR;
         if (!trail && g < 0.02F) return;
         Matrix4f m = pose.last().pose();
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
@@ -81,23 +83,25 @@ public final class PieceFx {
             float r = 0.55F + 0.45F * g, gr = 0.8F - 0.25F * g, b = 1F - 0.7F * g;
             int n = t.n + 1;
             double px = here.x, py = here.y, pz = here.z;
-            for (int i = 1; i < n; i++) {
+            int step = tier == com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR ? 1 : 2;
+            for (int i = step; i < n; i += step) {
                 double qx = t.xyz[(i - 1) * 3] - origin.x, qy = t.xyz[(i - 1) * 3 + 1] - origin.y, qz = t.xyz[(i - 1) * 3 + 2] - origin.z;
-                ribbon(vc, m, px, py, pz, qx, qy, qz, cam, PieceFxRules.trailHalfWidth(i - 1, n), PieceFxRules.trailHalfWidth(i, n),
-                    r, gr, b, 0.55F * PieceFxRules.trailAlpha(i - 1, n), 0.55F * PieceFxRules.trailAlpha(i, n));
+                ribbon(vc, m, px, py, pz, qx, qy, qz, cam, PieceFxRules.trailHalfWidth(i - step, n), PieceFxRules.trailHalfWidth(i, n),
+                    r, gr, b, 0.55F * PieceFxRules.trailAlpha(i - step, n), 0.55F * PieceFxRules.trailAlpha(i, n));
                 px = qx; py = qy; pz = qz;
             }
         }
-        if (g >= 0.02F && speed > 1.0E-4) cap(vc, m, here, v.scale(1 / speed), cam, g);
+        if (g >= 0.02F && speed > 1.0E-4) cap(vc, m, here, v.scale(1 / speed), cam, g,
+            tier == com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR ? CAP_RINGS : 2);
     }
 
     /** Shock cap in front of the path (apex 0.5 ahead, opening backwards) and a plasma tail behind. */
-    private static void cap(VertexConsumer vc, Matrix4f m, Vec3 at, Vec3 dir, Vec3 cam, float g) {
+    private static void cap(VertexConsumer vc, Matrix4f m, Vec3 at, Vec3 dir, Vec3 cam, float g, int rings) {
         Vec3 side = Math.abs(dir.y) < 0.95 ? dir.cross(new Vec3(0, 1, 0)).normalize() : dir.cross(new Vec3(1, 0, 0)).normalize();
         Vec3 up = side.cross(dir).normalize();
         double apex = 0.5, depth = 0.55, radius = 0.42;
-        for (int r = 0; r < CAP_RINGS; r++) {
-            double k0 = r / (double) CAP_RINGS, k1 = (r + 1) / (double) CAP_RINGS;
+        for (int r = 0; r < rings; r++) {
+            double k0 = r / (double) rings, k1 = (r + 1) / (double) rings;
             double d0 = apex - depth * k0, d1 = apex - depth * k1;
             double r0 = radius * Math.sqrt(k0), r1 = radius * Math.sqrt(k1);
             float a0 = g * 0.75F * (1 - (float) k0), a1 = g * 0.75F * (1 - (float) k1);

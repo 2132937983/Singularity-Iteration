@@ -47,6 +47,22 @@ public final class MarketQuote {
         return (long) Math.floor(base * (quantity - d * used) + 1.0E-9);
     }
 
+    /**
+     * 0.1.10.34: the market's bid of one item at {@code price} (before sell pressure): {@code price x ratio x (1 - spread / 2)},
+     * {@code ratio} = bid_price / base_price of the commodity (1 without a bid price).
+     */
+    public static double bidUnit(double price, double spread, double ratio) {
+        if (!(price > 0)) return 0;
+        double r = Double.isFinite(ratio) ? Math.max(0.0, Math.min(1.0, ratio)) : 1.0;
+        return price * r * (1.0 - clampSpread(spread) / 2.0);
+    }
+
+    /** 0.1.10.34: the value of one item for a bounty: halfway between the ask and the bid. */
+    public static double midValue(double ask, double bid) {
+        if (!(ask > 0)) return 0;
+        return (ask + Math.max(0, Math.min(ask, bid))) / 2.0;
+    }
+
     /** Items the market still buys today: the rest of the budget, {@link Integer#MAX_VALUE} without a budget. */
     public static int budgetLeft(int bought, int budget) {
         return budget == UNLIMITED ? Integer.MAX_VALUE : Math.max(0, budget - Math.max(0, bought));

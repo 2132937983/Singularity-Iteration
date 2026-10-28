@@ -74,6 +74,15 @@ public final class BountyBoard {
         public double share(Tier t) { return t == Tier.ADVANCED ? advancedShare : 1.0; }
     }
 
+    /**
+     * 0.1.10.34: the pace settings and the players of the server, set by the game before the board posts: random days by
+     * rarity ({@code randomDays}, within {@code minDays..maxDays}; off = the fixed days of the tiers), claims a player may
+     * hold, the active players (online, or used the exchange in the last three market days) and the players online.
+     */
+    public record Pace(boolean randomDays, int minDays, int maxDays, int acceptMax, int active, int online) {
+        public static final Pace DEFAULT = new Pace(true, 1, 7, 1, 1, 1);
+    }
+
     /** The market as the board sees it. */
     public interface Prices {
         /** Coins one item costs at the market's ask now (price x (1 + spread / 2)), or 0 when it has no price. */
@@ -81,6 +90,15 @@ public final class BountyBoard {
 
         /** A datapack commodity (delivered items go to the treasury; others go to the vault). */
         boolean isCommodity(String item);
+
+        /** 0.1.10.33: the stack size of the item (generated requests skip items that do not stack). */
+        default int maxStack(String item) { return 64; }
+
+        /** 0.1.10.33: coins of one mB of UU-matter (to value UU rewards; 0 = unknown). */
+        default double uuPerMb() { return 0; }
+
+        /** 0.1.10.34: the value of one item a request asks for (between the market's ask and bid); the ask by default. */
+        default double value(String item) { return ask(item); }
     }
 
     /** What the game decides for the board while a day is posted. */
@@ -123,6 +141,14 @@ public final class BountyBoard {
         public double share = 1.0;
         public final List<Need> needs = new ArrayList<>();
         public final List<Line> lines = new ArrayList<>();
+        /** 0.1.10.34: the rarity (its range of days) and the rush bonus (percent) of the posting. */
+        public BountyPacing.Rarity rarity = BountyPacing.Rarity.COMMON;
+        public int rush;
+        /** 0.1.10.34: the claim: the player (null = none), their name and team, the market day; the one extra day given. */
+        public UUID claimant;
+        public String claimName = "", claimTeam = "";
+        public long claimDay;
+        public boolean extended;
         /** Delivered value per player, in the order of their first delivery. */
         public final LinkedHashMap<UUID, Long> contribution = new LinkedHashMap<>();
         public final Map<UUID, String> names = new HashMap<>();
@@ -160,6 +186,9 @@ public final class BountyBoard {
         public double multiplier = 1.0;
         /** Fall back to coins when no reward line can be paid (NORMAL and ADVANCED). */
         public boolean coinsFallback = true;
+        /** 0.1.10.34: the rarity and the rush bonus (percent, already in {@link #multiplier}). */
+        public BountyPacing.Rarity rarity = BountyPacing.Rarity.COMMON;
+        public int rush;
 
         public long value() {
             long v = 0;
@@ -175,6 +204,8 @@ public final class BountyBoard {
     public record Delivery(List<Payout> payouts, boolean completed) { }
 
     public static final int MAX_OPEN = 64, MAX_NEEDS = BountyTables.MAX_REQUIREMENTS, MAX_LINES = 8;
+    /** The longest a bounty stays open (days). */
+    public static final int MAX_DAYS = 60;
 
     // ------------------------------------------------------------------ state
 
@@ -190,6 +221,15 @@ public final class BountyBoard {
     public long uuIssued;
     /** ADVANCED bounties posted this week. */
     public int advancedPosted;
+    /** 0.1.10.34: players who abandoned a claim and the market day they did (no claim that day). */
+    public final Map<UUID, Long> bans = new HashMap<>();
+    /** 0.1.10.34: refreshes per player: {market day, refreshes that day, game tick of the last}. */
+    public final Map<UUID, long[]> refreshes = new HashMap<>();
+    /** 0.1.10.34: NORMAL postings of {@link #postedDay} (the daily cap), the game tick of the last one, a posting counter. */
+    public long postedDay = Long.MIN_VALUE, lastPostTick = Long.MIN_VALUE, serial;
+    public int postedToday;
+    /** 0.1.10.34: the pace of the server, set by the game before the board posts (not saved). */
+    public Pace pace = Pace.DEFAULT;
 
     public void rollWeek(long day) {
         long w = BountyMath.week(day);
@@ -200,11 +240,20 @@ public final class BountyBoard {
         advancedPosted = 0;
     }
 
+    /** 0.1.10.34: the weekly caps grow with the square root of the active players. */
     public long issueLeft(Tier t, Rules r, long day) {
-        return BountyMath.left(r.issueCap(t), issued[t.ordinal()], week, BountyMath.week(day));
+        return BountyMath.left(BountyPacing.issueCap(r.issueCap(t), pace.active()), issued[t.ordinal()], week, BountyMath.week(day));
     }
 
-    public long uuLeft(Rules r, long day) { return BountyMath.left(r.uuPerWeek(), uuIssued, week, BountyMath.week(day)); }
+    public long uuLeft(Rules r, long day) {
+        return BountyMath.left(BountyPacing.issueCap(r.uuPerWeek(), pace.active()), uuIssued, week, BountyMath.week(day));
+    }
+
+    /** 0.1.10.34: the weekly cap of a tier for the active players. */
+    public long issueCap(Tier t, Rules r) { return BountyPacing.issueCap(r.issueCap(t), pace.active()); }
+
+    /** 0.1.10.34: the weekly UU cap for the active players. */
+    public long uuCap(Rules r) { return BountyPacing.issueCap(r.uuPerWeek(), pace.active()); }
 
     public int open(Tier t) {
         int n = 0;
@@ -232,6 +281,37 @@ public final class BountyBoard {
         return false;
     }
 
+    /**
+     * 0.1.10.33: the most an open NORMAL or ADVANCED bounty pays per item of {@code item} it still needs (coins; reward items
+     * at the market's ask, UU-matter at {@link Prices#uuPerMb}; 0 = none). While it is open the market sells the item at this
+     * price or more, so buying from the market to deliver earns nothing; before, the market did not sell it at all (an emerald
+     * bounty stopped the emerald market).
+     */
+    public long rewardPerItem(String item, Prices prices) {
+        double best = 0;
+        for (Bounty b : bounties) {
+            if (b.tier == Tier.SPECIAL) continue;
+            for (Need n : b.needs) {
+                if (!n.item.equals(item) || n.left() <= 0) continue;
+                long all = b.all();
+                if (all <= 0) continue;
+                double value = 0;
+                for (Line l : b.lines) value += lineValue(l, prices);
+                best = Math.max(best, value * Math.max(1, n.unit) / all);
+            }
+        }
+        return best >= Long.MAX_VALUE / 4.0 ? Long.MAX_VALUE / 4 : (long) Math.ceil(best);
+    }
+
+    /** 0.1.10.33: the coins a reward line is worth (items at the market's ask, 0 when it has none). */
+    static double lineValue(Line l, Prices prices) {
+        return switch (l.kind) {
+            case COINS -> l.amount;
+            case ITEM -> l.amount * Math.max(0, prices.ask(l.item));
+            case UU -> l.amount * Math.max(0, prices.uuPerMb());
+        };
+    }
+
     /** The table may be posted on {@code day}: its minimum day, cooldown and open count (the game checks the advancement). */
     public boolean eligible(Table t, long day) {
         if (t.weight() <= 0 || day < t.minDay() || open(t.id()) >= t.maxOpen()) return false;
@@ -253,6 +333,7 @@ public final class BountyBoard {
         n.count = quantity;
         n.unit = Math.max(1, Math.round(ask));
         d.needs.add(n);
+        pace(d, Integer.MAX_VALUE, "", -1, -1, -1, r, day, salt);
         d.lines.addAll(rewards(tables.pools().get(r.normalPool()), 1, d.value(), d.multiplier, Tier.NORMAL, r, treasury, prices, day, salt,
             needItems(d)));
         return d;
@@ -271,15 +352,35 @@ public final class BountyBoard {
         for (Requirement q : t.requirements()) {
             Need n = new Need();
             n.item = q.item();
-            n.count = q.count();
-            double unit = q.value() > 0 ? q.value() : prices.ask(q.item());
+            // 0.1.10.33: at most eight inventory slots of the item (the loader warns about such tables)
+            n.count = BountyMath.tableCount(q.count(), prices.maxStack(q.item()));
+            // 0.1.10.34: valued between the ask and the bid (Prices.value)
+            double unit = q.value() > 0 ? q.value() : prices.value(q.item());
             n.unit = Math.max(1, Math.round(unit));
             d.needs.add(n);
         }
+        pace(d, t.weight(), t.rarity(), t.days(), t.minDays(), t.maxDays(), r, day, salt);
         String pool = t.pool().isEmpty() ? r.pool(t.tier()) : t.pool();
         d.lines.addAll(rewards(tables.pools().get(pool), t.rolls(), d.value(), d.multiplier, t.tier(), r, treasury, prices, day, salt,
             needItems(d)));
         return d;
+    }
+
+    /**
+     * 0.1.10.34: the days, rarity and rush bonus of a draft (before its rewards): a table's fixed {@code duration_days} as
+     * before; else, with random days on, a range by the rarity (the table's, or by tier and weight) or the table's
+     * {@code days}, raised to the effort of the value, drawn per bounty; the rush bonus raises the multiplier.
+     */
+    void pace(Draft d, int weight, String rarityName, int fixedDays, int minDays, int maxDays, Rules r, long day, long salt) {
+        BountyPacing.Rarity named = BountyPacing.Rarity.of(rarityName);
+        d.rarity = named != null ? named : BountyPacing.rarity(d.tier.ordinal(), weight);
+        d.rush = 0;
+        if (fixedDays > 0) { d.days = fixedDays; return; }
+        if (!pace.randomDays()) return;
+        int lo = minDays > 0 ? minDays : d.rarity.minDays, hi = maxDays > 0 ? maxDays : d.rarity.maxDays;
+        d.days = BountyPacing.days(lo, hi, d.value(), pace.minDays(), pace.maxDays(), BountyMath.roll(r.seed() ^ salt ^ 0x44415953L, day));
+        d.rush = BountyPacing.rushPercent(d.days);
+        d.multiplier *= 1 + d.rush / 100.0;
     }
 
     /** The items a draft asks for (a reward never pays one of them). */
@@ -402,9 +503,11 @@ public final class BountyBoard {
         b.tier = d.tier;
         b.table = d.table == null ? "" : d.table;
         b.day = day;
-        b.expiry = day + Math.min(60, d.days);
+        b.expiry = day + Math.min(MAX_DAYS, d.days);
         b.split = d.split == null ? Split.FIRST : d.split;
         b.share = d.share > 0 && d.share <= 1 ? d.share : 1.0;
+        b.rarity = d.rarity == null ? BountyPacing.Rarity.COMMON : d.rarity;
+        b.rush = Math.max(0, d.rush);
         for (Need n : d.needs) {
             Need c = new Need();
             c.item = n.item; c.count = n.count; c.unit = n.unit;
@@ -424,6 +527,10 @@ public final class BountyBoard {
         bounties.add(b);
         if (!b.table.isEmpty()) lastPosted.put(b.table, day);
         if (b.tier == Tier.ADVANCED) advancedPosted++;
+        if (b.tier == Tier.NORMAL) {
+            if (postedDay != day) { postedDay = day; postedToday = 0; }
+            postedToday++;
+        }
         return b;
     }
 
@@ -437,53 +544,103 @@ public final class BountyBoard {
         List<Payout> payouts = new ArrayList<>();
         for (Iterator<Bounty> it = bounties.iterator(); it.hasNext(); ) {
             Bounty b = it.next();
-            if (b.expiry > day) continue;
+            // 0.1.10.33: a bounty with more than 60 days left or posted after today is damaged (a market day that went back)
+            if (b.expiry > day && b.expiry - day <= MAX_DAYS && b.day <= day) continue;
             it.remove();
             payouts.addAll(settleExpired(b, treasury));
             if (expired != null) expired.add(b);
         }
         rollWeek(day);
-        // NORMAL: keep the day's target open
-        int target = BountyMath.normalTarget(day, r.normalMin(), r.normalMax(), r.seed());
+        if (postedDay != day) { postedDay = day; postedToday = 0; }
+        // NORMAL: keep the day's target open (0.1.10.34: by the active players, plus the claimed ones; within the daily cap)
+        int target = normalTarget(day, r);
+        postNormal(target, BountyPacing.dailyPosts(pace.active()), day, r, tables, treasury, prices, lacking, hooks, posted, java.util.Set.of());
+        // ADVANCED: the week's posts, spread over its days (0.1.10.34: more for more players)
+        int weekly = BountyPacing.advancedWeekly(BountyMath.advancedTarget(week, r.advancedMin(), r.advancedMax(), r.seed()), pace.active());
+        if (BountyMath.advancedDue(day, weekly, advancedPosted)) {
+            Table t = pickTable(tables.tier(Tier.ADVANCED), day, hooks, r, 0x41445643L);
+            if (t != null) post(draft(t, r, tables, treasury, prices, day, 0x41445643L), day, r, treasury, hooks, posted);
+        }
+        // SPECIAL: by chance
+        if (open(Tier.SPECIAL) < BountyPacing.specialOpen(r.specialMaxOpen(), pace.active())
+            && BountyMath.roll(r.seed() ^ 0x5350434CL, day) < r.specialChance()) {
+            Table t = pickTable(tables.tier(Tier.SPECIAL), day, hooks, r, 0x5350434DL);
+            if (t != null) post(draft(t, r, tables, treasury, prices, day, 0x5350434DL), day, r, treasury, hooks, posted);
+        }
+        return payouts;
+    }
+
+    /** 0.1.10.34: NORMAL requests to keep open on {@code day}: the range for the active players, plus the claimed ones. */
+    public int normalTarget(long day, Rules r) {
+        int[] range = BountyPacing.normalRange(r.normalMin(), r.normalMax(), pace.active());
+        int claimed = 0;
+        for (Bounty b : bounties) if (b.tier == Tier.NORMAL && b.claimant != null) claimed++;
+        return BountyMath.normalTarget(day, range[0], range[1], r.seed()) + claimed;
+    }
+
+    /** 0.1.10.34: NORMAL postings left today under the daily cap. */
+    public int postsLeft(long day) {
+        return Math.max(0, BountyPacing.dailyPosts(pace.active()) - (postedDay == day ? postedToday : 0));
+    }
+
+    /**
+     * Posts NORMAL requests until {@code target} are open or {@code cap} were posted today ({@link Integer#MAX_VALUE}: no
+     * cap): a generated request for a commodity the market lacks, or a NORMAL table, by weight. Items and tables of
+     * {@code avoid} are not drawn (a refresh does not bring back what it replaced). Returns the postings.
+     */
+    int postNormal(int target, int cap, long day, Rules r, Parsed tables, Map<String, Long> treasury, Prices prices, List<String> lacking,
+                   Hooks hooks, List<Bounty> posted, java.util.Set<String> avoid) {
         List<String> pool = new ArrayList<>();
-        for (String item : lacking) if (!blocks(item) && prices.ask(item) > 0) pool.add(item);
+        // 0.1.10.33: never an item that does not stack
+        for (String item : lacking)
+            if (!blocks(item) && !avoid.contains(item) && prices.ask(item) > 0 && prices.maxStack(item) > 1) pool.add(item);
+        int done = 0;
         for (int attempt = 0; open(Tier.NORMAL) < target && attempt < target * 4 && bounties.size() < MAX_OPEN; attempt++) {
+            if (cap != Integer.MAX_VALUE && (postedDay == day ? postedToday : 0) >= cap) break;
             List<Table> normal = new ArrayList<>();
-            for (Table t : tables.tier(Tier.NORMAL)) if (eligible(t, day) && hooks.eligible(t)) normal.add(t);
+            for (Table t : tables.tier(Tier.NORMAL)) if (!avoid.contains(t.id()) && eligible(t, day) && hooks.eligible(t)) normal.add(t);
             int[] weights = new int[normal.size() + 1];
             boolean[] available = new boolean[weights.length];
             weights[0] = r.normalGeneratedWeight();
             available[0] = !pool.isEmpty();
             for (int i = 0; i < normal.size(); i++) { weights[i + 1] = normal.get(i).weight(); available[i + 1] = true; }
-            long salt = 0x4E4F524DL + attempt;
+            // 0.1.10.34: the salt counts every posting attempt (the board posts during the day too)
+            long salt = 0x4E4F524DL + serial++;
             int pick = BountyMath.pick(weights, available, BountyMath.roll(r.seed() ^ salt, day));
             if (pick < 0) break;
             Draft d;
             if (pick == 0) {
                 int k = (int) Math.min(pool.size() - 1, Math.floor(BountyMath.roll(r.seed() ^ (salt * 31), day) * pool.size()));
                 String item = pool.remove(k);
-                double ask = prices.ask(item);
+                // 0.1.10.34: valued between the ask and the bid (Prices.value)
+                double unit = prices.value(item);
                 double v = r.normalValue() * (0.5 + BountyMath.roll(r.seed() ^ (salt * 131), day));
-                int q = BountyMath.quantity(v, ask, r.normalMinQuantity(), r.normalMaxQuantity());
+                int q = BountyMath.generatedQuantity(v, unit, r.normalMinQuantity(), r.normalMaxQuantity(), prices.maxStack(item));
                 if (q < 0) continue;
-                d = draftGenerated(item, q, ask, r, tables, treasury, prices, day, salt);
+                d = draftGenerated(item, q, unit, r, tables, treasury, prices, day, salt);
             } else {
                 d = draft(normal.get(pick - 1), r, tables, treasury, prices, day, salt);
             }
-            post(d, day, r, treasury, hooks, posted);
+            if (post(d, day, r, treasury, hooks, posted) != null) done++;
         }
-        // ADVANCED: the week's posts, spread over its days
-        int weekly = BountyMath.advancedTarget(week, r.advancedMin(), r.advancedMax(), r.seed());
-        if (BountyMath.advancedDue(day, weekly, advancedPosted)) {
-            Table t = pickTable(tables.tier(Tier.ADVANCED), day, hooks, r, 0x41445643L);
-            if (t != null) post(draft(t, r, tables, treasury, prices, day, 0x41445643L), day, r, treasury, hooks, posted);
-        }
-        // SPECIAL: by chance
-        if (open(Tier.SPECIAL) < r.specialMaxOpen() && BountyMath.roll(r.seed() ^ 0x5350434CL, day) < r.specialChance()) {
-            Table t = pickTable(tables.tier(Tier.SPECIAL), day, hooks, r, 0x5350434DL);
-            if (t != null) post(draft(t, r, tables, treasury, prices, day, 0x5350434DL), day, r, treasury, hooks, posted);
-        }
-        return payouts;
+        return done;
+    }
+
+    /**
+     * 0.1.10.34: the refill during the day ({@code now} = game tick): one NORMAL request when the board is below the day's
+     * target and the wait for the players online passed since the last posting, within the daily cap. Returns the postings.
+     */
+    public int refill(long day, long now, Rules r, Parsed tables, Map<String, Long> treasury, Prices prices, List<String> lacking, Hooks hooks,
+                      List<Bounty> posted) {
+        if (postedDay != day) { postedDay = day; postedToday = 0; }
+        if (!BountyPacing.refillDue(open(Tier.NORMAL), normalTarget(day, r), now, lastPostTick, pace.online(), postedToday, pace.active()))
+            return 0;
+        int target = open(Tier.NORMAL) + 1;
+        int n = postNormal(target, BountyPacing.dailyPosts(pace.active()), day, r, tables, treasury, prices, lacking, hooks, posted, java.util.Set.of());
+        // the wait starts again after a posting; a refill that posted nothing (no table, no lacking commodity, draws that
+        // did not fit) tries again at the next check
+        if (n > 0) lastPostTick = now;
+        return n;
     }
 
     /** A table among {@code all} that may be posted now, by weight; null when none. */
@@ -505,6 +662,148 @@ public final class BountyBoard {
         Bounty b = commit(x, hooks.newId(), day, r, treasury);
         if (b != null && posted != null) posted.add(b);
         return b;
+    }
+
+    // ------------------------------------------------------------------ claims (0.1.10.34)
+
+    /** Claims {@code player} holds. */
+    public int claims(UUID player) {
+        int n = 0;
+        for (Bounty b : bounties) if (player.equals(b.claimant)) n++;
+        return n;
+    }
+
+    /**
+     * Why {@code player} may not claim {@code b} on {@code day} (a language key), or null: NORMAL and ADVANCED only, nobody
+     * delivered yet, not claimed, fewer than {@link Pace#acceptMax} claims, not abandoned today.
+     */
+    public String claimRefusal(Bounty b, UUID player, long day) {
+        if (b.tier == Tier.SPECIAL) return "bounty_claim_special";
+        if (b.claimant != null) return player.equals(b.claimant) ? "bounty_claim_mine" : "bounty_claimed";
+        if (!b.contribution.isEmpty()) return "bounty_claim_started";
+        if (claims(player) >= Math.max(1, pace.acceptMax())) return "bounty_claim_limit";
+        Long ban = bans.get(player);
+        if (ban != null && ban >= day) return "bounty_claim_banned";
+        return null;
+    }
+
+    /** Claims {@code b} for {@code player} (check {@link #claimRefusal} first); one day left gets one more (once). */
+    public void claim(Bounty b, UUID player, String name, String team, long day) {
+        b.claimant = player;
+        b.claimName = name == null ? "" : name;
+        b.claimTeam = team == null ? "" : team;
+        b.claimDay = day;
+        long expiry = BountyPacing.claimExpiry(b.expiry, day, b.extended);
+        if (expiry != b.expiry) { b.expiry = expiry; b.extended = true; }
+    }
+
+    /** Gives up the claim of {@code player}: no claim for them for the rest of the market day. */
+    public boolean abandon(Bounty b, UUID player, long day) {
+        if (b == null || !player.equals(b.claimant)) return false;
+        release(b);
+        bans.put(player, day);
+        return true;
+    }
+
+    static void release(Bounty b) {
+        b.claimant = null;
+        b.claimName = "";
+        b.claimTeam = "";
+        b.claimDay = 0;
+    }
+
+    /**
+     * Releases the claims of players not active for two market days ({@code lastActive}: market day of their last login or
+     * use of the exchange; a claimant with none counts from the claim). Returns the released bounties.
+     */
+    public int releaseAbsent(long day, Map<UUID, Long> lastActive) {
+        int n = 0;
+        for (Bounty b : bounties) {
+            if (b.claimant == null) continue;
+            long seen = Math.max(b.claimDay, lastActive.getOrDefault(b.claimant, Long.MIN_VALUE));
+            if (BountyPacing.absent(seen, day)) { release(b); n++; }
+        }
+        bans.values().removeIf(d -> d < day);
+        return n;
+    }
+
+    /** Only the claimant and their team deliver to a claimed bounty ({@code team}: the deliverer's team, "" = none). */
+    public static boolean mayDeliver(Bounty b, UUID player, String team) {
+        if (b.claimant == null || b.claimant.equals(player)) return true;
+        return !b.claimTeam.isEmpty() && b.claimTeam.equals(team);
+    }
+
+    // ------------------------------------------------------------------ refresh (0.1.10.34)
+
+    /** The NORMAL bounties a refresh replaces: not claimed, nothing delivered. */
+    public List<Bounty> refreshable() {
+        List<Bounty> out = new ArrayList<>();
+        for (Bounty b : bounties) if (b.tier == Tier.NORMAL && b.claimant == null && b.contribution.isEmpty()) out.add(b);
+        return out;
+    }
+
+    /** Items and tables of the {@link #refreshable} bounties (a refresh draws none of them). */
+    java.util.Set<String> refreshAvoid() {
+        java.util.Set<String> avoid = new java.util.HashSet<>();
+        for (Bounty b : refreshable()) {
+            if (!b.table.isEmpty()) avoid.add(b.table);
+            for (Need n : b.needs) avoid.add(n.item);
+        }
+        return avoid;
+    }
+
+    /**
+     * A refresh can post at least one new request: a commodity the market lacks that is not asked for yet, or a NORMAL table
+     * that may be posted, outside the replaced ones. Checked before the player pays.
+     */
+    public boolean refreshPossible(long day, Parsed tables, Prices prices, List<String> lacking, Hooks hooks) {
+        if (refreshable().isEmpty()) return false;
+        java.util.Set<String> avoid = refreshAvoid();
+        for (String item : lacking)
+            if (!avoid.contains(item) && !blocks(item) && prices.ask(item) > 0 && prices.maxStack(item) > 1) return true;
+        for (Table t : tables.tier(Tier.NORMAL)) if (!avoid.contains(t.id()) && eligible(t, day) && hooks.eligible(t)) return true;
+        return false;
+    }
+
+    /** Refreshes of {@code player} on {@code day}. */
+    public int refreshesToday(UUID player, long day) {
+        long[] x = refreshes.get(player);
+        return x == null || x[0] != day ? 0 : (int) x[1];
+    }
+
+    /** The coins of the next refresh of {@code player}: by the coin value of the rewards of {@link #refreshable}; -1 when none is left. */
+    public long refreshCost(UUID player, long day, Prices prices) {
+        double value = 0;
+        for (Bounty b : refreshable()) for (Line l : b.lines) value += lineValue(l, prices);
+        return BountyPacing.refreshCost(value, refreshesToday(player, day));
+    }
+
+    /** Ticks until {@code player} may refresh again (0 = now). */
+    public long refreshWait(UUID player, long now) {
+        long[] x = refreshes.get(player);
+        if (x == null || x[2] == Long.MIN_VALUE) return 0;
+        return Math.max(0, x[2] + BountyPacing.REFRESH_WAIT_TICKS - now);
+    }
+
+    /**
+     * Replaces the {@link #refreshable} bounties (their reserved items go back as at an expiry) with as many new NORMAL
+     * requests, never the same items or tables, outside the daily cap (they replace unpaid bounties one for one); counts the
+     * refresh of {@code player}. The caller took the coins. Returns the bounties replaced.
+     */
+    public int refresh(UUID player, long day, long now, Rules r, Parsed tables, Map<String, Long> treasury, Prices prices, List<String> lacking,
+                       Hooks hooks, List<Bounty> posted) {
+        List<Bounty> old = refreshable();
+        java.util.Set<String> avoid = refreshAvoid();
+        for (Bounty b : old) {
+            bounties.remove(b);
+            returnUnpaid(b, treasury);
+        }
+        refreshes.put(player, new long[] {day, refreshesToday(player, day) + 1L, now});
+        if (old.isEmpty()) return 0;
+        int keep = postedDay == day ? postedToday : 0;
+        postNormal(open(Tier.NORMAL) + old.size(), Integer.MAX_VALUE, day, r, tables, treasury, prices, lacking, hooks, posted, avoid);
+        if (postedDay == day) postedToday = keep;
+        return old.size();
     }
 
     // ------------------------------------------------------------------ delivery

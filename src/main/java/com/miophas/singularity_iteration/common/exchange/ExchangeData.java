@@ -43,6 +43,8 @@ public final class ExchangeData extends SavedData {
         public Currency currency;
         public final OrderBook book = new OrderBook();
         public final Map<Long, String> names = new HashMap<>();
+        /** 0.1.10.35: the game time each resting order ends (orders of older versions have none: 7 market days). */
+        public final Map<Long, Long> expires = new HashMap<>();
         Book(String commodity, Currency currency) { this.commodity = commodity; this.currency = currency; }
     }
 
@@ -63,6 +65,8 @@ public final class ExchangeData extends SavedData {
         public String rewardItem = "";
         public long rewardTotal, rewardPaid;
         public long day, expiry;
+        /** 0.1.10.35: the game time the commission ends (0 = an older commission: it ends with the market day {@link #expiry}). */
+        public long expiresAt;
         public boolean system;
         /** The requester met the play-time minimum when posting (counts as demand evidence). */
         public boolean counted;
@@ -85,6 +89,21 @@ public final class ExchangeData extends SavedData {
         public final Map<String, long[]> external = new java.util.TreeMap<>();
         /** 0.1.10.28 (X4): items the scrap sink took and the products (scrap) it gave. */
         public long scrapIn, scrapOut;
+        /**
+         * 0.1.10.35: coins of fees that went into the treasury reserve, and coins the reserve paid (bounty rewards). {@link #minted}
+         * counts only new coins and {@link #burned} only destroyed ones; the change of circulation is
+         * {@link ReserveRules#circulation}.
+         */
+        public long reserveIn, reserveOut;
+
+        /** 0.1.10.35: the change of the coins in circulation on this day. */
+        public long circulation() { return ReserveRules.circulation(minted, burned, reserveIn, reserveOut); }
+
+        /** 0.1.10.35: coins that came into circulation: new ones and the reserve's payments (before 0.1.10.35: {@link #minted}). */
+        public long created() { return minted + reserveOut; }
+
+        /** 0.1.10.35: coins that left circulation: destroyed ones and the fees into the reserve (before 0.1.10.35: {@link #burned}). */
+        public long destroyed() { return burned + reserveIn; }
     }
 
     /** 0.1.10.28 (X4): a delegate ID card in its issuer's register (a card not in the register is revoked). */
@@ -158,12 +177,27 @@ public final class ExchangeData extends SavedData {
     public long supplyDay = Long.MIN_VALUE;
     /** 0.1.10.28: the last day each player sold to the market (active sellers of the stabiliser). */
     public final Map<UUID, Long> lastSale = new HashMap<>();
+    /** 0.1.10.34: the market day each player last logged in or used the exchange (active players of the bounties). */
+    public final Map<UUID, Long> seen = new HashMap<>();
     /** 0.1.10.28: the secret that signs ID cards (0 = not made yet), the next serial, the delegate cards per issuer. */
     public long cardSecret;
     public long cardSerial = 1;
     public final Map<UUID, List<CardRecord>> cards = new HashMap<>();
     /** 0.1.10.29: players whose coin account comes first (payments from it first, receipts onto it). */
     public final Set<UUID> bankMode = new HashSet<>();
+    /** 0.1.10.33: player results per week and the cost basis of the treasury stock (recorded, not shown yet). */
+    public final MarketRecords records = new MarketRecords();
+    /** 0.1.10.35: the treasury's coin reserve (fees; it pays bounty coins first). */
+    public long reserve;
+    /** 0.1.10.35: players who turned the chat notice of new commissions off. */
+    public final Set<UUID> quietCommissions = new HashSet<>();
+    /** 0.1.10.35: calendar days on which the server ran, and the last of them (epoch day; the absence of shop owners). */
+    public long runDays;
+    public long lastRunDate = Long.MIN_VALUE;
+    /** 0.1.10.35: the player shops, by owner. */
+    public final Map<UUID, ShopRules.Shop> shops = new LinkedHashMap<>();
+    /** 0.1.10.35: owners whose shop closed while they were away (told at the next login). */
+    public final Set<UUID> shopNotices = new HashSet<>();
 
     public static ExchangeData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(ExchangeData::new, ExchangeData::load), NAME);
@@ -220,6 +254,7 @@ public final class ExchangeData extends SavedData {
                     book.book.rest(new OrderBook.Order(order.getLong("Id"), order.getString("Owner"), order.getString("Team"),
                         order.getBoolean("Buy"), order.getLong("Price"), order.getInt("Remaining"), order.getLong("Day")));
                     book.names.put(order.getLong("Id"), order.getString("Name"));
+                    if (order.getLong("Expires") > 0) book.expires.put(order.getLong("Id"), order.getLong("Expires"));   // 0.1.10.35
                 } catch (IllegalArgumentException ignored) {
                     // a damaged order is dropped (its escrow is lost with it; it cannot be valid)
                 }
@@ -246,6 +281,7 @@ public final class ExchangeData extends SavedData {
             x.kind = reward(c.getString("Kind")); x.rewardItem = c.getString("RewardItem"); x.rewardTotal = c.getLong("RewardTotal");
             x.rewardPaid = c.getLong("RewardPaid"); x.day = c.getLong("Day"); x.expiry = c.getLong("Expiry"); x.system = c.getBoolean("System");
             x.counted = c.getBoolean("Counted");
+            x.expiresAt = Math.max(0, c.getLong("ExpiresAt"));   // 0.1.10.35
             for (Tag u : c.getList("Deliverers", Tag.TAG_STRING)) { UUID id = uuid(u.getAsString()); if (id != null) x.deliverers.add(id); }
             if ((x.requester != null || x.system) && x.quantity > 0 && x.delivered >= 0 && x.delivered <= x.quantity) d.commissions.add(x);
         }
@@ -295,6 +331,7 @@ public final class ExchangeData extends SavedData {
             l.day = x.getLong("Day"); l.minted = x.getLong("Minted"); l.burned = x.getLong("Burned");
             l.bountyCoins = x.getLong("BountyCoins"); l.bountyItems = x.getLong("BountyItems"); l.bountyUu = x.getLong("BountyUu");
             l.scrapIn = x.getLong("ScrapIn"); l.scrapOut = x.getLong("ScrapOut");
+            l.reserveIn = Math.max(0, x.getLong("ReserveIn")); l.reserveOut = Math.max(0, x.getLong("ReserveOut"));   // 0.1.10.35
             CompoundTag ext = x.getCompound("External");
             for (String k : ext.getAllKeys()) { long[] v = ext.getLongArray(k); if (v.length == 2) l.external.put(k, v); }
             d.ledger.addLast(l);
@@ -343,6 +380,9 @@ public final class ExchangeData extends SavedData {
         d.supplyDay = st.contains("SupplyDay") ? st.getLong("SupplyDay") : Long.MIN_VALUE;
         CompoundTag ls = tag.getCompound("LastSale");
         for (String k : ls.getAllKeys()) { UUID id = uuid(k); if (id != null) d.lastSale.put(id, ls.getLong(k)); }
+        // 0.1.10.34
+        CompoundTag seen = tag.getCompound("Seen");
+        for (String k : seen.getAllKeys()) { UUID id = uuid(k); if (id != null) d.seen.put(id, seen.getLong(k)); }
         // 0.1.10.29
         for (Tag t : tag.getList("BankMode", Tag.TAG_STRING)) { UUID id = uuid(t.getAsString()); if (id != null) d.bankMode.add(id); }
         CompoundTag cd = tag.getCompound("Cards");
@@ -362,7 +402,94 @@ public final class ExchangeData extends SavedData {
             }
             if (!list.isEmpty()) d.cards.put(issuer, list);
         }
+        // 0.1.10.33
+        CompoundTag rec = tag.getCompound("Records");
+        d.records.week = rec.contains("Week") ? rec.getLong("Week") : Long.MIN_VALUE;
+        readStats(rec.getCompound("ThisWeek"), d.records.thisWeek);
+        readStats(rec.getCompound("LastWeek"), d.records.lastWeek);
+        readStats(rec.getCompound("Total"), d.records.total);
+        CompoundTag cost = rec.getCompound("Cost");
+        for (String k : cost.getAllKeys()) {
+            CompoundTag x = cost.getCompound(k);
+            double coins = x.getDouble("Coins"), stock = x.getDouble("Stock");
+            if (Double.isFinite(coins) && Double.isFinite(stock) && stock > 0) d.records.cost.put(k, new double[] {Math.max(0, coins), stock});
+        }
+        // 0.1.10.35
+        d.reserve = Math.max(0, tag.getLong("Reserve"));
+        for (Tag t : tag.getList("QuietCommissions", Tag.TAG_STRING)) { UUID id = uuid(t.getAsString()); if (id != null) d.quietCommissions.add(id); }
+        CompoundTag run = tag.getCompound("RunDays");
+        d.runDays = Math.max(0, run.getLong("Days"));
+        d.lastRunDate = run.contains("Last") ? run.getLong("Last") : Long.MIN_VALUE;
+        for (Tag t : tag.getList("Shops", Tag.TAG_COMPOUND)) {
+            ShopRules.Shop s = readShop((CompoundTag) t);
+            if (s != null && d.shops.size() < ShopRules.MAX_SHOPS) d.shops.put(s.owner, s);
+        }
+        for (Tag t : tag.getList("ShopNotices", Tag.TAG_STRING)) { UUID id = uuid(t.getAsString()); if (id != null) d.shopNotices.add(id); }
         return d;
+    }
+
+    /** 0.1.10.35: a shop from NBT; damaged offers are dropped (an offer without its items cannot trade). */
+    static ShopRules.Shop readShop(CompoundTag x) {
+        ShopRules.Shop s = new ShopRules.Shop();
+        s.owner = uuid(x.getString("Owner"));
+        if (s.owner == null) return null;
+        s.ownerName = x.getString("Name");
+        s.seenRunDay = x.getLong("Seen");
+        s.lastTradeDay = x.contains("LastTrade") ? x.getLong("LastTrade") : Long.MIN_VALUE;
+        s.upkeepWeek = x.contains("UpkeepWeek") ? x.getLong("UpkeepWeek") : Long.MIN_VALUE;
+        for (Tag t : x.getList("Offers", Tag.TAG_COMPOUND)) {
+            CompoundTag o = (CompoundTag) t;
+            ShopRules.Offer f = new ShopRules.Offer();
+            f.id = o.getLong("Id");
+            String kind = o.getString("Kind");
+            f.kind = "SELL".equals(kind) ? ShopRules.Kind.SELL : "BUY".equals(kind) ? ShopRules.Kind.BUY : ShopRules.Kind.EXCHANGE;
+            f.goods = o.getString("Goods"); f.goodsCount = o.getInt("GoodsCount");
+            f.cost = o.getString("Cost"); f.costCount = o.getInt("CostCount");
+            f.price = o.getLong("Price"); f.stock = Math.max(0, Math.min(ShopRules.MAX_UNITS, o.getLong("Stock")));
+            f.paused = o.getBoolean("Paused"); f.unpaid = o.getBoolean("Unpaid"); f.trades = Math.max(0, o.getLong("Trades"));
+            if (ShopRules.check(f.kind, f.goods, f.goodsCount, f.cost, f.costCount, f.price) == null && s.offers.size() < 54) s.offers.add(f);
+        }
+        readLongMap(x.getCompound("Proceeds"), s.proceeds);
+        return s;
+    }
+
+    static CompoundTag writeShop(ShopRules.Shop s) {
+        CompoundTag x = new CompoundTag();
+        x.putString("Owner", s.owner.toString());
+        x.putString("Name", s.ownerName);
+        x.putLong("Seen", s.seenRunDay);
+        x.putLong("LastTrade", s.lastTradeDay);
+        x.putLong("UpkeepWeek", s.upkeepWeek);
+        ListTag offers = new ListTag();
+        for (ShopRules.Offer f : s.offers) {
+            CompoundTag o = new CompoundTag();
+            o.putLong("Id", f.id); o.putString("Kind", f.kind.name());
+            o.putString("Goods", f.goods); o.putInt("GoodsCount", f.goodsCount);
+            o.putString("Cost", f.cost); o.putInt("CostCount", f.costCount);
+            o.putLong("Price", f.price); o.putLong("Stock", f.stock);
+            if (f.paused) o.putBoolean("Paused", true);
+            if (f.unpaid) o.putBoolean("Unpaid", true);
+            o.putLong("Trades", f.trades);
+            offers.add(o);
+        }
+        x.put("Offers", offers);
+        x.put("Proceeds", writeLongMap(s.proceeds));
+        return x;
+    }
+
+    private static void readStats(CompoundTag tag, Map<UUID, long[]> out) {
+        for (String k : tag.getAllKeys()) {
+            UUID id = uuid(k);
+            long[] v = tag.getLongArray(k);
+            if (id == null || out.size() >= MarketRecords.MAX_PLAYERS) continue;
+            out.put(id, java.util.Arrays.copyOf(v, MarketRecords.FIELDS));
+        }
+    }
+
+    private static CompoundTag writeStats(Map<UUID, long[]> map) {
+        CompoundTag t = new CompoundTag();
+        map.forEach((id, v) -> t.putLongArray(id.toString(), v));
+        return t;
     }
 
     @Override
@@ -381,6 +508,8 @@ public final class ExchangeData extends SavedData {
                 order.putLong("Id", o.id()); order.putString("Owner", o.owner()); order.putString("Team", o.team());
                 order.putBoolean("Buy", o.buy()); order.putLong("Price", o.price()); order.putInt("Remaining", o.remaining());
                 order.putLong("Day", o.day()); order.putString("Name", b.names.getOrDefault(o.id(), ""));
+                Long expires = b.expires.get(o.id());
+                if (expires != null) order.putLong("Expires", expires);   // 0.1.10.35
                 orders.add(order);
             }
             x.put("Orders", orders);
@@ -406,6 +535,7 @@ public final class ExchangeData extends SavedData {
             x.putString("Item", c.item); x.putInt("Quantity", c.quantity); x.putInt("Delivered", c.delivered); x.putString("Kind", c.kind.name());
             x.putString("RewardItem", c.rewardItem); x.putLong("RewardTotal", c.rewardTotal); x.putLong("RewardPaid", c.rewardPaid);
             x.putLong("Day", c.day); x.putLong("Expiry", c.expiry); x.putBoolean("System", c.system); x.putBoolean("Counted", c.counted);
+            if (c.expiresAt > 0) x.putLong("ExpiresAt", c.expiresAt);   // 0.1.10.35
             ListTag by = new ListTag();
             for (UUID u : c.deliverers) by.add(StringTag.valueOf(u.toString()));
             x.put("Deliverers", by);
@@ -467,6 +597,8 @@ public final class ExchangeData extends SavedData {
             if (l.bountyUu != 0) x.putLong("BountyUu", l.bountyUu);
             if (l.scrapIn != 0) x.putLong("ScrapIn", l.scrapIn);
             if (l.scrapOut != 0) x.putLong("ScrapOut", l.scrapOut);
+            if (l.reserveIn != 0) x.putLong("ReserveIn", l.reserveIn);   // 0.1.10.35
+            if (l.reserveOut != 0) x.putLong("ReserveOut", l.reserveOut);
             if (!l.external.isEmpty()) {
                 CompoundTag ext = new CompoundTag();
                 l.external.forEach(ext::putLongArray);
@@ -515,6 +647,10 @@ public final class ExchangeData extends SavedData {
         CompoundTag ls = new CompoundTag();
         lastSale.forEach((id, dd) -> ls.putLong(id.toString(), dd));
         tag.put("LastSale", ls);
+        // 0.1.10.34
+        CompoundTag seenTag = new CompoundTag();
+        seen.forEach((id, dd) -> seenTag.putLong(id.toString(), dd));
+        tag.put("Seen", seenTag);
         // 0.1.10.29
         ListTag bank = new ListTag();
         for (UUID id : bankMode) bank.add(StringTag.valueOf(id.toString()));
@@ -535,6 +671,36 @@ public final class ExchangeData extends SavedData {
         });
         cd.put("Issuers", issuers);
         tag.put("Cards", cd);
+        // 0.1.10.33
+        CompoundTag rec = new CompoundTag();
+        rec.putLong("Week", records.week);
+        rec.put("ThisWeek", writeStats(records.thisWeek));
+        rec.put("LastWeek", writeStats(records.lastWeek));
+        rec.put("Total", writeStats(records.total));
+        CompoundTag cost = new CompoundTag();
+        records.cost.forEach((k, v) -> {
+            CompoundTag x = new CompoundTag();
+            x.putDouble("Coins", v[0]);
+            x.putDouble("Stock", v[1]);
+            cost.put(k, x);
+        });
+        rec.put("Cost", cost);
+        tag.put("Records", rec);
+        // 0.1.10.35
+        tag.putLong("Reserve", reserve);
+        ListTag quiet = new ListTag();
+        for (UUID id : quietCommissions) quiet.add(StringTag.valueOf(id.toString()));
+        tag.put("QuietCommissions", quiet);
+        CompoundTag run = new CompoundTag();
+        run.putLong("Days", runDays);
+        run.putLong("Last", lastRunDate);
+        tag.put("RunDays", run);
+        ListTag shopList = new ListTag();
+        for (ShopRules.Shop s : shops.values()) shopList.add(writeShop(s));
+        tag.put("Shops", shopList);
+        ListTag notices = new ListTag();
+        for (UUID id : shopNotices) notices.add(StringTag.valueOf(id.toString()));
+        tag.put("ShopNotices", notices);
         return tag;
     }
 

@@ -71,9 +71,12 @@ public final class ExchangeService {
     /**
      * A tradable market: a datapack commodity (the market quotes it), a player listing (only the book) or (0.1.10.28) the
      * coin &lt;-&gt; UU board ({@link UuBoard}). {@code depthFactor}: the stabiliser's factor of the sell depths (1 = none).
+     * {@code bountyFloor} (0.1.10.33): the lowest ask per item while a bounty needs the item ({@link BountyBoard#rewardPerItem};
+     * 0 = none). {@code bidCap} (0.1.10.35): the most the market bids for one item, the inputs of {@code made_from} at the
+     * market's ask now ({@link BidLinks}; {@link BidLinks#NONE} = no cap).
      */
     public record Market(String id, Item item, Currency currency, boolean system, FutureCommodity commodity, long price,
-                         double fundamental, int depth, long low, long high, double depthFactor) { }
+                         double fundamental, int depth, long low, long high, double depthFactor, long bountyFloor, double bidCap) { }
 
     // ------------------------------------------------------------------ markets
 
@@ -86,14 +89,15 @@ public final class ExchangeService {
             long low = Math.max(1, Math.round(c.getBasePrice() * Singularity_Iteration_Config.FUTURE_MIN_PRICE_MULTIPLIER.get()));
             long high = Math.max(low, Math.round(c.getBasePrice() * Singularity_Iteration_Config.FUTURE_MAX_PRICE_MULTIPLIER.get()));
             return new Market(id, c.getItem(), Currency.COIN, true, c, price, Valuation.fundamental(uuBuckets(server, c.getItem()),
-                coinsPerBucket(server)), CraftDepthIndex.depth(server, c.getItem()), low, high, depthFactor(server));
+                coinsPerBucket(server)), CraftDepthIndex.depth(server, c.getItem()), low, high, depthFactor(server), bountyFloor(server, id),
+                bidCap(server, c));
         }
         // 0.1.10.28 (X4): the coin <-> UU board (players only; the market never trades UU-matter)
         if (UuBoard.is(id)) {
             if (!EconomySettings.uuBoard()) return null;
             long reference = UuBoard.reference(coinsPerBucket(server));
             return new Market(id, com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.UUMATTER_BUCKET.get(),
-                Currency.COIN, false, null, lastPrice(data(server), id, reference), reference, 0, 1, UuBoard.HIGH, 1.0);
+                Currency.COIN, false, null, lastPrice(data(server), id, reference), reference, 0, 1, UuBoard.HIGH, 1.0, 0, BidLinks.NONE);
         }
         ExchangeData.Listing l = data(server).listings.get(id);
         if (l == null) return null;
@@ -103,7 +107,37 @@ public final class ExchangeService {
         long low = fundamental > 0 ? Math.max(1, Math.round(fundamental * Valuation.BAND_LOW)) : 1;
         long high = fundamental > 0 ? Math.max(low, Math.round(fundamental * Valuation.BAND_HIGH)) : Long.MAX_VALUE / 4;
         return new Market(id, item, l.currency, false, null, lastPrice(data(server), id, l.reference), fundamental,
-            CraftDepthIndex.depth(server, item), low, high, 1.0);
+            CraftDepthIndex.depth(server, item), low, high, 1.0, 0, BidLinks.NONE);
+    }
+
+    /**
+     * 0.1.10.35: the cap of the bid of a commodity with {@code made_from}: its inputs at the market's ask now (the price of each
+     * input commodity x (1 + spread / 2)); {@link BidLinks#NONE} without inputs or when an input is no commodity.
+     */
+    static double bidCap(MinecraftServer server, FutureCommodity c) {
+        if (c == null || c.madeFrom().isEmpty()) return BidLinks.NONE;
+        FutureMarketData fm = FutureMarketData.get(server.overworld());
+        double spread = EconomySettings.spread();
+        return BidLinks.cap(c.madeFrom(), input -> {
+            FutureCommodity ic = FutureCommodityManager.getCommodityById(input);
+            return ic == null ? 0 : BidLinks.askUnit(fm.getPrice(input, ic.getBasePrice()), spread);
+        });
+    }
+
+    /** 0.1.10.35: the market's bid of one item of {@code c} at {@code price} before sell pressure (bid_price, then the cap). */
+    public static double bidUnit(MinecraftServer server, FutureCommodity c, int price) {
+        return BidLinks.bid(MarketQuote.bidUnit(price, EconomySettings.spread(), c.bidRatio()), bidCap(server, c));
+    }
+
+    /**
+     * 0.1.10.33: the lowest ask per item of a commodity while an open NORMAL or ADVANCED bounty needs it: what the bounty pays
+     * per item ({@link BountyBoard#rewardPerItem}; 0 = no such bounty). Before, the market did not sell the item at all while
+     * the bounty was open (an emerald bounty stopped the emerald market until it was done or expired).
+     */
+    static long bountyFloor(MinecraftServer server, String id) {
+        ExchangeData d = data(server);
+        if (d.board.bounties.isEmpty()) return 0;
+        return d.board.rewardPerItem(id, Bounties.prices(server));
     }
 
     /** All markets: the datapack commodities, then the player listings. */
@@ -184,26 +218,33 @@ public final class ExchangeService {
 
     /**
      * Items the market can sell today: treasury stock plus the rest of the daily import. None while the market's own
-     * commission for the item is open: its reward is above the market's ask, so buying from the market to deliver
-     * would create coins (players' orders still trade).
+     * commission for the item is open (the system commissions of 0.1.10.21-0.1.10.25 left in a save): its reward is above
+     * the market's ask, so buying from the market to deliver would create coins (players' orders still trade).
+     * 0.1.10.33: an open NORMAL or ADVANCED bounty no longer stops the sales; it raises the ask to its reward per item
+     * instead ({@link Market#bountyFloor}, {@link #systemCost}).
      */
     public static long supply(ExchangeData d, String id, long day) {
         if (d.importedDay != day) { d.imported.clear(); d.importedDay = day; d.setDirty(); }
         for (Commission c : d.commissions) if (c.system && c.item.equals(id)) return 0;
-        // 0.1.10.26 (X3): the same for the NORMAL and ADVANCED bounties (their reward is above the ask)
-        if (d.board.blocks(id)) return 0;
+        // 0.1.10.35: a sell_only commodity (raw ores) is bought by the market, never sold
+        FutureCommodity fc = FutureCommodityManager.getCommodityById(id);
+        if (fc != null && fc.sellOnly()) return 0;
         long stock = d.treasury.getOrDefault(id, 0L);
         int importLeft = Math.max(0, importPerDay(id) - d.imported.getOrDefault(id, 0));
         return stock + importLeft;
     }
 
-    /** Coins that buying {@code n} from the market costs: stock at the purchase price, imports with the premium. */
+    /**
+     * Coins that buying {@code n} from the market costs: stock at the purchase price, imports with the premium; 0.1.10.33: at
+     * least the bounty floor per item while a bounty needs the item ({@link Market#bountyFloor}).
+     */
     static long systemCost(ExchangeData d, Market m, int n) {
         long stock = d.treasury.getOrDefault(m.id(), 0L);
         int fromStock = (int) Math.min(n, stock), imported = n - fromStock;
         double spread = EconomySettings.spread();
         long cost = MarketQuote.buyCost((int) m.price(), fromStock, spread);
         if (imported > 0) cost += (long) Math.ceil(MarketQuote.buyCost((int) m.price(), imported, spread) * (1 + importPremium(m)));
+        if (m.bountyFloor() > 0 && n > 0) cost = Math.max(cost, Math.multiplyExact(m.bountyFloor(), (long) n));
         return cost;
     }
 
@@ -220,7 +261,10 @@ public final class ExchangeService {
         FutureCommodity.Market cm = m.commodity() == null ? FutureCommodity.Market.DEFAULT : m.commodity().getMarket();
         int lp = cm.depthPlayer() > 0 ? cm.depthPlayer() : EconomySettings.sellDepthPlayer();
         int lg = cm.depthServer() > 0 ? cm.depthServer() : EconomySettings.sellDepthServer();
-        return Stabilizer.scale(new SellDepth.Curve(m.price() * (1.0 - EconomySettings.spread() / 2.0), lp, lg), m.depthFactor());
+        // 0.1.10.34: the bid follows the price at the commodity's bid_price / base_price; 0.1.10.35: at most the inputs' ask
+        double ratio = m.commodity() == null ? 1.0 : m.commodity().bidRatio();
+        double unit = BidLinks.bid(MarketQuote.bidUnit(m.price(), EconomySettings.spread(), ratio), m.bidCap());
+        return Stabilizer.scale(new SellDepth.Curve(unit, lp, lg), m.depthFactor());
     }
 
     /** 0.1.10.28 (X4): the stabiliser's factor now (1 when it is off). */
@@ -291,6 +335,9 @@ public final class ExchangeService {
         mine.put(m.id(), before + take);
         d.pressure.put(m.id(), pressure + take);
         d.lastSale.put(uuid, day);   // 0.1.10.28: an active seller of the stabiliser
+        // 0.1.10.33: the records (MarketRecords)
+        d.records.costIn(m.id(), d.treasury.getOrDefault(m.id(), 0L), take, coins);
+        d.records.add(uuid, day, MarketRecords.TRADE_IN, coins);
         d.treasury.merge(m.id(), take, Long::sum);
         spendAllowance(server, d, uuid, day, coins);
         d.ledger(day).minted += coins;
@@ -327,7 +374,10 @@ public final class ExchangeService {
         if (m == null) return Result.fail("unknown_market");
         if (m.system() && !FutureCommodityManager.isUnlocked(player, m.commodity())) return Result.fail("locked");
         if (quantity < 1 || quantity > MAX_QUANTITY) return Result.fail("bad_quantity");
-        if (limit < m.low() || limit > m.high()) return Result.fail("outside_band", m.low(), m.high());
+        // 0.1.10.33: an instant sale of a datapack commodity may name a limit under the band (down to 1): the band is a rule
+        // of the orders that rest on the book, and the market's own bid falls under it when much was sold (the sell box never
+        // had the band); a resting order and a purchase keep it
+        if (!limitAllowed(m, buy, rest, limit)) return Result.fail("outside_band", m.low(), m.high());
         if (rest && openOrders(d, player.getUUID()) >= MAX_ORDERS_PER_PLAYER) return Result.fail("too_many_orders", MAX_ORDERS_PER_PLAYER);
         UUID uuid = player.getUUID();
         String owner = uuid.toString(), team = team(player);
@@ -356,6 +406,8 @@ public final class ExchangeService {
             long orderId = d.newId();
             book.book.rest(new OrderBook.Order(orderId, owner, team, buy, limit, left, day));
             book.names.put(orderId, player.getGameProfile().getName());
+            // 0.1.10.35 (item 3): the order lasts orderHours of game time (before: 7 market days)
+            book.expires.put(orderId, CommissionHours.expiresAt(server.overworld().getGameTime(), EconomySettings.orderHours()));
         } else if (left > 0) {
             if (buy) refund += limit * left;
             else if (uuLots) box.uu += UuBoard.mb(left);
@@ -382,6 +434,17 @@ public final class ExchangeService {
         if (filled == 0 && rest) return Result.done("order_rested", quantity);
         if (filled == 0) return Result.fail("no_match");
         return Result.done(buy ? "bought" : "sold", filled, quantity);
+    }
+
+    /**
+     * 0.1.10.33: the limit of an order is allowed: within the band, or for an instant sale ({@code rest} false) of a datapack
+     * commodity anywhere from 1 up to the band's top (it trades with resting bids at their price and with the market at its
+     * bid, both at or above the limit).
+     */
+    public static boolean limitAllowed(Market m, boolean buy, boolean rest, long limit) {
+        if (limit > m.high()) return false;
+        if (limit >= m.low()) return true;
+        return !buy && !rest && m.system() && limit >= 1;
     }
 
     /**
@@ -431,6 +494,7 @@ public final class ExchangeService {
         x.received += take;
         x.left -= take;
         d.ledger(day).burned += cost;
+        d.records.add(uuid, day, MarketRecords.TRADE_OUT, cost);   // 0.1.10.33
         FutureMarketData.get(server.overworld()).addPlayerVolume(uuid, take);
         trade(d, id, day, server.overworld().getGameTime(), Math.max(1, cost / take), take, SYSTEM, owner);
         ExchangeEvents.trade(id, day, Math.max(1, cost / take), take, Currency.COIN, SYSTEM, owner);
@@ -511,7 +575,13 @@ public final class ExchangeService {
                 x.proceeds += value - cut;
                 deliverGoods(d, maker, id, f.quantity());
             }
-            if (m.currency() == Currency.COIN) d.ledger(day).burned += cut;
+            if (m.currency() == Currency.COIN) {
+                // 0.1.10.33: the records (the buyer pays the value, the seller receives it less the fee)
+                UUID taker = UUID.fromString(owner);
+                d.records.add(buy ? taker : maker, day, MarketRecords.TRADE_OUT, value);
+                d.records.add(buy ? maker : taker, day, MarketRecords.TRADE_IN, value - cut);
+            }
+            if (m.currency() == Currency.COIN) toReserve(server, d, day, cut);   // 0.1.10.35: into the reserve (was destroyed)
             x.left -= f.quantity();
             trade(d, id, day, server.overworld().getGameTime(), f.price(), f.quantity(), f.makerOwner(), owner);
             ExchangeEvents.trade(id, day, f.price(), f.quantity(), m.currency(), buy ? f.makerOwner() : owner, buy ? owner : f.makerOwner());
@@ -535,6 +605,7 @@ public final class ExchangeService {
             if (!o.owner().equals(owner)) return Result.fail("not_yours");
             int left = b.book.cancel(orderId);
             b.names.remove(orderId);
+            b.expires.remove(orderId);
             refundOrder(d, player.getUUID(), b, o.buy(), o.price(), left);
             d.setDirty();
             return Result.done("cancelled", left);
@@ -974,6 +1045,7 @@ public final class ExchangeService {
                 SellDepth.Fill f = fills.get(i);
                 if (f.quantity() > 0) {
                     d.lastSale.put(a.owner, closing);
+                    d.records.add(a.owner, closing, MarketRecords.TRADE_IN, f.coins());   // 0.1.10.33
                     credit(d, a.owner, Currency.COIN, f.coins());
                     spendAllowance(server, d, a.owner, closing, f.coins());
                     d.ledger(closing).minted += f.coins();
@@ -989,6 +1061,9 @@ public final class ExchangeService {
                 r[0] += f.quantity(); r[1] += f.coins(); r[2] += a.quantity - f.quantity();
             }
             if (soldAll > 0) {
+                long paid = 0;
+                for (SellDepth.Fill f : fills) paid += f.coins();
+                d.records.costIn(m.id(), d.treasury.getOrDefault(m.id(), 0L), soldAll, paid);   // 0.1.10.33
                 d.treasury.merge(m.id(), soldAll, Long::sum);
                 d.pressure.merge(m.id(), (double) soldAll, Double::sum);
             }
@@ -1011,14 +1086,19 @@ public final class ExchangeService {
 
     // ------------------------------------------------------------------ commissions
 
-    /** Posts a commission: the reward is held until deliveries pay it out; the posting fee is destroyed. */
-    public static Result post(ServerPlayer player, String itemId, int quantity, RewardKind kind, String rewardItem, long amount, int days) {
+    /**
+     * Posts a commission: the reward is held until deliveries pay it out; the posting fee goes to the treasury reserve
+     * (0.1.10.35; before: destroyed). 0.1.10.35 (item 3): it lasts {@code hours} of game time (before: 1-7 market days); the
+     * players online are told (unless they turned the notice off).
+     */
+    public static Result post(ServerPlayer player, String itemId, int quantity, RewardKind kind, String rewardItem, long amount, int hours) {
         MinecraftServer server = player.server;
         ExchangeData d = data(server);
         Item item = item(itemId);
         Item coin = mio_icif_normal.COIN.get();
         if (item == null || item == coin) return Result.fail("bad_item");
-        if (quantity < 1 || quantity > MAX_QUANTITY || amount < 1 || days < 1 || days > COMMISSION_MAX_DAYS) return Result.fail("bad_quantity");
+        if (quantity < 1 || quantity > MAX_QUANTITY || amount < 1 || hours < 1 || hours > EconomySettings.commissionMaxHours())
+            return Result.fail("bad_quantity");
         int mine = 0;
         for (Commission c : d.commissions) if (player.getUUID().equals(c.requester)) mine++;
         if (mine >= MAX_COMMISSIONS_PER_PLAYER) return Result.fail("too_many_commissions", MAX_COMMISSIONS_PER_PLAYER);
@@ -1047,12 +1127,107 @@ public final class ExchangeService {
         c.rewardItem = kind == RewardKind.ITEM ? rewardItem : "";
         c.rewardTotal = amount;
         c.day = today(server);
-        c.expiry = c.day + days;
+        // 0.1.10.35: the end in game time; the market day stays for the order of the list (3 market days an hour)
+        c.expiresAt = CommissionHours.expiresAt(server.overworld().getGameTime(), hours);
+        c.expiry = c.day + 3L * hours;
         c.counted = playMinutes(player) >= EconomySettings.listingMinPlayMinutes();
         d.commissions.add(c);
-        d.ledger(c.day).burned += fee;
+        toReserve(server, d, c.day, fee);
         d.setDirty();
+        announceCommission(server, d, c, item);
         return Result.done("posted", quantity);
+    }
+
+    /** 0.1.10.35 (item 3): tells the players online about a new commission (not its poster, not those who turned it off). */
+    static void announceCommission(MinecraftServer server, ExchangeData d, Commission c, Item item) {
+        Component reward = switch (c.kind) {
+            case COIN -> Component.translatable("message.mio_icif.exchange.commission_reward_coins", c.rewardTotal);
+            case UU -> Component.translatable("message.mio_icif.exchange.commission_reward_uu", c.rewardTotal);
+            case ITEM -> {
+                Item r = item(c.rewardItem);
+                yield r == null ? Component.literal(c.rewardItem) : Component.translatable("message.mio_icif.exchange.commission_reward_items",
+                    new ItemStack(r).getHoverName(), c.rewardTotal);
+            }
+        };
+        long[] hm = CommissionHours.hoursMinutes(CommissionHours.secondsLeft(server.overworld().getGameTime(), c.expiresAt));
+        Component msg = Component.translatable("message.mio_icif.exchange.commission_new", new ItemStack(item).getHoverName(), c.quantity,
+            reward, c.requesterName, hm[0]);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (p.getUUID().equals(c.requester) || d.quietCommissions.contains(p.getUUID())) continue;
+            p.sendSystemMessage(msg);
+        }
+    }
+
+    /** 0.1.10.35: turns the chat notice of new commissions on or off for {@code player}. */
+    public static Result commissionNotice(ServerPlayer player, boolean on) {
+        ExchangeData d = data(player.server);
+        boolean changed = on ? d.quietCommissions.remove(player.getUUID()) : d.quietCommissions.add(player.getUUID());
+        if (changed) d.setDirty();
+        return Result.done(on ? "commission_notice_on" : "commission_notice_off");
+    }
+
+    // ------------------------------------------------------------------ 0.1.10.35: the treasury reserve, the clock
+
+    /**
+     * 0.1.10.35 (item 4): a fee of {@code coins} goes into the treasury reserve up to its cap; what is above the cap is
+     * destroyed as before ({@link ReserveRules#deposit}).
+     */
+    public static void toReserve(MinecraftServer server, ExchangeData d, long day, long coins) {
+        if (coins <= 0) return;
+        long[] r = ReserveRules.deposit(d.reserve, coins, reserveCap(d));
+        d.reserve += r[0];
+        ExchangeData.LedgerDay l = d.ledger(day);
+        l.reserveIn += r[0];
+        l.burned += r[1];
+        d.setDirty();
+    }
+
+    /** 0.1.10.35: the cap of the reserve for the active players of the bounty board now ({@link ReserveRules#cap}). */
+    public static long reserveCap(ExchangeData d) {
+        int active = Math.max(1, d.board.pace.active());
+        return ReserveRules.cap(EconomySettings.reserveWeeks(), BountyPacing.dailyPosts(active), EconomySettings.bountyNormalValue(),
+            EconomySettings.bountyNormalMultiplier());
+    }
+
+    /** 0.1.10.35: coins of a bounty payment the reserve pays; the rest is new coins (counted by the caller). */
+    public static long fromReserve(ExchangeData d, long day, long coins) {
+        long take = ReserveRules.draw(d.reserve, coins);
+        if (take <= 0) return 0;
+        d.reserve -= take;
+        d.ledger(day).reserveOut += take;
+        d.setDirty();
+        return take;
+    }
+
+    /**
+     * 0.1.10.35: the work of every 200 ticks: resting orders and commissions whose game time is over end (escrow and reward
+     * back to the mailboxes), then the shops ({@link Shops#tick}).
+     */
+    public static void tick(MinecraftServer server) {
+        if (!FutureMarketData.get(server.overworld()).isInitialized()) return;
+        ExchangeData d = data(server);
+        long now = server.overworld().getGameTime(), day = today(server);
+        boolean dirty = false;
+        for (ExchangeData.Book b : d.books.values()) {
+            if (b.expires.isEmpty()) continue;
+            for (OrderBook.Order o : b.book.orders()) {
+                Long at = b.expires.get(o.id());
+                if (at == null || !CommissionHours.expired(now, at)) continue;
+                int left = b.book.cancel(o.id());
+                b.names.remove(o.id());
+                b.expires.remove(o.id());
+                refundOrder(d, UUID.fromString(o.owner()), b, o.buy(), o.price(), left);
+                dirty = true;
+            }
+        }
+        for (Commission c : new ArrayList<>(d.commissions)) {
+            if (!CommissionHours.expired(now, c.expiresAt)) continue;
+            refundCommission(d, c);
+            finish(server, d, c, day);
+            dirty = true;
+        }
+        if (Shops.tick(server, d, day)) dirty = true;
+        if (dirty) d.setDirty();
     }
 
     static long playMinutes(ServerPlayer player) {
@@ -1073,11 +1248,17 @@ public final class ExchangeService {
         if (player.getUUID().equals(c.requester)) return Result.fail("own_commission");
         Item item = item(c.item);
         if (item == null) return Result.fail("bad_item");
-        int take = Math.min(quantity, c.quantity - c.delivered);
+        int left = c.quantity - c.delivered;
+        int take = Math.min(quantity, left);
         if (take < 1) return Result.fail("bad_quantity");
         InventoryPlan plan = new InventoryPlan(player.getInventory());
         ItemSource src = from != null ? from : ItemSource.of(plan);
-        take = (int) Math.min(take, src.count(item));
+        long have = src.count(item);
+        // 0.1.10.33: an item or UU-matter reward is paid in whole lots (before, 63 of "64 redstone for 1 diamond" paid nothing)
+        long lot = CommissionLots.lot(c.quantity, c.rewardTotal, c.kind == RewardKind.COIN);
+        take = (int) CommissionLots.take(Math.min(take, have), left, lot);
+        if (take < 1 && have > 0 && lot > 1)
+            return Result.fail("commission_lot", lot, CommissionLots.perLot(c.quantity, c.rewardTotal, lot));
         if (take < 1 || !src.take(item, take)) return Result.fail("not_enough_items");
         c.delivered += take;
         long due = c.rewardTotal * c.delivered / c.quantity - c.rewardPaid;
@@ -1300,15 +1481,16 @@ public final class ExchangeService {
         // orders
         for (ExchangeData.Book b : d.books.values()) {
             for (OrderBook.Order o : b.book.orders()) {
-                if (day - o.day() < ORDER_DAYS) continue;
+                // 0.1.10.35: an order with an end in game time ends in tick(); the orders of older versions keep 7 market days
+                if (b.expires.containsKey(o.id()) || day - o.day() < ORDER_DAYS) continue;
                 int left = b.book.cancel(o.id());
                 b.names.remove(o.id());
                 refundOrder(d, UUID.fromString(o.owner()), b, o.buy(), o.price(), left);
             }
         }
-        // commissions
+        // commissions (0.1.10.35: those with an end in game time end in tick())
         for (Commission c : new ArrayList<>(d.commissions)) {
-            if (c.expiry > day) continue;
+            if (c.expiresAt > 0 || c.expiry > day) continue;
             refundCommission(d, c);
             finish(server, d, c, day);
         }
@@ -1322,6 +1504,7 @@ public final class ExchangeService {
             long collateral = Forwards.collateral(p.price, p.quantity);
             credit(d, p.owner, Currency.COIN, back);
             if (back > collateral) d.ledger(day).minted += back - collateral; else d.ledger(day).burned += collateral - back;
+            d.records.add(p.owner, day, MarketRecords.FUTURES, back - collateral);   // 0.1.10.33
             it.remove();
         }
         // bars of the datapack commodities follow the daily price
@@ -1337,12 +1520,26 @@ public final class ExchangeService {
         for (String item : new ArrayList<>(d.evidence.keySet())) tryList(server, d, item, day);
         // 0.1.10.26 (X3): the bounties of three tiers replace postSystemCommissions (3 market commissions a day, paid in new coins)
         Bounties.onNewDay(server, d, day);
+        // 0.1.10.33: the cost basis follows the stock (items returned without a price at the bid without pressure)
+        reconcileCost(server, d);
+        d.records.rollWeek(day);
         d.ledger(day);
         // 0.1.10.28 (X4): the stabiliser looks at the closed days; expired delegate ID cards leave the registers
         stabilize(d, closing);
         IdCards.prune(d, day);
         d.setDirty();
         ExchangeEvents.marketDay(server, day);
+    }
+
+    /** 0.1.10.33: settles the cost basis of every treasury stock (MarketRecords). */
+    static void reconcileCost(MinecraftServer server, ExchangeData d) {
+        java.util.Set<String> ids = new java.util.HashSet<>(d.records.cost.keySet());
+        ids.addAll(d.treasury.keySet());
+        for (String id : ids) {
+            FutureCommodity c = FutureCommodityManager.getCommodityById(id);
+            double unit = c == null ? 0 : bidUnit(server, c, FutureMarketData.get(server.overworld()).getPrice(id, c.getBasePrice()));
+            d.records.reconcile(id, d.treasury.getOrDefault(id, 0L), unit);
+        }
     }
 
     /**
@@ -1353,8 +1550,10 @@ public final class ExchangeService {
         long net7 = 0;
         for (ExchangeData.LedgerDay l : d.ledger) {
             if (l.day > closing) continue;
-            if (d.supplyDay == Long.MIN_VALUE || l.day > d.supplyDay) d.supply = Stabilizer.supply(d.supply, l.minted, l.burned);
-            if (closing - l.day < Stabilizer.WINDOW_DAYS) net7 += l.minted - l.burned;
+            // 0.1.10.35: circulation (the reserve's fees out, its payments in), so the reserve changes nothing here
+            if (d.supplyDay == Long.MIN_VALUE || l.day > d.supplyDay)
+                d.supply = Stabilizer.supply(d.supply, l.minted + l.reserveOut, l.burned + l.reserveIn);
+            if (closing - l.day < Stabilizer.WINDOW_DAYS) net7 += l.circulation();
         }
         d.supplyDay = Math.max(d.supplyDay, closing);
         d.lastSale.values().removeIf(v -> closing - v >= Stabilizer.WINDOW_DAYS);

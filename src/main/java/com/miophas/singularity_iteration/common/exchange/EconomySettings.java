@@ -69,6 +69,23 @@ public final class EconomySettings {
         put(k, "bountyIssuePerWeekSpecial", () -> Singularity_Iteration_Config.BOUNTY_ISSUE_SPECIAL, 0, 1_000_000, 'i');
         put(k, "bountyUuPerWeek", () -> Singularity_Iteration_Config.BOUNTY_UU_PER_WEEK, 0, 1_000_000_000, 'i');
         put(k, "bountyTreasuryLow", () -> Singularity_Iteration_Config.BOUNTY_TREASURY_LOW, 0, 1_000_000, 'i');
+        // 0.1.10.34 the pace of the bounties
+        put(k, "bountyRandomDays", () -> Singularity_Iteration_Config.BOUNTY_RANDOM_DAYS, 0, 1, 'b');
+        put(k, "bountyMinDays", () -> Singularity_Iteration_Config.BOUNTY_MIN_DAYS, 1, 60, 'i');
+        put(k, "bountyMaxDays", () -> Singularity_Iteration_Config.BOUNTY_MAX_DAYS, 1, 60, 'i');
+        put(k, "bountyAcceptMax", () -> Singularity_Iteration_Config.BOUNTY_ACCEPT_MAX, 1, 16, 'i');
+        // 0.1.10.35 commissions and orders in hours, the treasury reserve, player shops
+        put(k, "commissionDefaultHours", () -> Singularity_Iteration_Config.COMMISSION_DEFAULT_HOURS, 1, 168, 'i');
+        put(k, "commissionMaxHours", () -> Singularity_Iteration_Config.COMMISSION_MAX_HOURS, 1, 168, 'i');
+        put(k, "orderHours", () -> Singularity_Iteration_Config.ORDER_HOURS, 1, 168, 'i');
+        put(k, "reserveWeeks", () -> Singularity_Iteration_Config.RESERVE_WEEKS, 0, 52, 'i');
+        put(k, "shopsEnabled", () -> Singularity_Iteration_Config.SHOPS_ENABLED, 0, 1, 'b');
+        put(k, "shopMaxOffers", () -> Singularity_Iteration_Config.SHOP_MAX_OFFERS, 1, 54, 'i');
+        put(k, "shopStacks", () -> Singularity_Iteration_Config.SHOP_STACKS, 9, 270, 'i');
+        put(k, "shopOfferFee", () -> Singularity_Iteration_Config.SHOP_OFFER_FEE, 0, 1_000_000, 'i');
+        put(k, "shopUpkeepPerWeek", () -> Singularity_Iteration_Config.SHOP_UPKEEP, 0, 1_000_000, 'i');
+        put(k, "shopIdleDays", () -> Singularity_Iteration_Config.SHOP_IDLE_DAYS, 1, 365, 'i');
+        put(k, "shopCloseDays", () -> Singularity_Iteration_Config.SHOP_CLOSE_DAYS, 1, 3650, 'i');
         // 0.1.10.28 (X4)
         put(k, "uuBoard", () -> Singularity_Iteration_Config.EXCHANGE_UU_BOARD, 0, 1, 'b');
         put(k, "scrapThreshold", () -> Singularity_Iteration_Config.EXCHANGE_SCRAP_THRESHOLD, 0, 1, 'd');
@@ -208,6 +225,37 @@ public final class EconomySettings {
             i("bountyIssuePerWeekNormal"), i("bountyIssuePerWeekAdvanced"), i("bountyIssuePerWeekSpecial"), i("bountyUuPerWeek"),
             i("bountyTreasuryLow"), seed);
     }
+
+    /**
+     * 0.1.10.34: the pace of the bounties for {@code active} players ({@code online} of them online now): random days, the
+     * range of days (min at most max), claims per player.
+     */
+    public static BountyBoard.Pace pace(int active, int online) {
+        int min = (int) i("bountyMinDays");
+        return new BountyBoard.Pace(b("bountyRandomDays"), min, (int) Math.max(min, i("bountyMaxDays")), (int) i("bountyAcceptMax"),
+            Math.max(1, active), Math.max(0, online));
+    }
+
+    /** 0.1.10.35: hours of commissions (default, at most) and of resting orders. */
+    public static int commissionDefaultHours() { return CommissionHours.clamp(i("commissionDefaultHours"), commissionMaxHours()); }
+    public static int commissionMaxHours() { return CommissionHours.clamp(i("commissionMaxHours"), CommissionHours.MAX_HOURS); }
+    public static int orderHours() { return CommissionHours.clamp(i("orderHours"), CommissionHours.MAX_HOURS); }
+
+    /** 0.1.10.35: the treasury reserve's cap in market weeks of NORMAL bounty rewards (0 = no reserve). */
+    public static int reserveWeeks() { return (int) i("reserveWeeks"); }
+
+    /** 0.1.10.35: the NORMAL bounty value and multiplier (the reserve's cap). */
+    public static long bountyNormalValue() { return i("bountyNormalValue"); }
+    public static double bountyNormalMultiplier() { return d("bountyNormalMultiplier"); }
+
+    /** 0.1.10.35: player shops. */
+    public static boolean shopsEnabled() { return b("shopsEnabled"); }
+    public static int shopMaxOffers() { return (int) i("shopMaxOffers"); }
+    public static int shopStacks() { return (int) i("shopStacks"); }
+    public static long shopOfferFee() { return i("shopOfferFee"); }
+    public static long shopUpkeepPerWeek() { return i("shopUpkeepPerWeek"); }
+    public static int shopIdleDays() { return (int) i("shopIdleDays"); }
+    public static int shopCloseDays() { return (int) Math.max(i("shopCloseDays"), i("shopIdleDays")); }
 
     /** Lines for {@code /mio_icif bounty settings}: key, value now and where it comes from. */
     public static List<String> describe() {

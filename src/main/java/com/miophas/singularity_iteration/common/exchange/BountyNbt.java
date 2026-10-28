@@ -55,6 +55,16 @@ final class BountyNbt {
                 by.add(t);
             });
             x.put("Contribution", by);
+            // 0.1.10.34: rarity, rush bonus and the claim
+            x.putString("Rarity", b.rarity.name());
+            x.putInt("Rush", b.rush);
+            if (b.claimant != null) {
+                CompoundTag c = new CompoundTag();
+                c.putString("Player", b.claimant.toString()); c.putString("Name", b.claimName); c.putString("Team", b.claimTeam);
+                c.putLong("Day", b.claimDay);
+                x.put("Claim", c);
+            }
+            x.putBoolean("Extended", b.extended);
             list.add(x);
         }
         tag.put("List", list);
@@ -68,6 +78,17 @@ final class BountyNbt {
         tag.putLongArray("Issued", board.issued);
         tag.putLong("UuIssued", board.uuIssued);
         tag.putInt("AdvancedPosted", board.advancedPosted);
+        // 0.1.10.34
+        CompoundTag bans = new CompoundTag();
+        board.bans.forEach((id, day) -> bans.putLong(id.toString(), day));
+        tag.put("Bans", bans);
+        CompoundTag refreshes = new CompoundTag();
+        board.refreshes.forEach((id, v) -> refreshes.putLongArray(id.toString(), v));
+        tag.put("Refreshes", refreshes);
+        tag.putLong("PostedDay", board.postedDay);
+        tag.putInt("PostedToday", board.postedToday);
+        tag.putLong("LastPostTick", board.lastPostTick);
+        tag.putLong("Serial", board.serial);
         return tag;
     }
 
@@ -90,6 +111,29 @@ final class BountyNbt {
         for (int i = 0; i < Math.min(issued.length, board.issued.length); i++) board.issued[i] = Math.max(0, issued[i]);
         board.uuIssued = Math.max(0, tag.getLong("UuIssued"));
         board.advancedPosted = Math.max(0, tag.getInt("AdvancedPosted"));
+        // 0.1.10.34
+        board.bans.clear();
+        CompoundTag bans = tag.getCompound("Bans");
+        for (String k : bans.getAllKeys()) { UUID id = uuid(k); if (id != null) board.bans.put(id, bans.getLong(k)); }
+        board.refreshes.clear();
+        CompoundTag refreshes = tag.getCompound("Refreshes");
+        for (String k : refreshes.getAllKeys()) {
+            UUID id = uuid(k);
+            long[] v = refreshes.getLongArray(k);
+            if (id != null && v.length == 3 && v[1] >= 0) board.refreshes.put(id, v);
+        }
+        board.postedDay = tag.contains("PostedDay") ? tag.getLong("PostedDay") : Long.MIN_VALUE;
+        board.postedToday = Math.max(0, tag.getInt("PostedToday"));
+        board.lastPostTick = tag.contains("LastPostTick") ? tag.getLong("LastPostTick") : Long.MIN_VALUE;
+        board.serial = Math.max(0, tag.getLong("Serial"));
+    }
+
+    static UUID uuid(String s) {
+        try {
+            return UUID.fromString(s);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     static Bounty bounty(CompoundTag x) {
@@ -125,6 +169,20 @@ final class BountyNbt {
             if (!c.getString("Name").isEmpty()) b.names.put(id, c.getString("Name"));
         }
         if (b.needs.isEmpty() || b.lines.isEmpty() || b.complete()) return null;
+        // 0.1.10.34 (an older save: common, no rush, no claim)
+        BountyPacing.Rarity rarity = BountyPacing.Rarity.of(x.getString("Rarity"));
+        b.rarity = rarity == null ? BountyPacing.Rarity.COMMON : rarity;
+        b.rush = Math.max(0, Math.min(100, x.getInt("Rush")));
+        if (x.contains("Claim")) {
+            CompoundTag c = x.getCompound("Claim");
+            b.claimant = uuid(c.getString("Player"));
+            if (b.claimant != null) {
+                b.claimName = c.getString("Name");
+                b.claimTeam = c.getString("Team");
+                b.claimDay = c.getLong("Day");
+            }
+        }
+        b.extended = x.getBoolean("Extended");
         return b;
     }
 }

@@ -86,7 +86,8 @@ public final class ExchangeApiImpl implements ExchangeApi.Service {
             ExchangeData.LedgerDay l = all.get(i);
             Map<String, Long> in = new HashMap<>(), out2 = new HashMap<>();
             l.external.forEach((k, v) -> { if (v[0] > 0) in.put(k, v[0]); if (v[1] > 0) out2.put(k, v[1]); });
-            out.add(new ExchangeApi.LedgerDay(l.day, l.minted, l.burned, l.bountyCoins, l.bountyItems, l.bountyUu, in, out2));
+            // 0.1.10.35: into / out of circulation (the reserve's fees and payments count as before the reserve)
+            out.add(new ExchangeApi.LedgerDay(l.day, l.created(), l.destroyed(), l.bountyCoins, l.bountyItems, l.bountyUu, in, out2));
         }
         return out;
     }

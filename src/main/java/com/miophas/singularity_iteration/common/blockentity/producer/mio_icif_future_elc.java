@@ -537,7 +537,8 @@ public static final int DATA_CURRENT_CATEGORY = 7;
             var market = com.miophas.singularity_iteration.common.exchange.ExchangeService.market(world.getServer(), commodity.getItemId());
             if (market == null) return false;
             long quoted = buying ? Math.max(1, (buyCost(commodity, 1) * 11 + 9) / 10) : Math.max(1, sellPayout(commodity, 1));
-            final long limit = Math.max(market.low(), Math.min(market.high(), quoted));
+            // 0.1.10.33: a sale may go under the band (the market's bid falls under it when much was sold)
+            final long limit = buying ? Math.max(market.low(), Math.min(market.high(), quoted)) : Math.max(1, Math.min(market.high(), quoted));
             return exchangeAction(customer, () -> com.miophas.singularity_iteration.common.exchange.ExchangeService.place(
                 customer, commodity.getItemId(), buying, false, limit, tradeQuantity));
         } finally {

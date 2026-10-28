@@ -23,7 +23,9 @@
     },
     {
       "item": "mio_icif:resource/item_adviron_ingot",
-      "base_price": 210,
+      "base_price": 400,
+      "bid_price": 205,
+      "made_from": { "minecraft:iron_ingot": 1 },
       "volatility": 0.05
     },
     {
@@ -33,7 +35,9 @@
     },
     {
       "item": "mio_icif:normal/item_circuit",
-      "base_price": 800,
+      "base_price": 900,
+      "bid_price": 760,
+      "made_from": { "minecraft:redstone": 2, "minecraft:iron_ingot": 1, "minecraft:copper_ingot": 2, "mio_icif:resource/item_rubber": 6 },
       "volatility": 0.05
     },
     {
@@ -43,12 +47,15 @@
     },
     {
       "item": "mio_icif:resource/item_alloy_ingot",
-      "base_price": 700,
+      "base_price": 800,
+      "bid_price": 665,
+      "made_from": { "minecraft:iron_ingot": 1.5, "mio_icif:resource/item_ingot_bronze": 1.5, "mio_icif:resource/item_ingot_tin": 1.5 },
       "volatility": 0.06
     },
     {
       "item": "mio_icif:resource/item_carbon_plate",
-      "base_price": 210,
+      "base_price": 300,
+      "bid_price": 60,
       "volatility": 0.06
     },
     {

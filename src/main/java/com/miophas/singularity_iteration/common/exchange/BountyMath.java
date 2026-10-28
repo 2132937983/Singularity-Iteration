@@ -39,6 +39,29 @@ public final class BountyMath {
         return q < min || q > max ? -1 : (int) q;
     }
 
+    /**
+     * 0.1.10.33: the quantity of a generated NORMAL request of an item that stacks to {@code stack}: none for an item that does
+     * not stack (a request for 39-117 mushroom stews filled the inventory several times); below a stack of 64 at most two
+     * stacks (the value is cut to fit, never raised; below {@code min} as before none); else {@link #quantity}.
+     */
+    public static int generatedQuantity(double value, double ask, int min, int max, int stack) {
+        if (stack <= 1) return -1;
+        if (stack >= 64) return quantity(value, ask, min, max);
+        if (!(value > 0) || !(ask > 0)) return -1;
+        int cap = Math.min(max, 2 * stack);
+        double q = Math.rint(value / ask);
+        if (q < Math.min(min, cap)) return -1;
+        return (int) Math.min(q, cap);
+    }
+
+    /** 0.1.10.33: the most a datapack table may ask of an item that stacks to {@code stack}: eight inventory slots. */
+    public static long tableCount(long count, int stack) {
+        return Math.min(count, TABLE_SLOTS * (long) Math.max(1, stack));
+    }
+
+    /** 0.1.10.33: inventory slots a table requirement may fill at most. */
+    public static final int TABLE_SLOTS = 8;
+
     /** What is due of {@code total} once {@code done} of {@code all} is delivered, minus what was {@code paid}. */
     public static long due(long total, long done, long all, long paid) {
         if (total <= 0 || all <= 0 || done <= 0) return 0;

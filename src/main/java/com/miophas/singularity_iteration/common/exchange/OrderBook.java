@@ -107,6 +107,25 @@ public final class OrderBook {
         return 0;
     }
 
+    /** 0.1.10.33: changes the day of resting orders in place, time priority kept (the repair of a market day that went back). */
+    public void redate(java.util.function.LongUnaryOperator day) {
+        for (var side : List.of(bids, asks)) {
+            for (var queue : side.values()) {
+                ArrayDeque<Entry> moved = new ArrayDeque<>(queue.size());
+                for (Entry e : queue) {
+                    long d = day.applyAsLong(e.order.day());
+                    if (d == e.order.day()) { moved.addLast(e); continue; }
+                    Order o = e.order;
+                    Entry x = new Entry(new Order(o.id(), o.owner(), o.team(), o.buy(), o.price(), o.remaining(), d));
+                    x.remaining = e.remaining;
+                    moved.addLast(x);
+                }
+                queue.clear();
+                queue.addAll(moved);
+            }
+        }
+    }
+
     /** The resting order with this id (with its current remaining quantity), or null. */
     public Order find(long id) {
         for (Order order : orders()) if (order.id() == id) return order;

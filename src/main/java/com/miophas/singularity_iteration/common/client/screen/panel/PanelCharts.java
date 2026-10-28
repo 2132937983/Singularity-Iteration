@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.client.screen.panel;
 
-import java.util.Locale;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.neoforged.api.distmarker.Dist;
@@ -20,9 +19,9 @@ public final class PanelCharts {
     public static final int ACCENT = 0xFF4FC3F7, WARN = 0xFFFFC857;
     public static boolean colourBlind;
 
-    public static int up() { return colourBlind ? 0xFF4F8DFF : 0xFF2EC4A6; }
+    public static int up() { return colourBlind || PanelStyle.colourBlind ? 0xFF4F8DFF : 0xFF2EC4A6; }
 
-    public static int down() { return colourBlind ? 0xFFFF9F43 : 0xFFFF6B6B; }
+    public static int down() { return colourBlind || PanelStyle.colourBlind ? 0xFFFF9F43 : 0xFFFF6B6B; }
 
     public static void panel(GuiGraphics g, int x, int y, int w, int h) {
         g.fill(x, y, x + w, y + h, PANEL);
@@ -70,15 +69,9 @@ public final class PanelCharts {
         }
     }
 
-    /** The scale the candles used, for {@link #line} and labels: {min, max}. */
+    /** The scale the candles used, for {@link #line} and labels: {min, max} ({@link PanelStyle#scale}). */
     public static long[] scale(long[] low, long[] high, long overlayLow, long overlayHigh) {
-        long min = Long.MAX_VALUE, max = Long.MIN_VALUE;
-        for (int i = 0; i < low.length; i++) { min = Math.min(min, low[i]); max = Math.max(max, high[i]); }
-        if (overlayLow > 0) min = Math.min(min, overlayLow);
-        if (overlayHigh > 0) max = Math.max(max, overlayHigh);
-        if (low.length == 0) { min = 0; max = 1; }
-        if (max == min) { max++; min = Math.max(0, min - 1); }
-        return new long[] {min, max};
+        return PanelStyle.scale(low, high, overlayLow, overlayHigh);
     }
 
     /** Small line of values in a box, coloured by the last change. */
@@ -115,16 +108,14 @@ public final class PanelCharts {
         }
     }
 
-    /** 12,345 / 1.2M style. */
+    /** 12,345 / 1.2M style (0.1.10.33: {@link PanelStyle#number}). */
     public static String number(long value) {
-        long a = Math.abs(value);
-        if (a >= 10_000_000L) return String.format(Locale.ROOT, "%.1fM", value / 1.0e6);
-        return String.format(Locale.ROOT, "%,d", value);
+        return PanelStyle.number(value);
     }
 
-    /** +1.2 % from permille. */
+    /** +1.2 % from permille ({@link PanelStyle#percent}). */
     public static String percent(int permille) {
-        return String.format(Locale.ROOT, "%+.1f%%", permille / 10.0);
+        return PanelStyle.percent(permille);
     }
 
     /** Text right-aligned at {@code right}. */

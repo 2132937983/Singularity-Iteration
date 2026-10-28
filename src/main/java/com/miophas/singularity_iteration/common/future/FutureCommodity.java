@@ -49,6 +49,24 @@ public class FutureCommodity {
 
     private Selling selling = Selling.DEFAULT;
 
+    /**
+     * 0.1.10.34: the market's bid at the base price (datapack {@code bid_price}, at most {@code base_price}; 0 = the base
+     * price). The bid moves with the price: price x bid_price / base_price, less half the spread. Server side only.
+     */
+    private int bidPrice;
+
+    /** 0.1.10.34: the datapack bid price (the base price when none is set). */
+    public int getBidPrice() { return bidPrice > 0 ? bidPrice : basePrice; }
+
+    /** 0.1.10.34: the bid as a share of the price ({@code bid_price / base_price}, 1 without a bid price). */
+    public double bidRatio() { return bidPrice > 0 && basePrice > 0 ? Math.min(1.0, (double) bidPrice / basePrice) : 1.0; }
+
+    /** 0.1.10.34: sets the bid price (loader only; 0 = the base price). */
+    public FutureCommodity withBidPrice(int bidPrice) {
+        this.bidPrice = bidPrice > 0 && bidPrice < basePrice ? bidPrice : 0;
+        return this;
+    }
+
     /** 0.1.10.26: the sell-box settings of this commodity. */
     public Selling getSelling() { return selling; }
 

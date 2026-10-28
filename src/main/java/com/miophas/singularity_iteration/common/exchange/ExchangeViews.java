@@ -146,13 +146,27 @@ public final class ExchangeViews {
         // 0.1.10.26 (X3): the bounties and their weekly budgets
         BountyBoard.Rules rules = Bounties.rules(server);
         BountyBoard board = d.board;
+        // 0.1.10.34: the pace for the players now (the caps grow with the active players)
+        BountyBoard.Pace pace = Bounties.pace(server, d, day);
         long vaultItems = 0;
         for (long v : board.vault.values()) vaultItems += v;
         boolean thisWeek = board.week == BountyMath.week(day);
+        long now = server.overworld().getGameTime();
+        int target = board.normalTarget(day, rules), openNormal = board.open(BountyTables.Tier.NORMAL);
+        int postedToday = board.postedDay == day ? board.postedToday : 0, dailyPosts = BountyPacing.dailyPosts(pace.active());
+        long nextRefill = -1;
+        if (openNormal < target && postedToday < dailyPosts && pace.online() > 0) {
+            long wait = BountyPacing.refillWait(pace.online());
+            long left = board.lastPostTick == Long.MIN_VALUE ? 0 : Math.max(0, board.lastPostTick + wait - now);
+            nextRefill = (left + 19) / 20;   // seconds (the board checks every 10 seconds)
+        }
+        int refreshesLeft = Math.max(0, BountyPacing.REFRESH_PER_DAY - board.refreshesToday(player.getUUID(), day));
         ExchangeView.BountyBudget budget = new ExchangeView.BountyBudget(
-            thisWeek ? board.issued[BountyTables.Tier.ADVANCED.ordinal()] : 0, rules.issueAdvanced(),
-            thisWeek ? board.issued[BountyTables.Tier.SPECIAL.ordinal()] : 0, rules.issueSpecial(),
-            thisWeek ? board.uuIssued : 0, rules.uuPerWeek(), board.vault.size(), vaultItems);
+            thisWeek ? board.issued[BountyTables.Tier.ADVANCED.ordinal()] : 0, board.issueCap(BountyTables.Tier.ADVANCED, rules),
+            thisWeek ? board.issued[BountyTables.Tier.SPECIAL.ordinal()] : 0, board.issueCap(BountyTables.Tier.SPECIAL, rules),
+            thisWeek ? board.uuIssued : 0, board.uuCap(rules), board.vault.size(), vaultItems,
+            board.refreshCost(player.getUUID(), day, Bounties.prices(server)), refreshesLeft, (board.refreshWait(player.getUUID(), now) + 19) / 20,
+            board.refreshable().size(), pace.active(), pace.online(), target, openNormal, postedToday, dailyPosts, nextRefill);
         // 0.1.10.29: the curves of the selected market, the box and the container (the panel's minimum-price previews)
         List<ExchangeView.CurveLine> curves = new ArrayList<>();
         if (m != null && m.system() && m.currency() == ExchangeData.Currency.COIN) addCurve(curves, server, d, player.getUUID(), m.id(), day);
@@ -234,8 +248,10 @@ public final class ExchangeViews {
         List<ExchangeView.BoxLine> lines = quoteLines(player, d, Settlement.contents(player, st), day, ExchangeView.MAX_SETTLE_LINES);
         List<ExchangeView.SettleTarget> targets = new ArrayList<>();
         boolean mp = Bounties.multiplayer(player.server);
+        String team = Bounties.team(player);
         for (BountyBoard.Bounty b : d.board.bounties) {
             if (targets.size() >= ExchangeView.MAX_SETTLE_TARGETS) break;
+            if (!BountyBoard.mayDeliver(b, player.getUUID(), team)) continue;   // 0.1.10.34: claimed by another player
             long n = 0;
             String first = "";
             for (int i = 0; i < b.needs.size(); i++) {

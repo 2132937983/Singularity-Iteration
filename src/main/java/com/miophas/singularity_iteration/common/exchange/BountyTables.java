@@ -21,6 +21,7 @@ import java.util.function.Predicate;
  * <pre>{@code
  * data/<ns>/si_exchange/bounties/<name>.json   one table entry, or {"bounties": [ ... ]}
  * { "tier": "advanced", "weight": 10, "max_open": 1, "duration_days": 7, "cooldown_days": 7,
+ *   (0.1.10.34: instead of "duration_days", "rarity": "rare" and / or "days": [1, 4] - a range drawn per bounty)
  *   "conditions": { "min_day": 7, "advancement": "minecraft:story/smelt_iron" },
  *   "requirements": [ { "item": "mio_icif:normal/item_circuit", "count": 32 },
  *                     { "item": "minecraft:dragon_head", "count": 1, "value": 20000 } ],
@@ -73,8 +74,18 @@ public final class BountyTables {
     public record Requirement(String item, long count, double value) { }
 
     public record Table(String id, Tier tier, int weight, int maxOpen, int days, int cooldownDays, long minDay, String advancement,
-                        List<Requirement> requirements, String pool, int rolls, double multiplier, Split split, double playerShare) {
-        /** {@code days} / {@code multiplier} / {@code playerShare} of -1 take the tier's setting. */
+                        List<Requirement> requirements, String pool, int rolls, double multiplier, Split split, double playerShare,
+                        String rarity, int minDays, int maxDays) {
+        /**
+         * {@code days} / {@code multiplier} / {@code playerShare} of -1 take the tier's setting. 0.1.10.34: {@code rarity}
+         * ("" = by tier and weight) and {@code minDays..maxDays} (-1 = by the rarity) choose the range of days when
+         * {@code days} is -1.
+         */
+        public Table(String id, Tier tier, int weight, int maxOpen, int days, int cooldownDays, long minDay, String advancement,
+                     List<Requirement> requirements, String pool, int rolls, double multiplier, Split split, double playerShare) {
+            this(id, tier, weight, maxOpen, days, cooldownDays, minDay, advancement, requirements, pool, rolls, multiplier, split, playerShare,
+                "", -1, -1);
+        }
     }
 
     /**
@@ -156,6 +167,18 @@ public final class BountyTables {
         int days = (int) range(o, "duration_days", -1, -1, 60);
         if (days == 0) throw new IllegalArgumentException("duration_days must be 1..60");
         int cooldown = (int) range(o, "cooldown_days", 0, 0, 3650);
+        // 0.1.10.34: the rarity and a range of days
+        String rarity = string(o, "rarity", "").toLowerCase(Locale.ROOT);
+        if (!rarity.isEmpty() && BountyPacing.Rarity.of(rarity) == null)
+            throw new IllegalArgumentException("rarity must be common, uncommon, rare or legendary");
+        int minDays = -1, maxDays = -1;
+        if (o.has("days")) {
+            if (!o.get("days").isJsonArray() || o.getAsJsonArray("days").size() != 2) throw new IllegalArgumentException("days must be [min, max]");
+            JsonArray dr = o.getAsJsonArray("days");
+            minDays = dr.get(0).getAsInt();
+            maxDays = dr.get(1).getAsInt();
+            if (minDays < 1 || maxDays < minDays || maxDays > 60) throw new IllegalArgumentException("days must be [min, max] within 1..60");
+        }
         long minDay = 0;
         String advancement = "";
         if (o.has("conditions")) {
@@ -199,7 +222,8 @@ public final class BountyTables {
         double share = number(o, "player_share", -1);
         if (share != -1 && !(share > 0 && share <= 1)) throw new IllegalArgumentException("player_share must be 0..1");
         out.remove(id);
-        out.put(id, new Table(id, tier, weight, maxOpen, days, cooldown, minDay, advancement, List.copyOf(list), pool, rolls, multiplier, split, share));
+        out.put(id, new Table(id, tier, weight, maxOpen, days, cooldown, minDay, advancement, List.copyOf(list), pool, rolls, multiplier, split, share,
+            rarity, minDays, maxDays));
     }
 
     static Pool pool(String id, JsonObject o, Predicate<String> itemExists, List<Error> errors) {

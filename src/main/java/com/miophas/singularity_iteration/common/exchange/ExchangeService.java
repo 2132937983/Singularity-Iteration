@@ -237,7 +237,9 @@ public final class ExchangeService {
         FutureCommodity.Market cm = m.commodity() == null ? FutureCommodity.Market.DEFAULT : m.commodity().getMarket();
         int lp = cm.depthPlayer() > 0 ? cm.depthPlayer() : EconomySettings.sellDepthPlayer();
         int lg = cm.depthServer() > 0 ? cm.depthServer() : EconomySettings.sellDepthServer();
-        return Stabilizer.scale(new SellDepth.Curve(m.price() * (1.0 - EconomySettings.spread() / 2.0), lp, lg), m.depthFactor());
+        // 0.1.10.34: the bid follows the price at the commodity's bid_price / base_price
+        double ratio = m.commodity() == null ? 1.0 : m.commodity().bidRatio();
+        return Stabilizer.scale(new SellDepth.Curve(MarketQuote.bidUnit(m.price(), EconomySettings.spread(), ratio), lp, lg), m.depthFactor());
     }
 
     /** 0.1.10.28 (X4): the stabiliser's factor now (1 when it is off). */
@@ -1406,7 +1408,8 @@ public final class ExchangeService {
         ids.addAll(d.treasury.keySet());
         for (String id : ids) {
             FutureCommodity c = FutureCommodityManager.getCommodityById(id);
-            double unit = c == null ? 0 : FutureMarketData.get(server.overworld()).getPrice(id, c.getBasePrice()) * (1.0 - EconomySettings.spread() / 2.0);
+            double unit = c == null ? 0 : MarketQuote.bidUnit(FutureMarketData.get(server.overworld()).getPrice(id, c.getBasePrice()),
+                EconomySettings.spread(), c.bidRatio());
             d.records.reconcile(id, d.treasury.getOrDefault(id, 0L), unit);
         }
     }

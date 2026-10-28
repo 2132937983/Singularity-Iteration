@@ -158,6 +158,8 @@ public final class ExchangeData extends SavedData {
     public long supplyDay = Long.MIN_VALUE;
     /** 0.1.10.28: the last day each player sold to the market (active sellers of the stabiliser). */
     public final Map<UUID, Long> lastSale = new HashMap<>();
+    /** 0.1.10.34: the market day each player last logged in or used the exchange (active players of the bounties). */
+    public final Map<UUID, Long> seen = new HashMap<>();
     /** 0.1.10.28: the secret that signs ID cards (0 = not made yet), the next serial, the delegate cards per issuer. */
     public long cardSecret;
     public long cardSerial = 1;
@@ -345,6 +347,9 @@ public final class ExchangeData extends SavedData {
         d.supplyDay = st.contains("SupplyDay") ? st.getLong("SupplyDay") : Long.MIN_VALUE;
         CompoundTag ls = tag.getCompound("LastSale");
         for (String k : ls.getAllKeys()) { UUID id = uuid(k); if (id != null) d.lastSale.put(id, ls.getLong(k)); }
+        // 0.1.10.34
+        CompoundTag seen = tag.getCompound("Seen");
+        for (String k : seen.getAllKeys()) { UUID id = uuid(k); if (id != null) d.seen.put(id, seen.getLong(k)); }
         // 0.1.10.29
         for (Tag t : tag.getList("BankMode", Tag.TAG_STRING)) { UUID id = uuid(t.getAsString()); if (id != null) d.bankMode.add(id); }
         CompoundTag cd = tag.getCompound("Cards");
@@ -544,6 +549,10 @@ public final class ExchangeData extends SavedData {
         CompoundTag ls = new CompoundTag();
         lastSale.forEach((id, dd) -> ls.putLong(id.toString(), dd));
         tag.put("LastSale", ls);
+        // 0.1.10.34
+        CompoundTag seenTag = new CompoundTag();
+        seen.forEach((id, dd) -> seenTag.putLong(id.toString(), dd));
+        tag.put("Seen", seenTag);
         // 0.1.10.29
         ListTag bank = new ListTag();
         for (UUID id : bankMode) bank.add(StringTag.valueOf(id.toString()));

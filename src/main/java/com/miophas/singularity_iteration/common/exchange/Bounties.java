@@ -62,11 +62,14 @@ public final class Bounties {
     /** Multiplayer for the per-player share: a dedicated server or a world opened to LAN. */
     public static boolean multiplayer(MinecraftServer server) { return !(server.isSingleplayer() && !server.isPublished()); }
 
-    /** The market's ask of one item now (price x (1 + spread / 2)), 0 for an item that is no commodity. */
+    /**
+     * The market's ask of one item now (price x (1 + spread / 2)), 0 for an item that is no commodity; 0.1.10.34: the value of
+     * an item a request asks for is halfway between the ask and the bid.
+     */
     public static BountyBoard.Prices prices(MinecraftServer server) {
         FutureMarketData fm = FutureMarketData.get(server.overworld());
         double spread = EconomySettings.spread();
-        Map<String, Double> memo = new HashMap<>();
+        Map<String, Double> memo = new HashMap<>(), valueMemo = new HashMap<>();
         return new BountyBoard.Prices() {
             @Override public double ask(String item) {
                 return memo.computeIfAbsent(item, id -> {
@@ -81,6 +84,16 @@ public final class Bounties {
             @Override public int maxStack(String item) { return ExchangeTables.maxStack(item); }
 
             @Override public double uuPerMb() { return ExchangeService.coinsPerBucket(server) / 1000.0; }
+
+            // 0.1.10.34 (item 10): a request is valued halfway between the market's ask and bid
+            @Override public double value(String item) {
+                return valueMemo.computeIfAbsent(item, id -> {
+                    FutureCommodity c = FutureCommodityManager.getCommodityById(id);
+                    if (c == null) return 0.0;
+                    int price = fm.getPrice(id, c.getBasePrice());
+                    return MarketQuote.midValue(ask(id), MarketQuote.bidUnit(price, spread, c.bidRatio()));
+                });
+            }
         };
     }
 
@@ -129,12 +142,14 @@ public final class Bounties {
         out.share = draft.share;
         out.multiplier = draft.multiplier;
         out.coinsFallback = draft.coinsFallback;
+        out.rarity = draft.rarity;   // 0.1.10.34
+        out.rush = draft.rush;
         for (BountyNeed n : event.getNeeds()) {
             if (n == null || !ExchangeTables.itemExists(n.item())) return null;
             Need x = new Need();
             x.item = n.item();
             x.count = n.count();
-            x.unit = n.value() > 0 ? n.value() : Math.max(1, Math.round(prices.ask(n.item())));
+            x.unit = n.value() > 0 ? n.value() : Math.max(1, Math.round(prices.value(n.item())));
             out.needs.add(x);
         }
         for (BountyReward r : event.getRewards()) {
@@ -146,9 +161,71 @@ public final class Bounties {
 
     // ------------------------------------------------------------------ the day
 
+    // ------------------------------------------------------------------ 0.1.10.34: players and pace
+
+    /**
+     * Sets the pace of the board for now: the settings, the active players (online, or seen at the exchange in the last
+     * {@link BountyPacing#ACTIVE_DAYS} market days) and the players online.
+     */
+    static BountyBoard.Pace pace(MinecraftServer server, ExchangeData d, long day) {
+        java.util.Set<UUID> active = new java.util.HashSet<>();
+        int online = 0;
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) { active.add(p.getUUID()); online++; }
+        for (Map.Entry<UUID, Long> e : d.seen.entrySet()) if (BountyPacing.active(e.getValue(), day)) active.add(e.getKey());
+        d.board.pace = EconomySettings.pace(active.size(), online);
+        return d.board.pace;
+    }
+
+    /** {@code player} logged in or used the exchange today (an active player; a claimant who is not away). */
+    public static void seen(ServerPlayer player) {
+        ExchangeData d = ExchangeData.get(player.server);
+        long day = ExchangeService.today(player.server);
+        Long before = d.seen.put(player.getUUID(), day);
+        if (before == null || before != day) d.setDirty();
+    }
+
+    @SubscribeEvent
+    public static void onLogin(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer p && FutureMarketData.get(p.server.overworld()).isInitialized()) seen(p);
+    }
+
+    /** Ticks between two checks of the refill (10 seconds). */
+    public static final int REFILL_CHECK_TICKS = 200;
+
+    @SubscribeEvent
+    public static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+        MinecraftServer server = event.getServer();
+        if (server.getTickCount() % REFILL_CHECK_TICKS == 0) refill(server);
+    }
+
+    /**
+     * 0.1.10.34 (item 11): one NORMAL request when the board is below the day's target and the wait for the players online
+     * passed (BountyBoard#refill). Returns the postings.
+     */
+    static int refill(MinecraftServer server) {
+        if (server.getPlayerList().getPlayerCount() == 0 || !FutureMarketData.get(server.overworld()).isInitialized()) return 0;
+        ExchangeData d = ExchangeData.get(server);
+        long day = ExchangeService.today(server);
+        pace(server, d, day);
+        BountyBoard.Rules r = rules(server);
+        BountyBoard.Prices p = prices(server);
+        long before = d.board.lastPostTick;
+        List<Bounty> posted = new ArrayList<>();
+        int n = d.board.refill(day, server.overworld().getGameTime(), r, ExchangeTables.tables(), d.treasury, p, lacking(d, r), hooks(server, d, p),
+            posted);
+        if (n > 0 || d.board.lastPostTick != before) d.setDirty();
+        return n;
+    }
+
     /** Called by {@link ExchangeService#onNewDay}: expiries, the week, and the day's postings. */
     static void onNewDay(MinecraftServer server, ExchangeData d, long day) {
         applyListings(server, d, day);
+        // 0.1.10.34: the pace for the day; claims of players away for two whole market days are released
+        pace(server, d, day);
+        Map<UUID, Long> last = new HashMap<>(d.seen);
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) last.put(p.getUUID(), day);
+        d.board.releaseAbsent(day, last);
+        d.seen.values().removeIf(v -> day - v > SEEN_KEEP_DAYS || v > day);
         BountyBoard.Rules r = rules(server);
         BountyBoard.Prices p = prices(server);
         List<Bounty> posted = new ArrayList<>(), expired = new ArrayList<>();
@@ -157,6 +234,9 @@ public final class Bounties {
         for (Bounty b : posted) if (b.tier == Tier.SPECIAL) announce(server, b);
         d.setDirty();
     }
+
+    /** Market days a player's last visit is kept (the active players need three, the absent claimants three). */
+    static final int SEEN_KEEP_DAYS = 30;
 
     static void announce(MinecraftServer server, Bounty b) {
         Item item = ExchangeService.item(b.needs.get(0).item);
@@ -183,6 +263,8 @@ public final class Bounties {
         Bounty b = d.board.find(id);
         if (b == null) return Result.fail("no_bounty");
         UUID uuid = player.getUUID();
+        // 0.1.10.34: a claimed bounty takes deliveries from its claimant and their team only
+        if (!BountyBoard.mayDeliver(b, uuid, team(player))) return Result.fail("bounty_claimed", b.claimName);
         long day = ExchangeService.today(server);
         boolean mp = multiplayer(server);
         BountyBoard.Prices prices = prices(server);
@@ -273,6 +355,71 @@ public final class Bounties {
         }
     }
 
+    // ------------------------------------------------------------------ 0.1.10.34: claims and the refresh
+
+    /** The player's vanilla team ("" = none): its members deliver to the bounties the player claimed. */
+    static String team(ServerPlayer player) {
+        var t = player.getTeam();
+        return t == null ? "" : t.getName();
+    }
+
+    /** Claims a NORMAL or ADVANCED bounty nobody delivered to yet (one per player by default). */
+    public static Result claim(ServerPlayer player, long id) {
+        MinecraftServer server = player.server;
+        ExchangeData d = ExchangeData.get(server);
+        Bounty b = d.board.find(id);
+        if (b == null) return Result.fail("no_bounty");
+        long day = ExchangeService.today(server);
+        BountyBoard.Pace pace = pace(server, d, day);
+        String why = d.board.claimRefusal(b, player.getUUID(), day);
+        if (why != null) return Result.fail(why, b.claimName, pace.acceptMax());
+        d.board.claim(b, player.getUUID(), player.getGameProfile().getName(), team(player), day);
+        d.setDirty();
+        return Result.done("bounty_claim_done", Math.max(0, b.expiry - day));
+    }
+
+    /** Gives up the player's claim: no new claim for them until the next market day. */
+    public static Result abandon(ServerPlayer player, long id) {
+        MinecraftServer server = player.server;
+        ExchangeData d = ExchangeData.get(server);
+        Bounty b = d.board.find(id);
+        if (b == null) return Result.fail("no_bounty");
+        if (!d.board.abandon(b, player.getUUID(), ExchangeService.today(server))) return Result.fail("bounty_not_mine");
+        d.setDirty();
+        return Result.done("bounty_abandoned");
+    }
+
+    /**
+     * Replaces the NORMAL bounties nobody claimed or delivered to with new requests, for coins that are destroyed (the
+     * ledger's burned coins): max(500, 5 % of their rewards), doubled for each earlier refresh of the player that day; three
+     * a day, five minutes apart.
+     */
+    public static Result refresh(ServerPlayer player) {
+        MinecraftServer server = player.server;
+        ExchangeData d = ExchangeData.get(server);
+        long day = ExchangeService.today(server), now = server.overworld().getGameTime();
+        UUID uuid = player.getUUID();
+        pace(server, d, day);
+        BountyBoard.Rules r = rules(server);
+        BountyBoard.Prices p = prices(server);
+        BountyBoard.Hooks hooks = hooks(server, d, p);
+        List<String> lacking = lacking(d, r);
+        if (d.board.refreshable().isEmpty()) return Result.fail("bounty_refresh_none");
+        long cost = d.board.refreshCost(uuid, day, p);
+        if (cost < 0) return Result.fail("bounty_refresh_limit", BountyPacing.REFRESH_PER_DAY);
+        long wait = d.board.refreshWait(uuid, now);
+        if (wait > 0) return Result.fail("bounty_refresh_wait", (wait + 19) / 20);
+        if (!d.board.refreshPossible(day, ExchangeTables.tables(), p, lacking, hooks)) return Result.fail("bounty_refresh_nothing");
+        InventoryPlan plan = new InventoryPlan(player.getInventory());
+        if (!ExchangeService.takeCoins(plan, d, uuid, cost)) return Result.fail("not_enough_coins");
+        plan.commit();
+        d.ledger(day).burned += cost;
+        List<Bounty> posted = new ArrayList<>();
+        int replaced = d.board.refresh(uuid, day, now, r, ExchangeTables.tables(), d.treasury, p, lacking, hooks, posted);
+        d.setDirty();
+        return Result.done("bounty_refreshed", replaced, posted.size(), cost);
+    }
+
     // ------------------------------------------------------------------ posting by hand (command, API)
 
     /** Posts a datapack table now (weight, cooldown and conditions are not checked). Returns the id or -1. */
@@ -305,12 +452,14 @@ public final class Bounties {
         draft.share = spec.playerShare() > 0 ? spec.playerShare() : r.share(tier);
         draft.multiplier = r.multiplier(tier);
         draft.coinsFallback = tier != Tier.SPECIAL;
+        // 0.1.10.34: the rarity of the tier (the days stay as asked, no rush bonus)
+        draft.rarity = BountyPacing.rarity(tier.ordinal(), tier == Tier.NORMAL ? 4 : 3);
         for (BountyNeed n : spec.needs()) {
             if (!ExchangeTables.itemExists(n.item())) return -1;
             Need x = new Need();
             x.item = n.item();
             x.count = n.count();
-            x.unit = n.value() > 0 ? n.value() : Math.max(1, Math.round(p.ask(n.item())));
+            x.unit = n.value() > 0 ? n.value() : Math.max(1, Math.round(p.value(n.item())));
             draft.needs.add(x);
         }
         if (spec.rewards().isEmpty()) {
@@ -406,6 +555,8 @@ public final class Bounties {
     /** The board for the panel of {@code player}: specials first, then advanced, then normal, by expiry. */
     static List<ExchangeView.BountyLine> lines(ServerPlayer player, ExchangeData d, long day) {
         boolean mp = multiplayer(player.server);
+        UUID me = player.getUUID();
+        String myTeam = team(player);
         List<Bounty> open = new ArrayList<>(d.board.bounties);
         open.sort(java.util.Comparator.comparingInt((Bounty b) -> -b.tier.ordinal()).thenComparingLong(b -> b.expiry).thenComparingLong(b -> b.id));
         List<ExchangeView.BountyLine> out = new ArrayList<>();
@@ -416,8 +567,14 @@ public final class Bounties {
             List<ExchangeView.RewardLine> rewards = new ArrayList<>();
             for (Line l : b.lines) rewards.add(new ExchangeView.RewardLine(l.kind.ordinal(), l.source.ordinal(), l.item, l.amount, l.paid));
             long room = d.board.room(b, player.getUUID(), day, mp);
+            // 0.1.10.34: the claim as this player sees it, and why they may not claim (a message key, "" = they may)
+            int claim = me.equals(b.claimant) ? ExchangeView.CLAIM_MINE
+                : b.claimant != null ? (BountyBoard.mayDeliver(b, me, myTeam) ? ExchangeView.CLAIM_TEAM : ExchangeView.CLAIM_OTHER)
+                : ExchangeView.CLAIM_NONE;
+            String refusal = claim == ExchangeView.CLAIM_NONE ? d.board.claimRefusal(b, me, day) : null;
             out.add(new ExchangeView.BountyLine(b.id, b.tier.ordinal(), b.expiry, b.split.ordinal(), (int) Math.round(b.share * 1000),
-                needs, rewards, b.mine(player.getUUID()), b.all(), room == Long.MAX_VALUE ? -1 : room, b.contribution.size()));
+                needs, rewards, b.mine(player.getUUID()), b.all(), room == Long.MAX_VALUE ? -1 : room, b.contribution.size(),
+                b.rarity.ordinal(), b.rush, claim, b.claimName, refusal == null ? "" : refusal));
         }
         return out;
     }

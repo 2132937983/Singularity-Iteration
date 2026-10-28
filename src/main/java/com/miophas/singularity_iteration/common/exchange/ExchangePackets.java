@@ -42,6 +42,8 @@ public final class ExchangePackets {
      * SETTLE_COINS (the coins of the settlement container). BOX_SELL and SETTLE_SELL: a = minimum coins per item (0 = c percent).
      */
     public static final int COIN_IN = 20, COIN_OUT = 21, BANK_MODE = 22, SETTLE_COINS = 23;
+    /** 0.1.10.34: BOUNTY_CLAIM / BOUNTY_ABANDON (a = bounty), BOUNTY_REFRESH (the unclaimed NORMAL bounties). */
+    public static final int BOUNTY_CLAIM = 24, BOUNTY_ABANDON = 25, BOUNTY_REFRESH = 26;
 
     public record Request(String selected) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_request"));
@@ -91,6 +93,7 @@ public final class ExchangePackets {
             mio_icif_future_elc machine = machine(player);
             // 0.1.10.29: the views have their own bucket, so refreshes never use up the actions'
             if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE_VIEW)) return;
+            Bounties.seen(player);   // 0.1.10.34: an active player
             send(player, packet.selected, machine);
         });
     }
@@ -133,6 +136,9 @@ public final class ExchangePackets {
                 case BANK_MODE -> ExchangeService.setBankMode(player, p.flag);
                 case AUCTION_CANCEL -> ExchangeService.cancelAuction(player, p.a);
                 case BOUNTY_DELIVER -> Bounties.deliver(player, p.a);
+                case BOUNTY_CLAIM -> Bounties.claim(player, p.a);
+                case BOUNTY_ABANDON -> Bounties.abandon(player, p.a);
+                case BOUNTY_REFRESH -> Bounties.refresh(player);
                 case SETTLE_SELL, SETTLE_BOUNTY, SETTLE_COMMISSION, SETTLE_UU, SETTLE_BUY, SETTLE_COINS -> settle(player, p);
                 default -> new ExchangeService.Result(false, "message.mio_icif.exchange.unknown_action");
             });

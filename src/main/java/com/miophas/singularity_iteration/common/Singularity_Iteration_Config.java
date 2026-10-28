@@ -175,6 +175,21 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
     public static final ModConfigSpec.IntValue BOUNTY_TREASURY_LOW = FUTURE_BUILDER
             .comment("A generated NORMAL request asks only for commodities of which the market owns fewer than this many items (0.1.10.26)")
             .defineInRange("bountyTreasuryLow", 64, 0, 1_000_000);
+    // 0.1.10.34: the pace of the bounties
+    public static final ModConfigSpec.BooleanValue BOUNTY_RANDOM_DAYS = FUTURE_BUILDER
+            .comment("Bounties stay open a random number of days by their rarity (common 3-7, uncommon 2-5, rare 1-4, legendary 1-3; at least",
+                     "1 + log2(value / 4,000) days for a large one); fewer than 4 days pay a rush bonus of 5 % a day (0.1.10.34).",
+                     "Off: the fixed days of the tiers (bountyNormalDays, bountyAdvancedDays, bountySpecialDays). A table's duration_days always wins.")
+            .define("bountyRandomDays", true);
+    public static final ModConfigSpec.IntValue BOUNTY_MIN_DAYS = FUTURE_BUILDER
+            .comment("Fewest days a bounty with random days stays open (0.1.10.34)")
+            .defineInRange("bountyMinDays", 1, 1, 60);
+    public static final ModConfigSpec.IntValue BOUNTY_MAX_DAYS = FUTURE_BUILDER
+            .comment("Most days a bounty with random days stays open (0.1.10.34)")
+            .defineInRange("bountyMaxDays", 7, 1, 60);
+    public static final ModConfigSpec.IntValue BOUNTY_ACCEPT_MAX = FUTURE_BUILDER
+            .comment("NORMAL and ADVANCED bounties one player may claim at the same time (0.1.10.34). Only the claimant and their team deliver to a claimed bounty.")
+            .defineInRange("bountyAcceptMax", 1, 1, 16);
 
     // 0.1.10.28 (X4): the coin <-> UU board, the scrap sink, the stabiliser
     public static final ModConfigSpec.BooleanValue EXCHANGE_UU_BOARD = FUTURE_BUILDER

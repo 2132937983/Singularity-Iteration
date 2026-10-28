@@ -181,6 +181,19 @@ public final class FuturePanel {
 
     void button(int x, int y, int w, int h, String label, Runnable click) { button(x, y, w, h, label, false, click); }
 
+    /** 0.1.10.34: a button that may be off (drawn dim, does nothing). */
+    void button(int x, int y, int w, int h, String label, boolean on, boolean enabled, Runnable click) {
+        String l = label(label, w);
+        c.button(x, y, w, h, l, on, enabled, click);
+        if (!l.equals(label)) c.hover(x, y, w, h, label);
+    }
+
+    /** 0.1.10.34: seconds as m:ss. */
+    static String clock(long seconds) {
+        long s = Math.max(0, seconds);
+        return s / 60 + ":" + (s % 60 < 10 ? "0" : "") + s % 60;
+    }
+
     void place(Box b, int x, int y, int w) { c.box(b, x, y, w); }
 
     /** Positions of the sell box / inventory / settlement slots (the screen moves the menu's slots there). */
@@ -1143,20 +1156,32 @@ public final class FuturePanel {
         int sideW = W >= 560 ? Math.max(170, Math.min(230, W / 4)) : 0;
         int listW = W - 12 - (sideW > 0 ? sideW + 6 : 0);
         c.panel(6, top, listW, bottom - top);
-        String title = tr("bounty.board");
-        int tw0 = text(title, 10, top + 4, listW - 8, PanelStyle.ACCENT);
         ExchangeView.BountyBudget q = v.budget();
+        // 0.1.10.34: the refresh of the unclaimed NORMAL requests, at the right of the title row
+        String refresh = q.refreshable() <= 0 ? tr("bounty.refresh_none") : q.refreshCost() < 0 ? tr("bounty.refresh_used")
+            : q.refreshWait() > 0 ? tr("bounty.refresh_wait", clock(q.refreshWait())) : tr("bounty.refresh", n(q.refreshCost()));
+        int refreshW = Math.min(Math.max(48, c.width(refresh) + 8), Math.max(48, listW / 3));
+        int refreshX = 6 + listW - 4 - refreshW;
+        boolean canRefresh = q.refreshable() > 0 && q.refreshCost() >= 0 && q.refreshWait() <= 0;
+        button(refreshX, top + 2, refreshW, 12, refresh, false, canRefresh,
+            () -> c.act(ExchangePackets.BOUNTY_REFRESH, "", 0, 0, 0, 0, false, ""));
+        c.hover(refreshX, top + 2, refreshW, 12, tr("bounty.refresh_help", q.refreshable(), q.refreshesLeft(), n(Math.max(0, q.refreshCost()))));
+        String title = tr("bounty.board");
+        int tw0 = text(title, 10, top + 4, refreshX - 6 - 10, PanelStyle.ACCENT);
         String[] budget = {
             tr("bounty.budget_advanced", n(q.advancedIssued()), n(q.advancedCap())),
             tr("bounty.budget_special", n(q.specialIssued()), n(q.specialCap())),
             tr("bounty.budget_uu", n(q.uuIssued()), n(q.uuCap())),
-            tr("bounty.vault", q.vaultTypes(), n(q.vaultItems()))};
+            tr("bounty.vault", q.vaultTypes(), n(q.vaultItems())),
+            tr("bounty.players", q.active(), q.online()),
+            tr("bounty.posted", q.postedToday(), q.dailyPosts(), q.openNormal(), q.target()),
+            q.nextRefill() >= 0 ? tr("bounty.next_refill", clock(q.nextRefill())) : tr("bounty.no_refill")};
         if (sideW == 0) {
             String b = tr("bounty.budget");
             int bw = c.width(b);
-            if (10 + tw0 + 12 + bw <= 6 + listW - 4) {
-                right(b, 6 + listW - 4, top + 4, PanelStyle.DIM);
-                c.hover(6 + listW - 4 - bw, top + 3, bw, 10, String.join(" | ", budget) + " | " + tr("bounty.budget_help") + " | " + tr("bounty.help"));
+            if (10 + tw0 + 12 + bw <= refreshX - 6) {
+                right(b, refreshX - 6, top + 4, PanelStyle.DIM);
+                c.hover(refreshX - 6 - bw, top + 3, bw, 10, String.join(" | ", budget) + " | " + tr("bounty.budget_help") + " | " + tr("bounty.help"));
             }
         }
         List<ExchangeView.BountyLine> list = v.bounties();
@@ -1182,7 +1207,7 @@ public final class FuturePanel {
                 text(line, x + 4, by, sideW - 8, PanelStyle.TEXT);
                 by += 11;
             }
-            c.hover(x, top + 16, sideW, 46, tr("bounty.budget_help"));
+            c.hover(x, top + 16, sideW, budget.length * 11 + 2, tr("bounty.budget_help"));
             by += 6;
             List<String> help = c.wrap(tr("bounty.help"), sideW - 8);
             int shownHelp = 0;
@@ -1233,10 +1258,17 @@ public final class FuturePanel {
         int tw = c.width(tierName) + 6;
         c.fill(10, y + 2, 10 + tw, y + 12, TIER_COLOR[tier]);
         c.text(tierName, 13, y + 3, 0xFFFFFFFF);
-        c.hover(10, y + 2, tw, 10, tr("bounty.tier_help." + tier));
+        // 0.1.10.34: the tier badge also explains the rarity and the rush bonus
+        c.hover(10, y + 2, tw, 10, tr("bounty.tier_help." + tier) + " | " + tr("bounty.rarity_help")
+            + (b.rush() > 0 ? " | " + tr("bounty.rush_help", b.rush()) : ""));
         long count = 0, done = 0;
         for (ExchangeView.NeedLine nl : b.needs()) { count += nl.count(); done += Math.min(nl.delivered(), nl.count()); }
         StringBuilder info = new StringBuilder(tr("days_left", Math.max(0, b.expiry() - v.day())));
+        // 0.1.10.34: the rarity (its range of days), the rush bonus and the claim
+        info.append(" \u00b7 ").append(tr("bounty.rarity." + Math.max(0, Math.min(3, b.rarity()))));
+        if (b.rush() > 0) info.append(" \u00b7 ").append(tr("bounty.rush", b.rush()));
+        if (b.claim() == ExchangeView.CLAIM_MINE) info.append(" \u00b7 ").append(tr("bounty.claimed_mine"));
+        else if (b.claim() != ExchangeView.CLAIM_NONE) info.append(" \u00b7 ").append(tr("bounty.claimed_by", b.claimName()));
         info.append(" \u00b7 ").append(count <= 0 ? 0 : done * 100 / count).append('%');
         if (b.split() == 1) info.append(" \u00b7 ").append(tr("bounty.shared"));
         if (b.contributors() > 0) info.append(" \u00b7 ").append(tr("bounty.contributors", b.contributors()));
@@ -1307,16 +1339,39 @@ public final class FuturePanel {
         }
         // deliver; this player's part at the right of the last needs line (under the button)
         final long id = b.id();
-        button(buttonX, y + 2, 58, 13, tr("deliver"), () -> c.act(ExchangePackets.BOUNTY_DELIVER, "", id, 0, 0, 0, false, ""));
-        c.hover(buttonX, y + 2, 58, 13, tr("bounty.deliver_help") + (all.length() > 0 ? " | " + all : ""));
+        // 0.1.10.34: another player's claim: only they and their team deliver
+        boolean other = b.claim() == ExchangeView.CLAIM_OTHER;
+        button(buttonX, y + 2, 58, 13, tr("deliver"), false, !other, () -> c.act(ExchangePackets.BOUNTY_DELIVER, "", id, 0, 0, 0, false, ""));
+        c.hover(buttonX, y + 2, 58, 13, (other ? tr("bounty.claimed_help", b.claimName()) + " | " : "") + tr("bounty.deliver_help")
+            + (all.length() > 0 ? " | " + all : ""));
+        // 0.1.10.34: claim / abandon under the deliver button, or who claimed it
+        boolean claimControl = false;
+        if (b.claim() == ExchangeView.CLAIM_MINE) {
+            button(buttonX, y + 18, 58, 13, tr("bounty.abandon"), () -> c.act(ExchangePackets.BOUNTY_ABANDON, "", id, 0, 0, 0, false, ""));
+            c.hover(buttonX, y + 18, 58, 13, tr("bounty.abandon_help"));
+            claimControl = true;
+        } else if (b.claim() != ExchangeView.CLAIM_NONE) {
+            String who = fitText(b.claimName(), 58);
+            c.text(who, buttonX + 58 - c.width(who), y + 21, b.claim() == ExchangeView.CLAIM_TEAM ? PanelStyle.TEXT : PanelStyle.DIM);
+            c.hover(buttonX, y + 19, 58, 10, tr(b.claim() == ExchangeView.CLAIM_TEAM ? "bounty.claimed_team_help" : "bounty.claimed_help", b.claimName()));
+            claimControl = true;
+        } else if (b.tier() != 2) {
+            boolean may = b.claimNote().isEmpty();
+            button(buttonX, y + 18, 58, 13, tr("bounty.claim"), false, may, () -> c.act(ExchangePackets.BOUNTY_CLAIM, "", id, 0, 0, 0, false, ""));
+            c.hover(buttonX, y + 18, 58, 13, (may ? "" : c.tr("message.mio_icif.exchange." + b.claimNote(), b.claimName(), 1) + " | ")
+                + tr("bounty.claim_help"));
+            claimControl = true;
+        }
         String mine = b.room() >= 0 ? tr("bounty.mine_room", n(b.mine()), n(b.room()), b.sharePermille() / 10)
             : b.mine() > 0 ? tr("bounty.mine", n(b.mine())) : "";
         if (!mine.isEmpty()) {
             int my = y + 16 + (lines - 1) * 18 + 5;
-            String fit = fitText(mine, 6 + listW - 4 - (lastX + 6));
+            // the claim control takes the right of the first needs line
+            int end = claimControl && lines == 1 ? buttonX - 4 : 6 + listW - 4;
+            String fit = fitText(mine, end - (lastX + 6));
             if (!fit.isEmpty()) {
-                right(fit, 6 + listW - 4, my, PanelStyle.DIM);
-                c.hover(6 + listW - 4 - c.width(fit), my - 1, c.width(fit), 10, mine + " - " + tr("bounty.value_help"));
+                right(fit, end, my, PanelStyle.DIM);
+                c.hover(end - c.width(fit), my - 1, c.width(fit), 10, mine + " - " + tr("bounty.value_help"));
             }
         }
         return rowH;

@@ -570,6 +570,7 @@ public final class MyBoilerGenerator extends AbstractGeneratorBlockEntity implem
   未支付的预留奖励退回。
 * 悬赏遵循与市场自己的悬赏相同的规则：来自国库与宝库的奖励必须有库存，并在发布时预留；为其制作的物品与 UU 物质在发布时计入该等级的每周上限；
   无法支付的奖励项被去掉；没有任何奖励的普通或高级悬赏改为支付货币（价值 × 倍率），特别悬赏不发布。交付的商品进入国库，其他物品进入宝库。
+* 自 0.1.10.34 起，价值为 0 的要求按市场卖价与买价的中间值计价（之前按卖价）。API 发布的悬赏使用 `BountySpec` 的天数（或该等级的天数），没有加急奖励，稀有度按等级决定。玩家可以接取普通与高级悬赏，之后只有接取者与其队伍可以交付。API 类型不变。
 * 事件（`NeoForge.EVENT_BUS`，服务器线程）：
   * `BountyPostingEvent`（可取消）：悬赏发布之前。可以修改要求、奖励、天数与分配方式；之后会再次检查。
   * `BountyCompletedEvent`：悬赏完成并支付之后；`getBounty().contribution()` 为每名玩家交付的价值。

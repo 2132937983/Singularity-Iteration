@@ -17,15 +17,20 @@ data/<命名空间>/si_exchange/
 
 | 等级 | 来源 | 发布 | 期限 | 奖励 |
 |---|---|---|---|---|
-| 普通 normal | 市场缺少的商品自动生成（无解锁进度、国库少于 `bountyTreasuryLow` 64 个），或数据包中 tier 为 normal 的表 | 每天保持 `bountyNormalMin`～`bountyNormalMax`（3～5）件 | 3 天 | 价值 × 1.15（`bountyNormalMultiplier`），奖励池 `mio_icif:normal` |
-| 高级 advanced | 数据包表 | 每个交易周（7 天）`bountyAdvancedPerWeekMin`～`Max`（2～3）件，分散在一周内 | 7 天 | 价值 × 1.3，奖励池 `mio_icif:advanced`；多人游戏中最后一天之前一名玩家最多交付 `bountyAdvancedPlayerShare`（0.5）的价值 |
-| 特别 special | 数据包表 | 每天 `bountySpecialChancePerDay`（5%）的概率，同时最多 `bountySpecialMaxOpen`（1）件 | 7 天 | 奖励池 `mio_icif:special`，默认没有货币 |
+| 普通 normal | 市场缺少的商品自动生成（无解锁进度、国库少于 `bountyTreasuryLow` 64 个），或数据包中 tier 为 normal 的表 | 每天保持 `bountyNormalMin`～`bountyNormalMax`（3～5）件（0.1.10.34 起随活跃玩家增加，并在日间补充） | 3～7 天（0.1.10.34 起按稀有度抽取；关闭 `bountyRandomDays` 时为 3 天） | 价值 × 1.15（`bountyNormalMultiplier`），奖励池 `mio_icif:normal` |
+| 高级 advanced | 数据包表 | 每个交易周（7 天）`bountyAdvancedPerWeekMin`～`Max`（2～3）件，分散在一周内（0.1.10.34 起随活跃玩家增加） | 2～5 或 1～4 天（按稀有度；关闭时 7 天） | 价值 × 1.3，奖励池 `mio_icif:advanced`；多人游戏中最后一天之前一名玩家最多交付 `bountyAdvancedPlayerShare`（0.5）的价值 |
+| 特别 special | 数据包表 | 每天 `bountySpecialChancePerDay`（5%）的概率，同时最多 `bountySpecialMaxOpen`（1）件（0.1.10.34 起随活跃玩家增加） | 1～3 天（传说；关闭时 7 天） | 奖励池 `mio_icif:special`，默认没有货币 |
 
 - **自动生成的普通委托**：价值 = `bountyNormalValue`（4,000）× 0.5～1.5，数量 = 价值 ÷ 市场卖价（四舍五入），必须在 `bountyNormalMinQuantity`～`bountyNormalMaxQuantity`（16～256）之内，否则不选该商品。
-- **价值**：每个要求物品按发布时市场的卖价（价格 × (1 + 价差/2)）计价；不是商品的物品用表中的 `value`，没有时为 1 货币。价值决定按比例支付、按贡献分配与每名玩家份额。
-- **市场不出售**：普通或高级悬赏仍需要某商品时，市场不出售该商品（奖励高于卖价，否则“从市场买来交付”就会凭空产生货币）。
+- **价值**：每个要求物品按发布时市场卖价与买价的中间值计价（0.1.10.34 起；之前按卖价 价格 × (1 + 价差/2)）；没有 `bid_price` 的商品即为价格本身；不是商品的物品用表中的 `value`，没有时为 1 货币。价值决定按比例支付、按贡献分配与每名玩家份额。
+- **市场的最低售价**（0.1.10.33 起）：普通或高级悬赏仍需要某商品时，市场以不低于悬赏每个物品报酬的价格出售该商品（之前完全不出售），“从市场买来交付”不会凭空产生货币。
 - **交付**：在期货交易机的“悬赏”页按“交付”，交出物品栏主区域中该悬赏仍需要的普通物品。交付的商品进入国库；不是商品的物品进入**宝库**，之后可以作为奖励发出。单人游戏中所有悬赏都可以由玩家一人完成。
 - **到期**：未支付的预留奖励（国库、宝库）退回原处；未支付的发行物品与货币不会产生。按贡献分配的悬赏在到期时按已交付的比例支付。
+- **稀有度与期限**（0.1.10.34 起，`bountyRandomDays` 默认开启）：每件悬赏按稀有度抽取开放天数：常见 3～7、少见 2～5、稀有 1～4、传说 1～3 天，并限制在 `bountyMinDays`～`bountyMaxDays`（1～7）之内。价值 8,000 起至少 2 天，每翻一倍多 1 天（仍不超过该范围的上限）。不足 4 天的悬赏奖励倍率乘以 1 + 每少一天 5%（加急奖励）。自动生成的普通请求为常见；表的稀有度见下表 `rarity`。
+- **接取**（0.1.10.34 起）：玩家可以接取普通与高级悬赏（每人同时最多 `bountyAcceptMax` 件，默认 1），之后只有接取者与其队伍可以交付。已有交付的悬赏不能接取；剩余 1 天时接取延长 1 天（一次）；放弃后当天不能再接取；连续两个完整交易日不在线的玩家的接取在换日时解除。接取、放弃与刷新各消耗一次交易的 EU。
+- **刷新**（0.1.10.34 起）：玩家付费把无人接取、无人交付的普通请求换成同样数量的新请求（不再抽到被换掉的物品与表）。费用为其奖励价值的 5%、至少 500 货币，每名玩家每个交易日第 2、3 次翻倍，最多 3 次，间隔 6,000 tick。费用作为货币销毁计入账本。被换掉的悬赏的预留奖励退回。
+- **按活跃玩家**（0.1.10.34 起；活跃 = 在线，或在最近三个交易日登录或用过交易所，人数 n）：普通请求的范围为 `bountyNormalMin` + ⌈1.5 (n − 1)⌉（最多 16）起、宽度不变，另加已接取的普通请求；高级每周件数 × (1 + 0.5 (n − 1))（最多 21）；特别同时件数 `bountySpecialMaxOpen` + ⌊(n − 1) / 4⌋（最多 4）；每周发行上限（物品与 UU 物质）× √n。
+- **日间补充**（0.1.10.34 起）：普通请求少于当天的目标时，悬赏板在上次发布后经过 7,200 tick ÷ (1 + 0.5 (在线人数 − 1))（至少 1,200 tick）发布 1 件，每个交易日普通发布最多 6 + 4 (n − 1) 件（含换日时的发布）。无人在线时不补充。
 - 0.1.10.21～0.1.10.25 的“市场委托”不再发布；存档中已有的继续留在委托板上直到到期。配置 `systemCommissionsPerDay` 已删除。
 
 ## 悬赏表 bounties/*.json
@@ -57,6 +62,8 @@ data/<命名空间>/si_exchange/
 | `weight` | 10 | 同等级中被选中的权重；0 = 不自动发布（仍可用命令或 API 发布）。普通等级中，自动生成的委托合计权重为 100。 |
 | `max_open` | 1 | 该表同时开放的数量上限。 |
 | `duration_days` | 该等级的设置 | 开放天数（1～60）。 |
+| `rarity` | 按等级与权重 | （0.1.10.34）`common` / `uncommon` / `rare` / `legendary`，决定抽取天数的范围（3～7 / 2～5 / 1～4 / 1～3）。不写时：普通权重 ≥ 4 为 common、< 4 为 uncommon；高级权重 ≥ 3 为 uncommon、< 3 为 rare；特别为 legendary。 |
+| `days` | 按稀有度 | （0.1.10.34）抽取天数的范围 `[最少, 最多]`（1～60），代替稀有度的范围。写了 `duration_days` 时天数固定，不抽取，也没有加急奖励。 |
 | `cooldown_days` | 0 | 上次发布后至少隔多少天才能再次发布。 |
 | `conditions.min_day` | 0 | 交易日达到此值后才发布。 |
 | `conditions.advancement` | 无 | 有在线玩家完成此进度时才发布。 |
@@ -117,6 +124,7 @@ data/<命名空间>/si_exchange/
 
 - 优先顺序：**服务器配置中修改过的值**（与默认值不同）＞ 数据包 ＞ 模组默认值。整合包作者用数据包发布默认值，服务器管理员仍可在配置文件中覆盖。
 - 0.1.10.28 新增的键：`uuBoard`（货币与 UU 物质交易板）、`scrapThreshold`（废料回收的下限，0 = 不回收）、`stabilizerEnabled`、`stabilizerTargetPerPlayerWeek`、`stabilizerTargetPercentPerWeek`、`stabilizerStep`、`stabilizerMinFactor`（自动稳定器，见 `docs/releases/0.1.10.28/UPDATE.md` 第 4 节）。整合包作者可以在数据包中默认开启稳定器。
+- 0.1.10.34 新增的键：`bountyRandomDays`（true，按稀有度抽取天数）、`bountyMinDays`（1）、`bountyMaxDays`（7）、`bountyAcceptMax`（1）。
 - 可用的键：`buyItemsPerDay`、`spread`、`sellDepthPlayer`、`sellDepthServer`、`sellExportPerDay`、`sellAllowancePerDay`、`sellAllowanceDays`、`sellAllowanceInSingleplayer`、`exchangeFee`、`importPerDay`、`importPremium`、`listingRequesters`、`listingFulfilled`、`listingMinPlayMinutes`、`uuDepth`、所有 `bounty*` 键，以及只能在数据包中设置的 `bountyNormalPool`、`bountyAdvancedPool`、`bountySpecialPool`。
 - 未知的键、类型错误与超出范围的值会被报告并忽略。`/mio_icif bounty settings` 显示每个值及其来源（config / datapack / default）。
 

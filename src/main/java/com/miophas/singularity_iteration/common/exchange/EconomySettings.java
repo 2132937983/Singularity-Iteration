@@ -69,6 +69,11 @@ public final class EconomySettings {
         put(k, "bountyIssuePerWeekSpecial", () -> Singularity_Iteration_Config.BOUNTY_ISSUE_SPECIAL, 0, 1_000_000, 'i');
         put(k, "bountyUuPerWeek", () -> Singularity_Iteration_Config.BOUNTY_UU_PER_WEEK, 0, 1_000_000_000, 'i');
         put(k, "bountyTreasuryLow", () -> Singularity_Iteration_Config.BOUNTY_TREASURY_LOW, 0, 1_000_000, 'i');
+        // 0.1.10.34 the pace of the bounties
+        put(k, "bountyRandomDays", () -> Singularity_Iteration_Config.BOUNTY_RANDOM_DAYS, 0, 1, 'b');
+        put(k, "bountyMinDays", () -> Singularity_Iteration_Config.BOUNTY_MIN_DAYS, 1, 60, 'i');
+        put(k, "bountyMaxDays", () -> Singularity_Iteration_Config.BOUNTY_MAX_DAYS, 1, 60, 'i');
+        put(k, "bountyAcceptMax", () -> Singularity_Iteration_Config.BOUNTY_ACCEPT_MAX, 1, 16, 'i');
         // 0.1.10.28 (X4)
         put(k, "uuBoard", () -> Singularity_Iteration_Config.EXCHANGE_UU_BOARD, 0, 1, 'b');
         put(k, "scrapThreshold", () -> Singularity_Iteration_Config.EXCHANGE_SCRAP_THRESHOLD, 0, 1, 'd');
@@ -207,6 +212,16 @@ public final class EconomySettings {
             d("bountySpecialChancePerDay"), (int) i("bountySpecialMaxOpen"), (int) i("bountySpecialDays"), s("bountySpecialPool"),
             i("bountyIssuePerWeekNormal"), i("bountyIssuePerWeekAdvanced"), i("bountyIssuePerWeekSpecial"), i("bountyUuPerWeek"),
             i("bountyTreasuryLow"), seed);
+    }
+
+    /**
+     * 0.1.10.34: the pace of the bounties for {@code active} players ({@code online} of them online now): random days, the
+     * range of days (min at most max), claims per player.
+     */
+    public static BountyBoard.Pace pace(int active, int online) {
+        int min = (int) i("bountyMinDays");
+        return new BountyBoard.Pace(b("bountyRandomDays"), min, (int) Math.max(min, i("bountyMaxDays")), (int) i("bountyAcceptMax"),
+            Math.max(1, active), Math.max(0, online));
     }
 
     /** Lines for {@code /mio_icif bounty settings}: key, value now and where it comes from. */

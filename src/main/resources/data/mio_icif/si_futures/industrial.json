@@ -23,7 +23,8 @@
     },
     {
       "item": "mio_icif:resource/item_adviron_ingot",
-      "base_price": 210,
+      "base_price": 400,
+      "bid_price": 220,
       "volatility": 0.05
     },
     {
@@ -33,7 +34,8 @@
     },
     {
       "item": "mio_icif:normal/item_circuit",
-      "base_price": 800,
+      "base_price": 900,
+      "bid_price": 650,
       "volatility": 0.05
     },
     {
@@ -43,12 +45,14 @@
     },
     {
       "item": "mio_icif:resource/item_alloy_ingot",
-      "base_price": 700,
+      "base_price": 800,
+      "bid_price": 600,
       "volatility": 0.06
     },
     {
       "item": "mio_icif:resource/item_carbon_plate",
-      "base_price": 210,
+      "base_price": 300,
+      "bid_price": 60,
       "volatility": 0.06
     },
     {

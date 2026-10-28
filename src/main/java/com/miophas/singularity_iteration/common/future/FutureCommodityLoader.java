@@ -26,6 +26,7 @@ import java.util.TreeMap;
  *   "category": "mineral",                 // default for the entries below (mineral, agriculture, wood, food, other)
  *   "commodities": [
  *     { "item": "minecraft:diamond", "base_price": 800, "volatility": 0.22 },
+ *     (0.1.10.34: "bid_price": the market's bid at the base price, at most base_price; the bid follows the price)
  *     { "item": "minecraft:netherite_ingot", "base_price": 4000, "volatility": 0.30,
  *       "period_days": 3,                    // price moves every 3 days (default 1)
  *       "unlock": { "advancement": "minecraft:nether/obtain_ancient_debris" } },
@@ -112,6 +113,9 @@ public final class FutureCommodityLoader extends SimpleJsonResourceReloadListene
         int basePrice = GsonHelper.getAsInt(entry, "base_price");
         float volatility = GsonHelper.getAsFloat(entry, "volatility", 0.05F);
         if (basePrice <= 0) throw new IllegalArgumentException("base_price must be positive");
+        // 0.1.10.34 (item 10): the bid at the base price (the market buys for less than it sells)
+        int bidPrice = GsonHelper.getAsInt(entry, "bid_price", 0);
+        if (bidPrice < 0 || bidPrice > basePrice) throw new IllegalArgumentException("bid_price must be 0..base_price (0 = none)");
         if (!Float.isFinite(volatility)) throw new IllegalArgumentException("volatility must be a number");
         if (volatility < 0 || volatility > 1) throw new IllegalArgumentException("volatility must be 0..1");
         int period = GsonHelper.getAsInt(entry, "period_days", 1);
@@ -148,7 +152,7 @@ public final class FutureCommodityLoader extends SimpleJsonResourceReloadListene
         boolean components = GsonHelper.getAsBoolean(entry, "accept_components", false);
         byItem.remove(key);   // a replacement moves to the end, after the entries it overrides
         byItem.put(key, new FutureCommodity(key, basePrice, volatility, category, period, unlock, market)
-            .withSelling(new FutureCommodity.Selling(tag, components)));
+            .withSelling(new FutureCommodity.Selling(tag, components)).withBidPrice(bidPrice));
     }
 
     /** Entries in sync-packet form. */

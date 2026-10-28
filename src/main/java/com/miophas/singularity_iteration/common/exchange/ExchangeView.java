@@ -116,12 +116,37 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
      * delivered / the whole value (coins); {@code room} the value this player may still deliver (-1 = no limit).
      */
     public record BountyLine(long id, int tier, long expiry, int split, int sharePermille, List<NeedLine> needs, List<RewardLine> rewards,
-                             long mine, long all, long room, int contributors) { }
+                             long mine, long all, long room, int contributors, int rarity, int rush, int claim, String claimName,
+                             String claimNote) {
+        /**
+         * 0.1.10.34: {@code rarity} 0 common / 1 uncommon / 2 rare / 3 legendary; {@code rush} the rush bonus (percent);
+         * {@code claim} {@link #CLAIM_NONE} / {@link #CLAIM_MINE} / {@link #CLAIM_TEAM} / {@link #CLAIM_OTHER} with the
+         * claimant's name; {@code claimNote} why this player may not claim it (a message key; "" = they may).
+         */
+        public BountyLine(long id, int tier, long expiry, int split, int sharePermille, List<NeedLine> needs, List<RewardLine> rewards,
+                          long mine, long all, long room, int contributors) {
+            this(id, tier, expiry, split, sharePermille, needs, rewards, mine, all, room, contributors, 0, 0, CLAIM_NONE, "", "");
+        }
+    }
+
+    /** 0.1.10.34: the claim of a bounty line: nobody, this player, a teammate of this player (they deliver too), another player. */
+    public static final int CLAIM_NONE = 0, CLAIM_MINE = 1, CLAIM_TEAM = 2, CLAIM_OTHER = 3;
 
     /** 0.1.10.26: the weekly budgets of the bounties (issued items and UU-matter against the caps) and the vault. */
     public record BountyBudget(long advancedIssued, long advancedCap, long specialIssued, long specialCap, long uuIssued, long uuCap,
-                               int vaultTypes, long vaultItems) {
+                               int vaultTypes, long vaultItems, long refreshCost, int refreshesLeft, long refreshWait, int refreshable,
+                               int active, int online, int target, int openNormal, int postedToday, int dailyPosts, long nextRefill) {
         public static final BountyBudget NONE = new BountyBudget(0, 0, 0, 0, 0, 0, 0, 0);
+
+        /**
+         * 0.1.10.34: the refresh of this player ({@code refreshCost} coins, -1 when none is left today; {@code refreshWait}
+         * seconds; {@code refreshable} bounties it replaces), the players (active / online), the NORMAL target and open
+         * requests, the day's postings against the cap, the seconds to the next refill (-1 = none due).
+         */
+        public BountyBudget(long advancedIssued, long advancedCap, long specialIssued, long specialCap, long uuIssued, long uuCap,
+                            int vaultTypes, long vaultItems) {
+            this(advancedIssued, advancedCap, specialIssued, specialCap, uuIssued, uuCap, vaultTypes, vaultItems, -1, 0, 0, 0, 1, 1, 0, 0, 0, 0, -1);
+        }
     }
 
     /**
@@ -215,10 +240,17 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
             list(b, x.rewards(), MAX_BOUNTY_REWARDS, r -> { b.writeVarInt(r.kind()); b.writeVarInt(r.source()); b.writeUtf(r.item(), 128);
                 b.writeVarLong(r.amount()); b.writeVarLong(r.paid()); });
             b.writeVarLong(x.mine()); b.writeVarLong(x.all()); b.writeLong(x.room()); b.writeVarInt(x.contributors());
+            // 0.1.10.34
+            b.writeVarInt(x.rarity()); b.writeVarInt(x.rush()); b.writeVarInt(x.claim()); b.writeUtf(x.claimName(), 32);
+            b.writeUtf(x.claimNote(), 64);
         });
         BountyBudget g = budget == null ? BountyBudget.NONE : budget;
         b.writeVarLong(g.advancedIssued()); b.writeVarLong(g.advancedCap()); b.writeVarLong(g.specialIssued()); b.writeVarLong(g.specialCap());
         b.writeVarLong(g.uuIssued()); b.writeVarLong(g.uuCap()); b.writeVarInt(g.vaultTypes()); b.writeVarLong(g.vaultItems());
+        // 0.1.10.34
+        b.writeLong(g.refreshCost()); b.writeVarInt(g.refreshesLeft()); b.writeVarLong(g.refreshWait()); b.writeVarInt(g.refreshable());
+        b.writeVarInt(g.active()); b.writeVarInt(g.online()); b.writeVarInt(g.target()); b.writeVarInt(g.openNormal());
+        b.writeVarInt(g.postedToday()); b.writeVarInt(g.dailyPosts()); b.writeLong(g.nextRefill());
         // 0.1.10.27 (X2)
         writeSettle(b, settle);
         // 0.1.10.28 (X4)
@@ -276,10 +308,15 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
             long id = b.readVarLong(); int tier = b.readVarInt(); long expiry = b.readVarLong(); int split = b.readVarInt(); int share = b.readVarInt();
             List<NeedLine> needs = read(b, MAX_BOUNTY_NEEDS, () -> new NeedLine(b.readUtf(128), b.readVarLong(), b.readVarLong()));
             List<RewardLine> rewards = read(b, MAX_BOUNTY_REWARDS, () -> new RewardLine(b.readVarInt(), b.readVarInt(), b.readUtf(128), b.readVarLong(), b.readVarLong()));
-            return new BountyLine(id, tier, expiry, split, share, needs, rewards, b.readVarLong(), b.readVarLong(), b.readLong(), b.readVarInt());
+            long mine = b.readVarLong(), all = b.readVarLong(), room = b.readLong();
+            int contributors = b.readVarInt();
+            int rarity = b.readVarInt(), rush = b.readVarInt(), claim = b.readVarInt();
+            return new BountyLine(id, tier, expiry, split, share, needs, rewards, mine, all, room, contributors, rarity, rush, claim, b.readUtf(32),
+                b.readUtf(64));
         });
         BountyBudget budget = new BountyBudget(b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong(),
-            b.readVarInt(), b.readVarLong());
+            b.readVarInt(), b.readVarLong(), b.readLong(), b.readVarInt(), b.readVarLong(), b.readVarInt(), b.readVarInt(), b.readVarInt(),
+            b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readLong());
         SettleView settle = readSettle(b);
         StabilizerLine stabilizer = new StabilizerLine(b.readBoolean(), b.readDouble(), b.readLong(), b.readVarLong(), b.readVarLong(), b.readVarInt(),
             b.readVarLong(), b.readVarLong());

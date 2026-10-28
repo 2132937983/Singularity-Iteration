@@ -19,10 +19,16 @@ public final class ExchangeViews {
     private ExchangeViews() {}
 
     public static ExchangeView build(ServerPlayer player, String selected, boolean energy) {
+        return build(player, selected, energy, "");
+    }
+
+    /** 0.1.10.35: with the shops part for {@code shopQuery} ({@link Shops#view}). */
+    public static ExchangeView build(ServerPlayer player, String selected, boolean energy, String shopQuery) {
         MinecraftServer server = player.server;
         ExchangeData d = ExchangeData.get(server);
         FutureMarketData fm = FutureMarketData.get(server.overworld());
         long day = ExchangeService.today(server);
+        long gameTime = server.overworld().getGameTime();
         String me = player.getUUID().toString();
         long coins = 0;
         for (var stack : player.getInventory().items) if (stack.is(mio_icif_normal.COIN.get())) coins += stack.getCount();
@@ -80,20 +86,27 @@ public final class ExchangeViews {
         List<ExchangeView.MyOrder> orders = new ArrayList<>();
         for (ExchangeData.Book b : d.books.values())
             for (OrderBook.Order o : b.book.orders())
-                if (o.owner().equals(me) && orders.size() < ExchangeView.MAX_ORDERS)
-                    orders.add(new ExchangeView.MyOrder(o.id(), b.commodity, o.buy(), o.price(), o.remaining(), o.day()));
+                if (o.owner().equals(me) && orders.size() < ExchangeView.MAX_ORDERS) {
+                    // 0.1.10.35: the time left of an order with an end in game time
+                    Long at = b.expires.get(o.id());
+                    orders.add(new ExchangeView.MyOrder(o.id(), b.commodity, o.buy(), o.price(), o.remaining(), o.day(),
+                        at == null ? -1 : CommissionHours.secondsLeft(gameTime, at)));
+                }
 
         List<ExchangeView.MailLine> mail = new ArrayList<>();
         for (Map.Entry<String, Long> e : box.items.entrySet())
             if (mail.size() < ExchangeView.MAX_MAIL) mail.add(new ExchangeView.MailLine(e.getKey(), e.getValue()));
 
         List<ExchangeData.Commission> open = new ArrayList<>(d.commissions);
-        open.sort(Comparator.comparing((ExchangeData.Commission c) -> !c.system).thenComparingLong(c -> c.expiry));
+        // 0.1.10.35: the ones that end first come first (game time; an older commission by its market day)
+        open.sort(Comparator.comparing((ExchangeData.Commission c) -> !c.system)
+            .thenComparingLong(c -> c.expiresAt > 0 ? CommissionHours.secondsLeft(gameTime, c.expiresAt) : (c.expiry - day) * 1200));
         List<ExchangeView.CommissionLine> commissions = new ArrayList<>();
         for (ExchangeData.Commission c : open) {
             if (commissions.size() >= ExchangeView.MAX_COMMISSIONS) break;
             commissions.add(new ExchangeView.CommissionLine(c.id, c.system ? "" : c.requesterName, c.item, c.quantity, c.delivered,
-                c.kind.ordinal(), c.rewardItem, c.rewardTotal, c.expiry, c.system, player.getUUID().equals(c.requester)));
+                c.kind.ordinal(), c.rewardItem, c.rewardTotal, c.expiry, c.system, player.getUUID().equals(c.requester),
+                c.expiresAt > 0 ? CommissionHours.secondsLeft(gameTime, c.expiresAt) : -1));
         }
 
         List<ExchangeView.PositionLine> positions = new ArrayList<>();
@@ -107,7 +120,7 @@ public final class ExchangeViews {
         List<ExchangeView.LedgerLine> ledger = new ArrayList<>();
         var led = new ArrayList<>(d.ledger);
         for (int i = Math.max(0, led.size() - ExchangeView.MAX_LEDGER); i < led.size(); i++)
-            ledger.add(new ExchangeView.LedgerLine(led.get(i).day, led.get(i).minted, led.get(i).burned));
+            ledger.add(new ExchangeView.LedgerLine(led.get(i).day, led.get(i).created(), led.get(i).destroyed()));   // 0.1.10.35: circulation
 
         List<Map.Entry<String, Long>> stock = new ArrayList<>(d.treasury.entrySet());
         stock.sort((a, b) -> Long.compare(b.getValue(), a.getValue()));
@@ -175,7 +188,19 @@ public final class ExchangeViews {
         return new ExchangeView(day, coins, box.uu, box.coins, box.items.size(), energy, rows, detail, orders, mail, commissions, positions,
             ledger, stocks, List.copyOf(candidates), allowance == Long.MAX_VALUE ? -1 : allowance, boxLines, auctions,
             Bounties.lines(player, d, day), budget, settle, stabilizerLine(d, day), d.bankMode.contains(player.getUUID()), curves,
-            m != null && m.system() ? m.bountyFloor() : 0);
+            m != null && m.system() ? m.bountyFloor() : 0, reserveLine(d, day), Shops.view(player, d, shopQuery));
+    }
+
+    /** 0.1.10.35 (item 4): the reserve now, its cap, and this market week's fees in, bounty coins paid from it, new bounty coins. */
+    static ExchangeView.ReserveLine reserveLine(ExchangeData d, long day) {
+        long week = BountyMath.week(day), in = 0, out = 0, made = 0;
+        for (ExchangeData.LedgerDay l : d.ledger) {
+            if (BountyMath.week(l.day) != week) continue;
+            in += l.reserveIn;
+            out += l.reserveOut;
+            made += Math.max(0, l.bountyCoins - l.reserveOut);
+        }
+        return new ExchangeView.ReserveLine(d.reserve, ExchangeService.reserveCap(d), in, out, made);
     }
 
     /** 0.1.10.29: adds the curve of {@code id} for {@code player} (once; datapack commodities only). */
@@ -193,7 +218,7 @@ public final class ExchangeViews {
         long net7 = 0, scrapIn = 0, scrapOut = 0;
         for (ExchangeData.LedgerDay l : d.ledger) {
             if (l.day >= day || day - l.day > Stabilizer.WINDOW_DAYS) continue;
-            net7 += l.minted - l.burned;
+            net7 += l.circulation();   // 0.1.10.35
             scrapIn += l.scrapIn;
             scrapOut += l.scrapOut;
         }

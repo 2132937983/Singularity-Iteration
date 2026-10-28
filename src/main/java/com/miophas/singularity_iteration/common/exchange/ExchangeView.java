@@ -15,7 +15,19 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
                            List<CommissionLine> commissions, List<PositionLine> positions, List<LedgerLine> ledger,
                            List<StockLine> stocks, List<Candidate> candidates, long allowance, List<BoxLine> box,
                            List<AuctionLine> auctions, List<BountyLine> bounties, BountyBudget budget, SettleView settle,
-                           StabilizerLine stabilizer, boolean bankMode, List<CurveLine> curves, long bountyFloor) {
+                           StabilizerLine stabilizer, boolean bankMode, List<CurveLine> curves, long bountyFloor,
+                           ReserveLine reserve, ShopView shops) {
+    /** 0.1.10.34 and older: without the reserve and the shops. */
+    public ExchangeView(long day, long coins, long uu, long mailCoins, int mailTypes, boolean energy,
+                        List<Row> markets, Detail detail, List<MyOrder> orders, List<MailLine> mail,
+                        List<CommissionLine> commissions, List<PositionLine> positions, List<LedgerLine> ledger,
+                        List<StockLine> stocks, List<Candidate> candidates, long allowance, List<BoxLine> box,
+                        List<AuctionLine> auctions, List<BountyLine> bounties, BountyBudget budget, SettleView settle,
+                        StabilizerLine stabilizer, boolean bankMode, List<CurveLine> curves, long bountyFloor) {
+        this(day, coins, uu, mailCoins, mailTypes, energy, markets, detail, orders, mail, commissions, positions, ledger, stocks, candidates,
+            allowance, box, auctions, bounties, budget, settle, stabilizer, bankMode, curves, bountyFloor, ReserveLine.NONE, ShopView.NONE);
+    }
+
     public static final int MAX_MARKETS = 160, MAX_SPARK = 20, MAX_BARS = 30, MAX_LEVELS = 8, MAX_TRADES = 12;
     public static final int MAX_ORDERS = 32, MAX_MAIL = 40, MAX_COMMISSIONS = 64, MAX_POSITIONS = 8, MAX_LEDGER = 14;
     public static final int MAX_STOCKS = 12, MAX_CANDIDATES = 8, MAX_BOX = 18, MAX_AUCTIONS = 96;
@@ -25,6 +37,8 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
     public static final int MAX_SETTLE_LINES = 32, MAX_SETTLE_TARGETS = 16;
     /** 0.1.10.29: the curves of the selected market, the sell box and the settlement container. */
     public static final int MAX_CURVES = 1 + MAX_BOX + MAX_SETTLE_LINES;
+    /** 0.1.10.35: shops listed, offers of a shop, proceeds lines of the own shop. */
+    public static final int MAX_SHOPS = 48, MAX_OFFERS = 54, MAX_PROCEEDS = 27;
 
     /**
      * 0.1.10.29: the bid curve of a datapack commodity for this player now ({@link SellDepth.Curve}: the bid without pressure,
@@ -87,13 +101,71 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
     /** 0.1.10.25: one of this player's auction orders with the estimate if the day changed now. */
     public record AuctionLine(long id, String item, long quantity, int minPercent, long estQuantity, long estCoins) { }
 
-    public record MyOrder(long id, String commodity, boolean buy, long price, int remaining, long day) { }
+    /** {@code secondsLeft} (0.1.10.35): seconds of game time left; -1 = an order of an older version (7 market days). */
+    public record MyOrder(long id, String commodity, boolean buy, long price, int remaining, long day, long secondsLeft) {
+        public MyOrder(long id, String commodity, boolean buy, long price, int remaining, long day) {
+            this(id, commodity, buy, price, remaining, day, -1);
+        }
+    }
 
     public record MailLine(String item, long count) { }
 
-    /** {@code kind}: 0 coins, 1 item, 2 UU-matter. */
+    /**
+     * {@code kind}: 0 coins, 1 item, 2 UU-matter. {@code secondsLeft} (0.1.10.35): seconds of game time left; -1 = a commission
+     * of an older version (it ends with the market day {@code expiry}).
+     */
     public record CommissionLine(long id, String requester, String item, int quantity, int delivered, int kind, String rewardItem,
-                                 long rewardTotal, long expiry, boolean system, boolean mine) { }
+                                 long rewardTotal, long expiry, boolean system, boolean mine, long secondsLeft) {
+        public CommissionLine(long id, String requester, String item, int quantity, int delivered, int kind, String rewardItem,
+                              long rewardTotal, long expiry, boolean system, boolean mine) {
+            this(id, requester, item, quantity, delivered, kind, rewardItem, rewardTotal, expiry, system, mine, -1);
+        }
+    }
+
+    /**
+     * 0.1.10.35 (item 4): the treasury reserve: coins now, the cap; this market week the fees in, the bounty coins it paid, the
+     * bounty coins newly made.
+     */
+    public record ReserveLine(long reserve, long cap, long weekIn, long weekOut, long weekNew) {
+        public static final ReserveLine NONE = new ReserveLine(0, 0, 0, 0, 0);
+    }
+
+    /** 0.1.10.35: a shop of the list; {@code lastTradeDay} -1 = none. */
+    public record ShopLine(String owner, String name, int offers, int open, boolean idle, long lastTradeDay, boolean mine) { }
+
+    /**
+     * 0.1.10.35: an offer: {@code kind} 0 exchange / 1 sell / 2 buy; per unit the goods, the cost items, the price; the units in
+     * stock; paused by the owner, upkeep unpaid; {@code maxNow} the units this player may take now; units traded.
+     */
+    public record OfferLine(long id, int kind, String goods, int goodsCount, String cost, int costCount, long price, long stock,
+                            boolean paused, boolean unpaid, long maxNow, long trades) { }
+
+    /**
+     * 0.1.10.35 (items 5-8): the shops part: shops on, the list (what the panel asked for), the open shop (owner UUID, name, idle,
+     * offers), the own shop (offers, proceeds, stacks used / storage), the limits and fees, and whether this player gets the
+     * notice of new commissions; the server's default and longest hours of a commission (the panel's hours box).
+     */
+    public record ShopView(boolean enabled, List<ShopLine> list, String openOwner, String openName, boolean openIdle, List<OfferLine> open,
+                           List<OfferLine> mine, List<MailLine> proceeds, long stacks, int maxStacks, int maxOffers, long offerFee,
+                           long upkeep, boolean commissionNotify, int commissionHours, int commissionMaxHours) {
+        public static final ShopView NONE = new ShopView(false, List.of(), "", "", false, List.of(), List.of(), List.of(), 0, 0, 0, 0, 0, true,
+            0, CommissionHours.MAX_HOURS);
+    }
+
+    static void writeOffers(FriendlyByteBuf b, List<OfferLine> offers) {
+        list(b, offers, MAX_OFFERS, o -> { b.writeVarLong(o.id()); b.writeVarInt(o.kind()); b.writeUtf(o.goods(), 128); b.writeVarInt(o.goodsCount());
+            b.writeUtf(o.cost(), 128); b.writeVarInt(o.costCount()); b.writeVarLong(o.price()); b.writeVarLong(o.stock()); b.writeBoolean(o.paused());
+            b.writeBoolean(o.unpaid()); b.writeVarLong(o.maxNow()); b.writeVarLong(o.trades()); });
+    }
+
+    static List<OfferLine> readOffers(FriendlyByteBuf b) {
+        return read(b, MAX_OFFERS, () -> {
+            long id = b.readVarLong(); int kind = b.readVarInt();
+            if (kind < 0 || kind > 2) throw new io.netty.handler.codec.DecoderException("offer kind");
+            return new OfferLine(id, kind, b.readUtf(128), b.readVarInt(), b.readUtf(128), b.readVarInt(), b.readVarLong(), b.readVarLong(),
+                b.readBoolean(), b.readBoolean(), b.readVarLong(), b.readVarLong());
+        });
+    }
 
     public record PositionLine(long id, String commodity, boolean isLong, long price, int quantity, long expiry, long valueNow) { }
 
@@ -217,11 +289,12 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
             b.writeVarLong(d.mine()); b.writeLong(d.buyLeft());
         }
         list(b, orders, MAX_ORDERS, x -> { b.writeVarLong(x.id()); b.writeUtf(x.commodity(), 128); b.writeBoolean(x.buy()); b.writeVarLong(x.price());
-            b.writeVarInt(x.remaining()); b.writeVarLong(x.day()); });
+            b.writeVarInt(x.remaining()); b.writeVarLong(x.day()); b.writeLong(x.secondsLeft()); });
         list(b, mail, MAX_MAIL, x -> { b.writeUtf(x.item(), 128); b.writeVarLong(x.count()); });
         list(b, commissions, MAX_COMMISSIONS, x -> { b.writeVarLong(x.id()); b.writeUtf(x.requester(), 32); b.writeUtf(x.item(), 128);
             b.writeVarInt(x.quantity()); b.writeVarInt(x.delivered()); b.writeVarInt(x.kind()); b.writeUtf(x.rewardItem(), 128);
-            b.writeVarLong(x.rewardTotal()); b.writeVarLong(x.expiry()); b.writeBoolean(x.system()); b.writeBoolean(x.mine()); });
+            b.writeVarLong(x.rewardTotal()); b.writeVarLong(x.expiry()); b.writeBoolean(x.system()); b.writeBoolean(x.mine());
+            b.writeLong(x.secondsLeft()); });
         list(b, positions, MAX_POSITIONS, x -> { b.writeVarLong(x.id()); b.writeUtf(x.commodity(), 128); b.writeBoolean(x.isLong());
             b.writeVarLong(x.price()); b.writeVarInt(x.quantity()); b.writeVarLong(x.expiry()); b.writeVarLong(x.valueNow()); });
         list(b, ledger, MAX_LEDGER, x -> { b.writeVarLong(x.day()); b.writeVarLong(x.minted()); b.writeVarLong(x.burned()); });
@@ -262,6 +335,19 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
         writeCurves(b, curves, MAX_CURVES);
         // 0.1.10.33: the ask floor of the selected market while a bounty needs it (0 = none)
         b.writeVarLong(bountyFloor);
+        // 0.1.10.35: the reserve, the shops
+        ReserveLine r = reserve == null ? ReserveLine.NONE : reserve;
+        b.writeVarLong(r.reserve()); b.writeVarLong(r.cap()); b.writeVarLong(r.weekIn()); b.writeVarLong(r.weekOut()); b.writeVarLong(r.weekNew());
+        ShopView sv = shops == null ? ShopView.NONE : shops;
+        b.writeBoolean(sv.enabled());
+        list(b, sv.list(), MAX_SHOPS, x -> { b.writeUtf(x.owner(), 40); b.writeUtf(x.name(), 32); b.writeVarInt(x.offers()); b.writeVarInt(x.open());
+            b.writeBoolean(x.idle()); b.writeLong(x.lastTradeDay()); b.writeBoolean(x.mine()); });
+        b.writeUtf(sv.openOwner(), 40); b.writeUtf(sv.openName(), 32); b.writeBoolean(sv.openIdle());
+        writeOffers(b, sv.open());
+        writeOffers(b, sv.mine());
+        list(b, sv.proceeds(), MAX_PROCEEDS, x -> { b.writeUtf(x.item(), 128); b.writeVarLong(x.count()); });
+        b.writeVarLong(sv.stacks()); b.writeVarInt(sv.maxStacks()); b.writeVarInt(sv.maxOffers()); b.writeVarLong(sv.offerFee());
+        b.writeVarLong(sv.upkeep()); b.writeBoolean(sv.commissionNotify()); b.writeVarInt(sv.commissionHours()); b.writeVarInt(sv.commissionMaxHours());
     }
 
     public static ExchangeView read(FriendlyByteBuf b) {
@@ -291,10 +377,12 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
             detail = new Detail(id, currency, system, price, ask, bid, supply, pressure, fundamental, depth, low, high, bars, bids, asks, trades,
                 l3, s3, l7, s7, mine, buyLeft);
         }
-        List<MyOrder> orders = read(b, MAX_ORDERS, () -> new MyOrder(b.readVarLong(), b.readUtf(128), b.readBoolean(), b.readVarLong(), b.readVarInt(), b.readVarLong()));
+        List<MyOrder> orders = read(b, MAX_ORDERS, () -> new MyOrder(b.readVarLong(), b.readUtf(128), b.readBoolean(), b.readVarLong(), b.readVarInt(), b.readVarLong(),
+            b.readLong()));
         List<MailLine> mail = read(b, MAX_MAIL, () -> new MailLine(b.readUtf(128), b.readVarLong()));
         List<CommissionLine> commissions = read(b, MAX_COMMISSIONS, () -> new CommissionLine(b.readVarLong(), b.readUtf(32), b.readUtf(128),
-            b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readUtf(128), b.readVarLong(), b.readVarLong(), b.readBoolean(), b.readBoolean()));
+            b.readVarInt(), b.readVarInt(), b.readVarInt(), b.readUtf(128), b.readVarLong(), b.readVarLong(), b.readBoolean(), b.readBoolean(),
+            b.readLong()));
         List<PositionLine> positions = read(b, MAX_POSITIONS, () -> new PositionLine(b.readVarLong(), b.readUtf(128), b.readBoolean(), b.readVarLong(),
             b.readVarInt(), b.readVarLong(), b.readVarLong()));
         List<LedgerLine> ledger = read(b, MAX_LEDGER, () -> new LedgerLine(b.readVarLong(), b.readVarLong(), b.readVarLong()));
@@ -323,8 +411,19 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
         boolean bankMode = b.readBoolean();
         List<CurveLine> curves = readCurves(b, MAX_CURVES);
         long bountyFloor = b.readVarLong();
+        // 0.1.10.35
+        ReserveLine reserve = new ReserveLine(b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong(), b.readVarLong());
+        boolean shopsOn = b.readBoolean();
+        List<ShopLine> shopList = read(b, MAX_SHOPS, () -> new ShopLine(b.readUtf(40), b.readUtf(32), b.readVarInt(), b.readVarInt(), b.readBoolean(),
+            b.readLong(), b.readBoolean()));
+        String openOwner = b.readUtf(40), openName = b.readUtf(32);
+        boolean openIdle = b.readBoolean();
+        List<OfferLine> open = readOffers(b), mine = readOffers(b);
+        List<MailLine> proceeds = read(b, MAX_PROCEEDS, () -> new MailLine(b.readUtf(128), b.readVarLong()));
+        ShopView shops = new ShopView(shopsOn, shopList, openOwner, openName, openIdle, open, mine, proceeds, b.readVarLong(), b.readVarInt(),
+            b.readVarInt(), b.readVarLong(), b.readVarLong(), b.readBoolean(), b.readVarInt(), b.readVarInt());
         return new ExchangeView(day, coins, uu, mailCoins, mailTypes, energy, markets, detail, orders, mail, commissions, positions, ledger, stocks, candidates,
-            allowance, box, auctions, bounties, budget, settle, stabilizer, bankMode, curves, bountyFloor);
+            allowance, box, auctions, bounties, budget, settle, stabilizer, bankMode, curves, bountyFloor, reserve, shops);
     }
 
     interface Writer<T> { void write(T value); }

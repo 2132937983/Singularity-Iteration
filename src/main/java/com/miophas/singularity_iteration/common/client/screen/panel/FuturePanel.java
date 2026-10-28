@@ -2,11 +2,13 @@
 package com.miophas.singularity_iteration.common.client.screen.panel;
 
 import com.miophas.singularity_iteration.common.client.screen.panel.PanelCanvas.Box;
+import com.miophas.singularity_iteration.common.exchange.CommissionHours;
 import com.miophas.singularity_iteration.common.exchange.CommissionLots;
 import com.miophas.singularity_iteration.common.exchange.ExchangePackets;
 import com.miophas.singularity_iteration.common.exchange.ExchangeService;
 import com.miophas.singularity_iteration.common.exchange.ExchangeView;
 import com.miophas.singularity_iteration.common.exchange.MinPrice;
+import com.miophas.singularity_iteration.common.exchange.ShopRules;
 import com.miophas.singularity_iteration.common.exchange.UuBoard;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +57,17 @@ public final class FuturePanel {
     public boolean scrapRest;
     /** 0.1.10.33: the first entry shown of the lists that scroll with the wheel (orders, mail, stock, auctions, quotes, targets). */
     final java.util.Map<String, Integer> scrolls = new java.util.HashMap<>();
+    /** 0.1.10.35: the commissions tab shows the commission board (0), the shops (1) or the own shop (2). */
+    public int shopPage;
+    /** 0.1.10.35: the open shop (owner UUID; "" = the list) and the item the list is filtered by ("" = all shops). */
+    public String shopOpen = "", shopFilter = "";
+    /** 0.1.10.35: the offer form: kind (0 exchange, 1 sell, 2 buy), the goods and the cost item ("" = none picked). */
+    public int shopKind = 1;
+    public String shopGoods = "", shopCost = "";
+    /** 0.1.10.35: the trades of an open shop take the cost from the container in the settlement slot (else the inventory). */
+    public boolean shopFromSettle;
+    /** 0.1.10.35: the hours box got the server's default and range (once per screen; then it keeps what the player typed). */
+    boolean hoursFromServer;
 
     // ------------------------------------------------------------------ common pieces
 
@@ -419,6 +432,7 @@ public final class FuturePanel {
             String ask = d.ask() > 0 ? n(d.ask()) + (floored ? "*" : "") : "-";
             labelValue(x + 4, ty, iw, tr("ask"), ask, d.ask() <= 0 ? PanelStyle.DIM : floored ? PanelStyle.WARN : PanelStyle.down());
             if (floored) c.hover(x + 4, ty - 1, iw, 10, tr("bounty_floor_help", n(v.bountyFloor())));
+            else if (d.ask() <= 0) c.hover(x + 4, ty - 1, iw, 10, tr("ask_none_help"));   // 0.1.10.35: no stock, or sold only to the market
             labelValue(x + 4, ty + 10, iw, tr("supply"), n(d.supply()), PanelStyle.TEXT);
             // 0.1.10.33: a bid under one coin shows "<1" (before "-", as if the market did not buy)
             labelValue(x + 4, ty + 20, iw, tr("bid"), d.bid() > 0 ? n(d.bid()) : "<1", d.bid() > 0 ? PanelStyle.up() : PanelStyle.DIM);
@@ -559,7 +573,13 @@ public final class FuturePanel {
     void commissions(ExchangeView v) {
         int top = TOP, bottom = bottom(), formW = Math.max(180, Math.min(220, W / 3)), listW = W - formW - 18;
         c.panel(6, top, listW, bottom - top);
-        text(tr("board"), 10, top + 4, listW - 8, PanelStyle.ACCENT);
+        // 0.1.10.35 (items 5-8): the commission board, the shops and the own shop share the tab
+        shopSwitch(10, top + 2, listW - 8);
+        if (shopPage != 0) {
+            if (shopPage == 1) shopList(v, 6, top, listW, bottom); else myShop(v, 6, top, listW, bottom);
+            shopForm(v, W - formW - 6, top, formW, bottom);
+            return;
+        }
         int rows = Math.max(1, (bottom - top - 18) / 22);
         boardScroll = Math.max(0, Math.min(boardScroll, v.commissions().size() - rows));
         c.wheel(6, top, listW, bottom - top, d -> boardScroll = Math.max(0, boardScroll + d));
@@ -581,7 +601,10 @@ public final class FuturePanel {
             }
             int nameW = rx - 4 - 30;
             // 0.1.10.33: the progress and the days stand right (a long item or player name is cut, never them)
-            String prog = cl.delivered() + "/" + cl.quantity(), days = tr("days_left", Math.max(0, cl.expiry() - v.day()));
+            // 0.1.10.35 (item 3): the time left in hours (a commission of an older version: in market days); red under 3 hours
+            String prog = cl.delivered() + "/" + cl.quantity();
+            String days = cl.secondsLeft() >= 0 ? timeLeft(cl.secondsLeft()) : tr("days_left", Math.max(0, cl.expiry() - v.day()));
+            int dayColour = cl.secondsLeft() >= 0 && CommissionHours.soon(cl.secondsLeft()) ? PanelStyle.WARN : PanelStyle.DIM;
             int progW = c.width(prog), daysW = c.width(days);
             if (progW + 30 <= nameW) {
                 right(prog, 30 + nameW, y + 2, PanelStyle.TEXT);
@@ -591,10 +614,10 @@ public final class FuturePanel {
             }
             String who = cl.system() ? tr("market_request") : cl.requester();
             if (daysW + 30 <= nameW) {
-                right(days, 30 + nameW, y + 11, PanelStyle.DIM);
+                right(days, 30 + nameW, y + 11, dayColour);
                 text(who, 30, y + 11, nameW - daysW - 6, PanelStyle.DIM);
             } else {
-                text(who + " \u00b7 " + days, 30, y + 11, nameW, PanelStyle.DIM);
+                text(who + " \u00b7 " + days, 30, y + 11, nameW, dayColour);
             }
             // 0.1.10.33 (Q20): item and UU rewards are delivered in whole lots
             long lot = CommissionLots.lot(cl.quantity(), cl.rewardTotal(), cl.kind() == 0);
@@ -614,7 +637,13 @@ public final class FuturePanel {
 
     void commissionForm(ExchangeView v, int fx, int top, int formW, int bottom) {
         c.panel(fx, top, formW, bottom - top);
-        text(tr("post"), fx + 4, top + 4, formW - 8, PanelStyle.ACCENT);
+        // 0.1.10.35 (item 3): the chat notice of new commissions, at the right of the title
+        boolean notify = v.shops().commissionNotify();
+        String note = tr(notify ? "notify_on" : "notify_off");
+        int nw = Math.min(formW / 2, c.width(note) + 8);
+        text(tr("post"), fx + 4, top + 4, formW - 12 - nw, PanelStyle.ACCENT);
+        button(fx + formW - 4 - nw, top + 2, nw, 12, note, notify, () -> c.act(ExchangePackets.COMMISSION_NOTIFY, "", 0, 0, 0, 0, !notify, ""));
+        c.hover(fx + formW - 4 - nw, top + 2, nw, 12, tr("notify_help"));
         int y = top + 15;
         button(fx + 4, y, formW / 2 - 6, 16, tr("pick_target"), pickMode == 0, () -> pickMode = 0);
         if (!target.isEmpty()) c.item(target, fx + formW / 2, y);
@@ -636,14 +665,24 @@ public final class FuturePanel {
         text(tr(rewardKind == 1 ? "reward_count" : "reward_amount"), fx + 4, y + 2, boxX - 3 - (fx + 4), PanelStyle.DIM);
         place(Box.POST_AMOUNT, boxX, y, 60);
         y += 15;
-        text(tr("days"), fx + 4, y + 2, boxX - 3 - (fx + 4), PanelStyle.DIM);
+        // 0.1.10.35 (item 3): hours; - / + step through 1, 3, 6, 12, 24, 48, 72, 168 (up to the server's longest)
+        int maxHours = CommissionHours.clamp(v.shops().commissionMaxHours(), CommissionHours.MAX_HOURS);
+        if (!hoursFromServer && v.shops().commissionHours() > 0) {
+            c.range(Box.POST_DAYS, 1, maxHours);
+            c.set(Box.POST_DAYS, CommissionHours.clamp(v.shops().commissionHours(), maxHours));
+            hoursFromServer = true;
+        }
+        text(tr("hours"), fx + 4, y + 2, boxX - 33 - (fx + 4), PanelStyle.DIM);
+        c.hover(fx + 4, y, Math.max(1, boxX - 33 - (fx + 4)), 12, tr("hours_help"));
+        button(boxX - 30, y, 13, 12, "-", () -> c.set(Box.POST_DAYS, CommissionHours.step((int) c.num(Box.POST_DAYS, 24), -1, maxHours)));
+        button(boxX - 15, y, 13, 12, "+", () -> c.set(Box.POST_DAYS, CommissionHours.step((int) c.num(Box.POST_DAYS, 24), 1, maxHours)));
         place(Box.POST_DAYS, boxX, y, 60);
         y += 15;
         text(tr(rewardKind == 0 ? "fee_coin" : "fee_flat"), fx + 4, y, formW - 8, PanelStyle.DIM);
         y += 10;
         button(fx + 4, y, formW - 8, 15, tr("post_button"), () -> {
             if (target.isEmpty()) return;
-            c.act(ExchangePackets.POST, target, c.num(Box.POST_AMOUNT, 0), c.num(Box.POST_DAYS, 3), rewardKind,
+            c.act(ExchangePackets.POST, target, c.num(Box.POST_AMOUNT, 0), c.num(Box.POST_DAYS, 24), rewardKind,
                 (int) Math.min(ExchangeService.MAX_QUANTITY, c.num(Box.POST_QTY, 0)), false, rewardItem);
         });
         y += 18;
@@ -660,22 +699,7 @@ public final class FuturePanel {
         if (candidatesH > 0 && Math.min(allRows, (avail - candidatesH) / 18) >= Math.min(allRows, 2)) fitRows = Math.min(allRows, (avail - candidatesH) / 18);
         else candidatesH = 0;
         fitRows = Math.max(1, fitRows);
-        pickScroll = Math.max(0, Math.min(pickScroll, allRows - fitRows));
-        c.wheel(fx + 4, y, cols * 18, fitRows * 18, d -> pickScroll = Math.max(0, pickScroll + d));
-        for (int r = 0; r < fitRows; r++) {
-            for (int col = 0; col < cols; col++) {
-                int s = (r + pickScroll) * cols + col;
-                if (s >= inv.size()) break;
-                int sx = fx + 4 + col * 18, sy = y + r * 18;
-                c.fill(sx, sy, sx + 17, sy + 17, 0x40000000);
-                String it = inv.get(s);
-                if (it.isEmpty()) continue;
-                c.item(it, sx, sy);
-                c.region(sx, sy, 17, 17, () -> { if (pickMode == 0) target = it; else rewardItem = it; }, null);
-                c.hover(sx, sy, 17, 17, c.itemName(it));
-            }
-        }
-        c.hidden("inventory picker rows (wheel)", fitRows, allRows);
+        pickerGrid(inv, fx + 4, y, cols, fitRows, allRows);
         if (candidatesH > 0) {
             int cy = y + fitRows * 18 + 2;
             text(tr("candidates"), fx + 4, cy, formW - 8, PanelStyle.ACCENT);
@@ -689,6 +713,315 @@ public final class FuturePanel {
         } else {
             c.hidden("listing progress", 0, v.candidates().size());
         }
+    }
+
+    /** The inventory picker's grid: {@code rows} rows of {@code cols} from {@link #pickScroll}; a click picks for {@link #pickMode}. */
+    void pickerGrid(List<String> inv, int x, int y, int cols, int rows, int allRows) {
+        pickScroll = Math.max(0, Math.min(pickScroll, allRows - rows));
+        c.wheel(x, y, cols * 18, rows * 18, d -> pickScroll = Math.max(0, pickScroll + d));
+        for (int r = 0; r < rows; r++) {
+            for (int col = 0; col < cols; col++) {
+                int s = (r + pickScroll) * cols + col;
+                if (s >= inv.size()) break;
+                int sx = x + col * 18, sy = y + r * 18;
+                c.fill(sx, sy, sx + 17, sy + 17, 0x40000000);
+                String it = inv.get(s);
+                if (it.isEmpty()) continue;
+                c.item(it, sx, sy);
+                c.region(sx, sy, 17, 17, () -> pick(it), null);
+                c.hover(sx, sy, 17, 17, c.itemName(it));
+            }
+        }
+        c.hidden("inventory picker rows (wheel)", rows, allRows);
+    }
+
+    /** The picked item goes where {@link #pickMode} says: 0 target, 1 reward, 2 shop goods, 3 shop cost, 4 the shop filter. */
+    void pick(String it) {
+        switch (pickMode) {
+            case 1 -> rewardItem = it;
+            case 2 -> shopGoods = it;
+            case 3 -> shopCost = it;
+            case 4 -> { shopFilter = it; shopOpen = ""; pickMode = 2; c.request(); }
+            default -> target = it;
+        }
+    }
+
+    /** 0.1.10.35: seconds left as "5h 20m left" ("20m left" under an hour). */
+    String timeLeft(long seconds) {
+        long[] hm = CommissionHours.hoursMinutes(seconds);
+        return hm[0] > 0 ? tr("hours_left", hm[0], hm[1]) : tr("minutes_left", hm[1]);
+    }
+
+    /** 0.1.10.35: seconds left in short form ("71h", "20m"). */
+    String timeShort(long seconds) {
+        long[] hm = CommissionHours.hoursMinutes(seconds);
+        return hm[0] > 0 ? tr("hours_short", hm[0]) : tr("minutes_short", hm[1]);
+    }
+
+    // ------------------------------------------------------------------ shops (0.1.10.35, items 5-8)
+
+    /** The shop query of the view request: the list (of the shops that trade the filter item) or the open shop; else "". */
+    public String shopQuery() {
+        if (tab != 1 || shopPage != 1) return "";
+        return shopOpen.isEmpty() ? "*" + shopFilter : shopOpen;
+    }
+
+    /** The switch of the commissions tab: the board, the shops, the own shop. */
+    void shopSwitch(int x, int y, int w) {
+        int bw = (w - 6) / 3;
+        for (int i = 0; i < 3; i++) {
+            final int page = i;
+            button(x + i * (bw + 3), y, bw, 12, tr("shop_switch." + i), shopPage == i, () -> {
+                shopPage = page;
+                // the picker follows the page: target / reward on the board, goods / cost / filter in the shops
+                if (page == 0 && pickMode >= 2) pickMode = 0;
+                if (page != 0 && pickMode < 2) pickMode = 2;
+                c.request();
+            });
+        }
+    }
+
+    /** An offer in a line: what the customer gets and gives. */
+    String offerText(ExchangeView.OfferLine o) {
+        return switch (o.kind()) {
+            case 0 -> tr("offer.0", name(o.goods()), n(o.goodsCount()), name(o.cost()), n(o.costCount()));
+            case 1 -> tr("offer.1", name(o.goods()), n(o.goodsCount()), n(o.price()));
+            default -> tr("offer.2", name(o.cost()), n(o.costCount()), n(o.price()));
+        };
+    }
+
+    /** The trades left and done; paused, upkeep unpaid. */
+    String offerState(ExchangeView.OfferLine o) {
+        String s = tr("offer_state", n(o.stock()), n(o.trades()));
+        if (o.unpaid()) s += " \u00b7 " + tr("offer_unpaid");
+        else if (o.paused()) s += " \u00b7 " + tr("offer_paused");
+        return s;
+    }
+
+    /** The shops (by activity: away owners last) or, when one is open, its offers. */
+    void shopList(ExchangeView v, int x, int top, int w, int bottom) {
+        ExchangeView.ShopView sv = v.shops();
+        int y = top + 17;
+        if (!sv.enabled()) { text(tr("shops_off"), x + 4, y + 3, w - 8, PanelStyle.DIM); return; }
+        if (!shopOpen.isEmpty() && shopOpen.equals(sv.openOwner())) { shopOffers(v, x, top, w, bottom); return; }
+        // the filter: the next item picked in the inventory (the list then holds the shops that trade it)
+        boolean picking = pickMode == 4;
+        int fw = Math.min(70, (w - 8) / 3);
+        button(x + 4, y, fw, 13, tr("shop_filter"), picking, () -> pickMode = picking ? 2 : 4);
+        c.hover(x + 4, y, fw, 13, tr("shop_filter_help"));
+        int ix = x + 8 + fw;
+        if (!shopFilter.isEmpty()) {
+            c.item(shopFilter, ix, y - 2);
+            c.hover(ix, y - 2, 16, 16, c.itemName(shopFilter));
+            button(ix + 18, y, 13, 13, "x", () -> { shopFilter = ""; c.request(); });
+            c.hover(ix + 18, y, 13, 13, tr("shop_filter_clear"));
+            ix += 35;
+        }
+        text(tr("shops_count", sv.list().size()), ix + 2, y + 3, x + w - 6 - ix, PanelStyle.DIM);
+        int ry = y + 17, shown = 0;
+        List<ExchangeView.ShopLine> list = sv.list();
+        int s0 = first("shops", list.size(), x, ry, w, bottom - ry);
+        for (int i = s0; i < list.size(); i++) {
+            if (ry + 22 > bottom - 2 - (i < list.size() - 1 || s0 > 0 ? 10 : 0)) break;
+            ExchangeView.ShopLine s = list.get(i);
+            c.fill(x + 1, ry, x + w - 1, ry + 21, shown % 2 == 0 ? 0x10FFFFFF : 0);
+            int bw = 50, bx = x + w - 4 - bw;
+            String counts = tr("shop_offers", s.open(), s.offers());
+            int cw = c.width(counts);
+            if (cw + 40 <= bx - 6 - (x + 4)) {
+                right(counts, bx - 6, ry + 2, PanelStyle.TEXT);
+                text(s.name(), x + 4, ry + 2, bx - 12 - cw - (x + 4), s.idle() ? PanelStyle.DIM : PanelStyle.TEXT);
+            } else {
+                text(s.name() + "  " + counts, x + 4, ry + 2, bx - 6 - (x + 4), s.idle() ? PanelStyle.DIM : PanelStyle.TEXT);
+            }
+            String when = s.idle() ? tr("shop_idle") : s.lastTradeDay() >= 0 ? tr("shop_last_trade", s.lastTradeDay() + 1) : tr("shop_no_trade");
+            int ww = text(when, x + 4, ry + 11, bx - 6 - (x + 4), PanelStyle.DIM);
+            if (s.idle()) c.hover(x + 4, ry + 10, Math.max(1, ww), 10, tr("shop_idle_help"));
+            final String owner = s.owner();
+            final boolean mine = s.mine();
+            button(bx, ry + 3, bw, 15, tr(mine ? "shop_mine" : "shop_open"), () -> {
+                if (mine) shopPage = 2; else shopOpen = owner;
+                c.request();
+            });
+            ry += 22;
+            shown++;
+        }
+        if (list.isEmpty()) text(tr(shopFilter.isEmpty() ? "shops_none" : "shops_none_item"), x + 4, ry, w - 8, PanelStyle.DIM);
+        more(x + 4, ry + 2, w - 8, list.size() - shown);
+        c.hidden("shops (wheel)", shown, list.size());
+    }
+
+    /** An open shop: its offers with x1 / xN / Max (xN from the box at the top). */
+    void shopOffers(ExchangeView v, int x, int top, int w, int bottom) {
+        ExchangeView.ShopView sv = v.shops();
+        int y = top + 17;
+        int backW = Math.min(50, c.width(tr("shop_back")) + 10);
+        button(x + 4, y, backW, 13, tr("shop_back"), () -> { shopOpen = ""; c.request(); });
+        int nx = x + w - 4 - 40;
+        place(Box.SHOP_N, nx, y, 40);
+        c.hover(nx, y, 40, 12, tr("shop_n_help"));
+        String src = tr(shopFromSettle ? "shop_src_settle" : "shop_src_inv");
+        int sw = Math.min(Math.max(30, (w - 8) / 4), c.width(src) + 8);
+        int sx = nx - 4 - sw;
+        button(sx, y, sw, 13, src, shopFromSettle, () -> shopFromSettle = !shopFromSettle);
+        c.hover(sx, y, sw, 13, tr("shop_src_help"));
+        String title = sv.openName() + (sv.openIdle() ? " (" + tr("shop_idle") + ")" : "");
+        text(title, x + 8 + backW, y + 3, sx - 4 - (x + 8 + backW), sv.openIdle() ? PanelStyle.DIM : PanelStyle.ACCENT);
+        int ry = y + 17, shown = 0;
+        List<ExchangeView.OfferLine> offers = sv.open();
+        long nUnits = Math.max(1, c.num(Box.SHOP_N, 1));
+        int s0 = first("shop offers", offers.size(), x, ry, w, bottom - ry);
+        for (int i = s0; i < offers.size(); i++) {
+            if (ry + 22 > bottom - 2 - (i < offers.size() - 1 || s0 > 0 ? 10 : 0)) break;
+            ExchangeView.OfferLine o = offers.get(i);
+            c.fill(x + 1, ry, x + w - 1, ry + 21, shown % 2 == 0 ? 0x10FFFFFF : 0);
+            c.item(o.kind() == 2 ? o.cost() : o.goods(), x + 4, ry + 2);
+            int b1 = 20, bn = 34, bm = 30, bx = x + w - 4 - b1 - bn - bm - 4;
+            boolean open = o.stock() > 0 && !o.paused() && !o.unpaid();
+            text(offerText(o), x + 24, ry + 2, bx - 4 - (x + 24), open ? PanelStyle.TEXT : PanelStyle.DIM);
+            text(offerState(o), x + 24, ry + 11, bx - 4 - (x + 24), PanelStyle.DIM);
+            final long id = o.id(), max = o.maxNow();
+            final String owner = sv.openOwner();
+            // from the settlement container the server finds how many fit; from the inventory the view knows it
+            boolean can = open && (shopFromSettle || max >= 1);
+            String why = !open ? tr(o.stock() <= 0 ? "shop_sold_out" : "offer_paused") : shopFromSettle ? tr("shop_src_help") : tr("take_help", n(max));
+            c.button(bx, ry + 3, b1, 15, "x1", false, can, () -> shopTrade(owner, id, 1));
+            c.button(bx + b1 + 2, ry + 3, bn, 15, label("x" + PanelStyle.compact(nUnits), bn), false, can, () -> shopTrade(owner, id, nUnits));
+            c.button(bx + b1 + bn + 4, ry + 3, bm, 15, label(tr("take_max"), bm), false, can, () -> shopTrade(owner, id, shopFromSettle ? ShopRules.MAX_UNITS : max));
+            c.hover(bx, ry + 3, b1 + bn + bm + 4, 15, why);
+            ry += 22;
+            shown++;
+        }
+        if (offers.isEmpty()) text(tr("shop_no_offers"), x + 4, ry, w - 8, PanelStyle.DIM);
+        more(x + 4, ry + 2, w - 8, offers.size() - shown);
+        c.hidden("shop offers (wheel)", shown, offers.size());
+    }
+
+    void shopTrade(String owner, long offer, long units) {
+        int d = (int) Math.max(1, Math.min(Integer.MAX_VALUE, units));
+        c.act(shopFromSettle ? ExchangePackets.SETTLE_SHOP : ExchangePackets.SHOP_TRADE, owner, offer, 0, 0, d, false, "");
+    }
+
+    /** The own shop: offers and storage, the proceeds and Collect, every offer with restock / pause / withdraw. */
+    void myShop(ExchangeView v, int x, int top, int w, int bottom) {
+        ExchangeView.ShopView sv = v.shops();
+        int y = top + 17;
+        if (!sv.enabled()) { text(tr("shops_off"), x + 4, y + 3, w - 8, PanelStyle.DIM); return; }
+        int cw = Math.min(60, (w - 8) / 3);
+        String sum = tr("my_shop_summary", sv.mine().size(), sv.maxOffers(), n(sv.stacks()), n(sv.maxStacks()));
+        int sw = text(sum, x + 4, y + 3, w - 12 - cw, sv.stacks() > sv.maxStacks() ? PanelStyle.WARN : PanelStyle.TEXT);
+        c.hover(x + 4, y + 2, Math.max(1, sw), 10, tr("my_shop_help", n(sv.offerFee()), n(sv.upkeep())));
+        c.button(x + w - 4 - cw, y, cw, 13, label(tr("shop_collect"), cw), false, !sv.proceeds().isEmpty(),
+            () -> c.act(ExchangePackets.SHOP_COLLECT, "", 0, 0, 0, 0, false, ""));
+        c.hover(x + w - 4 - cw, y, cw, 13, tr("shop_collect_help"));
+        y += 16;
+        // the proceeds: icon and count while they fit (all of them in the tooltip of the row)
+        int lw = text(tr("proceeds"), x + 4, y + 4, Math.max(1, (w - 8) / 4), PanelStyle.DIM);
+        int px = x + 8 + lw, pshown = 0;
+        StringBuilder all = new StringBuilder();
+        for (ExchangeView.MailLine m : sv.proceeds()) {
+            all.append(all.length() == 0 ? "" : ", ").append(name(m.item())).append(" x").append(n(m.count()));
+            String cnt = PanelStyle.compact(m.count());
+            int ew = 18 + c.width(cnt);
+            if (px + ew > x + w - 4 - (pshown < sv.proceeds().size() - 1 ? 24 : 0)) continue;
+            c.item(m.item(), px, y);
+            c.text(cnt, px + 17, y + 4, PanelStyle.TEXT);
+            px += ew + 4;
+            pshown++;
+        }
+        if (sv.proceeds().isEmpty()) text(tr("proceeds_none"), px, y + 4, x + w - 4 - px, PanelStyle.DIM);
+        else if (pshown < sv.proceeds().size()) c.text("+" + (sv.proceeds().size() - pshown), px, y + 4, PanelStyle.DIM);
+        if (all.length() > 0) c.hover(x + 4, y, w - 8, 16, all.toString());
+        c.hidden("shop proceeds", pshown, sv.proceeds().size());
+        int ry = y + 19, shown = 0;
+        List<ExchangeView.OfferLine> offers = sv.mine();
+        int s0 = first("my offers", offers.size(), x, ry, w, bottom - ry);
+        for (int i = s0; i < offers.size(); i++) {
+            if (ry + 22 > bottom - 2 - (i < offers.size() - 1 || s0 > 0 ? 10 : 0)) break;
+            ExchangeView.OfferLine o = offers.get(i);
+            c.fill(x + 1, ry, x + w - 1, ry + 21, shown % 2 == 0 ? 0x10FFFFFF : 0);
+            c.item(o.kind() == 2 ? o.cost() : o.goods(), x + 4, ry + 2);
+            int br = 18, bp = 44, bwd = 48, bx = x + w - 4 - br - bp - bwd - 4;
+            text(offerText(o), x + 24, ry + 2, bx - 4 - (x + 24), o.paused() || o.unpaid() ? PanelStyle.DIM : PanelStyle.TEXT);
+            text(offerState(o), x + 24, ry + 11, bx - 4 - (x + 24), o.unpaid() ? PanelStyle.WARN : PanelStyle.DIM);
+            final long id = o.id();
+            final boolean paused = o.paused() || o.unpaid();
+            button(bx, ry + 3, br, 15, "+", () -> c.act(ExchangePackets.SHOP_RESTOCK, "", id, 0, 0,
+                (int) Math.min(Integer.MAX_VALUE, c.num(Box.SHOP_UNITS, 1)), false, ""));
+            c.hover(bx, ry + 3, br, 15, tr("restock_help", n(c.num(Box.SHOP_UNITS, 1))));
+            button(bx + br + 2, ry + 3, bp, 15, tr(paused ? "shop_resume" : "shop_pause"), () -> c.act(ExchangePackets.SHOP_PAUSE, "", id, 0, 0, 0, !paused, ""));
+            if (o.unpaid()) c.hover(bx + br + 2, ry + 3, bp, 15, tr("shop_resume_help", n(sv.upkeep())));
+            button(bx + br + bp + 4, ry + 3, bwd, 15, tr("withdraw"), () -> c.act(ExchangePackets.SHOP_WITHDRAW, "", id, 0, 0, 0, false, ""));
+            c.hover(bx + br + bp + 4, ry + 3, bwd, 15, tr("shop_withdraw_help"));
+            ry += 22;
+            shown++;
+        }
+        if (offers.isEmpty()) text(tr("my_shop_empty"), x + 4, ry, w - 8, PanelStyle.DIM);
+        more(x + 4, ry + 2, w - 8, offers.size() - shown);
+        c.hidden("my offers (wheel)", shown, offers.size());
+    }
+
+    /** The form of a new offer and the inventory picker. */
+    void shopForm(ExchangeView v, int fx, int top, int formW, int bottom) {
+        ExchangeView.ShopView sv = v.shops();
+        c.panel(fx, top, formW, bottom - top);
+        int tw = text(tr("shop_form"), fx + 4, top + 4, formW - 8, PanelStyle.ACCENT);
+        c.hover(fx + 4, top + 3, Math.max(1, tw), 10, tr("shop_form_help", n(sv.offerFee()), n(sv.upkeep())));
+        int y = top + 15;
+        for (int k = 0; k < 3; k++) {
+            final int kind = k;
+            button(fx + 4 + k * ((formW - 8) / 3), y, (formW - 8) / 3 - 2, 13, tr("shop_kind." + k), shopKind == k, () -> {
+                shopKind = kind;
+                if (kind == 1 && pickMode == 3) pickMode = 2;
+                if (kind == 2 && pickMode == 2) pickMode = 3;
+            });
+        }
+        c.hover(fx + 4, y, formW - 8, 13, tr("shop_kind_help." + shopKind));
+        y += 16;
+        int boxX = fx + formW - 64, pw = formW / 2 - 24;
+        if (shopKind != 2) {
+            button(fx + 4, y, pw, 16, tr("shop_goods"), pickMode == 2, () -> pickMode = 2);
+            if (!shopGoods.isEmpty()) { c.item(shopGoods, fx + 8 + pw, y); c.hover(fx + 8 + pw, y, 16, 16, c.itemName(shopGoods)); }
+            place(Box.SHOP_GOODS, boxX, y + 2, 60);
+            c.hover(boxX, y + 2, 60, 12, tr("shop_goods_count"));
+            y += 19;
+        }
+        if (shopKind != 1) {
+            button(fx + 4, y, pw, 16, tr("shop_cost"), pickMode == 3, () -> pickMode = 3);
+            if (!shopCost.isEmpty()) { c.item(shopCost, fx + 8 + pw, y); c.hover(fx + 8 + pw, y, 16, 16, c.itemName(shopCost)); }
+            place(Box.SHOP_COST, boxX, y + 2, 60);
+            c.hover(boxX, y + 2, 60, 12, tr("shop_cost_count"));
+            y += 19;
+        }
+        if (shopKind != 0) {
+            text(tr(shopKind == 1 ? "shop_price_sell" : "shop_price_buy"), fx + 4, y + 2, boxX - 3 - (fx + 4), PanelStyle.DIM);
+            place(Box.SHOP_PRICE, boxX, y, 60);
+            y += 15;
+        }
+        text(tr("shop_units"), fx + 4, y + 2, boxX - 3 - (fx + 4), PanelStyle.DIM);
+        c.hover(fx + 4, y, Math.max(1, boxX - 7 - fx), 12, tr("shop_units_help"));
+        place(Box.SHOP_UNITS, boxX, y, 60);
+        y += 15;
+        long units = Math.max(1, c.num(Box.SHOP_UNITS, 1));
+        String need = shopKind == 2
+            ? tr("shop_need_coins", n(Math.min(MAX_COINS * 1000, units * Math.max(1, c.num(Box.SHOP_PRICE, 1)) + sv.offerFee())))
+            : tr("shop_need_items", n(Math.min(MAX_COINS * 1000, units * Math.max(1, c.num(Box.SHOP_GOODS, 1)))), n(sv.offerFee()));
+        text(need, fx + 4, y, formW - 8, PanelStyle.DIM);
+        y += 10;
+        boolean ready = sv.enabled() && (shopKind == 2 || !shopGoods.isEmpty()) && (shopKind == 1 || !shopCost.isEmpty())
+            && !(shopKind == 0 && shopGoods.equals(shopCost));
+        c.button(fx + 4, y, formW - 8, 15, label(tr("shop_post", n(sv.offerFee())), formW - 8), false, ready, () -> c.act(ExchangePackets.SHOP_POST,
+            shopKind == 2 ? "" : shopGoods, ShopRules.pack(c.num(Box.SHOP_PRICE, 1), c.num(Box.SHOP_UNITS, 1)), c.num(Box.SHOP_COST, 1), shopKind,
+            (int) c.num(Box.SHOP_GOODS, 1), false, shopKind == 1 ? "" : shopCost));
+        if (!ready) c.hover(fx + 4, y, formW - 8, 15, tr(sv.enabled() ? "shop_post_pick" : "shops_off"));
+        y += 18;
+        text(tr(pickMode == 4 ? "shop_filter_pick" : "inventory_pick"), fx + 4, y, formW - 8, pickMode == 4 ? PanelStyle.WARN : PanelStyle.DIM);
+        y += 10;
+        List<String> inv = c.inventory();
+        int cols = Math.max(1, Math.min(9, (formW - 8) / 18));
+        int allRows = (inv.size() + cols - 1) / cols;
+        int rows = Math.max(1, Math.min(allRows, (bottom - 2 - y) / 18));
+        pickerGrid(inv, fx + 4, y, cols, rows, allRows);
     }
 
     // ------------------------------------------------------------------ futures tab
@@ -802,7 +1135,9 @@ public final class FuturePanel {
             if (y + 16 > bottom - 2 - (i < v.orders().size() - 1 || s0 > 0 ? 10 : 0)) break;
             c.item(o.commodity(), 10, y);
             String side = tr(o.buy() ? "buy" : "sell");
-            textNum(f -> side + " x" + o.remaining() + " @ " + f.apply(o.price()), 30, y + 4, half - 60 - 30, o.buy() ? PanelStyle.up() : PanelStyle.down());
+            // 0.1.10.35: the hours left of a resting order (orders of older versions end with the market day)
+            String left = o.secondsLeft() >= 0 ? " \u00b7 " + timeShort(o.secondsLeft()) : "";
+            textNum(f -> side + " x" + o.remaining() + " @ " + f.apply(o.price()) + left, 30, y + 4, half - 60 - 30, o.buy() ? PanelStyle.up() : PanelStyle.down());
             final long id = o.id();
             button(6 + half - 60, y + 1, 54, 14, tr("cancel"), () -> c.act(ExchangePackets.CANCEL, "", id, 0, 0, 0, false, ""));
             y += 18;
@@ -857,7 +1192,7 @@ public final class FuturePanel {
         text(tr("ledger"), 10, top + 4, half - 8, PanelStyle.ACCENT);
         long max = 1, minted = 0, burned = 0;
         for (var l : v.ledger()) { max = Math.max(max, Math.max(l.minted(), l.burned())); minted += l.minted(); burned += l.burned(); }
-        int gx = 12, gy = top + 18, gw = half - 12, gh = bottom - top - 50;
+        int gx = 12, gy = top + 18, gw = half - 12, gh = bottom - top - 62;
         int count = Math.max(1, v.ledger().size());
         double step = gw / (double) count;
         for (int i = 0; i < v.ledger().size(); i++) {
@@ -869,6 +1204,10 @@ public final class FuturePanel {
             c.hover(bx, gy, 2 * bw + 2, gh, tr("ledger_day", l.day() + 1, n(l.minted()), n(l.burned())));
         }
         // 0.1.10.33: the total is cut to the panel (its tooltip has all of it)
+        // 0.1.10.35 (item 4): the treasury reserve (fees in; bounty coins paid from it first)
+        ExchangeView.ReserveLine rs = v.reserve();
+        int rw = text(tr("reserve_line", n(rs.reserve()), n(rs.cap())), 10, bottom - 38, half - 8, PanelStyle.TEXT);
+        c.hover(10, bottom - 39, Math.max(1, rw), 10, tr("reserve_help", n(rs.weekIn()), n(rs.weekOut()), n(rs.weekNew())));
         text(tr("ledger_total", n(minted), n(burned), n(minted - burned)), 10, bottom - 26, half - 8, PanelStyle.TEXT);
         text(tr("ledger_help"), 10, bottom - 14, half - 8, PanelStyle.DIM);
         int x = 12 + half;

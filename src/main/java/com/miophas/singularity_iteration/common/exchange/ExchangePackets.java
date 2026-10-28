@@ -44,13 +44,30 @@ public final class ExchangePackets {
     public static final int COIN_IN = 20, COIN_OUT = 21, BANK_MODE = 22, SETTLE_COINS = 23;
     /** 0.1.10.34: BOUNTY_CLAIM / BOUNTY_ABANDON (a = bounty), BOUNTY_REFRESH (the unclaimed NORMAL bounties). */
     public static final int BOUNTY_CLAIM = 24, BOUNTY_ABANDON = 25, BOUNTY_REFRESH = 26;
+    /**
+     * 0.1.10.35 (items 5-8): SHOP_POST (c = kind 0 exchange / 1 sell / 2 buy, id = goods, d = goods per unit, text = cost item,
+     * b = cost items per unit, a = price and units to stock: {@link ShopRules#pack}), SHOP_RESTOCK
+     * (a = offer, d = units), SHOP_WITHDRAW (a = offer), SHOP_PAUSE (a = offer, flag = paused), SHOP_TRADE (id = owner UUID,
+     * a = offer, d = units), SHOP_COLLECT (the proceeds box), COMMISSION_NOTIFY (flag = on), SETTLE_SHOP (as SHOP_TRADE with the
+     * items of the settlement container).
+     */
+    public static final int SHOP_POST = 27, SHOP_RESTOCK = 28, SHOP_WITHDRAW = 29, SHOP_PAUSE = 30, SHOP_TRADE = 31, SHOP_COLLECT = 32,
+        COMMISSION_NOTIFY = 33, SETTLE_SHOP = 34;
 
-    public record Request(String selected) implements CustomPacketPayload {
+    /**
+     * The view request: the selected market; 0.1.10.35: the panel's shop query ("" none, "*" the list, "*item" the list of
+     * shops that trade the item, an owner's UUID: that shop and the list).
+     */
+    public record Request(String selected, String shop) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_request"));
         public static final StreamCodec<FriendlyByteBuf, Request> CODEC = StreamCodec.of(
-            (b, p) -> b.writeUtf(p.selected, 128), b -> new Request(b.readUtf(128)));
+            (b, p) -> { b.writeUtf(p.selected, 128); b.writeUtf(p.shop, 160); }, b -> new Request(b.readUtf(128), b.readUtf(160)));
+        public Request(String selected) { this(selected, ""); }
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
+
+    /** 0.1.10.35: the last shop query of each player (the views after an action use it too). */
+    static final java.util.Map<java.util.UUID, String> SHOP_QUERY = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * One action. Fields by kind: PLACE (id = market, flag = buy, c = 1 to rest, a = limit, d = quantity); CANCEL (a = order);
@@ -94,6 +111,7 @@ public final class ExchangePackets {
             // 0.1.10.29: the views have their own bucket, so refreshes never use up the actions'
             if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE_VIEW)) return;
             Bounties.seen(player);   // 0.1.10.34: an active player
+            SHOP_QUERY.put(player.getUUID(), packet.shop == null ? "" : packet.shop);
             send(player, packet.selected, machine);
         });
     }
@@ -123,7 +141,7 @@ public final class ExchangePackets {
                         case 1 -> ExchangeData.RewardKind.ITEM;
                         case 2 -> ExchangeData.RewardKind.UU;
                         default -> ExchangeData.RewardKind.COIN;
-                    }, p.text, p.a, (int) Math.max(1, Math.min(ExchangeService.COMMISSION_MAX_DAYS, p.b)));
+                    }, p.text, p.a, CommissionHours.clamp(p.b, EconomySettings.commissionMaxHours()));   // 0.1.10.35: b = hours
                 case DELIVER -> ExchangeService.deliver(player, p.a, p.d);
                 case WITHDRAW -> ExchangeService.withdraw(player, p.a);
                 case UU_IN -> ExchangeService.depositUu(player);
@@ -139,7 +157,16 @@ public final class ExchangePackets {
                 case BOUNTY_CLAIM -> Bounties.claim(player, p.a);
                 case BOUNTY_ABANDON -> Bounties.abandon(player, p.a);
                 case BOUNTY_REFRESH -> Bounties.refresh(player);
-                case SETTLE_SELL, SETTLE_BOUNTY, SETTLE_COMMISSION, SETTLE_UU, SETTLE_BUY, SETTLE_COINS -> settle(player, p);
+                // 0.1.10.35
+                case SHOP_POST -> Shops.post(player, ShopRules.Kind.values()[Math.max(0, Math.min(2, p.c))], p.id, p.d, p.text, (int) Math.min(ShopRules.MAX_COUNT, Math.max(0, p.b)),
+                    ShopRules.packedPrice(p.a), ShopRules.packedUnits(p.a));
+                case SHOP_RESTOCK -> Shops.restock(player, p.a, Math.max(0, p.d));
+                case SHOP_WITHDRAW -> Shops.withdraw(player, p.a);
+                case SHOP_PAUSE -> Shops.pause(player, p.a, p.flag);
+                case SHOP_TRADE -> Shops.trade(player, p.id, p.a, Math.max(0, p.d));
+                case SHOP_COLLECT -> Shops.collect(player);
+                case COMMISSION_NOTIFY -> ExchangeService.commissionNotice(player, p.flag);
+                case SETTLE_SELL, SETTLE_BOUNTY, SETTLE_COMMISSION, SETTLE_UU, SETTLE_BUY, SETTLE_COINS, SETTLE_SHOP -> settle(player, p);
                 default -> new ExchangeService.Result(false, "message.mio_icif.exchange.unknown_action");
             });
             send(player, p.selected, machine);
@@ -159,6 +186,11 @@ public final class ExchangePackets {
             case SETTLE_BOUNTY -> Settlement.deliverBounty(player, st, p.a);
             case SETTLE_COMMISSION -> Settlement.deliverCommission(player, st, p.a, Math.max(1, p.d));
             case SETTLE_UU -> Settlement.depositUu(player, st);
+            case SETTLE_SHOP -> {   // 0.1.10.35
+                ExchangeService.Result t = Shops.trade(player, p.id, p.a, Math.max(1, p.d), st.source());
+                st.commit();
+                yield t;
+            }
             default -> Settlement.buyInto(player, st, p.id, p.a, p.d);
         };
         menu.broadcastChanges();
@@ -166,6 +198,7 @@ public final class ExchangePackets {
     }
 
     static void send(ServerPlayer player, String selected, mio_icif_future_elc machine) {
-        PacketDistributor.sendToPlayer(player, new View(ExchangeViews.build(player, selected, machine.hasEnoughEnergy())));
+        PacketDistributor.sendToPlayer(player, new View(ExchangeViews.build(player, selected, machine.hasEnoughEnergy(),
+            SHOP_QUERY.getOrDefault(player.getUUID(), ""))));
     }
 }

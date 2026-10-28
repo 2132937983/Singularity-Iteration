@@ -91,7 +91,8 @@ public final class Bounties {
                     FutureCommodity c = FutureCommodityManager.getCommodityById(id);
                     if (c == null) return 0.0;
                     int price = fm.getPrice(id, c.getBasePrice());
-                    return MarketQuote.midValue(ask(id), MarketQuote.bidUnit(price, spread, c.bidRatio()));
+                    // 0.1.10.35: the bid under the made_from cap
+                    return MarketQuote.midValue(ask(id), ExchangeService.bidUnit(server, c, price));
                 });
             }
         };
@@ -186,7 +187,15 @@ public final class Bounties {
 
     @SubscribeEvent
     public static void onLogin(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer p && FutureMarketData.get(p.server.overworld()).isInitialized()) seen(p);
+        if (event.getEntity() instanceof ServerPlayer p && FutureMarketData.get(p.server.overworld()).isInitialized()) {
+            seen(p);
+            Shops.onLogin(p);   // 0.1.10.35: the owner is back; a shop closed while away is told
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
+        ExchangePackets.SHOP_QUERY.remove(event.getEntity().getUUID());   // 0.1.10.35: the shop page the player looked at
     }
 
     /** Ticks between two checks of the refill (10 seconds). */
@@ -195,7 +204,10 @@ public final class Bounties {
     @SubscribeEvent
     public static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
         MinecraftServer server = event.getServer();
-        if (server.getTickCount() % REFILL_CHECK_TICKS == 0) refill(server);
+        if (server.getTickCount() % REFILL_CHECK_TICKS == 0) {
+            refill(server);
+            ExchangeService.tick(server);   // 0.1.10.35: commissions and orders in hours, the shops
+        }
     }
 
     /**
@@ -328,7 +340,8 @@ public final class Bounties {
 
     static void ledger(ExchangeData d, Payout x, long day) {
         ExchangeData.LedgerDay l = d.ledger(day);
-        if (x.kind() == Kind.COINS) { l.minted += x.amount(); l.bountyCoins += x.amount(); }
+        // 0.1.10.35: the reserve pays first; only the rest is new coins
+        if (x.kind() == Kind.COINS) { l.minted += x.amount() - ExchangeService.fromReserve(d, day, x.amount()); l.bountyCoins += x.amount(); }
         else if (x.kind() == Kind.UU) l.bountyUu += x.amount();
         else if (x.source() == Source.ISSUE) l.bountyItems += x.amount();
     }
@@ -413,7 +426,7 @@ public final class Bounties {
         InventoryPlan plan = new InventoryPlan(player.getInventory());
         if (!ExchangeService.takeCoins(plan, d, uuid, cost)) return Result.fail("not_enough_coins");
         plan.commit();
-        d.ledger(day).burned += cost;
+        ExchangeService.toReserve(server, d, day, cost);   // 0.1.10.35: into the treasury reserve (was destroyed)
         List<Bounty> posted = new ArrayList<>();
         int replaced = d.board.refresh(uuid, day, now, r, ExchangeTables.tables(), d.treasury, p, lacking, hooks, posted);
         d.setDirty();

@@ -230,9 +230,9 @@ public final class MarketToolsCommand {
         long minted = 0, burned = 0;
         for (ExchangeData.LedgerDay l : d.ledger) {
             if (day - l.day >= days) continue;
-            minted += l.minted;
-            burned += l.burned;
-            final long dd = l.day + 1, mm = l.minted, bb = l.burned;
+            minted += l.created();   // 0.1.10.35: into / out of circulation
+            burned += l.destroyed();
+            final long dd = l.day + 1, mm = l.created(), bb = l.destroyed();
             source.sendSuccess(() -> Component.translatable(K + "ledger_day", dd, mm, bb, mm - bb), false);
         }
         double pressure = 0;

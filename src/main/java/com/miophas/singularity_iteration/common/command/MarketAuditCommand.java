@@ -49,8 +49,8 @@ public final class MarketAuditCommand {
         long minted = 0, burned = 0;
         for (ExchangeData.LedgerDay l : d.ledger) {
             if (day - l.day > 6) continue;
-            minted += l.minted;
-            burned += l.burned;
+            minted += l.created();   // 0.1.10.35: into / out of circulation
+            burned += l.destroyed();
         }
         final long m = minted, b = burned;
         source.sendSuccess(() -> Component.translatable(K + "ledger", m, b, m - b), false);

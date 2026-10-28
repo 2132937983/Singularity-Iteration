@@ -6,7 +6,9 @@ import com.miophas.singularity_iteration.common.client.screen.panel.PanelCharts;
 import com.miophas.singularity_iteration.common.exchange.ExchangeClientState;
 import com.miophas.singularity_iteration.common.exchange.ExchangePackets;
 import com.miophas.singularity_iteration.common.exchange.ExchangeService;
+import com.miophas.singularity_iteration.common.exchange.CommissionHours;
 import com.miophas.singularity_iteration.common.exchange.MinPrice;
+import com.miophas.singularity_iteration.common.exchange.ShopRules;
 import com.miophas.singularity_iteration.common.exchange.UuBoard;
 import com.miophas.singularity_iteration.common.menu.producer.FutureElcMenu;
 import java.util.ArrayList;
@@ -92,10 +94,16 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> impl
         box(Box.QTY, 1, ExchangeService.MAX_QUANTITY, 1);
         box(Box.POST_QTY, 1, ExchangeService.MAX_QUANTITY, 64);
         box(Box.POST_AMOUNT, 1, MAX_COINS, 100);
-        box(Box.POST_DAYS, 1, ExchangeService.COMMISSION_MAX_DAYS, 3);
+        box(Box.POST_DAYS, 1, CommissionHours.MAX_HOURS, 24);   // 0.1.10.35: hours (the server clamps to its maximum)
         box(Box.FUT_QTY, 1, ExchangeService.FUTURES_MAX_QUANTITY, 16);
         box(Box.MIN, 0, panel.minCoins ? MAX_COINS : MinPrice.MAX_PERCENT, 0);
         box(Box.COIN, 0, MAX_COINS, 0);
+        // 0.1.10.35: the shop form and the trades of an open shop
+        box(Box.SHOP_GOODS, 1, ShopRules.MAX_COUNT, 1);
+        box(Box.SHOP_COST, 1, ShopRules.MAX_COUNT, 1);
+        box(Box.SHOP_PRICE, 1, ShopRules.MAX_PRICE, 10);
+        box(Box.SHOP_UNITS, 1, ShopRules.MAX_UNITS, 16);
+        box(Box.SHOP_N, 1, ShopRules.MAX_COUNT, 8);
         request();
     }
 
@@ -116,7 +124,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> impl
 
     @Override
     public void request() {
-        PacketDistributor.sendToServer(new ExchangePackets.Request(panel.selected));
+        PacketDistributor.sendToServer(new ExchangePackets.Request(panel.selected, panel.shopQuery()));   // 0.1.10.35: + the shops
         requestTimer = 0;
         requestPending = false;
     }

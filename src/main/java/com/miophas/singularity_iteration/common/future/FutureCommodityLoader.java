@@ -27,6 +27,8 @@ import java.util.TreeMap;
  *   "commodities": [
  *     { "item": "minecraft:diamond", "base_price": 800, "volatility": 0.22 },
  *     (0.1.10.34: "bid_price": the market's bid at the base price, at most base_price; the bid follows the price)
+ *     (0.1.10.35: "sell_only": true - the market buys it but never sells it; "made_from": {"minecraft:iron_ingot": 1} - what
+ *      one item is made from: the market's bid never exceeds those inputs at the market's ask)
  *     { "item": "minecraft:netherite_ingot", "base_price": 4000, "volatility": 0.30,
  *       "period_days": 3,                    // price moves every 3 days (default 1)
  *       "unlock": { "advancement": "minecraft:nether/obtain_ancient_debris" } },
@@ -150,9 +152,23 @@ public final class FutureCommodityLoader extends SimpleJsonResourceReloadListene
             throw new IllegalArgumentException("tag must be an item tag id");
         if (tag.startsWith("#")) tag = tag.substring(1);
         boolean components = GsonHelper.getAsBoolean(entry, "accept_components", false);
+        // 0.1.10.35: sell_only and made_from
+        boolean sellOnly = GsonHelper.getAsBoolean(entry, "sell_only", false);
+        java.util.Map<String, Double> madeFrom = new java.util.LinkedHashMap<>();
+        if (entry.has("made_from")) {
+            JsonObject m = GsonHelper.getAsJsonObject(entry, "made_from");
+            for (String input : m.keySet()) {
+                ResourceLocation in = ResourceLocation.tryParse(input);
+                if (in == null) throw new IllegalArgumentException("made_from: " + input + " is no item id");
+                double count = GsonHelper.getAsDouble(m, input);
+                if (!(count > 0 && count <= 4096)) throw new IllegalArgumentException("made_from: counts must be 0..4096 (more than 0)");
+                if (in.toString().equals(key)) throw new IllegalArgumentException("made_from: an item is not made from itself");
+                madeFrom.put(in.toString(), count);
+            }
+        }
         byItem.remove(key);   // a replacement moves to the end, after the entries it overrides
         byItem.put(key, new FutureCommodity(key, basePrice, volatility, category, period, unlock, market)
-            .withSelling(new FutureCommodity.Selling(tag, components)).withBidPrice(bidPrice));
+            .withSelling(new FutureCommodity.Selling(tag, components)).withBidPrice(bidPrice).withLinks(sellOnly, madeFrom));
     }
 
     /** Entries in sync-packet form. */

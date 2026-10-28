@@ -144,7 +144,8 @@ public final class Round1134GameTests {
         Object iron = call(manager, "getCommodityById", "mio_icif:resource/item_adviron_ingot");
         h.assertTrue(carbon != null && i(call(carbon, "getBasePrice")) == 300 && i(call(carbon, "getBidPrice")) == 60
             && Math.abs((double) call(carbon, "bidRatio") - 0.2) < 1e-9, "carbon plate 300 / 60");
-        h.assertTrue(iron != null && i(call(iron, "getBasePrice")) == 400 && i(call(iron, "getBidPrice")) == 220, "refined iron 400 / 220");
+        // 0.1.10.35: 205 (the processing loop of 0.1.10.34; Round1135GameTests checks the cap)
+        h.assertTrue(iron != null && i(call(iron, "getBasePrice")) == 400 && i(call(iron, "getBidPrice")) == 205, "refined iron 400 / 205");
         Object diamond = call(manager, "getCommodityById", "minecraft:diamond");
         h.assertTrue(diamond == null || (double) call(diamond, "bidRatio") == 1.0, "no bid_price: ratio 1");
         Class<?> q = common("future.MarketQuote");

@@ -190,6 +190,44 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
     public static final ModConfigSpec.IntValue BOUNTY_ACCEPT_MAX = FUTURE_BUILDER
             .comment("NORMAL and ADVANCED bounties one player may claim at the same time (0.1.10.34). Only the claimant and their team deliver to a claimed bounty.")
             .defineInRange("bountyAcceptMax", 1, 1, 16);
+    // 0.1.10.35: commissions and orders in hours of the server running, the treasury reserve, player shops
+    public static final ModConfigSpec.IntValue COMMISSION_DEFAULT_HOURS = FUTURE_BUILDER
+            .comment("Hours a new commission lasts unless the poster picks others (0.1.10.35). The clock is the world's game time: it",
+                     "runs while the server runs and does not move with /time set.")
+            .defineInRange("commissionDefaultHours", 24, 1, 168);
+    public static final ModConfigSpec.IntValue COMMISSION_MAX_HOURS = FUTURE_BUILDER
+            .comment("Most hours a commission may last (0.1.10.35)")
+            .defineInRange("commissionMaxHours", 168, 1, 168);
+    public static final ModConfigSpec.IntValue ORDER_HOURS = FUTURE_BUILDER
+            .comment("Hours a resting order of the order book lasts (0.1.10.35; before: 7 market days)")
+            .defineInRange("orderHours", 72, 1, 168);
+    public static final ModConfigSpec.IntValue RESERVE_WEEKS = FUTURE_BUILDER
+            .comment("Treasury reserve (0.1.10.35): fees go into a coin reserve instead of being destroyed, and bounty coin rewards come",
+                     "from it first. Its cap is this many market weeks of NORMAL bounty rewards; above the cap fees are destroyed.",
+                     "0 = no reserve (every fee destroyed, as before).")
+            .defineInRange("reserveWeeks", 4, 0, 52);
+    public static final ModConfigSpec.BooleanValue SHOPS_ENABLED = FUTURE_BUILDER
+            .comment("Player shops on the commission board (0.1.10.35)")
+            .define("shopsEnabled", true);
+    public static final ModConfigSpec.IntValue SHOP_MAX_OFFERS = FUTURE_BUILDER
+            .comment("Offers of one player's shop (0.1.10.35)")
+            .defineInRange("shopMaxOffers", 12, 1, 54);
+    public static final ModConfigSpec.IntValue SHOP_STACKS = FUTURE_BUILDER
+            .comment("Storage of one shop in stacks: the goods in stock and the items customers gave (0.1.10.35)")
+            .defineInRange("shopStacks", 54, 9, 270);
+    public static final ModConfigSpec.IntValue SHOP_OFFER_FEE = FUTURE_BUILDER
+            .comment("Coins a new shop offer costs; they go to the treasury reserve (0.1.10.35)")
+            .defineInRange("shopOfferFee", 50, 0, 1_000_000);
+    public static final ModConfigSpec.IntValue SHOP_UPKEEP = FUTURE_BUILDER
+            .comment("Coins each shop offer costs a market week, from the owner's coin account; an offer whose upkeep is not paid pauses (0.1.10.35)")
+            .defineInRange("shopUpkeepPerWeek", 10, 0, 1_000_000);
+    public static final ModConfigSpec.IntValue SHOP_IDLE_DAYS = FUTURE_BUILDER
+            .comment("A shop whose owner was not online on this many days on which the server ran is idle: listed last, still trades (0.1.10.35)")
+            .defineInRange("shopIdleDays", 7, 1, 365);
+    public static final ModConfigSpec.IntValue SHOP_CLOSE_DAYS = FUTURE_BUILDER
+            .comment("A shop whose owner was not online on this many days on which the server ran closes; its goods, coins and proceeds",
+                     "go to the owner's mailbox (0.1.10.35)")
+            .defineInRange("shopCloseDays", 30, 1, 3650);
 
     // 0.1.10.28 (X4): the coin <-> UU board, the scrap sink, the stabiliser
     public static final ModConfigSpec.BooleanValue EXCHANGE_UU_BOARD = FUTURE_BUILDER

@@ -770,6 +770,7 @@ result. The datapack side (bounty tables, reward pools, listings, `economy.json`
   lines that cannot be paid are dropped; a NORMAL or ADVANCED bounty without any line pays coins (value x multiplier), a
   SPECIAL one is not posted. Delivered commodities go to the treasury, other items to the vault.
 * Since 0.1.10.34 a need of value 0 is valued halfway between the market's ask and bid (before: the ask). A bounty of the API keeps the days of its `BountySpec` (or the tier's) without a rush bonus; its rarity follows the tier. Players may claim NORMAL and ADVANCED bounties; then only the claimant and their team deliver. The API types are unchanged.
+* Since 0.1.10.35 the fees of the exchange go into a treasury reserve and the coins of bounties are paid from it first. `ledger(server, days)` still reports coins into and out of circulation: `minted` = new coins + payments of the reserve, `burned` = destroyed coins + fees kept in the reserve (the same meaning as before the reserve). `quoteSell` uses the new bids: a commodity with `made_from` is bought for at most what its materials cost to buy that day; `sell_only` commodities (raw iron, copper, gold) have no supply in `quoteBuy`. The API types are unchanged.
 * Events on `NeoForge.EVENT_BUS` (server thread):
   * `BountyPostingEvent` (cancelable): before a bounty is posted. The needs, rewards, days and split may be changed; the
     bounty is checked again afterwards.

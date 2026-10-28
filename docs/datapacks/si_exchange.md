@@ -125,6 +125,8 @@ data/<命名空间>/si_exchange/
 - 优先顺序：**服务器配置中修改过的值**（与默认值不同）＞ 数据包 ＞ 模组默认值。整合包作者用数据包发布默认值，服务器管理员仍可在配置文件中覆盖。
 - 0.1.10.28 新增的键：`uuBoard`（货币与 UU 物质交易板）、`scrapThreshold`（废料回收的下限，0 = 不回收）、`stabilizerEnabled`、`stabilizerTargetPerPlayerWeek`、`stabilizerTargetPercentPerWeek`、`stabilizerStep`、`stabilizerMinFactor`（自动稳定器，见 `docs/releases/0.1.10.28/UPDATE.md` 第 4 节）。整合包作者可以在数据包中默认开启稳定器。
 - 0.1.10.34 新增的键：`bountyRandomDays`（true，按稀有度抽取天数）、`bountyMinDays`（1）、`bountyMaxDays`（7）、`bountyAcceptMax`（1）。
+- 0.1.10.35 新增的键：`commissionDefaultHours`（24）、`commissionMaxHours`（168，委托的时长上限，1～168 小时服务器时间）、`orderHours`（72，盘口挂单的有效时长）、`reserveWeeks`（4，国库储备上限 = 周数 × 7 × 每日普通发布数 × `bountyNormalValue` × 普通倍率；0 = 不设储备）、`shopsEnabled`（true）、`shopMaxOffers`（12）、`shopStacks`（54，库存与收益合计的组数）、`shopOfferFee`（50）、`shopUpkeepPerWeek`（10，每个报价每个交易周）、`shopIdleDays`（7）与 `shopCloseDays`（30，店主不在线的服务器运行日数：排到最后 / 关闭并退回邮箱）。
+- **国库储备**（0.1.10.35 起）：盘口交易、委托、商店（发布费、维护费、货币交易的手续费）与悬赏刷新的货币进入储备（上限内），超出部分销毁；悬赏的货币奖励先从储备支付，只有不足部分计为新发行。账本另记 `ReserveIn` / `ReserveOut`；稳定器、`/mio_icif market ledger` / `audit` 与 API 的 `ledger` 按进入 / 退出流通计算（发行 + 储备支出，销毁 + 存入储备），与 0.1.10.34 的含义相同。
 - 可用的键：`buyItemsPerDay`、`spread`、`sellDepthPlayer`、`sellDepthServer`、`sellExportPerDay`、`sellAllowancePerDay`、`sellAllowanceDays`、`sellAllowanceInSingleplayer`、`exchangeFee`、`importPerDay`、`importPremium`、`listingRequesters`、`listingFulfilled`、`listingMinPlayMinutes`、`uuDepth`、所有 `bounty*` 键，以及只能在数据包中设置的 `bountyNormalPool`、`bountyAdvancedPool`、`bountySpecialPool`。
 - 未知的键、类型错误与超出范围的值会被报告并忽略。`/mio_icif bounty settings` 显示每个值及其来源（config / datapack / default）。
 

@@ -67,6 +67,29 @@ public class FutureCommodity {
         return this;
     }
 
+    /**
+     * 0.1.10.35: the market buys this commodity but never sells it (datapack {@code sell_only}): no treasury sales, no
+     * imports. Raw ores: a macerator makes two ingots of one, so raw ore bought at the market's price paid twice. Server side.
+     */
+    private boolean sellOnly;
+
+    /**
+     * 0.1.10.35: what one item is made from (datapack {@code made_from}: item id to count per item); the market's bid never
+     * exceeds those inputs at the market's ask ({@code BidLinks}). Empty = no cap. Server side.
+     */
+    private java.util.Map<String, Double> madeFrom = java.util.Map.of();
+
+    public boolean sellOnly() { return sellOnly; }
+
+    public java.util.Map<String, Double> madeFrom() { return madeFrom; }
+
+    /** 0.1.10.35: sets sell_only and made_from (loader only). */
+    public FutureCommodity withLinks(boolean sellOnly, java.util.Map<String, Double> madeFrom) {
+        this.sellOnly = sellOnly;
+        this.madeFrom = madeFrom == null ? java.util.Map.of() : java.util.Map.copyOf(madeFrom);
+        return this;
+    }
+
     /** 0.1.10.26: the sell-box settings of this commodity. */
     public Selling getSelling() { return selling; }
 

@@ -15,8 +15,12 @@ import java.util.List;
  * overlap other foreground elements.
  */
 public interface PanelCanvas {
-    /** The number boxes of the panel (the screen owns the edit widgets). */
-    enum Box { PRICE, QTY, POST_QTY, POST_AMOUNT, POST_DAYS, FUT_QTY, MIN, COIN }
+    /**
+     * The number boxes of the panel (the screen owns the edit widgets). 0.1.10.35: POST_DAYS holds the hours of a commission
+     * (the name stays for the older layout harnesses); the shop boxes: goods and cost items per trade, coins per trade, trades
+     * to stock (and to restock), trades to take (xN).
+     */
+    enum Box { PRICE, QTY, POST_QTY, POST_AMOUNT, POST_DAYS, FUT_QTY, MIN, COIN, SHOP_GOODS, SHOP_COST, SHOP_PRICE, SHOP_UNITS, SHOP_N }
 
     int screenWidth();
 

@@ -90,24 +90,24 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> impl
         this.leftPos = 0;
         this.topPos = 0;
         // 0.1.10.29: the ranges of the actions; a new init (window resized) keeps what was typed
-        box(Box.PRICE, panel.pricePercent ? 0 : 1, panel.pricePercent ? MinPrice.MAX_PERCENT : MAX_COINS, 1);
-        box(Box.QTY, 1, ExchangeService.MAX_QUANTITY, 1);
-        box(Box.POST_QTY, 1, ExchangeService.MAX_QUANTITY, 64);
-        box(Box.POST_AMOUNT, 1, MAX_COINS, 100);
-        box(Box.POST_DAYS, 1, CommissionHours.MAX_HOURS, 24);   // 0.1.10.35: hours (the server clamps to its maximum)
-        box(Box.FUT_QTY, 1, ExchangeService.FUTURES_MAX_QUANTITY, 16);
-        box(Box.MIN, 0, panel.minCoins ? MAX_COINS : MinPrice.MAX_PERCENT, 0);
-        box(Box.COIN, 0, MAX_COINS, 0);
+        createNumberBox(Box.PRICE, panel.pricePercent ? 0 : 1, panel.pricePercent ? MinPrice.MAX_PERCENT : MAX_COINS, 1);
+        createNumberBox(Box.QTY, 1, ExchangeService.MAX_QUANTITY, 1);
+        createNumberBox(Box.POST_QTY, 1, ExchangeService.MAX_QUANTITY, 64);
+        createNumberBox(Box.POST_AMOUNT, 1, MAX_COINS, 100);
+        createNumberBox(Box.POST_DAYS, 1, CommissionHours.MAX_HOURS, 24);   // 0.1.10.35: hours (the server clamps to its maximum)
+        createNumberBox(Box.FUT_QTY, 1, ExchangeService.FUTURES_MAX_QUANTITY, 16);
+        createNumberBox(Box.MIN, 0, panel.minCoins ? MAX_COINS : MinPrice.MAX_PERCENT, 0);
+        createNumberBox(Box.COIN, 0, MAX_COINS, 0);
         // 0.1.10.35: the shop form and the trades of an open shop
-        box(Box.SHOP_GOODS, 1, ShopRules.MAX_COUNT, 1);
-        box(Box.SHOP_COST, 1, ShopRules.MAX_COUNT, 1);
-        box(Box.SHOP_PRICE, 1, ShopRules.MAX_PRICE, 10);
-        box(Box.SHOP_UNITS, 1, ShopRules.MAX_UNITS, 16);
-        box(Box.SHOP_N, 1, ShopRules.MAX_COUNT, 8);
+        createNumberBox(Box.SHOP_GOODS, 1, ShopRules.MAX_COUNT, 1);
+        createNumberBox(Box.SHOP_COST, 1, ShopRules.MAX_COUNT, 1);
+        createNumberBox(Box.SHOP_PRICE, 1, ShopRules.MAX_PRICE, 10);
+        createNumberBox(Box.SHOP_UNITS, 1, ShopRules.MAX_UNITS, 16);
+        createNumberBox(Box.SHOP_N, 1, ShopRules.MAX_COUNT, 8);
         request();
     }
 
-    private void box(Box which, long min, long max, long value) {
+    private void createNumberBox(Box which, long min, long max, long value) {
         NumberBox old = boxes.get(which);
         NumberBox b = new NumberBox(this.font, min, max, old == null ? value : old.value());
         addRenderableWidget(b);

@@ -50,6 +50,15 @@ public class FutureMarketData extends SavedData {
     private boolean initialized = false;
 
     /**
+     * 0.1.10.33: the world's day ({@code dayTime / 24000}) the market saw last; the market day follows its changes and never
+     * goes back ({@link MarketDay}). {@link MarketDay#UNSEEN} in a save of an older version.
+     */
+    private long rawDay = MarketDay.UNSEEN;
+
+    /** 0.1.10.33: the repair of a day that went back under an older version ran since this data was loaded (not saved). */
+    private boolean dayChecked;
+
+    /**
      * 0.1.10.20: the market day of the two daily counters below. When the market day moves on, the
      * counters start again from zero (on the first read or write of the new day).
      */
@@ -94,6 +103,8 @@ public class FutureMarketData extends SavedData {
 
         data.currentDay = tag.getLong("CurrentDay");
         data.initialized = tag.getBoolean("Initialized");
+        // 0.1.10.33: missing in older saves (the first check takes the market day as the world day seen last)
+        data.rawDay = tag.contains("RawDay") ? tag.getLong("RawDay") : MarketDay.UNSEEN;
 
         // 0.1.10.20: the daily counters (missing in older saves: they start at zero)
         if (tag.contains("CountersDay")) data.countersDay = tag.getLong("CountersDay");
@@ -155,6 +166,7 @@ public class FutureMarketData extends SavedData {
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
         tag.putLong("CurrentDay", currentDay);
         tag.putBoolean("Initialized", initialized);
+        if (rawDay != MarketDay.UNSEEN) tag.putLong("RawDay", rawDay);
 
         tag.putLong("CountersDay", countersDay);
         CompoundTag volumeTag = new CompoundTag();
@@ -366,6 +378,53 @@ public class FutureMarketData extends SavedData {
      */
     public void setCurrentDay(long day) {
         this.currentDay = day;
+        setDirty();
+    }
+
+    /** 0.1.10.33: the world's day the market saw last ({@link MarketDay#UNSEEN}: none yet). */
+    public long getRawDay() {
+        return rawDay;
+    }
+
+    public void setRawDay(long day) {
+        if (rawDay == day) return;
+        this.rawDay = day;
+        setDirty();
+    }
+
+    /** 0.1.10.33: true once per load: the caller runs the repair of a day that went back under an older version. */
+    public boolean takeDayCheck() {
+        if (dayChecked) return false;
+        dayChecked = true;
+        return true;
+    }
+
+    /** 0.1.10.33: the latest start day of the kept price events and the day of the daily counters ({@link MarketDay#UNSEEN}: none). */
+    public long latestStamp() {
+        long latest = countersDay;
+        for (List<FuturePriceEvent> events : activeEvents.values())
+            for (FuturePriceEvent e : events) latest = Math.max(latest, e.getStartDay());
+        return latest;
+    }
+
+    /**
+     * 0.1.10.33: the repair moved the market day from {@code oldDay} to {@code newDay}: events that started after the world's
+     * day went back (at or before {@code oldDay}) keep their age, and today's counters stay today's.
+     */
+    public void shiftForRepair(long oldDay, long newDay) {
+        if (newDay <= oldDay) return;
+        if (countersDay == oldDay) countersDay = newDay;
+        for (Map.Entry<String, List<FuturePriceEvent>> entry : activeEvents.entrySet()) {
+            List<FuturePriceEvent> moved = new ArrayList<>();
+            for (FuturePriceEvent e : entry.getValue()) {
+                long start = MarketDay.shift(e.getStartDay(), e.getStartDay(), oldDay, newDay);
+                if (start == e.getStartDay()) { moved.add(e); continue; }
+                CompoundTag t = e.serialize();
+                t.putLong("StartDay", start);
+                try { moved.add(FuturePriceEvent.deserialize(t)); } catch (Exception ex) { moved.add(e); }
+            }
+            entry.setValue(moved);
+        }
         setDirty();
     }
 

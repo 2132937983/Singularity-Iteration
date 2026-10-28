@@ -81,6 +81,12 @@ public final class BountyBoard {
 
         /** A datapack commodity (delivered items go to the treasury; others go to the vault). */
         boolean isCommodity(String item);
+
+        /** 0.1.10.33: the stack size of the item (generated requests skip items that do not stack). */
+        default int maxStack(String item) { return 64; }
+
+        /** 0.1.10.33: coins of one mB of UU-matter (to value UU rewards; 0 = unknown). */
+        default double uuPerMb() { return 0; }
     }
 
     /** What the game decides for the board while a day is posted. */
@@ -175,6 +181,8 @@ public final class BountyBoard {
     public record Delivery(List<Payout> payouts, boolean completed) { }
 
     public static final int MAX_OPEN = 64, MAX_NEEDS = BountyTables.MAX_REQUIREMENTS, MAX_LINES = 8;
+    /** The longest a bounty stays open (days). */
+    public static final int MAX_DAYS = 60;
 
     // ------------------------------------------------------------------ state
 
@@ -232,6 +240,37 @@ public final class BountyBoard {
         return false;
     }
 
+    /**
+     * 0.1.10.33: the most an open NORMAL or ADVANCED bounty pays per item of {@code item} it still needs (coins; reward items
+     * at the market's ask, UU-matter at {@link Prices#uuPerMb}; 0 = none). While it is open the market sells the item at this
+     * price or more, so buying from the market to deliver earns nothing; before, the market did not sell it at all (an emerald
+     * bounty stopped the emerald market).
+     */
+    public long rewardPerItem(String item, Prices prices) {
+        double best = 0;
+        for (Bounty b : bounties) {
+            if (b.tier == Tier.SPECIAL) continue;
+            for (Need n : b.needs) {
+                if (!n.item.equals(item) || n.left() <= 0) continue;
+                long all = b.all();
+                if (all <= 0) continue;
+                double value = 0;
+                for (Line l : b.lines) value += lineValue(l, prices);
+                best = Math.max(best, value * Math.max(1, n.unit) / all);
+            }
+        }
+        return best >= Long.MAX_VALUE / 4.0 ? Long.MAX_VALUE / 4 : (long) Math.ceil(best);
+    }
+
+    /** 0.1.10.33: the coins a reward line is worth (items at the market's ask, 0 when it has none). */
+    static double lineValue(Line l, Prices prices) {
+        return switch (l.kind) {
+            case COINS -> l.amount;
+            case ITEM -> l.amount * Math.max(0, prices.ask(l.item));
+            case UU -> l.amount * Math.max(0, prices.uuPerMb());
+        };
+    }
+
     /** The table may be posted on {@code day}: its minimum day, cooldown and open count (the game checks the advancement). */
     public boolean eligible(Table t, long day) {
         if (t.weight() <= 0 || day < t.minDay() || open(t.id()) >= t.maxOpen()) return false;
@@ -271,7 +310,8 @@ public final class BountyBoard {
         for (Requirement q : t.requirements()) {
             Need n = new Need();
             n.item = q.item();
-            n.count = q.count();
+            // 0.1.10.33: at most eight inventory slots of the item (the loader warns about such tables)
+            n.count = BountyMath.tableCount(q.count(), prices.maxStack(q.item()));
             double unit = q.value() > 0 ? q.value() : prices.ask(q.item());
             n.unit = Math.max(1, Math.round(unit));
             d.needs.add(n);
@@ -402,7 +442,7 @@ public final class BountyBoard {
         b.tier = d.tier;
         b.table = d.table == null ? "" : d.table;
         b.day = day;
-        b.expiry = day + Math.min(60, d.days);
+        b.expiry = day + Math.min(MAX_DAYS, d.days);
         b.split = d.split == null ? Split.FIRST : d.split;
         b.share = d.share > 0 && d.share <= 1 ? d.share : 1.0;
         for (Need n : d.needs) {
@@ -437,7 +477,8 @@ public final class BountyBoard {
         List<Payout> payouts = new ArrayList<>();
         for (Iterator<Bounty> it = bounties.iterator(); it.hasNext(); ) {
             Bounty b = it.next();
-            if (b.expiry > day) continue;
+            // 0.1.10.33: a bounty with more than 60 days left or posted after today is damaged (a market day that went back)
+            if (b.expiry > day && b.expiry - day <= MAX_DAYS && b.day <= day) continue;
             it.remove();
             payouts.addAll(settleExpired(b, treasury));
             if (expired != null) expired.add(b);
@@ -446,7 +487,8 @@ public final class BountyBoard {
         // NORMAL: keep the day's target open
         int target = BountyMath.normalTarget(day, r.normalMin(), r.normalMax(), r.seed());
         List<String> pool = new ArrayList<>();
-        for (String item : lacking) if (!blocks(item) && prices.ask(item) > 0) pool.add(item);
+        // 0.1.10.33: never an item that does not stack
+        for (String item : lacking) if (!blocks(item) && prices.ask(item) > 0 && prices.maxStack(item) > 1) pool.add(item);
         for (int attempt = 0; open(Tier.NORMAL) < target && attempt < target * 4 && bounties.size() < MAX_OPEN; attempt++) {
             List<Table> normal = new ArrayList<>();
             for (Table t : tables.tier(Tier.NORMAL)) if (eligible(t, day) && hooks.eligible(t)) normal.add(t);
@@ -464,7 +506,7 @@ public final class BountyBoard {
                 String item = pool.remove(k);
                 double ask = prices.ask(item);
                 double v = r.normalValue() * (0.5 + BountyMath.roll(r.seed() ^ (salt * 131), day));
-                int q = BountyMath.quantity(v, ask, r.normalMinQuantity(), r.normalMaxQuantity());
+                int q = BountyMath.generatedQuantity(v, ask, r.normalMinQuantity(), r.normalMaxQuantity(), prices.maxStack(item));
                 if (q < 0) continue;
                 d = draftGenerated(item, q, ask, r, tables, treasury, prices, day, salt);
             } else {

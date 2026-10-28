@@ -160,7 +160,8 @@ public final class ExchangeViews {
         for (ExchangeView.BoxLine l : settle.lines()) addCurve(curves, server, d, player.getUUID(), l.id(), day);
         return new ExchangeView(day, coins, box.uu, box.coins, box.items.size(), energy, rows, detail, orders, mail, commissions, positions,
             ledger, stocks, List.copyOf(candidates), allowance == Long.MAX_VALUE ? -1 : allowance, boxLines, auctions,
-            Bounties.lines(player, d, day), budget, settle, stabilizerLine(d, day), d.bankMode.contains(player.getUUID()), curves);
+            Bounties.lines(player, d, day), budget, settle, stabilizerLine(d, day), d.bankMode.contains(player.getUUID()), curves,
+            m != null && m.system() ? m.bountyFloor() : 0);
     }
 
     /** 0.1.10.29: adds the curve of {@code id} for {@code player} (once; datapack commodities only). */
@@ -252,7 +253,10 @@ public final class ExchangeViews {
             if (player.getUUID().equals(c.requester)) continue;
             net.minecraft.world.item.Item item = ExchangeService.item(c.item);
             if (item == null) continue;
-            long n = Math.min(c.quantity - c.delivered, st.plain(item));
+            // 0.1.10.33: whole reward lots (CommissionLots)
+            long left = c.quantity - c.delivered;
+            long n = CommissionLots.take(Math.min(left, st.plain(item)), left, CommissionLots.lot(c.quantity, c.rewardTotal,
+                c.kind == ExchangeData.RewardKind.COIN));
             if (n > 0) targets.add(new ExchangeView.SettleTarget(1, c.id, c.item, n));
         }
         return new ExchangeView.SettleView(st.kind(), lines, Settlement.otherItems(player, st), st.uu(), targets,

@@ -48,6 +48,13 @@ public final class ExchangeTables {
 
     public static BountyTables.Parsed tables() { return current.tables(); }
 
+    /** 0.1.10.33: the stack size of an item id (64 when unknown). */
+    static int maxStack(String id) {
+        ResourceLocation rl = ResourceLocation.tryParse(id);
+        if (rl == null || !BuiltInRegistries.ITEM.containsKey(rl)) return 64;
+        return Math.max(1, new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(rl)).getMaxStackSize());
+    }
+
     static boolean itemExists(String id) {
         ResourceLocation rl = ResourceLocation.tryParse(id);
         return rl != null && BuiltInRegistries.ITEM.containsKey(rl);
@@ -77,6 +84,16 @@ public final class ExchangeTables {
         }
         BountyTables.Parsed parsed = BountyTables.parse(bounties, pools, ExchangeTables::itemExists);
         for (BountyTables.Error e : parsed.errors()) errors.add(e.toString());
+        // 0.1.10.33: a requirement above eight inventory slots of its item is cut to eight slots when posted
+        for (BountyTables.Table t : parsed.tables().values()) {
+            for (BountyTables.Requirement q : t.requirements()) {
+                int stack = maxStack(q.item());
+                long cut = BountyMath.tableCount(q.count(), stack);
+                if (cut < q.count())
+                    errors.add(t.id() + ": " + q.item() + " x" + q.count() + " is more than " + BountyMath.TABLE_SLOTS + " slots (stack " + stack
+                        + "); posted as x" + cut);
+            }
+        }
         Map<String, com.google.gson.JsonPrimitive> eco = new LinkedHashMap<>();
         economy.forEach((k, v) -> eco.put(k, v.getAsJsonPrimitive()));
         EconomySettings.apply(eco);

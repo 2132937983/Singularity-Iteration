@@ -15,7 +15,7 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
                            List<CommissionLine> commissions, List<PositionLine> positions, List<LedgerLine> ledger,
                            List<StockLine> stocks, List<Candidate> candidates, long allowance, List<BoxLine> box,
                            List<AuctionLine> auctions, List<BountyLine> bounties, BountyBudget budget, SettleView settle,
-                           StabilizerLine stabilizer, boolean bankMode, List<CurveLine> curves) {
+                           StabilizerLine stabilizer, boolean bankMode, List<CurveLine> curves, long bountyFloor) {
     public static final int MAX_MARKETS = 160, MAX_SPARK = 20, MAX_BARS = 30, MAX_LEVELS = 8, MAX_TRADES = 12;
     public static final int MAX_ORDERS = 32, MAX_MAIL = 40, MAX_COMMISSIONS = 64, MAX_POSITIONS = 8, MAX_LEDGER = 14;
     public static final int MAX_STOCKS = 12, MAX_CANDIDATES = 8, MAX_BOX = 18, MAX_AUCTIONS = 96;
@@ -228,6 +228,8 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
         // 0.1.10.29
         b.writeBoolean(bankMode);
         writeCurves(b, curves, MAX_CURVES);
+        // 0.1.10.33: the ask floor of the selected market while a bounty needs it (0 = none)
+        b.writeVarLong(bountyFloor);
     }
 
     public static ExchangeView read(FriendlyByteBuf b) {
@@ -283,8 +285,9 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
             b.readVarLong(), b.readVarLong());
         boolean bankMode = b.readBoolean();
         List<CurveLine> curves = readCurves(b, MAX_CURVES);
+        long bountyFloor = b.readVarLong();
         return new ExchangeView(day, coins, uu, mailCoins, mailTypes, energy, markets, detail, orders, mail, commissions, positions, ledger, stocks, candidates,
-            allowance, box, auctions, bounties, budget, settle, stabilizer, bankMode, curves);
+            allowance, box, auctions, bounties, budget, settle, stabilizer, bankMode, curves, bountyFloor);
     }
 
     interface Writer<T> { void write(T value); }

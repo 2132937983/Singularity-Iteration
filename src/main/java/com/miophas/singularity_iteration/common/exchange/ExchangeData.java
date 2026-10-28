@@ -164,6 +164,8 @@ public final class ExchangeData extends SavedData {
     public final Map<UUID, List<CardRecord>> cards = new HashMap<>();
     /** 0.1.10.29: players whose coin account comes first (payments from it first, receipts onto it). */
     public final Set<UUID> bankMode = new HashSet<>();
+    /** 0.1.10.33: player results per week and the cost basis of the treasury stock (recorded, not shown yet). */
+    public final MarketRecords records = new MarketRecords();
 
     public static ExchangeData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(ExchangeData::new, ExchangeData::load), NAME);
@@ -362,7 +364,34 @@ public final class ExchangeData extends SavedData {
             }
             if (!list.isEmpty()) d.cards.put(issuer, list);
         }
+        // 0.1.10.33
+        CompoundTag rec = tag.getCompound("Records");
+        d.records.week = rec.contains("Week") ? rec.getLong("Week") : Long.MIN_VALUE;
+        readStats(rec.getCompound("ThisWeek"), d.records.thisWeek);
+        readStats(rec.getCompound("LastWeek"), d.records.lastWeek);
+        readStats(rec.getCompound("Total"), d.records.total);
+        CompoundTag cost = rec.getCompound("Cost");
+        for (String k : cost.getAllKeys()) {
+            CompoundTag x = cost.getCompound(k);
+            double coins = x.getDouble("Coins"), stock = x.getDouble("Stock");
+            if (Double.isFinite(coins) && Double.isFinite(stock) && stock > 0) d.records.cost.put(k, new double[] {Math.max(0, coins), stock});
+        }
         return d;
+    }
+
+    private static void readStats(CompoundTag tag, Map<UUID, long[]> out) {
+        for (String k : tag.getAllKeys()) {
+            UUID id = uuid(k);
+            long[] v = tag.getLongArray(k);
+            if (id == null || out.size() >= MarketRecords.MAX_PLAYERS) continue;
+            out.put(id, java.util.Arrays.copyOf(v, MarketRecords.FIELDS));
+        }
+    }
+
+    private static CompoundTag writeStats(Map<UUID, long[]> map) {
+        CompoundTag t = new CompoundTag();
+        map.forEach((id, v) -> t.putLongArray(id.toString(), v));
+        return t;
     }
 
     @Override
@@ -535,6 +564,21 @@ public final class ExchangeData extends SavedData {
         });
         cd.put("Issuers", issuers);
         tag.put("Cards", cd);
+        // 0.1.10.33
+        CompoundTag rec = new CompoundTag();
+        rec.putLong("Week", records.week);
+        rec.put("ThisWeek", writeStats(records.thisWeek));
+        rec.put("LastWeek", writeStats(records.lastWeek));
+        rec.put("Total", writeStats(records.total));
+        CompoundTag cost = new CompoundTag();
+        records.cost.forEach((k, v) -> {
+            CompoundTag x = new CompoundTag();
+            x.putDouble("Coins", v[0]);
+            x.putDouble("Stock", v[1]);
+            cost.put(k, x);
+        });
+        rec.put("Cost", cost);
+        tag.put("Records", rec);
         return tag;
     }
 

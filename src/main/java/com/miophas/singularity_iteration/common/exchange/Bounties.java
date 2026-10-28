@@ -76,6 +76,11 @@ public final class Bounties {
             }
 
             @Override public boolean isCommodity(String item) { return FutureCommodityManager.hasCommodity(item); }
+
+            // 0.1.10.33: generated requests skip items that do not stack; UU rewards are valued for the ask floor
+            @Override public int maxStack(String item) { return ExchangeTables.maxStack(item); }
+
+            @Override public double uuPerMb() { return ExchangeService.coinsPerBucket(server) / 1000.0; }
         };
     }
 
@@ -195,12 +200,16 @@ public final class Bounties {
             if (can <= 0 && have > 0) capped = true;
             long take = Math.min(can, have);
             if (take <= 0 || !src.take(item, take)) continue;
+            // 0.1.10.33: the records (the value delivered; a commodity enters the treasury at its value)
+            d.records.add(uuid, day, MarketRecords.BOUNTY, Math.multiplyExact(take, Math.max(1, n.unit)));
+            if (prices.isCommodity(n.item)) d.records.costIn(n.item, d.treasury.getOrDefault(n.item, 0L), take, (double) take * Math.max(1, n.unit));
             Delivery x = d.board.deliver(b, i, take, uuid, player.getGameProfile().getName(), d.treasury, prices);
             payouts.addAll(x.payouts());
             delivered += take;
             completed = x.completed();
         }
-        if (delivered == 0) return capped ? Result.fail("bounty_share", Math.round(b.share * 100)) : Result.fail("not_enough_items");
+        // 0.1.10.33: the messages name what is still needed (a need the panel did not show stopped deliveries silently)
+        if (delivered == 0) return capped ? Result.fail("bounty_share", Math.round(b.share * 100)) : Result.fail("bounty_missing", missing(b));
         long coins = 0;
         for (Payout x : payouts) {
             if (x.player().equals(uuid)) { if (x.kind() == Kind.COINS) coins += x.amount(); toPlayer(plan, d, x, day); }
@@ -216,7 +225,23 @@ public final class Bounties {
             }
         }
         d.setDirty();
-        return completed ? Result.done("bounty_completed", delivered, coins) : Result.done("bounty_delivered", delivered, coins);
+        return completed ? Result.done("bounty_completed", delivered, coins) : Result.done("bounty_delivered_left", delivered, coins, missing(b));
+    }
+
+    /** 0.1.10.33: what a bounty still needs, as "name xN, name xN" (four at most, then "+N"). */
+    static Component missing(Bounty b) {
+        net.minecraft.network.chat.MutableComponent out = Component.empty();
+        int shown = 0, more = 0;
+        for (Need n : b.needs) {
+            if (n.left() <= 0) continue;
+            if (shown >= 4) { more++; continue; }
+            Item item = ExchangeService.item(n.item);
+            if (shown > 0) out.append(", ");
+            out.append(item == null ? Component.literal(n.item) : new ItemStack(item).getHoverName()).append(" x" + n.left());
+            shown++;
+        }
+        if (more > 0) out.append(" +" + more);
+        return out;
     }
 
     static void ledger(ExchangeData d, Payout x, long day) {

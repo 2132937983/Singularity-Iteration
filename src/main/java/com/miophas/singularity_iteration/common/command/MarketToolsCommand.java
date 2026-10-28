@@ -4,9 +4,13 @@ package com.miophas.singularity_iteration.common.command;
 import com.miophas.singularity_iteration.common.exchange.ArbitrageAudit;
 import com.miophas.singularity_iteration.common.exchange.ExchangeData;
 import com.miophas.singularity_iteration.common.exchange.ExchangeService;
+import com.miophas.singularity_iteration.common.exchange.MarketDayRepair;
 import com.miophas.singularity_iteration.common.exchange.SellDepth;
 import com.miophas.singularity_iteration.common.future.FutureCommodity;
 import com.miophas.singularity_iteration.common.future.FutureCommodityManager;
+import com.miophas.singularity_iteration.common.future.FutureMarketData;
+import com.miophas.singularity_iteration.common.future.MarketDay;
+import com.miophas.singularity_iteration.common.future.MarketDayDriver;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -44,6 +48,8 @@ import net.minecraft.world.item.crafting.Ingredient;
  *   <li>{@code calibrate}: the base price of each commodity against its UU-matter value (the median ratio sets the coins
  *       per bucket used by player listings).</li>
  *   <li>{@code ledger [days]}: coins created and destroyed by the market per day.</li>
+ *   <li>{@code day [repair]} (0.1.10.33): the market day against the world's day; {@code repair} moves a market day that
+ *       went back under an older version up to the latest day stamp of the exchange (it also runs at every load).</li>
  * </ul>
  */
 public final class MarketToolsCommand {
@@ -70,7 +76,32 @@ public final class MarketToolsCommand {
             .then(Commands.literal("ledger").requires(s -> s.hasPermission(2))
                 .executes(c -> ledger(c.getSource(), 7))
                 .then(Commands.argument("days", IntegerArgumentType.integer(1, 60))
-                    .executes(c -> ledger(c.getSource(), IntegerArgumentType.getInteger(c, "days")))))));
+                    .executes(c -> ledger(c.getSource(), IntegerArgumentType.getInteger(c, "days")))))
+            // 0.1.10.33: the market day (it no longer follows /time set back) and its repair
+            .then(Commands.literal("day").requires(s -> s.hasPermission(2))
+                .executes(c -> day(c.getSource()))
+                .then(Commands.literal("repair").executes(c -> repairDay(c.getSource()))))));
+    }
+
+    /** 0.1.10.33: the market day, the world's day, the world day the market saw last and the latest stamp of the exchange. */
+    private static int day(CommandSourceStack source) {
+        MinecraftServer server = source.getServer();
+        FutureMarketData fm = FutureMarketData.get(server.overworld());
+        long world = server.overworld().getDayTime() / 24000L;
+        long latest = Math.max(MarketDayRepair.latestStamp(ExchangeData.get(server)), fm.latestStamp());
+        long seen = fm.getRawDay();
+        source.sendSuccess(() -> Component.translatable(K + "day", fm.getCurrentDay() + 1, world + 1, seen == MarketDay.UNSEEN ? "-" : Long.toString(seen + 1),
+            latest == MarketDay.UNSEEN ? "-" : Long.toString(latest + 1)), false);
+        return (int) Math.max(0, Math.min(Integer.MAX_VALUE, fm.getCurrentDay()));
+    }
+
+    /** 0.1.10.33: runs the repair now (it also runs once at every load). */
+    private static int repairDay(CommandSourceStack source) {
+        MinecraftServer server = source.getServer();
+        MarketDayRepair.Report r = MarketDayDriver.repair(server.overworld(), FutureMarketData.get(server.overworld()));
+        if (r.changed()) source.sendSuccess(() -> Component.translatable(K + "day_repaired", r.oldDay() + 1, r.newDay() + 1, r.moved()), true);
+        else source.sendSuccess(() -> Component.translatable(K + "day_ok", r.oldDay() + 1), false);
+        return r.changed() ? 1 : 0;
     }
 
     private static String f(double v) { return String.format(Locale.ROOT, "%,.1f", v); }

@@ -1600,21 +1600,21 @@
     "usage": {
       "en": [
         "Connect an LV cable to the machine.",
-        "Put an Iron Drill, a Diamond Drill or an Iridium Drill into the drill slot.",
+        "Put an Iron Drill, a Diamond Drill, an Iridium Drill or a Mining Laser into the drill slot. The Mining Laser must be in Mining mode or Super Heat mode.",
         "Put Mining Pipe into the pipe slot.",
         "Put an OD Scanner or an OV Scanner into the scanner slot.",
         "Take the ores from the storage slots."
       ],
       "zh": [
         "将LV导线连接到机器。",
-        "把铁钻头、钻石钻头或铱钻头放入钻头槽位。",
+        "把铁钻头、钻石钻头、铱钻头或采矿镭射枪放入钻头槽位。采矿镭射枪须处于采矿模式或超级热线模式。",
         "把采矿管道放入管道槽位。",
         "把OD扫描器或OV扫描器放入扫描器槽位。",
         "从储存槽位取出矿石。"
       ],
       "ja": [
         "LVケーブルを機械に接続する。",
-        "鉄ドリル、ダイヤモンドドリル、イリジウムドリルのどれかをドリルスロットに入れる。",
+        "ドリルかマイニングレーザーをドリルスロットに入れる。マイニングレーザーは採掘モードか超高熱モードにする。",
         "採掘パイプをパイプスロットに入れる。",
         "ODスキャナーかOVスキャナーをスキャナースロットに入れる。",
         "保管スロットから鉱石を取り出す。"
@@ -1624,16 +1624,22 @@
       "en": [
         "Place a Pump next to the Miner to remove the fluids in the shaft.",
         "A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.",
+        "To get the Mining Pipe back, push the Retract button or take the drill out. The machine pulls up one pipe every 5 ticks for 5 EU.",
+        "The Mining Laser mines 5 times faster than a drill and uses 250 EU of its charge for each route. In Super Heat mode, the machine smelts the ores.",
         "WARNING: The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier."
       ],
       "zh": [
         "在采矿机旁放置泵，以抽走竖井中的流体。",
         "红石信号使机器停止。红石信号反转升级可反转此行为。",
+        "要收回采矿管道，按下“收回”按钮或取出钻头。机器每5 tick收回一根管道，消耗5 EU。",
+        "采矿镭射枪的开采速度是钻头的5倍，每条开采路线消耗其250 EU电量。超级热线模式下，机器直接冶炼矿石。",
         "警告：电压高于LV时，机器因过压爆炸。安装变压升级可提高电压等级。"
       ],
       "ja": [
         "縦穴の流体を取り除くため、採掘機の隣にポンプを置く。",
         "レッドストーン信号は機械を止める。レッドストーン信号反転アップグレードはこの動作を逆にする。",
+        "採掘パイプを回収するには、「回収」ボタンを押すかドリルを取り出す。機械は5 tickごとにパイプを1本引き上げ、5 EUを使う。",
+        "マイニングレーザーはドリルの5倍の速さで掘り、採掘ルート1回ごとに充電から250 EUを使う。超高熱モードでは、機械は鉱石を製錬する。",
         "警告：LVを超える過電圧で機械は爆発する。上位の電圧Tierには変圧アップグレードを入れる。"
       ]
     }

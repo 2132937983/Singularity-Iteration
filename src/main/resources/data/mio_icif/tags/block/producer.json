@@ -254,6 +254,10 @@
       "required": false
     },
     "mio_icif:producer/block_blueprint_builder",
-    "mio_icif:producer/block_material_interface"
+    "mio_icif:producer/block_material_interface",
+    {
+      "id": "mio_icif:reactor/block_steam_reactor_chamber",
+      "required": false
+    }
   ]
 }

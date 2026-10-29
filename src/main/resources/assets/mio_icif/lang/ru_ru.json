@@ -3105,5 +3105,15 @@
   "command.mio_icif.uu_scanner.excluded": "%s: сканер не оценивает этот предмет (исключённое пространство имён или только для творчества)",
   "command.mio_icif.uu_scanner.none": "%s: цену вычислить нельзя",
   "command.mio_icif.uu_scanner.forgot": "%s: цена сканера удалена; следующий скан вычислит её заново",
-  "command.mio_icif.uu_scanner.not_saved": "%s: сохранённой цены сканера нет"
+  "command.mio_icif.uu_scanner.not_saved": "%s: сохранённой цены сканера нет",
+  "block.mio_icif.generator.block_steam_reactor": "Паровой реактор",
+  "container.mio_icif.steam_reactor": "Паровой реактор",
+  "block.mio_icif.reactor.block_steam_reactor_chamber": "Камера парового реактора",
+  "block.mio_icif.generator.block_steam_turbine": "Паротурбинный генератор",
+  "item.mio_icif.reactor.item_reactor_steam_vent": "Паровой отвод тепла",
+  "item.mio_icif.reactor.item_reactor_steam_vent_core": "Паровой отвод тепла реактора",
+  "item.mio_icif.reactor.item_reactor_steam_vent_overclocked": "Разогнанный паровой отвод тепла",
+  "item.mio_icif.reactor.item_reactor_steam_vent_advanced": "Продвинутый паровой отвод тепла",
+  "item.mio_icif.reactor.component.steam_vent": "В паровом реакторе: до %s мБ пара за 20 тиков из своего тепла, чем горячее, тем больше",
+  "reactor_audit.kind.steam_vent": "паровой отвод тепла"
 }

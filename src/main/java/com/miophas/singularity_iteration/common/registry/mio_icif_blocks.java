@@ -756,6 +756,14 @@ public static final DeferredBlock<mio_icif_Block_Nuclear_Reactor_Generator> NUCL
         registerBlock("generator/block_nuclear_reactor_generator", () -> new mio_icif_Block_Nuclear_Reactor_Generator(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
 
     // 注册核反应仓方块
+    // 0.1.10.36: the steam reactor (IC2 Classic) and its chamber
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.reactor.mio_icif_block_steam_reactor> STEAM_REACTOR =
+        registerBlock("generator/block_steam_reactor", () -> new com.miophas.singularity_iteration.common.block.reactor.mio_icif_block_steam_reactor(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+    /** 0.1.10.36: steam to EU (the semifluid generator block and screen with steam for fuel). */
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_turbine> STEAM_TURBINE =
+        registerBlock("generator/block_steam_turbine", () -> new com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_turbine(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.reactor.mio_icif_block_steam_reactor_chamber> STEAM_REACTOR_CHAMBER =
+        registerBlock("reactor/block_steam_reactor_chamber", () -> new com.miophas.singularity_iteration.common.block.reactor.mio_icif_block_steam_reactor_chamber(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.reactor.mio_icif_Block_Reactor_Chamber> REACTOR_CHAMBER =
         registerBlock("reactor/block_reactor_chamber", () -> new com.miophas.singularity_iteration.common.block.reactor.mio_icif_Block_Reactor_Chamber(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
 

@@ -82,12 +82,18 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
      * 构造函数
      */
     public mio_icif_Semifluid_generator(BlockPos pos, BlockState state, BlockEntityType<?> type) {
-        super(pos, state, type != null ? type : mio_icif_block_entities.SEMIFLUID_GENERATOR_ENTITY_TYPE.get(),
-            SlotLayout.builder().extra(2).battery().build(), ENERGY_GENERATION_RATE, ENERGY_CAPACITY, MAX_RECEIVE, MAX_EXTRACT, CableTier.LV);
+        this(pos, state, type != null ? type : mio_icif_block_entities.SEMIFLUID_GENERATOR_ENTITY_TYPE.get(),
+            FUEL_CAPACITY, ENERGY_GENERATION_RATE, ENERGY_CAPACITY, MAX_EXTRACT, CableTier.LV);
+    }
+
+    /** 0.1.10.36: a generator of the same build with its own tank, rate, buffer and tier (the steam turbine). */
+    protected mio_icif_Semifluid_generator(BlockPos pos, BlockState state, BlockEntityType<?> type,
+                                           int fuelCapacity, long rate, long capacity, long maxExtract, CableTier tier) {
+        super(pos, state, type, SlotLayout.builder().extra(2).battery().build(), rate, capacity, MAX_RECEIVE, maxExtract, tier);
 
         // 初始化燃料存储，接受全部半流质燃料（沼气/生物质/原油/柴油）
-        this.fuelTank = new FluidTank(FUEL_CAPACITY, fluidStack ->
-            SemifluidFuels.accepts(fluidStack.getFluid())) {
+        this.fuelTank = new FluidTank(fuelCapacity, fluidStack ->
+            acceptsFuel(fluidStack.getFluid())) {
             @Override protected void onContentsChanged() {
                 if (energyStorage.scexNetworkControlled()) com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank.markUnsaved(mio_icif_Semifluid_generator.this);
                 else mio_icif_Semifluid_generator.this.setChanged();
@@ -95,12 +101,28 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
         };
     }
 
+    /** The fluids this generator burns (0.1.10.36: a hook; the steam turbine takes steam). */
+    protected boolean acceptsFuel(@Nullable net.minecraft.world.level.material.Fluid fluid) {
+        return SemifluidFuels.accepts(fluid);
+    }
+
+    /** EU per unit and the EU/t ceiling of a fuel, or null (0.1.10.36: a hook). */
+    @Nullable
+    protected SemifluidFuels.GeneratorValue fuelValue(net.minecraft.world.level.material.Fluid fluid) {
+        return SemifluidFuels.generatorValue(fluid);
+    }
+
+    /** mB of fuel in one unit of {@link #fuelValue} (0.1.10.36: the steam turbine burns 2 mB for 1 EU). */
+    protected int millibucketsPerUnit() {
+        return 1;
+    }
+
     /**
      * 检查物品是否是任意半流质燃料桶或燃料单元。
      */
     private boolean isFuelBucket(ItemStack stack) {
         // 0.1.10.6: also partly filled cells and containers of other mods (through the fluid capability)
-        return fuelContentOf(stack) != null || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, SemifluidFuels::accepts);
+        return fuelContentOf(stack) != null || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, this::acceptsFuel);
     }
 
     /**
@@ -113,10 +135,10 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
             FluidStack content = mio_icif_cells.getCellFluid(stack);
             int capacity = mio_icif_cells.getCellCapacity(stack);
             if (content.isEmpty() || capacity <= 0 || content.getAmount() < capacity
-                    || !SemifluidFuels.accepts(content.getFluid())) return null;
+                    || !acceptsFuel(content.getFluid())) return null;
             return content.copyWithAmount(capacity);
         }
-        if (stack.getItem() instanceof BucketItem bucket && SemifluidFuels.accepts(bucket.content)) {
+        if (stack.getItem() instanceof BucketItem bucket && acceptsFuel(bucket.content)) {
             return new FluidStack(bucket.content, FUEL_PER_BUCKET);
         }
         return null;
@@ -152,7 +174,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
     private void handleFuelBucketSlot() {
         ItemStack held = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
         if (!held.isEmpty() && fuelContentOf(held) == null) {
-            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, FUEL_BUCKET_SLOT, EMPTY_BUCKET_SLOT, fuelTank, SemifluidFuels::accepts)) setChanged();
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, FUEL_BUCKET_SLOT, EMPTY_BUCKET_SLOT, fuelTank, this::acceptsFuel)) setChanged();
             return;
         }
         if (energyStorage.scexNetworkControlled()) { scexFillFuelContainer(); return; }
@@ -229,13 +251,14 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
 
         long room = energyStorage.getCapacity() - energyStorage.getAmount();
         FluidStack fuel = fuelTank.getFluid();
-        SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : SemifluidFuels.generatorValue(fuel.getFluid());
+        SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : fuelValue(fuel.getFluid());
         long generated = 0;
+        int unit = millibucketsPerUnit();
         if (room > 0 && value != null && outputScale() > 0) {
             var plan = com.miophas.singularity_iteration.core.runtime.energy.engine.ConsumableGeneration.plan(
-                fuelTank.getFluidAmount(), scexFuelCredit, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()), room, 0);   // 0.1.8.4
+                fuelTank.getFluidAmount() / unit, scexFuelCredit, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()), room, 0);   // 0.1.8.4
             if (plan.fuelConsumed() > 0) {
-                fuelTank.drain((int) plan.fuelConsumed(), IFluidHandler.FluidAction.EXECUTE);
+                fuelTank.drain((int) plan.fuelConsumed() * unit, IFluidHandler.FluidAction.EXECUTE);
             }
             scexFuelCredit = plan.bufferedEnergy();
             generated = plan.generated();
@@ -497,10 +520,10 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
         handleFuelBucketSlot();
         chargeItems();
         FluidStack fuel = fuelTank.getFluid();
-        SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : SemifluidFuels.generatorValue(fuel.getFluid());
+        SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : fuelValue(fuel.getFluid());
         if (value != null && outputScale() > 0) {
             var step = com.miophas.singularity_iteration.core.runtime.energy.FluidFuelGeneration.tick(fuelTank, energyStorage,
-                scexFuelCredit, 1, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()));   // 0.1.8.4 output multiplier
+                scexFuelCredit, millibucketsPerUnit(), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()));   // 0.1.8.4 output multiplier
             scexFuelCredit = step.bufferedEnergy();
             burnTime = step.generated() > 0 ? 1 : 0;
         } else {

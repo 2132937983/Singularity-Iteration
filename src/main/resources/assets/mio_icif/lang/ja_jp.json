@@ -4522,5 +4522,15 @@
   "command.mio_icif.uu_scanner.excluded": "%s：スキャナーはこのアイテムに価格を付けません（除外された名前空間かクリエイティブ専用）",
   "command.mio_icif.uu_scanner.none": "%s：価格を算出できません",
   "command.mio_icif.uu_scanner.forgot": "%s：スキャナー価格を削除しました。次のスキャンで再計算します",
-  "command.mio_icif.uu_scanner.not_saved": "%s：保存されたスキャナー価格はありません"
+  "command.mio_icif.uu_scanner.not_saved": "%s：保存されたスキャナー価格はありません",
+  "block.mio_icif.generator.block_steam_reactor": "蒸気原子炉",
+  "container.mio_icif.steam_reactor": "蒸気原子炉",
+  "block.mio_icif.reactor.block_steam_reactor_chamber": "蒸気原子炉チャンバー",
+  "block.mio_icif.generator.block_steam_turbine": "蒸気タービン発電機",
+  "item.mio_icif.reactor.item_reactor_steam_vent": "スチームベント",
+  "item.mio_icif.reactor.item_reactor_steam_vent_core": "原子炉スチームベント",
+  "item.mio_icif.reactor.item_reactor_steam_vent_overclocked": "オーバークロックスチームベント",
+  "item.mio_icif.reactor.item_reactor_steam_vent_advanced": "高度スチームベント",
+  "item.mio_icif.reactor.component.steam_vent": "蒸気原子炉内：自身の熱から蒸気を最大 %s mB / 20 tick 生成し、熱いほど多い",
+  "reactor_audit.kind.steam_vent": "スチームベント"
 }

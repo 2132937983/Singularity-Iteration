@@ -125,13 +125,13 @@ public class FluidReactorMenu extends mio_icif_base_menu {
             this.data = blockEntity.getFluidContainerData();
         } else {
             this.data = new ContainerData() {
-                private final int[] data = new int[8];
+                private final int[] data = new int[10];   // 0.1.10.36: + the two tank capacities
                 @Override
                 public int get(int index) { return data[index]; }
                 @Override
                 public void set(int index, int value) { data[index] = value; }
                 @Override
-                public int getCount() { return 8; }
+                public int getCount() { return 10; }
             };
         }
         this.addDataSlots(data);
@@ -144,7 +144,8 @@ public class FluidReactorMenu extends mio_icif_base_menu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(this.access, player, mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get());
+        return stillValid(this.access, player, mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get())
+            || stillValid(this.access, player, mio_icif_blocks.STEAM_REACTOR.get());   // 0.1.10.36: the steam reactor opens this screen too
     }
 
     private void addCustomPlayerInventory(Inventory playerInventory, int startX, int startY, int hotbarY) {
@@ -187,6 +188,7 @@ public class FluidReactorMenu extends mio_icif_base_menu {
     }
 
     public int getInputFluidCapacity() {
+        if (data.get(8) > 0) return data.get(8);   // 0.1.10.36: synced (a steam reactor's tanks differ)
         if (blockEntity != null && blockEntity.getFluidHandler() != null) {
             return blockEntity.getFluidHandler().getInputCapacity();
         }
@@ -194,6 +196,7 @@ public class FluidReactorMenu extends mio_icif_base_menu {
     }
 
     public int getOutputFluidCapacity() {
+        if (data.get(9) > 0) return data.get(9);
         if (blockEntity != null && blockEntity.getFluidHandler() != null) {
             return blockEntity.getFluidHandler().getOutputCapacity();
         }

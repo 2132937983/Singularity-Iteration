@@ -218,7 +218,8 @@ public class ReactorAuditScreen extends Screen {
     }
 
     private static boolean heatKind(int kind) {
-        return kind == Kind.CELL.ordinal() || kind == Kind.CONDENSATOR.ordinal() || kind == Kind.VENT.ordinal() || kind == Kind.EXCHANGER.ordinal();
+        return kind == Kind.CELL.ordinal() || kind == Kind.CONDENSATOR.ordinal() || kind == Kind.VENT.ordinal() || kind == Kind.EXCHANGER.ordinal()
+            || kind == Kind.STEAM_VENT.ordinal();   // 0.1.10.36
     }
 
     private void renderGraph(GuiGraphics g, int gx, int gy) {

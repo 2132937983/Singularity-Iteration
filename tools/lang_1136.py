@@ -120,6 +120,26 @@ KEYS = {
         '%s：スキャナー価格を削除しました。次のスキャンで再計算します', '%s: цена сканера удалена; следующий скан вычислит её заново'),
     'command.mio_icif.uu_scanner.not_saved': v(
         '%s: no Scanner price saved', '%s：没有已保存的扫描仪价格', '%s：保存されたスキャナー価格はありません', '%s: сохранённой цены сканера нет'),
+    # ---- 4.2 the steam reactor, its chamber, the steam vents and the steam turbine generator
+    'block.mio_icif.generator.block_steam_reactor': v('Steam Reactor', '蒸汽反应堆', '蒸気原子炉', 'Паровой реактор'),
+    'container.mio_icif.steam_reactor': v('Steam Reactor', '蒸汽反应堆', '蒸気原子炉', 'Паровой реактор'),
+    'block.mio_icif.reactor.block_steam_reactor_chamber': v(
+        'Steam Reactor Chamber', '蒸汽反应仓', '蒸気原子炉チャンバー', 'Камера парового реактора'),
+    'block.mio_icif.generator.block_steam_turbine': v(
+        'Steam Turbine Generator', '蒸汽涡轮发电机', '蒸気タービン発電機', 'Паротурбинный генератор'),
+    'item.mio_icif.reactor.item_reactor_steam_vent': v('Steam Vent', '蒸汽散热片', 'スチームベント', 'Паровой отвод тепла'),
+    'item.mio_icif.reactor.item_reactor_steam_vent_core': v(
+        'Reactor Steam Vent', '反应堆蒸汽散热片', '原子炉スチームベント', 'Паровой отвод тепла реактора'),
+    'item.mio_icif.reactor.item_reactor_steam_vent_overclocked': v(
+        'Overclocked Steam Vent', '超频蒸汽散热片', 'オーバークロックスチームベント', 'Разогнанный паровой отвод тепла'),
+    'item.mio_icif.reactor.item_reactor_steam_vent_advanced': v(
+        'Advanced Steam Vent', '高级蒸汽散热片', '高度スチームベント', 'Продвинутый паровой отвод тепла'),
+    'item.mio_icif.reactor.component.steam_vent': v(
+        'In a Steam Reactor: up to %s mB of steam / 20 ticks from its heat, more the hotter it is',
+        '在蒸汽反应堆中：用自身热量产生蒸汽，最多 %s mB / 20 tick，越热越多',
+        '蒸気原子炉内：自身の熱から蒸気を最大 %s mB / 20 tick 生成し、熱いほど多い',
+        'В паровом реакторе: до %s мБ пара за 20 тиков из своего тепла, чем горячее, тем больше'),
+    'reactor_audit.kind.steam_vent': v('steam vent', '蒸汽散热片', 'スチームベント', 'паровой отвод тепла'),
 }
 
 

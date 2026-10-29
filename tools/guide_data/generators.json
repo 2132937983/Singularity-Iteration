@@ -608,5 +608,41 @@
       "zh": ["警告：堆温达到上限时，反应堆爆炸。", "警告：堆温较高时，反应堆会点燃方块并伤害附近的生物。"],
       "ja": ["警告：炉の温度が上限に達すると、原子炉は爆発する。", "警告：炉の温度が高いと、原子炉はブロックに火をつけ、近くのモブを傷つける。"]
     }
+  },
+  "generator/block_steam_reactor": {
+    "kind": "reactor",
+    "function": {
+      "en": ["The machine burns nuclear fuel rods and makes heat, but no EU.", "Steam Vents in the machine change their heat into steam. Hotter vents make more steam.", "Each adjacent Steam Reactor Chamber adds one column of component slots. A Reactor Chamber does not connect."],
+      "zh": ["机器燃烧核燃料棒并产生热量，不产生 EU。", "机器内的蒸汽散热片把热量转换为蒸汽。散热片越热，蒸汽越多。", "每个相邻的蒸汽反应仓增加一列元件槽位。核反应仓不连接。"],
+      "ja": ["機械は核燃料棒を燃やして熱を出す。EUは作らない。", "機械内のスチームベントが熱を蒸気に変える。ベントが熱いほど蒸気が多い。", "隣接する蒸気原子炉チャンバー1個ごとに部品スロットが1列増える。原子炉チャンバーは接続しない。"]
+    },
+    "usage": {
+      "en": ["Place Steam Reactor Chambers against the faces of the reactor.", "Put fuel rods and Steam Vents into the slots.", "Pump water or distilled water into the reactor or into a chamber.", "Put a Steam Turbine Generator or a fluid pipe next to the reactor.", "Apply a redstone signal to the reactor to start it."],
+      "zh": ["把蒸汽反应仓放在反应堆的各个面上。", "把燃料棒和蒸汽散热片放入槽位。", "把水或蒸馏水泵入反应堆或反应仓。", "在反应堆旁放置蒸汽涡轮发电机或流体管道。", "向反应堆输入红石信号以启动反应堆。"],
+      "ja": ["蒸気原子炉チャンバーを原子炉の各面に接して置く。", "燃料棒とスチームベントをスロットに入れる。", "水または蒸留水を原子炉かチャンバーに送り込む。", "蒸気タービン発電機か流体パイプを原子炉の隣に置く。", "原子炉にレッドストーン信号を入れて起動する。"]
+    },
+    "notes": {
+      "en": ["The reactor pushes steam into adjacent fluid machines and pipes. A full steam tank stops the steam.", "WARNING: Without water or steam room, the heat stays in the Steam Vents. The vents and the hull get hot.", "WARNING: The reactor explodes when the hull heat reaches its limit."],
+      "zh": ["反应堆把蒸汽推入相邻的流体机器和管道。蒸汽储罐满时，反应堆停止产生蒸汽。", "警告：没有水或蒸汽空间时，热量留在蒸汽散热片中。散热片和堆温会升高。", "警告：堆温达到上限时，反应堆爆炸。"],
+      "ja": ["原子炉は隣接する流体機械とパイプに蒸気を送る。蒸気タンクが満杯だと蒸気は止まる。", "警告：水か蒸気の空きがないと、熱はスチームベントに残る。ベントと炉の温度が上がる。", "警告：炉の温度が上限に達すると、原子炉は爆発する。"]
+    }
+  },
+  "generator/block_steam_turbine": {
+    "kind": "generator",
+    "function": {
+      "en": ["The machine changes steam into EU.", "The machine charges a battery in its battery slot and empties steam cells into its tank."],
+      "zh": ["机器把蒸汽转换为 EU。", "机器为电池槽中的电池充电，并把蒸汽单元倒入储罐。"],
+      "ja": ["機械は蒸気をEUに変える。", "機械はバッテリースロットのバッテリーを充電し、蒸気セルをタンクに空ける。"]
+    },
+    "usage": {
+      "en": ["Put the machine next to a Steam Reactor, or connect a fluid pipe with steam to the machine.", "Connect an MV cable to the machine."],
+      "zh": ["把机器放在蒸汽反应堆旁，或把输送蒸汽的管道连接到机器。", "把 MV 导线连接到机器。"],
+      "ja": ["機械を蒸気原子炉の隣に置くか、蒸気を運ぶパイプを機械に接続する。", "MVケーブルを機械に接続する。"]
+    },
+    "notes": {
+      "en": ["The machine uses steam only while its energy storage has room."],
+      "zh": ["只有储能未满时，机器才消耗蒸汽。"],
+      "ja": ["蓄電容量に空きがある間だけ、機械は蒸気を使う。"]
+    }
   }
 }

@@ -112,5 +112,6 @@
   "generator/block_quantum_solar_panel": {"class": "mio_icif_QuantumSolarPanel", "capacity": 10000000, "maxReceive": 0, "maxExtract": 8192, "sinkTier": 5, "sourceTier": 5, "source": true, "powerOutput": 0, "perTick": -1, "ticks": -1, "cable": "iv"},
   "wiring/block_eesu_charger": {"class": "mio_icif_eesu_charger_entity", "capacity": 400000000, "maxReceive": 8192, "maxExtract": 8192, "sinkTier": 5, "sourceTier": 5, "source": false, "powerOutput": 0, "perTick": -1, "ticks": -1, "cable": "iv"},
   "producer/block_terra_elc": {"class": "mio_icif_terra_elc", "capacity": 100000, "maxReceive": 512, "maxExtract": 0, "sinkTier": 3, "sourceTier": -1, "source": false, "powerOutput": 0, "perTick": 100, "ticks": 1, "cable": "hv"},
-  "wiring/cable/block_iron_cable_1": {"class": "mio_icif_wire", "capacity": 0, "maxReceive": 0, "maxExtract": 0, "sinkTier": 4, "sourceTier": -1, "source": false, "powerOutput": 0, "perTick": -1, "ticks": -1, "cable": "ev"}
+  "wiring/cable/block_iron_cable_1": {"class": "mio_icif_wire", "capacity": 0, "maxReceive": 0, "maxExtract": 0, "sinkTier": 4, "sourceTier": -1, "source": false, "powerOutput": 0, "perTick": -1, "ticks": -1, "cable": "ev"},
+  "generator/block_steam_turbine": {"class": "mio_icif_steam_turbine", "capacity": 32000, "maxReceive": 0, "maxExtract": 128, "sinkTier": 2, "sourceTier": 2, "source": true, "powerOutput": 64, "perTick": -1, "ticks": -1, "cable": "mv"}
 }

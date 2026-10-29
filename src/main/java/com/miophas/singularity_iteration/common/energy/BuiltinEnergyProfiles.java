@@ -27,7 +27,8 @@ public final class BuiltinEnergyProfiles {
     private static final Map<ResourceLocation, Long> FUEL_GENERATOR_PACKETS = Map.of(
         id("generator/block_semifluid_generator"), 16L,
         id("generator/block_advanced_semifluid_generator"), 128L,
-        id("generator/block_diesel_generator"), 512L);
+        id("generator/block_diesel_generator"), 512L,
+        id("generator/block_steam_turbine"), 64L);   // 0.1.10.36: 2 mB of steam per EU, at most 64 EU/t
     private static final Map<ResourceLocation, Long> WORLD_FUEL_GENERATOR_PACKETS = Map.of(
         id("generator/block_drop_generator"), 128L,
         id("generator/block_advanced_drop_generator"), 512L,

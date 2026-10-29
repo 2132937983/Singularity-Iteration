@@ -13,10 +13,16 @@ public final class ChamberTopology {
  private ChamberTopology(){}
  /** -1 is an incomplete loaded neighborhood; it never authorizes orphan destruction. */
  public static int nearbyCores(LevelReader world,BlockPos at){
+  return nearbyCores(world,at,world.getBlockState(at).getBlock() instanceof com.miophas.singularity_iteration.common.block.reactor.mio_icif_block_steam_reactor_chamber);
+ }
+ /** 0.1.10.36: the cores of the given chamber kind ({@code steam}: steam reactors; else electric reactors). */
+ public static int nearbyCores(LevelReader world,BlockPos at,boolean steam){
   int count=0;boolean missing=false;
   for(var side:Direction.values()){
    var p=at.relative(side);if(!world.hasChunk(p.getX()>>4,p.getZ()>>4)){missing=true;continue;}
-   if(world.getBlockState(p).getBlock() instanceof mio_icif_Block_Nuclear_Reactor_Generator)count++;
+   // 0.1.10.36: only a core of the chamber's kind counts (steam chamber - steam reactor, electric chamber - electric reactor)
+   var core=world.getBlockState(p).getBlock();
+   if(core instanceof mio_icif_Block_Nuclear_Reactor_Generator&&(core instanceof com.miophas.singularity_iteration.common.block.reactor.mio_icif_block_steam_reactor)==steam)count++;
   }return missing&&count<2?-1:count;
  }
  public static void checkAndDrop(Level world,BlockPos at){

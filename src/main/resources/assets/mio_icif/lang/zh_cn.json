@@ -4522,5 +4522,15 @@
   "command.mio_icif.uu_scanner.excluded": "%s：扫描仪不为此物品定价（被排除的命名空间或仅限创造）",
   "command.mio_icif.uu_scanner.none": "%s：无法计算价格",
   "command.mio_icif.uu_scanner.forgot": "%s：已移除扫描仪价格，下次扫描重新计算",
-  "command.mio_icif.uu_scanner.not_saved": "%s：没有已保存的扫描仪价格"
+  "command.mio_icif.uu_scanner.not_saved": "%s：没有已保存的扫描仪价格",
+  "block.mio_icif.generator.block_steam_reactor": "蒸汽反应堆",
+  "container.mio_icif.steam_reactor": "蒸汽反应堆",
+  "block.mio_icif.reactor.block_steam_reactor_chamber": "蒸汽反应仓",
+  "block.mio_icif.generator.block_steam_turbine": "蒸汽涡轮发电机",
+  "item.mio_icif.reactor.item_reactor_steam_vent": "蒸汽散热片",
+  "item.mio_icif.reactor.item_reactor_steam_vent_core": "反应堆蒸汽散热片",
+  "item.mio_icif.reactor.item_reactor_steam_vent_overclocked": "超频蒸汽散热片",
+  "item.mio_icif.reactor.item_reactor_steam_vent_advanced": "高级蒸汽散热片",
+  "item.mio_icif.reactor.component.steam_vent": "在蒸汽反应堆中：用自身热量产生蒸汽，最多 %s mB / 20 tick，越热越多",
+  "reactor_audit.kind.steam_vent": "蒸汽散热片"
 }

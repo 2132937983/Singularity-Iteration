@@ -48,6 +48,10 @@ public class mio_icif_menus {
     public static final DeferredHolder<MenuType<?>, MenuType<SemifluidGeneratorMenu>> SEMIFLUID_GENERATOR_MENU_TYPE =
         MENU_TYPES.register("semifluid_generator_menu", () -> new MenuType<>(SemifluidGeneratorMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
+    /** 0.1.10.36: the steam turbine (the semifluid generator screen). */
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.generator.SteamTurbineMenu>> STEAM_TURBINE_MENU_TYPE =
+        MENU_TYPES.register("steam_turbine_menu", () -> new MenuType<>(com.miophas.singularity_iteration.common.menu.generator.SteamTurbineMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
+
     public static final DeferredHolder<MenuType<?>, MenuType<StirlingGeneratorMenu>> STIRLING_GENERATOR_MENU_TYPE =
         MENU_TYPES.register("stirling_generator_menu", () -> new MenuType<>(StirlingGeneratorMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 

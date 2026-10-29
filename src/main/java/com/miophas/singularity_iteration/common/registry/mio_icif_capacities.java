@@ -198,6 +198,7 @@ public class mio_icif_capacities {
             mio_icif_block_entities.WIND_GENERATOR_ENTITY_TYPE.get(),
             mio_icif_block_entities.WATER_GENERATOR_ENTITY_TYPE.get(),
             mio_icif_block_entities.SEMIFLUID_GENERATOR_ENTITY_TYPE.get(),
+            mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(),
             mio_icif_block_entities.HEAT_GENERATOR_ELC.get(),
             mio_icif_block_entities.SOLID_HEAT_GENERATOR.get(),
             mio_icif_block_entities.FLUID_HEAT_GENERATOR.get(),
@@ -2426,6 +2427,27 @@ public class mio_icif_capacities {
         );
 
         Singularity_Iteration.LOGGER.debug("Registered fluid and item capabilities for Reactor Fluid Port");
+
+        // 0.1.10.36: the steam reactor (item, heat, fluid; no EU) and its chambers (the same, forwarded to the reactor)
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, mio_icif_block_entities.STEAM_REACTOR_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getItemHandlerCapability(direction));
+        event.registerBlockEntity(IMioIcifCapabilities.HEAT_STORAGE_BLOCK, mio_icif_block_entities.STEAM_REACTOR_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getHeatStorageCapability(direction));
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_REACTOR_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getFluidHandlerCapability(direction));
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, mio_icif_block_entities.STEAM_REACTOR_CHAMBER_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getItemHandlerCapability(direction));
+        event.registerBlockEntity(IMioIcifCapabilities.HEAT_STORAGE_BLOCK, mio_icif_block_entities.STEAM_REACTOR_CHAMBER_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getHeatStorageCapability(direction) instanceof IMioIcifCapabilities.IHeatStorage api ? api : null);
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_REACTOR_CHAMBER_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getFluidHandlerCapability(direction));
+        // 0.1.10.36: the steam turbine (EU, cell and battery slots, the steam tank)
+        event.registerBlockEntity(EUApi.SIDED, mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getEnergyStorageCapability(direction));
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getItemHandlerCapability(direction));
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getFuelHandlerCapability(direction));
 
         // Register capabilities for Reactor Chamber (核反应仓)
         // 核反应仓本身没有存储，只是转发到连接的核反应堆

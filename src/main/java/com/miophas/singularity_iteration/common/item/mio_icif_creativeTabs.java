@@ -848,6 +848,11 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_reactors.DIAMOND_VENT.get());
                 output.accept(mio_icif_reactors.IRIDIUM_HEAT_VENT.get());
                 output.accept(mio_icif_reactors.IRIDIUM_OVERCLOCKED_HEAT_VENT.get());
+                // 0.1.10.36: steam vents (steam reactor)
+                output.accept(mio_icif_reactors.STEAM_VENT.get());
+                output.accept(mio_icif_reactors.STEAM_VENT_CORE.get());
+                output.accept(mio_icif_reactors.STEAM_VENT_OVERCLOCKED.get());
+                output.accept(mio_icif_reactors.STEAM_VENT_ADVANCED.get());
 
                 // Heat Switches
                 output.accept(mio_icif_reactors.HEAT_SWITCH.get());
@@ -1149,6 +1154,8 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.DIESEL_GENERATOR.get());
                 output.accept(mio_icif_blocks.RT_GENERATOR.get());
                 output.accept(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get());
+                output.accept(mio_icif_blocks.STEAM_REACTOR.get());   // 0.1.10.36
+                output.accept(mio_icif_blocks.STEAM_TURBINE.get());   // 0.1.10.36
                 // 0.1.10.36: the Infinite Generator is hidden (still registered, so placed ones survive); use the Creative Generator
                 output.accept(mio_icif_blocks.CREATIVE_GENERATOR.get());
 
@@ -1293,6 +1300,7 @@ public class mio_icif_creativeTabs {
                 //  27. BLOCKS - REACTOR STRUCTURE
                 // ============================================================
                 output.accept(mio_icif_blocks.REACTOR_CHAMBER.get());
+                output.accept(mio_icif_blocks.STEAM_REACTOR_CHAMBER.get());   // 0.1.10.36
                 output.accept(mio_icif_blocks.REACTOR_VESSEL.get());
                 output.accept(mio_icif_blocks.REACTOR_ACCESS_HATCH.get());
                 output.accept(mio_icif_blocks.REACTOR_FLUID_PORT.get());

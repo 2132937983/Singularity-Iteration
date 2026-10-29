@@ -3,6 +3,7 @@ package example.sicore;
 import com.miophas.singularity_iteration.core.api.item.IBatteryItem;
 import com.miophas.singularity_iteration.core.api.reactor.IReactorController;
 import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle;
+import com.miophas.singularity_iteration.core.runtime.reactor.SteamReactorCycle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -21,8 +22,12 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -43,10 +48,15 @@ public final class Round1136GameTests {
     private static ItemStack item(String path) { return new ItemStack(BuiltInRegistries.ITEM.get(id(path))); }
 
     private static ItemStack breeder(GameTestHelper h, String suffix, int stored) {
-        CompoundTag tag = (CompoundTag) item("reactor/item_reactor_" + suffix).save(h.getLevel().registryAccess());
+        return component(h, "reactor/item_reactor_" + suffix, stored, 10000);
+    }
+
+    /** A reactor component holding {@code stored} of {@code max} (breeding progress, heat). */
+    private static ItemStack component(GameTestHelper h, String path, int stored, int max) {
+        CompoundTag tag = (CompoundTag) item(path).save(h.getLevel().registryAccess());
         CompoundTag components = tag.getCompound("components");
         CompoundTag data = new CompoundTag();
-        data.putInt("stored_value", stored); data.putInt("max_value", 10000);
+        data.putInt("stored_value", stored); data.putInt("max_value", max);
         components.put("mio_icif:reactor_component_data", data); tag.put("components", components);
         return ItemStack.parse(h.getLevel().registryAccess(), tag).orElseThrow();
     }
@@ -432,6 +442,76 @@ public final class Round1136GameTests {
                 h.assertTrue(fuelRemaining(h, reactor.getItemHandler().getStackInSlot(10)) == 19998, "The reactor stalled after breeding");
                 h.succeed();
             });
+        });
+    }
+
+    // ------------------------------------------------------------------ phase 4.2: steam reactor and steam turbine
+
+    private static ReactorCycle.Part steamVent(int stored) {
+        return new ReactorCycle.Part(ReactorCycle.Profile.steamVent(1100, 12, 0), stored, 0);
+    }
+
+    /**
+     * A steam vent turns its heat into steam: efficiency (heat - 100) / (1100 - 100), one unit of vent heat = 40 mB of steam from
+     * 0.4 mB of water, no more than the water and the free steam room allow; what they cannot take stays in the vent. In any
+     * other reactor it is an ordinary vent.
+     */
+    @GameTest(batch = "round1136_steam", template = "empty", timeoutTicks = 20)
+    public static void steamVentsTurnTheirHeatIntoSteamWithinWaterAndRoom(GameTestHelper h) {
+        // 1000 HU: floor(12 * 0.9) = 10 units = 400 mB of steam from 4 mB of water
+        var hot = SteamReactorCycle.step(grid(null, steamVent(1000)), 3, 0, true, 10_000, 128_000);
+        h.assertTrue(hot.steamMade() == 400 && hot.waterUsed() == 4, "hot vent: " + hot.steamMade() + " mB from " + hot.waterUsed() + " mB");
+        h.assertTrue(hot.cycle().parts()[11].stored() == 990 && hot.cycle().emittedHeat() == 0,
+            "the steam heat leaves the vent and is not vented: " + hot.cycle().parts()[11].stored());
+        var dry = SteamReactorCycle.step(grid(null, steamVent(1000)), 3, 0, true, 0, 128_000);
+        h.assertTrue(dry.steamMade() == 0 && dry.cycle().parts()[11].stored() == 1000, "without water the heat stays in the vent");
+        var full = SteamReactorCycle.step(grid(null, steamVent(1000)), 3, 0, true, 10_000, 200);
+        h.assertTrue(full.steamMade() == 200 && full.waterUsed() == 2 && full.cycle().parts()[11].stored() == 995,
+            "200 mB of room takes 5 units: " + full.steamMade() + " mB, vent " + full.cycle().parts()[11].stored());
+        var cool = SteamReactorCycle.step(grid(null, steamVent(100)), 3, 0, true, 10_000, 128_000);
+        h.assertTrue(cool.steamMade() == 0 && cool.cycle().parts()[11].stored() == 100, "a vent at 100 HU makes no steam");
+        var electric = ReactorCycle.step(grid(null, steamVent(1000)), 3, 0, true);
+        h.assertTrue(electric.parts()[11].stored() == 988 && electric.emittedHeat() == 12 && electric.steamHeat() == 0,
+            "outside a steam reactor it vents 12: " + electric.parts()[11].stored());
+        h.succeed();
+    }
+
+    /**
+     * A steam reactor takes steam reactor chambers only (an electric chamber never joins it), makes no EU, turns water into
+     * steam in its hot steam vents and pushes the steam into an adjacent steam turbine generator, which makes EU.
+     */
+    @GameTest(batch = "round1136_steam", template = "empty", timeoutTicks = 120)
+    public static void steamReactorTakesSteamChambersAndFeedsATurbine(GameTestHelper h) {
+        h.setBlock(REACTOR, BuiltInRegistries.BLOCK.get(id("generator/block_steam_reactor")));
+        h.setBlock(REACTOR.north(), BuiltInRegistries.BLOCK.get(id("reactor/block_steam_reactor_chamber")));
+        h.setBlock(REACTOR.above(), BuiltInRegistries.BLOCK.get(id("reactor/block_reactor_chamber")));
+        IReactorController reactor = (IReactorController) h.getBlockEntity(REACTOR);
+        IFluidHandler tanks = h.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, h.absolutePos(REACTOR), null);
+        h.assertTrue(tanks != null && tanks.fill(new FluidStack(Fluids.WATER, 10_000), IFluidHandler.FluidAction.EXECUTE) == 10_000,
+            "The steam reactor must take water");
+        h.assertTrue(reactor.getItemHandler().insertItem(0, item("reactor/item_reactor_uranium_simple"), false).isEmpty(), "Fuel rejected");
+        h.assertTrue(reactor.getItemHandler().insertItem(1, component(h, "reactor/item_reactor_steam_vent", 1000, 1100), false).isEmpty(), "Vent rejected");
+        h.assertTrue(reactor.getItemHandler().insertItem(9, component(h, "reactor/item_reactor_steam_vent", 1000, 1100), false).isEmpty(), "Vent rejected");
+        h.setBlock(REACTOR.west(), BuiltInRegistries.BLOCK.get(id("generator/block_steam_turbine")));
+        h.setBlock(REACTOR.east(), Blocks.REDSTONE_BLOCK);
+        h.runAfterDelay(2, () -> {
+            h.assertTrue(reactor.getAvailableColumns() == 4, "only the steam chamber adds a column: " + reactor.getAvailableColumns());
+            BlockEntity electric = h.getLevel().getBlockEntity(h.absolutePos(REACTOR.above()));
+            h.assertTrue(electric == null || call(electric, "getConnectedReactor") == null, "An electric chamber joined the steam reactor");
+            BlockEntity steamChamber = h.getBlockEntity(REACTOR.north());
+            h.assertTrue(call(steamChamber, "getConnectedReactor") == reactor, "The steam chamber did not join the steam reactor");
+        });
+        h.runAfterDelay(80, () -> {
+            int water = tanks.getFluidInTank(0).getAmount();
+            h.assertTrue(water < 10_000, "No water became steam");
+            h.assertTrue(reactor.getCurrentEnergyGeneration() == 0, "A steam reactor makes no EU: " + reactor.getCurrentEnergyGeneration());
+            BlockEntity turbine = h.getBlockEntity(REACTOR.west());
+            long energy = (Long) call(call(turbine, "getEnergyStorage"), "getAmount");
+            int steam = (Integer) call(turbine, "getFuelAmount");
+            h.assertTrue(energy > 0, "The turbine made no EU (steam " + steam + " mB, water used " + (10_000 - water) + " mB)");
+            // 2 mB of steam per EU: the EU never exceeds half the steam the used water made (100 mB of steam per mB of water)
+            h.assertTrue(energy <= (10_000L - water) * 100 / 2, "Too much EU for the steam made: " + energy);
+            h.succeed();
         });
     }
 }

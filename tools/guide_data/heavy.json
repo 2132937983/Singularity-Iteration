@@ -657,5 +657,23 @@
              "センサーユニットは量子ヘルメットのバイザーでだけデータを表示する。オンのユニットは部位のEUを使う。",
              "ユニットを外す時、EUは使わず、ユニットは戻る。"]
     }
+  },
+  "reactor/block_steam_reactor_chamber": {
+    "kind": "reactor",
+    "function": {
+      "en": ["The Steam Reactor Chamber adds one column of component slots to an adjacent Steam Reactor.", "The chamber shares the reactor inventory, heat, water and steam. Pipes fill and drain the reactor through the chamber."],
+      "zh": ["蒸汽反应仓为相邻的蒸汽反应堆增加一列元件槽位。", "反应仓共享反应堆的物品栏、热量、水和蒸汽。管道通过反应仓给反应堆加水和抽出蒸汽。"],
+      "ja": ["蒸気原子炉チャンバーは隣接する蒸気原子炉に部品スロットを1列追加する。", "チャンバーは原子炉のインベントリ・熱・水・蒸気を共有する。パイプはチャンバー経由で原子炉に給水し、蒸気を抜く。"]
+    },
+    "usage": {
+      "en": ["Place the chamber against one face of a Steam Reactor.", "Connect a water pipe to the chamber to fill the reactor."],
+      "zh": ["把反应仓放在蒸汽反应堆的一个面上。", "把水管连接到反应仓以给反应堆加水。"],
+      "ja": ["チャンバーを蒸気原子炉の1つの面に接して置く。", "水のパイプをチャンバーに接続して原子炉に給水する。"]
+    },
+    "notes": {
+      "en": ["The chamber does not connect to a Nuclear Reactor Generator. A Reactor Chamber does not connect to a Steam Reactor.", "The chamber must touch only one reactor."],
+      "zh": ["反应仓不连接核反应堆发电机。核反应仓不连接蒸汽反应堆。", "反应仓只能接触一个反应堆。"],
+      "ja": ["チャンバーは原子炉発電機に接続しない。原子炉チャンバーは蒸気原子炉に接続しない。", "チャンバーは原子炉1基だけに接する必要がある。"]
+    }
   }
 }

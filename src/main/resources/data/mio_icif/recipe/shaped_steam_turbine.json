@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "GET",
+    "SSS"
+  ],
+  "key": {
+    "S": {
+      "tag": "c:casings/steel"
+    },
+    "G": {
+      "item": "mio_icif:generator/block_thermal_generator"
+    },
+    "E": {
+      "item": "mio_icif:resource/item_motor"
+    },
+    "T": {
+      "item": "mio_icif:normal/item_steam_turbin"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_steam_turbine",
+    "count": 1
+  }
+}

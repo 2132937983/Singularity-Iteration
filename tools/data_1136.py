@@ -83,11 +83,30 @@ def add_to_tag(path, value):
         tag(path, [value])
         return
     raw = open(out, 'rb').read()
-    data = json.loads(raw.decode('utf-8-sig'))
+    text = raw.decode('utf-8-sig')
+    data = json.loads(text)
     ids = [v if isinstance(v, str) else v.get('id') for v in data.get('values', [])]
-    if value not in ids:
-        data.setdefault('values', []).append(value if value.startswith('#') else {'id': value, 'required': False})
-        write(path, data, '\r\n' if b'\r\n' in raw else '\n')
+    if value in ids:
+        return
+    # insert as text after the last entry, in the file's own style (one-line or expanded entries), so nothing else changes
+    eol = '\r\n' if '\r\n' in text else '\n'
+    end = text.rindex(']')
+    head = text[:end]          # everything before the closing bracket
+    body = head.rstrip()       # up to the end of the last entry
+    gap = head[len(body):]     # the line break and indent before the closing bracket
+    last_line = body.splitlines()[-1]
+    indent = last_line[:len(last_line) - len(last_line.lstrip())]
+    if value.startswith('#'):
+        entry = '"%s"' % value
+    elif '{ "id"' in text or not any(isinstance(v, dict) for v in data.get('values', [])):
+        entry = '{ "id": "%s", "required": false }' % value
+    else:
+        inner = indent + '  '
+        entry = '{' + eol + inner + '"id": "%s",' % value + eol + inner + '"required": false' + eol + indent + '}'
+    text = body + ',' + eol + indent + entry + gap + text[end:]
+    json.loads(text)
+    with open(out, 'wb') as f:
+        f.write(text.encode('utf-8'))
 
 
 def iridium():
@@ -157,7 +176,76 @@ def scanner():
     print('scanner: excluded namespaces, estimate policy')
 
 
+def tag_has(path, value):
+    out = os.path.join(DATA, path)
+    if not os.path.exists(out):
+        return False
+    with open(out, encoding='utf-8-sig') as f:
+        data = json.load(f)
+    return value in [v if isinstance(v, str) else v.get('id') for v in data.get('values', [])]
+
+
+def steam_reactor():
+    """4.2 the steam reactor, its chamber and the steam vents: loot, the tags of the nuclear reactor / chamber, recipes."""
+    REACTOR, CHAMBER = 'mio_icif:generator/block_steam_reactor', 'mio_icif:reactor/block_steam_reactor_chamber'
+    for block, path in ((REACTOR, 'generator/block_steam_reactor'), (CHAMBER, 'reactor/block_steam_reactor_chamber')):
+        write('mio_icif/loot_table/blocks/%s.json' % path, {
+            'type': 'minecraft:block',
+            'pools': [{'bonus_rolls': 0.0, 'conditions': [{'condition': 'minecraft:survives_explosion'}],
+                       'entries': [{'type': 'minecraft:item', 'name': block}], 'rolls': 1.0}],
+            'random_sequence': 'mio_icif:blocks/%s' % path})
+    # the same block tags as the nuclear reactor and its chamber
+    for tag_file in ('minecraft/tags/block/mineable/pickaxe.json', 'c/tags/block/machine.json', 'c/tags/block/needs_stone_tool.json',
+                     'mio_icif/tags/block/generator.json', 'mio_icif/tags/block/producer.json', 'mio_icif/tags/block/reactor_heat_immune.json'):
+        if tag_has(tag_file, 'mio_icif:generator/block_nuclear_reactor_generator'):
+            add_to_tag(tag_file, REACTOR)
+        if tag_has(tag_file, 'mio_icif:reactor/block_reactor_chamber'):
+            add_to_tag(tag_file, CHAMBER)
+    # IC2C recipes on SI items: alloy plate, advanced circuit, blast glass (reinforced glass), reactor, chamber, heat vents
+    write('mio_icif/recipe/shaped_steam_reactor.json', {
+        'type': 'minecraft:crafting_shaped', 'pattern': ['AXA', 'YYY', 'ACA'],
+        'key': {'A': {'tag': 'c:plates/alloy'}, 'X': {'tag': 'c:circuits/advanced'}, 'Y': {'item': CHAMBER},
+                'C': {'item': 'mio_icif:generator/block_nuclear_reactor_generator'}},
+        'result': {'id': REACTOR, 'count': 1}})
+    write('mio_icif/recipe/shaped_steam_reactor_chamber.json', {
+        'type': 'minecraft:crafting_shaped', 'pattern': ['XYX', 'YCY', 'XYX'],
+        'key': {'X': {'tag': 'c:plates/alloy'}, 'Y': {'item': 'mio_icif:build/block_alloy_glass'},
+                'C': {'item': 'mio_icif:reactor/block_reactor_chamber'}},
+        'result': {'id': CHAMBER, 'count': 1}})
+    R = 'mio_icif:reactor/item_reactor_'
+    for steam, heat in (('steam_vent', 'vent'), ('steam_vent_core', 'vent_core'), ('steam_vent_overclocked', 'golden_vent'),
+                        ('steam_vent_advanced', 'diamond_vent')):
+        write('mio_icif/recipe/shaped_%s.json' % steam, {
+            'type': 'minecraft:crafting_shaped', 'pattern': ['I#I', '#X#', 'I#I'],
+            'key': {'I': {'tag': 'c:glass_blocks'}, '#': {'item': 'minecraft:iron_bars'}, 'X': {'item': R + heat}},
+            'result': {'id': R + steam, 'count': 1}})
+    print('steam reactor: 2 loot tables, tags, 6 recipes')
+
+
+def steam_turbine():
+    """4.2 the steam turbine: loot, the block tags of the semifluid generator, a recipe like the kinetic generator's with the
+    steam turbine rotor."""
+    TURBINE = 'mio_icif:generator/block_steam_turbine'
+    write('mio_icif/loot_table/blocks/generator/block_steam_turbine.json', {
+        'type': 'minecraft:block',
+        'pools': [{'bonus_rolls': 0.0, 'conditions': [{'condition': 'minecraft:survives_explosion'}],
+                   'entries': [{'type': 'minecraft:item', 'name': TURBINE}], 'rolls': 1.0}],
+        'random_sequence': 'mio_icif:blocks/generator/block_steam_turbine'})
+    for tag_file in ('minecraft/tags/block/mineable/pickaxe.json', 'c/tags/block/machine.json', 'c/tags/block/needs_stone_tool.json',
+                     'mio_icif/tags/block/generator.json'):
+        if tag_has(tag_file, 'mio_icif:generator/block_semifluid_generator'):
+            add_to_tag(tag_file, TURBINE)
+    write('mio_icif/recipe/shaped_steam_turbine.json', {
+        'type': 'minecraft:crafting_shaped', 'pattern': ['SSS', 'GET', 'SSS'],
+        'key': {'S': {'tag': 'c:casings/steel'}, 'G': {'item': 'mio_icif:generator/block_thermal_generator'},
+                'E': {'item': 'mio_icif:resource/item_motor'}, 'T': {'item': 'mio_icif:normal/item_steam_turbin'}},
+        'result': {'id': TURBINE, 'count': 1}})
+    print('steam turbine: loot table, tags, recipe')
+
+
 if __name__ == '__main__':
     proton()
     iridium()
     scanner()
+    steam_reactor()
+    steam_turbine()

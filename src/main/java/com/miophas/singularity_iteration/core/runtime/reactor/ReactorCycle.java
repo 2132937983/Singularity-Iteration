@@ -14,7 +14,8 @@ public final class ReactorCycle {
     /** IC2 resets capacity each cycle; plating raises it when encountered in thermal pass 0. */
     private static final long BASE_MAX_HEAT=10000;
     /** New kinds go after INERT only: saved reactor accident records store the ordinal. */
-    public enum Kind { FUEL, CELL, CONDENSATOR, VENT, COMPONENT_VENT, EXCHANGER, REFLECTOR, PLATING, HEATPACK, LITHIUM, ISOTOPE, INERT, NEUTRON_SOURCE }
+    public enum Kind { FUEL, CELL, CONDENSATOR, VENT, COMPONENT_VENT, EXCHANGER, REFLECTOR, PLATING, HEATPACK, LITHIUM, ISOTOPE, INERT, NEUTRON_SOURCE,
+        STEAM_VENT }
     /**
      * 0.1.10.36: {@code euFactor} / {@code heatFactor} scale the EU and the heat of a fuel rod (1 = uranium; the proton rod
      * 3 and 1.5). The ten-argument constructor keeps both at 1.
@@ -44,6 +45,13 @@ public final class ReactorCycle {
          * gives {@code heatPerCycle} of decay heat to the hull.
          */
         public static Profile neutronSource(int life,int heatPerCycle){return new Profile(Kind.NEUTRON_SOURCE,0,false,life,heatPerCycle,0,0,0,0,0);}
+        /**
+         * 0.1.10.36: an IC2C steam vent. In a steam reactor it turns its heat into steam instead of venting it: it pulls
+         * {@code hull} heat from the hull like a vent, then removes up to {@code self} x efficiency, where the efficiency rises
+         * from 0 at 100 heat to 1 at full heat, and only as much as the cycle's steam budget allows (water, steam room); heat it
+         * cannot turn into steam stays in it. In any other reactor it is an ordinary vent.
+         */
+        public static Profile steamVent(int capacity,int self,int hull){return thermal(Kind.STEAM_VENT,capacity,self,hull,0,0);}
         public static Profile cell(int capacity){return thermal(Kind.CELL,capacity,0,0,0,0);}
         public static Profile condensator(int capacity){return thermal(Kind.CONDENSATOR,capacity,0,0,0,0);}
         public static Profile vent(int capacity,int self,int hull){return thermal(Kind.VENT,capacity,self,hull,0,0);}
@@ -67,7 +75,7 @@ public final class ReactorCycle {
         /** Matches IC2 ItemReactorDepletedUranium: capacity holds the breeding threshold (10000). selfCooling holds the fixed gain for each pulse (the +1 of IC2). */
         public static Profile isotope(int threshold,int pulseBonus){return new Profile(Kind.ISOTOPE,0,false,threshold,pulseBonus,0,0,0,0,0);}
         private static Profile thermal(Kind kind,int capacity,int self,int hull,int adjacent,int exchange){return new Profile(kind,0,false,capacity,self,hull,adjacent,exchange,0,0);}
-        public boolean storesHeat(){return kind==Kind.CELL||kind==Kind.CONDENSATOR||kind==Kind.VENT||kind==Kind.EXCHANGER;}
+        public boolean storesHeat(){return kind==Kind.CELL||kind==Kind.CONDENSATOR||kind==Kind.VENT||kind==Kind.EXCHANGER||kind==Kind.STEAM_VENT;}
         /** Breeding components (IC2 lithium cell / near-depleted isotope rod). They do not store heat and do not exchange heat. Pulses add to their progress. */
         public boolean breeding(){return kind==Kind.LITHIUM||kind==Kind.ISOTOPE;}
     }
@@ -83,9 +91,13 @@ public final class ReactorCycle {
         public Part withStored(int amount){return new Part(profile,amount,remaining);}
         public Part withRemaining(int amount){return new Part(profile,stored,amount);}
     }
+    /** 0.1.10.36: {@code steamHeat} is the heat the steam vents of a steam reactor turned into steam (0 elsewhere). */
     public record Result(Part[] parts,long hullHeat,long maxHullHeat,long emittedHeat,
-                         long generatedHeat,double euPerTick,boolean[] depletedFuel) {
+                         long generatedHeat,double euPerTick,boolean[] depletedFuel,long steamHeat) {
         public Result {parts=parts.clone();depletedFuel=depletedFuel.clone();}
+        public Result(Part[] parts,long hullHeat,long maxHullHeat,long emittedHeat,long generatedHeat,double euPerTick,boolean[] depletedFuel){
+            this(parts,hullHeat,maxHullHeat,emittedHeat,generatedHeat,euPerTick,depletedFuel,0);
+        }
         @Override public Part[] parts(){return parts.clone();}
         @Override public boolean[] depletedFuel(){return depletedFuel.clone();}
     }
@@ -93,8 +105,12 @@ public final class ReactorCycle {
         return step(input,columns,heat,enabled,false);
     }
     public static Result step(Part[] input,int columns,long heat,boolean enabled,boolean fluidMode){
+        return step(input,columns,heat,enabled,fluidMode,-1);
+    }
+    /** 0.1.10.36: {@code steamBudget} >= 0 makes it a steam reactor cycle: the steam vents turn at most that much heat into steam. */
+    public static Result step(Part[] input,int columns,long heat,boolean enabled,boolean fluidMode,long steamBudget){
         if(input.length!=54||columns<3||columns>9||heat<0)throw new IllegalArgumentException("Invalid reactor state");
-        return new Work(input,columns,heat).run(enabled,fluidMode);
+        return new Work(input,columns,heat).run(enabled,fluidMode,steamBudget);
     }
     public static int selfPulses(int cells){return switch(cells){case 1->1;case 2->2;case 4->3;default->throw new IllegalArgumentException("Invalid cell count");};}
     public static int fuelHeat(int cells,int pulses){if(pulses<0||pulses>7)throw new IllegalArgumentException("Invalid pulse count");return Math.multiplyExact(2*cells,Math.multiplyExact(pulses,pulses+1));}
@@ -106,7 +122,7 @@ public final class ReactorCycle {
     }
     private static final class Work {
         final Part[] parts;final int columns;final boolean[] depleted=new boolean[54];
-        long hull,max=BASE_MAX_HEAT,emitted,generated;
+        long hull,max=BASE_MAX_HEAT,emitted,generated,steamHeat;
         Work(Part[] input,int columns,long heat){this.parts=input.clone();this.columns=columns;this.hull=heat;}
         boolean active(int i){return i>=0&&i<54&&i%9<columns;}
         int[] adjacent(int slot){int[] a=new int[4];int count=0;
@@ -134,7 +150,8 @@ public final class ReactorCycle {
             if(part.profile().kind()==Kind.LITHIUM&&part.profile().hullCooling()>0){
                 generated+=part.profile().hullCooling();hull=Math.addExact(hull,part.profile().hullCooling());
             }}
-        Result run(boolean enabled,boolean fluidMode){
+        Result run(boolean enabled,boolean fluidMode,long steamBudget){
+            long budget=steamBudget;
             // Apply component operations in visible row order; fuel expiry is committed after electrical output.
             for(int i=0;i<54;i++){
                 if(!active(i)||parts[i]==null)continue;Part p=parts[i];Profile profile=p.profile();
@@ -192,6 +209,16 @@ public final class ReactorCycle {
                             &&parts[a].profile().kind()!=Kind.CONDENSATOR)emitted+=remove(a,profile.selfCooling());}
                     case EXCHANGER -> exchange(i);
                     case PLATING -> max=Math.addExact(max,profile.extraHull());
+                    case STEAM_VENT -> {
+                        int pull=(int)Math.min(hull,profile.hullCooling());hull-=pull;alter(i,pull);
+                        if(parts[i]==null)break;
+                        if(budget<0){emitted+=remove(i,profile.selfCooling());break;}   // not a steam reactor: an ordinary vent
+                        // 0.1.10.36: efficiency 0 at 100 heat, 1 at full heat (IC2C); what the budget cannot take stays in the vent
+                        Part vent=parts[i];
+                        double efficiency=Math.clamp((vent.stored()-100.0)/Math.max(1,profile.capacity()-100),0.0,1.0);
+                        long take=Math.min(Math.min((long)Math.floor(profile.selfCooling()*efficiency),vent.stored()),budget);
+                        if(take>0){remove(i,(int)take);steamHeat+=take;budget-=take;}
+                    }
                     case NEUTRON_SOURCE -> {
                         // 0.1.10.36: decay goes on whether the fuel is enabled or not; a little decay heat reaches the hull
                         if(p.stored()<profile.capacity()){
@@ -220,7 +247,7 @@ public final class ReactorCycle {
                     depleted[i]=p.remaining()==1;parts[i]=p.withRemaining(p.remaining()-1);
                 }
             }
-            return new Result(parts,hull,max,emitted,generated,fluidMode?0:units*5.0f,depleted);
+            return new Result(parts,hull,max,emitted,generated,fluidMode?0:units*5.0f,depleted,steamHeat);
         }
         /** Electrical pass follows the entire thermal pass, including cooling and plating. 0.1.10.36: times the rod's EU factor. */
         float outputFactor(Part p){return (p.profile().mox()?1.0f+((float)hull/(float)max)*4.0f:1.0f)*p.profile().euFactor();}

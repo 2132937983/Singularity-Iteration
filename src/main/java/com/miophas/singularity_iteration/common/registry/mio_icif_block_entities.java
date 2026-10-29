@@ -861,6 +861,17 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("reactor_chamber", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_chamber::new, mio_icif_blocks.REACTOR_CHAMBER.get()).build(null));
 
+    // 0.1.10.36: the steam reactor and its chamber
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_steam_reactor>> STEAM_REACTOR_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("steam_reactor", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_steam_reactor::new, mio_icif_blocks.STEAM_REACTOR.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_steam_reactor_chamber>> STEAM_REACTOR_CHAMBER_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("steam_reactor_chamber", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_steam_reactor_chamber::new, mio_icif_blocks.STEAM_REACTOR_CHAMBER.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_steam_turbine>> STEAM_TURBINE_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("steam_turbine", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_steam_turbine::new, mio_icif_blocks.STEAM_TURBINE.get()).build(null));
+
     // 注册 reactor fluid port 方块实体类型
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_fluid_port>> REACTOR_FLUID_PORT_ENTITY_TYPE =
         BLOCK_ENTITIES.register("reactor_fluid_port", () ->

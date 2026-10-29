@@ -28,8 +28,15 @@ import org.jetbrains.annotations.Nullable;
                                    @Nullable mio_icif_Semifluid_generator blockEntity,
                                    @Nullable IItemHandler itemHandler,
                                    @Nullable ContainerData data) {
-        super(mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT,
-              playerInventory, itemHandler, data, DATA_COUNT, blockEntity);
+        this(mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get(), containerId, playerInventory, blockEntity, itemHandler, data);
+    }
+
+    /** 0.1.10.36: the same screen under another menu type (the steam turbine). */
+    protected SemifluidGeneratorMenu(net.minecraft.world.inventory.MenuType<?> type, int containerId, Inventory playerInventory,
+                                     @Nullable mio_icif_Semifluid_generator blockEntity,
+                                     @Nullable IItemHandler itemHandler,
+                                     @Nullable ContainerData data) {
+        super(type, containerId, SLOT_COUNT, playerInventory, itemHandler, data, DATA_COUNT, blockEntity);
     }
 
     @Override

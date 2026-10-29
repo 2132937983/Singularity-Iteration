@@ -38,12 +38,16 @@ public class mio_icif_Block_Reactor_Chamber extends BaseEntityBlock {
 
     @Override
     public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
-        return com.miophas.singularity_iteration.common.reactor.ChamberTopology.nearbyCores(context.getLevel(),context.getClickedPos())==1
+        return com.miophas.singularity_iteration.common.reactor.ChamberTopology.nearbyCores(context.getLevel(),context.getClickedPos(),steamChamber())==1
             ?super.getStateForPlacement(context):null;
     }
     @Override
     public boolean canSurvive(BlockState state,net.minecraft.world.level.LevelReader world,BlockPos at){
-        return com.miophas.singularity_iteration.common.reactor.ChamberTopology.nearbyCores(world,at)==1;
+        return com.miophas.singularity_iteration.common.reactor.ChamberTopology.nearbyCores(world,at,steamChamber())==1;
+    }
+    /** 0.1.10.36: true for the steam reactor chamber (it joins steam reactors only). */
+    protected boolean steamChamber(){
+        return false;
     }
     @Override
     public void onPlace(BlockState state,Level level,BlockPos pos,BlockState oldState,boolean moving){

@@ -28,6 +28,10 @@ import net.neoforged.neoforge.items.IItemHandler;
 public class mio_icif_reactor_chamber extends BlockEntity implements MenuProvider,IEnergySource,IReactorChamber {
  private BlockPos savedConnection;private long lastValidationTick;
  public mio_icif_reactor_chamber(BlockPos pos,BlockState state){super(mio_icif_block_entities.REACTOR_CHAMBER_ENTITY_TYPE.get(),pos,state);}
+ /** 0.1.10.36: for the steam reactor chamber. */
+ protected mio_icif_reactor_chamber(net.minecraft.world.level.block.entity.BlockEntityType<?> type,BlockPos pos,BlockState state){super(type,pos,state);}
+ /** 0.1.10.36: an electric chamber serves electric reactors only, a steam chamber steam reactors only (IC2C). */
+ protected boolean accepts(mio_icif_nuclear_reactor_generator core){return !core.isSteamReactor();}
  private boolean live(){
   if(!(level instanceof ServerLevel w)||!w.getServer().isSameThread()||isRemoved())return false;
   var c=w.getChunkSource().getChunkNow(worldPosition.getX()>>4,worldPosition.getZ()>>4);
@@ -37,7 +41,7 @@ public class mio_icif_reactor_chamber extends BlockEntity implements MenuProvide
   if(!live())return null;var w=(ServerLevel)level;mio_icif_nuclear_reactor_generator result=null;
   for(var side:Direction.values()){
    var at=worldPosition.relative(side);var c=w.getChunkSource().getChunkNow(at.getX()>>4,at.getZ()>>4);if(c==null)continue;
-   if(c.getBlockEntity(at,LevelChunk.EntityCreationType.CHECK) instanceof mio_icif_nuclear_reactor_generator core&&core.isLiveReactor()){
+   if(c.getBlockEntity(at,LevelChunk.EntityCreationType.CHECK) instanceof mio_icif_nuclear_reactor_generator core&&core.isLiveReactor()&&accepts(core)){
     if(result!=null)return null;result=core;
    }
   }return result;

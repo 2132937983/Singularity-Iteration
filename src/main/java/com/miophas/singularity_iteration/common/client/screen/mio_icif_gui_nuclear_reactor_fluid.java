@@ -139,6 +139,7 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
     private static net.minecraft.world.level.material.Fluid coolantFluid(int kind, boolean cold) {
         return switch (kind) {
             case 1 -> cold ? net.minecraft.world.level.material.Fluids.WATER : mio_icif_fluids.HOTWATER.get();
+            case 2 -> cold ? net.minecraft.world.level.material.Fluids.WATER : mio_icif_fluids.STEAM.get();   // 0.1.10.36: steam reactor
             default -> cold ? mio_icif_fluids.COOLANT.get() : mio_icif_fluids.HOTCOOLANT.get();
         };
     }

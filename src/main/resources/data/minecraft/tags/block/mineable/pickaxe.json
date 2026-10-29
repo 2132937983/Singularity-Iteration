@@ -775,6 +775,18 @@
     {
       "id": "mio_icif:block_ore_iridium_in_deep",
       "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_reactor",
+      "required": false
+    },
+    {
+      "id": "mio_icif:reactor/block_steam_reactor_chamber",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_turbine",
+      "required": false
     }
   ]
 }

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AXA",
+    "YYY",
+    "ACA"
+  ],
+  "key": {
+    "A": {
+      "tag": "c:plates/alloy"
+    },
+    "X": {
+      "tag": "c:circuits/advanced"
+    },
+    "Y": {
+      "item": "mio_icif:reactor/block_steam_reactor_chamber"
+    },
+    "C": {
+      "item": "mio_icif:generator/block_nuclear_reactor_generator"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_steam_reactor",
+    "count": 1
+  }
+}

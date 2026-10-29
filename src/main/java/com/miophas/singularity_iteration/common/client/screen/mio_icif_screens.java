@@ -200,6 +200,11 @@ public class mio_icif_screens {
             mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get(),
             mio_icif_gui_semifluid_generator::new
         );
+        // 0.1.10.36: the steam turbine uses the semifluid generator screen
+        event.register(
+            mio_icif_menus.STEAM_TURBINE_MENU_TYPE.get(),
+            mio_icif_gui_semifluid_generator::new
+        );
 
         // 注册核反应堆发电机的 GUI 界面
         event.register(

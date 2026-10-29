@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "XYX",
+    "YCY",
+    "XYX"
+  ],
+  "key": {
+    "X": {
+      "tag": "c:plates/alloy"
+    },
+    "Y": {
+      "item": "mio_icif:build/block_alloy_glass"
+    },
+    "C": {
+      "item": "mio_icif:reactor/block_reactor_chamber"
+    }
+  },
+  "result": {
+    "id": "mio_icif:reactor/block_steam_reactor_chamber",
+    "count": 1
+  }
+}

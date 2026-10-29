@@ -4522,5 +4522,15 @@
   "command.mio_icif.uu_scanner.excluded": "%s: the Scanner never prices this item (excluded namespace or creative-only)",
   "command.mio_icif.uu_scanner.none": "%s: no price can be worked out",
   "command.mio_icif.uu_scanner.forgot": "%s: Scanner price removed; the next scan works it out again",
-  "command.mio_icif.uu_scanner.not_saved": "%s: no Scanner price saved"
+  "command.mio_icif.uu_scanner.not_saved": "%s: no Scanner price saved",
+  "block.mio_icif.generator.block_steam_reactor": "Steam Reactor",
+  "container.mio_icif.steam_reactor": "Steam Reactor",
+  "block.mio_icif.reactor.block_steam_reactor_chamber": "Steam Reactor Chamber",
+  "block.mio_icif.generator.block_steam_turbine": "Steam Turbine Generator",
+  "item.mio_icif.reactor.item_reactor_steam_vent": "Steam Vent",
+  "item.mio_icif.reactor.item_reactor_steam_vent_core": "Reactor Steam Vent",
+  "item.mio_icif.reactor.item_reactor_steam_vent_overclocked": "Overclocked Steam Vent",
+  "item.mio_icif.reactor.item_reactor_steam_vent_advanced": "Advanced Steam Vent",
+  "item.mio_icif.reactor.component.steam_vent": "In a Steam Reactor: up to %s mB of steam / 20 ticks from its heat, more the hotter it is",
+  "reactor_audit.kind.steam_vent": "steam vent"
 }

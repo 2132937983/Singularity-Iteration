@@ -146,6 +146,21 @@ public class mio_icif_reactors {
             new Item.Properties().component(mio_icif_data_components.FUEL_ROD_DURABILITY.get(), FuelRodDurability.full(10000)),
             10000, 5, 4, mio_icif_nuclear_reactor.FuelRodType.QUAD, () -> MOX_QUAD_DEPLETED.get()));
 
+    // 0.1.10.36: IC2C steam vents (heat 1100; self / hull pull 12/0, 10/10, 40/72, 24/0). In a steam reactor they make steam
+    // from their heat (ReactorCycle STEAM_VENT); in any other reactor they are ordinary vents.
+    public static final DeferredItem<mio_icif_steam_vent> STEAM_VENT = ITEMS.register("reactor/item_reactor_steam_vent",
+        () -> new mio_icif_steam_vent(new Item.Properties().component(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),
+            ReactorComponentData.full(ReactorInventory.STEAM_VENT_HEAT)), ReactorInventory.STEAM_VENT_HEAT, 12, 0));
+    public static final DeferredItem<mio_icif_steam_vent> STEAM_VENT_CORE = ITEMS.register("reactor/item_reactor_steam_vent_core",
+        () -> new mio_icif_steam_vent(new Item.Properties().component(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),
+            ReactorComponentData.full(ReactorInventory.STEAM_VENT_HEAT)), ReactorInventory.STEAM_VENT_HEAT, 10, 10));
+    public static final DeferredItem<mio_icif_steam_vent> STEAM_VENT_OVERCLOCKED = ITEMS.register("reactor/item_reactor_steam_vent_overclocked",
+        () -> new mio_icif_steam_vent(new Item.Properties().component(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),
+            ReactorComponentData.full(ReactorInventory.STEAM_VENT_HEAT)), ReactorInventory.STEAM_VENT_HEAT, 40, 72));
+    public static final DeferredItem<mio_icif_steam_vent> STEAM_VENT_ADVANCED = ITEMS.register("reactor/item_reactor_steam_vent_advanced",
+        () -> new mio_icif_steam_vent(new Item.Properties().component(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),
+            ReactorComponentData.full(ReactorInventory.STEAM_VENT_HEAT)), ReactorInventory.STEAM_VENT_HEAT, 24, 0));
+
     // 0.1.10.36: proton fuel rods (Industrial Upgrade style): 3x the EU and 1.5x the heat of uranium, 40000 cycles.
     // The energy / heat arguments (15 / 6) are legacy-API values only; ReactorCycle uses the profile of ReactorInventory.
     public static final DeferredItem<Item> PROTON_SIMPLE_DEPLETED = ITEMS.register("reactor/item_reactor_proton_simple_depleted", () -> new Item(new Item.Properties().stacksTo(64)));

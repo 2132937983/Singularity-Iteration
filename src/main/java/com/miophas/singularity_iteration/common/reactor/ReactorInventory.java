@@ -37,6 +37,8 @@ public final class ReactorInventory {
     /** 0.1.10.36: the proton rod (Industrial Upgrade style): 3x the EU and 1.5x the heat of uranium, 40000 cycles. */
     public static final float PROTON_EU=3.0f,PROTON_HEAT=1.5f;
     public static final int PROTON_LIFE=40000;
+    /** 0.1.10.36: heat capacity of the IC2C steam vents. */
+    public static final int STEAM_VENT_HEAT=1100;
     /** 0.1.10.36: the tritium rod keeps its item id (normal/item_tritium_cell); its component key is "tritium_cell". */
     private static final String TRITIUM_KEY="tritium_cell";
     /** 0.1.10.36: the spent identity of each fuel rod (was a switch). */
@@ -67,6 +69,8 @@ public final class ReactorInventory {
         Map.entry(TRITIUM_KEY,Profile.neutronSource(TRITIUM_LIFE,TRITIUM_HEAT_PER_CYCLE)),
         Map.entry("proton_simple",Profile.fuel(1,false,PROTON_EU,PROTON_HEAT)),Map.entry("proton_dual",Profile.fuel(2,false,PROTON_EU,PROTON_HEAT)),
         Map.entry("proton_quad",Profile.fuel(4,false,PROTON_EU,PROTON_HEAT)),
+        Map.entry("steam_vent",Profile.steamVent(STEAM_VENT_HEAT,12,0)),Map.entry("steam_vent_core",Profile.steamVent(STEAM_VENT_HEAT,10,10)),
+        Map.entry("steam_vent_overclocked",Profile.steamVent(STEAM_VENT_HEAT,40,72)),Map.entry("steam_vent_advanced",Profile.steamVent(STEAM_VENT_HEAT,24,0)),
         Map.entry("uranium_simple_depleted",INERT),Map.entry("uranium_dual_depleted",INERT),Map.entry("uranium_quad_deplete",INERT),
         Map.entry("mox_simple_depleted",INERT),Map.entry("mox_dual_deplete",INERT),Map.entry("mox_quad_deplete",INERT),
         Map.entry("proton_simple_depleted",INERT),Map.entry("proton_dual_depleted",INERT),Map.entry("proton_quad_depleted",INERT));

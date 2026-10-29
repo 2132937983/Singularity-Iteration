@@ -156,6 +156,14 @@
     {
       "id": "mio_icif:kugenerator/block_stirling_kinetic_generator",
       "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_reactor",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_turbine",
+      "required": false
     }
   ]
 }

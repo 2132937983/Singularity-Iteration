@@ -1138,7 +1138,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.DIESEL_GENERATOR.get());
                 output.accept(mio_icif_blocks.RT_GENERATOR.get());
                 output.accept(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get());
-                output.accept(mio_icif_blocks.UNLIMIT_GENERATOR.get());
+                // 0.1.10.36: the Infinite Generator is hidden (still registered, so placed ones survive); use the Creative Generator
                 output.accept(mio_icif_blocks.CREATIVE_GENERATOR.get());
 
                 // ============================================================

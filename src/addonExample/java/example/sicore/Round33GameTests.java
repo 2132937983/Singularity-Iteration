@@ -386,6 +386,9 @@ public final class Round33GameTests {
                 be = ((EntityBlock) e.getValue()).newBlockEntity(BlockPos.ZERO, e.getValue().defaultBlockState());
             } catch (RuntimeException ex) { continue; }
             if (!(be instanceof AbstractEnergyBlockEntity)) continue;
+            // 0.1.10.36: a block hidden from players (c:hidden_from_recipe_viewers, e.g. the Infinite Generator) has no page
+            if (new net.minecraft.world.item.ItemStack(e.getValue()).is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM,
+                    net.minecraft.resources.ResourceLocation.parse("c:hidden_from_recipe_viewers")))) continue;
             String page = "machines/" + key.getPath().replace('/', '_') + ".md";
             for (String lang : new String[]{"", "_zh_cn/", "_ja_jp/"}) {
                 if (resource(base + lang + page) == null) missing.add(lang + page);

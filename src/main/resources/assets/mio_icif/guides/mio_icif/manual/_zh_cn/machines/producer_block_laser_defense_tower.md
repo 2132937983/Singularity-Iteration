@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "镭射激光防御塔"
+  title: "激光防御塔"
   icon: mio_icif:producer/block_laser_defense_tower
   parent: machines.md
   position: 38
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_laser_defense_tower
 ---
 
-# 镭射激光防御塔
+# 激光防御塔
 
 <Row>
   <BlockImage id="mio_icif:producer/block_laser_defense_tower" scale="3" />
@@ -16,7 +16,7 @@ item_ids:
 
 ## 功能
 
-镭射激光防御塔向视线内最多5个目标发射激光。每次命中消耗EU。
+激光防御塔向视线内最多5个目标发射激光。每次命中消耗EU。
 默认扫描范围为各方向16格。可在界面中扩大到32格。
 黑名单模式攻击未列出的敌对生物。白名单模式只攻击列出的生物、标签和玩家。
 

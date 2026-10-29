@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "巡天镭射激光防御站"
+  title: "巡天激光防御站"
   icon: mio_icif:producer/block_sky_patrol_laser_tower
   parent: machines.md
   position: 59
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:producer/block_sky_patrol_laser_tower
 ---
 
-# 巡天镭射激光防御站
+# 巡天激光防御站
 
 <Row>
   <BlockImage id="mio_icif:producer/block_sky_patrol_laser_tower" scale="3" />
@@ -16,7 +16,7 @@ item_ids:
 
 ## 功能
 
-巡天镭射激光防御站向视线内最多10个目标发射激光。每次命中消耗EU。
+巡天激光防御站向视线内最多10个目标发射激光。每次命中消耗EU。
 默认扫描范围为各方向32格。可在界面中扩大到64格。
 黑名单模式攻击未列出的敌对生物。白名单模式只攻击列出的生物、标签和玩家。
 

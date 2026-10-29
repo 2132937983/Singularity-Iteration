@@ -38,7 +38,8 @@ public class mio_icif_laser_miner extends mio_icif_tool_elc implements com.mioph
         SCATTER("scatter", 10_000, 3, 32, 4, 0),
         EXPLOSIVE("explosive", 5_000, 0, 64, 8, 2),
         THREE_BY_THREE("3x3", 10_000, 1, 64, 4, 0),
-        NUCLEAR_EXPLOSIVE("nuclear_explosive", 100_000, 0, 64, 20, 18.566355F);
+        // 0.1.10.36: 32767 (Short.MAX_VALUE) for a direct hit; LaserUltraBlastDamage gives it to everything in the blast radius
+        NUCLEAR_EXPLOSIVE("nuclear_explosive", 100_000, 0, 64, LaserUltraBlastDamage.DAMAGE, 18.566355F);
 
         final String translation;
         final long cost;
@@ -94,15 +95,12 @@ public class mio_icif_laser_miner extends mio_icif_tool_elc implements com.mioph
     private boolean fire(ItemStack stack, net.minecraft.world.entity.LivingEntity shooter, Mode mode, float yawDeg, float pitchDeg) {
         Level level = shooter.level();
         var bullets = new ArrayList<mio_icif_laser_bullet>();
-        boolean multiple = mode == Mode.SCATTER || mode == Mode.THREE_BY_THREE;
-        int radius = multiple ? 1 : 0;
-        Vec3 direction = Vec3.directionFromRotation(pitchDeg, yawDeg).normalize();
-        Vec3 right = Vec3.directionFromRotation(0, yawDeg + 90);
-        Vec3 up = right.cross(direction).normalize();
+        // 0.1.10.36: the 3x3 mode fires one bolt that mines a 3x3 around the block it hits. Before, nine parallel bolts
+        // started beside the shooter's eyes and each took the first block on its own line (a chest next to the player).
+        int radius = mode == Mode.SCATTER ? 1 : 0;
         for (int x = -radius; x <= radius; x++) for (int y = -radius; y <= radius; y++) {
             var bullet = new mio_icif_laser_bullet(LASER_BULLET_ENTITY, shooter, level);
             bullet.configure(mode);
-            if (mode == Mode.THREE_BY_THREE) bullet.setPos(bullet.position().add(right.scale(x)).add(up.scale(y)));
             float pitch = mode == Mode.HORIZONTAL ? 0 : pitchDeg;
             float yaw = yawDeg;
             if (mode == Mode.SCATTER) { pitch += y * 5; yaw += x * 5; }

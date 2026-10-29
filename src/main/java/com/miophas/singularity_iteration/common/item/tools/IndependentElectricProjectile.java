@@ -108,17 +108,26 @@ abstract class IndependentElectricProjectile extends ThrowableProjectile impleme
     }
 
     protected final void explode(Vec3 center, float strength, boolean terrain) {
-        explode(center, strength, terrain, null, null, null);
+        explode(center, strength, terrain, null, null, null, null);
     }
 
-    /**
-     * 0.1.10.11: an explosion with its own particles and sound (null: the vanilla ones). Returns
-     * true when it went off (the owner may build there and the area is loaded).
-     */
     protected final boolean explode(Vec3 center, float strength, boolean terrain,
             @org.jetbrains.annotations.Nullable net.minecraft.core.particles.ParticleOptions small,
             @org.jetbrains.annotations.Nullable net.minecraft.core.particles.ParticleOptions large,
             @org.jetbrains.annotations.Nullable net.minecraft.core.Holder<net.minecraft.sounds.SoundEvent> sound) {
+        return explode(center, strength, terrain, small, large, sound, null);
+    }
+
+    /**
+     * 0.1.10.11: an explosion with its own particles and sound (null: the vanilla ones). Returns
+     * true when it went off (the owner may build there and the area is loaded). 0.1.10.36: {@code damage} replaces the
+     * calculator (null: vanilla); it only takes effect with the custom particles and sound.
+     */
+    protected final boolean explode(Vec3 center, float strength, boolean terrain,
+            @org.jetbrains.annotations.Nullable net.minecraft.core.particles.ParticleOptions small,
+            @org.jetbrains.annotations.Nullable net.minecraft.core.particles.ParticleOptions large,
+            @org.jetbrains.annotations.Nullable net.minecraft.core.Holder<net.minecraft.sounds.SoundEvent> sound,
+            @org.jetbrains.annotations.Nullable java.util.function.Function<Entity, net.minecraft.world.level.ExplosionDamageCalculator> damage) {
         if (!(level() instanceof ServerLevel level) || !(getOwner() instanceof ServerPlayer player)
                 || !player.mayBuild() || strength <= 0.0F) return false;
         BlockPos pos = BlockPos.containing(center);
@@ -130,7 +139,8 @@ abstract class IndependentElectricProjectile extends ThrowableProjectile impleme
         if (small == null || large == null || sound == null) {
             level.explode(player, center.x, center.y, center.z, strength, interaction);
         } else {
-            level.explode(player, null, null, center.x, center.y, center.z, strength, false, interaction, small, large, sound);
+            level.explode(player, null, damage == null ? null : damage.apply(player), center.x, center.y, center.z, strength, false,
+                interaction, small, large, sound);
         }
         return true;
     }

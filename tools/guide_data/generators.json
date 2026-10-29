@@ -591,24 +591,6 @@
       "ja": ["LVケーブルを発電機に接続する。", "最大6個の燃料ペレットをペレットスロットに入れる。"]
     }
   },
-  "generator/block_unlimit_generator": {
-    "kind": "generator",
-    "function": {
-      "en": ["The machine makes EU continuously without fuel.", "The machine charges a battery in its charge slot. The machine is a creative-mode block."],
-      "zh": ["机器不需要燃料即可持续产生 EU。", "机器为充电槽位中的电池充电。该机器是创造模式方块。"],
-      "ja": ["機械は燃料なしで連続してEUを作る。", "機械は充電スロットのバッテリーを充電する。この機械はクリエイティブ用ブロックだ。"]
-    },
-    "usage": {
-      "en": ["Place the generator next to a machine or a cable.", "Put a battery into the charge slot to charge it."],
-      "zh": ["把发电机放在机器或导线旁边。", "把电池放入充电槽位来充电。"],
-      "ja": ["発電機を機械またはケーブルの隣に置く。", "充電するバッテリーを充電スロットに入れる。"]
-    },
-    "notes": {
-      "en": ["Check the voltage tier of each connected machine. A machine explodes on overvoltage."],
-      "zh": ["检查每台连接机器的电压等级。过压会使机器爆炸。"],
-      "ja": ["接続する各機械の電圧Tierを確認する。過電圧で機械は爆発する。"]
-    }
-  },
   "generator/block_nuclear_reactor_generator": {
     "kind": "reactor",
     "function": {

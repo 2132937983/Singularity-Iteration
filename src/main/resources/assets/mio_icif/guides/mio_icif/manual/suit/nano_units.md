@@ -67,7 +67,7 @@ The Kinetic Armor Mesh and the Optical Camouflage cannot be on the two keys at t
 
 ## Mk.II
 
-Every unit made for the nano lattice has a Mk.II item: the Mk.I unit, a Living Circuit, four neutron plates and three family materials.
+Every unit made for the nano lattice has a Mk.II item: the Mk.I unit, a Living Circuit, four Degenerate Zero Matter and three family materials.
 Mk.II is stronger (the item tooltip shows how) and draws 20 % less power. It takes the same lattice points.
 To upgrade, put the piece in the station and one Mk.II item in the unit slot. The station replaces the Mk.I unit and gives it back.
 

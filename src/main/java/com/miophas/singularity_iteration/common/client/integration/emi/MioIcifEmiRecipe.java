@@ -1,12 +1,16 @@
 package com.miophas.singularity_iteration.common.client.integration.emi;
 
+import com.miophas.singularity_iteration.common.recipe.blast_furnace.mio_icif_BlastFurnaceRecipe;
 import com.miophas.singularity_iteration.common.recipe.canner.mix.MixRecipe;
+import com.miophas.singularity_iteration.common.recipe.centrifuge.mio_icif_CentrifugeRecipe;
 import com.miophas.singularity_iteration.common.recipe.mio_icif_PowderRecipe;
+import com.miophas.singularity_iteration.common.recipe.washer.mio_icif_WasherRecipe;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
@@ -15,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * EMI 通用配方实现
@@ -27,6 +32,8 @@ public class MioIcifEmiRecipe implements EmiRecipe {
     private final List<EmiIngredient> inputs;
     private final List<EmiStack> outputs;
     private final ResourceLocation id;
+    /** A line under the slots (minimum heat, water), or null. */
+    private @Nullable Component info;
 
     public MioIcifEmiRecipe(EmiRecipeCategory category, RecipeHolder<? extends Recipe<?>> recipeHolder) {
         this.category = category;
@@ -54,13 +61,29 @@ public class MioIcifEmiRecipe implements EmiRecipe {
 
         // 解析输出
         this.outputs = new ArrayList<>();
-        ItemStack resultItem;
-        if (recipe instanceof MixRecipe mixRecipe) {
-            resultItem = mixRecipe.getDynamicResultCell();
+        // 0.1.10.36: machines with by-products show every output (before, only the primary one), as their JEI categories do
+        if (recipe instanceof mio_icif_CentrifugeRecipe centrifuge) {
+            centrifuge.getAllResults().forEach(stack -> outputs.add(EmiStack.of(stack)));
+            info = Component.translatable("jei.mio_icif.centrifuge.heat", number(centrifuge.getMinHeatRequired()));
+        } else if (recipe instanceof mio_icif_WasherRecipe washer) {
+            washer.getAllResults().forEach(stack -> outputs.add(EmiStack.of(stack)));
+            info = Component.translatable("jei.mio_icif.washer.water", number(washer.getWaterAmount()));
+        } else if (recipe instanceof mio_icif_BlastFurnaceRecipe blast) {
+            outputs.add(EmiStack.of(blast.getResult()));
+            if (!blast.getSecondaryResult().isEmpty()) outputs.add(EmiStack.of(blast.getSecondaryResult()));
         } else {
-            resultItem = recipe.getResultItem(null);
+            ItemStack resultItem;
+            if (recipe instanceof MixRecipe mixRecipe) {
+                resultItem = mixRecipe.getDynamicResultCell();
+            } else {
+                resultItem = recipe.getResultItem(null);
+            }
+            outputs.add(EmiStack.of(resultItem));
         }
-        outputs.add(EmiStack.of(resultItem));
+    }
+
+    private static String number(long n) {
+        return String.format(Locale.ROOT, "%,d", n);
     }
 
     @Override
@@ -105,9 +128,17 @@ public class MioIcifEmiRecipe implements EmiRecipe {
             widgets.addSlot(inputs.get(1), 80, 44);
         }
 
-        // 输出槽位
-        if (!outputs.isEmpty()) {
+        // 输出槽位：一个输出在中间；有副产物时排成一行
+        if (outputs.size() == 1) {
             widgets.addSlot(outputs.get(0), 109, 28).recipeContext(this);
+        } else {
+            for (int i = 0; i < outputs.size(); i++) {
+                widgets.addSlot(outputs.get(i), 100 + i * 18, 28).recipeContext(this);
+            }
+        }
+
+        if (info != null) {
+            widgets.addText(info, 2, 62, 0x404040, false);
         }
     }
 }

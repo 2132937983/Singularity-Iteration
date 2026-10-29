@@ -4547,5 +4547,18 @@
   "jei.mio_icif.reactor_transformation.breeder_pulse": "相邻燃料棒：热量增加，EU 不变",
   "jei.mio_icif.reactor_transformation.neutron_source": "相邻燃料棒多一次脉冲（EU、热量）",
   "jei.mio_icif.reactor_transformation.decay_heat": "每周期向堆体放热 %s HU",
-  "jei.mio_icif.reactor_transformation.ejected": "下一周期被弹出反应堆"
+  "jei.mio_icif.reactor_transformation.ejected": "下一周期被弹出反应堆",
+  "structure.mio_icif.steam_reactor": "蒸汽反应堆（含反应仓与涡轮发电机）",
+  "structure.mio_icif.steam_reactor.chamber": "可选：每个增加一列；可注水、抽蒸汽",
+  "structure.mio_icif.steam_reactor.turbine": "必须紧贴反应堆本体：反应堆向它推送蒸汽",
+  "structure.mio_icif.steam_reactor.note.columns": "反应堆每个面上的蒸汽反应仓增加一列元件槽位：3 + 反应仓数，最多 9 列。核反应仓不连接蒸汽反应堆。",
+  "structure.mio_icif.steam_reactor.note.vents": "在反应堆内把蒸汽散热片放在燃料棒旁：散热片自身热量超过 100 HU 后产生蒸汽，1,100 HU 时达到最大速率。“反应堆布局”分类中有蒸汽反应堆布局。",
+  "structure.mio_icif.steam_reactor.note.fluids": "把水泵入反应堆或反应仓。反应堆向相邻机器推送蒸汽，不推给反应仓：装满六个反应仓时，用管道从反应仓抽出蒸汽。",
+  "reactor_layout.mio_icif.steam_starter": "蒸汽：双联棒，960 mB/s",
+  "reactor_layout.mio_icif.steam_starter.note": "一根双联铀燃料棒与四个高级蒸汽散热片（稳定在 350 HU）。可供约 24 EU/t 的蒸汽涡轮发电机。",
+  "reactor_layout.mio_icif.steam_quad": "蒸汽：四联棒，3,840 mB/s",
+  "reactor_layout.mio_icif.steam_quad.note": "一根四联铀燃料棒与四个超频蒸汽散热片（稳定在 700 HU）。可供约 96 EU/t：两台蒸汽涡轮发电机。",
+  "jei.mio_icif.reactor_layout.steam_output": "蒸汽：%s mB/s ≈ 涡轮发电机 %s EU/t · 蒸汽反应仓：%s",
+  "jei.mio_icif.reactor_layout.steam_fuel": "燃料可用 %s · 每次装填 %s mB 蒸汽",
+  "jei.mio_icif.reactor_layout.steam_model": "蒸汽反应堆：水与蒸汽空间不限；涡轮发电机每 2 mB 蒸汽产生 1 EU。"
 }

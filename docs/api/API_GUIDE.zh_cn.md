@@ -527,6 +527,8 @@ ReactorLayoutRegistry.register(ReactorLayout.of(ResourceLocation.fromNamespaceAn
     "_,vent,_/vent,uranium_simple,vent/_,vent,_", null, "reactor_layout.mymod.starter.note"));
 ```
 
+* 0.1.10.37：`ReactorLayout.steam(id, preset, titleKey, noteKey)` 创建蒸汽反应堆布局（`steam()` 为 true）。SI 按蒸汽反应堆运行它（水与蒸汽空间不限），显示每秒蒸汽量、可供蒸汽涡轮发电机产生的 EU/t（每 2 mB 蒸汽 1 EU）以及每次装填的蒸汽量，而不是 EU/t。0.1.10.19 的四参数记录构造器仍创建发电布局。SI 注册了建造图 `mio_icif:steam_reactor`（反应堆、蒸汽反应仓、涡轮发电机）与布局 `mio_icif:steam_starter`、`mio_icif:steam_quad`。
+
 * `core.api.multiblock.StructureBlueprint` / `StructureBlueprintRegistry`：建造图。层自下而上；每层是由北向南的行列表；每行由西向东，每个方块一个符号。每个符号有一个键：允许的方块（`BlockRef`：方块 ID 加按名称指定的方块状态属性，因此可在注册表完成前引用方块）与可选的说明键。空格或 `.` 表示结构不使用的位置。`controller(char)` 标记控制器，它必须在图中恰好出现一次。`build()` 会拒绝大小不同的层或行、超过 32 的尺寸，以及没有键的符号。标题键默认为 `structure.<命名空间>.<路径>`。
 * JEI：3D 视图（拖动：旋转；滚轮：缩放；点击层标签：逐层查看）、作为输入槽并带数量的材料（查看某方块的用途即可找到包含它的建造图）、槽位提示中的键说明，以及视图下方的建造图说明。方块按模型绘制，不使用方块实体渲染器；所属模组缺失的方块不显示。
 * 手册（GuideME）：在 `<GameScene>` 中使用 `<SiStructure id="mymod:plan" />`，会在每个位置放置第一个允许的方块（可选 `x`、`y`、`z` 偏移）；`<SiStructureInfo id="mymod:plan" />` 列出材料及其规则和说明。SI 只为自己的手册（`mio_icif:manual`）注册这两个标签；建造图本身来自注册表，因此附属的建造图无论如何都会显示在 JEI 分类中。

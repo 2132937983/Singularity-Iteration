@@ -46,6 +46,16 @@ The heat stages, the radiation shielding and the accident audit are the same as 
 > **WARNING:** The reactor explodes when the hull heat reaches its limit.
 
 
+## Structure
+
+Drag the view to turn it. The list gives the blocks and their rules. JEI shows the same plan in the category "Multiblock Structures"; the category "Reactor Layouts" shows where the Steam Vents go.
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:steam_reactor" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:steam_reactor" />
+
 ## Recipe
 
 <RecipesFor id="mio_icif:generator/block_steam_reactor" fallbackText="-" />

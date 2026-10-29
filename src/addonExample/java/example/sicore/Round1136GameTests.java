@@ -359,6 +359,8 @@ public final class Round1136GameTests {
         java.util.UUID id = java.util.UUID.randomUUID();
         var center = net.minecraft.world.phys.Vec3.atCenterOf(h.absolutePos(inside));
         call(manager, "register", h.getLevel(), id, center, 3, 3);
+        // 0.1.10.37: a blast turns 0.02 % of the ores by default; this blast turns all of them, to check where it works
+        com.miophas.singularity_iteration.core.runtime.radiation.NuclearFalloutState.get(h.getLevel()).regions.get(id).transmuteChance = 1.0;
         call(manager, "ready", h.getLevel(), id);
         var iridium = BuiltInRegistries.BLOCK.get(id("block_ore_iridium_in_deep"));
         h.succeedWhen(() -> {

@@ -46,6 +46,16 @@ item_ids:
 > **警告：** 堆温达到上限时，反应堆爆炸。
 
 
+## 结构
+
+拖动视图可旋转。下方列表给出所需方块及其规则。JEI 的“多方块结构”分类中也有相同的建造图；“反应堆布局”分类给出蒸汽散热片的摆放方式。
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:steam_reactor" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:steam_reactor" />
+
 ## 配方
 
 <RecipesFor id="mio_icif:generator/block_steam_reactor" fallbackText="-" />

@@ -43,6 +43,16 @@ public final class BuiltinReactorLayouts {
         // failure that looks safe for 100 s: the reflector adds pulses (160 HU/s, 108 vented); the vents
         // store the rest, melt after 199 s, meltdown after 280 s
         add("failure_reflector", "_,IV,_/iridium_reflector,uranium_quad,IV/_,IV,_");
+        // 0.1.10.37: Steam Reactor layouts (run as steam reactors). 960 mB/s: each Advanced Steam Vent gets 6 HU/s and settles
+        // at 350 HU (efficiency 0.25: 6 units of 40 mB); about 24 EU/t of Steam Turbine Generators
+        steam("steam_starter", "_,steam_vent_advanced,_/steam_vent_advanced,uranium_dual,steam_vent_advanced/_,steam_vent_advanced,_");
+        // 3,840 mB/s: 96 HU/s into four Overclocked Steam Vents, 24 each, settling at 700 HU; about 96 EU/t of turbines
+        steam("steam_quad", "_,steam_vent_overclocked,_/steam_vent_overclocked,uranium_quad,steam_vent_overclocked/_,steam_vent_overclocked,_");
+    }
+
+    private static void steam(String name, String preset) {
+        ReactorLayoutRegistry.register(ReactorLayout.steam(ResourceLocation.fromNamespaceAndPath("mio_icif", name), preset, null,
+            "reactor_layout.mio_icif." + name + ".note"));
     }
 
     private static void add(String name, String preset) {

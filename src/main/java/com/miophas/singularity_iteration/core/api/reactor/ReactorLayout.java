@@ -34,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
  *     "_,vent,_/vent,uranium_simple,vent/_,vent,_"));
  * }</pre>
  */
-public record ReactorLayout(ResourceLocation id, List<String> rows, @Nullable String titleKey, @Nullable String noteKey) {
+public record ReactorLayout(ResourceLocation id, List<String> rows, @Nullable String titleKey, @Nullable String noteKey, boolean steam) {
     /** EN: Most rows of a reactor. ZH: 反应堆的最大行数。JA: 原子炉の最大行数。 */
     public static final int MAX_ROWS = 6;
     /** EN: Fewest and most columns (3 + 0 to 6 chambers). ZH: 最少与最多列数（3 + 0 到 6 个反应仓）。JA: 最小・最大の列数（3 + チャンバー 0〜6）。 */
@@ -63,6 +63,27 @@ public record ReactorLayout(ResourceLocation id, List<String> rows, @Nullable St
      */
     public static ReactorLayout of(ResourceLocation id, String preset) {
         return of(id, preset, null, null);
+    }
+
+    /**
+     * <p><b>EN:</b> An electric layout (the record of 0.1.10.19, {@code steam} false).
+     * <p><b>ZH:</b> 发电布局（0.1.10.19 的记录，{@code steam} 为 false）。
+     * <p><b>JA:</b> 発電レイアウト（0.1.10.19 のレコード、{@code steam} は false）。
+     */
+    public ReactorLayout(ResourceLocation id, List<String> rows, @Nullable String titleKey, @Nullable String noteKey) {
+        this(id, rows, titleKey, noteKey, false);
+    }
+
+    /**
+     * <p><b>EN:</b> 0.1.10.37: a Steam Reactor layout. SI runs it as a steam reactor (unlimited water and steam room) and shows the
+     * steam per second and the EU/t of the Steam Turbine Generators it feeds instead of the EU/t.
+     * <p><b>ZH:</b> 0.1.10.37：蒸汽反应堆布局。SI 按蒸汽反应堆运行（水与蒸汽空间不限），显示每秒蒸汽量及其可供蒸汽涡轮发电机产生的 EU/t，而不是 EU/t。
+     * <p><b>JA:</b> 0.1.10.37：蒸気原子炉のレイアウト。SI は蒸気原子炉として動かし（水と蒸気の空きは無制限）、EU/t の代わりに毎秒の蒸気量と、
+     * それで動く蒸気タービン発電機の EU/t を表示する。
+     */
+    public static ReactorLayout steam(ResourceLocation id, String preset, @Nullable String titleKey, @Nullable String noteKey) {
+        Objects.requireNonNull(preset, "preset");
+        return new ReactorLayout(id, Arrays.asList(preset.trim().split("/")), titleKey, noteKey, true);
     }
 
     /**

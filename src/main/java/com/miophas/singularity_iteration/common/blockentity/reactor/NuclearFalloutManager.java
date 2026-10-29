@@ -26,6 +26,8 @@ public final class NuclearFalloutManager {
     public static void register(ServerLevel level,UUID id,Vec3 center,int radius,int radiusY){
         var data=NuclearFalloutState.get(level);var region=new NuclearFalloutState.Region(center,radius,radiusY,System.currentTimeMillis());
         region.transmute=true;   // 0.1.10.36: deepslate ores in the blast become deepslate iridium ore
+        // 0.1.10.37: a share of them (0.02 % by default), the config value at the moment of the blast
+        region.transmuteChance=com.miophas.singularity_iteration.common.Singularity_Iteration_Config.NUKE_IRIDIUM_ORE_CHANCE.get();
         data.regions.put(id,region);data.setDirty();
     }
     public static void ready(ServerLevel level,UUID id){

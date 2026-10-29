@@ -29,6 +29,10 @@ public final class NuclearFalloutState extends SavedData {
          * version never transmutes). {@link #ores} holds the sections done per chunk; {@link #ORES_DONE} when the chunk is done.
          */
         public boolean transmute;
+        /** 0.1.10.37: the share of the transmutable ores that become iridium ore, fixed at the blast (config nukeIridiumOreChance). */
+        public double transmuteChance = DEFAULT_TRANSMUTE_CHANCE;
+        /** 0.1.10.37: 0.02 %; also the chance of a region saved by 0.1.10.36 (which turned every ore). */
+        public static final double DEFAULT_TRANSMUTE_CHANCE = 0.0002;
         public final Map<Long,Integer> ores = new LinkedHashMap<>();
         public static final int ORES_DONE = 1 << 16;
         public Region(Vec3 center,int radius,int radiusY,long created){
@@ -91,6 +95,7 @@ public final class NuclearFalloutState extends SavedData {
                 // Pressure tasks are transient. Reload resumes fallout, never another blast.
                 region.ready=true;
                 region.transmute=row.getBoolean("transmute");   // 0.1.10.36; older saves: false
+                if(row.contains("transmute_chance"))region.transmuteChance=Math.clamp(row.getDouble("transmute_chance"),0.0,1.0);   // 0.1.10.37
                 for(Tag entry:row.getList("chunks",Tag.TAG_COMPOUND)){
                     var chunk=(CompoundTag)entry;long key=chunk.getLong("pos");int cursor=chunk.getInt("columns");
                     if(cursor>0&&cursor<=256&&region.intersectsChunk(ChunkPos.getX(key),ChunkPos.getZ(key)))region.columns.put(key,cursor);
@@ -106,7 +111,7 @@ public final class NuclearFalloutState extends SavedData {
         var list=new ListTag();regions.forEach((id,region)->{
             var row=new CompoundTag();row.putUUID("id",id);row.putDouble("x",region.center.x);row.putDouble("y",region.center.y);row.putDouble("z",region.center.z);
             row.putInt("radius",region.radius);row.putInt("radius_y",region.radiusY);row.putLong("created",region.created);
-            if(region.transmute)row.putBoolean("transmute",true);
+            if(region.transmute){row.putBoolean("transmute",true);row.putDouble("transmute_chance",region.transmuteChance);}
             var chunks=new ListTag();region.columns.forEach((key,cursor)->{var chunk=new CompoundTag();chunk.putLong("pos",key);chunk.putInt("columns",cursor);
                 int ores=region.ores.getOrDefault(key,0);if(ores>0)chunk.putInt("ores",ores);chunks.add(chunk);});
             row.put("chunks",chunks);list.add(row);

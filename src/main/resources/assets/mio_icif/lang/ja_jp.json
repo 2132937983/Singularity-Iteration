@@ -4547,5 +4547,18 @@
   "jei.mio_icif.reactor_transformation.breeder_pulse": "隣の燃料棒：熱は増え、EU は同じ",
   "jei.mio_icif.reactor_transformation.neutron_source": "隣の燃料棒はパルス +1（EU・熱）",
   "jei.mio_icif.reactor_transformation.decay_heat": "サイクルごとに炉へ %s HU",
-  "jei.mio_icif.reactor_transformation.ejected": "次のサイクルで原子炉から出る"
+  "jei.mio_icif.reactor_transformation.ejected": "次のサイクルで原子炉から出る",
+  "structure.mio_icif.steam_reactor": "蒸気原子炉（チャンバーとタービン付き）",
+  "structure.mio_icif.steam_reactor.chamber": "任意: 1 個で 1 列増える。給水と蒸気の出口",
+  "structure.mio_icif.steam_reactor.turbine": "原子炉本体に接すること: 原子炉が蒸気を送り込む",
+  "structure.mio_icif.steam_reactor.note.columns": "原子炉の面にある蒸気原子炉チャンバー 1 個ごとに部品スロットが 1 列増える: 3 + チャンバー数、最大 9 列。原子炉チャンバーは蒸気原子炉に接続しない。",
+  "structure.mio_icif.steam_reactor.note.vents": "原子炉内では燃料棒の隣にスチームベントを置く: ベント自身の熱が 100 HU を超えると蒸気を作り、1,100 HU で最大になる。カテゴリ「原子炉レイアウト」に蒸気原子炉のレイアウトがある。",
+  "structure.mio_icif.steam_reactor.note.fluids": "水を原子炉かチャンバーに送り込む。原子炉は隣の機械に蒸気を送るが、チャンバーには送らない: チャンバーが 6 個のときはパイプでチャンバーから蒸気を抜く。",
+  "reactor_layout.mio_icif.steam_starter": "蒸気: デュアル棒、960 mB/s",
+  "reactor_layout.mio_icif.steam_starter.note": "デュアルウラン燃料棒 1 本と高度スチームベント 4 個（350 HU で安定）。蒸気タービン発電機で約 24 EU/t。",
+  "reactor_layout.mio_icif.steam_quad": "蒸気: クアッド棒、3,840 mB/s",
+  "reactor_layout.mio_icif.steam_quad.note": "クアッドウラン燃料棒 1 本とオーバークロックスチームベント 4 個（700 HU で安定）。約 96 EU/t: 蒸気タービン発電機 2 台。",
+  "jei.mio_icif.reactor_layout.steam_output": "蒸気: %s mB/s ≈ タービンで %s EU/t · 蒸気チャンバー: %s",
+  "jei.mio_icif.reactor_layout.steam_fuel": "燃料の持続 %s · 1 回分で蒸気 %s mB",
+  "jei.mio_icif.reactor_layout.steam_model": "蒸気原子炉: 水と蒸気の空きは無制限。タービンは蒸気 2 mB で 1 EU。"
 }

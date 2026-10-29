@@ -437,6 +437,9 @@ public class JEIPlugin implements IModPlugin {
             com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory.TYPE);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.REACTOR_CHAMBER.get()),
             com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory.TYPE);
+        // 0.1.10.37: the steam reactor and its chambers run the steam layouts
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.STEAM_REACTOR.get()), com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory.TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.STEAM_REACTOR_CHAMBER.get()), com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory.TYPE);
         // 0.1.10.37: both reactors run the component changes
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get()), com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorTransformationCategory.TYPE);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.STEAM_REACTOR.get()), com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorTransformationCategory.TYPE);

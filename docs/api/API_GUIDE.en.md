@@ -697,6 +697,12 @@ ReactorLayoutRegistry.register(ReactorLayout.of(ResourceLocation.fromNamespaceAn
     "_,vent,_/vent,uranium_simple,vent/_,vent,_", null, "reactor_layout.mymod.starter.note"));
 ```
 
+* 0.1.10.37: `ReactorLayout.steam(id, preset, titleKey, noteKey)` makes a Steam Reactor layout (`steam()` is true). SI runs it as
+  a steam reactor with unlimited water and steam room and shows the steam per second, the EU/t of the Steam Turbine Generators
+  it feeds (2 mB of steam per EU) and the steam of one fuel load instead of the EU/t. The four-argument record constructor of
+  0.1.10.19 still makes an electric layout. SI registers the plan `mio_icif:steam_reactor` (reactor, steam chambers, turbine)
+  and the layouts `mio_icif:steam_starter` and `mio_icif:steam_quad`.
+
 * `core.api.multiblock.StructureBlueprint` / `StructureBlueprintRegistry`: a build plan. Layers go from
   the bottom up; a layer is a list of rows from north to south; a row has one symbol per block from west
   to east. Each symbol has a key: the permitted blocks (`BlockRef`: a block id plus block state

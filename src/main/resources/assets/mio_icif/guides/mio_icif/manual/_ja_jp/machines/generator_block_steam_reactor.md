@@ -46,6 +46,16 @@ item_ids:
 > **警告：** 炉の温度が上限に達すると、原子炉は爆発する。
 
 
+## 構造
+
+ドラッグで視点を回せます。下のリストは必要なブロックとそのルールです。JEI のカテゴリ「マルチブロック構造」にも同じ建造図があり、カテゴリ「原子炉レイアウト」はスチームベントの置き方を示します。
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:steam_reactor" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:steam_reactor" />
+
 ## レシピ
 
 <RecipesFor id="mio_icif:generator/block_steam_reactor" fallbackText="-" />

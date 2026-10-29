@@ -20,6 +20,7 @@ public final class BuiltinStructureBlueprints {
 
     public static void install() {
         nuclearReactor();
+        steamReactor();   // 0.1.10.37
         fluidReactor();
         gesu();
         largeFabricator();
@@ -39,6 +40,26 @@ public final class BuiltinStructureBlueprints {
             .key('K', KEY + "nuclear_reactor.chamber", block("reactor/block_reactor_chamber"))
             .controller('R')
             .note(KEY + "nuclear_reactor.note.columns")
+            .note(KEY + "nuclear_reactor.note.shared")
+            .note(KEY + "nuclear_reactor.note.chunk"));
+    }
+
+    /**
+     * 0.1.10.37: Steam Reactor (IC2 Classic) with a Steam Reactor Chamber on five faces (optional: 3 + chambers columns) and a
+     * Steam Turbine Generator against the reactor itself (the reactor pushes steam into adjacent machines, never into chambers).
+     */
+    private static void steamReactor() {
+        register(StructureBlueprint.builder(id("steam_reactor"))
+            .layer("...", ".K.", "...")
+            .layer(".K.", "TRK", ".K.")
+            .layer("...", ".K.", "...")
+            .key('R', block("generator/block_steam_reactor"))
+            .key('K', KEY + "steam_reactor.chamber", block("reactor/block_steam_reactor_chamber"))
+            .key('T', KEY + "steam_reactor.turbine", block("generator/block_steam_turbine"))
+            .controller('R')
+            .note(KEY + "steam_reactor.note.columns")
+            .note(KEY + "steam_reactor.note.vents")
+            .note(KEY + "steam_reactor.note.fluids")
             .note(KEY + "nuclear_reactor.note.shared")
             .note(KEY + "nuclear_reactor.note.chunk"));
     }

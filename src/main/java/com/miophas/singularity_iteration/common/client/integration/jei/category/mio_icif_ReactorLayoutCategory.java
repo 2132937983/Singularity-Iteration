@@ -93,7 +93,10 @@ public class mio_icif_ReactorLayoutCategory implements IRecipeCategory<ReactorLa
             out.add(Component.translatable(KEY + "unknown", String.join(", ", layout.unknown())).withStyle(ChatFormatting.RED));
         } else {
             var report = result.report();
-            out.add(Component.translatable(KEY + "output", SiJei.number(Math.round(report.euPerTick())), plan.chambers())
+            // 0.1.10.37: a steam layout shows its steam and the EU/t of the turbines it feeds (2 mB of steam per EU)
+            if (plan.steam()) out.add(Component.translatable(KEY + "steam_output", SiJei.number(report.steamPerCycle()),
+                SiJei.number(report.steamPerCycle() / 20 / com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_steam_turbine.STEAM_PER_EU), plan.chambers()).withStyle(ChatFormatting.DARK_GRAY));
+            else out.add(Component.translatable(KEY + "output", SiJei.number(Math.round(report.euPerTick())), plan.chambers())
                 .withStyle(ChatFormatting.DARK_GRAY));
             out.add(Component.translatable(KEY + "heat", SiJei.number(report.heatPerCycle()), SiJei.number(report.ventPerCycle()))
                 .withStyle(ChatFormatting.DARK_GRAY));
@@ -104,12 +107,16 @@ public class mio_icif_ReactorLayoutCategory implements IRecipeCategory<ReactorLa
                 : Component.translatable(KEY + "blast", String.format(Locale.ROOT, "%.1f", blast.power()), blast.radius())
                     .withStyle(result.verdict() == Verdict.STABLE ? ChatFormatting.DARK_GRAY : ChatFormatting.DARK_RED));
             if (result.verdict() == Verdict.STABLE && result.fuelCycles() > 0) {
-                out.add(Component.translatable(KEY + "fuel", duration(result.fuelCycles()), SiJei.number(Math.round(result.euPerLoad())))
-                    .withStyle(ChatFormatting.DARK_GRAY));
+                out.add(plan.steam()
+                    ? Component.translatable(KEY + "steam_fuel", duration(result.fuelCycles()), SiJei.number(report.steamPerCycle() * result.fuelCycles()))
+                        .withStyle(ChatFormatting.DARK_GRAY)
+                    : Component.translatable(KEY + "fuel", duration(result.fuelCycles()), SiJei.number(Math.round(result.euPerLoad())))
+                        .withStyle(ChatFormatting.DARK_GRAY));
             }
         }
         if (plan.noteKey() != null) out.add(Component.translatable(plan.noteKey()).withStyle(ChatFormatting.GRAY));
         out.add(Component.translatable(KEY + "model").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+        if (plan.steam()) out.add(Component.translatable(KEY + "steam_model").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         return out;
     }
 

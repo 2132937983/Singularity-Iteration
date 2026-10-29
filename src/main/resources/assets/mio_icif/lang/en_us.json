@@ -4547,5 +4547,18 @@
   "jei.mio_icif.reactor_transformation.breeder_pulse": "Rod beside it: more heat, no EU",
   "jei.mio_icif.reactor_transformation.neutron_source": "Rods beside it: +1 pulse (EU, heat)",
   "jei.mio_icif.reactor_transformation.decay_heat": "+%s HU to the hull per cycle",
-  "jei.mio_icif.reactor_transformation.ejected": "Thrown out at the next cycle"
+  "jei.mio_icif.reactor_transformation.ejected": "Thrown out at the next cycle",
+  "structure.mio_icif.steam_reactor": "Steam Reactor with chambers and a turbine",
+  "structure.mio_icif.steam_reactor.chamber": "Optional: each adds one column; water in, steam out",
+  "structure.mio_icif.steam_reactor.turbine": "Must touch the reactor itself: the reactor pushes steam into it",
+  "structure.mio_icif.steam_reactor.note.columns": "Each Steam Reactor Chamber on a face of the reactor adds one column of component slots: 3 + chambers, at most 9. A Reactor Chamber does not connect to a Steam Reactor.",
+  "structure.mio_icif.steam_reactor.note.vents": "Inside, put Steam Vents next to the fuel rods: above 100 HU of their own heat they make steam, at the full rate at 1,100 HU. The category \"Reactor Layouts\" shows Steam Reactor layouts.",
+  "structure.mio_icif.steam_reactor.note.fluids": "Pump water into the reactor or a chamber. The reactor pushes steam into adjacent machines, not into chambers: with six chambers, take the steam out of a chamber with a pipe.",
+  "reactor_layout.mio_icif.steam_starter": "Steam: dual rod, 960 mB/s",
+  "reactor_layout.mio_icif.steam_starter.note": "One dual uranium rod and four Advanced Steam Vents (they settle at 350 HU). Feeds about 24 EU/t of Steam Turbine Generators.",
+  "reactor_layout.mio_icif.steam_quad": "Steam: quad rod, 3,840 mB/s",
+  "reactor_layout.mio_icif.steam_quad.note": "One quad uranium rod and four Overclocked Steam Vents (they settle at 700 HU). Feeds about 96 EU/t: two Steam Turbine Generators.",
+  "jei.mio_icif.reactor_layout.steam_output": "Steam: %s mB/s ≈ %s EU/t in turbines · Steam Chambers: %s",
+  "jei.mio_icif.reactor_layout.steam_fuel": "Fuel lasts %s · %s mB of steam per load",
+  "jei.mio_icif.reactor_layout.steam_model": "Steam Reactor: unlimited water and steam room; a turbine makes 1 EU from 2 mB of steam."
 }

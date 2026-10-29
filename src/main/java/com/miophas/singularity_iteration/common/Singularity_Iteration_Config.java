@@ -282,6 +282,12 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
             .comment("反应堆爆炸威力上限；最大水平半径为此值的两倍",
                      "默认 45 对应最大半径 90 格；0 暂停事故及高温环境效果，已提交事故不重算")
             .defineInRange("reactorExplosionPowerLimit", 45, 0, 1000);
+    // 0.1.10.37：核爆把深层矿石转为深层铱矿石的概率
+    public static final ModConfigSpec.DoubleValue NUKE_IRIDIUM_ORE_CHANCE = NUCLEAR_BUILDER
+            .comment("核弹与反应堆核爆把爆炸范围内每个深层矿石（#mio_icif:nuke_transmutable）转为深层铱矿石的概率",
+                     "默认 0.0002（0.02%）；1 为全部转换，0 关闭；每次爆炸保存爆炸时的值，调整后不影响已发生的爆炸",
+                     "每个位置的结果由爆炸与坐标决定，存档重进后继续处理不会重新抽取")
+            .defineInRange("nukeIridiumOreChance", 0.0002, 0.0, 1.0);
 
     // 蘑菇云粒子数量倍率
     public static final ModConfigSpec.BooleanValue NUCLEAR_FLASH = NUCLEAR_BUILDER

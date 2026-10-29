@@ -99,7 +99,7 @@ public final class NuclearFalloutChunkTask implements BooleanSupplier {
     private boolean transmuteStep(){
         int cursor=region.ores.getOrDefault(chunkKey,0);
         var sections=chunk.getSections();
-        if(!region.transmute||cursor>=NuclearFalloutState.Region.ORES_DONE||cursor>=sections.length
+        if(!region.transmute||region.transmuteChance<=0||cursor>=NuclearFalloutState.Region.ORES_DONE||cursor>=sections.length
                 ||!region.chunkInBlast(chunk.getPos().x,chunk.getPos().z)){finishOres();done=true;return true;}
         var section=sections[cursor];
         int baseY=SectionPos.sectionToBlockCoord(level.getSectionYFromSectionIndex(cursor));
@@ -109,12 +109,29 @@ public final class NuclearFalloutChunkTask implements BooleanSupplier {
         for(int n=0;n<TRANSMUTE_BATCH&&oreIndex<4096;n++,oreIndex++){
             int lx=oreIndex&15,lz=(oreIndex>>4)&15,ly=oreIndex>>8;
             var state=section.getBlockState(lx,ly,lz);
-            if(!transmutable(state)||!region.inBlast(minX+lx,baseY+ly,minZ+lz))continue;
+            if(!transmutable(state)||!region.inBlast(minX+lx,baseY+ly,minZ+lz)
+                ||!transmutes(seed(region),minX+lx,baseY+ly,minZ+lz,region.transmuteChance))continue;
             NuclearTerrainUpdates.replace(level,new BlockPos(minX+lx,baseY+ly,minZ+lz),
                 mio_icif_blocks.BLOCK_ORE_IRIDIUM_IN_DEEP.get().defaultBlockState(),REPLACE_FLAGS);
         }
         if(oreIndex>=4096)nextOreSection(cursor);
         return false;
+    }
+    /**
+     * 0.1.10.37: whether the ore at (x, y, z) becomes iridium ore in the blast {@code seed}: a fixed hash of the blast and the
+     * position (splitmix64) against {@code chance}. A chunk resumed after a reload decides every block the same way, so no ore
+     * gets a second chance.
+     */
+    public static boolean transmutes(long seed,int x,int y,int z,double chance){
+        if(chance>=1)return true;
+        if(chance<=0)return false;
+        long h=seed+BlockPos.asLong(x,y,z)*0x9E3779B97F4A7C15L;
+        h=(h^(h>>>30))*0xBF58476D1CE4E5B9L;h=(h^(h>>>27))*0x94D049BB133111EBL;h^=h>>>31;
+        return (h>>>11)*0x1.0p-53<chance;
+    }
+    /** The seed of a blast: its centre and the time it was registered (both saved). */
+    static long seed(NuclearFalloutState.Region region){
+        return Double.doubleToLongBits(region.center.x)*31+Double.doubleToLongBits(region.center.y)*17+Double.doubleToLongBits(region.center.z)+region.created;
     }
     private void nextOreSection(int cursor){oreIndex=0;region.ores.put(chunkKey,cursor+1);if(saved!=null)saved.setDirty();}
     private void finishOres(){region.ores.put(chunkKey,NuclearFalloutState.Region.ORES_DONE);if(saved!=null)saved.setDirty();}

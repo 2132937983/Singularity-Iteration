@@ -4,6 +4,7 @@ package com.miophas.singularity_iteration.common.reactor;
 import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle;
 import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Part;
 import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Profile;
+import com.miophas.singularity_iteration.core.runtime.reactor.SteamReactorCycle;
 
 /**
  * <p><b>EN:</b> Reactor design simulator (0.1.8.0, guide page "Reactor simulator"). It runs the same model
@@ -41,10 +42,11 @@ public final class ReactorSimulation {
      * @param cycles         cycles run
      * @param firstMeltCycle cycle in which the first component melted, or -1 (0.1.10.19)
      * @param steadyCycle    first cycle after which no heat value changes any more (steady state), or -1 (0.1.10.19)
+     * @param steamPerCycle  steam made per cycle in a steam run, mB (same window as heatPerCycle; 0 otherwise) (0.1.10.37)
      */
     public record Report(double euPerTick, long heatPerCycle, long ventPerCycle, double hullTrend, long hullHeat,
                          long maxHull, long peakHull, int melted, int meltdownCycle, int cycles, int firstMeltCycle,
-                         int steadyCycle) {
+                         int steadyCycle, long steamPerCycle) {
         /** No meltdown, no melted component, and the hull does not heat up. */
         public boolean stable() { return meltdownCycle < 0 && melted == 0 && hullTrend <= 0.0; }
 
@@ -76,10 +78,25 @@ public final class ReactorSimulation {
      * stable while its vents still heat up; this run sees them melt. Used by the JEI reactor layouts.
      */
     public static Report fullRun(Profile[] profiles, int columns) {
-        return simulate(profiles, columns, FULL_CYCLES, true);
+        return fullRun(profiles, columns, false);
+    }
+
+    /** 0.1.10.37: water and free steam room of each cycle of a steam run: more than any design can use. */
+    static final int STEAM_WATER = 1_000_000, STEAM_ROOM = 100_000_000;
+
+    /**
+     * 0.1.10.37: {@link #fullRun(Profile[], int)}, as a steam reactor when {@code steam} ({@link SteamReactorCycle} with
+     * unlimited water and steam room: the steam vents make steam, the rods no EU).
+     */
+    public static Report fullRun(Profile[] profiles, int columns, boolean steam) {
+        return simulate(profiles, columns, FULL_CYCLES, true, steam);
     }
 
     private static Report simulate(Profile[] profiles, int columns, int maxCycles, boolean stopWhenSteady) {
+        return simulate(profiles, columns, maxCycles, stopWhenSteady, false);
+    }
+
+    private static Report simulate(Profile[] profiles, int columns, int maxCycles, boolean stopWhenSteady, boolean steam) {
         if (profiles.length != 54 || columns < 3 || columns > 9) throw new IllegalArgumentException("Invalid design");
         Part[] parts = new Part[54];
         for (int i = 0; i < 54; i++) {
@@ -90,9 +107,18 @@ public final class ReactorSimulation {
         long heat = 0, peak = 0, maxHull = 10_000;
         double eu = 0;
         int melted = 0, meltdown = -1, cycles = 0, firstMelt = -1, steady = -1;
-        long[] history = new long[maxCycles + 1], made = new long[maxCycles + 1], vented = new long[maxCycles + 1];
+        long[] history = new long[maxCycles + 1], made = new long[maxCycles + 1], vented = new long[maxCycles + 1],
+            steamed = new long[maxCycles + 1];
         for (int c = 0; c < maxCycles; c++) {
-            ReactorCycle.Result r = ReactorCycle.step(parts, columns, heat, true);
+            ReactorCycle.Result r;
+            long steamMade = 0;
+            if (steam) {
+                var s = SteamReactorCycle.step(parts, columns, heat, true, STEAM_WATER, STEAM_ROOM);
+                r = s.cycle();
+                steamMade = s.steamMade();
+            } else {
+                r = ReactorCycle.step(parts, columns, heat, true);
+            }
             Part[] next = r.parts();
             boolean same = r.hullHeat() == heat;
             for (int i = 0; i < 54; i++) {
@@ -111,6 +137,7 @@ public final class ReactorSimulation {
             history[cycles] = heat;
             made[cycles] = r.generatedHeat();
             vented[cycles] = r.emittedHeat();
+            steamed[cycles] = steamMade;
             if (heat >= maxHull) { meltdown = cycles; break; }
             if (same) {
                 if (steady < 0) steady = cycles;
@@ -121,21 +148,23 @@ public final class ReactorSimulation {
         }
         // steady state: the components start cold, so the first cycles vent less than later ones
         int window = Math.min(10, cycles);
-        double trend = 0, heatMean = 0, ventMean = 0;
+        double trend = 0, heatMean = 0, ventMean = 0, steamMean = 0;
         if (window > 0) {
             trend = (history[cycles] - history[cycles - window]) / (double) window;
-            for (int c = cycles - window + 1; c <= cycles; c++) { heatMean += made[c]; ventMean += vented[c]; }
+            for (int c = cycles - window + 1; c <= cycles; c++) { heatMean += made[c]; ventMean += vented[c]; steamMean += steamed[c]; }
             heatMean /= window;
             ventMean /= window;
+            steamMean /= window;
         }
         if (stopWhenSteady && steady >= 0) {
             // at the steady state the hull does not change and the vents remove what the fuel makes
             trend = 0;
             heatMean = made[cycles];
             ventMean = vented[cycles];
+            steamMean = steamed[cycles];
         }
         return new Report(cycles == 0 ? 0 : eu / cycles, Math.round(heatMean), Math.round(ventMean), trend, heat, maxHull, peak, melted,
-            meltdown, cycles, firstMelt, steady);
+            meltdown, cycles, firstMelt, steady, Math.round(steamMean));
     }
 
     /** The same component with the same stored value (heat, reflector use, breeding progress), or both slots empty; fuel time is not compared. */

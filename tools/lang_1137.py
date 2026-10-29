@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """0.1.10.37 language values (en_us / zh_cn / ja_jp / ru_ru): the JEI category "Nuclear Fuel Breeding & Decay"
 (core.api.reactor.ReactorTransformationRegistry) - its title, the process line of each entry and the notes SI writes for its own
-components (ReactorInventory.transformations).
+components (ReactorInventory.transformations); the Steam Reactor plan in "Multiblock Structures" and the Steam Reactor
+layouts in "Reactor Layouts" (their steam lines).
 A value per language; a language left out keeps its current value. Idempotent; keeps the line endings of each file. With
 --check it only reports missing or different keys.
 Usage: lang_1137.py <repo root> [--check]
@@ -52,6 +53,49 @@ KEYS = {
         '+%s HU to the hull per cycle', '每周期向堆体放热 %s HU', 'サイクルごとに炉へ %s HU', '+%s HU корпусу за цикл'),
     'jei.mio_icif.reactor_transformation.ejected': v(
         'Thrown out at the next cycle', '下一周期被弹出反应堆', '次のサイクルで原子炉から出る', 'Выбрасывается в следующем цикле'),
+    # ---- the Steam Reactor in "Multiblock Structures" and "Reactor Layouts" (ru_ru has none of the sibling keys: left out)
+    'structure.mio_icif.steam_reactor': v(
+        'Steam Reactor with chambers and a turbine', '蒸汽反应堆（含反应仓与涡轮发电机）', '蒸気原子炉（チャンバーとタービン付き）'),
+    'structure.mio_icif.steam_reactor.chamber': v(
+        'Optional: each adds one column; water in, steam out', '可选：每个增加一列；可注水、抽蒸汽',
+        '任意: 1 個で 1 列増える。給水と蒸気の出口'),
+    'structure.mio_icif.steam_reactor.turbine': v(
+        'Must touch the reactor itself: the reactor pushes steam into it', '必须紧贴反应堆本体：反应堆向它推送蒸汽',
+        '原子炉本体に接すること: 原子炉が蒸気を送り込む'),
+    'structure.mio_icif.steam_reactor.note.columns': v(
+        'Each Steam Reactor Chamber on a face of the reactor adds one column of component slots: 3 + chambers, at most 9. '
+        'A Reactor Chamber does not connect to a Steam Reactor.',
+        '反应堆每个面上的蒸汽反应仓增加一列元件槽位：3 + 反应仓数，最多 9 列。核反应仓不连接蒸汽反应堆。',
+        '原子炉の面にある蒸気原子炉チャンバー 1 個ごとに部品スロットが 1 列増える: 3 + チャンバー数、最大 9 列。原子炉チャンバーは蒸気原子炉に接続しない。'),
+    'structure.mio_icif.steam_reactor.note.vents': v(
+        'Inside, put Steam Vents next to the fuel rods: above 100 HU of their own heat they make steam, at the full rate at 1,100 HU. '
+        'The category "Reactor Layouts" shows Steam Reactor layouts.',
+        '在反应堆内把蒸汽散热片放在燃料棒旁：散热片自身热量超过 100 HU 后产生蒸汽，1,100 HU 时达到最大速率。“反应堆布局”分类中有蒸汽反应堆布局。',
+        '原子炉内では燃料棒の隣にスチームベントを置く: ベント自身の熱が 100 HU を超えると蒸気を作り、1,100 HU で最大になる。カテゴリ「原子炉レイアウト」に蒸気原子炉のレイアウトがある。'),
+    'structure.mio_icif.steam_reactor.note.fluids': v(
+        'Pump water into the reactor or a chamber. The reactor pushes steam into adjacent machines, not into chambers: '
+        'with six chambers, take the steam out of a chamber with a pipe.',
+        '把水泵入反应堆或反应仓。反应堆向相邻机器推送蒸汽，不推给反应仓：装满六个反应仓时，用管道从反应仓抽出蒸汽。',
+        '水を原子炉かチャンバーに送り込む。原子炉は隣の機械に蒸気を送るが、チャンバーには送らない: チャンバーが 6 個のときはパイプでチャンバーから蒸気を抜く。'),
+    'reactor_layout.mio_icif.steam_starter': v('Steam: dual rod, 960 mB/s', '蒸汽：双联棒，960 mB/s', '蒸気: デュアル棒、960 mB/s'),
+    'reactor_layout.mio_icif.steam_starter.note': v(
+        'One dual uranium rod and four Advanced Steam Vents (they settle at 350 HU). Feeds about 24 EU/t of Steam Turbine Generators.',
+        '一根双联铀燃料棒与四个高级蒸汽散热片（稳定在 350 HU）。可供约 24 EU/t 的蒸汽涡轮发电机。',
+        'デュアルウラン燃料棒 1 本と高度スチームベント 4 個（350 HU で安定）。蒸気タービン発電機で約 24 EU/t。'),
+    'reactor_layout.mio_icif.steam_quad': v('Steam: quad rod, 3,840 mB/s', '蒸汽：四联棒，3,840 mB/s', '蒸気: クアッド棒、3,840 mB/s'),
+    'reactor_layout.mio_icif.steam_quad.note': v(
+        'One quad uranium rod and four Overclocked Steam Vents (they settle at 700 HU). Feeds about 96 EU/t: two Steam Turbine Generators.',
+        '一根四联铀燃料棒与四个超频蒸汽散热片（稳定在 700 HU）。可供约 96 EU/t：两台蒸汽涡轮发电机。',
+        'クアッドウラン燃料棒 1 本とオーバークロックスチームベント 4 個（700 HU で安定）。約 96 EU/t: 蒸気タービン発電機 2 台。'),
+    'jei.mio_icif.reactor_layout.steam_output': v(
+        'Steam: %s mB/s ≈ %s EU/t in turbines · Steam Chambers: %s', '蒸汽：%s mB/s ≈ 涡轮发电机 %s EU/t · 蒸汽反应仓：%s',
+        '蒸気: %s mB/s ≈ タービンで %s EU/t · 蒸気チャンバー: %s'),
+    'jei.mio_icif.reactor_layout.steam_fuel': v(
+        'Fuel lasts %s · %s mB of steam per load', '燃料可用 %s · 每次装填 %s mB 蒸汽', '燃料の持続 %s · 1 回分で蒸気 %s mB'),
+    'jei.mio_icif.reactor_layout.steam_model': v(
+        'Steam Reactor: unlimited water and steam room; a turbine makes 1 EU from 2 mB of steam.',
+        '蒸汽反应堆：水与蒸汽空间不限；涡轮发电机每 2 mB 蒸汽产生 1 EU。',
+        '蒸気原子炉: 水と蒸気の空きは無制限。タービンは蒸気 2 mB で 1 EU。'),
 }
 
 

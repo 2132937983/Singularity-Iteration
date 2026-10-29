@@ -150,4 +150,94 @@ public final class Round1137GameTests {
         h.assertTrue(refused, "a negative amount must be refused");
         h.succeed();
     }
+
+    // ------------------------------------------------------------------ nuclear transmutation at 0.02 %
+
+    /**
+     * A blast turns 0.02 % of the deepslate ores into iridium ore: about 200 of 1,000,000 positions. The decision is a fixed hash
+     * of the blast and the position (a chunk resumed after a reload decides the same way); 1 turns every ore, 0 none. A new blast
+     * takes the config value (0.0002 by default).
+     */
+    @GameTest(batch = "round1137_transmute", template = "empty", timeoutTicks = 20)
+    public static void nuclearTransmutationTurnsTwoInTenThousandOres(GameTestHelper h) throws ReflectiveOperationException {
+        var transmutes = Round33GameTests.common("blockentity.reactor.NuclearFalloutChunkTask")
+            .getMethod("transmutes", long.class, int.class, int.class, int.class, double.class);
+        long seed = 0x5EED_1137L;
+        int hits = 0;
+        for (int i = 0; i < 1_000_000; i++) {
+            int x = i % 100, y = -64 + (i / 100) % 100, z = i / 10_000;
+            if ((Boolean) transmutes.invoke(null, seed, x, y, z, 0.0002)) hits++;
+        }
+        h.assertTrue(hits >= 140 && hits <= 260, "0.02 % of 1,000,000 ores is about 200: " + hits);
+        boolean first = (Boolean) transmutes.invoke(null, seed, 5, -20, 7, 0.5);
+        for (int i = 0; i < 5; i++) h.assertTrue((Boolean) transmutes.invoke(null, seed, 5, -20, 7, 0.5) == first, "the same blast and block decide the same way");
+        h.assertTrue((Boolean) transmutes.invoke(null, seed, 1, 2, 3, 1.0) && !(Boolean) transmutes.invoke(null, seed, 1, 2, 3, 0.0), "1 turns every ore, 0 none");
+
+        var manager = Round33GameTests.common("blockentity.reactor.NuclearFalloutManager");
+        java.util.UUID id = java.util.UUID.randomUUID();
+        Round33GameTests.call(manager, "register", h.getLevel(), id, net.minecraft.world.phys.Vec3.atCenterOf(h.absolutePos(REACTOR)), 3, 3);
+        var region = com.miophas.singularity_iteration.core.runtime.radiation.NuclearFalloutState.get(h.getLevel()).regions.get(id);
+        double chance = region.transmuteChance;
+        Round33GameTests.call(manager, "remove", h.getLevel(), id);
+        h.assertTrue(chance == 0.0002, "a new blast takes the config value 0.0002: " + chance);
+        h.succeed();
+    }
+
+    // ------------------------------------------------------------------ the Steam Reactor in JEI
+
+    private static Object steamReport(GameTestHelper h, String layout) {
+        var plan = com.miophas.singularity_iteration.core.api.reactor.ReactorLayoutRegistry.get(id(layout));
+        h.assertTrue(plan != null, "missing layout " + layout);
+        Object result = Round33GameTests.call(Round33GameTests.call(Round33GameTests.common("reactor.ReactorLayoutAnalysis"), "of", plan), "result");
+        h.assertTrue(result != null, layout + " was not simulated");
+        h.assertTrue(Round33GameTests.call(result, "verdict").toString().equals("STABLE"), layout + " is not stable: " + Round33GameTests.call(result, "verdict"));
+        return Round33GameTests.call(result, "report");
+    }
+
+    /**
+     * The Steam Reactor layouts run as steam reactors: four Advanced Steam Vents on a dual rod make 960 mB/s (24 HU/s, 6 units of
+     * 40 mB per vent), four Overclocked Steam Vents on a quad rod 3,840 mB/s; neither makes EU. An electric layout makes no steam.
+     */
+    @GameTest(batch = "round1137_steam_jei", template = "empty", timeoutTicks = 20)
+    public static void steamLayoutsAreSimulatedAsSteamReactors(GameTestHelper h) {
+        h.assertTrue(com.miophas.singularity_iteration.core.api.reactor.ReactorLayoutRegistry.get(id("steam_starter")).steam(), "steam_starter is a steam layout");
+        Object starter = steamReport(h, "steam_starter");
+        h.assertTrue((Long) Round33GameTests.call(starter, "steamPerCycle") == 960, "steam_starter: " + Round33GameTests.call(starter, "steamPerCycle") + " mB/s");
+        h.assertTrue((Double) Round33GameTests.call(starter, "euPerTick") == 0, "a steam reactor makes no EU");
+        Object quad = steamReport(h, "steam_quad");
+        h.assertTrue((Long) Round33GameTests.call(quad, "steamPerCycle") == 3840, "steam_quad: " + Round33GameTests.call(quad, "steamPerCycle") + " mB/s");
+        Object electric = steamReport(h, "dual_rod");
+        h.assertTrue((Long) Round33GameTests.call(electric, "steamPerCycle") == 0 && Math.round((Double) Round33GameTests.call(electric, "euPerTick")) == 20,
+            "an electric layout makes EU and no steam");
+        h.succeed();
+    }
+
+    /**
+     * The plan "Steam Reactor" in "Multiblock Structures": the reactor as controller, five steam chambers and a turbine against
+     * the reactor. Built in the world from its placements, it works: the reactor has 3 + 5 columns.
+     */
+    @GameTest(batch = "round1137_steam_jei", template = "empty", timeoutTicks = 40)
+    public static void steamReactorPlanBuildsAWorkingReactor(GameTestHelper h) {
+        var plan = com.miophas.singularity_iteration.core.api.multiblock.StructureBlueprintRegistry.get(id("steam_reactor"));
+        h.assertTrue(plan != null, "the Steam Reactor plan is not registered");
+        h.assertTrue(plan.controller().blocks().get(0).block().equals(id("generator/block_steam_reactor")), "the controller is not the steam reactor");
+        BlockPos base = new BlockPos(1, 1, 1);
+        int chambers = 0, turbines = 0;
+        // the controller first, as a player builds: a chamber placed without a reactor beside it drops at once
+        h.setBlock(base.offset(plan.controllerPos()), plan.controller().blocks().get(0).resolve());
+        for (var placement : plan.placements()) {
+            if (placement.pos().equals(plan.controllerPos())) continue;
+            var block = placement.key().blocks().get(0);
+            if (block.block().equals(id("reactor/block_steam_reactor_chamber"))) chambers++;
+            if (block.block().equals(id("generator/block_steam_turbine"))) turbines++;
+            h.setBlock(base.offset(placement.pos()), block.resolve());
+        }
+        h.assertTrue(chambers == 5 && turbines == 1, "five chambers and one turbine: " + chambers + ", " + turbines);
+        BlockPos reactor = base.offset(plan.controllerPos());
+        h.runAfterDelay(2, () -> {
+            int columns = ((IReactorController) h.getBlockEntity(reactor)).getAvailableColumns();
+            h.assertTrue(columns == 8, "3 + 5 chambers = 8 columns: " + columns);
+            h.succeed();
+        });
+    }
 }

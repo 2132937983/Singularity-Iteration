@@ -110,7 +110,7 @@ public final class ReactorLayoutAnalysis {
 
     private Result compute() {
         int columns = columns();
-        ReactorSimulation.Report report = ReactorSimulation.fullRun(profiles, columns);
+        ReactorSimulation.Report report = ReactorSimulation.fullRun(profiles, columns, layout.steam());   // 0.1.10.37: steam layouts
         ReactorCycle.Part[] parts = new ReactorCycle.Part[54];
         int fuel = 0;
         for (int i = 0; i < 54; i++) {

@@ -594,3 +594,20 @@ public static void onPosting(BountyPostingEvent event) {
     if (event.getTier() == BountyTier.NORMAL) event.getRewards().add(BountyReward.uu(100));   // 额外加一点 UU 物质
 }
 ```
+
+## 23. 反应堆元件的转变（0.1.10.37）
+
+`core.api.reactor.ReactorTransformation` / `ReactorTransformationRegistry` 为 JEI 分类“核燃料增殖与衰变”提供数据。每个条目是反应堆元件的一次转变：输入物品变为输出物品。
+
+* 过程：`DEPLETION`（燃料棒燃尽；`amount` = 新燃料棒的反应堆周期数）、`BREEDING`（元件吸收中子；`amount` = 发生转变时的进度）、`DECAY`（元件衰变；`amount` = 衰变周期数）。`amount` 为 0 时只显示过程、不显示数字。`notes` 是条目下方的说明行（可翻译组件）。
+* 物品以 ID（`ResourceLocation`）指定，因此可以在物品注册表完成前、在模组构造函数中创建条目。JEI 显示 `ReactorTransformationRegistry.available()`：输入与输出物品都存在的条目。未安装的模组的条目会被略去，不会破坏该分类。
+* 请在模组构造函数或初始化事件中注册。同一 ID 的第二次注册会替换第一次；拒绝命名空间 `minecraft` 与负数的 `amount`。JEI 在加载配方时（进入世界时）读取注册表。
+* SI 按其反应堆运行所用的表注册自己的条目（`ReactorInventory.transformations()`）：铀、MOX、质子燃料棒燃尽，锂单元与近衰变同位素棒增殖，氚燃料棒衰变。因此该分类显示反应堆的实际行为；SI 的数值改变时，分类随之改变。
+* 注册表只保存数据，不会让反应堆运行附属的元件：拥有自己的反应堆或元件的附属在这里注册其转变，使玩家能在 JEI 中找到。
+
+```java
+ReactorTransformationRegistry.register(ReactorTransformation.of(
+    ResourceLocation.fromNamespaceAndPath("mymod", "decay/plutonium_rod"), ReactorTransformation.Process.DECAY,
+    ResourceLocation.fromNamespaceAndPath("mymod", "plutonium_rod"), ResourceLocation.fromNamespaceAndPath("mymod", "spent_rod"),
+    50_000, Component.translatable("jei.mymod.plutonium_rod.note")));
+```

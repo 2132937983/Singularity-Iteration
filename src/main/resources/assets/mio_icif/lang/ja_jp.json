@@ -4532,5 +4532,20 @@
   "item.mio_icif.reactor.item_reactor_steam_vent_overclocked": "オーバークロックスチームベント",
   "item.mio_icif.reactor.item_reactor_steam_vent_advanced": "高度スチームベント",
   "item.mio_icif.reactor.component.steam_vent": "蒸気原子炉内：自身の熱から蒸気を最大 %s mB / 20 tick 生成し、熱いほど多い",
-  "reactor_audit.kind.steam_vent": "スチームベント"
+  "reactor_audit.kind.steam_vent": "スチームベント",
+  "jei.mio_icif.reactor_transformation": "核燃料の増殖と崩壊",
+  "jei.mio_icif.reactor_transformation.depletion": "燃え尽き：%s サイクル",
+  "jei.mio_icif.reactor_transformation.depletion.short": "燃え尽き",
+  "jei.mio_icif.reactor_transformation.breeding": "増殖の進行 %s で変化",
+  "jei.mio_icif.reactor_transformation.breeding.short": "増殖",
+  "jei.mio_icif.reactor_transformation.decay": "崩壊：%s サイクル",
+  "jei.mio_icif.reactor_transformation.decay.short": "崩壊",
+  "jei.mio_icif.reactor_transformation.factors": "EU ×%s、熱 ×%s",
+  "jei.mio_icif.reactor_transformation.mox": "EU は炉温とともに増える",
+  "jei.mio_icif.reactor_transformation.breeding_gain": "パルスごと：炉温/3000 + %s",
+  "jei.mio_icif.reactor_transformation.breeding_heat": "パルスごとに炉へ %s HU",
+  "jei.mio_icif.reactor_transformation.breeder_pulse": "隣の燃料棒：熱は増え、EU は同じ",
+  "jei.mio_icif.reactor_transformation.neutron_source": "隣の燃料棒はパルス +1（EU・熱）",
+  "jei.mio_icif.reactor_transformation.decay_heat": "サイクルごとに炉へ %s HU",
+  "jei.mio_icif.reactor_transformation.ejected": "次のサイクルで原子炉から出る"
 }

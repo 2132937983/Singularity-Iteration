@@ -3115,5 +3115,20 @@
   "item.mio_icif.reactor.item_reactor_steam_vent_overclocked": "Разогнанный паровой отвод тепла",
   "item.mio_icif.reactor.item_reactor_steam_vent_advanced": "Продвинутый паровой отвод тепла",
   "item.mio_icif.reactor.component.steam_vent": "В паровом реакторе: до %s мБ пара за 20 тиков из своего тепла, чем горячее, тем больше",
-  "reactor_audit.kind.steam_vent": "паровой отвод тепла"
+  "reactor_audit.kind.steam_vent": "паровой отвод тепла",
+  "jei.mio_icif.reactor_transformation": "Размножение и распад ядерного топлива",
+  "jei.mio_icif.reactor_transformation.depletion": "Выгорание: %s циклов",
+  "jei.mio_icif.reactor_transformation.depletion.short": "Выгорание",
+  "jei.mio_icif.reactor_transformation.breeding": "Превращается при прогрессе %s",
+  "jei.mio_icif.reactor_transformation.breeding.short": "Размножение",
+  "jei.mio_icif.reactor_transformation.decay": "Распад: %s циклов",
+  "jei.mio_icif.reactor_transformation.decay.short": "Распад",
+  "jei.mio_icif.reactor_transformation.factors": "EU ×%s, тепло ×%s",
+  "jei.mio_icif.reactor_transformation.mox": "EU растёт с нагревом корпуса",
+  "jei.mio_icif.reactor_transformation.breeding_gain": "За импульс: нагрев/3000 + %s",
+  "jei.mio_icif.reactor_transformation.breeding_heat": "+%s HU корпусу за импульс",
+  "jei.mio_icif.reactor_transformation.breeder_pulse": "Соседний ТВЭЛ: больше тепла, EU тот же",
+  "jei.mio_icif.reactor_transformation.neutron_source": "Соседние ТВЭЛ: +1 импульс (EU, тепло)",
+  "jei.mio_icif.reactor_transformation.decay_heat": "+%s HU корпусу за цикл",
+  "jei.mio_icif.reactor_transformation.ejected": "Выбрасывается в следующем цикле"
 }

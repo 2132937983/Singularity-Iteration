@@ -795,3 +795,29 @@ public static void onPosting(BountyPostingEvent event) {
     if (event.getTier() == BountyTier.NORMAL) event.getRewards().add(BountyReward.uu(100));   // a little UU-matter on top
 }
 ```
+
+## 23. Reactor component changes (0.1.10.37)
+
+`core.api.reactor.ReactorTransformation` / `ReactorTransformationRegistry` feed the JEI category "Nuclear Fuel Breeding & Decay".
+Each entry is one change of a reactor component: the input item becomes the output item.
+
+* Processes: `DEPLETION` (a fuel rod burns out; `amount` = reactor cycles of a fresh rod), `BREEDING` (a component absorbs
+  neutrons; `amount` = the progress at which it changes), `DECAY` (a component decays; `amount` = its cycles). `amount` 0
+  shows the process without a number. `notes` are lines under the entry (translatable components).
+* Items are named by id (`ResourceLocation`), so an entry can be made in the mod constructor before the item registry is
+  complete. JEI shows `ReactorTransformationRegistry.available()`: the entries whose input and output items exist. An entry
+  for a mod that is not installed is left out; it never breaks the category.
+* Register in the mod constructor or in a setup event. A second registration of the same id replaces the first; the namespace
+  `minecraft` and a negative amount are refused. JEI reads the registry when it loads its recipes (when a world is joined).
+* SI registers its own entries from the tables its reactor runs on (`ReactorInventory.transformations()`): the uranium, MOX and
+  proton rods burning out, the lithium cell and the near-depleted isotope rod breeding, the tritium rod decaying. The category
+  therefore shows what the reactor does; a change of SI's numbers changes the category with it.
+* The registry holds data only. It does not make a reactor run an addon component: an addon that has its own reactor or its
+  own components registers their changes here so that players find them in JEI.
+
+```java
+ReactorTransformationRegistry.register(ReactorTransformation.of(
+    ResourceLocation.fromNamespaceAndPath("mymod", "decay/plutonium_rod"), ReactorTransformation.Process.DECAY,
+    ResourceLocation.fromNamespaceAndPath("mymod", "plutonium_rod"), ResourceLocation.fromNamespaceAndPath("mymod", "spent_rod"),
+    50_000, Component.translatable("jei.mymod.plutonium_rod.note")));
+```

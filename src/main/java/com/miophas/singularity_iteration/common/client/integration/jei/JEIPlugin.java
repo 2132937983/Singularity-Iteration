@@ -188,6 +188,8 @@ public class JEIPlugin implements IModPlugin {
         // 0.1.10.19: reactor designs (IC2 Classic style) and multiblock build plans, both from public API registries
         category(categories, "reactor_layouts", () -> new com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory(gui));
         category(categories, "structures", () -> new com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_StructureCategory(gui));
+        // 0.1.10.37: component changes (burn-out, breeding, decay) from a public API registry
+        category(categories, "reactor_transformations", () -> new com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorTransformationCategory(gui));
         if (!categories.isEmpty()) registration.addRecipeCategories(categories.toArray(new mezz.jei.api.recipe.category.IRecipeCategory<?>[0]));
     }
 
@@ -342,6 +344,9 @@ public class JEIPlugin implements IModPlugin {
         guarded("structures", () -> registration.addRecipes(
             com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_StructureCategory.TYPE,
             java.util.List.copyOf(com.miophas.singularity_iteration.core.api.multiblock.StructureBlueprintRegistry.all())));
+        // 0.1.10.37: an entry whose items are missing (an addon not installed) is left out
+        guarded("reactorTransformations", () -> registration.addRecipes(com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorTransformationCategory.TYPE,
+            com.miophas.singularity_iteration.core.api.reactor.ReactorTransformationRegistry.available()));
     }
 
     @Override
@@ -432,5 +437,8 @@ public class JEIPlugin implements IModPlugin {
             com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory.TYPE);
         registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.REACTOR_CHAMBER.get()),
             com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorLayoutCategory.TYPE);
+        // 0.1.10.37: both reactors run the component changes
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get()), com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorTransformationCategory.TYPE);
+        registration.addRecipeCatalyst(new ItemStack(mio_icif_blocks.STEAM_REACTOR.get()), com.miophas.singularity_iteration.common.client.integration.jei.category.mio_icif_ReactorTransformationCategory.TYPE);
     }
 }

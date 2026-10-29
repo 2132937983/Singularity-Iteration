@@ -4532,5 +4532,20 @@
   "item.mio_icif.reactor.item_reactor_steam_vent_overclocked": "Overclocked Steam Vent",
   "item.mio_icif.reactor.item_reactor_steam_vent_advanced": "Advanced Steam Vent",
   "item.mio_icif.reactor.component.steam_vent": "In a Steam Reactor: up to %s mB of steam / 20 ticks from its heat, more the hotter it is",
-  "reactor_audit.kind.steam_vent": "steam vent"
+  "reactor_audit.kind.steam_vent": "steam vent",
+  "jei.mio_icif.reactor_transformation": "Nuclear Fuel Breeding & Decay",
+  "jei.mio_icif.reactor_transformation.depletion": "Burns out: %s cycles",
+  "jei.mio_icif.reactor_transformation.depletion.short": "Burns out",
+  "jei.mio_icif.reactor_transformation.breeding": "Bred at %s progress",
+  "jei.mio_icif.reactor_transformation.breeding.short": "Breeding",
+  "jei.mio_icif.reactor_transformation.decay": "Decays: %s cycles",
+  "jei.mio_icif.reactor_transformation.decay.short": "Decay",
+  "jei.mio_icif.reactor_transformation.factors": "EU ×%s, heat ×%s",
+  "jei.mio_icif.reactor_transformation.mox": "EU rises with hull heat",
+  "jei.mio_icif.reactor_transformation.breeding_gain": "Per pulse: hull heat/3000 + %s",
+  "jei.mio_icif.reactor_transformation.breeding_heat": "+%s HU to the hull per pulse",
+  "jei.mio_icif.reactor_transformation.breeder_pulse": "Rod beside it: more heat, no EU",
+  "jei.mio_icif.reactor_transformation.neutron_source": "Rods beside it: +1 pulse (EU, heat)",
+  "jei.mio_icif.reactor_transformation.decay_heat": "+%s HU to the hull per cycle",
+  "jei.mio_icif.reactor_transformation.ejected": "Thrown out at the next cycle"
 }

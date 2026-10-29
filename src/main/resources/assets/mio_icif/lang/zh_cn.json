@@ -4532,5 +4532,20 @@
   "item.mio_icif.reactor.item_reactor_steam_vent_overclocked": "超频蒸汽散热片",
   "item.mio_icif.reactor.item_reactor_steam_vent_advanced": "高级蒸汽散热片",
   "item.mio_icif.reactor.component.steam_vent": "在蒸汽反应堆中：用自身热量产生蒸汽，最多 %s mB / 20 tick，越热越多",
-  "reactor_audit.kind.steam_vent": "蒸汽散热片"
+  "reactor_audit.kind.steam_vent": "蒸汽散热片",
+  "jei.mio_icif.reactor_transformation": "核燃料增殖与衰变",
+  "jei.mio_icif.reactor_transformation.depletion": "燃尽：%s 个周期",
+  "jei.mio_icif.reactor_transformation.depletion.short": "燃尽",
+  "jei.mio_icif.reactor_transformation.breeding": "增殖进度 %s 时转变",
+  "jei.mio_icif.reactor_transformation.breeding.short": "增殖",
+  "jei.mio_icif.reactor_transformation.decay": "衰变：%s 个周期",
+  "jei.mio_icif.reactor_transformation.decay.short": "衰变",
+  "jei.mio_icif.reactor_transformation.factors": "EU ×%s，热量 ×%s",
+  "jei.mio_icif.reactor_transformation.mox": "EU 随堆温升高",
+  "jei.mio_icif.reactor_transformation.breeding_gain": "每次脉冲：堆温/3000 + %s",
+  "jei.mio_icif.reactor_transformation.breeding_heat": "每次脉冲向堆体放热 %s HU",
+  "jei.mio_icif.reactor_transformation.breeder_pulse": "相邻燃料棒：热量增加，EU 不变",
+  "jei.mio_icif.reactor_transformation.neutron_source": "相邻燃料棒多一次脉冲（EU、热量）",
+  "jei.mio_icif.reactor_transformation.decay_heat": "每周期向堆体放热 %s HU",
+  "jei.mio_icif.reactor_transformation.ejected": "下一周期被弹出反应堆"
 }

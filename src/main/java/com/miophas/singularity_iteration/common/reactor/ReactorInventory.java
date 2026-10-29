@@ -4,11 +4,15 @@ package com.miophas.singularity_iteration.common.reactor;
 import com.miophas.singularity_iteration.common.item.component.FuelRodDurability;
 import com.miophas.singularity_iteration.common.item.component.ReactorComponentData;
 import com.miophas.singularity_iteration.common.registry.mio_icif_data_components;
+import com.miophas.singularity_iteration.core.api.reactor.ReactorTransformation;
 import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Kind;
 import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Part;
 import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Profile;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -41,6 +45,13 @@ public final class ReactorInventory {
     public static final int STEAM_VENT_HEAT=1100;
     /** 0.1.10.36: the tritium rod keeps its item id (normal/item_tritium_cell); its component key is "tritium_cell". */
     private static final String TRITIUM_KEY="tritium_cell";
+    /**
+     * 0.1.10.37: what each breeding or decaying component turns into (lithium cell -> tritium rod, isotope rod -> re-enriched
+     * uranium, tritium rod -> empty fuel rod). One table for the reactor ({@link #write}) and for recipe viewers
+     * ({@link #transformations}), in display order.
+     */
+    private static final Map<String,ResourceLocation> PRODUCTS=new java.util.LinkedHashMap<>();
+    static{PRODUCTS.put("lithium_cell",LITHIUM_PRODUCT);PRODUCTS.put("isotope_rod",ISOTOPE_PRODUCT);PRODUCTS.put(TRITIUM_KEY,TRITIUM_PRODUCT);}
     /** 0.1.10.36: the spent identity of each fuel rod (was a switch). */
     private static final Map<String,String> DEPLETED=Map.of(
         "uranium_simple","uranium_simple_depleted","uranium_dual","uranium_dual_depleted","uranium_quad","uranium_quad_deplete",
@@ -95,21 +106,62 @@ public final class ReactorInventory {
     public static int fuelLife(String key){
         Profile p=PROFILES.get(key);if(p==null||p.kind()!=Kind.FUEL)return 0;
         return key.startsWith("mox_")?10000:key.startsWith("proton_")?PROTON_LIFE:20000;}
-    private static String key(ItemStack stack){var id=BuiltInRegistries.ITEM.getKey(stack.getItem());String prefix="reactor/item_reactor_";
+    private static String key(ItemStack stack){return key(BuiltInRegistries.ITEM.getKey(stack.getItem()));}
+    private static String key(ResourceLocation id){String prefix="reactor/item_reactor_";
         if(id.equals(LITHIUM_PRODUCT))return TRITIUM_KEY;
         return id.getNamespace().equals("mio_icif")&&id.getPath().startsWith(prefix)?id.getPath().substring(prefix.length()):"";}
     public static boolean supported(ItemStack stack){return stack.isEmpty()||PROFILES.containsKey(key(stack));}
-    /** A breeding product (tritium cell, re-enriched uranium): an inert part until it leaves the reactor. */
-    private static boolean breedingProduct(ItemStack stack){
-        var id=BuiltInRegistries.ITEM.getKey(stack.getItem());return id.equals(LITHIUM_PRODUCT)||id.equals(ISOTOPE_PRODUCT);}
+    /**
+     * A product of breeding or decay without a profile of its own (re-enriched uranium, the empty fuel rod of a decayed tritium
+     * rod): an inert part until it leaves the reactor. 0.1.10.37: every product of {@link #PRODUCTS}; the empty fuel rod was
+     * missing, so the cycle that decayed a tritium rod threw, the rod stayed at 9999 and the reactor stopped for good.
+     */
+    private static boolean product(ItemStack stack){return PRODUCTS.containsValue(BuiltInRegistries.ITEM.getKey(stack.getItem()));}
     /** IC2 {@code isUsefulItem(stack,false)}: the bred tritium cell stays in the reactor; re-enriched uranium is thrown out. */
     public static boolean staysInReactor(ItemStack stack){return !stack.isEmpty()&&BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(LITHIUM_PRODUCT);}
+    /**
+     * 0.1.10.37: the component changes of this reactor for the JEI category "Nuclear Fuel Breeding & Decay"
+     * ({@code core.api.reactor.ReactorTransformationRegistry}), from the tables the reactor runs on: the fuel rods burning out
+     * ({@link #DEPLETED}, in palette order), then the breeders and the tritium rod ({@link #PRODUCTS}). The notes come from the
+     * profiles, so they follow any change of the numbers.
+     */
+    public static List<ReactorTransformation> transformations(){
+        var out=new ArrayList<ReactorTransformation>();
+        var fuels=new ArrayList<>(DEPLETED.keySet());
+        fuels.sort(java.util.Comparator.comparingInt((String k)->PALETTE.contains(k)?PALETTE.indexOf(k):PALETTE.size()).thenComparing(k->k));
+        for(String key:fuels){
+            Profile p=PROFILES.get(key);var notes=new ArrayList<Component>();
+            if(p.euFactor()!=1f||p.heatFactor()!=1f)notes.add(note("factors",factor(p.euFactor()),factor(p.heatFactor())));
+            if(p.mox())notes.add(note("mox"));
+            out.add(new ReactorTransformation(id("depletion/"+key),ReactorTransformation.Process.DEPLETION,itemId(key),
+                itemId(DEPLETED.get(key)),fuelLife(key),notes));
+        }
+        PRODUCTS.forEach((key,product)->{
+            Profile p=PROFILES.get(key);var notes=new ArrayList<Component>();
+            if(p.breeding()){
+                notes.add(note("breeding_gain",p.selfCooling()));
+                if(p.kind()==Kind.LITHIUM&&p.hullCooling()>0)notes.add(note("breeding_heat",p.hullCooling()));
+                notes.add(note("breeder_pulse"));
+            }else{
+                notes.add(note("neutron_source"));
+                if(p.selfCooling()>0)notes.add(note("decay_heat",p.selfCooling()));
+            }
+            // a product that is not a component itself is read as inert and thrown out at the next cycle
+            if(!PROFILES.containsKey(key(product)))notes.add(note("ejected"));
+            out.add(new ReactorTransformation(id((p.breeding()?"breeding/":"decay/")+key),
+                p.breeding()?ReactorTransformation.Process.BREEDING:ReactorTransformation.Process.DECAY,itemId(key),product,p.capacity(),notes));
+        });
+        return out;
+    }
+    private static ResourceLocation id(String path){return ResourceLocation.fromNamespaceAndPath("mio_icif",path);}
+    private static Component note(String key,Object... args){return Component.translatable("jei.mio_icif.reactor_transformation."+key,args);}
+    private static String factor(float f){return f==Math.rint(f)?Integer.toString((int)f):Float.toString(f);}
     public static Part read(ItemStack stack){
         if(stack.isEmpty())return null;
         if(stack.getCount()!=1)throw new IllegalArgumentException("Reactor slots require exactly one item");
         Profile p=PROFILES.get(key(stack));
         // 0.1.10.36: a finished breeder is read as inert; before, the cycle that bred it threw and the reactor stalled for good
-        if(p==null&&breedingProduct(stack))return new Part(INERT,0,0);
+        if(p==null&&product(stack))return new Part(INERT,0,0);
         if(p==null)throw new IllegalArgumentException("Unsupported reactor component: "+BuiltInRegistries.ITEM.getKey(stack.getItem()));
         if(p.kind()==Kind.FUEL){
             var d=stack.get(mio_icif_data_components.FUEL_ROD_DURABILITY.get());
@@ -144,8 +196,7 @@ public final class ReactorInventory {
         }else if(next.profile().breeding()){
             // IC2：锂单元累积到阈值后变成氚燃料棒；近衰变同位素棒累积到阈值后变成重新浓缩的铀
             if(next.profile().capacity()>0&&next.stored()>=next.profile().capacity()){
-                ItemStack product=new ItemStack(BuiltInRegistries.ITEM.get(
-                    next.profile().kind()==Kind.LITHIUM?LITHIUM_PRODUCT:ISOTOPE_PRODUCT));
+                ItemStack product=new ItemStack(BuiltInRegistries.ITEM.get(PRODUCTS.get(key(previous))));
                 product.applyComponents(previous.getComponentsPatch());
                 // 0.1.10.36: the tritium rod is a component: it starts undecayed (the cell's breeding progress is not its decay)
                 if(next.profile().kind()==Kind.LITHIUM)
@@ -156,7 +207,7 @@ public final class ReactorInventory {
             out.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),new ReactorComponentData(next.stored(),next.profile().capacity()));
         }else if(next.profile().kind()==Kind.NEUTRON_SOURCE){
             // 0.1.10.36: a decayed tritium rod leaves its empty fuel rod
-            if(next.stored()>=next.profile().capacity())return new ItemStack(BuiltInRegistries.ITEM.get(TRITIUM_PRODUCT));
+            if(next.stored()>=next.profile().capacity())return new ItemStack(BuiltInRegistries.ITEM.get(PRODUCTS.get(TRITIUM_KEY)));
             out.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),new ReactorComponentData(next.stored(),next.profile().capacity()));
         }else if(next.profile().storesHeat()||next.profile().kind()==Kind.REFLECTOR){
             out.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),new ReactorComponentData(next.stored(),next.profile().capacity()));

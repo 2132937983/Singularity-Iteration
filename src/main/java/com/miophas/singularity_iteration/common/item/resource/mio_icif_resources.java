@@ -130,6 +130,8 @@ public class mio_icif_resources {
     public static final DeferredItem<Item> RTG_PELLET = ITEMS.register("resource/item_rtg_pellet", () -> new mio_icif_nuclear_material(new Item.Properties(), 5.0F));
     public static final DeferredItem<Item> RUBBER = ITEMS.register("resource/item_rubber", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SHARD_IRIDIUM = ITEMS.register("resource/item_shard_iridium", () -> new Item(new Item.Properties()));
+    // 0.1.10.36: dropped by deepslate iridium ore; nine make an iridium shard
+    public static final DeferredItem<Item> IRIDIUM_DUST_SMALL = ITEMS.register("resource/item_iridium_dust_small", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SILICONDIOXIDE_DUST = ITEMS.register("resource/item_silicondioxide_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SILVER_CASING = ITEMS.register("resource/item_silver_casing", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> SILVER_DUST = ITEMS.register("resource/item_silver_dust", () -> new Item(new Item.Properties()));

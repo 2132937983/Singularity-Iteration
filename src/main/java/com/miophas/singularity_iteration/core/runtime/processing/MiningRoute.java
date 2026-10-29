@@ -38,6 +38,11 @@ public final class MiningRoute {
         if (!complete() || invalid) throw new IllegalStateException("Cannot finish an incomplete route");
         start = target = cursor = null; cost = 0; paid = false; changed.run();
     }
+    /** 0.1.10.36: drops an unfinished route (the miner retracts its pipes); the energy of a paid route is not refunded. */
+    public void abandon() {
+        if (invalid) throw new IllegalStateException("Cannot abandon an invalid route");
+        start = target = cursor = null; cost = 0; paid = false; changed.run();
+    }
     private static boolean validEndpoints(BlockPos from, BlockPos to) {
         if (from == null || to == null) return false;
         long dx = Math.abs((long) from.getX() - to.getX()), dz = Math.abs((long) from.getZ() - to.getZ());

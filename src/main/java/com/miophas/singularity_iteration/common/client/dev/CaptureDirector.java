@@ -1712,6 +1712,102 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene 1136 (-Dsi.capture.scene=1136), 0.1.10.36: the enchantment glint on the baked suit armor (scaled to its
+     * 128x128 texture) next to vanilla-model bronze, worn and on armor stands, the first-person arm and the inventory icons;
+     * the Miner's Retract button and its tooltip.
+     */
+    /** Scene 1136: the platform 40 blocks above the spawn point (chunks there are loaded; other places may still generate). */
+    private static BlockPos base1136 = BlockPos.ZERO;
+
+    private static BlockPos at1136(int dx, int dy, int dz) { return base1136.offset(dx, dy, dz); }
+
+    private static void scene1136() {
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            base1136 = new BlockPos(sp.getBlockX(), Math.min(level.getMaxBuildHeight() - 24, sp.getBlockY() + 40), sp.getBlockZ());
+            level.setDayTime(6000);
+            level.setWeatherParameters(6000, 0, false, false);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            for (int x = -8; x <= 10; x++) for (int z = -12; z <= 8; z++)
+                level.setBlock(at1136(x, -1, z), net.minecraft.world.level.block.Blocks.SMOOTH_STONE.defaultBlockState(), 3);
+            var protection = level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .getOrThrow(net.minecraft.world.item.enchantment.Enchantments.PROTECTION);
+            String[] pieces = {"helmet", "chestplate", "leggings", "boots"};
+            EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+            String[] sets = {"bronze", "nano", "quantum", "quantum"};
+            for (int s = 0; s < sets.length; s++) {
+                BlockPos p = at1136(-3 + s * 2, 0, 0);
+                var stand = new net.minecraft.world.entity.decoration.ArmorStand(level, p.getX() + 0.5, p.getY(), p.getZ() + 0.5);
+                stand.setYRot(180); stand.setYBodyRot(180); stand.setYHeadRot(180);
+                for (int i = 0; i < 4; i++) {
+                    ItemStack st = item("armor/item_armor_" + sets[s] + "_" + pieces[i]);
+                    if (s < 3) st.enchant(protection, 4);   // the last quantum stand stays plain, for comparison
+                    stand.setItemSlot(slots[i], st);
+                }
+                level.addFreshEntity(stand);
+            }
+            sp.getInventory().clearContent();
+            for (int i = 0; i < 4; i++) {
+                ItemStack st = item("armor/item_armor_quantum_" + pieces[i]);
+                st.enchant(protection, 4);
+                sp.setItemSlot(slots[i], st);
+                ItemStack icon = item("armor/item_armor_" + (i < 2 ? "nano_" : "quantum_") + pieces[i]);
+                icon.enchant(protection, 4);
+                sp.getInventory().setItem(i, icon);
+            }
+            ItemStack bronze = item("armor/item_armor_bronze_chestplate");
+            bronze.enchant(protection, 4);
+            sp.getInventory().setItem(4, bronze);
+            sp.getInventory().selected = 8;
+            place(level, at1136(6, 0, 4), "producer/block_miner_elc", Direction.NORTH);
+            look(sp, base1136.getX() + 0.5, base1136.getY() + 1.0, base1136.getZ() - 4.5, 0, 10);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.player.getInventory().selected = 8; });
+        shot(80, "scene1136/glint_stands_a");
+        shot(7, "scene1136/glint_stands_b");
+        server(1, sp -> look(sp, base1136.getX() + 2.5, base1136.getY() + 0.2, base1136.getZ() - 1.4, 0, 12));
+        shot(30, "scene1136/glint_quantum_close");
+        server(1, sp -> look(sp, base1136.getX() - 2.5, base1136.getY() + 0.2, base1136.getZ() - 1.4, 0, 12));
+        shot(30, "scene1136/glint_bronze_nano_close");
+        // first-person arm (empty hand) and the worn suit from the front
+        server(1, sp -> { sp.getAbilities().flying = false; sp.onUpdateAbilities();
+            sp.teleportTo(sp.serverLevel(), base1136.getX() + 0.5, base1136.getY(), base1136.getZ() - 8.5, 180, 10); });
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.player.getInventory().selected = 8; });
+        shot(30, "scene1136/glint_first_person_arm");
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(25, "scene1136/glint_worn_front");
+        // inventory: the survival screen shows the worn pieces and the icons
+        server(1, sp -> sp.setGameMode(GameType.SURVIVAL));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player)); });
+        shot(20, "scene1136/glint_inventory_icons");
+        client(1, () -> Minecraft.getInstance().setScreen(null));
+        // the Miner: Retract button and its tooltip
+        server(5, sp -> {
+            BlockPos miner = at1136(6, 0, 4);
+            sp.teleportTo(sp.serverLevel(), miner.getX() + 0.5, miner.getY(), miner.getZ() - 2.5, 0, 30);
+            if (sp.serverLevel().getBlockEntity(miner) instanceof net.minecraft.world.MenuProvider menu)
+                sp.openMenu(menu, buf -> buf.writeBlockPos(miner));
+        });
+        client(1, () -> hoverGui = new int[]{-4000, 4000});
+        shot(25, "scene1136/miner_gui");
+        client(1, () -> hoverGui = new int[]{152, 10});
+        shot(10, "scene1136/miner_retract_tooltip");
+        client(1, () -> hoverGui = new int[]{-4000, 4000});
+        // screenshots are written on a background thread: let them finish before the game stops
+        client(80, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "1136".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scene1136();
+        }
+    }
+
     // ------------------------------------------------------------------ 0.1.10.15 player feedback review
 
     static {

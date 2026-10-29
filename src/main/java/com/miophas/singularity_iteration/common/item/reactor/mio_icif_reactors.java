@@ -146,6 +146,24 @@ public class mio_icif_reactors {
             new Item.Properties().component(mio_icif_data_components.FUEL_ROD_DURABILITY.get(), FuelRodDurability.full(10000)),
             10000, 5, 4, mio_icif_nuclear_reactor.FuelRodType.QUAD, () -> MOX_QUAD_DEPLETED.get()));
 
+    // 0.1.10.36: proton fuel rods (Industrial Upgrade style): 3x the EU and 1.5x the heat of uranium, 40000 cycles.
+    // The energy / heat arguments (15 / 6) are legacy-API values only; ReactorCycle uses the profile of ReactorInventory.
+    public static final DeferredItem<Item> PROTON_SIMPLE_DEPLETED = ITEMS.register("reactor/item_reactor_proton_simple_depleted", () -> new Item(new Item.Properties().stacksTo(64)));
+    public static final DeferredItem<Item> PROTON_DUAL_DEPLETED = ITEMS.register("reactor/item_reactor_proton_dual_depleted", () -> new Item(new Item.Properties().stacksTo(64)));
+    public static final DeferredItem<Item> PROTON_QUAD_DEPLETED = ITEMS.register("reactor/item_reactor_proton_quad_depleted", () -> new Item(new Item.Properties().stacksTo(64)));
+    public static final DeferredItem<mio_icif_nuclear_reactor> PROTON_SIMPLE = ITEMS.register("reactor/item_reactor_proton_simple",
+        () -> new mio_icif_nuclear_reactor(
+            new Item.Properties().component(mio_icif_data_components.FUEL_ROD_DURABILITY.get(), FuelRodDurability.full(ReactorInventory.PROTON_LIFE)),
+            ReactorInventory.PROTON_LIFE, 15, 6, mio_icif_nuclear_reactor.FuelRodType.SINGLE, () -> PROTON_SIMPLE_DEPLETED.get()));
+    public static final DeferredItem<mio_icif_nuclear_reactor> PROTON_DUAL = ITEMS.register("reactor/item_reactor_proton_dual",
+        () -> new mio_icif_nuclear_reactor(
+            new Item.Properties().component(mio_icif_data_components.FUEL_ROD_DURABILITY.get(), FuelRodDurability.full(ReactorInventory.PROTON_LIFE)),
+            ReactorInventory.PROTON_LIFE, 15, 6, mio_icif_nuclear_reactor.FuelRodType.DUAL, () -> PROTON_DUAL_DEPLETED.get()));
+    public static final DeferredItem<mio_icif_nuclear_reactor> PROTON_QUAD = ITEMS.register("reactor/item_reactor_proton_quad",
+        () -> new mio_icif_nuclear_reactor(
+            new Item.Properties().component(mio_icif_data_components.FUEL_ROD_DURABILITY.get(), FuelRodDurability.full(ReactorInventory.PROTON_LIFE)),
+            ReactorInventory.PROTON_LIFE, 15, 6, mio_icif_nuclear_reactor.FuelRodType.QUAD, () -> PROTON_QUAD_DEPLETED.get()));
+
     // ?????
     // ????????30000???????????????????????
     public static final DeferredItem<mio_icif_neutron_reflector> REFLECTOR = ITEMS.register("reactor/item_reactor_reflector",

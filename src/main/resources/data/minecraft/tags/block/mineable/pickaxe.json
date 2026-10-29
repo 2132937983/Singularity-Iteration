@@ -771,6 +771,10 @@
     },
     "mio_icif:producer/block_blueprint_builder",
     "mio_icif:producer/block_material_interface",
-    "mio_icif:pipe/block_pipe_ejector"
+    "mio_icif:pipe/block_pipe_ejector",
+    {
+      "id": "mio_icif:block_ore_iridium_in_deep",
+      "required": false
+    }
   ]
 }

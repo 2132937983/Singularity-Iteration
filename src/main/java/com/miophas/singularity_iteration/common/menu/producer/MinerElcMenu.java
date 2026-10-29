@@ -68,9 +68,9 @@ public class MinerElcMenu extends mio_icif_base_menu {
         this.blockEntity = blockEntity;
         this.itemHandler = blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : new ItemStackHandler(TOTAL_SLOTS);
 
-        // Synced data: 0=progress, 1=maxProgress, 2=isWorking, 3=energy, 4=maxEnergy
+        // Synced data: 0=progress, 1=maxProgress, 2=isWorking, 3=energy, 4=maxEnergy, 5=retract mode, 6=status (0.1.10.36)
         this.data = new ContainerData() {
-            private final int[] data = new int[5];
+            private final int[] data = new int[7];
 
             @Override
             public int get(int index) {
@@ -84,7 +84,7 @@ public class MinerElcMenu extends mio_icif_base_menu {
 
             @Override
             public int getCount() {
-                return 5;
+                return 7;
             }
         };
         this.addDataSlots(data);
@@ -125,11 +125,7 @@ public class MinerElcMenu extends mio_icif_base_menu {
         }
 
         // Register custom quick-move rules.
-        addCustomMoveRule(
-            stack -> stack.getItem() instanceof mio_icif_iron_driller ||
-                     stack.getItem() instanceof mio_icif_diamond_driller ||
-                     stack.getItem() instanceof mio_icif_iridium_driller,
-            SLOT_DRILL, SLOT_DRILL + 1);
+        addCustomMoveRule(mio_icif_miner_elc::isDrill, SLOT_DRILL, SLOT_DRILL + 1);   // 0.1.10.36: the Mining Laser too
         addCustomMoveRule(
             stack -> stack.getItem() instanceof mio_icif_od_scanner ||
                      stack.getItem() instanceof mio_icif_ov_scanner,
@@ -200,6 +196,24 @@ public class MinerElcMenu extends mio_icif_base_menu {
         return data.get(4);
     }
 
+    /** 0.1.10.36: the Retract button is on. */
+    public boolean retractMode() {
+        return data.get(5) == 1;
+    }
+
+    /** 0.1.10.36: {@link mio_icif_miner_elc#status()}. */
+    public int status() {
+        return data.get(6);
+    }
+
+    /** Button 0: the Retract button (pull the pipes up / mine again). */
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (id != 0 || blockEntity == null || !stillValid(player)) return false;
+        blockEntity.toggleRetract();
+        return true;
+    }
+
     /**
      * Sets a synced data value. The Screen calls this from containerTick.
      */
@@ -227,6 +241,8 @@ public class MinerElcMenu extends mio_icif_base_menu {
             this.data.set(2, blockEntity.isWorking() ? 1 : 0);
             this.data.set(3, (int) blockEntity.getEnergyStorage().getAmount());
             this.data.set(4, (int) blockEntity.getEnergyStorage().getCapacity());
+            this.data.set(5, blockEntity.retractMode() ? 1 : 0);
+            this.data.set(6, blockEntity.status());
         }
     }
 }

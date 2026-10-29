@@ -115,6 +115,8 @@ public final class BountyBoard {
 
     public static final class Need {
         public String item = "";
+        /** 0.1.10.36: the accepted tag of a table requirement ("" = the item and its material tags, {@link ItemMatch}). */
+        public String tag = "";
         public long count, delivered;
         /** Coins per item at posting (at least 1): the weight of a delivery for proportional payment and the share cap. */
         public long unit = 1;
@@ -352,6 +354,7 @@ public final class BountyBoard {
         for (Requirement q : t.requirements()) {
             Need n = new Need();
             n.item = q.item();
+            n.tag = q.tag();
             // 0.1.10.33: at most eight inventory slots of the item (the loader warns about such tables)
             n.count = BountyMath.tableCount(q.count(), prices.maxStack(q.item()));
             // 0.1.10.34: valued between the ask and the bid (Prices.value)
@@ -510,7 +513,7 @@ public final class BountyBoard {
         b.rush = Math.max(0, d.rush);
         for (Need n : d.needs) {
             Need c = new Need();
-            c.item = n.item; c.count = n.count; c.unit = n.unit;
+            c.item = n.item; c.tag = n.tag; c.count = n.count; c.unit = n.unit;
             b.needs.add(c);
         }
         for (Line l : kept) {

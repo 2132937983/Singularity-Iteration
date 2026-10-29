@@ -93,7 +93,8 @@ public final class SuitHandRenderer {
             int tint = com.miophas.singularity_iteration.common.suit.SuitPalette.tint(chest, layer);
             if (tint == 0) continue;
             ResourceLocation texture = com.miophas.singularity_iteration.common.suit.SuitPalette.texture(chest, base, layer == 1);
-            var buffer = ItemRenderer.getArmorFoilBuffer(buffers, RenderType.armorCutoutNoCull(texture), layer == 0 && chest.hasFoil());
+            var buffer = com.miophas.singularity_iteration.common.client.render.SiRenderTypes.suitFoil(buffers,
+                RenderType.armorCutoutNoCull(texture), layer == 0 && chest.hasFoil());
             BakedArmorModel.draw(pose, buffer, arm, geometry.get(right ? "right_arm" : "left_arm"), light, OverlayTexture.NO_OVERLAY, tint);
             if (FcsClientConfig.handArmorFirstPerson())
                 BakedArmorModel.draw(pose, buffer, arm, geometry.get(right ? "right_hand" : "left_hand"), light, OverlayTexture.NO_OVERLAY, tint);

@@ -258,6 +258,9 @@ public class mio_icif_blocks {
 
     public static final DeferredBlock<Block> BLOCK_ORE_LEAD_IN_DEEP = registerBlock("block_ore_lead_in_deep", () -> new Block(Block.Properties.of().mapColor(MapColor.DEEPSLATE).strength(3.0f, 3.0f).sound(SoundType.DEEPSLATE).requiresCorrectToolForDrops().randomTicks()));
 
+    // 0.1.10.36: deepslate iridium ore. No world generation: a nuclear blast turns deepslate ores into it. Needs a diamond pickaxe.
+    public static final DeferredBlock<Block> BLOCK_ORE_IRIDIUM_IN_DEEP = registerBlock("block_ore_iridium_in_deep", () -> new Block(Block.Properties.of().mapColor(MapColor.DEEPSLATE).strength(4.5f, 3.0f).sound(SoundType.DEEPSLATE).requiresCorrectToolForDrops()));
+
     // 注册铌矿石
     public static final DeferredBlock<Block> BLOCK_ORE_NIOBIUM = registerBlock("block_ore_niobium", () -> new Block(Block.Properties.of().mapColor(MapColor.STONE).strength(3.0f, 3.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     public static final DeferredBlock<Block> BLOCK_ORE_NIOBIUM_IN_DEEP = registerBlock("block_ore_niobium_in_deep", () -> new Block(Block.Properties.of().mapColor(MapColor.DEEPSLATE).strength(3.0f, 3.0f).sound(SoundType.DEEPSLATE).requiresCorrectToolForDrops()));

@@ -25,6 +25,12 @@ public final class MiningLoot {
     }
     public static boolean capture(ServerLevel level, BlockPos pos, ItemStack tool, MachineActionOwner owner, PendingDrops custody,
                                   Predicate<List<ItemStack>> fits, MiningPayment.Permit payment, Runnable accountRemoval) {
+        return capture(level, pos, tool, owner, custody, fits, payment, accountRemoval, null);
+    }
+    /** 0.1.10.36: {@code transform} changes the drops before they are checked and staged (a Mining Laser in Super Heat mode smelts them). */
+    public static boolean capture(ServerLevel level, BlockPos pos, ItemStack tool, MachineActionOwner owner, PendingDrops custody,
+                                  Predicate<List<ItemStack>> fits, MiningPayment.Permit payment, Runnable accountRemoval,
+                                  java.util.function.UnaryOperator<List<ItemStack>> transform) {
         if (!level.getServer().isSameThread() || owner == null || !owner.canAct() || !custody.isEmpty()
                 || !level.getChunkSource().hasChunk(pos.getX() >> 4, pos.getZ() >> 4)
                 || !level.getWorldBorder().isWithinBounds(pos)) return false;
@@ -42,6 +48,7 @@ public final class MiningLoot {
             if (event.isCanceled() || !level.getChunkSource().hasChunk(pos.getX() >> 4, pos.getZ() >> 4)
                     || level.getBlockState(pos) != state) return false;
             var drops = Block.getDrops(state, level, pos, level.getBlockEntity(pos), actor, tool.copy());
+            if (transform != null) drops = transform.apply(drops);
             if (drops.size() > PendingDrops.MAX_STACKS || !fits.test(drops)
                     || level.getBlockState(pos) != state || !custody.stage(drops)) return false;
             try {

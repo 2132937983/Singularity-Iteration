@@ -34,6 +34,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -98,9 +99,21 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
     public static final int DURABILITY_COST_DIAMOND = 1;
     public static final int DURABILITY_COST_IRIDIUM = 1;
 
+    /** 0.1.10.36: a Mining Laser in the drill slot works this many times faster than a drill (IC2C: about 2 ticks per block). */
+    public static final int LASER_SPEED = 5;
+    /** 0.1.10.36 pipe retraction (IC2C): one pipe every {@link #RETRACT_INTERVAL} ticks for {@link #RETRACT_ENERGY} EU. */
+    public static final int RETRACT_INTERVAL = 5;
+    public static final long RETRACT_ENERGY = 5;
+    /** Status shown on the Retract button: idle, retracting, output full, blocked (protection), no energy, laser mode unusable. */
+    public static final int STATUS_IDLE = 0, STATUS_RETRACTING = 1, STATUS_FULL = 2, STATUS_BLOCKED = 3, STATUS_NO_ENERGY = 4,
+        STATUS_LASER_MODE = 5;
+
     private int currentDepth = 0;
     private BlockPos tipPos = null;
-    private boolean isPaused = false;
+    /** 0.1.10.36: the Retract button (saved under the former unused "IsPaused" key); retraction also runs with an empty drill slot. */
+    private boolean retractMode = false;
+    private int retractTimer;
+    private int retractStatus = STATUS_IDLE;
     // 已同步到客户端的工作半径，用于在扫描器变化时触发一次方块实体同步
     private int scexSyncedRangeRadius = -1;
     private List<BlockPos> oresInCurrentLayer = new ArrayList<>();
@@ -138,10 +151,12 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         };
     }
 
-    private boolean isDrill(ItemStack stack) {
+    /** The drills, and since 0.1.10.36 the Mining Laser. */
+    public static boolean isDrill(ItemStack stack) {
         return stack.getItem() instanceof mio_icif_iron_driller ||
                stack.getItem() instanceof mio_icif_diamond_driller ||
-               stack.getItem() instanceof mio_icif_iridium_driller;
+               stack.getItem() instanceof mio_icif_iridium_driller ||
+               stack.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_laser_miner;
     }
 
     private boolean isMiningPipe(ItemStack stack) {
@@ -161,8 +176,38 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
             return DrillType.DIAMOND;
         } else if (drillStack.getItem() instanceof mio_icif_iridium_driller) {
             return DrillType.IRIDIUM;
+        } else if (drillStack.getItem() instanceof com.miophas.singularity_iteration.common.item.tools.mio_icif_laser_miner) {
+            return DrillType.LASER;
         }
         return DrillType.NONE;
+    }
+
+    /** 0.1.10.36: a laser in a mode the miner cannot use (only Mining and Super Heat work). */
+    private boolean laserModeUnusable() {
+        return getDrillType() == DrillType.LASER
+            && !com.miophas.singularity_iteration.common.item.tools.mio_icif_laser_miner.minerMode(itemHandler.getStackInSlot(SLOT_DRILL));
+    }
+
+    /** The status of the Retract button: retraction first, then a laser in an unusable mode. */
+    public int status() {
+        if (retractStatus != STATUS_IDLE) return retractStatus;
+        return laserModeUnusable() ? STATUS_LASER_MODE : STATUS_IDLE;
+    }
+
+    public boolean retractMode() { return retractMode; }
+
+    /** The Retract button: pulls the pipes up (mining stops) until pressed again. */
+    public void toggleRetract() {
+        retractMode = !retractMode;
+        retractStatus = STATUS_IDLE;
+        retractTimer = 0;
+        ContainerToTank.markUnsaved(this);
+    }
+
+    @Override
+    protected int getProgressPerTick() {
+        int base = super.getProgressPerTick();
+        return getDrillType() == DrillType.LASER ? (int) Math.min(Integer.MAX_VALUE, (long) base * LASER_SPEED) : base;
     }
 
     private ScannerType getScannerType() {
@@ -221,6 +266,7 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         if (!scexRoute.belongsTo(worldPosition, level.getMinBuildHeight(), level.getMaxBuildHeight())
                 || !scexPipeAdvance.belongsTo(worldPosition, level.getMinBuildHeight(), level.getMaxBuildHeight())) return false;
         if (scexPipeAdvance.active()) return true;
+        if (retractMode || laserModeUnusable()) return false;
         if (getDrillType() == DrillType.NONE || getScannerType() == ScannerType.NONE) return false;
         if (scexRoute.active()) return true;
         boolean needsPipe = tipPos == null || scexLayerReady && currentOreIndex >= oresInCurrentLayer.size();
@@ -249,7 +295,8 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
 
         switch (getDrillType()) {
             case IRON -> drillCost = randInclusive(com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_IRON_DRILL_MIN.get(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_IRON_DRILL_MAX.get());
-            case DIAMOND -> drillCost = randInclusive(com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_DIAMOND_DRILL_MIN.get(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_DIAMOND_DRILL_MAX.get());
+            // 0.1.10.36: the laser costs the machine what a diamond drill does; the laser pays its own charge per route as well
+            case DIAMOND, LASER -> drillCost = randInclusive(com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_DIAMOND_DRILL_MIN.get(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_DIAMOND_DRILL_MAX.get());
             case IRIDIUM -> drillCost = randInclusive(com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_IRIDIUM_DRILL_MIN.get(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.MINER_IRIDIUM_DRILL_MAX.get());
             case NONE -> {}
         }
@@ -334,8 +381,106 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
 
     @Override
     protected void onTick() {
-        if (actionOwner.canAct()) flushPendingLoot();
+        if (actionOwner.canAct()) {
+            flushPendingLoot();
+            tickRetraction();
+        }
         syncRangeRadiusToClient();
+    }
+
+    // ------------------------------------------------------------------ 0.1.10.36: pipe retraction (IC2C)
+
+    /**
+     * Pulls the pipe column up, one pipe every {@link #RETRACT_INTERVAL} ticks, while the Retract button is on or the drill slot
+     * is empty (as IC2C; a redstone signal does not stop it). Runs only while no route, pipe placement or drop is in progress;
+     * an unfinished route without a drill is dropped first.
+     */
+    private void tickRetraction() {
+        if (!(level instanceof ServerLevel server)) return;
+        boolean wanted = retractMode || itemHandler.getStackInSlot(SLOT_DRILL).isEmpty();
+        if (!wanted) { if (retractStatus != STATUS_IDLE) { retractStatus = STATUS_IDLE; ContainerToTank.markUnsaved(this); } return; }
+        if (scexPipeAdvance.active() || scexPipeAdvance.isBusy() || scexPipeAdvance.uncertain() || scexPendingDrops.isBusy()
+                || !scexPendingDrops.isEmpty() || scexMiningPayment.isBusy() || scexRoute.invalid()) return;
+        if (++retractTimer < RETRACT_INTERVAL) return;
+        retractTimer = 0;
+        if (scexRoute.active()) { scexRoute.abandon(); resetEnergyCost(); }
+        int status = retractOne(server);
+        if (status != retractStatus) { retractStatus = status; ContainerToTank.markUnsaved(this); }
+    }
+
+    /** Takes the lowest pipe of the column (found from the miner down, not from the saved tip); returns the new status. */
+    private int retractOne(ServerLevel server) {
+        BlockPos lowest = null;
+        for (BlockPos pos = worldPosition.below(); available(server, pos); pos = pos.below()) {
+            var state = server.getBlockState(pos);
+            if (!state.is(mio_icif_blocks.BLOCK_MINING_PIPE.get()) && !state.is(mio_icif_blocks.BLOCK_MINING_TIP.get())) break;
+            lowest = pos;
+        }
+        if (lowest == null) {
+            if (tipPos != null) clearColumnState();
+            return STATUS_IDLE;
+        }
+        ItemStack pipe = new ItemStack(mio_icif_blocks.BLOCK_MINING_PIPE.get().asItem());
+        int[] slots = retractSlots();
+        boolean inside = RecipeSlots.outputs(itemHandler, slots, List.of(pipe)).isPresent();
+        IItemHandler outside = inside ? null : neighbourWithRoom(server, pipe);
+        if (!inside && outside == null) return STATUS_FULL;
+        if (energyStorage.consumeEnergyInternal(RETRACT_ENERGY, true) < RETRACT_ENERGY) return STATUS_NO_ENERGY;
+        var target = outside;
+        java.util.function.Predicate<List<ItemStack>> fits = drops -> target == null
+            ? RecipeSlots.outputs(itemHandler, slots, drops).isPresent() : fitsInto(target, drops);
+        // the owner's break event first (claims); the pipe and the tip both drop one pipe item
+        if (!MiningLoot.capture(server, lowest, new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE), actionOwner,
+                scexPendingDrops, fits)) return STATUS_BLOCKED;
+        energyStorage.consumeEnergyInternal(RETRACT_ENERGY, false);
+        if (target == null) scexPendingDrops.commitOwned(itemHandler, slots);
+        else scexPendingDrops.deliver(target, target.getSlots());
+        // the new lowest pipe becomes the tip; an empty column starts over from the miner
+        BlockPos above = lowest.above();
+        if (above.equals(worldPosition)) {
+            clearColumnState();
+        } else {
+            var state = server.getBlockState(above);
+            if (state.is(mio_icif_blocks.BLOCK_MINING_PIPE.get()))
+                MiningPlacement.replace(server, above, state, mio_icif_blocks.BLOCK_MINING_TIP.get().defaultBlockState(), ItemStack.EMPTY, actionOwner);
+            tipPos = above;
+            currentDepth = Math.max(0, worldPosition.getY() - tipPos.getY() - 1);
+            oresInCurrentLayer.clear(); currentOreIndex = 0; scexLayerReady = false; resetEnergyCost();
+            ContainerToTank.markUnsaved(this);
+        }
+        return STATUS_RETRACTING;
+    }
+
+    private void clearColumnState() {
+        tipPos = null; currentDepth = 0;
+        oresInCurrentLayer.clear(); currentOreIndex = 0; scexLayerReady = false; resetEnergyCost();
+        ContainerToTank.markUnsaved(this);
+    }
+
+    /** Retracted pipes go to the pipe slot first, then to the storage. */
+    private int[] retractSlots() {
+        int[] slots = new int[1 + SLOT_STORAGE_COUNT];
+        slots[0] = SLOT_PIPE;
+        for (int i = 0; i < SLOT_STORAGE_COUNT; i++) slots[i + 1] = SLOT_STORAGE_START + i;
+        return slots;
+    }
+
+    /** An adjacent inventory (not below: that is the pipe column) that takes {@code stack}. */
+    private @Nullable IItemHandler neighbourWithRoom(ServerLevel server, ItemStack stack) {
+        for (Direction side : Direction.values()) {
+            if (side == Direction.DOWN) continue;
+            BlockPos pos = worldPosition.relative(side);
+            if (!available(server, pos)) continue;
+            var handler = server.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, pos, side.getOpposite());
+            if (handler != null && fitsInto(handler, List.of(stack))) return handler;
+        }
+        return null;
+    }
+
+    private static boolean fitsInto(IItemHandler handler, List<ItemStack> drops) {
+        for (ItemStack drop : drops)
+            if (!net.neoforged.neoforge.items.ItemHandlerHelper.insertItemStacked(handler, drop.copy(), true).isEmpty()) return false;
+        return true;
     }
 
     /**
@@ -425,13 +570,20 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
             if (!canMineBlock(state, next)) return false;
             var lootTool = getLootToolStack(server).copy();
             Runnable account = () -> { scexRoute.markPaid(); scexRoute.advance(next); };
+            boolean laser = getDrillType() == DrillType.LASER;
+            // 0.1.10.36: a laser in Super Heat mode smelts what it mines
+            java.util.function.UnaryOperator<List<ItemStack>> heat = laser
+                && com.miophas.singularity_iteration.common.item.tools.mio_icif_laser_miner.superHeating(itemHandler.getStackInSlot(SLOT_DRILL))
+                ? drops -> com.miophas.singularity_iteration.common.item.tools.mio_icif_laser_miner.superHeat(server, drops) : null;
             boolean removed;
             if (scexRoute.paid()) {
-                removed = MiningLoot.capture(server, next, lootTool, actionOwner, scexPendingDrops, this::canStoreDrops, null, account);
+                removed = MiningLoot.capture(server, next, lootTool, actionOwner, scexPendingDrops, this::canStoreDrops, null, account, heat);
             } else {
-                long toolCost = getItemAPI().isElectricTool(itemHandler.getStackInSlot(SLOT_DRILL)) ? 1 : 0;
+                // a drill pays 1 EU of its charge per route; the laser pays MINER_LASER_COST
+                long toolCost = laser ? com.miophas.singularity_iteration.common.item.tools.mio_icif_laser_miner.MINER_LASER_COST
+                    : getItemAPI().isElectricTool(itemHandler.getStackInSlot(SLOT_DRILL)) ? 1 : 0;
                 removed = scexMiningPayment.attempt(energyStorage, itemHandler, SLOT_DRILL, getItemAPI(), scexRoute.cost(), toolCost,
-                    payment -> MiningLoot.capture(server, next, lootTool, actionOwner, scexPendingDrops, this::canStoreDrops, payment, account));
+                    payment -> MiningLoot.capture(server, next, lootTool, actionOwner, scexPendingDrops, this::canStoreDrops, payment, account, heat));
             }
             if (!removed) return false;
             flushPendingLoot();
@@ -554,7 +706,7 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         // The drill type sets which blocks the miner can mine.
         return switch (getDrillType()) {
             case IRON -> canIronDrillMine(state);
-            case DIAMOND, IRIDIUM -> canDiamondDrillMine(state);
+            case DIAMOND, IRIDIUM, LASER -> canDiamondDrillMine(state);
             default -> false;
         };
     }
@@ -604,6 +756,8 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
      */
     private ItemStack getLootToolStack(ServerLevel serverLevel) {
         ItemStack drill = itemHandler.getStackInSlot(SLOT_DRILL);
+        // 0.1.10.36: the Mining Laser's drops are those of a plain diamond pickaxe, as when it is fired (Super Heat smelts them)
+        if (getDrillType() == DrillType.LASER) return new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);
         if (!(drill.getItem() instanceof mio_icif_iridium_driller)) {
             return drill;
         }
@@ -678,7 +832,8 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         currentEnergyCost = Math.max(0, tag.getLong("scex_mining_cost"));
         scexLayerReady = tag.getBoolean("scex_layer_ready");
         currentDepth = Math.max(0, tag.getInt("CurrentDepth"));
-        isPaused = tag.getBoolean("IsPaused");
+        retractMode = tag.getBoolean("IsPaused");   // 0.1.10.36: the former unused pause flag holds the Retract button
+        retractStatus = Math.clamp(tag.getInt("scex_retract_status"), STATUS_IDLE, STATUS_NO_ENERGY);
         currentOreIndex = Math.max(0, tag.getInt("CurrentOreIndex"));
         tipPos = null;
 
@@ -722,7 +877,8 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
         tag.putLong("scex_mining_cost", currentEnergyCost);
         tag.putBoolean("scex_layer_ready", scexLayerReady);
         tag.putInt("CurrentDepth", currentDepth);
-        tag.putBoolean("IsPaused", isPaused);
+        tag.putBoolean("IsPaused", retractMode);
+        tag.putInt("scex_retract_status", retractStatus);
         tag.putInt("CurrentOreIndex", currentOreIndex);
 
         if (tipPos != null) {
@@ -760,7 +916,7 @@ public class mio_icif_miner_elc extends AbstractProcessingMachineBlockEntity imp
 
     // Drill types.
     private enum DrillType {
-        NONE, IRON, DIAMOND, IRIDIUM
+        NONE, IRON, DIAMOND, IRIDIUM, LASER
     }
 
     // Scanner types (OD scanner and OV scanner).

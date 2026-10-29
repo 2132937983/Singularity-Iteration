@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mio_icif:resource/item_iridium_dust_small",
+      "required": false
+    }
+  ]
+}

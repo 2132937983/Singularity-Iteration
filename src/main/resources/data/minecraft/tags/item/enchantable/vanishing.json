@@ -1,0 +1,37 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mio_icif:armor/item_armor_nano_helmet",
+      "required": false
+    },
+    {
+      "id": "mio_icif:armor/item_armor_quantum_helmet",
+      "required": false
+    },
+    {
+      "id": "mio_icif:armor/item_armor_nano_chestplate",
+      "required": false
+    },
+    {
+      "id": "mio_icif:armor/item_armor_quantum_chestplate",
+      "required": false
+    },
+    {
+      "id": "mio_icif:armor/item_armor_nano_leggings",
+      "required": false
+    },
+    {
+      "id": "mio_icif:armor/item_armor_quantum_leggings",
+      "required": false
+    },
+    {
+      "id": "mio_icif:armor/item_armor_nano_boots",
+      "required": false
+    },
+    {
+      "id": "mio_icif:armor/item_armor_quantum_boots",
+      "required": false
+    }
+  ]
+}

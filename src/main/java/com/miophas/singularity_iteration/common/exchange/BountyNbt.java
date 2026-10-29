@@ -37,6 +37,7 @@ final class BountyNbt {
             for (Need n : b.needs) {
                 CompoundTag t = new CompoundTag();
                 t.putString("Item", n.item); t.putLong("Count", n.count); t.putLong("Delivered", n.delivered); t.putLong("Unit", n.unit);
+                if (!n.tag.isEmpty()) t.putString("Tag", n.tag);   // 0.1.10.36
                 needs.add(t);
             }
             x.put("Needs", needs);
@@ -149,7 +150,7 @@ final class BountyNbt {
         for (Tag t : x.getList("Needs", Tag.TAG_COMPOUND)) {
             CompoundTag n = (CompoundTag) t;
             Need need = new Need();
-            need.item = n.getString("Item"); need.count = n.getLong("Count"); need.delivered = n.getLong("Delivered");
+            need.item = n.getString("Item"); need.tag = n.getString("Tag"); need.count = n.getLong("Count"); need.delivered = n.getLong("Delivered");
             need.unit = Math.max(1, n.getLong("Unit"));
             if (need.item.isEmpty() || need.count < 1 || need.delivered < 0 || need.delivered > need.count) return null;
             b.needs.add(need);

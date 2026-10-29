@@ -149,6 +149,8 @@ public final class Bounties {
             if (n == null || !ExchangeTables.itemExists(n.item())) return null;
             Need x = new Need();
             x.item = n.item();
+            // 0.1.10.36: a need the event kept keeps the accepted tag of its table requirement
+            for (Need before : draft.needs) if (before.item.equals(x.item)) x.tag = before.tag;
             x.count = n.count();
             x.unit = n.value() > 0 ? n.value() : Math.max(1, Math.round(prices.value(n.item())));
             out.needs.add(x);
@@ -287,13 +289,14 @@ public final class Bounties {
         boolean completed = false, capped = false;
         for (int i = 0; i < b.needs.size() && !completed; i++) {
             Need n = b.needs.get(i);
-            Item item = ExchangeService.item(n.item);
-            if (item == null || n.left() <= 0) continue;
+            // 0.1.10.36: the requested item or any item of its material tags (another mod's copper ingot for ours)
+            ItemMatch match = ItemMatch.of(n.item, n.tag);
+            if (match == null || n.left() <= 0) continue;
             long can = d.board.canDeliver(b, i, uuid, day, mp);
-            long have = src.count(item);
+            long have = src.count(match);
             if (can <= 0 && have > 0) capped = true;
             long take = Math.min(can, have);
-            if (take <= 0 || !src.take(item, take)) continue;
+            if (take <= 0 || !src.take(match, take)) continue;
             // 0.1.10.33: the records (the value delivered; a commodity enters the treasury at its value)
             d.records.add(uuid, day, MarketRecords.BOUNTY, Math.multiplyExact(take, Math.max(1, n.unit)));
             if (prices.isCommodity(n.item)) d.records.costIn(n.item, d.treasury.getOrDefault(n.item, 0L), take, (double) take * Math.max(1, n.unit));
@@ -576,7 +579,7 @@ public final class Bounties {
         for (Bounty b : open) {
             if (out.size() >= ExchangeView.MAX_BOUNTIES) break;
             List<ExchangeView.NeedLine> needs = new ArrayList<>();
-            for (Need n : b.needs) needs.add(new ExchangeView.NeedLine(n.item, n.count, n.delivered));
+            for (Need n : b.needs) needs.add(new ExchangeView.NeedLine(n.item, n.count, n.delivered, n.tag));
             List<ExchangeView.RewardLine> rewards = new ArrayList<>();
             for (Line l : b.lines) rewards.add(new ExchangeView.RewardLine(l.kind.ordinal(), l.source.ordinal(), l.item, l.amount, l.paid));
             long room = d.board.room(b, player.getUUID(), day, mp);

@@ -28,6 +28,22 @@ public final class ReactorInventory {
     public static final int ISOTOPE_PULSE_BONUS=1;
     /** 近衰变同位素棒增殖完成后的产物（IC2 nuclear#re_enriched_uranium）。 */
     public static final ResourceLocation ISOTOPE_PRODUCT=ResourceLocation.parse("mio_icif:normal/item_re_enriched_uranium");
+    /** 0.1.10.36: lithium breeding: +1 progress per pulse besides hull/3000 (IC2 experimental), 1 HU per absorbed pulse. */
+    public static final int LITHIUM_PULSE_BONUS=1,LITHIUM_HEAT_PER_PULSE=1;
+    /** 0.1.10.36: the tritium rod is a neutron source: it decays in TRITIUM_LIFE cycles and gives 1 HU of decay heat per cycle. */
+    public static final int TRITIUM_LIFE=10000,TRITIUM_HEAT_PER_CYCLE=1;
+    /** 0.1.10.36: a decayed tritium rod leaves the empty fuel rod it was canned in (the helium-3 escapes). */
+    public static final ResourceLocation TRITIUM_PRODUCT=ResourceLocation.parse("mio_icif:normal/item_fuel_rod");
+    /** 0.1.10.36: the proton rod (Industrial Upgrade style): 3x the EU and 1.5x the heat of uranium, 40000 cycles. */
+    public static final float PROTON_EU=3.0f,PROTON_HEAT=1.5f;
+    public static final int PROTON_LIFE=40000;
+    /** 0.1.10.36: the tritium rod keeps its item id (normal/item_tritium_cell); its component key is "tritium_cell". */
+    private static final String TRITIUM_KEY="tritium_cell";
+    /** 0.1.10.36: the spent identity of each fuel rod (was a switch). */
+    private static final Map<String,String> DEPLETED=Map.of(
+        "uranium_simple","uranium_simple_depleted","uranium_dual","uranium_dual_depleted","uranium_quad","uranium_quad_deplete",
+        "mox_simple","mox_simple_depleted","mox_dual","mox_dual_deplete","mox_quad","mox_quad_deplete",
+        "proton_simple","proton_simple_depleted","proton_dual","proton_dual_depleted","proton_quad","proton_quad_depleted");
     private static final Map<String,Profile> PROFILES=Map.ofEntries(
         Map.entry("uranium_simple",Profile.fuel(1,false)),Map.entry("uranium_dual",Profile.fuel(2,false)),Map.entry("uranium_quad",Profile.fuel(4,false)),
         Map.entry("mox_simple",Profile.fuel(1,true)),Map.entry("mox_dual",Profile.fuel(2,true)),Map.entry("mox_quad",Profile.fuel(4,true)),
@@ -46,10 +62,14 @@ public final class ReactorInventory {
         // IC2 铱中子反射板为无限耐久
         Map.entry("iridium_reflector",Profile.reflector(0)),
         Map.entry("heatpack",Profile.heatpack(HEATPACK_MAX_PER,HEATPACK_HEAT_PER)),
-        Map.entry("lithium_cell",Profile.lithium(LITHIUM_THRESHOLD)),
+        Map.entry("lithium_cell",Profile.lithium(LITHIUM_THRESHOLD,LITHIUM_PULSE_BONUS,LITHIUM_HEAT_PER_PULSE)),
         Map.entry("isotope_rod",Profile.isotope(ISOTOPE_THRESHOLD,ISOTOPE_PULSE_BONUS)),
+        Map.entry(TRITIUM_KEY,Profile.neutronSource(TRITIUM_LIFE,TRITIUM_HEAT_PER_CYCLE)),
+        Map.entry("proton_simple",Profile.fuel(1,false,PROTON_EU,PROTON_HEAT)),Map.entry("proton_dual",Profile.fuel(2,false,PROTON_EU,PROTON_HEAT)),
+        Map.entry("proton_quad",Profile.fuel(4,false,PROTON_EU,PROTON_HEAT)),
         Map.entry("uranium_simple_depleted",INERT),Map.entry("uranium_dual_depleted",INERT),Map.entry("uranium_quad_deplete",INERT),
-        Map.entry("mox_simple_depleted",INERT),Map.entry("mox_dual_deplete",INERT),Map.entry("mox_quad_deplete",INERT));
+        Map.entry("mox_simple_depleted",INERT),Map.entry("mox_dual_deplete",INERT),Map.entry("mox_quad_deplete",INERT),
+        Map.entry("proton_simple_depleted",INERT),Map.entry("proton_dual_depleted",INERT),Map.entry("proton_quad_depleted",INERT));
     /**
      * Components of the reactor simulator palette (0.1.8.0), in display order: fuel, heat
      * storage, vents, exchangers, plating, reflectors, special. Depleted rods are not in it.
@@ -59,12 +79,20 @@ public final class ReactorInventory {
         "collant_simple","collant_triple","coolant_six","condensator","condensator_lap",
         "vent","vent_core","golden_vent","diamond_vent","vent_spread","iridium_vent","iridium_oc_vent",
         "heat_switch","heat_switch_core","heat_switch_spread","diamond_heat_switch",
-        "plate","heat_plate","explosive_plate","reflector","thick_reflector","iridium_reflector");
+        "plate","heat_plate","explosive_plate","reflector","thick_reflector","iridium_reflector",
+        // 0.1.10.36: proton fuel, the lithium breeder and the tritium neutron source
+        "proton_simple","proton_dual","proton_quad","lithium_cell",TRITIUM_KEY);
     /** The numeric profile of component {@code key}, or null. */
     public static Profile profile(String key){Profile p=PROFILES.get(key);return p==null||p.kind()==Kind.INERT?null:p;}
     /** Item id of component {@code key}. */
-    public static ResourceLocation itemId(String key){return ResourceLocation.fromNamespaceAndPath("mio_icif","reactor/item_reactor_"+key);}
+    public static ResourceLocation itemId(String key){
+        return key.equals(TRITIUM_KEY)?LITHIUM_PRODUCT:ResourceLocation.fromNamespaceAndPath("mio_icif","reactor/item_reactor_"+key);}
+    /** Cycles of a fresh fuel rod of component {@code key} (0: not a fuel rod). */
+    public static int fuelLife(String key){
+        Profile p=PROFILES.get(key);if(p==null||p.kind()!=Kind.FUEL)return 0;
+        return key.startsWith("mox_")?10000:key.startsWith("proton_")?PROTON_LIFE:20000;}
     private static String key(ItemStack stack){var id=BuiltInRegistries.ITEM.getKey(stack.getItem());String prefix="reactor/item_reactor_";
+        if(id.equals(LITHIUM_PRODUCT))return TRITIUM_KEY;
         return id.getNamespace().equals("mio_icif")&&id.getPath().startsWith(prefix)?id.getPath().substring(prefix.length()):"";}
     public static boolean supported(ItemStack stack){return stack.isEmpty()||PROFILES.containsKey(key(stack));}
     /** A breeding product (tritium cell, re-enriched uranium): an inert part until it leaves the reactor. */
@@ -85,7 +113,7 @@ public final class ReactorInventory {
                 throw new IllegalArgumentException("Invalid fuel durability retained");
             return new Part(p,0,d.remainingUses());
         }
-        if(p.storesHeat()||p.kind()==Kind.REFLECTOR||p.breeding()){
+        if(p.storesHeat()||p.kind()==Kind.REFLECTOR||p.breeding()||p.kind()==Kind.NEUTRON_SOURCE){
             var d=stack.get(mio_icif_data_components.REACTOR_COMPONENT_DATA.get());
             if(d==null||d.maxValue()!=p.capacity()||d.storedValue()<0||d.storedValue()>d.maxValue())
                 throw new IllegalArgumentException("Unknown thermal component state retained");
@@ -101,10 +129,8 @@ public final class ReactorInventory {
         if(before.profile().kind()==Kind.INERT)return previous.copy();
         ItemStack out=previous.copy();
         if(depleted){
-            String target=switch(key(previous)){
-                case "uranium_simple"->"uranium_simple_depleted";case "uranium_dual"->"uranium_dual_depleted";case "uranium_quad"->"uranium_quad_deplete";
-                case "mox_simple"->"mox_simple_depleted";case "mox_dual"->"mox_dual_deplete";case "mox_quad"->"mox_quad_deplete";
-                default->throw new IllegalArgumentException("No depleted identity");};
+            String target=DEPLETED.get(key(previous));
+            if(target==null)throw new IllegalArgumentException("No depleted identity");
             var item=BuiltInRegistries.ITEM.get(ResourceLocation.parse("mio_icif:reactor/item_reactor_"+target));
             out=new ItemStack(item);out.applyComponents(previous.getComponentsPatch());out.remove(mio_icif_data_components.FUEL_ROD_DURABILITY.get());
         }else if(next.profile().kind()==Kind.FUEL){
@@ -117,9 +143,16 @@ public final class ReactorInventory {
                 ItemStack product=new ItemStack(BuiltInRegistries.ITEM.get(
                     next.profile().kind()==Kind.LITHIUM?LITHIUM_PRODUCT:ISOTOPE_PRODUCT));
                 product.applyComponents(previous.getComponentsPatch());
-                product.remove(mio_icif_data_components.REACTOR_COMPONENT_DATA.get());
+                // 0.1.10.36: the tritium rod is a component: it starts undecayed (the cell's breeding progress is not its decay)
+                if(next.profile().kind()==Kind.LITHIUM)
+                    product.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),ReactorComponentData.full(TRITIUM_LIFE));
+                else product.remove(mio_icif_data_components.REACTOR_COMPONENT_DATA.get());
                 return product;
             }
+            out.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),new ReactorComponentData(next.stored(),next.profile().capacity()));
+        }else if(next.profile().kind()==Kind.NEUTRON_SOURCE){
+            // 0.1.10.36: a decayed tritium rod leaves its empty fuel rod
+            if(next.stored()>=next.profile().capacity())return new ItemStack(BuiltInRegistries.ITEM.get(TRITIUM_PRODUCT));
             out.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),new ReactorComponentData(next.stored(),next.profile().capacity()));
         }else if(next.profile().storesHeat()||next.profile().kind()==Kind.REFLECTOR){
             out.set(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),new ReactorComponentData(next.stored(),next.profile().capacity()));

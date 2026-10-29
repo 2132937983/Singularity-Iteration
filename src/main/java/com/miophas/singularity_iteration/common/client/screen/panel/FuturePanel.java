@@ -7,6 +7,7 @@ import com.miophas.singularity_iteration.common.exchange.CommissionLots;
 import com.miophas.singularity_iteration.common.exchange.ExchangePackets;
 import com.miophas.singularity_iteration.common.exchange.ExchangeService;
 import com.miophas.singularity_iteration.common.exchange.ExchangeView;
+import com.miophas.singularity_iteration.common.exchange.ItemMatch;
 import com.miophas.singularity_iteration.common.exchange.MinPrice;
 import com.miophas.singularity_iteration.common.exchange.ShopRules;
 import com.miophas.singularity_iteration.common.exchange.UuBoard;
@@ -87,6 +88,18 @@ public final class FuturePanel {
     }
 
     String unit(int currency) { return tr(currency == 1 ? "uu" : "coins"); }
+
+    /** 0.1.10.36: " | Also accepts: #c:ingots/copper" for a bounty need (its table tag, or the item's material tags); "" without. */
+    String accepts(ExchangeView.NeedLine nl) {
+        List<String> tags = new ArrayList<>();
+        if (!nl.tag().isEmpty()) tags.add(nl.tag().startsWith("#") ? nl.tag() : "#" + nl.tag());
+        else {
+            var id = net.minecraft.resources.ResourceLocation.tryParse(nl.item());
+            var item = id == null ? null : net.minecraft.core.registries.BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+            if (item != null) for (var t : ItemMatch.materialTags(item)) tags.add("#" + t.location());
+        }
+        return tags.isEmpty() ? "" : " | " + tr("bounty_accepts", String.join(", ", tags));
+    }
 
     /** Text fitted to {@code w} ({@link #fitText}); the whole text as tooltip when it changed. Returns the width drawn. */
     int text(String s, int x, int y, int w, int colour) {
@@ -1664,7 +1677,7 @@ public final class FuturePanel {
             int ny = y + 16 + lineOf[k] * 18;
             c.item(nl.item(), xOf[k], ny);
             c.text(cnt, xOf[k] + 18, ny + 5, nl.delivered() >= nl.count() ? PanelStyle.up() : PanelStyle.TEXT);
-            c.hover(xOf[k], ny, 18 + c.width(cnt), 16, name(nl.item()) + "  " + cnt);
+            c.hover(xOf[k], ny, 18 + c.width(cnt), 16, name(nl.item()) + "  " + cnt + accepts(nl));
             if (lineOf[k] == lines - 1) lastX = xOf[k] + 18 + c.width(cnt);
         }
         if (placed < needs.size()) {

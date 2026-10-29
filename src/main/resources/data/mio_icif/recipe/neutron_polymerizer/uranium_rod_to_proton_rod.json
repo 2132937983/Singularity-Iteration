@@ -1,0 +1,21 @@
+{
+  "type": "mio_icif:neutron_polymerizer",
+  "ingredient": {
+    "type": "neoforge:components",
+    "items": "mio_icif:reactor/item_reactor_uranium_simple",
+    "components": {
+      "mio_icif:fuel_rod_durability": {
+        "remaining_uses": 20000,
+        "max_uses": 20000,
+        "tick_counter": 0
+      }
+    },
+    "strict": false
+  },
+  "result": {
+    "id": "mio_icif:reactor/item_reactor_proton_simple",
+    "count": 1
+  },
+  "processingtime": 4000,
+  "energyPerTick": 2048
+}

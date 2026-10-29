@@ -33,7 +33,7 @@ The game measured these values from the block entity of this version.
 ## Procedure
 
 1. Connect an LV cable to the machine.
-2. Put an Iron Drill, a Diamond Drill or an Iridium Drill into the drill slot.
+2. Put an Iron Drill, a Diamond Drill, an Iridium Drill or a Mining Laser into the drill slot. The Mining Laser must be in Mining mode or Super Heat mode.
 3. Put Mining Pipe into the pipe slot.
 4. Put an OD Scanner or an OV Scanner into the scanner slot.
 5. Take the ores from the storage slots.
@@ -42,6 +42,8 @@ The game measured these values from the block entity of this version.
 
 - Place a Pump next to the Miner to remove the fluids in the shaft.
 - A redstone signal stops the machine. A Redstone Signal Inverter Upgrade reverses this.
+- To get the Mining Pipe back, push the Retract button or take the drill out. The machine pulls up one pipe every 5 ticks for 5 EU.
+- The Mining Laser mines 5 times faster than a drill and uses 250 EU of its charge for each route. In Super Heat mode, the machine smelts the ores.
 
 > **WARNING:** The machine explodes on overvoltage above LV. Install a Transformer Upgrade for a higher voltage tier.
 

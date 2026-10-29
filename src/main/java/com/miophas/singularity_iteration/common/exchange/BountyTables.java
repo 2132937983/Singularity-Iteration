@@ -24,6 +24,8 @@ import java.util.function.Predicate;
  *   (0.1.10.34: instead of "duration_days", "rarity": "rare" and / or "days": [1, 4] - a range drawn per bounty)
  *   "conditions": { "min_day": 7, "advancement": "minecraft:story/smelt_iron" },
  *   "requirements": [ { "item": "mio_icif:normal/item_circuit", "count": 32 },
+ *                     (0.1.10.36: any item sharing a material tag of "item" counts, e.g. another mod's copper ingot for ours;
+ *                      { "item": "minecraft:copper_ingot", "tag": "c:ingots/copper", ... } names the accepted tag itself)
  *                     { "item": "minecraft:dragon_head", "count": 1, "value": 20000 } ],
  *   "reward": { "pool": "mio_icif:advanced", "rolls": 2, "multiplier": 1.3 },
  *   "split": "contribution", "player_share": 0.5 }
@@ -71,7 +73,12 @@ public final class BountyTables {
     public enum Source { MINTED, TREASURY, VAULT, ISSUE }
 
     /** One requirement: {@code value} coins per item, or 0 to value it at the market's ask (commodities) when posting. */
-    public record Requirement(String item, long count, double value) { }
+    public record Requirement(String item, long count, double value, String tag) {
+        /** 0.1.10.36: {@code tag} "" = the item and its material tags ({@link ItemMatch}). */
+        public Requirement(String item, long count, double value) {
+            this(item, count, value, "");
+        }
+    }
 
     public record Table(String id, Tier tier, int weight, int maxOpen, int days, int cooldownDays, long minDay, String advancement,
                         List<Requirement> requirements, String pool, int rolls, double multiplier, Split split, double playerShare,
@@ -202,7 +209,11 @@ public final class BountyTables {
             long count = range(r, "count", 1, 1, MAX_COUNT);
             double value = number(r, "value", 0);
             if (value < 0 || !Double.isFinite(value)) throw new IllegalArgumentException("value must be 0 or more");
-            list.add(new Requirement(item, count, value));
+            // 0.1.10.36: "tag" - the accepted items besides the item itself (without it: the item's material tags)
+            String tag = string(r, "tag", "");
+            if (!tag.isEmpty() && net.minecraft.resources.ResourceLocation.tryParse(tag.startsWith("#") ? tag.substring(1) : tag) == null)
+                throw new IllegalArgumentException("bad tag " + tag);
+            list.add(new Requirement(item, count, value, tag));
         }
         String pool = "";
         int rolls = 1;

@@ -24,7 +24,9 @@ public final class NuclearFalloutManager {
     private static final Set<Key> PENDING=new LinkedHashSet<>(),ACTIVE=new HashSet<>();
     private NuclearFalloutManager(){}
     public static void register(ServerLevel level,UUID id,Vec3 center,int radius,int radiusY){
-        var data=NuclearFalloutState.get(level);data.regions.put(id,new NuclearFalloutState.Region(center,radius,radiusY,System.currentTimeMillis()));data.setDirty();
+        var data=NuclearFalloutState.get(level);var region=new NuclearFalloutState.Region(center,radius,radiusY,System.currentTimeMillis());
+        region.transmute=true;   // 0.1.10.36: deepslate ores in the blast become deepslate iridium ore
+        data.regions.put(id,region);data.setDirty();
     }
     public static void ready(ServerLevel level,UUID id){
         var data=NuclearFalloutState.get(level);var region=data.regions.get(id);if(region==null)return;
@@ -40,7 +42,7 @@ public final class NuclearFalloutManager {
     }
     private static void queue(ServerLevel level,UUID id,NuclearFalloutState.Region region,long chunk){
         var key=new Key(level,id,chunk);
-        if(region.ready&&region.intersectsChunk(ChunkPos.getX(chunk),ChunkPos.getZ(chunk))&&region.columns.getOrDefault(chunk,0)<256&&!ACTIVE.contains(key))PENDING.add(key);
+        if(region.ready&&region.intersectsChunk(ChunkPos.getX(chunk),ChunkPos.getZ(chunk))&&!region.chunkDone(chunk)&&!ACTIVE.contains(key))PENDING.add(key);
     }
     /** Only records an address here; FULL-chunk access is delayed to the server tick. */
     public static void loaded(ServerLevel level,long chunk){
@@ -73,13 +75,13 @@ public final class NuclearFalloutManager {
             var key=it.next();it.remove();
             if(key.level.getServer()!=event.getServer()){retry.add(key);continue;}
             var data=NuclearFalloutState.get(key.level);var region=data.regions.get(key.region);
-            if(region==null||region.columns.getOrDefault(key.chunk,0)>=256)continue;
+            if(region==null||region.chunkDone(key.chunk))continue;
             var chunk=key.level.getChunkSource().getChunkNow(ChunkPos.getX(key.chunk),ChunkPos.getZ(key.chunk));
             if(chunk==null){retry.add(key);continue;}
             if(!ExplosionWorkScheduler.hasCapacity(key.level)){retry.add(key);break;}
             var task=new NuclearFalloutChunkTask(key.level,region,chunk,data,()->data.regions.get(key.region)==region);
             if(ExplosionWorkScheduler.trySubmitCleanup(key.level,net.minecraft.core.BlockPos.containing(region.center),NuclearFalloutManager.class,task,()->{
-                try{boolean done=task.getAsBoolean();if(done){ACTIVE.remove(key);if(region.columns.getOrDefault(key.chunk,0)<256&&LOADED.getOrDefault(key.level,Set.of()).contains(key.chunk))PENDING.add(key);}return done;}
+                try{boolean done=task.getAsBoolean();if(done){ACTIVE.remove(key);if(!region.chunkDone(key.chunk)&&LOADED.getOrDefault(key.level,Set.of()).contains(key.chunk))PENDING.add(key);}return done;}
                 catch(RuntimeException failure){ACTIVE.remove(key);throw failure;}
             })){ACTIVE.add(key);}else retry.add(key);
         }

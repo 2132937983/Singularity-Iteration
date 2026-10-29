@@ -1,0 +1,17 @@
+{
+  "type": "mio_icif:centrifuge",
+  "ingredient": {
+    "item": "mio_icif:reactor/item_reactor_proton_dual_depleted"
+  },
+  "minheat": 4000,
+  "primaryCount": 8,
+  "primaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_uran_238"
+  },
+  "secondaryCount": 3,
+  "secondaryResult": {
+    "count": 1,
+    "id": "mio_icif:resource/item_iron_dust"
+  }
+}

@@ -6,7 +6,11 @@ import com.miophas.singularity_iteration.common.reactor.NuclearThermalEffects;
 import com.miophas.singularity_iteration.core.runtime.radiation.NuclearFalloutState;
 import java.util.function.BooleanSupplier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.*;
@@ -49,7 +53,7 @@ public final class NuclearFalloutChunkTask implements BooleanSupplier {
             var section=chunk.getSections()[sectionCursor];cleanupSections[sectionCursor++]=!section.hasOnlyAir()
                 &&section.maybeHas(state->vegetation(state)||NuclearThermalEffects.frozen(state));return false;
         }
-        if(column>=256){done=true;return true;}
+        if(column>=256)return transmuteStep();
         int x=chunk.getPos().getMinBlockX()+(column&15),z=chunk.getPos().getMinBlockZ()+(column>>4);
         if(!scanning){
             if(!region.containsColumn(x,z)){completeColumn();return false;}
@@ -75,6 +79,45 @@ public final class NuclearFalloutChunkTask implements BooleanSupplier {
         return false;
     }
     private void completeColumn(){scanning=false;region.columns.put(chunkKey,++column);if(saved!=null)saved.setDirty();}
+
+    // ------------------------------------------------------------------ 0.1.10.36: deepslate ores -> deepslate iridium ore
+
+    /** The deepslate ores a blast transmutes ({@code #c:ores_in_ground/deepslate} by default; the iridium ore itself never). */
+    public static final TagKey<Block> TRANSMUTABLE=TagKey.create(Registries.BLOCK,ResourceLocation.fromNamespaceAndPath("mio_icif","nuke_transmutable"));
+    /** Blocks of one section looked at per scheduler step. */
+    private static final int TRANSMUTE_BATCH=256;
+    private int oreIndex;
+    public static boolean transmutable(BlockState state){
+        return state.is(TRANSMUTABLE)&&!state.is(mio_icif_blocks.BLOCK_ORE_IRIDIUM_IN_DEEP.get());
+    }
+    /**
+     * After the columns of the chunk: every transmutable ore inside the blast ellipsoid (radius, radiusY; underground too)
+     * becomes deepslate iridium ore. A section without such an ore, or outside the blast's height, is skipped in one step
+     * (palette check); the others are read {@link #TRANSMUTE_BATCH} blocks per step. The section cursor is saved, so a chunk
+     * unloaded halfway resumes on its next load (a converted ore is never converted again).
+     */
+    private boolean transmuteStep(){
+        int cursor=region.ores.getOrDefault(chunkKey,0);
+        var sections=chunk.getSections();
+        if(!region.transmute||cursor>=NuclearFalloutState.Region.ORES_DONE||cursor>=sections.length
+                ||!region.chunkInBlast(chunk.getPos().x,chunk.getPos().z)){finishOres();done=true;return true;}
+        var section=sections[cursor];
+        int baseY=SectionPos.sectionToBlockCoord(level.getSectionYFromSectionIndex(cursor));
+        if(oreIndex==0&&(baseY+15<region.center.y-region.radiusY-1||baseY>region.center.y+region.radiusY+1
+                ||section.hasOnlyAir()||!section.maybeHas(NuclearFalloutChunkTask::transmutable))){nextOreSection(cursor);return false;}
+        int minX=chunk.getPos().getMinBlockX(),minZ=chunk.getPos().getMinBlockZ();
+        for(int n=0;n<TRANSMUTE_BATCH&&oreIndex<4096;n++,oreIndex++){
+            int lx=oreIndex&15,lz=(oreIndex>>4)&15,ly=oreIndex>>8;
+            var state=section.getBlockState(lx,ly,lz);
+            if(!transmutable(state)||!region.inBlast(minX+lx,baseY+ly,minZ+lz))continue;
+            NuclearTerrainUpdates.replace(level,new BlockPos(minX+lx,baseY+ly,minZ+lz),
+                mio_icif_blocks.BLOCK_ORE_IRIDIUM_IN_DEEP.get().defaultBlockState(),REPLACE_FLAGS);
+        }
+        if(oreIndex>=4096)nextOreSection(cursor);
+        return false;
+    }
+    private void nextOreSection(int cursor){oreIndex=0;region.ores.put(chunkKey,cursor+1);if(saved!=null)saved.setDirty();}
+    private void finishOres(){region.ores.put(chunkKey,NuclearFalloutState.Region.ORES_DONE);if(saved!=null)saved.setDirty();}
     private static Block radioactive(Block block){
         if(block==Blocks.DIRT||block==Blocks.GRASS_BLOCK||block==Blocks.COARSE_DIRT||block==Blocks.PODZOL||block==Blocks.MYCELIUM||block==Blocks.ROOTED_DIRT)return mio_icif_blocks.BLOCK_RADIATING_DIRT.get();
         if(block==Blocks.STONE||block==Blocks.COBBLESTONE)return mio_icif_blocks.BLOCK_RADIATING_STONE.get();

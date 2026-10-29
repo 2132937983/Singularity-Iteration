@@ -200,6 +200,12 @@ public class Singularity_Iteration_Client {
         Singularity_Iteration.LOGGER.debug("Dynamic cell color handler registered");
     }
 
+    /** 0.1.10.36: the suit armor glint is a fixed buffer, like the vanilla glints (drawn after the plates under it). */
+    @SubscribeEvent
+    static void registerRenderBuffers(net.neoforged.neoforge.client.event.RegisterRenderBuffersEvent event) {
+        event.registerRenderBuffer(com.miophas.singularity_iteration.common.client.render.SiRenderTypes.SUIT_ARMOR_GLINT);
+    }
+
     @SubscribeEvent
     static void registerReloadListeners(net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent event) {
         event.registerReloadListener((net.minecraft.server.packs.resources.ResourceManagerReloadListener) manager -> {

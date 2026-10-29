@@ -177,7 +177,8 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
     public record Candidate(String item, int requesters, int fulfilled, int deliverers) { }
 
     /** 0.1.10.26 (X3): one item a bounty asks for. */
-    public record NeedLine(String item, long count, long delivered) { }
+    /** 0.1.10.36: {@code tag} the accepted tag of a table requirement ("" = the item and its material tags). */
+    public record NeedLine(String item, long count, long delivered, String tag) { }
 
     /** 0.1.10.26: one reward of a bounty; {@code kind} 0 coins / 1 item / 2 UU (mB), {@code source} 0 minted / 1 treasury / 2 vault / 3 issue. */
     public record RewardLine(int kind, int source, String item, long amount, long paid) { }
@@ -309,7 +310,8 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
         // 0.1.10.26 (X3)
         list(b, bounties, MAX_BOUNTIES, x -> {
             b.writeVarLong(x.id()); b.writeVarInt(x.tier()); b.writeVarLong(x.expiry()); b.writeVarInt(x.split()); b.writeVarInt(x.sharePermille());
-            list(b, x.needs(), MAX_BOUNTY_NEEDS, n -> { b.writeUtf(n.item(), 128); b.writeVarLong(n.count()); b.writeVarLong(n.delivered()); });
+            list(b, x.needs(), MAX_BOUNTY_NEEDS, n -> { b.writeUtf(n.item(), 128); b.writeVarLong(n.count()); b.writeVarLong(n.delivered());
+                b.writeUtf(n.tag(), 128); });
             list(b, x.rewards(), MAX_BOUNTY_REWARDS, r -> { b.writeVarInt(r.kind()); b.writeVarInt(r.source()); b.writeUtf(r.item(), 128);
                 b.writeVarLong(r.amount()); b.writeVarLong(r.paid()); });
             b.writeVarLong(x.mine()); b.writeVarLong(x.all()); b.writeLong(x.room()); b.writeVarInt(x.contributors());
@@ -394,7 +396,7 @@ public record ExchangeView(long day, long coins, long uu, long mailCoins, int ma
             b.readVarLong(), b.readVarLong()));
         List<BountyLine> bounties = read(b, MAX_BOUNTIES, () -> {
             long id = b.readVarLong(); int tier = b.readVarInt(); long expiry = b.readVarLong(); int split = b.readVarInt(); int share = b.readVarInt();
-            List<NeedLine> needs = read(b, MAX_BOUNTY_NEEDS, () -> new NeedLine(b.readUtf(128), b.readVarLong(), b.readVarLong()));
+            List<NeedLine> needs = read(b, MAX_BOUNTY_NEEDS, () -> new NeedLine(b.readUtf(128), b.readVarLong(), b.readVarLong(), b.readUtf(128)));
             List<RewardLine> rewards = read(b, MAX_BOUNTY_REWARDS, () -> new RewardLine(b.readVarInt(), b.readVarInt(), b.readUtf(128), b.readVarLong(), b.readVarLong()));
             long mine = b.readVarLong(), all = b.readVarLong(), room = b.readLong();
             int contributors = b.readVarInt();

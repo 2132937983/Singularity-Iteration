@@ -13,17 +13,37 @@ public final class ReactorCycle {
     private ReactorCycle() {}
     /** IC2 resets capacity each cycle; plating raises it when encountered in thermal pass 0. */
     private static final long BASE_MAX_HEAT=10000;
-    public enum Kind { FUEL, CELL, CONDENSATOR, VENT, COMPONENT_VENT, EXCHANGER, REFLECTOR, PLATING, HEATPACK, LITHIUM, ISOTOPE, INERT }
+    /** New kinds go after INERT only: saved reactor accident records store the ordinal. */
+    public enum Kind { FUEL, CELL, CONDENSATOR, VENT, COMPONENT_VENT, EXCHANGER, REFLECTOR, PLATING, HEATPACK, LITHIUM, ISOTOPE, INERT, NEUTRON_SOURCE }
+    /**
+     * 0.1.10.36: {@code euFactor} / {@code heatFactor} scale the EU and the heat of a fuel rod (1 = uranium; the proton rod
+     * 3 and 1.5). The ten-argument constructor keeps both at 1.
+     */
     public record Profile(Kind kind,int cells,boolean mox,int capacity,int selfCooling,
-                          int hullCooling,int adjacentExchange,int hullExchange,int extraHull,int explosionReduction) {
+                          int hullCooling,int adjacentExchange,int hullExchange,int extraHull,int explosionReduction,
+                          float euFactor,float heatFactor) {
         public Profile {
             Objects.requireNonNull(kind);
             if (cells<0||cells>4||capacity<0||selfCooling<0||hullCooling<0
                     ||adjacentExchange<0||hullExchange<0||extraHull<0) throw new IllegalArgumentException("Invalid reactor profile");
             if(explosionReduction<0||explosionReduction>100)throw new IllegalArgumentException("Invalid explosion reduction");
             if(kind==Kind.FUEL&&cells!=1&&cells!=2&&cells!=4)throw new IllegalArgumentException("Fuel cells must be 1, 2 or 4");
+            if(!(euFactor>0)||!(heatFactor>0)||!Float.isFinite(euFactor)||!Float.isFinite(heatFactor))throw new IllegalArgumentException("Invalid fuel factors");
+        }
+        public Profile(Kind kind,int cells,boolean mox,int capacity,int selfCooling,
+                       int hullCooling,int adjacentExchange,int hullExchange,int extraHull,int explosionReduction){
+            this(kind,cells,mox,capacity,selfCooling,hullCooling,adjacentExchange,hullExchange,extraHull,explosionReduction,1.0f,1.0f);
         }
         public static Profile fuel(int cells,boolean mox){return new Profile(Kind.FUEL,cells,mox,0,0,0,0,0,0,0);}
+        /** 0.1.10.36: a fuel rod with its own EU and heat factors (the proton rod). */
+        public static Profile fuel(int cells,boolean mox,float euFactor,float heatFactor){
+            return new Profile(Kind.FUEL,cells,mox,0,0,0,0,0,0,0,euFactor,heatFactor);}
+        /**
+         * 0.1.10.36: a neutron source (the tritium rod, a D-T neutron emitter): every adjacent fuel rod takes one more pulse
+         * (heat and EU), as from a reflector that never wears. It decays by one per cycle (capacity = life, stored = decay) and
+         * gives {@code heatPerCycle} of decay heat to the hull.
+         */
+        public static Profile neutronSource(int life,int heatPerCycle){return new Profile(Kind.NEUTRON_SOURCE,0,false,life,heatPerCycle,0,0,0,0,0);}
         public static Profile cell(int capacity){return thermal(Kind.CELL,capacity,0,0,0,0);}
         public static Profile condensator(int capacity){return thermal(Kind.CONDENSATOR,capacity,0,0,0,0);}
         public static Profile vent(int capacity,int self,int hull){return thermal(Kind.VENT,capacity,self,hull,0,0);}
@@ -37,6 +57,13 @@ public final class ReactorCycle {
         public static Profile heatpack(int maxPer,int heatPer){return new Profile(Kind.HEATPACK,0,false,maxPer,heatPer,0,0,0,0,0);}
         /** Matches IC2 ItemReactorLithiumCell: capacity holds the breeding threshold (10000). */
         public static Profile lithium(int threshold){return new Profile(Kind.LITHIUM,0,false,threshold,0,0,0,0,0,0);}
+        /**
+         * 0.1.10.36: the lithium cell as a real breeder: {@code pulseBonus} more progress per pulse (IC2 experimental: 1 + hull/3000,
+         * so it also breeds in a cool reactor) and {@code heatPerPulse} to the hull for every absorbed pulse (lithium-6 + n gives
+         * tritium + helium-4 and 4.8 MeV, a little heat). pulseBonus is kept in selfCooling, heatPerPulse in hullCooling.
+         */
+        public static Profile lithium(int threshold,int pulseBonus,int heatPerPulse){
+            return new Profile(Kind.LITHIUM,0,false,threshold,pulseBonus,heatPerPulse,0,0,0,0);}
         /** Matches IC2 ItemReactorDepletedUranium: capacity holds the breeding threshold (10000). selfCooling holds the fixed gain for each pulse (the +1 of IC2). */
         public static Profile isotope(int threshold,int pulseBonus){return new Profile(Kind.ISOTOPE,0,false,threshold,pulseBonus,0,0,0,0,0);}
         private static Profile thermal(Kind kind,int capacity,int self,int hull,int adjacent,int exchange){return new Profile(kind,0,false,capacity,self,hull,adjacent,exchange,0,0);}
@@ -89,8 +116,10 @@ public final class ReactorCycle {
         boolean fuel(int slot){Part p=parts[slot];return p!=null&&p.profile().kind()==Kind.FUEL&&p.remaining()>0;}
         /** Same as IC2 checkPulseable: fuel rods, reflectors and breeding components (lithium cell / near-depleted isotope rod) all increase the pulse count. */
         static boolean pulseable(Part part){return part!=null&&(part.profile().kind()==Kind.FUEL&&part.remaining()>0
-            ||part.profile().kind()==Kind.REFLECTOR||breeding(part));}
+            ||part.profile().kind()==Kind.REFLECTOR||breeding(part)||emitting(part));}
         static boolean breeding(Part part){return part!=null&&part.profile().breeding()&&part.stored()<part.profile().capacity();}
+        /** 0.1.10.36: a neutron source that has not decayed yet. */
+        static boolean emitting(Part part){return part!=null&&part.profile().kind()==Kind.NEUTRON_SOURCE&&part.stored()<part.profile().capacity();}
         static boolean canStoreHeat(Part part){return part!=null&&part.profile().storesHeat()&&part.profile().capacity()>0
             &&(part.profile().kind()!=Kind.CONDENSATOR||part.stored()<part.profile().capacity());}
         int pulses(int slot){int n=selfPulses(parts[slot].profile().cells());
@@ -100,7 +129,11 @@ public final class ReactorCycle {
          *  At the threshold, the save layer replaces it with the product (tritium fuel rod / re-enriched uranium). */
         void breed(int slot){Part part=parts[slot];int limit=part.profile().capacity();
             long gain=(long)Math.min(Integer.MAX_VALUE,hull/3000)+part.profile().selfCooling();
-            parts[slot]=part.withStored((int)Math.min(limit,(long)part.stored()+gain));}
+            parts[slot]=part.withStored((int)Math.min(limit,(long)part.stored()+gain));
+            // 0.1.10.36: the lithium reaction's own heat goes to the hull
+            if(part.profile().kind()==Kind.LITHIUM&&part.profile().hullCooling()>0){
+                generated+=part.profile().hullCooling();hull=Math.addExact(hull,part.profile().hullCooling());
+            }}
         Result run(boolean enabled,boolean fluidMode){
             // Apply component operations in visible row order; fuel expiry is committed after electrical output.
             for(int i=0;i<54;i++){
@@ -116,9 +149,12 @@ public final class ReactorCycle {
                                     if(limit>0)parts[a]=reflector.stored()+1>=limit?null:reflector.withStored(reflector.stored()+1);
                                 }else if(breeding(parts[a])){
                                     pulses++;breed(a);
+                                }else if(emitting(parts[a])){
+                                    pulses++;   // 0.1.10.36: the neutron source never wears per pulse; it decays per cycle
                                 }
                             }
                             int amount=2*pulses*(pulses+1);
+                            if(profile.heatFactor()!=1.0f)amount=Math.round(amount*profile.heatFactor());
                             if(fluidMode&&profile.mox()&&(float)hull/(float)max>0.5f)amount=Math.multiplyExact(amount,2);
                             generated+=amount;
                             // Each cell distributes immediately, left/right/up/down. Returned heat
@@ -156,6 +192,13 @@ public final class ReactorCycle {
                             &&parts[a].profile().kind()!=Kind.CONDENSATOR)emitted+=remove(a,profile.selfCooling());}
                     case EXCHANGER -> exchange(i);
                     case PLATING -> max=Math.addExact(max,profile.extraHull());
+                    case NEUTRON_SOURCE -> {
+                        // 0.1.10.36: decay goes on whether the fuel is enabled or not; a little decay heat reaches the hull
+                        if(p.stored()<profile.capacity()){
+                            parts[i]=p.withStored(Math.min(profile.capacity(),p.stored()+1));
+                            if(profile.selfCooling()>0){generated+=profile.selfCooling();hull=Math.addExact(hull,profile.selfCooling());}
+                        }
+                    }
                     default -> { }
                 }
             }
@@ -170,6 +213,8 @@ public final class ReactorCycle {
                             // In the electrical pass, IC2 ItemReactorReflector calls back the source fuel rod. This is the same as one more pulse for the source rod
                             // (MOX uses its own factor). Lithium cells / near-depleted isotope rods do not call back. Thus in IC2 they do not increase the EU output.
                             else if(parts[a].profile().kind()==Kind.REFLECTOR)units+=factor;
+                            // 0.1.10.36: the neutrons of a neutron source make the rod fission more (one more pulse of EU)
+                            else if(emitting(parts[a]))units+=factor;
                         }
                     }
                     depleted[i]=p.remaining()==1;parts[i]=p.withRemaining(p.remaining()-1);
@@ -177,8 +222,8 @@ public final class ReactorCycle {
             }
             return new Result(parts,hull,max,emitted,generated,fluidMode?0:units*5.0f,depleted);
         }
-        /** Electrical pass follows the entire thermal pass, including cooling and plating. */
-        float outputFactor(Part p){return p.profile().mox()?1.0f+((float)hull/(float)max)*4.0f:1.0f;}
+        /** Electrical pass follows the entire thermal pass, including cooling and plating. 0.1.10.36: times the rod's EU factor. */
+        float outputFactor(Part p){return (p.profile().mox()?1.0f+((float)hull/(float)max)*4.0f:1.0f)*p.profile().euFactor();}
         /**
          * IC2 {@code ItemReactorHeatStorage.alterHeat}: applies a signed heat change to a component. It keeps the IC2 return value rules:
          * · Overflow of a component that is not a condensator: the component melts and is removed. Returns {@code max - myHeat + 1} (negative; the extra heat goes back to the caller).

@@ -2,7 +2,6 @@
 package com.miophas.singularity_iteration.common.item.tools;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration_Config;
-import java.util.ArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -12,8 +11,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.BlockHitResult;
@@ -89,19 +86,7 @@ public class mio_icif_laser_bullet extends IndependentElectricProjectile {
                 || NeoForge.EVENT_BUS.post(new BlockEvent.BreakEvent(level, pos, state, player)).isCanceled()
                 || !level.getBlockState(pos).equals(state)) return false;
         var drops = Block.getDrops(state, level, pos, level.getBlockEntity(pos), player, tool);
-        if (mode == mio_icif_laser_miner.Mode.SUPER_HEAT) {
-            var smelted = new ArrayList<ItemStack>();
-            for (ItemStack drop : drops) {
-                var input = new SingleRecipeInput(drop);
-                var recipe = level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, input, level);
-                if (recipe.isEmpty()) { smelted.add(drop); continue; }
-                ItemStack output = recipe.get().value().assemble(input, level.registryAccess());
-                if (output.isEmpty()) { smelted.add(drop); continue; }
-                // Preserve count even if a modded recipe emits multiple items per input.
-                for (int count = 0; count < drop.getCount(); count++) smelted.add(output.copy());
-            }
-            drops = smelted;
-        }
+        if (mode == mio_icif_laser_miner.Mode.SUPER_HEAT) drops = mio_icif_laser_miner.superHeat(level, drops);
         if (!level.destroyBlock(pos, false, player)) return false;
         for (ItemStack drop : drops) Block.popResource(level, pos, drop);
         return true;

@@ -320,6 +320,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.BLOCK_TIN.get());
                 output.accept(mio_icif_blocks.BLOCK_ORE_LEAD.get());
                 output.accept(mio_icif_blocks.BLOCK_ORE_LEAD_IN_DEEP.get());
+                output.accept(mio_icif_blocks.BLOCK_ORE_IRIDIUM_IN_DEEP.get());   // 0.1.10.36: made by nuclear blasts
                 output.accept(mio_icif_blocks.BLOCK_LEAD.get());
                 output.accept(mio_icif_blocks.BLOCK_ORE_URAN.get());
                 output.accept(mio_icif_blocks.BLOCK_ORE_URAN_IN_DEEP.get());
@@ -518,6 +519,7 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_resources.IRIDIUM_INGOT.get());
                 output.accept(mio_icif_resources.IRIDIUM_PLATE.get());
                 output.accept(mio_icif_resources.SHARD_IRIDIUM.get());
+                output.accept(mio_icif_resources.IRIDIUM_DUST_SMALL.get());
                 output.accept(mio_icif_resources.DIAMOND_DUST.get());
                 output.accept(mio_icif_resources.DIAMOND_CUT_BLADE.get());
                 output.accept(mio_icif_resources.ENERGIUM_DUST.get());
@@ -868,6 +870,7 @@ public class mio_icif_creativeTabs {
                 // Heat Pack & Breeding Components
                 output.accept(mio_icif_reactors.HEATPACK.get());
                 output.accept(mio_icif_reactors.LITHIUM_CELL.get());
+                output.accept(com.miophas.singularity_iteration.common.item.normal.mio_icif_normal.TRITIUM_CELL.get());   // 0.1.10.36: neutron source
                 output.accept(mio_icif_reactors.ISOTOPE_ROD.get());
 
                 // Uranium Fuel Rods
@@ -885,6 +888,14 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_reactors.MOX_DUAL_DEPLETED.get());
                 output.accept(mio_icif_reactors.MOX_QUAD.get());
                 output.accept(mio_icif_reactors.MOX_QUAD_DEPLETED.get());
+
+                // Proton Fuel Rods (0.1.10.36)
+                output.accept(mio_icif_reactors.PROTON_SIMPLE.get());
+                output.accept(mio_icif_reactors.PROTON_SIMPLE_DEPLETED.get());
+                output.accept(mio_icif_reactors.PROTON_DUAL.get());
+                output.accept(mio_icif_reactors.PROTON_DUAL_DEPLETED.get());
+                output.accept(mio_icif_reactors.PROTON_QUAD.get());
+                output.accept(mio_icif_reactors.PROTON_QUAD_DEPLETED.get());
 
                 // Accident audit (0.1.10.12)
                 output.accept(mio_icif_reactors.REACTOR_BLACKBOX.get());

@@ -15,6 +15,12 @@ public interface ItemSource {
     /** Takes {@code amount} plain items; false (and nothing taken) when there are fewer. */
     boolean take(Item item, long amount);
 
+    /** 0.1.10.36: plain items accepted by {@code match} (the requested item and the items of its tags). */
+    long count(ItemMatch match);
+
+    /** 0.1.10.36: takes {@code amount} plain items accepted by {@code match}, the requested item first; false (and nothing taken) when there are fewer. */
+    boolean take(ItemMatch match, long amount);
+
     /** The planned inventory of a player (the plan is committed by the action). */
     static ItemSource of(InventoryPlan plan) {
         return new ItemSource() {
@@ -23,6 +29,12 @@ public interface ItemSource {
 
             @Override
             public boolean take(Item item, long amount) { return plan.removeMain(item, amount, true); }
+
+            @Override
+            public long count(ItemMatch match) { return plan.count(match); }
+
+            @Override
+            public boolean take(ItemMatch match, long amount) { return plan.removeMain(match, amount); }
         };
     }
 }

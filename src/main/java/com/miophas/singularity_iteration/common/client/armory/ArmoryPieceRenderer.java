@@ -310,8 +310,9 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
                 ResourceLocation texture = ClientHooks.getArmorTexture(wearer, stack, layer, innerLayer, slot);
                 var vc = buffers.getBuffer(RenderType.armorCutoutNoCull(texture));
                 drawSegment(pose, vc, light, color, baked, geometry, seg, o);
-                if (i == 0 && (stack.hasFoil() || seat))
-                    drawSegment(pose, buffers.getBuffer(RenderType.armorEntityGlint()), light, -1, baked, geometry, seg, o);
+                if (i == 0 && (stack.hasFoil() || seat))   // 0.1.10.36: the glint at the scale of the suit texture
+                    drawSegment(pose, buffers.getBuffer(com.miophas.singularity_iteration.common.client.render.SiRenderTypes.SUIT_ARMOR_GLINT),
+                        light, -1, baked, geometry, seg, o);
             }
             // 0.1.10.31 (A-6): the seam light of a locking segment (and of every segment at the final latch)
             float seamAge = latch >= 0 ? latch : clock.seatAge(j, n);
@@ -479,7 +480,10 @@ public class ArmoryPieceRenderer extends EntityRenderer<ArmoryPieceEntity> {
         }
         // Enchantment glint, and a shimmer while the plate seats and locks.
         if (stack.hasFoil() || glint) {
-            model.renderToBuffer(pose, buffers.getBuffer(RenderType.armorEntityGlint()), light, OverlayTexture.NO_OVERLAY);
+            // 0.1.10.36: a baked suit model takes the glint at the scale of its 128x128 texture
+            RenderType type = model instanceof com.miophas.singularity_iteration.common.client.render.BakedArmorModel
+                ? com.miophas.singularity_iteration.common.client.render.SiRenderTypes.SUIT_ARMOR_GLINT : RenderType.armorEntityGlint();
+            model.renderToBuffer(pose, buffers.getBuffer(type), light, OverlayTexture.NO_OVERLAY);
         }
     }
 

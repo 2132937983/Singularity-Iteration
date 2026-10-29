@@ -65,6 +65,33 @@ public interface SettlementStorage {
                 }
                 return true;
             }
+
+            @Override
+            public long count(ItemMatch match) {
+                long n = 0;
+                for (Entry e : self.items()) if (e.proto().isComponentsPatchEmpty() && match.test(e.proto())) n += e.count();
+                return n;
+            }
+
+            @Override
+            public boolean take(ItemMatch match, long amount) {
+                if (amount <= 0) return amount == 0;
+                if (count(match) < amount) return false;
+                // the requested item first, then the other items of its tags; on a shortfall everything taken goes back
+                List<Entry> entries = List.copyOf(self.items()), taken = new java.util.ArrayList<>();
+                long remaining = amount;
+                for (int pass = 0; pass < 2 && remaining > 0; pass++) {
+                    for (Entry e : entries) {
+                        if (remaining <= 0) break;
+                        if (!e.proto().isComponentsPatchEmpty() || !match.test(e.proto()) || match.exact(e.proto()) != (pass == 0)) continue;
+                        long got = self.extract(e.proto(), Math.min(remaining, e.count()), false);
+                        if (got > 0) { taken.add(new Entry(e.proto(), got)); remaining -= got; }
+                    }
+                }
+                if (remaining <= 0) return true;
+                for (Entry e : taken) self.insert(e.proto(), e.count(), false);
+                return false;
+            }
         };
     }
 }

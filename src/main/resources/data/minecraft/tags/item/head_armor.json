@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mio_icif:armor/item_armor_bronze_helmet",
+      "required": false
+    },
+    {
+      "id": "mio_icif:armor/item_armor_hazmat_helmet",
+      "required": false
+    }
+  ]
+}

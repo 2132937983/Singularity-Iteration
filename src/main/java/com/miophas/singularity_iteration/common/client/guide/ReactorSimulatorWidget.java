@@ -29,7 +29,8 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class ReactorSimulatorWidget extends AbstractWidget {
     public static final int W = 312, H = 180;
-    private static final int SLOT = 18, GRID_X = 4, GRID_Y = 14, STATS_X = 172, PALETTE_Y = 128, PER_ROW = 16;
+    // 0.1.10.36: 17 per row (two rows hold the 33 components; 4 + 17 x 18 = 310 of the 312 px)
+    private static final int SLOT = 18, GRID_X = 4, GRID_Y = 14, STATS_X = 172, PALETTE_Y = 128, PER_ROW = 17;
     private static final int TEXT = 0xFF20262C, DIM = 0xFF5C6670, GOOD = 0xFF2E8B47, BAD = 0xFFC0392B, WARN = 0xFFC88A1E, FRAME = 0xFF8A949E;
 
     private final Profile[] layout = new Profile[54];

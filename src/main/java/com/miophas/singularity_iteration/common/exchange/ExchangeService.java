@@ -1246,20 +1246,21 @@ public final class ExchangeService {
         Commission c = commission(d, id);
         if (c == null) return Result.fail("no_commission");
         if (player.getUUID().equals(c.requester)) return Result.fail("own_commission");
-        Item item = item(c.item);
-        if (item == null) return Result.fail("bad_item");
+        // 0.1.10.36: the requested item or any item of its material tags; the requester receives the requested item
+        ItemMatch match = ItemMatch.of(c.item, "");
+        if (match == null) return Result.fail("bad_item");
         int left = c.quantity - c.delivered;
         int take = Math.min(quantity, left);
         if (take < 1) return Result.fail("bad_quantity");
         InventoryPlan plan = new InventoryPlan(player.getInventory());
         ItemSource src = from != null ? from : ItemSource.of(plan);
-        long have = src.count(item);
+        long have = src.count(match);
         // 0.1.10.33: an item or UU-matter reward is paid in whole lots (before, 63 of "64 redstone for 1 diamond" paid nothing)
         long lot = CommissionLots.lot(c.quantity, c.rewardTotal, c.kind == RewardKind.COIN);
         take = (int) CommissionLots.take(Math.min(take, have), left, lot);
         if (take < 1 && have > 0 && lot > 1)
             return Result.fail("commission_lot", lot, CommissionLots.perLot(c.quantity, c.rewardTotal, lot));
-        if (take < 1 || !src.take(item, take)) return Result.fail("not_enough_items");
+        if (take < 1 || !src.take(match, take)) return Result.fail("not_enough_items");
         c.delivered += take;
         long due = c.rewardTotal * c.delivered / c.quantity - c.rewardPaid;
         c.rewardPaid += due;

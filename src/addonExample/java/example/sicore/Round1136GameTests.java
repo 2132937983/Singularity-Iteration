@@ -2,6 +2,7 @@ package example.sicore;
 
 import com.miophas.singularity_iteration.core.api.item.IBatteryItem;
 import com.miophas.singularity_iteration.core.api.reactor.IReactorController;
+import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -205,6 +206,157 @@ public final class Round1136GameTests {
         h.assertTrue(player.getInventory().getItem(1).isEmpty(), "The requested brick must be taken first");
         h.assertTrue(player.getInventory().getItem(0).getCount() == 2, "One nether brick must be taken after the bricks");
         h.succeed();
+    }
+
+    // ------------------------------------------------------------------ phase 2: armor enchanting
+
+    /**
+     * Bronze and hazmat take every armor enchantment, Mending and Unbreaking too; nano and quantum (no durability) take the
+     * enchanting table and every armor enchantment of their slot, but never Mending or Unbreaking.
+     */
+    @GameTest(batch = "round1136_armor", template = "empty", timeoutTicks = 20)
+    public static void suitArmorTakesEnchantmentsButNanoAndQuantumNeverMending(GameTestHelper h) {
+        var enchantments = h.getLevel().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        java.util.function.Function<net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>, net.minecraft.world.item.enchantment.Enchantment> e =
+            key -> enchantments.getHolderOrThrow(key).value();
+        for (String piece : new String[]{"bronze", "hazmat"}) {
+            ItemStack chest = item("armor/item_armor_" + piece + "_chestplate"), boots = item("armor/item_armor_" + piece + "_boots");
+            h.assertTrue(chest.isEnchantable(), piece + " chestplate is not enchantable");
+            h.assertTrue(e.apply(net.minecraft.world.item.enchantment.Enchantments.PROTECTION).canEnchant(chest), piece + ": no Protection");
+            h.assertTrue(e.apply(net.minecraft.world.item.enchantment.Enchantments.MENDING).canEnchant(chest), piece + ": no Mending");
+            h.assertTrue(e.apply(net.minecraft.world.item.enchantment.Enchantments.FEATHER_FALLING).canEnchant(boots), piece + ": no Feather Falling");
+        }
+        for (String piece : new String[]{"nano", "quantum"}) {
+            ItemStack helmet = item("armor/item_armor_" + piece + "_helmet"), chest = item("armor/item_armor_" + piece + "_chestplate");
+            ItemStack legs = item("armor/item_armor_" + piece + "_leggings"), boots = item("armor/item_armor_" + piece + "_boots");
+            for (ItemStack s : new ItemStack[]{helmet, chest, legs, boots}) {
+                h.assertTrue(s.isEnchantable(), s + " is not enchantable at the table");
+                h.assertTrue(s.getEnchantmentValue() > 0, s + " has no enchantment value");
+                h.assertTrue(e.apply(net.minecraft.world.item.enchantment.Enchantments.PROTECTION).canEnchant(s), s + ": no Protection");
+                h.assertTrue(!e.apply(net.minecraft.world.item.enchantment.Enchantments.MENDING).canEnchant(s), s + " must not take Mending");
+                h.assertTrue(!e.apply(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING).canEnchant(s), s + " must not take Unbreaking");
+            }
+            h.assertTrue(e.apply(net.minecraft.world.item.enchantment.Enchantments.RESPIRATION).canEnchant(helmet), piece + ": no Respiration");
+            h.assertTrue(e.apply(net.minecraft.world.item.enchantment.Enchantments.THORNS).canEnchant(chest), piece + ": no Thorns");
+            h.assertTrue(e.apply(net.minecraft.world.item.enchantment.Enchantments.SWIFT_SNEAK).canEnchant(legs), piece + ": no Swift Sneak");
+            h.assertTrue(e.apply(net.minecraft.world.item.enchantment.Enchantments.DEPTH_STRIDER).canEnchant(boots), piece + ": no Depth Strider");
+            h.assertTrue(e.apply(net.minecraft.world.item.enchantment.Enchantments.BINDING_CURSE).canEnchant(chest), piece + ": no Curse of Binding");
+        }
+        h.assertTrue(!item("armor/item_armor_jetpack_electric").isEnchantable(), "The electric jetpack must stay unenchantable at the table");
+        h.succeed();
+    }
+
+    // ------------------------------------------------------------------ phase 2: Miner
+
+    /**
+     * The Miner's drill slot takes the Mining Laser; with the drill slot empty the Miner pulls its pipe column back up (IC2C),
+     * the lowest pipe first, into the pipe slot; every pipe comes back (pipe and tip both drop one).
+     */
+    @GameTest(batch = "round1136_miner", template = "reactor_loop", timeoutTicks = 120)
+    public static void minerTakesTheLaserAndRetractsItsPipes(GameTestHelper h) {
+        for (int x = 1; x <= 5; x++) for (int y = 1; y <= 6; y++) for (int z = 1; z <= 5; z++) h.setBlock(x, y, z, Blocks.AIR);
+        BlockPos miner = new BlockPos(3, 6, 3);
+        h.setBlock(miner, BuiltInRegistries.BLOCK.get(id("producer/block_miner_elc")));
+        var pipe = BuiltInRegistries.BLOCK.get(id("produce/block_mining_pipe"));
+        var tip = BuiltInRegistries.BLOCK.get(id("produce/block_mining_tip"));
+        for (int y = 3; y <= 5; y++) h.setBlock(3, y, 3, pipe);
+        h.setBlock(3, 2, 3, tip);
+        BlockEntity entity = h.getBlockEntity(miner);
+        ((com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity) entity).getEnergyStorageInternal().setEnergy(10_000);
+        var items = (net.neoforged.neoforge.items.IItemHandler) call(entity, "getItemHandler");
+        h.assertTrue(items.insertItem(17, laser("MINING"), true).isEmpty(), "The drill slot must take the Mining Laser");
+        h.assertTrue(items.getStackInSlot(17).isEmpty(), "The drill slot must stay empty for the retraction test");
+        h.runAfterDelay(60, () -> {
+            for (int y = 2; y <= 5; y++) h.assertBlockPresent(Blocks.AIR, new BlockPos(3, y, 3));
+            ItemStack pipes = items.getStackInSlot(18);
+            h.assertTrue(pipes.is(pipe.asItem()) && pipes.getCount() == 4, "All four pipes must come back to the pipe slot, got " + pipes);
+            h.succeed();
+        });
+    }
+
+    // ------------------------------------------------------------------ phase 3: fuels
+
+    private static ReactorCycle.Part[] grid(ReactorCycle.Part a, ReactorCycle.Part b) {
+        var parts = new ReactorCycle.Part[54];
+        parts[10] = a; parts[11] = b;
+        return parts;
+    }
+
+    /**
+     * The proton rod gives 3x the EU and 1.5x the heat of uranium; the tritium neutron source gives each adjacent rod one more
+     * pulse (heat and EU), decays by one per cycle and gives 1 HU; the lithium cell breeds 1 + hull/3000 per pulse and gives
+     * 1 HU per absorbed pulse. The ten-argument profile keeps factors of 1.
+     */
+    @GameTest(batch = "round1136_fuel", template = "empty", timeoutTicks = 20)
+    public static void protonTritiumAndLithiumFollowTheirProfiles(GameTestHelper h) {
+        var uranium = ReactorCycle.Profile.fuel(1, false);
+        var proton = ReactorCycle.Profile.fuel(1, false, 3.0f, 1.5f);
+        var alone = ReactorCycle.step(grid(new ReactorCycle.Part(uranium, 0, 100), null), 3, 0, true);
+        var protonAlone = ReactorCycle.step(grid(new ReactorCycle.Part(proton, 0, 100), null), 3, 0, true);
+        h.assertTrue(alone.euPerTick() == 5 && alone.generatedHeat() == 4, "uranium alone: " + alone.euPerTick() + " EU, " + alone.generatedHeat() + " HU");
+        h.assertTrue(protonAlone.euPerTick() == 15 && protonAlone.generatedHeat() == 6,
+            "proton alone: " + protonAlone.euPerTick() + " EU, " + protonAlone.generatedHeat() + " HU");
+        h.assertTrue(new ReactorCycle.Profile(ReactorCycle.Kind.FUEL, 1, false, 0, 0, 0, 0, 0, 0, 0).euFactor() == 1.0f, "old profiles keep factor 1");
+
+        var tritium = ReactorCycle.Profile.neutronSource(10, 1);
+        var boosted = ReactorCycle.step(grid(new ReactorCycle.Part(uranium, 0, 100), new ReactorCycle.Part(tritium, 0, 0)), 3, 0, true);
+        h.assertTrue(boosted.euPerTick() == 10, "a neutron source must add one pulse of EU: " + boosted.euPerTick());
+        h.assertTrue(boosted.generatedHeat() == 12 + 1, "two pulses of heat (12) and 1 HU of decay: " + boosted.generatedHeat());
+        h.assertTrue(boosted.parts()[11].stored() == 1, "the source decays by one per cycle");
+        var spent = ReactorCycle.step(grid(new ReactorCycle.Part(uranium, 0, 100), new ReactorCycle.Part(tritium, 10, 0)), 3, 0, true);
+        h.assertTrue(spent.euPerTick() == 5 && spent.generatedHeat() == 4, "a decayed source does nothing: " + spent.euPerTick());
+
+        var lithium = ReactorCycle.Profile.lithium(10000, 1, 1);
+        var bred = ReactorCycle.step(grid(new ReactorCycle.Part(uranium, 0, 100), new ReactorCycle.Part(lithium, 0, 0)), 3, 0, true);
+        h.assertTrue(bred.parts()[11].stored() == 1, "a cool lithium cell still breeds 1 per pulse: " + bred.parts()[11].stored());
+        h.assertTrue(bred.hullHeat() == 12 + 1, "two pulses of heat plus 1 HU from the lithium reaction: " + bred.hullHeat());
+        h.assertTrue(bred.euPerTick() == 5, "a breeder adds no EU (IC2)");
+        h.succeed();
+    }
+
+    // ------------------------------------------------------------------ phase 3: deepslate iridium ore
+
+    /** The ore drops small iridium dust with a pickaxe and itself with Silk Touch. */
+    @GameTest(batch = "round1136_iridium", template = "empty", timeoutTicks = 20)
+    public static void deepslateIridiumOreDropsSmallDust(GameTestHelper h) {
+        var ore = BuiltInRegistries.BLOCK.get(id("block_ore_iridium_in_deep"));
+        BlockPos pos = new BlockPos(2, 1, 2);
+        h.setBlock(pos, ore);
+        var abs = h.absolutePos(pos);
+        var pick = new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);
+        var drops = net.minecraft.world.level.block.Block.getDrops(h.getLevel().getBlockState(abs), h.getLevel(), abs, null, null, pick);
+        h.assertTrue(drops.size() == 1 && drops.get(0).is(BuiltInRegistries.ITEM.get(id("resource/item_iridium_dust_small"))), "drops: " + drops);
+        var silk = pick.copy();
+        silk.enchant(h.getLevel().registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+            .getHolderOrThrow(net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH), 1);
+        var kept = net.minecraft.world.level.block.Block.getDrops(h.getLevel().getBlockState(abs), h.getLevel(), abs, null, null, silk);
+        h.assertTrue(kept.size() == 1 && kept.get(0).is(ore.asItem()), "silk touch: " + kept);
+        h.assertTrue(h.getLevel().getBlockState(abs).is(net.minecraft.tags.BlockTags.NEEDS_DIAMOND_TOOL), "needs a diamond tool");
+        h.succeed();
+    }
+
+    /**
+     * A nuclear blast region turns the deepslate ores inside its blast (radius 3 here) into deepslate iridium ore, through
+     * the fallout pass; an ore outside the radius stays. The region is small so the fallout stays inside the structure.
+     */
+    @GameTest(batch = "round1136_iridium", template = "reactor_loop", timeoutTicks = 200)
+    public static void nuclearBlastTurnsDeepslateOresIntoIridiumOre(GameTestHelper h) {
+        BlockPos inside = new BlockPos(6, 3, 6), below = new BlockPos(6, 1, 6), outside = new BlockPos(6, 3, 10);
+        h.setBlock(inside, Blocks.DEEPSLATE_DIAMOND_ORE);
+        h.setBlock(below, Blocks.DEEPSLATE_COPPER_ORE);
+        h.setBlock(outside, Blocks.DEEPSLATE_DIAMOND_ORE);
+        var manager = common("blockentity.reactor.NuclearFalloutManager");
+        java.util.UUID id = java.util.UUID.randomUUID();
+        var center = net.minecraft.world.phys.Vec3.atCenterOf(h.absolutePos(inside));
+        call(manager, "register", h.getLevel(), id, center, 3, 3);
+        call(manager, "ready", h.getLevel(), id);
+        var iridium = BuiltInRegistries.BLOCK.get(id("block_ore_iridium_in_deep"));
+        h.succeedWhen(() -> {
+            h.assertBlockPresent(iridium, inside);
+            h.assertBlockPresent(iridium, below);
+            h.assertBlockPresent(Blocks.DEEPSLATE_DIAMOND_ORE, outside);
+            call(manager, "remove", h.getLevel(), id);
+        });
     }
 
     @GameTest(batch = "round1136_breeding", template = "empty", timeoutTicks = 80)

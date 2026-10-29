@@ -60,6 +60,33 @@ public class mio_icif_laser_miner extends mio_icif_tool_elc implements com.mioph
         super(properties, LASER_MAX_ENERGY, 0, "laser_miner", 512, Mode.MINING.cost, 3);
     }
     public static void setLaserBulletEntity(EntityType<mio_icif_laser_bullet> type) { LASER_BULLET_ENTITY = type; }
+
+    /** 0.1.10.36: EU the laser pays per mining route when a Miner uses it as its drill (IC2C: 250 EU per block). */
+    public static final long MINER_LASER_COST = 250;
+
+    /** 0.1.10.36: a Miner works with the laser in Mining mode (normal drops) or Super Heat mode (smelted drops) only. */
+    public static boolean minerMode(ItemStack stack) {
+        Mode mode = getMode(stack);
+        return mode == Mode.MINING || mode == Mode.SUPER_HEAT;
+    }
+
+    /** True when the laser is in Super Heat mode: its drops are smelted ({@link #superHeat}). */
+    public static boolean superHeating(ItemStack stack) { return getMode(stack) == Mode.SUPER_HEAT; }
+
+    /** The drops smelted as by the Super Heat mode (a drop without a smelting recipe stays as it is). */
+    public static java.util.List<ItemStack> superHeat(net.minecraft.server.level.ServerLevel level, java.util.List<ItemStack> drops) {
+        var smelted = new ArrayList<ItemStack>();
+        for (ItemStack drop : drops) {
+            var input = new net.minecraft.world.item.crafting.SingleRecipeInput(drop);
+            var recipe = level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.SMELTING, input, level);
+            if (recipe.isEmpty()) { smelted.add(drop); continue; }
+            ItemStack output = recipe.get().value().assemble(input, level.registryAccess());
+            if (output.isEmpty()) { smelted.add(drop); continue; }
+            // Preserve count even if a modded recipe emits multiple items per input.
+            for (int count = 0; count < drop.getCount(); count++) smelted.add(output.copy());
+        }
+        return smelted;
+    }
     public static Mode getMode(ItemStack stack) {
         return Mode.byIndex(stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag().getInt(MODE_KEY));
     }

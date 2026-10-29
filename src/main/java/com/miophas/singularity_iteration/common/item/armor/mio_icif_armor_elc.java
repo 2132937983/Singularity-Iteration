@@ -58,6 +58,17 @@ public class mio_icif_armor_elc extends AbstractElectricArmor {
     }
 
     /**
+     * 0.1.10.36: the nano and quantum pieces take enchantments at the enchanting table. They have no durability, so the
+     * vanilla rule (max damage needed) refused them; the pieces in {@code #minecraft:enchantable/armor} are enchantable. Which
+     * enchantments apply comes from the item tags: these pieces are not in {@code enchantable/durability}, so they never get
+     * Mending or Unbreaking (useless without durability). Jetpacks and energy packs are not in the tag and stay as before.
+     */
+    @Override
+    public boolean isEnchantable(ItemStack stack) {
+        return super.isEnchantable(stack) || stack.is(net.minecraft.tags.ItemTags.ARMOR_ENCHANTABLE);
+    }
+
+    /**
      * 0.1.8.0: armor sets that render a baked Blockbench model. The texture of a piece is
      * {@code textures/models/armor/<set>_<piece>.png}, the same file the baked model uses.
      * 0.1.8.3: the advanced quantum and heavy quantum chestplates joined.

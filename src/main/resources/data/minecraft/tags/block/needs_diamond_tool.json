@@ -3,6 +3,10 @@
     {
       "id": "mio_icif:build/block_iridium_storage",
       "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_iridium_in_deep",
+      "required": false
     }
   ]
 }

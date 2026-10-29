@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mio_icif:armor/item_armor_nano_helmet",
+      "required": false
+    },
+    {
+      "id": "mio_icif:armor/item_armor_quantum_helmet",
+      "required": false
+    }
+  ]
+}

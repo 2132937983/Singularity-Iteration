@@ -3,6 +3,7 @@
 Phase 1: the doubled words of the Chinese weapon and laser tower names (激光镭射 -> 激光, 等离子电浆 -> 等离子), the renamed
 materials (Coal Chunk -> Graphite Block, Nano Living Metal -> Nano Superfluid Metal, Neutron Plate -> Degenerate Zero
 Matter) and the advanced battery / advanced charging battery name collision.
+Phase 2: "Also accepts" of bounty needs; the Miner Retract button and its status lines.
 A value per language; a language left out keeps its current value. Idempotent; keeps the line endings of each file. With
 --check it only reports missing or different keys.
 Usage: lang_1136.py <repo root> [--check]
@@ -48,6 +49,54 @@ KEYS = {
     'item.mio_icif.normal.item_advbat_lev0': v('Advanced Battery', '高级电池', '高度バッテリー', 'Продвинутая батарея'),
     'item.mio_icif.normal.item_advchargebat_lev0': v(
         'Advanced Charging Battery', '高级充电电池', '高度充電バッテリー', 'Продвинутая зарядная батарея'),
+    # ---- 2.1 bounties and commissions accept the items of the requested item's material tags
+    'gui.mio_icif.exchange.bounty_accepts': v('Also accepts: %1$s', '也接受：%1$s', 'こちらも受け付け：%1$s'),
+    # ---- 2.4 Miner: Mining Laser in the drill slot, pipe retraction
+    'gui.mio_icif.miner.retract': v('Retract', '收回', '回収', 'Поднять'),
+    'gui.mio_icif.miner.mine': v('Mine', '开采', '採掘', 'Копать'),
+    'gui.mio_icif.miner.retract_help': v(
+        'Pulls the mining pipes back up, one every 5 ticks for 5 EU each, into the pipe slot, the storage or an adjacent '
+        'inventory. Mining stops until you press the button again. Taking the drill out also retracts the pipes.',
+        '把采矿管道逐根收回（每5刻一根，每根耗5EU），放入管道槽、存储栏或相邻的容器。再次按下之前采矿机停止开采。'
+        '取出钻头也会收回管道。',
+        '採掘パイプを5tickごとに1本（1本5EU）引き上げ、パイプスロット・保管欄・隣接するインベントリに入れます。'
+        'もう一度押すまで採掘は止まります。ドリルを取り出してもパイプを回収します。',
+        'Поднимает шахтные трубы обратно, по одной каждые 5 тиков за 5 EU, в слот труб, хранилище или соседний '
+        'инвентарь. Добыча останавливается до повторного нажатия. Если вынуть бур, трубы тоже поднимаются.'),
+    'gui.mio_icif.miner.status.1': v('Retracting pipes', '正在收回管道', 'パイプを回収中', 'Трубы поднимаются'),
+    'gui.mio_icif.miner.status.2': v(
+        'No room for the pipes: empty the pipe slot or the storage', '没有空间放管道：请清空管道槽或存储栏',
+        'パイプを入れる場所がありません：パイプスロットか保管欄を空けてください',
+        'Нет места для труб: освободите слот труб или хранилище'),
+    'gui.mio_icif.miner.status.3': v(
+        'A protection prevents removing the pipe', '保护阻止了移除管道', '保護によりパイプを取り外せません',
+        'Защита не даёт убрать трубу'),
+    'gui.mio_icif.miner.status.4': v('Not enough energy', '能量不足', 'エネルギーが足りません', 'Недостаточно энергии'),
+    'gui.mio_icif.miner.status.5': v(
+        'The Mining Laser must be in Mining or Super Heat mode', '采矿镭射枪须处于采矿模式或超级热线模式',
+        'マイニングレーザーは採掘モードか超高熱モードにしてください',
+        'Шахтёрский лазер должен быть в режиме добычи или перегрева'),
+    # ---- 3.2 fuels: proton rods, the tritium neutron source, the lithium breeder
+    'item.mio_icif.reactor.item_reactor_proton_simple': v('Fuel Rod (Proton)', '燃料棒(质子)', '燃料棒（陽子）', 'ТВЭЛ (протон)'),
+    'item.mio_icif.reactor.item_reactor_proton_dual': v('Dual Fuel Rod (Proton)', '双联燃料棒(质子)', '二連燃料棒（陽子）', 'Двойной ТВЭЛ (протон)'),
+    'item.mio_icif.reactor.item_reactor_proton_quad': v('Quad Fuel Rod (Proton)', '四联燃料棒(质子)', '四連燃料棒（陽子）', 'Четверной ТВЭЛ (протон)'),
+    'item.mio_icif.reactor.item_reactor_proton_simple_depleted': v(
+        'Fuel Rod (Depleted Proton)', '燃料棒(枯竭质子)', '燃料棒（枯渇陽子）', 'ТВЭЛ (отработанный протон)'),
+    'item.mio_icif.reactor.item_reactor_proton_dual_depleted': v(
+        'Dual Fuel Rod (Depleted Proton)', '双联燃料棒(枯竭质子)', '二連燃料棒（枯渇陽子）', 'Двойной ТВЭЛ (отработанный протон)'),
+    'item.mio_icif.reactor.item_reactor_proton_quad_depleted': v(
+        'Quad Fuel Rod (Depleted Proton)', '四联燃料棒(枯竭质子)', '四連燃料棒（枯渇陽子）', 'Четверной ТВЭЛ (отработанный протон)'),
+    'item.mio_icif.reactor.component.neutron_source': v(
+        'Neutron source: each adjacent fuel rod takes one more pulse', '中子源：每根相邻燃料棒多受一次脉冲',
+        '中性子源：隣接する燃料棒はそれぞれパルスを 1 回多く受ける', 'Источник нейтронов: каждый соседний ТВЭЛ получает ещё один импульс'),
+    'item.mio_icif.reactor.component.decay': v('Decay: %s / %s cycles', '衰变：%s / %s 个周期', '崩壊：%s / %s サイクル',
+        'Распад: %s / %s циклов'),
+    'reactor_audit.kind.neutron_source': v('neutron source', '中子源', '中性子源', 'источник нейтронов'),
+    # ---- 3.1 deepslate iridium ore (made by nuclear blasts) and small iridium dust
+    'block.mio_icif.block_ore_iridium_in_deep': v(
+        'Deepslate Iridium Ore', '深层铱矿石', '深層岩イリジウム鉱石', 'Глубинносланцевая иридиевая руда'),
+    'item.mio_icif.resource.item_iridium_dust_small': v(
+        'Small Iridium Dust', '小撮铱粉', '少量のイリジウムの粉', 'Малая кучка иридиевой пыли'),
 }
 
 

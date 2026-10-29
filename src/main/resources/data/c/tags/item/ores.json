@@ -61,6 +61,10 @@
     {
       "id": "#c:ores/uranium",
       "required": false
+    },
+    {
+      "id": "mio_icif:block_ore_iridium_in_deep",
+      "required": false
     }
   ]
 }

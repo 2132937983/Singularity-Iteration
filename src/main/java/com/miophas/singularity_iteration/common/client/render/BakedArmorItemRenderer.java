@@ -77,9 +77,9 @@ public class BakedArmorItemRenderer extends BlockEntityWithoutLevelRenderer {
         // 0.1.8.0 suit palette: plates with the primary colour, then light strips with the accent colour.
         var palette = com.miophas.singularity_iteration.common.suit.SuitPalette.of(stack);
         if (palette == null) {
-            drawAll(pose, ItemRenderer.getArmorFoilBuffer(buffers, RenderType.armorCutoutNoCull(texture), stack.hasFoil()), geo, light, overlay, -1);
+            drawAll(pose, SiRenderTypes.suitFoil(buffers, RenderType.armorCutoutNoCull(texture), stack.hasFoil()), geo, light, overlay, -1);
         } else {
-            drawAll(pose, ItemRenderer.getArmorFoilBuffer(buffers, RenderType.armorCutoutNoCull(variant("_plating")), stack.hasFoil()),
+            drawAll(pose, SiRenderTypes.suitFoil(buffers, RenderType.armorCutoutNoCull(variant("_plating")), stack.hasFoil()),
                 geo, light, overlay, 0xFF000000 | palette.primary());
             drawAll(pose, buffers.getBuffer(RenderType.armorCutoutNoCull(variant("_accent"))), geo, light, overlay, 0xFF000000 | palette.accent());
         }

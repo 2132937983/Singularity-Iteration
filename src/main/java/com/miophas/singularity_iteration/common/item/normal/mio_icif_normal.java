@@ -163,7 +163,12 @@ public class mio_icif_normal {
     public static final DeferredItem<Item> TOOL_MFSU_UPGRADE_KIT = ITEMS.register("normal/item_tool_mfsu_upgrade_kit", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> TOOLBOX = ITEMS.register("normal/item_toolbox", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> TOOLBOX_X = ITEMS.register("normal/item_toolbox_x", () -> new Item(new Item.Properties()));
-    public static final DeferredItem<Item> TRITIUM_CELL = ITEMS.register("normal/item_tritium_cell", () -> new Item(new Item.Properties()));
+    // 0.1.10.36: a reactor component (neutron source) instead of a plain item; the id stays for saves and recipes
+    public static final DeferredItem<Item> TRITIUM_CELL = ITEMS.register("normal/item_tritium_cell",
+        () -> new com.miophas.singularity_iteration.common.item.reactor.mio_icif_tritium_cell(new Item.Properties().component(
+            com.miophas.singularity_iteration.common.registry.mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),
+            com.miophas.singularity_iteration.common.item.component.ReactorComponentData.full(
+                com.miophas.singularity_iteration.common.reactor.ReactorInventory.TRITIUM_LIFE))));
     public static final DeferredItem<Item> URAN_ENRICHED_CELL = ITEMS.register("normal/item_uran_enriched_cell", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> WEED = ITEMS.register("normal/item_weed", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> WEEDEX = ITEMS.register("normal/item_weedex", () -> new MatronHerbicideItem(new Item.Properties()));

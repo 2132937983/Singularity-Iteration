@@ -18,6 +18,7 @@
     "client.AdvancementWidgetHintMixin",
     "client.FcsGlowMixin",
     "client.FcsTeamColorMixin",
-    "client.PlayerManeuverPoseMixin"
+    "client.PlayerManeuverPoseMixin",
+    "client.HumanoidArmorLayerGlintMixin"
   ]
 }

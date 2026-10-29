@@ -81,6 +81,8 @@ public final class ReactorLayoutAnalysis {
     static String keyOf(String cell) {
         if (cell.indexOf(':') < 0) return cell;
         ResourceLocation id = ResourceLocation.tryParse(cell);
+        // 0.1.10.36: the tritium rod keeps its normal/ item id
+        if (id != null && id.equals(ReactorInventory.itemId("tritium_cell"))) return "tritium_cell";
         if (id == null || !id.getNamespace().equals("mio_icif") || !id.getPath().startsWith(PREFIX)) return null;
         return id.getPath().substring(PREFIX.length());
     }

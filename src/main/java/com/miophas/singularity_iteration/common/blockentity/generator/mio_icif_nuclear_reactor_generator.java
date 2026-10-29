@@ -208,7 +208,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             // IC2 dropAllUnfittingStuff() 用的是 isUsefulItem(stack, false)：只按"是否反应堆元件 / 是否落在可用列内"
             // 判定，不会因为"流体模式 + 冷却单元已吸热"就把元件丢出反应堆——那只是插入时(isUsefulItem(stack,true))
             // 才拒绝的条件。原先这里复用了插入判定，导致流体反应堆每循环把已吸热的冷却单元弹回世界。
-            if(i%9<columns&&stack.getItem() instanceof mio_icif_reactor)continue;
+            if(i%9<columns&&(stack.getItem() instanceof mio_icif_reactor||ReactorInventory.staysInReactor(stack)))continue;
             itemHandler.setStackInSlot(i,ItemStack.EMPTY);
             Block.popResource(level,worldPosition,stack);
             blackbox.dropped(1);   // 0.1.10.12: a lost chamber column throws its components out

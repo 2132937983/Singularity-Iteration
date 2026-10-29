@@ -67,10 +67,18 @@ public final class ReactorInventory {
     private static String key(ItemStack stack){var id=BuiltInRegistries.ITEM.getKey(stack.getItem());String prefix="reactor/item_reactor_";
         return id.getNamespace().equals("mio_icif")&&id.getPath().startsWith(prefix)?id.getPath().substring(prefix.length()):"";}
     public static boolean supported(ItemStack stack){return stack.isEmpty()||PROFILES.containsKey(key(stack));}
+    /** A breeding product (tritium cell, re-enriched uranium): an inert part until it leaves the reactor. */
+    private static boolean breedingProduct(ItemStack stack){
+        var id=BuiltInRegistries.ITEM.getKey(stack.getItem());return id.equals(LITHIUM_PRODUCT)||id.equals(ISOTOPE_PRODUCT);}
+    /** IC2 {@code isUsefulItem(stack,false)}: the bred tritium cell stays in the reactor; re-enriched uranium is thrown out. */
+    public static boolean staysInReactor(ItemStack stack){return !stack.isEmpty()&&BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(LITHIUM_PRODUCT);}
     public static Part read(ItemStack stack){
         if(stack.isEmpty())return null;
         if(stack.getCount()!=1)throw new IllegalArgumentException("Reactor slots require exactly one item");
-        Profile p=PROFILES.get(key(stack));if(p==null)throw new IllegalArgumentException("Unsupported reactor component: "+BuiltInRegistries.ITEM.getKey(stack.getItem()));
+        Profile p=PROFILES.get(key(stack));
+        // 0.1.10.36: a finished breeder is read as inert; before, the cycle that bred it threw and the reactor stalled for good
+        if(p==null&&breedingProduct(stack))return new Part(INERT,0,0);
+        if(p==null)throw new IllegalArgumentException("Unsupported reactor component: "+BuiltInRegistries.ITEM.getKey(stack.getItem()));
         if(p.kind()==Kind.FUEL){
             var d=stack.get(mio_icif_data_components.FUEL_ROD_DURABILITY.get());
             if(d==null||d.maxUses()<=0||d.remainingUses()<0||d.remainingUses()>d.maxUses()||d.tickCounter()<0||d.tickCounter()>=20)

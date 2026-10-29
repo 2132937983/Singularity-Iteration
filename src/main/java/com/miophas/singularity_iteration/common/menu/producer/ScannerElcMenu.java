@@ -39,7 +39,9 @@ import org.jetbrains.annotations.Nullable;
     private static final int DATA_STATE = 8;
     private static final int DATA_UU_COST = 9;
     private static final int DATA_EU_COST = 13;
-    private static final int DATA_COUNT = 15;
+    private static final int DATA_COUNT = 16;
+    /** 0.1.10.36: {@link mio_icif_scanner_elc#SOURCE_PUBLISHED} .. SOURCE_EXCLUDED. */
+    private static final int DATA_PRICE_SOURCE = 15;
 
     public ScannerElcMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, null);
@@ -102,6 +104,11 @@ import org.jetbrains.annotations.Nullable;
     public double getUuCost() {
         long bits = com.miophas.singularity_iteration.core.runtime.processing.PatternMenuData.read(data,DATA_UU_COST,4);
         return Double.longBitsToDouble(bits);
+    }
+
+    /** 0.1.10.36: where the price comes from: 0 published, 1 recipes, 2 estimate, 3 excluded. */
+    public int getPriceSource() {
+        return this.data.get(DATA_PRICE_SOURCE);
     }
 
     public int getEuCost() {

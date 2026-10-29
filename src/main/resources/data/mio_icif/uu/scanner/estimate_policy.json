@@ -1,0 +1,25 @@
+{
+  "_comment": "Buckets of UU-matter for items no recipe prices. Blocks: block_tiers by the tool they need [none, stone, iron, diamond, netherite] x hardness/3 (clamped), ores x ore_factor. Other items: item_base x rarity [common, uncommon, rare, epic] x stack (by max stack size) x (1 + durability/500), x2 fire resistant.",
+  "item_base": 0.1,
+  "rarity": [
+    1,
+    3,
+    10,
+    30
+  ],
+  "stack": {
+    "64": 1,
+    "16": 2,
+    "1": 5
+  },
+  "block_tiers": [
+    0.0002,
+    0.0011,
+    0.006,
+    0.03,
+    0.3
+  ],
+  "ore_factor": 3,
+  "hardness_min": 0.5,
+  "hardness_max": 3
+}

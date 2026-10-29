@@ -359,6 +359,65 @@ public final class Round1136GameTests {
         });
     }
 
+    // ------------------------------------------------------------------ phase 4.1: the Scanner prices unpriced items
+
+    /**
+     * Items the published generation does not know get a Scanner price: a sculk sensor (no recipe) an estimate, a calibrated
+     * sculk sensor (crafted from it and amethyst) a price from recipes, at least the sculk sensor's; a spawn egg none.
+     */
+    @GameTest(batch = "round1136_scanner", template = "empty", timeoutTicks = 20)
+    public static void scannerPricesItemsWithoutAPublishedPrice(GameTestHelper h) {
+        var server = h.getLevel().getServer();
+        var pricing = common("processing.scanner.ScannerPricing");
+        ItemStack sensor = new ItemStack(net.minecraft.world.item.Items.SCULK_SENSOR);
+        ItemStack calibrated = new ItemStack(net.minecraft.world.item.Items.CALIBRATED_SCULK_SENSOR);
+        h.assertTrue(com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.publishedQuote(server, sensor) == null,
+            "the test needs an unpublished sculk sensor");
+        Object sensorPrice = call(pricing, "price", server, sensor);
+        h.assertTrue(sensorPrice != null && "ESTIMATE".equals(String.valueOf(call(sensorPrice, "source"))), "sculk sensor: " + sensorPrice);
+        if (com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.publishedQuote(server, calibrated) == null) {
+            Object calibratedPrice = call(pricing, "price", server, calibrated);
+            h.assertTrue(calibratedPrice != null && "RECIPE".equals(String.valueOf(call(calibratedPrice, "source"))),
+                "calibrated sculk sensor: " + calibratedPrice);
+            h.assertTrue((double) call(calibratedPrice, "buckets") >= (double) call(sensorPrice, "buckets"),
+                "a crafted item costs at least its input");
+        }
+        h.assertTrue(call(pricing, "price", server, new ItemStack(net.minecraft.world.item.Items.PIG_SPAWN_EGG)) == null,
+            "a spawn egg is never priced");
+        h.succeed();
+    }
+
+    /** A Scanner given an unpriced, renamed item registers a Scanner price for the plain item (what the Replicator reads). */
+    @GameTest(batch = "round1136_scanner", template = "empty", timeoutTicks = 40)
+    public static void scannerRegistersAPriceTheReplicatorCanRead(GameTestHelper h) {
+        var server = h.getLevel().getServer();
+        // Prices need a published generation (as on a real server). The GameTest server's own generation may be missing:
+        // then an empty one stands in for this test.
+        boolean installed = com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.generation(server) < 0;
+        if (installed) com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.install(server,
+            new com.miophas.singularity_iteration.core.runtime.uu.IndependentUuValueIndex(16384));
+        BlockPos pos = new BlockPos(2, 1, 2);
+        h.setBlock(pos, BuiltInRegistries.BLOCK.get(id("producer/block_scanner_elc")));
+        BlockEntity scanner = h.getBlockEntity(pos);
+        ((com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity) scanner).getEnergyStorageInternal().setEnergy(100_000);
+        ItemStack named = new ItemStack(net.minecraft.world.item.Items.SCULK_SENSOR);
+        named.set(DataComponents.CUSTOM_NAME, net.minecraft.network.chat.Component.literal("x"));
+        var items = (net.neoforged.neoforge.items.IItemHandler) call(scanner, "getItemHandler");
+        h.assertTrue(items.insertItem(0, named, false).isEmpty(), "the scanner did not take the item");
+        h.runAfterDelay(5, () -> {
+            try {
+                var plain = new ItemStack(net.minecraft.world.item.Items.SCULK_SENSOR);
+                h.assertTrue(com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.quote(server, plain) != null, "no quote for the plain item");
+                h.assertTrue(com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.isScanned(server, plain), "the quote is not a Scanner price");
+                h.assertTrue(com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.publishedQuote(server, plain) == null,
+                    "a Scanner price must not become a published (market) price");
+                h.succeed();
+            } finally {
+                if (installed) com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.remove(server);
+            }
+        });
+    }
+
     @GameTest(batch = "round1136_breeding", template = "empty", timeoutTicks = 80)
     public static void finishedIsotopeRodIsThrownOutAndTheReactorKeepsRunning(GameTestHelper h) {
         IReactorController reactor = reactor(h, "isotope_rod");

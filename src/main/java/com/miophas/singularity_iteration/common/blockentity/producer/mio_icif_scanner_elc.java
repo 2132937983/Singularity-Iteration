@@ -60,7 +60,7 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
     private boolean changing;
     private long lastTick=Long.MIN_VALUE;
     private State state=State.IDLE;
-    private final int[] clientData=new int[15];
+    private final int[] clientData=new int[16];
     private final IItemHandlerModifiable guardedItems=new IItemHandlerModifiable(){
         public int getSlots(){return itemHandler.getSlots();}
         public ItemStack getStackInSlot(int slot){return itemHandler.getStackInSlot(slot).copy();}
@@ -86,9 +86,53 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
     protected UuQuoteBook.Assessment trustedAssessment(ItemStack item) {
         // Preserve the finite quote port used by existing machine contracts and public adapters.
         var finite = trustedQuote(item);
-        if (finite != null) return new UuQuoteBook.Assessment(UuQuoteBook.Disposition.FINITE, finite, finite.generation(), false);
-        return level instanceof ServerLevel s ? UuQuoteBook.classify(s.getServer(), item)
-                : new UuQuoteBook.Assessment(UuQuoteBook.Disposition.UNAVAILABLE, null, -1, false);
+        if (finite != null) {
+            priceSource = level instanceof ServerLevel s && UuQuoteBook.isScanned(s.getServer(), item) ? scannedSource(s, item) : SOURCE_PUBLISHED;
+            return new UuQuoteBook.Assessment(UuQuoteBook.Disposition.FINITE, finite, finite.generation(), false);
+        }
+        if (!(level instanceof ServerLevel s)) return new UuQuoteBook.Assessment(UuQuoteBook.Disposition.UNAVAILABLE, null, -1, false);
+        var assessment = UuQuoteBook.classify(s.getServer(), item);
+        // 0.1.10.36: an item without a published price (another mod's item): the Scanner works one out - from recipes,
+        // else an estimate - and registers it, so the Replicator copies it as it copies any priced item.
+        if (assessment.disposition() == UuQuoteBook.Disposition.UNSUPPORTED) {
+            var price = com.miophas.singularity_iteration.common.processing.scanner.ScannerPricing.price(s.getServer(), item);
+            if (price != null && UuQuoteBook.registerScanned(s.getServer(), item, price.buckets())) {
+                com.miophas.singularity_iteration.common.processing.scanner.ScannedPrices.get(s.getServer()).put(item, price);
+                var quote = UuQuoteBook.quote(s.getServer(), item);
+                if (quote != null) {
+                    priceSource = price.source() == com.miophas.singularity_iteration.common.processing.scanner.ScannerPricing.Source.RECIPE
+                        ? SOURCE_RECIPE : SOURCE_ESTIMATE;
+                    return new UuQuoteBook.Assessment(UuQuoteBook.Disposition.FINITE, quote, quote.generation(), false);
+                }
+            }
+            priceSource = com.miophas.singularity_iteration.common.processing.scanner.ScannerPricing.excluded(s.getServer(), item)
+                ? SOURCE_EXCLUDED : SOURCE_PUBLISHED;
+        }
+        return assessment;
+    }
+
+    /** 0.1.10.36: where the price of the scanned item comes from (synced, shown by the GUI). */
+    public static final int SOURCE_PUBLISHED = 0, SOURCE_RECIPE = 1, SOURCE_ESTIMATE = 2, SOURCE_EXCLUDED = 3;
+    private int priceSource = SOURCE_PUBLISHED;
+
+    private static int scannedSource(ServerLevel level, ItemStack item) {
+        var saved = com.miophas.singularity_iteration.common.processing.scanner.ScannedPrices.get(level.getServer()).get(item);
+        return saved != null && saved.source() == com.miophas.singularity_iteration.common.processing.scanner.ScannerPricing.Source.RECIPE
+            ? SOURCE_RECIPE : SOURCE_ESTIMATE;
+    }
+
+    /**
+     * 0.1.10.36: the form of {@code stack} that is scanned and copied: the stack itself when that exact variant has a price or a
+     * denial (a potion, an enchanted book), else the item with its default components, so a named, damaged or filled item is
+     * scanned as a fresh one and its contents are never copied.
+     */
+    protected ItemStack scanForm(ItemStack stack) {
+        if (stack.isEmpty()) return ItemStack.EMPTY;
+        var exact = stack.copyWithCount(1);
+        if (!(level instanceof ServerLevel s) || ItemStack.isSameItemSameComponents(exact, stack.getItem().getDefaultInstance())) return exact;
+        if (UuQuoteBook.quote(s.getServer(), exact) != null
+                || UuQuoteBook.classify(s.getServer(), exact).disposition() == UuQuoteBook.Disposition.KNOWN_DENIED) return exact;
+        return stack.getItem().getDefaultInstance();
     }
     public boolean isDeniedScanComplete() {
         return session != null && session.completionKind() == IndependentScanSession.CompletionKind.KNOWN_DENIED
@@ -149,7 +193,9 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
         lastTick=gameTime();
         if(hasHeldScanData()){recover(held!=null?held.getString("reason"):"scan session failed");return;}
         if(result!=null){state=State.COMPLETED;return;}
-        var input=itemHandler.getStackInSlot(SCANNER_SLOT);
+        var raw=itemHandler.getStackInSlot(SCANNER_SLOT);
+        // 0.1.10.36: the scanned form (default components unless that exact variant is priced); the slot itself is committed below
+        var input=scanForm(raw);
         // 0.1.10.14: IC2 TileEntityScanner: the item taken out or swapped ends the scan (IDLE, progress 0, no refund).
         if(active()&&(input.isEmpty()||!ItemStack.isSameItemSameComponents(input,session.sourceStack()))){resetScan();state=State.IDLE;return;}
         if(isDeniedScanComplete()){state=State.FAILED;return;}
@@ -177,7 +223,7 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
                     // Expected paid negative result: keep the input and terminal work, never create a StoredPattern.
                     state=State.FAILED;progress=DEFAULT_SCAN_TIME;ContainerToTank.markUnsaved(this);return;
                 }
-                var before=input.copy();var after=input.copy();after.shrink(1);
+                var before=raw.copy();var after=raw.copy();after.shrink(1);
                 var completed=new StoredPattern(session.sourceStack(),quote.buckets(),TOTAL_ENERGY_COST);
                 if(!itemHandler.scexCommitSlots(new int[]{SCANNER_SLOT},new ItemStack[]{before},new ItemStack[]{after},()->{
                     result=completed;session.takeStoredPattern();state=State.COMPLETED;progress=DEFAULT_SCAN_TIME;
@@ -268,10 +314,11 @@ public class mio_icif_scanner_elc extends AbstractProcessingMachineBlockEntity {
         state=hasHeldScanData()||isDeniedScanComplete()?State.FAILED:result!=null?State.COMPLETED:active()?State.NO_ENERGY:State.IDLE;updateProgress();
     }
     public ContainerData getContainerData(){return new ContainerData(){
-        public int getCount(){return 15;}
+        public int getCount(){return 16;}
         public void set(int index,int value){clientData[index]=value;}
         public int get(int i){
-            if(i<0||i>=15)throw new IndexOutOfBoundsException(i);if(level!=null&&level.isClientSide())return clientData[i];
+            if(i<0||i>=16)throw new IndexOutOfBoundsException(i);if(level!=null&&level.isClientSide())return clientData[i];
+            if(i==15)return priceSource;   // 0.1.10.36
             if(i<3)return i==0?progress:i==1?DEFAULT_SCAN_TIME:isWorking?1:0;
             if(i<5)return PatternMenuData.word(energyStorage.getAmount(),i-3);
             if(i<7)return PatternMenuData.word(energyStorage.getCapacity(),i-5);

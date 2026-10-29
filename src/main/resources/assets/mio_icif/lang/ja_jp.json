@@ -4511,5 +4511,16 @@
   "item.mio_icif.reactor.component.decay": "崩壊：%s / %s サイクル",
   "reactor_audit.kind.neutron_source": "中性子源",
   "block.mio_icif.block_ore_iridium_in_deep": "深層岩イリジウム鉱石",
-  "item.mio_icif.resource.item_iridium_dust_small": "少量のイリジウムの粉"
+  "item.mio_icif.resource.item_iridium_dust_small": "少量のイリジウムの粉",
+  "gui.mio_icif.scanner.excluded": "対象外",
+  "gui.mio_icif.scanner.source.recipe": "レシピから算出",
+  "gui.mio_icif.scanner.source.estimate": "推定",
+  "command.mio_icif.uu_scanner.unknown": "不明なアイテム %s",
+  "command.mio_icif.uu_scanner.published": "%s：公開価格 %s B",
+  "command.mio_icif.uu_scanner.saved": "%s：スキャナー価格 %s B（%s）",
+  "command.mio_icif.uu_scanner.would": "%s：未スキャン。スキャンすると %s B（%s）",
+  "command.mio_icif.uu_scanner.excluded": "%s：スキャナーはこのアイテムに価格を付けません（除外された名前空間かクリエイティブ専用）",
+  "command.mio_icif.uu_scanner.none": "%s：価格を算出できません",
+  "command.mio_icif.uu_scanner.forgot": "%s：スキャナー価格を削除しました。次のスキャンで再計算します",
+  "command.mio_icif.uu_scanner.not_saved": "%s：保存されたスキャナー価格はありません"
 }

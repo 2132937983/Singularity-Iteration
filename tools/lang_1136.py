@@ -97,6 +97,29 @@ KEYS = {
         'Deepslate Iridium Ore', '深层铱矿石', '深層岩イリジウム鉱石', 'Глубинносланцевая иридиевая руда'),
     'item.mio_icif.resource.item_iridium_dust_small': v(
         'Small Iridium Dust', '小撮铱粉', '少量のイリジウムの粉', 'Малая кучка иридиевой пыли'),
+    # ---- 4.1 the Scanner prices other mods' items itself
+    'gui.mio_icif.scanner.excluded': v('Excluded', '不可扫描', '対象外', 'Исключено'),
+    'gui.mio_icif.scanner.source.recipe': v('From recipes', '按配方计算', 'レシピから算出', 'По рецептам'),
+    'gui.mio_icif.scanner.source.estimate': v('Estimated', '估算', '推定', 'Оценка'),
+    'command.mio_icif.uu_scanner.unknown': v('Unknown item %s', '未知物品 %s', '不明なアイテム %s', 'Неизвестный предмет %s'),
+    'command.mio_icif.uu_scanner.published': v(
+        '%s: published price %s B', '%s：已发布价格 %s B', '%s：公開価格 %s B', '%s: опубликованная цена %s B'),
+    'command.mio_icif.uu_scanner.saved': v(
+        '%s: Scanner price %s B (%s)', '%s：扫描仪价格 %s B（%s）', '%s：スキャナー価格 %s B（%s）', '%s: цена сканера %s B (%s)'),
+    'command.mio_icif.uu_scanner.would': v(
+        '%s: not scanned yet; a scan would give %s B (%s)', '%s：尚未扫描；扫描将得到 %s B（%s）',
+        '%s：未スキャン。スキャンすると %s B（%s）', '%s: ещё не сканирован; скан даст %s B (%s)'),
+    'command.mio_icif.uu_scanner.excluded': v(
+        '%s: the Scanner never prices this item (excluded namespace or creative-only)', '%s：扫描仪不为此物品定价（被排除的命名空间或仅限创造）',
+        '%s：スキャナーはこのアイテムに価格を付けません（除外された名前空間かクリエイティブ専用）',
+        '%s: сканер не оценивает этот предмет (исключённое пространство имён или только для творчества)'),
+    'command.mio_icif.uu_scanner.none': v(
+        '%s: no price can be worked out', '%s：无法计算价格', '%s：価格を算出できません', '%s: цену вычислить нельзя'),
+    'command.mio_icif.uu_scanner.forgot': v(
+        '%s: Scanner price removed; the next scan works it out again', '%s：已移除扫描仪价格，下次扫描重新计算',
+        '%s：スキャナー価格を削除しました。次のスキャンで再計算します', '%s: цена сканера удалена; следующий скан вычислит её заново'),
+    'command.mio_icif.uu_scanner.not_saved': v(
+        '%s: no Scanner price saved', '%s：没有已保存的扫描仪价格', '%s：保存されたスキャナー価格はありません', '%s: сохранённой цены сканера нет'),
 }
 
 

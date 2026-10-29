@@ -131,6 +131,33 @@ def iridium():
     print('iridium: loot table, 3 recipes, 2 advancements, tags')
 
 
+def scanner():
+    """4.1 the Scanner's pricing settings: magic mods it never prices, and the estimate policy (same as the code defaults)."""
+    write('mio_icif/uu/scanner/excluded_namespaces.json', {
+        '_comment': 'Namespaces the Scanner never prices (magic mods). "name*" matches every namespace starting with "name". '
+                    'Lists of all packs are merged; "replace": true drops the lists of lower packs.',
+        'namespaces': [
+            'botania', 'extrabotany', 'mythicbotany', 'ars_nouveau', 'ars_*', 'irons_spellbooks', 'occultism', 'bloodmagic',
+            'forbidden_arcanus', 'eidolon', 'malum', 'hexcasting', 'hexerei', 'theurgy', 'evilcraft', 'mahoutsukai', 'goety',
+            'naturesaura', 'embers', 'astralsorcery', 'thaumcraft', 'mna', 'wizards_reborn', 'enigmaticlegacy', 'arcanus',
+            'iceandfire_spells', 'aetherworks', 'reliquary', 'apotheotic_additions'],
+    })
+    write('mio_icif/uu/scanner/estimate_policy.json', {
+        '_comment': 'Buckets of UU-matter for items no recipe prices. Blocks: block_tiers by the tool they need '
+                    '[none, stone, iron, diamond, netherite] x hardness/3 (clamped), ores x ore_factor. Other items: item_base x '
+                    'rarity [common, uncommon, rare, epic] x stack (by max stack size) x (1 + durability/500), x2 fire resistant.',
+        'item_base': 0.1,
+        'rarity': [1, 3, 10, 30],
+        'stack': {'64': 1, '16': 2, '1': 5},
+        'block_tiers': [0.0002, 0.0011, 0.006, 0.03, 0.3],
+        'ore_factor': 3,
+        'hardness_min': 0.5,
+        'hardness_max': 3,
+    })
+    print('scanner: excluded namespaces, estimate policy')
+
+
 if __name__ == '__main__':
     proton()
     iridium()
+    scanner()

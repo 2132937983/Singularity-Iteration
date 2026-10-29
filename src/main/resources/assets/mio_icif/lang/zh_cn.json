@@ -4511,5 +4511,16 @@
   "item.mio_icif.reactor.component.decay": "衰变：%s / %s 个周期",
   "reactor_audit.kind.neutron_source": "中子源",
   "block.mio_icif.block_ore_iridium_in_deep": "深层铱矿石",
-  "item.mio_icif.resource.item_iridium_dust_small": "小撮铱粉"
+  "item.mio_icif.resource.item_iridium_dust_small": "小撮铱粉",
+  "gui.mio_icif.scanner.excluded": "不可扫描",
+  "gui.mio_icif.scanner.source.recipe": "按配方计算",
+  "gui.mio_icif.scanner.source.estimate": "估算",
+  "command.mio_icif.uu_scanner.unknown": "未知物品 %s",
+  "command.mio_icif.uu_scanner.published": "%s：已发布价格 %s B",
+  "command.mio_icif.uu_scanner.saved": "%s：扫描仪价格 %s B（%s）",
+  "command.mio_icif.uu_scanner.would": "%s：尚未扫描；扫描将得到 %s B（%s）",
+  "command.mio_icif.uu_scanner.excluded": "%s：扫描仪不为此物品定价（被排除的命名空间或仅限创造）",
+  "command.mio_icif.uu_scanner.none": "%s：无法计算价格",
+  "command.mio_icif.uu_scanner.forgot": "%s：已移除扫描仪价格，下次扫描重新计算",
+  "command.mio_icif.uu_scanner.not_saved": "%s：没有已保存的扫描仪价格"
 }

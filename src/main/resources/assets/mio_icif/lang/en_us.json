@@ -4511,5 +4511,16 @@
   "item.mio_icif.reactor.component.decay": "Decay: %s / %s cycles",
   "reactor_audit.kind.neutron_source": "neutron source",
   "block.mio_icif.block_ore_iridium_in_deep": "Deepslate Iridium Ore",
-  "item.mio_icif.resource.item_iridium_dust_small": "Small Iridium Dust"
+  "item.mio_icif.resource.item_iridium_dust_small": "Small Iridium Dust",
+  "gui.mio_icif.scanner.excluded": "Excluded",
+  "gui.mio_icif.scanner.source.recipe": "From recipes",
+  "gui.mio_icif.scanner.source.estimate": "Estimated",
+  "command.mio_icif.uu_scanner.unknown": "Unknown item %s",
+  "command.mio_icif.uu_scanner.published": "%s: published price %s B",
+  "command.mio_icif.uu_scanner.saved": "%s: Scanner price %s B (%s)",
+  "command.mio_icif.uu_scanner.would": "%s: not scanned yet; a scan would give %s B (%s)",
+  "command.mio_icif.uu_scanner.excluded": "%s: the Scanner never prices this item (excluded namespace or creative-only)",
+  "command.mio_icif.uu_scanner.none": "%s: no price can be worked out",
+  "command.mio_icif.uu_scanner.forgot": "%s: Scanner price removed; the next scan works it out again",
+  "command.mio_icif.uu_scanner.not_saved": "%s: no Scanner price saved"
 }

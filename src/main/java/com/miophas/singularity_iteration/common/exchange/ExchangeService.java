@@ -161,7 +161,8 @@ public final class ExchangeService {
     static String id(Item item) { return BuiltInRegistries.ITEM.getKey(item).toString(); }
 
     public static double uuBuckets(MinecraftServer server, Item item) {
-        var q = com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.quote(server, new ItemStack(item));
+        // 0.1.10.36: the published prices only; a Scanner price of another mod's item never sets a market value
+        var q = com.miophas.singularity_iteration.core.runtime.uu.UuQuoteBook.publishedQuote(server, new ItemStack(item));
         return q == null ? 0 : q.buckets();
     }
 

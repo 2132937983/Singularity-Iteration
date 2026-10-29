@@ -3094,5 +3094,16 @@
   "item.mio_icif.reactor.component.decay": "Распад: %s / %s циклов",
   "reactor_audit.kind.neutron_source": "источник нейтронов",
   "block.mio_icif.block_ore_iridium_in_deep": "Глубинносланцевая иридиевая руда",
-  "item.mio_icif.resource.item_iridium_dust_small": "Малая кучка иридиевой пыли"
+  "item.mio_icif.resource.item_iridium_dust_small": "Малая кучка иридиевой пыли",
+  "gui.mio_icif.scanner.excluded": "Исключено",
+  "gui.mio_icif.scanner.source.recipe": "По рецептам",
+  "gui.mio_icif.scanner.source.estimate": "Оценка",
+  "command.mio_icif.uu_scanner.unknown": "Неизвестный предмет %s",
+  "command.mio_icif.uu_scanner.published": "%s: опубликованная цена %s B",
+  "command.mio_icif.uu_scanner.saved": "%s: цена сканера %s B (%s)",
+  "command.mio_icif.uu_scanner.would": "%s: ещё не сканирован; скан даст %s B (%s)",
+  "command.mio_icif.uu_scanner.excluded": "%s: сканер не оценивает этот предмет (исключённое пространство имён или только для творчества)",
+  "command.mio_icif.uu_scanner.none": "%s: цену вычислить нельзя",
+  "command.mio_icif.uu_scanner.forgot": "%s: цена сканера удалена; следующий скан вычислит её заново",
+  "command.mio_icif.uu_scanner.not_saved": "%s: сохранённой цены сканера нет"
 }

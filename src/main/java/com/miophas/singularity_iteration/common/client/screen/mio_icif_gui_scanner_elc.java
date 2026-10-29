@@ -130,7 +130,8 @@ guiGraphics.blit(ATLAS_TEXTURE, x + SAVE_BTN_X, y + SAVE_BTN_Y, 0, (float) 50, (
                 color = 0x2A2E33;
                 break;
             case 5: // FAILED
-                stateText = "Failed";
+                // 0.1.10.36: an item the Scanner never prices (a magic mod's, a creative-only one) says why
+                stateText = menu.getPriceSource() == 3 ? Component.translatable("gui.mio_icif.scanner.excluded").getString() : "Failed";
                 color = 0xD74242;
                 break;
             case 6: // TRANSFER_ERROR
@@ -168,6 +169,11 @@ guiGraphics.blit(ATLAS_TEXTURE, x + SAVE_BTN_X, y + SAVE_BTN_Y, 0, (float) 50, (
 
             guiGraphics.drawString(this.font, uuText, 105, 25, 0x2A2E33, false);
             guiGraphics.drawString(this.font, euText, 105, 36, 0x2A2E33, false);
+            // 0.1.10.36: a price the Scanner worked out itself (recipes, or an estimate)
+            int source = menu.getPriceSource();
+            if (source == 1 || source == 2)
+                guiGraphics.drawString(this.font, Component.translatable(source == 1 ? "gui.mio_icif.scanner.source.recipe"
+                    : "gui.mio_icif.scanner.source.estimate"), 105, 47, source == 1 ? 0x2A6A2A : 0xA86A00, false);
         }
 
 

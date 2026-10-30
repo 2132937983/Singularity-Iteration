@@ -62,6 +62,18 @@ public final class NanoFx {
     // ------------------------------------------------------------------ state
 
     private record Ghost(int entity, Vec3 pos, int born, int tier) { }
+
+    /**
+     * 0.1.10.38: how much lower your own afterimages and wake ribbons are drawn in first person, in blocks. Recorded at the body,
+     * they crossed the camera (the eye is 1.62 above the feet) and flashed in front of it while boosting; one block lower, the
+     * afterimage's head passes under the camera. Other players and third person see them at the body as before.
+     */
+    private static final double OWN_FIRST_PERSON_DROP = 1.0;
+
+    /** 0.1.10.38: the drop for the effects of entity {@code entity}: OWN_FIRST_PERSON_DROP for your own player in first person, else 0. */
+    private static double drop(Minecraft mc, int entity) {
+        return mc.player != null && entity == mc.player.getId() && mc.options.getCameraType().isFirstPerson() ? OWN_FIRST_PERSON_DROP : 0;
+    }
     private static final class Dash {
         final int entity, born, tier;
         final List<Vec3> path = new ArrayList<>();
@@ -329,7 +341,9 @@ public final class NanoFx {
             int age = now - d.born;
             if (e == null || age > NanoBursts.DASH_TICKS + 1) { it.remove(); continue; }
             d.path.add(e.position());
-            if (age <= NanoBursts.DASH_TICKS && (d.tier != PHOTON || age % 2 == 0)) GHOSTS.add(new Ghost(d.entity, e.position(), now, d.tier));
+            // 0.1.10.38: where the body was at the start of this tick. The position after this tick's move is up to 4 blocks ahead
+            // of the camera (it sits between the two), so the afterimages led the player and rushed through the view.
+            if (age <= NanoBursts.DASH_TICKS && (d.tier != PHOTON || age % 2 == 0)) GHOSTS.add(new Ghost(d.entity, new Vec3(e.xo, e.yo, e.zo), now, d.tier));
             for (int k = 0; k < (d.tier == PHOTON ? 0 : 3 * fx()); k++) {
                 mc.level.addParticle(ParticleTypes.ELECTRIC_SPARK, e.getRandomX(0.5), e.getRandomY(), e.getRandomZ(0.5),
                     -d.dir.x * 0.2, 0.02, -d.dir.z * 0.2);
@@ -548,7 +562,7 @@ public final class NanoFx {
                 pose.translate(-cam.x, -cam.y, -cam.z);
                 VertexConsumer vc = buffers.getBuffer(NanoRender.HAZE);
                 Matrix4f m = pose.last().pose();
-                for (Dash d : TRAILS) dashHaze(vc, m, d, cam, partial);
+                for (Dash d : TRAILS) dashHaze(vc, m, d, cam, partial, drop(mc, d.entity));
                 for (Emp e : EMPS) empHaze(vc, m, e, partial);
                 for (var v : VENTS.int2IntEntrySet()) ventHaze(vc, m, mc.level.getEntity(v.getIntKey()), v.getIntValue(), cam, partial);
                 QuantumActionFx.haze(vc, m, cam, partial, mc);          // 0.1.10.0 blink streak, field dome, dilation lens
@@ -613,7 +627,8 @@ public final class NanoFx {
         for (Ghost g : GHOSTS) {
             Entity e = mc.level.getEntity(g.entity);
             if (!(e instanceof AbstractClientPlayer player)) continue;
-            if (g.pos.distanceToSqr(cam) < 1.6 * 1.6) continue;          // not inside the camera
+            Vec3 at = g.pos.subtract(0, drop(mc, g.entity), 0);         // 0.1.10.38: lower for your own first-person view
+            if (at.add(0, 0.9, 0).distanceToSqr(cam) < 1.2 * 1.2) continue;   // not inside the camera (body centre, was the feet)
             if (com.miophas.singularity_iteration.common.client.render.FxBudget.tier(g.pos) != com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR) continue;     // 0.1.10.32 (P-3): afterimages only near
             float age = now - g.born + partial;
             float a = Mth.clamp(1 - age / 9F, 0, 1) * 0.9F * fx();
@@ -625,7 +640,7 @@ public final class NanoFx {
                 : g.tier >= 2 && (g.born & 1) == 1 ? VIOLET : CYAN;
             PoseStack ps = new PoseStack();
             ps.mulPose(event.getPoseStack().last().pose());
-            ps.translate(g.pos.x - cam.x, g.pos.y - cam.y, g.pos.z - cam.z);
+            ps.translate(at.x - cam.x, at.y - cam.y, at.z - cam.z);
             drawPlayer(mc, player, partial, ps, 0xF000F0, new RemapBuffers(buffers, NanoRender.HOLOGRID,
                 col[0] * a, col[1] * a, col[2] * a, 1));
         }
@@ -636,7 +651,7 @@ public final class NanoFx {
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
         VertexConsumer glow = buffers.getBuffer(SiRenderTypes.ENERGY_BEAM);
-        for (Dash d : TRAILS) dashGlow(glow, m, d, cam, partial);
+        for (Dash d : TRAILS) dashGlow(glow, m, d, cam, partial, drop(mc, d.entity));
         for (Emp e : EMPS) empGlow(glow, m, e, cam, partial, mc);
         stunCrackle(glow, m, cam, partial, mc);
         for (MeshHit h : MESH_HITS) meshRipple(glow, m, h, cam, partial, mc);
@@ -656,12 +671,12 @@ public final class NanoFx {
 
     // ------------------------------------------------------------------ dash geometry
 
-    private static void dashHaze(VertexConsumer vc, Matrix4f m, Dash d, Vec3 cam, float partial) {
+    private static void dashHaze(VertexConsumer vc, Matrix4f m, Dash d, Vec3 cam, float partial, double drop) {
         float age = now - d.born + partial;
         float s = Mth.clamp(1 - age / 16F, 0, 1) * fx();
         if (s <= 0.01F || d.path.size() < 2) return;
         for (int i = 1; i < d.path.size(); i++) {
-            Vec3 a = d.path.get(i - 1).add(0, 0.95, 0), b = d.path.get(i).add(0, 0.95, 0);
+            Vec3 a = d.path.get(i - 1).add(0, 0.95 - drop, 0), b = d.path.get(i).add(0, 0.95 - drop, 0);
             float sa = s * (0.4F + 0.6F * (i - 1) / d.path.size()), sb = s * (0.4F + 0.6F * i / d.path.size());
             ribbon(vc, m, a, b, cam, 0.85F, 0.6F, 0.85F, 1.0F, sa, sb, true);
         }
@@ -671,7 +686,7 @@ public final class NanoFx {
         ringFlat(vc, m, o, r, 0.35F, 0.7F, 0.9F, 1.0F, s * 0.9F, 32, true);
     }
 
-    private static void dashGlow(VertexConsumer vc, Matrix4f m, Dash d, Vec3 cam, float partial) {
+    private static void dashGlow(VertexConsumer vc, Matrix4f m, Dash d, Vec3 cam, float partial, double drop) {
         float age = now - d.born + partial;
         float s = Mth.clamp(1 - age / 12F, 0, 1) * fx();
         if (s <= 0.01F || d.path.size() < 2) return;
@@ -680,7 +695,7 @@ public final class NanoFx {
             float k0 = (i - 1F) / d.path.size(), k1 = (float) i / d.path.size();
             float[] c = d.tier == PHOTON ? PHOTON_GOLD : CYAN;
             for (float h : new float[]{0.35F, 0.95F, 1.45F}) {
-                ribbon(vc, m, a.add(0, h, 0), b.add(0, h, 0), cam, 0.06F, c[0], c[1], c[2], 0.5F * s * k0, 0.5F * s * k1, false);
+                ribbon(vc, m, a.add(0, h - drop, 0), b.add(0, h - drop, 0), cam, 0.06F, c[0], c[1], c[2], 0.5F * s * k0, 0.5F * s * k1, false);
             }
         }
         if (d.tier == PHOTON) return;                              // no ground ring in flight

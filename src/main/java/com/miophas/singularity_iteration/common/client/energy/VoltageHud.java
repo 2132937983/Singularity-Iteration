@@ -17,6 +17,8 @@ import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -69,8 +71,14 @@ public final class VoltageHud {
         } catch (RuntimeException ignored) { }
     }
 
+    /** 0.1.10.38: a GUI layer above the chat, like the Crop Analyzer panel. */
     @SubscribeEvent
-    static void render(RenderGuiEvent.Post event) {
+    static void layers(RegisterGuiLayersEvent event) {
+        event.registerAbove(VanillaGuiLayers.CHAT, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+            com.miophas.singularity_iteration.common.Singularity_Iteration.MOD_ID, "voltage_hud"), VoltageHud::render);
+    }
+
+    private static void render(GuiGraphics graphics, net.minecraft.client.DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.hideGui || mc.screen != null) return;
         BlockPos pos = target(mc);
@@ -98,14 +106,16 @@ public final class VoltageHud {
         } else {
             return;
         }
-        draw(event.getGuiGraphics(), mc, lines);
+        draw(graphics, mc, lines);
     }
 
     private static void draw(GuiGraphics g, Minecraft mc, List<String[]> lines) {
-        int x = mc.getWindow().getGuiScaledWidth() / 2 + 14, y = mc.getWindow().getGuiScaledHeight() / 2 + 8;
         int w = 0;
         for (String[] l : lines) w = Math.max(w, mc.font.width(l[0]));
         int h = lines.size() * 10 + 4;
+        // 0.1.10.38: clear of the chat (it sat below and right of the crosshair, under the chat on common screens)
+        int[] at = com.miophas.singularity_iteration.common.client.ToolHudPlacement.place(mc, w + 7, h + 2);
+        int x = at[0] + 3, y = at[1] + 3;
         g.fill(x - 3, y - 3, x + w + 4, y + h - 1, 0xC00C1622);
         g.fill(x - 3, y - 3, x - 2, y + h - 1, DspUi.CYAN);
         g.fill(x - 3, y - 3, x + 8, y - 2, DspUi.CYAN);

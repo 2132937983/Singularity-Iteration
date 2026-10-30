@@ -24,6 +24,8 @@ import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -81,8 +83,14 @@ public final class CropScannerHud {
         } catch (RuntimeException ignored) { }
     }
 
+    /** 0.1.10.38: a GUI layer above the chat (it was drawn after the HUD at a depth the chat covered). */
     @SubscribeEvent
-    static void render(RenderGuiEvent.Post event) {
+    static void layers(RegisterGuiLayersEvent event) {
+        event.registerAbove(VanillaGuiLayers.CHAT, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "crop_scanner_hud"),
+            CropScannerHud::render);
+    }
+
+    private static void render(GuiGraphics graphics, net.minecraft.client.DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.hideGui || mc.screen != null) return;
         ItemStack scanner = scanner(mc);
@@ -97,7 +105,7 @@ public final class CropScannerHud {
             if (reply == null || !reply.pos().equals(pos)) lines.add(new Line(Component.translatable(K + "scanning"), DspUi.TEXT_DIM));
             else describe(reply.snapshot(), lines);
         }
-        draw(event.getGuiGraphics(), mc, lines);
+        draw(graphics, mc, lines);
     }
 
     /** EN: One HUD line: text, colour, optional bar fraction (negative = no bar). ZH: 一行 HUD：文本、颜色、可选进度条比例（负数 = 无进度条）。JA: HUD の 1 行：文字、色、任意のバー比率（負 = バーなし）。 */
@@ -173,18 +181,16 @@ public final class CropScannerHud {
 
     private static void draw(GuiGraphics g, Minecraft mc, List<Line> lines) {
         if (lines.isEmpty()) return;
-        int x = mc.getWindow().getGuiScaledWidth() / 2 + 14, y = mc.getWindow().getGuiScaledHeight() / 2 + 8;
         int w = 0;
         for (Line l : lines) w = Math.max(w, mc.font.width(l.text()));
         w = Math.max(w, 120);
         int rowH = 10, h = 4;
         for (Line l : lines) h += rowH + (l.bar() >= 0 ? 3 : 0);
-        // EN: Keep the panel on the screen.
-        // ZH: 使面板保持在屏幕内。
-        // JA: パネルを画面内に収める。
-        int screenH = mc.getWindow().getGuiScaledHeight(), screenW = mc.getWindow().getGuiScaledWidth();
-        if (y + h > screenH - 4) y = Math.max(4, screenH - 4 - h);
-        if (x + w + 6 > screenW) x = Math.max(4, screenW - w - 6);
+        // EN: 0.1.10.38: on the screen and clear of the chat (ToolHudPlacement); the panel box is 3 px around the text.
+        // ZH: 0.1.10.38：在屏幕内并避开聊天栏（ToolHudPlacement）；面板框比文字外扩 3 像素。
+        // JA: 0.1.10.38：画面内でチャット欄を避ける（ToolHudPlacement）。パネルの枠は文字の 3 px 外側。
+        int[] at = com.miophas.singularity_iteration.common.client.ToolHudPlacement.place(mc, w + 7, h + 2);
+        int x = at[0] + 3, y = at[1] + 3;
         g.pose().pushPose();
         g.pose().translate(0, 0, 200);
         g.fill(x - 3, y - 3, x + w + 4, y + h - 1, 0xC00C1622);

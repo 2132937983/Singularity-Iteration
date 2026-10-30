@@ -11,6 +11,9 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 public final class FcsClientConfig {
     private FcsClientConfig() {}
 
+    /** 0.1.10.38: anchor of the tool HUD panels. */
+    public enum ToolHudAnchor { AUTO, BELOW_CROSSHAIR, ABOVE_CROSSHAIR, TOP_LEFT, TOP_RIGHT }
+
     public enum Palette {
         /** Green phosphor (thermal sight). */
         GREEN(0x7CFFB2),
@@ -81,6 +84,8 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue QUANTUM_HUD;
     public static final ModConfigSpec.BooleanValue VISOR_BOOT;
     public static final ModConfigSpec.DoubleValue QUANTUM_FX_INTENSITY;
+    /** 0.1.10.38: where the Crop Analyzer and EU meter panels go (ToolHudPlacement). */
+    public static final ModConfigSpec.EnumValue<ToolHudAnchor> TOOL_HUD_ANCHOR;
     public static final ModConfigSpec.BooleanValue DECOHERENCE_GLITCH;
     /** 0.1.10.2: squad panel, order markers, holo table cells, propulsion effects. */
     public static final ModConfigSpec.BooleanValue SQUAD_HUD;
@@ -193,6 +198,10 @@ public final class FcsClientConfig {
         HOLO_TABLE_CELLS = b.comment("Terrain cells per side of the 3D holo table (more = finer, slower).")
             .defineInRange("holo_table_cells", 49, 25, 65);
         b.pop();
+        b.push("tool_hud");
+        TOOL_HUD_ANCHOR = b.comment("Where the Crop Analyzer and EU meter panels go. AUTO: beside the crosshair, moved clear of the chat.",
+                "BELOW_CROSSHAIR is the old place (the chat can cover it).").defineEnum("anchor", ToolHudAnchor.AUTO);
+        b.pop();
         b.push("layout");
         for (Panel panel : Panel.values()) {
             panel.x = b.defineInRange(panel.id + "_x", panel.defaultX, 0.0, 1.0);
@@ -203,6 +212,7 @@ public final class FcsClientConfig {
     }
 
     public static boolean loaded() { return SPEC.isLoaded(); }
+    public static ToolHudAnchor toolHudAnchor() { return loaded() ? TOOL_HUD_ANCHOR.get() : ToolHudAnchor.AUTO; }
     public static boolean hudEnabled() { return !loaded() || HUD_ENABLED.get(); }
     public static int primary() { return loaded() ? PALETTE.get().rgb : Palette.GREEN.rgb; }
     public static boolean outlines() { return !loaded() || ESP_OUTLINES.get(); }

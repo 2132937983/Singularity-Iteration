@@ -25,7 +25,7 @@ With a Reactor Pressure Vessel structure, the machine changes to fluid mode and 
 | Item | Value |
 |---|---|
 | Output voltage tier | IV (8,192 EU) |
-| Output | 8,192 EU/t |
+| Output | 524,288 EU/t |
 | Energy storage | 1,000,000 EU |
 
 The game measured these values from the block entity of this version.

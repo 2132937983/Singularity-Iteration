@@ -19,10 +19,22 @@ import org.jetbrains.annotations.Nullable;
 public class mio_icif_wireless_power_transmission_node extends GenericEnergyBlockEntity
         implements IWirelessPowerNode, IEnergyConductiveEndpoint, com.miophas.singularity_iteration.core.api.energy.IEnergyPacketSource {
 
+    /** The limits before 0.1.10.38 (now the floor of the config value). */
     public static final long TRANSFER_SPEED = 32768L;
     public static final long DEFAULT_CAPACITY = 196608L;
     public static final long DEFAULT_MAX_RECEIVE = 32768L;
     public static final long DEFAULT_MAX_EXTRACT = 32768L;
+
+    /** 0.1.10.38: EU moved per tick, also the input and output limit (config EnergyNet.wirelessNodeTransferPerTick). */
+    private final long transferSpeed = configuredTransfer();
+
+    static long configuredTransfer() {
+        try {
+            return com.miophas.singularity_iteration.common.Singularity_Iteration_Config.WIRELESS_NODE_TRANSFER.get();
+        } catch (IllegalStateException notLoaded) {
+            return com.miophas.singularity_iteration.common.Singularity_Iteration_Config.WIRELESS_NODE_TRANSFER.getDefault();
+        }
+    }
 
     /** 0.5s（10 tick）点亮保持：缺电时传输是断续的，避免方块状态频繁闪烁。 */
     private static final int ACTIVE_HOLD_TICKS = 10;
@@ -34,7 +46,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
     public mio_icif_wireless_power_transmission_node(BlockPos pos, BlockState state) {
         super(pos, state,
             MioIcifAPI.instance().getRegistries().getBlockEntityType("wireless_power_transmission_node"),
-            DEFAULT_CAPACITY, DEFAULT_MAX_RECEIVE, DEFAULT_MAX_EXTRACT,
+            configuredTransfer() * 6, configuredTransfer(), configuredTransfer(),
             MioIcifAPI.instance().getEnergyNetAPI().getCableTier("luv"));
     }
 
@@ -64,9 +76,9 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
     private void updateRole() {
         boolean receiver = targetPosition == null;
         if (receiver == isPowerSource()) return;
-        if (receiver) setAsPowerSource(TRANSFER_SPEED);
+        if (receiver) setAsPowerSource(transferSpeed);
         else setAsConsumer();
-        getEnergyStorageInternal().setMaxExtract(receiver ? TRANSFER_SPEED : DEFAULT_MAX_EXTRACT);
+        getEnergyStorageInternal().setMaxExtract(transferSpeed);
         setChanged();
         com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.changed(this);   // republish faces
     }
@@ -95,7 +107,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
                 if (power >= 1) packet = Math.min(packet, (long) Math.min(power, Long.MAX_VALUE));
             }
         }
-        return packet == Long.MAX_VALUE ? 32 : Math.min(packet, TRANSFER_SPEED);
+        return packet == Long.MAX_VALUE ? 32 : Math.min(packet, TRANSFER_SPEED);   // one packet stays at most LuV
     }
 
     private void refreshPacket() {
@@ -111,7 +123,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
     @Override
     public com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy getEnergyPacketPolicy() {
         long packet = Math.max(1, outputPacket);
-        int count = (int) Math.max(1, Math.min(com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy.MAX_PACKETS_PER_ROUND, TRANSFER_SPEED / packet));
+        int count = (int) Math.max(1, Math.min(com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy.MAX_PACKETS_PER_ROUND, transferSpeed / packet));
         return new com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy(packet, count, true);
     }
 
@@ -137,7 +149,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
                         long targetMax = targetStorage.getCapacity();
 
                         if (targetCurrent < targetMax) {
-                            long toTransfer = Math.min(Math.min(TRANSFER_SPEED, storage.getAmount()), targetMax - targetCurrent);
+                            long toTransfer = Math.min(Math.min(transferSpeed, storage.getAmount()), targetMax - targetCurrent);
                             long used = storage.useEnergy(toTransfer, false);   // credit only what was actually taken
                             if (used > 0) {
                                 targetStorage.setEnergy(targetCurrent + used);
@@ -152,7 +164,7 @@ public class mio_icif_wireless_power_transmission_node extends GenericEnergyBloc
                             long targetMax = targetStorage.getCapacity();
 
                             if (targetCurrent < targetMax) {
-                                long toTransfer = Math.min(Math.min(TRANSFER_SPEED, storage.getAmount()), targetMax - targetCurrent);
+                                long toTransfer = Math.min(Math.min(transferSpeed, storage.getAmount()), targetMax - targetCurrent);
                                 long extracted = storage.useEnergy(toTransfer, false);
                                 if (extracted > 0) {
                                     long received = targetStorage.generateEnergy(extracted, false);

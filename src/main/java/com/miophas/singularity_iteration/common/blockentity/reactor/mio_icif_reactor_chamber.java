@@ -32,6 +32,13 @@ public class mio_icif_reactor_chamber extends BlockEntity implements MenuProvide
  protected mio_icif_reactor_chamber(net.minecraft.world.level.block.entity.BlockEntityType<?> type,BlockPos pos,BlockState state){super(type,pos,state);}
  /** 0.1.10.36: an electric chamber serves electric reactors only, a steam chamber steam reactors only (IC2C). */
  protected boolean accepts(mio_icif_nuclear_reactor_generator core){return !core.isSteamReactor();}
+ /**
+  * The reactor's fluid handler, or null without a connected reactor (0.1.10.38: electric chambers too, so pipes can inject
+  * coolant into any chamber; a steam chamber gives the steam reactor's water and steam tanks).
+  */
+ public @org.jetbrains.annotations.Nullable net.neoforged.neoforge.fluids.capability.IFluidHandler getFluidHandlerCapability(@org.jetbrains.annotations.Nullable Direction side){
+  var core=getConnectedReactor();return core==null?null:core.getFluidHandlerCapability(side);
+ }
  private boolean live(){
   if(!(level instanceof ServerLevel w)||!w.getServer().isSameThread()||isRemoved())return false;
   var c=w.getChunkSource().getChunkNow(worldPosition.getX()>>4,worldPosition.getZ()>>4);
@@ -101,7 +108,7 @@ public class mio_icif_reactor_chamber extends BlockEntity implements MenuProvide
  @Override public double getOfferedEnergy(){return 0;}
  @Override public void drawEnergy(double amount){}
  @Override public int getSourceTier(){var core=getConnectedReactor();return core==null?-1:core.getSourceTier();}
- @Override public int getPacketCount(){return 1;}
+ @Override public int getPacketCount(){var core=getConnectedReactor();return core==null?1:core.getPacketCount();}   // 0.1.10.38: the reactor's
     private void spawnHeatParticles(Level level, BlockPos pos) {
         if (level.isClientSide()) return;
 

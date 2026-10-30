@@ -3220,17 +3220,17 @@
       "en": [
         "The Energy Converter converts energy between EU and FE. The rate is 1 EU = 4 FE.",
         "In EU to FE mode, the machine receives EU and outputs FE at the front face.",
-        "In FE to EU mode, the machine takes FE from the other five faces and outputs EU to the cable network at HV."
+        "In FE to EU mode, the machine takes FE from the other five faces and outputs EU to the cable network at EV."
       ],
       "zh": [
         "能源转换器在EU和FE之间转换能量。比例为1 EU = 4 FE。",
         "EU转FE模式下，机器接收EU，并从正面输出FE。",
-        "FE转EU模式下，机器从其他5个面获取FE，并以HV向导线网络输出EU。"
+        "FE转EU模式下，机器从其他5个面获取FE，并以EV向导线网络输出EU。"
       ],
       "ja": [
         "エネルギー変換機はEUとFEの間でエネルギーを変換する。比率は1 EU = 4 FEだ。",
         "EUからFEのモードでは、機械はEUを受け、正面からFEを出す。",
-        "FEからEUのモードでは、機械は残りの5面からFEを取り、HVでケーブル網へEUを出す。"
+        "FEからEUのモードでは、機械は残りの5面からFEを取り、EVでケーブル網へEUを出す。"
       ]
     },
     "usage": {
@@ -3252,13 +3252,13 @@
     },
     "notes": {
       "en": [
-        "WARNING: The machine explodes on overvoltage above HV."
+        "WARNING: The machine explodes on overvoltage above EV."
       ],
       "zh": [
-        "警告：电压高于HV时，机器因过压爆炸。"
+        "警告：电压高于EV时，机器因过压爆炸。"
       ],
       "ja": [
-        "警告：HVを超える過電圧で機械は爆発する。"
+        "警告：EVを超える過電圧で機械は爆発する。"
       ]
     }
   }

@@ -2449,6 +2449,10 @@ public class mio_icif_capacities {
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(),
             (blockEntity, direction) -> blockEntity.getFuelHandlerCapability(direction));
 
+        // 0.1.10.38: the reactor chamber is a fluid port of its reactor (coolant in), like the steam reactor chamber
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.REACTOR_CHAMBER_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getFluidHandlerCapability(direction));
+
         // Register capabilities for Reactor Chamber (核反应仓)
         // 核反应仓本身没有存储，只是转发到连接的核反应堆
         

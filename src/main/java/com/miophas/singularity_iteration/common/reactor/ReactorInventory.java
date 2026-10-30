@@ -117,8 +117,13 @@ public final class ReactorInventory {
      * missing, so the cycle that decayed a tritium rod threw, the rod stayed at 9999 and the reactor stopped for good.
      */
     private static boolean product(ItemStack stack){return PRODUCTS.containsValue(BuiltInRegistries.ITEM.getKey(stack.getItem()));}
-    /** IC2 {@code isUsefulItem(stack,false)}: the bred tritium cell stays in the reactor; re-enriched uranium is thrown out. */
-    public static boolean staysInReactor(ItemStack stack){return !stack.isEmpty()&&BuiltInRegistries.ITEM.getKey(stack.getItem()).equals(LITHIUM_PRODUCT);}
+    /**
+     * Items that are not reactor components but stay in their slot: the bred tritium rod, and (0.1.10.38) every depleted rod and
+     * every product of breeding or decay (re-enriched uranium, the empty fuel rod). Before, these were thrown out at the reactor's
+     * own position, where a reactor with six chambers or the 5x5x5 fluid reactor lost them inside solid blocks (and nothing
+     * dropped with doTileDrops off). They stay until a player or automation takes them out.
+     */
+    public static boolean staysInReactor(ItemStack stack){return !stack.isEmpty()&&(PROFILES.containsKey(key(stack))||product(stack));}
     /**
      * 0.1.10.37: the component changes of this reactor for the JEI category "Nuclear Fuel Breeding & Decay"
      * ({@code core.api.reactor.ReactorTransformationRegistry}), from the tables the reactor runs on: the fuel rods burning out
@@ -146,8 +151,6 @@ public final class ReactorInventory {
                 notes.add(note("neutron_source"));
                 if(p.selfCooling()>0)notes.add(note("decay_heat",p.selfCooling()));
             }
-            // a product that is not a component itself is read as inert and thrown out at the next cycle
-            if(!PROFILES.containsKey(key(product)))notes.add(note("ejected"));
             out.add(new ReactorTransformation(id((p.breeding()?"breeding/":"decay/")+key),
                 p.breeding()?ReactorTransformation.Process.BREEDING:ReactorTransformation.Process.DECAY,itemId(key),product,p.capacity(),notes));
         });

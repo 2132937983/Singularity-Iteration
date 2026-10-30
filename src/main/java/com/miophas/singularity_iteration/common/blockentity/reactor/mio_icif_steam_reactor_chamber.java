@@ -4,10 +4,7 @@ package com.miophas.singularity_iteration.common.blockentity.reactor;
 import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * 0.1.10.36: a steam reactor chamber. It joins one adjacent steam reactor only (an electric reactor never takes it), and like
@@ -23,9 +20,5 @@ public class mio_icif_steam_reactor_chamber extends mio_icif_reactor_chamber {
         return core.isSteamReactor();
     }
 
-    /** The reactor's water and steam tanks, or null without a connected reactor. */
-    public @Nullable IFluidHandler getFluidHandlerCapability(@Nullable Direction side) {
-        var core = getConnectedReactor();
-        return core == null ? null : core.getFluidHandlerCapability(side);
-    }
+    // 0.1.10.38: the fluid port (water in, steam out) is the base chamber's getFluidHandlerCapability
 }

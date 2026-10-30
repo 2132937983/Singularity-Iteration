@@ -46,7 +46,7 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity 
     }
     
     public mio_icif_energy_converter_entity(BlockPos pos, BlockState state, BlockEntityType<?> type) {
-        super(pos, state, type, 100000, 2048, 2048, CableTier.HV);
+        super(pos, state, type, 100000, 2048, 2048, CableTier.EV);   // 0.1.10.38: EV, matching its 2048 EU/t input (it was HV: 512 EU packets exploded it)
         
         // FE存储：容量400k FE（对应100k EU * 4），最大输入/输出 8192 FE/t
         this.feStorage = new FEEnergyStorage(400000, 8192, 8192);
@@ -70,7 +70,7 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity 
             feStorage.setCanReceive(false);
         } else {
             // FE->EU 模式：作为EU电源（输出EU），允许FE面接收FE
-            setAsPowerSource(2048); // HV 等级输出
+            setAsPowerSource(2048); // EV 等级输出（0.1.10.38）
             feStorage.setCanReceive(true);
         }
         setChanged();
@@ -336,12 +336,12 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity 
 
     @Override
     public ICableTier getInputCableTier() {
-        return CableTier.HV;
+        return CableTier.EV;
     }
 
     @Override
     public ICableTier getOutputCableTier() {
-        return CableTier.HV;
+        return CableTier.EV;
     }
 
     @Override

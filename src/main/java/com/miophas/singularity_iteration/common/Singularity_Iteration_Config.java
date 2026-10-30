@@ -401,6 +401,15 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
                     "rotation = 0.1.10.21 之前：所有发电机轮流，储能最后 / before 0.1.10.22: all generators take turns, storage last")
             .define("dispatchMode", "merit", value -> "merit".equals(value) || "economic".equals(value) || "rotation".equals(value));
 
+    // 0.1.10.38: EU a wireless power node moves per tick (it was a fixed 32768)
+    public static final ModConfigSpec.LongValue WIRELESS_NODE_TRANSFER = ENERGY_NET_BUILDER
+            .comment("无线输电节点每 tick 的传输量（EU）/ EU a wireless power node moves per tick (0.1.10.38)",
+                    "同时是节点的输入上限与输出上限；缓存为此值的 6 倍。默认 524288 = 64 个 IV 数据包（与核反应堆的最大输出相同）",
+                    "Also the node's input and output limit per tick; its buffer holds 6 times this. Default 524288 = 64 IV packets (the reactor's maximum output)",
+                    "节点的输入电压等级仍为 LuV（单个数据包超过 32768 EU 会爆炸）；修改后对之后加载的节点生效",
+                    "The node's input voltage tier stays LuV (a packet above 32768 EU explodes it); applies to nodes loaded after the change")
+            .defineInRange("wirelessNodeTransferPerTick", 524_288L, 32_768L, Integer.MAX_VALUE);
+
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder ENERGY_NET_POP = BUILDER.pop();
     // ==================== 电网配置结束 ====================

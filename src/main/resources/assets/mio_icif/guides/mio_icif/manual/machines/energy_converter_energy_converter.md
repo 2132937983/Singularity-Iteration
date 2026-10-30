@@ -18,13 +18,13 @@ item_ids:
 
 The Energy Converter converts energy between EU and FE. The rate is 1 EU = 4 FE.
 In EU to FE mode, the machine receives EU and outputs FE at the front face.
-In FE to EU mode, the machine takes FE from the other five faces and outputs EU to the cable network at HV.
+In FE to EU mode, the machine takes FE from the other five faces and outputs EU to the cable network at EV.
 
 ## Power data
 
 | Item | Value |
 |---|---|
-| Input voltage tier | HV (512 EU) |
+| Input voltage tier | EV (2,048 EU) |
 | Maximum input | 2,048 EU/t |
 | Energy storage | 100,000 EU |
 
@@ -39,7 +39,7 @@ The game measured these values from the block entity of this version.
 ## Notes
 
 
-> **WARNING:** The machine explodes on overvoltage above HV.
+> **WARNING:** The machine explodes on overvoltage above EV.
 
 
 ## Recipe

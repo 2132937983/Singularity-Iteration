@@ -52,7 +52,7 @@ public final class Round1137GameTests {
 
     /**
      * A uranium rod next to a tritium rod one cycle short of its 10,000 (the reported bug): the next cycle commits, the tritium
-     * rod becomes an empty fuel rod, which is thrown out at the cycle after; the reactor runs on.
+     * rod becomes an empty fuel rod, which stays in its slot (0.1.10.38; it was thrown out before); the reactor runs on.
      */
     @GameTest(batch = "round1137_tritium", template = "empty", timeoutTicks = 80)
     public static void decayedTritiumRodLeavesAnEmptyFuelRodAndTheReactorKeepsRunning(GameTestHelper h) {
@@ -68,10 +68,8 @@ public final class Round1137GameTests {
             h.assertTrue(slot.is(BuiltInRegistries.ITEM.get(id("normal/item_fuel_rod"))), "The decayed tritium rod did not become an empty fuel rod: " + slot);
             h.assertTrue(fuelRemaining(h, reactor.getItemHandler().getStackInSlot(10)) == 19999, "The decay cycle did not commit");
             h.runAfterDelay(20, () -> {
-                h.assertTrue(reactor.getItemHandler().getStackInSlot(11).isEmpty(), "The empty fuel rod must leave the reactor");
-                var near = h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(h.absolutePos(REACTOR)).inflate(2),
-                    e -> e.getItem().is(BuiltInRegistries.ITEM.get(id("normal/item_fuel_rod"))));
-                h.assertTrue(!near.isEmpty(), "The empty fuel rod was not dropped next to the reactor");
+                h.assertTrue(reactor.getItemHandler().getStackInSlot(11).is(BuiltInRegistries.ITEM.get(id("normal/item_fuel_rod"))),
+                    "The empty fuel rod must stay in its slot");
                 h.assertTrue(fuelRemaining(h, reactor.getItemHandler().getStackInSlot(10)) == 19998, "The reactor stopped after the decay");
                 h.assertTrue(reactor.getCurrentEnergyGeneration() > 0, "The reactor makes no EU after the decay");
                 h.succeed();

@@ -430,17 +430,16 @@ public final class Round1136GameTests {
         });
     }
 
+    /** 0.1.10.38: re-enriched uranium stays in its slot (it was thrown out before) and the reactor keeps running. */
     @GameTest(batch = "round1136_breeding", template = "empty", timeoutTicks = 80)
-    public static void finishedIsotopeRodIsThrownOutAndTheReactorKeepsRunning(GameTestHelper h) {
+    public static void finishedIsotopeRodStaysAsReEnrichedUraniumAndTheReactorKeepsRunning(GameTestHelper h) {
         IReactorController reactor = reactor(h, "isotope_rod");
         h.runAfterDelay(25, () -> {
             h.assertTrue(reactor.getItemHandler().getStackInSlot(11).is(BuiltInRegistries.ITEM.get(id("normal/item_re_enriched_uranium"))),
                 "Isotope rod did not become re-enriched uranium");
             h.runAfterDelay(20, () -> {
-                h.assertTrue(reactor.getItemHandler().getStackInSlot(11).isEmpty(), "Re-enriched uranium must leave the reactor");
-                var near = h.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(h.absolutePos(REACTOR)).inflate(2),
-                    e -> e.getItem().is(BuiltInRegistries.ITEM.get(id("normal/item_re_enriched_uranium"))));
-                h.assertTrue(!near.isEmpty(), "Re-enriched uranium was not dropped next to the reactor");
+                h.assertTrue(reactor.getItemHandler().getStackInSlot(11).is(BuiltInRegistries.ITEM.get(id("normal/item_re_enriched_uranium"))),
+                    "Re-enriched uranium must stay in its slot");
                 h.assertTrue(fuelRemaining(h, reactor.getItemHandler().getStackInSlot(10)) == 19998, "The reactor stalled after breeding");
                 h.succeed();
             });

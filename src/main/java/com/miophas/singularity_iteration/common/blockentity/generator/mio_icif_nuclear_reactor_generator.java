@@ -59,7 +59,16 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     public static final int SLOT_COUNT=54,BASE_COLUMNS=3,MAX_COLUMNS=9,ROWS=6,HEAT_CAPACITY_BASE=10000,
         HEAT_CAPACITY_PER_CHAMBER=0,HEAT_MAX_RECEIVE=0,HEAT_MAX_EXTRACT=1000,HEAT_BASE_TEMP=20,HEAT_MAX_TEMP=5000;
     public static final float HEAT_LOSS_FACTOR=0;
-    public static final long ENERGY_GENERATION_RATE=0,ENERGY_CAPACITY=1000000,MAX_RECEIVE=0,MAX_EXTRACT=8192;
+    /**
+     * 0.1.10.38: the reactor sends up to MAX_PACKETS IV packets (8192 EU, the packet of its energy profile) per tick, so an output
+     * above 8192 EU/t (feed rate, output multiplier, big layouts) reaches the grid instead of being lost while the fuel burns. Each
+     * packet stays at IV voltage, so IV cables and machines are as safe as before. MAX_EXTRACT is the per-tick budget.
+     */
+    public static final long REACTOR_PACKET=8192;
+    public static final int MAX_PACKETS=com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy.MAX_PACKETS_PER_ROUND;
+    public static final long ENERGY_GENERATION_RATE=0,ENERGY_CAPACITY=1000000,MAX_RECEIVE=0,MAX_EXTRACT=REACTOR_PACKET*MAX_PACKETS;
+    /** 0.1.10.38: a saved rate above this is corrupt (it was 8192, which held every reactor that ran faster after a reload). */
+    private static final long MAX_SAVED_RATE=Integer.MAX_VALUE;
     private final PlatformHeatStorage heat=new PlatformHeatStorage(10000,0,1000,20,5000,0);
     private final com.miophas.singularity_iteration.core.runtime.reactor.GuardedReactorHeat heatPort=new com.miophas.singularity_iteration.core.runtime.reactor.GuardedReactorHeat(heat,this::operational);
     private final mio_icif_fluid_reactor_handler fluid=new mio_icif_fluid_reactor_handler(this::fluidAvailable,this::dirty);
@@ -93,7 +102,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     public mio_icif_nuclear_reactor_generator(BlockPos pos,BlockState state){this(pos,state,mio_icif_block_entities.NUCLEAR_REACTOR_GENERATOR_ENTITY_TYPE.get());}
     public mio_icif_nuclear_reactor_generator(BlockPos pos,BlockState state,BlockEntityType<?> type){
         super(pos,state,type,SlotLayout.builder().extra(54).build(),0,ENERGY_CAPACITY,0,MAX_EXTRACT,CableTier.EV);
-        setAsPowerSource(MAX_EXTRACT);
+        setAsPowerSource(REACTOR_PACKET);
         energyStorage.setOutputEnabled(false);
     }
     @Override protected MachineItemHandler createItemHandler(SlotLayout layout){return new ReactorItems(layout);}
@@ -232,9 +241,28 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             // 才拒绝的条件。原先这里复用了插入判定，导致流体反应堆每循环把已吸热的冷却单元弹回世界。
             if(i%9<columns&&(stack.getItem() instanceof mio_icif_reactor||ReactorInventory.staysInReactor(stack)))continue;
             itemHandler.setStackInSlot(i,ItemStack.EMPTY);
-            Block.popResource(level,worldPosition,stack);
+            dropOutside(stack);
             blackbox.dropped(1);   // 0.1.10.12: a lost chamber column throws its components out
         }
+    }
+    /**
+     * 0.1.10.38: drops a stack that left the reactor (a lost chamber column) at a free neighbouring position (the face of the
+     * removed chamber, usually), not inside the reactor block, where a reactor walled in by chambers lost it. Inventory
+     * contents, so it drops whatever doTileDrops says (as a container's contents do).
+     */
+    private void dropOutside(ItemStack stack){
+        BlockPos at=worldPosition;
+        for(Direction side:Direction.values()){
+            BlockPos p=worldPosition.relative(side);
+            if(level.isLoaded(p)&&level.getBlockState(p).getCollisionShape(level,p).isEmpty()){at=p;break;}
+        }
+        net.minecraft.world.Containers.dropItemStack(level,at.getX()+0.5,at.getY()+0.5,at.getZ()+0.5,stack);
+    }
+    /** The saved EU/t of a reactor; IllegalArgumentException when it is negative or above MAX_SAVED_RATE. */
+    private static EnergyAmount savedRate(CompoundTag own){
+        var saved=new EnergyAmount(own.getLong("rate"),own.getLong("rate_fraction"));
+        if(saved.whole()>MAX_SAVED_RATE)throw new IllegalArgumentException("Invalid saved rate");
+        return saved;
     }
     /** 对齐 IC2 {@code isUsefulItem(stack,true)}：流体模式拒绝已经吸过热的冷却单元，其余一律放行。 */
     private boolean acceptsInFluidMode(ItemStack stack){
@@ -603,7 +631,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     @Override public void drawEnergy(double amount){}
     @Override public boolean emitsEnergyTo(IEnergyAcceptor acceptor,Direction side){return false;}
     public long extractPowerForConsumer(long amount,boolean simulate){return 0;}
-    public int getPacketCount(){return 1;}
+    public int getPacketCount(){return MAX_PACKETS;}   // 0.1.10.38: was 1 (8192 EU/t at most)
     @Override public int getSourceTier(){return 5;}
     @Override public long getPowerOutput(){return MAX_EXTRACT;}
     @Override public int getFuelBurnTime(ItemStack stack){return 0;}
@@ -718,8 +746,13 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             int version=own.getInt("version");
             if(version==1||version==2){
                 hold.merge(own.getCompound("hold").copy());failure=own.getString("failure");
-                try{rate=new EnergyAmount(own.getLong("rate"),own.getLong("rate_fraction"));if(rate.whole()>8192)throw new IllegalArgumentException("Invalid saved rate");}
+                try{rate=savedRate(own);}
                 catch(IllegalArgumentException error){hold.put("invalid_rate",own.copy());rate=EnergyAmount.ZERO;}
+                // 0.1.10.38: a reactor held only because it ran above 8192 EU/t before a reload is freed (its rate is valid now)
+                if(hold.contains("invalid_rate",Tag.TAG_COMPOUND)&&!own.getCompound("hold").isEmpty()){
+                    try{var freed=savedRate(hold.getCompound("invalid_rate"));hold.remove("invalid_rate");rate=freed;}
+                    catch(IllegalArgumentException stillInvalid){/* keeps the hold */}
+                }
                 if(version==2){
                     if(!own.getAllKeys().equals(java.util.Set.of("version","rate","rate_fraction","hold","failure","accident")))hold.put("unknown_reactor_fields",own.copy());
                     if(!own.contains("version",Tag.TAG_INT)||!own.contains("rate",Tag.TAG_LONG)||!own.contains("rate_fraction",Tag.TAG_LONG)
@@ -739,7 +772,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         }else if(tag.contains("scex_reactor"))hold.put("invalid_reactor_tag",tag.get("scex_reactor").copy());
         if(hasReactorAccident()){rate=EnergyAmount.ZERO;failure=accidentFailure();}
         if(!hold.isEmpty()){rate=EnergyAmount.ZERO;failure="Saved reactor state requires recovery";}
-        setAsPowerSource(MAX_EXTRACT);energyStorage.setOutputEnabled(false);
+        setAsPowerSource(REACTOR_PACKET);energyStorage.setOutputEnabled(false);
     }
     private CompoundTag saveAccident(){
         CompoundTag tag=new CompoundTag();tag.putInt("version",3);tag.putString("state",accident.state().name());

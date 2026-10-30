@@ -6,6 +6,7 @@
   ],
   "key": {
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/block_mfe"
     },
     "R": {

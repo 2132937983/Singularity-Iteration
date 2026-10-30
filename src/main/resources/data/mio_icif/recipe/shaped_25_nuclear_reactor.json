@@ -7,12 +7,14 @@
   ],
   "key": {
     "C": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:reactor/block_reactor_chamber"
     },
     "c": {
       "tag": "c:circuits/advanced"
     },
     "G": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_thermal_generator"
     },
     "P": {"tag": "c:dense_plates/lead"}

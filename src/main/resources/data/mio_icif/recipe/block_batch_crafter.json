@@ -3,6 +3,7 @@
   "category": "misc",
   "key": {
     "I": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_industrial_workbench"
     },
     "A": {
@@ -15,6 +16,7 @@
       "item": "mio_icif:item_tool_hammer"
     },
     "W": {
+      "type": "mio_icif:electric",
       "tag": "c:tools/wrench"
     }
   },

@@ -11,6 +11,7 @@
       "item": "mio_icif:resource/item_coil"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lithium_battery"
     },
     "L": {

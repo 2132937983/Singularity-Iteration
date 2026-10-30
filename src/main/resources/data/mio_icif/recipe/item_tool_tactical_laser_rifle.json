@@ -11,12 +11,15 @@
       "tag": "c:dense_plates/super_iridium"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_super_lapotron_crystal"
     },
     "L": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_quantum_sword"
     },
     "J": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_advanced_electric_rifle"
     },
     "C": {

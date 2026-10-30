@@ -7,6 +7,7 @@
   ],
   "key": {
     "M": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_thermal_generator"
     },
     "E": {

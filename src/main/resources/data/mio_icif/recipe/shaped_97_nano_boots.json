@@ -7,6 +7,7 @@
   "key": {
     "C": {"tag": "c:plates/carbon"},
     "c": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_crystal_lev0"
     }
   },

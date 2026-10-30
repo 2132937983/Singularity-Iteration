@@ -12,10 +12,12 @@
       "tag": "c:circuits/elite"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     },
     "D": {"tag": "c:dusts/energium"},
     "J": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:armor/item_armor_advanced_jetpack"
     }
   },

@@ -13,6 +13,7 @@
     },
     "C": {"tag": "c:plates/niobium_titanium"},
     "P": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     }
   },

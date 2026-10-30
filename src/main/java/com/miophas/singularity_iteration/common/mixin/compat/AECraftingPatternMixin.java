@@ -32,6 +32,7 @@ public abstract class AECraftingPatternMixin {
         if (key == null || slot < 0 || slot >= sparseInputs.size()) return;
         GenericStack want = sparseInputs.get(slot);
         if (want == null || !(want.what() instanceof AEItemKey wanted) || wanted.getItem() != key.getItem()) return;
-        if (EnergyStackDiff.sameIgnoringCharge(wanted.toStack(), key.toStack())) cir.setReturnValue(true);
+        // 0.1.10.38 (D14): also a machine block dismantled by a wrench (its kept block entity data)
+        if (EnergyStackDiff.sameMaterial(wanted.toStack(), key.toStack())) cir.setReturnValue(true);
     }
 }

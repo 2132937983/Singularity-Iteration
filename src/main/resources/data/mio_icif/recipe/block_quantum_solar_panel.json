@@ -11,6 +11,7 @@
       "tag": "c:circuits/advanced"
     },
     "A": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_ultimate_hybrid_solar_panel"
     },
     "S": {

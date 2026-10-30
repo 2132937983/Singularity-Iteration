@@ -17,6 +17,7 @@
       "item": "minecraft:lead"
     },
     "B": {
+      "type": "mio_icif:electric",
       "tag": "c:crystals/energy"
     },
     "A": {

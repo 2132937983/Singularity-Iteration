@@ -8,6 +8,7 @@
   "key": {
     "I": {"tag": "c:casings/iron"},
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_bat_lev0"
     },
     "M": {

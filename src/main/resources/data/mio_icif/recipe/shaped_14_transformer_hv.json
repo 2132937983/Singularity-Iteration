@@ -7,12 +7,14 @@
   ],
   "key": {
     "E": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/transformer_mv_hv"
     },
     "c": {
       "item": "mio_icif:wiring/cable/block_gold_cable_1"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_advbat_lev0"
     },
     "C": {

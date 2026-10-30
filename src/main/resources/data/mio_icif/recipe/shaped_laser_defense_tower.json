@@ -8,6 +8,7 @@
   ],
   "key": {
     "L": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_laser_miner"
     },
     "C": {
@@ -20,6 +21,7 @@
       "tag": "c:plates/alloy"
     },
     "B": {
+      "type": "mio_icif:electric",
       "tag": "c:crystals/energy"
     }
   },

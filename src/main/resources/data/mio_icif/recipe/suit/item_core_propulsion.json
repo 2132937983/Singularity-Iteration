@@ -11,15 +11,18 @@
       "tag": "c:dense_plates/super_iridium"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_super_lapotron_crystal"
     },
     "R": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_electric_first_aid_life_support"
     },
     "C": {
       "tag": "c:circuits/elite"
     },
     "D": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:armor/item_armor_jetpack_electric"
     },
     "A": {

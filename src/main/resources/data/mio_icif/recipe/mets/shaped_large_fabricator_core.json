@@ -16,6 +16,7 @@
       "tag": "c:circuits/elite"
     },
     "M": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_matter_elc"
     }
   },

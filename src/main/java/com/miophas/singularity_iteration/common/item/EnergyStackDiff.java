@@ -33,4 +33,18 @@ public final class EnergyStackDiff {
         x.remove(DataComponents.DAMAGE); y.remove(DataComponents.DAMAGE);
         return ItemStack.isSameItemSameComponents(x, y);
     }
+
+    /**
+     * 0.1.10.38 (D14): the same material for an autocrafting pattern: {@link #sameIgnoringCharge}, or the same machine block of
+     * the mod whatever data a wrench kept on it (stored energy, inventory, settings). A crafting table already takes such a
+     * machine (ingredients ignore item data), so a pattern recorded with the plain block takes a dismantled one too.
+     */
+    public static boolean sameMaterial(ItemStack a, ItemStack b) {
+        if (sameIgnoringCharge(a, b)) return true;
+        if (a.isEmpty() || b.isEmpty() || a.getItem() != b.getItem() || !(a.getItem() instanceof net.minecraft.world.item.BlockItem)
+            || !net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(a.getItem()).getNamespace().equals("mio_icif")) return false;
+        ItemStack x = a.copyWithCount(1), y = b.copyWithCount(1);
+        x.remove(DataComponents.BLOCK_ENTITY_DATA); y.remove(DataComponents.BLOCK_ENTITY_DATA);
+        return sameIgnoringCharge(x, y);
+    }
 }

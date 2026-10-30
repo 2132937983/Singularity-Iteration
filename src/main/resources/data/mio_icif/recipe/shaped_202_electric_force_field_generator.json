@@ -5,8 +5,8 @@
   "key": {
     "S": {"tag": "c:casings/titanium"},
     "C": {"tag": "c:circuits/advanced"},
-    "M": {"item": "mio_icif:item_electric_nutrition_supply"},
-    "B": {"item": "mio_icif:normal/item_crystal_lev0"}
+    "M": {"type": "mio_icif:electric", "item": "mio_icif:item_electric_nutrition_supply"},
+    "B": {"type": "mio_icif:electric", "item": "mio_icif:normal/item_crystal_lev0"}
   },
   "result": {"id": "mio_icif:item_electric_force_field_generator", "count": 1}
 }

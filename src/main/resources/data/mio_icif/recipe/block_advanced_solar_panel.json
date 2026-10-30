@@ -10,6 +10,7 @@
       "item": "mio_icif:build/block_irradiant_glass_pane"
     },
     "A": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_solar_generator"
     },
     "G": {"tag": "c:plates/alloy"}

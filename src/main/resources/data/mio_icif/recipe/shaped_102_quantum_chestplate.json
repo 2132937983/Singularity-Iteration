@@ -8,14 +8,17 @@
   ],
   "key": {
     "n": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:armor/item_armor_nano_chestplate"
     },
     "I": {"tag": "c:plates/iridium"},
     "L": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     },
     "A": {"tag": "c:plates/alloy"},
     "J": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:armor/item_armor_jetpack_electric"
     }
   },

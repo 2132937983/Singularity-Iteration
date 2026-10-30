@@ -11,12 +11,14 @@
       "tag": "c:plates/carbon"
     },
     "T": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     },
     "C": {
       "tag": "c:circuits/advanced"
     },
     "X": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_electric_force_field_generator"
     },
     "B": {

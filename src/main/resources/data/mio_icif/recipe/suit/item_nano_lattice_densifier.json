@@ -13,6 +13,7 @@
       "tag": "c:plates/iridium"
     },
     "E": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_crystal_lev0"
     }
   },

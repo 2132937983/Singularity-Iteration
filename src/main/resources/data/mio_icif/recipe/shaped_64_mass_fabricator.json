@@ -10,6 +10,7 @@
       "item": "mio_icif:producer/block_machine_hull_advanced"
     },
     "L": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     },
     "G": {

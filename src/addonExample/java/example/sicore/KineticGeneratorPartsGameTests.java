@@ -29,6 +29,10 @@ public final class KineticGeneratorPartsGameTests {
 
     private static ResourceLocation rl(String path) { return ResourceLocation.fromNamespaceAndPath("mio_icif", path); }
     private static ItemStack item(String path) { return new ItemStack(BuiltInRegistries.ITEM.get(rl(path))); }
+    /** 0.1.10.38: a lathe-shaped part (mio_icif:lathe_state); electric and machine inputs (mio_icif:electric) are custom too. */
+    private static boolean lathePart(Ingredient i) {
+        return i.isCustom() && rl("lathe_state").equals(net.neoforged.neoforge.registries.NeoForgeRegistries.INGREDIENT_TYPES.getKey(i.getCustomIngredient().getType()));
+    }
     private static Object call(Object target, String name, Object... args) { return Round33GameTests.call(target, name, args); }
 
     private static ItemStack blank(int[] state) {
@@ -49,7 +53,7 @@ public final class KineticGeneratorPartsGameTests {
             var holder = h.getLevel().getRecipeManager().byKey(rl((String) c[0]));
             h.assertTrue(holder.isPresent(), "no recipe " + c[0]);
             Ingredient part = null;
-            for (Ingredient i : holder.get().value().getIngredients()) if (i.getCustomIngredient() != null) part = i;
+            for (Ingredient i : holder.get().value().getIngredients()) if (lathePart(i)) part = i;
             h.assertTrue(part != null, c[0] + " has no lathe-shaped part");
             h.assertTrue(part.test(blank((int[]) c[1])), c[0] + " does not take its part");
             h.assertTrue(!part.test(item("normal/item_iron_turning_blanks")), c[0] + " takes an uncut blank");
@@ -61,7 +65,7 @@ public final class KineticGeneratorPartsGameTests {
         for (RecipeHolder<?> r : h.getLevel().getRecipeManager().getRecipes()) {
             if (!BuiltInRegistries.ITEM.getKey(r.value().getResultItem(h.getLevel().registryAccess()).getItem())
                     .getPath().equals("kugenerator/block_kinetic_generator_elc")) continue;
-            for (Ingredient i : r.value().getIngredients()) h.assertTrue(i.getCustomIngredient() == null, r.id() + " needs a lathe part");
+            for (Ingredient i : r.value().getIngredients()) h.assertTrue(!lathePart(i), r.id() + " needs a lathe part");
         }
         h.succeed();
     }

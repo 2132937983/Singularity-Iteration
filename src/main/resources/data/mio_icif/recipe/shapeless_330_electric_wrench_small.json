@@ -3,6 +3,7 @@
   "transfer_charge": true,
   "ingredients": [
     {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_power_unit_small"
     },
     {

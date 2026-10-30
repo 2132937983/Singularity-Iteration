@@ -16,6 +16,7 @@
       "item": "mio_icif:producer/block_machine_hull_advanced"
     },
     "M": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_laser_miner"
     },
     "E": {

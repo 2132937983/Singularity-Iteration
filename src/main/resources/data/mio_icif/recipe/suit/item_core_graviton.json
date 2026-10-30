@@ -17,6 +17,7 @@
       "item": "mio_icif:resource/item_iridium"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     },
     "C": {

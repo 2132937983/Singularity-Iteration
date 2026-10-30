@@ -6,6 +6,7 @@
       "item": "mio_icif:item_tool_wooden_treetap"
     },
     {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_power_unit_small"
     },
     {

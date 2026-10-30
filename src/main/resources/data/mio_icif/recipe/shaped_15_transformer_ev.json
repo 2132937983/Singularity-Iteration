@@ -7,6 +7,7 @@
   ],
   "key": {
     "E": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/transformer_hv_ev"
     },
     "c": {
@@ -16,6 +17,7 @@
       "tag": "c:circuits/advanced"
     },
     "D": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     }
   },

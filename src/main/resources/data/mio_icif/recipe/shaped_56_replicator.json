@@ -7,6 +7,7 @@
   ],
   "key": {
     "T": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_scanner_elc"
     },
     "S": {
@@ -16,9 +17,11 @@
       "item": "mio_icif:build/block_alloy_glass"
     },
     "F": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/block_mfe"
     },
     "V": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/transformer_hv_ev"
     }
   },

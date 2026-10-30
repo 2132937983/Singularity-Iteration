@@ -8,6 +8,7 @@
   "key": {
     "T": {"tag": "c:storage_blocks/titanium"},
     "S": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_geo_generator"
     },
     "C": {

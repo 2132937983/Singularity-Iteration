@@ -175,6 +175,151 @@ public final class Round1138GameTests {
         h.succeed();
     }
 
+    // ------------------------------------------------------------------ A7: autocrafting ingredients (data for tools/recipes_1138.py)
+
+    /**
+     * Writes {@code autocraft_ingredients.json} in the game directory: every electric item of the mod (an {@code IBatteryItem}, with
+     * "full" when its default stack is fully charged), every machine block (a block with a block entity that a wrench dismantles
+     * with its data; cables, pipes and crop sticks left out), and the item tags that contain one of them. tools/recipes_1138.py
+     * turns these inputs of the crafting recipes into {@code mio_icif:electric} ingredients.
+     */
+    @GameTest(batch = "round1138_dump", template = "empty", timeoutTicks = 20)
+    public static void dumpAutocraftIngredients(GameTestHelper h) {
+        var items = new java.util.TreeMap<String, String>();
+        for (var entry : BuiltInRegistries.ITEM.entrySet()) {
+            var key = entry.getKey().location();
+            if (!key.getNamespace().equals("mio_icif")) continue;
+            var item = entry.getValue();
+            if (item instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem battery) {
+                ItemStack stack = new ItemStack(item);
+                long capacity = battery.getMaxEnergy(stack);
+                items.put(key.toString(), capacity > 0 && battery.getEnergy(stack) >= capacity ? "electric_full" : "electric");
+            } else if (item instanceof net.minecraft.world.item.BlockItem blockItem
+                    && blockItem.getBlock() instanceof net.minecraft.world.level.block.EntityBlock entityBlock) {
+                net.minecraft.world.level.block.entity.BlockEntity be;
+                try { be = entityBlock.newBlockEntity(BlockPos.ZERO, blockItem.getBlock().defaultBlockState()); }
+                catch (RuntimeException e) { continue; }
+                if (be == null || be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractWireBlockEntity) continue;
+                String name = be.getClass().getSimpleName().toLowerCase(java.util.Locale.ROOT);
+                // not machines: pipes, crop sticks, special cables (breaker, detector, fuse, splitter), foam, vanilla-type signs
+                if (name.contains("pipe") || name.contains("crop") || name.contains("cable") || name.contains("foam")
+                    || be.getClass().getName().startsWith("net.minecraft.")) continue;
+                items.put(key.toString(), "machine");
+            }
+        }
+        var tags = new java.util.TreeSet<String>();
+        BuiltInRegistries.ITEM.getTags().forEach(pair -> {
+            for (var holder : pair.getSecond())
+                if (items.containsKey(BuiltInRegistries.ITEM.getKey(holder.value()).toString())) { tags.add(pair.getFirst().location().toString()); break; }
+        });
+        var out = new StringBuilder("{\n  \"items\": {\n");
+        int n = 0;
+        for (var e : items.entrySet()) out.append(n++ == 0 ? "" : ",\n").append("    \"").append(e.getKey()).append("\": \"").append(e.getValue()).append('"');
+        out.append("\n  },\n  \"tags\": [");
+        n = 0;
+        for (String t : tags) out.append(n++ == 0 ? "\n    \"" : ",\n    \"").append(t).append('"');
+        out.append("\n  ]\n}\n");
+        try {
+            java.nio.file.Files.writeString(java.nio.file.Path.of("autocraft_ingredients.json"), out.toString());
+        } catch (java.io.IOException e) { throw new AssertionError("cannot write autocraft_ingredients.json", e); }
+        h.assertTrue(items.values().stream().filter("electric_full"::equals).count() >= 30, "expected about 36 items charged by default");
+        h.succeed();
+    }
+
+    private static boolean electric(net.minecraft.world.item.crafting.Ingredient ingredient) {
+        return ingredient.isCustom() && id("electric").equals(
+            net.neoforged.neoforge.registries.NeoForgeRegistries.INGREDIENT_TYPES.getKey(ingredient.getCustomIngredient().getType()));
+    }
+
+    /** The grid of a crafting recipe filled with the first stack each slot shows (the empty stacks of electric inputs). */
+    private static net.minecraft.world.item.crafting.CraftingInput shownInputs(net.minecraft.world.item.crafting.CraftingRecipe recipe) {
+        var stacks = new java.util.ArrayList<ItemStack>();
+        for (var ingredient : recipe.getIngredients()) {
+            ItemStack[] shown = ingredient.getItems();
+            stacks.add(shown.length == 0 ? ItemStack.EMPTY : shown[0].copy());
+        }
+        return recipe instanceof net.minecraft.world.item.crafting.ShapedRecipe shaped
+            ? net.minecraft.world.item.crafting.CraftingInput.of(shaped.getWidth(), shaped.getHeight(), stacks)
+            : net.minecraft.world.item.crafting.CraftingInput.of(stacks.size(), 1, stacks);
+    }
+
+    /**
+     * What autocrafting needs: every electric or machine input (mio_icif:electric) shows exactly the stack its own recipe makes
+     * from the stacks that recipe shows. So a pattern recorded from a recipe matches what the sub-pattern crafts (36 items are
+     * charged by default; a pattern recorded the full one while the craft gave an empty one, and the chain never autocrafted).
+     */
+    @GameTest(batch = "round1138_recipes", template = "empty", timeoutTicks = 20)
+    public static void electricInputsShowWhatTheirRecipesMake(GameTestHelper h) {
+        var level = h.getLevel();
+        var recipes = level.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING);
+        var producers = new java.util.HashMap<net.minecraft.world.item.Item, net.minecraft.world.item.crafting.CraftingRecipe>();
+        for (var holder : recipes) {
+            if (!holder.id().getNamespace().equals("mio_icif") || holder.value().isSpecial()) continue;
+            producers.putIfAbsent(holder.value().getResultItem(level.registryAccess()).getItem(), holder.value());
+        }
+        int converted = 0, checked = 0;
+        var mismatches = new java.util.ArrayList<String>();
+        for (var holder : recipes) {
+            if (!holder.id().getNamespace().equals("mio_icif")) continue;
+            for (var ingredient : holder.value().getIngredients()) {
+                if (!electric(ingredient)) continue;
+                converted++;
+                for (ItemStack shown : ingredient.getItems()) {
+                    var producer = producers.get(shown.getItem());
+                    if (producer == null) continue;
+                    var input = shownInputs(producer);
+                    if (!producer.matches(input, level)) continue;
+                    checked++;
+                    ItemStack made = producer.assemble(input, level.registryAccess());
+                    if (!ItemStack.isSameItemSameComponents(made, shown))
+                        mismatches.add(holder.id() + ": shows " + shown.getComponentsPatch() + ", its recipe makes " + made.getComponentsPatch());
+                }
+            }
+        }
+        h.assertTrue(converted >= 250, "only " + converted + " electric inputs");
+        h.assertTrue(checked >= 100, "only " + checked + " inputs had a recipe to check");
+        h.assertTrue(mismatches.isEmpty(), mismatches.size() + " inputs show another stack than their recipe makes, first: "
+            + (mismatches.isEmpty() ? "" : mismatches.get(0)));
+        h.succeed();
+    }
+
+    /** The chainsaw's power unit input takes a full and an empty power unit and shows the empty one (the default is full). */
+    @GameTest(batch = "round1138_recipes", template = "empty", timeoutTicks = 20)
+    public static void electricInputTakesAnyChargeAndShowsTheEmptyStack(GameTestHelper h) {
+        var holder = h.getLevel().getRecipeManager().byKey(id("shaped_152_chainsaw")).orElseThrow();
+        var unit = BuiltInRegistries.ITEM.get(id("item_tool_power_unit"));
+        var ingredient = holder.value().getIngredients().stream().filter(i -> java.util.Arrays.stream(i.getItems()).anyMatch(s -> s.is(unit)))
+            .findFirst().orElseThrow();
+        h.assertTrue(electric(ingredient), "the chainsaw's power unit input is not mio_icif:electric");
+        ItemStack full = new ItemStack(unit);
+        var battery = (com.miophas.singularity_iteration.core.api.item.IBatteryItem) unit;
+        h.assertTrue(battery.getEnergy(full) > 0 && battery.getEnergy(full) >= battery.getMaxEnergy(full), "the default power unit is full");
+        ItemStack shown = ingredient.getItems()[0];
+        h.assertTrue(battery.getEnergy(shown) == 0, "the input shows a charged power unit");
+        h.assertTrue(ingredient.test(full) && ingredient.test(shown), "the input must take any charge");
+        h.succeed();
+    }
+
+    /**
+     * D14: an AE2 pattern recorded with a plain machine takes one dismantled by a wrench (with its kept data), as a crafting table
+     * does; another machine, or a vanilla item with data, is still another material.
+     */
+    @GameTest(batch = "round1138_recipes", template = "empty", timeoutTicks = 20)
+    public static void dismantledMachineIsTheSameMaterialForPatterns(GameTestHelper h) {
+        Class<?> diff = Round33GameTests.common("item.EnergyStackDiff");
+        ItemStack plain = item("wiring/block_mfsu");
+        ItemStack dismantled = plain.copy();
+        CompoundTag data = new CompoundTag();
+        data.putString("id", "mio_icif:mfsu"); data.putLong("Energy", 123_456L);
+        dismantled.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA, net.minecraft.world.item.component.CustomData.of(data));
+        h.assertTrue((Boolean) call(diff, "sameMaterial", plain, dismantled), "a dismantled MFSU is not the MFSU of the pattern");
+        h.assertTrue(!(Boolean) call(diff, "sameMaterial", plain, item("wiring/block_mfe")), "an MFE matched an MFSU");
+        ItemStack chest = new ItemStack(net.minecraft.world.item.Items.CHEST), filled = chest.copy();
+        filled.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA, net.minecraft.world.item.component.CustomData.of(data));
+        h.assertTrue(!(Boolean) call(diff, "sameMaterial", chest, filled), "a vanilla block with data matched");
+        h.succeed();
+    }
+
     // ------------------------------------------------------------------ A1: Energy Converter at EV
 
     /** The Energy Converter takes EV packets (2048 EU) without exploding: its tier was HV (512 EU) while it took 2048 EU/t. */

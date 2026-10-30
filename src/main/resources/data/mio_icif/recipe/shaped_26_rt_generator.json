@@ -8,9 +8,11 @@
   "key": {
     "I": {"tag": "c:casings/iron"},
     "C": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:reactor/block_reactor_chamber"
     },
     "G": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_thermal_generator"
     }
   },

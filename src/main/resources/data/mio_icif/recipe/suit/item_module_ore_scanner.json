@@ -17,6 +17,7 @@
       "tag": "c:circuits/advanced"
     },
     "X": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_ov_scanner"
     },
     "B": {

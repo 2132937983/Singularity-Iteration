@@ -11,10 +11,12 @@
       "tag": "c:circuits/advanced"
     },
     "C": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_crystal_lev0"
     },
     "I": {"tag": "c:casings/iron"},
     "E": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:armor/item_armor_advbatpack"
     }
   },

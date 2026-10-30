@@ -11,6 +11,7 @@
       "tag": "c:plates/niobium_titanium"
     },
     "B": {
+      "type": "mio_icif:electric",
       "tag": "c:crystals/energy"
     },
     "L": {
@@ -23,6 +24,7 @@
       "tag": "c:circuits/elite"
     },
     "D": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_electric_rifle"
     }
   },

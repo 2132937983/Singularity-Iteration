@@ -13,9 +13,11 @@
       "tag": "c:circuits/elite"
     },
     "T": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/transformer_ev_sc"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_super_lapotron_crystal"
     }
   },

@@ -13,12 +13,15 @@
       "tag": "c:circuits/ultimate"
     },
     "R": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_replicator_elc"
     },
     "M": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_matter_elc"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/block_eesu"
     }
   },

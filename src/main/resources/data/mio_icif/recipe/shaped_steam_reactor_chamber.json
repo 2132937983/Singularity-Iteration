@@ -13,6 +13,7 @@
       "item": "mio_icif:build/block_alloy_glass"
     },
     "C": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:reactor/block_reactor_chamber"
     }
   },

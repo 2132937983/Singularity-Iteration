@@ -13,12 +13,14 @@
       "item": "mio_icif:resource/item_coil"
     },
     "T": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/transformer_mv_hv"
     },
     "M": {
       "item": "mio_icif:producer/block_machine_hull_basic"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_advbat_lev0"
     }
   },

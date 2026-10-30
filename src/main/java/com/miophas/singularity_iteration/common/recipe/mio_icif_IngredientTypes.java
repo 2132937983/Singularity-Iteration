@@ -19,6 +19,10 @@ public class mio_icif_IngredientTypes {
     public static final net.neoforged.neoforge.registries.DeferredHolder<IngredientType<?>, IngredientType<LatheStateIngredient>> LATHE_STATE =
             INGREDIENT_TYPES.register("lathe_state", () -> LatheStateIngredient.TYPE);
 
+    /** 0.1.10.38: an electric item or machine block; matches any charge or stored data, shows and records the empty stack. */
+    public static final net.neoforged.neoforge.registries.DeferredHolder<IngredientType<?>, IngredientType<ElectricIngredient>> ELECTRIC =
+            INGREDIENT_TYPES.register("electric", () -> ElectricIngredient.TYPE);
+
     public static void register(net.neoforged.bus.api.IEventBus modEventBus) {
         INGREDIENT_TYPES.register(modEventBus);
     }

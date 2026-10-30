@@ -11,9 +11,11 @@
       "item": "mio_icif:reactor/item_reactor_heat_switch_spread"
     },
     "C": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_crystal_lev0"
     },
     "O": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_advchargebat_lev0"
     }
   },

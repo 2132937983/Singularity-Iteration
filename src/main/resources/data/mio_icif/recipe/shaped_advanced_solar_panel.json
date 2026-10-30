@@ -11,6 +11,7 @@
     },
     "A": {"tag": "c:plates/alloy"},
     "S": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_solar_generator"
     },
     "C": {

@@ -6,7 +6,7 @@
     "P":{"tag": "c:casings/gold"},
     "G":{"item":"minecraft:glowstone_dust"},
     "C":{"tag":"c:circuits/basic"},
-    "B":{"item":"mio_icif:normal/item_advbat_lev0"},
+    "B":{"type":"mio_icif:electric", "item":"mio_icif:normal/item_advbat_lev0"},
     "c":{"item":"mio_icif:wiring/cable/block_tin_cable"}
   },
   "result":{"id":"mio_icif:item_tool_od_scanner","count":1}

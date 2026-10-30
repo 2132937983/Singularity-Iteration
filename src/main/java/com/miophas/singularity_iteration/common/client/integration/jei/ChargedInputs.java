@@ -47,6 +47,15 @@ import java.util.Set;
 public final class ChargedInputs {
     private ChargedInputs() {}
 
+    /**
+     * 0.1.10.38: true for JEI before 19.27, which matched recipe slots with the Ingredient context and needed the charged variant.
+     * JEI 19.27 and later match with the Recipe context, where charge does not count: the extension then stays out of the way,
+     * so a recipe slot shows only the empty stack (mio_icif:electric) and pattern encoders record that, never the charged one.
+     */
+    static final boolean OLD_JEI = net.neoforged.fml.ModList.get().getModContainerById("jei")
+        .map(c -> c.getModInfo().getVersion().compareTo(new org.apache.maven.artifact.versioning.DefaultArtifactVersion("19.27")) < 0)
+        .orElse(false);
+
     /** Subtype of a charged energy item in the Ingredient context. */
     public static final String CHARGED = "charged";
 
@@ -145,7 +154,7 @@ public final class ChargedInputs {
     static final class Extension<R extends CraftingRecipe> implements ICraftingCategoryExtension<R> {
         @Override
         public boolean isHandled(RecipeHolder<R> holder) {
-            if (holder.value().isSpecial()) return false;
+            if (holder.value().isSpecial() || !OLD_JEI) return false;
             for (Ingredient ingredient : holder.value().getIngredients()) {
                 for (ItemStack stack : ingredient.getItems()) if (ITEMS.contains(stack.getItem())) return true;
             }

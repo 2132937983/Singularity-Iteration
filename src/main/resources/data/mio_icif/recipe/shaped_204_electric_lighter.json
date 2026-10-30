@@ -5,11 +5,11 @@
   "key": {
     "N": {"item": "mio_icif:reactor/item_reactor_reflector"},
     "S": {"tag": "c:plates/iron"},
-    "B": {"item": "mio_icif:normal/item_adv_lithium_battery"},
+    "B": {"type": "mio_icif:electric", "item": "mio_icif:normal/item_adv_lithium_battery"},
     "L": {"item": "mio_icif:normal/item_lens"},
     "J": {"tag": "c:dusts/glowstone"},
     "C": {"tag": "c:circuits/advanced"},
-    "D": {"item": "mio_icif:item_tool_power_unit"}
+    "D": {"type": "mio_icif:electric", "item": "mio_icif:item_tool_power_unit"}
   },
   "result": {"id": "mio_icif:item_electric_lighter", "count": 1}
 }

@@ -8,15 +8,18 @@
   ],
   "key": {
     "C": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     },
     "A": {
       "tag": "c:circuits/advanced"
     },
     "E": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:armor/item_armor_energypack"
     },
     "L": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     }
   },

@@ -13,6 +13,7 @@
       "item": "mio_icif:wiring/cable/block_tin_cable_1"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_bat_lev0"
     }
   },

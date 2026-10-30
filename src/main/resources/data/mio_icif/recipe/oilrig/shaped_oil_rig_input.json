@@ -13,9 +13,11 @@
       "tag": "c:circuits/advanced"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_advchargebat_lev0"
     },
     "M": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:oilrig/block_oil_rig_base"
     }
   },

@@ -10,12 +10,14 @@
             "tag": "c:dense_plates/super_iridium"
         },
         "G": {
+            "type": "mio_icif:electric",
             "item": "mio_icif:generator/block_mets_advanced_solar_generator"
         },
         "C": {
             "tag": "c:circuits/elite"
         },
         "B": {
+            "type": "mio_icif:electric",
             "item": "mio_icif:normal/item_super_lapotron_crystal"
         }
     },

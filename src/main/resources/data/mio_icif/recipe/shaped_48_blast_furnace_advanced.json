@@ -8,6 +8,7 @@
   "key": {
     "S": {"tag": "c:casings/titanium"},
     "M": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_blast_furnace"
     },
     "C": {"tag": "c:plates/alloy"}

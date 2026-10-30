@@ -12,6 +12,7 @@
       "item": "minecraft:stone_pressure_plate"
     },
     "M": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/block_lesu"
     },
     "C": {

@@ -8,6 +8,7 @@
   ],
   "key": {
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_advbat_lev0"
     },
     "C": {

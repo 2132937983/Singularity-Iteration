@@ -10,6 +10,7 @@
       "item": "mio_icif:resource/item_iridium"
     },
     "G": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_turbo_kinetic_generator"
     },
     "M": {

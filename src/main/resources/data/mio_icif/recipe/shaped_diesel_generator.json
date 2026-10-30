@@ -11,15 +11,18 @@
       "tag": "c:shafts/titanium"
     },
     "G": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_semifluid_generator"
     },
     "C": {
       "tag": "c:circuits/elite"
     },
     "K": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_kinetic_generator"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_crystal_lev0"
     }
   },

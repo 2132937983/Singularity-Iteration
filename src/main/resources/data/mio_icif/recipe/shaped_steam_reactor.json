@@ -13,9 +13,11 @@
       "tag": "c:circuits/advanced"
     },
     "Y": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:reactor/block_steam_reactor_chamber"
     },
     "C": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_nuclear_reactor_generator"
     }
   },

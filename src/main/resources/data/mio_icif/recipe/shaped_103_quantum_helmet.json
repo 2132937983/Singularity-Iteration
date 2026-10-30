@@ -8,10 +8,12 @@
   ],
   "key": {
     "n": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:armor/item_armor_nano_helmet"
     },
     "I": {"tag": "c:plates/iridium"},
     "L": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     },
     "G": {

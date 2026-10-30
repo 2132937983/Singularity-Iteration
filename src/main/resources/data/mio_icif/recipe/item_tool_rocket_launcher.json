@@ -11,6 +11,7 @@
       "tag": "c:plates/titanium"
     },
     "B": {
+      "type": "mio_icif:electric",
       "tag": "c:crystals/energy"
     },
     "X": {
@@ -26,6 +27,7 @@
       "item": "mio_icif:normal/item_freq"
     },
     "D": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_power_unit"
     }
   },

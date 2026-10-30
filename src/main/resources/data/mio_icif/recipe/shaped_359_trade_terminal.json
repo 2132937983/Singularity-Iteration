@@ -16,6 +16,7 @@
       "item": "minecraft:emerald"
     },
     "E": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_future_elc"
     },
     "H": {

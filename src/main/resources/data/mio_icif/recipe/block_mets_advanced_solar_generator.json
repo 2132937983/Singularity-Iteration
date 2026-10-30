@@ -8,12 +8,14 @@
     "key": {
         "P": {"tag": "c:plates/carbon"},
         "G": {
+            "type": "mio_icif:electric",
             "item": "mio_icif:generator/block_solar_generator"
         },
         "C": {
             "tag": "c:circuits/elite"
         },
         "B": {
+            "type": "mio_icif:electric",
             "item": "mio_icif:normal/item_adv_lithium_battery"
         }
     },

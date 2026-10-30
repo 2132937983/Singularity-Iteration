@@ -14,6 +14,7 @@
       "item": "mio_icif:resource/item_iridium"
     },
     "A": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_advanced_solar_panel"
     },
     "C": {

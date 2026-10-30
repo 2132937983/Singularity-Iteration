@@ -20,6 +20,7 @@
       "tag": "mio_icif:nano_living_metals"
     },
     "E": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_crystal_lev0"
     }
   },

@@ -13,9 +13,11 @@
       "tag": "c:circuits/elite"
     },
     "T": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/transformer_iv_luv"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/block_eesu"
     }
   },

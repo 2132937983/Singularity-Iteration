@@ -13,6 +13,7 @@
       "tag": "mio_icif:nano_living_metals"
     },
     "C": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_tesla"
     }
   },

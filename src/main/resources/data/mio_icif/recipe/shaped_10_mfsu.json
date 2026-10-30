@@ -7,6 +7,7 @@
   ],
   "key": {
     "M": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/block_mfe"
     },
     "A": {
@@ -16,6 +17,7 @@
       "tag": "c:circuits/advanced"
     },
     "L": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_lapotron_crystal_lev0"
     }
   },

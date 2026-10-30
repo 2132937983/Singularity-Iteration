@@ -8,6 +8,7 @@
   ],
   "key": {
     "S": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_ultimate_hybrid_solar_panel"
     },
     "C": {
@@ -20,6 +21,7 @@
       "item": "mio_icif:wiring/cable/block_glass_cable"
     },
     "T": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/transformer_hv_ev"
     }
   },

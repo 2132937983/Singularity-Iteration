@@ -9,9 +9,11 @@
   "key": {
     "S": {"tag": "c:plates/titanium"},
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_crystal_lev0"
     },
     "J": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:armor/item_armor_jetpack_electric"
     },
     "P": {

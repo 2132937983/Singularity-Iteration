@@ -11,9 +11,11 @@
       "tag": "c:circuits/advanced"
     },
     "S": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_quantum_solar_panel"
     },
     "M": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_matter_elc"
     }
   },

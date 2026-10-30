@@ -8,18 +8,21 @@
   ],
   "key": {
     "L": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_advanced_electric_rifle"
     },
     "C": {
       "tag": "c:circuits/elite"
     },
     "T": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_laser_defense_tower"
     },
     "I": {
       "tag": "c:plates/iridium"
     },
     "B": {
+      "type": "mio_icif:electric",
       "tag": "c:crystals/energy"
     }
   },

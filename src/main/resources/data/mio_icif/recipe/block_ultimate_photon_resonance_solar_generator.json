@@ -10,9 +10,11 @@
             "tag": "c:dense_plates/super_iridium"
         },
         "G": {
+            "type": "mio_icif:electric",
             "item": "mio_icif:generator/block_photon_resonance_solar_generator"
         },
         "B": {
+            "type": "mio_icif:electric",
             "item": "mio_icif:normal/item_charging_super_lapotron_crystal"
         }
     },

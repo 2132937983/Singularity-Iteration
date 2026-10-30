@@ -12,6 +12,7 @@
       "tag": "c:circuits/advanced"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/block_bat_box"
     },
     "G": {

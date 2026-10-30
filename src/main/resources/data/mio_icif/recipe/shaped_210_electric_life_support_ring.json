@@ -11,18 +11,22 @@
       "tag": "c:dense_plates/super_iridium"
     },
     "A": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_electric_force_field_generator"
     },
     "L": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_electric_first_aid_life_support"
     },
     "S": {
       "item": "mio_icif:item_trinket_lapotron_crystal_belt"
     },
     "N": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_electric_nutrition_supply"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_super_lapotron_crystal"
     }
   },

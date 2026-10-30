@@ -13,6 +13,7 @@
       "tag": "c:plates/iron"
     },
     "F": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:producer/block_furnace_elc"
     }
   },

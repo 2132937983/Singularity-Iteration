@@ -11,6 +11,7 @@
       "tag": "c:circuits/advanced"
     },
     "C": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:item_tool_ov_scanner"
     },
     "G": {
@@ -23,6 +24,7 @@
       "tag": "c:plates/carbon"
     },
     "E": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:normal/item_crystal_lev0"
     }
   },

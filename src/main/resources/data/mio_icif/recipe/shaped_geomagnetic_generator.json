@@ -13,9 +13,11 @@
       "tag": "c:circuits/ultimate"
     },
     "G": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:generator/block_kinetic_generator"
     },
     "B": {
+      "type": "mio_icif:electric",
       "item": "mio_icif:wiring/block_eesu"
     },
     "C": {

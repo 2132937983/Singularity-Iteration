@@ -5,6 +5,7 @@ import com.miophas.singularity_iteration.core.api.crop.IPlanter;
 import com.miophas.singularity_iteration.core.api.crop.PlantType;
 import com.miophas.singularity_iteration.core.api.item.ICropSeedItem;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
+import com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath;
 import com.miophas.singularity_iteration.core.runtime.crop.PlantHybridization;
 import com.miophas.singularity_iteration.core.runtime.processing.CropSeedData;
 import net.minecraft.core.BlockPos;
@@ -163,15 +164,26 @@ public final class CropAlignmentGameTests {
 
     @GameTest(template="reactor_loop", batch="agriculture", timeoutTicks=100)
     public static void poorEnvironmentKillsAndResistanceCanPreventDeath(GameTestHelper h) {
-        IPlanter crop = crop(h, new BlockPos(3, 2, 3), "diareed", 1);
-        crop.setGrowthSpeed(31); crop.setYield(31); crop.setResilience(0);
-        h.getLevel().random.setSeed(1234);
-        for (int i = 0; i < 20 && crop.getPlant() != null; i++) cycle(crop);
-        h.assertTrue(crop.getPlant() == null, "High-tier unsupported crop never died");
-        crop.setPlant(plant("diareed")); crop.setGrowthStage(1);
-        crop.setGrowthSpeed(31); crop.setYield(31); crop.setResilience(31);
-        for (int i = 0; i < 20; i++) cycle(crop);
-        h.assertTrue(crop.getPlant() != null && crop.getProgress() == 0, "Resistance 31 must survive but cannot grow in insufficient conditions");
+        // 0.1.10.38: these are the IC2 rules (server option Crops.strictIc2Rules); the SI rules let the resistant crop grow
+        boolean strict = CropGrowthMath.strictIc2Rules();
+        CropGrowthMath.setStrictIc2Rules(true);
+        try {
+            IPlanter crop = crop(h, new BlockPos(3, 2, 3), "diareed", 1);
+            crop.setGrowthSpeed(31); crop.setYield(31); crop.setResilience(0);
+            h.getLevel().random.setSeed(1234);
+            for (int i = 0; i < 20 && crop.getPlant() != null; i++) cycle(crop);
+            h.assertTrue(crop.getPlant() == null, "High-tier unsupported crop never died");
+            crop.setPlant(plant("diareed")); crop.setGrowthStage(1);
+            crop.setGrowthSpeed(31); crop.setYield(31); crop.setResilience(31);
+            for (int i = 0; i < 20; i++) cycle(crop);
+            h.assertTrue(crop.getPlant() != null && crop.getProgress() == 0, "Resistance 31 must survive but cannot grow in insufficient conditions");
+            CropGrowthMath.setStrictIc2Rules(false);
+            for (int i = 0; i < 5; i++) cycle(crop);
+            h.assertTrue(crop.getPlant() != null && (crop.getProgress() > 0 || crop.getGrowthStage() > 1),
+                "Under SI rules Resistance 31 lowers the requirement and the crop grows slowly");
+        } finally {
+            CropGrowthMath.setStrictIc2Rules(strict);
+        }
         h.succeed();
     }
 

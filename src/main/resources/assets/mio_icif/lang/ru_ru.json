@@ -2342,7 +2342,7 @@
   "subtitles.mio_icif.fcs.lock": "Баллистический захват",
   "subtitles.mio_icif.fcs.blast_beep": "Писк оповещения о взрыве",
   "enchantment.mio_icif.energy_saving": "Энергосбережение",
-  "enchantment.mio_icif.energy_saving.desc": "Каждый уровень снижает расход энергии электрических инструментов, оружия и брони на 5%.",
+  "enchantment.mio_icif.energy_saving.desc": "Каждый уровень снижает расход энергии электрических инструментов, оружия и брони на 5%%. Выше уровня V каждый уровень снижает оставшийся расход ещё на 5%%.",
   "message.mio_icif.bat.auto_on": "§aАвтозарядка рюкзака: вкл§r (%s / %s EU)",
   "message.mio_icif.bat.auto_off": "§7Автозарядка рюкзака: выкл§r (%s / %s EU)",
   "tooltip.mio_icif.bat.auto_on": "Автозарядка включена: питает электрические предметы в рюкзаке",

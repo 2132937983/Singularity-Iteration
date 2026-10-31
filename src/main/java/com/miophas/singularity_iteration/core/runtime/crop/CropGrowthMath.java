@@ -20,6 +20,18 @@ package com.miophas.singularity_iteration.core.runtime.crop;
  * <p><b>ZH:</b> 每 256 tick 运行一个周期。顺序：刷新环境、植物 tick、生长点、进阶、资源衰减（水与营养各 -1）、杂草扩散。
  * <p><b>JA:</b> 256 tick ごとに 1 サイクルを実行する。順序：環境更新、植物 tick、成長ポイント、段階進行、
  * 資源減少（水と栄養を各 -1）、雑草拡散。
+ *
+ * <h2>Rules / 规则 / ルール (0.1.10.38)</h2>
+ * <p><b>EN:</b> SI rules by default: Resistance lowers the requirement, each missing quality point costs 2.5 % of the growth
+ * points (compounding), and Growth 24+ gives a gradual weed chance that Resistance reduces. With the server option
+ * {@code Crops.strictIc2Rules} the formulas are IC2 Experimental's exactly. The overloads with a {@code strict} argument take the
+ * rule set explicitly (a client shows the server's numbers with them); the others use the server setting.
+ * <p><b>ZH:</b> 默认采用 SI 规则：抗性降低需求，每缺 1 点品质使生长点减少 2.5%（复合计算），生长 24 以上按渐进概率扩散杂草，抗性可降低该概率。
+ * 开启服务器选项 {@code Crops.strictIc2Rules} 后公式与 IC2 Experimental 完全一致。带 {@code strict} 参数的重载显式指定规则（客户端用它显示服务器的数值），
+ * 其余方法使用服务器设置。
+ * <p><b>JA:</b> 既定は SI ルール：耐性は要求値を下げ、品質の不足 1 点ごとに成長ポイントが 2.5 % 減り（複利）、成長 24 以上は耐性で下がる
+ * 段階的な確率で雑草を広げる。サーバー設定 {@code Crops.strictIc2Rules} を有効にすると IC2 Experimental と同じ式になる。{@code strict}
+ * 引数付きのオーバーロードはルールを明示する（クライアントはこれでサーバーの数値を表示する）。それ以外はサーバー設定を使う。
  */
 public final class CropGrowthMath {
     /** EN: Ticks between two crop cycles. ZH: 两个作物周期之间的 tick 数。JA: 作物サイクル間の tick 数。 */
@@ -31,13 +43,42 @@ public final class CropGrowthMath {
 
     private CropGrowthMath() {}
 
+    private static volatile boolean strictIc2;
+
+    /** EN: 0.1.10.38: sets the rule set (server option Crops.strictIc2Rules). ZH: 0.1.10.38：设置规则（服务器选项 Crops.strictIc2Rules）。JA: 0.1.10.38：ルールを設定する（サーバー設定 Crops.strictIc2Rules）。 */
+    public static void setStrictIc2Rules(boolean strict) {
+        strictIc2 = strict;
+    }
+
+    /** EN: True when the strict IC2 Experimental rules apply. ZH: 采用严格 IC2 Experimental 规则时为真。JA: 厳密な IC2 Experimental ルールのとき真。 */
+    public static boolean strictIc2Rules() {
+        return strictIc2;
+    }
+
+    /** EN: Penalty for each missing quality point (SI / IC2). ZH: 每缺 1 点品质的惩罚（SI / IC2）。JA: 品質不足 1 点あたりのペナルティ（SI / IC2）。 */
+    public static final int PENALTY_PER_POINT = 2, IC2_PENALTY_PER_POINT = 4;
+    /** EN: Growth factor for each missing quality point under SI rules (-2.5 %, compounding). ZH: SI 规则下每缺 1 点品质的生长系数（-2.5%，复合）。JA: SI ルールで品質不足 1 点ごとの成長係数（-2.5 %、複利）。 */
+    public static final double GROWTH_PER_MISSING_POINT = 0.975;
+
     /**
-     * <p><b>EN:</b> Minimum environment quality that the plant needs for full growth.
-     * <p><b>ZH:</b> 植物完全生长所需的最低环境品质。
-     * <p><b>JA:</b> 植物が通常どおり成長するために必要な最低環境品質。
+     * <p><b>EN:</b> Minimum environment quality that the plant needs for full growth, with the server's rules.
+     * <p><b>ZH:</b> 植物完全生长所需的最低环境品质（服务器规则）。
+     * <p><b>JA:</b> 植物が通常どおり成長するために必要な最低環境品質（サーバーのルール）。
      */
     public static int requiredQuality(int tier, int growth, int gain, int resistance) {
-        return Math.max(0, (tier - 1) * 4 + growth + gain + resistance);
+        return requiredQuality(tier, growth, gain, resistance, strictIc2);
+    }
+
+    /**
+     * <p><b>EN:</b> Requirement: (tier - 1) x 4 + growth + gain, minus the resistance (SI) or plus it (IC2). Under SI rules a
+     * maxed 31/31/31 seed needs 62 less quality than in IC2, so it can be planted in an ordinary field.
+     * <p><b>ZH:</b> 需求：（等级 - 1）× 4 ＋ 生长 ＋ 产量，减去抗性（SI）或加上抗性（IC2）。SI 规则下满属性 31/31/31 的种子比 IC2 少需 62 点品质，
+     * 普通田地即可种植。
+     * <p><b>JA:</b> 要求値：（ティア - 1）× 4 ＋ 成長 ＋ 収量 から耐性を引く（SI）か足す（IC2）。SI ルールでは 31/31/31 の種は IC2 より
+     * 品質 62 点少なくて済み、普通の畑に植えられる。
+     */
+    public static int requiredQuality(int tier, int growth, int gain, int resistance, boolean strict) {
+        return Math.max(0, (tier - 1) * 4 + growth + gain + (strict ? resistance : -resistance));
     }
 
     /** EN: Quality margin above the requirement that a Cropmatron guarantees. ZH: 作物监护机保证的、高于需求的品质余量。JA: 作物管理機が保証する、要求を上回る品質の余裕。 */
@@ -62,13 +103,17 @@ public final class CropGrowthMath {
     }
 
     /**
-     * <p><b>EN:</b> Penalty when the quality is too low: four points for each missing quality
-     * point. The result is 0 when the quality is sufficient.
-     * <p><b>ZH:</b> 品质不足时的惩罚：每缺少 1 点品质记 4 点。品质足够时结果为 0。
-     * <p><b>JA:</b> 品質不足時のペナルティ：不足 1 点につき 4 点。品質が十分なら 0。
+     * <p><b>EN:</b> Penalty when the quality is too low: two points (SI) or four points (IC2) for each missing quality
+     * point. The result is 0 when the quality is sufficient. Above {@link #LETHAL_PENALTY} the crop can die.
+     * <p><b>ZH:</b> 品质不足时的惩罚：每缺少 1 点品质记 2 点（SI）或 4 点（IC2）。品质足够时结果为 0。超过 {@link #LETHAL_PENALTY} 时作物可能死亡。
+     * <p><b>JA:</b> 品質不足時のペナルティ：不足 1 点につき 2 点（SI）または 4 点（IC2）。品質が十分なら 0。{@link #LETHAL_PENALTY} を超えると枯れることがある。
      */
     public static int penalty(int required, int quality) {
-        return quality >= required ? 0 : (required - quality) * 4;
+        return penalty(required, quality, strictIc2);
+    }
+
+    public static int penalty(int required, int quality, boolean strict) {
+        return quality >= required ? 0 : (required - quality) * (strict ? IC2_PENALTY_PER_POINT : PENALTY_PER_POINT);
     }
 
     /**
@@ -91,8 +136,43 @@ public final class CropGrowthMath {
      * 1% 増える。品質が不足するとペナルティ（%）だけ減る。結果は負にならない。
      */
     public static int growthPoints(int base, int required, int quality) {
+        return growthPoints(base, required, quality, strictIc2);
+    }
+
+    /**
+     * <p><b>EN:</b> 0.1.10.38: below the requirement, SI rules multiply the points by 0.975 for each missing point (IC2: minus the
+     * penalty in percent, 0 at 25 missing points). Gain raises the drops by 3 % per point and the requirement by 1, Growth raises
+     * the base by more than 2.5 %, so neither lowers the expected yield per hour any more.
+     * <p><b>ZH:</b> 0.1.10.38：低于需求时，SI 规则每缺 1 点将生长点乘以 0.975（IC2：减去惩罚百分比，缺 25 点时为 0）。产量每点使掉落 +3%、需求 +1，
+     * 生长使基础值增加超过 2.5%，因此两者都不会再降低每小时期望产量。
+     * <p><b>JA:</b> 0.1.10.38：要求値を下回ると、SI ルールでは不足 1 点ごとにポイントを 0.975 倍する（IC2：ペナルティの % を引き、不足 25 点で 0）。
+     * 収量は 1 点ごとにドロップ +3 %・要求値 +1、成長は基礎値を 2.5 % 以上増やすので、どちらも 1 時間あたりの期待収穫を下げなくなった。
+     */
+    public static int growthPoints(int base, int required, int quality, boolean strict) {
         if (quality >= required) return base * (100 + quality - required) / 100;
-        return Math.max(0, base * (100 - penalty(required, quality)) / 100);
+        if (strict) return Math.max(0, base * (100 - penalty(required, quality, true)) / 100);
+        return (int) (base * Math.pow(GROWTH_PER_MISSING_POINT, required - quality));
+    }
+
+    /** EN: Growth from which a crop can spread weeds (SI) or is a weed source (IC2). ZH: 作物可能扩散杂草（SI）或成为杂草源（IC2）的生长值。JA: 作物が雑草を広げうる（SI）か雑草源になる（IC2）成長値。 */
+    public static final int WEED_GROWTH = 24;
+
+    /**
+     * <p><b>EN:</b> 0.1.10.38: chance in percent per cycle that a crop of stage 2 or more spreads weeds: 4 for each growth point
+     * from 24 (4 % at 24, 32 % at 31), minus the resistance. Under IC2 rules it is 0: such a crop is a weed source instead
+     * ({@code Ic2PlantType.isWeed}), cannot be harvested and spreads every cycle with a high chance.
+     * <p><b>ZH:</b> 0.1.10.38：阶段 2 及以上的作物每周期扩散杂草的概率（百分比）：生长自 24 起每点 4（24 时 4%，31 时 32%），减去抗性。
+     * IC2 规则下为 0：此类作物直接成为杂草源（{@code Ic2PlantType.isWeed}），无法收获，且每周期高概率扩散。
+     * <p><b>JA:</b> 0.1.10.38：段階 2 以上の作物が 1 サイクルに雑草を広げる確率（%）：成長 24 から 1 点ごとに 4（24 で 4 %、31 で 32 %）、
+     * そこから耐性を引く。IC2 ルールでは 0：その作物は雑草源になり（{@code Ic2PlantType.isWeed}）、収穫できず、毎サイクル高い確率で広がる。
+     */
+    public static int weedChance(int growth, int resistance) {
+        return weedChance(growth, resistance, strictIc2);
+    }
+
+    public static int weedChance(int growth, int resistance, boolean strict) {
+        if (strict || growth < WEED_GROWTH) return 0;
+        return Math.max(0, (growth - WEED_GROWTH + 1) * 4 - resistance);
     }
 
     /**

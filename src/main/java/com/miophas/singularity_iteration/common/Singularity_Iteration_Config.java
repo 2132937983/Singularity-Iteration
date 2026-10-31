@@ -513,6 +513,23 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder PERFORMANCE_POP = BUILDER.pop();
 
+    // ==================== 0.1.10.38: crops ====================
+    private static final ModConfigSpec.Builder CROPS_BUILDER = BUILDER
+        .comment("Crops (0.1.10.38).")
+        .push("Crops");
+    public static final ModConfigSpec.BooleanValue CROPS_STRICT_IC2 = CROPS_BUILDER
+        .comment("false = SI rules: Resistance lowers the environment requirement (1 per point), each missing quality point costs 2.5 % of the",
+                 "growth points (compounding; the crop can die below 50 missing points), Growth 24+ spreads weeds by a chance that Resistance",
+                 "lowers, and Weed-EX also protects empty crop sticks.",
+                 "true = IC2 Experimental exactly: Resistance raises the requirement, each missing point costs 4 % (lethal below 25), Growth 24+",
+                 "makes the crop a weed source from stage 2 (not harvestable), and an empty crop stick is always taken by weeds.",
+                 "false = SI 规则：抗性降低环境需求（每点 1），每缺 1 点品质使生长点减少 2.5%（复合；缺 50 点以上可能死亡），生长 24 以上按概率扩散杂草（抗性降低该概率），",
+                 "除草剂也保护空作物架。true = 与 IC2 Experimental 完全一致：抗性提高需求，每缺 1 点减少 4%（缺 25 点以上致命），生长 24 以上的作物自阶段 2 起成为杂草源（无法收获），",
+                 "空作物架总会被杂草占据。")
+        .define("strictIc2Rules", false);
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder CROPS_POP = BUILDER.pop();
+
     // ==================== 0.1.10.11: chunk loaders ====================
     private static final ModConfigSpec.Builder CHUNK_LOADER_BUILDER = BUILDER
         .comment("Chunk loaders (0.1.10.11): server rules. A loader that stops for one of these rules also lets its own chunk unload;",

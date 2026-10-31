@@ -153,7 +153,13 @@ public class mio_icif_crop_entity extends BlockEntity implements IPlanter {
         if (nutrients > 0) nutrients--;
         if (water > 0) water--;
         markChunkUnsaved();
-        if (plant.isWeed(this) && level.random.nextInt(50) - growthSpeed <= 2) spreadWeed();
+        if (plant.isWeed(this)) {
+            if (level.random.nextInt(50) - growthSpeed <= 2) spreadWeed();
+        } else if (growthStage >= 2) {
+            // 0.1.10.38: Growth 24+ spreads weeds by a chance that Resistance lowers (IC2 rules: the crop is a weed source)
+            int chance = CropGrowthMath.weedChance(growthSpeed, resilience);
+            if (chance > 0 && level.random.nextInt(100) < chance) spreadWeed();
+        }
     }
 
     /** EN: Signature of the client-visible state last sent. ZH: 上次发送的客户端可见状态签名。JA: 最後に送ったクライアント可視状態の署名。 */
@@ -200,8 +206,12 @@ public class mio_icif_crop_entity extends BlockEntity implements IPlanter {
         BlockPos pos = worldPosition.relative(directions[level.random.nextInt(4)]);
         if (!level.isLoaded(pos)) return;
         if (level.getBlockEntity(pos) instanceof IPlanter other) {
-            boolean invade = other.getPlant() == null;
-            if (!invade && !other.getPlant().isWeed(other) && level.random.nextInt(32) >= other.getResilience()) {
+            boolean empty = other.getPlant() == null, invade = empty;
+            if (empty && other.getWeedControl() > 0 && !CropGrowthMath.strictIc2Rules()) {
+                // 0.1.10.38: Weed-EX also protects an empty crop stick (IC2 rules: an empty stick is always taken)
+                other.setWeedControl(other.getWeedControl() - 5);
+                invade = false;
+            } else if (!empty && !other.getPlant().isWeed(other) && level.random.nextInt(32) >= other.getResilience()) {
                 if (other.getWeedControl() > 0) other.setWeedControl(other.getWeedControl() - 5);
                 else invade = true;
             }

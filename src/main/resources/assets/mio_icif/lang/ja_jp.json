@@ -404,7 +404,7 @@
   "subtitles.mio_icif.fcs.lock": "弾道ロック",
   "subtitles.mio_icif.fcs.blast_beep": "爆発警告ビープ",
   "enchantment.mio_icif.energy_saving": "省電力",
-  "enchantment.mio_icif.energy_saving.desc": "レベルごとに電気ツール・電気武器・電力防具の消費電力を 5 % 減らす。",
+  "enchantment.mio_icif.energy_saving.desc": "レベルごとに電気ツール・電気武器・電力防具の消費電力を 5 %% 減らす。V を超えると、レベルごとに残りの消費電力をさらに 5 %% 減らす。",
   "message.mio_icif.bat.auto_on": "§aインベントリ自動充電：ON§r（%s / %s EU）",
   "message.mio_icif.bat.auto_off": "§7インベントリ自動充電：OFF§r（%s / %s EU）",
   "tooltip.mio_icif.bat.auto_on": "自動充電ON：インベントリ内の電気アイテムに給電する",

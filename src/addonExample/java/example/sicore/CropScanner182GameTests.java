@@ -231,7 +231,7 @@ public final class CropScanner182GameTests {
     /** EN: The Cropmatron tending bonus removes the penalty of a 10/10/10 tier-1 crop in a poor spot. ZH: 作物监护机的照料加成消除了贫瘠环境中 10/10/10 一级作物的惩罚。JA: 作物管理機の管理ボーナスは、悪い場所の 10/10/10 ティア 1 作物のペナルティを消す。 */
     @GameTest(template = "reactor_loop", batch = "agriculture182", timeoutTicks = 100)
     public static void tendedHighTraitCropHasNoPenalty(GameTestHelper h) {
-        int required = CropGrowthMath.requiredQuality(1, 10, 10, 10);
+        int required = CropGrowthMath.requiredQuality(1, 20, 20, 0);   // 0.1.10.38: resistance lowers the requirement (SI rules)
         int poor = 10;
         h.assertTrue(CropGrowthMath.penalty(required, poor) > 0, "Test environment must be poor");
         int tended = CropGrowthMath.tendedQuality(poor, required);

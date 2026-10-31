@@ -161,7 +161,7 @@ public class mio_icif_reactors {
         () -> new mio_icif_steam_vent(new Item.Properties().component(mio_icif_data_components.REACTOR_COMPONENT_DATA.get(),
             ReactorComponentData.full(ReactorInventory.STEAM_VENT_HEAT)), ReactorInventory.STEAM_VENT_HEAT, 24, 0));
 
-    // 0.1.10.36: proton fuel rods (Industrial Upgrade style): 3x the EU and 1.5x the heat of uranium, 40000 cycles.
+    // 0.1.10.36: proton fuel rods (Industrial Upgrade style): 1.5x the heat of uranium, 40000 cycles; 0.1.10.38: EU like MOX (1x-5x).
     // The energy / heat arguments (15 / 6) are legacy-API values only; ReactorCycle uses the profile of ReactorInventory.
     public static final DeferredItem<Item> PROTON_SIMPLE_DEPLETED = ITEMS.register("reactor/item_reactor_proton_simple_depleted", () -> new Item(new Item.Properties().stacksTo(64)));
     public static final DeferredItem<Item> PROTON_DUAL_DEPLETED = ITEMS.register("reactor/item_reactor_proton_dual_depleted", () -> new Item(new Item.Properties().stacksTo(64)));

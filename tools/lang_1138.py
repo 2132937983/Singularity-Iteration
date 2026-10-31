@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""0.1.10.38 language values (en_us / zh_cn / ja_jp / ru_ru): the processing machine line of /mio_icif perf (PerfCommand).
+"""0.1.10.38 language values (en_us / zh_cn / ja_jp / ru_ru): the processing machine line of /mio_icif perf (PerfCommand);
+the Energy Saving description (levels above V).
 A value per language; a language left out keeps its current value. Idempotent; keeps the line endings of each file. With
 --check it only reports missing or different keys.
 Usage: lang_1138.py <repo root> [--check]
@@ -26,6 +27,14 @@ KEYS = {
         '加工机器每 tick：完整 tick %1$s，休眠 %2$s，状态灯切换 %3$s，红石读取 %4$s',
         '加工機械 1 tick あたり：通常 tick %1$s、休眠 %2$s、ランプ切替 %3$s、レッドストーン読み取り %4$s',
         'Машины обработки за тик: полных тиков %1$s, в ожидании %2$s, переключений ламп %3$s, чтений редстоуна %4$s'),
+    # D5: levels above V (commands, other mods) take another 5 % off the remaining cost
+    'enchantment.mio_icif.energy_saving.desc': v(
+        'Each level decreases the energy use of electric tools, weapons and armor by 5 %%. Above level V, each level takes '
+        'another 5 %% off the remaining use.',
+        '每级使电动工具、电动武器与电力护甲的耗电减少 5%%。V 级以上每级再减少剩余耗电的 5%%。',
+        'レベルごとに電気ツール・電気武器・電力防具の消費電力を 5 %% 減らす。V を超えると、レベルごとに残りの消費電力をさらに 5 %% 減らす。',
+        'Каждый уровень снижает расход энергии электрических инструментов, оружия и брони на 5%%. Выше уровня V каждый '
+        'уровень снижает оставшийся расход ещё на 5%%.'),
 }
 
 

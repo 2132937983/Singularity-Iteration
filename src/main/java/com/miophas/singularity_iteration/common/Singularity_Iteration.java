@@ -228,6 +228,8 @@ public class Singularity_Iteration {
             .setEnabled(Singularity_Iteration_Config.AUTOMATION_PACING.get());   // 0.1.10.7
         com.miophas.singularity_iteration.core.runtime.processing.MachineSleep
             .setEnabled(Singularity_Iteration_Config.MACHINE_SLEEP.get());       // 0.1.10.8
+        com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath
+            .setStrictIc2Rules(Singularity_Iteration_Config.CROPS_STRICT_IC2.get());   // 0.1.10.38
         com.miophas.singularity_iteration.common.energy.ChunkLoaderPolicy.configure(   // 0.1.10.11
             Singularity_Iteration_Config.CHUNK_LOADERS_ENABLED.get(),
             Singularity_Iteration_Config.CHUNK_LOADERS_MAX_PER_LOADER.get(),

@@ -3,6 +3,7 @@ package com.miophas.singularity_iteration.core.prefab.crop;
 
 import com.miophas.singularity_iteration.core.api.crop.IPlanter;
 import com.miophas.singularity_iteration.core.api.crop.PlantType;
+import com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -13,8 +14,10 @@ public abstract class Ic2PlantType extends PlantType {
     @Override public int getGrowthTime(IPlanter planter) { return getStats().getLevel() * 200; }
     @Override public boolean canGrow(IPlanter planter) { return planter.getGrowthStage() < getMaxGrowthStage(); }
     @Override public boolean canHybridize(IPlanter planter) { return planter.getGrowthStage() >= 3; }
+    /** 0.1.10.38: Growth 24+ makes a crop a weed source only under the strict IC2 rules (else: CropGrowthMath.weedChance). */
     @Override public boolean isWeed(IPlanter planter) {
-        return planter.getGrowthStage() >= 2 && (getTypeId().equals("weed") || planter.getGrowthSpeed() >= 24);
+        return planter.getGrowthStage() >= 2 && (getTypeId().equals("weed")
+            || CropGrowthMath.strictIc2Rules() && planter.getGrowthSpeed() >= CropGrowthMath.WEED_GROWTH);
     }
     @Override public boolean canBeHarvested(IPlanter planter) { return planter.getGrowthStage() == getMaxGrowthStage(); }
     @Override public boolean isHarvestable(IPlanter planter) { return canBeHarvested(planter); }

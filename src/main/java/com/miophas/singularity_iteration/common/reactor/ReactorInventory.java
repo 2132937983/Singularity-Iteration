@@ -38,8 +38,12 @@ public final class ReactorInventory {
     public static final int TRITIUM_LIFE=10000,TRITIUM_HEAT_PER_CYCLE=1;
     /** 0.1.10.36: a decayed tritium rod leaves the empty fuel rod it was canned in (the helium-3 escapes). */
     public static final ResourceLocation TRITIUM_PRODUCT=ResourceLocation.parse("mio_icif:normal/item_fuel_rod");
-    /** 0.1.10.36: the proton rod (Industrial Upgrade style): 3x the EU and 1.5x the heat of uranium, 40000 cycles. */
-    public static final float PROTON_EU=3.0f,PROTON_HEAT=1.5f;
+    /**
+     * 0.1.10.36: the proton rod (Industrial Upgrade style): 1.5x the heat of uranium, 40000 cycles. 0.1.10.38: like MOX, its EU
+     * rises with the hull heat, from 1x uranium cold to 5x at full heat (it was a flat 3x, which the MOX rule would have taken to
+     * 15x), and in a steam reactor above half heat its heat doubles.
+     */
+    public static final float PROTON_EU=1.0f,PROTON_HEAT=1.5f;
     public static final int PROTON_LIFE=40000;
     /** 0.1.10.36: heat capacity of the IC2C steam vents. */
     public static final int STEAM_VENT_HEAT=1100;
@@ -78,8 +82,8 @@ public final class ReactorInventory {
         Map.entry("lithium_cell",Profile.lithium(LITHIUM_THRESHOLD,LITHIUM_PULSE_BONUS,LITHIUM_HEAT_PER_PULSE)),
         Map.entry("isotope_rod",Profile.isotope(ISOTOPE_THRESHOLD,ISOTOPE_PULSE_BONUS)),
         Map.entry(TRITIUM_KEY,Profile.neutronSource(TRITIUM_LIFE,TRITIUM_HEAT_PER_CYCLE)),
-        Map.entry("proton_simple",Profile.fuel(1,false,PROTON_EU,PROTON_HEAT)),Map.entry("proton_dual",Profile.fuel(2,false,PROTON_EU,PROTON_HEAT)),
-        Map.entry("proton_quad",Profile.fuel(4,false,PROTON_EU,PROTON_HEAT)),
+        Map.entry("proton_simple",Profile.fuel(1,true,PROTON_EU,PROTON_HEAT)),Map.entry("proton_dual",Profile.fuel(2,true,PROTON_EU,PROTON_HEAT)),
+        Map.entry("proton_quad",Profile.fuel(4,true,PROTON_EU,PROTON_HEAT)),
         Map.entry("steam_vent",Profile.steamVent(STEAM_VENT_HEAT,12,0)),Map.entry("steam_vent_core",Profile.steamVent(STEAM_VENT_HEAT,10,10)),
         Map.entry("steam_vent_overclocked",Profile.steamVent(STEAM_VENT_HEAT,40,72)),Map.entry("steam_vent_advanced",Profile.steamVent(STEAM_VENT_HEAT,24,0)),
         Map.entry("uranium_simple_depleted",INERT),Map.entry("uranium_dual_depleted",INERT),Map.entry("uranium_quad_deplete",INERT),

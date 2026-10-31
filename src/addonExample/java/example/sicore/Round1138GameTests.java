@@ -1,13 +1,21 @@
 package example.sicore;
 
+import com.miophas.singularity_iteration.core.api.MioIcifAPI;
+import com.miophas.singularity_iteration.core.api.crop.IPlanter;
+import com.miophas.singularity_iteration.core.api.item.BatteryTransfer;
+import com.miophas.singularity_iteration.core.api.item.EnergySaving;
+import com.miophas.singularity_iteration.core.api.item.IBatteryItem;
 import com.miophas.singularity_iteration.core.api.reactor.IReactorController;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
+import com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath;
 import com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots;
+import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -17,6 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -521,6 +530,191 @@ public final class Round1138GameTests {
             if (fits) fit++;
         }
         h.assertTrue(fit > 40, "too few cases fit: " + fit);   // 71 of the 4000 with this seed
+        h.succeed();
+    }
+
+    // ------------------------------------------------------------------ D5: Energy Saving above V, D6: MOX-like proton rods
+
+    /**
+     * Levels above V keep saving: factor 0.75 x 0.95^(level - 5), exact on whole amounts, never zero; I-V are unchanged, and a
+     * sword enchanted at X pays that factor.
+     */
+    @GameTest(batch = "round1138_balance", template = "empty", timeoutTicks = 20)
+    public static void energySavingKeepsSavingAboveLevelFive(GameTestHelper h) {
+        for (int level = 0; level <= 5; level++)
+            h.assertTrue(EnergySaving.apply(level, 100) == 100 - 5L * level, "level " + level + " changed: " + EnergySaving.apply(level, 100));
+        h.assertTrue(Math.abs(EnergySaving.factor(6) - 0.7125) < 1e-9, "factor VI " + EnergySaving.factor(6));
+        h.assertTrue(Math.abs(EnergySaving.factor(10) - 0.75 * Math.pow(0.95, 5)) < 1e-9, "factor X " + EnergySaving.factor(10));
+        h.assertTrue(EnergySaving.apply(6, 10_000) == 7_125 && EnergySaving.maxCost(6, 10_000) == 7_125,
+            "level VI: 10000 EU -> " + EnergySaving.apply(6, 10_000));
+        long seven = EnergySaving.apply(7, 10_000);
+        h.assertTrue((seven == 6_768 || seven == 6_769) && EnergySaving.maxCost(7, 10_000) == 6_769, "level VII: 10000 EU -> " + seven);
+        double previous = 1;
+        for (int level = 1; level <= 300; level++) {
+            double factor = EnergySaving.factor(level);
+            h.assertTrue(factor > 0 && (factor < previous || level > EnergySaving.MAX_EFFECTIVE_LEVEL), "factor " + level + " = " + factor);
+            previous = factor;
+        }
+        h.assertTrue(EnergySaving.apply(255, 1_000_000) > 0, "level 255 costs nothing");
+        var holder = h.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(EnergySaving.KEY);
+        ItemStack sword = item("item_tool_quantum_sword");
+        sword.enchant(holder, 10);
+        h.assertTrue(EnergySaving.level(sword) == 10, "level X read as " + EnergySaving.level(sword));
+        IBatteryItem battery = (IBatteryItem) sword.getItem();
+        battery.setEnergy(sword, battery.getMaxEnergy(sword));
+        long before = battery.getEnergy(sword);
+        h.assertTrue(BatteryTransfer.consume(sword, battery, 100_000), "debit refused");
+        long paid = before - battery.getEnergy(sword);
+        h.assertTrue(Math.abs(paid - 100_000 * 0.75 * Math.pow(0.95, 5)) <= 1, "level X paid " + paid + " EU of 100000");
+        h.succeed();
+    }
+
+    private static Object staticField(Class<?> owner, String name) {
+        try { var f = owner.getDeclaredField(name); f.setAccessible(true); return f.get(null); }
+        catch (ReflectiveOperationException e) { throw new AssertionError(name, e); }
+    }
+
+    /** The proton rods are MOX-like: their EU rises with the hull heat, from 1x uranium cold to x3 at half heat. */
+    @GameTest(batch = "round1138_balance", template = "empty", timeoutTicks = 20)
+    public static void protonRodEuRisesWithHullHeatLikeMox(GameTestHelper h) {
+        @SuppressWarnings("unchecked")
+        var profiles = (java.util.Map<String, ReactorCycle.Profile>) staticField(Round33GameTests.common("reactor.ReactorInventory"), "PROFILES");
+        for (String size : new String[]{"simple", "dual", "quad"})
+            h.assertTrue(profiles.get("proton_" + size).mox(), "the " + size + " proton rod is not MOX-like");
+        var parts = new ReactorCycle.Part[54];
+        parts[10] = new ReactorCycle.Part(profiles.get("proton_simple"), 0, 100);
+        double cold = ReactorCycle.step(parts.clone(), 3, 0, true).euPerTick();
+        double hot = ReactorCycle.step(parts.clone(), 3, 5000, true).euPerTick();
+        double expected = 5 * profiles.get("proton_simple").euFactor();   // uranium gives 5 EU/t; the hull warms a little within the cycle
+        h.assertTrue(cold >= expected && cold <= expected * 1.02, "a cold proton rod gives " + cold + " EU/t, not " + expected);
+        h.assertTrue(hot >= cold * 2.8 && hot <= cold * 3.2, "a proton rod at half heat gives " + hot + " EU/t, not about 3x " + cold);
+        h.succeed();
+    }
+
+    // ------------------------------------------------------------------ D7/D8: crops
+
+    /** Relative yield per hour: growth points (x10000, so no rounding steps) over the base rolls, times the 1.03^gain drops. */
+    private static double yieldRate(int tier, int growth, int gain, int resistance, int quality, boolean strict) {
+        int required = CropGrowthMath.requiredQuality(tier, growth, gain, resistance, strict);
+        double points = 0;
+        for (int roll = 0; roll <= 6; roll++) points += CropGrowthMath.growthPoints(10_000 * (3 + roll + growth), required, quality, strict);
+        return points * Math.pow(1.03, gain);
+    }
+
+    /** {growth, gain, resistance}: the higher stats must not give less, while both crops live. */
+    private static void notLower(int tier, int quality, int[] low, int[] high, String stat) {
+        int lowRequired = CropGrowthMath.requiredQuality(tier, low[0], low[1], low[2], false);
+        int highRequired = CropGrowthMath.requiredQuality(tier, high[0], high[1], high[2], false);
+        if (CropGrowthMath.penalty(lowRequired, quality, false) > CropGrowthMath.LETHAL_PENALTY
+                || CropGrowthMath.penalty(highRequired, quality, false) > CropGrowthMath.LETHAL_PENALTY) return;
+        double a = yieldRate(tier, low[0], low[1], low[2], quality, false), b = yieldRate(tier, high[0], high[1], high[2], quality, false);
+        if (b < a * (1 - 1e-6)) throw new AssertionError("more " + stat + " gives less: " + java.util.Arrays.toString(low) + " -> "
+            + java.util.Arrays.toString(high) + " at tier " + tier + ", quality " + quality + ": " + a + " -> " + b);
+    }
+
+    /**
+     * SI crop rules: Resistance lowers the requirement, and more Growth, Gain or Resistance never lowers the expected yield per
+     * hour in the same environment. Under the IC2 rules a 20/20/20 crop yields less than a 20/10/10 one at quality 60.
+     */
+    @GameTest(batch = "round1138_crops", template = "empty", timeoutTicks = 40)
+    public static void betterCropStatsNeverLowerTheYieldPerHour(GameTestHelper h) {
+        h.assertTrue(CropGrowthMath.requiredQuality(1, 31, 31, 31, false) == 31 && CropGrowthMath.requiredQuality(1, 31, 31, 31, true) == 93,
+            "Resistance must lower the requirement (SI) or raise it (IC2)");
+        for (int tier : new int[]{1, 2, 4, 7, 10, 13})
+            for (int quality = 0; quality <= 400; quality += 7)
+                for (int a = 0; a < 31; a += 3) for (int b = 0; b <= 31; b += 6) for (int c = 0; c <= 31; c += 6) {
+                    notLower(tier, quality, new int[]{a, b, c}, new int[]{a + 1, b, c}, "growth");
+                    notLower(tier, quality, new int[]{b, a, c}, new int[]{b, a + 1, c}, "gain");
+                    notLower(tier, quality, new int[]{b, c, a}, new int[]{b, c, a + 1}, "resistance");
+                }
+        h.assertTrue(yieldRate(2, 20, 20, 20, 60, true) < yieldRate(2, 20, 10, 10, 60, true), "the IC2 rules changed");
+        h.assertTrue(yieldRate(2, 20, 20, 20, 60, false) > yieldRate(2, 20, 10, 10, 60, false), "20/20/20 still yields less than 20/10/10");
+        h.succeed();
+    }
+
+    private static IPlanter crop(GameTestHelper h, BlockPos pos, String species, int stage) {
+        h.setBlock(pos.below(), Blocks.FARMLAND.defaultBlockState().setValue(FarmBlock.MOISTURE, 7));
+        h.setBlock(pos, BuiltInRegistries.BLOCK.get(id("crop/stick")));
+        IPlanter crop = (IPlanter) h.getBlockEntity(pos);
+        if (species != null) { crop.setPlant(MioIcifAPI.instance().getCropAPI().getPlant("mio_icif", species)); crop.setGrowthStage(stage); }
+        return crop;
+    }
+
+    /**
+     * Growth 24+ spreads weeds by a chance (4 % per point from 24, minus the resistance) instead of making the crop a weed source,
+     * and Weed-EX protects empty crop sticks; under the IC2 rules the fast crop is a weed and an empty stick is always taken.
+     */
+    @GameTest(batch = "round1138_crops", template = "empty", timeoutTicks = 40)
+    public static void fastCropsSpreadWeedsByChanceAndWeedExGuardsEmptySticks(GameTestHelper h) {
+        h.assertTrue(CropGrowthMath.weedChance(23, 0, false) == 0 && CropGrowthMath.weedChance(24, 0, false) == 4
+            && CropGrowthMath.weedChance(31, 0, false) == 32 && CropGrowthMath.weedChance(31, 31, false) == 1
+            && CropGrowthMath.weedChance(31, 0, true) == 0, "weed chances");
+        boolean strict = CropGrowthMath.strictIc2Rules();
+        try {
+            IPlanter fast = crop(h, new BlockPos(1, 2, 1), "wheat", 3);
+            fast.setGrowthSpeed(31);
+            CropGrowthMath.setStrictIc2Rules(false);
+            h.assertTrue(!fast.getPlant().isWeed(fast), "a Growth 31 crop is a weed under the SI rules");
+            CropGrowthMath.setStrictIc2Rules(true);
+            h.assertTrue(fast.getPlant().isWeed(fast), "a Growth 31 crop is no weed source under the IC2 rules");
+
+            BlockPos center = new BlockPos(5, 2, 5);
+            IPlanter weed = crop(h, center, "weed", 3);
+            weed.setGrowthSpeed(31); weed.setResilience(31);   // spreads often, never dies
+            IPlanter[] sticks = new IPlanter[4];
+            int i = 0;
+            for (Direction d : Direction.Plane.HORIZONTAL) { sticks[i] = crop(h, center.relative(d), null, 0); sticks[i++].setWeedControl(100); }
+            CropGrowthMath.setStrictIc2Rules(false);
+            h.getLevel().random.setSeed(1138);
+            for (int c = 0; c < 30; c++) cycle(weed);
+            int left = 0;
+            for (IPlanter stick : sticks) {
+                h.assertTrue(stick.getPlant() == null, "Weed-EX did not protect an empty crop stick");
+                left += stick.getWeedControl();
+            }
+            h.assertTrue(left < 400, "the weed never reached the sticks");
+            CropGrowthMath.setStrictIc2Rules(true);
+            for (int c = 0; c < 30; c++) cycle(weed);
+            boolean taken = false;
+            for (IPlanter stick : sticks) taken |= stick.getPlant() != null;
+            h.assertTrue(taken, "under the IC2 rules no empty stick was taken");
+        } finally {
+            CropGrowthMath.setStrictIc2Rules(strict);
+        }
+        h.succeed();
+    }
+
+    private static void cycle(IPlanter crop) { call(crop, "performCropCycle"); }
+
+    // ------------------------------------------------------------------ D11: basic machines on the futures market
+
+    /**
+     * The basic machines are market goods (bought and sold, so also in bounties). Their made_from lists only market goods (one
+     * other input turns the bid cap off), the bid stays below the material cost and the base price above it.
+     */
+    @GameTest(batch = "round1138_market", template = "empty", timeoutTicks = 20)
+    public static void basicMachinesTradeOnTheFuturesMarket(GameTestHelper h) {
+        Class<?> manager = Round33GameTests.common("future.FutureCommodityManager");
+        String[] machines = {"producer/block_machine_hull_basic", "producer/block_powder_elc", "producer/block_extractor_elc",
+            "producer/block_compressor_elc", "producer/block_furnace_elc", "producer/block_recycler_elc", "generator/block_thermal_generator",
+            "generator/block_geo_generator", "generator/block_solar_generator", "wiring/block_bat_box"};
+        for (String path : machines) {
+            String id = "mio_icif:" + path;
+            Object machine = call(manager, "getCommodityById", id);
+            h.assertTrue(machine != null, id + " is not on the market");
+            h.assertTrue(!(Boolean) call(machine, "sellOnly"), id + " cannot be bought");
+            @SuppressWarnings("unchecked")
+            var madeFrom = (java.util.Map<String, Double>) call(machine, "madeFrom");
+            h.assertTrue(!madeFrom.isEmpty(), id + " has no made_from");
+            double cost = 0;
+            for (var input : madeFrom.entrySet()) {
+                Object good = call(manager, "getCommodityById", input.getKey());
+                h.assertTrue(good != null, id + " is made from " + input.getKey() + ", no market good (the bid cap would be off)");
+                cost += input.getValue() * (Integer) call(good, "getBasePrice");
+            }
+            int bid = (Integer) call(machine, "getBidPrice"), base = (Integer) call(machine, "getBasePrice");
+            h.assertTrue(bid < cost && base > cost, id + ": bid " + bid + ", base " + base + ", material cost " + cost);
+        }
         h.succeed();
     }
 }

@@ -1,0 +1,95 @@
+{
+  "category": "industrial",
+  "commodities": [
+    {
+      "item": "mio_icif:producer/block_machine_hull_basic",
+      "base_price": 2000,
+      "bid_price": 1550,
+      "made_from": { "minecraft:iron_ingot": 8 },
+      "volatility": 0.03,
+      "import_per_day": 16,
+      "depth": { "player": 32, "server": 128 }
+    },
+    {
+      "item": "mio_icif:producer/block_powder_elc",
+      "base_price": 2900,
+      "bid_price": 2270,
+      "made_from": { "minecraft:iron_ingot": 9, "minecraft:redstone": 2, "minecraft:copper_ingot": 2, "mio_icif:resource/item_rubber": 6 },
+      "volatility": 0.03,
+      "import_per_day": 8,
+      "depth": { "player": 16, "server": 64 }
+    },
+    {
+      "item": "mio_icif:producer/block_extractor_elc",
+      "base_price": 2900,
+      "bid_price": 2270,
+      "made_from": { "minecraft:iron_ingot": 9, "minecraft:redstone": 2, "minecraft:copper_ingot": 2, "mio_icif:resource/item_rubber": 6 },
+      "volatility": 0.03,
+      "import_per_day": 8,
+      "depth": { "player": 16, "server": 64 }
+    },
+    {
+      "item": "mio_icif:producer/block_compressor_elc",
+      "base_price": 2900,
+      "bid_price": 2270,
+      "made_from": { "minecraft:iron_ingot": 9, "minecraft:redstone": 2, "minecraft:copper_ingot": 2, "mio_icif:resource/item_rubber": 6 },
+      "volatility": 0.03,
+      "import_per_day": 8,
+      "depth": { "player": 16, "server": 64 }
+    },
+    {
+      "item": "mio_icif:producer/block_furnace_elc",
+      "base_price": 1100,
+      "bid_price": 830,
+      "made_from": { "minecraft:iron_ingot": 1, "minecraft:redstone": 4, "minecraft:copper_ingot": 2, "mio_icif:resource/item_rubber": 6 },
+      "volatility": 0.03,
+      "import_per_day": 8,
+      "depth": { "player": 16, "server": 64 }
+    },
+    {
+      "item": "mio_icif:producer/block_recycler_elc",
+      "base_price": 3400,
+      "bid_price": 2660,
+      "made_from": { "minecraft:iron_ingot": 11, "minecraft:redstone": 2, "minecraft:copper_ingot": 2, "mio_icif:resource/item_rubber": 6 },
+      "volatility": 0.03,
+      "import_per_day": 8,
+      "depth": { "player": 16, "server": 64 }
+    },
+    {
+      "item": "mio_icif:generator/block_thermal_generator",
+      "base_price": 2400,
+      "bid_price": 1880,
+      "made_from": { "minecraft:iron_ingot": 8, "mio_icif:resource/item_ingot_tin": 2, "minecraft:redstone": 2 },
+      "volatility": 0.03,
+      "import_per_day": 8,
+      "depth": { "player": 16, "server": 64 }
+    },
+    {
+      "item": "mio_icif:generator/block_geo_generator",
+      "base_price": 2700,
+      "bid_price": 2080,
+      "made_from": { "minecraft:iron_ingot": 9, "mio_icif:resource/item_ingot_tin": 2, "minecraft:redstone": 2 },
+      "volatility": 0.03,
+      "import_per_day": 8,
+      "depth": { "player": 16, "server": 64 }
+    },
+    {
+      "item": "mio_icif:generator/block_solar_generator",
+      "base_price": 4400,
+      "bid_price": 3430,
+      "made_from": { "minecraft:iron_ingot": 10, "minecraft:redstone": 6, "minecraft:copper_ingot": 4, "mio_icif:resource/item_rubber": 12, "mio_icif:resource/item_ingot_tin": 2, "minecraft:coal": 3 },
+      "volatility": 0.03,
+      "import_per_day": 8,
+      "depth": { "player": 16, "server": 64 }
+    },
+    {
+      "item": "mio_icif:wiring/block_bat_box",
+      "base_price": 1300,
+      "bid_price": 1020,
+      "made_from": { "mio_icif:resource/item_ingot_tin": 6, "minecraft:redstone": 6, "mio_icif:resource/item_rubber": 1 },
+      "volatility": 0.03,
+      "import_per_day": 8,
+      "depth": { "player": 16, "server": 64 }
+    }
+  ]
+}

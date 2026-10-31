@@ -15,6 +15,10 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
  * Energy Saving enchantment (0.1.7.35): each level removes 5 % of the energy that the item uses,
  * up to level V (75 % of the cost).
  *
+ * <p>0.1.10.38: levels above V (the enchanting table and the anvil stop at V; items from commands
+ * or other mods can have more) keep going: each one takes another 5 % off the remaining cost,
+ * factor 0.75 x 0.95^(level - 5). The cost gets close to zero but never reaches it.
+ *
  * <p>Every energy debit of an electric tool, weapon or armor piece goes through {@link #apply}:
  * tool use and paid actions ({@code BatteryTransfer.consume}), damage absorption, fall
  * protection, flight, jetpacks, suit units and Special Maneuver Mode. Charging and battery
@@ -28,9 +32,18 @@ public final class EnergySaving {
 
     public static final ResourceKey<Enchantment> KEY = ResourceKey.create(Registries.ENCHANTMENT,
         ResourceLocation.fromNamespaceAndPath("mio_icif", "energy_saving"));
+    /** The highest level of the enchanting table and the anvil (energy_saving.json). */
     public static final int MAX_LEVEL = 5;
+    /** 0.1.10.38: the highest level that counts (the enchantment level limit of the game). */
+    public static final int MAX_EFFECTIVE_LEVEL = 255;
     /** Percent removed per level. */
     public static final int PERCENT_PER_LEVEL = 5;
+    /** 0.1.10.38: cost factors in parts per million (the levels above V are not whole percents). */
+    private static final long PPM = 1_000_000L;
+    private static final long[] FACTOR_PPM = new long[MAX_EFFECTIVE_LEVEL + 1];
+    static {
+        for (int level = 0; level <= MAX_EFFECTIVE_LEVEL; level++) FACTOR_PPM[level] = Math.round(PPM * factor(level));
+    }
 
     /** Enchantment level on the stack (0 when absent). No registry lookup, no allocation. */
     public static int level(ItemStack stack) {
@@ -38,14 +51,16 @@ public final class EnergySaving {
         ItemEnchantments enchantments = stack.getTagEnchantments();
         if (enchantments.isEmpty()) return 0;
         for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
-            if (entry.getKey().is(KEY)) return Math.min(MAX_LEVEL, entry.getIntValue());
+            if (entry.getKey().is(KEY)) return Math.min(MAX_EFFECTIVE_LEVEL, entry.getIntValue());
         }
         return 0;
     }
 
-    /** Cost multiplier of a level: 1.0, 0.95, 0.90, 0.85, 0.80, 0.75. */
+    /** Cost multiplier of a level: 1.0, 0.95, 0.90, 0.85, 0.80, 0.75, then x 0.95 for each level above V. */
     public static double factor(int level) {
-        return 1.0 - PERCENT_PER_LEVEL * Math.max(0, Math.min(MAX_LEVEL, level)) / 100.0;
+        int l = Math.max(0, Math.min(MAX_EFFECTIVE_LEVEL, level));
+        if (l <= MAX_LEVEL) return 1.0 - PERCENT_PER_LEVEL * l / 100.0;
+        return (1.0 - PERCENT_PER_LEVEL * MAX_LEVEL / 100.0) * Math.pow(1.0 - PERCENT_PER_LEVEL / 100.0, l - MAX_LEVEL);
     }
 
     /** The reduced cost of one debit from {@code stack}. */
@@ -55,12 +70,12 @@ public final class EnergySaving {
 
     public static long apply(int level, long amount) {
         if (amount <= 0 || level <= 0) return amount;
-        long percent = 100 - (long) PERCENT_PER_LEVEL * Math.min(MAX_LEVEL, level);
-        long whole = amount / 100 * percent;
-        long rest = amount % 100 * percent;          // 0 .. 9900, in 1/100 EU
-        whole += rest / 100;
-        long fraction = rest % 100;
-        if (fraction > 0 && ThreadLocalRandom.current().nextInt(100) < fraction) whole++;
+        long ppm = FACTOR_PPM[Math.min(MAX_EFFECTIVE_LEVEL, level)];
+        long whole = amount / PPM * ppm;
+        long rest = amount % PPM * ppm;              // 0 .. 10^12, in millionths of an EU
+        whole += rest / PPM;
+        long fraction = rest % PPM;
+        if (fraction > 0 && ThreadLocalRandom.current().nextLong(PPM) < fraction) whole++;
         return whole;
     }
 
@@ -76,10 +91,10 @@ public final class EnergySaving {
 
     public static long maxCost(int level, long amount) {
         if (amount <= 0 || level <= 0) return amount;
-        long percent = 100 - (long) PERCENT_PER_LEVEL * Math.min(MAX_LEVEL, level);
-        long whole = amount / 100 * percent;
-        long rest = amount % 100 * percent;
-        return whole + (rest + 99) / 100;
+        long ppm = FACTOR_PPM[Math.min(MAX_EFFECTIVE_LEVEL, level)];
+        long whole = amount / PPM * ppm;
+        long rest = amount % PPM * ppm;
+        return whole + (rest + PPM - 1) / PPM;
     }
 
     /** A per-unit rate (EU per damage point, EU per tick): reduced, never below 1 when it was above 0. */

@@ -27,13 +27,15 @@ The crop compares its **quality** with its **requirement** in each cycle.
 
 | Value | Formula |
 |---|---|
-| Requirement | (tier - 1) x 4 + growth + gain + resistance |
+| Requirement | (tier - 1) x 4 + growth + gain - resistance |
 | Quality | 5 x (humidity + nutrients + air quality) |
 | Growth points | 3 + random 0 to 6 + growth |
 
 - Quality above the requirement: each extra point gives +1 % growth points.
-- Quality below the requirement: the penalty is 4 for each missing point. The growth points go down by the penalty in percent.
-- A penalty above 100 can kill the crop. The crop dies when a random value 0 to 31 is higher than its resistance.
+- Quality below the requirement: each missing point takes 2.5 % off the growth points, compounding (10 missing points leave 78 %, 30 leave 47 %). The penalty is 2 for each missing point.
+- A penalty above 100 (more than 50 missing points) can kill the crop. The crop dies when a random value 0 to 31 is higher than its resistance.
+- So more growth, gain or resistance never lowers the yield per hour in the same field.
+- Server option `strictIc2Rules` (section `Crops` of the SI config): the IC2 Experimental rules. Resistance raises the requirement, each missing point costs 4 % (lethal above 25 missing points), a crop with growth 24 or more is a weed, and Weed-EX does not protect empty crop sticks.
 - Some crops weigh the three values differently: coffee 0.4 / 1.4 / 1.2, cocoa 0.8 / 1.3 / 0.9, sugar cane 1.2 / 1.0 / 0.8, pumpkin and melon 1.1 / 0.9 / 1.0 (humidity / nutrients / air quality).
 - A crop that a <ItemLink id="mio_icif:producer/block_matron_elc" /> tends gets at least the requirement + 50.
 
@@ -124,5 +126,5 @@ At night the sky light falls to 4. A torch gives light 9 at a distance of 5 bloc
 - Leave the cell to the west, north and north-west of each crop free (for example rows with paths), and do not cover the field.
 - Build the field at y = 70 or higher.
 - Put light sources so that each crop has light 9 or more at night.
-- Keep growth below 24. A crop with growth 24 or more acts as a weed.
-- A crop stick without a plant and without Weed-EX can become a weed (1 in 100 per cycle).
+- Growth 24 or more spreads weeds: 4 % per cycle at growth 24, 4 % more for each further point, minus the resistance (31/31/31: 1 %).
+- A crop stick without a plant and without Weed-EX can become a weed (1 in 100 per cycle). Weed-EX on an empty crop stick also stops weeds that spread to it (5 Weed-EX each time).

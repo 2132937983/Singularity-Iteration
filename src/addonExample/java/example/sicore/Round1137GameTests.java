@@ -102,7 +102,9 @@ public final class Round1137GameTests {
             "reactor/item_reactor_uranium_simple_depleted", 20000);
         expect(h, "depletion/proton_quad", ReactorTransformation.Process.DEPLETION, "reactor/item_reactor_proton_quad",
             "reactor/item_reactor_proton_quad_depleted", 40000);
-        h.assertTrue(ReactorTransformationRegistry.get(id("depletion/proton_quad")).notes().size() == 1, "the proton rod notes its EU and heat factors");
+        // 0.1.10.38 (D6): and, like MOX, that its EU rises with the hull heat
+        h.assertTrue(ReactorTransformationRegistry.get(id("depletion/proton_quad")).notes().size() == 2,
+            "the proton rod notes its EU and heat factors and its MOX-like output");
         h.assertTrue(ReactorTransformationRegistry.get(id("breeding/lithium_cell")).notes().size() == 3,
             "the lithium cell notes its gain, its heat and the rod beside it");
         h.succeed();

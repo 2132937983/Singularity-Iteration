@@ -25,6 +25,8 @@ public final class CropDiagnosis {
     private CropDiagnosis() {}
 
     public static final int F_HYBRID = 1, F_TENDED = 2, F_CAN_GROW = 4, F_MATURE = 8, F_HARVESTABLE = 16, F_WEED = 32;
+    /** EN: 0.1.10.38: the server uses the strict IC2 crop rules. ZH: 0.1.10.38：服务器采用严格 IC2 作物规则。JA: 0.1.10.38：サーバーは厳密な IC2 作物ルールを使う。 */
+    public static final int F_STRICT = 64;
     /** EN: Growth blockers. ZH: 生长阻碍。JA: 成長の妨げ。 */
     public static final int B_NONE = 0, B_LIGHT_LOW = 1, B_LIGHT_HIGH = 2, B_ROOT = 3, B_WATER = 4, B_NUTRIENTS = 5, B_OTHER = 6;
 
@@ -41,8 +43,8 @@ public final class CropDiagnosis {
         public boolean has(int flag) { return (flags & flag) != 0; }
         public boolean empty() { return typeId.isEmpty(); }
         /** EN: Growth speed in percent of the base (100 = no bonus, no penalty). ZH: 生长速度占基础值的百分比（100 = 无加成无惩罚）。JA: 基礎に対する成長速度の百分率（100 = ボーナスもペナルティもなし）。 */
-        public int growthRate() { return CropGrowthMath.growthPoints(100, required, quality); }
-        public int penalty() { return CropGrowthMath.penalty(required, quality); }
+        public int growthRate() { return CropGrowthMath.growthPoints(100, required, quality, has(F_STRICT)); }
+        public int penalty() { return CropGrowthMath.penalty(required, quality, has(F_STRICT)); }
 
         public void write(FriendlyByteBuf b) {
             b.writeUtf(modId, 64); b.writeUtf(typeId, 128);
@@ -64,7 +66,7 @@ public final class CropDiagnosis {
     /** EN: Reads the planter (server thread). ZH: 读取作物架（服务器线程）。JA: 作物棒を読む（サーバースレッド）。 */
     public static Snapshot of(IPlanter p) {
         PlantType plant = p.getPlant();
-        int flags = (p.isHybridBase() ? F_HYBRID : 0) | (p.isTended() ? F_TENDED : 0);
+        int flags = (p.isHybridBase() ? F_HYBRID : 0) | (p.isTended() ? F_TENDED : 0) | (CropGrowthMath.strictIc2Rules() ? F_STRICT : 0);
         int humidity = p.getHumidity(), soil = p.getSoilNutrients(), air = p.getAirQuality(), light = p.getLightLevel();
         if (plant == null) {
             return new Snapshot("", "", 0, 0, 0, 0, 0, 0, 0, 0, humidity, soil, air, light, p.getWater(), p.getNutrients(), p.getWeedControl(),

@@ -221,6 +221,15 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
     public static final ModConfigSpec.IntValue SHOP_UPKEEP = FUTURE_BUILDER
             .comment("Coins each shop offer costs a market week, from the owner's coin account; an offer whose upkeep is not paid pauses (0.1.10.35)")
             .defineInRange("shopUpkeepPerWeek", 10, 0, 1_000_000);
+    // 0.1.10.38: the data plan of the Portable Futures Trader
+    public static final ModConfigSpec.IntValue PORTABLE_TRADER_PLAN_COINS = FUTURE_BUILDER
+            .comment("Industrial Coins the Portable Futures Trader's data plan costs per period, from the coin account and the inventory (0 = free) (0.1.10.38)",
+                    "便携期货交易终端的流量套餐每期费用（工业货币，从货币账户与物品栏扣除；0 = 免费）")
+            .defineInRange("portableTraderPlanCoins", 200, 0, 1_000_000);
+    public static final ModConfigSpec.IntValue PORTABLE_TRADER_PLAN_DAYS = FUTURE_BUILDER
+            .comment("Market days one data plan period covers (a market day is one Minecraft day) (0.1.10.38)",
+                    "一期流量套餐覆盖的市场日数（一个市场日 = 一个 Minecraft 日）")
+            .defineInRange("portableTraderPlanDays", 30, 1, 3650);
     public static final ModConfigSpec.IntValue SHOP_IDLE_DAYS = FUTURE_BUILDER
             .comment("A shop whose owner was not online on this many days on which the server ran is idle: listed last, still trades (0.1.10.35)")
             .defineInRange("shopIdleDays", 7, 1, 365);

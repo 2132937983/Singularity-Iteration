@@ -47,6 +47,7 @@
     "mio_icif:item_tool_windmeter",
     "mio_icif:item_tool_wrench_elc",
     "mio_icif:normal/item_crop_analyzer",
+    "mio_icif:normal/item_portable_futures_trader",
     {
       "id": "mio_icif:item_trinket_flight_ring",
       "required": false

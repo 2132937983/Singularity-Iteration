@@ -6,6 +6,7 @@ navigation:
   position: 29
 item_ids:
   - mio_icif:producer/block_future_elc
+  - mio_icif:normal/item_portable_futures_trader
 ---
 
 # Futures Machine
@@ -49,6 +50,18 @@ Each action costs the EU of one trade.
 - **Number fields**: a click selects the number, so typing replaces it; the mouse wheel and the arrow keys change it (Shift: 64, Ctrl: 10).
 - **Treasury reserve** (since 0.1.10.35): the fees of order-book trades, commissions, shops and the bounty refresh go into a reserve instead of being destroyed, and the coins of bounties are paid from it before new coins are made. The reserve holds at most 4 market weeks of normal bounty coins (772,800 with one player); fees above that are destroyed. The Treasury tab shows the reserve and its cap; its tooltip shows this market week's fees in, payments and new bounty coins. The ledger counts coins into and out of circulation as before (a fee leaves circulation, a payment from the reserve comes back).
 - **Small windows** (since 0.1.10.33): the panel fits every window from 426 x 240 (after the GUI scale). The account line (market day, coins, account, UU-matter) is the status bar at the bottom; long lists scroll with the mouse wheel and say how many entries are not shown; a text that does not fit uses short numbers (1.73M) and shows all of it as tooltip, and a number is never cut. On narrow windows the tabs use short names, the last trades are not shown and the bounty budgets are the tooltip of the board title.
+
+## Portable Futures Trader (0.1.10.38)
+
+<Row>
+  <ItemImage id="mio_icif:normal/item_portable_futures_trader" scale="2" />
+</Row>
+
+- Right-click the <ItemLink id="mio_icif:normal/item_portable_futures_trader" /> to open this panel anywhere: all tabs, the sell box and the settlement slot work as on the machine.
+- Each action costs the same EU fee, paid from the trader's charge (tier 2, 100,000 EU).
+- **Data plan**: the trader needs a paid plan, 200 Industrial Coins for 30 market days (server config `portableTraderPlanCoins` and `portableTraderPlanDays`). Opening it after the plan ran out pays the next period from your coin account and inventory; without the coins it does not open. The plan belongs to you, not to the item.
+- The market day now also advances without a loaded Futures Machine or Trade Terminal.
+- Ten basic machines are traded on the market and can appear in bounties: basic machine hull, macerator, extractor, compressor, electric furnace, recycler, thermal generator, geothermal generator, solar generator and BatBox. A machine with stored contents (picked up with a wrench) is not accepted.
 
 ## Power data
 

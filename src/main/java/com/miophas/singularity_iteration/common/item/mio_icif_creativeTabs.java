@@ -762,6 +762,8 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_normal.CONTAIN_MENT_BOX.get());
                 output.accept(mio_icif_normal.CROP_ANALYZER.get());
                 { ItemStack fullCropAnalyzer = new ItemStack(mio_icif_normal.CROP_ANALYZER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullCropAnalyzer, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullCropAnalyzer)); output.accept(fullCropAnalyzer); }
+                output.accept(mio_icif_normal.PORTABLE_FUTURES_TRADER.get());   // 0.1.10.38
+                { ItemStack fullTrader = new ItemStack(mio_icif_normal.PORTABLE_FUTURES_TRADER.get()); MioIcifAPI.instance().getItemAPI().setBatteryEnergy(fullTrader, MioIcifAPI.instance().getItemAPI().getBatteryCapacity(fullTrader)); output.accept(fullTrader); }
                 output.accept(mio_icif_normal.INTELLIGENCE.get());
                 output.accept(mio_icif_normal.MODIFY.get());
                 output.accept(mio_icif_normal.YOUNGSTER.get());

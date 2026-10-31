@@ -41,7 +41,17 @@ import java.util.List;
     }
 
     public FutureElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_future_elc blockEntity, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
-        super(mio_icif_menus.FUTURE_ELC_MENU_TYPE.get(), containerId, 1, playerInventory, itemHandler, data, mio_icif_future_elc.DATA_COUNT, blockEntity);
+        this(mio_icif_menus.FUTURE_ELC_MENU_TYPE.get(), containerId, playerInventory, blockEntity, itemHandler, data);
+    }
+
+    /** 0.1.10.38: a panel of another menu type without a machine (the Portable Futures Trader). */
+    protected FutureElcMenu(net.minecraft.world.inventory.MenuType<?> type, int containerId, Inventory playerInventory) {
+        this(type, containerId, playerInventory, null, null, null);
+    }
+
+    private FutureElcMenu(net.minecraft.world.inventory.MenuType<?> type, int containerId, Inventory playerInventory, @Nullable mio_icif_future_elc blockEntity,
+                          @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
+        super(type, containerId, 1, playerInventory, itemHandler, data, mio_icif_future_elc.DATA_COUNT, blockEntity);
         // 0.1.10.25 (X1): the sell box and the player inventory, shown on the sell page of the panel (the panel places them)
         this.owner = playerInventory.player;
         this.sellBox = new SimpleContainer(SELL_BOX_SIZE);
@@ -153,6 +163,11 @@ import java.util.List;
     @Override
     public mio_icif_future_elc getBlockEntity() {
         return this.blockEntity instanceof mio_icif_future_elc be ? be : null;
+    }
+
+    /** 0.1.10.38: what serves this panel: the machine here, the item in a Portable Futures Trader's menu. */
+    public @Nullable com.miophas.singularity_iteration.common.exchange.ExchangeHost host() {
+        return getBlockEntity();
     }
 
     @Override

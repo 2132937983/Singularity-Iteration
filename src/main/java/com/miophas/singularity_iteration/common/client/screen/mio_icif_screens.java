@@ -549,6 +549,11 @@ public class mio_icif_screens {
             mio_icif_tool_menus.CROP_ANALYZER_MENU.get(),
             mio_icif_gui_crop_analyzer::new
         );
+        // 0.1.10.38: the Portable Futures Trader uses the Futures Machine's panel
+        event.register(
+            mio_icif_tool_menus.PORTABLE_FUTURES_MENU.get(),
+            mio_icif_gui_future_elc::new
+        );
 
         // 注册酒桶的GUI 界面
         event.register(

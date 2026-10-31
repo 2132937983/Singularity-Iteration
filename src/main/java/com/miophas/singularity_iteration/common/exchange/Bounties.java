@@ -208,6 +208,8 @@ public final class Bounties {
         MinecraftServer server = event.getServer();
         if (server.getTickCount() % REFILL_CHECK_TICKS == 0) {
             refill(server);
+            // 0.1.10.38: the market day advances without a loaded Futures Machine or Trade Terminal (portable traders)
+            com.miophas.singularity_iteration.common.future.MarketDayDriver.check(server.overworld());
             ExchangeService.tick(server);   // 0.1.10.35: commissions and orders in hours, the shops
         }
     }

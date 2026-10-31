@@ -51,7 +51,7 @@ import java.util.List;
  * - 客户端只读取，不修改数据
  */
 @SuppressWarnings("null")
-public class mio_icif_future_elc extends AbstractEnergyBlockEntity {
+public class mio_icif_future_elc extends AbstractEnergyBlockEntity implements com.miophas.singularity_iteration.common.exchange.ExchangeHost {
 
     /** This inventory-free consumer uses the same guarded FE input ledger as processing machines. */
     @Override

@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    "AFA",
+    " B "
+  ],
+  "key": {
+    "G": { "item": "minecraft:glass_pane" },
+    "A": { "tag": "c:circuits/advanced" },
+    "F": { "type": "mio_icif:electric", "item": "mio_icif:producer/block_future_elc" },
+    "B": { "type": "mio_icif:electric", "item": "mio_icif:normal/item_bat_lev0" }
+  },
+  "result": { "id": "mio_icif:normal/item_portable_futures_trader", "count": 1 }
+}

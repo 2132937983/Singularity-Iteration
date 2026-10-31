@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """0.1.10.38 language values (en_us / zh_cn / ja_jp / ru_ru): the processing machine line of /mio_icif perf (PerfCommand);
-the Energy Saving description (levels above V).
+the Energy Saving description (levels above V); the Portable Futures Trader (name, tooltip, data plan message).
 A value per language; a language left out keeps its current value. Idempotent; keeps the line endings of each file. With
 --check it only reports missing or different keys.
 Usage: lang_1138.py <repo root> [--check]
@@ -35,6 +35,22 @@ KEYS = {
         'レベルごとに電気ツール・電気武器・電力防具の消費電力を 5 %% 減らす。V を超えると、レベルごとに残りの消費電力をさらに 5 %% 減らす。',
         'Каждый уровень снижает расход энергии электрических инструментов, оружия и брони на 5%%. Выше уровня V каждый '
         'уровень снижает оставшийся расход ещё на 5%%.'),
+    # D10: the Portable Futures Trader and its data plan
+    'item.mio_icif.normal.item_portable_futures_trader': v(
+        'Portable Futures Trader', '便携期货交易终端', '携帯先物取引端末', 'Портативный фьючерсный терминал'),
+    'tooltip.mio_icif.portable_trader.use': v(
+        'Right-click: the futures panel anywhere (%s EU per trade)', '右键：随时随地打开期货面板（每笔交易 %s EU）',
+        '右クリック：どこでも先物パネルを開く（取引 1 回 %s EU）', 'ПКМ: панель фьючерсов где угодно (%s EU за сделку)'),
+    'tooltip.mio_icif.portable_trader.plan': v(
+        'Data plan: %1$s Industrial Coins per %2$s market days', '流量套餐：每 %2$s 个市场日 %1$s 工业货币',
+        '通信プラン：市場日 %2$s 日ごとに工業コイン %1$s 枚', 'Тарифный план: %1$s промышленных монет за %2$s рыночных дней'),
+    'tooltip.mio_icif.portable_trader.plan_free': v(
+        'Data plan: free', '流量套餐：免费', '通信プラン：無料', 'Тарифный план: бесплатно'),
+    'message.mio_icif.portable_trader.plan_unpaid': v(
+        'Data plan unpaid: %1$s Industrial Coins needed for the next %2$s market days',
+        '流量套餐未支付：下一期 %2$s 个市场日需要 %1$s 工业货币',
+        '通信プラン未払い：次の市場日 %2$s 日分に工業コイン %1$s 枚が必要',
+        'Тарифный план не оплачен: нужно %1$s промышленных монет на следующие %2$s рыночных дней'),
 }
 
 

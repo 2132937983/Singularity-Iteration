@@ -27,6 +27,11 @@ public class mio_icif_tool_menus {
         MENU_TYPES.register("crop_analyzer", () ->
             IMenuTypeExtension.create(CropAnalyzerMenu::new));
 
+    // 0.1.10.38: typed as the machine's panel, so the futures screen opens it too
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.producer.FutureElcMenu>> PORTABLE_FUTURES_MENU =
+        MENU_TYPES.register("portable_futures_trader", () ->
+            IMenuTypeExtension.create((id, inventory, buffer) -> new PortableFuturesMenu(id, inventory, buffer)));
+
     public static final DeferredHolder<MenuType<?>, MenuType<mio_icif_toolbox_menu>> TOOLBOX_MENU =
         MENU_TYPES.register("toolbox", () ->
             IMenuTypeExtension.create(mio_icif_toolbox_menu::new));

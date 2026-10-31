@@ -4561,5 +4561,10 @@
   "jei.mio_icif.reactor_layout.steam_output": "蒸汽：%s mB/s ≈ 涡轮发电机 %s EU/t · 蒸汽反应仓：%s",
   "jei.mio_icif.reactor_layout.steam_fuel": "燃料可用 %s · 每次装填 %s mB 蒸汽",
   "jei.mio_icif.reactor_layout.steam_model": "蒸汽反应堆：水与蒸汽空间不限；涡轮发电机每 2 mB 蒸汽产生 1 EU。",
-  "command.mio_icif.perf.machines": "加工机器每 tick：完整 tick %1$s，休眠 %2$s，状态灯切换 %3$s，红石读取 %4$s"
+  "command.mio_icif.perf.machines": "加工机器每 tick：完整 tick %1$s，休眠 %2$s，状态灯切换 %3$s，红石读取 %4$s",
+  "item.mio_icif.normal.item_portable_futures_trader": "便携期货交易终端",
+  "tooltip.mio_icif.portable_trader.use": "右键：随时随地打开期货面板（每笔交易 %s EU）",
+  "tooltip.mio_icif.portable_trader.plan": "流量套餐：每 %2$s 个市场日 %1$s 工业货币",
+  "tooltip.mio_icif.portable_trader.plan_free": "流量套餐：免费",
+  "message.mio_icif.portable_trader.plan_unpaid": "流量套餐未支付：下一期 %2$s 个市场日需要 %1$s 工业货币"
 }

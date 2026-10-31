@@ -4561,5 +4561,10 @@
   "jei.mio_icif.reactor_layout.steam_output": "蒸気: %s mB/s ≈ タービンで %s EU/t · 蒸気チャンバー: %s",
   "jei.mio_icif.reactor_layout.steam_fuel": "燃料の持続 %s · 1 回分で蒸気 %s mB",
   "jei.mio_icif.reactor_layout.steam_model": "蒸気原子炉: 水と蒸気の空きは無制限。タービンは蒸気 2 mB で 1 EU。",
-  "command.mio_icif.perf.machines": "加工機械 1 tick あたり：通常 tick %1$s、休眠 %2$s、ランプ切替 %3$s、レッドストーン読み取り %4$s"
+  "command.mio_icif.perf.machines": "加工機械 1 tick あたり：通常 tick %1$s、休眠 %2$s、ランプ切替 %3$s、レッドストーン読み取り %4$s",
+  "item.mio_icif.normal.item_portable_futures_trader": "携帯先物取引端末",
+  "tooltip.mio_icif.portable_trader.use": "右クリック：どこでも先物パネルを開く（取引 1 回 %s EU）",
+  "tooltip.mio_icif.portable_trader.plan": "通信プラン：市場日 %2$s 日ごとに工業コイン %1$s 枚",
+  "tooltip.mio_icif.portable_trader.plan_free": "通信プラン：無料",
+  "message.mio_icif.portable_trader.plan_unpaid": "通信プラン未払い：次の市場日 %2$s 日分に工業コイン %1$s 枚が必要"
 }

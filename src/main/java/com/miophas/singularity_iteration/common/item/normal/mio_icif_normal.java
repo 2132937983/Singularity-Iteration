@@ -94,6 +94,9 @@ public class mio_icif_normal {
     public static final DeferredItem<Item> CONTAIN_MENT_BOX = ITEMS.register("normal/item_contain_ment_box", () -> new ContainmentBoxItem(new Item.Properties()));   // 0.1.10.5: a real box
 
     public static final DeferredItem<Item> CROP_ANALYZER = ITEMS.register("normal/item_crop_analyzer", () -> new CropAnalyzerItem(new Item.Properties()));
+    // 0.1.10.38: the futures panel in hand
+    public static final DeferredItem<Item> PORTABLE_FUTURES_TRADER = ITEMS.register("normal/item_portable_futures_trader",
+        () -> new com.miophas.singularity_iteration.common.item.tools.PortableFuturesTraderItem(new Item.Properties()));
 
     // 作物种子 - 通用种子，通过NBT数据区分植物类型
     // 空种子袋就是没有NBT数据的作物种子

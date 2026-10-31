@@ -3131,5 +3131,10 @@
   "jei.mio_icif.reactor_transformation.neutron_source": "Соседние ТВЭЛ: +1 импульс (EU, тепло)",
   "jei.mio_icif.reactor_transformation.decay_heat": "+%s HU корпусу за цикл",
   "jei.mio_icif.reactor_transformation.ejected": "Выбрасывается в следующем цикле",
-  "command.mio_icif.perf.machines": "Машины обработки за тик: полных тиков %1$s, в ожидании %2$s, переключений ламп %3$s, чтений редстоуна %4$s"
+  "command.mio_icif.perf.machines": "Машины обработки за тик: полных тиков %1$s, в ожидании %2$s, переключений ламп %3$s, чтений редстоуна %4$s",
+  "item.mio_icif.normal.item_portable_futures_trader": "Портативный фьючерсный терминал",
+  "tooltip.mio_icif.portable_trader.use": "ПКМ: панель фьючерсов где угодно (%s EU за сделку)",
+  "tooltip.mio_icif.portable_trader.plan": "Тарифный план: %1$s промышленных монет за %2$s рыночных дней",
+  "tooltip.mio_icif.portable_trader.plan_free": "Тарифный план: бесплатно",
+  "message.mio_icif.portable_trader.plan_unpaid": "Тарифный план не оплачен: нужно %1$s промышленных монет на следующие %2$s рыночных дней"
 }

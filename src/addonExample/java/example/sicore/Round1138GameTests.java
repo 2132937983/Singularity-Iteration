@@ -12,6 +12,8 @@ import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath;
 import com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots;
 import com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -714,6 +716,91 @@ public final class Round1138GameTests {
             }
             int bid = (Integer) call(machine, "getBidPrice"), base = (Integer) call(machine, "getBasePrice");
             h.assertTrue(bid < cost && base > cost, id + ": bid " + bid + ", base " + base + ", material cost " + cost);
+        }
+        h.succeed();
+    }
+
+    // ------------------------------------------------------------------ D10: Portable Futures Trader
+
+    /** A supplier of an exchange result (ExchangeService.Result, by reflection). */
+    private static java.util.function.Supplier<Object> result(boolean ok) {
+        return () -> {
+            try {
+                return Round33GameTests.common("exchange.ExchangeService$Result").getDeclaredConstructor(boolean.class, String.class, Object[].class)
+                    .newInstance(ok, "message.mio_icif.exchange.unknown_action", new Object[0]);
+            } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
+        };
+    }
+
+    private static net.minecraft.world.inventory.AbstractContainerMenu open(ServerPlayer p) {
+        try {
+            return (net.minecraft.world.inventory.AbstractContainerMenu) Round33GameTests.common("menu.tool.PortableFuturesMenu")
+                .getConstructor(int.class, net.minecraft.world.entity.player.Inventory.class, InteractionHand.class)
+                .newInstance(1, p.getInventory(), InteractionHand.MAIN_HAND);
+        } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
+    }
+
+    private static int coins(ServerPlayer p) {
+        int n = 0;
+        for (ItemStack s : p.getInventory().items) if (s.is(item("normal/item_coin").getItem())) n += s.getCount();
+        return n;
+    }
+
+    /**
+     * The Portable Futures Trader serves the futures panel with itself as host after taking the data plan (200 coins for 30 market
+     * days, once per period), pays each successful action's fee from its charge, keeps its own slot fixed and closes when it
+     * leaves the hand; without coins for the plan it does not open.
+     */
+    @SuppressWarnings("deprecation")
+    @GameTest(batch = "round1138_market", template = "empty", timeoutTicks = 20)
+    public static void portableTraderServesThePanelForItsDataPlan(GameTestHelper h) {
+        ServerPlayer p = Round33GameTests.survivalPlayer(h);
+        try {
+            ItemStack trader = item("normal/item_portable_futures_trader");
+            IBatteryItem battery = (IBatteryItem) trader.getItem();
+            battery.setEnergy(trader, battery.getMaxEnergy(trader));
+            p.getInventory().selected = 0;
+            p.setItemInHand(InteractionHand.MAIN_HAND, trader);
+            ItemStack pile = item("normal/item_coin");
+            pile.setCount(64);
+            for (int i = 0; i < 4; i++) p.getInventory().add(pile.copy());
+            int before = coins(p);
+            // the mock player cannot receive NeoForge's open-screen payload: pay the plan and open the menu as use() does
+            Class<?> plan = Round33GameTests.common("exchange.DataPlan");
+            h.assertTrue((Boolean) call(plan, "ensure", p), "the data plan was not paid");
+            p.containerMenu = open(p);
+            var menu = p.containerMenu;
+            h.assertTrue(menu.getClass().getSimpleName().equals("PortableFuturesMenu") && call(menu, "host") == menu, "the trader did not open its own panel");
+            h.assertTrue(before - coins(p) == 200, "the data plan took " + (before - coins(p)) + " coins, not 200");
+            long today = (Long) call(Round33GameTests.common("exchange.ExchangeService"), "today", p.server);
+            h.assertTrue((Long) call(plan, "paidUntil", p) == today + 30, "the plan does not cover 30 days");
+
+            long charge = battery.getEnergy(p.getItemInHand(InteractionHand.MAIN_HAND));
+            h.assertTrue((Boolean) call(menu, "serves", p) && (Boolean) call(menu, "hasEnoughEnergy"), "the trader does not serve its holder");
+            h.assertTrue((Boolean) call(menu, "exchangeAction", p, result(true)), "an action failed");
+            h.assertTrue(charge - battery.getEnergy(p.getItemInHand(InteractionHand.MAIN_HAND)) == 10, "an action did not cost 10 EU");
+            charge = battery.getEnergy(p.getItemInHand(InteractionHand.MAIN_HAND));
+            call(menu, "exchangeAction", p, result(false));
+            h.assertTrue(charge == battery.getEnergy(p.getItemInHand(InteractionHand.MAIN_HAND)), "a failed action cost energy");
+
+            menu.clicked(19 + 27, 0, net.minecraft.world.inventory.ClickType.QUICK_MOVE, p);   // the hotbar's first slot (INVENTORY_FIRST + 27)
+            h.assertTrue(p.getItemInHand(InteractionHand.MAIN_HAND).is(trader.getItem()), "the trader's own slot moved");
+            h.assertTrue((Boolean) call(plan, "ensure", p) && before - coins(p) == 200, "a second opening in the period charged again");
+            ItemStack held = p.getItemInHand(InteractionHand.MAIN_HAND);
+            p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            h.assertTrue(!p.containerMenu.stillValid(p), "the panel stays open without the trader");
+            p.closeContainer();
+
+            ServerPlayer poor = Round33GameTests.survivalPlayer(h);
+            try {
+                poor.setItemInHand(InteractionHand.MAIN_HAND, held);
+                held.use(h.getLevel(), poor, InteractionHand.MAIN_HAND);
+                h.assertTrue(poor.containerMenu == poor.inventoryMenu, "the trader opened without a paid data plan");
+            } finally {
+                Round33GameTests.remove(poor);
+            }
+        } finally {
+            Round33GameTests.remove(p);
         }
         h.succeed();
     }

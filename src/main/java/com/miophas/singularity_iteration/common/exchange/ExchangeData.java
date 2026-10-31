@@ -185,6 +185,8 @@ public final class ExchangeData extends SavedData {
     public final Map<UUID, List<CardRecord>> cards = new HashMap<>();
     /** 0.1.10.29: players whose coin account comes first (payments from it first, receipts onto it). */
     public final Set<UUID> bankMode = new HashSet<>();
+    /** 0.1.10.38: first market day the Portable Futures Trader's data plan no longer covers, per player. */
+    public final Map<UUID, Long> dataPlanUntil = new HashMap<>();
     /** 0.1.10.33: player results per week and the cost basis of the treasury stock (recorded, not shown yet). */
     public final MarketRecords records = new MarketRecords();
     /** 0.1.10.35: the treasury's coin reserve (fees; it pays bounty coins first). */
@@ -385,6 +387,9 @@ public final class ExchangeData extends SavedData {
         for (String k : seen.getAllKeys()) { UUID id = uuid(k); if (id != null) d.seen.put(id, seen.getLong(k)); }
         // 0.1.10.29
         for (Tag t : tag.getList("BankMode", Tag.TAG_STRING)) { UUID id = uuid(t.getAsString()); if (id != null) d.bankMode.add(id); }
+        // 0.1.10.38
+        CompoundTag plans = tag.getCompound("DataPlan");
+        for (String k : plans.getAllKeys()) { UUID id = uuid(k); if (id != null) d.dataPlanUntil.put(id, plans.getLong(k)); }
         CompoundTag cd = tag.getCompound("Cards");
         d.cardSecret = cd.getLong("Secret");
         d.cardSerial = Math.max(1, cd.getLong("Serial"));
@@ -655,6 +660,10 @@ public final class ExchangeData extends SavedData {
         ListTag bank = new ListTag();
         for (UUID id : bankMode) bank.add(StringTag.valueOf(id.toString()));
         tag.put("BankMode", bank);
+        // 0.1.10.38
+        CompoundTag plans = new CompoundTag();
+        dataPlanUntil.forEach((id, day) -> plans.putLong(id.toString(), day));
+        tag.put("DataPlan", plans);
         CompoundTag cd = new CompoundTag();
         cd.putLong("Secret", cardSecret);
         cd.putLong("Serial", cardSerial);

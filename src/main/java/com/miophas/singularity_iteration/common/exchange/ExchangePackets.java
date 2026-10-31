@@ -98,16 +98,17 @@ public final class ExchangePackets {
         registrar.playToClient(View.TYPE, View.CODEC, (packet, context) -> context.enqueueWork(() -> ExchangeClientState.set(packet.view())));
     }
 
-    private static mio_icif_future_elc machine(ServerPlayer player) {
+    /** 0.1.10.38: the host of the player's open panel (Futures Machine or Portable Futures Trader) when it serves the player. */
+    private static ExchangeHost machine(ServerPlayer player) {
         if (!(player.containerMenu instanceof FutureElcMenu menu)) return null;
-        mio_icif_future_elc machine = menu.getBlockEntity();
-        return machine != null && machine.serves(player) ? machine : null;
+        ExchangeHost host = menu.host();
+        return host != null && host.serves(player) ? host : null;
     }
 
     private static void onRequest(Request packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
-            mio_icif_future_elc machine = machine(player);
+            ExchangeHost machine = machine(player);
             // 0.1.10.29: the views have their own bucket, so refreshes never use up the actions'
             if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE_VIEW)) return;
             Bounties.seen(player);   // 0.1.10.34: an active player
@@ -119,7 +120,7 @@ public final class ExchangePackets {
     private static void onAction(Action p, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
-            mio_icif_future_elc machine = machine(player);
+            ExchangeHost machine = machine(player);
             if (machine == null) return;
             if (!PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE)) {
                 // 0.1.10.29: a dropped action says so (before, the click did nothing)
@@ -197,7 +198,7 @@ public final class ExchangePackets {
         return r;
     }
 
-    static void send(ServerPlayer player, String selected, mio_icif_future_elc machine) {
+    static void send(ServerPlayer player, String selected, ExchangeHost machine) {
         PacketDistributor.sendToPlayer(player, new View(ExchangeViews.build(player, selected, machine.hasEnoughEnergy(),
             SHOP_QUERY.getOrDefault(player.getUUID(), ""))));
     }

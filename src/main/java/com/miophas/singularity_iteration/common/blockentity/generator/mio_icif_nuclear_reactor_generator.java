@@ -647,6 +647,29 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     @Override public boolean isBurning(){return isRunning();}
     public boolean isRunning(){return !hasReactorAccident()&&!isRemoved()&&(!rate.isZero()||(mode==mio_icif_reactor_mode.FLUID||steamMode())&&lastHeat>0)&&failure.isEmpty();}
     public String getReactorFailure(){return failure;}
+    /**
+     * 0.1.10.39: why the reactor makes nothing, for its screens and Jade (a player saw 0 EU/t at 5,567 heat and could not tell):
+     * {@link #STATUS_OFF} no redstone signal on the reactor, a chamber or a redstone port (it never runs without one);
+     * {@link #STATUS_STOPPED} the last cycle failed ({@link #getReactorFailure}); {@link #STATUS_HOLD} a saved state that needs
+     * recovery; {@link #STATUS_ACCIDENT} shut down after an accident; {@link #STATUS_OK} otherwise (running, or simply no fuel).
+     */
+    public static final int STATUS_OK=0,STATUS_OFF=1,STATUS_STOPPED=2,STATUS_HOLD=3,STATUS_ACCIDENT=4;
+    public int statusCode(){
+        if(hasReactorAccident())return STATUS_ACCIDENT;
+        if(!hold.isEmpty())return STATUS_HOLD;
+        if(!failure.isEmpty())return STATUS_STOPPED;
+        if(level instanceof ServerLevel&&live()&&!enabled())return STATUS_OFF;
+        return STATUS_OK;
+    }
+    /** The lang key of a status line, or null for {@link #STATUS_OK}. */
+    public static @org.jetbrains.annotations.Nullable String statusKey(int status){
+        return switch(status){case STATUS_OFF->"gui.mio_icif.reactor.status.off";case STATUS_STOPPED->"gui.mio_icif.reactor.status.stopped";
+            case STATUS_HOLD->"gui.mio_icif.reactor.status.hold";case STATUS_ACCIDENT->"gui.mio_icif.reactor.status.accident";default->null;};
+    }
+    /** True in fluid mode (not a steam reactor): the heat leaves as hot coolant, no EU. */
+    public boolean isFluidMode(){return mode==mio_icif_reactor_mode.FLUID&&!steamMode();}
+    /** HU of the last cycle that went into hot coolant (fluid mode), as the fluid screen shows it. */
+    public int getFluidHeatOutput(){return fluidOutputRate();}
     public boolean hasLegacyHold(){return !hold.isEmpty();}
     @Override public int getAvailableColumns(){int n=3;for(var side:Direction.values())if(isChamber(worldPosition.relative(side)))n++;return n;}
     public int getCurrentSlotCount(){return 6*getAvailableColumns();}
@@ -691,16 +714,16 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     @Override public Component getDisplayName(){return Component.translatable("block.mio_icif.generator.block_nuclear_reactor_generator");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return mode==mio_icif_reactor_mode.FLUID||steamMode()?new FluidReactorMenu(id,inventory,this):new NuclearReactorGeneratorMenu(id,inventory,this,itemHandler,getContainerData());}
     public ContainerData getContainerData(){return new ContainerData(){
-        @Override public int get(int i){return switch(i){case 0->(int)energyStorage.getAmount();case 1->(int)ENERGY_CAPACITY;case 2->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 3->(int)getMaxHeat();case 4->getCurrentOutput();case 5->getAvailableColumns();case 6->feedRate;case 7->cooling.coldFluid().getAmount();case 8->cooling.hotFluid().getAmount();case 9->cooling.lastAbsorbed();case 10->cooling.active()==null?0:cooling.active().huPerMB();default->0;};}
+        @Override public int get(int i){return switch(i){case 0->(int)energyStorage.getAmount();case 1->(int)ENERGY_CAPACITY;case 2->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 3->(int)getMaxHeat();case 4->getCurrentOutput();case 5->getAvailableColumns();case 6->feedRate;case 7->cooling.coldFluid().getAmount();case 8->cooling.hotFluid().getAmount();case 9->cooling.lastAbsorbed();case 10->cooling.active()==null?0:cooling.active().huPerMB();case 11->statusCode();default->0;};}
         @Override public void set(int i,int value){}
-        @Override public int getCount(){return 11;}
+        @Override public int getCount(){return 12;}
     };}
     public ContainerData getGeneratorContainerData(){return getContainerData();}
     public ContainerData getFluidContainerData(){return new FluidData();}
     private final class FluidData implements ContainerData {
-        @Override public int get(int i){return switch(i){case 0->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 1->(int)getMaxHeat();case 2->(int)getCurrentTemperature();case 3->getInputFluidAmount();case 4->getOutputFluidAmount();case 5->fluidOutputRate();case 6->inputFluidKind();case 7->outputFluidKind();case 8->inputFluidCapacity();case 9->outputFluidCapacity();default->0;};}
+        @Override public int get(int i){return switch(i){case 0->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 1->(int)getMaxHeat();case 2->(int)getCurrentTemperature();case 3->getInputFluidAmount();case 4->getOutputFluidAmount();case 5->fluidOutputRate();case 6->inputFluidKind();case 7->outputFluidKind();case 8->inputFluidCapacity();case 9->outputFluidCapacity();case 10->statusCode();default->0;};}
         @Override public void set(int i,int value){}
-        @Override public int getCount(){return 10;}
+        @Override public int getCount(){return 11;}
     }
     @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider provider){
         super.saveAdditional(tag,provider);tag.putLong("HeatStored",heat.getHeatStored());tag.putLong("MaxHeatStored",heat.getMaxHeatStored());

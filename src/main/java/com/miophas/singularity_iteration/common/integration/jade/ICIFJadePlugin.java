@@ -44,6 +44,8 @@ public class ICIFJadePlugin implements IWailaPlugin {
         );
         registration.registerBlockDataProvider(SteamTunnelProvider.INSTANCE,
                 com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelBlockEntity.class);   // 0.1.10.39
+        registration.registerBlockDataProvider(ReactorStatusProvider.INSTANCE,
+                com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator.class);   // 0.1.10.39
     }
 
     @Override
@@ -51,6 +53,9 @@ public class ICIFJadePlugin implements IWailaPlugin {
         // 0.1.10.39: the Steam Tunnel controller (no menu)
         registration.registerBlockComponent(SteamTunnelProvider.INSTANCE,
                 com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_tunnel.class);
+        // 0.1.10.39: why a reactor makes nothing; fluid mode makes hot coolant, no EU
+        registration.registerBlockComponent(ReactorStatusProvider.INSTANCE,
+                com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Nuclear_Reactor_Generator.class);
         // 注册 EU 能量客户端组件提供器
         registration.registerBlockComponent(
                 EUEnergyStorageProvider.INSTANCE,

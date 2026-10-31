@@ -18,7 +18,7 @@ item_ids:
 
 The machine burns nuclear fuel rods and makes EU and heat.
 Each adjacent Reactor Chamber adds one column of component slots.
-With a Reactor Pressure Vessel structure, the machine changes to fluid mode and heats coolant.
+With a Reactor Pressure Vessel structure, the machine changes to fluid mode and heats coolant. In fluid mode it makes no EU: the heat leaves as hot coolant (Jade shows how many HU/s), for a <ItemLink id="mio_icif:hugenerator/block_heat_source_fluid" />. MOX rods make twice the heat there above half of the maximum hull heat.
 
 ## Power data
 
@@ -35,7 +35,7 @@ The game measured these values from the block entity of this version.
 1. Place Reactor Chambers against the faces of the reactor.
 2. Put fuel rods and cooling components into the slots.
 3. Connect a cable to the reactor.
-4. Apply a redstone signal to the reactor to start it.
+4. Apply a redstone signal to the reactor to start it. A chamber or a redstone port of the pressure vessel also takes the signal. Without one the reactor does nothing, and its screen and Jade say "Off: no redstone signal".
 
 ## Heat stages
 

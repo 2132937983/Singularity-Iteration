@@ -125,13 +125,13 @@ public class FluidReactorMenu extends mio_icif_base_menu {
             this.data = blockEntity.getFluidContainerData();
         } else {
             this.data = new ContainerData() {
-                private final int[] data = new int[10];   // 0.1.10.36: + the two tank capacities
+                private final int[] data = new int[11];   // 0.1.10.36: + the two tank capacities; 0.1.10.39: + the status
                 @Override
                 public int get(int index) { return data[index]; }
                 @Override
                 public void set(int index, int value) { data[index] = value; }
                 @Override
-                public int getCount() { return 10; }
+                public int getCount() { return 11; }
             };
         }
         this.addDataSlots(data);
@@ -158,6 +158,11 @@ public class FluidReactorMenu extends mio_icif_base_menu {
         for (int i = 0; i < 9; ++i) {
             this.addSlot(new Slot(playerInventory, i, startX + i * 18, hotbarY));
         }
+    }
+
+    /** 0.1.10.39: why the reactor makes nothing ({@code mio_icif_nuclear_reactor_generator.STATUS_*}). */
+    public int getStatus() {
+        return data.get(10);
     }
 
     public int getCurrentHeat() {

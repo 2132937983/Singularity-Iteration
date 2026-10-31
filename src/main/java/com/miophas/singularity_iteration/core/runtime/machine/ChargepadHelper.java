@@ -3,6 +3,10 @@ package com.miophas.singularity_iteration.core.runtime.machine;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyStorageBlockEntity;
 import com.miophas.singularity_iteration.core.api.MioIcifAPI;
 import com.miophas.singularity_iteration.core.api.item.IItemAPI;
+import com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage;
+import com.miophas.singularity_iteration.core.api.item.IBatteryItem;
+import com.miophas.singularity_iteration.core.runtime.energy.DirectItemCharging;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -58,8 +62,10 @@ public final class ChargepadHelper {
                     == com.miophas.singularity_iteration.core.api.item.ChargePriority.OFF) continue;
             if (api.isElectricArmor(stack)) {
                 totalExtracted += chargeArmor(container, stack, availableEnergy - totalExtracted, maxTransferPerItem);
-            } else {
+            } else if (api.isElectricTool(stack)) {
                 totalExtracted += chargeTool(container, stack, availableEnergy - totalExtracted, maxTransferPerItem);
+            } else {
+                totalExtracted += chargeFeItem(container, stack, availableEnergy - totalExtracted, maxTransferPerItem);
             }
         }
 
@@ -136,7 +142,23 @@ public final class ChargepadHelper {
         if (api.isBattery(stack)) {
             return chargeBattery(container, stack, availableEnergy, maxTransferPerItem);
         }
-        return 0;
+        return chargeFeItem(container, stack, availableEnergy, maxTransferPerItem);
+    }
+
+    /**
+     * 0.1.10.39: another mod's FE item (an AE2 wireless terminal, a Mekanism tool) on a charge pad. It takes whole EU at
+     * {@link ILongEnergyStorage#FE_PER_EU} FE each; what it refuses goes back to the pad. SI items keep their own paths above.
+     */
+    private static long chargeFeItem(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {
+        if (stack.isEmpty() || stack.getCount() != 1 || stack.getItem() instanceof IBatteryItem) return 0;
+        var cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (cap == null || !cap.canReceive()) return 0;
+        long offer = Math.min(availableEnergy, maxTransferPerItem);
+        if (offer <= 0) return 0;
+        return transfer(container, offer,
+            amount -> cap.receiveEnergy((int) Math.min(Integer.MAX_VALUE / ILongEnergyStorage.FE_PER_EU, amount) * ILongEnergyStorage.FE_PER_EU, true)
+                / ILongEnergyStorage.FE_PER_EU,
+            amount -> DirectItemCharging.charge(stack, amount));
     }
 
     private static long chargeBattery(AbstractEnergyStorageBlockEntity container, ItemStack stack, long availableEnergy, long maxTransferPerItem) {

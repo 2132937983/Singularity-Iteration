@@ -53,8 +53,11 @@ public final class CompatUniversalCableGameTests {
         }
         if (ModList.get().isLoaded(MEK_GEN))
             tests.add(test("mek_gen_in", "mekanismHeatGeneratorFeedsSiCables", 400, CompatUniversalCableGameTests::mekanismHeatGeneratorFeedsSiCables));
-        if (ModList.get().isLoaded(AE2))
+        if (ModList.get().isLoaded(AE2)) {
             tests.add(test("ae2_fe_out", "siNetworkChargesAnAe2Network", 160, CompatUniversalCableGameTests::siNetworkChargesAnAe2Network));
+            tests.add(test("ae2_pad", "chargePadChargesAnAe2Terminal", 40, CompatUniversalCableGameTests::chargePadChargesAnAe2Terminal));
+            tests.add(test("ae2_battery", "chargingBatteryChargesAnAe2Terminal", 40, CompatUniversalCableGameTests::chargingBatteryChargesAnAe2Terminal));
+        }
         return tests;
     }
 
@@ -327,6 +330,58 @@ public final class CompatUniversalCableGameTests {
      * energy cube behind the Mekanism cable stays empty), and takes none from it (an MFSU behind an SI cable stays empty while a
      * full energy cube pushes into a Mekanism cable that touches it).
      */
+    /** An AE2 wireless terminal (an FE item) with its FE capability, or a failed assertion. */
+    private static ItemStack ae2Terminal(GameTestHelper h) {
+        ItemStack terminal = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("ae2:wireless_terminal")));
+        IEnergyStorage fe = terminal.getCapability(Capabilities.EnergyStorage.ITEM);
+        h.assertTrue(!terminal.isEmpty() && fe != null && fe.canReceive(), "the AE2 wireless terminal has no FE item capability: " + terminal);
+        return terminal;
+    }
+
+    private static int terminalFe(ItemStack terminal) {
+        return terminal.getCapability(Capabilities.EnergyStorage.ITEM).getEnergyStored();
+    }
+
+    /**
+     * Follow-up: a BatBox Charger (a charge pad) charges an AE2 wireless terminal in the player's inventory, at 4 FE per EU, as the
+     * MFSU's charge slot already did. Its own per-player step runs here with a mock player (not put into the world).
+     */
+    private static void chargePadChargesAnAe2Terminal(GameTestHelper h) {
+        BlockPos pad = new BlockPos(2, 1, 2);
+        place(h, pad, block("mio_icif:wiring/block_batbox_charger").defaultBlockState());
+        setSiEu(h, pad, 10_000);
+        ItemStack terminal = ae2Terminal(h);
+        var player = h.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.getInventory().setItem(9, terminal);
+        long before = siEu(h, pad);
+        boolean charged = (Boolean) call(com.miophas.singularity_iteration.core.runtime.machine.ChargepadHelper.class, "chargePlayerEquipment",
+            h.getBlockEntity(pad), player, 32L);
+        long spent = before - siEu(h, pad);
+        int got = terminalFe(terminal);
+        LOG.info("charge pad -> AE2 terminal: {} EU spent, {} FE received", spent, got);
+        h.assertTrue(charged && got > 0, "the charge pad did not charge the AE2 terminal (" + got + " FE)");
+        h.assertTrue(got == spent * 4, "the terminal got " + got + " FE for " + spent + " EU, not 4 FE per EU");
+        h.succeed();
+    }
+
+    /** Follow-up: a Charging RE-Battery in auto-charge charges an AE2 wireless terminal in the inventory, at 4 FE per EU. */
+    private static void chargingBatteryChargesAnAe2Terminal(GameTestHelper h) {
+        ItemStack battery = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse("mio_icif:normal/item_chargebat_lev0")));
+        var cell = (com.miophas.singularity_iteration.core.api.item.IBatteryItem) battery.getItem();
+        cell.addEnergy(battery, cell.getMaxEnergy(battery));
+        ItemStack terminal = ae2Terminal(h);
+        var player = h.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        player.getInventory().setItem(9, terminal);
+        long before = cell.getEnergy(battery);
+        ((com.miophas.singularity_iteration.core.api.item.IEnergyDistributable) battery.getItem()).distributeEnergyToItems(player, battery, 1_000);
+        long spent = before - cell.getEnergy(battery);
+        int got = terminalFe(terminal);
+        LOG.info("charging battery -> AE2 terminal: {} EU spent, {} FE received", spent, got);
+        h.assertTrue(got > 0, "the charging battery did not charge the AE2 terminal");
+        h.assertTrue(got <= spent * 4 && got > (spent - 1) * 4, "the terminal got " + got + " FE for " + spent + " EU, not 4 FE per EU");
+        h.succeed();
+    }
+
     private static void siCableRefusesAMekanismUniversalCable(GameTestHelper h) {
         // row z = 1: SI MFSU -> SI cable | Mekanism cable -> energy cube
         BlockPos siSource = new BlockPos(0, 1, 1), siCable = new BlockPos(1, 1, 1), mekCable = new BlockPos(2, 1, 1), mekCube = new BlockPos(3, 1, 1);

@@ -4593,5 +4593,13 @@
   "structure.mio_icif.steam_tunnel.note.output": "每 1,024 mB 蒸汽产生 512 EU，每 tick 最多 4 次（2,048 EU/t）；缓存 10,000 EU",
   "structure.mio_icif.steam_tunnel.note.water": "每 100 mB 蒸汽返还 1 mB 水（水箱 2,000 mB，溢出部分损失）",
   "command.mio_icif.perf.fe": "FE 每 tick：推入导线 %1$s，输出 %2$s，输入 %3$s；邻居探测 %4$s（跳过 %5$s）",
-  "jade.mio_icif.steam_tunnel.output": "输出：%s EU/t"
+  "jade.mio_icif.steam_tunnel.output": "输出：%s EU/t",
+  "gui.mio_icif.reactor.status.off": "已关闭：没有红石信号",
+  "gui.mio_icif.reactor.status.stopped": "已停止：上一循环出错",
+  "gui.mio_icif.reactor.status.hold": "暂停：存档状态需要恢复",
+  "gui.mio_icif.reactor.status.accident": "事故后已停机",
+  "jade.mio_icif.reactor.off": "已关闭：没有红石信号（反应堆、反应仓或红石端口上均可）",
+  "jade.mio_icif.reactor.stopped": "已停止：%s",
+  "jade.mio_icif.reactor.fluid_mode": "流体模式：不发电，%s HU/s 转为热冷却液",
+  "config.jade.plugin_mio_icif.reactor_status": "核反应堆状态"
 }

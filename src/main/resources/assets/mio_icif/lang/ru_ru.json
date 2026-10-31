@@ -3155,5 +3155,13 @@
   "message.mio_icif.steam_tunnel.problem.casing_or_port": "Паровой туннель: нет корпуса или порта (%s)",
   "config.jade.plugin_mio_icif.steam_tunnel": "Паровой туннель",
   "command.mio_icif.perf.fe": "FE за тик: в кабели %1$s, отдано %2$s, принято %3$s; проверок соседей %4$s (пропущено %5$s)",
-  "jade.mio_icif.steam_tunnel.output": "Выход: %s EU/t"
+  "jade.mio_icif.steam_tunnel.output": "Выход: %s EU/t",
+  "gui.mio_icif.reactor.status.off": "Выключен: нет сигнала красного камня",
+  "gui.mio_icif.reactor.status.stopped": "Остановлен: последний цикл не удался",
+  "gui.mio_icif.reactor.status.hold": "Приостановлен: сохранённое состояние требует восстановления",
+  "gui.mio_icif.reactor.status.accident": "Отключён после аварии",
+  "jade.mio_icif.reactor.off": "Выключен: нет сигнала красного камня (на реакторе, камере или порту красного камня)",
+  "jade.mio_icif.reactor.stopped": "Остановлен: %s",
+  "jade.mio_icif.reactor.fluid_mode": "Жидкостный режим: без EU, %s HU/с в горячий хладагент",
+  "config.jade.plugin_mio_icif.reactor_status": "Состояние ядерного реактора"
 }

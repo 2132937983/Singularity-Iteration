@@ -33,7 +33,7 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
                                         @Nullable IItemHandler itemHandler,
                                         @Nullable ContainerData data) {
         super(mio_icif_menus.NUCLEAR_REACTOR_GENERATOR_MENU_TYPE.get(), containerId, TOTAL_SLOT_COUNT,
-              playerInventory, itemHandler, data, 11, blockEntity);
+              playerInventory, itemHandler, data, 12, blockEntity);
     }
 
     @Override
@@ -88,6 +88,8 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
     public int getHotCoolantAmount() { return data.get(8); }
     public int getCoolingAbsorbed() { return data.get(9); }
     public int getCoolantHuPerMB() { return data.get(10); }
+    /** 0.1.10.39: why the reactor makes nothing ({@code mio_icif_nuclear_reactor_generator.STATUS_*}). */
+    public int getStatus() { return data.get(11); }
     public net.neoforged.neoforge.fluids.FluidStack coolantFluid() {
         return blockEntity instanceof mio_icif_nuclear_reactor_generator gen ? gen.getLiquidCooling().coldFluid() : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
     }

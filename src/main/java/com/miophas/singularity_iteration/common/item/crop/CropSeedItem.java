@@ -98,7 +98,8 @@ public class CropSeedItem extends Item implements ICropSeedItem {
         if (planter.getPlant() != null || planter.isHybridBase()) return false;
         PlantType plantType = baseSeed == null ? getPlantType(stack) : baseSeed.plantType;
         int requiredSeeds = baseSeed == null ? 1 : Math.max(1, baseSeed.seed.getCount());
-        if (plantType == null || !plantType.canGrow(planter) || stack.getCount() < requiredSeeds) return false;
+        // 0.1.10.39: a base seed is planted whatever the light (IC2); a seed bag needs the plant to be able to grow there now
+        if (plantType == null || (baseSeed == null && !plantType.canGrow(planter)) || stack.getCount() < requiredSeeds) return false;
         var traits = CropSeedData.traits(stack);
         planter.setPlant(plantType);
         planter.setGrowthStage(baseSeed == null ? 1 : Math.max(1, baseSeed.stage));
@@ -121,7 +122,15 @@ public class CropSeedItem extends Item implements ICropSeedItem {
         if (planter.getPlant() != null || planter.isHybridBase()) return InteractionResult.PASS;
         PlantType plantType = baseSeed == null ? getPlantType(stack) : baseSeed.plantType;
         int requiredSeeds = baseSeed == null ? 1 : Math.max(1, baseSeed.seed.getCount());
-        if (plantType == null || !plantType.canGrow(planter) || stack.getCount() < requiredSeeds) return InteractionResult.PASS;
+        if (plantType == null || stack.getCount() < requiredSeeds) return InteractionResult.PASS;
+        // 0.1.10.39: a base seed (wheat seeds, a potato...) is planted whatever the light, as in IC2: the crop waits until it can
+        // grow. It used to be refused at night or in shade without a word. A seed bag still needs the plant to be able to grow
+        // there now (IC2), and the player is told why not.
+        if (baseSeed == null && !plantType.canGrow(planter)) {
+            if (!level.isClientSide) player.displayClientMessage(
+                com.miophas.singularity_iteration.common.crop.CropDiagnosis.cannotGrowReason(plantType, planter), true);
+            return InteractionResult.PASS;
+        }
 
         if (!level.isClientSide) {
             var traits = CropSeedData.traits(stack);

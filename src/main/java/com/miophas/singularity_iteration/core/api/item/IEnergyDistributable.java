@@ -48,6 +48,9 @@ public interface IEnergyDistributable extends IBatteryItem {
             if (s.isEmpty() || s == batteryStack) continue;
             if (BatteryTransfer.isEquipment(s) && s.getItem() instanceof IBatteryItem item) {
                 if (item.getEnergy(s) < item.getMaxEnergy(s)) targets.add(s);
+            } else if (!(s.getItem() instanceof IBatteryItem) && s.getCount() == 1
+                    && com.miophas.singularity_iteration.core.runtime.energy.DirectItemCharging.canCharge(s)) {
+                targets.add(s);   // 0.1.10.39: another mod's FE item (an AE2 wireless terminal, a Mekanism tool)
             }
         }
 
@@ -61,7 +64,14 @@ public interface IEnergyDistributable extends IBatteryItem {
         if (energyPerTarget <= 0) return;
 
         for (ItemStack target : targets) {
-            BatteryTransfer.move(batteryStack, this, target, (IBatteryItem) target.getItem(), energyPerTarget);
+            if (target.getItem() instanceof IBatteryItem to) {
+                BatteryTransfer.move(batteryStack, this, target, to, energyPerTarget);
+            } else {
+                // 0.1.10.39: an FE item takes whole EU (4 FE each); the battery gives exactly the EU it took
+                long taken = com.miophas.singularity_iteration.core.runtime.energy.DirectItemCharging.charge(target,
+                    Math.min(energyPerTarget, getEnergy(batteryStack)));
+                if (taken > 0) extractEnergy(batteryStack, taken);
+            }
         }
     }
 

@@ -4593,5 +4593,13 @@
   "structure.mio_icif.steam_tunnel.note.output": "1,024 mB of steam make 512 EU, up to 4 times a tick (2,048 EU/t); 10,000 EU buffer",
   "structure.mio_icif.steam_tunnel.note.water": "Returns 1 mB of water per 100 mB of steam (2,000 mB tank; the rest is lost)",
   "command.mio_icif.perf.fe": "FE per tick: into cables %1$s, exported %2$s, imported %3$s; neighbour probes %4$s (%5$s skipped)",
-  "jade.mio_icif.steam_tunnel.output": "Output: %s EU/t"
+  "jade.mio_icif.steam_tunnel.output": "Output: %s EU/t",
+  "gui.mio_icif.reactor.status.off": "Off: no redstone signal",
+  "gui.mio_icif.reactor.status.stopped": "Stopped: the last cycle failed",
+  "gui.mio_icif.reactor.status.hold": "On hold: saved state needs recovery",
+  "gui.mio_icif.reactor.status.accident": "Shut down after an accident",
+  "jade.mio_icif.reactor.off": "Off: no redstone signal (on the reactor, a chamber or a redstone port)",
+  "jade.mio_icif.reactor.stopped": "Stopped: %s",
+  "jade.mio_icif.reactor.fluid_mode": "Fluid mode: no EU, %s HU/s into hot coolant",
+  "config.jade.plugin_mio_icif.reactor_status": "Nuclear reactor status"
 }

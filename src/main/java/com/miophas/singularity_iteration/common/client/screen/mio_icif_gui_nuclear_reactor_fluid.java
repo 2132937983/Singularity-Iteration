@@ -167,10 +167,13 @@ public class mio_icif_gui_nuclear_reactor_fluid extends mio_icif_screen<FluidRea
         // 发热功率在右（青色）。文字过长时自动缩小，不会越出面板。
         float heatFraction = maxHeat > 0 ? Math.max(0F, Math.min(1F, heat / (float) maxHeat)) : 0F;
         guiGraphics.fill(PANEL_X0, PANEL_Y0, PANEL_X1, PANEL_Y1, PANEL_BACKING);
-        Component outputLine = Component.translatable("gui.mio_icif.reactor.heat_output", heatOutput);
+        // 0.1.10.39: a reactor that makes nothing says why (off without a redstone signal, stopped, on hold) in place of the output
+        String statusKey = com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator.statusKey(menu.getStatus());
+        Component outputLine = statusKey != null ? Component.translatable(statusKey)
+            : Component.translatable("gui.mio_icif.reactor.heat_output", heatOutput);
         int outputMax = (PANEL_X1 - PANEL_X0) / 2 - 4;
         int outputWidth = Math.min(this.font.width(outputLine), outputMax);
-        drawFittedRight(guiGraphics, this.font, outputLine, PANEL_X1 - 2, INFO_TEXT_Y, outputMax, OUTPUT_INK, true);
+        drawFittedRight(guiGraphics, this.font, outputLine, PANEL_X1 - 2, INFO_TEXT_Y, outputMax, statusKey != null ? 0xFFFF7A6A : OUTPUT_INK, true);
         drawFitted(guiGraphics, this.font, Component.translatable("gui.mio_icif.nuclear_reactor.heat", heat, maxHeat),
             INFO_TEXT_X, INFO_TEXT_Y, PANEL_X1 - 2 - outputWidth - 8 - INFO_TEXT_X, heatInk(heatFraction), true);
     }

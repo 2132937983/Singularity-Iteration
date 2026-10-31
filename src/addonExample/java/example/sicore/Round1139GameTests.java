@@ -325,6 +325,146 @@ public final class Round1139GameTests {
         });
     }
 
+    // ------------------------------------------------------------------ follow-ups: planting in the dark, reactor status
+
+    private static Object field(Object target, String name) {
+        for (Class<?> k = target.getClass(); k != null; k = k.getSuperclass()) {
+            try { var f = k.getDeclaredField(name); f.setAccessible(true); return f.get(target); }
+            catch (NoSuchFieldException e) { /* the superclass then */ }
+            catch (ReflectiveOperationException e) { throw new AssertionError(name, e); }
+        }
+        throw new AssertionError("no field " + name + " on " + target.getClass());
+    }
+
+    /**
+     * A crop stick on farmland at {@code at}, walled in with stone: around the stick and above it, and around and under the
+     * farmland too (light comes up through farmland, which is not a full block). Light 0.
+     */
+    private static void darkStick(GameTestHelper h, BlockPos at) {
+        h.setBlock(at.below(2), Blocks.STONE);
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            h.setBlock(at.below().relative(side), Blocks.STONE);
+            h.setBlock(at.relative(side), Blocks.STONE);
+        }
+        h.setBlock(at.below(), Blocks.FARMLAND);
+        h.setBlock(at, BuiltInRegistries.BLOCK.get(id("crop/stick")));
+        h.setBlock(at.above(), Blocks.STONE);
+    }
+
+    private static net.minecraft.world.phys.BlockHitResult hitTop(GameTestHelper h, BlockPos at) {
+        BlockPos abs = h.absolutePos(at);
+        return new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(abs), Direction.UP, abs, false);
+    }
+
+    /**
+     * Wheat seeds plant on a crop stick in the dark (IC2 plants a base seed whatever the light; the crop waits to grow). It used to
+     * be refused at night or in shade without a word, so some sticks of a field "randomly" stayed empty. A seed bag still needs
+     * the plant to be able to grow there now (IC2), and stays in the hand.
+     */
+    @GameTest(batch = "round1139_followups", template = "empty", timeoutTicks = 20)
+    public static void baseSeedsPlantInTheDarkButSeedBagsWaitForLight(GameTestHelper h) {
+        BlockPos first = new BlockPos(1, 2, 1), second = new BlockPos(3, 2, 3);
+        darkStick(h, first);
+        darkStick(h, second);
+        h.runAfterDelay(5, () -> plantInTheDark(h, first, second));   // the light engine catches up with the new walls first
+    }
+
+    private static void plantInTheDark(GameTestHelper h, BlockPos first, BlockPos second) {
+        var player = h.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        var crop = (com.miophas.singularity_iteration.core.api.crop.IPlanter) h.getBlockEntity(first);
+        h.assertTrue(crop.getLightLevel() < 9, "the walled-in stick is not dark: light " + crop.getLightLevel());
+        net.minecraft.world.item.ItemStack seeds = new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WHEAT_SEEDS, 4);
+        h.getLevel().getBlockState(h.absolutePos(first)).useItemOn(seeds, h.getLevel(), player, net.minecraft.world.InteractionHand.MAIN_HAND, hitTop(h, first));
+        h.assertTrue(crop.getPlant() != null, "wheat seeds were refused on a stick at light " + crop.getLightLevel());
+        h.assertTrue(seeds.getCount() == 3, "planting took " + (4 - seeds.getCount()) + " seeds, not 1");
+        var bag = (net.minecraft.world.item.ItemStack) call(h.getBlockEntity(first), "makeSeeds", crop.getPlant(), 1, 1, 1, 1);
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, bag);
+        var result = bag.useOn(new net.minecraft.world.item.context.UseOnContext(player, net.minecraft.world.InteractionHand.MAIN_HAND, hitTop(h, second)));
+        var other = (com.miophas.singularity_iteration.core.api.crop.IPlanter) h.getBlockEntity(second);
+        h.assertTrue(other.getPlant() == null && bag.getCount() == 1, "a seed bag planted in the dark (" + result + ")");
+        h.succeed();
+    }
+
+    private static final BlockPos REACTOR = new BlockPos(2, 2, 2);
+
+    private static net.minecraft.world.item.ItemStack moxQuad(GameTestHelper h) {
+        var tag = new net.minecraft.nbt.CompoundTag();
+        tag.putString("id", "mio_icif:reactor/item_reactor_mox_quad");
+        tag.putInt("count", 1);
+        var durability = new net.minecraft.nbt.CompoundTag();
+        durability.putInt("remaining_uses", 10_000); durability.putInt("max_uses", 10_000); durability.putInt("tick_counter", 0);
+        var components = new net.minecraft.nbt.CompoundTag();
+        components.put("mio_icif:fuel_rod_durability", durability);
+        tag.put("components", components);
+        return net.minecraft.world.item.ItemStack.parse(h.getLevel().registryAccess(), tag).orElseThrow();
+    }
+
+    private static int status(GameTestHelper h) { return (Integer) call(h.getBlockEntity(REACTOR), "statusCode"); }
+
+    private static long generation(GameTestHelper h) {
+        return ((com.miophas.singularity_iteration.core.api.reactor.IReactorController) h.getBlockEntity(REACTOR)).getCurrentEnergyGeneration();
+    }
+
+    /**
+     * The reactor of a player's report: 36 quad MOX rods in columns 1, 3, 4, 6, 7, 9 and 18 Component Heat Exchangers in columns
+     * 2, 5, 8 of a reactor with six chambers, at 5,567 hull heat. Without a redstone signal it makes nothing and now says so
+     * (status off); with a redstone block next to a chamber it makes about 12,391 EU/t (MOX at 5,567 / 10,000 heat).
+     */
+    @GameTest(batch = "round1139_followups", template = "empty", timeoutTicks = 100)
+    public static void moxReactorOfTheReportRunsOnlyWithRedstoneAndSaysWhy(GameTestHelper h) {
+        h.setBlock(REACTOR, BuiltInRegistries.BLOCK.get(id("generator/block_nuclear_reactor_generator")));
+        for (Direction side : Direction.values()) h.setBlock(REACTOR.relative(side), BuiltInRegistries.BLOCK.get(id("reactor/block_reactor_chamber")));
+        h.runAfterDelay(5, () -> {
+            var reactor = (com.miophas.singularity_iteration.core.api.reactor.IReactorController) h.getBlockEntity(REACTOR);
+            h.assertTrue(reactor.getAvailableColumns() == 9, "six chambers give " + reactor.getAvailableColumns() + " columns");
+            var exchanger = BuiltInRegistries.ITEM.get(id("reactor/item_reactor_heat_switch_spread"));
+            for (int slot = 0; slot < 54; slot++) {
+                int col = slot % 9;
+                var stack = col == 1 || col == 4 || col == 7 ? new net.minecraft.world.item.ItemStack(exchanger) : moxQuad(h);
+                h.assertTrue(reactor.getItemHandler().insertItem(slot, stack, false).isEmpty(), "slot " + slot + " refused " + stack);
+            }
+            call(field(h.getBlockEntity(REACTOR), "heat"), "setHeat", 5_567L);
+            h.runAfterDelay(25, () -> {
+                h.assertTrue(status(h) == 1, "without a redstone signal the status is " + status(h) + ", not 1 (off)");
+                h.assertTrue(generation(h) == 0, "the reactor made " + generation(h) + " EU/t without a redstone signal");
+                h.setBlock(REACTOR.east(2), Blocks.REDSTONE_BLOCK);   // powers the east chamber
+                h.runAfterDelay(25, () -> {
+                    long eu = generation(h);
+                    int running = status(h);
+                    h.setBlock(REACTOR.east(2), Blocks.AIR);   // off again before the exchangers fill up
+                    h.assertTrue(running == 0, "the running reactor reports status " + running + ", not 0");
+                    h.assertTrue(eu >= 12_380 && eu <= 12_400, "the MOX reactor of the report made " + eu + " EU/t, not about 12,391");
+                    h.succeed();
+                });
+            });
+        });
+    }
+
+    /**
+     * Fluid mode makes no EU: MOX doubles its heat above half the maximum hull heat (here 6,000 against 4,000), and the vented heat
+     * goes into hot coolant. In generator mode the same rod makes EU and does not double its heat.
+     */
+    @GameTest(batch = "round1139_followups", template = "empty", timeoutTicks = 20)
+    public static void moxInFluidModeMakesHotCoolantAndDoublesItsHeat(GameTestHelper h) {
+        var parts = new com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Part[54];
+        parts[10] = new com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Part(
+            com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Profile.fuel(4, true), 0, 10_000);
+        parts[11] = new com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Part(
+            com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.Profile.vent(1_000, 6, 0), 0, 0);
+        var cool = com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.step(parts.clone(), 9, 4_000, true, true);
+        var hot = com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.step(parts.clone(), 9, 6_000, true, true);
+        h.assertTrue(cool.euPerTick() == 0 && hot.euPerTick() == 0, "fluid mode made EU: " + cool.euPerTick() + " / " + hot.euPerTick());
+        h.assertTrue(hot.generatedHeat() == 2 * cool.generatedHeat(),
+            "MOX above half heat made " + hot.generatedHeat() + " heat, not twice " + cool.generatedHeat());
+        var generator = com.miophas.singularity_iteration.core.runtime.reactor.ReactorCycle.step(parts.clone(), 9, 6_000, true, false);
+        h.assertTrue(generator.euPerTick() > 0 && generator.generatedHeat() == cool.generatedHeat(),
+            "generator mode: " + generator.euPerTick() + " EU/t, " + generator.generatedHeat() + " heat");
+        var fluid = com.miophas.singularity_iteration.core.runtime.reactor.FluidReactorCycle.step(parts.clone(), 9, 6_000, true, 10_000, 0, 10_000,
+            com.miophas.singularity_iteration.core.runtime.reactor.FluidReactorCycle.COOLANT_HU_PER_MB);
+        h.assertTrue(fluid.converted() > 0 && fluid.cycle().euPerTick() == 0, "the vented heat made " + fluid.converted() + " mB of hot coolant");
+        h.succeed();
+    }
+
     // ------------------------------------------------------------------ C2: universal cables
 
     private static Object staticField(Class<?> owner, String name) {

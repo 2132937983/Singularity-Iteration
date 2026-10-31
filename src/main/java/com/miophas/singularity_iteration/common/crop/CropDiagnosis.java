@@ -7,6 +7,7 @@ import com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
@@ -96,6 +97,18 @@ public final class CropDiagnosis {
         return new Snapshot(plant.getModId(), plant.getTypeId(), stage, max, plant.getHarvestStage(), p.getProgress(),
             Math.max(1, plant.getGrowthTime(p)), p.getGrowthSpeed(), p.getYield(), p.getResilience(), humidity, soil, air, light,
             p.getWater(), p.getNutrients(), p.getWeedControl(), required, quality, flags, blocker, value, detail);
+    }
+
+    /**
+     * 0.1.10.39: why {@code plant} cannot grow on {@code p} now, as the crop scanner says it: light too low or too high, or another
+     * condition. Shown when a seed bag is refused.
+     */
+    public static Component cannotGrowReason(PlantType plant, IPlanter p) {
+        int light = p.getLightLevel();
+        int[] range = lightRange(plant);
+        if (range != null && light < range[0]) return Component.translatable("hud.mio_icif.crop_scanner.light_low", light, range[0]);
+        if (range != null && light > range[1]) return Component.translatable("hud.mio_icif.crop_scanner.light_high", light, range[1]);
+        return Component.translatable("hud.mio_icif.crop_scanner.other");
     }
 
     /** EN: Light range {min, max} that the plant needs, or null for no light rule. ZH: 植物所需的光照范围 {最小, 最大}，无光照规则时为 null。JA: 植物が必要とする明るさの範囲 {最小, 最大}。明るさの規則がなければ null。 */

@@ -97,9 +97,17 @@ public class mio_icif_gui_nuclear_reactor_generator extends mio_icif_screen<com.
         String heatText = Component.translatable("gui.mio_icif.nuclear_reactor.heat", heat, maxHeat).getString();
         String powerText = Component.translatable("gui.mio_icif.nuclear_reactor.power", outputPower).getString();
         String infoText = heatText + "    " + powerText;
+        String statusKey = com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator.statusKey(menu.getStatus());
 
         // 绘制绿色文本 (0x2A2E33 是绿色)
-        guiGraphics.drawString(this.font, infoText, INFO_TEXT_X, INFO_TEXT_Y, 0x2A2E33, false);
+        if (statusKey == null) {
+            guiGraphics.drawString(this.font, infoText, INFO_TEXT_X, INFO_TEXT_Y, 0x2A2E33, false);
+        } else {
+            // 0.1.10.39: a reactor that makes nothing says why (off without a redstone signal, stopped, on hold) instead of 0 EU/t
+            guiGraphics.drawString(this.font, heatText, INFO_TEXT_X, INFO_TEXT_Y, 0x2A2E33, false);
+            int x = INFO_TEXT_X + this.font.width(heatText) + 12;
+            drawFitted(guiGraphics, this.font, Component.translatable(statusKey), x, INFO_TEXT_Y, this.imageWidth - 7 - x, 0xB3261E, false);
+        }
         
         drawFeedRow(guiGraphics, mouseX, mouseY);
         drawCoolant(guiGraphics, mouseX, mouseY);

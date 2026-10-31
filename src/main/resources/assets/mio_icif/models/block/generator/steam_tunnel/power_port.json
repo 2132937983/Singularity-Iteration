@@ -1,0 +1,24 @@
+{
+  "loader": "mio_icif:steam_tunnel_shell",
+  "textures": {
+    "particle": "mio_icif:block/generator/block_steam_tunnel_power_port"
+  },
+  "tiles": [
+    "mio_icif:block/generator/block_steam_tunnel_power_port",
+    "mio_icif:block/generator/steam_tunnel/power_port_1",
+    "mio_icif:block/generator/steam_tunnel/power_port_2",
+    "mio_icif:block/generator/steam_tunnel/power_port_3",
+    "mio_icif:block/generator/steam_tunnel/power_port_4",
+    "mio_icif:block/generator/steam_tunnel/power_port_5",
+    "mio_icif:block/generator/steam_tunnel/power_port_6",
+    "mio_icif:block/generator/steam_tunnel/power_port_7",
+    "mio_icif:block/generator/steam_tunnel/power_port_8",
+    "mio_icif:block/generator/steam_tunnel/power_port_9",
+    "mio_icif:block/generator/steam_tunnel/power_port_10",
+    "mio_icif:block/generator/steam_tunnel/power_port_11",
+    "mio_icif:block/generator/steam_tunnel/power_port_12",
+    "mio_icif:block/generator/steam_tunnel/power_port_13",
+    "mio_icif:block/generator/steam_tunnel/power_port_14",
+    "mio_icif:block/generator/steam_tunnel/power_port_15"
+  ]
+}

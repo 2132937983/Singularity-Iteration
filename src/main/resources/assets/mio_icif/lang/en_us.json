@@ -4583,8 +4583,6 @@
   "message.mio_icif.steam_tunnel.problem.port_on_edge": "Steam Tunnel: a port on an edge (%s); ports go in the middle of a side or the back",
   "message.mio_icif.steam_tunnel.problem.casing": "Steam Tunnel: casing missing (%s)",
   "message.mio_icif.steam_tunnel.problem.casing_or_port": "Steam Tunnel: casing or port missing (%s)",
-  "jade.mio_icif.steam_tunnel.fluids": "Steam %1$s / %2$s mB, water %3$s / %4$s mB",
-  "jade.mio_icif.steam_tunnel.energy": "Buffer %1$s / %2$s EU, output %3$s EU/t",
   "config.jade.plugin_mio_icif.steam_tunnel": "Steam Tunnel",
   "structure.mio_icif.steam_tunnel": "Steam Tunnel",
   "structure.mio_icif.steam_tunnel.casing": "Edges: Steam Tunnel Casing",
@@ -4594,5 +4592,9 @@
   "structure.mio_icif.steam_tunnel.note.inside": "The 3 blocks inside must be air; the controller faces out of the front",
   "structure.mio_icif.steam_tunnel.note.output": "1,024 mB of steam make 512 EU, up to 4 times a tick (2,048 EU/t); 10,000 EU buffer",
   "structure.mio_icif.steam_tunnel.note.water": "Returns 1 mB of water per 100 mB of steam (2,000 mB tank; the rest is lost)",
-  "command.mio_icif.perf.fe": "FE per tick: into cables %1$s, exported %2$s, imported %3$s; neighbour probes %4$s (%5$s skipped)"
+  "command.mio_icif.perf.fe": "FE per tick: into cables %1$s, exported %2$s, imported %3$s; neighbour probes %4$s (%5$s skipped)",
+  "jade.mio_icif.steam_tunnel.steam": "Steam: %1$s / %2$s mB",
+  "jade.mio_icif.steam_tunnel.water": "Water: %1$s / %2$s mB",
+  "jade.mio_icif.steam_tunnel.buffer": "EU buffer: %1$s / %2$s EU",
+  "jade.mio_icif.steam_tunnel.output": "Output: %s EU/t"
 }

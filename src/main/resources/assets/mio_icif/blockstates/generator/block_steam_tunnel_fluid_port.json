@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "mio_icif:block/generator/block_steam_tunnel_fluid_port"
+      "model": "mio_icif:block/generator/steam_tunnel/fluid_port"
     }
   }
 }

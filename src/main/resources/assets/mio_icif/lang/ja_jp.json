@@ -4583,8 +4583,6 @@
   "message.mio_icif.steam_tunnel.problem.port_on_edge": "スチームトンネル：ポートが辺にある（%s）。ポートは側面の中央か後端の中心に置く",
   "message.mio_icif.steam_tunnel.problem.casing": "スチームトンネル：外装がない（%s）",
   "message.mio_icif.steam_tunnel.problem.casing_or_port": "スチームトンネル：外装かポートがない（%s）",
-  "jade.mio_icif.steam_tunnel.fluids": "蒸気 %1$s / %2$s mB、水 %3$s / %4$s mB",
-  "jade.mio_icif.steam_tunnel.energy": "バッファ %1$s / %2$s EU、出力 %3$s EU/t",
   "config.jade.plugin_mio_icif.steam_tunnel": "スチームトンネル",
   "structure.mio_icif.steam_tunnel": "スチームトンネル",
   "structure.mio_icif.steam_tunnel.casing": "辺：スチームトンネル外装",
@@ -4594,5 +4592,9 @@
   "structure.mio_icif.steam_tunnel.note.inside": "内部の 3 ブロックは空気。コントローラーは前端の外を向く",
   "structure.mio_icif.steam_tunnel.note.output": "蒸気 1,024 mB で 512 EU、1 tick に最大 4 回（2,048 EU/t）。バッファ 10,000 EU",
   "structure.mio_icif.steam_tunnel.note.water": "蒸気 100 mB ごとに水 1 mB を返す（タンク 2,000 mB、あふれた分は失われる）",
-  "command.mio_icif.perf.fe": "FE 1 tick あたり：ケーブルへ %1$s、送出 %2$s、受入 %3$s。隣接確認 %4$s（省略 %5$s）"
+  "command.mio_icif.perf.fe": "FE 1 tick あたり：ケーブルへ %1$s、送出 %2$s、受入 %3$s。隣接確認 %4$s（省略 %5$s）",
+  "jade.mio_icif.steam_tunnel.steam": "蒸気：%1$s / %2$s mB",
+  "jade.mio_icif.steam_tunnel.water": "水：%1$s / %2$s mB",
+  "jade.mio_icif.steam_tunnel.buffer": "EU バッファ：%1$s / %2$s EU",
+  "jade.mio_icif.steam_tunnel.output": "出力：%s EU/t"
 }

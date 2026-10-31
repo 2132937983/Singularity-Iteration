@@ -3,7 +3,7 @@
   "textures": {
     "top": "mio_icif:block/generator/block_steam_tunnel_casing",
     "side": "mio_icif:block/generator/block_steam_tunnel_casing",
-    "front": "mio_icif:block/generator/steam_tunnel/fan_center_on",
+    "front": "mio_icif:block/generator/steam_tunnel/fan_center_spin",
     "particle": "mio_icif:block/generator/block_steam_tunnel_casing"
   }
 }

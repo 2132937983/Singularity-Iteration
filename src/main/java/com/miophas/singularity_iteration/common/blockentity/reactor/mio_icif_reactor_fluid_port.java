@@ -45,7 +45,7 @@ import org.jetbrains.annotations.Nullable;
  * - 实现 IFluidHandler 接口，允许外部管道连
  */
 @SuppressWarnings("null")
-public class mio_icif_reactor_fluid_port extends BlockEntity implements MenuProvider, IFluidHandler, IFluidPort {
+public class mio_icif_reactor_fluid_port extends BlockEntity implements MenuProvider, IFluidHandler, IFluidPort, ReactorFluidPortMenu.Host {
 
     private static final SlotLayout LAYOUT = SlotLayout.builder()
         .extra(1)

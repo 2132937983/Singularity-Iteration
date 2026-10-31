@@ -12,11 +12,14 @@ import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -30,16 +33,25 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 0.1.10.39: the controller of the Steam Tunnel, IC2 Classic's large steam turbine ({@code SteamTunnelTileEntity}). With its
  * structure formed ({@link SteamTunnelStructure}) it turns steam into EU in steps of 1,024 mB into 512 EU, up to 4 steps a tick
- * (4,096 mB/t into 2,048 EU/t, the 2 mB per EU of the small turbine), while its 10,000 EU buffer has room. The power ports of the
- * shell take the EU and send it as HV packets. The steam comes back as water at SI's boiling ratio (1 mB of water per 100 mB of
- * steam, {@link SteamReactorCycle#STEAM_PER_WATER}); water that does not fit its 2,000 mB tank is lost, and the fluid ports push it
- * into pipes. Steam enters through the controller or a fluid port. No menu: Jade and a right-click show the state. Formed, its front
- * shows one big fan: the controller is the hub, the 8 casings around it the blades ({@link #showFan}).
+ * (4,096 mB/t into 2,048 EU/t, the 2 mB per EU of the small turbine). As in IC2 Classic it runs while its 10,000 EU buffer has room
+ * for one step and then makes all the steps the steam allows, so the buffer may go over by up to 3 steps ({@link #MAX_ENERGY}).
+ * The power ports of the shell take the EU and send it as HV packets. The steam comes back as the water it was boiled from: IC2
+ * Classic boils 1 mB of water into 160 mB of steam and returns 6.4 mB per 1,024 mB, SI boils at 1:100
+ * ({@link SteamReactorCycle#STEAM_PER_WATER}) and returns 1 mB per 100 mB, so a reactor loop loses no water either way. Water that
+ * does not fit its 2,000 mB tank is lost, and the fluid ports push it into pipes. Steam enters through the controller or a fluid
+ * port. No menu: Jade and a right-click show the state. Formed, its front shows one big fan: the controller is the hub, the 8
+ * casings around it the blades ({@link #showFan}); it spins and blows steam while the tunnel runs.
  */
 public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler {
     public static final int STEAM_CAPACITY = 16_000, WATER_CAPACITY = 2_000;
     public static final int STEAM_PER_STEP = 1_024, MAX_STEPS = 4, CHECK_TICKS = 20;
     public static final long EU_PER_STEP = 512L, ENERGY_CAPACITY = 10_000L;
+    /** The most the buffer can hold: room for one step lets all 4 run (IC2 Classic). */
+    public static final long MAX_ENERGY = ENERGY_CAPACITY + (MAX_STEPS - 1) * EU_PER_STEP;
+    /** Running (fan spinning, steam blowing) until this long after the last step: steam that comes in bursts keeps it running. */
+    public static final int RUN_HOLD_TICKS = 40;
+    /** Steam particles a tick out of the front of a running tunnel (client). */
+    public static final int PARTICLES_PER_TICK = 3;
 
     private final FluidTank steam = new FluidTank(STEAM_CAPACITY, stack -> mio_icif_steam_turbine.steam(stack.getFluid())) {
         @Override protected void onContentsChanged() { TickMarks.saved(SteamTunnelBlockEntity.this); }
@@ -52,7 +64,9 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
     private int condensate;
     private boolean formed;
     private final List<BlockPos> ports = new ArrayList<>();
-    private int checkIn, activeScore, lastSteps;
+    private int checkIn, runHold;
+    /** EU made this second so far, and in the last whole second (for the output per tick). */
+    private long madeThisSecond, madeLastSecond;
     /** Why the structure is not formed (a lang key and a position), or null. */
     private @Nullable String problem;
     private @Nullable BlockPos problemAt;
@@ -67,30 +81,48 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
             tunnel.checkIn = CHECK_TICKS;
             tunnel.validate();
         }
-        int steps = 0;
         if (tunnel.formed && tunnel.energy + EU_PER_STEP <= ENERGY_CAPACITY && tunnel.steam.getFluidAmount() >= STEAM_PER_STEP) {
-            steps = (int) Math.min(Math.min(MAX_STEPS, tunnel.steam.getFluidAmount() / STEAM_PER_STEP), (ENERGY_CAPACITY - tunnel.energy) / EU_PER_STEP);
+            int steps = Math.min(MAX_STEPS, tunnel.steam.getFluidAmount() / STEAM_PER_STEP);   // IC2 Classic: not capped by the room left
             tunnel.energy += EU_PER_STEP * steps;
             tunnel.steam.drain(STEAM_PER_STEP * steps, FluidAction.EXECUTE);
             tunnel.condensate += STEAM_PER_STEP * steps;
             int made = tunnel.condensate / SteamReactorCycle.STEAM_PER_WATER;
             tunnel.condensate %= SteamReactorCycle.STEAM_PER_WATER;
             tunnel.water.fill(new FluidStack(Fluids.WATER, made), FluidAction.EXECUTE);   // what does not fit is lost
-            tunnel.activeScore++;
-        } else {
-            tunnel.activeScore--;
+            tunnel.madeThisSecond += EU_PER_STEP * steps;
+            tunnel.runHold = RUN_HOLD_TICKS;
+        } else if (tunnel.runHold > 0) {
+            tunnel.runHold--;
         }
-        tunnel.lastSteps = steps;
-        if (level.getGameTime() % 20 == 0) {   // IC2 Classic: active unless it stood still clearly more often than it ran
-            tunnel.setActive(tunnel.formed && tunnel.activeScore > -10);
-            tunnel.activeScore = 0;
+        if (level.getGameTime() % 20 == 0) {
+            tunnel.madeLastSecond = tunnel.madeThisSecond;
+            tunnel.madeThisSecond = 0;
         }
+        tunnel.setActive(tunnel.formed && tunnel.runHold > 0);
     }
 
+    /** Running or not: the controller's state, and the fan pieces spin with it. */
     private void setActive(boolean active) {
         BlockState state = getBlockState();
-        if (state.hasProperty(mio_icif_block_steam_tunnel.ACTIVE) && state.getValue(mio_icif_block_steam_tunnel.ACTIVE) != active)
-            level.setBlock(worldPosition, state.setValue(mio_icif_block_steam_tunnel.ACTIVE, active), 3);
+        if (!state.hasProperty(mio_icif_block_steam_tunnel.ACTIVE) || state.getValue(mio_icif_block_steam_tunnel.ACTIVE) == active) return;
+        level.setBlock(worldPosition, state.setValue(mio_icif_block_steam_tunnel.ACTIVE, active), 3);
+        showFan(level, worldPosition, state.getValue(mio_icif_block_steam_tunnel.FACING), formed, active);
+    }
+
+    /** Client: a running tunnel blows steam out of its fan, a disc 2.5 blocks across in front of the controller. */
+    public static void clientTick(Level level, BlockPos pos, BlockState state) {
+        if (!state.getValue(mio_icif_block_steam_tunnel.ACTIVE) || !state.getValue(mio_icif_block_steam_tunnel.FORMED)) return;
+        Direction front = state.getValue(mio_icif_block_steam_tunnel.FACING), side = front.getClockWise();
+        RandomSource random = level.random;
+        for (int i = 0; i < PARTICLES_PER_TICK; i++) {
+            double angle = random.nextDouble() * Mth.TWO_PI, radius = Math.sqrt(random.nextDouble()) * 1.25;
+            double across = Math.cos(angle) * radius, up = Math.sin(angle) * radius, out = 0.55 + random.nextDouble() * 0.2;
+            double speed = 0.18 + random.nextDouble() * 0.12;
+            level.addParticle(ParticleTypes.CLOUD,
+                pos.getX() + 0.5 + front.getStepX() * out + side.getStepX() * across, pos.getY() + 0.5 + up,
+                pos.getZ() + 0.5 + front.getStepZ() * out + side.getStepZ() * across,
+                front.getStepX() * speed, 0.02, front.getStepZ() * speed);
+        }
     }
 
     /** Checks the structure and links its ports (every second, at once after a part was removed). */
@@ -133,14 +165,15 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
         BlockState own = getBlockState();
         if (own.getValue(mio_icif_block_steam_tunnel.FORMED) != ok)
             level.setBlock(worldPosition, own.setValue(mio_icif_block_steam_tunnel.FORMED, ok), Block.UPDATE_CLIENTS);
-        showFan(level, worldPosition, facing, ok);
+        showFan(level, worldPosition, facing, ok, ok && own.getValue(mio_icif_block_steam_tunnel.ACTIVE));
     }
 
     /**
-     * Puts the 8 blade pieces of the big fan on the casings around the controller at {@code controller}, or takes them off. A casing
-     * that already shows a piece of another tunnel keeps it; hiding takes off only this tunnel's pieces.
+     * Puts the 8 blade pieces of the big fan on the casings around the controller at {@code controller} ({@code spinning} while the
+     * tunnel runs), or takes them off. A casing that already shows a piece of another tunnel keeps it; hiding takes off only this
+     * tunnel's pieces.
      */
-    public static void showFan(Level level, BlockPos controller, Direction front, boolean show) {
+    public static void showFan(Level level, BlockPos controller, Direction front, boolean show, boolean spinning) {
         if (level.isClientSide) return;
         for (SteamTunnelStructure.Fan piece : SteamTunnelStructure.Fan.of(front)) {
             BlockPos at = piece.casing(controller);
@@ -148,8 +181,12 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
             BlockState state = level.getBlockState(at);
             if (!state.hasProperty(mio_icif_block_steam_tunnel_part.Casing.FAN)) continue;
             SteamTunnelStructure.Fan now = state.getValue(mio_icif_block_steam_tunnel_part.Casing.FAN);
-            SteamTunnelStructure.Fan want = show ? (now == SteamTunnelStructure.Fan.NONE ? piece : now) : (now == piece ? SteamTunnelStructure.Fan.NONE : now);
-            if (want != now) level.setBlock(at, state.setValue(mio_icif_block_steam_tunnel_part.Casing.FAN, want), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+            BlockState want = state;
+            if (show && (now == SteamTunnelStructure.Fan.NONE || now == piece))
+                want = state.setValue(mio_icif_block_steam_tunnel_part.Casing.FAN, piece).setValue(mio_icif_block_steam_tunnel_part.Casing.SPINNING, spinning);
+            else if (!show && now == piece)
+                want = state.setValue(mio_icif_block_steam_tunnel_part.Casing.FAN, SteamTunnelStructure.Fan.NONE).setValue(mio_icif_block_steam_tunnel_part.Casing.SPINNING, false);
+            if (want != state) level.setBlock(at, want, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
     }
 
@@ -169,8 +206,11 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
 
     public long energy() { return energy; }
 
-    /** EU made in the last tick (2,048 at full steam). */
-    public long euPerTick() { return lastSteps * EU_PER_STEP; }
+    /** EU made per tick, over the last second (2,048 at full steam). */
+    public long euPerTick() { return madeLastSecond / 20; }
+
+    /** It converted steam in the last {@link #RUN_HOLD_TICKS} ticks. */
+    public boolean running() { return formed && runHold > 0; }
 
     public FluidStack steam() { return steam.getFluid(); }
 
@@ -185,12 +225,12 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
 
     /** EU a power port could not store comes back (never lost). */
     public void returnEnergy(long amount) {
-        if (amount > 0) { energy = Math.min(ENERGY_CAPACITY, energy + amount); TickMarks.saved(this); }
+        if (amount > 0) { energy = Math.min(MAX_ENERGY, energy + amount); TickMarks.saved(this); }
     }
 
     /** The state line: running, idle, or why the structure is not formed. */
     public Component status() {
-        if (formed) return Component.translatable(lastSteps > 0 ? "message.mio_icif.steam_tunnel.running" : "message.mio_icif.steam_tunnel.idle",
+        if (formed) return Component.translatable(running() ? "message.mio_icif.steam_tunnel.running" : "message.mio_icif.steam_tunnel.idle",
             euPerTick(), ports.size());
         if (problem == null) return Component.translatable("message.mio_icif.steam_tunnel.checking");
         return Component.translatable("message.mio_icif.steam_tunnel.problem." + problem,
@@ -233,7 +273,7 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
         super.loadAdditional(tag, registries);
         steam.readFromNBT(registries, tag.getCompound("Steam"));
         water.readFromNBT(registries, tag.getCompound("Water"));
-        energy = Math.max(0, Math.min(ENERGY_CAPACITY, tag.getLong("Energy")));
+        energy = Math.max(0, Math.min(MAX_ENERGY, tag.getLong("Energy")));
         condensate = Math.max(0, tag.getInt("Condensate"));
         formed = tag.getBoolean("Formed");
         ports.clear();

@@ -61,7 +61,7 @@ public class mio_icif_block_steam_tunnel extends mio_icif_entity_block {
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!newState.is(this) || newState.getValue(FACING) != state.getValue(FACING))
-            SteamTunnelBlockEntity.showFan(level, pos, state.getValue(FACING), false);
+            SteamTunnelBlockEntity.showFan(level, pos, state.getValue(FACING), false, false);
         super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
@@ -83,7 +83,8 @@ public class mio_icif_block_steam_tunnel extends mio_icif_entity_block {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return level.isClientSide || type != mio_icif_block_entities.STEAM_TUNNEL_ENTITY_TYPE.get() ? null
+        if (type != mio_icif_block_entities.STEAM_TUNNEL_ENTITY_TYPE.get()) return null;
+        return level.isClientSide ? (l, p, s, be) -> SteamTunnelBlockEntity.clientTick(l, p, s)
             : (l, p, s, be) -> { if (be instanceof SteamTunnelBlockEntity tunnel) SteamTunnelBlockEntity.tick(l, p, s, tunnel); };
     }
 }

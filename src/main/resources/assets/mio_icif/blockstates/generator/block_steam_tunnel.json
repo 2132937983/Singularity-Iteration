@@ -31,18 +31,18 @@
       "y": 270
     },
     "active=true,facing=north,formed=false": {
-      "model": "mio_icif:block/generator/block_steam_tunnel_on"
+      "model": "mio_icif:block/generator/block_steam_tunnel"
     },
     "active=true,facing=east,formed=false": {
-      "model": "mio_icif:block/generator/block_steam_tunnel_on",
+      "model": "mio_icif:block/generator/block_steam_tunnel",
       "y": 90
     },
     "active=true,facing=south,formed=false": {
-      "model": "mio_icif:block/generator/block_steam_tunnel_on",
+      "model": "mio_icif:block/generator/block_steam_tunnel",
       "y": 180
     },
     "active=true,facing=west,formed=false": {
-      "model": "mio_icif:block/generator/block_steam_tunnel_on",
+      "model": "mio_icif:block/generator/block_steam_tunnel",
       "y": 270
     },
     "active=true,facing=north,formed=true": {

@@ -1,6 +1,0 @@
-{
-  "parent": "mio_icif:block/generator/steam_tunnel/face_side",
-  "textures": {
-    "face": "mio_icif:block/generator/steam_tunnel/casing_9"
-  }
-}

@@ -3153,8 +3153,10 @@
   "message.mio_icif.steam_tunnel.problem.port_on_edge": "Паровой туннель: порт на ребре (%s); порты ставятся в середину стороны или в центр задней стенки",
   "message.mio_icif.steam_tunnel.problem.casing": "Паровой туннель: нет корпуса (%s)",
   "message.mio_icif.steam_tunnel.problem.casing_or_port": "Паровой туннель: нет корпуса или порта (%s)",
-  "jade.mio_icif.steam_tunnel.fluids": "Пар %1$s / %2$s mB, вода %3$s / %4$s mB",
-  "jade.mio_icif.steam_tunnel.energy": "Буфер %1$s / %2$s EU, выход %3$s EU/t",
   "config.jade.plugin_mio_icif.steam_tunnel": "Паровой туннель",
-  "command.mio_icif.perf.fe": "FE за тик: в кабели %1$s, отдано %2$s, принято %3$s; проверок соседей %4$s (пропущено %5$s)"
+  "command.mio_icif.perf.fe": "FE за тик: в кабели %1$s, отдано %2$s, принято %3$s; проверок соседей %4$s (пропущено %5$s)",
+  "jade.mio_icif.steam_tunnel.steam": "Пар: %1$s / %2$s mB",
+  "jade.mio_icif.steam_tunnel.water": "Вода: %1$s / %2$s mB",
+  "jade.mio_icif.steam_tunnel.buffer": "Буфер EU: %1$s / %2$s EU",
+  "jade.mio_icif.steam_tunnel.output": "Выход: %s EU/t"
 }

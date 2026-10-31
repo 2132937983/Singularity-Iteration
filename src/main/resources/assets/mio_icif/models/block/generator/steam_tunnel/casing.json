@@ -1,0 +1,25 @@
+{
+  "loader": "mio_icif:steam_tunnel_shell",
+  "textures": {
+    "particle": "mio_icif:block/generator/block_steam_tunnel_casing"
+  },
+  "tiles": [
+    "mio_icif:block/generator/block_steam_tunnel_casing",
+    "mio_icif:block/generator/steam_tunnel/casing_1",
+    "mio_icif:block/generator/steam_tunnel/casing_2",
+    "mio_icif:block/generator/steam_tunnel/casing_3",
+    "mio_icif:block/generator/steam_tunnel/casing_4",
+    "mio_icif:block/generator/steam_tunnel/casing_5",
+    "mio_icif:block/generator/steam_tunnel/casing_6",
+    "mio_icif:block/generator/steam_tunnel/casing_7",
+    "mio_icif:block/generator/steam_tunnel/casing_8",
+    "mio_icif:block/generator/steam_tunnel/casing_9",
+    "mio_icif:block/generator/steam_tunnel/casing_10",
+    "mio_icif:block/generator/steam_tunnel/casing_11",
+    "mio_icif:block/generator/steam_tunnel/casing_12",
+    "mio_icif:block/generator/steam_tunnel/casing_13",
+    "mio_icif:block/generator/steam_tunnel/casing_14",
+    "mio_icif:block/generator/steam_tunnel/casing_15"
+  ],
+  "fan": "mio_icif:block/generator/steam_tunnel/fan_"
+}

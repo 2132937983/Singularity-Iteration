@@ -3,32 +3,45 @@ package com.miophas.singularity_iteration.common.menu.generator;
 import com.miophas.singularity_iteration.common.menu.base.mio_icif_base_menu;
 import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
-import com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_fluid_port;
+import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * The menu of a fluid port with one upgrade slot (Fluid Ejector / Fluid Pulling Upgrade): the fluid reactor's fluid port, and since
+ * 0.1.10.39 the Steam Tunnel's fluid port.
+ */
 @SuppressWarnings("null")
 public class ReactorFluidPortMenu extends mio_icif_base_menu {
 
+    /** A block entity whose menu this is. */
+    public interface Host {
+        MachineItemHandler getItemHandler();
+
+        boolean hasPlugin();
+    }
+
     private final ContainerLevelAccess access;
-    private final mio_icif_reactor_fluid_port blockEntity;
+    private final @Nullable BlockEntity blockEntity;
 
     public ReactorFluidPortMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null);
     }
 
-    public ReactorFluidPortMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_reactor_fluid_port blockEntity) {
+    /** {@code blockEntity}: a {@link Host}; null on the client. */
+    public ReactorFluidPortMenu(int containerId, Inventory playerInventory, @Nullable BlockEntity blockEntity) {
         super(mio_icif_menus.REACTOR_FLUID_PORT_MENU_TYPE.get(), containerId, 1, 1);
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
         this.blockEntity = blockEntity;
 
-        if (blockEntity != null) {
-            this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 0, 80, 43));
+        if (blockEntity instanceof Host host) {
+            this.addSlot(new SlotItemHandler(host.getItemHandler(), 0, 80, 43));
         } else {
             this.addSlot(new Slot(new SimpleContainer(1), 0, 80, 43));
         }
@@ -43,16 +56,16 @@ public class ReactorFluidPortMenu extends mio_icif_base_menu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(this.access, player, mio_icif_blocks.REACTOR_FLUID_PORT.get());
+        return stillValid(this.access, player, blockEntity != null ? blockEntity.getBlockState().getBlock() : mio_icif_blocks.REACTOR_FLUID_PORT.get());
     }
 
     @Nullable
-    public mio_icif_reactor_fluid_port getBlockEntity() {
+    public BlockEntity getBlockEntity() {
         return blockEntity;
     }
 
     public boolean hasPlugin() {
-        return blockEntity != null && blockEntity.hasPlugin();
+        return blockEntity instanceof Host host && host.hasPlugin();
     }
 
     private static class SlotItemHandler extends Slot {

@@ -155,32 +155,37 @@ public final class Round1139GameTests {
                 case WEST -> BlockStateProperties.WEST; case UP -> BlockStateProperties.UP; case DOWN -> BlockStateProperties.DOWN;
             };
             h.assertTrue(h.getBlockState(pos).getValue(link) == want.contains(side),
-                "the casing at " + pos + " is " + (want.contains(side) ? "not " : "") + "joined to its " + side + " neighbour: " + h.getBlockState(pos));
+                "the shell block at " + pos + " is " + (want.contains(side) ? "not " : "") + "joined to its " + side + " neighbour: " + h.getBlockState(pos));
         }
     }
 
     /**
-     * Casings join the casings next to them (placed by a plain setBlock too, as the blueprint builder places them), not ports or other
-     * blocks, and let go when one is removed. The block state drives the connected textures.
+     * Shell blocks (casings and ports) join the shell blocks next to them, not other blocks, and let go when one is removed. Placed by
+     * a plain setBlock (as the blueprint builder places them) they join on the next tick. The block state drives the connected
+     * textures.
      */
     @GameTest(batch = "round1139_tunnel", template = "empty", timeoutTicks = 20)
-    public static void steamTunnelCasingsJoinTheirNeighbours(GameTestHelper h) {
+    public static void steamTunnelShellBlocksJoinTheirNeighbours(GameTestHelper h) {
         Block casing = BuiltInRegistries.BLOCK.get(id("generator/block_steam_tunnel_casing"));
         BlockPos left = new BlockPos(1, 1, 1), middle = new BlockPos(2, 1, 1), right = new BlockPos(3, 1, 1), top = new BlockPos(2, 2, 1);
+        BlockPos port = middle.south();
         h.setBlock(left, casing);
         h.setBlock(middle, casing);
         h.setBlock(right, casing);
         h.setBlock(top, casing);
-        h.setBlock(middle.south(), BuiltInRegistries.BLOCK.get(id("generator/block_steam_tunnel_power_port")));
+        h.setBlock(port, BuiltInRegistries.BLOCK.get(id("generator/block_steam_tunnel_power_port")));
         h.setBlock(middle.north(), Blocks.IRON_BLOCK);
-        assertLinks(h, middle, Direction.EAST, Direction.WEST, Direction.UP);
-        assertLinks(h, left, Direction.EAST);
-        assertLinks(h, right, Direction.WEST);
-        assertLinks(h, top, Direction.DOWN);
-        h.setBlock(right, Blocks.AIR);
-        assertLinks(h, middle, Direction.WEST, Direction.UP);
-        h.assertTrue("none".equals(prop(h, middle, "fan")), "a lone casing shows a piece of a fan");
-        h.succeed();
+        h.runAfterDelay(2, () -> {
+            assertLinks(h, middle, Direction.EAST, Direction.WEST, Direction.UP, Direction.SOUTH);
+            assertLinks(h, left, Direction.EAST);
+            assertLinks(h, right, Direction.WEST);
+            assertLinks(h, top, Direction.DOWN);
+            assertLinks(h, port, Direction.NORTH);
+            h.setBlock(right, Blocks.AIR);
+            assertLinks(h, middle, Direction.WEST, Direction.UP, Direction.SOUTH);
+            h.assertTrue("none".equals(prop(h, middle, "fan")), "a lone casing shows a piece of a fan");
+            h.succeed();
+        });
     }
 
     /** Facing east, seen from outside: left is south (z 3), right is north (z 1). */
@@ -189,11 +194,13 @@ public final class Round1139GameTests {
         new BlockPos(4, 2, 3), "east_left", new BlockPos(4, 2, 1), "east_right",
         new BlockPos(4, 1, 3), "east_bottom_left", new BlockPos(4, 1, 2), "east_bottom", new BlockPos(4, 1, 1), "east_bottom_right");
 
-    private static void assertFan(GameTestHelper h, boolean shown) {
+    private static void assertFan(GameTestHelper h, boolean shown, boolean spinning) {
         for (var piece : FAN.entrySet()) {
             String value = prop(h, piece.getKey(), "fan");
             h.assertTrue(value.equals(shown ? piece.getValue() : "none"), "the casing at " + piece.getKey() + " shows fan=" + value
                 + (shown ? ", not " + piece.getValue() : " on an unformed tunnel"));
+            h.assertTrue(prop(h, piece.getKey(), "spinning").equals(String.valueOf(spinning)),
+                "the fan piece at " + piece.getKey() + " has spinning=" + prop(h, piece.getKey(), "spinning") + ", not " + spinning);
         }
     }
 
@@ -209,18 +216,110 @@ public final class Round1139GameTests {
         h.runAfterDelay(25, () -> {
             h.assertTrue(formed(h), "the tunnel did not form: " + call(tunnel(h), "status"));
             h.assertTrue("true".equals(prop(h, CONTROLLER, "formed")), "the controller of a formed tunnel shows no hub");
-            assertFan(h, true);
+            assertFan(h, true, false);
             h.assertTrue("none".equals(prop(h, EDGE, "fan")), "a casing off the front shows a piece of the fan");
             assertLinks(h, new BlockPos(2, 3, 2), Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST);
             h.setBlock(EDGE, Blocks.AIR);
             h.assertTrue("false".equals(prop(h, CONTROLLER, "formed")), "the controller of a broken tunnel still shows the hub");
-            assertFan(h, false);
+            assertFan(h, false, false);
             h.setBlock(EDGE, casing);
             h.runAfterDelay(25, () -> {
                 h.assertTrue(formed(h), "the whole tunnel did not form again: " + call(tunnel(h), "status"));
-                assertFan(h, true);
+                assertFan(h, true, false);
                 h.setBlock(CONTROLLER, Blocks.AIR);
-                assertFan(h, false);
+                assertFan(h, false, false);
+                h.succeed();
+            });
+        });
+    }
+
+    /**
+     * Running, the controller is active and the 8 fan pieces spin; 2 seconds after the steam ran out (16,000 mB make 15 steps in
+     * about 4 ticks) they stop and the controller is idle again.
+     */
+    @GameTest(batch = "round1139_tunnel", template = "empty", timeoutTicks = 120)
+    public static void runningSteamTunnelSpinsItsFan(GameTestHelper h) {
+        build(h);
+        h.runAfterDelay(25, () -> {
+            IFluidHandler port = h.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, h.absolutePos(FLUID_PORT), Direction.NORTH);
+            h.assertTrue(port != null && port.fill(steam(16_000), IFluidHandler.FluidAction.EXECUTE) == 16_000, "the fluid port took no steam");
+            h.runAfterDelay(2, () -> {
+                h.assertTrue("true".equals(prop(h, CONTROLLER, "active")), "the running tunnel is not active");
+                assertFan(h, true, true);
+                h.runAfterDelay(60, () -> {
+                    h.assertTrue("false".equals(prop(h, CONTROLLER, "active")), "the tunnel is still active 3 seconds after its steam ran out");
+                    assertFan(h, true, false);
+                    h.succeed();
+                });
+            });
+        });
+    }
+
+    private static void setLong(Object target, String name, long value) {
+        try { var f = target.getClass().getDeclaredField(name); f.setAccessible(true); f.setLong(target, value); }
+        catch (ReflectiveOperationException e) { throw new AssertionError(name, e); }
+    }
+
+    /** One tick of the controller, run here so that the power port does not take EU in between. */
+    private static void tickTunnel(GameTestHelper h) {
+        BlockEntity t = tunnel(h);
+        try {
+            t.getClass().getMethod("tick", net.minecraft.world.level.Level.class, BlockPos.class, BlockState.class, t.getClass())
+                .invoke(null, h.getLevel(), t.getBlockPos(), t.getBlockState(), t);
+        } catch (ReflectiveOperationException e) { throw new AssertionError("tick", e); }
+    }
+
+    /**
+     * IC2 Classic's buffer rule: the tunnel runs while its 10,000 EU buffer has room for one step (512 EU) and then makes every step
+     * the steam allows: 9,000 EU and 4,096 mB of steam become 11,048 EU in one tick (and 40 mB of water). At 9,600 EU it waits.
+     */
+    @GameTest(batch = "round1139_tunnel", template = "empty", timeoutTicks = 60)
+    public static void steamTunnelBufferFollowsIc2Classic(GameTestHelper h) {
+        build(h);
+        h.runAfterDelay(25, () -> {
+            h.assertTrue(formed(h), "the tunnel did not form: " + call(tunnel(h), "status"));
+            BlockEntity t = tunnel(h);
+            setLong(t, "energy", 9_000);
+            ((IFluidHandler) t).fill(steam(4_096), IFluidHandler.FluidAction.EXECUTE);
+            tickTunnel(h);
+            h.assertTrue((Long) call(t, "energy") == 11_048, "9,000 EU + 4,096 mB of steam made " + call(t, "energy") + " EU, not 11,048");
+            h.assertTrue(((FluidStack) call(t, "steam")).isEmpty(), "steam left: " + call(t, "steam"));
+            h.assertTrue(((FluidStack) call(t, "water")).getAmount() == 40, "water returned: " + call(t, "water"));
+            setLong(t, "energy", 9_600);
+            ((IFluidHandler) t).fill(steam(1_024), IFluidHandler.FluidAction.EXECUTE);
+            tickTunnel(h);
+            h.assertTrue((Long) call(t, "energy") == 9_600 && ((FluidStack) call(t, "steam")).getAmount() == 1_024,
+                "with 9,600 EU (no room for 512) the tunnel ran: " + call(t, "energy") + " EU, " + call(t, "steam"));
+            h.succeed();
+        });
+    }
+
+    /**
+     * The fluid port opens the fluid reactor port's menu, whose slot takes a Fluid Ejector or Fluid Pulling Upgrade and nothing
+     * else; with a Fluid Pulling Upgrade it draws steam from a tank next to it into the tunnel.
+     */
+    @GameTest(batch = "round1139_tunnel", template = "empty", timeoutTicks = 100)
+    public static void steamTunnelFluidPortTakesFluidUpgrades(GameTestHelper h) {
+        build(h);
+        BlockPos tank = FLUID_PORT.north();
+        h.setBlock(tank, BuiltInRegistries.BLOCK.get(id("build/block_iron_tank")));
+        h.runAfterDelay(25, () -> {
+            BlockEntity port = h.getBlockEntity(FLUID_PORT);
+            var player = h.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+            var menu = (net.minecraft.world.inventory.AbstractContainerMenu) call(port, "createMenu", 0, player.getInventory(), player);
+            h.assertTrue(BuiltInRegistries.MENU.getKey(menu.getType()).equals(id("reactor_fluid_port_menu")),
+                "the fluid port's menu is " + BuiltInRegistries.MENU.getKey(menu.getType()));
+            var pulling = Round33GameTests.item("upgrade/fluid_pulling_upgrade");
+            h.assertTrue(menu.getSlot(0).mayPlace(Round33GameTests.item("upgrade/fluid_ejector_upgrade")) && menu.getSlot(0).mayPlace(pulling),
+                "the upgrade slot refuses the fluid upgrades");
+            h.assertTrue(!menu.getSlot(0).mayPlace(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIRT)), "the upgrade slot takes dirt");
+            IFluidHandler tankFluids = h.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, h.absolutePos(tank), Direction.SOUTH);
+            h.assertTrue(tankFluids != null && tankFluids.fill(steam(8_000), IFluidHandler.FluidAction.EXECUTE) > 0, "the tank took no steam");
+            int before = tankFluids.getFluidInTank(0).getAmount();
+            menu.getSlot(0).set(pulling);
+            h.runAfterDelay(40, () -> {
+                int after = tankFluids.getFluidInTank(0).getAmount();
+                h.assertTrue(after < before, "the Fluid Pulling Upgrade moved no steam out of the tank: " + before + " -> " + after + " mB");
                 h.succeed();
             });
         });

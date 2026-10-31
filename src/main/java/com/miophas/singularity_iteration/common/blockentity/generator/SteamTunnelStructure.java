@@ -67,6 +67,7 @@ public final class SteamTunnelStructure {
         private static final List<Direction> FRONTS = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
         /** Column (-1 left, 1 right) and row (1 top, -1 bottom) of the 8 places, in the order of the constants. */
         private static final int[][] PLACES = {{-1, 1}, {0, 1}, {1, 1}, {-1, 0}, {1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+        private static final String[] PLACE_NAMES = {"top_left", "top", "top_right", "left", "right", "bottom_left", "bottom", "bottom_right"};
         /** The place that left and right swap into. */
         private static final int[] MIRRORED = {2, 1, 0, 4, 3, 7, 6, 5};
 
@@ -79,6 +80,9 @@ public final class SteamTunnelStructure {
         public @Nullable Direction front() { return this == NONE ? null : FRONTS.get((ordinal() - 1) / 8); }
 
         private int place() { return (ordinal() - 1) % 8; }
+
+        /** The place in the 3 x 3 as seen from outside ({@code top_left} ... {@code bottom_right}); not for {@link #NONE}. */
+        public String placeName() { return PLACE_NAMES[place()]; }
 
         /** Where this piece sits in front of the controller at {@code controller} (not for {@link #NONE}). */
         public BlockPos casing(BlockPos controller) {

@@ -62,6 +62,15 @@ public class mio_icif_cell extends Item implements IFluidCellItem {
         return this.content;
     }
 
+    /**
+     * 0.1.10.41: only a full cell leaves its empty cell in a crafting grid. A drained one (marked empty) counts as an empty cell
+     * itself, so leaving another one behind would copy the cell.
+     */
+    @Override
+    public boolean hasCraftingRemainingItem(ItemStack stack) {
+        return super.hasCraftingRemainingItem(stack) && !getFluid(stack).isEmpty();
+    }
+
     @Override
     public boolean doesSneakBypassUse(ItemStack stack, net.minecraft.world.level.LevelReader level, BlockPos pos, Player player) {
         return true;

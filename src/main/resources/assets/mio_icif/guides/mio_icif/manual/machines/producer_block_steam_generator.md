@@ -22,6 +22,12 @@ Normal water calcifies the boiler and stops the machine. Distilled Water causes 
 
 ## Power data
 
+| Item | Value |
+|---|---|
+| Water → Steam | 1 mB → 100 mB |
+| Heat input | up to 1,200 HU/t |
+| Superheated Steam | from 220 bar (valve up to 300 bar) |
+
 This block uses no EU.
 
 ## Procedure

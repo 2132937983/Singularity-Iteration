@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "B B",
+    " S ",
+    "B B"
+  ],
+  "key": {
+    "B": {
+      "item": "mio_icif:resource/item_titanium_iron_alloy_rotor_blade"
+    },
+    "S": {
+      "item": "mio_icif:resource/item_titanium_shaft"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_steam_turbine_rotor_titanium",
+    "count": 1
+  }
+}

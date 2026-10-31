@@ -26,6 +26,8 @@ Heat Vents in the four vent slots increase the speed. Each Heat Vent uses EU.
 | Input voltage tier | HV (512 EU) |
 | Maximum input | 512 EU/t |
 | Energy storage | 10,000 EU |
+| Steam or Superheated Steam → Distilled Water | 10,000 mB → 100 mB |
+| Speed | 100 mB/t of steam, each Heat Vent +100 mB/t for 2 EU/t (4 vents: 500 mB/t, 8 EU/t) |
 
 The game measured these values from the block entity of this version.
 

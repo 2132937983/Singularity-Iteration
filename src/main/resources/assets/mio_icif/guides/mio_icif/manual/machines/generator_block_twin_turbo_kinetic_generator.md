@@ -25,10 +25,13 @@ KU from other sources converts at a low efficiency.
 | Item | Value |
 |---|---|
 | Output voltage tier | EV (2,048 EU) |
-| Output | 8,192 EU/t |
+| Production | 1.2 EU per KU from wind or water kinetic generators, 0.12 EU per KU from other sources |
+| KU input | up to 4,000 KU/t (up to 4,800 EU/t) |
 | Energy storage | 400,000 EU |
 
 The game measured these values from the block entity of this version.
+
+With a generator output multiplier other than 1.0 (config GeneratorOutput), the EU values change.
 
 ## Procedure
 

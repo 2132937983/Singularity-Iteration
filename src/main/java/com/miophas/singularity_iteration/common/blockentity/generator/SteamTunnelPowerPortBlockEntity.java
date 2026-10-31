@@ -18,13 +18,19 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 0.1.10.39: a power port of the Steam Tunnel. While its tunnel is formed it takes EU from the controller's buffer and sends it
- * as HV packets of 512 EU, up to 4 a tick (2,048 EU/t, the tunnel's full output); otherwise it takes and sends nothing. IC2 Classic
- * sent from the casings themselves; SI's energy network needs a block entity to send from.
+ * as HV packets of 512 EU; otherwise it takes and sends nothing. IC2 Classic sent from the casings themselves; SI's energy network
+ * needs a block entity to send from. 0.1.10.41: it sends as many packets a tick as the tunnel can fill (4 without rotors, up to 8
+ * with three netherite rotors: 3,968 EU/t), so one port carries the full output.
  */
 public class SteamTunnelPowerPortBlockEntity extends AbstractEnergyBlockEntity implements SteamTunnelBlockEntity.SteamTunnelPart {
-    public static final long PACKET = 512L, PACKETS = 4L, RATE = PACKET * PACKETS, CAPACITY = 2 * RATE;
+    public static final long PACKET = 512L, PACKETS = 4L, RATE = PACKET * PACKETS;
+    /** The most packets a tick, for a tunnel with three netherite rotors (ceil(3,968 / 512)). */
+    public static final long MAX_PACKETS = (SteamTunnelBlockEntity.MAX_STEPS * SteamTunnelBlockEntity.MAX_STEP_EU + PACKET - 1) / PACKET;
+    public static final long CAPACITY = 2 * PACKET * MAX_PACKETS;
     private @Nullable BlockPos controller;
     private boolean sourceRole;
+    /** Packets a tick for the tunnel's current rotors ({@link #PACKETS} without rotors). */
+    private long packets = PACKETS;
 
     public SteamTunnelPowerPortBlockEntity(BlockPos pos, BlockState state) {
         super(pos, state, mio_icif_block_entities.STEAM_TUNNEL_POWER_PORT_ENTITY_TYPE.get(), CAPACITY, 0, 0, CableTier.HV);
@@ -43,31 +49,41 @@ public class SteamTunnelPowerPortBlockEntity extends AbstractEnergyBlockEntity i
         if (level.isClientSide) return;
         SteamTunnelBlockEntity tunnel = port.tunnel();
         boolean formed = tunnel != null;
+        long packets = formed ? Math.max(PACKETS, Math.min(MAX_PACKETS, (tunnel.maxEuPerTick() + PACKET - 1) / PACKET)) : PACKETS;
         if (formed != port.sourceRole) {
             port.sourceRole = formed;
+            port.packets = packets;
             if (formed) port.setAsPowerSource(PACKET);
             else port.setAsConsumer();
-            port.getEnergyStorageInternal().setMaxExtract(formed ? RATE : 0);
+            port.getEnergyStorageInternal().setMaxExtract(formed ? port.rate() : 0);
             port.setChanged();
             IndependentSiEnergy.changed(port);   // republish its faces: source <-> nothing
         } else if (formed && !port.isPowerSource()) {
             port.setAsPowerSource(PACKET);       // restored from a save
         }
         if (!formed) return;
+        if (packets != port.packets) {           // 0.1.10.41: the rotors changed
+            port.packets = packets;
+            port.getEnergyStorageInternal().setMaxExtract(port.rate());
+            port.setChanged();
+        }
         long space = CAPACITY - port.apiGetStoredEnergy();
         if (space <= 0) return;
-        long taken = tunnel.takeEnergy(Math.min(space, RATE));
+        long taken = tunnel.takeEnergy(Math.min(space, port.rate()));
         if (taken <= 0) return;
         long stored = port.apiGenerateEnergy(taken, false);
         if (stored < taken) tunnel.returnEnergy(taken - stored);   // never lost
         port.setChanged();
     }
 
-    /** Up to 4 HV packets a tick (the reactor does the same with IV packets). */
-    @Override public int getPacketCount() { return (int) PACKETS; }
+    /** EU a tick it sends at most: its packets of 512 EU. */
+    public long rate() { return packets * PACKET; }
+
+    /** 4 to 8 HV packets a tick, as the tunnel's rotors allow (the reactor does the same with IV packets). */
+    @Override public int getPacketCount() { return (int) packets; }
 
     // ---- legacy grid API (used only when the independent engine is disabled)
-    @Override public double getOfferedEnergy() { return isPowerSource() ? Math.min(RATE, apiGetStoredEnergy()) : 0.0D; }
+    @Override public double getOfferedEnergy() { return isPowerSource() ? Math.min(rate(), apiGetStoredEnergy()) : 0.0D; }
     @Override public void drawEnergy(double amount) { if (isPowerSource() && amount > 0) apiUseEnergy((long) amount, false); }
     @Override public int getSourceTier() { return isPowerSource() ? EnergyNetGlobal.cableTierToSourceTier(CableTier.HV) : -1; }
     @Override public boolean emitsEnergyTo(IEnergyAcceptor acceptor, Direction direction) { return isPowerSource(); }

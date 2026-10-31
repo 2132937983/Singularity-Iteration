@@ -22,6 +22,14 @@ The machine gives heat only through its front face.
 
 ## Power data
 
+| Item | Value |
+|---|---|
+| Fuel: Biogas | 0.5 mB/t → 32 HU/t (64 HU/mB) |
+| Fuel: Biomass | 1 mB/t → 16 HU/t (16 HU/mB) |
+| Fuel: Crude Oil | 0.5 mB/t → 32 HU/t (64 HU/mB) |
+| Fuel: Diesel Oil | 0.25 mB/t → 768 HU/t (3,072 HU/mB) |
+| Fuel tank | 10,000 mB |
+
 This block uses no EU.
 
 ## Procedure

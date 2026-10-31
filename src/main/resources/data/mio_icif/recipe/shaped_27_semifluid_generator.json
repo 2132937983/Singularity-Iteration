@@ -11,7 +11,8 @@
       "item": "mio_icif:generator/block_geo_generator"
     },
     "C": {
-      "item": "mio_icif:cell/item_cell_empty"
+      "type": "mio_icif:fluid_cell",
+      "fluid": "minecraft:empty"
     },
     "I": {"tag": "c:casings/iron"}
   },

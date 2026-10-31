@@ -22,6 +22,11 @@ The machine takes heat from all faces except the front face.
 
 ## Power data
 
+| Item | Value |
+|---|---|
+| Steam | 10 mB + 1 HU → 16 mB |
+| Superheated Steam | 10 mB + 1 HU → 32 mB |
+
 This block uses no EU.
 
 ## Procedure

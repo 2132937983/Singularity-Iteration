@@ -1,0 +1,6 @@
+{
+  "parent": "mio_icif:block/generator/block_steam_turbine_rotor",
+  "textures": {
+    "rotor": "mio_icif:block/generator/steam_turbine_rotor_bronze"
+  }
+}

@@ -50,6 +50,8 @@ public class mio_icif_radioactive_block extends Block {
             ));
         
         for (LivingEntity living : entities) {
+                // 0.1.10.41: a full hazmat suit protects here as in a blast zone (no radiation sickness, weakness or wither)
+                if (com.miophas.singularity_iteration.common.util.RadiationProtectionUtil.isWearingFullHazmat(living)) continue;
                 double distanceSquared = living.distanceToSqr(pos.getX(), pos.getY(), pos.getZ());
                 if (distanceSquared <= rangeSquared) {
                     double distance = Math.sqrt(distanceSquared);

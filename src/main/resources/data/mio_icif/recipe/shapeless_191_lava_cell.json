@@ -1,1 +1,1 @@
-{"type": "minecraft:crafting_shapeless","ingredients":[{"item":"mio_icif:cell/item_cell_empty"},{"item":"minecraft:lava_bucket"}],"result":{"id":"mio_icif:cell/item_cell_lava","count":1}}
+{"type": "minecraft:crafting_shapeless","ingredients":[{"type":"mio_icif:fluid_cell","fluid":"minecraft:empty"},{"item":"minecraft:lava_bucket"}],"result":{"id":"mio_icif:cell/item_cell_lava","count":1}}

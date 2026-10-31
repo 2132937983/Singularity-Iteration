@@ -24,10 +24,14 @@ Water at the front face of the machine also makes EU without buckets.
 | Item | Value |
 |---|---|
 | Output voltage tier | LV (32 EU) |
-| Output | 32 EU/t |
+| Output | up to 6 EU/t |
 | Energy storage | 64,000 EU |
+| Water in the tank | 1 mB/t → 4 EU/t (4 EU/mB) |
+| Water at the front face | +2 EU/t |
 
 The game measured these values from the block entity of this version.
+
+With a generator output multiplier other than 1.0 (config GeneratorOutput), the EU values change. The fuel use stays the same.
 
 ## Procedure
 

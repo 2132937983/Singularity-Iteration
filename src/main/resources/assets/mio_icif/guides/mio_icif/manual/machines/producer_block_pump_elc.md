@@ -30,6 +30,7 @@ Next to a Miner, the Pump also removes the fluids that the Miner finds.
 | Use while working | 1 EU/t |
 | Operation time | 20 tick (1 s) |
 | Energy per operation | 20 EU |
+| Fluid per operation | 1,000 mB (one source block) |
 
 The game measured these values from the block entity of this version.
 

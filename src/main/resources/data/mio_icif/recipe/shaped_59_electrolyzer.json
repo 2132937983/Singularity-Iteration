@@ -7,7 +7,8 @@
   ],
   "key": {
     "E": {
-      "item": "mio_icif:cell/item_cell_empty"
+      "type": "mio_icif:fluid_cell",
+      "fluid": "minecraft:empty"
     },
     "c": {
       "item": "mio_icif:wiring/cable/block_tin_cable"

@@ -27,6 +27,8 @@ The machine gives heat only through its front face.
 | Input voltage tier | EV (2,048 EU) |
 | Maximum input | 2,048 EU/t |
 | Energy storage | 10,000 EU |
+| Conversion | 1 EU → 1 HU |
+| Heat output | 10 HU/t per Coil, up to 100 HU/t (10 coils) |
 
 The game measured these values from the block entity of this version.
 

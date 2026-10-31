@@ -21,7 +21,14 @@ The machine draws heat from each adjacent heat generator whose front face points
 
 ## Power data
 
-This block uses no EU.
+| Item | Value |
+|---|---|
+| Output voltage tier | MV (128 EU) |
+| Energy storage | 1,000,000 EU |
+| Conversion | 100 HU → 85 EU |
+| Heat input | up to 2,000 HU/t |
+
+With a generator output multiplier other than 1.0 (config GeneratorOutput), the EU values change.
 
 ## Procedure
 

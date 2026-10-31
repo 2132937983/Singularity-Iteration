@@ -26,6 +26,7 @@ The machine charges a battery in its battery slot and empties steam cells into i
 | Output voltage tier | MV (128 EU) |
 | Output | 64 EU/t |
 | Energy storage | 32,000 EU |
+| Steam use | 128 mB/t → 64 EU/t (2 mB per EU) |
 
 The game measured these values from the block entity of this version.
 

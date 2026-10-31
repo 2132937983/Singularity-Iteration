@@ -18,7 +18,8 @@
       "item": "mio_icif:build/block_alloy_glass"
     },
     "F": {
-      "item": "mio_icif:cell/item_cell_empty"
+      "type": "mio_icif:fluid_cell",
+      "fluid": "minecraft:empty"
     },
     "C": {
       "tag": "c:circuits/advanced"

@@ -25,10 +25,16 @@ Each fuel gives a different EU output.
 | Item | Value |
 |---|---|
 | Output voltage tier | LV (32 EU) |
-| Output | 16 EU/t |
+| Output | 8 to 32 EU/t, by fuel |
 | Energy storage | 32,000 EU |
+| Fuel: Biogas | 0.5 mB/t → 16 EU/t (32 EU/mB) |
+| Fuel: Biomass | 1 mB/t → 8 EU/t (8 EU/mB) |
+| Fuel: Crude Oil | 0.5 mB/t → 8 EU/t (16 EU/mB) |
+| Fuel: Diesel Oil | 0.25 mB/t → 32 EU/t (128 EU/mB) |
 
 The game measured these values from the block entity of this version.
+
+With a generator output multiplier other than 1.0 (config GeneratorOutput), the EU values change. The fuel use stays the same.
 
 ## Procedure
 

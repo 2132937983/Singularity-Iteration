@@ -56,4 +56,26 @@ private static final ResourceLocation GUI_TEXTURE =
 
         drawLightningEnergy(guiGraphics, x + ENERGY_X, y + ENERGY_Y, menu.getEnergy(), menu.getMaxEnergy());
     }
+
+    // 0.1.10.41: the saw-line progress and the lightning energy show their values on hover, as on the Compressor
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        super.renderLabels(guiGraphics, mouseX, mouseY);
+
+        int x = (this.width - this.imageWidth) / 2;
+        int y = (this.height - this.imageHeight) / 2;
+
+        BlockCutterMenu menu = this.getMenu();
+        if (menu == null) return;
+
+        // the blade slot sits on the saw line: over the slot the blade's own tooltip shows
+        if (this.hoveredSlot == null
+                && isHovering(mouseX, mouseY, x + PROGRESS_X, y + PROGRESS_Y, CUTTER_PROGRESS_BG_WIDTH, CUTTER_PROGRESS_BG_HEIGHT)) {
+            renderProgressTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getProgress(), menu.getMaxProgress());
+        }
+
+        if (isHovering(mouseX, mouseY, x + ENERGY_X, y + ENERGY_Y, LIGHTNING_WIDTH, LIGHTNING_HEIGHT)) {
+            renderEnergyTooltip(guiGraphics, mouseX - x, mouseY - y, menu.getEnergy(), menu.getMaxEnergy());
+        }
+    }
 }

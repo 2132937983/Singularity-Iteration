@@ -164,7 +164,9 @@ public class RecipeRegistrationAPIImpl implements IRecipeRegistrationAPI {
 
     @Override
     public boolean registerCannerRecipe(ResourceLocation id, Ingredient input, ItemStack output, int processTime) {
-        Ingredient canIngredient = Ingredient.of(com.miophas.singularity_iteration.common.item.cell.mio_icif_cells.CELL_EMPTY.get());
+        // 0.1.10.41: only a really empty cell, not an Empty Cell holding coolant or another fluid
+        Ingredient canIngredient = new com.miophas.singularity_iteration.common.recipe.FluidCellIngredient(
+            net.minecraft.world.level.material.Fluids.EMPTY).toVanilla();
         return registerRecipe(id, "canner", () -> RecipeFactoryBridge.canning("", canIngredient, input, output, processTime, 10));
     }
 

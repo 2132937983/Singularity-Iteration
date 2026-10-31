@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>{@link Role#EDGE}: the 28 positions on two or more sides of the box: casing.</li>
  *   <li>{@link Role#FACE}: the 13 other shell positions (the middles of the four long sides and the centre of the far end):
  *   casing, a fluid port or a power port.</li>
- *   <li>{@link Role#INTERIOR}: the 3 positions inside: air.</li>
+ *   <li>{@link Role#INTERIOR}: the 3 positions inside: air, or (0.1.10.41) Steam Turbine Rotors, which raise the EU of each step.</li>
  * </ul>
  */
 public final class SteamTunnelStructure {

@@ -1,1 +1,1 @@
-{"type": "minecraft:crafting_shapeless","ingredients":[{"item":"mio_icif:cell/item_cell_empty"},{"item":"minecraft:water_bucket"}],"result":{"id":"mio_icif:cell/item_cell_water","count":1}}
+{"type": "minecraft:crafting_shapeless","ingredients":[{"type":"mio_icif:fluid_cell","fluid":"minecraft:empty"},{"item":"minecraft:water_bucket"}],"result":{"id":"mio_icif:cell/item_cell_water","count":1}}

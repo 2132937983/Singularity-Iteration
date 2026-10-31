@@ -803,6 +803,30 @@
     {
       "id": "mio_icif:generator/block_steam_tunnel_power_port",
       "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_turbine_rotor_bronze",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_turbine_rotor_iron",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_turbine_rotor_adviron",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_turbine_rotor_titanium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_turbine_rotor_iridium",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_turbine_rotor_netherite",
+      "required": false
     }
   ]
 }

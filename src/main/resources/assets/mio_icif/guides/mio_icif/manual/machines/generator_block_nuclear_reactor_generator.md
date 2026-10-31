@@ -73,7 +73,7 @@ Lead stops radiation. Radiation goes in a straight line from the reactor to a cr
 
 - Below 5 % nothing gets through: two lead blocks, or one lead block and two of the weaker blocks, stop the radiation completely.
 - A creature is exposed through the more open of two lines: the line to its eyes and the line to its middle. Cover the whole body.
-- The same rule applies to the radioactive blocks of a nuclear explosion (the line from the block) and to a nuclear blast zone. In a blast zone you need shielding toward the blast centre and a roof (the line 16 blocks up): the more open of the two lines counts.
+- The same rule applies to the radioactive blocks of a nuclear explosion (the line from the block) and to a nuclear blast zone. In a blast zone two lines count: the line toward the blast centre and the line 16 blocks up (the roof). The less open of the two counts, so a shielding wall toward the blast centre or a shielding roof protects you, also in the open.
 - A full hazmat suit or a full quantum suit still protects completely.
 - Radioactive items in a <ItemLink id="mio_icif:normal/item_contain_ment_box" /> do not irradiate you. The box has 18 slots: use it to open it.
 

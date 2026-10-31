@@ -22,6 +22,12 @@ The machine sends the exhaust steam to an adjacent Condenser and keeps the conde
 
 ## Power data
 
+| Item | Value |
+|---|---|
+| Steam | 2 KU per mB, per 1,000 mB: 900 mB of exhaust steam and 1 mB of Distilled Water |
+| Superheated Steam | 4 KU per mB, all of it leaves as exhaust steam |
+| Throttle | KU × (1 − Distilled Water ÷ 1,000 mB) |
+
 This block uses no EU.
 
 ## Procedure

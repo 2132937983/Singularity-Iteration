@@ -22,6 +22,11 @@ The machine gives heat only through its front face.
 
 ## Power data
 
+| Item | Value |
+|---|---|
+| Heat output | 20 HU/t while the fuel burns |
+| Burn time | furnace burn time ÷ 4 (Coal: 400 t, 8,000 HU) |
+
 This block uses no EU.
 
 ## Procedure

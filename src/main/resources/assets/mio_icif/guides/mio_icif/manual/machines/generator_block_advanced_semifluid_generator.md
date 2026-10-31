@@ -26,8 +26,11 @@ The machine accepts biogas buckets and biogas cells only.
 | Output voltage tier | MV (128 EU) |
 | Output | 36 EU/t |
 | Energy storage | 100,000 EU |
+| Fuel: Biogas | 1.5 mB/t → 36 EU/t (24 EU/mB) |
 
 The game measured these values from the block entity of this version.
+
+With a generator output multiplier other than 1.0 (config GeneratorOutput), the EU values change. The fuel use stays the same.
 
 ## Procedure
 

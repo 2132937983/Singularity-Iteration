@@ -18,7 +18,8 @@
       "tag": "c:ingots/alloy"
     },
     "P": {
-      "item": "mio_icif:cell/item_cell_empty"
+      "type": "mio_icif:fluid_cell",
+      "fluid": "minecraft:empty"
     },
     "A": {
       "tag": "c:circuits/advanced"

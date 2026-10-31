@@ -29,6 +29,7 @@ Each operation uses water from the internal tank. The machine has three output s
 | Use while working | 16 EU/t |
 | Operation time | 400 tick (20 s) |
 | Energy per operation | 6,400 EU |
+| Water use | 200 mB per operation (0.5 mB/t) |
 
 The game measured these values from the block entity of this version.
 

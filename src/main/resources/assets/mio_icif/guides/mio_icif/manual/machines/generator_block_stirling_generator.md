@@ -21,7 +21,13 @@ The machine takes heat through its back face and through its front face (the cop
 
 ## Power data
 
-This block uses no EU.
+| Item | Value |
+|---|---|
+| Output voltage tier | MV (128 EU) |
+| Energy storage | 200,000 EU |
+| Conversion | 2 HU → 1 EU |
+
+With a generator output multiplier other than 1.0 (config GeneratorOutput), the EU values change.
 
 ## Procedure
 

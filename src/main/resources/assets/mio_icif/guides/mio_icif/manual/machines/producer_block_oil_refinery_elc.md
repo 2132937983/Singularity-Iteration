@@ -30,6 +30,11 @@ Each Overclocker Upgrade increases the fluid per cycle and the EU cost.
 | Use while working | 8 EU/t |
 | Operation time | 10 tick (0.5 s) |
 | Energy per operation | 80 EU |
+| Crude Oil → Diesel Oil | 1 mB → 1 mB per cycle (10 t, 8 EU/t) |
+| Water → Distilled Water | 1 mB → 1 mB per cycle (10 t, 8 EU/t) |
+| Steam → Distilled Water | 1 mB → 1 mB per cycle (10 t, 8 EU/t) |
+| Overclocker Upgrade | +1 mB per cycle each, the EU/t rises in step |
+| Recipe data | datapacks set the cycle time and the EU/t of each recipe (processingtime, energypertick) |
 
 The game measured these values from the block entity of this version.
 

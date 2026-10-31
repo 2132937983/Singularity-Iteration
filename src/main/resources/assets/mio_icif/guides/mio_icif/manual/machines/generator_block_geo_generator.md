@@ -27,8 +27,12 @@ Each lava block next to the machine adds extra EU output.
 | Output voltage tier | LV (32 EU) |
 | Output | 20 EU/t |
 | Energy storage | 2,400 EU |
+| Fuel: Lava | 2 mB/t → 20 EU/t (10 EU/mB) |
+| Adjacent lava blocks | +1 EU/t each, up to 6 |
 
 The game measured these values from the block entity of this version.
+
+With a generator output multiplier other than 1.0 (config GeneratorOutput), the EU values change. The fuel use stays the same.
 
 ## Procedure
 

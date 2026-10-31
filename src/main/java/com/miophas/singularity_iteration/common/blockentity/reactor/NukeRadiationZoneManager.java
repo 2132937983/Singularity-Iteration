@@ -130,12 +130,7 @@ public class NukeRadiationZoneManager {
                 if (RadiationProtectionUtil.isWearingFullHazmat(entity)) continue;
                 float factor = intensity(level,entry.getKey(),zone, entity.getX(), entity.getY(), entity.getZ());
                 if (factor <= 0) continue;
-                // 0.1.10.5: a shelter needs shielding toward the blast centre and a shielding roof
-                // (fallout comes from both): the more open of the two lines sets the exposure
-                var eyes = entity.getEyePosition();
-                double toCentre = RadiationShielding.transmission(level, RadiationShielding.centre(c), entity, null);
-                double toSky = RadiationShielding.transmission(level, eyes.add(0, ROOF_CHECK, 0), eyes, null);
-                factor *= (float) Math.max(toCentre, toSky);
+                factor *= (float) shelterTransmission(level, c, entity);
                 if (factor <= 0) continue;
                 var value = exposure.computeIfAbsent(entity, ignored -> new float[2]);
                 value[0] = Math.max(value[0], zone.power() / 500 * factor);
@@ -144,6 +139,19 @@ public class NukeRadiationZoneManager {
         }
         exposure.forEach((entity, value) -> applyRadiationEffects(entity, value[0], value[1]));
     }
+    /**
+     * Share of a zone's radiation that reaches a creature. Fallout comes from the blast centre and from the sky, so two lines
+     * count: the line to the blast centre and the line {@link #ROOF_CHECK} blocks up from the eyes (the roof). 0.1.10.41: the
+     * less open line counts, so shielding toward the centre or a shielding roof protects (before, the more open line counted,
+     * and outdoors the open sky cancelled every wall).
+     */
+    static double shelterTransmission(Level level, BlockPos centre, LivingEntity entity) {
+        double toCentre = RadiationShielding.transmission(level, RadiationShielding.centre(centre), entity, null);
+        if (toCentre <= 0) return 0;
+        var eyes = entity.getEyePosition();
+        return Math.min(toCentre, RadiationShielding.transmission(level, eyes.add(0, ROOF_CHECK, 0), eyes, null));
+    }
+
     private static void applyRadiationEffects(LivingEntity living, float damage, float intensity) {
         if (!Float.isFinite(damage) || damage <= 0 || intensity <= 0) return;
         float actual = RadiationProtectionUtil.calculateRadiationDamage(living, damage);

@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mio_icif:block/generator/block_steam_turbine_rotor_bronze"
+    },
+    "facing=east": {
+      "model": "mio_icif:block/generator/block_steam_turbine_rotor_bronze",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "mio_icif:block/generator/block_steam_turbine_rotor_bronze",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "mio_icif:block/generator/block_steam_turbine_rotor_bronze",
+      "y": 270
+    },
+    "facing=up": {
+      "model": "mio_icif:block/generator/block_steam_turbine_rotor_bronze",
+      "x": 270
+    },
+    "facing=down": {
+      "model": "mio_icif:block/generator/block_steam_turbine_rotor_bronze",
+      "x": 90
+    }
+  }
+}

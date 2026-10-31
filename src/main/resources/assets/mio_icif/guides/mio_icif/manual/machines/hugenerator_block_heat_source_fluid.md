@@ -22,6 +22,13 @@ Each heat conductor increases the heat output. The machine gives heat only throu
 
 ## Power data
 
+| Item | Value |
+|---|---|
+| Lava → Pahoehoe Lava | 1 mB → 1 mB, 20 HU per mB |
+| Hot Coolant → Coolant | 1 mB → 1 mB, 20 HU per mB |
+| Heat output | 10 HU/t per Heat Conductor, up to 100 HU/t |
+| Fluid use | 0.5 mB/t per Heat Conductor, up to 5 mB/t |
+
 This block uses no EU.
 
 ## Procedure

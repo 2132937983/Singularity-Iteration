@@ -22,6 +22,11 @@ The machine gives heat only through its front face.
 
 ## Power data
 
+| Item | Value |
+|---|---|
+| Heat output | 2, 4, 8, 16, 32 or 64 HU/t for 1 to 6 pellets |
+| Pellet use | none, the pellets do not wear out |
+
 This block uses no EU.
 
 ## Procedure

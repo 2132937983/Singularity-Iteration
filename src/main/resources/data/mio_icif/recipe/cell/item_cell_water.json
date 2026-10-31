@@ -3,7 +3,8 @@
   "category": "misc",
   "ingredients": [
     {
-      "item": "mio_icif:cell/item_cell_empty"
+      "type": "mio_icif:fluid_cell",
+      "fluid": "minecraft:empty"
     },
     {
       "item": "minecraft:water_bucket"

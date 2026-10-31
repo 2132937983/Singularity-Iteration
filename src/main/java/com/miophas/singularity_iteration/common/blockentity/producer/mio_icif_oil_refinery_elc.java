@@ -9,6 +9,7 @@ import com.miophas.singularity_iteration.core.api.machine.ISlotLayout;
 import com.miophas.singularity_iteration.core.api.machine.builder.IElectricMachineBuilder;
 import com.miophas.singularity_iteration.core.api.machine.builder.IMachineBuilderAPI;
 import com.miophas.singularity_iteration.core.api.recipe.IRecipeAPI;
+import com.miophas.singularity_iteration.core.api.recipe.IRecipeProcessingInfo;
 import com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank;
 import com.miophas.singularity_iteration.core.runtime.processing.OwnedFluidConversion;
 import net.minecraft.core.BlockPos;
@@ -64,6 +65,8 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
 
     private int overclockerCount = 0;
     private int fluidPerCycle = 1;
+    /** 0.1.10.41: the EU per tick of the current recipe (its energypertick), for one mB per cycle. */
+    private long recipeEnergyPerTick = DEFAULT_ENERGY_PER_TICK;
     private String paidRecipe = "";
     private FluidStack paidInput = FluidStack.EMPTY, paidOutput = FluidStack.EMPTY;
     private long paidRate;
@@ -72,6 +75,11 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
     private void refreshPaidRecipe() {
         var recipe = findRecipe();
         if (recipe.isEmpty()) return;
+        // 0.1.10.41: the recipe sets the cycle time and the EU per tick (processingtime, energypertick), so datapacks change them
+        if (recipe.get().value() instanceof IRecipeProcessingInfo info) {
+            maxProgress = Math.max(1, info.getProcessingTime());
+            recipeEnergyPerTick = Math.max(0, info.getEnergyPerTick());
+        }
         String currentId = recipe.get().id().toString();
         var input = inputTank.getFluid().copyWithAmount(1);
         var output = MioIcifAPI.instance().getRecipeAPI().getFluidRefiningOutputFluid(recipe.get()).copy();
@@ -241,9 +249,13 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
         return 1;
     }
 
+    /** 0.1.10.41: the recipe sets the cycle time (refreshPaidRecipe); upgrades do not reset it to the default. */
+    @Override
+    protected void updateProcessingParameters() {}
+
     @Override
     public long getEffectiveEnergyPerTick() {
-        return DEFAULT_ENERGY_PER_TICK * fluidPerCycle;
+        return recipeEnergyPerTick * fluidPerCycle;
     }
 
     public int getFluidPerCycle() {
@@ -325,7 +337,8 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
     protected void doWork() {
         if (prepareOperation().isEmpty()) { stopWork(); return; }
         if (progress < maxProgress) {
-            if (getEffectiveEnergyPerTick() <= 0 || !hasEnoughEnergy() || !consumeEnergy()) { stopWork(); return; }
+            // a recipe with energypertick 0 runs without power
+            if (getEffectiveEnergyPerTick() > 0 && (!hasEnoughEnergy() || !consumeEnergy())) { stopWork(); return; }
             progress = (int) Math.min(maxProgress, (long) progress + getProgressPerTick());
         }
         isWorking = true;
@@ -410,6 +423,7 @@ public class mio_icif_oil_refinery_elc extends GenericMachineBlockEntity {
         paidRate = Math.max(0, tag.getLong("scex_paid_rate"));
         paidCycle = Math.max(0, tag.getInt("scex_paid_cycle"));
         paidDuration = Math.max(0, tag.getInt("scex_paid_duration"));
+        if (paidDuration > 0) maxProgress = paidDuration;   // 0.1.10.41: the cycle time of the recipe in progress
         progress = Math.max(0, Math.min(maxProgress, progress));
         if (tag.contains("InputTank")) {
             inputTank.readFromNBT(registries, tag.getCompound("InputTank"));

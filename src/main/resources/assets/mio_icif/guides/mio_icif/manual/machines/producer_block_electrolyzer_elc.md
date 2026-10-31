@@ -29,6 +29,8 @@ The machine returns the stored energy to adjacent blocks that are not full. The 
 | Use while working | 10 EU/t |
 | Operation time | 20 tick (1 s) |
 | Energy per operation | 200 EU |
+| Water Cell → Empty Cell | 1 per operation |
+| Stored energy | 200 EU per Water Cell, sent to adjacent blocks at up to 32 EU/t |
 
 The game measured these values from the block entity of this version.
 

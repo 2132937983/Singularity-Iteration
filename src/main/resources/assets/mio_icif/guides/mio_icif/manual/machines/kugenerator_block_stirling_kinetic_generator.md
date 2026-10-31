@@ -22,6 +22,12 @@ The machine sends KU only through its front face.
 
 ## Power data
 
+| Item | Value |
+|---|---|
+| Conversion | 4 HU + 1 mB Water → 12 KU + 1 mB Hot Water |
+| KU buffer | 2,000 KU |
+| Heat buffer | 1,000 HU |
+
 This block uses no EU.
 
 ## Procedure

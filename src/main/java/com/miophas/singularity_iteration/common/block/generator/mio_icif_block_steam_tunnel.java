@@ -23,19 +23,22 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 0.1.10.39: the Steam Tunnel controller. It faces out of the front of the tunnel, which lies behind it (see
- * {@code SteamTunnelStructure}). No menu: a right-click shows the state (running, idle, or what is missing where).
+ * {@code SteamTunnelStructure}). No menu: a right-click shows the state (running, idle, or what is missing where). While the
+ * tunnel is formed ({@link #FORMED}) its front is the hub of the big fan that the 8 casings around it show.
  */
 @SuppressWarnings("null")
 public class mio_icif_block_steam_tunnel extends mio_icif_entity_block {
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
+    public static final BooleanProperty FORMED = BooleanProperty.create("formed");
 
     public mio_icif_block_steam_tunnel(Properties properties) {
         super(properties);
+        registerDefaultState(defaultBlockState().setValue(ACTIVE, false).setValue(FORMED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(ACTIVE);
+        builder.add(ACTIVE, FORMED);
         super.createBlockStateDefinition(builder);
     }
 
@@ -51,7 +54,15 @@ public class mio_icif_block_steam_tunnel extends mio_icif_entity_block {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()).setValue(ACTIVE, false);
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    /** Removed or turned: the casings of its front ring stop showing its fan. */
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!newState.is(this) || newState.getValue(FACING) != state.getValue(FACING))
+            SteamTunnelBlockEntity.showFan(level, pos, state.getValue(FACING), false);
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override

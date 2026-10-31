@@ -42,6 +42,7 @@ The large steam turbine of IC2 Classic: a hollow box of 3 x 3 x 5 blocks that ch
 - The controller sits in the middle of the front end and faces out; the tunnel lies behind it.
 - The 28 edge blocks are casing. The 13 other shell blocks (the middles of the four long sides and the centre of the back) are casing, a fluid port or a power port. The 3 blocks inside are air.
 - Removing a part stops the tunnel at once; it starts again when the structure is complete (checked every second).
+- Casings next to each other join into one panel. While the tunnel is formed, its front shows one large fan: the controller is the hub and the 8 casings around it carry the blades. When the fan disappears, the structure is broken.
 
 Drag the view to turn it.
 

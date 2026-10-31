@@ -1,6 +1,7 @@
 package com.miophas.singularity_iteration.common.blockentity.generator;
 
 import com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_tunnel;
+import com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_tunnel_part;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
 import com.miophas.singularity_iteration.common.registry.mio_icif_blocks;
 import com.miophas.singularity_iteration.core.runtime.TickMarks;
@@ -17,6 +18,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
@@ -31,7 +33,8 @@ import org.jetbrains.annotations.Nullable;
  * (4,096 mB/t into 2,048 EU/t, the 2 mB per EU of the small turbine), while its 10,000 EU buffer has room. The power ports of the
  * shell take the EU and send it as HV packets. The steam comes back as water at SI's boiling ratio (1 mB of water per 100 mB of
  * steam, {@link SteamReactorCycle#STEAM_PER_WATER}); water that does not fit its 2,000 mB tank is lost, and the fluid ports push it
- * into pipes. Steam enters through the controller or a fluid port. No menu: Jade and a right-click show the state.
+ * into pipes. Steam enters through the controller or a fluid port. No menu: Jade and a right-click show the state. Formed, its front
+ * shows one big fan: the controller is the hub, the 8 casings around it the blades ({@link #showFan}).
  */
 public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler {
     public static final int STEAM_CAPACITY = 16_000, WATER_CAPACITY = 2_000;
@@ -126,6 +129,27 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
             ports.addAll(linked);
             formed = ok;
             setChanged();
+        }
+        BlockState own = getBlockState();
+        if (own.getValue(mio_icif_block_steam_tunnel.FORMED) != ok)
+            level.setBlock(worldPosition, own.setValue(mio_icif_block_steam_tunnel.FORMED, ok), Block.UPDATE_CLIENTS);
+        showFan(level, worldPosition, facing, ok);
+    }
+
+    /**
+     * Puts the 8 blade pieces of the big fan on the casings around the controller at {@code controller}, or takes them off. A casing
+     * that already shows a piece of another tunnel keeps it; hiding takes off only this tunnel's pieces.
+     */
+    public static void showFan(Level level, BlockPos controller, Direction front, boolean show) {
+        if (level.isClientSide) return;
+        for (SteamTunnelStructure.Fan piece : SteamTunnelStructure.Fan.of(front)) {
+            BlockPos at = piece.casing(controller);
+            if (!level.isLoaded(at)) continue;
+            BlockState state = level.getBlockState(at);
+            if (!state.hasProperty(mio_icif_block_steam_tunnel_part.Casing.FAN)) continue;
+            SteamTunnelStructure.Fan now = state.getValue(mio_icif_block_steam_tunnel_part.Casing.FAN);
+            SteamTunnelStructure.Fan want = show ? (now == SteamTunnelStructure.Fan.NONE ? piece : now) : (now == piece ? SteamTunnelStructure.Fan.NONE : now);
+            if (want != now) level.setBlock(at, state.setValue(mio_icif_block_steam_tunnel_part.Casing.FAN, want), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
         }
     }
 

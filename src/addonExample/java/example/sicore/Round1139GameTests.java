@@ -17,7 +17,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -125,6 +128,99 @@ public final class Round1139GameTests {
             h.runAfterDelay(40, () -> {
                 long stored = (Long) call(call(h.getBlockEntity(storage), "getEnergyStorageInternal"), "getAmount");
                 h.assertTrue(stored > 2_048, "the MFSU beside the power port got " + stored + " EU");
+                h.succeed();
+            });
+        });
+    }
+
+    // ------------------------------------------------------------------ connected textures
+
+    /** The value of the block state property {@code name} at {@code pos}, as written in blockstate files. */
+    private static String prop(GameTestHelper h, BlockPos pos, String name) {
+        BlockState state = h.getBlockState(pos);
+        Property<?> property = state.getBlock().getStateDefinition().getProperty(name);
+        h.assertTrue(property != null, state + " has no property " + name);
+        return valueName(property, state);
+    }
+
+    private static <T extends Comparable<T>> String valueName(Property<T> property, BlockState state) {
+        return property.getName(state.getValue(property));
+    }
+
+    private static void assertLinks(GameTestHelper h, BlockPos pos, Direction... linked) {
+        java.util.Set<Direction> want = java.util.Set.of(linked);
+        for (Direction side : Direction.values()) {
+            BooleanProperty link = switch (side) {
+                case NORTH -> BlockStateProperties.NORTH; case SOUTH -> BlockStateProperties.SOUTH; case EAST -> BlockStateProperties.EAST;
+                case WEST -> BlockStateProperties.WEST; case UP -> BlockStateProperties.UP; case DOWN -> BlockStateProperties.DOWN;
+            };
+            h.assertTrue(h.getBlockState(pos).getValue(link) == want.contains(side),
+                "the casing at " + pos + " is " + (want.contains(side) ? "not " : "") + "joined to its " + side + " neighbour: " + h.getBlockState(pos));
+        }
+    }
+
+    /**
+     * Casings join the casings next to them (placed by a plain setBlock too, as the blueprint builder places them), not ports or other
+     * blocks, and let go when one is removed. The block state drives the connected textures.
+     */
+    @GameTest(batch = "round1139_tunnel", template = "empty", timeoutTicks = 20)
+    public static void steamTunnelCasingsJoinTheirNeighbours(GameTestHelper h) {
+        Block casing = BuiltInRegistries.BLOCK.get(id("generator/block_steam_tunnel_casing"));
+        BlockPos left = new BlockPos(1, 1, 1), middle = new BlockPos(2, 1, 1), right = new BlockPos(3, 1, 1), top = new BlockPos(2, 2, 1);
+        h.setBlock(left, casing);
+        h.setBlock(middle, casing);
+        h.setBlock(right, casing);
+        h.setBlock(top, casing);
+        h.setBlock(middle.south(), BuiltInRegistries.BLOCK.get(id("generator/block_steam_tunnel_power_port")));
+        h.setBlock(middle.north(), Blocks.IRON_BLOCK);
+        assertLinks(h, middle, Direction.EAST, Direction.WEST, Direction.UP);
+        assertLinks(h, left, Direction.EAST);
+        assertLinks(h, right, Direction.WEST);
+        assertLinks(h, top, Direction.DOWN);
+        h.setBlock(right, Blocks.AIR);
+        assertLinks(h, middle, Direction.WEST, Direction.UP);
+        h.assertTrue("none".equals(prop(h, middle, "fan")), "a lone casing shows a piece of a fan");
+        h.succeed();
+    }
+
+    /** Facing east, seen from outside: left is south (z 3), right is north (z 1). */
+    private static final java.util.Map<BlockPos, String> FAN = java.util.Map.of(
+        new BlockPos(4, 3, 3), "east_top_left", new BlockPos(4, 3, 2), "east_top", new BlockPos(4, 3, 1), "east_top_right",
+        new BlockPos(4, 2, 3), "east_left", new BlockPos(4, 2, 1), "east_right",
+        new BlockPos(4, 1, 3), "east_bottom_left", new BlockPos(4, 1, 2), "east_bottom", new BlockPos(4, 1, 1), "east_bottom_right");
+
+    private static void assertFan(GameTestHelper h, boolean shown) {
+        for (var piece : FAN.entrySet()) {
+            String value = prop(h, piece.getKey(), "fan");
+            h.assertTrue(value.equals(shown ? piece.getValue() : "none"), "the casing at " + piece.getKey() + " shows fan=" + value
+                + (shown ? ", not " + piece.getValue() : " on an unformed tunnel"));
+        }
+    }
+
+    /**
+     * Formed, the front shows one big fan: the controller is the hub (formed=true) and the 8 casings around it the pieces of their
+     * places; a casing elsewhere shows none. A broken tunnel takes the fan off at once, a whole one puts it back, and removing the
+     * controller takes it off too. The tunnel's walls join into panels: a casing in the middle of the top joins its four neighbours.
+     */
+    @GameTest(batch = "round1139_tunnel", template = "empty", timeoutTicks = 100)
+    public static void formedSteamTunnelShowsOneFanOnItsFront(GameTestHelper h) {
+        build(h);
+        Block casing = BuiltInRegistries.BLOCK.get(id("generator/block_steam_tunnel_casing"));
+        h.runAfterDelay(25, () -> {
+            h.assertTrue(formed(h), "the tunnel did not form: " + call(tunnel(h), "status"));
+            h.assertTrue("true".equals(prop(h, CONTROLLER, "formed")), "the controller of a formed tunnel shows no hub");
+            assertFan(h, true);
+            h.assertTrue("none".equals(prop(h, EDGE, "fan")), "a casing off the front shows a piece of the fan");
+            assertLinks(h, new BlockPos(2, 3, 2), Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST);
+            h.setBlock(EDGE, Blocks.AIR);
+            h.assertTrue("false".equals(prop(h, CONTROLLER, "formed")), "the controller of a broken tunnel still shows the hub");
+            assertFan(h, false);
+            h.setBlock(EDGE, casing);
+            h.runAfterDelay(25, () -> {
+                h.assertTrue(formed(h), "the whole tunnel did not form again: " + call(tunnel(h), "status"));
+                assertFan(h, true);
+                h.setBlock(CONTROLLER, Blocks.AIR);
+                assertFan(h, false);
                 h.succeed();
             });
         });

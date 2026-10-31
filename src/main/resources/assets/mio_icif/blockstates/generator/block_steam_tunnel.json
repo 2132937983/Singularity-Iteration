@@ -1,33 +1,63 @@
 {
   "variants": {
-    "active=false,facing=north": {
+    "active=false,facing=north,formed=false": {
       "model": "mio_icif:block/generator/block_steam_tunnel"
     },
-    "active=false,facing=east": {
+    "active=false,facing=east,formed=false": {
       "model": "mio_icif:block/generator/block_steam_tunnel",
       "y": 90
     },
-    "active=false,facing=south": {
+    "active=false,facing=south,formed=false": {
       "model": "mio_icif:block/generator/block_steam_tunnel",
       "y": 180
     },
-    "active=false,facing=west": {
+    "active=false,facing=west,formed=false": {
       "model": "mio_icif:block/generator/block_steam_tunnel",
       "y": 270
     },
-    "active=true,facing=north": {
+    "active=false,facing=north,formed=true": {
+      "model": "mio_icif:block/generator/block_steam_tunnel_formed"
+    },
+    "active=false,facing=east,formed=true": {
+      "model": "mio_icif:block/generator/block_steam_tunnel_formed",
+      "y": 90
+    },
+    "active=false,facing=south,formed=true": {
+      "model": "mio_icif:block/generator/block_steam_tunnel_formed",
+      "y": 180
+    },
+    "active=false,facing=west,formed=true": {
+      "model": "mio_icif:block/generator/block_steam_tunnel_formed",
+      "y": 270
+    },
+    "active=true,facing=north,formed=false": {
       "model": "mio_icif:block/generator/block_steam_tunnel_on"
     },
-    "active=true,facing=east": {
+    "active=true,facing=east,formed=false": {
       "model": "mio_icif:block/generator/block_steam_tunnel_on",
       "y": 90
     },
-    "active=true,facing=south": {
+    "active=true,facing=south,formed=false": {
       "model": "mio_icif:block/generator/block_steam_tunnel_on",
       "y": 180
     },
-    "active=true,facing=west": {
+    "active=true,facing=west,formed=false": {
       "model": "mio_icif:block/generator/block_steam_tunnel_on",
+      "y": 270
+    },
+    "active=true,facing=north,formed=true": {
+      "model": "mio_icif:block/generator/block_steam_tunnel_formed_on"
+    },
+    "active=true,facing=east,formed=true": {
+      "model": "mio_icif:block/generator/block_steam_tunnel_formed_on",
+      "y": 90
+    },
+    "active=true,facing=south,formed=true": {
+      "model": "mio_icif:block/generator/block_steam_tunnel_formed_on",
+      "y": 180
+    },
+    "active=true,facing=west,formed=true": {
+      "model": "mio_icif:block/generator/block_steam_tunnel_formed_on",
       "y": 270
     }
   }

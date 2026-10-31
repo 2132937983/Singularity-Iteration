@@ -1,0 +1,26 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "mio_icif:block/generator/block_steam_tunnel_casing"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#face",
+          "cullface": "north"
+        }
+      }
+    }
+  ]
+}

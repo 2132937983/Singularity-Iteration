@@ -1,9 +1,16 @@
 package com.miophas.singularity_iteration.common.blockentity.generator;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 0.1.10.39: the shape of the Steam Tunnel (IC2 Classic's {@code SteamTunnelTileEntity.testStructure}): a hollow box, 3 x 3 across
@@ -42,5 +49,53 @@ public final class SteamTunnelStructure {
     public static boolean inReach(BlockPos controller, BlockPos pos) {
         return Math.abs(controller.getX() - pos.getX()) < LENGTH && Math.abs(controller.getY() - pos.getY()) <= 1
             && Math.abs(controller.getZ() - pos.getZ()) < LENGTH;
+    }
+
+    /**
+     * The piece of the big fan that a casing of the front ring shows on its front face while the tunnel is formed (the controller in
+     * the middle is the hub): the side the front faces, then the place in the 3 x 3 as seen from outside. {@link #NONE} on every
+     * other casing.
+     */
+    public enum Fan implements StringRepresentable {
+        NONE,
+        NORTH_TOP_LEFT, NORTH_TOP, NORTH_TOP_RIGHT, NORTH_LEFT, NORTH_RIGHT, NORTH_BOTTOM_LEFT, NORTH_BOTTOM, NORTH_BOTTOM_RIGHT,
+        EAST_TOP_LEFT, EAST_TOP, EAST_TOP_RIGHT, EAST_LEFT, EAST_RIGHT, EAST_BOTTOM_LEFT, EAST_BOTTOM, EAST_BOTTOM_RIGHT,
+        SOUTH_TOP_LEFT, SOUTH_TOP, SOUTH_TOP_RIGHT, SOUTH_LEFT, SOUTH_RIGHT, SOUTH_BOTTOM_LEFT, SOUTH_BOTTOM, SOUTH_BOTTOM_RIGHT,
+        WEST_TOP_LEFT, WEST_TOP, WEST_TOP_RIGHT, WEST_LEFT, WEST_RIGHT, WEST_BOTTOM_LEFT, WEST_BOTTOM, WEST_BOTTOM_RIGHT;
+
+        private static final Fan[] VALUES = values();
+        private static final List<Direction> FRONTS = List.of(Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST);
+        /** Column (-1 left, 1 right) and row (1 top, -1 bottom) of the 8 places, in the order of the constants. */
+        private static final int[][] PLACES = {{-1, 1}, {0, 1}, {1, 1}, {-1, 0}, {1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+        /** The place that left and right swap into. */
+        private static final int[] MIRRORED = {2, 1, 0, 4, 3, 7, 6, 5};
+
+        private final String name = name().toLowerCase(Locale.ROOT);
+
+        @Override
+        public String getSerializedName() { return name; }
+
+        /** The side the fan faces (the controller's facing); null for {@link #NONE}. */
+        public @Nullable Direction front() { return this == NONE ? null : FRONTS.get((ordinal() - 1) / 8); }
+
+        private int place() { return (ordinal() - 1) % 8; }
+
+        /** Where this piece sits in front of the controller at {@code controller} (not for {@link #NONE}). */
+        public BlockPos casing(BlockPos controller) {
+            int[] at = PLACES[place()];
+            return controller.relative(front().getCounterClockWise(), at[0]).above(at[1]);   // seen from outside, left is clockwise
+        }
+
+        /** The 8 pieces of a fan facing {@code front} (horizontal). */
+        public static List<Fan> of(Direction front) {
+            int first = 1 + 8 * FRONTS.indexOf(front);
+            return Arrays.asList(VALUES).subList(first, first + 8);
+        }
+
+        private static Fan of(Direction front, int place) { return VALUES[1 + 8 * FRONTS.indexOf(front) + place]; }
+
+        public Fan rotate(Rotation rotation) { return this == NONE ? NONE : of(rotation.rotate(front()), place()); }
+
+        public Fan mirror(Mirror mirror) { return this == NONE ? NONE : of(mirror.mirror(front()), MIRRORED[place()]); }
     }
 }

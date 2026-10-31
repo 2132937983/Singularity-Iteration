@@ -92,6 +92,32 @@ public final class RecipeSlots {
         }
         return Optional.of(new Prepared(inventory, indices, before, after));
     }
+    /**
+     * 0.1.10.38: {@code prepare(...).isPresent()} without copying a stack or building a plan. canWork() runs on every tick
+     * of a working machine; prepare copied the input and every output stack each time. Keep the two in step.
+     */
+    public static boolean fits(MachineItemHandler inventory, int inputSlot, int consumed, int[] outputSlots, List<ItemStack> results) {
+        if (consumed <= 0 || inputSlot < 0 || inputSlot >= inventory.getSlots()
+                || results.isEmpty() || results.size() > outputSlots.length) return false;
+        if (inventory.getStackInSlot(inputSlot).getCount() < consumed) return false;
+        boolean hasOutput = false;
+        for (int i = 0; i < outputSlots.length; i++) {
+            int slot = outputSlots[i];
+            if (slot < 0 || slot >= inventory.getSlots() || slot == inputSlot) return false;
+            for (int j = 0; j < i; j++) if (outputSlots[j] == slot) return false;
+            ItemStack result = i < results.size() ? results.get(i) : ItemStack.EMPTY;
+            if (result == null) return false;
+            if (result.isEmpty()) continue;
+            hasOutput = true;
+            var current = inventory.getStackInSlot(slot);
+            int limit = Math.min(inventory.getSlotLimit(slot), result.getMaxStackSize());
+            if (result.getCount() > limit || !current.isEmpty()
+                    && (!ItemStack.isSameItemSameComponents(current, result) || current.getCount() > limit - result.getCount()))
+                return false;
+        }
+        return hasOutput;
+    }
+
     public static Optional<Prepared> prepare(MachineItemHandler inventory, int inputSlot, int consumed,
                                              int[] outputSlots, List<ItemStack> results) {
         if (consumed <= 0 || inputSlot < 0 || inputSlot >= inventory.getSlots()

@@ -1,6 +1,10 @@
 package example.sicore;
 
 import com.miophas.singularity_iteration.core.api.reactor.IReactorController;
+import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
+import com.miophas.singularity_iteration.core.prefab.inventory.MachineItemHandler;
+import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
+import com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -8,8 +12,12 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -19,7 +27,9 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * GameTests of 0.1.10.38. Phase A: depleted rods stay in their slot (a reactor walled in by chambers lost the depleted quad rod
- * it threw out at its own position); a reactor chamber is a fluid port of its reactor. Internals are reached by reflection.
+ * it threw out at its own position); a reactor chamber is a fluid port of its reactor. Phase B: idle machines sleep almost
+ * every tick, the centrifuge and the ore washer sleep too, the lamp goes off 20 ticks after work stops, the redstone input is
+ * tracked from neighbour updates. Internals are reached by reflection.
  */
 @GameTestHolder(CoreExampleMod.ID)
 @PrefixGameTestTemplate(false)
@@ -329,6 +339,188 @@ public final class Round1138GameTests {
         var converter = h.getBlockEntity(REACTOR);
         long rating = (Long) call(call(converter, "getEffectiveCableTier"), "getPowerRating");
         h.assertTrue(rating == 2048, "the converter's voltage limit is " + rating);
+        h.succeed();
+    }
+
+    // ------------------------------------------------------------------ B: processing machine performance
+
+    private static AbstractProcessingMachineBlockEntity machine(GameTestHelper h, BlockPos at) {
+        return (AbstractProcessingMachineBlockEntity) h.getBlockEntity(at);
+    }
+
+    private static boolean lit(GameTestHelper h, BlockPos at) {
+        var state = h.getBlockState(at);
+        for (var property : state.getProperties())
+            if (property.getName().equals("lit") && property instanceof BooleanProperty lit) return state.getValue(lit);
+        throw new AssertionError("no lit property on " + state);
+    }
+
+    /** An electric furnace at {@code at} smelting cobblestone; its buffer is refilled on every tick. */
+    @SuppressWarnings("deprecation")
+    private static void smelting(GameTestHelper h, BlockPos at) {
+        h.setBlock(at, BuiltInRegistries.BLOCK.get(id("producer/block_furnace_elc")));
+        machine(h, at).getItemHandler().insertItem(0, new ItemStack(Items.COBBLESTONE, 64), false);
+        h.onEachTick(() -> {
+            if (h.getBlockEntity(at) instanceof AbstractProcessingMachineBlockEntity m) m.getEnergyStorageInternal().setStored(300);
+        });
+    }
+
+    /**
+     * An idle machine skips almost all its ticks: woken by its recheck timer with nothing changed, it sleeps again after one
+     * full tick. It used to count 20 quiet full ticks again, so it slept only half the time.
+     */
+    @GameTest(batch = "round1138_perf", template = "empty", timeoutTicks = 200)
+    public static void idleMachineSleepsAlmostEveryTick(GameTestHelper h) {
+        BlockPos at = new BlockPos(2, 1, 2);
+        h.setBlock(at, BuiltInRegistries.BLOCK.get(id("producer/block_powder_elc")));
+        int[] asleep = {0};
+        h.onEachTick(() -> {
+            long now = h.getTick();
+            if (now > 40 && now <= 140 && machine(h, at).isIdleAsleep()) asleep[0]++;
+            if (now == 141) {
+                h.assertTrue(asleep[0] >= 90, "the idle macerator was asleep at " + asleep[0] + " of 100 ticks");
+                h.succeed();
+            }
+        });
+    }
+
+    /** A machine that stops stays lit for LIT_OFF_DELAY (20) ticks: a machine short of input or power used to flicker. */
+    @GameTest(batch = "round1138_perf", template = "empty", timeoutTicks = 120)
+    public static void machineStaysLitForAMomentAfterItStops(GameTestHelper h) {
+        BlockPos at = new BlockPos(2, 1, 2);
+        smelting(h, at);
+        h.runAfterDelay(20, () -> {
+            h.assertTrue(machine(h, at).isWorking() && lit(h, at), "the furnace does not work");
+            machine(h, at).getItemHandler().extractItem(0, 64, false);
+            h.runAfterDelay(10, () -> {
+                h.assertTrue(!machine(h, at).isWorking(), "the furnace still works without input");
+                h.assertTrue(lit(h, at), "the lamp went off 10 ticks after the furnace stopped");
+                h.runAfterDelay(15, () -> {
+                    h.assertTrue(!lit(h, at), "the lamp is still on 25 ticks after the furnace stopped");
+                    h.succeed();
+                });
+            });
+        });
+    }
+
+    /** A redstone signal stops a machine at its next tick, and removing it starts the machine at its next tick (tracked input). */
+    @GameTest(batch = "round1138_perf", template = "empty", timeoutTicks = 100)
+    public static void redstoneStopsAndStartsAMachineAtOnce(GameTestHelper h) {
+        BlockPos at = new BlockPos(2, 1, 2), side = at.east();
+        smelting(h, at);
+        h.runAfterDelay(20, () -> {
+            h.assertTrue(machine(h, at).isWorking(), "the furnace does not work");
+            h.setBlock(side, Blocks.REDSTONE_BLOCK);
+            h.runAfterDelay(1, () -> {
+                h.assertTrue(!machine(h, at).isWorking(), "a redstone signal did not stop the furnace at its next tick");
+                h.setBlock(side, Blocks.AIR);
+                h.runAfterDelay(1, () -> {
+                    h.assertTrue(machine(h, at).isWorking(), "the furnace did not start again at its next tick");
+                    h.succeed();
+                });
+            });
+        });
+    }
+
+    /**
+     * The machine keeps its redstone input between neighbour updates, and reads it again within 20 ticks anyway: a signal
+     * placed without a neighbour update (as some mods do) is noticed late, but noticed.
+     */
+    @GameTest(batch = "round1138_perf", template = "empty", timeoutTicks = 100)
+    public static void silentRedstoneChangeIsReadAgainWithinASecond(GameTestHelper h) {
+        BlockPos at = new BlockPos(2, 1, 2), side = at.east();
+        smelting(h, at);
+        h.runAfterDelay(20, () -> {
+            h.assertTrue(machine(h, at).isWorking(), "the furnace does not work");
+            setField(machine(h, at), "redstoneReadAt", h.getLevel().getGameTime());   // the input was just read
+            h.getLevel().setBlock(h.absolutePos(side), Blocks.REDSTONE_BLOCK.defaultBlockState(), Block.UPDATE_CLIENTS);
+            h.runAfterDelay(3, () -> {
+                h.assertTrue(machine(h, at).isWorking(), "the furnace read its redstone input on every tick");
+                h.runAfterDelay(20, () -> {
+                    h.assertTrue(!machine(h, at).isWorking(), "the furnace did not read its redstone input again within 20 ticks");
+                    h.succeed();
+                });
+            });
+        });
+    }
+
+    /** A hot, idle centrifuge sleeps and keeps its heat; an inserted item starts it at once. It never slept before. */
+    @SuppressWarnings("deprecation")
+    @GameTest(batch = "round1138_perf", template = "empty", timeoutTicks = 120)
+    public static void hotIdleCentrifugeSleepsAndWakesOnInput(GameTestHelper h) {
+        BlockPos at = new BlockPos(2, 1, 2);
+        h.setBlock(at, BuiltInRegistries.BLOCK.get(id("producer/block_centrifuge_elc")));
+        setField(machine(h, at), "heatStorage", 5000);
+        machine(h, at).getEnergyStorageInternal().setStored(24_000);
+        h.runAfterDelay(40, () -> {
+            h.assertTrue(machine(h, at).isIdleAsleep(), "a hot idle centrifuge does not sleep");
+            h.assertTrue((Integer) field(machine(h, at), "heatStorage") == 5000, "the sleeping centrifuge lost heat");
+            machine(h, at).getItemHandler().insertItem(0, new ItemStack(Items.COBBLESTONE), false);
+            h.runAfterDelay(2, () -> {
+                h.assertTrue(machine(h, at).isWorking(), "an inserted item did not start the sleeping centrifuge");
+                h.succeed();
+            });
+        });
+    }
+
+    /** An ore washer without water sleeps; water piped into its tank wakes it, and it starts at once. It never slept before. */
+    @SuppressWarnings("deprecation")
+    @GameTest(batch = "round1138_perf", template = "empty", timeoutTicks = 120)
+    public static void dryWasherSleepsAndWakesWhenWaterArrives(GameTestHelper h) {
+        BlockPos at = new BlockPos(2, 1, 2);
+        h.setBlock(at, BuiltInRegistries.BLOCK.get(id("producer/block_washer_elc")));
+        machine(h, at).getEnergyStorageInternal().setStored(8_000);
+        machine(h, at).getItemHandler().insertItem(0, new ItemStack(Items.GRAVEL, 4), false);
+        h.runAfterDelay(40, () -> {
+            h.assertTrue(machine(h, at).isIdleAsleep(), "a washer without water does not sleep");
+            IFluidHandler tank = h.getLevel().getCapability(Capabilities.FluidHandler.BLOCK, h.absolutePos(at), Direction.UP);
+            h.assertTrue(tank != null && tank.fill(new FluidStack(Fluids.WATER, 1000), IFluidHandler.FluidAction.EXECUTE) == 1000,
+                "the washer took no water");
+            h.assertTrue(!machine(h, at).isIdleAsleep(), "water did not wake the washer");
+            h.runAfterDelay(2, () -> {
+                h.assertTrue(machine(h, at).isWorking(), "the washer did not start with water");
+                h.succeed();
+            });
+        });
+    }
+
+    /** RecipeSlots.fits (canWork, no copies) gives the same answer as prepare(...).isPresent() on random inventories. */
+    @GameTest(batch = "round1138_perf", template = "empty", timeoutTicks = 20)
+    public static void recipeFitCheckAgreesWithThePreparedPlan(GameTestHelper h) {
+        var layout = SlotLayout.builder().input(1).output(3).build();
+        Item[] items = {Items.COBBLESTONE, Items.STONE, Items.ENDER_PEARL, Items.DIAMOND_SWORD};
+        var random = new java.util.Random(1138);
+        int fit = 0;
+        for (int round = 0; round < 4000; round++) {
+            var inventory = new MachineItemHandler(layout);
+            for (int slot = 0; slot < 4; slot++) {
+                if (random.nextInt(3) == 0) continue;
+                var stack = new ItemStack(items[random.nextInt(items.length)]);
+                stack.setCount(1 + random.nextInt(stack.getMaxStackSize()));
+                inventory.setStackInSlot(slot, stack);
+            }
+            int[] outputs = switch (random.nextInt(6)) {
+                case 0 -> new int[]{1};
+                case 1 -> new int[]{1, 2};
+                case 2 -> new int[]{1, 2, 3};
+                case 3 -> new int[]{1, 1};
+                case 4 -> new int[]{0, 2};
+                default -> new int[]{2, 9};
+            };
+            var results = new java.util.ArrayList<ItemStack>();
+            for (int i = random.nextInt(outputs.length + 2); i > 0; i--) {
+                if (random.nextInt(4) == 0) { results.add(ItemStack.EMPTY); continue; }
+                var result = new ItemStack(items[random.nextInt(items.length)]);
+                result.setCount(1 + random.nextInt(Math.min(64, result.getMaxStackSize() + 2)));   // sometimes more than a stack
+                results.add(result);
+            }
+            int consumed = random.nextInt(4), input = random.nextInt(10) == 0 ? 7 : 0;
+            boolean planned = RecipeSlots.prepare(inventory, input, consumed, outputs, results).isPresent();
+            boolean fits = RecipeSlots.fits(inventory, input, consumed, outputs, results);
+            if (planned != fits) throw new AssertionError("round " + round + ": prepare " + planned + ", fits " + fits);
+            if (fits) fit++;
+        }
+        h.assertTrue(fit > 40, "too few cases fit: " + fit);   // 71 of the 4000 with this seed
         h.succeed();
     }
 }

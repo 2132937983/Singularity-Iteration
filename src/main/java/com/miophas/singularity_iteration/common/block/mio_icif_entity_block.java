@@ -43,13 +43,24 @@ import java.util.List;
  * 默认仅支持水平方向（北、南、东、西）
  */
 @SuppressWarnings("null")
-public abstract class mio_icif_entity_block extends BaseEntityBlock {
+public abstract class mio_icif_entity_block extends BaseEntityBlock implements com.miophas.singularity_iteration.core.api.machine.INeighbourSignalTracking {
     
     // 定义方向属性（默认仅支持水平方向：北、南、东、西）
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     public mio_icif_entity_block(Properties properties) {
         super(properties);
+    }
+
+    /**
+     * 0.1.10.38: tells a processing machine that a neighbour changed, so it keeps its redstone input instead of reading the six
+     * neighbours every tick (INeighbourSignalTracking). Overrides of this method call super.
+     */
+    @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity machine)
+            machine.neighbourSignalChanged();
     }
 
     /**

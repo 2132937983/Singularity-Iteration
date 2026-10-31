@@ -4560,5 +4560,6 @@
   "reactor_layout.mio_icif.steam_quad.note": "一根四联铀燃料棒与四个超频蒸汽散热片（稳定在 700 HU）。可供约 96 EU/t：两台蒸汽涡轮发电机。",
   "jei.mio_icif.reactor_layout.steam_output": "蒸汽：%s mB/s ≈ 涡轮发电机 %s EU/t · 蒸汽反应仓：%s",
   "jei.mio_icif.reactor_layout.steam_fuel": "燃料可用 %s · 每次装填 %s mB 蒸汽",
-  "jei.mio_icif.reactor_layout.steam_model": "蒸汽反应堆：水与蒸汽空间不限；涡轮发电机每 2 mB 蒸汽产生 1 EU。"
+  "jei.mio_icif.reactor_layout.steam_model": "蒸汽反应堆：水与蒸汽空间不限；涡轮发电机每 2 mB 蒸汽产生 1 EU。",
+  "command.mio_icif.perf.machines": "加工机器每 tick：完整 tick %1$s，休眠 %2$s，状态灯切换 %3$s，红石读取 %4$s"
 }

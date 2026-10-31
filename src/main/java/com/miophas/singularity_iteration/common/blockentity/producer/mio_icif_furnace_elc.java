@@ -127,6 +127,9 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
         return false;
     }
 
+    // 0.1.10.38: constant slot lists (they were new arrays on every call, several per tick); never modify them.
+    private static final int[] SIDE_SLOTS = {INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT}, INPUT_SLOTS = {INPUT_SLOT}, OUTPUT_SLOTS = {OUTPUT_SLOT};
+
     /**
      * 获取指定方向可访问的槽位
  * 电槽位结构：0=输入, 1=电池, 2=输出, 3-6=插件
@@ -136,17 +139,17 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
     @Override
     protected int[] getSlotsForDirection(Direction side) {
         // 所有面都可以访问所有槽位（升级槽除外，与IC2原版一致）
-        return new int[]{INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT};
+        return SIDE_SLOTS;
     }
 
     @Override
     protected int[] getInputSlots() {
-        return new int[]{INPUT_SLOT};
+        return INPUT_SLOTS;
     }
 
     @Override
     protected int[] getOutputSlots() {
-        return new int[]{OUTPUT_SLOT};
+        return OUTPUT_SLOTS;
     }
 
     @Override
@@ -368,10 +371,7 @@ tick 更新逻辑
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
         // 更新方块状态（运行/停止
-    boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_furnace_elc.LIT);
-        if (blockEntity.isWorking() != isLit) {
-            level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_furnace_elc.LIT, blockEntity.isWorking()), 3);
-        }
+    blockEntity.syncLit(level, pos, state, com.miophas.singularity_iteration.common.block.producer.mio_icif_block_furnace_elc.LIT);   // 0.1.10.38: off after LIT_OFF_DELAY idle ticks
     }
 
     @Override

@@ -137,19 +137,22 @@ public enum MetalFormerMode {
         return canRoll || canCut || canExtrude;
     }
 
+    // 0.1.10.38: constant slot lists (they were new arrays on every call, several per tick); never modify them.
+    private static final int[] SIDE_SLOTS = {INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT}, INPUT_SLOTS = {INPUT_SLOT}, OUTPUT_SLOTS = {OUTPUT_SLOT};
+
     @Override
     protected int[] getSlotsForDirection(Direction side) {
-        return new int[]{INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT};
+        return SIDE_SLOTS;
     }
 
     @Override
     protected int[] getInputSlots() {
-        return new int[]{INPUT_SLOT};
+        return INPUT_SLOTS;
     }
 
     @Override
     protected int[] getOutputSlots() {
-        return new int[]{OUTPUT_SLOT};
+        return OUTPUT_SLOTS;
     }
 
     @Override
@@ -205,20 +208,20 @@ public enum MetalFormerMode {
 
     private boolean canWorkRolling(ItemStack input) {
         var recipe = getRollingRecipe();
-        return recipe != null && RecipeSlots.prepare(itemHandler, INPUT_SLOT, recipe.getIngredientCount(),
-            new int[]{OUTPUT_SLOT}, java.util.List.of(recipe.getResultItem(level.registryAccess()))).isPresent();
+        return recipe != null && RecipeSlots.fits(itemHandler, INPUT_SLOT, recipe.getIngredientCount(),
+            OUTPUT_SLOTS, java.util.List.of(recipe.getResultItem(level.registryAccess())));
     }
 
     private boolean canWorkCutting(ItemStack input) {
         var recipe = getCuttingRecipe();
-        return recipe != null && RecipeSlots.prepare(itemHandler, INPUT_SLOT, recipe.getIngredientCount(),
-            new int[]{OUTPUT_SLOT}, java.util.List.of(recipe.getResultItem(level.registryAccess()))).isPresent();
+        return recipe != null && RecipeSlots.fits(itemHandler, INPUT_SLOT, recipe.getIngredientCount(),
+            OUTPUT_SLOTS, java.util.List.of(recipe.getResultItem(level.registryAccess())));
     }
 
     private boolean canWorkExtruding(ItemStack input) {
         var recipe = getExtrudingRecipe();
-        return recipe != null && RecipeSlots.prepare(itemHandler, INPUT_SLOT, recipe.getIngredientCount(),
-            new int[]{OUTPUT_SLOT}, java.util.List.of(recipe.getResultItem(level.registryAccess()))).isPresent();
+        return recipe != null && RecipeSlots.fits(itemHandler, INPUT_SLOT, recipe.getIngredientCount(),
+            OUTPUT_SLOTS, java.util.List.of(recipe.getResultItem(level.registryAccess())));
     }
 
 
@@ -449,10 +452,7 @@ public enum MetalFormerMode {
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
         // 更新方块状态（运行/停止）
-        boolean isLit = state.getValue(mio_icif_block_metal_former.LIT);
-        if (blockEntity.isWorking() != isLit) {
-            level.setBlock(pos, state.setValue(mio_icif_block_metal_former.LIT, blockEntity.isWorking()), 3);
-        }
+        blockEntity.syncLit(level, pos, state, mio_icif_block_metal_former.LIT);   // 0.1.10.38: off after LIT_OFF_DELAY idle ticks
     }
 
     @Override

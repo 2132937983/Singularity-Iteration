@@ -118,6 +118,9 @@ private mio_icif_ExtractorRecipe currentRecipe = null;
         return recipeCache1.find(level, recipeInput).isPresent();
     }
 
+    // 0.1.10.38: constant slot lists (they were new arrays on every call, several per tick); never modify them.
+    private static final int[] SIDE_SLOTS = {INPUT_SLOT, OUTPUT_SLOT, BATTERY_SLOT}, INPUT_SLOTS = {INPUT_SLOT}, OUTPUT_SLOTS = {OUTPUT_SLOT};
+
     /**
      * 获取指定方向可访问的槽位
      * 提取机槽位结构：0=输入, 1=输出, 2=电池, 3-6=升级
@@ -126,17 +129,17 @@ private mio_icif_ExtractorRecipe currentRecipe = null;
      */
     @Override
     protected int[] getSlotsForDirection(Direction side) {
-        return new int[]{INPUT_SLOT, OUTPUT_SLOT, BATTERY_SLOT};
+        return SIDE_SLOTS;
     }
 
     @Override
     protected int[] getInputSlots() {
-        return new int[]{INPUT_SLOT};
+        return INPUT_SLOTS;
     }
 
     @Override
     protected int[] getOutputSlots() {
-        return new int[]{OUTPUT_SLOT};
+        return OUTPUT_SLOTS;
     }
 
     @Override
@@ -343,10 +346,7 @@ tick 更新逻辑
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
         // 更新方块状态（运行/停止
-    boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_extrator_elc.LIT);
-        if (blockEntity.isWorking() != isLit) {
-            level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_extrator_elc.LIT, blockEntity.isWorking()), 3);
-        }
+    blockEntity.syncLit(level, pos, state, com.miophas.singularity_iteration.common.block.producer.mio_icif_block_extrator_elc.LIT);   // 0.1.10.38: off after LIT_OFF_DELAY idle ticks
     }
 
     @Override

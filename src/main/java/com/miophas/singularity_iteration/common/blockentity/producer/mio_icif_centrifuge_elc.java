@@ -149,6 +149,9 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
 
 
 
+    // 0.1.10.38: constant slot lists (they were new arrays on every call, several per tick); never modify them.
+    private static final int[] SIDE_SLOTS = {INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3}, INPUT_SLOTS = {INPUT_SLOT}, OUTPUT_SLOTS = {OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3};
+
     /**
      * Gets the slots that hoppers can access from a side.
      * All sides can access the same slots.
@@ -156,17 +159,17 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     @Override
     protected int[] getSlotsForDirection(Direction side) {
         // All sides can access the same slots.
-        return new int[]{INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3};
+        return SIDE_SLOTS;
     }
 
     @Override
     protected int[] getInputSlots() {
-        return new int[]{INPUT_SLOT};
+        return INPUT_SLOTS;
     }
 
     @Override
     protected int[] getOutputSlots() {
-        return new int[]{OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3};
+        return OUTPUT_SLOTS;
     }
 
     @Override
@@ -226,8 +229,8 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     protected boolean canWork() {
         var input = itemHandler.getStackInSlot(INPUT_SLOT);
         if (input.isEmpty() || !hasEnoughEnergy() || heatStorage < MIN_HEAT_FOR_WORK) return false;
-        return com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1,
-            new int[]{OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3}, getProcessingResults(input)).isPresent();
+        return com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.fits(itemHandler, INPUT_SLOT, 1,
+            OUTPUT_SLOTS, getProcessingResults(input));
     }
 
     /**
@@ -266,7 +269,7 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
     private void finishProcessing() {
         var input = itemHandler.getStackInSlot(INPUT_SLOT);
         var plan = com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1,
-            new int[]{OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3}, getProcessingResults(input));
+            OUTPUT_SLOTS, getProcessingResults(input));
         if (plan.isEmpty()) { stopWork(); return; }
         int completedProgress = progress;
         progress = 0; // An inventory observer must never save completed work against the next input.
@@ -316,10 +319,7 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
         // Update the LIT block state to show if the machine is working.
-        boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_centrifuge_elc.LIT);
-        if (blockEntity.isWorking() != isLit) {
-            level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_centrifuge_elc.LIT, blockEntity.isWorking()), 3);
-        }
+        blockEntity.syncLit(level, pos, state, com.miophas.singularity_iteration.common.block.producer.mio_icif_block_centrifuge_elc.LIT);   // 0.1.10.38: off after LIT_OFF_DELAY idle ticks
     }
 
     /**
@@ -328,10 +328,11 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
      * - Without power, the machine loses heat each tick.
      */
     private void updateHeat() {
+        int before = heatStorage;
         if (!hasEnoughEnergy()) {
             if (heatStorage > 0) {
                 heatStorage = Math.max(0, heatStorage - HEAT_COOLING_RATE);
-                setChanged();
+                heatChanged(before);
             }
             return;
         }
@@ -344,9 +345,34 @@ public class mio_icif_centrifuge_elc extends AbstractProcessingMachineBlockEntit
             if (heatGenerated > 0) {
                 apiUseEnergy(heatGenerated, false);
                 heatStorage += heatGenerated;
-                setChanged();
+                heatChanged(before);
             }
         }
+    }
+
+    /**
+     * 0.1.10.38: a heat change is saved with a light mark. The full setChanged() (comparators; it also wakes the idle machine)
+     * comes only when canWork can change (MIN_HEAT_FOR_WORK crossed) or the comparator output changes. It used to run on
+     * every tick of heating up and cooling down.
+     */
+    private void heatChanged(int before) {
+        boolean work = (before >= MIN_HEAT_FOR_WORK) != (heatStorage >= MIN_HEAT_FOR_WORK);
+        if (work || heatSignal(before) != heatSignal(heatStorage)) setChanged();
+        else com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
+    }
+
+    /** The heat part (0-8) of the comparator output (mio_icif_block_centrifuge_elc.getAnalogOutputSignal). */
+    public static int heatSignal(int heat) {
+        return heat * 8 / MAX_HEAT;
+    }
+
+    /**
+     * 0.1.10.38: canWork depends on the inventory, the stored energy and the heat; heat wakes the machine when it crosses
+     * MIN_HEAT_FOR_WORK (heatChanged). The heat itself keeps changing while the machine sleeps (tick runs updateHeat first).
+     */
+    @Override
+    protected boolean idleSleepAllowed() {
+        return true;
     }
 
 

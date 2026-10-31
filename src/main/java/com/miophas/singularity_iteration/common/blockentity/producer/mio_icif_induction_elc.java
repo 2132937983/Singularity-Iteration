@@ -186,12 +186,15 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         return recipeCache2.find(level, input);
     }
 
+    // 0.1.10.38: constant slot lists (they were new arrays on every call, several per tick); never modify them.
+    private static final int[] SIDE_SLOTS = {INPUT_SLOT_1, INPUT_SLOT_2, BATTERY_SLOT, OUTPUT_SLOT_1, OUTPUT_SLOT_2};
+
     /**
      * 指定方向可访问的槽位
      */
     @Override
     protected int[] getSlotsForDirection(Direction side) {
-        return new int[]{INPUT_SLOT_1, INPUT_SLOT_2, BATTERY_SLOT, OUTPUT_SLOT_1, OUTPUT_SLOT_2};
+        return SIDE_SLOTS;
     }
 
     @Override
@@ -264,7 +267,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
     @Override
     protected void onTick() {
         boolean working = canWork();
-        boolean heating = working || heatHold || level != null && level.hasNeighborSignal(worldPosition);
+        boolean heating = working || heatHold || level != null && redstoneSignal();
         boolean full = heatStorage.getHeatStored() >= heatStorage.getMaxHeatStored();
         boolean insulated = thermalRetention();
         if (heating && full && !working) {
@@ -376,10 +379,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
 
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
-        boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_induction_elc.LIT);
-        if (blockEntity.isWorking() != isLit) {
-            level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_induction_elc.LIT, blockEntity.isWorking()), 3);
-        }
+        blockEntity.syncLit(level, pos, state, com.miophas.singularity_iteration.common.block.producer.mio_icif_block_induction_elc.LIT);   // 0.1.10.38: off after LIT_OFF_DELAY idle ticks
     }
 
     @Override
@@ -387,7 +387,7 @@ public class mio_icif_induction_elc extends AbstractProcessingMachineBlockEntity
         if (level == null) {
             return true;
         }
-        boolean powered = level.hasNeighborSignal(worldPosition);
+        boolean powered = redstoneSignal();
         if (upgradeStats.isRedstoneInverted()) {
             return powered;
         }

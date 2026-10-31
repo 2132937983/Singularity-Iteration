@@ -4560,5 +4560,6 @@
   "reactor_layout.mio_icif.steam_quad.note": "クアッドウラン燃料棒 1 本とオーバークロックスチームベント 4 個（700 HU で安定）。約 96 EU/t: 蒸気タービン発電機 2 台。",
   "jei.mio_icif.reactor_layout.steam_output": "蒸気: %s mB/s ≈ タービンで %s EU/t · 蒸気チャンバー: %s",
   "jei.mio_icif.reactor_layout.steam_fuel": "燃料の持続 %s · 1 回分で蒸気 %s mB",
-  "jei.mio_icif.reactor_layout.steam_model": "蒸気原子炉: 水と蒸気の空きは無制限。タービンは蒸気 2 mB で 1 EU。"
+  "jei.mio_icif.reactor_layout.steam_model": "蒸気原子炉: 水と蒸気の空きは無制限。タービンは蒸気 2 mB で 1 EU。",
+  "command.mio_icif.perf.machines": "加工機械 1 tick あたり：通常 tick %1$s、休眠 %2$s、ランプ切替 %3$s、レッドストーン読み取り %4$s"
 }

@@ -107,6 +107,9 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
         return false;
     }
 
+    // 0.1.10.38: constant slot lists (they were new arrays on every call, several per tick); never modify them.
+    private static final int[] SIDE_SLOTS = {INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT}, INPUT_SLOTS = {INPUT_SLOT}, OUTPUT_SLOTS = {OUTPUT_SLOT};
+
     /**
      * 指定方向可访问的槽位
      * 打粉机槽位定义：0=输入, 1=电池, 2=输出, 3-6=升级件
@@ -115,17 +118,17 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
      */
     @Override
     protected int[] getSlotsForDirection(Direction side) {
-        return new int[]{INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT};
+        return SIDE_SLOTS;
     }
 
     @Override
     protected int[] getInputSlots() {
-        return new int[]{INPUT_SLOT};
+        return INPUT_SLOTS;
     }
 
     @Override
     protected int[] getOutputSlots() {
-        return new int[]{OUTPUT_SLOT};
+        return OUTPUT_SLOTS;
     }
 
     @Override
@@ -319,10 +322,7 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, blockEntity);
 
         // 更新方块状态（运行/停止）
-        boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_powder_elc.LIT);
-        if (blockEntity.isWorking() != isLit) {
-            level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_powder_elc.LIT, blockEntity.isWorking()), 3);
-        }
+        blockEntity.syncLit(level, pos, state, com.miophas.singularity_iteration.common.block.producer.mio_icif_block_powder_elc.LIT);   // 0.1.10.38: off after LIT_OFF_DELAY idle ticks
     }
 
     // MenuProvider implementation

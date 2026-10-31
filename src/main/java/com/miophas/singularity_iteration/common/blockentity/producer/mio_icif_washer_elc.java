@@ -101,7 +101,7 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
         // 创建流体槽只接受水
         this.fluidTank = new FluidTank(FLUID_CAPACITY, fluidStack ->
             fluidStack.getFluid() == Fluids.WATER) {
-                @Override protected void onContentsChanged() { com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank.markUnsaved(mio_icif_washer_elc.this); }
+                @Override protected void onContentsChanged() { com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank.markUnsaved(mio_icif_washer_elc.this); mio_icif_washer_elc.this.wakeFromIdleSleep(); }
             };
     }
 
@@ -113,7 +113,7 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
         // 创建流体槽只接受水
         this.fluidTank = new FluidTank(FLUID_CAPACITY, fluidStack ->
             fluidStack.getFluid() == Fluids.WATER) {
-                @Override protected void onContentsChanged() { com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank.markUnsaved(mio_icif_washer_elc.this); }
+                @Override protected void onContentsChanged() { com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank.markUnsaved(mio_icif_washer_elc.this); mio_icif_washer_elc.this.wakeFromIdleSleep(); }
             };
     }
 
@@ -211,6 +211,9 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
         return Direction.NORTH;
     }
 
+    // 0.1.10.38: constant slot lists (they were new arrays on every call, several per tick); never modify them.
+    private static final int[] SIDE_SLOTS = {INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3, WATER_BUCKET_SLOT, EMPTY_BUCKET_SLOT}, INPUT_SLOTS = {INPUT_SLOT}, OUTPUT_SLOTS = {OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3};
+
     /**
      * 默认返回可访问的槽位方法
      * 任何方向都可以访问所有公共槽位
@@ -218,17 +221,17 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
     @Override
     protected int[] getSlotsForDirection(Direction side) {
         // 任何方向都可以访问所有功能槽位
-        return new int[]{INPUT_SLOT, BATTERY_SLOT, OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3, WATER_BUCKET_SLOT, EMPTY_BUCKET_SLOT};
+        return SIDE_SLOTS;
     }
 
     @Override
     protected int[] getInputSlots() {
-        return new int[]{INPUT_SLOT};
+        return INPUT_SLOTS;
     }
 
     @Override
     protected int[] getOutputSlots() {
-        return new int[]{OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3};
+        return OUTPUT_SLOTS;
     }
 
     /**
@@ -338,8 +341,8 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
     protected boolean canWork() {
         var input = itemHandler.getStackInSlot(INPUT_SLOT);
         if (input.isEmpty() || !hasEnoughEnergy() || !hasEnoughWater()) return false;
-        return com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1,
-            new int[]{OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3}, getWashingResults(input)).isPresent();
+        return com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.fits(itemHandler, INPUT_SLOT, 1,
+            OUTPUT_SLOTS, getWashingResults(input));
     }
 
     /**
@@ -378,7 +381,7 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
     private void finishWashing() {
         var input = itemHandler.getStackInSlot(INPUT_SLOT);
         var plan = com.miophas.singularity_iteration.core.runtime.processing.RecipeSlots.prepare(itemHandler, INPUT_SLOT, 1,
-            new int[]{OUTPUT_SLOT_1, OUTPUT_SLOT_2, OUTPUT_SLOT_3}, getWashingResults(input));
+            OUTPUT_SLOTS, getWashingResults(input));
         if (plan.isEmpty()) { stopWork(); return; }
         int completedProgress = progress;
         progress = 0; // An inventory observer must never save completed work against the next input.
@@ -414,6 +417,15 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
     }
 
     /**
+     * 0.1.10.38: canWork depends on the inventory, the stored energy and the water; every tank change wakes the machine
+     * (onContentsChanged of the tank), so piped water starts it at its next tick.
+     */
+    @Override
+    protected boolean idleSleepAllowed() {
+        return true;
+    }
+
+    /**
      * 每tick执行工作核心逻辑
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_washer_elc blockEntity) {
@@ -428,10 +440,7 @@ public class mio_icif_washer_elc extends AbstractProcessingMachineBlockEntity {
         blockEntity.handleWaterBucketSlot();
 
         // 同步方块状态亮灭
-        boolean isLit = state.getValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_washer_elc.LIT);
-        if (blockEntity.isWorking() != isLit) {
-            level.setBlock(pos, state.setValue(com.miophas.singularity_iteration.common.block.producer.mio_icif_block_washer_elc.LIT, blockEntity.isWorking()), 3);
-        }
+        blockEntity.syncLit(level, pos, state, com.miophas.singularity_iteration.common.block.producer.mio_icif_block_washer_elc.LIT);   // 0.1.10.38: off after LIT_OFF_DELAY idle ticks
     }
 
     /**

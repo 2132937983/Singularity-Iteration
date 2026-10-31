@@ -137,7 +137,7 @@ public class mio_icif_block_centrifuge_elc extends mio_icif_entity_block {
             }
             // 物品栏占50%权重，热量储量占50%权重
             int itemSignal = (filledSlots * 7) / totalSlots; // 0-7
-            int heatSignal = (centrifuge.getHeatStorage() * 8) / centrifuge.getMaxHeat(); // 0-8
+            int heatSignal = mio_icif_centrifuge_elc.heatSignal(centrifuge.getHeatStorage()); // 0-8
             return Math.min(15, itemSignal + heatSignal);
         }
         return 0;

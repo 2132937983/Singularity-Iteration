@@ -4560,5 +4560,6 @@
   "reactor_layout.mio_icif.steam_quad.note": "One quad uranium rod and four Overclocked Steam Vents (they settle at 700 HU). Feeds about 96 EU/t: two Steam Turbine Generators.",
   "jei.mio_icif.reactor_layout.steam_output": "Steam: %s mB/s ≈ %s EU/t in turbines · Steam Chambers: %s",
   "jei.mio_icif.reactor_layout.steam_fuel": "Fuel lasts %s · %s mB of steam per load",
-  "jei.mio_icif.reactor_layout.steam_model": "Steam Reactor: unlimited water and steam room; a turbine makes 1 EU from 2 mB of steam."
+  "jei.mio_icif.reactor_layout.steam_model": "Steam Reactor: unlimited water and steam room; a turbine makes 1 EU from 2 mB of steam.",
+  "command.mio_icif.perf.machines": "Processing machines per tick: full ticks %1$s, asleep %2$s, lamp switches %3$s, redstone reads %4$s"
 }

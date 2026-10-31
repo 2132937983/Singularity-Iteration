@@ -74,6 +74,10 @@ public final class PerfCommand {
             avg(PerfCounters.Kind.SYNC_SENT), avg(PerfCounters.Kind.SYNC_REQUESTS),
             avg(PerfCounters.Kind.LAMP_CHECKS), avg(PerfCounters.Kind.CAP_LOOKUPS), avg(PerfCounters.Kind.CAP_CACHED),
             avg(PerfCounters.Kind.SLEEP_SKIPS), counters[5]), false);
+        // 0.1.10.38: processing machines per tick - full ticks, ticks asleep, lit state changes, redstone reads
+        source.sendSuccess(() -> Component.translatable("command.mio_icif.perf.machines",
+            avg(PerfCounters.Kind.MACHINE_TICKS), avg(PerfCounters.Kind.SLEEP_SKIPS),
+            avg(PerfCounters.Kind.LIT_FLIPS), avg(PerfCounters.Kind.REDSTONE_READS)), false);
         return 1;
     }
 

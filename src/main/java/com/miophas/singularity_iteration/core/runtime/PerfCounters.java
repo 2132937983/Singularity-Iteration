@@ -31,7 +31,13 @@ public final class PerfCounters {
         /** Neighbour capability lookups of {@code NeighbourCaps}, and those answered by a cache. */
         CAP_LOOKUPS, CAP_CACHED,
         /** Machine ticks skipped by the idle sleep. */
-        SLEEP_SKIPS
+        SLEEP_SKIPS,
+        /** 0.1.10.38: full ticks of processing machines (not skipped by the idle sleep). */
+        MACHINE_TICKS,
+        /** 0.1.10.38: lit state changes of processing machines (each one is a full block update). */
+        LIT_FLIPS,
+        /** 0.1.10.38: redstone input reads of processing machines (six neighbour signals each). */
+        REDSTONE_READS
     }
 
     /** Ticks of one averaging window. */

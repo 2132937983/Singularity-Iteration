@@ -483,10 +483,14 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
                 return;
             }
             blockEntity.asleep = false;
-            blockEntity.sleepQuietTicks = 0;
+            // 0.1.10.38: woken only by the recheck timer (nothing changed), one quiet tick puts it back to sleep. It used to
+            // count QUIET_TICKS full ticks again, so an idle machine ran every second tick in full (20 awake, 20 asleep).
+            blockEntity.sleepQuietTicks = blockEntity.wokeByTimerOnly()
+                ? com.miophas.singularity_iteration.core.runtime.processing.MachineSleep.QUIET_TICKS - 1 : 0;
         }
         long stampBefore = blockEntity.sleepStamp;
         boolean production = false;
+        com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.MACHINE_TICKS);
 
         // Refresh the upgrade statistics and apply their effects.
         blockEntity.recalculateUpgradeStats();
@@ -556,6 +560,75 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         return com.miophas.singularity_iteration.core.runtime.processing.MachineSleep.enabled()
             && sleepStamp == sleepStampSeen && !isWorking && progress == 0
             && level.getGameTime() < sleepUntil && apiGetStoredEnergy() == sleepEnergy && !isRemoved();
+    }
+
+    // ------------------------------------------------------------------ 0.1.10.38: redstone tracking and the lit state
+
+    /** Ticks after which a tracked redstone input is read again anyway (inputs of mods that skip neighbour updates). */
+    private static final int REDSTONE_REFRESH = 20;
+    private boolean redstoneKnown, redstoneCached;
+    private long redstoneReadAt;
+
+    /**
+     * 0.1.10.38: whether a neighbour powers this machine. On a block that reports neighbour changes (INeighbourSignalTracking)
+     * the input is kept from those reports and read again at most every REDSTONE_REFRESH ticks; it used to cost six neighbour
+     * signals (and their neighbours for conductors: up to 42 block reads) on every tick of every awake machine.
+     */
+    protected final boolean redstoneSignal() {
+        if (level == null) return false;
+        long now = level.getGameTime();
+        boolean tracked = getBlockState().getBlock() instanceof com.miophas.singularity_iteration.core.api.machine.INeighbourSignalTracking;
+        if (!tracked || !redstoneKnown || now - redstoneReadAt >= REDSTONE_REFRESH) {
+            redstoneCached = level.hasNeighborSignal(worldPosition);
+            redstoneKnown = true;
+            redstoneReadAt = now;
+            com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.REDSTONE_READS);
+        }
+        return redstoneCached;
+    }
+
+    /**
+     * 0.1.10.38: a neighbour changed (called by the block, INeighbourSignalTracking). Reads the redstone input once; when it
+     * changed, the machine wakes from its idle sleep, so a lever starts or stops it at its next tick.
+     */
+    public final void neighbourSignalChanged() {
+        if (level == null || level.isClientSide()) return;
+        boolean powered = level.hasNeighborSignal(worldPosition);
+        boolean changed = !redstoneKnown || powered != redstoneCached;
+        redstoneCached = powered;
+        redstoneKnown = true;
+        redstoneReadAt = level.getGameTime();
+        if (changed) wakeFromIdleSleep();
+    }
+
+    /** 0.1.10.38: ticks a machine stays lit after it stopped working. */
+    public static final int LIT_OFF_DELAY = 20;
+    private int litIdleTicks;
+
+    /**
+     * 0.1.10.38: sets the machine's lit block state from {@code isWorking}: on at once, off after LIT_OFF_DELAY ticks without
+     * work. Each change is a full block update (clients rebuild the chunk section, neighbours and the energy topology are told),
+     * and a machine short of power or fed slowly used to switch every tick or two.
+     */
+    protected final void syncLit(Level level, BlockPos pos, BlockState state, net.minecraft.world.level.block.state.properties.BooleanProperty lit) {
+        boolean on = state.getValue(lit);
+        if (isWorking) {
+            litIdleTicks = 0;
+            if (on) return;
+        } else if (!on || ++litIdleTicks < LIT_OFF_DELAY) {
+            if (!on) litIdleTicks = 0;
+            return;
+        } else {
+            litIdleTicks = 0;
+        }
+        level.setBlock(pos, state.setValue(lit, !on), 3);
+        com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.LIT_FLIPS);
+    }
+
+    /** 0.1.10.38: the sleep ended only because its recheck time came: stamp, work, progress and stored energy are unchanged. */
+    private boolean wokeByTimerOnly() {
+        return com.miophas.singularity_iteration.core.runtime.processing.MachineSleep.enabled()
+            && sleepStamp == sleepStampSeen && !isWorking && progress == 0 && apiGetStoredEnergy() == sleepEnergy && !isRemoved();
     }
 
     /** After a full tick: count a quiet idle tick, and sleep after {@code MachineSleep.QUIET_TICKS} of them. */
@@ -735,7 +808,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         if (isRemotelyDisabled()) {
             return false;
         }
-        boolean powered = level.hasNeighborSignal(worldPosition);
+        boolean powered = redstoneSignal();
         if (upgradeStats.isRedstoneInverted()) {
             return powered;
         }
@@ -1074,8 +1147,8 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
     private void markItemTransferSaved(BlockPos neighborPos) {
         // Also mark the neighbor: third-party inventory handlers may not notify their owner.
-        // Keep both sides of the completed transfer eligible for saving.
-        setChanged();
+        // 0.1.10.38: this machine's own inventory already ran setChanged() (onContentsChanged); a second one updated the
+        // neighbours and comparators again for nothing.
         BlockEntity neighbor = level.getBlockEntity(neighborPos);
         if (neighbor != null) neighbor.setChanged();
     }

@@ -3130,5 +3130,6 @@
   "jei.mio_icif.reactor_transformation.breeder_pulse": "Соседний ТВЭЛ: больше тепла, EU тот же",
   "jei.mio_icif.reactor_transformation.neutron_source": "Соседние ТВЭЛ: +1 импульс (EU, тепло)",
   "jei.mio_icif.reactor_transformation.decay_heat": "+%s HU корпусу за цикл",
-  "jei.mio_icif.reactor_transformation.ejected": "Выбрасывается в следующем цикле"
+  "jei.mio_icif.reactor_transformation.ejected": "Выбрасывается в следующем цикле",
+  "command.mio_icif.perf.machines": "Машины обработки за тик: полных тиков %1$s, в ожидании %2$s, переключений ламп %3$s, чтений редстоуна %4$s"
 }

@@ -16,22 +16,25 @@ import net.minecraft.core.Direction;
  *       more parents are necessary. The child species is a weighted random choice
  *       ({@link #calculateRatio}). Each trait is the parent average with a mutation of
  *       ±(number of parents) ({@link CropGrowthMath#inherit}).</li>
- *   <li>Spreading: when exactly one neighbour is a planter and it passes the participation
- *       roll, the stick gets a copy of that plant with the same traits.</li>
+ *   <li>Spreading: when exactly one neighbour has a plant (0.1.10.39: empty sticks and weeds do not count; with
+ *       {@link CropGrowthMath#strictIc2Rules} every neighbouring stick counts, as in IC2, so a field full of sticks never spread)
+ *       and it passes the participation roll, the stick gets a copy of that plant with the same traits.</li>
  * </ul>
  * <p><b>ZH:</b> 杂交作物架上的 IC2 杂交与单邻居扩散。代码只读取已加载的邻居，因此不会加载区块。
  * <ul>
  *   <li>杂交：每 3 个周期尝试 1 次。每个水平邻居在可杂交且通过参与检定（{@link CropGrowthMath#participationBase}）时加入。
  *       至少需要 2 个亲本。后代物种按权重随机选择（{@link #calculateRatio}）。每项属性为亲本平均值加 ±（亲本数）的变异
  *       （{@link CropGrowthMath#inherit}）。</li>
- *   <li>扩散：恰好只有 1 个邻居是作物架且其通过参与检定时，作物架获得该植物的副本，属性相同。</li>
+ *   <li>扩散：恰好只有 1 个邻居种有植物（0.1.10.39：空作物架与杂草不计入；开启 {@link CropGrowthMath#strictIc2Rules} 时与 IC2 相同，
+ *       每个相邻作物架都计入，铺满作物架的田地因此从不扩散）且其通过参与检定时，作物架获得该植物的副本，属性相同。</li>
  * </ul>
  * <p><b>JA:</b> 交配用作物棒での IC2 交配と単一隣接拡散。読み込み済みの隣接ブロックだけを読むので、チャンクを読み込まない。
  * <ul>
  *   <li>交配：3 サイクルに 1 回試行する。水平方向の各隣接作物は、交配可能で参加判定（{@link CropGrowthMath#participationBase}）に
  *       通ると参加する。親は 2 本以上必要。子の種は重み付きランダム（{@link #calculateRatio}）。各特性値は親の平均に
  *       ±（親の数）の変異を加えた値（{@link CropGrowthMath#inherit}）。</li>
- *   <li>拡散：隣接する作物棒がちょうど 1 本で、それが参加判定に通ると、同じ特性値のままその植物が複製される。</li>
+ *   <li>拡散：植物のある隣接作物棒がちょうど 1 本で（0.1.10.39：空の棒と雑草は数えない。{@link CropGrowthMath#strictIc2Rules}
+ *       では IC2 と同じく隣接する棒をすべて数えるので、棒で埋めた畑は拡散しない）、それが参加判定に通ると、同じ特性値のままその植物が複製される。</li>
  * </ul>
  */
 public class PlantHybridization {
@@ -88,6 +91,9 @@ public class PlantHybridization {
     public static boolean trySpread(IPlanter target) {
         if (!available(target)) return false;
         List<IPlanter> neighbors = neighbors(target);
+        // 0.1.10.39: only planted neighbours count (empty sticks blocked it, so a field full of sticks never spread)
+        if (!CropGrowthMath.strictIc2Rules())
+            neighbors = neighbors.stream().filter(n -> n.getPlant() != null && !n.getPlant().isWeed(n)).toList();
         if (neighbors.size() != 1 || !participates(neighbors.getFirst(), target)) return false;
         IPlanter parent = neighbors.getFirst();
         plant(target, parent.getPlant(), parent.getGrowthSpeed(), parent.getYield(), parent.getResilience());

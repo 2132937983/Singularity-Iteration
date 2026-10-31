@@ -812,8 +812,9 @@ public final class Round1138GameTests {
     }
 
     /**
-     * Industrial Upgrade's proton chain: the Molecular Transformer turns 1 plutonium into 1 Proton Shard for 15.5M EU, a shard and
-     * an empty fuel rod make a proton rod (the 8.2M EU uranium-rod recipe of the Neutron Polymerizer is gone). The octuple proton
+     * Industrial Upgrade's proton chain: the Molecular Transformer turns 1 plutonium into 1 Proton Shard for 15.5M EU, the Canner
+     * fills an empty fuel rod with a shard into a proton rod (0.1.10.39; it was a shapeless recipe; the 8.2M EU uranium-rod recipe
+     * of the Neutron Polymerizer is gone). The octuple proton
      * rod is a casing of 2 quad proton rods and 4 dense iron plates, finished in the Molecular Transformer for 2.108 billion EU (136
      * more shards' worth: about 144 plutonium in all). In the reactor it is two quads in one slot.
      */
@@ -827,10 +828,15 @@ public final class Round1138GameTests {
         h.assertTrue(recipe(h, "neutron_polymerizer/uranium_rod_to_proton_rod") == null, "the cheap uranium-rod recipe is still there");
         h.assertTrue(recipe(h, "shaped_proton_octuple_casing") != null, "the octuple casing has no recipe");
 
-        var input = net.minecraft.world.item.crafting.CraftingInput.of(2, 1, java.util.List.of(item("reactor/item_proton_shard"), item("normal/item_fuel_rod")));
-        var made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
-            .map(r -> r.value().assemble(input, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
-        h.assertTrue(made.is(item("reactor/item_reactor_proton_simple").getItem()), "a shard and an empty fuel rod do not make a proton rod: " + made);
+        // 0.1.10.39: the Canner (solid canning, like the uranium rod), no longer a shapeless crafting recipe
+        h.assertTrue(recipe(h, "shapeless_proton_rod_from_shard") == null, "the shapeless proton rod recipe is still there");
+        Object canning = recipe(h, "canning/proton_fuel_rod");
+        h.assertTrue(canning != null, "the Canner has no proton rod recipe");
+        var can = (net.minecraft.world.item.crafting.Ingredient) call(canning, "getCanIngredient");
+        var food = (net.minecraft.world.item.crafting.Ingredient) call(canning, "getFoodIngredient");
+        var made = (ItemStack) call(canning, "getResultItem", h.getLevel().registryAccess());
+        h.assertTrue(can.test(item("normal/item_fuel_rod")) && food.test(item("reactor/item_proton_shard"))
+            && made.is(item("reactor/item_reactor_proton_simple").getItem()), "the Canner does not fill an empty fuel rod with a shard into a proton rod: " + made);
 
         var profiles = (java.util.Map<String, ReactorCycle.Profile>) staticField(Round33GameTests.common("reactor.ReactorInventory"), "PROFILES");
         var quadParts = new ReactorCycle.Part[54];

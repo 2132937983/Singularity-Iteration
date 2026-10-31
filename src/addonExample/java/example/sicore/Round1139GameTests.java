@@ -465,6 +465,49 @@ public final class Round1139GameTests {
         h.succeed();
     }
 
+    /** A planted crop stick on farmland at {@code at}. */
+    private static void stickOnFarmland(GameTestHelper h, BlockPos at) {
+        h.setBlock(at.below(), Blocks.FARMLAND);
+        h.setBlock(at, BuiltInRegistries.BLOCK.get(id("crop/stick")));
+    }
+
+    /**
+     * A cross stick next to one wheat crop spreads it, although its other three neighbours are empty crop sticks: they used to
+     * block spreading, so a field full of sticks never spread. With the strict IC2 rules every neighbouring stick counts again.
+     */
+    @GameTest(batch = "round1139_followups", template = "empty", timeoutTicks = 20)
+    public static void crossSticksSpreadPastEmptySticks(GameTestHelper h) {
+        BlockPos center = new BlockPos(2, 2, 2);
+        for (BlockPos at : java.util.List.of(center, center.north(), center.south(), center.east(), center.west())) stickOnFarmland(h, at);
+        h.setBlock(center.above(), Blocks.GLOWSTONE);   // wheat needs light 9 where it spreads to, whatever the time of day
+        h.runAfterDelay(5, () -> spreadPastEmptySticks(h, center));   // the light engine catches up with the glowstone first
+    }
+
+    private static void spreadPastEmptySticks(GameTestHelper h, BlockPos center) {
+        var wheat = com.miophas.singularity_iteration.core.runtime.crop.PlantRegistry.instance.getPlant("mio_icif", "wheat");
+        var parent = (com.miophas.singularity_iteration.core.api.crop.IPlanter) h.getBlockEntity(center.north());
+        parent.setPlant(wheat);
+        parent.setGrowthStage(wheat.getMaxGrowthStage());
+        parent.setGrowthSpeed(31);
+        parent.setResilience(0);
+        parent.updateState();
+        var target = (com.miophas.singularity_iteration.core.api.crop.IPlanter) h.getBlockEntity(center);
+        boolean strict = com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath.strictIc2Rules();
+        try {
+            com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath.setStrictIc2Rules(true);
+            target.setHybridBase(true);
+            for (int i = 0; i < 200; i++) com.miophas.singularity_iteration.core.runtime.crop.PlantHybridization.trySpread(target);
+            h.assertTrue(target.getPlant() == null, "with the strict IC2 rules the empty sticks no longer block spreading");
+            com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath.setStrictIc2Rules(false);
+            for (int i = 0; i < 200 && target.getPlant() == null; i++)
+                com.miophas.singularity_iteration.core.runtime.crop.PlantHybridization.trySpread(target);
+        } finally {
+            com.miophas.singularity_iteration.core.runtime.crop.CropGrowthMath.setStrictIc2Rules(strict);
+        }
+        h.assertTrue(wheat.equals(target.getPlant()), "the cross stick next to one wheat and three empty sticks got " + target.getPlant());
+        h.succeed();
+    }
+
     // ------------------------------------------------------------------ C2: universal cables
 
     private static Object staticField(Class<?> owner, String name) {

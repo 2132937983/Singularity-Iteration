@@ -507,6 +507,16 @@ neoForge.runs.register('universalGameTestServer') {
 }
 tasks.matching { it.name == 'prepareUniversalGameTestServerRun' }.configureEach { dependsOn syncUniversalMods }
 
+// 0.1.10.39: tick-cost benchmark of machines and crops (PerfBenchmarkGameTests, GameTest namespace si_bench), run alone so no other
+// test ticks next to it: ./gradlew runBenchGameTestServer. The results are the "[bench]" lines of the log.
+neoForge.runs.register('benchGameTestServer') {
+    type = 'gameTestServer'
+    loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
+    gameDirectory = file('build/bench-gametest')
+    systemProperty 'neoforge.enabledGameTestNamespaces', 'si_bench'
+    logLevel = org.slf4j.event.Level.INFO
+}
+
 // GregTech Modern only boots on the client dist in a dev workspace, so its compat tests run
 // in a headless client: CompatTestDirector (dev-only) creates a world and runs /test runall.
 def compatClientDir = file('build/compat-client')

@@ -4,6 +4,8 @@
     {
       "id": "mio_icif:block_rub_leaves",
       "required": false
-    }
+    },
+    "mio_icif:crop/stick",
+    "mio_icif:crop/stick_upgraded"
   ]
 }

@@ -28,6 +28,9 @@ public class mio_icif_tags {
 
     public static final TagKey<Block> CHARGEPAD = BlockTags.create(ResourceLocation.fromNamespaceAndPath("mio_icif", "chargepad"));
 
+    /** 0.1.10.39: crop sticks (plain and upgraded): a charged Electric Chainsaw or Electric Hoe breaks them at once. */
+    public static final TagKey<Block> CROP_STICKS = BlockTags.create(ResourceLocation.fromNamespaceAndPath("mio_icif", "crop_sticks"));
+
     public static final TagKey<Item> ORES_IRON = ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "ores/iron"));
     public static final TagKey<Item> ORES_GOLD = ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "ores/gold"));
     public static final TagKey<Item> ORES_COPPER = ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "ores/copper"));

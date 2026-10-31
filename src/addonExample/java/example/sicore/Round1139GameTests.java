@@ -508,6 +508,33 @@ public final class Round1139GameTests {
         h.succeed();
     }
 
+    /**
+     * A charged Electric Chainsaw or Electric Hoe breaks a crop stick (plain or upgraded) in its first tick, even in the air; an
+     * empty one is as slow as a hand.
+     */
+    @GameTest(batch = "round1139_followups", template = "empty", timeoutTicks = 20)
+    public static void chargedElectricToolsBreakCropSticksAtOnce(GameTestHelper h) {
+        BlockPos plain = new BlockPos(1, 2, 1), upgraded = new BlockPos(3, 2, 3);
+        stickOnFarmland(h, plain);
+        h.setBlock(upgraded.below(), Blocks.FARMLAND);
+        h.setBlock(upgraded, BuiltInRegistries.BLOCK.get(id("crop/stick_upgraded")));
+        var player = h.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        for (String tool : java.util.List.of("item_tool_iron_chainsaw", "item_tool_iron_hoe")) {
+            var stack = new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(id(tool)));
+            var cell = (com.miophas.singularity_iteration.core.api.item.IBatteryItem) stack.getItem();
+            cell.addEnergy(stack, cell.getMaxEnergy(stack));
+            player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, stack);
+            for (BlockPos at : java.util.List.of(plain, upgraded)) {
+                float progress = h.getBlockState(at).getDestroyProgress(player, h.getLevel(), h.absolutePos(at));
+                h.assertTrue(progress >= 1, "a charged " + tool + " needs " + (1 / progress) + " ticks for " + h.getBlockState(at).getBlock());
+            }
+            cell.extractEnergy(stack, cell.getEnergy(stack));
+            float empty = h.getBlockState(plain).getDestroyProgress(player, h.getLevel(), h.absolutePos(plain));
+            h.assertTrue(empty < 0.1f, "an empty " + tool + " still breaks a crop stick fast: " + empty + " a tick");
+        }
+        h.succeed();
+    }
+
     // ------------------------------------------------------------------ C2: universal cables
 
     private static Object staticField(Class<?> owner, String name) {

@@ -107,6 +107,8 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
 
     // IC2 原版：ItemToolIC2 的效率值（field_77864_a = 16.0F）
     public static final float HOE_EFFICIENCY = 16.0F;
+    /** 0.1.10.39: the dig speed for crop sticks: they break at once, also in the air or under water (where speed counts a fifth). */
+    public static final float CROP_STICK_SPEED = 1000.0F;
 
     // IC2 原版：ItemTool 基础攻击伤害 2.0（玩家基础 1.0 + 1.0 加成）
     public static final float HOE_ATTACK_DAMAGE_BONUS = 1.0F;
@@ -611,6 +613,8 @@ public class mio_icif_electric_hoe extends mio_icif_tool_elc
     @Override
     public float getDestroySpeed(ItemStack stack, BlockState state) {
         if (!hasEnoughEnergy(stack)) return 1.0F;
+        // 0.1.10.39: crop sticks break at once (by hand they take 1.5 s, and a slip breaks the wrong one)
+        if (state.is(com.miophas.singularity_iteration.common.util.mio_icif_tags.CROP_STICKS)) return CROP_STICK_SPEED;
         if (state.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_HOE)) return HOE_EFFICIENCY;
         return 1.0F;
     }

@@ -45,6 +45,8 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
 
     // Mining efficiency of the iron chainsaw (IC2 original: 8.0).
     public static final float IRON_CHAINSAW_EFFICIENCY = 8.0F;
+    /** 0.1.10.39: the dig speed for crop sticks: they break at once, also in the air or under water (where speed counts a fifth). */
+    public static final float CROP_STICK_SPEED = 1000.0F;
 
     // Mining tier of the iron axe.
     private static final Tier IRON_TIER = Tiers.IRON;
@@ -101,6 +103,9 @@ public class mio_icif_iron_chainsaw extends mio_icif_tool_elc {
             // Without energy, the speed is very slow (hand speed).
             return 1.0F;
         }
+
+        // 0.1.10.39: crop sticks break at once (by hand they take 1.5 s, and a slip breaks the wrong one)
+        if (state.is(com.miophas.singularity_iteration.common.util.mio_icif_tags.CROP_STICKS)) return CROP_STICK_SPEED;
 
         // Shear blocks have high priority.
         if (state.is(Blocks.COBWEB)) {

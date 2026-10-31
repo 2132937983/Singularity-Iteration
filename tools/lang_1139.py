@@ -59,10 +59,6 @@ KEYS = {
     'message.mio_icif.steam_tunnel.problem.casing_or_port': v(
         'Steam Tunnel: casing or port missing (%s)', '蒸汽隧道涡轮机：缺少外壳或端口（%s）', 'スチームトンネル：外装かポートがない（%s）',
         'Паровой туннель: нет корпуса или порта (%s)'),
-    'jade.mio_icif.steam_tunnel.steam': v('Steam: %1$s / %2$s mB', '蒸汽：%1$s / %2$s mB', '蒸気：%1$s / %2$s mB', 'Пар: %1$s / %2$s mB'),
-    'jade.mio_icif.steam_tunnel.water': v('Water: %1$s / %2$s mB', '水：%1$s / %2$s mB', '水：%1$s / %2$s mB', 'Вода: %1$s / %2$s mB'),
-    'jade.mio_icif.steam_tunnel.buffer': v(
-        'EU buffer: %1$s / %2$s EU', 'EU 缓存：%1$s / %2$s EU', 'EU バッファ：%1$s / %2$s EU', 'Буфер EU: %1$s / %2$s EU'),
     'jade.mio_icif.steam_tunnel.output': v('Output: %s EU/t', '输出：%s EU/t', '出力：%s EU/t', 'Выход: %s EU/t'),
     'config.jade.plugin_mio_icif.steam_tunnel': v('Steam Tunnel', '蒸汽隧道涡轮机', 'スチームトンネル', 'Паровой туннель'),
     'structure.mio_icif.steam_tunnel': v('Steam Tunnel', '蒸汽隧道涡轮机', 'スチームトンネル'),

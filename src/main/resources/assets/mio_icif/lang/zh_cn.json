@@ -4593,8 +4593,5 @@
   "structure.mio_icif.steam_tunnel.note.output": "每 1,024 mB 蒸汽产生 512 EU，每 tick 最多 4 次（2,048 EU/t）；缓存 10,000 EU",
   "structure.mio_icif.steam_tunnel.note.water": "每 100 mB 蒸汽返还 1 mB 水（水箱 2,000 mB，溢出部分损失）",
   "command.mio_icif.perf.fe": "FE 每 tick：推入导线 %1$s，输出 %2$s，输入 %3$s；邻居探测 %4$s（跳过 %5$s）",
-  "jade.mio_icif.steam_tunnel.steam": "蒸汽：%1$s / %2$s mB",
-  "jade.mio_icif.steam_tunnel.water": "水：%1$s / %2$s mB",
-  "jade.mio_icif.steam_tunnel.buffer": "EU 缓存：%1$s / %2$s EU",
   "jade.mio_icif.steam_tunnel.output": "输出：%s EU/t"
 }

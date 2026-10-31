@@ -4566,5 +4566,9 @@
   "tooltip.mio_icif.portable_trader.use": "右键：随时随地打开期货面板（每笔交易 %s EU）",
   "tooltip.mio_icif.portable_trader.plan": "流量套餐：每 %2$s 个市场日 %1$s 工业货币",
   "tooltip.mio_icif.portable_trader.plan_free": "流量套餐：免费",
-  "message.mio_icif.portable_trader.plan_unpaid": "流量套餐未支付：下一期 %2$s 个市场日需要 %1$s 工业货币"
+  "message.mio_icif.portable_trader.plan_unpaid": "流量套餐未支付：下一期 %2$s 个市场日需要 %1$s 工业货币",
+  "item.mio_icif.reactor.item_proton_shard": "质子碎片",
+  "item.mio_icif.reactor.item_reactor_proton_octuple": "八联燃料棒(质子)",
+  "item.mio_icif.reactor.item_reactor_proton_octuple_depleted": "八联燃料棒(枯竭质子)",
+  "item.mio_icif.reactor.item_proton_octuple_casing": "八联质子燃料棒外壳"
 }

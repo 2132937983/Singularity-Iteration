@@ -60,7 +60,8 @@ public final class ReactorInventory {
     private static final Map<String,String> DEPLETED=Map.of(
         "uranium_simple","uranium_simple_depleted","uranium_dual","uranium_dual_depleted","uranium_quad","uranium_quad_deplete",
         "mox_simple","mox_simple_depleted","mox_dual","mox_dual_deplete","mox_quad","mox_quad_deplete",
-        "proton_simple","proton_simple_depleted","proton_dual","proton_dual_depleted","proton_quad","proton_quad_depleted");
+        "proton_simple","proton_simple_depleted","proton_dual","proton_dual_depleted","proton_quad","proton_quad_depleted",
+        "proton_octuple","proton_octuple_depleted");
     private static final Map<String,Profile> PROFILES=Map.ofEntries(
         Map.entry("uranium_simple",Profile.fuel(1,false)),Map.entry("uranium_dual",Profile.fuel(2,false)),Map.entry("uranium_quad",Profile.fuel(4,false)),
         Map.entry("mox_simple",Profile.fuel(1,true)),Map.entry("mox_dual",Profile.fuel(2,true)),Map.entry("mox_quad",Profile.fuel(4,true)),
@@ -84,11 +85,14 @@ public final class ReactorInventory {
         Map.entry(TRITIUM_KEY,Profile.neutronSource(TRITIUM_LIFE,TRITIUM_HEAT_PER_CYCLE)),
         Map.entry("proton_simple",Profile.fuel(1,true,PROTON_EU,PROTON_HEAT)),Map.entry("proton_dual",Profile.fuel(2,true,PROTON_EU,PROTON_HEAT)),
         Map.entry("proton_quad",Profile.fuel(4,true,PROTON_EU,PROTON_HEAT)),
+        // 0.1.10.38: two quads in one slot: a quad's pulses with twice its EU and heat
+        Map.entry("proton_octuple",Profile.fuel(4,true,2*PROTON_EU,2*PROTON_HEAT)),
         Map.entry("steam_vent",Profile.steamVent(STEAM_VENT_HEAT,12,0)),Map.entry("steam_vent_core",Profile.steamVent(STEAM_VENT_HEAT,10,10)),
         Map.entry("steam_vent_overclocked",Profile.steamVent(STEAM_VENT_HEAT,40,72)),Map.entry("steam_vent_advanced",Profile.steamVent(STEAM_VENT_HEAT,24,0)),
         Map.entry("uranium_simple_depleted",INERT),Map.entry("uranium_dual_depleted",INERT),Map.entry("uranium_quad_deplete",INERT),
         Map.entry("mox_simple_depleted",INERT),Map.entry("mox_dual_deplete",INERT),Map.entry("mox_quad_deplete",INERT),
-        Map.entry("proton_simple_depleted",INERT),Map.entry("proton_dual_depleted",INERT),Map.entry("proton_quad_depleted",INERT));
+        Map.entry("proton_simple_depleted",INERT),Map.entry("proton_dual_depleted",INERT),Map.entry("proton_quad_depleted",INERT),
+        Map.entry("proton_octuple_depleted",INERT));
     /**
      * Components of the reactor simulator palette (0.1.8.0), in display order: fuel, heat
      * storage, vents, exchangers, plating, reflectors, special. Depleted rods are not in it.
@@ -100,7 +104,9 @@ public final class ReactorInventory {
         "heat_switch","heat_switch_core","heat_switch_spread","diamond_heat_switch",
         "plate","heat_plate","explosive_plate","reflector","thick_reflector","iridium_reflector",
         // 0.1.10.36: proton fuel, the lithium breeder and the tritium neutron source
-        "proton_simple","proton_dual","proton_quad","lithium_cell",TRITIUM_KEY);
+        "proton_simple","proton_dual","proton_quad","lithium_cell",TRITIUM_KEY,
+        // 0.1.10.38
+        "proton_octuple");
     /** The numeric profile of component {@code key}, or null. */
     public static Profile profile(String key){Profile p=PROFILES.get(key);return p==null||p.kind()==Kind.INERT?null:p;}
     /** Item id of component {@code key}. */

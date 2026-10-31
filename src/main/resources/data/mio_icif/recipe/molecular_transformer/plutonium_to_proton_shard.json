@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "mio_icif:resource/item_plutonium"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:reactor/item_proton_shard"
+  },
+  "eu_cost": 15500000,
+  "duration": 1
+}

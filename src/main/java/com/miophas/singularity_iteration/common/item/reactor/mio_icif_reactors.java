@@ -178,6 +178,15 @@ public class mio_icif_reactors {
         () -> new mio_icif_nuclear_reactor(
             new Item.Properties().component(mio_icif_data_components.FUEL_ROD_DURABILITY.get(), FuelRodDurability.full(ReactorInventory.PROTON_LIFE)),
             ReactorInventory.PROTON_LIFE, 15, 6, mio_icif_nuclear_reactor.FuelRodType.QUAD, () -> PROTON_QUAD_DEPLETED.get()));
+    // 0.1.10.38: the octuple proton rod (two quads in one slot), its casing and the Proton Shard (Industrial Upgrade's proton:
+    // 1 plutonium in the Molecular Transformer)
+    public static final DeferredItem<Item> PROTON_OCTUPLE_DEPLETED = ITEMS.register("reactor/item_reactor_proton_octuple_depleted", () -> new Item(new Item.Properties().stacksTo(64)));
+    public static final DeferredItem<mio_icif_nuclear_reactor> PROTON_OCTUPLE = ITEMS.register("reactor/item_reactor_proton_octuple",
+        () -> new mio_icif_nuclear_reactor(
+            new Item.Properties().component(mio_icif_data_components.FUEL_ROD_DURABILITY.get(), FuelRodDurability.full(ReactorInventory.PROTON_LIFE)),
+            ReactorInventory.PROTON_LIFE, 30, 12, mio_icif_nuclear_reactor.FuelRodType.OCTUPLE, () -> PROTON_OCTUPLE_DEPLETED.get()));
+    public static final DeferredItem<Item> PROTON_OCTUPLE_CASING = ITEMS.register("reactor/item_proton_octuple_casing", () -> new Item(new Item.Properties().stacksTo(16)));
+    public static final DeferredItem<Item> PROTON_SHARD = ITEMS.register("reactor/item_proton_shard", () -> new Item(new Item.Properties()));
 
     // ?????
     // ????????30000???????????????????????

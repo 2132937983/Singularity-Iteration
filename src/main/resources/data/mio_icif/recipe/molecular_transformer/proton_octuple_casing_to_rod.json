@@ -1,0 +1,12 @@
+{
+  "type": "mio_icif:molecular_transformer",
+  "input": {
+    "item": "mio_icif:reactor/item_proton_octuple_casing"
+  },
+  "result": {
+    "count": 1,
+    "id": "mio_icif:reactor/item_reactor_proton_octuple"
+  },
+  "eu_cost": 2108000000,
+  "duration": 1
+}

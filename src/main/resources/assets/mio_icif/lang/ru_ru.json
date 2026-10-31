@@ -3136,5 +3136,9 @@
   "tooltip.mio_icif.portable_trader.use": "ПКМ: панель фьючерсов где угодно (%s EU за сделку)",
   "tooltip.mio_icif.portable_trader.plan": "Тарифный план: %1$s промышленных монет за %2$s рыночных дней",
   "tooltip.mio_icif.portable_trader.plan_free": "Тарифный план: бесплатно",
-  "message.mio_icif.portable_trader.plan_unpaid": "Тарифный план не оплачен: нужно %1$s промышленных монет на следующие %2$s рыночных дней"
+  "message.mio_icif.portable_trader.plan_unpaid": "Тарифный план не оплачен: нужно %1$s промышленных монет на следующие %2$s рыночных дней",
+  "item.mio_icif.reactor.item_proton_shard": "Протонный осколок",
+  "item.mio_icif.reactor.item_reactor_proton_octuple": "Восьмерной ТВЭЛ (протон)",
+  "item.mio_icif.reactor.item_reactor_proton_octuple_depleted": "Восьмерной ТВЭЛ (отработанный протон)",
+  "item.mio_icif.reactor.item_proton_octuple_casing": "Корпус восьмерного протонного ТВЭЛа"
 }

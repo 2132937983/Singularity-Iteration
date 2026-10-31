@@ -221,6 +221,7 @@ public class ReactorAPIImpl implements IReactorAPI {
         if (!component.isFuelRod()) return FuelRodType.SINGLE;
         int cells = component.getNumberOfCells();
         return switch (cells) {
+            case 8 -> FuelRodType.OCTUPLE;
             case 4 -> FuelRodType.QUAD;
             case 2 -> FuelRodType.DUAL;
             default -> FuelRodType.SINGLE;

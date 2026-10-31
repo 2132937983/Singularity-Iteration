@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """0.1.10.38 language values (en_us / zh_cn / ja_jp / ru_ru): the processing machine line of /mio_icif perf (PerfCommand);
-the Energy Saving description (levels above V); the Portable Futures Trader (name, tooltip, data plan message).
+the Energy Saving description (levels above V); the Portable Futures Trader (name, tooltip, data plan message); the Proton Shard and the octuple proton rod.
 A value per language; a language left out keeps its current value. Idempotent; keeps the line endings of each file. With
 --check it only reports missing or different keys.
 Usage: lang_1138.py <repo root> [--check]
@@ -51,6 +51,14 @@ KEYS = {
         '流量套餐未支付：下一期 %2$s 个市场日需要 %1$s 工业货币',
         '通信プラン未払い：次の市場日 %2$s 日分に工業コイン %1$s 枚が必要',
         'Тарифный план не оплачен: нужно %1$s промышленных монет на следующие %2$s рыночных дней'),
+    # D9: the Proton Shard (Industrial Upgrade's proton) and the octuple proton rod
+    'item.mio_icif.reactor.item_proton_shard': v('Proton Shard', '质子碎片', '陽子の欠片', 'Протонный осколок'),
+    'item.mio_icif.reactor.item_reactor_proton_octuple': v(
+        'Octuple Fuel Rod (Proton)', '八联燃料棒(质子)', '八連燃料棒（陽子）', 'Восьмерной ТВЭЛ (протон)'),
+    'item.mio_icif.reactor.item_reactor_proton_octuple_depleted': v(
+        'Octuple Fuel Rod (Depleted Proton)', '八联燃料棒(枯竭质子)', '八連燃料棒（枯渇陽子）', 'Восьмерной ТВЭЛ (отработанный протон)'),
+    'item.mio_icif.reactor.item_proton_octuple_casing': v(
+        'Octuple Proton Rod Casing', '八联质子燃料棒外壳', '八連陽子燃料棒ケーシング', 'Корпус восьмерного протонного ТВЭЛа'),
 }
 
 

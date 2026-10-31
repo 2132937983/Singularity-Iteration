@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "DQD",
+    "DQD"
+  ],
+  "key": {
+    "D": {
+      "tag": "c:dense_plates/iron"
+    },
+    "Q": {
+      "type": "neoforge:components",
+      "items": "mio_icif:reactor/item_reactor_proton_quad",
+      "components": {
+        "mio_icif:fuel_rod_durability": {
+          "remaining_uses": 40000,
+          "max_uses": 40000,
+          "tick_counter": 0
+        }
+      },
+      "strict": false
+    }
+  },
+  "result": {
+    "id": "mio_icif:reactor/item_proton_octuple_casing",
+    "count": 1
+  }
+}

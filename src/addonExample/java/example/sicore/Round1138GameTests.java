@@ -804,4 +804,48 @@ public final class Round1138GameTests {
         }
         h.succeed();
     }
+
+    // ------------------------------------------------------------------ D9: Proton Shard and the octuple proton rod
+
+    private static Object recipe(GameTestHelper h, String path) {
+        return h.getLevel().getRecipeManager().byKey(id(path)).map(holder -> (Object) holder.value()).orElse(null);
+    }
+
+    /**
+     * Industrial Upgrade's proton chain: the Molecular Transformer turns 1 plutonium into 1 Proton Shard for 15.5M EU, a shard and
+     * an empty fuel rod make a proton rod (the 8.2M EU uranium-rod recipe of the Neutron Polymerizer is gone). The octuple proton
+     * rod is a casing of 2 quad proton rods and 4 dense iron plates, finished in the Molecular Transformer for 2.108 billion EU (136
+     * more shards' worth: about 144 plutonium in all). In the reactor it is two quads in one slot.
+     */
+    @SuppressWarnings("unchecked")
+    @GameTest(batch = "round1138_balance", template = "empty", timeoutTicks = 20)
+    public static void protonShardsMakeProtonRodsAndTheOctupleCostsAbout144Plutonium(GameTestHelper h) {
+        Object shard = recipe(h, "molecular_transformer/plutonium_to_proton_shard");
+        h.assertTrue(shard != null && (Long) call(shard, "getEuCost") == 15_500_000L, "the Proton Shard recipe is missing or not 15.5M EU");
+        Object octuple = recipe(h, "molecular_transformer/proton_octuple_casing_to_rod");
+        h.assertTrue(octuple != null && (Long) call(octuple, "getEuCost") == 2_108_000_000L, "the octuple rod recipe is missing or not 2.108B EU");
+        h.assertTrue(recipe(h, "neutron_polymerizer/uranium_rod_to_proton_rod") == null, "the cheap uranium-rod recipe is still there");
+        h.assertTrue(recipe(h, "shaped_proton_octuple_casing") != null, "the octuple casing has no recipe");
+
+        var input = net.minecraft.world.item.crafting.CraftingInput.of(2, 1, java.util.List.of(item("reactor/item_proton_shard"), item("normal/item_fuel_rod")));
+        var made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, input, h.getLevel())
+            .map(r -> r.value().assemble(input, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
+        h.assertTrue(made.is(item("reactor/item_reactor_proton_simple").getItem()), "a shard and an empty fuel rod do not make a proton rod: " + made);
+
+        var profiles = (java.util.Map<String, ReactorCycle.Profile>) staticField(Round33GameTests.common("reactor.ReactorInventory"), "PROFILES");
+        var quadParts = new ReactorCycle.Part[54];
+        quadParts[10] = new ReactorCycle.Part(profiles.get("proton_quad"), 0, 100);
+        var octParts = new ReactorCycle.Part[54];
+        octParts[10] = new ReactorCycle.Part(profiles.get("proton_octuple"), 0, 100);
+        var quad = ReactorCycle.step(quadParts, 3, 0, true);
+        var oct = ReactorCycle.step(octParts, 3, 0, true);
+        // both are MOX-like: the EU of each at its own hull heat, taken back to a cold hull (x (1 + 4 x heat / 10000)), is 2 : 1
+        double octCold = oct.euPerTick() / (1 + 4.0 * oct.generatedHeat() / 10_000), quadCold = quad.euPerTick() / (1 + 4.0 * quad.generatedHeat() / 10_000);
+        h.assertTrue(Math.abs(octCold / quadCold - 2) < 0.01 && Math.abs(oct.generatedHeat() - 2 * quad.generatedHeat()) <= 1,
+            "the octuple rod is not two quads: " + oct.euPerTick() + " / " + quad.euPerTick() + " EU, " + oct.generatedHeat() + " / " + quad.generatedHeat() + " HU");
+        h.assertTrue(profiles.get("proton_octuple").mox(), "the octuple rod is not MOX-like");
+        var palette = (java.util.List<String>) staticField(Round33GameTests.common("reactor.ReactorInventory"), "PALETTE");
+        h.assertTrue(palette.contains("proton_octuple") && palette.size() == 34, "the simulator palette lacks the octuple rod: " + palette.size());
+        h.succeed();
+    }
 }

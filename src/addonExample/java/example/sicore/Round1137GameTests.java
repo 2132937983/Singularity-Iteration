@@ -94,7 +94,7 @@ public final class Round1137GameTests {
                 Round33GameTests.call(inventory, "read", new ItemStack(BuiltInRegistries.ITEM.get(item)));   // throws if unreadable
             }
         }
-        h.assertTrue(depletion == 9, "uranium, MOX and proton rods (3 sizes each) burn out: " + depletion);
+        h.assertTrue(depletion == 10, "uranium, MOX and proton rods (3 sizes each) and the octuple proton rod burn out: " + depletion);
         expect(h, "breeding/lithium_cell", ReactorTransformation.Process.BREEDING, "reactor/item_reactor_lithium_cell", "normal/item_tritium_cell", 10000);
         expect(h, "breeding/isotope_rod", ReactorTransformation.Process.BREEDING, "reactor/item_reactor_isotope_rod", "normal/item_re_enriched_uranium", 10000);
         expect(h, "decay/tritium_cell", ReactorTransformation.Process.DECAY, "normal/item_tritium_cell", "normal/item_fuel_rod", 10000);

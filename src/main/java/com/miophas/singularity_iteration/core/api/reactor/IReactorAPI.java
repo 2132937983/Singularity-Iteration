@@ -257,7 +257,9 @@ public interface IReactorAPI {
     enum FuelRodType {
         SINGLE(1),
         DUAL(2),
-        QUAD(4);
+        QUAD(4),
+        /** 0.1.10.38: eight cells, two quads in one slot (the octuple proton rod). */
+        OCTUPLE(8);
 
         private final int cells;
 

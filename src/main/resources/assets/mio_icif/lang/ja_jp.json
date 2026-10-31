@@ -4566,5 +4566,9 @@
   "tooltip.mio_icif.portable_trader.use": "右クリック：どこでも先物パネルを開く（取引 1 回 %s EU）",
   "tooltip.mio_icif.portable_trader.plan": "通信プラン：市場日 %2$s 日ごとに工業コイン %1$s 枚",
   "tooltip.mio_icif.portable_trader.plan_free": "通信プラン：無料",
-  "message.mio_icif.portable_trader.plan_unpaid": "通信プラン未払い：次の市場日 %2$s 日分に工業コイン %1$s 枚が必要"
+  "message.mio_icif.portable_trader.plan_unpaid": "通信プラン未払い：次の市場日 %2$s 日分に工業コイン %1$s 枚が必要",
+  "item.mio_icif.reactor.item_proton_shard": "陽子の欠片",
+  "item.mio_icif.reactor.item_reactor_proton_octuple": "八連燃料棒（陽子）",
+  "item.mio_icif.reactor.item_reactor_proton_octuple_depleted": "八連燃料棒（枯渇陽子）",
+  "item.mio_icif.reactor.item_proton_octuple_casing": "八連陽子燃料棒ケーシング"
 }

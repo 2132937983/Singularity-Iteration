@@ -49,7 +49,9 @@ public class mio_icif_nuclear_reactor extends mio_icif_reactor {
     public boolean acceptNeutronPulse(ItemStack stack,AtomicInteger energy,boolean heatPhase){if(isDepleted(stack))return false;if(!heatPhase)energy.updateAndGet(n->Math.addExact(n,baseEnergy));return true;}
     @Override public void appendHoverText(ItemStack stack,TooltipContext context,List<Component> lines,TooltipFlag flag){super.appendHoverText(stack,context,lines,flag);lines.add(Component.literal(getCurrentDurability(stack)+" reactor cycles; "+getNumberOfCells()+" cells"));}
     public enum FuelRodType {
-        SINGLE(1,1),DUAL(2,2),QUAD(4,3);
+        SINGLE(1,1),DUAL(2,2),QUAD(4,3),
+        /** 0.1.10.38: the octuple proton rod (two quads in one slot; ReactorCycle uses its profile). */
+        OCTUPLE(8,3);
         private final int cells,self;
         FuelRodType(int cells,int self){this.cells=cells;this.self=self;}
         public int getEfficiencyMultiplier(){return cells;}

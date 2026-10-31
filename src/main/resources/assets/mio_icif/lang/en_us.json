@@ -4566,5 +4566,9 @@
   "tooltip.mio_icif.portable_trader.use": "Right-click: the futures panel anywhere (%s EU per trade)",
   "tooltip.mio_icif.portable_trader.plan": "Data plan: %1$s Industrial Coins per %2$s market days",
   "tooltip.mio_icif.portable_trader.plan_free": "Data plan: free",
-  "message.mio_icif.portable_trader.plan_unpaid": "Data plan unpaid: %1$s Industrial Coins needed for the next %2$s market days"
+  "message.mio_icif.portable_trader.plan_unpaid": "Data plan unpaid: %1$s Industrial Coins needed for the next %2$s market days",
+  "item.mio_icif.reactor.item_proton_shard": "Proton Shard",
+  "item.mio_icif.reactor.item_reactor_proton_octuple": "Octuple Fuel Rod (Proton)",
+  "item.mio_icif.reactor.item_reactor_proton_octuple_depleted": "Octuple Fuel Rod (Depleted Proton)",
+  "item.mio_icif.reactor.item_proton_octuple_casing": "Octuple Proton Rod Casing"
 }

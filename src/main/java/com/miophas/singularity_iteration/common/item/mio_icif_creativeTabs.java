@@ -903,6 +903,10 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_reactors.PROTON_DUAL_DEPLETED.get());
                 output.accept(mio_icif_reactors.PROTON_QUAD.get());
                 output.accept(mio_icif_reactors.PROTON_QUAD_DEPLETED.get());
+                output.accept(mio_icif_reactors.PROTON_OCTUPLE.get());   // 0.1.10.38
+                output.accept(mio_icif_reactors.PROTON_OCTUPLE_DEPLETED.get());
+                output.accept(mio_icif_reactors.PROTON_OCTUPLE_CASING.get());
+                output.accept(mio_icif_reactors.PROTON_SHARD.get());
 
                 // Accident audit (0.1.10.12)
                 output.accept(mio_icif_reactors.REACTOR_BLACKBOX.get());

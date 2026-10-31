@@ -4620,5 +4620,7 @@
   "jade.mio_icif.steam_tunnel.waiting_steam": "蒸気待ち（1 回に 1,024 mB）",
   "jade.mio_icif.steam_tunnel.buffer_full": "バッファが満杯：電力が使われていない",
   "message.mio_icif.steam_tunnel.waiting_steam": "スチームトンネル：完成、蒸気待ち（ポート %2$s 個、1,024 mB で %3$s EU）",
-  "message.mio_icif.steam_tunnel.buffer_full": "スチームトンネル：バッファが満杯、電力が使われていない（ポート %2$s 個、1,024 mB で %3$s EU）"
+  "message.mio_icif.steam_tunnel.buffer_full": "スチームトンネル：バッファが満杯、電力が使われていない（ポート %2$s 個、1,024 mB で %3$s EU）",
+  "tooltip.mio_icif.fuel_rod.cycles": "原子炉サイクル %1$s；%2$s 連",
+  "tooltip.mio_icif.fuel_rod.cycles_double": "原子炉サイクル %1$s；%2$s 連 ×2"
 }

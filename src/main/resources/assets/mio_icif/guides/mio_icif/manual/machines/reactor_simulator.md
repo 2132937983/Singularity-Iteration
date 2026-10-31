@@ -40,7 +40,7 @@ The design is **SAFE** when these three conditions are true:
 * The hull heat does not increase.
 * No meltdown occurs.
 
-The SAFE check runs the design for a full uranium fuel load (20,000 cycles, 5 h 33 min), not only for the 100 seconds of the values. A design whose vents heat up slowly can look safe for 100 seconds and still melt later; the result then tells when the components melt. JEI shows tested designs in the category "Reactor Layouts".
+The SAFE check runs the design for a full uranium fuel load (20,000 cycles, 5 h 33 min), not only for the 100 seconds of the values. A design whose vents heat up slowly can look safe for 100 seconds and still melt later; the result then tells when the components melt. Each fuel rod burns for its own life: MOX 10,000, uranium 20,000 and proton 40,000 cycles; a MOX rod therefore burns out halfway through the check. JEI shows tested designs in the category "Reactor Layouts".
 
 ## Rules
 

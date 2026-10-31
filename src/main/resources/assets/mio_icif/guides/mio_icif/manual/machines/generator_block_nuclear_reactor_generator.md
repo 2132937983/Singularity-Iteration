@@ -18,7 +18,7 @@ item_ids:
 
 The machine burns nuclear fuel rods and makes EU and heat.
 Each adjacent Reactor Chamber adds one column of component slots.
-With a Reactor Pressure Vessel structure, the machine changes to fluid mode and heats coolant. In fluid mode it makes no EU: the heat leaves as hot coolant (Jade shows how many HU/s), for a <ItemLink id="mio_icif:hugenerator/block_heat_source_fluid" />. MOX rods make twice the heat there above half of the maximum hull heat.
+With a Reactor Pressure Vessel structure, the machine changes to fluid mode and heats coolant. In fluid mode it makes no EU: the heat leaves as hot coolant (Jade shows how many HU/s), for a <ItemLink id="mio_icif:hugenerator/block_heat_source_fluid" />. MOX and proton rods make twice the heat in fluid mode (here and in the steam reactor) above half of the maximum hull heat.
 
 ## Power data
 

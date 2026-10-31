@@ -576,7 +576,7 @@ public final class Round1138GameTests {
         catch (ReflectiveOperationException e) { throw new AssertionError(name, e); }
     }
 
-    /** The proton rods are MOX-like: their EU rises with the hull heat, from 1x uranium cold to x3 at half heat. */
+    /** The proton rods are MOX-like: their EU rises with the hull heat, from 6x uranium cold (30 EU per pulse) to x3 that at half heat. */
     @GameTest(batch = "round1138_balance", template = "empty", timeoutTicks = 20)
     public static void protonRodEuRisesWithHullHeatLikeMox(GameTestHelper h) {
         @SuppressWarnings("unchecked")

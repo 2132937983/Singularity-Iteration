@@ -4620,5 +4620,7 @@
   "structure.mio_icif.steam_tunnel.note.water": "Возвращает 1 mB воды на 100 mB пара (бак 2 000 mB, остальное теряется)",
   "structure.mio_icif.steam_tunnel.power_port": "Энергетический порт: до 3 968 EU/t с роторами, пакетами HV (512 EU)",
   "structure.mio_icif.steam_tunnel.note.inside": "3 блока внутри: воздух или до 3 роторов паровой турбины; контроллер смотрит наружу спереди",
-  "structure.mio_icif.steam_tunnel.note.output": "1 024 mB пара дают 512 EU (каждый ротор добавляет от 32 до 160), до 4 раз за тик; буфер 10 000 EU"
+  "structure.mio_icif.steam_tunnel.note.output": "1 024 mB пара дают 512 EU (каждый ротор добавляет от 32 до 160), до 4 раз за тик; буфер 10 000 EU",
+  "tooltip.mio_icif.fuel_rod.cycles": "%1$s циклов реактора; ячеек: %2$s",
+  "tooltip.mio_icif.fuel_rod.cycles_double": "%1$s циклов реактора; ячеек: %2$s ×2"
 }

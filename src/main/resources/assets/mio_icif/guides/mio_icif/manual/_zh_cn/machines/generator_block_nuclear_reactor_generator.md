@@ -18,7 +18,7 @@ item_ids:
 
 机器燃烧核燃料棒，产生 EU 和热量。
 每个相邻的核反应仓都增加一列元件槽位。
-组成核反应堆压力容器结构后，机器切换到流体模式并加热冷却液。流体模式下不发电：热量以热冷却液的形式输出（Jade 显示每秒多少 HU），供<ItemLink id="mio_icif:hugenerator/block_heat_source_fluid" />使用。MOX 燃料棒在堆温超过最大值一半时发热翻倍。
+组成核反应堆压力容器结构后，机器切换到流体模式并加热冷却液。流体模式下不发电：热量以热冷却液的形式输出（Jade 显示每秒多少 HU），供<ItemLink id="mio_icif:hugenerator/block_heat_source_fluid" />使用。MOX 与质子燃料棒在流体模式下（此处与蒸汽反应堆）堆温超过最大值一半时发热翻倍。
 
 ## 电力数据
 

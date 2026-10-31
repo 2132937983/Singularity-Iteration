@@ -159,49 +159,63 @@ public final class Round1128GameTests {
     /** The sell box with the sink pays the coins of a sale without it; the rest becomes the recycler's products. */
     @GameTest(batch = "round1128_scrap", template = "empty", timeoutTicks = 20)
     public static void scrapSinkKeepsTheCoins(GameTestHelper h) {
+        // 0.1.10.42: one commodity at fixed prices, not the first cheap one of the live market (its price walks from run to run).
+        // At 5, 7 and 10 coins the sink tested the bid at the start of the next item, a little above the item's own price, and the
+        // items the sale stopped at stayed in the box, neither sold nor scrapped
         MinecraftServer server = h.getLevel().getServer();
         Object d = data(server);
-        ServerPlayer player = h.makeMockServerPlayerInLevel();
-        Object m = null;
-        for (Object c : (List<?>) call(common("future.FutureCommodityManager"), "getCommodities")) {
-            if (call(c, "getUnlockAdvancement") != null) continue;
-            Object x = call(service(), "market", server, (String) call(c, "getItemId"));
-            if (x != null && (long) call(x, "price") <= 12) { m = x; break; }
-        }
-        if (m == null) { forget(server, d, player); h.succeed(); return; }
-        String id = (String) call(m, "id");
-        Item item = (Item) call(m, "item");
+        String id = "minecraft:melon_slice";
+        Object live = call(service(), "market", server, id);
+        h.assertTrue(live != null, "no melon slice market");
+        Object prices = call(common("future.FutureMarketData"), "get", server.overworld());
+        int price0 = (int) call(prices, "getPrice", id, (int) (long) call(live, "price"));
         Map<String, Double> pressure = field(d, "pressure");
         Double p0 = pressure.get(id);
         long stock = ((Map<String, Long>) field(d, "treasury")).getOrDefault(id, 0L);
         try {
-            SimpleContainer box = new SimpleContainer(18);
-            for (int i = 0; i < 18; i++) box.setItem(i, new ItemStack(item, 64));
-            Object curve = call(service(), "curve", m);
-            double p = p0 == null ? 0 : p0;
-            long take = (long) call(common("exchange.SellDepth"), "maxForItemPrice", curve, 0.0, p, 1.0, 1152L);
-            long coinsExpected = (long) Math.floor((double) call(common("exchange.SellDepth"), "payout", curve, 0.0, p, (double) take));
-            Object y = call(common("exchange.ScrapSink"), "yieldOf", server, new ItemStack(item));
-            long before = coins(d, player);
-            Object r = call(service(), "sellBox", player, box, false, 0, true);
-            h.assertTrue((boolean) call(r, "ok"), "sale: " + call(r, "key"));
-            h.assertTrue(coins(d, player) - before == coinsExpected, "coins " + (coins(d, player) - before) + ", without the sink " + coinsExpected);
-            if (y != null) {
-                ItemStack product = (ItemStack) call(y, "product");
-                double chance = (double) call(y, "chance");
-                long products = (long) Math.floor((1152 - take) * chance + 1e-9) * product.getCount();
-                h.assertTrue(count(player, product.getItem()) + ((Map<String, Long>) get(box(d, player.getUUID()), "items"))
-                    .getOrDefault(BuiltInRegistries.ITEM.getKey(product.getItem()).toString(), 0L) >= products, "fewer products than the recycler's rate");
-                long left = 0;
-                for (int i = 0; i < 18; i++) if (box.getItem(i).is(item)) left += box.getItem(i).getCount();
-                h.assertTrue(left < Math.ceil(1 / chance), "the box keeps " + left + " items (fewer than one product's worth expected)");
+            for (int price : new int[]{5, 7, 9, 10}) {
+                call(prices, "setPrice", id, price);
+                pressure.remove(id);
+                ServerPlayer player = h.makeMockServerPlayerInLevel();
+                try {
+                    sellIntoTheSink(h, server, d, player, call(service(), "market", server, id), price);
+                } finally {
+                    forget(server, d, player);
+                }
             }
         } finally {
+            call(prices, "setPrice", id, price0);
             if (p0 == null) pressure.remove(id); else pressure.put(id, p0);
             ((Map<String, Long>) field(d, "treasury")).put(id, stock);
-            forget(server, d, player);
         }
         h.succeed();
+    }
+
+    /** Sells 18 stacks of {@code m} at {@code price} with the sink on: the coins of a sale without the sink, the rest scrapped. */
+    @SuppressWarnings("unchecked")
+    private static void sellIntoTheSink(GameTestHelper h, MinecraftServer server, Object d, ServerPlayer player, Object m, int price) {
+        h.assertTrue((long) call(m, "price") == price, "the market price is " + call(m, "price") + ", not " + price);
+        Item item = (Item) call(m, "item");
+        SimpleContainer box = new SimpleContainer(18);
+        for (int i = 0; i < 18; i++) box.setItem(i, new ItemStack(item, 64));
+        Object curve = call(service(), "curve", m);
+        double p = 0;   // the pressure was removed
+        long take = (long) call(common("exchange.SellDepth"), "maxForItemPrice", curve, 0.0, p, 1.0, 1152L);
+        long coinsExpected = (long) Math.floor((double) call(common("exchange.SellDepth"), "payout", curve, 0.0, p, (double) take));
+        Object y = call(common("exchange.ScrapSink"), "yieldOf", server, new ItemStack(item));
+        h.assertTrue(y != null, "melon slices give no recycler product");
+        long before = coins(d, player);
+        Object r = call(service(), "sellBox", player, box, false, 0, true);
+        h.assertTrue((boolean) call(r, "ok"), "sale: " + call(r, "key"));
+        h.assertTrue(coins(d, player) - before == coinsExpected, "at " + price + " coins: coins " + (coins(d, player) - before) + ", without the sink " + coinsExpected);
+        ItemStack product = (ItemStack) call(y, "product");
+        double chance = (double) call(y, "chance");
+        long products = (long) Math.floor((1152 - take) * chance + 1e-9) * product.getCount();
+        h.assertTrue(count(player, product.getItem()) + ((Map<String, Long>) get(box(d, player.getUUID()), "items"))
+            .getOrDefault(BuiltInRegistries.ITEM.getKey(product.getItem()).toString(), 0L) >= products, "at " + price + " coins: fewer products than the recycler's rate");
+        long left = 0;
+        for (int i = 0; i < 18; i++) if (box.getItem(i).is(item)) left += box.getItem(i).getCount();
+        h.assertTrue(left < Math.ceil(1 / chance), "at " + price + " coins the box keeps " + left + " items (fewer than one product's worth expected)");
     }
 
     // ------------------------------------------------------------------ the stabiliser

@@ -47,7 +47,10 @@ public class mio_icif_nuclear_reactor extends mio_icif_reactor {
     public OperationResult getHeatOutput(ItemStack stack,int pulses,int reflected){int heat=Math.multiplyExact(2,calculateHeatOutput(pulses(pulses,reflected)));if(!advanceLegacyTick(stack))return new OperationResult(0,0,true);return new OperationResult(0,heat,isDepleted(stack));}
     public OperationResult operate(ItemStack stack,int pulses,int reflected){int heat=calculateHeatOutput(pulses(pulses,reflected));int eu=Math.multiplyExact(baseEnergy,Math.addExact(getBaseEnergyMultiplier(),pulses));if(!advanceLegacyTick(stack))return new OperationResult(0,0,true);return new OperationResult(eu,heat,isDepleted(stack));}
     public boolean acceptNeutronPulse(ItemStack stack,AtomicInteger energy,boolean heatPhase){if(isDepleted(stack))return false;if(!heatPhase)energy.updateAndGet(n->Math.addExact(n,baseEnergy));return true;}
-    @Override public void appendHoverText(ItemStack stack,TooltipContext context,List<Component> lines,TooltipFlag flag){super.appendHoverText(stack,context,lines,flag);lines.add(Component.literal(getCurrentDurability(stack)+" reactor cycles; "+getNumberOfCells()+" cells"));}
+    @Override public void appendHoverText(ItemStack stack,TooltipContext context,List<Component> lines,TooltipFlag flag){super.appendHoverText(stack,context,lines,flag);int cells=getNumberOfCells();
+        // 0.1.10.42: translated; the octuple rod is two quads in one slot (the reactor counts 4 cells, twice the EU and heat)
+        lines.add(cells>4?Component.translatable("tooltip.mio_icif.fuel_rod.cycles_double",getCurrentDurability(stack),cells/2)
+            :Component.translatable("tooltip.mio_icif.fuel_rod.cycles",getCurrentDurability(stack),cells));}
     public enum FuelRodType {
         SINGLE(1,1),DUAL(2,2),QUAD(4,3),
         /** 0.1.10.38: the octuple proton rod (two quads in one slot; ReactorCycle uses its profile). */

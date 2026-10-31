@@ -17,8 +17,10 @@ public final class ReactorCycle {
     public enum Kind { FUEL, CELL, CONDENSATOR, VENT, COMPONENT_VENT, EXCHANGER, REFLECTOR, PLATING, HEATPACK, LITHIUM, ISOTOPE, INERT, NEUTRON_SOURCE,
         STEAM_VENT }
     /**
-     * 0.1.10.36: {@code euFactor} / {@code heatFactor} scale the EU and the heat of a fuel rod (1 = uranium; the proton rod
-     * 3 and 1.5). The ten-argument constructor keeps both at 1.
+     * 0.1.10.36: {@code euFactor} / {@code heatFactor} scale the EU and the heat of a fuel rod (1 = uranium; the proton rod 6
+     * and 1.5 since 0.1.10.42, with the MOX flag, so its EU also rises with the hull heat; the octuple 12 and 3). The ten-argument
+     * constructor keeps both at 1. A rod with the MOX flag doubles its heat in every fluid-mode cycle (the fluid and the steam
+     * reactor) above half hull heat.
      */
     public record Profile(Kind kind,int cells,boolean mox,int capacity,int selfCooling,
                           int hullCooling,int adjacentExchange,int hullExchange,int extraHull,int explosionReduction,

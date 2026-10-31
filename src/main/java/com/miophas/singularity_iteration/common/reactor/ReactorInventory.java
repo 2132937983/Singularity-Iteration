@@ -40,10 +40,11 @@ public final class ReactorInventory {
     public static final ResourceLocation TRITIUM_PRODUCT=ResourceLocation.parse("mio_icif:normal/item_fuel_rod");
     /**
      * 0.1.10.36: the proton rod (Industrial Upgrade style): 1.5x the heat of uranium, 40000 cycles. 0.1.10.38: like MOX, its EU
-     * rises with the hull heat, from 1x uranium cold to 5x at full heat (it was a flat 3x, which the MOX rule would have taken to
-     * 15x), and in a steam reactor above half heat its heat doubles.
+     * rises with the hull heat (x1 cold to x5 at full heat; it was a flat 3x), and in a fluid-mode reactor (the fluid and the
+     * steam reactor) above half heat its heat doubles. 0.1.10.42: 30 EU per pulse cold (6x uranium's 5), so 30 to 150 EU per
+     * pulse with the hull heat; the octuple twice that.
      */
-    public static final float PROTON_EU=1.0f,PROTON_HEAT=1.5f;
+    public static final float PROTON_EU=6.0f,PROTON_HEAT=1.5f;
     public static final int PROTON_LIFE=40000;
     /** 0.1.10.36: heat capacity of the IC2C steam vents. */
     public static final int STEAM_VENT_HEAT=1100;
@@ -112,6 +113,10 @@ public final class ReactorInventory {
     /** Item id of component {@code key}. */
     public static ResourceLocation itemId(String key){
         return key.equals(TRITIUM_KEY)?LITHIUM_PRODUCT:ResourceLocation.fromNamespaceAndPath("mio_icif","reactor/item_reactor_"+key);}
+    /** 0.1.10.42: the life of the fuel rod whose profile is {@code profile} (for the simulator); 20000 for a profile of no rod. */
+    static int fuelLife(Profile profile){
+        for(var e:PROFILES.entrySet())if(e.getValue()==profile&&e.getValue().kind()==Kind.FUEL)return fuelLife(e.getKey());
+        return 20000;}
     /** Cycles of a fresh fuel rod of component {@code key} (0: not a fuel rod). */
     public static int fuelLife(String key){
         Profile p=PROFILES.get(key);if(p==null||p.kind()!=Kind.FUEL)return 0;

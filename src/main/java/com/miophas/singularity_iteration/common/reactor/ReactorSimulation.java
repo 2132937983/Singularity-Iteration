@@ -22,10 +22,8 @@ public final class ReactorSimulation {
 
     /** Simulated time: 100 cycles = 100 seconds. */
     public static final int CYCLES = 100;
-    /** Remaining cycles of a new fuel rod in the simulation (longer than the run). */
-    static final int FUEL = 20_000;
     /** 0.1.10.19: cycles of the full run ({@link #fullRun}): the life of a uranium rod (5 h 33 min). */
-    public static final int FULL_CYCLES = FUEL;
+    public static final int FULL_CYCLES = 20_000;
 
     /**
      * Result of one run.
@@ -102,7 +100,8 @@ public final class ReactorSimulation {
         for (int i = 0; i < 54; i++) {
             Profile p = profiles[i];
             if (p == null || i % 9 >= columns) continue;
-            parts[i] = new Part(p, 0, p.kind() == ReactorCycle.Kind.FUEL ? FUEL : 0);
+            // 0.1.10.42: each rod its own life (MOX 10000, uranium 20000, proton 40000 cycles); all had 20000 before
+            parts[i] = new Part(p, 0, p.kind() == ReactorCycle.Kind.FUEL ? ReactorInventory.fuelLife(p) : 0);
         }
         long heat = 0, peak = 0, maxHull = 10_000;
         double eu = 0;

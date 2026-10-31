@@ -4620,5 +4620,7 @@
   "jade.mio_icif.steam_tunnel.waiting_steam": "Waiting for steam (1,024 mB per step)",
   "jade.mio_icif.steam_tunnel.buffer_full": "Buffer full: power is not being drawn",
   "message.mio_icif.steam_tunnel.waiting_steam": "Steam Tunnel: formed, waiting for steam (%2$s ports, %3$s EU per 1,024 mB)",
-  "message.mio_icif.steam_tunnel.buffer_full": "Steam Tunnel: buffer full, power is not being drawn (%2$s ports, %3$s EU per 1,024 mB)"
+  "message.mio_icif.steam_tunnel.buffer_full": "Steam Tunnel: buffer full, power is not being drawn (%2$s ports, %3$s EU per 1,024 mB)",
+  "tooltip.mio_icif.fuel_rod.cycles": "%1$s reactor cycles; %2$s cells",
+  "tooltip.mio_icif.fuel_rod.cycles_double": "%1$s reactor cycles; %2$s cells ×2"
 }

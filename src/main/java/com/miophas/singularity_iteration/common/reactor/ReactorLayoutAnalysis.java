@@ -117,7 +117,7 @@ public final class ReactorLayoutAnalysis {
             Profile p = profiles[i];
             if (p == null) continue;
             boolean rod = p.kind() == ReactorCycle.Kind.FUEL;
-            parts[i] = new ReactorCycle.Part(p, 0, rod ? ReactorSimulation.FUEL : 0);
+            parts[i] = new ReactorCycle.Part(p, 0, rod ? ReactorInventory.fuelLife(p) : 0);   // 0.1.10.42: the rod's own life
             if (rod) {
                 int life = rodLife(items[i]);
                 fuel = fuel == 0 ? life : Math.min(fuel, life);
@@ -133,11 +133,11 @@ public final class ReactorLayoutAnalysis {
         return new Result(report, blast, fuel, verdict, seconds);
     }
 
-    /** Cycles of a new rod of this item (20,000 uranium, 10,000 MOX); the simulation value when unknown. */
+    /** Cycles of a new rod of this item (20,000 uranium, 10,000 MOX, 40,000 proton); a uranium rod's when unknown. */
     private static int rodLife(@Nullable ResourceLocation item) {
-        if (item == null) return ReactorSimulation.FUEL;
+        if (item == null) return ReactorSimulation.FULL_CYCLES;
         var durability = BuiltInRegistries.ITEM.get(item).components().get(mio_icif_data_components.FUEL_ROD_DURABILITY.get());
-        return durability == null || durability.maxUses() <= 0 ? ReactorSimulation.FUEL : durability.maxUses();
+        return durability == null || durability.maxUses() <= 0 ? ReactorSimulation.FULL_CYCLES : durability.maxUses();
     }
 
     static double explosionMultiplier() {

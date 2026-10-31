@@ -42,7 +42,9 @@ public final class ScrapSink {
     public static boolean eligible(ExchangeData d, ExchangeService.Market m, UUID seller, long day) {
         if (m == null || !m.system()) return false;
         SellDepth.Curve c = ExchangeService.curve(m);
-        double next = SellDepth.marginal(c, ExchangeService.soldToday(d, seller, m.id(), day), ExchangeService.pressure(d, m.id()));
+        // 0.1.10.42: the price of the next item, the number the sale stops on (SellDepth.maxForItemPrice). The bid at the start of
+        // the item (the marginal) is a little higher: with it, an item worth just under a coin was not sold and not scrapped either
+        double next = SellDepth.itemPrice(c, ExchangeService.soldToday(d, seller, m.id(), day), ExchangeService.pressure(d, m.id()), 1);
         return ScrapRules.eligible(next, ScrapRules.floor(c.unit(), EconomySettings.scrapThreshold()));
     }
 

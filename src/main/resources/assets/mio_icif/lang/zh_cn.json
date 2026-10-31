@@ -4620,5 +4620,7 @@
   "jade.mio_icif.steam_tunnel.waiting_steam": "等待蒸汽（每步 1,024 mB）",
   "jade.mio_icif.steam_tunnel.buffer_full": "缓存已满：电力未被取走",
   "message.mio_icif.steam_tunnel.waiting_steam": "蒸汽隧道涡轮机：已成型，等待蒸汽（%2$s 个端口，每 1,024 mB %3$s EU）",
-  "message.mio_icif.steam_tunnel.buffer_full": "蒸汽隧道涡轮机：缓存已满，电力未被取走（%2$s 个端口，每 1,024 mB %3$s EU）"
+  "message.mio_icif.steam_tunnel.buffer_full": "蒸汽隧道涡轮机：缓存已满，电力未被取走（%2$s 个端口，每 1,024 mB %3$s EU）",
+  "tooltip.mio_icif.fuel_rod.cycles": "%1$s 个反应堆周期；%2$s 联",
+  "tooltip.mio_icif.fuel_rod.cycles_double": "%1$s 个反应堆周期；%2$s 联 ×2"
 }

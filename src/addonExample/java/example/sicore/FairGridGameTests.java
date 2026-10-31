@@ -118,7 +118,9 @@ public final class FairGridGameTests {
     /** A full 2048 EU packet still destroys a 512 EU MFE in fair mode. */
     @GameTest(template = "empty", batch = "fair_grid", timeoutTicks = 60)
     public static void overvoltageStillDestroysLowTier(GameTestHelper h) {
-        BlockPos sourcePos = new BlockPos(1, 1, 21), sinkPos = sourcePos.east();
+        // 0.1.10.42: inside the 5x5 template. At z=21 the blocks stood 16 blocks out of it, in a chunk that was not always ticking
+        // (only the template's chunks are force-loaded), so the energy engine skipped them now and then (a flaky test)
+        BlockPos sourcePos = new BlockPos(1, 1, 2), sinkPos = sourcePos.east();
         h.setBlock(sourcePos, facing("wiring/block_mfsu", Direction.EAST));
         h.setBlock(sinkPos, facing("wiring/block_mfe", Direction.EAST));
         AbstractEnergyBlockEntity source = h.getBlockEntity(sourcePos);

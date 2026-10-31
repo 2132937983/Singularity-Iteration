@@ -289,7 +289,8 @@ public final class Round1136GameTests {
     }
 
     /**
-     * The proton rod gives 3x the EU and 1.5x the heat of uranium; the tritium neutron source gives each adjacent rod one more
+     * A fuel profile with EU factor 3 and heat factor 1.5 (the first proton numbers, 0.1.10.36; the live proton rod is in
+     * Round1138) gives 3x the EU and 1.5x the heat of uranium; the tritium neutron source gives each adjacent rod one more
      * pulse (heat and EU), decays by one per cycle and gives 1 HU; the lithium cell breeds 1 + hull/3000 per pulse and gives
      * 1 HU per absorbed pulse. The ten-argument profile keeps factors of 1.
      */

@@ -487,6 +487,26 @@ neoForge.runs.register('compatGameTestServer') {
 }
 tasks.matching { it.name == 'prepareCompatGameTestServerRun' }.configureEach { dependsOn syncCompatMods }
 
+// 0.1.10.39: universal cables (FE) against the real Mekanism, Mekanism Generators and AE2 jars, in a server of their own:
+// Mekanism sends its player data to the mock players of the main suite, which cannot take it (the compat run crashed). Only the
+// GameTest namespace si_universal runs here (CompatUniversalCableGameTests). Mekanism comes from the local client's mods folder.
+def universalModsDir = file('build/universal-gametest/mods')
+def syncUniversalMods = tasks.register('syncUniversalMods', Sync) {
+    from configurations.compatMods
+    from guidemeStubJar
+    from botaniaStubJar
+    from(fileTree('run/mods') { include '*Mekanism-1.21.1-*.jar', '*MekanismGenerators-1.21.1-*.jar' })
+    into universalModsDir
+}
+neoForge.runs.register('universalGameTestServer') {
+    type = 'gameTestServer'
+    loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
+    gameDirectory = file('build/universal-gametest')
+    systemProperty 'neoforge.enabledGameTestNamespaces', 'si_universal'
+    logLevel = org.slf4j.event.Level.INFO
+}
+tasks.matching { it.name == 'prepareUniversalGameTestServerRun' }.configureEach { dependsOn syncUniversalMods }
+
 // GregTech Modern only boots on the client dist in a dev workspace, so its compat tests run
 // in a headless client: CompatTestDirector (dev-only) creates a world and runs /test runall.
 def compatClientDir = file('build/compat-client')

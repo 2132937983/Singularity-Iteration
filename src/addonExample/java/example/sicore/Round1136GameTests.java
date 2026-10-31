@@ -107,12 +107,8 @@ public final class Round1136GameTests {
     }
 
     private static Enum<?> laserMode(String name) {
-        try {
-            Class<?> mode = Class.forName("com.miophas.singularity_iteration.common.item.tools.mio_icif_laser_miner$Mode");
-            for (Object constant : mode.getEnumConstants()) if (((Enum<?>) constant).name().equals(name)) return (Enum<?>) constant;
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError(e);
-        }
+        Class<?> mode = Round33GameTests.common("item.tools.mio_icif_laser_miner$Mode");
+        for (Object constant : mode.getEnumConstants()) if (((Enum<?>) constant).name().equals(name)) return (Enum<?>) constant;
         throw new AssertionError("No laser mode " + name);
     }
 
@@ -161,7 +157,7 @@ public final class Round1136GameTests {
             h.assertTrue(damageField.getFloat(nuclear) == 32767.0F, "Direct hit damage is not 32767");
             for (int x = 0; x <= 12; x++) for (int y = 1; y <= 4; y++) for (int z = 0; z <= 12; z++) h.setBlock(x, y, z, Blocks.AIR);
             ServerPlayer source = h.makeMockServerPlayerInLevel();
-            Class<?> type = Class.forName("com.miophas.singularity_iteration.common.item.tools.LaserUltraBlastDamage");
+            Class<?> type = Round33GameTests.common("item.tools.LaserUltraBlastDamage");
             var constructor = type.getDeclaredConstructor(Entity.class); constructor.setAccessible(true);
             var calculator = (ExplosionDamageCalculator) constructor.newInstance(source);
             Vec3 center = Vec3.atBottomCenterOf(h.absolutePos(new BlockPos(1, 1, 6)));

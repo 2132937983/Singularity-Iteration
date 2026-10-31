@@ -17,6 +17,7 @@ item_ids:
 ## Function
 
 The Steam Generator uses heat (HU) and water to make Steam or Superheated Steam.
+The machine takes heat through every face except its front face.
 The GUI sets the water flow and the pressure valve. The machine pushes the steam into adjacent tanks.
 Normal water calcifies the boiler and stops the machine. Distilled Water causes no calcification.
 

@@ -37,6 +37,10 @@ public final class Round1117GameTests {
 
     private static final org.slf4j.Logger LOG = com.mojang.logging.LogUtils.getLogger();
     private static final BlockPos AT = new BlockPos(1, 2, 1);
+    /** The reactor each chamber needs beside it. */
+    private static final java.util.Map<String, String> CHAMBER_CORES = java.util.Map.of(
+        "reactor/block_reactor_chamber", "generator/block_nuclear_reactor_generator",
+        "reactor/block_steam_reactor_chamber", "generator/block_steam_reactor");
     /** Inventory keys that no update tag may carry (except the rotor of the wind and water generators). */
     private static final Set<String> INVENTORY_KEYS = Set.of("inventory", "Items", "ReactorItems");
     private static final Set<String> ROTOR_BLOCKS = Set.of("kugenerator/block_wind_kinetic_generator", "kugenerator/block_water_kinetic_generator");
@@ -87,8 +91,11 @@ public final class Round1117GameTests {
             ResourceLocation id = entry.getKey().location();
             if (!id.getNamespace().equals("mio_icif") || !(entry.getValue() instanceof EntityBlock)) continue;
             try {
+                // a reactor chamber drops itself without its reactor beside it: place the reactor first
+                String core = CHAMBER_CORES.get(id.getPath());
+                if (core != null) h.setBlock(AT.east(), BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", core)));
                 h.setBlock(AT, entry.getValue());
-                BlockEntity be = h.getBlockEntity(AT);
+                BlockEntity be = h.getLevel().getBlockEntity(h.absolutePos(AT));   // h.getBlockEntity throws instead of returning null
                 if (be == null) continue;
                 fill(be);
                 CompoundTag update = be.getUpdateTag(registries);
@@ -107,6 +114,7 @@ public final class Round1117GameTests {
                 failed.add(id.getPath() + ": " + e);
             } finally {
                 h.setBlock(AT, Blocks.AIR);
+                h.setBlock(AT.east(), Blocks.AIR);
             }
         }
         LOG.info("{}\n  total: {} / {} bytes in {} block entities", table, updateTotal, saveTotal, checked);

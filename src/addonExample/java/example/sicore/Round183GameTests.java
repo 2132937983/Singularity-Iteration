@@ -33,26 +33,26 @@ public final class Round183GameTests {
         {"ultimate_solar_helmet", "armor/item_armor_ultimate_solar_helmet"}};
 
     /**
-     * Checks the item model of a Blockbench armor piece: separate transforms, a 3D base model
-     * (builtin/entity) and a flat inventory icon that exists. Returns null when it is right.
+     * Checks the item model of a Blockbench armor piece as 0.1.10.11 made it: builtin/entity (BakedArmorItemRenderer draws the 3D
+     * piece in the inventory, the hand, on the ground and in frames), its own display transforms with a gui one, the 32x32
+     * texture as its particle, no loader wrapper and no models/item/3d copy. Returns null when it is right.
      */
-    static String splitArmorItemModel(String itemPath) {
+    static String bakedArmorItemModel(String itemPath) {
         String json = Round33GameTests.resource("/assets/mio_icif/models/item/" + itemPath + ".json");
         if (json == null) return "item model missing";
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-        if (!"neoforge:separate_transforms".equals(root.has("loader") ? root.get("loader").getAsString() : "")) return "item model is not separate_transforms";
-        String base = root.getAsJsonObject("base").get("parent").getAsString();
-        if (!base.equals("mio_icif:item/3d/" + itemPath)) return "base model is " + base;
-        String model3d = Round33GameTests.resource("/assets/mio_icif/models/item/3d/" + itemPath + ".json");
-        if (model3d == null || !model3d.contains("builtin/entity")) return "3D model is not builtin/entity";
-        JsonObject gui = root.getAsJsonObject("perspectives").getAsJsonObject("gui");
-        String icon = gui.getAsJsonObject("textures").get("layer0").getAsString();
-        if (!icon.equals("mio_icif:item/" + itemPath)) return "inventory icon is " + icon;
-        if (!Round180GameTests.modResourceExists("assets/mio_icif/textures/item/" + itemPath + ".png")) return "icon texture missing";
+        if (root.has("loader")) return "item model still has the loader " + root.get("loader");
+        if (!root.has("parent") || !"builtin/entity".equals(root.get("parent").getAsString())) return "item model is not builtin/entity";
+        if (!root.has("display") || !root.getAsJsonObject("display").has("gui")) return "item model has no gui transform";
+        JsonObject textures = root.getAsJsonObject("textures");
+        String particle = textures == null || !textures.has("particle") ? null : textures.get("particle").getAsString();
+        if (!("mio_icif:item/" + itemPath).equals(particle)) return "particle texture is " + particle;
+        if (!Round180GameTests.modResourceExists("assets/mio_icif/textures/item/" + itemPath + ".png")) return "particle texture missing";
+        if (Round33GameTests.resource("/assets/mio_icif/models/item/3d/" + itemPath + ".json") != null) return "models/item/3d copy is still there";
         return null;
     }
 
-    /** Every Blockbench piece: geometry, texture, worn texture path, 3D/2D item model split. */
+    /** Every Blockbench piece: geometry, texture, worn texture path, the builtin/entity item model. */
     @GameTest(template = "empty", batch = "round183_data")
     public static void bakedArmorPiecesAreComplete(GameTestHelper h) {
         List<String> problems = new ArrayList<>();
@@ -64,8 +64,8 @@ public final class Round183GameTests {
             String main = name.endsWith("helmet") ? "head" : name.endsWith("chestplate") ? "body" : "right_leg";
             if (!parts.has(main) || parts.getAsJsonArray(main).size() < 6) problems.add(name + ": lacks " + main);
             if (!Round180GameTests.modResourceExists("assets/mio_icif/textures/models/armor/" + name + ".png")) problems.add(name + ": texture missing");
-            String split = splitArmorItemModel(piece[1]);
-            if (split != null) problems.add(name + ": " + split);
+            String model = bakedArmorItemModel(piece[1]);
+            if (model != null) problems.add(name + ": " + model);
             Item item = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", piece[1]));
             ItemStack stack = new ItemStack(item);
             if (item instanceof ArmorItem armor) {
@@ -112,7 +112,7 @@ public final class Round183GameTests {
     public static void weaponsAreFlatIcons(GameTestHelper h) {
         List<String> problems = new ArrayList<>();
         String[][] models = {
-            {"item_tool_bronze_sword", "minecraft:item/handheld", "weapon/bronze_sword"},
+            {"item_tool_bronze_sword", "minecraft:item/handheld", "item_tool_bronze_sword"},   // 0.1.10.42: the reworked tool art
             {"item_tool_nano_bow", "minecraft:item/bow", "item_tool_nano_bow"},
             {"item_tool_nano_bow_pull2", "minecraft:item/bow", "item_tool_nano_bow_pull2"}};
         for (String[] m : models) {
@@ -144,7 +144,9 @@ public final class Round183GameTests {
             last = p;
         }
         h.assertTrue((Float) Round33GameTests.call(bow, "drawProgress", 0) == 0F, "drawn at rest");
-        h.assertTrue((Float) Round33GameTests.call(bow, "drawProgress", 4) >= 0.999F, "not full at full power");
+        // full power at 5 ticks ((25 + 10) / 5 = 7, capped at 5); 4 ticks give 4.8 of 5
+        h.assertTrue((Float) Round33GameTests.call(bow, "drawProgress", 4) < 1F, "full already at 4 ticks");
+        h.assertTrue((Float) Round33GameTests.call(bow, "drawProgress", 5) >= 0.999F, "not full at full power");
         h.succeed();
     }
 

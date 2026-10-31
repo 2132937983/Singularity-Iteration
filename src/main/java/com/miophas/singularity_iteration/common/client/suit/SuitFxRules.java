@@ -69,7 +69,7 @@ public final class SuitFxRules {
         float radius = prep[o], spot = prep[o + 2];
         double ringFar = radius + 3 * RIPPLE_WIDTH, ringNear = Math.max(0, radius - 3 * RIPPLE_WIDTH);
         boolean inSpot = spot > 0 && d2 < 0.36;
-        boolean inRing = d2 < ringFar * ringFar && d2 > ringNear * ringNear;
+        boolean inRing = d2 < ringFar * ringFar && d2 >= ringNear * ringNear;   // 0.1.10.42: >=, the hit point itself is in a new ring
         if (!inSpot && !inRing) return 0F;
         double d = Math.sqrt(d2);
         double v = 0;

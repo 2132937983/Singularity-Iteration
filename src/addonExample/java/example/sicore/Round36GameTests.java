@@ -139,7 +139,7 @@ public final class Round36GameTests {
             for (int i = 0; i < max + 5; i++)
                 views.add(ctor.newInstance(new net.minecraft.core.BlockPos(i, 0, 0), "x".repeat(80), List.of()));
             var packetCtor = type.getDeclaredConstructors()[0];
-            Object packet = packetCtor.newInstance(true, null, views, net.minecraft.network.chat.Component.empty());
+            Object packet = packetCtor.newInstance(true, null, views, List.of(), net.minecraft.network.chat.Component.empty());   // no wingmen (0.1.8.0 field)
             var codec = (StreamCodec<RegistryFriendlyByteBuf, Object>) staticField(type, "CODEC");
             var buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), h.getLevel().registryAccess());
             codec.encode(buf, packet);

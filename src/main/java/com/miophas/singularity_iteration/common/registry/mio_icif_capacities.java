@@ -95,13 +95,9 @@ public class mio_icif_capacities {
                 ? transformer.getEnergyStorage(direction) : null);
     }
 
-    private static void registerAPIHeatCapability(RegisterCapabilitiesEvent event, net.minecraft.world.level.block.entity.BlockEntityType<?> entityType) {
-        event.registerBlockEntity(
-            IMioIcifCapabilities.HEAT_STORAGE_BLOCK,
-            entityType,
-            (blockEntity, direction) -> MioIcifAPI.instance().getCapabilities().adaptHeatStorage(blockEntity)
-        );
-    }
+    // 0.1.10.42: no generic heat adapter any more. It wrapped the block entity and ignored the side, so a machine registered with it
+    // took or gave heat on every face (the blast furnaces and the fermenter heated from the back). Each heat block registers its
+    // own directional provider above it.
 
     private static void registerAPIKineticCapability(RegisterCapabilitiesEvent event, net.minecraft.world.level.block.entity.BlockEntityType<?> entityType) {
         event.registerBlockEntity(
@@ -674,7 +670,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.FERMENTER_ELC_ENTITY_TYPE.get());
         Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Fermenter Machine");
 
         // Register capabilities for Oil Refinery (精炼机)
@@ -749,7 +744,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.BLAST_FURNACE_ENTITY_TYPE.get());
         Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Blast Furnace");
 
         // Register capabilities for Advanced Titanium Alloy Blast Furnace (进阶钛合金高炉)
@@ -789,7 +783,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.BLAST_FURNACE_ADVANCED_ENTITY_TYPE.get());
         Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Advanced Titanium Alloy Blast Furnace");
 
  // Register capabilities for Electric Nano Blast Furnace (电力纳米高)
@@ -852,7 +845,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.STEAM_GENERATOR_ENTITY_TYPE.get());
         Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Steam Generator");
 
         // Register capabilities for Steam Repressurizer (蒸汽再加压机)
@@ -892,7 +884,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.STEAM_REPRESSURIZER_ENTITY_TYPE.get());
         Singularity_Iteration.LOGGER.debug("Registered HU heat, item and fluid capabilities for Steam Repressurizer");
 
         // Register capabilities for Steam Kinetic Generator (蒸汽动能发生机)
@@ -1294,7 +1285,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.ADVANCED_STIRLING_GENERATOR_ENTITY_TYPE.get());
 
         event.registerBlockEntity(
             IMioIcifCapabilities.HEAT_STORAGE_BLOCK,
@@ -1372,7 +1362,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.SOLID_HEAT_GENERATOR.get());
         Singularity_Iteration.LOGGER.debug("Registered item handler and HU heat capabilities for Solid Heat Generator");
 
         // Register capabilities for Fluid Heat Generator (流体加热机)
@@ -1412,7 +1401,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.FLUID_HEAT_GENERATOR.get());
         Singularity_Iteration.LOGGER.debug("Registered item handler, fluid handler and HU heat capabilities for Fluid Heat Generator");
 
         // Register capabilities for RTG Heat Generator (放射性同位素温差加热机)
@@ -1440,7 +1428,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.RT_HEAT_GENERATOR.get());
         Singularity_Iteration.LOGGER.debug("Registered item handler and HU heat capabilities for RTG Heat Generator");
 
         // Register capabilities for Stirling Generator (斯特林发电机)
@@ -1763,7 +1750,6 @@ public class mio_icif_capacities {
         );
 
         registerAPIKineticCapability(event, mio_icif_block_entities.STIRLING_KINETIC_GENERATOR_ENTITY_TYPE.get());
-        registerAPIHeatCapability(event, mio_icif_block_entities.STIRLING_KINETIC_GENERATOR_ENTITY_TYPE.get());
         Singularity_Iteration.LOGGER.debug("Registered KU kinetic, item handler, fluid and HU heat capabilities for Stirling Kinetic Generator");
 
         // Register capabilities for LV-MV Transformer (LV-MV 变压器)
@@ -2141,7 +2127,6 @@ public class mio_icif_capacities {
             }
         );
 
-        registerAPIHeatCapability(event, mio_icif_block_entities.INDUCTION_ELC_ENTITY_TYPE.get());
         Singularity_Iteration.LOGGER.debug("Registered EU energy, item handler and HU heat capabilities for Induction Furnace");
 
         // Register capabilities for Matter Fabricator (UU物质生成机)

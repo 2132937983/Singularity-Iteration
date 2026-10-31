@@ -77,6 +77,14 @@ public final class Round1111GameTests {
             }
             if (name.startsWith("item_tool_quantum") && !(model.has("display") && model.getAsJsonObject("display").has("gui")))
                 problems.add(name + " has no gui transform");
+            // 0.1.10.42 (from the removed Round1104 test): textures exist, the active/hyper overrides stay, no keys 1.21.1 ignores
+            if (model.has("textures")) for (var t : model.getAsJsonObject("textures").entrySet()) {
+                var tex = net.minecraft.resources.ResourceLocation.parse(t.getValue().getAsString());
+                if (!Round180GameTests.modResourceExists("assets/" + tex.getNamespace() + "/textures/" + tex.getPath() + ".png")) problems.add(name + " texture " + tex);
+            }
+            if (name.equals("item_tool_nanosaber") && !json.contains("mio_icif:nanosaber_active")) problems.add(name + " lost its active override");
+            if (name.equals("item_tool_quantum_sword") && !json.contains("mio_icif:quantum_sword_hyper")) problems.add(name + " lost its hyper override");
+            if (json.contains("light_emission") || json.contains("on_shelf")) problems.add(name + " keeps keys 1.21.1 does not read");
         }
         if (Round33GameTests.resource("/assets/mio_icif/models/item/3d/weapon/nanosaber.json") != null) problems.add("models/item/3d is still there");
         h.assertTrue(problems.isEmpty(), "sword models: " + problems);
@@ -194,8 +202,11 @@ public final class Round1111GameTests {
 
     // ------------------------------------------------------------------ items 7 to 9
 
-    /** The landing spot is the ground below the post; water below or no ground within 8 blocks: no landing. */
-    @GameTest(batch = "round1111_wingman", template = "empty", timeoutTicks = 20)
+    /**
+     * The landing spot is the ground below the post; water below or no ground within 8 blocks: no landing. Sky access: without
+     * it the test is closed by a barrier ceiling at relative y=4, where the posts are.
+     */
+    @GameTest(batch = "round1111_wingman", template = "empty", timeoutTicks = 20, skyAccess = true)
     public static void wingmanFindsItsLandingSpot(GameTestHelper h) {
         Entity wingman = BuiltInRegistries.ENTITY_TYPE.get(rl("wingman")).create(h.getLevel());
         h.assertTrue(wingman != null, "no wingman entity type");

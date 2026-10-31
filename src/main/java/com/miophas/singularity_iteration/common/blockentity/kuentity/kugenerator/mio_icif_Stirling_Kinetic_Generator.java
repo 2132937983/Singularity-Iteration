@@ -324,10 +324,7 @@ public class mio_icif_Stirling_Kinetic_Generator extends AbstractKineticBlockEnt
 
             BlockPos neighborPos = worldPosition.relative(direction);
             IMioIcifCapabilities.IHeatStorage heatStorage = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(this, IMioIcifCapabilities.HEAT_STORAGE_BLOCK, direction);
-            if (heatStorage == null) {
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                heatStorage = MioIcifAPI.instance().getCapabilities().adaptHeatStorage(neighborBe);
-            }
+            if (heatStorage == null) heatStorage = com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.undeclared(level, neighborPos);
             if (heatStorage == null || !heatStorage.canExtractHeat()) {
                 continue;
             }

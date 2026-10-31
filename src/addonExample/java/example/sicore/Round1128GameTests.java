@@ -279,7 +279,7 @@ public final class Round1128GameTests {
             h.assertTrue(!written.isEmpty(), "no written card");
             ItemStack given = written.copy();
             written.setCount(0);
-            friend.getInventory().add(given);
+            friend.getInventory().add(given.copy());   // add() empties the stack it is given; keep `given` readable below
             h.assertTrue((int) call(be, "levelOf", friend) == 2, "the delegate card gives " + call(be, "levelOf", friend));
             // an edited copy (level 3, same signature) in the stranger's hand gives nothing
             Object data = call(cards, "data", given);

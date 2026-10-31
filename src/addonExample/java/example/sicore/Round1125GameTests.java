@@ -350,7 +350,7 @@ public final class Round1125GameTests {
         try {
             Class<?> type = common("menu.producer.FutureElcMenu");
             AbstractContainerMenu menu = (AbstractContainerMenu) type.getConstructor(int.class, Inventory.class).newInstance(1, player.getInventory());
-            h.assertTrue(menu.slots.size() == 1 + 18 + 36, "menu slots " + menu.slots.size());
+            h.assertTrue(menu.slots.size() == 1 + 18 + 36 + 1, "menu slots " + menu.slots.size());   // + the settlement slot (0.1.10.27)
             player.getInventory().setItem(0, new ItemStack(item, 7));                 // hotbar
             player.getInventory().setItem(9, new ItemStack(item, 20));                // main inventory
             player.getInventory().setItem(10, new ItemStack(Items.BARRIER, 3));

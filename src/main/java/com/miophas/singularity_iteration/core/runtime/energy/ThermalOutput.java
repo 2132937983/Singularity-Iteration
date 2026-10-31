@@ -2,7 +2,9 @@
 package com.miophas.singularity_iteration.core.runtime.energy;
 
 import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilities;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -21,7 +23,22 @@ public final class ThermalOutput {
         var target = com.miophas.singularity_iteration.core.runtime.NeighbourCaps.get(owner, IMioIcifCapabilities.HEAT_STORAGE_BLOCK, facing);
         if (target != null) return target;
         var tile = chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
-        return tile instanceof IMioIcifCapabilities.IHeatStorage heat ? heat : null;
+        return tile instanceof IMioIcifCapabilities.IHeatStorage heat && !declaresHeat(level, pos) ? heat : null;
+    }
+
+    /** Whether the block at {@code pos} registers a heat capability (it then decides itself which faces are open). */
+    public static boolean declaresHeat(Level level, BlockPos pos) {
+        return level.getCapability(IMioIcifCapabilities.HEAT_STORAGE_BLOCK, pos, null) != null;
+    }
+
+    /**
+     * 0.1.10.42: the block entity at {@code pos} as heat storage, only when its block registers no heat capability at all (a block
+     * of another mod that implements the interface); else null. A block whose capability refuses a face keeps that face closed:
+     * before, this fallback reached the block entity past the capability and heat went in or out on every face.
+     */
+    public static IMioIcifCapabilities.IHeatStorage undeclared(Level level, BlockPos pos) {
+        if (declaresHeat(level, pos)) return null;
+        return com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getCapabilities().adaptHeatStorage(level.getBlockEntity(pos));
     }
     public static long room(IMioIcifCapabilities.IHeatStorage target) {
         if (target == null || !target.canReceiveHeat()) return 0;

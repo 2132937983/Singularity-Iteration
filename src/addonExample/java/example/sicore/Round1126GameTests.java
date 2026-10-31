@@ -87,7 +87,12 @@ public final class Round1126GameTests {
     }
 
     private static BountySpec spec(BountyTier tier, String item, long count, List<BountyReward> rewards) {
-        return new BountySpec(tier, List.of(new BountyNeed(item, count, 0)), rewards, 0, BountySplit.FIRST, 0);
+        return spec(tier, item, count, rewards, 0);
+    }
+
+    /** {@code share}: the most one player may deliver (0 = the tier's setting; the GameTest server counts as multiplayer). */
+    private static BountySpec spec(BountyTier tier, String item, long count, List<BountyReward> rewards, double share) {
+        return new BountySpec(tier, List.of(new BountyNeed(item, count, 0)), rewards, 0, BountySplit.FIRST, share);
     }
 
     // ------------------------------------------------------------------ post, deliver, pay
@@ -99,8 +104,9 @@ public final class Round1126GameTests {
         MinecraftServer server = h.getLevel().getServer();
         ServerPlayer player = h.makeMockServerPlayerInLevel();
         Object d = data(server);
+        // a player share of 1: on the multiplayer GameTest server an advanced bounty takes at most half from one player otherwise
         long id = ExchangeApi.postBounty(server, spec(BountyTier.ADVANCED, "minecraft:cobblestone", 8,
-            List.of(BountyReward.coins(500), BountyReward.uu(100))));
+            List.of(BountyReward.coins(500), BountyReward.uu(100)), 1.0));
         try {
             h.assertTrue(id > 0 && find(server, id) != null, "the API bounty was not posted: " + id);
             player.getInventory().add(new ItemStack(Items.COBBLESTONE, 8));
@@ -144,7 +150,10 @@ public final class Round1126GameTests {
 
     // ------------------------------------------------------------------ market rules
 
-    /** While a normal bounty needs a commodity the market does not sell it; reserved treasury rewards come back on cancel. */
+    /**
+     * While a normal bounty needs a commodity the market sells it no cheaper than the bounty pays per item (0.1.10.33; it stopped
+     * selling it before); reserved treasury rewards come back on cancel.
+     */
     @GameTest(batch = "round1126_bounty", template = "empty", timeoutTicks = 20)
     public static void supplyBlockAndReservedRewards(GameTestHelper h) {
         MinecraftServer server = h.getLevel().getServer();
@@ -156,17 +165,24 @@ public final class Round1126GameTests {
         Long rewardStock = treasury.get(reward);
         treasury.put(reward, 10L);
         long supplyBefore = (long) call(service, "supply", d, commodity, day);
+        // the market may run its own bounty for wheat (a daily normal bounty): compare with the floor it already sets
+        long floorBefore = (long) call(call(service, "market", server, commodity), "bountyFloor");
         long id = ExchangeApi.postBounty(server, spec(BountyTier.NORMAL, commodity, 32,
-            List.of(BountyReward.item(reward, 4, BountyReward.Source.TREASURY))));
+            List.of(BountyReward.item(reward, 4, BountyReward.Source.TREASURY), BountyReward.coins(320))));
         try {
             h.assertTrue(id > 0, "not posted");
-            h.assertTrue((long) call(service, "supply", d, commodity, day) == 0, "the market still sells the requested commodity");
+            Object open = call(service, "market", server, commodity);
+            long floor = (long) call(open, "bountyFloor");
+            h.assertTrue(floor >= 10, "the bounty sets no price floor: " + floor + " (the coins alone pay 10 per item)");
+            h.assertTrue((long) call(service, "askOne", d, open) >= floor, "the market sells below the bounty's floor");
+            h.assertTrue((long) call(service, "supply", d, commodity, day) == supplyBefore, "the bounty stopped the supply");
             h.assertTrue(treasury.getOrDefault(reward, 0L) == 6, "4 circuits were not reserved: " + treasury.get(reward));
         } finally {
             ExchangeApi.cancelBounty(server, id);
         }
         h.assertTrue(treasury.getOrDefault(reward, 0L) == 10, "the reserved circuits did not come back: " + treasury.get(reward));
-        h.assertTrue((long) call(service, "supply", d, commodity, day) == supplyBefore, "the supply did not come back");
+        long floorAfter = (long) call(call(service, "market", server, commodity), "bountyFloor");
+        h.assertTrue(floorAfter == floorBefore, "the floor is " + floorAfter + " after the cancel, " + floorBefore + " before the bounty");
         if (rewardStock == null) treasury.remove(reward); else treasury.put(reward, rewardStock);
         h.succeed();
     }

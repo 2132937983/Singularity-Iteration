@@ -4,6 +4,8 @@ import java.lang.reflect.Proxy;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.gametest.framework.AfterBatch;
+import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -126,13 +128,32 @@ public final class Round1120GameTests {
         });
     }
 
-    /** A source feeding a drained sink is a steady window: its allocation is replayed instead of computed. */
+    // load priority, the early end of a full window and the replay of a steady plan exist only in the fair distribution;
+    // the addon test server runs the legacy walk (build.gradle), so this batch switches to fair as FairGridGameTests does
+    @BeforeBatch(batch = "round1120_steady")
+    public static void fairOnSteady(ServerLevel level) { System.setProperty("scex.independent.distribution", "fair"); }
+
+    @AfterBatch(batch = "round1120_steady")
+    public static void fairOffSteady(ServerLevel level) { System.setProperty("scex.independent.distribution", "legacy"); }
+
+    /**
+     * A source feeding a drained sink is a steady window: its allocation is replayed instead of computed. 0.1.10.42: the circuit
+     * stands in a force-loaded Nether chunk. The engine plans a dimension as one grid, and energy blocks other tests leave in
+     * the overworld (generators running by day, machines switching) broke the single-window plan now and then (a flaky test).
+     */
     @GameTest(batch = "round1120_steady", template = "reactor", timeoutTicks = 120)
     public static void steadyWindowIsReplayed(GameTestHelper h) {
-        BlockPos sourcePos = new BlockPos(1, 2, 2), cable = sourcePos.east(), sinkPos = cable.east();
-        h.setBlock(sourcePos, CoreExampleMod.SOURCE.get()); h.setBlock(sinkPos, CoreExampleMod.SINK.get());
-        h.setBlock(cable, block("wiring/cable/block_tin_cable_1"));
-        InheritedSource source = h.getBlockEntity(sourcePos); InheritedSink sink = h.getBlockEntity(sinkPos);
+        ServerLevel nether = h.getLevel().getServer().getLevel(Level.NETHER);
+        h.assertTrue(nether != null, "no Nether");
+        BlockPos sourcePos = new BlockPos(4_200, 70, 4_200), cable = sourcePos.east(), sinkPos = cable.east();
+        nether.getChunk(sourcePos);   // loads (and generates) the chunk now
+        nether.setChunkForced(sourcePos.getX() >> 4, sourcePos.getZ() >> 4, true);
+        nether.setBlock(sourcePos, CoreExampleMod.SOURCE.get().defaultBlockState(), 3);
+        nether.setBlock(sinkPos, CoreExampleMod.SINK.get().defaultBlockState(), 3);
+        nether.setBlock(cable, block("wiring/cable/block_tin_cable_1"), 3);
+        InheritedSource source = (InheritedSource) nether.getBlockEntity(sourcePos);
+        InheritedSink sink = (InheritedSink) nether.getBlockEntity(sinkPos);
+        h.assertTrue(source != null && sink != null, "the Nether circuit has no block entities");
         Object engine = engine(h);
         long[] seen = new long[2];
         int[] tick = {0};
@@ -146,9 +167,10 @@ public final class Round1120GameTests {
             if (now == 30) seen[0] = ((long[]) call(engine, "gridReuseCounters"))[2];
             if (now == 81) {
                 long replays = ((long[]) call(engine, "gridReuseCounters"))[2] - seen[0];
+                for (var p : java.util.List.of(sourcePos, cable, sinkPos)) nether.setBlock(p, Blocks.AIR.defaultBlockState(), 3);
+                nether.setChunkForced(sourcePos.getX() >> 4, sourcePos.getZ() >> 4, false);
                 h.assertTrue(replays >= 20, "steady windows replayed: " + replays);
                 h.assertTrue(seen[1] >= 45, "the replayed window did not deliver every tick: " + seen[1]);
-                for (var p : java.util.List.of(sourcePos, cable, sinkPos)) h.setBlock(p, Blocks.AIR);
             }
             if (now == 90) h.succeed();
         });

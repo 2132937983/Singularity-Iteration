@@ -106,8 +106,10 @@ public final class CropAudit181GameTests {
         var machine = (AbstractEnergyBlockEntity) h.getBlockEntity(machinePos);
         machine.getEnergyStorageInternal().setEnergy(5000);
         var inv = h.getLevel().getCapability(Capabilities.ItemHandler.BLOCK, h.absolutePos(machinePos), Direction.WEST);
-        // 14 full slots and one slot with 63 dirt: not "full", but no room for wheat
-        for (int slot = 0; slot < 15; slot++) inv.insertItem(slot, new ItemStack(Items.DIRT, slot == 14 ? 63 : 64), false);
+        // 14 full slots and one slot with 63 dirt: not "full", but no room for wheat. The storage slots are output slots, which
+        // refuse inserts through the capability: fill them directly
+        var storage = (net.neoforged.neoforge.items.IItemHandlerModifiable) ((com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity) machine).getItemHandler();
+        for (int slot = 0; slot < 15; slot++) storage.setStackInSlot(slot, new ItemStack(Items.DIRT, slot == 14 ? 63 : 64));
         IPlanter crop = crop(h, new BlockPos(3, 2, 2), "crop/stick", "wheat", 7);
         crop.setYield(31);
         h.getLevel().random.setSeed(4242);

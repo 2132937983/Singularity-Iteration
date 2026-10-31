@@ -94,6 +94,8 @@ public final class DataIntegrityGameTests {
                         if (ref.startsWith("#")) continue;    // nested tags: checked by Minecraft, optional where foreign
                         ResourceLocation id = ResourceLocation.parse(ref);
                         boolean known = registry.containsKey(id);
+                        // the trinkets are registered only with Curios (CuriosIntegration); their optional entries wait for it
+                        if (!known && !required && id.getPath().startsWith("item_trinket_") && !net.neoforged.fml.ModList.get().isLoaded("curios")) continue;
                         // vanilla ids must always resolve; our own ids too, even when marked optional
                         if (!known && (required || id.getNamespace().equals("mio_icif") || id.getNamespace().equals("minecraft")))
                             problems.add(where + " -> " + ref + (required ? " (REQUIRED: would void the tag)" : " (optional, dead entry)"));

@@ -41,8 +41,11 @@ public final class MachineRecoveryGameTests {
         var data = drops.getFirst().get(DataComponents.BLOCK_ENTITY_DATA);
         h.assertTrue(data != null && data.copyTag().getLong("energy") == 1234, "Wrenched machine lost its stored energy");
 
+        // without a wrench the drop follows the recipe (0.1.8.0): a recipe with no hull gives the machine back, without its data,
+        // so the stored energy is lost
         var plain = Block.getDrops(state, h.getLevel(), h.absolutePos(pos), machine, null, new ItemStack(Items.IRON_PICKAXE));
-        h.assertTrue(plain.size() == 1 && !plain.getFirst().is(polymerizer.asItem()), "Without a wrench a machine yields its hull");
+        h.assertTrue(!plain.isEmpty() && plain.stream().noneMatch(s -> s.has(DataComponents.BLOCK_ENTITY_DATA)),
+            "Without a wrench the machine kept its data: " + plain);
         h.succeed();
     }
 }

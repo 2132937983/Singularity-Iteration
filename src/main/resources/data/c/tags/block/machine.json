@@ -573,7 +573,10 @@
       "id": "mio_icif:producer/block_quantum_modification_station",
       "required": false
     },
-    "mio_icif:producer/block_blueprint_builder",
+    {
+      "id": "mio_icif:producer/block_blueprint_builder",
+      "required": false
+    },
     {
       "id": "mio_icif:generator/block_steam_reactor",
       "required": false

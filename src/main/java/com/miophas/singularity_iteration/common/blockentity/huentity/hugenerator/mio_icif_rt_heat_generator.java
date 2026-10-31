@@ -75,6 +75,13 @@ private int currentHeatRate = 0;
     /**
      * 每tick更新逻辑
      */
+    /** 0.1.10.42: the heat is offered on the front face only (where the machine it heats sits). */
+    @Nullable
+    @Override
+    public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
+        return side == null || side == getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING) ? this : null;
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_rt_heat_generator blockEntity) {
         if (level.isClientSide()) {
             return;
@@ -146,8 +153,7 @@ private int currentHeatRate = 0;
         IMioIcifCapabilities.IHeatStorage frontHeat = level.getCapability(
                 IMioIcifCapabilities.HEAT_STORAGE_BLOCK, frontPos, facing.getOpposite());
         if (frontHeat == null) {
-            frontHeat = MioIcifAPI.instance().getCapabilities().adaptHeatStorage(
-                level.getBlockEntity(frontPos));
+            frontHeat = com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.undeclared(level, frontPos);
         }
 
         if (frontHeat != null && frontHeat.canReceiveHeat()) {

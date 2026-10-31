@@ -111,7 +111,9 @@ public final class WingmanTactics {
         double toOwner = Math.sqrt(e.distanceToSqr(guard));
         if (e instanceof Enemy) score += 20;
         else if (!called && !attacker && !hunter) return Double.NEGATIVE_INFINITY;   // a neutral mob is a target only when it fights
-        if (called) score += marked ? 90 : 120;
+        // 0.1.10.42: the owner's call outweighs a fusing creeper beside the owner (up to about 210 before the distance terms), as the
+        // class comment ranks it; it was 120, so every Wingman left the owner's target for the creeper. The sight mark stays 90.
+        if (called) score += marked ? 90 : 240;
         if (attacker) score += 70;
         if (hunter) score += 35;
         if (hunter && e instanceof RangedAttackMob) score += 18;

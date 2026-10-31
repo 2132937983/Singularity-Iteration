@@ -28,6 +28,8 @@ public final class ArbitrageAudit {
     private ArbitrageAudit() {}
 
     public static final int PASSES = 40;
+    /** A cycle cost below this (from 1 per base input) can only come from a cycle that multiplies its items; it stops there. */
+    private static final double COLLAPSED = 1e-200;
 
     /** One recipe: {@code inputs} holds one set of accepted items per consumed item. */
     public record Recipe<T>(String id, T output, int count, List<Set<T>> inputs, double extraCost, double energy) { }
@@ -114,6 +116,7 @@ public final class ArbitrageAudit {
         Map<T, Double> cost = new HashMap<>();
         for (Recipe<T> r : recipes) for (Set<T> slot : r.inputs()) for (T i : slot) if (!made.contains(i)) cost.put(i, 1.0);
         Map<T, Double> before = null;
+        Set<T> collapsed = new HashSet<>();
         for (int pass = 0; pass < 60; pass++) {
             if (pass == 49) before = new HashMap<>(cost);
             for (Recipe<T> r : recipes) {
@@ -125,10 +128,15 @@ public final class ArbitrageAudit {
                     if (Double.isInfinite(total)) break;
                 }
                 double each = total / r.count();
-                if (each < cost.getOrDefault(r.output(), Double.POSITIVE_INFINITY) - 1e-15) cost.put(r.output(), each);
+                // 0.1.10.42: a relative step. The old absolute one (1e-15) froze the costs of a strong cycle (x10 a pass) after
+                // about 15 passes, so pass 49 matched pass 60 and the cycle was not reported
+                if (each < cost.getOrDefault(r.output(), Double.POSITIVE_INFINITY) * (1 - 1e-9)) {
+                    if (each < COLLAPSED) collapsed.add(r.output());   // far below any real cost: only a multiplying cycle gets here
+                    cost.put(r.output(), Math.max(each, COLLAPSED));
+                }
             }
         }
-        Set<T> falling = new HashSet<>();
+        Set<T> falling = new HashSet<>(collapsed);
         for (Map.Entry<T, Double> e : cost.entrySet()) {
             Double then = before.get(e.getKey());
             if (then != null && e.getValue() < then * 0.999) falling.add(e.getKey());

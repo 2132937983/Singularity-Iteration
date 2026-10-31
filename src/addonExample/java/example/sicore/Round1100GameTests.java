@@ -133,6 +133,7 @@ public final class Round1100GameTests {
         int wallX = origin.getX() + 3;
         for (int y = 0; y <= 3; y++) for (int z = -2; z <= 2; z++) h.getLevel().setBlock(new BlockPos(wallX, origin.getY() + y, origin.getZ() + z), Blocks.STONE.defaultBlockState(), 3);
         p.teleportTo(h.getLevel(), origin.getX() + 0.5, origin.getY(), origin.getZ() + 0.5, -90F, 0F);     // facing east
+        p.setYHeadRot(-90F);   // the blink aims with the head; a mock player never copies the body rotation to the head
         ItemStack legs = charged("armor/item_armor_quantum_leggings");
         install(legs, "PHASE_JUMP_DRIVE", 1);
         p.setItemSlot(EquipmentSlot.LEGS, legs);

@@ -53,6 +53,18 @@ public final class RestartPersistenceGameTests {
         }
     }
 
+    /** True when the menu opens for {@code player} and accepts them (a machine with access rules may refuse a stranger). */
+    private static boolean acceptsPlayer(MenuProvider fromState, BlockEntity entity, net.minecraft.world.entity.player.Player player) {
+        MenuProvider provider = fromState != null ? fromState : entity instanceof MenuProvider mp ? mp : null;
+        if (provider == null) return false;
+        try {
+            var menu = provider.createMenu(0, player.getInventory(), player);
+            return menu != null && menu.stillValid(player);
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     @GameTest(template = "empty", batch = "recovery", timeoutTicks = 200)
     public static void everyMachineSurvivesRestartWithoutReplacing(GameTestHelper h) {
         BlockPos rel = new BlockPos(1, 1, 1);
@@ -81,6 +93,9 @@ public final class RestartPersistenceGameTests {
                 if (placed == null) continue;   // e.g. blocks that only create entities on demand
                 checked++;
                 boolean hadMenu = createsMenu(level.getBlockState(abs).getMenuProvider(level, abs), placed, player);
+                // 0.1.10.42: only a menu that accepted the player before the reload must accept them after it (the Trade Terminal
+                // placed without an owner refuses a stranger before and after)
+                boolean acceptedBefore = hadMenu && acceptsPlayer(level.getBlockState(abs).getMenuProvider(level, abs), placed, player);
 
                 CompoundTag saved = placed.saveWithFullMetadata(registries);
                 BlockState liveState = level.getBlockState(abs);
@@ -113,7 +128,7 @@ public final class RestartPersistenceGameTests {
                         try {
                             var menu = provider.createMenu(1, player.getInventory(), player);
                             if (menu == null) failures.add(id + ": GUI could not be created after reload");
-                            else if (!menu.stillValid(player)) failures.add(id + ": GUI rejected the player after reload");
+                            else if (acceptedBefore && !menu.stillValid(player)) failures.add(id + ": GUI rejected the player after reload");
                         } catch (RuntimeException e) {
                             failures.add(id + ": GUI threw after reload: " + e);
                         }

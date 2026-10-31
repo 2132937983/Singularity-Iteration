@@ -116,6 +116,7 @@ public class mio_icif_steam_repressurizer extends AbstractHeatBlockEntity {
         if (level == null) return;
         long remaining = aim;
         for (Direction side : Direction.values()) {
+            if (side == front()) continue;
             BlockPos neighbour = worldPosition.relative(side);
             if (!level.hasChunkAt(neighbour)) continue;
             var source = level.getCapability(IMioIcifCapabilities.HEAT_STORAGE_BLOCK,
@@ -173,9 +174,12 @@ public class mio_icif_steam_repressurizer extends AbstractHeatBlockEntity {
     @Override public long receiveHeat(long amount, boolean simulate) { return 0; }
     @Override public boolean canReceiveHeat() { return false; }
     @Override public boolean isOverheated() { return false; }
+    /** 0.1.10.42: heat enters on every face but the front. */
     @Override public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
-        return this;
+        return side == null || side != front() ? this : null;
     }
+
+    private Direction front() { return getBlockState().getValue(mio_icif_block_steam_repressurizer.FACING); }
     public IItemHandler getItemHandlerCapability(@Nullable Direction side) { return itemHandler; }
     @Override public IFluidHandler getFluidHandlerCapability(@Nullable Direction side) {
         return combinedFluidHandler;

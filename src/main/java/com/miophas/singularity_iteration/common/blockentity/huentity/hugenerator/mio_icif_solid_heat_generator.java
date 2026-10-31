@@ -132,8 +132,7 @@ public class mio_icif_solid_heat_generator extends com.miophas.singularity_itera
         IMioIcifCapabilities.IHeatStorage adjacentHeat = level.getCapability(
                 IMioIcifCapabilities.HEAT_STORAGE_BLOCK, adjacentPos, facing.getOpposite());
         if (adjacentHeat == null) {
-            adjacentHeat = MioIcifAPI.instance().getCapabilities().adaptHeatStorage(
-                level.getBlockEntity(adjacentPos));
+            adjacentHeat = com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.undeclared(level, adjacentPos);
         }
 
         if (adjacentHeat != null && adjacentHeat.canReceiveHeat()) {
@@ -153,8 +152,7 @@ public class mio_icif_solid_heat_generator extends com.miophas.singularity_itera
         IMioIcifCapabilities.IHeatStorage adjacentHeat = level.getCapability(
                 IMioIcifCapabilities.HEAT_STORAGE_BLOCK, adjacentPos, facing.getOpposite());
         if (adjacentHeat == null) {
-            adjacentHeat = MioIcifAPI.instance().getCapabilities().adaptHeatStorage(
-                level.getBlockEntity(adjacentPos));
+            adjacentHeat = com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.undeclared(level, adjacentPos);
         }
 
         if (adjacentHeat != null && adjacentHeat.canReceiveHeat()) {
@@ -394,10 +392,11 @@ public class mio_icif_solid_heat_generator extends com.miophas.singularity_itera
 
     // ==================== Getter 方法 ====================
 
+    /** 0.1.10.42: the heat is offered on the front face only (where the machine it heats sits). */
     @Nullable
     @Override
     public IMioIcifCapabilities.IHeatStorage getHeatStorageCapability(@Nullable Direction side) {
-        return null;
+        return side == null || side == getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING) ? this : null;
     }
 
     /**

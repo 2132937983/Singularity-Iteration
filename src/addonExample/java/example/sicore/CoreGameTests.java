@@ -403,6 +403,8 @@ public final class CoreGameTests {
         }
         helper.assertTrue(UuQuoteBook.generation(server) == -1 && UuQuoteBook.quote(server, new ItemStack(Items.CLAY)) == null,
             "Server-bound UU state was not released");
+        // 0.1.10.42: publish the real prices again; later tests (replication lists, market fundamentals) read them
+        Round33GameTests.call(Round33GameTests.common("processing.UuPricingLifecycle"), "rebuild", server);
         helper.succeed();
     }
 }

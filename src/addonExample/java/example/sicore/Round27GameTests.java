@@ -168,14 +168,13 @@ public final class Round27GameTests {
         for (String lang : List.of("en_us", "zh_cn", "ja_jp")) {
             String text = read("assets", "mio_icif", "lang", lang + ".json");
             h.assertTrue(!text.matches("(?s).*EU/[pP]\\b.*"), lang + " no longer uses the EU/p unit");
-            h.assertTrue(text.contains("gui.mio_icif.equipment_console.appearance.experimental"), lang + " names the Experimental style");
+            // 0.1.10.42: the Experimental style and its keys were removed in 0.1.10.24 (Round1124GameTests checks they are gone)
         }
         var en = com.google.gson.JsonParser.parseString(read("assets", "mio_icif", "lang", "en_us.json")).getAsJsonObject();
         var zh = com.google.gson.JsonParser.parseString(read("assets", "mio_icif", "lang", "zh_cn.json")).getAsJsonObject();
         h.assertTrue(en.size() > 2100 && zh.size() > 2100, "Language files did not lose keys (en " + en.size() + ", zh " + zh.size() + ")");
         List<String> missing = en.keySet().stream().filter(k -> !zh.has(k)).toList();
         h.assertTrue(missing.size() <= 2, "zh_cn covers en_us, missing " + missing);
-        h.assertTrue(en.get("gui.mio_icif.equipment_console.appearance.default").getAsString().equalsIgnoreCase("default"), "Default style name");
         h.succeed();
     }
 

@@ -5,12 +5,16 @@ package com.miophas.singularity_iteration.core.api.energy.grid;
  * <p><b>EN:</b> Priority of a load or a storage block when the grid has too little energy (public API since
  * 0.1.10.22). The grid serves the critical tier first, then the normal tier, then the deferrable tier: a shortage
  * stops the deferrable loads first and the critical loads last. The player sets the priority at the energy
- * management terminal; the default is {@link #NORMAL}. With only normal loads, the grid shares as before.
+ * management terminal; the default is {@link #NORMAL}. With only normal loads, the grid shares as before. Priority
+ * needs the fair distribution (the default); with {@code distributionMode = legacy} in the server config the grid
+ * walks the loads in a random order and ignores it.
  * <p><b>ZH:</b> 电力不足时用电器或储能的优先级（0.1.10.22 起的公共 API）。电网先满足重要级，再满足普通级，最后满足可延后级：
  * 电力不足时先停可延后的负荷，最后才停重要负荷。玩家在能源管理终端设置优先级，默认为 {@link #NORMAL}。全部为普通级时，分配与此前相同。
+ * 优先级需要公平分配（默认）；服务器配置为 {@code distributionMode = legacy} 时，电网按随机顺序遍历负荷，忽略优先级。
  * <p><b>JA:</b> 電力が足りないときの負荷や蓄電の優先度（0.1.10.22 以降の公開 API）。電力網は重要、次に通常、最後に後回しの順に満たす。
  * 電力不足では後回しの負荷から止まり、重要な負荷は最後に止まる。プレイヤーはエネルギー管理端末で優先度を設定する。既定は {@link #NORMAL}。
- * すべて通常なら、配分は以前と同じ。
+ * すべて通常なら、配分は以前と同じ。優先度には公平配分（既定）が必要で、サーバー設定が {@code distributionMode = legacy} のとき
+ * 電力網は負荷をランダムな順に回り、優先度を無視する。
  */
 public enum LoadPriority {
     /**

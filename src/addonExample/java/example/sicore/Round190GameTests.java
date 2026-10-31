@@ -96,14 +96,15 @@ public final class Round190GameTests {
         for (String[] row : LEGACY) {
             ItemStack shell = Round33GameTests.item(row[0]);
             if (!(boolean) Round33GameTests.call(legacy, "isLegacy", shell)) { problems.add(row[0] + " is not a shell"); continue; }
-            shell.set(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(1_234_567L, 100_000_000L));
+            // below the 1,000,000 EU of the nano helmet the advanced solar helmet becomes (its old capacity was 1,000,000 too)
+            shell.set(CoreDataComponents.BATTERY_ENERGY.get(), new BatteryEnergy(765_432L, 100_000_000L));
             shell.set(DataComponents.CUSTOM_NAME, Component.literal("Old Faithful"));
             Object result = Round33GameTests.call(legacy, "convert", shell);
             ItemStack out = (ItemStack) Round33GameTests.call(result, "stack");
             if (!id(out).equals(row[1])) problems.add(row[0] + " -> " + id(out));
             if (row[2] == null) continue;
             if (!row[2].equals(coreOf(out))) problems.add(row[0] + " core " + coreOf(out));
-            if (energy(out) != 1_234_567L) problems.add(row[0] + " energy " + energy(out));
+            if (energy(out) != 765_432L) problems.add(row[0] + " energy " + energy(out));
             if (!out.has(DataComponents.CUSTOM_NAME)) problems.add(row[0] + " lost its name");
         }
         h.assertTrue(problems.isEmpty(), "legacy conversion: " + problems);
@@ -238,6 +239,8 @@ public final class Round190GameTests {
         coreTick(p);
         p.setHealth(20);
         p.invulnerableTime = 0;
+        // a real 12-block fall: below 3 blocks of fall distance the jetpack safety net cancels the fall, whatever the anchor does
+        p.fallDistance = 12;
         p.causeFallDamage(12, 1, p.damageSources().fall());
         float afterFall = p.getHealth();
         p.setDeltaMovement(Vec3.ZERO);
@@ -247,6 +250,7 @@ public final class Round190GameTests {
         ArmorFeatures.setEnabled(p.getItemBySlot(EquipmentSlot.CHEST), "core_anchor", false);
         coreTick(p);
         p.invulnerableTime = 0;
+        p.fallDistance = 12;
         p.causeFallDamage(12, 1, p.damageSources().fall());
         float unanchored = p.getHealth();
         Round33GameTests.remove(p);
@@ -298,17 +302,20 @@ public final class Round190GameTests {
         int day = (int) Round33GameTests.call(cores, "solarRate", h.getLevel(), p, core("solar_array_3"));
         h.getLevel().setDayTime(18000);
         int night = (int) Round33GameTests.call(cores, "solarRate", h.getLevel(), p, core("solar_array_3"));
-        h.getLevel().setBlockAndUpdate(head.above(2), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
-        h.getLevel().setDayTime(6000);
-        int roofed = (int) Round33GameTests.call(cores, "solarRate", h.getLevel(), p, core("solar_array_3"));
-        h.getLevel().setBlockAndUpdate(head.above(2), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
-        Round33GameTests.remove(p);
-        if (sky && !h.getLevel().isRaining()) {
-            h.assertTrue(day == 512, "day rate " + day);
-            h.assertTrue(night == 64, "night rate " + night);
-        }
-        h.assertTrue(roofed == 0, "a roof still lets the array generate: " + roofed);
-        h.succeed();
+        // the roof right above the head, inside the test area; the sky light under it is updated a few ticks later
+        h.getLevel().setBlockAndUpdate(head.above(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+        h.runAfterDelay(5, () -> {
+            h.getLevel().setDayTime(6000);
+            int roofed = (int) Round33GameTests.call(cores, "solarRate", h.getLevel(), p, core("solar_array_3"));
+            h.getLevel().setBlockAndUpdate(head.above(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+            Round33GameTests.remove(p);
+            if (sky && !h.getLevel().isRaining()) {
+                h.assertTrue(day == 512, "day rate " + day);
+                h.assertTrue(night == 64, "night rate " + night);
+            }
+            h.assertTrue(roofed == 0, "a roof still lets the array generate: " + roofed);
+            h.succeed();
+        });
     }
 
     // ------------------------------------------------------------------ assets

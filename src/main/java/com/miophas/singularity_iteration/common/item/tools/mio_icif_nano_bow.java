@@ -187,7 +187,7 @@ public class mio_icif_nano_bow extends mio_icif_tool_elc implements IWeaponItem,
 
     /**
      * Draw progress for the bow model, 0..1 (0.1.8.3): the arrow speed after {@code ticks} of draw
-     * divided by the full speed. It reaches 1 at the tick the shot reaches full power (4 ticks).
+     * divided by the full speed. It reaches 1 at the tick the shot reaches full power (5 ticks; 4.8 of 5 at 4 ticks).
      */
     public static float drawProgress(int ticks) {
         return ticks <= 0 ? 0.0F : getNanoArrowVelocity(ticks) / MAX_VELOCITY;

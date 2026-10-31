@@ -92,7 +92,7 @@ public final class Round1133GameTests {
         Object live = call(service, "market", server, "minecraft:iron_ingot");
         h.assertTrue(live != null && (boolean) call(live, "system"), "iron is no datapack market");
         Object m = make(live.getClass(), call(live, "id"), call(live, "item"), call(live, "currency"), true, call(live, "commodity"),
-            call(live, "price"), call(live, "fundamental"), call(live, "depth"), 100L, 200L, call(live, "depthFactor"), 0L);
+            call(live, "price"), call(live, "fundamental"), call(live, "depth"), 100L, 200L, call(live, "depthFactor"), 0L, call(live, "bidCap"));
         h.assertTrue((boolean) call(service, "limitAllowed", m, false, false, 5L), "an instant sale under the band");
         h.assertTrue(!(boolean) call(service, "limitAllowed", m, false, true, 5L), "a resting sale under the band");
         h.assertTrue(!(boolean) call(service, "limitAllowed", m, true, false, 5L), "a purchase under the band");

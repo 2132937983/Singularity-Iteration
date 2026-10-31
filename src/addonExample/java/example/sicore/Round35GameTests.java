@@ -214,8 +214,8 @@ public final class Round35GameTests {
     public static void nanoItemsUseTheirModelAndBootsFaceForward(GameTestHelper h) {
         List<String> problems = new ArrayList<>();
         for (String piece : new String[]{"helmet", "chestplate", "leggings", "boots"}) {
-            // 0.1.8.3: 3D model in hand and on the ground, flat icon in the inventory
-            String problem = Round183GameTests.splitArmorItemModel("armor/item_armor_nano_" + piece);
+            // 0.1.10.11: the 3D piece everywhere, the inventory included (builtin/entity)
+            String problem = Round183GameTests.bakedArmorItemModel("armor/item_armor_nano_" + piece);
             if (problem != null) problems.add(piece + " " + problem);
         }
         String boots = Round33GameTests.resource("/assets/mio_icif/armor_models/nano_boots.json");

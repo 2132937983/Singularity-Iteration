@@ -6,6 +6,9 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.gametest.framework.AfterBatch;
+import net.minecraft.gametest.framework.BeforeBatch;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -77,6 +80,7 @@ public final class Round1122GameTests {
         boolean[] reset = {false};
         h.onEachTick(() -> {
             int now = ++tick[0];
+            if (now > 380) { if (now == 400) h.succeed(); return; }   // the parts are gone (removed at 380): nothing to read
             Object relay = relay(h, wire);
             String s = state(relay);
             if (now <= 380) source.generate(32);
@@ -103,7 +107,6 @@ public final class Round1122GameTests {
             if (now == 380) {
                 for (var at : List.of(p, wire, load)) h.setBlock(at, Blocks.AIR);
             }
-            if (now == 400) h.succeed();
         });
     }
 
@@ -120,6 +123,7 @@ public final class Round1122GameTests {
         int[] tick = {0};
         h.onEachTick(() -> {
             int now = ++tick[0];
+            if (now > 110) { if (now == 125) h.succeed(); return; }   // the parts are gone (removed at 110): nothing to read
             String s = state(relay(h, wire));
             if (now <= 110) source.generate(32);
             long got = sink.stored();
@@ -139,7 +143,6 @@ public final class Round1122GameTests {
             }
             if (now == 100) h.assertTrue("CLOSED".equals(s) && got > 0, "the restored fuse does not conduct");
             if (now == 110) for (var at : List.of(p, wire, load)) h.setBlock(at, Blocks.AIR);
-            if (now == 125) h.succeed();
         });
     }
 
@@ -177,6 +180,14 @@ public final class Round1122GameTests {
     }
 
     // ------------------------------------------------------------------ G4 load priority
+
+    // load priority, the early end of a full window and the replay of a steady plan exist only in the fair distribution;
+    // the addon test server runs the legacy walk (build.gradle), so this batch switches to fair as FairGridGameTests does
+    @BeforeBatch(batch = "round1122_priority")
+    public static void fairOnPriority(ServerLevel level) { System.setProperty("scex.independent.distribution", "fair"); }
+
+    @AfterBatch(batch = "round1122_priority")
+    public static void fairOffPriority(ServerLevel level) { System.setProperty("scex.independent.distribution", "legacy"); }
 
     /**
      * 32 EU/t for two loads of 32 EU/t: both normal share it; a critical load then takes it all and the deferrable one

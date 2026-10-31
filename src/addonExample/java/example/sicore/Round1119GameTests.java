@@ -89,13 +89,16 @@ public final class Round1119GameTests {
                 if (tank != null) break;
             }
             h.assertTrue(tank != null, path + ": no fluid handler");
+            // the advanced generator burns biogas only (its guide page); the others get a fuel other than biogas, so a screen that
+            // always showed biogas fails
+            boolean biogasOnly = path.equals("generator/block_advanced_semifluid_generator");
             Fluid fuel = null;
             for (Fluid fluid : BuiltInRegistries.FLUID) {
                 if (fluid == Fluids.EMPTY || !fluid.defaultFluidState().isSource()) continue;
-                if (BuiltInRegistries.FLUID.getKey(fluid).getPath().contains("biogas")) continue;
+                if (BuiltInRegistries.FLUID.getKey(fluid).getPath().contains("biogas") != biogasOnly) continue;
                 if (tank.fill(new FluidStack(fluid, 1000), IFluidHandler.FluidAction.SIMULATE) > 0) { fuel = fluid; break; }
             }
-            h.assertTrue(fuel != null, path + ": no fuel other than biogas");
+            h.assertTrue(fuel != null, path + (biogasOnly ? ": takes no biogas" : ": no fuel other than biogas"));
             tank.fill(new FluidStack(fuel, 1000), IFluidHandler.FluidAction.EXECUTE);
             AbstractContainerMenu menu = ((MenuProvider) be).createMenu(1, player.getInventory(), player);
             h.assertTrue(menu != null, path + ": no menu");
@@ -292,7 +295,11 @@ public final class Round1119GameTests {
 
     private static List<BlockPos> build(ServerLevel level, BlockPos origin, StructureBlueprint plan) {
         List<BlockPos> placed = new ArrayList<>();
-        for (StructureBlueprint.Placement p : plan.placements()) {
+        // the controller first, as a player builds: a reactor chamber placed with no reactor beside it drops at once
+        List<StructureBlueprint.Placement> order = new ArrayList<>(plan.placements());
+        BlockPos controller = plan.controllerPos();
+        if (controller != null) order.sort((a, b) -> Boolean.compare(!a.pos().equals(controller), !b.pos().equals(controller)));
+        for (StructureBlueprint.Placement p : order) {
             BlockState state = p.key().blocks().get(0).resolve();
             if (state == null) throw new AssertionError(plan.id() + ": unknown block " + p.key().blocks().get(0).block());
             BlockPos at = origin.offset(p.pos());

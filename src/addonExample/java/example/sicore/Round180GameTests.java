@@ -32,7 +32,8 @@ public final class Round180GameTests {
      */
     @GameTest(template = "empty", batch = "round180_suit")
     public static void quantumSetAbsorbsAllAndSharesEnergy(GameTestHelper h) {
-        ServerPlayer player = h.makeMockServerPlayerInLevel();
+        // a survival player: the mock server player is creative and has join protection, so it takes no damage
+        ServerPlayer player = Round33GameTests.survivalPlayer(h);
         ItemStack[] pieces = equip(player, QUANTUM);
         long[] before = energies(pieces);
         player.hurt(h.getLevel().damageSources().magic(), 10.0F);
@@ -50,26 +51,30 @@ public final class Round180GameTests {
             minRatio = Math.min(minRatio, upper); maxRatio = Math.max(maxRatio, ratio);
         }
         h.assertTrue(maxRatio <= minRatio, "The pool did not split the cost by stored energy");
+        Round33GameTests.remove(player);
         h.succeed();
     }
 
     /** A full nano set absorbs 90 % of a hit, not 99.99 % (the old chained product) and not 40 %. */
     @GameTest(template = "empty", batch = "round180_suit")
     public static void nanoSetAbsorbsNinetyPercent(GameTestHelper h) {
-        ServerPlayer player = h.makeMockServerPlayerInLevel();
+        // a survival player: the mock server player is creative and has join protection, so it takes no damage
+        ServerPlayer player = Round33GameTests.survivalPlayer(h);
         equip(player, NANO);
         float start = player.getHealth();
         player.hurt(h.getLevel().damageSources().magic(), 10.0F);
         float lost = start - player.getHealth();
         // 1.0 without Resistance; 0.8 when the nano chestplate already gave Resistance I.
         h.assertTrue(lost >= 0.7F && lost <= 1.05F, "Full nano set did not absorb 90 %: lost " + lost);
+        Round33GameTests.remove(player);
         h.succeed();
     }
 
     /** With unequal charges, the fuller pieces pay more: each piece pays in proportion to its stored energy. */
     @GameTest(template = "empty", batch = "round180_suit")
     public static void poolPaysInProportionToStoredEnergy(GameTestHelper h) {
-        ServerPlayer player = h.makeMockServerPlayerInLevel();
+        // a survival player: the mock server player is creative and has join protection, so it takes no damage
+        ServerPlayer player = Round33GameTests.survivalPlayer(h);
         ItemStack[] pieces = equip(player, QUANTUM);
         long[] stored = {1_000_000, 3_000_000, 2_000_000, 4_000_000};
         for (int i = 0; i < 4; i++) ((AbstractElectricArmor) pieces[i].getItem()).setEnergy(pieces[i], stored[i]);
@@ -82,6 +87,7 @@ public final class Round180GameTests {
             double expected = (double) total * stored[i] / 10_000_000;
             h.assertTrue(Math.abs(spent[i] - expected) <= 2, "Piece " + i + " paid " + spent[i] + ", expected " + expected);
         }
+        Round33GameTests.remove(player);
         h.succeed();
     }
 
@@ -136,8 +142,8 @@ public final class Round180GameTests {
             if (json == null) { problems.add("model missing: " + pieces[i]); continue; }
             var root = com.google.gson.JsonParser.parseString(json).getAsJsonObject().getAsJsonObject("parts");
             for (String part : parts[i]) if (!root.has(part) || root.getAsJsonArray(part).size() < 6) problems.add(pieces[i] + " lacks " + part);
-            // 0.1.8.3: 3D model in hand and on the ground, flat icon in the inventory
-            String problem = Round183GameTests.splitArmorItemModel("armor/item_armor_quantum_" + pieces[i]);
+            // 0.1.10.11: the 3D piece everywhere, the inventory included (builtin/entity)
+            String problem = Round183GameTests.bakedArmorItemModel("armor/item_armor_quantum_" + pieces[i]);
             if (problem != null) problems.add(pieces[i] + " " + problem);
             var stack = new ItemStack(item("armor/item_armor_quantum_" + pieces[i]));
             if (stack.getItem() instanceof net.minecraft.world.item.ArmorItem armor) {

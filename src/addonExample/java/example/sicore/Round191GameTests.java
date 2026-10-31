@@ -74,7 +74,8 @@ public final class Round191GameTests {
         ItemStack box = two.getCraftingRemainingItem();
         h.assertTrue(BuiltInRegistries.ITEM.getKey(box.getItem()).getPath().equals("normal/item_recovered_parts"), "two stacks: " + box);
         ItemContainerContents contents = box.get(DataComponents.CONTAINER);
-        h.assertTrue(contents != null && contents.nonEmptyItemsCopy().spliterator().getExactSizeIfKnown() == 2, "case contents " + contents);
+        // count the stacks (a filtered iterable reports no exact size: its spliterator size is always -1)
+        h.assertTrue(contents != null && contents.nonEmptyStream().count() == 2, "case contents " + contents);
         h.assertTrue(!Round33GameTests.item("producer/block_powder_elc").hasCraftingRemainingItem(), "a plain machine item has a remainder");
         h.succeed();
     }

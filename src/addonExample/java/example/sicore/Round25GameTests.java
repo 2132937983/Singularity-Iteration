@@ -220,25 +220,17 @@ public final class Round25GameTests {
     // 0.1.10.24: physicalFrontsHaveNoScreen (and its screenPixels helper) removed: it read the refined fronts of the
     // experimental resource pack, which is gone
 
-    /** 0.1.7.26: the dedicated suit models are sealed - Nano / Quantum render with the classic 64x32 armour again. */
+    /**
+     * 0.1.7.26: the sealed suit atlases are not shipped, and (0.1.10.24) neither is the experimental pack. The worn nano and
+     * quantum suits use their Blockbench textures (textures/models/armor, Round34 / Round180 / Round183), not the classic ones.
+     */
     @GameTest(batch = "round25_suits", template = "empty")
-    public static void suitsUseClassicArmourAndClassicPackShips(GameTestHelper h) {
+    public static void sealedSuitAtlasesAndExperimentalPackAreGone(GameTestHelper h) {
         var file = net.neoforged.fml.ModList.get().getModFileById("mio_icif").getFile();
         h.assertTrue(!java.nio.file.Files.exists(file.findResource("assets", "mio_icif", "textures", "armor", "suit", "quantum.png")),
             "The sealed suit atlases are no longer shipped");
         // 0.1.10.24: the built-in experimental pack was removed
         h.assertTrue(!java.nio.file.Files.exists(file.findResource("resourcepacks", "si_experimental", "pack.mcmeta")), "The experimental pack is gone");
-        // 0.1.7.34: the nano suit now has its own Blockbench model and per-piece textures (Round34GameTests)
-        for (String suit : List.of("quantum")) {
-            for (var slot : List.of(net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS)) {
-                String piece = slot == net.minecraft.world.entity.EquipmentSlot.CHEST ? "chestplate" : "leggings";
-                ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(id("armor/item_armor_" + suit + "_" + piece)));
-                var item = (net.minecraft.world.item.ArmorItem) stack.getItem();
-                Object tex = item.getArmorTexture(stack, null, slot, item.getMaterial().value().layers().get(0), slot == net.minecraft.world.entity.EquipmentSlot.LEGS);
-                String want = "textures/armor/" + suit + (slot == net.minecraft.world.entity.EquipmentSlot.LEGS ? "_2" : "_1") + ".png";
-                h.assertTrue(String.valueOf(tex).endsWith(want), suit + " " + piece + " uses the classic texture " + want + ", got " + tex);
-            }
-        }
         h.succeed();
     }
 }

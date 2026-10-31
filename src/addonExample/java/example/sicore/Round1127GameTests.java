@@ -183,8 +183,9 @@ public final class Round1127GameTests {
         MinecraftServer server = h.getLevel().getServer();
         ServerPlayer player = h.makeMockServerPlayerInLevel();
         Object d = data(server);
+        // player share 1: the GameTest server counts as multiplayer, where an advanced bounty takes half from one player
         long id = ExchangeApi.postBounty(server, new BountySpec(BountyTier.ADVANCED, List.of(new BountyNeed("minecraft:cobblestone", 8, 0)),
-            List.of(BountyReward.coins(300)), 0, BountySplit.FIRST, 0));
+            List.of(BountyReward.coins(300)), 0, BountySplit.FIRST, 1.0));
         try {
             h.assertTrue(id > 0, "the bounty was not posted");
             SimpleContainer slot = new SimpleContainer(1);
@@ -219,7 +220,9 @@ public final class Round1127GameTests {
             ((Map<String, Long>) field(d, "treasury")).put(id, 20L);
             player.getInventory().add(new ItemStack(coin(), 64));
             player.getInventory().add(new ItemStack(coin(), 64));
-            long limit = (long) call(service(), "askOne", d, m) + 50;
+            long limit = Math.min((long) call(service(), "askOne", d, m) + 50, (long) call(m, "high"));   // inside the price band
+            // an order holds limit x quantity coins before it matches: the rest beyond the two stacks goes to the coin account
+            if (limit * 4 > 128) ExchangeApi.deposit(server, player.getUUID(), limit * 4 - 128, "test:settlement");
             SimpleContainer slot = new SimpleContainer(1);
             slot.setItem(0, shulker());
             Object st = call(common("exchange.SettlementStorages"), "open", slot, 0);

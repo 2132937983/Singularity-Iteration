@@ -4,6 +4,9 @@ import com.miophas.singularity_iteration.core.api.capability.IMioIcifCapabilitie
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.gametest.framework.AfterBatch;
+import net.minecraft.gametest.framework.BeforeBatch;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -96,6 +99,14 @@ public final class Round1110GameTests {
     }
 
     // ------------------------------------------------------------------ E11
+
+    // load priority, the early end of a full window and the replay of a steady plan exist only in the fair distribution;
+    // the addon test server runs the legacy walk (build.gradle), so this batch switches to fair as FairGridGameTests does
+    @BeforeBatch(batch = "round1110_saturated")
+    public static void fairOnSaturated(ServerLevel level) { System.setProperty("scex.independent.distribution", "fair"); }
+
+    @AfterBatch(batch = "round1110_saturated")
+    public static void fairOffSaturated(ServerLevel level) { System.setProperty("scex.independent.distribution", "legacy"); }
 
     /** A sink without room: the windows end early; with room again, energy arrives. */
     @GameTest(batch = "round1110_saturated", template = "reactor", timeoutTicks = 120)

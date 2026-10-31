@@ -137,13 +137,13 @@ public final class Round34GameTests {
             } else {
                 problems.add(piece + " is not an armor item");
             }
-            // the redrawn 16x16 inventory icon
+            // the 32x32 texture (redrawn in 0.1.8.3; since 0.1.10.11 the item model's particle, the inventory shows the 3D piece)
             byte[] png = bytes("/assets/mio_icif/textures/item/armor/item_armor_nano_" + piece + ".png");
             if (png == null || png.length < 24) problems.add("icon missing: " + piece);
             else {
                 int w = ((png[16] & 255) << 24) | ((png[17] & 255) << 16) | ((png[18] & 255) << 8) | (png[19] & 255);
                 int hgt = ((png[20] & 255) << 24) | ((png[21] & 255) << 16) | ((png[22] & 255) << 8) | (png[23] & 255);
-                if (w != 16 || hgt != 16) problems.add("icon " + piece + " is " + w + "x" + hgt);
+                if (w != 32 || hgt != 32) problems.add("icon " + piece + " is " + w + "x" + hgt);
             }
         }
         h.assertTrue(problems.isEmpty(), "nano suit: " + problems);

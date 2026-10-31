@@ -137,7 +137,8 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity i
     @Override
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot >= SLOT_STORAGE_START && slot < SLOT_STORAGE_START + SLOT_STORAGE_COUNT) {
-            // 对齐原版 contentSlot (InvSlot.Access.IO)：存储槽接受任意物品
+            // 存储槽接受任意物品（收获时由机器自己放入）。0.1.10.42：存储槽在 SlotLayout 中是 OUTPUT，物品处理器对外只允许取出，
+            // 自动化不能插入（不同于 IC2 contentSlot 的 Access.IO）
             return true;
         }
         if (slot == SLOT_CROPNALYZER) {
@@ -193,7 +194,7 @@ public class mio_icif_harvest_elc extends AbstractProcessingMachineBlockEntity i
     @Override
     protected boolean canInsertItem(int slot, ItemStack stack, @Nullable Direction side) {
         if (slot >= SLOT_STORAGE_START && slot < SLOT_STORAGE_START + SLOT_STORAGE_COUNT) {
-            // 对齐原版 contentSlot (InvSlot.Access.IO)：自动化可插入存储槽
+            // 0.1.10.42：此分支不会生效。存储槽是 OUTPUT，MachineItemHandler 先拒绝插入
             return true;
         }
         if (slot == SLOT_CROPNALYZER) {

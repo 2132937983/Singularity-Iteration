@@ -88,54 +88,13 @@ public final class Round1104GameTests {
 
     // ------------------------------------------------------------------ swords
 
-    @GameTest(batch = "round1104_data", template = "empty", timeoutTicks = 20)
-    public static void swordsCarryTheUserModels(GameTestHelper h) {
-        List<String> problems = new ArrayList<>();
-        String[][] models = {
-            {"item_tool_nanosaber", "item/3d/weapon/nanosaber", "weapon/nanosaber", "mio_icif:nanosaber_active"},
-            {"item_tool_nanosaber_active", "item/3d/weapon/nanosaber_active", "weapon/nanosaber_active", null},
-            {"item_tool_quantum_sword", "item/3d/weapon/quantum_sword", "weapon/quantum_sword", "mio_icif:quantum_sword_hyper"},
-            {"item_tool_quantum_sword_hyper", "item/3d/weapon/quantum_sword_hyper", "weapon/quantum_sword_hyper", null}};
-        for (String[] m : models) {
-            String json = Round33GameTests.resource("/assets/mio_icif/models/item/" + m[0] + ".json");
-            if (json == null) { problems.add(m[0] + " missing"); continue; }
-            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-            if (!"neoforge:separate_transforms".equals(root.get("loader").getAsString())) problems.add(m[0] + " loader");
-            if (!("mio_icif:" + m[1]).equals(root.getAsJsonObject("base").get("parent").getAsString())) problems.add(m[0] + " base");
-            String icon = root.getAsJsonObject("perspectives").getAsJsonObject("gui").getAsJsonObject("textures").get("layer0").getAsString();
-            if (!icon.equals("mio_icif:item/" + m[2])) problems.add(m[0] + " gui icon " + icon);
-            if (m[3] != null && !json.contains(m[3])) problems.add(m[0] + " lost its override " + m[3]);
-            String model3d = Round33GameTests.resource("/assets/mio_icif/models/" + m[1] + ".json");
-            if (model3d == null || !model3d.contains("\"elements\"")) problems.add(m[1] + " has no elements");
-            else if (model3d.contains("light_emission") || model3d.contains("on_shelf")) problems.add(m[1] + " keeps keys 1.21.1 does not read");
-            if (!Round180GameTests.modResourceExists("assets/mio_icif/textures/item/" + m[2] + ".png")) problems.add(m[2] + " texture missing");
-        }
-        h.assertTrue(problems.isEmpty(), "swords: " + problems);
-        h.succeed();
-    }
+    // 0.1.10.42: swordsCarryTheUserModels removed: it checked the 0.1.10.4 wrapper layout that 0.1.10.11 replaced;
+    // Round1111GameTests.swordModelsLoadInTheHand checks the sword models (textures and overrides included)
 
     // ------------------------------------------------------------------ reactor
 
-    @GameTest(batch = "round1104_reactor", template = "empty", timeoutTicks = 20)
-    public static void injectorNeverConnectsTowardTheReactor(GameTestHelper h) {
-        for (String kind : new String[]{"redstone", "lapis"}) {
-            Block injector = BuiltInRegistries.BLOCK.get(rl("producer/block_" + kind + "_reactor_coolant_injector"));
-            BlockPos pos = new BlockPos(1, 2, 1);
-            h.setBlock(pos.east(), net.minecraft.world.level.block.Blocks.AIR);
-            h.setBlock(pos, injector.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH));
-            var be = h.getBlockEntity(pos);
-            h.assertTrue(be instanceof AbstractEnergyBlockEntity, kind + " injector has no energy block entity");
-            var machine = (AbstractEnergyBlockEntity) be;
-            h.assertTrue(!machine.canConnect(Direction.NORTH), kind + ": the front (toward the reactor) connects");
-            for (Direction side : new Direction[]{Direction.SOUTH, Direction.EAST, Direction.WEST, Direction.UP, Direction.DOWN})
-                h.assertTrue(machine.canConnect(side), kind + ": free face " + side + " is closed");
-            h.setBlock(pos.east(), BuiltInRegistries.BLOCK.get(rl("reactor/block_reactor_chamber")));
-            h.assertTrue(!machine.canConnect(Direction.EAST), kind + ": a face on a reactor chamber connects");
-            h.setBlock(pos.east(), net.minecraft.world.level.block.Blocks.AIR);
-            h.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR);
-        }
-        h.succeed();
-    }
+    // 0.1.10.42: injectorNeverConnectsTowardTheReactor removed: the injector faces six ways and opens its front since
+    // 0.1.10.14; CoolantInjectorGameTests.energyFacesAndUpgradesFollowIc2 checks the faces
 
     @GameTest(batch = "round1104_reactor", template = "empty", timeoutTicks = 20)
     public static void heatNeverMeltsReactorParts(GameTestHelper h) {

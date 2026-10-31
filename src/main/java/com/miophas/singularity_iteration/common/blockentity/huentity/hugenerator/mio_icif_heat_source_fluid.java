@@ -237,8 +237,7 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
         IMioIcifCapabilities.IHeatStorage adjacentHeat = level.getCapability(
                 IMioIcifCapabilities.HEAT_STORAGE_BLOCK, adjacentPos, facing.getOpposite());
         if (adjacentHeat == null) {
-            adjacentHeat = MioIcifAPI.instance().getCapabilities().adaptHeatStorage(
-                level.getBlockEntity(adjacentPos));
+            adjacentHeat = com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.undeclared(level, adjacentPos);
         }
 
         return adjacentHeat != null && adjacentHeat.canReceiveHeat();
@@ -350,8 +349,7 @@ public class mio_icif_heat_source_fluid extends com.miophas.singularity_iteratio
         IMioIcifCapabilities.IHeatStorage adjacentHeat = level.getCapability(
                 IMioIcifCapabilities.HEAT_STORAGE_BLOCK, adjacentPos, facing.getOpposite());
         if (adjacentHeat == null) {
-            adjacentHeat = MioIcifAPI.instance().getCapabilities().adaptHeatStorage(
-                level.getBlockEntity(adjacentPos));
+            adjacentHeat = com.miophas.singularity_iteration.core.runtime.energy.ThermalOutput.undeclared(level, adjacentPos);
         }
         if (adjacentHeat == null || !adjacentHeat.canReceiveHeat()) return;
 

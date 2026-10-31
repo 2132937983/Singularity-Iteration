@@ -848,4 +848,121 @@ public final class Round1138GameTests {
         h.assertTrue(palette.contains("proton_octuple") && palette.size() == 34, "the simulator palette lacks the octuple rod: " + palette.size());
         h.succeed();
     }
+
+    // ------------------------------------------------------------------ verification of 0.1.10.38 (requested after the visual checks)
+
+    /** The server option [Crops] strictIc2Rules reaches the crop formulas when the config is (re)loaded, and back. */
+    @GameTest(batch = "round1138_crops", template = "empty", timeoutTicks = 20)
+    public static void strictIc2RulesConfigSwitchesTheCropRules(GameTestHelper h) {
+        Object option = staticField(Round33GameTests.common("Singularity_Iteration_Config"), "CROPS_STRICT_IC2");
+        java.lang.reflect.Method sync;
+        try {
+            sync = Round33GameTests.common("Singularity_Iteration").getDeclaredMethod("syncVoltageOverloadConfig");
+            sync.setAccessible(true);
+        } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
+        boolean before = (Boolean) call(option, "get");
+        IPlanter fast = crop(h, new BlockPos(2, 2, 2), "wheat", 3);
+        fast.setGrowthSpeed(31);
+        try {
+            call(option, "set", true);
+            sync.invoke(null);
+            h.assertTrue(CropGrowthMath.strictIc2Rules() && CropGrowthMath.requiredQuality(1, 31, 31, 31) == 93, "strictIc2Rules = true did not switch to the IC2 rules");
+            h.assertTrue(fast.getPlant().isWeed(fast) && CropGrowthMath.weedChance(31, 0) == 0, "under the IC2 rules Growth 31 must make a weed source");
+            call(option, "set", false);
+            sync.invoke(null);
+            h.assertTrue(!CropGrowthMath.strictIc2Rules() && CropGrowthMath.requiredQuality(1, 31, 31, 31) == 31, "strictIc2Rules = false did not switch back");
+            h.assertTrue(!fast.getPlant().isWeed(fast) && CropGrowthMath.weedChance(31, 0) == 32, "under the SI rules Growth 31 must spread by chance");
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        } finally {
+            call(option, "set", before);
+            try { sync.invoke(null); } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
+        }
+        h.succeed();
+    }
+
+    /**
+     * The octuple casing takes 2 full quad proton rods and 4 dense iron plates (a used quad rod does not fit), and the Molecular
+     * Transformer's recipes take the casing and plutonium.
+     */
+    @GameTest(batch = "round1138_balance", template = "empty", timeoutTicks = 20)
+    public static void octupleCasingTakesFullQuadRodsAndFeedsTheTransformer(GameTestHelper h) {
+        ItemStack plate = item("resource/item_iron_denseplate"), full = rod(h, "reactor/item_reactor_proton_quad", 40000, 40000),
+            used = rod(h, "reactor/item_reactor_proton_quad", 100, 40000);
+        var good = net.minecraft.world.item.crafting.CraftingInput.of(3, 2, java.util.List.of(plate, full, plate, plate, full, plate));
+        var made = h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, good, h.getLevel())
+            .map(r -> r.value().assemble(good, h.getLevel().registryAccess())).orElse(ItemStack.EMPTY);
+        h.assertTrue(made.is(item("reactor/item_proton_octuple_casing").getItem()), "2 quad rods and 4 dense plates do not make the casing: " + made);
+        var worn = net.minecraft.world.item.crafting.CraftingInput.of(3, 2, java.util.List.of(plate, full, plate, plate, used, plate));
+        h.assertTrue(h.getLevel().getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, worn, h.getLevel()).isEmpty(),
+            "a used quad rod made a casing");
+        var casingInput = (net.minecraft.world.item.crafting.Ingredient) field(recipe(h, "molecular_transformer/proton_octuple_casing_to_rod"), "input");
+        var shardInput = (net.minecraft.world.item.crafting.Ingredient) field(recipe(h, "molecular_transformer/plutonium_to_proton_shard"), "input");
+        h.assertTrue(casingInput.test(item("reactor/item_proton_octuple_casing")) && shardInput.test(item("resource/item_plutonium")),
+            "the Molecular Transformer recipes do not take the casing and plutonium");
+        h.succeed();
+    }
+
+    /**
+     * In a running reactor the octuple proton rod gives about twice the EU of a quad proton rod in the first cycle (2x, plus the
+     * MOX bonus of its doubled heat: 2.11x), and a spent octuple rod becomes the depleted octuple rod and stays in its slot.
+     */
+    @GameTest(batch = "round1138_reactor", template = "empty", timeoutTicks = 120)
+    public static void octupleRodRunsAsTwoQuadsAndStaysWhenSpent(GameTestHelper h) {
+        runOneRod(h, rod(h, "reactor/item_reactor_proton_quad", 40000, 40000));
+        h.runAfterDelay(25, () -> {
+            long quadEu = generation(h);
+            runOneRod(h, rod(h, "reactor/item_reactor_proton_octuple", 40000, 40000));   // a new reactor: cold hull
+            h.runAfterDelay(25, () -> {
+                long octuple = generation(h);
+                double ratio = (double) octuple / Math.max(1, quadEu);
+                h.assertTrue(quadEu > 0 && ratio > 1.9 && ratio < 2.3, "octuple " + octuple + " EU/t against quad " + quadEu + " EU/t");
+                runOneRod(h, rod(h, "reactor/item_reactor_proton_octuple", 1, 40000));
+                var depleted = BuiltInRegistries.ITEM.get(id("reactor/item_reactor_proton_octuple_depleted"));
+                h.runAfterDelay(45, () -> {
+                    var slot = ((IReactorController) h.getBlockEntity(REACTOR)).getItemHandler().getStackInSlot(10);
+                    h.assertTrue(slot.is(depleted), "the spent octuple rod is not the depleted octuple rod in its slot: " + slot);
+                    h.succeed();
+                });
+            });
+        });
+    }
+
+    /** Places a new (cold) reactor with one rod in its middle slot, then the redstone block that starts it. */
+    private static void runOneRod(GameTestHelper h, ItemStack rod) {
+        h.setBlock(REACTOR.east(), Blocks.AIR);
+        h.setBlock(REACTOR, Blocks.AIR);
+        h.setBlock(REACTOR, BuiltInRegistries.BLOCK.get(id("generator/block_nuclear_reactor_generator")));
+        IReactorController reactor = (IReactorController) h.getBlockEntity(REACTOR);
+        h.assertTrue(reactor.getItemHandler().insertItem(10, rod, false).isEmpty(), "rod rejected: " + rod);
+        h.setBlock(REACTOR.east(), Blocks.REDSTONE_BLOCK);
+    }
+
+    private static long generation(GameTestHelper h) {
+        return ((IReactorController) h.getBlockEntity(REACTOR)).getCurrentEnergyGeneration();
+    }
+
+    /**
+     * The market day follows the world's day from the server tick (every 200 ticks), with no Futures Machine or Trade Terminal
+     * ticking. Its own batch, so no other test of this run places one while it runs; the test checks that none is ticking.
+     */
+    @GameTest(batch = "round1138_marketday", template = "empty", timeoutTicks = 460)
+    public static void marketDayAdvancesWithoutAFuturesMachine(GameTestHelper h) {
+        var level = h.getLevel();
+        java.util.List<?> tickers = (java.util.List<?>) field(level, "blockEntityTickers");
+        long machines = tickers.stream().map(t -> ((net.minecraft.world.level.block.entity.TickingBlockEntity) t).getType())
+            .filter(type -> type != null && (type.contains("future_elc") || type.contains("trade_terminal"))).count();
+        h.assertTrue(machines == 0, machines + " Futures Machines / Trade Terminals are ticking; the test cannot tell which advanced the day");
+        Class<?> service = Round33GameTests.common("exchange.ExchangeService");
+        h.runAfterDelay(205, () -> {   // the server tick has initialized the market by now (if no test did)
+            long before = (Long) call(service, "today", level.getServer());
+            var overworld = level.getServer().overworld();
+            overworld.setDayTime(overworld.getDayTime() + 24_000L);   // the same time of day, one day later
+            h.runAfterDelay(210, () -> {
+                long after = (Long) call(service, "today", level.getServer());
+                h.assertTrue(after == before + 1, "the market day went from " + before + " to " + after + " in 210 ticks");
+                h.succeed();
+            });
+        });
+    }
 }

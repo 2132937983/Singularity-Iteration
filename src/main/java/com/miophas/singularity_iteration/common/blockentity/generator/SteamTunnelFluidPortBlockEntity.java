@@ -28,7 +28,7 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 0.1.10.39: a fluid port of the Steam Tunnel (IC2 Classic's valve): steam goes in, water comes out. Its controller links it while
+ * 0.1.10.39: a fluid port of the Steam Tunnel: steam goes in, water comes out. Its controller links it while
  * the structure is formed; unlinked it holds nothing. Every 10 ticks it pushes up to 1,000 mB of the tunnel's water into each
  * neighbour outside the tunnel that takes water. Its menu is the fluid reactor port's: one slot for a Fluid Ejector Upgrade (water
  * out, with its directions and rate) or a Fluid Pulling Upgrade (steam in from tanks next to it).

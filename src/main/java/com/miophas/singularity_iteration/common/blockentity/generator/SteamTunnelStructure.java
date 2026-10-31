@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.Rotation;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 0.1.10.39: the shape of the Steam Tunnel (IC2 Classic's {@code SteamTunnelTileEntity.testStructure}): a hollow box, 3 x 3 across
+ * 0.1.10.39: the shape of the Steam Tunnel (the same shape as in IC2 Classic): a hollow box, 3 x 3 across
  * and 5 long, behind the controller, which sits in the centre of the front end and faces out of it.
  * <ul>
  *   <li>{@link Role#EDGE}: the 28 positions on two or more sides of the box: casing.</li>

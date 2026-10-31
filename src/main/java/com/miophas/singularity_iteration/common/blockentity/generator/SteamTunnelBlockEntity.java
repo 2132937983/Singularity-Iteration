@@ -31,7 +31,7 @@ import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 0.1.10.39: the controller of the Steam Tunnel, IC2 Classic's large steam turbine ({@code SteamTunnelTileEntity}). With its
+ * 0.1.10.39: the controller of the Steam Tunnel, a large multiblock steam turbine like IC2 Classic's. With its
  * structure formed ({@link SteamTunnelStructure}) it turns steam into EU in steps of 1,024 mB into 512 EU, up to 4 steps a tick
  * (4,096 mB/t into 2,048 EU/t, the 2 mB per EU of the small turbine). As in IC2 Classic it runs while its 10,000 EU buffer has room
  * for one step and then makes all the steps the steam allows, so the buffer may go over by up to 3 steps ({@link #MAX_ENERGY}).

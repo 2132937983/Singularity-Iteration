@@ -10,6 +10,8 @@ item_ids:
 
 # Energy Converter
 
+> **Legacy block (0.1.10.39).** SI cables now take FE pushed into them and give FE to the machines of other mods (see [Power transmission and storage](../power.md)). The converter is no longer crafted or listed; placed converters keep working.
+
 <Row>
   <BlockImage id="mio_icif:energy_converter/energy_converter" scale="3" />
 </Row>

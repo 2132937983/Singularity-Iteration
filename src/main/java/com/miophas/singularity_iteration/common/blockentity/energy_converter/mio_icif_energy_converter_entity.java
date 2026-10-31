@@ -35,7 +35,7 @@ public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity 
     private final FEEnergyStorage feStorage;
     
     // 转换比例
-    public static final int EU_TO_FE_RATE = 4; // 1 EU = 4 FE
+    public static final int EU_TO_FE_RATE = com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage.FE_PER_EU; // 1 EU = 4 FE
     public static final int MAX_CONVERT_PER_TICK = 1000; // 最大转换量
     
     // 当前模式

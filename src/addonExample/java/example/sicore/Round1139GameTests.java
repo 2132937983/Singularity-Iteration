@@ -2,6 +2,11 @@ package example.sicore;
 
 import com.miophas.singularity_iteration.core.api.multiblock.StructureBlueprint;
 import com.miophas.singularity_iteration.core.api.multiblock.StructureBlueprintRegistry;
+import com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage;
+import com.miophas.singularity_iteration.core.runtime.energy.FeLedger;
+import com.miophas.singularity_iteration.core.runtime.energy.BatteryFeCapability;
+import com.miophas.singularity_iteration.core.runtime.energy.ForeignEnergyCables;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -123,5 +128,99 @@ public final class Round1139GameTests {
                 h.succeed();
             });
         });
+    }
+
+    // ------------------------------------------------------------------ C2: universal cables
+
+    private static Object staticField(Class<?> owner, String name) {
+        try { var f = owner.getDeclaredField(name); f.setAccessible(true); return f.get(null); }
+        catch (ReflectiveOperationException e) { throw new AssertionError(name, e); }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static long stored(GameTestHelper h, BlockPos at) {
+        return (Long) call(call(h.getBlockEntity(at), "getEnergyStorageInternal"), "getAmount");
+    }
+
+    private static BlockState facing(Block block, Direction direction) {
+        BlockState state = block.defaultBlockState();
+        return state.getBlock().getStateDefinition().getProperty("facing") instanceof DirectionProperty facing
+            && facing.getPossibleValues().contains(direction) ? state.setValue(facing, direction) : state;
+    }
+
+    /** One FE ratio (4 FE per EU, both ways) everywhere, and FE converts to EU and back without loss. */
+    @GameTest(batch = "round1139_cables", template = "empty", timeoutTicks = 20)
+    public static void feRatioIsOneLosslessConstant(GameTestHelper h) {
+        int ratio = ILongEnergyStorage.FE_PER_EU;
+        h.assertTrue(ratio == 4 && FeLedger.FE_PER_EU == ratio && BatteryFeCapability.FE_PER_EU == ratio, "the FE ratio differs in core");
+        h.assertTrue((Integer) staticField(Round33GameTests.common("armory.ArmoryItemEnergy"), "FE_PER_EU") == ratio
+            && (Integer) staticField(Round33GameTests.common("blockentity.energy_converter.mio_icif_energy_converter_entity"), "EU_TO_FE_RATE") == ratio,
+            "the FE ratio differs in the armory or the converter");
+        for (int fe = 0; fe <= 10_000; fe++)
+            if (FeLedger.fe(FeLedger.eu(fe)) != fe) throw new AssertionError(fe + " FE did not survive the trip to EU and back");
+        h.succeed();
+    }
+
+    /**
+     * FE pushed into an SI cable by the block beyond it (here a block without any energy capability, like a generator that only
+     * pushes) reaches SI storage at voltage 0: 32,768 FE through a low-voltage cable (32 EU) fill an MFSU with 8,192 EU less the
+     * cable loss, and the cable does not melt.
+     */
+    @GameTest(batch = "round1139_cables", template = "empty", timeoutTicks = 80)
+    public static void fePushedIntoACableEntersAtVoltageZero(GameTestHelper h) {
+        BlockPos pusher = new BlockPos(1, 1, 2), cable = new BlockPos(2, 1, 2), storage = new BlockPos(3, 1, 2);
+        Block lvCable = BuiltInRegistries.BLOCK.get(id("wiring/cable/block_tin_cable_1"));
+        h.setBlock(pusher, Blocks.STONE);
+        h.setBlock(cable, lvCable);
+        h.setBlock(storage, facing(BuiltInRegistries.BLOCK.get(id("wiring/block_mfsu")), Direction.EAST));   // output away from the cable
+        h.runAfterDelay(20, () -> {
+            IEnergyStorage face = h.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, h.absolutePos(cable), Direction.WEST);
+            h.assertTrue(face != null && face.canReceive() && !face.canExtract(), "the cable has no receive-only FE face");
+            int accepted = face.receiveEnergy(40_000, false);
+            h.assertTrue(accepted == 32_768, "the cable took " + accepted + " FE, not its 32,768 FE inbox");
+            h.runAfterDelay(40, () -> {
+                long eu = stored(h, storage);
+                h.assertTrue(eu >= 8_192 * 9 / 10 && eu <= 8_192, "the MFSU got " + eu + " EU of 8,192");
+                h.assertTrue(h.getBlockState(cable).is(lvCable), "the low-voltage cable melted under FE input");
+                h.succeed();
+            });
+        });
+    }
+
+    /**
+     * SI cables give FE to another mod's machine (a battery) but neither connect to nor feed another mod's cable (its id names a
+     * cable), so two networks cannot pass FE back and forth.
+     */
+    @GameTest(batch = "round1139_cables", template = "empty", timeoutTicks = 80)
+    @SuppressWarnings("deprecation")
+    public static void siCablesFeedForeignMachinesButNotForeignCables(GameTestHelper h) {
+        BlockPos source = new BlockPos(1, 1, 2), cable = new BlockPos(2, 1, 2), battery = new BlockPos(3, 1, 2), foreignCable = new BlockPos(2, 1, 3);
+        h.setBlock(source, facing(BuiltInRegistries.BLOCK.get(id("wiring/block_mfsu")), Direction.EAST));   // output into the cable
+        h.setBlock(cable, BuiltInRegistries.BLOCK.get(id("wiring/cable/block_superconducting_cable")));
+        h.setBlock(battery, CoreExampleMod.FOREIGN_BATTERY.get());
+        h.setBlock(foreignCable, CoreExampleMod.FOREIGN_CABLE.get());
+        call(call(h.getBlockEntity(source), "getEnergyStorageInternal"), "setStored", 1_000_000L);
+        h.assertTrue(ForeignEnergyCables.is(h.getLevel(), h.absolutePos(foreignCable)) && !ForeignEnergyCables.is(h.getLevel(), h.absolutePos(battery)),
+            "the foreign cable test block is not seen as a cable, or the battery is");
+        h.assertTrue(h.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, h.absolutePos(cable), Direction.SOUTH) == null,
+            "the SI cable offers FE input toward another mod's cable");
+        h.runAfterDelay(40, () -> {
+            int toBattery = ((ForeignBattery) h.getBlockEntity(battery)).storage.getEnergyStored();
+            int toCable = ((ForeignBattery) h.getBlockEntity(foreignCable)).storage.getEnergyStored();
+            h.assertTrue(toBattery > 0, "the foreign battery got no FE from the SI network");
+            h.assertTrue(toCable == 0, "the foreign cable got " + toCable + " FE from the SI network");
+            h.succeed();
+        });
+    }
+
+    /** The Energy Converter is a legacy block: still registered (placed ones keep working), hidden from viewers, no recipe. */
+    @GameTest(batch = "round1139_cables", template = "empty", timeoutTicks = 20)
+    public static void energyConverterIsALegacyBlock(GameTestHelper h) {
+        ResourceLocation converter = id("energy_converter/energy_converter");
+        h.assertTrue(BuiltInRegistries.BLOCK.containsKey(converter), "the converter is no longer registered");
+        var hidden = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, ResourceLocation.parse("c:hidden_from_recipe_viewers"));
+        h.assertTrue(new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(converter)).is(hidden), "the converter is still shown to players");
+        h.assertTrue(h.getLevel().getRecipeManager().byKey(id("shaped_energy_converter")).isEmpty(), "the converter can still be crafted");
+        h.succeed();
     }
 }

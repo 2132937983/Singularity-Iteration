@@ -78,6 +78,10 @@ public final class PerfCommand {
         source.sendSuccess(() -> Component.translatable("command.mio_icif.perf.machines",
             avg(PerfCounters.Kind.MACHINE_TICKS), avg(PerfCounters.Kind.SLEEP_SKIPS),
             avg(PerfCounters.Kind.LIT_FLIPS), avg(PerfCounters.Kind.REDSTONE_READS)), false);
+        // 0.1.10.39: FE per tick (universal cables) - into cables, exported, imported, neighbour probes (skipped)
+        source.sendSuccess(() -> Component.translatable("command.mio_icif.perf.fe",
+            avg(PerfCounters.Kind.FE_INTO_CABLES), avg(PerfCounters.Kind.FE_EXPORTED), avg(PerfCounters.Kind.FE_IMPORTED),
+            avg(PerfCounters.Kind.FE_PROBES), avg(PerfCounters.Kind.FE_PROBES_SKIPPED)), false);
         return 1;
     }
 

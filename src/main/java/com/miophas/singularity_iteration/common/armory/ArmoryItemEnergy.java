@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 public final class ArmoryItemEnergy {
     private ArmoryItemEnergy() {}
 
-    public static final int FE_PER_EU = 4;
+    public static final int FE_PER_EU = com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage.FE_PER_EU;
 
     /** EU the item can still take. */
     public static long room(ItemStack stack) {

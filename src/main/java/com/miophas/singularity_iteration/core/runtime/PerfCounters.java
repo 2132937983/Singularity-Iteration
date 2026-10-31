@@ -37,7 +37,17 @@ public final class PerfCounters {
         /** 0.1.10.38: lit state changes of processing machines (each one is a full block update). */
         LIT_FLIPS,
         /** 0.1.10.38: redstone input reads of processing machines (six neighbour signals each). */
-        REDSTONE_READS
+        REDSTONE_READS,
+        /** 0.1.10.39: FE taken into SI cables (universal cables). */
+        FE_INTO_CABLES,
+        /** 0.1.10.39: FE delivered to other mods' machines. */
+        FE_EXPORTED,
+        /** 0.1.10.39: FE taken from other mods' blocks into SI machines and storage. */
+        FE_IMPORTED,
+        /** 0.1.10.39: neighbours of the grid probed for an energy capability. */
+        FE_PROBES,
+        /** 0.1.10.39: probes skipped because the neighbour had none a moment ago. */
+        FE_PROBES_SKIPPED
     }
 
     /** Ticks of one averaging window. */
@@ -54,6 +64,13 @@ public final class PerfCounters {
     /** Counts one event of {@code kind} (server thread). */
     public static void add(Kind kind) {
         TOTALS[kind.ordinal()]++;
+        if (!installed) install();
+    }
+
+    /** 0.1.10.39: counts {@code amount} events of {@code kind} at once (an amount of FE). */
+    public static void add(Kind kind, long amount) {
+        if (amount <= 0) return;
+        TOTALS[kind.ordinal()] += amount;
         if (!installed) install();
     }
 

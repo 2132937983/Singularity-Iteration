@@ -36,7 +36,8 @@ public final class DirectItemCharging {
         long eu = simulated / BatteryFeCapability.FE_PER_EU;          // whole EU only
         if (eu <= 0) return 0;
         int accepted = cap.receiveEnergy((int) eu * BatteryFeCapability.FE_PER_EU, false);
-        return Math.max(0, accepted) / BatteryFeCapability.FE_PER_EU;
+        // 0.1.10.39: an item that takes less than its quote is charged the whole EU covering it (was rounded down: up to 3 FE free)
+        return (Math.max(0, accepted) + BatteryFeCapability.FE_PER_EU - 1) / BatteryFeCapability.FE_PER_EU;
     }
 
     /**

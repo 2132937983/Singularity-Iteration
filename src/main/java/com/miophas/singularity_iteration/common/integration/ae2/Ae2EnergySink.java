@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 @SuppressWarnings("null")
 public class Ae2EnergySink implements IEnergySink, ILocatableTile {
 
-    private static final int FE_PER_EU = 4;
+    private static final int FE_PER_EU = com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage.FE_PER_EU;
     private static final int CACHE_REFRESH_INTERVAL = 20;
 
     private final Level world;

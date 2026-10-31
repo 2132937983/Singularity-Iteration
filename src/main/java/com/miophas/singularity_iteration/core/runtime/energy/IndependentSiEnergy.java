@@ -941,6 +941,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             new com.miophas.singularity_iteration.core.runtime.energy.engine.ShockAccumulator<>();
         /** Known foreign FE contacts. At most 4096 entries. */
         final BoundedContactIndex<ForeignContact, FECompatTile> foreign = new BoundedContactIndex<>(4096);
+        /**
+         * 0.1.10.39: neighbours probed without an energy capability, and the tick to probe them again (every 10 s; a change of
+         * the grid probes everything at once). Air and plain blocks were probed again every round.
+         */
+        final HashMap<ForeignContact, Long> foreignMisses = new HashMap<>();
         /** The tick of the last foreign contact maintenance. Maintenance runs once per tick. */
         long foreignMaintenanceTick = Long.MIN_VALUE;
         /** True during foreign discovery. It stops a callback from starting a second discovery. */
@@ -2942,17 +2947,52 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * <p>Each foreign callback can change the world. The method checks
      * {@code currentWorld} after the callbacks and stops when it is false.
      */
+    /**
+     * 0.1.10.39 (universal cables): FE that the block beyond face {@code face} of SI cable {@code cable} pushes into it. It waits
+     * in the inbox of that contact ({@link FECompatTile#offerInbox}) and the FE import pass takes it like FE extracted from the
+     * block: at voltage 0 (no cable melts), lossless at {@link FeLedger#FE_PER_EU} FE per EU, into SI machines and storage. No FE
+     * from SI blocks or from other mods' cables ({@link ForeignEnergyCables}). Returns the FE accepted.
+     */
+    public int offerFe(ServerLevel level, BlockPos cable, Direction face, int fe, boolean simulate) {
+        if (fe <= 0 || !server.isSameThread()) return 0;
+        WorldGrid grid = worlds.get(level);
+        if (grid == null || !grid.conductorOwners.containsKey(cable)) return 0;
+        BlockPos at = cable.relative(face);
+        if (!loaded(level, at) || grid.machines.containsKey(at) || grid.conductorOwners.containsKey(at) || ForeignEnergyCables.is(level, at)) return 0;
+        var contact = new ForeignContact(at.immutable(), face.getOpposite());
+        FECompatTile adapter = grid.foreign.get(contact);
+        if (adapter == null) {
+            if (simulate) return Math.min(fe, FECompatTile.INBOX_FE);
+            if (!grid.foreign.putIfAbsent(contact, new FECompatTile(level, at, face))) return 0;
+            adapter = grid.foreign.get(contact);
+        }
+        int accepted = adapter.offerInbox(fe, simulate);
+        if (!simulate && accepted > 0) {
+            feInput += accepted;
+            grid.foreignMisses.remove(contact);
+            com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_INTO_CABLES, accepted);
+        }
+        return accepted;
+    }
+
+    /** 0.1.10.39: FE taken into cables since the start (perf). */
+    private long feInput;
+    public long feInputTotal() { return feInput; }
+
     private void discoverForeignBatch(ServerLevel level, WorldGrid grid) {
         if (grid.scanDirty) {
             var anchors = new ArrayList<BlockPos>(grid.conductorOwners.keySet()); anchors.addAll(grid.machines.keySet());
             grid.scanAnchors = List.copyOf(anchors); grid.scanDirty = false; grid.scanCursor = 0;
+            grid.foreignMisses.clear();   // 0.1.10.39: the grid changed: probe every neighbour again
         }
         // Maintenance is shared by START/END settlement and reachability queries.
         // Stale entries may wait for their turn, but every transfer still checks
         // foreignRouteCurrent immediately before committing to a live capability.
         if (grid.foreignMaintenanceTick != server.getTickCount()) {
             grid.foreignMaintenanceTick = server.getTickCount();
-            grid.foreign.maintain(128, (contact, adapter) -> foreignQuery(grid, contact, adapter::isValid));
+            // 0.1.10.39: a contact that became another mod's cable is dropped (ForeignEnergyCables)
+            grid.foreign.maintain(128, (contact, adapter) -> foreignQuery(grid, contact,
+                () -> adapter.isValid() && !ForeignEnergyCables.is(level, contact.at)));
         }
         if (!currentWorld(level, grid)) return;
         // count == 0 when there is no anchor, so the floorMod below never divides by 0.
@@ -2977,12 +3017,21 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if (ownedStorage(entity) != null && ownedStorage(entity).scexNetworkControlled()
                     || entity instanceof IndependentTransformerBlockEntity
                     || entity instanceof DemandEnergySource || entity instanceof IndependentSpecialCableBlockEntity) continue;
+                // 0.1.10.39: never another mod's cable: the two networks would pass the same FE back and forth
+                if (ForeignEnergyCables.is(chunk.getBlockState(at))) continue;
                 var contact = new ForeignContact(at.immutable(), side.getOpposite());
                 if (grid.foreign.containsKey(contact) || grid.foreign.size() >= 4096) continue;
+                Long retry = grid.foreignMisses.get(contact);
+                if (retry != null && retry > server.getTickCount()) { com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_PROBES_SKIPPED); continue; }
                 var adapter = new FECompatTile(level, at, side);
+                com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_PROBES);
                 boolean valid = foreignQuery(grid, contact, adapter::isValid);
                 if (!currentWorld(level, grid)) return;
-                if (valid) grid.foreign.putIfAbsent(contact, adapter);
+                if (valid) { grid.foreign.putIfAbsent(contact, adapter); grid.foreignMisses.remove(contact); }
+                else {
+                    if (grid.foreignMisses.size() >= 16_384) grid.foreignMisses.clear();
+                    grid.foreignMisses.put(contact, server.getTickCount() + 200L);
+                }
             }
         }
         accessible(level, grid); // One refresh after the complete batch of external discovery callbacks.
@@ -3131,7 +3180,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 grid.exportedThisTick.add(entry.getKey().at.asLong());
                 grid.packetSpent.merge(source.position.asLong(), FeLedger.eu(sent), EnergyAmount::add);
                 // FE to EU for meters: 4 FE = 1 EU. The voltage is the EU that the source sent.
-                double output = sent / 4.0, input = routed.delivered() / 4.0;
+                double output = sent / (double) FeLedger.FE_PER_EU, input = routed.delivered() / (double) FeLedger.FE_PER_EU;
+                com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_EXPORTED, routed.delivered());   // 0.1.10.39
                 double voltage = output;
                 sample(grid, source.position, 0, input, voltage);
                 sample(grid, entry.getKey().at, input, 0, voltage);
@@ -3244,9 +3294,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 else continue;
                 if (extracted == 0) continue;
                 int received = Math.max(0, extracted - lossFe);
+                com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_IMPORTED, received);   // 0.1.10.39
                 if (sink.transformer != null && received > 0)
                     grid.transformerReceived.merge(sink.position.asLong(), FeLedger.eu(received), EnergyAmount::add);
-                double output = extracted / 4.0, input = received / 4.0;
+                double output = extracted / (double) FeLedger.FE_PER_EU, input = received / (double) FeLedger.FE_PER_EU;
                 // FE has no packet voltage. Meters use zero for this unpacketized intake.
                 sample(grid, source.getKey().at, 0, output, 0);
                 sample(grid, sink.position, input, 0, 0);

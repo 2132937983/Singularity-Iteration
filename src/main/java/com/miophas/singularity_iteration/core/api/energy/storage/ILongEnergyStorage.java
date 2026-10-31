@@ -42,7 +42,9 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings("null")
 public interface ILongEnergyStorage extends IEnergyStorage {
     /**
-     * Conversion ratio: 1 EU = 4 FE.
+     * Conversion ratio: 1 EU = 4 FE, the same both ways (lossless, like Mekanism). 0.1.10.39: the only definition; every
+     * EU / FE boundary of SI (cables, machines, storage, items, the AE2 and Mekanism bridges) uses it, so no loop can make or
+     * lose energy.
      */
     int FE_PER_EU = 4;
     /**

@@ -2,7 +2,7 @@
   "parent": "mio_icif:industrial_age",
   "display": {
     "icon": {
-      "id": "mio_icif:energy_converter/energy_converter"
+      "id": "mio_icif:wiring/cable/block_tin_cable_1"
     },
     "title": {
       "translate": "advancements.mio_icif.industrial_prologue.title"
@@ -16,13 +16,13 @@
     "hidden": false
   },
   "criteria": {
-    "energy_converter": {
+    "insulated_cable": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
         "items": [
           {
             "items": [
-              "mio_icif:energy_converter/energy_converter"
+              "mio_icif:wiring/cable/block_tin_cable_1"
             ]
           }
         ]

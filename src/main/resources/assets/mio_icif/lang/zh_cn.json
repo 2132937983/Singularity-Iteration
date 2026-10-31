@@ -1954,7 +1954,7 @@
   "advancements.mio_icif.root.title": "奇点迭代",
   "advancements.mio_icif.root.description": "进入世界",
   "advancements.mio_icif.industrial_prologue.title": "工业时代：序章",
-  "advancements.mio_icif.industrial_prologue.description": "获得能源转换器",
+  "advancements.mio_icif.industrial_prologue.description": "获得绝缘低压导线",
   "advancements.mio_icif.industrial_age.title": "工业时代",
   "advancements.mio_icif.industrial_age.description": "获得火力发电机",
   "advancements.mio_icif.industrial_accident.title": "工业事故",
@@ -4593,5 +4593,6 @@
   "structure.mio_icif.steam_tunnel.power_port": "电力端口：最多 2,048 EU/t，HV 数据包（512 EU）",
   "structure.mio_icif.steam_tunnel.note.inside": "内部 3 格必须为空气；控制器朝向前端外侧",
   "structure.mio_icif.steam_tunnel.note.output": "每 1,024 mB 蒸汽产生 512 EU，每 tick 最多 4 次（2,048 EU/t）；缓存 10,000 EU",
-  "structure.mio_icif.steam_tunnel.note.water": "每 100 mB 蒸汽返还 1 mB 水（水箱 2,000 mB，溢出部分损失）"
+  "structure.mio_icif.steam_tunnel.note.water": "每 100 mB 蒸汽返还 1 mB 水（水箱 2,000 mB，溢出部分损失）",
+  "command.mio_icif.perf.fe": "FE 每 tick：推入导线 %1$s，输出 %2$s，输入 %3$s；邻居探测 %4$s（跳过 %5$s）"
 }

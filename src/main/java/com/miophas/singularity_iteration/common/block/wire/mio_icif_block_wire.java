@@ -519,7 +519,10 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
                 net.neoforged.neoforge.energy.IEnergyStorage feNull = realLevel.getCapability(
                     net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, pos, null);
 
-                if ((feSided != null && feSided.canReceive()) || (feNull != null && feNull.canReceive())) {
+                // 0.1.10.39: universal cables: any FE block (machines that take FE, generators that push or give it), but no
+                // cable of another mod (ForeignEnergyCables)
+                if ((feSided != null || feNull != null)
+                        && !com.miophas.singularity_iteration.core.runtime.energy.ForeignEnergyCables.is(realLevel, pos)) {
                     return true;
                 }
 

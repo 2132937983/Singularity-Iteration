@@ -9,7 +9,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 
 /** One EU balance; output allowance is shared by native packets, items and FE. */
 public final class FeLedger {
-    public static final int FE_PER_EU = 4;
+    public static final int FE_PER_EU = com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage.FE_PER_EU;
     private final CustomEUEnergyStorage storage;
     private final LongSupplier clock;
     private final BooleanSupplier active;

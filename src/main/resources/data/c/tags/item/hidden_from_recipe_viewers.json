@@ -7,6 +7,7 @@
     { "id": "mio_icif:armor/item_armor_ultimate_solar_helmet", "required": false },
     { "id": "mio_icif:armor/item_armor_advanced_quantum_chestplate", "required": false },
     { "id": "mio_icif:armor/item_armor_heavy_quantum_chestplate", "required": false },
-    { "id": "mio_icif:generator/block_unlimit_generator", "required": false }
+    { "id": "mio_icif:generator/block_unlimit_generator", "required": false },
+    { "id": "mio_icif:energy_converter/energy_converter", "required": false }
   ]
 }

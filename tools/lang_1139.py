@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """0.1.10.39 language values (en_us / zh_cn / ja_jp / ru_ru): the Steam Tunnel (block names, its state line, Jade, the JEI
-structure plan; the structure keys have no ru_ru, like their siblings).
+structure plan; the structure keys have no ru_ru, like their siblings); universal cables (the FE line of /mio_icif perf, the
+Industrial Age: Prologue advancement, which no longer asks for the legacy Energy Converter).
 A value per language; a language left out keeps its current value. Idempotent; keeps the line endings of each file. With
 --check it only reports missing or different keys.
 Usage: lang_1139.py <repo root> [--check]
@@ -85,6 +86,14 @@ KEYS = {
     'structure.mio_icif.steam_tunnel.note.water': v(
         'Returns 1 mB of water per 100 mB of steam (2,000 mB tank; the rest is lost)', '每 100 mB 蒸汽返还 1 mB 水（水箱 2,000 mB，溢出部分损失）',
         '蒸気 100 mB ごとに水 1 mB を返す（タンク 2,000 mB、あふれた分は失われる）'),
+    # C2: universal cables
+    'command.mio_icif.perf.fe': v(
+        'FE per tick: into cables %1$s, exported %2$s, imported %3$s; neighbour probes %4$s (%5$s skipped)',
+        'FE 每 tick：推入导线 %1$s，输出 %2$s，输入 %3$s；邻居探测 %4$s（跳过 %5$s）',
+        'FE 1 tick あたり：ケーブルへ %1$s、送出 %2$s、受入 %3$s。隣接確認 %4$s（省略 %5$s）',
+        'FE за тик: в кабели %1$s, отдано %2$s, принято %3$s; проверок соседей %4$s (пропущено %5$s)'),
+    'advancements.mio_icif.industrial_prologue.description': v(
+        'Obtain an Insulated Low-Voltage Cable', '获得绝缘低压导线', '絶縁低圧ケーブルを手に入れる', 'Получите изолированный низковольтный кабель'),
 }
 
 

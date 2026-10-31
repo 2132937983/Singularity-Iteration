@@ -1716,7 +1716,7 @@
   "advancements.mio_icif.industrial_accident.title": "労働災害",
   "advancements.mio_icif.industrial_age.description": "火力発電機を手に入れる",
   "advancements.mio_icif.industrial_age.title": "産業時代",
-  "advancements.mio_icif.industrial_prologue.description": "エネルギー変換器を手に入れる",
+  "advancements.mio_icif.industrial_prologue.description": "絶縁低圧ケーブルを手に入れる",
   "advancements.mio_icif.industrial_prologue.title": "産業時代：序章",
   "advancements.mio_icif.manhattan_project.description": "火を使いこなしたら、火を定義し直してみる",
   "advancements.mio_icif.manhattan_project.title": "マンハッタン計画",
@@ -4593,5 +4593,6 @@
   "structure.mio_icif.steam_tunnel.power_port": "電力ポート：最大 2,048 EU/t、HV パケット（512 EU）",
   "structure.mio_icif.steam_tunnel.note.inside": "内部の 3 ブロックは空気。コントローラーは前端の外を向く",
   "structure.mio_icif.steam_tunnel.note.output": "蒸気 1,024 mB で 512 EU、1 tick に最大 4 回（2,048 EU/t）。バッファ 10,000 EU",
-  "structure.mio_icif.steam_tunnel.note.water": "蒸気 100 mB ごとに水 1 mB を返す（タンク 2,000 mB、あふれた分は失われる）"
+  "structure.mio_icif.steam_tunnel.note.water": "蒸気 100 mB ごとに水 1 mB を返す（タンク 2,000 mB、あふれた分は失われる）",
+  "command.mio_icif.perf.fe": "FE 1 tick あたり：ケーブルへ %1$s、送出 %2$s、受入 %3$s。隣接確認 %4$s（省略 %5$s）"
 }

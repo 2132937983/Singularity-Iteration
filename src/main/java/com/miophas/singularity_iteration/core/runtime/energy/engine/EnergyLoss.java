@@ -13,7 +13,7 @@ public final class EnergyLoss {
     }
     /** FE is integral: charge the smallest whole FE covering the configured route loss. */
     public static int feLoss(long milli) {
-        var unitsPerFe = BigInteger.valueOf(EnergyAmount.UNITS / 4);
+        var unitsPerFe = BigInteger.valueOf(EnergyAmount.UNITS / com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage.FE_PER_EU);
         return fromMilli(milli).units().add(unitsPerFe.subtract(BigInteger.ONE)).divide(unitsPerFe)
             .min(BigInteger.valueOf(Integer.MAX_VALUE)).intValueExact();
     }

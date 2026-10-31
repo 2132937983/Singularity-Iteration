@@ -38,8 +38,10 @@ public final class CoreExampleMod {
     public static final DeferredBlock<Block> MULTI_SOURCE = BLOCKS.register("multi_source", () -> new ExampleBlock(InheritedMultiSource::new));
     public static final DeferredBlock<Block> PACKET_SOURCE = BLOCKS.register("packet_source", () -> new ExampleBlock(ComposedPacketSource::new));
     public static final DeferredBlock<Block> FOREIGN_BATTERY = BLOCKS.register("foreign_battery", () -> new ExampleBlock(ForeignBattery::new));
+    /** 0.1.10.39: another mod's FE cable as SI sees it (its id names a cable); SI cables must not connect to it. */
+    public static final DeferredBlock<Block> FOREIGN_CABLE = BLOCKS.register("foreign_energy_cable", () -> new ExampleBlock(ForeignBattery::new));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ForeignBattery>> FOREIGN_BATTERY_ENTITY =
-        ENTITIES.register("foreign_battery", () -> BlockEntityType.Builder.of(ForeignBattery::new, FOREIGN_BATTERY.get()).build(null));
+        ENTITIES.register("foreign_battery", () -> BlockEntityType.Builder.of(ForeignBattery::new, FOREIGN_BATTERY.get(), FOREIGN_CABLE.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<InheritedMultiSource>> MULTI_SOURCE_ENTITY =
         ENTITIES.register("multi_source", () -> BlockEntityType.Builder.of(InheritedMultiSource::new, MULTI_SOURCE.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ComposedPacketSource>> PACKET_SOURCE_ENTITY =

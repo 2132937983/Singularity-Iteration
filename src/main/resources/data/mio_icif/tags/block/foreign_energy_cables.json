@@ -1,0 +1,97 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "mekanism:basic_universal_cable",
+      "required": false
+    },
+    {
+      "id": "mekanism:advanced_universal_cable",
+      "required": false
+    },
+    {
+      "id": "mekanism:elite_universal_cable",
+      "required": false
+    },
+    {
+      "id": "mekanism:ultimate_universal_cable",
+      "required": false
+    },
+    {
+      "id": "thermal:energy_duct",
+      "required": false
+    },
+    {
+      "id": "thermal:energy_duct_window",
+      "required": false
+    },
+    {
+      "id": "powah:energy_cable_starter",
+      "required": false
+    },
+    {
+      "id": "powah:energy_cable_basic",
+      "required": false
+    },
+    {
+      "id": "powah:energy_cable_hardened",
+      "required": false
+    },
+    {
+      "id": "powah:energy_cable_blazing",
+      "required": false
+    },
+    {
+      "id": "powah:energy_cable_niotic",
+      "required": false
+    },
+    {
+      "id": "powah:energy_cable_spirited",
+      "required": false
+    },
+    {
+      "id": "powah:energy_cable_nitro",
+      "required": false
+    },
+    {
+      "id": "pipez:energy_pipe",
+      "required": false
+    },
+    {
+      "id": "pipez:universal_pipe",
+      "required": false
+    },
+    {
+      "id": "enderio:conduit",
+      "required": false
+    },
+    {
+      "id": "cyclic:energy_pipe",
+      "required": false
+    },
+    {
+      "id": "immersiveengineering:connector_lv",
+      "required": false
+    },
+    {
+      "id": "immersiveengineering:connector_mv",
+      "required": false
+    },
+    {
+      "id": "immersiveengineering:connector_hv",
+      "required": false
+    },
+    {
+      "id": "immersiveengineering:connector_lv_relay",
+      "required": false
+    },
+    {
+      "id": "immersiveengineering:connector_mv_relay",
+      "required": false
+    },
+    {
+      "id": "immersiveengineering:connector_hv_relay",
+      "required": false
+    }
+  ]
+}

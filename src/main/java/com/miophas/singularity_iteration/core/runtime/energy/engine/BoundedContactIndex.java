@@ -30,6 +30,8 @@ public final class BoundedContactIndex<K, V> {
     public int size() { return contacts.size(); }
     public boolean isEmpty() { return contacts.isEmpty(); }
     public boolean containsKey(K key) { return contacts.containsKey(key); }
+    /** 0.1.10.39: the value registered for {@code key}, or null. */
+    public V get(K key) { var entry = contacts.get(key); return entry == null ? null : entry.getValue(); }
 
     /** A snapshot entry is current only until that exact registration is removed. */
     public boolean isCurrent(Map.Entry<K, V> entry) {

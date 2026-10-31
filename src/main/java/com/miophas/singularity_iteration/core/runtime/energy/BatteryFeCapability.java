@@ -9,7 +9,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 
 /** Standard NeoForge FE view of an SI whole-EU battery item. */
 public final class BatteryFeCapability implements IEnergyStorage {
-    public static final int FE_PER_EU = 4;
+    public static final int FE_PER_EU = com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage.FE_PER_EU;
     private final ItemStack stack;
     private final IBatteryItem battery;
 

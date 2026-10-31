@@ -10,6 +10,8 @@ item_ids:
 
 # エネルギー変換器
 
+> **旧ブロック（0.1.10.39）。** SI のケーブルは押し込まれた FE を受け取り、他の MOD の機械へ FE を送るようになった（[送電と蓄電](../power.md)を参照）。変換器はクラフトも一覧表示もされなくなった。設置済みの変換器はそのまま動く。
+
 <Row>
   <BlockImage id="mio_icif:energy_converter/energy_converter" scale="3" />
 </Row>

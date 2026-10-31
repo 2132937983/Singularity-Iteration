@@ -25,6 +25,31 @@ import java.util.List;
 @SuppressWarnings("null")
 public abstract class AbstractWireBlockEntity extends AbstractEnergyBlockEntity implements ICableEnergyNode {
 
+    /**
+     * 0.1.10.39 (universal cables): every face takes FE pushed by the block beyond it (machines, generators, batteries of other
+     * mods) into the grid, at voltage 0 ({@code IndependentSiEnergy.offerFe}). Receive only; no FE toward another mod's cable.
+     */
+    @Override
+    public net.neoforged.neoforge.energy.IEnergyStorage scexFeCapability(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (side == null || !(level instanceof ServerLevel server) || isRemoved()) return null;
+        if (com.miophas.singularity_iteration.core.runtime.energy.ForeignEnergyCables.is(server, worldPosition.relative(side))) return null;
+        BlockPos cable = worldPosition;
+        return new net.neoforged.neoforge.energy.IEnergyStorage() {
+            private com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy engine() {
+                return com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.current(server.getServer());
+            }
+            @Override public int receiveEnergy(int amount, boolean simulate) {
+                var engine = engine();
+                return engine == null || isRemoved() ? 0 : engine.offerFe(server, cable, side, amount, simulate);
+            }
+            @Override public int extractEnergy(int amount, boolean simulate) { return 0; }
+            @Override public int getEnergyStored() { return 0; }
+            @Override public int getMaxEnergyStored() { return com.miophas.singularity_iteration.core.runtime.energy.grid.FECompatTile.INBOX_FE; }
+            @Override public boolean canExtract() { return false; }
+            @Override public boolean canReceive() { return engine() != null && !isRemoved(); }
+        };
+    }
+
     private static final int CONDUCTIVITY_RANGE = 32;
     private static final int ELECTRIC_CHECK_INTERVAL = 10;
     private static final int POWERED_DURATION = 20;

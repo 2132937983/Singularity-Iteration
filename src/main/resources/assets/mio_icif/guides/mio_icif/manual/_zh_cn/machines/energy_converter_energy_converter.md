@@ -10,6 +10,8 @@ item_ids:
 
 # 能源转换器
 
+> **旧版方块（0.1.10.39）。** SI 导线现在可以接收推入的 FE，并向其他模组的机器输出 FE（见[电力传输与储存](../power.md)）。转换器不再可合成、也不再列出；已放置的转换器继续工作。
+
 <Row>
   <BlockImage id="mio_icif:energy_converter/energy_converter" scale="3" />
 </Row>

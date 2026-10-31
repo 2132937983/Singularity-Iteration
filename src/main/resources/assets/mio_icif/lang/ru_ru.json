@@ -1943,7 +1943,7 @@
   "advancements.mio_icif.root.title": "Сингулярная Итерация",
   "advancements.mio_icif.root.description": "Войдите в мир",
   "advancements.mio_icif.industrial_prologue.title": "Индустриальная эпоха: пролог",
-  "advancements.mio_icif.industrial_prologue.description": "Получите преобразователь энергии",
+  "advancements.mio_icif.industrial_prologue.description": "Получите изолированный низковольтный кабель",
   "advancements.mio_icif.industrial_age.title": "Индустриальная эпоха",
   "advancements.mio_icif.industrial_age.description": "Получите термальный генератор",
   "advancements.mio_icif.industrial_accident.title": "Промышленная авария",
@@ -3155,5 +3155,6 @@
   "message.mio_icif.steam_tunnel.problem.casing_or_port": "Паровой туннель: нет корпуса или порта (%s)",
   "jade.mio_icif.steam_tunnel.fluids": "Пар %1$s / %2$s mB, вода %3$s / %4$s mB",
   "jade.mio_icif.steam_tunnel.energy": "Буфер %1$s / %2$s EU, выход %3$s EU/t",
-  "config.jade.plugin_mio_icif.steam_tunnel": "Паровой туннель"
+  "config.jade.plugin_mio_icif.steam_tunnel": "Паровой туннель",
+  "command.mio_icif.perf.fe": "FE за тик: в кабели %1$s, отдано %2$s, принято %3$s; проверок соседей %4$s (пропущено %5$s)"
 }

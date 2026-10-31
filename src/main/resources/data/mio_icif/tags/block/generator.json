@@ -164,6 +164,10 @@
     {
       "id": "mio_icif:generator/block_steam_turbine",
       "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_tunnel",
+      "required": false
     }
   ]
 }

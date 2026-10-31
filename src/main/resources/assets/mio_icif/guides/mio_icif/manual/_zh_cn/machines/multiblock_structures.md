@@ -92,6 +92,16 @@ navigation:
 
 页面: [发酵机与热源](producer_block_fermenter_elc.md)
 
+## 蒸汽隧道涡轮机
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:steam_tunnel" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:steam_tunnel" />
+
+页面: [蒸汽隧道涡轮机](generator_block_steam_tunnel.md)
+
 ## 附属模组作者
 
 用 `StructureBlueprintRegistry.register(...)`（包 `core.api.multiblock`）注册建造图后，JEI 会显示它；本手册的页面可在 `GameScene` 中用 `<SiStructure id="mymod:plan" />`，并用 `<SiStructureInfo id="mymod:plan" />` 显示它。详见 API 指南第 20 节。

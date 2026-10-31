@@ -62,6 +62,21 @@ public final class BuiltinStructureBlueprints {
             .note(KEY + "steam_reactor.note.fluids")
             .note(KEY + "nuclear_reactor.note.shared")
             .note(KEY + "nuclear_reactor.note.chunk"));
+        // 0.1.10.39: the Steam Tunnel (SteamTunnelStructure): a hollow 3 x 3 x 5 box behind its controller, which faces out
+        register(StructureBlueprint.builder(id("steam_tunnel"))
+            .layer("CCCCC", "CFFFC", "CCCCC")
+            .layer("CFVFC", "F...T", "CFPFC")
+            .layer("CCCCC", "CFFFC", "CCCCC")
+            .key('T', block("generator/block_steam_tunnel").with("facing", "east"))
+            .key('C', KEY + "steam_tunnel.casing", block("generator/block_steam_tunnel_casing"))
+            .key('F', KEY + "steam_tunnel.face", block("generator/block_steam_tunnel_casing"),
+                block("generator/block_steam_tunnel_fluid_port"), block("generator/block_steam_tunnel_power_port"))
+            .key('V', KEY + "steam_tunnel.fluid_port", block("generator/block_steam_tunnel_fluid_port"))
+            .key('P', KEY + "steam_tunnel.power_port", block("generator/block_steam_tunnel_power_port"))
+            .controller('T')
+            .note(KEY + "steam_tunnel.note.inside")
+            .note(KEY + "steam_tunnel.note.output")
+            .note(KEY + "steam_tunnel.note.water"));
     }
 
     /** 5x5x5 Fluid Reactor (mio_icif_fluid_reactor_validator): reactor, 6 chambers, 98 shell blocks with at least 1 port. */

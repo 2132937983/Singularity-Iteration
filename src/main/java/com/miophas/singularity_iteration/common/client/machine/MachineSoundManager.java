@@ -120,6 +120,7 @@ public final class MachineSoundManager {
         map(generator, "generator/block_geo_generator", "generator/block_semifluid_generator", "generator/block_advanced_semifluid_generator",
             "generator/block_diesel_generator", "generator/block_drop_generator", "generator/block_advanced_drop_generator",
             "generator/block_experience_generator", "generator/block_advanced_experience_generator", "hugenerator/block_solid_heat_generator");
+        map(turbine, "generator/block_steam_tunnel");   // 0.1.10.39
         map(turbine, "generator/block_stirling_generator", "generator/block_advanced_stirling_generator", "kugenerator/block_stirling_kinetic_generator",
             "producer/block_steam_kinetic_generator");
         map(reactor, "generator/block_nuclear_reactor_generator", "generator/block_rt_generator", "hugenerator/block_rt_heat_generator");

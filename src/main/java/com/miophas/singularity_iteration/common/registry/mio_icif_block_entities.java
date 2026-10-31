@@ -871,6 +871,16 @@ public class mio_icif_block_entities {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_steam_turbine>> STEAM_TURBINE_ENTITY_TYPE =
         BLOCK_ENTITIES.register("steam_turbine", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_steam_turbine::new, mio_icif_blocks.STEAM_TURBINE.get()).build(null));
+    // 0.1.10.39: the Steam Tunnel
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelBlockEntity>> STEAM_TUNNEL_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("steam_tunnel", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelBlockEntity::new, mio_icif_blocks.STEAM_TUNNEL.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelFluidPortBlockEntity>> STEAM_TUNNEL_FLUID_PORT_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("steam_tunnel_fluid_port", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelFluidPortBlockEntity::new, mio_icif_blocks.STEAM_TUNNEL_FLUID_PORT.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelPowerPortBlockEntity>> STEAM_TUNNEL_POWER_PORT_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("steam_tunnel_power_port", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelPowerPortBlockEntity::new, mio_icif_blocks.STEAM_TUNNEL_POWER_PORT.get()).build(null));
 
     // 注册 reactor fluid port 方块实体类型
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.reactor.mio_icif_reactor_fluid_port>> REACTOR_FLUID_PORT_ENTITY_TYPE =

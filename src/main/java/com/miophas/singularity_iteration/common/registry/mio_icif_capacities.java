@@ -199,6 +199,7 @@ public class mio_icif_capacities {
             mio_icif_block_entities.WATER_GENERATOR_ENTITY_TYPE.get(),
             mio_icif_block_entities.SEMIFLUID_GENERATOR_ENTITY_TYPE.get(),
             mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(),
+            mio_icif_block_entities.STEAM_TUNNEL_POWER_PORT_ENTITY_TYPE.get(),   // 0.1.10.39
             mio_icif_block_entities.HEAT_GENERATOR_ELC.get(),
             mio_icif_block_entities.SOLID_HEAT_GENERATOR.get(),
             mio_icif_block_entities.FLUID_HEAT_GENERATOR.get(),
@@ -2441,6 +2442,10 @@ public class mio_icif_capacities {
             (blockEntity, direction) -> blockEntity.getHeatStorageCapability(direction) instanceof IMioIcifCapabilities.IHeatStorage api ? api : null);
         event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_REACTOR_CHAMBER_ENTITY_TYPE.get(),
             (blockEntity, direction) -> blockEntity.getFluidHandlerCapability(direction));
+        // 0.1.10.39: the Steam Tunnel: steam in and water out at the controller and the fluid ports, EU at the power ports
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_TUNNEL_ENTITY_TYPE.get(), (blockEntity, direction) -> blockEntity);
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, mio_icif_block_entities.STEAM_TUNNEL_FLUID_PORT_ENTITY_TYPE.get(), (blockEntity, direction) -> blockEntity);
+        registerEnergyCapabilities(event, mio_icif_block_entities.STEAM_TUNNEL_POWER_PORT_ENTITY_TYPE.get());
         // 0.1.10.36: the steam turbine (EU, cell and battery slots, the steam tank)
         event.registerBlockEntity(EUApi.SIDED, mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(),
             (blockEntity, direction) -> blockEntity.getEnergyStorageCapability(direction));

@@ -92,6 +92,16 @@ navigation:
 
 ページ: [発酵槽と熱源](producer_block_fermenter_elc.md)
 
+## スチームトンネル
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:steam_tunnel" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:steam_tunnel" />
+
+ページ: [スチームトンネル](generator_block_steam_tunnel.md)
+
 ## アドオン作者向け
 
 `StructureBlueprintRegistry.register(...)`（パッケージ `core.api.multiblock`）で建造図を登録すると JEI に表示されます。このガイドのページでは `GameScene` の中の `<SiStructure id="mymod:plan" />` と `<SiStructureInfo id="mymod:plan" />` で表示できます。API ガイドの第 20 節を参照してください。

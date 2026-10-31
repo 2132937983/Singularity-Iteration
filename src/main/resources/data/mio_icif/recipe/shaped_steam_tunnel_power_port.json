@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    "GHG",
+    " G "
+  ],
+  "key": {
+    "G": {
+      "item": "mio_icif:wiring/cable/block_gold_cable_1"
+    },
+    "H": {
+      "item": "mio_icif:producer/block_machine_hull_basic"
+    }
+  },
+  "result": {
+    "id": "mio_icif:generator/block_steam_tunnel_power_port",
+    "count": 1
+  }
+}

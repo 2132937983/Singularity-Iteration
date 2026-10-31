@@ -1162,6 +1162,10 @@ public class mio_icif_creativeTabs {
                 output.accept(mio_icif_blocks.NUCLEAR_REACTOR_GENERATOR.get());
                 output.accept(mio_icif_blocks.STEAM_REACTOR.get());   // 0.1.10.36
                 output.accept(mio_icif_blocks.STEAM_TURBINE.get());   // 0.1.10.36
+                output.accept(mio_icif_blocks.STEAM_TUNNEL.get());   // 0.1.10.39
+                output.accept(mio_icif_blocks.STEAM_TUNNEL_CASING.get());
+                output.accept(mio_icif_blocks.STEAM_TUNNEL_FLUID_PORT.get());
+                output.accept(mio_icif_blocks.STEAM_TUNNEL_POWER_PORT.get());
                 // 0.1.10.36: the Infinite Generator is hidden (still registered, so placed ones survive); use the Creative Generator
                 output.accept(mio_icif_blocks.CREATIVE_GENERATOR.get());
 

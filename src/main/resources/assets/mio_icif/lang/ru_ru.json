@@ -3140,5 +3140,20 @@
   "item.mio_icif.reactor.item_proton_shard": "Протонный осколок",
   "item.mio_icif.reactor.item_reactor_proton_octuple": "Восьмерной ТВЭЛ (протон)",
   "item.mio_icif.reactor.item_reactor_proton_octuple_depleted": "Восьмерной ТВЭЛ (отработанный протон)",
-  "item.mio_icif.reactor.item_proton_octuple_casing": "Корпус восьмерного протонного ТВЭЛа"
+  "item.mio_icif.reactor.item_proton_octuple_casing": "Корпус восьмерного протонного ТВЭЛа",
+  "block.mio_icif.generator.block_steam_tunnel": "Паровой туннель",
+  "block.mio_icif.generator.block_steam_tunnel_casing": "Корпус парового туннеля",
+  "block.mio_icif.generator.block_steam_tunnel_fluid_port": "Жидкостный порт парового туннеля",
+  "block.mio_icif.generator.block_steam_tunnel_power_port": "Энергетический порт парового туннеля",
+  "message.mio_icif.steam_tunnel.running": "Паровой туннель: работает, %1$s EU/t (портов: %2$s)",
+  "message.mio_icif.steam_tunnel.idle": "Паровой туннель: собран, простаивает (портов: %2$s): нужно 1 024 mB пара и место в буфере",
+  "message.mio_icif.steam_tunnel.checking": "Паровой туннель: проверка конструкции...",
+  "message.mio_icif.steam_tunnel.problem.unloaded": "Паровой туннель: часть конструкции не загружена (%s)",
+  "message.mio_icif.steam_tunnel.problem.air": "Паровой туннель: внутри должен быть воздух (%s)",
+  "message.mio_icif.steam_tunnel.problem.port_on_edge": "Паровой туннель: порт на ребре (%s); порты ставятся в середину стороны или в центр задней стенки",
+  "message.mio_icif.steam_tunnel.problem.casing": "Паровой туннель: нет корпуса (%s)",
+  "message.mio_icif.steam_tunnel.problem.casing_or_port": "Паровой туннель: нет корпуса или порта (%s)",
+  "jade.mio_icif.steam_tunnel.fluids": "Пар %1$s / %2$s mB, вода %3$s / %4$s mB",
+  "jade.mio_icif.steam_tunnel.energy": "Буфер %1$s / %2$s EU, выход %3$s EU/t",
+  "config.jade.plugin_mio_icif.steam_tunnel": "Паровой туннель"
 }

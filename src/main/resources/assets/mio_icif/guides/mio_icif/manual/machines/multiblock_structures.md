@@ -92,6 +92,16 @@ Page: [Blast Furnace and heat source](producer_block_blast_furnace.md)
 
 Page: [Fermenter and heat source](producer_block_fermenter_elc.md)
 
+## Steam Tunnel
+
+<GameScene zoom="4" interactive={true}>
+  <SiStructure id="mio_icif:steam_tunnel" />
+</GameScene>
+
+<SiStructureInfo id="mio_icif:steam_tunnel" />
+
+Page: [Steam Tunnel](generator_block_steam_tunnel.md)
+
 ## For addon authors
 
 Register a plan with `StructureBlueprintRegistry.register(...)` (package `core.api.multiblock`). JEI then shows it, and a page of this manual can show it with `<SiStructure id="mymod:plan" />` inside a `GameScene` and `<SiStructureInfo id="mymod:plan" />`. See the API guide, section 20.

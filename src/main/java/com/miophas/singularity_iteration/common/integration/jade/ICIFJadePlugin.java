@@ -42,10 +42,15 @@ public class ICIFJadePlugin implements IWailaPlugin {
                 DualFluidStorageProvider.INSTANCE,
                 BlockEntity.class
         );
+        registration.registerBlockDataProvider(SteamTunnelProvider.INSTANCE,
+                com.miophas.singularity_iteration.common.blockentity.generator.SteamTunnelBlockEntity.class);   // 0.1.10.39
     }
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
+        // 0.1.10.39: the Steam Tunnel controller (no menu)
+        registration.registerBlockComponent(SteamTunnelProvider.INSTANCE,
+                com.miophas.singularity_iteration.common.block.generator.mio_icif_block_steam_tunnel.class);
         // 注册 EU 能量客户端组件提供器
         registration.registerBlockComponent(
                 EUEnergyStorageProvider.INSTANCE,

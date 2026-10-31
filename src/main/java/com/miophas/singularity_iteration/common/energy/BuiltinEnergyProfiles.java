@@ -49,6 +49,7 @@ public final class BuiltinEnergyProfiles {
         packets.put(id("generator/block_twin_turbo_kinetic_generator"), 8192L); // dynamic ceiling: tier 5 (IV)
         packets.put(id("generator/block_nuclear_reactor_generator"), 8192L); // SI public extraction ceiling; actual per-tick offer is demand quoted.
         packets.put(STIRLING, 128L); // Retained public SI packet setting; reference maximum remains open.
+        packets.put(id("generator/block_steam_tunnel_power_port"), 512L);   // 0.1.10.39: HV, up to 4 packets a tick
         for (var type : AMBIENT_GENERATORS) packets.put(type, 32L);
         packets.putAll(FUEL_GENERATOR_PACKETS);
         packets.putAll(WORLD_FUEL_GENERATOR_PACKETS);

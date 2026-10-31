@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mio_icif:block/generator/block_steam_tunnel_casing"
+    }
+  }
+}

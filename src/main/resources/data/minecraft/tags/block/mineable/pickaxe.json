@@ -787,6 +787,22 @@
     {
       "id": "mio_icif:generator/block_steam_turbine",
       "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_tunnel",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_tunnel_casing",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_tunnel_fluid_port",
+      "required": false
+    },
+    {
+      "id": "mio_icif:generator/block_steam_tunnel_power_port",
+      "required": false
     }
   ]
 }

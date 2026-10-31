@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "mio_icif:block/generator/block_steam_tunnel_casing",
+    "side": "mio_icif:block/generator/block_steam_tunnel_casing",
+    "front": "mio_icif:block/generator/block_steam_tunnel_front_on",
+    "particle": "mio_icif:block/generator/block_steam_tunnel_casing"
+  }
+}

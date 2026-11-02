@@ -258,6 +258,14 @@
     {
       "id": "mio_icif:reactor/block_steam_reactor_chamber",
       "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_trade_box",
+      "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_trade_box_advanced",
+      "required": false
     }
   ]
 }

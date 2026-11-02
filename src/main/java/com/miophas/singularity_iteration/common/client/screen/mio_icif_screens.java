@@ -325,6 +325,9 @@ public class mio_icif_screens {
         );
         // 0.1.10.27 (X2): the Trade Terminal
         event.register(mio_icif_menus.TRADE_TERMINAL_MENU_TYPE.get(), TradeTerminalScreen::new);
+        // 0.1.10.42: the Trade Boxes
+        event.register(mio_icif_menus.TRADE_BOX_MENU_TYPE.get(), TradeBoxScreen::new);
+        event.register(mio_icif_menus.TRADE_BOX_ADVANCED_MENU_TYPE.get(), TradeBoxScreen::new);
 
         // 注册热交换机的GUI 界面
         event.register(

@@ -123,6 +123,9 @@ public final class Bounties {
             @Override public boolean eligible(Table table) { return advancementHeld(server, table.advancement()); }
 
             @Override public Draft posting(Draft draft) { return postingEvent(server, draft, prices); }
+
+            // 0.1.10.43: the cost of reserved treasury items (the treasury fund books it when they are paid)
+            @Override public double unitCost(String item) { return BondsFund.unitCost(server, d, item); }
         };
     }
 
@@ -192,12 +195,16 @@ public final class Bounties {
         if (event.getEntity() instanceof ServerPlayer p && FutureMarketData.get(p.server.overworld()).isInitialized()) {
             seen(p);
             Shops.onLogin(p);   // 0.1.10.35: the owner is back; a shop closed while away is told
+            WealthRanking.onLogin(p);   // 0.1.10.42: the name of the ranking
         }
     }
 
     @SubscribeEvent
     public static void onLogout(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
         ExchangePackets.SHOP_QUERY.remove(event.getEntity().getUUID());   // 0.1.10.35: the shop page the player looked at
+        ExchangePackets.RANKING_QUERY.remove(event.getEntity().getUUID());
+        // 0.1.10.42: the coins the player carries count for them while they are away
+        if (event.getEntity() instanceof ServerPlayer p && FutureMarketData.get(p.server.overworld()).isInitialized()) WealthRanking.onLogout(p);
     }
 
     /** Ticks between two checks of the refill (10 seconds). */
@@ -246,6 +253,7 @@ public final class Bounties {
         BountyBoard.Prices p = prices(server);
         List<Bounty> posted = new ArrayList<>(), expired = new ArrayList<>();
         List<Payout> payouts = d.board.newDay(day, r, ExchangeTables.tables(), d.treasury, p, lacking(d, r), hooks(server, d, p), posted, expired);
+        BondsFund.restoreCost(d);   // 0.1.10.43: reserved items back unpaid keep their cost
         for (Payout x : payouts) toMailbox(d, x, day);
         for (Bounty b : posted) if (b.tier == Tier.SPECIAL) announce(server, b);
         d.setDirty();
@@ -327,6 +335,64 @@ public final class Bounties {
         return completed ? Result.done("bounty_completed", delivered, coins) : Result.done("bounty_delivered_left", delivered, coins, missing(b));
     }
 
+    /**
+     * 0.1.10.42: the Advanced Trade Box delivers for its owner (online or not) from {@code from} to the bounties the owner
+     * claimed, within the owner's share, like {@link #deliver}; every reward goes to the owner's accounts (coins, UU-matter)
+     * and mailbox (items), the other contributors' through their mailboxes. Returns {items delivered, coins paid to the owner,
+     * bounties completed}.
+     */
+    public static long[] deliverClaimed(MinecraftServer server, UUID owner, String ownerName, ItemSource from) {
+        long[] out = new long[3];
+        if (owner == null) return out;
+        ExchangeData d = ExchangeData.get(server);
+        long day = ExchangeService.today(server);
+        boolean mp = multiplayer(server);
+        BountyBoard.Prices prices = null;
+        for (Bounty b : List.copyOf(d.board.bounties)) {
+            if (!owner.equals(b.claimant)) continue;
+            if (prices == null) prices = prices(server);
+            List<Payout> payouts = new ArrayList<>();
+            long delivered = 0;
+            boolean completed = false;
+            for (int i = 0; i < b.needs.size() && !completed; i++) {
+                Need n = b.needs.get(i);
+                ItemMatch match = ItemMatch.of(n.item, n.tag);
+                if (match == null || n.left() <= 0) continue;
+                long take = Math.min(d.board.canDeliver(b, i, owner, day, mp), from.count(match));
+                if (take <= 0 || !from.take(match, take)) continue;
+                d.records.add(owner, day, MarketRecords.BOUNTY, Math.multiplyExact(take, Math.max(1, n.unit)));
+                if (prices.isCommodity(n.item)) d.records.costIn(n.item, d.treasury.getOrDefault(n.item, 0L), take, (double) take * Math.max(1, n.unit));
+                Delivery x = d.board.deliver(b, i, take, owner, ownerName, d.treasury, prices);
+                payouts.addAll(x.payouts());
+                delivered += take;
+                completed = x.completed();
+            }
+            if (delivered == 0) continue;
+            for (Payout x : payouts) {
+                if (x.player().equals(owner) && x.kind() == Kind.COINS) out[1] += x.amount();
+                toMailbox(d, x, day);
+            }
+            out[0] += delivered;
+            if (completed) {
+                out[2]++;
+                ExchangeEvents.completed(info(b));
+                for (UUID who : b.contribution.keySet()) {
+                    ServerPlayer online = server.getPlayerList().getPlayer(who);
+                    if (online != null) online.sendSystemMessage(Component.translatable("message.mio_icif.exchange.bounty_completed_mail"));
+                }
+            }
+            d.setDirty();
+        }
+        return out;
+    }
+
+    /** 0.1.10.42: bounties {@code owner} claimed (the Advanced Trade Box delivers to them). */
+    public static int claimedBy(ExchangeData d, UUID owner) {
+        int n = 0;
+        if (owner != null) for (Bounty b : d.board.bounties) if (owner.equals(b.claimant)) n++;
+        return n;
+    }
+
     /** 0.1.10.33: what a bounty still needs, as "name xN, name xN" (four at most, then "+N"). */
     static Component missing(Bounty b) {
         net.minecraft.network.chat.MutableComponent out = Component.empty();
@@ -349,6 +415,7 @@ public final class Bounties {
         if (x.kind() == Kind.COINS) { l.minted += x.amount() - ExchangeService.fromReserve(d, day, x.amount()); l.bountyCoins += x.amount(); }
         else if (x.kind() == Kind.UU) l.bountyUu += x.amount();
         else if (x.source() == Source.ISSUE) l.bountyItems += x.amount();
+        else if (x.source() == Source.TREASURY) BondsFund.bountyCost(d, x, day);   // 0.1.10.43: a loss of the treasury
     }
 
     static void toPlayer(InventoryPlan plan, ExchangeData d, Payout x, long day) {
@@ -498,6 +565,7 @@ public final class Bounties {
         Bounty b = d.board.find(id);
         if (b == null) return false;
         d.board.cancel(b, d.treasury);
+        BondsFund.restoreCost(d);   // 0.1.10.43
         d.setDirty();
         return true;
     }

@@ -18,9 +18,10 @@ public interface PanelCanvas {
     /**
      * The number boxes of the panel (the screen owns the edit widgets). 0.1.10.35: POST_DAYS holds the hours of a commission
      * (the name stays for the older layout harnesses); the shop boxes: goods and cost items per trade, coins per trade, trades
-     * to stock (and to restock), trades to take (xN).
+     * to stock (and to restock), trades to take (xN). 0.1.10.43: units of treasury bonds and of the treasury fund.
      */
-    enum Box { PRICE, QTY, POST_QTY, POST_AMOUNT, POST_DAYS, FUT_QTY, MIN, COIN, SHOP_GOODS, SHOP_COST, SHOP_PRICE, SHOP_UNITS, SHOP_N }
+    enum Box { PRICE, QTY, POST_QTY, POST_AMOUNT, POST_DAYS, FUT_QTY, MIN, COIN, SHOP_GOODS, SHOP_COST, SHOP_PRICE, SHOP_UNITS, SHOP_N,
+        BOND_UNITS, FUND_UNITS }
 
     int screenWidth();
 

@@ -24,6 +24,11 @@ public final class ExchangeViews {
 
     /** 0.1.10.35: with the shops part for {@code shopQuery} ({@link Shops#view}). */
     public static ExchangeView build(ServerPlayer player, String selected, boolean energy, String shopQuery) {
+        return build(player, selected, energy, shopQuery, -1);
+    }
+
+    /** 0.1.10.42: with the wealth ranking of {@code ranking} ({@link WealthRules} category; -1 = none). */
+    public static ExchangeView build(ServerPlayer player, String selected, boolean energy, String shopQuery, int ranking) {
         MinecraftServer server = player.server;
         ExchangeData d = ExchangeData.get(server);
         FutureMarketData fm = FutureMarketData.get(server.overworld());
@@ -109,13 +114,26 @@ public final class ExchangeViews {
                 c.expiresAt > 0 ? CommissionHours.secondsLeft(gameTime, c.expiresAt) : -1));
         }
 
+        // 0.1.10.42: one row per commodity, side and expiry (the lots inside keep their prices)
         List<ExchangeView.PositionLine> positions = new ArrayList<>();
-        for (ExchangeData.Position p : d.positions) {
-            if (!p.owner.equals(player.getUUID())) continue;
-            ExchangeService.Market pm = ExchangeService.market(server, p.commodity);
-            long now = Forwards.settlement(p.isLong, p.price, p.quantity, pm == null ? p.price : pm.price());
-            positions.add(new ExchangeView.PositionLine(p.id, p.commodity, p.isLong, p.price, p.quantity, p.expiry, now));
+        List<ExchangeData.Position> mineLots = new ArrayList<>();
+        for (ExchangeData.Position p : d.positions) if (p.owner.equals(player.getUUID())) mineLots.add(p);
+        List<FuturesLimits.Lot> lots = new ArrayList<>();
+        for (ExchangeData.Position p : mineLots) lots.add(new FuturesLimits.Lot(p.commodity, p.isLong, p.expiry, p.price, p.quantity));
+        for (FuturesLimits.Row r : FuturesLimits.rows(lots)) {
+            long now = 0;
+            for (ExchangeData.Position p : mineLots) {
+                if (!p.commodity.equals(r.commodity()) || p.isLong != r.isLong() || p.expiry != r.expiry()) continue;
+                var c = FutureCommodityManager.getCommodityById(p.commodity);
+                long settle = c == null ? p.price : fm.getPrice(p.commodity, c.getBasePrice());
+                now += Forwards.settlement(p.isLong, p.price, p.quantity, settle);
+            }
+            positions.add(new ExchangeView.PositionLine(mineLots.get(r.first()).id, r.commodity(), r.isLong(), r.averagePrice(),
+                (int) Math.min(Integer.MAX_VALUE, r.quantity()), r.expiry(), now, r.lots(), r.collateral()));
         }
+        long futuresCap = ExchangeService.futuresCollateralCap(server);
+        ExchangeView.FuturesLine futuresLine = new ExchangeView.FuturesLine(positions.size(), FuturesLimits.MAX_ROWS,
+            FuturesLimits.openCollateral(lots), futuresCap, FuturesLimits.MAX_LOTS);
 
         List<ExchangeView.LedgerLine> ledger = new ArrayList<>();
         var led = new ArrayList<>(d.ledger);
@@ -185,10 +203,12 @@ public final class ExchangeViews {
         if (m != null && m.system() && m.currency() == ExchangeData.Currency.COIN) addCurve(curves, server, d, player.getUUID(), m.id(), day);
         for (ExchangeView.BoxLine l : boxLines) addCurve(curves, server, d, player.getUUID(), l.id(), day);
         for (ExchangeView.BoxLine l : settle.lines()) addCurve(curves, server, d, player.getUUID(), l.id(), day);
+        ExchangeView.StabilizerLine stabilizer = stabilizerLine(d, day);
         return new ExchangeView(day, coins, box.uu, box.coins, box.items.size(), energy, rows, detail, orders, mail, commissions, positions,
             ledger, stocks, List.copyOf(candidates), allowance == Long.MAX_VALUE ? -1 : allowance, boxLines, auctions,
-            Bounties.lines(player, d, day), budget, settle, stabilizerLine(d, day), d.bankMode.contains(player.getUUID()), curves,
-            m != null && m.system() ? m.bountyFloor() : 0, reserveLine(d, day), Shops.view(player, d, shopQuery));
+            Bounties.lines(player, d, day), budget, settle, stabilizer, d.bankMode.contains(player.getUUID()), curves,
+            m != null && m.system() ? m.bountyFloor() : 0, reserveLine(d, day), Shops.view(player, d, shopQuery), futuresLine,
+            WealthRanking.view(server, player.getUUID(), ranking), BondsFund.view(player, d, day, stabilizer));
     }
 
     /** 0.1.10.35 (item 4): the reserve now, its cap, and this market week's fees in, bounty coins paid from it, new bounty coins. */
@@ -198,7 +218,7 @@ public final class ExchangeViews {
             if (BountyMath.week(l.day) != week) continue;
             in += l.reserveIn;
             out += l.reserveOut;
-            made += Math.max(0, l.bountyCoins - l.reserveOut);
+            made += Math.max(0, l.bountyCoins - (l.reserveOut - l.bondReserve));   // 0.1.10.43: the reserve also pays bond interest
         }
         return new ExchangeView.ReserveLine(d.reserve, ExchangeService.reserveCap(d), in, out, made);
     }

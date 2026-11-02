@@ -5,11 +5,13 @@ import com.miophas.singularity_iteration.common.client.screen.panel.PanelCharts;
 import com.miophas.singularity_iteration.common.exchange.CardView;
 import com.miophas.singularity_iteration.common.exchange.ExchangeView;
 import com.miophas.singularity_iteration.common.exchange.MinPrice;
+import com.miophas.singularity_iteration.common.exchange.RankingView;
 import com.miophas.singularity_iteration.common.exchange.TerminalClientState;
 import com.miophas.singularity_iteration.common.exchange.TerminalOrders;
 import com.miophas.singularity_iteration.common.exchange.TerminalPackets;
 import com.miophas.singularity_iteration.common.exchange.TerminalRules;
 import com.miophas.singularity_iteration.common.exchange.TerminalView;
+import com.miophas.singularity_iteration.common.exchange.WealthRules;
 import com.miophas.singularity_iteration.common.future.FutureCommodity;
 import com.miophas.singularity_iteration.common.future.FutureCommodityManager;
 import com.miophas.singularity_iteration.common.menu.producer.TradeTerminalMenu;
@@ -40,7 +42,9 @@ import org.lwjgl.glfw.GLFW;
 @SuppressWarnings("null")
 public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
     private static final String K = "gui.mio_icif.terminal.";
-    private static final int W = 320, H = 222, TABS = 6, COL_X = 176, SETTLE_PAGE_X = 8, SETTLE_PAGE_Y = 34;
+    private static final int W = 320, H = 222, TABS = 7, COL_X = 176, SETTLE_PAGE_X = 8, SETTLE_PAGE_Y = 34;
+    /** 0.1.10.42: the ranking tab uses the texts of the exchange panel's ranking. */
+    private static final String EX = "gui.mio_icif.exchange.";
 
     private record Region(int x, int y, int w, int h, Runnable click) {
         boolean inside(double mx, double my) { return mx >= x && mx < x + w && my >= y && my < y + h; }
@@ -62,6 +66,8 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
     private NumberBox cardDays;
     // access editor
     private int newLevel = TerminalRules.VIEW;
+    // 0.1.10.42: the category of the ranking tab
+    private int rankingCategory;
     // settlement page: the commodity to buy into the container
     private int buyCommodity;
     // 0.1.10.29: number boxes; nameBox stays a text field
@@ -112,7 +118,8 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
     // ------------------------------------------------------------------ network
 
     private void request() {
-        PacketDistributor.sendToServer(new TerminalPackets.Request());
+        // 0.1.10.42: the ranking tab asks for its category
+        PacketDistributor.sendToServer(new TerminalPackets.Request(tab == 6 ? rankingCategory : -1));
         requestTimer = 0;
     }
 
@@ -229,6 +236,7 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
             case 2 -> access(g, v, mx, my);
             case 3 -> log(g, v);
             case 4 -> settlement(g, v, mx, my);
+            case 6 -> ranking(g, v, mx, my);
             default -> cards(g, v, mx, my);
         }
     }
@@ -256,21 +264,33 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
 
     private void header(GuiGraphics g, TerminalView v, int mx, int my) {
         g.fill(leftPos, topPos, leftPos + W, topPos + 20, 0xFF161B22);
+        // 0.1.10.42: seven tabs; narrower padding when they do not leave 60 px for the owner line
+        int pad = 10, gap = 2, sum = 0;
+        for (int i = 0; i < TABS; i++) sum += font.width(Component.translatable(K + "tab." + i));
+        if (4 + sum + TABS * (pad + gap) > W - 60) { pad = 6; gap = 1; }
         int x = 4;
         for (int i = 0; i < TABS; i++) {
             Component label = Component.translatable(K + "tab." + i);
-            int w = font.width(label) + 10;
+            int w = font.width(label) + pad;
             final int t = i;
             button(g, x, 3, w, 14, label, tab == i, true, () -> { tab = t; request(); }, mx, my);
-            x += w + 2;
+            x += w + gap;
         }
         if (v != null) {
             String right = v.owner().isEmpty() ? Component.translatable(K + "no_owner").getString()
                 : Component.translatable(K + "owner", v.owner()).getString();
             int colour = v.owner().isEmpty() ? PanelCharts.down() : v.ownerOnline() ? PanelCharts.up() : PanelCharts.WARN;
-            PanelCharts.right(g, font, font.plainSubstrByWidth(right, W - x - 8), leftPos + W - 5, topPos + 6, colour);
-            hover(x, 3, W - x - 4, 14, Component.translatable(K + "owner_help", levelName(v.level()), PanelCharts.number(v.energy()),
-                PanelCharts.number(v.maxEnergy())).getString(), mx, my);
+            String help = Component.translatable(K + "owner_help", levelName(v.level()), PanelCharts.number(v.energy()),
+                PanelCharts.number(v.maxEnergy())).getString();
+            int room = W - x - 8;
+            if (room >= 40 && font.width(right) <= room) {
+                PanelCharts.right(g, font, right, leftPos + W - 5, topPos + 6, colour);
+            } else {
+                // 0.1.10.42: a lamp in the owner's state when the name does not fit (before: the line was cut to a few letters)
+                g.fill(leftPos + W - 11, topPos + 7, leftPos + W - 5, topPos + 13, colour);
+                help = right + " \u00b7 " + help;
+            }
+            hover(x, 3, W - x - 4, 14, help, mx, my);
         }
     }
 
@@ -605,6 +625,103 @@ public class TradeTerminalScreen extends mio_icif_screen<TradeTerminalMenu> {
     }
 
     // ------------------------------------------------------------------ ID cards page (0.1.10.28, X4)
+
+    // ------------------------------------------------------------------ ranking page (0.1.10.42)
+
+    /** The wealth ranking of the server (the exchange panel's ranking): categories, top ten, own place, own assets, the name switch. */
+    private void ranking(GuiGraphics g, TerminalView v, int mx, int my) {
+        RankingView r = v.ranking();
+        int cat = Math.max(0, Math.min(WealthRules.CATEGORIES - 1, rankingCategory));
+        boolean ready = r.category() == cat;
+        int lw = COL_X - 14;
+        text(g, Component.translatable(EX + "ranking.title"), 8, 24, PanelCharts.ACCENT);
+        // the categories in two rows of two (one row of four cuts the labels at this width)
+        int bw = (lw - 3) / 2;
+        for (int i = 0; i < WealthRules.CATEGORIES; i++) {
+            final int k = i;
+            int bx = 8 + (i % 2) * (bw + 3), by = 34 + (i / 2) * 14;
+            button(g, bx, by, bw, 12, Component.translatable(EX + "ranking.category." + i), cat == i, true,
+                () -> { rankingCategory = k; request(); }, mx, my);
+            hover(bx, by, bw, 12, Component.translatable(EX + "ranking.help." + i).getString(), mx, my);
+        }
+        int y = 64, footer = H - 28;
+        if (!ready) {
+            text(g, Component.translatable(EX + "loading"), 8, y, PanelCharts.DIM);
+        } else if (!r.enabled()) {
+            for (var line : font.split(Component.translatable(EX + "ranking.off"), lw)) {
+                if (y + 8 > footer) break;
+                g.drawString(font, line, leftPos + 8, topPos + y, PanelCharts.DIM, false);
+                y += 10;
+            }
+        } else if (r.top().isEmpty()) {
+            text(g, Component.translatable(EX + "ranking.empty"), 8, y, PanelCharts.DIM);
+        } else {
+            for (RankingView.Entry e : r.top()) {
+                if (y + 9 > footer) break;
+                int colour = e.me() ? PanelCharts.ACCENT : PanelCharts.TEXT;
+                text(g, "#" + e.rank(), 8, y, colour);
+                String value = PanelCharts.number(e.value());
+                if (font.width(value) > lw / 2) value = com.miophas.singularity_iteration.common.client.screen.panel.PanelStyle.compact(e.value());
+                int vw = font.width(value);
+                PanelCharts.right(g, font, value, leftPos + 8 + lw, topPos + y, colour);
+                String name = e.name().isEmpty() ? Component.translatable(EX + "ranking.anonymous").getString() : e.name();
+                text(g, font.plainSubstrByWidth(name, Math.max(0, lw - 26 - vw - 6)), 34, y, colour);
+                y += 10;
+            }
+        }
+        if (ready && r.enabled()) {
+            String mine = r.myRank() > 0
+                ? Component.translatable(EX + "ranking.mine", r.myRank(), r.players(), PanelCharts.number(r.myValue())).getString()
+                : Component.translatable(EX + "ranking.unranked", r.players()).getString();
+            String shown = mine;
+            if (font.width(mine) > lw && r.myRank() > 0)   // the own value in the short form, the full line in the tooltip
+                shown = Component.translatable(EX + "ranking.mine", r.myRank(), r.players(),
+                    com.miophas.singularity_iteration.common.client.screen.panel.PanelStyle.compact(r.myValue())).getString();
+            if (font.width(shown) > lw && r.myRank() > 0)   // only the place (the value is in the assets column)
+                shown = Component.translatable(EX + "ranking.mine_place", r.myRank(), r.players()).getString();
+            text(g, font.plainSubstrByWidth(shown, lw), 8, H - 26, PanelCharts.ACCENT);
+            if (!shown.equals(mine) || font.width(mine) > lw) hover(8, H - 27, lw, 10, mine, mx, my);
+        }
+        String note = Component.translatable(EX + "ranking.note").getString();
+        text(g, font.plainSubstrByWidth(note, lw), 8, H - 14, PanelCharts.DIM);
+        if (font.width(note) > lw) hover(8, H - 15, lw, 10, note, mx, my);
+
+        int x = COL_X, w = W - COL_X - 6;
+        text(g, Component.translatable(EX + "ranking.assets"), x, 24, PanelCharts.ACCENT);
+        if (!ready || !r.enabled()) return;
+        y = 36;
+        if (cat == WealthRules.TOTAL && r.parts().size() == WealthRules.PARTS) {
+            for (int i = 0; i < WealthRules.PARTS; i++) {
+                partRow(g, x, y, w, Component.translatable(EX + "ranking.part." + i).getString(), r.parts().get(i), PanelCharts.TEXT);
+                hover(x, y - 1, w, 10, Component.translatable(EX + "ranking.part_help." + i).getString(), mx, my);
+                y += 10;
+            }
+            partRow(g, x, y + 2, w, Component.translatable(EX + "ranking.part_total").getString(), r.myValue(), PanelCharts.ACCENT);
+            y += 16;
+        } else {
+            partRow(g, x, y, w, Component.translatable(EX + "ranking.category." + cat).getString(), r.myValue(), PanelCharts.ACCENT);
+            y += 14;
+        }
+        int hideY = H - 22;
+        for (var line : font.split(Component.translatable(EX + "ranking.help." + cat), w)) {
+            if (y + 8 > hideY - 3) break;
+            g.drawString(font, line, leftPos + x, topPos + y, PanelCharts.DIM, false);
+            y += 9;
+        }
+        boolean hidden = r.hidden();
+        button(g, x, hideY, w, 14, Component.translatable(EX + (hidden ? "ranking.hidden_on" : "ranking.hidden_off")), hidden, true,
+            () -> act(TerminalPackets.RANKING_HIDE, 0, "", 0, 0, hidden ? 0 : 1), mx, my);
+        hover(x, hideY, w, 14, Component.translatable(EX + "ranking.hide_help").getString(), mx, my);
+    }
+
+    /** A label (dim, cut) and its number (right-aligned; compact when the full number takes more than half the row). */
+    private void partRow(GuiGraphics g, int x, int y, int w, String label, long value, int colour) {
+        String val = PanelCharts.number(value);
+        if (font.width(val) > w / 2) val = com.miophas.singularity_iteration.common.client.screen.panel.PanelStyle.compact(value);
+        int vw = font.width(val);
+        PanelCharts.right(g, font, val, leftPos + x + w, topPos + y, colour);
+        text(g, font.plainSubstrByWidth(label, Math.max(0, w - vw - 4)), x, y, PanelCharts.DIM);
+    }
 
     private void cards(GuiGraphics g, TerminalView v, int mx, int my) {
         boolean owner = v.level() == TerminalRules.OWNER;

@@ -219,8 +219,44 @@ public static final ModConfigSpec.DoubleValue FUTURE_MAX_PRICE_MULTIPLIER = FUTU
             .comment("Coins a new shop offer costs; they go to the treasury reserve (0.1.10.35)")
             .defineInRange("shopOfferFee", 50, 0, 1_000_000);
     public static final ModConfigSpec.IntValue SHOP_UPKEEP = FUTURE_BUILDER
-            .comment("Coins each shop offer costs a market week, from the owner's coin account; an offer whose upkeep is not paid pauses (0.1.10.35)")
+            .comment("Coins each shop offer costs per upkeep period (shopUpkeepHours; the name is that of 0.1.10.35, when the period was a",
+                     "market week), from the owner's coin account; an offer whose upkeep is not paid pauses (0.1.10.35)",
+                     "每个商店出售项每个维护周期（shopUpkeepHours）的维护费，从店主的货币账户扣除；付不起的出售项暂停")
             .defineInRange("shopUpkeepPerWeek", 10, 0, 1_000_000);
+    // 0.1.10.42: the upkeep period of the shops, the futures collateral cap, the wealth ranking
+    public static final ModConfigSpec.IntValue SHOP_UPKEEP_HOURS = FUTURE_BUILDER
+            .comment("Hours of the server running between two upkeep payments of a shop (0.1.10.42; before: a market week, about 2 h 20 min)",
+                     "商店两次缴纳维护费之间的服务器运行小时数（0.1.10.42；此前为一个市场周，约 2 小时 20 分钟）")
+            .defineInRange("shopUpkeepHours", 24, 1, 168);
+    public static final ModConfigSpec.IntValue SHOP_UPKEEP_MAX = FUTURE_BUILDER
+            .comment("Most coins one shop pays per upkeep period, however many offers it has (0 = no cap) (0.1.10.42)",
+                     "一个商店每个维护周期最多缴纳的维护费，无论出售项多少（0 = 不限）（0.1.10.42）")
+            .defineInRange("shopUpkeepMaxPerShop", 60, 0, 1_000_000);
+    public static final ModConfigSpec.IntValue FUTURES_MAX_OPEN_COLLATERAL = FUTURE_BUILDER
+            .comment("Most coins of collateral one player's open futures hold in multiplayer (0 = no cap; single player has no cap) (0.1.10.42)",
+                     "多人游戏中一名玩家未到期期货的保证金合计上限（0 = 不限；单人游戏不限）（0.1.10.42）")
+            .defineInRange("futuresMaxOpenCollateral", 5_000_000, 0, Integer.MAX_VALUE);
+    public static final ModConfigSpec.BooleanValue WEALTH_RANKING = FUTURE_BUILDER
+            .comment("The wealth ranking of the exchange: total assets per player on the treasury page and /mio_icif market wealth (0.1.10.42)",
+                     "交易所的资产排行：国库页与 /mio_icif market wealth 显示每名玩家的总资产（0.1.10.42）")
+            .define("wealthRanking", true);
+    // 0.1.10.43: treasury bonds and the treasury fund
+    public static final ModConfigSpec.BooleanValue BONDS_ENABLED = FUTURE_BUILDER
+            .comment("Treasury bonds on the treasury page: 7 or 28 market days, 1,000 coins a unit, a weekly rate that follows the stabiliser (0.1.10.43)",
+                     "国库页的国债：7 或 28 个市场日，每单位 1,000 货币，周利率随稳定器变化（0.1.10.43）")
+            .define("bondsEnabled", true);
+    public static final ModConfigSpec.IntValue BOND_MAX_PER_PLAYER = FUTURE_BUILDER
+            .comment("Most coins of bond principal one player holds (0 = no cap) (0.1.10.43)",
+                     "一名玩家持有的国债本金上限（0 = 不限）（0.1.10.43）")
+            .defineInRange("bondMaxPerPlayer", 1_000_000, 0, Integer.MAX_VALUE);
+    public static final ModConfigSpec.DoubleValue BOND_MAX_SUPPLY_PERCENT = FUTURE_BUILDER
+            .comment("All bonds together hold at most this percent of the stabiliser's money supply estimate; above it no new bonds are sold (0 = no cap) (0.1.10.43)",
+                     "全部国债本金合计不超过稳定器货币量估算的此百分比；超过后停止发行新国债（0 = 不限）（0.1.10.43）")
+            .defineInRange("bondMaxSupplyPercent", 25.0, 0.0, 100.0);
+    public static final ModConfigSpec.BooleanValue TREASURY_FUND = FUTURE_BUILDER
+            .comment("The treasury fund: units of 1,000 coins share the treasury's realised profit and loss of each market week (0.1.10.43)",
+                     "国库运用基金：每单位 1,000 货币，分享国库每个市场周的已实现盈亏（0.1.10.43）")
+            .define("treasuryFund", true);
     // 0.1.10.38: the data plan of the Portable Futures Trader
     public static final ModConfigSpec.IntValue PORTABLE_TRADER_PLAN_COINS = FUTURE_BUILDER
             .comment("Industrial Coins the Portable Futures Trader's data plan costs per period, from the coin account and the inventory (0 = free) (0.1.10.38)",

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AUA",
+    " B "
+  ],
+  "key": {
+    "A": {
+      "tag": "c:circuits/advanced"
+    },
+    "U": {
+      "type": "mio_icif:fluid_cell",
+      "fluid": "mio_icif:uumatter"
+    },
+    "B": {
+      "item": "mio_icif:producer/block_trade_box"
+    }
+  },
+  "result": {
+    "id": "mio_icif:producer/block_trade_box_advanced",
+    "count": 1
+  }
+}

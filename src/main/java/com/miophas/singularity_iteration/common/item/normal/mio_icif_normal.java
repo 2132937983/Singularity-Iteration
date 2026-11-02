@@ -143,6 +143,8 @@ public class mio_icif_normal {
     public static final DeferredItem<Item> SCRAP = ITEMS.register("normal/item_scrap", () -> new Item(new Item.Properties()));
     /** 0.1.10.28 (X4): the ID card of the exchange (personal account card, delegate card of Trade Terminals). */
     public static final DeferredItem<Item> ID_CARD = ITEMS.register("normal/item_id_card", () -> new IdCardItem(new Item.Properties()));
+    /** 0.1.10.42: the Trade Box upgrade kit (a placed basic box becomes an advanced one with its contents). */
+    public static final DeferredItem<Item> TRADE_BOX_UPGRADE = ITEMS.register("normal/item_trade_box_upgrade", () -> new TradeBoxUpgradeItem(new Item.Properties()));
     public static final DeferredItem<Item> SCRAPBOX = ITEMS.register("normal/item_scrapbox", () -> new mio_icif_scrapbox(new Item.Properties()));
     public static final DeferredItem<Item> SLAG = ITEMS.register("normal/item_slag", () -> new Item(new Item.Properties()));
     // IC2 原版 ItemArmorUtility 无防御，故使用 0 护甲值材料

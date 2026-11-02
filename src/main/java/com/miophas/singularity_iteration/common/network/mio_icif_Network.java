@@ -123,6 +123,8 @@ public class mio_icif_Network {
         com.miophas.singularity_iteration.common.exchange.ExchangePackets.register(registrar);
         // 0.1.10.27 (X2): the Trade Terminal panel
         com.miophas.singularity_iteration.common.exchange.TerminalPackets.register(registrar);
+        // 0.1.10.42: the Trade Box panel
+        com.miophas.singularity_iteration.common.exchange.TradeBoxPackets.register(registrar);
         // 0.1.10.28 (X4): the account screen of a personal ID card
         com.miophas.singularity_iteration.common.exchange.CardPackets.register(registrar);
         GridPackets.register(registrar);   // 0.1.10.22

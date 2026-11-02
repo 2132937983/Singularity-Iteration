@@ -20,7 +20,7 @@
       "item": "mio_icif:producer/block_future_elc"
     },
     "H": {
-      "item": "minecraft:chest"
+      "item": "mio_icif:producer/block_trade_box_advanced"
     }
   },
   "result": {

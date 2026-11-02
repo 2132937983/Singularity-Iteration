@@ -53,11 +53,15 @@ import net.minecraft.world.item.Items;
 public final class ExchangeService {
     private ExchangeService() {}
 
-    /** 0.1.10.25 (X1): orders and commissions up to 100,000 items (before: 1,024); futures stay at 1,024. */
-    public static final int ORDER_DAYS = 7, MAX_ORDERS_PER_PLAYER = 32, MAX_QUANTITY = 100_000, FUTURES_MAX_QUANTITY = 1024;
+    /**
+     * 0.1.10.25 (X1): orders and commissions up to 100,000 items (before: 1,024). 0.1.10.42: {@code FUTURES_MAX_QUANTITY} is the
+     * smallest cap of a futures order; the cap of a commodity is {@link FuturesLimits#maxQuantity} (up to 65,536).
+     */
+    public static final int ORDER_DAYS = 7, MAX_ORDERS_PER_PLAYER = 32, MAX_QUANTITY = 100_000, FUTURES_MAX_QUANTITY = FuturesLimits.MIN_ORDER;
     public static final int MAX_COMMISSIONS_PER_PLAYER = 8, MAX_COMMISSIONS = 512, COMMISSION_MAX_DAYS = 7;
     public static final int TRADES_KEPT = 64, BARS_KEPT = 60, LEDGER_DAYS = 60, EVIDENCE_DAYS = 30, DELIST_DAYS = 30;
-    public static final int MAX_POSITIONS = 8;
+    /** 0.1.10.42: rows of open futures (commodity x side x expiry) per player (before: 8 contracts). */
+    public static final int MAX_POSITIONS = FuturesLimits.MAX_ROWS;
     public static final long BARTER_POST_FEE = 5;
     public static final double COMMISSION_FEE = 0.02;
     public static final String SYSTEM = "system";
@@ -487,6 +491,7 @@ public final class ExchangeService {
         long cost = systemCost(d, m, take);
         long stock = d.treasury.getOrDefault(id, 0L);
         int fromStock = (int) Math.min(take, stock);
+        BondsFund.recordSale(server, d, m, id, stock, fromStock, take, cost, day);   // 0.1.10.43: the treasury's realised profit
         if (fromStock > 0) d.treasury.put(id, stock - fromStock);
         if (take > fromStock) d.imported.merge(id, take - fromStock, Integer::sum);
         // 0.1.10.25: stock that leaves the treasury no longer weighs on the bids
@@ -1355,35 +1360,74 @@ public final class ExchangeService {
 
     // ------------------------------------------------------------------ futures (M5)
 
-    /** Opens a cash-settled, fully collateralized contract on a datapack commodity ({@link Forwards}, {@link FuturesPricer}). */
+    /**
+     * Opens a cash-settled, fully collateralized contract on a datapack commodity ({@link Forwards}, {@link FuturesPricer}).
+     * 0.1.10.42: within the limits of {@link FuturesLimits}: the quantity cap of the contract price, 16 rows (commodity x side x
+     * expiry), the lots of a row and the open collateral cap; a contract at the price of an open lot of its row adds to that lot.
+     */
     public static Result openFuture(ServerPlayer player, String id, boolean isLong, int quantity, int days) {
         MinecraftServer server = player.server;
         ExchangeData d = data(server);
         Market m = market(server, id);
         if (m == null || !m.system()) return Result.fail("no_futures");
         if (!FutureCommodityManager.isUnlocked(player, m.commodity())) return Result.fail("locked");
-        if (quantity < 1 || quantity > FUTURES_MAX_QUANTITY || (days != 3 && days != 7)) return Result.fail("bad_quantity");
-        int mine = 0;
-        for (ExchangeData.Position p : d.positions) if (p.owner.equals(player.getUUID())) mine++;
-        if (mine >= MAX_POSITIONS) return Result.fail("too_many_positions", MAX_POSITIONS);
+        if (quantity < 1 || quantity > FuturesLimits.MAX_QUANTITY || (days != 3 && days != 7)) return Result.fail("bad_quantity");
         long price = futuresPrice(server, m, isLong, days);
+        long day = today(server);
+        long expiry = day + days;
+        UUID me = player.getUUID();
+        List<FuturesLimits.Lot> mine = lots(d, me);
+        long cap = futuresCollateralCap(server);
+        switch (FuturesLimits.check(mine, id, isLong, expiry, price, quantity, cap)) {
+            case QUANTITY -> { return Result.fail("future_quantity_cap", FuturesLimits.maxQuantity(price), price); }
+            case ROWS -> { return Result.fail("too_many_positions", FuturesLimits.MAX_ROWS); }
+            case LOTS -> { return Result.fail("future_lots_full", FuturesLimits.MAX_LOTS); }
+            case ROW_QUANTITY -> { return Result.fail("future_row_full", FuturesLimits.MAX_ROW_QUANTITY); }
+            case COLLATERAL -> { return Result.fail("future_collateral_cap", cap, FuturesLimits.room(FuturesLimits.openCollateral(mine), cap)); }
+            default -> { }
+        }
         long collateral = Forwards.collateral(price, quantity);
         InventoryPlan plan = new InventoryPlan(player.getInventory());
-        if (!takeCoins(plan, d, player.getUUID(), collateral)) return Result.fail("not_enough_coins");
+        if (!takeCoins(plan, d, me, collateral)) return Result.fail("not_enough_coins");
         plan.commit();
-        ExchangeData.Position p = new ExchangeData.Position();
-        p.id = d.newId();
-        p.owner = player.getUUID();
-        p.ownerName = player.getGameProfile().getName();
-        p.commodity = id;
-        p.isLong = isLong;
-        p.price = price;
-        p.quantity = quantity;
-        p.openDay = today(server);
-        p.expiry = p.openDay + days;
-        d.positions.add(p);
+        ExchangeData.Position same = null;
+        boolean row = false;
+        for (ExchangeData.Position p : d.positions) {
+            if (!p.owner.equals(me) || !p.commodity.equals(id) || p.isLong != isLong || p.expiry != expiry) continue;
+            row = true;
+            if (p.price == price) same = p;
+        }
+        if (same != null) {
+            // the payoff is linear in the quantity at one price: one lot settles exactly as two
+            same.quantity += quantity;
+        } else {
+            ExchangeData.Position p = new ExchangeData.Position();
+            p.id = d.newId();
+            p.owner = me;
+            p.ownerName = player.getGameProfile().getName();
+            p.commodity = id;
+            p.isLong = isLong;
+            p.price = price;
+            p.quantity = quantity;
+            p.openDay = day;
+            p.expiry = expiry;
+            d.positions.add(p);
+        }
         d.setDirty();
-        return Result.done("future_opened", quantity, price, collateral);
+        return row ? Result.done("future_added", quantity, price, collateral) : Result.done("future_opened", quantity, price, collateral);
+    }
+
+    /** 0.1.10.42: the open lots of {@code owner}. */
+    public static List<FuturesLimits.Lot> lots(ExchangeData d, UUID owner) {
+        List<FuturesLimits.Lot> out = new ArrayList<>();
+        for (ExchangeData.Position p : d.positions)
+            if (p.owner.equals(owner)) out.add(new FuturesLimits.Lot(p.commodity, p.isLong, p.expiry, p.price, p.quantity));
+        return out;
+    }
+
+    /** 0.1.10.42: the open collateral cap of this server ({@code futuresMaxOpenCollateral} in multiplayer; -1 = none). */
+    public static long futuresCollateralCap(MinecraftServer server) {
+        return FuturesLimits.collateralCap(EconomySettings.futuresMaxOpenCollateral(), Bounties.multiplayer(server));
     }
 
     /** Simulated price paths per futures quote. */
@@ -1525,6 +1569,8 @@ public final class ExchangeService {
         // 0.1.10.33: the cost basis follows the stock (items returned without a price at the bid without pressure)
         reconcileCost(server, d);
         d.records.rollWeek(day);
+        // 0.1.10.43 (Q9): bonds that mature, the treasury fund's week, settlements and redemptions
+        BondsFund.onNewDay(server, d, day, closing);
         d.ledger(day);
         // 0.1.10.28 (X4): the stabiliser looks at the closed days; expired delegate ID cards leave the registers
         stabilize(d, closing);
@@ -1552,9 +1598,10 @@ public final class ExchangeService {
         long net7 = 0;
         for (ExchangeData.LedgerDay l : d.ledger) {
             if (l.day > closing) continue;
-            // 0.1.10.35: circulation (the reserve's fees out, its payments in), so the reserve changes nothing here
+            // 0.1.10.35: circulation (the reserve's fees out, its payments in), so the reserve changes nothing here;
+            // 0.1.10.43: principal frozen in bonds and the fund is out of circulation until it is paid back
             if (d.supplyDay == Long.MIN_VALUE || l.day > d.supplyDay)
-                d.supply = Stabilizer.supply(d.supply, l.minted + l.reserveOut, l.burned + l.reserveIn);
+                d.supply = Stabilizer.supply(d.supply, l.created(), l.destroyed());
             if (closing - l.day < Stabilizer.WINDOW_DAYS) net7 += l.circulation();
         }
         d.supplyDay = Math.max(d.supplyDay, closing);

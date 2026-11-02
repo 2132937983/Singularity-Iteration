@@ -1832,6 +1832,12 @@ public class mio_icif_capacities {
             mio_icif_block_entities.TRADE_TERMINAL_ENTITY_TYPE.get(),
             (blockEntity, direction) -> blockEntity.getItemHandlerCapability(direction)
         );
+        // 0.1.10.42: the Trade Boxes (commodities in; the advanced box's return slots out)
+        event.registerBlockEntity(
+            Capabilities.ItemHandler.BLOCK,
+            mio_icif_block_entities.TRADE_BOX_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity.getItemHandlerCapability(direction)
+        );
 
         // Register capabilities for Heat Source Fluid (热交换机)
         // Register item handler capability

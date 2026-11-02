@@ -16,6 +16,10 @@
     {
       "id": "mio_icif:producer/block_resin_collector",
       "required": false
+    },
+    {
+      "id": "mio_icif:producer/block_trade_box",
+      "required": false
     }
   ]
 }

@@ -95,15 +95,33 @@ public final class ExchangeData extends SavedData {
          * {@link ReserveRules#circulation}.
          */
         public long reserveIn, reserveOut;
+        /**
+         * 0.1.10.43: coins frozen in treasury bonds and the treasury fund ({@code frozenIn}: purchases and subscriptions) and
+         * paid back from them ({@code frozenOut}: principal at maturity, early exits and redemptions before their penalty or fee,
+         * refunds). Frozen coins are out of circulation; the stabiliser reads them like destroyed and new coins.
+         */
+        public long frozenIn, frozenOut;
+        /**
+         * 0.1.10.43: bond interest paid ({@code bondInterest}, of it {@code bondReserve} from the reserve and the rest in
+         * {@link #minted}), fund dividends ({@code fundDividend}, in {@link #minted}) and fund losses taken from frozen principal
+         * ({@code fundLoss}: frozen coins that never come back; no change of circulation).
+         */
+        public long bondInterest, bondReserve, fundDividend, fundLoss;
 
-        /** 0.1.10.35: the change of the coins in circulation on this day. */
-        public long circulation() { return ReserveRules.circulation(minted, burned, reserveIn, reserveOut); }
+        /** 0.1.10.35: the change of the coins in circulation on this day (0.1.10.43: frozen principal out and back in). */
+        public long circulation() { return created() - destroyed(); }
 
-        /** 0.1.10.35: coins that came into circulation: new ones and the reserve's payments (before 0.1.10.35: {@link #minted}). */
-        public long created() { return minted + reserveOut; }
+        /**
+         * 0.1.10.35: coins that came into circulation: new ones and the reserve's payments (before 0.1.10.35: {@link #minted});
+         * 0.1.10.43: and frozen principal paid back.
+         */
+        public long created() { return minted + reserveOut + frozenOut; }
 
-        /** 0.1.10.35: coins that left circulation: destroyed ones and the fees into the reserve (before 0.1.10.35: {@link #burned}). */
-        public long destroyed() { return burned + reserveIn; }
+        /**
+         * 0.1.10.35: coins that left circulation: destroyed ones and the fees into the reserve (before 0.1.10.35: {@link #burned});
+         * 0.1.10.43: and principal frozen in bonds and the fund.
+         */
+        public long destroyed() { return burned + reserveIn + frozenIn; }
     }
 
     /** 0.1.10.28 (X4): a delegate ID card in its issuer's register (a card not in the register is revoked). */
@@ -200,6 +218,16 @@ public final class ExchangeData extends SavedData {
     public final Map<UUID, ShopRules.Shop> shops = new LinkedHashMap<>();
     /** 0.1.10.35: owners whose shop closed while they were away (told at the next login). */
     public final Set<UUID> shopNotices = new HashSet<>();
+    /**
+     * 0.1.10.42 (wealth ranking): the coins each player carried at the last logout (an offline player's carried coins), the last
+     * name seen of each player, and the players who keep their name out of the ranking.
+     */
+    public final Map<UUID, Long> heldCoins = new HashMap<>();
+    public final Map<UUID, String> names = new HashMap<>();
+    public final Set<UUID> rankingHidden = new HashSet<>();
+    /** 0.1.10.43 (Q9): the treasury bonds (holdings of all players) and the treasury fund. */
+    public final List<BondRules.Bond> bonds = new ArrayList<>();
+    public final FundRules.Fund fund = new FundRules.Fund();
 
     public static ExchangeData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(ExchangeData::new, ExchangeData::load), NAME);
@@ -334,6 +362,9 @@ public final class ExchangeData extends SavedData {
             l.bountyCoins = x.getLong("BountyCoins"); l.bountyItems = x.getLong("BountyItems"); l.bountyUu = x.getLong("BountyUu");
             l.scrapIn = x.getLong("ScrapIn"); l.scrapOut = x.getLong("ScrapOut");
             l.reserveIn = Math.max(0, x.getLong("ReserveIn")); l.reserveOut = Math.max(0, x.getLong("ReserveOut"));   // 0.1.10.35
+            l.frozenIn = Math.max(0, x.getLong("FrozenIn")); l.frozenOut = Math.max(0, x.getLong("FrozenOut"));   // 0.1.10.43
+            l.bondInterest = Math.max(0, x.getLong("BondInterest")); l.bondReserve = Math.max(0, x.getLong("BondReserve"));
+            l.fundDividend = Math.max(0, x.getLong("FundDividend")); l.fundLoss = Math.max(0, x.getLong("FundLoss"));
             CompoundTag ext = x.getCompound("External");
             for (String k : ext.getAllKeys()) { long[] v = ext.getLongArray(k); if (v.length == 2) l.external.put(k, v); }
             d.ledger.addLast(l);
@@ -430,6 +461,24 @@ public final class ExchangeData extends SavedData {
             if (s != null && d.shops.size() < ShopRules.MAX_SHOPS) d.shops.put(s.owner, s);
         }
         for (Tag t : tag.getList("ShopNotices", Tag.TAG_STRING)) { UUID id = uuid(t.getAsString()); if (id != null) d.shopNotices.add(id); }
+        // 0.1.10.42: the wealth ranking (at most MarketRecords.MAX_PLAYERS players each)
+        CompoundTag wealth = tag.getCompound("Wealth");
+        CompoundTag held = wealth.getCompound("Held");
+        for (String k : held.getAllKeys()) {
+            UUID id = uuid(k);
+            if (id != null && d.heldCoins.size() < MarketRecords.MAX_PLAYERS) d.heldCoins.put(id, Math.max(0, held.getLong(k)));
+        }
+        CompoundTag names = wealth.getCompound("Names");
+        for (String k : names.getAllKeys()) {
+            UUID id = uuid(k);
+            if (id != null && d.names.size() < MarketRecords.MAX_PLAYERS) d.names.put(id, names.getString(k));
+        }
+        for (Tag t : wealth.getList("Hidden", Tag.TAG_STRING)) {
+            UUID id = uuid(t.getAsString());
+            if (id != null && d.rankingHidden.size() < MarketRecords.MAX_PLAYERS) d.rankingHidden.add(id);
+        }
+        // 0.1.10.43
+        BondFundNbt.load(tag.getCompound("BondsFund"), d.bonds, d.fund);
         return d;
     }
 
@@ -442,6 +491,7 @@ public final class ExchangeData extends SavedData {
         s.seenRunDay = x.getLong("Seen");
         s.lastTradeDay = x.contains("LastTrade") ? x.getLong("LastTrade") : Long.MIN_VALUE;
         s.upkeepWeek = x.contains("UpkeepWeek") ? x.getLong("UpkeepWeek") : Long.MIN_VALUE;
+        s.upkeepDue = x.contains("UpkeepDue") ? x.getLong("UpkeepDue") : Long.MIN_VALUE;   // 0.1.10.42
         for (Tag t : x.getList("Offers", Tag.TAG_COMPOUND)) {
             CompoundTag o = (CompoundTag) t;
             ShopRules.Offer f = new ShopRules.Offer();
@@ -465,6 +515,7 @@ public final class ExchangeData extends SavedData {
         x.putLong("Seen", s.seenRunDay);
         x.putLong("LastTrade", s.lastTradeDay);
         x.putLong("UpkeepWeek", s.upkeepWeek);
+        if (s.upkeepDue != Long.MIN_VALUE) x.putLong("UpkeepDue", s.upkeepDue);   // 0.1.10.42
         ListTag offers = new ListTag();
         for (ShopRules.Offer f : s.offers) {
             CompoundTag o = new CompoundTag();
@@ -604,6 +655,12 @@ public final class ExchangeData extends SavedData {
             if (l.scrapOut != 0) x.putLong("ScrapOut", l.scrapOut);
             if (l.reserveIn != 0) x.putLong("ReserveIn", l.reserveIn);   // 0.1.10.35
             if (l.reserveOut != 0) x.putLong("ReserveOut", l.reserveOut);
+            if (l.frozenIn != 0) x.putLong("FrozenIn", l.frozenIn);   // 0.1.10.43
+            if (l.frozenOut != 0) x.putLong("FrozenOut", l.frozenOut);
+            if (l.bondInterest != 0) x.putLong("BondInterest", l.bondInterest);
+            if (l.bondReserve != 0) x.putLong("BondReserve", l.bondReserve);
+            if (l.fundDividend != 0) x.putLong("FundDividend", l.fundDividend);
+            if (l.fundLoss != 0) x.putLong("FundLoss", l.fundLoss);
             if (!l.external.isEmpty()) {
                 CompoundTag ext = new CompoundTag();
                 l.external.forEach(ext::putLongArray);
@@ -710,6 +767,20 @@ public final class ExchangeData extends SavedData {
         ListTag notices = new ListTag();
         for (UUID id : shopNotices) notices.add(StringTag.valueOf(id.toString()));
         tag.put("ShopNotices", notices);
+        // 0.1.10.42
+        CompoundTag wealth = new CompoundTag();
+        CompoundTag held = new CompoundTag();
+        heldCoins.forEach((id, v) -> { if (v > 0) held.putLong(id.toString(), v); });
+        wealth.put("Held", held);
+        CompoundTag nameTag = new CompoundTag();
+        names.forEach((id, v) -> nameTag.putString(id.toString(), v));
+        wealth.put("Names", nameTag);
+        ListTag hidden = new ListTag();
+        for (UUID id : rankingHidden) hidden.add(StringTag.valueOf(id.toString()));
+        wealth.put("Hidden", hidden);
+        tag.put("Wealth", wealth);
+        // 0.1.10.43
+        tag.put("BondsFund", BondFundNbt.save(bonds, fund));
         return tag;
     }
 

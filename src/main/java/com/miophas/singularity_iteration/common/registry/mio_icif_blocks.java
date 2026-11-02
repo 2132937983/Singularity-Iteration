@@ -720,6 +720,12 @@ public static final DeferredBlock<mio_icif_block_future_elc> FUTURE_ELC =
     public static final DeferredBlock<com.miophas.singularity_iteration.common.block.producer.mio_icif_block_trade_terminal> TRADE_TERMINAL =
         registerBlock("producer/block_trade_terminal", () -> new com.miophas.singularity_iteration.common.block.producer.mio_icif_block_trade_terminal(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));
 
+    // 0.1.10.42: the Basic and the Advanced Trade Box (sell for the owner without energy)
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.producer.mio_icif_block_trade_box> TRADE_BOX =
+        registerBlock("producer/block_trade_box", () -> new com.miophas.singularity_iteration.common.block.producer.mio_icif_block_trade_box(Block.Properties.of().mapColor(MapColor.WOOD).strength(2.5f, 3.0f).sound(net.minecraft.world.level.block.SoundType.WOOD), false));
+    public static final DeferredBlock<com.miophas.singularity_iteration.common.block.producer.mio_icif_block_trade_box> TRADE_BOX_ADVANCED =
+        registerBlock("producer/block_trade_box_advanced", () -> new com.miophas.singularity_iteration.common.block.producer.mio_icif_block_trade_box(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(net.minecraft.world.level.block.SoundType.METAL), true));
+
     // 注册感应加热机方法
 public static final DeferredBlock<com.miophas.singularity_iteration.common.block.producer.mio_icif_block_induction_elc> INDUCTION_ELC =
         registerBlock("producer/block_induction_elc", () -> new com.miophas.singularity_iteration.common.block.producer.mio_icif_block_induction_elc(Block.Properties.of().mapColor(MapColor.METAL).strength(3.0f, 3.0f).sound(mio_icif_sounds.getMachineSoundType()).requiresCorrectToolForDrops()));

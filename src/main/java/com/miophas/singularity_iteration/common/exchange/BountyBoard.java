@@ -111,6 +111,12 @@ public final class BountyBoard {
 
         /** The draft about to be posted (the posting event may change it); null cancels the posting. */
         Draft posting(Draft draft);
+
+        /**
+         * 0.1.10.43: what one item of the treasury stock of {@code item} cost the market (its cost record), for the reward lines
+         * the treasury reserves: the treasury fund books that cost as a loss when the line is paid. 0 = unknown.
+         */
+        default double unitCost(String item) { return 0; }
     }
 
     public static final class Need {
@@ -129,6 +135,8 @@ public final class BountyBoard {
         public Source source = Source.MINTED;
         public String item = "";
         public long amount, paid;
+        /** 0.1.10.43: a TREASURY line: what one reserved item cost the market ({@link Hooks#unitCost}; 0 = unknown). */
+        public double unitCost;
 
         public long unpaid() { return Math.max(0, amount - paid); }
     }
@@ -200,7 +208,10 @@ public final class BountyBoard {
     }
 
     /** What the game pays out: to a player, coins / items / UU-matter from a source. */
-    public record Payout(UUID player, Kind kind, Source source, String item, long amount) { }
+    public record Payout(UUID player, Kind kind, Source source, String item, long amount, double unitCost) {
+        /** A payout without a unit cost (coins, UU-matter, issued and vault items). */
+        public Payout(UUID player, Kind kind, Source source, String item, long amount) { this(player, kind, source, item, amount, 0); }
+    }
 
     /** A delivery: its payouts and whether it completed the bounty. */
     public record Delivery(List<Payout> payouts, boolean completed) { }
@@ -214,6 +225,11 @@ public final class BountyBoard {
     public final List<Bounty> bounties = new ArrayList<>();
     /** Rare items delivered to bounties that are no commodities; they pay later bounties. */
     public final Map<String, Long> vault = new TreeMap<>();
+    /**
+     * 0.1.10.43: reserved treasury items that went back to the treasury unpaid (expiry, cancel) with their unit cost, for the
+     * game to restore their cost record; not saved (the game takes them at once).
+     */
+    public final List<Payout> returned = new ArrayList<>();
     /** Table id to the day it was last posted (cooldown). */
     public final Map<String, Long> lastPosted = new HashMap<>();
     public long week = Long.MIN_VALUE;
@@ -663,6 +679,8 @@ public final class BountyBoard {
         Draft x = hooks.posting(d);
         if (x == null) return null;
         Bounty b = commit(x, hooks.newId(), day, r, treasury);
+        // 0.1.10.43: the cost of the reserved treasury items (the record does not change before the next settling)
+        if (b != null) for (Line l : b.lines) if (l.source == Source.TREASURY) l.unitCost = Math.max(0, hooks.unitCost(l.item));
         if (b != null && posted != null) posted.add(b);
         return b;
     }
@@ -851,7 +869,7 @@ public final class BountyBoard {
                 long due = BountyMath.due(l.amount, done, all, l.paid);
                 if (due <= 0) continue;
                 l.paid += due;
-                payouts.add(new Payout(player, l.kind, l.source, l.item, due));
+                payouts.add(new Payout(player, l.kind, l.source, l.item, due, l.unitCost));
             }
         }
         boolean completed = b.complete();
@@ -880,8 +898,10 @@ public final class BountyBoard {
         for (Line l : b.lines) {
             long left = l.unpaid();
             if (left <= 0) continue;
-            if (l.source == Source.TREASURY) treasury.merge(l.item, left, Long::sum);
-            else if (l.source == Source.VAULT) vault.merge(l.item, left, Long::sum);
+            if (l.source == Source.TREASURY) {
+                treasury.merge(l.item, left, Long::sum);
+                if (returned.size() < MAX_OPEN * MAX_LINES) returned.add(new Payout(null, l.kind, l.source, l.item, left, l.unitCost));
+            } else if (l.source == Source.VAULT) vault.merge(l.item, left, Long::sum);
             l.paid = l.amount;   // closed (issued items and coins are never created)
         }
     }
@@ -899,7 +919,7 @@ public final class BountyBoard {
             long given = 0;
             for (int i = 0; i < parts.length; i++) {
                 if (parts[i] <= 0) continue;
-                payouts.add(new Payout(who.get(i), l.kind, l.source, l.item, parts[i]));
+                payouts.add(new Payout(who.get(i), l.kind, l.source, l.item, parts[i], l.unitCost));
                 given += parts[i];
             }
             l.paid += given;

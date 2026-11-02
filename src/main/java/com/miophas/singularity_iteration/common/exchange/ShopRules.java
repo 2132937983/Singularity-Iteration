@@ -27,6 +27,10 @@ import java.util.function.ToIntFunction;
  * counted in run days: calendar days on which the server ran since the owner was last online (a server stopped for a week
  * counts no days; a server running every day counts each day). Idle after a number of run days (listed last, still trades),
  * dissolved after more (everything back to the owner's mailbox).
+ *
+ * <p>0.1.10.42: the upkeep falls due every {@code shopUpkeepHours} of game time (24 by default; before: every market week, about
+ * 2 h 20 min of the server running) and a shop pays at most {@code shopUpkeepMaxPerShop} per period, shared evenly by its offers
+ * ({@link #upkeepShares}).
  */
 public final class ShopRules {
     private ShopRules() {}
@@ -87,8 +91,10 @@ public final class ShopRules {
         public long seenRunDay;
         /** The market day of the last trade (Long.MIN_VALUE = none). */
         public long lastTradeDay = Long.MIN_VALUE;
-        /** The market week whose upkeep is paid. */
+        /** The market week whose upkeep is paid (0.1.10.35 - 0.1.10.41; kept in the save). */
         public long upkeepWeek = Long.MIN_VALUE;
+        /** 0.1.10.42: the game time the next upkeep falls due (Long.MIN_VALUE = not set yet: a shop of an older version). */
+        public long upkeepDue = Long.MIN_VALUE;
         public final List<Offer> offers = new ArrayList<>();
         /** Items customers gave (EXCHANGE and BUY), until the owner collects them. */
         public final Map<String, Long> proceeds = new TreeMap<>();
@@ -201,6 +207,42 @@ public final class ShopRules {
     public static long upkeep(Shop s, long perOffer) {
         return Math.max(0, perOffer) * s.offers.size();
     }
+
+    // ------------------------------------------------------------------ 0.1.10.42: the upkeep period
+
+    /** Game ticks of an upkeep period of {@code hours} (1..168). */
+    public static long upkeepPeriod(int hours) { return CommissionHours.TICKS_PER_HOUR * Math.max(1, Math.min(168, hours)); }
+
+    /** The upkeep of a period: {@code perOffer} per offer, at most {@code maxPerShop} (0 = no cap). */
+    public static long upkeepTotal(int offers, long perOffer, long maxPerShop) {
+        long all = Math.max(0, perOffer) * Math.max(0, offers);
+        return maxPerShop > 0 ? Math.min(all, maxPerShop) : all;
+    }
+
+    /** The share of each offer of {@link #upkeepTotal}: as even as whole coins allow, the first offers one coin more. */
+    public static long[] upkeepShares(int offers, long perOffer, long maxPerShop) {
+        int n = Math.max(0, offers);
+        long[] out = new long[n];
+        if (n == 0) return out;
+        long total = upkeepTotal(n, perOffer, maxPerShop);
+        for (int i = 0; i < n; i++) out[i] = total / n + (i < total % n ? 1 : 0);
+        return out;
+    }
+
+    /** The share one offer pays when it resumes after an unpaid period (the largest share of the shop's offers now). */
+    public static long resumeShare(int offers, long perOffer, long maxPerShop) {
+        long[] shares = upkeepShares(Math.max(1, offers), perOffer, maxPerShop);
+        return shares[0];
+    }
+
+    /** The upkeep falls due at {@code now} (a shop without a due time first gets one: {@link #firstDue}). */
+    public static boolean upkeepDue(long due, long now) { return due != Long.MIN_VALUE && now >= due; }
+
+    /** The first due time of a shop of an older version: the period paid under that version runs one full period from now. */
+    public static long firstDue(long now, long period) { return now + Math.max(1, period); }
+
+    /** The next due time after a payment at {@code now}: one period later (a server that slept does not pay twice). */
+    public static long nextDue(long now, long period) { return now + Math.max(1, period); }
 
     // ------------------------------------------------------------------ absence
 

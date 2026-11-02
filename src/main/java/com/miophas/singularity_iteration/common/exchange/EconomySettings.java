@@ -86,6 +86,16 @@ public final class EconomySettings {
         put(k, "shopUpkeepPerWeek", () -> Singularity_Iteration_Config.SHOP_UPKEEP, 0, 1_000_000, 'i');
         put(k, "shopIdleDays", () -> Singularity_Iteration_Config.SHOP_IDLE_DAYS, 1, 365, 'i');
         put(k, "shopCloseDays", () -> Singularity_Iteration_Config.SHOP_CLOSE_DAYS, 1, 3650, 'i');
+        // 0.1.10.42 the upkeep period, the futures collateral cap, the wealth ranking
+        put(k, "shopUpkeepHours", () -> Singularity_Iteration_Config.SHOP_UPKEEP_HOURS, 1, 168, 'i');
+        put(k, "shopUpkeepMaxPerShop", () -> Singularity_Iteration_Config.SHOP_UPKEEP_MAX, 0, 1_000_000, 'i');
+        put(k, "futuresMaxOpenCollateral", () -> Singularity_Iteration_Config.FUTURES_MAX_OPEN_COLLATERAL, 0, Integer.MAX_VALUE, 'i');
+        put(k, "wealthRanking", () -> Singularity_Iteration_Config.WEALTH_RANKING, 0, 1, 'b');
+        // 0.1.10.43 treasury bonds and the treasury fund
+        put(k, "bondsEnabled", () -> Singularity_Iteration_Config.BONDS_ENABLED, 0, 1, 'b');
+        put(k, "bondMaxPerPlayer", () -> Singularity_Iteration_Config.BOND_MAX_PER_PLAYER, 0, Integer.MAX_VALUE, 'i');
+        put(k, "bondMaxSupplyPercent", () -> Singularity_Iteration_Config.BOND_MAX_SUPPLY_PERCENT, 0, 100, 'd');
+        put(k, "treasuryFund", () -> Singularity_Iteration_Config.TREASURY_FUND, 0, 1, 'b');
         // 0.1.10.28 (X4)
         put(k, "uuBoard", () -> Singularity_Iteration_Config.EXCHANGE_UU_BOARD, 0, 1, 'b');
         put(k, "scrapThreshold", () -> Singularity_Iteration_Config.EXCHANGE_SCRAP_THRESHOLD, 0, 1, 'd');
@@ -256,6 +266,25 @@ public final class EconomySettings {
     public static long shopUpkeepPerWeek() { return i("shopUpkeepPerWeek"); }
     public static int shopIdleDays() { return (int) i("shopIdleDays"); }
     public static int shopCloseDays() { return (int) Math.max(i("shopCloseDays"), i("shopIdleDays")); }
+
+    /** 0.1.10.42: the upkeep period of a shop (hours of game time) and the most one shop pays per period (0 = no cap). */
+    public static int shopUpkeepHours() { return (int) Math.max(1, Math.min(168, i("shopUpkeepHours"))); }
+    public static long shopUpkeepMaxPerShop() { return i("shopUpkeepMaxPerShop"); }
+
+    /** 0.1.10.42: the open collateral cap of a player's futures in multiplayer (0 = none). */
+    public static long futuresMaxOpenCollateral() { return i("futuresMaxOpenCollateral"); }
+
+    /** 0.1.10.42: the wealth ranking is on. */
+    public static boolean wealthRanking() { return b("wealthRanking"); }
+
+    /**
+     * 0.1.10.43: treasury bonds are sold; the most bond principal of a player (0 = no cap) and of all bonds in percent of the
+     * money supply estimate (0 = no cap); the treasury fund takes subscriptions.
+     */
+    public static boolean bondsEnabled() { return b("bondsEnabled"); }
+    public static long bondMaxPerPlayer() { return i("bondMaxPerPlayer"); }
+    public static double bondMaxSupplyPercent() { return d("bondMaxSupplyPercent"); }
+    public static boolean treasuryFund() { return b("treasuryFund"); }
 
     /** Lines for {@code /mio_icif bounty settings}: key, value now and where it comes from. */
     public static List<String> describe() {

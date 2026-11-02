@@ -49,10 +49,18 @@ public final class TerminalPackets {
     public static final int ISSUE_CARD = 15, REVOKE_CARD = 16, REVOKE_ALL_CARDS = 17;
     /** 0.1.10.29: SETTLE_COINS (the coins of the settlement container onto the viewer's coin account). SETTLE_SELL b = minimum coins per item. */
     public static final int SETTLE_COINS = 18;
+    /** 0.1.10.42: RANKING_HIDE (flags 1 = keep the viewer's name out of the wealth ranking, 0 = show it); any viewer. */
+    public static final int RANKING_HIDE = 19;
 
-    public record Request() implements CustomPacketPayload {
+    /** The view request; 0.1.10.42: {@code ranking} the wealth ranking category the ranking tab shows (-1 = none). */
+    public record Request(int ranking) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "terminal_request"));
-        public static final StreamCodec<FriendlyByteBuf, Request> CODEC = StreamCodec.of((b, p) -> { }, b -> new Request());
+        public static final StreamCodec<FriendlyByteBuf, Request> CODEC = StreamCodec.of((b, p) -> b.writeVarInt(p.ranking + 1),
+            b -> new Request(Math.max(-1, Math.min(WealthRules.CATEGORIES - 1, b.readVarInt() - 1))));
+
+        /** 0.1.10.27 - 0.1.10.41: without the ranking. */
+        public Request() { this(-1); }
+
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
@@ -86,6 +94,9 @@ public final class TerminalPackets {
             if (!(context.player() instanceof ServerPlayer player)) return;
             TradeTerminalMenu menu = menu(player);
             if (menu == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE_VIEW)) return;
+            // 0.1.10.42: the ranking category (the exchange panel and the terminal share the entry: one screen is open at a time)
+            if (packet.ranking() >= 0) ExchangePackets.RANKING_QUERY.put(player.getUUID(), packet.ranking());
+            else ExchangePackets.RANKING_QUERY.remove(player.getUUID());
             send(player, menu);
         });
     }
@@ -109,6 +120,7 @@ public final class TerminalPackets {
                     menu.broadcastChanges();
                     yield null;
                 }
+                case RANKING_HIDE -> WealthRanking.setHidden(player, p.flags != 0);   // 0.1.10.42: the viewer's own name
                 default -> act(player, menu, t, level, p);
             };
             if (r != null) player.displayClientMessage(Component.translatable(r.key(), r.args()), true);
@@ -255,7 +267,8 @@ public final class TerminalPackets {
         List<ExchangeView.CurveLine> curves = new ArrayList<>();
         for (ExchangeView.BoxLine l : settle.lines()) ExchangeViews.addCurve(curves, server, d, player.getUUID(), l.id(), day);
         return new TerminalView(t.ownerName(), t.ownerOnline(server), level, t.energy(), t.maxEnergy(), t.hasEnoughEnergy(), t.outputMode(),
-            t.teamLevel(), coins, day, orders, access, log, settle, cards, curves);
+            t.teamLevel(), coins, day, orders, access, log, settle, cards, curves,
+            WealthRanking.view(server, player.getUUID(), ExchangePackets.RANKING_QUERY.getOrDefault(player.getUUID(), -1)));
     }
 
     /**

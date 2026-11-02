@@ -127,6 +127,8 @@ data/<命名空间>/si_exchange/
 - 0.1.10.34 新增的键：`bountyRandomDays`（true，按稀有度抽取天数）、`bountyMinDays`（1）、`bountyMaxDays`（7）、`bountyAcceptMax`（1）。
 - 0.1.10.35 新增的键：`commissionDefaultHours`（24）、`commissionMaxHours`（168，委托的时长上限，1～168 小时服务器时间）、`orderHours`（72，盘口挂单的有效时长）、`reserveWeeks`（4，国库储备上限 = 周数 × 7 × 每日普通发布数 × `bountyNormalValue` × 普通倍率；0 = 不设储备）、`shopsEnabled`（true）、`shopMaxOffers`（12）、`shopStacks`（54，库存与收益合计的组数）、`shopOfferFee`（50）、`shopUpkeepPerWeek`（10，每个报价每个交易周）、`shopIdleDays`（7）与 `shopCloseDays`（30，店主不在线的服务器运行日数：排到最后 / 关闭并退回邮箱）。
 - **国库储备**（0.1.10.35 起）：盘口交易、委托、商店（发布费、维护费、货币交易的手续费）与悬赏刷新的货币进入储备（上限内），超出部分销毁；悬赏的货币奖励先从储备支付，只有不足部分计为新发行。账本另记 `ReserveIn` / `ReserveOut`；稳定器、`/mio_icif market ledger` / `audit` 与 API 的 `ledger` 按进入 / 退出流通计算（发行 + 储备支出，销毁 + 存入储备），与 0.1.10.34 的含义相同。
+- 0.1.10.42 新增的键：`shopUpkeepHours`（24，商店维护费的收取间隔，1～168 小时服务器时间；之前每个交易周）、`shopUpkeepMaxPerShop`（60，每家商店每期最多支付的维护费，由其报价平均分摊；0 = 不限）、`futuresMaxOpenCollateral`（5,000,000，多人游戏中每名玩家未平仓期货保证金的上限；0 = 不限；单人游戏不限）、`wealthRanking`（true，财富排行）。`shopUpkeepPerWeek` 保留原名，现在是每个报价每期的维护费。所有玩家可用 `/mio_icif market wealth [total|trade|futures|bounty]` 查看排行，`wealth hide` / `wealth show` 隐藏或显示自己的名字。
+- 0.1.10.43 新增的键：`bondsEnabled`（true，国债）、`bondMaxPerPlayer`（1,000,000，每名玩家的国债本金上限；0 = 不限）、`bondMaxSupplyPercent`（25，全部国债本金不超过稳定器货币量估算的此百分比，超过后停止发行；0 = 不限）、`treasuryFund`（true，国库运用基金接受申购）。账本：国债本金与基金申购在偿还前计为冻结（`FrozenIn`，离开流通，稳定器按销毁计算），到期、提前解约、赎回与撤回申购时回到流通（`FrozenOut`）；国债利息（`BondInterest`）先由国库储备支付，其余为新发行；基金分红（`FundDividend`）为新发行；基金亏损（`FundLoss`）是不再返还的冻结本金。所有玩家可用 `/mio_icif market bonds` 与 `/mio_icif market fund` 查看。
 - 可用的键：`buyItemsPerDay`、`spread`、`sellDepthPlayer`、`sellDepthServer`、`sellExportPerDay`、`sellAllowancePerDay`、`sellAllowanceDays`、`sellAllowanceInSingleplayer`、`exchangeFee`、`importPerDay`、`importPremium`、`listingRequesters`、`listingFulfilled`、`listingMinPlayMinutes`、`uuDepth`、所有 `bounty*` 键，以及只能在数据包中设置的 `bountyNormalPool`、`bountyAdvancedPool`、`bountySpecialPool`。
 - 未知的键、类型错误与超出范围的值会被报告并忽略。`/mio_icif bounty settings` 显示每个值及其来源（config / datapack / default）。
 
@@ -140,10 +142,15 @@ data/<命名空间>/si_exchange/
 | `/mio_icif bounty cancel <编号>` | 取消悬赏，未支付的预留奖励退回 |
 | `/mio_icif bounty errors` | 最近一次加载时 si_exchange 数据包的问题 |
 | `/mio_icif bounty settings` | 经济设置的值与来源 |
+| `/mio_icif market wealth player <玩家>` | 玩家的各部分资产、总资产名次与本周结果（0.1.10.42） |
+| `/mio_icif market wealth refresh` | 立即重新统计财富排行的资产（0.1.10.42；否则最多每 10 秒一次） |
+| `/mio_icif market bonds all` | 全部国债：本金、持有人、服务器上限、未来 7 个市场日到期的本金与利息、最近 7 天的利息（0.1.10.43） |
+| `/mio_icif market fund all` | 国库基金：投资者、投资本金、等待中的份额、累计分红与亏损（0.1.10.43） |
 
 ## 商品的 tag 与 accept_components 在 0.1.10.27 的作用范围
 
 除出售箱与每日集中清算外，交易终端的出售缓冲区（管道搬入）与大宗结算槽（容器中的商品）也按这两个字段收购，按本商品出售。挂单与悬赏交付仍只接受物品本身（普通物品）。
+0.1.10.42 起，交易箱（基础 / 高级）也按这两个字段接收商品（管道与漏斗放入），按本商品出售；高级交易箱的过滤按商品比较。
 
 ## Java API 与事件
 

@@ -40,7 +40,8 @@ public final class Shops {
 
     /**
      * Every 200 ticks: counts a new calendar day the server runs on, marks the owners online, closes the shops of owners away
-     * for {@code shopCloseDays} run days, charges the upkeep of a new market week. Returns whether anything changed.
+     * for {@code shopCloseDays} run days, charges the upkeep that fell due (0.1.10.42: every {@code shopUpkeepHours} of game
+     * time; before: every market week). Returns whether anything changed.
      */
     static boolean tick(MinecraftServer server, ExchangeData d, long day) {
         boolean dirty = false;
@@ -66,23 +67,35 @@ public final class Shops {
             d.shopNotices.add(s.owner);
             dirty = true;
         }
-        long week = BountyMath.week(day);
+        long now = server.overworld().getGameTime();
+        long period = ShopRules.upkeepPeriod(EconomySettings.shopUpkeepHours());
         for (Shop s : d.shops.values()) {
-            if (s.upkeepWeek == week) continue;
-            upkeep(server, d, s, day, week);
+            if (s.upkeepDue == Long.MIN_VALUE) {
+                // 0.1.10.42: a shop of an older version paid its market week; its first period starts now
+                s.upkeepDue = ShopRules.firstDue(now, period);
+                dirty = true;
+                continue;
+            }
+            if (!ShopRules.upkeepDue(s.upkeepDue, now)) continue;
+            upkeep(server, d, s, day);
+            s.upkeepDue = ShopRules.nextDue(now, period);
             dirty = true;
         }
         return dirty;
     }
 
-    /** The upkeep of a new market week from the owner's coin account; offers that cannot be paid pause (unpaid). */
-    static void upkeep(MinecraftServer server, ExchangeData d, Shop s, long day, long week) {
-        s.upkeepWeek = week;
-        long each = EconomySettings.shopUpkeepPerWeek();
-        if (each <= 0) { for (Offer o : s.offers) o.unpaid = false; return; }
+    /**
+     * The upkeep of a period from the owner's coin account ({@link ShopRules#upkeepShares}: at most {@code shopUpkeepMaxPerShop},
+     * shared by the offers); offers whose share cannot be paid pause (unpaid).
+     */
+    static void upkeep(MinecraftServer server, ExchangeData d, Shop s, long day) {
+        s.upkeepWeek = BountyMath.week(day);
+        long[] shares = ShopRules.upkeepShares(s.offers.size(), EconomySettings.shopUpkeepPerWeek(), EconomySettings.shopUpkeepMaxPerShop());
         ExchangeData.Mailbox box = d.mailbox(s.owner);
         long paid = 0;
-        for (Offer o : s.offers) {
+        for (int i = 0; i < s.offers.size(); i++) {
+            Offer o = s.offers.get(i);
+            long each = shares[i];
             if (box.coins >= each) {
                 box.coins -= each;
                 paid += each;
@@ -178,7 +191,9 @@ public final class Shops {
         s.owner = player.getUUID();
         s.ownerName = player.getGameProfile().getName();
         s.seenRunDay = d.runDays;
-        s.upkeepWeek = BountyMath.week(ExchangeService.today(player.server));   // the offer fee pays the first week
+        s.upkeepWeek = BountyMath.week(ExchangeService.today(player.server));
+        // the offer fee pays the first period (0.1.10.42: hours of game time)
+        s.upkeepDue = ShopRules.firstDue(player.server.overworld().getGameTime(), ShopRules.upkeepPeriod(EconomySettings.shopUpkeepHours()));
         return s;
     }
 
@@ -216,7 +231,7 @@ public final class Shops {
         return Result.done("shop_withdrawn");
     }
 
-    /** Pauses or resumes an own offer; resuming an offer whose upkeep was not paid pays this week's upkeep now. */
+    /** Pauses or resumes an own offer; resuming an offer whose upkeep was not paid pays its share of this period's upkeep now. */
     public static Result pause(ServerPlayer player, long offerId, boolean paused) {
         MinecraftServer server = player.server;
         ExchangeData d = ExchangeData.get(server);
@@ -224,7 +239,7 @@ public final class Shops {
         Offer o = s == null ? null : s.offer(offerId);
         if (o == null) return Result.fail("no_offer");
         if (!paused && o.unpaid) {
-            long each = EconomySettings.shopUpkeepPerWeek();
+            long each = ShopRules.resumeShare(s.offers.size(), EconomySettings.shopUpkeepPerWeek(), EconomySettings.shopUpkeepMaxPerShop());
             InventoryPlan plan = new InventoryPlan(player.getInventory());
             if (!ExchangeService.takeCoins(plan, d, player.getUUID(), each)) return Result.fail("not_enough_coins");
             plan.commit();
@@ -395,7 +410,8 @@ public final class Shops {
         }
         return new ExchangeView.ShopView(enabled, list, openOwner, openName, openIdle, offers, myOffers, proceeds, stacks,
             EconomySettings.shopStacks(), EconomySettings.shopMaxOffers(), EconomySettings.shopOfferFee(), EconomySettings.shopUpkeepPerWeek(),
-            !d.quietCommissions.contains(player.getUUID()), EconomySettings.commissionDefaultHours(), EconomySettings.commissionMaxHours());
+            !d.quietCommissions.contains(player.getUUID()), EconomySettings.commissionDefaultHours(), EconomySettings.commissionMaxHours(),
+            EconomySettings.shopUpkeepHours(), EconomySettings.shopUpkeepMaxPerShop());
     }
 
     static ExchangeView.OfferLine line(Offer o, long maxNow) {

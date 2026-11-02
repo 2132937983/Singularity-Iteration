@@ -7,6 +7,7 @@ import com.miophas.singularity_iteration.common.exchange.ExchangeClientState;
 import com.miophas.singularity_iteration.common.exchange.ExchangePackets;
 import com.miophas.singularity_iteration.common.exchange.ExchangeService;
 import com.miophas.singularity_iteration.common.exchange.CommissionHours;
+import com.miophas.singularity_iteration.common.exchange.FuturesLimits;
 import com.miophas.singularity_iteration.common.exchange.MinPrice;
 import com.miophas.singularity_iteration.common.exchange.ShopRules;
 import com.miophas.singularity_iteration.common.exchange.UuBoard;
@@ -95,7 +96,7 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> impl
         createNumberBox(Box.POST_QTY, 1, ExchangeService.MAX_QUANTITY, 64);
         createNumberBox(Box.POST_AMOUNT, 1, MAX_COINS, 100);
         createNumberBox(Box.POST_DAYS, 1, CommissionHours.MAX_HOURS, 24);   // 0.1.10.35: hours (the server clamps to its maximum)
-        createNumberBox(Box.FUT_QTY, 1, ExchangeService.FUTURES_MAX_QUANTITY, 16);
+        createNumberBox(Box.FUT_QTY, 1, FuturesLimits.MAX_QUANTITY, 16);   // 0.1.10.42: the cap of the price is checked per contract
         createNumberBox(Box.MIN, 0, panel.minCoins ? MAX_COINS : MinPrice.MAX_PERCENT, 0);
         createNumberBox(Box.COIN, 0, MAX_COINS, 0);
         // 0.1.10.35: the shop form and the trades of an open shop
@@ -104,6 +105,8 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> impl
         createNumberBox(Box.SHOP_PRICE, 1, ShopRules.MAX_PRICE, 10);
         createNumberBox(Box.SHOP_UNITS, 1, ShopRules.MAX_UNITS, 16);
         createNumberBox(Box.SHOP_N, 1, ShopRules.MAX_COUNT, 8);
+        createNumberBox(Box.BOND_UNITS, 1, com.miophas.singularity_iteration.common.exchange.BondRules.MAX_UNITS, 10);   // 0.1.10.43
+        createNumberBox(Box.FUND_UNITS, 1, com.miophas.singularity_iteration.common.exchange.FundRules.MAX_UNITS, 10);
         request();
     }
 
@@ -124,7 +127,8 @@ public class mio_icif_gui_future_elc extends mio_icif_screen<FutureElcMenu> impl
 
     @Override
     public void request() {
-        PacketDistributor.sendToServer(new ExchangePackets.Request(panel.selected, panel.shopQuery()));   // 0.1.10.35: + the shops
+        // 0.1.10.35: + the shops; 0.1.10.42: + the wealth ranking
+        PacketDistributor.sendToServer(new ExchangePackets.Request(panel.selected, panel.shopQuery(), panel.rankingQuery()));
         requestTimer = 0;
         requestPending = false;
     }

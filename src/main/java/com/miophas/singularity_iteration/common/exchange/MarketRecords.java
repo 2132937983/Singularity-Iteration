@@ -100,4 +100,36 @@ public final class MarketRecords {
         double[] c = cost.get(id);
         return c == null ? 0 : c[0];
     }
+
+    /** 0.1.10.43: the average cost of one item of the stock of {@code id} (0 without a record). */
+    public double unitCost(String id) {
+        double[] c = cost.get(id);
+        return c == null || !(c[1] > 0) ? 0 : c[0] / c[1];
+    }
+
+    /** 0.1.10.43: the coins paid for all the treasury stock (the treasury fund's stock cost). */
+    public double totalCost() {
+        double s = 0;
+        for (double[] c : cost.values()) s += Math.max(0, c[0]);
+        return s;
+    }
+
+    /**
+     * 0.1.10.43: {@code items} of {@code id} left the treasury (sold to a player); {@code stockBefore} is the stock before they
+     * left. The record is settled to {@code stockBefore} first ({@code unit}: the value of items that came without a price);
+     * returns the cost the items take with them (their share of the average cost).
+     */
+    public double costOut(String id, long stockBefore, long items, double unit) {
+        if (items <= 0) return 0;
+        double[] c = reconcile(cost.get(id), stockBefore, unit);
+        double out = 0;
+        if (c[1] > 0) {
+            double n = Math.min(items, c[1]);
+            out = c[0] * n / c[1];
+            c[0] -= out;
+            c[1] -= n;
+        }
+        if (c[1] <= 0) cost.remove(id); else cost.put(id, c);
+        return Math.max(0, out);
+    }
 }

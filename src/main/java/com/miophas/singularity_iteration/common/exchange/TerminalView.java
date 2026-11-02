@@ -11,8 +11,17 @@ import net.minecraft.network.FriendlyByteBuf;
  */
 public record TerminalView(String owner, boolean ownerOnline, int level, long energy, long maxEnergy, boolean energyOk, boolean outputMode,
                            int teamLevel, long ownerCoins, long day, List<OrderLine> orders, List<AccessLine> access, List<LogLine> log,
-                           ExchangeView.SettleView settle, List<CardView.CardLine> cards, List<ExchangeView.CurveLine> curves) {
+                           ExchangeView.SettleView settle, List<CardView.CardLine> cards, List<ExchangeView.CurveLine> curves,
+                           RankingView ranking) {
     public static final int MAX_ORDERS = TerminalRules.MAX_ORDERS, MAX_ACCESS = TerminalRules.MAX_ACCESS, MAX_LOG = 32;
+
+    /** 0.1.10.29 - 0.1.10.41: without the wealth ranking. */
+    public TerminalView(String owner, boolean ownerOnline, int level, long energy, long maxEnergy, boolean energyOk, boolean outputMode,
+                        int teamLevel, long ownerCoins, long day, List<OrderLine> orders, List<AccessLine> access, List<LogLine> log,
+                        ExchangeView.SettleView settle, List<CardView.CardLine> cards, List<ExchangeView.CurveLine> curves) {
+        this(owner, ownerOnline, level, energy, maxEnergy, energyOk, outputMode, teamLevel, ownerCoins, day, orders, access, log, settle, cards,
+            curves, RankingView.NONE);
+    }
 
     /** A standing order: {@code side} 0 sell / 1 buy, {@code mode} 0 auction / 1 instant, {@code status} -1 not run yet, else {@link TerminalRules.Status}. */
     public record OrderLine(int side, String item, long amount, int mode, long limit, boolean enabled, int status, boolean percent,
@@ -43,6 +52,8 @@ public record TerminalView(String owner, boolean ownerOnline, int level, long en
             b.writeVarLong(x.expiry()); });
         // 0.1.10.29: the curves of the settlement container (the minimum-price preview)
         ExchangeView.writeCurves(b, curves, ExchangeView.MAX_SETTLE_LINES);
+        // 0.1.10.42: the wealth ranking the viewer's ranking tab asked for
+        RankingView.write(b, ranking);
     }
 
     public static TerminalView read(FriendlyByteBuf b) {
@@ -61,7 +72,8 @@ public record TerminalView(String owner, boolean ownerOnline, int level, long en
         List<CardView.CardLine> cards = ExchangeView.read(b, CardView.MAX_LINES, () -> new CardView.CardLine(b.readVarLong(), b.readUtf(64), b.readVarInt(),
             b.readVarLong()));
         List<ExchangeView.CurveLine> curves = ExchangeView.readCurves(b, ExchangeView.MAX_SETTLE_LINES);
+        RankingView ranking = RankingView.read(b);
         return new TerminalView(owner, online, level, energy, maxEnergy, energyOk, outputMode, teamLevel, ownerCoins, day, orders, access, log, settle,
-            cards, curves);
+            cards, curves, ranking);
     }
 }

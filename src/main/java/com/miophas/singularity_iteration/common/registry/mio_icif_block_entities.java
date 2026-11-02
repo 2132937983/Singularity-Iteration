@@ -728,6 +728,12 @@ public class mio_icif_block_entities {
         BLOCK_ENTITIES.register("trade_terminal", () ->
             BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.producer.TradeTerminalBlockEntity::new, mio_icif_blocks.TRADE_TERMINAL.get()).build(null));
 
+    // 0.1.10.42: the Trade Boxes (one type; the block gives the tier)
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.miophas.singularity_iteration.common.blockentity.producer.TradeBoxBlockEntity>> TRADE_BOX_ENTITY_TYPE =
+        BLOCK_ENTITIES.register("trade_box", () ->
+            BlockEntityType.Builder.of(com.miophas.singularity_iteration.common.blockentity.producer.TradeBoxBlockEntity::new, mio_icif_blocks.TRADE_BOX.get(),
+                mio_icif_blocks.TRADE_BOX_ADVANCED.get()).build(null));
+
     // 注册热源流体 MenuType
 
     // 注册 heat source fluid MenuType

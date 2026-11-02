@@ -2,15 +2,21 @@
 package com.miophas.singularity_iteration.common.client.screen.panel;
 
 import com.miophas.singularity_iteration.common.client.screen.panel.PanelCanvas.Box;
+import com.miophas.singularity_iteration.common.exchange.BondFundView;
+import com.miophas.singularity_iteration.common.exchange.BondRules;
 import com.miophas.singularity_iteration.common.exchange.CommissionHours;
 import com.miophas.singularity_iteration.common.exchange.CommissionLots;
 import com.miophas.singularity_iteration.common.exchange.ExchangePackets;
 import com.miophas.singularity_iteration.common.exchange.ExchangeService;
 import com.miophas.singularity_iteration.common.exchange.ExchangeView;
+import com.miophas.singularity_iteration.common.exchange.FundRules;
+import com.miophas.singularity_iteration.common.exchange.FuturesLimits;
 import com.miophas.singularity_iteration.common.exchange.ItemMatch;
 import com.miophas.singularity_iteration.common.exchange.MinPrice;
+import com.miophas.singularity_iteration.common.exchange.RankingView;
 import com.miophas.singularity_iteration.common.exchange.ShopRules;
 import com.miophas.singularity_iteration.common.exchange.UuBoard;
+import com.miophas.singularity_iteration.common.exchange.WealthRules;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,6 +75,14 @@ public final class FuturePanel {
     public boolean shopFromSettle;
     /** 0.1.10.35: the hours box got the server's default and range (once per screen; then it keeps what the player typed). */
     boolean hoursFromServer;
+    /**
+     * 0.1.10.42: the treasury tab shows the treasury (0) or the wealth ranking (1); the category of the ranking. 0.1.10.43: the
+     * treasury bonds (2) and the treasury fund (3); the switch shows them in the order treasury, bonds, fund, ranking.
+     */
+    public int treasuryPage, rankingCategory;
+    /** 0.1.10.43: the term of a bond purchase ({@link BondRules#TERMS} index). */
+    public int bondTerm;
+    static final int[] TREASURY_ORDER = {0, 2, 3, 1};
 
     // ------------------------------------------------------------------ common pieces
 
@@ -779,6 +793,11 @@ public final class FuturePanel {
         return shopOpen.isEmpty() ? "*" + shopFilter : shopOpen;
     }
 
+    /** 0.1.10.42: the ranking category of the view request ({@link WealthRules}); -1 while the ranking is not shown. */
+    public int rankingQuery() {
+        return tab == 4 && treasuryPage == 1 ? Math.max(0, Math.min(WealthRules.CATEGORIES - 1, rankingCategory)) : -1;
+    }
+
     /** The switch of the commissions tab: the board, the shops, the own shop. */
     void shopSwitch(int x, int y, int w) {
         int bw = (w - 6) / 3;
@@ -793,6 +812,9 @@ public final class FuturePanel {
             });
         }
     }
+
+    /** 0.1.10.42: the most a shop pays per upkeep period ("no cap" for 0). */
+    String upkeepCap(ExchangeView.ShopView sv) { return sv.upkeepMax() > 0 ? n(sv.upkeepMax()) : tr("upkeep_no_cap"); }
 
     /** An offer in a line: what the customer gets and gives. */
     String offerText(ExchangeView.OfferLine o) {
@@ -923,7 +945,7 @@ public final class FuturePanel {
         int cw = Math.min(60, (w - 8) / 3);
         String sum = tr("my_shop_summary", sv.mine().size(), sv.maxOffers(), n(sv.stacks()), n(sv.maxStacks()));
         int sw = text(sum, x + 4, y + 3, w - 12 - cw, sv.stacks() > sv.maxStacks() ? PanelStyle.WARN : PanelStyle.TEXT);
-        c.hover(x + 4, y + 2, Math.max(1, sw), 10, tr("my_shop_help", n(sv.offerFee()), n(sv.upkeep())));
+        c.hover(x + 4, y + 2, Math.max(1, sw), 10, tr("my_shop_help", n(sv.offerFee()), n(sv.upkeep()), sv.upkeepHours(), upkeepCap(sv)));
         c.button(x + w - 4 - cw, y, cw, 13, label(tr("shop_collect"), cw), false, !sv.proceeds().isEmpty(),
             () -> c.act(ExchangePackets.SHOP_COLLECT, "", 0, 0, 0, 0, false, ""));
         c.hover(x + w - 4 - cw, y, cw, 13, tr("shop_collect_help"));
@@ -963,7 +985,8 @@ public final class FuturePanel {
                 (int) Math.min(Integer.MAX_VALUE, c.num(Box.SHOP_UNITS, 1)), false, ""));
             c.hover(bx, ry + 3, br, 15, tr("restock_help", n(c.num(Box.SHOP_UNITS, 1))));
             button(bx + br + 2, ry + 3, bp, 15, tr(paused ? "shop_resume" : "shop_pause"), () -> c.act(ExchangePackets.SHOP_PAUSE, "", id, 0, 0, 0, !paused, ""));
-            if (o.unpaid()) c.hover(bx + br + 2, ry + 3, bp, 15, tr("shop_resume_help", n(sv.upkeep())));
+            if (o.unpaid()) c.hover(bx + br + 2, ry + 3, bp, 15, tr("shop_resume_help",
+                n(ShopRules.resumeShare(sv.mine().size(), sv.upkeep(), sv.upkeepMax()))));
             button(bx + br + bp + 4, ry + 3, bwd, 15, tr("withdraw"), () -> c.act(ExchangePackets.SHOP_WITHDRAW, "", id, 0, 0, 0, false, ""));
             c.hover(bx + br + bp + 4, ry + 3, bwd, 15, tr("shop_withdraw_help"));
             ry += 22;
@@ -979,7 +1002,7 @@ public final class FuturePanel {
         ExchangeView.ShopView sv = v.shops();
         c.panel(fx, top, formW, bottom - top);
         int tw = text(tr("shop_form"), fx + 4, top + 4, formW - 8, PanelStyle.ACCENT);
-        c.hover(fx + 4, top + 3, Math.max(1, tw), 10, tr("shop_form_help", n(sv.offerFee()), n(sv.upkeep())));
+        c.hover(fx + 4, top + 3, Math.max(1, tw), 10, tr("shop_form_help", n(sv.offerFee()), n(sv.upkeep()), sv.upkeepHours(), upkeepCap(sv)));
         int y = top + 15;
         for (int k = 0; k < 3; k++) {
             final int kind = k;
@@ -1051,9 +1074,11 @@ public final class FuturePanel {
         int fh = beside ? bottom - top : Math.min(bottom - top - 40, contentH);
         c.panel(x, top, w, fh);
         text(tr("futures"), x + 4, top + 4, w - 8, PanelStyle.ACCENT);
+        // 0.1.10.42: the rows (commodity, side, expiry) and the collateral of their lots
+        ExchangeView.FuturesLine fl = v.futures();
         int open = v.positions().size();
         long collateral = 0;
-        for (ExchangeView.PositionLine p : v.positions()) collateral += p.price() * p.quantity();
+        for (ExchangeView.PositionLine p : v.positions()) collateral += p.collateral();
         int y = top + 18;
         if (d == null || !d.system()) {
             text(tr("futures_pick"), x + 4, y, w - 8, PanelStyle.DIM);
@@ -1062,27 +1087,30 @@ public final class FuturePanel {
             text(name(d.id()) + "  " + n(d.price()), x + 24, y + 4, w - 28, PanelStyle.TEXT);
             y += 20;
             int boxX = x + w - 70;
-            text(tr("quantity"), x + 4, y + 2, boxX - 3 - (x + 4), PanelStyle.DIM);
+            long[][] prices = {{d.futLong3(), d.futShort3()}, {d.futLong7(), d.futShort7()}};
+            // 0.1.10.42: the most items one order may have now (the cap of its price, the free collateral)
+            long most = FuturesLimits.MAX_QUANTITY;
+            for (long[] pair : prices) for (long p : pair) most = Math.min(most, FuturesLimits.orderRoom(p, collateral, fl.cap()));
+            final long mostNow = most;
+            textNum(f -> tr("quantity_max", f.apply(mostNow)), x + 4, y + 2, boxX - 3 - (x + 4), PanelStyle.DIM);
+            c.hover(x + 4, y, boxX - 3 - (x + 4), 12, tr("quantity_max_help", n(FuturesLimits.MIN_ORDER), n(FuturesLimits.ORDER_VALUE),
+                n(FuturesLimits.MAX_QUANTITY)));
             place(Box.FUT_QTY, boxX, y, 66);
             y += 16;
-            long q = Math.min(ExchangeService.FUTURES_MAX_QUANTITY, c.num(Box.FUT_QTY, 0));
-            long[][] prices = {{d.futLong3(), d.futShort3()}, {d.futLong7(), d.futShort7()}};
+            long q = Math.min(FuturesLimits.MAX_QUANTITY, c.num(Box.FUT_QTY, 0));
             int[] days = {3, 7};
             long have = v.coins() + v.mailCoins();
-            boolean full = open >= ExchangeService.MAX_POSITIONS;
             for (int i = 0; i < 2; i++) {
                 final int dd = days[i];
                 text(tr("contract_days", dd), x + 4, y + 3, 76, PanelStyle.TEXT);
                 int bw = (w - 90) / 2;
                 for (int side = 0; side < 2; side++) {
                     final boolean isLong = side == 0;
-                    long need = prices[i][side] * q;
-                    // 0.1.10.33: a contract that cannot be opened says why
-                    String why = full ? tr("future_full", ExchangeService.MAX_POSITIONS) : q < 1 ? tr("future_no_quantity")
-                        : need > have ? tr("future_no_coins", n(need), n(have)) : null;
+                    // 0.1.10.33: a contract that cannot be opened says why (0.1.10.42: the limits of FuturesLimits too)
+                    String why = futureWhy(v, fl, d.id(), isLong, v.day() + dd, prices[i][side], q, collateral, have);
                     int bx = x + 82 + side * (bw + 4);
                     c.button(bx, y, bw, 15, label(tr(isLong ? "long" : "short", n(prices[i][side])), bw), false, why == null,
-                        () -> c.act(ExchangePackets.FUTURE, d.id(), 0, 0, dd, (int) Math.min(ExchangeService.FUTURES_MAX_QUANTITY, c.num(Box.FUT_QTY, 0)), isLong, ""));
+                        () -> c.act(ExchangePackets.FUTURE, d.id(), 0, 0, dd, (int) Math.min(FuturesLimits.MAX_QUANTITY, c.num(Box.FUT_QTY, 0)), isLong, ""));
                     if (why != null) c.hover(bx, y, bw, 15, why);
                 }
                 y += 17;
@@ -1110,13 +1138,50 @@ public final class FuturePanel {
         }
     }
 
+    /**
+     * 0.1.10.42: why a futures order cannot open now (null: it can), in the order of the server's check
+     * ({@link FuturesLimits#check}); a row with 32 lots is left to the server (an order at the price of one of its lots adds to it).
+     */
+    String futureWhy(ExchangeView v, ExchangeView.FuturesLine fl, String id, boolean isLong, long expiry, long price, long q, long open,
+                     long have) {
+        if (q < 1) return tr("future_no_quantity");
+        int max = FuturesLimits.maxQuantity(price);
+        if (q > max) return tr("future_quantity_cap", n(max), n(price));
+        ExchangeView.PositionLine row = null;
+        for (ExchangeView.PositionLine p : v.positions())
+            if (p.commodity().equals(id) && p.isLong() == isLong && p.expiry() == expiry) row = p;
+        if (row == null && v.positions().size() >= fl.maxRows()) return tr("future_full", fl.maxRows());
+        if (row != null && row.quantity() + q > FuturesLimits.MAX_ROW_QUANTITY) return tr("future_row_full", n(FuturesLimits.MAX_ROW_QUANTITY));
+        long need = price * q;
+        long room = FuturesLimits.room(open, fl.cap());
+        if (fl.cap() >= 0 && need > room) return tr("future_collateral_cap", n(fl.cap()), n(room));
+        if (need > have) return tr("future_no_coins", n(need), n(have));
+        return null;
+    }
+
+    /** 0.1.10.42: a cap in short form (5,000,000 = 5M, 2,500,000 = 2.5M). */
+    static String shortNumber(long v) {
+        return PanelStyle.compact(v).replaceAll("\\.?0+([kMB])$", "$1");
+    }
+
     void positions(ExchangeView v, int px, int py, int pw, int ph, int open, long collateral, int cols) {
         c.panel(px, py, pw, ph);
-        text(tr("positions_count", open, ExchangeService.MAX_POSITIONS, n(collateral)), px + 4, py + 4, pw - 8, PanelStyle.ACCENT);
-        c.hover(px, py, pw, 12, tr("positions_help", ExchangeService.MAX_POSITIONS, n(ExchangeService.FUTURES_MAX_QUANTITY)));
-        int rows = Math.max(0, (ph - 16) / 22);
-        int perPage = Math.max(1, rows * cols);
+        // 0.1.10.42: "Positions N/16 - collateral X / 5M"; at a limit the line turns amber and its tooltip says why first
+        ExchangeView.FuturesLine fl = v.futures();
+        boolean rowsFull = open >= fl.maxRows();
+        boolean capFull = fl.cap() >= 0 && collateral >= fl.cap();
+        String cap = fl.cap() < 0 ? tr("positions_no_cap") : shortNumber(fl.cap());
+        textNum(f -> tr("positions_line", open, fl.maxRows(), f.apply(collateral), cap), px + 4, py + 4, pw - 8,
+            rowsFull || capFull ? PanelStyle.WARN : PanelStyle.ACCENT);
+        String help = tr("positions_help", fl.maxRows(), n(FuturesLimits.MIN_ORDER), n(FuturesLimits.MAX_QUANTITY),
+            fl.cap() < 0 ? tr("positions_no_cap") : n(fl.cap()), fl.maxLots());
+        if (capFull) help = tr("positions_cap_full", n(collateral), n(fl.cap())) + " " + help;
+        if (rowsFull) help = tr("positions_rows_full", fl.maxRows()) + " " + help;
+        c.hover(px, py, pw, 12, help);
         int lines = (v.positions().size() + cols - 1) / cols;
+        int rows = Math.max(0, (ph - 16) / 22);
+        if (lines > rows) rows = Math.max(0, (ph - 26) / 22);   // room for "+N more"
+        int perPage = Math.max(1, rows * cols);
         positionScroll = Math.max(0, Math.min(positionScroll, lines - rows));
         c.wheel(px, py, pw, ph, d -> positionScroll = Math.max(0, positionScroll + d));
         int colW = (pw - 8) / cols;
@@ -1127,11 +1192,15 @@ public final class FuturePanel {
             int rx = px + 4 + (k % cols) * colW, ry = py + 16 + (k / cols) * 22;
             c.item(p.commodity(), rx, ry);
             String side = tr(p.isLong() ? "side_long" : "side_short");
-            textNum(f -> side + " x" + p.quantity() + " @ " + f.apply(p.price()), rx + 20, ry, colW - 24, PanelStyle.TEXT);
-            long coll = p.price() * p.quantity();
+            // 0.1.10.42: a row of several lots shows their average price and their number
+            String lots = p.lots() > 1 ? " \u00b7 " + tr("position_lots", p.lots()) : "";
+            textNum(f -> side + " x" + f.apply(p.quantity()) + " @ " + f.apply(p.price()) + lots, rx + 20, ry, colW - 24, PanelStyle.TEXT);
+            long coll = p.collateral();
             textNum(f -> tr("position_value", f.apply(p.valueNow()), Math.max(0, p.expiry() - v.day())), rx + 20, ry + 9, colW - 24,
                 p.valueNow() >= coll ? PanelStyle.up() : PanelStyle.down());
+            c.hover(rx, ry, colW - 4, 18, tr("position_help", p.lots(), n(p.price()), n(coll), n(p.valueNow())));
         }
+        if (rows > 0) more(px + 4, py + ph - 11, pw - 8, v.positions().size() - shown);
         c.hidden("positions (wheel)", shown, v.positions().size());
     }
 
@@ -1200,7 +1269,18 @@ public final class FuturePanel {
     // ------------------------------------------------------------------ treasury tab
 
     void treasury(ExchangeView v) {
-        int top = TOP, bottom = bottom(), half = (W - 18) / 2;
+        // 0.1.10.42: the tab shows the treasury or the wealth ranking; 0.1.10.43: or the bonds or the fund
+        if (treasuryPage < 0 || treasuryPage >= TREASURY_ORDER.length) treasuryPage = 0;
+        int sw = (Math.min(440, W - 12) - 3 * (TREASURY_ORDER.length - 1)) / TREASURY_ORDER.length;
+        c.panel(6, TOP, TREASURY_ORDER.length * (sw + 3) - 3, 12);
+        for (int i = 0; i < TREASURY_ORDER.length; i++) {
+            final int page = TREASURY_ORDER[i];
+            button(6 + i * (sw + 3), TOP, sw, 12, tr("treasury_switch." + page), treasuryPage == page, () -> { treasuryPage = page; c.request(); });
+        }
+        if (treasuryPage == 1) { ranking(v); return; }
+        if (treasuryPage == 2) { bonds(v); return; }
+        if (treasuryPage == 3) { fund(v); return; }
+        int top = TOP + 15, bottom = bottom(), half = (W - 18) / 2;
         c.panel(6, top, half, bottom - top);
         text(tr("ledger"), 10, top + 4, half - 8, PanelStyle.ACCENT);
         long max = 1, minted = 0, burned = 0;
@@ -1250,6 +1330,251 @@ public final class FuturePanel {
         text(tr("scrap_week", n(st.scrapIn()), n(st.scrapOut())), x + 4, bottom - 26, half - 8, PanelStyle.DIM);
         long listings = v.markets().stream().filter(r -> !r.system()).count();
         text(tr("listings", listings), x + 4, bottom - 14, half - 8, PanelStyle.DIM);
+    }
+
+    // ------------------------------------------------------------------ treasury bonds and fund (0.1.10.43)
+
+    /** "+1,234", "-1,234" or "0". */
+    static String signed(long v) { return v > 0 ? "+" + n(v) : v < 0 ? "-" + n(-v) : "0"; }
+
+    /**
+     * The treasury bonds: the weekly rate a purchase gets now and the stabiliser behind it, the term, the units, what the
+     * purchase costs and earns, the caps on the left; the player's holdings with the early exit on the right.
+     */
+    void bonds(ExchangeView v) {
+        int top = TOP + 15, bottom = bottom(), half = (W - 18) / 2, x0 = 10, cw = half - 8;
+        BondFundView.Bonds b = v.bondsFund().bonds();
+        c.panel(6, top, half, bottom - top);
+        text(tr("bonds.title"), x0, top + 4, cw, PanelStyle.ACCENT);
+        labelValue(x0, top + 18, cw, tr("bonds.rate"), BondRules.percent(b.ratePpm()), PanelStyle.ACCENT);
+        c.hover(x0, top + 17, cw, 10, tr("bonds.rate_help"));
+        text(b.stabilizer() ? tr("bonds.stabilizer", n(b.net7()), n(b.target())) : tr("bonds.stabilizer_off"), x0, top + 29, cw, PanelStyle.DIM);
+        int footer = bottom - 38;
+        if (!b.enabled()) {
+            int y = top + 43, shown = 0;
+            List<String> off = c.wrap(tr("bonds.off"), cw);
+            for (String line : off) { if (y + 8 > footer - 3) break; c.text(line, x0, y, PanelStyle.DIM); y += 10; shown++; }
+            if (shown < off.size()) c.hover(x0, top + 42, cw, Math.max(10, y - top - 42), tr("bonds.off"));   // the lines that do not fit
+            c.hidden("bonds off lines", shown, off.size());
+        } else {
+            int tw = (cw - 3) / 2;
+            for (int i = 0; i < BondRules.TERMS.length; i++) {
+                final int k = i;
+                button(x0 + i * (tw + 3), top + 41, tw, 12, tr("bonds.term", BondRules.TERMS[i]), bondTerm == i, () -> bondTerm = k);
+            }
+            int term = BondRules.TERMS[Math.max(0, Math.min(BondRules.TERMS.length - 1, bondTerm))];
+            int y = top + 57;
+            String ul = tr("bonds.units");
+            int lw = Math.min(c.width(ul), cw / 3), bw = Math.max(40, Math.min(64, cw / 4));
+            int boxW = Math.max(30, Math.min(70, cw - lw - bw - 8));
+            text(ul, x0, y + 2, lw, PanelStyle.TEXT);
+            place(Box.BOND_UNITS, x0 + lw + 4, y, boxW);
+            long units = Math.max(1, Math.min(BondRules.MAX_UNITS, c.num(Box.BOND_UNITS, 1)));
+            button(x0 + cw - bw, y, bw, 12, tr("bonds.buy"), () -> c.act(ExchangePackets.BOND_BUY, "", units, 0, term, 0, false, ""));
+            c.hover(x0 + cw - bw, y, bw, 12, tr("bonds.buy_help", n(units * BondRules.UNIT), term));
+            y += 16;
+            long principal = units * BondRules.UNIT;
+            labelValue(x0, y, cw, tr("bonds.cost"), n(principal), PanelStyle.TEXT);
+            y += 11;
+            labelValue(x0, y, cw, tr("bonds.interest", v.day() + term + 1), "+" + n(BondRules.interest(principal, b.ratePpm(), term)), PanelStyle.up());
+            y += 11;
+            if (y + 8 <= footer - 3) labelValue(x0, y, cw, tr("bonds.room"), n(b.unitsRoom()), b.unitsRoom() > 0 ? PanelStyle.TEXT : PanelStyle.WARN);
+        }
+        labelValue(x0, footer, cw, tr("bonds.mine"), b.maxPerPlayer() > 0 ? n(b.mine()) + " / " + n(b.maxPerPlayer()) : n(b.mine()), PanelStyle.TEXT);
+        labelValue(x0, footer + 12, cw, tr("bonds.all"), b.serverCap() >= 0 ? n(b.outstanding()) + " / " + n(b.serverCap()) : n(b.outstanding()),
+            b.serverCap() >= 0 && b.outstanding() >= b.serverCap() ? PanelStyle.WARN : PanelStyle.TEXT);
+        c.hover(x0, footer + 11, cw, 10, tr("bonds.all_help"));
+        text(tr("bonds.exit_note"), x0, footer + 24, cw, PanelStyle.DIM);
+
+        int x = 12 + half;
+        c.panel(x, top, half, bottom - top);
+        text(tr("bonds.holdings"), x + 4, top + 4, cw, PanelStyle.ACCENT);
+        List<BondFundView.Holding> hs = b.holdings();
+        int listEnd = bottom - 16, y = top + 18, shown = 0;
+        int ew = Math.max(30, Math.min(56, c.width(tr("bonds.exit")) + 10));
+        if (hs.isEmpty()) text(tr("bonds.none"), x + 4, y, cw, PanelStyle.DIM);
+        int k0 = first("bonds", hs.size(), x, top, half, listEnd - top);
+        long sumP = 0, sumI = 0;
+        for (BondFundView.Holding h : hs) { sumP = WealthRules.add(sumP, h.units() * BondRules.UNIT); sumI = WealthRules.add(sumI, h.interest()); }
+        for (int i = k0; i < hs.size(); i++) {
+            if (y + 20 > listEnd - (i < hs.size() - 1 || k0 > 0 ? 10 : 0)) break;
+            BondFundView.Holding h = hs.get(i);
+            text(tr("bonds.row", n(h.units()), h.term(), BondRules.percent(h.ratePpm())), x + 4, y, cw - ew - 4, PanelStyle.TEXT);
+            text(tr("bonds.row2", h.maturity() + 1, n(h.interest())), x + 4, y + 10, cw - ew - 4, PanelStyle.DIM);
+            final long id = h.id();
+            long p = h.units() * BondRules.UNIT, pen = BondRules.penalty(p);
+            button(x + half - 4 - ew, y + 2, ew, 14, tr("bonds.exit"), () -> c.act(ExchangePackets.BOND_EXIT, "", id, 0, 0, 0, false, ""));
+            c.hover(x + half - 4 - ew, y + 2, ew, 14, tr("bonds.exit_help", n(p - pen), n(pen), n(h.interest())));
+            y += 22;
+            shown++;
+        }
+        more(x + 4, y, cw, hs.size() - shown);
+        c.hidden("bond holdings (wheel)", shown, hs.size());
+        labelValue(x + 4, bottom - 14, cw, tr("bonds.total"), n(sumP) + " +" + n(sumI), PanelStyle.ACCENT);
+    }
+
+    /**
+     * The treasury fund: the player's units, principal, waiting and booked units, dividends and losses, the units box and the
+     * actions, the rules on the left; the fund's invested principal, the stock cost, the investors' share, this week's realised
+     * profit and loss so far and the distributed weeks on the right.
+     */
+    void fund(ExchangeView v) {
+        int top = TOP + 15, bottom = bottom(), half = (W - 18) / 2, x0 = 10, cw = half - 8;
+        BondFundView.Fund f = v.bondsFund().fund();
+        c.panel(6, top, half, bottom - top);
+        text(tr("fund.title"), x0, top + 4, cw, PanelStyle.ACCENT);
+        int y = top + 18;
+        labelValue(x0, y, cw, tr("fund.units"), n(f.units()), PanelStyle.TEXT);
+        y += 11;
+        labelValue(x0, y, cw, tr("fund.principal"), n(f.principal()), PanelStyle.TEXT);
+        c.hover(x0, y - 1, cw, 10, tr("fund.principal_help"));
+        y += 11;
+        labelValue(x0, y, cw, tr("fund.pending"), n(f.pending()), f.pending() > 0 ? PanelStyle.ACCENT : PanelStyle.TEXT);
+        y += 11;
+        long booked = f.units() - f.free(), next = Long.MAX_VALUE;
+        for (BondFundView.Lot l : f.lots()) if (l.redeemDay() >= 0) next = Math.min(next, l.redeemDay());
+        labelValue(x0, y, cw, tr("fund.booked"), booked > 0 ? tr("fund.booked_value", n(booked), next + 1) : "0", PanelStyle.TEXT);
+        y += 11;
+        labelValue(x0, y, cw, tr("fund.result"), "+" + n(f.paid()) + " / -" + n(f.lost()), PanelStyle.TEXT);
+        y += 14;
+        String ul = tr("fund.units_box");
+        int lw = Math.min(c.width(ul), cw / 3), boxW = Math.max(30, Math.min(70, cw / 3));
+        text(ul, x0, y + 2, lw, PanelStyle.TEXT);
+        place(Box.FUND_UNITS, x0 + lw + 4, y, boxW);
+        long units = Math.max(1, Math.min(FundRules.MAX_UNITS, c.num(Box.FUND_UNITS, 1)));
+        int cx = x0 + lw + 4 + boxW + 4;
+        textNum(fn -> tr("fund.coins", fn.apply(units * FundRules.UNIT)), cx, y + 2, x0 + cw - cx, PanelStyle.DIM);
+        y += 16;
+        int bw3 = (cw - 6) / 3;
+        button(x0, y, bw3, 14, tr("fund.subscribe"), false, f.enabled(), () -> c.act(ExchangePackets.FUND_SUBSCRIBE, "", units, 0, 0, 0, false, ""));
+        c.hover(x0, y, bw3, 14, tr("fund.subscribe_help"));
+        button(x0 + bw3 + 3, y, bw3, 14, tr("fund.redeem"), false, f.free() > 0, () -> c.act(ExchangePackets.FUND_REDEEM, "", units, 0, 0, 0, false, ""));
+        c.hover(x0 + bw3 + 3, y, bw3, 14, tr("fund.redeem_help"));
+        button(x0 + 2 * (bw3 + 3), y, bw3, 14, tr("fund.cancel"), false, f.pending() > 0, () -> c.act(ExchangePackets.FUND_CANCEL, "", 0, 0, 0, 0, false, ""));
+        c.hover(x0 + 2 * (bw3 + 3), y, bw3, 14, tr("fund.cancel_help"));
+        y += 18;
+        List<String> rules = c.wrap(tr(f.enabled() ? "fund.rules" : "fund.off"), cw);
+        int shown = 0, rulesTop = y;
+        for (String line : rules) { if (y + 8 > bottom - 3) break; c.text(line, x0, y, PanelStyle.DIM); y += 9; shown++; }
+        // the lines that do not fit (small windows): the whole text in the tooltip
+        if (shown < rules.size()) c.hover(x0, rulesTop - 1, cw, Math.max(10, y - rulesTop), tr(f.enabled() ? "fund.rules" : "fund.off"));
+        c.hidden("fund rules lines", shown, rules.size());
+
+        int x = 12 + half;
+        c.panel(x, top, half, bottom - top);
+        text(tr("fund.results"), x + 4, top + 4, cw, PanelStyle.ACCENT);
+        y = top + 18;
+        labelValue(x + 4, y, cw, tr("fund.invested"), n(f.invested()), PanelStyle.TEXT);
+        c.hover(x + 4, y - 1, cw, 10, tr("fund.invested_help", f.investors(), n(f.allPending())));
+        y += 11;
+        labelValue(x + 4, y, cw, tr("fund.stock_cost"), n(f.stockCost()), PanelStyle.TEXT);
+        y += 11;
+        labelValue(x + 4, y, cw, tr("fund.share"), BondRules.percent(f.sharePpm()), PanelStyle.ACCENT);
+        c.hover(x + 4, y - 1, cw, 10, tr("fund.share_help"));
+        y += 14;
+        text(tr("fund.this_week"), x + 4, y, cw, PanelStyle.ACCENT);
+        y += 11;
+        labelValue(x + 4, y, cw, tr("fund.gain"), "+" + n(f.week(FundRules.SALE_PROFIT) + f.week(FundRules.IMPORT_FEE)), PanelStyle.up());
+        c.hover(x + 4, y - 1, cw, 10, tr("fund.gain_help", n(f.week(FundRules.SALE_PROFIT)), n(f.week(FundRules.IMPORT_FEE))));
+        y += 11;
+        labelValue(x + 4, y, cw, tr("fund.loss"), "-" + n(f.week(FundRules.SALE_LOSS) + f.week(FundRules.BOUNTY_COST)), PanelStyle.down());
+        c.hover(x + 4, y - 1, cw, 10, tr("fund.loss_help", n(f.week(FundRules.SALE_LOSS)), n(f.week(FundRules.BOUNTY_COST))));
+        y += 14;
+        text(tr("fund.history"), x + 4, y, cw, PanelStyle.ACCENT);
+        y += 11;
+        if (f.weeks().isEmpty()) text(tr("fund.no_history"), x + 4, y, cw, PanelStyle.DIM);
+        shown = 0;
+        for (BondFundView.Week w : f.weeks()) {
+            if (y + 8 > bottom - 3) break;
+            labelValue(x + 4, y, cw, tr("fund.week_row", w.week() + 1, signed(w.profit() - w.loss())), signed(w.mine()),
+                w.mine() > 0 ? PanelStyle.up() : w.mine() < 0 ? PanelStyle.down() : PanelStyle.TEXT);
+            c.hover(x + 4, y - 1, cw, 10, tr("fund.week_help", w.week() + 1, n(w.profit()), n(w.loss()), n(w.invested()), n(w.stockCost()),
+                BondRules.percent(w.sharePpm()), n(w.dividends()), n(w.losses()), n(w.kept()), signed(w.mine())));
+            y += 10;
+            shown++;
+        }
+        c.hidden("fund weeks", shown, f.weeks().size());
+    }
+
+    // ------------------------------------------------------------------ wealth ranking (0.1.10.42)
+
+    /**
+     * The wealth ranking of the server: the categories (total assets; this market week's net trade, futures profit and bounty
+     * deliveries), the top ten and the viewer's place on the left; the viewer's assets by part and the name switch on the right.
+     */
+    void ranking(ExchangeView v) {
+        int top = TOP + 15, bottom = bottom(), half = (W - 18) / 2;
+        RankingView r = v.ranking();
+        int cat = Math.max(0, Math.min(WealthRules.CATEGORIES - 1, rankingCategory));
+        boolean ready = r.category() == cat;
+        c.panel(6, top, half, bottom - top);
+        text(tr("ranking.title"), 10, top + 4, half - 8, PanelStyle.ACCENT);
+        int bw = (half - 8 - 3 * (WealthRules.CATEGORIES - 1)) / WealthRules.CATEGORIES;
+        for (int i = 0; i < WealthRules.CATEGORIES; i++) {
+            final int k = i;
+            button(10 + i * (bw + 3), top + 15, bw, 12, tr("ranking.category." + i), cat == i, () -> { rankingCategory = k; c.request(); });
+            c.hover(10 + i * (bw + 3), top + 15, bw, 12, tr("ranking.help." + i));
+        }
+        int y = top + 31, footer = bottom - 24;
+        if (!ready) {
+            text(tr("loading"), 10, y, half - 8, PanelStyle.DIM);
+        } else if (!r.enabled()) {
+            for (String line : c.wrap(tr("ranking.off"), half - 8)) { if (y + 8 > footer) break; c.text(line, 10, y, PanelStyle.DIM); y += 10; }
+        } else if (r.top().isEmpty()) {
+            text(tr("ranking.empty"), 10, y, half - 8, PanelStyle.DIM);
+        } else {
+            int shown = 0;
+            for (RankingView.Entry e : r.top()) {
+                if (y + 9 > footer) break;
+                int colour = e.me() ? PanelStyle.ACCENT : PanelStyle.TEXT;
+                String place = "#" + e.rank();
+                c.text(place, 10, y, colour);
+                int vw = rightNum("", e.value(), 6 + half - 4, y, (half - 8) / 2, colour);
+                text(e.name().isEmpty() ? tr("ranking.anonymous") : e.name(), 34, y, half - 28 - 8 - vw - 6, e.me() ? colour : PanelStyle.TEXT);
+                y += 10;
+                shown++;
+            }
+            c.hidden("ranking places", shown, r.top().size());
+        }
+        if (ready && r.enabled()) {
+            // the own value in the short form when the full one does not fit (the tooltip has it)
+            textNum(f -> r.myRank() > 0 ? tr("ranking.mine", r.myRank(), r.players(), f.apply(r.myValue())) : tr("ranking.unranked", r.players()),
+                10, bottom - 22, half - 8, PanelStyle.ACCENT);
+        }
+        text(tr("ranking.note"), 10, bottom - 11, half - 8, PanelStyle.DIM);
+
+        int x = 12 + half;
+        c.panel(x, top, half, bottom - top);
+        text(tr("ranking.assets"), x + 4, top + 4, half - 8, PanelStyle.ACCENT);
+        y = top + 18;
+        int hideY = bottom - 18;
+        if (ready && r.enabled()) {
+            if (cat == WealthRules.TOTAL && r.parts().size() == WealthRules.PARTS) {
+                for (int i = 0; i < WealthRules.PARTS; i++) {
+                    labelValue(x + 4, y, half - 8, tr("ranking.part." + i), n(r.parts().get(i)), PanelStyle.TEXT);
+                    c.hover(x + 4, y - 1, half - 8, 10, tr("ranking.part_help." + i));
+                    y += 10;
+                }
+                labelValue(x + 4, y + 2, half - 8, tr("ranking.part_total"), n(r.myValue()), PanelStyle.ACCENT);
+                y += 16;
+            } else {
+                labelValue(x + 4, y, half - 8, tr("ranking.category." + cat), n(r.myValue()), r.myValue() < 0 ? PanelStyle.down() : PanelStyle.ACCENT);
+                y += 14;
+            }
+            List<String> help = c.wrap(tr("ranking.help." + cat), half - 8);
+            int shown = 0;
+            for (String line : help) {
+                if (y + 8 > hideY - 3) break;
+                c.text(line, x + 4, y, PanelStyle.DIM);
+                y += 9;
+                shown++;
+            }
+            c.hidden("ranking help lines", shown, help.size());
+            boolean hidden = r.hidden();
+            button(x + 4, hideY, half - 8, 14, tr(hidden ? "ranking.hidden_on" : "ranking.hidden_off"), hidden,
+                () -> c.act(ExchangePackets.RANKING_HIDE, "", 0, 0, 0, 0, !hidden, ""));
+            c.hover(x + 4, hideY, half - 8, 14, tr("ranking.hide_help"));
+        }
     }
 
     // ------------------------------------------------------------------ sell page (0.1.10.25, X1)

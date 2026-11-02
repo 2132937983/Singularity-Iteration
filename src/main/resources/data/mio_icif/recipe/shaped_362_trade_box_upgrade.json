@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "AUA",
+    " I "
+  ],
+  "key": {
+    "A": {
+      "tag": "c:circuits/advanced"
+    },
+    "U": {
+      "type": "mio_icif:fluid_cell",
+      "fluid": "mio_icif:uumatter"
+    },
+    "I": {
+      "tag": "c:ingots/iron"
+    }
+  },
+  "result": {
+    "id": "mio_icif:normal/item_trade_box_upgrade",
+    "count": 1
+  }
+}

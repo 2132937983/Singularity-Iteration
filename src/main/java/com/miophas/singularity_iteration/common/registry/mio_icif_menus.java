@@ -255,6 +255,12 @@ public class mio_icif_menus {
     public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.producer.TradeTerminalMenu>> TRADE_TERMINAL_MENU_TYPE =
         MENU_TYPES.register("trade_terminal_menu", () -> new MenuType<>(com.miophas.singularity_iteration.common.menu.producer.TradeTerminalMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 
+    /** 0.1.10.42: the Basic and the Advanced Trade Box (a type per tier: the open buffer carries the position only). */
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.producer.TradeBoxMenu>> TRADE_BOX_MENU_TYPE =
+        MENU_TYPES.register("trade_box_menu", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create(com.miophas.singularity_iteration.common.menu.producer.TradeBoxMenu::basic));
+    public static final DeferredHolder<MenuType<?>, MenuType<com.miophas.singularity_iteration.common.menu.producer.TradeBoxMenu>> TRADE_BOX_ADVANCED_MENU_TYPE =
+        MENU_TYPES.register("trade_box_advanced_menu", () -> net.neoforged.neoforge.common.extensions.IMenuTypeExtension.create(com.miophas.singularity_iteration.common.menu.producer.TradeBoxMenu::advanced));
+
     public static final DeferredHolder<MenuType<?>, MenuType<RedstoneReactorCoolantInjectorMenu>> REDSTONE_REACTOR_COOLANT_INJECTOR_MENU_TYPE =
         MENU_TYPES.register("redstone_reactor_coolant_injector_menu", () -> new MenuType<>(RedstoneReactorCoolantInjectorMenu::new, net.minecraft.world.flag.FeatureFlags.VANILLA_SET));
 

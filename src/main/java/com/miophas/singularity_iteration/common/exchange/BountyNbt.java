@@ -46,6 +46,7 @@ final class BountyNbt {
                 CompoundTag t = new CompoundTag();
                 t.putString("Kind", l.kind.name()); t.putString("Source", l.source.name()); t.putString("Item", l.item);
                 t.putLong("Amount", l.amount); t.putLong("Paid", l.paid);
+                if (l.unitCost > 0) t.putDouble("UnitCost", l.unitCost);   // 0.1.10.43
                 lines.add(t);
             }
             x.put("Lines", lines);
@@ -160,6 +161,8 @@ final class BountyNbt {
             Line line = new Line();
             line.kind = Kind.valueOf(l.getString("Kind")); line.source = Source.valueOf(l.getString("Source")); line.item = l.getString("Item");
             line.amount = l.getLong("Amount"); line.paid = l.getLong("Paid");
+            double unitCost = l.getDouble("UnitCost");   // 0.1.10.43
+            line.unitCost = Double.isFinite(unitCost) ? Math.max(0, unitCost) : 0;
             if (line.amount < 0 || line.paid < 0 || line.paid > line.amount) return null;
             b.lines.add(line);
         }

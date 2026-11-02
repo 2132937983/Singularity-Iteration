@@ -329,6 +329,8 @@ com.miophas.singularity_iteration.common.entity.dynamite.mio_icif_dynamite_item.
         com.miophas.singularity_iteration.common.command.ReactorAuditCommand.register(event.getDispatcher());  // 0.1.10.12
         com.miophas.singularity_iteration.common.command.MarketAuditCommand.register(event.getDispatcher());   // 0.1.10.21
         com.miophas.singularity_iteration.common.command.MarketToolsCommand.register(event.getDispatcher());   // 0.1.10.25
+        com.miophas.singularity_iteration.common.command.WealthCommand.register(event.getDispatcher());   // 0.1.10.42
+        com.miophas.singularity_iteration.common.command.BondsCommand.register(event.getDispatcher());   // 0.1.10.43
         com.miophas.singularity_iteration.common.command.BountyCommand.register(event.getDispatcher());   // 0.1.10.26
         com.miophas.singularity_iteration.common.command.ScannerPriceCommand.register(event.getDispatcher());   // 0.1.10.36
     }

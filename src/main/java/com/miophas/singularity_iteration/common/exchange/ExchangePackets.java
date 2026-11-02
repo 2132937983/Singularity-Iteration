@@ -53,21 +53,34 @@ public final class ExchangePackets {
      */
     public static final int SHOP_POST = 27, SHOP_RESTOCK = 28, SHOP_WITHDRAW = 29, SHOP_PAUSE = 30, SHOP_TRADE = 31, SHOP_COLLECT = 32,
         COMMISSION_NOTIFY = 33, SETTLE_SHOP = 34;
+    /** 0.1.10.42: RANKING_HIDE (flag = keep the player's name out of the wealth ranking). */
+    public static final int RANKING_HIDE = 35;
+    /**
+     * 0.1.10.43 (Q9): BOND_BUY (c = term in market days, a = units), BOND_EXIT (a = holding), FUND_SUBSCRIBE (a = units),
+     * FUND_CANCEL (the units waiting for the next market day), FUND_REDEEM (a = units).
+     */
+    public static final int BOND_BUY = 36, BOND_EXIT = 37, FUND_SUBSCRIBE = 38, FUND_CANCEL = 39, FUND_REDEEM = 40;
 
     /**
      * The view request: the selected market; 0.1.10.35: the panel's shop query ("" none, "*" the list, "*item" the list of
      * shops that trade the item, an owner's UUID: that shop and the list).
      */
-    public record Request(String selected, String shop) implements CustomPacketPayload {
+    public record Request(String selected, String shop, int ranking) implements CustomPacketPayload {
         public static final Type<Request> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("mio_icif", "exchange_request"));
         public static final StreamCodec<FriendlyByteBuf, Request> CODEC = StreamCodec.of(
-            (b, p) -> { b.writeUtf(p.selected, 128); b.writeUtf(p.shop, 160); }, b -> new Request(b.readUtf(128), b.readUtf(160)));
-        public Request(String selected) { this(selected, ""); }
+            (b, p) -> { b.writeUtf(p.selected, 128); b.writeUtf(p.shop, 160); b.writeVarInt(p.ranking + 1); },
+            b -> new Request(b.readUtf(128), b.readUtf(160), Math.max(-1, Math.min(WealthRules.CATEGORIES - 1, b.readVarInt() - 1))));
+        public Request(String selected) { this(selected, "", -1); }
+
+        /** 0.1.10.35 - 0.1.10.41: without the ranking. */
+        public Request(String selected, String shop) { this(selected, shop, -1); }
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
     /** 0.1.10.35: the last shop query of each player (the views after an action use it too). */
     static final java.util.Map<java.util.UUID, String> SHOP_QUERY = new java.util.concurrent.ConcurrentHashMap<>();
+    /** 0.1.10.42: the ranking category each player's panel shows (absent = none). */
+    static final java.util.Map<java.util.UUID, Integer> RANKING_QUERY = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * One action. Fields by kind: PLACE (id = market, flag = buy, c = 1 to rest, a = limit, d = quantity); CANCEL (a = order);
@@ -113,6 +126,7 @@ public final class ExchangePackets {
             if (machine == null || !PacketRateLimit.allow(player, PacketRateLimit.EXCHANGE_VIEW)) return;
             Bounties.seen(player);   // 0.1.10.34: an active player
             SHOP_QUERY.put(player.getUUID(), packet.shop == null ? "" : packet.shop);
+            if (packet.ranking >= 0) RANKING_QUERY.put(player.getUUID(), packet.ranking); else RANKING_QUERY.remove(player.getUUID());
             send(player, packet.selected, machine);
         });
     }
@@ -167,6 +181,13 @@ public final class ExchangePackets {
                 case SHOP_TRADE -> Shops.trade(player, p.id, p.a, Math.max(0, p.d));
                 case SHOP_COLLECT -> Shops.collect(player);
                 case COMMISSION_NOTIFY -> ExchangeService.commissionNotice(player, p.flag);
+                case RANKING_HIDE -> WealthRanking.setHidden(player, p.flag);   // 0.1.10.42
+                // 0.1.10.43
+                case BOND_BUY -> BondsFund.buy(player, p.c, Math.max(0, p.a));
+                case BOND_EXIT -> BondsFund.exit(player, p.a);
+                case FUND_SUBSCRIBE -> BondsFund.subscribe(player, Math.max(0, p.a));
+                case FUND_CANCEL -> BondsFund.cancel(player);
+                case FUND_REDEEM -> BondsFund.redeem(player, Math.max(0, p.a));
                 case SETTLE_SELL, SETTLE_BOUNTY, SETTLE_COMMISSION, SETTLE_UU, SETTLE_BUY, SETTLE_COINS, SETTLE_SHOP -> settle(player, p);
                 default -> new ExchangeService.Result(false, "message.mio_icif.exchange.unknown_action");
             });
@@ -200,6 +221,6 @@ public final class ExchangePackets {
 
     static void send(ServerPlayer player, String selected, ExchangeHost machine) {
         PacketDistributor.sendToPlayer(player, new View(ExchangeViews.build(player, selected, machine.hasEnoughEnergy(),
-            SHOP_QUERY.getOrDefault(player.getUUID(), ""))));
+            SHOP_QUERY.getOrDefault(player.getUUID(), ""), RANKING_QUERY.getOrDefault(player.getUUID(), -1))));
     }
 }

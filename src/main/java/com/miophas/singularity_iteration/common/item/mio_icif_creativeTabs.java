@@ -1270,8 +1270,8 @@ public class mio_icif_creativeTabs {
 
                 // 工业工作台               
                 output.accept(mio_icif_blocks.INDUSTRIAL_WORKBENCH.get());
-                // 0.1.10.39: the Energy Converter is a legacy block (still registered, so placed ones keep working); SI cables
-                // take and give FE themselves (universal cables)
+                // 0.1.11.1: the grid-tie interface (Energy Converter id; a legacy block from 0.1.10.39 to 0.1.11.0)
+                output.accept(mio_icif_blocks.ENERGY_CONVERTER.get());
                 // ============================================================
                 //  22.5 BLOCKS - ITEM & FLUID TRANSPORT
                 // ============================================================

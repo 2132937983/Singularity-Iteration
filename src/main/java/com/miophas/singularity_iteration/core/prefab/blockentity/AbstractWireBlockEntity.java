@@ -26,28 +26,13 @@ import java.util.List;
 public abstract class AbstractWireBlockEntity extends AbstractEnergyBlockEntity implements ICableEnergyNode {
 
     /**
-     * 0.1.10.39 (universal cables): every face takes FE pushed by the block beyond it (machines, generators, batteries of other
-     * mods) into the grid, at voltage 0 ({@code IndependentSiEnergy.offerFe}). Receive only; no FE toward another mod's cable.
+     * 0.1.11.1: a cable has no FE capability. The grid reaches the blocks of other mods itself: it receives from and
+     * delivers to them in its fair round, and a block that only pushes FE connects through an SI machine or the grid-tie
+     * interface. From 0.1.10.39 to 0.1.11.0 every face took the FE pushed into it (an inbox per contact).
      */
     @Override
     public net.neoforged.neoforge.energy.IEnergyStorage scexFeCapability(@org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (side == null || !(level instanceof ServerLevel server) || isRemoved()) return null;
-        if (com.miophas.singularity_iteration.core.runtime.energy.ForeignEnergyCables.is(server, worldPosition.relative(side))) return null;
-        BlockPos cable = worldPosition;
-        return new net.neoforged.neoforge.energy.IEnergyStorage() {
-            private com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy engine() {
-                return com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.current(server.getServer());
-            }
-            @Override public int receiveEnergy(int amount, boolean simulate) {
-                var engine = engine();
-                return engine == null || isRemoved() ? 0 : engine.offerFe(server, cable, side, amount, simulate);
-            }
-            @Override public int extractEnergy(int amount, boolean simulate) { return 0; }
-            @Override public int getEnergyStored() { return 0; }
-            @Override public int getMaxEnergyStored() { return com.miophas.singularity_iteration.core.runtime.energy.grid.FECompatTile.INBOX_FE; }
-            @Override public boolean canExtract() { return false; }
-            @Override public boolean canReceive() { return engine() != null && !isRemoved(); }
-        };
+        return null;
     }
 
     private static final int CONDUCTIVITY_RANGE = 32;

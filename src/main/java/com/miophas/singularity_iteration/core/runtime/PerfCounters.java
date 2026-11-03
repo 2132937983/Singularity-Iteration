@@ -38,11 +38,14 @@ public final class PerfCounters {
         LIT_FLIPS,
         /** 0.1.10.38: redstone input reads of processing machines (six neighbour signals each). */
         REDSTONE_READS,
-        /** 0.1.10.39: FE taken into SI cables (universal cables). */
-        FE_INTO_CABLES,
-        /** 0.1.10.39: FE delivered to other mods' machines. */
+        /**
+         * 0.1.11.1: FE moved by grid-tie interfaces (both directions). Until 0.1.11.0 {@code FE_INTO_CABLES}: FE pushed into SI
+         * cables (cables take no FE now).
+         */
+        FE_GRID_TIE,
+        /** 0.1.10.39: FE delivered to other mods' blocks (0.1.11.1: handed from their staging cells). */
         FE_EXPORTED,
-        /** 0.1.10.39: FE taken from other mods' blocks into SI machines and storage. */
+        /** 0.1.10.39: FE taken from other mods' blocks into the grid. */
         FE_IMPORTED,
         /** 0.1.10.39: neighbours of the grid probed for an energy capability. */
         FE_PROBES,

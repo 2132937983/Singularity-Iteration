@@ -693,3 +693,54 @@ ReactorTransformationRegistry.register(ReactorTransformation.of(
 
 * `FeLedger.inFrame(long tick, Runnable settlement)` 在当前线程上以服务器 tick `tick` 的额度运行一次结算；不允许嵌套。已经计入更晚 tick 的账本在较早的帧内没有额度。
 * 引擎的搜索与路由额度仍然限制一个服务器 tick 的工作量：补结算与同一服务器 tick 的结算共用这些额度。
+
+## 26. 公平轮次中的外部方块与并网接口（0.1.11.1）
+
+0.1.11.1 是电网性能与互通提案的阶段 2：其他模组的方块与 SI 的端点参加同一个公平分配轮次，SI 线缆不再接收 FE，能量转换器成为并网接口。这些是行为变化；附属模组可能需要修改的内容见 26.2。
+
+### 26.1 外部方块是公平轮次的端口
+
+* SI 电网旁每个带有能量能力的其他模组方块都是原生结算中的一个端口：与 SI 端点使用相同的窗口、路由与公平分配轮次。一个电源每 tick 只有一个输出额度，SI 接收端与外部接收端共用。0.1.11.0 之前，原生结算之后的两次传递按对（先输出，后输入）以原生结算剩下的能量移动 FE。
+* 只接收的方块属于蓄电类：在 SI 负载之后接收余量。引擎每帧每个面询问一次（`receiveEnergy(max, true)`）。入账先进入引擎的暂存单元，然后引擎把单元中的全部 FE 交给方块。方块拒收的部分留在单元中等到下一 tick（端口的空间扣除这部分）。tick 之间单元中只留下不到 1 FE。
+* 只输出的方块是发电机。引擎只为已规划、可路由的输送从它提取 FE。
+* 端口列表把外部端口均匀地插在 SI 端口之间（每 n 个 SI 端口之后一个），所以原生结算的每个窗口（最多 128 个接收端）中SI 负载与外部接收端的比例与整个电网相同。若接在全部 SI 端口之后，只有外部接收端的窗口会拿走其电源的全部额度，而其他窗口中的负载仍然不足。
+* 既接收又输出的方块是电池（26.3）。
+* FE 没有电压包：来自外部方块的输送电压为 0，外部接收端不会爆炸。线损使用与原生相同的模型与设置（`LOSSLESS` 时 FE 也无损耗）。
+* `FairShareDistributor.Receiver` 新增最后一个分量 `fromStorage`。为 `false` 时该接收端不从第 1 类（蓄电）电源接收能量。原有构造函数保持 `true`。
+* 诊断（仅服务器线程）：`IndependentSiEnergy.foreignTotals(ServerLevel)` 返回 `ForeignTotals(handedFe, takenFe, dropped, ports)`：引擎启动以来交给外部方块与从外部方块取得的 FE、方块消失时（区块卸载、新的方块实体）暂存单元中留下而被丢弃的 EU，以及该维度的外部端口数。`foreignPortState(ServerLevel, BlockPos)` 返回端口的角色（`CHARGE`、`DISCHARGE`、`RECEIVER`、`SOURCE` 或 `NONE`）与暂存的 EU，不是端口时返回 `null`。
+* `PerfCounters.Kind`：删除 `FE_INTO_CABLES`；`FE_GRID_TIE` 统计并网接口移动的 FE（两个方向）；`FE_EXPORTED` 与 `FE_IMPORTED` 统计交给外部方块与从外部方块取得的 FE。`/mio_icif perf` 的 FE 行显示这些计数。
+
+### 26.2 线缆不再接收 FE
+
+* `AbstractWireBlockEntity.scexFeCapability(side)` 返回 `null`。0.1.10.39 至 0.1.11.0 期间，线缆的每个面都接收相邻方块推入的 FE（每个接触一个收件箱，不保存）。
+* 随收件箱删除：`IndependentSiEnergy.offerFe` 与 `feInputTotal`、`FECompatTile.INBOX_FE`、`offerInbox` 与 `inbox`。随两次 FE 传递删除：`RoutedFeTarget` 与 `FeMachineBridge.pushRouted` / `pullRouted`。它们都在 `core.runtime` 中，不是公共 API。
+* 只推送 FE（不提供提取）的方块现在不能向 SI 线缆供电。请把它连接到 SI 机器（机器仍把 FE 收入自己的储能）或输入模式的并网接口。
+
+### 26.3 电池：`StorageHysteresis`
+
+`StorageHysteresis`（引擎包，纯函数）按充电率为其他模组的电池每 tick 给出一个角色，并设有死区：
+
+* 90%（`DISCHARGE_PERCENT`）及以上：`DISCHARGE`。电池为 SI 负载供电（蓄电顺位），不接收能量；它的能量不会给蓄电充电。
+* 10%（`CHARGE_PERCENT`）及以下：`CHARGE`。电池接收余量，不供电。
+* 两者之间保持原角色。第一个角色（`initial`）在半满及以上为 `DISCHARGE`，否则为 `CHARGE`。
+
+因此电池不会在同一 tick 内既充电又放电，两个电池之间也不会来回传递能量。
+角色在每个 tick 开始时决定；一个 tick 内的数量只受方块自身速率的限制，所以速率大的电池在越过边沿的那个 tick 结束时可能低于 10% 或高于 90%。
+
+### 26.4 并网接口：`GridExchangePort`
+
+* 能量转换器（`mio_icif:energy_converter/energy_converter`，ID 不变）现在是并网接口，重新可以合成并列入创造模式物品栏。正面朝向另一个电网，其余五个面接入 SI 电网。缓存 200,000 EU；4 FE = 1 EU，无损耗。
+* 模式（潜行 + 右键）：输出（SI → 正面）、输入（正面 → SI）、双向（死区为缓存的 10%、25% 或 50%，以半满为中心）。上限（右键）：32、128、512 或 2,048 EU/t，两侧相同。
+* 输出：在 SI 一侧是蓄电类接收端，它在公平轮次中的空间不超过上限；每 tick 把缓存交给正面的方块（最多上限 × 4 FE）。
+* 输入：每 tick 从正面的方块取得 FE 存入缓存；在 SI 一侧是电压包等于上限的发电机。
+* 双向：在 SI 一侧只接收发电机的余量（不从蓄电接收），只为负载供电（不为蓄电充电）。正面把缓存高于上沿的部分交出，把低于下沿所缺的部分取入；在死区内正面不动作。
+* 其他模组只在正面看到 `IEnergyStorage`：输入与双向模式下接收（双向：到下沿为止），输出与双向模式下提供（双向：高于上沿的部分）。
+* 旧存档：`Mode` 为 true（FE → EU）变为输入模式；FE 缓存以整 EU 并入 EU 缓存，不超过容量。新标签：`GridTieMode`、`GridTieBand`、`GridTieLimit`。
+* `GridExchangePort`（位于 `core.runtime.energy`，不是公共 API）向引擎提供这种端点的 SI 面与调度规则：`exchangeFace()`、`exchangeInputs()`、`exchangeOutputs()`（面位）、`exchangeLoadsOnly()` 与 `exchangeSurplusOnly()`。
+
+### 26.5 Mekanism 焦耳：`JouleSavings`
+
+* SI 机器的焦耳视图在两次传输之间保留不足 1 EU 的焦耳（`FeMachineBridge.joules()`）。以前不足 1 EU 的输入被拒绝，每次输入中不足 1 EU 的部分被退回，因此小而持续的能量流永远到不了。现在按 10 J/EU 输入 200 次 3 J 得到 60 EU。
+* 提取先从积存中支付，其余以整 EU 从储能取出；该 EU 超出请求的焦耳继续积存。
+* 换算率改变时积存被丢弃（`dropped()` 统计）。积存不随世界保存：每台机器卸载时损失不到 1 EU。
+* 只用模拟的 strict-energy 视图测试过，未在安装 Mekanism 的环境中测试。

@@ -92,6 +92,11 @@ import java.util.Objects;
  *       stages before.</li>
  * </ul>
  *
+ * <h2>0.1.11.1: receivers that refuse storage energy</h2>
+ * <p>A receiver can refuse the energy of storage sources ({@link Receiver#fromStorage()} false). A class 1 source
+ * then has no link to it. The engine uses this for the bidirectional grid-tie interface: it exports only the surplus
+ * of the generators, never the energy of a storage block (that would leave the island and come back later).
+ *
  * <h2>Line loss</h2>
  * <ul>
  *   <li>{@link LineLoss#LOSSLESS}: a delivery has no loss. This is the default.</li>
@@ -252,13 +257,19 @@ public final class FairShareDistributor {
      *        stage 1 serves with the loads (a storage block that feeds machines);
      *        ignored for class 0. Zero for none.
      * @param tier 0.1.10.22: 0 critical, 1 normal, 2 deferrable
+     * @param fromStorage 0.1.11.1: false when the receiver takes nothing from class 1 (storage) sources
      */
-    public record Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass, EnergyAmount relay, int tier) {
+    public record Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass, EnergyAmount relay, int tier, boolean fromStorage) {
         public Receiver {
             Objects.requireNonNull(room, "room");
             if (receiverClass < 0 || receiverClass > 1 || tier < 0 || tier >= TIERS)
                 throw new IllegalArgumentException("Invalid fair-share receiver");
             if (relay == null) relay = EnergyAmount.ZERO;
+        }
+
+        /** A receiver that takes energy from every source (the receivers before 0.1.11.1). */
+        public Receiver(EnergyAmount room, EnergyAmount rated, int receiverClass, EnergyAmount relay, int tier) {
+            this(room, rated, receiverClass, relay, tier, true);
         }
 
         /** A normal-tier receiver. */
@@ -361,10 +372,11 @@ public final class FairShareDistributor {
         int[] receiverClass = new int[receiverCount], tier = new int[receiverCount];
         long[] room = new long[receiverCount], initialRoom = new long[receiverCount], rateLeft = new long[receiverCount];
         long[] relayLeft = new long[receiverCount];
-        boolean[] tierUsed = new boolean[TIERS];
+        boolean[] tierUsed = new boolean[TIERS], fromStorage = new boolean[receiverCount];
         for (int r = 0; r < receiverCount; r++) {
             var receiver = receivers.get(r);
             receiverClass[r] = receiver.receiverClass();
+            fromStorage[r] = receiver.fromStorage();
             tier[r] = receiver.tier();
             tierUsed[tier[r]] = true;
             room[r] = toCoarse(receiver.room());
@@ -389,6 +401,8 @@ public final class FairShareDistributor {
                 long den = Math.multiplyExact(1000L, packet[source]);
                 for (int r = 0; r < receiverCount; r++) {
                     if (r == ownReceiver[source] || !route.reaches(contacts[r])) continue;
+                    // 0.1.11.1: a receiver that refuses storage energy has no link from a storage source
+                    if (sourceClass[source] == 1 && !fromStorage[r]) continue;
                     long milli = route.lossMilliTo(contacts[r]);
                     if (milli < 0) throw new IllegalArgumentException("Negative route loss");
                     if (loss == LineLoss.PROPORTIONAL && milli >= den) continue; // The loss takes the full packet.

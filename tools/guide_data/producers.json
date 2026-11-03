@@ -3218,36 +3218,39 @@
     "kind": "utility",
     "function": {
       "en": [
-        "The Energy Converter converts energy between EU and FE. The rate is 1 EU = 4 FE.",
-        "In EU to FE mode, the machine receives EU and outputs FE at the front face.",
-        "In FE to EU mode, the machine takes FE from the other five faces and outputs EU to the cable network at EV."
+        "The grid-tie interface connects the SI grid to the FE network of another mod. The front face connects to the other network (FE). The other five faces connect to the SI grid (EU). The rate is 4 FE = 1 EU, with no loss.",
+        "Export: the interface takes the SI surplus after the loads, and gives it as FE at the front. Import: the interface takes FE at the front, and supplies the SI grid as a generator.",
+        "Bidirectional: the interface keeps its buffer near half charge (dead band 10, 25 or 50 %). On the SI side it takes only the surplus of generators and supplies only loads.",
+        "The limit (32, 128, 512 or 2,048 EU/t) applies to each direction."
       ],
       "zh": [
-        "能源转换器在EU和FE之间转换能量。比例为1 EU = 4 FE。",
-        "EU转FE模式下，机器接收EU，并从正面输出FE。",
-        "FE转EU模式下，机器从其他5个面获取FE，并以EV向导线网络输出EU。"
+        "并网接口将 SI 电网连接到其他模组的 FE 电网。正面连接其他电网（FE），其余 5 个面连接 SI 电网（EU）。比例为 4 FE = 1 EU，无损耗。",
+        "输出：接口获取负载用剩的 SI 电能，从正面以 FE 输出。输入：接口从正面获取 FE，作为发电机向 SI 电网供电。",
+        "双向：接口使缓存保持在半满附近（死区 10、25 或 50 %）。在 SI 一侧只接收发电机的剩余电能、只向负载供电。",
+        "上限（32、128、512 或 2,048 EU/t）对每个方向生效。"
       ],
       "ja": [
-        "エネルギー変換機はEUとFEの間でエネルギーを変換する。比率は1 EU = 4 FEだ。",
-        "EUからFEのモードでは、機械はEUを受け、正面からFEを出す。",
-        "FEからEUのモードでは、機械は残りの5面からFEを取り、EVでケーブル網へEUを出す。"
+        "系統連系インターフェースは SI 電力網を他の MOD の FE ネットワークにつなぐ。正面は他のネットワーク（FE）に、残りの 5 面は SI 電力網（EU）につながる。比率は 4 FE = 1 EU で、損失はない。",
+        "送出：負荷に使われなかった SI の余剰を受け取り、正面から FE として出す。受入：正面から FE を受け取り、発電機として SI 電力網へ供給する。",
+        "双方向：バッファを半分付近に保つ（不感帯 10・25・50 %）。SI 側では発電機の余剰だけを受け取り、負荷にだけ供給する。",
+        "上限（32・128・512・2,048 EU/t）は向きごとに効く。"
       ]
     },
     "usage": {
       "en": [
-        "Place the converter with the front face toward the target.",
-        "Sneak and right-click the converter to switch the mode.",
-        "Connect the source to the other faces."
+        "Put the interface with the front face against the cable or the block of the other mod.",
+        "Connect SI cables to the other faces.",
+        "Sneak and right-click the interface to select the mode. Right-click the interface to select the limit."
       ],
       "zh": [
-        "放置转换器，使正面朝向目标。",
-        "潜行并右键转换器，切换模式。",
-        "将能量源连接到其他面。"
+        "放置接口，使正面贴住其他模组的导线或方块。",
+        "将 SI 导线连接到其他面。",
+        "潜行并右键接口选择模式，右键接口选择上限。"
       ],
       "ja": [
-        "正面を送り先に向けて変換機を置く。",
-        "スニークして変換機を右クリックし、モードを切り替える。",
-        "残りの面にエネルギー源を接続する。"
+        "正面を他の MOD のケーブルかブロックに当てて置く。",
+        "残りの面に SI のケーブルをつなぐ。",
+        "スニークして右クリックでモードを、右クリックで上限を選ぶ。"
       ]
     },
     "notes": {

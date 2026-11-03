@@ -47,7 +47,7 @@ public final class CompatUniversalCableGameTests {
         List<TestFunction> tests = new ArrayList<>();
         tests.add(test("probe", "probeEnergyFacesOfTheOtherMods", 40, CompatUniversalCableGameTests::probeEnergyFacesOfTheOtherMods));
         if (ModList.get().isLoaded(MEK)) {
-            tests.add(test("mek_fe_in", "mekanismEnergyCubePushesFeIntoSiAtVoltageZero", 160, CompatUniversalCableGameTests::mekanismEnergyCubePushesFeIntoSiAtVoltageZero));
+            tests.add(test("mek_fe_in", "mekanismEnergyCubeFeedsSiThroughAGridTie", 160, CompatUniversalCableGameTests::mekanismEnergyCubeFeedsSiThroughAGridTie));
             tests.add(test("mek_fe_out", "siNetworkRunsAMekanismEnrichmentChamber", 400, CompatUniversalCableGameTests::siNetworkRunsAMekanismEnrichmentChamber));
             tests.add(test("mek_loop", "siCableRefusesAMekanismUniversalCable", 120, CompatUniversalCableGameTests::siCableRefusesAMekanismUniversalCable));
         }
@@ -186,13 +186,18 @@ public final class CompatUniversalCableGameTests {
     // ------------------------------------------------------------------ 1. Mekanism -> SI (FE in)
 
     /**
-     * A Mekanism basic energy cube, filled through its FE capability, pushes FE out of its front into an SI low-voltage cable (32
-     * EU). The FE enters at voltage 0, so the cable does not melt although the cube sends far more than 32 EU a tick, and the MFSU
-     * behind it gains 1 EU per 4 FE the cube lost (less the cable loss).
+     * 0.1.11.1: a Mekanism basic energy cube, filled through its FE capability, feeds an SI low-voltage cable (32 EU) through a
+     * grid-tie interface in import mode with its limit at 32 EU/t (SI cables take no FE, and a battery of another mod charges
+     * no SI storage by itself). The cable does not melt although the cube sends far more than 32 EU a tick, and the MFSU behind
+     * it and the buffer of the interface gain 1 EU per 4 FE the cube lost (less the cable loss). Until 0.1.11.0 the cube
+     * pushed into the cable.
      */
-    private static void mekanismEnergyCubePushesFeIntoSiAtVoltageZero(GameTestHelper h) {
-        BlockPos cube = new BlockPos(1, 1, 2), cable = new BlockPos(2, 1, 2), storage = new BlockPos(3, 1, 2);
-        place(h, cube, facing("mekanism:basic_energy_cube", Direction.EAST));   // its front (output) into the cable
+    private static void mekanismEnergyCubeFeedsSiThroughAGridTie(GameTestHelper h) {
+        BlockPos cube = new BlockPos(0, 1, 2), tie = new BlockPos(1, 1, 2), cable = new BlockPos(2, 1, 2), storage = new BlockPos(3, 1, 2);
+        place(h, cube, facing("mekanism:basic_energy_cube", Direction.EAST));   // its front (output) into the interface
+        h.setBlock(tie, facing("mio_icif:energy_converter/energy_converter", Direction.WEST));   // the front toward the cube
+        call(h.getBlockEntity(tie), "cycleMode");    // export -> import
+        call(h.getBlockEntity(tie), "cycleLimit");   // 2,048 -> 32 EU/t
         h.setBlock(cable, block(LV_CABLE));
         h.setBlock(storage, facing(MFSU, Direction.EAST));                        // output away from the cable
         h.runAfterDelay(10, () -> {
@@ -200,24 +205,25 @@ public final class CompatUniversalCableGameTests {
             h.assertTrue(in != null, "the energy cube takes FE on no face: " + describe(h, cube));
             int filled = fe(h, cube, in).receiveEnergy(400_000, false);
             int cubeStart = feStored(h, cube);
-            long siStart = siEu(h, storage);
+            long siStart = siEu(h, storage) + siEu(h, tie);
             h.assertTrue(filled > 0, "the energy cube took no FE");
             h.runAfterDelay(100, () -> {
                 int lostFe = cubeStart - feStored(h, cube);
-                long gainedEu = siEu(h, storage) - siStart;
+                long gainedEu = siEu(h, storage) + siEu(h, tie) - siStart;
                 h.assertTrue(h.getBlockState(cable).is(block(LV_CABLE)), "the low-voltage SI cable melted under Mekanism's FE");
                 h.assertTrue(lostFe > 0 && gainedEu > 0, "no FE reached SI: cube lost " + lostFe + " FE, MFSU gained " + gainedEu + " EU; "
                     + describe(h, cube) + "; cable " + describe(h, cable));
                 double ratio = lostFe / (double) gainedEu;
                 h.assertTrue(ratio >= 4.0 && ratio <= 4.4, "FE per EU " + ratio + " (cube lost " + lostFe + " FE, MFSU gained " + gainedEu + " EU)");
-                LOG.info("[universal] Mekanism energy cube -> SI: {} FE out, {} EU in, {} FE per EU", lostFe, gainedEu, ratio);
+                LOG.info("[universal] Mekanism energy cube -> grid-tie -> SI: {} FE out, {} EU in, {} FE per EU", lostFe, gainedEu, ratio);
                 h.succeed();
             });
         });
     }
 
     /**
-     * A Mekanism Heat Generator burning lava from its tank pushes FE into SI cables on all its faces; the MFSU they lead to fills.
+     * A Mekanism Heat Generator burning lava from its tank feeds SI cables on all its faces; the MFSU they lead to fills.
+     * 0.1.11.1: the grid takes the FE from its output faces (cables take no pushed FE; until 0.1.11.0 also an inbox).
      */
     private static void mekanismHeatGeneratorFeedsSiCables(GameTestHelper h) {
         BlockPos generator = new BlockPos(2, 1, 2), storage = new BlockPos(4, 1, 2);
@@ -236,18 +242,17 @@ public final class CompatUniversalCableGameTests {
             h.assertTrue(lava > 0, "the heat generator took no lava");
             final int lavaIn = lava;
             long siStart = siEu(h, storage);
-            var engine = com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.current(h.getLevel().getServer());
-            // the generator's FE reaches SI two ways: it pushes into the cables (inbox) and SI pulls from its output face
+            // the generator's FE reaches SI as the grid takes it from its output faces (0.1.11.1: one fair round)
             var imported = com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_IMPORTED;
-            long feStart = engine.feInputTotal(), importStart = com.miophas.singularity_iteration.core.runtime.PerfCounters.total(imported);
+            long importStart = com.miophas.singularity_iteration.core.runtime.PerfCounters.total(imported);
             h.runAfterDelay(300, () -> {
-                long gained = siEu(h, storage) - siStart, pushed = engine.feInputTotal() - feStart;
-                long pulled = com.miophas.singularity_iteration.core.runtime.PerfCounters.total(imported) - importStart, feIn = pushed + pulled;
+                long gained = siEu(h, storage) - siStart;
+                long feIn = com.miophas.singularity_iteration.core.runtime.PerfCounters.total(imported) - importStart;
                 h.assertTrue(gained > 0, "the heat generator's FE never reached SI (MFSU +" + gained + " EU, " + feIn + " FE in)");
                 double ratio = feIn / (double) gained;
-                h.assertTrue(ratio >= 3.95 && ratio <= 4.4, "FE per EU " + ratio + " (pushed " + pushed + " + pulled " + pulled + " FE, MFSU gained " + gained + " EU)");
-                LOG.info("[universal] Mekanism heat generator -> SI: pushed {} FE + pulled {} FE, MFSU gained {} EU in 300 ticks, {} FE per EU ({} mB lava)",
-                    pushed, pulled, gained, ratio, lavaIn);
+                h.assertTrue(ratio >= 3.95 && ratio <= 4.4, "FE per EU " + ratio + " (pulled " + feIn + " FE, MFSU gained " + gained + " EU)");
+                LOG.info("[universal] Mekanism heat generator -> SI: pulled {} FE, MFSU gained {} EU in 300 ticks, {} FE per EU ({} mB lava)",
+                    feIn, gained, ratio, lavaIn);
                 h.succeed();
             });
         });

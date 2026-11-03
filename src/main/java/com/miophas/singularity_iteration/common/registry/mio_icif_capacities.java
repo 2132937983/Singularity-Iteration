@@ -398,40 +398,40 @@ public class mio_icif_capacities {
 
         registerEnergyCapabilities(event, mio_icif_block_entities.WIRELESS_POWER_TRANSMISSION_NODE.get());
 
-        // Register EU energy storage capability for Energy Converter
+        // 0.1.11.1: the grid-tie interface (Energy Converter id). EU on its SI faces only; the front is FE only.
         event.registerBlockEntity(
             EUApi.SIDED,
             mio_icif_block_entities.ENERGY_CONVERTER_ENTITY_TYPE.get(),
             (blockEntity, direction) -> {
                 if (blockEntity instanceof mio_icif_energy_converter_entity converter) {
-                    return converter.getEnergyStorageCapability(direction);
+                    return converter.siPort(direction);
                 }
                 return null;
             }
         );
-        // Register FE energy storage capability for Energy Converter
+        // FE on the front only (the cables of other mods), gated by the mode and the limit
         event.registerBlockEntity(
             Capabilities.EnergyStorage.BLOCK,
             mio_icif_block_entities.ENERGY_CONVERTER_ENTITY_TYPE.get(),
             (blockEntity, direction) -> {
                 if (blockEntity instanceof mio_icif_energy_converter_entity converter) {
-                    return converter.getFEStorage();
+                    return converter.frontFe(direction);
                 }
                 return null;
             }
         );
-        // Register ILongEnergyStorage capability for Energy Converter
+        // ILongEnergyStorage on the SI faces only
         event.registerBlockEntity(
             ILongEnergyStorage.BLOCK,
             mio_icif_block_entities.ENERGY_CONVERTER_ENTITY_TYPE.get(),
             (blockEntity, direction) -> {
                 if (blockEntity instanceof mio_icif_energy_converter_entity converter) {
-                    return converter.getEnergyStorageCapability(direction);
+                    return converter.siPort(direction);
                 }
                 return null;
             }
         );
-        Singularity_Iteration.LOGGER.debug("Registered EU and FE energy capabilities for Energy Converter");
+        Singularity_Iteration.LOGGER.debug("Registered EU and FE energy capabilities for the grid-tie interface");
 
         // Register EU energy storage capability for all Wire tiers
         registerWireCapabilities(event, mio_icif_block_entities.WIRE_LV_ENTITY_TYPE.get());

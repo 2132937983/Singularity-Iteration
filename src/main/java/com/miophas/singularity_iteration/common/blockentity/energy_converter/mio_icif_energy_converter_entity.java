@@ -1,13 +1,18 @@
 package com.miophas.singularity_iteration.common.blockentity.energy_converter;
 
-import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-
-import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
 import com.miophas.singularity_iteration.common.block.energy_converter.mio_icif_block_energy_converter;
+import com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy;
+import com.miophas.singularity_iteration.core.api.energy.ICableTier;
+import com.miophas.singularity_iteration.core.api.energy.IEnergyPacketSource;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
 import com.miophas.singularity_iteration.core.api.machine.IEnergyConverter;
 import com.miophas.singularity_iteration.core.api.machine.IMachineAPI;
-import com.miophas.singularity_iteration.core.api.energy.ICableTier;
+import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
+import com.miophas.singularity_iteration.core.runtime.PerfCounters;
+import com.miophas.singularity_iteration.core.runtime.energy.FeLedger;
+import com.miophas.singularity_iteration.core.runtime.energy.GridExchangePort;
+import com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy;
+import com.miophas.singularity_iteration.core.runtime.energy.grid.FECompatTile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -15,347 +20,332 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 能源转换器方块实体
- * 
- * 模式说明：
- * - EU_TO_FE (false): 正面输出EU，其余5面输入FE，1EU = 4FE
- * - FE_TO_EU (true): 正面输出FE，其余5面输入EU，4FE = 1EU
+ * 0.1.11.1: the grid-tie interface (block id {@code energy_converter}, the Energy Converter until 0.1.11.0). It is the
+ * one connection between the SI grid and the cables of other mods: its front faces the other network, its other five
+ * faces join the SI grid. SI cables take no FE themselves.
+ *
+ * <ul>
+ *   <li>Export: the SI side is a receiver of the storage class (it takes the surplus after the loads); the front hands
+ *       what the buffer holds to the block in front.</li>
+ *   <li>Import: the front takes FE from the block in front; the SI side is a generator.</li>
+ *   <li>Bidirectional: the interface keeps its buffer between two edges around half charge (dead band 10, 25 or 50 % of
+ *       the buffer). Above the upper edge the front hands the excess out, below the lower edge it takes FE in. On the SI
+ *       side it takes only the surplus of generators (nothing from storage blocks) and supplies only loads (it charges no
+ *       storage), so energy cannot circle between the two networks through SI storage.</li>
+ *   <li>A limit (32, 128, 512 or 2,048 EU/t) bounds both sides: the SI input and the FE taken in share one input budget
+ *       per tick, the SI output and the FE handed out one output budget. The SI side sends one packet of the limit per
+ *       tick.</li>
+ * </ul>
+ * Sneak + right-click cycles the mode (export, import, bidirectional 10 / 25 / 50 %); right-click cycles the limit.
+ * Lossless: 4 FE = 1 EU.
  */
 @SuppressWarnings("null")
-public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity implements IEnergyConverter {
-    
-    // FE能量存储
-    private final FEEnergyStorage feStorage;
-    
-    // 转换比例
-    public static final int EU_TO_FE_RATE = com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage.FE_PER_EU; // 1 EU = 4 FE
-    public static final int MAX_CONVERT_PER_TICK = 1000; // 最大转换量
-    
-    // 当前模式
-    private boolean mode = false; // false = EU->FE, true = FE->EU
-    
+public class mio_icif_energy_converter_entity extends AbstractEnergyBlockEntity
+        implements IEnergyConverter, GridExchangePort, IEnergyPacketSource {
+
+    /** FE per EU (the one ratio of the mod). */
+    public static final int EU_TO_FE_RATE = com.miophas.singularity_iteration.core.api.energy.storage.ILongEnergyStorage.FE_PER_EU;
+    /** The buffer in EU (until 0.1.11.0: 100,000 EU and a separate buffer of 400,000 FE). */
+    public static final long CAPACITY = 200_000;
+    /** The limits in EU/t, in cycle order. */
+    public static final long[] LIMITS = {32, 128, 512, 2048};
+    /** The dead bands of the bidirectional mode in percent of the buffer, in cycle order. */
+    public static final int[] BANDS = {10, 25, 50};
+
+    /** The direction of the energy across the interface. */
+    public enum Mode { EXPORT, IMPORT, BIDIRECTIONAL }
+
+    private Mode mode = Mode.EXPORT;
+    private int band = 25;
+    private long limit = 2048;
+    /** The kept adapter of the block in front, and the face it was made for. */
+    private FECompatTile frontAdapter;
+    private Direction frontAdapterFace;
+    private IEnergyStorage frontPort;
+
     public mio_icif_energy_converter_entity(BlockPos pos, BlockState state) {
         this(pos, state, com.miophas.singularity_iteration.common.registry.mio_icif_block_entities.ENERGY_CONVERTER_ENTITY_TYPE.get());
     }
-    
+
     public mio_icif_energy_converter_entity(BlockPos pos, BlockState state, BlockEntityType<?> type) {
-        super(pos, state, type, 100000, 2048, 2048, CableTier.EV);   // 0.1.10.38: EV, matching its 2048 EU/t input (it was HV: 512 EU packets exploded it)
-        
-        // FE存储：容量400k FE（对应100k EU * 4），最大输入/输出 8192 FE/t
-        this.feStorage = new FEEnergyStorage(400000, 8192, 8192);
-        
-        // 默认作为EU用电器（EU->FE模式，接收EU），禁止FE面接收FE
-        setAsConsumer();
-        feStorage.setCanReceive(false);
+        super(pos, state, type, CAPACITY, 2048, 2048, CableTier.EV);
+        apply();
     }
-    
-    /**
-     * 设置模式
-     */
-    public void setMode(boolean mode) {
-        this.mode = mode;
-        // 根据模式设置电源/用电器状态
-        // EU->FE 模式：转换器作为EU用电器，接收EU并转换为FE输出
-        // FE->EU 模式：转换器作为EU电源，接收FE并转换为EU输出
-        if (!mode) {
-            // EU->FE 模式：作为EU用电器（接收EU），禁止FE面接收FE
-            setAsConsumer();
-            feStorage.setCanReceive(false);
-        } else {
-            // FE->EU 模式：作为EU电源（输出EU），允许FE面接收FE
-            setAsPowerSource(2048); // EV 等级输出（0.1.10.38）
-            feStorage.setCanReceive(true);
+
+    // ------------------------------------------------------------------ settings
+
+    public Mode mode() { return mode; }
+    public int band() { return band; }
+    public long limit() { return limit; }
+
+    /** The mode flag of the block state: false for export, true for import and bidirectional. */
+    public boolean getMode() { return mode != Mode.EXPORT; }
+
+    /** Sets the mode and the dead band (10, 25 or 50; other values become 25). */
+    public void setMode(Mode next, int nextBand) {
+        mode = next == null ? Mode.EXPORT : next;
+        band = validBand(nextBand);
+        apply();
+        changedSettings();
+    }
+
+    /** The next mode in the cycle: export, import, bidirectional 10 / 25 / 50 %, export. */
+    public void cycleMode() {
+        switch (mode) {
+            case EXPORT -> setMode(Mode.IMPORT, band);
+            case IMPORT -> setMode(Mode.BIDIRECTIONAL, BANDS[0]);
+            case BIDIRECTIONAL -> {
+                int index = java.util.Arrays.binarySearch(BANDS, band);
+                if (index >= 0 && index + 1 < BANDS.length) setMode(Mode.BIDIRECTIONAL, BANDS[index + 1]);
+                else setMode(Mode.EXPORT, band);
+            }
         }
+    }
+
+    /** Sets the limit in EU/t (one of {@link #LIMITS}; other values become 2,048). */
+    public void setLimit(long next) {
+        limit = validLimit(next);
+        apply();
+        changedSettings();
+    }
+
+    /** The next limit in the cycle. */
+    public void cycleLimit() {
+        for (int i = 0; i < LIMITS.length; i++) if (LIMITS[i] == limit) { setLimit(LIMITS[(i + 1) % LIMITS.length]); return; }
+        setLimit(LIMITS[0]);
+    }
+
+    private static int validBand(int value) {
+        for (int candidate : BANDS) if (candidate == value) return value;
+        return 25;
+    }
+
+    private static long validLimit(long value) {
+        for (long candidate : LIMITS) if (candidate == value) return value;
+        return 2048;
+    }
+
+    /** The budgets and the generator flag follow the settings. */
+    private void apply() {
+        energyStorage.setMaxReceive(limit);
+        energyStorage.setMaxExtract(limit);
+        if (mode == Mode.IMPORT) setAsPowerSource(limit); else setAsConsumer();
+    }
+
+    private void changedSettings() {
         setChanged();
         if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            // 刷新电网注册以更新连接
+            BlockState state = getBlockState();
+            if (state.hasProperty(mio_icif_block_energy_converter.MODE) && state.getValue(mio_icif_block_energy_converter.MODE) != getMode()) {
+                level.setBlock(worldPosition, state.setValue(mio_icif_block_energy_converter.MODE, getMode()), 3);
+            } else {
+                level.sendBlockUpdated(worldPosition, state, state, 3);
+            }
+            // new SI faces, budgets or packet size: the grid reads the endpoint again
             refreshRegistration();
         }
     }
-    
-    /**
-     * 获取当前模式
-     */
-    public boolean getMode() {
-        return mode;
-    }
-    
-    /**
-     * 获取正面方向
-     */
+
+    /** The lower edge of the bidirectional band in EU. */
+    public long lowerEdge() { return CAPACITY * (100 - band) / 200; }
+
+    /** The upper edge of the bidirectional band in EU. */
+    public long upperEdge() { return CAPACITY * (100 + band) / 200; }
+
     public Direction getFrontFacing() {
         return getBlockState().getValue(mio_icif_block_energy_converter.FACING);
     }
-    
+
+    // ------------------------------------------------------------------ the SI side
+
+    @Override
+    public Direction exchangeFace() { return getFrontFacing(); }
+
+    private int siFaces() { return 63 & ~(1 << getFrontFacing().ordinal()); }
+
+    @Override
+    public int exchangeInputs() { return mode == Mode.IMPORT ? 0 : siFaces(); }
+
+    @Override
+    public int exchangeOutputs() { return mode == Mode.EXPORT ? 0 : siFaces(); }
+
+    @Override
+    public boolean exchangeLoadsOnly() { return mode == Mode.BIDIRECTIONAL; }
+
+    @Override
+    public boolean exchangeSurplusOnly() { return mode == Mode.BIDIRECTIONAL; }
+
+    /** One packet of the limit per tick, partial packets allowed. */
+    @Override
+    public EnergyPacketPolicy getEnergyPacketPolicy() { return new EnergyPacketPolicy(limit, 1, true); }
+
+    /** The front is not an SI face. */
+    @Override
+    public boolean canConnect(@Nullable Direction side) {
+        return side == null || side != getFrontFacing();
+    }
+
+    /** The EU capability of a face: the SI faces only (the front is FE only). */
+    @SuppressWarnings("deprecation")
+    public @Nullable com.miophas.singularity_iteration.core.runtime.energy.CustomEUEnergyStorage siPort(@Nullable Direction side) {
+        return side != null && side == getFrontFacing() ? null : getEnergyStorageCapability(side);
+    }
+
+    // ------------------------------------------------------------------ the front
+
     /**
-     * 主 tick 逻辑
+     * Moves FE across the front once per tick: export hands out what the buffer holds, import takes in what the buffer
+     * has room for, bidirectional moves the buffer back to its band. Nothing toward an SI node (the grid reaches it).
      */
     public void tick() {
-        if (level == null || level.isClientSide) return;
-        
+        if (!(level instanceof ServerLevel server) || isRemoved()) return;
         Direction front = getFrontFacing();
-        
-        if (mode) {
-            // FE -> EU 模式
-            convertFEtoEU(front);
-        } else {
-            // EU -> FE 模式
-            convertEUtoFE(front);
+        BlockPos at = worldPosition.relative(front);
+        if (server.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4) == null
+                || !server.shouldTickBlocksAt(ChunkPos.asLong(at))) return;
+        if (IndependentSiEnergy.controls(server.getBlockState(at))) return;
+        if (frontAdapter == null || frontAdapterFace != front) {
+            frontAdapter = new FECompatTile(server, at, front).retain();
+            frontAdapterFace = front;
         }
+        var ledger = scexFeBridge().ledger();
+        int moved = 0;
+        switch (mode) {
+            case EXPORT -> moved = ledger.push(frontAdapter, this::live);
+            case IMPORT -> moved = ledger.pull(frontAdapter, 0, this::live);
+            case BIDIRECTIONAL -> {
+                long stored = energyStorage.getAmount();
+                if (stored > upperEdge()) moved = ledger.push(capped(frontAdapter, toFe(stored - upperEdge())), this::live);
+                else if (stored < lowerEdge()) moved = ledger.pull(capped(frontAdapter, toFe(lowerEdge() - stored)), 0, this::live);
+            }
+        }
+        if (moved > 0) PerfCounters.add(PerfCounters.Kind.FE_GRID_TIE, moved);
     }
-    
-    /**
-     * EU -> FE 转换
-     * 从EU存储提取EU，转换为FE，然后从正面输出FE
-     * 其余5面可以接收EU补充到EU存储
-     */
-    private void convertEUtoFE(Direction front) {
-        // 1. 从EU存储提取EU，转换为FE存入FE存储
-        // 注意：energyStorage.getAmount() 返回 EU 单位，getEnergyStored() 返回 FE 单位
-        long euAvailable = energyStorage.getAmount();  // 使用 getAmount() 获取 EU
-        long euToConvert = Math.min(euAvailable, MAX_CONVERT_PER_TICK);
-        int feToAdd = (int) (euToConvert * EU_TO_FE_RATE);
 
-        if (feToAdd > 0) {
-            // Convert whole EU only. The FE buffer can have 1..3 FE of room; filling that room
-            // and charging room / 4 = 0 EU made free FE (0.1.7.36). Quote first, then store a
-            // multiple of EU_TO_FE_RATE and charge exactly room / EU_TO_FE_RATE EU.
-            int room = feStorage.receiveEnergyInternal(feToAdd, true);
-            int wholeEu = room / EU_TO_FE_RATE;
-            if (wholeEu > 0) {
-                int actualAdded = feStorage.receiveEnergyInternal(wholeEu * EU_TO_FE_RATE, false);
-                // extract() takes EU (extractEnergy() takes FE)
-                energyStorage.extract((actualAdded + EU_TO_FE_RATE - 1) / EU_TO_FE_RATE, false);
-            }
-        }
-        
-        // 2. 从正面输出FE到连接的FE设备
-        BlockPos outputPos = worldPosition.relative(front);
-        net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(outputPos);
-        if (be != null) {
-            IEnergyStorage feHandler = level.getCapability(Capabilities.EnergyStorage.BLOCK, outputPos,
-                                                              be.getBlockState(), be, front.getOpposite());
-            if (feHandler != null && feHandler.canReceive()) {
-                int feToOutput = Math.min(feStorage.getEnergyStored(), feStorage.maxExtract);
-                if (feToOutput > 0) {
-                    int accepted = feHandler.receiveEnergy(feToOutput, false);
-                    if (accepted > 0) {
-                        feStorage.extractEnergy(accepted, false);
-                    }
-                }
-            }
-        }
+    private boolean live() { return !isRemoved() && level != null; }
+
+    private static long toFe(long eu) { return eu > Long.MAX_VALUE / EU_TO_FE_RATE ? Long.MAX_VALUE : eu * EU_TO_FE_RATE; }
+
+    /** {@code target} limited to {@code fe} FE per call. */
+    private static IEnergyStorage capped(IEnergyStorage target, long fe) {
+        int cap = (int) Math.min(Integer.MAX_VALUE, Math.max(0, fe));
+        return new IEnergyStorage() {
+            @Override public int receiveEnergy(int amount, boolean simulate) { return target.receiveEnergy(Math.min(amount, cap), simulate); }
+            @Override public int extractEnergy(int amount, boolean simulate) { return target.extractEnergy(Math.min(amount, cap), simulate); }
+            @Override public int getEnergyStored() { return target.getEnergyStored(); }
+            @Override public int getMaxEnergyStored() { return target.getMaxEnergyStored(); }
+            @Override public boolean canReceive() { return cap > 0 && target.canReceive(); }
+            @Override public boolean canExtract() { return cap > 0 && target.canExtract(); }
+        };
     }
-    
+
     /**
-     * FE -> EU 转换
-     * 从5个输入面接收FE，转换为EU存入EU存储
-     * EU存储通过电网系统输出EU
+     * The FE capability of the front (the cables of other mods push into it or pull from it), or {@code null} on the
+     * other faces. Import takes FE, export gives it, bidirectional only toward its band. Same budgets as the transfer of
+     * {@link #tick()}.
      */
-    private void convertFEtoEU(Direction front) {
-        // 1. 从其他方块接收FE（5个输入面，跳过正面）
-        for (Direction dir : Direction.values()) {
-            if (dir == front) continue; // 正面是输出，跳过
-            
-            BlockPos inputPos = worldPosition.relative(dir);
-            net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(inputPos);
-            if (be == null) continue;
-            
-            IEnergyStorage feHandler = level.getCapability(Capabilities.EnergyStorage.BLOCK, inputPos, 
-                                                             be.getBlockState(), be, dir.getOpposite());
-            if (feHandler == null || !feHandler.canExtract()) continue;
-            
-            // 尝试提取FE
-            int canReceive = feStorage.receiveEnergy(MAX_CONVERT_PER_TICK, true);
-            if (canReceive > 0) {
-                int extracted = feHandler.extractEnergy(canReceive, false);
-                if (extracted > 0) {
-                    feStorage.receiveEnergy(extracted, false);
-                }
+    public @Nullable IEnergyStorage frontFe(@Nullable Direction side) {
+        if (side == null || side != getFrontFacing()) return null;
+        if (frontPort == null) frontPort = new IEnergyStorage() {
+            @Override public int receiveEnergy(int amount, boolean simulate) {
+                if (mode == Mode.EXPORT || amount <= 0) return 0;
+                long room = mode == Mode.IMPORT ? amount : toFe(Math.max(0, lowerEdge() - energyStorage.getAmount()));
+                int taken = scexFeBridge().ledger().receive((int) Math.min(amount, room), simulate);
+                if (!simulate && taken > 0) PerfCounters.add(PerfCounters.Kind.FE_GRID_TIE, taken);
+                return taken;
             }
-        }
-        
-        // 2. 将FE存储中的FE转换为EU存入EU存储
-        int feAvailable = feStorage.getEnergyStored();
-        int feToConvert = Math.min(feAvailable, MAX_CONVERT_PER_TICK * EU_TO_FE_RATE);
-        int euToAdd = feToConvert / EU_TO_FE_RATE;
-        
-        if (euToAdd > 0) {
-            // 使用 receive() 方法直接存入EU（不是 receiveEnergy，后者期望FE单位）
-            long actualAdded = energyStorage.receive(euToAdd, false);
-            if (actualAdded > 0) {
-                // 根据实际存入的EU量计算消耗的FE
-                int actualFEConsumed = (int) (actualAdded * EU_TO_FE_RATE);
-                feStorage.extractEnergy(actualFEConsumed, false);
+            @Override public int extractEnergy(int amount, boolean simulate) {
+                if (mode == Mode.IMPORT || amount <= 0) return 0;
+                long held = mode == Mode.EXPORT ? amount : toFe(Math.max(0, energyStorage.getAmount() - upperEdge()));
+                int given = scexFeBridge().ledger().extract((int) Math.min(amount, held), simulate);
+                if (!simulate && given > 0) PerfCounters.add(PerfCounters.Kind.FE_GRID_TIE, given);
+                return given;
             }
-        }
+            @Override public int getEnergyStored() { return FeLedger.fe(energyStorage.scexExactAmount()); }
+            @Override public int getMaxEnergyStored() { return (int) Math.min(Integer.MAX_VALUE, toFe(CAPACITY)); }
+            @Override public boolean canReceive() { return mode != Mode.EXPORT; }
+            @Override public boolean canExtract() { return mode != Mode.IMPORT; }
+        };
+        return frontPort;
     }
-    
+
+    // ------------------------------------------------------------------ saving
+
     @Override
     public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putBoolean("Mode", mode);
-        tag.putInt("FEStored", feStorage.getEnergyStored());
+        tag.putString("GridTieMode", mode.name());
+        tag.putInt("GridTieBand", band);
+        tag.putLong("GridTieLimit", limit);
     }
-    
+
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        mode = tag.getBoolean("Mode");
-        feStorage.setEnergy(tag.getInt("FEStored"));
-        // 根据加载的模式设置电源/用电器状态
-        if (!mode) {
-            setAsConsumer();
+        if (tag.contains("GridTieMode")) {
+            readSettings(tag);
         } else {
-            setAsPowerSource(2048);
+            // 0.1.11.0 and older: the Energy Converter (Mode true = FE to EU, an import). Its FE buffer joins the EU buffer
+            // in whole EU (the new buffer holds both old ones: 100,000 EU + 400,000 FE = 200,000 EU).
+            mode = tag.getBoolean("Mode") ? Mode.IMPORT : Mode.EXPORT;
+            int fe = tag.getInt("FEStored");
+            if (fe >= EU_TO_FE_RATE) apiSetEnergy(Math.min(CAPACITY, apiGetStoredEnergy() + fe / EU_TO_FE_RATE));
         }
+        apply();
     }
-    
+
+    private void readSettings(CompoundTag tag) {
+        try { mode = Mode.valueOf(tag.getString("GridTieMode")); } catch (IllegalArgumentException ignored) { mode = Mode.EXPORT; }
+        band = validBand(tag.getInt("GridTieBand"));
+        limit = validLimit(tag.getLong("GridTieLimit"));
+    }
+
+    /** The client tag of the parent and the mode flag (the client shows the mode through the block state only). */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        // 0.1.10.17 (E-2): the client tag of the parent and the mode. This used to add the whole save.
         CompoundTag tag = super.getUpdateTag(registries);
-        tag.putBoolean("Mode", mode);
+        tag.putBoolean("Mode", getMode());
         return tag;
     }
-    
+
     @Nullable
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
-    
-    /**
-     * 获取FE存储
-     */
-    public FEEnergyStorage getFEStorage() {
-        return feStorage;
-    }
-    
-    /**
-     * 内部FE能量存储类
-     */
-    public static class FEEnergyStorage implements IEnergyStorage {
-        private int energy;
-        private final int capacity;
-        private final int maxReceive;
-        private final int maxExtract;
-        private boolean canReceive = true; // 是否允许接收FE
-        private boolean internalReceive = false; // 是否允许内部转换存入
-        
-        public FEEnergyStorage(int capacity, int maxReceive, int maxExtract) {
-            this.capacity = capacity;
-            this.maxReceive = maxReceive;
-            this.maxExtract = maxExtract;
-            this.energy = 0;
-        }
-        
-        public void setCanReceive(boolean canReceive) {
-            this.canReceive = canReceive;
-        }
-        
-        /**
-         * 内部转换存入FE（不受canReceive限制）
-         */
-        public int receiveEnergyInternal(int maxReceive, boolean simulate) {
-            int received = Math.min(capacity - energy, Math.min(this.maxReceive, maxReceive));
-            if (!simulate) {
-                energy += received;
-            }
-            return received;
-        }
-        
-        @Override
-        public int receiveEnergy(int maxReceive, boolean simulate) {
-            if (!canReceive && !internalReceive) return 0; // EU->FE模式下禁止接收FE
-            int received = Math.min(capacity - energy, Math.min(this.maxReceive, maxReceive));
-            if (!simulate) {
-                energy += received;
-            }
-            return received;
-        }
-        
-        @Override
-        public int extractEnergy(int maxExtract, boolean simulate) {
-            int extracted = Math.min(energy, Math.min(this.maxExtract, maxExtract));
-            if (!simulate) {
-                energy -= extracted;
-            }
-            return extracted;
-        }
-        
-        @Override
-        public int getEnergyStored() {
-            return energy;
-        }
-        
-        @Override
-        public int getMaxEnergyStored() {
-            return capacity;
-        }
-        
-        @Override
-        public boolean canExtract() {
-            return maxExtract > 0;
-        }
-        
-        @Override
-        public boolean canReceive() {
-            return canReceive && maxReceive > 0;
-        }
-        
-        public void setEnergy(int energy) {
-            this.energy = Math.min(energy, capacity);
-        }
-    }
 
-    // ==================== IEnergyConverter API ====================
+    // ------------------------------------------------------------------ IEnergyConverter
 
     @Override
-    public EnergyType getInputType() {
-        return mode ? EnergyType.FE : EnergyType.EU;
-    }
+    public EnergyType getInputType() { return mode == Mode.IMPORT ? EnergyType.FE : EnergyType.EU; }
 
     @Override
-    public EnergyType getOutputType() {
-        return mode ? EnergyType.EU : EnergyType.FE;
-    }
+    public EnergyType getOutputType() { return mode == Mode.IMPORT ? EnergyType.EU : EnergyType.FE; }
 
     @Override
-    public double getConversionRatio() {
-        return mode ? (1.0 / EU_TO_FE_RATE) : EU_TO_FE_RATE;
-    }
+    public double getConversionRatio() { return mode == Mode.IMPORT ? 1.0 / EU_TO_FE_RATE : EU_TO_FE_RATE; }
 
     @Override
-    public ICableTier getInputCableTier() {
-        return CableTier.EV;
-    }
+    public ICableTier getInputCableTier() { return CableTier.EV; }
 
     @Override
-    public ICableTier getOutputCableTier() {
-        return CableTier.EV;
-    }
+    public ICableTier getOutputCableTier() { return CableTier.EV; }
+
+    /** The buffer in EU (all modes). */
+    @Override
+    public long getBufferAmount() { return energyStorage.getAmount(); }
 
     @Override
-    public long getBufferAmount() {
-        return mode ? feStorage.getEnergyStored() : energyStorage.getAmount();
-    }
+    public long getBufferCapacity() { return CAPACITY; }
 
     @Override
-    public long getBufferCapacity() {
-        return mode ? feStorage.getMaxEnergyStored() : energyStorage.getCapacity();
-    }
-
-    @Override
-    public IMachineAPI.MachineType getMachineType() {
-        return IMachineAPI.MachineType.ENERGY_CONVERTER;
-    }
+    public IMachineAPI.MachineType getMachineType() { return IMachineAPI.MachineType.ENERGY_CONVERTER; }
 }

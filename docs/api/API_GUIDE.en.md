@@ -954,3 +954,95 @@ catch-up in the frame of the paused tick:
   thread. Nested frames are not allowed. A ledger that already counted a later tick has no room in an earlier frame.
 * The search and route budgets of the engine still bound the work of one server tick: a catch-up and the settlement of
   the same server tick share them.
+
+## 26. Foreign blocks in the fair round and the grid-tie interface (0.1.11.1)
+
+0.1.11.1 is phase 2 of the grid performance and interop proposal. The blocks of other mods take part in the same fair
+round as SI's endpoints, SI cables no longer take FE, and the Energy Converter becomes the grid-tie interface. These are
+behaviour changes; 26.2 lists what an addon may have to change.
+
+### 26.1 Foreign blocks are ports of the fair round
+
+* Each block of another mod with an energy capability next to the SI grid is one port of the native pass: the same
+  windows, routes and fair round as an SI endpoint. A source has one output budget per tick for SI and foreign receivers
+  together. Until 0.1.11.0 two passes after the native pass moved FE pair by pair (export, then import) with what the
+  native pass left.
+* A block that only receives is in the storage class: it takes the surplus after the SI loads. The engine asks it once per
+  frame and face (`receiveEnergy(max, true)`). A credit goes to a staging cell of the engine, and the engine then hands the
+  whole FE of the cell to the block. What the block refuses waits in the cell for the next tick (the room of the port counts
+  it). Less than one FE stays in the cell between ticks.
+* A block that only extracts is a generator. The engine takes FE from it only for a planned, routable delivery.
+* The port list spreads the foreign ports evenly among the SI ports (one after every n SI ports), so each window of
+  the native pass (at most 128 receivers) holds SI loads and foreign receivers in the proportion of the grid. Appended
+  after the SI ports, a window of foreign receivers only took the whole allowance of its sources while the loads of
+  the other windows were short.
+* A block that receives and extracts is a battery (26.3).
+* FE has no packets: a delivery from a foreign block has a voltage of 0, and a foreign receiver never explodes. Line loss
+  follows the native model and setting (`LOSSLESS`: no loss for FE either).
+* `FairShareDistributor.Receiver` has a new last component `fromStorage`. With `false` the receiver takes nothing from
+  class 1 (storage) sources. The old constructors keep `true`.
+* Diagnostics (server thread only): `IndependentSiEnergy.foreignTotals(ServerLevel)` returns
+  `ForeignTotals(handedFe, takenFe, dropped, ports)`: the FE handed to and taken from foreign blocks since the engine
+  started, the EU that staging cells held when their block went (a chunk unload, a new block entity), and the foreign ports
+  of the level. `foreignPortState(ServerLevel, BlockPos)` returns the role of a port (`CHARGE`, `DISCHARGE`, `RECEIVER`,
+  `SOURCE` or `NONE`) and its staged EU, or `null`.
+* `PerfCounters.Kind`: `FE_INTO_CABLES` is gone. `FE_GRID_TIE` counts the FE that grid-tie interfaces move (both
+  directions). `FE_EXPORTED` and `FE_IMPORTED` count the FE handed to and taken from foreign blocks. `/mio_icif perf` shows
+  them on its FE line.
+
+### 26.2 Cables take no FE
+
+* `AbstractWireBlockEntity.scexFeCapability(side)` returns `null`. From 0.1.10.39 to 0.1.11.0 every cable face took the FE
+  that the block beyond it pushed (an inbox per contact, not saved).
+* Removed with the inbox: `IndependentSiEnergy.offerFe` and `feInputTotal`, `FECompatTile.INBOX_FE`, `offerInbox` and
+  `inbox`. Removed with the two FE passes: `RoutedFeTarget` and `FeMachineBridge.pushRouted` / `pullRouted`. All were in
+  `core.runtime`, which is not a public API.
+* A block that only pushes FE (it offers no extraction) gives nothing to SI cables now. Connect it to an SI machine
+  (machines still take FE into their storage) or to a grid-tie interface in import mode.
+
+### 26.3 Batteries: `StorageHysteresis`
+
+`StorageHysteresis` (engine package, pure functions) gives a battery of another mod one role per tick, with a dead band on
+its state of charge:
+
+* At 90 % (`DISCHARGE_PERCENT`) or more: `DISCHARGE`. The battery supplies SI loads (storage rank) and takes nothing. Its
+  energy never charges storage.
+* At 10 % (`CHARGE_PERCENT`) or less: `CHARGE`. The battery takes the surplus and supplies nothing.
+* In between it keeps its role. The first role (`initial`) is `DISCHARGE` at half charge or more, else `CHARGE`.
+
+So a battery never charges and discharges in the same tick, and two batteries cannot pass energy back and forth.
+The role is chosen at the start of each tick; within the tick the amount is limited only by the block's own rate, so a
+fast battery can end the tick that crosses an edge below 10 % or above 90 %.
+
+### 26.4 The grid-tie interface: `GridExchangePort`
+
+* The Energy Converter (`mio_icif:energy_converter/energy_converter`, the same id) is now the grid-tie interface. It is
+  craftable again and listed in the creative tab. Its front face faces the other network; the other five faces join the
+  SI grid. Buffer 200,000 EU; 4 FE = 1 EU, no loss.
+* Modes (sneak + right-click): export (SI to the front), import (the front to SI), bidirectional with a dead band of 10,
+  25 or 50 % of the buffer around half charge. Limit (right-click): 32, 128, 512 or 2,048 EU/t, for both sides.
+* Export: on the SI side a storage-class receiver whose room in the fair round is capped by the limit; each tick it hands
+  its buffer to the block in front (at most limit x 4 FE).
+* Import: each tick it takes FE from the block in front into its buffer; on the SI side a generator with a packet of the
+  limit.
+* Bidirectional: on the SI side it takes only the surplus of the generators (not from storage) and supplies only loads
+  (not storage). In front it hands out what the buffer holds above the upper edge and takes in what it lacks below the
+  lower edge; inside the band the front is idle.
+* Other mods see an `IEnergyStorage` on the front face only: it receives in import and bidirectional mode (bidirectional:
+  up to the lower edge) and gives in export and bidirectional mode (bidirectional: above the upper edge).
+* Old worlds: `Mode` true (FE to EU) becomes import; the FE buffer joins the EU buffer in whole EU, up to the capacity.
+  New tags: `GridTieMode`, `GridTieBand`, `GridTieLimit`.
+* `GridExchangePort` (in `core.runtime.energy`, not a public API) tells the engine the SI faces and dispatch rules of such an
+  endpoint: `exchangeFace()`, `exchangeInputs()`, `exchangeOutputs()` (face bits), `exchangeLoadsOnly()` and
+  `exchangeSurplusOnly()`.
+
+### 26.5 Mekanism Joules: `JouleSavings`
+
+* The Joule view of an SI machine keeps the Joules below one EU between transfers (`FeMachineBridge.joules()`). Before,
+  an insert of less than one EU was refused and the part of each insert below one EU was handed back, so a small steady flow
+  never arrived. Now 200 inserts of 3 J at 10 J/EU give 60 EU.
+* An extract is paid from the savings first, then in whole EU from the storage; the Joules of that EU beyond the request
+  stay saved.
+* A new ratio drops the savings (`dropped()` counts them). The savings are not saved with the world: less than one EU per
+  machine goes when it unloads.
+* This was tested with a mock of the strict-energy view only, not with Mekanism installed.

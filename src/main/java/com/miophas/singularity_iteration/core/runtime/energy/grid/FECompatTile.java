@@ -59,13 +59,6 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
     private final Direction input;
     /** True while the energy engine holds this adapter as a registered tile. */
     private boolean registered;
-    /**
-     * 0.1.10.39: FE that the target pushed into an SI cable (universal cables) and the grid has not taken yet. The FE import pass
-     * takes it first, like FE extracted from the target (voltage 0, after the native machines). Not saved: at most this much is
-     * lost when the world stops.
-     */
-    public static final int INBOX_FE = 32_768;
-    private int inbox;
 
     /** direction is the existing SI caller's direction from its wire to the receiver. */
     public FECompatTile(Level world, BlockPos pos, Direction direction) {
@@ -156,17 +149,9 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
     /** Returns true if the target is loaded and has a storage layer or an AE2 sink. */
     public boolean isValid() {
         if (!loaded()) return false;
-        if (inbox > 0) return true;   // 0.1.10.39: a target that only pushes keeps its contact while FE waits
         boolean valid = capabilityWhenLoaded() != null || ae2WhenLoaded() != null;
         return valid && loaded();
     }
-    /** 0.1.10.39: the target pushes {@code fe} into the cable; returns the FE accepted (the inbox holds at most INBOX_FE). */
-    public int offerInbox(int fe, boolean simulate) {
-        int accepted = Math.max(0, Math.min(fe, INBOX_FE - inbox));
-        if (!simulate) inbox += accepted;
-        return accepted;
-    }
-    public int inbox() { return inbox; }
     public boolean isRegistered() { return registered; }
     public void setRegistered(boolean value) { registered = value; }
     /** Returns the face of the target that receives energy. */
@@ -273,14 +258,11 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
      */
     @Override public int extractEnergy(int amount, boolean simulate) {
         if (amount <= 0 || !loaded()) return 0;
-        int fromInbox = Math.min(amount, inbox);   // 0.1.10.39: what the target pushed into the cable comes first
-        if (!simulate) inbox -= fromInbox;
-        if (fromInbox == amount) return fromInbox;
         var target = capabilityWhenLoaded();
-        if (target == null || !loaded() || !target.canExtract() || !loaded()) return fromInbox;
-        int extracted = target.extractEnergy(amount - fromInbox, simulate);
-        if (extracted < 0 || extracted > amount - fromInbox) throw new IllegalStateException("Invalid external FE extraction at " + pos);
-        return fromInbox + extracted;
+        if (target == null || !loaded() || !target.canExtract() || !loaded()) return 0;
+        int extracted = target.extractEnergy(amount, simulate);
+        if (extracted < 0 || extracted > amount) throw new IllegalStateException("Invalid external FE extraction at " + pos);
+        return extracted;
     }
     /** Returns the FE stored in the first present layer, or 0. */
     @Override public int getEnergyStored() {
@@ -306,7 +288,6 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
     /** Returns true if the first present layer can extract. */
     @Override public boolean canExtract() {
         if (!loaded()) return false;
-        if (inbox > 0) return true;
         var target = capabilityWhenLoaded();
         return target != null && loaded() && target.canExtract();
     }

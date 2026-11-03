@@ -19,6 +19,9 @@ public final class FeMachineBridge {
     private final IEnergyStorage[] ports = new IEnergyStorage[7];
     private BlockCapabilityCache<IEnergyStorage, Direction> outputCache;
     private int idle;
+    /** 0.1.11.1: the Joules below one EU of the machine's Joule view (one per machine, all sides). */
+    private final com.miophas.singularity_iteration.core.runtime.energy.engine.JouleSavings joules =
+        new com.miophas.singularity_iteration.core.runtime.energy.engine.JouleSavings();
     public FeMachineBridge(AbstractEnergyBlockEntity owner) {
         this.owner = owner;
         ledger = new FeLedger(owner.getEnergyStorageInternal(), () -> owner.getLevel() instanceof ServerLevel level ? level.getServer().getTickCount() : 0, this::active);
@@ -49,13 +52,8 @@ public final class FeMachineBridge {
     public FeLedger.OutputQuote quoteNativeOutput() { return ledger.quoteNativeOutput(); }
     /** 0.1.10.44 (I-3): the ledger of this machine; the engine shares its input budget with native EU. */
     public FeLedger ledger() { return ledger; }
-    /** Routed output shares exactly the native/item/FE allowance and persisted uncertain debit. */
-    public int pushRouted(IEnergyStorage target, java.util.function.BooleanSupplier currentRoute) {
-        return ledger.push(target, currentRoute);
-    }
-    public int pullRouted(IEnergyStorage source, Direction side, int lossFe, java.util.function.BooleanSupplier currentRoute) {
-        return ledger.pull(source, lossFe, () -> input(side) && currentRoute.getAsBoolean());
-    }
+    /** 0.1.11.1: the Joules below one EU that the machine's Joule view keeps between transfers. */
+    public com.miophas.singularity_iteration.core.runtime.energy.engine.JouleSavings joules() { return joules; }
     public int uncertainOutput() { return ledger.uncertainOutput(); }
     public void loadUncertainOutput(int amount) { ledger.loadUncertainOutput(amount); }
     /** Shared whole-EU input used by optional energy-unit adapters. */
@@ -68,7 +66,7 @@ public final class FeMachineBridge {
     }
     public void clear() { outputCache = null; idle = 0; }
     public void push() {
-        // Controlled boxes use pushRouted after topology and packet-budget checks.
+        // Controlled boxes are settled by the engine (0.1.11.1: blocks of other mods are ports of its fair round).
         if (owner.getEnergyStorageInternal().scexNetworkControlled()) return;
         if (!active() || !(owner instanceof AbstractEnergyStorageBlockEntity box)) return;
         if (idle > 0) { idle--; return; }

@@ -567,28 +567,24 @@ public final class Round1139GameTests {
     }
 
     /**
-     * FE pushed into an SI cable by the block beyond it (here a block without any energy capability, like a generator that only
-     * pushes) reaches SI storage at voltage 0: 32,768 FE through a low-voltage cable (32 EU) fill an MFSU with 8,192 EU less the
-     * cable loss, and the cable does not melt.
+     * 0.1.11.1: an SI cable has no FE capability on any face (from 0.1.10.39 to 0.1.11.0 every face took pushed FE into an
+     * inbox of 32,768 FE). A block of another mod that only pushes FE connects through an SI machine or the grid-tie
+     * interface: an SI machine still takes pushed FE (here the back of an MFSU, 4 FE per EU).
      */
-    @GameTest(batch = "round1139_cables", template = "empty", timeoutTicks = 80)
-    public static void fePushedIntoACableEntersAtVoltageZero(GameTestHelper h) {
-        BlockPos pusher = new BlockPos(1, 1, 2), cable = new BlockPos(2, 1, 2), storage = new BlockPos(3, 1, 2);
-        Block lvCable = BuiltInRegistries.BLOCK.get(id("wiring/cable/block_tin_cable_1"));
-        h.setBlock(pusher, Blocks.STONE);
-        h.setBlock(cable, lvCable);
+    @GameTest(batch = "round1139_cables", template = "empty", timeoutTicks = 40)
+    public static void cablesTakeNoFeButMachinesDo(GameTestHelper h) {
+        BlockPos cable = new BlockPos(2, 1, 2), storage = new BlockPos(3, 1, 2);
+        h.setBlock(cable, BuiltInRegistries.BLOCK.get(id("wiring/cable/block_tin_cable_1")));
         h.setBlock(storage, facing(BuiltInRegistries.BLOCK.get(id("wiring/block_mfsu")), Direction.EAST));   // output away from the cable
-        h.runAfterDelay(20, () -> {
-            IEnergyStorage face = h.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, h.absolutePos(cable), Direction.WEST);
-            h.assertTrue(face != null && face.canReceive() && !face.canExtract(), "the cable has no receive-only FE face");
-            int accepted = face.receiveEnergy(40_000, false);
-            h.assertTrue(accepted == 32_768, "the cable took " + accepted + " FE, not its 32,768 FE inbox");
-            h.runAfterDelay(40, () -> {
-                long eu = stored(h, storage);
-                h.assertTrue(eu >= 8_192 * 9 / 10 && eu <= 8_192, "the MFSU got " + eu + " EU of 8,192");
-                h.assertTrue(h.getBlockState(cable).is(lvCable), "the low-voltage cable melted under FE input");
-                h.succeed();
-            });
+        h.runAfterDelay(5, () -> {
+            for (Direction side : Direction.values())
+                h.assertTrue(h.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, h.absolutePos(cable), side) == null,
+                    "the cable offers FE on its " + side + " face");
+            IEnergyStorage face = h.getLevel().getCapability(Capabilities.EnergyStorage.BLOCK, h.absolutePos(storage), Direction.WEST);
+            h.assertTrue(face != null && face.canReceive(), "the MFSU takes no pushed FE on its back");
+            int accepted = face.receiveEnergy(4_000, false);
+            h.assertTrue(accepted == 4_000 && stored(h, storage) == 1_000, "the MFSU took " + accepted + " FE for " + stored(h, storage) + " EU");
+            h.succeed();
         });
     }
 
@@ -618,14 +614,17 @@ public final class Round1139GameTests {
         });
     }
 
-    /** The Energy Converter is a legacy block: still registered (placed ones keep working), hidden from viewers, no recipe. */
+    /**
+     * 0.1.11.1: the Energy Converter id is the grid-tie interface: registered, shown to players and crafted again (a legacy
+     * block, hidden and without a recipe, from 0.1.10.39 to 0.1.11.0).
+     */
     @GameTest(batch = "round1139_cables", template = "empty", timeoutTicks = 20)
-    public static void energyConverterIsALegacyBlock(GameTestHelper h) {
+    public static void energyConverterIsTheGridTieInterface(GameTestHelper h) {
         ResourceLocation converter = id("energy_converter/energy_converter");
-        h.assertTrue(BuiltInRegistries.BLOCK.containsKey(converter), "the converter is no longer registered");
+        h.assertTrue(BuiltInRegistries.BLOCK.containsKey(converter), "the grid-tie interface is not registered");
         var hidden = net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, ResourceLocation.parse("c:hidden_from_recipe_viewers"));
-        h.assertTrue(new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(converter)).is(hidden), "the converter is still shown to players");
-        h.assertTrue(h.getLevel().getRecipeManager().byKey(id("shaped_energy_converter")).isEmpty(), "the converter can still be crafted");
+        h.assertTrue(!new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(converter)).is(hidden), "the grid-tie interface is hidden from players");
+        h.assertTrue(h.getLevel().getRecipeManager().byKey(id("shaped_energy_converter")).isPresent(), "the grid-tie interface has no recipe");
         h.succeed();
     }
 }

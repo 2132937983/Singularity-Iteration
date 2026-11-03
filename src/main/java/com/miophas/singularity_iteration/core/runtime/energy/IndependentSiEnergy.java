@@ -154,14 +154,15 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  *       next START catch-up.</li>
  *   <li>{@code ServerTickEvent.Post} ({@link #tick}): increment {@code ticks}.</li>
  * </ol>
- * <p>One settlement ({@code settle(ServerLevel, WorldGrid)}) has three passes
- * in this order:
+ * <p>One settlement ({@code settle(ServerLevel, WorldGrid)}) runs in this
+ * order (0.1.11.1):
  * <ol>
- *   <li>Native EU: SI sources to SI sinks.</li>
- *   <li>Export: SI sources to foreign FE sinks ({@code settleForeign}).</li>
- *   <li>Import: foreign FE sources to SI sinks ({@code importForeign}).</li>
+ *   <li>Foreign discovery, and the foreign ports of the frame
+ *       ({@code syncForeign}).</li>
+ *   <li>The native pass: SI endpoints and foreign blocks in one fair round.
+ *       Until 0.1.11.0 an FE export pass and an FE import pass followed it.</li>
  * </ol>
- * <p>Shock damage that the passes collected is applied after all three passes.
+ * <p>Shock damage that the settlement collected is applied at its end.
  *
  * <h2>Route plans</h2>
  * <p>A dense grid can have thousands of sources and sinks. A full
@@ -198,7 +199,7 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  * and each sink gets a turn. The code normalizes each cursor with
  * {@link Math#floorMod} before use.
  * <p><b>Budgets.</b> Each tick has fixed limits: search vertices
- * ({@code nativeSearch}, {@code exportSearch}, {@code importSearch}), route
+ * ({@code nativeSearch}), route
  * records and array cells ({@code RouteBuildBudget}), and path visits for world
  * effects. A pass that cannot afford the next step returns and resumes on the
  * next tick. It never runs past a budget.
@@ -210,8 +211,8 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  *       partial last packet. The packet size times the packet count limits the
  *       source output in EU/t.</li>
  *   <li>The engine freezes the offer of each source once per settlement in a
- *       {@link PacketAllowance}. Later windows and the FE export pass debit the
- *       same allowance. No pass can renew it in the same settlement. The
+ *       {@link PacketAllowance}. Later windows debit the same allowance. No
+ *       window can renew it in the same settlement. The
  *       allowance returns 0 when the packet policy of the source changes during
  *       the settlement.</li>
  *   <li>A tier maps to a packet size with
@@ -236,22 +237,31 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  *   </li>
  * </ul>
  *
- * <h2>Foreign energy (FE) path</h2>
+ * <h2>Foreign energy (FE) blocks</h2>
  * <ul>
  *   <li>{@code discoverForeignBatch} checks up to 128 anchors (conductors and
  *       endpoints) per tick. It adds each valid FE neighbour to
- *       {@code WorldGrid.foreign} (at most 4096 contacts).</li>
- *   <li>The export pass and the import pass visit (source, target) pairs in
- *       round-robin order with {@code transferCursor} and {@code importCursor}.
- *       Each pass visits at most 256 pairs per tick.</li>
- *   <li>A {@code ForeignRoutePlan} finds the cheapest route for one pair. It
- *       resumes across ticks in the same way as a native plan.</li>
- *   <li>FE has no packets. Export uses the remaining packet allowance of the SI
- *       source as its limit. Import records a voltage of 0 for meters.</li>
- *   <li>Before each FE callback, the engine checks {@code foreignRouteCurrent}.
- *       A stale route never reaches a live capability.</li>
- *   <li>The import pass skips a foreign contact that received an export in the
- *       same tick. This stops energy from moving back and forth.</li>
+ *       {@code WorldGrid.foreign} (at most 4096 contacts). It runs before the
+ *       native pass.</li>
+ *   <li>0.1.11.1: each foreign block with a contact is one port of the native
+ *       pass ({@link ForeignEndpoint}): the same windows, routes and fair round
+ *       as an SI endpoint. Its balance is a staging cell of the engine. A
+ *       credit is handed to the block after the commit; a debit is taken from
+ *       the block only for a planned, routable delivery (like the fuel of a
+ *       {@link DemandEnergySource}). Less than one FE stays in the cell.</li>
+ *   <li>A foreign receiver is in the storage class (it takes the surplus after
+ *       the SI loads). A block that only extracts is a generator. A block that
+ *       receives and extracts is a battery with a state-of-charge dead band
+ *       ({@link com.miophas.singularity_iteration.core.runtime.energy.engine.StorageHysteresis}):
+ *       one direction per tick, and as a source it supplies loads only, so two
+ *       batteries cannot pass energy back and forth.</li>
+ *   <li>FE has no packets. A delivery from a foreign block has a voltage of 0
+ *       (no cable effect). A foreign receiver never explodes.</li>
+ *   <li>Until 0.1.11.0 two passes after the native pass moved FE pair by pair
+ *       (export, then import) with what the native pass left, and SI cables
+ *       took FE that other blocks pushed into them (an inbox per contact). Both
+ *       are gone: a block that only pushes FE connects through an SI machine
+ *       or the grid-tie interface ({@link GridExchangePort}).</li>
  * </ul>
  *
  * <h2>Failure isolation</h2>
@@ -266,10 +276,9 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  *   <li>The topology reports a failure in {@link #tick}:
  *       {@code fail(RuntimeException)} sets {@code failure} and closes the
  *       topology. All dimensions stop until the server restarts.</li>
- *   <li>A foreign FE callback throws during a transfer: the engine logs a
- *       warning and increments {@code rejected}. An export source is skipped
- *       for the rest of the tick ({@code failedOutputs}). The engine does not
- *       refund energy that the source already prepared.</li>
+ *   <li>A foreign FE callback throws during a transfer: it counts as a
+ *       transfer of 0 FE, and the contact is blocked for the rest of the tick
+ *       ({@code foreignQuery}).</li>
  *   <li>A foreign query throws: {@code foreignQuery} returns {@code false} and
  *       blocks that contact for the rest of the tick.</li>
  *   <li>The endpoint limit ({@value #ENDPOINT_LIMIT} per dimension) is
@@ -738,13 +747,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      *       acquire fuel, the EU that the source can make. Otherwise {@code null}.</li>
      *   <li>{@code emitterPositions}: the blocks whose faces carry energy. It is
      *       the tile position, or the contact blocks of a multi-block source.</li>
+     *   <li>{@code foreign}: 0.1.11.1: the foreign block of this port, or {@code null}
+     *       for an SI endpoint. Its {@code storage} is {@code null} and its quote
+     *       reads the staging cell of the endpoint.</li>
      * </ul>
      */
     private record Port(BlockEntity tile, BlockPos position, BlockState state,
                         CustomEUEnergyStorage storage, CustomEUEnergyStorage.NetworkQuote quote,
                         long capacity, int inputs, int outputs, long packet, int packets, boolean partialPackets,
                         IndependentTransformerBlockEntity.Snapshot transformer, FeLedger.OutputQuote outputBudget,
-                        EnergyAmount potential, List<BlockPos> emitterPositions) {
+                        EnergyAmount potential, List<BlockPos> emitterPositions, ForeignEndpoint foreign) {
         /**
          * Returns the EU that this port can offer in this tick: the potential
          * energy (if set) or the stored balance, limited by the output budget.
@@ -845,12 +857,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         // Retain small independent networks without a 32-source cyclic scan miss.
         // Route arrays remain bounded by the previous 32 x 100,000-node maximum.
         final ConductorRegistry conductors = new ConductorRegistry(100_000, 4096, 3_200_000);
-        // Separate reservations prevent a permanently busy native grid from
-        // starving imports or exports. Total search admission is <=400k
-        // component vertices per world tick, including START/END and queries.
+        // Search admission of the native pass: <=200k component vertices per world tick, including START/END. 0.1.11.1:
+        // the FE export and import searches (100k each) went with their passes; foreign blocks are native ports now.
         final ConductorRegistry.SearchBudget nativeSearch = new ConductorRegistry.SearchBudget(200_000);
-        final ConductorRegistry.SearchBudget exportSearch = new ConductorRegistry.SearchBudget(100_000);
-        final ConductorRegistry.SearchBudget importSearch = new ConductorRegistry.SearchBudget(100_000);
         /** Route build limits of this grid for the current tick. */
         final RouteBuildBudget routeBudget = new RouteBuildBudget();
         /** The native plan in progress, or {@code null}. A plan with origins left resumes on the next tick. */
@@ -896,8 +905,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         long plansBuilt, plansResumed, budgetYields;
         /** Bumped whenever the endpoint/conductor sets change. Cached port lists must then be rebuilt. */
         long endpointEdits;
-        /** FE route plans in progress for the export pass and the import pass, or {@code null}. */
-        ForeignRoutePlan exportPlan, importPlan;
         /**
          * Index of the first source of the next native window. Any {@code int}
          * value is allowed in storage. The code applies {@code floorMod} with the
@@ -974,15 +981,15 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          * settlement on first use ({@code null} before). Entities move between the START and END settlements.
          */
         List<LivingEntity> shockCandidates;
-        /**
-         * 0.1.10.44 (P-6): the port list of the native pass of the settlement in progress (null outside one) and the
-         * endpoint edit count it belongs to. The FE passes take their sources and sinks from it instead of building the
-         * port list twice more.
-         */
-        List<Port> settlementPorts;
-        long settlementPortEdits;
         /** Known foreign FE contacts. At most 4096 entries. */
         final BoundedContactIndex<ForeignContact, FECompatTile> foreign = new BoundedContactIndex<>(4096);
+        /**
+         * 0.1.11.1: the foreign blocks of {@code foreign} as ports of the native pass, by block, in contact order. Built
+         * again when the contact snapshot changes ({@code foreignSource}); a block with a new block entity gets a new
+         * endpoint.
+         */
+        final LinkedHashMap<BlockPos, ForeignEndpoint> foreignPorts = new LinkedHashMap<>();
+        List<Map.Entry<ForeignContact, FECompatTile>> foreignSource;
         /**
          * 0.1.10.39: neighbours probed without an energy capability, and the tick to probe them again (every 10 s; a change of
          * the grid probes everything at once). Air and plain blocks were probed again every round.
@@ -1031,12 +1038,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         ArrayList<IslandStamp> idleStamps = new ArrayList<>();
         // 0.1.10.16 (E-3): the per-tick lookup tables below are keyed by BlockPos.asLong() (fastutil, no
         // entry object per put). The engine only reads, merges and clears them, never iterates them.
-        /** EU that each source sent in {@code sampleTick}, native and FE together. */
+        /** EU that each source sent in {@code sampleTick}. */
         final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<EnergyAmount> packetSpent = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
-        /** Sources whose FE export threw in {@code sampleTick}. The export pass skips them. */
-        final it.unimi.dsi.fastutil.longs.LongOpenHashSet failedOutputs = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
-        /** EU that each transformer received in {@code sampleTick}. It limits FE import to the input limit. */
-        final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<EnergyAmount> transformerReceived = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         /**
          * EU that each native sink received in {@code sampleTick}, in all windows
          * and batches. The fair-share distributor subtracts it from the rated
@@ -1048,19 +1051,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         Object relayFeedsView;
         /** Anchor positions for foreign discovery: conductors, then endpoints. */
         List<BlockPos> scanAnchors = List.of();
-        /** Foreign contacts that received an export in {@code sampleTick}. The import pass skips them. */
-        final it.unimi.dsi.fastutil.longs.LongOpenHashSet exportedThisTick = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
         /** Positions whose balances the latest native commit wrote (its window's ports). */
         final Set<BlockPos> lastCommitted = new HashSet<>();
         /** Bumped on every native balance write (commit or demand acquisition). It drives the quote refresh. */
         long balanceWrites;
         /**
-         * Round-robin cursors: next discovery anchor, next export pair, next
-         * import pair. Each use applies {@code floorMod} first, and each advance
-         * wraps to 0 at the end. The stored value is therefore in {@code [0, size)}
-         * after each advance.
+         * Round-robin cursor of the next discovery anchor. Each use applies
+         * {@code floorMod} first, and each advance wraps to 0 at the end. The
+         * stored value is therefore in {@code [0, size)} after each advance.
          */
-        int scanCursor, transferCursor, importCursor;
+        int scanCursor;
         /** True when {@code scanAnchors} must be rebuilt and a full pass run (a new grid, or too many changes to queue). */
         boolean scanDirty = true;
         /**
@@ -1133,9 +1133,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         /** The cached accessibility result. Valid only for {@code accessibilityTick} and {@code accessibilityRevision}. */
         boolean accessibilityResult;
         /**
-         * The server tick of {@code samples}, {@code packetSpent}, {@code failedOutputs},
-         * {@code transformerReceived} and {@code exportedThisTick}. {@code Long.MIN_VALUE}
-         * means "never sampled". Do not subtract from it without a sentinel test.
+         * The server tick of {@code samples}, {@code packetSpent} and
+         * {@code receivedThisTick}. {@code Long.MIN_VALUE} means "never sampled".
+         * Do not subtract from it without a sentinel test.
          */
         long sampleTick = Long.MIN_VALUE;
         /** True when {@code catchUpEndpoints} has entries for the next START. */
@@ -1329,7 +1329,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         @Override public void close() {
             if (closed) return;
             closed = true;
-            nativePlan = null; routingView = null; exportPlan = null; importPlan = null; receiverCursors.clear();
+            nativePlan = null; routingView = null; receiverCursors.clear();
+            // 0.1.11.1: the staging cells end with the grid (the level is gone)
+            for (var endpoint : foreignPorts.values()) endpoint.retired = true;
+            foreignPorts.clear(); foreignSource = null;
             planCache.clear(); planCacheCounts.clear(); planCacheSources = null;
             skeletons.clear(); machineList = null;
             catchUpEndpoints.clear(); effectEndpoints.clear(); shocks.clear(); includedEndpoints = null; excludedEndpoints = null;
@@ -1464,6 +1467,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             grid.apply(grid.forget(at -> (at.getX() >> 4) == chunkX && (at.getZ() >> 4) == chunkZ));
             grid.registered.keySet().removeIf(at -> (at.getX() >> 4) == chunkX && (at.getZ() >> 4) == chunkZ);
             grid.foreign.removeIf(contact -> (contact.at.getX() >> 4) == chunkX && (contact.at.getZ() >> 4) == chunkZ);
+            // 0.1.11.1: the foreign ports of the chunk; what their cells held is dropped (counted)
+            grid.foreignPorts.values().removeIf(endpoint -> {
+                if ((endpoint.at.getX() >> 4) != chunkX || (endpoint.at.getZ() >> 4) != chunkZ) return false;
+                retireForeign(endpoint); return true;
+            });
             grid.contactOrder.forgetPlacements(at -> (at.x() >> 4) == chunkX && (at.z() >> 4) == chunkZ);
             grid.catchUpEndpoints.removeIf(at -> (at.getX() >> 4) == chunkX && (at.getZ() >> 4) == chunkZ);
             grid.catchUp = !grid.catchUpEndpoints.isEmpty();
@@ -1637,6 +1645,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             }
         }
         if (islands.isEmpty()) return result;
+        // 0.1.11.1: a foreign port that touches an affected island pauses with it
+        for (var endpoint : grid.foreignPorts.values())
+            if (touches(graph, islands, endpoint.emitters)) result.add(endpoint.at);
         long conductors = 0;
         for (var at : firsts) conductors += graph.componentSize(point(at));
         if (conductors < grid.machines.size()) {
@@ -1748,20 +1759,19 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         return result;
     }
     /**
-     * Runs one full settlement of a grid: native EU, then FE export, then FE
-     * import. The current settlement scope ({@code participates}) applies.
+     * Runs one full settlement of a grid: foreign discovery, the foreign ports,
+     * then the native pass (0.1.11.1: foreign blocks are ports of the native
+     * pass; until 0.1.11.0 an FE export and an FE import pass followed it). The
+     * current settlement scope ({@code participates}) applies.
      *
      * <p>The per-tick maps ({@code samples}, {@code packetSpent},
-     * {@code failedOutputs}, {@code transformerReceived},
-     * {@code exportedThisTick}) are cleared only on the first settlement of a
+     * {@code receivedThisTick}) are cleared only on the first settlement of a
      * server tick. A START catch-up and the END settlement of one tick therefore
-     * share them. The FE export pass reads {@code packetSpent}, so FE export
-     * cannot exceed the packet limit of one tick.
+     * share them.
      *
-     * <p>The three passes share one {@code allowances} map. The native pass fills
-     * it. The export pass debits it. Each settlement creates a new map. A START
-     * catch-up therefore gives the paused endpoints the allowance of the tick
-     * that they missed.
+     * <p>The native pass fills one {@code allowances} map. Each settlement
+     * creates a new map. A START catch-up therefore gives the paused endpoints
+     * the allowance of the tick that they missed.
      *
      * <p>Shock damage is applied in the {@code finally} block. Damage that a pass
      * collected before an exception is still applied.
@@ -1774,32 +1784,40 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     private void settle(ServerLevel level, WorldGrid grid, long frame) {
         if (grid.sampleTick != frame) {
-            grid.sampleTick = frame; grid.samples.clear(); grid.pendingSamples.clear(); grid.packetSpent.clear(); grid.failedOutputs.clear(); grid.transformerReceived.clear(); grid.exportedThisTick.clear();
+            grid.sampleTick = frame; grid.samples.clear(); grid.pendingSamples.clear(); grid.packetSpent.clear();
             grid.receivedThisTick.clear();
         }
         grid.shocks.clear();
-        grid.shockCandidates = null; grid.settlementPorts = null;
+        grid.shockCandidates = null;
         long started = System.nanoTime();
         chunkStatus.clear();   // 0.1.10.7: the chunk cache of the port scans lives for one settlement
         chunkStatusLevel = level;
         var allowances = new IdentityHashMap<BlockEntity, PacketAllowance>();
         try {
-            if (frame == server.getTickCount()) passes(level, grid, allowances);
-            else FeLedger.inFrame(frame, () -> passes(level, grid, allowances));
+            if (frame == server.getTickCount()) passes(level, grid, allowances, frame);
+            else FeLedger.inFrame(frame, () -> passes(level, grid, allowances, frame));
         } finally {
             chunkStatusLevel = null; chunkStatus.clear();
-            grid.shockCandidates = null; grid.settlementPorts = null;
+            grid.shockCandidates = null;
             grid.shocks.apply((entity, damage) -> {
                 if (entity.isAlive()) entity.hurt(level.damageSources().lightningBolt(), damage);
             });
             grid.timings.add(server.getTickCount(), System.nanoTime() - started);
         }
     }
-    /** The three passes of one settlement: native EU, FE export, FE import. */
-    private void passes(ServerLevel level, WorldGrid grid, IdentityHashMap<BlockEntity, PacketAllowance> allowances) {
+    /**
+     * The passes of one settlement: foreign discovery and the foreign ports of the frame ({@link #syncForeign}), then the
+     * native pass, which settles SI endpoints and foreign blocks together (0.1.11.1). Until 0.1.11.0: native EU, FE
+     * export, FE import (discovery ran in the export pass, after the native pass).
+     */
+    private void passes(ServerLevel level, WorldGrid grid, IdentityHashMap<BlockEntity, PacketAllowance> allowances, long frame) {
+        if (accessible(level, grid)) {
+            discoverForeign(level, grid);
+            if (!currentWorld(level, grid)) return;
+            syncForeign(level, grid, frame);
+            if (!currentWorld(level, grid)) return;
+        }
         settle(level, grid, true, allowances);
-        settleForeign(level, grid, allowances);
-        importForeign(level, grid);
     }
     /**
      * The native EU pass. It settles windows of sources and sinks until every
@@ -1856,7 +1874,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         // rotate independently. Neither can renew a source's output allowance.
         for (int batch = 0; batch < 128; batch++) {
             if (cachedPorts == null) {
-                cachedPorts = new ArrayList<>(ports(level, grid, prepareDemand));
+                // 0.1.11.1: the foreign ports spread among the SI ports (see interleave)
+                cachedPorts = interleave(ports(level, grid, prepareDemand), foreignPorts(level, grid, prepareDemand));
                 for (var port : cachedPorts) if (port.outputs != 0)
                     allowances.put(port.tile, new PacketAllowance(port.policy(), port.offered()));
                 rebuildLists = true;
@@ -1873,7 +1892,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             grid.lastCommitted.clear();
             cachedAtCommits = grid.balanceWrites;
             cachedAtEdits = grid.endpointEdits;
-            grid.settlementPorts = cachedPorts; grid.settlementPortEdits = grid.endpointEdits;   // 0.1.10.44 (P-6)
             if (rebuildLists) {
                 cachedSources = new ArrayList<>(); cachedSinks = new ArrayList<>();
                 cachedByPosition = new HashMap<>(); portIndex = new HashMap<>(); sourceIndex = new HashMap<>(); sinkIndex = new HashMap<>();
@@ -2124,6 +2142,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         boolean anyRoom = false;
         for (int i = 0; i < sinks.size(); i++) {
             var space = sinks.get(i).quote.exactAmount().roomBelow(sinks.get(i).capacity);
+            // 0.1.11.1: the limit of a grid-tie interface caps its SI input per tick (the fair round gives other storage
+            // its room in the last stage, beyond the rated input)
+            if (sinks.get(i).tile instanceof GridExchangePort) {
+                var rated = ratedInput(grid, sinks.get(i));
+                space = rated == null ? EnergyAmount.ZERO : space.min(rated);
+            }
             room.add(space); receivers[i] = i; anyRoom |= !space.isZero();
         }
         // 0.1.10.10 (E11): no sink of the window has room, so the fair distribution moves nothing
@@ -2217,6 +2241,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 var source = sources.get(i);
                 if (source.tile instanceof DemandEnergySource demand && round.debit(i).compareTo(source.quote.exactAmount()) > 0) {
                     demand.prepareEnergy(round.debit(i)); acquired = true;
+                } else if (source.foreign != null && round.debit(i).compareTo(source.quote.exactAmount()) > 0) {
+                    // 0.1.11.1: FE from the foreign block for this routable debit, into its staging cell
+                    takeForeign(grid, source.foreign, round.debit(i).subtract(source.quote.exactAmount())); acquired = true;
                 }
             }
             if (acquired) {
@@ -2243,7 +2270,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         }
         // No debit or world effect is committed until BOTH path passes fit.
         // The constructor limits each window so it can fit a fresh tick.
-        if (!grid.routeBudget.reserveVisits(pathWork, 0)) return false;
+        if (!grid.routeBudget.reserveVisits(pathWork)) return false;
         EnergyAmount traceDebit = EnergyAmount.ZERO, traceCredit = EnergyAmount.ZERO, traceLoss = EnergyAmount.ZERO;
         long[] wireVisits = {0};
         var fusePlan = new LinkedHashMap<BlockPos, ResourceLocation>();
@@ -2279,7 +2306,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             // A source's tier only caps its offer. A partial delivery is not a full packet.
             // 0.1.10.11: a debug source (IOverloadFreeEnergySource, the creative generator) never causes
             // overload effects; its deliveries are metered with their real voltage below
-            double deliveryVoltage = sources.get(delivery.source()).tile instanceof com.miophas.singularity_iteration.core.api.energy.IOverloadFreeEnergySource free
+            // 0.1.11.1: FE from a foreign block has no packet voltage (as the FE import before)
+            double deliveryVoltage = sources.get(delivery.source()).foreign != null
+                || sources.get(delivery.source()).tile instanceof com.miophas.singularity_iteration.core.api.energy.IOverloadFreeEnergySource free
                 && free.ignoresOverload() ? 0 : delivery.voltage();
             if (path == null) {
                 if (!delivery.pathLoss().isZero()) throw new IllegalStateException("Direct delivery has conductor loss");
@@ -2382,8 +2411,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         }
         if (!traceDebit.equals(debit) || !traceCredit.equals(credit) || !traceLoss.equals(loss))
             throw new IllegalStateException("Delivery trace does not reconcile with the round");
-        // Transformers store EU in a NetworkCell. All other ports use their owned storage.
-        // A transformer always gets a write, also with a zero delta.
+        // Transformers and (0.1.11.1) foreign ports store EU in a NetworkCell. All other ports use their owned storage.
+        // A cell always gets a write, also with a zero delta.
         var writes = new ArrayList<CustomEUEnergyStorage.NetworkWrite>();
         var additional = new ArrayList<NetworkCell.Write>();
         for (var port : involved) {
@@ -2391,6 +2420,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             var portDebit = portDebits.getOrDefault(port, EnergyAmount.ZERO);
             var next = applyDelta(port.quote.exactAmount(), portCredit, portDebit);
             if (port.transformer != null) additional.add(new NetworkCell.Write(port.transformer.energy(), next));
+            else if (port.foreign != null) additional.add(new NetworkCell.Write(port.quote.cell(), next));
             else if (!portCredit.equals(portDebit)) writes.add(new CustomEUEnergyStorage.NetworkWrite(port.storage, port.quote, next));
         }
         final boolean checked = prevalidated && !acquired;
@@ -2413,10 +2443,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 var source = sources.get(delivery.source());
                 var sink = sinks.get(delivery.receiver());
                 double received = delivery.credit().toDouble();
-                double voltage = delivery.voltage();
+                double voltage = source.foreign != null ? 0 : delivery.voltage();
                 sample(grid, source.position, 0, received, voltage);
                 sample(grid, sink.position, received, 0, voltage);
-                if (sink.transformer != null) grid.transformerReceived.merge(sink.position.asLong(), delivery.credit(), EnergyAmount::add);
                 grid.receivedThisTick.merge(sink.position.asLong(), delivery.credit(), EnergyAmount::add);
                 var ledger = inputLedger(sink);   // 0.1.10.44 (I-3): one input budget for native EU and FE
                 if (ledger != null && !delivery.credit().isZero()) ledger.countNativeInput(delivery.credit());
@@ -2509,6 +2538,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 // END had made later independent inputs one tick too early.
                 grid.effectPauseFrame = ticks + 2;
             }
+            // 0.1.11.1: the credits of foreign receivers go to their blocks, after every SI effect (foreign code runs last)
+            for (var port : involved) if (port.foreign != null && port.foreign.hands()
+                    && !portCredits.getOrDefault(port, EnergyAmount.ZERO).isZero()) handForeign(level, grid, port.foreign);
         } else rejected++;
         return true;
     }
@@ -2540,6 +2572,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         var fairSources = new ArrayList<FairShareDistributor.Source>(sources.size());
         for (int i = 0; i < sources.size(); i++) {
             var source = sources.get(i);
+            // 0.1.11.1: a foreign battery and a bidirectional grid-tie interface supply loads only (storage rank, no
+            // storage charging); a foreign block that only extracts and an importing grid-tie interface are generators
+            if (source.foreign != null || source.tile instanceof GridExchangePort) {
+                boolean loadsOnly = source.foreign != null ? source.foreign.role != null
+                    : ((GridExchangePort) source.tile).exchangeLoadsOnly();
+                int storageRank = mode == IndependentEnergyMode.DispatchMode.MERIT ? 2 : 1;
+                fairSources.add(new FairShareDistributor.Source(budgets.get(i), Math.max(1, source.packet), loadsOnly ? 1 : 0,
+                    loadsOnly ? storageRank : 0, !loadsOnly));
+                continue;
+            }
             boolean storage = isStorage(source);
             boolean fuel = !storage && source.transformer == null && source.tile instanceof com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch dispatch
                 && dispatch.dispatchClass() == com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE;
@@ -2559,6 +2601,18 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         var fairReceivers = new ArrayList<FairShareDistributor.Receiver>(sinks.size());
         for (int r = 0; r < sinks.size(); r++) {
             var sink = sinks.get(r);
+            // 0.1.11.1: foreign receivers and the grid-tie interface are in the storage class (the surplus after the loads);
+            // a foreign block takes what it accepts in this tick (its room), the grid-tie its rated input; a bidirectional
+            // grid-tie takes nothing from storage sources
+            if (sink.foreign != null) {
+                fairReceivers.add(new FairShareDistributor.Receiver(room.get(r), null, 1, EnergyAmount.ZERO, FairShareDistributor.NORMAL_TIER));
+                continue;
+            }
+            if (sink.tile instanceof GridExchangePort tie) {
+                fairReceivers.add(new FairShareDistributor.Receiver(room.get(r), ratedInput(grid, sink), 1, EnergyAmount.ZERO,
+                    FairShareDistributor.NORMAL_TIER, !tie.exchangeSurplusOnly()));
+                continue;
+            }
             boolean storage = sink.transformer == null && isStorage(sink);
             var relay = storage ? relayDemand(sink) : EnergyAmount.ZERO;
             if (!relay.isZero() && !feedsReceivers(grid, sink)) relay = EnergyAmount.ZERO;
@@ -2662,7 +2716,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * (transformers, demand sources). Native credits are reported to it, and its FE input counts against the rated input.
      */
     private static FeLedger inputLedger(Port sink) {
-        if (sink.transformer != null || sink.tile instanceof DemandEnergySource) return null;
+        if (sink.foreign != null || sink.transformer != null || sink.tile instanceof DemandEnergySource) return null;
         if (sink.tile instanceof EnergyComponentHost host) return host.energyComponent().internalLedger();
         if (sink.tile instanceof AbstractEnergyBlockEntity machine) return machine.scexFeBridge().ledger();
         return null;
@@ -2722,7 +2776,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 // Fair mode: a transformer is a relay. It sends what it holds, up to
                 // outputPackets * outputPacket, also below one full packet.
                 ports.add(new Port(tile, at, saved.state(), null, quote, limits.capacity(), input, output,
-                    limits.outputPacket(), limits.outputPackets(), IndependentEnergyMode.fairDistribution(), saved, null, null, List.of(at)));
+                    limits.outputPacket(), limits.outputPackets(), IndependentEnergyMode.fairDistribution(), saved, null, null, List.of(at), null));
                 continue;
             }
             var machine = tile;
@@ -2746,6 +2800,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 inputs = policy.inputs();
                 outputs = policy.outputs();
             }
+            // 0.1.11.1: the grid-tie interface reports its SI faces (never the face toward the other network)
+            if (tile instanceof GridExchangePort tie) { inputs = tie.exchangeInputs(); outputs = tie.exchangeOutputs(); }
             // 0.1.10.4: a machine closes single faces through IEnergyBlock#canConnect(side)
             // (the reactor coolant injectors close the faces that touch the reactor). The base
             // class opens all six faces, so other machines keep their faces.
@@ -2767,7 +2823,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             var potential = prepareDemand && machine instanceof DemandEnergySource demand ? demand.potentialEnergy() : null;
             ports.add(new Port(tile, at, tile.getBlockState(), storage, quote, ownedCapacity(machine), inputs, outputs,
                 packets.packetSize(), packets.packetCount(), packets.partialPackets(), null, outputBudget, potential,
-                skeleton.emitters() != null ? skeleton.emitters() : emissionPositions(tile)));
+                skeleton.emitters() != null ? skeleton.emitters() : emissionPositions(tile), null));
             } catch (RuntimeException error) { topology.isolateChunk(level, entry.getKey(), error); chunkStatus.clear(); }
         }
         ports.removeIf(port -> !topology.chunkReady(level, ChunkPos.asLong(port.position)) || grid.machines.get(port.position) != port.tile);
@@ -2806,6 +2862,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             try {
             var tile = port.tile();
             if (tile.isRemoved() || !topology.chunkReady(level, ChunkPos.asLong(port.position))) continue;
+            if (port.foreign != null) {
+                // 0.1.11.1: the staging cell again; the snapshot of the frame stays
+                if (!port.foreign.retired && grid.foreignPorts.get(port.position) == port.foreign)
+                    refreshed.add(foreignPort(level, port.foreign, prepareDemand));
+                continue;
+            }
             if (tile instanceof IndependentTransformerBlockEntity transformer) {
                 var offered = transformer.snapshot(transformer.stepUpNow());
                 if (offered.isEmpty()) continue;
@@ -2814,7 +2876,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     limits.capacity(), limits.inputLimit(), limits.outputPacket(), limits.outputPacket(), true, true, saved.energy());
                 refreshed.add(new Port(tile, port.position(), port.state(), null, quote, limits.capacity(),
                     port.inputs(), port.outputs(), limits.outputPacket(), limits.outputPackets(),
-                    IndependentEnergyMode.fairDistribution(), saved, null, null, port.emitterPositions()));
+                    IndependentEnergyMode.fairDistribution(), saved, null, null, port.emitterPositions(), null));
                 continue;
             }
             var storage = ownedStorage(tile);
@@ -2825,10 +2887,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             var packets = packetPolicy(tile, type, quote);
             var potential = prepareDemand && tile instanceof DemandEnergySource demand ? demand.potentialEnergy() : null;
             refreshed.add(new Port(tile, port.position(), port.state(), storage, quote, ownedCapacity(tile),
-                port.inputs(), port.outputs(), packets.packetSize(), packets.packetCount(), packets.partialPackets(), null, outputBudget, potential, port.emitterPositions()));
+                port.inputs(), port.outputs(), packets.packetSize(), packets.packetCount(), packets.partialPackets(), null, outputBudget, potential, port.emitterPositions(), null));
             } catch (RuntimeException error) { topology.isolateChunk(level, port.position, error); }
         }
-        refreshed.removeIf(port -> !topology.chunkReady(level, ChunkPos.asLong(port.position)) || grid.machines.get(port.position) != port.tile);
+        refreshed.removeIf(port -> !topology.chunkReady(level, ChunkPos.asLong(port.position))
+            || (port.foreign == null ? grid.machines.get(port.position) != port.tile : grid.foreignPorts.get(port.position) != port.foreign));
         return refreshed;
     }
     /**
@@ -2836,84 +2899,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * {@code input}: the face of the foreign block that touches the SI side.
      */
     private record ForeignContact(BlockPos at, Direction input) { }
-    /**
-     * A selected route. {@code lossMilli}: total loss in milli-EU.
-     * {@code path}: the conductor path, or {@code null} for a direct face contact
-     * with no conductor (loss 0).
-     */
-    private record Route(long lossMilli, ConductorRegistry.Path path) { }
-    /**
-     * Resumes one foreign pair, including all candidate faces, without quoting energy.
-     *
-     * <p>The plan tests each (emitter, output face) combination in order. The
-     * {@code contact} field is the index of the next combination:
-     * {@code contact / 6} is the emitter index, {@code contact % 6} is the face
-     * ordinal. It runs from 0 to {@code emitters.size() * 6}. For each
-     * combination, the plan tests each open input face of the receiver and
-     * keeps the route with the lowest loss in {@code best}.
-     *
-     * <p>A direct face contact (the emitter face touches the receiver) ends the
-     * search at once with loss 0.
-     *
-     * <p>The plan is bound to one conductor snapshot. Use {@link #matches} before
-     * resuming it.
-     */
-    private static final class ForeignRoutePlan {
-        final ConductorRegistry.Snapshot graph;
-        final List<BlockPos> emitters;
-        final int outputs, inputs;
-        final BlockPos receiver;
-        int contact;
-        Route best;
-        Direction bestInput;
-        ForeignRoutePlan(ConductorRegistry.Snapshot graph, List<BlockPos> emitters, int outputs, BlockPos receiver, int inputs) {
-            this.graph = graph; this.emitters = List.copyOf(emitters); this.outputs = outputs;
-            this.receiver = receiver; this.inputs = inputs;
-        }
-        /** Tells whether this plan was built for the same snapshot, emitters, masks and receiver. */
-        boolean matches(ConductorRegistry.Snapshot snapshot, List<BlockPos> from, int outputMask, BlockPos to, int inputMask) {
-            return graph == snapshot && emitters.equals(from) && outputs == outputMask && receiver.equals(to) && inputs == inputMask;
-        }
-        /**
-         * Continues the search.
-         *
-         * @return {@code true} when the search is complete ({@code best} is the
-         *         result, or {@code null} when no route exists). {@code false}
-         *         when the budget cannot pay for the next search. {@code contact}
-         *         then stays at the same combination, and a later call retries it.
-         */
-        boolean advance(ConductorRegistry.SearchBudget budget) {
-            while (contact < emitters.size() * 6) {
-                int current = contact; var output = Direction.values()[current % 6];
-                var start = point(emitters.get(current / 6).relative(output));
-                if ((outputs & (1 << output.ordinal())) == 0) { contact++; continue; }
-                if (start.equals(point(receiver)) && (inputs & (1 << output.getOpposite().ordinal())) != 0) {
-                    best = new Route(0, null); bestInput = output.getOpposite(); contact = emitters.size() * 6; return true;
-                }
-                if (!graph.contains(start) || !graph.permits(start, output.getOpposite().ordinal())) { contact++; continue; }
-                ConductorRegistry.RouteIndex paths = null;
-                for (var side : Direction.values()) {
-                    if ((inputs & (1 << side.ordinal())) == 0) continue;
-                    var end = point(receiver.relative(side));
-                    if (!graph.contains(end) || !graph.permits(end, side.getOpposite().ordinal())
-                            || graph.componentOf(start) != graph.componentOf(end)) continue;
-                    if (paths == null) {
-                        // Search lazily: only when at least one receiver face is in the same component.
-                        paths = graph.routesFrom(start, budget);
-                        if (paths == null) return false;
-                    }
-                    int vertex = graph.vertex(end);
-                    if (!paths.reaches(vertex)) continue;
-                    long loss = paths.lossMilliTo(vertex);
-                    if (best == null || loss < best.lossMilli) {
-                        best = new Route(loss, paths.path(vertex)); bestInput = side;
-                    }
-                }
-                contact++;
-            }
-            return true;
-        }
-    }
     /** A position-only tile. {@code tileAt} returns it for an SI node that is not an {@link IEnergyTile}. */
     private record LocatedNode(ServerLevel getWorld, BlockPos getPos) implements ILocatableTile { }
 
@@ -3171,38 +3156,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * <p>Each foreign callback can change the world. The method checks
      * {@code currentWorld} after the callbacks and stops when it is false.
      */
-    /**
-     * 0.1.10.39 (universal cables): FE that the block beyond face {@code face} of SI cable {@code cable} pushes into it. It waits
-     * in the inbox of that contact ({@link FECompatTile#offerInbox}) and the FE import pass takes it like FE extracted from the
-     * block: at voltage 0 (no cable melts), lossless at {@link FeLedger#FE_PER_EU} FE per EU, into SI machines and storage. No FE
-     * from SI blocks or from other mods' cables ({@link ForeignEnergyCables}). Returns the FE accepted.
-     */
-    public int offerFe(ServerLevel level, BlockPos cable, Direction face, int fe, boolean simulate) {
-        if (fe <= 0 || !server.isSameThread()) return 0;
-        WorldGrid grid = worlds.get(level);
-        if (grid == null || !grid.conductorOwners.containsKey(cable)) return 0;
-        BlockPos at = cable.relative(face);
-        if (!loaded(level, at) || grid.machines.containsKey(at) || grid.conductorOwners.containsKey(at) || ForeignEnergyCables.is(level, at)) return 0;
-        var contact = new ForeignContact(at.immutable(), face.getOpposite());
-        FECompatTile adapter = grid.foreign.get(contact);
-        if (adapter == null) {
-            if (simulate) return Math.min(fe, FECompatTile.INBOX_FE);
-            if (!grid.foreign.putIfAbsent(contact, new FECompatTile(level, at, face).retain())) return 0;
-            adapter = grid.foreign.get(contact);
-        }
-        int accepted = adapter.offerInbox(fe, simulate);
-        if (!simulate && accepted > 0) {
-            feInput += accepted;
-            grid.foreignMisses.remove(contact);
-            com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_INTO_CABLES, accepted);
-        }
-        return accepted;
-    }
-
-    /** 0.1.10.39: FE taken into cables since the start (perf). */
-    private long feInput;
-    public long feInputTotal() { return feInput; }
-
     private void discoverForeignBatch(ServerLevel level, WorldGrid grid) {
         if (grid.scanDirty) {
             var anchors = new ArrayList<BlockPos>(grid.conductorOwners.keySet()); anchors.addAll(grid.machines.keySet());
@@ -3221,8 +3174,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             grid.scanAnchors = List.copyOf(anchors); grid.sweepDirty = false;
         }
         // Maintenance is shared by START/END settlement and reachability queries.
-        // Stale entries may wait for their turn, but every transfer still checks
-        // foreignRouteCurrent immediately before committing to a live capability.
+        // Stale entries may wait for their turn; a foreign port is checked by valid()
+        // before every commit, and its block is called only after the commit.
         if (grid.foreignMaintenanceTick != server.getTickCount()) {
             grid.foreignMaintenanceTick = server.getTickCount();
             // 0.1.10.39: a contact that became another mod's cable is dropped (ForeignEnergyCables)
@@ -3268,6 +3221,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     private boolean probeForeign(ServerLevel level, WorldGrid grid, BlockPos anchor, Direction side) {
         var at = anchor.relative(side);
         if (!loaded(level, at) || grid.machines.containsKey(at) || grid.conductorOwners.containsKey(at)) return true;
+        // 0.1.11.1: the grid-tie interface moves the energy of the block in front of it itself
+        if (grid.machines.get(anchor) instanceof GridExchangePort tie && tie.exchangeFace() == side) return true;
         // loaded() returned true, so getChunkNow() is not null here.
         var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
         var entity = chunk.getBlockEntity(at, LevelChunk.EntityCreationType.CHECK);
@@ -3312,380 +3267,269 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         }
         return false;
     }
+    // ------------------------------------------------------------------ 0.1.11.1: foreign blocks as native ports
+    /** FE handed to foreign blocks and taken from them since the start; EU dropped with retired staging cells. */
+    private long foreignHandedFe, foreignTakenFe;
+    private EnergyAmount foreignDropped = EnergyAmount.ZERO;
+
     /**
-     * Tells whether an FE route is still safe to use. The FE paths call it just
-     * before each foreign callback and each commit.
+     * 0.1.11.1: foreign FE totals since the engine started, and the foreign ports of one level.
      *
-     * <p>It checks the foreign contact (still indexed, still valid), the grid
-     * (accessible, same conductor snapshot), and the SI port (loaded, same tile,
-     * same state, same emitters, same output faces, same transformer routing).
-     * The contact is checked twice around the validity query, because the query
-     * itself can change the index.
-     *
-     * @param source the SI port of the route. For an import it is the SI sink.
+     * @param handedFe FE handed to foreign blocks
+     * @param takenFe FE taken from foreign blocks
+     * @param dropped EU that staging cells held when their block went (a chunk unload, a new block entity)
+     * @param ports foreign ports of the level
      */
-    private boolean foreignRouteCurrent(ServerLevel level, WorldGrid grid, ConductorRegistry.Snapshot graph, Port source,
-            Map.Entry<ForeignContact, FECompatTile> target) {
-        if (!grid.foreign.isCurrent(target) || !foreignQuery(grid, target.getKey(), target.getValue()::isValid)
-            || !grid.foreign.isCurrent(target)
-            || !accessible(level, grid) || !grid.conductors.isCurrent(graph)
-            || !loaded(level, source.position) || source.tile.isRemoved()
-            || source.tile.getBlockState() != source.state || grid.machines.get(source.position) != source.tile) return false;
-        if (!source.emitterPositions.equals(emissionPositions(source.tile))) return false;
-        if (source.tile instanceof DemandEnergySource demand && (source.outputs & ~demand.outputFaces()) != 0) return false;
-        if (source.tile instanceof IndependentTransformerBlockEntity transformer)
-            return transformer.validMode() && transformer.routingSignature() == grid.transformerRouting.getOrDefault(source.position, -1);
-        return true;
+    public record ForeignTotals(long handedFe, long takenFe, EnergyAmount dropped, int ports) { }
+
+    /** 0.1.11.1: see {@link ForeignTotals}. Server thread only. */
+    public ForeignTotals foreignTotals(ServerLevel level) {
+        if (level.getServer() != server || !server.isSameThread()) throw new IllegalStateException("Wrong diagnostics context");
+        var grid = worlds.get(level);
+        return new ForeignTotals(foreignHandedFe, foreignTakenFe, foreignDropped, grid == null ? 0 : grid.foreignPorts.size());
     }
+
     /**
-     * The FE export pass: SI sources to foreign FE sinks.
-     *
-     * <p>The pass visits (source, target) pairs in round-robin order. Pair
-     * {@code index} maps to source {@code index / targets} and target
-     * {@code index % targets}. The pass makes at most
-     * {@code min(256, pairs * maxPacketCount)} attempts per tick.
-     *
-     * <p><b>Limit per pair.</b> The FE limit is the smallest of: the packet room
-     * of the tick ({@code packet * packets - packetSpent}), the one-packet window
-     * offer of the frozen allowance, and the native output budget. The pass
-     * skips the pair when the route loss is equal to or more than the limit.
-     *
-     * <p><b>Transfer.</b> A demand source first makes fuel into EU for the amount
-     * that the target wants. Then the source pushes FE through a
-     * {@link RoutedFeTarget}, which takes the route loss and re-checks
-     * {@code foreignRouteCurrent}. After a nonzero transfer, the pass debits the
-     * allowance, records samples, and applies conductor effects.
-     *
-     * <p><b>Return points.</b> The pass returns when the grid is no longer
-     * accessible or the snapshot changed, when a budget is empty (the pair plan
-     * stays in {@code exportPlan} and resumes), and when an effect removed a
-     * conductor (the snapshot is then stale).
-     *
-     * <p>A callback that throws marks the source in {@code failedOutputs} for
-     * the rest of the tick. The engine does not refund energy that a demand
-     * source already prepared. That energy stays in the source storage.
+     * 0.1.11.1: the port of the foreign block at {@code at}: its role ({@code CHARGE}, {@code DISCHARGE}, or
+     * {@code RECEIVER} / {@code SOURCE} / {@code NONE} for a block that is not a battery) and its staged EU, or
+     * {@code null} when the block is no foreign port. For tests and diagnostics; server thread only.
      */
-    private void settleForeign(ServerLevel level, WorldGrid grid, IdentityHashMap<BlockEntity, PacketAllowance> allowances) {
-        if (!accessible(level, grid)) return;
-        grid.exportSearch.reset(server.getTickCount());
-        discoverForeign(level, grid);
-        // Check the foreign index first. Most grids have no FE contact, and a
-        // full ports() rebuild each tick was a measurable O(endpoints) cost.
-        if (grid.foreign.isEmpty()) return;
-        // 0.1.10.44 (P-6): the sources of the native pass, quoted again (their balances changed); else a full port scan
-        var known = settlementPorts(level, grid);
-        var sources = (known != null ? refreshQuotes(level, grid, known.stream().filter(IndependentSiEnergy::isRoutedSource).toList(), true)
-            : ports(level, grid, true)).stream().filter(port -> port.outputs != 0 && port.packet > 0 && port.packets > 0).toList();
-        if (sources.isEmpty()) return;
-        var targets = grid.foreign.snapshot();
-        var graph = grid.conductors.snapshot();
-        int pairs = boundedPairCount(sources.size(), targets.size());
-        int packets = sources.stream().mapToInt(Port::packets).max().orElse(1);
-        int attempts = (int) Math.min(256L, (long) pairs * packets);
-        for (int attempt = 0; attempt < attempts; attempt++) {
-            if (!accessible(level, grid) || !grid.conductors.isCurrent(graph)) { grid.exportPlan = null; return; }
-            // Normalize before advancing.  The old post-increment sequence
-            // could turn Integer.MAX_VALUE into Integer.MIN_VALUE, leaving a
-            // negative cursor in a long-running server.  Keeping the cursor
-            // in [0, pairs) also repairs a value persisted by an older build.
-            int index = Math.floorMod(grid.transferCursor, pairs);
-            var source = sources.get(index / targets.size()); var entry = targets.get(index % targets.size());
-            var target = entry.getValue();
-            if (grid.failedOutputs.contains(source.position.asLong())) {
-                grid.transferCursor = index + 1 == pairs ? 0 : index + 1;
-                grid.exportPlan = null; continue;
+    public Map.Entry<String, EnergyAmount> foreignPortState(ServerLevel level, BlockPos at) {
+        if (level.getServer() != server || !server.isSameThread()) throw new IllegalStateException("Wrong diagnostics context");
+        var grid = worlds.get(level);
+        var endpoint = grid == null ? null : grid.foreignPorts.get(at);
+        if (endpoint == null || endpoint.retired) return null;
+        String role = endpoint.role != null ? endpoint.role.name()
+            : endpoint.inputs != 0 ? "RECEIVER" : endpoint.outputs != 0 ? "SOURCE" : "NONE";
+        return Map.entry(role, endpoint.held());
+    }
+
+    /**
+     * 0.1.11.1: brings the foreign ports up to date for a settlement in {@code frame}: one endpoint per foreign block of
+     * {@code grid.foreign} (grouped again when the contact snapshot changed), a new endpoint for a new block entity, and
+     * once per frame the snapshot of each block ({@link #snapshotForeign}). Then the staged balance of each block that
+     * receives is handed to it ({@link #handForeign}): what it refused in an earlier tick.
+     */
+    private void syncForeign(ServerLevel level, WorldGrid grid, long frame) {
+        var contacts = grid.foreign.snapshot();
+        if (contacts.isEmpty() && grid.foreignPorts.isEmpty()) { grid.foreignSource = contacts; return; }
+        if (grid.foreignSource != contacts) {
+            var faces = new LinkedHashMap<BlockPos, FECompatTile[]>();
+            for (var entry : contacts)
+                faces.computeIfAbsent(entry.getKey().at, ignored -> new FECompatTile[6])[entry.getKey().input.ordinal()] = entry.getValue();
+            var iterator = grid.foreignPorts.values().iterator();
+            while (iterator.hasNext()) {
+                var endpoint = iterator.next();
+                if (faces.containsKey(endpoint.at)) continue;
+                handBeforeRetire(level, grid, endpoint);
+                retireForeign(endpoint); iterator.remove();
             }
-            int inputMask = 1 << entry.getKey().input.ordinal();
-            var plan = grid.exportPlan;
-            if (plan == null || !plan.matches(graph, source.emitterPositions, source.outputs, entry.getKey().at, inputMask))
-                grid.exportPlan = plan = new ForeignRoutePlan(graph, source.emitterPositions, source.outputs, entry.getKey().at, inputMask);
-            // Budget empty: keep exportPlan and the cursor, so the next tick resumes this pair.
-            if (!plan.advance(grid.exportSearch)) return;
-            // Visit budget kind 1 = export.
-            if (plan.best != null && plan.best.path != null
-                    && !grid.routeBudget.reserveVisits(plan.best.path.vertexCount(), 1)) return;
-            grid.exportPlan = null;
-            grid.transferCursor = index + 1 == pairs ? 0 : index + 1;
-            var route = plan.best;
-            if (route == null) continue;
-            // Saturating multiply: packet * packets in EU/t, capped at Long.MAX_VALUE.
-            long allowance = source.packet > Long.MAX_VALUE / source.packets ? Long.MAX_VALUE : source.packet * source.packets;
-            var remaining = grid.packetSpent.getOrDefault(source.position.asLong(), EnergyAmount.ZERO).roomBelow(allowance);
-            // Native EU and engine-driven FE exports share the initial packet
-            // offer. In particular a full-packet source cannot leak a sub-packet
-            // through FE, or renew an already spent native allowance here.
-            remaining = remaining.min(windowOffer(source, allowances, 1));
-            int limit = FeLedger.fe(remaining);
-            var nativeBudget = outputBudget(source.tile);
-            if (nativeBudget != null) limit = Math.min(limit, FeLedger.fe(nativeBudget.allowance()));
-            if (limit == 0) continue;
-            int lossFe = com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyLoss.feLoss(route.lossMilli);
-            if (lossFe >= limit) continue;
-            java.util.function.BooleanSupplier current = () -> foreignRouteCurrent(level, grid, graph, source, entry);
-            var routed = new RoutedFeTarget(target, limit, lossFe, current);
-            try {
-                if (source.tile instanceof DemandEnergySource demand && current.getAsBoolean()) {
-                    int wanted = routed.receiveEnergy(limit, true);
-                    if (wanted > 0) demand.prepareEnergy(FeLedger.eu(wanted));
+            for (var item : faces.entrySet()) {
+                var endpoint = grid.foreignPorts.get(item.getKey());
+                if (endpoint == null) {
+                    var chunk = readyChunk(level, item.getKey());
+                    var tile = chunk == null ? null : chunk.getBlockEntity(item.getKey(), LevelChunk.EntityCreationType.CHECK);
+                    if (tile == null) continue;
+                    endpoint = new ForeignEndpoint(item.getKey(), tile);
+                    grid.foreignPorts.put(endpoint.at, endpoint);
                 }
-                int sent;
-                if (source.tile instanceof EnergyComponentHost host) sent = host.energyComponent().internalLedger().push(routed, current);
-                else if (source.tile instanceof AbstractEnergyBlockEntity machine) sent = machine.scexFeBridge().pushRouted(routed, current);
-                else if (source.tile instanceof IndependentTransformerBlockEntity transformer) sent = pushTransformer(transformer, routed, current);
-                else continue;
-                if (sent == 0) continue;
-                // Not null: limit > 0 above needs a nonzero windowOffer, which needs an allowance.
-                allowances.get(source.tile).debit(FeLedger.eu(sent));
-                grid.exportedThisTick.add(entry.getKey().at.asLong());
-                grid.packetSpent.merge(source.position.asLong(), FeLedger.eu(sent), EnergyAmount::add);
-                // FE to EU for meters: 4 FE = 1 EU. The voltage is the EU that the source sent.
-                double output = sent / (double) FeLedger.FE_PER_EU, input = routed.delivered() / (double) FeLedger.FE_PER_EU;
-                com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_EXPORTED, routed.delivered());   // 0.1.10.39
-                double voltage = output;
-                sample(grid, source.position, 0, input, voltage);
-                sample(grid, entry.getKey().at, input, 0, voltage);
-                var fuses = new LinkedHashMap<BlockPos, ResourceLocation>();
-                var strips = new LinkedHashMap<BlockPos, ResourceLocation>();
-                var shocks = new LinkedHashMap<BlockPos, Double>();
-                if (route.path != null && accessible(level, grid) && grid.conductors.isCurrent(graph)) route.path.visit(at -> {
-                    var pos = new BlockPos(at.x(), at.y(), at.z()); sample(grid, pos, input, input, voltage);
-                    var type = grid.conductorTypes.get(pos); var fuseLimit = tierFuseLimit(type);
-                    if (fuseLimit == null) fuseLimit = EnergyNodeRegistry.fuseLimit(type);
-                    if (IndependentEnergyMode.enetCableMeltdown() && fuseLimit != null && voltage > fuseLimit) fuses.put(pos, type);
-                    var chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
-                    if (chunk != null) {
-                        var be = chunk.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
-                        if (be instanceof IEnergyConductor conductor) {
-                            conductor.onEnergyPass();
-                            if (IndependentEnergyMode.enetCableMeltdown() && !fuses.containsKey(pos) && voltage > conductor.getInsulationBreakdownEnergy()) strips.put(pos, type);
-                            if (IndependentEnergyMode.enetShockDamage() && voltage > conductor.getInsulationEnergyAbsorption()) {
-                                double shockEnergy = voltage - conductor.getInsulationEnergyAbsorption();
-                                shocks.merge(pos, shockEnergy, Math::max);
-                            }
-                        }
-                    }
-                    var detector = grid.specialCables.get(pos); if (detector != null && detector.detector()) detector.delivered();
-                    if (detector != null && detector.protective()) detector.carry(input, voltage);   // 0.1.10.22 (G5)
-                });
-                commits++; totalDebit = totalDebit.add(FeLedger.eu(sent)); totalCredit = totalCredit.add(FeLedger.eu(routed.delivered()));
-                totalLoss = totalLoss.add(FeLedger.eu(sent - routed.delivered()));
-                debited = totalDebit.whole(); credited = totalCredit.whole(); dissipated = totalLoss.whole();
-                var effectPositions = new HashSet<BlockPos>(fuses.keySet()); effectPositions.addAll(strips.keySet());
-                if (!effectPositions.isEmpty()) grid.effectEndpoints.addAll(affectedEndpoints(grid, effectPositions));
-                collectShockDamage(level, grid, new ShockRoute(source.position, entry.getKey().at), shocks);
-                var removed = fuseConductors(level, grid, fuses);
-                strips.keySet().removeAll(fuses.keySet());
-                removed.addAll(stripInsulation(level, grid, strips));
-                if (!removed.isEmpty()) {
-                    grid.apply(grid.forget(removed::contains)); grid.effectPauseFrame = ticks + 2;
-                    return; // The prior graph lease was revoked by the physical fuse effects.
-                }
-            } catch (RuntimeException foreignFailure) {
-                // A foreign callback may have accepted before throwing. The pre-debit stays
-                // charged. The native graph keeps running and does not invent a refund.
-                grid.failedOutputs.add(source.position.asLong());
-                rejected++; LOG.warn("Foreign energy endpoint threw during transfer; skipped", foreignFailure);
+                System.arraycopy(item.getValue(), 0, endpoint.adapters, 0, 6);
             }
+            grid.foreignSource = contacts;
         }
-    }
-    /**
-     * The FE import pass: foreign FE sources to SI sinks.
-     *
-     * <p>The pass visits (foreign source, SI sink) pairs in round-robin order,
-     * at most {@code min(256, pairs)} per tick. It skips a foreign contact that
-     * received an export in this tick, so energy cannot cycle between the two
-     * passes.
-     *
-     * <p>The sink pulls FE through its own ledger or bridge. The loss in FE is
-     * taken from the extracted amount: {@code received = max(0, extracted - lossFe)}.
-     * A transformer sink is limited to its input limit per tick
-     * ({@code transformerReceived}).
-     *
-     * <p>FE has no packets. The pass records a voltage of 0 and has no
-     * overvoltage effects. A callback that throws is logged and skipped.
-     */
-    private void importForeign(ServerLevel level, WorldGrid grid) {
-        if (!accessible(level, grid) || grid.foreign.isEmpty()) return;
-        grid.importSearch.reset(server.getTickCount());
-        // 0.1.10.44 (P-6): the sinks of the native pass (the pull reads the live ledgers); else a full port scan
-        var known = settlementPorts(level, grid);
-        var sinks = (known != null ? known : ports(level, grid, false)).stream().filter(port -> port.inputs != 0).toList();
-        if (sinks.isEmpty()) return;
-        var sources = grid.foreign.snapshot();
-        var graph = grid.conductors.snapshot();
-        int pairs = boundedPairCount(sources.size(), sinks.size());
-        for (int attempt = 0; attempt < Math.min(256, pairs); attempt++) {
-            if (!accessible(level, grid) || !grid.conductors.isCurrent(graph)) { grid.importPlan = null; return; }
-            // Use the same bounded advancement as exports. Never rely on an
-            // overflowing post-increment to detect the wrap point.
-            int index = Math.floorMod(grid.importCursor, pairs);
-            var source = sources.get(index / sinks.size()); var sink = sinks.get(index % sinks.size());
-            if (grid.exportedThisTick.contains(source.getKey().at.asLong())) {
-                grid.importCursor = index + 1 == pairs ? 0 : index + 1;
-                grid.importPlan = null; continue;
-            }
-            var emitters = List.of(source.getKey().at); int outputs = 1 << source.getKey().input.ordinal();
-            var plan = grid.importPlan;
-            if (plan == null || !plan.matches(graph, emitters, outputs, sink.position, sink.inputs))
-                grid.importPlan = plan = new ForeignRoutePlan(graph, emitters, outputs, sink.position, sink.inputs);
-            // Budget empty: keep importPlan and the cursor, so the next tick resumes this pair.
-            if (!plan.advance(grid.importSearch)) return;
-            // Visit budget kind 2 = import.
-            if (plan.best != null && plan.best.path != null
-                    && !grid.routeBudget.reserveVisits(plan.best.path.vertexCount(), 2)) return;
-            grid.importPlan = null;
-            grid.importCursor = index + 1 == pairs ? 0 : index + 1;
-            Route selected = plan.best; Direction selectedSide = plan.bestInput;
-            // feLoss returns Integer.MAX_VALUE for a loss too large to carry any FE.
-            if (selected == null || com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyLoss.feLoss(selected.lossMilli) == Integer.MAX_VALUE) continue;
-            final var route = selected; final var inputSide = selectedSide;
-            int lossFe = com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyLoss.feLoss(route.lossMilli);
-            java.util.function.BooleanSupplier current = () -> foreignRouteCurrent(level, grid, graph, sink, source);
-            try {
-                if (!source.getValue().canExtract()) continue;
-                int extracted;
-                if (sink.tile instanceof EnergyComponentHost host)
-                    extracted = host.energyComponent().internalLedger().pull(source.getValue(), lossFe,
-                        () -> host.energyComponent().ports().accepts(inputSide) && current.getAsBoolean());
-                else if (sink.tile instanceof AbstractEnergyBlockEntity machine)
-                    extracted = machine.scexFeBridge().pullRouted(source.getValue(), inputSide, lossFe, current);
-                else if (sink.tile instanceof IndependentTransformerBlockEntity transformer)
-                    extracted = pullTransformer(transformer, source.getValue(), lossFe,
-                        grid.transformerReceived.getOrDefault(sink.position.asLong(), EnergyAmount.ZERO), current);
-                else continue;
-                if (extracted == 0) continue;
-                int received = Math.max(0, extracted - lossFe);
-                com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_IMPORTED, received);   // 0.1.10.39
-                if (sink.transformer != null && received > 0)
-                    grid.transformerReceived.merge(sink.position.asLong(), FeLedger.eu(received), EnergyAmount::add);
-                double output = extracted / (double) FeLedger.FE_PER_EU, input = received / (double) FeLedger.FE_PER_EU;
-                // FE has no packet voltage. Meters use zero for this unpacketized intake.
-                sample(grid, source.getKey().at, 0, output, 0);
-                sample(grid, sink.position, input, 0, 0);
-                if (route.path != null && accessible(level, grid) && grid.conductors.isCurrent(graph)) route.path.visit(at -> {
-                    var pos = new BlockPos(at.x(), at.y(), at.z()); sample(grid, pos, output, output, 0);
-                    var detector = grid.specialCables.get(pos); if (detector != null && detector.detector()) detector.delivered();
-                    if (detector != null && detector.protective()) detector.carry(output, 0);   // 0.1.10.22 (G5)
-                });
-                commits++; totalDebit = totalDebit.add(FeLedger.eu(extracted)); totalCredit = totalCredit.add(FeLedger.eu(received));
-                totalLoss = totalLoss.add(FeLedger.eu(extracted - received));
-                debited = totalDebit.whole(); credited = totalCredit.whole(); dissipated = totalLoss.whole();
-            } catch (RuntimeException foreignFailure) { rejected++; LOG.warn("Foreign energy endpoint threw during transfer; skipped", foreignFailure); }
+        var stale = new ArrayList<ForeignEndpoint>();
+        for (var endpoint : List.copyOf(grid.foreignPorts.values())) {
+            if (!currentWorld(level, grid)) return;
+            if (endpoint.retired) continue;
+            var chunk = readyChunk(level, endpoint.at);
+            if (chunk == null) continue;
+            var tile = chunk.getBlockEntity(endpoint.at, LevelChunk.EntityCreationType.CHECK);
+            if (tile != endpoint.tile) { stale.add(endpoint); continue; }
+            if (endpoint.frame != frame) snapshotForeign(grid, endpoint, frame, chunk.getBlockState(endpoint.at));
+            if (endpoint.hands() && FeLedger.fe(endpoint.held()) > 0) handForeign(level, grid, endpoint);
+        }
+        // a new block entity at the position: a new endpoint at the next contact snapshot (the contacts are probed again)
+        for (var endpoint : stale) {
+            if (grid.foreignPorts.get(endpoint.at) != endpoint) continue;
+            retireForeign(endpoint); grid.foreignPorts.remove(endpoint.at);
+            grid.foreignSource = null;
         }
     }
 
     /**
-     * 0.1.10.44 (P-6): the ports of the native pass of this settlement that are still published, not removed and in a
-     * ready chunk, in {@link #ports} order; {@code null} when the native pass built none or an endpoint edit followed it.
+     * 0.1.11.1: the snapshot of a foreign block for one frame: its faces that receive and extract, its role (a battery,
+     * by its state of charge), the FE it would take and give now (simulated), and the packet size of the frame. The
+     * transfers of the previous frame are forgotten.
      */
-    private List<Port> settlementPorts(ServerLevel level, WorldGrid grid) {
-        var known = grid.settlementPorts;
-        if (known == null || grid.settlementPortEdits != grid.endpointEdits) return null;
-        var live = new ArrayList<Port>(known.size());
-        for (var port : known)
-            if (!port.tile.isRemoved() && grid.machines.get(port.position) == port.tile && readyChunk(level, port.position) != null) live.add(port);
-        return live;
-    }
-    /**
-     * Pair iteration is deliberately capped: only a bounded number of routes is
-     * sampled per tick, so representing a larger Cartesian product exactly would
-     * add an overflow failure without improving scheduling fairness.
-     */
-    private static int boundedPairCount(int left, int right) {
-        if (left <= 0 || right <= 0) return 0;
-        return (int) Math.min(Integer.MAX_VALUE, (long) left * right);
-    }
-    /**
-     * Pulls FE from a foreign source into a transformer.
-     *
-     * <p>Room is the smallest of the free capacity and the input limit minus
-     * {@code receivedThisTick}. The method asks for {@code room + lossFe}, first
-     * as a simulation, then for real. The loss stays with the route. The
-     * transformer gets {@code extracted - lossFe} EU-equivalent.
-     *
-     * <p>The credit goes through a temporary {@link NetworkCell} that holds the
-     * accepted EU. The commit moves it from that cell into the transformer cell,
-     * so the commit is balanced.
-     *
-     * @return the FE that the foreign source gave up ({@code >= 0}). It includes the loss.
-     * @throws IllegalStateException when the foreign source reports an invalid
-     *         amount, or the transformer changed during the callback
-     */
-    private static int pullTransformer(IndependentTransformerBlockEntity transformer, FECompatTile source, int lossFe,
-            EnergyAmount receivedThisTick, java.util.function.BooleanSupplier current) {
-        var before = transformer.snapshot(transformer.stepUpNow()).orElse(null);
-        if (before == null || !current.getAsBoolean() || !source.canExtract()) return 0;
-        // Fair mode: the per-tick intake is the throughput (4 low packets) in both
-        // modes, as for native input. Legacy: the input packet limit.
-        var limits = before.limits();
-        long intake = IndependentEnergyMode.fairDistribution()
-            ? limits.outputPacket() * limits.outputPackets() : limits.inputLimit();
-        int room = FeLedger.fe(before.energy().exactAmount().roomBelow(limits.capacity())
-            .min(receivedThisTick.roomBelow(intake)));
-        if (room == 0) return 0;
-        // long math, then clamp: room + lossFe can be above Integer.MAX_VALUE.
-        int maximum = (int)Math.min(Integer.MAX_VALUE, (long)room + lossFe);
-        int quoted = source.extractEnergy(maximum, true);
-        if (quoted <= lossFe || quoted > maximum || !current.getAsBoolean()
-            || !transformer.isCurrent(before, transformer.stepUpNow())) return 0;
-        int extracted = source.extractEnergy(quoted, false);
-        if (extracted < 0 || extracted > quoted) throw new IllegalStateException("Invalid transformer FE input receipt");
-        int accepted = Math.max(0, extracted - lossFe);
-        // All extracted FE went to loss. There is nothing to credit.
-        if (accepted == 0) return extracted;
-        var fresh = transformer.snapshot(transformer.stepUpNow()).orElse(null);
-        if (fresh == null) throw new IllegalStateException("Transformer removed during foreign extraction");
-        var acquired = new NetworkCell(FeLedger.eu(accepted));
-        if (!NetworkCell.commit(List.of(new NetworkCell.Write(acquired.quote(), EnergyAmount.ZERO),
-                new NetworkCell.Write(fresh.energy(), fresh.energy().exactAmount().add(FeLedger.eu(accepted)))),
-                EnergyAmount.ZERO, () -> true)) throw new IllegalStateException("Transformer input lease changed");
-        transformer.markNetworkChanged();
-        return extracted;
+    private void snapshotForeign(WorldGrid grid, ForeignEndpoint endpoint, long frame, BlockState state) {
+        endpoint.frame = frame; endpoint.state = state;
+        endpoint.deliveredFe = 0; endpoint.extractedFe = 0;
+        int receive = 0, extract = 0, first = -1;
+        for (int face = 0; face < 6; face++) {
+            var adapter = endpoint.adapters[face];
+            if (adapter == null) continue;
+            var contact = new ForeignContact(endpoint.at, Direction.values()[face]);
+            if (foreignQuery(grid, contact, adapter::canReceive)) receive |= 1 << face;
+            if (foreignQuery(grid, contact, adapter::canExtract)) extract |= 1 << face;
+            if (first < 0) first = face;
+        }
+        endpoint.receiveFaces = receive; endpoint.extractFaces = extract;
+        if (receive != 0 && extract != 0) {
+            var adapter = endpoint.adapters[first];
+            var contact = new ForeignContact(endpoint.at, Direction.values()[first]);
+            long stored = foreignAmount(grid, contact, adapter::getEnergyStored);
+            long capacity = foreignAmount(grid, contact, adapter::getMaxEnergyStored);
+            endpoint.role = com.miophas.singularity_iteration.core.runtime.energy.engine.StorageHysteresis.next(endpoint.role, stored, capacity);
+            boolean charging = endpoint.role == com.miophas.singularity_iteration.core.runtime.energy.engine.StorageHysteresis.Role.CHARGE;
+            endpoint.inputs = charging ? receive : 0;
+            endpoint.outputs = charging ? 0 : extract;
+        } else {
+            endpoint.role = null;
+            endpoint.inputs = receive; endpoint.outputs = extract;
+        }
+        int accept = 0, give = 0;
+        for (int face = 0; face < 6; face++) {
+            var adapter = endpoint.adapters[face];
+            if (adapter == null) continue;
+            var contact = new ForeignContact(endpoint.at, Direction.values()[face]);
+            if ((endpoint.inputs & (1 << face)) != 0)
+                accept = Math.max(accept, foreignAmount(grid, contact, () -> adapter.receiveEnergy(Integer.MAX_VALUE, true)));
+            if ((endpoint.outputs & (1 << face)) != 0)
+                give = Math.max(give, foreignAmount(grid, contact, () -> adapter.extractEnergy(Integer.MAX_VALUE, true)));
+        }
+        endpoint.acceptFe = accept; endpoint.extractFe = give;
+        // the packet of the frame: a frozen allowance compares the packet policy, so it must not change while the frame lasts
+        var potential = endpoint.potential();
+        endpoint.packet = Math.max(1, potential.whole() + (potential.fraction() == 0 ? 0 : 1));
     }
 
     /**
-     * Pushes FE from a transformer into a routed foreign target.
-     *
-     * <ol>
-     *   <li>The transformer must hold at least one output packet.</li>
-     *   <li>Simulate the target to get the offered FE.</li>
-     *   <li>Commit the debit from the transformer cell first. The debit is in
-     *       flight until the target accepts it.</li>
-     *   <li>Call the target for real.</li>
-     *   <li>When the target accepts less, refund the difference through a
-     *       temporary {@link NetworkCell}.</li>
-     * </ol>
-     *
-     * @return the FE that left the transformer
-     * @throws IllegalStateException when the refund commit fails
+     * 0.1.11.1: the SI ports with the foreign ports spread evenly among them, each list in its own order; an SI-only
+     * list stays as it is. A window of the native pass takes up to {@code MAX_PLAN_RECEIVERS} receivers in this order.
+     * Appended after the SI ports, the foreign receivers (storage class) formed windows of their own, and such a window
+     * took the whole allowance of its sources while the loads of the other windows were short.
      */
-    private static int pushTransformer(IndependentTransformerBlockEntity transformer, RoutedFeTarget target,
-            java.util.function.BooleanSupplier current) {
-        var saved = transformer.snapshot(transformer.stepUpNow()).orElse(null);
-        // Legacy: a transformer sends FE only with one full output packet. Fair mode:
-        // it sends what it holds. RoutedFeTarget limits the amount to the allowance.
-        if (saved == null || !target.canReceive() || saved.energy().exactAmount().isZero()
-                || !IndependentEnergyMode.fairDistribution() && saved.energy().exactAmount().whole() < saved.limits().outputPacket()) return 0;
-        int offered = target.receiveEnergy(FeLedger.fe(saved.energy().exactAmount()), true);
-        if (offered <= 0) return 0;
-        var debit = FeLedger.eu(offered);
-        if (!NetworkCell.commit(List.of(new NetworkCell.Write(saved.energy(), saved.energy().exactAmount().subtract(debit))),
-            debit, () -> current.getAsBoolean() && transformer.isCurrent(saved, transformer.stepUpNow()))) return 0;
-        transformer.markNetworkChanged();
-        int accepted = target.receiveEnergy(offered, false);
-        if (accepted < offered) {
-            var fresh = transformer.snapshot(transformer.stepUpNow()).orElse(null);
-            // Removed during callback. The original comment said "reserved energy stays with
-            // the removed source". This is not accurate: the debit is already committed, and no
-            // refund follows. The caller books (offered - delivered) as loss.
-            if (fresh == null) return offered;
-            var refund = FeLedger.eu(offered - accepted); var escrow = new NetworkCell(refund);
-            if (!NetworkCell.commit(List.of(new NetworkCell.Write(fresh.energy(), fresh.energy().exactAmount().add(refund)),
-                    new NetworkCell.Write(escrow.quote(), EnergyAmount.ZERO)), EnergyAmount.ZERO, () -> true))
-                throw new IllegalStateException("Transformer refund lease changed");
-            transformer.markNetworkChanged();
+    static <T> ArrayList<T> interleave(List<T> si, List<T> foreign) {
+        var out = new ArrayList<T>(si.size() + foreign.size());
+        int i = 0, j = 0;
+        while (i < si.size() || j < foreign.size()) {
+            // the next foreign port once the SI ports so far stand for its share of the list
+            if (j < foreign.size() && (i == si.size() || (long) (j + 1) * si.size() <= (long) i * foreign.size())) out.add(foreign.get(j++));
+            else out.add(si.get(i++));
         }
-        return accepted;
+        return out;
+    }
+
+    /** 0.1.11.1: one port of the native pass for each foreign block in the settlement scope (in contact order). */
+    private List<Port> foreignPorts(ServerLevel level, WorldGrid grid, boolean prepareDemand) {
+        if (grid.foreignPorts.isEmpty()) return List.of();
+        var result = new ArrayList<Port>(grid.foreignPorts.size());
+        for (var endpoint : grid.foreignPorts.values()) {
+            if (endpoint.retired || endpoint.state == null || (endpoint.inputs | endpoint.outputs) == 0
+                    || !participates(grid, endpoint.at) || readyChunk(level, endpoint.at) == null || endpoint.tile.isRemoved()) continue;
+            result.add(foreignPort(level, endpoint, prepareDemand));
+        }
+        return result;
+    }
+
+    /**
+     * 0.1.11.1: the port of a foreign block now: its quote reads the staging cell; its capacity is what the block still
+     * takes in this frame; a source offers the cell and (with {@code prepareDemand}) what the block still gives. One packet
+     * per tick of the frame's packet size, partial packets allowed.
+     */
+    private static Port foreignPort(ServerLevel level, ForeignEndpoint endpoint, boolean prepareDemand) {
+        var cell = endpoint.cell.quote();
+        long capacity = endpoint.capacity();
+        var quote = new CustomEUEnergyStorage.NetworkQuote(level, endpoint.at, cell.amount(), capacity, 0, 0, endpoint.packet,
+            endpoint.outputs != 0, true, cell);
+        var potential = prepareDemand && endpoint.outputs != 0 ? endpoint.potential() : null;
+        return new Port(endpoint.tile, endpoint.at, endpoint.state, null, quote, capacity, endpoint.inputs, endpoint.outputs,
+            endpoint.packet, 1, true, null, null, potential, endpoint.emitters, endpoint);
+    }
+
+    /**
+     * 0.1.11.1: takes up to {@code need} EU (in whole FE, rounded up, at most what the block gives in this frame) from a
+     * foreign block into its staging cell, for a planned debit. The FE above the debit stays in the cell. A refusal or a
+     * failing callback takes less; the window is settled again with what the cell holds.
+     */
+    private void takeForeign(WorldGrid grid, ForeignEndpoint endpoint, EnergyAmount need) {
+        if (endpoint.retired || endpoint.outputs == 0 || endpoint.extractFe <= endpoint.extractedFe) return;
+        long wanted = need.whole() * FeLedger.FE_PER_EU
+            + (need.fraction() + EnergyAmount.UNITS / FeLedger.FE_PER_EU - 1) / (EnergyAmount.UNITS / FeLedger.FE_PER_EU);
+        int want = (int) Math.min(endpoint.extractFe - (long) endpoint.extractedFe, wanted);
+        int taken = 0;
+        for (int face = 0; face < 6 && taken < want; face++) {
+            var adapter = endpoint.adapters[face];
+            if (adapter == null || (endpoint.outputs & (1 << face)) == 0) continue;
+            int ask = want - taken;
+            taken += Math.min(ask, foreignAmount(grid, new ForeignContact(endpoint.at, Direction.values()[face]),
+                () -> adapter.extractEnergy(ask, false)));
+        }
+        if (taken == 0) return;
+        endpoint.extractedFe += taken;
+        foreignTakenFe += taken;
+        com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_IMPORTED, taken);
+        var got = FeLedger.eu(taken);
+        // a callback removed the port (a chunk unload): the FE has no cell to go to
+        if (endpoint.retired) { foreignDropped = foreignDropped.add(got); return; }
+        var cell = endpoint.cell.quote();
+        var escrow = new NetworkCell(got);
+        if (!NetworkCell.commit(List.of(new NetworkCell.Write(escrow.quote(), EnergyAmount.ZERO),
+                new NetworkCell.Write(cell, cell.exactAmount().add(got))), EnergyAmount.ZERO, () -> true))
+            throw new IllegalStateException("Foreign staging cell changed during extraction");
+    }
+
+    /**
+     * 0.1.11.1: hands the whole FE of a foreign block's staging cell to the block. What it refuses stays in the cell (the
+     * room of the port counts it), as does the part below one FE. The FE leaves the SI balance (counted as handed).
+     */
+    private void handForeign(ServerLevel level, WorldGrid grid, ForeignEndpoint endpoint) {
+        if (endpoint.retired || endpoint.receiveFaces == 0) return;
+        int fe = FeLedger.fe(endpoint.held());
+        int handed = 0;
+        for (int face = 0; face < 6 && handed < fe; face++) {
+            var adapter = endpoint.adapters[face];
+            if (adapter == null || (endpoint.receiveFaces & (1 << face)) == 0) continue;
+            int offer = fe - handed;
+            handed += Math.min(offer, foreignAmount(grid, new ForeignContact(endpoint.at, Direction.values()[face]),
+                () -> adapter.receiveEnergy(offer, false)));
+        }
+        if (handed == 0) return;
+        endpoint.deliveredFe += handed;
+        foreignHandedFe += handed;
+        com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_EXPORTED, handed);
+        var paid = FeLedger.eu(handed);
+        // a callback removed the port (a chunk unload): its cell was counted as dropped; this part reached the block
+        if (endpoint.retired) { foreignDropped = foreignDropped.subtract(foreignDropped.min(paid)); return; }
+        var cell = endpoint.cell.quote();
+        if (!NetworkCell.commit(List.of(new NetworkCell.Write(cell, cell.exactAmount().subtract(paid))), paid, () -> true))
+            throw new IllegalStateException("Foreign staging cell changed while handing FE");
+        grid.balanceWrites++;
+        grid.lastCommitted.add(endpoint.at);
+    }
+
+    /** 0.1.11.1: before a foreign port goes while its block is still there, the block gets what its cell holds. */
+    private void handBeforeRetire(ServerLevel level, WorldGrid grid, ForeignEndpoint endpoint) {
+        if (endpoint.retired || endpoint.receiveFaces == 0 || FeLedger.fe(endpoint.held()) == 0) return;
+        var chunk = readyChunk(level, endpoint.at);
+        if (chunk == null || chunk.getBlockEntity(endpoint.at, LevelChunk.EntityCreationType.CHECK) != endpoint.tile) return;
+        handForeign(level, grid, endpoint);
+    }
+
+    /** 0.1.11.1: ends a foreign port; what its cell still holds is dropped and counted. */
+    private void retireForeign(ForeignEndpoint endpoint) {
+        if (endpoint.retired) return;
+        var held = endpoint.held();
+        if (!held.isZero()) foreignDropped = foreignDropped.add(held);
+        endpoint.retired = true;
+        endpoint.cell.retire();
+    }
+
+    /** 0.1.11.1: one foreign call that returns an amount; a failure or a blocked contact gives 0 (see {@link #foreignQuery}). */
+    private int foreignAmount(WorldGrid grid, ForeignContact contact, java.util.function.IntSupplier call) {
+        int[] amount = {0};
+        if (!foreignQuery(grid, contact, () -> { amount[0] = call.getAsInt(); return true; })) return 0;
+        return Math.max(0, amount[0]);
     }
 
     /**
@@ -3917,9 +3761,18 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (chunk == null || !level.shouldTickBlocksAt(ChunkPos.asLong(port.position))
                 || !topology.chunkReady(level, ChunkPos.asLong(port.position)) || port.tile.isRemoved()
                 || chunk.getBlockEntity(port.position, LevelChunk.EntityCreationType.CHECK) != port.tile
-                || chunk.getBlockState(port.position) != port.state) return false;
+                // 0.1.11.1: not the state of a foreign block (many show their charge in the block state)
+                || port.foreign == null && chunk.getBlockState(port.position) != port.state) return false;
+            if (port.foreign != null) {
+                // 0.1.11.1: still the port of the block, and the staging cell unchanged since the quote
+                var endpoint = port.foreign;
+                if (endpoint.retired || grid.foreignPorts.get(port.position) != endpoint || endpoint.cell.quote() != port.quote.cell()) return false;
+                continue;
+            }
             if (!port.emitterPositions.equals(emissionPositions(port.tile))) return false;
             if (port.tile instanceof DemandEnergySource demand && (port.outputs & ~demand.outputFaces()) != 0) return false;
+            if (port.tile instanceof GridExchangePort tie
+                    && ((port.inputs & ~tie.exchangeInputs()) != 0 || (port.outputs & ~tie.exchangeOutputs()) != 0)) return false;
             if (port.tile instanceof EnergyComponentHost host) {
                 var policy = host.energyComponent().ports();
                 int outputs = port.quote.outputEnabled() ? policy.outputs() : 0;
@@ -4218,7 +4071,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         HashMap<Integer, long[]> idleRuns; ConductorRegistry.Snapshot idleSnapshot; long idleGeneration; int idleSources;
         ArrayList<IslandStamp> idleStamps;
         it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Boolean> relayFeeds; Object relayFeedsView;
-        ForeignRoutePlan exportPlan, importPlan;
 
         static RoutingCaches setAside(WorldGrid grid) {
             var saved = new RoutingCaches();
@@ -4228,14 +4080,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             saved.idleRuns = grid.idleRuns; saved.idleSnapshot = grid.idleSnapshot; saved.idleGeneration = grid.idleGeneration;
             saved.idleSources = grid.idleSources; saved.idleStamps = grid.idleStamps;
             saved.relayFeeds = grid.relayFeeds; saved.relayFeedsView = grid.relayFeedsView;
-            saved.exportPlan = grid.exportPlan; saved.importPlan = grid.importPlan;
             grid.routingView = null; grid.nativePlan = null;
             grid.planCache = new LinkedHashMap<>(); grid.planCacheCounts = new HashMap<>(); grid.planCacheSources = null;
             grid.planCacheGeneration = -1; grid.planCacheCells = 0; grid.planCacheVertices = 0;
             grid.idleRuns = new HashMap<>(); grid.idleSnapshot = null; grid.idleGeneration = Long.MIN_VALUE; grid.idleSources = -1;
             grid.idleStamps = new ArrayList<>();
             grid.relayFeeds = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>(); grid.relayFeedsView = null;
-            grid.exportPlan = null; grid.importPlan = null;
             return saved;
         }
 
@@ -4247,7 +4097,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             grid.idleRuns = idleRuns; grid.idleSnapshot = idleSnapshot; grid.idleGeneration = idleGeneration;
             grid.idleSources = idleSources; grid.idleStamps = idleStamps;
             grid.relayFeeds = relayFeeds; grid.relayFeedsView = relayFeedsView;
-            grid.exportPlan = exportPlan; grid.importPlan = importPlan;
         }
     }
 
@@ -4586,6 +4435,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
 
     /** The packet limit of a sink for the explosion test, or {@code null} when it has none. */
     private static Long receiverLimit(Port sink) {
+        if (sink.foreign != null) return null;   // 0.1.11.1: a foreign block takes FE; it has no packet limit
         var receiverType = BuiltInRegistries.BLOCK.getKey(sink.state.getBlock());
         Long receiverLimit = tierReceiverLimit(sink.tile);
         if (receiverLimit == null) receiverLimit = EnergyNodeRegistry.storagePacket(receiverType);
@@ -4997,13 +4847,13 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         private int records;
         /** Route array cells left in this tick. Range {@code [0, MAX_ROUTE_ARRAY_CELLS_PER_TICK]}. */
         private long arrayCells;
-        /** Path visits left in this tick, by kind: 0 = native, 1 = FE export, 2 = FE import. */
-        private final long[] pathVisits = new long[3];
+        /** Native path visits left in this tick (0.1.11.1: the FE export and import kinds went with their passes). */
+        private long pathVisits;
         /** Refills all limits when {@code now} is a new tick. A second call in the same tick has no effect. */
         void reset(long now) {
             if (tick == now) return;
             tick = now; records = MAX_ROUTE_RECORDS_PER_TICK; arrayCells = MAX_ROUTE_ARRAY_CELLS_PER_TICK;
-            pathVisits[0] = MAX_NATIVE_PATH_VISITS_PER_TICK; pathVisits[1] = 200_000; pathVisits[2] = 200_000;
+            pathVisits = MAX_NATIVE_PATH_VISITS_PER_TICK;
         }
         /** Takes one record and {@code cells} array cells, or nothing. */
         boolean consumeRecord(int cells) {
@@ -5015,17 +4865,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (cells < 0 || arrayCells < cells) return false;
             arrayCells -= cells; return true;
         }
-        /**
-         * Takes {@code visits} path visits of one kind, or nothing.
-         * Note: {@code settleForeign} and {@code importForeign} do not call
-         * {@link #reset}. They use the allowance that the native pass reset in
-         * the same settlement.
-         *
-         * @param kind 0 = native, 1 = FE export, 2 = FE import
-         */
-        boolean reserveVisits(long visits, int kind) {
-            if (visits < 0 || visits > pathVisits[kind]) return false;
-            pathVisits[kind] -= visits; return true;
+        /** Takes {@code visits} path visits, or nothing. */
+        boolean reserveVisits(long visits) {
+            if (visits < 0 || visits > pathVisits) return false;
+            pathVisits -= visits; return true;
         }
     }
     /**

@@ -250,9 +250,17 @@ public final class MekanismStrictEnergyBridge {
             long joules = Math.max(0L, ((Number) args[offset]).longValue());
             if (args.length == 3 && ((Number) args[0]).intValue() != 0) return insert ? joules : 0L;
             if (unit <= 0L) return insert ? joules : 0L;
+            boolean simulate = !"EXECUTE".equals(String.valueOf(args[offset + 1]));
+            return transferJ(joules, insert, simulate, unit);
+        }
+
+        /**
+         * Moves {@code joules} J in whole EU: an insert returns the Joules not accepted, an extract the Joules given. The
+         * part below one EU is handed back (insert) or not given (extract); a block view keeps it instead (0.1.11.1).
+         */
+        protected long transferJ(long joules, boolean insert, boolean simulate, long unit) {
             long eu = joules / unit;
             if (eu == 0) return insert ? joules : 0L;
-            boolean simulate = !"EXECUTE".equals(String.valueOf(args[offset + 1]));
             long moved = insert ? insertEu(eu, simulate) : extractEu(eu, simulate);
             if (moved < 0 || moved > eu) throw new IllegalStateException("Invalid SI Joule transfer receipt");
             long movedJ = toJ(moved, unit);
@@ -280,6 +288,16 @@ public final class MekanismStrictEnergyBridge {
         }
         @Override protected long extractEu(long amount, boolean simulate) {
             return port.canExtract() ? bridge().extractWholeEu(amount, simulate) : 0L;
+        }
+        /**
+         * 0.1.11.1: the machine keeps the Joules below one EU ({@code JouleSavings}): a small steady flow arrives, and the
+         * part of a transfer below one EU is neither handed back nor lost. Until 0.1.11.0 an insert below one EU was
+         * refused and every remainder went back.
+         */
+        @Override protected long transferJ(long joules, boolean insert, boolean simulate, long unit) {
+            var savings = bridge().joules();
+            if (insert) return port.canReceive() ? savings.insert(joules, unit, simulate, this::insertEu) : joules;
+            return port.canExtract() ? savings.extract(joules, unit, simulate, this::extractEu) : 0L;
         }
     }
 

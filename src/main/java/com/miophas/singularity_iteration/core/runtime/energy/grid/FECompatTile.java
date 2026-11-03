@@ -130,10 +130,20 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
      */
     private final java.util.Map<net.neoforged.neoforge.capabilities.BlockCapability<?, ?>,
         net.neoforged.neoforge.capabilities.BlockCapabilityCache<?, Direction>> caches = new java.util.IdentityHashMap<>(4);
+    /**
+     * 0.1.10.44 (P-5): true once the owner keeps this adapter ({@link #retain}). Only then do the lookups go through the
+     * caches: each cache registers a capability listener in the level, and the discovery probe of every free face next to
+     * the grid made three caches and dropped them (the listener references piled up: 523,000 at 4,000 cables). A probe
+     * looks up live, as before 0.1.10.39.
+     */
+    private boolean retained;
+
+    /** 0.1.10.44: the caller keeps this adapter; capability lookups are cached from now on. Returns this adapter. */
+    public FECompatTile retain() { retained = true; return this; }
 
     @SuppressWarnings("unchecked")
     private <T> T cap(net.neoforged.neoforge.capabilities.BlockCapability<T, Direction> capability) {
-        if (!(world instanceof net.minecraft.server.level.ServerLevel server)) return world.getCapability(capability, pos, input);
+        if (!retained || !(world instanceof net.minecraft.server.level.ServerLevel server)) return world.getCapability(capability, pos, input);
         var cache = (net.neoforged.neoforge.capabilities.BlockCapabilityCache<T, Direction>) caches.computeIfAbsent(capability,
             c -> net.neoforged.neoforge.capabilities.BlockCapabilityCache.create(capability, server, pos, input));
         return cache.getCapability();
@@ -208,12 +218,12 @@ public final class FECompatTile implements IEnergySink, ILocatableTile, IEnergyS
         // used only the first non-null capability showed the fault "the wire connects and the
         // machine faces the wire, but it never charges". When a layer accepts no energy, the next
         // layer must be tried. Each layer is looked up only when it is needed, so the common path
-        // has no extra cost.
-        int accepted = receiveThrough(world.getCapability(EUApi.SIDED, pos, input), amount, simulate);
+        // has no extra cost. 0.1.10.44 (I-4): a kept adapter reads the layers from its caches.
+        int accepted = receiveThrough(cap(EUApi.SIDED), amount, simulate);
         if (accepted >= 0) return accepted;
-        accepted = receiveThrough(world.getCapability(ILongEnergyStorage.BLOCK, pos, input), amount, simulate);
+        accepted = receiveThrough(cap(ILongEnergyStorage.BLOCK), amount, simulate);
         if (accepted >= 0) return accepted;
-        accepted = receiveThrough(world.getCapability(Capabilities.EnergyStorage.BLOCK, pos, input), amount, simulate);
+        accepted = receiveThrough(cap(Capabilities.EnergyStorage.BLOCK), amount, simulate);
         if (accepted >= 0) return accepted;
         accepted = receiveThrough(EnergyCompatibility.get().findEuStorage(world, pos, input), amount, simulate);
         if (accepted >= 0) return accepted;

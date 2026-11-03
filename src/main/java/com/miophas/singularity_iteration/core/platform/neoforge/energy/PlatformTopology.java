@@ -34,7 +34,10 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  *
  * <h2>What the topology is</h2>
  * <p>The topology has one {@link ConductorRegistry} for each {@link ServerLevel}. The registry is the
- * conductor index.
+ * conductor index. 0.1.11.0 (P-8): when the observer keeps the conductor index itself
+ * ({@link Observer#keepsConductorIndex}, the engine), the topology keeps only the conductor positions of each chunk
+ * (for its capacity check) and {@link #snapshot} / {@link #isCurrent} read the observer's index. Until 0.1.10.44 the
+ * engine's topology kept a second registry that nothing read; its set of edited positions was never cleared.
  * <ul>
  *   <li><b>Node.</b> A node is one block position whose block ID is a key of the {@code losses} map.
  *       The node stores the loss of that block ID and a mask of open faces. The loss unit is
@@ -161,6 +164,15 @@ public final class PlatformTopology implements AutoCloseable {
         default void levelRemoved(ServerLevel level) { }
         /** Called after all registries are closed, at {@link #close}. */
         default void cleared() { }
+        /**
+         * 0.1.11.0 (P-8): true when the observer keeps the conductor index of each level itself (it applies the conductor
+         * entries of {@link #position} and {@link #chunkRemoved}) and returns it from {@link #conductorIndex}. The topology
+         * then keeps no {@link ConductorRegistry} of its own, only the conductor positions for its capacity check. Read
+         * once, when the topology is made.
+         */
+        default boolean keepsConductorIndex() { return false; }
+        /** 0.1.11.0 (P-8): the observer's conductor index of {@code level}, or {@code null} when it has none yet. */
+        default ConductorRegistry conductorIndex(ServerLevel level) { return null; }
     }
     private static final Observer NO_OBSERVER = new Observer() { };
     /** All open topologies, by server. Guarded by the {@code PlatformTopology.class} lock. */
@@ -214,7 +226,18 @@ public final class PlatformTopology implements AutoCloseable {
      * {@code coordinate} is {@link BlockPos#asLong} for {@code POSITION}, {@link ChunkPos#asLong} for
      * {@code CHUNK}, and 0 for {@code LEVEL}.
      */
-    private record Key(ServerLevel level, Scope scope, long coordinate) { }
+    private record Key(ServerLevel level, Scope scope, long coordinate) {
+        /**
+         * 0.1.10.44 (P-7): the coordinate is mixed with the 64-bit MurmurHash3 finalizer. The record hash used
+         * {@code Long.hashCode} of a packed position ({@code x << 38 | z << 12 | y}) or chunk ({@code x ^ z}): in a
+         * HashMap, 42 to 60 % of the 1,318 positions of a 1,000-cable comb (it depends on the identity hash of the level)
+         * and all chunks of a 32 x 32 area shared buckets of 8 or more. ({@code HashCommon.mix} is no fix here: HashMap's
+         * own {@code h ^ h >>> 16} cancels its shifts and leaves the low 11 bits of the position, that is y.)
+         */
+        @Override public int hashCode() {
+            return 31 * (31 * level.hashCode() + scope.hashCode()) + (int) it.unimi.dsi.fastutil.HashCommon.murmurHash3(coordinate);
+        }
+    }
     /**
      * One queued change. {@code position} is the sampled position for {@code POSITION} scope and
      * {@link BlockPos#ZERO} otherwise. {@code scan} is set only for {@code SCAN_CHUNK}.
@@ -267,6 +290,40 @@ public final class PlatformTopology implements AutoCloseable {
     private final int workPerTick;
     /** Conductor index for each level. A registry is made on the first conductor or snapshot. */
     private final Map<ServerLevel, ConductorRegistry> worlds = new HashMap<>();
+    /** 0.1.11.0 (P-8): the observer keeps the conductor index; {@link #members} replaces {@link #worlds}. */
+    private final boolean observerIndex;
+    /** 0.1.11.0 (P-8): the conductor positions of each level when the observer keeps the index. */
+    private final Map<ServerLevel, Members> members = new HashMap<>();
+
+    /**
+     * 0.1.11.0 (P-8): the conductor positions of one level by chunk (packed block positions): the capacity check of a
+     * {@link ConductorRegistry} without its conductor records, components and edit marks.
+     */
+    private static final class Members {
+        final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<it.unimi.dsi.fastutil.longs.LongOpenHashSet> chunks =
+            new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+        int size;
+
+        void put(BlockPos at, int maximumNodes) {
+            long chunkKey = ChunkPos.asLong(at.getX() >> 4, at.getZ() >> 4);
+            var chunk = chunks.get(chunkKey);
+            if (chunk != null && chunk.contains(at.asLong())) return;
+            if (size >= maximumNodes) { throw new IllegalStateException("Registry capacity reached"); }
+            if (chunk == null) { chunk = new it.unimi.dsi.fastutil.longs.LongOpenHashSet(); chunks.put(chunkKey, chunk); }
+            chunk.add(at.asLong()); size++;
+        }
+
+        void remove(BlockPos at) {
+            long chunkKey = ChunkPos.asLong(at.getX() >> 4, at.getZ() >> 4);
+            var chunk = chunks.get(chunkKey);
+            if (chunk != null && chunk.remove(at.asLong())) { size--; if (chunk.isEmpty()) chunks.remove(chunkKey); }
+        }
+
+        void unloadChunk(int chunkX, int chunkZ) {
+            var chunk = chunks.remove(ChunkPos.asLong(chunkX, chunkZ));
+            if (chunk != null) size -= chunk.size();
+        }
+    }
     /** The change queue, in the order of first insertion of each key. The size is at most {@code maximumQueued}. */
     private final LinkedHashMap<Key, Change> pending = new LinkedHashMap<>();
     // Readiness is queried at every transaction boundary. Keep the level count
@@ -353,6 +410,7 @@ public final class PlatformTopology implements AutoCloseable {
             // Drop indexes, never block-entity balances. Rebuild from public loaded-chunk observations.
             recovering.put(level, new Recovery(knownChunks.getOrDefault(level, new java.util.LinkedHashSet<>())));
             var previous = worlds.remove(level); if (previous != null) previous.close();
+            members.remove(level);
             observer.levelRemoved(level);
             quarantined.keySet().removeIf(key -> key.level == level);
             recoveries++;
@@ -458,6 +516,7 @@ public final class PlatformTopology implements AutoCloseable {
         }
         this.maximumNodes = maximumNodes; this.maximumSources = maximumSources;
         this.maximumQueued = maximumQueued; this.workPerTick = workPerTick;
+        this.observerIndex = observer.keepsConductorIndex();
         synchronized (PlatformTopology.class) { INSTANCES.computeIfAbsent(server, ignored -> new ArrayList<>()).add(this); }
         NeoForge.EVENT_BUS.register(this);
     }
@@ -752,6 +811,8 @@ public final class PlatformTopology implements AutoCloseable {
     private void removeChunk(ServerLevel level, int chunkX, int chunkZ) {
         var registry = worlds.get(level);
         if (registry != null) registry.unloadChunk(chunkX, chunkZ);
+        var known = members.get(level);
+        if (known != null) known.unloadChunk(chunkX, chunkZ);
         observer.chunkRemoved(level, chunkX, chunkZ);
     }
 
@@ -808,6 +869,7 @@ public final class PlatformTopology implements AutoCloseable {
         if (!level.getServer().isSameThread()) { throw new IllegalStateException("World mutation outside server thread"); }
         if (change.kind == Kind.UNLOAD_LEVEL) {
             var old = worlds.remove(level); if (old != null) { old.close(); }
+            members.remove(level);
             observer.levelRemoved(level); return;
         }
         if (change.kind == Kind.UNLOAD_CHUNK) {
@@ -859,11 +921,22 @@ public final class PlatformTopology implements AutoCloseable {
         var registry = worlds.get(level);
         if (loss != null) {
             if (!state.hasBlockEntity()) { throw new IllegalStateException("Registered conductor requires a block entity"); }
-            if (registry == null) { registry = new ConductorRegistry(maximumNodes, maximumSources); worlds.put(level, registry); }
-            int faces = observer.conductorFaces(level, chunk, at);
-            // The observer callback can close the topology. Do not write into a closed registry.
-            if (closed) return;
-            registry.put(new ConductorRegistry.Position(at.getX(), at.getY(), at.getZ()), loss, faces);
+            if (observerIndex) {
+                // 0.1.11.0 (P-8): the observer indexes the conductor; the same checks (face mask, capacity) as a registry
+                int faces = observer.conductorFaces(level, chunk, at);
+                if (closed) return;
+                if ((faces & ~ConductorRegistry.ALL_FACES) != 0) throw new IllegalArgumentException("Invalid conductor face mask");
+                members.computeIfAbsent(level, key -> new Members()).put(at, maximumNodes);
+            } else {
+                if (registry == null) { registry = new ConductorRegistry(maximumNodes, maximumSources); worlds.put(level, registry); }
+                int faces = observer.conductorFaces(level, chunk, at);
+                // The observer callback can close the topology. Do not write into a closed registry.
+                if (closed) return;
+                registry.put(new ConductorRegistry.Position(at.getX(), at.getY(), at.getZ()), loss, faces);
+            }
+        } else if (observerIndex) {
+            var known = members.get(level);
+            if (known != null) known.remove(at);
         } else if (registry != null) { registry.remove(new ConductorRegistry.Position(at.getX(), at.getY(), at.getZ())); }
         sampledPositions++;
         observer.position(level, chunk, at);
@@ -915,12 +988,14 @@ public final class PlatformTopology implements AutoCloseable {
 
     /**
      * Returns an immutable graph lease of the level index. The registry builds the edges and
-     * components lazily and caches the result until the next index change.
+     * components lazily and caches the result until the next index change. 0.1.11.0 (P-8): the observer's
+     * index when the observer keeps it ({@link Observer#keepsConductorIndex}).
      *
      * @throws IllegalStateException if the level is not {@link #ready}
      */
     public ConductorRegistry.Snapshot snapshot(ServerLevel level) {
         if (!ready(level)) { throw new IllegalStateException("Topology is pending, closed, failed or on another thread"); }
+        if (observerIndex) { var index = observer.conductorIndex(level); if (index != null) return index.snapshot(); }
         return worlds.computeIfAbsent(level, key -> new ConductorRegistry(maximumNodes, maximumSources)).snapshot();
     }
 
@@ -931,20 +1006,21 @@ public final class PlatformTopology implements AutoCloseable {
      */
     public boolean isCurrent(ServerLevel level, ConductorRegistry.Snapshot snapshot) {
         if (!ready(level)) { return false; }
+        if (observerIndex) { var index = observer.conductorIndex(level); if (index != null) return index.isCurrent(snapshot); }
         var registry = worlds.get(level);
         return registry != null && registry.isCurrent(snapshot);
     }
 
     /** Returns a diagnostic snapshot of the counters. Safe to call from any thread. */
     public synchronized Metrics metrics() {
-        return new Metrics(worlds.size(), pending.size(), chunkLoads, chunkUnloads, blockSignals,
+        return new Metrics(observerIndex ? members.size() : worlds.size(), pending.size(), chunkLoads, chunkUnloads, blockSignals,
                 sampledPositions, deferredLoads, accessibilityChanges, closed, failure);
     }
 
     /** Closes every registry and tells the observer. */
     private void clearWorlds() {
         for (var registry : worlds.values()) { registry.close(); }
-        worlds.clear(); observer.cleared();
+        worlds.clear(); members.clear(); observer.cleared();
     }
 
     /** Closes the topology when its server stops. */

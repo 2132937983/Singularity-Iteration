@@ -178,11 +178,18 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  * can finish a plan over several ticks and still transfer energy.
  * <p>The engine keeps a plan only while all of these stay the same:
  * <ul>
- *   <li>The conductor snapshot identity ({@code plan.graph == snapshot}).</li>
+ *   <li>The island at each origin of the plan (0.1.11.0, {@code IslandStamp}).
+ *       Until 0.1.10.44 the conductor snapshot identity: one edit anywhere in
+ *       the dimension dropped every plan. A finished plan whose islands no edit
+ *       touched is bound to the new snapshot ({@code NativeRoutePlan.rebase}).</li>
  *   <li>The routing generation ({@code WorldGrid.portsGeneration}). The engine
  *       increments it when the routing identity of any source or sink changes
  *       (see {@code RouteEndpoint.matches}).</li>
  * </ul>
+ * <p>0.1.11.0: a scoped settlement (the END that pauses the endpoints near an
+ * edit, and the START catch-up of those endpoints) runs on its own routing
+ * caches ({@code RoutingCaches}); the caches of the full settlement stay as
+ * they were.
  * <p>A plan never stores a balance. Balances are quoted again before each
  * commit.
  * <p><b>Cursors.</b> {@code WorldGrid.nativeCursor} selects the first source of
@@ -286,8 +293,9 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  *       that every involved port still matches the world.</li>
  *   <li>Each cursor stays in {@code [0, size)} of its list when it is used.</li>
  *   <li>A source cannot send more in one settlement than its frozen allowance.</li>
- *   <li>A plan is used only with the conductor snapshot and the routing
- *       generation that built it.</li>
+ *   <li>A plan is used only with the routing generation that built it, and with
+ *       the snapshot that built it or a later one in which the island at each of
+ *       its origins is the same (0.1.11.0).</li>
  *   <li>The work of one tick is bounded by the budget constants of this
  *       class.</li>
  * </ul>
@@ -329,6 +337,14 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * code multiplies vertex counts by 2 before it compares them with this value.
      */
     private static final long MAX_NATIVE_PATH_VISITS_PER_TICK = 2_000_000;
+    /**
+     * 0.1.10.44 (P-5): foreign discovery. After the full pass over the anchors (128 per tick, as before) a slow sweep checks
+     * {@code FOREIGN_SWEEP_ANCHORS} anchors per tick, for a capability that appears without a block change. A block change
+     * next to the grid is probed at once: up to {@code FOREIGN_CANDIDATES_PER_TICK} changed positions per tick; beyond
+     * {@code FOREIGN_CANDIDATE_LIMIT} queued positions a full pass runs instead.
+     */
+    private static final int FOREIGN_PASS_ANCHORS = 128, FOREIGN_SWEEP_ANCHORS = 8;
+    private static final int FOREIGN_CANDIDATES_PER_TICK = 128, FOREIGN_CANDIDATE_LIMIT = 16_384;
     /** One engine per running server. Guarded by the class monitor. */
     private static final Map<MinecraftServer, IndependentSiEnergy> SERVERS = new IdentityHashMap<>();
     /** True after {@link #install()} registered its listener. Guarded by the class monitor. */
@@ -794,6 +810,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         }
         @Override public int hashCode() { return 31 * type.hashCode() + Long.hashCode(conductorLoss) + System.identityHashCode(tile) + routing + 31 * faces; }
     }
+    /** 0.1.10.44 (P-2): true for an element that path profiles read (a conductor or a special cable). */
+    private static boolean wired(Element element) {
+        return element != null && (element.conductorLoss >= 0 || element.tile instanceof IndependentSpecialCableBlockEntity);
+    }
     /**
      * All energy state of one dimension. The engine creates one grid per
      * {@link ServerLevel} and closes it when the level unloads or the server
@@ -837,18 +857,21 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         NativeRoutePlan nativePlan;
         /**
          * 0.1.10.8: released plans of a multi-window cycle, by first source and first receiver
-         * ({@link #planKey}). A plan is a function of the snapshot, the routing view and generation,
-         * the endpoint edits, its first source and its first receiver. So a plan of the same epoch
-         * and key is the plan that the constructor would build again. The cache belongs to one epoch
-         * ({@code planCache*} fields) and is emptied when the epoch changes.
+         * ({@link #planKey}). A plan is a function of the routing view and generation, the islands
+         * at its origins (0.1.11.0; until 0.1.10.44 the snapshot and the endpoint edits), its first
+         * source and its first receiver. So a plan of the same epoch and key whose islands are
+         * unchanged is the plan that the constructor would build again. The cache belongs to one
+         * epoch ({@code planCacheSources}, {@code planCacheGeneration}) and is emptied when the epoch
+         * changes; a snapshot change drops only the plans of edited islands ({@link #prunePlanCache}).
+         * 0.1.11.0: in the order of their return to the cache (a plan taken out and returned goes to the end), so the
+         * first plan is the one unused longest ({@link #releasePlan}).
          */
-        final HashMap<Long, NativeRoutePlan> planCache = new HashMap<>();
+        HashMap<Long, NativeRoutePlan> planCache = new LinkedHashMap<>();
         /** Reachable sink count per first source of the cached plans. It is the same for every plan of one source in one epoch. */
-        final HashMap<Integer, Integer> planCacheCounts = new HashMap<>();
-        /** The epoch of {@code planCache}. */
-        ConductorRegistry.Snapshot planCacheSnapshot;
-        RoutingView planCacheView;
-        long planCacheGeneration = -1, planCacheEdits = -1;
+        HashMap<Integer, Integer> planCacheCounts = new HashMap<>();
+        /** The epoch of {@code planCache}: the source list of the routing view (by identity) and the generation. */
+        List<RouteEndpoint> planCacheSources;
+        long planCacheGeneration = -1;
         /** Route array cells and route search weights held by {@code planCache}. */
         long planCacheCells, planCacheVertices;
         /**
@@ -864,7 +887,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         long machineListRevision = -1, machinesRevision;
         /** Routing identities of all sources and sinks for {@code portsGeneration}, or {@code null}. */
         RoutingView routingView;
-        /** Routing generation. It only increases. See the class comment. */
+        /**
+         * Routing generation. It only increases. See the class comment. 0.1.11.0: it follows the routing identities of the
+         * endpoints only; a new snapshot with the same endpoints rebases the view ({@link RoutingView#rebase}).
+         */
         long portsGeneration;
         /** Diagnostics counters. See {@link RoutingMetrics}. */
         long plansBuilt, plansResumed, budgetYields;
@@ -914,8 +940,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          * as separate route entries.
          */
         final Map<BlockPos, Set<BlockPos>> initialGeneratorContacts = new HashMap<>();
-        /** Number of published conductors per chunk ({@link ChunkPos#asLong} key). No zero values are kept. */
-        final Map<Long, Integer> conductorChunks = new HashMap<>();
+        /**
+         * Number of published conductors per chunk ({@link ChunkPos#asLong} key). No zero values are kept.
+         * 0.1.10.44 (P-7): fastutil (mixed hash). {@code Long.hashCode} of a chunk key is {@code x ^ z}: the chunks of an
+         * 8 x 8 area fell into 8 buckets.
+         */
+        final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap conductorChunks = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
         /** Block type of each published conductor. Effects use it to find limits. */
         final Map<BlockPos, ResourceLocation> conductorTypes = new HashMap<>();
         /** Block entity of each published conductor. */
@@ -939,6 +969,18 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         /** Shock damage collected in one settlement. It is applied and cleared at the end of the settlement. */
         final com.miophas.singularity_iteration.core.runtime.energy.engine.ShockAccumulator<ShockRoute, LivingEntity> shocks =
             new com.miophas.singularity_iteration.core.runtime.energy.engine.ShockAccumulator<>();
+        /**
+         * 0.1.10.44 (P-1): the living, non-spectator entities in or next to a conductor chunk, collected once per
+         * settlement on first use ({@code null} before). Entities move between the START and END settlements.
+         */
+        List<LivingEntity> shockCandidates;
+        /**
+         * 0.1.10.44 (P-6): the port list of the native pass of the settlement in progress (null outside one) and the
+         * endpoint edit count it belongs to. The FE passes take their sources and sinks from it instead of building the
+         * port list twice more.
+         */
+        List<Port> settlementPorts;
+        long settlementPortEdits;
         /** Known foreign FE contacts. At most 4096 entries. */
         final BoundedContactIndex<ForeignContact, FECompatTile> foreign = new BoundedContactIndex<>(4096);
         /**
@@ -966,17 +1008,27 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          * work of a delivery is never done.
          */
         final ArrayList<PendingSample> pendingSamples = new ArrayList<>();
-        /** 0.1.10.7: effect profiles of the delivery paths of {@code profileSnapshot} ({@link PathProfile}). */
+        /**
+         * 0.1.10.7: effect profiles of the delivery paths ({@link PathProfile}). 0.1.11.0 (P-3): a new snapshot
+         * ({@code profileSnapshot}) drops only the profiles of islands that an edit ended (until 0.1.10.44: all).
+         */
         ConductorRegistry.Snapshot profileSnapshot;
         final HashMap<Object, PathProfile> pathProfiles = new HashMap<>();
         /**
-         * 0.1.10.7: idle native passes (no source has an allowance): start cursor to {end cursor,
-         * plans built}, valid for one snapshot, routing generation, endpoint edit count and source count.
+         * 0.1.10.44 (P-2): what a profile reads of each conductor ({@link ConductorFact}): per component (by identity), an
+         * array by the conductor's index in the component. 0.1.11.0: kept while the island is current.
          */
-        final HashMap<Integer, long[]> idleRuns = new HashMap<>();
+        final IdentityHashMap<Object, ConductorFact[]> conductorFacts = new IdentityHashMap<>();
+        /**
+         * 0.1.10.7: idle native passes (no source has an allowance): start cursor to {end cursor,
+         * plans built}, valid for one routing generation and source count, and (0.1.11.0) while the islands of the
+         * plans it built are unchanged ({@code idleStamps}; until 0.1.10.44 one snapshot and endpoint edit count).
+         */
+        HashMap<Integer, long[]> idleRuns = new HashMap<>();
         ConductorRegistry.Snapshot idleSnapshot;
-        long idleGeneration = Long.MIN_VALUE, idleEdits = Long.MIN_VALUE;
+        long idleGeneration = Long.MIN_VALUE;
         int idleSources = -1;
+        ArrayList<IslandStamp> idleStamps = new ArrayList<>();
         // 0.1.10.16 (E-3): the per-tick lookup tables below are keyed by BlockPos.asLong() (fastutil, no
         // entry object per put). The engine only reads, merges and clears them, never iterates them.
         /** EU that each source sent in {@code sampleTick}, native and FE together. */
@@ -992,7 +1044,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          */
         final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<EnergyAmount> receivedThisTick = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         /** 0.1.10.12: storage blocks whose output reaches a receiver, for one routing view ({@code relayFeedsView}). */
-        final it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Boolean> relayFeeds = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
+        it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Boolean> relayFeeds = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>();
         Object relayFeedsView;
         /** Anchor positions for foreign discovery: conductors, then endpoints. */
         List<BlockPos> scanAnchors = List.of();
@@ -1009,8 +1061,66 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          * after each advance.
          */
         int scanCursor, transferCursor, importCursor;
-        /** True when {@code scanAnchors} must be rebuilt (an anchor was added or removed). */
+        /** True when {@code scanAnchors} must be rebuilt and a full pass run (a new grid, or too many changes to queue). */
         boolean scanDirty = true;
+        /**
+         * 0.1.11.0: true when {@code scanAnchors} must be rebuilt for the sweep (an anchor was added or removed). Until
+         * 0.1.10.44 such an edit set {@code scanDirty}: every anchor of the level was probed again (a 4k grid: 32 ticks of
+         * 128 anchors) and the misses were forgotten, also for an edit far from the grid.
+         */
+        boolean sweepDirty;
+        /**
+         * 0.1.10.44 (P-5): anchors left in the full discovery pass that follows a rebuild of {@code scanAnchors}. At 0 only
+         * the slow sweep runs ({@link #FOREIGN_SWEEP_ANCHORS} anchors per tick); block changes next to the grid are probed
+         * through {@code foreignCandidates}.
+         */
+        int scanPassLeft;
+        /** 0.1.10.44 (P-5): chunks of the anchors and of their neighbours ({@link ChunkPos#asLong}), built with {@code scanAnchors}. */
+        final it.unimi.dsi.fastutil.longs.LongOpenHashSet anchorChunks = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        /** 0.1.10.44 (P-5): positions ({@link BlockPos#asLong}) whose block changed in {@code anchorChunks}, in order, to probe. */
+        final it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet foreignCandidates = new it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet();
+
+        /**
+         * 0.1.10.44 (P-5): queues a changed position that touches an anchor for the next discovery batch (nothing to do
+         * while a full pass is pending).
+         */
+        void foreignCandidate(BlockPos at) {
+            if (scanDirty || closed || !anchorChunks.contains(ChunkPos.asLong(at))) return;
+            var next = new BlockPos.MutableBlockPos();
+            boolean touches = false;
+            for (var side : Direction.values()) {
+                next.setWithOffset(at, side);
+                if (machines.containsKey(next) || conductorOwners.containsKey(next)) { touches = true; break; }
+            }
+            if (!touches) return;
+            if (foreignCandidates.size() >= FOREIGN_CANDIDATE_LIMIT) { foreignCandidates.clear(); scanDirty = true; return; }
+            foreignCandidates.add(at.asLong());
+        }
+
+        /**
+         * 0.1.11.0: an anchor came ({@code added}) or went at {@code at}. The sweep list is built again at the next batch; the
+         * six neighbours of a new anchor are probed then (a contact can only appear beside it). A removed anchor's contacts
+         * fail their route check before any transfer, as before. More changes than the candidate queue holds (a chunk
+         * load) start one full pass, as every anchor edit did until 0.1.10.44.
+         */
+        void anchorChanged(BlockPos at, boolean added) {
+            if (scanDirty || closed) return;
+            sweepDirty = true;
+            if (!added) return;
+            if (foreignCandidates.size() + 6 > FOREIGN_CANDIDATE_LIMIT) { foreignCandidates.clear(); scanDirty = true; return; }
+            addAnchorChunks(anchorChunks, at);
+            for (var side : Direction.values()) foreignCandidates.add(at.relative(side).asLong());
+        }
+
+        /** 0.1.10.44 (P-5): the chunk of {@code anchor} and the chunks of its neighbours across a chunk border. */
+        static void addAnchorChunks(it.unimi.dsi.fastutil.longs.LongOpenHashSet chunks, BlockPos anchor) {
+            chunks.add(ChunkPos.asLong(anchor));
+            int x = anchor.getX() & 15, z = anchor.getZ() & 15;
+            if (x == 0) chunks.add(ChunkPos.asLong((anchor.getX() >> 4) - 1, anchor.getZ() >> 4));
+            if (x == 15) chunks.add(ChunkPos.asLong((anchor.getX() >> 4) + 1, anchor.getZ() >> 4));
+            if (z == 0) chunks.add(ChunkPos.asLong(anchor.getX() >> 4, (anchor.getZ() >> 4) - 1));
+            if (z == 15) chunks.add(ChunkPos.asLong(anchor.getX() >> 4, (anchor.getZ() >> 4) + 1));
+        }
         // Chunk availability is queried by native settlement and both FE
         // directions in the same server tick.  Re-evaluating every registered
         // conductor for each pass was a hot O(chunks * passes) path.  The
@@ -1030,6 +1140,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         long sampleTick = Long.MIN_VALUE;
         /** True when {@code catchUpEndpoints} has entries for the next START. */
         boolean catchUp;
+        /**
+         * 0.1.11.0 (C-1): the server tick of the END that paused {@code catchUpEndpoints}. The START catch-up of the next
+         * tick settles them within the per-tick budgets of that tick ({@code settleScoped}).
+         */
+        long catchUpFrame = Long.MIN_VALUE;
         /** True after {@link #close()}. */
         boolean closed;
         /**
@@ -1126,12 +1241,18 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             for (var change : changes) {
                 var at = change.key(); long chunk = ChunkPos.asLong(at);
                 var before = change.before(); var next = change.after();
+                // 0.1.11.0 (P-3): only the facts of the island at the position (until 0.1.10.44: all); the islands that the edit
+                // ends are dropped with their profiles at the next snapshot
+                if (!conductorFacts.isEmpty() && (wired(before) || wired(next))) {
+                    var island = conductors.islandAt(point(at));
+                    if (island != null) conductorFacts.remove(island);
+                }
                 // Face/routing updates do not change the discovery work set.
                 // Restarting here would starve anchors beyond the scan budget.
                 boolean wasAnchor = conductorOwners.containsKey(at) || machines.containsKey(at);
                 boolean isAnchor = next != null && (next.conductorLoss >= 0
                         || !(next.tile instanceof IndependentSpecialCableBlockEntity));
-                if (wasAnchor != isAnchor) scanDirty = true;
+                if (wasAnchor != isAnchor) anchorChanged(at, isAnchor);
                 if (before != null && next != null && before.conductorLoss >= 0
                         && before.conductorLoss == next.conductorLoss && before.tile == next.tile
                         && before.type.equals(next.type) && before.routing == next.routing) {
@@ -1156,7 +1277,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     conductorTypes.remove(at);
                     conductorOwners.remove(at);
                     // A null result removes the key, so the map never holds a zero count.
-                    conductorChunks.compute(chunk, (key, count) -> count == 1 ? null : count - 1);
+                    if (conductorChunks.addTo(chunk, -1) == 1) conductorChunks.remove(chunk);
                 }
                 machines.remove(at); machinesRevision++;
                 receiverCursors.remove(at);
@@ -1171,7 +1292,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     conductors.put(point(at), after.conductorLoss, after.faces);
                     conductorTypes.put(at, after.type);
                     conductorOwners.put(at, after.tile);
-                    conductorChunks.merge(chunk, 1, Integer::sum);
+                    conductorChunks.addTo(chunk, 1);
                     if (after.tile instanceof IEnergyConductiveEndpoint) {
                         // IC2 dual-node layout: the position carries routes to endpoints
                         // beyond it and still owns a port, so its balance keeps charging.
@@ -1209,7 +1330,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (closed) return;
             closed = true;
             nativePlan = null; routingView = null; exportPlan = null; importPlan = null; receiverCursors.clear();
-            planCache.clear(); planCacheCounts.clear(); planCacheSnapshot = null; planCacheView = null;
+            planCache.clear(); planCacheCounts.clear(); planCacheSources = null;
             skeletons.clear(); machineList = null;
             catchUpEndpoints.clear(); effectEndpoints.clear(); shocks.clear(); includedEndpoints = null; excludedEndpoints = null;
             registered.clear(); foreign.clear(); failedQueries.clear(); samples.clear(); packetSpent.clear(); scanAnchors = List.of();
@@ -1255,7 +1376,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         if (recognized) {
             if (grid == null) { grid = new WorldGrid(selectionSeed ^ 0x5343455848495354L); worlds.put(level, grid); }
             grid.contactOrder.reservePlacement(point(at));
-        } else if (grid != null) grid.contactOrder.cancelPlacement(point(at));
+        } else if (grid != null) {
+            grid.contactOrder.cancelPlacement(point(at));
+            grid.foreignCandidate(at);   // 0.1.10.44 (P-5): a block next to the grid changed: probe it for an FE contact
+        }
     }
     /**
      * Topology callback: observes one position in a FULL chunk.
@@ -1322,6 +1446,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 grid.observeSpecial(frame, at.immutable(), element != null && element.tile instanceof IndependentSpecialCableBlockEntity ? element : null);
                 if (element == null || element.tile instanceof IndependentSpecialCableBlockEntity) return;
             }
+            // 0.1.10.44 (P-5): a block entity next to the grid (also one of a chunk that loaded): probe it for an FE contact
+            if (element == null) grid.foreignCandidate(at);
             grid.entries.observe(frame, at.immutable(), element);
         }
     }
@@ -1344,6 +1470,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             grid.accessibilityTick = Long.MIN_VALUE;
         }
     }
+    /** 0.1.11.0 (P-8): the conductor index is {@code WorldGrid.conductors}; the topology keeps no second registry. */
+    @Override public boolean keepsConductorIndex() { return true; }
+    /** 0.1.11.0 (P-8): the conductor index of the level's grid, or {@code null} before the grid exists. */
+    @Override public ConductorRegistry conductorIndex(ServerLevel level) { var grid = worlds.get(level); return grid == null ? null : grid.conductors; }
     /** Topology callback for a level unload. It closes and removes the grid of the level. */
     @Override public void levelRemoved(ServerLevel level) { var grid = worlds.remove(level); if (grid != null) grid.close(); }
     /** Topology callback for a full reset. It closes and removes all grids. */
@@ -1387,7 +1517,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         grid.catchUp = false;
         try {
             if (!topology.failure().isEmpty()) throw new IllegalStateException(topology.failure());
-            settleScoped(level, grid, Set.copyOf(grid.catchUpEndpoints), null);
+            // 0.1.11.0 (C-1): the catch-up gives the paused endpoints the tick that they missed: it settles in the frame of the
+            // END that paused them (their per-tick budgets of that tick). Until 0.1.10.44 it used the budgets of this tick,
+            // which the END of this tick then lacked, so each pause lost one tick of transfer.
+            long now = server.getTickCount();
+            long frame = grid.catchUpFrame == now - 1 && grid.sampleTick <= grid.catchUpFrame ? grid.catchUpFrame : now;
+            settleScoped(level, grid, Set.copyOf(grid.catchUpEndpoints), null, frame);
             grid.catchUpEndpoints.clear();
         } catch (RuntimeException error) { fail(level, grid, error); }
     }
@@ -1451,7 +1586,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 // Independent circuits neither pause nor get duplicate START output.
                 grid.catchUpEndpoints.addAll(affected);
                 grid.catchUp = !grid.catchUpEndpoints.isEmpty();
-                settleScoped(level, grid, null, affected);
+                grid.catchUpFrame = server.getTickCount();
+                settleScoped(level, grid, null, affected, server.getTickCount());
             }
             // 0.1.10.22 (G5): protective cables after this tick's settlement: overload, reclosing, cooling. A change of
             // conduction reaches the topology at the next tick start (refreshInput), like a splitter cable.
@@ -1479,27 +1615,59 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * </ul>
      * The result uses the current published conductor snapshot. Call it before
      * and after {@code apply} to cover the old and the new topology. Cost:
-     * O(changes + endpoints &times; emitters &times; 6).
+     * O(changes + endpoints &times; emitters &times; 6) until 0.1.10.44.
+     * 0.1.11.0 (P-9): O(changes + min(conductors of the affected islands,
+     * endpoints &times; emitters) &times; 6): a small island (an edit far from a
+     * large grid) looks at the neighbours of its own conductors only.
      *
      * @return a new mutable set. The caller can add to it.
      */
     private static HashSet<BlockPos> affectedEndpoints(WorldGrid grid, Set<BlockPos> changes) {
         var result = new HashSet<BlockPos>(changes);
-        var graph = grid.conductors.snapshot(); var components = new HashSet<Integer>();
+        var graph = grid.conductors.snapshot();
+        var islands = java.util.Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
+        var firsts = new ArrayList<BlockPos>();
         for (var at : changes) {
-            if (graph.contains(point(at))) components.add(graph.componentOf(point(at)));
+            var island = graph.island(point(at));
+            if (island != null && islands.add(island)) firsts.add(at);
             for (var side : Direction.values()) {
                 var next = at.relative(side); result.add(next);
-                if (graph.contains(point(next))) components.add(graph.componentOf(point(next)));
+                island = graph.island(point(next));
+                if (island != null && islands.add(island)) firsts.add(next);
             }
         }
-        for (var entry : grid.machines.entrySet()) {
-            for (var emitter : emissionPositions(entry.getValue())) for (var side : Direction.values()) {
-                var contact = point(emitter.relative(side));
-                if (graph.contains(contact) && components.contains(graph.componentOf(contact))) result.add(entry.getKey());
+        if (islands.isEmpty()) return result;
+        long conductors = 0;
+        for (var at : firsts) conductors += graph.componentSize(point(at));
+        if (conductors < grid.machines.size()) {
+            // the endpoints next to a conductor of the islands: an endpoint whose tile sits at its own position by position,
+            // the others (multiblock emitters, a position that carries another block's tile) as before
+            var near = new BlockPos.MutableBlockPos();
+            for (var at : firsts) for (var conductor : graph.islandPositions(point(at))) for (var side : Direction.values()) {
+                near.set(conductor.x() + side.getStepX(), conductor.y() + side.getStepY(), conductor.z() + side.getStepZ());
+                var tile = grid.machines.get(near);
+                if (tile != null && !irregular(near, tile)) result.add(near.immutable());
             }
+            for (var entry : grid.machines.entrySet())
+                if (irregular(entry.getKey(), entry.getValue()) && touches(graph, islands, emissionPositions(entry.getValue())))
+                    result.add(entry.getKey());
+            return result;
         }
+        for (var entry : grid.machines.entrySet())
+            if (touches(graph, islands, emissionPositions(entry.getValue()))) result.add(entry.getKey());
         return result;
+    }
+    /** 0.1.11.0 (P-9): an endpoint whose emitters are not just its own position (see {@link #emissionPositions}). */
+    private static boolean irregular(BlockPos at, BlockEntity tile) {
+        return tile instanceof com.miophas.singularity_iteration.core.api.energy.IEnergyEmissionSource || !at.equals(tile.getBlockPos());
+    }
+    /** 0.1.11.0 (P-9): true when a face of one of {@code emitters} touches a conductor of {@code islands}. */
+    private static boolean touches(ConductorRegistry.Snapshot graph, Set<Object> islands, List<BlockPos> emitters) {
+        for (var emitter : emitters) for (var side : Direction.values()) {
+            var island = graph.island(point(emitter.relative(side)));
+            if (island != null && islands.contains(island)) return true;
+        }
+        return false;
     }
     /**
      * Runs one settlement on a subset of the endpoints.
@@ -1507,11 +1675,14 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * @param included only these endpoints take part, or {@code null} for all
      * @param excluded these endpoints do not take part, or {@code null} for none
      */
-    private void settleScoped(ServerLevel level, WorldGrid grid, Set<BlockPos> included, Set<BlockPos> excluded) {
+    private void settleScoped(ServerLevel level, WorldGrid grid, Set<BlockPos> included, Set<BlockPos> excluded, long frame) {
         grid.includedEndpoints = included; grid.excludedEndpoints = excluded;
-        try { settle(level, grid); }
+        // 0.1.11.0 (P-3): the subset of endpoints has other port lists. Until 0.1.10.44 it replaced the routing view, so the
+        // pause, the catch-up and the next full settlement each started a new generation and every plan was built again.
+        var full = RoutingCaches.setAside(grid);
+        try { settle(level, grid, frame); }
         // Always reset the scope, so a failed settlement cannot leak it to the next one.
-        finally { grid.includedEndpoints = null; grid.excludedEndpoints = null; }
+        finally { grid.includedEndpoints = null; grid.excludedEndpoints = null; full.restore(grid); }
     }
     /** Tells whether the endpoint at {@code at} is inside the current settlement scope. */
     private static boolean participates(WorldGrid grid, BlockPos at) {
@@ -1565,7 +1736,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         // An unrelated inactive component must not pause this entire dimension.
         // No branch sets this value to false. Per-chunk state goes to setChunkActive.
         boolean result = true;
-        for (long chunk : grid.conductorChunks.keySet()) {
+        for (var chunks = grid.conductorChunks.keySet().iterator(); chunks.hasNext(); ) {
+            long chunk = chunks.nextLong();
             boolean available = level.getChunkSource().getChunkNow(ChunkPos.getX(chunk), ChunkPos.getZ(chunk)) != null
                 && level.shouldTickBlocksAt(chunk) && topology.chunkReady(level, chunk);
             grid.conductors.setChunkActive(ChunkPos.getX(chunk), ChunkPos.getZ(chunk), available);
@@ -1594,27 +1766,40 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * <p>Shock damage is applied in the {@code finally} block. Damage that a pass
      * collected before an exception is still applied.
      */
-    private void settle(ServerLevel level, WorldGrid grid) {
-        if (grid.sampleTick != server.getTickCount()) {
-            grid.sampleTick = server.getTickCount(); grid.samples.clear(); grid.pendingSamples.clear(); grid.packetSpent.clear(); grid.failedOutputs.clear(); grid.transformerReceived.clear(); grid.exportedThisTick.clear();
+    private void settle(ServerLevel level, WorldGrid grid) { settle(level, grid, server.getTickCount()); }
+    /**
+     * 0.1.11.0 (C-1): a settlement in the frame of server tick {@code frame}: the per-tick maps and the per-tick budgets
+     * of the FE ledgers ({@link FeLedger#inFrame}) are those of that tick. Only the START catch-up uses an earlier frame
+     * (the tick of the END that paused its endpoints).
+     */
+    private void settle(ServerLevel level, WorldGrid grid, long frame) {
+        if (grid.sampleTick != frame) {
+            grid.sampleTick = frame; grid.samples.clear(); grid.pendingSamples.clear(); grid.packetSpent.clear(); grid.failedOutputs.clear(); grid.transformerReceived.clear(); grid.exportedThisTick.clear();
             grid.receivedThisTick.clear();
         }
         grid.shocks.clear();
+        grid.shockCandidates = null; grid.settlementPorts = null;
         long started = System.nanoTime();
         chunkStatus.clear();   // 0.1.10.7: the chunk cache of the port scans lives for one settlement
         chunkStatusLevel = level;
         var allowances = new IdentityHashMap<BlockEntity, PacketAllowance>();
         try {
-            settle(level, grid, true, allowances);
-            settleForeign(level, grid, allowances);
-            importForeign(level, grid);
+            if (frame == server.getTickCount()) passes(level, grid, allowances);
+            else FeLedger.inFrame(frame, () -> passes(level, grid, allowances));
         } finally {
             chunkStatusLevel = null; chunkStatus.clear();
+            grid.shockCandidates = null; grid.settlementPorts = null;
             grid.shocks.apply((entity, damage) -> {
                 if (entity.isAlive()) entity.hurt(level.damageSources().lightningBolt(), damage);
             });
             grid.timings.add(server.getTickCount(), System.nanoTime() - started);
         }
+    }
+    /** The three passes of one settlement: native EU, FE export, FE import. */
+    private void passes(ServerLevel level, WorldGrid grid, IdentityHashMap<BlockEntity, PacketAllowance> allowances) {
+        settle(level, grid, true, allowances);
+        settleForeign(level, grid, allowances);
+        importForeign(level, grid);
     }
     /**
      * The native EU pass. It settles windows of sources and sinks until every
@@ -1688,6 +1873,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             grid.lastCommitted.clear();
             cachedAtCommits = grid.balanceWrites;
             cachedAtEdits = grid.endpointEdits;
+            grid.settlementPorts = cachedPorts; grid.settlementPortEdits = grid.endpointEdits;   // 0.1.10.44 (P-6)
             if (rebuildLists) {
                 cachedSources = new ArrayList<>(); cachedSinks = new ArrayList<>();
                 cachedByPosition = new HashMap<>(); portIndex = new HashMap<>(); sourceIndex = new HashMap<>(); sinkIndex = new HashMap<>();
@@ -1710,13 +1896,19 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             // Preserve incomplete plans until topology, directions or owners change.
             // The O(ports) comparison runs only when the lists or topology changed.
             if (checkView) {
-                if (grid.routingView == null || !grid.routingView.matches(snapshot, allSources, allSinks)) {
+                var view = grid.routingView;
+                if (view == null || !view.sameEndpoints(allSources, allSinks)) {
                     grid.portsGeneration++;
                     var sourceIds = allSources.stream().map(RouteEndpoint::of).toList();
                     var sinkIds = allSinks.stream().map(RouteEndpoint::of).toList();
                     var contacts = new ReceiverContacts(snapshot, sinkIds.stream()
                         .map(p -> new ReceiverContacts.Endpoint(point(p.position), p.inputs)).toList());
                     grid.routingView = new RoutingView(snapshot, sourceIds, sinkIds, contacts, grid.portsGeneration);
+                } else if (view.graph != snapshot) {
+                    // 0.1.11.0 (P-3): the same endpoints on a later snapshot keep their generation; the plans of the islands
+                    // that no edit touched stay (until 0.1.10.44 a new generation dropped every plan)
+                    grid.routingView = view.rebase(snapshot);
+                    prunePlanCache(grid, snapshot);
                 }
                 checkView = false;
             }
@@ -1741,7 +1933,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             }
             // A plan that contains a finished source would settle that source twice.
             if (plan != null && plan.sources.stream().anyMatch(p -> visited.contains(p.position))) plan = null;
-            if (plan == null || plan.portsGeneration != grid.portsGeneration || plan.graph != snapshot) {
+            if (plan == null || plan.portsGeneration != grid.portsGeneration || plan.allSources != grid.routingView.sources
+                    || !plan.rebase(snapshot)) {
                 // floorMod maps any stored cursor (also a negative or stale one) into [0, size).
                 int start = Math.floorMod(grid.nativeCursor, allSources.size());
                 int skipped = 0;
@@ -2098,18 +2291,27 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 // effect. Its profile gives the same visit count, detector cables, powered conductors
                 // and weakest limit without visiting the path. Otherwise the path is visited as before.
                 var profile = pathProfile(level, grid, snapshot, path);
-                if (profile != null && profile.quiet(deliveryVoltage, meltdown, shocking) && profile.live()) {
+                // 0.1.10.44 (P-1): a delivery above the insulation of the path (bare cable) takes the profile too. Its shock
+                // exposures come from the profile, in path order, and only when a living entity is near the path; with
+                // nobody near, the visit found exposures that hurt nobody.
+                if (profile != null && profile.quiet(deliveryVoltage, meltdown, false) && profile.live()) {
                     pathProfileHits++;
                     wireVisits[0] = Math.addExact(wireVisits[0], profile.positions.length);
                     for (var special : profile.specials) if (special.detector()) detectorDeliveries.add(special);
+                    int open = profile.positions.length;   // the wire index of the guard that opens (no shock from there on)
                     if (profile.guards.length > 0) {
                         deliveryGuards[deliveryIndex] = profile.guards;
-                        for (var guard : profile.guards) {
+                        for (int g = 0; g < profile.guards.length; g++) {
+                            var guard = profile.guards[g];
                             // an open cable (tripped earlier in this tick; the topology follows at the next tick start) also guards
-                            if (!guard.relay().conducts()) { guarded[0] = true; break; }
-                            if (guard.voltageExceeded(deliveryVoltage)) { voltageTrips.add(guard); guarded[0] = true; break; }
+                            if (!guard.relay().conducts()) { guarded[0] = true; open = profile.guardIndex[g]; break; }
+                            if (guard.voltageExceeded(deliveryVoltage)) { voltageTrips.add(guard); guarded[0] = true; open = profile.guardIndex[g]; break; }
                         }
                     }
+                    if (shocking && deliveryVoltage > profile.minAbsorption && profile.shockBox != null
+                            && livingNear(level, grid, profile.shockBox))
+                        profile.exposures(deliveryVoltage, open, new ShockRoute(sources.get(delivery.source()).position,
+                            sinks.get(delivery.receiver()).position), shockPlan);
                     poweredRuns.add(profile.conductors);
                     weakestMeasuredLimit[0] = Math.min(weakestMeasuredLimit[0], profile.weakest);
                     deliveryWires[deliveryIndex] = profile.positions;
@@ -2216,6 +2418,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 sample(grid, sink.position, received, 0, voltage);
                 if (sink.transformer != null) grid.transformerReceived.merge(sink.position.asLong(), delivery.credit(), EnergyAmount::add);
                 grid.receivedThisTick.merge(sink.position.asLong(), delivery.credit(), EnergyAmount::add);
+                var ledger = inputLedger(sink);   // 0.1.10.44 (I-3): one input budget for native EU and FE
+                if (ledger != null && !delivery.credit().isZero()) ledger.countNativeInput(delivery.credit());
                 grid.packetSpent.merge(source.position.asLong(), delivery.sourceDebit(), EnergyAmount::add);
                 // 0.1.10.7: the wire samples wait until a meter reads (same order, same sums)
                 var wire = deliveryWires[sampleIndex];
@@ -2250,7 +2454,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (!stripPlan.isEmpty()) GridAlarms.record(level, GridAlarms.Type.INSULATION_BURNED, stripPlan.keySet().iterator().next(), stripPlan.size(), 0);
             removedByEffects.addAll(stripInsulation(level, grid, stripPlan));
             // 0.1.10.7: a fused or stripped conductor changes the limits of every path through it
-            if (!fusePlan.isEmpty() || !stripPlan.isEmpty()) grid.pathProfiles.clear();
+            if (!fusePlan.isEmpty() || !stripPlan.isEmpty()) { grid.pathProfiles.clear(); grid.conductorFacts.clear(); }
             for (var overload : receiverPlan.entrySet()) {
                 var sink = overload.getKey();
                 var at = sink.position;
@@ -2446,7 +2650,22 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 : limits.outputPacket() * limits.outputPackets();
         } else cap = sink.quote.maxReceive();
         if (cap <= 0) return null;
-        return grid.receivedThisTick.getOrDefault(sink.position.asLong(), EnergyAmount.ZERO).roomBelow(cap);
+        var used = grid.receivedThisTick.getOrDefault(sink.position.asLong(), EnergyAmount.ZERO);
+        // 0.1.10.44 (I-3): FE, whole-EU and Joule input of this tick share the rated input
+        var ledger = inputLedger(sink);
+        if (ledger != null) used = used.add(ledger.inputThisTick());
+        return used.roomBelow(cap);
+    }
+
+    /**
+     * 0.1.10.44 (I-3): the FE ledger of a native sink (the same storage as {@link #ownedStorage}), or {@code null}
+     * (transformers, demand sources). Native credits are reported to it, and its FE input counts against the rated input.
+     */
+    private static FeLedger inputLedger(Port sink) {
+        if (sink.transformer != null || sink.tile instanceof DemandEnergySource) return null;
+        if (sink.tile instanceof EnergyComponentHost host) return host.energyComponent().internalLedger();
+        if (sink.tile instanceof AbstractEnergyBlockEntity machine) return machine.scexFeBridge().ledger();
+        return null;
     }
     /**
      * Builds one {@code Port} for each published endpoint in the settlement
@@ -2937,12 +3156,17 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      *
      * <ol>
      *   <li>Rebuild {@code scanAnchors} when {@code scanDirty} is set, and reset
-     *       the cursor to 0.</li>
+     *       the cursor to 0. 0.1.10.44: this starts one full pass. 0.1.11.0: an
+     *       anchor edit ({@code sweepDirty}) rebuilds the list only; the new
+     *       anchor's neighbours are queued in {@code foreignCandidates}.</li>
      *   <li>Once per tick: check up to 128 known contacts, and drop the invalid
      *       ones.</li>
-     *   <li>Check the six neighbours of up to 128 anchors, starting at
-     *       {@code scanCursor}. A neighbour becomes a contact when it is loaded,
-     *       is not an SI node, and its FE adapter is valid.</li>
+     *   <li>0.1.10.44 (P-5): probe up to 128 positions that changed next to an
+     *       anchor ({@code foreignCandidates}).</li>
+     *   <li>Check the six neighbours of up to 128 anchors (during the full pass;
+     *       after it, 8 anchors), starting at {@code scanCursor}. A neighbour
+     *       becomes a contact when it is loaded, is not an SI node, and its FE
+     *       adapter is valid.</li>
      * </ol>
      * <p>Each foreign callback can change the world. The method checks
      * {@code currentWorld} after the callbacks and stops when it is false.
@@ -2963,7 +3187,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         FECompatTile adapter = grid.foreign.get(contact);
         if (adapter == null) {
             if (simulate) return Math.min(fe, FECompatTile.INBOX_FE);
-            if (!grid.foreign.putIfAbsent(contact, new FECompatTile(level, at, face))) return 0;
+            if (!grid.foreign.putIfAbsent(contact, new FECompatTile(level, at, face).retain())) return 0;
             adapter = grid.foreign.get(contact);
         }
         int accepted = adapter.offerInbox(fe, simulate);
@@ -2984,6 +3208,17 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             var anchors = new ArrayList<BlockPos>(grid.conductorOwners.keySet()); anchors.addAll(grid.machines.keySet());
             grid.scanAnchors = List.copyOf(anchors); grid.scanDirty = false; grid.scanCursor = 0;
             grid.foreignMisses.clear();   // 0.1.10.39: the grid changed: probe every neighbour again
+            // 0.1.10.44 (P-5): one full pass, then the slow sweep; the pass covers every queued change
+            grid.scanPassLeft = anchors.size();
+            grid.foreignCandidates.clear();
+            grid.anchorChunks.clear();
+            // a neighbour in the next chunk (the anchor is on the chunk border)
+            for (var anchor : anchors) WorldGrid.addAnchorChunks(grid.anchorChunks, anchor);
+            grid.sweepDirty = false;
+        } else if (grid.sweepDirty) {
+            // 0.1.11.0: an anchor edit: the sweep list again, no full pass (the new anchors' neighbours are queued)
+            var anchors = new ArrayList<BlockPos>(grid.conductorOwners.keySet()); anchors.addAll(grid.machines.keySet());
+            grid.scanAnchors = List.copyOf(anchors); grid.sweepDirty = false;
         }
         // Maintenance is shared by START/END settlement and reachability queries.
         // Stale entries may wait for their turn, but every transfer still checks
@@ -2995,9 +3230,21 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 () -> adapter.isValid() && !ForeignEnergyCables.is(level, contact.at)));
         }
         if (!currentWorld(level, grid)) return;
+        // 0.1.10.44 (P-5): first the blocks that changed next to the grid (probed at once, also after a miss)
+        for (int probed = 0; probed < FOREIGN_CANDIDATES_PER_TICK && !grid.foreignCandidates.isEmpty(); probed++) {
+            var at = BlockPos.of(grid.foreignCandidates.removeFirstLong());
+            for (var side : Direction.values()) {
+                var anchor = at.relative(side.getOpposite());
+                if (!grid.machines.containsKey(anchor) && !grid.conductorOwners.containsKey(anchor)) continue;
+                grid.foreignMisses.remove(new ForeignContact(at, side.getOpposite()));
+                if (!probeForeign(level, grid, anchor, side)) return;
+            }
+        }
         // count == 0 when there is no anchor, so the floorMod below never divides by 0.
-        int count = Math.min(128, grid.scanAnchors.size());
+        // 0.1.10.44 (P-5): 128 anchors per tick during the full pass, then the slow sweep
         int anchorCount = grid.scanAnchors.size();
+        int count = Math.min(grid.scanPassLeft > 0 ? FOREIGN_PASS_ANCHORS : FOREIGN_SWEEP_ANCHORS, anchorCount);
+        grid.scanPassLeft = Math.max(0, grid.scanPassLeft - count);
         for (int i = 0; i < count; i++) {
             // Normalize before advancing so a very long-running server can
             // cross Integer.MAX_VALUE without a negative index or a skipped
@@ -3007,34 +3254,43 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             int anchorIndex = Math.floorMod(grid.scanCursor, anchorCount);
             var anchor = grid.scanAnchors.get(anchorIndex);
             grid.scanCursor = anchorIndex + 1 == anchorCount ? 0 : anchorIndex + 1;
-            for (var side : Direction.values()) {
-                var at = anchor.relative(side);
-                if (!loaded(level, at) || grid.machines.containsKey(at) || grid.conductorOwners.containsKey(at)) continue;
-                // loaded() returned true, so getChunkNow() is not null here.
-                var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
-                var entity = chunk.getBlockEntity(at, LevelChunk.EntityCreationType.CHECK);
-                // An unpublished native entity must never become a foreign callback route.
-                if (ownedStorage(entity) != null && ownedStorage(entity).scexNetworkControlled()
-                    || entity instanceof IndependentTransformerBlockEntity
-                    || entity instanceof DemandEnergySource || entity instanceof IndependentSpecialCableBlockEntity) continue;
-                // 0.1.10.39: never another mod's cable: the two networks would pass the same FE back and forth
-                if (ForeignEnergyCables.is(chunk.getBlockState(at))) continue;
-                var contact = new ForeignContact(at.immutable(), side.getOpposite());
-                if (grid.foreign.containsKey(contact) || grid.foreign.size() >= 4096) continue;
-                Long retry = grid.foreignMisses.get(contact);
-                if (retry != null && retry > server.getTickCount()) { com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_PROBES_SKIPPED); continue; }
-                var adapter = new FECompatTile(level, at, side);
-                com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_PROBES);
-                boolean valid = foreignQuery(grid, contact, adapter::isValid);
-                if (!currentWorld(level, grid)) return;
-                if (valid) { grid.foreign.putIfAbsent(contact, adapter); grid.foreignMisses.remove(contact); }
-                else {
-                    if (grid.foreignMisses.size() >= 16_384) grid.foreignMisses.clear();
-                    grid.foreignMisses.put(contact, server.getTickCount() + 200L);
-                }
-            }
+            for (var side : Direction.values()) if (!probeForeign(level, grid, anchor, side)) return;
         }
         accessible(level, grid); // One refresh after the complete batch of external discovery callbacks.
+    }
+
+    /**
+     * Probes the neighbour of {@code anchor} beyond face {@code side} for an FE contact and indexes a valid one.
+     * 0.1.10.44 (P-5): the probe adapter looks up live; only an indexed adapter keeps capability caches.
+     *
+     * @return {@code false} when a callback unloaded the level or closed the engine (stop at once)
+     */
+    private boolean probeForeign(ServerLevel level, WorldGrid grid, BlockPos anchor, Direction side) {
+        var at = anchor.relative(side);
+        if (!loaded(level, at) || grid.machines.containsKey(at) || grid.conductorOwners.containsKey(at)) return true;
+        // loaded() returned true, so getChunkNow() is not null here.
+        var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
+        var entity = chunk.getBlockEntity(at, LevelChunk.EntityCreationType.CHECK);
+        // An unpublished native entity must never become a foreign callback route.
+        if (ownedStorage(entity) != null && ownedStorage(entity).scexNetworkControlled()
+            || entity instanceof IndependentTransformerBlockEntity
+            || entity instanceof DemandEnergySource || entity instanceof IndependentSpecialCableBlockEntity) return true;
+        // 0.1.10.39: never another mod's cable: the two networks would pass the same FE back and forth
+        if (ForeignEnergyCables.is(chunk.getBlockState(at))) return true;
+        var contact = new ForeignContact(at.immutable(), side.getOpposite());
+        if (grid.foreign.containsKey(contact) || grid.foreign.size() >= 4096) return true;
+        Long retry = grid.foreignMisses.get(contact);
+        if (retry != null && retry > server.getTickCount()) { com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_PROBES_SKIPPED); return true; }
+        var adapter = new FECompatTile(level, at, side);
+        com.miophas.singularity_iteration.core.runtime.PerfCounters.add(com.miophas.singularity_iteration.core.runtime.PerfCounters.Kind.FE_PROBES);
+        boolean valid = foreignQuery(grid, contact, adapter::isValid);
+        if (!currentWorld(level, grid)) return false;
+        if (valid) { grid.foreign.putIfAbsent(contact, adapter.retain()); grid.foreignMisses.remove(contact); }
+        else {
+            if (grid.foreignMisses.size() >= 16_384) grid.foreignMisses.clear();
+            grid.foreignMisses.put(contact, server.getTickCount() + 200L);
+        }
+        return true;
     }
     /**
      * Reachability needs connected components, not a shortest-path search.
@@ -3116,7 +3372,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         // Check the foreign index first. Most grids have no FE contact, and a
         // full ports() rebuild each tick was a measurable O(endpoints) cost.
         if (grid.foreign.isEmpty()) return;
-        var sources = ports(level, grid, true).stream().filter(port -> port.outputs != 0 && port.packet > 0 && port.packets > 0).toList();
+        // 0.1.10.44 (P-6): the sources of the native pass, quoted again (their balances changed); else a full port scan
+        var known = settlementPorts(level, grid);
+        var sources = (known != null ? refreshQuotes(level, grid, known.stream().filter(IndependentSiEnergy::isRoutedSource).toList(), true)
+            : ports(level, grid, true)).stream().filter(port -> port.outputs != 0 && port.packet > 0 && port.packets > 0).toList();
         if (sources.isEmpty()) return;
         var targets = grid.foreign.snapshot();
         var graph = grid.conductors.snapshot();
@@ -3248,7 +3507,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     private void importForeign(ServerLevel level, WorldGrid grid) {
         if (!accessible(level, grid) || grid.foreign.isEmpty()) return;
         grid.importSearch.reset(server.getTickCount());
-        var sinks = ports(level, grid, false).stream().filter(port -> port.inputs != 0).toList();
+        // 0.1.10.44 (P-6): the sinks of the native pass (the pull reads the live ledgers); else a full port scan
+        var known = settlementPorts(level, grid);
+        var sinks = (known != null ? known : ports(level, grid, false)).stream().filter(port -> port.inputs != 0).toList();
         if (sinks.isEmpty()) return;
         var sources = grid.foreign.snapshot();
         var graph = grid.conductors.snapshot();
@@ -3313,6 +3574,18 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         }
     }
 
+    /**
+     * 0.1.10.44 (P-6): the ports of the native pass of this settlement that are still published, not removed and in a
+     * ready chunk, in {@link #ports} order; {@code null} when the native pass built none or an endpoint edit followed it.
+     */
+    private List<Port> settlementPorts(ServerLevel level, WorldGrid grid) {
+        var known = grid.settlementPorts;
+        if (known == null || grid.settlementPortEdits != grid.endpointEdits) return null;
+        var live = new ArrayList<Port>(known.size());
+        for (var port : known)
+            if (!port.tile.isRemoved() && grid.machines.get(port.position) == port.tile && readyChunk(level, port.position) != null) live.add(port);
+        return live;
+    }
     /**
      * Pair iteration is deliberately capped: only a bounded number of routes is
      * sampled per tick, so representing a larger Cartesian product exactly would
@@ -3472,6 +3745,31 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
 
     /** The (source, sink) pair of a delivery. Shock damage is grouped by this key. */
     private record ShockRoute(BlockPos source, BlockPos receiver) { }
+
+    /**
+     * 0.1.10.44 (P-1): true when a living, non-spectator entity meets {@code box}. The candidates (entities in or next to a
+     * conductor chunk) are collected once per settlement, so a bare-cable grid with nobody near it costs one walk over the
+     * entities of the level per settlement instead of a visit of every delivery path. {@code collectShockDamage} still finds
+     * the entities of each exposed conductor exactly.
+     */
+    private boolean livingNear(ServerLevel level, WorldGrid grid, AABB box) {
+        if (grid.shockCandidates == null) {
+            var near = new ArrayList<LivingEntity>();
+            for (var entity : level.getAllEntities()) {
+                if (!(entity instanceof LivingEntity living) || !living.isAlive() || living.isSpectator()) continue;
+                var bounds = living.getBoundingBox();
+                int x0 = net.minecraft.util.Mth.floor(bounds.minX - 2) >> 4, x1 = net.minecraft.util.Mth.floor(bounds.maxX + 2) >> 4;
+                int z0 = net.minecraft.util.Mth.floor(bounds.minZ - 2) >> 4, z1 = net.minecraft.util.Mth.floor(bounds.maxZ + 2) >> 4;
+                boolean found = false;
+                for (int x = x0; x <= x1 && !found; x++) for (int z = z0; z <= z1 && !found; z++)
+                    found = grid.conductorChunks.containsKey(ChunkPos.asLong(x, z));
+                if (found) near.add(living);
+            }
+            grid.shockCandidates = near;
+        }
+        for (var entity : grid.shockCandidates) if (entity.isAlive() && entity.getBoundingBox().intersects(box)) return true;
+        return false;
+    }
     /**
      * Collects shock damage for living, non-spectator entities within 1.5 blocks
      * of each exposed conductor. It only collects. {@code settle} applies the
@@ -3707,10 +4005,21 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * above this limit melts the cable.
      */
     private static Long tierFuseLimit(ResourceLocation type) {
+        // 0.1.10.44: kept per block id (the block registry is frozen); a path visit asked the registry for every conductor
+        var known = TIER_FUSE_LIMITS.get(type);
+        if (known != null) return known.orElse(null);
         var block = BuiltInRegistries.BLOCK.get(type);
-        if (block instanceof com.miophas.singularity_iteration.core.api.energy.ICableBlock cable)
-            return cable.getCableTier().getConductorBreakdownEnergy();
-        return null;
+        Long limit = block instanceof com.miophas.singularity_iteration.core.api.energy.ICableBlock cable
+            ? Long.valueOf(cable.getCableTier().getConductorBreakdownEnergy()) : null;
+        TIER_FUSE_LIMITS.put(type, java.util.Optional.ofNullable(limit));
+        return limit;
+    }
+    private static final java.util.concurrent.ConcurrentHashMap<ResourceLocation, java.util.Optional<Long>> TIER_FUSE_LIMITS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** The fuse limit of a conductor type: its cable tier, else its registry profile, else {@code null}. */
+    private static Long fuseLimit(ResourceLocation type) {
+        Long limit = tierFuseLimit(type);
+        return limit != null ? limit : EnergyNodeRegistry.fuseLimit(type);
     }
     /** Converts a block position to a conductor registry position. */
     private static ConductorRegistry.Position point(BlockPos at) { return new ConductorRegistry.Position(at.getX(), at.getY(), at.getZ()); }
@@ -3861,7 +4170,84 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         }
         /** O(ports) check: same snapshot and the same routing identity for each list element. */
         boolean matches(ConductorRegistry.Snapshot snapshot, List<Port> sourcePorts, List<Port> sinkPorts) {
-            return graph == snapshot && NativeRoutePlan.matches(sources, sourcePorts) && NativeRoutePlan.matches(sinks, sinkPorts);
+            return graph == snapshot && sameEndpoints(sourcePorts, sinkPorts);
+        }
+        /** 0.1.11.0: O(ports) check of the routing identities alone. */
+        boolean sameEndpoints(List<Port> sourcePorts, List<Port> sinkPorts) {
+            return NativeRoutePlan.matches(sources, sourcePorts) && NativeRoutePlan.matches(sinks, sinkPorts);
+        }
+        /**
+         * 0.1.11.0 (P-3): the view on a later snapshot: the same endpoint lists (by identity) and generation, the contact
+         * index built again (contacts of edited islands change).
+         */
+        RoutingView rebase(ConductorRegistry.Snapshot snapshot) {
+            var contacts = new ReceiverContacts(snapshot, sinks.stream()
+                .map(p -> new ReceiverContacts.Endpoint(point(p.position), p.inputs)).toList());
+            return new RoutingView(snapshot, sources, sinks, contacts, portsGeneration);
+        }
+    }
+
+    /**
+     * 0.1.11.0 (P-3): the islands that a kept routing result read: the island at each origin position ({@code null}: no
+     * conductor there). The result holds on a later snapshot when each position still has the same island. An edit of
+     * one of them, or a conductor placed at an empty origin, puts another island there.
+     */
+    private record IslandStamp(ConductorRegistry.Position[] positions, Object[] islands) {
+        static IslandStamp of(ConductorRegistry.Snapshot graph, List<NativeOrigin> origins) {
+            var positions = new ConductorRegistry.Position[origins.size()];
+            var islands = new Object[positions.length];
+            for (int i = 0; i < positions.length; i++) { positions[i] = origins.get(i).position(); islands[i] = graph.island(positions[i]); }
+            return new IslandStamp(positions, islands);
+        }
+        boolean holds(ConductorRegistry.Snapshot graph) {
+            for (int i = 0; i < positions.length; i++) if (graph.island(positions[i]) != islands[i]) return false;
+            return true;
+        }
+    }
+
+    /**
+     * 0.1.11.0 (P-3): the routing caches of a grid, set aside while a scoped settlement (the END pause near an edit or the
+     * START catch-up) runs on its own, empty caches. The routing generation of the full settlement is restored too; the
+     * scoped settlement's plans are dropped. A full settlement plan with origins left is dropped as before (a scoped
+     * settlement used to start a new generation).
+     */
+    private static final class RoutingCaches {
+        RoutingView view; long generation; NativeRoutePlan nativePlan;
+        HashMap<Long, NativeRoutePlan> planCache; HashMap<Integer, Integer> planCacheCounts;
+        List<RouteEndpoint> planCacheSources; long planCacheGeneration, planCacheCells, planCacheVertices;
+        HashMap<Integer, long[]> idleRuns; ConductorRegistry.Snapshot idleSnapshot; long idleGeneration; int idleSources;
+        ArrayList<IslandStamp> idleStamps;
+        it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<Boolean> relayFeeds; Object relayFeedsView;
+        ForeignRoutePlan exportPlan, importPlan;
+
+        static RoutingCaches setAside(WorldGrid grid) {
+            var saved = new RoutingCaches();
+            saved.view = grid.routingView; saved.generation = grid.portsGeneration; saved.nativePlan = grid.nativePlan;
+            saved.planCache = grid.planCache; saved.planCacheCounts = grid.planCacheCounts; saved.planCacheSources = grid.planCacheSources;
+            saved.planCacheGeneration = grid.planCacheGeneration; saved.planCacheCells = grid.planCacheCells; saved.planCacheVertices = grid.planCacheVertices;
+            saved.idleRuns = grid.idleRuns; saved.idleSnapshot = grid.idleSnapshot; saved.idleGeneration = grid.idleGeneration;
+            saved.idleSources = grid.idleSources; saved.idleStamps = grid.idleStamps;
+            saved.relayFeeds = grid.relayFeeds; saved.relayFeedsView = grid.relayFeedsView;
+            saved.exportPlan = grid.exportPlan; saved.importPlan = grid.importPlan;
+            grid.routingView = null; grid.nativePlan = null;
+            grid.planCache = new LinkedHashMap<>(); grid.planCacheCounts = new HashMap<>(); grid.planCacheSources = null;
+            grid.planCacheGeneration = -1; grid.planCacheCells = 0; grid.planCacheVertices = 0;
+            grid.idleRuns = new HashMap<>(); grid.idleSnapshot = null; grid.idleGeneration = Long.MIN_VALUE; grid.idleSources = -1;
+            grid.idleStamps = new ArrayList<>();
+            grid.relayFeeds = new it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<>(); grid.relayFeedsView = null;
+            grid.exportPlan = null; grid.importPlan = null;
+            return saved;
+        }
+
+        void restore(WorldGrid grid) {
+            grid.routingView = view; grid.portsGeneration = generation;
+            grid.nativePlan = nativePlan != null && nativePlan.originIndex < nativePlan.origins.size() ? null : nativePlan;
+            grid.planCache = planCache; grid.planCacheCounts = planCacheCounts; grid.planCacheSources = planCacheSources;
+            grid.planCacheGeneration = planCacheGeneration; grid.planCacheCells = planCacheCells; grid.planCacheVertices = planCacheVertices;
+            grid.idleRuns = idleRuns; grid.idleSnapshot = idleSnapshot; grid.idleGeneration = idleGeneration;
+            grid.idleSources = idleSources; grid.idleStamps = idleStamps;
+            grid.relayFeeds = relayFeeds; grid.relayFeedsView = relayFeedsView;
+            grid.exportPlan = exportPlan; grid.importPlan = importPlan;
         }
     }
 
@@ -3929,19 +4315,49 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final double weakest;
         /** 0 for a profile; for a path that could not be profiled, the tick after which it is tried again. */
         long retryAfter;
+        /** 0.1.11.0 (P-3): the island of the path; the profile is dropped when an edit ends it. */
+        Object island;
+        /** 0.1.10.44 (P-1): the wire index of each conductor and of each guard (the same order as {@code conductors} and {@code guards}). */
+        final int[] conductorIndex, guardIndex;
+        /** 0.1.10.44 (P-1): the shock range of the conductors (each centre +- 1.5 blocks, as {@code collectShockDamage}), or null for none. */
+        final AABB shockBox;
 
-        PathProfile(BlockPos[] positions, IEnergyConductor[] conductors, BlockEntity[] owners,
-                    IndependentSpecialCableBlockEntity[] specials, double minFuse, double minBreakdown, double minAbsorption) {
+        PathProfile(BlockPos[] positions, IEnergyConductor[] conductors, int[] conductorIndex, BlockEntity[] owners,
+                    IndependentSpecialCableBlockEntity[] specials, int[] specialIndex, double minFuse, double minBreakdown, double minAbsorption) {
             this.positions = positions; this.conductors = conductors; this.owners = owners; this.specials = specials;
-            this.guards = java.util.Arrays.stream(specials).filter(IndependentSpecialCableBlockEntity::protective)
-                .toArray(IndependentSpecialCableBlockEntity[]::new);
+            this.conductorIndex = conductorIndex;
+            int guardCount = 0;
+            for (var special : specials) if (special.protective()) guardCount++;
+            this.guards = new IndependentSpecialCableBlockEntity[guardCount]; this.guardIndex = new int[guardCount];
+            for (int i = 0, g = 0; i < specials.length; i++) if (specials[i].protective()) { guards[g] = specials[i]; guardIndex[g++] = specialIndex[i]; }
             this.minFuse = minFuse; this.minBreakdown = minBreakdown; this.minAbsorption = minAbsorption;
             this.weakest = Math.min(minFuse, minBreakdown);
+            int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
+            int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+            for (int index : conductorIndex) {
+                var at = positions[index];
+                minX = Math.min(minX, at.getX()); minY = Math.min(minY, at.getY()); minZ = Math.min(minZ, at.getZ());
+                maxX = Math.max(maxX, at.getX()); maxY = Math.max(maxY, at.getY()); maxZ = Math.max(maxZ, at.getZ());
+            }
+            this.shockBox = conductorIndex.length == 0 ? null
+                : new AABB(minX - 1.0, minY - 1.0, minZ - 1.0, maxX + 2.0, maxY + 2.0, maxZ + 2.0);
         }
 
         /** True when a delivery at {@code voltage} fuses, strips or shocks nothing on this path. */
         boolean quiet(double voltage, boolean meltdown, boolean shocking) {
             return (!meltdown || voltage <= minFuse && voltage <= minBreakdown) && (!shocking || voltage <= minAbsorption);
+        }
+
+        /**
+         * 0.1.10.44 (P-1): the shock exposures of a delivery at {@code voltage}, as the path visit finds them: each conductor
+         * before wire index {@code open} (the first guard that opens) whose live insulation absorbs less than the voltage.
+         */
+        void exposures(double voltage, int open, ShockRoute route, LinkedHashMap<ShockRoute, Map<BlockPos, Double>> shockPlan) {
+            for (int i = 0; i < conductors.length && conductorIndex[i] < open; i++) {
+                double absorption = conductors[i].getInsulationEnergyAbsorption();
+                if (voltage > absorption)
+                    shockPlan.computeIfAbsent(route, ignored -> new LinkedHashMap<>()).merge(positions[conductorIndex[i]], voltage - absorption, Math::max);
+            }
         }
 
         /** True while every block entity of the profile is still in the world. */
@@ -3954,7 +4370,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
 
     /** The profile of {@code path}, built on first use, or {@code null} when the path cannot be profiled now. */
     private PathProfile pathProfile(ServerLevel level, WorldGrid grid, ConductorRegistry.Snapshot snapshot, ConductorRegistry.Path path) {
-        if (grid.profileSnapshot != snapshot) { grid.pathProfiles.clear(); grid.profileSnapshot = snapshot; }
+        if (grid.profileSnapshot != snapshot) {
+            // 0.1.11.0 (P-3): drop the profiles and facts of the islands that an edit ended (until 0.1.10.44: all of them)
+            grid.pathProfiles.values().removeIf(profile -> !grid.conductors.isCurrentIsland(profile.island));
+            grid.conductorFacts.keySet().removeIf(island -> !grid.conductors.isCurrentIsland(island));
+            grid.profileSnapshot = snapshot;
+        }
         var key = path.key();
         var cached = grid.pathProfiles.get(key);
         long tick = server.getTickCount();
@@ -3965,51 +4386,83 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         var built = buildPathProfile(level, grid, path);
         if (grid.pathProfiles.size() >= PATH_PROFILE_LIMIT) grid.pathProfiles.clear();
         if (built == null) {
-            var none = new PathProfile(new BlockPos[0], new IEnergyConductor[0], new BlockEntity[0],
-                new IndependentSpecialCableBlockEntity[0], 0, 0, 0);
+            var none = new PathProfile(new BlockPos[0], new IEnergyConductor[0], new int[0], new BlockEntity[0],
+                new IndependentSpecialCableBlockEntity[0], new int[0], 0, 0, 0);
             none.retryAfter = Math.max(1, tick + PATH_PROFILE_RETRY);
+            none.island = path.component();
             grid.pathProfiles.put(key, none);
             return null;
         }
+        built.island = path.component();
         grid.pathProfiles.put(key, built);
         return built;
     }
 
+    /**
+     * 0.1.10.44 (P-2): what a path profile reads of one conductor position: the block entity (and its own position), the
+     * conductor and special-cable views of it, and the fuse limit of the conductor type. The insulation limits are still read
+     * from the conductor at each profile build.
+     *
+     * <p>A large grid has far more delivery paths than {@link #PATH_PROFILE_LIMIT} (a 16k-cable comb with 960 sources and
+     * 3,840 sinks used 462,000 different paths in 15 s), so most deliveries there build a profile, and every conductor of the
+     * path cost five hash lookups (type, special cable, fuse limit, chunk, block entity). A fact is read from an array by the
+     * conductor's index in its component. Facts live as long as the profiles: until the conductor snapshot changes, a fuse or
+     * strip, or a change of any conductor or special cable; a fact whose block entity was removed (also by a chunk unload) is
+     * looked up again.
+     */
+    private record ConductorFact(BlockPos pos, BlockEntity owner, IEnergyConductor conductor, IndependentSpecialCableBlockEntity special, Long fuse) { }
+
+    /** The fact of {@code position}, looked up now when it is not kept; {@code null} when the position cannot be profiled now. */
+    private static ConductorFact conductorFact(ServerLevel level, WorldGrid grid, ConductorFact[] facts, int index,
+                                               ConductorRegistry.Position position, BlockPos.MutableBlockPos at) {
+        var fact = facts[index];
+        if (fact != null && !fact.owner().isRemoved()) return fact;
+        at.set(position.x(), position.y(), position.z());
+        var type = grid.conductorTypes.get(at);
+        if (type == null) return null;
+        var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
+        if (chunk == null) return null;
+        var be = chunk.getBlockEntity(at, LevelChunk.EntityCreationType.CHECK);
+        // No block entity yet: the effect visit could see one later, so this path is not profiled now.
+        if (be == null) return null;
+        // A block entity that is no conductor (a switching or detector cable) has no insulation limits.
+        fact = new ConductorFact(be.getBlockPos().equals(at) ? be.getBlockPos() : at.immutable(), be,
+            be instanceof IEnergyConductor conductor ? conductor : null, grid.specialCables.get(at), fuseLimit(type));
+        facts[index] = fact;
+        return fact;
+    }
+
     /** Visits the path once, as the effect visit does, and keeps its limits; {@code null} when not every conductor is loaded. */
     private static PathProfile buildPathProfile(ServerLevel level, WorldGrid grid, ConductorRegistry.Path path) {
-        var positions = new ArrayList<BlockPos>();
-        var conductors = new ArrayList<IEnergyConductor>();
-        var owners = new ArrayList<BlockEntity>();
+        int length = path.vertexCount();
+        var positions = new ArrayList<BlockPos>(length);
+        var conductors = new ArrayList<IEnergyConductor>(length);
+        var conductorIndex = new it.unimi.dsi.fastutil.ints.IntArrayList(length);
+        var owners = new ArrayList<BlockEntity>(length);
         var specials = new ArrayList<IndependentSpecialCableBlockEntity>();
+        var specialIndex = new it.unimi.dsi.fastutil.ints.IntArrayList();
         double[] limits = {Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         boolean[] complete = {true};
-        path.visit(position -> {
+        var at = new BlockPos.MutableBlockPos();
+        var facts = grid.conductorFacts.computeIfAbsent(path.component(), component -> new ConductorFact[path.componentSize()]);
+        path.visitIndexed((position, index) -> {
             if (!complete[0]) return;
-            var at = new BlockPos(position.x(), position.y(), position.z());
-            positions.add(at);
-            var type = grid.conductorTypes.get(at);
-            if (type == null) { complete[0] = false; return; }
-            var special = grid.specialCables.get(at);
-            if (special != null) specials.add(special);
-            Long fuse = tierFuseLimit(type);
-            if (fuse == null) fuse = EnergyNodeRegistry.fuseLimit(type);
-            if (fuse != null) limits[0] = Math.min(limits[0], fuse);
-            var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
-            if (chunk == null) { complete[0] = false; return; }
-            var be = chunk.getBlockEntity(at, LevelChunk.EntityCreationType.CHECK);
-            // No block entity yet: the effect visit could see one later, so this path is not profiled now.
-            // A block entity that is no conductor (a switching or detector cable) has no insulation limits.
-            if (be == null) { complete[0] = false; return; }
-            owners.add(be);
-            if (be instanceof IEnergyConductor conductor) {
-                conductors.add(conductor);
-                limits[1] = Math.min(limits[1], conductor.getInsulationBreakdownEnergy());
-                limits[2] = Math.min(limits[2], conductor.getInsulationEnergyAbsorption());
+            var fact = conductorFact(level, grid, facts, index, position, at);
+            if (fact == null) { complete[0] = false; return; }
+            positions.add(fact.pos());
+            if (fact.special() != null) { specials.add(fact.special()); specialIndex.add(positions.size() - 1); }
+            if (fact.fuse() != null) limits[0] = Math.min(limits[0], fact.fuse());
+            owners.add(fact.owner());
+            if (fact.conductor() != null) {
+                conductors.add(fact.conductor()); conductorIndex.add(positions.size() - 1);
+                limits[1] = Math.min(limits[1], fact.conductor().getInsulationBreakdownEnergy());
+                limits[2] = Math.min(limits[2], fact.conductor().getInsulationEnergyAbsorption());
             }
         });
         if (!complete[0]) return null;
-        return new PathProfile(positions.toArray(BlockPos[]::new), conductors.toArray(IEnergyConductor[]::new),
-            owners.toArray(BlockEntity[]::new), specials.toArray(IndependentSpecialCableBlockEntity[]::new), limits[0], limits[1], limits[2]);
+        return new PathProfile(positions.toArray(BlockPos[]::new), conductors.toArray(IEnergyConductor[]::new), conductorIndex.toIntArray(),
+            owners.toArray(BlockEntity[]::new), specials.toArray(IndependentSpecialCableBlockEntity[]::new), specialIndex.toIntArray(),
+            limits[0], limits[1], limits[2]);
     }
 
     /** True when no source has an allowance left: then no window of the native pass can offer energy. */
@@ -4030,8 +4483,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     private void settleIdle(WorldGrid grid, ConductorRegistry.Snapshot snapshot, List<Port> allSources, List<Port> allSinks) {
         int first = Math.floorMod(grid.nativeCursor, allSources.size());
+        // 0.1.11.0 (P-3): a later snapshot keeps the memo while the islands of its plans are unchanged
+        if (grid.idleSnapshot != null && grid.idleSnapshot != snapshot && grid.idleStamps.stream().allMatch(stamp -> stamp.holds(snapshot)))
+            grid.idleSnapshot = snapshot;
         if (grid.idleSnapshot == snapshot && grid.idleGeneration == grid.portsGeneration
-                && grid.idleEdits == grid.endpointEdits && grid.idleSources == allSources.size()) {
+                && grid.idleSources == allSources.size()) {
             var memo = grid.idleRuns.get(first);
             if (memo != null) {
                 grid.nativeCursor = (int) memo[0]; grid.plansBuilt += memo[1]; grid.nativePlan = null; idleMemoHits++;
@@ -4039,7 +4495,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             }
         } else {
             grid.idleRuns.clear(); grid.idleSnapshot = snapshot; grid.idleGeneration = grid.portsGeneration;
-            grid.idleEdits = grid.endpointEdits; grid.idleSources = allSources.size();
+            grid.idleSources = allSources.size(); grid.idleStamps.clear();
         }
         long plansBefore = grid.plansBuilt;
         var visited = new HashSet<BlockPos>();
@@ -4053,6 +4509,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (all) break;
             var plan = new NativeRoutePlan(snapshot, allSources, allSinks, start, grid);
             grid.plansBuilt++;
+            grid.idleStamps.add(plan.stamp);
             visited.addAll(plan.sources.stream().map(RouteEndpoint::position).toList());
             grid.nativeCursor = plan.nextSource;
             if (visited.size() == allSources.size()) break;
@@ -4142,18 +4599,38 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         return ((long) firstSource << 32) | (firstReceiver & 0xFFFF_FFFFL);
     }
 
-    /** True when the plan cache of {@code grid} belongs to the current snapshot, routing view, generation and endpoint edits. */
-    private static boolean planCacheCurrent(WorldGrid grid, ConductorRegistry.Snapshot snapshot) {
+    /**
+     * True when the plan cache of {@code grid} belongs to the current routing view lists and generation. 0.1.11.0 (P-3):
+     * not to one snapshot and endpoint edit count; each plan is checked against its islands ({@link NativeRoutePlan#rebase}).
+     */
+    private static boolean planCacheCurrent(WorldGrid grid) {
         var view = grid.routingView;
-        return view != null && grid.planCacheSnapshot == snapshot && grid.planCacheView == view
-            && view.isCurrent(snapshot, grid.portsGeneration)
-            && grid.planCacheGeneration == grid.portsGeneration && grid.planCacheEdits == grid.endpointEdits;
+        return view != null && grid.planCacheSources == view.sources && grid.planCacheGeneration == grid.portsGeneration;
     }
 
     private static void clearPlanCache(WorldGrid grid) {
         grid.planCache.clear(); grid.planCacheCounts.clear();
         grid.planCacheCells = 0; grid.planCacheVertices = 0;
-        grid.planCacheSnapshot = null; grid.planCacheView = null; grid.planCacheGeneration = -1; grid.planCacheEdits = -1;
+        grid.planCacheSources = null; grid.planCacheGeneration = -1;
+    }
+
+    /**
+     * 0.1.11.0 (P-3): after a snapshot change, drops the cached plans whose islands an edit ended (they would hold their
+     * keys and the cache room until looked up), and counts the reachable sinks of the remaining plans again.
+     */
+    private static void prunePlanCache(WorldGrid grid, ConductorRegistry.Snapshot snapshot) {
+        if (grid.planCache.isEmpty()) return;
+        var plans = grid.planCache.values().iterator();
+        boolean dropped = false;
+        while (plans.hasNext()) {
+            var plan = plans.next();
+            if (plan.stamp.holds(snapshot)) continue;
+            plans.remove(); dropped = true;
+            grid.planCacheCells -= plan.cachedCells; grid.planCacheVertices -= plan.routeVertices;
+        }
+        if (!dropped) return;
+        grid.planCacheCounts.clear();
+        for (var plan : grid.planCache.values()) grid.planCacheCounts.put(plan.firstSource, plan.receiverCount);
     }
 
     /**
@@ -4163,7 +4640,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     private NativeRoutePlan cachedPlan(WorldGrid grid, ConductorRegistry.Snapshot snapshot, List<Port> allSources, int start) {
         if (grid.planCache.isEmpty()) return null;
-        if (!planCacheCurrent(grid, snapshot)) { clearPlanCache(grid); return null; }
+        if (!planCacheCurrent(grid)) { clearPlanCache(grid); return null; }
         Integer count = grid.planCacheCounts.get(start);
         if (count == null) return null;
         int firstReceiver = count == 0 ? 0 : Math.floorMod(grid.receiverCursors.getOrDefault(allSources.get(start).position, 0), count);
@@ -4171,9 +4648,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         if (plan == null) return null;
         grid.planCacheCells -= plan.cachedCells; grid.planCacheVertices -= plan.routeVertices;
         if (plan.firstSource != start || plan.firstReceiver != firstReceiver || plan.receiverCount != count
-                || plan.graph != snapshot || plan.portsGeneration != grid.portsGeneration
-                || plan.endpointEdits != grid.endpointEdits || plan.allSources != grid.routingView.sources
-                || plan.allSinks != grid.routingView.sinks) return null;
+                || plan.portsGeneration != grid.portsGeneration || plan.allSources != grid.routingView.sources
+                || plan.allSinks != grid.routingView.sinks || !plan.rebase(snapshot)) return null;
         planCacheHits++;
         return plan;
     }
@@ -4181,24 +4657,39 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     /**
      * 0.1.10.8: ends the use of {@code plan} as the grid's plan in progress and keeps it in the plan
      * cache when it belongs to the live epoch and the cache has room. A full cache keeps its plans
-     * (a cycle of more windows than the cache holds still reuses the cached ones).
+     * (a cycle of more windows than the cache holds still reuses the cached ones). 0.1.11.0: except the
+     * plans that no settlement used in this or the last tick: the source and receiver cursors moved on
+     * from their windows. Until 0.1.10.44 such plans kept the room until an edit (a new generation)
+     * emptied the cache: on a 4k comb 7.6 windows were built and 0.4 taken from the cache per tick, and
+     * the island edits of 0.1.11.0, which keep the cache, made it worse (39 windows built per tick).
      */
     private static void releasePlan(WorldGrid grid, NativeRoutePlan plan) {
         grid.nativePlan = null;
         var view = grid.routingView;
         if (view == null || plan.allSources != view.sources || plan.allSinks != view.sinks
                 || plan.portsGeneration != grid.portsGeneration || !view.isCurrent(plan.graph, grid.portsGeneration)
-                || plan.endpointEdits != grid.endpointEdits || !grid.conductors.isCurrent(plan.graph)) return;
-        if (!planCacheCurrent(grid, plan.graph)) {
+                || !grid.conductors.isCurrent(plan.graph)) return;
+        if (!planCacheCurrent(grid)) {
             clearPlanCache(grid);
-            grid.planCacheSnapshot = plan.graph; grid.planCacheView = view;
-            grid.planCacheGeneration = grid.portsGeneration; grid.planCacheEdits = grid.endpointEdits;
+            grid.planCacheSources = view.sources; grid.planCacheGeneration = grid.portsGeneration;
         }
         long key = planKey(plan.firstSource, plan.firstReceiver);
-        if (grid.planCache.containsKey(key) || grid.planCache.size() >= PLAN_CACHE_PLANS
+        if (grid.planCache.containsKey(key)) return;
+        long now = grid.sampleTick;
+        for (var eldest = grid.planCache.values().iterator(); eldest.hasNext() && (grid.planCache.size() >= PLAN_CACHE_PLANS
+                || grid.planCacheCells + plan.arrayCells > PLAN_CACHE_CELLS
+                || grid.planCacheVertices + plan.routeVertices > PLAN_CACHE_ROUTE_VERTICES); ) {
+            var old = eldest.next();
+            if (old.cachedAt >= now - 1) break;
+            eldest.remove();
+            grid.planCacheCells -= old.cachedCells; grid.planCacheVertices -= old.routeVertices;
+            if (grid.planCache.values().stream().noneMatch(other -> other.firstSource == old.firstSource))
+                grid.planCacheCounts.remove(old.firstSource);
+        }
+        if (grid.planCache.size() >= PLAN_CACHE_PLANS
                 || grid.planCacheCells + plan.arrayCells > PLAN_CACHE_CELLS
                 || grid.planCacheVertices + plan.routeVertices > PLAN_CACHE_ROUTE_VERTICES) return;
-        plan.cachedCells = plan.arrayCells;
+        plan.cachedCells = plan.arrayCells; plan.cachedAt = now;
         grid.planCache.put(key, plan);
         grid.planCacheCounts.put(plan.firstSource, plan.receiverCount);
         grid.planCacheCells += plan.cachedCells; grid.planCacheVertices += plan.routeVertices;
@@ -4217,14 +4708,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 eldest.remove();
             }
         }
-        /** The conductor snapshot that this plan was built for. */
-        final ConductorRegistry.Snapshot graph;
+        /** The conductor snapshot that this plan was built for, or (0.1.11.0) a later one it was bound to ({@link #rebase}). */
+        ConductorRegistry.Snapshot graph;
         /** {@code allSources}, {@code allSinks}: the full lists of the routing view. {@code sources}, {@code sinks}: this window. */
         final List<RouteEndpoint> allSources, allSinks, sources, sinks;
         /** All search start points of the window sources, in source order. */
         final List<NativeOrigin> origins = new ArrayList<>();
         /** Sink contact index for the window sinks only. Sink indexes are window indexes. */
-        final ReceiverContacts contacts;
+        ReceiverContacts contacts;
+        /** 0.1.11.0 (P-3): the island at each origin when the plan was built. */
+        final IslandStamp stamp;
         /** Route table: domain key, then entry key, then (losses, paths) per window sink. */
         final LinkedHashMap<Long, LinkedHashMap<Long, Map.Entry<long[], ConductorRegistry.Path[]>>> grouped = new LinkedHashMap<>();
         /**
@@ -4236,15 +4729,17 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         /** The routing generation that this plan was built for. */
         final long portsGeneration;
         /**
-         * 0.1.10.8: the endpoint edits at construction (the initial generator contacts of
-         * {@link #origins}), the number of sinks reachable from the window sources (the modulus of
+         * 0.1.10.8: the number of sinks reachable from the window sources (the modulus of
          * {@code firstReceiver}), and the search weight of all origins (the routes that the plan keeps).
+         * 0.1.11.0: no endpoint edit count; the initial generator contacts of the origins change only with
+         * a conductor at an origin, which {@link #stamp} sees.
          */
-        final long endpointEdits;
         final int receiverCount;
         final long routeVertices;
         /** 0.1.10.8: {@code arrayCells} when the plan entered the plan cache. */
         long cachedCells;
+        /** 0.1.11.0: the settlement tick when the plan last entered the plan cache. */
+        long cachedAt;
         /** Index of the origin in progress. {@code origins.size()} means complete. */
         int originIndex;
         /** Route array cells this plan allocated (one per window sink per new entry). */
@@ -4284,7 +4779,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             allSources = view.sources; allSinks = view.sinks;
             firstSource = first;
             portsGeneration = grid.portsGeneration;
-            endpointEdits = grid.endpointEdits;
             int end = first; long vertices = 0, effectVertices = 0;
             while (end < allSources.size() && end - first < MAX_PLAN_SOURCES) {
                 var next = origins(allSources.get(end), end - first, graph, grid);
@@ -4341,6 +4835,22 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             nextReceiver = firstReceiver + sinks.size() == count ? 0 : firstReceiver + sinks.size();
             contacts = new ReceiverContacts(graph, sinks.stream()
                 .map(p -> new ReceiverContacts.Endpoint(point(p.position), p.inputs)).toList());
+            stamp = IslandStamp.of(graph, origins);
+        }
+
+        /**
+         * 0.1.11.0 (P-3): binds a finished plan to a later snapshot when the island at each origin is unchanged. The
+         * window, its routes and its contacts are then those that a new plan would get: they read only the islands of
+         * the origins and the endpoint lists of the generation. A plan with origins left is not bound (its search state
+         * belongs to its snapshot).
+         *
+         * @return {@code true} when the plan belongs to {@code snapshot} now; {@code false}: build it again
+         */
+        boolean rebase(ConductorRegistry.Snapshot snapshot) {
+            if (graph == snapshot) return true;
+            if (originIndex < origins.size() || !stamp.holds(snapshot)) return false;
+            graph = snapshot; contacts = contacts.rebase(snapshot);
+            return true;
         }
 
         /**

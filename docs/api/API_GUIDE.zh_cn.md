@@ -614,3 +614,82 @@ ReactorTransformationRegistry.register(ReactorTransformation.of(
     ResourceLocation.fromNamespaceAndPath("mymod", "plutonium_rod"), ResourceLocation.fromNamespaceAndPath("mymod", "spent_rod"),
     50_000, Component.translatable("jei.mymod.plutonium_rod.note")));
 ```
+
+## 24. 电网性能与 FE 互通（0.1.10.44）
+
+0.1.10.44 是电网性能与互通提案的阶段 0：让电网更快，规则不变，只有一个例外：输入额度（24.1）。本节说明附属作者需要知道的改动。
+
+### 24.1 原生 EU 与 FE 共用一个输入额度
+
+* 机器每 tick 有一个额定输入（`maxReceive`）。0.1.10.44 之前原生 EU 与 FE 各有一个 `maxReceive`，从两侧同时供电的机器每 tick 最多收到额定输入的两倍。
+* 引擎现在把每次原生入账报告给机器的 FE 账本（`FeLedger.countNativeInput`）。本 tick 的 FE 额度减去这部分能量（向上取整到整 FE；4 FE = 1 EU）。公平分配模式下，原生额度减去本 tick 已收到的 FE、整 EU 物品输入与焦耳输入（`FeLedger.inputThisTick()`）。
+* 适用于 `AbstractEnergyBlockEntity` 机器（`FeMachineBridge.ledger()`）与 `EnergyComponentHost` 方块（`internalLedger()`）。变压器与按需发电源保持各自的上限。
+* 引擎会取得每个原生接收端的 FE 桥，因此原来没有 FE 桥的机器此后保存 `scex_fe_uncertain_output: 0`。请勿用这个标签判断 FE 机器。
+
+### 24.2 FE 适配器：`FECompatTile.retain()`
+
+* `FECompatTile` 实时读取方块的能力。保留适配器时（例如放在方块实体的映射中）请调用 `retain()`；保留的适配器通过 `BlockCapabilityCache` 读取能力。
+* 只用一次的适配器请勿调用 `retain()`：每个缓存都在世界中注册一个能力监听器。0.1.10.44 之前每次发现探测创建三个缓存：4,000 根线缆时世界中累积了 523,000 个监听引用。
+* `IFECompatAPI.getStorage` 返回保留的适配器，因为调用方通常会保留它。
+
+### 24.3 外部 FE 方块的发现
+
+* 电网旁边的位置在方块改变或收到邻居更新时立即探测（下一次结算），每 tick 最多 128 个位置；等待的位置超过 16,384 个时改为执行一次完整扫描。
+* 电网改变后，一次完整扫描检查所有锚点的邻居（每 tick 128 个锚点）；之后为慢速扫描，每 tick 检查 8 个锚点。
+* 没有方块改变就出现的能力只能由慢速扫描发现，例如在界面操作后才开放能量能力的方块实体。4,000 个锚点的电网最多需要 500 tick（25 秒）。要让 SI 立即探测，请在能力出现时通知邻居（`Level.updateNeighborsAt`）。
+
+### 24.4 供引擎代码使用的路径数据
+
+`ConductorRegistry.Path` 新增三个成员，使引擎包内的代码不用哈希表即可按导体保存数据：
+
+* `visitIndexed(ObjIntConsumer<Position>)` 与 `visit` 一样遍历路径，同时给出每个位置在其连通分量中的索引。
+* `component()` 返回连通分量的标识令牌；分量重建时改变。
+* `componentSize()` 返回分量中的位置数，所有索引都小于这个数。
+
+引擎按分量用一个数组保存路径档案的导体数据（以 `component()` 为键）。缓存容量不变（`PATH_PROFILE_LIMIT` 8192）：16,000 根线缆的梳状电网有 462,240 条路径，因此引擎降低了未命中时重建档案的成本。
+
+### 24.5 Mekanism
+
+* `MekanismStrictEnergyBridge.joulesPerEu()` 在服务器线程上每个服务器 tick 只读取一次 Mekanism 的比率；配置重载从下一 tick 生效。其他线程每次读取。
+* 机器的每个 FE 端口复用一个严格能量视图（弱引用）。0.1.10.44 之前每次查询能力都新建一个 `Proxy`。
+* 未在安装 Mekanism 的环境中测试。
+
+## 25. 岛局部更新与单一导线索引（0.1.11.0）
+
+0.1.11.0 是电网性能与互通提案的阶段 1：一个电网的编辑不再让同一维度的其他电网重新规划，引擎与平台拓扑共用一个导线索引。能量规则不变，只有一项修正：编辑后的补结算（25.4）。
+
+### 25.1 `ConductorRegistry` 的岛
+
+导线的连通分量称为“岛”。引擎包内的代码可以按岛保存数据，其他岛的编辑不影响这些数据：
+
+* `Snapshot.island(Position)` 返回某位置所在岛的标识（用 `==` 比较），没有导线时返回 `null`。`Path.component()` 返回同一个对象。
+* 没有编辑触及该岛时，`ConductorRegistry.isCurrentIsland(Object island)` 为 true。编辑会立即结束该岛，而不是等到下一个快照。仍有效的岛在之后的每个快照中保持相同的标识、顶点 ID、面掩码与路径搜索。
+* `ConductorRegistry.islandAt(Position)` 不构建快照，直接返回某位置所在的岛；返回的岛可能已被编辑结束。
+* `Snapshot.islandPositions(Position)` 按升序返回该岛的导线（只读视图）。
+* `Path` 与 `RouteIndex` 检查的是所属的岛而不是快照：岛仍有效时可以继续使用。
+
+顶点 ID：
+
+* 新岛使用目前已分配的最大 ID 之后的 ID，并在岛有效期间保持不变。因此 ID 之间有空隙：`Snapshot.size()` 是导线数，不是 ID 范围。`Snapshot.componentOf` 仍是岛的最小 ID。
+* ID 范围用尽时，所有岛重新构建并从 0 开始编号，`renumberings()` 统计次数。新构造函数 `ConductorRegistry(maximumNodes, maximumCachedSources, maximumCachedRouteVertices, vertexLimit)` 设定该范围（不小于 `maximumNodes`）；较小的 `vertexLimit` 只用于测试。
+
+`ReceiverContacts.rebase(Snapshot)` 返回绑定到之后快照的相同接触索引。只在读取“索引自身快照中已存在且仍有效的岛”的接触时使用：已结束的岛的条目已过期，索引之后构建的岛没有条目。
+
+### 25.2 单一导线索引：`PlatformTopology.Observer`
+
+* 新增 `Observer.keepsConductorIndex()`（默认 `false`）与 `Observer.conductorIndex(ServerLevel)`（默认 `null`）。观察者若按维度自行维护 `ConductorRegistry`（应用 `position` 与 `chunkRemoved` 的导线条目），则返回 `true` 与其索引。此时拓扑只按区块保存导线位置（用于容量检查），`snapshot(level)` / `isCurrent(level, snapshot)` 读取观察者的索引。拓扑只在创建时读取一次 `keepsConductorIndex()`。此时快照反映观察者的状态：SI 的引擎在发布该 tick 时才应用采样的条目，因此其索引可能比采样晚一个 tick。
+* SI 的引擎就是这样的观察者。0.1.11.0 之前它的拓扑还保存一个没有任何代码读取的第二个索引，其已编辑位置的集合从不清空：放置并移除 100,000 根线缆后占 43 MB。16,000 根导线时拓扑现在占 234 KB（原来 7,378 KB）。
+* 保持默认值的观察者行为不变。
+
+### 25.3 局部更新
+
+* 编辑只结束它触及的岛。其他岛的路由视图、缓存的路由计划与空闲记忆保持有效（每个计划保存其起点所在岛的印记）。路由代数只在端点出现、消失或改变面时变化，导线编辑不改变它。
+* 编辑后暂停的端点只是被触及的岛的导线旁边的端点，而不是该维度的所有端点。
+* 添加或移除锚点不再启动外部 FE 方块的完整发现扫描（24.3）：新锚点的六个邻居在下一次结算中探测。排队的位置超过 16,384 个（例如区块加载）时仍执行一次完整扫描。
+
+### 25.4 修正：补结算保留暂停那一 tick 的输送
+
+编辑附近的端点在 tick 结束时暂停，在下一 tick 开始时补结算。0.1.11.0 之前补结算使用下一 tick 的每 tick 额度，因此每次暂停损失一个 tick 的输送。引擎现在在暂停那一 tick 的帧内进行补结算：
+
+* `FeLedger.inFrame(long tick, Runnable settlement)` 在当前线程上以服务器 tick `tick` 的额度运行一次结算；不允许嵌套。已经计入更晚 tick 的账本在较早的帧内没有额度。
+* 引擎的搜索与路由额度仍然限制一个服务器 tick 的工作量：补结算与同一服务器 tick 的结算共用这些额度。

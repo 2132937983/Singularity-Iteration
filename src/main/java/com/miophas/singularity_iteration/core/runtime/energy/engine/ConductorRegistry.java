@@ -4,12 +4,15 @@ package com.miophas.singularity_iteration.core.runtime.energy.engine;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.ObjIntConsumer;
 
 /**
  * Thread-confined, bounded registration of conductors on a six-neighbour lattice.
@@ -31,6 +34,21 @@ import java.util.function.Consumer;
  *   <li>{@link Snapshot#componentOf}: the lowest vertex ID of the component (as before).</li>
  *   <li>The route cache is one LRU over all components with the old limits (sources and route vertices).</li>
  *   <li>A snapshot still becomes invalid with any edit; a route search bound to it still checks the lease.</li>
+ * </ul>
+ *
+ * <h2>0.1.11.0: islands (P-3)</h2>
+ * <p>A component is an <em>island</em>. Its identity ({@link Snapshot#island}) is its version: an edit that touches the
+ * island ends it at once ({@link #isCurrentIsland} is false from the edit on), and the next snapshot builds a new island.
+ * An island that no edit touched keeps its identity, its vertex IDs and its route searches in every later snapshot, so
+ * a caller can keep data of the island across edits elsewhere:
+ * <ul>
+ *   <li>Vertex IDs: a new island takes the IDs after the highest ID given out so far (the new islands of one snapshot
+ *       in the order of their smallest position) and keeps them for its life. Within an island the vertices are still
+ *       its positions in ascending order, so route searches choose the same paths as before. The IDs are no longer
+ *       dense: {@link Snapshot#size} is the conductor count, not the ID range. When the ID range is used up, every
+ *       island is built again and numbered from 0 ({@link #renumberings}).</li>
+ *   <li>{@link Path} and {@link RouteIndex} check their island, not their snapshot: they stay usable while their
+ *       island is current.</li>
  * </ul>
  */
 public final class ConductorRegistry implements AutoCloseable {
@@ -95,6 +113,10 @@ public final class ConductorRegistry implements AutoCloseable {
     private final int maximumNodes;
     private final int maximumCachedSources;
     private final long maximumCachedRouteVertices;
+    /** 0.1.11.0: the vertex ID range; the next new island starts at {@code nextVertex}. */
+    private final int vertexLimit;
+    private int nextVertex;
+    private long renumberings;
     /** Face bits: down, up, north (-Z), south (+Z), west (-X), east (+X). */
     public static final int ALL_FACES = 63;
     private record Conductor(long loss, int faces) { }
@@ -110,18 +132,28 @@ public final class ConductorRegistry implements AutoCloseable {
 
     /** One connected component: its positions (ascending), their local IDs, face masks and the graph. */
     private static final class Component {
+        final ConductorRegistry registry;
         final Position[] positions;
         final HashMap<Position, Integer> local;
         final int[] faces;
         final ConductorGraph graph;
         /** Local source IDs with a cached route search. */
         final HashSet<Integer> cachedSources = new HashSet<>();
-        /** Vertex ID of {@code positions[0]} in the current snapshot. */
-        int offset;
+        /** Vertex ID of {@code positions[0]}: 0.1.11.0, fixed for the life of the component (-1 until a snapshot numbers it). */
+        int offset = -1;
         boolean live = true;
+        /** 0.1.11.0 (P-3): false from the first edit that touches the component (its rebuild is pending). */
+        boolean current = true;
 
-        Component(Position[] positions, HashMap<Position, Integer> local, int[] faces, ConductorGraph graph) {
-            this.positions = positions; this.local = local; this.faces = faces; this.graph = graph;
+        Component(ConductorRegistry registry, Position[] positions, HashMap<Position, Integer> local, int[] faces, ConductorGraph graph) {
+            this.registry = registry; this.positions = positions; this.local = local; this.faces = faces; this.graph = graph;
+        }
+
+        /** 0.1.11.0 (P-3): the lease check of a route search or a path of this island. */
+        void active() {
+            if (Thread.currentThread() != registry.owner || registry.closed || !live || !current) {
+                throw new IllegalStateException("Stale or foreign-thread island");
+            }
         }
     }
 
@@ -148,13 +180,23 @@ public final class ConductorRegistry implements AutoCloseable {
 
     /** Bound both retained source count and the total component-sized route arrays. */
     public ConductorRegistry(int maximumNodes, int maximumCachedSources, long maximumCachedRouteVertices) {
+        this(maximumNodes, maximumCachedSources, maximumCachedRouteVertices, Integer.MAX_VALUE);
+    }
+
+    /**
+     * 0.1.11.0: as above, with the vertex ID range {@code [0, vertexLimit)} (at least {@code maximumNodes}). A small range
+     * renumbers often; it is meant for tests.
+     */
+    public ConductorRegistry(int maximumNodes, int maximumCachedSources, long maximumCachedRouteVertices, int vertexLimit) {
         if (maximumNodes <= 0 || maximumNodes > (Integer.MAX_VALUE - 1) / 6 || maximumCachedSources <= 0) {
             throw new IllegalArgumentException("Positive bounded registry/cache sizes required");
         }
         if (maximumCachedRouteVertices <= 0) throw new IllegalArgumentException("Positive route-array budget required");
+        if (vertexLimit < maximumNodes) throw new IllegalArgumentException("Vertex ID range below the node bound");
         this.maximumNodes = maximumNodes;
         this.maximumCachedSources = maximumCachedSources;
         this.maximumCachedRouteVertices = maximumCachedRouteVertices;
+        this.vertexLimit = vertexLimit;
     }
 
     private void active() {
@@ -162,7 +204,17 @@ public final class ConductorRegistry implements AutoCloseable {
         if (closed) { throw new IllegalStateException("Registry is closed"); }
     }
 
-    private static long chunkKey(int x, int z) { return ((long) x << 32) | (z & 0xffffffffL); }
+    /**
+     * 0.1.10.44 (P-7): the packed chunk coordinates, mixed (the 64-bit MurmurHash3 finalizer, a bijection): the
+     * {@code Long.hashCode} of {@code x << 32 | z} is {@code x ^ z}, and the chunks of an 8 x 8 area fell into 8 buckets.
+     * The key is used only inside this registry.
+     */
+    private static long chunkKey(int x, int z) {
+        long key = ((long) x << 32) | (z & 0xffffffffL);
+        key = (key ^ (key >>> 33)) * 0xff51afd7ed558ccdL;
+        key = (key ^ (key >>> 33)) * 0xc4ceb9fe1a85ec53L;
+        return key ^ (key >>> 33);
+    }
     private static long chunkKey(Position at) { return chunkKey(at.x >> 4, at.z >> 4); }
 
     private void changed() {
@@ -173,11 +225,18 @@ public final class ConductorRegistry implements AutoCloseable {
 
     /** Marks a position and its six neighbours: their components are rebuilt by the next snapshot. */
     private void touch(Position at) {
-        dirty.add(at);
+        mark(at);
         for (int face = 0; face < 6; face++) {
             Position next = adjacent(at, face);
-            if (next != null) dirty.add(next);
+            if (next != null) mark(next);
         }
+    }
+
+    /** 0.1.11.0 (P-3): a dirty position ends its island at once, not only at the next snapshot. */
+    private void mark(Position at) {
+        dirty.add(at);
+        Component component = componentAt.get(at);
+        if (component != null) component.current = false;
     }
 
     /** Register or replace a loss. Identical updates retain valid cached work. */
@@ -245,15 +304,42 @@ public final class ConductorRegistry implements AutoCloseable {
     public int lastRebuiltComponents() { active(); return lastRebuiltComponents; }
     public int lastKeptComponents() { active(); return lastKeptComponents; }
     public long rebuiltComponentsTotal() { active(); return rebuiltComponentsTotal; }
+    /** 0.1.11.0: how often the vertex ID range was used up and every island was built and numbered again. */
+    public long renumberings() { active(); return renumberings; }
 
-    private boolean available(Position at) {
-        return conductors.containsKey(at) && !inactiveChunks.contains(chunkKey(at));
+    /**
+     * 0.1.11.0 (P-3): true while {@code island} (from {@link Snapshot#island} or {@link Path#component}) is an island of
+     * this registry that no edit has touched since it was built. Such an island has the same identity, vertex IDs,
+     * face masks and route searches in the current snapshot.
+     */
+    public boolean isCurrentIsland(Object island) {
+        active();
+        return island instanceof Component component && component.registry == this && component.live && component.current;
     }
 
-    /** Both conductors are available and open towards each other (the link rule of the old global build). */
-    private boolean linked(Position from, int face, Position to) {
-        if (to == null || !available(to)) return false;
-        return (conductors.get(from).faces & (1 << face)) != 0 && (conductors.get(to).faces & (1 << (face ^ 1))) != 0;
+    /**
+     * 0.1.11.0 (P-3): the island that holds {@code at} now, without building a snapshot; {@code null} when the position is
+     * no conductor of a built island. The island can be one that an edit already ended ({@link #isCurrentIsland}).
+     */
+    public Object islandAt(Position at) { active(); return componentAt.get(Objects.requireNonNull(at, "at")); }
+
+    private boolean available(Position at) {
+        return conductors.containsKey(at) && chunkActive(at);
+    }
+
+    /** 0.1.11.0: the chunk of {@code at} is not switched off (no lookup while no chunk is). */
+    private boolean chunkActive(Position at) {
+        return inactiveChunks.isEmpty() || !inactiveChunks.contains(chunkKey(at));
+    }
+
+    /**
+     * The conductor at {@code to} is available and open towards a conductor whose face {@code face} is open (the link rule
+     * of the old global build). 0.1.11.0: one lookup; the caller checks the face of its own conductor once.
+     */
+    private boolean linkedTo(Position to, int face) {
+        if (to == null) return false;
+        Conductor target = conductors.get(to);
+        return target != null && (target.faces & (1 << (face ^ 1))) != 0 && chunkActive(to);
     }
 
     /**
@@ -265,18 +351,43 @@ public final class ConductorRegistry implements AutoCloseable {
         if (cached != null) { return cached; }
         long nextRebuild = Math.incrementExact(rebuilds);
         rebuildDirty();
+        number();
         Component[] ordered = components.toArray(new Component[0]);
-        Arrays.sort(ordered, (a, b) -> a.positions[0].compareTo(b.positions[0]));
+        Arrays.sort(ordered, (a, b) -> Integer.compare(a.offset, b.offset));
         int[] offsets = new int[ordered.length];
         int total = 0;
         for (int i = 0; i < ordered.length; i++) {
-            ordered[i].offset = total;
-            offsets[i] = total;
+            offsets[i] = ordered[i].offset;
             total = Math.addExact(total, ordered[i].positions.length);
         }
         cached = new Snapshot(this, owner, revision, ordered, offsets, total);
         rebuilds = nextRebuild;
         return cached;
+    }
+
+    /**
+     * 0.1.11.0: gives each new component the vertex IDs after the highest ID given out (new components in the order of
+     * their smallest position). When the range is used up, every component is built again and numbered from 0.
+     */
+    private void number() {
+        var fresh = new ArrayList<Component>();
+        long needed = 0;
+        for (Component component : components) {
+            if (component.offset < 0) { fresh.add(component); needed += component.positions.length; }
+        }
+        if (fresh.isEmpty()) return;
+        if (nextVertex + needed > vertexLimit) {
+            for (Component component : new ArrayList<>(components)) for (Position at : component.positions) mark(at);
+            rebuildDirty();
+            nextVertex = 0;
+            renumberings++;
+            fresh = new ArrayList<>(components);
+        }
+        fresh.sort((a, b) -> a.positions[0].compareTo(b.positions[0]));
+        for (Component component : fresh) {
+            component.offset = nextVertex;
+            nextVertex += component.positions.length;
+        }
     }
 
     /** Rebuilds the components of the dirty positions; the other components stay as they are. */
@@ -302,9 +413,11 @@ public final class ConductorRegistry implements AutoCloseable {
             while (!queue.isEmpty()) {
                 Position at = queue.poll();
                 group.add(at);
+                int open = conductors.get(at).faces;
                 for (int face = 0; face < 6; face++) {
+                    if ((open & (1 << face)) == 0) continue;
                     Position next = adjacent(at, face);
-                    if (!linked(at, face, next) || assigned.contains(next)) continue;
+                    if (!linkedTo(next, face) || assigned.contains(next)) continue;
                     Component other = componentAt.get(next);
                     if (other != null) { dissolve(other, work); kept--; }
                     assigned.add(next); queue.add(next);
@@ -352,7 +465,7 @@ public final class ConductorRegistry implements AutoCloseable {
             link(links, local, faces, i, 1, at.y < Integer.MAX_VALUE ? new Position(at.x, at.y + 1, at.z) : null);
             link(links, local, faces, i, 3, at.z < Integer.MAX_VALUE ? new Position(at.x, at.y, at.z + 1) : null);
         }
-        var component = new Component(positions, local, faces, new ConductorGraph(losses, links.toArray(int[][]::new)));
+        var component = new Component(this, positions, local, faces, new ConductorGraph(losses, links.toArray(int[][]::new)));
         components.add(component);
         for (Position at : positions) componentAt.put(at, component);
     }
@@ -458,9 +571,12 @@ public final class ConductorRegistry implements AutoCloseable {
 
         private Component componentOfVertex(int vertex) {
             active();
-            if (vertex < 0 || vertex >= size) throw new IllegalArgumentException("Unknown conductor ID");
-            int index = Arrays.binarySearch(offsets, vertex);
-            if (index < 0) index = -index - 2;
+            int index = vertex < 0 ? -1 : Arrays.binarySearch(offsets, vertex);
+            if (index < -1) index = -index - 2;
+            // 0.1.11.0: the IDs have gaps (the IDs of rebuilt islands are not given out again)
+            if (index < 0 || vertex - ordered[index].offset >= ordered[index].positions.length) {
+                throw new IllegalArgumentException("Unknown conductor ID");
+            }
             return ordered[index];
         }
 
@@ -484,8 +600,18 @@ public final class ConductorRegistry implements AutoCloseable {
             if (!index.reaches(target)) throw new IllegalArgumentException("Unreachable conductor");
             return index.path(target);
         }
-        /** The lowest vertex ID of the component (a label of the component within this snapshot). */
+        /**
+         * The lowest vertex ID of the component (a label of the component within this snapshot). 0.1.11.0: the label of an
+         * island stays the same while the island is current; a later island never takes it again before a renumbering.
+         */
         public int componentOf(Position at) { return component(at).offset; }
+        /**
+         * 0.1.11.0 (P-3): the island of the conductor at {@code at} (compare with ==), or {@code null} when the position
+         * holds no conductor. Check it later with {@link ConductorRegistry#isCurrentIsland}.
+         */
+        public Object island(Position at) { active(); return registry.componentAt.get(Objects.requireNonNull(at, "at")); }
+        /** 0.1.11.0 (P-9): the conductors of the island of {@code at}, in ascending order (a read-only view). */
+        public List<Position> islandPositions(Position at) { return Collections.unmodifiableList(Arrays.asList(component(at).positions)); }
         public int componentSize(Position at) { return component(at).positions.length; }
         /** Search work / retained route size for a source in this component (key vertices only). */
         public int searchWeight(Position at) { Component c = component(at); return c.graph.searchWeight(c.local.get(at)); }
@@ -527,9 +653,9 @@ public final class ConductorRegistry implements AutoCloseable {
             this.routes = routes;
         }
 
-        /** The local vertex of {@code receiver} in this component, or -1. */
+        /** The local vertex of {@code receiver} in this component, or -1. 0.1.11.0: valid while the island is current. */
         private int local(int receiver) {
-            snapshot.active();
+            component.active();
             int local = receiver - component.offset;
             return local >= 0 && local < component.positions.length ? local : -1;
         }
@@ -549,33 +675,47 @@ public final class ConductorRegistry implements AutoCloseable {
         public Path path(int receiver) {
             int local = local(receiver);
             if (local < 0 || !routes.reaches(local)) throw new IllegalArgumentException("Unreachable conductor");
-            return new Path(snapshot, component, routes, local, receiver);
+            return new Path(component, routes, local, receiver);
         }
     }
 
-    /** Immutable selected route. Every visit rechecks the snapshot lease. */
+    /**
+     * Immutable selected route. Every visit rechecks the lease. 0.1.11.0 (P-3): the lease of the path's island, not of
+     * its snapshot: an edit of another island leaves the path usable.
+     */
     public static final class Path {
-        private final Snapshot snapshot;
         private final Component component;
         private final ConductorGraph.Routes routes;
         private final int local;
         private final int receiver;
-        private Path(Snapshot snapshot, Component component, ConductorGraph.Routes routes, int local, int receiver) {
-            this.snapshot = snapshot; this.component = component; this.routes = routes; this.local = local; this.receiver = receiver;
+        private Path(Component component, ConductorGraph.Routes routes, int local, int receiver) {
+            this.component = component; this.routes = routes; this.local = local; this.receiver = receiver;
         }
-        public long lossMilli() { snapshot.active(); return routes.lossMilliTo(local); }
+        public long lossMilli() { component.active(); return routes.lossMilliTo(local); }
         /** Exact visit callback count, available before admitting effect traversal. */
-        public int vertexCount() { snapshot.active(); return routes.vertexCountTo(local); }
+        public int vertexCount() { component.active(); return routes.vertexCountTo(local); }
         public void visit(Consumer<Position> visitor) {
-            Objects.requireNonNull(visitor, "visitor"); snapshot.active();
+            Objects.requireNonNull(visitor, "visitor"); component.active();
             routes.visitPath(local, id -> visitor.accept(component.positions[id]));
         }
         /**
          * 0.1.10.7: an identity of this path within its snapshot (the cached route search and the
          * receiver vertex). Two {@code Path} objects of the same search and receiver have equal keys,
-         * so a caller can keep per-path data while the snapshot lives.
+         * so a caller can keep per-path data while the snapshot lives (0.1.11.0: while the island is current).
          */
         public Object key() { return new PathKey(routes, receiver); }
+        /**
+         * 0.1.10.44: visits the path as {@link #visit} does and also gives the index of each conductor in its component
+         * ({@code 0 .. componentSize() - 1}), so a caller can keep per-conductor data of the component in an array.
+         */
+        public void visitIndexed(ObjIntConsumer<Position> visitor) {
+            Objects.requireNonNull(visitor, "visitor"); component.active();
+            routes.visitPath(local, id -> visitor.accept(component.positions[id], id));
+        }
+        /** 0.1.10.44: the component of this path, an identity within the snapshot (compare with ==); 0.1.11.0: its island. */
+        public Object component() { component.active(); return component; }
+        /** 0.1.10.44: the number of conductors of the component of this path. */
+        public int componentSize() { component.active(); return component.positions.length; }
     }
 
     /** Route search (by identity: {@code Routes} has no equals) and receiver vertex of a path. */

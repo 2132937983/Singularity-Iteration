@@ -3,6 +3,7 @@ package com.miophas.singularity_iteration.core.runtime.energy.engine;
 
 import com.miophas.singularity_iteration.core.runtime.energy.engine.ConductorRegistry.Position;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,10 +40,27 @@ public final class ReceiverContacts {
         }
         var directIndex = new HashMap<Position, List<Integer>>();
         directLists.forEach((position, members) -> directIndex.put(position, List.copyOf(members)));
-        direct = Map.copyOf(directIndex);
+        // 0.1.10.44 (P-7): a hash map, not Map.copyOf: its linear probing walks long runs of neighbouring position
+        // hashes on a miss (origin lookups mostly miss), 18 % of the server thread on a 16k-cable comb.
+        direct = Collections.unmodifiableMap(directIndex);
         var wireIndex = new HashMap<Integer, List<Contact>>();
         wiredLists.forEach((component, contacts) -> wireIndex.put(component, List.copyOf(contacts)));
-        wired = Map.copyOf(wireIndex);
+        wired = Collections.unmodifiableMap(wireIndex);
+    }
+
+    private ReceiverContacts(ConductorRegistry.Snapshot snapshot, Map<Position, List<Integer>> direct, Map<Integer, List<Contact>> wired) {
+        this.snapshot = snapshot; this.direct = direct; this.wired = wired;
+    }
+
+    /**
+     * 0.1.11.0 (P-3): the same contacts, bound to {@code snapshot}. Only for a caller that reads the contacts of islands
+     * of the index's own snapshot that are still current ({@link ConductorRegistry#isCurrentIsland}): their labels,
+     * vertices and contacts are the same in {@code snapshot}; the entries of ended islands are stale, and islands built
+     * after the index have none.
+     */
+    public ReceiverContacts rebase(ConductorRegistry.Snapshot snapshot) {
+        Objects.requireNonNull(snapshot, "snapshot").revision();
+        return snapshot == this.snapshot ? this : new ReceiverContacts(snapshot, direct, wired);
     }
 
     public List<Integer> at(Position position) {

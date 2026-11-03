@@ -39,8 +39,26 @@ public final class MekanismStrictEnergyBridge {
     private MekanismStrictEnergyBridge() {
     }
 
-    /** Current exact whole-J/EU ratio, or zero while the strict view cannot transfer. */
+    /** 0.1.10.44 (I-4): the ratio read on the server thread in {@code ratioTick} of {@code ratioServer}. */
+    private static volatile Object ratioServer;
+    private static volatile long ratioTick = Long.MIN_VALUE, cachedRatio;
+
+    /**
+     * Current exact whole-J/EU ratio, or zero while the strict view cannot transfer. 0.1.10.44 (I-4): on the server thread
+     * the ratio is read once per server tick (every view call read the configuration through two reflective calls); a
+     * configuration reload applies from the next tick. Other threads read it every time, as before.
+     */
     public static long joulesPerEu() {
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server == null || !server.isSameThread()) return readJoulesPerEu();
+        long tick = server.getTickCount();
+        if (ratioServer == server && ratioTick == tick) return cachedRatio;
+        long ratio = readJoulesPerEu();
+        cachedRatio = ratio; ratioTick = tick; ratioServer = server;
+        return ratio;
+    }
+
+    private static long readJoulesPerEu() {
         ConversionAccess access = conversionAccess();
         if (access == null) return 0L;
         try {
@@ -48,8 +66,8 @@ public final class MekanismStrictEnergyBridge {
                 warnOnce(1, "Mekanism server configuration is not loaded; SI strict-J transfers are unavailable until it loads.");
                 return 0L;
             }
-            // Cache reflection metadata, never the conversion value: an existing
-            // capability must immediately follow configuration reloads, too.
+            // Cache reflection metadata, never the conversion value here: an existing
+            // capability must follow configuration reloads, too (joulesPerEu keeps it one tick).
             double feRate = ((Number) access.get().invoke(access.value())).doubleValue();
             double ratio = feRate * BatteryFeCapability.FE_PER_EU;
             if (!Double.isFinite(ratio) || ratio <= 0.0 || ratio >= 0x1.0p63 || ratio != Math.rint(ratio)) {
@@ -140,12 +158,26 @@ public final class MekanismStrictEnergyBridge {
         }
     }
 
+    /**
+     * 0.1.10.44 (I-4): one strict-energy view per FE port (a port belongs to one side of one machine). Each capability query
+     * made a new {@code Proxy}. Weak keys and weakly held views: an entry goes when nobody holds its view.
+     */
+    private static final java.util.Map<IEnergyStorage, java.lang.ref.WeakReference<Object>> BLOCK_VIEWS =
+        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
     private static Object handler(AbstractEnergyBlockEntity machine, Direction side) {
         // Match the FE bridge: side-restricted producers/converters expose no
         // capability on a blocked port instead of returning a proxy that would
         // later dereference a null storage view.
         var port = machine.scexFeCapability(side);
-        return port == null ? null : proxy(new BlockView(machine, side, port));
+        if (port == null) return null;
+        var known = BLOCK_VIEWS.get(port);
+        Object view = known == null ? null : known.get();
+        if (view == null) {
+            view = proxy(new BlockView(machine, side, port));
+            if (view != null) BLOCK_VIEWS.put(port, new java.lang.ref.WeakReference<>(view));
+        }
+        return view;
     }
 
     private static Object handler(ItemStack stack) {

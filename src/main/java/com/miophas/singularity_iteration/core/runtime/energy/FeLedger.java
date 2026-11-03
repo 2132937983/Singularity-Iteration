@@ -27,23 +27,77 @@ public final class FeLedger {
         if (fe < 0) throw new IllegalArgumentException("Negative FE");
         return new EnergyAmount(fe / FE_PER_EU, (fe % FE_PER_EU) * (EnergyAmount.UNITS / FE_PER_EU));
     }
+    // ------------------------------------------------------------------ 0.1.11.0 (C-1): the frame of a catch-up
+    // The engine pauses the endpoints near an edit at the END of a tick and settles them at the next START. That START
+    // belongs to the next tick: its transfer used the output and input budgets of that tick, which the END of the tick then
+    // lacked, so every pause lost one tick of transfer. The engine now runs the catch-up in the frame of the paused tick.
+    private static Thread frameThread;
+    private static long frameTick;
+
+    /**
+     * 0.1.11.0 (C-1): runs {@code settlement} with the per-tick budgets of server tick {@code tick} on this thread, in
+     * place of the clock's tick. A ledger that already counted a later tick has no room in an earlier frame (its count of
+     * the earlier tick is gone).
+     */
+    public static void inFrame(long tick, Runnable settlement) {
+        if (frameThread != null) throw new IllegalStateException("Nested ledger frame");
+        frameThread = Thread.currentThread(); frameTick = tick;
+        try { settlement.run(); } finally { frameThread = null; }
+    }
+    /** The tick of the budgets: the frame of a running catch-up on this thread, else the clock. */
+    private long now() { return Thread.currentThread() == frameThread ? frameTick : clock.getAsLong(); }
+    /** 0.1.11.0 (C-1): true in a frame earlier than the tick {@code slot} counted. */
+    private static boolean pastFrame(long now, long slot) { return now < slot && Thread.currentThread() == frameThread; }
+
     public static int fe(EnergyAmount eu) {
         if (eu.whole() >= (Integer.MAX_VALUE / FE_PER_EU) + 1L) return Integer.MAX_VALUE;
         return (int)Math.min(Integer.MAX_VALUE, eu.whole() * FE_PER_EU + eu.fraction() / (EnergyAmount.UNITS / FE_PER_EU));
     }
     private long limit(long eu) { return eu > Long.MAX_VALUE / FE_PER_EU ? Long.MAX_VALUE : Math.max(0, eu) * FE_PER_EU; }
-    private long received() { return tick == clock.getAsLong() ? received : 0; }
-    private EnergyAmount extracted() { return tick == clock.getAsLong() ? extracted : EnergyAmount.ZERO; }
-    private EnergyAmount outputRoom() { return extracted().roomBelow(Math.max(0, storage.getMaxExtract())); }
+    private long received() { return tick == now() ? received : 0; }
+
+    // ------------------------------------------------------------------ 0.1.10.44 (I-3): one input budget
+    // Native EU and FE (also whole-EU item and Joule inputs) used to have a maxReceive each per tick, so a machine
+    // fed from both sides took up to twice its rated input. The engine now reports its native credits here; the FE
+    // room of the tick shrinks by them (rounded up to whole FE), and the engine subtracts inputThisTick() from the
+    // native room.
+    private long nativeTick = Long.MIN_VALUE;
+    private EnergyAmount nativeReceived = EnergyAmount.ZERO;
+    /** 0.1.10.44 (I-3): the engine credited {@code amount} native EU to this storage in the current tick. */
+    public void countNativeInput(EnergyAmount amount) {
+        long now = now();
+        if (nativeTick != now && !pastFrame(now, nativeTick)) { nativeTick = now; nativeReceived = EnergyAmount.ZERO; }
+        nativeReceived = nativeReceived.add(amount);
+    }
+    /** 0.1.10.44 (I-3): the EU that FE, whole-EU and Joule inputs brought in the current tick (4 FE = 1 EU). */
+    public EnergyAmount inputThisTick() {
+        long fe = received();
+        return fe == 0 ? EnergyAmount.ZERO : new EnergyAmount(fe / FE_PER_EU, (fe % FE_PER_EU) * (EnergyAmount.UNITS / FE_PER_EU));
+    }
+    /** FE input room of the current tick: maxReceive less the FE received and the native EU credited (rounded up). */
+    private long inputRoom() {
+        long now = now();
+        if (pastFrame(now, tick) || pastFrame(now, nativeTick)) return 0;
+        var credited = nativeTick == now ? nativeReceived : EnergyAmount.ZERO;
+        long unit = EnergyAmount.UNITS / FE_PER_EU;
+        long nativeFe = credited.whole() > (Long.MAX_VALUE - FE_PER_EU) / FE_PER_EU ? Long.MAX_VALUE
+            : credited.whole() * FE_PER_EU + credited.fraction() / unit + (credited.fraction() % unit != 0 ? 1 : 0);
+        long used = received() > Long.MAX_VALUE - nativeFe ? Long.MAX_VALUE : received() + nativeFe;
+        return Math.max(0, limit(storage.getMaxReceive()) - used);
+    }
+    private EnergyAmount extracted() { return tick == now() ? extracted : EnergyAmount.ZERO; }
+    private EnergyAmount outputRoom() {
+        return pastFrame(now(), tick) ? EnergyAmount.ZERO : extracted().roomBelow(Math.max(0, storage.getMaxExtract()));
+    }
     private void count(boolean input, long amount) {
-        long now = clock.getAsLong();
-        if (tick != now) { tick = now; received = 0; extracted = EnergyAmount.ZERO; }
+        long now = now();
+        if (tick != now && !pastFrame(now, tick)) { tick = now; received = 0; extracted = EnergyAmount.ZERO; }
         if (input) received += amount;
         else { extracted = extracted.add(eu(Math.toIntExact(amount))); outputRevision++; }
     }
     public int receive(int requested, boolean simulate) {
         if (requested <= 0 || busy || !active.getAsBoolean()) return 0;
-        int amount = (int)Math.min(requested, Math.max(0, limit(storage.getMaxReceive()) - received()));
+        int amount = (int)Math.min(requested, inputRoom());
         amount = Math.min(amount, fe(storage.scexExactAmount().roomBelow(storage.getCapacity())));
         if (!simulate && amount > 0) { storage.scexTransferFe(amount, true); count(true, amount); }
         return amount;
@@ -51,7 +105,7 @@ public final class FeLedger {
     /** Whole-EU item input shares the standard FE input budget and preserves fractional room. */
     public long receiveWholeEu(long requested, boolean simulate) {
         if (requested <= 0 || busy || !active.getAsBoolean()) return 0;
-        long amount = Math.min(requested, Math.max(0, limit(storage.getMaxReceive()) - received()) / FE_PER_EU);
+        long amount = Math.min(requested, inputRoom() / FE_PER_EU);
         amount = Math.min(amount, storage.scexExactAmount().roomBelow(storage.getCapacity()).whole());
         if (!simulate && amount > 0) {
             long actual = storage.generateEnergyInternal(amount, false);
@@ -122,8 +176,8 @@ public final class FeLedger {
     }
 
     private void countOutput(EnergyAmount amount) {
-        long now = clock.getAsLong();
-        if (tick != now) { tick = now; received = 0; extracted = EnergyAmount.ZERO; }
+        long now = now();
+        if (tick != now && !pastFrame(now, tick)) { tick = now; received = 0; extracted = EnergyAmount.ZERO; }
         extracted = extracted.add(amount); outputRevision++;
     }
     /** Immutable allowance quote. No balance or allowance is consumed by planning. */
@@ -132,14 +186,14 @@ public final class FeLedger {
         private final long time, revision, limit;
         private final EnergyAmount spent, allowance;
         private OutputQuote(FeLedger owner) {
-            this.owner = owner; time = owner.clock.getAsLong(); revision = owner.outputRevision;
+            this.owner = owner; time = owner.now(); revision = owner.outputRevision;
             limit = owner.storage.getMaxExtract(); spent = owner.extracted();
-            allowance = owner.outputAllowed() ? spent.roomBelow(Math.max(0, limit)) : EnergyAmount.ZERO;
+            allowance = owner.outputAllowed() && !pastFrame(time, owner.tick) ? spent.roomBelow(Math.max(0, limit)) : EnergyAmount.ZERO;
         }
         public EnergyAmount allowance() { return allowance; }
         public EnergyAmount limitOffer(EnergyAmount balance) { return balance.min(allowance); }
         private boolean sameCounters() {
-            return time == owner.clock.getAsLong() && revision == owner.outputRevision
+            return time == owner.now() && revision == owner.outputRevision
                 && limit == owner.storage.getMaxExtract() && spent.equals(owner.extracted())
                 && !owner.busy && owner.uncertain == 0 && owner.storage.isOutputEnabled();
         }
@@ -227,7 +281,7 @@ public final class FeLedger {
             int quoted = source.extractEnergy(maximum, true);
             if (quoted <= lossFe || quoted > maximum || !active.getAsBoolean() || !allowed.getAsBoolean()) return 0;
             // Foreign simulation can change policy. Recompute the actual input room before extraction.
-            int currentRoom = (int)Math.min(Integer.MAX_VALUE, Math.max(0, limit(storage.getMaxReceive()) - received()));
+            int currentRoom = (int)Math.min(Integer.MAX_VALUE, inputRoom());
             currentRoom = Math.min(currentRoom, fe(storage.scexExactAmount().roomBelow(storage.getCapacity())));
             if (currentRoom == 0) return 0;
             quoted = (int)Math.min(quoted, (long)currentRoom + lossFe);

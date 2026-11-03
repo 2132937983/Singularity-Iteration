@@ -11,7 +11,7 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 
 public final class FECompatAPIImpl implements IFECompatAPI {
     @Override public IEnergyStorage getStorage(Level world, BlockPos pos, Direction inputSide) {
-        var adapter = new FECompatTile(world, pos, inputSide.getOpposite());
+        var adapter = new FECompatTile(world, pos, inputSide.getOpposite()).retain();
         return adapter.isValid() ? adapter : null;
     }
 }

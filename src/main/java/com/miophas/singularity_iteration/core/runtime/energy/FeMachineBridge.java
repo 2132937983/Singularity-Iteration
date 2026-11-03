@@ -47,6 +47,8 @@ public final class FeMachineBridge {
         return ports[index];
     }
     public FeLedger.OutputQuote quoteNativeOutput() { return ledger.quoteNativeOutput(); }
+    /** 0.1.10.44 (I-3): the ledger of this machine; the engine shares its input budget with native EU. */
+    public FeLedger ledger() { return ledger; }
     /** Routed output shares exactly the native/item/FE allowance and persisted uncertain debit. */
     public int pushRouted(IEnergyStorage target, java.util.function.BooleanSupplier currentRoute) {
         return ledger.push(target, currentRoute);

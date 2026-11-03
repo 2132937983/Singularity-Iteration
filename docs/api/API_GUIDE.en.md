@@ -828,3 +828,129 @@ ReactorTransformationRegistry.register(ReactorTransformation.of(
     ResourceLocation.fromNamespaceAndPath("mymod", "plutonium_rod"), ResourceLocation.fromNamespaceAndPath("mymod", "spent_rod"),
     50_000, Component.translatable("jei.mymod.plutonium_rod.note")));
 ```
+
+## 24. Grid performance and FE interop (0.1.10.44)
+
+0.1.10.44 is phase 0 of the grid performance and interop proposal. It makes the grid faster and keeps its rules, with one
+exception: the input budget (24.1). This section tells addon authors what changed.
+
+### 24.1 One input budget for native EU and FE
+
+* A machine has one rated input per tick (`maxReceive`). Before 0.1.10.44, native EU and FE had one `maxReceive` each. A
+  machine that got energy from both sides took up to two times its rated input.
+* The engine now reports each native credit to the FE ledger of the machine (`FeLedger.countNativeInput`). The FE room of
+  the tick decreases by this energy (rounded up to whole FE; 4 FE = 1 EU). In fair distribution, the native room decreases by
+  the FE, whole-EU item and Joule input of the tick (`FeLedger.inputThisTick()`).
+* This applies to `AbstractEnergyBlockEntity` machines (`FeMachineBridge.ledger()`) and to `EnergyComponentHost` blocks
+  (`internalLedger()`). Transformers and demand sources keep their own limits.
+* The engine gets the FE bridge of each native sink. Thus a machine that had no FE bridge saves `scex_fe_uncertain_output: 0`
+  from now on. Do not use this tag to find FE machines.
+
+### 24.2 FE adapters: `FECompatTile.retain()`
+
+* A `FECompatTile` reads the capabilities of its block live. Call `retain()` when you keep the adapter (for example, in a map
+  of your block entity). A kept adapter reads the capabilities through `BlockCapabilityCache`.
+* Do not call `retain()` on an adapter that you use one time. Each cache registers a capability listener in the level. Before
+  0.1.10.44 each discovery probe made three caches: at 4,000 cables the level held 523,000 listener references.
+* `IFECompatAPI.getStorage` returns a kept adapter, because the caller usually keeps it.
+
+### 24.3 Discovery of foreign FE blocks
+
+* SI probes a position next to the grid at once (in the next settlement) when its block changes or when a neighbour update
+  reaches it. Up to 128 positions are probed per tick. When more than 16,384 positions wait, one full pass runs instead.
+* After a change of the grid, one full pass checks the neighbours of all anchors (128 anchors per tick). After the pass, a slow
+  sweep checks 8 anchors per tick.
+* A capability that appears without a block change is found only by the sweep. Example: a block entity that opens its energy
+  capability after a GUI action. A grid with 4,000 anchors needs up to 500 ticks (25 s). To make SI probe the block at once,
+  notify the neighbours (`Level.updateNeighborsAt`) when the capability appears.
+
+### 24.4 Path data for engine code
+
+`ConductorRegistry.Path` has three new members. They let code that is in the engine's package keep data per conductor without
+a hash map:
+
+* `visitIndexed(ObjIntConsumer<Position>)` visits the path like `visit`, and also gives the index of each position in its
+  component.
+* `component()` returns an identity token of the component. It changes when the component is built again.
+* `componentSize()` returns the number of positions in the component. All indexes are less than this number.
+
+The engine keeps the conductor data of its path profiles in one array per component (`component()` as the key). The cache
+capacity is not changed (`PATH_PROFILE_LIMIT` 8192): a comb grid of 16,000 cables has 462,240 paths, so the engine makes a
+missed profile less expensive to build.
+
+### 24.5 Mekanism
+
+* `MekanismStrictEnergyBridge.joulesPerEu()` reads the Mekanism ratio one time per server tick on the server thread. A
+  configuration reload applies from the next tick. Other threads read the ratio each time.
+* Each FE port of a machine has one strict-energy view (weak references). Before 0.1.10.44 each capability query made a new
+  `Proxy`.
+* This was not tested with Mekanism installed.
+
+## 25. Island updates and one conductor index (0.1.11.0)
+
+0.1.11.0 is phase 1 of the grid performance and interop proposal. An edit of one grid no longer plans the other grids of the
+dimension again, and the engine and the platform topology share one conductor index. The energy rules do not change, with
+one fix: the catch-up after an edit (25.4).
+
+### 25.1 Islands of `ConductorRegistry`
+
+A connected component of conductors is an *island*. Code in the engine's package can keep data per island across edits of
+other islands:
+
+* `Snapshot.island(Position)` returns the identity of the island at a position (compare with `==`), or `null`.
+  `Path.component()` returns the same object.
+* `ConductorRegistry.isCurrentIsland(Object island)` is true while no edit touched the island. An edit ends the island at
+  once, not at the next snapshot. A current island has the same identity, vertex IDs, face masks and route searches in each
+  later snapshot.
+* `ConductorRegistry.islandAt(Position)` returns the island at a position without building a snapshot. It can be an island
+  that an edit already ended.
+* `Snapshot.islandPositions(Position)` returns the conductors of the island, in ascending order (a read-only view).
+* `Path` and `RouteIndex` check their island, not their snapshot. They stay usable while the island is current.
+
+Vertex IDs:
+
+* A new island takes the IDs after the highest ID given out so far, and keeps them while it is current. The IDs therefore
+  have gaps: `Snapshot.size()` is the number of conductors, not the ID range. `Snapshot.componentOf` is still the lowest ID of
+  the island.
+* When the ID range is used up, every island is built again and numbered from 0. `renumberings()` counts these events. The
+  new constructor `ConductorRegistry(maximumNodes, maximumCachedSources, maximumCachedRouteVertices, vertexLimit)` sets the
+  range (at least `maximumNodes`). A small `vertexLimit` is for tests.
+
+`ReceiverContacts.rebase(Snapshot)` returns the same contacts bound to a later snapshot. Use it only when you read the
+contacts of islands that existed in the index's own snapshot and are still current. The entries of ended islands are stale,
+and the index has no entries for islands built after it.
+
+### 25.2 One conductor index: `PlatformTopology.Observer`
+
+* `Observer.keepsConductorIndex()` (default `false`) and `Observer.conductorIndex(ServerLevel)` (default `null`) are new. An
+  observer that keeps its own `ConductorRegistry` per level (it applies the conductor entries of `position` and
+  `chunkRemoved`) returns `true` and its registry. The topology then keeps only the conductor positions of each chunk (for
+  its capacity check), and `snapshot(level)` / `isCurrent(level, snapshot)` read the observer's index. The topology reads
+  `keepsConductorIndex()` one time, when it is made. The snapshot is then the observer's state: SI's engine applies the
+  sampled entries when it publishes the tick, so its index can be one tick behind the sampling.
+* SI's engine is such an observer. Before 0.1.11.0 its topology kept a second registry that nothing read. The set of edited
+  positions of that registry was never cleared: 43 MB after 100,000 cables were placed and removed. At 16,000 conductors the
+  topology now keeps 234 KB instead of 7,378 KB.
+* An observer that keeps the defaults works as before.
+
+### 25.3 Local updates
+
+* An edit ends only the islands that it touches. The routing view, the cached route plans and the idle memo of the other
+  islands stay valid (each plan keeps an island stamp of its origins). The routing generation changes only when endpoints
+  come, go or change their faces, not with conductor edits.
+* The endpoints that pause after an edit are those next to the conductors of the touched islands, not all endpoints of the
+  dimension.
+* An anchor that is added or removed no longer starts a full discovery pass of foreign FE blocks (24.3). The six neighbours
+  of a new anchor are probed in the next settlement. More than 16,384 queued positions (a chunk load) still start one full
+  pass.
+
+### 25.4 Fix: the catch-up keeps the transfer of the paused tick
+
+The endpoints near an edit pause at the end of a tick and settle at the start of the next tick. Before 0.1.11.0 this
+catch-up used the per-tick budgets of the next tick, so each pause lost one tick of transfer. The engine now runs the
+catch-up in the frame of the paused tick:
+
+* `FeLedger.inFrame(long tick, Runnable settlement)` runs a settlement with the budgets of server tick `tick` on the current
+  thread. Nested frames are not allowed. A ledger that already counted a later tick has no room in an earlier frame.
+* The search and route budgets of the engine still bound the work of one server tick: a catch-up and the settlement of
+  the same server tick share them.

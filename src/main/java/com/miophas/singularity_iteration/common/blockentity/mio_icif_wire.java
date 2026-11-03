@@ -417,7 +417,7 @@ public class mio_icif_wire extends AbstractWireBlockEntity implements com.miopha
             if (isFEMachine) {
                 FECompatTile compat = feCompatTiles.get(dir);
                 if (compat == null) {
-                    compat = new FECompatTile(level, neighborPos, dir);
+                    compat = new FECompatTile(level, neighborPos, dir).retain();
                     feCompatTiles.put(dir, compat);
                     EnergyNetGlobal.addTile(compat, level, neighborPos);
                     compat.setRegistered(true);

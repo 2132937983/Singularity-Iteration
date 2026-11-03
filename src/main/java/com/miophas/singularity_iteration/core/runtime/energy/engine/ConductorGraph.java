@@ -70,16 +70,22 @@ public final class ConductorGraph {
         }
         offsets = new int[count + 1];
         int[] ends = new int[links.length * 2];
-        var unique = new HashSet<Long>();
+        // 0.1.10.44 (P-7): duplicates are found by sorting the pair keys. A HashSet<Long> of (min << 32 | max) hashed
+        // min ^ max: the links of neighbouring IDs (i, i + 1) shared a few buckets.
+        long[] keys = new long[links.length];
         for (int i = 0; i < links.length; i++) {
             int[] link = Objects.requireNonNull(links[i], "link");
             if (link.length != 2) { throw new IllegalArgumentException("Link needs two endpoints"); }
             int a = link[0]; int b = link[1];
             check(a, count); check(b, count);
-            long key = ((long) Math.min(a, b) << 32) | Math.max(a, b);
-            if (a == b || !unique.add(key)) { throw new IllegalArgumentException("Self or duplicate link"); }
+            if (a == b) { throw new IllegalArgumentException("Self or duplicate link"); }
+            keys[i] = ((long) Math.min(a, b) << 32) | Math.max(a, b);
             ends[2 * i] = a; ends[2 * i + 1] = b;
             offsets[a + 1]++; offsets[b + 1]++;
+        }
+        Arrays.sort(keys);
+        for (int i = 1; i < keys.length; i++) {
+            if (keys[i] == keys[i - 1]) { throw new IllegalArgumentException("Self or duplicate link"); }
         }
         for (int i = 1; i <= count; i++) { offsets[i] += offsets[i - 1]; }
         neighbours = new int[ends.length];

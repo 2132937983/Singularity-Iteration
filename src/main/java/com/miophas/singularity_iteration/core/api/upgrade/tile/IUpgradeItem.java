@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
  * <ul>
  *   <li>{@link #isSuitableFor} - checks if the upgrade applies to a given machine</li>
  *   <li>{@link #onTick} - runs each tick and can apply continuous effects</li>
- *   <li>{@link #onProcessEnd} - runs after a recipe is complete and can change the output</li>
+ *   <li>{@link #onProcessEnd} - deprecated, no machine calls it; use {@link IWorkCycleUpgrade} (0.1.11.2)</li>
  * </ul>
  */
 public interface IUpgradeItem {
@@ -49,7 +49,10 @@ public interface IUpgradeItem {
      * @param block the machine that has this upgrade installed
      * @param outputs the current output items (you can change this collection)
      * @return the changed output items
+     * @deprecated No machine calls this method. Since 0.1.11.2 use {@link IWorkCycleUpgrade#onCycleComplete} to add
+     *     outputs at the end of a work cycle. 没有机器调用此方法；0.1.11.2 起请用 {@link IWorkCycleUpgrade#onCycleComplete}。
      */
+    @Deprecated
     Collection<ItemStack> onProcessEnd(ItemStack stack, IUpgradableBlock block, Collection<ItemStack> outputs);
 
     /**

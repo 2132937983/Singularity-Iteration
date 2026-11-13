@@ -31,7 +31,7 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
             upgradeStats.getProcessTimeMultiplier(), upgradeStats.getEnergyUsageMultiplier());
         previousOverclockers = count;
         int previousLength = maxProgress;
-        maxProgress = timing.ticks();
+        maxProgress = cycleScaledTicks(timing.ticks());   // 0.1.11.2: with the duration factor of an open work cycle
         if (previousLength > 0 && previousLength != maxProgress)
             progress = (int) Math.min(maxProgress - 1L, (long) ((double) progress * maxProgress / previousLength));
     }
@@ -47,10 +47,18 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
             boolean changed = progress != 0 || isWorking;
             progress = 0;
             stopWork();
+            closeWorkCycle();   // 0.1.11.2
             if (changed) setChanged();
             return;
         }
         if (!hasEnoughEnergy()) {
+            boolean changed = isWorking;
+            stopWork();
+            if (changed) setChanged();
+            return;
+        }
+        // 0.1.11.2: work cycle upgrades and MachineWorkStartEvent; a hold is the same as the wait for energy above.
+        if (progress == 0 && !isWorkCycleOpen() && !beginWorkCycle()) {
             boolean changed = isWorking;
             stopWork();
             if (changed) setChanged();
@@ -62,6 +70,7 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
         // Pay once per active world tick. Each operation still rechecks the real recipe,
         // input quantity and output space through the existing machine implementation.
         paidForThisTick = true;
+        int finished = finishedOperations();
         try {
             for (int i=0; i<timing.operations() && canWork(); i++) {
                 progress = maxProgress;
@@ -73,6 +82,12 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
             isWorking = true;
             setChanged();
         }
+        completeWorkCycles(finishedOperations() - finished);   // 0.1.11.2: also closes the cycle
+    }
+
+    @Override
+    protected int workCycleBaseTicks() {
+        return timing == null ? Math.max(1, maxProgress) : timing.ticks();
     }
 
     @Override
@@ -89,7 +104,7 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
 
     @Override
     public long getEffectiveEnergyPerTick() {
-        return timing == null ? energyPerTick : timing.energyPerTick();
+        return cycleScaledEnergy(timing == null ? energyPerTick : timing.energyPerTick());   // 0.1.11.2: cycle energy factor
     }
 
     @Override

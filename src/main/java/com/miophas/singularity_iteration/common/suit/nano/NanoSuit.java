@@ -79,6 +79,17 @@ public final class NanoSuit {
             @Override public float heat(Player player) { NanoCoreState s = existing(player); return s == null ? 0 : s.heat; }
             @Override public float heatCap(Player player) { return NanoSuit.heatCap(player); }
             @Override public boolean overheated(Player player) { NanoCoreState s = existing(player); return s != null && s.overheated; }
+            @Override public boolean trySpendReserve(ServerPlayer player, float amount) {
+                if (!Float.isFinite(amount) || amount < 0 || !wearsNano(player)) return false;
+                NanoCoreState s = state(player);
+                if (s.reserve < amount) return false;
+                if (amount > 0) s.reserve = Math.max(0, s.reserve - amount);
+                return true;
+            }
+            @Override public void addHeat(ServerPlayer player, float amount) {
+                if (!Float.isFinite(amount) || amount <= 0 || !wearsNano(player)) return;
+                NanoSuit.addHeat(player, state(player), amount);
+            }
             @Nullable
             private NanoCoreState existing(Player player) {
                 if (player.level().isClientSide) return CLIENT_VIEW == null ? null : CLIENT_VIEW.apply(player);

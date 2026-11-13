@@ -103,7 +103,7 @@ chestplate 6, leggings 4, boots 4, +2 for each densifier, at most 2). The two-ar
 | `SuitModuleTraits` | LP on a nano piece (1..6), the suit classes, and an optional burst. `nano(lp, burst)`, `shared(lp)`, `QUANTUM_ONLY`. |
 | `SuitBurstSpec` | Burst costs: reserve points, heat, cooldown ticks, sustained flag. |
 | `SuitBurstBehavior` | `fire(player, piece, input)` on the server. Return true when the burst fired; only then the costs are paid. |
-| `SuitNanoCore` | Read-only reserve, heat, heat cap and overheat of a player. |
+| `SuitNanoCore` | Read-only reserve, heat, heat cap and overheat of a player. Since 0.1.11.2 also `trySpendReserve` and `addHeat` (27.3). |
 | `ArmorCapacityBonus` (`core.api.item`) | Extra EU capacity of one electric armor piece from its own data. |
 
 Procedure: register with traits.
@@ -155,7 +155,7 @@ Nothing changed for units without an action: all 0.1.9.2 types and signatures ar
 | `SuitActionSpec` | Coherence cost, cooldown ticks, sustained flag, coherence per second of a sustained action. `single(cost, cooldown)`, `sustained(start, perSecond, cooldown)`. |
 | `SuitActionBehavior` | `fire(player, piece, input)` on the server; true when it fired (only then the cost is paid). Sustained actions also get `sustain` each tick (false ends it) and `end`. |
 | `SuitQuantumActions` | `register(unitId, spec, behavior)`, `get(key)`, `all()`. |
-| `SuitQuantumCore` | Read-only coherence, coherence maximum and decoherence lock of a player. |
+| `SuitQuantumCore` | Read-only coherence, coherence maximum and decoherence lock of a player. Since 0.1.11.2 also `trySpendCoherence` (27.3). |
 
 Procedure: register the unit as before, then its action.
 
@@ -1046,3 +1046,95 @@ fast battery can end the tick that crosses an edge below 10 % or above 90 %.
 * A new ratio drops the savings (`dropped()` counts them). The savings are not saved with the world: less than one EU per
   machine goes when it unloads.
 * This was tested with a mock of the strict-energy view only, not with Mekanism installed.
+
+## 27. Work cycle upgrades and suit core costs (0.1.11.2)
+
+0.1.11.2 adds two general extension points. Nothing changes for a world without an addon that uses them: with no work
+cycle upgrade installed and no event listener, every machine has the same ticks, EU and outputs as in 0.1.11.1, and every
+suit has the same costs.
+
+### 27.1 Work cycle upgrades: `IWorkCycleUpgrade`
+
+An upgrade item that implements `IWorkCycleUpgrade` (`core.api.upgrade.tile`, extends `IUpgradeItem`) gets a call at the
+start and at the end of each work cycle of a processing machine (the prefab `AbstractProcessingMachineBlockEntity`, also
+`AbstractStandardMachineBlockEntity`). Put it in an upgrade slot like any other upgrade.
+
+| Type | Function |
+|---|---|
+| `IWorkCycleUpgrade` | `onCycleStart(upgrade, ctx)` returns a `CycleDecision`; `onCycleComplete(upgrade, ctx, out)`. Both have defaults (no change). Defaults for `onTick` (false) and `onProcessEnd` (no change), which no machine calls. |
+| `CycleDecision` | `proceed()`, `hold()`, `proceed(durationFactor, energyFactor)`. Each factor is clamped to 0.25..4 (`MIN_FACTOR`, `MAX_FACTOR`, `clamp`); a value that is not finite is 1. `isHold()`, `durationFactor()`, `energyFactor()`. |
+| `WorkCycleContext` | `level`, `pos`, `recipeId` (nullable), `baseTicks`, `baseEnergyPerTick`, `machine` (`IUpgradableBlock`). |
+| `BonusOutputs` | `add(ItemStack)`: one more output at the end of the operation. |
+
+Rules:
+
+* Server only. Do not break or replace the block of the machine in a callback.
+* Start: before the progress of a cycle starts from 0, the machine calls `onCycleStart` for each `IWorkCycleUpgrade` stack in
+  its upgrade slots (in slot order, once for each stack). One `hold()` stops the start in this tick: the machine uses no
+  energy, adds no progress and does not go to idle sleep; it asks again in the next tick (the same as a wait for energy).
+* Factors: the factors of all upgrades are multiplied and the product is clamped to 0.25..4. The duration factor multiplies
+  the ticks of the cycle and the energy factor the EU per tick, on top of the overclockers and other upgrades. They apply to
+  this cycle only; the next cycle asks again. A saved world keeps the factors of a cycle in progress (tag
+  `scex_work_cycle`, written only when a factor is not 1).
+* `baseTicks` and `baseEnergyPerTick` are the values with the installed upgrades, before the cycle factors.
+* `recipeId`: the new `protected @Nullable ResourceLocation currentRecipeId()` of the prefab (default null). The macerator,
+  compressor, extractor and electric furnace return the id of their recipe. At the end of a cycle the context has the id
+  taken at the start (after a reload in the middle of a cycle, or when the upgrade came in during the cycle: the id that the
+  machine reports at the end, which can be null).
+* End: after each operation that finished through `finishWork()` (all recipe machines of SI), the machine calls
+  `onCycleComplete` for each stack. An overclocked machine that makes several outputs in one cycle calls it once for each
+  output.
+* Bonus outputs go into the output slots after the normal output: onto stacks of the same item first, then into empty output
+  slots. What does not fit is discarded; a bonus never makes the machine wait. A bonus of another item in the only output
+  slot blocks the next normal output, the same as any other item there (an ejector upgrade moves it).
+* Limits: a machine that replaces `tickProduction` (for example the pump, the replicator, the scanner) calls nothing unless it
+  calls the new `beginWorkCycle()` / `completeWorkCycles(n)` itself. The duration factor does not apply to a machine that
+  sets `maxProgress` again during the cycle; the energy factor does not apply to a machine that overrides
+  `getEffectiveEnergyPerTick` without the prefab value.
+* `IUpgradeItem.onProcessEnd` is deprecated: no machine calls it. Use `onCycleComplete`. `IUpgradeItem.onTick` is still not
+  called by any machine.
+
+Example: `src/addonExample/java/example/sicore/ExampleCycleUpgrade.java`.
+
+```java
+public final class SlowCleanUpgrade extends Item implements IWorkCycleUpgrade {
+    @Override public boolean isSuitableFor(ItemStack stack, Set<UpgradableProperty> properties) { return true; }
+    @Override public CycleDecision onCycleStart(ItemStack upgrade, WorkCycleContext ctx) {
+        return CycleDecision.proceed(2.0F, 0.5F);          // half speed, half EU per tick
+    }
+    @Override public void onCycleComplete(ItemStack upgrade, WorkCycleContext ctx, BonusOutputs out) {
+        if (ctx.level().random.nextInt(10) == 0) out.add(new ItemStack(Items.CLAY_BALL));
+    }
+}
+```
+
+### 27.2 Machine work events
+
+The prefab machines now post the two events that were declared but not posted:
+
+* `MachineWorkStartEvent` at the start of a cycle, after the work cycle upgrades (when none of them holds). Cancel it to hold
+  the machine (the same as `hold()`); while it stays cancelled the event comes each tick.
+* `MachineWorkCompleteEvent` after each finished operation, after `onCycleComplete`. `getOutput()` is an empty stack and
+  `setOutput` has no effect in the prefab machines; the output is already in the slots. Use `IWorkCycleUpgrade` for
+  additional outputs.
+* `MachineUpgradeInsertEvent` and `MachineUpgradeRemoveEvent` are still not posted.
+
+### 27.3 Suit core costs
+
+The facades `SuitQuantumCore` and `SuitNanoCore` (`core.api.suit`) can now change the core on the server:
+
+| Method | Function |
+|---|---|
+| `SuitQuantumCore.trySpendCoherence(ServerPlayer, float amount)` | When the player wears a quantum piece, the core is not decoherent and the coherence is at least `amount`: takes it and returns true. The regeneration waits as after an action; coherence that goes to 0 decoheres the core. Else no change, false. |
+| `SuitNanoCore.trySpendReserve(ServerPlayer, float amount)` | When the nano core is online (a worn nano piece carries a unit) and the reserve is at least `amount`: takes it and returns true. Else no change, false. |
+| `SuitNanoCore.addHeat(ServerPlayer, float amount)` | When the nano core is online: adds heat up to the heat cap. At the cap the usual overheat rules apply (bursts lock, the camouflage ends). |
+
+* `amount` must be finite and 0 or more; else the methods change nothing (false). An amount of 0 returns true when the core
+  can pay and changes nothing.
+* Server only. On the client, or with only the API JAR (no implementation installed), the methods return false and change
+  nothing.
+* A player without the suit gets no core state from these calls.
+* The client gets the change with the usual core sync.
+* The costs and behaviour of SI's own units, actions and bursts do not change.
+* The implementation comes in through the existing `View` hook: `View.trySpendCoherence`, `View.trySpendReserve` and
+  `View.addHeat` are new default methods (no change, false), so other implementations of `View` still compile.

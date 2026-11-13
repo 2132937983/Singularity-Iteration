@@ -85,7 +85,7 @@ API 包不引用任何运行时、预制或 `common` 类。构建会检查这一
 | `SuitModuleTraits` | 纳米部件上的 LP（1..6）、适用的套装类别与可选的爆发。`nano(lp, burst)`、`shared(lp)`、`QUANTUM_ONLY`。 |
 | `SuitBurstSpec` | 爆发消耗：储备点、热量、冷却 tick、是否持续型。 |
 | `SuitBurstBehavior` | 服务器上的 `fire(player, piece, input)`。爆发成功时返回真；只有此时才支付消耗。 |
-| `SuitNanoCore` | 玩家储备、热量、热量上限与过热状态的只读视图。 |
+| `SuitNanoCore` | 玩家储备、热量、热量上限与过热状态的只读视图。0.1.11.2 起另有 `trySpendReserve` 与 `addHeat`（27.3）。 |
 | `ArmorCapacityBonus`（`core.api.item`） | 单件电力护甲由自身数据带来的额外 EU 容量。 |
 
 步骤：带特性注册。
@@ -125,7 +125,7 @@ SuitModuleRegistry.register(SPEC, SuitModuleBehavior.NONE,
 | `SuitActionSpec` | 相干度消耗、冷却 tick、是否持续型、持续型每秒消耗。`single(cost, cooldown)`、`sustained(start, perSecond, cooldown)`。 |
 | `SuitActionBehavior` | 服务器上的 `fire(player, piece, input)`；成功时返回真（只有此时才支付消耗）。持续型行动每 tick 还会收到 `sustain`（返回假则结束）与最后的 `end`。 |
 | `SuitQuantumActions` | `register(unitId, spec, behavior)`、`get(key)`、`all()`。 |
-| `SuitQuantumCore` | 玩家相干度、相干度上限与退相干锁定的只读视图。 |
+| `SuitQuantumCore` | 玩家相干度、相干度上限与退相干锁定的只读视图。0.1.11.2 起另有 `trySpendCoherence`（27.3）。 |
 
 步骤：照旧注册单元，再注册其行动。
 
@@ -744,3 +744,69 @@ ReactorTransformationRegistry.register(ReactorTransformation.of(
 * 提取先从积存中支付，其余以整 EU 从储能取出；该 EU 超出请求的焦耳继续积存。
 * 换算率改变时积存被丢弃（`dropped()` 统计）。积存不随世界保存：每台机器卸载时损失不到 1 EU。
 * 只用模拟的 strict-energy 视图测试过，未在安装 Mekanism 的环境中测试。
+
+## 27. 工作周期升级与套装核心花费（0.1.11.2）
+
+0.1.11.2 新增两处通用扩展点。没有附属使用它们的世界不受影响：未安装工作周期升级且没有事件监听器时，每台机器的耗时、耗电与产物与 0.1.11.1 相同，每件套装的花费也相同。
+
+### 27.1 工作周期升级：`IWorkCycleUpgrade`
+
+实现 `IWorkCycleUpgrade`（`core.api.upgrade.tile`，继承 `IUpgradeItem`）的升级物品，在加工机器（预制基类 `AbstractProcessingMachineBlockEntity`，包括 `AbstractStandardMachineBlockEntity`）每个工作周期的开始与结束时得到回调。像其他升级一样放进升级槽即可。
+
+| 类型 | 作用 |
+|---|---|
+| `IWorkCycleUpgrade` | `onCycleStart(upgrade, ctx)` 返回 `CycleDecision`；`onCycleComplete(upgrade, ctx, out)`。两者都有默认实现（不改动）。另为 `onTick`（假）与 `onProcessEnd`（不改动）提供默认实现，机器不调用它们。 |
+| `CycleDecision` | `proceed()`、`hold()`、`proceed(durationFactor, energyFactor)`。每个系数钳制在 0.25..4（`MIN_FACTOR`、`MAX_FACTOR`、`clamp`），非有限数视为 1。`isHold()`、`durationFactor()`、`energyFactor()`。 |
+| `WorkCycleContext` | `level`、`pos`、`recipeId`（可为空）、`baseTicks`、`baseEnergyPerTick`、`machine`（`IUpgradableBlock`）。 |
+| `BonusOutputs` | `add(ItemStack)`：在本次操作结束时追加一个产物。 |
+
+规则：
+
+* 只在服务端调用。回调中不得破坏或替换机器的方块。
+* 开始：周期进度从 0 开始之前，机器按升级槽顺序对每个 `IWorkCycleUpgrade` 物品堆调用一次 `onCycleStart`。任一返回 `hold()` 则本刻不开工：不耗电、不推进进度、不进入空闲休眠，下一刻再问（与等电相同）。
+* 系数：各升级的系数相乘，乘积钳制到 0.25..4。耗时系数乘周期刻数，耗电系数乘每刻 EU，叠加在超频等升级之上；只作用于当前周期，下一周期重新询问。存档保留进行中周期的系数（标签 `scex_work_cycle`，只在系数不为 1 时写入）。
+* `baseTicks` 与 `baseEnergyPerTick` 计入已装升级、不含周期系数。
+* `recipeId`：预制基类新增 `protected @Nullable ResourceLocation currentRecipeId()`（默认空）。打粉机、压缩机、提取机、电炉返回所用配方的标识。周期结束时上下文中是周期开始时取得的标识（周期中途重新加载、或升级在周期中途装入时：结束时机器报告的标识，可能为空）。
+* 结束：每次经 `finishWork()` 完成的操作（奇点迭代所有配方机器）之后，对每个物品堆调用 `onCycleComplete`。超频机器一个周期产出多次时，每次产出各调用一次。
+* 追加产物在正常产物之后放进输出槽：先叠到相同物品上，再放进空的输出槽。放不下的部分丢弃，追加产物不会让机器等待。若唯一的输出槽被另一种追加物品占据，下一次正常产出会像遇到其他任何物品一样受阻（弹出升级可以把它移走）。
+* 限制：替换了 `tickProduction` 的机器（如泵、复制机、扫描仪）不回调，除非自己调用新增的 `beginWorkCycle()` / `completeWorkCycles(n)`。周期中途重新设定 `maxProgress` 的机器不受耗时系数影响；覆盖 `getEffectiveEnergyPerTick` 且不使用预制值的机器不受耗电系数影响。
+* `IUpgradeItem.onProcessEnd` 标为弃用：没有机器调用它，请改用 `onCycleComplete`。`IUpgradeItem.onTick` 仍没有机器调用。
+
+示例：`src/addonExample/java/example/sicore/ExampleCycleUpgrade.java`。
+
+```java
+public final class SlowCleanUpgrade extends Item implements IWorkCycleUpgrade {
+    @Override public boolean isSuitableFor(ItemStack stack, Set<UpgradableProperty> properties) { return true; }
+    @Override public CycleDecision onCycleStart(ItemStack upgrade, WorkCycleContext ctx) {
+        return CycleDecision.proceed(2.0F, 0.5F);          // 半速，每刻 EU 减半
+    }
+    @Override public void onCycleComplete(ItemStack upgrade, WorkCycleContext ctx, BonusOutputs out) {
+        if (ctx.level().random.nextInt(10) == 0) out.add(new ItemStack(Items.CLAY_BALL));
+    }
+}
+```
+
+### 27.2 机器工作事件
+
+预制机器现在投递此前只有声明、没有投递的两个事件：
+
+* `MachineWorkStartEvent`：周期开始时、在工作周期升级之后（没有升级 hold 时）投递。取消它即让机器暂缓（等同 `hold()`）；持续取消期间每刻都会投递。
+* `MachineWorkCompleteEvent`：每次操作完成后、在 `onCycleComplete` 之后投递。在预制机器中 `getOutput()` 为空堆，`setOutput` 无效果，产物此时已在槽中；追加产物请用 `IWorkCycleUpgrade`。
+* `MachineUpgradeInsertEvent` 与 `MachineUpgradeRemoveEvent` 仍未投递。
+
+### 27.3 套装核心花费
+
+门面 `SuitQuantumCore` 与 `SuitNanoCore`（`core.api.suit`）现在可以在服务端修改核心：
+
+| 方法 | 作用 |
+|---|---|
+| `SuitQuantumCore.trySpendCoherence(ServerPlayer, float amount)` | 玩家穿戴量子部件、核心未退相干且相干度不少于 `amount` 时扣除并返回真；回复像行动之后一样推迟，相干度降到 0 时退相干。否则不改动，返回假。 |
+| `SuitNanoCore.trySpendReserve(ServerPlayer, float amount)` | 纳米核心在线（穿戴的纳米部件装有单元）且储备不少于 `amount` 时扣除并返回真。否则不改动，返回假。 |
+| `SuitNanoCore.addHeat(ServerPlayer, float amount)` | 纳米核心在线时增加热量，不超过热量上限；达到上限时按原有的过热规则处理（爆发锁定、伪装结束）。 |
+
+* `amount` 必须是有限的非负数，否则不做任何改动（返回假）。`amount` 为 0 时，核心能支付则返回真且不改动。
+* 只在服务端有效。在客户端，或只有 API JAR（未装入实现）时，返回假且不改动。
+* 没穿套装的玩家不会因这些调用而产生核心状态。
+* 客户端经常规的核心同步得到变化。
+* 奇点迭代自身单元、行动、爆发的花费与行为不变。
+* 实现经现有的 `View` 挂钩装入：`View.trySpendCoherence`、`View.trySpendReserve` 与 `View.addHeat` 是新增的默认方法（不改动、返回假），`View` 的其他实现仍可编译。

@@ -30,6 +30,8 @@ public final class CoreExampleMod {
     public static final net.neoforged.neoforge.registries.DeferredItem<ForeignCropSeed> FOREIGN_CROP_SEED = ITEMS.register("foreign_crop_seed", ForeignCropSeed::new);
     /** 0.1.8.0 public API example: an addon quantum suit unit. */
     public static final net.neoforged.neoforge.registries.DeferredItem<ExampleSonarUnit> SONAR_UNIT = ITEMS.register("sonar_unit", ExampleSonarUnit::new);
+    /** 0.1.11.2 public API example: a work cycle upgrade for the processing machines. */
+    public static final net.neoforged.neoforge.registries.DeferredItem<ExampleCycleUpgrade> CYCLE_UPGRADE = ITEMS.register("cycle_upgrade", ExampleCycleUpgrade::new);
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(ID);
     private static final DeferredRegister<BlockEntityType<?>> ENTITIES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, ID);
     public static final DeferredBlock<Block> SOURCE = BLOCKS.register("source", () -> new ExampleBlock(InheritedSource::new));

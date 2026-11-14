@@ -297,6 +297,15 @@ public static final long DEFAULT_ENERGY_PER_TICK = 2L; // 每tick消
         return recipe.map(r -> r.value().getResult()).orElse(ItemStack.EMPTY);
     }
 
+    /** 0.1.11.2: the id of the compressor recipe of the current input (for work cycle upgrades). */
+    @Override
+    protected @Nullable net.minecraft.resources.ResourceLocation currentRecipeId() {
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (level == null || input.isEmpty()) return null;
+        return recipeCache3.find(level, new com.miophas.singularity_iteration.common.recipe.compressor.mio_icif_CompressorRecipeInput(input))
+            .map(net.minecraft.world.item.crafting.RecipeHolder::id).orElse(null);
+    }
+
     /**
      * 获取当前匹配的配
  * @return 当前配方（如果有

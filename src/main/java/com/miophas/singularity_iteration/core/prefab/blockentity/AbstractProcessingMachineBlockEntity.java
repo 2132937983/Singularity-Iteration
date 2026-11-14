@@ -640,7 +640,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         }
         long energy = apiGetStoredEnergy();
         int battery = getBatterySlot();
-        boolean quiet = production && !isWorking && progress == 0 && sleepStamp == stampBefore && energy == sleepEnergy
+        boolean quiet = production && !isWorking && progress == 0 && !workCycleHeld && sleepStamp == stampBefore && energy == sleepEnergy
             && (battery < 0 || battery >= itemHandler.getSlots() || itemHandler.getStackInSlot(battery).isEmpty());
         sleepEnergy = energy;
         if (!quiet) { sleepQuietTicks = 0; return; }
@@ -659,12 +659,225 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     // Keep the existing scheduler for machines with their own heat/fluid/continuous logic.
     protected void tickProduction() {
         if (canWork()) {
+            // 0.1.11.2: work cycle upgrades and MachineWorkStartEvent. A hold behaves like a wait for energy.
+            if (!workCycleOpen && progress == 0 && !beginWorkCycle()) {
+                stopWork();
+                updateProgress();
+                return;
+            }
+            int finished = finishedOperations;
             doWork();
+            if (finished != finishedOperations) {
+                completeWorkCycles(finishedOperations - finished);
+                // The next cycle starts in this tick when the machine goes on working.
+                if (isWorking && progress == 0 && !beginWorkCycle()) stopWork();
+            }
         } else {
             if (shouldResetProgress()) progress = 0;
             stopWork();
+            if (progress == 0) closeWorkCycle();
         }
         updateProgress();
+    }
+
+    // ------------------------------------------------------------------ 0.1.11.2: work cycle upgrades
+
+    /** True between the start of a work cycle and its end (not saved; a reload in the middle of a cycle sees progress above 0). */
+    private boolean workCycleOpen;
+    /** True while an upgrade or an event listener holds the start: the machine does not sleep then. */
+    private boolean workCycleHeld;
+    /** Factors of the open cycle (1 = none). */
+    private float cycleDurationFactor = 1.0F, cycleEnergyFactor = 1.0F;
+    /** maxProgress before the duration factor (-1 = not recorded). */
+    private int cycleUnscaledTicks = -1;
+    /** The recipe id taken at the start of the open cycle, and whether it was taken. */
+    private @Nullable net.minecraft.resources.ResourceLocation cycleRecipeId;
+    private boolean cycleRecipeKnown;
+    /** Context values taken at the start of the open cycle (-1 = not taken). */
+    private int cycleBaseTicks = -1;
+    private long cycleBaseEnergy = -1;
+    /** Operations finished through {@link #finishWork()} so far (not saved). */
+    private int finishedOperations;
+
+    /**
+     * 0.1.11.2: the id of the recipe that the machine uses now, or null (default) when it has no recipe concept.
+     * {@link com.miophas.singularity_iteration.core.api.upgrade.tile.WorkCycleContext#recipeId()} reports it.
+     * Called on the server only, at most once per cycle start and only when a work cycle upgrade is installed.
+     */
+    protected @Nullable net.minecraft.resources.ResourceLocation currentRecipeId() {
+        return null;
+    }
+
+    /** 0.1.11.2: ticks of one cycle with the installed upgrades, before the cycle factors. */
+    protected int workCycleBaseTicks() {
+        int ticks = cycleUnscaledTicks >= 0 ? cycleUnscaledTicks : maxProgress;
+        int perTick = Math.max(1, getProgressPerTick());
+        return Math.max(1, (ticks + perTick - 1) / perTick);
+    }
+
+    /** 0.1.11.2: the duration factor of the open cycle (1 when none). */
+    public final float getCycleDurationFactor() { return cycleDurationFactor; }
+
+    /** 0.1.11.2: the energy factor of the open cycle (1 when none). */
+    public final float getCycleEnergyFactor() { return cycleEnergyFactor; }
+
+    /** 0.1.11.2: {@code ticks} with the duration factor of the open cycle; records {@code ticks} as the unscaled length. */
+    protected final int cycleScaledTicks(int ticks) {
+        if (cycleDurationFactor == 1.0F) {
+            cycleUnscaledTicks = -1;
+            return ticks;
+        }
+        cycleUnscaledTicks = ticks;
+        return (int) Math.max(1L, Math.min(Integer.MAX_VALUE, Math.round((double) ticks * cycleDurationFactor)));
+    }
+
+    /** 0.1.11.2: {@code euPerTick} with the energy factor of the open cycle. */
+    protected final long cycleScaledEnergy(long euPerTick) {
+        if (cycleEnergyFactor == 1.0F || euPerTick <= 0) return euPerTick;
+        double scaled = (double) euPerTick * cycleEnergyFactor;
+        return scaled >= Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(1L, Math.round(scaled));
+    }
+
+    /** The work cycle upgrade stacks in the upgrade slots (an empty list when none). */
+    private List<ItemStack> workCycleUpgrades() {
+        int start = slotLayout.getStart(SlotType.UPGRADE), count = slotLayout.getCount(SlotType.UPGRADE);
+        int end = Math.min(itemHandler.getSlots(), start + Math.max(0, count));
+        List<ItemStack> found = List.of();
+        for (int slot = Math.max(0, start); slot < end; slot++) {
+            ItemStack stack = itemHandler.getStackInSlot(slot);
+            if (!stack.isEmpty() && stack.getItem() instanceof com.miophas.singularity_iteration.core.api.upgrade.tile.IWorkCycleUpgrade) {
+                if (found.isEmpty()) found = new java.util.ArrayList<>(2);
+                found.add(stack);
+            }
+        }
+        return found;
+    }
+
+    /**
+     * 0.1.11.2: starts a work cycle. Asks the work cycle upgrades and posts MachineWorkStartEvent; false when one of
+     * them holds (the cycle stays closed and the machine asks again in the next tick). On true the cycle factors apply.
+     */
+    protected final boolean beginWorkCycle() {
+        if (level == null || level.isClientSide) return true;
+        List<ItemStack> upgrades = workCycleUpgrades();
+        double duration = 1.0, energy = 1.0;
+        net.minecraft.resources.ResourceLocation recipe = null;
+        int baseTicks = workCycleBaseTicks();
+        long baseEnergy = getEffectiveEnergyPerTick();
+        if (!upgrades.isEmpty()) {
+            recipe = currentRecipeId();
+            var ctx = new com.miophas.singularity_iteration.core.api.upgrade.tile.WorkCycleContext(level, worldPosition, recipe, baseTicks, baseEnergy, this);
+            for (ItemStack stack : upgrades) {
+                var decision = ((com.miophas.singularity_iteration.core.api.upgrade.tile.IWorkCycleUpgrade) stack.getItem()).onCycleStart(stack, ctx);
+                if (decision == null) continue;
+                if (decision.isHold()) {
+                    workCycleHeld = true;
+                    return false;
+                }
+                duration *= decision.durationFactor();
+                energy *= decision.energyFactor();
+            }
+        }
+        if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
+                new com.miophas.singularity_iteration.core.api.event.MachineWorkStartEvent(level, worldPosition, this)).isCanceled()) {
+            workCycleHeld = true;
+            return false;
+        }
+        workCycleHeld = false;
+        workCycleOpen = true;
+        cycleRecipeId = recipe;
+        cycleRecipeKnown = !upgrades.isEmpty();
+        cycleBaseTicks = baseTicks;
+        cycleBaseEnergy = baseEnergy;
+        setCycleFactors(com.miophas.singularity_iteration.core.api.upgrade.tile.CycleDecision.clamp((float) duration),
+            com.miophas.singularity_iteration.core.api.upgrade.tile.CycleDecision.clamp((float) energy));
+        return true;
+    }
+
+    /** 0.1.11.2: ends the open cycle (its factors no longer apply). */
+    protected final void closeWorkCycle() {
+        workCycleOpen = false;
+        cycleRecipeId = null;
+        cycleRecipeKnown = false;
+        cycleBaseTicks = -1;
+        cycleBaseEnergy = -1;
+        setCycleFactors(1.0F, 1.0F);
+    }
+
+    /** 0.1.11.2: true while a cycle is open. */
+    public final boolean isWorkCycleOpen() { return workCycleOpen; }
+
+    private void setCycleFactors(float duration, float energy) {
+        if (duration == cycleDurationFactor && energy == cycleEnergyFactor) return;
+        boolean durationChanged = duration != cycleDurationFactor;
+        int unscaled = cycleUnscaledTicks >= 0 ? cycleUnscaledTicks : maxProgress;
+        cycleDurationFactor = duration;
+        cycleEnergyFactor = energy;
+        if (durationChanged) {
+            maxProgress = cycleScaledTicks(unscaled);
+            if (progress > maxProgress) progress = maxProgress;
+        }
+    }
+
+    /**
+     * 0.1.11.2: the end of {@code operations} operations that made an output: calls the work cycle upgrades and posts
+     * MachineWorkCompleteEvent once for each, then closes the cycle.
+     */
+    protected final void completeWorkCycles(int operations) {
+        if (level == null || level.isClientSide || operations <= 0) {
+            closeWorkCycle();
+            return;
+        }
+        List<ItemStack> upgrades = workCycleUpgrades();
+        com.miophas.singularity_iteration.core.api.upgrade.tile.WorkCycleContext ctx = null;
+        if (!upgrades.isEmpty()) {
+            net.minecraft.resources.ResourceLocation recipe = cycleRecipeKnown ? cycleRecipeId : currentRecipeId();
+            int ticks = cycleBaseTicks >= 0 ? cycleBaseTicks : workCycleBaseTicks();
+            long energy = cycleBaseEnergy >= 0 ? cycleBaseEnergy : Math.round(getEffectiveEnergyPerTick() / (double) cycleEnergyFactor);
+            ctx = new com.miophas.singularity_iteration.core.api.upgrade.tile.WorkCycleContext(level, worldPosition, recipe, ticks, energy, this);
+        }
+        for (int i = 0; i < operations; i++) {
+            if (ctx != null) {
+                for (ItemStack stack : upgrades)
+                    ((com.miophas.singularity_iteration.core.api.upgrade.tile.IWorkCycleUpgrade) stack.getItem())
+                        .onCycleComplete(stack, ctx, this::addBonusOutput);
+            }
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
+                new com.miophas.singularity_iteration.core.api.event.MachineWorkCompleteEvent(level, worldPosition, this, ItemStack.EMPTY));
+        }
+        closeWorkCycle();
+    }
+
+    /** Operations finished through {@link #finishWork()} so far (for the cycle dispatch of subclasses with their own scheduler). */
+    protected final int finishedOperations() { return finishedOperations; }
+
+    /**
+     * 0.1.11.2: puts a bonus output into the output slots (same item first, then empty slots); discards what does not fit.
+     */
+    protected void addBonusOutput(ItemStack bonus) {
+        if (bonus == null || bonus.isEmpty()) return;
+        ItemStack rest = bonus.copy();
+        int[] outputs = getOutputSlots();
+        for (int pass = 0; pass < 2 && !rest.isEmpty(); pass++) {
+            for (int slot : outputs) {
+                if (rest.isEmpty()) break;
+                if (slot < 0 || slot >= itemHandler.getSlots()) continue;
+                ItemStack current = itemHandler.getStackInSlot(slot);
+                int limit = Math.min(itemHandler.getSlotLimit(slot), rest.getMaxStackSize());
+                if (pass == 0 && !current.isEmpty() && ItemStack.isSameItemSameComponents(current, rest)) {
+                    int move = Math.min(rest.getCount(), Math.min(itemHandler.getSlotLimit(slot), current.getMaxStackSize()) - current.getCount());
+                    if (move <= 0) continue;
+                    ItemStack grown = current.copyWithCount(current.getCount() + move);
+                    itemHandler.setStackInSlot(slot, grown);
+                    rest.shrink(move);
+                } else if (pass == 1 && current.isEmpty() && limit > 0) {
+                    int move = Math.min(rest.getCount(), limit);
+                    itemHandler.setStackInSlot(slot, rest.copyWithCount(move));
+                    rest.shrink(move);
+                }
+            }
+        }
+        setChanged();
     }
 
     /**
@@ -758,8 +971,9 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     protected void updateProcessingParameters() {
         // The overclocker upgrade now adds more progress per tick. It does not decrease the maximum progress.
         // Thus this code only resets a maxProgress that an old save possibly changed back to the base value.
-        if (this.maxProgress != this.baseMaxProgress) {
-            this.maxProgress = this.baseMaxProgress;
+        int target = cycleScaledTicks(this.baseMaxProgress);   // 0.1.11.2: baseMaxProgress without a cycle factor
+        if (this.maxProgress != target) {
+            this.maxProgress = target;
             if (this.progress > this.maxProgress) {
                 this.progress = this.maxProgress;
             }
@@ -1493,6 +1707,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
             // The input items changed. Reset the progress
             progress = 0;
             isWorking = false;
+            closeWorkCycle();   // 0.1.11.2
             // Update the cache
             for (int i = 0; i < inputSlots.length; i++) {
                 lastInputStacks[i] = itemHandler.getStackInSlot(inputSlots[i]).copy();
@@ -1520,6 +1735,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
      * Completes the production.
      */
     protected void finishWork() {
+        finishedOperations++;   // 0.1.11.2: counted for the work cycle dispatch
         progress = 0;
         isWorking = false;
         if (level != null) lastFinishTick = level.getGameTime();
@@ -1710,7 +1926,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
      */
     public long getEffectiveEnergyPerTick() {
         // Use the overridable getEnergyPerTick(), not the field, so that machines whose energy use changes with their state (for example the condenser, which charges per heat vent) are included in the overclocker statistics.
-        return upgradeStats.getEnergyPerTick(getEnergyPerTick());
+        return cycleScaledEnergy(upgradeStats.getEnergyPerTick(getEnergyPerTick()));   // 0.1.11.2: cycle energy factor
     }
 
     /**
@@ -1916,6 +2132,12 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         tag.putInt("progress", progress);
         tag.putBoolean("is_working", isWorking);
         if (overclockThrottle != 100) tag.putInt("scex_oc_throttle", overclockThrottle);   // 0.1.10.6
+        if (workCycleOpen && (cycleDurationFactor != 1.0F || cycleEnergyFactor != 1.0F)) {   // 0.1.11.2: only with cycle factors
+            CompoundTag cycle = new CompoundTag();
+            cycle.putFloat("duration", cycleDurationFactor);
+            cycle.putFloat("energy", cycleEnergyFactor);
+            tag.put("scex_work_cycle", cycle);
+        }
     }
 
     @Override
@@ -1923,6 +2145,17 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
         super.loadAdditional(tag, registries);
         overclockThrottle = tag.contains("scex_oc_throttle") ? Math.max(0, Math.min(100, tag.getInt("scex_oc_throttle"))) : 100;
         upgradeStatsDirty = true;
+        // 0.1.11.2: the factors of a cycle in progress (the unscaled length follows from recalculateUpgradeStats below)
+        CompoundTag cycle = tag.getCompound("scex_work_cycle");
+        cycleUnscaledTicks = -1;
+        workCycleOpen = !cycle.isEmpty();
+        cycleDurationFactor = cycle.isEmpty() ? 1.0F
+            : com.miophas.singularity_iteration.core.api.upgrade.tile.CycleDecision.clamp(cycle.getFloat("duration"));
+        cycleEnergyFactor = cycle.isEmpty() ? 1.0F
+            : com.miophas.singularity_iteration.core.api.upgrade.tile.CycleDecision.clamp(cycle.getFloat("energy"));
+        cycleRecipeKnown = false;
+        cycleBaseTicks = -1;
+        cycleBaseEnergy = -1;
         scexItemOutput.load(registries, tag.getCompound("scex_item_output_pending"));
         scexItemInput.load(registries, tag.getCompound("scex_item_input_pending"));
         fluidAutomation.load(tag, registries);

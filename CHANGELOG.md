@@ -1,6 +1,24 @@
 # 奇点迭代变更日志
 
-累计记录 `0.1.7.16` 至 `0.1.11.1` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+累计记录 `0.1.7.16` 至 `0.1.11.2` 的源码、资源、功能与修复。按交付版本归档；操作入口和机制以后续版本说明为准。
+
+## 0.1.11.2
+
+基于 0.1.11.1。两处通用的附属接口（P5、P6）：加工机器的工作周期升级与机器工作事件，套装核心的花费与加热。只新增，不改已有公开签名；没有附属使用新接口、也没有事件监听器时，机器与套装的行为不变。
+
+- 公共 API（P5，`core.api.upgrade.tile`）：新增 `IWorkCycleUpgrade`（继承 `IUpgradeItem`；`onCycleStart(ItemStack, WorkCycleContext)` 返回 `CycleDecision`，`onCycleComplete(ItemStack, WorkCycleContext, BonusOutputs)`；为 `onTick`、`onProcessEnd` 提供默认实现）、`CycleDecision`（`proceed()`、`hold()`、`proceed(float, float)`、`clamp(float)`、`isHold()`、`durationFactor()`、`energyFactor()`、`MIN_FACTOR` 0.25、`MAX_FACTOR` 4）、`WorkCycleContext`（record：`level`、`pos`、可为空的 `recipeId`、`baseTicks`、`baseEnergyPerTick`、`machine`）、`BonusOutputs`（`add(ItemStack)`）。`IUpgradeItem.onProcessEnd` 标为 `@Deprecated`（没有机器调用它）。
+- 机器（P5，`core.prefab`）：`AbstractProcessingMachineBlockEntity` 与 `AbstractStandardMachineBlockEntity` 在周期进度从 0 开始之前询问升级槽里的每个工作周期升级，任一返回 `hold` 则本刻不开工（不耗电、不推进进度、不进入空闲休眠，下一刻再问）。各升级的系数相乘后钳制到 0.25..4，叠加在超频等升级之上，只作用于当前周期；进行中周期的系数随存档保存（`scex_work_cycle`，只在系数不为 1 时写入）。每次经 `finishWork()` 完成产出后回调 `onCycleComplete`，追加产物先叠到相同物品上、再放进空输出槽，放不下的丢弃。新增 `protected @Nullable ResourceLocation currentRecipeId()`（默认空），打粉机、压缩机、提取机、电炉覆盖。新增的预制成员：`beginWorkCycle()`、`completeWorkCycles(int)`、`closeWorkCycle()`、`isWorkCycleOpen()`、`getCycleDurationFactor()`、`getCycleEnergyFactor()`、`cycleScaledTicks(int)`、`cycleScaledEnergy(long)`、`workCycleBaseTicks()`、`finishedOperations()`、`addBonusOutput(ItemStack)`。
+- 机器工作事件（P5）：已声明但从未投递的 `MachineWorkStartEvent`（可取消，取消等同 `hold`）与 `MachineWorkCompleteEvent` 现在由预制机器在同样两个时点投递。`MachineWorkCompleteEvent.getOutput()` 为空堆，`setOutput` 在预制机器中无效果。`MachineUpgradeInsertEvent` 与 `MachineUpgradeRemoveEvent` 仍未投递（API 指南已写明）。
+- 公共 API（P6，`core.api.suit`）：新增 `SuitQuantumCore.trySpendCoherence(ServerPlayer, float)`、`SuitNanoCore.trySpendReserve(ServerPlayer, float)`、`SuitNanoCore.addHeat(ServerPlayer, float)`，以及 `View` 上对应的默认方法（不改动、返回假），实现由 `common` 经现有的 `setView` 装入。只在服务端有效；`amount` 须为有限非负数；量子要求穿戴量子部件且未退相干，纳米要求纳米核心在线；余额不足时不改动。扣除走现有规则（相干度推迟回复、降到 0 退相干；热量到上限时过热、伪装结束），同步沿用现有的核心同步。没穿套装的玩家不会因此产生核心状态。
+- 示例附属：`ExampleCycleUpgrade`（`si_core_example:cycle_upgrade`，只用公共 API），按物品堆的自定义数据给出 hold / 系数 / 追加产物。
+- 与规格的差异：
+  - 工作周期的开始时点：对没有进度概念、只在 0 进度工作的机器，“开始”是从空闲转为工作的时点（每次空闲后一次），不是每刻一次。
+  - 超频机器一个周期产出多次时，`onCycleStart` 每周期一次，`onCycleComplete` 与 `MachineWorkCompleteEvent` 每次产出一次。
+  - 覆盖了 `tickProduction` 的机器（泵、复制机、扫描仪、批量合成台、激光塔、军械库、量子改装台、蓝图建造机）不回调；周期中途自己重设 `maxProgress` 的机器不受耗时系数影响；覆盖 `getEffectiveEnergyPerTick` 而不用预制值的机器（含 `GenericMachineBlockEntity`、装罐机、炼油厂）不受耗电系数影响。
+  - `trySpendCoherence` 的“穿量子套装”按“穿戴任一量子部件”判定（不要求装有行动单元）；纳米的两个方法按现有的“纳米核心在线”判定。`amount` 为 0 时，核心能支付则返回真且不改动。
+  - `MachineUpgradeInsertEvent` / `MachineUpgradeRemoveEvent` 本次未接。
+- 新增 GameTests `Round1152GameTests` 11 项：系数钳制；`proceed(2, 1)` 使打粉机周期从 300 刻变为 600 刻（未装升级的打粉机仍为 300 刻）；耗电系数（每刻 2 → 6 EU）与上下文基准值；`hold` 停在进度 0、不耗电、不休眠，换成 `proceed` 后恢复；追加产物有空位时出现、放不下时丢弃且机器继续；`recipeId` 等于 `mio_icif:powder/stone_to_gravel`；开始事件取消等同 `hold`、完成事件投递；`trySpendCoherence`、`trySpendReserve`、`addHeat` 与未穿套装的玩家。
+- 验证：`check`（含 `checkCoreArchitecture`、`checkCoreDistribution`、`compileAddonExampleJava`）通过；`runAddonGameTestServer` 完整运行 723 项全部通过（0.1.11.1 的 712 项与新增 11 项）。未在游戏客户端中检查。
 
 ## 0.1.11.1
 

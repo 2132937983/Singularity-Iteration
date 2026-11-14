@@ -177,6 +177,14 @@ private mio_icif_ExtractorRecipe currentRecipe = null;
         return recipe.map(RecipeHolder::value).orElse(null);
     }
 
+    /** 0.1.11.2: the id of the extractor recipe of the current input (for work cycle upgrades). */
+    @Override
+    protected @Nullable net.minecraft.resources.ResourceLocation currentRecipeId() {
+        ItemStack input = itemHandler.getStackInSlot(INPUT_SLOT);
+        if (level == null || input.isEmpty()) return null;
+        return recipeCache2.find(level, new mio_icif_ExtractorRecipeInput(input)).map(RecipeHolder::id).orElse(null);
+    }
+
     @Override
     protected boolean canWork() {
         // 检查是否有输入物品

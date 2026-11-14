@@ -188,6 +188,12 @@ public class mio_icif_powder_elc extends AbstractStandardMachineBlockEntity {
         return recipeCache2.find(level, recipeInput);
     }
 
+    /** 0.1.11.2: the id of the macerator recipe of the current input (for work cycle upgrades). */
+    @Override
+    protected @Nullable net.minecraft.resources.ResourceLocation currentRecipeId() {
+        return findRecipe().map(RecipeHolder::id).orElse(null);
+    }
+
     @Override
     protected boolean canWork() {
         // 检查输入槽是否有物品

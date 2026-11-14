@@ -186,6 +186,12 @@ public static final long DEFAULT_ENERGY_PER_TICK = 3L; // 每tick消
  *
      * @return 配方（如果存在）
      */
+    /** 0.1.11.2: the id of the smelting recipe of the current input (for work cycle upgrades). */
+    @Override
+    protected @Nullable ResourceLocation currentRecipeId() {
+        return findRecipe().map(RecipeHolder::id).orElse(null);
+    }
+
     private Optional<RecipeHolder<SmeltingRecipe>> findRecipe() {
         if (level == null) {
             currentRecipe = Optional.empty();

@@ -50,6 +50,7 @@ public final class QuantumCore {
             @Override public float coherence(Player player) { float[] v = view(player); return v == null ? 0 : v[0]; }
             @Override public float coherenceMax(Player player) { float[] v = view(player); return v == null ? BASE_MAX : v[1]; }
             @Override public boolean decoherent(Player player) { float[] v = view(player); return v != null && v[2] > 0; }
+            @Override public boolean trySpendCoherence(ServerPlayer player, float amount) { return QuantumCore.trySpend(player, amount); }
             @Nullable
             private float[] view(Player player) {
                 if (player.level().isClientSide) return CLIENT_VIEW == null ? null : CLIENT_VIEW.apply(player);
@@ -107,6 +108,19 @@ public final class QuantumCore {
         s.coherence = Math.max(0, s.coherence - amount);
         if (s.coherence <= 0.001F) decohere(player, s);
         s.sentHash = 0;
+    }
+
+    /**
+     * 0.1.11.2 public API ({@code SuitQuantumCore.trySpendCoherence}): spends {@code amount} (finite, 0 or more) when the
+     * player wears a quantum piece, the core is not decoherent and holds at least that much. Uses {@link #spend}, so
+     * the regeneration waits and a coherence of 0 decoheres. A player without a quantum piece gets no core state.
+     */
+    public static boolean trySpend(ServerPlayer player, float amount) {
+        if (!Float.isFinite(amount) || amount < 0 || !wearsQuantum(player)) return false;
+        QuantumCoreState s = state(player);
+        if (s.decoherentTicks > 0 || s.coherence < amount) return false;
+        if (amount > 0) spend(player, s, amount);
+        return true;
     }
 
     /** Drains a toggle action for one tick. False when the coherence ran out (the core decohered). */

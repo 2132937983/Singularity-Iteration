@@ -1,9 +1,10 @@
 package com.miophas.singularity_iteration.common.blockentity.generator;
 
-import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity;
+import com.miophas.singularity_iteration.common.energy.SolarPhysics;
 import com.miophas.singularity_iteration.common.registry.mio_icif_block_entities;
-import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import com.miophas.singularity_iteration.core.api.energy.storage.CableTier;
+import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity;
+import com.miophas.singularity_iteration.core.prefab.inventory.SlotLayout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -12,337 +13,337 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 太阳能发电机方块实体类
- * 仅在白天工作，只能在主世界使用
- * 正上方任何高度都不能有非透明方块阻挡
- * 发电时间段为6:20~17:45，平均每天能发电13050EU，输出电压为1EU/t
- * 下雨或下雪时不发电
- * 
- * 槽位结构：1个电池充电槽
+ * Every solar panel. 0.1.11.14: one implementation for the basic solar generator, the four advanced solar panels and the
+ * three METS generators (they were three code paths, each with an old-grid and an independent-network branch, and they
+ * disagreed on night, rain and shade). The others are subclasses that give their numbers.
+ *
+ * <p>The output follows {@link SolarPhysics}: the sun's elevation and the air mass, cloud cover from the weather, shade
+ * (straight up open: everything; under cover with sky light around: the diffuse part), the cell temperature from the
+ * biome, and inverter clipping at 700 W/m². A panel with a night core (the hybrid panels; the METS generators' night
+ * share) gives its core output at night while it sees the sky. It is written through the framework's sink, so both energy
+ * modes behave alike.
+ *
+ * <p>For the screen (a pyranometer record) it keeps today's irradiance and output in 96 points (every 250 ticks).
  */
 @SuppressWarnings("null")
 public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
 
-    // 槽位数量：1个电池槽
     public static final int SLOT_COUNT = 1;
-    // 电池充电槽索引
     public static final int BATTERY_SLOT = 0;
-
-    // 发电速率 (EU/tick) - LV，1 EU/t
+    /** The basic panel: 1 EU/t, LV. */
     public static final long ENERGY_GENERATION_RATE = 1L;
-
-    // 能量容量（LV 级）
     public static final long ENERGY_CAPACITY = 100000L;
-    public static final long MAX_RECEIVE = 0L; // 太阳能发电机不接受外部能量输入
-    public static final long MAX_EXTRACT = 32L; // LV 级最大输出速率 32 EU/tick
+    public static final long MAX_RECEIVE = 0L;
+    public static final long MAX_EXTRACT = 32L;
 
-    // 发电时间段（以游戏刻计算，一天24000刻）
-    // Minecraft 时间：0 = 6:00 (日出), 6000 = 12:00 (正午), 12000 = 18:00 (日落), 18000 = 0:00 (午夜)
-    // 6:20 = 0 + 20 * 1000/60 ≈ 333 刻
-    // 17:45 = 6000 + 5700 = 11700 刻（从中午往前推）
-    // 实际上：18:00 = 12000, 所以 17:45 = 12000 - 15*1000/60 = 12000 - 250 = 11750
-    public static final int GENERATION_START_TIME = 333;   // 6:20 (日出+20分钟)
-    public static final int GENERATION_END_TIME = 11750;   // 17:45 (日落-15分钟)
+    /** The environment is read every second; the record keeps a point every 250 ticks (96 a day). */
+    public static final int REFRESH = 20, SAMPLE = 250, SAMPLES = 24000 / SAMPLE;
+    /** Shade states for the screen. */
+    public static final int OPEN = 0, DIFFUSE = 1, DARK = 2, NO_SKY = 3;
+    public static final int DATA_COUNT = 16 + SAMPLES / 2;
 
-    // 一天的总发电时间刻数
-    public static final int TOTAL_GENERATION_TICKS = GENERATION_END_TIME - GENERATION_START_TIME; // 11583刻
-    // 平均每天发电量13050EU，所以实际发电速率需要调整
-    // 13050 EU / 11583 ticks ≈ 1.126 EU/t，但设定为1 EU/t
+    protected final int dayPower, corePower, chargeSlots;
+    private final boolean clampBasicBuffer;
 
-    // 当前是否正在发电（用于客户端同步和方块状态更新）
-    private boolean isGenerating = false;
-    private float scexSolarRate;
-    private int scexRefreshWait;
+    // the environment (server)
+    private int refreshIn;
+    private double irradiance, clearSky, cloud = 1, cellTemp = 25, derate = 1, elevation;
+    private int exposure = DARK;
+    private boolean coreActive;
+    private double output;
+    private boolean isGenerating;
+    // today's record
+    private long recordDay = Long.MIN_VALUE;
+    private final byte[] recordG = new byte[SAMPLES], recordOut = new byte[SAMPLES];
+    private int recordIndex = -1;
+    private double sumG, sumOut;
+    private int sumCount;
+    private double today;
 
-    /**
-     * 构造函数（用于 BlockEntityType.Builder）
-     */
     public mio_icif_solar_generator(BlockPos pos, BlockState state) {
         this(pos, state, null);
     }
 
-    /**
-     * 构造函数
-     */
     public mio_icif_solar_generator(BlockPos pos, BlockState state, BlockEntityType<?> type) {
         this(pos, state, type, CableTier.LV);
     }
 
-    /**
-     * 构造函数（带 CableTier）
-     */
     public mio_icif_solar_generator(BlockPos pos, BlockState state, BlockEntityType<?> type, CableTier cableTier) {
+        // the basic panel keeps the independent network's 2 EU buffer (its fractional output is taken every tick)
+        this(pos, state, type, cableTier, (int) ENERGY_GENERATION_RATE, 0,
+            com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.controls(state) ? 2L : ENERGY_CAPACITY, MAX_EXTRACT, 1, 1, true);
+    }
+
+    /**
+     * @param dayPower    rated output (EU/t) in full sun
+     * @param corePower   output (EU/t) of the night core, 0 for none
+     * @param slots       inventory slots (the advanced and METS panels keep 4, as saved)
+     * @param chargeSlots slots that charge items; the rest are hidden and emptied
+     */
+    protected mio_icif_solar_generator(BlockPos pos, BlockState state, BlockEntityType<?> type, CableTier cableTier,
+                                       int dayPower, int corePower, long capacity, long maxExtract, int slots, int chargeSlots, boolean clampBasicBuffer) {
         super(pos, state, type != null ? type : mio_icif_block_entities.SOLAR_GENERATOR_ENTITY_TYPE.get(),
-              SlotLayout.builder().battery().build(), ENERGY_GENERATION_RATE,
-              com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy.controls(state) ? 2L : ENERGY_CAPACITY, MAX_RECEIVE, MAX_EXTRACT, cableTier);
+              slots == 1 ? SlotLayout.builder().battery().build() : SlotLayout.builder().extra(slots).build(),
+              dayPower, capacity, MAX_RECEIVE, maxExtract, cableTier);
+        this.dayPower = dayPower;
+        this.corePower = corePower;
+        this.chargeSlots = Math.max(1, Math.min(slots, chargeSlots));
+        this.clampBasicBuffer = clampBasicBuffer;
+        setAsPowerSource(maxExtract);
     }
 
-    /**
-     * 检查是否可以发电
-     * 条件：
-     * 1. 在主世界
-     * 2. 时间在6:20~17:45之间
-     * 3. 天气晴朗（不下雨/下雪）
-     * 4. 正上方没有非透明方块阻挡
-     */
-    public boolean canGenerate(Level level, BlockPos pos) {
-        if (energyStorage.scexNetworkControlled()) return scexCurrentRate(level, pos) > 0;
-        // 检查是否在主世界
-        if (!hasSkyLight(level)) {
-            return false;
+    public static CableTier tierOf(int tier) {
+        return switch (tier) {
+            case 2 -> CableTier.MV;
+            case 3 -> CableTier.HV;
+            case 4 -> CableTier.EV;
+            case 5 -> CableTier.IV;
+            case 6 -> CableTier.LuV;
+            case 7 -> CableTier.ZPMV;
+            default -> CableTier.LV;
+        };
+    }
+
+    // ---- the environment ---------------------------------------------------------------------------------------------
+
+    /** Reads the sun, the weather, the shade and the temperature, and sets the output for the next second. */
+    protected void sense(Level level) {
+        long dayTime = level.getDayTime();
+        elevation = SolarPhysics.elevation(dayTime);
+        BlockPos up = worldPosition.above();
+        if (!level.dimensionType().hasSkyLight()) exposure = NO_SKY;
+        else if (level.canSeeSky(up)) exposure = OPEN;
+        else exposure = level.getBrightness(LightLayer.SKY, up) > 0 ? DIFFUSE : DARK;
+        var biome = level.getBiome(worldPosition).value();
+        boolean wet = biome.hasPrecipitation() && level.isRaining();
+        clearSky = SolarPhysics.clearSky(elevation);
+        cloud = biome.hasPrecipitation() ? SolarPhysics.cloudIndex(level.getRainLevel(1), level.getThunderLevel(1)) : 1;
+        double shade = switch (exposure) {
+            case OPEN -> 1;
+            case DIFFUSE -> SolarPhysics.DIFFUSE * level.getBrightness(LightLayer.SKY, up) / 15.0;
+            default -> 0;
+        };
+        irradiance = clearSky * cloud * shade;
+        cellTemp = SolarPhysics.cellTemperature(SolarPhysics.ambient(biome.getBaseTemperature(), wet), irradiance);
+        derate = SolarPhysics.derate(cellTemp);
+        coreActive = corePower > 0 && elevation <= 0 && exposure == OPEN;
+        double pv = dayPower * SolarPhysics.output(irradiance, derate);
+        output = Math.max(pv, coreActive ? corePower : 0) * outputScale();
+    }
+
+    // ---- tick --------------------------------------------------------------------------------------------------------
+
+    public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_solar_generator be) {
+        if (level.isClientSide()) return;
+        boolean wasGenerating = be.isGenerating;
+        be.chargeItems();
+        be.ejectHiddenSlots();
+        boolean network = be.energyStorage.scexNetworkControlled();
+        if (!network && be.shouldDirectlyDistributeEnergy()) be.distributeEnergy();
+        else if (!network) be.distributeEnergyToCompatSinks();
+        if (be.refreshIn-- <= 0) {
+            be.sense(level);
+            be.refreshIn = REFRESH - 1;
         }
-
-        // 检查天气（下雨或下雪时不发电）
-        if (level.isRaining() || level.isThundering()) {
-            return false;
+        if (network && be.clampBasicBuffer && be.output > 0
+                && be.energyStorage.scexExactAmount().compareTo(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(2)) > 0)
+            be.energyStorage.setEnergy(2);
+        boolean full = be.energyStorage.getAmount() >= be.energyStorage.getCapacity();
+        double made = be.output > 0 && !full ? be.produce(be.output) : 0;
+        be.isGenerating = made > 0;
+        be.record(level.getDayTime(), made);
+        if (wasGenerating != be.isGenerating) {
+            BlockState now = level.getBlockState(pos);
+            for (String name : new String[]{"active", "lit"}) {
+                if (now.getBlock().getStateDefinition().getProperty(name) instanceof net.minecraft.world.level.block.state.properties.BooleanProperty flag
+                        && now.getValue(flag) != be.isGenerating) {
+                    level.setBlock(pos, now.setValue(flag, be.isGenerating), 3);
+                    break;
+                }
+            }
         }
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(be);
+    }
 
-        // 检查时间
-        long timeOfDay = level.getDayTime() % 24000;
-        if (timeOfDay < GENERATION_START_TIME || timeOfDay > GENERATION_END_TIME) {
-            return false;
+    /** One point of today's record every 250 ticks (the mean irradiance and output); a new day starts a clean sheet. */
+    private void record(long dayTime, double made) {
+        long day = Math.floorDiv(dayTime, 24000L);
+        if (day != recordDay) {
+            java.util.Arrays.fill(recordG, (byte) 0);
+            java.util.Arrays.fill(recordOut, (byte) 0);
+            recordDay = day;
+            recordIndex = -1;
+            sumG = sumOut = 0;
+            sumCount = 0;
+            today = 0;
         }
-
-        // 检查上方是否有非透明方块阻挡
-        if (!hasClearSky(level, pos)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /** Family hooks keep the R29 fractional model and 2 EU buffer specific to basic solar. */
-    protected float scexIndependentRate(Level level, BlockPos pos) { return scexCurrentRate(level, pos); }
-    protected int scexRefreshTicks() { return 128; }
-    protected boolean scexClampBasicBuffer() { return true; }
-
-    /** IC2 的 getSkyLight 对沙漠群系免疫雨天/雷暴衰减。 */
-    private static final net.minecraft.tags.TagKey<net.minecraft.world.level.biome.Biome> SANDY_BIOMES =
-        net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.BIOME, net.minecraft.resources.ResourceLocation.parse("c:sandy"));
-
-    private static float scexCurrentRate(Level level, BlockPos pos) {
-        if (!level.dimensionType().hasSkyLight()) return 0;
-        int light = com.miophas.singularity_iteration.core.runtime.energy.engine.SolarColumnLight.sample(pos.getY() + 1, level.getMaxBuildHeight(), y -> {
-            var at = new BlockPos(pos.getX(), y, pos.getZ());
-            var state = level.getBlockState(at);
-            int opacity = state.getLightBlock(level, at);
-            // The observed reference water column attenuates by three per cell.
-            if (state.getFluidState().is(net.minecraft.tags.FluidTags.WATER)) opacity = Math.max(3, opacity);
-            return Math.min(15, Math.max(0, opacity));
-        });
-        // 0.1.11.11: never more than the world's own sky light above the panel. The column sample only looks up to the
-        // top of its own 16-block section, so a panel in a sealed cave with one air block over it read full sun.
-        light = Math.min(light, level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos.above()));
-        boolean sandy = level.getBiome(pos).is(SANDY_BIOMES);
-        return com.miophas.singularity_iteration.core.runtime.energy.engine.SolarOutputModel.rate(level.getDayTime(),
-            light,
-            sandy ? 0F : level.getRainLevel(1F), sandy ? 0F : level.getThunderLevel(1F));
-    }
-
-    /**
-     * 检查是否在主世界
-     */
-    protected boolean hasSkyLight(Level level) {
-        return level.dimensionType().hasSkyLight();
-    }
-
-    /**
-     * 检查正上方是否有非透明方块阻挡
-     * 使用 Minecraft 内置的 canSeeSky 方法
-     */
-    protected boolean hasClearSky(Level level, BlockPos pos) {
-        // 使用 Minecraft 内置方法检查该位置是否能看到天空
-        return level.canSeeSky(pos.above());
-    }
-
-    /**
-     * 生成能量
-     * 太阳能发电机在条件满足时持续发电
-     */
-    @Override
-    protected void generateEnergy() {
-        // 使用 CustomEUEnergyStorage 的 generateEnergyInternal 方法
-        // 这样可以绕过 maxReceive=0 的限制
-        long energyGenerated = Math.min(scaleOutput(energyGenerationRate),   // 0.1.8.4 output multiplier
-            energyStorage.getCapacity() - energyStorage.getAmount());
-        if (energyGenerated > 0) {
-            apiGenerateEnergy(energyGenerated, false);
+        today += made;
+        sumG += irradiance;
+        sumOut += dayPower > 0 ? made / (dayPower * Math.max(1e-9, outputScale())) : 0;
+        sumCount++;
+        int index = (int) (Math.floorMod(dayTime, 24000L) / SAMPLE);
+        if (index != recordIndex) {
+            if (recordIndex >= 0 && sumCount > 0) {
+                recordG[recordIndex] = ink(sumG / sumCount / 1016.0);
+                recordOut[recordIndex] = ink(sumOut / sumCount);
+            }
+            recordIndex = index;
+            sumG = sumOut = 0;
+            sumCount = 0;
         }
     }
 
-    /**
-     * 给充电槽中的物品充电
-     * 重写父类方法，使用 BATTERY_SLOT
-     */
+    /** 0 is no record; 1..255 is 0..1. */
+    private static byte ink(double v) {
+        return (byte) (1 + (int) Math.round(Math.max(0, Math.min(1, v)) * 254));
+    }
+
+    // ---- items ---------------------------------------------------------------------------------------------------------
+
     @Override
     protected void chargeItems() {
-        ItemStack chargeStack = itemHandler.getStackInSlot(BATTERY_SLOT);
-        if (chargeStack.isEmpty()) {
+        if (energyStorage.scexNetworkControlled()) {
+            if (com.miophas.singularity_iteration.core.runtime.energy.SolarItemCharging.charge(itemHandler, chargeSlots, energyStorage, getItemAPI())) setChanged();
             return;
         }
-
-        // 检查物品是否是电池类
-        if (getItemAPI().isBattery(chargeStack)) {
-            var api = getItemAPI();
-            long currentEnergy = api.getBatteryStored(chargeStack);
-            long batteryMaxEnergy = api.getBatteryCapacity(chargeStack);
-            long batteryChargeRate = api.getChargeRate(chargeStack);
-
-            if (currentEnergy >= batteryMaxEnergy) {
-                return;
-            }
-
-            long availableEnergy = getEnergyStorage().getAmount();
-            if (availableEnergy <= 0) {
-                return;
-            }
-
-            long energyToCharge = Math.min(batteryChargeRate, batteryMaxEnergy - currentEnergy);
-            energyToCharge = Math.min(energyToCharge, availableEnergy);
-            energyToCharge = Math.min(energyToCharge, Math.max(0, api.chargeBattery(chargeStack, energyToCharge, true)));
-            long energyExtracted = energyToCharge > 0 ? getEnergyStorageInternal().extract(energyToCharge, false) : 0;
-            long energyStored = energyExtracted > 0 ? api.chargeBattery(chargeStack, energyExtracted, false) : 0;
-            if (energyStored < energyExtracted) getEnergyStorageInternal().generateEnergyInternal(energyExtracted - energyStored, false);
+        var api = getItemAPI();
+        for (int i = 0; i < chargeSlots; i++) {
+            ItemStack stack = itemHandler.getStackInSlot(i);
+            if (stack.isEmpty() || !api.isBattery(stack)) continue;
+            long stored = api.getBatteryStored(stack), max = api.getBatteryCapacity(stack);
+            long available = energyStorage.getAmount();
+            if (stored >= max || available <= 0) continue;
+            long offer = Math.min(Math.min(api.getChargeRate(stack), max - stored), available);
+            offer = Math.min(offer, Math.max(0, api.chargeBattery(stack, offer, true)));
+            long taken = offer > 0 ? getEnergyStorageInternal().extract(offer, false) : 0;
+            long accepted = taken > 0 ? api.chargeBattery(stack, taken, false) : 0;
+            if (accepted < taken) getEnergyStorageInternal().generateEnergyInternal(taken - accepted, false);
             setChanged();
         }
     }
 
-    /**
-     * 每tick更新逻辑
-     * 
-     * 注意：先分配能量，再检查是否应该停止发电
-     * 这样可以避免因内部存储满就停止发电，而实际上能量可以通过电网输出
-     */
-    public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_solar_generator blockEntity) {
-        if (level.isClientSide()) {
-            return;
+    /** Items left in hidden slots (the METS generators' old discharge slot) are dropped so nothing is lost. */
+    private void ejectHiddenSlots() {
+        if (level == null) return;
+        for (int i = chargeSlots; i < itemHandler.getSlots(); i++) {
+            ItemStack stack = itemHandler.getStackInSlot(i);
+            if (stack.isEmpty()) continue;
+            itemHandler.setStackInSlot(i, ItemStack.EMPTY);
+            net.minecraft.world.Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.1, worldPosition.getZ() + 0.5, stack);
+            setChanged();
         }
-
-        // 记录之前的发电状态
-        boolean wasGenerating = blockEntity.isGenerating;
-
-        // 先给充电槽中的物品充电，再分配能量到相邻方块
-        // 这样可以确保电池和外部电器同时得到能量
-        blockEntity.chargeItems();
-        
-        // 只有当发电机需要直接向相邻方块输出能量时，才调用distributeEnergy()
-        if (!blockEntity.energyStorage.scexNetworkControlled() && blockEntity.shouldDirectlyDistributeEnergy()) {
-            blockEntity.distributeEnergy();
-        }
-
-        // 分配完能量后再检查是否可以发电
-        // 检查是否可以发电
-        boolean controlled = blockEntity.energyStorage.scexNetworkControlled();
-        if (controlled && blockEntity.scexRefreshWait-- <= 0) {
-            blockEntity.scexSolarRate = blockEntity.scexIndependentRate(level, pos);
-            blockEntity.scexRefreshWait = blockEntity.scexRefreshTicks() - 1;
-        }
-        boolean canGenerate = controlled ? blockEntity.scexSolarRate > 0 : blockEntity.canGenerate(level, pos);
-        if (controlled && blockEntity.scexClampBasicBuffer() && canGenerate
-                && blockEntity.energyStorage.scexExactAmount().compareTo(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(2)) > 0)
-            blockEntity.energyStorage.setEnergy(2);
-
-        // 检查能量存储是否已满
-        boolean isEnergyFull = blockEntity.getEnergyStorage().getAmount() >=
-                              blockEntity.getEnergyStorage().getCapacity();
-
-        // 更新发电状态
-        blockEntity.isGenerating = canGenerate && !isEnergyFull;
-
-        // 如果可以发电且能量未满，则生成能量
-        if (blockEntity.isGenerating) {
-            if (controlled) blockEntity.energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.fromDouble(blockEntity.scexSolarRate * blockEntity.outputScale()), false);
-            else blockEntity.generateEnergy();
-        }
-
-        // 检查发电状态是否改变
-        if (wasGenerating != blockEntity.isGenerating) {
-            // 更新方块状态
-            // 0.1.11.11: the block's own "active" property, found by name: each solar block declares its own instance, and
-            // properties compare by identity, so the advanced panels never switched to their active model
-            BlockState newState = level.getBlockState(pos);
-            if (newState.getBlock().getStateDefinition().getProperty("active") instanceof net.minecraft.world.level.block.state.properties.BooleanProperty active
-                    && newState.getValue(active) != blockEntity.isGenerating) {
-                level.setBlock(pos, newState.setValue(active, blockEntity.isGenerating), 3);
-            }
-        }
-
-        // 标记方块实体已更新
-        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
-        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
-    /**
-     * 获取燃料的燃烧时间（太阳能发电机不需要燃料）
-     * @param fuel 燃料物品
-     * @return 始终返回0，因为太阳能不需要燃料
-     */
     @Override
-    public int getFuelBurnTime(ItemStack fuel) {
-        // 太阳能发电机不需要燃料，始终返回0
-        return 0;
-    }
-
-    /**
-     * 检查是否正在燃烧/发电
-     * 对于太阳能发电机，返回当前是否正在发电
-     */
-    @Override
-    public boolean isBurning() {
-        return isGenerating;
-    }
-
-    /**
-     * 获取当前发电状态
-     */
-    public boolean isGenerating() {
-        return isGenerating;
-    }
-
-    // ==================== WorldlyContainer 接口实现 ====================
+    public int getFuelBurnTime(ItemStack fuel) { return 0; }
 
     @Override
     public int[] getSlotsForFace(Direction side) {
-        // 所有方向都可以访问电池槽
-        return new int[]{BATTERY_SLOT};
+        int[] slots = new int[chargeSlots];
+        for (int i = 0; i < chargeSlots; i++) slots[i] = i;
+        return slots;
     }
 
     @Override
     public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction side) {
-        // 电池槽：只接受电池类物品
-        if (slot == BATTERY_SLOT) {
-            return isBattery(stack);
-        }
-        return false;
+        return slot >= 0 && slot < chargeSlots && isBattery(stack);
     }
 
     @Override
     public boolean canTakeItemThroughFace(int slot, ItemStack stack, Direction side) {
-        // 电池槽可以提取
-        return slot == BATTERY_SLOT;
+        return slot >= 0 && slot < chargeSlots;
     }
 
-    // ==================== NBT 数据保存 ====================
+    // ---- state -------------------------------------------------------------------------------------------------------
+
+    @Override
+    public boolean isBurning() { return isGenerating; }
+
+    @Override
+    public boolean isGenerating() { return isGenerating; }
+
+    /** EU/t now (the configured multiplier included). */
+    @Override
+    public long getPowerOutput() { return Math.round(output); }
+
+    public int getDayPower() { return dayPower; }
+    public int getCorePower() { return corePower; }
+    public int getChargeSlots() { return chargeSlots; }
+    public double getIrradiance() { return irradiance; }
+    public double getOutput() { return output; }
+    public int getExposure() { return exposure; }
+
+    /**
+     * Menu data: 0 irradiance W/m², 1 clear-sky W/m², 2 output EU/t x100, 3 rated EU/t x100, 4 night core EU/t x100,
+     * 5 cell °C x10, 6 temperature factor x1000, 7 cloud index x1000, 8 shade state, 9 time of day, 10 energy,
+     * 11 capacity, 12 today's EU, 13 elevation x10, 14 charge slots, 15 core on, 16.. today's record (two points an int).
+     */
+    public ContainerData getContainerData() {
+        return new ContainerData() {
+            @Override public int getCount() { return DATA_COUNT; }
+            @Override public void set(int i, int v) { }
+            @Override public int get(int i) {
+                double scale = outputScale();
+                return switch (i) {
+                    case 0 -> (int) Math.round(irradiance);
+                    case 1 -> (int) Math.round(clearSky);
+                    case 2 -> (int) Math.round(output * 100);
+                    case 3 -> (int) Math.round(dayPower * scale * 100);
+                    case 4 -> (int) Math.round(corePower * scale * 100);
+                    case 5 -> (int) Math.round(cellTemp * 10);
+                    case 6 -> (int) Math.round(derate * 1000);
+                    case 7 -> (int) Math.round(cloud * 1000);
+                    case 8 -> exposure;
+                    case 9 -> level == null ? 0 : (int) Math.floorMod(level.getDayTime(), 24000L);
+                    case 10 -> (int) Math.min(Integer.MAX_VALUE, energyStorage.getAmount());
+                    case 11 -> (int) Math.min(Integer.MAX_VALUE, energyStorage.getCapacity());
+                    case 12 -> (int) Math.min(Integer.MAX_VALUE, Math.round(today));
+                    case 13 -> (int) Math.round(elevation * 10);
+                    case 14 -> chargeSlots;
+                    case 15 -> coreActive ? 1 : 0;
+                    default -> {
+                        int k = (i - 16) * 2;
+                        if (k < 0 || k + 1 >= SAMPLES) yield 0;
+                        yield (recordG[k] & 0xFF) | (recordOut[k] & 0xFF) << 8 | (recordG[k + 1] & 0xFF) << 16 | (recordOut[k + 1] & 0xFF) << 24;
+                    }
+                };
+            }
+        };
+    }
+
+    // ---- save ----------------------------------------------------------------------------------------------------------
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putBoolean("IsGenerating", isGenerating);
-        if (energyStorage.scexNetworkControlled()) tag.putFloat("scex_solar_rate", scexSolarRate);
+        tag.putLong("SolarDay", recordDay);
+        tag.putByteArray("SolarRecordG", recordG);
+        tag.putByteArray("SolarRecordOut", recordOut);
+        tag.putDouble("SolarToday", today);
     }
 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         isGenerating = tag.getBoolean("IsGenerating");
-        if (energyStorage.scexNetworkControlled()) { scexSolarRate = 0; scexRefreshWait = 0; }
+        recordDay = tag.contains("SolarDay") ? tag.getLong("SolarDay") : Long.MIN_VALUE;
+        byte[] g = tag.getByteArray("SolarRecordG"), o = tag.getByteArray("SolarRecordOut");
+        if (g.length == SAMPLES && o.length == SAMPLES) {
+            System.arraycopy(g, 0, recordG, 0, SAMPLES);
+            System.arraycopy(o, 0, recordOut, 0, SAMPLES);
+        }
+        today = tag.getDouble("SolarToday");
+        refreshIn = 0;   // read the world on the first tick, never a saved value
     }
 
     @Override
@@ -358,11 +359,10 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
         isGenerating = tag.getBoolean("IsGenerating");
     }
 
-    // ==================== MenuProvider 接口实现 ====================
-
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.mio_icif.solar_generator");
+        // 0.1.11.14: the block's own name (the advanced panels showed "Solar Generator")
+        return getBlockState().getBlock().getName();
     }
 
     @Nullable

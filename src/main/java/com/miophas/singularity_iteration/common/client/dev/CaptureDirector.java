@@ -2348,6 +2348,62 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "solar" (-Dsi.capture.scene=solar), 0.1.11.14: the solar panel screen. A hybrid panel is driven through the
+     * morning against the world clock (a shower around 09:00), then shot at noon, under a roof, and at night on its core.
+     */
+    private static void sceneSolar() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_WEATHER_CYCLE).set(false, level.getServer());
+            level.setBlock(at, block("generator/block_hybrid_solar_panel").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            solarDrive(level, at, 0, 6200);
+        });
+        server(5, sp -> openAt(sp, at));
+        server(30, sp -> {});
+        shot(1, "solar/1_noon");
+        server(1, sp -> sp.serverLevel().setBlock(at.above(3), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3));
+        server(30, sp -> {});
+        shot(1, "solar/2_covered");
+        server(1, sp -> sp.serverLevel().removeBlock(at.above(3), false));
+        server(20, sp -> solarDrive(sp.serverLevel(), at, 6200, 15000));   // after the sky light under the old roof is back
+        server(30, sp -> {});
+        shot(1, "solar/3_night_core");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Runs the panel's tick against the world clock from {@code from} to {@code to} (a shower 2500..3800), leaving the clock at {@code to}. */
+    private static void solarDrive(net.minecraft.server.level.ServerLevel level, BlockPos at, long from, long to) {
+        if (!(level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_solar_generator panel)) return;
+        try {
+            var refresh = com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_solar_generator.class.getDeclaredField("refreshIn");
+            refresh.setAccessible(true);
+            for (long t = from; t <= to; t += 10) {
+                level.setDayTime(t);
+                boolean shower = t >= 2500 && t < 3800;
+                level.setRainLevel(shower ? 1 : 0);
+                level.setThunderLevel(0);
+                refresh.setInt(panel, 0);
+                com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_solar_generator.tick(level, at, level.getBlockState(at), panel);
+                panel.getEnergyStorageInternal().setStored(Math.max(0, panel.getEnergyStorageInternal().getAmount() - 600));
+            }
+            level.setRainLevel(0);
+            level.setDayTime(to);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static {
+        if (OUT != null && "solar".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneSolar();
+        }
+    }
+
+    /**
      * Scene "thermal" (-Dsi.capture.scene=thermal), 0.1.11.10: the generator's chart recorder. Most of a game day of record
      * is written first (the furnace is driven against earlier times with a load that rises and falls, and a refuel gap),
      * then the screen at full output, banked (storage full), and in a cold start.

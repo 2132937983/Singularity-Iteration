@@ -30,9 +30,6 @@ public class mio_icif_UltimateHybridSolarPanel extends mio_icif_AdvancedSolarGen
 
     public mio_icif_UltimateHybridSolarPanel(BlockPos pos, BlockState state) {
         super(pos, state, DAY_POWER, NIGHT_POWER, CAPACITY, TIER, mio_icif_block_entities.ULTIMATE_HYBRID_SOLAR_PANEL_ENTITY_TYPE.get());
-        // 重新初始化ItemHandler以支持4个槽位
-        this.slotLayout = SlotLayout.builder().extra(4).build();
-        this.itemHandler = createItemHandler(slotLayout);
     }
 
     @Override

@@ -25,6 +25,11 @@ public class mio_icif_screens {
      * 注册菜单屏幕
      * @param event 注册菜单屏幕事件
      */
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.SolarPanelMenu> void solar(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, SolarPanelScreen<M>>register(type, SolarPanelScreen::new);
+    }
+
     private static void registerMenuScreens(RegisterMenuScreensEvent event) {
         // 注册火力发电机的 GUI 界面
         // Toolbox: the menu was registered and opened by the item, but had no screen (0.1.7.36)
@@ -166,10 +171,7 @@ public class mio_icif_screens {
         );
 
         // 注册太阳能发电机的GUI 界面
-        event.register(
-            mio_icif_menus.SOLAR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_solar_generator::new
-        );
+        solar(event, mio_icif_menus.SOLAR_GENERATOR_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册地磁发电机的 GUI 界面
         event.register(
@@ -450,46 +452,25 @@ public class mio_icif_screens {
         );
 
         // 注册高级太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.ADVANCED_SOLAR_PANEL_MENU_TYPE.get(),
-            mio_icif_gui_advanced_solar_panel::new
-        );
+        solar(event, mio_icif_menus.ADVANCED_SOLAR_PANEL_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册混合太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.HYBRID_SOLAR_PANEL_MENU_TYPE.get(),
-            mio_icif_gui_hybrid_solar_panel::new
-        );
+        solar(event, mio_icif_menus.HYBRID_SOLAR_PANEL_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册终极混合太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.ULTIMATE_HYBRID_SOLAR_PANEL_MENU_TYPE.get(),
-            mio_icif_gui_ultimate_hybrid_solar_panel::new
-        );
+        solar(event, mio_icif_menus.ULTIMATE_HYBRID_SOLAR_PANEL_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册量子太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.QUANTUM_SOLAR_PANEL_MENU_TYPE.get(),
-            mio_icif_gui_quantum_solar_panel::new
-        );
+        solar(event, mio_icif_menus.QUANTUM_SOLAR_PANEL_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册METS进阶太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.METS_ADVANCED_SOLAR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_mets_advanced_solar_generator::new
-        );
+        solar(event, mio_icif_menus.METS_ADVANCED_SOLAR_GENERATOR_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册光子振谐太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.PHOTON_RESONANCE_SOLAR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_photon_resonance_solar_generator::new
-        );
+        solar(event, mio_icif_menus.PHOTON_RESONANCE_SOLAR_GENERATOR_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册终极光子振谐太阳能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_ultimate_photon_resonance_solar_generator::new
-        );
+        solar(event, mio_icif_menus.ULTIMATE_PHOTON_RESONANCE_SOLAR_GENERATOR_MENU_TYPE.get());   // 0.1.11.14: one screen for every solar panel
 
         // 注册量子发电机的 GUI 界面
         event.register(

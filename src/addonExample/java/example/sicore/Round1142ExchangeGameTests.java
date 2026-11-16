@@ -249,7 +249,7 @@ public final class Round1142ExchangeGameTests {
         h.assertTrue(collateralCap == (multiplayer ? 5_000_000L : -1L), "collateral cap " + collateralCap + " (multiplayer " + multiplayer + ")");
         if (collateralCap > 0) {
             String last = "";
-            for (int k = 0; k < 12; k++) {
+            for (int k = 0; k < 64; k++) {   // 0.1.11.14: until refused (12 orders fell short of the cap at lower prices)
                 r = call(svc, "openFuture", player, ids.get(0), true, cap, 3);
                 last = String.valueOf(call(r, "key"));
                 if (!(boolean) call(r, "ok")) break;

@@ -16,9 +16,12 @@ item_ids:
 
 ## Function
 
-The machine makes EU from sunlight in the day and at a lower rate at night.
-The machine needs a clear view of the sky above it.
-In rain, the machine uses the night rate.
+The machine makes EU from the sunlight on it. The sun is weak in the morning and evening and strongest at noon; the machine reaches its rated output at 700 W/m² and stays there above it.
+Rain keeps about 70 % of the light and a thunderstorm about 37 %. A hot panel makes less (−0.4 % per °C above 25 °C), so deserts are sunny but hot.
+The machine needs open sky straight above it; under cover it gets only the diffuse light, in the dark nothing.
+The screen shows today's record: the sunlight on the panel, a clear day for comparison, and the output.
+At night, while it sees the sky, its night core keeps a lower output.
+The machine charges items in four slots.
 
 ## Power data
 

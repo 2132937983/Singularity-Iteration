@@ -97,7 +97,8 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
             tunnel.checkIn = CHECK_TICKS;
             tunnel.validate();
         }
-        long stepEu = tunnel.stepEu * (mio_icif_steam_turbine.superheated(tunnel.steam.getFluid().getFluid()) ? 2 : 1);
+        // 0.1.11.16: the step EU (steam into the air) times the enthalpy drop of the steam held over that of steam
+        long stepEu = Math.round(tunnel.stepEu * tunnel.stateFactor());
         if (tunnel.formed && tunnel.energy + stepEu <= ENERGY_CAPACITY && tunnel.steam.getFluidAmount() >= STEAM_PER_STEP) {
             int steps = Math.min(MAX_STEPS, tunnel.steam.getFluidAmount() / STEAM_PER_STEP);   // IC2 Classic: not capped by the room left
             tunnel.energy += stepEu * steps;
@@ -345,5 +346,13 @@ public class SteamTunnelBlockEntity extends BlockEntity implements IFluidHandler
         void link(BlockPos controller);
 
         void unlink(BlockPos controller);
+    }
+
+    /** 0.1.11.16: the work of the steam held over that of ordinary steam (1 for steam, about 2 for superheated steam). */
+    public double stateFactor() {
+        var state = mio_icif_steam_turbine.stateOf(steam.getFluid().getFluid());
+        if (state == null) return 1;
+        return com.miophas.singularity_iteration.common.energy.SteamPhysics.work(state, com.miophas.singularity_iteration.common.energy.SteamPhysics.ATMOSPHERE, com.miophas.singularity_iteration.common.energy.SteamPhysics.TURBINE_EFFICIENCY)
+            / com.miophas.singularity_iteration.common.energy.SteamPhysics.work(com.miophas.singularity_iteration.common.energy.SteamPhysics.STEAM, com.miophas.singularity_iteration.common.energy.SteamPhysics.ATMOSPHERE, com.miophas.singularity_iteration.common.energy.SteamPhysics.TURBINE_EFFICIENCY);
     }
 }

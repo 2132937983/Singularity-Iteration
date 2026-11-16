@@ -1,39 +1,35 @@
 package com.miophas.singularity_iteration.common.menu.generator;
 
 import com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_steam_kinetic_generator;
-import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
+import com.miophas.singularity_iteration.common.energy.SteamPhysics;
 import com.miophas.singularity_iteration.common.menu.base.mio_icif_generator_menu;
+import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Container menu for the steam kinetic generator.
+ * Container menu for the steam kinetic generator. 0.1.11.16: 248 x 204 (the mimic screen): the turbine slot on the left,
+ * the upgrade slot docked; the data carries the steam, the expansion and the turbine's wear.
  */
 @SuppressWarnings({"null"}) public class SteamKineticGeneratorMenu extends mio_icif_generator_menu {
 
-    private static final int TURBINE_X = 80;
-    private static final int TURBINE_Y = 26;
-    private static final int UPGRADE_X = 152;
-    private static final int UPGRADE_Y = 26;
-
-    // 数据同步索引
-    private static final int DATA_IS_HOT_STEAM = 0;
-    private static final int DATA_HAS_TURBINE = 1;
-    private static final int DATA_IS_TURBINE_FILLED = 2;
-    private static final int DATA_IS_WORKING = 3;
-    private static final int DATA_LAST_OUTPUT = 4;
-    private static final int DATA_GAUGE_LIQUID = 5;
-    private static final int DATA_WATER_AMOUNT = 6;
-    private static final int DATA_IS_THROTTLED = 7;
-    private static final int DATA_IS_VENTING = 8;
-    private static final int DATA_COUNT = 9;
-    private static final int SLOT_COUNT = 5; // extra(2,已雪藏) + turbine(1) + upgrade(2,原版只用 1)
+    public static final int TURBINE_X = 10, TURBINE_Y = 30;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+    /**
+     * 0 hot steam, 1 has turbine, 2 waterlogged, 3 working, 4 KU/t, 5 (unused), 6 water mB, 7 throttled, 8 venting,
+     * 9 steam mB, 10 steam capacity, 11 KU per mB x100, 12 exhaust condensed, 13 exhaust quality x1000,
+     * 14 turbine life per mille, 15 steam fluid id (-1 none), 16 water capacity.
+     */
+    public static final int DATA_COUNT = 17;
+    private static final int SLOT_COUNT = 5; // extra(2, shelved) + turbine(1) + upgrade(2, IC2 used 1)
 
     public SteamKineticGeneratorMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, null, null);
+        this(containerId, playerInventory, (IItemHandler) null, null);
     }
 
     public SteamKineticGeneratorMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler) {
@@ -46,90 +42,57 @@ import org.jetbrains.annotations.Nullable;
 
     public SteamKineticGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_steam_kinetic_generator blockEntity) {
         super(mio_icif_menus.STEAM_KINETIC_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory,
-              blockEntity != null ? blockEntity.getItemHandler() : null,
-              blockEntity != null ? blockEntity.getContainerData() : null, DATA_COUNT, blockEntity);
+              blockEntity != null ? blockEntity.getItemHandler() : null, null, DATA_COUNT, blockEntity);
     }
 
-    public void setSyncData(boolean isHotSteam, boolean hasTurbine, boolean isTurbineFilled, boolean isWorking,
-                            int lastOutput, int gaugeLiquid, int waterAmount, boolean throttled, boolean venting) {
-        this.data.set(DATA_IS_HOT_STEAM, isHotSteam ? 1 : 0);
-        this.data.set(DATA_HAS_TURBINE, hasTurbine ? 1 : 0);
-        this.data.set(DATA_IS_TURBINE_FILLED, isTurbineFilled ? 1 : 0);
-        this.data.set(DATA_IS_WORKING, isWorking ? 1 : 0);
-        this.data.set(DATA_LAST_OUTPUT, lastOutput);
-        this.data.set(DATA_GAUGE_LIQUID, gaugeLiquid);
-        this.data.set(DATA_WATER_AMOUNT, waterAmount);
-        this.data.set(DATA_IS_THROTTLED, throttled ? 1 : 0);
-        this.data.set(DATA_IS_VENTING, venting ? 1 : 0);
-    }
+    public int value(int i) { return data.get(i); }
 
-    public boolean isHotSteam() {
-        return this.data.get(DATA_IS_HOT_STEAM) == 1;
-    }
+    public boolean isHotSteam() { return data.get(0) == 1; }
+    public boolean hasTurbine() { return data.get(1) == 1; }
+    public boolean isTurbineFilledWithWater() { return data.get(2) == 1; }
+    public boolean isWorking() { return data.get(3) == 1; }
+    public int getLastKineticOutput() { return data.get(4); }
+    public int getWaterAmount() { return data.get(6); }
+    public boolean isThrottled() { return data.get(7) == 1; }
+    public boolean isVentingSteam() { return data.get(8) == 1; }
 
-    public boolean hasTurbine() {
-        return this.data.get(DATA_HAS_TURBINE) == 1;
-    }
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
 
-    public boolean isTurbineFilledWithWater() {
-        return this.data.get(DATA_IS_TURBINE_FILLED) == 1;
-    }
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
 
-    public boolean isWorking() {
-        return this.data.get(DATA_IS_WORKING) == 1;
-    }
-
-    public int getLastKineticOutput() {
-        return this.data.get(DATA_LAST_OUTPUT);
-    }
-
-    public int getGaugeLiquidScaled26() {
-        return this.data.get(DATA_GAUGE_LIQUID);
-    }
-
-    public int getWaterAmount() {
-        return this.data.get(DATA_WATER_AMOUNT);
-    }
-
-    /** 原版 IC2 {@code throttled}：蒸馏水槽非空（KU 输出按水量衰减）。 */
-    public boolean isThrottled() {
-        return this.data.get(DATA_IS_THROTTLED) == 1;
-    }
-
-    /** 原版 IC2 {@code ventingSteam}：蒸汽排不出去（有爆炸风险）。 */
-    public boolean isVentingSteam() {
-        return this.data.get(DATA_IS_VENTING) == 1;
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
     }
 
     @Override
     protected void addMachineSlots() {
-        // 雪藏：槽位 0-1（蒸汽单元输入 / 蒸馏水单元输出）不是原版 IC2 机制，
-        // 槽位定义保留在 SlotLayout/NBT 里，但不再加入 GUI，也不再接受物品。
-
-        // 涡轮槽(80, 26) - 索引 2（原版位置一致）
-        // mayPlace 由 MachineItemHandler.isItemValid 处理
+        // slots 0-1 (the steam/water cell slots) are shelved: kept in the save layout, not in the GUI
         this.addSlot(new SlotItemHandler(itemHandler, mio_icif_steam_kinetic_generator.TURBINE_SLOT, TURBINE_X, TURBINE_Y));
-
-        // 升级槽 (152, 26) - 原版 IC2 只有 1 个升级槽
-        this.addUpgradeSlot(mio_icif_steam_kinetic_generator.UPGRADE_SLOT_START, UPGRADE_X, UPGRADE_Y);
+        this.addUpgradeSlot(mio_icif_steam_kinetic_generator.UPGRADE_SLOT_START, TURBINE_X, TURBINE_Y + 30);
     }
-
-
 
     @Override
     public void broadcastChanges() {
-        if (blockEntity instanceof mio_icif_steam_kinetic_generator generator) {
-            setSyncData(
-                generator.isHotSteam(),
-                generator.hasTurbine(),
-                generator.isTurbineFilledWithWater(),
-                generator.isWorking(),
-                generator.getLastKineticOutput(),
-                generator.gaugeLiquidScaled(26, 0),
-                generator.getTank().getFluidAmount(),
-                generator.isThrottled(),
-                generator.isVentingSteam()
-            );
+        if (blockEntity instanceof mio_icif_steam_kinetic_generator g) {
+            boolean hot = g.isHotSteam();
+            var state = hot ? SteamPhysics.SUPERHEATED : SteamPhysics.STEAM;
+            double back = g.isExhaustCondensed() ? SteamPhysics.VACUUM : SteamPhysics.ATMOSPHERE;
+            ItemStack turbine = g.getItemHandler().getStackInSlot(mio_icif_steam_kinetic_generator.TURBINE_SLOT);
+            int life = turbine.isEmpty() || !turbine.isDamageableItem() ? (turbine.isEmpty() ? 0 : 1000)
+                : (int) Math.round(1000.0 * (turbine.getMaxDamage() - turbine.getDamageValue()) / turbine.getMaxDamage());
+            var steam = g.getSteamTank().getFluid();
+            int[] values = {hot ? 1 : 0, g.hasTurbine() ? 1 : 0, g.isTurbineFilledWithWater() ? 1 : 0, g.isWorking() ? 1 : 0,
+                g.getLastKineticOutput(), 0, g.getWaterTank().getFluidAmount(), g.isThrottled() ? 1 : 0, g.isVentingSteam() ? 1 : 0,
+                g.getSteamTank().getFluidAmount(), g.getSteamTank().getCapacity(), (int) Math.round(g.kuPerMb(hot) * 100),
+                g.isExhaustCondensed() ? 1 : 0,
+                (int) Math.round(SteamPhysics.exhaustQuality(state, back, mio_icif_steam_kinetic_generator.KINETIC_TURBINE_EFFICIENCY) * 1000),
+                life, steam.isEmpty() ? -1 : net.minecraft.core.registries.BuiltInRegistries.FLUID.getId(steam.getFluid()), g.getWaterTank().getCapacity()};
+            for (int i = 0; i < values.length; i++) data.set(i, values[i]);
         }
         super.broadcastChanges();
     }

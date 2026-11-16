@@ -95,7 +95,7 @@ public final class Round11512GameTests {
         BlockEntity be = place(h, new BlockPos(1, 2, 1), "generator/block_steam_turbine");
         var superheated = BuiltInRegistries.FLUID.get(id("superheatedsteam"));
         h.assertTrue((boolean) call(be, "acceptsFuel", superheated), "refused");
-        h.assertTrue((long) call(call(be, "fuelValue", superheated), "energyPerMb") == 2, "2 EU per 2 mB");
+        h.assertTrue((long) call(call(be, "fuelValue", superheated), "energyPerMb") == 10, "10 EU per 10 mB (0.1.11.16: the enthalpy model, into the air)");
         h.succeed();
     }
 

@@ -2348,6 +2348,105 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "steam" (-Dsi.capture.scene=steam), 0.1.11.16: the plant mimic screens of the steam chain. A boiler above the
+     * critical point feeds a steam turbine with a condenser beside it; a steam kinetic generator with a rotor drives a
+     * kinetic generator, its exhaust into a second condenser; a repressurizer with superheated steam in it.
+     */
+    private static void sceneSteam() {
+        BlockPos boiler = new BlockPos(0, -60, 3), turbine = new BlockPos(1, -60, 3), condenser = new BlockPos(2, -60, 3);
+        BlockPos kinetic = new BlockPos(-3, -60, 3), kgen = new BlockPos(-3, -60, 2), condenser2 = new BlockPos(-4, -60, 3);
+        BlockPos repress = new BlockPos(-6, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(boiler, block("producer/block_steam_generator").defaultBlockState(), 3);
+            level.setBlock(turbine, block("generator/block_steam_turbine").defaultBlockState(), 3);
+            level.setBlock(condenser, block("producer/block_condenser").defaultBlockState(), 3);
+            level.setBlock(kinetic, facing(block("producer/block_steam_kinetic_generator").defaultBlockState(), Direction.NORTH), 3);
+            level.setBlock(kgen, facing(block("generator/block_kinetic_generator").defaultBlockState(), Direction.SOUTH), 3);
+            level.setBlock(condenser2, block("producer/block_condenser").defaultBlockState(), 3);
+            level.setBlock(repress, block("producer/block_steam_repressurizer").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            var be = level.getBlockEntity(boiler);
+            if (be != null) {
+                var tag = be.saveWithoutMetadata(level.registryAccess());
+                tag.putInt("pressure", 221);
+                tag.putInt("inputMB", 1);
+                tag.putFloat("systemHeat", 100F + 221F / 220F * 100F * 2.74F);
+                be.loadWithComponents(tag, level.registryAccess());
+            }
+            if (be instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_steam_generator b)
+                b.getWaterTank().fill(new net.neoforged.neoforge.fluids.FluidStack(
+                    com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.DISTILLEDWATER.get(), 8000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            if (level.getBlockEntity(kinetic) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_steam_kinetic_generator k)
+                k.getItemHandler().setStackInSlot(2, new net.minecraft.world.item.ItemStack(
+                    BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "normal/item_steam_turbin"))));
+            if (level.getBlockEntity(condenser2) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_condenser c)
+                for (int slot = 0; slot < 4; slot++) c.getItemHandler().insertItem(slot, new net.minecraft.world.item.ItemStack(
+                    BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_vent"))), false);
+            if (level.getBlockEntity(repress) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_steam_repressurizer r)
+                r.getInputTank().fill(new net.neoforged.neoforge.fluids.FluidStack(
+                    com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.SUPERHEATEDSTEAM.get(), 6000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        });
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 80);
+        server(1, sp -> openAt(sp, boiler));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 40);
+        shot(1, "steam/1_boiler");
+        server(1, sp -> openAt(sp, turbine));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 30);
+        shot(1, "steam/2_turbine_condensing");
+        server(1, sp -> openAt(sp, condenser));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 30);
+        shot(1, "steam/3_condenser");
+        server(1, sp -> openAt(sp, kinetic));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 30);
+        shot(1, "steam/4_kinetic");
+        server(1, sp -> openAt(sp, repress));
+        steamRun(boiler, turbine, kinetic, kgen, condenser2, 30);
+        shot(1, "steam/5_repressurizer");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static net.minecraft.world.level.block.state.BlockState facing(net.minecraft.world.level.block.state.BlockState state, Direction d) {
+        if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING))
+            return state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, d);
+        if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING))
+            return state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, d);
+        return state;
+    }
+
+    /** Heat into the boiler, the turbine's and the kinetic generator's storage drained, the kinetic turbine kept in steam. */
+    private static void steamRun(BlockPos boiler, BlockPos turbine, BlockPos kinetic, BlockPos kgen, BlockPos condenser2, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                var level = sp.serverLevel();
+                if (level.getBlockEntity(boiler) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_steam_generator b) {
+                    var heat = b.getHeatStorageCapability(null);
+                    if (heat != null) heat.receiveHeat(b.getSystemHeat() < 376 ? 1200 : 300, false);
+                }
+                if (level.getBlockEntity(turbine) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (level.getBlockEntity(kgen) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (level.getBlockEntity(condenser2) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(e.getEnergyStorageInternal().getCapacity());
+                if (level.getBlockEntity(kinetic) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_steam_kinetic_generator k
+                        && k.getSteamTank().getFluidAmount() < 8000)
+                    k.getSteamTank().fill(new net.neoforged.neoforge.fluids.FluidStack(
+                        com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.STEAM.get(), 4000),
+                        net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "steam".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneSteam();
+        }
+    }
+
+    /**
      * Scene "engine" (-Dsi.capture.scene=engine), 0.1.11.15: the engine room monitor of a diesel generator. A cold start
      * under a varying load, the engine warm at load, then a storage filled to the top (stopped).
      */

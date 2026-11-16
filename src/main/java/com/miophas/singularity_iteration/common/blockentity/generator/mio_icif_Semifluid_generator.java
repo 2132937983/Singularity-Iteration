@@ -112,6 +112,12 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
         return SemifluidFuels.generatorValue(fluid);
     }
 
+    /** 0.1.11.16: called before the fuel of a tick is planned (the steam turbine looks for its condenser). */
+    protected void beforeBurn() { }
+
+    /** 0.1.11.16: called with the mB of fuel burnt in a tick (the steam turbine sends its exhaust away). */
+    protected void afterBurn(int millibuckets) { }
+
     /** mB of fuel in one unit of {@link #fuelValue} (0.1.10.36: the steam turbine burns 2 mB for 1 EU). */
     protected int millibucketsPerUnit() {
         return 1;
@@ -251,6 +257,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
         }
 
         long room = energyStorage.getCapacity() - energyStorage.getAmount();
+        beforeBurn();
         FluidStack fuel = fuelTank.getFluid();
         SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : fuelValue(fuel.getFluid());
         long generated = 0;
@@ -260,6 +267,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
                 fuelTank.getFluidAmount() / unit, scexFuelCredit, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()), room, 0);   // 0.1.8.4
             if (plan.fuelConsumed() > 0) {
                 fuelTank.drain((int) plan.fuelConsumed() * unit, IFluidHandler.FluidAction.EXECUTE);
+                afterBurn((int) plan.fuelConsumed() * unit);
             }
             scexFuelCredit = plan.bufferedEnergy();
             generated = plan.generated();
@@ -525,12 +533,14 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
         boolean wasBurning = burnTime > 0;
         handleFuelBucketSlot();
         chargeItems();
+        beforeBurn();
         FluidStack fuel = fuelTank.getFluid();
         SemifluidFuels.GeneratorValue value = fuel.isEmpty() ? null : fuelValue(fuel.getFluid());
         if (value != null && outputScale() > 0) {
             var step = com.miophas.singularity_iteration.core.runtime.energy.FluidFuelGeneration.tick(fuelTank, energyStorage,
                 scexFuelCredit, millibucketsPerUnit(), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerMb()), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, value.energyPerTick()));   // 0.1.8.4 output multiplier
             scexFuelCredit = step.bufferedEnergy();
+            if (step.fuelConsumed() > 0) afterBurn((int) step.fuelConsumed() * millibucketsPerUnit());
             burnTime = step.generated() > 0 ? 1 : 0;
         } else {
             burnTime = 0;

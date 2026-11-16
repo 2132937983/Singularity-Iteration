@@ -18,6 +18,8 @@ item_ids:
 
 The Condenser turns Steam or Superheated Steam into Distilled Water.
 Heat Vents in the four vent slots increase the speed. Each Heat Vent uses EU.
+Beside a Steam Turbine or a Steam Kinetic Generator it takes their exhaust, which lowers their back pressure to 0.1 bar and raises their output.
+The screen is a plant mimic: steam in, cooling tubes and vent fans, distilled water out.
 
 ## Power data
 

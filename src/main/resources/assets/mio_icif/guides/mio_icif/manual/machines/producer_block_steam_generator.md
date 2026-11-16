@@ -20,6 +20,7 @@ The Steam Generator uses heat (HU) and water to make Steam or Superheated Steam.
 The machine takes heat through every face except its front face.
 The GUI sets the water flow and the pressure valve. The machine pushes the steam into adjacent tanks.
 Normal water calcifies the boiler and stops the machine. Distilled Water causes no calcification.
+The screen is a plant mimic: feed water tank, drum with the heat under it, steam outlet, a temperature gauge with the critical point (374 °C, superheated steam above it) and the 500 °C limit, and the scale. Two columns of buttons on the left set the pressure valve and the feed water.
 
 ## Power data
 

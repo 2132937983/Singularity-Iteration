@@ -138,7 +138,7 @@ private int lastWaterInput = 0;   // mB/t
                 case 8 -> outputMB;
                 case 9 -> gaugeHeatScaled(76);
                 case 10 -> gaugeCalcificationScaled(58);
-                case 11 -> gaugeLiquidScaled(47, 0);
+                case 11 -> outputFluid.ordinal();   // 0.1.11.16: what leaves (the mimic screen)
                 // 水槽实际流体（原版 IC2 的 TankGauge 会显示罐内真实流体，而不是固定用水材质）
                 case 12 -> waterTank.isEmpty() ? 0
                     : net.minecraft.core.registries.BuiltInRegistries.FLUID.getId(waterTank.getFluid().getFluid());
@@ -703,6 +703,7 @@ tick 将内部蒸汽槽的蒸汽推送给相邻容器
     public ItemStackHandler getItemHandler() { return itemHandler; }
     public ContainerData getContainerData() { return containerData; }
     public int getCalcification() { return calcification; }
+    public int getOutputTypeOrdinal() { return outputFluid.ordinal(); }
     public int getMaxCalcification() { return MAX_CALCIFICATION; }
     public boolean isWorking() { return isWorking; }
     public int getPressure() { return pressure; }

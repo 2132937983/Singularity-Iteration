@@ -46,23 +46,18 @@ import org.jetbrains.annotations.Nullable;
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_1, 26, 26));
-        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_2, 26, 44));
-        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_3, 134, 26));
-        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_4, 134, 44));
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_BUCKET_SLOT, 26, 73));
-        this.addSlot(new SlotItemHandler(itemHandler, EMPTY_BUCKET_SLOT, 134, 73));
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 8, 44));
-        this.addUpgradeSlot(UPGRADE_SLOT, 152, 73);
+        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_1, 10, 18));
+        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_2, 30, 18));
+        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_3, 10, 38));
+        this.addSlot(new SlotItemHandler(itemHandler, VENT_SLOT_4, 30, 38));
+        this.addSlot(new SlotItemHandler(itemHandler, INPUT_BUCKET_SLOT, 10, 62));
+        this.addSlot(new SlotItemHandler(itemHandler, EMPTY_BUCKET_SLOT, 30, 62));
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 10, 88));
+        this.addUpgradeSlot(UPGRADE_SLOT, 30, 88);
     }
 
     // The GUI height is 184. The player inventory position follows the original IC2 logic.
     // Inventory Y = 184 - 82 = 102, hotbar Y = 184 - 24 = 160
-    @Override
-    protected int getPlayerInventoryY() { return 102; }
-
-    @Override
-    protected int getPlayerHotbarY() { return 160; }
 
     public boolean isWorking() { return data.get(0) == 1; }
     public int getEnergy() { return data.get(1); }
@@ -86,4 +81,18 @@ import org.jetbrains.annotations.Nullable;
 
     /** 0.1.10.6: the progress is at index 3 of the synced data. */
     @Override protected int progressDataIndex() { return 3; }
+
+    // 0.1.11.16: the 248 x 204 mimic screen
+    @Override
+    protected int getPlayerInventoryY() { return 122; }
+
+    @Override
+    protected int getPlayerHotbarY() { return 180; }
+
+    @Override
+    protected void addPlayerInventory(net.minecraft.world.entity.player.Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, 44 + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, 44 + i * 18, hotbarY));
+    }
 }

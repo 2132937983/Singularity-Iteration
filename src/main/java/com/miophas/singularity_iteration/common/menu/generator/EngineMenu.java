@@ -31,8 +31,14 @@ public class EngineMenu extends mio_icif_generator_menu {
 
     protected EngineMenu(MenuType<?> type, int containerId, Inventory playerInventory, @Nullable AbstractGeneratorBlockEntity blockEntity,
                          @Nullable ContainerData data) {
+        this(type, containerId, playerInventory, blockEntity, data, EngineGovernor.DATA_COUNT);
+    }
+
+    /** 0.1.11.16: the same slots with another data layout (the steam turbine). */
+    protected EngineMenu(MenuType<?> type, int containerId, Inventory playerInventory, @Nullable AbstractGeneratorBlockEntity blockEntity,
+                         @Nullable ContainerData data, int dataCount) {
         super(type, containerId, SLOT_COUNT, playerInventory, blockEntity != null ? blockEntity.getItemHandlerCapability(null) : null,
-            data, EngineGovernor.DATA_COUNT, blockEntity);
+            data, dataCount, blockEntity);
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
         this.blockEntity = blockEntity;

@@ -118,13 +118,13 @@ public class mio_icif_screens {
         // 注册蒸汽机的 GUI 界面
         event.register(
             mio_icif_menus.STEAM_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_steam_generator::new
+            BoilerScreen::new   // 0.1.11.16: plant mimic
         );
 
         // 注册蒸汽再加压机的GUI 界面
         event.register(
             mio_icif_menus.STEAM_REPRESSURIZER_MENU_TYPE.get(),
-            mio_icif_gui_steam_repressurizer::new
+            RepressurizerScreen::new
         );
 
         // 注册太阳能蒸馏机的GUI 界面
@@ -136,7 +136,7 @@ public class mio_icif_screens {
         // 注册冷凝机的 GUI 界面
         event.register(
             mio_icif_menus.CONDENSER_MENU_TYPE.get(),
-            mio_icif_gui_condenser::new
+            CondenserScreen::new
         );
 
         // 注册方块切割机的 GUI 界面
@@ -154,7 +154,7 @@ public class mio_icif_screens {
         // 注册蒸汽动能发生机的 GUI 界面
         event.register(
             mio_icif_menus.STEAM_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_steam_kinetic_generator::new
+            SteamKineticScreen::new
         );
 
         // 注册热能离心机的 GUI 界面
@@ -201,10 +201,10 @@ public class mio_icif_screens {
 
         // 注册半流质发电机的GUI 界面
         engine(event, mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get());   // 0.1.11.15: the engine room monitor
-        // 0.1.10.36: the steam turbine uses the semifluid generator screen
+        // 0.1.11.16: the steam turbine has its own mimic screen
         event.register(
             mio_icif_menus.STEAM_TURBINE_MENU_TYPE.get(),
-            mio_icif_gui_semifluid_generator::new
+            SteamTurbineScreen::new
         );
 
         // 注册核反应堆发电机的 GUI 界面

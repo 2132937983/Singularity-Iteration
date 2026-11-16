@@ -9,10 +9,15 @@ import net.neoforged.neoforge.capabilities.ItemCapability;
 /**
  * mio_icif capability system API.
  *
- * <p>This interface defines all capabilities that other mods can use. Add-on mods use the NeoForge
- * Capability system to interact with the blocks and items of this mod.
+ * <p>This interface declares capability keys for the NeoForge Capability system.
  *
- * <p>Example:
+ * <p><b>0.1.11.3: what SI provides.</b> SI registers only {@link #HEAT_STORAGE_BLOCK} and {@link #KINETIC_STORAGE_BLOCK} for
+ * its own blocks. The other keys of this interface are declared but SI registers no provider for them, so a query on an
+ * SI block or item returns null; an addon may register them for its own blocks and items. For EU use
+ * {@code EUApi.SIDED} (blocks) and the item interfaces in {@code core.api.item}; for machines and generators use
+ * {@code MioIcifAPI.getMachineAPI()}; upgrades are found by {@code instanceof IUpgradeItem}. (API guide §28.3.)
+ *
+ * <p>Example of the key style (for a key that a provider registered):
  * <pre>{@code
  * // Get the EU energy storage of a block.
  * IEUStorage storage = level.getCapability(IMioIcifCapabilities.EU_STORAGE_BLOCK, pos, direction);

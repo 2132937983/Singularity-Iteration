@@ -1081,9 +1081,11 @@ Rules:
   compressor, extractor and electric furnace return the id of their recipe. At the end of a cycle the context has the id
   taken at the start (after a reload in the middle of a cycle, or when the upgrade came in during the cycle: the id that the
   machine reports at the end, which can be null).
-* End: after each operation that finished through `finishWork()` (all recipe machines of SI), the machine calls
-  `onCycleComplete` for each stack. An overclocked machine that makes several outputs in one cycle calls it once for each
-  output.
+* End: after each operation that finished through `finishWork()` or, since 0.1.11.3, `countFinishedOperation()` (§28.1),
+  the machine calls `onCycleComplete` for each stack. An overclocked machine that makes several outputs in one cycle calls
+  it once for each output. (0.1.11.2 said "all recipe machines of SI"; the machine builder's generic machines, the blast
+  furnace, the oil refinery, the molecular transformer, the electrolyzer and the miner did not finish through
+  `finishWork()` and never ended their cycle. 0.1.11.3 fixes this, §28.1.)
 * Bonus outputs go into the output slots after the normal output: onto stacks of the same item first, then into empty output
   slots. What does not fit is discarded; a bonus never makes the machine wait. A bonus of another item in the only output
   slot blocks the next normal output, the same as any other item there (an ejector upgrade moves it).
@@ -1138,3 +1140,46 @@ The facades `SuitQuantumCore` and `SuitNanoCore` (`core.api.suit`) can now chang
 * The costs and behaviour of SI's own units, actions and bursts do not change.
 * The implementation comes in through the existing `View` hook: `View.trySpendCoherence`, `View.trySpendReserve` and
   `View.addHeat` are new default methods (no change, false), so other implementations of `View` still compile.
+
+## 28. Work cycle fixes and the API surface SI provides (0.1.11.3)
+
+### 28.1 Work cycles end on every machine
+
+In 0.1.11.2 a cycle ended only through `finishWork()`. The machines that end an operation by setting the progress back
+themselves (`GenericMachineBlockEntity`, so every machine of `IMachineBuilderAPI`, the blast furnace and the oil refinery,
+plus the molecular transformer, the electrolyzer and the miner) kept their first cycle open for good: the factors of the
+first `onCycleStart` applied to every later operation and were saved, `onCycleComplete` and `MachineWorkCompleteEvent` never
+came, and a `hold()` was not asked again.
+
+* New `protected final void countFinishedOperation()` in `AbstractProcessingMachineBlockEntity`: one finished operation that
+  made an output, for a machine that does not call `finishWork()`. The default scheduler then ends the cycle with
+  `onCycleComplete` and `MachineWorkCompleteEvent`. `finishWork()` calls it. SI's machines listed above now call it.
+* Safety net: when the progress of an open cycle goes from above 0 back to 0 in one `doWork()` and no operation was counted,
+  the cycle ends without completion callbacks (nothing says an output was made). An addon machine on the prefab therefore no
+  longer keeps its factors forever; call `countFinishedOperation()` to get the completion callbacks.
+* A hold ends when the machine stops working (no input, no recipe) and when a cycle ends, so an idle machine sleeps again
+  (it stayed awake after a hold until a cycle started).
+* `IMachineAPI` force start and stop: a forced start opens a cycle like any start (upgrades and `MachineWorkStartEvent` are
+  asked; a hold keeps the machine stopped); a forced stop ends the open cycle.
+* New `protected final void refreshCycleRecipe()`: takes `currentRecipeId()` again for the open cycle. The standard machines
+  (`AbstractStandardMachineBlockEntity`) keep their progress when the input is swapped for another valid recipe; they call
+  it right before they complete, so `onCycleComplete` reports the recipe that made the output. The factors of the cycle stay.
+
+### 28.2 `MachineWorkCompleteEvent`
+
+The class documentation now says what §27.2 says: in the prefab machines `getOutput()` is empty and `setOutput` does
+nothing. Its example that grew the output did nothing and is gone.
+
+### 28.3 Declared but not provided
+
+These parts of the API are declared but SI does not provide them. They stay for compatibility; a query returns null and a
+listener is never called. An addon may register or post them for its own content.
+
+* Capabilities of `IMioIcifCapabilities` without an SI provider: `EU_STORAGE_BLOCK`, `MACHINE_BLOCK`, `GENERATOR_BLOCK`,
+  `EU_STORAGE_ITEM`, `ELECTRIC_ITEM`, `UPGRADE_ITEM`, `REACTOR_COMPONENT`, `TRANSFORMER_BLOCK`, `PIPE_BLOCK`,
+  `ENERGY_CONVERTER_BLOCK`, `WEAPON_ITEM`, `SOLAR_HELMET_ITEM`, `JETPACK_ITEM`, `FLUID_CELL_ITEM`. SI registers
+  `HEAT_STORAGE_BLOCK` and `KINETIC_STORAGE_BLOCK`. Use instead: `EUApi.SIDED` for the EU of a block, the item interfaces of
+  `core.api.item` for EU items, `MioIcifAPI.getMachineAPI()` for machines and generators; machines find upgrades by
+  `instanceof IUpgradeItem`, not by `UPGRADE_ITEM`.
+* Events never posted: `GeneratorStartEvent`, `GeneratorStopEvent`, `EnergyGenerationEvent`, `EnergyTransferEvent`, and (as
+  §27.2 says) `MachineUpgradeInsertEvent`, `MachineUpgradeRemoveEvent`.

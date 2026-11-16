@@ -666,15 +666,22 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
                 return;
             }
             int finished = finishedOperations;
+            int progressBefore = progress;
             doWork();
             if (finished != finishedOperations) {
                 completeWorkCycles(finishedOperations - finished);
                 // The next cycle starts in this tick when the machine goes on working.
                 if (isWorking && progress == 0 && !beginWorkCycle()) stopWork();
+            } else if (workCycleOpen && progressBefore > 0 && progress == 0) {
+                // 0.1.11.3: a machine that ends its operation without finishWork() or countFinishedOperation() (an
+                // addon machine, for example) still ends the cycle; its factors stuck for good and a hold was never
+                // asked again. No completion callback, since nothing says an output was made.
+                closeWorkCycle();
             }
         } else {
             if (shouldResetProgress()) progress = 0;
             stopWork();
+            workCycleHeld = false;   // 0.1.11.3: a hold ends with the work, so the idle machine can sleep again
             if (progress == 0) closeWorkCycle();
         }
         updateProgress();
@@ -797,6 +804,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     /** 0.1.11.2: ends the open cycle (its factors no longer apply). */
     protected final void closeWorkCycle() {
         workCycleOpen = false;
+        workCycleHeld = false;   // 0.1.11.3
         cycleRecipeId = null;
         cycleRecipeKnown = false;
         cycleBaseTicks = -1;
@@ -850,6 +858,24 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
 
     /** Operations finished through {@link #finishWork()} so far (for the cycle dispatch of subclasses with their own scheduler). */
     protected final int finishedOperations() { return finishedOperations; }
+
+    /**
+     * 0.1.11.3: counts one finished operation that made an output, for a machine that ends its operation without
+     * {@link #finishWork()} (it sets the progress back itself). The default scheduler then calls the work cycle
+     * upgrades' {@code onCycleComplete} and posts MachineWorkCompleteEvent, as for {@code finishWork()}.
+     */
+    protected final void countFinishedOperation() { finishedOperations++; }
+
+    /**
+     * 0.1.11.3: takes the recipe the machine uses now as the recipe of the open cycle, when a work cycle upgrade asked
+     * for it. A machine that keeps its progress when the input is swapped for another valid recipe calls this right
+     * before it completes, so {@code onCycleComplete} reports the recipe that made the output. The factors stay.
+     */
+    protected final void refreshCycleRecipe() {
+        if (!workCycleOpen || !cycleRecipeKnown || level == null || level.isClientSide) return;
+        var now = currentRecipeId();
+        if (now != null) cycleRecipeId = now;
+    }
 
     /**
      * 0.1.11.2: puts a bonus output into the output slots (same item first, then empty slots); discards what does not fit.
@@ -1735,7 +1761,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
      * Completes the production.
      */
     protected void finishWork() {
-        finishedOperations++;   // 0.1.11.2: counted for the work cycle dispatch
+        countFinishedOperation();   // 0.1.11.2: counted for the work cycle dispatch
         progress = 0;
         isWorking = false;
         if (level != null) lastFinishTick = level.getGameTime();
@@ -1769,6 +1795,9 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
      * Starts the work by force (for API calls).
      */
     public void forceStartWork() {
+        // 0.1.11.3: a forced start opens a work cycle like any start (upgrades and MachineWorkStartEvent are asked;
+        // a hold keeps the machine stopped). It used to skip both.
+        if (!workCycleOpen && progress == 0 && !beginWorkCycle()) return;
         this.isWorking = true;
         this.progress = Math.min(this.progress + 1, this.maxProgress);
     }
@@ -1779,6 +1808,7 @@ public abstract class AbstractProcessingMachineBlockEntity extends AbstractEnerg
     public void forceStopWork() {
         this.isWorking = false;
         this.progress = 0;
+        closeWorkCycle();   // 0.1.11.3: the next run starts a new cycle (it kept the old factors and recipe)
     }
 
     @Override

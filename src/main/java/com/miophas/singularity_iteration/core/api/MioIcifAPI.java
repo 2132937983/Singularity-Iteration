@@ -126,13 +126,13 @@ public interface MioIcifAPI {
      * <p><b>EN:</b> Returns the generator API. Deprecated: a generator is now one type of machine.
      * Migration: create a generator with {@link #getMachineBuilderAPI()}{@code .createGeneratorBuilder()};
      * query it with {@link #getMachineAPI()}{@code .getMachineInfo(world, pos)}; start or stop it with
-     * {@code forceStart/Stop(world, pos)}; or use the capability {@code IMioIcifCapabilities.GENERATOR_BLOCK}.
+     * {@code forceStart/Stop(world, pos)}; (0.1.11.3: SI registers no {@code IMioIcifCapabilities.GENERATOR_BLOCK} provider).
      * <p><b>ZH:</b> 返回发电机 API。已弃用：发电机现在是机器的一种。迁移方法：用 {@link #getMachineBuilderAPI()}{@code .createGeneratorBuilder()}
      * 创建；用 {@link #getMachineAPI()}{@code .getMachineInfo(world, pos)} 查询；用 {@code forceStart/Stop(world, pos)} 启停；
-     * 或使用能力 {@code IMioIcifCapabilities.GENERATOR_BLOCK}。
+     * （0.1.11.3：奇点迭代不注册 {@code IMioIcifCapabilities.GENERATOR_BLOCK}）。
      * <p><b>JA:</b> 発電機 API を返す。非推奨：発電機は現在、機械の一種である。移行方法：{@link #getMachineBuilderAPI()}{@code .createGeneratorBuilder()}
      * で作成し、{@link #getMachineAPI()}{@code .getMachineInfo(world, pos)} で照会し、{@code forceStart/Stop(world, pos)} で起動・停止する。
-     * またはケイパビリティ {@code IMioIcifCapabilities.GENERATOR_BLOCK} を使う。
+     * （0.1.11.3：奇点迭代は {@code IMioIcifCapabilities.GENERATOR_BLOCK} を登録しない）。
      *
      * <pre>{@code
      * // Old (deprecated) / 旧 / 旧方式

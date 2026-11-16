@@ -70,6 +70,7 @@ public abstract class AbstractStandardMachineBlockEntity extends AbstractProcess
         // Pay once per active world tick. Each operation still rechecks the real recipe,
         // input quantity and output space through the existing machine implementation.
         paidForThisTick = true;
+        refreshCycleRecipe();   // 0.1.11.3: an input swapped mid-cycle for another valid recipe reports the new recipe
         int finished = finishedOperations();
         try {
             for (int i=0; i<timing.operations() && canWork(); i++) {

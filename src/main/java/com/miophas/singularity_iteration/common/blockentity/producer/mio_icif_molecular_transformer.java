@@ -253,6 +253,7 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
         if (changed) {
             progress = 0;
             isWorking = false;
+            closeWorkCycle();   // 0.1.11.3: as the default input check does since 0.1.11.2
             consumedEU = 0;
             currentRecipeEU = null;
             lastEnergyPerTick = null;
@@ -312,7 +313,7 @@ public class mio_icif_molecular_transformer extends AbstractProcessingMachineBlo
                 int savedProgress = progress;
                 // Publish completed billing before slot callbacks can observe the next input.
                 consumedEU = 0; currentRecipeEU = null; lastEnergyPerTick = null; progress = 0; isWorking = false;
-                if (plan.get().commit()) resetWork();
+                if (plan.get().commit()) { countFinishedOperation(); resetWork(); }   // 0.1.11.3: closes the work cycle
                 else { consumedEU = paid; currentRecipeEU = cost; lastEnergyPerTick = lastRate; progress = savedProgress; stopWork(); }
             } else {
                 // 无法添加到输出槽，停止工作状态，不重置进度

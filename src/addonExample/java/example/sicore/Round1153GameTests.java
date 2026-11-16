@@ -1,6 +1,8 @@
 package example.sicore;
 
+import com.miophas.singularity_iteration.core.api.event.MachineWorkCompleteEvent;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
+import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractProcessingMachineBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.item.AbstractBattery;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -285,6 +287,98 @@ public final class Round1153GameTests {
         h.runAfterDelay(3, () -> {
             h.assertTrue(!(boolean) call(pump, "hasUncertainRemoval"), "The pump closes the open removal and goes on");
             h.succeed();
+        });
+    }
+
+    // ------------------------------------------------------------------ B3 (work cycles, 0.1.11.2 API)
+
+    private static final java.util.Map<BlockPos, Integer> COMPLETES = new java.util.concurrent.ConcurrentHashMap<>();
+    private static volatile boolean listening;
+
+    private static synchronized void listen() {
+        if (listening) return;
+        listening = true;
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((MachineWorkCompleteEvent e) -> COMPLETES.merge(e.getPos().immutable(), 1, Integer::sum));
+    }
+
+    private static CompoundTag cycleTag(String key, Object value) {
+        CompoundTag tag = new CompoundTag();
+        if (value instanceof Boolean b) tag.putBoolean(key, b);
+        else tag.putFloat(key, (Float) value);
+        return tag;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static AbstractProcessingMachineBlockEntity macerator(GameTestHelper h, BlockPos at, ItemStack upgrade) {
+        h.setBlock(at, BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "producer/block_powder_elc")));
+        var m = (AbstractProcessingMachineBlockEntity) h.getBlockEntity(at);
+        h.assertTrue(m.getItemHandler().insertItem(0, new ItemStack(Items.STONE, 64), false).isEmpty(), "stone was refused");
+        if (!upgrade.isEmpty()) h.assertTrue(m.getItemHandler().insertItem(3, upgrade, false).isEmpty(), "the upgrade was refused");
+        m.getEnergyStorageInternal().setStored(600);
+        return m;
+    }
+
+    /** A-1: a machine that ends its operation without finishWork() (here the molecular transformer) now ends its cycles. */
+    @GameTest(template = "empty", timeoutTicks = 100)
+    @SuppressWarnings("deprecation")
+    public static void transformerEndsItsWorkCycles(GameTestHelper h) {
+        listen();
+        BlockPos at = new BlockPos(1, 1, 1);
+        h.setBlock(at, BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "producer/block_molecular_transformer")));
+        var m = (AbstractProcessingMachineBlockEntity) h.getBlockEntity(at);
+        BlockPos abs = h.absolutePos(at);
+        COMPLETES.remove(abs);
+        h.assertTrue(m.getItemHandler().insertItem(0, new ItemStack(Items.DIRT, 3), false).isEmpty(), "dirt was refused");
+        h.onEachTick(() -> {
+            m.getEnergyStorageInternal().setStored(Math.min(m.getEnergyStorageInternal().getCapacity(), 200_000));
+            int clay = m.getItemHandler().getStackInSlot(1).getCount();
+            if (clay >= 2) {
+                int events = COMPLETES.getOrDefault(abs, 0);
+                h.assertTrue(events >= clay, "MachineWorkCompleteEvent came " + events + " times for " + clay + " clay (0.1.11.2: never)");
+                h.succeed();
+            }
+        });
+    }
+
+    /** A-5: a forced stop ends the open cycle; the next run starts a new one (it kept the old factors). */
+    @GameTest(template = "empty", timeoutTicks = 60)
+    public static void forcedStopEndsTheCycle(GameTestHelper h) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        var m = macerator(h, at, ExampleCycleUpgrade.configured(cycleTag("duration", 2.0F)));
+        h.runAfterDelay(10, () -> {
+            h.assertTrue(m.isWorkCycleOpen() && m.getCycleDurationFactor() == 2F && m.getMaxProgress() == 600,
+                "the cycle runs with its factor: " + m.getMaxProgress());
+            m.forceStopWork();
+            h.assertTrue(!m.isWorkCycleOpen() && m.getCycleDurationFactor() == 1F && m.getMaxProgress() == 300,
+                "a forced stop ends the cycle: open " + m.isWorkCycleOpen() + ", ticks " + m.getMaxProgress());
+            h.succeed();
+        });
+    }
+
+    /** A-5: a forced start during a hold respects the hold. */
+    @GameTest(template = "empty", timeoutTicks = 40)
+    public static void forcedStartRespectsAHold(GameTestHelper h) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        var m = macerator(h, at, ExampleCycleUpgrade.configured(cycleTag("hold", true)));
+        h.runAfterDelay(5, () -> {
+            m.forceStartWork();
+            h.assertTrue(m.getProgress() == 0 && !m.isWorkCycleOpen(), "a forced start skipped the hold: progress " + m.getProgress());
+            h.succeed();
+        });
+    }
+
+    /** A-4: after a hold, a machine whose input is taken out goes back to idle sleep. */
+    @GameTest(template = "empty", timeoutTicks = 120)
+    public static void heldMachineSleepsWhenTheInputGoes(GameTestHelper h) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        var m = macerator(h, at, ExampleCycleUpgrade.configured(cycleTag("hold", true)));
+        h.runAfterDelay(5, () -> {
+            h.assertTrue(!m.isIdleAsleep(), "the held machine is awake");
+            m.getItemHandler().extractItem(0, 64, false);
+            h.runAfterDelay(50, () -> {
+                h.assertTrue(m.isIdleAsleep(), "without input the machine sleeps again (0.1.11.2: awake for good after a hold)");
+                h.succeed();
+            });
         });
     }
 }

@@ -1189,6 +1189,12 @@ public class mio_icif_capacities {
         );
 
         // Register item handler capability
+        // 0.1.11.13: pipes fill the water generator's tank
+        event.registerBlockEntity(
+            Capabilities.FluidHandler.BLOCK,
+            mio_icif_block_entities.WATER_GENERATOR_ENTITY_TYPE.get(),
+            (blockEntity, direction) -> blockEntity instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_water_generator water
+                ? water.getWaterHandler(direction) : null);
         event.registerBlockEntity(
             Capabilities.ItemHandler.BLOCK,
             mio_icif_block_entities.WATER_GENERATOR_ENTITY_TYPE.get(),

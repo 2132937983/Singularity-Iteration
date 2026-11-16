@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
  * - 电压等级: 可配置，默认 HV (3)
  */
 @SuppressWarnings("null")
-public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity implements IGeneratorBlock {
+public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity implements com.miophas.singularity_iteration.core.api.machine.IComparatorSource, IGeneratorBlock {
 
     // 默认配置 (参考ASP)
     /** 0.1.11.12: an endgame generator above the quantum solar panel it is made from (was 512 EU/t at HV). */
@@ -326,5 +326,11 @@ public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity impleme
     @Override
     public void setBurnTime(int ticks) {
         // Not applicable for quantum generator
+    }
+
+    /** 0.1.11.13: comparator by the share of the energy storage filled. */
+    @Override
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(energyStorage.getAmount(), energyStorage.getCapacity());
     }
 }

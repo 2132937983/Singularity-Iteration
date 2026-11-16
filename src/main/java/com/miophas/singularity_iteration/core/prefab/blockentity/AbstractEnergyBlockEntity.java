@@ -64,6 +64,25 @@ public abstract class AbstractEnergyBlockEntity extends BlockEntity implements M
     
     /** Legacy implementation field. Addons should use getEnergyStorage() and the protected api* operations. */
     @org.jetbrains.annotations.ApiStatus.Internal
+    /**
+     * 0.1.11.13: generates {@code eu} EU (already scaled) into the storage, in either energy mode: as an exact amount on
+     * the independent network, in whole EU with the fraction carried on the old grid. Never more than the room left.
+     * Generators each branched on the energy mode themselves before (and some made nothing in one of them).
+     *
+     * @return the EU stored
+     */
+    protected double produce(double eu) {
+        if (!(eu > 0)) return 0;
+        if (energyStorage.scexNetworkControlled())
+            return energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.fromDouble(eu), false).toDouble();
+        double v = eu + produceCarry;
+        long whole = (long) Math.floor(v);
+        long room = Math.max(0, energyStorage.getCapacity() - energyStorage.getAmount());
+        if (whole > room) { whole = room; produceCarry = 0; } else produceCarry = v - whole;
+        return whole > 0 ? energyStorage.generateEnergyInternal(whole, false) : 0;
+    }
+    private double produceCarry;
+
     protected final CustomEUEnergyStorage energyStorage;
     private com.miophas.singularity_iteration.core.runtime.energy.FeMachineBridge scexFe;
     private CustomEUEnergyStorage[] scexEuPorts;

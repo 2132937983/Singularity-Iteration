@@ -28,7 +28,7 @@ import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
-public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch {
+public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
 
     public static final int SLOT_COUNT = 3;
     public static final int FUEL_BUCKET_SLOT = 0;
@@ -465,7 +465,9 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity imple
         }
     }
 
-    /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
+    /** 0.1.11.13: comparator by the fuel in the tank. */
     @Override
-    public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(fuelTank.getFluidAmount(), fuelTank.getCapacity());
+    }
 }

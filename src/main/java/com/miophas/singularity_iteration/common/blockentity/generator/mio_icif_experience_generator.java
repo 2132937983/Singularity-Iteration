@@ -26,28 +26,33 @@ import net.neoforged.neoforge.items.IItemHandler;
 import java.util.List;
 
 @SuppressWarnings("null")
-public class mio_icif_experience_generator extends AbstractEnergyBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, com.miophas.singularity_iteration.common.area.WorkAreaProvider, IGeneratorBlock {
+public class mio_icif_experience_generator extends AbstractEnergyBlockEntity implements com.miophas.singularity_iteration.core.api.machine.IComparatorSource, com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, com.miophas.singularity_iteration.common.area.WorkAreaProvider, IGeneratorBlock {
 
     private boolean registered = false;
 
-    private static final long ENERGY_CAPACITY = 1000000L;
-    private static final long MAX_ENERGY_RECEIVE = 0L;
-    private static final long MAX_ENERGY_EXTRACT = 512L;
-    private static final CableTier CABLE_TIER = CableTier.HV;
-    private static final long PRODUCTION = 160L;
-
-    private static final int SCAN_RANGE = 5;
+    /**
+     * 0.1.11.13: the numbers of a model. The basic and the advanced generator were two copies of the same class; the
+     * advanced one now extends this one with its own profile.
+     */
+    protected record Profile(long capacity, long maxExtract, CableTier tier, long production, int scanRange, int valueScale) {}
+    protected static final Profile BASIC = new Profile(1000000L, 512L, CableTier.HV, 160L, 5, 1);
+    protected static final long MAX_ENERGY_RECEIVE = 0L;
+    protected final Profile profile;
     private static final double CONSUME_DISTANCE_SQ = 1.0D;
 
-    private int fuel = 0;
+    protected int fuel = 0;
     private long scexFuelCredit;
     private final com.miophas.singularity_iteration.core.runtime.energy.WorldFuelCollection scexCollector = new com.miophas.singularity_iteration.core.runtime.energy.WorldFuelCollection();
     private boolean isWorking = false;
 
     public mio_icif_experience_generator(BlockPos pos, BlockState state) {
-        super(pos, state, mio_icif_block_entities.EXPERIENCE_GENERATOR_ENTITY_TYPE.get(),
-              ENERGY_CAPACITY, MAX_ENERGY_RECEIVE, MAX_ENERGY_EXTRACT, CABLE_TIER);
-        setAsPowerSource(PRODUCTION);
+        this(pos, state, mio_icif_block_entities.EXPERIENCE_GENERATOR_ENTITY_TYPE.get(), BASIC);
+    }
+
+    protected mio_icif_experience_generator(BlockPos pos, BlockState state, net.minecraft.world.level.block.entity.BlockEntityType<?> type, Profile profile) {
+        super(pos, state, type, profile.capacity(), MAX_ENERGY_RECEIVE, profile.maxExtract(), profile.tier());
+        this.profile = profile;
+        setAsPowerSource(profile.production());
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_experience_generator blockEntity) {
@@ -62,14 +67,14 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
 
         // 0.1.11.11: the shared collector (merged orbs counted, at most 64 entities a tick) and nothing taken while the
         // storage is full or the fuel is well stocked (it ate every drop around it for nothing before)
-        if (level instanceof net.minecraft.server.level.ServerLevel server) blockEntity.fuel = blockEntity.scexCollector.experience(server, pos, SCAN_RANGE, blockEntity.fuel, blockEntity.fuelLimit());
+        if (level instanceof net.minecraft.server.level.ServerLevel server) blockEntity.fuel = blockEntity.scexCollector.experience(server, pos, blockEntity.profile.scanRange(), blockEntity.fuel, blockEntity.fuelLimit());
 
         boolean wasWorking = blockEntity.isWorking;
         blockEntity.isWorking = blockEntity.fuel > 0 &&
                 blockEntity.energyStorage.getAmount() < blockEntity.energyStorage.getCapacity();
 
         long room = blockEntity.energyStorage.getCapacity() - blockEntity.energyStorage.getAmount();
-        long tickEu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, PRODUCTION);   // 0.1.8.4
+        long tickEu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, blockEntity.profile.production());   // 0.1.8.4
         // 0.1.11.11: a tick of fuel only when its whole output fits (a part was lost before)
         if (blockEntity.fuel > 0 && tickEu > 0 && room >= tickEu) {
             blockEntity.energyStorage.generateEnergyInternal(tickEu, false);
@@ -95,9 +100,9 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
         int previousFuel = fuel;
         long previousCredit = scexFuelCredit;
         if (com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this) == 0) return;                      // 0.1.8.4: switched off in the config
-        fuel = scexCollector.experience(server, pos, SCAN_RANGE, fuel, fuelLimit());
+        fuel = scexCollector.experience(server, pos, profile.scanRange(), fuel, fuelLimit());
         var step = com.miophas.singularity_iteration.core.runtime.energy.StoredFuelGeneration.tick(energyStorage, fuel, scexFuelCredit,
-            com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, PRODUCTION));   // 0.1.8.4 output multiplier
+            com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, profile.production()));   // 0.1.8.4 output multiplier
         fuel = Math.toIntExact(step.fuelRemaining());
         scexFuelCredit = step.bufferedEnergy();
         boolean wasWorking = isWorking;
@@ -106,49 +111,15 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
         if (previousFuel != fuel || previousCredit != scexFuelCredit || wasWorking != isWorking || step.generated() > 0) setChanged();
     }
 
-    private void scanAndConsumeOrbs(Level level, BlockPos pos) {
-        BlockPos minPos = pos.offset(-SCAN_RANGE, -SCAN_RANGE, -SCAN_RANGE);
-        BlockPos maxPos = pos.offset(SCAN_RANGE, SCAN_RANGE, SCAN_RANGE);
-        AABB bb = new AABB(minPos.getX(), minPos.getY(), minPos.getZ(), maxPos.getX() + 1, maxPos.getY() + 1, maxPos.getZ() + 1);
-
-        List<ExperienceOrb> orbs = level.getEntitiesOfClass(ExperienceOrb.class, bb);
-
-        for (ExperienceOrb orb : orbs) {
-            double dist = pos.distToCenterSqr(orb.getX(), orb.getY(), orb.getZ());
-
-            if (dist <= CONSUME_DISTANCE_SQ) {
-                fuel += orb.getValue();
-                orb.discard();
-            } else {
-                double d1 = (pos.getX() + 0.5D - orb.getX()) / 8.0D;
-                double d2 = (pos.getY() + 0.5D - orb.getY()) / 8.0D;
-                double d3 = (pos.getZ() + 0.5D - orb.getZ()) / 8.0D;
-                double d4 = Math.sqrt(d1 * d1 + d2 * d2 + d3 * d3);
-                double d5 = 1.0D - d4;
-
-                if (d5 > 0.0D) {
-                    d5 = d5 * d5;
-                    orb.setDeltaMovement(
-                            orb.getDeltaMovement().add(
-                                    d1 / d4 * d5 * 0.05D,
-                                    d2 / d4 * d5 * 0.05D,
-                                    d3 / d4 * d5 * 0.05D));
-                }
-            }
-        }
-    }
 
     private void updateBlockState(boolean working) {
         if (level == null || level.isClientSide()) {
             return;
         }
         BlockState currentState = level.getBlockState(worldPosition);
-        Boolean currentActive = currentState.getValue(
-                com.miophas.singularity_iteration.common.block.generator.mio_icif_block_experience_generator.ACTIVE);
-        if (currentActive != working) {
-            level.setBlock(worldPosition, currentState.setValue(
-                    com.miophas.singularity_iteration.common.block.generator.mio_icif_block_experience_generator.ACTIVE,
-                    working), 3);
+        if (currentState.getBlock().getStateDefinition().getProperty("active") instanceof net.minecraft.world.level.block.state.properties.BooleanProperty active
+                && currentState.getValue(active) != working) {
+            level.setBlock(worldPosition, currentState.setValue(active, working), 3);
         }
     }
 
@@ -183,14 +154,14 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
     public double getOfferedEnergy() {
         if (energyStorage.scexNetworkControlled()) return 0;
         long available = Math.min(energyStorage.getAmount(), energyStorage.getMaxExtract());
-        return Math.min(available, CABLE_TIER.powerRating);
+        return Math.min(available, profile.tier().powerRating);
     }
 
     @Override
     public void drawEnergy(double amount) {
         if (energyStorage.scexNetworkControlled()) return;
         if (amount > 0.0D) {
-            long request = Math.min((long) amount, CABLE_TIER.powerRating);
+            long request = Math.min((long) amount, profile.tier().powerRating);
             energyStorage.extract(request, false);
         }
     }
@@ -198,7 +169,7 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
     @Override
     public int getSourceTier() {
         if (energyStorage.scexNetworkControlled()) return 0;
-        return EnergyNetGlobal.cableTierToSourceTier(CABLE_TIER);
+        return EnergyNetGlobal.cableTierToSourceTier(profile.tier());
     }
 
     @Override
@@ -235,7 +206,7 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         fuel = Math.max(0, tag.getInt("Fuel"));
-        scexFuelCredit = com.miophas.singularity_iteration.core.api.util.BoundedUnits.clamp(tag.getLong("scex_fuel_credit_eu"), PRODUCTION - 1);
+        scexFuelCredit = com.miophas.singularity_iteration.core.api.util.BoundedUnits.clamp(tag.getLong("scex_fuel_credit_eu"), profile.production() - 1);
         // The parent's lowercase energy + fraction is authoritative in the controlled format.
         if (tag.contains("Energy", net.minecraft.nbt.Tag.TAG_LONG)
                 && (!energyStorage.scexNetworkControlled() || !tag.contains("energy", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC))) {
@@ -260,7 +231,7 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.handleUpdateTag(tag, registries);
         fuel = Math.max(0, tag.getInt("Fuel"));
-        scexFuelCredit = com.miophas.singularity_iteration.core.api.util.BoundedUnits.clamp(tag.getLong("scex_fuel_credit_eu"), PRODUCTION - 1);
+        scexFuelCredit = com.miophas.singularity_iteration.core.api.util.BoundedUnits.clamp(tag.getLong("scex_fuel_credit_eu"), profile.production() - 1);
         isWorking = tag.getBoolean("IsWorking");
     }
 
@@ -276,7 +247,7 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
 
     @Override
     public ICableTier getCableTier() {
-        return CABLE_TIER;
+        return profile.tier();
     }
 
     @Override
@@ -296,7 +267,7 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
 
     @Override
     public long getPowerOutput() {
-        return PRODUCTION;
+        return profile.production();
     }
 
     @Override
@@ -327,10 +298,16 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
 
     @Override
     public java.util.List<com.miophas.singularity_iteration.common.area.WorkArea> workAreas() {
-        return java.util.List.of(com.miophas.singularity_iteration.common.area.WorkArea.cube(worldPosition, SCAN_RANGE, com.miophas.singularity_iteration.common.area.WorkArea.COLLECT));
+        return java.util.List.of(com.miophas.singularity_iteration.common.area.WorkArea.cube(worldPosition, profile.scanRange(), com.miophas.singularity_iteration.common.area.WorkArea.COLLECT));
     }
 
     /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
     @Override
     public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
+
+    /** 0.1.11.13: comparator by the share of the energy storage filled. */
+    @Override
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(energyStorage.getAmount(), energyStorage.getCapacity());
+    }
 }

@@ -102,7 +102,8 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
 
         // 检查是否是水桶
         if (bucketStack.is(Items.WATER_BUCKET)) {
-            if (energyStorage.scexNetworkControlled() && bucketStack.getCount() != 1) return false;
+            // 0.1.11.13: one bucket at a time in both energy modes (the old grid shrank a stack and lost its empty buckets)
+            if (bucketStack.getCount() != 1) return false;
             // 检查水槽是否有足够空间
             int spaceAvailable = WATER_CAPACITY - waterAmount;
             if (spaceAvailable < WATER_PER_BUCKET) {
@@ -110,19 +111,8 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
             }
 
             // 消耗水桶，添加水量
-            bucketStack.shrink(1);
             waterAmount += WATER_PER_BUCKET;
-
-            // 如果槽位为空，放入空桶
-            if (bucketStack.isEmpty()) {
-                itemHandler.setStackInSlot(BUCKET_SLOT, new ItemStack(Items.BUCKET));
-            } else {
-                // 尝试将空桶放入槽位或玩家背包
-                // 这里简化处理，直接替换（实际应该尝试合并）
-                // 由于槽位只能放一个物品，这里需要处理溢出
-                // 暂时简单处理：如果槽位满了，就不给空桶（或者可以掉落）
-                // 更好的做法是在tick中处理空桶输出
-            }
+            itemHandler.setStackInSlot(BUCKET_SLOT, new ItemStack(Items.BUCKET));   // written through the slot
 
             setChanged();
             return true;
@@ -440,5 +430,35 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new com.miophas.singularity_iteration.common.menu.generator.WaterGeneratorMenu(containerId, playerInventory, this);
+    }
+
+    // ---- 0.1.11.13: pipes can fill the water tank (it took water buckets only) ----------------------------------------
+
+    private final net.neoforged.neoforge.fluids.capability.IFluidHandler waterHandler = new net.neoforged.neoforge.fluids.capability.IFluidHandler() {
+        @Override public int getTanks() { return 1; }
+        @Override public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            return waterAmount > 0 ? new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, waterAmount)
+                : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+        @Override public int getTankCapacity(int tank) { return WATER_CAPACITY; }
+        @Override public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack stack) {
+            return stack.getFluid().isSame(net.minecraft.world.level.material.Fluids.WATER);
+        }
+        @Override public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || !isFluidValid(0, resource)) return 0;
+            int filled = Math.min(resource.getAmount(), Math.max(0, WATER_CAPACITY - waterAmount));
+            if (filled > 0 && action.execute()) { waterAmount += filled; setChanged(); }
+            return filled;
+        }
+        @Override public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+        @Override public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+    };
+
+    public net.neoforged.neoforge.fluids.capability.IFluidHandler getWaterHandler(net.minecraft.core.Direction side) {
+        return waterHandler;
     }
 }

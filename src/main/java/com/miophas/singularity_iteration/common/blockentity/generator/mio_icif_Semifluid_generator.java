@@ -38,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  * 数值对齐原版 IC2 半流质发电机（沼气 32 EU/mB、输出 16 EU/t、内部储能 32000 EU）
  */
 @SuppressWarnings("null")
-public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch {
+public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
 
     // 槽位数量：3个槽位
     public static final int SLOT_COUNT = 3;
@@ -326,6 +326,7 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
      * 独立电网路径与旧路径都改为 IC2 的连续耗液模型：储能满时暂停燃烧且不丢弃燃料。
      */
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_Semifluid_generator blockEntity) {
+        com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(blockEntity);   // 0.1.11.13
         if (level.isClientSide()) {
             return;
         }
@@ -549,7 +550,9 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
         }
     }
 
-    /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
+    /** 0.1.11.13: comparator by the fuel in the tank. */
     @Override
-    public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(fuelTank.getFluidAmount(), fuelTank.getCapacity());
+    }
 }

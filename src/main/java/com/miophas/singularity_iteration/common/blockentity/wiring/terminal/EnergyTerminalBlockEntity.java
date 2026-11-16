@@ -292,7 +292,7 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
         try {
             if (cat == EnergyNetworkSnapshot.Category.GENERATOR) {
                 float nameplate = be instanceof com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity gen
-                    ? gen.getEnergyGenerationRate() : 0F;
+                    ? gen.ratedOutput() : 0F;   // 0.1.11.13: the generator's own rated output
                 return Math.max(nameplate, out);
             }
             if (cat == EnergyNetworkSnapshot.Category.CONSUMER) {

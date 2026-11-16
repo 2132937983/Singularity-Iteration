@@ -112,13 +112,4 @@ public class mio_icif_Block_Thermal_Generator extends mio_icif_entity_block {
     }
 
     */
-
-    /** 0.1.11.10: the comparator reads the fuel left (a full stack of coal gives 15). */
-    @Override
-    protected boolean hasAnalogOutputSignal(BlockState state) { return true; }
-
-    @Override
-    protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        return level.getBlockEntity(pos) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g ? g.comparatorSignal() : 0;
-    }
 }

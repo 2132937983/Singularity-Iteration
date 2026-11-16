@@ -629,6 +629,8 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
         com.miophas.singularity_iteration.common.suit.quantum.QuantumConfig.bind(SPEC);
         com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity.OUTPUT_SCALE =
             com.miophas.singularity_iteration.common.energy.GeneratorOutput::multiplier;
+        com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity.DISPATCH =
+            com.miophas.singularity_iteration.common.energy.GeneratorOutput::dispatchClass;   // 0.1.11.13
     }
 
     /**

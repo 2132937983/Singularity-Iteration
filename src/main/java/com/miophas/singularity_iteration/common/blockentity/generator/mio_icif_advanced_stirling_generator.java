@@ -25,7 +25,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
-public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, IEnergySource, IGeneratorBlock,
+public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntity implements com.miophas.singularity_iteration.core.api.machine.IComparatorSource, com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, IEnergySource, IGeneratorBlock,
         com.miophas.singularity_iteration.core.runtime.energy.DemandEnergySource {
 
     private boolean registered = false;
@@ -83,6 +83,7 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_advanced_stirling_generator blockEntity) {
+        com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(blockEntity);   // 0.1.11.13
         if (level.isClientSide()) {
             return;
         }
@@ -446,4 +447,10 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
     /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
     @Override
     public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
+
+    /** 0.1.11.13: comparator by the share of the energy storage filled. */
+    @Override
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(energyStorage.getAmount(), energyStorage.getCapacity());
+    }
 }

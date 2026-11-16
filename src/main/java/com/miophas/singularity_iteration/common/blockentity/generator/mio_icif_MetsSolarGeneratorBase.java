@@ -324,4 +324,10 @@ public class mio_icif_MetsSolarGeneratorBase extends AbstractGeneratorBlockEntit
     public Component getDisplayName() {
         return Component.translatable("container.mio_icif.mets_advanced_solar_generator");
     }
+
+    /** 0.1.11.13: rated output = the day power (the photon panels passed a larger figure as their nameplate rate). */
+    @Override
+    public long ratedOutput() {
+        return Math.round(dayPower * outputScale());
+    }
 }

@@ -241,4 +241,34 @@ public abstract class mio_icif_entity_block extends BaseEntityBlock implements c
         }
         return -1;
     }
+
+    // ---- 0.1.11.13: comparators on every generator --------------------------------------------------------------------
+
+    private Boolean generatorBlock;
+
+    /** A block registered under generator/ (the EU generators). */
+    private boolean generatorBlock() {
+        if (generatorBlock == null) {
+            var key = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(this);
+            generatorBlock = key != null && key.getPath().startsWith("generator/");
+        }
+        return generatorBlock;
+    }
+
+    /**
+     * Generators give a comparator signal: by default the share of their energy storage filled, fuel generators the fuel
+     * left (see {@link com.miophas.singularity_iteration.core.api.machine.IComparatorSource}). Other machine blocks keep
+     * their own (most have none).
+     */
+    @Override
+    protected boolean hasAnalogOutputSignal(BlockState state) {
+        return generatorBlock() || super.hasAnalogOutputSignal(state);
+    }
+
+    @Override
+    protected int getAnalogOutputSignal(BlockState state, net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
+        if (generatorBlock() && level.getBlockEntity(pos) instanceof com.miophas.singularity_iteration.core.api.machine.IComparatorSource source)
+            return Math.max(0, Math.min(15, source.comparatorSignal()));
+        return super.getAnalogOutputSignal(state, level, pos);
+    }
 }

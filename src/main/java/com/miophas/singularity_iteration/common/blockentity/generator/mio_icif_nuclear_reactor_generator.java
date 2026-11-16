@@ -213,6 +213,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         else if(mode==mio_icif_reactor_mode.FLUID)setReactorMode(mio_icif_reactor_mode.GENERATOR);
     }
     public static void tick(Level world,BlockPos pos,BlockState state,mio_icif_nuclear_reactor_generator m){
+        com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(m);   // 0.1.11.13
         if(!m.live())return;m.ready=true;
         if(!m.operational()){m.dispatchAccident();if(m.live()){m.syncOutputGate();m.updateActive();}return;}
         m.frame();
@@ -227,12 +228,9 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         if(m.live())m.dirty();
     }
     /** 0.1.11.11: the old grid (independent network off) pulls from the storage, so the reactor fills it at its rate each tick. */
-    private double oldGridCarry;
     private void oldGridGenerate(){
         if(energyStorage.scexNetworkControlled()||!exportAllowed())return;
-        double v=rate.toDouble()+oldGridCarry;long whole=(long)Math.floor(v);oldGridCarry=v-whole;
-        long room=ENERGY_CAPACITY-energyStorage.getAmount();if(whole>room){whole=room;oldGridCarry=0;}
-        if(whole>0)energyStorage.generateEnergyInternal(whole,false);
+        produce(rate.toDouble());   // 0.1.11.13: the framework's sink (whole EU, fraction carried)
     }
     /**
      * 对齐 IC2 {@code dropAllUnfittingStuff()}：每个循环开始时弹出所有不再适用的元件，
@@ -836,4 +834,16 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         return super.getUpdateTag(provider);
     }
     @Override public void handleUpdateTag(CompoundTag tag,HolderLookup.Provider provider){loadAdditional(tag,provider);}
+
+    /** 0.1.11.13: comparator by the hull heat (the share of the maximum). */
+    @Override
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(getCurrentHeat(), getMaxHeat());
+    }
+
+    /** 0.1.11.13: rated output = the output of the current layout (its nameplate rate is 0). */
+    @Override
+    public long ratedOutput() {
+        return Math.round(rate.toDouble());
+    }
 }

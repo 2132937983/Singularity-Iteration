@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * The grid uses extractPowerForConsumer to take energy from the energyStorage of the generator.
  */
 @SuppressWarnings("null")
-public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch {
+public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity {
     
     // LV tier: matches original IC2. Capacity is 4000 EU. Generation rate is 10 EU/tick. Maximum output is 32 EU/tick.
     public mio_icif_Thermal_Generator(BlockPos pos, BlockState state) {
@@ -101,9 +101,6 @@ public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity imp
         return new com.miophas.singularity_iteration.common.menu.generator.ThermalGeneratorMenu(id, playerInventory, this, this.getItemHandler(), getContainerData());
     }
 
-    /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
-    @Override
-    public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
 
     // ---- 0.1.11.10: furnace temperature, the damper, the chart recorder, the comparator ----------------------------
 
@@ -123,13 +120,11 @@ public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity imp
     /** Burn time left of the current lump; it goes down by {@link #heat} a tick, so a lump gives the same EU at any temperature. */
     private double burnLeft;
     private boolean banked;
-    private double euCarry;
     private double lastOutput;
     private final byte[] chartHeat = new byte[SAMPLES], chartOutput = new byte[SAMPLES];
     private long chartIndex = Long.MIN_VALUE;   // no point yet
     private double sumHeat, sumOutput;
     private int sumCount;
-    private int lastSignal = -1;
 
     public double getHeat() { return heat; }
     public boolean isBanked() { return banked; }
@@ -150,6 +145,7 @@ public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity imp
     }
 
     /** 0 without fuel; 1..15 with the fuel left (a full stack of coal gives 15). */
+    @Override
     public int comparatorSignal() {
         double t = fuelTicksLeft();
         if (t <= 0) return 0;
@@ -163,12 +159,7 @@ public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity imp
         if (level.isClientSide()) return;
         be.tickFurnace(level, pos);
         be.record(level.getGameTime());
-        int signal = be.comparatorSignal();
-        if (signal != be.lastSignal) {
-            be.lastSignal = signal;
-            level.updateNeighbourForOutputSignal(pos, state.getBlock());
-        }
-        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(be);
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(be);   // also tells comparators when the signal changes
     }
 
     /**
@@ -193,15 +184,7 @@ public class mio_icif_Thermal_Generator extends AbstractGeneratorBlockEntity imp
         if (firing) {
             heat = Math.min(1, heat + 1.0 / WARM_UP);
             lastOutput = maxOutput() * heat;
-            if (network) {
-                energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.fromDouble(lastOutput), false);
-            } else {
-                double eu = lastOutput + euCarry;
-                long whole = (long) Math.floor(eu);
-                euCarry = eu - whole;
-                whole = Math.min(whole, room);
-                if (whole > 0) apiGenerateEnergy(whole);
-            }
+            produce(lastOutput);   // 0.1.11.13: the framework's sink for both energy modes
             burnLeft = Math.max(0, burnLeft - heat);
         } else {
             lastOutput = 0;

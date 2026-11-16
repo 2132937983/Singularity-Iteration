@@ -34,7 +34,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 
 /** Independently authored from normal R102 HU/EU receipts. No predecessor implementation was inspected. */
 public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
-        implements com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, IEnergySource, IGeneratorBlock, DemandEnergySource {
+        implements com.miophas.singularity_iteration.core.api.machine.IComparatorSource, com.miophas.singularity_iteration.core.api.energy.grid.IGridDispatch, IEnergySource, IGeneratorBlock, DemandEnergySource {
     private final CustomEUEnergyStorage energy=new CustomEUEnergyStorage(200000,0,128,CableTier.MV);
     private long lastFrame=Long.MIN_VALUE,frameHu,generatedFrame,uncertainHu;
     private long generatedAt=Long.MIN_VALUE,lastOutput;
@@ -172,6 +172,7 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         frame();convertOwnedHeat(Math.max(0,1000-frameHu));
     }
     public static void tick(Level level,BlockPos pos,BlockState state,mio_icif_stirling_generator m){
+        com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(m);   // 0.1.11.13
         if(!m.live())return;m.frame();
         m.selfConvert();
         var actual=m.getBlockState();boolean active=m.isWorking();
@@ -245,4 +246,10 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
     /** 0.1.10.22 (G3): burns fuel only while the grid takes its energy, so the merit order uses it after the must-run sources. */
     @Override
     public com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass dispatchClass() { return com.miophas.singularity_iteration.core.api.energy.grid.DispatchClass.DISPATCHABLE; }
+
+    /** 0.1.11.13: comparator by the share of the energy storage filled. */
+    @Override
+    public int comparatorSignal() {
+        return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(energy.getAmount(), energy.getCapacity());
+    }
 }

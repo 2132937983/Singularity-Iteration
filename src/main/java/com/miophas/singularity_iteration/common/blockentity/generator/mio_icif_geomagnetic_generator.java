@@ -213,6 +213,7 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_geomagnetic_generator blockEntity) {
+        com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(blockEntity);   // 0.1.11.13
         if (level.isClientSide()) return;
 
         boolean wasWorking = blockEntity.shouldMachineWork;
@@ -427,5 +428,11 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
 
     public boolean isStructureComplete() {
         return shouldMachineWork;
+    }
+
+    /** 0.1.11.13: rated output only with the structure complete (an incomplete one counted 30720 EU/t of capacity). */
+    @Override
+    public long ratedOutput() {
+        return shouldMachineWork ? super.ratedOutput() : 0;
     }
 }

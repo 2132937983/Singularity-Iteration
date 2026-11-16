@@ -129,8 +129,7 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
      */
     private void generateEnergyInternal() {
         if (currentGenerationRate > 0) {
-            if (energyStorage.scexNetworkControlled()) energyStorage.scexGenerateEnergy(scaleOutput(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(currentGenerationRate)), false);   // 0.1.8.4
-            else apiGenerateEnergy(scaleOutput(currentGenerationRate), false);
+            produce(currentGenerationRate * outputScale());   // 0.1.8.4 multiplier; 0.1.11.13: the framework's sink
         }
     }
 
@@ -238,5 +237,11 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new com.miophas.singularity_iteration.common.menu.generator.RTGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
+    }
+
+    /** 0.1.11.13: rated output = the rate of the pellets in it (the nameplate rate is 0). */
+    @Override
+    public long ratedOutput() {
+        return Math.round(Math.max(0, currentGenerationRate) * outputScale());
     }
 }

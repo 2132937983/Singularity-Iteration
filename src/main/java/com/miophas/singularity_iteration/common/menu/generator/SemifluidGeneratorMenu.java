@@ -20,18 +20,7 @@ import org.jetbrains.annotations.Nullable;
     /** Menu data values (0.1.10.19: 5, the fuel fluid id at index 4). */
     public static final int DATA_COUNT = 5;
 
-    public SemifluidGeneratorMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, null, null, null);
-    }
-
-    public SemifluidGeneratorMenu(int containerId, Inventory playerInventory,
-                                   @Nullable mio_icif_Semifluid_generator blockEntity,
-                                   @Nullable IItemHandler itemHandler,
-                                   @Nullable ContainerData data) {
-        this(mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get(), containerId, playerInventory, blockEntity, itemHandler, data);
-    }
-
-    /** 0.1.10.36: the same screen under another menu type (the steam turbine). */
+    /** 0.1.10.36: the semifluid screen under another menu type. 0.1.11.15: only the steam turbine uses it (the semifluid generator has the engine menu). */
     protected SemifluidGeneratorMenu(net.minecraft.world.inventory.MenuType<?> type, int containerId, Inventory playerInventory,
                                      @Nullable mio_icif_Semifluid_generator blockEntity,
                                      @Nullable IItemHandler itemHandler,

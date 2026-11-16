@@ -19,6 +19,9 @@ item_ids:
 The machine burns semifluid fuel and makes EU.
 The machine accepts biogas, biomass, crude oil and diesel oil.
 Each fuel gives a different EU output.
+The machine is an engine that follows the grid: it makes what is taken, plus a top-up while its storage is below 90 %. It stops when the storage is full (98 %) and starts again below 60 %, so a full storage burns no fuel.
+Fuel per EU is lowest near 80 % load (5 % better than at full load) and rises at part load. A cold engine has 80 % of its efficiency until the coolant reaches about 80 °C.
+The screen is an engine room monitor: exhaust temperature per cylinder, tachometer, coolant, fuel tank and a record of the load and exhaust temperature.
 
 ## Power data
 

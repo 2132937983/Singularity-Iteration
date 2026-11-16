@@ -221,55 +221,13 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_diesel_generator blockEntity) {
         if (level.isClientSide()) return;
-        if (blockEntity.energyStorage.scexNetworkControlled()) { blockEntity.scexTickFuel(level, pos); return; }
-
-        boolean wasBurning = blockEntity.burnTime > 0;
-
-        blockEntity.handleFuelBucketSlot();
-
-        blockEntity.chargeItems();
-
-        if (blockEntity.shouldDirectlyDistributeEnergy()) {
-            blockEntity.distributeEnergy();
-        } else {
-            blockEntity.distributeEnergyToCompatSinks();
-        }
-
-        IEnergyStorageAccess storage = blockEntity.getEnergyStorage();
-        boolean isEnergyFull = storage.getAmount() >= storage.getCapacity();
-
-        long tickEu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, ENERGY_GENERATION_RATE);   // 0.1.8.4
-        // 0.1.11.12: fuel is drawn 3 mB (480 EU) at a time into a credit; a tick only when its whole output fits
-        if (!isEnergyFull && tickEu > 0 && blockEntity.oldGridCredit < tickEu && blockEntity.fuelTank.getFluidAmount() >= MB_PER_UNIT) {
-            blockEntity.fuelTank.drain(MB_PER_UNIT, IFluidHandler.FluidAction.EXECUTE);
-            blockEntity.oldGridCredit += com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, ENERGY_PER_UNIT);
-        }
-        if (!isEnergyFull && tickEu > 0 && storage.getCapacity() - storage.getAmount() >= tickEu && blockEntity.oldGridCredit > 0) {
-            long energyToGenerate = Math.min(tickEu, blockEntity.oldGridCredit);
-            storage.generateEnergy(energyToGenerate, false);
-            blockEntity.oldGridCredit -= energyToGenerate;
-            blockEntity.burnTime = 1;
-            blockEntity.burnDuration = 1;
-        } else {
-            blockEntity.burnTime = 0;
-        }
-
-        boolean isBurning = blockEntity.burnTime > 0;
-        if (wasBurning != isBurning) {
-            BlockState newState = level.getBlockState(pos);
-            if (newState.hasProperty(mio_icif_Block_Diesel_Generator.ACTIVE)) {
-                newState = newState.setValue(mio_icif_Block_Diesel_Generator.ACTIVE, isBurning);
-                level.setBlock(pos, newState, 3);
-            }
-        }
-
-        // 0.1.10.10 (D1): save mark only (setChanged() every tick also updated the six neighbours)
-        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
+        blockEntity.engineTick(level, pos);   // 0.1.11.15: the engine model, in both energy modes
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        engine.save(tag);   // 0.1.11.15
         if (energyStorage.scexNetworkControlled() || scexFuelCredit > 0) tag.putLong("scex_fuel_credit_eu", scexFuelCredit);
         if (itemHandler != null) {
             tag.put("Items", itemHandler.serializeNBT(registries));
@@ -293,6 +251,7 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
             fuelTank.readFromNBT(registries, tag.getCompound("FuelTank"));
         }
         scexReadFuelCredit(tag);
+        engine.load(tag, scexFuelCredit);   // 0.1.11.15: older saves start cold with their fuel credit
     }
 
     @Override
@@ -423,7 +382,7 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.generator.DieselGeneratorMenu(containerId, inventory, this, this.getItemHandler(), null);
+        return new com.miophas.singularity_iteration.common.menu.generator.DieselGeneratorMenu(containerId, inventory, this);   // 0.1.11.15
     }
 
     private void scexFillFuelContainer() {
@@ -469,5 +428,58 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity {
     @Override
     public int comparatorSignal() {
         return com.miophas.singularity_iteration.core.api.machine.IComparatorSource.fill(fuelTank.getFluidAmount(), fuelTank.getCapacity());
+    }
+
+    // ---- 0.1.11.15: the engine -----------------------------------------------------------------------------------------
+
+    protected final com.miophas.singularity_iteration.common.energy.EngineGovernor engine = new com.miophas.singularity_iteration.common.energy.EngineGovernor(6);
+
+    /** Full output in EU/t of the fuel in the tank (multiplier included); 0 without fuel. */
+    public double engineRated() {
+        return fuelTank.getFluidAmount() <= 0 ? 0 : ENERGY_GENERATION_RATE * outputScale();
+    }
+
+    /** EU per mB of the fuel in the tank at full load (multiplier included). */
+    public double engineEuPerMb() {
+        return fuelTank.getFluidAmount() <= 0 ? 0 : EU_PER_MB * outputScale();
+    }
+
+    public com.miophas.singularity_iteration.common.energy.EngineGovernor getEngine() { return engine; }
+
+    private void engineTick(Level level, BlockPos pos) {
+        boolean wasBurning = burnTime > 0;
+        handleFuelBucketSlot();
+        chargeItems();
+        if (!energyStorage.scexNetworkControlled()) {
+            if (shouldDirectlyDistributeEnergy()) distributeEnergy();
+            else distributeEnergyToCompatSinks();
+        }
+        double made = engine.tick(energyStorage.getAmount(), energyStorage.getCapacity(), engineRated(), engineEuPerMb(),
+            n -> fuelTank.drain(n, IFluidHandler.FluidAction.EXECUTE).getAmount(), this::produce);
+        burnTime = made > 0 ? 1 : 0;
+        burnDuration = 1;
+        if (wasBurning != burnTime > 0) {
+            BlockState now = level.getBlockState(pos);
+            if (now.getBlock().getStateDefinition().getProperty("active") instanceof net.minecraft.world.level.block.state.properties.BooleanProperty active
+                    && now.getValue(active) != burnTime > 0)
+                level.setBlock(pos, now.setValue(active, burnTime > 0), 3);
+        }
+        com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
+    }
+
+    /** Menu data of the engine screen (see {@link com.miophas.singularity_iteration.common.energy.EngineGovernor#data}). */
+    public net.minecraft.world.inventory.ContainerData getEngineData() {
+        return new net.minecraft.world.inventory.ContainerData() {
+            @Override public int getCount() { return com.miophas.singularity_iteration.common.energy.EngineGovernor.DATA_COUNT; }
+            @Override public void set(int i, int v) { }
+            @Override public int get(int i) {
+                return switch (i) {
+                    case 9 -> fuelTank.getFluidAmount();
+                    case 10 -> fuelTank.getCapacity();
+                    case 11 -> fuelTank.isEmpty() ? -1 : net.minecraft.core.registries.BuiltInRegistries.FLUID.getId(fuelTank.getFluid().getFluid());
+                    default -> engine.data(i, engineRated(), engineEuPerMb(), energyStorage.getAmount(), energyStorage.getCapacity());
+                };
+            }
+        };
     }
 }

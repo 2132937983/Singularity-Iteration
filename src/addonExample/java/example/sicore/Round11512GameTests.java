@@ -54,18 +54,11 @@ public final class Round11512GameTests {
         h.succeed();
     }
 
-    /** 3 mB of diesel make 480 EU in the diesel generator (160 EU/mB; it was 7.5). */
-    @GameTest(template = "empty", timeoutTicks = 60)
+    /** The diesel generator's fuel value is 160 EU/mB at full load (it was 7.5); 0.1.11.15 tests the engine running on it. */
+    @GameTest(template = "empty", timeoutTicks = 20)
     public static void dieselGeneratorGets160PerMb(GameTestHelper h) {
-        BlockEntity be = place(h, new BlockPos(1, 2, 1), "generator/block_diesel_generator");
-        var diesel = BuiltInRegistries.FLUID.get(id("dieseloil"));
-        var tank = (IFluidHandler) call(be, "getFuelTank");
-        h.assertTrue(tank.fill(new FluidStack(diesel, 3), IFluidHandler.FluidAction.EXECUTE) == 3, "the tank takes diesel");
-        h.runAfterDelay(20, () -> {
-            long stored = (long) call(call(be, "getEnergyStorageInternal"), "getAmount");
-            h.assertTrue(stored == 480, "3 mB gave " + stored + " EU");
-            h.succeed();
-        });
+        h.assertTrue(num("blockentity.generator.mio_icif_diesel_generator", "EU_PER_MB") == 160, "160 EU/mB");
+        h.succeed();
     }
 
     /** The advanced semifluid generator burns every semifluid fuel at 1.25 x the basic generator's value. */

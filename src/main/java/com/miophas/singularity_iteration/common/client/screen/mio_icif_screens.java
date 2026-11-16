@@ -30,6 +30,11 @@ public class mio_icif_screens {
         event.<M, SolarPanelScreen<M>>register(type, SolarPanelScreen::new);
     }
 
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.EngineMenu> void engine(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, EngineScreen<M>>register(type, EngineScreen::new);
+    }
+
     private static void registerMenuScreens(RegisterMenuScreensEvent event) {
         // 注册火力发电机的 GUI 界面
         // Toolbox: the menu was registered and opened by the item, but had no screen (0.1.7.36)
@@ -180,10 +185,7 @@ public class mio_icif_screens {
         );
 
         // 注册柴油发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.DIESEL_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_diesel_generator::new
-        );
+        engine(event, mio_icif_menus.DIESEL_GENERATOR_MENU_TYPE.get());   // 0.1.11.15: the engine room monitor
 
         // 注册风力发电机的 GUI 界面
         event.register(
@@ -198,10 +200,7 @@ public class mio_icif_screens {
         );
 
         // 注册半流质发电机的GUI 界面
-        event.register(
-            mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_semifluid_generator::new
-        );
+        engine(event, mio_icif_menus.SEMIFLUID_GENERATOR_MENU_TYPE.get());   // 0.1.11.15: the engine room monitor
         // 0.1.10.36: the steam turbine uses the semifluid generator screen
         event.register(
             mio_icif_menus.STEAM_TURBINE_MENU_TYPE.get(),
@@ -259,10 +258,7 @@ public class mio_icif_screens {
             mio_icif_gui_advanced_stirling_generator::new
         );
 
-        event.register(
-            mio_icif_menus.ADVANCED_SEMIFLUID_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_advanced_semifluid_generator::new
-        );
+        engine(event, mio_icif_menus.ADVANCED_SEMIFLUID_GENERATOR_MENU_TYPE.get());   // 0.1.11.15: the engine room monitor
 
         event.register(
             mio_icif_menus.EXPERIENCE_GENERATOR_MENU_TYPE.get(),

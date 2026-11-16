@@ -19,6 +19,9 @@ item_ids:
 The machine burns semifluid fuels (biogas, biomass, crude oil, diesel oil) and makes EU.
 Each fuel gives 1.25 times the EU per mB of the Semifluid Generator.
 The machine accepts buckets, cells and other containers of these fuels.
+The machine is an engine that follows the grid: it makes what is taken, plus a top-up while its storage is below 90 %. It stops when the storage is full (98 %) and starts again below 60 %, so a full storage burns no fuel.
+Fuel per EU is lowest near 80 % load (5 % better than at full load) and rises at part load. A cold engine has 80 % of its efficiency until the coolant reaches about 80 °C.
+The screen is an engine room monitor: exhaust temperature per cylinder, tachometer, coolant, fuel tank and a record of the load and exhaust temperature.
 
 ## Power data
 

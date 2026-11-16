@@ -2348,6 +2348,57 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "engine" (-Dsi.capture.scene=engine), 0.1.11.15: the engine room monitor of a diesel generator. A cold start
+     * under a varying load, the engine warm at load, then a storage filled to the top (stopped).
+     */
+    private static void sceneEngine() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(at, block("generator/block_diesel_generator").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            if (level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_diesel_generator d)
+                d.getFuelTank().fill(new net.neoforged.neoforge.fluids.FluidStack(
+                    com.miophas.singularity_iteration.common.block.environment.fluid.mio_icif_fluids.DIESELOIL.get(), 180_000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        });
+        server(5, sp -> openAt(sp, at));
+        engineLoad(at, 140);
+        shot(1, "engine/1_cold_start");
+        engineLoad(at, 900);
+        shot(1, "engine/2_warm_running");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_diesel_generator d)
+                d.getEnergyStorageInternal().setStored(d.getEnergyStorageInternal().getCapacity());
+        });
+        server(60, sp -> {});
+        shot(1, "engine/3_stopped_full");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** A grid taking a varying load (30..110 EU/t) from the generator for {@code ticks} ticks, the storage held near half. */
+    private static void engineLoad(BlockPos at, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (!(sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_diesel_generator d)) return;
+                var store = d.getEnergyStorageInternal();
+                long t = sp.serverLevel().getGameTime();
+                long take = Math.round(70 + 40 * Math.sin(t / 90.0));
+                store.setStored(Math.max(0, Math.min(store.getAmount(), 500_000) - take));
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "engine".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneEngine();
+        }
+    }
+
+    /**
      * Scene "solar" (-Dsi.capture.scene=solar), 0.1.11.14: the solar panel screen. A hybrid panel is driven through the
      * morning against the world clock (a shower around 09:00), then shot at noon, under a roof, and at night on its core.
      */

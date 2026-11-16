@@ -71,6 +71,7 @@ public class HudLayoutScreen extends Screen {
         g.fill(width / 2, 0, width / 2 + 1, height, 0x30FFFFFF);
         g.fill(0, height / 2, width, height / 2 + 1, 0x30FFFFFF);
         for (FcsClientConfig.Panel p : FcsClientConfig.Panel.values()) {
+            if (!p.editable) continue;
             int[] r = rect(p);
             boolean hot = p == dragging || (mouseX >= r[0] && mouseX < r[0] + r[2] && mouseY >= r[1] && mouseY < r[1] + r[3]);
             FcsDraw.panel(g, r[0], r[1], r[2], r[3], Component.translatable("screen.mio_icif.hud_layout." + p.id).getString(),
@@ -91,6 +92,7 @@ public class HudLayoutScreen extends Screen {
         if (super.mouseClicked(mx, my, button)) return true;
         FcsClientConfig.Panel[] panels = FcsClientConfig.Panel.values();
         for (int i = panels.length - 1; i >= 0; i--) {
+            if (!panels[i].editable) continue;
             int[] r = rect(panels[i]);
             if (mx >= r[0] && mx < r[0] + r[2] && my >= r[1] && my < r[1] + r[3]) {
                 dragging = panels[i];

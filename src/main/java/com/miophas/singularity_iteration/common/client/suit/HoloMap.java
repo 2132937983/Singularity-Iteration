@@ -475,8 +475,9 @@ public final class HoloMap {
         // panel
         FcsDraw.panel(g, (int) (cx - half), (int) (cy - panelH / 2), (int) size, (int) panelH,
             net.minecraft.network.chat.Component.translatable("hud.mio_icif.holo.title", SIDE, TALL, SIDE).getString(), primary);
-        // 0.1.11.5: a zoomed view stays inside its panel
-        if (zoom > 1F) g.enableScissor((int) (cx - half) + 1, (int) (cy - panelH / 2) + 12, (int) (cx + half) - 1, (int) (cy + panelH / 2) - 1);
+        // 0.1.11.5: the map stays inside its panel (a zoomed view, labels of creatures beyond the box)
+        g.enableScissor((int) (cx - half) + 1, (int) (cy - panelH / 2) + 12, (int) (cx + half) - 1, (int) (cy + panelH / 2) - 1);
+        labels.clear();
 
         float[] a = new float[3], b = new float[3], c = new float[3], d = new float[3];
         float x0 = -RADIUS, x1 = RADIUS + 1, y0 = -BELOW, y1 = ABOVE + 1, z0 = -RADIUS, z1 = RADIUS + 1;
@@ -566,12 +567,16 @@ public final class HoloMap {
                 px = a[0]; py = a[1];
             }
             project(0.5F + fwdX * r, 0, 0.5F + fwdZ * r, a);
-            FcsDraw.text(g, r + "m", a[0] + 2, a[1] - 8 * k, FcsDraw.argb(primary, 0.9F), 0.65F * k);
+            String rl = r + "m";
+            float[] at = place(a[0] + 2, a[1] - 8 * k, FcsDraw.width(rl, 0.65F * k), 6.5F * k);
+            if (at != null) FcsDraw.text(g, rl, at[0], at[1], FcsDraw.argb(primary, 0.9F), 0.65F * k);
         }
         String[] dirs = {tr("hud.mio_icif.holo.s"), tr("hud.mio_icif.holo.w"), tr("hud.mio_icif.holo.n"), tr("hud.mio_icif.holo.e")};   // +z, -x, -z, +x
         float[][] dv = {{0, 1}, {-1, 0}, {0, -1}, {1, 0}};
         for (int i = 0; i < 4; i++) {
             project(0.5F + dv[i][0] * (RADIUS + 0.2F), 0, 0.5F + dv[i][1] * (RADIUS + 0.2F), a);
+            float dw = FcsDraw.width(dirs[i], 0.8F * k);
+            labels.add(new float[] {a[0] - dw / 2, a[1] - 5 * k, dw, 7 * k});   // directions always show; others step aside
             FcsDraw.textCentered(g, dirs[i], a[0], a[1] - 5 * k, FcsDraw.argb(i == 2 ? 0xFFFFFF : primary, i == 2 ? 1F : 0.75F), 0.8F * k);
         }
 
@@ -592,7 +597,10 @@ public final class HoloMap {
                 float s3 = 3.2F * k;
                 int col = FcsDraw.argb(ct.color, ct.threat == 2 ? pulse : 0.9F);
                 FcsDraw.triangle(g, a[0] + ax * s3, a[1] + ay * s3, a[0] - ay * s3 * 0.7F, a[1] + ax * s3 * 0.7F, a[0] + ay * s3 * 0.7F, a[1] - ax * s3 * 0.7F, col);
-                FcsDraw.textCentered(g, Math.round(ct.dist) + "m", a[0] + ax * 9 * k, a[1] + ay * 9 * k - 4 * k, FcsDraw.argb(ct.color, 0.9F), 0.7F * k);
+                String far = Math.round(ct.dist) + "m";
+                float fw = FcsDraw.width(far, 0.7F * k);
+                float[] at = place(a[0] + ax * 9 * k - fw / 2, a[1] + ay * 9 * k - 4 * k, fw, 7 * k);
+                if (at != null) FcsDraw.text(g, far, at[0], at[1], FcsDraw.argb(ct.color, 0.9F), 0.7F * k);
                 continue;
             }
             float uy = (float) Mth.clamp(ct.dy, -BELOW, ABOVE + 1);
@@ -609,7 +617,8 @@ public final class HoloMap {
                 labelled++;
                 int h = (int) Math.round(ct.dy);
                 String tag = Math.round(ct.dist) + "m " + (h > 0 ? "\u2191" + h : h < 0 ? "\u2193" + (-h) : "=");
-                FcsDraw.text(g, tag, a[0] + r + 2, a[1] - r - 4 * k, FcsDraw.argb(ct.color, 1F), 0.75F * k);
+                float[] at = place(a[0] + r + 2, a[1] - r - 4 * k, FcsDraw.width(tag, 0.75F * k), 7.5F * k);
+                if (at != null) FcsDraw.text(g, tag, at[0], at[1], FcsDraw.argb(ct.color, 1F), 0.75F * k);
             }
         }
         // ores of the last scan: with the ore scanner unit (0.1.11.5), or the Ore Hologram synergy as before
@@ -633,7 +642,8 @@ public final class HoloMap {
         // front edges of the box
         boxEdges(g, primary, true);
 
-        if (zoom > 1F) { g.flush(); g.disableScissor(); }   // draw the batched lines while the scissor is still on
+        g.flush();   // draw the batched lines while the scissor is still on
+        g.disableScissor();
         // read-outs: the wearer's height, the roof cut, hostiles / all
         float ty = cy + panelH / 2 - 8;
         float ts = detail ? 0.7F : 0.5F;
@@ -650,6 +660,25 @@ public final class HoloMap {
         }
         long age = now - sampledAtMs;
         if (age < 250) FcsDraw.textRight(g, "SCAN", cx + half - 4, cy - panelH / 2 + 2, FcsDraw.argb(0x050A0C, 0.9F), 0.5F);
+    }
+
+    /** 0.1.11.5: label boxes placed in this frame {x, y, w, h}, so labels do not cover each other. */
+    private static final List<float[]> labels = new ArrayList<>();
+
+    /** 0.1.11.5: a free spot for a label of size (w, h) at (x, y), moved down up to 3 lines; null when there is none. */
+    private static float[] place(float x, float y, float w, float h) {
+        for (int i = 0; i < 4; i++) {
+            float yy = y + i * (h + 1);
+            boolean free = true;
+            for (float[] o : labels) {
+                if (x < o[0] + o[2] && x + w > o[0] && yy < o[1] + o[3] && yy + h > o[1]) { free = false; break; }
+            }
+            if (free) {
+                labels.add(new float[] {x, yy, w, h});
+                return new float[] {x, yy};
+            }
+        }
+        return null;
     }
 
     private static String tr(String key, Object... args) {

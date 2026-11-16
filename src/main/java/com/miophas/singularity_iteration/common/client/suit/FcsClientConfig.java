@@ -26,15 +26,19 @@ public final class FcsClientConfig {
     }
 
     public enum Panel {
-        STATUS("status", 0.13, 0.20),
-        TELEMETRY("telemetry", 0.86, 0.60),
-        HOLOMAP("holomap", 0.87, 0.20),
-        BALLISTIC("ballistic", 0.62, 0.72),
-        BLAST("blast", 0.38, 0.72);
+        // 0.1.11.5: the status, telemetry and blast panels are gone from the passive HUD (a status line, a card at the
+        // aim point, a message); their config entries stay so older files load, but the layout editor no longer lists them
+        STATUS("status", 0.13, 0.20, false),
+        TELEMETRY("telemetry", 0.86, 0.60, false),
+        HOLOMAP("holomap", 0.87, 0.20, true),
+        BALLISTIC("ballistic", 0.62, 0.72, true),
+        BLAST("blast", 0.38, 0.72, false);
         public final String id;
         public final double defaultX, defaultY;
+        /** 0.1.11.5: shown and movable in the HUD layout editor. */
+        public final boolean editable;
         ModConfigSpec.DoubleValue x, y;
-        Panel(String id, double x, double y) { this.id = id; this.defaultX = x; this.defaultY = y; }
+        Panel(String id, double x, double y, boolean editable) { this.id = id; this.defaultX = x; this.defaultY = y; this.editable = editable; }
         public double x() { return x == null ? defaultX : x.get(); }
         public double y() { return y == null ? defaultY : y.get(); }
         public void set(double nx, double ny) {

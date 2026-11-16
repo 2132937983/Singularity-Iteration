@@ -59,6 +59,23 @@ public final class AsciiHud {
         text(g, c, cx - width(c, scale) / 2, y, rgb, scale);
     }
 
+    /** A translated line in the HUD font, centred on {@code cx}, with an ARGB colour (for fading read-outs). */
+    public static void centred(GuiGraphics g, String key, float cx, float y, int argb, float scale, Object... args) {
+        MutableComponent c = t(Component.translatable(key, args));
+        FcsDraw.text(g, c, cx - FcsDraw.width(c, scale) / 2, y, argb, scale);
+    }
+
+    /** A translated line in the HUD font, right-aligned on {@code right}, with an ARGB colour. */
+    public static void right(GuiGraphics g, String key, float right, float y, int argb, float scale, Object... args) {
+        MutableComponent c = t(Component.translatable(key, args));
+        FcsDraw.text(g, c, right - FcsDraw.width(c, scale), y, argb, scale);
+    }
+
+    /** A translated line in the HUD font at (x, y), with an ARGB colour. */
+    public static void left(GuiGraphics g, String key, float x, float y, int argb, float scale, Object... args) {
+        FcsDraw.text(g, t(Component.translatable(key, args)), x, y, argb, scale);
+    }
+
     /** A bar of {@code cells} cells, {@code ▕████░░░░▏}. */
     public static String bar(float fraction, int cells) {
         int full = Math.round(Math.max(0, Math.min(1, fraction)) * cells);

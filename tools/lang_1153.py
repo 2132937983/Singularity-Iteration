@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """0.1.11.3 language values (en_us / zh_cn / ja_jp / ru_ru): the Wireless Manager refuses to link a wireless power node
-to itself (a node linked to itself duplicated energy).
+to itself (a node linked to itself duplicated energy); the empty tank tooltip of the
+weighted fluid distributor (a key that was used but never defined).
 A value per language; a language left out keeps its current value. Idempotent; keeps the line endings of each file. With
 --check it only reports missing or different keys and removed keys that are still present.
 Usage: lang_1153.py <repo root> [--check]
@@ -27,6 +28,8 @@ KEYS = {
         '§c无线节点不能连接到自身',
         '§cノードを自分自身にはつなげません',
         '§cУзел нельзя связать с самим собой'),
+    # the empty tank of the weighted fluid distributor (the key was used but never defined)
+    'mio_icif.tooltip.empty_tank': v('Empty', '空', '空', 'Пусто'),
 }
 
 REMOVE = []

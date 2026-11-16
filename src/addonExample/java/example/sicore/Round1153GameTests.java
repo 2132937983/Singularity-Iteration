@@ -381,4 +381,138 @@ public final class Round1153GameTests {
             });
         });
     }
+
+    // ------------------------------------------------------------------ B4 (gameplay correctness)
+
+    private static Object enumConstant(String type, String name) {
+        for (Object c : type(type).getEnumConstants()) if (((Enum<?>) c).name().equals(name)) return c;
+        throw new AssertionError(type + "." + name);
+    }
+
+    /** S-3: leggings removed any Speed (potions, beacons); now only their own hidden effect. */
+    @GameTest(template = "empty")
+    public static void leggingsRemoveOnlyTheirOwnSpeed(GameTestHelper h) {
+        ServerPlayer p = player(h);
+        Class<?> quantum = type(COMMON + "item.armor.mio_icif_leggings_quantum");
+        var speed = net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED;
+        p.addEffect(new net.minecraft.world.effect.MobEffectInstance(speed, 3600, 1));   // a potion: icon, particles
+        call(quantum, "removeOwnSpeed", p);
+        h.assertTrue(p.hasEffect(speed), "A Speed potion is kept");
+        p.removeEffect(speed);
+        p.addEffect(new net.minecraft.world.effect.MobEffectInstance(speed, 100, 1, false, false, false));
+        call(quantum, "removeOwnSpeed", p);
+        h.assertTrue(!p.hasEffect(speed), "The leggings' own Speed is removed");
+        p.discard();
+        h.succeed();
+    }
+
+    /** S-6: the treetap's +2 reach is an item attribute modifier of the main hand. */
+    @GameTest(template = "empty")
+    public static void treetapReachIsAMainHandModifier(GameTestHelper h) {
+        ItemStack tap = new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "item_tool_treetap_elc")));
+        h.assertTrue(!tap.isEmpty(), "treetap item id");
+        var modifiers = tap.getItem().getDefaultAttributeModifiers(tap);
+        boolean found = modifiers.modifiers().stream().anyMatch(e -> e.attribute().is(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE)
+            && e.slot() == net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND && e.modifier().amount() == 2.0);
+        h.assertTrue(found, "+2 block interaction range in the main hand, got " + modifiers.modifiers());
+        h.succeed();
+    }
+
+    /** S-7: the quantum helmet eats only food without effects. */
+    @GameTest(template = "empty")
+    public static void quantumHelmetEatsPlainFoodOnly(GameTestHelper h) {
+        ServerPlayer p = player(h);
+        Class<?> helmet = type(COMMON + "item.armor.mio_icif_helmet_quantum");
+        java.util.function.Predicate<net.minecraft.world.item.Item> plain = i -> (boolean) call(helmet, "plainFood", new ItemStack(i), p);
+        h.assertTrue(plain.test(Items.BREAD) && plain.test(Items.COOKED_BEEF) && plain.test(Items.MUSHROOM_STEW), "Plain food is eaten");
+        h.assertTrue(!plain.test(Items.GOLDEN_APPLE) && !plain.test(Items.ENCHANTED_GOLDEN_APPLE), "Golden apples are kept");
+        h.assertTrue(!plain.test(Items.ROTTEN_FLESH) && !plain.test(Items.SPIDER_EYE) && !plain.test(Items.PUFFERFISH), "Harmful food is not eaten");
+        h.assertTrue(!plain.test(Items.CHORUS_FRUIT) && !plain.test(Items.STICK), "Chorus fruit and non-food are not eaten");
+        p.discard();
+        h.succeed();
+    }
+
+    /** S-8: painting keeps the candles of a block. */
+    @GameTest(template = "empty")
+    public static void painterKeepsCandleCount(GameTestHelper h) {
+        BlockPos at = new BlockPos(1, 1, 1);
+        BlockState four = Blocks.WHITE_CANDLE.defaultBlockState().setValue(BlockStateProperties.CANDLES, 4);
+        h.setBlock(at, four);
+        Object painter = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "build/item_painter_red"));
+        h.assertTrue(type(COMMON + "item.build.PainterItem").isInstance(painter), "red painter item id");
+        call(painter, "copyBlockStateProperties", four, Blocks.RED_CANDLE.defaultBlockState(), h.getLevel(), h.absolutePos(at));
+        BlockState now = h.getBlockState(at);
+        h.assertTrue(now.is(Blocks.RED_CANDLE) && now.getValue(BlockStateProperties.CANDLES) == 4, "Four red candles, got " + now);
+        h.succeed();
+    }
+
+    /** S-5: a rocket keeps its shot settings through a save. */
+    @GameTest(template = "empty")
+    public static void rocketKeepsItsSettingsThroughASave(GameTestHelper h) {
+        ServerPlayer p = player(h);
+        var type = BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "rocket_entity"));
+        net.minecraft.world.entity.Entity rocket = type.create(h.getLevel());
+        h.assertTrue(rocket != null && rocket.getClass().getSimpleName().equals("mio_icif_rocket_entity"), "rocket entity id, got " + rocket);
+        call(rocket, "setTerrainDamage", false);
+        call(rocket, "setExplosionPower", 2.0F);
+        CompoundTag saved = rocket.saveWithoutId(new CompoundTag());
+        net.minecraft.world.entity.Entity loaded = type.create(h.getLevel());
+        loaded.load(saved);
+        h.assertTrue(!(boolean) ArmoryServiceGameTests.field(loaded, "terrainDamage"), "Terrain damage stays off after a load");
+        h.assertTrue((float) ArmoryServiceGameTests.field(loaded, "explosionPower") == 2.0F, "Explosion power is kept");
+        p.discard();
+        h.succeed();
+    }
+
+    /** X-1: a market that changes its currency refunds the resting orders in the old one. */
+    @GameTest(template = "empty")
+    @SuppressWarnings("unchecked")
+    public static void exchangeRefundsInTheOldCurrency(GameTestHelper h) {
+        String dataType = COMMON + "exchange.ExchangeData";
+        Object d = call(type(dataType), "get", h.getLevel().getServer());
+        String id = "si_core_example:currency_switch_test";
+        java.util.UUID owner = java.util.UUID.randomUUID();
+        Object uu = enumConstant(dataType + "$Currency", "UU"), coin = enumConstant(dataType + "$Currency", "COIN");
+        Object book = call(d, "book", id, uu);
+        Object orderBook = ArmoryServiceGameTests.field(book, "book");
+        Object order;
+        try {
+            var ctor = type(COMMON + "exchange.OrderBook$Order").getDeclaredConstructors()[0];
+            order = ctor.newInstance(9_000_000L, owner.toString(), "", true, 10L, 5, 0L);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("order", e);
+        }
+        call(orderBook, "rest", order);
+        Object box = call(d, "mailbox", owner);
+        long uuBefore = (long) ArmoryServiceGameTests.field(box, "uu"), coinsBefore = (long) ArmoryServiceGameTests.field(box, "coins");
+        call(d, "book", id, coin);
+        long uuAfter = (long) ArmoryServiceGameTests.field(box, "uu"), coinsAfter = (long) ArmoryServiceGameTests.field(box, "coins");
+        ((java.util.Map<String, ?>) ArmoryServiceGameTests.field(d, "books")).remove(id);
+        ((java.util.Map<java.util.UUID, ?>) ArmoryServiceGameTests.field(d, "mail")).remove(owner);
+        h.assertTrue(uuAfter - uuBefore == 50 && coinsAfter == coinsBefore,
+            "The bid of 5 at 10 comes back as 50 UU, not coins: uu +" + (uuAfter - uuBefore) + ", coins +" + (coinsAfter - coinsBefore));
+        h.assertTrue((int) call(orderBook, "size") == 0, "The resting order is gone");
+        h.succeed();
+    }
+
+    /** W-2: the futures menu pages with the server's value. */
+    @GameTest(template = "empty")
+    public static void futuresMenuPagesWithTheServerValue(GameTestHelper h) {
+        ServerPlayer p = player(h);
+        String be = COMMON + "blockentity.producer.mio_icif_future_elc";
+        int count = (int) staticField(be, "DATA_COUNT"), index = (int) staticField(be, "DATA_ITEMS_PER_PAGE");
+        var data = new SimpleContainerData(count);
+        data.set(index, 7);
+        Object menu;
+        try {
+            menu = type(COMMON + "menu.producer.FutureElcMenu").getConstructor(int.class, net.minecraft.world.entity.player.Inventory.class,
+                type(be), net.neoforged.neoforge.items.IItemHandler.class, net.minecraft.world.inventory.ContainerData.class)
+                .newInstance(1, p.getInventory(), null, null, data);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError("futures menu", e);
+        }
+        h.assertTrue((int) call(menu, "getItemsPerPage") == 7, "The synced page size wins over the local config");
+        p.discard();
+        h.succeed();
+    }
 }

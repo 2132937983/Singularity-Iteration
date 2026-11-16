@@ -30,8 +30,9 @@ public class ItemStackMaxStackMixin {
         )
     )
     private static Codec<Integer> replaceItemStackCodec(Codec<Integer> original) {
-        // 将物品数量的序列化范围从 0-64 改为 0-9999
-        return ExtraCodecs.intRange(0, 9999);
+        // 将物品数量的序列化范围从原版的 1-99 改为 1-9999
+        // 0.1.11.3: the lower bound stays 1 as in vanilla (0 let a datapack or command decode count-0 stacks)
+        return ExtraCodecs.intRange(1, 9999);
     }
 }
 

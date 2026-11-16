@@ -745,6 +745,8 @@ public class mio_icif_batch_crafter extends AbstractProcessingMachineBlockEntity
                         if (existing.isEmpty()) {
                             canInsert = Math.min(limit, simRemaining.getCount());
                             simStacks[slotIdx] = simRemaining.copyWithCount(canInsert);
+                        } else if (!ItemStack.isSameItemSameComponents(existing, simRemaining)) {
+                            canInsert = 0;   // 0.1.11.3: a slot with another item has no room (the real insert agrees)
                         } else {
                             canInsert = Math.min(limit - existing.getCount(), simRemaining.getCount());
                             if (canInsert > 0) existing.grow(canInsert);

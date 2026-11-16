@@ -167,6 +167,18 @@ public class mio_icif_multiblock_manager<T extends mio_icif_multiblock_validator
      * @param level the server world
      * @return {@code true} if the structure is still valid
      */
+    /**
+     * 0.1.11.3: the full check when every member is in a loaded chunk (the validator would load the others), else the
+     * quick check. For controllers whose far members have no block hook of their own (the oil rig's drill frames).
+     */
+    public boolean validateStructureFullIfLoaded(Level level) {
+        if (!isValid) return false;
+        for (BlockPos pos : structureBlocks) {
+            if (!level.isLoaded(pos)) return validateStructure(level);
+        }
+        return validateStructureFull(level);
+    }
+
     public boolean validateStructureFull(Level level) {
         if (!isValid) {
             return false;

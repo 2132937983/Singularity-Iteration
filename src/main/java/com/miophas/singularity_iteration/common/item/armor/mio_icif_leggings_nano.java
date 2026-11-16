@@ -49,14 +49,32 @@ public class mio_icif_leggings_nano extends mio_icif_armor_elc {
         }
 
         ItemStack leggings = player.getItemBySlot(EquipmentSlot.LEGS);
-        if (leggings != stack || isEmpty(stack)) {
-            player.removeEffect(MobEffects.MOVEMENT_SPEED);
+        if (leggings != stack) {
+            // 0.1.11.3: a pair that is not worn leaves Speed alone when other leggings are worn (it took away what the
+            // worn pair gave each tick), and otherwise removes only its own effect (never a potion or a beacon)
+            if (!(leggings.getItem() instanceof mio_icif_leggings_nano)) removeOwnSpeed(player);
+            return;
+        }
+        if (isEmpty(stack)) {
+            removeOwnSpeed(player);
             return;
         }
 
         if (ArmorFeatureToggle.isEnabled(stack, "speed_boost")) {
             player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, EFFECT_DURATION, 0, false, false, false));
         } else {
+            removeOwnSpeed(player);
+        }
+    }
+
+    /**
+     * 0.1.11.3: removes Speed only when it is the leggings' own effect (amplifier 0, no particles, no icon, at most
+     * {@link #EFFECT_DURATION} ticks left). It used to remove any Speed, so potions and beacons were stripped.
+     */
+    static void removeOwnSpeed(Player player) {
+        MobEffectInstance speed = player.getEffect(MobEffects.MOVEMENT_SPEED);
+        if (speed != null && speed.getAmplifier() == 0 && !speed.isVisible() && !speed.showIcon() && !speed.isAmbient()
+                && speed.getDuration() <= EFFECT_DURATION) {
             player.removeEffect(MobEffects.MOVEMENT_SPEED);
         }
     }

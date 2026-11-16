@@ -4845,5 +4845,6 @@
   "message.mio_icif.energy_converter.mode_import": "并网：输入（正面的 FE → SI 电网）",
   "message.mio_icif.energy_converter.mode_bidirectional": "并网：双向，死区为缓存的 %s%%（以半满为中心）",
   "message.mio_icif.energy_converter.limit": "并网上限：%s EU/t",
-  "message.mio_icif.electric_wireless_manager.self_target": "§c无线节点不能连接到自身"
+  "message.mio_icif.electric_wireless_manager.self_target": "§c无线节点不能连接到自身",
+  "mio_icif.tooltip.empty_tank": "空"
 }

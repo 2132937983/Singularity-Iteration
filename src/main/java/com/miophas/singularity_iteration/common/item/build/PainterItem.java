@@ -196,24 +196,30 @@ public enum PainterColor {
      * Copies block state properties, such as the facing, from the old state to the new state.
      */
     private void copyBlockStateProperties(BlockState oldState, BlockState newState, Level level, BlockPos pos) {
+        // 0.1.11.3: every property the new block has too is copied (it was facing, lit and waterlogged only, so painting
+        // four candles left one, and a standing banner lost its rotation; glass panes lost their connections).
         BlockState finalState = newState;
-        // Copy the facing property.
-        if (oldState.hasProperty(BlockStateProperties.FACING) && finalState.hasProperty(BlockStateProperties.FACING)) {
-            finalState = finalState.setValue(BlockStateProperties.FACING, oldState.getValue(BlockStateProperties.FACING));
+        for (var property : oldState.getProperties()) {
+            if (finalState.hasProperty(property)) finalState = copyProperty(oldState, finalState, property);
         }
-        // Copy the horizontal facing property.
-        if (oldState.hasProperty(BlockStateProperties.HORIZONTAL_FACING) && finalState.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-            finalState = finalState.setValue(BlockStateProperties.HORIZONTAL_FACING, oldState.getValue(BlockStateProperties.HORIZONTAL_FACING));
-        }
-        // Copy the lit state of candles.
-        if (oldState.hasProperty(BlockStateProperties.LIT) && finalState.hasProperty(BlockStateProperties.LIT)) {
-            finalState = finalState.setValue(BlockStateProperties.LIT, oldState.getValue(BlockStateProperties.LIT));
-        }
-        // Copy the waterlogged property.
-        if (oldState.hasProperty(BlockStateProperties.WATERLOGGED) && finalState.hasProperty(BlockStateProperties.WATERLOGGED)) {
-            finalState = finalState.setValue(BlockStateProperties.WATERLOGGED, oldState.getValue(BlockStateProperties.WATERLOGGED));
-        }
+        // 0.1.11.3: the block entity data (a banner's patterns and custom name) moves to the new block; it was lost.
+        var oldEntity = level.getBlockEntity(pos);
+        net.minecraft.nbt.CompoundTag data = oldEntity == null ? null : oldEntity.saveCustomOnly(level.registryAccess());
+        var oldType = oldEntity == null ? null : oldEntity.getType();
         level.setBlockAndUpdate(pos, finalState);
+        if (data != null && !data.isEmpty()) {
+            var newEntity = level.getBlockEntity(pos);
+            if (newEntity != null && newEntity.getType() == oldType) {
+                newEntity.loadCustomOnly(data, level.registryAccess());
+                newEntity.setChanged();
+                level.sendBlockUpdated(pos, finalState, finalState, net.minecraft.world.level.block.Block.UPDATE_ALL);
+            }
+        }
+    }
+
+    private static <T extends Comparable<T>> BlockState copyProperty(BlockState from, BlockState to,
+            net.minecraft.world.level.block.state.properties.Property<T> property) {
+        return to.setValue(property, from.getValue(property));
     }
 
     // ===== Check methods =====

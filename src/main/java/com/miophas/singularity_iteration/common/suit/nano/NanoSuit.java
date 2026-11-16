@@ -377,7 +377,8 @@ public final class NanoSuit {
         int hydro = level(player, SuitModuleType.HYDROPHOBIC);
         int gecko = level(player, SuitModuleType.GECKO_SETAE);
         boolean fins = active(player, SuitModuleType.HEAT_SINK_FINS);
-        boolean anyMod = myofiber > 0 || hydro > 0 || gecko > 0 || s.overheated;
+        // 0.1.11.3: the HF sync counts too; a suit whose only passive was an HF blade never got the attack speed bonus
+        boolean anyMod = myofiber > 0 || hydro > 0 || gecko > 0 || s.overheated || hf > 0;
         if (anyMod || s.modifiersOn) {
             modifier(player.getAttribute(Attributes.MOVEMENT_SPEED), SPRINT_ID,
                 myofiber > 0 && player.isSprinting() ? NanoConfig.sprintBonus() * (myofiber >= 2 ? 22.0 / 15.0 : 1.0) : 0,

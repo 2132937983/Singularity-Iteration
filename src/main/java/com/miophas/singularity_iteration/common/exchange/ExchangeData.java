@@ -240,7 +240,24 @@ public final class ExchangeData extends SavedData {
 
     public Book book(String commodity, Currency currency) {
         Book b = books.computeIfAbsent(commodity, c -> new Book(c, currency));
-        b.currency = currency;
+        if (b.currency != currency) {
+            // 0.1.11.3: the market changed its currency (a datapack made the item a commodity, or a listing in another
+            // currency). Resting orders hold escrow in the old currency: they are cancelled and refunded in it before the
+            // switch. They used to stay, and were refunded or matched in the new currency (40,000 mB came back as
+            // 40,000 coins).
+            for (OrderBook.Order o : new java.util.ArrayList<>(b.book.orders())) {
+                int left = b.book.cancel(o.id());
+                b.names.remove(o.id());
+                b.expires.remove(o.id());
+                try {
+                    ExchangeService.refundOrder(this, UUID.fromString(o.owner()), b, o.buy(), o.price(), left);
+                } catch (IllegalArgumentException notAPlayer) {
+                    // an order without a player owner holds no player escrow
+                }
+            }
+            b.currency = currency;
+            setDirty();
+        }
         return b;
     }
 

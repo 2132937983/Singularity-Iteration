@@ -107,7 +107,10 @@ public class mio_icif_dimension_oil_rig_core_entity extends MultiblockEnergyCore
         mio_icif_multiblock_manager<?> manager =
             mio_icif_multiblock_manager.getStructureByController(level, pos);
         if (manager != null) {
-            if (!manager.validateStructure(level)) {
+            // 0.1.11.3: every fourth check (100 ticks) is the full one. The quick check only sees air at the core and
+            // its face neighbours, so a formed rig kept drilling after its drill frames were broken until a reload.
+            boolean full = tickCounter % 100 == 0;
+            if (!(full ? manager.validateStructureFullIfLoaded(level) : manager.validateStructure(level))) {
                 onMultiblockBroken();
             }
         } else {

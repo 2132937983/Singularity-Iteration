@@ -60,7 +60,9 @@ public class mio_icif_future_elc extends AbstractEnergyBlockEntity implements co
     }
 
     // 数据槽位定义
-    public static final int DATA_COUNT = 126;  // 0.1.10.20: + buy cost, sale payout, market room (121..125)
+    public static final int DATA_COUNT = 127;  // 0.1.10.20: + buy cost, sale payout, market room (121..125); 0.1.11.3: + 126
+    /** 0.1.11.3: the server's commodities per page. The client paged with its own config value and showed others. */
+    public static final int DATA_ITEMS_PER_PAGE = 126;
 public static final int DATA_ENERGY = 0;
     public static final int DATA_MAX_ENERGY = 1;
     public static final int DATA_CURRENT_DAY = 2;
@@ -184,6 +186,7 @@ public static final int DATA_CURRENT_CATEGORY = 7;
                 case DATA_SELL_PAYOUT_LOW -> (int) (Math.max(0, quote(false)) & 0xFFFF);
                 case DATA_SELL_PAYOUT_HIGH -> (int) ((Math.max(0, quote(false)) >>> 16) & 0xFFFF);
                 case DATA_MARKET_ROOM -> marketRoom();
+                case DATA_ITEMS_PER_PAGE -> Singularity_Iteration_Config.FUTURE_ITEMS_PER_PAGE.get();
             default -> {
                     // 价格历史数据 (11-50) - 每个价格拆分为高16位和低16位
                 if (index >= DATA_HISTORY_START && index <= DATA_HISTORY_END) {

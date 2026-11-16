@@ -2,7 +2,6 @@ package com.miophas.singularity_iteration.common.item.tools;
 
 import com.miophas.singularity_iteration.core.api.item.ITreeTapItem;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -90,32 +89,18 @@ public class mio_icif_treetap_elc extends mio_icif_tool_elc implements ITreeTapI
     private static final ResourceLocation REACH_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath("mio_icif", "treetap_elc_reach");
 
     /**
-     * 当玩家手持电动木龙头时，增加方块交互距离
+     * 0.1.11.3: +2 block interaction range in the main hand, as an item attribute modifier that vanilla adds and removes
+     * when the hand changes. It used to be added and removed from inventoryTick, so a treetap dropped with Q or moved
+     * into a chest left the +2 on the player until relog, and a second treetap in the inventory removed it every tick.
      */
+    private static final net.minecraft.world.item.component.ItemAttributeModifiers REACH = net.minecraft.world.item.component.ItemAttributeModifiers.builder()
+        .add(Attributes.BLOCK_INTERACTION_RANGE, new AttributeModifier(REACH_MODIFIER_ID, 2.0, AttributeModifier.Operation.ADD_VALUE),
+            net.minecraft.world.entity.EquipmentSlotGroup.MAINHAND)
+        .build();
+
     @Override
-    public void inventoryTick(ItemStack stack, Level level, net.minecraft.world.entity.Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-
-        if (!(entity instanceof Player player)) return;
-
-        AttributeInstance reachAttr = player.getAttribute(Attributes.BLOCK_INTERACTION_RANGE);
-        if (reachAttr == null) return;
-
-        boolean hasModifier = reachAttr.getModifier(REACH_MODIFIER_ID) != null;
-
-        if (isSelected) {
-            // 手持电动木龙头时，添加 +2 格交互距离
-            if (!hasModifier) {
-                reachAttr.addTransientModifier(
-                    new AttributeModifier(REACH_MODIFIER_ID, 2.0, AttributeModifier.Operation.ADD_VALUE)
-                );
-            }
-        } else {
-            // 未手持时，移除修饰符
-            if (hasModifier) {
-                reachAttr.removeModifier(REACH_MODIFIER_ID);
-            }
-        }
+    public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return REACH;
     }
 
 }

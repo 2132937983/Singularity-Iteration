@@ -212,6 +212,14 @@ import java.util.List;
     public int getTradeQuantity() { return data.get(mio_icif_future_elc.DATA_TRADE_QUANTITY); }
     public int getCurrentCategory() { return data.get(mio_icif_future_elc.DATA_CURRENT_CATEGORY); }
     public int getCurrentPage() { return data.get(mio_icif_future_elc.DATA_CURRENT_PAGE); }
+    /**
+     * 0.1.11.3: commodities per page as the server pages them (synced). The page was sliced with this side's COMMON
+     * config value, so with different values the highlighted commodity was not the one the server traded.
+     */
+    public int getItemsPerPage() {
+        int synced = data.get(mio_icif_future_elc.DATA_ITEMS_PER_PAGE);
+        return synced >= 1 && synced <= 20 ? synced : Singularity_Iteration_Config.FUTURE_ITEMS_PER_PAGE.get();
+    }
 
     public int getPlayerCoins() {
         int low = data.get(mio_icif_future_elc.DATA_PLAYER_COINS_LOW);
@@ -233,7 +241,7 @@ import java.util.List;
 
     public int getTotalPages() {
         List<FutureCommodity> commodities = getCurrentCategoryCommodities();
-        int itemsPerPage = Singularity_Iteration_Config.FUTURE_ITEMS_PER_PAGE.get();
+        int itemsPerPage = getItemsPerPage();
         return (commodities.size() + itemsPerPage - 1) / itemsPerPage;
     }
 
@@ -253,7 +261,7 @@ import java.util.List;
     public List<FutureCommodity> getCurrentPageCommodities() {
         List<FutureCommodity> all = getCurrentCategoryCommodities();
         int currentPage = getCurrentPage();
-        int itemsPerPage = Singularity_Iteration_Config.FUTURE_ITEMS_PER_PAGE.get();
+        int itemsPerPage = getItemsPerPage();
         long start = (long) currentPage * itemsPerPage;
         if (start < 0 || start >= all.size()) return List.of();
         int end = (int) Math.min(start + itemsPerPage, all.size());

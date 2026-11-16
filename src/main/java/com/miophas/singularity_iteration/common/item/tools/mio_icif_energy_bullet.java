@@ -127,6 +127,47 @@ public class mio_icif_energy_bullet extends ThrowableProjectile {
         }
     }
 
+    // 0.1.11.3: the shot's settings are saved (a bullet in a chunk that unloaded came back with damage 5 and lost its
+    // explosion, area damage, pierce, effect and tachyon settings).
+    @Override
+    public void addAdditionalSaveData(net.minecraft.nbt.CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putFloat("Damage", damage);
+        tag.putInt("MaxLife", maxLife);
+        tag.putInt("Life", life);
+        tag.putFloat("AoeRadius", aoeRadius);
+        tag.putFloat("AoeDamage", aoeDamage);
+        tag.putFloat("ExplosionPower", explosionPower);
+        tag.putBoolean("TerrainDamage", terrainDamage);
+        tag.putInt("Pierces", remainingPierces);
+        tag.putInt("ExtraHits", extraHits);
+        tag.putInt("BlockPierce", blockPierce);
+        tag.putFloat("TrueFraction", trueFraction);
+        tag.putInt("BeamColor", beamColor());
+        tag.putFloat("BeamPower", beamPower());
+        if (potionEffect != null) tag.put("Effect", potionEffect.save());
+    }
+
+    @Override
+    public void readAdditionalSaveData(net.minecraft.nbt.CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        if (!tag.contains("Damage")) return;   // saved before 0.1.11.3
+        damage = tag.getFloat("Damage");
+        maxLife = tag.getInt("MaxLife");
+        life = tag.getInt("Life");
+        aoeRadius = tag.getFloat("AoeRadius");
+        aoeDamage = tag.getFloat("AoeDamage");
+        explosionPower = tag.getFloat("ExplosionPower");
+        terrainDamage = tag.getBoolean("TerrainDamage");
+        remainingPierces = tag.getInt("Pierces");
+        extraHits = tag.getInt("ExtraHits");
+        blockPierce = tag.getInt("BlockPierce");
+        trueFraction = tag.getFloat("TrueFraction");
+        this.entityData.set(DATA_COLOR, tag.getInt("BeamColor") & 0xFFFFFF);
+        this.entityData.set(DATA_POWER, tag.getFloat("BeamPower"));
+        potionEffect = tag.contains("Effect") ? net.minecraft.world.effect.MobEffectInstance.load(tag.getCompound("Effect")) : null;
+    }
+
     public void setGravity(boolean gravity) {
         this.setNoGravity(!gravity);
     }

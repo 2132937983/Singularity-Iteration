@@ -28,8 +28,9 @@ public class DataComponentMaxStackMixin {
         )
     )
     private static Codec<Integer> replaceMaxStackCodec(Codec<Integer> original) {
-        // Change the serialization range of the MAX_STACK_SIZE data component from 0-64 to 0-9999.
-        return Codec.intRange(0, 9999);
+        // Change the serialization range of the MAX_STACK_SIZE data component from vanilla 1-99 to 1-9999.
+        // 0.1.11.3: the lower bound stays 1 as in vanilla (0 made items whose slots hold nothing).
+        return Codec.intRange(1, 9999);
     }
 }
 

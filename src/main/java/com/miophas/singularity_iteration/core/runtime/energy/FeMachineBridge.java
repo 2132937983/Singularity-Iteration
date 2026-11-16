@@ -56,6 +56,8 @@ public final class FeMachineBridge {
     public com.miophas.singularity_iteration.core.runtime.energy.engine.JouleSavings joules() { return joules; }
     public int uncertainOutput() { return ledger.uncertainOutput(); }
     public void loadUncertainOutput(int amount) { ledger.loadUncertainOutput(amount); }
+    /** 0.1.11.3: see {@link FeLedger#writeOffUncertainOutput()}. */
+    public void writeOffUncertainOutput() { ledger.writeOffUncertainOutput(); }
     /** Shared whole-EU input used by optional energy-unit adapters. */
     public long receiveWholeEu(long amount, boolean simulate) {
         return ledger.receiveWholeEu(amount, simulate);

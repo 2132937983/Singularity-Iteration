@@ -127,6 +127,7 @@ public final class ArmoryRemoteService {
         List<ArmorShowcaseBlockEntity> out = new ArrayList<>();
         collect(player.serverLevel(), player.blockPosition(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.ARMORY_PLAYER_RANGE.get(), out);
         if (armory != null && armory.getLevel() instanceof ServerLevel home) collect(home, armory.getBlockPos(), com.miophas.singularity_iteration.common.tuning.SiTuningValues.ARMORY_ARMORY_RANGE.get(), out);
+        out.removeIf(showcase -> !showcase.remoteUsableBy(player));   // 0.1.11.3: only the player's own showcases
         out.sort(java.util.Comparator.comparingDouble(s -> s.getLevel() == player.level()
             ? s.getBlockPos().distSqr(player.blockPosition()) : Double.MAX_VALUE));
         return out;
@@ -207,6 +208,7 @@ public final class ArmoryRemoteService {
         if (armory == null) return Component.translatable("message.mio_icif.armory.missing");
         if (!armory.isOwner(player)) return Component.translatable("message.mio_icif.armory.not_owner");
         if (armory.isBusy()) return Component.translatable("message.mio_icif.armory.busy");
+        if (!showcase.remoteUsableBy(player)) return Component.translatable("message.mio_icif.armory.not_owner");
         if (!(showcase.getLevel() instanceof ServerLevel world) || !showcase.hasOwnOutfit())
             return Component.translatable("message.mio_icif.armory.failed");
         if (!player.isAlive() || player.isSpectator()) return Component.translatable("message.mio_icif.armory.failed");

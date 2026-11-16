@@ -665,9 +665,27 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
     }
 
     // ------------------------------------------------------------------ material rules
-    /** The state to place: never a water source (waterlogged blocks are placed dry). */
+    /**
+     * The state to place: never a water source (waterlogged blocks are placed dry), and 0.1.11.3: never a state that
+     * holds more than its item. A full composter, a beehive with honey, a charged respawn anchor, a filled cauldron,
+     * a potted plant, a ripe crop or a bush with berries cost one plain item but gave bone meal, honey, a bucket of
+     * lava, the plant or the harvest when broken; they are placed empty (or unripe).
+     */
     static BlockState target(BlockState s) {
-        return s.hasProperty(BlockStateProperties.WATERLOGGED) ? s.setValue(BlockStateProperties.WATERLOGGED, false) : s;
+        if (s.getBlock() instanceof net.minecraft.world.level.block.AbstractCauldronBlock && !s.is(net.minecraft.world.level.block.Blocks.CAULDRON))
+            return net.minecraft.world.level.block.Blocks.CAULDRON.defaultBlockState();
+        if (s.getBlock() instanceof net.minecraft.world.level.block.FlowerPotBlock && !s.is(net.minecraft.world.level.block.Blocks.FLOWER_POT))
+            return net.minecraft.world.level.block.Blocks.FLOWER_POT.defaultBlockState();
+        if (s.hasProperty(BlockStateProperties.WATERLOGGED)) s = s.setValue(BlockStateProperties.WATERLOGGED, false);
+        if (s.hasProperty(BlockStateProperties.LEVEL_COMPOSTER)) s = s.setValue(BlockStateProperties.LEVEL_COMPOSTER, 0);
+        if (s.hasProperty(BlockStateProperties.LEVEL_HONEY)) s = s.setValue(BlockStateProperties.LEVEL_HONEY, 0);
+        if (s.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)) s = s.setValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES, 0);
+        if (s.hasProperty(BlockStateProperties.BERRIES)) s = s.setValue(BlockStateProperties.BERRIES, false);
+        for (net.minecraft.world.level.block.state.properties.Property<?> p : s.getProperties()) {
+            if (p instanceof net.minecraft.world.level.block.state.properties.IntegerProperty age && "age".equals(age.getName()))
+                s = s.setValue(age, java.util.Collections.min(age.getPossibleValues()));
+        }
+        return s;
     }
 
     /** The material item; {@link Items#AIR} for a free second half; null for a state that is not built (fluids, no item). */
@@ -680,8 +698,15 @@ public class BlueprintBuilderBlockEntity extends AbstractProcessingMachineBlockE
         return item == Items.AIR ? null : item;
     }
 
+    /** Items one block costs: 0.1.11.3 counts the candles, pickles, eggs, petals and snow layers it holds (it was always one). */
     static int amount(BlockState s) {
-        return s.hasProperty(BlockStateProperties.SLAB_TYPE) && s.getValue(BlockStateProperties.SLAB_TYPE) == SlabType.DOUBLE ? 2 : 1;
+        if (s.hasProperty(BlockStateProperties.SLAB_TYPE)) return s.getValue(BlockStateProperties.SLAB_TYPE) == SlabType.DOUBLE ? 2 : 1;
+        if (s.hasProperty(BlockStateProperties.CANDLES)) return s.getValue(BlockStateProperties.CANDLES);
+        if (s.hasProperty(BlockStateProperties.PICKLES)) return s.getValue(BlockStateProperties.PICKLES);
+        if (s.hasProperty(BlockStateProperties.EGGS)) return s.getValue(BlockStateProperties.EGGS);
+        if (s.hasProperty(BlockStateProperties.FLOWER_AMOUNT)) return s.getValue(BlockStateProperties.FLOWER_AMOUNT);
+        if (s.getBlock() instanceof net.minecraft.world.level.block.SnowLayerBlock) return s.getValue(BlockStateProperties.LAYERS);
+        return 1;
     }
 
     /** Two-part blocks keep their exact shape: no neighbour update that would break the half placed first. */

@@ -377,11 +377,9 @@ import java.util.List;
                 future.increaseTradeQuantity();
                 return true;
             case BUTTON_BUY:
-                boolean buyResult = future.executeBuy(player);
-                return buyResult;
             case BUTTON_SELL:
-                boolean sellResult = future.executeSell(player);
-                return sellResult;
+                // 0.1.11.3: refused, as in FutureTradePacket (the shared selection could be changed by another viewer)
+                return false;
             default:
                 return false;
         }

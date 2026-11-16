@@ -92,6 +92,8 @@ public final class Round22GameTests {
         var armory = ArmoryServiceGameTests.armory(h, 300_000);
         ServerPlayer p = owner(h, armory);
         BlockEntity showcase = ArmoryServiceGameTests.showcase(h);
+        // 0.1.11.3: a showcase answers the remote of its owner only; the first player to use it by hand owns it
+        ArmoryServiceGameTests.use(h, p, ItemStack.EMPTY);
         ServerPlayer dresser = ArmoryServiceGameTests.player(h);
         ArmoryServiceGameTests.use(h, dresser, new ItemStack(Items.DIAMOND_HELMET));
         ArmoryServiceGameTests.use(h, dresser, new ItemStack(Items.DIAMOND_BOOTS));

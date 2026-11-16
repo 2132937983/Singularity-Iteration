@@ -41,6 +41,12 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
     private int linkedSuit;
     private String label = "";
     private int rotation;
+    /**
+     * 0.1.11.3: the player who placed the showcase, or the first player to use it by hand (showcases from before
+     * 0.1.11.3 have none until then). Only the owner can summon its outfit with the Armory remote: the remote reached
+     * any showcase near the player or the Armory, through walls and around claim protection.
+     */
+    @Nullable private java.util.UUID owner;
 
     public ArmorShowcaseBlockEntity(BlockPos pos, BlockState state) {
         super(ArmoryRegistry.SHOWCASE_ENTITY.get(), pos, state);
@@ -238,6 +244,20 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
         return true;
     }
 
+    /** Takes the first player who places or uses the showcase by hand as its owner (those uses pass claim protection). */
+    void claim(Player player) {
+        if (owner != null || player instanceof net.neoforged.neoforge.common.util.FakePlayer) return;
+        owner = player.getUUID();
+        setChanged();
+    }
+
+    @Nullable public java.util.UUID owner() { return owner; }
+
+    /** True when this player may summon the outfit from afar (0.1.11.3: the owner only). */
+    public boolean remoteUsableBy(Player player) {
+        return owner != null && owner.equals(player.getUUID());
+    }
+
     void useEmptyHand(Player player) {
         if (player.isShiftKeyDown() && link == null) {
             // swap the whole outfit with the player's
@@ -331,6 +351,7 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.put("Items", writeList(items, registries));
+        if (owner != null) tag.putUUID("Owner", owner);
         writeShared(tag, registries);
     }
 
@@ -338,6 +359,7 @@ public class ArmorShowcaseBlockEntity extends BlockEntity {
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         if (tag.contains("Items")) readList(tag.getList("Items", 10), items, registries);
+        owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
         readShared(tag, registries);
     }
 

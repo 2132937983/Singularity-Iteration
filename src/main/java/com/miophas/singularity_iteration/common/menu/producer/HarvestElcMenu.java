@@ -26,6 +26,7 @@ public class HarvestElcMenu extends mio_icif_base_menu {
 
     private final ContainerData data;
     private final IItemHandler itemHandler;
+    @Nullable private final mio_icif_harvest_elc blockEntity;
 
     public HarvestElcMenu(int containerId, Inventory playerInventory) {
         this(containerId, playerInventory, null, new SimpleContainerData(3));
@@ -33,6 +34,7 @@ public class HarvestElcMenu extends mio_icif_base_menu {
 
     public HarvestElcMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_harvest_elc blockEntity, ContainerData data) {
         super(mio_icif_menus.HARVEST_ELC_MENU_TYPE.get(), containerId, TOTAL_SLOTS, TOTAL_SLOTS);
+        this.blockEntity = blockEntity;
         this.itemHandler = blockEntity != null ? blockEntity.getItemHandler() : new ItemStackHandler(TOTAL_SLOTS);
         this.data = data;
         this.addDataSlots(this.data);
@@ -106,7 +108,13 @@ public class HarvestElcMenu extends mio_icif_base_menu {
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+        // 0.1.11.3: was always true, so an open screen kept reaching the 18 slots from any distance, and items put
+        // into it after the harvester was broken were lost
+        if (player.level().isClientSide) return true;
+        if (blockEntity == null || blockEntity.isRemoved() || blockEntity.getLevel() != player.level() || !player.isAlive()) return false;
+        var pos = blockEntity.getBlockPos();
+        return player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 64.0
+            && player.level().isLoaded(pos) && player.level().getBlockEntity(pos) == blockEntity;
     }
 
     @Override

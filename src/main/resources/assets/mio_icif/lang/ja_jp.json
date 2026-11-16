@@ -4844,5 +4844,6 @@
   "message.mio_icif.energy_converter.mode_export": "系統連系：送出（SI 電力網 → 正面、FE）",
   "message.mio_icif.energy_converter.mode_import": "系統連系：受入（正面の FE → SI 電力網）",
   "message.mio_icif.energy_converter.mode_bidirectional": "系統連系：双方向、不感帯はバッファの %s%%（半分を中心）",
-  "message.mio_icif.energy_converter.limit": "系統連系の上限：%s EU/t"
+  "message.mio_icif.energy_converter.limit": "系統連系の上限：%s EU/t",
+  "message.mio_icif.electric_wireless_manager.self_target": "§cノードを自分自身にはつなげません"
 }

@@ -44,16 +44,22 @@ public class mio_icif_toolbox extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!level.isClientSide) {
-            player.openMenu(new Provider(stack), buf -> buf.writeVarInt(INVENTORY_SIZE));
+            player.openMenu(new Provider(stack, hand), buf -> { buf.writeVarInt(INVENTORY_SIZE); buf.writeEnum(hand); });
         }
         return new InteractionResultHolder<>(InteractionResult.SUCCESS, stack);
     }
 
     public static class Provider implements MenuProvider {
         private final ItemStack containerStack;
+        private final net.minecraft.world.InteractionHand hand;
 
         public Provider(ItemStack containerStack) {
+            this(containerStack, net.minecraft.world.InteractionHand.MAIN_HAND);
+        }
+
+        public Provider(ItemStack containerStack, net.minecraft.world.InteractionHand hand) {
             this.containerStack = containerStack;
+            this.hand = hand;
         }
 
         @Override
@@ -65,7 +71,7 @@ public class mio_icif_toolbox extends Item {
         @Override
         public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
             return new com.miophas.singularity_iteration.common.menu.tool.mio_icif_toolbox_menu(
-                containerId, playerInventory, containerStack, INVENTORY_SIZE);
+                containerId, playerInventory, containerStack, INVENTORY_SIZE, hand);
         }
     }
 }

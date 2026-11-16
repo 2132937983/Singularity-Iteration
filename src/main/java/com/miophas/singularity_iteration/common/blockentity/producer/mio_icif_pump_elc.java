@@ -326,6 +326,9 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
             && tank.fill(new FluidStack(fluid, amount), IFluidHandler.FluidAction.SIMULATE) == amount;
     }
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_pump_elc pump) {
+        // 0.1.11.3: a removal left open by an exception (or saved in the middle of one) is closed without a credit
+        // instead of holding the pump for good, across reloads and when wrenched
+        if (pump.uncertainRemoval != null && !pump.changing) { pump.uncertainRemoval = null; ContainerToTank.markUnsaved(pump); }
         if (!pump.operational() || pump.hasHeldState() || !pump.actionOwner.canAct()) return;
         AbstractProcessingMachineBlockEntity.tick(level, pos, state, pump);
         pump.setLit(pump.isWorking);
@@ -446,7 +449,10 @@ public class mio_icif_pump_elc extends AbstractProcessingMachineBlockEntity impl
             if (result.getItem() instanceof BucketItem bucket && bucket.content == fluid && result.getCount() == 1) {
                 return available(server, pos) && sourceState(pos) != expected;
             }
-            if (result.isEmpty() && available(server, pos) && sourceState(pos) == expected) uncertainRemoval = null;
+            // 0.1.11.3: the pickup has returned, so nothing is uncertain any more. Either the source is still there
+            // (nothing happened) or another mod's pickup took it without the matching bucket; no fluid is credited for
+            // that. The flag used to stay set when the result was not empty, and a pump with the flag never ticked again.
+            uncertainRemoval = null;
             ContainerToTank.markUnsaved(this); return false;
         } finally {
             actor.setItemInHand(InteractionHand.MAIN_HAND, oldHand);

@@ -296,6 +296,12 @@ public final class FeLedger {
     }
     public int uncertainOutput() { return uncertain; }
     public void loadUncertainOutput(int amount) { uncertain = Math.max(0, amount); outputRevision++; }
+    /**
+     * 0.1.11.3: closes an uncertain output as delivered. The quote was debited before the foreign call that threw or
+     * returned an invalid receipt, so nothing is credited back (no duplication); the owner only calls this after a
+     * pause. Before, nothing ever cleared it and the latch blocked all FE output of the block, across reloads.
+     */
+    public void writeOffUncertainOutput() { if (!busy && uncertain != 0) { uncertain = 0; outputRevision++; } }
     public IEnergyStorage port(BooleanSupplier input, BooleanSupplier output) {
         return new IEnergyStorage() {
             @Override public int receiveEnergy(int amount, boolean simulate) { return input.getAsBoolean() ? receive(amount, simulate) : 0; }

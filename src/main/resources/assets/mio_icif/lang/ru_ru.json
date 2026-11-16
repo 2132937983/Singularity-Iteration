@@ -4844,5 +4844,6 @@
   "message.mio_icif.energy_converter.mode_export": "Сопряжение: отдача (сеть SI → лицевая сторона, FE)",
   "message.mio_icif.energy_converter.mode_import": "Сопряжение: приём (FE с лицевой стороны → сеть SI)",
   "message.mio_icif.energy_converter.mode_bidirectional": "Сопряжение: двусторонний, мёртвая зона %s%% буфера вокруг половины заряда",
-  "message.mio_icif.energy_converter.limit": "Предел сопряжения: %s EU/t"
+  "message.mio_icif.energy_converter.limit": "Предел сопряжения: %s EU/t",
+  "message.mio_icif.electric_wireless_manager.self_target": "§cУзел нельзя связать с самим собой"
 }

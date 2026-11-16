@@ -4844,5 +4844,6 @@
   "message.mio_icif.energy_converter.mode_export": "Grid-tie: export (SI grid to the front, as FE)",
   "message.mio_icif.energy_converter.mode_import": "Grid-tie: import (FE from the front to the SI grid)",
   "message.mio_icif.energy_converter.mode_bidirectional": "Grid-tie: bidirectional, dead band %s%% of the buffer around half charge",
-  "message.mio_icif.energy_converter.limit": "Grid-tie limit: %s EU/t"
+  "message.mio_icif.energy_converter.limit": "Grid-tie limit: %s EU/t",
+  "message.mio_icif.electric_wireless_manager.self_target": "§cA node cannot be linked to itself"
 }

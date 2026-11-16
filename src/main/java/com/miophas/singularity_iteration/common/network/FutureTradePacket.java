@@ -67,8 +67,10 @@ public record FutureTradePacket(BlockPos pos, int action, int commodityIndex, in
                 }
                 case ACTION_INCREASE -> future.increaseTradeQuantity();
                 case ACTION_DECREASE -> future.decreaseTradeQuantity();
-                case ACTION_BUY -> future.executeBuy(player);
-                case ACTION_SELL -> future.executeSell(player);
+                // 0.1.11.3: legacy buy and sell are refused. No screen sends them since the exchange panel (which
+                // names its commodity and quantity); they traded the machine's shared selection, which another player
+                // with the same machine open could change just before the trade.
+                case ACTION_BUY, ACTION_SELL -> { }
                 case ACTION_SET_QUANTITY -> {
                     if (packet.quantity >= 1 && packet.quantity <= 64) future.setTradeQuantity(packet.quantity);
                 }

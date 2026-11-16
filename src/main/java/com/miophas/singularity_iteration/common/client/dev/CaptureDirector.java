@@ -2348,6 +2348,95 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "thermal" (-Dsi.capture.scene=thermal), 0.1.11.10: the generator's chart recorder. Most of a game day of record
+     * is written first (the furnace is driven against earlier times with a load that rises and falls, and a refuel gap),
+     * then the screen at full output, banked (storage full), and in a cold start.
+     */
+    private static void sceneThermal() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(at, block("generator/block_thermal_generator").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            if (!(level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g)) return;
+            var fuel = g.getItemHandler();
+            try {
+                var tick = g.getClass().getDeclaredMethod("tickFurnace", net.minecraft.world.level.Level.class, BlockPos.class);
+                var record = g.getClass().getDeclaredMethod("record", long.class);
+                tick.setAccessible(true);
+                record.setAccessible(true);
+                long now = level.getGameTime(), span = 20000;
+                var store = g.getEnergyStorageInternal();
+                for (long k = 0; k < span; k++) {
+                    long t = now - span + k;
+                    // six lumps, a cold gap until a refuel, then a long run
+                    if (k == 0 || k == 6000 || k == 18000)
+                        ((net.neoforged.neoforge.items.IItemHandlerModifiable) fuel).setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.COAL, k == 0 ? 6 : k == 6000 ? 30 : 64));
+                    tick.invoke(g, level, at);
+                    // the grid's draw: a day curve, light in the small hours (the storage fills and the fire is banked)
+                    double load = 7 + 5 * Math.sin(k / 3200.0) + 1.5 * Math.sin(k / 410.0);
+                    store.setStored(Math.max(0, store.getAmount() - Math.round(Math.max(0, load))));
+                    record.invoke(g, t);
+                }
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException(e);
+            }
+            store(g, 1200);
+        });
+        server(5, sp -> openAt(sp, at));
+        thermalDrain(at, 60, 12);
+        shot(1, "thermal/1_full_output");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g)
+                store(g, g.getEnergyStorageInternal().getCapacity());
+        });
+        server(160, sp -> {});
+        shot(1, "thermal/2_banked");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g) {
+                ((net.neoforged.neoforge.items.IItemHandlerModifiable) g.getItemHandler()).setStackInSlot(0, ItemStack.EMPTY);
+                try {
+                    for (String f : new String[]{"heat", "burnLeft"}) {
+                        var field = g.getClass().getDeclaredField(f);
+                        field.setAccessible(true);
+                        field.setDouble(g, 0);
+                    }
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException(e);
+                }
+                store(g, 0);
+                ((net.neoforged.neoforge.items.IItemHandlerModifiable) g.getItemHandler()).setStackInSlot(0, new ItemStack(net.minecraft.world.item.Items.CHARCOAL, 23));
+            }
+        });
+        thermalDrain(at, 70, 12);
+        shot(1, "thermal/3_cold_start");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static void store(com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g, long eu) {
+        g.getEnergyStorageInternal().setStored(eu);
+    }
+
+    /** A load of {@code perTick} EU taken from the generator each tick for {@code ticks} ticks. */
+    private static void thermalDrain(BlockPos at, int ticks, int perTick) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_Thermal_Generator g)
+                    store(g, Math.max(0, g.getEnergyStorageInternal().getAmount() - perTick));
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "thermal".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneThermal();
+        }
+    }
+
+    /**
      * Scene "wind" (-Dsi.capture.scene=wind), 0.1.11.9: the two wind machine screens. A carbon-rotor turbine high up with
      * another one upstream (its wake), in a fair wind, then a storm (feathered, then overloaded without storm protection);
      * then the wind generator. The wind field is set directly and the roses get a minute of varied wind.

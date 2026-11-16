@@ -623,13 +623,11 @@ protected static final int CHARGE_SLOT = 1;
                 // Get the container item before the fuel is used (for example, a lava bucket gives an empty bucket).
                 ItemStack remainingItem = fuelStack.getCraftingRemainingItem();
 
-                // Use the fuel.
-            fuelStack.shrink(1);
-
-                // If the fuel stack is empty, put in the container item (if there is one).
-            if (fuelStack.isEmpty()) {
-                    itemHandler.setStackInSlot(FUEL_SLOT, remainingItem);
-                }
+                // 0.1.11.10: take one through the slot (shrinking the live stack bypassed the handler's change notice);
+                // the container item (a lava bucket's bucket) replaces the last one
+                ItemStack rest = fuelStack.copy();
+                rest.shrink(1);
+                itemHandler.setStackInSlot(FUEL_SLOT, rest.isEmpty() ? remainingItem : rest);
             }
         }
     }

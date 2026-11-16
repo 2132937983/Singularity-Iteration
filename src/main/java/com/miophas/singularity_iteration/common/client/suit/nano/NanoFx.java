@@ -632,6 +632,9 @@ public final class NanoFx {
             if (com.miophas.singularity_iteration.common.client.render.FxBudget.tier(g.pos) != com.miophas.singularity_iteration.common.client.render.FxLodRules.NEAR) continue;     // 0.1.10.32 (P-3): afterimages only near
             float age = now - g.born + partial;
             float a = Mth.clamp(1 - age / 9F, 0, 1) * 0.9F * fx();
+            // 0.1.11.5: photon afterimages are fainter and fade out within 11 blocks of the camera, so the ones left between
+            // a third-person camera and the flyer do not cover the flyer
+            if (g.tier == PHOTON) a *= 0.55F * (float) Mth.clamp((Math.sqrt(at.add(0, 0.9, 0).distanceToSqr(cam)) - 5) / 6, 0, 1);
             if (a <= 0.02F) continue;
             // Mk.II: every second afterimage is violet; 0.1.10.0 quantum blink: violet and white, phase echo: magenta
             float[] col = g.tier == PHOTON ? ((g.born / 2 & 1) == 1 ? PHOTON_GOLD : CYAN)

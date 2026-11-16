@@ -1561,10 +1561,17 @@ public final class CaptureDirector {
         // a gentle turn while the throttle passes the shock barrier: drift, bank and vapour cone
         client(8, () -> { var pl = Minecraft.getInstance().player; pl.setYRot(pl.getYRot() + 6); });
         client(2, () -> { var pl = Minecraft.getInstance().player; pl.setYRot(pl.getYRot() + 6); });
-        shot(2, "scene14/maneuver_shock_barrier");
-        shot(4, "scene14/maneuver_supersonic");
-        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
-        shot(5, "scene14/maneuver_flight_hud");
+        // 0.1.11.5: the barrier is the measured speed, so wait for it instead of a fixed tick
+        until(120, () -> com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.supersonic(Minecraft.getInstance().player));
+        shot(3, "scene14/maneuver_shock_barrier");
+        shot(10, "scene14/maneuver_supersonic");
+        // drop below M 0.9 and cross again in first person: the edge flash of the own boom
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.FIRST_PERSON); mc.options.keySprint.setDown(false); });
+        until(120, () -> !com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.supersonic(Minecraft.getInstance().player));
+        client(1, () -> Minecraft.getInstance().options.keySprint.setDown(true));
+        until(160, () -> com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.supersonic(Minecraft.getInstance().player));
+        shot(2, "scene14/maneuver_boom_first_person");
+        shot(12, "scene14/maneuver_flight_hud");
         client(1, () -> Singularity_Iteration.LOGGER.warn("[scene14] supersonic: throttle={} speed={}",
             com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.throttle(),
             com.miophas.singularity_iteration.common.client.suit.ManeuverModeClient.speed()));

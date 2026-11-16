@@ -3056,7 +3056,7 @@
   "mio_icif.configuration.photon_fx": "Quantum photon effects",
   "mio_icif.configuration.photon_fx.tooltip": "Photon barrier of the deflector and the photon afterglow of fast Special Maneuver flight.",
   "mio_icif.configuration.scan_fx": "Active scan effect",
-  "mio_icif.configuration.scan_fx.tooltip": "A scan sphere expands from you every 3 s while an entity sensor unit runs.",
+  "mio_icif.configuration.scan_fx.tooltip": "A radar ring sweeps out from your feet when an entity sensor unit comes on, when a new hostile comes into range, and when you hold the detail key.",
   "mio_icif.configuration.wingman_fx": "Wingman effects",
   "mio_icif.configuration.wingman_fx.tooltip": "Lock-on scan laser and hologram marker, muzzle flashes, thruster boosts, attitude jets and slash arcs.",
   "mio_icif.subtitle.wingman.boost": "Wingman thrusters burst",

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """0.1.11.5 language values (en_us / zh_cn / ja_jp / ru_ru): the tactical holomap's title, read-outs, directions, legend
 and controls (they were hard-coded English), the suit detail view key, and the passive text HUD (messages, relative
-directions, status line, detail panel, telemetry card).
+directions, status line, detail panel, telemetry card), and the active-scan option tooltip.
 A value per language; a language left out keeps its current value. Idempotent; keeps the line endings of each file. With
 --check it only reports missing or different keys and removed keys that are still present.
 Usage: lang_1155.py <repo root> [--check]
@@ -111,6 +111,12 @@ KEYS = {
     'hud.mio_icif.deny.no_wingman': v('NO WINGMAN', '无僚机', '僚機なし', 'НЕТ ВЕДОМОГО'),
     'hud.mio_icif.deny.no_unit': v('NO UNIT', '无单元', 'ユニットなし', 'НЕТ МОДУЛЯ'),
     'key.mio_icif.hud_detail': v('Suit detail view (hold)', '套装详细视图（按住）', 'スーツ詳細ビュー（長押し）', 'Подробный вид костюма (удерживать)'),
+    # the active scan is a passive radar ring now
+    'mio_icif.configuration.scan_fx.tooltip': v(
+        'A radar ring sweeps out from your feet when an entity sensor unit comes on, when a new hostile comes into range, and when you hold the detail key.',
+        '实体传感单元开启、范围内出现新的敌对生物、按住详细视图键时，从脚下扫出一圈雷达环。',
+        'エンティティ系センサーユニットの起動時、新しい敵対生物が範囲に入った時、詳細ビューキーを押した時に、足元からレーダーリングが広がる。',
+        'Радарное кольцо расходится от ног, когда включается модуль сканирования существ, когда в радиусе появляется новый враг и когда вы удерживаете клавишу подробного вида.'),
 }
 
 REMOVE = []

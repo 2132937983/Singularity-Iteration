@@ -3083,7 +3083,7 @@
   "mio_icif.configuration.photon_fx": "量子光子特效",
   "mio_icif.configuration.photon_fx.tooltip": "偏转器的光子屏障与高速特殊机动的光子残光。",
   "mio_icif.configuration.scan_fx": "主动扫描特效",
-  "mio_icif.configuration.scan_fx.tooltip": "实体传感单元运行时，每 3 秒从你身上扩散出扫描球。",
+  "mio_icif.configuration.scan_fx.tooltip": "实体传感单元开启、范围内出现新的敌对生物、按住详细视图键时，从脚下扫出一圈雷达环。",
   "mio_icif.configuration.wingman_fx": "僚机特效",
   "mio_icif.configuration.wingman_fx.tooltip": "锁定扫描激光与全息标记、枪口火光、推进器冲刺、姿态喷射与斩击弧光。",
   "mio_icif.subtitle.wingman.boost": "僚机推进器喷射",

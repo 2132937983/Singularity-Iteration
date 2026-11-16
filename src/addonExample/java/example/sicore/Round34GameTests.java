@@ -64,6 +64,13 @@ public final class Round34GameTests {
         h.assertTrue(Math.abs(full - 342) < 1, "full throttle cost " + full + " (manual says 342 EU/t with the deflection field)");
         double cruise = (double) call(common("suit.ManeuverMode"), "costPerTick", 1.1);
         h.assertTrue(Math.abs(cruise - 42.3) < 1, "slow cruise cost " + cruise + " (manual says 42 EU/t)");
+        // 0.1.11.5: the barrier follows the measured Mach number with hysteresis (on at M 1, off below M 0.9)
+        Class<?> mm = common("suit.ManeuverMode");
+        h.assertTrue(Math.abs((double) call(mm, "mach", 2.4) - 1.0) < 1e-6, "Mach 1 at 2.4 blocks/t");
+        h.assertTrue(!(boolean) call(mm, "supersonic", false, 0.99), "M 0.99 is not past the barrier");
+        h.assertTrue((boolean) call(mm, "supersonic", false, 1.0), "M 1.0 crosses the barrier");
+        h.assertTrue((boolean) call(mm, "supersonic", true, 0.92), "M 0.92 stays supersonic (no second boom)");
+        h.assertTrue(!(boolean) call(mm, "supersonic", true, 0.89), "below M 0.9 the barrier re-arms");
         h.succeed();
     }
 

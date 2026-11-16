@@ -155,7 +155,7 @@ public final class FcsClientConfig {
         PHOTON_FX = b.comment("Quantum suit photon effects: the geodesic photon barrier of the deflector and the photon afterglow",
                 "(spatial distortion wake and afterimages) of fast Special Maneuver flight.")
             .define("photon_fx", true);
-        SCAN_FX = b.comment("Active scan: a scan sphere expands from you every 3 s while an entity sensor unit runs.").define("scan_fx", true);
+        SCAN_FX = b.comment("Active scan: a radar ring sweeps out from your feet when an entity sensor unit comes on, when a new hostile comes into range, and when you hold the detail key.").define("scan_fx", true);
         WINGMAN_FX = b.comment("Wingman effects: lock-on scan laser and hologram marker, muzzle flashes, thruster boosts, attitude jets, slash arcs.")
             .define("wingman_fx", true);
         SUIT_GLOW = b.comment("Nano and quantum suits glow: their lights and circuit lines shine in the light colour (palette accent),",

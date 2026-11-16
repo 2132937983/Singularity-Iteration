@@ -86,6 +86,25 @@ public final class ManeuverMode {
     public static final double BOOST_SPEED = MAX_SPEED;
     /** Speed at the shock barrier in blocks per tick (2.4 blocks/t, 48 m/s). The HUD uses it as Mach 1. */
     public static final double BOOM_SPEED = MAX_SPEED * SHOCK_THROTTLE;
+    /**
+     * 0.1.11.5: Mach number below which a flyer counts as subsonic again after a barrier crossing. The boom, the shock
+     * shell and the HUD mode follow the measured speed (Mach = speed / {@link #BOOM_SPEED}), not the throttle: the speed
+     * lags the throttle by about M 0.2 while it rises, and a flyer pressed against a wall has throttle but no speed.
+     */
+    public static final double MACH_REARM = 0.9;
+
+    /** Mach number of a speed in blocks per tick. */
+    public static double mach(double speed) {
+        return speed / BOOM_SPEED;
+    }
+
+    /**
+     * 0.1.11.5: supersonic state with hysteresis. It turns on at Mach 1 and off below {@link #MACH_REARM}, so a flyer at
+     * the barrier does not boom again and again.
+     */
+    public static boolean supersonic(boolean was, double mach) {
+        return mach >= 1.0 || was && mach >= MACH_REARM;
+    }
     /** Base energy cost in EU per tick while the player flies. */
     public static final long BASE_COST = 6;
     /** Speed cost factor in EU per tick per (blocks per tick)^2. */

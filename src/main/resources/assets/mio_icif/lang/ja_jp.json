@@ -1189,7 +1189,7 @@
   "mio_icif.configuration.photon_fx": "量子フォトン演出",
   "mio_icif.configuration.photon_fx.tooltip": "ディフレクターのフォトンバリアと、高速特殊機動のフォトン残光。",
   "mio_icif.configuration.scan_fx": "アクティブスキャン演出",
-  "mio_icif.configuration.scan_fx.tooltip": "エンティティ系センサーユニットの稼働中、3 秒ごとにスキャン球が広がる。",
+  "mio_icif.configuration.scan_fx.tooltip": "エンティティ系センサーユニットの起動時、新しい敵対生物が範囲に入った時、詳細ビューキーを押した時に、足元からレーダーリングが広がる。",
   "mio_icif.configuration.wingman_fx": "ウィングマン演出",
   "mio_icif.configuration.wingman_fx.tooltip": "ロックオンのスキャンレーザーとホログラムマーカー、マズルフラッシュ、スラスターブースト、姿勢制御噴射、斬撃の弧。",
   "mio_icif.subtitle.wingman.boost": "ウィングマンのスラスターが噴射する",

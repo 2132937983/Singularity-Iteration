@@ -42,7 +42,7 @@ import org.joml.Matrix4f;
  * <p>Model space: 1 unit = 1 block after the 1/16 scale of the parts; y points down, so the head is
  * at negative y. The layer draws with the additive {@link SiRenderTypes#FIELD_GLOW} render type.
  * It draws nothing when the player is not in maneuver flight. The local player in first person is
- * not rendered by vanilla, so this layer does not run then (see {@code ManeuverModeClient.fieldRim}).
+ * not rendered by vanilla, so this layer does not run then (0.1.11.5: and nothing stands in for it).
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
 public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
@@ -160,10 +160,11 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
             float rad0 = 0.9F * (float) Math.sqrt(d0 / (tail - apex)), rad1 = 0.9F * (float) Math.sqrt(d1 / (tail - apex));
             float y0 = apex + d0, y1 = apex + d1;
             // brighter at the nose, fading towards the tail; flow bands move from nose to tail
-            float flow0 = 0.35F + 0.65F * (float) Math.max(0, Math.sin(d0 * 7.5 - time * 9));
-            float flow1 = 0.35F + 0.65F * (float) Math.max(0, Math.sin(d1 * 7.5 - time * 9));
+            // 0.1.11.5: slow, shallow flow (was a hard pulse at 9 rad/s that made the shell throb) and a lower alpha
+            float flow0 = 0.7F + 0.3F * (float) (0.5 + 0.5 * Math.cos(d0 * 4.0 - time * 2.4));
+            float flow1 = 0.7F + 0.3F * (float) (0.5 + 0.5 * Math.cos(d1 * 4.0 - time * 2.4));
             float fade0 = 1 - 0.85F * d0 / (tail - apex), fade1 = 1 - 0.85F * d1 / (tail - apex);
-            float a0base = 0.16F * field * fade0 * flow0, a1base = 0.16F * field * fade1 * flow1;
+            float a0base = 0.10F * field * fade0 * flow0, a1base = 0.10F * field * fade1 * flow1;
             for (int s = 0; s < seg; s++) {
                 double t0 = s * Math.PI * 2 / seg, t1 = (s + 1) * Math.PI * 2 / seg;
                 float c0 = (float) Math.cos(t0), s0 = (float) Math.sin(t0), c1 = (float) Math.cos(t1), s1 = (float) Math.sin(t1);

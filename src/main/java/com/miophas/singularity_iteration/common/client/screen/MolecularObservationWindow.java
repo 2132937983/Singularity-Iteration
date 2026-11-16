@@ -4,37 +4,34 @@ package com.miophas.singularity_iteration.common.client.screen;
 import com.miophas.singularity_iteration.common.client.suit.AsciiHud;
 import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
 import com.miophas.singularity_iteration.common.recipe.molecular_transformer.MolecularProcess;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import org.joml.Matrix4f;
 
 /**
- * 0.1.11.6: the observation window of the Molecular Transformer screen. It shows the process of the running recipe
- * ({@link MolecularProcess}) as a real machine would:
+ * 0.1.11.6: the observation window of the Molecular Transformer screen, drawn as photographic film: the record a real
+ * laboratory would keep of the process. The left two thirds are a strip of film (sprocket holes, fiducial crosses, the
+ * frame number printed on the edge, grain); the right third is the scanner's log on lined paper.
  *
  * <ul>
- *   <li><b>Core.</b> Nuclear, molecular, exotic and unmarked recipes: a Penning ion trap. The tilted ellipses are the
- *       field lines; the ions follow the three motions of a real trap (fast cyclotron circles, the slow magnetron drift,
- *       the axial bob) and change from the input colour to the product colour as the dose rises. Lattice recipes: a
- *       rotating atom lattice that turns from graphite layers into diamond, nucleating from the centre outward.</li>
- *   <li><b>Beat.</b> The accelerator (or the press) fires in trains of pulses and pauses for the trap to cool. The ring
- *       of read-outs, the outward rays and the beam all follow it. Less power gives sparser, weaker trains.</li>
- *   <li><b>Read-out ring.</b> Eight small sensor panels turning around the core (atomic number, mass spectrum, beam
- *       current, field, vacuum, trap temperature, dose, nuclide; or pressure, temperature, sp3 share for a lattice: order, pressure, temperature, nuclei, grain).
- *       Every value comes from the recipe and the progress.</li>
- *   <li><b>Text column.</b> Process class, path, element or structure change, the phase strip, the dose bar, EU, power
- *       and the time per item.</li>
+ *   <li><b>Nuclear</b> ({@link MolecularProcess} {@code nuclear}): a bubble chamber photograph. Each accelerator pulse
+ *       sends a beam track in from the left; at the vertex charged secondaries curl in the magnetic field (an electron
+ *       losing energy winds into a tight spiral, now and then a neutral particle decays into a V). Tracks are rows of
+ *       bubbles; they pile up like repeated exposures and fade over four seconds. A yellow grease-pencil ring marks some
+ *       vertices with the atomic number reached, as a human scanner would.</li>
+ *   <li><b>Lattice</b>: an X-ray diffraction strip. Debye-Scherrer rings of the old phase (graphite d-spacings) fade
+ *       while the rings of the new phase (diamond) come in; the strip edges cut the large rings as on real film.</li>
+ *   <li><b>Molecular</b> and unmarked: a mass spectrograph plate. One row per exposure, lines placed by the square root
+ *       of the mass; the input's lines fade and the product's darken.</li>
+ *   <li><b>Exotic</b>: bubble tracks that break the rules (kinks both ways, tracks that stop dead) and a light leak.</li>
  * </ul>
- * A recipe that finishes in under 2 s runs as a continuous process: no phases, the dose bar shows items per second.
- * Idle: the core dims, the ring stops, the panels read STBY. All drawing is client side; the screen only needs the
- * progress, the power and the recipe (the client has the recipes).
+ * Idle: the shutter closes. A recipe under 2 s an item runs as a continuous process (the log shows items per second).
+ * Text uses the HUD font at 2 / GUI scale, so one font texel lands on whole screen pixels.
  */
 public final class MolecularObservationWindow {
 
@@ -43,39 +40,33 @@ public final class MolecularObservationWindow {
                            Component inName, Component outName, int inHash, int outHash) { }
 
     private static final float[] EDGES = {0F, 0.12F, 0.22F, 0.88F, 1F};
-    /** The machine's nominal draw (DEFAULT_ENERGY_PER_TICK); below a quarter of it the window reads "low power". */
+    /** The machine's nominal draw (DEFAULT_ENERGY_PER_TICK); below a quarter of it the log reads "low power". */
     private static final long NOMINAL_EU_T = 32768;
-    /** Faster than this per item the window shows a continuous process. */
     private static final double CONTINUOUS_SECONDS = 2.0;
-
-    private static final int ACC = 0x6FE3C8, TXT = 0xE9FFF6, DIM = 0x9FC9BB, WARN = 0xFFD166, CRIT = 0xFF6B5E, MUTE = 0x506468;
     private static final String K = "gui.mio_icif.mt.";
 
+    private static final int FILM = 0xFF0E0D0B, EMULSION = 0xECE8DC, AMBER = 0xECBE6E, PENCIL = 0xE8C547, LEAK = 0xFFAA5A;
+    private static final int PAPER = 0xFFE9E4D6, RULE = 0xFFB8C6D6, MARGIN = 0xFFD29B9B, INK = 0x24324A, RED = 0x9C2F2A, FADED = 0x6F7A88;
+    /** Bubble tracks fade over this many seconds (an exposure that keeps adding up). */
+    private static final double TRACK_LIFE = 4.0;
+    private static final int MAX_BUBBLES = 6000;
+
     private final Random rnd = new Random();
-    private final Ion[] ions = new Ion[46];
-    private float ringAngle, ringVel = 0.15F, trapHeat;
+    private final List<Track> tracks = new ArrayList<>();
+    private final List<Mark> marks = new ArrayList<>();
     private final List<Pulse> pulses = new ArrayList<>();
-    private final List<Ray> rays = new ArrayList<>();
-    private final float[] beamHist = new float[24];
-    private Pulse lastPulse;
-    private double nextTrain, doneFlashAt = -10, now;
+    private double nextTrain, now;
     private long lastNanos;
-    private float shown = -1;
-    /** Text scale of this frame: one font texel on whole screen pixels (2 / GUI scale); fractional scales drop rows. */
+    private float shown = -1, flash;
+    private int frameNo = 412, bubbles;
     private float u = 0.667F;
-    /** GUI scale 2 or less: the text is large for the window, so half the panels and no notes. */
     private boolean compact;
-    private String ionsFor = "";
 
-    private static final class Pulse { double t; float s; int i, n; boolean fired; }
-    private record Ray(double born, float ang, int layer, float len, float s, float life) { }
-    private record Ion(float rm, float thm, float wm, float rc, float thc, float wc, float az, float tha, float wa, float thr, int sp) { }
-    private record Atom(float[] g, float[] d, float r) { }
-    private record Readout(String label, String value, int kind, boolean warn, float bar, float[][] spec) {
-        static final int VALUE = 0, SPEC = 1, SPARK = 2, BAR = 3;
-    }
-
-    private static final Atom[] LATTICE = buildLattice();
+    private static final class Pulse { double t; float s; boolean fired; }
+    /** One bubble track, relative to the film's top-left corner. */
+    private record Track(float[] x, float[] y, double born, float bright) { }
+    /** A grease-pencil ring with a note. */
+    private record Mark(float x, float y, double born, String label) { }
 
     // ------------------------------------------------------------------ entry
 
@@ -85,7 +76,7 @@ public final class MolecularObservationWindow {
         float dt = lastNanos == 0 ? 0.016F : Math.min(0.05F, (t - lastNanos) / 1.0E9F);
         lastNanos = t;
         now += dt;
-        double guiScale = net.minecraft.client.Minecraft.getInstance().getWindow().getGuiScale();
+        double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
         u = (float) Math.min(1.0, 2.0 / Math.max(1.0, guiScale));
         compact = u > 0.7F;
         MolecularProcess proc = s.process() == null ? MolecularProcess.UNKNOWN : s.process();
@@ -95,154 +86,92 @@ public final class MolecularObservationWindow {
         boolean continuous = !idle && secs < CONTINUOUS_SECONDS;
         float level = idle ? 0 : (float) Math.min(1.0, s.euPerTick() / (double) NOMINAL_EU_T);
         boolean low = !idle && s.euPerTick() < NOMINAL_EU_T / 4;
-        float live = idle ? 0.25F : low ? 0.6F : 1F;
-        String key = kind + s.inHash();
-        if (!key.equals(ionsFor)) { buildIons(key.hashCode()); ionsFor = key; }
 
-        // progress: smoothed; a drop means an item finished
         float target = Math.max(0, Math.min(1, s.progress()));
-        if (shown < 0 || idle) shown = target;
-        else if (target < shown - 0.3F) { doneFlashAt = now; shown = target; }
+        if (shown < 0 || idle || target < shown - 0.3F) shown = target;   // a drop means an item finished
         else shown += (target - shown) * Math.min(1F, dt * 10F);
         float p = continuous ? 0.55F : shown;
         int ph = continuous ? 2 : phase(p);
         float conv = continuous ? 0.5F : ph < 2 ? 0 : ph == 2 ? phaseFrac(p) : 1;
 
-        // the pulse clock
-        boolean pulsing = !idle && ("lattice".equals(kind) ? ph >= 1 && ph <= 3 : ph == 2);
-        schedule(pulsing, level, low);
-        fire(live);
-        float beat = idle ? 0 : beatEnv();
-        if (!idle) {
-            ringVel += (0.12F - ringVel) * Math.min(1F, dt * 0.6F);
-            ringVel *= (float) Math.exp(-dt * 1.6F);
-            ringAngle += (ringVel + 0.08F) * dt;
-        }
-        trapHeat = Math.max(0, trapHeat - dt * (low ? 0.18F : 0.1F));
+        boolean bubbleKind = "nuclear".equals(kind) || "exotic".equals(kind);
+        schedule(!idle && ("lattice".equals(kind) ? ph >= 1 && ph <= 3 : ph == 2), level, low);
+        int filmW = Math.round(w * 0.66F);
+        fire(bubbleKind, kind, proc, conv, filmW, h);
+        flash = Math.max(0, flash - dt * 3);
+        tracks.removeIf(tr -> now - tr.born > TRACK_LIFE);
+        marks.removeIf(m -> now - m.born > 4);
 
-        int cin = colourIn(kind), cout = colourOut(kind);
-        // glass and grid
-        g.fill(x, y, x + w, y + h, 0xFF05090B);
-        g.enableScissor(x, y, x + w, y + h);
-        float cx = x + w * 0.33F, cy = y + h * 0.47F;
-        float R = Math.min(h * 0.27F, w * 0.22F);
-        FcsDraw.disc(g, cx, cy, R * 2.2F, FcsDraw.argb(0x0D1A1D, 0.9F));
-        FcsDraw.disc(g, cx, cy, R * 1.4F, FcsDraw.argb(0x10211F, 0.7F));
-        for (int gx = x + 8; gx < x + w; gx += 8) g.fill(gx, y, gx + 1, y + h, FcsDraw.argb(ACC, 0.04F));
-        for (int gy = y + 8; gy < y + h; gy += 8) g.fill(x, gy, x + w, gy + 1, FcsDraw.argb(ACC, 0.04F));
-        float ringRx = Math.min(R * 2.0F, w * 0.33F - 20), ringRy = R * 0.85F;
-
-        // the beamline from the left edge into the core
-        FcsDraw.line(g, x, cy - 1.5F, cx - R * 1.1F, cy - 1.5F, 0.6F, FcsDraw.argb(DIM, 0.18F));
-        FcsDraw.line(g, x, cy + 1.5F, cx - R * 1.1F, cy + 1.5F, 0.6F, FcsDraw.argb(DIM, 0.18F));
-        if (beat > 0.05F && !"lattice".equals(kind)) {
-            gradLine(g, x, cy, cx, cy, 0.6F + beat * 1.2F, FcsDraw.argb(0x8CDCFF, 0), FcsDraw.argb(0xC8F5FF, Math.min(1, 0.9F * beat * live)));
+        // ---- the film strip
+        g.fill(x, y, x + w, y + h, FILM);
+        g.enableScissor(x, y, x + filmW, y + h);
+        if (!s.hasRecipe()) { tracks.clear(); marks.clear(); }       // nothing loaded: a blank frame
+        else switch (kind) {
+            case "nuclear", "exotic" -> drawTracks(g, x, y);
+            case "lattice" -> diffraction(g, x, y, filmW, h, conv, idle);
+            default -> plate(g, x, y, filmW, h, s, idle);
         }
-        ellipse(g, cx, cy, ringRx, ringRy, 0, (float) Math.PI, (float) (Math.PI * 2), 0.5F, FcsDraw.argb(ACC, 0.16F * live + beat * 0.15F));
-        // rays
-        int rayCol = "exotic".equals(kind) ? 0xFF96BE : "lattice".equals(kind) ? 0xC8FFAA : 0xBEEBFF;
-        for (Ray ray : rays) {
-            float age = (float) ((now - ray.born) / ray.life);
-            float ca = (float) Math.cos(ray.ang), sa = (float) Math.sin(ray.ang);
-            float x0 = cx + ringRx * ca, y0 = cy + ringRy * sa;
-            float len = R * 2.6F * ray.len * (0.4F + 0.6F * Math.min(1, age * 3));
-            float a = (1 - age) * (1 - age) * new float[]{0.25F, 0.45F, 0.8F}[ray.layer] * ray.s * live;
-            gradLine(g, x0, y0, x0 + ca * len, y0 + sa * len * 0.6F, new float[]{0.4F, 0.6F, 0.9F}[ray.layer], FcsDraw.argb(rayCol, a), FcsDraw.argb(rayCol, 0));
+        if ("exotic".equals(kind) && !idle) {                       // a light leak at the edge of the strip
+            float leak = 0.06F + 0.05F * (float) Math.sin(now * 1.7);
+            for (int i = 0; i < 6; i++) fillF(g, x + i * 3, y, 3, h, FcsDraw.argb(LEAK, leak * (1 - i / 6F)));
         }
-
-        List<Readout> rd = readouts(kind, proc, p, ph, conv, beat, s);
-        // six panels around the ring (the field and the last read-out stay off: eight overlapped), four when compact
-        int[] pick = compact ? new int[]{0, 1, 2, 6} : new int[]{0, 1, 2, 4, 5, 6};
-        List<Readout> shownRd = new ArrayList<>(pick.length);
-        for (int i : pick) shownRd.add(rd.get(i));
-        rd = shownRd;
-        int n = rd.size();
-        for (int pass = 0; pass < 2; pass++) {
-            if (pass == 1) {
-                // the core between the back and the front of the ring
-                if ("lattice".equals(kind)) lattice(g, cx, cy, R, p, conv, live, beat, cin, cout);
-                else trap(g, cx, cy, R, ph, phaseFrac(p), conv, live, beat, kind, idle, cin, cout);
-                ellipse(g, cx, cy, ringRx, ringRy, 0, 0, (float) Math.PI, 0.5F, FcsDraw.argb(ACC, 0.35F * live + beat * 0.15F));
-            }
-            for (int i = 0; i < n; i++) {
-                float ang = ringAngle + i * (float) Math.PI * 2 / n;
-                float depth = (float) Math.sin(ang);
-                if ((pass == 0) == (depth < 0)) panel(g, rd.get(i), cx + ringRx * (float) Math.cos(ang), cy + ringRy * depth, depth, live, idle);
-            }
+        if (!idle) for (Mark m : marks) pencil(g, x + m.x, y + m.y, m);
+        grain(g, x, y, filmW, h);
+        for (float[] f : new float[][]{{0.2F, 0.25F}, {0.8F, 0.25F}, {0.2F, 0.78F}, {0.8F, 0.78F}}) {
+            float px = x + filmW * f[0], py = y + h * f[1];
+            fillF(g, px - 2.5F, py - 0.2F, 5, 0.4F, FcsDraw.argb(EMULSION, 0.5F));
+            fillF(g, px - 0.2F, py - 2.5F, 0.4F, 5, FcsDraw.argb(EMULSION, 0.5F));
         }
-        // deposition stream down to the output slot side
-        if (!idle && (ph == 3 || continuous)) {
-            float tx = x + 2, ty = y + h * 0.82F;
-            for (int i = 0; i < 6; i++) {
-                float k = (float) ((now * 0.9 + i / 6.0) % 1.0);
-                float px = cx + (tx - cx) * k, py = cy + (ty - cy) * k + (float) Math.sin(k * 9 + i) * 2;
-                fillF(g, px - 0.6F, py - 0.6F, 1.2F, 1.2F, FcsDraw.argb(cout, (1 - k) * 0.9F * live));
-            }
+        for (int sx = x + 3; sx < x + filmW - 4; sx += 8) {
+            g.fill(sx, y + 2, sx + 4, y + 5, 0xFF2B2925);
+            g.fill(sx, y + h - 5, sx + 4, y + h - 2, 0xFF2B2925);
         }
-        float fl = (float) (now - doneFlashAt);
-        if (fl < 0.5F) g.fill(x, y, x + w, y + h, FcsDraw.argb(cout, (1 - fl / 0.5F) * 0.22F));
-
-        textColumn(g, x, y, w, h, kind, proc, p, ph, conv, s, idle, low, continuous, secs);
-
-        // scan lines
-        for (int sy = y; sy < y + h; sy += 2) g.fill(x, sy, x + w, sy + 1, 0x14000000);
+        text(g, Component.translatable(K + "film.edge", String.format(Locale.ROOT, "%04d", frameNo)), x + 4, y + 6, AMBER, 0.75F, u);
+        if (idle) {
+            g.fill(x, y, x + filmW, y + h, 0x8C0E0D0B);
+            Component shut = Component.translatable(K + "idle.shutter");
+            text(g, shut, x + filmW / 2F - AsciiHud.width(shut, u) / 2, y + h / 2F - 4 * u, EMULSION, 0.6F, u);
+        }
+        if (flash > 0.01F) g.fill(x, y, x + filmW, y + h, FcsDraw.argb(EMULSION, flash * 0.06F));
         g.flush();
         g.disableScissor();
-        // frame and corner ticks
-        g.fill(x - 1, y - 1, x + w + 1, y, 0xFF2B3A40);
-        g.fill(x - 1, y + h, x + w + 1, y + h + 1, 0xFF2B3A40);
-        g.fill(x - 1, y, x, y + h, 0xFF2B3A40);
-        g.fill(x + w, y, x + w + 1, y + h, 0xFF2B3A40);
-        int tick = FcsDraw.argb(ACC, 0.6F);
-        g.fill(x, y, x + 5, y + 1, tick); g.fill(x, y, x + 1, y + 5, tick);
-        g.fill(x + w - 5, y, x + w, y + 1, tick); g.fill(x + w - 1, y, x + w, y + 5, tick);
-        g.fill(x, y + h - 1, x + 5, y + h, tick); g.fill(x, y + h - 5, x + 1, y + h, tick);
-        g.fill(x + w - 5, y + h - 1, x + w, y + h, tick); g.fill(x + w - 1, y + h - 5, x + w, y + h, tick);
+
+        // ---- the scanner's log
+        log(g, x + filmW, y, w - filmW, h, kind, proc, s, p, ph, conv, idle, low, continuous, secs);
+
+        // frame
+        g.fill(x - 1, y - 1, x + w + 1, y, 0xFF7A7F85);
+        g.fill(x - 1, y + h, x + w + 1, y + h + 1, 0xFF7A7F85);
+        g.fill(x - 1, y, x, y + h, 0xFF7A7F85);
+        g.fill(x + w, y, x + w + 1, y + h, 0xFF7A7F85);
     }
 
     // ------------------------------------------------------------------ pulse clock
 
+    /** Trains of 1 .. 5 accelerator pulses, then a pause for the chamber to recompress; less power, sparser trains. */
     private void schedule(boolean pulsing, float level, boolean low) {
         if (!pulsing || now < nextTrain) return;
         int n = low ? 1 + rnd.nextInt(2) : 2 + Math.round(level * 2) + rnd.nextInt(2);
         double t = now;
         for (int i = 0; i < n; i++) {
-            t += (low ? 0.4 : 0.16) + rnd.nextDouble() * (low ? 0.3 : 0.16);
+            t += (low ? 0.45 : 0.17) + rnd.nextDouble() * (low ? 0.3 : 0.15);
             Pulse p = new Pulse();
-            p.t = t; p.s = (low ? 0.45F : 0.8F) + rnd.nextFloat() * 0.2F; p.i = i + 1; p.n = n;
+            p.t = t;
+            p.s = (low ? 0.5F : 0.85F) + rnd.nextFloat() * 0.15F;
             pulses.add(p);
         }
-        nextTrain = t + 0.7 + (1 - level) * 1.9 + rnd.nextDouble() * 0.9;
+        nextTrain = t + 0.8 + (1 - level) * 1.8 + rnd.nextDouble() * 0.8;
     }
 
-    private void fire(float live) {
+    private void fire(boolean bubbleKind, String kind, MolecularProcess proc, float conv, int filmW, int h) {
         for (Pulse p : pulses) {
             if (p.fired || now < p.t) continue;
             p.fired = true;
-            ringVel += 0.9F * p.s * (rnd.nextFloat() < 0.25F ? -0.6F : 1F);   // a stutter now and then
-            trapHeat = Math.min(1, trapHeat + 0.08F * p.s);
-            System.arraycopy(beamHist, 1, beamHist, 0, beamHist.length - 1);
-            beamHist[beamHist.length - 1] = p.s * (0.75F + rnd.nextFloat() * 0.25F);
-            lastPulse = p;
-            int k = 8 + rnd.nextInt(8);
-            for (int i = 0; i < k; i++) {
-                int layer = rnd.nextFloat() < 0.35F ? 0 : rnd.nextFloat() < 0.6F ? 1 : 2;   // far, mid, near
-                rays.add(new Ray(now, rnd.nextFloat() * (float) Math.PI * 2, layer,
-                    new float[]{0.35F, 0.6F, 0.9F}[layer] * (0.6F + rnd.nextFloat() * 0.6F), p.s, 0.35F + rnd.nextFloat() * 0.35F));
-            }
+            frameNo++;
+            flash = Math.min(1, flash + p.s);
+            if (bubbleKind) event(kind, proc, conv, p.s, filmW, h);
         }
         pulses.removeIf(p -> now - p.t > 1.5);
-        rays.removeIf(r -> now - r.born >= r.life);
-        if (rays.size() > 96) rays.subList(0, rays.size() - 96).clear();
-    }
-
-    private float beatEnv() {
-        float e = 0;
-        for (Pulse p : pulses) {
-            double d = now - p.t;
-            if (d >= 0 && d < 1.2) e += p.s * (float) Math.exp(-d * 7);
-        }
-        return Math.min(1.4F, e);
     }
 
     private static int phase(float p) { return p < EDGES[1] ? 0 : p < EDGES[2] ? 1 : p < EDGES[3] ? 2 : 3; }
@@ -252,370 +181,264 @@ public final class MolecularObservationWindow {
         return (p - EDGES[i]) / (EDGES[i + 1] - EDGES[i]);
     }
 
-    // ------------------------------------------------------------------ core: ion trap
+    // ------------------------------------------------------------------ bubble chamber
 
-    private void buildIons(int seed) {
-        Random r = new Random(seed);
-        for (int i = 0; i < ions.length; i++) {
-            ions[i] = new Ion(0.25F + r.nextFloat() * 0.62F, r.nextFloat() * 6.283F, 0.35F + r.nextFloat() * 0.25F,
-                0.05F + r.nextFloat() * 0.07F, r.nextFloat() * 6.283F, 9 + r.nextFloat() * 6,
-                0.12F + r.nextFloat() * 0.18F, r.nextFloat() * 6.283F, 2.2F + r.nextFloat() * 1.2F, r.nextFloat(), r.nextInt(3));
+    /** One interaction: the beam track, the secondaries, sometimes a spiral and a V0, sometimes a grease-pencil ring. */
+    private void event(String kind, MolecularProcess proc, float conv, float s, int filmW, int h) {
+        boolean wild = "exotic".equals(kind);
+        float vx = filmW * (0.35F + rnd.nextFloat() * 0.35F), vy = h * (0.3F + rnd.nextFloat() * 0.4F);
+        // the beam: almost straight (high momentum), from the left edge to the vertex
+        int nb = (int) (vx / 0.9F);
+        float[] bx = new float[nb], by = new float[nb];
+        float bend = (rnd.nextFloat() - 0.5F) * 0.0006F;
+        for (int i = 0; i < nb; i++) {
+            float d = i * 0.9F - vx;
+            bx[i] = i * 0.9F;
+            by[i] = vy + bend * d * d;
         }
-    }
-
-    private void trap(GuiGraphics g, float cx, float cy, float R, int ph, float f, float conv, float live, float beat,
-                      String kind, boolean idle, int cin, int cout) {
-        float tight = ph == 0 ? 0.4F + f * 0.4F : 1F;          // the trap closes during dissociation
-        boolean exo = "exotic".equals(kind);
-        boolean mol = "molecular".equals(kind) || "unknown".equals(kind);
-        float t = (float) now;
-        for (int k = 0; k < 12; k++) {
-            float rot = k * (float) Math.PI / 12 + t * (idle ? 0.03F : 0.12F);
-            float ry = R * (0.22F + 0.72F * Math.abs((float) Math.sin(k * 1.7F + t * (idle ? 0.1F : 0.35F))));
-            float a = (0.08F + 0.1F * tight + beat * 0.12F) * live;
-            float jx = exo && rnd.nextFloat() < 0.06F ? (rnd.nextFloat() - 0.5F) * 3 : 0;
-            ellipse(g, cx + jx, cy, R * (1.02F - 0.1F * tight), ry * (1.1F - 0.15F * tight), rot, 0, (float) Math.PI * 2, 0.35F,
-                FcsDraw.argb(exo && k % 3 == 0 ? 0xFF78AA : ACC, a));
+        addTrack(bx, by, 0.85F);
+        int secondaries = 2 + rnd.nextInt(Math.max(1, Math.round(4 * s)));
+        for (int i = 0; i < secondaries; i++) {
+            float sign = rnd.nextBoolean() ? -1 : 1;
+            particle(vx, vy, (rnd.nextFloat() - 0.5F) * 1.6F, sign * (0.01F + rnd.nextFloat() * 0.05F), 40 + rnd.nextInt(90), 1.004F, wild, 0.8F);
         }
-        int glow = mix(cin, cout, conv);
-        FcsDraw.disc(g, cx, cy, R * 0.85F, FcsDraw.argb(glow, (0.06F + beat * 0.18F) * live));
-        FcsDraw.disc(g, cx, cy, R * 0.45F, FcsDraw.argb(glow, (0.08F + beat * 0.25F) * live));
-        if (idle) return;
-        float visible = ph == 0 ? f : 1;
-        for (int i = 0; i < ions.length; i++) {
-            Ion ion = ions[i];
-            if (i / (float) ions.length > visible) continue;
-            boolean done = mol ? ion.sp == 0 && ph >= 2 && conv > ion.thr * 0.8F : conv > ion.thr;
-            int col = mol ? (done ? cout : 0xD27864) : done ? cout : cin;
-            if (exo && rnd.nextFloat() < 0.04F) col = 0xFF508C;
-            float px = 0, py = 0;
-            for (int k = 5; k >= 0; k--) {
-                float tt = t - k * 0.018F;
-                float thm = ion.thm + ion.wm * tt * (1 + beat * 0.6F), thc = ion.thc + ion.wc * tt, tha = ion.tha + ion.wa * tt;
-                float rm = ion.rm * R * (1.05F - 0.25F * tight);
-                float qx = cx + rm * (float) Math.cos(thm) + ion.rc * R * (float) Math.cos(thc);
-                float qy = cy + rm * (float) Math.sin(thm) * 0.42F + ion.rc * R * (float) Math.sin(thc) * 0.6F + ion.az * R * (float) Math.sin(tha);
-                if (k < 5) FcsDraw.line(g, px, py, qx, qy, 0.35F, FcsDraw.argb(col, 0.35F * live));
-                px = qx; py = qy;
-            }
-            fillF(g, px - 0.55F, py - 0.55F, 1.1F, 1.1F, FcsDraw.argb(col, 0.95F * live));
+        if (rnd.nextFloat() < 0.45F) {                                // an electron losing energy: a tightening spiral
+            particle(vx, vy, rnd.nextFloat() * 6.283F, (rnd.nextBoolean() ? -1 : 1) * 0.12F, 160, 1.012F, wild, 0.7F);
         }
-    }
-
-    // ------------------------------------------------------------------ core: lattice
-
-    private static Atom[] buildLattice() {
-        List<float[]> gr = new ArrayList<>(), di = new ArrayList<>();
-        float a = 0.62F;
-        for (int layer = -1; layer <= 1; layer++) {
-            float shift = layer == 0 ? a * 0.5F : 0;
-            for (int i = -4; i <= 4; i++) for (int j = -4; j <= 4; j++) {
-                float x = (i + j * 0.5F) * a + shift, y = j * a * 0.866F;
-                if (Math.hypot(x, y) < 1.75) gr.add(new float[]{x, layer * 0.62F, y});
-            }
+        if (rnd.nextFloat() < 0.35F) {                                // a neutral decays a little downstream: a V
+            float dx = vx + 10 + rnd.nextFloat() * 18, dy = vy + (rnd.nextFloat() - 0.5F) * 16;
+            particle(dx, dy, -0.4F, 0.02F, 50, 1.003F, wild, 0.75F);
+            particle(dx, dy, 0.45F, -0.03F, 45, 1.003F, wild, 0.75F);
         }
-        float c = 0.9F;
-        float[][] base = {{0, 0, 0}, {0, .5F, .5F}, {.5F, 0, .5F}, {.5F, .5F, 0}, {.25F, .25F, .25F}, {.25F, .75F, .75F}, {.75F, .25F, .75F}, {.75F, .75F, .25F}};
-        for (int i = -2; i <= 1; i++) for (int j = -2; j <= 1; j++) for (int k = -2; k <= 1; k++) for (float[] b : base) {
-            float x = (i + b[0]) * c + 0.2F, y = (j + b[1]) * c + 0.2F, z = (k + b[2]) * c + 0.2F;
-            if (Math.sqrt(x * x + y * y + z * z) < 1.7) di.add(new float[]{x, y, z});
-        }
-        java.util.Comparator<float[]> byR = java.util.Comparator.comparingDouble(v -> Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]));
-        gr.sort(byR);
-        di.sort(byR);
-        int n = Math.min(gr.size(), di.size());
-        Atom[] out = new Atom[n];
-        for (int i = 0; i < n; i++) {
-            float[] d = di.get(i);
-            out[i] = new Atom(gr.get(i), d, (float) Math.sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]));
-        }
-        return out;
-    }
-
-    private void lattice(GuiGraphics g, float cx, float cy, float R, float p, float conv, float live, float beat, int cin, int cout) {
-        float front = conv * 1.9F;                                   // nucleation front from the centre outward
-        float squeeze = 1 - beat * 0.06F;
-        float ay = (float) now * 0.35F, ax = 0.45F;
-        int n = LATTICE.length;
-        float[] sx = new float[n], sy = new float[n], sz = new float[n], kk = new float[n];
-        float[][] w = new float[n][];
-        for (int i = 0; i < n; i++) {
-            Atom a = LATTICE[i];
-            float k = Math.max(0, Math.min(1, (front - a.r) / 0.25F + 0.5F));
-            float[] s = {a.g[0] + (a.d[0] - a.g[0]) * k, a.g[1] + (a.d[1] - a.g[1]) * k, a.g[2] + (a.d[2] - a.g[2]) * k};
-            float x = s[0] * (float) Math.cos(ay) - s[2] * (float) Math.sin(ay), z = s[0] * (float) Math.sin(ay) + s[2] * (float) Math.cos(ay);
-            float y2 = s[1] * (float) Math.cos(ax) - z * (float) Math.sin(ax), z2 = s[1] * (float) Math.sin(ax) + z * (float) Math.cos(ax);
-            float sc = R * 0.78F * squeeze * (1 + z2 * 0.08F);
-            sx[i] = cx + x * sc; sy[i] = cy + y2 * sc; sz[i] = z2; kk[i] = k; w[i] = s;
-        }
-        for (int i = 0; i < n; i++) for (int j = i + 1; j < n; j++) {
-            float dx = w[i][0] - w[j][0], dy = w[i][1] - w[j][1], dz = w[i][2] - w[j][2];
-            float d = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-            float k = (kk[i] + kk[j]) / 2;
-            float lim = k > 0.5F ? 0.42F : 0.66F;
-            if (d > lim || (k <= 0.5F && Math.abs(dy) > 0.1F)) continue;
-            float depth = 0.6F + 0.4F * (Math.min(sz[i], sz[j]) + 1.5F) / 3F;
-            FcsDraw.line(g, sx[i], sy[i], sx[j], sy[j], 0.4F, FcsDraw.argb(mix(cin, cout, k), (0.22F + 0.25F * k + beat * 0.2F) * live * depth));
-        }
-        for (int i = 0; i < n; i++) {
-            float s = 0.7F + kk[i] * 0.4F;
-            fillF(g, sx[i] - s / 2, sy[i] - s / 2, s, s, FcsDraw.argb(mix(cin, cout, kk[i]), (0.6F + 0.4F * kk[i]) * live));
-        }
-        if (beat > 0.05F) {                                          // press anvils close in on each stroke
-            for (int k = 0; k < 6; k++) {
-                float ang = k * (float) Math.PI / 3 + 0.3F, d = R * (1.25F - beat * 0.15F);
-                float px = cx + (float) Math.cos(ang) * d, py = cy + (float) Math.sin(ang) * d * 0.7F;
-                float ix = -(float) Math.cos(ang), iy = -(float) Math.sin(ang) * 0.7F;
-                int col = FcsDraw.argb(0xC8FFAA, Math.min(1, 0.6F * beat * live));
-                FcsDraw.line(g, px - iy * 2.5F - ix * 2, py + ix * 2.5F - iy * 2, px, py, 0.6F, col);
-                FcsDraw.line(g, px, py, px + iy * 2.5F - ix * 2, py - ix * 2.5F - iy * 2, 0.6F, col);
-            }
-        }
-    }
-
-    // ------------------------------------------------------------------ read-outs
-
-    private List<Readout> readouts(String kind, MolecularProcess proc, float p, int ph, float conv, float beat, Snapshot s) {
-        List<Readout> out = new ArrayList<>(8);
-        float heat = trapHeat;
-        String beam = String.format(Locale.ROOT, "%.1fµA", beamHist[beamHist.length - 1] * 18);
-        String dose = Math.round(p * 100) + "%";
-        switch (kind) {
-            case "nuclear" -> {
+        if (rnd.nextFloat() < 0.4F) {
+            String label;
+            if (wild) label = "??";
+            else {
                 Elements.E a = Elements.of(proc.from()), b = Elements.of(proc.to());
-                int za = a == null ? 0 : a.z(), zb = b == null ? 0 : b.z();
-                int ma = a == null ? 0 : a.a(), mb = b == null ? 0 : b.a();
-                int z = Math.round(za + (zb - za) * conv), m = Math.round(ma + (mb - ma) * conv);
-                String sym = conv >= 1 ? proc.to() : conv <= 0 ? proc.from() : z == za ? proc.from() : z == zb ? proc.to() : "·";
-                out.add(value("z", za + "→" + z, false));
-                out.add(new Readout(tr("r.spectrum"), "", Readout.SPEC, false, 0,
-                    new float[][]{{ma, 1 - conv}, {m, conv > 0 && conv < 1 ? 0.35F : 0}, {mb, conv}}));
-                out.add(new Readout(tr("r.beam"), beam, Readout.SPARK, false, 0, null));
-                out.add(value("field", "7.00 T", false));
-                out.add(value("vacuum", String.format(Locale.ROOT, "%.1fe-9 Pa", 1.8F + heat * 2.6F), heat > 0.75F));
-                out.add(value("trap_temp", String.format(Locale.ROOT, "%.1f K", 4.2F + heat * 38), heat > 0.75F));
-                out.add(new Readout(tr("r.dose"), dose, Readout.BAR, false, p, null));
-                out.add(value("nuclide", m + sym, false));
+                label = a == null || b == null ? "?" : "Z " + Math.round(a.z() + (b.z() - a.z()) * conv);
             }
-            case "lattice" -> {
-                float f = phaseFrac(p);
-                float press = ph == 0 ? 0.1F + f * 0.4F : Math.min(5.5F, 0.5F + (ph == 1 ? f : 1) * 5.0F) + beat * 0.4F;
-                int temp = ph == 0 ? Math.round(300 + f * 1400) : 1700 + Math.round((float) Math.sin(now * 1.3) * 12);
-                out.add(value("order", Math.round(conv * 100) + "%", false));
-                out.add(value("pressure", String.format(Locale.ROOT, "%.2f GPa", press), false));
-                out.add(value("temperature", temp + " K", false));
-                out.add(value("nuclei", ph >= 2 ? String.valueOf(1 + (int) (conv * 37)) : "—", false));
-                out.add(value("lattice", tr(conv < 0.5F ? "v.hexagonal" : "v.cubic"), false));
-                out.add(new Readout(tr("r.press"), lastPulse == null ? "—" : lastPulse.i + "/" + lastPulse.n, Readout.SPARK, false, 0, null));
-                out.add(new Readout(tr("r.progress"), dose, Readout.BAR, false, p, null));
-                out.add(value("grain", String.format(Locale.ROOT, "%.1f µm", 0.1F + conv * 40), false));
-            }
-            case "exotic" -> {
-                String glyph = String.valueOf("?#%&@".charAt(rnd.nextInt(5)));
-                out.add(value("z", "?" + glyph, true));
-                out.add(new Readout(tr("r.spectrum"), "", Readout.SPEC, false, 0,
-                    new float[][]{{40, rnd.nextFloat()}, {90, rnd.nextFloat()}, {140, rnd.nextFloat()}}));
-                out.add(new Readout(tr("r.beam"), String.format(Locale.ROOT, "%.1fµA", beamHist[beamHist.length - 1] * 30), Readout.SPARK, false, 0, null));
-                out.add(value("field", String.format(Locale.ROOT, "%.2f T", 7 + (float) Math.sin(now * 9) * 0.4F), true));
-                out.add(value("process", tr("v.unknown"), true));
-                out.add(value("trap_temp", String.format(Locale.ROOT, "%.0f K", 4.2F + heat * 60), heat > 0.5F));
-                out.add(new Readout(tr("r.progress"), dose, Readout.BAR, false, p, null));
-                out.add(value("conservation", tr("v.broken"), true));
-            }
-            default -> {                                               // molecular and unmarked
-                float[][] peaks = new float[6][];
-                for (int i = 0; i < 3; i++) {
-                    float in = ph == 0 ? 1 - phaseFrac(p) * 0.3F : ph == 1 ? 0.7F : Math.max(0.05F, 0.7F * (1 - (ph == 2 ? phaseFrac(p) : 1)));
-                    float prod = ph >= 2 ? (ph == 2 ? phaseFrac(p) : 1) : 0.05F;
-                    peaks[i] = new float[]{mass(s.inHash(), i), in * (1 - i * 0.25F)};
-                    peaks[3 + i] = new float[]{mass(s.outHash(), i), prod * (1 - i * 0.25F)};
-                }
-                int top = (int) (ph >= 2 ? mass(s.outHash(), 0) : mass(s.inHash(), 0));
-                out.add(value("mz", String.valueOf(top), false));
-                out.add(new Readout(tr("r.spectrum"), "", Readout.SPEC, false, 0, peaks));
-                out.add(new Readout(tr("r.beam"), String.format(Locale.ROOT, "%.1fµA", beamHist[beamHist.length - 1] * 4), Readout.SPARK, false, 0, null));
-                out.add(value("nucleus", tr("v.unchanged"), false));
-                out.add(value("vacuum", String.format(Locale.ROOT, "%.1fe-7 Pa", 3.0F + heat * 2), false));
-                out.add(value("purity", Math.round(40 + conv * 59) + "%", false));
-                out.add(new Readout(tr("r.progress"), dose, Readout.BAR, false, p, null));
-                out.add(value("fragments", String.valueOf(Math.round(12 + 30 * (1 - conv))), false));
-            }
-        }
-        return out;
-    }
-
-    /** A stable fragment mass for an item (12 .. 211) for the mass spectrum of a molecular recipe. */
-    private static float mass(int hash, int i) {
-        int h = hash * 31 + i * 0x9E3779B1;
-        h ^= h >>> 15;
-        return 12 + Math.floorMod(h, 200);
-    }
-
-    private Readout value(String label, String v, boolean warn) {
-        return new Readout(tr("r." + label), v, Readout.VALUE, warn, 0, null);
-    }
-
-    private void panel(GuiGraphics g, Readout d, float x, float y, float depth, float live, boolean idle) {
-        float lh = 9 * u;
-        boolean graph = d.kind == Readout.SPEC || d.kind == Readout.SPARK;
-        float w = Math.max(18 * u / 0.667F, Math.max(AsciiHud.width(d.label, u), idle ? 0 : AsciiHud.width(d.value, u)) + 4);
-        if (graph || d.kind == Readout.BAR) w = Math.max(w, AsciiHud.width(d.label, u) + AsciiHud.width(d.value, u) + 7);
-        float h = lh * 2 + 2;
-        float a = (depth < 0 ? 0.35F : 0.85F) * live;
-        int edge = d.warn ? CRIT : ACC;
-        float x0 = x - w / 2, y0 = y - h / 2;
-        fillF(g, x0, y0, w, h, FcsDraw.argb(0x040A0C, 0.72F * (depth < 0 ? 0.7F : 1)));
-        outline(g, x0, y0, w, h, FcsDraw.argb(edge, a * 0.7F));
-        fillF(g, x0, y0, 1.2F, h, FcsDraw.argb(edge, a));
-        if (idle) {
-            text(g, "STBY", x - AsciiHud.width("STBY", u) / 2, y - lh / 2 + 0.5F, DIM, a * 0.8F, u);
-            return;
-        }
-        float lx = x0 + 2.5F, top = y0 + 1, bw = w - 4.5F, by = y0 + h - 1.5F;
-        text(g, d.label, lx, top, DIM, a, u);
-        switch (d.kind) {
-            case Readout.SPEC -> {
-                fillF(g, lx, by, bw, 0.4F, FcsDraw.argb(DIM, a * 0.4F));
-                float mMax = 0;
-                for (float[] sp : d.spec) mMax = Math.max(mMax, sp[0]);
-                mMax *= 1.15F;
-                for (float[] sp : d.spec) {
-                    float hh = Math.max(0, Math.min(1, sp[1])) * (lh - 1.5F);
-                    fillF(g, lx + bw * (sp[0] / mMax) - 0.4F, by - hh, 0.8F, hh, FcsDraw.argb(TXT, a));
-                }
-            }
-            case Readout.SPARK -> {
-                float px = 0, py = 0;
-                for (int i = 0; i < beamHist.length; i++) {
-                    float qx = lx + bw * i / (beamHist.length - 1), qy = by - beamHist[i] * (lh - 1.5F);
-                    if (i > 0) FcsDraw.line(g, px, py, qx, qy, 0.4F, FcsDraw.argb(TXT, a));
-                    px = qx; py = qy;
-                }
-                text(g, d.value, x0 + w - 1.5F - AsciiHud.width(d.value, u), top, TXT, a, u);
-            }
-            case Readout.BAR -> {
-                text(g, d.value, x0 + w - 1.5F - AsciiHud.width(d.value, u), top, TXT, a, u);
-                fillF(g, lx, by - 2, bw, 1.6F, FcsDraw.argb(DIM, a * 0.3F));
-                fillF(g, lx, by - 2, bw * d.bar, 1.6F, FcsDraw.argb(ACC, a));
-            }
-            default -> text(g, d.value, lx, top + lh, d.warn ? CRIT : TXT, a, u);
+            marks.add(new Mark(vx, vy, now, label));
         }
     }
 
-    // ------------------------------------------------------------------ text column
+    /** A charged particle in the field: the curvature k grows by the factor dk per step as it slows (a spiral). */
+    private void particle(float x0, float y0, float ang, float k, int len, float dk, boolean wild, float bright) {
+        float[] xs = new float[len], ys = new float[len];
+        float x = x0, y = y0, a = ang;
+        int n = 0;
+        for (int i = 0; i < len; i++) {
+            x += (float) Math.cos(a) * 0.9F;
+            y += (float) Math.sin(a) * 0.9F;
+            a += k + (wild ? (rnd.nextFloat() - 0.5F) * 0.4F : 0);
+            k *= dk;
+            xs[n] = x;
+            ys[n] = y;
+            n++;
+            if (wild && rnd.nextFloat() < 0.01F) break;               // tracks that stop dead
+        }
+        addTrack(Arrays.copyOf(xs, n), Arrays.copyOf(ys, n), bright);
+    }
 
-    private void textColumn(GuiGraphics g, int x, int y, int w, int h, String kind, MolecularProcess proc, float p, int ph,
-                            float conv, Snapshot s, boolean idle, boolean low, boolean continuous, double secs) {
-        float x0 = x + w * 0.63F, x1 = x + w - 4;
-        float colW = x1 - x0;
-        g.fill((int) (x0 - 3), y + 1, x + w - 1, y + h - 1, 0xC7030809);
-        fillF(g, x0 - 3, y + 1, 0.5F, h - 2, FcsDraw.argb(ACC, 0.25F));
-        float sc = u, lh = 9 * u + 1.5F, yy = y + 3;
-        int tagCol = switch (kind) { case "nuclear" -> 0x7FD8FF; case "lattice" -> 0xB9F18A; case "molecular" -> 0xFFD166; case "exotic" -> 0xFF8FB1; default -> DIM; };
+    /** Keeps a track as bubbles: about one point in six is missing, as in a real chamber. */
+    private void addTrack(float[] xs, float[] ys, float bright) {
+        int keep = 0;
+        float[] kx = new float[xs.length], ky = new float[ys.length];
+        for (int i = 0; i < xs.length; i++) {
+            if (rnd.nextFloat() < 0.18F) continue;
+            kx[keep] = xs[i] + (rnd.nextFloat() - 0.5F) * 0.3F;
+            ky[keep] = ys[i] + (rnd.nextFloat() - 0.5F) * 0.3F;
+            keep++;
+        }
+        tracks.add(new Track(Arrays.copyOf(kx, keep), Arrays.copyOf(ky, keep), now, bright));
+        bubbles += keep;
+        while (bubbles > MAX_BUBBLES && !tracks.isEmpty()) bubbles -= tracks.remove(0).x.length;
+    }
+
+    private void drawTracks(GuiGraphics g, int x, int y) {
+        int total = 0;
+        for (Track tr : tracks) {
+            float age = (float) ((now - tr.born) / TRACK_LIFE);
+            float a = tr.bright * (1 - age) * (1 - age);
+            total += tr.x.length;
+            if (a < 0.02F) continue;
+            int col = FcsDraw.argb(EMULSION, a);
+            for (int i = 0; i < tr.x.length; i++) {
+                float sz = 0.45F + ((i * 7919) % 5) * 0.08F;
+                fillF(g, x + tr.x[i] - sz / 2, y + tr.y[i] - sz / 2, sz, sz, col);
+            }
+        }
+        bubbles = total;
+    }
+
+    /** A wobbly grease-pencil ring and its note. */
+    private void pencil(GuiGraphics g, float cx, float cy, Mark m) {
+        float age = (float) (now - m.born);
+        float a = age < 3 ? 0.9F : 0.9F * (4 - age);
+        int col = FcsDraw.argb(PENCIL, a);
+        float px = 0, py = 0;
+        for (int i = 0; i <= 24; i++) {
+            float t = i / 24F * 6.6F, rr = 5 + (float) Math.sin(t * 3 + m.x) * 0.6F;
+            float qx = cx + (float) Math.cos(t) * rr, qy = cy + (float) Math.sin(t) * rr * 0.85F;
+            if (i > 0) FcsDraw.line(g, px, py, qx, qy, 0.6F, col);
+            px = qx;
+            py = qy;
+        }
+        text(g, Component.literal(m.label), cx + 6, cy - 6 - 6 * u, PENCIL, a, u);
+    }
+
+    private void grain(GuiGraphics g, int x, int y, int w, int h) {
+        for (int i = 0; i < 160; i++) {
+            float gx = x + rnd.nextFloat() * w, gy = y + rnd.nextFloat() * h;
+            fillF(g, gx, gy, 0.5F, 0.5F, FcsDraw.argb(EMULSION, 0.04F + rnd.nextFloat() * 0.08F));
+        }
+    }
+
+    // ------------------------------------------------------------------ diffraction strip
+
+    /** Debye-Scherrer rings: radius proportional to 1 / d (Bragg); the old phase fades, the new phase comes in. */
+    private void diffraction(GuiGraphics g, int x, int y, int w, int h, float conv, boolean idle) {
+        float cx = x + w / 2F, cy = y + h / 2F;
+        float[] oldD = {3.35F, 2.13F, 2.03F, 1.68F, 1.23F}, newD = {2.06F, 1.26F, 1.08F, 0.89F};   // graphite, diamond (Å)
+        float k = 16.1F, exp = (idle ? 0.4F : 1F) * (0.85F + flash * 0.25F);
+        for (float d : oldD) ring(g, cx, cy, k * 2.06F / d, (1 - conv) * 0.55F * exp);
+        for (float d : newD) ring(g, cx, cy, k * 2.06F / d, conv * 0.7F * exp);
+        FcsDraw.disc(g, cx, cy, 2.2F, FcsDraw.argb(EMULSION, 0.8F));      // the hole of the beam stop
+        FcsDraw.disc(g, cx, cy, 1.2F, FILM);
+        text(g, Component.translatable(K + "film.old_phase"), cx + k * 2.06F / 3.35F + 1, cy - 4 - 8 * u, AMBER, 0.7F * (1 - conv), u);
+        text(g, Component.translatable(K + "film.new_phase"), cx + k + 1, cy + 3, AMBER, 0.8F * conv, u);
+    }
+
+    private static void ring(GuiGraphics g, float cx, float cy, float r, float a) {
+        if (a < 0.02F) return;
+        FcsDraw.circle(g, cx, cy, r, 0.9F, FcsDraw.argb(EMULSION, a));
+    }
+
+    // ------------------------------------------------------------------ mass spectrograph plate
+
+    /** One row per exposure (older above); lines at sqrt(m/z); input lines fade, product lines darken. */
+    private void plate(GuiGraphics g, int x, int y, int w, int h, Snapshot s, boolean idle) {
+        int rows = 5;
+        float top = y + 8 + 9 * u, rh = (h - 22F - 13 * u) / rows;
+        float[] in = masses(s.inHash()), out = masses(s.outHash());
+        for (int i = 0; i < rows; i++) {
+            float q = Math.max(0, shown - (rows - 1 - i) * 0.12F);
+            int pp = phase(q);
+            float conv = pp < 2 ? 0 : pp == 2 ? phaseFrac(q) : 1;
+            float yy = top + i * rh;
+            text(g, Component.literal(String.valueOf(i + 1)), x + 1.5F, yy + rh / 2 - 4 * u, AMBER, 0.6F, u);
+            for (float m : in) fillF(g, plateX(x, w, m) - 0.4F, yy + 1, 0.8F, rh - 2, FcsDraw.argb(EMULSION, (idle ? 0.15F : 0.75F) * (1 - conv)));
+            for (float m : out) fillF(g, plateX(x, w, m) - 0.45F, yy + 1, 0.9F, rh - 2, FcsDraw.argb(EMULSION, (idle ? 0.15F : 0.85F) * conv + flash * 0.1F));
+        }
+        for (float m : out) {
+            String lbl = String.valueOf((int) m);
+            text(g, Component.literal(lbl), plateX(x, w, m) - AsciiHud.width(lbl, u) / 2, top + rows * rh + 1, AMBER, 0.75F, u);
+        }
+    }
+
+    private static float plateX(int x, int w, float m) {
+        return x + 8 + (float) ((Math.sqrt(m) - 2.5) / (14.6 - 2.5)) * (w - 16);
+    }
+
+    /** Three stable line masses (12 .. 211) for an item: the plate shows the same lines for the same item. */
+    private static float[] masses(int hash) {
+        float[] m = new float[3];
+        for (int i = 0; i < 3; i++) {
+            int h = hash * 31 + i * 0x9E3779B1;
+            h ^= h >>> 15;
+            m[i] = 12 + Math.floorMod(h, 200);
+        }
+        return m;
+    }
+
+    // ------------------------------------------------------------------ the scanner's log
+
+    private void log(GuiGraphics g, int x, int y, int w, int h, String kind, MolecularProcess proc, Snapshot s, float p, int ph,
+                     float conv, boolean idle, boolean low, boolean continuous, double secs) {
+        g.fill(x + 1, y, x + w, y + h, PAPER);
+        float lh = 9 * u + 1;
+        for (float ry = y + 2 + lh; ry < y + h; ry += lh) fillF(g, x + 1, ry - 0.5F, w - 1, 0.3F, RULE);
+        fillF(g, x + 4, y, 0.3F, h, MARGIN);
+        float x0 = x + 6, x1 = x + w - 2, colW = x1 - x0, yy = y + 2;
+        Component film = Component.translatable(K + "film." + filmKind(kind));
         Component state = Component.translatable(K + (idle ? "state.idle" : low ? "state.low" : "state.run"));
-        if (!s.hasRecipe()) {                                        // nothing to run: only the stand-by lines
-            text(g, state, x0, yy, DIM, 1, sc);
-            yy += lh + 2;
-            fit(g, Component.translatable(K + "idle.insert"), x0, yy, colW, DIM, sc);
-            yy += lh;
-            fit(g, Component.translatable(K + "idle.trap"), x0, yy, colW, MUTE, sc);
-            return;
+        if (s.hasRecipe()) {
+            fit(g, film, x0, yy, colW - AsciiHud.width(state, u) - 2, INK, u);
+            text(g, state, x1 - AsciiHud.width(state, u), yy, idle ? FADED : low ? RED : INK, 1, u);
+        } else {
+            text(g, state, x0, yy, FADED, 1, u);
         }
-        text(g, Component.translatable(K + "kind." + kind), x0, yy, tagCol, 1, sc);
-        rightText(g, state, x1, yy, idle ? DIM : low ? WARN : ACC, sc);
         yy += lh;
-        if (!compact) {
-            fit(g, pathLine(kind, proc), x0, yy, colW, DIM, sc);
-            yy += lh;
+        if (!s.hasRecipe()) {
+            fit(g, Component.translatable(K + "idle.insert"), x0, yy, colW, FADED, u);
+            return;
         }
         if (idle) {
-            yy += 2;
-            fit(g, Component.translatable(K + "idle.wait"), x0, yy, colW, DIM, sc);
-            yy += lh;
-            fit(g, Component.translatable(K + "idle.trap"), x0, yy, colW, MUTE, sc);
+            fit(g, Component.translatable(K + "idle.wait"), x0, yy, colW, FADED, u);
             return;
         }
+        List<Component> lines = new ArrayList<>();
         switch (kind) {
             case "nuclear" -> {
                 Elements.E a = Elements.of(proc.from()), b = Elements.of(proc.to());
                 int za = a == null ? 0 : a.z(), zb = b == null ? 0 : b.z();
-                fit(g, Component.literal(proc.from() + " " + za + " → " + proc.to() + " " + zb), x0, yy, colW * 0.7F, TXT, sc);
-                rightText(g, Component.literal("ΔZ " + (zb - za > 0 ? "+" : "") + (zb - za)), x1, yy, DIM, sc);
-                int z = Math.round(za + (zb - za) * conv);
-                if (!compact) { yy += lh; fit(g, Component.translatable(K + "line.z", String.valueOf(z)), x0, yy, colW, DIM, sc); }
+                lines.add(Component.literal(proc.from() + " → " + proc.to()));
+                if (!compact) lines.add(pathLine(za, zb));
+                lines.add(Component.translatable(K + "log.frame", String.valueOf(frameNo)));
+                lines.add(Component.translatable(K + "log.z", String.valueOf(Math.round(za + (zb - za) * conv)), String.valueOf(zb)));
             }
             case "lattice" -> {
-                fit(g, names(s), x0, yy, colW, TXT, sc);
-                if (!compact) { yy += lh; fit(g, Component.translatable(K + "line.lattice_note"), x0, yy, colW, DIM, sc); }
+                lines.add(names(s));
+                if (!compact) lines.add(Component.translatable(K + "line.lattice_note"));
+                lines.add(Component.translatable(K + "log.new_rings", Math.round(conv * 100) + "%"));
             }
             case "exotic" -> {
-                fit(g, names(s), x0, yy, colW, CRIT, sc);
-                if (!compact) { yy += lh; fit(g, Component.translatable(K + "line.exotic_note"), x0, yy, colW, CRIT, sc); }
+                lines.add(names(s));
+                if (!compact) lines.add(Component.translatable(K + "line.exotic_note"));
+                lines.add(Component.translatable(K + "log.frame", String.valueOf(frameNo)));
+                lines.add(Component.translatable(K + "log.unconserved"));
             }
             default -> {
-                fit(g, names(s), x0, yy, colW, TXT, sc);
-                if (!compact) { yy += lh; fit(g, Component.translatable(K + "line.molecular_note"), x0, yy, colW, DIM, sc); }
+                lines.add(names(s));
+                if (!compact) lines.add(Component.translatable("unknown".equals(kind) ? K + "path.unknown" : K + "line.molecular_note"));
+                lines.add(Component.translatable(K + "log.peak", String.valueOf((int) masses(s.outHash())[0]), Math.round(conv * 100) + "%"));
             }
         }
-        yy += lh + 1;
-        // phase strip
-        if (continuous) {
-            text(g, Component.translatable(K + "phase.continuous"), x0, yy, ACC, 1, sc);
-        } else {
-            MutableComponent[] parts = new MutableComponent[4];
-            float total = 0, ps = sc;
-            for (int i = 0; i < 4; i++) {
-                parts[i] = Component.literal(i > 0 ? "›" : "").append(Component.translatable(K + "phase." + phaseSet(kind) + "." + i));
-                total += AsciiHud.width(parts[i], ps) + 1;
-            }
-            if (total > colW) {                                      // long words (ru): only the current phase, with its number
-                text(g, Component.translatable(K + "phase." + phaseSet(kind) + "." + ph).append(" " + (ph + 1) + "/4"), x0, yy, ACC, 1, ps);
-            } else {
-                float px = x0;
-                for (int i = 0; i < 4; i++) {
-                    int col = i < ph ? DIM : i == ph ? ACC : MUTE;
-                    text(g, parts[i], px, yy, col, 1, ps);
-                    px += AsciiHud.width(parts[i], ps) + 1;
-                }
-            }
+        for (Component c : lines) {
+            fit(g, c, x0, yy, colW, "exotic".equals(kind) ? RED : INK, u);
+            yy += lh;
         }
+        Component phaseLine = continuous ? Component.translatable(K + "phase.continuous")
+            : Component.translatable(K + "log.phase", Component.translatable(K + "phase." + phaseSet(kind) + "." + ph), String.valueOf(ph + 1));
+        fit(g, phaseLine, x0, yy, colW, RED, u);
         yy += lh;
-        // dose bar or rate
         if (continuous) {
             double perSec = 1 / secs;
             String rate = perSec >= 10 ? String.format(Locale.ROOT, "%.0f", perSec) : String.format(Locale.ROOT, "%.1f", perSec);
-            fit(g, Component.translatable(K + "line.rate", rate), x0, yy, colW, TXT, sc);
+            fit(g, Component.translatable(K + "line.rate", rate), x0, yy, colW, INK, u);
         } else {
-            String pct = Math.round(p * 100) + "%";
-            int cells = Math.max(4, (int) ((colW - AsciiHud.width(pct, sc) - 4) / Math.max(1, AsciiHud.width("█", sc))) - 2);
-            text(g, AsciiHud.bar(p, cells), x0, yy, ACC, 0.95F, sc);
-            rightText(g, Component.literal(pct), x1, yy, TXT, sc);
+            fit(g, Component.literal(Math.round(p * 100) + "% · ").append(Component.translatable(K + "line.power", si(s.euPerTick()))),
+                x0, yy, colW, low ? RED : INK, u);
         }
         yy += lh;
-        Component eu = Component.translatable(K + "line.eu", si(continuous ? s.recipeEU() : (long) (p * s.recipeEU())), si(s.recipeEU()));
-        Component pw = Component.translatable(K + "line.power", si(s.euPerTick()));
-        fit(g, eu, x0, yy, colW - AsciiHud.width(pw, sc) - 3, DIM, sc);
-        rightText(g, pw, x1, yy, low ? WARN : DIM, sc);
-        yy += lh;
-        String pulse = lastPulse == null ? "—" : lastPulse.i + "/" + lastPulse.n;
-        text(g, Component.translatable(K + ("lattice".equals(kind) ? "line.press" : "line.pulse"), pulse), x0, yy, DIM, 1, sc);
-        String time = secs == Double.POSITIVE_INFINITY ? "—" : secs < 60 ? String.format(Locale.ROOT, "%.1f", secs) : String.format(Locale.ROOT, "%.1f", secs / 60);
-        rightText(g, Component.translatable(K + (secs < 60 ? "line.per_item_s" : "line.per_item_min"), time), x1, yy, DIM, sc);
+        if (yy + lh <= y + h + 1) {
+            String time = secs < 60 ? String.format(Locale.ROOT, "%.1f", secs) : String.format(Locale.ROOT, "%.1f", secs / 60);
+            fit(g, Component.translatable(K + (secs < 60 ? "line.per_item_s" : "line.per_item_min"), time), x0, yy, colW, FADED, u);
+        }
+    }
+
+    private static String filmKind(String kind) {
+        return switch (kind) { case "nuclear", "exotic" -> "chamber"; case "lattice" -> "diffraction"; default -> "plate"; };
     }
 
     private static String phaseSet(String kind) {
         return switch (kind) { case "lattice" -> "lattice"; case "molecular", "unknown" -> "molecular"; case "exotic" -> "exotic"; default -> "nuclear"; };
     }
 
-    private static Component pathLine(String kind, MolecularProcess proc) {
-        if ("nuclear".equals(kind)) {
-            Elements.E a = Elements.of(proc.from()), b = Elements.of(proc.to());
-            int dz = a == null || b == null ? 0 : b.z() - a.z();
-            if (dz < 0) return Component.translatable(K + "path.strip", String.valueOf(-dz));
-            if (dz > 0) return Component.translatable(K + "path.fuse");
-            return Component.translatable(K + "path.isotope");
-        }
-        return Component.translatable(K + "path." + kind);
+    private static Component pathLine(int za, int zb) {
+        int dz = zb - za;
+        if (dz < 0) return Component.translatable(K + "path.strip", String.valueOf(-dz));
+        if (dz > 0) return Component.translatable(K + "path.fuse");
+        return Component.translatable(K + "path.isotope");
     }
 
     private static Component names(Snapshot s) {
@@ -629,39 +452,13 @@ public final class MolecularObservationWindow {
         return String.valueOf(v);
     }
 
-    private static String tr(String key) {
-        return Component.translatable(K + key).getString();
-    }
-
     // ------------------------------------------------------------------ drawing helpers
 
-    private static int colourIn(String kind) {
-        return switch (kind) { case "nuclear" -> 0xB9C3CF; case "lattice" -> 0x78787F; case "exotic" -> 0x5A5A62; default -> 0xD27864; };
-    }
-
-    private static int colourOut(String kind) {
-        return switch (kind) { case "nuclear" -> 0xDCE6FF; case "lattice" -> 0xBEF0FF; case "exotic" -> 0xEBE6FF; default -> 0xE8E8E8; };
-    }
-
-    private static int mix(int a, int b, float f) {
-        f = Math.max(0, Math.min(1, f));
-        int r = Math.round(((a >> 16) & 255) + (((b >> 16) & 255) - ((a >> 16) & 255)) * f);
-        int gg = Math.round(((a >> 8) & 255) + (((b >> 8) & 255) - ((a >> 8) & 255)) * f);
-        int bb = Math.round((a & 255) + ((b & 255) - (a & 255)) * f);
-        return (r << 16) | (gg << 8) | bb;
-    }
-
-    private static void text(GuiGraphics g, String s, float x, float y, int rgb, float alpha, float scale) {
-        text(g, Component.literal(s), x, y, rgb, alpha, scale);
-    }
-
+    /** Text at whole screen pixels: a fractional position cuts rows and columns out of the pixel font, like a fractional scale. */
     private static void text(GuiGraphics g, Component c, float x, float y, int rgb, float alpha, float scale) {
         if (alpha < 0.05F) return;
-        FcsDraw.text(g, AsciiHud.t(c), x, y, FcsDraw.argb(rgb, alpha), scale);
-    }
-
-    private static void rightText(GuiGraphics g, Component c, float right, float y, int rgb, float scale) {
-        text(g, c, right - AsciiHud.width(c, scale), y, rgb, 1, scale);
+        float gs = (float) Minecraft.getInstance().getWindow().getGuiScale();
+        FcsDraw.text(g, AsciiHud.t(c), Math.round(x * gs) / gs, Math.round(y * gs) / gs, FcsDraw.argb(rgb, Math.min(1, alpha)), scale);
     }
 
     /** Left-aligned text, cut with an ellipsis to fit {@code maxW} (never scaled: fractional scales break the font). */
@@ -670,55 +467,11 @@ public final class MolecularObservationWindow {
         String str = c.getString();
         int n = str.length();
         while (n > 1 && AsciiHud.width(str.substring(0, n) + "…", scale) > maxW) n--;
-        text(g, str.substring(0, n) + "…", x, y, rgb, 1, scale);
+        text(g, Component.literal(str.substring(0, n) + "…"), x, y, rgb, 1, scale);
     }
 
     private static void fillF(GuiGraphics g, float x, float y, float w, float h, int argb) {
         FcsDraw.quad(g, x, y, x, y + h, x + w, y + h, x + w, y, argb);
-    }
-
-    private static void outline(GuiGraphics g, float x, float y, float w, float h, int argb) {
-        fillF(g, x, y, w, 0.4F, argb);
-        fillF(g, x, y + h - 0.4F, w, 0.4F, argb);
-        fillF(g, x, y, 0.4F, h, argb);
-        fillF(g, x + w - 0.4F, y, 0.4F, h, argb);
-    }
-
-    /** Ellipse arc from a0 to a1 (radians, standard orientation) rotated by {@code rot}. */
-    private static void ellipse(GuiGraphics g, float cx, float cy, float rx, float ry, float rot, float a0, float a1, float width, int argb) {
-        int steps = Math.max(8, (int) (Math.abs(a1 - a0) / (Math.PI * 2) * 40));
-        float cr = (float) Math.cos(rot), sr = (float) Math.sin(rot);
-        float px = 0, py = 0;
-        for (int i = 0; i <= steps; i++) {
-            float a = a0 + (a1 - a0) * i / steps;
-            float ex = rx * (float) Math.cos(a), ey = ry * (float) Math.sin(a);
-            float qx = cx + ex * cr - ey * sr, qy = cy + ex * sr + ey * cr;
-            if (i > 0) FcsDraw.line(g, px, py, qx, qy, width, argb);
-            px = qx; py = qy;
-        }
-    }
-
-    /** A line whose colour runs from {@code from} at (x1, y1) to {@code to} at (x2, y2). */
-    private static void gradLine(GuiGraphics g, float x1, float y1, float x2, float y2, float width, int from, int to) {
-        float dx = x2 - x1, dy = y2 - y1;
-        float len = (float) Math.sqrt(dx * dx + dy * dy);
-        if (len < 1.0E-3F) return;
-        float nx = -dy / len * width * 0.5F, ny = dx / len * width * 0.5F;
-        VertexConsumer vc = g.bufferSource().getBuffer(RenderType.gui());
-        Matrix4f m = g.pose().last().pose();
-        float ax = x1 + nx, ay = y1 + ny, bx = x1 - nx, by = y1 - ny, cxx = x2 - nx, cyy = y2 - ny, ex = x2 + nx, ey = y2 + ny;
-        // the GUI pass culls back faces: keep the front-facing winding
-        if ((bx - ax) * (cyy - ay) - (by - ay) * (cxx - ax) > 0) {
-            vc.addVertex(m, ax, ay, 0).setColor(from);
-            vc.addVertex(m, ex, ey, 0).setColor(to);
-            vc.addVertex(m, cxx, cyy, 0).setColor(to);
-            vc.addVertex(m, bx, by, 0).setColor(from);
-        } else {
-            vc.addVertex(m, ax, ay, 0).setColor(from);
-            vc.addVertex(m, bx, by, 0).setColor(from);
-            vc.addVertex(m, cxx, cyy, 0).setColor(to);
-            vc.addVertex(m, ex, ey, 0).setColor(to);
-        }
     }
 
     // ------------------------------------------------------------------ elements

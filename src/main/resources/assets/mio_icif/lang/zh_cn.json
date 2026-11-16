@@ -4841,5 +4841,15 @@
   "message.mio_icif.energy_converter.mode_bidirectional": "并网：双向，死区为缓存的 %s%%（以半满为中心）",
   "message.mio_icif.energy_converter.limit": "并网上限：%s EU/t",
   "message.mio_icif.electric_wireless_manager.self_target": "§c无线节点不能连接到自身",
-  "mio_icif.tooltip.empty_tank": "空"
+  "mio_icif.tooltip.empty_tank": "空",
+  "hud.mio_icif.holo.title": "全息  %s×%s×%s",
+  "hud.mio_icif.holo.roof": "剖开 +%s",
+  "hud.mio_icif.holo.hostile": "敌对 %s / %s",
+  "hud.mio_icif.holo.n": "北",
+  "hud.mio_icif.holo.e": "东",
+  "hud.mio_icif.holo.s": "南",
+  "hud.mio_icif.holo.w": "西",
+  "hud.mio_icif.holo.legend": "▲ 敌对  ● 玩家 / 僚机  ■ 中立  · 被动  空心 = 被遮挡",
+  "hud.mio_icif.holo.controls": "滚轮 缩放 %s%%　Shift + 滚轮 俯角 %s°",
+  "key.mio_icif.hud_detail": "套装详细视图（按住）"
 }

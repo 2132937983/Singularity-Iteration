@@ -2085,6 +2085,23 @@ public final class CaptureDirector {
         shot(30, "holo/2_wall");
         server(2, sp -> sp.teleportTo(sp.serverLevel(), 33.5, -60, 0.5, 270, 10));
         shot(40, "holo/3_bunker");
+        // 0.1.11.5: the detail view (held key), zoomed, then a steeper elevation
+        client(1, () -> { com.miophas.singularity_iteration.common.client.suit.FcsClient.forceDetail = true;
+            com.miophas.singularity_iteration.common.client.suit.HoloMap.resetDetailView(); });
+        shot(10, "holo/4_detail_bunker");
+        client(1, () -> { for (int i = 0; i < 3; i++) com.miophas.singularity_iteration.common.client.suit.HoloMap.scroll(1, false); });
+        shot(10, "holo/5_detail_zoom");
+        client(1, () -> { for (int i = 0; i < 5; i++) com.miophas.singularity_iteration.common.client.suit.HoloMap.scroll(1, true); });
+        shot(10, "holo/6_detail_tilt");
+        client(1, () -> { com.miophas.singularity_iteration.common.client.suit.FcsClient.forceDetail = false;
+            com.miophas.singularity_iteration.common.client.suit.HoloMap.resetDetailView(); });
+        // 0.1.11.5: passive: no hostile left, the small map goes away after its linger time
+        server(2, sp -> {
+            sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 0, 15);
+            sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, sp.getBoundingBox().inflate(80),
+                m -> m instanceof net.minecraft.world.entity.monster.Enemy).forEach(m -> m.discard());
+        });
+        shot(120, "holo/7_passive_hidden");
         client(1, () -> { if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
             com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.HOLOMAP_SCALE.set(1.0); });
         client(10, () -> Minecraft.getInstance().stop());

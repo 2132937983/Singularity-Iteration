@@ -75,10 +75,12 @@ public final class FcsHud {
             if (FcsState.active(SuitModuleType.BALLISTIC)) ballistic(g, w, h, primary, partial);
             if (FcsState.active(SuitModuleType.BLAST_WARNING)) blast(g, w, h, primary, partial);
             // in flight the aircraft HUD owns the middle band: the status and telemetry panels step aside
-            if (FcsState.active(SuitModuleType.GRID_TELEMETRY) && !flight) telemetry(g, w, h, primary);
+            // 0.1.11.5: while the detail view is held, the large holomap is the only panel
+            boolean detail = FcsClient.detailHeld() && FcsState.active(SuitModuleType.HOLOMAP);
+            if (FcsState.active(SuitModuleType.GRID_TELEMETRY) && !flight && !detail) telemetry(g, w, h, primary);
             if (FcsState.active(SuitModuleType.THREAT_SENSOR)) threats(g, mc, w, h, partial);
             if (FcsState.active(SuitModuleType.HOLOMAP)) holomap(g, w, h, primary, player, partial);
-            if (!flight) status(g, player, w, h, primary);
+            if (!flight && !detail) status(g, player, w, h, primary);
         }
         if (flight) ManeuverModeClient.renderHud(g, w, h, primary, partial);
         if (transformed) {
@@ -748,12 +750,24 @@ public final class FcsHud {
 
     // ------------------------------------------------------------------ holomap
 
+    /**
+     * 0.1.11.5 (H3, H4): the holomap is passive. It shows small in its panel place only while a hostile is in range or a
+     * sonar result is fresh (and {@link HoloMap#LINGER_MS} after), and large in the middle of the screen while the detail
+     * key is held (wheel: zoom, Shift + wheel: elevation). It used to show all the time.
+     */
     private static void holomap(GuiGraphics g, int w, int h, int primary, LocalPlayer player, float partial) {
+        if (FcsClient.detailHeld()) {
+            // above the hotbar (about 44 GUI pixels) and below the heading tape
+            float size = Math.min(w * 0.58F, (h - 96) / 0.92F);
+            HoloMap.render(g, w / 2F, 44 + size * 0.46F, size, player.getViewYRot(partial), primary, partial, true);
+            return;
+        }
+        if (!HoloMap.popupVisible()) return;
         float[] c = centre(FcsClientConfig.Panel.HOLOMAP, w, h);
         float size = 112 * FcsClientConfig.holomapScale();
         // keep the whole box on screen at any size
         c[0] = Mth.clamp(c[0], size / 2 + 4, w - size / 2 - 4);
         c[1] = Mth.clamp(c[1], size * 0.46F + 4, h - size * 0.46F - 4);
-        HoloMap.render(g, c[0], c[1], size, player.getViewYRot(partial), primary, partial);
+        HoloMap.render(g, c[0], c[1], size, player.getViewYRot(partial), primary, partial, false);
     }
 }

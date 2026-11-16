@@ -41,7 +41,7 @@ import net.minecraft.world.level.material.MapColor;
  * It sorts them from back to front (painter's algorithm) and draws them as translucent quads. Thus
  * it needs no depth buffer and no shader.
  *
- * <p><b>Memory bounds.</b> The face list holds at most {@link #MAX_FACES} faces (6 ints each,
+ * <p><b>Memory bounds.</b> The face list holds at most {@link #MAX_FACES} faces (8 ints each since 0.1.11.5,
  * 168 KB). Each sample allocates the occupancy and colour grids (27 x 16 x 27 cells, about 58 KB)
  * and a new face list. The contact list holds at most 48 entries.
  *
@@ -67,17 +67,34 @@ public final class HoloMap {
     private static final int TALL = BELOW + ABOVE + 1;
     /** Camera elevation above the horizontal: 42 degrees since 0.1.11.5 (34 before), closer to a floor plan. */
     private static final float TILT = (float) Math.toRadians(42);   // camera elevation
+    /** 0.1.11.5 (H3): the detail view's zoom and camera elevation, set with the mouse wheel while the detail key is held. */
+    private static float detailZoom = 1F, detailTiltDeg = 42F;
+    public static final float MIN_ZOOM = 0.6F, MAX_ZOOM = 2.4F, MIN_TILT = 20F, MAX_TILT = 80F;
+    /** 0.1.11.5 (H3): the heading the map shows, eased toward the view heading so the box does not jitter. */
+    private static float shownYaw;
+    private static long lastFrameMs;
+    private static boolean yawKnown;
+    /** 0.1.11.5 (H4): how long the small map stays after the last hostile or sonar result, in milliseconds. */
+    public static final long LINGER_MS = 4000;
+    /** 0.1.11.5 (H4): wall-clock time of the last reason to show the small map (a hostile, a sonar result). */
+    private static long lastReasonMs = Long.MIN_VALUE / 2;
+    /** 0.1.11.5 (H4): how long a sonar result keeps the small map up, in milliseconds. */
+    private static final long SONAR_SHOW_MS = 6000;
 
     /** Face directions: +x, -x, +y, -y, +z, -z. The index is the "dir" value of a face. */
     private static final int[][] DIR = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 
     /**
-     * Packed face list, 6 ints per face: x, y, z (box frame), dir (index into {@link #DIR}),
+     * Packed face list, {@link #STRIDE} ints per face: x, y, z (box frame, the lowest block of a merged face), dir (index
+     * into {@link #DIR}),
      * colour (0xRRGGBB), flags. Flags: 1 = cut section on the box wall, 2 = fluid surface,
      * 4 = non-solid block (plants, glass, slabs and similar), 8 = lava (0.1.11.5), 16 = the top of a ledge with a drop
-     * of 4 or more blocks beside it (0.1.11.5). Only the first {@link #faceCount} faces are valid.
+     * of 4 or more blocks beside it (0.1.11.5), then (0.1.11.5) the width and height of a merged face in blocks (see
+     * {@link #merge}). Only the first {@link #faceCount} faces are valid.
      */
     private static int[] faces = new int[0];
+    /** Ints per face in {@link #faces} (0.1.11.5: 8, with the merged width and height). */
+    private static final int STRIDE = 8;
     private static int faceCount;
     /** Sample centre in world block coordinates. */
     private static int centreX, centreY, centreZ;
@@ -141,7 +158,8 @@ public final class HoloMap {
             int threat = SuitSensorData.threatLevel(e.getId());
             boolean wingman = e instanceof com.miophas.singularity_iteration.common.armory.WingmanEntity;
             boolean linked = com.miophas.singularity_iteration.common.client.suit.nano.QuantumClient.datalinkSeen().contains(e.getId());
-            int kind = wingman ? ALLY : e instanceof Player ? PLAYER : e instanceof Enemy || threat > 0 ? HOSTILE
+            // the shape follows the creature's kind; the threat level only changes its colour (a watched wolf stays neutral)
+            int kind = wingman ? ALLY : e instanceof Player ? PLAYER : e instanceof Enemy || threat == 2 ? HOSTILE
                 : e instanceof NeutralMob ? NEUTRAL : PASSIVE;
             // colour = meaning only: red danger, amber caution, cyan friends, pale yellow neutral, grey-green passive
             int color = threat == 2 ? FcsDraw.RED : kind == HOSTILE ? 0xFF6A4D : threat == 1 ? FcsDraw.YELLOW
@@ -160,7 +178,31 @@ public final class HoloMap {
         list.sort((p, q) -> p.threat != q.threat ? Integer.compare(q.threat, p.threat)
             : (p.kind == HOSTILE) != (q.kind == HOSTILE) ? (p.kind == HOSTILE ? -1 : 1) : Double.compare(p.dist, q.dist));
         contacts = list.size() > 48 ? List.copyOf(list.subList(0, 48)) : list;
+        // 0.1.11.5 (H4): a hostile in range, or a fresh sonar result, brings the small map up
+        long wall = System.currentTimeMillis();
+        boolean hostile = false;
+        for (Contact c : contacts) if (c.kind == HOSTILE) { hostile = true; break; }
+        boolean sonar = !OreScanner.hits().isEmpty() && wall - OreScanner.echoStartMs() < SONAR_SHOW_MS;
+        if (hostile || sonar) lastReasonMs = wall;
     }
+
+    /** 0.1.11.5 (H4): true while the small map should show (a reason in the last {@link #LINGER_MS}). */
+    public static boolean popupVisible() {
+        return System.currentTimeMillis() - lastReasonMs < LINGER_MS;
+    }
+
+    /** 0.1.11.5 (H3): the mouse wheel in the detail view: zoom, or with Shift the camera elevation. */
+    public static void scroll(double delta, boolean tilt) {
+        if (delta == 0) return;
+        if (tilt) detailTiltDeg = Mth.clamp(detailTiltDeg + (float) Math.signum(delta) * 5F, MIN_TILT, MAX_TILT);
+        else detailZoom = Mth.clamp(detailZoom * (delta > 0 ? 1.15F : 1 / 1.15F), MIN_ZOOM, MAX_ZOOM);
+    }
+
+    /** 0.1.11.5 (H3): resets the detail view's zoom and elevation (tests, the reset key). */
+    public static void resetDetailView() { detailZoom = 1F; detailTiltDeg = 42F; }
+
+    public static float detailZoom() { return detailZoom; }
+    public static float detailTiltDeg() { return detailTiltDeg; }
 
     /** True for a full opaque block with no fluid. */
     private static boolean solid(ClientLevel level, BlockPos.MutableBlockPos m) {
@@ -257,8 +299,7 @@ public final class HoloMap {
                 }
             }
         }
-        faces = out;
-        faceCount = n;
+        merge(out, n);
         sampledAtMs = System.currentTimeMillis();
     }
 
@@ -273,6 +314,57 @@ public final class HoloMap {
             if (open) return true;
         }
         return false;
+    }
+
+    /**
+     * 0.1.11.5 (H5): merges neighbouring faces that look the same into rectangles and stores them in {@link #faces}.
+     * Floors and ceilings (+y, -y) merge in both directions of their plane. Walls merge along their horizontal direction
+     * only, since a wall's fade depends on its layer. Faces merge only with equal flags. It cuts the faces to draw and
+     * sort by about 4 to 10 times on open ground, and a wall on the wearer's layer becomes one outlined rectangle.
+     *
+     * @param raw the single-block faces, 6 ints each (x, y, z, dir, colour, flags)
+     * @param n   the number of raw faces
+     */
+    private static void merge(int[] raw, int n) {
+        int sx = SIDE, sy = TALL, sz = SIDE;
+        int[] mask = new int[6 * sx * sy * sz];   // flags + 1 per (dir, x, y, z); 0 = no face
+        for (int i = 0; i < n; i++) {
+            int k = i * 6;
+            int ix = raw[k] + RADIUS, iy = raw[k + 1] + BELOW, iz = raw[k + 2] + RADIUS, dir = raw[k + 3];
+            mask[((dir * sx + ix) * sy + iy) * sz + iz] = raw[k + 5] + 1;
+        }
+        int[] out = new int[Math.max(1, n) * STRIDE];
+        int m = 0;
+        for (int dir = 0; dir < 6; dir++) {
+            boolean floor = dir == 2 || dir == 3;
+            boolean alongX = dir != 0 && dir != 1;   // walls facing x run along z; the others run along x
+            for (int iy = 0; iy < sy; iy++) for (int iz = 0; iz < sz; iz++) for (int ix = 0; ix < sx; ix++) {
+                int at = ((dir * sx + ix) * sy + iy) * sz + iz;
+                int v = mask[at];
+                if (v == 0) continue;
+                int w = 1, h = 1;
+                if (alongX) {
+                    while (ix + w < sx && mask[((dir * sx + ix + w) * sy + iy) * sz + iz] == v) w++;
+                    if (floor) {
+                        grow:
+                        while (iz + h < sz) {
+                            for (int t = 0; t < w; t++) if (mask[((dir * sx + ix + t) * sy + iy) * sz + iz + h] != v) break grow;
+                            h++;
+                        }
+                    }
+                    for (int dz = 0; dz < h; dz++) for (int t = 0; t < w; t++) mask[((dir * sx + ix + t) * sy + iy) * sz + iz + dz] = 0;
+                } else {
+                    while (iz + w < sz && mask[((dir * sx + ix) * sy + iy) * sz + iz + w] == v) w++;
+                    for (int t = 0; t < w; t++) mask[((dir * sx + ix) * sy + iy) * sz + iz + t] = 0;
+                }
+                int k = m * STRIDE;
+                out[k] = ix - RADIUS; out[k + 1] = iy - BELOW; out[k + 2] = iz - RADIUS; out[k + 3] = dir;
+                out[k + 4] = 0; out[k + 5] = v - 1; out[k + 6] = w; out[k + 7] = h;
+                m++;
+            }
+        }
+        faces = out;
+        faceCount = m;
     }
 
     // ------------------------------------------------------------------ projection
@@ -350,24 +442,41 @@ public final class HoloMap {
      * @param partial the partial tick. The method does not use it.
      */
     public static void render(GuiGraphics g, float cx, float cy, float size, float yawDeg, int primary, float partial) {
+        render(g, cx, cy, size, yawDeg, primary, partial, false);
+    }
+
+    /**
+     * 0.1.11.5: draws the map; {@code detail} is the large view of the detail key (its own zoom and elevation, a legend).
+     * The shown heading eases toward {@code yawDeg} (about 90 % in 0.15 s) so the box does not jitter while turning.
+     */
+    public static void render(GuiGraphics g, float cx, float cy, float size, float yawDeg, int primary, float partial, boolean detail) {
         long now = System.currentTimeMillis();
-        float yaw = (float) Math.toRadians(yawDeg);
+        float dt = yawKnown ? Math.min(0.25F, (now - lastFrameMs) / 1000F) : 1F;
+        lastFrameMs = now;
+        float diff = Mth.wrapDegrees(yawDeg - shownYaw);
+        shownYaw = !yawKnown || Math.abs(diff) > 120 ? yawDeg : shownYaw + diff * (1F - (float) Math.exp(-dt * 15F));
+        yawKnown = true;
+        float yaw = (float) Math.toRadians(shownYaw);
+        float tilt = detail ? (float) Math.toRadians(detailTiltDeg) : TILT;
+        float zoom = detail ? detailZoom : 1F;
         // look direction (-sin, cos). Right of it: (-cos, -sin). Minecraft yaw 0 looks to +Z.
         fwdX = -Mth.sin(yaw); fwdZ = Mth.cos(yaw);
         rightX = -Mth.cos(yaw); rightZ = -Mth.sin(yaw);
-        cosT = Mth.cos(TILT); sinT = Mth.sin(TILT);
+        cosT = Mth.cos(tilt); sinT = Mth.sin(tilt);
         dist = RADIUS * 5.5F;
         float half = size / 2;
         float panelH = size * 0.92F;
         float k = Math.max(1F, size / 220F);   // marker and label scale
         // at depth dist, a width of SIDE * 1.18 blocks fills 84 % of the frame width (66 % before 0.1.11.5)
-        focal = dist * (size * 0.84F) / (SIDE * 1.18F);
+        focal = dist * (size * 0.84F * zoom) / (SIDE * 1.18F);
         cx0 = cx;
         cy0 = cy + panelH * 0.06F;
 
         // panel
         FcsDraw.panel(g, (int) (cx - half), (int) (cy - panelH / 2), (int) size, (int) panelH,
-            String.format(java.util.Locale.ROOT, "HOLO  %dx%dx%d", SIDE, TALL, SIDE), primary);
+            net.minecraft.network.chat.Component.translatable("hud.mio_icif.holo.title", SIDE, TALL, SIDE).getString(), primary);
+        // 0.1.11.5: a zoomed view stays inside its panel
+        if (zoom > 1F) g.enableScissor((int) (cx - half) + 1, (int) (cy - panelH / 2) + 12, (int) (cx + half) - 1, (int) (cy + panelH / 2) - 1);
 
         float[] a = new float[3], b = new float[3], c = new float[3], d = new float[3];
         float x0 = -RADIUS, x1 = RADIUS + 1, y0 = -BELOW, y1 = ABOVE + 1, z0 = -RADIUS, z1 = RADIUS + 1;
@@ -388,11 +497,13 @@ public final class HoloMap {
         // 0.1.11.5: one primitive sort key per face (depth bits high, face index low), no boxed Integer[] per frame.
         // The depth is always positive (the camera is dist = 66 blocks away), so its float bits sort as ints.
         long[] keys = new long[n];
+        float[] ctr = new float[3];
         int nv = 0;
         for (int i = 0; i < n; i++) {
-            int o = i * 6;
+            int o = i * STRIDE;
             int dir = f[o + 3];
-            float fx = f[o] + 0.5F + DIR[dir][0] * 0.5F, fy = f[o + 1] + 0.5F + DIR[dir][1] * 0.5F, fz = f[o + 2] + 0.5F + DIR[dir][2] * 0.5F;
+            centre(f[o], f[o + 1], f[o + 2], dir, f[o + 6], f[o + 7], ctr);
+            float fx = ctr[0], fy = ctr[1], fz = ctr[2];
             float u = fx * rightX + fz * rightZ, w = fx * fwdX + fz * fwdZ;
             float px = u, py = w * sinT + fy * cosT, pz = dist + w * cosT - fy * sinT;
             float nu = DIR[dir][0] * rightX + DIR[dir][2] * rightZ, nw = DIR[dir][0] * fwdX + DIR[dir][2] * fwdZ;
@@ -405,9 +516,9 @@ public final class HoloMap {
         int outline = FcsDraw.argb(0xF2F7FA, 0.78F * flicker);
         for (int oi = nv - 1; oi >= 0; oi--) {   // far faces first
             int i = (int) keys[oi];
-            int o = i * 6;
+            int o = i * STRIDE;
             int x = f[o], y = f[o + 1], z = f[o + 2], dir = f[o + 3], flags = f[o + 5];
-            corners(x, y, z, dir, a, b, c, d);
+            corners(x, y, z, dir, f[o + 6], f[o + 7], a, b, c, d);
             boolean cut = (flags & 1) != 0, fluid = (flags & 2) != 0, plant = (flags & 4) != 0, lava = (flags & 8) != 0, ledge = (flags & 16) != 0;
             // layer distance from the wearer's layers (the floor y = -1 and the body y = 0, 1)
             int layer = y < -1 ? -1 - y : y > 1 ? y - 1 : 0;
@@ -457,7 +568,7 @@ public final class HoloMap {
             project(0.5F + fwdX * r, 0, 0.5F + fwdZ * r, a);
             FcsDraw.text(g, r + "m", a[0] + 2, a[1] - 8 * k, FcsDraw.argb(primary, 0.9F), 0.65F * k);
         }
-        String[] dirs = {"S", "W", "N", "E"};   // +z, -x, -z, +x
+        String[] dirs = {tr("hud.mio_icif.holo.s"), tr("hud.mio_icif.holo.w"), tr("hud.mio_icif.holo.n"), tr("hud.mio_icif.holo.e")};   // +z, -x, -z, +x
         float[][] dv = {{0, 1}, {-1, 0}, {0, -1}, {1, 0}};
         for (int i = 0; i < 4; i++) {
             project(0.5F + dv[i][0] * (RADIUS + 0.2F), 0, 0.5F + dv[i][1] * (RADIUS + 0.2F), a);
@@ -522,15 +633,27 @@ public final class HoloMap {
         // front edges of the box
         boxEdges(g, primary, true);
 
+        if (zoom > 1F) { g.flush(); g.disableScissor(); }   // draw the batched lines while the scissor is still on
         // read-outs: the wearer's height, the roof cut, hostiles / all
         float ty = cy + panelH / 2 - 8;
-        FcsDraw.text(g, String.format(java.util.Locale.ROOT, "Y%+d", centreY) + (cutFrom <= ABOVE ? "  ROOF CUT +" + cutFrom : ""),
-            cx - half + 5, ty, FcsDraw.argb(primary, 0.9F), 0.5F);
+        float ts = detail ? 0.7F : 0.5F;
+        FcsDraw.text(g, String.format(java.util.Locale.ROOT, "Y%+d", centreY) + (cutFrom <= ABOVE ? "  " + tr("hud.mio_icif.holo.roof", cutFrom) : ""),
+            cx - half + 5, ty, FcsDraw.argb(primary, 0.9F), ts);
         long hostile = contacts.stream().filter(ct -> ct.kind == HOSTILE).count();
-        FcsDraw.textRight(g, String.format(java.util.Locale.ROOT, "HOSTILE %d / %d", hostile, contacts.size()), cx + half - 4, ty,
-            FcsDraw.argb(hostile > 0 ? 0xFF6A4D : primary, 0.9F), 0.5F);
+        FcsDraw.textRight(g, tr("hud.mio_icif.holo.hostile", hostile, contacts.size()), cx + half - 4, ty,
+            FcsDraw.argb(hostile > 0 ? 0xFF6A4D : primary, 0.9F), ts);
+        if (detail) {
+            // legend and controls under the read-outs
+            FcsDraw.text(g, tr("hud.mio_icif.holo.legend"), cx - half + 5, ty - 11, FcsDraw.argb(0xEAF6FF, 0.85F), 0.6F);
+            FcsDraw.text(g, tr("hud.mio_icif.holo.controls", Math.round(detailZoom * 100), Math.round(detailTiltDeg)),
+                cx - half + 5, ty - 21, FcsDraw.argb(primary, 0.75F), 0.6F);
+        }
         long age = now - sampledAtMs;
         if (age < 250) FcsDraw.textRight(g, "SCAN", cx + half - 4, cy - panelH / 2 + 2, FcsDraw.argb(0x050A0C, 0.9F), 0.5F);
+    }
+
+    private static String tr(String key, Object... args) {
+        return net.minecraft.network.chat.Component.translatable(key, args).getString();
     }
 
     /** 0.1.11.5: the contact marker of a kind; hollow without line of sight. (x, y) is the centre. */
@@ -582,19 +705,33 @@ public final class HoloMap {
     /**
      * Projects the 4 corners of a face, in order around the face.
      *
-     * @param x   the block x in the box frame.
-     * @param y   the block y in the box frame.
-     * @param z   the block z in the box frame.
+     * @param x   the lowest block x of the face in the box frame.
+     * @param y   the lowest block y of the face in the box frame.
+     * @param z   the lowest block z of the face in the box frame.
      * @param dir the face direction, an index into {@link #DIR}.
+     * @param w   0.1.11.5: the merged width (along x, or along z for a wall facing x).
+     * @param h   0.1.11.5: the merged height (along z for a floor or ceiling, else 1).
      */
-    private static void corners(int x, int y, int z, int dir, float[] a, float[] b, float[] c, float[] d) {
+    private static void corners(int x, int y, int z, int dir, int w, int h, float[] a, float[] b, float[] c, float[] d) {
         switch (dir) {
-            case 0 -> { project(x + 1, y, z, a); project(x + 1, y + 1, z, b); project(x + 1, y + 1, z + 1, c); project(x + 1, y, z + 1, d); }
-            case 1 -> { project(x, y, z, a); project(x, y, z + 1, b); project(x, y + 1, z + 1, c); project(x, y + 1, z, d); }
-            case 2 -> { project(x, y + 1, z, a); project(x, y + 1, z + 1, b); project(x + 1, y + 1, z + 1, c); project(x + 1, y + 1, z, d); }
-            case 3 -> { project(x, y, z, a); project(x + 1, y, z, b); project(x + 1, y, z + 1, c); project(x, y, z + 1, d); }
-            case 4 -> { project(x, y, z + 1, a); project(x + 1, y, z + 1, b); project(x + 1, y + 1, z + 1, c); project(x, y + 1, z + 1, d); }
-            default -> { project(x, y, z, a); project(x, y + 1, z, b); project(x + 1, y + 1, z, c); project(x + 1, y, z, d); }
+            case 0 -> { project(x + 1, y, z, a); project(x + 1, y + 1, z, b); project(x + 1, y + 1, z + w, c); project(x + 1, y, z + w, d); }
+            case 1 -> { project(x, y, z, a); project(x, y, z + w, b); project(x, y + 1, z + w, c); project(x, y + 1, z, d); }
+            case 2 -> { project(x, y + 1, z, a); project(x, y + 1, z + h, b); project(x + w, y + 1, z + h, c); project(x + w, y + 1, z, d); }
+            case 3 -> { project(x, y, z, a); project(x + w, y, z, b); project(x + w, y, z + h, c); project(x, y, z + h, d); }
+            case 4 -> { project(x, y, z + 1, a); project(x + w, y, z + 1, b); project(x + w, y + 1, z + 1, c); project(x, y + 1, z + 1, d); }
+            default -> { project(x, y, z, a); project(x, y + 1, z, b); project(x + w, y + 1, z, c); project(x + w, y, z, d); }
+        }
+    }
+
+    /** 0.1.11.5: the centre of a merged face in the box frame, written into {@code out}. */
+    private static void centre(int x, int y, int z, int dir, int w, int h, float[] out) {
+        switch (dir) {
+            case 0 -> { out[0] = x + 1; out[1] = y + 0.5F; out[2] = z + w / 2F; }
+            case 1 -> { out[0] = x; out[1] = y + 0.5F; out[2] = z + w / 2F; }
+            case 2 -> { out[0] = x + w / 2F; out[1] = y + 1; out[2] = z + h / 2F; }
+            case 3 -> { out[0] = x + w / 2F; out[1] = y; out[2] = z + h / 2F; }
+            case 4 -> { out[0] = x + w / 2F; out[1] = y + 0.5F; out[2] = z + 1; }
+            default -> { out[0] = x + w / 2F; out[1] = y + 0.5F; out[2] = z; }
         }
     }
 

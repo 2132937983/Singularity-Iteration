@@ -50,6 +50,10 @@ public final class FcsClient {
 
     public static KeyMapping HUD_KEY;
     public static KeyMapping LAYOUT_KEY;
+    /** 0.1.11.5 (H3): held, it opens the suit's detail view (the large holomap). Left Alt by default. */
+    public static KeyMapping DETAIL_KEY;
+    /** 0.1.11.5: forces the detail view on (capture scenes and tests); the key is still read as well. */
+    public static boolean forceDetail;
     private static int tick;
     /** 0.1.10.0: the HUD was on last tick (the boot sequence runs on the rising edge). */
     private static boolean visorOn;
@@ -59,8 +63,24 @@ public final class FcsClient {
     public static void onKeys(RegisterKeyMappingsEvent event) {
         HUD_KEY = new KeyMapping("key.mio_icif.fcs_hud", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, "key.category.mio_icif");
         LAYOUT_KEY = new KeyMapping("key.mio_icif.hud_layout", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "key.category.mio_icif");
+        DETAIL_KEY = new KeyMapping("key.mio_icif.hud_detail", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, "key.category.mio_icif");
         event.register(HUD_KEY);
         event.register(LAYOUT_KEY);
+        event.register(DETAIL_KEY);
+    }
+
+    /** 0.1.11.5 (H3): true while the detail view is held open (no screen open). */
+    public static boolean detailHeld() {
+        if (forceDetail) return true;
+        return DETAIL_KEY != null && Minecraft.getInstance().screen == null && DETAIL_KEY.isDown();
+    }
+
+    /** 0.1.11.5 (H3): the mouse wheel zooms the detail holomap (Shift + wheel: elevation) instead of changing the slot. */
+    @SubscribeEvent
+    public static void onScroll(net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent event) {
+        if (!detailHeld() || !FcsState.active(SuitModuleType.HOLOMAP) || !FcsClientConfig.hudEnabled()) return;
+        HoloMap.scroll(event.getScrollDeltaY(), net.minecraft.client.gui.screens.Screen.hasShiftDown());
+        event.setCanceled(true);
     }
 
     @SubscribeEvent

@@ -4841,5 +4841,15 @@
   "message.mio_icif.energy_converter.mode_bidirectional": "Сопряжение: двусторонний, мёртвая зона %s%% буфера вокруг половины заряда",
   "message.mio_icif.energy_converter.limit": "Предел сопряжения: %s EU/t",
   "message.mio_icif.electric_wireless_manager.self_target": "§cУзел нельзя связать с самим собой",
-  "mio_icif.tooltip.empty_tank": "Пусто"
+  "mio_icif.tooltip.empty_tank": "Пусто",
+  "hud.mio_icif.holo.title": "ГОЛО  %s×%s×%s",
+  "hud.mio_icif.holo.roof": "СРЕЗ КРЫШИ +%s",
+  "hud.mio_icif.holo.hostile": "ВРАГИ %s / %s",
+  "hud.mio_icif.holo.n": "С",
+  "hud.mio_icif.holo.e": "В",
+  "hud.mio_icif.holo.s": "Ю",
+  "hud.mio_icif.holo.w": "З",
+  "hud.mio_icif.holo.legend": "▲ враг  ● игрок / союзник  ■ нейтрал  · мирный  пустой = за укрытием",
+  "hud.mio_icif.holo.controls": "Колесо: масштаб %s%%   Shift + колесо: наклон %s°",
+  "key.mio_icif.hud_detail": "Подробный вид костюма (удерживать)"
 }

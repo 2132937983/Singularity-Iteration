@@ -4841,5 +4841,15 @@
   "message.mio_icif.energy_converter.mode_bidirectional": "Grid-tie: bidirectional, dead band %s%% of the buffer around half charge",
   "message.mio_icif.energy_converter.limit": "Grid-tie limit: %s EU/t",
   "message.mio_icif.electric_wireless_manager.self_target": "§cA node cannot be linked to itself",
-  "mio_icif.tooltip.empty_tank": "Empty"
+  "mio_icif.tooltip.empty_tank": "Empty",
+  "hud.mio_icif.holo.title": "HOLO  %sx%sx%s",
+  "hud.mio_icif.holo.roof": "ROOF CUT +%s",
+  "hud.mio_icif.holo.hostile": "HOSTILE %s / %s",
+  "hud.mio_icif.holo.n": "N",
+  "hud.mio_icif.holo.e": "E",
+  "hud.mio_icif.holo.s": "S",
+  "hud.mio_icif.holo.w": "W",
+  "hud.mio_icif.holo.legend": "▲ hostile  ● player / ally  ■ neutral  · passive  hollow = behind cover",
+  "hud.mio_icif.holo.controls": "Wheel: zoom %s%%   Shift + wheel: tilt %s°",
+  "key.mio_icif.hud_detail": "Suit detail view (hold)"
 }

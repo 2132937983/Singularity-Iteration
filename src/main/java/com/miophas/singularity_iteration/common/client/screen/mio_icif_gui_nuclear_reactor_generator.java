@@ -110,7 +110,6 @@ public class mio_icif_gui_nuclear_reactor_generator extends mio_icif_screen<com.
         }
         
         drawFeedRow(guiGraphics, mouseX, mouseY);
-        drawCoolant(guiGraphics, mouseX, mouseY);
 
         // 为不可用的槽位绘制 X 号标志（根据当前可用列数）
         int availableColumns = menu.getAvailableColumns();
@@ -125,36 +124,8 @@ public class mio_icif_gui_nuclear_reactor_generator extends mio_icif_screen<com.
     }
 
 
-    // ---- liquid cooling gauges (right of the reactor grid) -----------------------------------------
-    private static final int COOL_X = 191, HOT_X = 199, GAUGE_Y = 25, GAUGE_W = 7, GAUGE_H = 108;
+    // 0.1.11.4: the liquid cooling gauges are gone with the feature
 
-    private void drawCoolant(GuiGraphics g, int mouseX, int mouseY) {
-        int left = (this.width - this.imageWidth) / 2, top = (this.height - this.imageHeight) / 2;
-        int cap = com.miophas.singularity_iteration.common.blockentity.generator.ReactorLiquidCooling.CAPACITY;
-        gauge(g, COOL_X, this.menu.getCoolantAmount() / (float) cap, 0xFF7FD8F5, 0xFF2C7FB8);
-        gauge(g, HOT_X, this.menu.getHotCoolantAmount() / (float) cap, 0xFFFFB04A, 0xFFD2452A);
-        if (isHovering(mouseX, mouseY, left + COOL_X, top + GAUGE_Y, HOT_X + GAUGE_W - COOL_X, GAUGE_H)) {
-            java.util.List<Component> tip = new java.util.ArrayList<>();
-            int hu = this.menu.getCoolantHuPerMB();
-            if (this.menu.getCoolantAmount() <= 0) tip.add(Component.translatable("tooltip.mio_icif.reactor.coolant.empty"));
-            else {
-                tip.add(Component.translatable("tooltip.mio_icif.reactor.coolant", String.format("%,d", this.menu.getCoolantAmount()), ""));
-                tip.add(Component.translatable("tooltip.mio_icif.reactor.coolant.rate", hu,
-                    String.format("%,d", (long) hu * com.miophas.singularity_iteration.common.blockentity.generator.ReactorLiquidCooling.MAX_FLOW_PER_CYCLE)));
-            }
-            tip.add(Component.translatable("tooltip.mio_icif.reactor.hot", String.format("%,d", this.menu.getHotCoolantAmount()), String.format("%,d", cap)));
-            tip.add(Component.translatable("tooltip.mio_icif.reactor.coolant.tip").withStyle(net.minecraft.ChatFormatting.GRAY));
-            g.renderComponentTooltip(this.font, tip, mouseX - left, mouseY - top);
-        }
-    }
-
-    private void gauge(GuiGraphics g, int x, float fraction, int from, int to) {
-        g.fill(x, GAUGE_Y, x + GAUGE_W, GAUGE_Y + GAUGE_H, 0xFF70757B);
-        g.fill(x + 1, GAUGE_Y + 1, x + GAUGE_W - 1, GAUGE_Y + GAUGE_H - 1, 0xFF2A2E33);
-        int h = Math.round(Math.max(0, Math.min(1, fraction)) * (GAUGE_H - 2));
-        if (h > 0) g.fillGradient(x + 1, GAUGE_Y + GAUGE_H - 1 - h, x + GAUGE_W - 1, GAUGE_Y + GAUGE_H - 1, from, to);
-        for (int k = 1; k < 4; k++) g.fill(x + GAUGE_W - 3, GAUGE_Y + k * GAUGE_H / 4, x + GAUGE_W - 1, GAUGE_Y + k * GAUGE_H / 4 + 1, 0x80FFFFFF);
-    }
 
     // ---- feed rate configurator ------------------------------------------------------------------
     private static final int FEED_Y = 149;

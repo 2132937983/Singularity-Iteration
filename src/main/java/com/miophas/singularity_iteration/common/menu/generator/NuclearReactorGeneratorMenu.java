@@ -84,15 +84,9 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
     public int getOutputPower() { return data.get(4); }
     public int getAvailableColumns() { return data.get(5); }
     public int getFeedRate() { return Math.max(1, data.get(6)); }
-    public int getCoolantAmount() { return data.get(7); }
-    public int getHotCoolantAmount() { return data.get(8); }
-    public int getCoolingAbsorbed() { return data.get(9); }
-    public int getCoolantHuPerMB() { return data.get(10); }
+    // 0.1.11.4: data 7..10 (the removed liquid cooling) stay in the layout and are always 0
     /** 0.1.10.39: why the reactor makes nothing ({@code mio_icif_nuclear_reactor_generator.STATUS_*}). */
     public int getStatus() { return data.get(11); }
-    public net.neoforged.neoforge.fluids.FluidStack coolantFluid() {
-        return blockEntity instanceof mio_icif_nuclear_reactor_generator gen ? gen.getLiquidCooling().coldFluid() : net.neoforged.neoforge.fluids.FluidStack.EMPTY;
-    }
 
     /** Feed-rate buttons: 0 = slower, 1 = faster, 2 = reset to 1x (shift = by 4). */
     @Override
@@ -124,10 +118,6 @@ public class NuclearReactorGeneratorMenu extends mio_icif_generator_menu {
             setSyncData(4, gen.getCurrentOutput());
             setSyncData(5, gen.getAvailableColumns());
             setSyncData(6, gen.getFeedRate());
-            setSyncData(7, gen.getLiquidCooling().coldFluid().getAmount());
-            setSyncData(8, gen.getLiquidCooling().hotFluid().getAmount());
-            setSyncData(9, gen.getLiquidCooling().lastAbsorbed());
-            setSyncData(10, gen.getLiquidCooling().active() == null ? 0 : gen.getLiquidCooling().active().huPerMB());
         }
     }
 }

@@ -112,23 +112,15 @@ public class mio_icif_item_buffer_elc extends BlockEntity implements WorldlyCont
 
         blockEntity.refreshUpgradeStats();
 
-        // 升级槽1(左/绿色面) → 仅影响左侧内容槽(0~23)
-        // 升级槽2(右/蓝色面) → 仅影响右侧内容槽(24~47)
-        MachineUpgradeStats leftStats = blockEntity.leftUpgradeStats;
-        MachineUpgradeStats rightStats = blockEntity.rightUpgradeStats;
-
-        if (leftStats.ejectorCount > 0) {
-            blockEntity.bufferEjectItems(leftStats, 0, LEFT_CONTENT_SLOTS);
-        }
-        if (rightStats.ejectorCount > 0) {
-            blockEntity.bufferEjectItems(rightStats, LEFT_CONTENT_SLOTS, RIGHT_CONTENT_SLOTS);
-        }
-        if (leftStats.pullingCount > 0) {
-            blockEntity.bufferPullItems(leftStats, 0, LEFT_CONTENT_SLOTS);
-        }
-        if (rightStats.pullingCount > 0) {
-            blockEntity.bufferPullItems(rightStats, LEFT_CONTENT_SLOTS, RIGHT_CONTENT_SLOTS);
-        }
+        // 0.1.11.4: both upgrade slots act on all 48 content slots, as in IC2. Slot 1 used to act on the left 24 slots
+        // and slot 2 on the right 24 only, and nothing moves items between the halves: with a pulling upgrade in one
+        // slot and an ejector in the other, what was pulled in never came out. Pipe access per face is unchanged.
+        int contentSlots = LEFT_CONTENT_SLOTS + RIGHT_CONTENT_SLOTS;
+        MachineUpgradeStats first = blockEntity.leftUpgradeStats, second = blockEntity.rightUpgradeStats;
+        if (first.ejectorCount > 0) blockEntity.bufferEjectItems(first, 0, contentSlots);
+        if (second.ejectorCount > 0) blockEntity.bufferEjectItems(second, 0, contentSlots);
+        if (first.pullingCount > 0) blockEntity.bufferPullItems(first, 0, contentSlots);
+        if (second.pullingCount > 0) blockEntity.bufferPullItems(second, 0, contentSlots);
     }
 
     private void bufferEjectItems(MachineUpgradeStats stats, int slotStart, int slotCount) {

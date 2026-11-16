@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "双层绝缘高压铁导线"
+  title: "双层绝缘超高压导线"
   icon: mio_icif:wiring/cable/block_iron_cable_2
   parent: power.md
   position: 1
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_iron_cable_2
 ---
 
-# 双层绝缘高压铁导线
+# 双层绝缘超高压导线
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_iron_cable_2" scale="3" />
@@ -16,7 +16,7 @@ item_ids:
 
 ## 功能
 
-双层绝缘高压铁导线是带两层绝缘层的EV导线。
+双层绝缘超高压导线是带两层绝缘层的EV导线。
 绝缘层仅在低于EV满电压时防止触电。
 超过导线上限的电力包会烧毁导线。
 
@@ -30,7 +30,7 @@ item_ids:
 
 ## 使用步骤
 
-1. 用双层绝缘高压铁导线连接发电机和机器。
+1. 用双层绝缘超高压导线连接发电机和机器。
 2. 手持橡胶右键点击导线，加一层绝缘层。
 3. 潜行时用剪线钳右键点击导线，去掉一层绝缘层。
 4. 手持染料右键点击导线，为导线染色。

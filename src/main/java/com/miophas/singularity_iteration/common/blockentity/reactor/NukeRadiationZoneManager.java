@@ -127,7 +127,7 @@ public class NukeRadiationZoneManager {
             var box = new AABB(c.getX() + .5 - r, c.getY() + .5 - r, c.getZ() + .5 - r,
                 c.getX() + .5 + r, c.getY() + .5 + r, c.getZ() + .5 + r);
             for (var entity : level.getEntitiesOfClass(LivingEntity.class, box)) {
-                if (RadiationProtectionUtil.isWearingFullHazmat(entity)) continue;
+                if (RadiationProtectionUtil.isRadiationProtected(entity)) continue;   // 0.1.11.4: any radiation protection (was the hazmat suit only)
                 float factor = intensity(level,entry.getKey(),zone, entity.getX(), entity.getY(), entity.getZ());
                 if (factor <= 0) continue;
                 factor *= (float) shelterTransmission(level, c, entity);

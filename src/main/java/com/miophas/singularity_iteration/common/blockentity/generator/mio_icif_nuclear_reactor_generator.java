@@ -72,9 +72,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     private final PlatformHeatStorage heat=new PlatformHeatStorage(10000,0,1000,20,5000,0);
     private final com.miophas.singularity_iteration.core.runtime.reactor.GuardedReactorHeat heatPort=new com.miophas.singularity_iteration.core.runtime.reactor.GuardedReactorHeat(heat,this::operational);
     private final mio_icif_fluid_reactor_handler fluid=new mio_icif_fluid_reactor_handler(this::fluidAvailable,this::dirty);
-    /** Liquid cooling of the standard (generator-mode) reactor. */
-    private final ReactorLiquidCooling cooling=new ReactorLiquidCooling(this::dirty);
-    public ReactorLiquidCooling getLiquidCooling(){return cooling;}
+    // 0.1.11.4: the liquid cooling of the generator-mode reactor (coolant piped into the reactor itself) is removed.
     private mio_icif_multiblock_manager<mio_icif_fluid_reactor_validator> structure;
     private mio_icif_reactor_mode mode=mio_icif_reactor_mode.GENERATOR;
     private int cycleRemaining=19,lastHeat;
@@ -291,7 +289,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             ItemStack[] current=new ItemStack[54];for(int i=0;i<54;i++)current[i]=expected[i].copy();
             long hull=heat.getHeatStored();int coldIn=liquid?fluid.getInputFluidAmount():0,hotOut=liquid?fluid.getOutputFluidAmount():0,convertedSum=0;
             double euSum=0;long generatedSum=0;
-            long coolBudget=liquid||steam?0:cooling.budget(),coolUsed=0;
+            final long coolBudget=0;   // 0.1.11.4: no liquid cooling (the blackbox keeps the field)
             int water=steam?steamWater():0,steamRoom=steam?steamRoom():0,waterUsed=0,steamMade=0;
             // 0.1.10.12 blackbox: the hull before the cycle, the vented heat, the parts that melted
             final long hullBefore=hull;long emittedSum=0;final boolean poweredOn=enabled();
@@ -314,13 +312,6 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
                 for(int i=0;i<54;i++)if(parts[i]!=null&&next[i]==null)
                     melts.add(new com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Melt(i,
                         com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Slot.of(current[i],parts[i]),level.getGameTime()));
-                // liquid cooling: coolant drains heat stored in vents/cells/exchangers first -> no wear while it flows
-                for(int i=0;i<54&&coolUsed<coolBudget;i++){
-                    var p=next[i];
-                    if(p==null||!p.profile().storesHeat()||p.stored()<=0)continue;
-                    int take=(int)Math.min(p.stored(),coolBudget-coolUsed);
-                    next[i]=p.withStored(p.stored()-take);coolUsed+=take;
-                }
                 for(int i=0;i<54;i++)replacement[i]=i%9<columns?ReactorInventory.write(current[i],parts[i],next[i],depleted[i]):current[i].copy();
                 euSum+=result.euPerTick();generatedSum+=result.generatedHeat();hull=result.hullHeat();
                 if(liquid){convertedSum+=converted.converted();coldIn=converted.coolant();hotOut=converted.hotCoolant();}
@@ -329,9 +320,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             }
             long excessHeat=excessHeat(generatedSum,feeds);
             long hullAfter=Math.addExact(hull,excessHeat);
-            long hullCooling=Math.min(hullAfter,coolBudget-coolUsed);   // remaining flow then cools the hull
-            coolUsed+=hullCooling;
-            final long finalHull=hullAfter-hullCooling;final long finalCoolUsed=coolUsed;
+            final long finalHull=hullAfter;final long finalCoolUsed=0;
             final double finalEu=euSum*com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);   // 0.1.8.4 output multiplier (EU only, not heat)
             final long finalGenerated=Math.addExact(generatedSum,excessHeat);
             final int finalCold=coldIn,finalHot=hotOut,finalConverted=convertedSum,finalWater=waterUsed,finalSteam=steamMade;
@@ -353,7 +342,6 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
             if(!operational())return;
             if(!itemHandler.scexCommitSlots(slots,expected,replacement,()->{
                 heat.setCapacity(finalResult.maxHullHeat());heat.setHeat(Math.min(finalHull,finalResult.maxHullHeat()));lastHeat=committedHeat;
-                if(!liquid)cooling.commit(finalCoolUsed);
                 if(finalConverted2!=null)fluid.commitCycle(finalCold,finalHot,finalConverted,coolant.huPerMB());
                 if(steam)commitSteam(finalWater,finalSteam);
                 accident.armAfterCommit(trigger);cycleVerified=true;rate=committedRate;
@@ -380,7 +368,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
                 blackbox.record(new com.miophas.singularity_iteration.common.reactor.audit.ReactorBlackbox.Sample(level.getGameTime(),
                     hullBefore,Math.min(finalHull,finalResult.maxHullHeat()),finalResult.maxHullHeat(),generatedSum,emittedSum,excessHeat,
                     finalEu,feeds,columns,unloaded,poweredOn,liquid,finalCold,finalHot,liquid?fluid.FLUID_CAPACITY:0,finalConverted,
-                    coolBudget,finalCoolUsed,cooling.coldFluid().getAmount(),cooling.hotFluid().getAmount(),partHeat,partCapacity,
+                    coolBudget,finalCoolUsed,0,0,partHeat,partCapacity,
                     rods,coolingParts,meltedCount,expired,blackbox.pendingDropped(),blackbox.pendingAutomationIn(),blackbox.pendingAutomationOut()),
                     after,melts);
                 // explosions off in the config: no accident is armed and the hull stops at its limit; log that
@@ -708,13 +696,13 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     // structure through the multiblock manager; this is called every tick and per fluid capability query
     @Override public boolean isValidFluidReactorStructure(){return structure!=null&&structure.isValid()&&level!=null;}
     @Override public mio_icif_fluid_reactor_handler getFluidHandler(){return fluid;}
-    public IFluidHandler getFluidHandlerCapability(Direction side){if(steamMode())return steamFluids();if(fluidAvailable())return fluid;return mode==mio_icif_reactor_mode.GENERATOR?cooling:null;}
+    public IFluidHandler getFluidHandlerCapability(Direction side){if(steamMode())return steamFluids();if(fluidAvailable())return fluid;return null;}   // 0.1.11.4: generator mode takes no coolant
     public int getInputFluidAmount(){return fluid.getInputFluidAmount();}
     public int getOutputFluidAmount(){return fluid.getOutputFluidAmount();}
     @Override public Component getDisplayName(){return Component.translatable("block.mio_icif.generator.block_nuclear_reactor_generator");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){return mode==mio_icif_reactor_mode.FLUID||steamMode()?new FluidReactorMenu(id,inventory,this):new NuclearReactorGeneratorMenu(id,inventory,this,itemHandler,getContainerData());}
     public ContainerData getContainerData(){return new ContainerData(){
-        @Override public int get(int i){return switch(i){case 0->(int)energyStorage.getAmount();case 1->(int)ENERGY_CAPACITY;case 2->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 3->(int)getMaxHeat();case 4->getCurrentOutput();case 5->getAvailableColumns();case 6->feedRate;case 7->cooling.coldFluid().getAmount();case 8->cooling.hotFluid().getAmount();case 9->cooling.lastAbsorbed();case 10->cooling.active()==null?0:cooling.active().huPerMB();case 11->statusCode();default->0;};}
+        @Override public int get(int i){return switch(i){case 0->(int)energyStorage.getAmount();case 1->(int)ENERGY_CAPACITY;case 2->(int)Math.min(Integer.MAX_VALUE,getCurrentHeat());case 3->(int)getMaxHeat();case 4->getCurrentOutput();case 5->getAvailableColumns();case 6->feedRate;case 7,8,9,10->0;case 11->statusCode();default->0;};}
         @Override public void set(int i,int value){}
         @Override public int getCount(){return 12;}
     };}
@@ -727,7 +715,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     }
     @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider provider){
         super.saveAdditional(tag,provider);tag.putLong("HeatStored",heat.getHeatStored());tag.putLong("MaxHeatStored",heat.getMaxHeatStored());
-        tag.putInt("CurrentHeatGeneration",lastHeat);tag.putLong("CurrentEnergyGeneration",rate.whole());tag.putBoolean("IsRunning",isRunning());tag.putInt("ReactorCycleTicks",cycleRemaining);tag.putString("ReactorMode",mode.getName());tag.putInt("FeedRate",feedRate);tag.put("LiquidCooling",cooling.save(provider));
+        tag.putInt("CurrentHeatGeneration",lastHeat);tag.putLong("CurrentEnergyGeneration",rate.whole());tag.putBoolean("IsRunning",isRunning());tag.putInt("ReactorCycleTicks",cycleRemaining);tag.putString("ReactorMode",mode.getName());tag.putInt("FeedRate",feedRate);
         ListTag legacy=new ListTag();for(int i=0;i<54;i++)if(!getItem(i).isEmpty()){CompoundTag item=(CompoundTag)getItem(i).save(provider);item.putByte("Slot",(byte)i);legacy.add(item);}tag.put("ReactorItems",legacy);
         CompoundTag fluidTag=new CompoundTag();fluid.saveToNBT(fluidTag,provider);tag.put("FluidHandler",fluidTag);
         if(auditOwner!=null){tag.putUUID("AuditOwner",auditOwner);tag.putString("AuditOwnerName",auditOwnerName);}   // 0.1.10.12
@@ -740,7 +728,7 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         long max=tag.getLong("MaxHeatStored");heat.setCapacity(max>0?max:10000);
         cycleRemaining=tag.contains("ReactorCycleTicks")?tag.getInt("ReactorCycleTicks"):19;
         if(cycleRemaining<0||cycleRemaining>19){hold.put("invalid_cycle",tag.get("ReactorCycleTicks").copy());cycleRemaining=19;}
-        if(tag.contains("LiquidCooling"))cooling.load(tag.getCompound("LiquidCooling"),provider);
+        // 0.1.11.4: a saved "LiquidCooling" tank (removed feature) is ignored; its coolant is gone
         feedRate=tag.contains("FeedRate")?Math.max(MIN_FEED,Math.min(MAX_FEED,tag.getInt("FeedRate"))):1;
         String savedMode=tag.getString("ReactorMode");mode=mio_icif_reactor_mode.fromString(savedMode);
         if(!savedMode.isEmpty()&&!savedMode.equals("generator")&&!savedMode.equals("fluid"))hold.putString("unknown_mode",savedMode);

@@ -1,6 +1,6 @@
 ---
 navigation:
-  title: "三层绝缘高压铁导线"
+  title: "三层绝缘超高压导线"
   icon: mio_icif:wiring/cable/block_iron_cable_3
   parent: power.md
   position: 2
@@ -8,7 +8,7 @@ item_ids:
   - mio_icif:wiring/cable/block_iron_cable_3
 ---
 
-# 三层绝缘高压铁导线
+# 三层绝缘超高压导线
 
 <Row>
   <BlockImage id="mio_icif:wiring/cable/block_iron_cable_3" scale="3" />
@@ -16,7 +16,7 @@ item_ids:
 
 ## 功能
 
-三层绝缘高压铁导线是带三层绝缘层的EV导线。
+三层绝缘超高压导线是带三层绝缘层的EV导线。
 绝缘层在EV满电压下也能防止触电。
 超过导线上限的电力包会烧毁导线。
 
@@ -30,7 +30,7 @@ item_ids:
 
 ## 使用步骤
 
-1. 用三层绝缘高压铁导线连接发电机和机器。
+1. 用三层绝缘超高压导线连接发电机和机器。
 2. 潜行时用剪线钳右键点击导线，去掉一层绝缘层。
 3. 手持染料右键点击导线，为导线染色。
 

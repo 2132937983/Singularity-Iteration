@@ -104,10 +104,14 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
         }
 
         // 如果有靶丸且能量未满，生成能量
+        blockEntity.lastEu = 0;
+        blockEntity.coldSide();
         if (blockEntity.currentGenerationRate > 0 &&
             blockEntity.getEnergyStorage().getAmount() < blockEntity.getEnergyStorage().getCapacity()) {
             blockEntity.generateEnergyInternal();
         }
+
+        blockEntity.chart.tick(level.getGameTime(), blockEntity.lastEu * 10);   // x10: tenths of an EU/t
 
         // 分配能量到相邻方块
         if (!blockEntity.energyStorage.scexNetworkControlled()) blockEntity.distributeEnergy();
@@ -126,12 +130,29 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
 
     /**
      * 生成能量（内部方法）
+     * <p>0.1.11.20: the pellet table times the cold side (RtgPhysics: water, ice, a hot biome, the Nether, lava).
      */
     private void generateEnergyInternal() {
         if (currentGenerationRate > 0) {
-            produce(currentGenerationRate * outputScale());   // 0.1.8.4 multiplier; 0.1.11.13: the framework's sink
+            double eu = currentGenerationRate * coldSide().factor() * outputScale();
+            produce(eu);   // 0.1.8.4 multiplier; 0.1.11.13: the framework's sink
+            lastEu = eu;
         }
     }
+
+    /** 0.1.11.20: the cold side, looked at every 20 ticks; the EU of the last tick; the chart for the screen. */
+    private com.miophas.singularity_iteration.common.energy.RtgPhysics.ColdSide cold;
+    private double lastEu;
+    private final com.miophas.singularity_iteration.common.energy.Recorder chart = new com.miophas.singularity_iteration.common.energy.Recorder();
+    public com.miophas.singularity_iteration.common.energy.RtgPhysics.ColdSide coldSide() {
+        if (cold == null || level != null && level.getGameTime() % 20 == 0)
+            cold = level == null ? new com.miophas.singularity_iteration.common.energy.RtgPhysics.ColdSide(1, 18, 0, false)
+                : com.miophas.singularity_iteration.common.energy.RtgPhysics.coldSide(level, worldPosition);
+        return cold;
+    }
+    public double getLastEu() { return lastEu; }
+    public int getBaseRate() { return (int) currentGenerationRate; }
+    public com.miophas.singularity_iteration.common.energy.Recorder getChart() { return chart; }
 
     /**
      * 统计放入的RTG靶丸数量
@@ -236,7 +257,7 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.generator.RTGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
+        return new com.miophas.singularity_iteration.common.menu.generator.RTGeneratorMenu(containerId, playerInventory, this);
     }
 
     /** 0.1.11.13: rated output = the rate of the pellets in it (the nameplate rate is 0). */

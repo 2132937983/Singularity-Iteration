@@ -17,7 +17,9 @@ item_ids:
 ## Function
 
 The machine makes EU from Radioisotope Fuel Pellets.
-Each added pellet doubles the EU output. The pellets never deplete.
+Each added pellet doubles the EU output (1, 2, 4, 8, 16, 32 EU/t with the air of a temperate biome around it). The pellets never deplete.
+It is a thermoelectric generator: the colder its cold side the more it makes. The best of its six faces sets the cold side: ice, packed ice, blue ice, snow or powder snow ×1.25, water ×1.15; otherwise the air, ×0.9 in a hot biome (35 °C or more) and ×0.7 in the Nether. Lava touching any face costs a further ×0.6.
+The screen is a recorder: the hot junctions' and the cold side's thermometers, the output of the last 12 seconds against the pellet table, and the cold side's factor.
 
 ## Power data
 

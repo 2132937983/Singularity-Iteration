@@ -2348,6 +2348,65 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "rtg" (-Dsi.capture.scene=rtg), 0.1.11.20: the RTG with ice beside it, the RT heat generator, and a complete
+     * geomagnetic generator on a stone column above sea level, the clock set some hours into a storm of this world.
+     */
+    private static void sceneRtg() {
+        BlockPos rtg = new BlockPos(2, -60, 4), heat = new BlockPos(-2, -60, 4), geo = new BlockPos(0, 70, 8);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            var pellet = new net.minecraft.world.item.ItemStack(com.miophas.singularity_iteration.common.item.resource.mio_icif_resources.RTG_PELLET.get());
+            level.setBlock(rtg, block("generator/block_rt_generator").defaultBlockState(), 3);
+            level.setBlock(rtg.east(), net.minecraft.world.level.block.Blocks.ICE.defaultBlockState(), 3);
+            if (level.getBlockEntity(rtg) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_rt_generator r)
+                for (int i = 0; i < 6; i++) r.getItemHandler().insertItem(i, pellet.copy(), false);
+            level.setBlock(heat, block("hugenerator/block_rt_heat_generator").defaultBlockState(), 3);
+            if (level.getBlockEntity(heat) instanceof com.miophas.singularity_iteration.common.blockentity.huentity.hugenerator.mio_icif_rt_heat_generator r)
+                for (int i = 0; i < 4; i++) r.getItemHandler().insertItem(i, pellet.copy(), false);
+            for (int y = 50; y < 70; y++) level.setBlock(new BlockPos(0, y, 8), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+            for (BlockPos p : new BlockPos[]{geo.offset(1, -1, 0), geo.offset(-1, -1, 0), geo.offset(0, -1, 1), geo.offset(0, -1, -1)})
+                level.setBlock(p, block("generator/block_geomagnetic_pedestal").defaultBlockState(), 3);
+            level.setBlock(geo, block("generator/block_geomagnetic_generator").defaultBlockState(), 3);
+            level.setBlock(geo.above(), block("generator/block_geomagnetic_antenna").defaultBlockState(), 3);
+            level.setBlock(geo.above(2), block("generator/block_geomagnetic_antenna").defaultBlockState(), 3);
+            long seed = level.getSeed();
+            long time = 6000;
+            for (long d = 3; d < 400; d++) {
+                var storm = com.miophas.singularity_iteration.common.energy.GeomagPhysics.storm(seed, d);
+                if (storm != null) { time = storm.start() + 1500; break; }
+            }
+            level.setDayTime(time);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -58, 0.5, 0, 30);
+        });
+        server(80, sp -> {
+            for (BlockPos p : new BlockPos[]{rtg, geo})
+                if (sp.serverLevel().getBlockEntity(p) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+        });
+        server(1, sp -> openAt(sp, rtg));
+        server(30, sp -> {});
+        shot(1, "rtg/1_rtg_ice");
+        server(1, sp -> openAt(sp, heat));
+        server(30, sp -> {});
+        shot(1, "rtg/2_rt_heat");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), 0.5, 71, 4.5, 0, 20));
+        server(10, sp -> openAt(sp, geo));
+        server(40, sp -> {});
+        shot(1, "rtg/3_magnetogram");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "rtg".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneRtg();
+        }
+    }
+
+    /**
      * Scene "geo" (-Dsi.capture.scene=geo), 0.1.11.19: the recorder screens. A geothermal generator in a pocket of lava
      * (two lava blocks on faces, two further off, one flowing) with lava in its tank; an incinerator fed coal with now and
      * then a cobblestone (the chart shows the warm-up and the quenches); an experience generator fed orbs.

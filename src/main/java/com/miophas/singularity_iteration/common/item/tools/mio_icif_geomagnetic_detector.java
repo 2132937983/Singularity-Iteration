@@ -74,42 +74,18 @@ public class mio_icif_geomagnetic_detector extends mio_icif_bat {
 
         player.sendSystemMessage(Component.translatable("message.mio_icif.geomagnetic_detector.value",
             String.format("%.2f", ratio)));
+        // 0.1.11.20: the field's disturbance now (the daily variation and storms)
+        long seed = com.miophas.singularity_iteration.common.energy.GeomagPhysics.seed(level);
+        player.sendSystemMessage(Component.translatable("message.mio_icif.geomagnetic_detector.kp",
+            String.format("%.1f", com.miophas.singularity_iteration.common.energy.GeomagPhysics.kp(seed, level.getDayTime())),
+            String.format("%.2f", com.miophas.singularity_iteration.common.energy.GeomagPhysics.disturbance(seed, level.getDayTime()))));
 
         return InteractionResult.SUCCESS;
     }
 
-    /**
-     * 计算地磁强度
-     * 基于高度和周围方块计算
-     */
+    /** 0.1.11.20: the generator's rule (from the bottom of the world; the old one gave 0 or less below Y 0). */
     private float getMagneticSource(Level world, BlockPos pos) {
-        float source = 1.0F;
-        int seaLevel = world.getSeaLevel();
-        int seaLevelDelta = pos.getY() - seaLevel;
-
-        // 海平面以下，越低强度越低
-        if (seaLevelDelta < 0) {
-            source = (float) pos.getY() / (float) (seaLevel + 1);
-        }
-
-        // 计算下方实心方块比例
-        int baseDelta = pos.getY() >= 20 ? 20 : pos.getY();
-        int airBlockCount = 0;
-
-        for (int i = 0; i < baseDelta; i++) {
-            BlockState state = world.getBlockState(pos.below(i));
-            if (state.is(Blocks.AIR) || state.is(Blocks.WATER)) {
-                airBlockCount++;
-            }
-        }
-
-        if (baseDelta != 0) {
-            source *= (float) (baseDelta - airBlockCount) / (float) baseDelta;
-        } else {
-            source = 0;
-        }
-
-        return source;
+        return com.miophas.singularity_iteration.common.energy.GeomagPhysics.source(world, pos);
     }
 
     @Override

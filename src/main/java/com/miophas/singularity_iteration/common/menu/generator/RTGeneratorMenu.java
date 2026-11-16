@@ -1,112 +1,56 @@
 package com.miophas.singularity_iteration.common.menu.generator;
 
 import com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_rt_generator;
-import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
-import com.miophas.singularity_iteration.common.menu.base.mio_icif_generator_menu;
+import com.miophas.singularity_iteration.common.energy.Recorder;
 import com.miophas.singularity_iteration.common.item.resource.mio_icif_resources;
+import com.miophas.singularity_iteration.common.registry.mio_icif_menus;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Container menu for the RTG generator.
+ * RTG menu. 0.1.11.20 (the recorder screen): six pellet slots in two columns on the left. Values: 0 energy, 1 capacity,
+ * 2 the pellet table's EU/t, 3 pellets, 4 cold-side factor x1000, 5 cold side °C x10, 6 its kind (RtgPhysics),
+ * 7 lava touching, 8 EU/t x100, 9.. the chart (EU/t x10, x4).
  */
-@SuppressWarnings({"null"}) public class RTGeneratorMenu extends mio_icif_generator_menu {
+@SuppressWarnings("null")
+public class RTGeneratorMenu extends MimicGeneratorMenu {
+    public static final int SLOT_COUNT = 6, CHART = 9, DATA_COUNT = CHART + Recorder.SAMPLES;
 
-    // 槽位索引
-    public static final int SLOT_COUNT = 6;
-    public static final int FIRST_PELLET_SLOT = 0;
-    public static final int LAST_PELLET_SLOT = 5;
+    public RTGeneratorMenu(int containerId, Inventory playerInventory) { this(containerId, playerInventory, null); }
 
-    // 槽位布局参数
-    private static final int SLOT_START_X = 36;
-    private static final int SLOT_START_Y = 36;
-    private static final int SLOT_SPACING_X = 18;
-    private static final int SLOT_SPACING_Y = 18;
-
-    // 数据同步索引
-    private static final int DATA_ENERGY = 0;
-    private static final int DATA_MAX_ENERGY = 1;
-    private static final int DATA_GENERATION_RATE = 2;
-    private static final int DATA_ENERGY_PROGRESS = 3;
-    private static final int DATA_COUNT = 4;
-
-    public RTGeneratorMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, null, null);
+    public RTGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_rt_generator be) {
+        super(mio_icif_menus.RT_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, be != null ? be.getItemHandler() : null, DATA_COUNT, be);
+        addCustomMoveRule(stack -> stack.is(mio_icif_resources.RTG_PELLET.get()), 0, SLOT_COUNT);
     }
 
-    public RTGeneratorMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler) {
-        this(containerId, playerInventory, itemHandler, null);
-    }
-
-    public RTGeneratorMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
-        super(mio_icif_menus.RT_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, DATA_COUNT);
-    }
-
-    public RTGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_rt_generator blockEntity, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
-        super(mio_icif_menus.RT_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, DATA_COUNT, blockEntity);
-        // 注册RTG靶丸快速移动规则：优先放入RTG槽位（0-5）
-        addCustomMoveRule(this::isRTGPellet, FIRST_PELLET_SLOT, LAST_PELLET_SLOT + 1);
-    }
-
-    private boolean isRTGPellet(ItemStack stack) {
-        return stack.is(mio_icif_resources.RTG_PELLET.get());
-    }
-
-    public void setSyncData(int energy, int maxEnergy, int generationRate, int energyProgress) {
-        this.data.set(DATA_ENERGY, energy);
-        this.data.set(DATA_MAX_ENERGY, maxEnergy);
-        this.data.set(DATA_GENERATION_RATE, generationRate);
-        this.data.set(DATA_ENERGY_PROGRESS, energyProgress);
-    }
-
-    public int getEnergy() {
-        return this.data.get(DATA_ENERGY);
-    }
-
-    public int getMaxEnergy() {
-        return this.data.get(DATA_MAX_ENERGY);
-    }
-
-    public int getGenerationRate() {
-        return this.data.get(DATA_GENERATION_RATE);
-    }
-
-    public int getEnergyProgress() {
-        return this.data.get(DATA_ENERGY_PROGRESS);
+    /** Two columns of three at x 10 and 28 (the window starts at x 54). */
+    static void pelletSlots(MimicGeneratorMenu menu, net.neoforged.neoforge.items.IItemHandler items, java.util.function.Consumer<SlotItemHandler> add) {
+        for (int i = 0; i < SLOT_COUNT; i++)
+            add.accept(new SlotItemHandler(items, i, 10 + (i % 2) * 18, 20 + (i / 2) * 22) {
+                @Override public boolean mayPlace(ItemStack stack) { return stack.is(mio_icif_resources.RTG_PELLET.get()); }
+            });
     }
 
     @Override
-    public void broadcastChanges() {
-        if (blockEntity instanceof mio_icif_rt_generator generator) {
-            long energy = generator.getEnergyStorage().getAmount();
-            long capacity = generator.getEnergyStorage().getCapacity();
-            setSyncData(DATA_ENERGY, (int) energy);
-            setSyncData(DATA_MAX_ENERGY, (int) capacity);
-            setSyncData(DATA_GENERATION_RATE, (int) generator.getCurrentGenerationRate());
-            setSyncData(DATA_ENERGY_PROGRESS, capacity > 0 ? (int) (energy * 100 / capacity) : 0);
-        }
-        super.broadcastChanges();
-    }
+    protected void addMachineSlots() { pelletSlots(this, itemHandler, this::addSlot); }
 
     @Override
-    protected void addMachineSlots() {
-        // Add 6 pellet slots (2 rows x 3 columns). The first slot is at (36, 36).
-        for (int row = 0; row < 2; row++) {
-            for (int col = 0; col < 3; col++) {
-                int slotIndex = row * 3 + col;
-                int slotX = SLOT_START_X + col * SLOT_SPACING_X;
-                int slotY = SLOT_START_Y + row * SLOT_SPACING_Y;
-                this.addSlot(new SlotItemHandler(itemHandler, slotIndex, slotX, slotY) {
-                    @Override
-                    public boolean mayPlace(ItemStack stack) {
-                        return stack.is(mio_icif_resources.RTG_PELLET.get());
-                    }
-                });
-            }
-        }
+    protected int[] values() {
+        var g = (mio_icif_rt_generator) blockEntity;
+        var cold = g.coldSide();
+        int[] v = new int[DATA_COUNT];
+        v[0] = (int) g.getEnergyStorage().getAmount();
+        v[1] = (int) g.getEnergyStorage().getCapacity();
+        v[2] = g.getBaseRate();
+        v[3] = g.getPelletCount();
+        v[4] = (int) Math.round(cold.factor() * 1000);
+        v[5] = (int) Math.round(cold.celsius() * 10);
+        v[6] = cold.kind();
+        v[7] = cold.lava() ? 1 : 0;
+        v[8] = (int) Math.round(g.getLastEu() * 100);
+        for (int i = 0; i < Recorder.SAMPLES; i++) v[CHART + i] = g.getChart().get(i);
+        return v;
     }
 }

@@ -204,7 +204,7 @@ public class mio_icif_screens {
         // 注册地磁发电机的 GUI 界面
         event.register(
             mio_icif_menus.GEOMAGNETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_geomagnetic_generator::new
+            MagnetogramScreen::new   // 0.1.11.20
         );
 
         // 注册柴油发电机的 GUI 界面
@@ -257,7 +257,7 @@ public class mio_icif_screens {
         // 注册放射性同位素温差加热机的 GUI 界面
         event.register(
             mio_icif_menus.RT_HEAT_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_rt_heat_generator::new
+            RtHeatScreen::new   // 0.1.11.20
         );
 
         // 注册斯特林发电机的GUI 界面
@@ -435,7 +435,7 @@ public class mio_icif_screens {
         // 注册放射性同位素温差发电机的 GUI 界面
         event.register(
             mio_icif_menus.RT_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_rt_generator::new
+            RtgScreen::new   // 0.1.11.20
         );
 
         // 注册高级太阳能发电机的 GUI 界面

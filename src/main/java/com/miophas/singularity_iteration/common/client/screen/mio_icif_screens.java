@@ -35,6 +35,17 @@ public class mio_icif_screens {
         event.<M, EngineScreen<M>>register(type, EngineScreen::new);
     }
 
+    /** 0.1.11.19: the incinerator and experience recorders (basic and advanced). */
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu> void incinerator(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, IncineratorScreen<M>>register(type, IncineratorScreen::new);
+    }
+
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu> void experience(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, ExperienceScreen<M>>register(type, ExperienceScreen::new);
+    }
+
     /** 0.1.11.17: the Stirling mimic (basic and advanced). */
     private static <M extends com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu> void stirling(
             RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
@@ -184,7 +195,7 @@ public class mio_icif_screens {
         // 注册地热发电机的 GUI 界面
         event.register(
             mio_icif_menus.GEO_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_geo_generator::new
+            GeoScreen::new   // 0.1.11.19: recorder
         );
 
         // 注册太阳能发电机的GUI 界面
@@ -252,29 +263,17 @@ public class mio_icif_screens {
         // 注册斯特林发电机的GUI 界面
         stirling(event, mio_icif_menus.STIRLING_GENERATOR_MENU_TYPE.get());   // 0.1.11.17: plant mimic
 
-        event.register(
-            mio_icif_menus.DROP_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_drop_generator::new
-        );
+        incinerator(event, mio_icif_menus.DROP_GENERATOR_MENU_TYPE.get());   // 0.1.11.19: recorder
 
-        event.register(
-            mio_icif_menus.ADVANCED_DROP_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_advanced_drop_generator::new
-        );
+        incinerator(event, mio_icif_menus.ADVANCED_DROP_GENERATOR_MENU_TYPE.get());   // 0.1.11.19: recorder
 
         stirling(event, mio_icif_menus.ADVANCED_STIRLING_GENERATOR_MENU_TYPE.get());
 
         engine(event, mio_icif_menus.ADVANCED_SEMIFLUID_GENERATOR_MENU_TYPE.get());   // 0.1.11.15: the engine room monitor
 
-        event.register(
-            mio_icif_menus.EXPERIENCE_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_experience_generator::new
-        );
+        experience(event, mio_icif_menus.EXPERIENCE_GENERATOR_MENU_TYPE.get());   // 0.1.11.19: recorder
 
-        event.register(
-            mio_icif_menus.ADVANCED_EXPERIENCE_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_advanced_experience_generator::new
-        );
+        experience(event, mio_icif_menus.ADVANCED_EXPERIENCE_GENERATOR_MENU_TYPE.get());   // 0.1.11.19: recorder
 
         // 注册动能发电机的 GUI 界面
         shaft(event, mio_icif_menus.KINETIC_GENERATOR_MENU_TYPE.get(), false);   // 0.1.11.17: shaft mimic

@@ -2348,6 +2348,68 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "geo" (-Dsi.capture.scene=geo), 0.1.11.19: the recorder screens. A geothermal generator in a pocket of lava
+     * (two lava blocks on faces, two further off, one flowing) with lava in its tank; an incinerator fed coal with now and
+     * then a cobblestone (the chart shows the warm-up and the quenches); an experience generator fed orbs.
+     */
+    private static void sceneGeo() {
+        BlockPos geo = new BlockPos(0, -60, 4), inc = new BlockPos(3, -60, 4), xp = new BlockPos(-3, -60, 4);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(geo, block("generator/block_geo_generator").defaultBlockState(), 3);
+            for (BlockPos l : new BlockPos[]{geo.below(), geo.south(), geo.offset(1, -1, 1), geo.offset(-1, -1, 1)})
+                level.setBlock(l, net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState(), 3);
+            for (BlockPos stone : new BlockPos[]{geo.offset(0, -2, 0), geo.offset(1, -2, 1), geo.offset(-1, -2, 1), geo.offset(0, -2, 1), geo.offset(0, -1, 2),
+                    geo.offset(1, -1, 2), geo.offset(-1, -1, 2), geo.offset(2, -1, 1), geo.offset(-2, -1, 1), geo.offset(0, 0, 2), geo.offset(1, 0, 1), geo.offset(-1, 0, 1)})
+                level.setBlock(stone, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+            if (level.getBlockEntity(geo) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_geo_generator g)
+                g.getLavaHandler().fill(new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.LAVA, 6000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            level.setBlock(inc, block("generator/block_drop_generator").defaultBlockState(), 3);
+            level.setBlock(xp, block("generator/block_experience_generator").defaultBlockState(), 3);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -58, 0.5, 0, 30);
+        });
+        for (int i = 0; i < 600; i++) {
+            final int step = i;
+            server(1, sp -> {
+                var level = sp.serverLevel();
+                if (level.getBlockEntity(inc) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (level.getBlockEntity(xp) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (level.getBlockEntity(geo) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+                if (step % 20 == 0) {
+                    var item = step % 100 == 40 || step % 100 == 60 ? net.minecraft.world.item.Items.COBBLESTONE : net.minecraft.world.item.Items.COAL;
+                    level.addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(level, inc.getX() + 0.5, inc.getY() + 0.5, inc.getZ() + 0.5,
+                        new net.minecraft.world.item.ItemStack(item)));
+                }
+                if (step % 40 == 0)
+                    level.addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(level, xp.getX() + 0.5, xp.getY() + 0.5, xp.getZ() + 0.5, 7));
+            });
+        }
+        server(1, sp -> openAt(sp, geo));
+        server(20, sp -> {});
+        shot(1, "geo/1_geothermal");
+        server(1, sp -> openAt(sp, inc));
+        server(20, sp -> {});
+        shot(1, "geo/2_incinerator");
+        server(1, sp -> openAt(sp, xp));
+        server(20, sp -> {});
+        shot(1, "geo/3_experience");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "geo".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneGeo();
+        }
+    }
+
+    /**
      * Scene "water" (-Dsi.capture.scene=water), 0.1.11.18: the water kinetic generator's rotor cross-section with a
      * waterfall pouring through its disc (three stones in it), and the water generator under a second waterfall.
      */

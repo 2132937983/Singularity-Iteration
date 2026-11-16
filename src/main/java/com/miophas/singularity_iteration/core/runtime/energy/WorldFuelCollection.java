@@ -52,14 +52,25 @@ public final class WorldFuelCollection {
      * generator with a full storage no longer eats the drops around it for nothing.
      */
     public int items(ServerLevel level, BlockPos pos, int range, int fuel, ToIntFunction<ItemStack> value, int limit) {
+        return items(level, pos, range, fuel, value, limit, stack -> false, stack -> {});
+    }
+
+    /**
+     * 0.1.11.19: with an incinerator's hooks. An item worth nothing is taken too when {@code takeWorthless} says so (it
+     * burns no fuel), and {@code eaten} hears of every item taken (before the stack shrinks).
+     */
+    public int items(ServerLevel level, BlockPos pos, int range, int fuel, ToIntFunction<ItemStack> value, int limit,
+                     java.util.function.Predicate<ItemStack> takeWorthless, java.util.function.Consumer<ItemStack> eaten) {
         for (var item : next(level, pos, range, ItemEntity.class)) {
             if (item.isRemoved()) continue;
             if (pos.distToCenterSqr(item.getX(), item.getY(), item.getZ()) <= 1) {
                 if (fuel >= limit) continue;
                 var stack = item.getItem();
                 if (stack.isEmpty()) continue;
-                int credit = FuelAdmission.accepted(fuel, value.applyAsInt(stack), 1);
-                if (credit == 0) continue;
+                int worth = value.applyAsInt(stack);
+                int credit = FuelAdmission.accepted(fuel, worth, 1);
+                if (credit == 0 && !(worth <= 0 && takeWorthless.test(stack))) continue;
+                eaten.accept(stack);
                 var remaining = stack.copy();
                 remaining.shrink(1);
                 item.setItem(remaining);

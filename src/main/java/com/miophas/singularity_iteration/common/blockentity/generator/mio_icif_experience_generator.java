@@ -55,6 +55,20 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
         setAsPowerSource(profile.production());
     }
 
+    /** 0.1.11.19: the chart of the output for the screen (EU/t, marked when orbs were taken) and the last tick's EU. */
+    private final com.miophas.singularity_iteration.common.energy.Recorder chart = new com.miophas.singularity_iteration.common.energy.Recorder();
+    private long lastEu;
+    public com.miophas.singularity_iteration.common.energy.Recorder getChart() { return chart; }
+    public long getLastEu() { return lastEu; }
+    public int getScanRange() { return profile.scanRange(); }
+    public long getProduction() { return profile.production(); }
+
+    private void record(Level level, int fuelBefore, int fuelAfterCollect, long eu) {
+        lastEu = eu;
+        if (fuelAfterCollect > fuelBefore) chart.mark(1);
+        chart.tick(level.getGameTime(), eu);
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_experience_generator blockEntity) {
         if (level.isClientSide()) {
             return;
@@ -67,7 +81,10 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
 
         // 0.1.11.11: the shared collector (merged orbs counted, at most 64 entities a tick) and nothing taken while the
         // storage is full or the fuel is well stocked (it ate every drop around it for nothing before)
+        int before = blockEntity.fuel;
         if (level instanceof net.minecraft.server.level.ServerLevel server) blockEntity.fuel = blockEntity.scexCollector.experience(server, pos, blockEntity.profile.scanRange(), blockEntity.fuel, blockEntity.fuelLimit());
+        int collected = blockEntity.fuel;
+        long made = 0;
 
         boolean wasWorking = blockEntity.isWorking;
         blockEntity.isWorking = blockEntity.fuel > 0 &&
@@ -79,7 +96,9 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
         if (blockEntity.fuel > 0 && tickEu > 0 && room >= tickEu) {
             blockEntity.energyStorage.generateEnergyInternal(tickEu, false);
             blockEntity.fuel--;
+            made = tickEu;
         }
+        blockEntity.record(level, before, collected, made);
 
         if (wasWorking != blockEntity.isWorking) {
             blockEntity.updateBlockState(blockEntity.isWorking);
@@ -101,12 +120,14 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
         long previousCredit = scexFuelCredit;
         if (com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this) == 0) return;                      // 0.1.8.4: switched off in the config
         fuel = scexCollector.experience(server, pos, profile.scanRange(), fuel, fuelLimit());
+        int collected = fuel;
         var step = com.miophas.singularity_iteration.core.runtime.energy.StoredFuelGeneration.tick(energyStorage, fuel, scexFuelCredit,
             com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, profile.production()));   // 0.1.8.4 output multiplier
         fuel = Math.toIntExact(step.fuelRemaining());
         scexFuelCredit = step.bufferedEnergy();
         boolean wasWorking = isWorking;
         isWorking = step.generated() > 0;
+        record(level, previousFuel, collected, step.generated());
         if (wasWorking != isWorking) updateBlockState(isWorking);
         if (previousFuel != fuel || previousCredit != scexFuelCredit || wasWorking != isWorking || step.generated() > 0) setChanged();
     }

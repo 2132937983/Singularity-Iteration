@@ -18,6 +18,7 @@ item_ids:
 
 The machine pulls experience orbs within its range and converts them into EU.
 Orbs with more experience give more EU.
+The screen is a recorder: the output of the last 12 seconds with a mark where orbs were taken, the experience stocked and the range.
 
 ## Power data
 

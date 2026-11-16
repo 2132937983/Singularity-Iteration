@@ -99,12 +99,12 @@ public final class Round11512GameTests {
         h.succeed();
     }
 
-    /** Drop generators: coal by its burn time, cobblestone (does not burn) a tenth of the old common value. */
+    /** Drop generators: coal by its burn time; cobblestone (does not burn) no fuel at all since 0.1.11.19 (it cools the chamber). */
     @GameTest(template = "empty", timeoutTicks = 20)
     public static void dropGeneratorCountsBurnTime(GameTestHelper h) {
         BlockEntity be = place(h, new BlockPos(1, 2, 1), "generator/block_drop_generator");
         int coal = (int) call(be, "getItemValue", new ItemStack(Items.COAL)), stone = (int) call(be, "getItemValue", new ItemStack(Items.COBBLESTONE));
-        h.assertTrue(coal == 200 && stone == 2, "coal " + coal + ", cobblestone " + stone);
+        h.assertTrue(coal == 200 && stone == 0, "coal " + coal + ", cobblestone " + stone);
         h.succeed();
     }
 }

@@ -1464,6 +1464,11 @@ public class mio_icif_capacities {
 
         Singularity_Iteration.LOGGER.debug("Registered EU energy and HU heat capabilities for Stirling Generator");
 
+        // 0.1.11.19: the item generators' ash pit can be emptied by hoppers and pipes
+        for (var type : java.util.List.of(mio_icif_block_entities.DROP_GENERATOR_ENTITY_TYPE.get(), mio_icif_block_entities.ADVANCED_DROP_GENERATOR_ENTITY_TYPE.get()))
+            event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, type, (blockEntity, direction) ->
+                blockEntity instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_drop_generator drop ? drop.getAshHandler() : null);
+
         event.registerBlockEntity(
             EUApi.SIDED,
             mio_icif_block_entities.DROP_GENERATOR_ENTITY_TYPE.get(),

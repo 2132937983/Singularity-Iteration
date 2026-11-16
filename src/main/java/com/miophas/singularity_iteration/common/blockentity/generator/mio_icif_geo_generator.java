@@ -371,7 +371,7 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
 
         // 检查状态是否改变：燃着（有正在发电的岩浆）或邻接岩浆在供电时都视为激活
         // （储能满、燃烧被冻结时这里仍为 true，这是 SI 原有行为，原版此时会转为 inactive）
-        boolean isBurning = blockEntity.isBurning() || blockEntity.nearbyLavaBlocks > 0;
+        boolean isBurning = blockEntity.isBurning() || blockEntity.getWorldHeat() > 0;
         if (wasBurning != isBurning) {
             // 更新方块状态
             BlockState newState = level.getBlockState(pos);
@@ -430,7 +430,7 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
         handleLavaBucketSlot();
         burnDuration = 1;
         burnTime = generated ? 1 : 0;
-        boolean isActive = generated || nearbyLavaBlocks > 0;
+        boolean isActive = generated || getWorldHeat() > 0;
         BlockState current = level.getBlockState(pos);
         if (current.hasProperty(mio_icif_Block_Geo_Generator.ACTIVE)
             && current.getValue(mio_icif_Block_Geo_Generator.ACTIVE) != isActive) {
@@ -441,21 +441,33 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
     }
 
     /**
-     * 检测周围的岩浆方块数量
+     * 0.1.11.19: the lava around the generator. Every 20 ticks the lava within 2 blocks is weighed (GeoPhysics): touching a
+     * face 1 EU/t, further 0.5, flowing lava half, times the depth (1 at Y 64 and above, 2 at Y -64) or 1.5 in the Nether,
+     * at most 12 EU/t. Each tick hands out the whole EU of that rate (the fraction carried) as {@code nearbyLavaBlocks},
+     * which both energy paths already turn into EU at 1 EU each. It was 1 EU/t per lava block touching a face.
      */
     private void checkNearbyLavaBlocks(Level level, BlockPos pos) {
-        int count = 0;
-        // 检查六个方向的方块
-        for (Direction direction : Direction.values()) {
-            BlockPos adjacentPos = pos.relative(direction);
-            BlockState adjacentState = level.getBlockState(adjacentPos);
-            // 检查是否是岩浆方块（包括流动岩浆）
-            if (adjacentState.getBlock() == Blocks.LAVA) {
-                count++;
-            }
+        if (level.getGameTime() % 20 == 0 || worldHeat < 0) {
+            var scan = com.miophas.singularity_iteration.common.energy.GeoPhysics.scan(level, pos);
+            worldHeat = scan.euPerTick();
+            lavaSources = scan.sources();
+            lavaFlowing = scan.flowing();
+            depthFactor = scan.factor();
+            scanRaw = scan.raw();
         }
-        this.nearbyLavaBlocks = count;
+        double v = worldHeat + worldCarry;
+        int whole = (int) Math.floor(v);
+        worldCarry = v - whole;
+        this.nearbyLavaBlocks = whole;
     }
+
+    private double worldHeat = -1, worldCarry, depthFactor = 1, scanRaw;
+    private int lavaSources, lavaFlowing;
+    public double getWorldHeat() { return Math.max(0, worldHeat); }
+    public int getLavaSources() { return lavaSources; }
+    public int getLavaFlowing() { return lavaFlowing; }
+    public double getDepthFactor() { return depthFactor; }
+    public double getScanRaw() { return scanRaw; }
 
     // ==================== WorldlyContainer 接口实现 ====================
 
@@ -609,7 +621,7 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.generator.GeoGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
+        return new com.miophas.singularity_iteration.common.menu.generator.GeoGeneratorMenu(containerId, playerInventory, this);
     }
 
     /** 0.1.11.13: comparator by the fuel in the tank. */

@@ -264,7 +264,9 @@ public final class Round1141FixGameTests {
         }
         String geo = "generator.mio_icif_geo_generator";
         expected.put("generator_block_geo_generator", List.of(n(num(geo, "LAVA_MB_PER_TICK")) + " mB/t → " + n(num(geo, "ENERGY_GENERATION_RATE"))
-            + " EU/t (" + n(num(geo, "EU_PER_MB")) + " EU/mB)", "+" + n(num(geo, "LAVA_BLOCK_ENERGY_RATE")) + " EU/t each, up to 6"));
+            + " EU/t (" + n(num(geo, "EU_PER_MB")) + " EU/mB)",
+            // 0.1.11.19: the lava around it (GeoPhysics)
+            geoRates()));
         String diesel = "generator.mio_icif_diesel_generator";
         double dieselMb = num(diesel, "FUEL_CONSUME_PER_TICK"), dieselEu = num(diesel, "ENERGY_GENERATION_RATE");
         expected.put("generator_block_diesel_generator", List.of(n(dieselMb) + " mB/t → " + n(dieselEu) + " EU/t (" + n(dieselEu / dieselMb) + " EU/mB)"));
@@ -400,5 +402,14 @@ public final class Round1141FixGameTests {
             h.assertTrue(biogas == 0, "without power the 5 EU/t recipe made " + biogas + " mB");
             h.succeed();
         });
+    }
+
+    /** 0.1.11.19: the geothermal generator's lava-around line from GeoPhysics (common/energy, outside blockentity). */
+    private static String geoRates() {
+        try {
+            Class<?> gp = Round33GameTests.common("energy.GeoPhysics");
+            double face = gp.getField("FACE").getDouble(null), near = gp.getField("NEAR").getDouble(null), cap = gp.getField("CAP").getDouble(null);
+            return n(face) + " EU/t touching, " + near + " EU/t further, × depth, at most " + n(cap) + " EU/t";
+        } catch (ReflectiveOperationException e) { throw new AssertionError(e); }
     }
 }

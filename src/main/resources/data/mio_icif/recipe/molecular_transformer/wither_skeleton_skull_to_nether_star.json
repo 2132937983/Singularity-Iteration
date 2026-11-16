@@ -8,5 +8,8 @@
     "id": "minecraft:nether_star"
   },
   "eu_cost": 120000000,
-  "duration": 1
+  "duration": 1,
+  "process": {
+    "kind": "exotic"
+  }
 }

@@ -15,10 +15,14 @@ public class MolecularTransformerMenu extends mio_icif_machine_menu {
     public static final int OUTPUT_SLOT = 1;
     public static final int SLOT_COUNT = 2;
 
-    private static final int INPUT_X = 55;
-    private static final int INPUT_Y = 35;
-    private static final int OUTPUT_X = 115;
-    private static final int OUTPUT_Y = 35;
+    /** 0.1.11.6: the screen is 248 x 204 (observation window); input and output stand in a column on the left. */
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204;
+    public static final int INPUT_X = 10;
+    public static final int INPUT_Y = 29;
+    public static final int OUTPUT_X = 10;
+    public static final int OUTPUT_Y = 81;
+    /** Player inventory: centred under the window. */
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
 
     private static final int DATA_PROGRESS = 0;
     private static final int DATA_MAX_PROGRESS = 1;
@@ -41,6 +45,25 @@ public class MolecularTransformerMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.MOLECULAR_TRANSFORMER_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory,
               blockEntity != null ? blockEntity.getItemHandler() : null,
               blockEntity != null ? blockEntity.getContainerData() : null, DATA_COUNT, blockEntity);
+    }
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    /** Same slots and order as the base, centred in the wider screen. */
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 9; ++j) {
+                this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+            }
+        }
+        for (int i = 0; i < 9; ++i) {
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+        }
     }
 
     @Override

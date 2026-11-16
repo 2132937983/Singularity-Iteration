@@ -18,12 +18,23 @@ public class mio_icif_MolecularTransformerRecipe implements Recipe<mio_icif_Mole
     private final ItemStack result;
     private final long euCost;
     private final int duration;
+    /** 0.1.11.6: what the recipe does physically, for the screen's observation window ({@link MolecularProcess}). */
+    private final MolecularProcess process;
 
     public mio_icif_MolecularTransformerRecipe(Ingredient input, ItemStack result, long euCost, int duration) {
+        this(input, result, euCost, duration, MolecularProcess.UNKNOWN);
+    }
+
+    public mio_icif_MolecularTransformerRecipe(Ingredient input, ItemStack result, long euCost, int duration, MolecularProcess process) {
         this.input = input;
         this.result = result;
         this.euCost = euCost;
         this.duration = duration;
+        this.process = process == null ? MolecularProcess.UNKNOWN : process;
+    }
+
+    public MolecularProcess getProcess() {
+        return process;
     }
 
     @Override
@@ -92,7 +103,8 @@ public class mio_icif_MolecularTransformerRecipe implements Recipe<mio_icif_Mole
                 Ingredient.CODEC.fieldOf("input").forGetter(r -> r.input),
                 ItemStack.CODEC.fieldOf("result").forGetter(r -> r.result),
                 Codec.LONG.fieldOf("eu_cost").forGetter(r -> r.euCost),
-                Codec.INT.fieldOf("duration").forGetter(r -> r.duration)
+                Codec.INT.fieldOf("duration").forGetter(r -> r.duration),
+                MolecularProcess.CODEC.optionalFieldOf("process", MolecularProcess.UNKNOWN).forGetter(r -> r.process)
             ).apply(instance, mio_icif_MolecularTransformerRecipe::new)
         );
 
@@ -116,7 +128,7 @@ public class mio_icif_MolecularTransformerRecipe implements Recipe<mio_icif_Mole
             ItemStack result = ItemStack.STREAM_CODEC.decode(buf);
             long euCost = buf.readLong();
             int duration = buf.readVarInt();
-            return new mio_icif_MolecularTransformerRecipe(input, result, euCost, duration);
+            return new mio_icif_MolecularTransformerRecipe(input, result, euCost, duration, MolecularProcess.read(buf));
         }
 
         private static void toNetwork(RegistryFriendlyByteBuf buf, mio_icif_MolecularTransformerRecipe recipe) {
@@ -124,6 +136,7 @@ public class mio_icif_MolecularTransformerRecipe implements Recipe<mio_icif_Mole
             ItemStack.STREAM_CODEC.encode(buf, recipe.result);
             buf.writeLong(recipe.euCost);
             buf.writeVarInt(recipe.duration);
+            recipe.process.write(buf);
         }
     }
 }

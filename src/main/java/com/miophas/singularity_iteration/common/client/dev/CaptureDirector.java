@@ -2114,6 +2114,88 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /**
+     * Scene "mt" (-Dsi.capture.scene=mt), 0.1.11.6: the Molecular Transformer screen with its observation window. A
+     * transformer is fed a fixed number of EU per tick (the buffer is set each tick, the machine spends it all) and shot
+     * in each process class: transmutation in three phases, lattice, a continuous molecular run, an anomalous recipe,
+     * low power and idle.
+     */
+    private static void sceneMt() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(at, block("producer/block_molecular_transformer").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+        });
+        server(5, sp -> {
+            var level = sp.serverLevel();
+            var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
+            level.getBlockState(at).useWithoutItem(level, sp, hit);
+        });
+        mtLoad(at, "minecraft:iron_ingot");
+        mtFeed(at, 32768, 30);
+        shot(1, "mt/1_nuclear_ionise");
+        mtFeed(at, 32768, 95);
+        shot(1, "mt/2_nuclear_transmute");
+        mtFeed(at, 32768, 125);
+        shot(1, "mt/3_nuclear_deposit");
+        mtLoad(at, "minecraft:coal");
+        mtFeed(at, 32768, 150);
+        shot(1, "mt/4_lattice");
+        mtLoad(at, "minecraft:netherrack");
+        mtFeed(at, 32768, 12);
+        shot(1, "mt/5_molecular_continuous");
+        mtLoad(at, "minecraft:wither_skeleton_skull");
+        mtFeed(at, 1_200_000, 50);
+        shot(1, "mt/6_exotic");
+        mtLoad(at, "minecraft:iron_ingot");
+        mtFeed(at, 32768, 75);
+        mtFeed(at, 4096, 60);
+        shot(1, "mt/7_low_power");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_molecular_transformer mt
+                && mt.getItemHandler() instanceof net.neoforged.neoforge.items.IItemHandlerModifiable h) h.setStackInSlot(0, ItemStack.EMPTY);
+        });
+        shot(30, "mt/8_idle");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Puts 64 of {@code id} in the transformer's input and empties the output. */
+    private static void mtLoad(BlockPos at, String id) {
+        server(2, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_molecular_transformer mt
+                && mt.getItemHandler() instanceof net.neoforged.neoforge.items.IItemHandlerModifiable h) {
+                h.setStackInSlot(0, new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.parse(id)), 64));
+                h.setStackInSlot(1, ItemStack.EMPTY);
+            }
+        });
+    }
+
+    /** Sets the transformer's buffer to {@code perTick} EU on each of the next {@code ticks} ticks, then logs its state. */
+    private static void mtFeed(BlockPos at, long perTick, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (sp.serverLevel().getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(perTick);
+            });
+        }
+        server(0, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_molecular_transformer mt) {
+                var d = mt.getContainerData();
+                Singularity_Iteration.LOGGER.warn("[mt] progress={} working={} recipeEU={} euPerTick={} in={} out={}", d.get(0), d.get(2), d.get(5), d.get(6),
+                    mt.getItemHandler().getStackInSlot(0), mt.getItemHandler().getStackInSlot(1));
+            }
+        });
+    }
+
+    static {
+        if (OUT != null && "mt".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneMt();
+        }
+    }
+
     static {
         if (OUT != null && "holo".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

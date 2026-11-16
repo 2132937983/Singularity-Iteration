@@ -54,9 +54,10 @@ public final class QuantumHud {
             || t - NanoClient.usedAt[0] < 40 || t - NanoClient.usedAt[1] < 40 || t - NanoClient.deniedAt[0] < 40 || t - NanoClient.deniedAt[1] < 40;
         if (Math.abs(q.coherence() - lastCoherence) > 0.2F) lastChange = NanoClient.ticks;
         lastCoherence = q.coherence();
-        float target = busy || NanoClient.ticks - lastChange < 60 ? 1F : 0.4F;
+        float target = busy || NanoClient.ticks - lastChange < 60 ? 1F : 0F;   // 0.1.11.5 passive HUD: hidden when idle (was 0.4)
         alpha += (target - alpha) * 0.08F;
         float a = alpha;
+        if (a < 0.02F) { g.flush(); return; }   // 0.1.11.5: nothing to show
         float glitch = QuantumClient.glitch(partial);
         // glitch: the whole ring jumps sideways for a frame now and then
         float jx = 0;

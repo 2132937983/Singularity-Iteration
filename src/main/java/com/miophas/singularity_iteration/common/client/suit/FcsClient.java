@@ -116,6 +116,7 @@ public final class FcsClient {
         if (player != null && mc.level != null) QuantumFx.tick(mc);
         if (player == null || mc.level == null) {
             FcsState.clear();
+            HudMessages.clear();
             visorOn = false;
             return;
         }
@@ -158,6 +159,7 @@ public final class FcsClient {
         else OreScanner.reset();
 
         if (hud && FcsState.active(SuitModuleType.HOLOMAP)) HoloMap.tick(mc.level, player);
+        HudMessages.tick(mc, player, hud && FcsState.anyHud());   // 0.1.11.5: the situational messages
 
         FcsState.ballistic = null;
         FcsState.spread = java.util.List.of();

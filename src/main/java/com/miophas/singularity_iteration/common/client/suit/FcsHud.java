@@ -80,7 +80,9 @@ public final class FcsHud {
             if (FcsState.active(SuitModuleType.GRID_TELEMETRY) && !flight && !detail) telemetry(g, w, h, primary);
             if (FcsState.active(SuitModuleType.THREAT_SENSOR)) threats(g, mc, w, h, partial);
             if (FcsState.active(SuitModuleType.HOLOMAP)) holomap(g, w, h, primary, player, partial);
-            if (!flight && !detail) status(g, player, w, h, primary);
+            if (detail) detailPanel(g, player, w, h);
+            else HudMessages.status(g, h, 0.85F);
+            HudMessages.render(g, w, flight || detail ? 46 : 16, 0.9F);
         }
         if (flight) ManeuverModeClient.renderHud(g, w, h, primary, partial);
         if (transformed) {
@@ -153,11 +155,13 @@ public final class FcsHud {
 
     private static void frame(GuiGraphics g, Minecraft mc, LocalPlayer player, int w, int h, int primary, float partial) {
         int inset = 8;
-        FcsDraw.brackets(g, inset, inset, w - inset * 2, h - inset * 2, 22, 1.2F, FcsDraw.argb(primary, 0.55F));
+        FcsDraw.brackets(g, inset, inset, w - inset * 2, h - inset * 2, 22, 1.2F, FcsDraw.argb(primary, 0.35F));
         float cx = w / 2F, top = 12;
-        if (FcsClientConfig.showCompass()) heading(g, player, cx, top, w, primary, partial);
-        // laser range finder next to the aim point
-        rangeFinder(g, player, cx, h, primary, partial);
+        // 0.1.11.5 passive HUD: the heading tape in flight and in the detail view; the range read-out while there is a
+        // ballistic solution or in the detail view (they were always on)
+        boolean detail = FcsClient.detailHeld();
+        if (FcsClientConfig.showCompass() && (ManeuverModeClient.isFlying() || detail)) heading(g, player, cx, top, w, primary, partial);
+        if (FcsState.ballistic != null || detail) rangeFinder(g, player, cx, h, primary, partial);
     }
 
     /** Heading tape at the top of the view (can be switched off in the layout editor). */
@@ -430,17 +434,23 @@ public final class FcsHud {
                 FcsDraw.text(g, "LEAD", p[0] + 7, p[1] - 3, FcsDraw.argb(FcsDraw.YELLOW, 0.95F), 0.5F);
             }
         }
-        // slim data panel
+        // 0.1.11.5: the solution as a text card (it shows only while there is a solution)
         float[] pc = centre(FcsClientConfig.Panel.BALLISTIC, w, h);
-        int pw = 92, ph = 40;
-        int x = (int) (pc[0] - pw / 2F), y = (int) (pc[1] - ph / 2F);
-        FcsDraw.panel(g, x, y, pw, ph, "BALLISTIC  " + s.profile().name(), c);
         double range = s.impact() != null && !path.isEmpty() ? s.impact().distanceTo(path.get(0)) : -1;
-        row(g, x, y + 13, pw, "TOF", String.format(Locale.ROOT, "%.2fs", s.ticks() / 20.0));
-        row(g, x, y + 21, pw, "RNG", range < 0 ? "OUT" : String.format(Locale.ROOT, "%.1fm", range));
-        row(g, x, y + 29, pw, "DROP", String.format(Locale.ROOT, "%.1fm", s.drop()));
         String state = onTarget ? "ON TGT" : s.profile().ready() ? "READY" : "CHARGE";
-        FcsDraw.textRight(g, state, x + pw - 4, y + 2, FcsDraw.argb(c, 1F), 0.5F);
+        String[][] rows = {
+            {"TOF", String.format(Locale.ROOT, "%.2f s", s.ticks() / 20.0)},
+            {"RNG", range < 0 ? "OUT" : String.format(Locale.ROOT, "%.1f m", range)},
+            {"DROP", String.format(Locale.ROOT, "%.1f m", s.drop())}};
+        float sc = 0.8F, lh = AsciiHud.LINE * sc, pw = 100, ph = lh * 5;
+        float x = pc[0] - pw / 2F, y = pc[1] - ph / 2F;
+        AsciiHud.box(g, x, y, pw, ph, Component.literal(s.profile().name()), onTarget ? AsciiHud.OK : AsciiHud.DIM, sc);
+        AsciiHud.textRight(g, state, x + pw - AsciiHud.width("\u2502 ", sc), y + lh, onTarget ? AsciiHud.OK : s.profile().ready() ? AsciiHud.TEXT : AsciiHud.WARN, sc);
+        for (int i = 0; i < 3; i++) {
+            AsciiHud.text(g, rows[i][0], x + AsciiHud.width("\u2502 ", sc), y + lh * (i + 1), AsciiHud.DIM, sc);
+            if (i > 0) AsciiHud.textRight(g, rows[i][1], x + pw - AsciiHud.width("\u2502 ", sc), y + lh * (i + 1), AsciiHud.TEXT, sc);
+            else AsciiHud.text(g, rows[i][1], x + AsciiHud.width("\u2502 DROP  ", sc), y + lh * (i + 1), AsciiHud.TEXT, sc);
+        }
     }
 
     /** Label left, value right, dotted leader between. */
@@ -516,26 +526,7 @@ public final class FcsHud {
                 g.fill(k * 4, bw, bw, h - bw, a); g.fill(w - bw, bw, w - k * 4, h - bw, a);
             }
         }
-        // compact list
-        float[] c = centre(FcsClientConfig.Panel.BLAST, w, h);
-        int rows = Math.min(4, blasts.size());
-        int pw = 128, ph = 13 + rows * 9;
-        int x = (int) (c[0] - pw / 2F), y = (int) (c[1] - ph / 2F);
-        FcsDraw.panel(g, x, y, pw, ph, inside ? "BLAST  IN RADIUS" : "BLAST WARNING", inside ? FcsDraw.RED : FcsDraw.YELLOW);
-        for (int i = 0; i < rows; i++) {
-            SensorTracker.Blast b = blasts.get(i);
-            int ry = y + 12 + i * 9;
-            double d = Math.sqrt(b.entity().distanceToSqr(player));
-            int col = b.urgent() || d < b.radius() ? FcsDraw.RED : FcsDraw.YELLOW;
-            FcsDraw.text(g, b.label(), x + 5, ry, FcsDraw.argb(col, 1F), 0.55F);
-            FcsDraw.text(g, String.format(Locale.ROOT, "%.0fm", d), x + 46, ry, FcsDraw.argb(FcsDraw.WHITE, 0.9F), 0.55F);
-            // segmented fuse bar
-            int segs = 10, filled = Math.round((1 - b.burnt()) * segs);
-            for (int k = 0; k < segs; k++) {
-                g.fill(x + 64 + k * 4, ry + 1, x + 67 + k * 4, ry + 5, k < filled ? FcsDraw.argb(col, 0.95F) : 0x40FFFFFF);
-            }
-            FcsDraw.textRight(g, b.secondsText(), x + pw - 4, ry, FcsDraw.argb(col, 1F), 0.55F);
-        }
+        // 0.1.11.5: the blast list panel is gone; the "blast" message of HudMessages says the nearest charge
     }
 
     /**
@@ -620,43 +611,100 @@ public final class FcsHud {
 
     // ------------------------------------------------------------------ grid telemetry
 
+    /**
+     * 0.1.11.5: grid telemetry is a text card beside the aim point, only while the wearer looks at a grid node (it was a
+     * fixed panel with the chunk summary all the time). The chunk summary is in the detail view.
+     */
     private static void telemetry(GuiGraphics g, int w, int h, int primary) {
-        float[] c = centre(FcsClientConfig.Panel.TELEMETRY, w, h);
-        int pw = 112, ph = 74;
-        int x = (int) (c[0] - pw / 2F), y = (int) (c[1] - ph / 2F);
-        int color = FcsDraw.YELLOW;
-        FcsDraw.panel(g, x, y, pw, ph, "GRID TELEMETRY", color);
         MeterHudPacket.Reply reply = MeterHudPacket.latest();
         var pos = FcsClient.telemetryPos();
-        int ty = y + 11;
-        if (pos != null && reply != null && reply.pos().equals(pos)) {
-            String tier = NetworkWalker.tierName(reply.voltage());
-            FcsDraw.text(g, "LOS " + tier + "  " + FcsDraw.si(reply.voltage()) + " EU", x + 4, ty, FcsDraw.argb(FcsDraw.WHITE, 0.95F), 0.55F);
-            FcsDraw.text(g, "FLOW " + FcsDraw.si(reply.throughput()) + " EU/t", x + 4, ty + 8, FcsDraw.argb(FcsDraw.WHITE, 0.95F), 0.55F);
-            String rated = reply.ratedPacket() > 0 ? NetworkWalker.tierName(reply.ratedPacket()) + " " + FcsDraw.si(reply.ratedPacket()) : "-";
-            FcsDraw.text(g, "LINE " + rated + "  N" + reply.endpoints(), x + 4, ty + 16, FcsDraw.argb(FcsDraw.WHITE, 0.95F), 0.55F);
-            boolean over = reply.ratedPacket() > 0 && reply.voltage() > reply.ratedPacket();
-            String state = reply.throughput() <= 0 ? "IDLE" : over ? "OVER" : "LIVE";
-            FcsDraw.textRight(g, state, x + pw - 4, ty, FcsDraw.argb(over ? FcsDraw.RED : primary, 1F), 0.55F);
-        } else {
-            FcsDraw.text(g, "LOS  NO GRID NODE", x + 4, ty, FcsDraw.argb(FcsDraw.WHITE, 0.55F), 0.55F);
+        if (pos == null || reply == null || !reply.pos().equals(pos)) return;
+        boolean over = reply.ratedPacket() > 0 && reply.voltage() > reply.ratedPacket();
+        String state = reply.throughput() <= 0 ? "IDLE" : over ? "OVER" : "LIVE";
+        String rated = reply.ratedPacket() > 0 ? NetworkWalker.tierName(reply.ratedPacket()) + " " + FcsDraw.si(reply.ratedPacket()) : "-";
+        String[][] rows = {
+            {"LOS", NetworkWalker.tierName(reply.voltage()) + "  " + FcsDraw.si(reply.voltage()) + " EU"},
+            {"FLOW", FcsDraw.si(reply.throughput()) + " EU/t"},
+            {"LINE", rated + "  N" + reply.endpoints()}};
+        float sc = 0.8F, lh = AsciiHud.LINE * sc, side = AsciiHud.width("\u2502 ", sc), label = AsciiHud.width("FLOW  ", sc);
+        float pw = 0;
+        for (String[] r : rows) pw = Math.max(pw, side * 2 + label + AsciiHud.width(r[1], sc));
+        pw = Math.max(pw, AsciiHud.width(Component.translatable("hud.mio_icif.telemetry.title"), sc) + side * 2 + AsciiHud.width(state, sc) + 20);
+        float ph = lh * 5, x = w / 2F - 22 - pw, y = h / 2F + 10;   // below left of the aim point (the ballistic card is on the right)
+        AsciiHud.box(g, x, y, pw, ph, Component.translatable("hud.mio_icif.telemetry.title"), over ? AsciiHud.CRIT : AsciiHud.WARN, sc);
+        AsciiHud.textRight(g, state, x + pw - side, y + lh, over ? AsciiHud.CRIT : AsciiHud.OK, sc);
+        for (int i = 0; i < 3; i++) {
+            AsciiHud.text(g, rows[i][0], x + side, y + lh * (i + 1), AsciiHud.DIM, sc);
+            if (i > 0 || AsciiHud.width(rows[i][1], sc) + label + side * 2 + AsciiHud.width(state, sc) < pw)
+                AsciiHud.text(g, rows[i][1], x + side + label, y + lh * (i + 1), AsciiHud.TEXT, sc);
         }
-        g.fill(x + 3, ty + 25, x + pw - 3, ty + 26, FcsDraw.argb(color, 0.4F));
+    }
+
+    /**
+     * 0.1.11.5: the left panel of the detail view (held detail key): visor energy and drain, flight, the active units
+     * with their drain, the chunk grid summary (grid telemetry), and the recent messages.
+     */
+    private static void detailPanel(GuiGraphics g, LocalPlayer player, int w, int h) {
+        float sc = 0.85F, lh = AsciiHud.LINE * sc, side = AsciiHud.width("\u2502 ", sc);
+        List<Object[]> rows = new java.util.ArrayList<>();   // {label, value, colour, right}
+        var helmet = player.getItemBySlot(EquipmentSlot.HEAD);
+        long visor = SuitModules.energy(helmet);
+        long visorMax = helmet.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor a ? a.getMaxEnergy(helmet) : 1;
+        float f = visor / (float) Math.max(1, visorMax);
+        rows.add(new Object[] {Component.translatable("hud.mio_icif.detail.energy"), AsciiHud.bar(f, 10) + " " + Math.round(f * 100) + "%",
+            f < 0.2F ? AsciiHud.WARN : AsciiHud.TEXT, "-" + FcsDraw.si(FcsState.drain()) + " EU/t"});
+        rows.add(new Object[] {Component.translatable("hud.mio_icif.detail.flight"), ManeuverModeClient.isFlying()
+            ? Math.round(ManeuverModeClient.speed() * 3.6) + " km/h" : Component.translatable("hud.mio_icif.detail.idle").getString(), AsciiHud.TEXT, ""});
+        rows.add(null);
+        rows.add(new Object[] {Component.translatable("hud.mio_icif.detail.units"), "", AsciiHud.DIM, "EU/t"});
+        for (SuitModuleType type : FcsState.activeSet()) {
+            rows.add(new Object[] {Component.translatable(type.nameKey()), "", AsciiHud.TEXT,
+                type.drainPerTick() > 0 ? String.valueOf(type.drainPerTick()) : "-"});
+        }
         SuitPackets.ChunkGrid grid = SuitSensorData.chunkGrid();
-        int cy = ty + 28;
-        if (grid == null) {
-            FcsDraw.text(g, "CHUNK  ---", x + 4, cy, FcsDraw.argb(FcsDraw.WHITE, 0.55F), 0.55F);
-            return;
+        if (grid != null && FcsState.active(SuitModuleType.GRID_TELEMETRY)) {
+            rows.add(null);
+            rows.add(new Object[] {Component.translatable("hud.mio_icif.detail.chunk"), String.format(Locale.ROOT, "%d,%d  %s",
+                grid.chunkX(), grid.chunkZ(), NetworkWalker.tierName(grid.maxVoltage())), AsciiHud.TEXT,
+                "+" + FcsDraw.si(grid.generated()) + " -" + FcsDraw.si(grid.consumed())});
         }
-        FcsDraw.text(g, String.format(Locale.ROOT, "CHUNK %d,%d  MAX %s", grid.chunkX(), grid.chunkZ(), NetworkWalker.tierName(grid.maxVoltage())),
-            x + 4, cy, FcsDraw.argb(FcsDraw.WHITE, 0.95F), 0.55F);
-        FcsDraw.text(g, String.format(Locale.ROOT, "GEN %d  USE %d  ESS %d  CBL %d", grid.generators(), grid.consumers(), grid.storages(), grid.cables()),
-            x + 4, cy + 8, FcsDraw.argb(FcsDraw.WHITE, 0.95F), 0.55F);
-        FcsDraw.text(g, "+" + FcsDraw.si(grid.generated()) + "  -" + FcsDraw.si(grid.consumed()) + " EU/t", x + 4, cy + 16,
-            FcsDraw.argb(FcsDraw.WHITE, 0.95F), 0.55F);
-        FcsDraw.bar(g, x + 4, cy + 25, pw - 8, 5, grid.capacity() > 0 ? grid.stored() / (float) grid.capacity() : 0, color);
-        if (grid.overvolted() > 0) {
-            FcsDraw.textRight(g, "OV " + grid.overvolted(), x + pw - 4, cy, FcsDraw.argb(FcsDraw.RED, 1F), 0.55F);
+        var history = HudMessages.history();
+        if (!history.isEmpty()) {
+            rows.add(null);
+            rows.add(new Object[] {Component.translatable("hud.mio_icif.detail.recent"), "", AsciiHud.DIM, ""});
+            long now = player.level().getGameTime();
+            for (var m : history) {
+                int col = m.level() == HudMessages.CRIT ? AsciiHud.CRIT : m.level() == HudMessages.WARN ? AsciiHud.WARN : AsciiHud.OK;
+                rows.add(new Object[] {m.label(), m.detail().getString(), col, "-" + Math.max(0, (now - m.gameTime()) / 20) + "s"});
+            }
+        }
+        float labelW = 0, valueW = 0, rightW = 0;
+        for (Object[] r : rows) {
+            if (r == null) continue;
+            labelW = Math.max(labelW, AsciiHud.width((Component) r[0], sc));
+            valueW = Math.max(valueW, AsciiHud.width((String) r[1], sc));
+            rightW = Math.max(rightW, AsciiHud.width((String) r[3], sc));
+        }
+        float gap = AsciiHud.width("  ", sc);
+        Component title = Component.translatable("hud.mio_icif.detail.title");
+        Component hint = Component.translatable("hud.mio_icif.detail.hold", FcsClient.DETAIL_KEY == null ? Component.literal("Alt")
+            : FcsClient.DETAIL_KEY.getTranslatedKeyMessage());
+        float pw = Math.max(side * 2 + labelW + gap + valueW + gap + rightW, AsciiHud.width(title, sc) + AsciiHud.width(hint, sc) + side * 4);
+        float ph = lh * (rows.size() + 3);
+        float x = 12, y = 34;
+        AsciiHud.box(g, x, y, pw, ph, title, AsciiHud.DIM, sc);
+        AsciiHud.text(g, hint, x + pw - side - AsciiHud.width(hint, sc), y + lh, AsciiHud.DIM, sc);
+        float ry = y + lh * 2;
+        for (Object[] r : rows) {
+            if (r != null) {
+                int col = (int) r[2];
+                AsciiHud.text(g, (Component) r[0], x + side, ry, col == AsciiHud.TEXT ? AsciiHud.DIM : col, sc);
+                AsciiHud.text(g, (String) r[1], x + side + labelW + gap, ry, col, sc);
+                AsciiHud.textRight(g, (String) r[3], x + pw - side, ry, AsciiHud.DIM, sc);
+            } else {
+                FcsDraw.line(g, x + side, ry + lh * 0.45F, x + pw - side, ry + lh * 0.45F, 1F, FcsDraw.argb(AsciiHud.DIM, 0.5F));
+            }
+            ry += lh;
         }
     }
 
@@ -703,10 +751,7 @@ public final class FcsHud {
             FcsDraw.triangle(g, ax + bx * 7, ay + by * 7, ax - by * 4, ay + bx * 4, ax + by * 4, ay - bx * 4, col);
             FcsDraw.textCentered(g, "EVADE", ax + bx * 14, ay + by * 14 - 3, col, 0.5F);
         }
-        String banner = "INCOMING " + alerts.size() + (hits > 0 ? "  HIT " + hits : "");
-        float bw = FcsDraw.width(banner, 0.7F) + 8, by0 = 52;
-        g.fill((int) (cx - bw / 2), (int) by0, (int) (cx + bw / 2), (int) by0 + 10, hits > 0 ? FcsDraw.argb(FcsDraw.RED, 0.35F * flash) : 0x50403000);
-        FcsDraw.textCentered(g, banner, cx, by0 + 2, FcsDraw.argb(hits > 0 ? FcsDraw.RED : INCOMING, 1F), 0.7F);
+        // 0.1.11.5: the "INCOMING n" banner is the "incoming" message of HudMessages now
     }
 
     private static void threats(GuiGraphics g, Minecraft mc, int w, int h, float partial) {
@@ -739,13 +784,7 @@ public final class FcsHud {
             g.fill(0, 0, 3, h, edge);
             g.fill(w - 3, 0, w, h, edge);
         }
-        String banner = (red > 0 ? "LOCK " + red : "") + (red > 0 && yellow > 0 ? "  " : "") + (yellow > 0 ? "WATCH " + yellow : "");
-        if (!banner.isEmpty()) {
-            float bw = FcsDraw.width(banner, 0.7F) + 8;
-            float by = 40;
-            g.fill((int) (cx - bw / 2), (int) by, (int) (cx + bw / 2), (int) by + 10, red > 0 ? FcsDraw.argb(FcsDraw.RED, 0.35F * pulse) : 0x50403000);
-            FcsDraw.textCentered(g, banner, cx, by + 2, FcsDraw.argb(red > 0 ? FcsDraw.RED : FcsDraw.YELLOW, 1F), 0.7F);
-        }
+        // 0.1.11.5: the "LOCK n  WATCH n" banner is the "threat" message of HudMessages now
     }
 
     // ------------------------------------------------------------------ holomap
@@ -758,8 +797,9 @@ public final class FcsHud {
     private static void holomap(GuiGraphics g, int w, int h, int primary, LocalPlayer player, float partial) {
         if (FcsClient.detailHeld()) {
             // above the hotbar (about 44 GUI pixels) and below the heading tape
-            float size = Math.min(w * 0.58F, (h - 96) / 0.92F);
-            HoloMap.render(g, w / 2F, 44 + size * 0.46F, size, player.getViewYRot(partial), primary, partial, true);
+            // the right side: the detail panel takes the left
+            float size = Math.min(w * 0.5F, (h - 96) / 0.92F);
+            HoloMap.render(g, w - size / 2F - 12, 44 + size * 0.46F, size, player.getViewYRot(partial), primary, partial, true);
             return;
         }
         if (!HoloMap.popupVisible()) return;

@@ -58,9 +58,10 @@ public final class NanoHud {
         if (Math.abs(s.reserve() - lastReserve) > 0.2F || Math.abs(s.heat() - lastHeat) > 0.2F) lastChange = NanoClient.ticks;
         lastReserve = s.reserve();
         lastHeat = s.heat();
-        float target = busy || NanoClient.ticks - lastChange < 60 ? 1F : 0.38F;
+        float target = busy || NanoClient.ticks - lastChange < 60 ? 1F : 0F;   // 0.1.11.5 passive HUD: hidden when idle (was 0.38)
         alpha += (target - alpha) * 0.08F;
         float a = alpha;
+        if (a < 0.02F) { g.flush(); return; }   // 0.1.11.5: nothing to show
 
         // ---- reserve arc (left), heat arc (right)
         float r = 17;

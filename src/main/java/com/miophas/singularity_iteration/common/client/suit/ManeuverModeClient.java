@@ -29,6 +29,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
@@ -1247,137 +1248,70 @@ public final class ManeuverModeClient {
         float rollRad = (float) Math.toRadians(-roll);
 
         boolean cockpit = Minecraft.getInstance().options.getCameraType().isFirstPerson();
-        // pitch ladder and horizon, rotated with the camera roll. First person only, as in a cockpit HUD.
+        // 0.1.11.5 text-mode flight HUD: no pitch ladder and no tapes. The boresight and the flight path marker stay
+        // (they show directions); speed and altitude are read-outs beside the aim point; the bottom line is the mode,
+        // the cost and the thrust. Hovering still for 3 s folds it to the bottom line.
         if (cockpit) {
-        g.pose().pushPose();
-        g.pose().translate(cx, cy, 0);
-        g.pose().mulPose(new Quaternionf().rotateZ(rollRad));
-        for (int deg = -60; deg <= 60; deg += 10) {
-            // the first value is not used. The second line sets the value: y = -(deg + pitch) * pxPerDeg.
-            // The horizon (deg 0) moves up when the view pitch goes down (positive pitch).
-            float y = (pitch - deg) * pxPerDeg * -1F;
-            y = -(deg - (-pitch)) * pxPerDeg;
-            if (Math.abs(y) > h * 0.42F) continue;
-            float half = deg == 0 ? w * 0.22F : 38;
-            int c = deg == 0 ? col : dim;
-            if (deg == 0) {
-                FcsDraw.line(g, -half, y, -14, y, 1.2F, c);
-                FcsDraw.line(g, 14, y, half, y, 1.2F, c);
-            } else if (deg > 0) {
-                FcsDraw.line(g, -half, y, -14, y, 1F, c);
-                FcsDraw.line(g, 14, y, half, y, 1F, c);
-                FcsDraw.line(g, -half, y, -half, y + 4, 1F, c);
-                FcsDraw.line(g, half, y, half, y + 4, 1F, c);
-                FcsDraw.textRight(g, String.valueOf(deg), -half - 3, y - 3, c, 0.55F);
-                FcsDraw.text(g, String.valueOf(deg), half + 3, y - 3, c, 0.55F);
-            } else {
-                for (float x = -half; x < -14; x += 7) FcsDraw.line(g, x, y, Math.min(-14, x + 4), y, 1F, c);
-                for (float x = 14; x < half; x += 7) FcsDraw.line(g, x, y, Math.min(half, x + 4), y, 1F, c);
-                FcsDraw.line(g, -half, y, -half, y - 4, 1F, c);
-                FcsDraw.line(g, half, y, half, y - 4, 1F, c);
-                FcsDraw.textRight(g, String.valueOf(deg), -half - 3, y - 3, c, 0.55F);
-                FcsDraw.text(g, String.valueOf(deg), half + 3, y - 3, c, 0.55F);
+            FcsDraw.line(g, cx - 10, cy, cx - 4, cy, 1.2F, col);
+            FcsDraw.line(g, cx + 4, cy, cx + 10, cy, 1.2F, col);
+            FcsDraw.line(g, cx - 4, cy, cx - 2, cy + 3, 1.2F, col);
+            FcsDraw.line(g, cx + 4, cy, cx + 2, cy + 3, 1.2F, col);
+            Vec3 vel = velocity;
+            if (vel.lengthSqr() > 1.0E-3) {
+                Vec3 eye = player.getEyePosition(partial);
+                float[] fpm = FcsProjection.project(eye.add(vel.normalize().scale(40)));
+                if (fpm != null) {
+                    float x = Mth.clamp(fpm[0], 30, w - 30), y = Mth.clamp(fpm[1], 30, h - 30);
+                    FcsDraw.circle(g, x, y, 4.5F, 1.2F, col);
+                    FcsDraw.line(g, x - 12, y, x - 4.5F, y, 1.2F, col);
+                    FcsDraw.line(g, x + 4.5F, y, x + 12, y, 1.2F, col);
+                    FcsDraw.line(g, x, y - 4.5F, x, y - 9, 1.2F, col);
+                }
             }
         }
-        g.pose().popPose();
-
-        // boresight (gun cross / waterline)
-        FcsDraw.line(g, cx - 10, cy, cx - 4, cy, 1.2F, col);
-        FcsDraw.line(g, cx + 4, cy, cx + 10, cy, 1.2F, col);
-        FcsDraw.line(g, cx - 4, cy, cx - 2, cy + 3, 1.2F, col);
-        FcsDraw.line(g, cx + 4, cy, cx + 2, cy + 3, 1.2F, col);
-
-        // flight path marker: the direction of the commanded velocity, projected from a point 40
-        // blocks ahead of the eye. It is clamped to 30 GUI pixels from the screen edge.
-        Vec3 vel = velocity;
-        if (vel.lengthSqr() > 1.0E-3) {
-            Vec3 eye = player.getEyePosition(partial);
-            float[] fpm = FcsProjection.project(eye.add(vel.normalize().scale(40)));
-            if (fpm != null) {
-                float x = Mth.clamp(fpm[0], 30, w - 30), y = Mth.clamp(fpm[1], 30, h - 30);
-                FcsDraw.circle(g, x, y, 4.5F, 1.2F, col);
-                FcsDraw.line(g, x - 12, y, x - 4.5F, y, 1.2F, col);
-                FcsDraw.line(g, x + 4.5F, y, x + 12, y, 1.2F, col);
-                FcsDraw.line(g, x, y - 4.5F, x, y - 9, 1.2F, col);
-            }
-        }
-        }
-
-        // airspeed tape (km/h)
         double kmh = s * 20 * 3.6;
-        float tapeX = cx - Math.min(w * 0.2F, 130), tapeH = h * 0.36F;
-        tape(g, tapeX, cy, tapeH, kmh, 50, 10, true, col, dim);
-        FcsDraw.text(g, "IAS km/h", tapeX - 30, cy - tapeH / 2 - 10, dim, 0.55F);
-        // altitude tape (m)
-        float altX = cx + Math.min(w * 0.2F, 130);
-        tape(g, altX, cy, tapeH, player.getY(), 10, 2, false, col, dim);
-        FcsDraw.text(g, "ALT m", altX + 6, cy - tapeH / 2 - 10, dim, 0.55F);
-        double vs = (player.getY() - player.yo) * 20;
-        FcsDraw.text(g, String.format(Locale.ROOT, "%+.0f m/s", vs), altX + 6, cy + tapeH / 2 + 4, col, 0.6F);
-
-        // Mach (barrier speed = M1.0), G (from the change of speed), throttle.
-        // s is interpolated by partial, but prevSpeed is not. Thus G is 1 at partial 0 and the full value at partial 1.
         double mach = s / ManeuverMode.BOOM_SPEED;
-        double gload = 1 + (s - prevSpeed) * 20 / 9.81 * 20;
-        float ry = cy + tapeH / 2 + 4;
-        FcsDraw.text(g, String.format(Locale.ROOT, "M %.2f", mach), tapeX - 30, ry, mach >= 1 ? FcsDraw.argb(FcsDraw.YELLOW, 1F) : col, 0.6F);
-        FcsDraw.text(g, String.format(Locale.ROOT, "G %.1f", gload), tapeX - 30, ry + 8, col, 0.6F);
-        // throttle gauge (vertical, left of the speed tape)
-        float gx = tapeX - 44, gy = cy - tapeH / 2;
-        g.fill((int) gx, (int) gy, (int) gx + 3, (int) (gy + tapeH), FcsDraw.argb(primary, 0.15F));
-        int filled = (int) (tapeH * thr);
-        int tc = thr >= ManeuverMode.SHOCK_THROTTLE ? FcsDraw.argb(0xFF9F1C, 0.95F) : col;
-        g.fill((int) gx, (int) (gy + tapeH - filled), (int) gx + 3, (int) (gy + tapeH), tc);
-        float shockY = gy + tapeH * (1 - ManeuverMode.SHOCK_THROTTLE);
-        FcsDraw.line(g, gx - 3, shockY, gx + 6, shockY, 1F, FcsDraw.argb(FcsDraw.RED, 0.9F));
-        FcsDraw.textRight(g, String.format(Locale.ROOT, "THR %d%%", Math.round(thr * 100)), gx - 3, gy + tapeH + 4, tc, 0.55F);
-        if (locked) FcsDraw.textRight(g, "LOCK", gx - 3, gy - 9, FcsDraw.argb(FcsDraw.YELLOW, 1F), 0.6F);
-        String mode = thr <= 0 ? "HOVER" : thr >= ManeuverMode.SHOCK_THROTTLE ? "SUPERSONIC" : "CRUISE";
-        FcsDraw.textCentered(g, "MNVR  " + mode, cx, cy + tapeH / 2 + 12, thr >= ManeuverMode.SHOCK_THROTTLE ? FcsDraw.argb(0xFF9F1C, 1F) : col, 0.65F);
-        // power: cost per tick at the measured speed (the server bills the same formula), and the charge in percent
+        double vs = (player.getY() - player.yo) * 20;
+        long now = System.currentTimeMillis();
+        if (thr > 0 || kmh > 3 || Math.abs(vs) > 1) movingAtMs = now;
+        boolean folded = now - movingAtMs > 3000;
+        float sc = 0.9F, lh = AsciiHud.LINE * sc;
+        if (!folded) {
+            float lx = cx - Math.min(w * 0.18F, 120), rx = cx + Math.min(w * 0.18F, 120);
+            float big = 1.7F, by = cy - lh * 1.2F;
+            // dark backing behind both read-out blocks (the labels were lost against a bright sky)
+            float bw = Math.max(AsciiHud.width("0000", big), AsciiHud.width(Component.translatable("hud.mio_icif.flight.speed").getString() + " / km/h", sc)) + 6;
+            float bh = lh * 2 + AsciiHud.LINE * big + 4;
+            g.fill((int) (lx - bw), (int) (by - lh - 3), (int) lx + 3, (int) (by - lh - 3 + bh), AsciiHud.GLASS);
+            g.fill((int) rx - 3, (int) (by - lh - 3), (int) (rx + bw), (int) (by - lh - 3 + bh), AsciiHud.GLASS);
+            AsciiHud.textRight(g, Component.translatable("hud.mio_icif.flight.speed").getString() + " / km/h", lx, by - lh, AsciiHud.DIM, sc);
+            AsciiHud.textRight(g, String.format(Locale.ROOT, "%.0f", kmh), lx, by, AsciiHud.TEXT, big);
+            AsciiHud.textRight(g, String.format(Locale.ROOT, "M %.2f", mach) + (mach >= 1 ? " \u25B2" : ""), lx, by + AsciiHud.LINE * big,
+                mach >= 1 ? AsciiHud.WARN : AsciiHud.DIM, sc);
+            AsciiHud.text(g, Component.translatable("hud.mio_icif.flight.alt").getString() + " / Y", rx, by - lh, AsciiHud.DIM, sc);
+            AsciiHud.text(g, String.format(Locale.ROOT, "%.0f", player.getY()), rx, by, AsciiHud.TEXT, big);
+            AsciiHud.text(g, String.format(Locale.ROOT, "%s %.0f m/s", vs < -0.5 ? "\u2193" : vs > 0.5 ? "\u2191" : "=", Math.abs(vs)), rx,
+                by + AsciiHud.LINE * big, vs < -15 ? AsciiHud.WARN : AsciiHud.DIM, sc);
+        }
+        // bottom line: [mode] · EU/t · thrust bar
+        String modeKey = thr <= 0 ? "hover" : thr >= ManeuverMode.SHOCK_THROTTLE ? "supersonic" : "cruise";
         ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
         long e = SuitModules.energy(chest), max = chest.getItem() instanceof AbstractElectricArmor a ? a.getMaxEnergy(chest) : 1;
-        FcsDraw.textCentered(g, String.format(Locale.ROOT, "%.0f EU/t   %.0f%%", ManeuverMode.costPerTick(s), 100.0 * e / Math.max(1, max)),
-            cx, cy + tapeH / 2 + 21, dim, 0.55F);
+        Component modeC = Component.translatable("hud.mio_icif.flight.mode." + modeKey);
+        String tail = String.format(Locale.ROOT, "  \u00B7  %.0f EU/t  \u00B7  %s %s %d%%  \u00B7  %.0f%%", ManeuverMode.costPerTick(s),
+            Component.translatable("hud.mio_icif.flight.thrust").getString(), AsciiHud.bar(thr, 10), Math.round(thr * 100), 100.0 * e / Math.max(1, max))
+            + (locked ? "  \u00B7  " + Component.translatable("hud.mio_icif.flight.lock").getString() : "");
+        String head = "[" + Component.translatable("hud.mio_icif.flight.tag").getString() + "] ";
+        float total = AsciiHud.width(head, sc) + AsciiHud.width(modeC, sc) + AsciiHud.width(tail, sc);
+        float bx = cx - total / 2, byl = cy + Math.min(h * 0.24F, 90);
+        g.fill((int) (bx - 3), (int) (byl - 2), (int) (bx + total + 3), (int) (byl + lh), AsciiHud.GLASS);
+        AsciiHud.text(g, head, bx, byl, AsciiHud.DIM, sc);
+        AsciiHud.text(g, modeC, bx + AsciiHud.width(head, sc), byl, thr >= ManeuverMode.SHOCK_THROTTLE ? AsciiHud.WARN : AsciiHud.TEXT, sc);
+        AsciiHud.text(g, tail, bx + AsciiHud.width(head, sc) + AsciiHud.width(modeC, sc), byl, AsciiHud.DIM, sc);
     }
 
-    /**
-     * A moving scale with a boxed read-out at its middle. The visible range is 5 major steps. Minor
-     * ticks are every {@code minor} units, major ticks with labels every {@code major} units. Higher
-     * values are higher on the screen.
-     *
-     * @param x        the x of the scale line, in GUI pixels.
-     * @param cy       the y of the scale middle, in GUI pixels.
-     * @param height   the scale height in GUI pixels.
-     * @param value    the value at the middle.
-     * @param leftSide true to draw ticks and labels to the left of the line.
-     */
-    private static void tape(GuiGraphics g, float x, float cy, float height, double value, double major, double minor, boolean leftSide,
-                             int col, int dim) {
-        float pxPerUnit = height / (float) (major * 5);
-        double lo = value - height / 2 / pxPerUnit, hi = value + height / 2 / pxPerUnit;
-        FcsDraw.line(g, x, cy - height / 2, x, cy + height / 2, 1F, dim);
-        for (double v = Math.ceil(lo / minor) * minor; v <= hi; v += minor) {
-            float y = cy - (float) ((v - value) * pxPerUnit);
-            boolean isMajor = Math.abs(v / major - Math.rint(v / major)) < 1.0E-6;
-            float len = isMajor ? 6 : 3;
-            FcsDraw.line(g, x, y, leftSide ? x - len : x + len, y, 1F, isMajor ? col : dim);
-            if (isMajor && Math.abs(y - cy) > 7) {
-                String t = String.format(Locale.ROOT, "%.0f", v);
-                if (leftSide) FcsDraw.textRight(g, t, x - 8, y - 3, dim, 0.55F); else FcsDraw.text(g, t, x + 8, y - 3, dim, 0.55F);
-            }
-        }
-        String box = String.format(Locale.ROOT, "%.0f", value);
-        float bw = FcsDraw.width(box, 0.75F) + 6;
-        float bx = leftSide ? x - 8 - bw : x + 8;
-        g.fill((int) bx, (int) cy - 5, (int) (bx + bw), (int) cy + 6, 0x90000000);
-        FcsDraw.line(g, bx, cy - 5, bx + bw, cy - 5, 1F, col);
-        FcsDraw.line(g, bx, cy + 6, bx + bw, cy + 6, 1F, col);
-        FcsDraw.line(g, bx, cy - 5, bx, cy + 6, 1F, col);
-        FcsDraw.line(g, bx + bw, cy - 5, bx + bw, cy + 6, 1F, col);
-        FcsDraw.text(g, box, bx + 3, cy - 3, col, 0.75F);
-        FcsDraw.triangle(g, leftSide ? x - 1 : x + 1, cy, leftSide ? x - 7 : x + 7, cy - 4, leftSide ? x - 7 : x + 7, cy + 4, col);
-    }
+    /** 0.1.11.5: wall-clock time the wearer last moved in flight (the flight HUD folds after 3 s of hover). */
+    private static long movingAtMs;
 
     /** 0.1.9.0: vectoring multiplier of the worn chestplate (the advanced propulsion core sharpens the vectors). */
     static double propulsionVectoring(net.minecraft.world.entity.player.Player player) {

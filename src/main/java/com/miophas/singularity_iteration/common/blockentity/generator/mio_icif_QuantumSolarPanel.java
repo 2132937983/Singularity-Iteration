@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * 配置参数:
  * - 白天发电: 4096 EU/t
- * - 夜晚发电: 2048 EU/t
+ * - 夜晚发电: 1024 EU/t（0.1.11.12：原 2048，其他各档都是白天的 1/8）
  * - 能量存储: 10,000,000 EU
  * - 电压等级: IV (8192 EU/t)
  */
@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 public class mio_icif_QuantumSolarPanel extends mio_icif_AdvancedSolarGenerator {
 
     public static final int DAY_POWER = 4096;
-    public static final int NIGHT_POWER = 2048;
+    public static final int NIGHT_POWER = 1024;   // 0.1.11.12: 25 % of the day (was 50 %)
     public static final long CAPACITY = 10000000L;
     public static final int TIER = 5; // IV
     public static final int SLOT_COUNT = 4; // 4个电池槽

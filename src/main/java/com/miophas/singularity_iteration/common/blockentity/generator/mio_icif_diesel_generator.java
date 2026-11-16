@@ -42,10 +42,19 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity imple
     public static final int FUEL_ENERGY_PER_TICK_BASE = 80;
     public static final double PRODUCTION_MULTIPLIER = 1.5;
 
-    public static final int FUEL_CONSUME_PER_TICK = (int) Math.ceil((double) FUEL_ENERGY_PER_TICK_BASE / FUEL_ENERGY_PER_MB);
     public static final long ENERGY_GENERATION_RATE = (long) (FUEL_ENERGY_PER_TICK_BASE * PRODUCTION_MULTIPLIER);
+    /**
+     * 0.1.11.12: 160 EU per mB of diesel (was 7.5, while the LV semifluid generator got 128 from the same diesel): the
+     * dedicated engine is the more efficient one. Fuel is drawn 3 mB (480 EU) at a time: 0.75 mB/t at 120 EU/t.
+     */
+    public static final int EU_PER_MB = 160, MB_PER_UNIT = 3;
+    public static final long ENERGY_PER_UNIT = (long) EU_PER_MB * MB_PER_UNIT;
+    /** mB a tick at full output (for the manual). */
+    public static final double FUEL_CONSUME_PER_TICK = (double) ENERGY_GENERATION_RATE / EU_PER_MB;
 
     public static final long ENERGY_CAPACITY = 1000000L;
+    /** 0.1.11.12 (old grid): EU paid for by fuel already drawn, not yet generated (at most one draw). */
+    private long oldGridCredit;
     public static final long MAX_RECEIVE = 0L;
     public static final long MAX_EXTRACT = 512L;
 
@@ -230,14 +239,15 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity imple
         boolean isEnergyFull = storage.getAmount() >= storage.getCapacity();
 
         long tickEu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, ENERGY_GENERATION_RATE);   // 0.1.8.4
-        // 0.1.11.11: a tick's fuel only when its whole output fits (near full it drained 16 mB for a part of it)
-        if (!isEnergyFull && tickEu > 0 && storage.getCapacity() - storage.getAmount() >= tickEu
-                && blockEntity.fuelTank.getFluidAmount() >= FUEL_CONSUME_PER_TICK) {
-            blockEntity.fuelTank.drain(FUEL_CONSUME_PER_TICK, IFluidHandler.FluidAction.EXECUTE);
-            long energyToGenerate = Math.min(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, ENERGY_GENERATION_RATE), storage.getCapacity() - storage.getAmount());   // 0.1.8.4
-            if (energyToGenerate > 0) {
-                storage.generateEnergy(energyToGenerate, false);
-            }
+        // 0.1.11.12: fuel is drawn 3 mB (480 EU) at a time into a credit; a tick only when its whole output fits
+        if (!isEnergyFull && tickEu > 0 && blockEntity.oldGridCredit < tickEu && blockEntity.fuelTank.getFluidAmount() >= MB_PER_UNIT) {
+            blockEntity.fuelTank.drain(MB_PER_UNIT, IFluidHandler.FluidAction.EXECUTE);
+            blockEntity.oldGridCredit += com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, ENERGY_PER_UNIT);
+        }
+        if (!isEnergyFull && tickEu > 0 && storage.getCapacity() - storage.getAmount() >= tickEu && blockEntity.oldGridCredit > 0) {
+            long energyToGenerate = Math.min(tickEu, blockEntity.oldGridCredit);
+            storage.generateEnergy(energyToGenerate, false);
+            blockEntity.oldGridCredit -= energyToGenerate;
             blockEntity.burnTime = 1;
             blockEntity.burnDuration = 1;
         } else {
@@ -436,7 +446,7 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity imple
         chargeItems();
         if (outputScale() == 0) { burnTime = 0; setChanged(); return; }   // 0.1.8.4: switched off in the config
         var step = com.miophas.singularity_iteration.core.runtime.energy.FluidFuelGeneration.tick(fuelTank, energyStorage,
-            scexFuelCredit, FUEL_CONSUME_PER_TICK, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_GENERATION_RATE), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_GENERATION_RATE));   // 0.1.8.4
+            scexFuelCredit, MB_PER_UNIT, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_PER_UNIT), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_GENERATION_RATE));   // 0.1.8.4, 0.1.11.12
         scexFuelCredit = step.bufferedEnergy();
         burnTime = step.generated() > 0 ? 1 : 0;
         burnDuration = 1;

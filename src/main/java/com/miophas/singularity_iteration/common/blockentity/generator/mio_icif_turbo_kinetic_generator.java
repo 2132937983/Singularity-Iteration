@@ -40,7 +40,12 @@ public class mio_icif_turbo_kinetic_generator extends AbstractGeneratorBlockEnti
     private static final double EU_PER_KU = 0.85D;
 
     private static final double EFFECTIVE_PERCENT_NATURAL = 1.0D;
-    private static final double EFFECTIVE_PERCENT_ARTIFICIAL = 0.1D;
+    /**
+     * 0.1.11.12: EU per KU from any other kinetic source (steam, Stirling, electric). It was a tenth of the wind and
+     * water rate, below the basic kinetic generator's 0.25; now always above it.
+     */
+    private static final double ARTIFICIAL_EU_PER_KU = 0.35D;
+    private static final double EFFECTIVE_PERCENT_ARTIFICIAL = ARTIFICIAL_EU_PER_KU / EU_PER_KU;
 
     private final KineticReceiverStorage kineticStorage;
 

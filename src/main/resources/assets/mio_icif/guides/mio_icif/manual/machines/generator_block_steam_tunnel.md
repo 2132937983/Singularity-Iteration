@@ -30,6 +30,7 @@ item_ids:
 The large steam turbine of IC2 Classic: a hollow box of 3 x 3 x 5 blocks that changes much steam into EU in one place.
 
 - Each tick it changes 1,024 mB of steam into 512 EU, up to 4 times (4,096 mB into 2,048 EU). That is the 2 mB per EU of the <ItemLink id="mio_icif:generator/block_steam_turbine" />. As in IC2 Classic it runs while its 10,000 EU buffer has room for one step and then makes every step the steam allows, so the buffer can go over by up to 1,536 EU. Steam Turbine Rotors inside raise the EU of each step (see Rotors).
+- Superheated Steam works too: each step gives twice the EU (it took twice the heat to raise).
 - It returns 1 mB of water per 100 mB of steam, the same ratio at which the Steam Reactor boils water, so a reactor loop loses no water (IC2 Classic does the same at its own 1:160 ratio). The water tank holds 2,000 mB; water that does not fit is lost.
 - The controller has no menu. Right-click it to see its state (running, idle, or what is missing and where), or look at it with Jade (steam, water, EU buffer, output).
 

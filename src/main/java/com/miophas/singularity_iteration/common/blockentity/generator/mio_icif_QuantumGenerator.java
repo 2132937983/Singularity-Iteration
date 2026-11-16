@@ -34,8 +34,9 @@ import org.jetbrains.annotations.Nullable;
 public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity implements IGeneratorBlock {
 
     // 默认配置 (参考ASP)
-    public static final int DEFAULT_PRODUCTION = 512;
-    public static final int DEFAULT_TIER = 3; // HV
+    /** 0.1.11.12: an endgame generator above the quantum solar panel it is made from (was 512 EU/t at HV). */
+    public static final int DEFAULT_PRODUCTION = 8192;
+    public static final int DEFAULT_TIER = 5; // IV
     public static final long DEFAULT_CAPACITY = 100000000L; // 1亿 EU
 
     // 当前配置
@@ -226,8 +227,9 @@ public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity impleme
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        production = tag.getInt("Production");
-        tier = Math.max(1, Math.min(14, tag.getInt("Tier")));
+        // 0.1.11.12: older saves hold the old 512 EU/t at HV (nothing could change them): raised to the new defaults
+        production = Math.max(DEFAULT_PRODUCTION, tag.getInt("Production"));
+        tier = Math.max(DEFAULT_TIER, Math.min(14, tag.getInt("Tier")));
         energyStorage.setMaxExtract(getCableTierFromIndex(tier - 1).powerRating);   // 0.1.11.11: the saved tier's output limit
         active = true;   // 0.1.11.11: saves before it say false (it could never be switched on)
     }

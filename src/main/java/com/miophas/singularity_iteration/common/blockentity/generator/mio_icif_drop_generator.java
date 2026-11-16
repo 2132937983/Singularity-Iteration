@@ -63,7 +63,7 @@ public class mio_icif_drop_generator extends AbstractEnergyBlockEntity implement
 
         // 0.1.11.11: the shared collector (merged orbs counted, at most 64 entities a tick) and nothing taken while the
         // storage is full or the fuel is well stocked (it ate every drop around it for nothing before)
-        if (level instanceof net.minecraft.server.level.ServerLevel server) blockEntity.fuel = blockEntity.scexCollector.items(server, pos, SCAN_RANGE, blockEntity.fuel, stack -> blockEntity.getItemValue(stack.getRarity()), blockEntity.fuelLimit());
+        if (level instanceof net.minecraft.server.level.ServerLevel server) blockEntity.fuel = blockEntity.scexCollector.items(server, pos, SCAN_RANGE, blockEntity.fuel, stack -> blockEntity.getItemValue(stack), blockEntity.fuelLimit());
 
         boolean wasWorking = blockEntity.isWorking;
         blockEntity.isWorking = blockEntity.fuel > 0 &&
@@ -96,7 +96,7 @@ public class mio_icif_drop_generator extends AbstractEnergyBlockEntity implement
         int previousFuel = fuel;
         long previousCredit = scexFuelCredit;
         if (com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this) == 0) return;                      // 0.1.8.4: switched off in the config
-        fuel = scexCollector.items(server, pos, SCAN_RANGE, fuel, stack -> getItemValue(stack.getRarity()), fuelLimit());
+        fuel = scexCollector.items(server, pos, SCAN_RANGE, fuel, stack -> getItemValue(stack), fuelLimit());
         var step = com.miophas.singularity_iteration.core.runtime.energy.StoredFuelGeneration.tick(energyStorage, fuel, scexFuelCredit,
             com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, PRODUCTION));   // 0.1.8.4 output multiplier
         fuel = Math.toIntExact(step.fuelRemaining());
@@ -144,6 +144,18 @@ public class mio_icif_drop_generator extends AbstractEnergyBlockEntity implement
                 }
             }
         }
+    }
+
+    /**
+     * 0.1.11.12: fuel ticks of an item. Common items count by their furnace burn time (burn time / 8, so coal gives
+     * 200 ticks); common items that do not burn give 2 ticks, a tenth of before (a cobblestone generator was free
+     * power). Uncommon and above by rarity, as before.
+     */
+    private int getItemValue(ItemStack stack) {
+        Rarity rarity = stack.getRarity();
+        if (rarity != Rarity.COMMON) return getItemValue(rarity);
+        int burn = stack.getBurnTime(null);
+        return burn > 0 ? Math.max(2, burn / 8) : 2;
     }
 
     private int getItemValue(Rarity rarity) {

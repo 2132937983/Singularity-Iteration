@@ -26,6 +26,8 @@ public class mio_icif_steam_turbine extends mio_icif_Semifluid_generator {
     public static final long MAX_OUTPUT = 64L;
     public static final long ENERGY_CAPACITY = 32_000L;
     private static final SemifluidFuels.GeneratorValue STEAM_VALUE = new SemifluidFuels.GeneratorValue(1, MAX_OUTPUT);
+    /** 0.1.11.12: superheated steam, which costs twice the heat to raise, gives twice the EU (1 per mB); it was refused. */
+    private static final SemifluidFuels.GeneratorValue SUPERHEATED_VALUE = new SemifluidFuels.GeneratorValue(2, MAX_OUTPUT);
 
     public mio_icif_steam_turbine(BlockPos pos, BlockState state) {
         super(pos, state, mio_icif_block_entities.STEAM_TURBINE_ENTITY_TYPE.get(), STEAM_CAPACITY, MAX_OUTPUT, ENERGY_CAPACITY, 128L, CableTier.MV);
@@ -35,8 +37,14 @@ public class mio_icif_steam_turbine extends mio_icif_Semifluid_generator {
         return fluid != null && fluid.isSame(mio_icif_fluids.STEAM.get());
     }
 
-    @Override protected boolean acceptsFuel(@Nullable Fluid fluid) { return steam(fluid); }
-    @Override protected @Nullable SemifluidFuels.GeneratorValue fuelValue(Fluid fluid) { return steam(fluid) ? STEAM_VALUE : null; }
+    public static boolean superheated(@Nullable Fluid fluid) {
+        return fluid != null && fluid.isSame(mio_icif_fluids.SUPERHEATEDSTEAM.get());
+    }
+
+    @Override protected boolean acceptsFuel(@Nullable Fluid fluid) { return steam(fluid) || superheated(fluid); }
+    @Override protected @Nullable SemifluidFuels.GeneratorValue fuelValue(Fluid fluid) {
+        return steam(fluid) ? STEAM_VALUE : superheated(fluid) ? SUPERHEATED_VALUE : null;
+    }
     @Override protected int millibucketsPerUnit() { return STEAM_PER_EU; }
 
     @Override

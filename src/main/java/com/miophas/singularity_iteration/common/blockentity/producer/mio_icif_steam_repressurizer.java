@@ -45,8 +45,8 @@ public class mio_icif_steam_repressurizer extends AbstractHeatBlockEntity {
     public static final int OUTPUT_TANK_CAPACITY = 10_000;
     public static final int INPUT_BATCH = 10;
     public static final int HEAT_PER_BATCH = 1;
-    public static final int NORMAL_OUTPUT_BATCH = 16;
-    public static final int SUPERHEATED_OUTPUT_BATCH = 32;
+    public static final int NORMAL_OUTPUT_BATCH = 10;   // 0.1.11.11: the config defaults (were 16 / 32)
+    public static final int SUPERHEATED_OUTPUT_BATCH = 20;
     public static final int DATA_COUNT = 8;
 
     // IC2 can retain < aim HU, then draw aim HU (not aim - currentHeat).

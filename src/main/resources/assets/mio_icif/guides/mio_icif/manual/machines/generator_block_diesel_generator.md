@@ -26,7 +26,7 @@ The machine accepts diesel oil buckets and diesel oil cells only.
 | Output voltage tier | EV (2,048 EU) |
 | Output | 120 EU/t |
 | Energy storage | 1,000,000 EU |
-| Fuel: Diesel Oil | 16 mB/t → 120 EU/t (7.5 EU/mB) |
+| Fuel: Diesel Oil | 0.75 mB/t → 120 EU/t (160 EU/mB) |
 
 The game measured these values from the block entity of this version.
 

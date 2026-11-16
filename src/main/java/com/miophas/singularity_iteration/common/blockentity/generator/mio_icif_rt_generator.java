@@ -53,7 +53,8 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
     private long currentGenerationRate = 0;
 
     // 旧 SI 扩展的发电量表；不是受控路径的成品行为规格。
-    private static final long[] GENERATION_RATES = {0L, 2L, 4L, 8L, 16L, 32L, 64L};
+    // 0.1.11.12: the old grid uses the IC2 table as well (it gave twice as much as the independent network)
+    private static final long[] GENERATION_RATES = {0L, 1L, 2L, 4L, 8L, 16L, 32L};
     // R29 ordinary placement/inventory/save observations, 0..6 occupied fuel slots.
     private static final long[] INDEPENDENT_GENERATION_RATES = {0L, 1L, 2L, 4L, 8L, 16L, 32L};
     private static final long INDEPENDENT_CAPACITY = 20000L;

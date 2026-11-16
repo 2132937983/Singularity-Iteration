@@ -17,15 +17,15 @@ item_ids:
 ## Function
 
 The Steam Repressurizer uses heat (HU) to increase the volume of Steam or Superheated Steam.
-The output fluid is the same type as the input fluid. Superheated Steam gives a larger gain.
+The output is ordinary Steam. Superheated Steam gives twice as much, as it took twice the heat to raise.
 The machine takes heat from all faces except the front face.
 
 ## Power data
 
 | Item | Value |
 |---|---|
-| Steam | 10 mB + 1 HU → 16 mB |
-| Superheated Steam | 10 mB + 1 HU → 32 mB |
+| Steam | 10 mB + 1 HU → 10 mB |
+| Superheated Steam | 10 mB + 1 HU → 20 mB |
 
 This block uses no EU.
 

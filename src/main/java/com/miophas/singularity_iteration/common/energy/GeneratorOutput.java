@@ -56,7 +56,7 @@ public final class GeneratorOutput {
         new Entry("advanced_drop_generator", "Advanced Drop Generator: 40 EU/t"),
         new Entry("experience_generator", "Experience Generator: 160 EU/t"),
         new Entry("advanced_experience_generator", "Advanced Experience Generator: 320 EU/t"),
-        new Entry("quantum_generator", "Quantum Generator: 512 EU/t (its own setting, then this multiplier)"));
+        new Entry("quantum_generator", "Quantum Generator: 8192 EU/t (its own setting, then this multiplier)"));
 
     private static Map<String, ModConfigSpec.DoubleValue> values = Map.of();
     private static ModConfigSpec spec;

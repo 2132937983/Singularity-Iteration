@@ -18,7 +18,7 @@ item_ids:
 
 The machine pulls dropped items and destroys them to make EU.
 The machine has a larger range and a higher output than the Drop Generator.
-Rare items give more EU than common items.
+Rare items give more EU than common items. Common items count by their furnace burn time; common items that do not burn give little EU.
 
 ## Power data
 

@@ -61,8 +61,8 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
         super(pos, state, type != null ? type : mio_icif_block_entities.ADVANCED_SEMIFLUID_GENERATOR_ENTITY_TYPE.get(),
             SlotLayout.builder().extra(2).battery().build(), ENERGY_GENERATION_RATE, ENERGY_CAPACITY, MAX_RECEIVE, MAX_EXTRACT, CableTier.MV);
 
-        this.fuelTank = new FluidTank(FUEL_CAPACITY, fluidStack ->
-            fluidStack.getFluid() == mio_icif_fluids.BIOGAS.get()) {
+        // 0.1.11.12: every semifluid fuel (it took only biogas)
+        this.fuelTank = new FluidTank(FUEL_CAPACITY, fluidStack -> SemifluidFuels.accepts(fluidStack.getFluid())) {
             @Override protected void onContentsChanged() {
                 if (energyStorage.scexNetworkControlled()) com.miophas.singularity_iteration.core.runtime.energy.ContainerToTank.markUnsaved(mio_icif_advanced_semifluid_generator.this);
                 else mio_icif_advanced_semifluid_generator.this.setChanged();
@@ -72,11 +72,30 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
 
     private boolean isFuelBucket(ItemStack stack) {
         // 0.1.10.6: also partly filled cells and containers of other mods (through the fluid capability)
-        return isKnownFuelBucket(stack) || com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, mio_icif_fluids.BIOGAS.get());
+        if (isKnownFuelBucket(stack)) return true;
+        for (var fluid : SemifluidFuels.acceptedFluids())
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.holds(stack, fluid)) return true;
+        return false;
     }
 
     private boolean isKnownFuelBucket(ItemStack stack) {
-        return stack.is(mio_icif_fluids.BIOGAS_BUCKET.get()) || mio_icif_cells.isCellContainingFluid(stack, mio_icif_fluids.BIOGAS.get());
+        return knownFuelFluid(stack) != null;
+    }
+
+    /** 0.1.11.12: the fuel in one of this mod's buckets or cells (null for anything else). */
+    private static net.minecraft.world.level.material.Fluid knownFuelFluid(ItemStack stack) {
+        if (stack.getItem() instanceof net.minecraft.world.item.BucketItem bucket && SemifluidFuels.accepts(bucket.content)) return bucket.content;
+        var cell = mio_icif_cells.getCellFluid(stack);
+        return !cell.isEmpty() && SemifluidFuels.accepts(cell.getFluid()) ? cell.getFluid() : null;
+    }
+
+    /**
+     * 0.1.11.12: EU per mB of a fuel: the basic semifluid generator's value x 1.25 (biogas 40, diesel 160, crude oil 20,
+     * biomass 10). It burnt biogas only, at 24 EU/mB, less than the basic generator's 32.
+     */
+    public static long euPerMb(net.minecraft.world.level.material.Fluid fluid) {
+        var value = SemifluidFuels.generatorValue(fluid);
+        return value == null ? 0 : value.energyPerMb() * 5 / 4;
     }
 
     @Override
@@ -90,7 +109,7 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
     private void handleFuelBucketSlot() {
         ItemStack held = itemHandler.getStackInSlot(FUEL_BUCKET_SLOT);
         if (!held.isEmpty() && !isKnownFuelBucket(held)) {
-            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, FUEL_BUCKET_SLOT, EMPTY_BUCKET_SLOT, fuelTank, mio_icif_fluids.BIOGAS.get())) setChanged();
+            if (com.miophas.singularity_iteration.common.util.FluidContainerSlots.emptyInto(itemHandler, FUEL_BUCKET_SLOT, EMPTY_BUCKET_SLOT, fuelTank, SemifluidFuels::accepts)) setChanged();
             return;
         }
         if (energyStorage.scexNetworkControlled()) { scexFillFuelContainer(); return; }
@@ -115,8 +134,10 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
         }
 
         // 0.1.10.6: only a whole container; before, a nearly full tank kept the part it took and the container stayed
-        if (fuelTank.fill(new FluidStack(mio_icif_fluids.BIOGAS.get(), FUEL_PER_BUCKET), IFluidHandler.FluidAction.SIMULATE) < FUEL_PER_BUCKET) return;
-        int filled = fuelTank.fill(new FluidStack(mio_icif_fluids.BIOGAS.get(), FUEL_PER_BUCKET), IFluidHandler.FluidAction.EXECUTE);
+        var bucketFluid = knownFuelFluid(fuelBucketStack);
+        if (bucketFluid == null) return;
+        if (fuelTank.fill(new FluidStack(bucketFluid, FUEL_PER_BUCKET), IFluidHandler.FluidAction.SIMULATE) < FUEL_PER_BUCKET) return;
+        int filled = fuelTank.fill(new FluidStack(bucketFluid, FUEL_PER_BUCKET), IFluidHandler.FluidAction.EXECUTE);
         if (filled >= FUEL_PER_BUCKET) {
             // 0.1.11.11: written through the slots (changing the live stacks bypassed the handler)
             itemHandler.setStackInSlot(FUEL_BUCKET_SLOT, fuelBucketStack.copyWithCount(fuelBucketStack.getCount() - 1));
@@ -234,30 +255,27 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
             blockEntity.distributeEnergy();
         }
 
-        boolean isEnergyFull = blockEntity.getEnergyStorage().getAmount() >=
-                              blockEntity.getEnergyStorage().getCapacity();
-
-        if (!isEnergyFull && blockEntity.isBurning()) {
-            blockEntity.generateEnergy();
+        // 0.1.11.12 (old grid): fuel is drawn by the mB into a credit (any semifluid fuel at its own value) and a tick of
+        // output is made only when it fits; nothing burns while the storage is full
+        if (blockEntity.currentFuelBurning > 0) {   // a bucket burning in a save from before: its biogas becomes credit
+            blockEntity.scexFuelCredit += (long) blockEntity.currentFuelBurning * euPerMb(mio_icif_fluids.BIOGAS.get());
+            blockEntity.currentFuelBurning = 0;
+            blockEntity.currentFuelEnergyGenerated = 0;
         }
-
-        if (blockEntity.isBurning()) {
-            if (isEnergyFull) {
-                // 0.1.11.11: the fire waits while the storage is full (the rest of the bucket burnt away for nothing)
-            } else {
-                blockEntity.burnTime--;
-
-                if (blockEntity.burnTime <= 0) {
-                    blockEntity.currentFuelBurning = 0;
-                    blockEntity.currentFuelEnergyGenerated = 0;
-                    blockEntity.consumeFuel();
-                }
-            }
-        } else {
-            if (!isEnergyFull) {
-                blockEntity.consumeFuel();
-            }
+        long room = blockEntity.getEnergyStorage().getCapacity() - blockEntity.getEnergyStorage().getAmount();
+        long tickEu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, ENERGY_GENERATION_RATE);
+        for (int draws = 0; room >= tickEu && tickEu > 0 && blockEntity.scexFuelCredit < tickEu && !blockEntity.fuelTank.isEmpty() && draws < 64; draws++) {
+            long perMb = euPerMb(blockEntity.fuelTank.getFluid().getFluid());
+            if (perMb <= 0 || blockEntity.fuelTank.drain(1, IFluidHandler.FluidAction.EXECUTE).isEmpty()) break;
+            blockEntity.scexFuelCredit += com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, perMb);
         }
+        long made = tickEu > 0 && room >= Math.min(tickEu, blockEntity.scexFuelCredit) ? Math.min(tickEu, blockEntity.scexFuelCredit) : 0;
+        if (made > 0) {
+            blockEntity.apiGenerateEnergy(made, false);
+            blockEntity.scexFuelCredit -= made;
+        }
+        blockEntity.burnTime = made > 0 ? 1 : 0;
+        blockEntity.burnDuration = 1;
 
         boolean isBurning = blockEntity.isBurning();
         if (wasBurning != isBurning) {
@@ -408,7 +426,7 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
         if (input.isEmpty() || !isFuelBucket(input)) return;
         var api = getItemAPI();
         boolean cell = api.isFluidCell(input);
-        var fluid = mio_icif_fluids.BIOGAS.get();
+        var fluid = knownFuelFluid(input);
         if (fluid == null) return;
         var contents = cell ? api.getFluidCellContent(input.copyWithCount(1)).copy()
             : new FluidStack(fluid, FUEL_PER_BUCKET);
@@ -423,7 +441,8 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
         chargeItems();
         if (outputScale() == 0) { burnTime = 0; setChanged(); return; }   // 0.1.8.4: switched off in the config
         var step = com.miophas.singularity_iteration.core.runtime.energy.FluidFuelGeneration.tick(fuelTank, energyStorage,
-            scexFuelCredit, 1, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_PER_BUCKET / FUEL_PER_BUCKET), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_GENERATION_RATE));   // 0.1.8.4
+            scexFuelCredit, 1, com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, fuelTank.isEmpty() ? 1 : Math.max(1, euPerMb(fuelTank.getFluid().getFluid()))),
+            com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_GENERATION_RATE));   // 0.1.8.4, 0.1.11.12
         scexFuelCredit = step.bufferedEnergy();
         burnTime = step.generated() > 0 ? 1 : 0;
         burnDuration = 1;

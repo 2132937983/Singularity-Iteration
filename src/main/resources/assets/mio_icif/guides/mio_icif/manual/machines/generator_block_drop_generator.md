@@ -17,7 +17,7 @@ item_ids:
 ## Function
 
 The machine pulls dropped items within a short range and destroys them to make EU.
-Rare items give more EU than common items.
+Rare items give more EU than common items. Common items count by their furnace burn time; common items that do not burn give little EU.
 
 ## Power data
 

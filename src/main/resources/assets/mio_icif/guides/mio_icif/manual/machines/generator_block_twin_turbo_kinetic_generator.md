@@ -18,14 +18,14 @@ item_ids:
 
 The machine converts kinetic energy (KU) from the block at its front face into EU.
 KU from wind or water kinetic generators converts at full efficiency.
-KU from other sources converts at a low efficiency.
+KU from other sources converts at a lower efficiency, still above the Kinetic Generator.
 
 ## Power data
 
 | Item | Value |
 |---|---|
 | Output voltage tier | EV (2,048 EU) |
-| Production | 1.2 EU per KU from wind or water kinetic generators, 0.12 EU per KU from other sources |
+| Production | 1.2 EU per KU from wind or water kinetic generators, 0.45 EU per KU from other sources |
 | KU input | up to 4,000 KU/t (up to 4,800 EU/t) |
 | Energy storage | 400,000 EU |
 

@@ -1,84 +1,161 @@
 package com.miophas.singularity_iteration.common.client.screen;
 
+import com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WindPhysics;
+import com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator;
+import com.miophas.singularity_iteration.common.client.suit.AsciiHud;
+import com.miophas.singularity_iteration.common.client.suit.FcsDraw;
+import com.miophas.singularity_iteration.common.menu.generator.WindKineticGeneratorMenu;
+import com.miophas.singularity_iteration.core.api.item.IKineticRotor;
+import java.util.List;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 /**
- * 风力动能发生机的 GUI类
- * 显示转子槽、风力强度和动能输出信息
+ * Wind kinetic generator screen. 0.1.11.9: 248 x 204 with the two charts a wind engineer reads: the wind rose (where
+ * the wind came from lately and how strong, the rotor's facing against the wind's bearing now) and this rotor's power
+ * curve (cut-in, cut-out, the current operating point; above cut-out the curve drops to 0 with storm protection, or
+ * keeps rising in red while the rotor wears). Under them the wind and its factors (facing, wake, obstruction), the
+ * output and the state; under the window the storm protection switch and the rotor's health.
  */
 @OnlyIn(Dist.CLIENT)
-@SuppressWarnings("null")
-public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<com.miophas.singularity_iteration.common.menu.generator.WindKineticGeneratorMenu> {
+public class mio_icif_gui_wind_kinetic_generator extends mio_icif_screen<WindKineticGeneratorMenu> {
 
-    private static final ResourceLocation GUI_TEXTURE =
-        ResourceLocation.parse("mio_icif:textures/gui/gui_wind_kinetic_generator.png");
+    private static final int WX = 34, WY = 15, WW = 207, WH = 95, STRIP_Y = 113, STORM_W = 76;
+    private static final String K = "gui.mio_icif.wind.";
 
-    // GUI 尺寸
-    private static final int GUI_WIDTH = 176;
-    private static final int GUI_HEIGHT = 166;
-
-    // IC2 原版 GUI 的两行状态文本位置
-    private static final int STATUS_TEXT_X = 17;
-    private static final int PRIMARY_STATUS_TEXT_Y = 48;
-    private static final int SECONDARY_STATUS_TEXT_Y = 66;
-    private static final int INFO_TEXT_COLOR = 0x2A2E33;
-
-    public mio_icif_gui_wind_kinetic_generator(com.miophas.singularity_iteration.common.menu.generator.WindKineticGeneratorMenu menu, Inventory playerInventory, Component title) {
+    public mio_icif_gui_wind_kinetic_generator(WindKineticGeneratorMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = GUI_WIDTH;
-        this.imageHeight = GUI_HEIGHT;
+        this.imageWidth = WindKineticGeneratorMenu.GUI_WIDTH;
+        this.imageHeight = WindKineticGeneratorMenu.GUI_HEIGHT;
+    }
+
+    private int v(int i) { return menu.value(i); }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        int x = leftPos, y = topPos;
+        SiGuiTheme.panel(g, x, y, imageWidth, imageHeight);
+        SiGuiTheme.slot(g, x + WindKineticGeneratorMenu.SLOT_X - 1, y + WindKineticGeneratorMenu.SLOT_Y - 1);
+        for (int r = 0; r < 3; r++) for (int c = 0; c < 9; c++)
+            SiGuiTheme.slot(g, x + WindKineticGeneratorMenu.INVENTORY_X - 1 + c * 18, y + WindKineticGeneratorMenu.INVENTORY_Y - 1 + r * 18);
+        for (int c = 0; c < 9; c++) SiGuiTheme.slot(g, x + WindKineticGeneratorMenu.INVENTORY_X - 1 + c * 18, y + WindKineticGeneratorMenu.HOTBAR_Y - 1);
+
+        g.fill(x + WX - 1, y + WY - 1, x + WX + WW + 1, y + WY + WH + 1, 0xFF7A7F85);
+        g.fill(x + WX, y + WY, x + WX + WW, y + WY + WH, WindRoseView.PAPER);
+        float u = WindRoseView.u();
+        WindRoseView.rose(g, x + WX + 40, y + WY + 31, 22, WindRoseView.bytes(this::v, 11), WindRoseView.bytes(this::v, 15), v(6), v(5));
+        ItemStack rotorStack = menu.getSlot(0).getItem();
+        curve(g, x + WX + 92, y + WY + 6, 108, 46, rotorStack);
+        // readings
+        float tx = x + WX + 4, ty = y + WY + 66, lh = 9 * u + 1;
+        WindRoseView.line(g, Component.translatable(K + "wind_line", v(3), v(4)).append(" · ").append(WindRoseView.bearing(v(5))), tx, ty, WindRoseView.INK, WW - 8);
+        WindRoseView.line(g, Component.translatable(K + "factors", WindRoseView.factor(v(7)), WindRoseView.factor(v(8)), WindRoseView.factor(v(9))),
+            tx, ty + lh, WindRoseView.DIM, WW - 8);
+        int status = v(0);
+        String key = switch (status) {
+            case mio_icif_Wind_Kinetic_Generator.STATUS_MISSING_ROTOR -> "state.no_rotor";
+            case mio_icif_Wind_Kinetic_Generator.STATUS_BLOCKED_ROTOR -> "state.blocked";
+            case mio_icif_Wind_Kinetic_Generator.STATUS_WEAK_WIND -> "state.weak";
+            case mio_icif_Wind_Kinetic_Generator.STATUS_FEATHERED -> "state.feathered";
+            case mio_icif_Wind_Kinetic_Generator.STATUS_OVERLOAD -> "state.overload";
+            default -> "state.run";
+        };
+        int col = status == mio_icif_Wind_Kinetic_Generator.STATUS_OVERLOAD || status == mio_icif_Wind_Kinetic_Generator.STATUS_BLOCKED_ROTOR
+            ? WindRoseView.RED : status == mio_icif_Wind_Kinetic_Generator.STATUS_GENERATING ? 0x2F6E4F : WindRoseView.DIM;
+        WindRoseView.line(g, Component.translatable(K + "output_ku", v(1)).append(" · ").append(Component.translatable(K + key)), tx, ty + 2 * lh, col, WW - 8);
+
+        // strip: storm protection, rotor health
+        int sy = y + STRIP_Y, bx = x + WX;
+        boolean hover = mouseX >= bx && mouseX < bx + STORM_W && mouseY >= sy && mouseY < sy + 12;
+        boolean storm = v(10) != 0;
+        g.fill(bx, sy, bx + STORM_W, sy + 12, SiGuiTheme.OUTLINE);
+        g.fill(bx + 1, sy + 1, bx + STORM_W - 1, sy + 11, hover ? 0xFFF4F6F8 : storm ? 0xFFDFEEE3 : 0xFFF1DEDE);
+        Component sc = Component.translatable(K + (storm ? "storm.on" : "storm.off"));
+        PumpCrossSection.text(g, sc, bx + STORM_W / 2F - AsciiHud.width(sc, u) / 2, sy + 6 - 4.5F * u, 0x2A2E33, u);
+        Component hc = Component.translatable(K + "rotor_health");
+        float hx = bx + STORM_W + 6;
+        PumpCrossSection.text(g, hc, hx, sy + 6 - 4.5F * u, 0x2A2E33, u);
+        float barX = hx + AsciiHud.width(hc, u) + 3, barW = x + 241 - 22 - barX;
+        g.fill((int) barX - 1, sy + 2, (int) (barX + barW) + 1, sy + 10, SiGuiTheme.SLOT_SHADOW);
+        g.fill((int) barX, sy + 3, (int) (barX + barW), sy + 9, SiGuiTheme.SCREEN_BG);
+        int health = v(2);
+        if (health > 0) g.fill((int) barX, sy + 3, (int) (barX + barW * health / 100F), sy + 9, health > 25 ? 0xFF3C9A52 : 0xFFC8423C);
+        Component pc = Component.literal(health + "%");
+        PumpCrossSection.text(g, pc, x + 241 - AsciiHud.width(pc, u), sy + 6 - 4.5F * u, 0x2A2E33, u);
+    }
+
+    /** The rotor's power curve in (px, py, pw, ph) with the operating point. */
+    private void curve(GuiGraphics g, float px, float py, float pw, float ph, ItemStack rotorStack) {
+        float u = WindRoseView.u();
+        FcsDraw.line(g, px, py + ph, px + pw, py + ph, 0.5F, 0xFF5B6867);
+        FcsDraw.line(g, px, py, px, py + ph, 0.5F, 0xFF5B6867);
+        if (!(rotorStack.getItem() instanceof IKineticRotor rotor)) {
+            Component c = Component.translatable(K + "insert_rotor");
+            PumpCrossSection.text(g, c, px + pw / 2 - AsciiHud.width(c, u) / 2, py + ph / 2 - 4 * u, WindRoseView.DIM, u);
+            return;
+        }
+        int min = rotor.getMinWindStrength(rotorStack), max = rotor.getMaxWindStrength(rotorStack);
+        float eff = rotor.getEfficiency(rotorStack);
+        boolean storm = v(10) != 0;
+        float vmax = max * 1.4F, pmax = vmax * eff * WindPhysics.OUTPUT_MODIFIER * 1.05F;
+        java.util.function.DoubleUnaryOperator X = w -> px + w / vmax * pw;
+        java.util.function.DoubleUnaryOperator Y = p -> py + ph - p / pmax * ph;
+        for (int[] mark : new int[][]{{min, 0}, {max, 1}}) {
+            float mx = (float) X.applyAsDouble(mark[0]);
+            FcsDraw.line(g, mx, py, mx, py + ph, 0.35F, 0xFFB6BFBE);
+            Component c = Component.translatable(K + (mark[1] == 0 ? "cut_in" : "cut_out"), mark[0]);
+            PumpCrossSection.text(g, c, mx - AsciiHud.width(c, u) / 2, py + ph + 1, WindRoseView.DIM, u);
+        }
+        int ink = 0xFF23454A;
+        float pMin = min * eff * WindPhysics.OUTPUT_MODIFIER, pMax = max * eff * WindPhysics.OUTPUT_MODIFIER;
+        FcsDraw.line(g, px, (float) Y.applyAsDouble(0), (float) X.applyAsDouble(min), (float) Y.applyAsDouble(0), 0.9F, ink);
+        FcsDraw.line(g, (float) X.applyAsDouble(min), (float) Y.applyAsDouble(0), (float) X.applyAsDouble(min), (float) Y.applyAsDouble(pMin), 0.9F, ink);
+        FcsDraw.line(g, (float) X.applyAsDouble(min), (float) Y.applyAsDouble(pMin), (float) X.applyAsDouble(max), (float) Y.applyAsDouble(pMax), 0.9F, ink);
+        if (storm) {
+            FcsDraw.line(g, (float) X.applyAsDouble(max), (float) Y.applyAsDouble(pMax), (float) X.applyAsDouble(max), (float) Y.applyAsDouble(0), 0.9F, ink);
+            FcsDraw.line(g, (float) X.applyAsDouble(max), (float) Y.applyAsDouble(0), px + pw, (float) Y.applyAsDouble(0), 0.9F, ink);
+        } else {
+            WindRoseView.dashed(g, (float) X.applyAsDouble(max), (float) Y.applyAsDouble(pMax), px + pw,
+                (float) Y.applyAsDouble(vmax * eff * WindPhysics.OUTPUT_MODIFIER), 0xFFC0392B);
+        }
+        float wind = Math.min(vmax, v(3));
+        FcsDraw.disc(g, (float) X.applyAsDouble(wind), (float) Y.applyAsDouble(v(1)), 1.8F, 0xFFC0392B);
+        PumpCrossSection.text(g, Component.translatable(K + "axis_ku"), px + 2, py - 1, WindRoseView.DIM, u);
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = this.leftPos;
-        int y = this.topPos;
-
-        // 绘制背景
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        com.miophas.singularity_iteration.common.menu.generator.WindKineticGeneratorMenu menu = this.menu;
-        if (menu != null) {
-            Component primaryText = getPrimaryStatusText(menu);
-            if (primaryText != null) {
-                drawFitted(guiGraphics, this.font, primaryText, x + STATUS_TEXT_X, y + PRIMARY_STATUS_TEXT_Y, 141, INFO_TEXT_COLOR, true);
-            }
-
-            Component secondaryText = getSecondaryStatusText(menu);
-            if (secondaryText != null) {
-                drawFitted(guiGraphics, this.font, secondaryText, x + STATUS_TEXT_X, y + SECONDARY_STATUS_TEXT_Y, 141, INFO_TEXT_COLOR, true);
-            }
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int bx = leftPos + WX, by = topPos + STRIP_Y;
+        if (button == 0 && mouseX >= bx && mouseX < bx + STORM_W && mouseY >= by && mouseY < by + 12) {
+            Minecraft.getInstance().gameMode.handleInventoryButtonClick(menu.containerId, 0);
+            playClick();
+            return true;
         }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    private Component getPrimaryStatusText(com.miophas.singularity_iteration.common.menu.generator.WindKineticGeneratorMenu menu) {
-        return switch (menu.getStatus()) {
-            case com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_MISSING_ROTOR ->
-                Component.translatable("gui.mio_icif.wind_kinetic.status.missing_rotor");
-            case com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_BLOCKED_ROTOR ->
-                Component.translatable("gui.mio_icif.wind_kinetic.status.blocked_rotor");
-            case com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_WEAK_WIND ->
-                Component.translatable("gui.mio_icif.wind_kinetic.status.weak_wind");
-            case com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_GENERATING,
-                 com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_OVERLOAD ->
-                Component.translatable("gui.mio_icif.wind_kinetic.status.output", menu.getKineticOutput());
-            default -> null;
-        };
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        super.renderLabels(g, mouseX, mouseY);
     }
 
-    private Component getSecondaryStatusText(com.miophas.singularity_iteration.common.menu.generator.WindKineticGeneratorMenu menu) {
-        return switch (menu.getStatus()) {
-            case com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_WEAK_WIND ->
-                Component.translatable("gui.mio_icif.wind_kinetic.status.weak_wind_detail");
-            case com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_GENERATING,
-                 com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator.STATUS_OVERLOAD ->
-                Component.translatable("gui.mio_icif.wind_kinetic.status.rotor_health", menu.getRotorHealthPercent());
-            default -> null;
-        };
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        super.render(g, mouseX, mouseY, partialTick);
+        int rx = mouseX - leftPos, ry = mouseY - topPos;
+        if (rx >= WX && rx < WX + STORM_W && ry >= STRIP_Y && ry < STRIP_Y + 12) {
+            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.storm"), Component.translatable(K + "tip.storm2")), mouseX, mouseY);
+        } else if (rx >= WX && rx < WX + 85 && ry >= WY && ry < WY + 62) {
+            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.rose"), Component.translatable(K + "tip.facing")), mouseX, mouseY);
+        } else if (rx >= WX + 88 && rx < WX + WW && ry >= WY && ry < WY + 62) {
+            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.curve")), mouseX, mouseY);
+        } else if (rx >= WX && rx < WX + WW && ry >= WY + 62 && ry < WY + WH) {
+            g.renderComponentTooltip(this.font, List.of(Component.translatable(K + "tip.factors"), Component.translatable(K + "tip.wake")), mouseX, mouseY);
+        }
     }
 }

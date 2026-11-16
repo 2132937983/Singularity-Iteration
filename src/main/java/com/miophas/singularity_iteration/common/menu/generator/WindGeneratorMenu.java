@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
     // Data synchronization indexes.
     private static final int DATA_GENERATING = 0;
     private static final int DATA_OUTPUT = 1;
-    private static final int DATA_COUNT = 2;
+    private static final int DATA_COUNT = mio_icif_wind_generator.DATA_COUNT;
     private static final int SLOT_COUNT = 1;
 
     public WindGeneratorMenu(int containerId, Inventory playerInventory) {
@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
 
     public WindGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_wind_generator blockEntity) {
         super(mio_icif_menus.WIND_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory,
-              blockEntity != null ? blockEntity.getItemHandler() : null, null, DATA_COUNT, blockEntity);
+              blockEntity != null ? blockEntity.getItemHandler() : null, blockEntity != null ? blockEntity.getContainerData() : null, DATA_COUNT, blockEntity);
     }
 
     public void setSyncData(boolean generating, int output) {
@@ -53,19 +53,31 @@ import org.jetbrains.annotations.Nullable;
         return this.data.get(DATA_OUTPUT);
     }
 
+    /** 0.1.11.9: 248 x 204 with the wind rose and the height curve; the battery slot on the left. */
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 204;
+    public static final int SLOT_X = 10, SLOT_Y = 46;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+
+    /** Synced value {@code i} (see the block entity's getContainerData). */
+    public int value(int i) { return data.get(i); }
+
     @Override
-    public void broadcastChanges() {
-        if (blockEntity instanceof mio_icif_wind_generator generator) {
-            setSyncData(DATA_GENERATING, generator.isGenerating() ? 1 : 0);
-            setSyncData(DATA_OUTPUT, (int) generator.getCurrentEnergyOutput());
-        }
-        super.broadcastChanges();
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
     }
 
     @Override
     protected void addMachineSlots() {
         // Battery slot (80, 26).
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 80, 26));
+        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, SLOT_X, SLOT_Y));
     }
 }
 

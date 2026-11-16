@@ -2347,6 +2347,104 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wind" (-Dsi.capture.scene=wind), 0.1.11.9: the two wind machine screens. A carbon-rotor turbine high up with
+     * another one upstream (its wake), in a fair wind, then a storm (feathered, then overloaded without storm protection);
+     * then the wind generator. The wind field is set directly and the roses get a minute of varied wind.
+     */
+    private static void sceneWind() {
+        BlockPos kin = new BlockPos(0, 140, 12), up = new BlockPos(0, 140, 4), gen = new BlockPos(20, 140, 12);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            var state = block("kugenerator/block_wind_kinetic_generator").defaultBlockState()
+                .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.NORTH);
+            level.setBlock(kin, state, 3);
+            level.setBlock(up, state, 3);
+            level.setBlock(gen, block("generator/block_wind_generator").defaultBlockState(), 3);
+            var rotor = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "rotors/item_carbon_rotor")));
+            for (BlockPos at : new BlockPos[]{kin, up})
+                if (level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator k)
+                    k.setRotorStack(rotor.copy());
+            windField(level, 14, 20);
+            var rnd = new java.util.Random(7);
+            for (BlockPos at : new BlockPos[]{kin, gen}) {
+                Object rose = fieldOf(level.getBlockEntity(at), "rose");
+                for (int i = 0; i < 64; i++) {
+                    int b = Math.floorMod((int) (20 + rnd.nextGaussian() * 40), 360);
+                    ((com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WindRoseBuffer) rose).add(b, 30 + rnd.nextInt(60));
+                }
+            }
+            sp.setGameMode(GameType.CREATIVE);                                     // flies: a fall would close the screen
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, 141, 16.5, 180, 10);
+        });
+        server(5, sp -> openAt(sp, kin));
+        server(140, sp -> {});
+        shot(1, "wind/1_kinetic_wake");
+        server(1, sp -> {
+            // a thunderstorm (wind x1.5) and the upstream turbine gone: well above the carbon rotor's cut-out
+            sp.serverLevel().setWeatherParameters(0, 6000, true, true);
+            sp.serverLevel().removeBlock(up, false);
+            windField(sp.serverLevel(), 30, 200);
+        });
+        server(140, sp -> {});
+        shot(1, "wind/2_storm_feathered");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(kin) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Wind_Kinetic_Generator k)
+                k.toggleStormProtection();
+        });
+        server(140, sp -> {});
+        shot(1, "wind/3_storm_overload");
+        server(1, sp -> {
+            sp.closeContainer();
+            sp.serverLevel().setWeatherParameters(6000, 0, false, false);
+            windField(sp.serverLevel(), 20, 60);
+            sp.teleportTo(sp.serverLevel(), 20.5, 141, 16.5, 180, 10);
+        });
+        server(5, sp -> openAt(sp, gen));
+        server(260, sp -> {});
+        shot(1, "wind/4_generator");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Sets the dimension's wind field (strength 0..30, bearing). */
+    private static void windField(net.minecraft.server.level.ServerLevel level, int strength, int bearing) {
+        Object sim = com.miophas.singularity_iteration.core.runtime.world.WindSim.get(level);
+        setField(sim, "windStrength", strength);
+        setField(sim, "windDirection", bearing);
+    }
+
+    private static Object fieldOf(Object target, String name) {
+        try {
+            var f = target.getClass().getDeclaredField(name);
+            f.setAccessible(true);
+            return f.get(target);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static void setField(Object target, String name, int value) {
+        try {
+            var f = target.getClass().getDeclaredField(name);
+            f.setAccessible(true);
+            f.setInt(target, value);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    static {
+        if (OUT != null && "wind".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWind();
+        }
+    }
+
     static {
         if (OUT != null && "poly".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

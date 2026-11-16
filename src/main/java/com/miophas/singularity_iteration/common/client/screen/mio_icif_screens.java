@@ -233,7 +233,7 @@ public class mio_icif_screens {
         // 注册核反应堆发电机的 GUI 界面
         event.register(
             mio_icif_menus.NUCLEAR_REACTOR_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_nuclear_reactor_generator::new
+            ReactorControlScreen::new   // 0.1.11.21: control room
         );
 
         // 注册电力发热机的 GUI 界面

@@ -125,13 +125,13 @@ public class FluidReactorMenu extends mio_icif_base_menu {
             this.data = blockEntity.getFluidContainerData();
         } else {
             this.data = new ContainerData() {
-                private final int[] data = new int[11];   // 0.1.10.36: + the two tank capacities; 0.1.10.39: + the status
+                private final int[] data = new int[13];   // 0.1.10.36: + the two tank capacities; 0.1.10.39: + the status; 0.1.11.21: + SCRAM
                 @Override
                 public int get(int index) { return data[index]; }
                 @Override
                 public void set(int index, int value) { data[index] = value; }
                 @Override
-                public int getCount() { return 11; }
+                public int getCount() { return 13; }
             };
         }
         this.addDataSlots(data);
@@ -158,6 +158,24 @@ public class FluidReactorMenu extends mio_icif_base_menu {
         for (int i = 0; i < 9; ++i) {
             this.addSlot(new Slot(playerInventory, i, startX + i * 18, hotbarY));
         }
+    }
+
+    /** 0.1.11.21: the SCRAM setpoint (percent, 100 = off) and whether the reactor is tripped. */
+    public int getScramSetpoint() { return data.get(11); }
+    public boolean isTripped() { return data.get(12) != 0; }
+
+    /** 0.1.11.21: SCRAM (10), reset (11), setpoint down (12) and up (13), as on the generator screen. */
+    @Override
+    public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+        if (blockEntity == null) return false;
+        switch (id) {
+            case 10 -> blockEntity.scram();
+            case 11 -> blockEntity.resetTrip();
+            case 12 -> blockEntity.setScramSetpoint(blockEntity.getScramSetpoint() - 5);
+            case 13 -> blockEntity.setScramSetpoint(blockEntity.getScramSetpoint() + 5);
+            default -> { return false; }
+        }
+        return true;
     }
 
     /** 0.1.10.39: why the reactor makes nothing ({@code mio_icif_nuclear_reactor_generator.STATUS_*}). */

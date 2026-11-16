@@ -2348,6 +2348,57 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "reactor" (-Dsi.capture.scene=reactor), 0.1.11.21: the control room. A nine-column reactor (six chambers)
+     * with quad uranium rods and golden vents, the hull started at 55 % with the trip at 70 %, run for 40 cycles.
+     */
+    private static void sceneReactor() {
+        BlockPos core = new BlockPos(0, -57, 6);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(core, block("generator/block_nuclear_reactor_generator").defaultBlockState(), 3);
+            for (Direction d : Direction.values()) level.setBlock(core.relative(d), block("reactor/block_reactor_chamber").defaultBlockState(), 3);
+            level.setBlock(core.east(2), net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK.defaultBlockState(), 3);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -57, 2.5, 0, 10);
+        });
+        server(25, sp -> {
+            if (!(sp.serverLevel().getBlockEntity(core) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator r)) return;
+            var quad = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_uranium_quad"));
+            var vent = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "reactor/item_reactor_golden_vent"));
+            int[][] rods = {{1, 1}, {1, 4}, {1, 7}, {4, 1}, {4, 4}, {4, 7}};
+            for (int[] rc : rods) {
+                r.getItemHandler().insertItem(rc[0] * 9 + rc[1], new net.minecraft.world.item.ItemStack(quad), false);
+                for (int[] d : new int[][]{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) {
+                    int row = rc[0] + d[0], col = rc[1] + d[1];
+                    if (row >= 0 && row < 6 && col >= 0 && col < 9) r.getItemHandler().insertItem(row * 9 + col, new net.minecraft.world.item.ItemStack(vent), false);
+                }
+            }
+            r.setScramSetpoint(70);
+            r.getHeatStorage().setHeat(5500);
+        });
+        server(1, sp -> openAt(sp, core));
+        server(800, sp -> {});
+        shot(1, "reactor/1_control_room");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(core) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_nuclear_reactor_generator r) r.scram();
+        });
+        server(60, sp -> {});
+        shot(1, "reactor/2_tripped");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "reactor".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneReactor();
+        }
+    }
+
+    /**
      * Scene "rtg" (-Dsi.capture.scene=rtg), 0.1.11.20: the RTG with ice beside it, the RT heat generator, and a complete
      * geomagnetic generator on a stone column above sea level, the clock set some hours into a storm of this world.
      */

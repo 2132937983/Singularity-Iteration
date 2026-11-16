@@ -37,6 +37,16 @@ The game measured these values from the block entity of this version.
 3. Connect a cable to the reactor.
 4. Apply a redstone signal to the reactor to start it. A chamber or a redstone port of the pressure vessel also takes the signal. Without one the reactor does nothing, and its screen and Jade say "Off: no redstone signal".
 
+## SCRAM and the control room
+
+The screen is a control room: the grid with the three hottest parts outlined (green, amber above 50 %, red above 80 % of their heat capacity), an annunciator panel (redstone, heat high, trip, rising, nine columns, output), the hull record of the last 60 cycles with the output, and the heat balance of the last cycle (heat made by the fuel, heat vented, the hull's change) with the seconds left to the setpoint at that rate.
+
+- **SCRAM** trips the reactor: from the next cycle the fuel makes no heat and no EU, as without a redstone signal; vents and exchangers keep working. The status says "Tripped".
+- **Trip at** (30 to 100 %, by 5 %; 100 % is off) trips it by itself at the start of a cycle whose hull heat has reached that share.
+- **Reset** works only while the hull heat is below the setpoint. Turning the redstone signal off and on again resets it too.
+- The setpoint and the trip are saved. The fluid reactor and the steam reactor have the same SCRAM, setpoint and reset buttons under their panel.
+- There is no decay heat: a tripped reactor's fuel makes no heat at all.
+
 ## Heat stages
 
 From 4,000 HU of hull heat, the reactor checks these stages once per cycle (1 second), by hull heat

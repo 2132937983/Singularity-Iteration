@@ -72,12 +72,12 @@ import org.jetbrains.annotations.Nullable;
             return SemifluidFuels.accepts(bucket.content);
         }
         var content = mio_icif_cells.getCellFluid(stack);
-        return !content.isEmpty() && SemifluidFuels.accepts(content.getFluid());
+        return !content.isEmpty() && SemifluidFuels.accepts(content.getFluid()) || holdsFluid(stack, SemifluidFuels::accepts);
     }
 
     @Override
     protected boolean isBattery(ItemStack stack) {
-        return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
+        return com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI().isBattery(stack);   // 0.1.11.11: any chargeable item, as the block takes
     }
 
     @Override

@@ -36,7 +36,7 @@ public class DieselGeneratorMenu extends mio_icif_generator_menu {
         this.addSlot(new SlotItemHandler(itemHandler, FUEL_BUCKET_SLOT, 27, 21) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                boolean isFuel = stack.is(mio_icif_fluids.DIESELOIL_BUCKET.get()) || mio_icif_cells.isCellContainingFluid(stack, mio_icif_fluids.DIESELOIL.get());
+                boolean isFuel = stack.is(mio_icif_fluids.DIESELOIL_BUCKET.get()) || mio_icif_cells.isCellContainingFluid(stack, mio_icif_fluids.DIESELOIL.get()) || holdsFluid(stack, f -> f.isSame(mio_icif_fluids.DIESELOIL.get()));
                 if (!isFuel) return false;
                 if (!itemHandler.isItemValid(FUEL_BUCKET_SLOT, stack)) return false;
                 int amount = blockEntity instanceof mio_icif_diesel_generator gen ? gen.getFuelAmount() : getFuelAmount();
@@ -55,12 +55,12 @@ public class DieselGeneratorMenu extends mio_icif_generator_menu {
     public int getFuelCapacity() { return data.get(3); }
 
     protected boolean isValidFuel(ItemStack stack) {
-        return stack.is(mio_icif_fluids.DIESELOIL_BUCKET.get()) || mio_icif_cells.isCellContainingFluid(stack, mio_icif_fluids.DIESELOIL.get());
+        return stack.is(mio_icif_fluids.DIESELOIL_BUCKET.get()) || mio_icif_cells.isCellContainingFluid(stack, mio_icif_fluids.DIESELOIL.get()) || holdsFluid(stack, f -> f.isSame(mio_icif_fluids.DIESELOIL.get()));
     }
 
     @Override
     protected boolean isBattery(ItemStack stack) {
-        return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
+        return com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI().isBattery(stack);   // 0.1.11.11: any chargeable item, as the block takes
     }
 
     @Override

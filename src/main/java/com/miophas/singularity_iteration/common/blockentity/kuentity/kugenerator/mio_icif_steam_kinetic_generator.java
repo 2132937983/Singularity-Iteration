@@ -373,11 +373,15 @@ public class mio_icif_steam_kinetic_generator extends AbstractKineticBlockEntity
      * @return 本 tick 的原始 KU 产出（未节流）
      */
     private int handleSteam(boolean hotSteam) {
-        int amount = steamTank.getFluidAmount();
+        int perMb = hotSteam ? KU_PER_MB_SUPERHEATED : KU_PER_MB_STEAM;
+        // 0.1.11.11: only the steam whose work the front can take this tick (the KU nobody takes is lost, as in IC2,
+        // so draining the whole tank threw most of a large flow away)
+        long accept = AUX_AUTOMATION_ENABLED ? Long.MAX_VALUE : frontAcceptance();
+        int amount = accept == Long.MAX_VALUE ? steamTank.getFluidAmount() : (int) Math.min(steamTank.getFluidAmount(), (accept + perMb - 1) / perMb);
         if (amount <= 0) return 0;
         steamTank.drain(amount, IFluidHandler.FluidAction.EXECUTE);
 
-        int kuWorkBuffer = amount * (hotSteam ? KU_PER_MB_SUPERHEATED : KU_PER_MB_STEAM);
+        int kuWorkBuffer = amount * perMb;
         if (hotSteam) {
             outputSteam(amount, true);
         } else {
@@ -492,30 +496,41 @@ public class mio_icif_steam_kinetic_generator extends AbstractKineticBlockEntity
     private void outputKineticToFront() {
         if (level == null || level.isClientSide()) return;
         if (kineticStorage.getKineticStored() <= 0) return;
+        IMioIcifCapabilities.IKineticStorage frontKinetic = frontKinetic();
+        if (frontKinetic != null && frontKinetic.canReceiveKinetic()) {
+            // 0.1.11.11: sized by what the receiver really takes (a simulated receive: its per-tick limit too, not only
+            // its free space), and what it did not take goes back to the buffer
+            long toTransfer = Math.min(kineticStorage.getKineticStored(),
+                Math.min(kineticStorage.getMaxExtract(), frontKinetic.receiveKinetic(kineticStorage.getKineticStored(), true)));
+            if (toTransfer > 0) {
+                long extracted = kineticStorage.extractKinetic(toTransfer, false);
+                if (extracted > 0) {
+                    long accepted = frontKinetic.receiveKinetic(extracted, false);
+                    if (accepted < extracted) kineticStorage.receiveKinetic(extracted - accepted, false);
+                }
+            }
+        }
+    }
 
+    private IMioIcifCapabilities.IKineticStorage frontKinetic() {
         Direction facing = getBlockState().getValue(
             net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
-
         IMioIcifCapabilities.IKineticStorage frontKinetic = level.getCapability(
-            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK,
-            frontPos, facing.getOpposite());
+            IMioIcifCapabilities.KINETIC_STORAGE_BLOCK, frontPos, facing.getOpposite());
         if (frontKinetic == null) {
             BlockEntity be = level.getBlockEntity(frontPos);
             frontKinetic = MioIcifAPI.instance().getCapabilities().adaptKineticStorage(be);
         }
+        return frontKinetic;
+    }
 
-        if (frontKinetic != null && frontKinetic.canReceiveKinetic()) {
-            long toTransfer = Math.min(kineticStorage.getKineticStored(),
-                                      Math.min(kineticStorage.getMaxExtract(),
-                                               frontKinetic.getMaxKineticStored() - frontKinetic.getKineticStored()));
-            if (toTransfer > 0) {
-                long extracted = kineticStorage.extractKinetic(toTransfer, false);
-                if (extracted > 0) {
-                    frontKinetic.receiveKinetic(extracted, false);
-                }
-            }
-        }
+    /** 0.1.11.11: KU the front can take this tick (0 without a receiver). */
+    private long frontAcceptance() {
+        if (level == null) return 0;
+        IMioIcifCapabilities.IKineticStorage front = frontKinetic();
+        if (front == null || !front.canReceiveKinetic()) return 0;
+        return Math.min(kineticStorage.getMaxExtract(), front.receiveKinetic(kineticStorage.getMaxExtract(), true));
     }
 
     /** 雪藏：原版 IC2 没有蒸汽单元槽，蒸汽只能从管道/容器进入蒸汽槽。 */

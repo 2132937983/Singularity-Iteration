@@ -137,6 +137,9 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
             if (state.getFluidState().is(net.minecraft.tags.FluidTags.WATER)) opacity = Math.max(3, opacity);
             return Math.min(15, Math.max(0, opacity));
         });
+        // 0.1.11.11: never more than the world's own sky light above the panel. The column sample only looks up to the
+        // top of its own 16-block section, so a panel in a sealed cave with one air block over it read full sun.
+        light = Math.min(light, level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos.above()));
         boolean sandy = level.getBiome(pos).is(SANDY_BIOMES);
         return com.miophas.singularity_iteration.core.runtime.energy.engine.SolarOutputModel.rate(level.getDayTime(),
             light,
@@ -262,10 +265,12 @@ public class mio_icif_solar_generator extends AbstractGeneratorBlockEntity {
         // 检查发电状态是否改变
         if (wasGenerating != blockEntity.isGenerating) {
             // 更新方块状态
+            // 0.1.11.11: the block's own "active" property, found by name: each solar block declares its own instance, and
+            // properties compare by identity, so the advanced panels never switched to their active model
             BlockState newState = level.getBlockState(pos);
-            if (newState.hasProperty(com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Solar_Generator.ACTIVE)) {
-                newState = newState.setValue(com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Solar_Generator.ACTIVE, blockEntity.isGenerating);
-                level.setBlock(pos, newState, 3);
+            if (newState.getBlock().getStateDefinition().getProperty("active") instanceof net.minecraft.world.level.block.state.properties.BooleanProperty active
+                    && newState.getValue(active) != blockEntity.isGenerating) {
+                level.setBlock(pos, newState.setValue(active, blockEntity.isGenerating), 3);
             }
         }
 

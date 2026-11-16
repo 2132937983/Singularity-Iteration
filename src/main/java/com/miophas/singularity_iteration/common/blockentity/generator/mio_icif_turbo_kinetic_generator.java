@@ -74,6 +74,9 @@ public class mio_icif_turbo_kinetic_generator extends AbstractGeneratorBlockEnti
         }
 
         AbstractEnergyBlockEntity.tick(level, pos, state, blockEntity);
+        // 0.1.11.11: the old grid only reaches this mod's machines; other mods' storages beside it are fed here, as the
+        // other generators do (the independent network does its own transfers)
+        if (!blockEntity.getEnergyStorageInternal().scexNetworkControlled()) blockEntity.distributeEnergyToCompatSinks();
 
         blockEntity.lastEnergyOutput = 0;
         blockEntity.lastProduction = 0;

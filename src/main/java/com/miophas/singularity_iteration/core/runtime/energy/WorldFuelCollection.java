@@ -45,9 +45,17 @@ public final class WorldFuelCollection {
         return result;
     }
     public int items(ServerLevel level, BlockPos pos, int range, int fuel, ToIntFunction<ItemStack> value) {
+        return items(level, pos, range, fuel, value, Integer.MAX_VALUE);
+    }
+    /**
+     * 0.1.11.11: with a fuel limit. At or above it nothing more is taken (the items still drift in and wait), so a
+     * generator with a full storage no longer eats the drops around it for nothing.
+     */
+    public int items(ServerLevel level, BlockPos pos, int range, int fuel, ToIntFunction<ItemStack> value, int limit) {
         for (var item : next(level, pos, range, ItemEntity.class)) {
             if (item.isRemoved()) continue;
             if (pos.distToCenterSqr(item.getX(), item.getY(), item.getZ()) <= 1) {
+                if (fuel >= limit) continue;
                 var stack = item.getItem();
                 if (stack.isEmpty()) continue;
                 int credit = FuelAdmission.accepted(fuel, value.applyAsInt(stack), 1);
@@ -62,9 +70,14 @@ public final class WorldFuelCollection {
         return fuel;
     }
     public int experience(ServerLevel level, BlockPos pos, int range, int fuel) {
+        return experience(level, pos, range, fuel, Integer.MAX_VALUE);
+    }
+    /** 0.1.11.11: with a fuel limit, as {@link #items(ServerLevel, BlockPos, int, int, ToIntFunction, int)}. */
+    public int experience(ServerLevel level, BlockPos pos, int range, int fuel, int limit) {
         for (var orb : next(level, pos, range, ExperienceOrb.class)) {
             if (orb.isRemoved()) continue;
             if (pos.distToCenterSqr(orb.getX(), orb.getY(), orb.getZ()) <= 1) {
+                if (fuel >= limit) continue;
                 // 1.21.1's ordinary public save data stores the merged count separately from getValue().
                 var saved = new CompoundTag();
                 orb.addAdditionalSaveData(saved);

@@ -108,10 +108,13 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
         String biomeName = level.getBiome(worldPosition).unwrapKey()
                 .map(key -> key.location().toString()).orElse("");
 
-        if (biomeName.contains("river")) {
+        // 0.1.11.11: biome tags first ("deep" in the name also matched the Deep Dark); names only for untagged biomes
+        var biome = level.getBiome(worldPosition);
+        if (biome.is(net.minecraft.tags.BiomeTags.IS_RIVER) || biomeName.contains("river")) {
             isInValidBiome = true;
             currentBiomeType = BiomeType.RIVER;
-        } else if (biomeName.contains("ocean") || biomeName.contains("beach") || biomeName.contains("deep")) {
+        } else if (biome.is(net.minecraft.tags.BiomeTags.IS_OCEAN) || biome.is(net.minecraft.tags.BiomeTags.IS_BEACH)
+                || biomeName.contains("ocean") || biomeName.contains("beach")) {
             isInValidBiome = true;
             currentBiomeType = BiomeType.OCEAN;
         } else {

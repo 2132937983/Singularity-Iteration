@@ -61,18 +61,19 @@ public class mio_icif_advanced_drop_generator extends AbstractEnergyBlockEntity 
             return;
         }
 
-        blockEntity.scanAndConsumeItems(level, pos);
+        // 0.1.11.11: the shared collector (merged orbs counted, at most 64 entities a tick) and nothing taken while the
+        // storage is full or the fuel is well stocked (it ate every drop around it for nothing before)
+        if (level instanceof net.minecraft.server.level.ServerLevel server) blockEntity.fuel = blockEntity.scexCollector.items(server, pos, SCAN_RANGE, blockEntity.fuel, stack -> blockEntity.getItemValue(stack.getRarity()), blockEntity.fuelLimit());
 
         boolean wasWorking = blockEntity.isWorking;
         blockEntity.isWorking = blockEntity.fuel > 0 &&
                 blockEntity.energyStorage.getAmount() < blockEntity.energyStorage.getCapacity();
 
-        if (blockEntity.fuel > 0 && com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(blockEntity) > 0 &&
-                blockEntity.energyStorage.getAmount() < blockEntity.energyStorage.getCapacity()) {
-            long energyGenerated = Math.min(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, PRODUCTION),   // 0.1.8.4
-
-                    blockEntity.energyStorage.getCapacity() - blockEntity.energyStorage.getAmount());
-            blockEntity.energyStorage.generateEnergyInternal(energyGenerated, false);
+        long room = blockEntity.energyStorage.getCapacity() - blockEntity.energyStorage.getAmount();
+        long tickEu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, PRODUCTION);   // 0.1.8.4
+        // 0.1.11.11: a tick of fuel only when its whole output fits (a part was lost before)
+        if (blockEntity.fuel > 0 && tickEu > 0 && room >= tickEu) {
+            blockEntity.energyStorage.generateEnergyInternal(tickEu, false);
             blockEntity.fuel--;
         }
 
@@ -84,12 +85,18 @@ public class mio_icif_advanced_drop_generator extends AbstractEnergyBlockEntity 
         com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
+    /** 0.1.11.11: take no more fuel while the storage is full or {@value #FUEL_STOCK} is already stocked. */
+    private static final int FUEL_STOCK = 10000;
+    private int fuelLimit() {
+        return energyStorage.getAmount() >= energyStorage.getCapacity() ? 0 : FUEL_STOCK;
+    }
+
     private void scexTickStoredFuel(Level level, BlockPos pos) {
         if (!(level instanceof net.minecraft.server.level.ServerLevel server) || !server.getServer().isSameThread()) return;
         int previousFuel = fuel;
         long previousCredit = scexFuelCredit;
         if (com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this) == 0) return;                      // 0.1.8.4: switched off in the config
-        fuel = scexCollector.items(server, pos, SCAN_RANGE, fuel, stack -> getItemValue(stack.getRarity()));
+        fuel = scexCollector.items(server, pos, SCAN_RANGE, fuel, stack -> getItemValue(stack.getRarity()), fuelLimit());
         var step = com.miophas.singularity_iteration.core.runtime.energy.StoredFuelGeneration.tick(energyStorage, fuel, scexFuelCredit,
             com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, PRODUCTION));   // 0.1.8.4 output multiplier
         fuel = Math.toIntExact(step.fuelRemaining());
@@ -142,8 +149,9 @@ public class mio_icif_advanced_drop_generator extends AbstractEnergyBlockEntity 
     private int getItemValue(Rarity rarity) {
         if (rarity == Rarity.COMMON) return 40;
         if (rarity == Rarity.UNCOMMON) return 800;
-        if (rarity == Rarity.EPIC) return 10000;
-        if (rarity == Rarity.RARE) return 20000;
+        // 0.1.11.11: epic above rare (they were the other way round)
+        if (rarity == Rarity.RARE) return 10000;
+        if (rarity == Rarity.EPIC) return 20000;
         return 40;
     }
 

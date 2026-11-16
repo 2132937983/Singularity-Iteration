@@ -180,6 +180,17 @@ public abstract class mio_icif_generator_menu extends mio_icif_base_menu {
         return false;
     }
 
+    /**
+     * 0.1.11.11: whether an item holds a fluid the machine burns, through the item's fluid capability (buckets, cells and
+     * other mods' containers alike). The menus accepted only this mod's buckets and cells, while the blocks (and hoppers)
+     * took any container.
+     */
+    protected static boolean holdsFluid(ItemStack stack, java.util.function.Predicate<net.minecraft.world.level.material.Fluid> accepts) {
+        if (stack.isEmpty()) return false;
+        return net.neoforged.neoforge.fluids.FluidUtil.getFluidContained(stack)
+            .map(f -> !f.isEmpty() && accepts.test(f.getFluid())).orElse(false);
+    }
+
     protected void addUpgradeSlot(int index, int x, int y) {
         super.addUpgradeSlot(itemHandler, index, x, y);
     }

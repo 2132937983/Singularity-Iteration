@@ -169,12 +169,13 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity impleme
         int filled = lavaTank.fill(bucketFluid, IFluidHandler.FluidAction.EXECUTE);
         if (filled >= LAVA_PER_BUCKET) {
             // 消耗岩浆桶/单元
-            lavaBucketStack.shrink(1);
+            // 0.1.11.11: written through the slots (changing the live stacks bypassed the handler)
+            itemHandler.setStackInSlot(LAVA_BUCKET_SLOT, lavaBucketStack.copyWithCount(lavaBucketStack.getCount() - 1));
             // 添加空桶/空单元到空桶输出槽
             if (emptyBucketStack.isEmpty()) {
                 itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyContainer);
             } else {
-                emptyBucketStack.grow(1);
+                itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyBucketStack.copyWithCount(emptyBucketStack.getCount() + 1));
             }
             setChanged();
         }

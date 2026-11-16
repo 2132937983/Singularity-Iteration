@@ -41,7 +41,7 @@ public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity impleme
     // 当前配置
     private int production;
     private int tier;
-    private boolean active = false;
+    private boolean active = true;   // 0.1.11.11: on (nothing could ever switch it on, so it never made any energy)
 
     public mio_icif_QuantumGenerator(BlockPos pos, BlockState state) {
         this(pos, state, null);
@@ -227,8 +227,9 @@ public class mio_icif_QuantumGenerator extends AbstractEnergyBlockEntity impleme
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         production = tag.getInt("Production");
-        tier = tag.getInt("Tier");
-        active = tag.getBoolean("Active");
+        tier = Math.max(1, Math.min(14, tag.getInt("Tier")));
+        energyStorage.setMaxExtract(getCableTierFromIndex(tier - 1).powerRating);   // 0.1.11.11: the saved tier's output limit
+        active = true;   // 0.1.11.11: saves before it say false (it could never be switched on)
     }
 
     @Override

@@ -36,7 +36,7 @@ public class GeoGeneratorMenu extends mio_icif_generator_menu {
         this.addSlot(new SlotItemHandler(itemHandler, LAVA_BUCKET_SLOT, 27, 21) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                boolean isLavaContainer = stack.is(Items.LAVA_BUCKET) || mio_icif_cells.isCellContainingFluid(stack, Fluids.LAVA);
+                boolean isLavaContainer = stack.is(Items.LAVA_BUCKET) || mio_icif_cells.isCellContainingFluid(stack, Fluids.LAVA) || holdsFluid(stack, f -> f.isSame(Fluids.LAVA));
                 if (!isLavaContainer) return false;
                 if (!itemHandler.isItemValid(LAVA_BUCKET_SLOT, stack)) return false;
                 int amount = blockEntity instanceof mio_icif_geo_generator gen ? gen.getLavaAmount() : getLavaAmount();
@@ -55,7 +55,7 @@ public class GeoGeneratorMenu extends mio_icif_generator_menu {
     public int getLavaCapacity() { return data.get(3); }
 
     protected boolean isValidFuel(ItemStack stack) {
-        return stack.is(Items.LAVA_BUCKET) || mio_icif_cells.isCellContainingFluid(stack, Fluids.LAVA);
+        return stack.is(Items.LAVA_BUCKET) || mio_icif_cells.isCellContainingFluid(stack, Fluids.LAVA) || holdsFluid(stack, f -> f.isSame(Fluids.LAVA));
     }
 
     @Override

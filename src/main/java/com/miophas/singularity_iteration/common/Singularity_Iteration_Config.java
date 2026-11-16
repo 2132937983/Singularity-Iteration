@@ -476,11 +476,14 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
 
     private static final ModConfigSpec.Builder REPRESSURIZER_BUILDER = BUILDER.push("SteamRepressurizer");
     public static final ModConfigSpec.IntValue REPRESSURIZER_STEAM_OUTPUT = REPRESSURIZER_BUILDER
-        .comment("Output ordinary steam (mB) per 10 mB steam + 1 HU; IC2 default: 16")
-        .defineInRange("steamPerSteam", 16, 1, 10000);
+        .comment("Output ordinary steam (mB) per 10 mB steam + 1 HU. At most 10 since 0.1.11.11: input and output are the same",
+                 "steam here, so more than went in multiplied steam (and energy) when repressurizers were chained (IC2 used 16",
+                 "because it converted into another mod's steam)")
+        .defineInRange("steamPerSteam", 10, 1, 10);
     public static final ModConfigSpec.IntValue REPRESSURIZER_SUPERHEATED_OUTPUT = REPRESSURIZER_BUILDER
-        .comment("Output ordinary steam (mB) per 10 mB superheated steam + 1 HU; IC2 default: 32")
-        .defineInRange("steamPerSuperSteam", 32, 1, 10000);
+        .comment("Output ordinary steam (mB) per 10 mB superheated steam + 1 HU. At most 20 since 0.1.11.11 (superheated steam",
+                 "costs twice the heat of steam; more made energy from nothing; IC2 used 32)")
+        .defineInRange("steamPerSuperSteam", 20, 1, 20);
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder REPRESSURIZER_POP = BUILDER.pop();
 

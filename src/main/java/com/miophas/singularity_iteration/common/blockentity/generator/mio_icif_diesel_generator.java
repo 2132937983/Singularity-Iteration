@@ -155,11 +155,12 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity imple
         if (fuelTank.fill(new FluidStack(dieselFluid, FUEL_PER_BUCKET), IFluidHandler.FluidAction.SIMULATE) < FUEL_PER_BUCKET) return;
         int filled = fuelTank.fill(new FluidStack(dieselFluid, FUEL_PER_BUCKET), IFluidHandler.FluidAction.EXECUTE);
         if (filled >= FUEL_PER_BUCKET) {
-            fuelBucketStack.shrink(1);
+            // 0.1.11.11: written through the slots (changing the live stacks bypassed the handler)
+            itemHandler.setStackInSlot(FUEL_BUCKET_SLOT, fuelBucketStack.copyWithCount(fuelBucketStack.getCount() - 1));
             if (emptyBucketStack.isEmpty()) {
                 itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyContainer);
             } else {
-                emptyBucketStack.grow(1);
+                itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyBucketStack.copyWithCount(emptyBucketStack.getCount() + 1));
             }
             setChanged();
             if (level != null && !level.isClientSide()) {
@@ -200,7 +201,10 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity imple
             long energyToCharge = Math.min(batteryChargeRate, batteryMaxEnergy - currentEnergy);
             energyToCharge = Math.min(energyToCharge, availableEnergy);
 
-            long energyExtracted = storage.useEnergy(energyToCharge, false);
+            // 0.1.11.11: take only what the item accepts (the rest was lost)
+            long accepts = itemAPI.chargeBattery(chargeStack, energyToCharge, true);
+            if (accepts <= 0) return;
+            long energyExtracted = storage.useEnergy(accepts, false);
             itemAPI.chargeBattery(chargeStack, energyExtracted, false);
             setChanged();
         }
@@ -225,7 +229,10 @@ public class mio_icif_diesel_generator extends GenericGeneratorBlockEntity imple
         IEnergyStorageAccess storage = blockEntity.getEnergyStorage();
         boolean isEnergyFull = storage.getAmount() >= storage.getCapacity();
 
-        if (!isEnergyFull && blockEntity.outputScale() > 0 && blockEntity.fuelTank.getFluidAmount() >= FUEL_CONSUME_PER_TICK) {
+        long tickEu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, ENERGY_GENERATION_RATE);   // 0.1.8.4
+        // 0.1.11.11: a tick's fuel only when its whole output fits (near full it drained 16 mB for a part of it)
+        if (!isEnergyFull && tickEu > 0 && storage.getCapacity() - storage.getAmount() >= tickEu
+                && blockEntity.fuelTank.getFluidAmount() >= FUEL_CONSUME_PER_TICK) {
             blockEntity.fuelTank.drain(FUEL_CONSUME_PER_TICK, IFluidHandler.FluidAction.EXECUTE);
             long energyToGenerate = Math.min(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, ENERGY_GENERATION_RATE), storage.getCapacity() - storage.getAmount());   // 0.1.8.4
             if (energyToGenerate > 0) {

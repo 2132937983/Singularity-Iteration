@@ -57,6 +57,8 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
 
     private int burnTime = 0;
     private long scexHeatCredit;
+    /** 0.1.11.11: the fuel the credit came from (not saved: after a reload an empty tank drops its last few HU). */
+    private SemifluidFuels.HeatValue lastHeatValue;
     private int maxBurnTime = 0;
     private boolean isWorking = false;
 
@@ -115,6 +117,9 @@ public class mio_icif_fluid_heat_generator extends com.miophas.singularity_itera
         boolean previousWorking = isWorking;
         FluidStack fuel = fuelTank.getFluid();
         SemifluidFuels.HeatValue value = fuel.isEmpty() ? null : SemifluidFuels.heatValue(fuel.getFluid());
+        // 0.1.11.11: the heat of the last mB drawn is still sent out when the tank has just run dry (it was erased)
+        if (value == null && scexHeatCredit > 0 && lastHeatValue != null) value = lastHeatValue;
+        if (value != null) lastHeatValue = value;
         if (value == null) {
             isWorking = false;
             burnTime = 0;

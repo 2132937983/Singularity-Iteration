@@ -34,8 +34,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * IC2 2.8.221 steam repressurizer: 10 mB input + 1 HU per batch, producing
- * 16 / 32 mB ordinary steam. Heat is drawn on demand from all six neighbours.
+ * IC2 2.8.221 steam repressurizer: 10 mB input + 1 HU per batch, producing ordinary steam. 0.1.11.11: at most
+ * 10 / 20 mB (was 16 / 32): IC2 converted into another mod's steam, but here the output is the same steam as the input,
+ * so a chain of repressurizers multiplied steam and made energy from nothing. Heat is drawn on demand from all six neighbours.
  * IC2's external registered "steam" output is mapped to this mod's ordinary steam.
  */
 @SuppressWarnings("null")

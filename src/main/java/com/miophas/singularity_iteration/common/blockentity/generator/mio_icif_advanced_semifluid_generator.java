@@ -118,11 +118,12 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
         if (fuelTank.fill(new FluidStack(mio_icif_fluids.BIOGAS.get(), FUEL_PER_BUCKET), IFluidHandler.FluidAction.SIMULATE) < FUEL_PER_BUCKET) return;
         int filled = fuelTank.fill(new FluidStack(mio_icif_fluids.BIOGAS.get(), FUEL_PER_BUCKET), IFluidHandler.FluidAction.EXECUTE);
         if (filled >= FUEL_PER_BUCKET) {
-            fuelBucketStack.shrink(1);
+            // 0.1.11.11: written through the slots (changing the live stacks bypassed the handler)
+            itemHandler.setStackInSlot(FUEL_BUCKET_SLOT, fuelBucketStack.copyWithCount(fuelBucketStack.getCount() - 1));
             if (emptyBucketStack.isEmpty()) {
                 itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyContainer);
             } else {
-                emptyBucketStack.grow(1);
+                itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyBucketStack.copyWithCount(emptyBucketStack.getCount() + 1));
             }
             setChanged();
             if (level != null && !level.isClientSide()) {
@@ -242,12 +243,7 @@ public class mio_icif_advanced_semifluid_generator extends AbstractGeneratorBloc
 
         if (blockEntity.isBurning()) {
             if (isEnergyFull) {
-                blockEntity.burnTime--;
-                if (blockEntity.burnTime <= 0) {
-                    blockEntity.burnTime = 0;
-                    blockEntity.currentFuelBurning = 0;
-                    blockEntity.currentFuelEnergyGenerated = 0;
-                }
+                // 0.1.11.11: the fire waits while the storage is full (the rest of the bucket burnt away for nothing)
             } else {
                 blockEntity.burnTime--;
 

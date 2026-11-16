@@ -121,8 +121,10 @@ public class mio_icif_MetsSolarGeneratorBase extends AbstractGeneratorBlockEntit
     }
 
     public float calculateSkyLight(Level level, BlockPos pos) {
-        if (!level.dimensionType().hasSkyLight()) {
-            return minSkyBrightness;
+        // 0.1.11.11: no sky (the Nether, the End), no output; and the panel must see the sky straight up (with the raw
+        // sky light a one-block roof open at the sides still gave 14/15, and a buried panel in the Nether gave the night rate)
+        if (!level.dimensionType().hasSkyLight() || !level.canSeeSky(pos)) {
+            return 0.0F;
         }
 
         float sunBrightness = calculateSunBrightness(level);
@@ -193,7 +195,10 @@ public class mio_icif_MetsSolarGeneratorBase extends AbstractGeneratorBlockEntit
                 if (availableEnergy <= 0) continue;
                 long energyToCharge = Math.min(batteryChargeRate, batteryMaxEnergy - currentEnergy);
                 energyToCharge = Math.min(energyToCharge, availableEnergy);
-                long energyExtracted = apiExtractEnergy(energyToCharge, false);
+                // 0.1.11.11: take only what the item accepts (the rest was lost)
+                long accepts = api.chargeBattery(chargeStack, energyToCharge, true);
+                if (accepts <= 0) continue;
+                long energyExtracted = apiExtractEnergy(accepts, false);
                 api.chargeBattery(chargeStack, energyExtracted, false);
                 setChanged();
             }

@@ -50,15 +50,18 @@ public class SteamTunnelPowerPortBlockEntity extends AbstractEnergyBlockEntity i
         SteamTunnelBlockEntity tunnel = port.tunnel();
         boolean formed = tunnel != null;
         long packets = formed ? Math.max(PACKETS, Math.min(MAX_PACKETS, (tunnel.maxEuPerTick() + PACKET - 1) / PACKET)) : PACKETS;
-        if (formed != port.sourceRole) {
-            port.sourceRole = formed;
+        // 0.1.11.11: an unformed port stays a source until the EU already in it has gone out (it was stranded there,
+        // and lost when the port was broken)
+        boolean source = formed || port.apiGetStoredEnergy() > 0;
+        if (source != port.sourceRole) {
+            port.sourceRole = source;
             port.packets = packets;
-            if (formed) port.setAsPowerSource(PACKET);
+            if (source) port.setAsPowerSource(PACKET);
             else port.setAsConsumer();
-            port.getEnergyStorageInternal().setMaxExtract(formed ? port.rate() : 0);
+            port.getEnergyStorageInternal().setMaxExtract(source ? port.rate() : 0);
             port.setChanged();
             IndependentSiEnergy.changed(port);   // republish its faces: source <-> nothing
-        } else if (formed && !port.isPowerSource()) {
+        } else if (source && !port.isPowerSource()) {
             port.setAsPowerSource(PACKET);       // restored from a save
         }
         if (!formed) return;

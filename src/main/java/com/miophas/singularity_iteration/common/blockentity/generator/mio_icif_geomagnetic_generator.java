@@ -113,6 +113,14 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
         return false;
     }
 
+    /** 0.1.11.11: EU made on the last tick (the screen and the energy terminal showed the 30720 rating). */
+    private long lastGenerated;
+
+    @Override
+    public long getPowerOutput() {
+        return lastGenerated;
+    }
+
     private float getMagneticSource() {
         // 0.1.10.7: a field of 0 is cached as well (before, a generator with no field read up to
         // 20 blocks below it every tick)
@@ -120,12 +128,15 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
             return lastSourceValue;
         }
         float source = 1.0f;
+        // 0.1.11.11: measured from the bottom of the world (the old worlds started at Y 0; below 0 this went negative and
+        // the whole deepslate layer gave nothing)
+        int bottom = level.getMinBuildHeight();
         int seaLevelDelta = getBlockPos().getY() - level.getSeaLevel();
         if (seaLevelDelta < 0) {
-            source = (float) getBlockPos().getY() / (float) (level.getSeaLevel() + 1);
+            source = (float) (getBlockPos().getY() - bottom) / (float) (level.getSeaLevel() + 1 - bottom);
         }
 
-        int baseDelta = (getBlockPos().getY() >= 20) ? 20 : getBlockPos().getY();
+        int baseDelta = Math.min(20, getBlockPos().getY() - bottom);
         int airBlockCount = 0;
         for (int i = 0; i < baseDelta; i++) {
             BlockState tempState = level.getBlockState(getBlockPos().below(i));
@@ -226,6 +237,9 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
         IEnergyStorageAccess storage = blockEntity.getEnergyStorage();
         boolean isEnergyFull = storage.getAmount() >= storage.getCapacity();
 
+        // 0.1.11.11: "running" only on a tick that made energy (burnTime stayed 1 for good after the first one)
+        blockEntity.burnTime = 0;
+        blockEntity.lastGenerated = 0;
         if (blockEntity.shouldMachineWork && !isEnergyFull) {
             float ratio = blockEntity.getMagneticSource();
             ratio *= blockEntity.cachedBiomeMultiplier();
@@ -236,6 +250,7 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
                 long energyToGenerate = Math.min(scaledGeneration, storage.getCapacity() - storage.getAmount());
                 if (energyToGenerate > 0) {
                     storage.generateEnergy(energyToGenerate, false);
+                    blockEntity.lastGenerated = energyToGenerate;
                 }
                 blockEntity.burnTime = 1;
                 blockEntity.burnDuration = 1;

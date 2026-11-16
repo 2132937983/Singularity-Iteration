@@ -223,7 +223,16 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
         if(--m.cycleRemaining<0){m.cycleRemaining=19;m.dropUnfittingComponents();if(!m.operational())return;m.operate();}
         if(!m.live())return;
         m.syncOutputGate();m.updateActive();
+        m.oldGridGenerate();
         if(m.live())m.dirty();
+    }
+    /** 0.1.11.11: the old grid (independent network off) pulls from the storage, so the reactor fills it at its rate each tick. */
+    private double oldGridCarry;
+    private void oldGridGenerate(){
+        if(energyStorage.scexNetworkControlled()||!exportAllowed())return;
+        double v=rate.toDouble()+oldGridCarry;long whole=(long)Math.floor(v);oldGridCarry=v-whole;
+        long room=ENERGY_CAPACITY-energyStorage.getAmount();if(whole>room){whole=room;oldGridCarry=0;}
+        if(whole>0)energyStorage.generateEnergyInternal(whole,false);
     }
     /**
      * 对齐 IC2 {@code dropAllUnfittingStuff()}：每个循环开始时弹出所有不再适用的元件，
@@ -615,10 +624,11 @@ public class mio_icif_nuclear_reactor_generator extends AbstractGeneratorBlockEn
     @Override public void setRemoved(){closeAccess();super.setRemoved();IndependentSiEnergy.changed(this);}
     @Override public void clearRemoved(){ready=false;cycleVerified=false;energyStorage.setOutputEnabled(false);super.clearRemoved();IndependentSiEnergy.changed(this);}
     @Override public void onChunkUnloaded(){closeAccess();super.onChunkUnloaded();IndependentSiEnergy.changed(this);}
-    @Override public double getOfferedEnergy(){return 0;}
-    @Override public void drawEnergy(double amount){}
-    @Override public boolean emitsEnergyTo(IEnergyAcceptor acceptor,Direction side){return false;}
-    public long extractPowerForConsumer(long amount,boolean simulate){return 0;}
+    // 0.1.11.11: the old grid takes the stored energy (it made none before); the independent network keeps the demand path above
+    @Override public double getOfferedEnergy(){return energyStorage.scexNetworkControlled()||!exportAllowed()?0:Math.min(super.getOfferedEnergy(),MAX_EXTRACT);}
+    @Override public void drawEnergy(double amount){if(!energyStorage.scexNetworkControlled())super.drawEnergy(amount);}
+    @Override public boolean emitsEnergyTo(IEnergyAcceptor acceptor,Direction side){return !energyStorage.scexNetworkControlled()&&exportAllowed()&&super.emitsEnergyTo(acceptor,side);}
+    public long extractPowerForConsumer(long amount,boolean simulate){return energyStorage.scexNetworkControlled()||!exportAllowed()?0:energyStorage.extract(Math.min(amount,MAX_EXTRACT),simulate);}
     public int getPacketCount(){return MAX_PACKETS;}   // 0.1.10.38: was 1 (8192 EU/t at most)
     @Override public int getSourceTier(){return 5;}
     @Override public long getPowerOutput(){return MAX_EXTRACT;}

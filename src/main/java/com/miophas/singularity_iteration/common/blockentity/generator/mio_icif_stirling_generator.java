@@ -130,11 +130,19 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         }catch(RuntimeException problem){if(uncertainHu>0){failure=problem.getClass().getName();dirty();}}
         finally{acquiring=false;}
     }
+    private double oldGridCarry;
     private void credit(long hu){
-        var value=eu(hu);var got=energy.scexGenerateEnergy(value,false);
+        var value=eu(hu);
         double m=com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);
-        // a scaled ratio rounds the last EU fraction: only the stock 2 HU = 1 EU ratio is exact
-        if(!got.equals(value)&&m==1.0)throw new IllegalStateException("Owned HU exceeds reserved EU capacity");
+        if(energy.scexNetworkControlled()){
+            var got=energy.scexGenerateEnergy(value,false);
+            // a scaled ratio rounds the last EU fraction: only the stock 2 HU = 1 EU ratio is exact
+            if(!got.equals(value)&&m==1.0)throw new IllegalStateException("Owned HU exceeds reserved EU capacity");
+        }else{
+            // 0.1.11.11: the old grid (independent network off) has whole EU only; the fraction is carried. This path threw before.
+            double v=value.toDouble()+oldGridCarry;long whole=(long)Math.floor(v);oldGridCarry=v-whole;
+            if(whole>0)energy.generateEnergyInternal(whole,false);
+        }
         frameHu+=hu;generatedFrame+=hu;if(hu>0){generatedAt=level.getGameTime();lastOutput=Math.round(generatedFrame/2.0*m);}dirty();
     }
     /**
@@ -171,9 +179,17 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
             level.setBlock(pos,actual.setValue(mio_icif_block_stirling_generator.ACTIVE,active),3);
     }
     @Override public void setLevel(Level level){super.setLevel(level);energy.setBlockContext(level,worldPosition);}
-    @Override public void onLoad(){super.onLoad();if(energy.scexNetworkControlled())IndependentSiEnergy.changed(this);}
-    @Override public void setRemoved(){super.setRemoved();IndependentSiEnergy.changed(this);}
-    @Override public void clearRemoved(){super.clearRemoved();if(energy.scexNetworkControlled())IndependentSiEnergy.changed(this);}
+    private boolean oldGridRegistered;
+    private void oldGrid(boolean load){
+        if(level==null||level.isClientSide||energy.scexNetworkControlled()||oldGridRegistered==load)return;
+        oldGridRegistered=load;
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(load
+            ?new com.miophas.singularity_iteration.core.api.energy.grid.EnergyTileLoadEvent(this,level)
+            :new com.miophas.singularity_iteration.core.api.energy.grid.EnergyTileUnloadEvent(this,level));
+    }
+    @Override public void onLoad(){super.onLoad();if(energy.scexNetworkControlled())IndependentSiEnergy.changed(this);else oldGrid(true);}
+    @Override public void setRemoved(){oldGrid(false);super.setRemoved();IndependentSiEnergy.changed(this);}
+    @Override public void clearRemoved(){super.clearRemoved();if(energy.scexNetworkControlled())IndependentSiEnergy.changed(this);else oldGrid(true);}
     public CustomEUEnergyStorage getEnergyStorage(){return energy;}
     public IEUEnergyStorage getEnergyStorageCapability(Direction side){return side==input()?null:energy;}
     // 基类按构造参数 (capacity=20000, maxReceive=1000, maxExtract=0) 已给出正确语义：
@@ -192,10 +208,11 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
     public boolean hasLegacyHold(){return !legacyHold.isEmpty();}
     public long extractPowerForConsumer(long request,boolean simulate){return live()?energy.extract(request,simulate):0;}
     // ABI retained; all actual grid traffic belongs to IndependentSiEnergy.
-    @Override public double getOfferedEnergy(){return 0;}
-    @Override public void drawEnergy(double amount){}
+    // 0.1.11.11: the old grid (independent network off) takes the stored EU; it made no output there before
+    @Override public double getOfferedEnergy(){return energy.scexNetworkControlled()||!live()?0:Math.min(energy.getAmount(),128);}
+    @Override public void drawEnergy(double amount){if(!energy.scexNetworkControlled()&&amount>0)energy.extract((long)amount,false);}
     @Override public int getSourceTier(){return CableTier.MV.getTier();}
-    @Override public boolean emitsEnergyTo(IEnergyAcceptor acceptor,Direction side){return false;}
+    @Override public boolean emitsEnergyTo(IEnergyAcceptor acceptor,Direction side){return !energy.scexNetworkControlled()&&side!=input();}
     @Override public CableTier getCableTier(){return CableTier.MV;}
     @Override public boolean isBurning(){return isWorking();}
     @Override public int getBurnTime(){return 0;}

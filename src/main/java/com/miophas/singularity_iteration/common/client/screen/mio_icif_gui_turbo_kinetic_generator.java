@@ -42,7 +42,7 @@ public class mio_icif_gui_turbo_kinetic_generator extends mio_icif_screen<com.mi
             int energyProgressPixels = menu.getEnergyProgressPixels();
             drawKineticEnergyBar(guiGraphics, x + ENERGY_BAR_X, y + ENERGY_BAR_Y, energyProgressPixels);
 
-            String infoText = Component.translatable("gui.mio_icif.turbo_kinetic_generator.efficiency", 85).getString();
+            String infoText = Component.translatable("gui.mio_icif.turbo_kinetic_generator.efficiency", menu.getEfficiencyPercent()).getString();
             // the read-out box spans x 42..136 on gui_kinetic_generator.png
             drawFitted(guiGraphics, this.font, Component.literal(infoText), x + INFO_TEXT_X, y + INFO_TEXT_Y, 94, INFO_TEXT_COLOR, true);
         }

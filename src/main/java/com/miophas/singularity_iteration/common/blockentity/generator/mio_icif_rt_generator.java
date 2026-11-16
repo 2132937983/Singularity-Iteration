@@ -220,12 +220,10 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
         super.loadAdditional(tag, registries);
         this.cachedPelletCount = tag.getInt("CachedPelletCount");
         this.currentGenerationRate = tag.getLong("CurrentGenerationRate");
-        if (energyStorage.scexNetworkControlled()) {
-            // Inventory is authoritative after loading, including older SI caches.
-            // Recompute on the next server tick without consuming or replacing fuel.
-            this.cachedPelletCount = -1;
-            this.currentGenerationRate = 0;
-        }
+        // Inventory is authoritative after loading, including older SI caches: recompute on the next server tick without
+        // consuming or replacing fuel. 0.1.11.11: in both energy modes (a save from the other mode kept its rate table).
+        this.cachedPelletCount = -1;
+        this.currentGenerationRate = 0;
     }
 
     // ==================== MenuProvider 接口实现 ====================

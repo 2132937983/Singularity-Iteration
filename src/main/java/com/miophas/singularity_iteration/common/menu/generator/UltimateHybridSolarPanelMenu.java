@@ -80,7 +80,7 @@ public class UltimateHybridSolarPanelMenu extends mio_icif_generator_menu {
 
     @Override
     protected boolean isBattery(ItemStack stack) {
-        return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.normal.mio_icif_bat;
+        return com.miophas.singularity_iteration.core.api.MioIcifAPI.instance().getItemAPI().isBattery(stack);   // 0.1.11.11: any chargeable item, as the block takes
     }
 
     public boolean isDaytimeGeneration() {

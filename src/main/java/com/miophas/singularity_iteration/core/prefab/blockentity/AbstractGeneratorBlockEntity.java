@@ -734,10 +734,8 @@ protected static final int CHARGE_SLOT = 1;
         if (stack.isEmpty()) return ItemStack.EMPTY;
         int toRemove = Math.min(amount, stack.getCount());
         ItemStack result = stack.copyWithCount(toRemove);
-        stack.shrink(toRemove);
-        if (stack.isEmpty()) {
-            itemHandler.setStackInSlot(slot, ItemStack.EMPTY);
-        }
+        // 0.1.11.11: written through the slot (shrinking the live stack bypassed the handler's change notice)
+        itemHandler.setStackInSlot(slot, stack.getCount() > toRemove ? stack.copyWithCount(stack.getCount() - toRemove) : ItemStack.EMPTY);
         return result;
     }
 

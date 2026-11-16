@@ -207,12 +207,13 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity i
         int filled = fuelTank.fill(content, IFluidHandler.FluidAction.EXECUTE);
         if (filled >= content.getAmount()) {
             // 消耗燃料桶/单元
-            fuelBucketStack.shrink(1);
+            // 0.1.11.11: written through the slots (changing the live stacks bypassed the handler)
+            itemHandler.setStackInSlot(FUEL_BUCKET_SLOT, fuelBucketStack.copyWithCount(fuelBucketStack.getCount() - 1));
             // 添加空桶/空单元到空桶输出槽
             if (emptyBucketStack.isEmpty()) {
                 itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyContainer);
             } else {
-                emptyBucketStack.grow(1);
+                itemHandler.setStackInSlot(EMPTY_BUCKET_SLOT, emptyBucketStack.copyWithCount(emptyBucketStack.getCount() + 1));
             }
             setChanged();
             // 通知客户端更新方块实体数据

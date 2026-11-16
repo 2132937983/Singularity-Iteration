@@ -16,7 +16,8 @@ import org.jetbrains.annotations.Nullable;
     private static final int DATA_MAX_KINETIC = 3;
     private static final int DATA_IS_WORKING = 4;
     private static final int DATA_ENERGY_OUTPUT = 5;
-    private static final int DATA_COUNT = 6;
+    private static final int DATA_EFFICIENCY = 6;   // 0.1.11.11: EU per KU x100, live
+    private static final int DATA_COUNT = 7;
     private static final int SLOT_COUNT = 0;
 
     public TurboKineticGeneratorMenu(int containerId, Inventory playerInventory) {
@@ -64,6 +65,11 @@ import org.jetbrains.annotations.Nullable;
         return this.data.get(DATA_IS_WORKING) == 1;
     }
 
+    /** 0.1.11.11: the real rate in percent (the screen showed a fixed figure; other KU sources get a tenth of it). */
+    public int getEfficiencyPercent() {
+        return this.data.get(DATA_EFFICIENCY);
+    }
+
     public int getEnergyOutput() {
         return this.data.get(DATA_ENERGY_OUTPUT);
     }
@@ -93,6 +99,7 @@ import org.jetbrains.annotations.Nullable;
                 generator.isBurning(),
                 (int) generator.getLastProduction()
             );
+            this.data.set(DATA_EFFICIENCY, (int) Math.round(generator.getEuPerKu() * 100));
         }
         super.broadcastChanges();
     }

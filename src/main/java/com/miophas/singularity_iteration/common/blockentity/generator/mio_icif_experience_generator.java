@@ -60,18 +60,19 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
             return;
         }
 
-        blockEntity.scanAndConsumeOrbs(level, pos);
+        // 0.1.11.11: the shared collector (merged orbs counted, at most 64 entities a tick) and nothing taken while the
+        // storage is full or the fuel is well stocked (it ate every drop around it for nothing before)
+        if (level instanceof net.minecraft.server.level.ServerLevel server) blockEntity.fuel = blockEntity.scexCollector.experience(server, pos, SCAN_RANGE, blockEntity.fuel, blockEntity.fuelLimit());
 
         boolean wasWorking = blockEntity.isWorking;
         blockEntity.isWorking = blockEntity.fuel > 0 &&
                 blockEntity.energyStorage.getAmount() < blockEntity.energyStorage.getCapacity();
 
-        if (blockEntity.fuel > 0 && com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(blockEntity) > 0 &&
-                blockEntity.energyStorage.getAmount() < blockEntity.energyStorage.getCapacity()) {
-            long energyGenerated = Math.min(com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, PRODUCTION),   // 0.1.8.4
-
-                    blockEntity.energyStorage.getCapacity() - blockEntity.energyStorage.getAmount());
-            blockEntity.energyStorage.generateEnergyInternal(energyGenerated, false);
+        long room = blockEntity.energyStorage.getCapacity() - blockEntity.energyStorage.getAmount();
+        long tickEu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(blockEntity, PRODUCTION);   // 0.1.8.4
+        // 0.1.11.11: a tick of fuel only when its whole output fits (a part was lost before)
+        if (blockEntity.fuel > 0 && tickEu > 0 && room >= tickEu) {
+            blockEntity.energyStorage.generateEnergyInternal(tickEu, false);
             blockEntity.fuel--;
         }
 
@@ -83,12 +84,18 @@ public class mio_icif_experience_generator extends AbstractEnergyBlockEntity imp
         com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
     }
 
+    /** 0.1.11.11: take no more fuel while the storage is full or {@value #FUEL_STOCK} is already stocked. */
+    private static final int FUEL_STOCK = 1000;
+    private int fuelLimit() {
+        return energyStorage.getAmount() >= energyStorage.getCapacity() ? 0 : FUEL_STOCK;
+    }
+
     private void scexTickStoredFuel(Level level, BlockPos pos) {
         if (!(level instanceof net.minecraft.server.level.ServerLevel server) || !server.getServer().isSameThread()) return;
         int previousFuel = fuel;
         long previousCredit = scexFuelCredit;
         if (com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this) == 0) return;                      // 0.1.8.4: switched off in the config
-        fuel = scexCollector.experience(server, pos, SCAN_RANGE, fuel);
+        fuel = scexCollector.experience(server, pos, SCAN_RANGE, fuel, fuelLimit());
         var step = com.miophas.singularity_iteration.core.runtime.energy.StoredFuelGeneration.tick(energyStorage, fuel, scexFuelCredit,
             com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, PRODUCTION));   // 0.1.8.4 output multiplier
         fuel = Math.toIntExact(step.fuelRemaining());

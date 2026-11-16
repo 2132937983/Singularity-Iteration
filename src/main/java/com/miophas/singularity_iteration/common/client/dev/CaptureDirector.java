@@ -2024,6 +2024,79 @@ public final class CaptureDirector {
         client(10, () -> Minecraft.getInstance().stop());
     }
 
+    /**
+     * Scene "holo" (-Dsi.capture.scene=holo), 0.1.11.5: the tactical holomap in three places (open yard, by a wall, inside a
+     * roofed bunker with a lava pool and a pit) with creatures above, below, behind a wall and out of range. Shot at the
+     * enlarged holomap scale for before/after comparisons.
+     */
+    private static void sceneHolo() {
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            sp.setGameMode(GameType.SURVIVAL);
+            var bricks = net.minecraft.world.level.block.Blocks.STONE_BRICKS.defaultBlockState();
+            var stone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
+            var air = net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+            // open yard: an L wall and a tower (west), a pit with water (north)
+            for (int x = -9; x <= -3; x++) for (int y = -60; y <= -58; y++) level.setBlock(new BlockPos(x, y, -6), bricks, 3);
+            for (int z = -6; z <= -1; z++) for (int y = -60; y <= -58; y++) level.setBlock(new BlockPos(-9, y, z), bricks, 3);
+            for (int y = -60; y <= -54; y++) for (int x = 6; x <= 8; x++) for (int z = -5; z <= -3; z++) level.setBlock(new BlockPos(x, y, z), bricks, 3);
+            for (int x = -2; x <= 2; x++) for (int z = -10; z <= -7; z++) for (int y = -63; y <= -61; y++) level.setBlock(new BlockPos(x, y, z), air, 3);
+            level.setBlock(new BlockPos(0, -63, -9), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            // bunker at x 30..44, z -7..7: stone shell, roof at -55, a lava pool and a 3-deep pit inside, a ledge
+            for (int x = 30; x <= 44; x++) for (int z = -7; z <= 7; z++) {
+                level.setBlock(new BlockPos(x, -55, z), stone, 3);
+                for (int y = -60; y <= -56; y++) if (x == 30 || x == 44 || z == -7 || z == 7) level.setBlock(new BlockPos(x, y, z), stone, 3);
+            }
+            for (int y = -60; y <= -58; y++) level.setBlock(new BlockPos(30, y, 0), air, 3);   // doorway
+            for (int x = 39; x <= 41; x++) for (int z = 2; z <= 4; z++) level.setBlock(new BlockPos(x, -61, z), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState(), 3);
+            for (int x = 35; x <= 37; x++) for (int z = -5; z <= -3; z++) for (int y = -63; y <= -61; y++) level.setBlock(new BlockPos(x, y, z), air, 3);
+            for (int x = 41; x <= 43; x++) for (int z = -6; z <= -4; z++) for (int y = -60; y <= -58; y++) level.setBlock(new BlockPos(x, y, z), stone, 3);
+            for (int z = -2; z <= 2; z++) for (int y = -60; y <= -57; y++) level.setBlock(new BlockPos(38, y, z), bricks, 3);   // inner wall
+            look(sp, 0.5, -60, 0.5, 0, 20);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            suitUp(sp);
+            // yard creatures: a husk ahead, a wolf, a cow, a zombie on the tower (above), a skeleton in the pit (below), a far creeper
+            mob(level, net.minecraft.world.entity.EntityType.HUSK, 3.5, -60, 7.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.WOLF, 5.5, -60, 3.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.COW, -5.5, -60, 9.5, true, null);
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 7.5, -53, -3.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.SKELETON, 0.5, -63, -8.5, true, sp);
+            mob(level, net.minecraft.world.entity.EntityType.CREEPER, 0.5, -60, 19.5, true, sp);
+            // bunker creatures: a zombie behind the inner wall, a skeleton in the pit, a spider on the ledge
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 41.5, -60, 0.5, true, null);
+            mob(level, net.minecraft.world.entity.EntityType.SKELETON, 36.5, -63, -3.5, true, null);
+            mob(level, net.minecraft.world.entity.EntityType.SPIDER, 42.5, -57, -4.5, true, null);
+        });
+        client(5, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.hideGui = false;
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
+                com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.HOLOMAP_SCALE.set(1.8);
+        });
+        server(40, sp -> sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 0, 15));
+        shot(30, "holo/1_yard");
+        server(2, sp -> sp.teleportTo(sp.serverLevel(), -7.5, -60, -3.5, 300, 10));
+        shot(30, "holo/2_wall");
+        server(2, sp -> sp.teleportTo(sp.serverLevel(), 33.5, -60, 0.5, 270, 10));
+        shot(40, "holo/3_bunker");
+        client(1, () -> { if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.loaded())
+            com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.HOLOMAP_SCALE.set(1.0); });
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "holo".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneHolo();
+        }
+    }
+
     static {
         if (OUT != null && "14".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

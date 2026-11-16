@@ -515,4 +515,33 @@ public final class Round1153GameTests {
         p.discard();
         h.succeed();
     }
+
+    // ------------------------------------------------------------------ B5 (performance)
+
+    /** N-5: a burst of rotate clicks rebuilds the Blueprint Builder's plan once, after a short pause. */
+    @GameTest(template = "reactor_loop", timeoutTicks = 40)
+    public static void builderRebuildsOnceAfterABurst(GameTestHelper h) {
+        BlockEntity builder = place(h, "producer/block_blueprint_builder");
+        ServerPlayer p = player(h);
+        for (int i = 0; i < 3; i++) call(builder, "action", p, 3, 0);   // A_ROTATE
+        h.assertTrue((int) ArmoryServiceGameTests.field(builder, "rotation") == 3, "Each click turns the blueprint");
+        h.assertTrue((long) ArmoryServiceGameTests.field(builder, "rebuildAt") >= 0, "The rebuild waits");
+        h.runAfterDelay(8, () -> {
+            h.assertTrue((long) ArmoryServiceGameTests.field(builder, "rebuildAt") == -1, "The rebuild ran after the pause");
+            p.discard();
+            h.succeed();
+        });
+    }
+
+    /** N-4: grid readings need a meter in hand (or the suit's grid telemetry). */
+    @GameTest(template = "empty")
+    public static void meterReadingsNeedAMeter(GameTestHelper h) {
+        ServerPlayer p = player(h);
+        Class<?> packet = type(COMMON + "menu.tool.MeterHudPacket");
+        h.assertTrue((double) call(packet, "readingReach", p) == 0, "No reading without a meter or telemetry");
+        p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "item_tool_meter"))));
+        h.assertTrue((double) call(packet, "readingReach", p) == 16, "A meter in hand reads within 16 blocks");
+        p.discard();
+        h.succeed();
+    }
 }

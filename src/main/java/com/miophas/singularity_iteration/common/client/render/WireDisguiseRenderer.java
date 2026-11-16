@@ -41,6 +41,7 @@ public class WireDisguiseRenderer implements BlockEntityRenderer<mio_icif_wire> 
         if (!disguised) {
             return;
         }
+        if (DisguiseCulling.enclosed(level, blockEntity.getBlockPos())) return;   // 0.1.11.3: nothing of it can be seen
 
         poseStack.pushPose();
 

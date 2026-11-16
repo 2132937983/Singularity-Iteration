@@ -42,6 +42,7 @@ public class FoamEntityRenderer implements BlockEntityRenderer<mio_icif_block_fo
 
         Level level = blockEntity.getLevel();
         if (level == null) return;
+        if (DisguiseCulling.enclosed(level, blockEntity.getBlockPos())) return;   // 0.1.11.3: nothing of it can be seen
 
         BlockState disguisedState = disguisedBlock.defaultBlockState();
         int light = net.minecraft.client.renderer.LevelRenderer.getLightColor(level, blockEntity.getBlockPos());

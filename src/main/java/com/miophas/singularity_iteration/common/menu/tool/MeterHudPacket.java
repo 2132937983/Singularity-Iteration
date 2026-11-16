@@ -59,7 +59,10 @@ public final class MeterHudPacket {
             if (LAST.size() > 256) LAST.values().removeIf(t -> now - t > 1200 || t > now);   // players who left
             LAST.put(player.getUUID(), now);
             BlockPos pos = request.pos();
-            if (!level.isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > 64 * 64) return;
+            // 0.1.11.3: only with a meter in hand (reach 16) or the suit's grid telemetry (24, Mk.II 36). Any client could
+            // read the grids of other players through walls, within 64 blocks, without the tool.
+            double reach = readingReach(player);
+            if (reach <= 0 || !level.isLoaded(pos) || player.distanceToSqr(pos.getCenter()) > reach * reach) return;
             var be = level.getBlockEntity(pos);
             boolean network = NetworkWalker.isConductor(be) || NetworkWalker.isTransformer(be);
             if (be == null || (!network && NetworkWalker.categorize(be) == null)) return;
@@ -71,6 +74,15 @@ public final class MeterHudPacket {
                         r.conductors, r.devices.size(), reading.ratedPacket(), network));
             } catch (RuntimeException ignored) { }
         });
+    }
+
+    /** 0.1.11.3: the distance this player may read a grid from (0 = not at all). */
+    static double readingReach(ServerPlayer player) {
+        if (player.getMainHandItem().getItem() instanceof com.miophas.singularity_iteration.core.api.item.IEUMeterItem
+                || player.getOffhandItem().getItem() instanceof com.miophas.singularity_iteration.core.api.item.IEUMeterItem) return 16;
+        int telemetry = com.miophas.singularity_iteration.common.suit.SuitModules.tier(player,
+            com.miophas.singularity_iteration.common.suit.SuitModuleType.GRID_TELEMETRY);
+        return telemetry >= 2 ? 38 : telemetry == 1 ? 26 : 0;
     }
 
     public static void handleReply(Reply reply, IPayloadContext context) {

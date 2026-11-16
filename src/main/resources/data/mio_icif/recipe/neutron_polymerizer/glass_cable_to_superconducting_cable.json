@@ -8,5 +8,10 @@
     "count": 1
   },
   "processingtime": 1500,
-  "energyPerTick": 1536
+  "energyPerTick": 1536,
+  "process": {
+    "kind": "structure",
+    "density_from": 2.5,
+    "density_to": 6.0
+  }
 }

@@ -2275,6 +2275,85 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "poly" (-Dsi.capture.scene=poly), 0.1.11.8: the Particle Polymerizer screen. Iron ingots on a chain to neutron
+     * plate, shot in each of the three steps (the job progress is set directly, a step takes 75 s), then coal to diamond,
+     * then idle.
+     */
+    private static void scenePoly() {
+        BlockPos at = new BlockPos(0, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(at, block("producer/block_neutron_polymerizer").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+            polyInput(sp, at, new ItemStack(net.minecraft.world.item.Items.IRON_INGOT, 16));
+        });
+        server(5, sp -> openAt(sp, at));
+        server(2, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_neutron_polymerizer p) {
+                p.cycleTarget();
+                p.cycleTarget();                                                    // nano living metal, then neutron plate
+            }
+        });
+        polyFeed(at, 50);
+        polyJob(at, 600);
+        polyFeed(at, 6);
+        shot(1, "poly/1_chain_step1");
+        polyJob(at, 1500 + 800);
+        polyFeed(at, 6);
+        shot(1, "poly/2_chain_step2");
+        polyJob(at, 3000 + 1100);
+        polyFeed(at, 25);
+        shot(1, "poly/3_neutron_plate");
+        server(1, sp -> polyInput(sp, at, new ItemStack(net.minecraft.world.item.Items.COAL, 16)));
+        polyFeed(at, 4);
+        polyJob(at, 900);
+        polyFeed(at, 6);
+        shot(1, "poly/4_coal_diamond");
+        server(1, sp -> polyInput(sp, at, ItemStack.EMPTY));
+        polyFeed(at, 20);
+        shot(1, "poly/5_idle");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static void polyInput(net.minecraft.server.level.ServerPlayer sp, BlockPos at, ItemStack stack) {
+        if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_neutron_polymerizer p
+                && p.getItemHandler() instanceof net.neoforged.neoforge.items.IItemHandlerModifiable h)
+            h.setStackInSlot(p.getSlotLayout().getInputSlots()[0], stack);
+    }
+
+    /** Sets the job progress (a step takes 1500 ticks; the scene jumps through them). */
+    private static void polyJob(BlockPos at, double ticks) {
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_neutron_polymerizer p) {
+                try {
+                    var f = p.getClass().getDeclaredField("jobProgress");
+                    f.setAccessible(true);
+                    f.setDouble(p, ticks);
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        });
+    }
+
+    private static void polyFeed(BlockPos at, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (sp.serverLevel().getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(2_304_000L);
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "poly".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scenePoly();
+        }
+    }
+
     static {
         if (OUT != null && "pump".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

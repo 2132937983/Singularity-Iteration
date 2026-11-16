@@ -12,8 +12,21 @@ import net.minecraft.world.level.Level;
 @SuppressWarnings("null")
 public class NeutronPolymerizerRecipe extends AbstractSingleInputRecipe<mio_icif_SingleItemRecipeInput> {
 
+    /** 0.1.11.8: what the recipe does physically ({@link PolymerizerProcess}); only the screen and the radiation read it. */
+    private final PolymerizerProcess process;
+
     public NeutronPolymerizerRecipe(String group, Ingredient ingredient, ItemStack result, int processingTime, int energyPerTick, float experience) {
+        this(group, ingredient, result, processingTime, energyPerTick, experience, PolymerizerProcess.UNKNOWN);
+    }
+
+    public NeutronPolymerizerRecipe(String group, Ingredient ingredient, ItemStack result, int processingTime, int energyPerTick, float experience,
+                                    PolymerizerProcess process) {
         super(group, ingredient, result, processingTime, energyPerTick);
+        this.process = process == null ? PolymerizerProcess.UNKNOWN : process;
+    }
+
+    public PolymerizerProcess getProcess() {
+        return process;
     }
 
     @Override

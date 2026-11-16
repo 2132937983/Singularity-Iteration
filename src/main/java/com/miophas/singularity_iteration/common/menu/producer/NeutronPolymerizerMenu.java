@@ -17,12 +17,12 @@ public class NeutronPolymerizerMenu extends mio_icif_machine_menu {
 
     public static final int SLOT_COUNT = 7;
 
-    private static final int INPUT_X = 56;
-    private static final int INPUT_Y = 17;
-    private static final int BATTERY_X = 56;
-    private static final int BATTERY_Y = 53;
-    private static final int OUTPUT_X = 116;
-    private static final int OUTPUT_Y = 35;
+    /** 0.1.11.8: 248 x 212 with the implosion-photography window; input, energy and output on the left. */
+    public static final int GUI_WIDTH = 248, GUI_HEIGHT = 212;
+    public static final int INPUT_X = 10, INPUT_Y = 29;
+    public static final int OUTPUT_X = 10, OUTPUT_Y = 81;
+    public static final int BATTERY_X = 10, BATTERY_Y = 112;
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 130, HOTBAR_Y = 188;
     private static final int UPGRADE_X = 152;
     private static final int[] UPGRADE_Y = {8, 26, 44, 62};
 
@@ -37,7 +37,7 @@ public class NeutronPolymerizerMenu extends mio_icif_machine_menu {
         super(mio_icif_menus.NEUTRON_POLYMERIZER_MENU_TYPE.get(), containerId, SLOT_COUNT,
             playerInventory,
             blockEntity != null ? (IItemHandler) blockEntity.getItemHandler() : null,
-            null, 5, blockEntity);
+            blockEntity != null ? blockEntity.getContainerData() : null, mio_icif_neutron_polymerizer.DATA_COUNT, blockEntity);
 
         this.access = ContainerLevelAccess.create(playerInventory.player.level(),
             blockEntity != null ? blockEntity.getBlockPos() : playerInventory.player.blockPosition());
@@ -60,7 +60,7 @@ public class NeutronPolymerizerMenu extends mio_icif_machine_menu {
 
         addInputSlot(inputSlot, INPUT_X, INPUT_Y);
         addBatterySlot(batterySlot, BATTERY_X, BATTERY_Y);
-        this.addSlot(new LargeSlot(itemHandler, outputSlots[0], OUTPUT_X, OUTPUT_Y, 26, 26));
+        this.addSlot(new LargeSlot(itemHandler, outputSlots[0], OUTPUT_X, OUTPUT_Y, 16, 16));
         for (int i = 0; i < upgradeSlots.length; i++) {
             addUpgradeSlot(upgradeSlots[i], UPGRADE_X, UPGRADE_Y[i]);
         }
@@ -117,18 +117,29 @@ public class NeutronPolymerizerMenu extends mio_icif_machine_menu {
             true);
     }
 
+    /** Synced value {@code i} (see {@code mio_icif_neutron_polymerizer.getContainerData}). */
+    public int value(int i) {
+        return this.data.get(i);
+    }
+
+    /** Button 0: the next chain target. */
     @Override
-    public void broadcastChanges() {
-        super.broadcastChanges();
-        if (blockEntity != null) {
-            this.setSyncData(0, blockEntity.getProgress());
-            this.setSyncData(1, blockEntity.getMaxProgress());
-            this.setSyncData(2, blockEntity.isWorking() ? 1 : 0);
-            int energy = (int) blockEntity.getEnergyStorage().getAmount();
-            int maxEnergy = (int) blockEntity.getEnergyStorage().getCapacity();
-            this.setSyncData(3, energy);
-            this.setSyncData(4, maxEnergy);
-        }
+    public boolean clickMenuButton(Player player, int id) {
+        if (id != 0 || blockEntity == null || !stillValid(player)) return false;
+        return blockEntity.cycleTarget();
+    }
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
     }
 
     public static class LargeSlot extends SlotItemHandler {

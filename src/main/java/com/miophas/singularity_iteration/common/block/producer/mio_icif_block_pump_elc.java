@@ -141,28 +141,12 @@ public class mio_icif_block_pump_elc extends mio_icif_entity_block {
     }
 
     /**
-     * Gets the analog output signal strength for redstone comparators.
-     * The signal is based on the inventory fill level and the stored fluid amount.
+     * 0.1.11.7: comparator output. Pumping: the share of the pool still there (15 for a pool that refills itself or is
+     * too large to count). Discharging: the share of the basin already full. See {@link mio_icif_pump_elc#comparatorSignal}.
      */
     @Override
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof mio_icif_pump_elc pump) {
-            // Calculate the inventory fill level.
-            var handler = pump.getItemHandler();
-            int totalSlots = handler.getSlots();
-            int filledSlots = 0;
-            for (int i = 0; i < totalSlots; i++) {
-                if (!handler.getStackInSlot(i).isEmpty()) {
-                    filledSlots++;
-                }
-            }
-            // 物品栏占50%权重，流体储量占50%权重
-            int itemSignal = (filledSlots * 7) / totalSlots; // 0-7
-            int fluidSignal = (pump.getFluidAmount() * 8) / pump.getFluidCapacity(); // 0-8
-            return Math.min(15, itemSignal + fluidSignal);
-        }
-        return 0;
+        return level.getBlockEntity(pos) instanceof mio_icif_pump_elc pump ? pump.comparatorSignal() : 0;
     }
 
     /**

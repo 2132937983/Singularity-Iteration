@@ -2189,6 +2189,99 @@ public final class CaptureDirector {
         });
     }
 
+    /**
+     * Scene "pump" (-Dsi.capture.scene=pump), 0.1.11.7: the pump screen. A lava pool deeper in the middle is surveyed and
+     * drained (keep level set), then turned into water (an infinite pool), then a second pump discharges lava into a pit.
+     */
+    private static void scenePump() {
+        BlockPos pump = new BlockPos(6, -61, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            for (int z = 4; z <= 12; z++) {
+                int depth = 1 + (z >= 6 && z <= 10 ? 1 : 0) + (z >= 7 && z <= 9 ? 1 : 0);
+                for (int x = 3; x <= 9; x++) for (int y = -61; y > -61 - depth; y--)
+                    level.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.LAVA.defaultBlockState(), 3);
+            }
+            level.setBlock(pump, block("producer/block_pump_elc").defaultBlockState()
+                .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.SOUTH), 3);
+            sp.teleportTo(level, 6.5, -60, -1.5, 0, 30);
+        });
+        server(5, sp -> openAt(sp, pump));
+        pumpFeed(pump, 60);
+        shot(1, "pump/1_lava_pool");
+        server(1, sp -> {
+            if (sp.serverLevel().getBlockEntity(pump) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_pump_elc p)
+                for (int i = 0; i < 4; i++) p.handleButton(5);                     // keep 40 buckets
+        });
+        pumpFeed(pump, 240);
+        shot(1, "pump/2_lava_draining");
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            // the same basin, refilled with water (lava left in it would turn to obsidian where the water touches it)
+            for (int z = 4; z <= 12; z++) {
+                int depth = 1 + (z >= 6 && z <= 10 ? 1 : 0) + (z >= 7 && z <= 9 ? 1 : 0);
+                for (int x = 3; x <= 9; x++) for (int y = -61; y > -61 - depth; y--)
+                    level.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+            }
+            for (int z = 4; z <= 12; z++) {
+                int depth = 1 + (z >= 6 && z <= 10 ? 1 : 0) + (z >= 7 && z <= 9 ? 1 : 0);
+                for (int x = 3; x <= 9; x++) for (int y = -61; y > -61 - depth; y--)
+                    level.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            }
+        });
+        pumpFeed(pump, 160);
+        shot(1, "pump/3_water_infinite");
+        // a second pump pours lava into an empty pit (lava does not spread into new sources, so the fill stays visible)
+        BlockPos pump2 = new BlockPos(24, -60, 6);
+        server(2, sp -> {
+            var level = sp.serverLevel();
+            sp.closeContainer();
+            for (int x = 21; x <= 27; x++) for (int z = 4; z <= 8; z++) for (int y = -61; y >= -63; y--)
+                level.setBlock(new BlockPos(x, y, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+            level.setBlock(pump2, block("producer/block_pump_elc").defaultBlockState()
+                .setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, Direction.DOWN), 3);
+            if (level.getBlockEntity(pump2) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_pump_elc p) {
+                p.handleButton(0);
+                p.handleButton(8);
+                p.getFluidHandler().fill(new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.LAVA, 8000),
+                    net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            }
+            sp.teleportTo(level, 24.5, -60, 1.5, 0, 30);
+        });
+        server(5, sp -> openAt(sp, pump2));
+        pumpFeed(pump2, 120);
+        shot(1, "pump/4_discharge");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static void openAt(net.minecraft.server.level.ServerPlayer sp, BlockPos at) {
+        var level = sp.serverLevel();
+        var hit = new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), Direction.NORTH, at, false);
+        level.getBlockState(at).useWithoutItem(level, sp, hit);
+    }
+
+    /** Keeps the pump's small buffer full for {@code ticks} ticks. */
+    private static void pumpFeed(BlockPos at, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                if (sp.serverLevel().getBlockEntity(at) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(20);
+                // a pipe that takes the pumped fluid away (the tank never fills up and stalls the pump)
+                if (sp.serverLevel().getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_pump_elc p
+                        && !p.discharging())
+                    p.getFluidHandler().drain(8000, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "pump".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scenePump();
+        }
+    }
+
     static {
         if (OUT != null && "mt".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

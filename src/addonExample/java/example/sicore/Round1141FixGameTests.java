@@ -269,9 +269,11 @@ public final class Round1141FixGameTests {
         double dieselMb = num(diesel, "FUEL_CONSUME_PER_TICK"), dieselEu = num(diesel, "ENERGY_GENERATION_RATE");
         expected.put("generator_block_diesel_generator", List.of(n(dieselMb) + " mB/t → " + n(dieselEu) + " EU/t (" + n(dieselEu / dieselMb) + " EU/mB)"));
         String water = "generator.mio_icif_water_generator";
-        double tank = num(water, "ENERGY_PER_BUCKET") / num(water, "WATER_PER_BUCKET"), face = num(water, "WATER_FACE_GENERATION");
-        expected.put("generator_block_water_generator", List.of("1 mB/t → " + n(tank) + " EU/t (" + n(tank) + " EU/mB)", "+" + n(face) + " EU/t",
-            "up to " + n(tank + face) + " EU/t"));
+        double tank = num(water, "ENERGY_PER_BUCKET") / num(water, "WATER_PER_BUCKET"), face = num(water, "WATER_FACE_GENERATION"),
+            faceMax = num(water, "MAX_FACE_GENERATION");
+        // 0.1.11.18: the water in front gives 2 EU/t at an average current, up to 4 (WaterPhysics)
+        expected.put("generator_block_water_generator", List.of("1 mB/t → " + n(tank) + " EU/t (" + n(tank) + " EU/mB)",
+            n(face) + " EU/t at an average current, up to " + n(faceMax) + " EU/t", "up to " + n(tank + faceMax) + " EU/t"));
         String turbine = "generator.mio_icif_steam_turbine";
         double steamPerEu = num(turbine, "STEAM_PER_EU"), turbineEu = num(turbine, "MAX_OUTPUT");
         expected.put("generator_block_steam_turbine", List.of(n(steamPerEu * turbineEu) + " mB/t → " + n(turbineEu) + " EU/t (" + n(steamPerEu) + " mB per EU)",

@@ -208,7 +208,7 @@ public class mio_icif_screens {
         // 注册水力发电机的 GUI 界面
         event.register(
             mio_icif_menus.WATER_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_water_generator::new
+            WaterGeneratorScreen::new   // 0.1.11.18
         );
 
         // 注册半流质发电机的GUI 界面
@@ -296,7 +296,7 @@ public class mio_icif_screens {
         // 注册水力动能发生机的 GUI 界面
         event.register(
             mio_icif_menus.WATER_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_water_kinetic_generator::new
+            WaterRotorScreen::new   // 0.1.11.18: rotor cross-section
         );
 
         // 注册斯特林动能发生机的GUI 界面

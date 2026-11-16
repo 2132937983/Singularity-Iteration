@@ -61,6 +61,12 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
     private long currentEnergyOutput = 0L;
     // 面前是否有水
     private boolean hasWaterInFront = false;
+    /** 0.1.11.18: EU/t from the water in front: 2 x v^3 of its speed (WaterPhysics), 0..4; and that speed. */
+    private int faceOutput;
+    private double faceSpeed;
+    public static final int MAX_FACE_GENERATION = 4;
+    public int getFaceOutput() { return faceOutput; }
+    public double getFaceSpeed() { return faceSpeed; }
 
     /**
      * 构造函数（用于 BlockEntityType.Builder）
@@ -88,6 +94,11 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
         if (!level.isLoaded(frontPos)) { this.hasWaterInFront = false; return; }
         BlockState frontState = level.getBlockState(frontPos);
         this.hasWaterInFront = frontState.is(Blocks.WATER);
+        // 0.1.11.18: the water's speed sets the output (a river, the tide, a canal or a waterfall; still water gives nothing)
+        var src = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSource(level, pos);
+        double biome = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSpeed(level, pos, src);
+        faceSpeed = hasWaterInFront ? com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.cellSpeed(level, frontPos, facing, biome) : 0;
+        faceOutput = (int) Math.min(MAX_FACE_GENERATION, Math.round(WATER_FACE_GENERATION * faceSpeed * faceSpeed * faceSpeed));
     }
 
     /**
@@ -130,7 +141,7 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
         // 检查面前是否有水，产生微量电力
         checkWaterInFront(level, pos, state);
         if (hasWaterInFront) {
-            output += WATER_FACE_GENERATION;
+            output += faceOutput;
         }
 
         // 如果有水在水槽中，根据水量发电
@@ -153,7 +164,7 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
             long room = energyStorage.scexExactAmount().roomBelow(energyStorage.getCapacity()).whole();
             var step = com.miophas.singularity_iteration.core.runtime.energy.engine.ConsumableGeneration.plan(waterAmount, scexBufferedWaterEnergy,
                 com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, ENERGY_PER_BUCKET / WATER_PER_BUCKET), com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, 4), room,
-                hasWaterInFront ? com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, WATER_FACE_GENERATION) : 0);   // 0.1.8.4 output multiplier
+                hasWaterInFront && faceOutput > 0 ? com.miophas.singularity_iteration.common.energy.GeneratorOutput.rate(this, faceOutput) : 0);   // 0.1.8.4 output multiplier
             if (step.generated() > 0) {
                 long generated = apiGenerateEnergy(step.generated(), false);
                 if (generated != step.generated()) throw new IllegalStateException("Stable water-generation capacity changed");
@@ -173,7 +184,7 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
             apiGenerateEnergy(energyGenerated, false);
 
             // 消耗水（如果是从水槽发电）
-            if (waterAmount > 0 && currentEnergyOutput > WATER_FACE_GENERATION) {
+            if (waterAmount > 0 && currentEnergyOutput > (hasWaterInFront ? faceOutput : 0)) {
                 waterAmount = Math.max(0, waterAmount - 1);
             }
         }

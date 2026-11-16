@@ -2348,6 +2348,50 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "water" (-Dsi.capture.scene=water), 0.1.11.18: the water kinetic generator's rotor cross-section with a
+     * waterfall pouring through its disc (three stones in it), and the water generator under a second waterfall.
+     */
+    private static void sceneWater() {
+        BlockPos rotor = new BlockPos(0, -57, 6), gen = new BlockPos(6, -60, 6);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(rotor, facing(block("kugenerator/block_water_kinetic_generator").defaultBlockState(), Direction.NORTH), 3);
+            if (level.getBlockEntity(rotor) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Water_Kinetic_Generator w)
+                w.setRotorStack(new net.minecraft.world.item.ItemStack(BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("mio_icif", "rotors/item_iron_rotor"))));
+            // a waterfall over the disc (z = 5, x -3..3, y -60..-54): sources above it, stones in three cells
+            for (int x = -3; x <= 3; x++) level.setBlock(new BlockPos(x, -53, 5), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            for (int x = -3; x <= 3; x++) level.setBlock(new BlockPos(x, -52, 5), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+            for (BlockPos stone : new BlockPos[]{new BlockPos(2, -56, 5), new BlockPos(3, -56, 5), new BlockPos(2, -57, 5)})
+                level.setBlock(stone, net.minecraft.world.level.block.Blocks.STONE.defaultBlockState(), 3);
+            level.setBlock(gen, facing(block("generator/block_water_generator").defaultBlockState(), Direction.NORTH), 3);
+            level.setBlock(gen.north().above(3), net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            if (level.getBlockEntity(gen) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_water_generator g)
+                g.getItemHandler().insertItem(0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.WATER_BUCKET), false);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 2.5, -55, 1.5, 0, 20);   // flying above the spreading water (it pushed the player out of reach)
+        });
+        server(100, sp -> {});
+        server(1, sp -> openAt(sp, rotor));
+        server(50, sp -> {});
+        shot(1, "water/1_rotor_waterfall");
+        server(1, sp -> openAt(sp, gen));
+        server(50, sp -> {});
+        shot(1, "water/2_water_generator");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "water".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWater();
+        }
+    }
+
+    /**
      * Scene "stirling" (-Dsi.capture.scene=stirling), 0.1.11.17: the Stirling and shaft mimic screens. A Stirling generator
      * in air, an advanced Stirling generator with water beside it, a Stirling kinetic generator driving a kinetic generator,
      * and a turbo kinetic generator with nothing in front.

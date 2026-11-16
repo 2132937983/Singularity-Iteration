@@ -62,6 +62,11 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
     private boolean isInValidBiome = false;
     private boolean isInNaturalWater = false;
     private BiomeType currentBiomeType = BiomeType.NONE;
+    /** 0.1.11.18: the last scan of the rotor's disc, the current's source and speed, and the wake factor. */
+    private WaterPhysics.Disc disc;
+    private WaterPhysics.Source source = WaterPhysics.Source.NONE;
+    private double biomeSpeed, wakeFactor = 1;
+    private int meanOutput;
     private long lastVisualSyncTick = Long.MIN_VALUE;
     private ItemStack lastVisualRotor = ItemStack.EMPTY;
     private int lastVisualOutput;
@@ -148,37 +153,49 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
             }
         }
 
-        isInNaturalWater = connectedWaterCount >= 2;
+        // 0.1.11.18: the block in front must be water; how much of the disc is water now sets the output (WaterPhysics)
+        isInNaturalWater = true;
     }
 
+    /**
+     * 0.1.11.18: the power of the flow through the rotor's disc (WaterPhysics): a river's steady current, an ocean's tide
+     * or the flowing water of a canal, over the cells of the disc that are water, less the wake of a rotor in front. The
+     * block in front must be water. It was a four-peak cosine of the time of day in rivers and oceans, whatever the water.
+     */
     private int calculateKineticOutput() {
         IKineticRotor rotor = getRotor();
         ItemStack rotorStack = getRotorStack();
-
-        if (rotor == null) {
-            return 0;
+        disc = null;
+        wakeFactor = 1;
+        meanOutput = 0;
+        if (rotor == null || level == null) return 0;
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
+        BlockPos front = worldPosition.relative(facing);
+        WaterPhysics.Source biome = WaterPhysics.biomeSource(level, worldPosition);
+        biomeSpeed = WaterPhysics.biomeSpeed(level, worldPosition, biome);
+        int diameter = Math.min(WaterPhysics.MAX_DIAMETER, rotor.getDiameter(rotorStack));
+        disc = WaterPhysics.scan(level, front, facing, diameter, biomeSpeed);
+        source = biome != WaterPhysics.Source.NONE ? biome : disc.cubes() > 0 ? WaterPhysics.Source.CANAL : WaterPhysics.Source.NONE;
+        meanOutput = WaterPhysics.meanOutput(diameter, source);
+        if (!isInNaturalWater) return 0;
+        // the wake of a rotor in line in front of this one, facing the same way
+        for (int k = 2; k <= WaterPhysics.WAKE_RANGE; k++) {
+            BlockPos at = worldPosition.relative(facing, k);
+            if (!level.isLoaded(at)) break;
+            if (level.getBlockEntity(at) instanceof mio_icif_Water_Kinetic_Generator other && other.getRotor() != null
+                    && other.getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING) == facing) {
+                wakeFactor = 1 - WaterPhysics.wakeDeficit(k, other.getRotor().getDiameter(other.getRotorStack()));
+                break;
+            }
         }
-
-        if (!isInValidBiome) {
-            return 0;
-        }
-
-        if (!isInNaturalWater) {
-            return 0;
-        }
-
-        // Calculate the kinetic output from the rotor diameter, the biome bonus and the time of day.
-        int diameter = rotor.getDiameter(rotorStack);
-        int amplitude = (diameter - 3) * 25 + currentBiomeType.amplitudeBonus;
-
-        long timeOfDay = level != null ? level.getDayTime() % 24000L : 0L;
-        double t = (double) timeOfDay;
-        double angle = (Math.PI / 3000.0) * t;
-        double cosValue = Math.cos(angle);
-        double kineticOutput = amplitude - amplitude * cosValue;
-
-        return (int) Math.round(kineticOutput);
+        double v3 = disc.power() * wakeFactor * wakeFactor * wakeFactor;
+        return (int) Math.round(meanOutput * v3);
     }
+
+    public WaterPhysics.Disc getDisc() { return disc; }
+    public WaterPhysics.Source getSource() { return source; }
+    public double getWakeFactor() { return wakeFactor; }
+    public int getMeanOutput() { return meanOutput; }
 
     private void damageRotor() {
         ItemStack rotorStack = getRotorStack();

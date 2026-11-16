@@ -14,6 +14,13 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings({"null"}) public class WaterKineticGeneratorMenu extends mio_icif_generator_menu {
+    /**
+     * 0.1.11.18: 0 KU stored, 1 KU capacity, 2 generating, 3 KU/t, 4 biome, 5 water in front, 6 rotor durability,
+     * 7 rotor max, 8 diameter, 9 source (WaterPhysics.Source), 10 mean speed of the water cells x1000, 11 water cells,
+     * 12 disc cells, 13 wake factor x1000, 14 moon phase, 15 day time, 16 mean output, 17 the current's speed x1000,
+     * 18.. the disc's cells (WaterPhysics.pack).
+     */
+    public static final int DATA_COUNT = 18 + com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.PACKED;
     public static final int SLOT_COUNT = 1;
     public static final int ROTOR_SLOT = 0;
 
@@ -26,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
     }
 
     public WaterKineticGeneratorMenu(int containerId, Inventory playerInventory, @Nullable IItemHandler itemHandler, @Nullable ContainerData data) {
-        super(mio_icif_menus.WATER_KINETIC_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, 8);
+        super(mio_icif_menus.WATER_KINETIC_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory, itemHandler, data, DATA_COUNT);
         addCustomMoveRule(
             stack -> stack.getItem() instanceof IKineticRotor,
             ROTOR_SLOT, ROTOR_SLOT + 1
@@ -35,7 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
     public WaterKineticGeneratorMenu(int containerId, Inventory playerInventory, @Nullable mio_icif_Water_Kinetic_Generator blockEntity) {
         super(mio_icif_menus.WATER_KINETIC_GENERATOR_MENU_TYPE.get(), containerId, SLOT_COUNT, playerInventory,
-            blockEntity != null ? blockEntity.getItemHandler() : null, null, 8, blockEntity);
+            blockEntity != null ? blockEntity.getItemHandler() : null, null, DATA_COUNT, blockEntity);
         addCustomMoveRule(
             stack -> stack.getItem() instanceof IKineticRotor,
             ROTOR_SLOT, ROTOR_SLOT + 1
@@ -85,13 +92,28 @@ import org.jetbrains.annotations.Nullable;
             setSyncData(5, generator.isInNaturalWater() ? 1 : 0);
             setSyncData(6, generator.getRotorDurability());
             setSyncData(7, generator.getRotorMaxDurability());
+            var disc = generator.getDisc();
+            var level = generator.getLevel();
+            setSyncData(8, disc == null ? 0 : disc.diameter());
+            setSyncData(9, generator.getSource().ordinal());
+            setSyncData(10, disc == null ? 0 : (int) Math.round(disc.meanSpeed() * 1000));
+            setSyncData(11, disc == null ? 0 : disc.waterCells());
+            setSyncData(12, disc == null ? 0 : disc.discCells());
+            setSyncData(13, (int) Math.round(generator.getWakeFactor() * 1000));
+            setSyncData(14, level == null ? 0 : level.getMoonPhase());
+            setSyncData(15, level == null ? 0 : (int) Math.floorMod(level.getDayTime(), 24000L));
+            setSyncData(16, generator.getMeanOutput());
+            setSyncData(17, level == null ? 0 : (int) Math.round(1000 * com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSpeed(
+                level, generator.getBlockPos(), generator.getSource())));
+            for (int i = 0; i < com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.PACKED; i++)
+                setSyncData(18 + i, disc == null ? 0 : com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.pack(disc.cells(), i));
         }
         super.broadcastChanges();
     }
 
     @Override
     protected void addMachineSlots() {
-        this.addSlot(new SlotItemHandler(itemHandler, ROTOR_SLOT, 80, 26) {
+        this.addSlot(new SlotItemHandler(itemHandler, ROTOR_SLOT, 10, 30) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 if (!(stack.getItem() instanceof IKineticRotor)) return false;
@@ -99,4 +121,22 @@ import org.jetbrains.annotations.Nullable;
             }
         });
     }
+
+    // 0.1.11.18: the 248 x 204 rotor cross-section screen
+    public static final int INVENTORY_X = 44, INVENTORY_Y = 122, HOTBAR_Y = 180;
+
+    @Override
+    protected int getPlayerInventoryY() { return INVENTORY_Y; }
+
+    @Override
+    protected int getPlayerHotbarY() { return HOTBAR_Y; }
+
+    @Override
+    protected void addPlayerInventory(Inventory playerInventory, int startY, int hotbarY) {
+        for (int i = 0; i < 3; ++i) for (int j = 0; j < 9; ++j)
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, j + i * 9 + 9, INVENTORY_X + j * 18, startY + i * 18));
+        for (int i = 0; i < 9; ++i) this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, i, INVENTORY_X + i * 18, hotbarY));
+    }
+
+    public int value(int i) { return data.get(i); }
 }

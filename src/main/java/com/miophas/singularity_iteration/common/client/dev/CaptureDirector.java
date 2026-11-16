@@ -2348,6 +2348,78 @@ public final class CaptureDirector {
     }
 
     /**
+     * Scene "stirling" (-Dsi.capture.scene=stirling), 0.1.11.17: the Stirling and shaft mimic screens. A Stirling generator
+     * in air, an advanced Stirling generator with water beside it, a Stirling kinetic generator driving a kinetic generator,
+     * and a turbo kinetic generator with nothing in front.
+     */
+    private static void sceneStirling() {
+        BlockPos basic = new BlockPos(0, -60, 3), advanced = new BlockPos(2, -60, 3), water = new BlockPos(2, -61, 3);   // a pit under it: no spreading
+        BlockPos kinetic = new BlockPos(-3, -60, 3), kgen = new BlockPos(-3, -60, 2), turbo = new BlockPos(-6, -60, 3);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.setBlock(basic, block("generator/block_stirling_generator").defaultBlockState(), 3);
+            level.setBlock(advanced, block("generator/block_advanced_stirling_generator").defaultBlockState(), 3);
+            level.setBlock(water, net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(), 3);
+            level.setBlock(kinetic, facing(block("kugenerator/block_stirling_kinetic_generator").defaultBlockState(), Direction.NORTH), 3);
+            level.setBlock(kgen, facing(block("generator/block_kinetic_generator").defaultBlockState(), Direction.SOUTH), 3);
+            level.setBlock(turbo, facing(block("generator/block_turbo_kinetic_generator").defaultBlockState(), Direction.NORTH), 3);
+            sp.teleportTo(level, 0.5, -60, 0.5, 0, 20);
+        });
+        stirlingRun(basic, advanced, kinetic, kgen, 400);
+        server(1, sp -> openAt(sp, basic));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/1_stirling_air");
+        server(1, sp -> openAt(sp, advanced));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/2_advanced_water");
+        server(1, sp -> openAt(sp, kinetic));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/3_kinetic");
+        server(1, sp -> openAt(sp, kgen));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/4_kinetic_generator");
+        server(1, sp -> openAt(sp, turbo));
+        stirlingRun(basic, advanced, kinetic, kgen, 30);
+        shot(1, "stirling/5_turbo_no_source");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /** Heat into the three engines, their storages drained, the kinetic engine's water topped up and hot water taken. */
+    private static void stirlingRun(BlockPos basic, BlockPos advanced, BlockPos kinetic, BlockPos kgen, int ticks) {
+        for (int i = 0; i < ticks; i++) {
+            server(1, sp -> {
+                var level = sp.serverLevel();
+                if (level.getBlockEntity(basic) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_stirling_generator s) {
+                    s.getHeatStorageCapability(null).receiveHeat(200, false);
+                    s.getEnergyStorage().setEnergy(0);
+                }
+                if (level.getBlockEntity(advanced) instanceof com.miophas.singularity_iteration.common.blockentity.generator.mio_icif_advanced_stirling_generator a) {
+                    var heat = a.getHeatStorageCapability(Direction.UP);
+                    if (heat != null) heat.receiveHeat(150, false);
+                    a.getEnergyStorage().setEnergy(0);
+                }
+                if (level.getBlockEntity(kinetic) instanceof com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.mio_icif_Stirling_Kinetic_Generator k) {
+                    var heat = k.getHeatStorageCapability(Direction.SOUTH);
+                    if (heat != null) heat.receiveHeat(400, false);
+                    k.getWaterTank().fill(new net.neoforged.neoforge.fluids.FluidStack(net.minecraft.world.level.material.Fluids.WATER, 2000),
+                        net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                    k.getHotWaterTank().drain(2000, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                }
+                if (level.getBlockEntity(kgen) instanceof AbstractEnergyBlockEntity e) e.getEnergyStorageInternal().setStored(0);
+            });
+        }
+    }
+
+    static {
+        if (OUT != null && "stirling".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneStirling();
+        }
+    }
+
+    /**
      * Scene "steam" (-Dsi.capture.scene=steam), 0.1.11.16: the plant mimic screens of the steam chain. A boiler above the
      * critical point feeds a steam turbine with a condenser beside it; a steam kinetic generator with a rotor drives a
      * kinetic generator, its exhaust into a second condenser; a repressurizer with superheated steam in it.

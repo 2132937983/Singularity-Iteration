@@ -19,6 +19,7 @@ item_ids:
 The machine converts kinetic energy (KU) from the block at its front face into EU.
 KU from wind or water kinetic generators converts at full efficiency.
 KU from other sources converts at a lower efficiency, still above the Kinetic Generator.
+The screen is a plant mimic: the KU source on the front, the shaft turning at its speed, the generator and the EU out, with the input load and the EU per KU.
 
 ## Power data
 

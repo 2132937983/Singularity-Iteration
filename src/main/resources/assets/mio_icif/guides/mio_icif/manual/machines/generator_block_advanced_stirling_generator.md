@@ -18,6 +18,9 @@ item_ids:
 
 The machine converts heat (HU) into EU at a higher ratio than the Stirling Generator.
 The machine draws heat from each adjacent heat generator whose front face points at it.
+The ratio below is the design point: heater 650 °C, cooler 40 °C. The engine's efficiency follows the Carnot efficiency between its heater and its cooler, from 40 % to 110 % of the design ratio. The heater gets hotter the more heat flows through it (650 °C at the rated flow, about 530 °C at a quarter of it), and a cold engine warms up over a few seconds. The cooler is the air of the biome (a desert is worse than a snowy plain); water touching the machine cools it to about 15 °C.
+The screen is a plant mimic: heat in, the engine with its heater and cooler temperatures, the flywheel, the generator and the EU out.
+Rated heat flow: 150 HU/t.
 
 ## Power data
 

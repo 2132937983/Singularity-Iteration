@@ -102,4 +102,51 @@ final class PlantMimic {
     static void shaft(GuiGraphics g, float x1, float y1, float x2, float y2) {
         FcsDraw.line(g, x1, y1, x2, y2, 1.6F, SHAFT);
     }
+
+    /** 0.1.11.17: shaft angle for a speed: one turn every 40 ticks at 1,500 rpm (slowed to be seen). */
+    static double angle(double time, double rpm) {
+        return time * Math.max(0, rpm) / 1500.0 * Math.PI / 20;
+    }
+
+    /** 0.1.11.17: a flywheel (a disc with four spokes) turned to {@code angle}. */
+    static void flywheel(GuiGraphics g, float cx, float cy, float r, double angle) {
+        FcsDraw.disc(g, cx, cy, r, 0xFFD5DAD8);
+        FcsDraw.circle(g, cx, cy, r, 0.6F, OUTLINE);
+        for (int k = 0; k < 4; k++) {
+            double a = angle + k * Math.PI / 2;
+            FcsDraw.line(g, cx, cy, cx + (float) Math.cos(a) * r, cy + (float) Math.sin(a) * r, 0.6F, OUTLINE);
+        }
+        FcsDraw.disc(g, cx, cy, 1.4F, OUTLINE);
+    }
+
+    /**
+     * 0.1.11.17: a Stirling engine standing at ({@code x}, {@code y}), 26 wide and 50 high: the heater head on top coloured
+     * by its temperature, the cylinder with the displacer and the power piston a quarter turn apart, the cooler at the
+     * bottom (fins in air, blue with water).
+     */
+    static void stirling(GuiGraphics g, float x, float y, double hot, double cold, boolean water, double angle, float u) {
+        box(g, x, y, 26, 11, colour(hot));
+        Component t = Component.literal(Math.round(hot) + "°");
+        PumpCrossSection.text(g, t, x + 13 - AsciiHud.width(t, u) / 2, y + 5.5F - 4 * u, 0xFFFFFF, u);
+        box(g, x + 3, y + 13, 20, 24, BODY);
+        float d = (float) (y + 15 + 7 * (1 + Math.sin(angle)) / 2), p = (float) (y + 25 + 7 * (1 + Math.sin(angle + Math.PI / 2)) / 2);
+        g.fill((int) x + 5, (int) d, (int) x + 21, (int) d + 3, 0xFF9AA3A6);
+        g.fill((int) x + 5, (int) p, (int) x + 21, (int) p + 4, OUTLINE);
+        box(g, x, y + 39, 26, 10, water ? 0xFFCFE0EF : 0xFFE6E9EA);
+        if (!water) for (int k = 0; k < 5; k++) g.fill((int) x + 3 + k * 5, (int) y + 40, (int) x + 4 + k * 5, (int) y + 49, 0xFF9AA3A6);
+        Component c = Component.literal(Math.round(cold) + "°");
+        PumpCrossSection.text(g, c, x + 13 - AsciiHud.width(c, u) / 2, y + 44 - 4 * u, 0x1C2524, u);
+    }
+
+    /** 0.1.11.17: a thermometer 0..{@code max} °C with a mark at {@code mark}. */
+    static void thermometer(GuiGraphics g, float x, float y, float h, double celsius, double max, double mark) {
+        g.fill((int) x - 1, (int) y - 1, (int) x + 5, (int) (y + h) + 1, OUTLINE);
+        g.fill((int) x, (int) y, (int) x + 4, (int) (y + h), 0xFFF4F6F4);
+        float f = (float) Math.max(0, Math.min(1, celsius / max));
+        WindRoseView.fill(g, x, y + h * (1 - f), 4, h * f, colour(celsius));
+        if (mark > 0) {
+            float m = (float) (y + h * (1 - mark / max));
+            g.fill((int) x - 2, (int) m, (int) x + 6, (int) m + 1, 0xFF2A5D8A);
+        }
+    }
 }

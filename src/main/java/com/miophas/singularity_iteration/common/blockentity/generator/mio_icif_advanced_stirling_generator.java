@@ -47,6 +47,15 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
     private static final int EU_PER_CONVERSION = 85;
 
     private long heatBuffer = 0;
+    /** 0.1.11.17: the heater and cooler (StirlingPhysics); rated flow 150 HU/t (about 128 EU/t at the design point). */
+    public static final double RATED_HU = 150;
+    private final com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head head = new com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head(RATED_HU);
+    private double euCarry;
+    private long lastHu;
+    public com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head head() { return head; }
+    public long getLastHu() { return lastHu; }
+    /** EU per HU now: 0.85 at the design point, times the heater factor and the output multiplier. */
+    public double ratio() { return 0.85 * head.factor() * com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this); }
     /** EU made by the last tick's conversion (shown as EU/t; was the EU value of all the buffered heat). */
     private long lastEu;
     private boolean isWorking = false;
@@ -93,6 +102,7 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
         blockEntity.receiveHeatFromSides();
 
         blockEntity.convertHeatToEnergy();
+        blockEntity.head.tick(level, pos, blockEntity.lastHu, false);   // 0.1.11.17
 
         boolean wasWorking = blockEntity.isWorking;
         blockEntity.isWorking = blockEntity.lastEu > 0;
@@ -185,10 +195,16 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
             setChanged();
         }
         lastEu = 0;
+        lastHu = 0;
         if (heatBuffer >= HU_PER_CONVERSION && energySpace >= EU_PER_CONVERSION) {
             long conversions = Math.min(heatBuffer / HU_PER_CONVERSION, energySpace / EU_PER_CONVERSION);
             heatBuffer -= conversions * HU_PER_CONVERSION;
-            long eu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(this, conversions * EU_PER_CONVERSION);   // 0.1.8.4 output multiplier
+            lastHu = conversions * HU_PER_CONVERSION;
+            // 0.1.11.17: 85 EU per 100 HU at the design point, times the heater factor (the fraction carried)
+            double made = conversions * EU_PER_CONVERSION * head.factor() + euCarry;
+            long whole = (long) Math.floor(made);
+            euCarry = made - whole;
+            long eu = com.miophas.singularity_iteration.common.energy.GeneratorOutput.eu(this, whole);   // 0.1.8.4 output multiplier
             if (network()) energyStorage.scexGenerateEnergy(com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount.of(eu), false);
             else energyStorage.generateEnergyInternal(eu, false);
             lastEu = eu;
@@ -299,11 +315,15 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
         tag.putLong("HeatBuffer", heatBuffer);
         tag.putLong("Energy", energyStorage.getAmount());
         tag.putBoolean("IsWorking", isWorking);
+        head.save(tag);
+        tag.putDouble("scex_eu_carry", euCarry);
     }
 
     @Override
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        head.load(tag);
+        euCarry = tag.getDouble("scex_eu_carry");
         if (tag.contains("HeatBuffer", net.minecraft.nbt.Tag.TAG_LONG)) {
             heatBuffer = tag.getLong("HeatBuffer");
         } else if (tag.contains("HeatBuffer", net.minecraft.nbt.Tag.TAG_INT)) {
@@ -326,7 +346,7 @@ public class mio_icif_advanced_stirling_generator extends AbstractHeatBlockEntit
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.generator.AdvancedStirlingGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
+        return new com.miophas.singularity_iteration.common.menu.generator.AdvancedStirlingGeneratorMenu(containerId, playerInventory, this);
     }
 
     @Override

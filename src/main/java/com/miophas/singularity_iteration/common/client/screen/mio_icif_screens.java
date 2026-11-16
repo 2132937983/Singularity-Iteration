@@ -35,6 +35,18 @@ public class mio_icif_screens {
         event.<M, EngineScreen<M>>register(type, EngineScreen::new);
     }
 
+    /** 0.1.11.17: the Stirling mimic (basic and advanced). */
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu> void stirling(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type) {
+        event.<M, StirlingScreen<M>>register(type, StirlingScreen::new);
+    }
+
+    /** 0.1.11.17: the shaft mimic of the kinetic generators. */
+    private static <M extends com.miophas.singularity_iteration.common.menu.generator.MimicGeneratorMenu> void shaft(
+            RegisterMenuScreensEvent event, net.minecraft.world.inventory.MenuType<M> type, boolean turbo) {
+        event.<M, ShaftScreen<M>>register(type, (m, inv, title) -> new ShaftScreen<>(m, inv, title, turbo));
+    }
+
     private static void registerMenuScreens(RegisterMenuScreensEvent event) {
         // 注册火力发电机的 GUI 界面
         // Toolbox: the menu was registered and opened by the item, but had no screen (0.1.7.36)
@@ -238,10 +250,7 @@ public class mio_icif_screens {
         );
 
         // 注册斯特林发电机的GUI 界面
-        event.register(
-            mio_icif_menus.STIRLING_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_stirling_generator::new
-        );
+        stirling(event, mio_icif_menus.STIRLING_GENERATOR_MENU_TYPE.get());   // 0.1.11.17: plant mimic
 
         event.register(
             mio_icif_menus.DROP_GENERATOR_MENU_TYPE.get(),
@@ -253,10 +262,7 @@ public class mio_icif_screens {
             mio_icif_gui_advanced_drop_generator::new
         );
 
-        event.register(
-            mio_icif_menus.ADVANCED_STIRLING_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_advanced_stirling_generator::new
-        );
+        stirling(event, mio_icif_menus.ADVANCED_STIRLING_GENERATOR_MENU_TYPE.get());
 
         engine(event, mio_icif_menus.ADVANCED_SEMIFLUID_GENERATOR_MENU_TYPE.get());   // 0.1.11.15: the engine room monitor
 
@@ -271,20 +277,9 @@ public class mio_icif_screens {
         );
 
         // 注册动能发电机的 GUI 界面
-        event.register(
-            mio_icif_menus.KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_kinetic_generator::new
-        );
-
-        event.register(
-            mio_icif_menus.TURBO_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_turbo_kinetic_generator::new
-        );
-
-        event.register(
-            mio_icif_menus.TWIN_TURBO_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_twin_turbo_kinetic_generator::new
-        );
+        shaft(event, mio_icif_menus.KINETIC_GENERATOR_MENU_TYPE.get(), false);   // 0.1.11.17: shaft mimic
+        shaft(event, mio_icif_menus.TURBO_KINETIC_GENERATOR_MENU_TYPE.get(), true);
+        shaft(event, mio_icif_menus.TWIN_TURBO_KINETIC_GENERATOR_MENU_TYPE.get(), true);
 
         // 注册电力动能机的 GUI 界面
         event.register(
@@ -305,10 +300,7 @@ public class mio_icif_screens {
         );
 
         // 注册斯特林动能发生机的GUI 界面
-        event.register(
-            mio_icif_menus.STIRLING_KINETIC_GENERATOR_MENU_TYPE.get(),
-            mio_icif_gui_stirling_kinetic_generator::new
-        );
+        event.register(mio_icif_menus.STIRLING_KINETIC_GENERATOR_MENU_TYPE.get(), StirlingKineticScreen::new);   // 0.1.11.17
 
         // 注册变压器的 GUI 界面
         event.register(

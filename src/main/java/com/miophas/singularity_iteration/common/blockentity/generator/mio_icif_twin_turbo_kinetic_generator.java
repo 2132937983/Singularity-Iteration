@@ -230,6 +230,9 @@ public class mio_icif_twin_turbo_kinetic_generator extends AbstractGeneratorBloc
         return lastProduction;
     }
 
+    /** 0.1.11.17: KU received in the last tick (the mimic screen). */
+    public int getLastKuInput() { return lastKuInputRate; }
+
     public double getEffectivePercent() {
         return effectivePercent;
     }
@@ -268,7 +271,7 @@ public class mio_icif_twin_turbo_kinetic_generator extends AbstractGeneratorBloc
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new com.miophas.singularity_iteration.common.menu.generator.TwinTurboKineticGeneratorMenu(containerId, playerInventory, this, this.getItemHandler(), null);
+        return new com.miophas.singularity_iteration.common.menu.generator.TwinTurboKineticGeneratorMenu(containerId, playerInventory, this);
     }
 
     @Override

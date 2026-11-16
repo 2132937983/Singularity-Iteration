@@ -51,7 +51,15 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         var chunk=server.getChunkSource().getChunkNow(worldPosition.getX()>>4,worldPosition.getZ()>>4);
         return chunk!=null && chunk.getBlockEntity(worldPosition,LevelChunk.EntityCreationType.CHECK)==this;
     }
-    private void frame(){long now=level==null?0:level.getGameTime();if(lastFrame!=now){lastFrame=now;frameHu=0;generatedFrame=0;}}
+    private void frame(){long now=level==null?0:level.getGameTime();if(lastFrame!=now){prevFrameHu=lastFrame==now-1?generatedFrame:0;lastFrame=now;frameHu=0;generatedFrame=0;}}
+    /** 0.1.11.17: the heater and cooler (StirlingPhysics); rated flow 256 HU/t (128 EU/t at the design point). */
+    public static final double RATED_HU=256;
+    private final com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head head=new com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head(RATED_HU);
+    private long prevFrameHu;
+    public com.miophas.singularity_iteration.common.energy.StirlingPhysics.Head head(){return head;}
+    /** EU per HU now: 0.5 at the design point, times the heater factor and the output multiplier. */
+    public double ratio(){return 0.5*com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this)*head.factor();}
+    private boolean exact(){return ratio()==0.5;}
     /** The back face: a heat input face, and the only face without EU output (as before 0.1.10.9). */
     private Direction input(){return getBlockState().getValue(mio_icif_block_stirling_generator.FACING).getOpposite();}
     /** 0.1.10.9: the front face (the copper plate, toward the player at placement) takes heat too; it still outputs EU. */
@@ -67,15 +75,14 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
     }
     /** EU for {@code hu} heat: 2 HU = 1 EU, times the output multiplier (0.1.8.4, config GeneratorOutput). */
     private EnergyAmount eu(long hu){
-        double m=com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);
-        if(m==1.0)return new EnergyAmount(hu/2,(hu%2)*(EnergyAmount.UNITS/2));
-        return EnergyAmount.fromDouble(hu*0.5*m);
+        if(exact())return new EnergyAmount(hu/2,(hu%2)*(EnergyAmount.UNITS/2));
+        return EnergyAmount.fromDouble(hu*ratio());
     }
     /** Whole HU whose EU fits into {@code room} at the current ratio (0.1.8.4). */
     private long huFor(EnergyAmount room){
-        double m=com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);
-        if(m==1.0)return room.whole()*2+(room.fraction()>=EnergyAmount.UNITS/2?1:0);
-        return m<=0?0:(long)Math.floor(room.toDouble()/(0.5*m));
+        if(exact())return room.whole()*2+(room.fraction()>=EnergyAmount.UNITS/2?1:0);
+        double r=ratio();
+        return r<=0?0:(long)Math.floor(room.toDouble()/r);
     }
     private long availableHeat(){
         if(!live() || !energy.scexNetworkControlled() || acquiring || uncertainHu!=0 || !legacyHold.isEmpty())return 0;
@@ -104,9 +111,9 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
         var balance=energy.scexExactAmount();if(requested.compareTo(balance)<=0)return;
         frame();var need=requested.subtract(balance).min(balance.roomBelow(energy.getCapacity()));
         // At most 1000 integer HU per frame. A sub-half-EU route can leave a paid fractional remainder.
-        double ratio=com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);
-        long count=ratio==1.0?(need.whole()>=500?1000:need.whole()*2+(need.fraction()==0?0:need.fraction()<=EnergyAmount.UNITS/2?1:2))
-            :ratio<=0?0:(long)Math.min(1000,Math.ceil(need.toDouble()/(0.5*ratio)));
+        double ratio=ratio();
+        long count=exact()?(need.whole()>=500?1000:need.whole()*2+(need.fraction()==0?0:need.fraction()<=EnergyAmount.UNITS/2?1:2))
+            :ratio<=0?0:(long)Math.min(1000,Math.ceil(need.toDouble()/ratio));
         count=Math.min(count,Math.max(0,1000-frameHu));
         count=Math.min(count,huFor(balance.roomBelow(energy.getCapacity())));
         if(count==0)return;
@@ -133,17 +140,17 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
     private double oldGridCarry;
     private void credit(long hu){
         var value=eu(hu);
-        double m=com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this);
+        boolean exact=exact();
         if(energy.scexNetworkControlled()){
             var got=energy.scexGenerateEnergy(value,false);
             // a scaled ratio rounds the last EU fraction: only the stock 2 HU = 1 EU ratio is exact
-            if(!got.equals(value)&&m==1.0)throw new IllegalStateException("Owned HU exceeds reserved EU capacity");
+            if(!got.equals(value)&&exact)throw new IllegalStateException("Owned HU exceeds reserved EU capacity");
         }else{
             // 0.1.11.11: the old grid (independent network off) has whole EU only; the fraction is carried. This path threw before.
             double v=value.toDouble()+oldGridCarry;long whole=(long)Math.floor(v);oldGridCarry=v-whole;
             if(whole>0)energy.generateEnergyInternal(whole,false);
         }
-        frameHu+=hu;generatedFrame+=hu;if(hu>0){generatedAt=level.getGameTime();lastOutput=Math.round(generatedFrame/2.0*m);}dirty();
+        frameHu+=hu;generatedFrame+=hu;if(hu>0){generatedAt=level.getGameTime();lastOutput=Math.round(generatedFrame*ratio());}dirty();
     }
     /**
      * 把自身 HU 缓冲里的热量转成 EU（2 HU = 1 EU），上限同时受本帧预算、内部 EU 剩余空间与缓冲实有量约束。
@@ -174,6 +181,7 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
     public static void tick(Level level,BlockPos pos,BlockState state,mio_icif_stirling_generator m){
         com.miophas.singularity_iteration.core.runtime.ComparatorSignals.refresh(m);   // 0.1.11.13
         if(!m.live())return;m.frame();
+        m.head.tick(level,pos,m.prevFrameHu,false);   // 0.1.11.17: the heat of the last tick sets the heater
         m.selfConvert();
         var actual=m.getBlockState();boolean active=m.isWorking();
         if(actual.getValue(mio_icif_block_stirling_generator.ACTIVE)!=active)
@@ -225,12 +233,12 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
     @Override public void setBurnTime(int ticks){}
     @Override public Component getDisplayName(){return Component.translatable("block.mio_icif.generator.block_stirling_generator");}
     @Override public AbstractContainerMenu createMenu(int id,Inventory inventory,Player player){
-        return new StirlingGeneratorMenu(id,inventory,this,null,new SimpleContainerData(6));
+        return new StirlingGeneratorMenu(id,inventory,this);
     }
     @Override protected void saveAdditional(CompoundTag tag,HolderLookup.Provider provider){
         super.saveAdditional(tag,provider);tag.putLong("Energy",energy.getAmount());tag.putLong("scex_energy_fraction",energy.scexSavedFraction());
         var saved=new CompoundTag();saved.putInt("version",1);saved.putLong("uncertain",uncertainHu);saved.putString("failure",failure);
-        saved.put("legacy_hold",legacyHold.copy());tag.put("scex_stirling",saved);
+        saved.put("legacy_hold",legacyHold.copy());tag.put("scex_stirling",saved);head.save(tag);
     }
     @Override public void loadAdditional(CompoundTag tag,HolderLookup.Provider provider){
         super.loadAdditional(tag,provider);energy.setEnergy(Math.max(0,tag.getLong("Energy")));energy.scexLoadFraction(tag.getLong("scex_energy_fraction"));
@@ -240,6 +248,7 @@ public class mio_icif_stirling_generator extends AbstractHeatBlockEntity
             if(saved.getInt("version")==1){legacyHold=saved.getCompound("legacy_hold").copy();uncertainHu=Math.max(0,saved.getLong("uncertain"));failure=saved.getString("failure");}
             else legacyHold.put("unknown_stirling_version",saved.copy());
         }else if(tag.contains("HeatBuffer") && tag.getLong("HeatBuffer")!=0)legacyHold.put("HeatBuffer",tag.get("HeatBuffer").copy());
+        head.load(tag);
         acquiring=false;lastFrame=Long.MIN_VALUE;frameHu=0;generatedFrame=0;
     }
 

@@ -199,6 +199,12 @@ public class mio_icif_kinetic_generator extends AbstractGeneratorBlockEntity {
         return lastProduction;
     }
 
+    /** 0.1.11.17: KU received in the last tick (the mimic screen). */
+    public int getLastKuInput() { return lastKuInputRate; }
+
+    /** 0.1.11.17: EU per KU (1 / KU_TO_EU_RATIO, times the output multiplier). */
+    public double getEuPerKu() { return com.miophas.singularity_iteration.common.energy.GeneratorOutput.multiplier(this) / KU_TO_EU_RATIO; }
+
     @Override
     public Component getDisplayName() {
         return Component.translatable("block.mio_icif.generator.block_kinetic_generator");
@@ -206,7 +212,7 @@ public class mio_icif_kinetic_generator extends AbstractGeneratorBlockEntity {
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new KineticGeneratorMenu(containerId, playerInventory, this, getItemHandler(), new SimpleContainerData(6));
+        return new KineticGeneratorMenu(containerId, playerInventory, this);
     }
 
     @Override

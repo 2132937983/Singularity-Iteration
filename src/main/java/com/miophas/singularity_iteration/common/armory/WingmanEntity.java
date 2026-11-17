@@ -449,6 +449,7 @@ public class WingmanEntity extends Mob {
                 default -> {
                     if (deathGuard && tickDeathGuard(world, player, ownerHere)) return;
                     if (!ownerHere && swapPhase == SWAP_NONE && !rescuing() && cleanSlate < 0) return;
+                    if (pilot != null) { tickPiloted(); return; }                            // 0.1.11.60: flown by its owner
                     if (cleanSlate >= 0) { tickCleanSlate(); return; }                     // 0.1.11.59: the Clean Slate protocol
                     if (rescuing()) { tickRescue(player, ownerHere); return; }             // 0.1.11.56: an emergency rescue
                     if (swapPhase != SWAP_NONE) { tickSwap(player, ownerHere); return; }   // 0.1.11.54: a suit swap
@@ -802,6 +803,85 @@ public class WingmanEntity extends Mob {
         }
         if (target != null) engage(target, player);
         else idle(formation(player), player, false);
+    }
+
+    // ---- remote piloting (0.1.11.60, gaze and Iron Man phase P8; WingmanPilot keeps the link)
+
+    /** Pilot speeds (blocks per tick) and acceleration; ticks between two cuts of a blade or a melee weapon at the least. */
+    static final double PILOT_SPEED = 0.8, PILOT_SPRINT = 1.6, PILOT_ACCEL = 0.22;
+    @Nullable private UUID pilot;
+    private WingmanPilot.Input pilotInput = new WingmanPilot.Input(0, 0, 0, false, 0, 0, false, false);
+    private boolean pilotAttackHeld;
+
+    /** 0.1.11.60: the owner flying this Wingman (null: its own AI). */
+    @Nullable public UUID pilot() { return pilot; }
+
+    void setPilot(@Nullable UUID who) {
+        pilot = who;
+        target = null;
+        clearOrder();
+        pilotInput = new WingmanPilot.Input(0, 0, 0, false, facing(), getXRot(), false, false);
+    }
+
+    void pilotInput(WingmanPilot.Input input) { pilotInput = input; }
+
+    /** One tick flown by the owner: look, move along the look, attack, boost. */
+    private void tickPiloted() {
+        WingmanPilot.Input in = pilotInput;
+        setYaw(in.yaw());
+        setXRot(in.pitch());
+        Vec3 look = Vec3.directionFromRotation(in.pitch(), in.yaw());
+        double yaw = Math.toRadians(in.yaw());
+        Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+        Vec3 want = look.scale(in.forward()).add(right.scale(in.strafe())).add(0, in.vertical(), 0);
+        if (want.lengthSqr() > 1.0E-4) want = want.normalize().scale(in.sprint() ? PILOT_SPRINT : PILOT_SPEED);
+        setDeltaMovement(WingmanFlight.accelerate(getDeltaMovement(), want, PILOT_ACCEL));
+        if (horizontalCollision) setDeltaMovement(getDeltaMovement().add(0, 0.2, 0));
+        if (in.use() && boostCooldown == 0) boost(look);
+        boolean pressed = in.attack() && !pilotAttackHeld;
+        pilotAttackHeld = in.attack();
+        if (in.attack()) pilotAttack(look, pressed);
+    }
+
+    /** The creature in the crosshair within {@code range}, or null. */
+    @Nullable
+    private LivingEntity aimed(Vec3 look, double range) {
+        Vec3 eye = getEyePosition(), end = eye.add(look.scale(range));
+        var hit = ProjectileUtil.getEntityHitResult(level(), this, eye, end, getBoundingBox().expandTowards(look.scale(range)).inflate(1),
+            e -> e instanceof LivingEntity l && l.isAlive() && !(e instanceof WingmanEntity) && !e.getUUID().equals(owner));
+        return hit != null && hit.getEntity() instanceof LivingEntity l ? l : null;
+    }
+
+    /** Attack along the look: a shot, a blade input (on each press) or a melee strike. */
+    private void pilotAttack(Vec3 look, boolean pressed) {
+        if (attackCooldown > 0) return;
+        ItemStack weapon = getMainHandItem();
+        switch (weaponKind()) {
+            case RANGED -> {
+                Vec3 muzzle = getEyePosition().add(look.scale(0.6));
+                int cooldown = fire(weapon, look.scale(20), null);
+                if (cooldown >= 0) {
+                    entityData.set(DATA_SHOTS, entityData.get(DATA_SHOTS) + 1);
+                    attackCooldown = Math.max(2, cooldown);
+                    entityData.set(DATA_FIRE_CD, attackCooldown);
+                    wear(weapon, EquipmentSlot.MAINHAND, 1);
+                } else {
+                    attackCooldown = 10;
+                    tellEmpty(weapon);
+                }
+            }
+            case BLADE -> {
+                if (!pressed) return;   // each click is one input, as for a player (the combo windows decide)
+                if (SlashBladeCombat.attack(this, aimed(look, 4.5)) != null) slash(SLASH_COMBO);
+                attackCooldown = 2;
+            }
+            default -> {
+                LivingEntity hit = aimed(look, 3.5);
+                swing(InteractionHand.MAIN_HAND);
+                if (hit != null) doHurtTarget(hit);
+                attackCooldown = Mth.ceil(20.0 / Math.max(0.5, getAttributeValue(Attributes.ATTACK_SPEED)));
+            }
+        }
     }
 
     // ---- the Clean Slate protocol (0.1.11.59, gaze and Iron Man phase P7; WingmanCleanSlate)

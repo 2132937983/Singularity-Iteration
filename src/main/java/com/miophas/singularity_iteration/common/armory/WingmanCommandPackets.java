@@ -117,6 +117,14 @@ public final class WingmanCommandPackets {
             if (FMLEnvironment.dist != Dist.CLIENT) return;
             c.enqueueWork(() -> { Consumer<Squad> hook = SQUAD_HOOK; if (hook != null) hook.accept(p); });
         });
+        // 0.1.11.60 (P8): remote piloting (the controls every tick, the piloted Wingman)
+        registrar.playToServer(WingmanPilot.Input.TYPE, WingmanPilot.Input.CODEC, (p, c) -> c.enqueueWork(() -> {
+            if (c.player() instanceof ServerPlayer player) WingmanPilot.input(player, p);
+        }));
+        registrar.playToClient(WingmanPilot.State.TYPE, WingmanPilot.State.CODEC, (p, c) -> {
+            if (FMLEnvironment.dist != Dist.CLIENT) return;
+            c.enqueueWork(() -> { Consumer<WingmanPilot.State> hook = WingmanPilot.HOOK; if (hook != null) hook.accept(p); });
+        });
         // 0.1.11.59 (P7): the Clean Slate firework bursts
         registrar.playToClient(WingmanCleanSlate.Burst.TYPE, WingmanCleanSlate.Burst.CODEC, (p, c) -> {
             if (FMLEnvironment.dist != Dist.CLIENT) return;

@@ -89,7 +89,7 @@ public final class SlashBladeCombat {
         if (s == null) return null;
         EnumSet<?> commands = commands(wielder);
         try {
-            setTarget.invoke(s, target);
+            if (target != null) setTarget.invoke(s, target);   // 0.1.11.60: a piloted Wingman may cut at the air
             if (commands != null) {
                 add(commands, Command.L_CLICK);
                 for (Command c : extra) add(commands, c);

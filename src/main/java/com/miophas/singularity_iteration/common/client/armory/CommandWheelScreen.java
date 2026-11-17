@@ -44,13 +44,13 @@ public final class CommandWheelScreen extends Screen {
     }
 
     /** Squad control fan: the three modes (0.1.11.43: the Fulton mode is gone), follow squad, return home. */
-    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0xDDDDDD, 0xFFD24D, 0xFF8A3D, 0xFF4D8A, 0x9B7CFF};
+    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0xDDDDDD, 0xFFD24D, 0xFF8A3D, 0x6FF3D6, 0xFF4D8A, 0x9B7CFF};
     private static final String[] SUB_KEYS = {"gui.mio_icif.wingman.mode.offensive", "gui.mio_icif.wingman.mode.dispersal",
         "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.squad", "gui.mio_icif.command.sub.suit_up",
-        "gui.mio_icif.command.sub.eject", "gui.mio_icif.command.sub.clean_slate", "gui.mio_icif.command.sub.return"};
+        "gui.mio_icif.command.sub.eject", "gui.mio_icif.command.sub.pilot", "gui.mio_icif.command.sub.clean_slate", "gui.mio_icif.command.sub.return"};
     /** 0.1.11.54 (P2): the suit swap, 0.1.11.55 (P3): the suit eject, between "follow squad" and "return home". */
     private static final int SUB_SQUAD = WingmanMode.VALUES.length, SUB_SUIT_UP = SUB_SQUAD + 1, SUB_EJECT = SUB_SUIT_UP + 1,
-        SUB_CLEAN_SLATE = SUB_EJECT + 1, SUB_RETURN = SUB_CLEAN_SLATE + 1;   // 0.1.11.59 (P7): the Clean Slate protocol
+        SUB_PILOT = SUB_EJECT + 1, SUB_CLEAN_SLATE = SUB_PILOT + 1, SUB_RETURN = SUB_CLEAN_SLATE + 1;   // 0.1.11.59 (P7), 0.1.11.60 (P8)
     private static final float SUB_STEP = (float) Math.toRadians(23);
 
     private final CommandWheelClient.Target target;
@@ -424,6 +424,7 @@ public final class CommandWheelScreen extends Screen {
                 else if (sub == SUB_SUIT_UP) SquadClient.send(WingmanCommands.A_SUIT_UP, unit, (byte) 0, null, -1);
                 else if (sub == SUB_EJECT) SquadClient.send(WingmanCommands.A_EJECT, WingmanCommandPackets.ALL, (byte) 0, null, -1);
                 else if (sub == SUB_CLEAN_SLATE) SquadClient.send(WingmanCommands.A_CLEAN_SLATE, WingmanCommandPackets.ALL, (byte) 0, null, -1);
+                else if (sub == SUB_PILOT) SquadClient.send(WingmanCommands.A_PILOT, unit, (byte) 0, null, -1);
                 else SquadClient.send(WingmanCommands.A_RETURN, unit, (byte) 0, null, -1);
             }
             case DATALINK -> SquadClient.send(WingmanCommands.A_DATALINK, WingmanCommandPackets.ALL, (byte) (SquadClient.datalink() ? 0 : 1), null, -1);

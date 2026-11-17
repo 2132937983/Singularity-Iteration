@@ -3309,6 +3309,73 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman_pilot" (-Dsi.capture.scene=wingman_pilot), 0.1.11.60 (gaze and Iron Man phase P8): the owner (quantum
+     * chestplate with the entanglement relay) pilots an iron Wingman: the view from its eyes with the pilot line on top, a
+     * flight ahead (the forward key held), a look back at the body that stayed, then the way back into the body.
+     */
+    private static void sceneWingmanPilot() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            ItemStack chest = item("armor/item_armor_quantum_chestplate");
+            if (chest.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor) armor.setEnergy(chest, armor.getMaxEnergy(chest));
+            com.miophas.singularity_iteration.common.suit.SuitModules.install(chest, com.miophas.singularity_iteration.common.suit.SuitModuleType.ENTANGLEMENT_RELAY);
+            sp.setItemSlot(EquipmentSlot.CHEST, chest);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[][] sets = {
+                    {Items.IRON_HELMET, Items.IRON_CHESTPLATE, Items.IRON_LEGGINGS, Items.IRON_BOOTS, Items.IRON_SWORD},
+                    {Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS, Items.BOW}};
+                for (int st = 0; st < sets.length; st++) {
+                    for (int c = 0; c < 5; c++) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), new ItemStack(sets[st][c]), false);
+                    com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE);
+                }
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        server(100, sp -> {
+            var list = com.miophas.singularity_iteration.common.armory.WingmanService.of(sp);
+            var w = list.stream().filter(x -> x.getMainHandItem().is(Items.IRON_SWORD)).findFirst().orElse(list.get(0));
+            Singularity_Iteration.LOGGER.info("capture pilot start: {} (relay {})", com.miophas.singularity_iteration.common.armory.WingmanPilot.start(sp, w),
+                com.miophas.singularity_iteration.common.armory.WingmanCommands.commander(sp));
+        });
+        shot(20, "wingman_pilot/00_remote_view");
+        client(1, () -> net.minecraft.client.KeyMapping.set(Minecraft.getInstance().options.keyUp.getKey(), true));
+        for (int f = 0; f < 6; f++) shot(5, String.format("wingman_pilot/f%02d_ahead", f));
+        client(1, () -> net.minecraft.client.KeyMapping.set(Minecraft.getInstance().options.keyUp.getKey(), false));
+        client(10, () -> { var p = Minecraft.getInstance().player; if (p != null) { p.setYRot(180); p.setXRot(15); } });
+        shot(10, "wingman_pilot/10_look_back");
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture pilot during: piloting {}, body at {}",
+            com.miophas.singularity_iteration.common.armory.WingmanPilot.piloting(sp), sp.position()));
+        client(1, () -> com.miophas.singularity_iteration.common.client.armory.SquadClient.send(
+            com.miophas.singularity_iteration.common.armory.WingmanCommands.A_PILOT_EXIT,
+            com.miophas.singularity_iteration.common.armory.WingmanCommandPackets.ALL, (byte) 0, null, -1));
+        shot(20, "wingman_pilot/20_back_in_body");
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture pilot after: piloting {}",
+            com.miophas.singularity_iteration.common.armory.WingmanPilot.piloting(sp)));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_pilot".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanPilot();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

@@ -69,7 +69,8 @@ public final class WingmanCommands {
     private WingmanCommands() {}
 
     public static final byte A_MOVE = 0, A_HOLD = 1, A_SUPPRESS = 2, A_FOCUS = 3, A_FORM_UP = 4, A_MODE = 5, A_SQUAD = 6,
-        A_VOLLEY = 7, A_DATALINK = 8, A_RETURN = 9, A_QUANTUM_RECALL = 10, A_SUIT_UP = 11, A_EJECT = 12, A_CLEAN_SLATE = 13;
+        A_VOLLEY = 7, A_DATALINK = 8, A_RETURN = 9, A_QUANTUM_RECALL = 10, A_SUIT_UP = 11, A_EJECT = 12, A_CLEAN_SLATE = 13,
+        A_PILOT = 14, A_PILOT_EXIT = 15;
     /** Cooldown key of the quantum recall in the nano core cooldown map. */
     public static final String RECALL_KEY = "mio_icif:quantum_recall";
     /** Ticks of the chunk ticket of an unloaded Wingman's recall. */
@@ -99,6 +100,10 @@ public final class WingmanCommands {
     /** Handles one command of the owner (rate limited by the payload handler). */
     static void handle(ServerPlayer player, WingmanCommandPackets.Command c) {
         if (!player.isAlive() || player.isSpectator()) return;
+        if (c.action() == A_PILOT_EXIT) {   // 0.1.11.60 (P8): leaving the flight needs no link
+            WingmanPilot.stop(player, Component.translatable("message.mio_icif.wingman.pilot.off"));
+            return;
+        }
         if (!commander(player)) {
             refuse(player, "message.mio_icif.command.no_relay");
             return;
@@ -175,6 +180,15 @@ public final class WingmanCommands {
             }
             case A_SQUAD -> name = "SQUAD";
             case A_RETURN -> name = "RETURN";
+            case A_PILOT -> {
+                // 0.1.11.60 (P8): the owner flies one Wingman: the selected one, or with "all" the nearest
+                WingmanEntity one = units.stream().min(java.util.Comparator.comparingDouble(w -> w.distanceToSqr(player))).orElse(null);
+                Component refused = WingmanPilot.start(player, one);
+                if (refused != null) player.displayClientMessage(refused, true);
+                else player.displayClientMessage(Component.translatable("message.mio_icif.wingman.pilot.on", one.getName()), true);
+                player.playNotifySound(mio_icif_sounds.ORDER_ACK.get(), SoundSource.PLAYERS, 0.7F, 1.2F);
+                return;
+            }
             case A_SUIT_UP -> {
                 // 0.1.11.54 (P2): one Wingman swaps suits with the owner: the selected one, or with "all" the nearest
                 WingmanEntity nearest = units.stream().min(java.util.Comparator.comparingDouble(w -> w.distanceToSqr(player))).orElse(null);

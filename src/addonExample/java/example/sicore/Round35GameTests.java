@@ -225,13 +225,14 @@ public final class Round35GameTests {
             for (var q : parts.getAsJsonArray(part)) {
                 var v = q.getAsJsonObject().getAsJsonArray("v");
                 for (int i = 0; i < 4; i++) {
+                    if (v.get(i * 5 + 1).getAsDouble() <= 10.5) continue;   // 0.1.11.27: at the sole (see Round180)
                     double z = v.get(i * 5 + 2).getAsDouble();
                     minZ = Math.min(minZ, z);
                     maxZ = Math.max(maxZ, z);
                 }
             }
         }
-        // the toe caps reach further than the heel: the front (-z) must be the long side
+        // the toe caps reach further than the heel at the sole: the front (-z) must be the long side
         if (-minZ <= maxZ) problems.add("boots face backwards: z from " + minZ + " to " + maxZ);
         h.assertTrue(problems.isEmpty(), "nano: " + problems);
         h.succeed();

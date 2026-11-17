@@ -2588,6 +2588,90 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "suits" (-Dsi.capture.scene=suits), 0.1.11.27: the nano and quantum suits on armour stands: plain, with a
+     * palette (crimson, cobalt), and with frame cores (solar arrays, graviton, propulsion); front, back, three-quarter and
+     * night; then the player in the quantum suit, third person and first person (the hand).
+     */
+    private static void sceneSuits() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        String[] pieces = {"helmet", "chestplate", "leggings", "boots"};
+        EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+        // suit, palette (primary, accent; -1 none), head core, chest core
+        Object[][] stands = {
+            {"nano", -1, -1, null, null}, {"quantum", -1, -1, null, null},
+            {"nano", 0xC8323C, 0xFFD24A, null, null}, {"quantum", 0x2F5FD0, 0xE8F4FF, null, null},
+            {"nano", -1, -1, "solar_array_2", null}, {"quantum", -1, -1, "solar_array_3", "graviton"},
+            {"quantum", 0x3A3F46, 0x37E35A, "solar_array_1", "propulsion"}};
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            for (int i = 0; i < stands.length; i++) {
+                Object[] d = stands[i];
+                double x = i * 1.6 - 4.8, z = 5.5;
+                var stand = new net.minecraft.world.entity.decoration.ArmorStand(level, x, -60, z);
+                stand.moveTo(x, -60, z, 180, 0);
+                stand.setYHeadRot(180); stand.setYBodyRot(180);
+                for (int k = 0; k < 4; k++) {
+                    ItemStack st = item("armor/item_armor_" + d[0] + "_" + pieces[k]);
+                    if ((int) d[1] >= 0) st.set(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_PALETTE.get(),
+                        new com.miophas.singularity_iteration.common.suit.SuitPalette((int) d[1], (int) d[2]));
+                    if (k == 0 && d[3] != null) st.set(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_CORE.get(), (String) d[3]);
+                    if (k == 1 && d[4] != null) st.set(com.miophas.singularity_iteration.common.registry.mio_icif_data_components.SUIT_CORE.get(), (String) d[4]);
+                    if (st.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor) armor.setEnergy(st, Long.MAX_VALUE / 4);
+                    stand.setItemSlot(slots[k], st);
+                }
+                try { var m = net.minecraft.world.entity.decoration.ArmorStand.class.getDeclaredMethod("setShowArms", boolean.class); m.setAccessible(true); m.invoke(stand, true); } catch (ReflectiveOperationException ignored) { }
+                level.addFreshEntity(stand);
+            }
+            look(sp, 0.0, -59.0, 1.0, 0, 8);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(80, "suits/1_front_day");
+        server(1, sp -> look(sp, -3.2, -59.2, 3.2, -20, 5));
+        shot(30, "suits/2_close_plain");
+        server(1, sp -> look(sp, 3.2, -59.2, 3.2, 20, 5));
+        shot(30, "suits/3_close_cores");
+        server(1, sp -> look(sp, 0.0, -59.0, 10.0, 180, 8));
+        shot(30, "suits/4_back_day");
+        server(1, sp -> look(sp, -6.5, -58.8, 2.0, -45, 12));
+        shot(30, "suits/5_three_quarter");
+        server(1, sp -> { sp.serverLevel().setDayTime(18000); look(sp, 0.0, -59.0, 1.0, 0, 8); });
+        shot(40, "suits/6_front_night");
+        server(1, sp -> {
+            sp.serverLevel().setDayTime(6000);
+            for (int k = 0; k < 4; k++) {
+                ItemStack st = item("armor/item_armor_quantum_" + pieces[k]);
+                if (st.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor) armor.setEnergy(st, Long.MAX_VALUE / 4);
+                sp.setItemSlot(slots[k], st);
+            }
+            sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            sp.teleportTo(sp.serverLevel(), 0.5, -60, -3.0, 180, 10);
+            sp.setYBodyRot(180); sp.setYHeadRot(180);
+        });
+        client(5, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(40, "suits/7_player_front");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
+        shot(30, "suits/8_player_back");
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.FIRST_PERSON); mc.options.hideGui = false; });
+        shot(30, "suits/9_first_person_hand");
+        server(1, sp -> sp.serverLevel().setDayTime(18000));
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(40, "suits/10_player_night");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "suits".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneSuits();
+        }
+    }
+
     static {
         if (OUT != null && "reactor".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

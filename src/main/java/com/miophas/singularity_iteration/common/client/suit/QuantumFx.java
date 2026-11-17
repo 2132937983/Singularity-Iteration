@@ -92,7 +92,7 @@ public final class QuantumFx {
             // photon afterglow of fast maneuver flight (all players near)
             // 0.1.11.5: only past the shock barrier and half as often (it used to start at 1.1 blocks/t every 6 ticks and
             // buried the flyer in afterimages in third person)
-            if (ticks % 12 == 0) {
+            if (ticks % 12 == 0 && FcsClientConfig.classicFlightFx()) {   // 0.1.11.63 (Q2): no afterimages in the constructivist style
                 for (Player p : mc.level.getEntitiesOfClass(Player.class, mc.player.getBoundingBox().inflate(128))) {
                     if (!ManeuverModeClient.inManeuver(p) || !ManeuverModeClient.supersonic(p)) continue;
                     Vec3 v = p.position().subtract(p.xo, p.yo, p.zo);

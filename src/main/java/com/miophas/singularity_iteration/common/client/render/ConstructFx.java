@@ -67,4 +67,27 @@ public final class ConstructFx {
             FxDraw.vertex(vc, m, centre.add(d1.scale(r0)), rgb[0], rgb[1], rgb[2], alpha);
         }
     }
+
+    /**
+     * 0.1.11.63 (Q2): a thrust wedge in a limb's own frame, along +y from the origin (the nozzle): two crossed flat triangles
+     * (in the x-y and z-y planes), each a black edge, the red body and a white core. It reads from every side without the
+     * camera, so it works in an entity layer, on the soles and on the first-person hand alike.
+     */
+    public static void crossWedge(VertexConsumer vc, Matrix4f m, float length, float width, float alpha) {
+        if (length <= 0 || alpha <= 0) return;
+        for (int plane = 0; plane < 2; plane++) {
+            flatTri(vc, m, plane, length * 1.05F + 0.02F, width * 1.16F, BLACK, alpha);
+            flatTri(vc, m, plane, length, width, RED, alpha);
+            flatTri(vc, m, plane, length * 0.5F, width * 0.45F, WHITE, alpha);
+        }
+    }
+
+    private static void flatTri(VertexConsumer vc, Matrix4f m, int plane, float length, float width, float[] c, float a) {
+        float h = width / 2;
+        float x = plane == 0 ? h : 0, z = plane == 0 ? 0 : h;
+        vc.addVertex(m, x, 0, z).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(m, -x, 0, -z).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(m, 0, length, 0).setColor(c[0], c[1], c[2], a);
+        vc.addVertex(m, 0, length, 0).setColor(c[0], c[1], c[2], a);
+    }
 }

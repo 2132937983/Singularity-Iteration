@@ -269,7 +269,7 @@ public final class WingmanFx {
             double[][] at = {{0.32, 1.35, 1.2, 0.05}, {0, 0.9, 0.85, 0.1}, {-0.32, 0.55, 1.0, 0.05}};   // right, up, length, width
             for (int i = 0; i < 3; i++) {
                 Vec3 start = pos.add(right.scale(at[i][0])).add(0, at[i][1], 0).add(back.scale(0.5));
-                ConstructFx.bar(vc, m, start, start.add(back.scale(speed * 1.4 * at[i][2])), (float) at[i][3], cam, colours[i], 0.92F * bars);
+                ConstructFx.bar(vc, m, start, start.add(back.scale(Math.min(2.4, speed * 1.4) * at[i][2])), (float) at[i][3], cam, colours[i], 0.92F * bars);
             }
         }
         float boostAge = now - s.boostTick, ring = com.miophas.singularity_iteration.common.armory.WingmanPose.boostRing(boostAge);

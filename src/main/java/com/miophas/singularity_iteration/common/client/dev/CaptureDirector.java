@@ -1455,6 +1455,7 @@ public final class CaptureDirector {
      * barrier, flight HUD) and the nano suit model and icons.
      */
     private static void scene14() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);   // 0.1.11.63: a lost focus paused the flight
         server(40, sp -> {
             var level = sp.serverLevel();
             level.setDayTime(6000);

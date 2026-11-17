@@ -53,7 +53,7 @@ public final class ThrusterFx {
 
     /** 0.1.10.31: {@link #jet} with the thrust of the nozzle (0..1) for the sparks. */
     public static void jet(long key, Vec3 a, Vec3 b, float power, float throttle) {
-        if (!FcsClientConfig.thrusterFx() || power <= 0.05F) return;
+        if (!FcsClientConfig.thrusterFx() || power <= 0.05F || !FcsClientConfig.classicFlightFx()) return;   // 0.1.11.63: no haze in the constructivist style
         JETS.put(key, new Jet(a, b, power, throttle, System.currentTimeMillis()));
     }
 
@@ -92,6 +92,13 @@ public final class ThrusterFx {
      */
     public static void ground(Entity e, Vec3 at, float strength, boolean takeoff) {
         var level = e.level();
+        if (!FcsClientConfig.classicFlightFx()) {
+            // 0.1.11.63 (Q2): the constructivist take-off and landing: a flat ring on the ground (and the sound), no dust or sparks
+            com.miophas.singularity_iteration.common.client.render.ConstructBursts.ground(at, strength, takeoff);
+            level.playLocalSound(at.x, at.y, at.z, takeoff ? mio_icif_sounds.ARMORY_PULSE.get() : mio_icif_sounds.THRUSTER_LAND.get(), SoundSource.PLAYERS,
+                (takeoff ? 0.45F + 0.35F * strength : 0.5F + 0.5F * strength), (takeoff ? 0.7F : 0.9F) + level.random.nextFloat() * 0.1F, false);
+            return;
+        }
         if (takeoff) {
             LANDINGS.add(new Landing(at, strength * 0.7F, NanoClient.ticks));
             if (LANDINGS.size() > 6) LANDINGS.remove(0);

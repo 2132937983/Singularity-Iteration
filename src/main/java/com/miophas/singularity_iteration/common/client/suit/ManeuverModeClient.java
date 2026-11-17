@@ -380,6 +380,10 @@ public final class ManeuverModeClient {
         level.playLocalSound(player.getX(), player.getY(), player.getZ(), mio_icif_sounds.MANEUVER_TAKEOFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F, false);
         BlockPos below = player.blockPosition().below();
         var state = level.getBlockState(below);
+        if (!FcsClientConfig.classicFlightFx()) {   // 0.1.11.63 (Q2): the take-off is one ring, no dust or cloud
+            com.miophas.singularity_iteration.common.client.render.ConstructBursts.ground(player.position(), 1F, false);
+            return;
+        }
         for (int i = 0; i < 40; i++) {
             double a = i * Math.PI * 2 / 40;
             double c = Math.cos(a), s = Math.sin(a);
@@ -498,6 +502,10 @@ public final class ManeuverModeClient {
         if (BOOMS.size() > 8) BOOMS.remove(0);
         if (local) ownBoomAt = System.currentTimeMillis();
         boolean ownView = local && Minecraft.getInstance().options.getCameraType().isFirstPerson();
+        // 0.1.11.63 (Q2): the constructivist boom: one white ring across the flight with a black one behind it, no puffs
+        if (!FcsClientConfig.classicFlightFx()) {
+            if (!ownView) com.miophas.singularity_iteration.common.client.render.ConstructBursts.boom(centre, axis, player.getId());
+        } else
         // 0.1.8.3: a burst of condensation around the ring plane, thrown outward and left behind
         // (0.1.11.5: 14 puffs, none around the own camera)
         if (FcsClientConfig.vaporEffects() && !ownView) {
@@ -524,6 +532,7 @@ public final class ManeuverModeClient {
      * the body centre.
      */
     private static void vapour(Player p, float thr) {
+        if (!FcsClientConfig.classicFlightFx()) return;   // 0.1.11.63 (Q2): no condensation puffs in the constructivist style
         var level = p.level();
         Vec3 v = p.position().subtract(p.xo, p.yo, p.zo);
         if (v.lengthSqr() < 0.25) return;
@@ -875,7 +884,10 @@ public final class ManeuverModeClient {
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
-        boolean vapour = FcsClientConfig.vaporEffects();
+        // 0.1.11.63 (hit feel and constructivist FX phase Q2): in the constructivist style the wake ribbons, the vapour cone,
+        // the Mach shell and the vapour shock rings are not drawn (the speed bars and the boom ring of ConstructBursts stand
+        // for them); the booms list is still kept for the HUD flash
+        boolean vapour = FcsClientConfig.vaporEffects() && FcsClientConfig.classicFlightFx();
         alphaScale = FcsClientConfig.vaporIntensity();
 
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.VAPOR);
@@ -900,7 +912,7 @@ public final class ManeuverModeClient {
         // supersonic shock shell (additive) and the first-person rim of the deflection field
         VertexConsumer glowCone = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         for (Player p : mc.level.players()) {
-            if (!VISUALS.containsKey(p.getId()) || p == mc.player && firstPerson) continue;
+            if (!vapour || !VISUALS.containsKey(p.getId()) || p == mc.player && firstPerson) continue;
             if (supersonic(p)) machShell(glowCone, m, p, machOf(p), partial, now);
         }
         // 0.1.11.5: no first-person rim of the deflection field any more (a disc 1.5 blocks ahead of the eye that sat in the

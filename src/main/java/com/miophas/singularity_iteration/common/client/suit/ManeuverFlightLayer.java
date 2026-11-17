@@ -70,6 +70,10 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         float[] output = ManeuverModeClient.thrusterOutput(player);
         if (output == null) return;
         PlayerModel<AbstractClientPlayer> model = getParentModel();
+        if (!FcsClientConfig.classicFlightFx()) {
+            constructivist(pose, buffers, player, model, output, partial);
+            return;
+        }
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         float time = ManeuverModeClient.visualTime(player);
         // 0.1.10.2: full burn (throttle above 0.72) lengthens the plume and lights the shock diamonds
@@ -92,6 +96,53 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         }
         // 0.1.10.31: the textured flames last (taking their buffer ends the glow batch of an immediate source)
         strips.draw(buffers);
+    }
+
+    /**
+     * 0.1.11.63 (hit feel and constructivist FX phase Q2, decisions three B / four B): the constructivist maneuver flight.
+     * One crossed wedge (black edge, red body, white core) out of each palm and sole along the limb, its length with the
+     * output and the burn on a two-state beat; from 0.9 blocks per tick three speed bars (white, red, white) along the
+     * flight. No glow disc, flame strip, Mach nodes, deflection shell or haze.
+     */
+    private void constructivist(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
+                                float[] output, float partial) {
+        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FLAT);
+        float thr = ManeuverModeClient.throttleOf(player, partial);
+        float burn = net.minecraft.util.Mth.clamp((thr - 0.72F) / 0.2F, 0, 1);
+        float beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;
+        ModelPart[] limbs = {model.rightArm, model.leftArm, model.rightLeg, model.leftLeg};
+        float[][] tips = {{-1F / 16F, 10.5F / 16F}, {1F / 16F, 10.5F / 16F}, {0, 12.2F / 16F}, {0, 12.2F / 16F}};
+        for (int i = 0; i < 4; i++) {
+            float p = output[i];
+            if (p <= 0.02F || !limbs[i].visible) continue;
+            pose.pushPose();
+            limbs[i].translateAndRotate(pose);
+            pose.translate(tips[i][0], tips[i][1], 0);
+            float length = (0.2F + 0.55F * p + 0.7F * burn * p) * beat;
+            com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, pose.last().pose(), length, 0.14F + 0.08F * p, 0.95F);
+            pose.popPose();
+        }
+        // the speed bars, in camera-relative world space (the layer pose ends there; the camera rotation is not in it)
+        net.minecraft.world.phys.Vec3 v = player.position().subtract(player.xo, player.yo, player.zo);
+        float alpha = com.miophas.singularity_iteration.common.armory.WingmanPose.speedBarAlpha((float) v.length());
+        if (alpha > 0) {
+            net.minecraft.world.phys.Vec3 cam = net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            net.minecraft.world.phys.Vec3 centre = player.getPosition(partial).add(0, player.getBbHeight() * 0.5, 0).subtract(cam);
+            net.minecraft.world.phys.Vec3 back = v.normalize().scale(-1), side = back.cross(new net.minecraft.world.phys.Vec3(0, 1, 0));
+            if (side.lengthSqr() < 1.0E-4) side = new net.minecraft.world.phys.Vec3(1, 0, 0);
+            side = side.normalize();
+            net.minecraft.world.phys.Vec3 up = side.cross(back).normalize();
+            Matrix4f id = new Matrix4f();
+            float[][] colours = {com.miophas.singularity_iteration.common.client.render.ConstructFx.WHITE,
+                com.miophas.singularity_iteration.common.client.render.ConstructFx.RED, com.miophas.singularity_iteration.common.client.render.ConstructFx.WHITE};
+            double[][] at = {{0.35, 0.3, 1.2, 0.05}, {0, -0.1, 0.85, 0.1}, {-0.35, 0.2, 1.0, 0.05}};
+            for (int i = 0; i < 3; i++) {
+                net.minecraft.world.phys.Vec3 start = centre.add(side.scale(at[i][0])).add(up.scale(at[i][1])).add(back.scale(0.6));
+                // at most 2.4 blocks: longer bars ran past a chase camera and across the screen
+                com.miophas.singularity_iteration.common.client.render.ConstructFx.bar(vc, id, start, start.add(back.scale(Math.min(2.4, v.length() * 1.4) * at[i][2])),
+                    (float) at[i][3], net.minecraft.world.phys.Vec3.ZERO, colours[i], 0.92F * alpha);
+            }
+        }
     }
 
     /** Glow disc at the tip of one limb and a flame along the limb axis (+y of the limb). */

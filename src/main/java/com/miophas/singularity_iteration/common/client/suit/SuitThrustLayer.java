@@ -82,7 +82,9 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         int id = player.getId();
         lodTier = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(player);                    // 0.1.10.32 (P-3)
         strips.clear();
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+        flat = !FcsClientConfig.classicFlightFx();   // 0.1.11.63 (Q2): constructivist wedges instead of the glowing flames
+        beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;
+        VertexConsumer vc = buffers.getBuffer(flat ? SiRenderTypes.FLAT : SiRenderTypes.FIELD_GLOW);
         if (jet > 0.02F) {
             for (int side = -1; side <= 1; side += 2) {
                 pose.pushPose();
@@ -98,8 +100,11 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
             sole(pose, vc, model.rightLeg, sole, Math.max(jet, burst), seconds, id, 6);
             sole(pose, vc, model.leftLeg, sole, Math.max(jet, burst), seconds, id, 7);
         }
-        strips.draw(buffers);
+        if (!flat) strips.draw(buffers);
     }
+
+    private boolean flat;
+    private float beat = 1F;
 
     private void sole(PoseStack pose, VertexConsumer vc, ModelPart leg, float power, float throttle, float seconds, int id, int seed) {
         if (!leg.visible) return;
@@ -112,6 +117,10 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
 
     private void nozzle(PoseStack pose, VertexConsumer vc, float radius, float length, float power, float throttle, float seconds, int id, int seed) {
         Matrix4f m = pose.last().pose();
+        if (flat) {
+            com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, m, length * 1.4F * beat, radius * 2.8F, 0.95F);
+            return;
+        }
         float flicker = 0.88F + 0.12F * (float) Math.sin(seconds * 37 + seed * 1.7) * (float) Math.sin(seconds * 23 + seed);
         ThrusterFlame.glow(vc, m, radius, length, power, throttle, flicker, seconds, id * 8 + seed,
             lodTier == com.miophas.singularity_iteration.common.client.render.FxLodRules.FAR ? null : strips, com.miophas.singularity_iteration.common.client.render.FxLodRules.segments(10, lodTier));
@@ -140,6 +149,13 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         arm.translateAndRotate(pose);
         pose.translate((right ? -1F : 1F) / 16F, 10.5F / 16F, 0);
         PALM.clear();
+        if (!FcsClientConfig.classicFlightFx()) {   // 0.1.11.63 (Q2): the constructivist palm wedge
+            float beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;
+            com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(buffers.getBuffer(SiRenderTypes.FLAT), pose.last().pose(),
+                (0.14F + 0.3F * power) * beat, 0.14F + 0.06F * power, 0.95F);
+            pose.popPose();
+            return;
+        }
         float flicker = 0.88F + 0.12F * (float) Math.sin(seconds * 37) * (float) Math.sin(seconds * 23 + (right ? 1 : 0));
         // shorter than in third person: the flame runs past the bottom of the screen
         ThrusterFlame.glow(buffers.getBuffer(SiRenderTypes.FIELD_GLOW), pose.last().pose(), 0.05F + 0.03F * power, 0.1F + 0.22F * power,

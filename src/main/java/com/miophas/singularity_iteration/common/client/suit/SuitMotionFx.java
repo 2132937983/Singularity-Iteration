@@ -174,6 +174,21 @@ public final class SuitMotionFx {
         Matrix4f m = pose.last().pose();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer vc = null;
+        if (!FcsClientConfig.classicFlightFx()) {
+            // 0.1.11.63 (Q2): the constructivist sprint: one straight white bar per calf line, from now back to the oldest point
+            for (Map.Entry<Player, State> e : STATES.entrySet()) {
+                State s = e.getValue();
+                if (s.streakCount < 2 || s.streakAlpha <= 0.3F || e.getKey() == mc.player && firstPerson) continue;
+                if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FLAT);
+                double[] a = s.streak[0], b = s.streak[s.streakCount - 1];
+                for (int k = 0; k < 4; k += 2)
+                    com.miophas.singularity_iteration.common.client.render.ConstructFx.bar(vc, m, new Vec3(a[k * 3], a[k * 3 + 1], a[k * 3 + 2]),
+                        new Vec3(b[k * 3], b[k * 3 + 1], b[k * 3 + 2]), 0.035F, cam, com.miophas.singularity_iteration.common.client.render.ConstructFx.WHITE, 0.9F);
+            }
+            if (vc != null) buffers.endBatch(SiRenderTypes.FLAT);
+            pose.popPose();
+            return;
+        }
         for (Map.Entry<Player, State> e : STATES.entrySet()) {
             State s = e.getValue();
             if (s.streakCount < 2 || s.streakAlpha <= 0F || e.getKey() == mc.player && firstPerson) continue;

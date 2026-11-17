@@ -3640,7 +3640,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             var at = fuse.getKey();
             var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
             if (chunk == null || !BuiltInRegistries.BLOCK.getKey(chunk.getBlockState(at).getBlock()).equals(fuse.getValue())) continue;
+            var melted = chunk.getBlockState(at);
             if (level.removeBlock(at, false)) {
+                // 0.1.11.31: the scaffold or wall the cable was laid in stays (it vanished with the cable)
+                if (melted.getBlock() instanceof com.miophas.singularity_iteration.core.api.energy.ICableBlock cable)
+                    for (var stack : cable.meltDrops(melted)) net.minecraft.world.level.block.Block.popResource(level, at, stack);
                 grid.conductors.remove(point(at)); grid.contactOrder.remove(point(at));
                 grid.accessibilityTick = Long.MIN_VALUE;
                 topology.changed(level, at); removed.add(at);

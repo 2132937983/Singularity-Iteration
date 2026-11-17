@@ -676,6 +676,15 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
                 .withStyle(net.minecraft.ChatFormatting.GOLD));
     }
 
+    /** 0.1.11.31 (cable audit M-7): a melted cable leaves the scaffold or the set wall it was laid in (wet foam is lost, as when broken). */
+    @Override
+    public List<ItemStack> meltDrops(BlockState state) {
+        if (state.getValue(FOAM_HARDENED) && state.getValue(FOAMLOGGED)) return List.of(new ItemStack(wallOf(state).getBlock().asItem()));
+        if (state.getValue(FOAM_REINFORCED))
+            return List.of(new ItemStack(com.miophas.singularity_iteration.common.registry.mio_icif_blocks.SCAFFOLD_IRON.get().asItem()));
+        return List.of();
+    }
+
     @Override
     public List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder context) {
         var drops = new java.util.ArrayList<>(super.getDrops(state, context));

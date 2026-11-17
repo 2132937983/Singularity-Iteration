@@ -2672,6 +2672,74 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "guns" (-Dsi.capture.scene=guns), 0.1.11.28: the mining laser and the CF sprayer (OBJ models): first person idle
+     * and firing, third person front and side, on the ground, in item frames, and in the inventory.
+     */
+    private static void sceneGuns() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            ItemStack laser = item("item_tool_laser_miner");
+            if (laser.getItem() instanceof com.miophas.singularity_iteration.core.api.item.IBatteryItem b) b.setEnergy(laser, b.getMaxEnergy(laser));
+            sp.getInventory().clearContent();
+            sp.setItemInHand(InteractionHand.MAIN_HAND, laser);
+            sp.getInventory().setItem(1, item("build/item_cf_sprayer"));
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -60, 0.5, 180, 0);
+            // on the ground and in item frames, a few blocks ahead (north)
+            for (int i = 0; i < 2; i++) {
+                var drop = new net.minecraft.world.entity.item.ItemEntity(level, -0.5 + i * 2, -60, -3.5, item(i == 0 ? "item_tool_laser_miner" : "build/item_cf_sprayer"));
+                drop.setNoPickUpDelay(); drop.setPickUpDelay(32767); drop.setNeverPickUp(); drop.setUnlimitedLifetime();
+                drop.setDeltaMovement(0, 0, 0);
+                level.addFreshEntity(drop);
+                level.setBlock(new BlockPos(-1 + i * 2, -59, -6), net.minecraft.world.level.block.Blocks.OAK_PLANKS.defaultBlockState(), 3);
+                var frame = new net.minecraft.world.entity.decoration.ItemFrame(level, new BlockPos(-1 + i * 2, -59, -5), Direction.SOUTH);
+                frame.setItem(item(i == 0 ? "item_tool_laser_miner" : "build/item_cf_sprayer"), false);
+                level.addFreshEntity(frame);
+            }
+        });
+        client(5, () -> { Minecraft.getInstance().options.hideGui = false; Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(40, "guns/1_laser_fp_idle");
+        server(1, sp -> sp.getMainHandItem().use(sp.serverLevel(), sp, InteractionHand.MAIN_HAND));
+        shot(2, "guns/2_laser_fp_fire");
+        client(20, () -> { Minecraft.getInstance().options.hideGui = true; Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(40, "guns/3_laser_tp_lowready");
+        server(1, sp -> sp.getMainHandItem().use(sp.serverLevel(), sp, InteractionHand.MAIN_HAND));
+        shot(3, "guns/4_laser_tp_aim");
+        server(30, sp -> { sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 90, 0); sp.setYBodyRot(90); sp.setYHeadRot(90); });
+        shot(20, "guns/5_laser_tp_side");
+        server(1, sp -> {
+            sp.setItemInHand(InteractionHand.MAIN_HAND, item("build/item_cf_sprayer"));
+            sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 180, 0); sp.setYBodyRot(180); sp.setYHeadRot(180);
+        });
+        shot(20, "guns/6_sprayer_tp_front");
+        server(1, sp -> { sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 90, 0); sp.setYBodyRot(90); sp.setYHeadRot(90); });
+        shot(20, "guns/7_sprayer_tp_side");
+        client(1, () -> { Minecraft.getInstance().options.hideGui = false; Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON); });
+        server(1, sp -> { sp.teleportTo(sp.serverLevel(), 0.5, -60, 0.5, 180, 0); });
+        shot(20, "guns/8_sprayer_fp");
+        server(1, sp -> { sp.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY); sp.teleportTo(sp.serverLevel(), 0.0, -59.0, -1.0, 180, 25); });
+        client(1, () -> Minecraft.getInstance().options.hideGui = true);
+        shot(30, "guns/9_ground_and_frames");
+        client(1, () -> Minecraft.getInstance().options.hideGui = false);
+        client(10, () -> Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(Minecraft.getInstance().player)));
+        shot(20, "guns/10_inventory");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "guns".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneGuns();
+        }
+    }
+
     static {
         if (OUT != null && "reactor".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

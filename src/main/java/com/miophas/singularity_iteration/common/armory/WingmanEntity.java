@@ -1538,6 +1538,11 @@ public class WingmanEntity extends Mob {
     private float combat, combatO, recoil, recoilO;
     // 0.1.11.44 (motion audit M0, M-4): the smoothed horizontal velocity in the body frame (forward, right), for the lean
     private float moveF, moveFO, moveR, moveRO;
+    // 0.1.11.45 (M1): the smoothed climb, turn rate and braking, and the tick of the last thruster boost (the leg tuck)
+    private float moveU, moveUO, turn, turnO, brake, brakeO;
+    private int seenBoosts = Integer.MIN_VALUE, boostAt = -100;
+    /** Smoothing per tick of the turn rate and the braking (the attitude test checks them as the entity uses them). */
+    public static final float TURN_SMOOTH = 0.10F, BRAKE_SMOOTH = 0.15F;
     private int seenShots = Integer.MIN_VALUE, lastShot = -100;
     /** The recoil holds this many ticks after a shot (a gun firing faster keeps a steady braced pose). */
     private static final int RECOIL_HOLD = 8;
@@ -1547,6 +1552,9 @@ public class WingmanEntity extends Mob {
         landO = land;
         moveFO = moveF;
         moveRO = moveR;
+        moveUO = moveU;
+        turnO = turn;
+        brakeO = brake;
         combatO = combat;
         recoilO = recoil;
         boolean down = landed();
@@ -1556,6 +1564,15 @@ public class WingmanEntity extends Mob {
         float[] frame = WingmanPose.bodyFrame(down ? 0 : dx, down ? 0 : dz, yBodyRot);
         moveF += (frame[0] - moveF) * 0.2F;
         moveR += (frame[1] - moveR) * 0.2F;
+        moveU += ((down ? 0 : (float) (getY() - yo)) - moveU) * 0.2F;
+        turn += (Mth.wrapDegrees(yBodyRot - yBodyRotO) - turn) * TURN_SMOOTH;   // slow: a snap turn in combat must not snap the bank
+        // lost forward speed per tick (moveF is smoothed by 0.2), at most a full brake: a reversal must not snap the flare
+        brake += (Math.min(WingmanPose.FULL_BRAKE, Math.max(0, moveFO - moveF) * 5) - brake) * BRAKE_SMOOTH;
+        int boosts = entityData.get(DATA_BOOSTS);
+        if (boosts != seenBoosts) {
+            if (seenBoosts != Integer.MIN_VALUE) boostAt = tickCount;
+            seenBoosts = boosts;
+        }
         land += ((down ? 1 : 0) - land) * 0.2F;
         combat += ((lockedTargetId() >= 0 ? 1 : 0) - combat) * 0.25F;
         int shots = entityData.get(DATA_SHOTS);
@@ -1578,7 +1595,15 @@ public class WingmanEntity extends Mob {
 
     /** Client: the tilt {pitch, roll} in degrees from the smoothed flight direction (0.1.11.44, {@link WingmanPose#lean}). */
     public float[] lean(float partialTick) {
-        return WingmanPose.lean(Mth.lerp(partialTick, moveFO, moveF), Mth.lerp(partialTick, moveRO, moveR), 1 - landBlend(partialTick));
+        // 0.1.11.45 (M1): with the bank of a turn, the climb or dive and the flare of a brake
+        return WingmanPose.attitude(Mth.lerp(partialTick, moveFO, moveF), Mth.lerp(partialTick, moveRO, moveR),
+            Mth.lerp(partialTick, moveUO, moveU), Mth.lerp(partialTick, turnO, turn), Mth.lerp(partialTick, brakeO, brake),
+            1 - landBlend(partialTick));
+    }
+
+    /** Client: ticks since the last thruster boost (with the partial tick), for the leg tuck (0.1.11.45). */
+    public float boostAge(float partialTick) {
+        return tickCount - boostAt + partialTick;
     }
 
     /** Client: 0 (hover) .. 1 (full speed), smoothed. */

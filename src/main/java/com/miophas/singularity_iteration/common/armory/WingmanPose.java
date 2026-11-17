@@ -185,30 +185,79 @@ public final class WingmanPose {
         return body;
     }
 
-    // ------------------------------------------------------------------ lean (0.1.11.44, motion audit M0, M-4)
+    // ------------------------------------------------------------------ attitude (0.1.11.44 M0 lean, 0.1.11.45 M1 flight pose)
+    //
+    // The suit flies like a small jet (user decision two A): it tilts along its flight (forward, back, to the side), banks
+    // into turns, raises its head in a climb and dips it in a dive, flares back when it brakes, and tucks its legs in a
+    // thruster boost. All terms come from smoothed per-tick states, so they are continuous in time.
 
-    /** Forward lean at full speed, degrees (the value of 0.1.10.11; M1 changes the flight pose as a whole). */
-    public static final float MAX_LEAN = 62.0F;
+    /** Forward lean at full speed, degrees (0.1.11.45: 45, was 62: the suit no longer lies flat like a board). */
+    public static final float MAX_LEAN = 45.0F;
     /** Lean backwards (flying backwards) at full speed: a fraction of {@link #MAX_LEAN}. */
     public static final float BACK_LEAN = 0.5F;
     /** Side lean (sliding sideways) at full speed: a fraction of {@link #MAX_LEAN}. */
     public static final float SIDE_LEAN = 0.6F;
     /** Speed (blocks per tick) of a full lean: the flight factor of 0.1.10.11 ({@code speed * 1.6}, at most 1). */
     public static final float FULL_SPEED = 1 / 1.6F;
+    /** Bank at a full turn ({@link #FULL_TURN} degrees per tick) at full speed, degrees. */
+    public static final float BANK = 28.0F, FULL_TURN = 15.0F;
+    /** Head up in a full climb, down in a full dive ({@link #FULL_CLIMB} blocks per tick), degrees. */
+    public static final float CLIMB = 16.0F, FULL_CLIMB = 0.4F;
+    /** Flare back at a full brake ({@link #FULL_BRAKE} blocks per tick of lost forward speed per tick), degrees. */
+    public static final float BRAKE = 20.0F, FULL_BRAKE = 0.12F;
+    /** Bounds of the pitch and the roll, degrees. */
+    public static final float MIN_PITCH = -32.0F, MAX_PITCH = 55.0F, MAX_ROLL = 42.0F;
+
+    /** 0.1.11.44: the tilt from the flight direction alone (no turn, no climb, no brake); see {@link #attitude}. */
+    public static float[] lean(float forward, float right, float air) {
+        return attitude(forward, right, 0, 0, 0, air);
+    }
 
     /**
-     * The tilt of the suit, degrees: {pitch (positive: head forward), roll (positive: head to the right)}, from the
-     * smoothed velocity in the body frame ({@code forward}, {@code right}, blocks per tick) and the landing blend
-     * {@code air} (0 on the ground). Up to 0.1.11.43 the suit always leaned forward by its speed, whichever way it flew:
-     * sliding sideways around a target or backing off after a hit, it leaned toward its facing; now the tilt follows
-     * the flight. Finite and bounded for any input.
+     * The tilt of the suit, degrees: {pitch (positive: head forward), roll (positive: head to the right)}.
+     *
+     * @param forward smoothed velocity ahead in the body frame, blocks per tick
+     * @param right smoothed velocity to the right, blocks per tick
+     * @param up smoothed vertical velocity, blocks per tick
+     * @param turn smoothed turn rate of the body, degrees per tick (positive: to the right)
+     * @param brake smoothed loss of forward speed, blocks per tick per tick (positive: slowing down)
+     * @param air 1 in the air, 0 on the ground
      */
-    public static float[] lean(float forward, float right, float air) {
+    public static float[] attitude(float forward, float right, float up, float turn, float brake, float air) {
         float a = clamp01(air);
         float f = Mth.clamp(finite(forward) / FULL_SPEED, -1, 1), r = Mth.clamp(finite(right) / FULL_SPEED, -1, 1);
-        float pitch = (f >= 0 ? f : f * BACK_LEAN) * MAX_LEAN * a;
-        float roll = r * SIDE_LEAN * MAX_LEAN * a;
+        float speed = Math.min(1, Mth.sqrt(f * f + r * r));
+        float pitch = (f >= 0 ? f : f * BACK_LEAN) * MAX_LEAN;
+        pitch -= Mth.clamp(finite(up) / FULL_CLIMB, -1, 1) * CLIMB;                          // climb: head up; dive: head down
+        if (f > 0) pitch -= Mth.clamp(finite(brake) / FULL_BRAKE, 0, 1) * BRAKE * f;      // braking: a flare back
+        float roll = r * SIDE_LEAN * MAX_LEAN + Mth.clamp(finite(turn) / FULL_TURN, -1, 1) * BANK * speed;   // slide and bank
+        pitch = Mth.clamp(pitch, MIN_PITCH, MAX_PITCH) * a;
+        roll = Mth.clamp(roll, -MAX_ROLL, MAX_ROLL) * a;
         return new float[]{pitch, roll};
+    }
+
+    /** Leg angles: [right x, y, z, left x, y, z]. */
+    public static final int LEG_RX = 0, LEG_RZ = 2, LEG_LX = 3, LEG_LZ = 5;
+    /** Ticks of the leg tuck of a thruster boost. */
+    public static final int TUCK_TICKS = 12;
+
+    /**
+     * 0.1.11.45: the legs. In flight they trail a little behind (more with speed), spread with a slide or a bank, and swing
+     * slowly in the hover; a thruster boost tucks both thighs forward and lets them out again ({@code boostAge} ticks since
+     * the boost, partial; out of {@code [0, TUCK_TICKS]}: none). On the ground they stand straight.
+     *
+     * @param flight 0..1, speed; @param air 1 in the air; @param sway the hover sway; @param roll the roll, degrees
+     */
+    public static float[] legs(float flight, float air, float sway, float roll, float boostAge) {
+        float a = clamp01(air), f = clamp01(flight), sw = Mth.clamp(finite(sway), -0.2F, 0.2F);
+        float t = finite(boostAge);
+        float tuck = t >= 0 && t <= TUCK_TICKS ? Mth.sin(t / TUCK_TICKS * Mth.PI) : 0;
+        tuck = tuck * tuck * (3 - 2 * tuck);
+        float trail = Mth.lerp(f, 0, 0.22F);
+        float spread = 0.03F + Math.abs(Mth.clamp(finite(roll), -MAX_ROLL, MAX_ROLL)) / MAX_ROLL * 0.10F;
+        float rx = (trail + sw - tuck * 0.95F) * a, lx = (trail - sw * 0.7F - tuck * 0.80F) * a;
+        float rz = spread * a + 0.01F, lz = -rz;
+        return new float[]{rx, 0, rz, lx, 0, lz};
     }
 
     /** {forward, right} components (blocks per tick) of the horizontal motion {@code dx, dz} for a body yaw in degrees. */

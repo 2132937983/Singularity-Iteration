@@ -138,13 +138,14 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             rightArm.x = -Mth.cos(twist) * 5.0F;
             leftArm.z = -Mth.sin(twist) * 5.0F;
             leftArm.x = Mth.cos(twist) * 5.0F;
-            // legs straight and together; a small hover sway; straight under the suit when landed
-            rightLeg.xRot = Mth.lerp(f, sway, 0.10F) * air;
-            leftLeg.xRot = Mth.lerp(f, -sway, 0.10F) * air;
+            // 0.1.11.45 (M1): the legs trail with speed, spread in a slide or bank, tuck in a boost; straight when landed
+            float[] legs = WingmanPose.legs(f, air, sway, entity.lean(partial)[1], entity.boostAge(partial));
+            rightLeg.xRot = legs[WingmanPose.LEG_RX];
+            leftLeg.xRot = legs[WingmanPose.LEG_LX];
             rightLeg.yRot = 0;
             leftLeg.yRot = 0;
-            rightLeg.zRot = 0.03F * air + 0.01F;
-            leftLeg.zRot = -rightLeg.zRot;
+            rightLeg.zRot = legs[WingmanPose.LEG_RZ];
+            leftLeg.zRot = legs[WingmanPose.LEG_LZ];
             // the head looks forward in fast flight
             head.xRot -= leanPitch * Mth.DEG_TO_RAD * 0.6F;   // 0.1.11.44: the head keeps looking ahead (forward and back)
             hat.copyFrom(head);

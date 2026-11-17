@@ -15,6 +15,7 @@ public final class WingmanConfig {
     public static final int MAX_LIMIT = 8;
 
     private static ModConfigSpec spec;
+    private static ModConfigSpec.BooleanValue emergencyRescue;
     private static ModConfigSpec.IntValue maxPerPlayer, upkeep, lowPowerSeconds, scanRange, leash, reserveMinutes, speedCostPercent;
 
     /** Defines the section entries (called once while the common spec is built). */
@@ -41,6 +42,10 @@ public final class WingmanConfig {
                 "0.1.11.50：僚机伴飞速度超过巡航（0.9 格/tick）的部分，按机动模式速度耗电（30 EU/t × 速度²）的百分之几随维持费支付。",
                 "付不起时只能以巡航速度飞。0 = 伴飞速度免费。")
             .translation("mio_icif.configuration.wingmen.speedCostPercent").defineInRange("speedCostPercent", 100, 0, 1000);
+        emergencyRescue = b.comment("0.1.11.56: a Wingman catches its owner in a lethal fall and swaps suits with an owner near death",
+                "who wears fewer than two armour pieces (the nearest Wingman, at most once a minute each).",
+                "0.1.11.56：主人致命坠落时僚机接住他；主人濒死且身上盔甲不足两件时僚机飞来换装（由最近的僚机执行，每架每分钟最多一次）。")
+            .translation("mio_icif.configuration.wingmen.emergencyRescue").define("emergencyRescue", true);
     }
 
     /** Called after the spec is built. */
@@ -65,6 +70,8 @@ public final class WingmanConfig {
     public static long reserveEu() { return upkeepEuPerSecond() * 60L * reserveMinutes(); }
     public static double scanRange() { return get(scanRange, 24); }
     /** Never below the scan range (a target found must not be dropped at once). */
+    /** 0.1.11.56: true when Wingmen rescue their owner (a lethal fall, near death). */
+    public static boolean emergencyRescue() { return get(emergencyRescue, true); }
     /** 0.1.11.50: the factor of the escort speed cost (1 = the maneuver flight's). */
     public static double speedCostFactor() { return get(speedCostPercent, 100) / 100.0; }
     public static double leash() { return Math.max(scanRange(), get(leash, 28)); }

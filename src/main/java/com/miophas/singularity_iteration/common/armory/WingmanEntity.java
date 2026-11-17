@@ -431,7 +431,8 @@ public class WingmanEntity extends Mob {
                 case RETURNING -> tickReturn(world);
                 default -> {
                     if (deathGuard && tickDeathGuard(world, player, ownerHere)) return;
-                    if (!ownerHere && swapPhase == SWAP_NONE) return;
+                    if (!ownerHere && swapPhase == SWAP_NONE && !rescuing()) return;
+                    if (rescuing()) { tickRescue(player, ownerHere); return; }             // 0.1.11.56: an emergency rescue
                     if (swapPhase != SWAP_NONE) { tickSwap(player, ownerHere); return; }   // 0.1.11.54: a suit swap
                     // 0.1.10.2 quantum command: an order replaces the mode and the owner leash
                     if (order != WingmanOrder.NONE) { tickOrder(world, player); return; }
@@ -775,6 +776,85 @@ public class WingmanEntity extends Mob {
         }
         if (target != null) engage(target, player);
         else idle(formation(player), player, false);
+    }
+
+    // ---- emergency rescue (0.1.11.56, gaze and Iron Man phase P4; WingmanRescue picks the Wingman)
+
+    /** Ticks a falling owner is held after the catch, and the most ticks a rescue flight lasts. */
+    static final int CATCH_HOLD = 10, RESCUE_TICKS = 100;
+    /** Distance at which the owner is caught. */
+    static final double CATCH_REACH = 1.8;
+    private WingmanRescue.Danger rescue = WingmanRescue.Danger.NONE;
+    private int rescueTicks, holdTicks;
+    private long lastRescue = Long.MIN_VALUE / 2;
+
+    /** 0.1.11.56: true while this Wingman flies a rescue. */
+    public boolean rescuing() { return rescue != WingmanRescue.Danger.NONE; }
+
+    /** 0.1.11.56: true when this Wingman can be sent on a rescue for {@code danger} now. */
+    boolean canRescue(long now, WingmanRescue.Danger danger) {
+        if (state() != ACTIVE || secured || rescuing() || swapPhase != SWAP_NONE || now - lastRescue < WingmanRescue.COOLDOWN) return false;
+        return danger != WingmanRescue.Danger.LOW_HEALTH || armourPieces() >= 2;   // near death it brings a suit
+    }
+
+    private int armourPieces() {
+        int n = 0;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) if (p.isArmor() && !getItemBySlot(p.slot).isEmpty()) n++;
+        return n;
+    }
+
+    /** 0.1.11.56: starts a rescue of the owner. */
+    void startRescue(WingmanRescue.Danger danger, ServerPlayer player) {
+        lastRescue = level().getGameTime();
+        clearOrder();
+        deathGuard = false;
+        target = null;
+        if (danger == WingmanRescue.Danger.LOW_HEALTH) {
+            // near death: the suit comes to the owner at once
+            if (suitUp(player) == null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.rescue.suit", getName()), true);
+            return;
+        }
+        rescue = danger;
+        rescueTicks = 0;
+        holdTicks = 0;
+        level().playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_BOOST.get(), SoundSource.NEUTRAL, 1.0F, 0.8F);
+    }
+
+    /** One tick of a fall rescue: race to the owner, catch them, hold them, then swap suits when they wear less armour. */
+    private void tickRescue(@Nullable ServerPlayer player, boolean ownerHere) {
+        if (!ownerHere || ++rescueTicks > RESCUE_TICKS || holdTicks == 0 && player.onGround()) { rescue = WingmanRescue.Danger.NONE; return; }
+        face(player.getEyePosition());
+        Vec3 pv = player.getDeltaMovement();
+        if (holdTicks == 0) {
+            Vec3 to = player.position().add(pv).add(0, -0.4, 0).subtract(position());
+            double cap = Math.max(3.0, pv.length() + 1.5);
+            Vec3 want = pv.add(to.scale(0.6));
+            if (want.length() > cap) want = want.normalize().scale(cap);
+            setDeltaMovement(WingmanFlight.accelerate(getDeltaMovement(), want, 0.9));
+            if (distanceTo(player) <= CATCH_REACH) {
+                holdTicks = CATCH_HOLD;
+                player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOW_FALLING, 100, 0, false, false, true));
+                player.displayClientMessage(Component.translatable("message.mio_icif.wingman.rescue.catch", getName()), true);
+                level().playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.PLAYERS, 1.0F, 0.8F);
+                holdOwner(player);
+            }
+            return;
+        }
+        holdOwner(player);
+        if (--holdTicks > 0) return;
+        rescue = WingmanRescue.Danger.NONE;
+        // caught: the owner gets the suit when they wear less armour than the Wingman
+        if (WingmanRescue.armourPieces(player) < armourPieces() && armourPieces() >= 2 && suitUp(player) == null)
+            player.displayClientMessage(Component.translatable("message.mio_icif.wingman.rescue.suit", getName()), true);
+    }
+
+    /** Holds the caught owner: no fall, no fall distance; the Wingman under them. */
+    private void holdOwner(ServerPlayer player) {
+        player.setDeltaMovement(player.getDeltaMovement().multiply(0.3, 0, 0.3).add(0, 0.02, 0));
+        player.hurtMarked = true;
+        player.resetFallDistance();
+        Vec3 under = player.position().add(0, -1.2, 0).subtract(position());
+        setDeltaMovement(under.scale(0.5));
     }
 
     // ---- suit swap (0.1.11.54, gaze and Iron Man phase P2, decision four A)

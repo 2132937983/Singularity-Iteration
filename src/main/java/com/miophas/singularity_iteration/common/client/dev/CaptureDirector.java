@@ -3099,6 +3099,62 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman_rescue" (-Dsi.capture.scene=wingman_rescue), 0.1.11.56 (gaze and Iron Man phase P4): an owner without
+     * armour falls from 45 blocks; the escort Wingman (diamond suit) catches them in the air and swaps suits. Seen in third
+     * person, a frame every 2 ticks.
+     */
+    private static void sceneWingmanRescue() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.getAbilities().mayfly = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET})
+                sp.setItemSlot(slot, ItemStack.EMPTY);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[] set = {Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS,
+                    Items.DIAMOND_SWORD};
+                for (int c = 0; c < 5; c++) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), new ItemStack(set[c]), false);
+                Singularity_Iteration.LOGGER.info("capture rescue deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT).getString());
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); });
+        shot(100, "wingman_rescue/00_formed");
+        server(1, sp -> sp.connection.teleport(0.5, -15, 0.5, 0, 30));   // 45 blocks up: the fall starts
+        for (int f = 0; f < 60; f++) {
+            int frame = f;
+            server(0, sp -> {
+                if (frame % 5 == 0) Singularity_Iteration.LOGGER.info("capture rescue f{}: y {} fall {} slow {} chest {}", frame,
+                    String.format(java.util.Locale.ROOT, "%.1f", sp.getY()), String.format(java.util.Locale.ROOT, "%.1f", sp.fallDistance),
+                    sp.hasEffect(net.minecraft.world.effect.MobEffects.SLOW_FALLING), sp.getItemBySlot(EquipmentSlot.CHEST));
+            });
+            shot(2, String.format("wingman_rescue/f%02d", f));
+        }
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture rescue after: alive {} health {} chest {} on ground {}", sp.isAlive(),
+            sp.getHealth(), sp.getItemBySlot(EquipmentSlot.CHEST), sp.onGround()));
+        client(40, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_rescue".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanRescue();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

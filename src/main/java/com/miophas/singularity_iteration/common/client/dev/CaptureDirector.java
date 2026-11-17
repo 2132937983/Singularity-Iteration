@@ -3689,18 +3689,19 @@ public final class CaptureDirector {
             client(20, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance();
                 mc.options.setCameraType(view.equals("back") ? CameraType.THIRD_PERSON_BACK : CameraType.FIRST_PERSON); mc.player.setXRot(-2); });
             client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
-            until(400, () -> gather.get() > 0.7F);
+            // 0.1.11.73: each shot is timed from the gather and the crossing themselves (fixed waits landed long after the warp)
+            until(400, () -> gather.get() > 0.5F || since.get() < 3F);
             client(1, () -> Minecraft.getInstance().setScreen(null));
             shot(1, "warp/" + view + "_1_gather");
-            until(200, () -> since.get() < 1.5F);
+            until(200, () -> since.get() < 1.2F);
             shot(1, "warp/" + view + "_2_flash");
-            client(8, () -> Minecraft.getInstance().setScreen(null));
+            until(60, () -> since.get() >= 9F);
             shot(1, "warp/" + view + "_3_warp");
-            client(14, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null);
-                if (view.equals("back")) mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });   // the afterimages trail behind
+            until(60, () -> since.get() >= 22F);
+            client(1, () -> { if (view.equals("back")) Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT); });   // the afterimages trail behind
             shot(1, "warp/" + view + "_4_afterimages");
             client(1, () -> { if (view.equals("back")) Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK); });
-            client(30, () -> Minecraft.getInstance().setScreen(null));
+            until(60, () -> since.get() >= 46F);
             shot(1, "warp/" + view + "_5_drop");
             // slow down below the gather again before the next pass
             client(1, CaptureDirector::releaseKeys);

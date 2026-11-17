@@ -3030,6 +3030,8 @@
   "mio_icif.configuration.impact_shake.tooltip": "Camera shake of a hard landing, a wall hit and a take-off in quantum flight (0 = off, 1 = default, 2 = strong).",
   "mio_icif.configuration.impact_fov": "Boost and brake FOV kick",
   "mio_icif.configuration.impact_fov.tooltip": "FOV kick of a boost (wider) and a hard brake (narrower) in quantum flight (0 = off, 1 = default, 2 = strong).",
+  "mio_icif.configuration.warp_post": "Warp screen effect",
+  "mio_icif.configuration.warp_post.tooltip": "Screen effect of the own phase warp at the sound barrier: a radial blur, split colours at the edge and a dark edge. Off by itself while a shader pack is in use.",
   "callout.mio_icif.wingman.lock": "%s: locked on %s",
   "callout.mio_icif.wingman.kill": "%s: %s is down",
   "callout.mio_icif.wingman.damaged": "%s: %s badly damaged",

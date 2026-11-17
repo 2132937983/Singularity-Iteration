@@ -74,6 +74,8 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue WINGMAN_ENGINE_SOUND;
     /** 0.1.11.68 (quantum flight phase R2): the camera shake of hard landings and wall hits, and the FOV kick of boost and brake. */
     public static final ModConfigSpec.DoubleValue IMPACT_SHAKE, IMPACT_FOV;
+    /** 0.1.11.73 (phase warp W3): the screen effect of the own warp. */
+    public static final ModConfigSpec.BooleanValue WARP_POST;
     /** 0.1.8.3: flight visual effects (vapour cone, wake trails, boom rings) and their strength. */
     public static final ModConfigSpec.BooleanValue VAPOR_EFFECTS;
     public static final ModConfigSpec.DoubleValue VAPOR_INTENSITY;
@@ -177,6 +179,8 @@ public final class FcsClientConfig {
             .defineInRange("impact_shake", 1.0, 0.0, 2.0);
         IMPACT_FOV = b.comment("FOV kick of a boost (wider) and a hard brake (narrower) in quantum flight (0 = off, 1 = default, 2 = strong).")
             .defineInRange("impact_fov", 1.0, 0.0, 2.0);
+        WARP_POST = b.comment("Screen effect of the own phase warp at the sound barrier: a radial blur, split colours at the edge and a dark",
+                "edge. Off by itself while a shader pack is in use.").define("warp_post", true);
         SUIT_GLOW = b.comment("Nano and quantum suits glow: their lights and circuit lines shine in the light colour (palette accent),",
                 "amber and red as the charge falls, with breathing, an energy band and a power-on sweep. Players, Wingmen, armour stands.")
             .define("suit_glow", true);
@@ -261,6 +265,8 @@ public final class FcsClientConfig {
     /** 0.1.11.62: true for the classic flight effects, false (default) for the constructivist ones. */
     public static boolean classicFlightFx() { return loaded() && CLASSIC_FLIGHT_FX.get(); }
     public static boolean wingmanEngineSound() { return !loaded() || WINGMAN_ENGINE_SOUND.get(); }
+    /** 0.1.11.73: the screen effect of the own warp is on. */
+    public static boolean warpPost() { return !loaded() || WARP_POST.get(); }
     /** 0.1.11.68: the scale of the impact camera shake, 0..2. */
     public static float impactShake() { return loaded() ? IMPACT_SHAKE.get().floatValue() : 1.0F; }
     /** 0.1.11.68: the scale of the boost and brake FOV kick, 0..2. */

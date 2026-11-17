@@ -20,7 +20,8 @@ package com.miophas.singularity_iteration.common.suit;
 public final class WarpRules {
     private WarpRules() {}
 
-    public static final float GATHER_FROM = 0.8F, GATHER_CANCEL = 0.72F;
+    /** 0.1.11.73: from 0.65 (was 0.8: the climb from 0.8 to the barrier took only a few ticks, too short to gather). */
+    public static final float GATHER_FROM = 0.65F, GATHER_CANCEL = 0.58F;
     public static final int GATHER_FULL = 12, GATHER_MAX = 60, FLASH = 2, WARP = 40, DROP = 16;
 
     public enum Phase { NONE, FLASH, WARP, DROP }
@@ -96,6 +97,19 @@ public final class WarpRules {
     public static float[] gate(float since) {
         if (!(since >= 0) || since >= 6) return new float[]{0F, 0F};
         return new float[]{1.2F + 1.6F * since, 1 - since / 6F};
+    }
+
+    /**
+     * 0.1.11.73 (W3): the strength of the screen effect of the own warp (edge colour split, radial blur, dark edge), 0..1:
+     * full in the flash, easing to 0.6 over the warp, out over the drop.
+     */
+    public static float postStrength(float since) {
+        return switch (phase(since)) {
+            case FLASH -> 1F;
+            case WARP -> 1F - 0.4F * progress(since);
+            case DROP -> 0.6F * (1 - progress(since));
+            case NONE -> 0F;
+        };
     }
 
     private static float clamp(float v) { return Float.isFinite(v) ? Math.max(0F, Math.min(1F, v)) : 0F; }

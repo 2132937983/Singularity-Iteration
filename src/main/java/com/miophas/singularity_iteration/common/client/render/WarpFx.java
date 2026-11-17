@@ -22,7 +22,7 @@ import org.joml.Matrix4f;
  * {@link WarpRules}). The gather: a violet ring closes on the flyer across its flight and a violet glow grows on it. The
  * flash: a white burst, a gate of light growing round the flyer and a thin line of light across the flight (not round the
  * own first-person camera, where it would cut the view in two). The warp: rings of rippled space left behind and
- * afterimages of the flyer (slabs of light fanned behind it). The star streams of the warp are {@link StarStreams}. Not in
+ * afterimages of the flyer (outlines of light fanned behind it). The star streams of the warp are {@link StarStreams}. Not in
  * the classic style.
  */
 @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
@@ -86,9 +86,9 @@ public final class WarpFx {
     }
 
     /**
-     * The afterimages of the warp: up to three slabs of light the size of the lying flyer (in the warp it always flies the
-     * cruise pose, along the flight), fanned to each side in turn, a little back and up, cyan and magenta in turn
-     * ({@link WarpRules#ghost}).
+     * The afterimages of the warp: up to three outlines of light the size of the lying flyer (in the warp it always flies
+     * the cruise pose, along the flight), fanned to each side in turn, back and a little up, cyan and magenta in turn
+     * ({@link WarpRules#ghost}); faded near the camera (filled boxes there read as big pale blocks).
      */
     private static void afterimages(VertexConsumer vc, Vec3 centre, Vec3 axis, float since) {
         Vec3 side = axis.cross(new Vec3(0, 1, 0));
@@ -97,26 +97,38 @@ public final class WarpFx {
         for (int i = 1; i <= 3; i++) {
             float a = WarpRules.ghost(i, since);
             if (a <= 0.01F) continue;
-            Vec3 at = centre.subtract(axis.scale(1.4 * i)).add(side.scale((i % 2 == 1 ? 1 : -1) * (0.7 + 0.2 * i))).add(up.scale(0.15 * i));
+            Vec3 at = centre.subtract(axis.scale(1.6 * i)).add(side.scale((i % 2 == 1 ? 1 : -1) * (1.0 + 0.35 * i))).add(up.scale(0.2 * i));
+            a *= PhaseRules.streamNear((float) at.length());
+            if (a <= 0.01F) continue;
             float[] c = i % 2 == 1 ? PhaseRules.CYAN : PhaseRules.MAGENTA;
-            slab(vc, at, axis.scale(0.95), side.scale(0.3), up.scale(0.2), c, a * 0.6F);
-            slab(vc, at.add(axis.scale(0.95)), axis.scale(0.22), side.scale(0.24), up.scale(0.24), c, a * 0.7F);   // the helmet
+            outline(vc, at, axis.scale(0.9), side.scale(0.28), up.scale(0.18), c, a);
+            outline(vc, at.add(axis.scale(1.08)), axis.scale(0.18), side.scale(0.22), up.scale(0.22), c, a);   // the helmet
+            PhaseFx.blob(vc, at, 0.5F, c, a * 0.35F);
         }
     }
 
-    /** A box of light about {@code at} with half-axes {@code a}, {@code b}, {@code c} (camera-relative), faces additive. */
-    private static void slab(VertexConsumer vc, Vec3 at, Vec3 a, Vec3 b, Vec3 c, float[] rgb, float alpha) {
-        Matrix4f id = new Matrix4f();
-        Vec3[] axes = {a, b, c};
+    /** The twelve edges of a box about {@code at} with half-axes {@code a}, {@code b}, {@code c} (camera-relative), as lines of light. */
+    private static void outline(VertexConsumer vc, Vec3 at, Vec3 a, Vec3 b, Vec3 c, float[] rgb, float alpha) {
+        Vec3[] ax = {a, b, c};
         for (int f = 0; f < 3; f++) {
-            Vec3 n = axes[f], u = axes[(f + 1) % 3], v = axes[(f + 2) % 3];
-            for (int sgn = -1; sgn <= 1; sgn += 2) {
-                Vec3 o = at.add(n.scale(sgn));
-                FxDraw.vertex(vc, id, o.add(u).add(v), rgb[0], rgb[1], rgb[2], alpha);
-                FxDraw.vertex(vc, id, o.add(u).subtract(v), rgb[0], rgb[1], rgb[2], alpha);
-                FxDraw.vertex(vc, id, o.subtract(u).subtract(v), rgb[0], rgb[1], rgb[2], alpha);
-                FxDraw.vertex(vc, id, o.subtract(u).add(v), rgb[0], rgb[1], rgb[2], alpha);
+            Vec3 n = ax[f], u = ax[(f + 1) % 3], v = ax[(f + 2) % 3];
+            for (int su = -1; su <= 1; su += 2) for (int sv = -1; sv <= 1; sv += 2) {
+                Vec3 mid = at.add(u.scale(su)).add(v.scale(sv));
+                line(vc, mid.subtract(n), mid.add(n), 0.025F, rgb, alpha);
             }
         }
+    }
+
+    /** A camera-facing line of light from {@code p} to {@code q} (camera-relative). */
+    private static void line(VertexConsumer vc, Vec3 p, Vec3 q, float width, float[] rgb, float alpha) {
+        Vec3 side = q.subtract(p).cross(p);
+        if (side.lengthSqr() < 1.0E-10) return;
+        side = side.normalize().scale(width / 2);
+        Matrix4f id = new Matrix4f();
+        float[] core = PhaseRules.mix(rgb, PhaseRules.WHITE, 0.4F);
+        FxDraw.vertex(vc, id, p.add(side), core[0], core[1], core[2], alpha);
+        FxDraw.vertex(vc, id, p.subtract(side), core[0], core[1], core[2], alpha);
+        FxDraw.vertex(vc, id, q.subtract(side), core[0], core[1], core[2], alpha);
+        FxDraw.vertex(vc, id, q.add(side), core[0], core[1], core[2], alpha);
     }
 }

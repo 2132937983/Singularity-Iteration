@@ -1190,6 +1190,8 @@
   "mio_icif.configuration.impact_shake.tooltip": "量子飛行での激しい着地、高速での壁への衝突、離陸時のカメラ振動（0 = オフ、1 = 標準、2 = 強い）。",
   "mio_icif.configuration.impact_fov": "加速・急制動の視野変化",
   "mio_icif.configuration.impact_fov.tooltip": "量子飛行で加速時に視野が広がり、急制動時に狭まる（0 = オフ、1 = 標準、2 = 強い）。",
+  "mio_icif.configuration.warp_post": "ワープ画面効果",
+  "mio_icif.configuration.warp_post.tooltip": "自分が音速を超えてワープしたときの画面効果：放射状ブラー、画面端の色ずれ、周辺減光。シェーダーパック使用中は自動でオフ。",
   "callout.mio_icif.wingman.lock": "%s：%s をロック",
   "callout.mio_icif.wingman.kill": "%s：%s を撃破",
   "callout.mio_icif.wingman.damaged": "%s：%s が大きく損傷",

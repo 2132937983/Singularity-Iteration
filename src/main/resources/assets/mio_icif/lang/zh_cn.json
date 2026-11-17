@@ -3057,6 +3057,8 @@
   "mio_icif.configuration.impact_shake.tooltip": "量子飞行中重落地、高速撞墙和起飞时的镜头震动（0 = 关闭，1 = 默认，2 = 强烈）。",
   "mio_icif.configuration.impact_fov": "加力与急刹视野冲击",
   "mio_icif.configuration.impact_fov.tooltip": "量子飞行中加力时视野瞬间拉宽、急刹时收窄（0 = 关闭，1 = 默认，2 = 强烈）。",
+  "mio_icif.configuration.warp_post": "跃迁屏幕效果",
+  "mio_icif.configuration.warp_post.tooltip": "自己冲过音障跃迁时的屏幕效果：径向模糊、边缘色散和暗角。使用光影包时自动关闭。",
   "callout.mio_icif.wingman.lock": "%s：锁定 %s",
   "callout.mio_icif.wingman.kill": "%s：目标 %s 已清除",
   "callout.mio_icif.wingman.damaged": "%s：%s 严重受损",

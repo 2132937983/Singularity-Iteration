@@ -26,9 +26,9 @@ public final class Round11572GameTests {
 
     @GameTest(template = "empty", batch = "round11572_gather", timeoutTicks = 20)
     public static void gather(GameTestHelper h) {
-        h.assertTrue(b("gatherStarts", 0.79, 0.81) && !b("gatherStarts", 0.81, 0.79) && !b("gatherStarts", 0.85, 0.9)
+        h.assertTrue(b("gatherStarts", 0.64, 0.66) && !b("gatherStarts", 0.66, 0.64) && !b("gatherStarts", 0.85, 0.9)
             && !b("gatherStarts", Double.NaN, 0.9), "the gather starts wrong");
-        h.assertTrue(b("gatherCancels", 0.7, 5) && b("gatherCancels", 0.9, 61) && !b("gatherCancels", 0.85, 20), "the gather is not called off");
+        h.assertTrue(b("gatherCancels", 0.55, 5) && b("gatherCancels", 0.9, 61) && !b("gatherCancels", 0.85, 20), "the gather is not called off");
         h.assertTrue(f("gather", 0F) == 0 && f("gather", 6F) > 0.5F && f("gather", 12F) == 1 && f("gather", 50F) == 1, "the gather does not ease in");
         h.succeed();
     }

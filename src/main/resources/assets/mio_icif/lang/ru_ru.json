@@ -2706,6 +2706,8 @@
   "mio_icif.configuration.impact_shake.tooltip": "Тряска камеры при жёсткой посадке, ударе о стену на скорости и взлёте в квантовом полёте (0 = выкл., 1 = по умолчанию, 2 = сильно).",
   "mio_icif.configuration.impact_fov": "Рывок обзора при ускорении и торможении",
   "mio_icif.configuration.impact_fov.tooltip": "Обзор расширяется при ускорении и сужается при резком торможении в квантовом полёте (0 = выкл., 1 = по умолчанию, 2 = сильно).",
+  "mio_icif.configuration.warp_post": "Эффект экрана при варпе",
+  "mio_icif.configuration.warp_post.tooltip": "Эффект экрана при собственном фазовом варпе на звуковом барьере: радиальное размытие, расслоение цветов по краям и затемнение краёв. Отключается сам при использовании шейдерпака.",
   "callout.mio_icif.wingman.lock": "%s: захват цели %s",
   "callout.mio_icif.wingman.kill": "%s: %s уничтожен",
   "callout.mio_icif.wingman.damaged": "%s: %s сильно повреждён",

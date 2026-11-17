@@ -296,7 +296,10 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
     }
 
     /** Fly suit {@code set} to the player. Server side only. */
-    public SummonResult summon(ServerPlayer player, int set) {
+    public SummonResult summon(ServerPlayer player, int set) { return summon(player, set, null); }
+
+    /** 0.1.11.57 (P5): {@link #summon} of one piece of suit {@code set} ({@code only}; null: the whole suit). */
+    public SummonResult summon(ServerPlayer player, int set, @Nullable ArmoryPiece only) {
         if (!(level instanceof ServerLevel world)) return SummonResult.fail("message.mio_icif.armory.failed");
         if (set < 0 || set >= SETS) return SummonResult.fail("message.mio_icif.armory.failed");
         if (!isOwner(player)) return SummonResult.fail("message.mio_icif.armory.not_owner");
@@ -305,6 +308,7 @@ public class mio_icif_armory extends AbstractProcessingMachineBlockEntity {
 
         List<ArmoryPiece> flying = new ArrayList<>();
         for (ArmoryPiece p : ArmoryFlight.SEQUENCE) {
+            if (only != null && p != only) continue;
             ItemStack stored = piece(set, p);
             if (stored.isEmpty()) continue;
             ItemStack worn = player.getItemBySlot(p.slot);

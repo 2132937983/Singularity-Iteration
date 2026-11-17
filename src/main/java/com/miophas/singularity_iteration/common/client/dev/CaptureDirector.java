@@ -3155,6 +3155,52 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "piece_call" (-Dsi.capture.scene=piece_call), 0.1.11.57 (gaze and Iron Man phase P5): the piece wheel, then a
+     * helmet called from the Armory flying onto the owner (seen from the front), a frame every 2 ticks.
+     */
+    private static void scenePieceCall() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-6, -60, 6);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            sp.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+            sp.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                armory.getItemHandler().insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.HEAD), new ItemStack(Items.DIAMOND_HELMET), false);
+                ItemStack remote = new ItemStack(ArmoryRegistry.REMOTE.get());
+                remote.set(ArmoryComponents.TARGET.get(), GlobalPos.of(level.dimension(), armoryAt));
+                sp.getInventory().setItem(8, remote);
+            }
+        });
+        client(5, () -> Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.armory.PieceCallScreen()));
+        shot(20, "piece_call/00_wheel");
+        client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.options.hideGui = true;
+            mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        server(5, sp -> Singularity_Iteration.LOGGER.info("capture piece call: {}", com.miophas.singularity_iteration.common.armory.ArmoryPieceCall.call(sp,
+            sp.serverLevel().getBlockEntity(armoryAt) instanceof mio_icif_armory a ? a : null, ArmoryPiece.HEAD.ordinal()).getString()));
+        for (int f = 0; f < 50; f++) shot(2, String.format("piece_call/f%02d", f));
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture piece call after: head {} chest {}", sp.getItemBySlot(EquipmentSlot.HEAD),
+            sp.getItemBySlot(EquipmentSlot.CHEST)));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "piece_call".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            scenePieceCall();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

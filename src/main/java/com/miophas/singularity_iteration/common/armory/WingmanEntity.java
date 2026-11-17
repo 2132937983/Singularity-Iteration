@@ -890,7 +890,11 @@ public class WingmanEntity extends Mob {
 
     /** 0.1.11.54: starts a suit swap with the owner; null when it starts, else the reason (a message key). */
     @Nullable
-    public String suitUp(ServerPlayer player) {
+    public String suitUp(ServerPlayer player) { return suitUp(player, null); }
+
+    /** 0.1.11.57 (P5): a swap of one piece ({@code only}; null: the whole suit). */
+    @Nullable
+    public String suitUp(ServerPlayer player, @Nullable ArmoryPiece only) {
         if (state() != ACTIVE || secured) return "message.mio_icif.wingman.swap.busy";
         if (swapPhase != SWAP_NONE) return "message.mio_icif.wingman.swap.busy";
         if (player.level() != level()) return "message.mio_icif.wingman.swap.far";
@@ -899,8 +903,12 @@ public class WingmanEntity extends Mob {
         target = null;
         swapPhase = SWAP_APPROACH;
         swapWait = 0;
+        swapOnly = only;
         return null;
     }
+
+    /** 0.1.11.57: the one piece a swap hands over (null: the whole suit). */
+    @Nullable private ArmoryPiece swapOnly;
 
     /** An item the owner holds that counts as gear (it goes to the Wingman): a tool, weapon, shield or totem (unstackable). */
     static boolean handGear(ItemStack stack) {
@@ -965,7 +973,7 @@ public class WingmanEntity extends Mob {
         for (ArmoryPiece p : ArmoryPiece.VALUES) {
             int i = p.ordinal();
             ItemStack mine = getItemBySlot(p.slot), theirs = player.getItemBySlot(p.slot);
-            swapTake[i] = !bound(theirs, player) && (!mine.isEmpty() || givesToWingman(theirs, p));
+            swapTake[i] = (swapOnly == null || p == swapOnly) && !bound(theirs, player) && (!mine.isEmpty() || givesToWingman(theirs, p));
             if (!swapTake[i]) continue;
             any = true;
             swapOut[i] = mine.copy();
@@ -1051,6 +1059,7 @@ public class WingmanEntity extends Mob {
             swapIn[i] = ItemStack.EMPTY;
         }
         swapPhase = SWAP_NONE;
+        swapOnly = null;
         java.util.Arrays.fill(swapTake, false);
         level().playSound(null, getX(), getY(), getZ(), mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.NEUTRAL, 0.9F, 1.1F);
         int armour = 0;
@@ -1098,6 +1107,7 @@ public class WingmanEntity extends Mob {
         java.util.Arrays.fill(swapTake, false);
         swapPhase = SWAP_NONE;
         swapWait = 0;
+        swapOnly = null;
     }
 
     // ---- orders (0.1.10.2)

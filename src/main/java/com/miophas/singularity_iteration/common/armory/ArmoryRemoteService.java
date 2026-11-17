@@ -44,6 +44,8 @@ public final class ArmoryRemoteService {
     public static final int COMPANION_EQUIP = 7;
     /** 0.1.11.39: recall one Wingman; index = its entity id ({@link WingmanService.View#entityId()}). */
     public static final int WINGMAN_RECALL_ID = 8;
+    /** 0.1.11.57 (P5): call one piece ({@code index}: the {@link ArmoryPiece} ordinal), see {@link ArmoryPieceCall}. */
+    public static final int PIECE_CALL = 9;
     /**
      * Default ranges: showcases this close to the player, or to the paired Armory, belong to the
      * network. The live values come from {@code SiTuningValues.ARMORY_*_RANGE}
@@ -172,6 +174,7 @@ public final class ArmoryRemoteService {
             case WINGMAN_RECALL -> message = WingmanService.recall(player, index == ALL ? -1 : index);
             case COMPANION_EQUIP -> message = CompanionEquip.equip(player, armory, index);
             case WINGMAN_RECALL_ID -> message = WingmanService.recallById(player, index);
+            case PIECE_CALL -> message = ArmoryPieceCall.call(player, armory, index);
             default -> { }
         }
         if (!message.getString().isEmpty()) player.displayClientMessage(message, true);

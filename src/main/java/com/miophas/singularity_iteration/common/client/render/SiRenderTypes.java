@@ -55,7 +55,7 @@ public final class SiRenderTypes extends RenderType {
 
     /**
      * 0.1.11.62 (hit feel and constructivist FX phase Q1): flat, alpha-blended, full-bright quads with a depth test and no
-     * depth write: solid red, white and black shapes ({@code ConstructFx}). The additive glow types cannot draw black (and
+     * depth write: solid red, white and black shapes (0.1.11.74: the dark day bed of {@code PhaseFx}; the constructivist shapes it was made for are gone). The additive glow types cannot draw black (and
      * wash red into pink over a bright sky).
      */
     public static final RenderType FLAT = create("mio_icif_flat",

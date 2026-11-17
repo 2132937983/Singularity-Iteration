@@ -2699,7 +2699,7 @@
   "mio_icif.configuration.wingman_callout_sound": "Сигнал докладов",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "Короткий сигнал при каждом докладе ведомого.",
   "mio_icif.configuration.classic_flight_fx": "Классические эффекты полёта",
-  "mio_icif.configuration.classic_flight_fx.tooltip": "Эффекты полёта в классическом стиле (светящиеся конусы, частицы двигателей, марево) вместо конструктивистского (резкие красно-бело-чёрные клинья, полосы и кольца).",
+  "mio_icif.configuration.classic_flight_fx.tooltip": "Эффекты полёта в классическом стиле (светящиеся конусы, частицы двигателей, марево) вместо стиля фазового варпа (конусы света, звёздные потоки, варп на звуковом барьере).",
   "mio_icif.configuration.wingman_engine_sound": "Звук двигателя ведомого",
   "mio_icif.configuration.wingman_engine_sound.tooltip": "Турбинный гул летящего ведомого; громкость и высота растут со скоростью.",
   "mio_icif.configuration.impact_shake": "Тряска камеры при ударах",

@@ -3637,7 +3637,7 @@ public final class CaptureDirector {
         // the take-off burst at the feet (staged: a capture cannot double-tap the jump key)
         server(30, sp -> quantumFlyer(sp, null, 0.5, -59.6, -10.5));
         client(3, () -> { releaseKeys(); var pl = Minecraft.getInstance().player; pl.setXRot(35);
-            com.miophas.singularity_iteration.common.client.render.ConstructBursts.ground(pl.position(), 1F, true);
+            com.miophas.singularity_iteration.common.client.render.PhaseBursts.ground(pl.position(), 1F, true);
             com.miophas.singularity_iteration.common.client.suit.FlightImpactClient.takeoff(pl); });
         shot(2, "impact/3_takeoff_burst");
         // the boost out of the hover, then the hard brake

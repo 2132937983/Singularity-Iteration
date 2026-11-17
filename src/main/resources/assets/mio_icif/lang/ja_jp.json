@@ -1183,7 +1183,7 @@
   "mio_icif.configuration.wingman_callout_sound": "僚機の報告音",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "僚機の報告ごとに短い合図音を鳴らす。",
   "mio_icif.configuration.classic_flight_fx": "従来の飛行エフェクト",
-  "mio_icif.configuration.classic_flight_fx.tooltip": "構成主義スタイル（赤・白・黒の硬いくさび、線、輪）ではなく、従来の飛行エフェクト（発光コーン、スラスター粒子、陽炎）を使う。",
+  "mio_icif.configuration.classic_flight_fx.tooltip": "相位ワープスタイル（光の円錐、星の流れ、音速突破時のワープ）ではなく、従来の飛行エフェクト（発光コーン、スラスター粒子、陽炎）を使う。",
   "mio_icif.configuration.wingman_engine_sound": "僚機のエンジン音",
   "mio_icif.configuration.wingman_engine_sound.tooltip": "飛行中の僚機のタービン音。速度とともに音量と音程が上がる。",
   "mio_icif.configuration.impact_shake": "衝撃カメラ振動",

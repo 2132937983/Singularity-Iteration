@@ -71,10 +71,10 @@ public final class CommandWheelClient {
             com.miophas.singularity_iteration.common.armory.WingmanCleanSlate.HOOK = b -> {
                 var level = net.minecraft.client.Minecraft.getInstance().level;
                 if (level == null) return;
-                // 0.1.11.64 (Q3): the constructivist burst; the classic style keeps the firework
+                // 0.1.11.74 (W4): the phase burst (0.1.11.64: constructivist); the classic style keeps the firework
                 if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.classicFlightFx())
                     level.createFireworks(b.at().x, b.at().y, b.at().z, 0, 0, 0, b.explosions());
-                else com.miophas.singularity_iteration.common.client.render.ConstructBursts.cleanSlate(b.at());
+                else com.miophas.singularity_iteration.common.client.render.PhaseBursts.cleanSlate(b.at());
             };
         }
 

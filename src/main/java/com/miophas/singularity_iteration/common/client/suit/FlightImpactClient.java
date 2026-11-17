@@ -2,7 +2,7 @@
 package com.miophas.singularity_iteration.common.client.suit;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.client.render.ConstructBursts;
+import com.miophas.singularity_iteration.common.client.render.PhaseBursts;
 import com.miophas.singularity_iteration.common.suit.FlightImpact;
 import net.minecraft.client.Minecraft;
 import net.minecraft.sounds.SoundEvents;
@@ -57,19 +57,19 @@ public final class FlightImpactClient {
 
     public static void hardLanding(Player p, float strength) {
         Vec3 at = p.position();
-        if (!FcsClientConfig.classicFlightFx()) ConstructBursts.hardLanding(at, strength);
+        if (!FcsClientConfig.classicFlightFx()) PhaseBursts.hardLanding(at, strength);
         p.level().playLocalSound(at.x, at.y, at.z, SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS,
             0.6F + 0.6F * strength, 0.75F + p.level().random.nextFloat() * 0.1F, false);
         shakeFrom(p, 0.35F + 0.55F * strength);
     }
 
     public static void takeoff(Player p) {
-        if (!FcsClientConfig.classicFlightFx()) ConstructBursts.takeoffBurst(p.position());
+        if (!FcsClientConfig.classicFlightFx()) PhaseBursts.takeoffBurst(p.position());
         shakeFrom(p, 0.22F);
     }
 
     public static void wallHit(Player p, Vec3 at, Vec3 normal, float strength) {
-        if (!FcsClientConfig.classicFlightFx()) ConstructBursts.wallHit(at, normal, strength);
+        if (!FcsClientConfig.classicFlightFx()) PhaseBursts.wallHit(at, normal, strength);
         p.level().playLocalSound(at.x, at.y, at.z, SoundEvents.MACE_SMASH_GROUND_HEAVY, SoundSource.PLAYERS, 1.0F + strength, 0.6F, false);
         p.level().playLocalSound(at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.35F + 0.4F * strength, 0.65F, false);
         shakeFrom(p, 0.6F + 0.4F * strength);

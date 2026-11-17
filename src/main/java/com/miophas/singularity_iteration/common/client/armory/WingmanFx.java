@@ -4,7 +4,6 @@ package com.miophas.singularity_iteration.common.client.armory;
 import com.miophas.singularity_iteration.common.armory.ArmoryRegistry;
 import com.miophas.singularity_iteration.common.armory.WingmanEntity;
 import com.miophas.singularity_iteration.common.armory.WingmanMode;
-import com.miophas.singularity_iteration.common.client.render.ConstructFx;
 import com.miophas.singularity_iteration.common.client.render.FxDraw;
 import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
 import com.miophas.singularity_iteration.common.client.suit.FcsClientConfig;
@@ -231,89 +230,101 @@ public final class WingmanFx {
         }
         buffers.endBatch(SiRenderTypes.FIELD_GLOW);
         if (!classic) {
-            VertexConsumer flat = buffers.getBuffer(SiRenderTypes.FLAT);
+            VertexConsumer light = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
             for (var entry : STATES.int2ObjectEntrySet()) {
                 Entity e = mc.level.getEntity(entry.getIntKey());
-                if (e instanceof WingmanEntity w && w.isAlive()) construct(flat, m, w, entry.getValue(), now, partial, cam);
+                if (e instanceof WingmanEntity w && w.isAlive()) phase(light, w, entry.getValue(), now, partial, cam);
             }
-            buffers.endBatch(SiRenderTypes.FLAT);
+            buffers.endBatch(SiRenderTypes.FIELD_GLOW);
         }
         pose.popPose();
     }
 
     /**
-     * 0.1.11.62 (hit feel and constructivist FX phase Q1, decisions three B / four B): the flight and the strikes of one
-     * Wingman in the constructivist style ({@link ConstructFx}): a thrust wedge out of each sole (its length on a two-state
-     * beat, longer with speed and in the high-speed pose); three speed bars along the flight from 0.9 blocks per tick; a
-     * boost is one large wedge and one white ring, cut after {@link WingmanPose#BOOST_CUT} ticks; attitude jets are short
-     * white wedges; a shot is a white wedge and a red ring at the muzzle; a melee or blade swing is a red band with a white
-     * edge. No particles, no glow, no haze.
+     * 0.1.11.74 (phase warp style phase W4): the flight and the strikes of one Wingman in the phase warp style, in light
+     * (camera-relative, additive; {@link com.miophas.singularity_iteration.common.client.render.PhaseFx}): a phase cone out
+     * of each sole, longer with speed and in the high-speed pose; the star streams of a fast flyer; a boost is a long hot
+     * cone and a ring of light thrown off; attitude jets blink; a shot is a flash and a ring at the muzzle; a melee or blade
+     * swing is an arc of light fading from its edge. (0.1.11.62: the constructivist wedges, bars and red band.)
      */
-    private static void construct(VertexConsumer vc, Matrix4f m, WingmanEntity w, State s, float now, float partial, Vec3 cam) {
+    private static void phase(VertexConsumer vc, WingmanEntity w, State s, float now, float partial, Vec3 cam) {
         Vec3 pos = w.getPosition(partial), v = w.getDeltaMovement();
-        float speed = (float) v.length();
+        float speed = (float) v.length(), seconds = (w.tickCount + partial) / 20F;
         double yaw = Math.toRadians(Mth.lerp(partial, w.yBodyRotO, w.yBodyRot));
         Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw)), ahead = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
         double pitch = Math.toRadians(w.lean(partial)[0]);
         Vec3 feet = pos.add(0, 0.9, 0).add(ahead.scale(-0.85 * Math.sin(pitch))).add(0, -0.85 * Math.cos(pitch), 0);
         Vec3 aft = ahead.scale(-Math.sin(pitch)).add(0, -Math.cos(pitch), 0);
         float prone = w.proneBlend(partial);
+        float rate = com.miophas.singularity_iteration.common.suit.PhaseRules.rate(Math.min(1F, speed));
         if (!w.landed()) {
-            float len = com.miophas.singularity_iteration.common.armory.WingmanPose.thrustLength(speed, prone, ticks);
-            for (int side = -1; side <= 1; side += 2) ConstructFx.thrust(vc, m, feet.add(right.scale(0.13 * side)), aft, len * 1.3F, 0.24F, cam, 0.95F);
-        }
-        float bars = com.miophas.singularity_iteration.common.armory.WingmanPose.speedBarAlpha(speed);
-        if (bars > 0) {
-            Vec3 back = v.normalize().scale(-1);
-            float[][] colours = {ConstructFx.WHITE, ConstructFx.RED, ConstructFx.WHITE};
-            double[][] at = {{0.32, 1.35, 1.2, 0.05}, {0, 0.9, 0.85, 0.1}, {-0.32, 0.55, 1.0, 0.05}};   // right, up, length, width
-            for (int i = 0; i < 3; i++) {
-                Vec3 start = pos.add(right.scale(at[i][0])).add(0, at[i][1], 0).add(back.scale(0.5));
-                ConstructFx.bar(vc, m, start, start.add(back.scale(Math.min(2.4, speed * 1.4) * at[i][2])), (float) at[i][3], cam, colours[i], 0.92F * bars);
+            float len = com.miophas.singularity_iteration.common.armory.WingmanPose.thrustLength(speed, prone, ticks) * 0.9F;
+            for (int side = -1; side <= 1; side += 2) {
+                Vec3 sole = feet.add(right.scale(0.13 * side)).subtract(cam);
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, frame(sole, aft), len, 0.14F, seconds + side * 0.3F, rate, prone * 0.6F, 0.9F);
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.blob(vc, sole, 0.14F, com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, 0.7F);
             }
         }
+        com.miophas.singularity_iteration.common.client.render.StarStreams.drawFor(vc, w, v, partial, cam);
         float boostAge = now - s.boostTick, ring = com.miophas.singularity_iteration.common.armory.WingmanPose.boostRing(boostAge);
         if (ring > 0) {
-            Vec3 centre = pos.add(0, 0.95, 0);
-            ConstructFx.thrust(vc, m, centre, s.boostDir.scale(-1), 2.6F * (1 - boostAge / com.miophas.singularity_iteration.common.armory.WingmanPose.BOOST_CUT) + 0.4F,
-                0.5F, cam, 1F);
-            ConstructFx.ring(vc, m, centre, s.boostDir, ring, 0.1F, ConstructFx.WHITE, 1F, 40);
+            float k = boostAge / com.miophas.singularity_iteration.common.armory.WingmanPose.BOOST_CUT;
+            Vec3 centre = pos.add(0, 0.95, 0).subtract(cam);
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, frame(centre, s.boostDir.scale(-1)), 2.2F * (1 - k) + 0.4F, 0.4F,
+                seconds, rate * 2, 1F, 1F - 0.6F * k);
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.ring(vc, centre, s.boostDir, ring, 0.07F,
+                com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, 1F - k);
         }
         double acc = s.accel.length();
-        if (acc > 0.03) {
+        if (acc > 0.03 && ((w.tickCount >> 1) & 1) == 0) {   // attitude jets blink on a pulse
             Vec3 jet = s.accel.normalize().scale(-1);
             float a = (float) Math.min(1, acc * 9);
             Vec3[] ports = {pos.add(right.scale(0.36)).add(0, 1.38, 0), pos.add(right.scale(-0.36)).add(0, 1.38, 0)};
-            for (Vec3 p : ports) ConstructFx.wedge(vc, m, p, jet, 0.22F + 0.35F * a, 0.07F, cam, ConstructFx.WHITE, 0.9F);
+            for (Vec3 p : ports) {
+                Vec3 at = p.subtract(cam);
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, frame(at, jet), 0.18F + 0.3F * a, 0.08F, seconds, rate, 0F, 0.8F);
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.blob(vc, at, 0.1F, com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, 0.8F);
+            }
         }
         float shotAge = now - s.shotTick;
-        if (shotAge < 3) {
-            Vec3 mz = muzzle(w, partial), look = w.getViewVector(partial);
-            ConstructFx.wedge(vc, m, mz, look, 1.0F, 0.24F, cam, ConstructFx.WHITE, 1F);
-            ConstructFx.ring(vc, m, mz, look, 0.2F + shotAge * 0.12F, 0.06F, ConstructFx.RED, 1F, 24);
+        if (shotAge < 4) {
+            Vec3 mz = muzzle(w, partial).subtract(cam), look = w.getViewVector(partial);
+            float a = 1 - shotAge / 4F;
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.blob(vc, mz, 0.35F, com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, a);
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.ring(vc, mz, look, 0.15F + shotAge * 0.12F, 0.04F,
+                com.miophas.singularity_iteration.common.suit.PhaseRules.WHITE, a);
         }
         float swing = w.getAttackAnim(partial);
-        if (swing > 0.02F && !isRanged(w)) slashBand(vc, m, pos, yaw, swing, cam);
+        if (swing > 0.02F && !isRanged(w)) slashLight(vc, pos.subtract(cam), yaw, swing);
     }
 
-    /** 0.1.11.62: the constructivist cut: a flat red band over the swept arc (hard edges, no fade) and a white outer edge. */
-    private static void slashBand(VertexConsumer vc, Matrix4f m, Vec3 pos, double yaw, float swing, Vec3 cam) {
+    /** A frame at {@code at} (camera-relative) with +y along {@code dir}. */
+    private static Matrix4f frame(Vec3 at, Vec3 dir) {
+        Vec3 d = dir.lengthSqr() < 1.0E-8 ? new Vec3(0, -1, 0) : dir.normalize();
+        return new Matrix4f().translate((float) at.x, (float) at.y, (float) at.z)
+            .rotate(new org.joml.Quaternionf().rotationTo(0, 1, 0, (float) d.x, (float) d.y, (float) d.z));
+    }
+
+    /** 0.1.11.74 (W4): the cut in light: an arc over the swept sweep, bright at its leading edge and fading behind it. */
+    private static void slashLight(VertexConsumer vc, Vec3 pos, double yaw, float swing) {
         Vec3 fwd = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw)), right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
         Vec3 centre = pos.add(0, 1.15, 0);
+        Matrix4f id = new Matrix4f();
+        float[] cyan = com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, white = com.miophas.singularity_iteration.common.suit.PhaseRules.WHITE;
         int seg = 16;
         for (int i = 0; i < seg; i++) {
             float k0 = i / (float) seg, k1 = (i + 1F) / seg;
             if (k1 > swing) break;
-            if (swing - k0 > 0.45F) continue;   // only the last part of the sweep stands (hard cut, no fade)
+            float behind = swing - k1;
+            if (behind > 0.5F) continue;
+            float a = 1 - behind / 0.5F;
             double a0 = Math.toRadians(-80 + 160 * k0), a1 = Math.toRadians(-80 + 160 * k1);
             Vec3 d0 = fwd.scale(Math.cos(a0)).add(right.scale(Math.sin(a0))).add(0, -0.35 * Math.sin(a0), 0);
             Vec3 d1 = fwd.scale(Math.cos(a1)).add(right.scale(Math.sin(a1))).add(0, -0.35 * Math.sin(a1), 0);
-            float[] red = ConstructFx.RED;
-            FxDraw.vertex(vc, m, centre.add(d0.scale(0.95)), red[0], red[1], red[2], 0.92F);
-            FxDraw.vertex(vc, m, centre.add(d0.scale(1.65)), red[0], red[1], red[2], 0.92F);
-            FxDraw.vertex(vc, m, centre.add(d1.scale(1.65)), red[0], red[1], red[2], 0.92F);
-            FxDraw.vertex(vc, m, centre.add(d1.scale(0.95)), red[0], red[1], red[2], 0.92F);
-            ConstructFx.bar(vc, m, centre.add(d0.scale(1.72)), centre.add(d1.scale(1.72)), 0.06F, cam, ConstructFx.WHITE, 1F);
+            FxDraw.vertex(vc, id, centre.add(d0.scale(1.0)), cyan[0], cyan[1], cyan[2], 0F);
+            FxDraw.vertex(vc, id, centre.add(d0.scale(1.65)), white[0], white[1], white[2], 0.9F * a);
+            FxDraw.vertex(vc, id, centre.add(d1.scale(1.65)), white[0], white[1], white[2], 0.9F * a);
+            FxDraw.vertex(vc, id, centre.add(d1.scale(1.0)), cyan[0], cyan[1], cyan[2], 0F);
         }
     }
 

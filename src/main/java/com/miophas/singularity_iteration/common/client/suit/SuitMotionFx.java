@@ -175,17 +175,18 @@ public final class SuitMotionFx {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer vc = null;
         if (!FcsClientConfig.classicFlightFx()) {
-            // 0.1.11.63 (Q2): the constructivist sprint: one straight white bar per calf line, from now back to the oldest point
+            // 0.1.11.74 (W4): the phase sprint: one streak of light per calf line, bright now and gone at the oldest point
             for (Map.Entry<Player, State> e : STATES.entrySet()) {
                 State s = e.getValue();
                 if (s.streakCount < 2 || s.streakAlpha <= 0.3F || e.getKey() == mc.player && firstPerson) continue;
-                if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FLAT);
+                if (vc == null) vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
                 double[] a = s.streak[0], b = s.streak[s.streakCount - 1];
                 for (int k = 0; k < 4; k += 2)
-                    com.miophas.singularity_iteration.common.client.render.ConstructFx.bar(vc, m, new Vec3(a[k * 3], a[k * 3 + 1], a[k * 3 + 2]),
-                        new Vec3(b[k * 3], b[k * 3 + 1], b[k * 3 + 2]), 0.035F, cam, com.miophas.singularity_iteration.common.client.render.ConstructFx.WHITE, 0.9F);
+                    com.miophas.singularity_iteration.common.client.render.StarStreams.streak(vc, new org.joml.Matrix4f(), new Vec3(a[k * 3], a[k * 3 + 1], a[k * 3 + 2]).subtract(cam),
+                        new Vec3(b[k * 3], b[k * 3 + 1], b[k * 3 + 2]).subtract(cam), 0.05F, com.miophas.singularity_iteration.common.suit.PhaseRules.WHITE,
+                        com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, 0.8F * s.streakAlpha);
             }
-            if (vc != null) buffers.endBatch(SiRenderTypes.FLAT);
+            if (vc != null) buffers.endBatch(SiRenderTypes.FIELD_GLOW);
             pose.popPose();
             return;
         }

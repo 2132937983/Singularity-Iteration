@@ -3023,7 +3023,7 @@
   "mio_icif.configuration.wingman_callout_sound": "Wingman callout chirp",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "A short chirp with each Wingman callout.",
   "mio_icif.configuration.classic_flight_fx": "Classic flight effects",
-  "mio_icif.configuration.classic_flight_fx.tooltip": "Flight effects in the classic style (glowing cones, thruster particles, heat haze) instead of the constructivist one (hard-edged red, white and black wedges, bars and rings).",
+  "mio_icif.configuration.classic_flight_fx.tooltip": "Flight effects in the classic style (glowing cones, thruster particles, heat haze) instead of the phase warp one (cones of light, star streams, the warp at the sound barrier).",
   "mio_icif.configuration.wingman_engine_sound": "Wingman engine sound",
   "mio_icif.configuration.wingman_engine_sound.tooltip": "The engine of a flying Wingman: a turbine drone that rises with its speed.",
   "mio_icif.configuration.impact_shake": "Impact camera shake",

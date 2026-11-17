@@ -399,8 +399,8 @@ public final class ManeuverModeClient {
         level.playLocalSound(player.getX(), player.getY(), player.getZ(), mio_icif_sounds.MANEUVER_TAKEOFF.get(), SoundSource.PLAYERS, 1.0F, 1.0F, false);
         BlockPos below = player.blockPosition().below();
         var state = level.getBlockState(below);
-        if (!FcsClientConfig.classicFlightFx()) {   // 0.1.11.63 (Q2): the take-off is one ring, no dust or cloud
-            com.miophas.singularity_iteration.common.client.render.ConstructBursts.ground(player.position(), 1F, false);
+        if (!FcsClientConfig.classicFlightFx()) {   // 0.1.11.74 (W4): the take-off is one ring of light, no dust or cloud
+            com.miophas.singularity_iteration.common.client.render.PhaseBursts.ground(player.position(), 1F, true);
             return;
         }
         for (int i = 0; i < 40; i++) {
@@ -1060,9 +1060,9 @@ public final class ManeuverModeClient {
         pose.translate(-cam.x, -cam.y, -cam.z);
         Matrix4f m = pose.last().pose();
         boolean firstPerson = mc.options.getCameraType().isFirstPerson();
-        // 0.1.11.63 (hit feel and constructivist FX phase Q2): in the constructivist style the wake ribbons, the vapour cone,
-        // the Mach shell and the vapour shock rings are not drawn (the speed bars and the boom ring of ConstructBursts stand
-        // for them); the booms list is still kept for the HUD flash
+        // 0.1.11.63 (Q2), 0.1.11.74 (W4): outside the classic style the wake ribbons, the vapour cone, the Mach shell and the
+        // vapour shock rings are not drawn (the star streams and the phase warp stand for them); the booms list is still kept
+        // for the HUD flash
         boolean vapour = FcsClientConfig.vaporEffects() && FcsClientConfig.classicFlightFx();
         alphaScale = FcsClientConfig.vaporIntensity();
 

@@ -60,7 +60,7 @@ public final class StarStreams {
         if (vc != null) buffers.endBatch(SiRenderTypes.FIELD_GLOW);
     }
 
-    private static void draw(VertexConsumer vc, Matrix4f m, Player p, Vec3 flow, float speed, float alpha, float widen, float gather, float boost,
+    private static void draw(VertexConsumer vc, Matrix4f m, net.minecraft.world.entity.Entity p, Vec3 flow, float speed, float alpha, float widen, float gather, float boost,
                              float partial, Vec3 cam) {
         Vec3 axis = flow.normalize(), u = FxDraw.perp(axis).normalize(), v = axis.cross(u).normalize();
         Vec3 centre = p.getPosition(partial).add(0, p.getBbHeight() * 0.5, 0).subtract(cam);
@@ -79,6 +79,12 @@ public final class StarStreams {
             float a = alpha * (float) Math.sin(Math.PI * place) * (0.55F + 0.45F * (i % 3) / 2F) * PhaseRules.streamNear((float) head.add(tail).scale(0.5).length());
             streak(vc, m, head, tail, 0.03F + 0.015F * (i % 3), colours[0], colours[1], a);
         }
+    }
+
+    /** 0.1.11.74 (W4): the star streams of any flyer (a Wingman) moving by {@code flow} blocks per tick, no warp. */
+    public static void drawFor(VertexConsumer vc, net.minecraft.world.entity.Entity e, Vec3 flow, float partial, Vec3 cam) {
+        float speed = (float) flow.length(), alpha = PhaseRules.streamAlpha(speed);
+        if (alpha > 0.01F) draw(vc, new Matrix4f(), e, flow, speed, alpha * 0.8F, 1F, 0F, 1F, partial, cam);
     }
 
     /** A camera-facing ribbon from {@code head} (bright) to {@code tail} (gone), camera-relative points. */

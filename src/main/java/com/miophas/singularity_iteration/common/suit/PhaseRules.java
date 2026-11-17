@@ -123,6 +123,36 @@ public final class PhaseRules {
     /** 0.1.11.71: the fade of a stream near the camera ({@code distance} blocks to its middle): gone within 1.5, full from 4. */
     public static float streamNear(float distance) { return clamp((fin(distance) - 1.5F) / 2.5F); }
 
+    /**
+     * 0.1.11.74 (W4): the light of a burst {@code age} ticks into its {@code life}: up in two ticks, held, then easing out
+     * over the last 60 % (dissipation, no hard cut); 0 outside.
+     */
+    public static float burstFade(float age, float life) {
+        if (!(age >= 0) || !(life > 0) || age >= life) return 0F;
+        if (age < 2) return age / 2F;
+        float k = clamp((age / life - 0.4F) / 0.6F);
+        return 1 - k * k * (3 - 2 * k);
+    }
+
+    /**
+     * 0.1.11.74 (W4): a fissure of light along a crack of {@link FlightImpact#cracks}: {@code n + 1} points {x, y} in the
+     * plane of the crack (blocks, from the centre out), bending a little at each joint, its last point {@code length} out
+     * along about {@code angle}; the same seed, the same fissure.
+     */
+    public static float[][] fissure(long seed, int i, float angle, float length, int n) {
+        int joints = Math.max(1, n);
+        float[][] out = new float[joints + 1][2];
+        double a = angle, x = 0, y = 0, step = Math.max(0F, fin(length)) / joints;
+        for (int k = 1; k <= joints; k++) {
+            a += (hash(seed * 131 + i, k) - 0.5) * 0.7;
+            x += Math.cos(a) * step;
+            y += Math.sin(a) * step;
+            out[k][0] = (float) x;
+            out[k][1] = (float) y;
+        }
+        return out;
+    }
+
     /** A number 0..1 from a seed and a salt. */
     static double hash(long seed, int salt) {
         long h = seed * 0x9E3779B97F4A7C15L + salt * 0xC2B2AE3D27D4EB4FL;

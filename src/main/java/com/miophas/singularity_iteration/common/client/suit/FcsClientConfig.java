@@ -172,7 +172,7 @@ public final class FcsClientConfig {
                 "off: in the action bar.").define("wingman_callouts", true);
         WINGMAN_CALLOUT_SOUND = b.comment("A short chirp with each Wingman callout.").define("wingman_callout_sound", true);
         CLASSIC_FLIGHT_FX = b.comment("Flight effects in the classic style (glowing cones, thruster particles, heat haze) instead of the",
-                "constructivist one (hard-edged red, white and black wedges, bars and rings).").define("classic_flight_fx", false);
+                "phase warp one (cones of light, star streams, the warp at the sound barrier).").define("classic_flight_fx", false);
         WINGMAN_ENGINE_SOUND = b.comment("The engine of a flying Wingman: a turbine drone that rises with its speed.")
             .define("wingman_engine_sound", true);
         IMPACT_SHAKE = b.comment("Camera shake of a hard landing, a wall hit and a take-off in quantum flight (0 = off, 1 = default, 2 = strong).")

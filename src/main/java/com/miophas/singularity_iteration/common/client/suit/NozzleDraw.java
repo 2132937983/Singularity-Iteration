@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.miophas.singularity_iteration.common.client.suit;
 
-import com.miophas.singularity_iteration.common.client.render.ConstructFx;
 import com.miophas.singularity_iteration.common.suit.QuantumNozzles;
 import com.miophas.singularity_iteration.common.suit.core.FrameCores;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -72,18 +71,15 @@ public final class NozzleDraw {
         return true;
     }
 
-    /**
-     * A graviton field at the pose origin around +y: a red ring and a white ring that grows out of it and fades, on a
-     * one-second beat (constructivist), or two violet rings (classic).
-     */
+    /** The classic graviton field at the pose origin around +y: two violet rings, the outer one growing out on a one-second beat. */
     public static void field(VertexConsumer vc, PoseStack pose, float size, float power, float seconds, boolean classic) {
         if (power <= 0.02F) return;
         float r = 0.16F * size * (0.7F + 0.3F * power), phase = (seconds + size) % 1F;
-        float[] inner = classic ? new float[]{0.72F, 0.55F, 1F} : ConstructFx.RED;
-        float[] outer = classic ? new float[]{0.85F, 0.75F, 1F} : ConstructFx.WHITE;
-        ConstructFx.ring(vc, pose.last().pose(), Vec3.ZERO, new Vec3(0, 1, 0), r, 0.035F * size, inner, 0.9F * Math.min(1, power + 0.3F), 20);
-        ConstructFx.ring(vc, pose.last().pose(), new Vec3(0, 0.02, 0), new Vec3(0, 1, 0), r * (1.2F + 1.3F * phase), 0.02F * size,
-            outer, 0.85F * power * (1 - phase), 24);
+        Matrix4f m = pose.last().pose();
+        com.miophas.singularity_iteration.common.client.render.PhaseFx.ringAt(vc, m, 0, r, 0.035F * size, new float[]{0.72F, 0.55F, 1F},
+            0.9F * Math.min(1, power + 0.3F));
+        com.miophas.singularity_iteration.common.client.render.PhaseFx.ringAt(vc, m, 0.02F, r * (1.2F + 1.3F * phase), 0.02F * size,
+            new float[]{0.85F, 0.75F, 1F}, 0.85F * power * (1 - phase));
     }
 
     /**

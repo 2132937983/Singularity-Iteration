@@ -21,6 +21,17 @@
 - 截图核对（`wingman_motion`）：战斗中远程僚机的头低下来看着下方的僵尸（以前俯仰被清零，总是平视）。
 - 验证：`check runAddonGameTestServer` 完整运行 883 项，新增的 3 项和所有僚机测试都通过。失败的 2 项为 `cableReadsItsOwnFlow`、`solarPanelMarksSaveWithoutNeighbourUpdates`，属于 0.1.11.51 中已证实受测试摆放位置影响的能量测试，与本版本改动无关，未处理。
 
+### GameTest 稳定性（只改测试，游戏代码未改）
+
+几项能量/线缆测试会随测试总数变化而失败或通过，与代码无关。原因与修复：
+
+- 批次顺序：1.21.1 的 GameTest 服务器按批次名的 `HashMap` 遍历顺序运行批次。本套件约 377 个批次名，接近 384 的扩容阈值，加几个批次就会让全部批次重排。
+- 残留结构（主要原因）：原版测试服务器（`StructureGridSpawner(pos, 8, false)`）从不清除已完成批次的结构。新批次接着往后排，它强制加载的区块会把前面批次留下的机器、发电机和线缆重新加载并运行。这些方块和正在运行的测试共用同一个维度的电网，并计入全局计数（`PerfCounters`、`optimizationCounters`）。哪些残留会被重新加载取决于批次顺序。
+  - 新增 `GameTestIsolation`（附属测试模组）：每个批次结束时，在测试服务器取消强制加载区块之前，清空本批次每个结构的空间（与原版 `clearOnBatch` 的做法相同）。同一批次内的测试仍共用世界。
+- 结构外的方块：`brokenBareCablesDropPlainItems` 的两根线缆在 x 5 和 x 9，`cableReadsItsOwnFlow` 的用电器在 x 5，都在 5×5 的 `empty` 结构之外：处在到下一个结构的空隙里，也可能在测试服务器没有强制加载的区块里。现在都移到结构内。
+- 全局计数：`solarPanelMarksSaveWithoutNeighbourUpdates` 原来读取全局的 setChanged 计数，世界里其他 SI 方块实体也会计入。现在用面板旁边的新测试方块 `si_core_example:neighbour_probe`（`NeighbourProbe`）只统计面板发出的邻居更新。已确认：面板每 tick 调用 setChanged 时，这项测试仍会失败。
+- 验证：完整套件连续 3 次全部通过；另外加入 5 个、10 个占位测试（各自单独成批）后也全部通过。修复前，同样的加 0/5/10 个占位的运行每次都有 2–3 项失败。占位测试已删除。
+
 ## 0.1.11.51
 
 基于 0.1.11.50。僚机伴飞与武装库开放阶段的 F2（用户裁定决定四 A：高速编队与高速姿态）。伴飞与武装库开放阶段 F0–F2 至此完成。

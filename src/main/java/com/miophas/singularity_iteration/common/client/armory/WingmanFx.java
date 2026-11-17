@@ -108,7 +108,6 @@ public final class WingmanFx {
             case OFFENSIVE -> new float[]{1.0F, 0.32F, 0.22F};
             case DISPERSAL -> new float[]{1.0F, 0.7F, 0.2F};
             case ESCORT -> new float[]{0.3F, 0.9F, 1.0F};
-            case FULTON -> new float[]{0.4F, 1.0F, 0.5F};
         };
     }
 

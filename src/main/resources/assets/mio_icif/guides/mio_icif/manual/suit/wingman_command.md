@@ -25,7 +25,7 @@ When the wheel opens, it takes the point and the creature in your crosshair (up 
 | FOCUS | Attack the creature in your crosshair until it is down (up to 128 blocks from the Wingman), then form up. |
 | VOLLEY | The Entangled Volley (as on the action key). |
 | FORM UP | End the orders: back to formation and the tactical mode. |
-| MODE | A fan: the four tactical modes, "follow squad" and "return home". A mode for one Wingman is its own; the squad mode no longer changes it until "follow squad". |
+| MODE | A fan: the three tactical modes, "follow squad" and "return home". A mode for one Wingman is its own; the squad mode no longer changes it until "follow squad". |
 | DATA LINK | On or off (see below). |
 | HOLO TABLE | Project the 3D holo table (holomap Mk.II). |
 | Q-RECALL | Quantum recall (see below). |

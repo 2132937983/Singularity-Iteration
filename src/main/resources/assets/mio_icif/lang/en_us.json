@@ -2358,10 +2358,7 @@
   "gui.mio_icif.wingman.mode.dispersal.tip": "Each Wingman holds one sector of a large ring around you. It attacks the hostile mobs in its sector and pulls the mobs that attack you.",
   "gui.mio_icif.wingman.mode.escort": "Escort",
   "gui.mio_icif.wingman.mode.escort.tip": "Stays near you. Destroys the projectiles that fly at you. Attacks the mobs that hurt you.",
-  "gui.mio_icif.wingman.mode.fulton": "Fulton",
-  "gui.mio_icif.wingman.mode.fulton.tip": "Takes a mob to the Armory. Hit the mob, or crouch and look at it. A hostile mob must have 50% health or less. Cost: 4000 EU from the Armory.",
   "gui.mio_icif.wingman.state.1": "Returning",
-  "gui.mio_icif.wingman.state.2": "Fulton lift",
   "message.mio_icif.wingman.limit": "Maximum number of Wingmen: %s",
   "message.mio_icif.wingman.no_armor": "%s has no armor piece",
   "message.mio_icif.wingman.none": "No Wingman is active",
@@ -2369,8 +2366,6 @@
   "message.mio_icif.wingman.recalled": "%s Wingman(s) return to the Armory",
   "message.mio_icif.wingman.low_power": "Wingman power is low. It returns to the Armory.",
   "message.mio_icif.wingman.damaged": "Wingman is damaged. It returns to the Armory.",
-  "message.mio_icif.wingman.fulton_no_armory": "Fulton recovery: the paired Armory must be in this dimension",
-  "message.mio_icif.wingman.fulton_done": "Fulton recovery: %s is at the Armory",
   "gui.mio_icif.wingman.toggle.companion": "Companion",
   "gui.mio_icif.wingman.toggle.tip.companion": "Companion: the suit button sends the suit to your companion (for example a Touhou Little Maid maid). Look at the companion, or stay within 32 blocks of it. The old pieces of the companion fly to the Armory.",
   "gui.mio_icif.companion.equip": "Equip",
@@ -5392,7 +5387,6 @@
   "gui.mio_icif.wingman.mode_short.offensive": "OFF",
   "gui.mio_icif.wingman.mode_short.dispersal": "DSP",
   "gui.mio_icif.wingman.mode_short.escort": "ESC",
-  "gui.mio_icif.wingman.mode_short.fulton": "FUL",
   "gui.mio_icif.wingman.order.none": "FORM",
   "gui.mio_icif.wingman.order.move": "MOVE",
   "gui.mio_icif.wingman.order.hold": "HOLD",
@@ -5415,5 +5409,7 @@
   "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "Charged from the Armory at deployment (less when it has less). The suit pays first, then the reserve, then the loaded Armory; the rest goes back when the Wingman returns. 0 = no reserve.",
   "message.mio_icif.wingman.worn": "%s is worn: the Wingman returns to the Armory for repairs",
   "message.mio_icif.wingman.needs_repair": "%s must be repaired before it can fly (below 10 %% durability)",
-  "message.mio_icif.wingman.no_charge": "Wingman: %s is out of charge; it fights in melee"
+  "message.mio_icif.wingman.no_charge": "Wingman: %s is out of charge; it fights in melee",
+  "message.mio_icif.wingman.death_guard": "Your Wingmen guard the place where you fell (up to %s min). Come back within 24 blocks and they form up.",
+  "message.mio_icif.wingman.death_guard_over": "The guard of your place of death is over: the Wingman returns to the Armory"
 }

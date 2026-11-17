@@ -20,7 +20,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -44,7 +43,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -73,13 +71,9 @@ import org.jetbrains.annotations.Nullable;
  */
 @SuppressWarnings("null")
 public class WingmanEntity extends Mob {
-    /** EU of one Fulton recovery (paid by the Armory). */
-    public static final long FULTON_EU = 4000;
-    /** Mobs that a Fulton recovery cannot take (data pack tag). */
-    public static final TagKey<EntityType<?>> FULTON_IMMUNE = TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
-        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "wingman/fulton_immune"));
 
-    public static final byte ACTIVE = 0, RETURNING = 1, LIFTING = 2;
+    /** States; 2 was LIFTING (the Fulton lift, removed in 0.1.11.43): a saved one loads as ACTIVE. */
+    public static final byte ACTIVE = 0, RETURNING = 1;
 
     private static final double CRUISE = 0.9, COMBAT = 1.15, ACCEL = 0.14;
     /** Follow-range attribute (the live target ranges are {@link WingmanConfig#scanRange()} and {@link WingmanConfig#leash()}). */
@@ -114,7 +108,6 @@ public class WingmanEntity extends Mob {
     private int strafeSign = 1, retreatTicks, dashTicks, artsCooldown, blockedTicks;
     /** Ticks between two Slash Arts of a blade-wielding Wingman. */
     private static final int ARTS_INTERVAL = 200;
-    private int lastFulton = -1;
     private boolean secured, protectedReturn;
     // 0.1.9.1 tactics: firing station (re-planned every STATION_TICKS), evasion cooldown
     @Nullable private Vec3 station;
@@ -233,6 +226,7 @@ public class WingmanEntity extends Mob {
      */
     public void order(WingmanOrder order, @Nullable Vec3 pos, @Nullable LivingEntity focus) {
         if (order == WingmanOrder.FOCUS && focus == null) order = WingmanOrder.NONE;
+        deathGuard = false;   // 0.1.11.43: an order of the owner ends the guard of the place of death
         this.order = order;
         this.orderPos = order.anchored() ? (pos != null ? pos : position()) : null;
         this.orderTarget = order == WingmanOrder.FOCUS ? focus.getId() : -1;
@@ -243,6 +237,7 @@ public class WingmanEntity extends Mob {
 
     /** 0.1.10.2 "form up": the order ends and the tactical mode applies again. */
     public void clearOrder() {
+        deathGuard = false;
         order = WingmanOrder.NONE;
         orderPos = null;
         orderTarget = -1;
@@ -383,6 +378,7 @@ public class WingmanEntity extends Mob {
                 for (ItemStack extra : result.extras()) spawnAtLocation(extra);
             }
         }
+        if (!getPassengers().isEmpty()) dropCargo();   // 0.1.11.43: a Fulton cargo of an older save is let go (slow falling)
         if (attackCooldown > 0) attackCooldown--;
         if (deflectCooldown > 0) deflectCooldown--;
         if (boostCooldown > 0) boostCooldown--;
@@ -392,7 +388,10 @@ public class WingmanEntity extends Mob {
         disarmIdle();                                          // 0.1.10.4: the nanosaber goes off after a fight
         ServerPlayer player = owner == null ? null : world.getServer().getPlayerList().getPlayer(owner);
         boolean ownerHere = player != null && player.isAlive() && player.level() == world && !player.isSpectator();
-        if (state() != RETURNING && !ownerHere) {
+        // 0.1.11.43 (W4, decision 3 B): the owner died here: the squad guards the place instead of flying home
+        boolean ownerDead = player != null && !player.isAlive() && player.level() == world && !player.isSpectator();
+        if (ownerDead && state() == ACTIVE && !deathGuard) startDeathGuard(world, player);
+        if (state() != RETURNING && !ownerHere && !(deathGuard && player != null && player.level() == world)) {
             startReturn(null);
         }
         if (tickCount % 20 == 0 && state() != RETURNING) upkeep(world, player);
@@ -401,8 +400,8 @@ public class WingmanEntity extends Mob {
         try {
             switch (state()) {
                 case RETURNING -> tickReturn(world);
-                case LIFTING -> tickLift(world, player);
                 default -> {
+                    if (deathGuard && tickDeathGuard(world, player, ownerHere)) return;
                     if (!ownerHere) return;
                     // 0.1.10.2 quantum command: an order replaces the mode and the owner leash
                     if (order != WingmanOrder.NONE) { tickOrder(world, player); return; }
@@ -411,7 +410,6 @@ public class WingmanEntity extends Mob {
                         case OFFENSIVE -> tickOffensive(player);
                         case DISPERSAL -> tickDispersal(player);
                         case ESCORT -> tickEscort(world, player);
-                        case FULTON -> tickFulton(world, player);
                     }
                 }
             }
@@ -422,6 +420,46 @@ public class WingmanEntity extends Mob {
                 if (landed()) takeOff();
             }
         }
+    }
+
+    // ---- the owner's death (0.1.11.43, Wingman audit W4, decision 3 B)
+    //
+    // When the owner dies in the dimension of the squad, each Wingman holds the place of death (a HOLD order there: it
+    // engages what comes near, the dropped items included) instead of flying home. The guard ends when the owner, alive
+    // again, comes within DEATH_GUARD_END blocks (the Wingman forms up), when the owner gives an order, or after
+    // DEATH_GUARD_TICKS (the Wingman flies home). A respawn in another dimension or a logout sends it home as before.
+
+    /** Ticks a Wingman guards the place of its owner's death (2 minutes). */
+    static final int DEATH_GUARD_TICKS = 2400;
+    /** Blocks from the place of death within which the returning owner ends the guard. */
+    static final double DEATH_GUARD_END = 24;
+    private boolean deathGuard;
+    private long guardUntil;
+
+    /** 0.1.11.43: true while this Wingman guards the place of its owner's death. */
+    public boolean deathGuard() { return deathGuard; }
+
+    private void startDeathGuard(ServerLevel world, ServerPlayer player) {
+        order(WingmanOrder.HOLD, player.position(), null);
+        deathGuard = true;
+        guardUntil = world.getGameTime() + DEATH_GUARD_TICKS;
+        if (slot == 0) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.death_guard", DEATH_GUARD_TICKS / 1200), false);
+    }
+
+    /** One tick of the guard; true when it took the tick (the guard goes on or ended with the flight home). */
+    private boolean tickDeathGuard(ServerLevel world, @Nullable ServerPlayer player, boolean ownerHere) {
+        if (world.getGameTime() > guardUntil) {
+            deathGuard = false;
+            startReturn(Component.translatable("message.mio_icif.wingman.death_guard_over"));
+            return true;
+        }
+        if (ownerHere && orderPos != null && player.position().distanceToSqr(orderPos) < DEATH_GUARD_END * DEATH_GUARD_END) {
+            clearOrder();   // the owner is back: form up
+            return false;
+        }
+        if (player == null || order == WingmanOrder.NONE) return !ownerHere;
+        tickOrder(world, player);
+        return true;
     }
 
     // ---- idle landing (0.1.10.11)
@@ -655,83 +693,6 @@ public class WingmanEntity extends Mob {
         else idle(formation(player), player, false);
     }
 
-    private void tickFulton(ServerLevel world, ServerPlayer player) {
-        if (tickCount % 10 == 0 && !fultonCandidate(target, player)) target = pickFulton(player);
-        if (target == null) { idle(formation(player), player, false); return; }
-        steer(target.position().add(0, target.getBbHeight() + 0.7, 0), COMBAT, player);
-        face(target.position());
-        if (distanceToSqr(target.position().add(0, target.getBbHeight(), 0)) < 1.9 * 1.9) {
-            mio_icif_armory home = fultonArmory(world);
-            if (home == null) {
-                player.displayClientMessage(Component.translatable("message.mio_icif.wingman.fulton_no_armory"), true);
-                target = null;
-                return;
-            }
-            var payment = home.getEnergyStorageInternal().scexReserveInternal(FULTON_EU);
-            if (payment == null) {
-                player.displayClientMessage(Component.translatable("message.mio_icif.armory.no_energy", FULTON_EU, home.storedEnergy()), true);
-                target = null;
-                return;
-            }
-            payment.commit();
-            lastFulton = target.getId();
-            target.startRiding(this, true);
-            world.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.ARMORY_LATCH.get(), SoundSource.NEUTRAL, 1.0F, 0.8F);
-            setState(LIFTING);
-        }
-    }
-
-    /** The paired Armory for a Fulton recovery: same dimension as this Wingman, loaded or not. */
-    @Nullable
-    private mio_icif_armory fultonArmory(ServerLevel world) {
-        if (armory == null || armory.dimension() != world.dimension()) return null;
-        return world.getBlockEntity(armory.pos()) instanceof mio_icif_armory a ? a : null;
-    }
-
-    private void tickLift(ServerLevel world, @Nullable ServerPlayer player) {
-        Entity cargo = getFirstPassenger();
-        if (cargo == null) { setState(ACTIVE); return; }
-        setDeltaMovement(getDeltaMovement().scale(0.6).add(0, 0.18, 0));
-        if (stateTicks % 3 == 0) world.sendParticles(ParticleTypes.CLOUD, getX(), getY() - 0.4, getZ(), 2, 0.2, 0.1, 0.2, 0.02);
-        if (stateTicks < 30) return;
-        mio_icif_armory home = fultonArmory(world);
-        Vec3 drop = home == null ? null : dropPoint(world, home.getBlockPos(), cargo);
-        ejectPassengers();
-        if (drop != null) {
-            cargo.teleportTo(drop.x, drop.y, drop.z);
-            cargo.fallDistance = 0;
-            if (cargo instanceof Mob mob) mob.setPersistenceRequired();
-            world.playSound(null, drop.x, drop.y, drop.z, mio_icif_sounds.ARMORY_SEAL.get(), SoundSource.NEUTRAL, 1.0F, 1.0F);
-            if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.fulton_done", cargo.getDisplayName()), true);
-        } else if (player != null) {
-            cargo.teleportTo(player.getX(), player.getY(), player.getZ());
-        }
-        target = null;
-        if (player != null && player.level() == world) catchUp(player);
-        setState(ACTIVE);
-    }
-
-    /** A free place next to the Armory for a recovered mob: two-high air on solid ground. */
-    @Nullable
-    private static Vec3 dropPoint(ServerLevel world, BlockPos home, Entity cargo) {
-        int height = Math.max(1, Mth.ceil(cargo.getBbHeight()));
-        for (int r = 2; r <= 4; r++) {
-            for (int dx = -r; dx <= r; dx++) {
-                for (int dz = -r; dz <= r; dz++) {
-                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
-                    for (int dy = -1; dy <= 2; dy++) {
-                        BlockPos feet = home.offset(dx, dy, dz);
-                        if (!world.getBlockState(feet.below()).isFaceSturdy(world, feet.below(), net.minecraft.core.Direction.UP)) continue;
-                        boolean free = true;
-                        for (int h = 0; h < height && free; h++) free = world.getBlockState(feet.above(h)).getCollisionShape(world, feet.above(h)).isEmpty();
-                        if (free) return Vec3.atBottomCenterOf(feet);
-                    }
-                }
-            }
-        }
-        return Vec3.atCenterOf(home).add(0, 1.2, 0);
-    }
-
     // ---- orders (0.1.10.2)
 
     /** Height of the hold point above the order point, and the spread of the squad around it. */
@@ -823,10 +784,19 @@ public class WingmanEntity extends Mob {
         return best;
     }
 
-    /** A projectile of somebody else that passes within 2.2 blocks of the owner in the next 20 ticks. */
-    private static boolean incoming(Projectile p, ServerPlayer player) {
+    /**
+     * A hostile projectile that passes within 2.2 blocks of the owner in the next 20 ticks. 0.1.11.43 (G-8): hostile means
+     * from a hostile creature, a creature that hunts the owner, a player of another team (or none), or nobody (a
+     * dispenser). Potions and ender pearls are never stopped (a healing potion thrown to the owner, a teammate's pearl);
+     * before, every projectile of somebody else was destroyed.
+     */
+    static boolean incoming(Projectile p, ServerPlayer player) {
+        if (p instanceof net.minecraft.world.entity.projectile.ThrownPotion || p instanceof net.minecraft.world.entity.projectile.ThrownEnderpearl) return false;
         Entity shooter = p.getOwner();
         if (shooter == player || shooter instanceof WingmanEntity) return false;
+        if (shooter instanceof Player other && player.isAlliedTo(other)) return false;
+        if (shooter instanceof Mob mob && !(mob instanceof Enemy) && mob.getTarget() != player) return false;
+        if (shooter != null && !(shooter instanceof Player) && !(shooter instanceof Mob)) return false;
         Vec3 c = player.getBoundingBox().getCenter();
         Vec3 v = p.getDeltaMovement();
         double v2 = v.lengthSqr();
@@ -835,26 +805,6 @@ public class WingmanEntity extends Mob {
         double t = rel.dot(v) / v2;                                    // ticks to the closest approach
         if (t <= 0 || t > 20) return false;
         return p.position().add(v.scale(t)).distanceToSqr(c) <= 2.2 * 2.2;
-    }
-
-    private boolean fultonCandidate(@Nullable LivingEntity e, ServerPlayer player) {
-        if (e == null || !e.isAlive() || e.level() != level() || e instanceof Player || e instanceof WingmanEntity) return false;
-        if (e.isPassenger() || e.isVehicle() || e.getId() == lastFulton) return false;
-        if (e.getType().is(net.neoforged.neoforge.common.Tags.EntityTypes.BOSSES) || e.getType().is(FULTON_IMMUNE)) return false;
-        if (e.getBbWidth() > 1.6F || e.getBbHeight() > 2.8F || e.distanceToSqr(player) > WingmanConfig.leash() * WingmanConfig.leash()) return false;
-        if (e instanceof net.minecraft.world.entity.OwnableEntity own && own.getOwnerUUID() != null && !player.getUUID().equals(own.getOwnerUUID())) return false;
-        return !(e instanceof Enemy) || e.getHealth() <= e.getMaxHealth() * 0.5F;   // a hostile mob must be weakened first
-    }
-
-    @Nullable
-    private LivingEntity pickFulton(ServerPlayer player) {
-        LivingEntity marked = player.getLastHurtMob();
-        if (marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 100 && fultonCandidate(marked, player)) return marked;
-        if (!player.isCrouching()) return null;
-        Vec3 eye = player.getEyePosition(), end = eye.add(player.getViewVector(1.0F).scale(24));
-        EntityHitResult hit = ProjectileUtil.getEntityHitResult(player, eye, end, player.getBoundingBox().expandTowards(end.subtract(eye)).inflate(1),
-            e -> e instanceof LivingEntity && !e.isSpectator(), 24 * 24);
-        return hit != null && hit.getEntity() instanceof LivingEntity l && fultonCandidate(l, player) ? l : null;
     }
 
     // ---- combat (0.1.8.4 rework)
@@ -1213,10 +1163,12 @@ public class WingmanEntity extends Mob {
     private LivingEntity ownerFocus(ServerPlayer player) {
         LivingEntity marked = player.getLastHurtMob();
         double leash = WingmanConfig.leash();
-        if (marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 40 && valid(marked, player, leash)) return marked;
+        // 0.1.11.43 (G-7): the owner's hit calls the squad only on a hostile creature (a stray hit on a villager, a golem or a
+        // friend's horse no longer turns every Wingman on it); a neutral one is a target when it fights the owner
+        if (marked != null && marked instanceof Enemy && player.tickCount - player.getLastHurtMobTimestamp() < 40 && valid(marked, player, leash)) return marked;
         // 0.1.10.1 Fleet Datalink synergy: the creature in the owner's sights
         LivingEntity sighted = com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergies.mark(player);
-        return sighted != null && valid(sighted, player, leash * 2) ? sighted : null;
+        return sighted instanceof Enemy && valid(sighted, player, leash * 2) ? sighted : null;
     }
 
     /** Nearest hostile mob within {@code range} of the owner that hunts the owner. */
@@ -1542,7 +1494,7 @@ public class WingmanEntity extends Mob {
     public LivingEntity getControllingPassenger() { return null; }
 
     @Override
-    protected boolean canAddPassenger(Entity passenger) { return getPassengers().isEmpty() && state() == ACTIVE; }
+    protected boolean canAddPassenger(Entity passenger) { return false; }   // 0.1.11.43: no Fulton cargo any more
 
     @Override
     protected Vec3 getPassengerAttachmentPoint(Entity passenger, EntityDimensions dimensions, float scale) {
@@ -1675,8 +1627,9 @@ public class WingmanEntity extends Mob {
         set = tag.getInt("Set");
         sortie = tag.hasUUID("Sortie") ? tag.getUUID("Sortie") : null;
         reserve = Math.max(0, tag.getLong("Reserve"));   // 0.1.11.41 (absent in older saves: no reserve)
-        entityData.set(DATA_MODE, tag.getByte("Mode"));
-        entityData.set(DATA_STATE, tag.getByte("State"));
+        entityData.set(DATA_MODE, (byte) WingmanMode.byId(tag.getByte("Mode")).ordinal());   // 0.1.11.43: Fulton (3) loads as Escort
+        byte state = tag.getByte("State");
+        entityData.set(DATA_STATE, state == RETURNING ? RETURNING : ACTIVE);                   // 0.1.11.43: a Fulton lift (2) is over
         protectedReturn = tag.getBoolean("Protected");
         individual = tag.getBoolean("Individual");
         WingmanOrder saved = tag.contains("Order") ? WingmanOrder.byId(tag.getByte("Order")) : WingmanOrder.NONE;

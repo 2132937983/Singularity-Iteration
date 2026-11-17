@@ -102,11 +102,13 @@ public final class WingmanTactics {
                                             Vec3 guard, Squad squad) {
         double score = 0;
         int now = owner.tickCount;
-        boolean called = e == owner.getLastHurtMob() && now - owner.getLastHurtMobTimestamp() < 60;
+        // 0.1.11.43 (G-7): the owner's call and the Fleet Datalink mark count for hostile creatures only; a neutral one
+        // is a target when it attacks or hunts the owner (or by an explicit focus order)
+        boolean called = e instanceof Enemy && e == owner.getLastHurtMob() && now - owner.getLastHurtMobTimestamp() < 60;
         boolean attacker = e == owner.getLastHurtByMob() && now - owner.getLastHurtByMobTimestamp() < 100;
         boolean hunter = e instanceof Mob mob && mob.getTarget() == owner;
         // 0.1.10.2: the Fleet Datalink mark (the creature in the owner's sights) counts as a call
-        boolean marked = e == com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergies.mark(owner);
+        boolean marked = e instanceof Enemy && e == com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergies.mark(owner);
         if (marked) called = true;
         double toOwner = Math.sqrt(e.distanceToSqr(guard));
         if (e instanceof Enemy) score += 20;
@@ -165,7 +167,7 @@ public final class WingmanTactics {
         double bestScore = top[0];
         // the owner's call may be outside the scan box (a long shot): keep it
         LivingEntity called = owner.getLastHurtMob();
-        if (called != null && owner.tickCount - owner.getLastHurtMobTimestamp() < 60 && valid.test(called)) {
+        if (called instanceof Enemy && owner.tickCount - owner.getLastHurtMobTimestamp() < 60 && valid.test(called)) {
             double s = withSight(self, owner, called, threatBeforeSight(self, owner, called, current, guard, squad));
             if (s > bestScore) best = called;
         }

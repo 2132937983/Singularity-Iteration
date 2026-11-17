@@ -61,7 +61,7 @@ public final class Round11540GameTests {
         "gui.mio_icif.command.where.unloaded", "gui.mio_icif.command.where.other_dim",
         "gui.mio_icif.command.hud.datalink_on", "gui.mio_icif.command.hud.datalink_off", "gui.mio_icif.command.hud.recall_cd",
         "gui.mio_icif.wingman.mode_short.offensive", "gui.mio_icif.wingman.mode_short.dispersal", "gui.mio_icif.wingman.mode_short.escort",
-        "gui.mio_icif.wingman.mode_short.fulton", "gui.mio_icif.wingman.order.none", "gui.mio_icif.wingman.order.move",
+        "gui.mio_icif.wingman.order.none", "gui.mio_icif.wingman.order.move",
         "gui.mio_icif.wingman.order.hold", "gui.mio_icif.wingman.order.suppress", "gui.mio_icif.wingman.order.focus",
         "gui.mio_icif.wingman.order.rtb", "gui.mio_icif.wingman.order_short.move", "gui.mio_icif.wingman.order_short.hold",
         "gui.mio_icif.wingman.order_short.suppress", "gui.mio_icif.wingman.order_short.focus");

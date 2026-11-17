@@ -32,7 +32,7 @@ KEYS = {
     'gui.mio_icif.wingman.mode_short.offensive': v('OFF', '进攻', '攻勢', 'АТК'),
     'gui.mio_icif.wingman.mode_short.dispersal': v('DSP', '分散', '分散', 'РАС'),
     'gui.mio_icif.wingman.mode_short.escort': v('ESC', '护航', '護衛', 'ЭСК'),
-    'gui.mio_icif.wingman.mode_short.fulton': v('FUL', '富尔顿', 'フルトン', 'ФУЛ'),
+    # gui.mio_icif.wingman.mode_short.fulton: removed in 0.1.11.43 (lang_11543.py)
     'gui.mio_icif.wingman.order.none': v('FORM', '编队', '編隊', 'СТРОЙ'),
     'gui.mio_icif.wingman.order.move': v('MOVE', '移动', '移動', 'ДВИЖ.'),
     'gui.mio_icif.wingman.order.hold': v('HOLD', '待机', '待機', 'ОЖИД.'),

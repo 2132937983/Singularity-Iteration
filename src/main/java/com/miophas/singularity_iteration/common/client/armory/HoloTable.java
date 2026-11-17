@@ -425,10 +425,10 @@ public final class HoloTable {
             Vec3 at = e.getPosition(partial);
             if (!onTable(at.x, at.z)) continue;
             boolean hostile = e instanceof Enemy, player = e instanceof Player, linked = seen.contains(e.getId());
-            if (!hostile && !player && !linked) continue;
             Vec3 head = toTable(at.x, at.y + e.getBbHeight() + 2, at.z), foot = toTable(at.x, at.y, at.z);
-            float[] c = player ? new float[]{1F, 0.8F, 0.3F} : new float[]{1F, 0.3F, 0.25F};
-            float al = (linked ? 1F : 0.65F) * a;
+            // 0.1.11.43: a neutral creature gets a faint grey marker (it can take a focus order, as in the command wheel)
+            float[] c = player ? new float[]{1F, 0.8F, 0.3F} : hostile || linked ? new float[]{1F, 0.3F, 0.25F} : new float[]{0.7F, 0.75F, 0.78F};
+            float al = (linked ? 1F : hostile || player ? 0.65F : 0.35F) * a;
             FxDraw.line(vc, m, foot, head, cam, 0.004F, c[0], c[1], c[2], al * 0.6F);
             diamond(vc, m, head, cam, pin * (linked ? 1.0F : 0.75F), c[0], c[1], c[2], al);
             if (linked) FxDraw.ring(vc, m, head, head.subtract(cam), pin * 1.6F, pin * 0.5F, 0.44F, 0.95F, 0.84F, 0.8F * a, 16);
@@ -519,7 +519,7 @@ public final class HoloTable {
         return best;
     }
 
-    /** The hostile creature marker nearest to a screen point (within 8 GUI pixels), or null. */
+    /** The creature marker nearest to a screen point (within 8 GUI pixels), or null (0.1.11.43: any creature, not only hostile ones). */
     @Nullable
     static LivingEntity pickEntity(double mouseX, double mouseY) {
         Minecraft mc = Minecraft.getInstance();
@@ -527,7 +527,9 @@ public final class HoloTable {
         AABB box = new AABB(originX - radius, baseY - 48, originZ - radius, originX + radius + 1, baseY + 48, originZ + radius + 1);
         LivingEntity best = null;
         double bestD = 8 * 8;
-        for (Entity e : mc.level.getEntities((Entity) null, box, e -> e instanceof LivingEntity && e instanceof Enemy && e.isAlive())) {
+        // 0.1.11.43 (G-7): any creature but a player or a Wingman takes a focus order, as in the command wheel
+        for (Entity e : mc.level.getEntities((Entity) null, box, e -> e instanceof LivingEntity && !(e instanceof Player) && !(e instanceof WingmanEntity)
+                && e != mc.player && e.isAlive())) {
             if (!onTable(e.getX(), e.getZ())) continue;
             float[] s = com.miophas.singularity_iteration.common.client.suit.FcsProjection.project(toTable(e.getX(), e.getY() + e.getBbHeight() + 2, e.getZ()));
             if (s == null) continue;

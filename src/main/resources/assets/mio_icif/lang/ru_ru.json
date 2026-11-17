@@ -2353,10 +2353,7 @@
   "gui.mio_icif.wingman.mode.dispersal.tip": "Каждый ведомый отвечает за свой сектор большого круга вокруг вас, атакует враждебных мобов в секторе и отвлекает тех, кто нападает на вас.",
   "gui.mio_icif.wingman.mode.escort": "Эскорт",
   "gui.mio_icif.wingman.mode.escort.tip": "Держится рядом, сбивает летящие в вас снаряды и атакует существ, ранящих вас.",
-  "gui.mio_icif.wingman.mode.fulton": "Фултон-эвакуация",
-  "gui.mio_icif.wingman.mode.fulton.tip": "Отправляет существ в арсенал. Атакуйте существо или присядьте и посмотрите на него. Здоровье враждебного моба должно быть не выше 50%. Расходует 4000 EU арсенала.",
   "gui.mio_icif.wingman.state.1": "Возвращается",
-  "gui.mio_icif.wingman.state.2": "Подъём Фултона",
   "message.mio_icif.wingman.limit": "Лимит ведомых: %s",
   "message.mio_icif.wingman.no_armor": "У %s нет частей брони",
   "message.mio_icif.wingman.none": "Нет активных ведомых",
@@ -2364,8 +2361,6 @@
   "message.mio_icif.wingman.recalled": "Ведомых возвращено в арсенал: %s",
   "message.mio_icif.wingman.low_power": "У ведомого мало энергии, возвращается в арсенал.",
   "message.mio_icif.wingman.damaged": "Ведомый повреждён, возвращается в арсенал.",
-  "message.mio_icif.wingman.fulton_no_armory": "Фултон-эвакуация: привязанный арсенал должен быть в текущем измерении",
-  "message.mio_icif.wingman.fulton_done": "Фултон-эвакуация: %s доставлен в арсенал",
   "gui.mio_icif.wingman.toggle.companion": "Спутник",
   "gui.mio_icif.wingman.toggle.tip.companion": "Спутник: кнопка «комплект» отправляет комплект вашему спутнику (например, горничной из Touhou Little Maid). Смотрите на спутника или находитесь в пределах 32 блоков от него. Старые части спутника улетят в арсенал.",
   "gui.mio_icif.companion.equip": "Надеть",
@@ -5392,7 +5387,6 @@
   "gui.mio_icif.wingman.mode_short.offensive": "АТК",
   "gui.mio_icif.wingman.mode_short.dispersal": "РАС",
   "gui.mio_icif.wingman.mode_short.escort": "ЭСК",
-  "gui.mio_icif.wingman.mode_short.fulton": "ФУЛ",
   "gui.mio_icif.wingman.order.none": "СТРОЙ",
   "gui.mio_icif.wingman.order.move": "ДВИЖ.",
   "gui.mio_icif.wingman.order.hold": "ОЖИД.",
@@ -5415,5 +5409,7 @@
   "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "Заряжается из арсенала при выпуске (меньше, если энергии мало). Платит сначала костюм, затем запас, затем загруженный арсенал; остаток возвращается. 0 = без запаса.",
   "message.mio_icif.wingman.worn": "%s изношен: ведомый возвращается в арсенал на ремонт",
   "message.mio_icif.wingman.needs_repair": "%s нужно починить перед вылетом (прочность ниже 10 %%)",
-  "message.mio_icif.wingman.no_charge": "Ведомый: у %s нет заряда, он сражается в ближнем бою"
+  "message.mio_icif.wingman.no_charge": "Ведомый: у %s нет заряда, он сражается в ближнем бою",
+  "message.mio_icif.wingman.death_guard": "Ваши ведомые охраняют место, где вы пали (до %s мин). Вернитесь ближе чем на 24 блока, и они встанут в строй.",
+  "message.mio_icif.wingman.death_guard_over": "Охрана места гибели окончена: ведомый возвращается в арсенал"
 }

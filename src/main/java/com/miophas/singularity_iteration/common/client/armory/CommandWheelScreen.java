@@ -43,10 +43,11 @@ public final class CommandWheelScreen extends Screen {
         String key() { return "gui.mio_icif.command.entry." + name().toLowerCase(Locale.ROOT); }
     }
 
-    /** Squad control fan: the four modes, follow squad, return home. */
-    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0x66FF80, 0xDDDDDD, 0x9B7CFF};
+    /** Squad control fan: the three modes (0.1.11.43: the Fulton mode is gone), follow squad, return home. */
+    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0xDDDDDD, 0x9B7CFF};
     private static final String[] SUB_KEYS = {"gui.mio_icif.wingman.mode.offensive", "gui.mio_icif.wingman.mode.dispersal",
-        "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.wingman.mode.fulton", "gui.mio_icif.command.sub.squad", "gui.mio_icif.command.sub.return"};
+        "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.squad", "gui.mio_icif.command.sub.return"};
+    private static final int SUB_SQUAD = WingmanMode.VALUES.length, SUB_RETURN = SUB_SQUAD + 1;
     private static final float SUB_STEP = (float) Math.toRadians(23);
 
     private final CommandWheelClient.Target target;
@@ -237,7 +238,7 @@ public final class CommandWheelScreen extends Screen {
             int col = SUB_COLORS[s];
             FcsDraw.sector(g, cx, cy, R_SUB_IN, R_SUB_OUT + (hot ? 4 : 0), a0, a1, FcsDraw.argb(col, hot ? 0.45F : 0.15F));
             FcsDraw.arc(g, cx, cy, R_SUB_OUT + (hot ? 4 : 0), a0, a1, hot ? 2F : 1F, FcsDraw.argb(col, hot ? 1F : 0.6F));
-            if (s < 4 && s == current) FcsDraw.arc(g, cx, cy, R_SUB_IN + 2, a0, a1, 2F, FcsDraw.argb(0xFFFFFF, 0.8F));
+            if (s < SUB_SQUAD && s == current) FcsDraw.arc(g, cx, cy, R_SUB_IN + 2, a0, a1, 2F, FcsDraw.argb(0xFFFFFF, 0.8F));
             float am = (a0 + a1) / 2, rm = (R_SUB_IN + R_SUB_OUT) / 2;
             float x = cx + (float) Math.sin(am) * rm, y = cy - (float) Math.cos(am) * rm;
             String label = Component.translatable(SUB_KEYS[s]).getString();
@@ -316,7 +317,7 @@ public final class CommandWheelScreen extends Screen {
     }
 
     static int modeColor(int mode) {
-        return mode >= 0 && mode < 4 ? SUB_COLORS[mode] : 0xDDDDDD;
+        return mode >= 0 && mode < SUB_SQUAD ? SUB_COLORS[mode] : 0xDDDDDD;
     }
 
     // ------------------------------------------------------------------ icons (line drawings, s = half size)
@@ -415,7 +416,7 @@ public final class CommandWheelScreen extends Screen {
             case CONTROL -> {
                 if (sub < 0) { done = false; return; }                     // the fan stays open until a choice
                 if (sub < WingmanMode.VALUES.length) SquadClient.send(WingmanCommands.A_MODE, unit, (byte) sub, null, -1);
-                else if (sub == 4) SquadClient.send(WingmanCommands.A_SQUAD, unit, (byte) 0, null, -1);
+                else if (sub == SUB_SQUAD) SquadClient.send(WingmanCommands.A_SQUAD, unit, (byte) 0, null, -1);
                 else SquadClient.send(WingmanCommands.A_RETURN, unit, (byte) 0, null, -1);
             }
             case DATALINK -> SquadClient.send(WingmanCommands.A_DATALINK, WingmanCommandPackets.ALL, (byte) (SquadClient.datalink() ? 0 : 1), null, -1);

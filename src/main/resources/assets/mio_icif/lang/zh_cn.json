@@ -2385,10 +2385,7 @@
   "gui.mio_icif.wingman.mode.dispersal.tip": "每架僚机负责你周围大圆环中的一个扇区，攻击扇区内的敌对生物，并吸引正在攻击你的生物。",
   "gui.mio_icif.wingman.mode.escort": "防卫护航",
   "gui.mio_icif.wingman.mode.escort.tip": "留在你身边，击毁飞向你的弹射物，并攻击伤害你的生物。",
-  "gui.mio_icif.wingman.mode.fulton": "富尔顿回收",
-  "gui.mio_icif.wingman.mode.fulton.tip": "将生物送往武装库。攻击该生物，或潜行并注视它。敌对生物的生命值须不高于50%。消耗武装库 4000 EU。",
   "gui.mio_icif.wingman.state.1": "返航中",
-  "gui.mio_icif.wingman.state.2": "富尔顿升空",
   "message.mio_icif.wingman.limit": "僚机数量上限：%s",
   "message.mio_icif.wingman.no_armor": "%s 没有护甲部件",
   "message.mio_icif.wingman.none": "没有活动的僚机",
@@ -2396,8 +2393,6 @@
   "message.mio_icif.wingman.recalled": "%s 架僚机返回武装库",
   "message.mio_icif.wingman.low_power": "僚机电量不足，返回武装库。",
   "message.mio_icif.wingman.damaged": "僚机受损，返回武装库。",
-  "message.mio_icif.wingman.fulton_no_armory": "富尔顿回收：配对的武装库必须在当前维度",
-  "message.mio_icif.wingman.fulton_done": "富尔顿回收：%s 已送达武装库",
   "gui.mio_icif.wingman.toggle.companion": "同伴",
   "gui.mio_icif.wingman.toggle.tip.companion": "同伴：套装按钮将套装送往你的同伴（例如车万女仆的女仆）。注视同伴，或位于其 32 格以内。同伴原有的部件会飞回武装库。",
   "gui.mio_icif.companion.equip": "装备",
@@ -5392,7 +5387,6 @@
   "gui.mio_icif.wingman.mode_short.offensive": "进攻",
   "gui.mio_icif.wingman.mode_short.dispersal": "分散",
   "gui.mio_icif.wingman.mode_short.escort": "护航",
-  "gui.mio_icif.wingman.mode_short.fulton": "富尔顿",
   "gui.mio_icif.wingman.order.none": "编队",
   "gui.mio_icif.wingman.order.move": "移动",
   "gui.mio_icif.wingman.order.hold": "待机",
@@ -5415,5 +5409,7 @@
   "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "出击时从武装库预充（电量不足时少充）。先由套装支付，再用储备，最后由已加载的武装库支付；返航时剩余部分退回。0 = 不预充。",
   "message.mio_icif.wingman.worn": "%s 耐久过低：僚机返回武装库维修",
   "message.mio_icif.wingman.needs_repair": "%s 需要先维修才能出击（耐久低于 10%%）",
-  "message.mio_icif.wingman.no_charge": "僚机：%s 没电了，改为近战"
+  "message.mio_icif.wingman.no_charge": "僚机：%s 没电了，改为近战",
+  "message.mio_icif.wingman.death_guard": "你的僚机正在驻守你倒下的地方（最多 %s 分钟）。回到 24 格内，它们就会归队。",
+  "message.mio_icif.wingman.death_guard_over": "死亡地点驻守结束：僚机返回武装库"
 }

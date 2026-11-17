@@ -457,10 +457,7 @@
   "gui.mio_icif.wingman.mode.dispersal.tip": "各機があなたの周囲の大きなリングの担当区画を守り、区画内の敵対モブを攻撃し、あなたを狙うモブを引き付けます。",
   "gui.mio_icif.wingman.mode.escort": "防衛・護衛",
   "gui.mio_icif.wingman.mode.escort.tip": "あなたの近くに留まり、あなたへ飛来する投射物を撃墜し、あなたを傷つけたモブを攻撃します。",
-  "gui.mio_icif.wingman.mode.fulton": "フルトン回収",
-  "gui.mio_icif.wingman.mode.fulton.tip": "モブを武装庫へ運びます。モブを攻撃するか、しゃがんで注視してください。敵対モブは体力50%以下が必要です。武装庫から 4000 EU を消費します。",
   "gui.mio_icif.wingman.state.1": "帰還中",
-  "gui.mio_icif.wingman.state.2": "フルトン上昇",
   "message.mio_icif.wingman.limit": "僚機の上限：%s",
   "message.mio_icif.wingman.no_armor": "%s に防具がありません",
   "message.mio_icif.wingman.none": "稼働中の僚機はいません",
@@ -468,8 +465,6 @@
   "message.mio_icif.wingman.recalled": "%s 機の僚機が武装庫へ帰還",
   "message.mio_icif.wingman.low_power": "僚機の電力低下。武装庫へ帰還します。",
   "message.mio_icif.wingman.damaged": "僚機損傷。武装庫へ帰還します。",
-  "message.mio_icif.wingman.fulton_no_armory": "フルトン回収：ペアリングした武装庫が同じディメンションに必要です",
-  "message.mio_icif.wingman.fulton_done": "フルトン回収：%s を武装庫へ送りました",
   "gui.mio_icif.wingman.toggle.companion": "随伴",
   "gui.mio_icif.wingman.toggle.tip.companion": "随伴：スーツのボタンでスーツを随伴者（例：東方Little Maidのメイド）へ送ります。随伴者を注視するか、32ブロック以内にいてください。随伴者の元の装備は武装庫へ戻ります。",
   "gui.mio_icif.companion.equip": "装備",
@@ -5392,7 +5387,6 @@
   "gui.mio_icif.wingman.mode_short.offensive": "攻勢",
   "gui.mio_icif.wingman.mode_short.dispersal": "分散",
   "gui.mio_icif.wingman.mode_short.escort": "護衛",
-  "gui.mio_icif.wingman.mode_short.fulton": "フルトン",
   "gui.mio_icif.wingman.order.none": "編隊",
   "gui.mio_icif.wingman.order.move": "移動",
   "gui.mio_icif.wingman.order.hold": "待機",
@@ -5415,5 +5409,7 @@
   "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "出撃時に武装庫から充電（足りなければ少なめ）。スーツ、予備、読み込み中の武装庫の順に払い、帰還時に残りを戻す。0 = 予備なし。",
   "message.mio_icif.wingman.worn": "%s の耐久が低下：僚機は修理のため武装庫へ帰還",
   "message.mio_icif.wingman.needs_repair": "%s は修理が必要です（耐久 10%% 未満）",
-  "message.mio_icif.wingman.no_charge": "僚機：%s の電力切れ。近接戦闘に切り替えます"
+  "message.mio_icif.wingman.no_charge": "僚機：%s の電力切れ。近接戦闘に切り替えます",
+  "message.mio_icif.wingman.death_guard": "僚機があなたの倒れた場所を守っています（最大 %s 分）。24 ブロック以内に戻ると編隊に戻ります。",
+  "message.mio_icif.wingman.death_guard_over": "死亡地点の警護が終了：僚機は武装庫へ帰還"
 }

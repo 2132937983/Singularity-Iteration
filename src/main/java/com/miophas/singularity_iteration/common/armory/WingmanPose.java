@@ -326,6 +326,29 @@ public final class WingmanPose {
         return out;
     }
 
+    // ---- constructivist flight effects (0.1.11.62, hit feel and constructivist FX phase Q1): the timing, pure
+
+    /** The two-state beat of a thrust wedge: full on even pairs of ticks, {@link #BEAT_LOW} on odd ones (no noise). */
+    public static final float BEAT_LOW = 0.82F;
+
+    /** Length (blocks) of a boot thrust wedge at {@code speed} (blocks per tick) and the high-speed pose weight. */
+    public static float thrustLength(float speed, float prone, int tick) {
+        float base = 0.35F + Mth.clamp(finite(speed), 0, 4) * 0.45F + clamp01(prone) * 0.6F;
+        return base * (((tick >> 1) & 1) == 0 ? 1 : BEAT_LOW);
+    }
+
+    /** Opacity of the speed bars: none below 0.9 blocks per tick, full from 1.5. */
+    public static float speedBarAlpha(float speed) {
+        return Mth.clamp((finite(speed) - 0.9F) / 0.6F, 0, 1);
+    }
+
+    /** Ticks a boost ring and wedge stand before the hard cut, and the ring radius at {@code age} ticks (0: gone). */
+    public static final int BOOST_CUT = 6;
+
+    public static float boostRing(float age) {
+        return age < 0 || age >= BOOST_CUT ? 0 : 0.45F + age * 0.4F;
+    }
+
     // ---- battle damage (0.1.11.58, gaze and Iron Man phase P6)
 
     /** Durability fraction below which a piece counts as badly damaged (sparks start at 2 x this). */

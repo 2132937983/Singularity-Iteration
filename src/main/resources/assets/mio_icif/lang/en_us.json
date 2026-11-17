@@ -3022,6 +3022,8 @@
   "mio_icif.configuration.wingman_callouts.tooltip": "Wingman callouts (lock-on, kills, damage, power, rescues...) as subtitles beside the squad HUD; off: in the action bar.",
   "mio_icif.configuration.wingman_callout_sound": "Wingman callout chirp",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "A short chirp with each Wingman callout.",
+  "mio_icif.configuration.classic_flight_fx": "Classic flight effects",
+  "mio_icif.configuration.classic_flight_fx.tooltip": "Flight effects in the classic style (glowing cones, thruster particles, heat haze) instead of the constructivist one (hard-edged red, white and black wedges, bars and rings).",
   "callout.mio_icif.wingman.lock": "%s: locked on %s",
   "callout.mio_icif.wingman.kill": "%s: %s is down",
   "callout.mio_icif.wingman.damaged": "%s: %s badly damaged",

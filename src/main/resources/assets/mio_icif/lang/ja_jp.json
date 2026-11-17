@@ -1182,6 +1182,8 @@
   "mio_icif.configuration.wingman_callouts.tooltip": "僚機の報告（ロック、撃破、損傷、電力、救助など）を編隊HUDの横に字幕で表示。オフ：アクションバー。",
   "mio_icif.configuration.wingman_callout_sound": "僚機の報告音",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "僚機の報告ごとに短い合図音を鳴らす。",
+  "mio_icif.configuration.classic_flight_fx": "従来の飛行エフェクト",
+  "mio_icif.configuration.classic_flight_fx.tooltip": "構成主義スタイル（赤・白・黒の硬いくさび、線、輪）ではなく、従来の飛行エフェクト（発光コーン、スラスター粒子、陽炎）を使う。",
   "callout.mio_icif.wingman.lock": "%s：%s をロック",
   "callout.mio_icif.wingman.kill": "%s：%s を撃破",
   "callout.mio_icif.wingman.damaged": "%s：%s が大きく損傷",

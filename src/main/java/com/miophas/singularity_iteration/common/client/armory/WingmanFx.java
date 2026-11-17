@@ -4,6 +4,7 @@ package com.miophas.singularity_iteration.common.client.armory;
 import com.miophas.singularity_iteration.common.armory.ArmoryRegistry;
 import com.miophas.singularity_iteration.common.armory.WingmanEntity;
 import com.miophas.singularity_iteration.common.armory.WingmanMode;
+import com.miophas.singularity_iteration.common.client.render.ConstructFx;
 import com.miophas.singularity_iteration.common.client.render.FxDraw;
 import com.miophas.singularity_iteration.common.client.render.SiRenderTypes;
 import com.miophas.singularity_iteration.common.client.suit.FcsClientConfig;
@@ -62,11 +63,12 @@ public final class WingmanFx {
         for (WingmanEntity w : mc.level.getEntitiesOfClass(WingmanEntity.class, mc.player.getBoundingBox().inflate(96))) {
             State s = STATES.computeIfAbsent(w.getId(), k -> new State());
             s.seen = ticks;
+            boolean classic = FcsClientConfig.classicFlightFx();
             if (s.shots != Integer.MIN_VALUE && w.shotCount() != s.shots) {
                 s.shotTick = ticks;
                 Vec3 muzzle = muzzle(w, 1.0F);
                 Vec3 look = w.getViewVector(1.0F);
-                for (int i = 0; i < 6; i++) {
+                for (int i = 0; classic && i < 6; i++) {
                     mc.level.addParticle(ParticleTypes.ELECTRIC_SPARK, muzzle.x, muzzle.y, muzzle.z,
                         look.x * 0.3 + w.getRandom().nextGaussian() * 0.06, look.y * 0.3 + w.getRandom().nextGaussian() * 0.06,
                         look.z * 0.3 + w.getRandom().nextGaussian() * 0.06);
@@ -76,7 +78,7 @@ public final class WingmanFx {
                 s.boostTick = ticks;
                 Vec3 v = w.getDeltaMovement();
                 s.boostDir = v.lengthSqr() > 1.0E-4 ? v.normalize() : w.getViewVector(1.0F).scale(-1);
-                for (int i = 0; i < 10; i++) {
+                for (int i = 0; classic && i < 10; i++) {
                     mc.level.addParticle(ArmoryRegistry.THRUST.get(), w.getX(), w.getY() + 0.9, w.getZ(),
                         -s.boostDir.x * 0.5 + w.getRandom().nextGaussian() * 0.08, -s.boostDir.y * 0.5 + w.getRandom().nextGaussian() * 0.08,
                         -s.boostDir.z * 0.5 + w.getRandom().nextGaussian() * 0.08);
@@ -122,6 +124,7 @@ public final class WingmanFx {
         float flash = FcsClientConfig.flashScale();
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        boolean classic = FcsClientConfig.classicFlightFx();
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         pose.pushPose();
         pose.translate(-cam.x, -cam.y, -cam.z);
@@ -154,6 +157,7 @@ public final class WingmanFx {
                 }
                 marker(vc, m, target, tc, cam, left, up, col, lockAge, now, partial);
             }
+            if (!classic) continue;   // 0.1.11.62: the constructivist pass below draws the flight and the strikes
             // muzzle flash
             float shotAge = now - s.shotTick;
             if (shotAge < 4) {
@@ -226,7 +230,91 @@ public final class WingmanFx {
             if (swing > 0.02F && !isRanged(w)) slashArc(vc, m, w, pos, swing, partial);
         }
         buffers.endBatch(SiRenderTypes.FIELD_GLOW);
+        if (!classic) {
+            VertexConsumer flat = buffers.getBuffer(SiRenderTypes.FLAT);
+            for (var entry : STATES.int2ObjectEntrySet()) {
+                Entity e = mc.level.getEntity(entry.getIntKey());
+                if (e instanceof WingmanEntity w && w.isAlive()) construct(flat, m, w, entry.getValue(), now, partial, cam);
+            }
+            buffers.endBatch(SiRenderTypes.FLAT);
+        }
         pose.popPose();
+    }
+
+    /**
+     * 0.1.11.62 (hit feel and constructivist FX phase Q1, decisions three B / four B): the flight and the strikes of one
+     * Wingman in the constructivist style ({@link ConstructFx}): a thrust wedge out of each sole (its length on a two-state
+     * beat, longer with speed and in the high-speed pose); three speed bars along the flight from 0.9 blocks per tick; a
+     * boost is one large wedge and one white ring, cut after {@link WingmanPose#BOOST_CUT} ticks; attitude jets are short
+     * white wedges; a shot is a white wedge and a red ring at the muzzle; a melee or blade swing is a red band with a white
+     * edge. No particles, no glow, no haze.
+     */
+    private static void construct(VertexConsumer vc, Matrix4f m, WingmanEntity w, State s, float now, float partial, Vec3 cam) {
+        Vec3 pos = w.getPosition(partial), v = w.getDeltaMovement();
+        float speed = (float) v.length();
+        double yaw = Math.toRadians(Mth.lerp(partial, w.yBodyRotO, w.yBodyRot));
+        Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw)), ahead = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
+        double pitch = Math.toRadians(w.lean(partial)[0]);
+        Vec3 feet = pos.add(0, 0.9, 0).add(ahead.scale(-0.85 * Math.sin(pitch))).add(0, -0.85 * Math.cos(pitch), 0);
+        Vec3 aft = ahead.scale(-Math.sin(pitch)).add(0, -Math.cos(pitch), 0);
+        float prone = w.proneBlend(partial);
+        if (!w.landed()) {
+            float len = com.miophas.singularity_iteration.common.armory.WingmanPose.thrustLength(speed, prone, ticks);
+            for (int side = -1; side <= 1; side += 2) ConstructFx.thrust(vc, m, feet.add(right.scale(0.13 * side)), aft, len * 1.3F, 0.24F, cam, 0.95F);
+        }
+        float bars = com.miophas.singularity_iteration.common.armory.WingmanPose.speedBarAlpha(speed);
+        if (bars > 0) {
+            Vec3 back = v.normalize().scale(-1);
+            float[][] colours = {ConstructFx.WHITE, ConstructFx.RED, ConstructFx.WHITE};
+            double[][] at = {{0.32, 1.35, 1.2, 0.05}, {0, 0.9, 0.85, 0.1}, {-0.32, 0.55, 1.0, 0.05}};   // right, up, length, width
+            for (int i = 0; i < 3; i++) {
+                Vec3 start = pos.add(right.scale(at[i][0])).add(0, at[i][1], 0).add(back.scale(0.5));
+                ConstructFx.bar(vc, m, start, start.add(back.scale(speed * 1.4 * at[i][2])), (float) at[i][3], cam, colours[i], 0.92F * bars);
+            }
+        }
+        float boostAge = now - s.boostTick, ring = com.miophas.singularity_iteration.common.armory.WingmanPose.boostRing(boostAge);
+        if (ring > 0) {
+            Vec3 centre = pos.add(0, 0.95, 0);
+            ConstructFx.thrust(vc, m, centre, s.boostDir.scale(-1), 2.6F * (1 - boostAge / com.miophas.singularity_iteration.common.armory.WingmanPose.BOOST_CUT) + 0.4F,
+                0.5F, cam, 1F);
+            ConstructFx.ring(vc, m, centre, s.boostDir, ring, 0.1F, ConstructFx.WHITE, 1F, 40);
+        }
+        double acc = s.accel.length();
+        if (acc > 0.03) {
+            Vec3 jet = s.accel.normalize().scale(-1);
+            float a = (float) Math.min(1, acc * 9);
+            Vec3[] ports = {pos.add(right.scale(0.36)).add(0, 1.38, 0), pos.add(right.scale(-0.36)).add(0, 1.38, 0)};
+            for (Vec3 p : ports) ConstructFx.wedge(vc, m, p, jet, 0.22F + 0.35F * a, 0.07F, cam, ConstructFx.WHITE, 0.9F);
+        }
+        float shotAge = now - s.shotTick;
+        if (shotAge < 3) {
+            Vec3 mz = muzzle(w, partial), look = w.getViewVector(partial);
+            ConstructFx.wedge(vc, m, mz, look, 1.0F, 0.24F, cam, ConstructFx.WHITE, 1F);
+            ConstructFx.ring(vc, m, mz, look, 0.2F + shotAge * 0.12F, 0.06F, ConstructFx.RED, 1F, 24);
+        }
+        float swing = w.getAttackAnim(partial);
+        if (swing > 0.02F && !isRanged(w)) slashBand(vc, m, pos, yaw, swing, cam);
+    }
+
+    /** 0.1.11.62: the constructivist cut: a flat red band over the swept arc (hard edges, no fade) and a white outer edge. */
+    private static void slashBand(VertexConsumer vc, Matrix4f m, Vec3 pos, double yaw, float swing, Vec3 cam) {
+        Vec3 fwd = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw)), right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
+        Vec3 centre = pos.add(0, 1.15, 0);
+        int seg = 16;
+        for (int i = 0; i < seg; i++) {
+            float k0 = i / (float) seg, k1 = (i + 1F) / seg;
+            if (k1 > swing) break;
+            if (swing - k0 > 0.45F) continue;   // only the last part of the sweep stands (hard cut, no fade)
+            double a0 = Math.toRadians(-80 + 160 * k0), a1 = Math.toRadians(-80 + 160 * k1);
+            Vec3 d0 = fwd.scale(Math.cos(a0)).add(right.scale(Math.sin(a0))).add(0, -0.35 * Math.sin(a0), 0);
+            Vec3 d1 = fwd.scale(Math.cos(a1)).add(right.scale(Math.sin(a1))).add(0, -0.35 * Math.sin(a1), 0);
+            float[] red = ConstructFx.RED;
+            FxDraw.vertex(vc, m, centre.add(d0.scale(0.95)), red[0], red[1], red[2], 0.92F);
+            FxDraw.vertex(vc, m, centre.add(d0.scale(1.65)), red[0], red[1], red[2], 0.92F);
+            FxDraw.vertex(vc, m, centre.add(d1.scale(1.65)), red[0], red[1], red[2], 0.92F);
+            FxDraw.vertex(vc, m, centre.add(d1.scale(0.95)), red[0], red[1], red[2], 0.92F);
+            ConstructFx.bar(vc, m, centre.add(d0.scale(1.72)), centre.add(d1.scale(1.72)), 0.06F, cam, ConstructFx.WHITE, 1F);
+        }
     }
 
     /** 0.1.10.13: the same test as the combat logic and the arm pose ({@link com.miophas.singularity_iteration.common.armory.WingmanPose#ranged}). */

@@ -53,6 +53,21 @@ public final class SiRenderTypes extends RenderType {
             .setWriteMaskState(COLOR_WRITE)
             .createCompositeState(false));
 
+    /**
+     * 0.1.11.62 (hit feel and constructivist FX phase Q1): flat, alpha-blended, full-bright quads with a depth test and no
+     * depth write: solid red, white and black shapes ({@code ConstructFx}). The additive glow types cannot draw black (and
+     * wash red into pink over a bright sky).
+     */
+    public static final RenderType FLAT = create("mio_icif_flat",
+        DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 8192, false, false,   // no sorting: the layers keep their order
+        CompositeState.builder()
+            .setShaderState(POSITION_COLOR_SHADER)
+            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+            .setCullState(NO_CULL)
+            .setDepthTestState(LEQUAL_DEPTH_TEST)
+            .setWriteMaskState(COLOR_WRITE)
+            .createCompositeState(false));
+
     /** Depth-tested additive quads in the main target (deflector field cells, flight shock rings). */
     public static final RenderType FIELD_GLOW = create("mio_icif_field_glow",
         DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 16384, false, false,

@@ -2698,6 +2698,8 @@
   "mio_icif.configuration.wingman_callouts.tooltip": "Доклады ведомых (захват, уничтожение, повреждения, энергия, спасение...) субтитрами рядом с HUD звена; выкл.: в строке действий.",
   "mio_icif.configuration.wingman_callout_sound": "Сигнал докладов",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "Короткий сигнал при каждом докладе ведомого.",
+  "mio_icif.configuration.classic_flight_fx": "Классические эффекты полёта",
+  "mio_icif.configuration.classic_flight_fx.tooltip": "Эффекты полёта в классическом стиле (светящиеся конусы, частицы двигателей, марево) вместо конструктивистского (резкие красно-бело-чёрные клинья, полосы и кольца).",
   "callout.mio_icif.wingman.lock": "%s: захват цели %s",
   "callout.mio_icif.wingman.kill": "%s: %s уничтожен",
   "callout.mio_icif.wingman.damaged": "%s: %s сильно повреждён",

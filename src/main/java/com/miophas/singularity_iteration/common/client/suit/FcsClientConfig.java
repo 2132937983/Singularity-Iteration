@@ -68,6 +68,8 @@ public final class FcsClientConfig {
     public static final ModConfigSpec.BooleanValue WINGMAN_FX;
     /** 0.1.11.58: the Wingman callouts as subtitles (else in the action bar), and their chirp. */
     public static final ModConfigSpec.BooleanValue WINGMAN_CALLOUTS, WINGMAN_CALLOUT_SOUND;
+    /** 0.1.11.62: the flight effects in the classic style (glow, particles) instead of the constructivist one. */
+    public static final ModConfigSpec.BooleanValue CLASSIC_FLIGHT_FX;
     /** 0.1.8.3: flight visual effects (vapour cone, wake trails, boom rings) and their strength. */
     public static final ModConfigSpec.BooleanValue VAPOR_EFFECTS;
     public static final ModConfigSpec.DoubleValue VAPOR_INTENSITY;
@@ -163,6 +165,8 @@ public final class FcsClientConfig {
         WINGMAN_CALLOUTS = b.comment("Wingman callouts (lock-on, kills, damage, power, rescues...) as a subtitle line beside the squad HUD;",
                 "off: in the action bar.").define("wingman_callouts", true);
         WINGMAN_CALLOUT_SOUND = b.comment("A short chirp with each Wingman callout.").define("wingman_callout_sound", true);
+        CLASSIC_FLIGHT_FX = b.comment("Flight effects in the classic style (glowing cones, thruster particles, heat haze) instead of the",
+                "constructivist one (hard-edged red, white and black wedges, bars and rings).").define("classic_flight_fx", false);
         SUIT_GLOW = b.comment("Nano and quantum suits glow: their lights and circuit lines shine in the light colour (palette accent),",
                 "amber and red as the charge falls, with breathing, an energy band and a power-on sweep. Players, Wingmen, armour stands.")
             .define("suit_glow", true);
@@ -244,6 +248,8 @@ public final class FcsClientConfig {
     public static boolean scanFx() { return !loaded() || SCAN_FX.get(); }
     public static boolean wingmanFx() { return !loaded() || WINGMAN_FX.get(); }
     public static boolean wingmanCallouts() { return !loaded() || WINGMAN_CALLOUTS.get(); }
+    /** 0.1.11.62: true for the classic flight effects, false (default) for the constructivist ones. */
+    public static boolean classicFlightFx() { return loaded() && CLASSIC_FLIGHT_FX.get(); }
     public static boolean wingmanCalloutSound() { return !loaded() || WINGMAN_CALLOUT_SOUND.get(); }
     public static void setCoreAttachments(boolean on) {
         if (!loaded()) return;

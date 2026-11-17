@@ -3049,6 +3049,8 @@
   "mio_icif.configuration.wingman_callouts.tooltip": "在编队 HUD 旁以字幕显示僚机播报（锁定、击杀、受损、电力、救援等）；关闭时显示在动作栏。",
   "mio_icif.configuration.wingman_callout_sound": "僚机播报提示音",
   "mio_icif.configuration.wingman_callout_sound.tooltip": "每条僚机播报伴随一声短促的提示音。",
+  "mio_icif.configuration.classic_flight_fx": "经典飞行特效",
+  "mio_icif.configuration.classic_flight_fx.tooltip": "使用旧的飞行特效（发光锥、推进器粒子、热浪），而不是构成主义风格（红白黑硬边楔形、线条与圆环）。",
   "callout.mio_icif.wingman.lock": "%s：锁定 %s",
   "callout.mio_icif.wingman.kill": "%s：目标 %s 已清除",
   "callout.mio_icif.wingman.damaged": "%s：%s 严重受损",

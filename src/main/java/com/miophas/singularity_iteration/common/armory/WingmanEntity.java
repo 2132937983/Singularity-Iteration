@@ -2388,6 +2388,9 @@ public class WingmanEntity extends Mob {
         return WingmanPose.damageShake(tickCount + partialTick, damageLevel, 1 - landBlend(partialTick));
     }
 
+    /** 0.1.11.62: true when the client draws the classic flight effects (set by the client setup; the client option). */
+    public static java.util.function.BooleanSupplier CLASSIC_FX = () -> true;
+
     private void tickDamageFx() {
         if (tickCount % 10 == 0) {
             float worst = 1;
@@ -2530,6 +2533,7 @@ public class WingmanEntity extends Mob {
             Vec3 v = getDeltaMovement();
             double yaw = Math.toRadians(yBodyRot);
             double rx = -Math.cos(yaw) * 0.13, rz = -Math.sin(yaw) * 0.13;
+            if (!CLASSIC_FX.getAsBoolean()) return;   // 0.1.11.62: the constructivist wedges and bars are drawn by WingmanFx
             for (int side = -1; side <= 1; side += 2) {
                 level().addParticle(ArmoryRegistry.THRUST.get(), getX() + rx * side, getY() + 0.05, getZ() + rz * side,
                     -v.x * 0.3, -0.22 - Math.max(0, v.y) * 0.4, -v.z * 0.3);

@@ -3595,7 +3595,8 @@ public final class CaptureDirector {
      * Scene "impact" (-Dsi.capture.scene=impact), 0.1.11.68 (quantum flight phase R2): the weight of the quantum flight. A
      * dive into the ground (hard landing: cracks and the heavy ring), the take-off burst (staged at the feet), the boost
      * out of the hover (stretched main wedges, wider view), the hard brake (the brake jets together), a cruise into a
-     * stone wall (cracks in the wall, the ring out of it).
+     * stone wall (cracks in the wall, the ring out of it). 0.1.11.69: pigs around the touchdown are thrown off by the
+     * shockwave.
      */
     private static void sceneImpact() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
@@ -3607,14 +3608,27 @@ public final class CaptureDirector {
             sp.setGameMode(GameType.SURVIVAL);
             var stone = net.minecraft.world.level.block.Blocks.STONE.defaultBlockState();
             for (int x = -8; x <= 8; x++) for (int y = -60; y <= -44; y++) level.setBlock(new BlockPos(x, y, 40), stone, 3);
+            // 0.1.11.69 (R3): a ring of pigs around the touchdown, for the shockwave
+            for (int i = 0; i < 8; i++) {
+                double a = i * Math.PI / 4, r = i % 2 == 0 ? 2.2 : 3.6;
+                var pig = net.minecraft.world.entity.EntityType.PIG.create(level);
+                if (pig == null) continue;
+                pig.moveTo(0.5 + Math.cos(a) * r, -60, -20.5 + Math.sin(a) * r, (float) Math.toDegrees(a), 0);
+                pig.setPersistenceRequired();   // with AI: a mob without AI takes no push at all
+                level.addFreshEntity(pig);
+            }
             quantumFlyer(sp, null, 0.5, -36, -20.5);
+            Singularity_Iteration.LOGGER.warn("[impact] pigs placed: {}", level.getEntitiesOfClass(net.minecraft.world.entity.animal.Pig.class,
+                sp.getBoundingBox().inflate(40)).size());
         });
         // the dive: straight down at full throttle
-        client(5, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); mc.player.setXRot(80); });
-        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.setXRot(80); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
+        client(5, () -> { releaseKeys(); Minecraft mc = Minecraft.getInstance(); mc.options.setCameraType(CameraType.THIRD_PERSON_BACK); mc.player.setXRot(90); });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.setXRot(90); mc.options.keyUp.setDown(true); mc.options.keySprint.setDown(true); });
         until(200, () -> com.miophas.singularity_iteration.common.client.suit.FlightImpactClient.trauma() > 0.3F);
         client(1, CaptureDirector::releaseKeys);
         shot(3, "impact/1_hard_landing");
+        server(1, sp -> Singularity_Iteration.LOGGER.warn("[impact] pigs after the touchdown at {}: {}", sp.position(), sp.serverLevel().getEntitiesOfClass(
+            net.minecraft.world.entity.animal.Pig.class, sp.getBoundingBox().inflate(40)).stream().map(e -> e.position().toString()).toList()));
         client(1, () -> Minecraft.getInstance().player.setXRot(55));
         shot(4, "impact/2_hard_landing_cracks");
         // the take-off burst at the feet (staged: a capture cannot double-tap the jump key)

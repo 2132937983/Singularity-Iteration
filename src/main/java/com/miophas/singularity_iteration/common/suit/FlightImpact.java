@@ -15,7 +15,8 @@ package com.miophas.singularity_iteration.common.suit;
  *   <li><b>FOV kick</b>: a boost widens the view at once and lets it settle over {@link #KICK_TICKS} ticks; a brake narrows
  *       it the same way.</li>
  * </ul>
- * The scale of the shake and of the FOV kick is a client option, 0..2 (1 = default, 0 = off).
+ * The scale of the shake and of the FOV kick is a client option, 0..2 (1 = default, 0 = off). 0.1.11.69 (R3): the
+ * shockwave of a hard landing pushes the creatures around ({@link #shove}), without damage.
  */
 public final class FlightImpact {
     private FlightImpact() {}
@@ -96,6 +97,23 @@ public final class FlightImpact {
             out[i][1] = (0.8F + 2.2F * k) * (0.6F + 0.4F * r1) * (i % 2 == 0 ? 1F : 0.7F);
         }
         return out;
+    }
+
+    /**
+     * 0.1.11.69 (R3, decision four B): the reach of the shockwave of a hard landing, blocks: 2.5 at the weakest, 5.5 at full
+     * strength.
+     */
+    public static float shoveRadius(float strength) { return 2.5F + 3F * clamp(strength); }
+
+    /**
+     * 0.1.11.69: the push of the shockwave on a creature {@code distance} blocks from the touchdown, {horizontal, vertical}
+     * in blocks per tick: strongest at the centre, falling linearly to nothing at {@link #shoveRadius}; never damage.
+     */
+    public static float[] shove(float distance, float strength) {
+        float r = shoveRadius(strength), d = fin(distance);
+        if (d < 0 || d >= r) return new float[]{0F, 0F};
+        float k = 1 - d / r, s = clamp(strength);
+        return new float[]{k * (0.55F + 0.85F * s), k * (0.22F + 0.2F * s)};
     }
 
     private static float clamp(float v) { return Float.isFinite(v) ? Math.max(0F, Math.min(1F, v)) : 0F; }

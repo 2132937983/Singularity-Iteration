@@ -81,6 +81,55 @@ public final class PhaseRules {
         return 0.3F * clamp((fin(skyBrightness) - 0.35F) / 0.55F);
     }
 
+    /** 0.1.11.71 (W1): the hot magenta of the far end of a fast star stream. */
+    public static final float[] MAGENTA = {1.00F, 0.37F, 0.82F};
+
+    /** 0.1.11.71 (W1): star streams around a flyer; their count, the reach of the tube they run in (blocks). */
+    public static final int STREAMS = 22;
+    public static final float STREAM_SPAN = 9F, STREAM_INNER = 1.1F, STREAM_OUTER = 3.4F;
+
+    /** How much the star streams show at a speed (blocks per tick): none under 0.9, full from 1.5. */
+    public static float streamAlpha(float speed) { return clamp((fin(speed) - 0.9F) / 0.6F); }
+
+    /** The length of a star stream at a speed (blocks per tick), at most 6 blocks. */
+    public static float streamLength(float speed) { return Math.min(6F, 0.6F + 1.6F * Math.max(0F, fin(speed))); }
+
+    /**
+     * Where stream {@code i} is along its run (0 just ahead of the flyer, 1 behind it) at {@code seconds} for a flyer of
+     * {@code seed} at a speed: each stream starts at its own place and slides back at half the speed of the flight.
+     */
+    public static float streamPlace(int i, long seed, float seconds, float speed) {
+        double start = hash(seed * 31 + i, 0);
+        double v = start + fin(seconds) * Math.max(0F, fin(speed)) * 20 * 0.5 / STREAM_SPAN;
+        return (float) (v - Math.floor(v));
+    }
+
+    /** The angle (radians) and radius (blocks) of stream {@code i} around the flight. */
+    public static float[] streamSlot(int i, long seed) {
+        return new float[]{(float) (hash(seed * 31 + i, 1) * Math.PI * 2),
+            STREAM_INNER + (STREAM_OUTER - STREAM_INNER) * (float) hash(seed * 31 + i, 2)};
+    }
+
+    /**
+     * The colours of a stream at a speed, {head rgb, tail rgb}: a white-cyan head; the tail cyan, going to violet and
+     * to magenta as the flight gets fast (a shift in the light, like a Doppler shift).
+     */
+    public static float[][] streamColours(float speed) {
+        float k = clamp((fin(speed) - 1.5F) / 2F);
+        float[] tail = k < 0.5F ? mix(CYAN, VIOLET, k * 2) : mix(VIOLET, MAGENTA, (k - 0.5F) * 2);
+        return new float[][]{mix(WHITE, CYAN, 0.3F), tail};
+    }
+
+    /** 0.1.11.71: the fade of a stream near the camera ({@code distance} blocks to its middle): gone within 1.5, full from 4. */
+    public static float streamNear(float distance) { return clamp((fin(distance) - 1.5F) / 2.5F); }
+
+    /** A number 0..1 from a seed and a salt. */
+    static double hash(long seed, int salt) {
+        long h = seed * 0x9E3779B97F4A7C15L + salt * 0xC2B2AE3D27D4EB4FL;
+        h ^= h >>> 29; h *= 0xBF58476D1CE4E5B9L; h ^= h >>> 32;
+        return (h >>> 11) / (double) (1L << 53);
+    }
+
     public static float[] mix(float[] a, float[] b, float k) {
         float t = clamp(k);
         return new float[]{a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t};

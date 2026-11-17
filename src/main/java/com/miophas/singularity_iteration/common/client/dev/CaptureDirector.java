@@ -3572,6 +3572,9 @@ public final class CaptureDirector {
         client(30, () -> Minecraft.getInstance().setScreen(null));
         for (int i = 0; i < 5; i++) client(1, () -> { var pl = Minecraft.getInstance().player; pl.setXRot(pl.getXRot() - 5); });
         shot(1, "rcs/4_cruise_pull_up");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));   // 0.1.11.71: the light tunnel
+        shot(2, "rcs/4b_cruise_first_person");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_BACK));
         client(15, () -> { Minecraft mc = Minecraft.getInstance(); mc.setScreen(null); mc.player.setXRot(0); });
         client(1, () -> Minecraft.getInstance().options.keySprint.setDown(false));
         shot(2, "rcs/5_cruise_brake");

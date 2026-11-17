@@ -179,6 +179,8 @@ public final class ManeuverModeClient {
         boolean braking;
         /** 0.1.11.68: the tick of the last hard landing or wall hit (the plain landing ring stays away right after). */
         int hardTick = Integer.MIN_VALUE / 2;
+        /** 0.1.11.71: the move per tick, smoothed. */
+        Vec3 flow = Vec3.ZERO;
     }
     /**
      * Visual state per entity id. {@link #pruneVisuals} removes the entries of players that are
@@ -529,6 +531,7 @@ public final class ManeuverModeClient {
         }
         vis.rawSpeed = raw;
         vis.lastMove = moved;
+        vis.flow = vis.flow.lerp(moved, 0.4);   // 0.1.11.71 (W1): the smoothed flight, for the star streams
         if (vis.wasFlying && vis.tickThrottle < 0.05F && thr > vis.tickThrottle + 0.005F) {
             vis.boostTick = p.tickCount;
             FlightImpactClient.boost(p);
@@ -539,6 +542,18 @@ public final class ManeuverModeClient {
             vis.braking = true;
             FlightImpactClient.brake(p, vis.brake);
         } else if (vis.brake < 0.3F) vis.braking = false;
+    }
+
+    /** 0.1.11.71 (W1): the smoothed flight of a flyer (blocks per tick), zero when unknown. */
+    public static Vec3 flow(Player p) {
+        Visual vis = VISUALS.get(p.getId());
+        return vis == null ? Vec3.ZERO : vis.flow;
+    }
+
+    /** 0.1.11.71 (W1): the brake of a flyer, 0..1 (see {@link #rcsSample}). */
+    public static float brake(Player p) {
+        Visual vis = VISUALS.get(p.getId());
+        return vis == null ? 0F : vis.brake;
     }
 
     /** 0.1.11.68 (R2): the stretch of the main thrust of a flyer just after a boost, 0..1 (1 at the start, 0 after 8 ticks). */

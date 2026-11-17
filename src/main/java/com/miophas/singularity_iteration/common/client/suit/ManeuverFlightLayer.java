@@ -116,7 +116,8 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
      * along its exhaust (white core, quantum cyan to violet, rings of compressed space sliding out; violet with the burn),
      * with a flare at the nozzle; an attitude jet blinks (a point of light, a ring that grows across its exhaust and a
      * short cone); a graviton core shows its field rings. By day a soft dark bed under the suit lets the light read on a
-     * bright sky. (The speed bars of the constructivist style are gone; the star streams of W1 take their place.)
+     * bright sky. 0.1.11.71 (W1): a boost throws a ring of light off each main nozzle and turns its cone violet for a
+     * moment; a hard brake burns its jets as steady hot cones; the star streams round a fast flyer are {@code StarStreams}.
      */
     private void phase(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
                        float[] output, float partial) {
@@ -135,19 +136,33 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player);
         float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);   // 0.1.11.67 (R1): the reaction control
         float kick = ManeuverModeClient.boostKick(player);
+        boolean hardBrake = ManeuverModeClient.brake(player) >= com.miophas.singularity_iteration.common.suit.RcsAllocator.HARD_BRAKE;
         for (int i = 0; outs != null && i < outs.length; i++) {
             QuantumNozzles.Nozzle n = nozzles.get(i);
             float p = outs[i];
             if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
             Matrix4f m = pose.last().pose();
+            if (n.kind() == QuantumNozzles.Kind.RCS && hardBrake) {
+                // 0.1.11.71 (W1): a hard brake burns its jets together and steady: hot cones, no blink
+                float w = com.miophas.singularity_iteration.common.suit.PhaseRules.width(1F, n.size()) * 1.2F;
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, m, 0.5F * (0.6F + 0.4F * n.size()), w, seconds + i * 0.13F, rate * 1.5F, 1F, 1F);
+                NozzleDraw.flare(vc, m, w * 1.3F, 0.95F);
+                pose.popPose();
+                continue;
+            }
             if (n.kind() == QuantumNozzles.Kind.FIELD) NozzleDraw.fieldPhase(vc, pose, n.size(), p, seconds);
             else if (n.kind() == QuantumNozzles.Kind.RCS) NozzleDraw.blink(vc, m, n.size(), player.tickCount, partial, seconds, rate);
             else {
                 float length = com.miophas.singularity_iteration.common.suit.PhaseRules.length(p, burn, n.size());
                 if (n.kind() == QuantumNozzles.Kind.MAIN) length *= 1 + 0.9F * kick;   // 0.1.11.68 (R2): the boost stretch
                 float width = com.miophas.singularity_iteration.common.suit.PhaseRules.width(p, n.size());
-                com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, m, length, width, seconds + i * 0.13F, rate, burn, 0.9F);
-                NozzleDraw.flare(vc, m, width * 1.1F, 0.55F + 0.4F * p);
+                boolean main = n.kind() == QuantumNozzles.Kind.MAIN;
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, m, length, width, seconds + i * 0.13F, rate,
+                    main ? Math.max(burn, kick) : burn, 0.9F);
+                NozzleDraw.flare(vc, m, width * (1.1F + (main ? 0.8F * kick : 0F)), 0.55F + 0.4F * p);
+                if (main && kick > 0.02F)   // 0.1.11.71 (W1): the boost: a ring of light thrown off the nozzle
+                    com.miophas.singularity_iteration.common.client.render.PhaseFx.ringAt(vc, m, 0.04F + 0.25F * (1 - kick),
+                        width * (0.6F + 2.4F * (1 - kick)), 0.025F, com.miophas.singularity_iteration.common.suit.PhaseRules.CYAN, kick);
             }
             pose.popPose();
         }

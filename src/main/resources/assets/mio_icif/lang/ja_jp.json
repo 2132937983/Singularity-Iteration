@@ -5356,9 +5356,7 @@
   "gui.mio_icif.protection.voltage_auto_none": "線路に合わせる（ケーブルなし）",
   "gui.mio_icif.chunk_loader.energy": "EU：%s / %s",
   "gui.mio_icif.chunk_loader.cost": "現在の消費 %s EU/t",
-  "gui.mio_icif.chunk_loader.cell.self": "自分のチャンク [%s, %s]",
-  "gui.mio_icif.chunk_loader.cell.selected": "選択中 [%s, %s] · クリックで解除",
-  "gui.mio_icif.chunk_loader.cell.unselected": "未選択 [%s, %s] · クリックで選択",
+  "gui.mio_icif.chunk_loader.cell.unselected": "未選択 [%s, %s]",
   "jade.mio_icif.chunk_loader": "チャンク：保持 %s / 選択 %s · %s · %s EU/t",
   "gui.mio_icif.chunk_loader.status.grace": "電力なし：自分のチャンクだけを保持、残り %s",
   "gui.mio_icif.chunk_loader.state.grace": "電力なし（自分のチャンクを保持）",
@@ -5366,5 +5364,12 @@
   "gui.mio_icif.grid_panel.alarm.loader_stopped": "チャンクローダー停止",
   "gui.mio_icif.grid_panel.alarm.loader_restored": "チャンクローダー復帰",
   "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes": "電力切れの猶予（分）",
-  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "電力切れの間、自分のチャンクを保持する分。その間に電力が戻ればすべてのチャンクを取り戻す。0：すぐ停止。"
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "電力切れの間、自分のチャンクを保持する分。その間に電力が戻ればすべてのチャンクを取り戻す。0：すぐ停止。",
+  "gui.mio_icif.chunk_loader.cell.held": "読み込み中 [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.waiting": "選択済み・未読み込み [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.ring": "隣の読み込みチャンクに伴って動作・無料 [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.own": "ローダー自身のチャンク（常に選択）",
+  "gui.mio_icif.chunk_loader.cell.help": "クリック：選択・解除 · ドラッグ：範囲選択 · 右クリック・右ドラッグ：解除",
+  "gui.mio_icif.chunk_loader.select_all": "すべて選択（近い順、上限まで）",
+  "gui.mio_icif.chunk_loader.clear": "クリア（自分のチャンクは残す）"
 }

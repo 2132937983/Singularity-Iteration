@@ -5356,9 +5356,7 @@
   "gui.mio_icif.protection.voltage_auto_none": "Line (no cable)",
   "gui.mio_icif.chunk_loader.energy": "EU: %s / %s",
   "gui.mio_icif.chunk_loader.cost": "Uses %s EU/t now",
-  "gui.mio_icif.chunk_loader.cell.self": "Own chunk [%s, %s]",
-  "gui.mio_icif.chunk_loader.cell.selected": "Selected [%s, %s] · click to remove",
-  "gui.mio_icif.chunk_loader.cell.unselected": "Not selected [%s, %s] · click to select",
+  "gui.mio_icif.chunk_loader.cell.unselected": "Not selected [%s, %s]",
   "jade.mio_icif.chunk_loader": "Chunks: %s held / %s selected · %s · %s EU/t",
   "gui.mio_icif.chunk_loader.status.grace": "No energy: holding only its own chunk for %s more",
   "gui.mio_icif.chunk_loader.state.grace": "no energy (own chunk kept)",
@@ -5366,5 +5364,12 @@
   "gui.mio_icif.grid_panel.alarm.loader_stopped": "Chunk loader stopped",
   "gui.mio_icif.grid_panel.alarm.loader_restored": "Chunk loader running again",
   "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes": "No-energy grace (minutes)",
-  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "Minutes a loader out of energy keeps its own chunk and takes all its chunks back when energy returns. 0: it stops at once."
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "Minutes a loader out of energy keeps its own chunk and takes all its chunks back when energy returns. 0: it stops at once.",
+  "gui.mio_icif.chunk_loader.cell.held": "Loading [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.waiting": "Selected, not loading [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.ring": "Runs beside a loading chunk, free [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.own": "The loader's own chunk (always selected)",
+  "gui.mio_icif.chunk_loader.cell.help": "Click: select or remove · drag: select an area · right click or drag: remove",
+  "gui.mio_icif.chunk_loader.select_all": "Select all (nearest first, up to the limit)",
+  "gui.mio_icif.chunk_loader.clear": "Clear (keeps the own chunk)"
 }

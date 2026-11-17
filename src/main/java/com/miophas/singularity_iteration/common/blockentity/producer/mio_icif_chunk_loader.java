@@ -146,6 +146,7 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
                 case 9 -> active ? forcedChunks.size() : 0;
                 case 10 -> (int) Math.min(Integer.MAX_VALUE, active ? cost(forcedChunks.size()) : 0);   // 0.1.11.36: EU/t paid now
                 case 11 -> graceSecondsLeft();   // 0.1.11.37
+                case 12, 13, 14 -> heldBits(index - 12);   // 0.1.11.38: the chunks that hold a ticket now
                 default -> 0;
             };
         }
@@ -156,7 +157,7 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         @Override
         public int getCount() { return DATA_COUNT; }
     };
-    public static final int DATA_COUNT = 12;
+    public static final int DATA_COUNT = 15;
 
     /** Recomputes the selection bits of the screen map (after a selection change only). */
     private void refreshChunkBits() {
@@ -320,6 +321,37 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         refreshChunkBits();
         rulesDirty = true;
         setChanged();
+    }
+
+    /** 0.1.11.38: word {@code word} of the bits of the 9 x 9 cells whose chunk holds a ticket of this loader now. */
+    private int heldBits(int word) {
+        if (forcedChunks.isEmpty()) return 0;
+        ChunkPos self = getSelfChunkPos();
+        int bits = 0;
+        for (int idx = word * 32; idx < Math.min(81, word * 32 + 32); idx++) {
+            int dx = idx / 9 - CHUNK_RADIUS, dz = idx % 9 - CHUNK_RADIUS;
+            if (forcedChunks.contains(ChunkPos.asLong(self.x + dx, self.z + dz))) bits |= 1 << (idx % 32);
+        }
+        return bits;
+    }
+
+    /**
+     * 0.1.11.38 (chunk loader audit C2): selects or clears the cells of a rectangle of offsets (clamped to the 9 x 9). A
+     * selection fills nearest first, up to the limit; clearing keeps the loader's own chunk. Returns how many changed.
+     */
+    public int selectArea(int dx0, int dz0, int dx1, int dz1, boolean select) {
+        int minX = Math.max(-CHUNK_RADIUS, Math.min(dx0, dx1)), maxX = Math.min(CHUNK_RADIUS, Math.max(dx0, dx1));
+        int minZ = Math.max(-CHUNK_RADIUS, Math.min(dz0, dz1)), maxZ = Math.min(CHUNK_RADIUS, Math.max(dz0, dz1));
+        var cells = new java.util.ArrayList<int[]>();
+        for (int x = minX; x <= maxX; x++) for (int z = minZ; z <= maxZ; z++) cells.add(new int[]{x, z});
+        cells.sort(java.util.Comparator.comparingInt((int[] c) -> c[0] * c[0] + c[1] * c[1]).thenComparingInt(c -> c[0]).thenComparingInt(c -> c[1]));
+        ChunkPos self = getSelfChunkPos();
+        int changed = 0;
+        for (int[] c : cells) {
+            ChunkPos chunk = new ChunkPos(self.x + c[0], self.z + c[1]);
+            if (select ? addChunkToLoaded(chunk) : removeChunkFromLoaded(chunk)) changed++;
+        }
+        return changed;
     }
 
     public void toggleChunk(ChunkPos chunk) {

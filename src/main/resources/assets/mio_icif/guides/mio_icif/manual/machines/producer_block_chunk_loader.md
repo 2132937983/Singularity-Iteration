@@ -32,8 +32,14 @@ The game measured these values from the block entity of this version.
 ## Procedure
 
 1. Connect an MV cable to the machine.
-2. Open the GUI and click the chunks to load.
+2. Open the GUI and click or drag over the chunks to load.
 3. Keep a steady EU supply to the machine.
+
+## Map
+
+- Green: the chunk is loading. Orange: selected but not loading now (a chunk limit, or no energy); the tooltip says why. Faint green: not selected, but running because a loading chunk is next to it. Dark: not selected. The yellow frame marks the loader's own chunk, which is always selected.
+- A loaded chunk also runs the chunks around it, as `/forceload` does: selecting the 5 × 5 in the middle runs 7 × 7. Only the selected chunks cost EU.
+- Click a chunk to select or remove it. Drag to select an area; right-click or right-drag to remove. **+** selects the whole grid, nearest first up to the limit; **−** clears all but the own chunk.
 
 ## Notes
 

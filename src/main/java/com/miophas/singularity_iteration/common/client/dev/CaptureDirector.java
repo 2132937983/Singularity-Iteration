@@ -2605,6 +2605,25 @@ public final class CaptureDirector {
             if (nether.getBlockEntity(at) instanceof net.minecraft.world.MenuProvider provider) sp.openMenu(provider, buf -> buf.writeBlockPos(at));
         });
         shot(60, "chunkloader/1_nether_map");
+        // 0.1.11.38: the overworld map: a 3 x 3 loading, its running ring, two selected chunks waiting over a limit of 9
+        BlockPos home = new BlockPos(8, -60, 8);
+        client(1, () -> Minecraft.getInstance().setScreen(null));
+        server(20, sp -> {
+            var level = sp.server.overworld();
+            sp.teleportTo(level, home.getX() + 0.5, home.getY() + 2, home.getZ() - 1.5, 0, 40);
+        });
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            com.miophas.singularity_iteration.common.energy.ChunkLoaderPolicy.configure(true, 9, 0, 0, -1, 1.0, true, false);
+            level.setBlock(home, block("producer/block_chunk_loader").defaultBlockState(), 3);
+            if (level.getBlockEntity(home) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader loader) {
+                loader.getEnergyStorageInternal().setStored(2500);
+                loader.selectArea(-1, -1, 1, 1, true);
+                loader.selectArea(3, -3, 3, -2, true);
+                sp.openMenu(loader, buf -> buf.writeBlockPos(home));
+            }
+        });
+        shot(60, "chunkloader/2_overworld_map");
         client(10, () -> Minecraft.getInstance().stop());
     }
 

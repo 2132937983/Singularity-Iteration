@@ -5356,9 +5356,7 @@
   "gui.mio_icif.protection.voltage_auto_none": "По линии (нет кабеля)",
   "gui.mio_icif.chunk_loader.energy": "EU: %s / %s",
   "gui.mio_icif.chunk_loader.cost": "Сейчас потребляет %s EU/t",
-  "gui.mio_icif.chunk_loader.cell.self": "Свой чанк [%s, %s]",
-  "gui.mio_icif.chunk_loader.cell.selected": "Выбран [%s, %s] · нажмите, чтобы убрать",
-  "gui.mio_icif.chunk_loader.cell.unselected": "Не выбран [%s, %s] · нажмите, чтобы выбрать",
+  "gui.mio_icif.chunk_loader.cell.unselected": "Не выбран [%s, %s]",
   "jade.mio_icif.chunk_loader": "Чанки: удержано %s / выбрано %s · %s · %s EU/t",
   "gui.mio_icif.chunk_loader.status.grace": "Нет энергии: держит только свой чанк, ещё %s",
   "gui.mio_icif.chunk_loader.state.grace": "нет энергии (свой чанк удержан)",
@@ -5366,5 +5364,12 @@
   "gui.mio_icif.grid_panel.alarm.loader_stopped": "Загрузчик чанков остановлен",
   "gui.mio_icif.grid_panel.alarm.loader_restored": "Загрузчик чанков снова работает",
   "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes": "Отсрочка без энергии (минуты)",
-  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "Сколько минут загрузчик без энергии держит свой чанк и возвращает все чанки, когда энергия появится. 0: сразу останавливается."
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "Сколько минут загрузчик без энергии держит свой чанк и возвращает все чанки, когда энергия появится. 0: сразу останавливается.",
+  "gui.mio_icif.chunk_loader.cell.held": "Загружается [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.waiting": "Выбран, не загружается [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.ring": "Работает рядом с загруженным чанком, бесплатно [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.own": "Чанк самого загрузчика (всегда выбран)",
+  "gui.mio_icif.chunk_loader.cell.help": "Щелчок: выбрать или убрать · перетаскивание: выбрать область · правый щелчок или перетаскивание: убрать",
+  "gui.mio_icif.chunk_loader.select_all": "Выбрать все (от ближних, до предела)",
+  "gui.mio_icif.chunk_loader.clear": "Очистить (свой чанк остаётся)"
 }

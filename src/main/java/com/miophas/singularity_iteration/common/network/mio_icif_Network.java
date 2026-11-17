@@ -57,6 +57,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  *   <tr><td>{@code WorkbenchClearPacket}</td><td>C2S</td><td>clear button of the Industrial Workbench</td></tr>
  *   <tr><td>{@code SorterDefaultDirPacket}</td><td>C2S</td><td>sets the default output side of the Electric Sorter</td></tr>
  *   <tr><td>{@code ChunkLoaderTogglePacket}</td><td>C2S</td><td>toggles one chunk of a Chunk Loader</td></tr>
+ *   <tr><td>{@code ChunkLoaderAreaPacket}</td><td>C2S</td><td>selects or clears a rectangle of a Chunk Loader (0.1.11.38)</td></tr>
  *   <tr><td>{@code ArmorFeatureTogglePacket}</td><td>C2S</td><td>switches an on/off feature of a worn item on or off</td></tr>
  *   <tr><td>{@code ArmorFeatureCyclePacket}</td><td>C2S</td><td>selects the next mode of a mode feature of a worn item</td></tr>
  *   <tr><td>{@code TileEntityEventPacket}</td><td>S2C</td><td>a block entity network event</td></tr>
@@ -286,6 +287,11 @@ public class mio_icif_Network {
             ChunkLoaderTogglePacket.TYPE,
             ChunkLoaderTogglePacket.CODEC,
             ChunkLoaderTogglePacket::handle
+        );
+        registrar.playToServer(
+            ChunkLoaderAreaPacket.TYPE,
+            ChunkLoaderAreaPacket.CODEC,
+            ChunkLoaderAreaPacket::handle
         );
 
         // C2S: armor feature on/off toggle.

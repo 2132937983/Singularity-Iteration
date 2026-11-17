@@ -154,6 +154,15 @@ public class ChunkLoaderMenu extends mio_icif_machine_menu {
         return (data.get(5 + wordIndex) & (1 << bitIndex)) != 0;
     }
 
+    /** 0.1.11.38: true when the chunk at offset (dx, dz) holds a ticket of the loader now. */
+    public boolean isChunkHeld(int dx, int dz) {
+        if (Math.abs(dx) > 4 || Math.abs(dz) > 4) return false;
+        int idx = (dx + 4) * 9 + (dz + 4);
+        int word = idx / 32;
+        if (data.getCount() <= 12 + word) return false;
+        return (data.get(12 + word) & (1 << (idx % 32))) != 0;
+    }
+
     public net.minecraft.world.level.ChunkPos getSelfChunkPos() {
         if (blockPos == null) return new net.minecraft.world.level.ChunkPos(0, 0);
         return new net.minecraft.world.level.ChunkPos(blockPos.getX() >> 4, blockPos.getZ() >> 4);

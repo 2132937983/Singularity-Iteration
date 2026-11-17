@@ -5356,9 +5356,7 @@
   "gui.mio_icif.protection.voltage_auto_none": "跟随线路（无导线）",
   "gui.mio_icif.chunk_loader.energy": "EU：%s / %s",
   "gui.mio_icif.chunk_loader.cost": "当前耗电 %s EU/t",
-  "gui.mio_icif.chunk_loader.cell.self": "自身区块 [%s, %s]",
-  "gui.mio_icif.chunk_loader.cell.selected": "已选中 [%s, %s] · 点击取消",
-  "gui.mio_icif.chunk_loader.cell.unselected": "未选中 [%s, %s] · 点击选中",
+  "gui.mio_icif.chunk_loader.cell.unselected": "未选中 [%s, %s]",
   "jade.mio_icif.chunk_loader": "区块：加载 %s / 已选 %s · %s · %s EU/t",
   "gui.mio_icif.chunk_loader.status.grace": "没电：只保持自身区块，还剩 %s",
   "gui.mio_icif.chunk_loader.state.grace": "没电（保持自身区块）",
@@ -5366,5 +5364,12 @@
   "gui.mio_icif.grid_panel.alarm.loader_stopped": "区块加载器已停止",
   "gui.mio_icif.grid_panel.alarm.loader_restored": "区块加载器已恢复",
   "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes": "没电宽限（分钟）",
-  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "加载器没电时保持自身区块的分钟数，期间来电即恢复全部区块。0：立即停下。"
+  "mio_icif.configuration.chunk_loaders.noEnergyGraceMinutes.tooltip": "加载器没电时保持自身区块的分钟数，期间来电即恢复全部区块。0：立即停下。",
+  "gui.mio_icif.chunk_loader.cell.held": "加载中 [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.waiting": "已选中，未加载 [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.ring": "随相邻的加载区块运转，不收费 [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.own": "加载器所在区块（总是选中）",
+  "gui.mio_icif.chunk_loader.cell.help": "单击：选中或取消 · 拖动：框选 · 右键单击或拖动：取消",
+  "gui.mio_icif.chunk_loader.select_all": "全选（由近到远，至上限）",
+  "gui.mio_icif.chunk_loader.clear": "清空（保留自身区块）"
 }

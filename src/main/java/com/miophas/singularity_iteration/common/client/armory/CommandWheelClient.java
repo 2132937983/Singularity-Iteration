@@ -93,6 +93,7 @@ public final class CommandWheelClient {
         static void tick(ClientTickEvent.Post event) {
             SquadClient.ticks++;
             CommandFx.tick();
+            WingmanEngineSound.tick(Minecraft.getInstance());   // 0.1.11.65 (Q4)
             HoloTable.tick();
             Minecraft mc = Minecraft.getInstance();
             if (waitRelease && !HeldKeys.down(KEY)) waitRelease = false;

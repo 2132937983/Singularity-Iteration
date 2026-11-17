@@ -3377,6 +3377,56 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wheel_fans" (-Dsi.capture.scene=wheel_fans), 0.1.11.65 (hit feel and constructivist FX phase Q4): the command
+     * wheel with the squad control fan (modes, follow squad, return) and with the new suit fan (swap, send, pilot, Clean
+     * Slate). The owner wears the entanglement relay and has two Wingmen.
+     */
+    private static void sceneWheelFans() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            ItemStack chest = item("armor/item_armor_quantum_chestplate");
+            if (chest.getItem() instanceof com.miophas.singularity_iteration.core.prefab.item.AbstractElectricArmor armor) armor.setEnergy(chest, armor.getMaxEnergy(chest));
+            com.miophas.singularity_iteration.common.suit.SuitModules.install(chest, com.miophas.singularity_iteration.common.suit.SuitModuleType.ENTANGLEMENT_RELAY);
+            sp.setItemSlot(EquipmentSlot.CHEST, chest);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                for (int st = 0; st < 2; st++) {
+                    inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.CHEST), new ItemStack(Items.IRON_CHESTPLATE), false);
+                    inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.HEAD), new ItemStack(Items.IRON_HELMET), false);
+                    com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE);
+                }
+            }
+        });
+        client(120, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            var screen = new com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen(
+                new com.miophas.singularity_iteration.common.client.armory.CommandWheelClient.Target(mc.player.position(), false, -1, null, 0));
+            mc.setScreen(screen);
+            screen.previewFan("CONTROL");
+        });
+        shot(20, "wheel_fans/1_control");
+        client(1, () -> { if (Minecraft.getInstance().screen instanceof com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen w) w.previewFan("SUIT"); });
+        shot(10, "wheel_fans/2_suit");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wheel_fans".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWheelFans();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

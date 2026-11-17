@@ -349,6 +349,18 @@ public final class WingmanPose {
         return age < 0 || age >= BOOST_CUT ? 0 : 0.45F + age * 0.4F;
     }
 
+    /**
+     * 0.1.11.65 (Q4): the engine loop of a Wingman at {@code speed} (blocks per tick), {@code sinceBoost} ticks after a boost,
+     * landed or not: {volume, pitch}. A low drone in the hover, louder and higher with speed, a kick after a boost; silent on
+     * the ground.
+     */
+    public static float[] engineMix(float speed, int sinceBoost, boolean landed) {
+        if (landed) return new float[]{0, 0.8F};
+        float s = Mth.clamp(finite(speed) / 2F, 0, 1);
+        float kick = sinceBoost >= 0 && sinceBoost < 10 ? (1 - sinceBoost / 10F) * 0.35F : 0;
+        return new float[]{Math.min(1F, 0.16F + 0.5F * s + kick), 0.82F + 0.5F * s + kick * 0.6F};
+    }
+
     // ---- battle damage (0.1.11.58, gaze and Iron Man phase P6)
 
     /** Durability fraction below which a piece counts as badly damaged (sparks start at 2 x this). */

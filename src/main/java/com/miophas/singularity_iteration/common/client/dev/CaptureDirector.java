@@ -2634,6 +2634,63 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman" (-Dsi.capture.scene=wingman), 0.1.11.39: the console's Armory page with suit 0 out as a Wingman ("Out"
+     * row, the Wingman row and the count against the server limit).
+     */
+    private static void sceneWingman() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(8, -60, 12);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.teleportTo(level, 2.5, -60, 2.5, 0, 0);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack[][] suits = {
+                    {new ItemStack(Items.DIAMOND_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE), new ItemStack(Items.DIAMOND_LEGGINGS),
+                        new ItemStack(Items.DIAMOND_BOOTS), new ItemStack(Items.DIAMOND_SWORD), ItemStack.EMPTY},
+                    {new ItemStack(Items.GOLDEN_HELMET), new ItemStack(Items.GOLDEN_CHESTPLATE), ItemStack.EMPTY, new ItemStack(Items.GOLDEN_BOOTS), ItemStack.EMPTY, ItemStack.EMPTY}};
+                for (int st = 0; st < suits.length; st++)
+                    for (int c = 0; c < 6; c++)
+                        if (!suits[st][c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), suits[st][c], false);
+                armory.rename(sp, 0, "Diamond Mk.II");
+                armory.rename(sp, 1, "Parade Gold");
+            }
+            ItemStack remote = new ItemStack(ArmoryRegistry.REMOTE.get());
+            remote.set(ArmoryComponents.TARGET.get(), GlobalPos.of(level.dimension(), armoryAt));
+            if (!com.miophas.singularity_iteration.common.item.armor.ArmorFeatureSlots.write(sp, "curio:charm:0", remote)) sp.getInventory().add(remote);
+        });
+        server(20, sp -> {
+            if (sp.serverLevel().getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                var msg = com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT);
+                Singularity_Iteration.LOGGER.info("capture wingman: {}", msg.getString());
+            }
+        });
+        client(40, () -> { Minecraft.getInstance().options.hideGui = false;
+            Minecraft.getInstance().setScreen(new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features()
+                .tab(com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_ARMORY)); });
+        shot(50, "wingman/1_console_out");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(40, "wingman/2_escort");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingman();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

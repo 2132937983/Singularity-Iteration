@@ -619,6 +619,16 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
     @SuppressWarnings("unused")
     private static final ModConfigSpec.Builder CHUNK_LOADER_POP = BUILDER.pop();
 
+    // ==================== 0.1.11.39: Wingmen (Wingman audit W0) ====================
+    private static final ModConfigSpec.Builder WINGMEN_BUILDER = BUILDER
+        .comment("Wingmen (0.1.11.39): the limit, the upkeep and the target ranges. 僚机（0.1.11.39）：数量上限、维持费与目标范围。")
+        .translation("mio_icif.configuration.wingmen").push("Wingmen");
+    static {
+        com.miophas.singularity_iteration.common.armory.WingmanConfig.define(WINGMEN_BUILDER);
+    }
+    @SuppressWarnings("unused")
+    private static final ModConfigSpec.Builder WINGMEN_POP = BUILDER.pop();
+
     static final ModConfigSpec SPEC = BUILDER.build();
 
     static {
@@ -626,6 +636,7 @@ public static final ModConfigSpec.ConfigValue<List<? extends String>> SCANNER_CU
         com.miophas.singularity_iteration.common.suit.nano.NanoConfig.bind(SPEC);
         com.miophas.singularity_iteration.common.suit.core.CoreConfig.bind(SPEC);
         com.miophas.singularity_iteration.common.suit.quantum.QuantumConfig.bind(SPEC);
+        com.miophas.singularity_iteration.common.armory.WingmanConfig.bind(SPEC);
         com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity.OUTPUT_SCALE =
             com.miophas.singularity_iteration.common.energy.GeneratorOutput::multiplier;
         com.miophas.singularity_iteration.core.prefab.blockentity.AbstractGeneratorBlockEntity.DISPATCH =

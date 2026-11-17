@@ -10,11 +10,11 @@ import java.util.List;
 /** Everything the remote controller shows, sent server -> client while the remote is open. */
 public record ArmorySnapshot(GlobalPos armory, int status, String owner, long energy, long capacity, boolean busy,
                              List<String> names, List<List<ItemStack>> suits, List<ArmoryLogEntry> log,
-                             int mana, int maintenanceState, int etaTicks, int pendingPieces) {
+                             int mana, int maintenanceState, int etaTicks, int pendingPieces, int deployedMask) {
     public static final int OK = 0, MISSING = 1, NOT_OWNER = 2, UNBOUND = 3;
 
     public static ArmorySnapshot of(GlobalPos pos, int status) {
-        return new ArmorySnapshot(pos, status, "", 0, mio_icif_armory.CAPACITY, false, List.of(), List.of(), List.of(), 0, 0, 0, 0);
+        return new ArmorySnapshot(pos, status, "", 0, mio_icif_armory.CAPACITY, false, List.of(), List.of(), List.of(), 0, 0, 0, 0, 0);
     }
 
     public static ArmorySnapshot of(GlobalPos pos, mio_icif_armory armory, int status) {
@@ -28,7 +28,7 @@ public record ArmorySnapshot(GlobalPos armory, int status, String owner, long en
         }
         return new ArmorySnapshot(pos, status, armory.ownerName(), armory.getEnergyStorage().getAmount(),
             armory.getEnergyStorage().getCapacity(), armory.isBusy(), names, suits, armory.log(), armory.mana(),
-            armory.maintenance().state(), armory.maintenance().etaTicks(), armory.maintenance().pendingPieces());
+            armory.maintenance().state(), armory.maintenance().etaTicks(), armory.maintenance().pendingPieces(), armory.deployedMask());
     }
 
     public void write(RegistryFriendlyByteBuf buf) {
@@ -42,6 +42,7 @@ public record ArmorySnapshot(GlobalPos armory, int status, String owner, long en
         buf.writeVarInt(log.size());
         for (ArmoryLogEntry e : log) e.write(buf);
         buf.writeVarInt(mana); buf.writeVarInt(maintenanceState); buf.writeInt(etaTicks); buf.writeVarInt(pendingPieces);
+        buf.writeVarInt(deployedMask);   // 0.1.11.39
     }
 
     public static ArmorySnapshot read(RegistryFriendlyByteBuf buf) {
@@ -60,8 +61,12 @@ public record ArmorySnapshot(GlobalPos armory, int status, String owner, long en
         List<ArmoryLogEntry> log = new ArrayList<>();
         for (int i = 0; i < m; i++) log.add(ArmoryLogEntry.read(buf));
         int mana = buf.readVarInt(), state = buf.readVarInt(), eta = buf.readInt(), pending = buf.readVarInt();
-        return new ArmorySnapshot(pos, status, owner, energy, capacity, busy, names, suits, log, mana, state, eta, pending);
+        int deployed = buf.readVarInt() & ((1 << mio_icif_armory.SETS) - 1);
+        return new ArmorySnapshot(pos, status, owner, energy, capacity, busy, names, suits, log, mana, state, eta, pending, deployed);
     }
+
+    /** 0.1.11.39: true while suit {@code set} flies as a Wingman. */
+    public boolean deployed(int set) { return set >= 0 && set < 32 && (deployedMask >>> set & 1) != 0; }
 
     public int pieces(int set) {
         if (set < 0 || set >= suits.size()) return 0;

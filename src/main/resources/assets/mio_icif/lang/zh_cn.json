@@ -5371,5 +5371,18 @@
   "gui.mio_icif.chunk_loader.cell.own": "加载器所在区块（总是选中）",
   "gui.mio_icif.chunk_loader.cell.help": "单击：选中或取消 · 拖动：框选 · 右键单击或拖动：取消",
   "gui.mio_icif.chunk_loader.select_all": "全选（由近到远，至上限）",
-  "gui.mio_icif.chunk_loader.clear": "清空（保留自身区块）"
+  "gui.mio_icif.chunk_loader.clear": "清空（保留自身区块）",
+  "message.mio_icif.wingman.no_room": "你的上方和身旁都没有空间投放僚机",
+  "gui.mio_icif.armory_console.deployed": "出击中",
+  "mio_icif.configuration.wingmen": "僚机",
+  "mio_icif.configuration.wingmen.maxPerPlayer": "每名玩家的僚机上限",
+  "mio_icif.configuration.wingmen.maxPerPlayer.tooltip": "1-8，包括未加载区块中的僚机。",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond": "维持费（EU/秒）",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "先由套装的电动部件支付，再由武装库支付（须已加载）。0 = 免费。",
+  "mio_icif.configuration.wingmen.lowPowerSeconds": "付不起维持费后返航前的秒数",
+  "mio_icif.configuration.wingmen.lowPowerSeconds.tooltip": "1-600。",
+  "mio_icif.configuration.wingmen.scanRange": "目标搜索范围",
+  "mio_icif.configuration.wingmen.scanRange.tooltip": "主人周围的格数（进攻模式）。",
+  "mio_icif.configuration.wingmen.leash": "目标牵引距离",
+  "mio_icif.configuration.wingmen.leash.tooltip": "目标离主人超过这个距离就放弃（无命令时）。不会小于搜索范围。"
 }

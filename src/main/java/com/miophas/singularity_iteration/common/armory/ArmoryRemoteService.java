@@ -42,6 +42,8 @@ public final class ArmoryRemoteService {
     public static final int WINGMAN_DEPLOY = 4, WINGMAN_MODE = 5, WINGMAN_RECALL = 6, ALL = 255;
     /** Remote equip onto a companion (0.1.8.0, {@link CompanionEquip}). index = set. */
     public static final int COMPANION_EQUIP = 7;
+    /** 0.1.11.39: recall one Wingman; index = its entity id ({@link WingmanService.View#entityId()}). */
+    public static final int WINGMAN_RECALL_ID = 8;
     /**
      * Default ranges: showcases this close to the player, or to the paired Armory, belong to the
      * network. The live values come from {@code SiTuningValues.ARMORY_*_RANGE}
@@ -169,6 +171,7 @@ public final class ArmoryRemoteService {
             case WINGMAN_MODE -> message = WingmanService.setMode(player, WingmanMode.byId(index));
             case WINGMAN_RECALL -> message = WingmanService.recall(player, index == ALL ? -1 : index);
             case COMPANION_EQUIP -> message = CompanionEquip.equip(player, armory, index);
+            case WINGMAN_RECALL_ID -> message = WingmanService.recallById(player, index);
             default -> { }
         }
         if (!message.getString().isEmpty()) player.displayClientMessage(message, true);
@@ -193,7 +196,7 @@ public final class ArmoryRemoteService {
         try {
             if (player.connection != null && player.connection.hasChannel(ArmoryConsoleSyncPacket.TYPE)) {
                 PacketDistributor.sendToPlayer(player, new ArmoryConsoleSyncPacket(hasRemote(player), snapshot, views,
-                    WingmanService.views(player), message));
+                    WingmanService.views(player), WingmanService.count(player), WingmanConfig.maxPerPlayer(), message));
             }
         } catch (RuntimeException ignored) {
             // detached / fake connections (automation, tests) have no client to update
@@ -268,8 +271,7 @@ public final class ArmoryRemoteService {
         // 0.1.8.0 auto return: a suit summoned from a holo projector goes back to that projector;
         // when every Armory suit position is in use, an empty docked projector takes it.
         ArmorShowcaseBlockEntity projector = originProjector(player);
-        int set = -1;
-        for (int s = 0; s < mio_icif_armory.SETS; s++) if (armory.pieceCount(s) == 0) { set = s; break; }
+        int set = armory.firstFreeSet();   // 0.1.11.39 (G-1): never a suit that flies as a Wingman
         if (projector == null && set < 0) projector = freeDockedProjector(armory);
         if (projector != null) return returnToProjector(player, armory, projector, worn);
         if (set < 0) set = 0;

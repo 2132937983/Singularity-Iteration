@@ -5371,5 +5371,18 @@
   "gui.mio_icif.chunk_loader.cell.own": "Чанк самого загрузчика (всегда выбран)",
   "gui.mio_icif.chunk_loader.cell.help": "Щелчок: выбрать или убрать · перетаскивание: выбрать область · правый щелчок или перетаскивание: убрать",
   "gui.mio_icif.chunk_loader.select_all": "Выбрать все (от ближних, до предела)",
-  "gui.mio_icif.chunk_loader.clear": "Очистить (свой чанк остаётся)"
+  "gui.mio_icif.chunk_loader.clear": "Очистить (свой чанк остаётся)",
+  "message.mio_icif.wingman.no_room": "Нет места, чтобы сбросить ведомого над вами или рядом",
+  "gui.mio_icif.armory_console.deployed": "В полёте",
+  "mio_icif.configuration.wingmen": "Ведомые",
+  "mio_icif.configuration.wingmen.maxPerPlayer": "Ведомых на игрока",
+  "mio_icif.configuration.wingmen.maxPerPlayer.tooltip": "1-8, включая ведомых в незагруженных чанках.",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond": "Содержание (EU в секунду)",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "Сначала платят электрические части костюма, затем арсенал (если загружен). 0 = бесплатно.",
+  "mio_icif.configuration.wingmen.lowPowerSeconds": "Секунд без оплаты до возврата",
+  "mio_icif.configuration.wingmen.lowPowerSeconds.tooltip": "1-600.",
+  "mio_icif.configuration.wingmen.scanRange": "Радиус поиска целей",
+  "mio_icif.configuration.wingmen.scanRange.tooltip": "Блоков вокруг владельца (режим атаки).",
+  "mio_icif.configuration.wingmen.leash": "Предел удаления цели",
+  "mio_icif.configuration.wingmen.leash.tooltip": "Цель дальше этого расстояния от владельца бросается (без приказа). Не меньше радиуса поиска."
 }

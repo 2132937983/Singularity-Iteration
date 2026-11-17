@@ -5371,5 +5371,18 @@
   "gui.mio_icif.chunk_loader.cell.own": "ローダー自身のチャンク（常に選択）",
   "gui.mio_icif.chunk_loader.cell.help": "クリック：選択・解除 · ドラッグ：範囲選択 · 右クリック・右ドラッグ：解除",
   "gui.mio_icif.chunk_loader.select_all": "すべて選択（近い順、上限まで）",
-  "gui.mio_icif.chunk_loader.clear": "クリア（自分のチャンクは残す）"
+  "gui.mio_icif.chunk_loader.clear": "クリア（自分のチャンクは残す）",
+  "message.mio_icif.wingman.no_room": "上にも横にも僚機を降下させる空間がありません",
+  "gui.mio_icif.armory_console.deployed": "出撃中",
+  "mio_icif.configuration.wingmen": "僚機",
+  "mio_icif.configuration.wingmen.maxPerPlayer": "プレイヤーごとの僚機上限",
+  "mio_icif.configuration.wingmen.maxPerPlayer.tooltip": "1〜8。未読み込みチャンクの僚機も数えます。",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond": "維持費（EU/秒）",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "スーツの電動パーツが先に払い、次にアーマリー（読み込み中のとき）。0 = 無料。",
+  "mio_icif.configuration.wingmen.lowPowerSeconds": "維持費が払えないまま帰還するまでの秒数",
+  "mio_icif.configuration.wingmen.lowPowerSeconds.tooltip": "1〜600。",
+  "mio_icif.configuration.wingmen.scanRange": "ターゲット探索範囲",
+  "mio_icif.configuration.wingmen.scanRange.tooltip": "主人の周りのブロック数（攻撃モード）。",
+  "mio_icif.configuration.wingmen.leash": "ターゲット追跡距離",
+  "mio_icif.configuration.wingmen.leash.tooltip": "主人からこれより遠いターゲットは追わない（命令なしのとき）。探索範囲より小さくならない。"
 }

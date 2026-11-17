@@ -5371,5 +5371,18 @@
   "gui.mio_icif.chunk_loader.cell.own": "The loader's own chunk (always selected)",
   "gui.mio_icif.chunk_loader.cell.help": "Click: select or remove · drag: select an area · right click or drag: remove",
   "gui.mio_icif.chunk_loader.select_all": "Select all (nearest first, up to the limit)",
-  "gui.mio_icif.chunk_loader.clear": "Clear (keeps the own chunk)"
+  "gui.mio_icif.chunk_loader.clear": "Clear (keeps the own chunk)",
+  "message.mio_icif.wingman.no_room": "No room for a Wingman to drop in above or beside you",
+  "gui.mio_icif.armory_console.deployed": "Out",
+  "mio_icif.configuration.wingmen": "Wingmen",
+  "mio_icif.configuration.wingmen.maxPerPlayer": "Wingmen per player",
+  "mio_icif.configuration.wingmen.maxPerPlayer.tooltip": "1-8, counting the Wingmen in unloaded chunks.",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond": "Upkeep (EU per second)",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "The electric pieces of the suit pay first, then the Armory (when loaded). 0 = free.",
+  "mio_icif.configuration.wingmen.lowPowerSeconds": "Seconds without upkeep before return",
+  "mio_icif.configuration.wingmen.lowPowerSeconds.tooltip": "1-600.",
+  "mio_icif.configuration.wingmen.scanRange": "Target search range",
+  "mio_icif.configuration.wingmen.scanRange.tooltip": "Blocks around the owner (offensive mode).",
+  "mio_icif.configuration.wingmen.leash": "Target leash",
+  "mio_icif.configuration.wingmen.leash.tooltip": "A target farther than this from the owner is dropped (no order). Never below the search range."
 }

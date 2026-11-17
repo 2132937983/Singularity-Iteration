@@ -42,7 +42,7 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 public final class WingmanService {
     private WingmanService() {}
 
-    /** Maximum number of Wingmen per player. */
+    /** Default maximum number of Wingmen per player (the live value is {@link WingmanConfig#maxPerPlayer()}, 0.1.11.39). */
     public static final int MAX_PER_PLAYER = 4;
     /** Same dimension and nearer than this: the Wingman takes off from the Armory, else it drops in above the owner. */
     static final double LAUNCH_RANGE = 128;
@@ -50,19 +50,22 @@ public final class WingmanService {
     /** Server thread only. */
     private static final Map<UUID, List<WingmanEntity>> BY_OWNER = new HashMap<>();
 
-    /** One Wingman row of the console. {@code energy} is -1 without electric pieces. */
-    public record View(int set, int mode, int state, float health, float energy, List<ItemStack> items) {
+    /**
+     * One Wingman row of the console. {@code energy} is -1 without electric pieces. 0.1.11.39: {@code entityId} names the
+     * Wingman for a recall (a row number could point at another Wingman after a change of the list).
+     */
+    public record View(int entityId, int set, int mode, int state, float health, float energy, List<ItemStack> items) {
         void write(RegistryFriendlyByteBuf buf) {
-            buf.writeVarInt(set); buf.writeByte(mode); buf.writeByte(state); buf.writeFloat(health); buf.writeFloat(energy);
+            buf.writeVarInt(entityId); buf.writeVarInt(set); buf.writeByte(mode); buf.writeByte(state); buf.writeFloat(health); buf.writeFloat(energy);
             for (int i = 0; i < ArmoryPiece.COLUMNS.length; i++) ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, i < items.size() ? items.get(i) : ItemStack.EMPTY);
         }
 
         static View read(RegistryFriendlyByteBuf buf) {
-            int set = buf.readVarInt(), mode = buf.readUnsignedByte(), state = buf.readUnsignedByte();
+            int entityId = buf.readVarInt(), set = buf.readVarInt(), mode = buf.readUnsignedByte(), state = buf.readUnsignedByte();
             float health = buf.readFloat(), energy = buf.readFloat();
             List<ItemStack> items = new ArrayList<>();
             for (int i = 0; i < ArmoryPiece.COLUMNS.length; i++) items.add(ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
-            return new View(set, mode, state, health, energy, items);
+            return new View(entityId, set, mode, state, health, energy, items);
         }
     }
 
@@ -108,8 +111,12 @@ public final class WingmanService {
         return false;
     }
 
+    /**
+     * 0.1.11.39 (G-13): the squad order follows the suit sets (then the entity id), so a Wingman that loads or unloads no
+     * longer shuffles the places of the others (before: the entity id, which a new deployment always puts last).
+     */
     private static void renumber(List<WingmanEntity> list) {
-        list.sort(Comparator.comparingInt(WingmanEntity::getId));
+        list.sort(Comparator.comparingInt(WingmanEntity::set).thenComparingInt(WingmanEntity::getId));
         for (int i = 0; i < list.size(); i++) list.get(i).setSlot(i, list.size());
     }
 
@@ -127,9 +134,42 @@ public final class WingmanService {
         for (WingmanEntity w : of(player)) {
             List<ItemStack> items = new ArrayList<>();
             for (ItemStack s : w.items()) items.add(s.copy());
-            out.add(new View(w.set(), w.mode().ordinal(), w.state(), w.getHealth() / Math.max(1, w.getMaxHealth()), w.energyFraction(), items));
+            out.add(new View(w.getId(), w.set(), w.mode().ordinal(), w.state(), w.getHealth() / Math.max(1, w.getMaxHealth()), w.energyFraction(), items));
         }
         return out;
+    }
+
+    /**
+     * 0.1.11.39 (G-2): every Wingman of {@code player}: the loaded ones and the ones in unloaded chunks (roster). The limit
+     * counts them all; before, a Wingman sent far away and unloaded freed its place, so the limit did not hold.
+     */
+    public static int count(ServerPlayer player) {
+        WingmanRoster roster = WingmanRoster.get(player.server);
+        return of(player).size() + (roster == null ? 0 : roster.of(player.getUUID()).size());
+    }
+
+    /**
+     * 0.1.11.39 (G-4): where a Wingman that cannot take off from its Armory drops in: the highest place up to 18 blocks
+     * above the owner with room for its body and an open column down to the owner, else beside the owner; null when even
+     * that place is blocked. Before, it always appeared 18 blocks up, inside the rock of a cave or the Nether, suffocated
+     * and flew home at once.
+     */
+    @org.jetbrains.annotations.Nullable
+    static Vec3 dropInPoint(ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        var size = ArmoryRegistry.WINGMAN.get().getDimensions();
+        Vec3 feet = player.position();
+        int top = 0;
+        for (int dy = 1; dy <= 18; dy++) {   // the open column above the owner
+            if (!level.noCollision(size.makeBoundingBox(feet.add(0, dy, 0)))) break;
+            top = dy;
+        }
+        if (top >= 2) return feet.add(0, top, 0);
+        for (double[] o : new double[][]{{1.2, 0}, {-1.2, 0}, {0, 1.2}, {0, -1.2}, {0, 0}}) {
+            Vec3 at = feet.add(o[0], 0, o[1]);
+            if (level.noCollision(size.makeBoundingBox(at))) return at;
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------ actions
@@ -140,7 +180,8 @@ public final class WingmanService {
         if (set < 0 || set >= mio_icif_armory.SETS) return Component.translatable("message.mio_icif.armory.failed");
         if (!(armory.getLevel() instanceof ServerLevel home) || !player.isAlive() || player.isSpectator())
             return Component.translatable("message.mio_icif.armory.failed");
-        if (of(player).size() >= MAX_PER_PLAYER) return Component.translatable("message.mio_icif.wingman.limit", MAX_PER_PLAYER);
+        int limit = WingmanConfig.maxPerPlayer();
+        if (count(player) >= limit) return Component.translatable("message.mio_icif.wingman.limit", limit);
         int armor = 0, pieces = 0;
         for (ArmoryPiece p : ArmoryPiece.VALUES) {
             if (armory.piece(set, p).isEmpty()) continue;
@@ -153,30 +194,36 @@ public final class WingmanService {
 
         boolean sameDimension = player.level() == home;
         double straight = sameDimension ? player.position().distanceTo(armory.launchTop()) : -1;
+        boolean launch = sameDimension && straight >= 0 && straight < LAUNCH_RANGE;
+        Vec3 at = launch ? armory.launchTop().add(0, 0.5, 0) : dropInPoint(player);
+        if (at == null) return Component.translatable("message.mio_icif.wingman.no_room");   // 0.1.11.39 (G-4): before the payment
         long cost = mio_icif_armory.cost(pieces, straight, sameDimension);
         var payment = armory.getEnergyStorageInternal().scexReserveInternal(cost);
         if (payment == null) return Component.translatable("message.mio_icif.armory.no_energy", cost, armory.getEnergyStorage().getAmount());
-        payment.commit();
 
-        ItemStack[] items = new ItemStack[ArmoryPiece.VALUES.length];
-        var handler = armory.getItemHandler();
-        for (ArmoryPiece p : ArmoryPiece.VALUES) items[p.ordinal()] = handler.extractItem(mio_icif_armory.slotOf(set, p), 64, false);
-        armory.markStorageChanged();
-
-        ServerLevel level = player.serverLevel();
-        boolean launch = sameDimension && straight >= 0 && straight < LAUNCH_RANGE;
-        Vec3 at = launch ? armory.launchTop().add(0, 0.5, 0) : player.position().add(0, 18, 0);
-        WingmanEntity w = WingmanEntity.create(level, player, GlobalPos.of(home.dimension(), armory.getBlockPos()), set, mode, items, at);
-        if (!level.addFreshEntity(w)) {
-            // a different mod cancelled the spawn: the items go back, the energy stays spent
-            w.secure();
-            return Component.translatable("message.mio_icif.armory.failed");
+        WingmanEntity w;
+        try {
+            ItemStack[] items = new ItemStack[ArmoryPiece.VALUES.length];
+            var handler = armory.getItemHandler();
+            for (ArmoryPiece p : ArmoryPiece.VALUES) items[p.ordinal()] = handler.extractItem(mio_icif_armory.slotOf(set, p), 64, false);
+            armory.markStorageChanged();
+            ServerLevel level = player.serverLevel();
+            w = WingmanEntity.create(level, player, GlobalPos.of(home.dimension(), armory.getBlockPos()), set, mode, items, at);
+            if (!level.addFreshEntity(w)) {
+                // a different mod cancelled the spawn: the items go back and (0.1.11.39) the energy too
+                w.secure();
+                payment.cancel();
+                return Component.translatable("message.mio_icif.armory.failed");
+            }
+        } finally {
+            if (payment.isPending()) payment.commit();   // settled on every path (a throw keeps the old behaviour: spent)
         }
+        armory.markDeployed(set, w.sortie());   // 0.1.11.39 (G-1): the suit keeps its positions while it flies
         if (launch) {
             home.playSound(null, armory.getBlockPos(), mio_icif_sounds.ARMORY_HATCH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
             home.playSound(null, armory.getBlockPos(), mio_icif_sounds.ARMORY_LAUNCH.get(), SoundSource.BLOCKS, 1.0F, 0.9F);
         } else {
-            level.playSound(null, at.x, at.y, at.z, mio_icif_sounds.ARMORY_FLYBY.get(), SoundSource.NEUTRAL, 1.5F, 0.9F);
+            player.serverLevel().playSound(null, at.x, at.y, at.z, mio_icif_sounds.ARMORY_FLYBY.get(), SoundSource.NEUTRAL, 1.5F, 0.9F);
         }
         return Component.translatable("message.mio_icif.wingman.deployed", armory.setName(set),
             Component.translatable(mode.key()), cost);
@@ -194,20 +241,39 @@ public final class WingmanService {
         return Component.translatable("message.mio_icif.wingman.mode", Component.translatable(mode.key()));
     }
 
-    /** Recalls Wingman {@code index} of the console list, or all for a negative or too large index. */
+    /**
+     * Recalls Wingman {@code index} of the console list, or all for a negative or too large index. 0.1.11.39 (G-2, G-10):
+     * "all" also reaches the Wingmen in unloaded chunks (their chunk loads for a moment and the suit goes home), so a
+     * player without the quantum recall can get them back too.
+     */
     public static Component recall(ServerPlayer player, int index) {
         List<WingmanEntity> list = of(player);
-        if (list.isEmpty()) return Component.translatable("message.mio_icif.wingman.none");
         if (index >= 0 && index < list.size()) {
             list.get(index).startReturn(null);
             return Component.translatable("message.mio_icif.wingman.recalled", 1);
         }
+        WingmanRoster roster = WingmanRoster.get(player.server);
+        int far = roster == null ? 0 : WingmanCommands.recallUnloaded(player.server, player.getUUID(), roster.of(player.getUUID()));
+        if (list.isEmpty() && far == 0) return Component.translatable("message.mio_icif.wingman.none");
         for (WingmanEntity w : list) w.startReturn(null);
-        return Component.translatable("message.mio_icif.wingman.recalled", list.size());
+        return Component.translatable("message.mio_icif.wingman.recalled", list.size() + far);
+    }
+
+    /** 0.1.11.39 (G-12): recalls the Wingman with entity id {@code entityId} (a console row). */
+    public static Component recallById(ServerPlayer player, int entityId) {
+        for (WingmanEntity w : of(player)) {
+            if (w.getId() != entityId) continue;
+            w.startReturn(null);
+            return Component.translatable("message.mio_icif.wingman.recalled", 1);
+        }
+        return Component.translatable("message.mio_icif.wingman.none");
     }
 
     // ------------------------------------------------------------------ lifecycle
-    /** The owner leaves: every loaded Wingman puts its suit back at once (no flight). */
+    /**
+     * The owner leaves: every loaded Wingman puts its suit back at once (no flight). 0.1.11.39 (G-10): the Wingmen in
+     * unloaded chunks too (their chunk loads for a moment); before, their suits waited there until somebody came by.
+     */
     @SubscribeEvent
     static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
@@ -215,6 +281,8 @@ public final class WingmanService {
             w.secure();
             w.discard();
         }
+        WingmanRoster roster = WingmanRoster.get(player.server);
+        if (roster != null && player.server.isRunning()) WingmanCommands.recallUnloaded(player.server, player.getUUID(), roster.of(player.getUUID()));
     }
 
     @SubscribeEvent

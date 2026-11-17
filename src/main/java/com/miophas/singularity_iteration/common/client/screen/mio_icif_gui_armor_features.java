@@ -947,11 +947,12 @@ public class mio_icif_gui_armor_features extends Screen {
             // stocked suits, plus the first empty one (a target to fill); the rest stay folded away
             boolean emptyShown = false;
             for (int s = 0; s < snap.suits().size(); s++) {
-                if (snap.pieces(s) == 0) { if (emptyShown) continue; emptyShown = true; }
+                // 0.1.11.39: a suit out as a Wingman keeps its row ("out") and is not the empty target
+                if (snap.pieces(s) == 0 && !snap.deployed(s)) { if (emptyShown) continue; emptyShown = true; }
                 rows.add(new ARow(1, s));
             }
         }
-        if (deployTarget == 1 || !data.wingmen().isEmpty()) {
+        if (deployTarget == 1 || data.wingmanCount() > 0) {
             rows.add(new ARow(5, 0));
             for (int i = 0; i < data.wingmen().size(); i++) rows.add(new ARow(6, i));
         }
@@ -1018,15 +1019,15 @@ public class mio_icif_gui_armor_features extends Screen {
                     }
                 }
                 case 5 -> {
-                    String head = Component.translatable("gui.mio_icif.wingman.header", data.wingmen().size(),
-                        com.miophas.singularity_iteration.common.armory.WingmanService.MAX_PER_PLAYER).getString();
+                    // 0.1.11.39: every Wingman (unloaded ones too) against the server's limit
+                    String head = Component.translatable("gui.mio_icif.wingman.header", data.wingmanCount(), data.wingmanLimit()).getString();
                     DspUi.small(g, font, head, x0 + 5, yy + 8, DspUi.GREEN);
                     g.fill(x0 + 8 + DspUi.smallWidth(font, head), yy + 11, x0 + EW - 140, yy + 12, DspUi.FRAME);
                     var mode = com.miophas.singularity_iteration.common.armory.WingmanMode.byId(wingmanMode);
                     dspButton(g, x0 + EW - 136, yy + 2, 66, 13, Component.translatable(mode.key()).getString(),
                         in(mouseX, mouseY, x0 + EW - 136, yy + 2, 66, 13), DspUi.GREEN, true);
                     dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.wingman.recall_all").getString(),
-                        in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.VIOLET, !data.wingmen().isEmpty());
+                        in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.VIOLET, data.wingmanCount() > 0);
                 }
                 case 6 -> {
                     var w = data.wingmen().get(r.index());
@@ -1053,10 +1054,12 @@ public class mio_icif_gui_armor_features extends Screen {
                     if (hot) g.fill(x0 + 3, yy, x0 + EW - 3, yy + AROW - 1, 0x305FD3F5);
                     g.drawString(font, font.plainSubstrByWidth(snap.names().get(r.index()), 70), x0 + 6, yy + 5, pieces > 0 ? DspUi.TEXT : DspUi.TEXT_DIM, false);
                     icons(g, snap.suits().get(r.index()), x0 + 80, yy + 1);
-                    DspUi.small(g, font, pieces + "/6", x0 + 192, yy + 6, DspUi.TEXT_DIM);
+                    boolean out = snap.deployed(r.index()) && pieces == 0;
+                    if (out) DspUi.small(g, font, Component.translatable("gui.mio_icif.armory_console.deployed").getString(), x0 + 192, yy + 6, DspUi.GREEN);
+                    else DspUi.small(g, font, pieces + "/6", x0 + 192, yy + 6, DspUi.TEXT_DIM);
                     boolean ok = pieces > 0 && !snap.busy();
                     if (deployTarget == 1) {
-                        ok &= data.wingmen().size() < com.miophas.singularity_iteration.common.armory.WingmanService.MAX_PER_PLAYER;
+                        ok &= data.wingmanCount() < data.wingmanLimit();
                         dspButton(g, x0 + EW - 68, yy + 2, 64, 13, Component.translatable("gui.mio_icif.wingman.deploy").getString(),
                             in(mouseX, mouseY, x0 + EW - 68, yy + 2, 64, 13), DspUi.GREEN, ok);
                     } else if (deployTarget == 2) {
@@ -1131,7 +1134,7 @@ public class mio_icif_gui_armor_features extends Screen {
             }
             if (r.kind() == 5 && in(mouseX, mouseY, x0 + EW - 136, yy + 2, 66, 13)) {
                 wingmanMode = (wingmanMode + 1) % com.miophas.singularity_iteration.common.armory.WingmanMode.VALUES.length;
-                if (!data.wingmen().isEmpty()) sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.WINGMAN_MODE, wingmanMode);
+                if (data.wingmanCount() > 0) sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.WINGMAN_MODE, wingmanMode);
                 else sound(false);
                 return true;
             }
@@ -1151,7 +1154,10 @@ public class mio_icif_gui_armor_features extends Screen {
                     com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.ALL);
                 return true;
             }
-            if (r.kind() == 6) { sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.WINGMAN_RECALL, r.index()); return true; }
+            if (r.kind() == 6) {   // 0.1.11.39 (G-12): by entity id, not by row
+                sendArmory(com.miophas.singularity_iteration.common.armory.ArmoryRemoteService.WINGMAN_RECALL_ID, data.wingmen().get(r.index()).entityId());
+                return true;
+            }
         }
         return false;
     }

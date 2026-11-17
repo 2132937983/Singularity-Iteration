@@ -180,8 +180,10 @@ public final class WingmanCommands {
                 }
                 case A_FORM_UP -> w.clearOrder();
                 case A_MODE -> {
-                    WingmanMode mode = WingmanMode.byId(c.arg());
-                    w.setMode(mode, !all);
+                    // 0.1.11.39 (G-12): a squad mode leaves an individual mode alone, as the panel's squad mode does
+                    // (before, the wheel's "all" cleared it); "follow squad" ends an individual mode
+                    if (all && w.individual()) continue;
+                    w.setMode(WingmanMode.byId(c.arg()), !all);
                 }
                 case A_SQUAD -> {
                     WingmanMode squad = state.squadMode >= 0 ? WingmanMode.byId(state.squadMode) : w.mode();
@@ -257,15 +259,7 @@ public final class WingmanCommands {
             return 0;
         }
         for (WingmanEntity w : loaded) dematerialize(w);
-        int requested = 0;
-        for (WingmanRoster.Entry e : far) {
-            ServerLevel level = player.server.getLevel(e.dimension());
-            if (level == null) continue;
-            ChunkPos chunk = new ChunkPos(BlockPos.containing(e.pos()));
-            level.getChunkSource().addRegionTicket(RECALL_TICKET, chunk, 2, chunk);
-            PENDING.put(e.wingman(), new Pending(e.dimension(), player.getUUID(), player.server.getTickCount() + RECALL_TICKET_TICKS / 2));
-            requested++;
-        }
+        int requested = recallUnloaded(player.server, player.getUUID(), far);
         QuantumCore.spend(player, s, cost);
         keys.cooldown.put(RECALL_KEY, QuantumConfig.recallCooldown());
         keys.dirty();
@@ -273,6 +267,24 @@ public final class WingmanCommands {
         player.displayClientMessage(Component.translatable("message.mio_icif.command.recall", loaded.size() + requested, requested), true);
         player.getData(SuitRegistry.WINGMAN_COMMAND).syncTimer = 100;
         return loaded.size() + requested;
+    }
+
+    /**
+     * Sends the unloaded Wingmen {@code far} home: each chunk loads for a moment with a ticket and the suit goes home as
+     * soon as the entity appears (see {@link #onServerTick}). Returns the number of requests. 0.1.11.39: shared by the
+     * quantum recall, the console's "recall all" and the owner's logout.
+     */
+    static int recallUnloaded(MinecraftServer server, UUID owner, List<WingmanRoster.Entry> far) {
+        int requested = 0;
+        for (WingmanRoster.Entry e : far) {
+            ServerLevel level = server.getLevel(e.dimension());
+            if (level == null) continue;
+            ChunkPos chunk = new ChunkPos(BlockPos.containing(e.pos()));
+            level.getChunkSource().addRegionTicket(RECALL_TICKET, chunk, 2, chunk);
+            PENDING.put(e.wingman(), new Pending(e.dimension(), owner, server.getTickCount() + RECALL_TICKET_TICKS / 2));
+            requested++;
+        }
+        return requested;
     }
 
     /** The suit of {@code w} folds into the Armory: the effect for the players near, then the items go home. */
@@ -320,16 +332,16 @@ public final class WingmanCommands {
     static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         WingmanCommandState st = player.getData(SuitRegistry.WINGMAN_COMMAND);
-        boolean commander = commander(player);
-        if (!commander) {
+        // 0.1.11.39 (G-15): the link is checked every 10 ticks, not in every tick of every player
+        if (++st.syncTimer < 10) return;
+        st.syncTimer = 0;
+        if (!commander(player)) {
             if (st.sentActive) {
                 SuitPackets.send(player, new WingmanCommandPackets.Squad(false, st.datalink, (byte) st.squadMode, 0, 0, 0, List.of()));
                 st.sentActive = false;
             }
             return;
         }
-        if (++st.syncTimer < 10) return;
-        st.syncTimer = 0;
         // always sent while the link works (a few bytes without Wingmen): the client takes a silent link as lost
         st.sentActive = true;
         SuitPackets.send(player, squad(player, st));

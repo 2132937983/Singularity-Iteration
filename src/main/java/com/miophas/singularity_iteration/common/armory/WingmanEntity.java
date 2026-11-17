@@ -56,7 +56,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>The Wingman wears the real items of one Armory suit (four armor pieces, main hand, off
  *       hand). The items are moved, not copied. Thus the Wingman has the armor value, the
  *       weapon damage, the enchantments and the electric armor protection of the suit, as for a
- *       player who wears it. The base values are the player base values (20 health, attack
+ *       player who wears it (0.1.11.39: the suit modules, such as the deflector, work only for players). The base values are the player base values (20 health, attack
  *       damage 1, attack speed 4).</li>
  *   <li>The items never disappear. Recall, owner logout, owner in a different dimension, low
  *       power and a removal (for example {@code /kill}) put the items back into the Armory. If
@@ -65,19 +65,15 @@ import org.jetbrains.annotations.Nullable;
  *   <li>A hit that would kill the Wingman sets it to 1 health. It then returns to the Armory
  *       and is invulnerable on the way. Only void damage and {@code /kill} remove it at once.</li>
  *   <li>The owner and the other Wingmen of the owner cannot hurt it.</li>
- *   <li>Upkeep: {@link #UPKEEP_EU} EU per second. The electric pieces of the suit pay first (the
- *       full-set pool applies). If they cannot pay, the Armory pays when it is loaded. After
- *       {@link #LOW_POWER_LIMIT} seconds without power, the Wingman returns.</li>
+ *   <li>Upkeep: {@link WingmanConfig#upkeepEuPerSecond()} EU per second (default 160). The electric pieces of the suit pay
+ *       first (the full-set pool applies). If they cannot pay, the Armory pays when it is loaded. After
+ *       {@link WingmanConfig#lowPowerSeconds()} seconds without power (default 5), the Wingman returns.</li>
  * </ul>
  */
 @SuppressWarnings("null")
 public class WingmanEntity extends Mob {
-    /** EU per second of flight. */
-    public static final long UPKEEP_EU = 160;
     /** EU of one Fulton recovery (paid by the Armory). */
     public static final long FULTON_EU = 4000;
-    /** Seconds without power before the Wingman returns. */
-    public static final int LOW_POWER_LIMIT = 5;
     /** Mobs that a Fulton recovery cannot take (data pack tag). */
     public static final TagKey<EntityType<?>> FULTON_IMMUNE = TagKey.create(net.minecraft.core.registries.Registries.ENTITY_TYPE,
         net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("mio_icif", "wingman/fulton_immune"));
@@ -85,7 +81,8 @@ public class WingmanEntity extends Mob {
     public static final byte ACTIVE = 0, RETURNING = 1, LIFTING = 2;
 
     private static final double CRUISE = 0.9, COMBAT = 1.15, ACCEL = 0.14;
-    private static final double SCAN_RANGE = 24, LEASH = 28, CATCH_UP = 64;
+    /** Follow-range attribute (the live target ranges are {@link WingmanConfig#scanRange()} and {@link WingmanConfig#leash()}). */
+    private static final double SCAN_RANGE = 24, CATCH_UP = 64;
 
     private static final EntityDataAccessor<Byte> DATA_MODE = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Byte> DATA_STATE = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BYTE);
@@ -450,7 +447,8 @@ public class WingmanEntity extends Mob {
         // 0.1.10.5: count the nominal EU that is covered. Energy Saving makes a piece pay less EU
         // for the same share; before, the saved EU counted as unpaid (the Armory paid it again, or
         // the Wingman flew home for low power).
-        long due = UPKEEP_EU;
+        long due = WingmanConfig.upkeepEuPerSecond();
+        if (due <= 0) { lowPowerSeconds = 0; return; }
         var api = MioIcifAPI.instance().getItemAPI();
         for (EquipmentSlot s : SuitEnergyPool.ARMOR_SLOTS) {
             ItemStack piece = getItemBySlot(s);
@@ -464,7 +462,7 @@ public class WingmanEntity extends Mob {
             if (payment != null) { payment.commit(); due = 0; }
         }
         if (due <= 0) { lowPowerSeconds = 0; return; }
-        if (++lowPowerSeconds >= LOW_POWER_LIMIT) {
+        if (++lowPowerSeconds >= WingmanConfig.lowPowerSeconds()) {
             startReturn(player == null ? null : Component.translatable("message.mio_icif.wingman.low_power"));
         }
     }
@@ -480,12 +478,13 @@ public class WingmanEntity extends Mob {
 
     // ---- modes
     private void tickOffensive(ServerPlayer player) {
+        double leash = WingmanConfig.leash();
         LivingEntity focus = ownerFocus(player);
         if (focus != null && focus != target) target = focus;          // the owner's new target first, at once
-        else if (tickCount % 5 == 0 || !valid(target, player, LEASH)) {
+        else if (tickCount % 5 == 0 || !valid(target, player, leash)) {
             // 0.1.9.1: threat scoring (owner's call, fusing creepers, attackers, hunters, focus fire)
-            target = WingmanTactics.select(this, player, player.position(), SCAN_RANGE, valid(target, player, LEASH) ? target : null,
-                e -> valid(e, player, LEASH));
+            target = WingmanTactics.select(this, player, player.position(), WingmanConfig.scanRange(), valid(target, player, leash) ? target : null,
+                e -> valid(e, player, leash));
         }
         if (target != null) engage(target, player);
         else idle(formation(player), player, false);
@@ -494,8 +493,9 @@ public class WingmanEntity extends Mob {
     private void tickDispersal(ServerPlayer player) {
         double angle = Math.toRadians(player.getYRot()) + slot * (Math.PI * 2 / slotCount);
         Vec3 station = player.position().add(-Math.sin(angle) * 10, 3.5, Math.cos(angle) * 10);
-        if (tickCount % 10 == 0 || !valid(target, player, LEASH)) {
-            target = WingmanTactics.select(this, player, station, 14, valid(target, player, LEASH) ? target : null, e -> valid(e, player, LEASH));
+        double leash = WingmanConfig.leash();
+        if (tickCount % 10 == 0 || !valid(target, player, leash)) {
+            target = WingmanTactics.select(this, player, station, 14, valid(target, player, leash) ? target : null, e -> valid(e, player, leash));
             // decoy: the mobs near the station that hunt the owner turn to this Wingman
             for (Mob mob : level().getEntitiesOfClass(Mob.class, new AABB(station, station).inflate(12),
                     m -> m instanceof Enemy && m.getTarget() == player)) mob.setTarget(this);
@@ -675,27 +675,6 @@ public class WingmanEntity extends Mob {
             && !player.isAlliedTo(e) && !(e instanceof net.minecraft.world.entity.OwnableEntity own && player.getUUID().equals(own.getOwnerUUID()));
     }
 
-    @Nullable
-    private LivingEntity pickOffensive(ServerPlayer player) {
-        LivingEntity marked = player.getLastHurtMob();
-        if (marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 200 && valid(marked, player, LEASH)) return marked;
-        LivingEntity attacker = player.getLastHurtByMob();
-        if (attacker != null && player.tickCount - player.getLastHurtByMobTimestamp() < 200 && valid(attacker, player, LEASH)) return attacker;
-        return nearestHostile(player.position(), SCAN_RANGE, player);
-    }
-
-    @Nullable
-    private LivingEntity nearestHostile(Vec3 around, double range, ServerPlayer player) {
-        LivingEntity best = null;
-        double bestD = Double.MAX_VALUE;
-        for (Mob mob : level().getEntitiesOfClass(Mob.class, new AABB(around, around).inflate(range), m -> m instanceof Enemy)) {
-            if (!valid(mob, player, LEASH)) continue;
-            double d = mob.distanceToSqr(around);
-            if (d < bestD) { bestD = d; best = mob; }
-        }
-        return best;
-    }
-
     /** 0.1.10.8: the projectile scan runs every 2nd tick; in between the last threat is kept while it still flies at the owner. */
     @Nullable private Projectile lastThreat;
     private int threatScanAt = -10;
@@ -736,7 +715,7 @@ public class WingmanEntity extends Mob {
         if (e == null || !e.isAlive() || e.level() != level() || e instanceof Player || e instanceof WingmanEntity) return false;
         if (e.isPassenger() || e.isVehicle() || e.getId() == lastFulton) return false;
         if (e.getType().is(net.neoforged.neoforge.common.Tags.EntityTypes.BOSSES) || e.getType().is(FULTON_IMMUNE)) return false;
-        if (e.getBbWidth() > 1.6F || e.getBbHeight() > 2.8F || e.distanceToSqr(player) > LEASH * LEASH) return false;
+        if (e.getBbWidth() > 1.6F || e.getBbHeight() > 2.8F || e.distanceToSqr(player) > WingmanConfig.leash() * WingmanConfig.leash()) return false;
         if (e instanceof net.minecraft.world.entity.OwnableEntity own && own.getOwnerUUID() != null && !player.getUUID().equals(own.getOwnerUUID())) return false;
         return !(e instanceof Enemy) || e.getHealth() <= e.getMaxHealth() * 0.5F;   // a hostile mob must be weakened first
     }
@@ -1086,10 +1065,11 @@ public class WingmanEntity extends Mob {
     @Nullable
     private LivingEntity ownerFocus(ServerPlayer player) {
         LivingEntity marked = player.getLastHurtMob();
-        if (marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 40 && valid(marked, player, LEASH)) return marked;
+        double leash = WingmanConfig.leash();
+        if (marked != null && player.tickCount - player.getLastHurtMobTimestamp() < 40 && valid(marked, player, leash)) return marked;
         // 0.1.10.1 Fleet Datalink synergy: the creature in the owner's sights
         LivingEntity sighted = com.miophas.singularity_iteration.common.suit.quantum.QuantumSynergies.mark(player);
-        return sighted != null && valid(sighted, player, LEASH * 2) ? sighted : null;
+        return sighted != null && valid(sighted, player, leash * 2) ? sighted : null;
     }
 
     /** Nearest hostile mob within {@code range} of the owner that hunts the owner. */
@@ -1284,7 +1264,10 @@ public class WingmanEntity extends Mob {
             }
             if (!rest.isEmpty()) spawnAtLocation(rest);
         }
-        if (home != null) home.markStorageChanged();
+        if (home != null) {
+            home.releaseDeployed(set, sortie);   // 0.1.11.39 (G-1)
+            home.markStorageChanged();
+        }
     }
 
     /**

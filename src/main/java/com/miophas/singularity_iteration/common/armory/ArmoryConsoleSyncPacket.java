@@ -39,6 +39,8 @@ import java.util.List;
  *       {@code ArmoryPiece.COLUMNS.length} item stacks (empty stacks allowed).</li>
  *   <li>{@code wingmen}: the loaded Wingmen of the player (0.1.8.0), at most {@link #MAX_WINGMEN},
  *       each with the suit set, mode, state, health and energy fractions and the worn items.</li>
+ *   <li>{@code wingmanCount}, {@code wingmanLimit} (0.1.11.39): all Wingmen of the player (unloaded ones too) and the
+ *       server's limit (a config value the client does not have).</li>
  *   <li>{@code message}: result text of the last action. Empty for a refresh.</li>
  * </ul>
  *
@@ -56,7 +58,7 @@ import java.util.List;
  */
 public record ArmoryConsoleSyncPacket(boolean hasRemote, @Nullable ArmorySnapshot snapshot,
                                       List<ArmoryRemoteService.ShowcaseView> showcases, List<WingmanService.View> wingmen,
-                                      Component message) implements CustomPacketPayload {
+                                      int wingmanCount, int wingmanLimit, Component message) implements CustomPacketPayload {
     /** Maximum number of showcase entries in one packet. */
     public static final int MAX_SHOWCASES = 64;
     /** Maximum number of Wingman entries in one packet. */
@@ -85,6 +87,7 @@ public record ArmoryConsoleSyncPacket(boolean hasRemote, @Nullable ArmorySnapsho
             }
             int wingmen = com.miophas.singularity_iteration.common.util.PacketLimits.writeCount(buf, p.wingmen.size(), MAX_WINGMEN);
             for (int i = 0; i < wingmen; i++) p.wingmen.get(i).write(buf);
+            buf.writeVarInt(Math.max(0, p.wingmanCount)); buf.writeVarInt(Math.max(0, p.wingmanLimit));   // 0.1.11.39
             ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, p.message);
         },
         buf -> {
@@ -102,7 +105,8 @@ public record ArmoryConsoleSyncPacket(boolean hasRemote, @Nullable ArmorySnapsho
             int w = com.miophas.singularity_iteration.common.util.PacketLimits.readCount(buf, MAX_WINGMEN, "wingman");
             List<WingmanService.View> wingmen = new ArrayList<>();
             for (int i = 0; i < w; i++) wingmen.add(WingmanService.View.read(buf));
-            return new ArmoryConsoleSyncPacket(has, snapshot, views, wingmen, ComponentSerialization.TRUSTED_STREAM_CODEC.decode(buf));
+            int count = buf.readVarInt(), limit = buf.readVarInt();
+            return new ArmoryConsoleSyncPacket(has, snapshot, views, wingmen, count, limit, ComponentSerialization.TRUSTED_STREAM_CODEC.decode(buf));
         });
 
     @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
@@ -129,7 +133,8 @@ public record ArmoryConsoleSyncPacket(boolean hasRemote, @Nullable ArmorySnapsho
             ArmoryConsoleSyncPacket previous = latest;
             // A refresh has an empty message. Keep the last action message until a new one arrives.
             if (packet.message.getString().isEmpty() && previous != null) {
-                latest = new ArmoryConsoleSyncPacket(packet.hasRemote, packet.snapshot, packet.showcases, packet.wingmen, previous.message);
+                latest = new ArmoryConsoleSyncPacket(packet.hasRemote, packet.snapshot, packet.showcases, packet.wingmen,
+                    packet.wingmanCount, packet.wingmanLimit, previous.message);
             } else {
                 latest = packet;
             }

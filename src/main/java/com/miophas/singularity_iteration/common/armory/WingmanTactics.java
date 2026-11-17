@@ -136,15 +136,6 @@ public final class WingmanTactics {
         return score;
     }
 
-    /** True when another Wingman of the same owner fights {@code e}. */
-    static boolean engagedByOther(WingmanEntity self, ServerPlayer owner, LivingEntity e) {
-        for (WingmanEntity other : self.level().getEntitiesOfClass(WingmanEntity.class, self.getBoundingBox().inflate(48),
-                w -> w != self && owner.getUUID().equals(w.owner()))) {
-            if (other.currentTarget() == e) return true;
-        }
-        return false;
-    }
-
     /** Best target among the mobs within {@code range} of {@code around}, or null. */
     @Nullable
     static LivingEntity select(WingmanEntity self, ServerPlayer owner, Vec3 around, double range, @Nullable LivingEntity current,

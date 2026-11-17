@@ -137,6 +137,24 @@ public class WingmanEntity extends Mob {
         setPersistenceRequired();
         setCanPickUpLoot(false);
         for (EquipmentSlot s : EquipmentSlot.values()) setDropChance(s, 0);   // items leave only through secure()
+        // 0.1.11.52 (gaze and Iron Man phase P0, decision one A): the Wingman turns its head itself. The vanilla look control
+        // ran after its AI every tick, pulled the head 10 degrees back to the body and set the pitch to 0: in a fight the
+        // head swung between the enemy and the body (a "look around") and never looked up or down at it.
+        this.lookControl = new net.minecraft.world.entity.ai.control.LookControl(this) {
+            @Override
+            public void tick() { }
+        };
+    }
+
+    /**
+     * 0.1.11.52 (P0): the body is turned by the Wingman ({@link #setYaw}: it follows the head by at most {@link #BODY_TURN}
+     * degrees per tick, the neck at most {@link #NECK} degrees); the vanilla body control (which turned the body to the
+     * head after 10 still ticks and to the motion when moving) is not used. On the client the body keeps the synced yaw.
+     */
+    @Override
+    protected float tickHeadTurn(float yRot, float animStep) {
+        yBodyRot = getYRot();
+        return animStep;
     }
 
     /**
@@ -894,7 +912,22 @@ public class WingmanEntity extends Mob {
         return WingmanPose.ranged(w) ? WeaponKind.RANGED : WeaponKind.MELEE;
     }
 
+    /** 0.1.11.52 (P0): ticks of the stare at a newly locked enemy, the rest between two stares, the head turn in a fight. */
+    static final int GLARE = 6, GLARE_REST = 40;
+    static final float GAZE_TURN = 45.0F;
+    private int glareTicks, lastGlare = -GLARE_REST;
+
+    /** 0.1.11.52: ticks of the stare left (0 when none). */
+    int glareTicks() { return glareTicks; }
+
     private void engage(LivingEntity enemy, ServerPlayer player) {
+        if (glareTicks > 0) {
+            // the stare: brake to a hover, the head (and the body after it) on the enemy's eyes
+            glareTicks--;
+            faceSmooth(enemy.getEyePosition(), GAZE_TURN);
+            setDeltaMovement(getDeltaMovement().scale(0.6));
+            return;
+        }
         switch (weaponKind()) {
             case RANGED -> {
                 if (tickCount < dryUntil) engageMelee(enemy, player);   // 0.1.11.42: an empty energy weapon: melee until it may fire again
@@ -1330,9 +1363,14 @@ public class WingmanEntity extends Mob {
     /** Most degrees per tick the body turns after the head. */
     static final float BODY_TURN = 18.0F;
 
+    /** 0.1.11.52 (P0): most degrees between the head and the body (the body is pulled along beyond it). */
+    static final float NECK = 75.0F;
+
     private void setYaw(float yaw) {
         yHeadRot = yaw;
         float body = getYRot() + Mth.clamp(Mth.wrapDegrees(yaw - getYRot()), -BODY_TURN, BODY_TURN);
+        float neck = Mth.wrapDegrees(yaw - body);
+        if (Math.abs(neck) > NECK) body = yaw - Math.copySign(NECK, neck);
         setYRot(body);
         yBodyRot = body;
     }
@@ -1357,7 +1395,13 @@ public class WingmanEntity extends Mob {
     private void syncTarget(ServerLevel world) {
         int id = target != null && target.isAlive() && state() == ACTIVE ? target.getId() : -1;
         if (id == entityData.get(DATA_TARGET)) return;
+        boolean fresh = id >= 0 && tickCount - lastGlare >= GLARE_REST;
         entityData.set(DATA_TARGET, id);
+        // 0.1.11.52 (P0, decision one A): a new lock starts with a stare: the Wingman stops, turns its head on the enemy and
+        // holds it there for GLARE ticks before the first attack (at most once per GLARE_REST ticks, so a fight that
+        // switches targets does not stall)
+        if (fresh) { glareTicks = GLARE; lastGlare = tickCount; }
+        if (id < 0) glareTicks = 0;
         station = null;
         hitPause = 0;   // 0.1.11.46: a new target starts without the pause of the last hit
         if (id >= 0) world.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_LOCK.get(), SoundSource.NEUTRAL, 0.5F, 1.0F);
@@ -1640,6 +1684,31 @@ public class WingmanEntity extends Mob {
     /** The recoil holds this many ticks after a shot (a gun firing faster keeps a steady braced pose). */
     private static final int RECOIL_HOLD = 8;
 
+    // 0.1.11.52 (P0, decision three A): the idle glances of this Wingman (client), spaced from the other Wingmen's
+    private final WingmanGlance glance = new WingmanGlance();
+    private static final WingmanGlance.Shared GLANCES = new WingmanGlance.Shared();
+
+    /** Client: the idle glance as a head offset {yaw, pitch}, radians (0.1.11.52). */
+    public float[] glance(float partialTick) { return glance.offset(partialTick); }
+
+    /** Client: what an idle glance looks at: a creature just hurt, else the nearest one (not a Wingman), or null. */
+    @Nullable
+    private float[] glancePick() {
+        if (getRandom().nextFloat() < 0.3F) return null;   // now and then just a look round
+        LivingEntity best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (LivingEntity e : level().getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(12),
+                e -> e != this && e.isAlive() && !(e instanceof WingmanEntity))) {
+            double score = distanceToSqr(e) - (e.hurtTime > 0 ? 1000 : 0);
+            if (score < bestScore) { bestScore = score; best = e; }
+        }
+        if (best == null) return null;
+        Vec3 d = best.getEyePosition().subtract(getEyePosition());
+        float yaw = Mth.wrapDegrees((float) Math.toDegrees(Math.atan2(-d.x, d.z)) - yBodyRot);
+        float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
+        return new float[]{yaw * Mth.DEG_TO_RAD, pitch * Mth.DEG_TO_RAD};
+    }
+
     private void tickAnimation() {
         flightO = flight;
         landO = land;
@@ -1683,6 +1752,7 @@ public class WingmanEntity extends Mob {
             shotCooldown = Math.max(2, entityData.get(DATA_FIRE_CD));
         }
         recoil += ((tickCount - lastShot <= RECOIL_HOLD ? 1 : 0) - recoil) * 0.35F;
+        glance.tick(level().getGameTime(), (1 - combat) * (1 - flight) * (1 - prone), getRandom(), GLANCES, this::glancePick);
         int s = entityData.get(DATA_SLASH);
         if (s != seenSlash) {
             if (seenSlash != Integer.MIN_VALUE) { slashStart = tickCount; slashKind = s & 3; }

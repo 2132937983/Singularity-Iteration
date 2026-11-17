@@ -189,7 +189,10 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
                 rightLeg.xRot += -0.25F * crouch + 0.45F * push;
                 leftLeg.xRot += -0.20F * crouch + 0.40F * push;
             }
-            head.yRot += WingmanPose.idleLook(age, (1 - entity.combat(partial)) * (1 - f));
+            // 0.1.11.52 (P0): idle glances, each Wingman on its own (they replaced the age-driven waves, which a squad shared)
+            float[] look = entity.glance(partial);
+            head.yRot += look[0];
+            head.xRot += look[1];
             hat.copyFrom(head);
         }
     }

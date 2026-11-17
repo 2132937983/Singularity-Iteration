@@ -448,7 +448,8 @@ public class WingmanEntity extends Mob {
                 case RETURNING -> tickReturn(world);
                 default -> {
                     if (deathGuard && tickDeathGuard(world, player, ownerHere)) return;
-                    if (!ownerHere && swapPhase == SWAP_NONE && !rescuing()) return;
+                    if (!ownerHere && swapPhase == SWAP_NONE && !rescuing() && cleanSlate < 0) return;
+                    if (cleanSlate >= 0) { tickCleanSlate(); return; }                     // 0.1.11.59: the Clean Slate protocol
                     if (rescuing()) { tickRescue(player, ownerHere); return; }             // 0.1.11.56: an emergency rescue
                     if (swapPhase != SWAP_NONE) { tickSwap(player, ownerHere); return; }   // 0.1.11.54: a suit swap
                     // 0.1.10.2 quantum command: an order replaces the mode and the owner leash
@@ -801,6 +802,44 @@ public class WingmanEntity extends Mob {
         }
         if (target != null) engage(target, player);
         else idle(formation(player), player, false);
+    }
+
+    // ---- the Clean Slate protocol (0.1.11.59, gaze and Iron Man phase P7; WingmanCleanSlate)
+
+    /** Ticks left until this Wingman bursts (-1: none). */
+    private int cleanSlate = -1;
+
+    /** 0.1.11.59: climb for {@code ticks}, then burst into a firework; the suit goes home. */
+    void cleanSlate(int ticks) {
+        if (swapPhase != SWAP_NONE) flushSwap();
+        rescue = WingmanRescue.Danger.NONE;
+        clearOrder();
+        target = null;
+        cleanSlate = Math.max(1, ticks);
+    }
+
+    /** 0.1.11.59: true while this Wingman climbs for the Clean Slate protocol. */
+    public boolean cleaningSlate() { return cleanSlate >= 0; }
+
+    private void tickCleanSlate() {
+        // straight up, faster and faster, the boot thrusters roaring
+        Vec3 v = getDeltaMovement();
+        setDeltaMovement(v.x * 0.8, Math.min(1.4, Math.max(0.2, v.y) + 0.08), v.z * 0.8);
+        setXRot(-60);
+        if (--cleanSlate > 0) return;
+        if (level() instanceof ServerLevel world) {
+            Vec3 at = position().add(0, 1.0, 0);
+            var burst = new WingmanCleanSlate.Burst(at, WingmanCleanSlate.burst(WingmanCleanSlate.colours(
+                List.of(getItemBySlot(EquipmentSlot.CHEST), getItemBySlot(EquipmentSlot.HEAD), getItemBySlot(EquipmentSlot.LEGS), getItemBySlot(EquipmentSlot.FEET)))));
+            for (ServerPlayer p : world.players())   // only clients with the channel (a vanilla client or a test player has none)
+                if (p.distanceToSqr(at) < 256 * 256 && p.connection != null && p.connection.hasChannel(WingmanCleanSlate.Burst.TYPE))
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, burst);
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST_FAR, SoundSource.NEUTRAL, 6.0F, 1.0F);
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_TWINKLE_FAR, SoundSource.NEUTRAL, 6.0F, 1.0F);
+        }
+        cleanSlate = -1;
+        secure();     // the suit goes home (the Armory, else the owner's inventory)
+        discard();
     }
 
     // ---- emergency rescue (0.1.11.56, gaze and Iron Man phase P4; WingmanRescue picks the Wingman)

@@ -3251,6 +3251,64 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "clean_slate" (-Dsi.capture.scene=clean_slate), 0.1.11.59 (gaze and Iron Man phase P7): three Wingmen (gold,
+     * diamond, netherite) form up; the protocol is asked twice; they climb and burst in their colours. Looking up, a frame
+     * every 3 ticks.
+     */
+    private static void sceneCleanSlate() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(14000);   // night: the bursts show
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, -10);
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[][] sets = {
+                    {Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS},
+                    {Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS},
+                    {Items.NETHERITE_HELMET, Items.NETHERITE_CHESTPLATE, Items.NETHERITE_LEGGINGS, Items.NETHERITE_BOOTS}};
+                for (int st = 0; st < sets.length; st++) {
+                    for (int c = 0; c < 4; c++) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), new ItemStack(sets[st][c]), false);
+                    com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT);
+                }
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(120, "clean_slate/00_formed");
+        server(1, sp -> {
+            Singularity_Iteration.LOGGER.info("capture clean slate 1: {}", com.miophas.singularity_iteration.common.armory.WingmanCleanSlate.request(sp).getString());
+            Singularity_Iteration.LOGGER.info("capture clean slate 2: {}", com.miophas.singularity_iteration.common.armory.WingmanCleanSlate.request(sp).getString());
+        });
+        server(5, sp -> look(sp, sp.getX(), sp.getY(), sp.getZ(), 0, -70));
+        for (int f = 0; f < 40; f++) shot(3, String.format("clean_slate/f%02d", f));
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory)
+                Singularity_Iteration.LOGGER.info("capture clean slate after: Wingmen {}, Armory chest pieces {} {} {}",
+                    com.miophas.singularity_iteration.common.armory.WingmanService.of(sp).size(), armory.piece(0, ArmoryPiece.CHEST),
+                    armory.piece(1, ArmoryPiece.CHEST), armory.piece(2, ArmoryPiece.CHEST));
+        });
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "clean_slate".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneCleanSlate();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

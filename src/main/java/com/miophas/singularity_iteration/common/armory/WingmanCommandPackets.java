@@ -117,6 +117,11 @@ public final class WingmanCommandPackets {
             if (FMLEnvironment.dist != Dist.CLIENT) return;
             c.enqueueWork(() -> { Consumer<Squad> hook = SQUAD_HOOK; if (hook != null) hook.accept(p); });
         });
+        // 0.1.11.59 (P7): the Clean Slate firework bursts
+        registrar.playToClient(WingmanCleanSlate.Burst.TYPE, WingmanCleanSlate.Burst.CODEC, (p, c) -> {
+            if (FMLEnvironment.dist != Dist.CLIENT) return;
+            c.enqueueWork(() -> { Consumer<WingmanCleanSlate.Burst> hook = WingmanCleanSlate.HOOK; if (hook != null) hook.accept(p); });
+        });
         // 0.1.11.58 (P6): the Wingman callouts
         registrar.playToClient(WingmanCallouts.Line.TYPE, WingmanCallouts.Line.CODEC, (p, c) -> {
             if (FMLEnvironment.dist != Dist.CLIENT) return;

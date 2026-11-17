@@ -65,6 +65,11 @@ public final class CommandWheelClient {
         static void setup(FMLClientSetupEvent event) {
             WingmanCommandPackets.SQUAD_HOOK = SquadClient::accept;
             com.miophas.singularity_iteration.common.armory.WingmanCallouts.HOOK = CalloutHud::accept;   // 0.1.11.58 (P6)
+            // 0.1.11.59 (P7): a Clean Slate burst is drawn as a firework explosion (no rocket entity, no damage)
+            com.miophas.singularity_iteration.common.armory.WingmanCleanSlate.HOOK = b -> {
+                var level = net.minecraft.client.Minecraft.getInstance().level;
+                if (level != null) level.createFireworks(b.at().x, b.at().y, b.at().z, 0, 0, 0, b.explosions());
+            };
         }
 
         @SubscribeEvent

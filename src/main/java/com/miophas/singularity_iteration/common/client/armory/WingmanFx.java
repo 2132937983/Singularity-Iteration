@@ -190,15 +190,26 @@ public final class WingmanFx {
                     0.65F, 0.9F, 1.0F, 0.7F * a, 32);
             }
             // 0.1.10.2: heat haze under the boot thrusters, stronger when the drone climbs or moves fast
-            if (thrusterFx) {
-                Vec3 v = w.getDeltaMovement();
-                float thrust = (float) Math.min(1, 0.3 + v.length() * 1.2 + Math.max(0, v.y) * 1.5);
-                double yaw = Math.toRadians(Mth.lerp(partial, w.yBodyRotO, w.yBodyRot));
-                Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
-                for (int side = -1; side <= 1; side += 2) {
-                    Vec3 boot = pos.add(right.scale(0.13 * side)).add(0, 0.05, 0);
+            // 0.1.11.51 (F2): the boots follow the pitch of the suit (it rotates round its waist), and at high speed the
+            // boot thrusters burn a visible jet behind it, longer with the speed
+            Vec3 v = w.getDeltaMovement();
+            double yaw = Math.toRadians(Mth.lerp(partial, w.yBodyRotO, w.yBodyRot));
+            Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw)), ahead = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
+            double pitch = Math.toRadians(w.lean(partial)[0]);
+            Vec3 feet = pos.add(0, 0.9, 0).add(ahead.scale(-0.85 * Math.sin(pitch))).add(0, -0.85 * Math.cos(pitch), 0);
+            Vec3 aft = ahead.scale(-Math.sin(pitch)).add(0, -Math.cos(pitch), 0);   // out of the soles
+            float prone = w.proneBlend(partial);
+            for (int side = -1; side <= 1; side += 2) {
+                Vec3 boot = feet.add(right.scale(0.13 * side));
+                if (thrusterFx) {
+                    float thrust = (float) Math.min(1, 0.3 + v.length() * 1.2 + Math.max(0, v.y) * 1.5);
                     com.miophas.singularity_iteration.common.client.suit.nano.ThrusterFx.jet(w.getId() * 8L + 2 + side, boot,
-                        boot.add(-v.x * 1.5, -0.55 - Math.max(0, v.y), -v.z * 1.5), thrust * 0.6F);
+                        boot.add(-v.x * 1.5, -0.55 - Math.max(0, v.y), -v.z * 1.5).add(aft.scale(0.2 * prone)), thrust * 0.6F);
+                }
+                if (prone > 0.05F) {
+                    float len = (float) (0.5 + v.length() * 0.9) * prone;
+                    FxDraw.cone(vc, m, boot, aft, len, 0.11F, 0.5F, 0.85F, 1.0F, 0.75F * prone, 10);
+                    FxDraw.cone(vc, m, boot, aft, len * 0.45F, 0.06F, 1.0F, 0.97F, 0.9F, 0.85F * prone, 8);
                 }
             }
             // attitude jets against the acceleration
@@ -206,8 +217,6 @@ public final class WingmanFx {
             if (acc > 0.015) {
                 Vec3 jet = s.accel.normalize().scale(-1);
                 float a = (float) Math.min(1, acc * 9);
-                double yaw = Math.toRadians(Mth.lerp(partial, w.yBodyRotO, w.yBodyRot));
-                Vec3 right = new Vec3(-Math.cos(yaw), 0, -Math.sin(yaw));
                 Vec3[] ports = {pos.add(right.scale(0.36)).add(0, 1.38, 0), pos.add(right.scale(-0.36)).add(0, 1.38, 0),
                     pos.add(right.scale(0.2)).add(0, 0.78, 0), pos.add(right.scale(-0.2)).add(0, 0.78, 0)};
                 for (Vec3 p : ports) FxDraw.cone(vc, m, p, jet, 0.18F + 0.45F * a, 0.05F, 0.6F, 0.9F, 1.0F, 0.75F * a, 8);

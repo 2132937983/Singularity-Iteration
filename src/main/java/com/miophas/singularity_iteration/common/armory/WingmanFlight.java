@@ -73,4 +73,46 @@ public final class WingmanFlight {
         if (speed <= cruise) return 0;
         return ManeuverMode.SPEED_COST * (speed * speed - cruise * cruise);
     }
+
+    // ---- the formation (0.1.11.51, escort and open Armory phase F2, decision four A)
+
+    /** Places of the four slots (right, up, forward; blocks) at rest: behind and beside the owner at shoulder height. */
+    static final double[][] SLOW = {{-1.6, 1.2, -1.8}, {1.6, 1.2, -1.8}, {-2.9, 1.7, -0.6}, {2.9, 1.7, -0.6}};
+    /** Places at full speed ({@link #SPREAD_FULL}): a V opened behind the owner, about twice as wide. */
+    static final double[][] FAST = {{-2.2, 1.0, -2.6}, {2.2, 1.0, -2.6}, {-4.4, 1.4, -5.2}, {4.4, 1.4, -5.2}};
+    /** Owner speeds (blocks per tick) where the V starts to open and where it is fully open. */
+    public static final double SPREAD_START = 0.9, SPREAD_FULL = 4.0;
+    /** Owner speeds where the formation starts to follow the flight direction instead of the view, and follows it fully. */
+    public static final double HEADING_START = 0.4, HEADING_FULL = 0.9;
+
+    /** 0 at rest .. 1 at {@link #SPREAD_FULL}: how far the V is open. */
+    public static double spread(double horizontalSpeed) {
+        return Math.max(0, Math.min(1, (horizontalSpeed - SPREAD_START) / (SPREAD_FULL - SPREAD_START)));
+    }
+
+    /**
+     * The place of {@code slot} around an owner at {@code owner} looking at {@code ownerYaw} (degrees) and flying at
+     * {@code ownerVelocity}; {@code tighten} scales the sideways and forward offsets (0.6 when the owner is hurt). At rest
+     * the formation is the one of 0.1.8.4 and faces the way the owner looks; with speed it turns to the flight direction
+     * (so a look back does not swing the squad across the owner's path) and opens into a V.
+     */
+    public static Vec3 place(Vec3 owner, float ownerYaw,
+                                 Vec3 ownerVelocity, int slot, double tighten) {
+        double speed = ownerVelocity.horizontalDistance();
+        int i = Math.floorMod(slot, SLOW.length);
+        double s = spread(speed);
+        double ox = (SLOW[i][0] + (FAST[i][0] - SLOW[i][0]) * s) * tighten;
+        double oy = SLOW[i][1] + (FAST[i][1] - SLOW[i][1]) * s;
+        double oz = (SLOW[i][2] + (FAST[i][2] - SLOW[i][2]) * s) * tighten;
+        double yaw = Math.toRadians(ownerYaw);
+        double fx = -Math.sin(yaw), fz = Math.cos(yaw);   // forward of the view
+        double w = Math.max(0, Math.min(1, (speed - HEADING_START) / (HEADING_FULL - HEADING_START)));
+        if (w > 0) {
+            double vx = ownerVelocity.x / speed, vz = ownerVelocity.z / speed;
+            double bx = fx + (vx - fx) * w, bz = fz + (vz - fz) * w, b = Math.sqrt(bx * bx + bz * bz);
+            if (b < 1.0E-3) { fx = vx; fz = vz; } else { fx = bx / b; fz = bz / b; }
+        }
+        double rx = -fz, rz = fx;                          // right
+        return owner.add(rx * ox + fx * oz, oy, rz * ox + fz * oz);
+    }
 }

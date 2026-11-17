@@ -2922,6 +2922,87 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman_escort" (-Dsi.capture.scene=wingman_escort), 0.1.11.51 (escort and open Armory phase F2): four escort
+     * Wingmen form up on a hovering owner, who then flies a circle of 64 blocks 20 blocks above the ground, speeding up to
+     * 4 blocks per tick (the maneuver flight's top speed) in 60 ticks and flying 600 server ticks (about six laps), at the
+     * end looking back over the shoulder (first person); the camera looks back at the
+     * owner's face (the V behind). The distances of the Wingmen to the owner are logged every 20 ticks.
+     */
+    private static void sceneWingmanEscort() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        double cx = 0.5, cz = 0.5, radius = 64, height = -40;
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            look(sp, cx + radius, height, cz, 0, 10);   // at the start of the circle, facing south (+z): the way round
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                net.minecraft.world.item.Item[][] sets = {
+                    {Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS, Items.DIAMOND_SWORD},
+                    {Items.IRON_HELMET, Items.IRON_CHESTPLATE, Items.IRON_LEGGINGS, Items.IRON_BOOTS, Items.BOW},
+                    {Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS, Items.CROSSBOW},
+                    {Items.NETHERITE_HELMET, Items.NETHERITE_CHESTPLATE, Items.NETHERITE_LEGGINGS, Items.NETHERITE_BOOTS, Items.TRIDENT}};
+                for (int st = 0; st < sets.length; st++) {
+                    for (int c = 0; c < 5; c++) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), new ItemStack(sets[st][c]), false);
+                    Singularity_Iteration.LOGGER.info("capture escort deploy {}: {}", st, com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT).getString());
+                }
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        // the squad flies up from the Armory and forms up on the hovering owner
+        for (int t = 0; t < 140; t++) server(1, sp -> sp.connection.teleport(cx + radius, height, cz, 0, 10));
+        shot(1, "wingman_escort/00_formed");
+        // the flight runs on the server tick (a client step can come every other server tick), 600 ticks; at the end the
+        // owner looks back over the shoulder while flying on (the formation follows the flight, not the view)
+        java.util.concurrent.atomic.AtomicBoolean lookBack = new java.util.concurrent.atomic.AtomicBoolean();
+        server(1, sp -> {
+            var uuid = sp.getUUID();
+            int[] tick = {0};
+            double[] angle = {0};
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.tick.ServerTickEvent.Pre e) -> {
+                if (tick[0] >= 600) return;
+                ServerPlayer p = e.getServer().getPlayerList().getPlayer(uuid);
+                if (p == null) return;
+                int t = tick[0]++;
+                double speed = Math.min(4.0, (t + 1) * 4.0 / 60);
+                angle[0] += speed / radius;
+                double a = angle[0];
+                // counter-clockwise seen from above: the velocity is (-sin a, cos a), the yaw a
+                float yaw = (float) Math.toDegrees(a) + (lookBack.get() ? 150 : 0);
+                p.connection.teleport(cx + Math.cos(a) * radius, height, cz + Math.sin(a) * radius, yaw, lookBack.get() ? 5 : 10);
+                if (t % 20 == 19) {
+                    StringBuilder line = new StringBuilder();
+                    for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(p))
+                        line.append(String.format(java.util.Locale.ROOT, " [%.1f m, %.2f b/t]", w.distanceTo(p), w.getDeltaMovement().length()));
+                    Singularity_Iteration.LOGGER.info("capture escort t={} speed {}:{}", t + 1, String.format(java.util.Locale.ROOT, "%.2f", speed), line);
+                }
+            });
+        });
+        for (int f = 0; f < 30; f++) shot(5, String.format("wingman_escort/f%02d", f));
+        client(1, () -> { lookBack.set(true); Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON); });
+        for (int f = 0; f < 10; f++) shot(5, String.format("wingman_escort/back_%02d", f));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_escort".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanEscort();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

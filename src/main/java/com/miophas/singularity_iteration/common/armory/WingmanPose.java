@@ -281,6 +281,51 @@ public final class WingmanPose {
         return new float[]{pitch, roll};
     }
 
+    // ---- the high-speed pose (0.1.11.51, escort and open Armory phase F2, decision four A)
+    //
+    // Above PRONE_START blocks per tick ahead the suit lies down into the flight like its owner in maneuver flight or on
+    // an elytra: the pitch goes to PRONE_PITCH, the bank softens, the arms lie along the body and the legs stretch out.
+    // The weight is smoothed by the entity, so the change is gradual; a fight (combat) keeps the arms free.
+
+    /** Pitch of the full high-speed pose, degrees. */
+    public static final float PRONE_PITCH = 80.0F;
+    /** Forward speeds (blocks per tick) where the high-speed pose starts and is full. */
+    public static final float PRONE_START = 1.5F, PRONE_FULL = 2.5F;
+
+    /** Target weight 0..1 of the high-speed pose for a forward speed (blocks per tick); none on the ground. */
+    public static float proneTarget(float forward, float air) {
+        return Mth.clamp((finite(forward) - PRONE_START) / (PRONE_FULL - PRONE_START), 0, 1) * clamp01(air);
+    }
+
+    /** The attitude {pitch, roll} with the high-speed pose of weight {@code prone} (0..1). */
+    public static float[] prone(float[] attitude, float prone) {
+        float p = clamp01(prone);
+        return new float[]{Mth.lerp(p, attitude[0], PRONE_PITCH), attitude[1] * (1 - 0.5F * p)};
+    }
+
+    /** Lays both arms along the body (weight {@code prone} x (1 - combat)): a slight spread, the weapon trailing. */
+    public static void proneArms(float[] pose, float prone, float combat) {
+        float p = clamp01(prone) * (1 - clamp01(combat));
+        if (p <= 0) return;
+        pose[RX] = Mth.lerp(p, pose[RX], 0.12F);
+        pose[RY] = Mth.lerp(p, pose[RY], 0.0F);
+        pose[RZ] = Mth.lerp(p, pose[RZ], 0.16F);
+        pose[LX] = Mth.lerp(p, pose[LX], 0.12F);
+        pose[LY] = Mth.lerp(p, pose[LY], 0.0F);
+        pose[LZ] = Mth.lerp(p, pose[LZ], -0.16F);
+    }
+
+    /** Stretches the legs (see {@link #legs}) out behind the body with the high-speed pose of weight {@code prone}. */
+    public static float[] proneLegs(float[] legs, float prone) {
+        float p = clamp01(prone);
+        float[] out = legs.clone();
+        out[LEG_RX] = Mth.lerp(p, legs[LEG_RX], 0.04F);
+        out[LEG_LX] = Mth.lerp(p, legs[LEG_LX], -0.02F);
+        out[LEG_RZ] = Mth.lerp(p, legs[LEG_RZ], 0.05F);
+        out[LEG_LZ] = Mth.lerp(p, legs[LEG_LZ], -0.05F);
+        return out;
+    }
+
     /** Leg angles: [right x, y, z, left x, y, z]. */
     public static final int LEG_RX = 0, LEG_RZ = 2, LEG_LX = 3, LEG_LZ = 5;
     /** Ticks of the leg tuck of a thruster boost. */

@@ -1283,17 +1283,14 @@ public class WingmanEntity extends Mob {
         return push;
     }
 
-    /** Escort place of this Wingman: behind and to the side of the owner, at shoulder height. */
+    /**
+     * Escort place of this Wingman: behind and to the side of the owner, at shoulder height; 0.1.11.51 (F2): with speed it
+     * follows the flight direction and opens into a V ({@link WingmanFlight#place}).
+     */
     private Vec3 formation(ServerPlayer player) {
-        double[][] offsets = {{-1.6, 1.2, -1.8}, {1.6, 1.2, -1.8}, {-2.9, 1.7, -0.6}, {2.9, 1.7, -0.6}};
-        double[] o = offsets[Math.floorMod(slot, offsets.length)];
         // 0.1.8.4: tighter guard when the owner is below 40 % health
         double k = player.getHealth() < player.getMaxHealth() * 0.4F ? 0.6 : 1.0;
-        o = new double[]{o[0] * k, o[1], o[2] * k};
-        double yaw = Math.toRadians(player.getYRot());
-        double fx = -Math.sin(yaw), fz = Math.cos(yaw);       // forward
-        double rx = -Math.cos(yaw), rz = -Math.sin(yaw);      // right
-        return player.position().add(rx * o[0] + fx * o[2], o[1], rz * o[0] + fz * o[2]);
+        return WingmanFlight.place(player.position(), player.getYRot(), speedStarved ? Vec3.ZERO : ownerVelocity, slot, k);
     }
 
     /** Steers the velocity to {@code goal} with a limited acceleration; climbs over obstacles. */
@@ -1631,6 +1628,9 @@ public class WingmanEntity extends Mob {
     // 0.1.11.45 (M1): the smoothed climb, turn rate and braking, and the tick of the last thruster boost (the leg tuck)
     private float moveU, moveUO, turn, turnO, brake, brakeO;
     private int seenBoosts = Integer.MIN_VALUE, boostAt = -100;
+    /** 0.1.11.51 (F2): the smoothed weight of the high-speed pose, and its smoothing per tick. */
+    private float prone, proneO;
+    static final float PRONE_SMOOTH = 0.12F;
     // 0.1.11.47 (M4): the ticks of the last touchdown and take-off (the cushion, the push-off)
     private boolean wasDown;
     private int landedAt = -100, tookOffAt = -100;
@@ -1644,6 +1644,7 @@ public class WingmanEntity extends Mob {
         flightO = flight;
         landO = land;
         moveFO = moveF;
+        proneO = prone;
         moveRO = moveR;
         moveUO = moveU;
         turnO = turn;
@@ -1663,6 +1664,8 @@ public class WingmanEntity extends Mob {
         moveF += (frame[0] - moveF) * 0.2F;
         moveR += (frame[1] - moveR) * 0.2F;
         moveU += ((down ? 0 : (float) (getY() - yo)) - moveU) * 0.2F;
+        // 0.1.11.51 (F2): the high-speed pose comes and goes over about a second
+        prone += (WingmanPose.proneTarget(moveF, down ? 0 : 1) - prone) * PRONE_SMOOTH;
         turn += (Mth.wrapDegrees(yBodyRot - yBodyRotO) - turn) * TURN_SMOOTH;   // slow: a snap turn in combat must not snap the bank
         // lost forward speed per tick (moveF is smoothed by 0.2), at most a full brake: a reversal must not snap the flare
         brake += (Math.min(WingmanPose.FULL_BRAKE, Math.max(0, moveFO - moveF) * 5) - brake) * BRAKE_SMOOTH;
@@ -1706,7 +1709,15 @@ public class WingmanEntity extends Mob {
 
     /** Client: the tilt {pitch, roll} in degrees from the smoothed flight direction (0.1.11.44, {@link WingmanPose#lean}). */
     public float[] lean(float partialTick) {
-        // 0.1.11.45 (M1): with the bank of a turn, the climb or dive and the flare of a brake
+        // 0.1.11.45 (M1): with the bank of a turn, the climb or dive and the flare of a brake; 0.1.11.51 (F2): lying into
+        // the flight at high speed
+        return WingmanPose.prone(attitude(partialTick), proneBlend(partialTick));
+    }
+
+    /** Client: weight 0..1 of the high-speed pose (0.1.11.51), interpolated. */
+    public float proneBlend(float partialTick) { return Mth.lerp(partialTick, proneO, prone) * (1 - landBlend(partialTick)); }
+
+    private float[] attitude(float partialTick) {
         return WingmanPose.attitude(Mth.lerp(partialTick, moveFO, moveF), Mth.lerp(partialTick, moveRO, moveR),
             Mth.lerp(partialTick, moveUO, moveU), Mth.lerp(partialTick, turnO, turn), Mth.lerp(partialTick, brakeO, brake),
             1 - landBlend(partialTick));

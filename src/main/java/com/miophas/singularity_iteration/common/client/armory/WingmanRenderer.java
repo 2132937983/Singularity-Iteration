@@ -127,6 +127,7 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             float[] pose = WingmanPose.base(hold, leftHanded, f, air, combat, sway, pitch, yaw,
                 Math.max(0, leanPitch) * Mth.DEG_TO_RAD, windup, shield);
             WingmanPose.smooth(poses.computeIfAbsent(entity, e -> new float[7]), pose, age);
+            WingmanPose.proneArms(pose, entity.proneBlend(partial), combat);   // 0.1.11.51 (F2): arms along the body at speed
             float twist = 0;
             float shotAge = entity.shotAge(partial);
             int cooldown = entity.shotCooldown();
@@ -162,7 +163,8 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             leftArm.z = -Mth.sin(twist) * 5.0F;
             leftArm.x = Mth.cos(twist) * 5.0F;
             // 0.1.11.45 (M1): the legs trail with speed, spread in a slide or bank, tuck in a boost; straight when landed
-            float[] legs = WingmanPose.legs(f, air, sway, entity.lean(partial)[1], entity.boostAge(partial));
+            float[] legs = WingmanPose.proneLegs(WingmanPose.legs(f, air, sway, entity.lean(partial)[1], entity.boostAge(partial)),
+                entity.proneBlend(partial));
             rightLeg.xRot = legs[WingmanPose.LEG_RX];
             leftLeg.xRot = legs[WingmanPose.LEG_LX];
             rightLeg.yRot = 0;

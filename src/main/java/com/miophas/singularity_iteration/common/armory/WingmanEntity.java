@@ -77,7 +77,15 @@ public class WingmanEntity extends Mob {
 
     private static final double CRUISE = 0.9, COMBAT = 1.15, ACCEL = 0.14;
     /** Follow-range attribute (the live target ranges are {@link WingmanConfig#scanRange()} and {@link WingmanConfig#leash()}). */
-    private static final double SCAN_RANGE = 24, CATCH_UP = 64;
+    private static final double SCAN_RANGE = 24;
+    /**
+     * Distance to the owner beyond which the Wingman jumps to its place (0.1.11.50, decision four A: 96, was 64; at high
+     * speed it flies the owner's velocity and stays close, the jump is the last resort, and it lands with that velocity).
+     */
+    static final double CATCH_UP = 96;
+    /** 0.1.11.50: farther than this from its place and not closing in for STUCK_TICKS: stuck behind terrain, it jumps. */
+    static final double STUCK_DISTANCE = 16;
+    static final int STUCK_TICKS = 60;
 
     private static final EntityDataAccessor<Byte> DATA_MODE = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Byte> DATA_STATE = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BYTE);
@@ -480,9 +488,25 @@ public class WingmanEntity extends Mob {
     private boolean idleThisTick;
     private int quietTicks, ownerStill;
     @Nullable private Vec3 ownerLast, landSpot, landPost, landOwner;
+    /** 0.1.11.50: the owner's smoothed velocity (blocks per tick), measured from its positions. */
+    private Vec3 ownerVelocity = Vec3.ZERO;
+    /** 0.1.11.50: EU of escort speed flown since the last upkeep; true while it could not be paid (cruise speed only). */
+    private double speedDue;
+    private boolean speedStarved;
+    private int stuckTicks;
+    private double stuckBest = Double.MAX_VALUE;
+
+    /** 0.1.11.50: the owner's velocity as this Wingman measures it. */
+    Vec3 ownerVelocity() { return ownerVelocity; }
+
+    /** 0.1.11.50: true while the escort speed above cruise could not be paid. */
+    public boolean speedStarved() { return speedStarved; }
 
     private void trackOwner(ServerPlayer player) {
         Vec3 p = player.position();
+        // 0.1.11.50 (F1): the owner's velocity from its positions (the server's velocity of a player is not kept up to date
+        // for elytra or maneuver flight)
+        ownerVelocity = ownerLast == null ? Vec3.ZERO : WingmanFlight.ownerVelocity(ownerVelocity, p.subtract(ownerLast));
         boolean still = ownerLast != null && player.onGround() && !player.isFallFlying() && !player.getAbilities().flying
             && p.subtract(ownerLast).horizontalDistanceSqr() < 0.06 * 0.06 && Math.abs(p.y - ownerLast.y) < 0.1;
         ownerStill = still ? ownerStill + 1 : 0;
@@ -522,7 +546,32 @@ public class WingmanEntity extends Mob {
                 return;
             }
         }
-        steer(post, CRUISE, player);
+        if (anchored) steer(post, CRUISE, player);
+        else follow(post, player);
+    }
+
+    /**
+     * 0.1.11.50 (escort and open Armory phase F1, decision three B): flies to a place that moves with the owner. The
+     * Wingman flies the owner's velocity plus the correction to the place, with a speed limit and an
+     * acceleration that grow with the owner's speed ({@link WingmanFlight}); the speed above cruise is charged with the next
+     * upkeep. When it could not be paid, or the owner stands, this is the old flight to the place at cruise speed.
+     */
+    private void follow(Vec3 post, ServerPlayer player) {
+        Vec3 carry = speedStarved ? Vec3.ZERO : ownerVelocity;
+        double ownerSpeed = carry.length();
+        double cap = WingmanFlight.cap(ownerSpeed, CRUISE), accel = WingmanFlight.accel(ownerSpeed, ACCEL);
+        Vec3 to = post.subtract(position());   // with the owner's velocity flown this tick, it is at the next place
+        Vec3 want = WingmanTactics.avoid(this, WingmanFlight.want(to, carry, cap).add(separation()));
+        Vec3 v = WingmanFlight.accelerate(getDeltaMovement(), want, accel);
+        if (horizontalCollision) v = v.add(0, 0.3, 0);
+        setDeltaMovement(v);
+        if (WingmanConfig.upkeepEuPerSecond() > 0) speedDue += WingmanFlight.speedCost(v.length(), CRUISE) * WingmanConfig.speedCostFactor();
+        faceFlight(v, player);
+        // stuck behind terrain: far from the place and not closing in for STUCK_TICKS
+        double dist = to.length();
+        if (dist <= STUCK_DISTANCE || speedStarved) { stuckTicks = 0; stuckBest = Double.MAX_VALUE; return; }
+        if (dist < stuckBest - 0.5) { stuckBest = dist; stuckTicks = 0; }
+        else if (++stuckTicks >= STUCK_TICKS) catchUp(player);
     }
 
     /** Ground below {@code post} within 8 blocks with room for the suit, or null (water, lava, blocked, too deep). */
@@ -576,8 +625,12 @@ public class WingmanEntity extends Mob {
         // 0.1.10.5: count the nominal EU that is covered. Energy Saving makes a piece pay less EU
         // for the same share; before, the saved EU counted as unpaid (the Armory paid it again, or
         // the Wingman flew home for low power).
-        long due = WingmanConfig.upkeepEuPerSecond();
-        if (due <= 0) { lowPowerSeconds = 0; return; }
+        long base = WingmanConfig.upkeepEuPerSecond();
+        // 0.1.11.50 (decision three B): the escort speed above cruise flown since the last upkeep is paid with it
+        long speed = (long) Math.ceil(speedDue);
+        speedDue = 0;
+        if (base <= 0) { lowPowerSeconds = 0; speedStarved = false; return; }
+        long due = base + speed;
         var api = MioIcifAPI.instance().getItemAPI();
         for (EquipmentSlot s : SuitEnergyPool.ARMOR_SLOTS) {
             ItemStack piece = getItemBySlot(s);
@@ -596,8 +649,14 @@ public class WingmanEntity extends Mob {
             mio_icif_armory home = loadedArmory(world);
             var payment = home == null ? null : home.getEnergyStorageInternal().scexReserveInternal(due);
             if (payment != null) { payment.commit(); due = 0; armoryPaid = true; }
+            else if (home != null && due > speed) {
+                // 0.1.11.50: the Armory cannot pay the escort speed too: it pays the upkeep alone (the Wingman slows to cruise)
+                var upkeepOnly = home.getEnergyStorageInternal().scexReserveInternal(due - speed);
+                if (upkeepOnly != null) { upkeepOnly.commit(); due = speed; armoryPaid = true; }
+            }
         }
-        if (due <= 0) { lowPowerSeconds = 0; return; }
+        speedStarved = due > 0;   // what is left unpaid: no escort speed above cruise until a full payment
+        if (due <= speed) { lowPowerSeconds = 0; return; }   // only the speed went unpaid: the upkeep itself is covered
         if (++lowPowerSeconds >= WingmanConfig.lowPowerSeconds()) {
             startReturn(player == null ? null : Component.translatable("message.mio_icif.wingman.low_power"));
         }
@@ -1249,10 +1308,14 @@ public class WingmanEntity extends Mob {
         v = v.add(dv);
         if (horizontalCollision) v = v.add(0, 0.3, 0);
         setDeltaMovement(v);
-        if (target == null) {
-            if (v.horizontalDistanceSqr() > 0.02) faceSmooth(getEyePosition().add(v.x, 0, v.z), 20);
-            else if (player != null) setYaw(facing() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - facing()), -15, 15));
-        }
+        faceFlight(v, player);
+    }
+
+    /** Without a target the Wingman looks where it flies, or slowly the way its owner looks when it hovers. */
+    private void faceFlight(Vec3 v, @Nullable ServerPlayer player) {
+        if (target != null) return;
+        if (v.horizontalDistanceSqr() > 0.02) faceSmooth(getEyePosition().add(v.x, 0, v.z), 20);
+        else if (player != null) setYaw(facing() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - facing()), -15, 15));
     }
 
     private void face(Vec3 at) {
@@ -1306,7 +1369,9 @@ public class WingmanEntity extends Mob {
     private void catchUp(ServerPlayer player) {
         Vec3 at = formation(player).add(0, 2, 0);
         teleportTo(at.x, at.y, at.z);
-        setDeltaMovement(Vec3.ZERO);
+        setDeltaMovement(ownerVelocity);   // 0.1.11.50: it arrives at the owner's speed (it stopped dead before and fell behind again)
+        stuckTicks = 0;
+        stuckBest = Double.MAX_VALUE;
     }
 
     // ---- return home

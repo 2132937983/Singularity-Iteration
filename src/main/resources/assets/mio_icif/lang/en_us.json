@@ -5371,6 +5371,8 @@
   "mio_icif.configuration.wingmen.scanRange.tooltip": "Blocks around the owner (offensive mode).",
   "mio_icif.configuration.wingmen.leash": "Target leash",
   "mio_icif.configuration.wingmen.leash.tooltip": "A target farther than this from the owner is dropped (no order). Never below the search range.",
+  "mio_icif.configuration.wingmen.speedCostPercent": "Escort speed cost (%)",
+  "mio_icif.configuration.wingmen.speedCostPercent.tooltip": "Percent of the maneuver flight's speed cost (30 EU/t × speed²) a Wingman pays for escort speed above cruise (0.9 blocks per tick). Unpaid: it flies at cruise speed. 0 = free.",
   "gui.mio_icif.command.where.unloaded": "UNLOADED",
   "gui.mio_icif.command.where.other_dim": "OTHER DIM",
   "gui.mio_icif.command.hud.datalink_on": "DATALINK",

@@ -5371,6 +5371,8 @@
   "mio_icif.configuration.wingmen.scanRange.tooltip": "主人周围的格数（进攻模式）。",
   "mio_icif.configuration.wingmen.leash": "目标牵引距离",
   "mio_icif.configuration.wingmen.leash.tooltip": "目标离主人超过这个距离就放弃（无命令时）。不会小于搜索范围。",
+  "mio_icif.configuration.wingmen.speedCostPercent": "伴飞速度耗电（%）",
+  "mio_icif.configuration.wingmen.speedCostPercent.tooltip": "僚机伴飞速度超过巡航（0.9 格/tick）的部分，按机动模式速度耗电（30 EU/t × 速度²）的百分之几支付。付不起时只能以巡航速度飞。0 = 免费。",
   "gui.mio_icif.command.where.unloaded": "未加载",
   "gui.mio_icif.command.where.other_dim": "其他维度",
   "gui.mio_icif.command.hud.datalink_on": "数据链",

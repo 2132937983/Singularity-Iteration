@@ -15,7 +15,7 @@ public final class WingmanConfig {
     public static final int MAX_LIMIT = 8;
 
     private static ModConfigSpec spec;
-    private static ModConfigSpec.IntValue maxPerPlayer, upkeep, lowPowerSeconds, scanRange, leash, reserveMinutes;
+    private static ModConfigSpec.IntValue maxPerPlayer, upkeep, lowPowerSeconds, scanRange, leash, reserveMinutes, speedCostPercent;
 
     /** Defines the section entries (called once while the common spec is built). */
     public static void define(ModConfigSpec.Builder b) {
@@ -36,6 +36,11 @@ public final class WingmanConfig {
             .translation("mio_icif.configuration.wingmen.scanRange").defineInRange("scanRange", 24, 8, 64);
         leash = b.comment("Blocks from the owner beyond which a Wingman drops its target (without an order). 目标离主人超过多少格时僚机放弃它（无命令时）。")
             .translation("mio_icif.configuration.wingmen.leash").defineInRange("leash", 28, 8, 96);
+        speedCostPercent = b.comment("0.1.11.50: percent of the maneuver flight's speed cost (30 EU/t x speed^2) a Wingman pays for its escort speed",
+                "above cruise (0.9 blocks per tick), with its upkeep. When it cannot pay, it flies at cruise speed. 0 = escort speed is free.",
+                "0.1.11.50：僚机伴飞速度超过巡航（0.9 格/tick）的部分，按机动模式速度耗电（30 EU/t × 速度²）的百分之几随维持费支付。",
+                "付不起时只能以巡航速度飞。0 = 伴飞速度免费。")
+            .translation("mio_icif.configuration.wingmen.speedCostPercent").defineInRange("speedCostPercent", 100, 0, 1000);
     }
 
     /** Called after the spec is built. */
@@ -60,5 +65,7 @@ public final class WingmanConfig {
     public static long reserveEu() { return upkeepEuPerSecond() * 60L * reserveMinutes(); }
     public static double scanRange() { return get(scanRange, 24); }
     /** Never below the scan range (a target found must not be dropped at once). */
+    /** 0.1.11.50: the factor of the escort speed cost (1 = the maneuver flight's). */
+    public static double speedCostFactor() { return get(speedCostPercent, 100) / 100.0; }
     public static double leash() { return Math.max(scanRange(), get(leash, 28)); }
 }

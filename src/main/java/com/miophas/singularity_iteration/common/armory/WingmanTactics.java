@@ -351,14 +351,18 @@ public final class WingmanTactics {
         Level level = self.level();
         Vec3 from = self.position().add(0, self.getBbHeight() * 0.5, 0);
         Vec3 dir = want.normalize();
-        Vec3 ahead = from.add(dir.scale(Math.min(4.0, 1.5 + want.length() * 6)));
+        double speed = want.length();
+        // 0.1.11.50 (F1): the look-ahead covers about 4 ticks of flight at escort speed (it stopped at 4 blocks, one tick at
+        // 4 blocks per tick), and the ways round grow with the speed
+        double k = Math.max(1.0, speed / 0.9);
+        Vec3 ahead = from.add(dir.scale(Math.min(Math.max(4.0, speed * 4), 1.5 + speed * 6)));
         if (clear(level, from, ahead, self)) return want;
-        Vec3 up = from.add(0, 2.5, 0).add(dir.scale(2.5));
-        if (clear(level, from, up, self)) return want.add(0, 0.35, 0);
+        Vec3 up = from.add(0, 2.5 * k, 0).add(dir.scale(2.5 * k));
+        if (clear(level, from, up, self)) return want.add(0, 0.35 * k, 0);
         Vec3 side = new Vec3(-dir.z, 0, dir.x);
-        Vec3 left = from.add(side.scale(2.5)).add(dir.scale(1.5)), right = from.add(side.scale(-2.5)).add(dir.scale(1.5));
-        if (clear(level, from, left, self)) return want.add(side.scale(0.35));
-        if (clear(level, from, right, self)) return want.add(side.scale(-0.35));
+        Vec3 left = from.add(side.scale(2.5 * k)).add(dir.scale(1.5 * k)), right = from.add(side.scale(-2.5 * k)).add(dir.scale(1.5 * k));
+        if (clear(level, from, left, self)) return want.add(side.scale(0.35 * k));
+        if (clear(level, from, right, self)) return want.add(side.scale(-0.35 * k));
         return want.add(0, 0.3, 0).scale(0.5);
     }
 }

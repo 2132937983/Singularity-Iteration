@@ -84,9 +84,11 @@ public final class ArmoryRegistry {
             .sized(0.6F, 0.6F).clientTrackingRange(10).updateInterval(5).fireImmune().noSummon().build("armory_piece"));
 
     /** Wingman (0.1.8.0): a stored suit that flies as a drone. Player size; saved with the chunk. */
+    // 0.1.11.50 (F1): synced every tick (was every 2): at escort speed a Wingman moves up to 12 blocks in two ticks, past
+    // the 8 blocks of a relative move packet
     public static final DeferredHolder<EntityType<?>, EntityType<WingmanEntity>> WINGMAN = ENTITIES.register("wingman",
         () -> EntityType.Builder.<WingmanEntity>of(WingmanEntity::new, MobCategory.MISC)
-            .sized(0.6F, 1.8F).eyeHeight(1.62F).clientTrackingRange(10).updateInterval(2).noSummon().build("wingman"));
+            .sized(0.6F, 1.8F).eyeHeight(1.62F).clientTrackingRange(10).updateInterval(1).noSummon().build("wingman"));
 
     /** NeoForge data attachments of the Armory system (0.1.8.0). */
     public static final DeferredRegister<net.neoforged.neoforge.attachment.AttachmentType<?>> ATTACHMENTS =

@@ -1,6 +1,7 @@
 package com.miophas.singularity_iteration.common.armory;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
+import net.minecraft.resources.ResourceLocation;
 import com.miophas.singularity_iteration.common.registry.mio_icif_sounds;
 import com.miophas.singularity_iteration.core.api.energy.storage.EUApi;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
@@ -62,8 +63,12 @@ public final class ArmoryRegistry {
 
     public static final DeferredItem<ArmoryRemoteItem> REMOTE = ITEMS.register("normal/item_armory_remote",
         () -> new ArmoryRemoteItem(new Item.Properties().rarity(Rarity.UNCOMMON)));
-    public static final DeferredItem<ArmoryConnectorItem> CONNECTOR = ITEMS.register("normal/item_armory_connector",
-        () -> new ArmoryConnectorItem(new Item.Properties()));
+    static {
+        // 0.1.11.49 (escort and open Armory phase F0, decision two A): the Connector Kit is gone, the Armory takes the gear
+        // of every mod. Old kits resolve to air (they are dropped from the save) instead of a missing registry entry.
+        ITEMS.addAlias(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "normal/item_armory_connector"),
+            ResourceLocation.withDefaultNamespace("air"));
+    }
 
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<mio_icif_armory>> ARMORY_ENTITY =
         BLOCK_ENTITIES.register("armory", () -> BlockEntityType.Builder.of(mio_icif_armory::new, ARMORY.get()).build(null));

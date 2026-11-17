@@ -2868,7 +2868,8 @@ public final class CaptureDirector {
                 var inv = armory.getItemHandler();
                 ItemStack blade = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("slashblade", "slashblade_white")));
-                Singularity_Iteration.LOGGER.info("capture blade: {}", blade);
+                Singularity_Iteration.LOGGER.info("capture blade: {}, the Armory takes it: {}", blade,
+                    inv.isItemValid(mio_icif_armory.slotOf(0, ArmoryPiece.MAINHAND), blade));
                 ItemStack[] suit = {new ItemStack(Items.IRON_HELMET), new ItemStack(Items.IRON_CHESTPLATE), new ItemStack(Items.IRON_LEGGINGS),
                     new ItemStack(Items.IRON_BOOTS), blade, ItemStack.EMPTY};
                 for (int c = 0; c < 6; c++) if (!suit[c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), suit[c], false);
@@ -2876,11 +2877,10 @@ public final class CaptureDirector {
                     com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE).getString());
             }
         });
-        // the Armory takes gear of other mods only after the connector kit: the blade goes straight into the Wingman's hand
+        // 0.1.11.49 (F0): the Armory takes the blade as it is (no connector kit): the Wingman deployed from it holds the blade
         server(10, sp -> {
-            ItemStack blade = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("slashblade", "slashblade_white")));
-            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp)) w.setItemSlot(EquipmentSlot.MAINHAND, blade.copy());
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp))
+                Singularity_Iteration.LOGGER.info("capture blade held by the Wingman: {}", w.getMainHandItem());
         });
         client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
         shot(60, "wingman_blade/00_formation");

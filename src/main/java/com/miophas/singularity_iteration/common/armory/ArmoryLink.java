@@ -7,8 +7,8 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
 /**
- * Data component written by the Connector Kit onto equipment from other mods: marks the
- * item as Armory-compatible and records which body slot it docks to.
+ * Data component the Connector Kit wrote onto equipment from other mods before 0.1.11.49: the body slot it docks to.
+ * The kit is gone and the Armory takes every item; old stacks keep the component (read only, see {@link ArmoryRules}).
  */
 public record ArmoryLink(String piece) {
     public static final Codec<ArmoryLink> CODEC = RecordCodecBuilder.create(i -> i.group(

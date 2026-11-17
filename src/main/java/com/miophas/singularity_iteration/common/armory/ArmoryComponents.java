@@ -14,7 +14,10 @@ public final class ArmoryComponents {
     public static final DeferredRegister.DataComponents COMPONENTS =
         DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, Singularity_Iteration.MOD_ID);
 
-    /** Connector Kit binding on foreign equipment. */
+    /**
+     * Connector Kit binding written before 0.1.11.49. The kit is gone; the component stays registered so old stacks load,
+     * and is only read (the slot it names, {@link ArmoryRules#naturalSlot}).
+     */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<ArmoryLink>> LINK =
         COMPONENTS.registerComponentType("armory_link",
             b -> b.persistent(ArmoryLink.CODEC).networkSynchronized(ArmoryLink.STREAM_CODEC));

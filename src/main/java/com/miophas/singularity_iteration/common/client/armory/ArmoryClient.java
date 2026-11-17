@@ -1,17 +1,13 @@
 package com.miophas.singularity_iteration.common.client.armory;
 
 import com.miophas.singularity_iteration.common.Singularity_Iteration;
-import com.miophas.singularity_iteration.common.armory.ArmoryComponents;
-import com.miophas.singularity_iteration.common.armory.ArmoryLink;
 import com.miophas.singularity_iteration.common.armory.ArmoryRegistry;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
 /** Client registrations of the Armory system. */
 public final class ArmoryClient {
@@ -46,25 +42,6 @@ public final class ArmoryClient {
             com.miophas.singularity_iteration.common.armory.ArmoryRemoteItem.OPEN_CONSOLE = () -> net.minecraft.client.Minecraft.getInstance().setScreen(
                 new com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features().tab(
                     com.miophas.singularity_iteration.common.client.screen.mio_icif_gui_armor_features.TAB_ARMORY));
-        }
-    }
-
-    @EventBusSubscriber(modid = Singularity_Iteration.MOD_ID, value = Dist.CLIENT)
-    public static final class GameEvents {
-        /** Equipment fitted with a Connector Kit shows its Armory link. */
-        @SubscribeEvent
-        static void tooltip(ItemTooltipEvent event) {
-            // 0.1.9.2: tooltips are built for every item, also by recipe viewers during their start-up; never throw here
-            try {
-                if (event.getItemStack().isEmpty()) return;
-                ArmoryLink link = event.getItemStack().get(ArmoryComponents.LINK.get());
-                if (link == null) return;
-                event.getToolTip().add(Component.translatable("item.mio_icif.armory_link",
-                    Component.translatable("gui.mio_icif.armory.piece." + link.pieceOrDefault().name().toLowerCase(java.util.Locale.ROOT)))
-                    .withStyle(ChatFormatting.AQUA));
-            } catch (RuntimeException e) {
-                com.miophas.singularity_iteration.core.runtime.diagnostics.QuietFailures.report("armory-tooltip", "Armory link tooltip", e);
-            }
         }
     }
 }

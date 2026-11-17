@@ -1,0 +1,18 @@
+// Optional development capture of the in-game scenes of CaptureDirector (screenshots into build/hud-capture/screenshots).
+// ./gradlew --init-script tools/hud-capture.init.gradle runHudCapture -PsiCaptureScene=<scene>
+// Extra mods for a scene (for example SlashBlade: Resharped and Player Animator for wingman_blade) go into
+// build/hud-capture-game/mods; they are not part of the build.
+allprojects { project ->
+    afterEvaluate {
+        project.neoForge.runs.register('hudCapture') {
+            client()
+            loadedMods = [project.neoForge.mods[project.mod_id]]
+            gameDirectory = project.file('build/hud-capture-game')
+            systemProperty 'si.capture', project.file('build/hud-capture').absolutePath
+            systemProperty 'si.capture.scene', project.findProperty('siCaptureScene') ?: 'wingman'
+            programArguments.addAll '--width', '1600', '--height', '900'
+            jvmArguments.addAll '-Xmx3G', '-Xms512m'
+            logLevel = org.slf4j.event.Level.INFO
+        }
+    }
+}

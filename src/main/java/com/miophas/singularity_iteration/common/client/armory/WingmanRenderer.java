@@ -169,6 +169,12 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             leftLeg.yRot = 0;
             rightLeg.zRot = legs[WingmanPose.LEG_RZ];
             leftLeg.zRot = legs[WingmanPose.LEG_LZ];
+            // 0.1.11.48 (M3): with a SlashBlade blade, the arms and legs follow SlashBlade's own player motion of the combo
+            // (the blade layer draws the blade from the same combo); without the bridge the key frames above stay
+            if (hold == WingmanPose.Hold.BLADE) {
+                Object motion = SlashBladeMotion.update(entity);
+                if (motion != null) SlashBladeMotion.apply(motion, partial, rightArm, leftArm, rightLeg, leftLeg);
+            }
             // the head looks forward in fast flight
             head.xRot -= leanPitch * Mth.DEG_TO_RAD * 0.6F;   // 0.1.11.44: the head keeps looking ahead (forward and back)
             // 0.1.11.47 (M4): a crouch on touchdown, a push-off at take-off, a slow look around when idle

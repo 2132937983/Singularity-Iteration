@@ -2842,6 +2842,86 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman_blade" (-Dsi.capture.scene=wingman_blade), 0.1.11.48 (motion audit M3): a Wingman with a SlashBlade:
+     * Resharped blade (the mod must be in the capture client's mods folder) attacking a still zombie, close from the side,
+     * a frame every tick. Without SlashBlade the blade is missing and the scene shows nothing useful.
+     */
+    private static void sceneWingmanBlade() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(18000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            level.setDayTime(6000);
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, -6.5, -60, 6.5, -90, 6);   // looking east at the fight from the side
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack blade = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("slashblade", "slashblade_white")));
+                Singularity_Iteration.LOGGER.info("capture blade: {}", blade);
+                ItemStack[] suit = {new ItemStack(Items.IRON_HELMET), new ItemStack(Items.IRON_CHESTPLATE), new ItemStack(Items.IRON_LEGGINGS),
+                    new ItemStack(Items.IRON_BOOTS), blade, ItemStack.EMPTY};
+                for (int c = 0; c < 6; c++) if (!suit[c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.COLUMNS[c]), suit[c], false);
+                Singularity_Iteration.LOGGER.info("capture blade deploy: {}", com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE).getString());
+            }
+        });
+        // the Armory takes gear of other mods only after the connector kit: the blade goes straight into the Wingman's hand
+        server(10, sp -> {
+            ItemStack blade = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("slashblade", "slashblade_white")));
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp)) w.setItemSlot(EquipmentSlot.MAINHAND, blade.copy());
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(60, "wingman_blade/00_formation");
+        // a still Wingman (its AI off) facing a still zombie; the scene feeds SlashBlade's combo inputs and ticks the blade,
+        // as the Wingman's AI does in a fight, so the blade and the arms can be compared frame by frame
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            var z = mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 2.5, -60, 6.5, true, sp);
+            z.setInvulnerable(true);
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp)) {
+                w.setNoAi(true);
+                w.teleportTo(0.5, -59.0, 6.5);
+                w.setYRot(-90);
+                w.yHeadRot = -90;
+                w.yBodyRot = -90;
+                w.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+            }
+            look(sp, 0.5, -60, 2.0, 0, 8);   // looking south at the Wingman's right side
+        });
+        for (int f = 0; f < 120; f++) {
+            int frame = f;
+            server(0, sp -> {
+                var level = sp.serverLevel();
+                var zs = level.getEntitiesOfClass(net.minecraft.world.entity.monster.Zombie.class, sp.getBoundingBox().inflate(16));
+                for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp)) {
+                    com.miophas.singularity_iteration.common.armory.SlashBladeCombat.tick(w);
+                    if (!zs.isEmpty() && frame % 10 == 0) com.miophas.singularity_iteration.common.armory.SlashBladeCombat.attack(w, zs.get(0));
+                }
+            });
+            shot(1, String.format("wingman_blade/f%03d", f));
+        }
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_blade".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanBlade();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

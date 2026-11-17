@@ -2357,7 +2357,6 @@
   "gui.mio_icif.wingman.mode.fulton.tip": "Отправляет существ в арсенал. Атакуйте существо или присядьте и посмотрите на него. Здоровье враждебного моба должно быть не выше 50%. Расходует 4000 EU арсенала.",
   "gui.mio_icif.wingman.state.1": "Возвращается",
   "gui.mio_icif.wingman.state.2": "Подъём Фултона",
-  "message.mio_icif.wingman.deployed": "%s выпущен как ведомый (%s), затрачено %s EU",
   "message.mio_icif.wingman.limit": "Лимит ведомых: %s",
   "message.mio_icif.wingman.no_armor": "У %s нет частей брони",
   "message.mio_icif.wingman.none": "Нет активных ведомых",
@@ -5378,7 +5377,7 @@
   "mio_icif.configuration.wingmen.maxPerPlayer": "Ведомых на игрока",
   "mio_icif.configuration.wingmen.maxPerPlayer.tooltip": "1-8, включая ведомых в незагруженных чанках.",
   "mio_icif.configuration.wingmen.upkeepEuPerSecond": "Содержание (EU в секунду)",
-  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "Сначала платят электрические части костюма, затем арсенал (если загружен). 0 = бесплатно.",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "Сначала платят электрические части костюма, затем запас, затем арсенал (если загружен). 0 = бесплатно.",
   "mio_icif.configuration.wingmen.lowPowerSeconds": "Секунд без оплаты до возврата",
   "mio_icif.configuration.wingmen.lowPowerSeconds.tooltip": "1-600.",
   "mio_icif.configuration.wingmen.scanRange": "Радиус поиска целей",
@@ -5404,5 +5403,14 @@
   "gui.mio_icif.wingman.order_short.move": "ДВИЖ",
   "gui.mio_icif.wingman.order_short.hold": "ОЖИД",
   "gui.mio_icif.wingman.order_short.suppress": "ПОДВ",
-  "gui.mio_icif.wingman.order_short.focus": "ФОКС"
+  "gui.mio_icif.wingman.order_short.focus": "ФОКС",
+  "message.mio_icif.wingman.deployed_reserve": "%s выпущен как ведомый (%s), затрачено %s EU, запас на содержание %s EU (%s)",
+  "gui.mio_icif.wingman.endurance": "%s · осталось %s",
+  "gui.mio_icif.wingman.endurance.armory": "Арсенал",
+  "jade.mio_icif.wingman.suit": "Костюм %s · владелец: %s",
+  "jade.mio_icif.wingman.owner_away": "не в сети",
+  "jade.mio_icif.wingman.endurance": "Осталось полёта: %s (запас %s EU)",
+  "config.jade.plugin_mio_icif.wingman": "Ведомый",
+  "mio_icif.configuration.wingmen.reserveMinutes": "Запас на содержание (минуты)",
+  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "Заряжается из арсенала при выпуске (меньше, если энергии мало). Платит сначала костюм, затем запас, затем загруженный арсенал; остаток возвращается. 0 = без запаса."
 }

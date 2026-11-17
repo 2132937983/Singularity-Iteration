@@ -2389,7 +2389,6 @@
   "gui.mio_icif.wingman.mode.fulton.tip": "将生物送往武装库。攻击该生物，或潜行并注视它。敌对生物的生命值须不高于50%。消耗武装库 4000 EU。",
   "gui.mio_icif.wingman.state.1": "返航中",
   "gui.mio_icif.wingman.state.2": "富尔顿升空",
-  "message.mio_icif.wingman.deployed": "%s 已作为僚机出动（%s），消耗 %s EU",
   "message.mio_icif.wingman.limit": "僚机数量上限：%s",
   "message.mio_icif.wingman.no_armor": "%s 没有护甲部件",
   "message.mio_icif.wingman.none": "没有活动的僚机",
@@ -5378,7 +5377,7 @@
   "mio_icif.configuration.wingmen.maxPerPlayer": "每名玩家的僚机上限",
   "mio_icif.configuration.wingmen.maxPerPlayer.tooltip": "1-8，包括未加载区块中的僚机。",
   "mio_icif.configuration.wingmen.upkeepEuPerSecond": "维持费（EU/秒）",
-  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "先由套装的电动部件支付，再由武装库支付（须已加载）。0 = 免费。",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "先由套装的电动部件支付，再用维持费储备，最后由武装库支付（须已加载）。0 = 免费。",
   "mio_icif.configuration.wingmen.lowPowerSeconds": "付不起维持费后返航前的秒数",
   "mio_icif.configuration.wingmen.lowPowerSeconds.tooltip": "1-600。",
   "mio_icif.configuration.wingmen.scanRange": "目标搜索范围",
@@ -5404,5 +5403,14 @@
   "gui.mio_icif.wingman.order_short.move": "移动",
   "gui.mio_icif.wingman.order_short.hold": "待机",
   "gui.mio_icif.wingman.order_short.suppress": "压制",
-  "gui.mio_icif.wingman.order_short.focus": "集火"
+  "gui.mio_icif.wingman.order_short.focus": "集火",
+  "message.mio_icif.wingman.deployed_reserve": "%s 已作为僚机出动（%s），消耗 %s EU，维持费储备 %s EU（%s）",
+  "gui.mio_icif.wingman.endurance": "%s · 航时 %s",
+  "gui.mio_icif.wingman.endurance.armory": "武装库",
+  "jade.mio_icif.wingman.suit": "第 %s 套 · 主人：%s",
+  "jade.mio_icif.wingman.owner_away": "不在线",
+  "jade.mio_icif.wingman.endurance": "剩余航时：%s（储备 %s EU）",
+  "config.jade.plugin_mio_icif.wingman": "僚机",
+  "mio_icif.configuration.wingmen.reserveMinutes": "维持费储备（分钟）",
+  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "出击时从武装库预充（电量不足时少充）。先由套装支付，再用储备，最后由已加载的武装库支付；返航时剩余部分退回。0 = 不预充。"
 }

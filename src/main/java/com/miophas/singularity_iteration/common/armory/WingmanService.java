@@ -54,18 +54,20 @@ public final class WingmanService {
      * One Wingman row of the console. {@code energy} is -1 without electric pieces. 0.1.11.39: {@code entityId} names the
      * Wingman for a recall (a row number could point at another Wingman after a change of the list).
      */
-    public record View(int entityId, int set, int mode, int state, float health, float energy, List<ItemStack> items) {
+    public record View(int entityId, int set, int mode, int state, float health, float energy, int endurance, List<ItemStack> items) {
         void write(RegistryFriendlyByteBuf buf) {
             buf.writeVarInt(entityId); buf.writeVarInt(set); buf.writeByte(mode); buf.writeByte(state); buf.writeFloat(health); buf.writeFloat(energy);
+            buf.writeVarInt(endurance + 2);   // 0.1.11.41: seconds, or ENDURANCE_FREE (-1) / ENDURANCE_ARMORY (-2)
             for (int i = 0; i < ArmoryPiece.COLUMNS.length; i++) ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, i < items.size() ? items.get(i) : ItemStack.EMPTY);
         }
 
         static View read(RegistryFriendlyByteBuf buf) {
             int entityId = buf.readVarInt(), set = buf.readVarInt(), mode = buf.readUnsignedByte(), state = buf.readUnsignedByte();
             float health = buf.readFloat(), energy = buf.readFloat();
+            int endurance = buf.readVarInt() - 2;
             List<ItemStack> items = new ArrayList<>();
             for (int i = 0; i < ArmoryPiece.COLUMNS.length; i++) items.add(ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
-            return new View(entityId, set, mode, state, health, energy, items);
+            return new View(entityId, set, mode, state, health, energy, endurance, items);
         }
     }
 
@@ -134,7 +136,8 @@ public final class WingmanService {
         for (WingmanEntity w : of(player)) {
             List<ItemStack> items = new ArrayList<>();
             for (ItemStack s : w.items()) items.add(s.copy());
-            out.add(new View(w.getId(), w.set(), w.mode().ordinal(), w.state(), w.getHealth() / Math.max(1, w.getMaxHealth()), w.energyFraction(), items));
+            out.add(new View(w.getId(), w.set(), w.mode().ordinal(), w.state(), w.getHealth() / Math.max(1, w.getMaxHealth()), w.energyFraction(),
+                w.enduranceSeconds(), items));
         }
         return out;
     }
@@ -219,14 +222,24 @@ public final class WingmanService {
             if (payment.isPending()) payment.commit();   // settled on every path (a throw keeps the old behaviour: spent)
         }
         armory.markDeployed(set, w.sortie());   // 0.1.11.39 (G-1): the suit keeps its positions while it flies
+        // 0.1.11.41 (decision 1 C): the upkeep reserve, as much of it as the Armory has after the deployment
+        long reserve = armory.getEnergyStorageInternal().consumeEnergyInternal(WingmanConfig.reserveEu(), false);
+        w.setReserve(reserve);
+        armory.markStorageChanged();
         if (launch) {
             home.playSound(null, armory.getBlockPos(), mio_icif_sounds.ARMORY_HATCH.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
             home.playSound(null, armory.getBlockPos(), mio_icif_sounds.ARMORY_LAUNCH.get(), SoundSource.BLOCKS, 1.0F, 0.9F);
         } else {
             player.serverLevel().playSound(null, at.x, at.y, at.z, mio_icif_sounds.ARMORY_FLYBY.get(), SoundSource.NEUTRAL, 1.5F, 0.9F);
         }
-        return Component.translatable("message.mio_icif.wingman.deployed", armory.setName(set),
-            Component.translatable(mode.key()), cost);
+        long upkeep = WingmanConfig.upkeepEuPerSecond();
+        return Component.translatable("message.mio_icif.wingman.deployed_reserve", armory.setName(set), Component.translatable(mode.key()), cost,
+            reserve, upkeep <= 0 ? "-" : formatSeconds(reserve / upkeep));
+    }
+
+    /** 0.1.11.41: m:ss. */
+    public static String formatSeconds(long seconds) {
+        return String.format(java.util.Locale.ROOT, "%d:%02d", seconds / 60, seconds % 60);
     }
 
     /**

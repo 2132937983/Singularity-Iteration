@@ -356,14 +356,14 @@ public final class WingmanCommands {
             units.add(new WingmanCommandPackets.Unit(w.getUUID(), here ? w.getId() : -1, (byte) w.set(), (byte) w.mode().ordinal(), w.individual(),
                 (byte) w.order().ordinal(), o == null ? 0 : (float) o.x, o == null ? 0 : (float) o.y, o == null ? 0 : (float) o.z,
                 w.orderTargetId(), w.getHealth() / Math.max(1, w.getMaxHealth()), w.energyFraction(), w.state(), (byte) (here ? 0 : 1),
-                (float) w.getX(), (float) w.getY(), (float) w.getZ()));
+                (float) w.getX(), (float) w.getY(), (float) w.getZ(), w.enduranceSeconds()));
         }
         WingmanRoster roster = WingmanRoster.get(player.server);
         if (roster != null) {
             for (WingmanRoster.Entry e : roster.of(player.getUUID())) {
                 if (units.size() >= WingmanCommandPackets.Squad.MAX_UNITS) break;
                 units.add(new WingmanCommandPackets.Unit(e.wingman(), -1, (byte) e.set(), (byte) -1, false, (byte) 0, 0, 0, 0, -1, 1, -1,
-                    WingmanEntity.ACTIVE, (byte) 2, (float) e.pos().x, (float) e.pos().y, (float) e.pos().z));
+                    WingmanEntity.ACTIVE, (byte) 2, (float) e.pos().x, (float) e.pos().y, (float) e.pos().z, -3));
             }
         }
         int cooldown = NanoSuit.state(player).cooldown(RECALL_KEY);

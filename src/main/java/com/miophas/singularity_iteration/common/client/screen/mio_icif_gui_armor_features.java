@@ -1038,7 +1038,11 @@ public class mio_icif_gui_armor_features extends Screen {
                     String wingState = w.state() == 0
                         ? Component.translatable(com.miophas.singularity_iteration.common.armory.WingmanMode.byId(w.mode()).key()).getString()
                         : Component.translatable("gui.mio_icif.wingman.state." + w.state()).getString();
-                    DspUi.small(g, font, font.plainSubstrByWidth(wingState, 90), x0 + 6, yy + 11, w.state() == 0 ? DspUi.GREEN : DspUi.ORANGE);
+                    // 0.1.11.41: the flight time left from the suit charge and the upkeep reserve
+                    String left = com.miophas.singularity_iteration.common.client.armory.SquadClient.enduranceText(w.endurance());
+                    if (w.state() == 0 && !left.isEmpty()) wingState = Component.translatable("gui.mio_icif.wingman.endurance", wingState, left).getString();
+                    DspUi.small(g, font, font.plainSubstrByWidth(wingState, 96), x0 + 6, yy + 11,
+                        w.state() != 0 ? DspUi.ORANGE : w.endurance() >= 0 && w.endurance() < 60 ? DspUi.RED : DspUi.GREEN);
                     icons(g, w.items(), x0 + 80, yy + 1);
                     DspUi.meter(g, x0 + 192, yy + 4, 22, 3, w.health(), w.health() > 0.35F ? DspUi.GREEN : DspUi.RED);
                     if (w.energy() >= 0) DspUi.meter(g, x0 + 192, yy + 10, 22, 3, w.energy(), DspUi.CYAN);

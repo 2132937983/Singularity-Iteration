@@ -461,7 +461,6 @@
   "gui.mio_icif.wingman.mode.fulton.tip": "モブを武装庫へ運びます。モブを攻撃するか、しゃがんで注視してください。敵対モブは体力50%以下が必要です。武装庫から 4000 EU を消費します。",
   "gui.mio_icif.wingman.state.1": "帰還中",
   "gui.mio_icif.wingman.state.2": "フルトン上昇",
-  "message.mio_icif.wingman.deployed": "%s を僚機として出撃（%s）、%s EU",
   "message.mio_icif.wingman.limit": "僚機の上限：%s",
   "message.mio_icif.wingman.no_armor": "%s に防具がありません",
   "message.mio_icif.wingman.none": "稼働中の僚機はいません",
@@ -5378,7 +5377,7 @@
   "mio_icif.configuration.wingmen.maxPerPlayer": "プレイヤーごとの僚機上限",
   "mio_icif.configuration.wingmen.maxPerPlayer.tooltip": "1〜8。未読み込みチャンクの僚機も数えます。",
   "mio_icif.configuration.wingmen.upkeepEuPerSecond": "維持費（EU/秒）",
-  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "スーツの電動パーツが先に払い、次にアーマリー（読み込み中のとき）。0 = 無料。",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "スーツの電動パーツ、維持費の予備、武装庫（読み込み中のとき）の順に払う。0 = 無料。",
   "mio_icif.configuration.wingmen.lowPowerSeconds": "維持費が払えないまま帰還するまでの秒数",
   "mio_icif.configuration.wingmen.lowPowerSeconds.tooltip": "1〜600。",
   "mio_icif.configuration.wingmen.scanRange": "ターゲット探索範囲",
@@ -5404,5 +5403,14 @@
   "gui.mio_icif.wingman.order_short.move": "移動",
   "gui.mio_icif.wingman.order_short.hold": "待機",
   "gui.mio_icif.wingman.order_short.suppress": "制圧",
-  "gui.mio_icif.wingman.order_short.focus": "集中"
+  "gui.mio_icif.wingman.order_short.focus": "集中",
+  "message.mio_icif.wingman.deployed_reserve": "%s を僚機として出撃（%s）、%s EU、維持費の予備 %s EU（%s）",
+  "gui.mio_icif.wingman.endurance": "%s · 残り %s",
+  "gui.mio_icif.wingman.endurance.armory": "武装庫",
+  "jade.mio_icif.wingman.suit": "スーツ %s・持ち主：%s",
+  "jade.mio_icif.wingman.owner_away": "オフライン",
+  "jade.mio_icif.wingman.endurance": "残り飛行時間：%s（予備 %s EU）",
+  "config.jade.plugin_mio_icif.wingman": "僚機",
+  "mio_icif.configuration.wingmen.reserveMinutes": "維持費の予備（分）",
+  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "出撃時に武装庫から充電（足りなければ少なめ）。スーツ、予備、読み込み中の武装庫の順に払い、帰還時に残りを戻す。0 = 予備なし。"
 }

@@ -61,7 +61,7 @@ public final class SquadHud {
     }
 
     private static void panel(GuiGraphics g, LocalPlayer player, List<Unit> units, int h, float t, float partial) {
-        int x = 10, rowH = 11, pw = 132;
+        int x = 10, rowH = 11, pw = 156;   // 0.1.11.41: one more column (flight time)
         int y = (int) (h * 0.38F);
         int ph = 14 + units.size() * rowH;
         FcsDraw.panel(g, x, y, pw, ph, Component.translatable("gui.mio_icif.command.squad").getString(), 0x5CEBFF);
@@ -102,8 +102,12 @@ public final class SquadHud {
             int bx = x + 92, bw = 18;
             g.fill(bx, ry + 3, bx + bw, ry + 6, 0x60000000);
             g.fill(bx, ry + 3, bx + (int) (bw * Mth.clamp(u.health(), 0, 1)), ry + 6, FcsDraw.argb(u.health() < 0.35F ? 0xFF5A4C : 0x5CFF9A, 0.9F));
-            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.0f", at.distanceTo(player.position())), x + pw - 4, ry + 1,
+            FcsDraw.textRight(g, String.format(Locale.ROOT, "%.0f", at.distanceTo(player.position())), x + 128, ry + 1,
                 FcsDraw.argb(0xDFFBFF, 0.7F), 0.45F);
+            // 0.1.11.41 (decision 1 C): flight time left from the suit charge and the upkeep reserve
+            String left = SquadClient.enduranceText(u.endurance());
+            if (!left.isEmpty()) FcsDraw.textRight(g, fit(left, 24, 0.45F), x + pw - 4, ry + 1,
+                FcsDraw.argb(SquadClient.enduranceColor(u.endurance()), 0.85F), 0.45F);
             ry += rowH;
         }
     }

@@ -15,15 +15,21 @@ public final class WingmanConfig {
     public static final int MAX_LIMIT = 8;
 
     private static ModConfigSpec spec;
-    private static ModConfigSpec.IntValue maxPerPlayer, upkeep, lowPowerSeconds, scanRange, leash;
+    private static ModConfigSpec.IntValue maxPerPlayer, upkeep, lowPowerSeconds, scanRange, leash, reserveMinutes;
 
     /** Defines the section entries (called once while the common spec is built). */
     public static void define(ModConfigSpec.Builder b) {
         maxPerPlayer = b.comment("Wingmen per player, counting the ones in unloaded chunks. 每名玩家的僚机数量上限（包括未加载区块中的僚机）。")
             .translation("mio_icif.configuration.wingmen.maxPerPlayer").defineInRange("maxPerPlayer", WingmanService.MAX_PER_PLAYER, 1, MAX_LIMIT);
-        upkeep = b.comment("Upkeep of one Wingman in EU per second: the electric pieces of its suit pay first, then its Armory (when loaded).",
-                "单架僚机每秒的维持费（EU）：先由套装的电动部件支付，再由其武装库支付（武装库须已加载）。")
+        upkeep = b.comment("Upkeep of one Wingman in EU per second: the electric pieces of its suit pay first, then its reserve, then its Armory (when loaded).",
+                "单架僚机每秒的维持费（EU）：先由套装的电动部件支付，再用出击储备，最后由其武装库支付（武装库须已加载）。")
             .translation("mio_icif.configuration.wingmen.upkeepEuPerSecond").defineInRange("upkeepEuPerSecond", 160, 0, 1_000_000);
+        reserveMinutes = b.comment("0.1.11.41: minutes of upkeep the Armory charges into a Wingman at deployment (less when it has less). The Wingman",
+                "pays from its suit first, then from this reserve, then from its Armory (when loaded); the rest of the reserve goes back to the",
+                "Armory when the Wingman comes home. 0 = no reserve (as before 0.1.11.41).",
+                "0.1.11.41：出击时武装库为僚机预充多少分钟的维持费（武装库电量不足时少充）。僚机先用套装电力，再用这笔储备，最后才由武装库支付（须已加载）；",
+                "返航时剩余储备退回武装库。0 = 不预充（0.1.11.41 之前的行为）。")
+            .translation("mio_icif.configuration.wingmen.reserveMinutes").defineInRange("reserveMinutes", 10, 0, 120);
         lowPowerSeconds = b.comment("Seconds a Wingman flies on without paid upkeep before it returns. 维持费付不起时，僚机继续飞行多少秒后返航。")
             .translation("mio_icif.configuration.wingmen.lowPowerSeconds").defineInRange("lowPowerSeconds", 5, 1, 600);
         scanRange = b.comment("Blocks around the owner in which an offensive Wingman looks for targets. 进攻模式的僚机在主人周围多少格内寻找目标。")
@@ -49,6 +55,9 @@ public final class WingmanConfig {
     public static int maxPerPlayer() { return get(maxPerPlayer, WingmanService.MAX_PER_PLAYER); }
     public static long upkeepEuPerSecond() { return get(upkeep, 160); }
     public static int lowPowerSeconds() { return get(lowPowerSeconds, 5); }
+    public static int reserveMinutes() { return get(reserveMinutes, 10); }
+    /** EU of a full upkeep reserve. */
+    public static long reserveEu() { return upkeepEuPerSecond() * 60L * reserveMinutes(); }
     public static double scanRange() { return get(scanRange, 24); }
     /** Never below the scan range (a target found must not be dropped at once). */
     public static double leash() { return Math.max(scanRange(), get(leash, 28)); }

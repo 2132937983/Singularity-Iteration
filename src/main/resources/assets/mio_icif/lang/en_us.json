@@ -2362,7 +2362,6 @@
   "gui.mio_icif.wingman.mode.fulton.tip": "Takes a mob to the Armory. Hit the mob, or crouch and look at it. A hostile mob must have 50% health or less. Cost: 4000 EU from the Armory.",
   "gui.mio_icif.wingman.state.1": "Returning",
   "gui.mio_icif.wingman.state.2": "Fulton lift",
-  "message.mio_icif.wingman.deployed": "%s flies as a Wingman (%s). Cost: %s EU",
   "message.mio_icif.wingman.limit": "Maximum number of Wingmen: %s",
   "message.mio_icif.wingman.no_armor": "%s has no armor piece",
   "message.mio_icif.wingman.none": "No Wingman is active",
@@ -5378,7 +5377,7 @@
   "mio_icif.configuration.wingmen.maxPerPlayer": "Wingmen per player",
   "mio_icif.configuration.wingmen.maxPerPlayer.tooltip": "1-8, counting the Wingmen in unloaded chunks.",
   "mio_icif.configuration.wingmen.upkeepEuPerSecond": "Upkeep (EU per second)",
-  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "The electric pieces of the suit pay first, then the Armory (when loaded). 0 = free.",
+  "mio_icif.configuration.wingmen.upkeepEuPerSecond.tooltip": "The electric pieces of the suit pay first, then the upkeep reserve, then the Armory (when loaded). 0 = free.",
   "mio_icif.configuration.wingmen.lowPowerSeconds": "Seconds without upkeep before return",
   "mio_icif.configuration.wingmen.lowPowerSeconds.tooltip": "1-600.",
   "mio_icif.configuration.wingmen.scanRange": "Target search range",
@@ -5404,5 +5403,14 @@
   "gui.mio_icif.wingman.order_short.move": "MOVE",
   "gui.mio_icif.wingman.order_short.hold": "HOLD",
   "gui.mio_icif.wingman.order_short.suppress": "SUPP",
-  "gui.mio_icif.wingman.order_short.focus": "FOCS"
+  "gui.mio_icif.wingman.order_short.focus": "FOCS",
+  "message.mio_icif.wingman.deployed_reserve": "%s flies as a Wingman (%s). Cost: %s EU, upkeep reserve: %s EU (%s)",
+  "gui.mio_icif.wingman.endurance": "%s · %s left",
+  "gui.mio_icif.wingman.endurance.armory": "Armory",
+  "jade.mio_icif.wingman.suit": "Suit %s · owner: %s",
+  "jade.mio_icif.wingman.owner_away": "offline",
+  "jade.mio_icif.wingman.endurance": "Flight time left: %s (reserve %s EU)",
+  "config.jade.plugin_mio_icif.wingman": "Wingman",
+  "mio_icif.configuration.wingmen.reserveMinutes": "Upkeep reserve (minutes)",
+  "mio_icif.configuration.wingmen.reserveMinutes.tooltip": "Charged from the Armory at deployment (less when it has less). The suit pays first, then the reserve, then the loaded Armory; the rest goes back when the Wingman returns. 0 = no reserve."
 }

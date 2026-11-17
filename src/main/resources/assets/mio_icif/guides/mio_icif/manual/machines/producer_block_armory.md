@@ -62,7 +62,8 @@ A Wingman is a stored suit that flies and fights next to you as an empty suit of
 - A suit out as a Wingman shows "Out" in the console. Its positions are kept for the Wingman: "send home", pipes and storage buses put nothing there, and the pieces come back to their places.
 - When the Armory is far away or in another dimension, the Wingman drops in where there is room above you (up to 18 blocks), else beside you; with no room at all it does not deploy and nothing is paid.
 - "Recall all" in the console also reaches the Wingmen in unloaded chunks: their chunk loads for a moment and the suit goes straight home. The same happens when you log off.
-- Upkeep is 160 EU per second by default (config Wingmen.upkeepEuPerSecond): the electric pieces of the suit pay first, then the Armory (only while it is loaded). After 5 seconds without upkeep the Wingman returns (config Wingmen.lowPowerSeconds).
+- Upkeep is 160 EU per second by default (config Wingmen.upkeepEuPerSecond). At deployment the Armory charges the Wingman with an upkeep reserve of 10 minutes (96,000 EU, config Wingmen.reserveMinutes; less when the Armory has less). The electric pieces of the suit pay first, then the reserve, then the Armory (only while it is loaded), so a Wingman in plain armor flies about 10 minutes away from your base. The rest of the reserve goes back to the Armory when the Wingman returns. After 5 seconds without upkeep the Wingman returns (config Wingmen.lowPowerSeconds).
+- The flight time left (what the suit charge and the reserve pay for) shows in the Wingman row of the console, in the squad HUD and in Jade; it turns red under one minute, and "Armory" means the Armory is paying.
 
 ## Wingman safety
 

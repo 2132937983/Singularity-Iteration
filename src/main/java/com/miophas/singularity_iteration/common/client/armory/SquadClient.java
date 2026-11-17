@@ -156,6 +156,23 @@ public final class SquadClient {
             : "gui.mio_icif.command.where.other_dim").getString();
     }
 
+    /**
+     * 0.1.11.41 (decision 1 C): the flight time a Wingman has left from its suit charge and its upkeep reserve: "m:ss", "∞"
+     * (no upkeep), the Armory paying, or "" (unknown: an unloaded Wingman).
+     */
+    public static String enduranceText(int seconds) {
+        if (seconds == -1) return "∞";
+        if (seconds == -2) return net.minecraft.network.chat.Component.translatable("gui.mio_icif.wingman.endurance.armory").getString();
+        if (seconds < 0) return "";
+        return com.miophas.singularity_iteration.common.armory.WingmanService.formatSeconds(seconds);
+    }
+
+    /** 0.1.11.41: the colour of {@link #enduranceText}: red under one minute, amber under three. */
+    public static int enduranceColor(int seconds) {
+        if (seconds < 0) return 0x9FDFFF;
+        return seconds < 60 ? 0xFF5A4C : seconds < 180 ? 0xFFB333 : 0x9FDFFF;
+    }
+
     /** 0.1.11.40 (U-4): the language key of the short order tag (chips). */
     public static String orderShortKey(WingmanOrder o) {
         return "gui.mio_icif.wingman.order_short." + o.name().toLowerCase(java.util.Locale.ROOT);

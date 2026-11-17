@@ -66,7 +66,8 @@ import org.jetbrains.annotations.Nullable;
  *       and is invulnerable on the way. Only void damage and {@code /kill} remove it at once.</li>
  *   <li>The owner and the other Wingmen of the owner cannot hurt it.</li>
  *   <li>Upkeep: {@link WingmanConfig#upkeepEuPerSecond()} EU per second (default 160). The electric pieces of the suit pay
- *       first (the full-set pool applies). If they cannot pay, the Armory pays when it is loaded. After
+ *       first (the full-set pool applies), then (0.1.11.41) the reserve the Armory charged at deployment, then the Armory
+ *       when it is loaded; the unused reserve goes back to the Armory. After
  *       {@link WingmanConfig#lowPowerSeconds()} seconds without power (default 5), the Wingman returns.</li>
  * </ul>
  */
@@ -102,6 +103,10 @@ public class WingmanEntity extends Mob {
     private int set;
     /** 0.1.10.5: the token of this sortie ({@link WingmanSorties}); null in a save of an older version. */
     @Nullable private UUID sortie;
+    /** 0.1.11.41 (Wingman audit W2, decision 1 C): EU of upkeep charged by the Armory at deployment (saved); see {@link #upkeep}. */
+    private long reserve;
+    /** 0.1.11.41: the Armory paid (part of) the last upkeep (not saved). */
+    private boolean armoryPaid;
     // server state (not saved)
     @Nullable private LivingEntity target;
     private int attackCooldown, deflectCooldown, lowPowerSeconds, stateTicks, slot, slotCount = 1;
@@ -456,15 +461,56 @@ public class WingmanEntity extends Mob {
             due -= SuitEnergyPool.payPart(this, piece, due);
             if (due <= 0) break;
         }
+        // 0.1.11.41 (decision 1 C): the reserve charged at deployment pays next, so a Wingman flies on away from a loaded Armory
+        if (due > 0 && reserve > 0) {
+            long take = Math.min(reserve, due);
+            reserve -= take;
+            due -= take;
+        }
+        armoryPaid = false;
         if (due > 0) {
             mio_icif_armory home = loadedArmory(world);
             var payment = home == null ? null : home.getEnergyStorageInternal().scexReserveInternal(due);
-            if (payment != null) { payment.commit(); due = 0; }
+            if (payment != null) { payment.commit(); due = 0; armoryPaid = true; }
         }
         if (due <= 0) { lowPowerSeconds = 0; return; }
         if (++lowPowerSeconds >= WingmanConfig.lowPowerSeconds()) {
             startReturn(player == null ? null : Component.translatable("message.mio_icif.wingman.low_power"));
         }
+    }
+
+    /** 0.1.11.41: EU of the upkeep reserve left. */
+    public long reserve() { return reserve; }
+
+    /** 0.1.11.41: sets the upkeep reserve (deployment, tests). */
+    void setReserve(long eu) { reserve = Math.max(0, eu); }
+
+    /** EU stored in the electric pieces of the suit (0 without). */
+    long suitStored() {
+        var api = MioIcifAPI.instance().getItemAPI();
+        long stored = 0;
+        for (EquipmentSlot s : SuitEnergyPool.ARMOR_SLOTS) {
+            ItemStack piece = getItemBySlot(s);
+            if (!piece.isEmpty() && api.isElectricArmor(piece)) stored += Math.max(0, api.getElectricArmorStored(piece));
+        }
+        return stored;
+    }
+
+    /** {@link #enduranceSeconds()}: no upkeep (free flight). */
+    public static final int ENDURANCE_FREE = -1;
+    /** {@link #enduranceSeconds()}: suit and reserve are empty and the Armory pays (it flies as long as the Armory has energy). */
+    public static final int ENDURANCE_ARMORY = -2;
+
+    /**
+     * 0.1.11.41: seconds of flight the suit charge and the reserve pay for (Energy Saving makes it a little longer), or
+     * {@link #ENDURANCE_FREE} / {@link #ENDURANCE_ARMORY}.
+     */
+    public int enduranceSeconds() {
+        long upkeep = WingmanConfig.upkeepEuPerSecond();
+        if (upkeep <= 0) return ENDURANCE_FREE;
+        long own = suitStored() + reserve;
+        if (own < upkeep && armoryPaid) return ENDURANCE_ARMORY;
+        return (int) Math.min(Integer.MAX_VALUE, own / upkeep);
     }
 
     /** The Armory of this Wingman when its chunk is loaded (no chunk load), else null. */
@@ -1264,6 +1310,11 @@ public class WingmanEntity extends Mob {
             }
             if (!rest.isEmpty()) spawnAtLocation(rest);
         }
+        if (home != null && reserve > 0) {
+            // 0.1.11.41: the reserve that was not flown goes back (as far as the Armory has room; without the Armory it is lost)
+            home.getEnergyStorageInternal().generateEnergyInternal(reserve, false);
+        }
+        reserve = 0;
         if (home != null) {
             home.releaseDeployed(set, sortie);   // 0.1.11.39 (G-1)
             home.markStorageChanged();
@@ -1299,6 +1350,7 @@ public class WingmanEntity extends Mob {
     /** Empties a copy without a drop: its items exist elsewhere (the Armory, the first Wingman). */
     private void voidCopy(ServerLevel world, String reason) {
         secured = true;                 // remove() and die() must not send these items home
+        reserve = 0;                    // 0.1.11.41: nor its reserve (the real Wingman has it)
         setSilent(true);
         for (EquipmentSlot s : EquipmentSlot.values()) setItemSlot(s, ItemStack.EMPTY);
         com.miophas.singularity_iteration.common.Singularity_Iteration.LOGGER.warn(
@@ -1500,6 +1552,7 @@ public class WingmanEntity extends Mob {
         if (armory != null) GlobalPos.CODEC.encodeStart(NbtOps.INSTANCE, armory).result().ifPresent(t -> tag.put("Armory", t));
         tag.putInt("Set", set);
         if (sortie != null) tag.putUUID("Sortie", sortie);   // 0.1.10.5
+        tag.putLong("Reserve", reserve);                       // 0.1.11.41
         tag.putByte("Mode", entityData.get(DATA_MODE));
         tag.putByte("State", state());
         tag.putBoolean("Protected", protectedReturn);
@@ -1520,6 +1573,7 @@ public class WingmanEntity extends Mob {
         armory = tag.contains("Armory") ? GlobalPos.CODEC.parse(NbtOps.INSTANCE, tag.get("Armory")).result().orElse(null) : null;
         set = tag.getInt("Set");
         sortie = tag.hasUUID("Sortie") ? tag.getUUID("Sortie") : null;
+        reserve = Math.max(0, tag.getLong("Reserve"));   // 0.1.11.41 (absent in older saves: no reserve)
         entityData.set(DATA_MODE, tag.getByte("Mode"));
         entityData.set(DATA_STATE, tag.getByte("State"));
         protectedReturn = tag.getBoolean("Protected");

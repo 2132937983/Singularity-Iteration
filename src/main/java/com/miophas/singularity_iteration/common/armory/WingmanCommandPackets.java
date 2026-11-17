@@ -59,21 +59,23 @@ public final class WingmanCommandPackets {
      * not loaded; {@code where}: 0 with the owner, 1 in another dimension, 2 in an unloaded chunk
      * (roster); {@code order}: a {@link WingmanOrder} ordinal; {@code ox, oy, oz}: the order point;
      * {@code focus}: the focus entity id or -1; {@code health}, {@code energy}: 0..1 (energy -1
-     * without electric pieces); {@code x, y, z}: the position (the last known one when unloaded).
+     * without electric pieces); {@code x, y, z}: the position (the last known one when unloaded); {@code endurance} (0.1.11.41): seconds of upkeep the suit and
+     * the reserve pay for, -1 for free upkeep, -2 while the Armory pays, -3 unknown (unloaded).
      */
     public record Unit(UUID id, int entityId, byte set, byte mode, boolean individual, byte order, float ox, float oy, float oz, int focus,
-                       float health, float energy, byte state, byte where, float x, float y, float z) {
+                       float health, float energy, byte state, byte where, float x, float y, float z, int endurance) {
         void write(FriendlyByteBuf b) {
             b.writeUUID(id); b.writeVarInt(entityId + 1); b.writeByte(set); b.writeByte(mode); b.writeBoolean(individual); b.writeByte(order);
             b.writeFloat(ox); b.writeFloat(oy); b.writeFloat(oz); b.writeVarInt(focus + 1);
             b.writeFloat(health); b.writeFloat(energy); b.writeByte(state); b.writeByte(where);
             b.writeFloat(x); b.writeFloat(y); b.writeFloat(z);
+            b.writeVarInt(endurance + 3);   // 0.1.11.41: seconds, or -1 free, -2 the Armory pays, -3 unknown
         }
 
         static Unit read(FriendlyByteBuf b) {
             return new Unit(b.readUUID(), b.readVarInt() - 1, b.readByte(), b.readByte(), b.readBoolean(), b.readByte(),
                 b.readFloat(), b.readFloat(), b.readFloat(), b.readVarInt() - 1,
-                b.readFloat(), b.readFloat(), b.readByte(), b.readByte(), b.readFloat(), b.readFloat(), b.readFloat());
+                b.readFloat(), b.readFloat(), b.readByte(), b.readByte(), b.readFloat(), b.readFloat(), b.readFloat(), b.readVarInt() - 3);
         }
     }
 

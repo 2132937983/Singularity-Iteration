@@ -65,6 +65,12 @@ public final class SquadClient {
         return s == null || s.suppressRadius() <= 0 ? 14 : s.suppressRadius();
     }
 
+    /** 0.1.11.40 (U-8): the server's quantum recall cooldown (config), for the sweep of the recall sector. */
+    public static int recallCooldownMax() {
+        WingmanCommandPackets.Squad s = squad;
+        return s == null || s.recallCooldownMax() <= 0 ? 600 : s.recallCooldownMax();
+    }
+
     /** Ticks until the next quantum recall (counts down between payloads). */
     public static int recallCooldown() {
         WingmanCommandPackets.Squad s = squad;
@@ -118,9 +124,41 @@ public final class SquadClient {
         return -1;
     }
 
-    /** Short name: "W1" .. */
+    /**
+     * 0.1.11.40 (U-5): the number of a Wingman: its Armory suit (1..6). It stays the same while Wingmen deploy, return,
+     * load or unload (before: the place in the list, so W2 could become W3). The table digits and the 1..9 keys use it.
+     */
+    public static int number(Unit u) {
+        return Math.floorMod(u.set(), 32) + 1;
+    }
+
+    /** Short name: "W1" ..; two Wingmen of the same suit number (two Armories) get a letter: "W1", "W1b". */
     public static String label(Unit u) {
-        return "W" + (index(u) + 1);
+        String name = "W" + number(u);
+        int same = 0;
+        for (Unit other : units()) {
+            if (other.id().equals(u.id())) break;
+            if (number(other) == number(u)) same++;
+        }
+        return same == 0 ? name : name + (char) ('a' + same);
+    }
+
+    /** 0.1.11.40: the orderable Wingman with number {@code n} (a 1..9 key), or null. */
+    @Nullable
+    public static Unit byNumber(int n) {
+        for (Unit u : orderable()) if (number(u) == n) return u;
+        return null;
+    }
+
+    /** 0.1.11.40 (U-4): "unloaded" / "other dimension" for a Wingman that cannot take orders. */
+    public static String whereText(Unit u) {
+        return net.minecraft.network.chat.Component.translatable(u.where() == 2 ? "gui.mio_icif.command.where.unloaded"
+            : "gui.mio_icif.command.where.other_dim").getString();
+    }
+
+    /** 0.1.11.40 (U-4): the language key of the short order tag (chips). */
+    public static String orderShortKey(WingmanOrder o) {
+        return "gui.mio_icif.wingman.order_short." + o.name().toLowerCase(java.util.Locale.ROOT);
     }
 
     public static WingmanOrder order(Unit u) {

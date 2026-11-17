@@ -81,9 +81,11 @@ public final class CommandWheelClient {
             CommandFx.tick();
             HoloTable.tick();
             Minecraft mc = Minecraft.getInstance();
+            if (waitRelease && !HeldKeys.down(KEY)) waitRelease = false;
             while (KEY != null && KEY.consumeClick()) {
                 LocalPlayer player = mc.player;
                 if (player == null || mc.screen != null) continue;
+                if (waitRelease) continue;   // 0.1.11.40 (U-1): a repeat of the key that just closed the wheel
                 if (sharesWithTool() && holdsToggleTool(player)) continue;    // the tool toggle takes this press
                 if (!SquadClient.commander()) {
                     if (wearsQuantum(player)) player.displayClientMessage(Component.translatable("message.mio_icif.command.no_relay"), true);
@@ -98,7 +100,17 @@ public final class CommandWheelClient {
             SquadClient.clear();
             CommandFx.clear();
             HoloTable.close(true);
+            ArmoryToastOverlay.clear();   // 0.1.11.40 (U-9)
+            waitRelease = false;
         }
+    }
+
+    /** 0.1.11.40: set when a quantum command screen closes while the wheel key is held; cleared at its release. */
+    private static boolean waitRelease;
+
+    /** Called when the wheel or the holo table closes: a still held wheel key must not reopen the wheel. */
+    static void waitForRelease() {
+        waitRelease = HeldKeys.down(KEY);
     }
 
     /** True when the wheel key and the tool toggle key are bound to the same key. */

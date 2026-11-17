@@ -42,6 +42,11 @@ public final class ArmoryToastOverlay {
         return !QUEUE.isEmpty();
     }
 
+    /** 0.1.11.40 (U-9): the queue empties at logout (a notice of one world must not show in the next; see CommandWheelClient). */
+    static void clear() {
+        QUEUE.clear();
+    }
+
     public static void push(ArmoryToastPacket packet) {
         QUEUE.addLast(new Entry(packet, new long[]{-1}));
         if (QUEUE.size() > 4) QUEUE.removeFirst();
@@ -92,7 +97,9 @@ public final class ArmoryToastOverlay {
         g.fill(-4, -4, 5, 5, SiGuiTheme.GOOD);
         g.drawString(font, "✔", -3, -4, 0xFFFFFFFF, false);
         g.pose().popPose();
-        g.drawString(font, Component.translatable("toast.mio_icif.armory.done.title"), x + 36, y + 7, SiGuiTheme.TEXT, false);
+        // 0.1.11.40 (U-9): a long title (Russian, Japanese) is cut at the panel edge, like the detail line
+        g.drawString(font, font.plainSubstrByWidth(Component.translatable("toast.mio_icif.armory.done.title").getString(), W - 40), x + 36, y + 7,
+            SiGuiTheme.TEXT, false);
         String detail = Component.translatable("toast.mio_icif.armory.done.detail", p.repairedPoints(),
             String.format("%,d", p.chargedEu())).getString();
         if (p.manaUsed() > 0) detail += Component.translatable("toast.mio_icif.armory.done.mana", String.format("%,d", p.manaUsed())).getString();

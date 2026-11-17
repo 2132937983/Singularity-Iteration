@@ -56,6 +56,10 @@ public final class CommandWheelScreen extends Screen {
     /** Unit chip rectangles of the last frame: x, y, w, h per chip; ids parallel. */
     private final List<float[]> chips = new ArrayList<>();
     private final List<UUID> chipIds = new ArrayList<>();
+    /** 0.1.11.40 (U-1): the wheel key that opened the wheel is down; its repeats are not new presses. */
+    private final HeldKeys.Repeats keys = new HeldKeys.Repeats().seed(CommandWheelClient.KEY);
+    /** 0.1.11.40 (U-3): the whole wheel scales down to fit a small GUI (auto GUI scale at 1080p is only 270 high). */
+    private float fit = 1;
 
     public CommandWheelScreen(CommandWheelClient.Target target) {
         super(Component.translatable("gui.mio_icif.command.title"));
@@ -71,6 +75,11 @@ public final class CommandWheelScreen extends Screen {
     public boolean isPauseScreen() { return false; }
 
     @Override
+    public void removed() {
+        CommandWheelClient.waitForRelease();   // 0.1.11.40: a held wheel key must not open the wheel again
+    }
+
+    @Override
     public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partial) {
         g.fillGradient(0, 0, width, height, 0x38000000, 0x60000814);
     }
@@ -78,7 +87,23 @@ public final class CommandWheelScreen extends Screen {
     // ------------------------------------------------------------------ state
 
     private float cx() { return width / 2F; }
-    private float cy() { return height / 2F + 10; }
+    private float cy() { return height / 2F + 10 * fit; }
+
+    /**
+     * 0.1.11.40 (U-3): the scale at which the chips above (up to 174 units over the centre) and the read-out below (158
+     * under it) fit the screen, and the chip row its width. Before, at the auto GUI scale of a 1080p or 1440p screen the
+     * chips and the footer were drawn off the screen.
+     */
+    private float computeFit() {
+        float chipsW = (SquadClient.units().size() + 1) * 42F;
+        float byHeight = (height / 2F - 3) / 174F;
+        float byWidth = (width - 8) / Math.max(2 * R_SUB_OUT + 16, chipsW);
+        return Mth.clamp(Math.min(byHeight, byWidth), 0.4F, 1F);
+    }
+
+    /** Screen point to the unscaled wheel layout. */
+    private double lx(double mouseX) { return cx() + (mouseX - cx()) / fit; }
+    private double ly(double mouseY) { return cy() + (mouseY - cy()) / fit; }
 
     private static float centre(int i) { return i * STEP; }
 
@@ -126,8 +151,10 @@ public final class CommandWheelScreen extends Screen {
     // ------------------------------------------------------------------ render
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
-        renderBackground(g, mouseX, mouseY, partial);
+    public void render(GuiGraphics g, int screenX, int screenY, float partial) {
+        renderBackground(g, screenX, screenY, partial);
+        fit = computeFit();
+        int mouseX = (int) Math.round(lx(screenX)), mouseY = (int) Math.round(ly(screenY));
         updateHover(mouseX, mouseY);
         int key = hover * 10 + sub;
         if (key != lastHover && hover >= 0) play(mio_icif_sounds.WHEEL_SELECT.get(), 1.4F + 0.05F * hover, 0.25F);
@@ -136,6 +163,10 @@ public final class CommandWheelScreen extends Screen {
         float open = Mth.clamp((t - openedAt) / 5F, 0, 1);
         float ease = 1 - (1 - open) * (1 - open) * (1 - open);
         float cx = cx(), cy = cy();
+        g.pose().pushPose();
+        g.pose().translate(cx, cy, 0);
+        g.pose().scale(fit, fit, 1);
+        g.pose().translate(-cx, -cy, 0);
         g.pose().pushPose();
         g.pose().translate(cx, cy, 0);
         float scale = 0.72F + 0.28F * ease;
@@ -148,6 +179,7 @@ public final class CommandWheelScreen extends Screen {
         g.pose().popPose();
         unitChips(g, cx, t, ease, mouseX, mouseY);
         footer(g, cx, ease);
+        g.pose().popPose();
     }
 
     private void rings(GuiGraphics g, float cx, float cy, float t, float a) {
@@ -184,7 +216,7 @@ public final class CommandWheelScreen extends Screen {
         }
         // the recall cooldown sweeps the sector
         if (e == Entry.RECALL && SquadClient.recallCooldown() > 0) {
-            float f = Mth.clamp(SquadClient.recallCooldown() / 600F, 0, 1);
+            float f = Mth.clamp(SquadClient.recallCooldown() / (float) Math.max(1, SquadClient.recallCooldownMax()), 0, 1);   // 0.1.11.40 (U-8)
             FcsDraw.sector(g, cx, cy, R_IN, R_IN + (R_OUT - R_IN) * f, a0, a1, FcsDraw.argb(0x000000, 0.35F));
         }
         float rm = (R_IN + R_OUT) / 2 + lift;
@@ -209,7 +241,9 @@ public final class CommandWheelScreen extends Screen {
             float am = (a0 + a1) / 2, rm = (R_SUB_IN + R_SUB_OUT) / 2;
             float x = cx + (float) Math.sin(am) * rm, y = cy - (float) Math.cos(am) * rm;
             String label = Component.translatable(SUB_KEYS[s]).getString();
-            FcsDraw.textCentered(g, label, x, y - 2, FcsDraw.argb(hot ? 0xFFFFFF : col, 1F), 0.45F);
+            // 0.1.11.40 (U-9): a label longer than its fan sector (about 44 units) is drawn smaller
+            float size = Math.min(0.45F, 44F / Math.max(1F, FcsDraw.width(label, 1F)));
+            FcsDraw.textCentered(g, label, x, y - 2, FcsDraw.argb(hot ? 0xFFFFFF : col, 1F), size);
         }
         // a bracket joins the fan to its sector
         FcsDraw.arc(g, cx, cy, R_SUB_IN - 3, start, start + SUB_STEP * SUB_KEYS.length, 0.8F, FcsDraw.argb(VIOLET, 0.5F));
@@ -255,12 +289,11 @@ public final class CommandWheelScreen extends Screen {
             String name = u == null ? Component.translatable("gui.mio_icif.command.chip_all").getString() : SquadClient.label(u);
             FcsDraw.text(g, name, x + 3, y + 3, FcsDraw.argb(usable ? 0xEFFFFF : 0x7A8890, a), 0.55F);
             if (u != null) {
-                if (u.where() == 2) FcsDraw.text(g, "UNLOADED", x + 3, y + 11, FcsDraw.argb(0xFF9F4D, a), 0.35F);
-                else if (u.where() == 1) FcsDraw.text(g, "OTHER DIM", x + 3, y + 11, FcsDraw.argb(0xFF9F4D, a), 0.35F);
+                if (u.where() != 0) FcsDraw.text(g, SquadClient.whereText(u), x + 3, y + 11, FcsDraw.argb(0xFF9F4D, a), 0.35F);
                 else {
                     g.fill((int) x + 3, (int) y + 12, (int) (x + 3 + 30 * Mth.clamp(u.health(), 0, 1)), (int) y + 14, FcsDraw.argb(0x5CFF9A, 0.9F * a));
                     WingmanOrder o = SquadClient.order(u);
-                    if (o != WingmanOrder.NONE) FcsDraw.textRight(g, o.name().substring(0, Math.min(4, o.name().length())), x + w - 3, y + 3,
+                    if (o != WingmanOrder.NONE) FcsDraw.textRight(g, Component.translatable(SquadClient.orderShortKey(o)).getString(), x + w - 3, y + 3,
                         FcsDraw.argb(0xFFE08A, a), 0.38F);
                 }
             }
@@ -398,6 +431,7 @@ public final class CommandWheelScreen extends Screen {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        keys.release(keyCode);
         if (CommandWheelClient.KEY != null && CommandWheelClient.KEY.matches(keyCode, scanCode)) {
             // a quick tap leaves the wheel open for a click
             if (SquadClient.ticks - openedAt > 4 || hover >= 0) run();
@@ -409,6 +443,7 @@ public final class CommandWheelScreen extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (CommandWheelClient.KEY != null && CommandWheelClient.KEY.matches(keyCode, scanCode)) {
+            if (keys.repeat(keyCode)) return true;   // 0.1.11.40 (U-1): a repeat of the held key, not a confirm
             run();
             return true;
         }
@@ -416,7 +451,8 @@ public final class CommandWheelScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(double screenX, double screenY, int button) {
+        double mouseX = lx(screenX), mouseY = ly(screenY);
         for (int i = 0; i < chips.size(); i++) {
             float[] c = chips.get(i);
             if (mouseX >= c[0] && mouseX < c[0] + c[2] && mouseY >= c[1] && mouseY < c[1] + c[3]) {
@@ -427,13 +463,13 @@ public final class CommandWheelScreen extends Screen {
         }
         if (button == 0) { updateHover(mouseX, mouseY); run(); return true; }
         if (button == 1) { onClose(); return true; }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(screenX, screenY, button);
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (CommandWheelClient.KEY != null && CommandWheelClient.KEY.matchesMouse(button)) {
-            updateHover(mouseX, mouseY);
+            updateHover(lx(mouseX), ly(mouseY));
             run();
             return true;
         }

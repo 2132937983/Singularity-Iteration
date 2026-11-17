@@ -81,27 +81,28 @@ public final class WingmanCommandPackets {
      * Server to client (the owner). {@code commander}: the command link works (an active
      * entanglement relay on a worn quantum piece); {@code datalink}: the data link setting;
      * {@code squadMode}: the squad mode ordinal or -1; {@code recallCooldown}: ticks until the next
-     * quantum recall; {@code holdRadius}, {@code suppressRadius}: the server's order radii (for the
-     * markers); {@code units}: at most {@link #MAX_UNITS}.
+     * quantum recall; {@code recallCooldownMax} (0.1.11.40): the configured cooldown; {@code holdRadius},
+     * {@code suppressRadius}: the server's order radii (for the markers); {@code units}: at most {@link #MAX_UNITS}.
      */
-    public record Squad(boolean commander, boolean datalink, byte squadMode, int recallCooldown, int holdRadius, int suppressRadius,
-                        List<Unit> units) implements CustomPacketPayload {
+    public record Squad(boolean commander, boolean datalink, byte squadMode, int recallCooldown, int recallCooldownMax, int holdRadius,
+                        int suppressRadius, List<Unit> units) implements CustomPacketPayload {
         public static final int MAX_UNITS = 12;
         public static final Type<Squad> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(Singularity_Iteration.MOD_ID, "wingman_squad"));
         public static final StreamCodec<FriendlyByteBuf, Squad> CODEC = StreamCodec.of((b, p) -> {
             b.writeBoolean(p.commander); b.writeBoolean(p.datalink); b.writeByte(p.squadMode); b.writeVarInt(Math.max(0, p.recallCooldown));
+            b.writeVarInt(Math.max(0, p.recallCooldownMax));
             b.writeVarInt(Math.max(0, p.holdRadius)); b.writeVarInt(Math.max(0, p.suppressRadius));
             int n = PacketLimits.writeCount(b, p.units.size(), MAX_UNITS);
             for (int i = 0; i < n; i++) p.units.get(i).write(b);
         }, b -> {
             boolean commander = b.readBoolean(), datalink = b.readBoolean();
             byte mode = b.readByte();
-            int cooldown = b.readVarInt();
+            int cooldown = b.readVarInt(), cooldownMax = b.readVarInt();
             int hold = Math.min(64, b.readVarInt()), suppress = Math.min(64, b.readVarInt());
             int n = PacketLimits.readCount(b, MAX_UNITS, "squad unit");
             List<Unit> units = new ArrayList<>(n);
             for (int i = 0; i < n; i++) units.add(Unit.read(b));
-            return new Squad(commander, datalink, mode, cooldown, hold, suppress, units);
+            return new Squad(commander, datalink, mode, cooldown, cooldownMax, hold, suppress, units);
         });
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }

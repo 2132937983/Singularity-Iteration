@@ -38,6 +38,14 @@ public final class HoloTableScreen extends Screen {
     private final List<UUID> chipIds = new ArrayList<>();
     private int ackAt = -100;
     private String ack = "";
+    /** 0.1.11.40 (U-2): the map key that opened the table (or the wheel key) is down; repeats are not new presses. */
+    private final HeldKeys.Repeats keys = new HeldKeys.Repeats().seed(TacticalMapClient.KEY).seed(CommandWheelClient.KEY);
+    /** 0.1.11.40 (U-7): this mouse press landed on a chip; its release gives no order. */
+    private boolean pressOnChip;
+    /** 0.1.11.40 (U-6): the hover picks of the last mouse position (projecting every column costs; it runs again on a move or a tick). */
+    private int pickedX = Integer.MIN_VALUE, pickedY, pickedAt;
+    @org.jetbrains.annotations.Nullable private LivingEntity pickedHostile;
+    private int pickedCell = -1;
 
     public HoloTableScreen() {
         super(Component.translatable("gui.mio_icif.holo_table.title"));
@@ -50,6 +58,8 @@ public final class HoloTableScreen extends Screen {
 
     @Override
     public void removed() {
+        TacticalMapClient.waitForRelease();      // 0.1.11.40: a held key must not reopen what it just closed
+        CommandWheelClient.waitForRelease();
         HoloTable.close(false);
         HoloTable.hoverCell = -1;
         HoloTable.hoverEntity = -1;
@@ -63,9 +73,16 @@ public final class HoloTableScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
-        LivingEntity hostile = HoloTable.pickEntity(mouseX, mouseY);
+        if (mouseX != pickedX || mouseY != pickedY || SquadClient.ticks != pickedAt) {
+            pickedX = mouseX;
+            pickedY = mouseY;
+            pickedAt = SquadClient.ticks;
+            pickedHostile = HoloTable.pickEntity(mouseX, mouseY);
+            pickedCell = pickedHostile == null ? HoloTable.pickCell(mouseX, mouseY) : -1;
+        }
+        LivingEntity hostile = pickedHostile;
         HoloTable.hoverEntity = hostile == null ? -1 : hostile.getId();
-        HoloTable.hoverCell = hostile == null && !dragging ? HoloTable.pickCell(mouseX, mouseY) : -1;
+        HoloTable.hoverCell = hostile == null && !dragging ? pickedCell : -1;
         int w = width, h = height;
         // header and footer bars
         FcsDraw.panel(g, w / 2 - 110, 8, 220, 22, Component.translatable("gui.mio_icif.holo_table.title").getString(), 0x4DE1C1);
@@ -108,8 +125,9 @@ public final class HoloTableScreen extends Screen {
             int col = i == 0 ? 0x5CEBFF : CommandWheelScreen.modeColor(units.get(i - 1).mode());
             g.fill((int) x, (int) y, (int) (x + w), (int) (y + hh), FcsDraw.argb(col, selected ? 0.4F : 0.12F));
             FcsDraw.line(g, x, y, x + w, y, selected ? 1.5F : 0.8F, FcsDraw.argb(col, 0.9F));
-            String name = i == 0 ? Component.translatable("gui.mio_icif.command.chip_all").getString() : SquadClient.label(units.get(i - 1));
-            FcsDraw.textCentered(g, (i == 0 ? "0 " : i + " ") + name, x + w / 2, y + 4, FcsDraw.argb(0xEFFFFF, 1F), 0.5F);
+            // 0.1.11.40 (U-5): the key of a chip is the Wingman's number (its suit), the same number as on the table
+            String name = i == 0 ? "0 " + Component.translatable("gui.mio_icif.command.chip_all").getString() : SquadClient.label(units.get(i - 1));
+            FcsDraw.textCentered(g, name, x + w / 2, y + 4, FcsDraw.argb(0xEFFFFF, 1F), 0.5F);
             chips.add(new float[]{x, y, w, hh});
             chipIds.add(id);
             x += w + gap;
@@ -130,9 +148,11 @@ public final class HoloTableScreen extends Screen {
             float[] c = chips.get(i);
             if (mouseX >= c[0] && mouseX < c[0] + c[2] && mouseY >= c[1] && mouseY < c[1] + c[3]) {
                 SquadClient.select(chipIds.get(i));
+                pressOnChip = true;
                 return true;
             }
         }
+        pressOnChip = false;
         pressX = mouseX;
         pressY = mouseY;
         dragging = false;
@@ -152,6 +172,7 @@ public final class HoloTableScreen extends Screen {
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (dragging) { dragging = false; return true; }
+        if (pressOnChip) { pressOnChip = false; return true; }
         LivingEntity hostile = HoloTable.pickEntity(mouseX, mouseY);
         if (button == 0 && hostile != null) {
             order(WingmanCommands.A_FOCUS, null, hostile.getId());
@@ -174,13 +195,19 @@ public final class HoloTableScreen extends Screen {
     }
 
     @Override
+    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+        keys.release(keyCode);
+        return super.keyReleased(keyCode, scanCode, modifiers);
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keys.repeat(keyCode) && keyCode != GLFW.GLFW_KEY_ESCAPE) return true;   // 0.1.11.40 (U-2, U-9): a held key acts once
         if (keyCode == GLFW.GLFW_KEY_H) { order(WingmanCommands.A_HOLD, null, -1); return true; }
         if (keyCode == GLFW.GLFW_KEY_F) { order(WingmanCommands.A_FORM_UP, null, -1); return true; }
         if (keyCode >= GLFW.GLFW_KEY_0 && keyCode <= GLFW.GLFW_KEY_9) {
-            int i = keyCode - GLFW.GLFW_KEY_0;
-            List<Unit> units = SquadClient.orderable();
-            SquadClient.select(i == 0 || i > units.size() ? WingmanCommandPackets.ALL : units.get(i - 1).id());
+            Unit unit = SquadClient.byNumber(keyCode - GLFW.GLFW_KEY_0);
+            SquadClient.select(unit == null ? WingmanCommandPackets.ALL : unit.id());
             return true;
         }
         if (TacticalMapClient.KEY != null && TacticalMapClient.KEY.matches(keyCode, scanCode)

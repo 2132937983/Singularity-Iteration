@@ -337,7 +337,7 @@ public final class WingmanCommands {
         st.syncTimer = 0;
         if (!commander(player)) {
             if (st.sentActive) {
-                SuitPackets.send(player, new WingmanCommandPackets.Squad(false, st.datalink, (byte) st.squadMode, 0, 0, 0, List.of()));
+                SuitPackets.send(player, new WingmanCommandPackets.Squad(false, st.datalink, (byte) st.squadMode, 0, 0, 0, 0, List.of()));
                 st.sentActive = false;
             }
             return;
@@ -367,7 +367,7 @@ public final class WingmanCommands {
             }
         }
         int cooldown = NanoSuit.state(player).cooldown(RECALL_KEY);
-        return new WingmanCommandPackets.Squad(true, st.datalink, (byte) st.squadMode, cooldown, QuantumConfig.holdRadius(),
+        return new WingmanCommandPackets.Squad(true, st.datalink, (byte) st.squadMode, cooldown, QuantumConfig.recallCooldown(), QuantumConfig.holdRadius(),
             QuantumConfig.suppressRadius(), units);
     }
 }

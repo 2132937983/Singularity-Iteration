@@ -2691,6 +2691,86 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman_ui" (-Dsi.capture.scene=wingman_ui), 0.1.11.40: the squad HUD (W1 / W3 by suit, an order), the command
+     * wheel at GUI scale 3 and 4 (it scales to fit), the same in Chinese, and the holo table with its chips.
+     */
+    private static void sceneWingmanUi() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-6, -60, 10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, 0.5, -60, 0.5, 0, 10);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            ItemStack helmet = suitPiece("armor/item_armor_quantum_helmet", "entity_esp");
+            com.miophas.singularity_iteration.common.suit.SuitModules.install(helmet,
+                com.miophas.singularity_iteration.common.suit.UnitRef.of(com.miophas.singularity_iteration.common.suit.SuitModuleType.HOLOMAP), 2);
+            sp.setItemSlot(EquipmentSlot.HEAD, helmet);
+            sp.setItemSlot(EquipmentSlot.CHEST, suitPiece("armor/item_armor_quantum_chestplate", "entanglement_relay"));
+            sp.setItemSlot(EquipmentSlot.LEGS, suitPiece("armor/item_armor_quantum_leggings"));
+            sp.setItemSlot(EquipmentSlot.FEET, suitPiece("armor/item_armor_quantum_boots"));
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.CHEST), new ItemStack(Items.DIAMOND_CHESTPLATE), false);
+                inv.insertItem(mio_icif_armory.slotOf(0, ArmoryPiece.MAINHAND), new ItemStack(Items.DIAMOND_SWORD), false);
+                inv.insertItem(mio_icif_armory.slotOf(2, ArmoryPiece.CHEST), new ItemStack(Items.IRON_CHESTPLATE), false);
+                inv.insertItem(mio_icif_armory.slotOf(2, ArmoryPiece.MAINHAND), new ItemStack(Items.BOW), false);
+                com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 2,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE);
+                com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, 0,
+                    com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT);
+            }
+            mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, 0.5, -60, 14.5, true, sp);
+        });
+        server(60, sp -> {
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp)) {
+                if (w.set() == 2) w.order(com.miophas.singularity_iteration.common.armory.WingmanOrder.HOLD, new net.minecraft.world.phys.Vec3(8.5, -60, 18.5), null);
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = false; mc.options.guiScale().set(3); mc.resizeDisplay(); });
+        shot(60, "wingman_ui/1_hud_en");
+        Runnable wheel = () -> {
+            Minecraft mc = Minecraft.getInstance();
+            var target = new com.miophas.singularity_iteration.common.client.armory.CommandWheelClient.Target(
+                new net.minecraft.world.phys.Vec3(0.5, -60, 14.5), false, -1, null, 14);
+            mc.setScreen(new com.miophas.singularity_iteration.common.client.armory.CommandWheelScreen(target));
+        };
+        client(5, wheel);
+        shot(20, "wingman_ui/2_wheel_scale3");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.guiScale().set(4); mc.resizeDisplay(); });
+        client(5, wheel);
+        shot(20, "wingman_ui/3_wheel_scale4");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.guiScale().set(3); mc.resizeDisplay();
+            mc.getLanguageManager().setSelected("zh_cn"); mc.options.languageCode = "zh_cn"; mc.reloadResourcePacks(); });
+        shot(120, "wingman_ui/4_hud_zh");
+        client(5, wheel);
+        shot(20, "wingman_ui/5_wheel_zh");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, com.miophas.singularity_iteration.common.client.armory.HoloTable::open);
+        shot(60, "wingman_ui/6_holo_zh");
+        client(2, () -> Minecraft.getInstance().setScreen(null));
+        client(5, () -> { Minecraft mc = Minecraft.getInstance();
+            mc.getLanguageManager().setSelected("en_us"); mc.options.languageCode = "en_us"; mc.reloadResourcePacks(); });
+        client(80, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_ui".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanUi();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

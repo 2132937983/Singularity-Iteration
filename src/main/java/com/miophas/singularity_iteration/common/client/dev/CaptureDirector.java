@@ -2483,6 +2483,75 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "cables" (-Dsi.capture.scene=cables), 0.1.11.25: every wire block as a short run with a branch, in daylight,
+     * close and from above; then the cable items and other redrawn items in the survival inventory.
+     */
+    private static BlockPos superconductorAt;
+
+    private static void sceneCables() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            int i = 0;
+            for (Block b : BuiltInRegistries.BLOCK) {
+                if (!(b instanceof com.miophas.singularity_iteration.common.block.wire.mio_icif_block_wire)) continue;
+                int col = i % 6, row = i / 6;
+                int bx = col * 4 - 10, bz = 4 + row * 3;
+                for (int x = 0; x < 3; x++) level.setBlock(new BlockPos(bx + x, -60, bz), b.defaultBlockState(), 3);
+                level.setBlock(new BlockPos(bx + 1, -60, bz + 1), b.defaultBlockState(), 3);
+                level.setBlock(new BlockPos(bx + 1, -59, bz), b.defaultBlockState(), 3);
+                if (BuiltInRegistries.BLOCK.getKey(b).getPath().equals("wiring/cable/block_superconducting_cable")) superconductorAt = new BlockPos(bx + 1, -60, bz);
+                i++;
+            }
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.5, -55.5, 2.0, 0, 55);
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(80, "cables/1_overview");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), -6.5, -58.3, 2.6, 0, 35));
+        shot(40, "cables/2_close_left");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), 5.5, -58.3, 2.6, 0, 35));
+        shot(40, "cables/3_close_right");
+        server(1, sp -> { if (superconductorAt != null) sp.teleportTo(sp.serverLevel(), superconductorAt.getX() + 0.5, -58.6, superconductorAt.getZ() - 1.6, 0, 40); });
+        shot(40, "cables/5_superconducting");
+        String[][] pages = {
+            {"wiring/cable/block_tin_cable", "wiring/cable/block_tin_cable_1", "wiring/cable/block_cable_o", "wiring/cable/block_cable",
+             "wiring/cable/block_gold_cable", "wiring/cable/block_gold_cable_1", "wiring/cable/block_gold_cable_2", "wiring/cable/block_iron_cable",
+             "wiring/cable/block_iron_cable_1", "wiring/cable/block_iron_cable_2", "wiring/cable/block_iron_cable_3", "wiring/cable/block_glass_cable",
+             "wiring/cable/block_superconducting_cable", "wiring/cable/block_eu_detector_cable", "wiring/cable/block_eu_splitter_cable",
+             "wiring/cable/block_eu_fuse_cable", "wiring/cable/block_eu_breaker_cable", "build/item_cf_sprayer", "reactor/item_reactor_isotope_rod",
+             "item_tool_od_scanner", "item_tool_ov_scanner", "item_tool_meter", "item_tool_wooden_treetap"}};
+        client(1, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.hideGui = false;
+        });
+        server(1, sp -> {
+            sp.getInventory().clearContent();
+            int slot = 0;
+            for (String id : pages[0]) {
+                var stack = item(id);
+                if (stack.isEmpty()) continue;
+                sp.getInventory().setItem(slot++, stack);
+            }
+        });
+        client(10, () -> Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(Minecraft.getInstance().player)));
+        shot(20, "cables/4_inventory");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "cables".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneCables();
+        }
+    }
+
     static {
         if (OUT != null && "reactor".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

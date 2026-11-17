@@ -902,12 +902,19 @@ public class WingmanEntity extends Mob {
     /** Ticks left until this Wingman bursts (-1: none). */
     private int cleanSlate = -1;
 
+    @Nullable private Vec3 slateSlot, slateCentre;
+
     /** 0.1.11.59: climb for {@code ticks}, then burst into a firework; the suit goes home. */
-    void cleanSlate(int ticks) {
+    void cleanSlate(int ticks) { cleanSlate(ticks, null, null); }
+
+    /** 0.1.11.64: climb to {@code slot} in the ring about {@code centre}, burst after {@code ticks}; the suit goes home. */
+    void cleanSlate(int ticks, @Nullable Vec3 slot, @Nullable Vec3 centre) {
         if (swapPhase != SWAP_NONE) flushSwap();
         rescue = WingmanRescue.Danger.NONE;
         clearOrder();
         target = null;
+        slateSlot = slot;
+        slateCentre = centre;
         cleanSlate = Math.max(1, ticks);
     }
 
@@ -915,10 +922,19 @@ public class WingmanEntity extends Mob {
     public boolean cleaningSlate() { return cleanSlate >= 0; }
 
     private void tickCleanSlate() {
-        // straight up, faster and faster, the boot thrusters roaring
         Vec3 v = getDeltaMovement();
-        setDeltaMovement(v.x * 0.8, Math.min(1.4, Math.max(0.2, v.y) + 0.08), v.z * 0.8);
-        setXRot(-60);
+        if (slateSlot != null) {
+            // 0.1.11.64: into the ring, then hold there facing its centre
+            Vec3 to = slateSlot.subtract(position());
+            Vec3 want = to.scale(0.25);
+            if (want.length() > 1.6) want = want.normalize().scale(1.6);
+            setDeltaMovement(WingmanFlight.accelerate(v, want, 0.4));
+            if (slateCentre != null && to.lengthSqr() < 4) face(slateCentre);
+        } else {
+            // straight up, faster and faster, the boot thrusters roaring
+            setDeltaMovement(v.x * 0.8, Math.min(1.4, Math.max(0.2, v.y) + 0.08), v.z * 0.8);
+            setXRot(-60);
+        }
         if (--cleanSlate > 0) return;
         if (level() instanceof ServerLevel world) {
             Vec3 at = position().add(0, 1.0, 0);
@@ -927,8 +943,17 @@ public class WingmanEntity extends Mob {
             for (ServerPlayer p : world.players())   // only clients with the channel (a vanilla client or a test player has none)
                 if (p.distanceToSqr(at) < 256 * 256 && p.connection != null && p.connection.hasChannel(WingmanCleanSlate.Burst.TYPE))
                     net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, burst);
-            world.playSound(null, at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST_FAR, SoundSource.NEUTRAL, 6.0F, 1.0F);
-            world.playSound(null, at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_TWINKLE_FAR, SoundSource.NEUTRAL, 6.0F, 1.0F);
+            // 0.1.11.64: a deep blast under the crack; the pieces fly home in straight lines (copies: the items go by secure())
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.NEUTRAL, 6.0F, 0.5F);
+            world.playSound(null, at.x, at.y, at.z, SoundEvents.FIREWORK_ROCKET_LARGE_BLAST_FAR, SoundSource.NEUTRAL, 6.0F, 0.8F);
+            Vec3 home = ArmoryPieceEntity.homeTarget(world, armory, at);
+            for (ArmoryPiece p : ArmoryPiece.VALUES) {
+                ItemStack stack = getItemBySlot(p.slot);
+                if (stack.isEmpty()) continue;
+                Vec3 from = ArmoryFlight.dockPoint(this, 1.0F, p);
+                int ticks = Math.max(14, Math.min(60, (int) (from.distanceTo(home) / 1.6)));
+                world.addFreshEntity(ArmoryPieceEntity.straight(world, this, stack.copy(), p, from, home, ticks));
+            }
         }
         cleanSlate = -1;
         secure();     // the suit goes home (the Armory, else the owner's inventory)

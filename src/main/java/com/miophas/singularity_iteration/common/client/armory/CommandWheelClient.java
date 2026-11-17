@@ -70,7 +70,11 @@ public final class CommandWheelClient {
             // 0.1.11.59 (P7): a Clean Slate burst is drawn as a firework explosion (no rocket entity, no damage)
             com.miophas.singularity_iteration.common.armory.WingmanCleanSlate.HOOK = b -> {
                 var level = net.minecraft.client.Minecraft.getInstance().level;
-                if (level != null) level.createFireworks(b.at().x, b.at().y, b.at().z, 0, 0, 0, b.explosions());
+                if (level == null) return;
+                // 0.1.11.64 (Q3): the constructivist burst; the classic style keeps the firework
+                if (com.miophas.singularity_iteration.common.client.suit.FcsClientConfig.classicFlightFx())
+                    level.createFireworks(b.at().x, b.at().y, b.at().z, 0, 0, 0, b.explosions());
+                else com.miophas.singularity_iteration.common.client.render.ConstructBursts.cleanSlate(b.at());
             };
         }
 

@@ -24,18 +24,33 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * 0.1.11.59 (gaze and Iron Man phase P7, decisions A / A): the Clean Slate protocol. The owner gives it twice within
- * {@link #CONFIRM_TICKS} (the command wheel, squad control; the first time only asks to confirm): every loaded Wingman of
- * the owner climbs into the sky and, one after another, bursts into a firework in the colours of its armour. It is a show:
- * nothing is destroyed and no one is hurt (the burst is drawn by the clients from a packet, no firework rocket flies); the
- * suits go home to their Armory as in a return.
+ * {@link #CONFIRM_TICKS} (the command wheel, squad control; the first time only asks to confirm). It is a show: nothing is
+ * destroyed and no one is hurt (the burst is drawn by the clients from a packet); the suits go home to their Armory.
+ *
+ * <p>0.1.11.64 (hit feel and constructivist FX phase Q3, decision five A): every loaded Wingman of the owner climbs into a
+ * ring {@link #RING_HEIGHT} blocks above the owner, facing its centre; then, one every {@link #STAGGER} ticks, each bursts:
+ * a growing white ring with a red one inside, eight red wedges thrown out and a white pillar through it, all cut after
+ * 12 ticks, with a deep blast; its pieces fly home in straight lines (visual echoes) while the items go to the Armory. The
+ * classic style (client option) still draws the firework of 0.1.11.59.
  */
 public final class WingmanCleanSlate {
     private WingmanCleanSlate() {}
 
     /** Ticks within which the second request confirms the first. */
     public static final int CONFIRM_TICKS = 60;
-    /** Ticks of the climb before the first burst, and between two bursts. */
-    public static final int RISE_TICKS = 30, STAGGER = 8;
+    /** Ticks of the climb into the ring before the first burst, and between two bursts (0.1.11.64: 40, was 30). */
+    public static final int RISE_TICKS = 40, STAGGER = 8;
+    /** Height of the ring above the owner, blocks. */
+    public static final double RING_HEIGHT = 12;
+
+    /** 0.1.11.64: the ring radius for {@code n} Wingmen (room for them, at least 4 blocks). */
+    public static double ringRadius(int n) { return Math.max(4, 1.6 + n * 1.1); }
+
+    /** 0.1.11.64: the place of Wingman {@code i} of {@code n} in the ring above {@code owner}. */
+    public static net.minecraft.world.phys.Vec3 ringSlot(net.minecraft.world.phys.Vec3 owner, int i, int n) {
+        double a = Math.PI * 2 * i / Math.max(1, n), r = ringRadius(n);
+        return owner.add(Math.cos(a) * r, RING_HEIGHT, Math.sin(a) * r);
+    }
 
     private static final Map<UUID, Long> ASKED = new HashMap<>();
 
@@ -53,12 +68,11 @@ public final class WingmanCleanSlate {
             return Component.translatable("message.mio_icif.wingman.clean_slate.confirm", CONFIRM_TICKS / 20);
         }
         ASKED.remove(player.getUUID());
-        int n = 0;
-        for (WingmanEntity w : WingmanService.of(player)) {
-            if (w.state() != WingmanEntity.ACTIVE || w.isRemoved()) continue;
-            w.cleanSlate(RISE_TICKS + n * STAGGER);
-            n++;
-        }
+        // 0.1.11.64 (decision five A): the squad climbs into a ring above the owner, then bursts one after another
+        java.util.List<WingmanEntity> squad = new java.util.ArrayList<>();
+        for (WingmanEntity w : WingmanService.of(player)) if (w.state() == WingmanEntity.ACTIVE && !w.isRemoved()) squad.add(w);
+        int n = squad.size();
+        for (int i = 0; i < n; i++) squad.get(i).cleanSlate(RISE_TICKS + i * STAGGER, ringSlot(player.position(), i, n), player.position().add(0, RING_HEIGHT, 0));
         return n == 0 ? Component.translatable("message.mio_icif.command.no_unit")
             : Component.translatable("message.mio_icif.wingman.clean_slate.go", n);
     }

@@ -47,6 +47,22 @@ public final class ConstructBursts {
             ConstructFx.WHITE, takeoff ? null : ConstructFx.RED, -1));
     }
 
+    private record Slate(Vec3 at, long start) { }
+
+    private static final List<Slate> SLATES = new ArrayList<>();
+    /** Ticks a Clean Slate burst stands before the hard cut. */
+    public static final int SLATE_LIFE = 12;
+
+    /**
+     * 0.1.11.64 (hit feel and constructivist FX phase Q3): one Wingman of the Clean Slate protocol bursts at {@code at}: a
+     * white ring with a red one inside grows facing the viewer, eight red wedges are thrown out across it, a white pillar
+     * stands through it; all is cut after {@link #SLATE_LIFE} ticks.
+     */
+    public static void cleanSlate(Vec3 at) {
+        SLATES.add(new Slate(at, now()));
+        if (SLATES.size() > 16) SLATES.remove(0);
+    }
+
     /**
      * The sound barrier at {@code centre}, across the flight {@code axis}. The ring rides with the flyer {@code entityId}
      * (it would be behind a chase camera a few ticks later: past the barrier a flyer covers 2.4 blocks a tick).
@@ -57,7 +73,7 @@ public final class ConstructBursts {
 
     @SubscribeEvent
     static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || BURSTS.isEmpty()) return;
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || BURSTS.isEmpty() && SLATES.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         float t = now() + partial;
@@ -79,6 +95,29 @@ public final class ConstructBursts {
                 at = e.getPosition(partial).add(0, e.getBbHeight() * 0.5, 0).subtract(b.normal.normalize().scale(0.6));
             if (b.inner != null) ConstructFx.ring(vc, m, at, b.normal, r * 0.72F, b.width * 0.7F, b.inner, 1F, 40);
             ConstructFx.ring(vc, m, at, b.normal, r, b.width, b.outer, 1F, 48);
+        }
+        for (Iterator<Slate> it = SLATES.iterator(); it.hasNext(); ) {
+            Slate sl = it.next();
+            float age = (t - sl.start) / SLATE_LIFE;
+            if (age >= 1 || age < -0.5F) { it.remove(); continue; }
+            float k = Math.max(0, age), out = 1 - (1 - k) * (1 - k);
+            Vec3 view = sl.at.subtract(cam);
+            Vec3 toward = view.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : view.normalize();
+            // the pillar first (behind the rest): a black edge and a white core, thinning out
+            Vec3 bottom = sl.at.add(0, -10, 0), top = sl.at.add(0, 16, 0);
+            ConstructFx.bar(vc, m, bottom, top, 0.55F * (1 - k) + 0.08F, cam, ConstructFx.BLACK, 1F);
+            ConstructFx.bar(vc, m, bottom, top, 0.38F * (1 - k) + 0.04F, cam, ConstructFx.WHITE, 1F);
+            // eight wedges thrown out in the view plane, on a diagonal grid (a constructivist star)
+            Vec3 u = FxDraw.perp(toward).normalize(), w = toward.cross(u).normalize();
+            for (int i = 0; i < 8; i++) {
+                double a = Math.PI / 8 + i * Math.PI / 4;
+                Vec3 dir = u.scale(Math.cos(a)).add(w.scale(Math.sin(a)));
+                float reach = (i % 2 == 0 ? 4.8F : 3.2F) * out;
+                ConstructFx.thrust(vc, m, sl.at.add(dir.scale(0.5 + reach * 0.35)), dir, 1.2F + reach * 0.6F, 0.7F, cam, 1F);
+            }
+            // the rings, facing the viewer
+            ConstructFx.ring(vc, m, sl.at, toward, (0.6F + 5.2F * out) * 0.7F, 0.32F, ConstructFx.RED, 1F, 48);
+            ConstructFx.ring(vc, m, sl.at, toward, 0.6F + 5.2F * out, 0.45F, ConstructFx.WHITE, 1F, 56);
         }
         buffers.endBatch(SiRenderTypes.FLAT);
         pose.popPose();

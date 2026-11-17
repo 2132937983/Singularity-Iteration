@@ -313,6 +313,39 @@ public final class WingmanPose {
         return new float[]{(float) (dx * fx + dz * fz), (float) (dx * rx + dz * rz)};
     }
 
+    // ------------------------------------------------------------------ idle and landing (0.1.11.47, motion audit M4)
+
+    /** Ticks of the crouch at a touchdown and of the push at a take-off. */
+    public static final int CROUCH_TICKS = 8, PUSH_TICKS = 6;
+
+    /** A bell 0 -> 1 -> 0 over {@code length} ticks, peaking at {@code peak} (0..1 of it); 0 outside. */
+    static float bell(float t, float length, float peak) {
+        float s = finite(t) / length;
+        if (s <= 0 || s >= 1) return 0;
+        return s < peak ? ease(s / peak) : 1 - ease((s - peak) / (1 - peak));
+    }
+
+    /** The cushion of a touchdown: 0..1, {@code t} ticks after it (a quick dip, a slower rise). */
+    public static float landingCrouch(float t) { return bell(t, CROUCH_TICKS, 0.3F); }
+
+    /** The push-off of a take-off: 0..1, {@code t} ticks after it. */
+    public static float takeoffPush(float t) { return bell(t, PUSH_TICKS, 0.35F); }
+
+    /** The slow float of the hover, blocks (the suit drifts up and down a few centimetres in the air). */
+    public static float hoverBob(float age, float air, float flight) {
+        return Mth.sin(finite(age) * 0.11F) * 0.035F * clamp01(air) * (1 - clamp01(flight));
+    }
+
+    /**
+     * The look-around of an idle Wingman: a head yaw offset, radians, that drifts slowly from side to side (two slow
+     * waves), only when nothing is going on ({@code idle} 1: no target, no speed).
+     */
+    public static float idleLook(float age, float idle) {
+        float a = finite(age);
+        float look = Mth.sin(a * 0.021F) * 0.45F + Mth.sin(a * 0.053F + 1.3F) * 0.15F;
+        return look * clamp01(idle);
+    }
+
     // ------------------------------------------------------------------ weapon motions (0.1.11.46, motion audit M2)
 
     /**

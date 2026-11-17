@@ -560,7 +560,7 @@ public class WingmanEntity extends Mob {
     private void holdLanded(ServerPlayer player) {
         setDeltaMovement(Vec3.ZERO);
         // face the way the owner looks, slowly; head level
-        setYaw(getYRot() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - getYRot()), -6, 6));
+        setYaw(facing() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - facing()), -6, 6));
         setXRot(getXRot() * 0.8F);
     }
 
@@ -929,7 +929,7 @@ public class WingmanEntity extends Mob {
         if (hit) {
             float knock = getKnockback(target, source);
             if (knock > 0.0F && target instanceof LivingEntity living) {
-                living.knockback(knock * 0.5F, Mth.sin(getYRot() * Mth.DEG_TO_RAD), -Mth.cos(getYRot() * Mth.DEG_TO_RAD));
+                living.knockback(knock * 0.5F, Mth.sin(facing() * Mth.DEG_TO_RAD), -Mth.cos(facing() * Mth.DEG_TO_RAD));
                 setDeltaMovement(getDeltaMovement().multiply(0.6, 1.0, 0.6));
             }
             if (level() instanceof ServerLevel world) net.minecraft.world.item.enchantment.EnchantmentHelper.doPostAttackEffects(world, target, source);
@@ -1162,7 +1162,7 @@ public class WingmanEntity extends Mob {
         Vec3 d = at.subtract(getEyePosition());
         float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
         float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
-        return Math.abs(Mth.wrapDegrees(yaw - getYRot())) + Math.abs(pitch - getXRot());
+        return Math.abs(Mth.wrapDegrees(yaw - facing())) + Math.abs(pitch - getXRot());
     }
 
     /** Turns toward {@code at} by at most {@code maxStep} degrees per tick (no snapping). */
@@ -1170,8 +1170,8 @@ public class WingmanEntity extends Mob {
         Vec3 d = at.subtract(getEyePosition());
         float yaw = (float) Math.toDegrees(Math.atan2(-d.x, d.z));
         float pitch = (float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z)));
-        float dy = Mth.clamp(Mth.wrapDegrees(yaw - getYRot()), -maxStep, maxStep);
-        setYaw(getYRot() + dy);
+        float dy = Mth.clamp(Mth.wrapDegrees(yaw - facing()), -maxStep, maxStep);
+        setYaw(facing() + dy);
         setXRot(getXRot() + Mth.clamp(pitch - getXRot(), -maxStep, maxStep));
     }
 
@@ -1251,7 +1251,7 @@ public class WingmanEntity extends Mob {
         setDeltaMovement(v);
         if (target == null) {
             if (v.horizontalDistanceSqr() > 0.02) faceSmooth(getEyePosition().add(v.x, 0, v.z), 20);
-            else if (player != null) setYaw(getYRot() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - getYRot()), -15, 15));
+            else if (player != null) setYaw(facing() + Mth.clamp(Mth.wrapDegrees(player.getYRot() - facing()), -15, 15));
         }
     }
 
@@ -1261,10 +1261,20 @@ public class WingmanEntity extends Mob {
         setXRot((float) -Math.toDegrees(Math.atan2(d.y, Math.sqrt(d.x * d.x + d.z * d.z))));
     }
 
+    /**
+     * The way the Wingman looks and aims (its head). 0.1.11.47 (motion audit M4): the head turns first, the body follows at
+     * {@link #BODY_TURN} degrees per tick (before, both snapped together, up to 45 degrees in a tick of combat).
+     */
+    float facing() { return yHeadRot; }
+
+    /** Most degrees per tick the body turns after the head. */
+    static final float BODY_TURN = 18.0F;
+
     private void setYaw(float yaw) {
-        setYRot(yaw);
-        yBodyRot = yaw;
         yHeadRot = yaw;
+        float body = getYRot() + Mth.clamp(Mth.wrapDegrees(yaw - getYRot()), -BODY_TURN, BODY_TURN);
+        setYRot(body);
+        yBodyRot = body;
     }
 
     /**
@@ -1556,6 +1566,9 @@ public class WingmanEntity extends Mob {
     // 0.1.11.45 (M1): the smoothed climb, turn rate and braking, and the tick of the last thruster boost (the leg tuck)
     private float moveU, moveUO, turn, turnO, brake, brakeO;
     private int seenBoosts = Integer.MIN_VALUE, boostAt = -100;
+    // 0.1.11.47 (M4): the ticks of the last touchdown and take-off (the cushion, the push-off)
+    private boolean wasDown;
+    private int landedAt = -100, tookOffAt = -100;
     /** Smoothing per tick of the turn rate and the braking (the attitude test checks them as the entity uses them). */
     public static final float TURN_SMOOTH = 0.10F, BRAKE_SMOOTH = 0.15F;
     private int seenShots = Integer.MIN_VALUE, lastShot = -100, shotCooldown = 20;
@@ -1573,6 +1586,11 @@ public class WingmanEntity extends Mob {
         combatO = combat;
         recoilO = recoil;
         boolean down = landed();
+        if (down != wasDown) {
+            if (down) landedAt = tickCount;
+            else tookOffAt = tickCount;
+            wasDown = down;
+        }
         double dx = getX() - xo, dz = getZ() - zo;
         float want = down ? 0 : (float) Mth.clamp(Math.sqrt(dx * dx + dz * dz) * 1.6, 0, 1);
         flight += (want - flight) * 0.2F;
@@ -1628,6 +1646,11 @@ public class WingmanEntity extends Mob {
             Mth.lerp(partialTick, moveUO, moveU), Mth.lerp(partialTick, turnO, turn), Mth.lerp(partialTick, brakeO, brake),
             1 - landBlend(partialTick));
     }
+
+    /** Client: ticks since the last touchdown, with the partial tick (0.1.11.47: the cushion). */
+    public float sinceLanding(float partialTick) { return tickCount - landedAt + partialTick; }
+    /** Client: ticks since the last take-off, with the partial tick (0.1.11.47: the push-off). */
+    public float sinceTakeoff(float partialTick) { return tickCount - tookOffAt + partialTick; }
 
     /** Client: ticks since the last thruster boost (with the partial tick), for the leg tuck (0.1.11.45). */
     public float boostAge(float partialTick) {

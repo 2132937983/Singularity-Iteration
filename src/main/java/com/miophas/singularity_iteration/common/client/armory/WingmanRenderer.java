@@ -68,6 +68,11 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
     protected void setupRotations(WingmanEntity entity, PoseStack pose, float bob, float bodyYaw, float partialTick, float scale) {
         super.setupRotations(entity, pose, bob, bodyYaw, partialTick, scale);
         // 0.1.11.44 (motion audit M-4): the tilt follows the flight direction (pitch forward or back, roll to the side)
+        // 0.1.11.47 (M4): the hover float and the dip of a touchdown
+        float air = 1 - entity.landBlend(partialTick);
+        float drop = WingmanPose.hoverBob(entity.tickCount + partialTick, air, flightFactor(entity, partialTick))
+            - 0.12F * WingmanPose.landingCrouch(entity.sinceLanding(partialTick));
+        if (drop != 0) pose.translate(0, drop * scale, 0);
         float[] lean = entity.lean(partialTick);
         if (Math.abs(lean[0]) + Math.abs(lean[1]) <= 0.01F) return;
         // pivot at the waist; negative x rotation tips the head forward, negative z rotation tips it to the right
@@ -166,6 +171,17 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             leftLeg.zRot = legs[WingmanPose.LEG_LZ];
             // the head looks forward in fast flight
             head.xRot -= leanPitch * Mth.DEG_TO_RAD * 0.6F;   // 0.1.11.44: the head keeps looking ahead (forward and back)
+            // 0.1.11.47 (M4): a crouch on touchdown, a push-off at take-off, a slow look around when idle
+            float crouch = WingmanPose.landingCrouch(entity.sinceLanding(partial));
+            float push = WingmanPose.takeoffPush(entity.sinceTakeoff(partial));
+            if (crouch > 0 || push > 0) {
+                body.xRot += 0.35F * crouch - 0.08F * push;
+                rightArm.xRot += 0.25F * crouch - 0.35F * push;
+                leftArm.xRot += 0.25F * crouch - 0.35F * push;
+                rightLeg.xRot += -0.25F * crouch + 0.45F * push;
+                leftLeg.xRot += -0.20F * crouch + 0.40F * push;
+            }
+            head.yRot += WingmanPose.idleLook(age, (1 - entity.combat(partial)) * (1 - f));
             hat.copyFrom(head);
         }
     }

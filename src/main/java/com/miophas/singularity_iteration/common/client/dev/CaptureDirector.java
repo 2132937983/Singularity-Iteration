@@ -2552,6 +2552,42 @@ public final class CaptureDirector {
         }
     }
 
+    /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
+    private static void sceneResin() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            Direction[] faces = {Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST};
+            for (int i = 0; i < 4; i++) place(level, new BlockPos(i * 2 - 3, -60, 4), "producer/block_resin_collector", faces[i]);
+            sp.getAbilities().mayfly = true;
+            sp.getAbilities().flying = true;
+            sp.onUpdateAbilities();
+            sp.teleportTo(level, 0.0, -58.4, 1.6, 0, 30);
+            sp.getInventory().clearContent();
+            sp.getInventory().setItem(0, item("producer/block_resin_collector"));
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        shot(80, "resin/1_facings");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), -2.4, -59.2, 2.7, 0, 25));
+        shot(30, "resin/2_close");
+        server(1, sp -> sp.teleportTo(sp.serverLevel(), -0.6, -59.0, 6.4, 180, 30));
+        shot(30, "resin/3_back");
+        client(1, () -> Minecraft.getInstance().options.hideGui = false);
+        client(10, () -> Minecraft.getInstance().setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(Minecraft.getInstance().player)));
+        shot(20, "resin/4_item");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "resin".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneResin();
+        }
+    }
+
     static {
         if (OUT != null && "reactor".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();

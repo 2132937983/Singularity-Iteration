@@ -3047,6 +3047,58 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman_eject" (-Dsi.capture.scene=wingman_eject), 0.1.11.55 (gaze and Iron Man phase P3): the owner in a
+     * golden suit with a paired remote sends the suit on: the pieces come off and a Wingman stands up in them in front of
+     * the owner; seen from the front, a frame every 2 ticks.
+     */
+    private static void sceneWingmanEject() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            sp.setGameMode(GameType.SURVIVAL);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            look(sp, 0.5, -60, 0.5, 0, 5);
+            sp.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.GOLDEN_HELMET));
+            sp.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.GOLDEN_CHESTPLATE));
+            sp.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.GOLDEN_LEGGINGS));
+            sp.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.GOLDEN_BOOTS));
+            sp.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.GOLDEN_SWORD));
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                ItemStack remote = new ItemStack(ArmoryRegistry.REMOTE.get());
+                remote.set(ArmoryComponents.TARGET.get(), GlobalPos.of(level.dimension(), armoryAt));
+                sp.getInventory().setItem(8, remote);
+            }
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT); });
+        shot(40, "wingman_eject/00_before");
+        server(1, sp -> Singularity_Iteration.LOGGER.info("capture eject: {}",
+            com.miophas.singularity_iteration.common.armory.WingmanService.eject(sp).getString()));
+        for (int f = 0; f < 40; f++) shot(2, String.format("wingman_eject/f%02d", f));
+        server(1, sp -> {
+            for (var w : com.miophas.singularity_iteration.common.armory.WingmanService.of(sp))
+                Singularity_Iteration.LOGGER.info("capture eject after: owner chest {} / Wingman {} {} mode {}", sp.getItemBySlot(EquipmentSlot.CHEST),
+                    w.getItemBySlot(EquipmentSlot.CHEST), w.getMainHandItem(), w.mode());
+        });
+        shot(20, "wingman_eject/90_after");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_eject".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanEject();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

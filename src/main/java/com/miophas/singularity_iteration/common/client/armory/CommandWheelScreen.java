@@ -44,12 +44,13 @@ public final class CommandWheelScreen extends Screen {
     }
 
     /** Squad control fan: the three modes (0.1.11.43: the Fulton mode is gone), follow squad, return home. */
-    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0xDDDDDD, 0xFFD24D, 0x9B7CFF};
+    private static final int[] SUB_COLORS = {0xFF5238, 0xFFB333, 0x4DE6FF, 0xDDDDDD, 0xFFD24D, 0xFF8A3D, 0x9B7CFF};
     private static final String[] SUB_KEYS = {"gui.mio_icif.wingman.mode.offensive", "gui.mio_icif.wingman.mode.dispersal",
         "gui.mio_icif.wingman.mode.escort", "gui.mio_icif.command.sub.squad", "gui.mio_icif.command.sub.suit_up",
-        "gui.mio_icif.command.sub.return"};
-    /** 0.1.11.54 (P2): the suit swap sits between "follow squad" and "return home". */
-    private static final int SUB_SQUAD = WingmanMode.VALUES.length, SUB_SUIT_UP = SUB_SQUAD + 1, SUB_RETURN = SUB_SUIT_UP + 1;
+        "gui.mio_icif.command.sub.eject", "gui.mio_icif.command.sub.return"};
+    /** 0.1.11.54 (P2): the suit swap, 0.1.11.55 (P3): the suit eject, between "follow squad" and "return home". */
+    private static final int SUB_SQUAD = WingmanMode.VALUES.length, SUB_SUIT_UP = SUB_SQUAD + 1, SUB_EJECT = SUB_SUIT_UP + 1,
+        SUB_RETURN = SUB_EJECT + 1;
     private static final float SUB_STEP = (float) Math.toRadians(23);
 
     private final CommandWheelClient.Target target;
@@ -114,7 +115,8 @@ public final class CommandWheelScreen extends Screen {
         List<Unit> sel = selection();
         boolean anyOrderable = !sel.isEmpty();
         return switch (e) {
-            case MOVE, HOLD, SUPPRESS, CONTROL -> anyOrderable;
+            case MOVE, HOLD, SUPPRESS -> anyOrderable;
+            case CONTROL -> true;   // 0.1.11.55 (P3): the fan holds the suit eject, which needs no Wingman (the others are refused without one)
             case FOCUS -> anyOrderable && target.entityId() >= 0;
             case FORM_UP -> sel.stream().anyMatch(u -> SquadClient.order(u) != WingmanOrder.NONE);
             case VOLLEY, DATALINK -> true;
@@ -420,6 +422,7 @@ public final class CommandWheelScreen extends Screen {
                 if (sub < WingmanMode.VALUES.length) SquadClient.send(WingmanCommands.A_MODE, unit, (byte) sub, null, -1);
                 else if (sub == SUB_SQUAD) SquadClient.send(WingmanCommands.A_SQUAD, unit, (byte) 0, null, -1);
                 else if (sub == SUB_SUIT_UP) SquadClient.send(WingmanCommands.A_SUIT_UP, unit, (byte) 0, null, -1);
+                else if (sub == SUB_EJECT) SquadClient.send(WingmanCommands.A_EJECT, WingmanCommandPackets.ALL, (byte) 0, null, -1);
                 else SquadClient.send(WingmanCommands.A_RETURN, unit, (byte) 0, null, -1);
             }
             case DATALINK -> SquadClient.send(WingmanCommands.A_DATALINK, WingmanCommandPackets.ALL, (byte) (SquadClient.datalink() ? 0 : 1), null, -1);

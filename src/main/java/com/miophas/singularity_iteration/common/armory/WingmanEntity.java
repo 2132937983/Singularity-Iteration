@@ -828,7 +828,7 @@ public class WingmanEntity extends Mob {
     }
 
     /** True when the owner's {@code stack} in {@code piece} goes to the Wingman. */
-    static boolean givesToWingman(ItemStack stack, ArmoryPiece piece) {
+    public static boolean givesToWingman(ItemStack stack, ArmoryPiece piece) {
         if (stack.isEmpty() || stack.getItem() instanceof ArmoryRemoteItem || !ArmoryRules.isSummonable(stack)) return false;
         if (!piece.isArmor() && !handGear(stack)) return false;
         return ArmoryRules.fits(stack, piece);
@@ -903,6 +903,30 @@ public class WingmanEntity extends Mob {
         swapWait = longest;
     }
 
+    /**
+     * 0.1.11.55 (P3): a new Wingman takes the owner's ejected pieces: they fly from the owner's body to it, and it stands
+     * up in them when they arrive ({@link #standUp}); it holds them meanwhile (saved with it).
+     */
+    void receiveSuit(ServerPlayer player, ItemStack[] items) {
+        ServerLevel level = (ServerLevel) level();
+        int longest = 1;
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            int i = p.ordinal();
+            if (items[i].isEmpty()) continue;
+            swapIn[i] = items[i];
+            swapTake[i] = true;
+            Vec3 from = ArmoryFlight.dockPoint(player, 1.0F, p), to = ArmoryFlight.dockPoint(this, 1.0F, p);
+            level.addFreshEntity(ArmoryPieceEntity.echo(level, player, items[i].copy(), p, from, to));
+            longest = Math.max(longest, ArmoryFlight.PURGE_TICKS + ArmoryFlight.returnTicksFor(ArmoryFlight.length(from, to)));
+        }
+        swapPhase = SWAP_TO_WINGMAN;
+        swapWait = longest;
+        ejected = true;
+    }
+
+    /** 0.1.11.55: true while the pieces of an eject fly to this new Wingman (no "back in formation" message). */
+    private boolean ejected;
+
     /** The pieces arrive: the owner is suited up, their old pieces fly to the Wingman. */
     private void suitOwner(ServerPlayer player) {
         ServerLevel level = (ServerLevel) level();
@@ -967,7 +991,8 @@ public class WingmanEntity extends Mob {
             startReturn(Component.translatable("message.mio_icif.wingman.swap.home", getName()));
             return;
         }
-        if (player != null) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.done", getName()), false);
+        if (player != null && !ejected) player.displayClientMessage(Component.translatable("message.mio_icif.wingman.swap.done", getName()), false);
+        ejected = false;
     }
 
     /** Ends a swap before the owner was suited up: the pieces go back on the Wingman. */

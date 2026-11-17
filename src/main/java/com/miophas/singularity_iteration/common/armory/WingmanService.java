@@ -242,6 +242,66 @@ public final class WingmanService {
             reserve, upkeep <= 0 ? "-" : formatSeconds(reserve / upkeep));
     }
 
+    /**
+     * 0.1.11.55 (gaze and Iron Man phase P3, decisions A / B / A): the owner's worn suit leaves the body and flies on as a
+     * Wingman (the reverse of the suit swap). The four armour pieces and the gear in the hands (unstackable items) come off,
+     * except a piece with Curse of Binding, and assemble into a Wingman in front of the owner, in Escort mode (its own,
+     * individual mode). It belongs to the Armory of the owner's paired remote and takes that Armory's first free suit
+     * position: there it goes when it comes home. At least two armour pieces are needed and none may need repair; no
+     * launch cost (nothing flies from the Armory), the upkeep reserve is charged as at a deployment.
+     */
+    public static Component eject(ServerPlayer player) {
+        if (!player.isAlive() || player.isSpectator()) return Component.translatable("message.mio_icif.armory.failed");
+        mio_icif_armory armory = ArmoryRemoteService.armory(player, ArmoryRemoteService.target(player));
+        if (armory == null) return Component.translatable("message.mio_icif.wingman.eject.no_armory");
+        if (!armory.isOwner(player)) return Component.translatable("message.mio_icif.armory.not_owner");
+        if (!(armory.getLevel() instanceof ServerLevel home)) return Component.translatable("message.mio_icif.armory.failed");
+        int limit = WingmanConfig.maxPerPlayer();
+        if (count(player) >= limit) return Component.translatable("message.mio_icif.wingman.limit", limit);
+        int set = armory.firstFreeSet();
+        if (set < 0) return Component.translatable("message.mio_icif.wingman.eject.no_set");
+        ItemStack[] items = new ItemStack[ArmoryPiece.VALUES.length];
+        java.util.Arrays.fill(items, ItemStack.EMPTY);
+        int armour = 0;
+        List<ItemStack> suit = new ArrayList<>();
+        for (ArmoryPiece p : ArmoryPiece.VALUES) {
+            ItemStack worn = player.getItemBySlot(p.slot);
+            boolean bound = !player.isCreative() && net.minecraft.world.item.enchantment.EnchantmentHelper.has(worn,
+                net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE);
+            if (bound || !WingmanEntity.givesToWingman(worn, p)) continue;
+            items[p.ordinal()] = worn;
+            suit.add(worn);
+            if (p.isArmor()) armour++;
+        }
+        if (armour < 2) return Component.translatable("message.mio_icif.wingman.eject.too_few");
+        ItemStack needsRepair = WingmanEntity.wornPiece(suit);
+        if (!needsRepair.isEmpty()) return Component.translatable("message.mio_icif.wingman.needs_repair", needsRepair.getHoverName());
+        if (net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new com.miophas.singularity_iteration.core.api.armory.ArmoryEvent.WingmanDeploy(
+                player, armory.getBlockPos(), set, WingmanMode.ESCORT.name())).isCanceled()) return Component.translatable("message.mio_icif.armory.cancelled");
+        ServerLevel level = player.serverLevel();
+        Vec3 look = player.getLookAngle().multiply(1, 0, 1);
+        look = look.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : look.normalize();
+        Vec3 at = player.position().add(look.scale(1.8)).add(0, 0.05, 0);
+        ItemStack[] none = new ItemStack[ArmoryPiece.VALUES.length];
+        java.util.Arrays.fill(none, ItemStack.EMPTY);
+        WingmanEntity w = WingmanEntity.create(level, player, GlobalPos.of(home.dimension(), armory.getBlockPos()), set, WingmanMode.ESCORT, none, at);
+        w.setMode(WingmanMode.ESCORT, true);
+        if (!level.addFreshEntity(w)) {
+            w.secure();
+            return Component.translatable("message.mio_icif.armory.failed");
+        }
+        // the pieces come off now and fly to the new Wingman, which holds them until they arrive (see the suit swap)
+        for (ArmoryPiece p : ArmoryPiece.VALUES) if (!items[p.ordinal()].isEmpty()) ArmoryPieceEntity.equipSilently(player, p.slot, ItemStack.EMPTY);
+        player.inventoryMenu.broadcastChanges();
+        w.receiveSuit(player, items);
+        armory.markDeployed(set, w.sortie());
+        long reserve = armory.getEnergyStorageInternal().consumeEnergyInternal(WingmanConfig.reserveEu(), false);
+        w.setReserve(reserve);
+        armory.markStorageChanged();
+        level.playSound(null, player.getX(), player.getY(), player.getZ(), mio_icif_sounds.ARMORY_UNLOCK.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+        return Component.translatable("message.mio_icif.wingman.eject.done", armory.setName(set));
+    }
+
     /** 0.1.11.41: m:ss. */
     public static String formatSeconds(long seconds) {
         return String.format(java.util.Locale.ROOT, "%d:%02d", seconds / 60, seconds % 60);

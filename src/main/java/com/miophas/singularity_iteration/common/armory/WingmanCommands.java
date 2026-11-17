@@ -69,7 +69,7 @@ public final class WingmanCommands {
     private WingmanCommands() {}
 
     public static final byte A_MOVE = 0, A_HOLD = 1, A_SUPPRESS = 2, A_FOCUS = 3, A_FORM_UP = 4, A_MODE = 5, A_SQUAD = 6,
-        A_VOLLEY = 7, A_DATALINK = 8, A_RETURN = 9, A_QUANTUM_RECALL = 10, A_SUIT_UP = 11;
+        A_VOLLEY = 7, A_DATALINK = 8, A_RETURN = 9, A_QUANTUM_RECALL = 10, A_SUIT_UP = 11, A_EJECT = 12;
     /** Cooldown key of the quantum recall in the nano core cooldown map. */
     public static final String RECALL_KEY = "mio_icif:quantum_recall";
     /** Ticks of the chunk ticket of an unloaded Wingman's recall. */
@@ -119,6 +119,14 @@ public final class WingmanCommands {
             }
             case A_QUANTUM_RECALL -> {
                 quantumRecall(player);
+                return;
+            }
+            case A_EJECT -> {
+                // 0.1.11.55 (P3): the worn suit flies on as a Wingman (no unit selection: it makes one)
+                Component result = WingmanService.eject(player);
+                player.displayClientMessage(result, false);
+                player.playNotifySound(mio_icif_sounds.ORDER_ACK.get(), SoundSource.PLAYERS, 0.7F, 1.0F);
+                state.syncTimer = 100;
                 return;
             }
             default -> { }

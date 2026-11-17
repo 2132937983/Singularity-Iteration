@@ -143,11 +143,16 @@ public class mio_icif_rt_generator extends AbstractGeneratorBlockEntity {
     /** 0.1.11.20: the cold side, looked at every 20 ticks; the EU of the last tick; the chart for the screen. */
     private com.miophas.singularity_iteration.common.energy.RtgPhysics.ColdSide cold;
     private double lastEu;
+    private long coldTick = Long.MIN_VALUE;
     private final com.miophas.singularity_iteration.common.energy.Recorder chart = new com.miophas.singularity_iteration.common.energy.Recorder();
     public com.miophas.singularity_iteration.common.energy.RtgPhysics.ColdSide coldSide() {
-        if (cold == null || level != null && level.getGameTime() % 20 == 0)
+        // 0.1.11.22: once per 20 ticks, spread by position (it was worked out 2 to 3 times on every 20th tick)
+        long now = level == null ? 0 : level.getGameTime();
+        if (cold == null || level != null && now != coldTick && com.miophas.singularity_iteration.common.energy.TickPhase.every(level, worldPosition, 20)) {
+            coldTick = now;
             cold = level == null ? new com.miophas.singularity_iteration.common.energy.RtgPhysics.ColdSide(1, 18, 0, false)
                 : com.miophas.singularity_iteration.common.energy.RtgPhysics.coldSide(level, worldPosition);
+        }
         return cold;
     }
     public double getLastEu() { return lastEu; }

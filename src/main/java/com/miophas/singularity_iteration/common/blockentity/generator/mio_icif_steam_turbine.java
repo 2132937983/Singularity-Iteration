@@ -58,27 +58,51 @@ public class mio_icif_steam_turbine extends mio_icif_Semifluid_generator {
 
     @Override
     protected void beforeBurn() {
-        condensing = condenser() != null;
+        burnCondenser = condenser();
+        condensing = burnCondenser != null;
         lastCondensed = lastVented = 0;
     }
+
+    /** 0.1.11.22: the condenser found this tick (afterBurn reuses it) and the side it was last on. */
+    @Nullable private IFluidHandler burnCondenser;
+    @Nullable private net.minecraft.core.Direction condenserSide;
 
     /** A condenser beside it that takes steam now, or null. */
     @Nullable
     private IFluidHandler condenser() {
         if (level == null) return null;
-        for (net.minecraft.core.Direction side : net.minecraft.core.Direction.values()) {
-            var at = worldPosition.relative(side);
-            if (!level.isLoaded(at) || !(level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_condenser)) continue;
-            IFluidHandler handler = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, at, side.getOpposite());
-            if (handler != null && handler.fill(new net.neoforged.neoforge.fluids.FluidStack(mio_icif_fluids.STEAM.get(), 1), IFluidHandler.FluidAction.SIMULATE) > 0) return handler;
+        // 0.1.11.22: try the side the condenser was on first; elsewhere only the block is looked at, and the block
+        // entity and its tank only on a condenser (it looked up six block entities twice a tick)
+        if (condenserSide != null) {
+            IFluidHandler h = condenserOn(condenserSide);
+            if (h != null) return h;
+            condenserSide = null;
         }
+        for (net.minecraft.core.Direction side : net.minecraft.core.Direction.values()) {
+            IFluidHandler h = condenserOn(side);
+            if (h != null) {
+                condenserSide = side;
+                return h;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private IFluidHandler condenserOn(net.minecraft.core.Direction side) {
+        var at = worldPosition.relative(side);
+        if (!level.isLoaded(at) || !level.getBlockState(at).is(com.miophas.singularity_iteration.common.registry.mio_icif_blocks.CONDENSER.get())
+                || !(level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_condenser)) return null;
+        IFluidHandler handler = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, at, side.getOpposite());
+        if (handler != null && handler.fill(new net.neoforged.neoforge.fluids.FluidStack(mio_icif_fluids.STEAM.get(), 1), IFluidHandler.FluidAction.SIMULATE) > 0) return handler;
         return null;
     }
 
     /** The exhaust (the same mass of low-pressure steam) goes into the condenser; what it cannot take is vented. */
     @Override
     protected void afterBurn(int millibuckets) {
-        IFluidHandler handler = condensing ? condenser() : null;
+        IFluidHandler handler = condensing ? burnCondenser : null;
+        burnCondenser = null;
         int taken = handler == null ? 0 : handler.fill(new net.neoforged.neoforge.fluids.FluidStack(mio_icif_fluids.STEAM.get(), millibuckets),
             IFluidHandler.FluidAction.EXECUTE);
         lastCondensed = taken;

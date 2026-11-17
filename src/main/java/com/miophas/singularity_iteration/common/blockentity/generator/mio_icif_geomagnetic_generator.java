@@ -228,8 +228,11 @@ public class mio_icif_geomagnetic_generator extends GenericGeneratorBlockEntity 
         blockEntity.burnTime = 0;
         blockEntity.lastGenerated = 0;
         long seed = com.miophas.singularity_iteration.common.energy.GeomagPhysics.seed(level);
-        blockEntity.disturbance = com.miophas.singularity_iteration.common.energy.GeomagPhysics.disturbance(seed, level.getDayTime());
-        blockEntity.kp = com.miophas.singularity_iteration.common.energy.GeomagPhysics.kp(seed, level.getDayTime());
+        long dayTime = level.getDayTime();
+        double sq = com.miophas.singularity_iteration.common.energy.GeomagPhysics.sq(dayTime);
+        double stormKp = com.miophas.singularity_iteration.common.energy.GeomagPhysics.stormKp(seed, dayTime);
+        blockEntity.disturbance = com.miophas.singularity_iteration.common.energy.GeomagPhysics.disturbanceOf(sq, stormKp);
+        blockEntity.kp = com.miophas.singularity_iteration.common.energy.GeomagPhysics.kpOf(sq, stormKp);
         if (blockEntity.shouldMachineWork && !isEnergyFull) {
             float ratio = blockEntity.getMagneticSource();
             ratio *= blockEntity.cachedBiomeMultiplier();

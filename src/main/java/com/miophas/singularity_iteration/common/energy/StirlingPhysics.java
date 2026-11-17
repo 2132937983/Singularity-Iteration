@@ -80,7 +80,7 @@ public final class StirlingPhysics {
 
         /** @param hu heat through the engine this tick; {@code waterCooled} when cooled by water whatever is beside it */
         public void tick(Level level, BlockPos pos, double hu, boolean waterCooled) {
-            if (level.getGameTime() % 20 == 0 || Double.isNaN(hot)) {
+            if (TickPhase.every(level, pos, 20) || Double.isNaN(hot)) {
                 ambient = ambient(level, pos);
                 water = waterCooled || waterBeside(level, pos);
             }

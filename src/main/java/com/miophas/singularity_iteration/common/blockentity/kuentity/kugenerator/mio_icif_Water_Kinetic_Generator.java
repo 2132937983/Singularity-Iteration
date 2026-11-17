@@ -58,6 +58,9 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
     private boolean isGenerating = false;
     private int currentKineticOutput = 0;
     private int ticksUntilUpdate = UPDATE_INTERVAL;
+    /** 0.1.11.22: client only, the rotor's drawn angle and the time it was last drawn (kept per machine). */
+    public float rotorAngle;
+    public long rotorRenderTime;
     private int ticksUntilRotorDamage = ROTOR_DAMAGE_INTERVAL;
     private boolean isInValidBiome = false;
     private boolean isInNaturalWater = false;
@@ -104,6 +107,8 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
 
  
     private void checkBiome() {
+        // 0.1.11.22: the biome does not change; look once (with the source the disc uses)
+        if (biomeChecked) return;
         if (level == null) {
             isInValidBiome = false;
             currentBiomeType = BiomeType.NONE;
@@ -126,7 +131,12 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
             isInValidBiome = false;
             currentBiomeType = BiomeType.NONE;
         }
+        biomeSourceCached = WaterPhysics.biomeSource(level, worldPosition);
+        biomeChecked = true;
     }
+
+    private boolean biomeChecked;
+    private WaterPhysics.Source biomeSourceCached = WaterPhysics.Source.NONE;
 
 
     private void checkNaturalWater() {
@@ -142,15 +152,6 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
         if (!frontFluidState.is(Fluids.WATER) && !frontFluidState.is(Fluids.FLOWING_WATER)) {
             isInNaturalWater = false;
             return;
-        }
-
-        int connectedWaterCount = 0;
-        for (Direction direction : Direction.values()) {
-            BlockPos adjacentPos = frontPos.relative(direction);
-            FluidState adjacentFluid = level.getFluidState(adjacentPos);
-            if (adjacentFluid.is(Fluids.WATER) || adjacentFluid.is(Fluids.FLOWING_WATER)) {
-                connectedWaterCount++;
-            }
         }
 
         // 0.1.11.18: the block in front must be water; how much of the disc is water now sets the output (WaterPhysics)
@@ -171,7 +172,8 @@ public class mio_icif_Water_Kinetic_Generator extends AbstractKineticGeneratorBl
         if (rotor == null || level == null) return 0;
         Direction facing = getBlockState().getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING);
         BlockPos front = worldPosition.relative(facing);
-        WaterPhysics.Source biome = WaterPhysics.biomeSource(level, worldPosition);
+        checkBiome();
+        WaterPhysics.Source biome = biomeSourceCached;
         biomeSpeed = WaterPhysics.biomeSpeed(level, worldPosition, biome);
         int diameter = Math.min(WaterPhysics.MAX_DIAMETER, rotor.getDiameter(rotorStack));
         disc = WaterPhysics.scan(level, front, facing, diameter, biomeSpeed);

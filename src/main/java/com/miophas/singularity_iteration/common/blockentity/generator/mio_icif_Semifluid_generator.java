@@ -619,9 +619,21 @@ public class mio_icif_Semifluid_generator extends AbstractGeneratorBlockEntity {
                     case 9 -> fuelTank.getFluidAmount();
                     case 10 -> fuelTank.getCapacity();
                     case 11 -> fuelTank.isEmpty() ? -1 : net.minecraft.core.registries.BuiltInRegistries.FLUID.getId(fuelTank.getFluid().getFluid());
-                    default -> engine.data(i, engineRated(), engineEuPerMb(), energyStorage.getAmount(), energyStorage.getCapacity());
+                    default -> {
+                        // 0.1.11.22: the fuel lookups once per tick, not once per data slot (61 of 64 slots)
+                        long now = level == null ? 0 : level.getGameTime();
+                        if (now != dataTick) {
+                            dataTick = now;
+                            dataRated = engineRated();
+                            dataEuPerMb = engineEuPerMb();
+                        }
+                        yield engine.data(i, dataRated, dataEuPerMb, energyStorage.getAmount(), energyStorage.getCapacity());
+                    }
                 };
             }
         };
     }
+
+    private long dataTick = Long.MIN_VALUE;
+    private double dataRated, dataEuPerMb;
 }

@@ -49,6 +49,11 @@ public final class PerfBenchmarkGameTests {
         tests.add(test("active_centrifuges", () -> machines(CENTRIFUGE, true, true, false)));
         tests.add(test("starved_furnaces", () -> machines(FURNACE, true, false, true)));
         tests.add(test("crop_field", PerfBenchmarkGameTests::crops));
+        // 0.1.11.22: the generators of the 0.1.11.9..21 overhaul (the performance audit)
+        tests.add(test("wind_rotors", PerfBenchmarkGameTests::windRotors));
+        tests.add(test("water_generators", PerfBenchmarkGameTests::waterGenerators));
+        tests.add(test("steam_turbines", PerfBenchmarkGameTests::steamTurbines));
+        tests.add(test("water_rotors", PerfBenchmarkGameTests::waterRotors));
         return tests;
     }
 
@@ -178,6 +183,88 @@ public final class PerfBenchmarkGameTests {
                 positions.add(h.absolutePos(at));
             }
             measure(h, "crop field (wheat)", positions, CROP_WINDOW, null);
+        };
+    }
+
+    private static Object field(Object target, String name) {
+        for (Class<?> k = target.getClass(); k != null; k = k.getSuperclass()) {
+            try { var f = k.getDeclaredField(name); f.setAccessible(true); return f.get(target); }
+            catch (NoSuchFieldException next) { /* superclass */ }
+            catch (IllegalAccessException e) { throw new AssertionError(e); }
+        }
+        throw new AssertionError("no field " + name);
+    }
+
+    private static ItemStack item(String path) { return new ItemStack(BuiltInRegistries.ITEM.get(id(path))); }
+
+    /** 20 kinetic wind generators with carbon rotors (diameter 11), 24 blocks apart in the air, a kinetic generator behind each. */
+    private static Consumer<GameTestHelper> windRotors() {
+        return h -> {
+            List<BlockPos> positions = new ArrayList<>();
+            for (int i = 0; i < 20; i++) {
+                BlockPos at = new BlockPos((i % 5) * 24, 30, (i / 5) * 40);
+                h.setBlock(at, BuiltInRegistries.BLOCK.get(id("mio_icif:kugenerator/block_wind_kinetic_generator")));
+                call(h.getBlockEntity(at), "setRotorStack", item("mio_icif:rotors/item_carbon_rotor"));
+                positions.add(h.absolutePos(at));
+            }
+            measure(h, "kinetic wind generators (carbon rotors)", positions, WINDOW, null);
+        };
+    }
+
+    /** 50 electric water generators, each with a water source in front. */
+    private static Consumer<GameTestHelper> waterGenerators() {
+        return h -> {
+            List<BlockPos> positions = new ArrayList<>();
+            for (int i = 0; i < MACHINES; i++) {
+                BlockPos at = new BlockPos((i % 10) * 3, 1, (i / 10) * 3);
+                h.setBlock(at, BuiltInRegistries.BLOCK.get(id("mio_icif:generator/block_water_generator")));
+                var facing = h.getBlockState(at).getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING);
+                h.setBlock(at.relative(facing), Blocks.WATER);
+                positions.add(h.absolutePos(at));
+            }
+            var level = h.getLevel();
+            measure(h, "water generators", positions, WINDOW, () -> {
+                for (BlockPos at : positions) if (level.getBlockEntity(at) != null) setEu(level.getBlockEntity(at), 0);
+            });
+        };
+    }
+
+    /** 20 steam turbines (EU) full of steam, a condenser beside every other one, the storage emptied each tick. */
+    private static Consumer<GameTestHelper> steamTurbines() {
+        return h -> {
+            List<BlockPos> positions = new ArrayList<>();
+            var steam = BuiltInRegistries.FLUID.get(id("mio_icif:steam"));
+            for (int i = 0; i < 20; i++) {
+                BlockPos at = new BlockPos((i % 5) * 3, 1, (i / 5) * 3);
+                h.setBlock(at, BuiltInRegistries.BLOCK.get(id("mio_icif:generator/block_steam_turbine")));
+                if (i % 2 == 0) h.setBlock(at.east(), BuiltInRegistries.BLOCK.get(id("mio_icif:producer/block_condenser")));
+                positions.add(h.absolutePos(at));
+            }
+            var level = h.getLevel();
+            measure(h, "steam turbines (half with a condenser)", positions, WINDOW, () -> {
+                for (BlockPos at : positions) {
+                    var be = level.getBlockEntity(at);
+                    if (be == null) continue;
+                    setEu(be, 0);
+                    var tank = (net.neoforged.neoforge.fluids.capability.IFluidHandler) field(be, "fuelTank");
+                    tank.fill(new net.neoforged.neoforge.fluids.FluidStack(steam, 2000), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+                }
+            });
+        };
+    }
+
+    /** 20 kinetic water generators with carbon rotors in a plane of water (diameter 11 discs). */
+    private static Consumer<GameTestHelper> waterRotors() {
+        return h -> {
+            List<BlockPos> positions = new ArrayList<>();
+            for (int i = 0; i < 20; i++) {
+                BlockPos at = new BlockPos((i % 5) * 14, 8, (i / 5) * 4 + 2);
+                h.setBlock(at, BuiltInRegistries.BLOCK.get(id("mio_icif:kugenerator/block_water_kinetic_generator")));
+                for (int dx = -5; dx <= 5; dx++) for (int dy = -5; dy <= 5; dy++) h.setBlock(at.offset(dx, dy, -1), Blocks.WATER);
+                call(h.getBlockEntity(at), "setRotorStack", item("mio_icif:rotors/item_carbon_rotor"));
+                positions.add(h.absolutePos(at));
+            }
+            measure(h, "kinetic water generators (carbon rotors, water discs)", positions, WINDOW, null);
         };
     }
 }

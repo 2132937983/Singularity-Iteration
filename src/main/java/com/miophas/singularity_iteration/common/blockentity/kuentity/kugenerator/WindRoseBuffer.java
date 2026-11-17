@@ -19,11 +19,24 @@ public final class WindRoseBuffer {
         wind[next] = (short) Math.max(0, Math.min(Short.MAX_VALUE, windMcu));
         next = (next + 1) % SAMPLES;
         count = Math.min(SAMPLES, count + 1);
+        packed = null;
     }
+
+    /** 0.1.11.22: the eight ints, packed once per sample instead of once per read (16 reads per sync). */
+    private int[] packed;
 
     /** Menu int {@code i} (0 .. 7) of the rose. */
     public int data(int i) {
         if (i < 0 || i >= DATA_INTS) return 0;
+        if (packed == null) {
+            int[] p = new int[DATA_INTS];
+            for (int j = 0; j < DATA_INTS; j++) p[j] = pack(j);
+            packed = p;
+        }
+        return packed[i];
+    }
+
+    private int pack(int i) {
         int[] n = new int[16], sum = new int[16];
         for (int k = 0; k < count; k++) {
             int b = Math.floorMod(Math.round((bearing[k] & 0xFF) * 360 / 256F / 22.5F), 16);

@@ -61,6 +61,8 @@ public final class GeneratorOutput {
     private static Map<String, ModConfigSpec.DoubleValue> values = Map.of();
     private static ModConfigSpec spec;
     private static final Map<BlockEntity, double[]> CARRY = new WeakHashMap<>();
+    private static final Map<net.minecraft.world.level.block.entity.BlockEntityType<?>, java.util.Optional<ModConfigSpec.DoubleValue>> BY_TYPE =
+        new java.util.concurrent.ConcurrentHashMap<>();
 
     /** Defines the section entries on {@code builder} (called once while the common spec is built). */
     public static Map<String, ModConfigSpec.DoubleValue> define(ModConfigSpec.Builder builder) {
@@ -82,9 +84,11 @@ public final class GeneratorOutput {
     /** Multiplier of a generator block entity (1 for unknown ones or before the config loads). */
     public static double multiplier(BlockEntity be) {
         if (spec == null || !spec.isLoaded() || be == null) return 1.0;
-        ResourceLocation id = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType());
-        if (id == null || !"mio_icif".equals(id.getNamespace())) return 1.0;
-        ModConfigSpec.DoubleValue v = values.get(id.getPath());
+        // 0.1.11.22: the registry and table lookups once per block entity type
+        ModConfigSpec.DoubleValue v = BY_TYPE.computeIfAbsent(be.getType(), type -> {
+            ResourceLocation id = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(type);
+            return java.util.Optional.ofNullable(id == null || !"mio_icif".equals(id.getNamespace()) ? null : values.get(id.getPath()));
+        }).orElse(null);
         if (v == null) return 1.0;
         double m = v.get();
         return Double.isFinite(m) && m > 0 ? m : 0;

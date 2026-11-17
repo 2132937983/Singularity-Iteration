@@ -447,7 +447,7 @@ public class mio_icif_geo_generator extends AbstractGeneratorBlockEntity {
      * which both energy paths already turn into EU at 1 EU each. It was 1 EU/t per lava block touching a face.
      */
     private void checkNearbyLavaBlocks(Level level, BlockPos pos) {
-        if (level.getGameTime() % 20 == 0 || worldHeat < 0) {
+        if (com.miophas.singularity_iteration.common.energy.TickPhase.every(level, pos, 20) || worldHeat < 0) {
             var scan = com.miophas.singularity_iteration.common.energy.GeoPhysics.scan(level, pos);
             worldHeat = scan.euPerTick();
             lavaSources = scan.sources();

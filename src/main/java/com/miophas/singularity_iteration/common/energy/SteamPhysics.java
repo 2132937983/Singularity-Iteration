@@ -74,18 +74,30 @@ public final class SteamPhysics {
      * (half the exhaust moisture when it starts dry).
      */
     public static double work(State in, double backBar, double eta) {
-        State first = expand(in, backBar, eta);
-        double moisture = Math.max(0, 1 - first.quality()) / 2;
-        State out = expand(in, backBar, eta * (1 - moisture));
-        return in.enthalpy() - out.enthalpy();
+        return in.enthalpy() - exhaust(in, backBar, eta).enthalpy();
     }
 
     /** Exhaust quality of an expansion (with the Baumann loss). */
     public static double exhaustQuality(State in, double backBar, double eta) {
+        return exhaust(in, backBar, eta).quality();
+    }
+
+    /** The exhaust state of an expansion with the Baumann loss. */
+    public static State exhaust(State in, double backBar, double eta) {
+        // 0.1.11.22: machines ask for the same few expansions (2 steam states x 2 back pressures) every tick; keep the
+        // last ones. Entries are immutable, so a race between threads only costs a recomputation.
+        int slot = (System.identityHashCode(in) ^ Double.hashCode(backBar) * 31 ^ Double.hashCode(eta) * 961) & (MEMO.length - 1);
+        Memo m = MEMO[slot];
+        if (m != null && m.in == in && m.backBar == backBar && m.eta == eta) return m.out;
         State first = expand(in, backBar, eta);
         double moisture = Math.max(0, 1 - first.quality()) / 2;
-        return expand(in, backBar, eta * (1 - moisture)).quality();
+        State out = expand(in, backBar, eta * (1 - moisture));
+        MEMO[slot] = new Memo(in, backBar, eta, out);
+        return out;
     }
+
+    private record Memo(State in, double backBar, double eta, State out) {}
+    private static final Memo[] MEMO = new Memo[16];
 
     /** EU per kJ: steam through the steam turbine to the open air gives 0.5 EU/mB (1 mB = 1 kg here). */
     public static final double EU_PER_KJ = 0.5 / work(STEAM, ATMOSPHERE, TURBINE_EFFICIENCY);

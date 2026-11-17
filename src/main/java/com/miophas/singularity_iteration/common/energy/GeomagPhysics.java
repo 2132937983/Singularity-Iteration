@@ -33,6 +33,20 @@ public final class GeomagPhysics {
     public record Storm(long start, int length, double kp) {}
 
     public static Storm storm(long seed, long day) {
+        // 0.1.11.22: a day's storm is asked for many times (each generator every tick, each open magnetogram 288 times);
+        // keep the last days. Entries are immutable, so a race only costs a recomputation.
+        int slot = (int) ((day ^ seed ^ (seed >>> 32)) & (STORMS.length - 1));
+        StormMemo m = STORMS[slot];
+        if (m != null && m.seed == seed && m.day == day) return m.storm;
+        Storm s = rollStorm(seed, day);
+        STORMS[slot] = new StormMemo(seed, day, s);
+        return s;
+    }
+
+    private record StormMemo(long seed, long day, Storm storm) {}
+    private static final StormMemo[] STORMS = new StormMemo[8];
+
+    private static Storm rollStorm(long seed, long day) {
         var rng = new java.util.Random(seed ^ (day * 0x9E3779B97F4A7C15L) ^ 0x5DEECE66DL);
         if (rng.nextDouble() >= STORM_CHANCE) return null;
         return new Storm(day * DAY + rng.nextInt(DAY), 12000 + rng.nextInt(24000), 6 + 3 * rng.nextDouble());
@@ -52,12 +66,16 @@ public final class GeomagPhysics {
     }
 
     public static double disturbance(long seed, long t) {
-        return Math.min(MAX, sq(t) + STORM_GAIN * stormKp(seed, t) / 9);
+        return disturbanceOf(sq(t), stormKp(seed, t));
     }
 
     public static double kp(long seed, long t) {
-        return Math.max(1 + 1.5 * sq(t), stormKp(seed, t));
+        return kpOf(sq(t), stormKp(seed, t));
     }
+
+    /** The disturbance and Kp from Sq and the storm's Kp, when both are wanted at one time. */
+    public static double disturbanceOf(double sq, double stormKp) { return Math.min(MAX, sq + STORM_GAIN * stormKp / 9); }
+    public static double kpOf(double sq, double stormKp) { return Math.max(1 + 1.5 * sq, stormKp); }
 
     public static long seed(Level level) {
         return level instanceof net.minecraft.server.level.ServerLevel server ? server.getSeed() : 0;

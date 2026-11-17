@@ -61,6 +61,9 @@ public final class WorldFuelCollection {
      */
     public int items(ServerLevel level, BlockPos pos, int range, int fuel, ToIntFunction<ItemStack> value, int limit,
                      java.util.function.Predicate<ItemStack> takeWorthless, java.util.function.Consumer<ItemStack> eaten) {
+        // 0.1.11.22: at the limit nothing would be taken; do not search the world for entities only to skip them all
+        // (the drops then stay where they are instead of being drawn in to wait)
+        if (fuel >= limit) return fuel;
         for (var item : next(level, pos, range, ItemEntity.class)) {
             if (item.isRemoved()) continue;
             if (pos.distToCenterSqr(item.getX(), item.getY(), item.getZ()) <= 1) {
@@ -85,6 +88,7 @@ public final class WorldFuelCollection {
     }
     /** 0.1.11.11: with a fuel limit, as {@link #items(ServerLevel, BlockPos, int, int, ToIntFunction, int)}. */
     public int experience(ServerLevel level, BlockPos pos, int range, int fuel, int limit) {
+        if (fuel >= limit) return fuel;   // 0.1.11.22, as items
         for (var orb : next(level, pos, range, ExperienceOrb.class)) {
             if (orb.isRemoved()) continue;
             if (pos.distToCenterSqr(orb.getX(), orb.getY(), orb.getZ()) <= 1) {

@@ -86,6 +86,9 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
     /**
      * 检查面前是否有水
      */
+    @org.jetbrains.annotations.Nullable
+    private com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.Source biomeSource;
+
     private void checkWaterInFront(Level level, BlockPos pos, BlockState state) {
         // 获取方块朝向
         Direction facing = state.getValue(com.miophas.singularity_iteration.common.block.generator.mio_icif_Block_Water_Generator.FACING);
@@ -95,9 +98,12 @@ public class mio_icif_water_generator extends AbstractGeneratorBlockEntity {
         BlockState frontState = level.getBlockState(frontPos);
         this.hasWaterInFront = frontState.is(Blocks.WATER);
         // 0.1.11.18: the water's speed sets the output (a river, the tide, a canal or a waterfall; still water gives nothing)
-        var src = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSource(level, pos);
-        double biome = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSpeed(level, pos, src);
-        faceSpeed = hasWaterInFront ? com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.cellSpeed(level, frontPos, facing, biome) : 0;
+        // 0.1.11.22: the biome once (it does not change), and nothing more without water in front
+        if (biomeSource == null) biomeSource = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSource(level, pos);
+        if (hasWaterInFront) {
+            double biome = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.biomeSpeed(level, pos, biomeSource);
+            faceSpeed = com.miophas.singularity_iteration.common.blockentity.kuentity.kugenerator.WaterPhysics.cellSpeed(level, frontPos, facing, biome);
+        } else faceSpeed = 0;
         faceOutput = (int) Math.min(MAX_FACE_GENERATION, Math.round(WATER_FACE_GENERATION * faceSpeed * faceSpeed * faceSpeed));
     }
 

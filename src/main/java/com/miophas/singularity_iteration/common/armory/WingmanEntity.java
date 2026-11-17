@@ -471,6 +471,8 @@ public class WingmanEntity extends Mob {
     // jumping into flight or gliding make it take off at once.
 
     private static final int LAND_DELAY = 40;
+    /** Distance to the landing spot at which the Wingman stands on it (0.1.11.44: 4 cm, was 25 cm). */
+    static final double TOUCHDOWN = 0.04;
     private static final double LAND_STAY = 3.5;
     private boolean idleThisTick;
     private int quietTicks, ownerStill;
@@ -504,13 +506,14 @@ public class WingmanEntity extends Mob {
             }
             if (landSpot != null) {
                 Vec3 to = landSpot.subtract(position());
-                if (to.lengthSqr() < 0.25 * 0.25) { touchDown(); holdLanded(player); return; }
+                // 0.1.11.44 (motion audit M0): touch down within 4 cm (the sink below gets it there); it was 25 cm, a visible jump
+                if (to.lengthSqr() < TOUCHDOWN * TOUCHDOWN) { touchDown(); holdLanded(player); return; }
                 if (to.horizontalDistanceSqr() > 0.4 * 0.4) {
                     // line up above the spot first (with the usual obstacle avoidance) ...
                     steer(new Vec3(landSpot.x, Math.max(getY(), landSpot.y + 1.2), landSpot.z), CRUISE * 0.7, player);
                 } else {
                     // ... then sink straight down: the column above the spot was checked free
-                    double down = Math.min(0.14, Math.max(0.03, -to.y * 0.35));
+                    double down = Math.min(0.14, Math.max(Math.min(0.03, -to.y), -to.y * 0.35));
                     setDeltaMovement(to.x * 0.4, to.y < 0 ? -down : Math.min(0.1, to.y), to.z * 0.4);
                 }
                 return;
@@ -1533,6 +1536,8 @@ public class WingmanEntity extends Mob {
     // filtered per tick like the flight factor; the recoil holds while shots keep coming, so a fast gun
     // gives a steady braced pose instead of a kick every 2 ticks
     private float combat, combatO, recoil, recoilO;
+    // 0.1.11.44 (motion audit M0, M-4): the smoothed horizontal velocity in the body frame (forward, right), for the lean
+    private float moveF, moveFO, moveR, moveRO;
     private int seenShots = Integer.MIN_VALUE, lastShot = -100;
     /** The recoil holds this many ticks after a shot (a gun firing faster keeps a steady braced pose). */
     private static final int RECOIL_HOLD = 8;
@@ -1540,12 +1545,17 @@ public class WingmanEntity extends Mob {
     private void tickAnimation() {
         flightO = flight;
         landO = land;
+        moveFO = moveF;
+        moveRO = moveR;
         combatO = combat;
         recoilO = recoil;
         boolean down = landed();
         double dx = getX() - xo, dz = getZ() - zo;
         float want = down ? 0 : (float) Mth.clamp(Math.sqrt(dx * dx + dz * dz) * 1.6, 0, 1);
         flight += (want - flight) * 0.2F;
+        float[] frame = WingmanPose.bodyFrame(down ? 0 : dx, down ? 0 : dz, yBodyRot);
+        moveF += (frame[0] - moveF) * 0.2F;
+        moveR += (frame[1] - moveR) * 0.2F;
         land += ((down ? 1 : 0) - land) * 0.2F;
         combat += ((lockedTargetId() >= 0 ? 1 : 0) - combat) * 0.25F;
         int shots = entityData.get(DATA_SHOTS);
@@ -1565,6 +1575,11 @@ public class WingmanEntity extends Mob {
     public float combat(float partialTick) { return Mth.lerp(partialTick, combatO, combat); }
     /** Client: 0 .. 1 while firing, smoothed (0.1.10.13). */
     public float recoil(float partialTick) { return Mth.lerp(partialTick, recoilO, recoil); }
+
+    /** Client: the tilt {pitch, roll} in degrees from the smoothed flight direction (0.1.11.44, {@link WingmanPose#lean}). */
+    public float[] lean(float partialTick) {
+        return WingmanPose.lean(Mth.lerp(partialTick, moveFO, moveF), Mth.lerp(partialTick, moveRO, moveR), 1 - landBlend(partialTick));
+    }
 
     /** Client: 0 (hover) .. 1 (full speed), smoothed. */
     public float flight(float partialTick) { return Mth.lerp(partialTick, flightO, flight); }

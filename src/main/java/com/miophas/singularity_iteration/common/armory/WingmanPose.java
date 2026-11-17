@@ -185,6 +185,40 @@ public final class WingmanPose {
         return body;
     }
 
+    // ------------------------------------------------------------------ lean (0.1.11.44, motion audit M0, M-4)
+
+    /** Forward lean at full speed, degrees (the value of 0.1.10.11; M1 changes the flight pose as a whole). */
+    public static final float MAX_LEAN = 62.0F;
+    /** Lean backwards (flying backwards) at full speed: a fraction of {@link #MAX_LEAN}. */
+    public static final float BACK_LEAN = 0.5F;
+    /** Side lean (sliding sideways) at full speed: a fraction of {@link #MAX_LEAN}. */
+    public static final float SIDE_LEAN = 0.6F;
+    /** Speed (blocks per tick) of a full lean: the flight factor of 0.1.10.11 ({@code speed * 1.6}, at most 1). */
+    public static final float FULL_SPEED = 1 / 1.6F;
+
+    /**
+     * The tilt of the suit, degrees: {pitch (positive: head forward), roll (positive: head to the right)}, from the
+     * smoothed velocity in the body frame ({@code forward}, {@code right}, blocks per tick) and the landing blend
+     * {@code air} (0 on the ground). Up to 0.1.11.43 the suit always leaned forward by its speed, whichever way it flew:
+     * sliding sideways around a target or backing off after a hit, it leaned toward its facing; now the tilt follows
+     * the flight. Finite and bounded for any input.
+     */
+    public static float[] lean(float forward, float right, float air) {
+        float a = clamp01(air);
+        float f = Mth.clamp(finite(forward) / FULL_SPEED, -1, 1), r = Mth.clamp(finite(right) / FULL_SPEED, -1, 1);
+        float pitch = (f >= 0 ? f : f * BACK_LEAN) * MAX_LEAN * a;
+        float roll = r * SIDE_LEAN * MAX_LEAN * a;
+        return new float[]{pitch, roll};
+    }
+
+    /** {forward, right} components (blocks per tick) of the horizontal motion {@code dx, dz} for a body yaw in degrees. */
+    public static float[] bodyFrame(double dx, double dz, float bodyYawDegrees) {
+        double yaw = Math.toRadians(bodyYawDegrees);
+        double fx = -Math.sin(yaw), fz = Math.cos(yaw);       // forward
+        double rx = -Math.cos(yaw), rz = -Math.sin(yaw);      // right
+        return new float[]{(float) (dx * fx + dz * fz), (float) (dx * rx + dz * rz)};
+    }
+
     /** Firing: the weapon kicks up and the support arm follows. {@code r} 0..1, smoothed per tick. */
     public static void recoil(float[] pose, boolean leftHanded, float r) {
         float k = clamp01(r);

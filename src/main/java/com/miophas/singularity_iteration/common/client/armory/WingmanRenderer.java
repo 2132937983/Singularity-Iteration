@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
 @OnlyIn(Dist.CLIENT)
 public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanRenderer.Model> {
     /** Forward lean at full speed, degrees. */
-    static final float MAX_LEAN = 62.0F;
+    static final float MAX_LEAN = WingmanPose.MAX_LEAN;
     private static final ResourceLocation UNUSED = ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
 
     public WingmanRenderer(EntityRendererProvider.Context context) {
@@ -67,11 +67,13 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
     @Override
     protected void setupRotations(WingmanEntity entity, PoseStack pose, float bob, float bodyYaw, float partialTick, float scale) {
         super.setupRotations(entity, pose, bob, bodyYaw, partialTick, scale);
-        float lean = MAX_LEAN * flightFactor(entity, partialTick);
-        if (lean <= 0.01F) return;
-        // pivot at the waist; negative x rotation tips the head forward (the model faces -z)
+        // 0.1.11.44 (motion audit M-4): the tilt follows the flight direction (pitch forward or back, roll to the side)
+        float[] lean = entity.lean(partialTick);
+        if (Math.abs(lean[0]) + Math.abs(lean[1]) <= 0.01F) return;
+        // pivot at the waist; negative x rotation tips the head forward, negative z rotation tips it to the right
         pose.translate(0, 0.9F * scale, 0);
-        pose.mulPose(Axis.XP.rotationDegrees(-lean));
+        pose.mulPose(Axis.XP.rotationDegrees(-lean[0]));
+        pose.mulPose(Axis.ZP.rotationDegrees(-lean[1]));
         pose.translate(0, -0.9F * scale, 0);
     }
 
@@ -110,8 +112,9 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             boolean blade = SlashBladeResharpedBridge.isBlade(entity.getMainHandItem());
             WingmanPose.Hold hold = WingmanPose.holdOf(entity.getMainHandItem(), blade);
             float pitch = headPitch * Mth.DEG_TO_RAD, yaw = netHeadYaw * Mth.DEG_TO_RAD;
+            float leanPitch = entity.lean(partial)[0];
             float[] pose = WingmanPose.base(hold, leftHanded, f, air, entity.combat(partial), sway, pitch, yaw,
-                f * MAX_LEAN * Mth.DEG_TO_RAD);
+                Math.max(0, leanPitch) * Mth.DEG_TO_RAD);
             WingmanPose.smooth(poses.computeIfAbsent(entity, e -> new float[7]), pose, age);
             float twist = 0;
             switch (hold) {
@@ -143,7 +146,7 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             rightLeg.zRot = 0.03F * air + 0.01F;
             leftLeg.zRot = -rightLeg.zRot;
             // the head looks forward in fast flight
-            head.xRot -= f * Mth.DEG_TO_RAD * MAX_LEAN * 0.6F;
+            head.xRot -= leanPitch * Mth.DEG_TO_RAD * 0.6F;   // 0.1.11.44: the head keeps looking ahead (forward and back)
             hat.copyFrom(head);
         }
     }

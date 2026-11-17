@@ -2771,6 +2771,72 @@ public final class CaptureDirector {
         }
     }
 
+    /**
+     * Scene "wingman_motion" (-Dsi.capture.scene=wingman_motion), Wingman motion audit: a sword Wingman and a bow Wingman
+     * fighting still zombies, seen from the side (frames every 2 ticks), then a hover close-up and a landed one.
+     */
+    private static void sceneWingmanMotion() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos armoryAt = new BlockPos(-10, -60, -10);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, level.getServer());
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);   // peaceful removes the zombies at once
+            sp.setGameMode(GameType.SURVIVAL);
+            look(sp, 0.5, -60, -6.5, 0, 8);
+            sp.getAbilities().flying = false;
+            sp.onUpdateAbilities();
+            place(level, armoryAt, "producer/block_armory", Direction.NORTH);
+            if (level.getBlockEntity(armoryAt) instanceof mio_icif_armory armory) {
+                armory.getEnergyStorageInternal().setStored(900_000);
+                armory.tryBind(sp);
+                var inv = armory.getItemHandler();
+                ItemStack[][] suits = {
+                    {new ItemStack(Items.DIAMOND_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE), new ItemStack(Items.DIAMOND_LEGGINGS),
+                        new ItemStack(Items.DIAMOND_BOOTS), new ItemStack(Items.DIAMOND_SWORD), ItemStack.EMPTY},
+                    {new ItemStack(Items.IRON_HELMET), new ItemStack(Items.IRON_CHESTPLATE), new ItemStack(Items.IRON_LEGGINGS),
+                        new ItemStack(Items.IRON_BOOTS), new ItemStack(Items.BOW), ItemStack.EMPTY}};
+                for (int st = 0; st < suits.length; st++)
+                    for (int c = 0; c < 6; c++)
+                        if (!suits[st][c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), suits[st][c], false);
+                for (int st = 0; st < 2; st++)
+                    Singularity_Iteration.LOGGER.info("capture motion deploy {}: {}", st, com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
+                        com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE).getString());
+            }
+            Singularity_Iteration.LOGGER.info("capture motion: player at {} yaw {}", sp.position(), sp.getYRot());
+        });
+        client(5, () -> { Minecraft mc = Minecraft.getInstance(); mc.options.hideGui = true; mc.options.setCameraType(CameraType.FIRST_PERSON); });
+        client(60, () -> { Minecraft mc = Minecraft.getInstance();
+            Singularity_Iteration.LOGGER.info("capture motion client: at {} yaw {} pitch {} camera {} entities {}", mc.player.position(), mc.player.getYRot(),
+                mc.player.getXRot(), mc.getCameraEntity(), mc.level.getEntityCount()); });
+        shot(1, "wingman_motion/00_hover");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        shot(10, "wingman_motion/01_formation_front");
+        client(1, () -> Minecraft.getInstance().options.setCameraType(CameraType.FIRST_PERSON));
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            for (double[] at : new double[][]{{-4.5, 8.5}, {5.5, 10.5}}) {
+                var z = mob(level, net.minecraft.world.entity.EntityType.ZOMBIE, at[0], -60, at[1], true, sp);
+                z.setHealth(z.getMaxHealth());
+                z.setInvulnerable(true);
+                Singularity_Iteration.LOGGER.info("capture motion zombie at {}", z.position());
+            }
+        });
+        for (int f = 0; f < 50; f++) shot(2, String.format("wingman_motion/fight_%02d", f));
+        server(1, sp -> { for (var e : sp.serverLevel().getEntitiesOfClass(net.minecraft.world.entity.monster.Zombie.class, sp.getBoundingBox().inflate(40))) e.discard(); });
+        shot(120, "wingman_motion/90_landed");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "wingman_motion".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneWingmanMotion();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
@@ -3672,7 +3738,8 @@ public final class CaptureDirector {
         } else if (OUT != null && "2".equals(System.getProperty("si.capture.scene"))) {
             new File(OUT).mkdirs();
             scene2();
-        } else if (OUT != null && System.getProperty("si.capture.scene") != null) {
+        } else if (OUT != null && System.getProperty("si.capture.scene") != null && STEPS.isEmpty()) {
+            // a named scene of its own (registered above, so its steps are queued) does not get the default scene too
             new File(OUT).mkdirs();
             scene();
         } else {

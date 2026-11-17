@@ -238,7 +238,7 @@ if (SuitSynergies.active(player, DEEP_SCAN)) { /* 协同效果 */ }
 
 ## 6. 能量（`core.api.energy`）
 
-0.1.8.0 没有改变能量 API 的约定。EU 网络默认使用公平分配（`config/core.ini` 中的 `distributionMode=fair`，或通用配置）。
+0.1.8.0 没有改变能量 API 的约定。EU 网络使用公平分配（0.1.11.32 起是唯一的分配方式，`distributionMode` 已移除）。
 
 1. 用 `EnergyNodeRegistry.register(id, profile)` 注册每个方块的角色。使用 `EnergyNodeProfile.generator(packet)`、`storage(packet)` 或 `consumer()`。
 2. 提供方块能力 `EUApi.SIDED`。对于预制方块实体，调用 `CoreCapabilityRegistration.registerEntity(event, type)`。

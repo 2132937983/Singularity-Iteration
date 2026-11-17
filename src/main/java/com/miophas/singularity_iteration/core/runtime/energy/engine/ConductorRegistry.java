@@ -242,6 +242,14 @@ public final class ConductorRegistry implements AutoCloseable {
     /** Register or replace a loss. Identical updates retain valid cached work. */
     public boolean put(Position at, long lossMilli) { return put(at, lossMilli, ALL_FACES); }
 
+    /**
+     * 0.1.11.32 (cable audit E-1): true when {@code at} is registered or one more conductor fits. A caller that adds
+     * a conductor asks first: {@link #put} still throws at the bound.
+     */
+    public boolean hasRoomFor(Position at) {
+        active(); return conductors.containsKey(Objects.requireNonNull(at, "at")) || conductors.size() < maximumNodes;
+    }
+
     /** Changing only a face mask invalidates every old route lease before publication. */
     public boolean put(Position at, long lossMilli, int openFaces) {
         active(); Objects.requireNonNull(at, "at");

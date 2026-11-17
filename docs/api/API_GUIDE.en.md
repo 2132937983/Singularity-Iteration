@@ -286,7 +286,7 @@ Singularity Iteration posts these events on `NeoForge.EVENT_BUS`, on the server 
 ## 6. Energy (`core.api.energy`)
 
 The energy API did not change its contracts in 0.1.8.0. The EU network uses fair-share
-distribution by default (`distributionMode=fair` in `config/core.ini`, or the common config).
+distribution (the only distribution since 0.1.11.32; `distributionMode` was removed).
 
 1. Register the role of each block with `EnergyNodeRegistry.register(id, profile)`.
    Use `EnergyNodeProfile.generator(packet)`, `storage(packet)` or `consumer()`.

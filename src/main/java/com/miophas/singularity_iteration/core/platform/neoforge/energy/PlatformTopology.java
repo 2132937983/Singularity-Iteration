@@ -160,6 +160,11 @@ public final class PlatformTopology implements AutoCloseable {
         default void blockChanged(ServerLevel level, BlockPos at, BlockState before, BlockState after) { }
         /** Called after the index entries of one chunk are removed. Chunk coordinates are chunk units, not blocks. */
         default void chunkRemoved(ServerLevel level, int chunkX, int chunkZ) { }
+        /**
+         * 0.1.11.32: called directly from {@link ChunkEvent.Unload}, while the block entities of the chunk are still there
+         * (the removal of its index entries is queued). The index must not change here.
+         */
+        default void chunkUnloading(ServerLevel level, LevelChunk chunk) { }
         /** Called after the registry of a level is closed, at level unload or at the start of a rebuild. */
         default void levelRemoved(ServerLevel level) { }
         /** Called after all registries are closed, at {@link #close}. */
@@ -347,6 +352,13 @@ public final class PlatformTopology implements AutoCloseable {
     private final Map<ServerLevel, java.util.LinkedHashSet<Long>> knownChunks = new java.util.IdentityHashMap<>();
     // Levels in rebuild, with the cursor over the chunks to replay.
     private final Map<ServerLevel, Recovery> recovering = new java.util.IdentityHashMap<>();
+    /**
+     * 0.1.11.32 (cable audit E-1/E-2): back-off of error rebuilds per level: {count, last rebuild tick, next allowed tick}.
+     * A rebuild asked for before the next allowed tick waits in {@code heldRebuilds} (the level does not settle meanwhile);
+     * the wait doubles from 20 ticks up to 1200 and starts over after 6000 ticks without a rebuild.
+     */
+    private final Map<ServerLevel, long[]> rebuildBackoff = new java.util.IdentityHashMap<>();
+    private final Map<ServerLevel, String> heldRebuilds = new java.util.IdentityHashMap<>();
     // Chunk key to the server tick of the next retry. A chunk is here after a callback or sample failed.
     private final Map<Key, Long> quarantined = new HashMap<>();
     private long recoveries, isolatedFailures, readinessRevision, filteredSignals;
@@ -366,7 +378,7 @@ public final class PlatformTopology implements AutoCloseable {
     /** Diagnostic counters of rebuilds and quarantine. */
     public record RecoveryMetrics(long rebuilds, long isolatedFailures, int recoveringLevels, int quarantinedChunks, String lastReason) { }
     public synchronized RecoveryMetrics recoveryMetrics() {
-        return new RecoveryMetrics(recoveries, isolatedFailures, recovering.size(), quarantined.size(), lastRecovery);
+        return new RecoveryMetrics(recoveries, isolatedFailures, recovering.size() + heldRebuilds.size(), quarantined.size(), lastRecovery);
     }
     /**
      * Returns the chunk key of a change. A position change maps to the chunk that contains the position.
@@ -433,6 +445,11 @@ public final class PlatformTopology implements AutoCloseable {
      * blocking change of that level is queued or running.
      */
     private void pumpRecovery() {
+        // 0.1.11.32: a held rebuild starts when its back-off ends
+        if (!heldRebuilds.isEmpty()) for (var held : java.util.List.copyOf(heldRebuilds.entrySet())) {
+            long[] backoff = rebuildBackoff.get(held.getKey());
+            if (backoff == null || server.getTickCount() >= backoff[2]) rebuild(held.getKey(), held.getValue());
+        }
         for (var entry : recovering.entrySet()) {
             var scan = entry.getValue();
             while (pending.size() < maximumQueued && scan.next < scan.chunks.length) {
@@ -473,6 +490,13 @@ public final class PlatformTopology implements AutoCloseable {
      */
     public synchronized void rebuild(ServerLevel level, String reason) {
         if (closed || level.getServer() != server || !server.isSameThread()) return;
+        long now = server.getTickCount();
+        long[] backoff = rebuildBackoff.computeIfAbsent(level, ignored -> new long[]{0, Long.MIN_VALUE / 2, Long.MIN_VALUE});
+        if (now < backoff[2]) { heldRebuilds.put(level, reason); readinessRevision++; return; }
+        if (now - backoff[1] > 6000) backoff[0] = 0;
+        backoff[0]++; backoff[1] = now;
+        backoff[2] = now + Math.min(1200L, 20L << Math.min(6, backoff[0] - 1));
+        heldRebuilds.remove(level);
         var iterator = pending.values().iterator();
         while (iterator.hasNext()) {
             var change = iterator.next();
@@ -680,6 +704,10 @@ public final class PlatformTopology implements AutoCloseable {
     public void onChunkUnload(ChunkEvent.Unload event) {
         if (!(event.getLevel() instanceof ServerLevel level) || level.getServer() != server) { return; }
         synchronized (this) { chunkUnloads++; }
+        if (event.getChunk() instanceof LevelChunk chunk) {
+            try { observer.chunkUnloading(level, chunk); }
+            catch (RuntimeException error) { com.mojang.logging.LogUtils.getLogger().warn("Energy chunk unload callback failed", error); }
+        }
         queueChunkRemoval(level, event.getChunk().getPos().toLong());
     }
 
@@ -735,6 +763,7 @@ public final class PlatformTopology implements AutoCloseable {
             blockingByLevel.remove(level);
             pendingChunks.keySet().removeIf(key -> key.level == level);
             recovering.remove(level); knownChunks.remove(level); quarantined.keySet().removeIf(key -> key.level == level);
+            heldRebuilds.remove(level); rebuildBackoff.remove(level);
             enqueue(new Change(new Key(level, Scope.LEVEL, 0), Kind.UNLOAD_LEVEL, BlockPos.ZERO), false);
         }
     }
@@ -984,7 +1013,7 @@ public final class PlatformTopology implements AutoCloseable {
      */
     public synchronized boolean operational(ServerLevel level) {
         return !closed && failure.isEmpty() && level.getServer() == server && server.isSameThread()
-            && server.getLevel(level.dimension()) == level && !recovering.containsKey(level)
+            && server.getLevel(level.dimension()) == level && !recovering.containsKey(level) && !heldRebuilds.containsKey(level)
             && !pending.containsKey(new Key(level, Scope.LEVEL, 0));
     }
     /**
@@ -1060,6 +1089,7 @@ public final class PlatformTopology implements AutoCloseable {
         finally {
             clearPending(); server = null; observer = NO_OBSERVER; NeoForge.EVENT_BUS.unregister(this);
             knownChunks.clear(); recovering.clear(); quarantined.clear(); processingChunks.clear();
+            heldRebuilds.clear(); rebuildBackoff.clear();
         }
     }
 }

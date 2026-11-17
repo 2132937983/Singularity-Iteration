@@ -2,18 +2,14 @@ package example.sicore;
 
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.IndependentTransformerBlockEntity;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.gametest.framework.AfterBatch;
-import net.minecraft.gametest.framework.BeforeBatch;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
@@ -22,27 +18,10 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * GameTests of the 0.1.8.0 fair-share distribution (smart grid mode).
- *
- * <p>The test server starts in legacy mode, so that the older engine tests
- * keep their IC2-style expectations. The batches of this class select the
- * fair mode before they start and select legacy mode again after they end.
  */
 @GameTestHolder(CoreExampleMod.ID)
 @PrefixGameTestTemplate(false)
 public final class FairGridGameTests {
-    private static final String KEY = "scex.independent.distribution";
-
-    @BeforeBatch(batch = "fair_grid")
-    public static void fairOn(ServerLevel level) { System.setProperty(KEY, "fair"); }
-
-    @AfterBatch(batch = "fair_grid")
-    public static void fairOff(ServerLevel level) { System.setProperty(KEY, "legacy"); }
-
-    @BeforeBatch(batch = "fair_grid_transformer")
-    public static void fairTransformerOn(ServerLevel level) { System.setProperty(KEY, "fair"); }
-
-    @AfterBatch(batch = "fair_grid_transformer")
-    public static void fairTransformerOff(ServerLevel level) { System.setProperty(KEY, "legacy"); }
 
     /**
      * One BatBox feeds three electric furnaces on one tin cable, at distances
@@ -51,7 +30,6 @@ public final class FairGridGameTests {
      */
     @GameTest(template = "reactor_loop", batch = "fair_grid", timeoutTicks = 120)
     public static void seriesFurnacesGetEqualShares(GameTestHelper h) {
-        h.assertTrue(IndependentEnergyMode.fairDistribution(), "Fair batch did not select the fair distributor");
         var furnaces = line(h, 3, new int[]{1, 3, 5});
         // A furnace holds 300 EU. Empty all three after the topology settles,
         // then measure 10 ticks: about 107 EU each, below the capacity.

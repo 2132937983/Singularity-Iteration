@@ -219,8 +219,6 @@ public class Singularity_Iteration {
         com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
             .setVoltageOverload(Singularity_Iteration_Config.ENERGY_NET_ENABLE_VOLTAGE_OVERLOAD.get());
         com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
-            .setDistributionMode(Singularity_Iteration_Config.ENERGY_NET_DISTRIBUTION_MODE.get());
-        com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
             .setLineLossModel(Singularity_Iteration_Config.ENERGY_NET_LINE_LOSS.get());
         com.miophas.singularity_iteration.core.runtime.energy.engine.IndependentEnergyMode
             .setDispatchMode(Singularity_Iteration_Config.ENERGY_NET_DISPATCH_MODE.get());   // 0.1.10.22

@@ -20,15 +20,12 @@ import com.miophas.singularity_iteration.core.runtime.energy.engine.PacketAllowa
 import com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy;
 import com.miophas.singularity_iteration.core.api.energy.IEnergyPacketSource;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.FractionalDistributor;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.FairShareDistributor;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.ReceiverOrder;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.RouteCosts;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.ReceiverContacts;
 import com.miophas.singularity_iteration.core.api.energy.EnergyNodeRegistry;
 import com.miophas.singularity_iteration.core.api.energy.IEnergyConductiveEndpoint;
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.PlatformTopology;
-import com.miophas.singularity_iteration.core.platform.neoforge.energy.ContactOrder;
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.SmallBlastField;
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.IndependentTransformerBlockEntity;
 import com.miophas.singularity_iteration.core.platform.neoforge.energy.IndependentSpecialCableBlockEntity;
@@ -115,8 +112,7 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  * chunk loads, block changes and chunk unloads, and calls the
  * {@link PlatformTopology.Observer} methods of this class:
  * <ol>
- *   <li>{@link #blockChanged} reserves or cancels a placement slot in
- *       {@code ContactOrder}. The slot keeps the placement order of sinks.</li>
+ *   <li>{@link #blockChanged} creates the grid of a level on its first controlled block.</li>
  *   <li>{@link #position} reads the block entity at a position in a FULL chunk.
  *       It builds an {@code Element} (block type, conductor loss, tile, routing
  *       signature, face mask). It does not apply the element. It queues the
@@ -273,9 +269,6 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
  *   <li>A settlement throws in {@link #beforeLevel} or {@link #afterLevel}:
  *       {@code fail(ServerLevel, WorldGrid, RuntimeException)} logs the error
  *       and rebuilds the topology of that dimension only.</li>
- *   <li>The topology reports a failure in {@link #tick}:
- *       {@code fail(RuntimeException)} sets {@code failure} and closes the
- *       topology. All dimensions stop until the server restarts.</li>
  *   <li>A foreign FE callback throws during a transfer: it counts as a
  *       transfer of 0 FE, and the contact is blocked for the rest of the tick
  *       ({@code foreignQuery}).</li>
@@ -318,6 +311,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * The same cap applies to registrations through {@link #registerTile}.
      */
     private static final int ENDPOINT_LIMIT = 65_536;
+    /** 0.1.11.32 (cable audit E-1): conductor cap per level; over it a new cable stays disconnected and the engine warns. */
+    private static final int CONDUCTOR_LIMIT = 100_000;
+    /** 0.1.11.32 (cable audit E-3): ticks a cut conductor chunk must stay available before its routes are used again. */
+    private static final int REACTIVATE_TICKS = 40;
     /**
      * Route construction is a server tick operation.  A dense component can
      * otherwise produce a source × receiver × contact cross product and spend
@@ -540,7 +537,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         if (!(tile.getLevel() instanceof ServerLevel level) || !level.getServer().isSameThread()
                 || tile.isRemoved() || ownedStorage(tile) == null || !ownedStorage(tile).scexNetworkControlled()) return;
         var engine = current(level.getServer());
-        if (engine == null || engine.closed || !engine.failure.isEmpty()) return;
+        if (engine == null || engine.closed) return;
         var at = tile.getBlockPos();
         var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
         if (chunk == null || chunk.getBlockEntity(at, LevelChunk.EntityCreationType.CHECK) != tile) return;
@@ -550,7 +547,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 && grid.conductors.containsRegistered(point(at))) {
             int faces = conductorFaces(tile);
             grid.conductors.put(point(at), loss, faces);
-            grid.contactOrder.putConductor(point(at), loss, faces);
         }
         engine.topology.changed(level, at);
     }
@@ -628,7 +624,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     // Record the independent seed in probe metrics so this selection stream can
     // be replayed. It is not a seed or algorithm taken from the reference mod.
     private final long selectionSeed = Long.getLong("scex.independent.selectionSeed", ThreadLocalRandom.current().nextLong());
-    private final SplittableRandom selectionRandom = new SplittableRandom(selectionSeed);
     // A separate independent stream keeps visible block effects from changing
     // receiver selection. This is not the reference game's PRNG or seed.
     private final SplittableRandom blockDropRandom = new SplittableRandom(selectionSeed ^ 0x5343455844524f50L);
@@ -661,11 +656,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     private long foreignQueryFailures;
     /**
      * {@code lastForeignQueryFailure}: text of the last foreign query failure,
-     * at most 256 characters. {@code failure}: text of the engine failure.
-     * An empty {@code failure} means that the engine runs. A non-empty value
-     * stops every dimension until restart.
+     * at most 256 characters.
      */
-    private String lastForeignQueryFailure = "", failure = "";
+    private String lastForeignQueryFailure = "";
     /** True after the server stopped. A closed engine does no work. */
     private boolean closed;
     /**
@@ -681,7 +674,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         return Map.of("topology", topology.metrics(), "ready", topology.ready(level),
             "world_grid", grid != null, "catch_up", grid != null && grid.catchUp,
             "entries", grid == null ? 0 : grid.machines.size(),
-            "world_grid_failure", grid == null ? "" : grid.failure,
             "foreign_query_failures", foreignQueryFailures, "last_foreign_query_failure", lastForeignQueryFailure);
     }
     /**
@@ -776,8 +768,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     /**
      * One planned delivery of a native window, for both distributors.
      * {@code voltage}: the packet size for overvoltage effects and meters.
-     * The legacy distributor uses the source debit. The fair-share distributor
-     * uses {@link FairShareDistributor.Delivery#voltage()}.
+     * It is {@link FairShareDistributor.Delivery#voltage()}.
      */
     private record PlannedDelivery(int domain, int entry, int source, int receiver,
                                    EnergyAmount credit, EnergyAmount pathLoss, double voltage) {
@@ -788,14 +779,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                                 List<PlannedDelivery> deliveries) {
         EnergyAmount debit(int source) { return debits[source]; }
         EnergyAmount credit(int receiver) { return credits[receiver]; }
-        static PlannedRound of(FractionalDistributor.Round round, int sources, int receivers) {
-            var debits = new EnergyAmount[sources]; var credits = new EnergyAmount[receivers];
-            for (int i = 0; i < sources; i++) debits[i] = round.debit(i);
-            for (int i = 0; i < receivers; i++) credits[i] = round.credit(i);
-            var deliveries = round.deliveries().stream().map(d -> new PlannedDelivery(d.domain(), d.entry(), d.source(),
-                d.receiver(), d.credit(), d.pathLoss(), d.sourceDebit().toDouble())).toList();
-            return new PlannedRound(debits, credits, round.dissipated(), deliveries);
-        }
         static PlannedRound of(FairShareDistributor.Round round) {
             var debits = new EnergyAmount[round.sourceCount()]; var credits = new EnergyAmount[round.receiverCount()];
             for (int i = 0; i < debits.length; i++) debits[i] = round.debit(i);
@@ -837,7 +820,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      *
      * <p><b>Two layers.</b> {@code entries} holds the observed entries. They are
      * not visible to routing yet. {@link #apply} publishes changes into the
-     * routing indexes ({@code conductors}, {@code contactOrder}, {@code machines}
+     * routing indexes ({@code conductors}, {@code machines}
      * and the side maps). Only published data affects a transfer.
      *
      * <p><b>Generation counters.</b>
@@ -859,7 +842,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final DeferredEntries<BlockPos, Element> entries = new DeferredEntries<>(104_096, 65_536);
         // Retain small independent networks without a 32-source cyclic scan miss.
         // Route arrays remain bounded by the previous 32 x 100,000-node maximum.
-        final ConductorRegistry conductors = new ConductorRegistry(100_000, 4096, 3_200_000);
+        final ConductorRegistry conductors = new ConductorRegistry(CONDUCTOR_LIMIT, 4096, 3_200_000);
         // Search admission of the native pass: <=200k component vertices per world tick, including START/END. 0.1.11.1:
         // the FE export and import searches (100k each) went with their passes; foreign blocks are native ports now.
         final ConductorRegistry.SearchBudget nativeSearch = new ConductorRegistry.SearchBudget(200_000);
@@ -922,10 +905,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          * sink count before use.
          */
         final Map<BlockPos, Integer> receiverCursors = new HashMap<>();
-        /** Placement order of endpoints and conductors. It orders sinks for generators with two or more contacts. */
-        final ContactOrder contactOrder;
-        /** @param constructionSeed the seed of the contact order stream */
-        WorldGrid(long constructionSeed) { contactOrder = new ContactOrder(104_096, 4096, constructionSeed); }
         /**
          * Published endpoints by position, in publication order. At most
          * {@link #ENDPOINT_LIMIT} entries. A dual tile ({@link IEnergyConductiveEndpoint})
@@ -934,6 +913,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final Map<BlockPos, BlockEntity> machines = new LinkedHashMap<>();
         /** Number of endpoints and registrations that the limit refused. Used to throttle the warning log. */
         long endpointLimitDrops, registrationLimitDrops;
+        /** 0.1.11.32 (cable audit E-1): conductors over the conductor bound, and the entry drops already warned about. */
+        long conductorLimitDrops, entryDropsWarned;
         /** Published routing signature per transformer. A transformer with another live signature is not used. */
         final Map<BlockPos, Integer> transformerRouting = new HashMap<>();
         /** Published transformers, for the mode refresh in {@code beforeLevel}. */
@@ -1148,6 +1129,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         // ticket changes are consequently observed on the next tick at the
         // latest. All transaction leases still recheck isCurrent().
         long accessibilityTick = Long.MIN_VALUE;
+        /** 0.1.11.32 (E-3): conductor chunks cut by availability: the tick since which they are available again, or MAX_VALUE. */
+        final it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap cutChunks = new it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap();
         /** The topology readiness revision of the cached accessibility result. */
         long accessibilityRevision = Long.MIN_VALUE;
         /** The cached accessibility result. Valid only for {@code accessibilityTick} and {@code accessibilityRevision}. */
@@ -1167,11 +1150,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         long catchUpFrame = Long.MIN_VALUE;
         /** True after {@link #close()}. */
         boolean closed;
-        /**
-         * Failure text of this grid. Empty means no failure. Many methods skip a
-         * grid with a non-empty value. Note: no code in this file assigns it.
-         */
-        String failure = "";
         /** The frame whose END pauses {@code effectEndpoints}, or -1 for none. */
         long effectPauseFrame = -1;
         /**
@@ -1281,13 +1259,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         // The fast path only refreshed the conductor index. A dual tile
                         // keeps its endpoint registration and its port.
                         machines.put(at, next.tile); machinesRevision++;
-                        contactOrder.putEndpoint(point(at));
-                    } else {
-                        contactOrder.putConductor(point(at), next.conductorLoss, next.faces);
                     }
                     continue;
                 }
-                contactOrder.remove(point(at));
                 if (change.before() != null && change.before().conductorLoss >= 0) {
                     for (Direction side : Direction.values()) {
                         var initial = initialGeneratorContacts.get(at.relative(side));
@@ -1309,6 +1283,15 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if (after == null) continue;
                 if (after.tile instanceof IndependentSpecialCableBlockEntity cable) specialCables.put(at, cable);
                 if (after.conductorLoss >= 0) {
+                    // 0.1.11.32 (cable audit E-1): over the bound a new conductor stays disconnected (as an endpoint over
+                    // ENDPOINT_LIMIT); it threw before, and the rebuild of the level hit the bound again
+                    if (!conductors.hasRoomFor(point(at))) {
+                        conductorLimitDrops++;
+                        if (conductorLimitDrops == 1 || conductorLimitDrops % 1000 == 0)
+                            LOG.warn("Conductor limit {} reached on one level; extra cables stay disconnected (drops={})",
+                                CONDUCTOR_LIMIT, conductorLimitDrops);
+                        continue;
+                    }
                     conductors.put(point(at), after.conductorLoss, after.faces);
                     conductorTypes.put(at, after.type);
                     conductorOwners.put(at, after.tile);
@@ -1317,9 +1300,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         // IC2 dual-node layout: the position carries routes to endpoints
                         // beyond it and still owns a port, so its balance keeps charging.
                         machines.put(at, after.tile); machinesRevision++;
-                        contactOrder.putEndpoint(point(at));
-                    } else {
-                        contactOrder.putConductor(point(at), after.conductorLoss, after.faces);
                     }
                 } else if (!(after.tile instanceof IndependentSpecialCableBlockEntity)) {
                     if (machines.size() >= ENDPOINT_LIMIT) {
@@ -1330,7 +1310,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         continue;
                     }
                     machines.put(at, after.tile); machinesRevision++;
-                    contactOrder.putEndpoint(point(at));
                     if (after.tile instanceof IndependentTransformerBlockEntity transformer) {
                         transformerRouting.put(at, after.routing); transformers.put(at, transformer);
                     }
@@ -1357,7 +1336,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             skeletons.clear(); machineList = null;
             catchUpEndpoints.clear(); effectEndpoints.clear(); shocks.clear(); includedEndpoints = null; excludedEndpoints = null;
             registered.clear(); foreign.clear(); failedQueries.clear(); samples.clear(); packetSpent.clear(); scanAnchors = List.of();
-            entries.close(); conductors.close(); contactOrder.close(); machines.clear(); machinesRevision++; transformerRouting.clear(); transformers.clear(); specialCables.clear(); specialObserved.clear(); specialPublished.clear(); specialPending.clear(); initialGeneratorContacts.clear(); conductorChunks.clear(); conductorTypes.clear(); conductorOwners.clear(); catchUp = false; effectPauseFrame = -1;
+            entries.close(); conductors.close(); machines.clear(); machinesRevision++; transformerRouting.clear(); transformers.clear(); specialCables.clear(); specialObserved.clear(); specialPublished.clear(); specialPending.clear(); initialGeneratorContacts.clear(); conductorChunks.clear(); cutChunks.clear(); conductorTypes.clear(); conductorOwners.clear(); catchUp = false; effectPauseFrame = -1;
         }
     }
     /**
@@ -1380,27 +1359,21 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     public Metrics metrics() {
         if (Thread.currentThread().threadId() != ownerThread) throw new IllegalStateException("Read engine metrics on server thread");
         return new Metrics(ticks, commits, rejected, debited, credited, dissipated,
-            worlds.size(), worlds.values().stream().mapToInt(grid -> grid.machines.size()).sum(), closed, failure, selectionSeed,
+            worlds.size(), worlds.values().stream().mapToInt(grid -> grid.machines.size()).sum(), closed, topology.failure(), selectionSeed,
             deliveryCount, deliveryWireVisits, fusedWires, destroyedReceivers, blastBlocks,
             totalDebit.fraction(), totalCredit.fraction(), totalLoss.fraction());
     }
     /**
-     * Topology callback for a block state change. It reserves a placement slot
-     * in {@code ContactOrder} when the new state is controlled, and cancels the
-     * slot when it is not. The slot keeps the order in which blocks were placed.
-     * The method creates the grid of the level on the first controlled block.
+     * Topology callback for a block state change. The method creates the grid of the level on the first controlled block.
      * It does not publish anything. {@link #position} observes the entry later.
      */
     @Override
     public void blockChanged(ServerLevel level, BlockPos at, BlockState before, BlockState after) {
         boolean recognized = controls(after);
         var grid = worlds.get(level);
-        if (grid != null && !grid.failure.isEmpty()) return;
         if (recognized) {
-            if (grid == null) { grid = new WorldGrid(selectionSeed ^ 0x5343455848495354L); worlds.put(level, grid); }
-            grid.contactOrder.reservePlacement(point(at));
+            if (grid == null) { grid = new WorldGrid(); worlds.put(level, grid); }
         } else if (grid != null) {
-            grid.contactOrder.cancelPlacement(point(at));
             grid.foreignCandidate(at);   // 0.1.10.44 (P-5): a block next to the grid changed: probe it for an FE contact
         }
     }
@@ -1427,7 +1400,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         var state = chunk.getBlockState(at); var type = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         var loss = controls(state) ? EnergyNodeRegistry.conductorLoss(type) : null; Element element = null;
         var grid = worlds.get(level);
-        if (grid != null && !grid.failure.isEmpty()) return;
         // The chunk is already FULL. This can materialize its saved block entity,
         // without loading another chunk or renewing a world lookup ticket.
         if (loss != null || controls(state)) {
@@ -1459,11 +1431,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if (!cable.conductsNow()) loss = -2L;
             }
             element = new Element(type, loss == null ? -1 : loss, tile, routing, conductorFaces(tile));
-            if (grid == null) { grid = new WorldGrid(selectionSeed ^ 0x5343455848495354L); worlds.put(level, grid); }
+            if (grid == null) { grid = new WorldGrid(); worlds.put(level, grid); }
         }
         // A late server-post observation belongs to the next publication frame
         // if the world's END decision has already been made.
-        if (grid != null && grid.failure.isEmpty()) {
+        if (grid != null) {
             long frame = Math.max(ticks + 1, grid.entries.metrics().advancedFrame() + 1);
             if (element != null && element.tile instanceof IndependentSpecialCableBlockEntity || grid.specialObserved.containsKey(at)) {
                 grid.observeSpecial(frame, at.immutable(), element != null && element.tile instanceof IndependentSpecialCableBlockEntity ? element : null);
@@ -1483,7 +1455,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     @Override
     public void chunkRemoved(ServerLevel level, int chunkX, int chunkZ) {
         var grid = worlds.get(level);
-        if (grid != null && grid.failure.isEmpty()) {
+        if (grid != null) {
             grid.apply(grid.forget(at -> (at.getX() >> 4) == chunkX && (at.getZ() >> 4) == chunkZ));
             grid.registered.keySet().removeIf(at -> (at.getX() >> 4) == chunkX && (at.getZ() >> 4) == chunkZ);
             grid.foreign.removeIf(contact -> (contact.at.getX() >> 4) == chunkX && (contact.at.getZ() >> 4) == chunkZ);
@@ -1492,7 +1464,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if ((endpoint.at.getX() >> 4) != chunkX || (endpoint.at.getZ() >> 4) != chunkZ) return false;
                 retireForeign(endpoint); return true;
             });
-            grid.contactOrder.forgetPlacements(at -> (at.x() >> 4) == chunkX && (at.z() >> 4) == chunkZ);
             grid.catchUpEndpoints.removeIf(at -> (at.getX() >> 4) == chunkX && (at.getZ() >> 4) == chunkZ);
             grid.catchUp = !grid.catchUpEndpoints.isEmpty();
             grid.accessibilityTick = Long.MIN_VALUE;
@@ -1505,7 +1476,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     @Override public boolean interested(ServerLevel level, BlockPos at) {
         var grid = worlds.get(level);
-        if (grid == null || !grid.failure.isEmpty() || closed || !failure.isEmpty()) return true;
+        if (grid == null || closed) return true;
         if (controls(level.getBlockState(at))) return true;
         var endpoints = grid.endpointChunks(server.getTickCount());
         int cx = at.getX() >> 4, cz = at.getZ() >> 4;
@@ -1541,9 +1512,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     @SubscribeEvent
     public void beforeLevel(LevelTickEvent.Pre event) {
-        if (!(event.getLevel() instanceof ServerLevel level) || level.getServer() != server || closed || !failure.isEmpty()) return;
+        if (!(event.getLevel() instanceof ServerLevel level) || level.getServer() != server || closed) return;
         var grid = worlds.get(level);
-        if (grid == null || !grid.failure.isEmpty()) return;
+        if (grid == null) return;
         for (var item : grid.specialCables.entrySet()) {
             var at = item.getKey(); var cable = item.getValue();
             if (level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4) == null || cable.isRemoved()
@@ -1561,7 +1532,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         if (!grid.catchUp) return;
         grid.catchUp = false;
         try {
-            if (!topology.failure().isEmpty()) throw new IllegalStateException(topology.failure());
             // 0.1.11.0 (C-1): the catch-up gives the paused endpoints the tick that they missed: it settles in the frame of the
             // END that paused them (their per-tick budgets of that tick). Until 0.1.10.44 it used the budgets of this tick,
             // which the END of this tick then lacked, so each pause lost one tick of transfer.
@@ -1573,14 +1543,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     }
     /**
      * End of a server tick, after all levels ticked. It increments
-     * {@code ticks}, which advances the publication frame. A topology failure
-     * stops the whole engine here.
+     * {@code ticks}, which advances the publication frame.
      */
     @SubscribeEvent
     public void tick(ServerTickEvent.Post event) {
-        if (event.getServer() != server || closed || !failure.isEmpty()) return;
+        if (event.getServer() != server || closed) return;
         ticks++;
-        if (!topology.failure().isEmpty()) fail(new IllegalStateException(topology.failure()));
     }
     /**
      * END of a level tick. It runs after the block entities of the level ticked.
@@ -1602,17 +1570,21 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     @SubscribeEvent(priority = EventPriority.LOW)
     public void afterLevel(LevelTickEvent.Post event) {
-        if (!(event.getLevel() instanceof ServerLevel level) || level.getServer() != server || closed || !failure.isEmpty()) return;
+        if (!(event.getLevel() instanceof ServerLevel level) || level.getServer() != server || closed) return;
         var grid = worlds.get(level);
-        if (grid == null || !grid.failure.isEmpty() || !topology.operational(level)) return;
+        if (grid == null || !topology.operational(level)) return;
         try {
-            if (!topology.failure().isEmpty()) throw new IllegalStateException(topology.failure());
             for (var cable : grid.specialCables.values()) {
                 var at = cable.getBlockPos();
                 if (!cable.isRemoved() && level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4) != null
                         && level.shouldTickBlocksAt(ChunkPos.asLong(at))) cable.sampleDetector();
             }
             var changes = new ArrayList<>(grid.entries.advance(ticks + 1));
+            long entryDrops = grid.entries.metrics().dropped();
+            if (entryDrops > grid.entryDropsWarned && (grid.entryDropsWarned == 0 || entryDrops / 1000 > grid.entryDropsWarned / 1000)) {
+                LOG.warn("Energy grid entry limit reached in {}; extra blocks stay disconnected (drops={})", level.dimension().location(), entryDrops);
+                grid.entryDropsWarned = entryDrops;
+            }
             changes.addAll(grid.advanceSpecial(ticks + 1));
             // A world effect (fuse, blast) set this frame as its pause frame. Consume it once.
             boolean effectPause = grid.effectPauseFrame == ticks + 1;
@@ -1644,13 +1616,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             }
         } catch (RuntimeException error) { fail(level, grid, error); }
     }
-    /**
-     * Stops the whole engine. It records the failure text, logs the error and
-     * closes the topology. All event handlers then return at once. Only a
-     * server restart starts the engine again. Use this method only for a
-     * failure that affects all dimensions.
-     */
-    private void fail(RuntimeException error) { failure = error.toString(); LOG.error("SI energy engine stopped after an internal error", error); topology.close(); }
     /**
      * Returns the endpoints that a set of changed positions can affect:
      * <ul>
@@ -1743,16 +1708,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     /**
      * 0.1.11.30 (cable audit T-3): the state of one dimension's grid for {@code /mio_icif grid}: conductors, endpoints,
      * foreign FE ports, chunks with conductors and how many of them do not tick now (a line is cut there), settlement
-     * passes stopped by the time cap, the EU dropped at FE ports on chunk unload, and neighbour events the topology left
-     * out (no grid near them).
+     * passes stopped by the time cap, the EU dropped at FE ports on chunk unload, neighbour events the topology left
+     * out (no grid near them) and (0.1.11.32) the blocks left out at the bounds of the grid.
      */
     public record GridHealth(long conductors, int endpoints, int foreignPorts, int conductorChunks, int idleChunks,
-                             long timeCapped, double foreignDroppedEu, long filteredSignals) { }
+                             long timeCapped, double foreignDroppedEu, long filteredSignals, long overLimit) { }
 
     public GridHealth gridHealth(ServerLevel level) {
         if (level.getServer() != server || !server.isSameThread()) throw new IllegalStateException("Wrong grid diagnostics thread");
         var grid = worlds.get(level);
-        if (grid == null) return new GridHealth(0, 0, 0, 0, 0, 0, 0, topology.filteredSignals());
+        if (grid == null) return new GridHealth(0, 0, 0, 0, 0, 0, 0, topology.filteredSignals(), 0);
         long conductors = 0;
         int idle = 0;
         for (var entry : grid.conductorChunks.long2IntEntrySet()) {
@@ -1760,7 +1725,29 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (!level.shouldTickBlocksAt(entry.getLongKey())) idle++;
         }
         return new GridHealth(conductors, grid.machines.size(), grid.foreignPorts.size(), grid.conductorChunks.size(), idle,
-            grid.timeCapped, foreignDropped.toDouble(), topology.filteredSignals());
+            grid.timeCapped, foreignDropped.toDouble(), topology.filteredSignals(),
+            // 0.1.11.32: blocks left out at a bound (cables, machines, registrations, the entry queue)
+            grid.conductorLimitDrops + grid.endpointLimitDrops + grid.registrationLimitDrops + grid.entries.metrics().dropped());
+    }
+    /** 0.1.11.32 (cable audit E-2): world callbacks after a commit that threw (an addon's block, for example). */
+    private long callbackFailures;
+    /** Runs one world callback after a commit; an exception isolates the chunk of {@code owner} (a block entity or a position). */
+    private void afterCommit(ServerLevel level, Object owner, Runnable callback) {
+        try { callback.run(); }
+        catch (RuntimeException error) {
+            BlockPos at = owner instanceof BlockEntity be ? be.getBlockPos() : owner instanceof BlockPos pos ? pos : null;
+            callbackFailed(level, at, error);
+        }
+    }
+    /** {@link IEnergyConductor#onEnergyPass} under the same rule, without a lambda (it runs for every powered cable, every tick). */
+    private void passEnergy(ServerLevel level, IEnergyConductor conductor) {
+        try { conductor.onEnergyPass(); }
+        catch (RuntimeException error) { callbackFailed(level, conductor instanceof BlockEntity be ? be.getBlockPos() : null, error); }
+    }
+    private void callbackFailed(ServerLevel level, BlockPos at, RuntimeException error) {
+        callbackFailures++;
+        if (at != null) topology.isolateChunk(level, at, error);
+        else if (callbackFailures == 1 || callbackFailures % 1000 == 0) LOG.warn("SI energy callback failed (failures={})", callbackFailures, error);
     }
     /**
      * Isolates a failure to one dimension. It logs the error, drops the pending
@@ -1779,7 +1766,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * or closed the engine. The caller must then stop at once.
      */
     private boolean currentWorld(ServerLevel level, WorldGrid grid) {
-        return !closed && grid.failure.isEmpty() && server != null
+        return !closed && server != null
             && worlds.get(level) == grid && server.getLevel(level.dimension()) == level;
     }
     /**
@@ -1811,8 +1798,19 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             long chunk = chunks.nextLong();
             boolean available = level.getChunkSource().getChunkNow(ChunkPos.getX(chunk), ChunkPos.getZ(chunk)) != null
                 && level.shouldTickBlocksAt(chunk) && topology.chunkReady(level, chunk);
-            grid.conductors.setChunkActive(ChunkPos.getX(chunk), ChunkPos.getZ(chunk), available);
+            // 0.1.11.32 (cable audit E-3): a chunk goes inactive at once, but active again only after it was available
+            // for REACTIVATE_TICKS in a row; a chunk at the edge of a player's ticking range that flips back and forth
+            // rebuilt the island and dropped the route plans at every flip. A chunk never cut is active at once.
+            boolean active = available;
+            if (!available) grid.cutChunks.put(chunk, Long.MAX_VALUE);
+            else if (grid.cutChunks.containsKey(chunk)) {
+                long since = grid.cutChunks.get(chunk);
+                if (since == Long.MAX_VALUE) { grid.cutChunks.put(chunk, tick); since = tick; }
+                if (tick - since < REACTIVATE_TICKS) active = false; else grid.cutChunks.remove(chunk);
+            }
+            grid.conductors.setChunkActive(ChunkPos.getX(chunk), ChunkPos.getZ(chunk), active);
         }
+        if (!grid.cutChunks.isEmpty()) grid.cutChunks.keySet().removeIf(chunk -> !grid.conductorChunks.containsKey(chunk));
         grid.accessibilityResult = result;
         grid.accessibilityTick = tick;
         grid.accessibilityRevision = readiness;
@@ -2222,9 +2220,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         // (every credit is bounded by the room, every debit by its credits and losses): the window
         // ends as it would after the round, without building the domains and the round. The legacy
         // walk draws random numbers for its receiver order, so it still runs in full.
-        if (!anyRoom && IndependentEnergyMode.fairDistribution()) { saturatedWindows++; return true; }
+        if (!anyRoom) { saturatedWindows++; return true; }
         var budgets = sources.stream().map(source -> windowOffer(source, allowances, plan.packetLimit)).toList();
-        final boolean fair = IndependentEnergyMode.fairDistribution();
         var shared = new ArrayList<DomainDistributor.SharedStorage>();
         var sinkIndices = new IdentityHashMap<Port, Integer>();
         for (int i = 0; i < sinks.size(); i++) sinkIndices.put(sinks.get(i), i);
@@ -2236,10 +2233,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (source.potential == null && receiver != null)
                 shared.add(new DomainDistributor.SharedStorage(i, receiver, source.capacity));
         }
-        // fair (default): deterministic fair share. legacy: the 0.1.7.x packet priority walk.
+        // 0.1.11.32: the fair share is the only distributor (the 0.1.7.x packet priority walk, distributionMode=legacy,
+        // was removed with the cable audit, decision D4)
         List<List<ConductorRegistry.Path[]>> effectPaths;
         PlannedRound round;
-        if (fair) {
+        {
             // 0.1.10.20 (G2): steady-window replay. The fair round is a pure function of its inputs (the source
             // budgets, packets and classes, the receiver rooms, rated inputs, classes and relay demands, the
             // shared storage, the line loss mode, and the rotation start of each source class), and the fair
@@ -2259,20 +2257,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 round = memo.round();
             } else {
                 var paths = new ArrayList<List<ConductorRegistry.Path[]>>();
-                var domains = domains(plan, sources, sinks, snapshot, receivers, rotation, grid, paths, budgets, true);
+                var domains = domains(plan, sources, sinks, snapshot, budgets, paths);
                 round = PlannedRound.of(FairShareDistributor.allocate(fairSources, domains, receivers, fairReceivers, shared,
                     lineLoss, rotation));
                 effectPaths = paths;
                 plan.rememberSteady(key, new SteadyRound(lineLoss, fairSources, fairReceivers, List.copyOf(shared), List.copyOf(paths), round));
             }
-        } else {
-            var quotes = sources.stream().map(source -> new DomainDistributor.Source(source.balance().whole(), source.packet,
-                source.partialPackets, source.packets)).toList();
-            var paths = new ArrayList<List<ConductorRegistry.Path[]>>();
-            var domains = domains(plan, sources, sinks, snapshot, receivers, level.getGameTime(), grid, paths, budgets, false);
-            round = PlannedRound.of(FractionalDistributor.allocateQuotedTraced(quotes, sources.stream().map(Port::balance).toList(),
-                domains, receivers, room, shared, budgets, selectionRandom), sources.size(), sinks.size());
-            effectPaths = paths;
         }
         // Net balance change per port: the credits and the debits of the port. A port
         // that is a source and a sink gets both. 0.1.10.8: two exact EnergyAmount sums
@@ -2381,9 +2371,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (path == null) {
                 if (!delivery.pathLoss().isZero()) throw new IllegalStateException("Direct delivery has conductor loss");
             } else {
-                // The legacy walk pays the whole path loss per delivery. The fair-share
-                // proportional loss depends on the credit, so this check is legacy only.
-                if (!fair && !com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyLoss.fromMilli(path.lossMilli()).equals(delivery.pathLoss())) throw new IllegalStateException("Delivery path and quoted loss differ");
                 // 0.1.10.7: a delivery below every limit of its path (the normal case) has no world
                 // effect. Its profile gives the same visit count, detector cables, powered conductors
                 // and weakest limit without visiting the path. Otherwise the path is visited as before.
@@ -2526,13 +2513,15 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if (guards != null) for (var guard : guards) guard.carry(received, voltage);
             }
             // 0.1.10.22 (G5): the voltage element opens after the commit; the topology change follows at the next tick start
-            for (var trip : voltageTrips) trip.tripForVoltage();
-            poweredConductors.forEach(IEnergyConductor::onEnergyPass);
-            for (var run : poweredRuns) for (var conductor : run) conductor.onEnergyPass();
-            detectorDeliveries.forEach(IndependentSpecialCableBlockEntity::delivered);
+            // 0.1.11.32 (cable audit E-2): the callbacks after the commit run one by one; one that throws isolates the
+            // chunk of its block (it rebuilt the whole dimension before, again at every tick it threw)
+            for (var trip : voltageTrips) afterCommit(level, trip, trip::tripForVoltage);
+            for (var conductor : poweredConductors) passEnergy(level, conductor);
+            for (var run : poweredRuns) for (var conductor : run) passEnergy(level, conductor);
+            for (var detector : detectorDeliveries) afterCommit(level, detector, detector::delivered);
             for (var port : involved) if (port.transformer != null
                     && !portCredits.getOrDefault(port, EnergyAmount.ZERO).equals(portDebits.getOrDefault(port, EnergyAmount.ZERO)))
-                ((IndependentTransformerBlockEntity) port.tile).markNetworkChanged();
+                afterCommit(level, port.tile, ((IndependentTransformerBlockEntity) port.tile)::markNetworkChanged);
             commits++; grid.balanceWrites++;
             for (var port : involved) grid.lastCommitted.add(port.position);
             totalDebit = totalDebit.add(debit); totalCredit = totalCredit.add(credit); totalLoss = totalLoss.add(loss);
@@ -2555,6 +2544,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             for (var overload : receiverPlan.entrySet()) {
                 var sink = overload.getKey();
                 var at = sink.position;
+                try {
                 var chunk = level.getChunkSource().getChunkNow(at.getX() >> 4, at.getZ() >> 4);
                 if (chunk == null || chunk.getBlockEntity(at) != sink.tile || !chunk.getBlockState(at).equals(sink.state)) continue;
                 int overloadTier = EnergyNetGlobal.getTierFromPower(overload.getValue());
@@ -2577,7 +2567,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 if (level.removeBlock(at, false)) {
                     grid.endpointEdits++;
                     grid.machines.remove(at); grid.machinesRevision++;
-                    grid.contactOrder.remove(point(at));
                     grid.initialGeneratorContacts.remove(at);
                     topology.changed(level, at);
                     removedByEffects.add(at);
@@ -2595,6 +2584,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     com.miophas.singularity_iteration.core.api.advancement.MioAchievements
                         .at(level, at, "industrial_accident", "machine_exploded");
                 }
+                } catch (RuntimeException error) { callbackFailed(level, at, error); }   // 0.1.11.32 (E-2): an overload handler
             }
             if (!removedByEffects.isEmpty()) {
                 // Our own completed removals are already known this frame.
@@ -2844,7 +2834,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 // Fair mode: a transformer is a relay. It sends what it holds, up to
                 // outputPackets * outputPacket, also below one full packet.
                 ports.add(new Port(tile, at, saved.state(), null, quote, limits.capacity(), input, output,
-                    limits.outputPacket(), limits.outputPackets(), IndependentEnergyMode.fairDistribution(), saved, null, null, List.of(at), null));
+                    limits.outputPacket(), limits.outputPackets(), true, saved, null, null, List.of(at), null));
                 continue;
             }
             var machine = tile;
@@ -2952,7 +2942,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     limits.capacity(), limits.inputLimit(), limits.outputPacket(), limits.outputPacket(), true, true, saved.energy());
                 refreshed.add(new Port(tile, port.position(), port.state(), null, quote, limits.capacity(),
                     port.inputs(), port.outputs(), limits.outputPacket(), limits.outputPackets(),
-                    IndependentEnergyMode.fairDistribution(), saved, null, null, port.emitterPositions(), null));
+                    true, saved, null, null, port.emitterPositions(), null));
                 continue;
             }
             var storage = ownedStorage(tile);
@@ -2998,7 +2988,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     public void registerTile(ServerLevel level, BlockPos at, IEnergyTile tile) {
         if (closed || level.getServer() != server || !server.isSameThread()) return;
-        var grid = worlds.computeIfAbsent(level, ignored -> new WorldGrid(selectionSeed ^ 0x5343455848495354L));
+        var grid = worlds.computeIfAbsent(level, ignored -> new WorldGrid());
         if (grid.registered.size() >= ENDPOINT_LIMIT && !grid.registered.containsKey(at)) {
             grid.registrationLimitDrops++;
             if (grid.registrationLimitDrops == 1 || grid.registrationLimitDrops % 1000 == 0)
@@ -3068,7 +3058,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * never the previous tick's packet. The existing sparse query remains unchanged. */
     public NodeStats currentTickNodeStats(ServerLevel level, BlockPos at) {
         var grid = worlds.get(level);
-        if (closed || !failure.isEmpty() || grid == null || !grid.failure.isEmpty() || tileAt(level, at) == null) return null;
+        if (closed || grid == null || tileAt(level, at) == null) return null;
         flushSamples(grid, at);
         NodeStats measured = grid.sampleTick == server.getTickCount() ? grid.samples.get(at) : null;
         return measured == null ? new NodeStats(0, 0, 0) : measured;
@@ -3608,6 +3598,23 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         handForeign(level, grid, endpoint);
     }
 
+    /**
+     * 0.1.11.32 (cable audit E-4): a chunk unloads: each foreign port in it hands what its cell holds to its block while
+     * the block is still there (the cell was dropped when the queued removal ran, and counted as lost).
+     */
+    @Override
+    public void chunkUnloading(ServerLevel level, LevelChunk chunk) {
+        var grid = worlds.get(level);
+        if (closed || grid == null || grid.foreignPorts.isEmpty()) return;
+        int chunkX = chunk.getPos().x, chunkZ = chunk.getPos().z;
+        for (var endpoint : List.copyOf(grid.foreignPorts.values())) {
+            if ((endpoint.at.getX() >> 4) != chunkX || (endpoint.at.getZ() >> 4) != chunkZ) continue;
+            if (endpoint.retired || endpoint.receiveFaces == 0 || FeLedger.fe(endpoint.held()) == 0) continue;
+            if (chunk.getBlockEntity(endpoint.at, LevelChunk.EntityCreationType.CHECK) != endpoint.tile) continue;
+            handForeign(level, grid, endpoint);
+        }
+    }
+
     /** 0.1.11.1: ends a foreign port; what its cell still holds is dropped and counted. */
     private void retireForeign(ForeignEndpoint endpoint) {
         if (endpoint.retired) return;
@@ -3644,8 +3651,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (level.removeBlock(at, false)) {
                 // 0.1.11.31: the scaffold or wall the cable was laid in stays (it vanished with the cable)
                 if (melted.getBlock() instanceof com.miophas.singularity_iteration.core.api.energy.ICableBlock cable)
-                    for (var stack : cable.meltDrops(melted)) net.minecraft.world.level.block.Block.popResource(level, at, stack);
-                grid.conductors.remove(point(at)); grid.contactOrder.remove(point(at));
+                    afterCommit(level, at, () -> { for (var stack : cable.meltDrops(melted)) net.minecraft.world.level.block.Block.popResource(level, at, stack); });
+                grid.conductors.remove(point(at));
                 grid.accessibilityTick = Long.MIN_VALUE;
                 topology.changed(level, at); removed.add(at);
                 fusedWires = Math.incrementExact(fusedWires);
@@ -3676,7 +3683,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             if (chunk == null) continue;
             var be = chunk.getBlockEntity(at, LevelChunk.EntityCreationType.CHECK);
             if (be instanceof IEnergyConductor conductor) {
-                conductor.removeInsulation();
+                afterCommit(level, be, conductor::removeInsulation);   // 0.1.11.32 (E-2)
                 stripped.add(at);
             }
         }
@@ -3805,7 +3812,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 : List.<net.minecraft.world.item.ItemStack>of();
             if (level.removeBlock(at, false)) {
                 grid.conductors.remove(point(at));
-                grid.contactOrder.remove(point(at));
                 grid.accessibilityTick = Long.MIN_VALUE;
                 grid.machines.remove(at); grid.machinesRevision++;
                 grid.initialGeneratorContacts.remove(at);
@@ -3929,12 +3935,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             return java.util.Objects.requireNonNull(provider.getEnergyPacketPolicy(), "energy packet policy");
         int count = tile instanceof IEnergySource source
             ? Math.max(0, Math.min(EnergyPacketPolicy.MAX_PACKETS_PER_ROUND, source.getPacketCount())) : 1;
-        // Fair mode: every source can send a partial packet. A storage block then
-        // supplies the exact demand instead of a full packet or nothing.
-        boolean partial = IndependentEnergyMode.fairDistribution()
-            || tile instanceof DemandEnergySource
-            || tile instanceof EnergyComponentHost host && host.energyComponent().ports().generator()
-            || tile instanceof AbstractEnergyBlockEntity block && block.isPowerSource();
+        // Every source can send a partial packet (fair share): a storage block supplies the exact demand.
+        boolean partial = true;
         return new EnergyPacketPolicy(Math.max(1, portPacket(tile, type, quote)), count, partial);
     }
     /**
@@ -3973,16 +3975,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * window. {@code key % 7} is a face ordinal (0..5) for a separate contact
      * of a two-contact generator, or 6 for all faces of the source together.
      *
-     * <p>For each entry the method builds:
-     * <ul>
-     *   <li>the loss to each sink ({@link RouteCosts})</li>
-     *   <li>the eligible sinks: reachable, and the whole loss is below the packet
-     *       size of the source</li>
-     *   <li>a sink priority order ({@link ReceiverOrder}). A separate contact
-     *       entry orders sinks by loss. A generator with two or more contacts in
-     *       one component orders sinks by {@code contactOrder}. Others keep the
-     *       window order.</li>
-     * </ul>
+     * <p>For each entry the method builds the loss to each sink ({@link RouteCosts}).
      * <p>Entries of sources with a zero window offer are left out.
      *
      * @param effectPaths output: per domain, the path arrays of its entries, in
@@ -3990,8 +3983,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      *        find the path of each delivery.
      */
     private List<DomainDistributor.Domain> domains(NativeRoutePlan plan, List<Port> sources, List<Port> sinks,
-            ConductorRegistry.Snapshot graph, int[] receivers, long worldTime, WorldGrid grid,
-            List<List<ConductorRegistry.Path[]>> effectPaths, List<EnergyAmount> budgets, boolean fair) {
+            ConductorRegistry.Snapshot graph, List<EnergyAmount> budgets, List<List<ConductorRegistry.Path[]>> effectPaths) {
         var result = new ArrayList<DomainDistributor.Domain>();
         for (var domainItem : plan.grouped.entrySet()) {
             var domain = new LinkedHashMap<Long, Map.Entry<long[], ConductorRegistry.Path[]>>();
@@ -4002,61 +3994,22 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             }
             if (domain.isEmpty()) continue;
             var selectedPaths = new ArrayList<ConductorRegistry.Path[]>();
-            int[] ids = new int[domain.size()]; int[][] priorities = new int[domain.size()][];
-            var routes = new ArrayList<RouteCosts>(); int index = 0; boolean shared = false;
+            int[] ids = new int[domain.size()];
+            var routes = new ArrayList<RouteCosts>(); int index = 0;
             for (var entry : domain.entrySet()) {
-                int source = (int) (entry.getKey() / 7); long[] losses = entry.getValue().getKey();
+                long[] losses = entry.getValue().getKey();
                 selectedPaths.add(entry.getValue().getValue());
-                // Slot 0..5: one separate face contact. Slot 6: all faces of the source together.
-                boolean contactEntry = entry.getKey() % 7 != 6; shared |= contactEntry;
                 // losses[i] == -1 means "sink i not reachable" (see NativeRoutePlan.record).
-                RouteCosts costs = new RouteCosts() {
+                routes.add(new RouteCosts() {
                     @Override public boolean reaches(int contact) { return losses[contact] >= 0; }
                     @Override public long lossMilliTo(int contact) {
                         if (!reaches(contact)) throw new IllegalArgumentException("Unreachable endpoint");
                         return losses[contact];
                     }
-                };
-                boolean[] eligible = new boolean[sinks.size()]; int eligibleCount = 0;
-                for (int receiver = 0; receiver < eligible.length; receiver++) {
-                    // Full connected receivers retain their random offset.
-                    eligible[receiver] = costs.reaches(receiver) && costs.wholeLossTo(receiver) < sources.get(source).packet;
-                    if (eligible[receiver]) eligibleCount++;
-                }
-                ids[index] = source; routes.add(costs);
-                // The fair-share distributor ignores receiver priorities. Skip the
-                // sort and the random order: an identity permutation is enough.
-                if (fair) { priorities[index++] = receivers.clone(); continue; }
-                int[] registration = receivers;
-                if (eligibleCount > 1 && contactEntry) {
-                    registration = Arrays.stream(receivers).boxed().sorted(java.util.Comparator.comparingLong(
-                        receiver -> costs.reaches(receiver) ? costs.lossMilliTo(receiver) : Long.MAX_VALUE))
-                        .mapToInt(Integer::intValue).toArray();
-                }
-                if (eligibleCount > 1 && !contactEntry && domainItem.getKey() >= 0
-                        && EnergyNodeRegistry.isGenerator(BuiltInRegistries.BLOCK.getKey(sources.get(source).state.getBlock()))) {
-                    var sourcePort = sources.get(source);
-                    ConductorRegistry.Position contact = null; int contacts = 0;
-                    for (Direction side : Direction.values()) {
-                        var near = point(sourcePort.position.relative(side));
-                        if ((sourcePort.outputs & (1 << side.ordinal())) != 0 && graph.contains(near)
-                                && graph.permits(near, side.getOpposite().get3DDataValue()) && graph.componentOf(near) == domainItem.getKey()) { contact = near; contacts++; }
-                    }
-                    if (contacts > 1) {
-                        var order = grid.contactOrder.receivers(point(sourcePort.position), contact);
-                        if (!order.isEmpty()) {
-                            var ranks = new HashMap<ConductorRegistry.Position, Integer>();
-                            for (int i = 0; i < order.size(); i++) ranks.put(order.get(i), i);
-                            registration = Arrays.stream(receivers).boxed().sorted(java.util.Comparator.comparingInt(
-                                receiver -> ranks.getOrDefault(point(sinks.get(receiver).position), Integer.MAX_VALUE)))
-                                .mapToInt(Integer::intValue).toArray();
-                        }
-                    }
-                }
-                priorities[index++] = ReceiverOrder.create(registration, eligible, worldTime, selectionRandom);
+                });
+                ids[index++] = (int) (entry.getKey() / 7);
             }
-            result.add(shared ? DomainDistributor.Domain.withSharedSourceContacts(ids, routes, priorities)
-                : new DomainDistributor.Domain(ids, routes, priorities));
+            result.add(new DomainDistributor.Domain(ids, routes));
             effectPaths.add(selectedPaths);
         }
         return result;

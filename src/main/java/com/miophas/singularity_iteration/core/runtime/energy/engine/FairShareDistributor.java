@@ -9,8 +9,8 @@ import java.util.Objects;
 /**
  * <p><b>EN:</b> Deterministic fair-share distributor for the smart grid mode.
  *
- * <p>This class replaces the packet priority walk of {@link FractionalDistributor}
- * when {@link IndependentEnergyMode#fairDistribution()} is on. It does not use
+ * <p>The only distributor of the native pass since 0.1.11.32 (the packet priority walk, distributionMode=legacy, was
+ * removed). It does not use
  * a random number. It does not depend on the order of receivers. It gives the
  * same result for the same input.
  *
@@ -285,10 +285,10 @@ public final class FairShareDistributor {
 
     /**
      * One positive delivery. {@code domain} and {@code entry} identify the
-     * route (the same values as {@link FractionalDistributor.Delivery}).
+     * route (the domain and the entry in it).
      * {@code voltage} is the packet that the source pushes to this receiver,
-     * for overvoltage effects: {@code min(packet, max(debit, min(room, budget)))},
-     * where room and budget are the values at the start of the round.
+     * for overvoltage effects: {@code min(packet, max(debit, budget))} (0.1.11.31: the room of the receiver no longer counts),
+     * where the budget is the value at the start of the round.
      */
     public record Delivery(int domain, int entry, int source, int receiver,
                            EnergyAmount credit, EnergyAmount pathLoss, double voltage) {

@@ -5349,5 +5349,6 @@
   "jei.mio_icif.cable_info.loss": "默认没有线路损耗。服务器选项 lineLossModel = proportional 打开后，每个包每格损失提示中的量。",
   "jei.mio_icif.cable_info.shock": "裸线或绝缘不足的导线在包超过绝缘吸收值时，电击 1.5 格内的生物。橡胶加一层绝缘，剪线钳去掉一层；隔着泡沫都不行。",
   "jei.mio_icif.cable_info.colour": "染色的绝缘导线只连接同色导线；未染色的导线和任何颜色都连接。",
-  "jei.mio_icif.cable_info.chunks": "线路经过不 tick 的区块时会在那里断开，整条线路要保持区块加载。用 EU 测量仪对准导线，可以看到通过这根导线的 EU。"
+  "jei.mio_icif.cable_info.chunks": "线路经过不 tick 的区块时会在那里断开，整条线路要保持区块加载。用 EU 测量仪对准导线，可以看到通过这根导线的 EU。",
+  "command.mio_icif.grid.over_limit": "%s：%s 个方块因超出电网上限未接入（每个维度 100,000 根导线、65,536 台机器）"
 }

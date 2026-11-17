@@ -74,7 +74,7 @@ public final class CableTier implements Comparable<CableTier>, ICableTier {
 
     // ============ Voltage tier instances ============
     // SCEX clean-room: base cable losses calibrated against 2.8.222-ex112
-    // 0.1.11.29: the losses only apply with lineLossModel=proportional or distributionMode=legacy; the default
+    // 0.1.11.29: the losses only apply with lineLossModel=proportional (legacy mode was removed in 0.1.11.32); the default
     // (lossless) uses them to choose routes only. electricDamage is the old per-touch damage of the non-grid path:
     // on the independent grid a bare cable hurts within 1.5 blocks by ceil((packet - absorption) / 64) (ShockAccumulator).
     // Metals since 0.1.11.4: LV tin, MV iron, HV copper, EV gold (the block ids keep the old names).

@@ -44,6 +44,9 @@ public final class GridCommand {
             source.sendSuccess(() -> Component.translatable("command.mio_icif.grid.level", name, health.conductors(), health.endpoints(),
                 health.foreignPorts(), health.conductorChunks(), health.idleChunks(), health.timeCapped(),
                 String.format(Locale.ROOT, "%.1f", health.foreignDroppedEu())), false);
+            // 0.1.11.32 (cable audit E-1): blocks left disconnected at the grid's bounds
+            if (health.overLimit() > 0)
+                source.sendSuccess(() -> Component.translatable("command.mio_icif.grid.over_limit", name, health.overLimit()), false);
         }
         if (shown == 0) source.sendSuccess(() -> Component.translatable("command.mio_icif.grid.empty"), false);
         return 1;

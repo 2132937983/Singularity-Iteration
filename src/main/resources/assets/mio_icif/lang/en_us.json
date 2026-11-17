@@ -5349,5 +5349,6 @@
   "jei.mio_icif.cable_info.loss": "No line loss by default. With the server option lineLossModel = proportional a packet loses the tooltip's amount per block.",
   "jei.mio_icif.cable_info.shock": "A bare or partly insulated cable shocks living things within 1.5 blocks while a packet is above what its insulation absorbs. Rubber adds a layer, the Cable Cutter takes one off; neither works through foam.",
   "jei.mio_icif.cable_info.colour": "Dyed insulated cables connect only to the same colour; an undyed cable connects to every colour.",
-  "jei.mio_icif.cable_info.chunks": "A line is cut where it crosses a chunk that does not tick; keep the whole route chunk-loaded. The EU Meter on a cable shows the EU through that cable."
+  "jei.mio_icif.cable_info.chunks": "A line is cut where it crosses a chunk that does not tick; keep the whole route chunk-loaded. The EU Meter on a cable shows the EU through that cable.",
+  "command.mio_icif.grid.over_limit": "%s: %s blocks left disconnected at the grid limits (100,000 cables and 65,536 machines per dimension)"
 }

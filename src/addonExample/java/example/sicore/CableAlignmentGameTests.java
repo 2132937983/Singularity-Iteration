@@ -2,10 +2,8 @@ package example.sicore;
 
 import com.miophas.singularity_iteration.core.api.energy.ICableEnergyNode;
 import com.miophas.singularity_iteration.core.api.energy.IColoredEnergyTile;
-import com.miophas.singularity_iteration.core.runtime.CoreConfig;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.*;
 import java.util.List;
-import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -35,29 +33,6 @@ public final class CableAlignmentGameTests {
         accumulator.apply((entity, damage) -> { h.assertTrue(entity == cow && damage == 3, "Shock path accounting differs from IC2"); calls[0]++; });
         h.assertTrue(calls[0] == 1, "Fraction below 1 EU produced shock damage");
         accumulator.apply((entity, damage) -> h.fail("Old exposure replayed next settlement"));
-        h.succeed();
-    }
-
-    @GameTest(template = "empty", batch = "cable_arithmetic")
-    public static void fractionalLossPreservesConservationAndFeGranularity(GameTestHelper h) {
-        boolean previous = CoreConfig.getBool("energynet", "roundEnetLoss", true);
-        try {
-            var sources = List.of(new DomainDistributor.Source(32, 32, true));
-            RouteCosts route = new RouteCosts() {
-                public boolean reaches(int id) { return true; }
-                public long lossMilliTo(int id) { return 200; }
-            };
-            var domains = List.of(new DomainDistributor.Domain(new int[]{0}, List.of(route), new int[][]{{0}}));
-            for (boolean rounded : new boolean[]{true, false}) {
-                CoreConfig.overrideBool("energynet", "roundEnetLoss", rounded);
-                var result = FractionalDistributor.allocateTraced(sources, List.of(EnergyAmount.of(32)), domains,
-                    new int[]{0}, List.of(EnergyAmount.of(1000)), List.of(), new Random(1));
-                h.assertTrue(result.debit(0).equals(EnergyAmount.of(32))
-                    && result.credit(0).add(result.dissipated()).equals(result.debit(0)), "Fractional loss broke conservation");
-                h.assertTrue(Math.abs(result.credit(0).toDouble() - (rounded ? 32 : 31.8)) < 1e-12, "Wrong rounded/fractional loss");
-                h.assertTrue(EnergyLoss.feLoss(200) == (rounded ? 0 : 1), "FE loss was rounded down below its actual route cost");
-            }
-        } finally { CoreConfig.overrideBool("energynet", "roundEnetLoss", previous); }
         h.succeed();
     }
 

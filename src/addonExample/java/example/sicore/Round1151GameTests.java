@@ -29,24 +29,22 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
  * the lossless mode, conservation), the dead band of a battery of another mod (no round trips), the grid-tie interface
  * (export, import and bidirectional within its limit, one input budget, the migration of the Energy Converter), discovery
  * of a new block within three ticks, and the Joule view of an SI machine (Mekanism) through a mock. The production default
- * is the fair distribution with no line loss: the batches here select it (the addon test server runs the legacy walk).
+ * is the fair distribution with no line loss: the batches here select no line loss.
  */
 @GameTestHolder(CoreExampleMod.ID)
 @PrefixGameTestTemplate(false)
 public final class Round1151GameTests {
     private Round1151GameTests() {}
 
-    private static final String DISTRIBUTION = "scex.independent.distribution", LINE_LOSS = "scex.independent.lineLoss";
+    private static final String LINE_LOSS = "scex.independent.lineLoss";
     private static String lineLossBefore;
 
     private static void fairLossless() {
-        System.setProperty(DISTRIBUTION, "fair");
         lineLossBefore = System.getProperty(LINE_LOSS);
         System.setProperty(LINE_LOSS, "lossless");
     }
 
     private static void restore() {
-        System.setProperty(DISTRIBUTION, "legacy");
         if (lineLossBefore == null) System.clearProperty(LINE_LOSS); else System.setProperty(LINE_LOSS, lineLossBefore);
     }
 

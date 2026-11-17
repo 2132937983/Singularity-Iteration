@@ -27,13 +27,6 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class Round11531GameTests {
     private Round11531GameTests() {}
 
-    // the addon test server runs the legacy walk (build.gradle); the W2 rules are those of the fair distribution
-    @net.minecraft.gametest.framework.BeforeBatch(batch = "round11531_fair")
-    public static void fairOn(net.minecraft.server.level.ServerLevel level) { System.setProperty("scex.independent.distribution", "fair"); }
-
-    @net.minecraft.gametest.framework.AfterBatch(batch = "round11531_fair")
-    public static void fairOff(net.minecraft.server.level.ServerLevel level) { System.setProperty("scex.independent.distribution", "legacy"); }
-
     private static Block block(String path) { return BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", path)); }
     private static BooleanProperty flag(BlockState state, String name) { return (BooleanProperty) state.getBlock().getStateDefinition().getProperty(name); }
     private static BlockState facing(String id, Direction side) {

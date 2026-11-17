@@ -5,14 +5,9 @@ import com.miophas.singularity_iteration.core.platform.neoforge.energy.PlatformT
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
 import com.miophas.singularity_iteration.core.runtime.energy.IndependentSiEnergy;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.ConductorRegistry;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.DomainDistributor;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.FractionalDistributor;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.RouteCosts;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -28,86 +23,6 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder(CoreExampleMod.ID)
 @PrefixGameTestTemplate(false)
 public final class EnergyEngineRegressionGameTests {
-    private static RouteCosts route(long... loss) {
-        return new RouteCosts() {
-            public boolean reaches(int id) { return loss[id] >= 0; }
-            public long lossMilliTo(int id) { return loss[id]; }
-        };
-    }
-
-    @GameTest(template = "empty", batch = "packet_arithmetic")
-    public static void partialPacketsPayLossAndStopAtActualCapacity(GameTestHelper h) {
-        var source = List.of(new DomainDistributor.Source(4096, 512, false, 4));
-        var domain = List.of(new DomainDistributor.Domain(new int[]{0}, List.of(route(1000)), new int[][]{{0}}));
-        var round = FractionalDistributor.allocateTraced(source, List.of(EnergyAmount.of(4096)), domain,
-            new int[]{0}, List.of(EnergyAmount.fromDouble(512.5)), List.of(), new Random(1));
-        h.assertTrue(round.credit(0).equals(EnergyAmount.fromDouble(512.5))
-                && round.debit(0).equals(EnergyAmount.fromDouble(514.5)) && round.dissipated().equals(EnergyAmount.of(2))
-                && round.deliveries().size() == 2, "Fractional demand exceeded capacity or paid the wrong per-packet loss");
-        var split = DomainDistributor.allocateTraced(List.of(new DomainDistributor.Source(64, 32, false, 2)),
-            List.of(new DomainDistributor.Domain(new int[]{0}, List.of(route(0, 1000)), new int[][]{{0, 1}})),
-            new int[]{0, 1}, new long[]{1, 1000}, new Random(1));
-        h.assertTrue(split.debit(0) == 64 && split.credit(0) == 1 && split.credit(1) == 61
-                && split.dissipated() == 2 && split.deliveries().size() == 3, "Packet remainder was lost or enlarged between sinks");
-        var insufficient = DomainDistributor.allocateTraced(List.of(new DomainDistributor.Source(511, 512, false, 4)),
-            domain, new int[]{0}, new long[]{10_000}, new Random(1));
-        h.assertTrue(insufficient.debit(0) == 0, "Transformer emitted without a complete initial packet");
-        h.succeed();
-    }
-
-    @GameTest(template = "empty", batch = "packet_arithmetic")
-    public static void integralAndFractionalPlannersAgreeAcrossRandomDomains(GameTestHelper h) {
-        Random fixtures = new Random(20260929);
-        for (int trial = 0; trial < 400; trial++) {
-            int ns = 1 + fixtures.nextInt(5), nr = 1 + fixtures.nextInt(6), nd = 1 + fixtures.nextInt(3);
-            var sources = new ArrayList<DomainDistributor.Source>();
-            var amounts = new ArrayList<EnergyAmount>();
-            int[] ids = new int[ns], contacts = new int[nr];
-            long[] room = new long[nr];
-            var exactRoom = new ArrayList<EnergyAmount>();
-            for (int i = 0; i < ns; i++) {
-                long packet = 32L << fixtures.nextInt(4);
-                long reserve = fixtures.nextInt(10) * packet + fixtures.nextInt(32);
-                sources.add(new DomainDistributor.Source(reserve, packet, false, 1 + fixtures.nextInt(4)));
-                // Full-packet sources cannot spend this fraction, but it forces the exact planner.
-                amounts.add(new EnergyAmount(reserve, EnergyAmount.UNITS / 4));
-                ids[i] = i;
-            }
-            for (int i = 0; i < nr; i++) {
-                contacts[i] = i; room[i] = fixtures.nextInt(1500); exactRoom.add(EnergyAmount.of(room[i]));
-            }
-            var domains = new ArrayList<DomainDistributor.Domain>();
-            for (int d = 0; d < nd; d++) {
-                var routes = new ArrayList<RouteCosts>(); int[][] priorities = new int[ns][nr];
-                for (int s = 0; s < ns; s++) {
-                    long[] costs = new long[nr];
-                    for (int r = 0; r < nr; r++) { costs[r] = fixtures.nextInt(5) == 0 ? -1 : fixtures.nextInt(8) * 1000; priorities[s][r] = r; }
-                    for (int r = nr - 1; r > 0; r--) {
-                        int at = fixtures.nextInt(r + 1), old = priorities[s][r]; priorities[s][r] = priorities[s][at]; priorities[s][at] = old;
-                    }
-                    routes.add(route(costs));
-                }
-                domains.add(new DomainDistributor.Domain(ids, routes, priorities));
-            }
-            long seed = fixtures.nextLong();
-            var integer = DomainDistributor.allocateTraced(sources, domains, contacts, room, new Random(seed));
-            var exact = FractionalDistributor.allocateTraced(sources, amounts, domains, contacts, exactRoom, List.of(), new Random(seed));
-            long debits = 0, credits = 0;
-            for (int s = 0; s < ns; s++) {
-                h.assertTrue(exact.debit(s).equals(EnergyAmount.of(integer.debit(s))), "Planner debit mismatch trial " + trial);
-                h.assertTrue(integer.debit(s) <= Math.min(sources.get(s).reserve(), sources.get(s).packet() * sources.get(s).packetCount()), "Source budget overspent");
-                debits += integer.debit(s);
-            }
-            for (int r = 0; r < nr; r++) {
-                h.assertTrue(exact.credit(r).equals(EnergyAmount.of(integer.credit(r))) && integer.credit(r) <= room[r], "Planner capacity/credit mismatch trial " + trial);
-                credits += integer.credit(r);
-            }
-            h.assertTrue(debits == credits + integer.dissipated() && exact.dissipated().equals(EnergyAmount.of(integer.dissipated())), "Planner lost energy");
-            for (var delivery : integer.deliveries())
-                h.assertTrue(delivery.sourceDebit() <= sources.get(delivery.source()).packet(), "Multi-packet output became one overvoltage packet");
-        }
-        h.succeed();
-    }
 
     @GameTest(template = "reactor_loop", batch = "step_down_throughput", timeoutTicks = 100)
     public static void bothStepDownTiersFeedFourPacketsIntoOneStorage(GameTestHelper h) {
@@ -226,19 +141,21 @@ public final class EnergyEngineRegressionGameTests {
         h.setBlock(wirePos, wire);
         h.setBlock(sinkPos, facing("wiring/block_bat_box", Direction.EAST));
         AbstractEnergyBlockEntity source = h.getBlockEntity(sourcePos), sink = h.getBlockEntity(sinkPos);
-        source.getEnergyStorageInternal().setStored(100_000);
-        sink.getEnergyStorageInternal().setStored(sink.getEnergyStorageInternal().getCapacity() - 1);
+        // 0.1.11.31 (D3): the packet is what the source sends (capped by what it has), not the receiver's room
+        source.getEnergyStorageInternal().setStored(1);
         h.runAfterDelay(16, () -> {
             h.assertTrue(h.getBlockState(wirePos).is(wire.getBlock()) && h.getBlockEntity(sinkPos) == sink,
                 "One-EU actual packet melted a tin cable or exploded a BatBox");
-            h.assertTrue(source.getEnergyStorageInternal().getAmount() == 99_999
-                && sink.getEnergyStorageInternal().getAmount() == sink.getEnergyStorageInternal().getCapacity(), "One-EU packet/loss mismatch");
-            sink.getEnergyStorageInternal().setStored(0);
+            h.assertTrue(source.getEnergyStorageInternal().getAmount() == 0
+                && sink.getEnergyStorageInternal().getAmount() == 1, "One-EU packet/loss mismatch");
+            source.getEnergyStorageInternal().setStored(100_000);
+            sink.getEnergyStorageInternal().setStored(sink.getEnergyStorageInternal().getCapacity() - 1);
         });
         h.runAfterDelay(28, () -> {
-            h.assertTrue(h.getBlockState(wirePos).isAir(), "Full 512-EU packet no longer melts a tin cable");
+            h.assertTrue(h.getBlockState(wirePos).isAir(), "A 512-EU packet into a nearly full BatBox no longer melts a tin cable");
             h.assertTrue(h.getLevel().getBlockEntity(h.absolutePos(sinkPos)) == sink, "Cable fuse failed to suppress receiver explosion");
-            h.assertTrue(source.getEnergyStorageInternal().getAmount() == 99_999 - 512, "Fuse packet was duplicated or lost");
+            h.assertTrue(source.getEnergyStorageInternal().getAmount() == 100_000 - 1
+                && sink.getEnergyStorageInternal().getAmount() == sink.getEnergyStorageInternal().getCapacity(), "The melting delivery was duplicated or lost: source " + source.getEnergyStorageInternal().getAmount() + " sink " + sink.getEnergyStorageInternal().getAmount() + "/" + sink.getEnergyStorageInternal().getCapacity());
             h.setBlock(sourcePos, Blocks.AIR); h.setBlock(wirePos, Blocks.AIR); h.setBlock(sinkPos, Blocks.AIR);
         });
         h.runAfterDelay(42, h::succeed);

@@ -2,14 +2,9 @@ package example.sicore;
 
 import com.miophas.singularity_iteration.core.api.energy.EnergyPacketPolicy;
 import com.miophas.singularity_iteration.core.prefab.blockentity.AbstractEnergyBlockEntity;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.DomainDistributor;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.EnergyAmount;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.FractionalDistributor;
 import com.miophas.singularity_iteration.core.runtime.energy.engine.PacketAllowance;
-import com.miophas.singularity_iteration.core.runtime.energy.engine.RouteCosts;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,31 +27,12 @@ public final class EnergyWindowGameTests {
         allowance.debit(EnergyAmount.of(1));
         var quoted = allowance.quote(policy, EnergyAmount.of(1024), 1);
         h.assertTrue(quoted.equals(EnergyAmount.of(31)), "A new window renewed or discarded the original budget");
-        RouteCosts zero = new RouteCosts() {
-            public boolean reaches(int id) { return true; }
-            public long lossMilliTo(int id) { return 0; }
-        };
-        var sources = List.of(new DomainDistributor.Source(31, 32, false, 1));
-        var domains = List.of(new DomainDistributor.Domain(new int[]{0}, List.of(zero), new int[][]{{0}}));
-        var integer = DomainDistributor.allocateQuotedTraced(sources, domains, new int[]{0}, new long[]{1000},
-            List.of(), new long[]{31}, new Random(7));
-        var exact = FractionalDistributor.allocateQuotedTraced(sources, List.of(EnergyAmount.fromDouble(31.5)), domains,
-            new int[]{0}, List.of(EnergyAmount.of(1000)), List.of(), List.of(quoted), new Random(7));
-        h.assertTrue(integer.credit(0) == 31 && exact.credit(0).equals(quoted), "Full-packet threshold reapplied to a packet remainder");
-        allowance.debit(exact.debit(0));
+        allowance.debit(quoted);
         h.assertTrue(allowance.quote(policy, EnergyAmount.of(1024), 1).isZero(), "Incoming energy renewed a spent allowance");
         h.assertTrue(new PacketAllowance(policy, EnergyAmount.of(31)).remaining().isZero(), "Incomplete initial packet escaped");
         h.assertTrue(new PacketAllowance(policy, EnergyAmount.of(32)).quote(new EnergyPacketPolicy(32, 2, false), EnergyAmount.of(32), 1).isZero(), "Policy change reused a stale allowance");
         h.assertTrue(new EnergyPacketPolicy(Long.MAX_VALUE, 64, true).maximumTransfer() == Long.MAX_VALUE,
             "Packet ceiling overflowed");
-        for (int count : new int[]{0, 1, 8, 64}) {
-            var multi = List.of(new DomainDistributor.Source(65536, 32, true, count));
-            var round = FractionalDistributor.allocateTraced(multi, List.of(EnergyAmount.fromDouble(65536.5)), domains,
-                new int[]{0}, List.of(EnergyAmount.of(10000)), List.of(), new Random(1));
-            h.assertTrue(round.credit(0).equals(EnergyAmount.of(32L * count)), "Wrong multi-packet allowance: " + count);
-            for (var delivery : round.deliveries()) h.assertTrue(delivery.sourceDebit().compareTo(EnergyAmount.of(32)) <= 0,
-                "Multi-packet throughput became a high-voltage packet");
-        }
         h.succeed();
     }
 
@@ -134,7 +110,7 @@ public final class EnergyWindowGameTests {
         });
     }
 
-    @GameTest(template = "empty", batch = "addon_legacy_multi_packet", timeoutTicks = 100)
+    @GameTest(template = "empty", batch = "addon_multi_packet_inherited", timeoutTicks = 100)
     public static void inheritedSourceEmitsEightLowVoltagePackets(GameTestHelper h) {
         var p = new BlockPos(1, 1, 1);
         h.setBlock(p, CoreExampleMod.MULTI_SOURCE.get());
@@ -143,7 +119,7 @@ public final class EnergyWindowGameTests {
         InheritedSink sink = h.getBlockEntity(p.east()); int[] tick = {0};
         h.onEachTick(() -> {
             int now = ++tick[0];
-            if (now > 20 && now <= 60) h.assertTrue(sink.stored() == 256, "Legacy packet count was ignored or enlarged into an overvoltage packet");
+            if (now > 20 && now <= 60) h.assertTrue(sink.stored() == 256, "The packet count was ignored or enlarged into an overvoltage packet");
             if (now <= 60) sink.getEnergyStorageInternal().setStored(0);
             if (now == 60) { h.setBlock(p, Blocks.AIR); h.setBlock(p.east(), Blocks.AIR); }
             if (now == 80) h.succeed();

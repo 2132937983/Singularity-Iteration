@@ -5349,5 +5349,6 @@
   "jei.mio_icif.cable_info.loss": "既定では線路損失なし。サーバー設定 lineLossModel = proportional では、パケットは 1 ブロックごとに説明の量を失う。",
   "jei.mio_icif.cable_info.shock": "裸または絶縁の足りないケーブルは、パケットが絶縁の吸収量を超える間、1.5 ブロック以内の生物を感電させる。ゴムで 1 層増え、ケーブルカッターで 1 層外れる。フォーム越しにはできない。",
   "jei.mio_icif.cable_info.colour": "染めた絶縁ケーブルは同じ色とだけつながり、染めていないケーブルはどの色ともつながる。",
-  "jei.mio_icif.cable_info.chunks": "tick されないチャンクを通る線路はそこで切れる。経路全体をチャンク読み込みすること。EU メーターをケーブルに向けると、そのケーブルを通る EU が分かる。"
+  "jei.mio_icif.cable_info.chunks": "tick されないチャンクを通る線路はそこで切れる。経路全体をチャンク読み込みすること。EU メーターをケーブルに向けると、そのケーブルを通る EU が分かる。",
+  "command.mio_icif.grid.over_limit": "%s：電力網の上限で %s 個のブロックが未接続（次元ごとにケーブル 100,000、機械 65,536）"
 }

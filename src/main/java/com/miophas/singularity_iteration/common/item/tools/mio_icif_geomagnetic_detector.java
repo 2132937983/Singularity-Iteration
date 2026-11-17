@@ -23,7 +23,12 @@ import java.util.List;
  * 右键点击方块探测地磁强度
  */
 @SuppressWarnings("null")
-public class mio_icif_geomagnetic_detector extends mio_icif_bat {
+/**
+ * 0.1.11.35: an electric tool ({@link com.miophas.singularity_iteration.core.api.item.IElectricToolItem}), as the electric
+ * wireless manager: charging batteries and machines charge it, and it is no longer a source a machine or another mod
+ * drains (on the battery base alone it was a battery, so a charging battery skipped it).
+ */
+public class mio_icif_geomagnetic_detector extends mio_icif_bat implements com.miophas.singularity_iteration.core.api.item.IElectricToolItem {
 
     private static final int MAX_ENERGY = 50000;
     private static final int TRANSFER_SPEED = 128;
@@ -93,6 +98,12 @@ public class mio_icif_geomagnetic_detector extends mio_icif_bat {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         tooltipComponents.add(Component.translatable("tooltip.mio_icif.geomagnetic_detector.desc"));
     }
+
+    @Override
+    public long getEnergyPerUse() { return ENERGY_COST; }
+
+    @Override
+    public int getToolTier() { return 1; }
 
     /** A tool on the battery base: right click keeps its tool action, no inventory auto-charge. */
     @Override

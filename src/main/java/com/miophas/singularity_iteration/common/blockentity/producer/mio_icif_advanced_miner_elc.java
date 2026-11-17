@@ -347,8 +347,29 @@ private int currentDepth = 0;           // 当前挖掘深度
         }
     }
 
+    /**
+     * 0.1.11.35: what the miner really used from its storage (it pays per block: 512 EU, overclockers add blocks per
+     * cycle), averaged over the last second, for Jade and the overclocker panel. Its energy per tick is 0, which the
+     * overclocker statistics showed as 1 EU/t whatever the overclockers.
+     */
+    private long scexSpentThisWindow, scexWindowStart = Long.MIN_VALUE, scexDisplayedPower;
+
+    @Override
+    public long getDisplayedEnergyPerTick() { return scexDisplayedPower; }
+
+    private void rollPowerWindow() {
+        if (level == null) return;
+        long now = level.getGameTime();
+        if (scexWindowStart == Long.MIN_VALUE) scexWindowStart = now;
+        if (now - scexWindowStart < 20) return;
+        scexDisplayedPower = (scexSpentThisWindow + (now - scexWindowStart) - 1) / (now - scexWindowStart);
+        scexSpentThisWindow = 0;
+        scexWindowStart = now;
+    }
+
     @Override
     protected void onTick() {
+        if (level instanceof ServerLevel) rollPowerWindow();
         if (!actionOwner.canAct()) return;
         if (level instanceof ServerLevel && (scexScanConfigurationDirty || level.getGameTime() % 100 == 0)) {
             scanUpgrades(); scexScanConfigurationDirty = false;
@@ -557,9 +578,11 @@ private int currentDepth = 0;           // 当前挖掘深度
             if (silk.isPresent()) tool.enchant(silk.get(), 1);
         }
         final ItemStack lootTool = tool;
+        long before = energyStorage.getAmount();
         boolean removed = scexMiningPayment.attempt(energyStorage, itemHandler, SLOT_SCANNER, getItemAPI(),
             BASE_ENERGY_COST, SCANNER_ENERGY_COST,
             payment -> MiningLoot.capture(serverLevel, pos, lootTool, actionOwner, scexPendingDrops, drops -> true, payment));
+        scexSpentThisWindow += Math.max(0, before - energyStorage.getAmount());
         if (removed) flushPendingLoot();
         return removed;
     }

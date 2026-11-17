@@ -2589,6 +2589,32 @@ public final class CaptureDirector {
         }
     }
 
+    /** Scene "chunkloader" (-Dsi.capture.scene=chunkloader), 0.1.11.35: the chunk loader's map in the Nether (one grey before). */
+    private static void sceneChunkLoader() {
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        BlockPos at = new BlockPos(8, 70, 8);
+        server(40, sp -> {
+            var nether = sp.server.getLevel(net.minecraft.world.level.Level.NETHER);
+            sp.setGameMode(GameType.CREATIVE);
+            sp.teleportTo(nether, at.getX() + 0.5, at.getY() + 2, at.getZ() - 1.5, 0, 40);
+        });
+        server(60, sp -> {
+            var nether = sp.serverLevel();
+            for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) nether.setBlock(at.offset(x, -1, z), net.minecraft.world.level.block.Blocks.NETHERRACK.defaultBlockState(), 3);
+            nether.setBlock(at, block("producer/block_chunk_loader").defaultBlockState(), 3);
+            if (nether.getBlockEntity(at) instanceof net.minecraft.world.MenuProvider provider) sp.openMenu(provider, buf -> buf.writeBlockPos(at));
+        });
+        shot(60, "chunkloader/1_nether_map");
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    static {
+        if (OUT != null && "chunkloader".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneChunkLoader();
+        }
+    }
+
     /** Scene "resin" (-Dsi.capture.scene=resin), 0.1.11.26: the resin collector in its four facings, close, and as an item. */
     private static void sceneResin() {
         client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);

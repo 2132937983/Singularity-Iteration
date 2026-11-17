@@ -113,6 +113,14 @@ public interface IProducerBlock {
     long getEffectiveEnergyPerTick();
 
     /**
+     * 0.1.11.35: the energy use per tick that Jade, the machine info API and the overclocker panel show. The same as
+     * {@link #getEffectiveEnergyPerTick()} by default; a machine that pays per action instead of per tick (the advanced
+     * miner pays per block) returns what it really used, averaged over the last second.
+     * @return the displayed energy use (EU/t)
+     */
+    default long getDisplayedEnergyPerTick() { return getEffectiveEnergyPerTick(); }
+
+    /**
      * Gets the total processed amount.
      * @return the total processed amount
      */

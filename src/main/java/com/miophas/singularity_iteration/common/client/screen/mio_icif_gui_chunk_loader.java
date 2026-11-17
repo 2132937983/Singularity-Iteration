@@ -92,8 +92,19 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
         }
     }
 
+    /** A map colour as the ABGR pixel of the terrain image (0 for none). */
+    private static int abgr(MapColor mapColor) {
+        if (mapColor == null) return 0;
+        int rgb = mapColor.col;
+        return 0xFF000000 | ((rgb & 0xFF) << 16) | (rgb & 0xFF00) | ((rgb >> 16) & 0xFF);
+    }
+
     private void rebuildTerrainTexture(ChunkPos selfChunk) {
         if (terrainImage == null || minecraft == null || minecraft.level == null) return;
+        // 0.1.11.35: under a roof (the Nether) the top block of every column is the bedrock ceiling, so the map was one
+        // flat grey; there each column shows the first block at or below the loader's height (the floor around it)
+        boolean ceiling = minecraft.level.dimensionType().hasCeiling();
+        int floorStart = menu.getBlockPos() != null ? menu.getBlockPos().getY() : minecraft.level.getMinBuildHeight();
 
         for (int ci = -MAP_RADIUS; ci <= MAP_RADIUS; ci++) {
             for (int cj = -MAP_RADIUS; cj <= MAP_RADIUS; cj++) {
@@ -105,6 +116,17 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
 
                 for (int cx = 0; cx < 16; cx++) {
                     for (int cz = 0; cz < 16; cz++) {
+                        if (ceiling) {
+                            int y = floorStart;
+                            var cursor = new net.minecraft.core.BlockPos.MutableBlockPos(chunkPos.getMinBlockX() + cx, y, chunkPos.getMinBlockZ() + cz);
+                            BlockState found = chunk.getBlockState(cursor);
+                            while (found.isAir() && y > minecraft.level.getMinBuildHeight()) {
+                                cursor.setY(--y);
+                                found = chunk.getBlockState(cursor);
+                            }
+                            terrainImage.setPixelRGBA(baseX + cx, baseY + cz, found.isAir() ? 0 : abgr(found.getMapColor(minecraft.level, cursor)));
+                            continue;
+                        }
                         int surfaceY = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, cx, cz);
                         net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(
                             chunkPos.getMinBlockX() + cx, surfaceY, chunkPos.getMinBlockZ() + cz);
@@ -120,16 +142,7 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
                             state = chunk.getBlockState(pos);
                         }
 
-                        MapColor mapColor = state.getMapColor(minecraft.level, pos);
-                        int color = 0;
-                        if (mapColor != null) {
-                            int rgb = mapColor.col;
-                            int r = (rgb >> 16) & 0xFF;
-                            int g = (rgb >> 8) & 0xFF;
-                            int b = rgb & 0xFF;
-                            color = 0xFF000000 | (b << 16) | (g << 8) | r;
-                        }
-                        terrainImage.setPixelRGBA(baseX + cx, baseY + cz, color);
+                        terrainImage.setPixelRGBA(baseX + cx, baseY + cz, abgr(state.getMapColor(minecraft.level, pos)));
                     }
                 }
             }

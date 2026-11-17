@@ -112,7 +112,7 @@ public enum EUEnergyStorageProvider implements IBlockComponentProvider, IServerD
         if (blockEntity instanceof IGeneratorBlock generator) {
             data.putLong("OutputPower", generator.getPowerOutput());
         } else if (blockEntity instanceof IProducerBlock producer) {
-            data.putLong("WorkPower", producer.getEffectiveEnergyPerTick());
+            data.putLong("WorkPower", producer.getDisplayedEnergyPerTick());
         } else if (blockEntity instanceof IEnergyContainerBlock container) {
             data.putLong("OutputPower", container.getDischargeRate());
         }

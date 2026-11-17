@@ -69,6 +69,15 @@ public enum EUEnergyStorageProvider implements IBlockComponentProvider, IServerD
             tooltip.add(Component.translatable("jade.mio_icif.work_power", data.getLong("WorkPower")));
         }
 
+        // 0.1.11.36 (chunk loader audit L-9): chunks held now, selected, the state and the EU it pays per tick
+        if (data.contains("ChunkLoaderStatus")) {
+            String[] names = com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader.STATUS_NAMES;
+            int status = data.getInt("ChunkLoaderStatus");
+            String name = status >= 0 && status < names.length ? names[status] : "starting";
+            tooltip.add(Component.translatable("jade.mio_icif.chunk_loader", data.getInt("ChunkLoaderHeld"), data.getInt("ChunkLoaderSelected"),
+                Component.translatable("gui.mio_icif.chunk_loader.state." + name), data.getLong("ChunkLoaderCost")));
+        }
+
         if (data.contains("CableTier")) {
             // 优先使用"能量等级"编号显示（LV = 能量等级1，MV = 能量等级2 ……），
             // 若服务端未同步等级编号则回退为等级名称。
@@ -109,6 +118,13 @@ public enum EUEnergyStorageProvider implements IBlockComponentProvider, IServerD
      * discharge rate, and an ordinary machine reports its effective per-tick consumption.
      */
     private static void appendPower(CompoundTag data, BlockEntity blockEntity) {
+        if (blockEntity instanceof com.miophas.singularity_iteration.common.blockentity.producer.mio_icif_chunk_loader loader) {
+            data.putInt("ChunkLoaderStatus", loader.status());
+            data.putInt("ChunkLoaderHeld", loader.getForcedChunkCount());
+            data.putInt("ChunkLoaderSelected", loader.getLoadedChunkCount());
+            data.putLong("ChunkLoaderCost", loader.getEnergyPerTickPaid());
+            return;
+        }
         if (blockEntity instanceof IGeneratorBlock generator) {
             data.putLong("OutputPower", generator.getPowerOutput());
         } else if (blockEntity instanceof IProducerBlock producer) {

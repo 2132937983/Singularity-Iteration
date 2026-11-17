@@ -5353,5 +5353,11 @@
   "command.mio_icif.grid.over_limit": "%s：%s 个方块因超出电网上限未接入（每个维度 100,000 根导线、65,536 台机器）",
   "gui.mio_icif.protection.not_set": "未设定",
   "gui.mio_icif.protection.voltage_auto": "跟随线路（%s EU）",
-  "gui.mio_icif.protection.voltage_auto_none": "跟随线路（无导线）"
+  "gui.mio_icif.protection.voltage_auto_none": "跟随线路（无导线）",
+  "gui.mio_icif.chunk_loader.energy": "EU：%s / %s",
+  "gui.mio_icif.chunk_loader.cost": "当前耗电 %s EU/t",
+  "gui.mio_icif.chunk_loader.cell.self": "自身区块 [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.selected": "已选中 [%s, %s] · 点击取消",
+  "gui.mio_icif.chunk_loader.cell.unselected": "未选中 [%s, %s] · 点击选中",
+  "jade.mio_icif.chunk_loader": "区块：加载 %s / 已选 %s · %s · %s EU/t"
 }

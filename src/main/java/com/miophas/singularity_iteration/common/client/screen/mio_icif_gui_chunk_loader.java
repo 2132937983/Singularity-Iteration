@@ -264,9 +264,9 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
             mouseY >= y + ENERGY_GAUGE_Y && mouseY <= y + ENERGY_GAUGE_Y + LIGHTNING_HEIGHT) {
             ChunkLoaderMenu menu = this.getMenu();
             if (menu != null) {
-                guiGraphics.renderTooltip(this.font,
-                    Component.literal("Energy: " + menu.getEnergy() + "/" + menu.getMaxEnergy() + " EU"),
-                    mouseX, mouseY);
+                guiGraphics.renderComponentTooltip(this.font, java.util.List.of(
+                    Component.translatable("gui.mio_icif.chunk_loader.energy", menu.getEnergy(), menu.getMaxEnergy()),
+                    Component.translatable("gui.mio_icif.chunk_loader.cost", menu.getEnergyPerTick())), mouseX, mouseY);
             }
             return;
         }
@@ -274,7 +274,8 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
         // 0.1.10.11: the chunk count tells the state and how many selected chunks hold a ticket
         if (mouseX >= x + CHUNK_COUNT_X && mouseX <= x + CHUNK_COUNT_X + 16 && mouseY >= y + CHUNK_COUNT_Y && mouseY <= y + CHUNK_COUNT_Y + 26) {
             guiGraphics.renderComponentTooltip(this.font, java.util.List.of(statusText(menu.getStatus()),
-                Component.translatable("gui.mio_icif.chunk_loader.granted", menu.getForcedChunkCount(), menu.getLoadedChunkCount(), menu.getMaxChunks())),
+                Component.translatable("gui.mio_icif.chunk_loader.granted", menu.getForcedChunkCount(), menu.getLoadedChunkCount(), menu.getMaxChunks()),
+                Component.translatable("gui.mio_icif.chunk_loader.cost", menu.getEnergyPerTick())),
                 mouseX, mouseY);
             return;
         }
@@ -294,15 +295,9 @@ public class mio_icif_gui_chunk_loader extends mio_icif_screen<ChunkLoaderMenu> 
                         boolean loaded = menu.isChunkLoaded(dx, dy);
                         boolean isSelf = (dx == 0 && dy == 0);
 
-                        String tooltip;
-                        if (isSelf) {
-                            tooltip = "Chunk (self) [" + chunk.x + ", " + chunk.z + "]";
-                        } else if (loaded) {
-                            tooltip = "Chunk (loaded) [" + chunk.x + ", " + chunk.z + "]";
-                        } else {
-                            tooltip = "Chunk (unloaded) [" + chunk.x + ", " + chunk.z + "]";
-                        }
-                        guiGraphics.renderTooltip(this.font, Component.literal(tooltip), mouseX, mouseY);
+                        // 0.1.11.36: translated; "selected" (it said "loaded", whether or not the chunk holds a ticket)
+                        String state = isSelf ? "self" : loaded ? "selected" : "unselected";
+                        guiGraphics.renderTooltip(this.font, Component.translatable("gui.mio_icif.chunk_loader.cell." + state, chunk.x, chunk.z), mouseX, mouseY);
                     }
                     return;
                 }

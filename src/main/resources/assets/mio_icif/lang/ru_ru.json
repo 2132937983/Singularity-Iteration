@@ -5353,5 +5353,11 @@
   "command.mio_icif.grid.over_limit": "%s: %s блоков не подключено из-за пределов сети (100 000 кабелей и 65 536 машин на измерение)",
   "gui.mio_icif.protection.not_set": "Не задано",
   "gui.mio_icif.protection.voltage_auto": "По линии (%s EU)",
-  "gui.mio_icif.protection.voltage_auto_none": "По линии (нет кабеля)"
+  "gui.mio_icif.protection.voltage_auto_none": "По линии (нет кабеля)",
+  "gui.mio_icif.chunk_loader.energy": "EU: %s / %s",
+  "gui.mio_icif.chunk_loader.cost": "Сейчас потребляет %s EU/t",
+  "gui.mio_icif.chunk_loader.cell.self": "Свой чанк [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.selected": "Выбран [%s, %s] · нажмите, чтобы убрать",
+  "gui.mio_icif.chunk_loader.cell.unselected": "Не выбран [%s, %s] · нажмите, чтобы выбрать",
+  "jade.mio_icif.chunk_loader": "Чанки: удержано %s / выбрано %s · %s · %s EU/t"
 }

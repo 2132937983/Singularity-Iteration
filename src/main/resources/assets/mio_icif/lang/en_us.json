@@ -5353,5 +5353,11 @@
   "command.mio_icif.grid.over_limit": "%s: %s blocks left disconnected at the grid limits (100,000 cables and 65,536 machines per dimension)",
   "gui.mio_icif.protection.not_set": "Not set",
   "gui.mio_icif.protection.voltage_auto": "Line (%s EU)",
-  "gui.mio_icif.protection.voltage_auto_none": "Line (no cable)"
+  "gui.mio_icif.protection.voltage_auto_none": "Line (no cable)",
+  "gui.mio_icif.chunk_loader.energy": "EU: %s / %s",
+  "gui.mio_icif.chunk_loader.cost": "Uses %s EU/t now",
+  "gui.mio_icif.chunk_loader.cell.self": "Own chunk [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.selected": "Selected [%s, %s] · click to remove",
+  "gui.mio_icif.chunk_loader.cell.unselected": "Not selected [%s, %s] · click to select",
+  "jade.mio_icif.chunk_loader": "Chunks: %s held / %s selected · %s · %s EU/t"
 }

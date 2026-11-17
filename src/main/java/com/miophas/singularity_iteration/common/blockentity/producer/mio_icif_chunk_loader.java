@@ -138,6 +138,7 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
                 case 5, 6, 7 -> chunkBits[index - 5];
                 case 8 -> status;
                 case 9 -> active ? forcedChunks.size() : 0;
+                case 10 -> (int) Math.min(Integer.MAX_VALUE, active ? cost(forcedChunks.size()) : 0);   // 0.1.11.36: EU/t paid now
                 default -> 0;
             };
         }
@@ -148,7 +149,7 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         @Override
         public int getCount() { return DATA_COUNT; }
     };
-    public static final int DATA_COUNT = 10;
+    public static final int DATA_COUNT = 11;
 
     /** Recomputes the selection bits of the screen map (after a selection change only). */
     private void refreshChunkBits() {
@@ -185,6 +186,13 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         return true;
     }
 
+    /** 0.1.11.36 (chunk loader audit L-4): only the upgrades that act on this machine (storage, transformer...), as the menu. */
+    @Override
+    public boolean acceptsUpgrade(int slot, ItemStack stack) {
+        return stack.getItem() instanceof com.miophas.singularity_iteration.common.item.upgrade.mio_icif_upgrade upgrade
+            && upgrade.isSuitableFor(stack, getUpgradableProperties());
+    }
+
     public Set<Long> getLoadedChunks() {
         return Set.copyOf(loadedChunks);
     }
@@ -197,6 +205,9 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
     public int getForcedChunkCount() {
         return active ? forcedChunks.size() : 0;
     }
+
+    /** 0.1.11.36: the EU this loader pays per tick now (0 while it holds nothing). */
+    public long getEnergyPerTickPaid() { return active ? cost(forcedChunks.size()) : 0; }
 
     public double getEuPerChunk() {
         return ChunkLoaderPolicy.euPerChunk();
@@ -280,9 +291,13 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
     }
 
     public boolean addChunkToLoaded(ChunkPos chunk) {
-        if (!live() || ticketUpdate || !isChunkInRange(chunk) || loadedChunks.size() >= maxChunks()) return false;
+        if (!live() || ticketUpdate || !isChunkInRange(chunk) || loadedChunks.contains(chunkKey(chunk))) return false;
+        // 0.1.11.36 (audit L-6): the loader's own chunk comes first; a selection without it loaded nothing ("no chunk selected")
+        boolean withSelf = !loadedChunks.contains(selfKey()) && chunkKey(chunk) != selfKey();
+        if (loadedChunks.size() + (withSelf ? 2 : 1) > maxChunks()) return false;
         // Selection is free; the next natural tick pays before installing tickets.
-        if (!loadedChunks.add(chunkKey(chunk))) return false;
+        if (withSelf) loadedChunks.add(selfKey());
+        loadedChunks.add(chunkKey(chunk));
         selectionChanged(); return true;
     }
 
@@ -520,6 +535,8 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
 
     public static void tick(Level level, BlockPos pos, BlockState state, mio_icif_chunk_loader blockEntity) {
         if (!(level instanceof ServerLevel server) || !blockEntity.live()) return;
+        // 0.1.11.36 (audit L-6): a loader not placed by a player (a command, a structure, a builder) starts with its own chunk
+        if (blockEntity.loadedChunks.isEmpty()) blockEntity.addChunkToLoaded(blockEntity.getSelfChunkPos());
         if (blockEntity.upgradesDirty) {
             blockEntity.upgradesDirty = false;
             blockEntity.recalculateUpgradeStats();
@@ -609,7 +626,6 @@ public class mio_icif_chunk_loader extends AbstractEnergyBlockEntity implements 
         }
         chunksTag.putInt("count", i);
         tag.put("loadedChunks", chunksTag);
-        tag.putBoolean("active", active);
         tag.put("inventory", itemHandler.serializeNBT(registries));
         if (owner != null) {
             tag.putUUID("Owner", owner);

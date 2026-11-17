@@ -5353,5 +5353,11 @@
   "command.mio_icif.grid.over_limit": "%s：電力網の上限で %s 個のブロックが未接続（次元ごとにケーブル 100,000、機械 65,536）",
   "gui.mio_icif.protection.not_set": "未設定",
   "gui.mio_icif.protection.voltage_auto": "線路に合わせる（%s EU）",
-  "gui.mio_icif.protection.voltage_auto_none": "線路に合わせる（ケーブルなし）"
+  "gui.mio_icif.protection.voltage_auto_none": "線路に合わせる（ケーブルなし）",
+  "gui.mio_icif.chunk_loader.energy": "EU：%s / %s",
+  "gui.mio_icif.chunk_loader.cost": "現在の消費 %s EU/t",
+  "gui.mio_icif.chunk_loader.cell.self": "自分のチャンク [%s, %s]",
+  "gui.mio_icif.chunk_loader.cell.selected": "選択中 [%s, %s] · クリックで解除",
+  "gui.mio_icif.chunk_loader.cell.unselected": "未選択 [%s, %s] · クリックで選択",
+  "jade.mio_icif.chunk_loader": "チャンク：保持 %s / 選択 %s · %s · %s EU/t"
 }

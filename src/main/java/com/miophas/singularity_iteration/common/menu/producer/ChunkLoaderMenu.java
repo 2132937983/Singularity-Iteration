@@ -140,6 +140,8 @@ public class ChunkLoaderMenu extends mio_icif_machine_menu {
     public int getStatus() { return data.getCount() > 8 ? data.get(8) : 0; }
     /** 0.1.10.11: chunks that hold a ticket now. */
     public int getForcedChunkCount() { return data.getCount() > 9 ? data.get(9) : 0; }
+    /** 0.1.11.36: the EU paid per tick now. */
+    public int getEnergyPerTick() { return data.getCount() > 10 ? data.get(10) : 0; }
 
     public boolean isChunkLoaded(int dx, int dz) {
         int radius = 4;

@@ -222,8 +222,10 @@ public class EnergyTerminalBlockEntity extends BlockEntity implements MenuProvid
             if (cat == EnergyNetworkSnapshot.Category.PROTECTION && be instanceof IndependentSpecialCableBlockEntity cable
                     && cable.protective() && s.breakers.size() < EnergyNetworkSnapshot.MAX_BREAKERS) {
                 var relay = cable.relay();
+                cable.refreshLineVoltage();
+                // 0.1.11.34: the voltage it opens above (the line's when automatic; 0 = none) and the flow (0 = not set)
                 s.breakers.add(new EnergyNetworkSnapshot.Breaker(at, relay.kind().ordinal(), relay.state().ordinal(), relay.lastCause().ordinal(),
-                    (float) relay.lastFlow(), relay.ratedFlow(), relay.ratedVoltage(), relay.delay(), relay.autoReclose(), relay.recloseIn(),
+                    (float) relay.lastFlow(), relay.ratedFlow(), relay.effectiveVoltage(), relay.delay(), relay.autoReclose(), relay.recloseIn(),
                     relay.recentTrips(), (float) relay.heat()));
             }
             switch (cat) {

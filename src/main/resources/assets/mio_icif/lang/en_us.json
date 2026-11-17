@@ -3762,8 +3762,8 @@
   "gui.mio_icif.protection.voltage": "Rated voltage",
   "gui.mio_icif.protection.delay": "Delay (ticks, %s s)",
   "gui.mio_icif.protection.reclose": "Automatic reclosing",
-  "gui.mio_icif.protection.help": "Opens after the delay at twice the rated flow, sooner for larger overloads, at once at ten times or above the rated voltage. Closes again after 3 s, at most three times in a row. Redstone holds it open.",
-  "gui.mio_icif.protection.help_fuse": "Blows after the delay at twice the rated flow, at once at ten times or above the rated voltage. Right-click a blown fuse with a new fuse cable to restore it.",
+  "gui.mio_icif.protection.help": "Opens after the delay at twice the rated flow, sooner for larger overloads, at once at ten times; with no rated flow it does not open for flow. Above the rated voltage (automatic: the packet limit of the line) it opens before the packet passes. Closes again after 3 s, at most three times in a row. Redstone holds it open.",
+  "gui.mio_icif.protection.help_fuse": "Blows after the delay at twice the rated flow, at once at ten times; with no rated flow it does not blow for flow. Above the rated voltage (automatic: the packet limit of the line) it blows before the packet passes. Right-click a blown fuse with a new fuse cable to restore it.",
   "gui.mio_icif.grid_panel.open": "Panel",
   "gui.mio_icif.grid_panel.title": "Grid Monitoring Panel",
   "gui.mio_icif.grid_panel.tab.0": "Overview",
@@ -5350,5 +5350,8 @@
   "jei.mio_icif.cable_info.shock": "A bare or partly insulated cable shocks living things within 1.5 blocks while a packet is above what its insulation absorbs. Rubber adds a layer, the Cable Cutter takes one off; neither works through foam.",
   "jei.mio_icif.cable_info.colour": "Dyed insulated cables connect only to the same colour; an undyed cable connects to every colour.",
   "jei.mio_icif.cable_info.chunks": "A line is cut where it crosses a chunk that does not tick; keep the whole route chunk-loaded. The EU Meter on a cable shows the EU through that cable.",
-  "command.mio_icif.grid.over_limit": "%s: %s blocks left disconnected at the grid limits (100,000 cables and 65,536 machines per dimension)"
+  "command.mio_icif.grid.over_limit": "%s: %s blocks left disconnected at the grid limits (100,000 cables and 65,536 machines per dimension)",
+  "gui.mio_icif.protection.not_set": "Not set",
+  "gui.mio_icif.protection.voltage_auto": "Line (%s EU)",
+  "gui.mio_icif.protection.voltage_auto_none": "Line (no cable)"
 }

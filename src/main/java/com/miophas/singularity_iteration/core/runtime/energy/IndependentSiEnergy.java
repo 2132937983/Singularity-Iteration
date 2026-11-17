@@ -1729,6 +1729,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             // 0.1.11.32: blocks left out at a bound (cables, machines, registrations, the entry queue)
             grid.conductorLimitDrops + grid.endpointLimitDrops + grid.registrationLimitDrops + grid.entries.metrics().dropped());
     }
+    /** 0.1.11.34 (cable audit W5): windows held back because a protective cable opened for an overvoltage before the commit. */
+    private long protectionHolds;
+    public long protectionHolds() { return protectionHolds; }
     /** 0.1.11.32 (cable audit E-2): world callbacks after a commit that threw (an addon's block, for example). */
     private long callbackFailures;
     /** Runs one world callback after a commit; an exception isolates the chunk of {@code owner} (a block entity or a position). */
@@ -1796,13 +1799,16 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         boolean result = true;
         for (var chunks = grid.conductorChunks.keySet().iterator(); chunks.hasNext(); ) {
             long chunk = chunks.nextLong();
-            boolean available = level.getChunkSource().getChunkNow(ChunkPos.getX(chunk), ChunkPos.getZ(chunk)) != null
-                && level.shouldTickBlocksAt(chunk) && topology.chunkReady(level, chunk);
-            // 0.1.11.32 (cable audit E-3): a chunk goes inactive at once, but active again only after it was available
-            // for REACTIVATE_TICKS in a row; a chunk at the edge of a player's ticking range that flips back and forth
-            // rebuilt the island and dropped the route plans at every flip. A chunk never cut is active at once.
+            boolean ticking = level.getChunkSource().getChunkNow(ChunkPos.getX(chunk), ChunkPos.getZ(chunk)) != null
+                && level.shouldTickBlocksAt(chunk);
+            boolean available = ticking && topology.chunkReady(level, chunk);
+            // 0.1.11.32 (cable audit E-3): a chunk that stops ticking goes inactive at once, but active again only after
+            // it ticked for REACTIVATE_TICKS in a row; a chunk at the edge of a player's ticking range that flips back and
+            // forth rebuilt the island and dropped the route plans at every flip. A chunk never cut is active at once.
+            // 0.1.11.34: only ticking counts here: a chunk that is not ready in the topology for a moment (a cable placed
+            // or broken there) comes back at once, as before 0.1.11.32 (it waited 40 ticks, a 2 s outage after each edit)
             boolean active = available;
-            if (!available) grid.cutChunks.put(chunk, Long.MAX_VALUE);
+            if (!ticking) grid.cutChunks.put(chunk, Long.MAX_VALUE);
             else if (grid.cutChunks.containsKey(chunk)) {
                 long since = grid.cutChunks.get(chunk);
                 if (since == Long.MAX_VALUE) { grid.cutChunks.put(chunk, tick); since = tick; }
@@ -2350,6 +2356,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         // 0.1.10.22 (G5): the protective cables of each delivery (path order) and the cables that open for an overvoltage
         var deliveryGuards = new IndependentSpecialCableBlockEntity[round.deliveries().size()][];
         var voltageTrips = new java.util.LinkedHashSet<IndependentSpecialCableBlockEntity>();
+        boolean[] throughOpenGuard = {false};   // 0.1.11.34: a delivery passes a protective cable that is open already
         int deliveryIndex = -1;
         for (var delivery : round.deliveries()) {
             deliveryIndex++;
@@ -2388,7 +2395,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                         for (int g = 0; g < profile.guards.length; g++) {
                             var guard = profile.guards[g];
                             // an open cable (tripped earlier in this tick; the topology follows at the next tick start) also guards
-                            if (!guard.relay().conducts()) { guarded[0] = true; open = profile.guardIndex[g]; break; }
+                            if (!guard.relay().conducts()) { guarded[0] = true; throughOpenGuard[0] = true; open = profile.guardIndex[g]; break; }
                             if (guard.voltageExceeded(deliveryVoltage)) { voltageTrips.add(guard); guarded[0] = true; open = profile.guardIndex[g]; break; }
                         }
                     }
@@ -2416,7 +2423,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                     // and the machine behind it get no overvoltage effect from this delivery
                     if (special != null && special.protective()) {
                         guards.add(special);
-                        if (!guarded[0] && !special.relay().conducts()) guarded[0] = true;   // opened earlier in this tick
+                        if (!guarded[0] && !special.relay().conducts()) { guarded[0] = true; throughOpenGuard[0] = true; }   // opened earlier in this tick
                         if (!guarded[0] && special.voltageExceeded(deliveryVoltage)) { voltageTrips.add(special); guarded[0] = true; }
                     }
                     Long conductorLimit = tierFuseLimit(type);
@@ -2466,6 +2473,15 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         }
         if (!traceDebit.equals(debit) || !traceCredit.equals(credit) || !traceLoss.equals(loss))
             throw new IllegalStateException("Delivery trace does not reconcile with the round");
+        // 0.1.11.34 (cable audit W5): a protective cable that a packet of this window exceeds opens before the commit, and
+        // nothing of the window passes in this tick: the overvoltage was committed into the machine before, only its
+        // effects were held back. The same for a delivery through a cable that is open already (it opened earlier in
+        // this tick; the topology drops it at the next tick start, and the window then plans again without it).
+        if (!voltageTrips.isEmpty() || throughOpenGuard[0]) {
+            for (var trip : voltageTrips) afterCommit(level, trip, trip::tripForVoltage);
+            protectionHolds++;
+            return true;
+        }
         // Transformers and (0.1.11.1) foreign ports store EU in a NetworkCell. All other ports use their owned storage.
         // A cell always gets a write, also with a zero delta.
         var writes = new ArrayList<CustomEUEnergyStorage.NetworkWrite>();
@@ -2512,10 +2528,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 var guards = deliveryGuards[sampleIndex];
                 if (guards != null) for (var guard : guards) guard.carry(received, voltage);
             }
-            // 0.1.10.22 (G5): the voltage element opens after the commit; the topology change follows at the next tick start
             // 0.1.11.32 (cable audit E-2): the callbacks after the commit run one by one; one that throws isolates the
             // chunk of its block (it rebuilt the whole dimension before, again at every tick it threw)
-            for (var trip : voltageTrips) afterCommit(level, trip, trip::tripForVoltage);
             for (var conductor : poweredConductors) passEnergy(level, conductor);
             for (var run : poweredRuns) for (var conductor : run) passEnergy(level, conductor);
             for (var detector : detectorDeliveries) afterCommit(level, detector, detector::delivered);

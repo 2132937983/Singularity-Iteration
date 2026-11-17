@@ -2568,6 +2568,17 @@ public final class CaptureDirector {
         });
         client(1, () -> { Minecraft mc = Minecraft.getInstance(); mc.player.getInventory().selected = 0; mc.options.hideGui = false; });
         shot(80, "cables/8_meter_hud");
+        // 0.1.11.34: the settings of a new breaker in a tin line: flow not set, voltage following the line (32 EU)
+        BlockPos breakerAt = new BlockPos(0, -60, 8);
+        server(1, sp -> {
+            var level = sp.serverLevel();
+            level.setBlock(breakerAt.west(), block("wiring/cable/block_tin_cable_1").defaultBlockState(), 3);
+            level.setBlock(breakerAt, block("wiring/block_eu_breaker_cable").defaultBlockState(), 3);
+            level.setBlock(breakerAt.east(), block("wiring/cable/block_tin_cable_1").defaultBlockState(), 3);
+            sp.teleportTo(level, 0.5, -59, 6.5, 0, 30);
+        });
+        client(20, () -> com.miophas.singularity_iteration.common.client.screen.ProtectionSettingsScreen.open(breakerAt));
+        shot(30, "cables/9_protection");
         client(10, () -> Minecraft.getInstance().stop());
     }
 

@@ -437,7 +437,8 @@ public class GridScadaScreen extends AbstractContainerScreen<EnergyTerminalMenu>
             PanelCharts.bar(g, 10, y + 13, barW, 4, Math.min(1F, ratio / 2F), ratio > 1 ? PanelCharts.down() : PanelCharts.up(), false);
             g.fill(10 + barW / 2, y + 12, 11 + barW / 2, y + 18, PanelCharts.TEXT);   // the rated flow mark (scale 0..2x)
             if (b.heat() > 0) PanelCharts.bar(g, 10, y + 18, barW, 1, b.heat(), PanelCharts.WARN, false);
-            String settings = Component.translatable(K + "settings", rate(b.flow()), rate(b.ratedFlow()),
+            String settings = Component.translatable(K + "settings", rate(b.flow()),
+                b.ratedFlow() > 0 ? rate(b.ratedFlow()) : Component.translatable("gui.mio_icif.protection.not_set").getString(),
                 b.ratedVoltage() > 0 ? DspUi.compact(b.ratedVoltage()) + " EU" : "-", String.format(Locale.ROOT, "%.2f", b.delay() / 20.0)).getString();
             DspUi.small(g, font, font.plainSubstrByWidth(settings, (int) ((half - 70) / 0.75F)), 10, y + 21, PanelCharts.DIM);
             if (b.kind() == 0 && b.state() != 0) {

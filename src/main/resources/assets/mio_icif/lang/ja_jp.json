@@ -3762,8 +3762,8 @@
   "gui.mio_icif.protection.voltage": "定格電圧",
   "gui.mio_icif.protection.delay": "遅延（tick、%s 秒）",
   "gui.mio_icif.protection.reclose": "自動再閉路",
-  "gui.mio_icif.protection.help": "定格の 2 倍の流量で遅延後に開き、過負荷が大きいほど早い。10 倍や定格電圧超えでは即座に開く。3 秒後に再投入（連続 3 回まで）。レッドストーン信号で開いたままにできる。",
-  "gui.mio_icif.protection.help_fuse": "定格の 2 倍の流量で遅延後に切れ、10 倍や定格電圧超えでは即座に切れる。切れたヒューズを新しいヒューズケーブルで右クリックすると元に戻る。",
+  "gui.mio_icif.protection.help": "定格流量の 2 倍で遅延の後に開き、過負荷が大きいほど早く、10 倍で即座に開く。定格流量が未設定なら流量では開かない。定格電圧（自動：線路の最大パケット）を超えるパケットは通る前に開く。3 秒後に再投入、連続 3 回まで。レッドストーンで開いたままになる。",
+  "gui.mio_icif.protection.help_fuse": "定格流量の 2 倍で遅延の後に切れ、10 倍で即座に切れる。定格流量が未設定なら流量では切れない。定格電圧（自動：線路の最大パケット）を超えるパケットは通る前に切れる。切れたヒューズは新しいヒューズケーブルで右クリックして戻す。",
   "gui.mio_icif.grid_panel.open": "パネル",
   "gui.mio_icif.grid_panel.title": "系統監視パネル",
   "gui.mio_icif.grid_panel.tab.0": "概要",
@@ -5350,5 +5350,8 @@
   "jei.mio_icif.cable_info.shock": "裸または絶縁の足りないケーブルは、パケットが絶縁の吸収量を超える間、1.5 ブロック以内の生物を感電させる。ゴムで 1 層増え、ケーブルカッターで 1 層外れる。フォーム越しにはできない。",
   "jei.mio_icif.cable_info.colour": "染めた絶縁ケーブルは同じ色とだけつながり、染めていないケーブルはどの色ともつながる。",
   "jei.mio_icif.cable_info.chunks": "tick されないチャンクを通る線路はそこで切れる。経路全体をチャンク読み込みすること。EU メーターをケーブルに向けると、そのケーブルを通る EU が分かる。",
-  "command.mio_icif.grid.over_limit": "%s：電力網の上限で %s 個のブロックが未接続（次元ごとにケーブル 100,000、機械 65,536）"
+  "command.mio_icif.grid.over_limit": "%s：電力網の上限で %s 個のブロックが未接続（次元ごとにケーブル 100,000、機械 65,536）",
+  "gui.mio_icif.protection.not_set": "未設定",
+  "gui.mio_icif.protection.voltage_auto": "線路に合わせる（%s EU）",
+  "gui.mio_icif.protection.voltage_auto_none": "線路に合わせる（ケーブルなし）"
 }

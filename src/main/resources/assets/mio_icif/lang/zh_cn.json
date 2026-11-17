@@ -3762,8 +3762,8 @@
   "gui.mio_icif.protection.voltage": "额定电压",
   "gui.mio_icif.protection.delay": "延时（tick，%s 秒）",
   "gui.mio_icif.protection.reclose": "自动重合闸",
-  "gui.mio_icif.protection.help": "2 倍额定流量时经过延时断开，过载越大越快；10 倍流量或超过额定电压时立即断开。3 秒后自动重合，最多连续 3 次。红石信号使其保持断开。",
-  "gui.mio_icif.protection.help_fuse": "2 倍额定流量时经过延时熔断，10 倍流量或超过额定电压时立即熔断。用新的保险丝导线右击熔断的保险丝即可恢复。",
+  "gui.mio_icif.protection.help": "2 倍额定流量时经过延时断开，过载越大越快，10 倍时立即断开；额定流量未设定时不因流量断开。包超过额定电压（自动：线路的单包上限）时在其通过前断开。3 秒后自动重合，最多连续 3 次。红石信号使其保持断开。",
+  "gui.mio_icif.protection.help_fuse": "2 倍额定流量时经过延时熔断，10 倍时立即熔断；额定流量未设定时不因流量熔断。包超过额定电压（自动：线路的单包上限）时在其通过前熔断。用新的保险丝导线右击熔断的保险丝即可恢复。",
   "gui.mio_icif.grid_panel.open": "面板",
   "gui.mio_icif.grid_panel.title": "电网监控面板",
   "gui.mio_icif.grid_panel.tab.0": "概览",
@@ -5350,5 +5350,8 @@
   "jei.mio_icif.cable_info.shock": "裸线或绝缘不足的导线在包超过绝缘吸收值时，电击 1.5 格内的生物。橡胶加一层绝缘，剪线钳去掉一层；隔着泡沫都不行。",
   "jei.mio_icif.cable_info.colour": "染色的绝缘导线只连接同色导线；未染色的导线和任何颜色都连接。",
   "jei.mio_icif.cable_info.chunks": "线路经过不 tick 的区块时会在那里断开，整条线路要保持区块加载。用 EU 测量仪对准导线，可以看到通过这根导线的 EU。",
-  "command.mio_icif.grid.over_limit": "%s：%s 个方块因超出电网上限未接入（每个维度 100,000 根导线、65,536 台机器）"
+  "command.mio_icif.grid.over_limit": "%s：%s 个方块因超出电网上限未接入（每个维度 100,000 根导线、65,536 台机器）",
+  "gui.mio_icif.protection.not_set": "未设定",
+  "gui.mio_icif.protection.voltage_auto": "跟随线路（%s EU）",
+  "gui.mio_icif.protection.voltage_auto_none": "跟随线路（无导线）"
 }

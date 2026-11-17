@@ -26,8 +26,9 @@ import org.lwjgl.glfw.GLFW;
 @SuppressWarnings("null")
 public class ProtectionSettingsScreen extends Screen {
     private static final String K = "gui.mio_icif.protection.";
-    private static final long[] VOLTAGES = {0, 32, 128, 512, 2048, 8192, 32768};
-    private static final int W = 240, H = 178;
+    /** 0.1.11.34: automatic (the line's packet limit), off, then fixed values. */
+    private static final long[] VOLTAGES = {ProtectionRelay.VOLTAGE_AUTO, ProtectionRelay.VOLTAGE_OFF, 32, 128, 512, 2048, 8192, 32768};
+    private static final int W = 240, H = 232;   // 0.1.11.34: taller for the longer help text
 
     private final BlockPos pos;
     private EditBox flowBox, delayBox;
@@ -58,7 +59,8 @@ public class ProtectionSettingsScreen extends Screen {
         flowBox = new EditBox(font, x + W - 96, y + 52, 80, 14, Component.empty());
         flowBox.setMaxLength(10);
         flowBox.setFilter(s -> s.chars().allMatch(Character::isDigit));
-        flowBox.setValue(Long.toString(relay.ratedFlow()));
+        flowBox.setValue(relay.ratedFlow() > 0 ? Long.toString(relay.ratedFlow()) : "");   // 0.1.11.34: empty = not set
+        flowBox.setHint(Component.translatable(K + "not_set").withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
         addRenderableWidget(flowBox);
         voltageIndex = 0;
         for (int i = 0; i < VOLTAGES.length; i++) if (VOLTAGES[i] == relay.ratedVoltage()) voltageIndex = i;
@@ -85,7 +87,12 @@ public class ProtectionSettingsScreen extends Screen {
 
     private Component voltageLabel() {
         long v = VOLTAGES[voltageIndex];
-        return v == 0 ? Component.translatable(K + "voltage_off") : Component.literal(v + " EU");
+        if (v == ProtectionRelay.VOLTAGE_AUTO) {
+            var level = Minecraft.getInstance().level;
+            long line = level != null && level.getBlockEntity(pos) instanceof IndependentSpecialCableBlockEntity cable ? cable.refreshLineVoltage() : 0;
+            return line > 0 ? Component.translatable(K + "voltage_auto", line) : Component.translatable(K + "voltage_auto_none");
+        }
+        return v == ProtectionRelay.VOLTAGE_OFF ? Component.translatable(K + "voltage_off") : Component.literal(v + " EU");
     }
 
     private Component recloseLabel() {
@@ -93,9 +100,9 @@ public class ProtectionSettingsScreen extends Screen {
     }
 
     private void apply(boolean reset) {
-        long flow = parse(flowBox.getValue(), 512);
+        long flow = parse(flowBox.getValue(), 0);   // 0.1.11.34: empty = not set
         int delay = (int) parse(delayBox.getValue(), 20);
-        PacketDistributor.sendToServer(new GridPackets.ProtectionSettings(pos, Math.max(1, flow), VOLTAGES[voltageIndex],
+        PacketDistributor.sendToServer(new GridPackets.ProtectionSettings(pos, Math.max(0, flow), VOLTAGES[voltageIndex],
             Math.max(1, Math.min(ProtectionRelay.MAX_DELAY, delay)), reclose, reset));
         if (!reset) onClose();
     }

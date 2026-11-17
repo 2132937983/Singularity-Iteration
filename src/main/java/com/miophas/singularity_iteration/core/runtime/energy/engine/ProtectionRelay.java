@@ -17,6 +17,12 @@ package com.miophas.singularity_iteration.core.runtime.energy.engine;
  *       The fourth trip without a quiet period of {@link #SETTLE_TICKS} locks it out until a player resets it.
  *       Without automatic reclosing it stays open until a reset.</li>
  *   <li><b>Fuse:</b> it blows once; a new fuse item restores it.</li>
+ *   <li><b>0.1.11.34 (cable audit W5):</b> a rated flow of 0 is "not set": no overload or short-circuit element (cables
+ *       have no flow limit, decision D2). A rated voltage of 0 is "automatic": the largest packet of the line it sits in
+ *       ({@link #setLineVoltage}, from the neighbouring cables); {@link #VOLTAGE_OFF} switches the voltage element off.
+ *       New cables start with both not set / automatic; a cable saved before with the old defaults (fuse 128 EU/t and
+ *       5 ticks, breaker 512 EU/t and 20 ticks, no rated voltage) loads as not set / automatic. The engine opens the
+ *       cable for an overvoltage before it commits the delivery.</li>
  * </ul>
  * <p><b>ZH:</b> 0.1.10.22（G5）：一个断路器或保险丝线缆的保护逻辑。纯计算：线缆把每个 tick 通过的能量与最大数据包交给它，由它决定线缆何时断开、
  * 断路器何时重新合上。过载（反时限）：超过额定流量时，热状态每 tick 增加 {@code (r^2 - 1) / (3 * 延时)}（{@code r} = 流量 / 额定流量），到 1 时断开；
@@ -47,12 +53,16 @@ public final class ProtectionRelay {
     public static final int SETTLE_TICKS = 600;
     /** Flow / rated flow from which the cable opens in the same tick. */
     public static final double INSTANT_RATIO = 10;
-    /** Setting bounds. */
-    public static final long MIN_FLOW = 1, MAX_FLOW = 1L << 31;
+    /** Setting bounds. 0.1.11.34: a rated flow of 0 is "not set". */
+    public static final long MIN_FLOW = 0, MAX_FLOW = 1L << 31;
+    /** 0.1.11.34: rated voltage values: 0 follows the line, -1 is off. */
+    public static final long VOLTAGE_AUTO = 0, VOLTAGE_OFF = -1;
+    /** The save format: 2 since 0.1.11.34 (0 = automatic voltage, 0 = flow not set). */
+    private static final int FORMAT = 2;
     public static final int MIN_DELAY = 1, MAX_DELAY = 1200;
 
     private final Kind kind;
-    private long ratedFlow, ratedVoltage;
+    private long ratedFlow, ratedVoltage, lineVoltage;
     private int delay;
     private boolean autoReclose;
     private State state = State.CLOSED;
@@ -65,8 +75,10 @@ public final class ProtectionRelay {
 
     public ProtectionRelay(Kind kind) {
         this.kind = kind;
-        if (kind == Kind.FUSE) { ratedFlow = 128; delay = 5; autoReclose = false; }
-        else { ratedFlow = 512; delay = 20; autoReclose = true; }
+        // 0.1.11.34: flow not set, voltage of the line (a fuse rated 128 EU/t blew at once on a line above 1280 EU/t)
+        ratedFlow = 0; ratedVoltage = VOLTAGE_AUTO;
+        if (kind == Kind.FUSE) { delay = 5; autoReclose = false; }
+        else { delay = 20; autoReclose = true; }
     }
 
     public Kind kind() { return kind; }
@@ -74,6 +86,13 @@ public final class ProtectionRelay {
     public Cause lastCause() { return lastCause; }
     public long ratedFlow() { return ratedFlow; }
     public long ratedVoltage() { return ratedVoltage; }
+    /** 0.1.11.34: the largest packet of the line (0 = not known: no cable next to it). Not saved. */
+    public long lineVoltage() { return lineVoltage; }
+    public void setLineVoltage(long packet) { lineVoltage = Math.max(0, packet); }
+    /** 0.1.11.34: the voltage the cable opens above (0 = none): the rated voltage, or the line's when automatic. */
+    public long effectiveVoltage() { return ratedVoltage > 0 ? ratedVoltage : ratedVoltage == VOLTAGE_AUTO ? lineVoltage : 0; }
+    /** 0.1.11.34: true when no rated flow is set (no overload element). */
+    public boolean flowUnset() { return ratedFlow <= 0; }
     public int delay() { return delay; }
     public boolean autoReclose() { return autoReclose; }
     public double heat() { return heat; }
@@ -89,7 +108,7 @@ public final class ProtectionRelay {
     /** Settings within bounds; a fuse never recloses. */
     public void configure(long ratedFlow, long ratedVoltage, int delay, boolean autoReclose) {
         this.ratedFlow = Math.max(MIN_FLOW, Math.min(MAX_FLOW, ratedFlow));
-        this.ratedVoltage = Math.max(0, Math.min(MAX_FLOW, ratedVoltage));
+        this.ratedVoltage = Math.max(VOLTAGE_OFF, Math.min(MAX_FLOW, ratedVoltage));
         this.delay = Math.max(MIN_DELAY, Math.min(MAX_DELAY, delay));
         this.autoReclose = kind == Kind.BREAKER && autoReclose;
     }
@@ -103,7 +122,8 @@ public final class ProtectionRelay {
 
     /** True when a packet of {@code packet} EU opens the closed cable at once (voltage element). */
     public boolean voltageExceeded(double packet) {
-        return state == State.CLOSED && ratedVoltage > 0 && packet > ratedVoltage;
+        long limit = effectiveVoltage();
+        return state == State.CLOSED && limit > 0 && packet > limit;
     }
 
     /** Opens the closed cable now (the voltage element, checked by the engine). */
@@ -118,6 +138,11 @@ public final class ProtectionRelay {
         lastVoltage = flowTick == tick ? voltage : 0;
         switch (state) {
             case CLOSED -> {
+                if (ratedFlow <= 0) {   // 0.1.11.34: no rated flow, no overload element
+                    heat = 0;
+                    if (recentTrips > 0 && tick - closedAt >= SETTLE_TICKS) recentTrips = 0;
+                    return Event.NONE;
+                }
                 double ratio = f / ratedFlow;
                 if (ratio >= INSTANT_RATIO) return trip(tick, Cause.SHORT_CIRCUIT);
                 if (ratio > 1) {
@@ -165,12 +190,20 @@ public final class ProtectionRelay {
     /** The saved form: settings, state, cause, thermal state, counters. */
     public long[] save() {
         return new long[] {ratedFlow, ratedVoltage, delay, autoReclose ? 1 : 0, state.ordinal(), lastCause.ordinal(),
-            Double.doubleToLongBits(heat), recloseIn, recentTrips};
+            Double.doubleToLongBits(heat), recloseIn, recentTrips, FORMAT};
     }
 
     public void load(long[] saved) {
         if (saved == null || saved.length < 9) return;
-        configure(saved[0], saved[1], (int) saved[2], saved[3] != 0);
+        long flow = saved[0], voltage = saved[1];
+        if (saved.length < 10) {
+            // 0.1.11.34: a save of the old format: its rated voltage 0 was "off", and the old defaults become not set /
+            // automatic (they were not chosen; a fuse rated 128 EU/t blew on a bigger line at once). Other settings stay.
+            boolean oldDefault = kind == Kind.FUSE ? flow == 128 && saved[2] == 5 : flow == 512 && saved[2] == 20;
+            if (oldDefault && voltage == 0) flow = 0;
+            else if (voltage == 0) voltage = VOLTAGE_OFF;
+        }
+        configure(flow, voltage, (int) saved[2], saved[3] != 0);
         State[] states = State.values();
         Cause[] causes = Cause.values();
         state = states[(int) Math.max(0, Math.min(states.length - 1, saved[4]))];

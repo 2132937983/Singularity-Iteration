@@ -80,9 +80,8 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         int id = player.getId();
         lodTier = com.miophas.singularity_iteration.common.client.render.FxBudget.tier(player);                    // 0.1.10.32 (P-3)
         strips.clear();
-        flat = !FcsClientConfig.classicFlightFx();   // 0.1.11.63 (Q2): constructivist wedges instead of the glowing flames
-        beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;
-        VertexConsumer vc = buffers.getBuffer(flat ? SiRenderTypes.FLAT : SiRenderTypes.FIELD_GLOW);
+        flat = !FcsClientConfig.classicFlightFx();   // 0.1.11.70 (W0): phase cones instead of the glowing flames
+        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         // 0.1.11.66 (R0): the jets leave the back ports of the worn chestplate (pods, boosters; a graviton core shows rings)
         // and the soles of the boots (QuantumNozzles)
         float sole = Math.max(boots ? jet * 0.75F : 0F, burst);
@@ -94,7 +93,9 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
                 : kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.LIFT ? jet * 0.6F
                 : kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.FIELD ? jet : 0F) : foot ? sole : 0F;
             if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
-            if (kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.FIELD) NozzleDraw.field(vc, pose, n.size(), p, seconds, !flat);
+            if (kind == com.miophas.singularity_iteration.common.suit.QuantumNozzles.Kind.FIELD) {
+                if (flat) NozzleDraw.fieldPhase(vc, pose, n.size(), p, seconds); else NozzleDraw.field(vc, pose, n.size(), p, seconds, true);
+            }
             else if (foot) nozzle(pose, vc, 0.07F * n.size(), 0.14F + 0.4F * p, p, Math.max(jet, burst), seconds, id, n.part().ordinal());
             else nozzle(pose, vc, 0.085F * n.size(), (0.18F + 0.5F * p) * (0.6F + 0.4F * n.size()), p, jet, seconds, id, 4 + (n.name().hashCode() & 3));
             pose.popPose();
@@ -103,12 +104,13 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
     }
 
     private boolean flat;
-    private float beat = 1F;
 
     private void nozzle(PoseStack pose, VertexConsumer vc, float radius, float length, float power, float throttle, float seconds, int id, int seed) {
         Matrix4f m = pose.last().pose();
-        if (flat) {
-            com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, m, length * 1.4F * beat, radius * 2.8F, 0.95F);
+        if (flat) {   // 0.1.11.70 (W0): a phase cone and a flare
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, m, length * 1.3F, radius * 2.4F, seconds + seed * 0.13F,
+                com.miophas.singularity_iteration.common.suit.PhaseRules.rate(throttle), 0F, 0.9F);
+            NozzleDraw.flare(vc, m, radius * 2.6F, 0.5F + 0.4F * power);
             return;
         }
         float flicker = 0.88F + 0.12F * (float) Math.sin(seconds * 37 + seed * 1.7) * (float) Math.sin(seconds * 23 + seed);
@@ -139,10 +141,11 @@ public final class SuitThrustLayer extends RenderLayer<AbstractClientPlayer, Pla
         arm.translateAndRotate(pose);
         pose.translate((right ? -1.2F : 1.2F) / 16F, 10.4F / 16F, 0);   // 0.1.11.66: the palm port of QuantumNozzles
         PALM.clear();
-        if (!FcsClientConfig.classicFlightFx()) {   // 0.1.11.63 (Q2): the constructivist palm wedge
-            float beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;
-            com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(buffers.getBuffer(SiRenderTypes.FLAT), pose.last().pose(),
-                (0.14F + 0.3F * power) * beat, 0.14F + 0.06F * power, 0.95F);
+        if (!FcsClientConfig.classicFlightFx()) {   // 0.1.11.70 (W0): the phase palm cone, short (it runs off the screen)
+            VertexConsumer glow = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
+            com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(glow, pose.last().pose(), 0.12F + 0.26F * power, 0.12F + 0.04F * power,
+                seconds, com.miophas.singularity_iteration.common.suit.PhaseRules.rate(thr), 0F, 0.9F);
+            NozzleDraw.flare(glow, pose.last().pose(), 0.1F, 0.5F + 0.4F * power);
             pose.popPose();
             return;
         }

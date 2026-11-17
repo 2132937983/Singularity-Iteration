@@ -75,7 +75,7 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
         if (output == null) return;
         PlayerModel<AbstractClientPlayer> model = getParentModel();
         if (!FcsClientConfig.classicFlightFx()) {
-            constructivist(pose, buffers, player, model, output, partial);
+            phase(pose, buffers, player, model, output, partial);
             return;
         }
         VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
@@ -112,19 +112,26 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
     }
 
     /**
-     * 0.1.11.63 (hit feel and constructivist FX phase Q2, decisions three B / four B): the constructivist maneuver flight.
-     * One crossed wedge (black edge, red body, white core) out of each palm and sole along the limb, its length with the
-     * output and the burn on a two-state beat; from 0.9 blocks per tick three speed bars (white, red, white) along the
-     * flight. No glow disc, flame strip, Mach nodes, deflection shell or haze.
+     * 0.1.11.70 (phase warp style phase W0): the phase maneuver flight. Every lit port of the worn suit burns a cone of light
+     * along its exhaust (white core, quantum cyan to violet, rings of compressed space sliding out; violet with the burn),
+     * with a flare at the nozzle; an attitude jet blinks (a point of light, a ring that grows across its exhaust and a
+     * short cone); a graviton core shows its field rings. By day a soft dark bed under the suit lets the light read on a
+     * bright sky. (The speed bars of the constructivist style are gone; the star streams of W1 take their place.)
      */
-    private void constructivist(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
-                                float[] output, float partial) {
-        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FLAT);
+    private void phase(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
+                       float[] output, float partial) {
         float thr = ManeuverModeClient.throttleOf(player, partial);
         float burn = net.minecraft.util.Mth.clamp((thr - 0.72F) / 0.2F, 0, 1);
-        float beat = (((player.tickCount >> 1) & 1) == 0) ? 1F : com.miophas.singularity_iteration.common.armory.WingmanPose.BEAT_LOW;
-        float seconds = (player.tickCount + partial) / 20F;
-        // 0.1.11.66 (R0, decision one A): one wedge out of every lit port of the worn suit, along its exhaust; graviton rings
+        float seconds = (player.tickCount + partial) / 20F, rate = com.miophas.singularity_iteration.common.suit.PhaseRules.rate(thr);
+        // the day bed first, flushed, so the light lies on it
+        pose.pushPose();
+        model.body.translateAndRotate(pose);
+        org.joml.Vector3f chest = pose.last().pose().transformPosition(0, 0.45F, 0, new org.joml.Vector3f());
+        pose.popPose();
+        com.miophas.singularity_iteration.common.client.render.PhaseFx.underlay(buffers.getBuffer(SiRenderTypes.FLAT),
+            new net.minecraft.world.phys.Vec3(chest.x, chest.y, chest.z), 1.1F, 1F);
+        if (buffers instanceof MultiBufferSource.BufferSource bs) bs.endBatch(SiRenderTypes.FLAT);
+        VertexConsumer vc = buffers.getBuffer(SiRenderTypes.FIELD_GLOW);
         java.util.List<QuantumNozzles.Nozzle> nozzles = NozzleDraw.worn(player);
         float[] outs = ManeuverModeClient.nozzleOutput(player, nozzles, partial);   // 0.1.11.67 (R1): the reaction control
         float kick = ManeuverModeClient.boostKick(player);
@@ -132,39 +139,17 @@ public final class ManeuverFlightLayer extends RenderLayer<AbstractClientPlayer,
             QuantumNozzles.Nozzle n = nozzles.get(i);
             float p = outs[i];
             if (p <= 0.02F || !NozzleDraw.push(pose, model, n)) continue;
-            if (n.kind() == QuantumNozzles.Kind.FIELD) NozzleDraw.field(vc, pose, n.size(), p, seconds, false);
-            else if (n.kind() == QuantumNozzles.Kind.RCS) {
-                // an attitude jet: a hard pulse of one length (no beat, no burn), short and narrow
-                com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, pose.last().pose(),
-                    0.34F * p * (0.6F + 0.4F * n.size()), 0.13F * n.size() + 0.05F, 0.95F);
-            } else {
-                float length = (0.2F + 0.55F * p + 0.7F * burn * p) * beat * (0.6F + 0.4F * n.size());
+            Matrix4f m = pose.last().pose();
+            if (n.kind() == QuantumNozzles.Kind.FIELD) NozzleDraw.fieldPhase(vc, pose, n.size(), p, seconds);
+            else if (n.kind() == QuantumNozzles.Kind.RCS) NozzleDraw.blink(vc, m, n.size(), player.tickCount, partial, seconds, rate);
+            else {
+                float length = com.miophas.singularity_iteration.common.suit.PhaseRules.length(p, burn, n.size());
                 if (n.kind() == QuantumNozzles.Kind.MAIN) length *= 1 + 0.9F * kick;   // 0.1.11.68 (R2): the boost stretch
-                com.miophas.singularity_iteration.common.client.render.ConstructFx.crossWedge(vc, pose.last().pose(), length,
-                    (0.14F + 0.08F * p) * n.size(), 0.95F);
+                float width = com.miophas.singularity_iteration.common.suit.PhaseRules.width(p, n.size());
+                com.miophas.singularity_iteration.common.client.render.PhaseFx.cone(vc, m, length, width, seconds + i * 0.13F, rate, burn, 0.9F);
+                NozzleDraw.flare(vc, m, width * 1.1F, 0.55F + 0.4F * p);
             }
             pose.popPose();
-        }
-        // the speed bars, in camera-relative world space (the layer pose ends there; the camera rotation is not in it)
-        net.minecraft.world.phys.Vec3 v = player.position().subtract(player.xo, player.yo, player.zo);
-        float alpha = com.miophas.singularity_iteration.common.armory.WingmanPose.speedBarAlpha((float) v.length());
-        if (alpha > 0) {
-            net.minecraft.world.phys.Vec3 cam = net.minecraft.client.Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            net.minecraft.world.phys.Vec3 centre = player.getPosition(partial).add(0, player.getBbHeight() * 0.5, 0).subtract(cam);
-            net.minecraft.world.phys.Vec3 back = v.normalize().scale(-1), side = back.cross(new net.minecraft.world.phys.Vec3(0, 1, 0));
-            if (side.lengthSqr() < 1.0E-4) side = new net.minecraft.world.phys.Vec3(1, 0, 0);
-            side = side.normalize();
-            net.minecraft.world.phys.Vec3 up = side.cross(back).normalize();
-            Matrix4f id = new Matrix4f();
-            float[][] colours = {com.miophas.singularity_iteration.common.client.render.ConstructFx.WHITE,
-                com.miophas.singularity_iteration.common.client.render.ConstructFx.RED, com.miophas.singularity_iteration.common.client.render.ConstructFx.WHITE};
-            double[][] at = {{0.35, 0.3, 1.2, 0.05}, {0, -0.1, 0.85, 0.1}, {-0.35, 0.2, 1.0, 0.05}};
-            for (int i = 0; i < 3; i++) {
-                net.minecraft.world.phys.Vec3 start = centre.add(side.scale(at[i][0])).add(up.scale(at[i][1])).add(back.scale(0.6));
-                // at most 2.4 blocks: longer bars ran past a chase camera and across the screen
-                com.miophas.singularity_iteration.common.client.render.ConstructFx.bar(vc, id, start, start.add(back.scale(Math.min(2.4, v.length() * 1.4) * at[i][2])),
-                    (float) at[i][3], net.minecraft.world.phys.Vec3.ZERO, colours[i], 0.92F * alpha);
-            }
         }
     }
 

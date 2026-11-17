@@ -173,6 +173,12 @@ public final class PlatformTopology implements AutoCloseable {
         default boolean keepsConductorIndex() { return false; }
         /** 0.1.11.0 (P-8): the observer's conductor index of {@code level}, or {@code null} when it has none yet. */
         default ConductorRegistry conductorIndex(ServerLevel level) { return null; }
+        /**
+         * 0.1.11.23: false when a neighbour event at {@code at} cannot concern the observer (no conductor or endpoint near
+         * it and the block there is not one the observer handles), so no sample is queued for it. Called on the server
+         * thread, after the block changed. True by default.
+         */
+        default boolean interested(ServerLevel level, BlockPos at) { return true; }
     }
     private static final Observer NO_OBSERVER = new Observer() { };
     /** All open topologies, by server. Guarded by the {@code PlatformTopology.class} lock. */
@@ -343,7 +349,9 @@ public final class PlatformTopology implements AutoCloseable {
     private final Map<ServerLevel, Recovery> recovering = new java.util.IdentityHashMap<>();
     // Chunk key to the server tick of the next retry. A chunk is here after a callback or sample failed.
     private final Map<Key, Long> quarantined = new HashMap<>();
-    private long recoveries, isolatedFailures, readinessRevision;
+    private long recoveries, isolatedFailures, readinessRevision, filteredSignals;
+    /** 0.1.11.23: neighbour events that no observer was interested in (no sample queued). */
+    public synchronized long filteredSignals() { return filteredSignals; }
     /**
      * Returns a counter that increases each time the queue or the readiness state can change.
      * A caller can cache {@link #ready} or {@link #chunkReady} results while this value stays the same.
@@ -652,6 +660,9 @@ public final class PlatformTopology implements AutoCloseable {
     public void onNeighbours(BlockEvent.NeighborNotifyEvent event) {
         if (!(event.getLevel() instanceof ServerLevel level) || level.getServer() != server) { return; }
         synchronized (this) { blockSignals++; }
+        // 0.1.11.23: a block update far from any grid (a farm, a redstone clock, a tree) queued seven samples and moved the
+        // readiness revision (which drops the reachability caches) for nothing
+        if (!observer.interested(level, event.getPos())) { synchronized (this) { filteredSignals++; } return; }
         changed(level, event.getPos());
         for (Direction direction : event.getNotifiedSides()) { changed(level, event.getPos().relative(direction)); }
     }

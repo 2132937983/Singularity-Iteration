@@ -514,6 +514,10 @@ neoForge.runs.register('benchGameTestServer') {
     loadedMods = [neoForge.mods[mod_id], neoForge.mods.si_core_example]
     gameDirectory = file('build/bench-gametest')
     systemProperty 'neoforge.enabledGameTestNamespaces', 'si_bench'
+    // 0.1.11.23: -PsiBenchProfile samples the server thread during the network scenarios ("[profile]" lines)
+    if (project.hasProperty('siBenchProfile')) systemProperty 'si.bench.profile', 'true'
+    if (project.hasProperty('siBenchRows')) systemProperty 'si.bench.rows', project.property('siBenchRows')
+    if (project.hasProperty('siBenchCable')) systemProperty 'si.bench.cable', project.property('siBenchCable')
     logLevel = org.slf4j.event.Level.INFO
 }
 

@@ -328,6 +328,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * calls) per grid per tick.
      */
     private static final int MAX_ROUTE_RECORDS_PER_TICK = 16_384;
+    /** 0.1.11.23: the time cap of one settlement pass, applied from its {@code SETTLE_CAP_AFTER_WINDOWS}-th window on. */
+    private static final long SETTLE_TIME_CAP_NANOS = 8_000_000L;
+    private static final int SETTLE_CAP_AFTER_WINDOWS = 8;
     /** Maximum route array cells (one {@code long} loss and one path slot each) per grid per tick. */
     private static final long MAX_ROUTE_ARRAY_CELLS_PER_TICK = 2_000_000L;
     /** Maximum sources and maximum sinks in one native window. */
@@ -862,6 +865,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         final ConductorRegistry.SearchBudget nativeSearch = new ConductorRegistry.SearchBudget(200_000);
         /** Route build limits of this grid for the current tick. */
         final RouteBuildBudget routeBudget = new RouteBuildBudget();
+        /** 0.1.11.23: settlement passes stopped by the time cap (diagnostics). */
+        long timeCapped;
         /** The native plan in progress, or {@code null}. A plan with origins left resumes on the next tick. */
         NativeRoutePlan nativePlan;
         /**
@@ -953,6 +958,24 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          * 8 x 8 area fell into 8 buckets.
          */
         final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap conductorChunks = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
+        /** 0.1.11.23: the chunks of the endpoints, foreign ports, registrations and special cables; built at most once a tick. */
+        private final it.unimi.dsi.fastutil.longs.LongOpenHashSet endpointChunks = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+        private long endpointChunksKey = Long.MIN_VALUE;
+
+        /** Rebuilt when the endpoints change (their revision, the edit count or the sizes of the other maps). */
+        it.unimi.dsi.fastutil.longs.LongOpenHashSet endpointChunks(long tick) {
+            long key = machinesRevision * 31 + endpointEdits;
+            key = key * 31 + foreignPorts.size(); key = key * 31 + registered.size(); key = key * 31 + specialCables.size();
+            if (key != endpointChunksKey) {
+                endpointChunksKey = key;
+                endpointChunks.clear();
+                for (var at : machines.keySet()) endpointChunks.add(ChunkPos.asLong(at));
+                for (var at : foreignPorts.keySet()) endpointChunks.add(ChunkPos.asLong(at));
+                for (var at : registered.keySet()) endpointChunks.add(ChunkPos.asLong(at));
+                for (var at : specialCables.keySet()) endpointChunks.add(ChunkPos.asLong(at));
+            }
+            return endpointChunks;
+        }
         /** Block type of each published conductor. Effects use it to find limits. */
         final Map<BlockPos, ResourceLocation> conductorTypes = new HashMap<>();
         /** Block entity of each published conductor. */
@@ -976,11 +999,6 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         /** Shock damage collected in one settlement. It is applied and cleared at the end of the settlement. */
         final com.miophas.singularity_iteration.core.runtime.energy.engine.ShockAccumulator<ShockRoute, LivingEntity> shocks =
             new com.miophas.singularity_iteration.core.runtime.energy.engine.ShockAccumulator<>();
-        /**
-         * 0.1.10.44 (P-1): the living, non-spectator entities in or next to a conductor chunk, collected once per
-         * settlement on first use ({@code null} before). Entities move between the START and END settlements.
-         */
-        List<LivingEntity> shockCandidates;
         /** Known foreign FE contacts. At most 4096 entries. */
         final BoundedContactIndex<ForeignContact, FECompatTile> foreign = new BoundedContactIndex<>(4096);
         /**
@@ -1015,6 +1033,8 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
          * work of a delivery is never done.
          */
         final ArrayList<PendingSample> pendingSamples = new ArrayList<>();
+        /** 0.1.11.23: the wire samples, kept apart: expanded only when a conductor position is read (see flushSamples). */
+        final ArrayList<PendingSample> pendingWires = new ArrayList<>();
         /**
          * 0.1.10.7: effect profiles of the delivery paths ({@link PathProfile}). 0.1.11.0 (P-3): a new snapshot
          * ({@code profileSnapshot}) drops only the profiles of islands that an edit ended (until 0.1.10.44: all).
@@ -1478,6 +1498,23 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             grid.accessibilityTick = Long.MIN_VALUE;
         }
     }
+    /**
+     * 0.1.11.23: a neighbour event concerns the grid when the block is one the engine handles, or a conductor, endpoint,
+     * foreign port or special cable of the grid is in the 3 x 3 chunks around it. Without a grid (not built yet, or
+     * failed) every event does.
+     */
+    @Override public boolean interested(ServerLevel level, BlockPos at) {
+        var grid = worlds.get(level);
+        if (grid == null || !grid.failure.isEmpty() || closed || !failure.isEmpty()) return true;
+        if (controls(level.getBlockState(at))) return true;
+        var endpoints = grid.endpointChunks(server.getTickCount());
+        int cx = at.getX() >> 4, cz = at.getZ() >> 4;
+        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+            long chunk = ChunkPos.asLong(cx + dx, cz + dz);
+            if (grid.conductorChunks.containsKey(chunk) || endpoints.contains(chunk)) return true;
+        }
+        return false;
+    }
     /** 0.1.11.0 (P-8): the conductor index is {@code WorldGrid.conductors}; the topology keeps no second registry. */
     @Override public boolean keepsConductorIndex() { return true; }
     /** 0.1.11.0 (P-8): the conductor index of the level's grid, or {@code null} before the grid exists. */
@@ -1784,11 +1821,10 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     private void settle(ServerLevel level, WorldGrid grid, long frame) {
         if (grid.sampleTick != frame) {
-            grid.sampleTick = frame; grid.samples.clear(); grid.pendingSamples.clear(); grid.packetSpent.clear();
+            grid.sampleTick = frame; grid.samples.clear(); grid.pendingSamples.clear(); grid.pendingWires.clear(); grid.packetSpent.clear();
             grid.receivedThisTick.clear();
         }
         grid.shocks.clear();
-        grid.shockCandidates = null;
         long started = System.nanoTime();
         chunkStatus.clear();   // 0.1.10.7: the chunk cache of the port scans lives for one settlement
         chunkStatusLevel = level;
@@ -1798,8 +1834,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             else FeLedger.inFrame(frame, () -> passes(level, grid, allowances, frame));
         } finally {
             chunkStatusLevel = null; chunkStatus.clear();
-            grid.shockCandidates = null;
-            grid.shocks.apply((entity, damage) -> {
+                grid.shocks.apply((entity, damage) -> {
                 if (entity.isAlive()) entity.hurt(level.damageSources().lightningBolt(), damage);
             });
             grid.timings.add(server.getTickCount(), System.nanoTime() - started);
@@ -1872,7 +1907,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         ConductorRegistry.Snapshot lastSnapshot = null;
         // Freeze each source offer once. Receiver windows and source groups
         // rotate independently. Neither can renew a source's output allowance.
+        long passStarted = System.nanoTime();
         for (int batch = 0; batch < 128; batch++) {
+            // 0.1.11.23: a time cap besides the operation budgets. After the first windows of the tick, a pass that has run
+            // SETTLE_TIME_CAP_NANOS stops; the cursors keep their place and the next tick goes on from there (as when an
+            // operation budget runs out). Large edits of a large island could otherwise make ticks of tens of ms.
+            if (batch >= SETTLE_CAP_AFTER_WINDOWS && System.nanoTime() - passStarted > SETTLE_TIME_CAP_NANOS) { grid.timeCapped++; return; }
             if (cachedPorts == null) {
                 // 0.1.11.1: the foreign ports spread among the SI ports (see interleave)
                 cachedPorts = interleave(ports(level, grid, prepareDemand), foreignPorts(level, grid, prepareDemand));
@@ -1893,8 +1933,9 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
             cachedAtCommits = grid.balanceWrites;
             cachedAtEdits = grid.endpointEdits;
             if (rebuildLists) {
+                int n = cachedPorts.size(), cap = Math.max(16, n * 4 / 3 + 1);   // 0.1.11.23: sized once, no rehashing
                 cachedSources = new ArrayList<>(); cachedSinks = new ArrayList<>();
-                cachedByPosition = new HashMap<>(); portIndex = new HashMap<>(); sourceIndex = new HashMap<>(); sinkIndex = new HashMap<>();
+                cachedByPosition = new HashMap<>(cap); portIndex = new HashMap<>(cap); sourceIndex = new HashMap<>(cap); sinkIndex = new HashMap<>(cap);
                 for (int i = 0; i < cachedPorts.size(); i++) {
                     var port = cachedPorts.get(i);
                     cachedByPosition.put(port.position, port); portIndex.put(port.position, i);
@@ -2135,8 +2176,12 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
         // Only this window's ports are read or written by this settlement, so
         // validation and writes are scoped to them (was: every port in the world,
         // where one unrelated stale quote rejected the whole window).
-        var involvedSet = new java.util.LinkedHashSet<Port>(sources); involvedSet.addAll(sinks);
-        final List<Port> involved = List.copyOf(involvedSet);
+        // 0.1.11.23: by identity (as sinkIndices): the record's equals and hashCode walked every field, quote and level
+        var involvedList = new ArrayList<Port>(sources.size() + sinks.size());
+        var involvedSeen = java.util.Collections.newSetFromMap(new IdentityHashMap<Port, Boolean>());
+        for (var port : sources) if (involvedSeen.add(port)) involvedList.add(port);
+        for (var port : sinks) if (involvedSeen.add(port)) involvedList.add(port);
+        final List<Port> involved = List.copyOf(involvedList);
         var snapshot = plan.graph; var room = new ArrayList<EnergyAmount>();
         int[] receivers = new int[sinks.size()];
         boolean anyRoom = false;
@@ -2826,7 +2871,14 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
                 skeleton.emitters() != null ? skeleton.emitters() : emissionPositions(tile), null));
             } catch (RuntimeException error) { topology.isolateChunk(level, entry.getKey(), error); chunkStatus.clear(); }
         }
-        ports.removeIf(port -> !topology.chunkReady(level, ChunkPos.asLong(port.position)) || grid.machines.get(port.position) != port.tile);
+        // 0.1.11.23: the (synchronized) readiness once per chunk, not once per port
+        var ready = new it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap();
+        ports.removeIf(port -> {
+            long chunk = ChunkPos.asLong(port.position);
+            int known = ready.containsKey(chunk) ? (ready.get(chunk) ? 1 : 0) : -1;
+            if (known < 0) { boolean r = topology.chunkReady(level, chunk); ready.put(chunk, r); known = r ? 1 : 0; }
+            return known == 0 || grid.machines.get(port.position) != port.tile;
+        });
         return ports;
     }
     /**
@@ -2964,7 +3016,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      */
     public NodeStats nodeStats(ServerLevel level, BlockPos at) {
         var grid = worlds.get(level);
-        if (grid != null) flushSamples(grid);
+        if (grid != null) flushSamples(grid, at);
         // sampleTick starts at Long.MIN_VALUE: test the sentinel before subtracting (overflow)
         return grid == null || !loaded(level, at) || grid.sampleTick == Long.MIN_VALUE
             || server.getTickCount() - grid.sampleTick > 1 ? null : grid.samples.get(at);
@@ -2984,7 +3036,7 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
     public NodeStats currentTickNodeStats(ServerLevel level, BlockPos at) {
         var grid = worlds.get(level);
         if (closed || !failure.isEmpty() || grid == null || !grid.failure.isEmpty() || tileAt(level, at) == null) return null;
-        flushSamples(grid);
+        flushSamples(grid, at);
         NodeStats measured = grid.sampleTick == server.getTickCount() ? grid.samples.get(at) : null;
         return measured == null ? new NodeStats(0, 0, 0) : measured;
     }
@@ -3003,20 +3055,27 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
 
     /** 0.1.10.7: the same sample for every conductor of a delivery wire (EU through: in = out = {@code amount}). */
     private static void sampleWire(WorldGrid grid, BlockPos[] wire, double amount, double voltage) {
-        grid.pendingSamples.add(new PendingSample(null, wire, amount, amount, voltage));
+        grid.pendingWires.add(new PendingSample(null, wire, amount, amount, voltage));
     }
 
     /** 0.1.10.7: one queued meter sample: one position, or every position of a wire. */
     private record PendingSample(BlockPos at, BlockPos[] wire, double input, double output, double voltage) { }
 
-    /** 0.1.10.7: adds the queued samples to {@code samples}, in the order they were taken. */
-    private static void flushSamples(WorldGrid grid) {
-        if (grid.pendingSamples.isEmpty()) return;
-        for (var pending : grid.pendingSamples) {
-            if (pending.wire() == null) addSample(grid, pending.at(), pending.input(), pending.output(), pending.voltage());
-            else for (var at : pending.wire()) addSample(grid, at, pending.input(), pending.output(), pending.voltage());
+    /**
+     * 0.1.10.7: adds the queued samples to {@code samples}, in the order they were taken. 0.1.11.23: the wire samples
+     * (every conductor of every delivery path) only when the position read is not an endpoint: an energy terminal reads
+     * its devices every tick, and expanded every wire of the grid each time (one map write and one record per conductor
+     * per delivery) to read none of them.
+     */
+    private static void flushSamples(WorldGrid grid, BlockPos reading) {
+        if (!grid.pendingSamples.isEmpty()) {
+            for (var pending : grid.pendingSamples) addSample(grid, pending.at(), pending.input(), pending.output(), pending.voltage());
+            grid.pendingSamples.clear();
         }
-        grid.pendingSamples.clear();
+        if (grid.pendingWires.isEmpty() || grid.machines.containsKey(reading)) return;
+        for (var pending : grid.pendingWires)
+            for (var at : pending.wire()) addSample(grid, at, pending.input(), pending.output(), pending.voltage());
+        grid.pendingWires.clear();
     }
 
     private static void addSample(WorldGrid grid, BlockPos at, double input, double output, double voltage) {
@@ -3597,22 +3656,11 @@ public final class IndependentSiEnergy implements PlatformTopology.Observer {
      * the entities of each exposed conductor exactly.
      */
     private boolean livingNear(ServerLevel level, WorldGrid grid, AABB box) {
-        if (grid.shockCandidates == null) {
-            var near = new ArrayList<LivingEntity>();
-            for (var entity : level.getAllEntities()) {
-                if (!(entity instanceof LivingEntity living) || !living.isAlive() || living.isSpectator()) continue;
-                var bounds = living.getBoundingBox();
-                int x0 = net.minecraft.util.Mth.floor(bounds.minX - 2) >> 4, x1 = net.minecraft.util.Mth.floor(bounds.maxX + 2) >> 4;
-                int z0 = net.minecraft.util.Mth.floor(bounds.minZ - 2) >> 4, z1 = net.minecraft.util.Mth.floor(bounds.maxZ + 2) >> 4;
-                boolean found = false;
-                for (int x = x0; x <= x1 && !found; x++) for (int z = z0; z <= z1 && !found; z++)
-                    found = grid.conductorChunks.containsKey(ChunkPos.asLong(x, z));
-                if (found) near.add(living);
-            }
-            grid.shockCandidates = near;
-        }
-        for (var entity : grid.shockCandidates) if (entity.isAlive() && entity.getBoundingBox().intersects(box)) return true;
-        return false;
+        // 0.1.11.23: the entity sections around the box (it walked every entity of the dimension once per settlement)
+        var found = new ArrayList<LivingEntity>(1);
+        level.getEntities(net.minecraft.world.level.entity.EntityTypeTest.forClass(LivingEntity.class), box,
+            living -> living.isAlive() && !living.isSpectator(), found, 1);
+        return !found.isEmpty();
     }
     /**
      * Collects shock damage for living, non-spectator entities within 1.5 blocks

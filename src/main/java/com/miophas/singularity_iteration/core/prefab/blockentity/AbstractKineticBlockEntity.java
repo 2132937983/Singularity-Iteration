@@ -20,7 +20,11 @@ import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("null")
 public class AbstractKineticBlockEntity extends BlockEntity implements MenuProvider, IMioIcifCapabilities.IKineticStorage, IWrenchable {
-    /** 0.1.10.10 (D7): counts server-side setChanged() calls for /mio_icif perf. */
+    /**
+     * 0.1.10.10 (D7): counts server-side setChanged() calls for /mio_icif perf. 0.1.11.23: the kinetic moves of this class
+     * (friction / loss each tick, transfers) mark the chunk for saving and refresh a comparator signal (TickMarks.saved)
+     * instead of a full setChanged.
+     */
     @Override
     public void setChanged() {
         if (level != null && !level.isClientSide)
@@ -52,14 +56,14 @@ public class AbstractKineticBlockEntity extends BlockEntity implements MenuProvi
     @Override
     public long receiveKinetic(long toReceive, boolean simulate) {
         long received = kineticStorage.receiveKinetic(toReceive, simulate);
-        if (!simulate && received > 0) setChanged();
+        if (!simulate && received > 0) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
         return received;
     }
 
     @Override
     public long extractKinetic(long toExtract, boolean simulate) {
         long extracted = kineticStorage.extractKinetic(toExtract, simulate);
-        if (!simulate && extracted > 0) setChanged();
+        if (!simulate && extracted > 0) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
         return extracted;
     }
 
@@ -112,20 +116,20 @@ public class AbstractKineticBlockEntity extends BlockEntity implements MenuProvi
     public void setKinetic(long kinetic) {
         long before = kineticStorage.getKineticStored();
         kineticStorage.setKinetic(kinetic);
-        if (kineticStorage.getKineticStored() != before) setChanged();
+        if (kineticStorage.getKineticStored() != before) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
     }
 
     @Override
     public void applyFrictionLoss() {
         long before = kineticStorage.getKineticStored();
         kineticStorage.applyFrictionLoss();
-        if (kineticStorage.getKineticStored() != before) setChanged();
+        if (kineticStorage.getKineticStored() != before) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
     }
 
     @Override
     public long generateKineticInternal(long amount, boolean simulate) {
         long generated = kineticStorage.generateKineticInternal(amount, simulate);
-        if (!simulate && generated > 0) setChanged();
+        if (!simulate && generated > 0) com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
         return generated;
     }
     
@@ -138,7 +142,7 @@ public class AbstractKineticBlockEntity extends BlockEntity implements MenuProvi
         blockEntity.kineticStorage.applyFrictionLoss();
         long kineticAfter = blockEntity.kineticStorage.getKineticStored();
         if (kineticBefore != kineticAfter) {
-            blockEntity.setChanged();
+            com.miophas.singularity_iteration.core.runtime.TickMarks.saved(blockEntity);
         }
         
         blockEntity.distributeKinetic();
@@ -184,7 +188,7 @@ public class AbstractKineticBlockEntity extends BlockEntity implements MenuProvi
                                 var target = level.getBlockEntity(adjacentPos);
                                 if (target != null) target.setChanged();
                             }
-                            setChanged();
+                            com.miophas.singularity_iteration.core.runtime.TickMarks.saved(this);
                         }
                     }
                 }

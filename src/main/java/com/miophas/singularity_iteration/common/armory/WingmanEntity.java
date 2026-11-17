@@ -89,6 +89,8 @@ public class WingmanEntity extends Mob {
     private static final EntityDataAccessor<Boolean> DATA_LANDED = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.BOOLEAN);
     /** 0.1.10.11: blade slash counter (high bits) and kind (low 2 bits: {@link #SLASH_COMBO}, {@link #SLASH_DASH}, {@link #SLASH_ARTS}). */
     private static final EntityDataAccessor<Integer> DATA_SLASH = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
+    /** 0.1.11.46 (motion audit M2): ticks until the held ranged weapon fires again, set at each shot (the draw, the reload). */
+    private static final EntityDataAccessor<Integer> DATA_FIRE_CD = SynchedEntityData.defineId(WingmanEntity.class, EntityDataSerializers.INT);
     public static final int SLASH_COMBO = 0, SLASH_DASH = 1, SLASH_ARTS = 2;
 
     // server state (saved)
@@ -181,6 +183,7 @@ public class WingmanEntity extends Mob {
         builder.define(DATA_BOOSTS, 0);
         builder.define(DATA_LANDED, false);
         builder.define(DATA_SLASH, 0);
+        builder.define(DATA_FIRE_CD, 20);
     }
 
     // ------------------------------------------------------------------ accessors
@@ -847,6 +850,12 @@ public class WingmanEntity extends Mob {
     private void engageMelee(LivingEntity enemy, ServerPlayer player) {
         Vec3 aim = enemy.position().add(0, enemy.getBbHeight() * 0.5, 0);
         faceSmooth(enemy.getEyePosition(), 35);
+        // 0.1.11.46 (M2): after a hit the Wingman stays a moment (the follow-through of the cut), then boosts away
+        if (hitPause > 0) {
+            setDeltaMovement(getDeltaMovement().scale(0.45));
+            if (--hitPause == 0) boost(position().subtract(enemy.position()).add(sideOf(enemy).scale(0.8)));
+            return;
+        }
         if (retreatTicks > 0) {                                   // peel off: sideways and up, then return
             retreatTicks--;
             Vec3 side = sideOf(enemy).scale(3.2).add(0, 1.6, 0);
@@ -872,11 +881,15 @@ public class WingmanEntity extends Mob {
                 enemy.knockback(1.6, -away.x, -away.z);
             }
             // 0.1.9.1 hit and away: a thruster boost out of reach, then a new pass from the other side
-            boost(position().subtract(enemy.position()).add(sideOf(enemy).scale(0.8)));
+            hitPause = HIT_PAUSE;   // the boost away follows the pause (0.1.11.46; it was at once, in the tick of the hit)
             retreatTicks = 10;
             strafeSign = -strafeSign;
         }
     }
+
+    /** Ticks a melee Wingman stays at its target after a hit before it boosts away (0.1.11.46). */
+    static final int HIT_PAUSE = 3;
+    private int hitPause;
 
     // ---- electric weapons (0.1.10.4)
 
@@ -1054,6 +1067,7 @@ public class WingmanEntity extends Mob {
         if (cooldown >= 0) entityData.set(DATA_SHOTS, entityData.get(DATA_SHOTS) + 1);   // muzzle flash on the clients
         if (cooldown >= 0) {
             attackCooldown = Math.max(2, cooldown);
+            entityData.set(DATA_FIRE_CD, attackCooldown);           // 0.1.11.46: the clients time the draw and the reload by it
             toldEmpty = false;
             wear(weapon, EquipmentSlot.MAINHAND, 1);                // 0.1.11.42: a shot wears the weapon (arrows stay free)
         } else {
@@ -1275,6 +1289,7 @@ public class WingmanEntity extends Mob {
         if (id == entityData.get(DATA_TARGET)) return;
         entityData.set(DATA_TARGET, id);
         station = null;
+        hitPause = 0;   // 0.1.11.46: a new target starts without the pause of the last hit
         if (id >= 0) world.playSound(null, getX(), getY(), getZ(), mio_icif_sounds.WINGMAN_LOCK.get(), SoundSource.NEUTRAL, 0.5F, 1.0F);
     }
 
@@ -1543,7 +1558,7 @@ public class WingmanEntity extends Mob {
     private int seenBoosts = Integer.MIN_VALUE, boostAt = -100;
     /** Smoothing per tick of the turn rate and the braking (the attitude test checks them as the entity uses them). */
     public static final float TURN_SMOOTH = 0.10F, BRAKE_SMOOTH = 0.15F;
-    private int seenShots = Integer.MIN_VALUE, lastShot = -100;
+    private int seenShots = Integer.MIN_VALUE, lastShot = -100, shotCooldown = 20;
     /** The recoil holds this many ticks after a shot (a gun firing faster keeps a steady braced pose). */
     private static final int RECOIL_HOLD = 8;
 
@@ -1579,6 +1594,7 @@ public class WingmanEntity extends Mob {
         if (shots != seenShots) {
             if (seenShots != Integer.MIN_VALUE) lastShot = tickCount;
             seenShots = shots;
+            shotCooldown = Math.max(2, entityData.get(DATA_FIRE_CD));
         }
         recoil += ((tickCount - lastShot <= RECOIL_HOLD ? 1 : 0) - recoil) * 0.35F;
         int s = entityData.get(DATA_SLASH);
@@ -1586,6 +1602,18 @@ public class WingmanEntity extends Mob {
             if (seenSlash != Integer.MIN_VALUE) { slashStart = tickCount; slashKind = s & 3; }
             seenSlash = s;
         }
+    }
+
+    /** Client: ticks since the last shot, with the partial tick (0.1.11.46: the draw, the reload, the throw). */
+    public float shotAge(float partialTick) { return tickCount - lastShot + partialTick; }
+    /** Client: the weapon's cooldown at the last shot, ticks. */
+    public int shotCooldown() { return shotCooldown; }
+
+    /** Client: the distance to the locked target, or a large value without one (0.1.11.46: the melee wind-up). */
+    public float targetDistance() {
+        int id = lockedTargetId();
+        Entity e = id < 0 ? null : level().getEntity(id);
+        return e == null ? 99 : distanceTo(e);
     }
 
     /** Client: 0 (no target) .. 1 (target locked), smoothed (0.1.10.13). */

@@ -113,16 +113,34 @@ public class WingmanRenderer extends HumanoidMobRenderer<WingmanEntity, WingmanR
             WingmanPose.Hold hold = WingmanPose.holdOf(entity.getMainHandItem(), blade);
             float pitch = headPitch * Mth.DEG_TO_RAD, yaw = netHeadYaw * Mth.DEG_TO_RAD;
             float leanPitch = entity.lean(partial)[0];
-            float[] pose = WingmanPose.base(hold, leftHanded, f, air, entity.combat(partial), sway, pitch, yaw,
-                Math.max(0, leanPitch) * Mth.DEG_TO_RAD);
+            float combat = entity.combat(partial);
+            // 0.1.11.46 (motion audit M2): the melee wind-up grows as the target comes within 5.5 blocks; a shield in the
+            // off hand is raised in escort
+            float windup = hold == WingmanPose.Hold.HELD ? Mth.clamp((5.5F - entity.targetDistance()) / 3.0F, 0, 1) : 0;
+            float shield = entity.getOffhandItem().getItem() instanceof net.minecraft.world.item.ShieldItem
+                && entity.mode() == com.miophas.singularity_iteration.common.armory.WingmanMode.ESCORT ? 1 : 0;
+            float[] pose = WingmanPose.base(hold, leftHanded, f, air, combat, sway, pitch, yaw,
+                Math.max(0, leanPitch) * Mth.DEG_TO_RAD, windup, shield);
             WingmanPose.smooth(poses.computeIfAbsent(entity, e -> new float[7]), pose, age);
             float twist = 0;
+            float shotAge = entity.shotAge(partial);
+            int cooldown = entity.shotCooldown();
             switch (hold) {
                 case BLADE -> WingmanPose.slash(pose, entity.slashKind(), entity.slashProgress(partial));
                 case RANGED -> {
                     WingmanPose.recoil(pose, leftHanded, entity.recoil(partial));
                     twist = WingmanPose.swing(pose, leftHanded, attack, pitch);
                 }
+                case BOW -> {   // the release at the shot, then the draw over the cooldown
+                    WingmanPose.draw(pose, leftHanded, Mth.clamp((shotAge - 2) / Math.max(1, cooldown - 4), 0, 1), combat);
+                    WingmanPose.recoil(pose, leftHanded, entity.recoil(partial) * 0.4F);
+                }
+                case CROSSBOW -> {
+                    WingmanPose.reload(pose, leftHanded, shotAge / cooldown, combat);
+                    WingmanPose.recoil(pose, leftHanded, entity.recoil(partial));
+                }
+                case SPEAR -> WingmanPose.spearThrow(pose, leftHanded, shotAge, combat);
+                case HELD -> twist = WingmanPose.cut(pose, leftHanded, attack, windup);
                 default -> twist = WingmanPose.swing(pose, leftHanded, attack, pitch);
             }
             rightArm.xRot = pose[WingmanPose.RX]; rightArm.yRot = pose[WingmanPose.RY]; rightArm.zRot = pose[WingmanPose.RZ];

@@ -35,8 +35,14 @@ import net.minecraft.world.item.ItemStack;
 public final class WingmanPose {
     private WingmanPose() { }
 
-    /** What the main hand holds, for the pose. */
-    public enum Hold { EMPTY, HELD, RANGED, BLADE }
+    /**
+     * What the main hand holds, for the pose. 0.1.11.46 (motion audit M2): a bow, a crossbow and a trident have poses of
+     * their own (draw, hold and reload, throw); RANGED is the two-handed aim of the energy guns and other ranged weapons.
+     */
+    public enum Hold { EMPTY, HELD, RANGED, BLADE, BOW, CROSSBOW, SPEAR;
+        /** True for every ranged kind. */
+        public boolean ranged() { return this == RANGED || this == BOW || this == CROSSBOW || this == SPEAR; }
+    }
 
     public static final int RX = 0, RY = 1, RZ = 2, LX = 3, LY = 4, LZ = 5;
     /** Time constant of the fail-safe smoothing, ticks. */
@@ -58,7 +64,12 @@ public final class WingmanPose {
     public static Hold holdOf(ItemStack stack, boolean blade) {
         if (stack.isEmpty()) return Hold.EMPTY;
         if (blade) return Hold.BLADE;
-        return ranged(stack) ? Hold.RANGED : Hold.HELD;
+        if (!ranged(stack)) return Hold.HELD;
+        var item = stack.getItem();
+        if (item instanceof com.miophas.singularity_iteration.core.api.item.IWeaponItem) return Hold.RANGED;
+        if (item instanceof net.minecraft.world.item.TridentItem) return Hold.SPEAR;
+        if (item instanceof net.minecraft.world.item.CrossbowItem) return Hold.CROSSBOW;
+        return Hold.BOW;   // bows and other projectile weapons
     }
 
     /**
@@ -74,6 +85,15 @@ public final class WingmanPose {
      */
     public static float[] base(Hold hold, boolean leftHanded, float flight, float air, float combat, float sway,
                                float headPitch, float headYaw, float lean) {
+        return base(hold, leftHanded, flight, air, combat, sway, headPitch, headYaw, lean, 0, 0);
+    }
+
+    /**
+     * 0.1.11.46 (M2): the target pose with the melee wind-up ({@code windup} 0..1: the weapon raised back as the target
+     * comes near) and the shield ({@code shield} 0..1: the off arm raises a held shield; escort).
+     */
+    public static float[] base(Hold hold, boolean leftHanded, float flight, float air, float combat, float sway,
+                               float headPitch, float headYaw, float lean, float windup, float shield) {
         float f = clamp01(flight), a = clamp01(air), c = clamp01(combat);
         float hp = Mth.clamp(finite(headPitch), -1.2F, 1.2F), hy = Mth.clamp(finite(headYaw), -0.9F, 0.9F);
         float tilt = Mth.clamp(finite(lean), 0, 1.2F);
@@ -82,14 +102,36 @@ public final class WingmanPose {
         free(main, f, a, sw);
         free(off, f, a, -sw);
         float aimYaw = 0;
+        float aimX = -Mth.HALF_PI + hp - tilt;
         switch (hold) {
-            case HELD -> held(main, f, c);
+            case HELD -> {
+                held(main, f, c);
+                // 0.1.11.46: the weapon goes up and back as the target comes near (the wind-up of the cut)
+                blend(main, c * clamp01(windup), -2.45F, 0.30F, 0.12F);
+            }
             case RANGED -> {
                 held(main, f, 0);
-                float aimX = -Mth.HALF_PI + hp - tilt;
                 blend(main, c, aimX, -0.10F, 0);
                 blend(off, c, aimX, 0.50F, 0);
                 aimYaw = c * hy;   // the head yaw turns both arms the same way, whatever the hand
+            }
+            case BOW -> {          // 0.1.11.46: the bow arm straight at the target, the string hand beside it (the draw is added)
+                held(main, f, 0);
+                blend(main, c, aimX, -0.08F, 0);
+                blend(off, c, aimX, 0.45F, 0);
+                aimYaw = c * hy;
+            }
+            case CROSSBOW -> {     // 0.1.11.46: the vanilla crossbow hold (the reload is added)
+                held(main, f, 0);
+                blend(main, c, aimX + 0.10F, -0.30F, 0);
+                blend(off, c, aimX + 0.07F, 0.60F, 0);
+                aimYaw = c * hy;
+            }
+            case SPEAR -> {        // 0.1.11.46: the trident raised back over the shoulder (the throw is added)
+                held(main, f, 0);
+                blend(main, c, -Mth.PI + 0.35F + hp * 0.5F, -0.15F, 0.05F);
+                blend(off, c, -0.55F, 0.35F, -0.10F);
+                aimYaw = c * hy * 0.5F;
             }
             case BLADE -> {   // the still ready pose of 0.1.10.11 (the blade is drawn by SlashBlade)
                 main[0] = -0.42F; main[1] = 0.32F; main[2] = 0.04F;
@@ -97,6 +139,9 @@ public final class WingmanPose {
             }
             default -> { }
         }
+        // 0.1.11.46: a shield in the off hand is raised in front (the vanilla block pose)
+        float sh = clamp01(shield) * c;
+        if (sh > 0) blend(off, sh, -0.95F + hp * 0.5F, 0.52F, 0);
         float[] pose = place(main, off, leftHanded);
         pose[RY] += aimYaw;
         pose[LY] += aimYaw;
@@ -266,6 +311,65 @@ public final class WingmanPose {
         double fx = -Math.sin(yaw), fz = Math.cos(yaw);       // forward
         double rx = -Math.cos(yaw), rz = -Math.sin(yaw);      // right
         return new float[]{(float) (dx * fx + dz * fz), (float) (dx * rx + dz * rz)};
+    }
+
+    // ------------------------------------------------------------------ weapon motions (0.1.11.46, motion audit M2)
+
+    /**
+     * The cut of a melee hit from the wind-up: a fast strike down and across (to 35 % of the swing), a held
+     * follow-through low across the body (to 70 %), then back to the guard. Zero at 0 and at 1. Returns the body twist.
+     * {@code a}: 0..1 of the swing (the vanilla swing time); {@code windup} as in {@link #base}.
+     */
+    /** The arm angle at the end of the strike (forward and low). */
+    public static final float STRIKE_X = -0.15F;
+
+    public static float cut(float[] pose, boolean leftHanded, float a, float windup) {
+        a = clamp01(a);
+        if (a <= 0 || a >= 1) return 0;
+        float w = 0.55F + 0.45F * clamp01(windup);       // a cut from a full wind-up travels further
+        float k = a < 0.35F ? ease(a / 0.35F) : a < 0.70F ? 1 : 1 - ease((a - 0.70F) / 0.30F);
+        int x = leftHanded ? LX : RX;
+        float side = leftHanded ? -1 : 1;
+        pose[x] += (STRIKE_X - pose[x]) * k;              // down from wherever the arm is to the strike, never past it
+        pose[x + 1] += side * -0.95F * w * k;             // across the body
+        pose[x + 2] += side * -0.20F * k;
+        float twist = side * 0.38F * k;                   // the body turns into the cut
+        pose[RY] += twist;
+        pose[LY] += twist;
+        return twist;
+    }
+
+    /**
+     * The draw of a bow: the string hand comes back toward the chest as {@code draw} goes from 0 (just shot) to 1 (full
+     * draw); the release is the drop of {@code draw} at the shot.
+     */
+    public static void draw(float[] pose, boolean leftHanded, float draw, float combat) {
+        float d = clamp01(draw) * clamp01(combat);
+        int x = leftHanded ? LX : RX;
+        float side = leftHanded ? -1 : 1;
+        pose[x] += 0.28F * d;
+        pose[x + 1] += side * 0.55F * d;
+    }
+
+    /** The reload of a crossbow after a shot: {@code reload} 0..1 of the cooldown; the arms pull the string, then hold. */
+    public static void reload(float[] pose, boolean leftHanded, float reload, float combat) {
+        float r = clamp01(reload);
+        float k = (r < 0.15F ? ease(r / 0.15F) : r < 0.65F ? 1 : 1 - ease((r - 0.65F) / 0.35F)) * clamp01(combat);
+        int x = leftHanded ? LX : RX, o = leftHanded ? RX : LX;
+        float side = leftHanded ? -1 : 1;
+        pose[x] += 0.55F * k;
+        pose[x + 1] += side * -0.50F * k;
+        pose[o] += 0.50F * k;
+        pose[o + 1] += side * -0.25F * k;
+    }
+
+    /** The throw of a trident: {@code t} ticks since the throw (partial); the arm whips forward and comes back up. */
+    public static void spearThrow(float[] pose, boolean leftHanded, float t, float combat) {
+        float s = finite(t);
+        if (s < 0 || s > 10) return;
+        float k = (s < 2 ? ease(s / 2) : 1 - ease((s - 2) / 8)) * clamp01(combat);
+        int x = leftHanded ? LX : RX;
+        pose[x] += 2.3F * k;
     }
 
     /** Firing: the weapon kicks up and the support arm follows. {@code r} 0..1, smoothed per tick. */

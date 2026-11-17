@@ -179,17 +179,21 @@ public final class Round11539GameTests {
         h.succeed();
     }
 
-    /** Upkeep that nobody pays (no electric piece, no Armory) sends the Wingman home after the low-power seconds. */
-    @GameTest(template = "empty", batch = "round11539_upkeep", timeoutTicks = 200)
+    /**
+     * Upkeep that nobody pays (no electric piece, no Armory, no reserve) sends the Wingman home after the low-power
+     * seconds. 0.1.11.46: the upkeep runs directly (a Wingman left to fly can leave the ticking chunks of the test area).
+     */
+    @GameTest(template = "empty", batch = "round11539_upkeep", timeoutTicks = 20)
     public static void unpaidUpkeepSendsHome(GameTestHelper h) {
         ServerPlayer owner = Round33GameTests.survivalPlayer(h);
         Entity w = wingman(h, owner, 0, new Vec3(1.5, 4, 1.5));
-        h.runAtTickTime(60, () -> h.assertTrue(!w.isRemoved() && state(w) == 0, "returned too early"));
-        h.succeedWhen(() -> {
-            h.assertTrue(h.getTick() > 60 && (w.isRemoved() || state(w) == 1), "still flying");
-            w.discard();
-            Round33GameTests.remove(owner);
-        });
+        for (int second = 1; second <= 4; second++) call(w, "upkeep", h.getLevel(), owner);
+        h.assertTrue(state(w) == 0, "returned before 5 s without upkeep");
+        call(w, "upkeep", h.getLevel(), owner);
+        h.assertTrue(state(w) == 1, "still flying after 5 s without upkeep");
+        w.discard();
+        Round33GameTests.remove(owner);
+        h.succeed();
     }
 
     /** G-12: the wheel's squad mode leaves an individual mode alone; a console recall by entity id reaches only that one. */

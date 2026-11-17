@@ -2797,11 +2797,16 @@ public final class CaptureDirector {
                     {new ItemStack(Items.DIAMOND_HELMET), new ItemStack(Items.DIAMOND_CHESTPLATE), new ItemStack(Items.DIAMOND_LEGGINGS),
                         new ItemStack(Items.DIAMOND_BOOTS), new ItemStack(Items.DIAMOND_SWORD), ItemStack.EMPTY},
                     {new ItemStack(Items.IRON_HELMET), new ItemStack(Items.IRON_CHESTPLATE), new ItemStack(Items.IRON_LEGGINGS),
-                        new ItemStack(Items.IRON_BOOTS), new ItemStack(Items.BOW), ItemStack.EMPTY}};
+                        new ItemStack(Items.IRON_BOOTS), new ItemStack(Items.BOW), ItemStack.EMPTY},
+                    // 0.1.11.46 (M2): a crossbow and a trident
+                    {new ItemStack(Items.GOLDEN_HELMET), new ItemStack(Items.GOLDEN_CHESTPLATE), new ItemStack(Items.GOLDEN_LEGGINGS),
+                        new ItemStack(Items.GOLDEN_BOOTS), new ItemStack(Items.CROSSBOW), ItemStack.EMPTY},
+                    {new ItemStack(Items.NETHERITE_HELMET), new ItemStack(Items.NETHERITE_CHESTPLATE), new ItemStack(Items.NETHERITE_LEGGINGS),
+                        new ItemStack(Items.NETHERITE_BOOTS), new ItemStack(Items.TRIDENT), ItemStack.EMPTY}};
                 for (int st = 0; st < suits.length; st++)
                     for (int c = 0; c < 6; c++)
                         if (!suits[st][c].isEmpty()) inv.insertItem(mio_icif_armory.slotOf(st, ArmoryPiece.COLUMNS[c]), suits[st][c], false);
-                for (int st = 0; st < 2; st++)
+                for (int st = 0; st < suits.length; st++)
                     Singularity_Iteration.LOGGER.info("capture motion deploy {}: {}", st, com.miophas.singularity_iteration.common.armory.WingmanService.deploy(sp, armory, st,
                         com.miophas.singularity_iteration.common.armory.WingmanMode.OFFENSIVE).getString());
             }

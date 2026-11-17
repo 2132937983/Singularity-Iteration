@@ -92,8 +92,8 @@ public class mio_icif_block_foam extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // 有伪装时由BER渲染伪装方块，无伪装时用默认模型渲染泡沫
-        return state.getValue(DISGUISED) ? RenderShape.ENTITYBLOCK_ANIMATED : RenderShape.MODEL;
+        // 0.1.11.24: a disguise is drawn by the chunk mesh too (DisguiseModels), not by a block entity renderer
+        return RenderShape.MODEL;
     }
 
     @Nullable

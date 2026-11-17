@@ -48,6 +48,12 @@ import net.minecraft.world.level.material.MapColor;
  * <p><b>Thread.</b> Call all methods on the client thread only.
  */
 public final class HoloMap {
+    /** 0.1.11.24: the sorted visible faces of the last view (see the face pass). */
+    private static long[] sortKeys = new long[0];
+    private static int[] sortedFaces;
+    private static int sortedCount, sortedVisible;
+    private static final float[] sortedView = new float[7];
+
     private HoloMap() {}
 
     /** Half width of the box in blocks, in x and z. */
@@ -497,10 +503,15 @@ public final class HoloMap {
         int[] f = faces;
         // 0.1.11.5: one primitive sort key per face (depth bits high, face index low), no boxed Integer[] per frame.
         // The depth is always positive (the camera is dist = 66 blocks away), so its float bits sort as ints.
-        long[] keys = new long[n];
+        // 0.1.11.24: the visible faces and their order only change with the view (yaw, tilt) or the faces; kept between
+        // frames in a reused array (a new long[n] and a sort of up to 7,000 faces every frame before)
+        boolean sameView = f == sortedFaces && n == sortedCount && rightX == sortedView[0] && rightZ == sortedView[1]
+            && fwdX == sortedView[2] && fwdZ == sortedView[3] && sinT == sortedView[4] && cosT == sortedView[5] && dist == sortedView[6];
+        if (sortKeys.length < n) sortKeys = new long[Math.max(n, sortKeys.length * 2)];
+        long[] keys = sortKeys;
         float[] ctr = new float[3];
-        int nv = 0;
-        for (int i = 0; i < n; i++) {
+        int nv = sameView ? sortedVisible : 0;
+        if (!sameView) for (int i = 0; i < n; i++) {
             int o = i * STRIDE;
             int dir = f[o + 3];
             centre(f[o], f[o + 1], f[o + 2], dir, f[o + 6], f[o + 7], ctr);
@@ -512,7 +523,12 @@ public final class HoloMap {
             if (nu * px + qy * py + qz * pz >= 0) continue;   // back face
             keys[nv++] = ((long) Float.floatToIntBits(pz) << 32) | i;
         }
-        java.util.Arrays.sort(keys, 0, nv);
+        if (!sameView) {
+            java.util.Arrays.sort(keys, 0, nv);
+            sortedFaces = f; sortedCount = n; sortedVisible = nv;
+            sortedView[0] = rightX; sortedView[1] = rightZ; sortedView[2] = fwdX; sortedView[3] = fwdZ;
+            sortedView[4] = sinT; sortedView[5] = cosT; sortedView[6] = dist;
+        }
         float flicker = 0.95F + 0.05F * (float) Math.sin(now / 47.0) * (float) Math.sin(now / 131.0);
         int outline = FcsDraw.argb(0xF2F7FA, 0.78F * flicker);
         for (int oi = nv - 1; oi >= 0; oi--) {   // far faces first

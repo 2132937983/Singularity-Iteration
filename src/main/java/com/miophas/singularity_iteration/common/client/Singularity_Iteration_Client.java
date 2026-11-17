@@ -151,9 +151,14 @@ public class Singularity_Iteration_Client {
     
     @SubscribeEvent
     static void registerBlockColors(RegisterColorHandlersEvent.Block event) {
-        event.register((state, level, pos, tint) -> tint == 0 && level != null && pos != null
-                && level.getBlockEntity(pos) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_wire wire
-                ? wire.getCableColor().getTextureDiffuseColor() : 0xFF1D1D21,
+        event.register((state, level, pos, tint) -> {
+                // 0.1.11.24: a disguise quad of a disguised wire (DisguiseModels moves its tint index up)
+                Integer disguise = com.miophas.singularity_iteration.common.client.render.DisguiseModels.wireTint(level, pos, tint);
+                if (disguise != null) return disguise;
+                return tint == 0 && level != null && pos != null
+                    && level.getBlockEntity(pos) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_wire wire
+                    ? wire.getCableColor().getTextureDiffuseColor() : 0xFF1D1D21;
+            },
             mio_icif_blocks.WIRE_ISOLATION_LV.get(), mio_icif_blocks.WIRE_ISOLATION_MV.get(),
             mio_icif_blocks.WIRE_ISOLATION_HV.get(), mio_icif_blocks.WIRE_ISOLATION_HV_2.get(),
             mio_icif_blocks.WIRE_ISOLATION_EV.get(), mio_icif_blocks.WIRE_ISOLATION_EV_2.get(),
@@ -626,12 +631,7 @@ public class Singularity_Iteration_Client {
         );
         Singularity_Iteration.LOGGER.debug("Nuke primed entity renderer registered");
 
-        // 注册建筑泡沫方块实体渲染器（用于遮蔽器伪装纹理）
-        event.registerBlockEntityRenderer(
-            mio_icif_block_entities.FOAM_ENTITY_TYPE.get(),
-            com.miophas.singularity_iteration.common.client.render.FoamEntityRenderer::new
-        );
-        Singularity_Iteration.LOGGER.debug("Foam entity renderer registered");
+        // 0.1.11.24: disguised foam and wires are drawn by the chunk mesh (DisguiseModels); no block entity renderers
 
         event.registerBlockEntityRenderer(
             mio_icif_block_entities.WIRELESS_POWER_TRANSMISSION_NODE.get(),
@@ -649,10 +649,6 @@ public class Singularity_Iteration_Client {
             com.miophas.singularity_iteration.common.client.render.mio_icif_MinerRangeRenderer.provider()
         );
         Singularity_Iteration.LOGGER.debug("Miner range renderer registered");
-
-        // 注册电线方块实体渲染器（用于泡沫化电线的遮蔽器伪装纹理渲染）
-        com.miophas.singularity_iteration.common.client.render.WireDisguiseRenderer.registerAll(event);
-        Singularity_Iteration.LOGGER.debug("Wire disguise renderer registered");
 
         event.registerEntityRenderer(
             mio_icif_entities.ELECTRIC_BOAT.get(),

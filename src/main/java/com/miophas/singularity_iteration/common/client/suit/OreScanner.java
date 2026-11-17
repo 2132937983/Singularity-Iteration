@@ -399,9 +399,13 @@ public final class OreScanner {
      * probability of up to 35 % and moves sideways by up to 3 GUI pixels. Both values fall to 0 at
      * the end of the reveal.
      */
+    /** 0.1.11.24: the projected corners of the cell being drawn (render thread only). */
+    private static final float[][] CORNERS = new float[8][2];
+
     private static void cells(net.minecraft.client.gui.GuiGraphics g, Vec3 cam, Vec3 origin, float front, long age, long now, float pulse) {
         if (shown.isEmpty()) return;
-        float[][] p = new float[8][];
+        float[][] p = CORNERS;
+        float sw = Minecraft.getInstance().getWindow().getGuiScaledWidth(), sh = Minecraft.getInstance().getWindow().getGuiScaledHeight();
         int drawn = 0;
         for (Hit hit : shown) {
             double dOrigin = Math.sqrt(hit.pos.distToCenterSqr(origin));
@@ -419,17 +423,26 @@ public final class OreScanner {
                 a = Math.min(1F, a + (1 - f) * 0.8F);
                 jx = (noise(bucket + 7, hit.pos.asLong()) - 0.5F) * 6 * (1 - f);
             }
+            // 0.1.11.24: a cell whose centre is behind the near plane has a corner there too (depth is affine), and such a
+            // cell was skipped after projecting its corners; test the centre first. The corners go into reused arrays
+            // with one matrix (eight new arrays and sixteen transforms a cell before), and a cell wholly off the screen
+            // is not drawn.
+            if (FcsProjection.depth(hit.pos.getX() + 0.5, hit.pos.getY() + 0.5, hit.pos.getZ() + 0.5) <= 0.05F) continue;
             boolean ok = true;
+            float minX = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, minY = Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
             // corner i: x = 1 for i in {1, 2, 5, 6}, z = 1 for i in {2, 3, 6, 7}, y = 1 for i >= 4
             for (int i = 0; i < 8 && ok; i++) {
                 double x = hit.pos.getX() + ((i == 1 || i == 2 || i == 5 || i == 6) ? 1.0 : 0.0);
                 double y = hit.pos.getY() + (i >= 4 ? 1.0 : 0.0);
                 double z = hit.pos.getZ() + ((i == 2 || i == 3 || i == 6 || i == 7) ? 1.0 : 0.0);
-                p[i] = FcsProjection.project(x, y, z);
-                ok = p[i] != null;
-                if (ok) { p[i][0] += jx; p[i][1] += jy; }
+                ok = FcsProjection.projectInto(x, y, z, p[i]);
+                if (ok) {
+                    p[i][0] += jx; p[i][1] += jy;
+                    minX = Math.min(minX, p[i][0]); maxX = Math.max(maxX, p[i][0]);
+                    minY = Math.min(minY, p[i][1]); maxY = Math.max(maxY, p[i][1]);
+                }
             }
-            if (!ok) continue;
+            if (!ok || maxX < 0 || minX > sw || maxY < 0 || minY > sh) continue;
             int fill = FcsDraw.argb(hit.color, 0.10F * a);
             for (int[] f : FACES) {
                 FcsDraw.quad(g, p[f[0]][0], p[f[0]][1], p[f[1]][0], p[f[1]][1], p[f[2]][0], p[f[2]][1], p[f[3]][0], p[f[3]][1], fill);

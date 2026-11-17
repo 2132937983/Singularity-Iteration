@@ -676,7 +676,7 @@ public class mio_icif_block_wire extends mio_icif_entity_block implements Simple
     
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return state.getValue(DISGUISED) ? RenderShape.ENTITYBLOCK_ANIMATED : RenderShape.MODEL;
+        return RenderShape.MODEL;   // 0.1.11.24: a disguise is drawn by the chunk mesh too (DisguiseModels)
     }
 
     @Override

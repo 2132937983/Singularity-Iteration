@@ -46,30 +46,35 @@ public class ReactorControlScreen extends mio_icif_screen<NuclearReactorGenerato
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
-        int x = leftPos, y = topPos;
-        float u = WindRoseView.u();
-        SiGuiTheme.panel(g, x, y, imageWidth, imageHeight);
-        for (Slot slot : menu.slots) SiGuiTheme.slot(g, x + slot.x - 1, y + slot.y - 1);
-        int columns = menu.getAvailableColumns();
-        for (int row = 0; row < 6; row++)
-            for (int col = columns; col < 9; col++) {
-                int sx = x + GX + col * 18, sy = y + GY + row * 18;
-                g.fill(sx, sy, sx + 16, sy + 16, 0x90585D63);
-                FcsDraw.line(g, sx + 3, sy + 3, sx + 13, sy + 13, 1, 0xFFEEF0F1);
-                FcsDraw.line(g, sx + 13, sy + 3, sx + 3, sy + 13, 1, 0xFFEEF0F1);
+        // 0.1.11.24: one batch (each fill and text otherwise flushed on its own: ~115 draw calls a frame here, ~450 in
+        // the control room). Only fills, quads and text are drawn here; a blit (immediate) must sit inside a scissor,
+        // which flushes the batch first (PumpCrossSection).
+        g.drawManaged(() -> {
+            int x = leftPos, y = topPos;
+            float u = WindRoseView.u();
+            SiGuiTheme.panel(g, x, y, imageWidth, imageHeight);
+            for (Slot slot : menu.slots) SiGuiTheme.slot(g, x + slot.x - 1, y + slot.y - 1);
+            int columns = menu.getAvailableColumns();
+            for (int row = 0; row < 6; row++)
+                for (int col = columns; col < 9; col++) {
+                    int sx = x + GX + col * 18, sy = y + GY + row * 18;
+                    g.fill(sx, sy, sx + 16, sy + 16, 0x90585D63);
+                    FcsDraw.line(g, sx + 3, sy + 3, sx + 13, sy + 13, 1, 0xFFEEF0F1);
+                    FcsDraw.line(g, sx + 13, sy + 3, sx + 3, sy + 13, 1, 0xFFEEF0F1);
+                }
+            // the hottest parts
+            for (int k = 0; k < 3; k++) {
+                int slot = v(17 + k), share = v(20 + k);
+                if (slot < 0 || share <= 0) continue;
+                int sx = x + GX + slot % 9 * 18 - 1, sy = y + GY + slot / 9 * 18 - 1;
+                int c = share >= 800 ? 0xFFC0392B : share >= 500 ? 0xFFD9A32B : 0xFF4F9A6A;
+                g.fill(sx, sy, sx + 18, sy + 1, c); g.fill(sx, sy + 17, sx + 18, sy + 18, c);
+                g.fill(sx, sy, sx + 1, sy + 18, c); g.fill(sx + 17, sy, sx + 18, sy + 18, c);
             }
-        // the hottest parts
-        for (int k = 0; k < 3; k++) {
-            int slot = v(17 + k), share = v(20 + k);
-            if (slot < 0 || share <= 0) continue;
-            int sx = x + GX + slot % 9 * 18 - 1, sy = y + GY + slot / 9 * 18 - 1;
-            int c = share >= 800 ? 0xFFC0392B : share >= 500 ? 0xFFD9A32B : 0xFF4F9A6A;
-            g.fill(sx, sy, sx + 18, sy + 1, c); g.fill(sx, sy + 17, sx + 18, sy + 18, c);
-            g.fill(sx, sy, sx + 1, sy + 18, c); g.fill(sx + 17, sy, sx + 18, sy + 18, c);
-        }
-        drawPanel(g, x, y, u, mouseX, mouseY);
-        drawRecord(g, x, y, u);
-        drawLines(g, x, y, u);
+            drawPanel(g, x, y, u, mouseX, mouseY);
+            drawRecord(g, x, y, u);
+            drawLines(g, x, y, u);
+        });
     }
 
     private double hullShare() { return v(3) > 0 ? v(2) / (double) v(3) : 0; }

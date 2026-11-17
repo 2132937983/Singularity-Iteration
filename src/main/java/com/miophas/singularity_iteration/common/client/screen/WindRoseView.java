@@ -75,10 +75,14 @@ final class WindRoseView {
     static void line(GuiGraphics g, Component c, float x, float y, int rgb, float maxW) {
         float u = u();
         if (AsciiHud.width(c, u) > maxW) {
+            // 0.1.11.24: the longest prefix that fits, by halving (it measured one character shorter at a time)
             String s = c.getString();
-            int n = s.length();
-            while (n > 1 && AsciiHud.width(s.substring(0, n) + "…", u) > maxW) n--;
-            c = Component.literal(s.substring(0, n) + "…");
+            int lo = 1, hi = s.length();
+            while (lo < hi) {
+                int mid = (lo + hi + 1) >>> 1;
+                if (AsciiHud.width(s.substring(0, mid) + "…", u) > maxW) hi = mid - 1; else lo = mid;
+            }
+            c = Component.literal(s.substring(0, lo) + "…");
         }
         PumpCrossSection.text(g, c, x, y, rgb, u);
     }

@@ -47,8 +47,38 @@ public final class FcsProjection {
     public static void capture(Matrix4f projection, Matrix4f modelView, Vec3 cameraPos) {
         PROJECTION.set(projection);
         VIEW.set(modelView);
+        PROJECTION.mul(VIEW, VIEW_PROJECTION);
         camera = cameraPos;
+        var window = Minecraft.getInstance().getWindow();
+        guiW = window.getGuiScaledWidth();
+        guiH = window.getGuiScaledHeight();
         valid = true;
+    }
+
+    /** 0.1.11.24: projection x view (one transform per point) and the GUI size, both of the last capture. */
+    private static final Matrix4f VIEW_PROJECTION = new Matrix4f();
+    private static float guiW, guiH;
+
+    /**
+     * 0.1.11.24: {@link #project(double, double, double)} into {@code out} (GUI x, y), without allocating; false where
+     * that returns null. For the many points of the ore scanner.
+     */
+    public static boolean projectInto(double x, double y, double z, float[] out) {
+        if (!valid) return false;
+        TMP.set((float) (x - camera.x), (float) (y - camera.y), (float) (z - camera.z), 1.0F);
+        VIEW_PROJECTION.transform(TMP);
+        if (TMP.w <= 0.05F) return false;
+        out[0] = (TMP.x / TMP.w * 0.5F + 0.5F) * guiW;
+        out[1] = (0.5F - TMP.y / TMP.w * 0.5F) * guiH;
+        return true;
+    }
+
+    /** 0.1.11.24: the clip-space w of a world point (the depth in front of the camera); {@code -1} without a capture. */
+    public static float depth(double x, double y, double z) {
+        if (!valid) return -1;
+        TMP.set((float) (x - camera.x), (float) (y - camera.y), (float) (z - camera.z), 1.0F);
+        VIEW_PROJECTION.transform(TMP);
+        return TMP.w;
     }
 
     /** Camera position of the last capture, in world blocks. */

@@ -75,6 +75,19 @@ public class mio_icif_block_foam_entity extends BlockEntity {
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        var previous = disguisedBlockId;
+        loadDisguise(tag, registries);
+        // 0.1.11.24: the chunk mesh draws the disguise (DisguiseModels): a new disguise on the client re-meshes the section
+        if (level != null && level.isClientSide && !java.util.Objects.equals(previous, disguisedBlockId)) refreshClientModel();
+    }
+
+    private void refreshClientModel() {
+        requestModelDataUpdate();
+        var state = getBlockState();
+        level.sendBlockUpdated(worldPosition, state, state, net.minecraft.world.level.block.Block.UPDATE_CLIENTS | net.minecraft.world.level.block.Block.UPDATE_IMMEDIATE);
+    }
+
+    private void loadDisguise(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         if (tag.contains(TAG_DISGUISED_BLOCK)) {
             String idStr = tag.getString(TAG_DISGUISED_BLOCK);
@@ -100,6 +113,7 @@ public class mio_icif_block_foam_entity extends BlockEntity {
 
     @Override
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
+        var previous = disguisedBlockId;
         super.handleUpdateTag(tag, registries);
         if (tag.contains(TAG_DISGUISED_BLOCK)) {
             String idStr = tag.getString(TAG_DISGUISED_BLOCK);
@@ -112,6 +126,7 @@ public class mio_icif_block_foam_entity extends BlockEntity {
         } else {
             this.disguisedBlockId = null;
         }
+        if (level != null && level.isClientSide && !java.util.Objects.equals(previous, disguisedBlockId)) refreshClientModel();
     }
 
     @Nullable

@@ -106,8 +106,38 @@ public final class CaptureDirector {
             File target = new File(OUT, "screenshots/" + name + ".png");
             target.getParentFile().mkdirs();
             Screenshot.grab(new File(OUT), name + ".png", mc.getMainRenderTarget(), c -> { });
+            if (Boolean.getBoolean("si.capture.guiBench")) guiBench(mc, name);
         });
     }
+
+    /**
+     * 0.1.11.24: with -Dsi.capture.guiBench=true, after each shot with a screen open, the screen is drawn
+     * {@code GUI_BENCH_FRAMES} times more (after a warm-up), with a GPU sync before and after, and the time per frame is
+     * logged as "[guibench]". The time includes the driver's work on the draw calls, which is what batching saves.
+     */
+    private static void guiBench(Minecraft mc, String name) {
+        if (mc.screen == null) return;
+        var g = new net.minecraft.client.gui.GuiGraphics(mc, mc.renderBuffers().bufferSource());
+        int mx = -4000, my = 4000;
+        for (int i = 0; i < 60; i++) { mc.screen.render(g, mx, my, 0); g.flush(); }
+        org.lwjgl.opengl.GL11.glFinish();
+        long[] each = new long[GUI_BENCH_FRAMES];
+        for (int i = 0; i < GUI_BENCH_FRAMES; i++) {
+            long t = System.nanoTime();
+            mc.screen.render(g, mx, my, 0);
+            g.flush();
+            org.lwjgl.opengl.GL11.glFinish();
+            each[i] = System.nanoTime() - t;
+        }
+        java.util.Arrays.sort(each);
+        long sum = 0;
+        for (long v : each) sum += v;
+        org.slf4j.LoggerFactory.getLogger(CaptureDirector.class).info("[guibench] {} ({}) | mean {} us | p50 {} us | p90 {} us",
+            name, mc.screen.getClass().getSimpleName(), String.format("%.0f", sum / (double) GUI_BENCH_FRAMES / 1000),
+            String.format("%.0f", each[GUI_BENCH_FRAMES / 2] / 1000.0), String.format("%.0f", each[GUI_BENCH_FRAMES * 9 / 10] / 1000.0));
+    }
+
+    private static final int GUI_BENCH_FRAMES = 300;
 
     private static Block block(String id) { return BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("mio_icif", id)); }
 
@@ -2389,6 +2419,68 @@ public final class CaptureDirector {
         server(60, sp -> {});
         shot(1, "reactor/2_tripped");
         client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    /**
+     * Scene "disguise" (-Dsi.capture.scene=disguise), 0.1.11.24: disguised construction foam and disguised wires, as the
+     * chunk mesh now draws them. A row of foam as stone, glass, grass, oak leaves and bricks; foamlogged tin cables
+     * disguised as planks and grass, a bare one; behind them a 32 x 12 wall of disguised foam and a layer of disguised
+     * cables. Logs the frame rate ("[disguisebench]", no frame cap, no vsync) looking at the wall.
+     */
+    private static void sceneDisguise() {
+        String[] looks = {"stone", "glass", "grass_block", "oak_leaves", "bricks"};
+        client(1, () -> Minecraft.getInstance().options.pauseOnLostFocus = false);
+        server(40, sp -> {
+            var level = sp.serverLevel();
+            level.setDayTime(6000);
+            level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, level.getServer());
+            sp.setGameMode(GameType.CREATIVE);
+            var foam = block("build/block_construction_foam");
+            var disguised = (net.minecraft.world.level.block.state.properties.BooleanProperty) foam.getStateDefinition().getProperty("disguised");
+            for (int i = 0; i < looks.length; i++) disguiseFoam(level, new BlockPos(i * 2, -60, 6), foam, disguised, looks[i]);
+            String[] wires = {"oak_planks", "grass_block", null};
+            for (int i = 0; i < wires.length; i++) disguiseWire(level, new BlockPos(11 + i * 2, -60, 6), wires[i]);
+            for (int x = -12; x < 20; x++) for (int y = 0; y < 12; y++) {
+                disguiseFoam(level, new BlockPos(x, -60 + y, 14), foam, disguised, (x + y) % 3 == 0 ? "glass" : "stone");
+                disguiseWire(level, new BlockPos(x, -60 + y, 15), "oak_planks");
+            }
+            look(sp, 4.5, -59, 1.5, 0, 5);
+        });
+        client(5, () -> {
+            Minecraft mc = Minecraft.getInstance();
+            mc.options.hideGui = true;
+            mc.options.setCameraType(CameraType.FIRST_PERSON);
+            mc.options.enableVsync().set(false);
+            mc.options.framerateLimit().set(260);
+            mc.getWindow().updateVsync(false);
+        });
+        client(60, () -> Minecraft.getInstance().setScreen(null));
+        shot(40, "disguise/1_row");
+        for (int k = 0; k < 3; k++) client(40, () -> org.slf4j.LoggerFactory.getLogger(CaptureDirector.class).info("[disguisebench] fps {}", Minecraft.getInstance().getFps()));
+        client(10, () -> Minecraft.getInstance().stop());
+    }
+
+    private static void disguiseFoam(ServerLevel level, BlockPos at, Block foam, net.minecraft.world.level.block.state.properties.BooleanProperty disguised, String look) {
+        level.setBlock(at, foam.defaultBlockState().setValue(disguised, true), 3);
+        if (level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.build.mio_icif_block_foam_entity f)
+            f.setDisguisedBlockId(ResourceLocation.withDefaultNamespace(look));
+    }
+
+    private static void disguiseWire(ServerLevel level, BlockPos at, String look) {
+        var state = block("wiring/cable/block_tin_cable_1").defaultBlockState();
+        var def = state.getBlock().getStateDefinition();
+        state = state.setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("disguised"), true);
+        if (look != null) state = state.setValue((net.minecraft.world.level.block.state.properties.BooleanProperty) def.getProperty("foamlogged"), true);
+        level.setBlock(at, state, 3);
+        if (look != null && level.getBlockEntity(at) instanceof com.miophas.singularity_iteration.common.blockentity.mio_icif_wire w)
+            w.setDisguisedBlockId(ResourceLocation.withDefaultNamespace(look));
+    }
+
+    static {
+        if (OUT != null && "disguise".equals(System.getProperty("si.capture.scene"))) {
+            new File(OUT).mkdirs();
+            sceneDisguise();
+        }
     }
 
     static {
